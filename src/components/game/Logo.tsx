@@ -1,14 +1,14 @@
+import { MapPinned } from "lucide-react";
+
 export function Logo({ small = false }: { small?: boolean }) {
   return (
     <span className="inline-flex items-center gap-2">
-      <span className="relative inline-flex h-9 w-12 items-center justify-center rounded-md border-[2.5px] border-edge bg-primary shadow-[0_3px_0_0_var(--edge)]">
-        <span className="absolute -top-2 left-1.5 h-2 w-3.5 rounded-t-sm border-[2.5px] border-b-0 border-edge bg-primary" />
-        <span className="absolute -top-2 right-1.5 h-2 w-3.5 rounded-t-sm border-[2.5px] border-b-0 border-edge bg-primary" />
-        <span className="font-display text-sm font-bold text-primary-foreground">OL</span>
+      <span className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+        <MapPinned className="h-5 w-5" />
       </span>
       {!small && (
-        <span className="font-display text-xl font-bold leading-none tracking-tight">
-          OSOGBO <span className="text-clay">LIFE</span>
+        <span className="font-display text-lg font-bold leading-none">
+          OSOGBO <span className="text-primary">LIFE</span>
         </span>
       )}
     </span>

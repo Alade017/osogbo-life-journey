@@ -8,6 +8,13 @@
       "when": 1791245090836,
       "tag": "0000_osogbo_life_phase1",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791245090837,
+      "tag": "0001_education_skills",
+      "breakpoints": true
     }
   ]
 }

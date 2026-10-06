@@ -201,6 +201,7 @@ export type Database = {
           icon: string
           id: string
           name: string
+          required_course_slug: string | null
           required_level: number
           salary: number
           slug: string
@@ -216,6 +217,7 @@ export type Database = {
           icon?: string
           id?: string
           name: string
+          required_course_slug?: string | null
           required_level?: number
           salary: number
           slug: string
@@ -231,6 +233,7 @@ export type Database = {
           icon?: string
           id?: string
           name?: string
+          required_course_slug?: string | null
           required_level?: number
           salary?: number
           slug?: string
@@ -291,6 +294,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      education_courses: {
+        Row: {
+          career_gain: number
+          description: string
+          energy_cost: number
+          id: string
+          intelligence_gain: number
+          name: string
+          provider: string
+          slug: string
+          sort_order: number
+          tuition: number
+        }
+        Insert: {
+          career_gain: number
+          description: string
+          energy_cost: number
+          id?: string
+          intelligence_gain: number
+          name: string
+          provider: string
+          slug: string
+          sort_order?: number
+          tuition: number
+        }
+        Update: {
+          career_gain?: number
+          description?: string
+          energy_cost?: number
+          id?: string
+          intelligence_gain?: number
+          name?: string
+          provider?: string
+          slug?: string
+          sort_order?: number
+          tuition?: number
+        }
+        Relationships: []
+      }
+      player_courses: {
+        Row: {
+          character_id: string
+          completed_at: string
+          course_id: string
+          id: string
+          tuition_paid: number
+          user_id: string
+        }
+        Insert: {
+          character_id: string
+          completed_at?: string
+          course_id: string
+          id?: string
+          tuition_paid: number
+          user_id: string
+        }
+        Update: {
+          character_id?: string
+          completed_at?: string
+          course_id?: string
+          id?: string
+          tuition_paid?: number
+          user_id?: string
+        }
+        Relationships: []
       }
       locations: {
         Row: {
@@ -695,6 +764,7 @@ export type Database = {
       _recalc_missions: { Args: { p_char: string }; Returns: undefined }
       _refresh_energy: { Args: { p_char: string }; Returns: number }
       claim_mission: { Args: { p_player_mission_id: string }; Returns: Json }
+      complete_education_course: { Args: { p_course_slug: string }; Returns: Json }
       create_character: {
         Args: {
           p_age: number

@@ -30,7 +30,7 @@ export function StatBar({ label, value, max = 100, tone = "primary", icon }: { l
         <span className="flex items-center gap-1.5">{icon}{label}</span>
         <span className="tabular-nums">{value}/{max}</span>
       </div>
-      <div className="h-3.5 overflow-hidden rounded-full border-2 border-edge bg-muted">
+      <div className="h-2.5 overflow-hidden rounded-full border border-border bg-muted">
         <div className={cn("h-full rounded-full transition-all", TONES[tone])} style={{ width: `${pct}%` }} />
       </div>
     </div>
@@ -41,7 +41,7 @@ export function Chip({ children, tone = "plain" }: { children: ReactNode; tone?:
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border-2 border-edge px-2.5 py-0.5 text-xs font-bold",
+        "inline-flex items-center gap-1 rounded-full border border-border px-2.5 py-0.5 text-xs font-bold",
         tone === "plain" ? "bg-card" : TONES[tone],
         (tone === "primary" || tone === "clay" || tone === "ink") && "text-primary-foreground",
       )}
@@ -53,7 +53,7 @@ export function Chip({ children, tone = "plain" }: { children: ReactNode; tone?:
 
 export function ComingSoon({ children }: { children?: ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full border-2 border-dashed border-edge bg-muted px-2.5 py-0.5 text-xs font-bold text-muted-foreground">
+    <span className="inline-flex items-center gap-1 rounded-full border border-dashed border-border bg-muted px-2.5 py-0.5 text-xs font-bold text-muted-foreground">
       Coming Soon{children ? ` · ${children}` : ""}
     </span>
   );
@@ -70,10 +70,8 @@ export function EmptyState({ title, body }: { title: string; body: string }) {
 
 export function LoadingBricks() {
   return (
-    <div className="flex items-center justify-center gap-2 py-16" role="status" aria-label="Loading">
-      {["bg-primary", "bg-sun", "bg-clay"].map((c, i) => (
-        <span key={c} className={cn("bob h-5 w-7 rounded-md border-2 border-edge", c)} style={{ animationDelay: `${i * 150}ms` }} />
-      ))}
+    <div className="flex items-center justify-center py-16" role="status" aria-label="Loading">
+      <span className="h-8 w-8 animate-spin rounded-full border-[3px] border-muted border-t-primary" />
     </div>
   );
 }

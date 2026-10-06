@@ -5,14 +5,12 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * OSOGBO LIFE design system — miniature diorama / construction-toy.
- * Sand baseplate, chunky outlined "bricks", Nigerian green, sun yellow,
- * terracotta clay and adire indigo. All colors are oklch tokens.
+ * OSOGBO LIFE game UI. City scenes opt into the LEGO palette locally.
  */
 
 @theme inline {
-  --font-display: "Fredoka", ui-rounded, system-ui, sans-serif;
-  --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Space Grotesk", ui-rounded, system-ui, sans-serif;
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -67,49 +65,49 @@
 }
 
 :root {
-  --radius: 0.9rem;
-  --background: oklch(0.95 0.035 85);
-  --foreground: oklch(0.26 0.04 255);
-  --card: oklch(0.99 0.012 85);
-  --card-foreground: oklch(0.26 0.04 255);
-  --popover: oklch(0.99 0.012 85);
-  --popover-foreground: oklch(0.26 0.04 255);
-  --primary: oklch(0.58 0.16 150);
-  --primary-foreground: oklch(0.99 0.01 150);
-  --secondary: oklch(0.91 0.05 85);
-  --secondary-foreground: oklch(0.26 0.04 255);
-  --muted: oklch(0.92 0.03 85);
-  --muted-foreground: oklch(0.48 0.04 255);
-  --accent: oklch(0.88 0.08 90);
-  --accent-foreground: oklch(0.26 0.04 255);
+  --radius: 0.75rem;
+  --background: oklch(0.975 0.008 150);
+  --foreground: oklch(0.24 0.025 256);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.24 0.025 256);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.24 0.025 256);
+  --primary: oklch(0.46 0.13 151);
+  --primary-foreground: oklch(0.99 0.005 150);
+  --secondary: oklch(0.93 0.03 220);
+  --secondary-foreground: oklch(0.24 0.025 256);
+  --muted: oklch(0.945 0.012 250);
+  --muted-foreground: oklch(0.49 0.025 255);
+  --accent: oklch(0.9 0.11 82);
+  --accent-foreground: oklch(0.24 0.025 256);
   --destructive: oklch(0.58 0.21 27);
   --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.26 0.04 255);
-  --input: oklch(0.26 0.04 255);
-  --ring: oklch(0.58 0.16 150);
-  --edge: oklch(0.26 0.04 255);
-  --sun: oklch(0.86 0.16 88);
-  --sun-foreground: oklch(0.26 0.04 255);
-  --clay: oklch(0.64 0.16 40);
-  --clay-foreground: oklch(0.99 0.01 40);
-  --ink: oklch(0.45 0.13 258);
+  --border: oklch(0.88 0.018 255);
+  --input: oklch(0.86 0.02 255);
+  --ring: oklch(0.46 0.13 151);
+  --edge: oklch(0.88 0.018 255);
+  --sun: oklch(0.86 0.16 86);
+  --sun-foreground: oklch(0.24 0.025 256);
+  --clay: oklch(0.63 0.17 38);
+  --clay-foreground: oklch(0.99 0.005 40);
+  --ink: oklch(0.43 0.11 258);
   --ink-foreground: oklch(0.98 0.01 258);
-  --leaf: oklch(0.74 0.16 140);
-  --sky: oklch(0.82 0.08 230);
+  --leaf: oklch(0.75 0.14 145);
+  --sky: oklch(0.81 0.09 225);
   --baseplate: oklch(0.76 0.13 145);
-  --chart-1: oklch(0.58 0.16 150);
-  --chart-2: oklch(0.64 0.16 40);
-  --chart-3: oklch(0.45 0.13 258);
-  --chart-4: oklch(0.86 0.16 88);
-  --chart-5: oklch(0.74 0.16 140);
-  --sidebar: oklch(0.99 0.012 85);
-  --sidebar-foreground: oklch(0.26 0.04 255);
-  --sidebar-primary: oklch(0.58 0.16 150);
-  --sidebar-primary-foreground: oklch(0.99 0.01 150);
-  --sidebar-accent: oklch(0.91 0.05 85);
-  --sidebar-accent-foreground: oklch(0.26 0.04 255);
-  --sidebar-border: oklch(0.26 0.04 255);
-  --sidebar-ring: oklch(0.58 0.16 150);
+  --chart-1: oklch(0.46 0.13 151);
+  --chart-2: oklch(0.63 0.17 38);
+  --chart-3: oklch(0.43 0.11 258);
+  --chart-4: oklch(0.86 0.16 86);
+  --chart-5: oklch(0.75 0.14 145);
+  --sidebar: oklch(1 0 0);
+  --sidebar-foreground: oklch(0.24 0.025 256);
+  --sidebar-primary: oklch(0.46 0.13 151);
+  --sidebar-primary-foreground: oklch(0.99 0.005 150);
+  --sidebar-accent: oklch(0.93 0.03 220);
+  --sidebar-accent-foreground: oklch(0.24 0.025 256);
+  --sidebar-border: oklch(0.88 0.018 255);
+  --sidebar-ring: oklch(0.46 0.13 151);
 }
 
 @layer base {
@@ -121,34 +119,112 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
   }
-  h1, h2, h3, h4 {
+  h1,
+  h2,
+  h3,
+  h4 {
     font-family: var(--font-display);
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
   }
 }
 
 /* Chunky outlined toy brick surface */
 @utility brick {
   background-color: var(--color-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 2px 8px oklch(0.2 0.025 255 / 0.05);
+}
+
+/* Pressable brick button */
+@utility brick-btn {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 1px 2px oklch(0.2 0.025 255 / 0.06);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  transition:
+    transform 140ms ease,
+    background-color 140ms ease,
+    box-shadow 140ms ease;
+  &:hover {
+    box-shadow: 0 3px 8px oklch(0.2 0.025 255 / 0.12);
+  }
+  &:active {
+    transform: translateY(1px);
+  }
+}
+
+@utility studs {
+  background-color: var(--secondary);
+}
+
+@utility studs-sand {
+  background-color: var(--background);
+}
+
+.game-shell {
+  background-color: var(--background);
+}
+
+.lego-world {
+  --font-display: "Fredoka", ui-rounded, system-ui, sans-serif;
+  --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
+  --background: oklch(0.95 0.035 85);
+  --foreground: oklch(0.26 0.04 255);
+  --card: oklch(0.99 0.012 85);
+  --card-foreground: oklch(0.26 0.04 255);
+  --primary: oklch(0.58 0.16 150);
+  --primary-foreground: oklch(0.99 0.01 150);
+  --secondary: oklch(0.91 0.05 85);
+  --secondary-foreground: oklch(0.26 0.04 255);
+  --muted: oklch(0.92 0.03 85);
+  --muted-foreground: oklch(0.48 0.04 255);
+  --accent: oklch(0.88 0.08 90);
+  --accent-foreground: oklch(0.26 0.04 255);
+  --border: oklch(0.26 0.04 255);
+  --input: oklch(0.26 0.04 255);
+  --edge: oklch(0.26 0.04 255);
+  --sun: oklch(0.86 0.16 88);
+  --sun-foreground: oklch(0.26 0.04 255);
+  --clay: oklch(0.64 0.16 40);
+  --clay-foreground: oklch(0.99 0.01 40);
+  --ink: oklch(0.45 0.13 258);
+  --ink-foreground: oklch(0.98 0.01 258);
+  --leaf: oklch(0.74 0.16 140);
+  --sky: oklch(0.82 0.08 230);
+  --baseplate: oklch(0.76 0.13 145);
+  background-color: var(--background);
+  background-image:
+    radial-gradient(circle at 50% 45%, oklch(1 0 0 / 0.5) 0 3px, transparent 4px),
+    radial-gradient(circle at 50% 55%, oklch(0.5 0.05 85 / 0.12) 0 4px, transparent 5px);
+  background-size: 24px 24px;
+}
+
+.lego-world .brick,
+.lego-world.brick {
+  background-color: var(--card);
   border: 2.5px solid var(--edge);
   border-radius: var(--radius-xl);
   box-shadow: 0 5px 0 0 var(--edge);
 }
 
-/* Pressable brick button */
-@utility brick-btn {
+.lego-world .brick-btn {
   border: 2.5px solid var(--edge);
   border-radius: var(--radius-lg);
   box-shadow: 0 4px 0 0 var(--edge);
   font-family: var(--font-display);
   font-weight: 600;
-  transition: transform 90ms ease, box-shadow 90ms ease, filter 120ms ease;
-  &:hover { filter: brightness(1.05); }
-  &:active { transform: translateY(3px); box-shadow: 0 1px 0 0 var(--edge); }
+  &:hover {
+    filter: brightness(1.05);
+  }
+  &:active {
+    transform: translateY(3px);
+    box-shadow: 0 1px 0 0 var(--edge);
+  }
 }
 
-/* Studded baseplate pattern */
-@utility studs {
+.lego-world .studs {
   background-color: var(--baseplate);
   background-image:
     radial-gradient(circle at 50% 45%, oklch(1 0 0 / 0.35) 0 4px, transparent 5px),
@@ -156,12 +232,16 @@
   background-size: 22px 22px;
 }
 
-@utility studs-sand {
-  background-color: var(--background);
-  background-image:
-    radial-gradient(circle at 50% 45%, oklch(1 0 0 / 0.6) 0 3px, transparent 4px),
-    radial-gradient(circle at 50% 55%, oklch(0.5 0.05 85 / 0.12) 0 4px, transparent 5px);
-  background-size: 24px 24px;
+.lego-world :is(.border, .border-2, .border-\[2\.5px\]) {
+  border-width: 2px;
+  border-color: var(--edge);
+}
+
+.mobile-nav-scrollbar {
+  scrollbar-width: none;
+}
+.mobile-nav-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 @utility pop-in {
@@ -173,15 +253,28 @@
 }
 
 @keyframes pop-in {
-  from { opacity: 0; transform: translateY(10px) scale(0.96); }
-  to { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 @keyframes bob {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
 }
 
-.reduce-motion *, .reduce-motion *::before, .reduce-motion *::after {
+.reduce-motion *,
+.reduce-motion *::before,
+.reduce-motion *::after {
   animation: none !important;
   transition: none !important;
 }

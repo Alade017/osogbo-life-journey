@@ -16,7 +16,7 @@ function MapPage() {
   const { data: visits } = useQuery(q.visits());
   const visited = new Set(visits?.map((v) => v.location_id));
   return (
-    <div>
+    <div className="lego-world -mx-3 px-3 py-5 md:-mx-4 md:px-4 md:py-8">
       <PageHeader title="City Map" subtitle={`A fictional, game-inspired Osogbo · ${visited.size}/${locations?.length ?? 9} districts discovered`} />
       <CityBoard />
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

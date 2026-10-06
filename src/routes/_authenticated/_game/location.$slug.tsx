@@ -28,7 +28,7 @@ function LocationPage() {
   if (!loc) return <EmptyState title="District not found" body="That place isn't on the map." />;
 
   return (
-    <div className="space-y-5">
+    <div className="lego-world -mx-3 space-y-5 px-3 py-5 md:-mx-4 md:px-4 md:py-8">
       <Link to="/map" className="inline-flex items-center gap-1 text-sm font-bold"><ArrowLeft className="h-4 w-4" /> Back to map</Link>
       <div className={cn("brick studs p-6 md:p-10")}>
         <span className={cn("inline-block rounded-lg border-2 border-edge px-3 py-1 font-display text-sm font-bold", TONE_BG[loc.color])}>{loc.district_type}</span>
@@ -43,6 +43,11 @@ function LocationPage() {
           </Button>
           {visit && <span className="text-sm text-muted-foreground">Visited {visit.visit_count}×</span>}
         </div>
+        {loc.slug === "student-district" && (
+          <Link to="/education" className="mt-4 inline-flex items-center rounded-lg border-2 border-edge bg-leaf px-4 py-2 font-display font-bold transition-transform hover:-translate-y-0.5">
+            Explore courses at the Tech Hub and Polytechnic
+          </Link>
+        )}
       </div>
       <div className="brick p-5">
         <h2 className="text-xl font-bold">Places in {loc.name}</h2>

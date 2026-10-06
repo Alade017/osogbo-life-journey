@@ -33,6 +33,8 @@ function JobsPage() {
   const { data: c } = useQuery(q.character());
   const { data: jobs, isLoading } = useQuery(q.jobs());
   const { data: myJobs } = useQuery(q.myJobs());
+  const { data: courses } = useQuery(q.educationCourses());
+  const { data: myCourses } = useQuery(q.myCourses());
   const select = useGameAction(rpc.selectJob, { onSuccess: () => toast.success("You got the job!") });
   const work = useGameAction(rpc.performJob, {
     onSuccess: (r) => toast.success(`Shift done! +${formatNaira(r.earned)} · +${r.xp} XP`),
@@ -41,6 +43,11 @@ function JobsPage() {
   if (isLoading || !c || !jobs) return <LoadingBricks />;
   const current = myJobs?.find((j) => j.is_current);
   const currentJob = jobs.find((j) => j.id === current?.job_id);
+  const currentRequirement = currentJob?.required_course_slug
+    ? courses?.find((course) => course.slug === currentJob.required_course_slug)
+    : undefined;
+  const currentQualified = !currentJob?.required_course_slug ||
+    myCourses?.some((course) => course.course_id === currentRequirement?.id);
   const readyAt = current?.last_performed_at && currentJob
     ? new Date(current.last_performed_at).getTime() + currentJob.cooldown_minutes * 60_000
     : 0;
@@ -57,22 +64,30 @@ function JobsPage() {
             <h2 className="text-3xl font-bold">{currentJob.name}</h2>
             <p className="text-sm">Shifts completed: {current?.times_performed ?? 0}</p>
           </div>
-          <Button variant="brick" size="lg" disabled={cooling || work.isPending || c.energy < currentJob.energy_cost} onClick={() => work.mutate(undefined)}>
-            {cooling ? <>Next shift in {fmt(readyAt - now)}</> : c.energy < currentJob.energy_cost ? `Need ${currentJob.energy_cost} energy` : work.isPending ? "Working…" : `Work shift · ${formatNaira(currentJob.salary)}`}
+          <Button variant="brick" size="lg" disabled={!currentQualified || cooling || work.isPending || c.energy < currentJob.energy_cost} onClick={() => work.mutate(undefined)}>
+            {!currentQualified ? `Complete ${currentRequirement?.name ?? "required course"}` : cooling ? <>Next shift in {fmt(readyAt - now)}</> : c.energy < currentJob.energy_cost ? `Need ${currentJob.energy_cost} energy` : work.isPending ? "Working…" : `Work shift · ${formatNaira(currentJob.salary)}`}
           </Button>
         </div>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {jobs.map((j) => {
-          const locked = c.level < j.required_level;
+          const requiredCourse = j.required_course_slug
+            ? courses?.find((course) => course.slug === j.required_course_slug)
+            : undefined;
+          const hasCourse = !j.required_course_slug ||
+            myCourses?.some((course) => course.course_id === requiredCourse?.id);
+          const locked = c.level < j.required_level || !hasCourse;
+          const lockReason = c.level < j.required_level
+            ? `Reach level ${j.required_level}`
+            : `Complete ${requiredCourse?.name ?? "required course"}`;
           const isCurrent = j.id === currentJob?.id;
           const dream = c.occupation_preference === j.slug;
           return (
             <div key={j.id} className={cn("brick flex flex-col p-5", locked && "opacity-75")}>
               <div className="flex items-start justify-between gap-2">
                 <h3 className="text-xl font-bold">{j.name}</h3>
-                {isCurrent ? <Chip tone="primary">Current</Chip> : locked ? <Chip><Lock className="h-3 w-3" /> Lv {j.required_level}</Chip> : <Chip tone="leaf">Open</Chip>}
+                {isCurrent ? <Chip tone="primary">Current</Chip> : locked ? <Chip><Lock className="h-3 w-3" /> {c.level < j.required_level ? `Lv ${j.required_level}` : "Course"}</Chip> : <Chip tone="leaf">Open</Chip>}
               </div>
               {dream && <p className="mt-1 flex items-center gap-1 text-xs font-bold text-clay"><Star className="h-3 w-3" /> Your dream job</p>}
               <p className="mt-2 flex-1 text-sm text-muted-foreground">{j.description}</p>
@@ -84,7 +99,7 @@ function JobsPage() {
               <p className="mt-2 text-xs text-muted-foreground">+{j.xp_reward} XP · boosts {j.stat_bonus} & career</p>
               {!isCurrent && (
                 <Button variant={locked ? "plain" : "ink"} className="mt-4" disabled={locked || select.isPending} onClick={() => select.mutate(j.id)}>
-                  {locked ? `Reach level ${j.required_level}` : currentJob ? "Switch to this job" : "Take this job"}
+                  {locked ? lockReason : currentJob ? "Switch to this job" : "Take this job"}
                 </Button>
               )}
             </div>

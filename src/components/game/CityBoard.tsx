@@ -19,7 +19,7 @@ export function CityBoard({ compact = false }: { compact?: boolean }) {
   const visited = new Set(visits?.map((v) => v.location_id));
 
   return (
-    <div className={cn("brick studs relative overflow-hidden p-0", compact ? "aspect-[16/10]" : "aspect-[4/5] sm:aspect-[16/10]")}>
+    <div className={cn("lego-world brick studs relative overflow-hidden p-0", compact ? "aspect-16/10" : "aspect-4/5 sm:aspect-16/10")}>
       {/* River & roads */}
       <svg className="pointer-events-none absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden>
         <path d="M0 12 C 20 18, 30 6, 45 14 S 70 30, 100 22" fill="none" stroke="var(--sky)" strokeWidth="5" strokeLinecap="round" />

@@ -62,6 +62,18 @@ export const q = {
       staleTime: 5 * 60_000,
       queryFn: async () => unwrap(await supabase.from("jobs").select("*").order("sort_order")),
     }),
+  educationCourses: () =>
+    queryOptions({
+      queryKey: ["educationCourses"],
+      staleTime: 5 * 60_000,
+      queryFn: async () =>
+        unwrap(await supabase.from("education_courses").select("*").order("sort_order")),
+    }),
+  myCourses: () =>
+    queryOptions({
+      queryKey: ["myCourses"],
+      queryFn: async () => unwrap(await supabase.from("player_courses").select("*")),
+    }),
   myJobs: () =>
     queryOptions({
       queryKey: ["myJobs"],
@@ -127,6 +139,14 @@ export function useGameAction<TArgs, TResult>(
 export const rpc = {
   refreshEnergy: async () => unwrap(await supabase.rpc("refresh_my_energy")),
   selectJob: async (jobId: string) => unwrap(await supabase.rpc("select_job", { p_job_id: jobId })),
+  completeEducationCourse: async (courseSlug: string) =>
+    unwrap(await supabase.rpc("complete_education_course", { p_course_slug: courseSlug })) as unknown as {
+      course: string;
+      tuition: number;
+      energy_spent: number;
+      intelligence_gain: number;
+      career_gain: number;
+    },
   performJob: async () =>
     unwrap(await supabase.rpc("perform_job")) as unknown as {
       earned: number;
