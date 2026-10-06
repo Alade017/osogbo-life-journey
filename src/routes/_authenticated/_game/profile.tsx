@@ -33,7 +33,7 @@ function ProfilePage() {
           <div className="mt-2 flex flex-wrap justify-center gap-1.5">
             <Chip tone="sun">Level {c.level}</Chip>
             <Chip>{c.age} yrs</Chip>
-            <Chip className-none="">{c.personality}</Chip>
+            <Chip>{c.personality}</Chip>
           </div>
           {dream && <p className="mt-3 text-sm text-muted-foreground">Dream job: <strong>{dream.name}</strong></p>}
           <p className="mt-1 text-sm text-muted-foreground">Balance: <strong>{formatNaira(wallet?.balance)}</strong></p>

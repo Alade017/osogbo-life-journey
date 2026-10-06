@@ -34,7 +34,7 @@ export function CityBoard({ compact = false }: { compact?: boolean }) {
           className={cn(
             "brick-btn absolute -translate-x-1/2 -translate-y-1/2 px-2 py-1 text-center leading-tight",
             compact ? "text-[10px] sm:text-xs" : "text-[11px] sm:text-sm sm:px-3 sm:py-1.5",
-            TONE_BG[l.color] ?? TONE_BG.primary,
+            TONE_BG[l.color] ?? TONE_BG["primary"],
           )}
           style={{ left: `${l.map_x}%`, top: `${l.map_y}%` }}
         >
