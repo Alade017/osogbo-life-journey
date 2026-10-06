@@ -1,11 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, MapPin } from "lucide-react";
-import { q, rpc, useGameAction } from "@/lib/game";
+import {
+  ArrowLeft,
+  Briefcase,
+  GraduationCap,
+  MapPin,
+  Navigation,
+  Store,
+  Utensils,
+} from "lucide-react";
+import { formatNaira, q, rpc, useGameAction } from "@/lib/game";
+import { CityBillboards } from "@/components/game/CityBillboards";
 import { pageMeta } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
-import { ComingSoon, EmptyState, LoadingBricks } from "@/components/game/ui";
+import { Chip, ComingSoon, EmptyState, LoadingBricks } from "@/components/game/ui";
 import { TONE_BG } from "@/components/game/CityBoard";
 import { cn } from "@/lib/utils";
 
@@ -18,48 +27,280 @@ function LocationPage() {
   const { slug } = Route.useParams();
   const { data: locations, isLoading } = useQuery(q.locations());
   const { data: visits } = useQuery(q.visits());
+  const { data: character } = useQuery(q.character());
+  const { data: wallet } = useQuery(q.wallet());
+  const { data: places } = useQuery(q.places());
+  const { data: jobs } = useQuery(q.jobs());
+  const { data: myJobs } = useQuery(q.myJobs());
+  const { data: courses } = useQuery(q.educationCourses());
+  const { data: myCourses } = useQuery(q.myCourses());
   const loc = locations?.find((l) => l.slug === slug);
   const visit = visits?.find((v) => v.location_id === loc?.id);
-  const action = useGameAction(rpc.visitLocation, {
-    onSuccess: (r) => toast.success(r.first_visit ? `Discovered ${loc?.name}! +10 XP` : `You spent time in ${loc?.name}.`),
+  const isHere = character?.current_location_id === loc?.id;
+  const localPlaces = places?.filter((place) => place.location_id === loc?.id) ?? [];
+  const localJobs = jobs?.filter((job) => job.location_id === loc?.id && job.is_available) ?? [];
+  const canPayFare = (wallet?.balance ?? 0) >= (loc?.travel_fare ?? 0);
+  const currentJob = myJobs?.find((job) => job.is_current);
+  const visitAction = useGameAction(rpc.visitLocation, {
+    onSuccess: (r) =>
+      toast.success(
+        r.first_visit ? `Discovered ${loc?.name}! +10 XP` : `You spent time in ${loc?.name}.`,
+      ),
+  });
+  const travel = useGameAction(rpc.travelToLocation, {
+    onSuccess: (r) =>
+      toast.success(
+        r.first_visit
+          ? `Arrived in ${r.location} · −${formatNaira(r.fare)} · +10 XP`
+          : `Arrived in ${r.location} · −${formatNaira(r.fare)}`,
+      ),
+  });
+  const selectJob = useGameAction(rpc.selectJob, {
+    onSuccess: () => toast.success("You got the job!"),
+  });
+  const eat = useGameAction(rpc.eatAtPlace, {
+    onSuccess: (result) =>
+      toast.success(
+        `${result.venue} · −${formatNaira(result.cost)} · Hunger −${result.hunger_restored} · Happiness +${result.happiness_gained}`,
+      ),
   });
 
-  if (isLoading) return <LoadingBricks />;
+  if (isLoading || !character) return <LoadingBricks />;
   if (!loc) return <EmptyState title="District not found" body="That place isn't on the map." />;
 
   return (
     <div className="lego-world -mx-3 space-y-5 px-3 py-5 md:-mx-4 md:px-4 md:py-8">
-      <Link to="/map" className="inline-flex items-center gap-1 text-sm font-bold"><ArrowLeft className="h-4 w-4" /> Back to map</Link>
+      <Link to="/map" className="inline-flex items-center gap-1 text-sm font-bold">
+        <ArrowLeft className="h-4 w-4" /> Back to map
+      </Link>
       <div className={cn("brick studs p-6 md:p-10")}>
-        <span className={cn("inline-block rounded-lg border-2 border-edge px-3 py-1 font-display text-sm font-bold", TONE_BG[loc.color])}>{loc.district_type}</span>
+        <span
+          className={cn(
+            "inline-block rounded-lg border-2 border-edge px-3 py-1 font-display text-sm font-bold",
+            TONE_BG[loc.color],
+          )}
+        >
+          {loc.district_type}
+        </span>
         <h1 className="mt-3 text-4xl font-bold md:text-5xl">{loc.name}</h1>
         <p className="mt-1 text-lg font-semibold">{loc.tagline}</p>
       </div>
-      <div className="brick p-5">
-        <p>{loc.description}</p>
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <Button variant="brick" onClick={() => action.mutate(loc.id)} disabled={action.isPending}>
-            <MapPin /> {visit ? "Spend time here" : "Visit district"}
-          </Button>
-          {visit && <span className="text-sm text-muted-foreground">Visited {visit.visit_count}×</span>}
+      <div className="brick p-5 md:p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="max-w-2xl">
+            <p>{loc.description}</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {visit
+                ? `Explored ${visit.visit_count} time${visit.visit_count === 1 ? "" : "s"}.`
+                : "Your first visit discovers this district and awards 10 XP."}
+            </p>
+          </div>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-edge bg-card px-3 py-1 text-xs font-bold">
+            <MapPin className="h-3.5 w-3.5" />
+            {isHere ? "You are here" : "Not your current district"}
+          </span>
         </div>
-        {loc.slug === "student-district" && (
-          <Link to="/education" className="mt-4 inline-flex items-center rounded-lg border-2 border-edge bg-leaf px-4 py-2 font-display font-bold transition-transform hover:-translate-y-0.5">
-            Explore courses at the Tech Hub and Polytechnic
-          </Link>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          {!isHere ? (
+            <Button
+              variant="brick"
+              onClick={() => travel.mutate(loc.id)}
+              disabled={travel.isPending || !canPayFare}
+            >
+              <Navigation />{" "}
+              {travel.isPending
+                ? "Travelling…"
+                : !canPayFare
+                  ? `Need ${formatNaira(loc.travel_fare)}`
+                  : `Travel here · ${formatNaira(loc.travel_fare)}`}
+            </Button>
+          ) : (
+            <Button
+              variant="plain"
+              onClick={() => visitAction.mutate(loc.id)}
+              disabled={visitAction.isPending}
+            >
+              <MapPin /> {visitAction.isPending ? "Checking in…" : "Spend time here"}
+            </Button>
+          )}
+          {isHere && loc.slug === "student-district" && (
+            <Link
+              to="/education"
+              className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-4 py-2 text-sm font-semibold"
+            >
+              <GraduationCap className="h-4 w-4" />
+              Explore technology courses
+            </Link>
+          )}
+        </div>
+        <p className="mt-3 text-xs text-muted-foreground">
+          Transport fares are virtual in-game Naira. Travel is immediate in this first city-map
+          build.
+        </p>
+      </div>
+
+      {isHere && <CityBillboards locationId={loc.id} />}
+
+      <section className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Store className="h-5 w-5 text-primary" />
+          <h2 className="text-2xl font-bold">Places in {loc.name}</h2>
+        </div>
+        {localPlaces.length ? (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {localPlaces.map((place) => {
+              const placeJobs = localJobs.filter((job) => job.place_id === place.id);
+              return (
+                <article key={place.id} className="brick p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <Chip tone="primary">{place.category}</Chip>
+                    <Chip>
+                      {place.origin === "fictional"
+                        ? "Fictional game business"
+                        : "Real-world inspired"}
+                    </Chip>
+                  </div>
+                  <h3 className="mt-3 text-lg font-bold">{place.name}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">{place.description}</p>
+                  {place.disclosure && (
+                    <p className="mt-2 border-l-2 border-clay pl-2 text-xs text-muted-foreground">
+                      {place.disclosure}
+                    </p>
+                  )}
+                  {place.slug === "elegance-tech-hub" && (
+                    <div className="mt-3 flex flex-wrap gap-1.5 text-xs">
+                      <Chip>Technology training</Chip>
+                      <Chip>Phones & laptops</Chip>
+                      <Chip>Device repairs</Chip>
+                    </div>
+                  )}
+                  {place.slug !== "elegance-tech-hub" && placeJobs.length > 0 && (
+                    <p className="mt-3 text-xs font-semibold text-muted-foreground">
+                      Hiring: {placeJobs.map((job) => job.name).join(" · ")}
+                    </p>
+                  )}
+                  {place.meal_price !== null &&
+                    (isHere ? (
+                      <Button
+                        className="mt-4 w-full"
+                        variant="plain"
+                        disabled={eat.isPending || (wallet?.balance ?? 0) < place.meal_price}
+                        onClick={() => eat.mutate(place.id)}
+                      >
+                        <Utensils />
+                        {eat.isPending
+                          ? "Ordering…"
+                          : (wallet?.balance ?? 0) < place.meal_price
+                            ? `Need ${formatNaira(place.meal_price)}`
+                            : `Eat · ${formatNaira(place.meal_price)}`}
+                      </Button>
+                    ) : (
+                      <p className="mt-4 text-xs font-semibold text-muted-foreground">
+                        Travel here to eat · {formatNaira(place.meal_price)}
+                      </p>
+                    ))}
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="brick p-5">
+            <p className="text-sm text-muted-foreground">
+              Venue listings for this district are being added.
+            </p>
+          </div>
         )}
-      </div>
-      <div className="brick p-5">
-        <h2 className="text-xl font-bold">Places in {loc.name}</h2>
-        <p className="text-sm text-muted-foreground">These activities are planned for future updates.</p>
-        <ul className="mt-3 grid gap-2 sm:grid-cols-3">
-          {loc.planned_features.map((f) => (
-            <li key={f} className="flex items-center justify-between gap-2 rounded-lg border-2 border-dashed border-edge/40 p-3">
-              <span className="font-semibold">{f}</span><ComingSoon />
-            </li>
-          ))}
-        </ul>
-      </div>
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Briefcase className="h-5 w-5 text-primary" />
+            <h2 className="text-2xl font-bold">Local jobs</h2>
+          </div>
+          <Chip>{localJobs.length} opportunities</Chip>
+        </div>
+        {localJobs.length ? (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {localJobs.map((job) => {
+              const isCurrentJob = currentJob?.job_id === job.id;
+              const place = localPlaces.find((item) => item.id === job.place_id);
+              const requiredCourse = job.required_course_slug
+                ? courses?.find((course) => course.slug === job.required_course_slug)
+                : undefined;
+              const qualified =
+                character.level >= job.required_level &&
+                (!job.required_course_slug ||
+                  myCourses?.some((course) => course.course_id === requiredCourse?.id));
+              return (
+                <article key={job.id} className="brick flex flex-col p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        {place?.name ?? loc.name}
+                      </p>
+                      <h3 className="mt-1 text-lg font-bold">{job.name}</h3>
+                    </div>
+                    {isCurrentJob ? (
+                      <Chip tone="primary">Your job</Chip>
+                    ) : (
+                      <Chip tone={qualified ? "leaf" : "plain"}>
+                        {qualified ? "Open" : "Requirements"}
+                      </Chip>
+                    )}
+                  </div>
+                  <p className="mt-2 flex-1 text-sm text-muted-foreground">{job.description}</p>
+                  <p className="mt-3 text-xs font-semibold">
+                    ₦{job.salary.toLocaleString("en-NG")} · {job.energy_cost} energy · +
+                    {job.xp_reward} XP
+                  </p>
+                  {!isCurrentJob && (
+                    <Button
+                      className="mt-3"
+                      variant="ink"
+                      disabled={!isHere || !qualified || selectJob.isPending}
+                      onClick={() => selectJob.mutate(job.id)}
+                    >
+                      {!isHere
+                        ? "Travel here to apply"
+                        : !qualified
+                          ? requiredCourse && character.level >= job.required_level
+                            ? `Complete ${requiredCourse.name}`
+                            : `Reach level ${job.required_level}`
+                          : selectJob.isPending
+                            ? "Applying…"
+                            : "Apply for job"}
+                    </Button>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="brick p-5">
+            <p className="text-sm text-muted-foreground">
+              No jobs are listed in this district yet.
+            </p>
+          </div>
+        )}
+      </section>
+
+      {loc.planned_features.length > 0 && (
+        <div className="brick p-5">
+          <h2 className="text-lg font-bold">More district features</h2>
+          <ul className="mt-3 grid gap-2 sm:grid-cols-3">
+            {loc.planned_features.map((feature) => (
+              <li
+                key={feature}
+                className="flex items-center justify-between gap-2 rounded-md border border-dashed border-border p-3"
+              >
+                <span className="text-sm font-semibold">{feature}</span>
+                <ComingSoon />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }

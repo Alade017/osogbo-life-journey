@@ -81,7 +81,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "OSOGBO LIFE" },
-      { name: "description", content: "A playful Nigerian life simulation game set in a miniature Osogbo-inspired city." },
+      {
+        name: "description",
+        content: "A playful Nigerian life simulation game set in a miniature Osogbo-inspired city.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

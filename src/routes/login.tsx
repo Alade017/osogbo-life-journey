@@ -9,7 +9,10 @@ export const Route = createFileRoute("/login")({
       { title: "Log in — OSOGBO LIFE" },
       { name: "description", content: "Log in to continue your life in the city of Osogbo." },
       { property: "og:title", content: "Log in — OSOGBO LIFE" },
-      { property: "og:description", content: "Log in to continue your life in the city of Osogbo." },
+      {
+        property: "og:description",
+        content: "Log in to continue your life in the city of Osogbo.",
+      },
     ],
   }),
   component: LoginPage,

@@ -10,6 +10,9 @@ import type { Database } from "@/integrations/supabase/types";
 export type Character = Database["public"]["Tables"]["characters"]["Row"];
 export type Job = Database["public"]["Tables"]["jobs"]["Row"];
 export type Location = Database["public"]["Tables"]["locations"]["Row"];
+export type GamePlace = Database["public"]["Tables"]["game_places"]["Row"];
+export type GameBillboard = Database["public"]["Tables"]["game_billboards"]["Row"];
+export type Advertisement = Database["public"]["Tables"]["advertisements"]["Row"];
 
 export const XP_PER_LEVEL = 150;
 export const ENERGY_REGEN_SECONDS = 120;
@@ -32,6 +35,7 @@ export const q = {
   character: () =>
     queryOptions({
       queryKey: ["character"],
+      retry: false,
       queryFn: async () => unwrap(await supabase.from("characters").select("*").maybeSingle()),
     }),
   profile: () =>
@@ -60,7 +64,37 @@ export const q = {
     queryOptions({
       queryKey: ["jobs"],
       staleTime: 5 * 60_000,
+      retry: false,
       queryFn: async () => unwrap(await supabase.from("jobs").select("*").order("sort_order")),
+    }),
+  places: () =>
+    queryOptions({
+      queryKey: ["places"],
+      staleTime: 5 * 60_000,
+      queryFn: async () =>
+        unwrap(await supabase.from("game_places").select("*").order("sort_order")),
+    }),
+  billboards: () =>
+    queryOptions({
+      queryKey: ["billboards"],
+      staleTime: 60_000,
+      queryFn: async () =>
+        unwrap(
+          await supabase.from("game_billboards").select("*").eq("status", "active").order("name"),
+        ),
+    }),
+  advertisements: () =>
+    queryOptions({
+      queryKey: ["advertisements"],
+      staleTime: 60_000,
+      queryFn: async () =>
+        unwrap(
+          await supabase
+            .from("advertisements")
+            .select("*")
+            .eq("status", "active")
+            .order("starts_at", { ascending: false }),
+        ),
     }),
   educationCourses: () =>
     queryOptions({
@@ -83,8 +117,7 @@ export const q = {
     queryOptions({
       queryKey: ["locations"],
       staleTime: 5 * 60_000,
-      queryFn: async () =>
-        unwrap(await supabase.from("locations").select("*").order("sort_order")),
+      queryFn: async () => unwrap(await supabase.from("locations").select("*").order("sort_order")),
     }),
   visits: () =>
     queryOptions({
@@ -140,7 +173,9 @@ export const rpc = {
   refreshEnergy: async () => unwrap(await supabase.rpc("refresh_my_energy")),
   selectJob: async (jobId: string) => unwrap(await supabase.rpc("select_job", { p_job_id: jobId })),
   completeEducationCourse: async (courseSlug: string) =>
-    unwrap(await supabase.rpc("complete_education_course", { p_course_slug: courseSlug })) as unknown as {
+    unwrap(
+      await supabase.rpc("complete_education_course", { p_course_slug: courseSlug }),
+    ) as unknown as {
       course: string;
       tuition: number;
       energy_spent: number;
@@ -152,7 +187,23 @@ export const rpc = {
       earned: number;
       xp: number;
       energy_spent: number;
+      hunger_gained: number;
+      stress_gained: number;
       level: number;
+    },
+  travelToLocation: async (locationId: string) =>
+    unwrap(await supabase.rpc("travel_to_location", { p_location_id: locationId })) as unknown as {
+      location: string;
+      fare: number;
+      travel_minutes: number;
+      first_visit: boolean;
+    },
+  eatAtPlace: async (placeId: string) =>
+    unwrap(await supabase.rpc("eat_at_place", { p_place_id: placeId })) as unknown as {
+      venue: string;
+      cost: number;
+      hunger_restored: number;
+      happiness_gained: number;
     },
   visitLocation: async (id: string) =>
     unwrap(await supabase.rpc("visit_location", { p_location_id: id })) as unknown as {

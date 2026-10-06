@@ -15,6 +15,20 @@
       "when": 1791245090837,
       "tag": "0001_education_skills",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791245090838,
+      "tag": "0002_city_locations_jobs",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791245090839,
+      "tag": "0003_billboards_advertising",
+      "breakpoints": true
     }
   ]
 }
