@@ -28,7 +28,10 @@ function SettingsPage() {
   async function update(patch: { display_name?: string; reduced_motion?: boolean; sound_enabled?: boolean }) {
     if (!profile) return;
     const { error } = await supabase.from("profiles").update(patch).eq("id", profile.id);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     toast.success("Saved");
     qc.invalidateQueries({ queryKey: ["profile"] });
   }
@@ -49,7 +52,7 @@ function SettingsPage() {
           <Label htmlFor="dn">Display name</Label>
           <div className="flex gap-2">
             <Input id="dn" maxLength={40} value={name} onChange={(e) => setName(e.target.value)} className="h-10 border-2 bg-card" />
-            <Button variant="brick" onClick={() => update({ display_name: name.trim() || undefined })}>Save</Button>
+            <Button variant="brick" onClick={() => update(name.trim() ? { display_name: name.trim() } : {})}>Save</Button>
           </div>
         </div>
       </section>

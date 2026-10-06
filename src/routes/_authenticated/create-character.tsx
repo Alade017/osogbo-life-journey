@@ -92,7 +92,10 @@ function CreateCharacter() {
       p_occupation: occupation || null,
     } as never);
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
     await qc.invalidateQueries();
     toast.success(`Welcome to Osogbo, ${name}!`);
     navigate({ to: "/home" });
@@ -128,7 +131,7 @@ function CreateCharacter() {
               </div>
             </div>
 
-            <Picker label="Gender / presentation" options={GENDERS.map((g) => g.l)} value={GENDERS.findIndex((g) => g.v === gender)} onChange={(i) => setGender(GENDERS[i].v)} />
+            <Picker label="Gender / presentation" options={GENDERS.map((g) => g.l)} value={GENDERS.findIndex((g) => g.v === gender)} onChange={(i) => setGender(GENDERS[i]?.v ?? "female")} />
             <Picker label="Skin tone" options={SKIN_TONES} swatches value={ap.skin} onChange={(skin) => setAp({ ...ap, skin })} />
             <Picker label="Hair style" options={HAIR_STYLES} value={ap.hair} onChange={(hair) => setAp({ ...ap, hair })} />
             <Picker label="Hair colour" options={HAIR_COLORS} swatches value={ap.hairColor} onChange={(hairColor) => setAp({ ...ap, hairColor })} />
