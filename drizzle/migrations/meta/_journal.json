@@ -1,5 +1,13 @@
 {
   "version": "7",
   "dialect": "postgresql",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1791245090836,
+      "tag": "0000_osogbo_life_phase1",
+      "breakpoints": true
+    }
+  ]
 }
