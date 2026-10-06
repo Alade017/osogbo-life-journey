@@ -10,33 +10,217 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as SignupRouteImport } from './routes/signup'
+import { Route as AuthenticatedGameRouteImport } from './routes/_authenticated/_game'
+import { Route as AuthenticatedCreateCharacterRouteImport } from './routes/_authenticated/create-character'
+import { Route as AuthenticatedGameHomeRouteImport } from './routes/_authenticated/_game/home'
+import { Route as AuthenticatedGameInventoryRouteImport } from './routes/_authenticated/_game/inventory'
+import { Route as AuthenticatedGameJobsRouteImport } from './routes/_authenticated/_game/jobs'
+import { Route as AuthenticatedGameMapRouteImport } from './routes/_authenticated/_game/map'
+import { Route as AuthenticatedGameMissionsRouteImport } from './routes/_authenticated/_game/missions'
+import { Route as AuthenticatedGameNotificationsRouteImport } from './routes/_authenticated/_game/notifications'
+import { Route as AuthenticatedGameProfileRouteImport } from './routes/_authenticated/_game/profile'
+import { Route as AuthenticatedGameSettingsRouteImport } from './routes/_authenticated/_game/settings'
+import { Route as AuthenticatedGameWalletRouteImport } from './routes/_authenticated/_game/wallet'
+import { Route as AuthenticatedGameLocationSlugRouteImport } from './routes/_authenticated/_game/location.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignupRoute = SignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedGameRoute = AuthenticatedGameRouteImport.update({
+  id: '/_game',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCreateCharacterRoute =
+  AuthenticatedCreateCharacterRouteImport.update({
+    id: '/create-character',
+    path: '/create-character',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedGameHomeRoute = AuthenticatedGameHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => AuthenticatedGameRoute,
+} as any)
+const AuthenticatedGameInventoryRoute =
+  AuthenticatedGameInventoryRouteImport.update({
+    id: '/inventory',
+    path: '/inventory',
+    getParentRoute: () => AuthenticatedGameRoute,
+  } as any)
+const AuthenticatedGameJobsRoute = AuthenticatedGameJobsRouteImport.update({
+  id: '/jobs',
+  path: '/jobs',
+  getParentRoute: () => AuthenticatedGameRoute,
+} as any)
+const AuthenticatedGameMapRoute = AuthenticatedGameMapRouteImport.update({
+  id: '/map',
+  path: '/map',
+  getParentRoute: () => AuthenticatedGameRoute,
+} as any)
+const AuthenticatedGameMissionsRoute =
+  AuthenticatedGameMissionsRouteImport.update({
+    id: '/missions',
+    path: '/missions',
+    getParentRoute: () => AuthenticatedGameRoute,
+  } as any)
+const AuthenticatedGameNotificationsRoute =
+  AuthenticatedGameNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedGameRoute,
+  } as any)
+const AuthenticatedGameProfileRoute =
+  AuthenticatedGameProfileRouteImport.update({
+    id: '/profile',
+    path: '/profile',
+    getParentRoute: () => AuthenticatedGameRoute,
+  } as any)
+const AuthenticatedGameSettingsRoute =
+  AuthenticatedGameSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedGameRoute,
+  } as any)
+const AuthenticatedGameWalletRoute = AuthenticatedGameWalletRouteImport.update({
+  id: '/wallet',
+  path: '/wallet',
+  getParentRoute: () => AuthenticatedGameRoute,
+} as any)
+const AuthenticatedGameLocationSlugRoute =
+  AuthenticatedGameLocationSlugRouteImport.update({
+    id: '/location/$slug',
+    path: '/location/$slug',
+    getParentRoute: () => AuthenticatedGameRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
+  '/create-character': typeof AuthenticatedCreateCharacterRoute
+  '/home': typeof AuthenticatedGameHomeRoute
+  '/inventory': typeof AuthenticatedGameInventoryRoute
+  '/jobs': typeof AuthenticatedGameJobsRoute
+  '/map': typeof AuthenticatedGameMapRoute
+  '/missions': typeof AuthenticatedGameMissionsRoute
+  '/notifications': typeof AuthenticatedGameNotificationsRoute
+  '/profile': typeof AuthenticatedGameProfileRoute
+  '/settings': typeof AuthenticatedGameSettingsRoute
+  '/wallet': typeof AuthenticatedGameWalletRoute
+  '/location/$slug': typeof AuthenticatedGameLocationSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
+  '/create-character': typeof AuthenticatedCreateCharacterRoute
+  '/home': typeof AuthenticatedGameHomeRoute
+  '/inventory': typeof AuthenticatedGameInventoryRoute
+  '/jobs': typeof AuthenticatedGameJobsRoute
+  '/map': typeof AuthenticatedGameMapRoute
+  '/missions': typeof AuthenticatedGameMissionsRoute
+  '/notifications': typeof AuthenticatedGameNotificationsRoute
+  '/profile': typeof AuthenticatedGameProfileRoute
+  '/settings': typeof AuthenticatedGameSettingsRoute
+  '/wallet': typeof AuthenticatedGameWalletRoute
+  '/location/$slug': typeof AuthenticatedGameLocationSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/login': typeof LoginRoute
+  '/signup': typeof SignupRoute
+  '/_authenticated/_game': typeof AuthenticatedGameRouteWithChildren
+  '/_authenticated/create-character': typeof AuthenticatedCreateCharacterRoute
+  '/_authenticated/_game/home': typeof AuthenticatedGameHomeRoute
+  '/_authenticated/_game/inventory': typeof AuthenticatedGameInventoryRoute
+  '/_authenticated/_game/jobs': typeof AuthenticatedGameJobsRoute
+  '/_authenticated/_game/map': typeof AuthenticatedGameMapRoute
+  '/_authenticated/_game/missions': typeof AuthenticatedGameMissionsRoute
+  '/_authenticated/_game/notifications': typeof AuthenticatedGameNotificationsRoute
+  '/_authenticated/_game/profile': typeof AuthenticatedGameProfileRoute
+  '/_authenticated/_game/settings': typeof AuthenticatedGameSettingsRoute
+  '/_authenticated/_game/wallet': typeof AuthenticatedGameWalletRoute
+  '/_authenticated/_game/location/$slug': typeof AuthenticatedGameLocationSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/login'
+    | '/signup'
+    | '/create-character'
+    | '/home'
+    | '/inventory'
+    | '/jobs'
+    | '/map'
+    | '/missions'
+    | '/notifications'
+    | '/profile'
+    | '/settings'
+    | '/wallet'
+    | '/location/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/login'
+    | '/signup'
+    | '/create-character'
+    | '/home'
+    | '/inventory'
+    | '/jobs'
+    | '/map'
+    | '/missions'
+    | '/notifications'
+    | '/profile'
+    | '/settings'
+    | '/wallet'
+    | '/location/$slug'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/login'
+    | '/signup'
+    | '/_authenticated/_game'
+    | '/_authenticated/create-character'
+    | '/_authenticated/_game/home'
+    | '/_authenticated/_game/inventory'
+    | '/_authenticated/_game/jobs'
+    | '/_authenticated/_game/map'
+    | '/_authenticated/_game/missions'
+    | '/_authenticated/_game/notifications'
+    | '/_authenticated/_game/profile'
+    | '/_authenticated/_game/settings'
+    | '/_authenticated/_game/wallet'
+    | '/_authenticated/_game/location/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  SignupRoute: typeof SignupRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +232,161 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signup': {
+      id: '/signup'
+      path: '/signup'
+      fullPath: '/signup'
+      preLoaderRoute: typeof SignupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/_game': {
+      id: '/_authenticated/_game'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedGameRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/create-character': {
+      id: '/_authenticated/create-character'
+      path: '/create-character'
+      fullPath: '/create-character'
+      preLoaderRoute: typeof AuthenticatedCreateCharacterRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/_game/home': {
+      id: '/_authenticated/_game/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof AuthenticatedGameHomeRouteImport
+      parentRoute: typeof AuthenticatedGameRoute
+    }
+    '/_authenticated/_game/inventory': {
+      id: '/_authenticated/_game/inventory'
+      path: '/inventory'
+      fullPath: '/inventory'
+      preLoaderRoute: typeof AuthenticatedGameInventoryRouteImport
+      parentRoute: typeof AuthenticatedGameRoute
+    }
+    '/_authenticated/_game/jobs': {
+      id: '/_authenticated/_game/jobs'
+      path: '/jobs'
+      fullPath: '/jobs'
+      preLoaderRoute: typeof AuthenticatedGameJobsRouteImport
+      parentRoute: typeof AuthenticatedGameRoute
+    }
+    '/_authenticated/_game/map': {
+      id: '/_authenticated/_game/map'
+      path: '/map'
+      fullPath: '/map'
+      preLoaderRoute: typeof AuthenticatedGameMapRouteImport
+      parentRoute: typeof AuthenticatedGameRoute
+    }
+    '/_authenticated/_game/missions': {
+      id: '/_authenticated/_game/missions'
+      path: '/missions'
+      fullPath: '/missions'
+      preLoaderRoute: typeof AuthenticatedGameMissionsRouteImport
+      parentRoute: typeof AuthenticatedGameRoute
+    }
+    '/_authenticated/_game/notifications': {
+      id: '/_authenticated/_game/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AuthenticatedGameNotificationsRouteImport
+      parentRoute: typeof AuthenticatedGameRoute
+    }
+    '/_authenticated/_game/profile': {
+      id: '/_authenticated/_game/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedGameProfileRouteImport
+      parentRoute: typeof AuthenticatedGameRoute
+    }
+    '/_authenticated/_game/settings': {
+      id: '/_authenticated/_game/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedGameSettingsRouteImport
+      parentRoute: typeof AuthenticatedGameRoute
+    }
+    '/_authenticated/_game/wallet': {
+      id: '/_authenticated/_game/wallet'
+      path: '/wallet'
+      fullPath: '/wallet'
+      preLoaderRoute: typeof AuthenticatedGameWalletRouteImport
+      parentRoute: typeof AuthenticatedGameRoute
+    }
+    '/_authenticated/_game/location/$slug': {
+      id: '/_authenticated/_game/location/$slug'
+      path: '/location/$slug'
+      fullPath: '/location/$slug'
+      preLoaderRoute: typeof AuthenticatedGameLocationSlugRouteImport
+      parentRoute: typeof AuthenticatedGameRoute
+    }
   }
 }
 
+interface AuthenticatedGameRouteChildren {
+  AuthenticatedGameHomeRoute: typeof AuthenticatedGameHomeRoute
+  AuthenticatedGameInventoryRoute: typeof AuthenticatedGameInventoryRoute
+  AuthenticatedGameJobsRoute: typeof AuthenticatedGameJobsRoute
+  AuthenticatedGameMapRoute: typeof AuthenticatedGameMapRoute
+  AuthenticatedGameMissionsRoute: typeof AuthenticatedGameMissionsRoute
+  AuthenticatedGameNotificationsRoute: typeof AuthenticatedGameNotificationsRoute
+  AuthenticatedGameProfileRoute: typeof AuthenticatedGameProfileRoute
+  AuthenticatedGameSettingsRoute: typeof AuthenticatedGameSettingsRoute
+  AuthenticatedGameWalletRoute: typeof AuthenticatedGameWalletRoute
+  AuthenticatedGameLocationSlugRoute: typeof AuthenticatedGameLocationSlugRoute
+}
+
+const AuthenticatedGameRouteChildren: AuthenticatedGameRouteChildren = {
+  AuthenticatedGameHomeRoute: AuthenticatedGameHomeRoute,
+  AuthenticatedGameInventoryRoute: AuthenticatedGameInventoryRoute,
+  AuthenticatedGameJobsRoute: AuthenticatedGameJobsRoute,
+  AuthenticatedGameMapRoute: AuthenticatedGameMapRoute,
+  AuthenticatedGameMissionsRoute: AuthenticatedGameMissionsRoute,
+  AuthenticatedGameNotificationsRoute: AuthenticatedGameNotificationsRoute,
+  AuthenticatedGameProfileRoute: AuthenticatedGameProfileRoute,
+  AuthenticatedGameSettingsRoute: AuthenticatedGameSettingsRoute,
+  AuthenticatedGameWalletRoute: AuthenticatedGameWalletRoute,
+  AuthenticatedGameLocationSlugRoute: AuthenticatedGameLocationSlugRoute,
+}
+
+const AuthenticatedGameRouteWithChildren =
+  AuthenticatedGameRoute._addFileChildren(AuthenticatedGameRouteChildren)
+
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedGameRoute: typeof AuthenticatedGameRouteWithChildren
+  AuthenticatedCreateCharacterRoute: typeof AuthenticatedCreateCharacterRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedGameRoute: AuthenticatedGameRouteWithChildren,
+  AuthenticatedCreateCharacterRoute: AuthenticatedCreateCharacterRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  LoginRoute: LoginRoute,
+  SignupRoute: SignupRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
