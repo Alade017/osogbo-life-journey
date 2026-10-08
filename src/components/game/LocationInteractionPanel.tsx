@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { CityLocationData, LocationActionDefinition } from "@/lib/location-service";
 import { LOCATION_CATEGORIES } from "@/lib/location-service";
 import { LocationCard } from "@/components/game/LocationCard";
+import { Link } from "@tanstack/react-router";
 
 const SUGGESTED_ACTIONS: Partial<Record<CityLocationData["category"], string[]>> = {
   bank: ["View bank services", "Deposit money", "Withdraw money"],
@@ -36,6 +37,22 @@ export function LocationInteractionPanel({ location }: { location: CityLocationD
   return (
     <section className="location-interaction-panel" aria-label={`${location.name} interactions`}>
       <LocationCard location={location} compact showActions={false} />
+      {location.category === "bank" && (
+        <Link
+          className="inline-flex rounded-lg border-2 border-edge bg-primary px-4 py-2 font-bold text-primary-foreground"
+          to="/wallet"
+        >
+          Open bank services
+        </Link>
+      )}
+      {location.category === "market" && (
+        <Link
+          className="inline-flex rounded-lg border-2 border-edge bg-primary px-4 py-2 font-bold text-primary-foreground"
+          to="/market"
+        >
+          Browse shop offers
+        </Link>
+      )}
       {selectedAction ? (
         <div className="location-interaction-placeholder" role="status" aria-live="polite">
           <p className="location-interaction-placeholder-title">{selectedAction.label}</p>

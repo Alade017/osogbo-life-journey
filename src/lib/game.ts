@@ -7,9 +7,12 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { normalizeCityLocation } from "@/lib/location-service";
+import { progressionFromExperience, XP_PER_LEVEL } from "@/lib/progression-service";
 
 export type Character = Database["public"]["Tables"]["characters"]["Row"];
 export type Job = Database["public"]["Tables"]["jobs"]["Row"];
+export type Activity = Database["public"]["Tables"]["activities"]["Row"];
+export type PlayerSkill = Database["public"]["Tables"]["player_skills"]["Row"];
 export type Location = Database["public"]["Tables"]["locations"]["Row"];
 export type MapLocation = Pick<
   Location,
@@ -30,7 +33,7 @@ export type GamePlace = Database["public"]["Tables"]["game_places"]["Row"];
 export type GameBillboard = Database["public"]["Tables"]["game_billboards"]["Row"];
 export type Advertisement = Database["public"]["Tables"]["advertisements"]["Row"];
 
-export const XP_PER_LEVEL = 150;
+export { XP_PER_LEVEL };
 export const ENERGY_REGEN_SECONDS = 120;
 
 export function formatNaira(n: number | bigint | null | undefined) {
@@ -38,8 +41,14 @@ export function formatNaira(n: number | bigint | null | undefined) {
 }
 
 export function xpProgress(xp: number) {
-  const into = xp % XP_PER_LEVEL;
-  return { into, needed: XP_PER_LEVEL, pct: (into / XP_PER_LEVEL) * 100 };
+  const progression = progressionFromExperience(xp);
+  return {
+    into: progression.experienceIntoLevel,
+    needed: progression.experienceRequired,
+    pct: progression.progressPercent,
+    toNextLevel: progression.experienceToNextLevel,
+    level: progression.level,
+  };
 }
 
 function unwrap<T>(res: { data: T; error: { message: string } | null }): T {
@@ -82,6 +91,16 @@ export const q = {
       staleTime: 5 * 60_000,
       retry: false,
       queryFn: async () => unwrap(await supabase.from("jobs").select("*").order("sort_order")),
+    }),
+  activities: () =>
+    queryOptions({
+      queryKey: ["activities"],
+      staleTime: 5 * 60_000,
+      retry: false,
+      queryFn: async () =>
+        unwrap(
+          await supabase.from("activities").select("*").eq("is_available", true).order("name"),
+        ),
     }),
   places: () =>
     queryOptions({
@@ -129,6 +148,11 @@ export const q = {
       queryKey: ["myJobs"],
       queryFn: async () => unwrap(await supabase.from("character_jobs").select("*")),
     }),
+  playerSkills: () =>
+    queryOptions({
+      queryKey: ["playerSkills"],
+      queryFn: async () => unwrap(await supabase.from("player_skills").select("*")),
+    }),
   locations: () =>
     queryOptions({
       queryKey: ["locations"],
@@ -166,6 +190,35 @@ export const q = {
             .from("player_inventory")
             .select("*, item:inventory_items(*)")
             .order("acquired_at"),
+        ),
+    }),
+  shops: () =>
+    queryOptions({
+      queryKey: ["shops"],
+      staleTime: 60_000,
+      queryFn: async () => unwrap(await supabase.from("shops").select("*").eq("is_open", true)),
+    }),
+  shopItems: () =>
+    queryOptions({
+      queryKey: ["shopItems"],
+      staleTime: 60_000,
+      queryFn: async () =>
+        unwrap(
+          await supabase
+            .from("shop_items")
+            .select("*, item:inventory_items(*), shop:shops(*)")
+            .eq("is_available", true),
+        ),
+    }),
+  equipment: () =>
+    queryOptions({
+      queryKey: ["equipment"],
+      queryFn: async () =>
+        unwrap(
+          await supabase
+            .from("player_equipment")
+            .select("*, item:inventory_items(*)")
+            .order("slot"),
         ),
     }),
   missions: () =>
@@ -224,6 +277,9 @@ export const rpc = {
       xp: number;
       energy_spent: number;
       hunger_gained: number;
+      thirst_gained: number;
+      duration_minutes: number;
+      game_time: { minute: number; hour: number; day: number; weekday: number };
       stress_gained: number;
       level: number;
     },
@@ -242,6 +298,39 @@ export const rpc = {
       hunger_restored: number;
       happiness_gained: number;
     },
+  useInventoryItem: async (inventoryId: string) =>
+    unwrap(await supabase.rpc("use_inventory_item", { p_inventory_id: inventoryId })),
+  discardInventoryItem: async (inventoryId: string, quantity = 1) =>
+    unwrap(
+      await supabase.rpc("discard_inventory_item", {
+        p_inventory_id: inventoryId,
+        p_quantity: quantity,
+      }),
+    ),
+  equipInventoryItem: async (inventoryId: string, slot: string) =>
+    unwrap(
+      await supabase.rpc("equip_inventory_item", { p_inventory_id: inventoryId, p_slot: slot }),
+    ),
+  unequipItem: async (slot: string) => unwrap(await supabase.rpc("unequip_item", { p_slot: slot })),
+  depositCash: async (amount: number) =>
+    unwrap(await supabase.rpc("deposit_cash", { p_amount: amount })),
+  withdrawCash: async (amount: number) =>
+    unwrap(await supabase.rpc("withdraw_cash", { p_amount: amount })),
+  purchaseShopItem: async (args: { shopItemId: string; quantity: number }) =>
+    unwrap(
+      await supabase.rpc("purchase_shop_item", {
+        p_shop_item_id: args.shopItemId,
+        p_quantity: args.quantity,
+      }),
+    ),
+  sellInventoryItem: async (args: { shopId: string; inventoryId: string; quantity: number }) =>
+    unwrap(
+      await supabase.rpc("sell_inventory_item", {
+        p_shop_id: args.shopId,
+        p_inventory_id: args.inventoryId,
+        p_quantity: args.quantity,
+      }),
+    ),
   visitLocation: async (id: string) =>
     unwrap(await supabase.rpc("visit_location", { p_location_id: id })) as unknown as {
       first_visit: boolean;

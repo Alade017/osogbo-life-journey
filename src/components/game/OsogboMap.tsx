@@ -48,7 +48,6 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
     if (!containerRef.current || mapRef.current) return;
     const container = containerRef.current;
     let didLoad = false;
-    let loadTimer: number | undefined;
     setLoaded(false);
     setMapError(null);
     setMapInstance(null);
@@ -98,6 +97,10 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
     map.addControl(new NavigationControl({ visualizePitch: false }), "top-right");
     map.addControl(new FullscreenControl(), "top-right");
     map.addControl(new AttributionControl({ compact: true }), "bottom-right");
+    const loadTimer = window.setTimeout(() => {
+      if (!didLoad)
+        setMapError("The map is taking too long to load. Check your connection and retry.");
+    }, 20_000);
     map.once("load", () => {
       didLoad = true;
       if (loadTimer) window.clearTimeout(loadTimer);
@@ -112,10 +115,6 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
       }
     };
     map.on("error", handleMapError);
-    loadTimer = window.setTimeout(() => {
-      if (!didLoad)
-        setMapError("The map is taking too long to load. Check your connection and retry.");
-    }, 20_000);
     const updateCameraMetadata = () => {
       const center = map.getCenter();
       container.dataset["mapCenter"] = `${center.lat.toFixed(4)},${center.lng.toFixed(4)}`;

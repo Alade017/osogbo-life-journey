@@ -2,13 +2,37 @@ import { Activity, Droplets, Heart, Smile, Sparkles, Users, Utensils, Zap } from
 import type { Character } from "@/lib/game";
 
 const NEEDS = [
-  { key: "health", label: "Health", icon: Heart, tone: "#e97c69", inverted: false },
-  { key: "energy", label: "Energy", icon: Zap, tone: "#efbd46", inverted: false },
-  { key: "hunger", label: "Hunger", icon: Utensils, tone: "#e99750", inverted: false },
-  { key: "happiness", label: "Happiness", icon: Smile, tone: "#8ecb83", inverted: false },
-  { key: "hygiene", label: "Hygiene", icon: Droplets, tone: "#7bbfd2", inverted: false },
-  { key: "social", label: "Social", icon: Users, tone: "#9a9ae0", inverted: false },
-  { key: "stress", label: "Stress", icon: Activity, tone: "#d889a1", inverted: false },
+  { key: "health", label: "Health", icon: Heart, tone: "var(--color-danger)", inverted: false },
+  { key: "energy", label: "Energy", icon: Zap, tone: "var(--color-warm-orange)", inverted: false },
+  {
+    key: "hunger",
+    label: "Hunger",
+    icon: Utensils,
+    tone: "var(--color-warm-orange)",
+    inverted: true,
+  },
+  {
+    key: "thirst",
+    label: "Thirst",
+    icon: Droplets,
+    tone: "var(--color-osogbo-blue)",
+    inverted: true,
+  },
+  {
+    key: "happiness",
+    label: "Happiness",
+    icon: Smile,
+    tone: "var(--color-emerald)",
+    inverted: false,
+  },
+  {
+    key: "social",
+    label: "Social",
+    icon: Users,
+    tone: "var(--color-osogbo-blue)",
+    inverted: false,
+  },
+  { key: "stress", label: "Stress", icon: Activity, tone: "var(--color-danger)", inverted: true },
 ] as const;
 
 export function NeedsPanel({ character }: { character: Character }) {
@@ -19,16 +43,17 @@ export function NeedsPanel({ character }: { character: Character }) {
           <Sparkles className="h-4 w-4" />
         </span>
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-white/50">
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
             How you're doing
           </p>
-          <h2 className="font-display text-sm font-bold text-white">Your needs</h2>
+          <h2 className="font-display text-sm font-bold text-ink">Your status</h2>
         </div>
       </div>
       <div className="needs-list">
         {NEEDS.map((need) => {
           const Icon = need.icon;
-          const value = need.key === "hygiene" ? null : character[need.key];
+          const rawValue = character[need.key];
+          const value = typeof rawValue === "number" && Number.isFinite(rawValue) ? rawValue : null;
           const fill = value === null ? 0 : need.inverted ? 100 - value : value;
           return (
             <div className={`need-meter ${value === null ? "need-untracked" : ""}`} key={need.key}>
@@ -39,15 +64,18 @@ export function NeedsPanel({ character }: { character: Character }) {
                 </span>
                 <span className="need-value">{value === null ? "—" : `${value}%`}</span>
               </div>
-              <div className="need-track">
+              <div
+                className="need-track"
+                aria-label={
+                  value === null ? `${need.label} not tracked` : `${need.label} ${value} out of 100`
+                }
+              >
                 <span style={{ width: `${fill}%`, backgroundColor: need.tone }} />
               </div>
-              {value === null && <span className="sr-only">Not tracked yet</span>}
             </div>
           );
         })}
       </div>
-      <p className="needs-note">Hygiene is not tracked yet.</p>
     </section>
   );
 }

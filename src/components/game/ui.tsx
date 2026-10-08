@@ -118,14 +118,11 @@ export function GameDataUnavailable({
   return (
     <main className="game-shell flex min-h-screen items-center justify-center px-4 py-10">
       <section className="game-panel w-full max-w-xl p-6 sm:p-8">
-        <p className="text-xs font-bold uppercase tracking-[0.14em] text-clay">
-          Game setup unavailable
-        </p>
+        <p className="text-xs font-bold uppercase tracking-[0.14em] text-clay">Game unavailable</p>
         <h1 className="mt-2 text-2xl font-bold">We couldn’t load your Osogbo game data.</h1>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-          Your sign-in is active, but the game database tables are missing or unavailable. Apply
-          migrations 0000–0003 to the connected Supabase project, then retry. Your character will
-          not be created until the game can check for an existing save.
+          Your sign-in is active, but game data couldn't be reached. Check your connection and try
+          again. Your saved character won't be changed.
         </p>
         <details className="mt-4 rounded-lg border border-border bg-muted p-3 text-xs">
           <summary className="cursor-pointer font-semibold">Technical detail</summary>

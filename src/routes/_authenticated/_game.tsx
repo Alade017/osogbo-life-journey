@@ -1,7 +1,16 @@
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { Briefcase, House, Map, Settings, UserRound } from "lucide-react";
+import {
+  Briefcase,
+  House,
+  Map,
+  Package,
+  Settings,
+  ShoppingBag,
+  UserRound,
+  Wallet,
+} from "lucide-react";
 import { q, rpc } from "@/lib/game";
 import { Logo } from "@/components/game/Logo";
 import { GameDataUnavailable, LoadingState } from "@/components/game/ui";
@@ -10,6 +19,7 @@ import { GameHUD } from "@/components/game/GameHUD";
 import { PhoneLauncher } from "@/components/game/PhoneLauncher";
 import { GameTimeProvider } from "@/components/game/GameTimeProvider";
 import { gameTimeFromCharacter } from "@/lib/game-time";
+import { playerStateFromRows } from "@/lib/player-state";
 
 export const Route = createFileRoute("/_authenticated/_game")({
   component: GameLayout,
@@ -19,6 +29,9 @@ const NAV = [
   { to: "/home", label: "Home", icon: House },
   { to: "/map", label: "City", icon: Map },
   { to: "/jobs", label: "Jobs", icon: Briefcase },
+  { to: "/inventory", label: "Inventory", icon: Package },
+  { to: "/market", label: "Market", icon: ShoppingBag },
+  { to: "/wallet", label: "Bank", icon: Wallet },
   { to: "/profile", label: "Profile", icon: UserRound },
 ] as const;
 
@@ -70,6 +83,8 @@ function GameLayout() {
       </div>
     );
 
+  const player = playerStateFromRows({ character, wallet, location: currentLocation });
+
   return (
     <GameTimeProvider gameTime={gameTimeFromCharacter(character)}>
       <div
@@ -81,7 +96,7 @@ function GameLayout() {
         <div className="city-game-frame">
           <aside className="game-desktop-nav" aria-label="Main navigation">
             <Link to="/home" className="game-side-logo" aria-label="OSOGBO LIFE home">
-              <Logo small />
+              <Logo />
             </Link>
             <p className="game-side-label">YOUR CITY</p>
             <nav className="game-side-links">
@@ -109,12 +124,7 @@ function GameLayout() {
             </div>
           </aside>
           <div className="city-game-content">
-            <GameHUD
-              character={character}
-              balance={wallet?.balance}
-              location={currentLocation?.name ?? "Osogbo"}
-              unread={unread}
-            />
+            <GameHUD player={player} location={currentLocation?.name ?? "Osogbo"} unread={unread} />
             <main className="city-game-main">
               <Outlet />
             </main>
@@ -138,7 +148,6 @@ function GameLayout() {
             <Map className="h-4.75 w-4.75" />
             <span>City</span>
           </Link>
-          <PhoneLauncher className="mobile-nav-phone" />
           <Link
             to="/jobs"
             activeProps={{ className: "mobile-nav-active" }}
@@ -146,6 +155,14 @@ function GameLayout() {
           >
             <Briefcase className="h-4.75 w-4.75" />
             <span>Jobs</span>
+          </Link>
+          <Link
+            to="/inventory"
+            activeProps={{ className: "mobile-nav-active" }}
+            className="mobile-nav-link"
+          >
+            <Package className="h-4.75 w-4.75" />
+            <span>Items</span>
           </Link>
           <Link
             to="/profile"

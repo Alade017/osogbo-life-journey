@@ -7,13 +7,23 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Backpack, Bell, Briefcase, Map, MessageCircle, Settings, Wallet } from "lucide-react";
+import {
+  Backpack,
+  Bell,
+  Briefcase,
+  Map,
+  MessageCircle,
+  Settings,
+  ShoppingBag,
+  Wallet,
+} from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 
 const PHONE_APPS = [
   { label: "Jobs", to: "/jobs", icon: Briefcase, tone: "phone-app-green", active: true },
   { label: "Bank", to: "/wallet", icon: Wallet, tone: "phone-app-gold", active: true },
+  { label: "Market", to: "/market", icon: ShoppingBag, tone: "phone-app-green", active: true },
   { label: "Map", to: "/map", icon: Map, tone: "phone-app-blue", active: true },
   { label: "Social", icon: MessageCircle, tone: "phone-app-coral", active: false },
   { label: "Inventory", to: "/inventory", icon: Backpack, tone: "phone-app-blue", active: true },

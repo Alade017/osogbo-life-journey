@@ -34,7 +34,10 @@ function MissionsPage() {
           const m = pm.mission!;
           const money = m.slug === "earn_10000";
           return (
-            <div key={pm.id} className={`game-panel p-5 ${pm.status === "completed" ? "bg-sun" : ""}`}>
+            <div
+              key={pm.id}
+              className={`game-panel p-5 ${pm.status === "completed" ? "bg-sun" : ""}`}
+            >
               <div className="flex items-start justify-between gap-2">
                 <h3 className="text-xl font-bold">{m.title}</h3>
                 {pm.status === "claimed" ? (

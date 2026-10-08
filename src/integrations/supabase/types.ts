@@ -95,6 +95,8 @@ export type Database = {
           social: number;
           current_location_id: string | null;
           hunger: number;
+          thirst: number;
+          wanted_level: number;
           stress: number;
           updated_at: string;
           user_id: string;
@@ -125,6 +127,8 @@ export type Database = {
           social?: number;
           current_location_id?: string | null;
           hunger?: number;
+          thirst?: number;
+          wanted_level?: number;
           stress?: number;
           updated_at?: string;
           user_id: string;
@@ -155,6 +159,8 @@ export type Database = {
           social?: number;
           current_location_id?: string | null;
           hunger?: number;
+          thirst?: number;
+          wanted_level?: number;
           stress?: number;
           updated_at?: string;
           user_id?: string;
@@ -180,93 +186,215 @@ export type Database = {
       };
       inventory_items: {
         Row: {
+          buy_price: number;
           category: string;
           created_at: string;
           description: string;
+          effects: Json;
+          equippable: boolean;
+          equipment_slot: string | null;
           icon: string;
           id: string;
+          max_stack: number;
           name: string;
+          stackable: boolean;
+          sell_price: number;
+          sellable: boolean;
           slug: string;
+          usable: boolean;
+          value: number;
         };
         Insert: {
+          buy_price?: number;
           category?: string;
           created_at?: string;
           description: string;
+          effects?: Json;
+          equippable?: boolean;
+          equipment_slot?: string | null;
           icon?: string;
           id?: string;
+          max_stack?: number;
           name: string;
+          stackable?: boolean;
+          sell_price?: number;
+          sellable?: boolean;
           slug: string;
+          usable?: boolean;
+          value?: number;
         };
         Update: {
+          buy_price?: number;
           category?: string;
           created_at?: string;
           description?: string;
+          effects?: Json;
+          equippable?: boolean;
+          equipment_slot?: string | null;
           icon?: string;
           id?: string;
+          max_stack?: number;
           name?: string;
+          stackable?: boolean;
+          sell_price?: number;
+          sellable?: boolean;
           slug?: string;
+          usable?: boolean;
+          value?: number;
         };
         Relationships: [];
       };
       jobs: {
         Row: {
+          category: string;
           cooldown_minutes: number;
           created_at: string;
           description: string;
+          duration_minutes: number;
           energy_cost: number;
+          hunger_cost: number;
           icon: string;
           id: string;
           is_available: boolean;
           location_id: string | null;
+          metadata: Json;
           name: string;
           place_id: string | null;
           required_course_slug: string | null;
           required_level: number;
+          requirements: Json;
+          reputation_reward: number;
           salary: number;
           slug: string;
           sort_order: number;
           stat_bonus: string;
+          thirst_cost: number;
           xp_reward: number;
         };
         Insert: {
+          category?: string;
           cooldown_minutes?: number;
           created_at?: string;
           description: string;
+          duration_minutes?: number;
           energy_cost: number;
+          hunger_cost?: number;
           icon?: string;
           id?: string;
           is_available?: boolean;
           location_id?: string | null;
+          metadata?: Json;
           name: string;
           place_id?: string | null;
           required_course_slug?: string | null;
           required_level?: number;
+          requirements?: Json;
+          reputation_reward?: number;
           salary: number;
           slug: string;
           sort_order?: number;
           stat_bonus?: string;
+          thirst_cost?: number;
           xp_reward?: number;
         };
         Update: {
+          category?: string;
           cooldown_minutes?: number;
           created_at?: string;
           description?: string;
+          duration_minutes?: number;
           energy_cost?: number;
+          hunger_cost?: number;
           icon?: string;
           id?: string;
           is_available?: boolean;
           location_id?: string | null;
+          metadata?: Json;
           name?: string;
           place_id?: string | null;
           required_course_slug?: string | null;
           required_level?: number;
+          requirements?: Json;
+          reputation_reward?: number;
           salary?: number;
           slug?: string;
           sort_order?: number;
           stat_bonus?: string;
+          thirst_cost?: number;
           xp_reward?: number;
         };
         Relationships: [];
+      };
+      activities: {
+        Row: {
+          category: string;
+          cooldown_minutes: number;
+          created_at: string;
+          description: string;
+          duration_minutes: number;
+          energy_delta: number;
+          hunger_delta: number;
+          id: string;
+          is_available: boolean;
+          location_id: string | null;
+          metadata: Json;
+          name: string;
+          requirements: Json;
+          rewards: Json;
+          slug: string;
+          thirst_delta: number;
+          updated_at: string;
+          xp_reward: number;
+        };
+        Insert: {
+          category: string;
+          cooldown_minutes?: number;
+          created_at?: string;
+          description: string;
+          duration_minutes: number;
+          energy_delta?: number;
+          hunger_delta?: number;
+          id?: string;
+          is_available?: boolean;
+          location_id?: string | null;
+          metadata?: Json;
+          name: string;
+          requirements?: Json;
+          rewards?: Json;
+          slug: string;
+          thirst_delta?: number;
+          updated_at?: string;
+          xp_reward?: number;
+        };
+        Update: {
+          category?: string;
+          cooldown_minutes?: number;
+          created_at?: string;
+          description?: string;
+          duration_minutes?: number;
+          energy_delta?: number;
+          hunger_delta?: number;
+          id?: string;
+          is_available?: boolean;
+          location_id?: string | null;
+          metadata?: Json;
+          name?: string;
+          requirements?: Json;
+          rewards?: Json;
+          slug?: string;
+          thirst_delta?: number;
+          updated_at?: string;
+          xp_reward?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "activities_location_id_fkey";
+            columns: ["location_id"];
+            isOneToOne: false;
+            referencedRelation: "locations";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       location_visits: {
         Row: {
@@ -775,6 +903,95 @@ export type Database = {
           },
         ];
       };
+      player_skills: {
+        Row: {
+          character_id: string;
+          created_at: string;
+          experience: number;
+          id: string;
+          level: number;
+          skill_slug: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          character_id: string;
+          created_at?: string;
+          experience?: number;
+          id?: string;
+          level?: number;
+          skill_slug: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          character_id?: string;
+          created_at?: string;
+          experience?: number;
+          id?: string;
+          level?: number;
+          skill_slug?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "player_skills_character_id_fkey";
+            columns: ["character_id"];
+            isOneToOne: false;
+            referencedRelation: "characters";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "player_skills_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      player_equipment: {
+        Row: {
+          character_id: string;
+          durability: number | null;
+          equipped_at: string;
+          id: string;
+          item_id: string;
+          metadata: Json;
+          slot: string;
+          user_id: string;
+        };
+        Insert: {
+          character_id: string;
+          durability?: number | null;
+          equipped_at?: string;
+          id?: string;
+          item_id: string;
+          metadata?: Json;
+          slot: string;
+          user_id: string;
+        };
+        Update: {
+          character_id?: string;
+          durability?: number | null;
+          equipped_at?: string;
+          id?: string;
+          item_id?: string;
+          metadata?: Json;
+          slot?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "player_equipment_item_id_fkey";
+            columns: ["item_id"];
+            isOneToOne: false;
+            referencedRelation: "inventory_items";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       player_missions: {
         Row: {
           character_id: string;
@@ -863,37 +1080,163 @@ export type Database = {
         };
         Relationships: [];
       };
+      shops: {
+        Row: {
+          category: string;
+          closing_hour: number;
+          created_at: string;
+          game_place_id: string | null;
+          id: string;
+          is_open: boolean;
+          location_id: string;
+          name: string;
+          opening_hour: number;
+          slug: string;
+          updated_at: string;
+        };
+        Insert: {
+          category: string;
+          closing_hour?: number;
+          created_at?: string;
+          game_place_id?: string | null;
+          id?: string;
+          is_open?: boolean;
+          location_id: string;
+          name: string;
+          opening_hour?: number;
+          slug: string;
+          updated_at?: string;
+        };
+        Update: {
+          category?: string;
+          closing_hour?: number;
+          created_at?: string;
+          game_place_id?: string | null;
+          id?: string;
+          is_open?: boolean;
+          location_id?: string;
+          name?: string;
+          opening_hour?: number;
+          slug?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "shops_game_place_id_fkey";
+            columns: ["game_place_id"];
+            isOneToOne: true;
+            referencedRelation: "game_places";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "shops_location_id_fkey";
+            columns: ["location_id"];
+            isOneToOne: false;
+            referencedRelation: "locations";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      shop_items: {
+        Row: {
+          buy_price: number | null;
+          created_at: string;
+          id: string;
+          is_available: boolean;
+          item_id: string;
+          sell_price: number | null;
+          shop_id: string;
+          stock: number | null;
+          updated_at: string;
+        };
+        Insert: {
+          buy_price?: number | null;
+          created_at?: string;
+          id?: string;
+          is_available?: boolean;
+          item_id: string;
+          sell_price?: number | null;
+          shop_id: string;
+          stock?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          buy_price?: number | null;
+          created_at?: string;
+          id?: string;
+          is_available?: boolean;
+          item_id?: string;
+          sell_price?: number | null;
+          shop_id?: string;
+          stock?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "shop_items_item_id_fkey";
+            columns: ["item_id"];
+            isOneToOne: false;
+            referencedRelation: "inventory_items";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "shop_items_shop_id_fkey";
+            columns: ["shop_id"];
+            isOneToOne: false;
+            referencedRelation: "shops";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       transactions: {
         Row: {
           amount: number;
+          account: string;
+          balance_after: number | null;
           category: string;
           character_id: string;
           created_at: string;
           description: string;
           id: string;
           kind: string;
+          metadata: Json;
+          source: string | null;
+          destination: string | null;
+          transaction_type: string;
           user_id: string;
           wallet_id: string;
         };
         Insert: {
           amount: number;
+          account?: string;
+          balance_after?: number | null;
           category: string;
           character_id: string;
           created_at?: string;
           description: string;
           id?: string;
           kind: string;
+          metadata?: Json;
+          source?: string | null;
+          destination?: string | null;
+          transaction_type?: string;
           user_id: string;
           wallet_id: string;
         };
         Update: {
           amount?: number;
+          account?: string;
+          balance_after?: number | null;
           category?: string;
           character_id?: string;
           created_at?: string;
           description?: string;
           id?: string;
           kind?: string;
+          metadata?: Json;
+          source?: string | null;
+          destination?: string | null;
+          transaction_type?: string;
           user_id?: string;
           wallet_id?: string;
         };
@@ -924,6 +1267,7 @@ export type Database = {
       wallets: {
         Row: {
           balance: number;
+          bank_balance: number;
           character_id: string;
           created_at: string;
           id: string;
@@ -934,6 +1278,7 @@ export type Database = {
         };
         Insert: {
           balance?: number;
+          bank_balance?: number;
           character_id: string;
           created_at?: string;
           id?: string;
@@ -944,6 +1289,7 @@ export type Database = {
         };
         Update: {
           balance?: number;
+          bank_balance?: number;
           character_id?: string;
           created_at?: string;
           id?: string;
@@ -974,6 +1320,13 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      deposit_cash: { Args: { p_amount: number }; Returns: Json };
+      withdraw_cash: { Args: { p_amount: number }; Returns: Json };
+      purchase_shop_item: { Args: { p_quantity: number; p_shop_item_id: string }; Returns: Json };
+      sell_inventory_item: {
+        Args: { p_inventory_id: string; p_quantity: number; p_shop_id: string };
+        Returns: Json;
+      };
       _credit: {
         Args: {
           p_amount: number;
@@ -999,6 +1352,16 @@ export type Database = {
       eat_at_place: { Args: { p_place_id: string }; Returns: Json };
       claim_mission: { Args: { p_player_mission_id: string }; Returns: Json };
       complete_education_course: { Args: { p_course_slug: string }; Returns: Json };
+      use_inventory_item: { Args: { p_inventory_id: string }; Returns: Json };
+      discard_inventory_item: {
+        Args: { p_inventory_id: string; p_quantity?: number };
+        Returns: Json;
+      };
+      equip_inventory_item: {
+        Args: { p_inventory_id: string; p_slot: string };
+        Returns: Json;
+      };
+      unequip_item: { Args: { p_slot: string }; Returns: Json };
       create_character: {
         Args: {
           p_age: number;

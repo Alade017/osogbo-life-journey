@@ -14,6 +14,7 @@ export const Route = createFileRoute("/_authenticated/_game/map")({
 
 function MapPage() {
   const { data: locations } = useQuery(q.locations());
+  const { data: jobs } = useQuery(q.jobs());
   const { data: visits } = useQuery(q.visits());
   const visited = new Set(visits?.map((v) => v.location_id));
   return (
@@ -24,19 +25,28 @@ function MapPage() {
       />
       <OsogboMap />
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {locations?.map((l) => (
-          <Link
-            key={l.id}
-            to="/location/$slug"
-            params={{ slug: l.slug }}
-            className="city-location-link"
-          >
-            <LocationCard
-              location={normalizeCityLocation(l)}
-              accessory={visited.has(l.id) ? <Chip tone="leaf">Visited</Chip> : <Chip>New</Chip>}
-            />
-          </Link>
-        ))}
+        {locations?.map((l) => {
+          const openJobs =
+            jobs?.filter((job) => job.location_id === l.id && job.is_available).length ?? 0;
+          return (
+            <Link
+              key={l.id}
+              to="/location/$slug"
+              params={{ slug: l.slug }}
+              className="city-location-link"
+            >
+              <LocationCard
+                location={normalizeCityLocation(l)}
+                accessory={
+                  <span className="flex flex-wrap justify-end gap-1">
+                    {openJobs > 0 && <Chip tone="primary">{openJobs} hiring</Chip>}
+                    {visited.has(l.id) ? <Chip tone="leaf">Visited</Chip> : <Chip>New</Chip>}
+                  </span>
+                }
+              />
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

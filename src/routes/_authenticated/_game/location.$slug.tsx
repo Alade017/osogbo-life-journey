@@ -13,6 +13,8 @@ import { cn } from "@/lib/utils";
 import { TravelPanel } from "@/components/game/TravelPanel";
 import { initialTravelState, travelReducer } from "@/lib/travel-state";
 import { getDrivingRoute, hasValidCoordinates } from "@/lib/route-service";
+import { checkJobEligibility } from "@/lib/job-board-service";
+import { parseJobActivityRequirements } from "@/lib/job-activity-model";
 
 export const Route = createFileRoute("/_authenticated/_game/location/$slug")({
   head: () => pageMeta("District", "Visit a district of Osogbo."),
@@ -32,6 +34,14 @@ function LocationPage() {
   const { data: myJobs } = useQuery(q.myJobs());
   const { data: courses } = useQuery(q.educationCourses());
   const { data: myCourses } = useQuery(q.myCourses());
+  const hasSkillRequirements =
+    jobs?.some(
+      (job) => (parseJobActivityRequirements(job.requirements ?? {}).skills?.length ?? 0) > 0,
+    ) ?? false;
+  const { data: playerSkills } = useQuery({
+    ...q.playerSkills(),
+    enabled: !!character && hasSkillRequirements,
+  });
   const loc = locations?.find((l) => l.slug === slug);
   const origin = locations?.find((location) => location.id === character?.current_location_id);
   const routeOrigin = hasValidCoordinates(origin)
@@ -236,6 +246,33 @@ function LocationPage() {
 
       {isHere && <CityBillboards locationId={loc.id} />}
 
+      {isHere && localPlaces.some((place) => ["bank", "atm"].includes(place.category)) && (
+        <Link
+          to="/wallet"
+          className="inline-flex rounded-lg border-2 border-edge bg-primary px-4 py-2 font-bold text-primary-foreground"
+        >
+          Open bank services
+        </Link>
+      )}
+      {isHere &&
+        localPlaces.some((place) =>
+          [
+            "market",
+            "supermarket",
+            "food-market",
+            "electronics",
+            "phone-store",
+            "clothing",
+          ].includes(place.category),
+        ) && (
+          <Link
+            to="/market"
+            className="ml-2 inline-flex rounded-lg border-2 border-edge bg-primary px-4 py-2 font-bold text-primary-foreground"
+          >
+            Browse local shops
+          </Link>
+        )}
+
       <section className="space-y-3">
         <div className="flex items-center gap-2">
           <Store className="h-5 w-5 text-primary" />
@@ -323,10 +360,19 @@ function LocationPage() {
               const requiredCourse = job.required_course_slug
                 ? courses?.find((course) => course.slug === job.required_course_slug)
                 : undefined;
-              const qualified =
-                character.level >= job.required_level &&
-                (!job.required_course_slug ||
-                  myCourses?.some((course) => course.course_id === requiredCourse?.id));
+              const courseCompleted =
+                !job.required_course_slug ||
+                !!myCourses?.some((course) => course.course_id === requiredCourse?.id);
+              const eligibility = checkJobEligibility(
+                job,
+                { level: character.level, skills: playerSkills ?? [] },
+                {
+                  required: !!job.required_course_slug,
+                  completed: courseCompleted,
+                  ...(requiredCourse?.name ? { name: requiredCourse.name } : {}),
+                },
+              );
+              const qualified = eligibility.eligible;
               return (
                 <article key={job.id} className="game-panel flex flex-col p-4">
                   <div className="flex items-start justify-between gap-2">
@@ -349,6 +395,20 @@ function LocationPage() {
                     ₦{job.salary.toLocaleString("en-NG")} · {job.energy_cost} energy · +
                     {job.xp_reward} XP
                   </p>
+                  <div className="mt-3 rounded-lg border border-border bg-muted/60 p-3 text-xs">
+                    <p className="font-bold">Requirements</p>
+                    {eligibility.reasons.length ? (
+                      <ul className="mt-1 list-inside list-disc text-clay">
+                        {eligibility.reasons.map((reason) => (
+                          <li key={reason}>{reason}</li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="mt-1 text-muted-foreground">
+                        You meet this job’s requirements.
+                      </p>
+                    )}
+                  </div>
                   {!isCurrentJob && (
                     <Button
                       className="mt-3"
@@ -359,9 +419,7 @@ function LocationPage() {
                       {!isHere
                         ? "Travel here to apply"
                         : !qualified
-                          ? requiredCourse && character.level >= job.required_level
-                            ? `Complete ${requiredCourse.name}`
-                            : `Reach level ${job.required_level}`
+                          ? (eligibility.reasons[0] ?? "Requirements not met")
                           : selectJob.isPending
                             ? "Applying…"
                             : "Apply for job"}
