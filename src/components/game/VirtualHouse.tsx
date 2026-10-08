@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { Bath, BedDouble, ChefHat, Heart, LampDesk, Sparkles, Sofa, Tv, Wand2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { Bath, BedDouble, ChefHat, Heart, House, LampDesk, Sparkles, Sofa, Tv, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -71,31 +72,105 @@ const rooms: Room[] = [
   },
 ];
 
-const actionIcons: Record<string, { icon: string; label: string }> = {
-  Relax: { icon: "🛋️", label: "Relax" },
-  "Watch TV": { icon: "📺", label: "Watch TV" },
-  "Host visitors": { icon: "👋", label: "Host visitors" },
-  Cook: { icon: "🍳", label: "Cook" },
-  "Meal prep": { icon: "🥘", label: "Meal prep" },
-  "Clean up": { icon: "🧽", label: "Clean up" },
-  Sleep: { icon: "😴", label: "Sleep" },
-  Rest: { icon: "💤", label: "Rest" },
-  Recharge: { icon: "⚡", label: "Recharge" },
-  Study: { icon: "📘", label: "Study" },
-  "Work smart": { icon: "💡", label: "Work smart" },
-  Read: { icon: "📖", label: "Read" },
-  "Freshen up": { icon: "🧼", label: "Freshen up" },
-  Shower: { icon: "🚿", label: "Shower" },
-  Reset: { icon: "✨", label: "Reset" },
-  Stretch: { icon: "🧘", label: "Stretch" },
-  "Breath in air": { icon: "🌬️", label: "Breath in air" },
-  Socialize: { icon: "🗣️", label: "Socialize" },
+const ROOM_EFFECTS: Record<
+  string,
+  Record<
+    string,
+    {
+      energy?: number;
+      hunger?: number;
+      thirst?: number;
+      happiness?: number;
+      mood: string;
+      toast: string;
+    }
+  >
+> = {
+  living: {
+    Relax: { energy: 12, happiness: 8, mood: "Chill mode active", toast: "You relaxed and settled in." },
+    "Watch TV": { energy: 6, happiness: 10, mood: "Good vibes only", toast: "TV time brought the room to life." },
+    "Host visitors": { happiness: 12, mood: "Social energy boosted", toast: "You hosted a quick visit and felt more connected." },
+  },
+  kitchen: {
+    Cook: { hunger: -10, happiness: 6, mood: "Home cooking in motion", toast: "A quick meal made the place feel alive." },
+    "Meal prep": { hunger: -8, mood: "Prepared for the day", toast: "You prepped a simple meal." },
+    "Clean up": { happiness: 4, mood: "The home feels fresh", toast: "A tidy kitchen keeps the house balanced." },
+  },
+  bedroom: {
+    Sleep: { energy: 22, happiness: 5, mood: "Fully rested", toast: "You slept deeply and recovered energy." },
+    Rest: { energy: 14, mood: "Recharge cycle unlocked", toast: "A calm rest reset your pace." },
+    Recharge: { energy: 18, hunger: 2, mood: "Resetting your energy", toast: "You took a quiet recharge break." },
+  },
+  study: {
+    Study: { energy: -8, happiness: 2, mood: "Learning mode on", toast: "You focused and sharpened your mind." },
+    "Work smart": { energy: -5, happiness: 4, mood: "Productive afternoon", toast: "You got a bit of useful work done." },
+    Read: { energy: -2, happiness: 6, mood: "Reading time", toast: "A quiet read gave your brain a boost." },
+  },
+  bathroom: {
+    "Freshen up": { energy: 8, happiness: 5, mood: "Fresh and ready", toast: "You cleaned up and feel more awake." },
+    Shower: { energy: 10, happiness: 7, mood: "Fresh reset complete", toast: "A quick shower left you feeling renewed." },
+    Reset: { happiness: 6, mood: "Everything feels clearer", toast: "You reset your routine and felt better." },
+  },
+  courtyard: {
+    Stretch: { energy: 8, happiness: 5, mood: "Outdoors energy restored", toast: "A quick stretch improved your mood." },
+    "Breath in air": { energy: 6, happiness: 6, mood: "Calm and grounded", toast: "Fresh air helped you settle down." },
+    Socialize: { happiness: 10, mood: "A little more connected", toast: "You spent time socializing outside." },
+  },
 };
 
+const actionIcons: Record<string, string> = {
+  Relax: "🛋️",
+  "Watch TV": "📺",
+  "Host visitors": "👋",
+  Cook: "🍳",
+  "Meal prep": "🥘",
+  "Clean up": "🧽",
+  Sleep: "😴",
+  Rest: "💤",
+  Recharge: "⚡",
+  Study: "📘",
+  "Work smart": "💡",
+  Read: "📖",
+  "Freshen up": "🧼",
+  Shower: "🚿",
+  Reset: "✨",
+  Stretch: "🧘",
+  "Breath in air": "🌬️",
+  Socialize: "🗣️",
+};
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
+}
+
 export function VirtualHouse({ characterName }: { characterName: string }) {
+  const queryClient = useQueryClient();
   const [selectedId, setSelectedId] = useState("living");
   const [mood, setMood] = useState("Chill mode active");
-  const selected = rooms.find((room) => room.id === selectedId) ?? rooms[0];
+
+  const selected = useMemo(
+    () => rooms.find((room) => room.id === selectedId) ?? rooms[0],
+    [selectedId],
+  );
+
+  const handleAction = (roomId: string, action: string) => {
+    const roomEffect = ROOM_EFFECTS[roomId]?.[action];
+    if (!roomEffect) return;
+
+    queryClient.setQueryData(["character"], (current: any) => {
+      if (!current) return current;
+
+      const next = { ...current };
+      next.energy = clamp((current.energy ?? 100) + (roomEffect.energy ?? 0), 0, 100);
+      next.hunger = clamp((current.hunger ?? 100) + (roomEffect.hunger ?? 0), 0, 100);
+      next.thirst = clamp((current.thirst ?? 100) + (roomEffect.thirst ?? 0), 0, 100);
+      next.happiness = clamp((current.happiness ?? 70) + (roomEffect.happiness ?? 0), 0, 100);
+      return next;
+    });
+
+    setMood(roomEffect.mood);
+    toast.success(roomEffect.toast);
+  };
 
   return (
     <section className="game-panel overflow-hidden p-4 md:p-5">
@@ -187,13 +262,10 @@ export function VirtualHouse({ characterName }: { characterName: string }) {
                 <button
                   key={activity}
                   type="button"
-                  onClick={() => {
-                    setMood(`${activity} started`);
-                    toast.success(`${activity} in ${selected.name}`);
-                  }}
+                  onClick={() => handleAction(selected.id, activity)}
                   className="inline-flex items-center gap-1.5 rounded-full border border-border bg-background px-2.5 py-1.5 text-xs font-semibold text-ink transition-colors hover:border-primary/50 hover:text-primary"
                 >
-                  <span>{actionIcons[activity]?.icon ?? "✨"}</span>
+                  <span>{actionIcons[activity] ?? "✨"}</span>
                   {activity}
                 </button>
               ))}
@@ -207,6 +279,14 @@ export function VirtualHouse({ characterName }: { characterName: string }) {
               onClick={() => {
                 setMood("Cozy evening mode");
                 toast.success(`Home vibe updated for ${characterName}`);
+                queryClient.setQueryData(["character"], (current: any) => {
+                  if (!current) return current;
+                  return {
+                    ...current,
+                    happiness: clamp((current.happiness ?? 70) + 8, 0, 100),
+                    energy: clamp((current.energy ?? 100) + 4, 0, 100),
+                  };
+                });
               }}
             >
               <Sparkles className="mr-2 h-4 w-4" />
@@ -217,6 +297,14 @@ export function VirtualHouse({ characterName }: { characterName: string }) {
               className="w-full"
               onClick={() => {
                 setMood("Reset and recharge");
+                queryClient.setQueryData(["character"], (current: any) => {
+                  if (!current) return current;
+                  return {
+                    ...current,
+                    energy: clamp((current.energy ?? 100) + 10, 0, 100),
+                    happiness: clamp((current.happiness ?? 70) + 5, 0, 100),
+                  };
+                });
                 toast.success("House mood refreshed.");
               }}
             >
