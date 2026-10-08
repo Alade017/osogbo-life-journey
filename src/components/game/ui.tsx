@@ -124,7 +124,7 @@ export function GameDataUnavailable({
         <h1 className="mt-2 text-2xl font-bold">We couldn’t load your Osogbo game data.</h1>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
           Your sign-in is active, but the game database tables are missing or unavailable. Apply
-          migrations 0000–0002 to the connected Supabase project, then retry. Your character will
+          migrations 0000–0003 to the connected Supabase project, then retry. Your character will
           not be created until the game can check for an existing save.
         </p>
         <details className="mt-4 rounded-lg border border-border bg-muted p-3 text-xs">

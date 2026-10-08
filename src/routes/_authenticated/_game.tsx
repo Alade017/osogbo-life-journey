@@ -1,35 +1,23 @@
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import {
-  Backpack,
-  Bell,
-  Briefcase,
-  Home,
-  Map,
-  Settings,
-  Target,
-  User,
-  Wallet,
-  Zap,
-} from "lucide-react";
-import { q, rpc, formatNaira } from "@/lib/game";
+import { Briefcase, House, Map, Settings, UserRound } from "lucide-react";
+import { q, rpc } from "@/lib/game";
 import { Logo } from "@/components/game/Logo";
 import { GameDataUnavailable, LoadingBricks } from "@/components/game/ui";
 import { cn } from "@/lib/utils";
+import { GameHUD } from "@/components/game/GameHUD";
+import { PhoneLauncher } from "@/components/game/PhoneLauncher";
 
 export const Route = createFileRoute("/_authenticated/_game")({
   component: GameLayout,
 });
 
 const NAV = [
-  { to: "/home", label: "Home", icon: Home },
-  { to: "/map", label: "Map", icon: Map },
+  { to: "/home", label: "Home", icon: House },
+  { to: "/map", label: "City", icon: Map },
   { to: "/jobs", label: "Jobs", icon: Briefcase },
-  { to: "/wallet", label: "Wallet", icon: Wallet },
-  { to: "/inventory", label: "Items", icon: Backpack },
-  { to: "/missions", label: "Missions", icon: Target },
-  { to: "/profile", label: "Profile", icon: User },
+  { to: "/profile", label: "Profile", icon: UserRound },
 ] as const;
 
 function GameLayout() {
@@ -46,7 +34,11 @@ function GameLayout() {
   const { data: wallet } = useQuery({ ...q.wallet(), enabled: !!character });
   const { data: notes } = useQuery({ ...q.notifications(), enabled: !!character });
   const { data: profile } = useQuery(q.profile());
+  const { data: locations } = useQuery({ ...q.locations(), enabled: !!character });
   const unread = notes?.filter((n) => !n.read_at).length ?? 0;
+  const currentLocation = locations?.find(
+    (location) => location.id === character?.current_location_id,
+  );
 
   useEffect(() => {
     if (!isLoading && !isError && !character) navigate({ to: "/create-character" });
@@ -79,92 +71,87 @@ function GameLayout() {
   return (
     <div
       className={cn(
-        "game-shell min-h-screen pb-24 md:pb-8",
+        "game-shell city-game min-h-screen pb-20 md:pb-0",
         profile?.reduced_motion && "reduce-motion",
       )}
     >
-      <header className="sticky top-0 z-30 border-b border-border bg-card/95 shadow-sm backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-3 py-2.5">
-          <Link to="/home" aria-label="Home">
-            <span className="md:hidden">
-              <Logo small />
-            </span>
-            <span className="hidden md:inline">
-              <Logo />
-            </span>
+      <div className="city-game-frame">
+        <aside className="game-desktop-nav" aria-label="Main navigation">
+          <Link to="/home" className="game-side-logo" aria-label="OSOGBO LIFE home">
+            <Logo small />
           </Link>
-          <nav className="ml-4 hidden gap-1 md:flex">
-            {NAV.map((n) => (
-              <Link
-                key={n.to}
-                to={n.to}
-                className="rounded-lg px-3 py-2 text-sm font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                activeProps={{ className: "bg-secondary text-foreground" }}
-              >
-                {n.label}
-              </Link>
-            ))}
+          <p className="game-side-label">YOUR CITY</p>
+          <nav className="game-side-links">
+            {NAV.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.to}
+                  to={item.to}
+                  activeProps={{ className: "game-side-link-active" }}
+                  className="game-side-link"
+                >
+                  <Icon className="h-4.5 w-4.5" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
           </nav>
-          <div className="ml-auto flex items-center gap-2">
-            <span
-              className="flex items-center gap-1 rounded-full border border-border bg-secondary px-2.5 py-1 text-xs font-bold"
-              title="Energy"
-            >
-              <Zap className="h-3.5 w-3.5" />
-              {character.energy}
-            </span>
-            <span
-              className="rounded-full bg-primary px-2.5 py-1 text-xs font-bold text-primary-foreground"
-              title="In-game balance"
-            >
-              {formatNaira(wallet?.balance)}
-            </span>
-            <Link
-              to="/notifications"
-              className="relative rounded-lg border border-border bg-card p-2 transition-colors hover:bg-muted"
-              aria-label={`Notifications (${unread} unread)`}
-            >
-              <Bell className="h-4 w-4" />
-              {unread > 0 && (
-                <span className="absolute -right-1.5 -top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-clay px-1 text-[10px] font-bold text-clay-foreground">
-                  {unread}
-                </span>
-              )}
-            </Link>
-            <Link
-              to="/settings"
-              className="rounded-lg border border-border bg-card p-2 transition-colors hover:bg-muted"
-              aria-label="Settings"
-            >
-              <Settings className="h-4 w-4" />
+          <div className="mt-auto grid gap-2">
+            <PhoneLauncher compact className="game-side-phone" />
+            <Link to="/settings" className="game-side-link">
+              <Settings className="h-4.5 w-4.5" />
+              <span>Settings</span>
             </Link>
           </div>
+        </aside>
+        <div className="city-game-content">
+          <GameHUD
+            character={character}
+            balance={wallet?.balance}
+            location={currentLocation?.name ?? "Osogbo"}
+            unread={unread}
+          />
+          <main className="city-game-main">
+            <Outlet />
+          </main>
         </div>
-      </header>
+      </div>
 
-      <main className="mx-auto max-w-6xl px-3 py-5 md:px-4 md:py-8">
-        <Outlet />
-      </main>
-
-      <nav
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 shadow-[0_-4px_18px_rgba(20,30,30,0.08)] backdrop-blur md:hidden"
-        aria-label="Game navigation"
-      >
-        <div className="mobile-nav-scrollbar flex overflow-x-auto px-1">
-          {NAV.map((n) => (
-            <Link
-              key={n.to}
-              to={n.to}
-              className="flex min-w-12 flex-1 flex-col items-center gap-0.5 py-2 text-[9px] font-semibold text-muted-foreground"
-              activeProps={{ className: "!text-primary [&>span]:bg-secondary" }}
-            >
-              <span className="rounded-lg p-1">
-                <n.icon className="h-5 w-5" />
-              </span>
-              {n.label}
-            </Link>
-          ))}
-        </div>
+      <nav className="game-mobile-nav" aria-label="Game navigation">
+        <Link
+          to="/home"
+          activeProps={{ className: "mobile-nav-active" }}
+          className="mobile-nav-link"
+        >
+          <House className="h-4.75 w-4.75" />
+          <span>Home</span>
+        </Link>
+        <Link
+          to="/map"
+          activeProps={{ className: "mobile-nav-active" }}
+          className="mobile-nav-link"
+        >
+          <Map className="h-4.75 w-4.75" />
+          <span>City</span>
+        </Link>
+        <PhoneLauncher className="mobile-nav-phone" />
+        <Link
+          to="/jobs"
+          activeProps={{ className: "mobile-nav-active" }}
+          className="mobile-nav-link"
+        >
+          <Briefcase className="h-4.75 w-4.75" />
+          <span>Jobs</span>
+        </Link>
+        <Link
+          to="/profile"
+          activeProps={{ className: "mobile-nav-active" }}
+          className="mobile-nav-link"
+        >
+          <UserRound className="h-4.75 w-4.75" />
+          <span>Profile</span>
+        </Link>
       </nav>
     </div>
   );

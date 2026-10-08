@@ -20,9 +20,16 @@ export type Database = {
           times_performed: number;
           updated_at: string;
           user_id: string;
+          icon: string;
         };
+        image_url: string | null;
+        is_active: boolean;
+        latitude: number | null;
+        level_required: number;
+        longitude: number | null;
         Insert: {
           character_id: string;
+          metadata: Json;
           created_at?: string;
           hired_at?: string;
           id?: string;
@@ -30,30 +37,48 @@ export type Database = {
           job_id: string;
           last_performed_at?: string | null;
           times_performed?: number;
+          type: string;
+          updated_at: string;
           updated_at?: string;
           user_id: string;
         };
         Update: {
-          character_id?: string;
-          created_at?: string;
+          description?: string;
+          district_type?: string;
+          icon?: string;
           hired_at?: string;
-          id?: string;
-          is_current?: boolean;
+          image_url?: string | null;
+          is_active?: boolean;
+          latitude?: number | null;
+          level_required?: number;
+          longitude?: number | null;
+          map_x?: number;
+          map_y?: number;
+          metadata?: Json;
           job_id?: string;
           last_performed_at?: string | null;
           times_performed?: number;
-          updated_at?: string;
+          tagline?: string;
           user_id?: string;
         };
+        type?: string;
+        updated_at?: string;
         Relationships: [
           {
             foreignKeyName: "character_jobs_character_id_fkey";
             columns: ["character_id"];
             isOneToOne: false;
             referencedRelation: "characters";
+            icon?: string;
             referencedColumns: ["id"];
+            image_url?: string | null;
+            is_active?: boolean;
+            latitude?: number | null;
+            level_required?: number;
+            longitude?: number | null;
           },
           {
+            metadata?: Json;
             foreignKeyName: "character_jobs_job_id_fkey";
             columns: ["job_id"];
             isOneToOne: false;
@@ -61,6 +86,8 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
+            type?: string;
+            updated_at?: string;
             foreignKeyName: "character_jobs_user_id_fkey";
             columns: ["user_id"];
             isOneToOne: false;

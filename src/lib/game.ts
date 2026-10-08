@@ -10,6 +10,20 @@ import type { Database } from "@/integrations/supabase/types";
 export type Character = Database["public"]["Tables"]["characters"]["Row"];
 export type Job = Database["public"]["Tables"]["jobs"]["Row"];
 export type Location = Database["public"]["Tables"]["locations"]["Row"];
+export type MapLocation = Pick<
+  Location,
+  | "id"
+  | "name"
+  | "slug"
+  | "type"
+  | "description"
+  | "latitude"
+  | "longitude"
+  | "icon"
+  | "image_url"
+  | "level_required"
+  | "metadata"
+>;
 export type GamePlace = Database["public"]["Tables"]["game_places"]["Row"];
 export type GameBillboard = Database["public"]["Tables"]["game_billboards"]["Row"];
 export type Advertisement = Database["public"]["Tables"]["advertisements"]["Row"];
@@ -118,6 +132,21 @@ export const q = {
       queryKey: ["locations"],
       staleTime: 5 * 60_000,
       queryFn: async () => unwrap(await supabase.from("locations").select("*").order("sort_order")),
+    }),
+  mapLocations: () =>
+    queryOptions({
+      queryKey: ["mapLocations"],
+      staleTime: 60_000,
+      queryFn: async () =>
+        unwrap(
+          await supabase
+            .from("locations")
+            .select(
+              "id,name,slug,type,description,latitude,longitude,icon,image_url,level_required,metadata",
+            )
+            .eq("is_active", true)
+            .order("name"),
+        ),
     }),
   visits: () =>
     queryOptions({
