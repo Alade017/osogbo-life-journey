@@ -91,14 +91,14 @@ export function ComingSoon({ children }: { children?: ReactNode }) {
 
 export function EmptyState({ title, body }: { title: string; body: string }) {
   return (
-    <div className="brick studs-sand p-8 text-center">
+    <div className="game-panel game-canvas p-8 text-center">
       <p className="font-display text-xl font-semibold">{title}</p>
       <p className="mt-1 text-sm text-muted-foreground">{body}</p>
     </div>
   );
 }
 
-export function LoadingBricks() {
+export function LoadingState() {
   return (
     <div className="flex items-center justify-center py-16" role="status" aria-label="Loading">
       <span className="h-8 w-8 animate-spin rounded-full border-[3px] border-muted border-t-primary" />
@@ -117,7 +117,7 @@ export function GameDataUnavailable({
 }) {
   return (
     <main className="game-shell flex min-h-screen items-center justify-center px-4 py-10">
-      <section className="brick w-full max-w-xl p-6 sm:p-8">
+      <section className="game-panel w-full max-w-xl p-6 sm:p-8">
         <p className="text-xs font-bold uppercase tracking-[0.14em] text-clay">
           Game setup unavailable
         </p>
@@ -131,7 +131,7 @@ export function GameDataUnavailable({
           <summary className="cursor-pointer font-semibold">Technical detail</summary>
           <p className="mt-2 wrap-break-word text-muted-foreground">{error.message}</p>
         </details>
-        <Button className="mt-5" variant="brick" disabled={isRetrying} onClick={onRetry}>
+        <Button className="mt-5" variant="default" disabled={isRetrying} onClick={onRetry}>
           <RefreshCw className={cn("h-4 w-4", isRetrying && "animate-spin")} />
           {isRetrying ? "Checking…" : "Retry connection"}
         </Button>

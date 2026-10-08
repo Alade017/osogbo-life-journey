@@ -6,7 +6,7 @@ import { Clock, Lock, MapPin, Star, Zap } from "lucide-react";
 import { q, rpc, formatNaira, useGameAction } from "@/lib/game";
 import { pageMeta } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
-import { Chip, LoadingBricks, PageHeader } from "@/components/game/ui";
+import { Chip, LoadingState, PageHeader } from "@/components/game/ui";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/_game/jobs")({
@@ -44,7 +44,7 @@ function JobsPage() {
     onSuccess: (r) => toast.success(`Shift done! +${formatNaira(r.earned)} · +${r.xp} XP`),
   });
 
-  if (isLoading || !c || !jobs) return <LoadingBricks />;
+  if (isLoading || !c || !jobs) return <LoadingState />;
   const current = myJobs?.find((j) => j.is_current);
   const currentJob = jobs.find((j) => j.id === current?.job_id);
   const currentJobLocation = locations?.find((location) => location.id === currentJob?.location_id);
@@ -69,21 +69,21 @@ function JobsPage() {
       />
 
       {currentJob && (
-        <div className="brick pop-in mb-6 grid gap-4 bg-sun p-5 md:grid-cols-[1fr_auto] md:items-center">
+        <div className="game-panel pop-in mb-6 grid gap-4 bg-sun p-5 md:grid-cols-[1fr_auto] md:items-center">
           <div>
             <p className="text-xs font-bold uppercase tracking-wider">Current job</p>
             <h2 className="text-3xl font-bold">{currentJob.name}</h2>
             <p className="text-sm">Shifts completed: {current?.times_performed ?? 0}</p>
           </div>
           {!canWorkHere && currentJobLocation ? (
-            <Button asChild variant="brick" size="lg">
+            <Button asChild variant="default" size="lg">
               <Link to="/location/$slug" params={{ slug: currentJobLocation.slug }}>
                 Travel to {currentJobLocation.name} to work
               </Link>
             </Button>
           ) : (
             <Button
-              variant="brick"
+              variant="default"
               size="lg"
               disabled={
                 !currentQualified || cooling || work.isPending || c.energy < currentJob.energy_cost
@@ -125,7 +125,7 @@ function JobsPage() {
           const isCurrent = j.id === currentJob?.id;
           const dream = c.occupation_preference === j.slug;
           return (
-            <div key={j.id} className={cn("brick flex flex-col p-5", locked && "opacity-75")}>
+            <div key={j.id} className={cn("game-panel flex flex-col p-5", locked && "opacity-75")}>
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <p className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">

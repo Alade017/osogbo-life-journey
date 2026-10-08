@@ -130,7 +130,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
         </section>
 
         <section className="flex items-center justify-center bg-background/95 px-4 py-8 backdrop-blur-sm sm:px-8 lg:my-6 lg:rounded-l-2xl lg:px-10">
-          <div className="brick pop-in w-full max-w-md p-6 sm:p-8">
+          <div className="game-panel pop-in w-full max-w-md p-6 sm:p-8">
             <Link to="/" className="mb-7 inline-block">
               <Logo />
             </Link>
@@ -141,7 +141,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
                   We sent a confirmation link to <strong>{email}</strong>. Click it to activate your
                   account, then come back to log in.
                 </p>
-                <Button asChild variant="brick" size="lg" className="mt-6 w-full">
+                <Button asChild variant="default" size="lg" className="mt-6 w-full">
                   <Link to="/login">Go to login</Link>
                 </Button>
               </div>
@@ -165,7 +165,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
                   </div>
                   <Button
                     type="submit"
-                    variant="brick"
+                    variant="default"
                     size="lg"
                     className="w-full"
                     disabled={busy}
@@ -267,7 +267,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
                   )}
                   <Button
                     type="submit"
-                    variant="brick"
+                    variant="default"
                     size="lg"
                     className="w-full"
                     disabled={busy}

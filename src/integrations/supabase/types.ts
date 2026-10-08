@@ -20,62 +20,38 @@ export type Database = {
           times_performed: number;
           updated_at: string;
           user_id: string;
-          icon: string;
         };
-        image_url: string | null;
-        is_active: boolean;
-        latitude: number | null;
-        level_required: number;
-        longitude: number | null;
         Insert: {
           character_id: string;
-          metadata: Json;
+          id?: string;
+          user_id: string;
+          job_id: string;
+          is_current?: boolean;
+          last_performed_at?: string | null;
+          times_performed?: number;
+          hired_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          character_id?: string;
           created_at?: string;
           hired_at?: string;
           id?: string;
           is_current?: boolean;
-          job_id: string;
-          last_performed_at?: string | null;
-          times_performed?: number;
-          type: string;
-          updated_at: string;
-          updated_at?: string;
-          user_id: string;
-        };
-        Update: {
-          description?: string;
-          district_type?: string;
-          icon?: string;
-          hired_at?: string;
-          image_url?: string | null;
-          is_active?: boolean;
-          latitude?: number | null;
-          level_required?: number;
-          longitude?: number | null;
-          map_x?: number;
-          map_y?: number;
-          metadata?: Json;
           job_id?: string;
           last_performed_at?: string | null;
           times_performed?: number;
-          tagline?: string;
+          updated_at?: string;
           user_id?: string;
         };
-        type?: string;
-        updated_at?: string;
         Relationships: [
           {
             foreignKeyName: "character_jobs_character_id_fkey";
             columns: ["character_id"];
             isOneToOne: false;
             referencedRelation: "characters";
-            icon?: string;
             referencedColumns: ["id"];
-            image_url?: string | null;
-            is_active?: boolean;
-            latitude?: number | null;
-            level_required?: number;
-            longitude?: number | null;
           },
           {
             metadata?: Json;
@@ -86,8 +62,6 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
-            type?: string;
-            updated_at?: string;
             foreignKeyName: "character_jobs_user_id_fkey";
             columns: ["user_id"];
             isOneToOne: false;
@@ -407,8 +381,15 @@ export type Database = {
           description: string;
           district_type: string;
           id: string;
+          icon: string;
+          image_url: string | null;
+          is_active: boolean;
+          latitude: number | null;
+          level_required: number;
+          longitude: number | null;
           map_x: number;
           map_y: number;
+          metadata: Json;
           name: string;
           planned_features: string[];
           slug: string;
@@ -416,6 +397,8 @@ export type Database = {
           tagline: string;
           travel_fare: number;
           travel_minutes: number;
+          type: string;
+          updated_at: string;
         };
         Insert: {
           color?: string;
@@ -423,8 +406,15 @@ export type Database = {
           description: string;
           district_type: string;
           id?: string;
+          icon?: string;
+          image_url?: string | null;
+          is_active?: boolean;
+          latitude?: number | null;
+          level_required?: number;
+          longitude?: number | null;
           map_x: number;
           map_y: number;
+          metadata?: Json;
           name: string;
           planned_features?: string[];
           slug: string;
@@ -432,6 +422,8 @@ export type Database = {
           tagline: string;
           travel_fare?: number;
           travel_minutes?: number;
+          type?: string;
+          updated_at?: string;
         };
         Update: {
           color?: string;
@@ -439,8 +431,15 @@ export type Database = {
           description?: string;
           district_type?: string;
           id?: string;
+          icon?: string;
+          image_url?: string | null;
+          is_active?: boolean;
+          latitude?: number | null;
+          level_required?: number;
+          longitude?: number | null;
           map_x?: number;
           map_y?: number;
+          metadata?: Json;
           name?: string;
           planned_features?: string[];
           slug?: string;
@@ -448,6 +447,8 @@ export type Database = {
           tagline?: string;
           travel_fare?: number;
           travel_minutes?: number;
+          type?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };

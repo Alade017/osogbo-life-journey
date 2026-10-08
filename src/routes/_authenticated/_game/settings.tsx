@@ -51,7 +51,7 @@ function SettingsPage() {
   return (
     <div className="max-w-2xl space-y-5">
       <PageHeader title="Settings" />
-      <section className="brick space-y-4 p-5">
+      <section className="game-panel space-y-4 p-5">
         <h2 className="text-xl font-bold">Account</h2>
         <p className="text-sm text-muted-foreground">
           Signed in as <strong>{email}</strong>
@@ -67,7 +67,7 @@ function SettingsPage() {
               className="h-10 border-2 bg-card"
             />
             <Button
-              variant="brick"
+              variant="default"
               onClick={() => update(name.trim() ? { display_name: name.trim() } : {})}
             >
               Save
@@ -75,7 +75,7 @@ function SettingsPage() {
           </div>
         </div>
       </section>
-      <section className="brick space-y-4 p-5">
+      <section className="game-panel space-y-4 p-5">
         <h2 className="text-xl font-bold">Preferences</h2>
         <label className="flex items-center justify-between gap-3">
           <span>
@@ -97,7 +97,7 @@ function SettingsPage() {
           <ComingSoon />
         </div>
       </section>
-      <section className="brick p-5">
+      <section className="game-panel p-5">
         <Button variant="clay" onClick={signOut}>
           Sign out
         </Button>

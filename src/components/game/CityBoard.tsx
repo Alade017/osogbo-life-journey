@@ -12,7 +12,7 @@ export const TONE_BG: Record<string, string> = {
   leaf: "bg-leaf text-foreground",
 };
 
-/** Interactive toy-baseplate map of the fictional Osogbo districts. */
+/** Interactive district map of the fictional Osogbo city. */
 export function CityBoard({ compact = false }: { compact?: boolean }) {
   const { data: locations } = useQuery(q.locations());
   const { data: visits } = useQuery(q.visits());
@@ -22,7 +22,7 @@ export function CityBoard({ compact = false }: { compact?: boolean }) {
   return (
     <div
       className={cn(
-        "lego-world brick studs relative overflow-hidden p-0",
+        "game-panel relative overflow-hidden p-0",
         compact ? "aspect-16/10" : "aspect-4/5 sm:aspect-16/10",
       )}
     >
@@ -64,7 +64,7 @@ export function CityBoard({ compact = false }: { compact?: boolean }) {
             character?.current_location_id === l.id ? `${l.name} · Your current district` : l.name
           }
           className={cn(
-            "brick-btn absolute -translate-x-1/2 -translate-y-1/2 px-2 py-1 text-center leading-tight",
+            "game-control absolute -translate-x-1/2 -translate-y-1/2 px-2 py-1 text-center leading-tight",
             compact ? "text-[10px] sm:text-xs" : "text-[11px] sm:text-sm sm:px-3 sm:py-1.5",
             TONE_BG[l.color] ?? TONE_BG["primary"],
             character?.current_location_id === l.id &&

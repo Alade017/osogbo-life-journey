@@ -5,7 +5,7 @@ import { CheckCircle2, Gift } from "lucide-react";
 import { q, rpc, formatNaira, useGameAction } from "@/lib/game";
 import { pageMeta } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
-import { Chip, LoadingBricks, PageHeader, StatBar } from "@/components/game/ui";
+import { Chip, LoadingState, PageHeader, StatBar } from "@/components/game/ui";
 
 export const Route = createFileRoute("/_authenticated/_game/missions")({
   head: () => pageMeta("Missions", "Complete missions in Osogbo to earn rewards and XP."),
@@ -18,7 +18,7 @@ function MissionsPage() {
     onSuccess: (r) =>
       toast.success(`Reward claimed: ${formatNaira(r.money)}${r.xp ? ` · +${r.xp} XP` : ""}`),
   });
-  if (isLoading) return <LoadingBricks />;
+  if (isLoading) return <LoadingState />;
   const sorted = [...(missions ?? [])].sort(
     (a, b) => (a.mission?.sort_order ?? 0) - (b.mission?.sort_order ?? 0),
   );
@@ -34,7 +34,7 @@ function MissionsPage() {
           const m = pm.mission!;
           const money = m.slug === "earn_10000";
           return (
-            <div key={pm.id} className={`brick p-5 ${pm.status === "completed" ? "bg-sun" : ""}`}>
+            <div key={pm.id} className={`game-panel p-5 ${pm.status === "completed" ? "bg-sun" : ""}`}>
               <div className="flex items-start justify-between gap-2">
                 <h3 className="text-xl font-bold">{m.title}</h3>
                 {pm.status === "claimed" ? (
@@ -65,7 +65,7 @@ function MissionsPage() {
                 </p>
                 {pm.status === "completed" && (
                   <Button
-                    variant="brick"
+                    variant="default"
                     size="sm"
                     disabled={claim.isPending}
                     onClick={() => claim.mutate(pm.id)}

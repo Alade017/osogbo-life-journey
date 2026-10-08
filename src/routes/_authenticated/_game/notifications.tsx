@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { q, rpc, useGameAction } from "@/lib/game";
 import { pageMeta } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
-import { EmptyState, LoadingBricks, PageHeader } from "@/components/game/ui";
+import { EmptyState, LoadingState, PageHeader } from "@/components/game/ui";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/_game/notifications")({
@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_authenticated/_game/notifications")({
 function NotificationsPage() {
   const { data: notes, isLoading } = useQuery(q.notifications());
   const mark = useGameAction(rpc.markRead);
-  if (isLoading) return <LoadingBricks />;
+  if (isLoading) return <LoadingState />;
   const unread = notes?.filter((n) => !n.read_at).length ?? 0;
   return (
     <div>
@@ -38,7 +38,7 @@ function NotificationsPage() {
               <button
                 type="button"
                 onClick={() => !n.read_at && mark.mutate(n.id)}
-                className={cn("brick block w-full p-4 text-left", !n.read_at && "bg-sun")}
+                className={cn("game-panel block w-full p-4 text-left", !n.read_at && "bg-sun")}
               >
                 <div className="flex items-start justify-between gap-2">
                   <p className="font-display text-lg font-semibold">{n.title}</p>

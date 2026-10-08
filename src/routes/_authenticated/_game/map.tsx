@@ -17,7 +17,7 @@ function MapPage() {
   const { data: visits } = useQuery(q.visits());
   const visited = new Set(visits?.map((v) => v.location_id));
   return (
-    <div className="lego-world -mx-2.75 px-2.75 py-5 md:-mx-4 md:px-4 md:py-8">
+    <div className="-mx-2.75 px-2.75 py-5 md:-mx-4 md:px-4 md:py-8">
       <PageHeader
         title="City Map"
         subtitle={`Osogbo, Osun State · ${visited.size}/${locations?.length ?? 9} districts discovered`}
@@ -29,7 +29,7 @@ function MapPage() {
             key={l.id}
             to="/location/$slug"
             params={{ slug: l.slug }}
-            className="brick block p-4 transition-transform hover:-translate-y-0.5"
+            className="game-panel block p-4 transition-transform hover:-translate-y-0.5"
           >
             <div className="flex items-start justify-between gap-2">
               <span

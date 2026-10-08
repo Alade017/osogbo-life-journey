@@ -84,7 +84,7 @@ function Landing() {
           <Button asChild variant="plain" size="sm">
             <Link to="/login">Log in</Link>
           </Button>
-          <Button asChild variant="brick" size="sm">
+          <Button asChild variant="default" size="sm">
             <Link to="/signup">
               Start playing <ArrowRight />
             </Link>
@@ -117,7 +117,7 @@ function Landing() {
                 journey ahead.
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
-                <Button asChild variant="brick" size="lg">
+                <Button asChild variant="default" size="lg">
                   <Link to="/signup">
                     Create your character <ArrowRight />
                   </Link>

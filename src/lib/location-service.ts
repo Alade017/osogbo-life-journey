@@ -52,5 +52,5 @@ export const LOCATION_TYPE_COLOURS: Record<string, string> = {
 };
 
 export function locationTypeColour(type: string) {
-  return LOCATION_TYPE_COLOURS[type] ?? LOCATION_TYPE_COLOURS.custom;
+  return LOCATION_TYPE_COLOURS[type] ?? LOCATION_TYPE_COLOURS["custom"];
 }

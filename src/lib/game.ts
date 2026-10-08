@@ -5,25 +5,26 @@
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
+import type { Database, Json } from "@/integrations/supabase/types";
 
 export type Character = Database["public"]["Tables"]["characters"]["Row"];
 export type Job = Database["public"]["Tables"]["jobs"]["Row"];
 export type Location = Database["public"]["Tables"]["locations"]["Row"];
-export type MapLocation = Pick<
-  Location,
-  | "id"
-  | "name"
-  | "slug"
-  | "type"
-  | "description"
-  | "latitude"
-  | "longitude"
-  | "icon"
-  | "image_url"
-  | "level_required"
-  | "metadata"
->;
+// Migration 0004 adds these fields to locations. Keep this map-facing model
+// aligned with that schema while the checked-in generated Supabase types catch up.
+export type MapLocation = {
+  id: string;
+  name: string;
+  slug: string;
+  type: string;
+  description: string;
+  latitude: number | null;
+  longitude: number | null;
+  icon: string;
+  image_url: string | null;
+  level_required: number;
+  metadata: Json;
+};
 export type GamePlace = Database["public"]["Tables"]["game_places"]["Row"];
 export type GameBillboard = Database["public"]["Tables"]["game_billboards"]["Row"];
 export type Advertisement = Database["public"]["Tables"]["advertisements"]["Row"];
@@ -146,7 +147,7 @@ export const q = {
             )
             .eq("is_active", true)
             .order("name"),
-        ),
+        ) as unknown as MapLocation[],
     }),
   visits: () =>
     queryOptions({

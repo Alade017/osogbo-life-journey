@@ -14,7 +14,7 @@ import { formatNaira, q, rpc, useGameAction } from "@/lib/game";
 import { CityBillboards } from "@/components/game/CityBillboards";
 import { pageMeta } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
-import { Chip, ComingSoon, EmptyState, LoadingBricks } from "@/components/game/ui";
+import { Chip, ComingSoon, EmptyState, LoadingState } from "@/components/game/ui";
 import { TONE_BG } from "@/components/game/CityBoard";
 import { cn } from "@/lib/utils";
 
@@ -65,15 +65,15 @@ function LocationPage() {
       ),
   });
 
-  if (isLoading || !character) return <LoadingBricks />;
+  if (isLoading || !character) return <LoadingState />;
   if (!loc) return <EmptyState title="District not found" body="That place isn't on the map." />;
 
   return (
-    <div className="lego-world -mx-3 space-y-5 px-3 py-5 md:-mx-4 md:px-4 md:py-8">
+    <div className="-mx-3 space-y-5 px-3 py-5 md:-mx-4 md:px-4 md:py-8">
       <Link to="/map" className="inline-flex items-center gap-1 text-sm font-bold">
         <ArrowLeft className="h-4 w-4" /> Back to map
       </Link>
-      <div className={cn("brick studs p-6 md:p-10")}>
+      <div className={cn("game-panel game-panel-accent p-6 md:p-10")}>
         <span
           className={cn(
             "inline-block rounded-lg border-2 border-edge px-3 py-1 font-display text-sm font-bold",
@@ -85,7 +85,7 @@ function LocationPage() {
         <h1 className="mt-3 text-4xl font-bold md:text-5xl">{loc.name}</h1>
         <p className="mt-1 text-lg font-semibold">{loc.tagline}</p>
       </div>
-      <div className="brick p-5 md:p-6">
+      <div className="game-panel p-5 md:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-2xl">
             <p>{loc.description}</p>
@@ -103,7 +103,7 @@ function LocationPage() {
         <div className="mt-4 flex flex-wrap items-center gap-3">
           {!isHere ? (
             <Button
-              variant="brick"
+              variant="default"
               onClick={() => travel.mutate(loc.id)}
               disabled={travel.isPending || !canPayFare}
             >
@@ -151,7 +151,7 @@ function LocationPage() {
             {localPlaces.map((place) => {
               const placeJobs = localJobs.filter((job) => job.place_id === place.id);
               return (
-                <article key={place.id} className="brick p-4">
+                <article key={place.id} className="game-panel p-4">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <Chip tone="primary">{place.category}</Chip>
                     <Chip>
@@ -204,7 +204,7 @@ function LocationPage() {
             })}
           </div>
         ) : (
-          <div className="brick p-5">
+          <div className="game-panel p-5">
             <p className="text-sm text-muted-foreground">
               Venue listings for this district are being added.
             </p>
@@ -233,7 +233,7 @@ function LocationPage() {
                 (!job.required_course_slug ||
                   myCourses?.some((course) => course.course_id === requiredCourse?.id));
               return (
-                <article key={job.id} className="brick flex flex-col p-4">
+                <article key={job.id} className="game-panel flex flex-col p-4">
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -277,7 +277,7 @@ function LocationPage() {
             })}
           </div>
         ) : (
-          <div className="brick p-5">
+          <div className="game-panel p-5">
             <p className="text-sm text-muted-foreground">
               No jobs are listed in this district yet.
             </p>
@@ -286,7 +286,7 @@ function LocationPage() {
       </section>
 
       {loc.planned_features.length > 0 && (
-        <div className="brick p-5">
+        <div className="game-panel p-5">
           <h2 className="text-lg font-bold">More district features</h2>
           <ul className="mt-3 grid gap-2 sm:grid-cols-3">
             {loc.planned_features.map((feature) => (

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   AttributionControl,
   FullscreenControl,
@@ -9,6 +10,8 @@ import {
 import "maplibre-gl/dist/maplibre-gl.css";
 import mapWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
 import { LocationMarker } from "@/components/game/LocationMarker";
+import { MapControls } from "@/components/game/MapControls";
+import { q } from "@/lib/game";
 
 const OSOGBO_CENTER: [number, number] = [4.556, 7.7677];
 const OSM_ATTRIBUTION =
@@ -24,8 +27,14 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const onMapReadyRef = useRef(onMapReady);
+  const [retryKey, setRetryKey] = useState(0);
   const [mapInstance, setMapInstance] = useState<MapLibreMap | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
+  const { data: locations } = useQuery(q.mapLocations());
+  const { data: character } = useQuery(q.character());
+  const playerLocation =
+    locations?.find((location) => location.id === character?.current_location_id) ?? null;
 
   useEffect(() => {
     onMapReadyRef.current = onMapReady;
@@ -34,8 +43,15 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
     const container = containerRef.current;
+    let didLoad = false;
+    let loadTimer: number | undefined;
+    setLoaded(false);
+    setMapError(null);
+    setMapInstance(null);
 
-    const map = new MapLibreMap({
+    let map: MapLibreMap;
+    try {
+      map = new MapLibreMap({
       container,
       center: OSOGBO_CENTER,
       zoom: 13,
@@ -68,17 +84,33 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
         ],
       },
       cooperativeGestures: true,
-    });
+      });
+    } catch {
+      setMapError("The Osogbo map could not start.");
+      return;
+    }
 
     mapRef.current = map;
     map.addControl(new NavigationControl({ visualizePitch: false }), "top-right");
     map.addControl(new FullscreenControl(), "top-right");
     map.addControl(new AttributionControl({ compact: true }), "bottom-right");
     map.once("load", () => {
+      didLoad = true;
+      if (loadTimer) window.clearTimeout(loadTimer);
       setLoaded(true);
+      setMapError(null);
       setMapInstance(map);
       onMapReadyRef.current?.(map);
     });
+    const handleMapError = () => {
+      if (!didLoad && !map.isStyleLoaded()) {
+        setMapError("Map data could not be loaded. Check your connection and retry.");
+      }
+    };
+    map.on("error", handleMapError);
+    loadTimer = window.setTimeout(() => {
+      if (!didLoad) setMapError("The map is taking too long to load. Check your connection and retry.");
+    }, 20_000);
     const updateCameraMetadata = () => {
       const center = map.getCenter();
       container.dataset.mapCenter = `${center.lat.toFixed(4)},${center.lng.toFixed(4)}`;
@@ -94,10 +126,12 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
       resizeObserver.disconnect();
       map.off("moveend", updateCameraMetadata);
       map.off("zoomend", updateCameraMetadata);
+      map.off("error", handleMapError);
+      if (loadTimer) window.clearTimeout(loadTimer);
       map.remove();
       mapRef.current = null;
     };
-  }, []);
+  }, [retryKey]);
 
   return (
     <div className="osogbo-map-frame">
@@ -109,14 +143,25 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
         data-map-center={`${OSOGBO_CENTER[1]},${OSOGBO_CENTER[0]}`}
       />
       {mapInstance && <LocationMarker map={mapInstance} />}
-      {!loaded && (
+      {mapInstance && <MapControls map={mapInstance} playerLocation={playerLocation} />}
+      {!loaded && !mapError && (
         <div className="osogbo-map-loading" aria-live="polite">
           Loading Osogbo map…
         </div>
       )}
+      {mapError && (
+        <div className="osogbo-map-error" role="alert">
+          <span>{mapError}</span>
+          <button type="button" onClick={() => setRetryKey((value) => value + 1)}>
+            Retry map
+          </button>
+        </div>
+      )}
       <div className="osogbo-map-place-label" aria-hidden="true">
         <span className="osogbo-map-live-dot" />
-        <span>OSOGBO, OSUN STATE</span>
+        <span>
+          {playerLocation ? `YOU ARE IN ${playerLocation.name.toUpperCase()}` : "OSOGBO, OSUN STATE"}
+        </span>
       </div>
     </div>
   );

@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { BookOpen, GraduationCap, Lock, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Chip, LoadingBricks, PageHeader } from "@/components/game/ui";
+import { Chip, LoadingState, PageHeader } from "@/components/game/ui";
 import { formatNaira, q, rpc, useGameAction } from "@/lib/game";
 import { pageMeta } from "@/lib/seo";
 
@@ -28,7 +28,7 @@ function EducationPage() {
       ),
   });
 
-  if (isLoading || !character || !courses) return <LoadingBricks />;
+  if (isLoading || !character || !courses) return <LoadingState />;
 
   return (
     <div>
@@ -46,7 +46,7 @@ function EducationPage() {
       </div>
 
       {!hasVisited && studentDistrict && (
-        <div className="brick mb-5 flex flex-col items-start gap-3 bg-sun p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="game-panel mb-5 flex flex-col items-start gap-3 bg-sun p-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="font-semibold">Check in at the Student District before enrolling.</p>
           <Link
             to="/location/$slug"
@@ -67,7 +67,7 @@ function EducationPage() {
             !hasVisited || isComplete || !canAfford || !hasEnergy || complete.isPending;
 
           return (
-            <article key={course.id} className="brick flex flex-col p-5">
+            <article key={course.id} className="game-panel flex flex-col p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">

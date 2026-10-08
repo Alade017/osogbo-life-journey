@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { Briefcase, House, Map, Settings, UserRound } from "lucide-react";
 import { q, rpc } from "@/lib/game";
 import { Logo } from "@/components/game/Logo";
-import { GameDataUnavailable, LoadingBricks } from "@/components/game/ui";
+import { GameDataUnavailable, LoadingState } from "@/components/game/ui";
 import { cn } from "@/lib/utils";
 import { GameHUD } from "@/components/game/GameHUD";
 import { PhoneLauncher } from "@/components/game/PhoneLauncher";
@@ -64,7 +64,7 @@ function GameLayout() {
   if (isLoading || !character)
     return (
       <div className="game-shell min-h-screen">
-        <LoadingBricks />
+        <LoadingState />
       </div>
     );
 

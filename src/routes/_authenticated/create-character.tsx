@@ -20,7 +20,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/game/Logo";
 import { cn } from "@/lib/utils";
-import { GameDataUnavailable, LoadingBricks } from "@/components/game/ui";
+import { GameDataUnavailable, LoadingState } from "@/components/game/ui";
 
 export const Route = createFileRoute("/_authenticated/create-character")({
   head: () => ({
@@ -72,7 +72,7 @@ function Picker({
             aria-label={swatches ? `${label} ${i + 1}` : o}
             aria-pressed={value === i}
             className={cn(
-              "brick-btn",
+              "game-control",
               swatches ? "h-9 w-9 rounded-full" : "bg-card px-3 py-1.5 text-sm",
               value === i && !swatches && "bg-sun",
               value === i && swatches && "ring-4 ring-primary ring-offset-2 ring-offset-card",
@@ -149,7 +149,7 @@ function CreateCharacter() {
   if (isLoading)
     return (
       <div className="game-shell min-h-screen">
-        <LoadingBricks />
+        <LoadingState />
       </div>
     );
   if (isError)
@@ -168,7 +168,7 @@ function CreateCharacter() {
   const hairOptions = HAIR_STYLES_BY_GENDER[gender] ?? HAIR_STYLES_BY_GENDER["nonbinary"] ?? [];
 
   return (
-    <div className="studs-sand min-h-screen px-4 py-6">
+    <div className="game-canvas min-h-screen px-4 py-6">
       <div className="mx-auto max-w-5xl">
         <Logo />
         <h1 className="mt-6 text-4xl font-bold">Create your character</h1>
@@ -177,7 +177,7 @@ function CreateCharacter() {
         </p>
 
         <div className="mt-6 grid gap-6 md:grid-cols-[280px_1fr]">
-          <div className="brick studs flex flex-col items-center justify-center p-6 md:sticky md:top-6 md:self-start">
+          <div className="game-panel game-panel-accent flex flex-col items-center justify-center p-6 md:sticky md:top-6 md:self-start">
             <div className="bob">
               <Avatar appearance={ap} gender={gender} size={170} />
             </div>
@@ -186,7 +186,7 @@ function CreateCharacter() {
             </div>
           </div>
 
-          <div className="brick space-y-6 p-5 md:p-7">
+          <div className="game-panel space-y-6 p-5 md:p-7">
             <div className="grid gap-4 sm:grid-cols-[1fr_120px]">
               <div className="space-y-1.5">
                 <Label htmlFor="name">Character name</Label>
@@ -277,7 +277,7 @@ function CreateCharacter() {
                     onClick={() => setPersonality(p.v)}
                     aria-pressed={personality === p.v}
                     className={cn(
-                      "brick-btn bg-card px-3 py-2 text-left",
+                      "game-control bg-card px-3 py-2 text-left",
                       personality === p.v && "bg-sun",
                     )}
                   >
@@ -316,7 +316,7 @@ function CreateCharacter() {
             </div>
 
             <Button
-              variant="brick"
+              variant="default"
               size="lg"
               className="w-full"
               disabled={!valid || busy || jobsLoading}

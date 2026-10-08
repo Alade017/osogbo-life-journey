@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { q, formatNaira, xpProgress } from "@/lib/game";
 import { pageMeta } from "@/lib/seo";
 import { Avatar } from "@/components/game/Avatar";
-import { Chip, LoadingBricks, PageHeader, StatBar, type Tone } from "@/components/game/ui";
+import { Chip, LoadingState, PageHeader, StatBar, type Tone } from "@/components/game/ui";
 
 export const Route = createFileRoute("/_authenticated/_game/profile")({
   head: () => pageMeta("Player Profile", "Your character's stats and progress."),
@@ -14,7 +14,7 @@ function ProfilePage() {
   const { data: c } = useQuery(q.character());
   const { data: wallet } = useQuery(q.wallet());
   const { data: jobs } = useQuery(q.jobs());
-  if (!c) return <LoadingBricks />;
+  if (!c) return <LoadingState />;
   const xp = xpProgress(c.xp);
   const dream = jobs?.find((j) => j.slug === c.occupation_preference);
   const stats: [string, number, Tone][] = [
@@ -32,8 +32,8 @@ function ProfilePage() {
     <div>
       <PageHeader title="Player Profile" />
       <div className="grid gap-5 md:grid-cols-[300px_1fr]">
-        <div className="brick p-5 text-center">
-          <div className="studs mx-auto flex w-fit justify-center rounded-xl border-2 border-edge p-4">
+        <div className="game-panel p-5 text-center">
+          <div className="game-panel-accent mx-auto flex w-fit justify-center rounded-xl border-2 border-edge p-4">
             <Avatar appearance={c.appearance as object} gender={c.gender} size={130} />
           </div>
           <h2 className="mt-4 text-3xl font-bold">{c.name}</h2>
@@ -54,7 +54,7 @@ function ProfilePage() {
             In Osogbo since {new Date(c.created_at).toLocaleDateString("en-NG")}
           </p>
         </div>
-        <div className="brick space-y-4 p-5">
+        <div className="game-panel space-y-4 p-5">
           <div>
             <div className="flex items-baseline justify-between">
               <h3 className="text-xl font-bold">Level {c.level}</h3>

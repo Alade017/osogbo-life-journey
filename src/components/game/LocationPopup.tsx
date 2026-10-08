@@ -1,5 +1,6 @@
 import type { MapLocation } from "@/lib/game";
 import { LOCATION_ICONS, locationTypeColour } from "@/lib/location-service";
+import { MapPin } from "lucide-react";
 
 function safeImageUrl(value: string | null) {
   if (!value) return undefined;

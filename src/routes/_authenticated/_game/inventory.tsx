@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Backpack, GlassWater, Package, Shirt, Smartphone, type LucideIcon } from "lucide-react";
 import { q } from "@/lib/game";
 import { pageMeta } from "@/lib/seo";
-import { Chip, ComingSoon, EmptyState, LoadingBricks, PageHeader } from "@/components/game/ui";
+import { Chip, ComingSoon, EmptyState, LoadingState, PageHeader } from "@/components/game/ui";
 
 export const Route = createFileRoute("/_authenticated/_game/inventory")({
   head: () => pageMeta("Inventory", "Items your character carries around Osogbo."),
@@ -20,7 +20,7 @@ const TONES = ["bg-sun", "bg-leaf", "bg-sky", "bg-clay"];
 
 function InventoryPage() {
   const { data: items, isLoading } = useQuery(q.inventory());
-  if (isLoading) return <LoadingBricks />;
+  if (isLoading) return <LoadingState />;
   return (
     <div>
       <PageHeader
@@ -37,11 +37,11 @@ function InventoryPage() {
             return (
               <div
                 key={pi.id}
-                className="brick pop-in p-4"
+                className="game-panel pop-in p-4"
                 style={{ animationDelay: `${i * 60}ms` }}
               >
                 <div
-                  className={`studs flex aspect-square items-center justify-center rounded-xl border-2 border-edge ${TONES[i % TONES.length]}`}
+                  className={`game-panel-accent flex aspect-square items-center justify-center rounded-xl border-2 border-edge ${TONES[i % TONES.length]}`}
                 >
                   <span className="rounded-xl border-2 border-edge bg-card p-3">
                     <Icon className="h-8 w-8" />

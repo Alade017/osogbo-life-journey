@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * OSOGBO LIFE game UI. City scenes opt into the LEGO palette locally.
+ * OSOGBO LIFE game UI with a polished, city-inspired visual system.
  */
 
 @theme inline {
@@ -48,7 +48,6 @@
   --color-ink-foreground: var(--ink-foreground);
   --color-leaf: var(--leaf);
   --color-sky: var(--sky);
-  --color-baseplate: var(--baseplate);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -94,7 +93,6 @@
   --ink-foreground: oklch(0.98 0.01 258);
   --leaf: oklch(0.75 0.14 145);
   --sky: oklch(0.81 0.09 225);
-  --baseplate: oklch(0.76 0.13 145);
   --chart-1: oklch(0.46 0.13 151);
   --chart-2: oklch(0.63 0.17 38);
   --chart-3: oklch(0.43 0.11 258);
@@ -128,113 +126,47 @@
   }
 }
 
-/* Chunky outlined toy brick surface */
-@utility brick {
+/* Reusable game surfaces and controls */
+@utility game-panel {
   background-color: var(--color-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 2px 8px oklch(0.2 0.025 255 / 0.05);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 2px 8px rgb(15 23 42 / 6%);
 }
 
-/* Pressable brick button */
-@utility brick-btn {
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  box-shadow: 0 1px 2px oklch(0.2 0.025 255 / 0.06);
+@utility game-control {
+  border: 1px solid var(--color-border);
+  border-radius: 0.65rem;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 8%);
   font-family: var(--font-sans);
   font-weight: 600;
   transition:
     transform 140ms ease,
     background-color 140ms ease,
-    box-shadow 140ms ease;
+    box-shadow 140ms ease,
+    border-color 140ms ease;
+
   &:hover {
-    box-shadow: 0 3px 8px oklch(0.2 0.025 255 / 0.12);
+    box-shadow: 0 4px 12px rgb(15 23 42 / 10%);
   }
+
   &:active {
     transform: translateY(1px);
   }
 }
 
-@utility studs {
-  background-color: var(--secondary);
+@utility game-panel-accent {
+  background-color: var(--color-card);
+  background-image: none;
 }
 
-@utility studs-sand {
-  background-color: var(--background);
+@utility game-canvas {
+  background-color: var(--color-background);
+  background-image: none;
 }
 
 .game-shell {
   background-color: var(--background);
-}
-
-.lego-world {
-  --font-display: "Fredoka", ui-rounded, system-ui, sans-serif;
-  --font-sans: "Figtree", ui-sans-serif, system-ui, sans-serif;
-  --background: oklch(0.95 0.035 85);
-  --foreground: oklch(0.26 0.04 255);
-  --card: oklch(0.99 0.012 85);
-  --card-foreground: oklch(0.26 0.04 255);
-  --primary: oklch(0.58 0.16 150);
-  --primary-foreground: oklch(0.99 0.01 150);
-  --secondary: oklch(0.91 0.05 85);
-  --secondary-foreground: oklch(0.26 0.04 255);
-  --muted: oklch(0.92 0.03 85);
-  --muted-foreground: oklch(0.48 0.04 255);
-  --accent: oklch(0.88 0.08 90);
-  --accent-foreground: oklch(0.26 0.04 255);
-  --border: oklch(0.26 0.04 255);
-  --input: oklch(0.26 0.04 255);
-  --edge: oklch(0.26 0.04 255);
-  --sun: oklch(0.86 0.16 88);
-  --sun-foreground: oklch(0.26 0.04 255);
-  --clay: oklch(0.64 0.16 40);
-  --clay-foreground: oklch(0.99 0.01 40);
-  --ink: oklch(0.45 0.13 258);
-  --ink-foreground: oklch(0.98 0.01 258);
-  --leaf: oklch(0.74 0.16 140);
-  --sky: oklch(0.82 0.08 230);
-  --baseplate: oklch(0.76 0.13 145);
-  background-color: var(--background);
-  background-image:
-    radial-gradient(circle at 50% 45%, oklch(1 0 0 / 0.5) 0 3px, transparent 4px),
-    radial-gradient(circle at 50% 55%, oklch(0.5 0.05 85 / 0.12) 0 4px, transparent 5px);
-  background-size: 24px 24px;
-}
-
-.lego-world .brick,
-.lego-world.brick {
-  background-color: var(--card);
-  border: 2.5px solid var(--edge);
-  border-radius: var(--radius-xl);
-  box-shadow: 0 5px 0 0 var(--edge);
-}
-
-.lego-world .brick-btn {
-  border: 2.5px solid var(--edge);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 4px 0 0 var(--edge);
-  font-family: var(--font-display);
-  font-weight: 600;
-  &:hover {
-    filter: brightness(1.05);
-  }
-  &:active {
-    transform: translateY(3px);
-    box-shadow: 0 1px 0 0 var(--edge);
-  }
-}
-
-.lego-world .studs {
-  background-color: var(--baseplate);
-  background-image:
-    radial-gradient(circle at 50% 45%, oklch(1 0 0 / 0.35) 0 4px, transparent 5px),
-    radial-gradient(circle at 50% 55%, oklch(0 0 0 / 0.12) 0 5px, transparent 6px);
-  background-size: 22px 22px;
-}
-
-.lego-world :is(.border, .border-2, .border-\[2\.5px\]) {
-  border-width: 2px;
-  border-color: var(--edge);
 }
 
 .mobile-nav-scrollbar {
@@ -1770,11 +1702,10 @@
   height: clamp(420px, 62vh, 760px);
   min-height: 55vh;
   overflow: hidden;
-  border: 2px solid var(--edge);
+  border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   background: #d8dfd2;
   box-shadow:
-    0 5px 0 0 var(--edge),
     0 16px 35px rgb(18 36 29 / 13%);
 }
 
@@ -1801,6 +1732,109 @@
   font-size: 12px;
   font-weight: 700;
   pointer-events: none;
+}
+
+.osogbo-map-error {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  z-index: 5;
+  display: grid;
+  width: min(360px, calc(100% - 32px));
+  gap: 12px;
+  padding: 16px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgb(41 54 46 / 20%);
+  border-radius: 14px;
+  color: #33473b;
+  background: rgb(255 251 237 / 96%);
+  box-shadow: 0 8px 28px rgb(31 46 34 / 20%);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.osogbo-map-error button {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 9px;
+  color: #fff;
+  background: #315d45;
+  font: inherit;
+  cursor: pointer;
+}
+
+.osogbo-map-recenter {
+  position: absolute;
+  right: 12px;
+  bottom: 48px;
+  z-index: 4;
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid rgb(44 59 49 / 19%);
+  border-radius: 10px;
+  color: #293d31;
+  background: #fffaf0;
+  box-shadow: 0 2px 9px rgb(27 43 33 / 18%);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color 140ms ease, transform 140ms ease;
+}
+
+.osogbo-map-recenter:hover {
+  transform: translateY(-1px);
+  background: #f0e7d0;
+}
+
+.osogbo-map-recenter:focus-visible,
+.osogbo-map-error button:focus-visible,
+.location-map-filter:focus-visible {
+  outline: 3px solid #315d45;
+  outline-offset: 2px;
+}
+
+.player-map-marker {
+  position: relative;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  cursor: default;
+}
+
+.player-map-marker-pulse,
+.player-map-marker-dot {
+  position: absolute;
+  border-radius: 50%;
+}
+
+.player-map-marker-pulse {
+  width: 28px;
+  height: 28px;
+  background: rgb(39 108 75 / 22%);
+  animation: player-marker-pulse 1.8s ease-out infinite;
+}
+
+.player-map-marker-dot {
+  width: 15px;
+  height: 15px;
+  border: 3px solid #fff;
+  background: #24764f;
+  box-shadow: 0 1px 5px rgb(18 36 29 / 45%);
+}
+
+@keyframes player-marker-pulse {
+  0% {
+    transform: scale(0.65);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
 }
 
 .osogbo-map-place-label {
@@ -1908,6 +1942,26 @@
   gap: 6px 9px;
   color: #425148;
   font-size: 9px;
+}
+
+.location-map-filter {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  gap: 5px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 6px;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  text-transform: capitalize;
+  cursor: pointer;
+}
+
+.location-map-filter[aria-pressed="false"] {
+  opacity: 0.45;
+  text-decoration: line-through;
 }
 
 .location-map-count {
@@ -2055,6 +2109,12 @@
 
   .osogbo-map-frame .maplibregl-ctrl-attrib {
     max-width: calc(100vw - 36px);
+  }
+
+  .osogbo-map-recenter {
+    right: 9px;
+    bottom: 48px;
+    min-height: 42px;
   }
 
   .location-map-status,

@@ -1,11 +1,18 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import type { FeatureCollection, Point } from "geojson";
-import { Map as MapLibreMap, MapLayerMouseEvent, Popup } from "maplibre-gl";
+import {
+  GeoJSONSource,
+  Map as MapLibreMap,
+  MapLayerMouseEvent,
+  Popup,
+  type ExpressionSpecification,
+} from "maplibre-gl";
 import { useQuery } from "@tanstack/react-query";
 import { q, type MapLocation } from "@/lib/game";
 import { LocationPopup } from "@/components/game/LocationPopup";
 import { LOCATION_TYPE_COLOURS, locationTypeColour } from "@/lib/location-service";
+import { PlayerMarker } from "@/components/game/PlayerMarker";
 
 const SOURCE_ID = "game-locations";
 const LAYER_ID = "game-location-markers";
@@ -16,7 +23,7 @@ type LocationFeatureProperties = {
   type: string;
 };
 
-function hasValidCoordinates(location: MapLocation): location is MapLocation & {
+export function hasValidCoordinates(location: MapLocation): location is MapLocation & {
   latitude: number;
   longitude: number;
 } {
@@ -34,15 +41,27 @@ function hasValidCoordinates(location: MapLocation): location is MapLocation & {
 
 export function LocationMarker({ map }: { map: MapLibreMap }) {
   const { data: activeLocations, isLoading, isError, error, refetch } = useQuery(q.mapLocations());
+  const { data: character } = useQuery(q.character());
   const locations = useMemo(
     () => (activeLocations ?? []).filter(hasValidCoordinates),
     [activeLocations],
   );
+  const [visibleTypes, setVisibleTypes] = useState<Set<string> | null>(null);
+  const locationTypes = useMemo(
+    () => [...new Set(locations.map((location) => location.type))].sort(),
+    [locations],
+  );
+  const visibleLocations = useMemo(
+    () => locations.filter((location) => !visibleTypes || visibleTypes.has(location.type)),
+    [locations, visibleTypes],
+  );
   const skippedCount = (activeLocations?.length ?? 0) - locations.length;
+  const playerLocation =
+    activeLocations?.find((location) => location.id === character?.current_location_id) ?? null;
   const featureCollection = useMemo<FeatureCollection<Point, LocationFeatureProperties>>(
     () => ({
       type: "FeatureCollection",
-      features: locations.map((location) => ({
+      features: visibleLocations.map((location) => ({
         type: "Feature",
         id: location.id,
         geometry: {
@@ -56,7 +75,7 @@ export function LocationMarker({ map }: { map: MapLibreMap }) {
         },
       })),
     }),
-    [locations],
+    [visibleLocations],
   );
 
   useEffect(() => {
@@ -64,7 +83,7 @@ export function LocationMarker({ map }: { map: MapLibreMap }) {
 
     const existingSource = map.getSource(SOURCE_ID);
     if (existingSource?.type === "geojson") {
-      existingSource.setData(featureCollection);
+      (existingSource as GeoJSONSource).setData(featureCollection);
     } else {
       map.addSource(SOURCE_ID, {
         type: "geojson",
@@ -74,17 +93,19 @@ export function LocationMarker({ map }: { map: MapLibreMap }) {
     }
 
     if (!map.getLayer(LAYER_ID)) {
+      const colorExpression = [
+        "match",
+        ["get", "type"],
+        ...Object.entries(LOCATION_TYPE_COLOURS).flat(),
+        locationTypeColour("custom"),
+      ] as ExpressionSpecification;
+
       map.addLayer({
         id: LAYER_ID,
         type: "circle",
         source: SOURCE_ID,
         paint: {
-          "circle-color": [
-            "match",
-            ["get", "type"],
-            ...Object.entries(LOCATION_TYPE_COLOURS).flat(),
-            locationTypeColour("custom"),
-          ],
+          "circle-color": colorExpression,
           "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 5, 15, 8, 19, 12],
           "circle-stroke-color": "#fff9e9",
           "circle-stroke-width": 2,
@@ -103,8 +124,8 @@ export function LocationMarker({ map }: { map: MapLibreMap }) {
       popupRoots.clear();
     };
     const onMarkerClick = (event: MapLayerMouseEvent) => {
-      const id = event.features?.[0]?.properties?.id;
-      const location = locations.find((candidate) => candidate.id === id);
+      const id = event.features?.[0]?.properties?.["id"];
+      const location = visibleLocations.find((candidate) => candidate.id === id);
       if (!location || !hasValidCoordinates(location)) return;
 
       activePopup?.remove();
@@ -146,7 +167,7 @@ export function LocationMarker({ map }: { map: MapLibreMap }) {
       map.off("mouseleave", LAYER_ID, onMouseLeave);
       closePopup();
     };
-  }, [featureCollection, locations, map]);
+  }, [featureCollection, visibleLocations, map]);
 
   if (isLoading) {
     return (
@@ -170,9 +191,11 @@ export function LocationMarker({ map }: { map: MapLibreMap }) {
   if (locations.length === 0) {
     return (
       <div className="location-map-status" role="status">
-        <strong>No mapped locations yet</strong>
+        <strong>{activeLocations?.length ? "City pins need coordinates" : "No active city pins yet"}</strong>
         <span>
-          Active locations will appear here when verified coordinates are added.
+          {activeLocations?.length
+            ? "These locations are saved, but verified map coordinates have not been added yet."
+            : "Active locations will appear here when they are added to the city."}
           {skippedCount > 0 &&
             ` ${skippedCount} active record(s) currently lack valid coordinates.`}
         </span>
@@ -181,24 +204,39 @@ export function LocationMarker({ map }: { map: MapLibreMap }) {
   }
 
   return (
-    <div className="location-map-legend" aria-label="Mapped locations by type">
-      <span className="location-map-count">{locations.length} mapped location(s)</span>
-      {skippedCount > 0 && <span>{skippedCount} skipped: missing/invalid coordinates</span>}
-      <span
-        className="location-map-legend-dot"
-        style={{ background: locationTypeColour("market") }}
-      />
-      <span>Market</span>
-      <span
-        className="location-map-legend-dot"
-        style={{ background: locationTypeColour("government") }}
-      />
-      <span>Government</span>
-      <span
-        className="location-map-legend-dot"
-        style={{ background: locationTypeColour("custom") }}
-      />
-      <span>Other</span>
-    </div>
+    <>
+      <PlayerMarker map={map} location={playerLocation} />
+      <div className="location-map-legend" aria-label="Mapped locations by type">
+        <span className="location-map-count">
+          {visibleLocations.length} of {locations.length} mapped
+        </span>
+        {skippedCount > 0 && <span>{skippedCount} skipped: missing/invalid coordinates</span>}
+        {locationTypes.map((type) => {
+          const checked = !visibleTypes || visibleTypes.has(type);
+          return (
+            <button
+              key={type}
+              type="button"
+              className="location-map-filter"
+              aria-pressed={checked}
+              onClick={() =>
+                setVisibleTypes((previous) => {
+                  const next = new Set(previous ?? locationTypes);
+                  if (next.has(type)) next.delete(type);
+                  else next.add(type);
+                  return next.size === locationTypes.length ? null : next;
+                })
+              }
+            >
+              <span
+                className="location-map-legend-dot"
+                style={{ background: locationTypeColour(type) }}
+              />
+              {type}
+            </button>
+          );
+        })}
+      </div>
+    </>
   );
 }
