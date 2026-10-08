@@ -5,6 +5,7 @@ import { OsogboMap } from "@/components/game/OsogboMap";
 import { CityBillboards } from "@/components/game/CityBillboards";
 import { GameQuickActions } from "@/components/game/GameQuickActions";
 import { NeedsPanel } from "@/components/game/NeedsPanel";
+import { VirtualHouse } from "@/components/game/VirtualHouse";
 import { q, formatNaira } from "@/lib/game";
 import { pageMeta } from "@/lib/seo";
 import { dashboardGreeting } from "@/lib/dashboard-greeting";
@@ -72,7 +73,11 @@ function CityHome() {
         )}
       </div>
 
-      <div className="game-home-grid">
+      <div className="mt-5">
+        <VirtualHouse characterName={character.name} />
+      </div>
+
+      <div className="game-home-grid mt-6">
         <div className="game-world-column">
           <section className="home-city-map" aria-label="Explore Osogbo">
             <div className="home-map-heading">
