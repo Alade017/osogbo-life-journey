@@ -86,7 +86,9 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
   }
 
   async function google() {
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin + "/login" });
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin + "/login",
+    });
     if (result.error) {
       toast.error(result.error.message ?? "Google sign-in failed");
       return;
@@ -97,13 +99,19 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
 
   return (
     <div className="auth-screen relative isolate min-h-screen overflow-hidden bg-ink">
-      <img src={cityPhoto} alt="Osogbo city panorama" className="absolute inset-0 h-full w-full object-cover object-center" />
+      <img
+        src={cityPhoto}
+        alt="Osogbo city panorama"
+        className="absolute inset-0 h-full w-full object-cover object-center"
+      />
       <div className="absolute inset-0 bg-slate-950/55" />
       <div className="relative mx-auto grid min-h-screen max-w-7xl lg:grid-cols-2">
         <section className="flex min-h-57.5 flex-col justify-end px-5 pb-7 pt-8 text-white sm:px-8 lg:min-h-screen lg:justify-between lg:px-12 lg:py-12">
           <p className="hidden text-sm font-bold tracking-wide lg:block">OSOGBO LIFE</p>
           <div className="max-w-lg">
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-white/75">Your next chapter starts here</p>
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-white/75">
+              Your next chapter starts here
+            </p>
             <h1 className="mt-3 text-3xl font-bold leading-tight sm:text-4xl lg:text-6xl">
               {mode === "signup" ? "Make a life in Osogbo." : "Good to have you back."}
             </h1>
@@ -111,59 +119,206 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
               Explore the city, find work and build your own way forward.
             </p>
           </div>
-          <a href="https://commons.wikimedia.org/wiki/File:Osogbo.jpg" target="_blank" rel="noreferrer" className="hidden text-[11px] text-white/75 underline underline-offset-2 lg:block">
+          <a
+            href="https://commons.wikimedia.org/wiki/File:Osogbo.jpg"
+            target="_blank"
+            rel="noreferrer"
+            className="hidden text-[11px] text-white/75 underline underline-offset-2 lg:block"
+          >
             Photo: El-Shaddaites · CC BY-SA 4.0
           </a>
         </section>
 
         <section className="flex items-center justify-center bg-background/95 px-4 py-8 backdrop-blur-sm sm:px-8 lg:my-6 lg:rounded-l-2xl lg:px-10">
-          <div className="brick pop-in w-full max-w-md p-6 sm:p-8">
-            <Link to="/" className="mb-7 inline-block"><Logo /></Link>
+          <div className="game-panel pop-in w-full max-w-md p-6 sm:p-8">
+            <Link to="/" className="mb-7 inline-block">
+              <Logo />
+            </Link>
             {sent ? (
               <div>
                 <h2 className="text-2xl font-bold">Check your email</h2>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account, then come back to log in.
+                  We sent a confirmation link to <strong>{email}</strong>. Click it to activate your
+                  account, then come back to log in.
                 </p>
-                <Button asChild variant="brick" size="lg" className="mt-6 w-full"><Link to="/login">Go to login</Link></Button>
+                <Button asChild variant="default" size="lg" className="mt-6 w-full">
+                  <Link to="/login">Go to login</Link>
+                </Button>
               </div>
             ) : recoverySent ? (
               <div>
                 <h2 className="text-2xl font-bold">Reset your password</h2>
-                <p className="mt-2 text-sm text-muted-foreground">Enter your account email and we’ll send a secure reset link.</p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Enter your account email and we’ll send a secure reset link.
+                </p>
                 <form onSubmit={submit} className="mt-6 space-y-4">
-                  <div className="space-y-1.5"><Label htmlFor="email">Email</Label><Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="h-11 border bg-card" /></div>
-                  <Button type="submit" variant="brick" size="lg" className="w-full" disabled={busy}>{busy ? "Sending…" : "Send reset link"}</Button>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="h-11 border bg-card"
+                    />
+                  </div>
+                  <Button
+                    type="submit"
+                    variant="default"
+                    size="lg"
+                    className="w-full"
+                    disabled={busy}
+                  >
+                    {busy ? "Sending…" : "Send reset link"}
+                  </Button>
                 </form>
-                <button type="button" onClick={() => setRecoverySent(false)} className="mt-5 w-full text-center text-sm font-bold text-primary underline">Back to log in</button>
+                <button
+                  type="button"
+                  onClick={() => setRecoverySent(false)}
+                  className="mt-5 w-full text-center text-sm font-bold text-primary underline"
+                >
+                  Back to log in
+                </button>
               </div>
             ) : (
               <>
-                <h2 className="text-3xl font-bold">{resettingPassword ? "Choose a new password" : mode === "signup" ? "Create your account" : "Welcome back"}</h2>
+                <h2 className="text-3xl font-bold">
+                  {resettingPassword
+                    ? "Choose a new password"
+                    : mode === "signup"
+                      ? "Create your account"
+                      : "Welcome back"}
+                </h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {resettingPassword ? "Use at least 8 characters for your new password." : mode === "signup" ? "Start your new life in Osogbo." : "Log in to continue your life in the city."}
+                  {resettingPassword
+                    ? "Use at least 8 characters for your new password."
+                    : mode === "signup"
+                      ? "Start your new life in Osogbo."
+                      : "Log in to continue your life in the city."}
                 </p>
                 <form onSubmit={submit} className="mt-6 space-y-4">
-                  {!resettingPassword && <div className="space-y-1.5"><Label htmlFor="email">Email</Label><Input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="h-11 border bg-card" /></div>}
-                  {mode === "signup" && <div className="space-y-1.5"><Label htmlFor="username">Username</Label><Input id="username" autoComplete="username" minLength={3} maxLength={24} pattern="[A-Za-z0-9_]{3,24}" required value={username} onChange={(e) => setUsername(e.target.value)} placeholder="e.g. adunni_ade" className="h-11 border bg-card" /><p className="text-xs text-muted-foreground">3–24 letters, numbers or underscores.</p></div>}
+                  {!resettingPassword && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="email">Email</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        autoComplete="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="h-11 border bg-card"
+                      />
+                    </div>
+                  )}
+                  {mode === "signup" && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="username">Username</Label>
+                      <Input
+                        id="username"
+                        autoComplete="username"
+                        minLength={3}
+                        maxLength={24}
+                        pattern="[A-Za-z0-9_]{3,24}"
+                        required
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="e.g. adunni_ade"
+                        className="h-11 border bg-card"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        3–24 letters, numbers or underscores.
+                      </p>
+                    </div>
+                  )}
                   <div className="space-y-1.5">
                     <Label htmlFor="password">Password</Label>
-                    <Input id="password" type="password" required minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} className="h-11 border bg-card" autoComplete={mode === "signup" || resettingPassword ? "new-password" : "current-password"} />
-                    {(mode === "signup" || resettingPassword) && <p className="text-xs text-muted-foreground">At least 8 characters.</p>}
+                    <Input
+                      id="password"
+                      type="password"
+                      required
+                      minLength={8}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="h-11 border bg-card"
+                      autoComplete={
+                        mode === "signup" || resettingPassword ? "new-password" : "current-password"
+                      }
+                    />
+                    {(mode === "signup" || resettingPassword) && (
+                      <p className="text-xs text-muted-foreground">At least 8 characters.</p>
+                    )}
                   </div>
-                  {(mode === "signup" || resettingPassword) && <div className="space-y-1.5"><Label htmlFor="confirm-password">Confirm password</Label><Input id="confirm-password" type="password" required minLength={8} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="h-11 border bg-card" autoComplete="new-password" /></div>}
-                  <Button type="submit" variant="brick" size="lg" className="w-full" disabled={busy}>
-                    {busy ? "Please wait…" : resettingPassword ? "Update password" : mode === "signup" ? "Create account" : "Log in"}
+                  {(mode === "signup" || resettingPassword) && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="confirm-password">Confirm password</Label>
+                      <Input
+                        id="confirm-password"
+                        type="password"
+                        required
+                        minLength={8}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        className="h-11 border bg-card"
+                        autoComplete="new-password"
+                      />
+                    </div>
+                  )}
+                  <Button
+                    type="submit"
+                    variant="default"
+                    size="lg"
+                    className="w-full"
+                    disabled={busy}
+                  >
+                    {busy
+                      ? "Please wait…"
+                      : resettingPassword
+                        ? "Update password"
+                        : mode === "signup"
+                          ? "Create account"
+                          : "Log in"}
                   </Button>
                 </form>
-                {!resettingPassword && mode === "login" && <>
-                  <button type="button" onClick={() => setRecoverySent(true)} className="mt-4 text-sm font-semibold text-primary underline underline-offset-2">Forgot password?</button>
-                  <div className="my-5 flex items-center gap-3 text-xs font-semibold text-muted-foreground"><span className="h-px flex-1 bg-border" /> OR <span className="h-px flex-1 bg-border" /></div>
-                  <Button variant="plain" size="lg" className="w-full" onClick={google}>Continue with Google</Button>
-                  <p className="mt-6 text-center text-sm">New to Osogbo? <Link to="/signup" className="font-bold text-primary underline">Create an account</Link></p>
-                </>}
-                {!resettingPassword && mode === "signup" && <p className="mt-6 text-center text-sm">Already playing? <Link to="/login" className="font-bold text-primary underline">Log in</Link></p>}
-                <a href="https://commons.wikimedia.org/wiki/File:Osogbo.jpg" target="_blank" rel="noreferrer" className="mt-6 block text-center text-[10px] text-muted-foreground underline underline-offset-2 lg:hidden">
+                {!resettingPassword && mode === "login" && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setRecoverySent(true)}
+                      className="mt-4 text-sm font-semibold text-primary underline underline-offset-2"
+                    >
+                      Forgot password?
+                    </button>
+                    <div className="my-5 flex items-center gap-3 text-xs font-semibold text-muted-foreground">
+                      <span className="h-px flex-1 bg-border" /> OR{" "}
+                      <span className="h-px flex-1 bg-border" />
+                    </div>
+                    <Button variant="plain" size="lg" className="w-full" onClick={google}>
+                      Continue with Google
+                    </Button>
+                    <p className="mt-6 text-center text-sm">
+                      New to Osogbo?{" "}
+                      <Link to="/signup" className="font-bold text-primary underline">
+                        Create an account
+                      </Link>
+                    </p>
+                  </>
+                )}
+                {!resettingPassword && mode === "signup" && (
+                  <p className="mt-6 text-center text-sm">
+                    Already playing?{" "}
+                    <Link to="/login" className="font-bold text-primary underline">
+                      Log in
+                    </Link>
+                  </p>
+                )}
+                <a
+                  href="https://commons.wikimedia.org/wiki/File:Osogbo.jpg"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-6 block text-center text-[10px] text-muted-foreground underline underline-offset-2 lg:hidden"
+                >
                   Photo: El-Shaddaites · CC BY-SA 4.0
                 </a>
               </>

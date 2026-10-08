@@ -6,12 +6,34 @@ import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
+import { normalizeCityLocation } from "@/lib/location-service";
+import { progressionFromExperience, XP_PER_LEVEL } from "@/lib/progression-service";
 
 export type Character = Database["public"]["Tables"]["characters"]["Row"];
 export type Job = Database["public"]["Tables"]["jobs"]["Row"];
+export type Activity = Database["public"]["Tables"]["activities"]["Row"];
+export type PlayerSkill = Database["public"]["Tables"]["player_skills"]["Row"];
 export type Location = Database["public"]["Tables"]["locations"]["Row"];
+export type MapLocation = Pick<
+  Location,
+  | "id"
+  | "name"
+  | "slug"
+  | "type"
+  | "description"
+  | "latitude"
+  | "longitude"
+  | "icon"
+  | "image_url"
+  | "is_active"
+  | "level_required"
+  | "metadata"
+>;
+export type GamePlace = Database["public"]["Tables"]["game_places"]["Row"];
+export type GameBillboard = Database["public"]["Tables"]["game_billboards"]["Row"];
+export type Advertisement = Database["public"]["Tables"]["advertisements"]["Row"];
 
-export const XP_PER_LEVEL = 150;
+export { XP_PER_LEVEL };
 export const ENERGY_REGEN_SECONDS = 120;
 
 export function formatNaira(n: number | bigint | null | undefined) {
@@ -19,8 +41,14 @@ export function formatNaira(n: number | bigint | null | undefined) {
 }
 
 export function xpProgress(xp: number) {
-  const into = xp % XP_PER_LEVEL;
-  return { into, needed: XP_PER_LEVEL, pct: (into / XP_PER_LEVEL) * 100 };
+  const progression = progressionFromExperience(xp);
+  return {
+    into: progression.experienceIntoLevel,
+    needed: progression.experienceRequired,
+    pct: progression.progressPercent,
+    toNextLevel: progression.experienceToNextLevel,
+    level: progression.level,
+  };
 }
 
 function unwrap<T>(res: { data: T; error: { message: string } | null }): T {
@@ -32,6 +60,7 @@ export const q = {
   character: () =>
     queryOptions({
       queryKey: ["character"],
+      retry: false,
       queryFn: async () => unwrap(await supabase.from("characters").select("*").maybeSingle()),
     }),
   profile: () =>
@@ -60,7 +89,47 @@ export const q = {
     queryOptions({
       queryKey: ["jobs"],
       staleTime: 5 * 60_000,
+      retry: false,
       queryFn: async () => unwrap(await supabase.from("jobs").select("*").order("sort_order")),
+    }),
+  activities: () =>
+    queryOptions({
+      queryKey: ["activities"],
+      staleTime: 5 * 60_000,
+      retry: false,
+      queryFn: async () =>
+        unwrap(
+          await supabase.from("activities").select("*").eq("is_available", true).order("name"),
+        ),
+    }),
+  places: () =>
+    queryOptions({
+      queryKey: ["places"],
+      staleTime: 5 * 60_000,
+      queryFn: async () =>
+        unwrap(await supabase.from("game_places").select("*").order("sort_order")),
+    }),
+  billboards: () =>
+    queryOptions({
+      queryKey: ["billboards"],
+      staleTime: 60_000,
+      queryFn: async () =>
+        unwrap(
+          await supabase.from("game_billboards").select("*").eq("status", "active").order("name"),
+        ),
+    }),
+  advertisements: () =>
+    queryOptions({
+      queryKey: ["advertisements"],
+      staleTime: 60_000,
+      queryFn: async () =>
+        unwrap(
+          await supabase
+            .from("advertisements")
+            .select("*")
+            .eq("status", "active")
+            .order("starts_at", { ascending: false }),
+        ),
     }),
   educationCourses: () =>
     queryOptions({
@@ -79,12 +148,33 @@ export const q = {
       queryKey: ["myJobs"],
       queryFn: async () => unwrap(await supabase.from("character_jobs").select("*")),
     }),
+  playerSkills: () =>
+    queryOptions({
+      queryKey: ["playerSkills"],
+      queryFn: async () => unwrap(await supabase.from("player_skills").select("*")),
+    }),
   locations: () =>
     queryOptions({
       queryKey: ["locations"],
       staleTime: 5 * 60_000,
-      queryFn: async () =>
-        unwrap(await supabase.from("locations").select("*").order("sort_order")),
+      queryFn: async () => unwrap(await supabase.from("locations").select("*").order("sort_order")),
+    }),
+  mapLocations: () =>
+    queryOptions({
+      queryKey: ["mapLocations"],
+      staleTime: 60_000,
+      queryFn: async () => {
+        const locations = unwrap(
+          await supabase
+            .from("locations")
+            .select(
+              "id,name,slug,type,description,latitude,longitude,icon,image_url,is_active,level_required,metadata",
+            )
+            .eq("is_active", true)
+            .order("name"),
+        );
+        return (locations ?? []).map(normalizeCityLocation);
+      },
     }),
   visits: () =>
     queryOptions({
@@ -100,6 +190,35 @@ export const q = {
             .from("player_inventory")
             .select("*, item:inventory_items(*)")
             .order("acquired_at"),
+        ),
+    }),
+  shops: () =>
+    queryOptions({
+      queryKey: ["shops"],
+      staleTime: 60_000,
+      queryFn: async () => unwrap(await supabase.from("shops").select("*").eq("is_open", true)),
+    }),
+  shopItems: () =>
+    queryOptions({
+      queryKey: ["shopItems"],
+      staleTime: 60_000,
+      queryFn: async () =>
+        unwrap(
+          await supabase
+            .from("shop_items")
+            .select("*, item:inventory_items(*), shop:shops(*)")
+            .eq("is_available", true),
+        ),
+    }),
+  equipment: () =>
+    queryOptions({
+      queryKey: ["equipment"],
+      queryFn: async () =>
+        unwrap(
+          await supabase
+            .from("player_equipment")
+            .select("*, item:inventory_items(*)")
+            .order("slot"),
         ),
     }),
   missions: () =>
@@ -125,13 +244,16 @@ export const q = {
 /** Wraps a server-validated game action; refreshes all player data after it runs. */
 export function useGameAction<TArgs, TResult>(
   fn: (args: TArgs) => Promise<TResult>,
-  opts?: { onSuccess?: (r: TResult) => void },
+  opts?: { onSuccess?: (r: TResult) => void; onError?: (error: Error) => void },
 ) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: fn,
     onSuccess: (r) => opts?.onSuccess?.(r),
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      opts?.onError?.(e);
+      toast.error(e.message);
+    },
     onSettled: () => qc.invalidateQueries(),
   });
 }
@@ -140,7 +262,9 @@ export const rpc = {
   refreshEnergy: async () => unwrap(await supabase.rpc("refresh_my_energy")),
   selectJob: async (jobId: string) => unwrap(await supabase.rpc("select_job", { p_job_id: jobId })),
   completeEducationCourse: async (courseSlug: string) =>
-    unwrap(await supabase.rpc("complete_education_course", { p_course_slug: courseSlug })) as unknown as {
+    unwrap(
+      await supabase.rpc("complete_education_course", { p_course_slug: courseSlug }),
+    ) as unknown as {
       course: string;
       tuition: number;
       energy_spent: number;
@@ -152,8 +276,61 @@ export const rpc = {
       earned: number;
       xp: number;
       energy_spent: number;
+      hunger_gained: number;
+      thirst_gained: number;
+      duration_minutes: number;
+      game_time: { minute: number; hour: number; day: number; weekday: number };
+      stress_gained: number;
       level: number;
     },
+  travelToLocation: async (locationId: string) =>
+    unwrap(await supabase.rpc("travel_to_location", { p_location_id: locationId })) as unknown as {
+      location: string;
+      fare: number;
+      travel_minutes: number;
+      first_visit: boolean;
+      game_time?: { minute: number; hour: number; day: number; weekday: number };
+    },
+  eatAtPlace: async (placeId: string) =>
+    unwrap(await supabase.rpc("eat_at_place", { p_place_id: placeId })) as unknown as {
+      venue: string;
+      cost: number;
+      hunger_restored: number;
+      happiness_gained: number;
+    },
+  useInventoryItem: async (inventoryId: string) =>
+    unwrap(await supabase.rpc("use_inventory_item", { p_inventory_id: inventoryId })),
+  discardInventoryItem: async (inventoryId: string, quantity = 1) =>
+    unwrap(
+      await supabase.rpc("discard_inventory_item", {
+        p_inventory_id: inventoryId,
+        p_quantity: quantity,
+      }),
+    ),
+  equipInventoryItem: async (inventoryId: string, slot: string) =>
+    unwrap(
+      await supabase.rpc("equip_inventory_item", { p_inventory_id: inventoryId, p_slot: slot }),
+    ),
+  unequipItem: async (slot: string) => unwrap(await supabase.rpc("unequip_item", { p_slot: slot })),
+  depositCash: async (amount: number) =>
+    unwrap(await supabase.rpc("deposit_cash", { p_amount: amount })),
+  withdrawCash: async (amount: number) =>
+    unwrap(await supabase.rpc("withdraw_cash", { p_amount: amount })),
+  purchaseShopItem: async (args: { shopItemId: string; quantity: number }) =>
+    unwrap(
+      await supabase.rpc("purchase_shop_item", {
+        p_shop_item_id: args.shopItemId,
+        p_quantity: args.quantity,
+      }),
+    ),
+  sellInventoryItem: async (args: { shopId: string; inventoryId: string; quantity: number }) =>
+    unwrap(
+      await supabase.rpc("sell_inventory_item", {
+        p_shop_id: args.shopId,
+        p_inventory_id: args.inventoryId,
+        p_quantity: args.quantity,
+      }),
+    ),
   visitLocation: async (id: string) =>
     unwrap(await supabase.rpc("visit_location", { p_location_id: id })) as unknown as {
       first_visit: boolean;

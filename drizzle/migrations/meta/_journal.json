@@ -15,6 +15,76 @@
       "when": 1791245090837,
       "tag": "0001_education_skills",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791245090838,
+      "tag": "0002_city_locations_jobs",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791245090839,
+      "tag": "0003_billboards_advertising",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791245090840,
+      "tag": "0004_interactive_locations",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791245090841,
+      "tag": "0005_virtual_world_properties",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791245090842,
+      "tag": "0006_character_game_time",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1791245090843,
+      "tag": "0007_player_state_inventory",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791245090844,
+      "tag": "0008_economy_foundation",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791245090845,
+      "tag": "0009_job_activity_model",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791245090846,
+      "tag": "0010_job_requirements",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1791245090847,
+      "tag": "0011_job_time_needs",
+      "breakpoints": true
     }
   ]
 }
