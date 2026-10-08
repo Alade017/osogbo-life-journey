@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
 import { Bell, Coins, MapPin } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Avatar } from "@/components/game/Avatar";
 import { formatNaira, xpProgress, type Character } from "@/lib/game";
+import { formatGameTime, getDayPeriod, WEEKDAYS } from "@/lib/game-time";
+import { useGameTime } from "@/components/game/GameTimeProvider";
 
 export function GameHUD({
   character,
@@ -15,28 +16,11 @@ export function GameHUD({
   location: string;
   unread: number;
 }) {
-  const [cityClock, setCityClock] = useState({ time: "", day: "" });
+  const { gameTime } = useGameTime();
+  const clockLabel = formatGameTime(gameTime);
+  const weekday = WEEKDAYS[gameTime.weekday] ?? WEEKDAYS[0];
+  const dayPeriod = getDayPeriod(gameTime.hour);
   const xp = xpProgress(character.xp);
-
-  useEffect(() => {
-    const update = () => {
-      const now = new Date();
-      setCityClock({
-        time: now.toLocaleTimeString("en-NG", {
-          timeZone: "Africa/Lagos",
-          hour: "numeric",
-          minute: "2-digit",
-        }),
-        day: now.toLocaleDateString("en-NG", {
-          timeZone: "Africa/Lagos",
-          weekday: "long",
-        }),
-      });
-    };
-    update();
-    const timer = window.setInterval(update, 60_000);
-    return () => window.clearInterval(timer);
-  }, []);
 
   return (
     <header className="game-hud" aria-label="Player status">
@@ -80,15 +64,15 @@ export function GameHUD({
         <MapPin className="h-4 w-4 shrink-0 text-[#e7a653]" />
         <span className="min-w-0">
           <span className="block truncate text-xs font-bold">{location}</span>
-          <span className="block text-[10px] text-white/60">{cityClock.day || "Osogbo"}</span>
+          <span className="block text-[10px] text-white/60">
+            {weekday} | Day {gameTime.day}
+          </span>
         </span>
       </div>
 
-      <div className="game-hud-time" aria-label={`Osogbo local time ${cityClock.time}`}>
-        <span className="block font-display text-sm font-bold tabular-nums">
-          {cityClock.time || "--:--"}
-        </span>
-        <span className="block text-[10px] text-white/60">Osogbo time</span>
+      <div className="game-hud-time" aria-label={`Osogbo game time ${clockLabel}`}>
+        <span className="block font-display text-sm font-bold tabular-nums">{clockLabel}</span>
+        <span className="block text-[10px] capitalize text-white/60">{dayPeriod}</span>
       </div>
 
       <Link

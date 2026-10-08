@@ -78,6 +78,10 @@ export type Database = {
           created_at: string;
           energy: number;
           energy_updated_at: string;
+          game_day: number;
+          game_time_hour: number;
+          game_time_minute: number;
+          game_weekday: number;
           gender: string;
           happiness: number;
           health: number;
@@ -104,6 +108,10 @@ export type Database = {
           created_at?: string;
           energy?: number;
           energy_updated_at?: string;
+          game_day?: number;
+          game_time_hour?: number;
+          game_time_minute?: number;
+          game_weekday?: number;
           gender: string;
           happiness?: number;
           health?: number;
@@ -130,6 +138,10 @@ export type Database = {
           created_at?: string;
           energy?: number;
           energy_updated_at?: string;
+          game_day?: number;
+          game_time_hour?: number;
+          game_time_minute?: number;
+          game_weekday?: number;
           gender?: string;
           happiness?: number;
           health?: number;

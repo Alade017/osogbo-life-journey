@@ -3,9 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { q } from "@/lib/game";
 import { pageMeta } from "@/lib/seo";
 import { OsogboMap } from "@/components/game/OsogboMap";
-import { TONE_BG } from "@/components/game/CityBoard";
+import { LocationCard } from "@/components/game/LocationCard";
 import { Chip, PageHeader } from "@/components/game/ui";
-import { cn } from "@/lib/utils";
+import { normalizeCityLocation } from "@/lib/location-service";
 
 export const Route = createFileRoute("/_authenticated/_game/map")({
   head: () => pageMeta("City Map", "Explore Osogbo on the interactive city map."),
@@ -29,17 +29,12 @@ function MapPage() {
             key={l.id}
             to="/location/$slug"
             params={{ slug: l.slug }}
-            className="game-panel block p-4 transition-transform hover:-translate-y-0.5"
+            className="city-location-link"
           >
-            <div className="flex items-start justify-between gap-2">
-              <span
-                className={cn("h-8 w-8 shrink-0 rounded-md border-2 border-edge", TONE_BG[l.color])}
-              />
-              {visited.has(l.id) ? <Chip tone="leaf">Visited</Chip> : <Chip>New</Chip>}
-            </div>
-            <h3 className="mt-3 text-lg font-bold">{l.name}</h3>
-            <p className="text-sm font-semibold text-muted-foreground">{l.tagline}</p>
-            <p className="mt-2 line-clamp-2 text-sm">{l.description}</p>
+            <LocationCard
+              location={normalizeCityLocation(l)}
+              accessory={visited.has(l.id) ? <Chip tone="leaf">Visited</Chip> : <Chip>New</Chip>}
+            />
           </Link>
         ))}
       </div>

@@ -8,6 +8,8 @@ import { GameDataUnavailable, LoadingState } from "@/components/game/ui";
 import { cn } from "@/lib/utils";
 import { GameHUD } from "@/components/game/GameHUD";
 import { PhoneLauncher } from "@/components/game/PhoneLauncher";
+import { GameTimeProvider } from "@/components/game/GameTimeProvider";
+import { gameTimeFromCharacter } from "@/lib/game-time";
 
 export const Route = createFileRoute("/_authenticated/_game")({
   component: GameLayout,
@@ -69,90 +71,92 @@ function GameLayout() {
     );
 
   return (
-    <div
-      className={cn(
-        "game-shell city-game min-h-screen pb-20 md:pb-0",
-        profile?.reduced_motion && "reduce-motion",
-      )}
-    >
-      <div className="city-game-frame">
-        <aside className="game-desktop-nav" aria-label="Main navigation">
-          <Link to="/home" className="game-side-logo" aria-label="OSOGBO LIFE home">
-            <Logo small />
-          </Link>
-          <p className="game-side-label">YOUR CITY</p>
-          <nav className="game-side-links">
-            {NAV.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  key={item.to}
-                  to={item.to}
-                  activeProps={{ className: "game-side-link-active" }}
-                  className="game-side-link"
-                >
-                  <Icon className="h-4.5 w-4.5" />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-          <div className="mt-auto grid gap-2">
-            <PhoneLauncher compact className="game-side-phone" />
-            <Link to="/settings" className="game-side-link">
-              <Settings className="h-4.5 w-4.5" />
-              <span>Settings</span>
+    <GameTimeProvider gameTime={gameTimeFromCharacter(character)}>
+      <div
+        className={cn(
+          "game-shell city-game min-h-screen pb-20 md:pb-0",
+          profile?.reduced_motion && "reduce-motion",
+        )}
+      >
+        <div className="city-game-frame">
+          <aside className="game-desktop-nav" aria-label="Main navigation">
+            <Link to="/home" className="game-side-logo" aria-label="OSOGBO LIFE home">
+              <Logo small />
             </Link>
+            <p className="game-side-label">YOUR CITY</p>
+            <nav className="game-side-links">
+              {NAV.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    activeProps={{ className: "game-side-link-active" }}
+                    className="game-side-link"
+                  >
+                    <Icon className="h-4.5 w-4.5" />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+            <div className="mt-auto grid gap-2">
+              <PhoneLauncher compact className="game-side-phone" />
+              <Link to="/settings" className="game-side-link">
+                <Settings className="h-4.5 w-4.5" />
+                <span>Settings</span>
+              </Link>
+            </div>
+          </aside>
+          <div className="city-game-content">
+            <GameHUD
+              character={character}
+              balance={wallet?.balance}
+              location={currentLocation?.name ?? "Osogbo"}
+              unread={unread}
+            />
+            <main className="city-game-main">
+              <Outlet />
+            </main>
           </div>
-        </aside>
-        <div className="city-game-content">
-          <GameHUD
-            character={character}
-            balance={wallet?.balance}
-            location={currentLocation?.name ?? "Osogbo"}
-            unread={unread}
-          />
-          <main className="city-game-main">
-            <Outlet />
-          </main>
         </div>
-      </div>
 
-      <nav className="game-mobile-nav" aria-label="Game navigation">
-        <Link
-          to="/home"
-          activeProps={{ className: "mobile-nav-active" }}
-          className="mobile-nav-link"
-        >
-          <House className="h-4.75 w-4.75" />
-          <span>Home</span>
-        </Link>
-        <Link
-          to="/map"
-          activeProps={{ className: "mobile-nav-active" }}
-          className="mobile-nav-link"
-        >
-          <Map className="h-4.75 w-4.75" />
-          <span>City</span>
-        </Link>
-        <PhoneLauncher className="mobile-nav-phone" />
-        <Link
-          to="/jobs"
-          activeProps={{ className: "mobile-nav-active" }}
-          className="mobile-nav-link"
-        >
-          <Briefcase className="h-4.75 w-4.75" />
-          <span>Jobs</span>
-        </Link>
-        <Link
-          to="/profile"
-          activeProps={{ className: "mobile-nav-active" }}
-          className="mobile-nav-link"
-        >
-          <UserRound className="h-4.75 w-4.75" />
-          <span>Profile</span>
-        </Link>
-      </nav>
-    </div>
+        <nav className="game-mobile-nav" aria-label="Game navigation">
+          <Link
+            to="/home"
+            activeProps={{ className: "mobile-nav-active" }}
+            className="mobile-nav-link"
+          >
+            <House className="h-4.75 w-4.75" />
+            <span>Home</span>
+          </Link>
+          <Link
+            to="/map"
+            activeProps={{ className: "mobile-nav-active" }}
+            className="mobile-nav-link"
+          >
+            <Map className="h-4.75 w-4.75" />
+            <span>City</span>
+          </Link>
+          <PhoneLauncher className="mobile-nav-phone" />
+          <Link
+            to="/jobs"
+            activeProps={{ className: "mobile-nav-active" }}
+            className="mobile-nav-link"
+          >
+            <Briefcase className="h-4.75 w-4.75" />
+            <span>Jobs</span>
+          </Link>
+          <Link
+            to="/profile"
+            activeProps={{ className: "mobile-nav-active" }}
+            className="mobile-nav-link"
+          >
+            <UserRound className="h-4.75 w-4.75" />
+            <span>Profile</span>
+          </Link>
+        </nav>
+      </div>
+    </GameTimeProvider>
   );
 }

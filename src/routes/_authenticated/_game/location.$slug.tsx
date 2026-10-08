@@ -1,15 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useReducer } from "react";
 import { toast } from "sonner";
-import {
-  ArrowLeft,
-  Briefcase,
-  GraduationCap,
-  MapPin,
-  Navigation,
-  Store,
-  Utensils,
-} from "lucide-react";
+import { ArrowLeft, Briefcase, GraduationCap, MapPin, Store, Utensils } from "lucide-react";
 import { formatNaira, q, rpc, useGameAction } from "@/lib/game";
 import { CityBillboards } from "@/components/game/CityBillboards";
 import { pageMeta } from "@/lib/seo";
@@ -17,6 +10,9 @@ import { Button } from "@/components/ui/button";
 import { Chip, ComingSoon, EmptyState, LoadingState } from "@/components/game/ui";
 import { TONE_BG } from "@/components/game/CityBoard";
 import { cn } from "@/lib/utils";
+import { TravelPanel } from "@/components/game/TravelPanel";
+import { initialTravelState, travelReducer } from "@/lib/travel-state";
+import { getDrivingRoute, hasValidCoordinates } from "@/lib/route-service";
 
 export const Route = createFileRoute("/_authenticated/_game/location/$slug")({
   head: () => pageMeta("District", "Visit a district of Osogbo."),
@@ -25,6 +21,8 @@ export const Route = createFileRoute("/_authenticated/_game/location/$slug")({
 
 function LocationPage() {
   const { slug } = Route.useParams();
+  const [travelState, dispatchTravel] = useReducer(travelReducer, initialTravelState);
+  const queryClient = useQueryClient();
   const { data: locations, isLoading } = useQuery(q.locations());
   const { data: visits } = useQuery(q.visits());
   const { data: character } = useQuery(q.character());
@@ -35,11 +33,49 @@ function LocationPage() {
   const { data: courses } = useQuery(q.educationCourses());
   const { data: myCourses } = useQuery(q.myCourses());
   const loc = locations?.find((l) => l.slug === slug);
+  const origin = locations?.find((location) => location.id === character?.current_location_id);
+  const routeOrigin = hasValidCoordinates(origin)
+    ? { latitude: origin.latitude, longitude: origin.longitude }
+    : null;
+  const routeDestination = hasValidCoordinates(loc)
+    ? { latitude: loc.latitude, longitude: loc.longitude }
+    : null;
+  const routeQueryKey = [
+    "travelRoute",
+    origin?.id,
+    loc?.id,
+    routeOrigin?.latitude,
+    routeOrigin?.longitude,
+    routeDestination?.latitude,
+    routeDestination?.longitude,
+  ] as const;
+  const routeQuery = useQuery({
+    queryKey: routeQueryKey,
+    queryFn: ({ signal }) => {
+      if (!routeOrigin || !routeDestination) throw new Error("Mapped coordinates are required.");
+      return getDrivingRoute(routeOrigin, routeDestination, signal);
+    },
+    enabled:
+      travelState.status === "selecting_destination" &&
+      routeOrigin !== null &&
+      routeDestination !== null,
+    retry: false,
+    staleTime: 5 * 60_000,
+  });
+  const routeMessage =
+    routeQuery.data !== undefined
+      ? null
+      : !routeOrigin || !routeDestination
+        ? "A street route needs mapped coordinates for your current district and destination. The saved travel-time estimate is shown."
+        : routeQuery.isFetching
+          ? "Calculating a street route…"
+          : routeQuery.isError
+            ? "A street route could not be calculated. The saved travel-time estimate is shown."
+            : null;
   const visit = visits?.find((v) => v.location_id === loc?.id);
   const isHere = character?.current_location_id === loc?.id;
   const localPlaces = places?.filter((place) => place.location_id === loc?.id) ?? [];
   const localJobs = jobs?.filter((job) => job.location_id === loc?.id && job.is_available) ?? [];
-  const canPayFare = (wallet?.balance ?? 0) >= (loc?.travel_fare ?? 0);
   const currentJob = myJobs?.find((job) => job.is_current);
   const visitAction = useGameAction(rpc.visitLocation, {
     onSuccess: (r) =>
@@ -48,12 +84,29 @@ function LocationPage() {
       ),
   });
   const travel = useGameAction(rpc.travelToLocation, {
-    onSuccess: (r) =>
+    onSuccess: (r) => {
+      dispatchTravel({ type: "arrive", estimatedMinutes: r.travel_minutes });
+      const gameTime = r.game_time;
+      if (gameTime) {
+        queryClient.setQueryData(q.character().queryKey, (current) =>
+          current
+            ? {
+                ...current,
+                game_time_minute: gameTime.minute,
+                game_time_hour: gameTime.hour,
+                game_day: gameTime.day,
+                game_weekday: gameTime.weekday,
+              }
+            : current,
+        );
+      }
       toast.success(
         r.first_visit
           ? `Arrived in ${r.location} · −${formatNaira(r.fare)} · +10 XP`
           : `Arrived in ${r.location} · −${formatNaira(r.fare)}`,
-      ),
+      );
+    },
+    onError: (error) => dispatchTravel({ type: "fail", message: error.message }),
   });
   const selectJob = useGameAction(rpc.selectJob, {
     onSuccess: () => toast.success("You got the job!"),
@@ -64,6 +117,38 @@ function LocationPage() {
         `${result.venue} · −${formatNaira(result.cost)} · Hunger −${result.hunger_restored} · Happiness +${result.happiness_gained}`,
       ),
   });
+
+  useEffect(() => {
+    dispatchTravel({ type: "reset" });
+  }, [slug]);
+
+  function selectDestination() {
+    if (!loc) return;
+    dispatchTravel({
+      type: "select_destination",
+      originId: character?.current_location_id ?? null,
+      destinationId: loc.id,
+      destinationName: loc.name,
+      fare: loc.travel_fare,
+      estimatedMinutes: loc.travel_minutes,
+    });
+  }
+
+  function startTravel() {
+    if (
+      !loc ||
+      travelState.status !== "selecting_destination" ||
+      travelState.destinationId !== loc.id
+    )
+      return;
+    dispatchTravel({ type: "start" });
+    travel.mutate(loc.id);
+  }
+
+  function cancelDestination() {
+    void queryClient.cancelQueries({ queryKey: routeQueryKey, exact: true });
+    dispatchTravel({ type: "cancel" });
+  }
 
   if (isLoading || !character) return <LoadingState />;
   if (!loc) return <EmptyState title="District not found" body="That place isn't on the map." />;
@@ -104,15 +189,11 @@ function LocationPage() {
           {!isHere ? (
             <Button
               variant="default"
-              onClick={() => travel.mutate(loc.id)}
-              disabled={travel.isPending || !canPayFare}
+              className={travelState.status === "idle" ? undefined : "hidden"}
+              onClick={selectDestination}
+              disabled={travel.isPending}
             >
-              <Navigation />{" "}
-              {travel.isPending
-                ? "Travelling…"
-                : !canPayFare
-                  ? `Need ${formatNaira(loc.travel_fare)}`
-                  : `Travel here · ${formatNaira(loc.travel_fare)}`}
+              Choose destination
             </Button>
           ) : (
             <Button
@@ -133,9 +214,23 @@ function LocationPage() {
             </Link>
           )}
         </div>
+        {travelState.status !== "idle" && (
+          <TravelPanel
+            state={travelState}
+            currentBalance={wallet?.balance ?? 0}
+            isPending={travel.isPending}
+            isRouteLoading={routeQuery.isFetching}
+            route={routeQuery.data ?? null}
+            routeMessage={routeMessage}
+            onSelect={selectDestination}
+            onStart={startTravel}
+            onCancel={cancelDestination}
+            onReset={() => dispatchTravel({ type: "reset" })}
+          />
+        )}
         <p className="mt-3 text-xs text-muted-foreground">
-          Transport fares are virtual in-game Naira. Travel is immediate in this first city-map
-          build.
+          Fares and estimated travel minutes come from this district's game data. Successful
+          server-confirmed travel advances the game clock by the returned journey time.
         </p>
       </div>
 

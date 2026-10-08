@@ -9,10 +9,14 @@ import {
   type ExpressionSpecification,
 } from "maplibre-gl";
 import { useQuery } from "@tanstack/react-query";
-import { q, type MapLocation } from "@/lib/game";
+import { q } from "@/lib/game";
+import type { CityLocationData } from "@/lib/location-service";
 import { LocationPopup } from "@/components/game/LocationPopup";
-import { LOCATION_TYPE_COLOURS, locationTypeColour } from "@/lib/location-service";
-import { PlayerMarker } from "@/components/game/PlayerMarker";
+import {
+  LOCATION_CATEGORIES,
+  getLocationCategory,
+  locationCategoryColour,
+} from "@/lib/location-service";
 
 const SOURCE_ID = "game-locations";
 const LAYER_ID = "game-location-markers";
@@ -20,10 +24,10 @@ const LAYER_ID = "game-location-markers";
 type LocationFeatureProperties = {
   id: string;
   name: string;
-  type: string;
+  category: string;
 };
 
-export function hasValidCoordinates(location: MapLocation): location is MapLocation & {
+export function hasValidCoordinates(location: CityLocationData): location is CityLocationData & {
   latitude: number;
   longitude: number;
 } {
@@ -41,23 +45,23 @@ export function hasValidCoordinates(location: MapLocation): location is MapLocat
 
 export function LocationMarker({ map }: { map: MapLibreMap }) {
   const { data: activeLocations, isLoading, isError, error, refetch } = useQuery(q.mapLocations());
-  const { data: character } = useQuery(q.character());
   const locations = useMemo(
     () => (activeLocations ?? []).filter(hasValidCoordinates),
     [activeLocations],
   );
   const [visibleTypes, setVisibleTypes] = useState<Set<string> | null>(null);
   const locationTypes = useMemo(
-    () => [...new Set(locations.map((location) => location.type))].sort(),
+    () => [...new Set(locations.map(getLocationCategory))].sort(),
     [locations],
   );
   const visibleLocations = useMemo(
-    () => locations.filter((location) => !visibleTypes || visibleTypes.has(location.type)),
+    () =>
+      locations.filter(
+        (location) => !visibleTypes || visibleTypes.has(getLocationCategory(location)),
+      ),
     [locations, visibleTypes],
   );
   const skippedCount = (activeLocations?.length ?? 0) - locations.length;
-  const playerLocation =
-    activeLocations?.find((location) => location.id === character?.current_location_id) ?? null;
   const featureCollection = useMemo<FeatureCollection<Point, LocationFeatureProperties>>(
     () => ({
       type: "FeatureCollection",
@@ -71,7 +75,7 @@ export function LocationMarker({ map }: { map: MapLibreMap }) {
         properties: {
           id: location.id,
           name: location.name,
-          type: location.type,
+          category: getLocationCategory(location),
         },
       })),
     }),
@@ -95,10 +99,13 @@ export function LocationMarker({ map }: { map: MapLibreMap }) {
     if (!map.getLayer(LAYER_ID)) {
       const colorExpression = [
         "match",
-        ["get", "type"],
-        ...Object.entries(LOCATION_TYPE_COLOURS).flat(),
-        locationTypeColour("custom"),
-      ] as ExpressionSpecification;
+        ["get", "category"],
+        ...Object.entries(LOCATION_CATEGORIES).flatMap(([category, definition]) => [
+          category,
+          definition.colour,
+        ]),
+        locationCategoryColour("other"),
+      ] as unknown as ExpressionSpecification;
 
       map.addLayer({
         id: LAYER_ID,
@@ -207,34 +214,33 @@ export function LocationMarker({ map }: { map: MapLibreMap }) {
 
   return (
     <>
-      <PlayerMarker map={map} location={playerLocation} />
       <div className="location-map-legend" aria-label="Mapped locations by type">
         <span className="location-map-count">
           {visibleLocations.length} of {locations.length} mapped
         </span>
         {skippedCount > 0 && <span>{skippedCount} skipped: missing/invalid coordinates</span>}
-        {locationTypes.map((type) => {
-          const checked = !visibleTypes || visibleTypes.has(type);
+        {locationTypes.map((category) => {
+          const checked = !visibleTypes || visibleTypes.has(category);
           return (
             <button
-              key={type}
+              key={category}
               type="button"
               className="location-map-filter"
               aria-pressed={checked}
               onClick={() =>
                 setVisibleTypes((previous) => {
                   const next = new Set(previous ?? locationTypes);
-                  if (next.has(type)) next.delete(type);
-                  else next.add(type);
+                  if (next.has(category)) next.delete(category);
+                  else next.add(category);
                   return next.size === locationTypes.length ? null : next;
                 })
               }
             >
               <span
                 className="location-map-legend-dot"
-                style={{ background: locationTypeColour(type) }}
+                style={{ background: locationCategoryColour(category) }}
               />
-              {type}
+              {LOCATION_CATEGORIES[category].label}
             </button>
           );
         })}

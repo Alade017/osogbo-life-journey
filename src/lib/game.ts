@@ -5,26 +5,27 @@
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import type { Database, Json } from "@/integrations/supabase/types";
+import type { Database } from "@/integrations/supabase/types";
+import { normalizeCityLocation } from "@/lib/location-service";
 
 export type Character = Database["public"]["Tables"]["characters"]["Row"];
 export type Job = Database["public"]["Tables"]["jobs"]["Row"];
 export type Location = Database["public"]["Tables"]["locations"]["Row"];
-// Migration 0004 adds these fields to locations. Keep this map-facing model
-// aligned with that schema while the checked-in generated Supabase types catch up.
-export type MapLocation = {
-  id: string;
-  name: string;
-  slug: string;
-  type: string;
-  description: string;
-  latitude: number | null;
-  longitude: number | null;
-  icon: string;
-  image_url: string | null;
-  level_required: number;
-  metadata: Json;
-};
+export type MapLocation = Pick<
+  Location,
+  | "id"
+  | "name"
+  | "slug"
+  | "type"
+  | "description"
+  | "latitude"
+  | "longitude"
+  | "icon"
+  | "image_url"
+  | "is_active"
+  | "level_required"
+  | "metadata"
+>;
 export type GamePlace = Database["public"]["Tables"]["game_places"]["Row"];
 export type GameBillboard = Database["public"]["Tables"]["game_billboards"]["Row"];
 export type Advertisement = Database["public"]["Tables"]["advertisements"]["Row"];
@@ -138,16 +139,18 @@ export const q = {
     queryOptions({
       queryKey: ["mapLocations"],
       staleTime: 60_000,
-      queryFn: async () =>
-        unwrap(
+      queryFn: async () => {
+        const locations = unwrap(
           await supabase
             .from("locations")
             .select(
-              "id,name,slug,type,description,latitude,longitude,icon,image_url,level_required,metadata",
+              "id,name,slug,type,description,latitude,longitude,icon,image_url,is_active,level_required,metadata",
             )
             .eq("is_active", true)
             .order("name"),
-        ) as unknown as MapLocation[],
+        );
+        return (locations ?? []).map(normalizeCityLocation);
+      },
     }),
   visits: () =>
     queryOptions({
@@ -188,13 +191,16 @@ export const q = {
 /** Wraps a server-validated game action; refreshes all player data after it runs. */
 export function useGameAction<TArgs, TResult>(
   fn: (args: TArgs) => Promise<TResult>,
-  opts?: { onSuccess?: (r: TResult) => void },
+  opts?: { onSuccess?: (r: TResult) => void; onError?: (error: Error) => void },
 ) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: fn,
     onSuccess: (r) => opts?.onSuccess?.(r),
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => {
+      opts?.onError?.(e);
+      toast.error(e.message);
+    },
     onSettled: () => qc.invalidateQueries(),
   });
 }
@@ -227,6 +233,7 @@ export const rpc = {
       fare: number;
       travel_minutes: number;
       first_visit: boolean;
+      game_time?: { minute: number; hour: number; day: number; weekday: number };
     },
   eatAtPlace: async (placeId: string) =>
     unwrap(await supabase.rpc("eat_at_place", { p_place_id: placeId })) as unknown as {

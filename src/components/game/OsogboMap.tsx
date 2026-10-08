@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   AttributionControl,
@@ -11,7 +11,9 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import mapWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
 import { LocationMarker } from "@/components/game/LocationMarker";
 import { MapControls } from "@/components/game/MapControls";
+import { PlayerMarker } from "@/components/game/PlayerMarker";
 import { q } from "@/lib/game";
+import { resolvePlayerLocation } from "@/lib/player-location";
 
 const OSOGBO_CENTER: [number, number] = [4.556, 7.7677];
 const OSM_ATTRIBUTION =
@@ -33,8 +35,10 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
   const [mapError, setMapError] = useState<string | null>(null);
   const { data: locations } = useQuery(q.mapLocations());
   const { data: character } = useQuery(q.character());
-  const playerLocation =
-    locations?.find((location) => location.id === character?.current_location_id) ?? null;
+  const playerLocation = useMemo(
+    () => resolvePlayerLocation(character, locations),
+    [character, locations],
+  );
 
   useEffect(() => {
     onMapReadyRef.current = onMapReady;
@@ -144,6 +148,7 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
         data-map-center={`${OSOGBO_CENTER[1]},${OSOGBO_CENTER[0]}`}
       />
       {mapInstance && <LocationMarker map={mapInstance} />}
+      {mapInstance && <PlayerMarker map={mapInstance} playerLocation={playerLocation} />}
       {mapInstance && <MapControls map={mapInstance} playerLocation={playerLocation} />}
       {!loaded && !mapError && (
         <div className="osogbo-map-loading" aria-live="polite">
@@ -158,12 +163,14 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
           </button>
         </div>
       )}
-      <div className="osogbo-map-place-label" aria-hidden="true">
+      <div className="osogbo-map-place-label" aria-live="polite">
         <span className="osogbo-map-live-dot" />
         <span>
-          {playerLocation
-            ? `YOU ARE IN ${playerLocation.name.toUpperCase()}`
-            : "OSOGBO, OSUN STATE"}
+          {playerLocation?.location
+            ? `YOU ARE IN ${playerLocation.location.name.toUpperCase()}`
+            : playerLocation?.currentLocationId
+              ? "YOUR DISTRICT NEEDS MAP COORDINATES"
+              : "OSOGBO, OSUN STATE"}
         </span>
       </div>
     </div>

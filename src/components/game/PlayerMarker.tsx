@@ -1,33 +1,29 @@
 import { useEffect } from "react";
 import { Marker, type Map as MapLibreMap } from "maplibre-gl";
-import type { MapLocation } from "@/lib/game";
-
-function hasCoordinates(
-  location: MapLocation | null | undefined,
-): location is MapLocation & { latitude: number; longitude: number } {
-  return (
-    typeof location?.latitude === "number" &&
-    Number.isFinite(location.latitude) &&
-    typeof location.longitude === "number" &&
-    Number.isFinite(location.longitude)
-  );
-}
+import type { PlayerLocation } from "@/lib/player-location";
 
 export function PlayerMarker({
   map,
-  location,
+  playerLocation,
 }: {
   map: MapLibreMap;
-  location: MapLocation | null;
+  playerLocation: PlayerLocation | null;
 }) {
   useEffect(() => {
-    if (!hasCoordinates(location)) return;
+    if (!playerLocation || playerLocation.latitude === null || playerLocation.longitude === null)
+      return;
 
     const element = document.createElement("div");
     element.className = "player-map-marker";
     element.setAttribute("role", "img");
-    element.setAttribute("aria-label", `Your current location: ${location.name}`);
-    element.title = `You are in ${location.name}`;
+    element.dataset["playerId"] = playerLocation.playerId;
+    element.setAttribute(
+      "aria-label",
+      `Your current location${playerLocation.location ? `: ${playerLocation.location.name}` : ""}`,
+    );
+    element.title = playerLocation.location
+      ? `You are in ${playerLocation.location.name}`
+      : "Your current location";
 
     const pulse = document.createElement("span");
     pulse.className = "player-map-marker-pulse";
@@ -36,11 +32,13 @@ export function PlayerMarker({
     element.append(pulse, dot);
 
     const marker = new Marker({ element, anchor: "center" })
-      .setLngLat([location.longitude, location.latitude])
+      .setLngLat([playerLocation.longitude, playerLocation.latitude])
       .addTo(map);
 
-    return () => marker.remove();
-  }, [location, map]);
+    return () => {
+      marker.remove();
+    };
+  }, [playerLocation, map]);
 
   return null;
 }
