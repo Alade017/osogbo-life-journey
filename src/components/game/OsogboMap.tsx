@@ -52,38 +52,38 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
     let map: MapLibreMap;
     try {
       map = new MapLibreMap({
-      container,
-      center: OSOGBO_CENTER,
-      zoom: 13,
-      minZoom: 10,
-      maxZoom: 19,
-      maxBounds: [
-        [4.25, 7.48],
-        [4.88, 8.02],
-      ],
-      attributionControl: false,
-      style: {
-        version: 8,
-        sources: {
-          osm: {
-            type: "raster",
-            tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-            tileSize: 256,
-            attribution: OSM_ATTRIBUTION,
-            maxzoom: 19,
-          },
-        },
-        layers: [
-          {
-            id: "osm-raster",
-            type: "raster",
-            source: "osm",
-            minzoom: 0,
-            maxzoom: 22,
-          },
+        container,
+        center: OSOGBO_CENTER,
+        zoom: 13,
+        minZoom: 10,
+        maxZoom: 19,
+        maxBounds: [
+          [4.25, 7.48],
+          [4.88, 8.02],
         ],
-      },
-      cooperativeGestures: true,
+        attributionControl: false,
+        style: {
+          version: 8,
+          sources: {
+            osm: {
+              type: "raster",
+              tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+              tileSize: 256,
+              attribution: OSM_ATTRIBUTION,
+              maxzoom: 19,
+            },
+          },
+          layers: [
+            {
+              id: "osm-raster",
+              type: "raster",
+              source: "osm",
+              minzoom: 0,
+              maxzoom: 22,
+            },
+          ],
+        },
+        cooperativeGestures: true,
       });
     } catch {
       setMapError("The Osogbo map could not start.");
@@ -109,12 +109,13 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
     };
     map.on("error", handleMapError);
     loadTimer = window.setTimeout(() => {
-      if (!didLoad) setMapError("The map is taking too long to load. Check your connection and retry.");
+      if (!didLoad)
+        setMapError("The map is taking too long to load. Check your connection and retry.");
     }, 20_000);
     const updateCameraMetadata = () => {
       const center = map.getCenter();
-      container.dataset.mapCenter = `${center.lat.toFixed(4)},${center.lng.toFixed(4)}`;
-      container.dataset.mapZoom = map.getZoom().toFixed(2);
+      container.dataset["mapCenter"] = `${center.lat.toFixed(4)},${center.lng.toFixed(4)}`;
+      container.dataset["mapZoom"] = map.getZoom().toFixed(2);
     };
     map.on("moveend", updateCameraMetadata);
     map.on("zoomend", updateCameraMetadata);
@@ -160,7 +161,9 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
       <div className="osogbo-map-place-label" aria-hidden="true">
         <span className="osogbo-map-live-dot" />
         <span>
-          {playerLocation ? `YOU ARE IN ${playerLocation.name.toUpperCase()}` : "OSOGBO, OSUN STATE"}
+          {playerLocation
+            ? `YOU ARE IN ${playerLocation.name.toUpperCase()}`
+            : "OSOGBO, OSUN STATE"}
         </span>
       </div>
     </div>

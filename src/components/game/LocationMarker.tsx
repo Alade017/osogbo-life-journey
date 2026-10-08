@@ -191,7 +191,9 @@ export function LocationMarker({ map }: { map: MapLibreMap }) {
   if (locations.length === 0) {
     return (
       <div className="location-map-status" role="status">
-        <strong>{activeLocations?.length ? "City pins need coordinates" : "No active city pins yet"}</strong>
+        <strong>
+          {activeLocations?.length ? "City pins need coordinates" : "No active city pins yet"}
+        </strong>
         <span>
           {activeLocations?.length
             ? "These locations are saved, but verified map coordinates have not been added yet."
