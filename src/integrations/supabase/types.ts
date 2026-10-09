@@ -8,6 +8,135 @@ export type Database = {
   };
   public: {
     Tables: {
+      npc_definitions: {
+        Row: {
+          id: string;
+          name: string;
+          role: string;
+          personality: string;
+          home_location_id: string | null;
+          work_location_id: string | null;
+          interests: string[];
+          topics: string[];
+          routine: Json;
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          name: string;
+          role: string;
+          personality: string;
+          home_location_id?: string | null;
+          work_location_id?: string | null;
+          interests?: string[];
+          topics?: string[];
+          routine?: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          role?: string;
+          personality?: string;
+          home_location_id?: string | null;
+          work_location_id?: string | null;
+          interests?: string[];
+          topics?: string[];
+          routine?: Json;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      character_npc_relationships: {
+        Row: {
+          id: string;
+          user_id: string;
+          character_id: string;
+          npc_id: string;
+          friendship: number;
+          romance: number;
+          trust: number;
+          conflict: number;
+          meetings: number;
+          last_interaction_day: number | null;
+          last_interaction_text: string | null;
+          daily_points: number;
+          daily_points_day: number | null;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          character_id: string;
+          npc_id: string;
+          friendship?: number;
+          romance?: number;
+          trust?: number;
+          conflict?: number;
+          meetings?: number;
+          last_interaction_day?: number | null;
+          last_interaction_text?: string | null;
+          daily_points?: number;
+          daily_points_day?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          character_id?: string;
+          npc_id?: string;
+          friendship?: number;
+          romance?: number;
+          trust?: number;
+          conflict?: number;
+          meetings?: number;
+          last_interaction_day?: number | null;
+          last_interaction_text?: string | null;
+          daily_points?: number;
+          daily_points_day?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      npc_interaction_events: {
+        Row: {
+          id: string;
+          user_id: string;
+          character_id: string;
+          npc_id: string;
+          request_id: string;
+          action: string;
+          accepted: boolean;
+          message: string;
+          game_day: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          character_id: string;
+          npc_id: string;
+          request_id: string;
+          action: string;
+          accepted?: boolean;
+          message: string;
+          game_day: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          character_id?: string;
+          npc_id?: string;
+          request_id?: string;
+          action?: string;
+          accepted?: boolean;
+          message?: string;
+          game_day?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       character_jobs: {
         Row: {
           character_id: string;
@@ -1347,6 +1476,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      interact_with_npc: {
+        Args: { p_npc_id: string; p_action: string; p_request_id: string };
+        Returns: Json;
+      };
       save_player_map_position: {
         Args: { p_latitude: number; p_longitude: number; p_movement_state: string };
         Returns: Json;

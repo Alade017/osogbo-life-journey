@@ -72,6 +72,23 @@ export const q = {
       retry: false,
       queryFn: async () => unwrap(await supabase.from("characters").select("*").maybeSingle()),
     }),
+  npcs: () =>
+    queryOptions({
+      queryKey: ["npcs"],
+      staleTime: 5 * 60_000,
+      queryFn: async () => unwrap(await supabase.from("npc_definitions").select("*").order("name")),
+    }),
+  npcRelationships: () =>
+    queryOptions({
+      queryKey: ["npcRelationships"],
+      queryFn: async () => unwrap(await supabase.from("character_npc_relationships").select("*")),
+    }),
+  npcEvents: () =>
+    queryOptions({
+      queryKey: ["npcEvents"],
+      queryFn: async () =>
+        unwrap(await supabase.from("npc_interaction_events").select("*").order("created_at", { ascending: false }).limit(40)),
+    }),
   profile: () =>
     queryOptions({
       queryKey: ["profile"],
@@ -334,6 +351,12 @@ export function useGameAction<TArgs, TResult>(
 }
 
 export const rpc = {
+  interactWithNpc: async (args: { npcId: string; action: string; requestId: string }) =>
+    unwrap(await supabase.rpc("interact_with_npc", {
+      p_npc_id: args.npcId,
+      p_action: args.action,
+      p_request_id: args.requestId,
+    })) as unknown as { event_id: string; accepted: boolean; message: string; friendship?: number; romance?: number; trust?: number; conflict?: number; meetings?: number; duplicate: boolean },
   refreshEnergy: async () => unwrap(await supabase.rpc("refresh_my_energy")),
   selectJob: async (jobId: string) => unwrap(await supabase.rpc("select_job", { p_job_id: jobId })),
   completeEducationCourse: async (courseSlug: string) =>

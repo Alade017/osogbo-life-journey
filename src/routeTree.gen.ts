@@ -26,6 +26,7 @@ import { Route as AuthenticatedGameMissionsRouteImport } from './routes/_authent
 import { Route as AuthenticatedGameNotificationsRouteImport } from './routes/_authenticated/_game/notifications'
 import { Route as AuthenticatedGameProfileRouteImport } from './routes/_authenticated/_game/profile'
 import { Route as AuthenticatedGameSettingsRouteImport } from './routes/_authenticated/_game/settings'
+import { Route as AuthenticatedGameSocialRouteImport } from './routes/_authenticated/_game/social'
 import { Route as AuthenticatedGameWalletRouteImport } from './routes/_authenticated/_game/wallet'
 import { Route as AuthenticatedGameLocationSlugRouteImport } from './routes/_authenticated/_game/location.$slug'
 
@@ -119,6 +120,11 @@ const AuthenticatedGameSettingsRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedGameRoute,
   } as any)
+const AuthenticatedGameSocialRoute = AuthenticatedGameSocialRouteImport.update({
+  id: '/social',
+  path: '/social',
+  getParentRoute: () => AuthenticatedGameRoute,
+} as any)
 const AuthenticatedGameWalletRoute = AuthenticatedGameWalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
@@ -147,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof AuthenticatedGameNotificationsRoute
   '/profile': typeof AuthenticatedGameProfileRoute
   '/settings': typeof AuthenticatedGameSettingsRoute
+  '/social': typeof AuthenticatedGameSocialRoute
   '/wallet': typeof AuthenticatedGameWalletRoute
   '/location/$slug': typeof AuthenticatedGameLocationSlugRoute
 }
@@ -166,6 +173,7 @@ export interface FileRoutesByTo {
   '/notifications': typeof AuthenticatedGameNotificationsRoute
   '/profile': typeof AuthenticatedGameProfileRoute
   '/settings': typeof AuthenticatedGameSettingsRoute
+  '/social': typeof AuthenticatedGameSocialRoute
   '/wallet': typeof AuthenticatedGameWalletRoute
   '/location/$slug': typeof AuthenticatedGameLocationSlugRoute
 }
@@ -188,6 +196,7 @@ export interface FileRoutesById {
   '/_authenticated/_game/notifications': typeof AuthenticatedGameNotificationsRoute
   '/_authenticated/_game/profile': typeof AuthenticatedGameProfileRoute
   '/_authenticated/_game/settings': typeof AuthenticatedGameSettingsRoute
+  '/_authenticated/_game/social': typeof AuthenticatedGameSocialRoute
   '/_authenticated/_game/wallet': typeof AuthenticatedGameWalletRoute
   '/_authenticated/_game/location/$slug': typeof AuthenticatedGameLocationSlugRoute
 }
@@ -209,6 +218,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/profile'
     | '/settings'
+    | '/social'
     | '/wallet'
     | '/location/$slug'
   fileRoutesByTo: FileRoutesByTo
@@ -228,6 +238,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/profile'
     | '/settings'
+    | '/social'
     | '/wallet'
     | '/location/$slug'
   id:
@@ -249,6 +260,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_game/notifications'
     | '/_authenticated/_game/profile'
     | '/_authenticated/_game/settings'
+    | '/_authenticated/_game/social'
     | '/_authenticated/_game/wallet'
     | '/_authenticated/_game/location/$slug'
   fileRoutesById: FileRoutesById
@@ -381,6 +393,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGameSettingsRouteImport
       parentRoute: typeof AuthenticatedGameRoute
     }
+    '/_authenticated/_game/social': {
+      id: '/_authenticated/_game/social'
+      path: '/social'
+      fullPath: '/social'
+      preLoaderRoute: typeof AuthenticatedGameSocialRouteImport
+      parentRoute: typeof AuthenticatedGameRoute
+    }
     '/_authenticated/_game/wallet': {
       id: '/_authenticated/_game/wallet'
       path: '/wallet'
@@ -410,6 +429,7 @@ interface AuthenticatedGameRouteChildren {
   AuthenticatedGameNotificationsRoute: typeof AuthenticatedGameNotificationsRoute
   AuthenticatedGameProfileRoute: typeof AuthenticatedGameProfileRoute
   AuthenticatedGameSettingsRoute: typeof AuthenticatedGameSettingsRoute
+  AuthenticatedGameSocialRoute: typeof AuthenticatedGameSocialRoute
   AuthenticatedGameWalletRoute: typeof AuthenticatedGameWalletRoute
   AuthenticatedGameLocationSlugRoute: typeof AuthenticatedGameLocationSlugRoute
 }
@@ -426,6 +446,7 @@ const AuthenticatedGameRouteChildren: AuthenticatedGameRouteChildren = {
   AuthenticatedGameNotificationsRoute: AuthenticatedGameNotificationsRoute,
   AuthenticatedGameProfileRoute: AuthenticatedGameProfileRoute,
   AuthenticatedGameSettingsRoute: AuthenticatedGameSettingsRoute,
+  AuthenticatedGameSocialRoute: AuthenticatedGameSocialRoute,
   AuthenticatedGameWalletRoute: AuthenticatedGameWalletRoute,
   AuthenticatedGameLocationSlugRoute: AuthenticatedGameLocationSlugRoute,
 }

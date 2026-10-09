@@ -134,6 +134,13 @@
       "when": 1791245090854,
       "tag": "0017_milestone8_career_recurring_economy",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1791245090855,
+      "tag": "0018_milestone9_npc_social",
+      "breakpoints": true
     }
   ]
 }
