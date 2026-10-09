@@ -1,21 +1,17 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-<<<<<<< HEAD
-import { HomeInterior } from "@/components/game/HomeInterior";
-import { q } from "@/lib/game";
-=======
 import { ArrowRight, Briefcase, Compass, Target } from "lucide-react";
-import { OsogboMap } from "@/components/game/OsogboMap";
 import { CityBillboards } from "@/components/game/CityBillboards";
 import { GameQuickActions } from "@/components/game/GameQuickActions";
-import { NeedsPanel } from "@/components/game/NeedsPanel";
-import { VirtualHouse } from "@/components/game/VirtualHouse";
-import { q, formatNaira } from "@/lib/game";
->>>>>>> 4f92bff4fad1802c6e0405ebd4f4e87483ca9946
-import { pageMeta } from "@/lib/seo";
-import { dashboardGreeting } from "@/lib/dashboard-greeting";
-import { useLiveClock } from "@/hooks/use-live-clock";
+import { HomeInterior } from "@/components/game/HomeInterior";
 import { LifeSimulationPanel } from "@/components/game/LifeSimulationPanel";
+import { NeedsPanel } from "@/components/game/NeedsPanel";
+import { OsogboMap } from "@/components/game/OsogboMap";
+import { VirtualHouse } from "@/components/game/VirtualHouse";
+import { dashboardGreeting } from "@/lib/dashboard-greeting";
+import { q, formatNaira } from "@/lib/game";
+import { pageMeta } from "@/lib/seo";
+import { useLiveClock } from "@/hooks/use-live-clock";
 
 export const Route = createFileRoute("/_authenticated/_game/home")({
   head: () => pageMeta("Osogbo · Home", "Step into your day in Osogbo."),
@@ -25,8 +21,25 @@ export const Route = createFileRoute("/_authenticated/_game/home")({
 function CityHome() {
   const now = useLiveClock();
   const { data: character } = useQuery(q.character());
+  const { data: jobs } = useQuery(q.jobs());
+  const { data: myJobs } = useQuery(q.myJobs());
+  const { data: locations } = useQuery(q.locations());
 
   if (!character) return null;
+
+  const currentJobAssignment = myJobs?.find((job) => job.is_current);
+  const currentJob = jobs?.find((job) => job.id === currentJobAssignment?.job_id);
+  const nearby = (locations ?? []).slice(0, 4);
+  const currentLocation = locations?.find(
+    (location) => location.id === character.current_location_id,
+  );
+  const billboardLocationId = currentLocation?.id;
+  const lowEnergy = character.energy < 20;
+  const missionText = currentJob
+    ? `Head to ${currentLocation?.name ?? "your district"} and complete a shift`
+    : "Explore the city and find a job that suits you";
+  const nextPath = currentJob ? "/jobs" : "/map";
+  const nextLabel = currentJob ? "View job" : "Explore";
 
   return (
     <div className="game-home home-only-page">
@@ -37,8 +50,6 @@ function CityHome() {
           </p>
           <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">Your home</h1>
         </div>
-<<<<<<< HEAD
-=======
         {currentJob && (
           <Link to="/jobs" className="arrival-job">
             <Briefcase className="h-4 w-4" />
@@ -122,7 +133,6 @@ function CityHome() {
             </Link>
           </section>
         </aside>
->>>>>>> 4f92bff4fad1802c6e0405ebd4f4e87483ca9946
       </div>
       <LifeSimulationPanel />
       <HomeInterior />
