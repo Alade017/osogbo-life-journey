@@ -108,7 +108,7 @@ function CityHome() {
         </div>
 
         <aside className="game-side-rail" aria-label="Player status and actions">
-          <NeedsPanel character={character} />
+          <NeedsPanel />
           <GameQuickActions />
           <section className="day-objective" aria-label="Current objective">
             <span className="objective-icon">

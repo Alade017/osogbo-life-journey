@@ -675,15 +675,44 @@ export function isValidSimulationSnapshot(
   )
     return false;
   if (
+    !snapshot.character.name ||
+    !Number.isInteger(snapshot.character.level) ||
+    snapshot.character.level < 1 ||
+    !Array.isArray(snapshot.goals) ||
+    !snapshot.goals.every((goal) => typeof goal === "string") ||
+    !["any", "home", "workplace", "school"].includes(snapshot.locationType ?? "") ||
+    !["idle", "traveling", "working"].includes(snapshot.travelState ?? "")
+  )
+    return false;
+  if (
     !Array.isArray(snapshot.queuedActions) ||
     snapshot.queuedActions.some((action) => !(action in ACTION_CATALOG))
   )
     return false;
-  if (
-    snapshot.currentAction &&
-    (!(snapshot.currentAction.actionId in ACTION_CATALOG) || !snapshot.currentAction.requestId)
-  )
-    return false;
+  if (snapshot.currentAction) {
+    const active = snapshot.currentAction;
+    if (
+      !(active.actionId in ACTION_CATALOG) ||
+      typeof active.requestId !== "string" ||
+      active.requestId.length === 0 ||
+      !Number.isFinite(active.reservedCost) ||
+      active.reservedCost < 0 ||
+      !active.startedAt ||
+      !Number.isInteger(active.startedAt.minute) ||
+      active.startedAt.minute < 0 ||
+      active.startedAt.minute > 59 ||
+      !Number.isInteger(active.startedAt.hour) ||
+      active.startedAt.hour < 0 ||
+      active.startedAt.hour > 23 ||
+      !Number.isInteger(active.startedAt.day) ||
+      active.startedAt.day < 1 ||
+      !Number.isInteger(active.startedAt.weekday) ||
+      active.startedAt.weekday < 0 ||
+      active.startedAt.weekday > 6 ||
+      typeof active.animation !== "string"
+    )
+      return false;
+  }
   return true;
 }
 
@@ -713,6 +742,8 @@ export function startNextQueuedAction(
   state: SimulationState,
   options: { furniture?: readonly string[] } = {},
 ): { state: SimulationState; error: string | null } {
+  if (state.currentAction)
+    return { state, error: "Finish or cancel the current activity before starting the queue." };
   const actionId = state.queuedActions[0];
   if (!actionId) return { state, error: null };
   const started = startAction(state, actionId, `queue-${Date.now()}-${actionId}`, options);

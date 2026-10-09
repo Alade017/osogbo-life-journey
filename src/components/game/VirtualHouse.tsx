@@ -153,6 +153,8 @@ export function VirtualHouse({ characterName }: { characterName: string }) {
     [selectedId],
   );
 
+  if (!selected) return null;
+
   const handleAction = (roomId: string, action: string) => {
     const roomEffect = ROOM_EFFECTS[roomId]?.[action];
     if (!roomEffect) return;

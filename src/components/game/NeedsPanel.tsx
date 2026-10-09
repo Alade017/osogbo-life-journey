@@ -1,41 +1,19 @@
-import { Activity, Droplets, Heart, Smile, Sparkles, Users, Utensils, Zap } from "lucide-react";
-import type { Character } from "@/lib/game";
+import { Activity, Droplets, Smile, Sparkles, Users, Utensils, Zap } from "lucide-react";
+import { useGameTime } from "@/components/game/GameTimeProvider";
+import { NEED_NAMES, NEED_RULES, statusForNeed } from "@/lib/life-simulation";
 
-const NEEDS = [
-  { key: "health", label: "Health", icon: Heart, tone: "var(--color-danger)", inverted: false },
-  { key: "energy", label: "Energy", icon: Zap, tone: "var(--color-warm-orange)", inverted: false },
-  {
-    key: "hunger",
-    label: "Hunger",
-    icon: Utensils,
-    tone: "var(--color-warm-orange)",
-    inverted: true,
-  },
-  {
-    key: "thirst",
-    label: "Thirst",
-    icon: Droplets,
-    tone: "var(--color-osogbo-blue)",
-    inverted: true,
-  },
-  {
-    key: "happiness",
-    label: "Happiness",
-    icon: Smile,
-    tone: "var(--color-emerald)",
-    inverted: false,
-  },
-  {
-    key: "social",
-    label: "Social",
-    icon: Users,
-    tone: "var(--color-osogbo-blue)",
-    inverted: false,
-  },
-  { key: "stress", label: "Stress", icon: Activity, tone: "var(--color-danger)", inverted: true },
-] as const;
+const NEED_ICONS = {
+  hunger: Utensils,
+  energy: Zap,
+  hygiene: Sparkles,
+  bladder: Droplets,
+  fun: Smile,
+  social: Users,
+};
 
-export function NeedsPanel({ character }: { character: Character }) {
+export function NeedsPanel() {
+  const { simulation } = useGameTime();
+
   return (
     <section className="needs-panel" aria-label="Character needs">
       <div className="needs-heading">
@@ -50,32 +28,44 @@ export function NeedsPanel({ character }: { character: Character }) {
         </div>
       </div>
       <div className="needs-list">
-        {NEEDS.map((need) => {
-          const Icon = need.icon;
-          const rawValue = character[need.key];
-          const value = typeof rawValue === "number" && Number.isFinite(rawValue) ? rawValue : null;
-          const fill = value === null ? 0 : need.inverted ? 100 - value : value;
+        {NEED_NAMES.map((name) => {
+          const Icon = NEED_ICONS[name];
+          const value = simulation.needs[name];
+          const status = statusForNeed(name, value);
           return (
-            <div className={`need-meter ${value === null ? "need-untracked" : ""}`} key={need.key}>
+            <div className={`need-meter need-${status}`} key={name}>
               <div className="need-meter-top">
                 <span className="flex min-w-0 items-center gap-1.5">
-                  <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: need.tone }} />
-                  <span className="truncate">{need.label}</span>
+                  <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  <span className="truncate">{NEED_RULES[name].label}</span>
                 </span>
-                <span className="need-value">{value === null ? "—" : `${value}%`}</span>
+                <span className="need-value">{Math.round(value)}%</span>
               </div>
               <div
                 className="need-track"
-                aria-label={
-                  value === null ? `${need.label} not tracked` : `${need.label} ${value} out of 100`
-                }
+                role="meter"
+                aria-label={NEED_RULES[name].label}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(value)}
+                aria-valuetext={`${Math.round(value)} percent, ${status}`}
               >
-                <span style={{ width: `${fill}%`, backgroundColor: need.tone }} />
+                <span style={{ width: `${value}%` }} />
               </div>
+              <small className="need-status-label">
+                {status === "critical"
+                  ? "Critical"
+                  : status === "warning"
+                    ? "Needs attention"
+                    : "Healthy"}
+              </small>
             </div>
           );
         })}
       </div>
+      <p className="sr-only">
+        <Activity aria-hidden="true" /> Mood: {simulation.mood.mood}. {simulation.mood.reason}
+      </p>
     </section>
   );
 }

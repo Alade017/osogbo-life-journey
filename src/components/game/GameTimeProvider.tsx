@@ -98,8 +98,22 @@ function makeInitialState(
       if (
         isValidSimulationSnapshot(saved, character.id) &&
         saved.lastUpdatedAt > Date.parse(character.updated_at)
-      )
-        state = { ...state, ...saved, character: state.character };
+      ) {
+        state = {
+          ...state,
+          ...saved,
+          character: state.character,
+          // Activities are manually completed, so an interrupted browser session must not
+          // leave the character locked or charge the reserved cost permanently.
+          wallet: saved.wallet + (saved.currentAction?.reservedCost ?? 0),
+          currentAction: null,
+          travelState: "idle",
+          queuedActions: saved.currentAction
+            ? saved.queuedActions.filter((id) => id !== saved.currentAction?.actionId)
+            : saved.queuedActions,
+          lastUpdatedAt: Date.now(),
+        };
+      }
     } catch {
       /* Invalid snapshots are ignored and rebuilt from the character row. */
     }

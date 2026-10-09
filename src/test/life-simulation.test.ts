@@ -7,6 +7,7 @@ import {
   decayNeeds,
   deriveMood,
   interruptAction,
+  isValidSimulationSnapshot,
   NEED_NAMES,
   normalizeNeeds,
   queueActions,
@@ -155,7 +156,6 @@ describe("life simulation needs and clock", () => {
     const started = startAction(player(), "study", "pause-1");
     const paused = { ...started.state, paused: true };
     expect(completeAction(paused, "pause-1").error).toMatch(/Resume/);
-    const { isValidSimulationSnapshot } = await import("@/lib/life-simulation");
     expect(isValidSimulationSnapshot(paused, "p1")).toBe(true);
     expect(
       isValidSimulationSnapshot({ ...paused, gameTime: { ...paused.gameTime, hour: 48 } }, "p1"),
@@ -172,5 +172,37 @@ describe("life simulation needs and clock", () => {
     const stopped = startNextQueuedAction({ ...completed, paused: true });
     expect(stopped.error).toMatch(/Queue stopped/);
     expect(stopped.state.queuedActions).toEqual([]);
+  });
+
+  it("does not start queued actions while another action is active", () => {
+    const active = startAction(player(), "study", "active-study").state;
+    const queued = queueActions(active, ["socialize"]);
+    const result = startNextQueuedAction(queued);
+    expect(result.error).toMatch(/current activity/);
+    expect(result.state.currentAction?.requestId).toBe("active-study");
+    expect(result.state.queuedActions).toEqual(["socialize"]);
+  });
+
+  it("rejects corrupt active action saves and accepts complete active records", () => {
+    const active = startAction(player(), "study", "saved-study").state;
+    expect(isValidSimulationSnapshot(active, "p1")).toBe(true);
+    expect(
+      isValidSimulationSnapshot(
+        {
+          ...active,
+          currentAction: { ...active.currentAction!, reservedCost: Number.NaN },
+        },
+        "p1",
+      ),
+    ).toBe(false);
+    expect(
+      isValidSimulationSnapshot(
+        {
+          ...active,
+          currentAction: { ...active.currentAction!, startedAt: { ...active.gameTime, hour: 30 } },
+        },
+        "p1",
+      ),
+    ).toBe(false);
   });
 });
