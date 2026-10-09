@@ -42,9 +42,24 @@ export function LocationCard({
       {location.description && (
         <p className="city-location-card-description">{location.description}</p>
       )}
+      {location.neighborhood && (
+        <p className="city-location-card-meta">
+          <strong>Neighborhood</strong> {location.neighborhood}
+        </p>
+      )}
       {location.openingHours && (
         <p className="city-location-card-meta">
           <strong>Hours</strong> {location.openingHours}
+        </p>
+      )}
+      {location.entryCost && location.entryCost.amount > 0 && (
+        <p className="city-location-card-meta">
+          <strong>Entry fee</strong> ₦{location.entryCost.amount.toLocaleString("en-NG")}
+        </p>
+      )}
+      {location.accessibility.length > 0 && (
+        <p className="city-location-card-meta">
+          <strong>Accessibility</strong> {location.accessibility.join(", ")}
         </p>
       )}
       {showActions && location.availableActions.length > 0 && (
@@ -62,9 +77,9 @@ export function LocationCard({
           </ul>
         </div>
       )}
-      {compact && location.level_required > 0 && (
+      {compact && (
         <p className="city-location-card-meta">
-          <strong>Entry level</strong> {location.level_required}
+          <strong>Required level</strong> {location.level_required}
         </p>
       )}
     </article>

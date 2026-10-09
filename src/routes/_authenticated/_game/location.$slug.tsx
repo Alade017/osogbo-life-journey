@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useReducer } from "react";
+import { useEffect, useReducer, useRef } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, Briefcase, GraduationCap, MapPin, Store, Utensils } from "lucide-react";
 import { formatNaira, q, rpc, useGameAction } from "@/lib/game";
@@ -15,6 +15,12 @@ import { initialTravelState, travelReducer } from "@/lib/travel-state";
 import { getDrivingRoute, hasValidCoordinates } from "@/lib/route-service";
 import { checkJobEligibility } from "@/lib/job-board-service";
 import { parseJobActivityRequirements } from "@/lib/job-activity-model";
+import {
+  estimateTrip,
+  getAvailableTravelModes,
+  travelAnimationDurationMs,
+  validateTripRequest,
+} from "@/lib/transport-service";
 
 export const Route = createFileRoute("/_authenticated/_game/location/$slug")({
   head: () => pageMeta("District", "Visit a district of Osogbo."),
@@ -24,6 +30,7 @@ export const Route = createFileRoute("/_authenticated/_game/location/$slug")({
 function LocationPage() {
   const { slug } = Route.useParams();
   const [travelState, dispatchTravel] = useReducer(travelReducer, initialTravelState);
+  const travelStartTimer = useRef<number | null>(null);
   const queryClient = useQueryClient();
   const { data: locations, isLoading } = useQuery(q.locations());
   const { data: visits } = useQuery(q.visits());
@@ -43,10 +50,21 @@ function LocationPage() {
     enabled: !!character && hasSkillRequirements,
   });
   const loc = locations?.find((l) => l.slug === slug);
+  const availableModes = loc ? getAvailableTravelModes(loc.metadata) : [];
   const origin = locations?.find((location) => location.id === character?.current_location_id);
-  const routeOrigin = hasValidCoordinates(origin)
-    ? { latitude: origin.latitude, longitude: origin.longitude }
-    : null;
+  const savedPlayerCoordinates =
+    character &&
+    hasValidCoordinates({
+      latitude: character.virtual_latitude,
+      longitude: character.virtual_longitude,
+    })
+      ? { latitude: character.virtual_latitude, longitude: character.virtual_longitude }
+      : null;
+  const routeOrigin =
+    savedPlayerCoordinates ??
+    (hasValidCoordinates(origin)
+      ? { latitude: origin.latitude, longitude: origin.longitude }
+      : null);
   const routeDestination = hasValidCoordinates(loc)
     ? { latitude: loc.latitude, longitude: loc.longitude }
     : null;
@@ -84,6 +102,7 @@ function LocationPage() {
             : null;
   const visit = visits?.find((v) => v.location_id === loc?.id);
   const isHere = character?.current_location_id === loc?.id;
+  const meetsLevelRequirement = !!character && !!loc && character.level >= loc.level_required;
   const localPlaces = places?.filter((place) => place.location_id === loc?.id) ?? [];
   const localJobs = jobs?.filter((job) => job.location_id === loc?.id && job.is_available) ?? [];
   const currentJob = myJobs?.find((job) => job.is_current);
@@ -112,8 +131,8 @@ function LocationPage() {
       }
       toast.success(
         r.first_visit
-          ? `Arrived in ${r.location} · −${formatNaira(r.fare)} · +10 XP`
-          : `Arrived in ${r.location} · −${formatNaira(r.fare)}`,
+          ? `Arrived in ${r.location} · ${r.mode} · −${formatNaira(r.fare)} · +10 XP`
+          : `Arrived in ${r.location} · ${r.mode} · −${formatNaira(r.fare)}`,
       );
     },
     onError: (error) => dispatchTravel({ type: "fail", message: error.message }),
@@ -129,30 +148,73 @@ function LocationPage() {
   });
 
   useEffect(() => {
+    if (travelStartTimer.current !== null) window.clearTimeout(travelStartTimer.current);
+    travelStartTimer.current = null;
     dispatchTravel({ type: "reset" });
   }, [slug]);
 
+  useEffect(
+    () => () => {
+      if (travelStartTimer.current !== null) window.clearTimeout(travelStartTimer.current);
+    },
+    [],
+  );
+
   function selectDestination() {
     if (!loc) return;
+    const mode = availableModes.includes("danfo") ? "danfo" : availableModes[0];
+    if (!mode) return;
+    const estimate = estimateTrip(mode, loc.travel_fare, loc.travel_minutes);
     dispatchTravel({
       type: "select_destination",
       originId: character?.current_location_id ?? null,
       destinationId: loc.id,
       destinationName: loc.name,
-      fare: loc.travel_fare,
-      estimatedMinutes: loc.travel_minutes,
+      fare: estimate.fare,
+      estimatedMinutes: estimate.minutes,
+      mode,
     });
   }
 
   function startTravel() {
     if (
+      travelStartTimer.current !== null ||
       !loc ||
       travelState.status !== "selecting_destination" ||
       travelState.destinationId !== loc.id
     )
       return;
+    const validationError = validateTripRequest({
+      destinationId: loc.id,
+      currentLocationId: character?.current_location_id ?? null,
+      mode: travelState.mode,
+      availableModes,
+      balance: Number(wallet?.balance ?? 0),
+      fare: travelState.fare ?? 0,
+    });
+    if (validationError) {
+      toast.error(validationError);
+      return;
+    }
     dispatchTravel({ type: "start" });
-    travel.mutate(loc.id);
+    travelStartTimer.current = window.setTimeout(
+      () => {
+        travelStartTimer.current = null;
+        travel.mutate({ locationId: loc.id, mode: travelState.mode });
+      },
+      travelAnimationDurationMs(travelState.estimatedMinutes ?? 1),
+    );
+  }
+
+  function changeTravelMode(mode: (typeof availableModes)[number]) {
+    if (!loc) return;
+    const estimate = estimateTrip(mode, loc.travel_fare, loc.travel_minutes);
+    dispatchTravel({
+      type: "set_mode",
+      mode,
+      fare: estimate.fare,
+      estimatedMinutes: estimate.minutes,
+    });
   }
 
   function cancelDestination() {
@@ -196,7 +258,17 @@ function LocationPage() {
           </span>
         </div>
         <div className="mt-4 flex flex-wrap items-center gap-3">
-          {!isHere ? (
+          {!isHere && !meetsLevelRequirement ? (
+            <p className="travel-state-error" role="status">
+              Reach level {loc.level_required} to unlock this destination. Earn XP by exploring and
+              completing available activities.
+            </p>
+          ) : !isHere && availableModes.length === 0 ? (
+            <p className="travel-state-error" role="status">
+              Travel options have not been configured for this destination yet. Return to the city
+              map to explore other places.
+            </p>
+          ) : !isHere ? (
             <Button
               variant="default"
               className={travelState.status === "idle" ? undefined : "hidden"}
@@ -228,19 +300,23 @@ function LocationPage() {
           <TravelPanel
             state={travelState}
             currentBalance={wallet?.balance ?? 0}
+            originName={origin?.name ?? "Current player position"}
             isPending={travel.isPending}
             isRouteLoading={routeQuery.isFetching}
             route={routeQuery.data ?? null}
             routeMessage={routeMessage}
             onSelect={selectDestination}
+            availableModes={availableModes}
+            onModeChange={changeTravelMode}
             onStart={startTravel}
             onCancel={cancelDestination}
             onReset={() => dispatchTravel({ type: "reset" })}
           />
         )}
         <p className="mt-3 text-xs text-muted-foreground">
-          Fares and estimated travel minutes come from this district's game data. Successful
-          server-confirmed travel advances the game clock by the returned journey time.
+          Mode fares and trip times are game estimates based on saved district travel values. The
+          optional car-road distance comes from the configured OSRM routing provider. A confirmed
+          trip is charged once by the server and advances the game clock on arrival.
         </p>
       </div>
 

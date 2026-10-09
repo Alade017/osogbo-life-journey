@@ -18,6 +18,7 @@ import {
 import { itemUseEffect } from "@/lib/item-service";
 import { validatePlayerAction } from "@/lib/player-action-service";
 import type { EquipmentSlot } from "@/lib/player-state";
+import { EQUIPMENT_SLOTS } from "@/lib/equipment-service";
 
 export const Route = createFileRoute("/_authenticated/_game/inventory")({
   head: () => pageMeta("Inventory", "Items your character carries around Osogbo."),
@@ -252,24 +253,31 @@ function InventoryPage() {
               {isRefetchingEquipment ? "Retrying…" : "Retry"}
             </Button>
           </div>
-        ) : equipment?.length ? (
-          equipment.map((equipped) => (
-            <div key={equipped.id} className="inventory-equipped-row">
-              <span>
-                {equipped.item?.name ?? equipped.slot} · {equipped.slot}
-              </span>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={unequipItem.isPending}
-                onClick={() => unequipItem.mutate(equipped.slot)}
-              >
-                Unequip
-              </Button>
-            </div>
-          ))
         ) : (
-          <p className="inventory-detail-note">Nothing equipped yet.</p>
+          <div className="inventory-equipment-grid">
+            {EQUIPMENT_SLOTS.map((slot) => {
+              const equipped = equipment?.find((item) => item.slot === slot);
+              return (
+                <div
+                  key={slot}
+                  className={`inventory-equipment-slot ${equipped ? "is-equipped" : ""}`}
+                >
+                  <span className="inventory-equipment-slot-name">{slot}</span>
+                  <strong>{equipped?.item?.name ?? "Empty"}</strong>
+                  {equipped && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={unequipItem.isPending}
+                      onClick={() => unequipItem.mutate(slot)}
+                    >
+                      Unequip
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         )}
       </section>
     </div>

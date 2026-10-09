@@ -1,9 +1,9 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { LocateFixed, MapPin, Search, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { PlayerLocation } from "@/lib/player-location";
-import { q } from "@/lib/game";
+import { q, type MapLocation } from "@/lib/game";
 
 const OSOGBO_CENTER: [number, number] = [4.556, 7.7677];
 
@@ -24,22 +24,22 @@ export function MapControls({
 }) {
   const [announcement, setAnnouncement] = useState("");
   const [search, setSearch] = useState("");
-  const { data: locations } = useQuery(q.mapLocations());
-  const matches = useMemo(() => {
-    const term = search.trim().toLocaleLowerCase();
-    if (!term) return [];
-    return (locations ?? [])
-      .filter(
-        (location) =>
-          typeof location.latitude === "number" &&
-          typeof location.longitude === "number" &&
-          location.name.toLocaleLowerCase().includes(term),
-      )
-      .slice(0, 5);
-  }, [locations, search]);
+  const [searchTerm, setSearchTerm] = useState("");
+  useEffect(() => {
+    const timeout = window.setTimeout(() => setSearchTerm(search.trim()), 250);
+    return () => window.clearTimeout(timeout);
+  }, [search]);
+  const {
+    data: matches,
+    isFetching: isSearchFetching,
+    isError: isSearchError,
+    error: searchError,
+    refetch: retrySearch,
+  } = useQuery(q.searchMapLocations(searchTerm));
+  const searchResults = matches ?? [];
   const canCenterOnPlayer = hasPlayerCoordinates(playerLocation);
 
-  function selectLocation(location: (typeof matches)[number]) {
+  function selectLocation(location: MapLocation) {
     if (typeof location.latitude !== "number" || typeof location.longitude !== "number") return;
     map.flyTo({ center: [location.longitude, location.latitude], zoom: 16 });
     setAnnouncement(`Map centered on ${location.name}.`);
@@ -72,7 +72,7 @@ export function MapControls({
         role="search"
         onSubmit={(event) => {
           event.preventDefault();
-          if (matches[0]) selectLocation(matches[0]);
+          if (searchResults[0]) selectLocation(searchResults[0]);
         }}
       >
         <Search className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
@@ -90,8 +90,8 @@ export function MapControls({
         )}
         {search && (
           <div className="osogbo-map-search-results" role="listbox" aria-label="Matching places">
-            {matches.length ? (
-              matches.map((location) => (
+            {searchResults.length ? (
+              searchResults.map((location) => (
                 <button
                   type="button"
                   role="option"
@@ -103,8 +103,19 @@ export function MapControls({
                   <span>{location.name}</span>
                 </button>
               ))
+            ) : isSearchFetching ? (
+              <p role="status">Searching mapped places…</p>
+            ) : isSearchError ? (
+              <p role="alert">
+                Places could not be searched. {searchError.message}{" "}
+                <button type="button" onClick={() => void retrySearch()}>
+                  Retry
+                </button>
+              </p>
             ) : (
-              <p>No mapped places found</p>
+              <p>
+                {searchTerm.length < 3 ? "Type at least 3 characters" : "No mapped places found"}
+              </p>
             )}
           </div>
         )}

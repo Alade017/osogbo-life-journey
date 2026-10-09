@@ -26,9 +26,16 @@ export type MapLocation = Pick<
   | "icon"
   | "image_url"
   | "is_active"
+  | "interaction_radius_m"
   | "level_required"
   | "metadata"
 >;
+export type MapLocationBounds = {
+  north: number;
+  south: number;
+  east: number;
+  west: number;
+};
 export type GamePlace = Database["public"]["Tables"]["game_places"]["Row"];
 export type GameBillboard = Database["public"]["Tables"]["game_billboards"]["Row"];
 export type Advertisement = Database["public"]["Tables"]["advertisements"]["Row"];
@@ -159,19 +166,75 @@ export const q = {
       staleTime: 5 * 60_000,
       queryFn: async () => unwrap(await supabase.from("locations").select("*").order("sort_order")),
     }),
-  mapLocations: () =>
+  mapLocations: (bounds?: MapLocationBounds) =>
     queryOptions({
-      queryKey: ["mapLocations"],
+      queryKey: ["mapLocations", bounds ?? null],
       staleTime: 60_000,
+      retry: false,
+      queryFn: async () => {
+        const pageSize = 500;
+        const allLocations: MapLocation[] = [];
+        for (let from = 0; ; from += pageSize) {
+          let request = supabase
+            .from("locations")
+            .select(
+              "id,name,slug,type,description,latitude,longitude,icon,image_url,is_active,interaction_radius_m,level_required,metadata",
+            )
+            .eq("is_active", true);
+          if (bounds) {
+            request = request
+              .gte("latitude", bounds.south)
+              .lte("latitude", bounds.north)
+              .gte("longitude", bounds.west)
+              .lte("longitude", bounds.east);
+          }
+          const page = unwrap(await request.order("name").range(from, from + pageSize - 1)) ?? [];
+          allLocations.push(...page);
+          if (page.length < pageSize) break;
+        }
+        return allLocations.map(normalizeCityLocation);
+      },
+    }),
+  locationById: (id: string | null) =>
+    queryOptions({
+      queryKey: ["mapLocation", id],
+      enabled: !!id,
+      staleTime: 60_000,
+      retry: false,
+      queryFn: async () => {
+        if (!id) return null;
+        const location = unwrap(
+          await supabase
+            .from("locations")
+            .select(
+              "id,name,slug,type,description,latitude,longitude,icon,image_url,is_active,interaction_radius_m,level_required,metadata",
+            )
+            .eq("id", id)
+            .eq("is_active", true)
+            .maybeSingle(),
+        );
+        return location ? normalizeCityLocation(location) : null;
+      },
+    }),
+  searchMapLocations: (search: string) =>
+    queryOptions({
+      queryKey: ["mapLocationSearch", search],
+      enabled: search.length >= 3,
+      staleTime: 30_000,
+      retry: false,
       queryFn: async () => {
         const locations = unwrap(
           await supabase
             .from("locations")
             .select(
-              "id,name,slug,type,description,latitude,longitude,icon,image_url,is_active,level_required,metadata",
+              "id,name,slug,type,description,latitude,longitude,icon,image_url,is_active,interaction_radius_m,level_required,metadata",
             )
             .eq("is_active", true)
-            .order("name"),
+            .not("latitude", "is", null)
+            .not("longitude", "is", null)
+            .ilike("name", `%${search}%`)
+            .order("name")
+            .limit(10),
         );
         return (locations ?? []).map(normalizeCityLocation);
       },
@@ -283,14 +346,29 @@ export const rpc = {
       stress_gained: number;
       level: number;
     },
-  travelToLocation: async (locationId: string) =>
-    unwrap(await supabase.rpc("travel_to_location", { p_location_id: locationId })) as unknown as {
+  travelToLocation: async ({ locationId, mode }: { locationId: string; mode: string }) =>
+    unwrap(
+      await supabase.rpc("travel_to_location", { p_location_id: locationId, p_mode: mode }),
+    ) as unknown as {
       location: string;
+      mode: string;
       fare: number;
       travel_minutes: number;
       first_visit: boolean;
       game_time?: { minute: number; hour: number; day: number; weekday: number };
     },
+  savePlayerMapPosition: async (position: {
+    latitude: number;
+    longitude: number;
+    movementState: "idle" | "walking";
+  }) =>
+    unwrap(
+      await supabase.rpc("save_player_map_position", {
+        p_latitude: position.latitude,
+        p_longitude: position.longitude,
+        p_movement_state: position.movementState,
+      }),
+    ),
   eatAtPlace: async (placeId: string) =>
     unwrap(await supabase.rpc("eat_at_place", { p_place_id: placeId })) as unknown as {
       venue: string;

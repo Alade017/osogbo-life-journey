@@ -1,14 +1,34 @@
-import { Bell, Coins, Droplets, Heart, MapPin, Utensils, Zap } from "lucide-react";
+import {
+  Bell,
+  CirclePause,
+  CirclePlay,
+  Coins,
+  Activity,
+  MapPin,
+  Smile,
+  Sparkles,
+  Utensils,
+  Users,
+  Zap,
+} from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Avatar } from "@/components/game/Avatar";
 import { formatNaira, xpProgress } from "@/lib/game";
 import type { PlayerState } from "@/lib/player-state";
-import { formatGameTime, getDayPeriod, WEEKDAYS } from "@/lib/game-time";
-import { useGameTime } from "@/components/game/GameTimeProvider";
+import { useLiveClock } from "@/hooks/use-live-clock";
 import { Logo } from "@/components/game/Logo";
-import { getHudVitals } from "@/lib/hud-service";
+import { useGameTime } from "@/components/game/GameTimeProvider";
+import { formatGameTime, WEEKDAYS } from "@/lib/game-time";
+import { NEED_NAMES, NEED_RULES, statusForNeed } from "@/lib/life-simulation";
 
-const VITAL_ICONS = { health: Heart, energy: Zap, hunger: Utensils, thirst: Droplets };
+const VITAL_ICONS = {
+  hunger: Utensils,
+  energy: Zap,
+  hygiene: Sparkles,
+  bladder: Activity,
+  fun: Smile,
+  social: Users,
+};
 
 export function GameHUD({
   player,
@@ -19,17 +39,35 @@ export function GameHUD({
   location: string;
   unread: number;
 }) {
-  const { gameTime } = useGameTime();
-  const clockLabel = formatGameTime(gameTime);
-  const weekday = WEEKDAYS[gameTime.weekday] ?? WEEKDAYS[0];
-  const dayPeriod = getDayPeriod(gameTime.hour);
-  const xp = xpProgress(player.experience);
-  const vitals = getHudVitals(player);
+  const now = useLiveClock();
+  const { simulation, pause, resume, setSpeed } = useGameTime();
+  const dateLabel = now
+    ? new Intl.DateTimeFormat("en-NG", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        timeZone: "Africa/Lagos",
+      }).format(now)
+    : "—";
+  const clockLabel = now
+    ? new Intl.DateTimeFormat("en-NG", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hourCycle: "h23",
+        timeZone: "Africa/Lagos",
+      }).format(now)
+    : "--:--:--";
+  const xp = xpProgress(simulation.experience);
 
   return (
     <header className="game-hud" aria-label="Player status">
       <Link to="/home" className="game-hud-brand" aria-label="OSOGBO LIFE home">
         <Logo small />
+        <span className="game-hud-brand-copy">
+          <strong>OSOGBO LIFE</strong>
+          <small>PLAYER DASHBOARD</small>
+        </span>
       </Link>
       <Link to="/profile" className="game-hud-player" aria-label={`${player.name}, view profile`}>
         <span className="game-hud-avatar">
@@ -39,12 +77,15 @@ export function GameHUD({
           <span className="block truncate font-display text-sm font-bold">{player.name}</span>
           <span className="block text-[11px] text-muted-foreground">Level {player.level}</span>
           <span className="game-hud-vitals" aria-label="Player needs">
-            {vitals.map(({ name, value, label }) => {
+            {NEED_NAMES.map((name) => {
               const Icon = VITAL_ICONS[name];
               return (
-                <span key={name} title={label}>
+                <span
+                  key={name}
+                  title={`${NEED_RULES[name].label} ${Math.round(simulation.needs[name])}% · ${statusForNeed(name, simulation.needs[name])}`}
+                >
                   <Icon aria-hidden="true" />
-                  {value ?? "—"}
+                  {Math.round(simulation.needs[name])}
                 </span>
               );
             })}
@@ -53,14 +94,15 @@ export function GameHUD({
       </Link>
 
       <div className="game-hud-xp" aria-label={`${xp.into} of ${xp.needed} XP to next level`}>
-        <div className="flex items-center justify-between gap-2 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-          <span>Level {player.level}</span>
-          <span>
-            {xp.into}/{xp.needed} XP
-          </span>
+        <div className="game-hud-xp-label">
+          <span>LEVEL PROGRESS</span>
+          <strong>
+            {xp.into}
+            <small> / {xp.needed} XP</small>
+          </strong>
         </div>
-        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/15">
-          <span className="block h-full rounded-full bg-emerald" style={{ width: `${xp.pct}%` }} />
+        <div className="game-hud-xp-track">
+          <span style={{ width: `${xp.pct}%` }} />
         </div>
       </div>
 
@@ -70,22 +112,50 @@ export function GameHUD({
         aria-label={`Wallet ${formatNaira(player.cash)}`}
       >
         <Coins className="h-4 w-4 text-emerald" />
-        <span>{formatNaira(player.cash)}</span>
+        <span className="game-hud-item-copy">
+          <small>WALLET</small>
+          <strong>{formatNaira(player.cash)}</strong>
+        </span>
       </Link>
 
       <div className="game-hud-location">
-        <MapPin className="h-4 w-4 shrink-0 text-primary" />
-        <span className="min-w-0">
-          <span className="block truncate text-xs font-bold">{location}</span>
-          <span className="block text-[10px] text-muted-foreground">
-            {weekday} | Day {gameTime.day}
-          </span>
+        <span className="game-hud-location-icon">
+          <MapPin className="h-4 w-4 shrink-0" />
+        </span>
+        <span className="game-hud-item-copy min-w-0">
+          <small>CURRENT AREA</small>
+          <strong className="truncate">{location}</strong>
+          <span>{dateLabel}</span>
         </span>
       </div>
 
-      <div className="game-hud-time" aria-label={`Osogbo game time ${clockLabel}`}>
-        <span className="block font-display text-sm font-bold tabular-nums">{clockLabel}</span>
-        <span className="block text-[10px] capitalize text-muted-foreground">{dayPeriod}</span>
+      <div className="game-hud-time" aria-label="Simulation clock">
+        <span className="game-hud-item-copy">
+          <small>GAME TIME · DAY {simulation.gameTime.day}</small>
+          <strong className="tabular-nums">{formatGameTime(simulation.gameTime)}</strong>
+          <span>
+            {WEEKDAYS[simulation.gameTime.weekday]} · {dateLabel} · Local {clockLabel}
+          </span>
+        </span>
+        <div className="game-hud-simulation-controls">
+          <button
+            type="button"
+            aria-label={simulation.paused ? "Resume simulation" : "Pause simulation"}
+            title={simulation.paused ? "Resume simulation" : "Pause simulation"}
+            onClick={() => (simulation.paused ? resume() : pause())}
+          >
+            {simulation.paused ? <CirclePlay size={14} /> : <CirclePause size={14} />}
+          </button>
+          <select
+            aria-label="Simulation speed"
+            value={simulation.timeSpeed}
+            onChange={(event) => setSpeed(Number(event.target.value) as 0.5 | 1 | 2)}
+          >
+            <option value={0.5}>½×</option>
+            <option value={1}>1×</option>
+            <option value={2}>2×</option>
+          </select>
+        </div>
       </div>
 
       <Link

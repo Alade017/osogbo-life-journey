@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   AttributionControl,
@@ -12,13 +12,24 @@ import mapWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
 import { LocationMarker } from "@/components/game/LocationMarker";
 import { MapControls } from "@/components/game/MapControls";
 import { PlayerMarker } from "@/components/game/PlayerMarker";
-import { q } from "@/lib/game";
+import { PlayerMovementControls } from "@/components/game/PlayerMovementControls";
+import { NearbyLocationPrompt } from "@/components/game/NearbyLocationPrompt";
+import { useNearbyLocations } from "@/hooks/use-nearby-locations";
+import {
+  applyOsogboMapPalette,
+  createDevelopmentMapFallbackStyle,
+  getOsogboMapStyleUrl,
+} from "@/lib/osogbo-map-style";
+import { q, rpc } from "@/lib/game";
 import { resolvePlayerLocation } from "@/lib/player-location";
+import {
+  OSOGBO_PLAYABLE_BOUNDS,
+  publishPlayerMovement,
+  stepVirtualPosition,
+  type MovementDirection,
+} from "@/lib/player-movement";
 
 const OSOGBO_CENTER: [number, number] = [4.556, 7.7677];
-const OSM_ATTRIBUTION =
-  '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap contributors</a>';
-
 setWorkerUrl(mapWorkerUrl);
 
 export type OsogboMapProps = {
@@ -33,12 +44,114 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
   const [mapInstance, setMapInstance] = useState<MapLibreMap | null>(null);
   const [loaded, setLoaded] = useState(false);
   const [mapError, setMapError] = useState<string | null>(null);
-  const { data: locations } = useQuery(q.mapLocations());
+  const [virtualPlayer, setVirtualPlayer] =
+    useState<ReturnType<typeof resolvePlayerLocation>>(null);
+  const directionsRef = useRef<ReadonlySet<MovementDirection>>(new Set());
+  const followPlayerRef = useRef(false);
+  const lastSavedAtRef = useRef(0);
+  const lastPositionRef = useRef(virtualPlayer);
+  lastPositionRef.current = virtualPlayer;
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
   const { data: character } = useQuery(q.character());
-  const playerLocation = useMemo(
-    () => resolvePlayerLocation(character, locations),
-    [character, locations],
+  const { data: currentLocation } = useQuery(
+    q.locationById(character?.current_location_id ?? null),
   );
+  const playerLocation = useMemo(
+    () => resolvePlayerLocation(character, currentLocation ? [currentLocation] : undefined),
+    [character, currentLocation],
+  );
+  const displayedPlayer = virtualPlayer ?? playerLocation;
+  const proximityPosition = useMemo(
+    () =>
+      displayedPlayer?.latitude !== null &&
+      displayedPlayer?.latitude !== undefined &&
+      displayedPlayer.longitude !== null &&
+      displayedPlayer.longitude !== undefined
+        ? { latitude: displayedPlayer.latitude, longitude: displayedPlayer.longitude }
+        : null,
+    [displayedPlayer?.latitude, displayedPlayer?.longitude],
+  );
+  const { nearbyLocations } = useNearbyLocations(proximityPosition, character?.level ?? 0);
+  useEffect(() => {
+    if (!playerLocation) {
+      setVirtualPlayer(null);
+      return;
+    }
+    setVirtualPlayer((current) =>
+      current?.playerId === playerLocation.playerId ? current : playerLocation,
+    );
+  }, [playerLocation]);
+
+  const handleDirections = useCallback((directions: ReadonlySet<MovementDirection>) => {
+    directionsRef.current = directions;
+  }, []);
+
+  const savePosition = useCallback(
+    (location: NonNullable<typeof virtualPlayer>, movementStatus: "idle" | "walking") => {
+      if (location.latitude === null || location.longitude === null) return;
+      saveQueueRef.current = saveQueueRef.current
+        .then(() =>
+          rpc.savePlayerMapPosition({
+            latitude: location.latitude!,
+            longitude: location.longitude!,
+            movementState: movementStatus,
+          }),
+        )
+        .then(() => {
+          lastSavedAtRef.current = Date.now();
+        })
+        .catch((error: unknown) => {
+          console.error("Could not save virtual player position", error);
+        });
+    },
+    [],
+  );
+
+  useEffect(() => {
+    let frame = 0;
+    let previousTime = 0;
+    let lastPublish = 0;
+    const animate = (time: number) => {
+      const current = lastPositionRef.current;
+      const directions = directionsRef.current;
+      if (current && directions.size && current.latitude !== null && current.longitude !== null) {
+        const position = stepVirtualPosition(
+          { latitude: current.latitude, longitude: current.longitude },
+          directions,
+          previousTime ? time - previousTime : 16,
+        );
+        previousTime = time;
+        const next = { ...current, ...position, movementStatus: "walking" as const };
+        setVirtualPlayer(next);
+        lastPositionRef.current = next;
+        if (followPlayerRef.current)
+          mapInstance?.setCenter([position.longitude, position.latitude]);
+        if (time - lastPublish > 80) {
+          publishPlayerMovement(position, "walking");
+          lastPublish = time;
+        }
+        if (Date.now() - lastSavedAtRef.current > 1000) {
+          lastSavedAtRef.current = Date.now();
+          savePosition(next, "walking");
+        }
+      } else {
+        previousTime = 0;
+        if (current?.movementStatus === "walking") {
+          const stopped = { ...current, movementStatus: "idle" as const };
+          setVirtualPlayer(stopped);
+          lastPositionRef.current = stopped;
+          publishPlayerMovement(
+            { latitude: stopped.latitude!, longitude: stopped.longitude! },
+            "idle",
+          );
+          savePosition(stopped, "idle");
+        }
+      }
+      frame = window.requestAnimationFrame(animate);
+    };
+    frame = window.requestAnimationFrame(animate);
+    return () => window.cancelAnimationFrame(frame);
+  }, [mapInstance, savePosition]);
 
   useEffect(() => {
     onMapReadyRef.current = onMapReady;
@@ -48,6 +161,7 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
     if (!containerRef.current || mapRef.current) return;
     const container = containerRef.current;
     let didLoad = false;
+    let usingDevelopmentFallback = false;
     setLoaded(false);
     setMapError(null);
     setMapInstance(null);
@@ -61,31 +175,11 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
         minZoom: 10,
         maxZoom: 19,
         maxBounds: [
-          [4.25, 7.48],
-          [4.88, 8.02],
+          [OSOGBO_PLAYABLE_BOUNDS.west, OSOGBO_PLAYABLE_BOUNDS.south],
+          [OSOGBO_PLAYABLE_BOUNDS.east, OSOGBO_PLAYABLE_BOUNDS.north],
         ],
         attributionControl: false,
-        style: {
-          version: 8,
-          sources: {
-            osm: {
-              type: "raster",
-              tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-              tileSize: 256,
-              attribution: OSM_ATTRIBUTION,
-              maxzoom: 19,
-            },
-          },
-          layers: [
-            {
-              id: "osm-raster",
-              type: "raster",
-              source: "osm",
-              minzoom: 0,
-              maxzoom: 22,
-            },
-          ],
-        },
+        style: getOsogboMapStyleUrl(),
         cooperativeGestures: true,
       });
     } catch {
@@ -109,9 +203,18 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
       setMapInstance(map);
       onMapReadyRef.current?.(map);
     });
+    const handleStyleLoad = () => applyOsogboMapPalette(map);
+    map.on("style.load", handleStyleLoad);
     const handleMapError = () => {
       if (!didLoad && !map.isStyleLoaded()) {
-        setMapError("Map data could not be loaded. Check your connection and retry.");
+        if (import.meta.env.DEV && !usingDevelopmentFallback) {
+          usingDevelopmentFallback = true;
+          map.setStyle(createDevelopmentMapFallbackStyle());
+          return;
+        }
+        setMapError(
+          "Map data could not be loaded. Check your map provider configuration and retry.",
+        );
       }
     };
     map.on("error", handleMapError);
@@ -131,6 +234,7 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
       map.off("moveend", updateCameraMetadata);
       map.off("zoomend", updateCameraMetadata);
       map.off("error", handleMapError);
+      map.off("style.load", handleStyleLoad);
       if (loadTimer) window.clearTimeout(loadTimer);
       map.remove();
       mapRef.current = null;
@@ -147,8 +251,25 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
         data-map-center={`${OSOGBO_CENTER[1]},${OSOGBO_CENTER[0]}`}
       />
       {mapInstance && <LocationMarker map={mapInstance} />}
-      {mapInstance && <PlayerMarker map={mapInstance} playerLocation={playerLocation} />}
-      {mapInstance && <MapControls map={mapInstance} playerLocation={playerLocation} />}
+      {mapInstance && <PlayerMarker map={mapInstance} playerLocation={displayedPlayer} />}
+      {mapInstance && <MapControls map={mapInstance} playerLocation={displayedPlayer} />}
+      {mapInstance && (
+        <PlayerMovementControls
+          onDirectionChange={handleDirections}
+          onFollowChange={(enabled) => {
+            followPlayerRef.current = enabled;
+            if (
+              enabled &&
+              displayedPlayer &&
+              displayedPlayer.latitude !== null &&
+              displayedPlayer.longitude !== null
+            ) {
+              mapInstance.setCenter([displayedPlayer.longitude, displayedPlayer.latitude]);
+            }
+          }}
+        />
+      )}
+      {mapInstance && <NearbyLocationPrompt nearbyLocations={nearbyLocations} />}
       {!loaded && !mapError && (
         <div className="osogbo-map-loading" aria-live="polite">
           Loading Osogbo map…
@@ -165,10 +286,10 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
       <div className="osogbo-map-place-label" aria-live="polite">
         <span className="osogbo-map-live-dot" />
         <span>
-          {playerLocation?.location
-            ? `YOU ARE IN ${playerLocation.location.name.toUpperCase()}`
-            : playerLocation?.currentLocationId
-              ? "YOUR DISTRICT NEEDS MAP COORDINATES"
+          {displayedPlayer?.location
+            ? `PLAYER POSITION · ${displayedPlayer.location.name.toUpperCase()}`
+            : displayedPlayer?.currentLocationId
+              ? "PLAYER POSITION · OSOGBO"
               : "OSOGBO, OSUN STATE"}
         </span>
       </div>

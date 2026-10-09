@@ -17,8 +17,16 @@ const SUGGESTED_ACTIONS: Partial<Record<CityLocationData["category"], string[]>>
   entertainment: ["View events", "Enter venue"],
   park: ["Explore the park"],
   cultural_landmark: ["Explore landmark"],
+  religious: ["View visitor information", "Explore site"],
   transportation: ["View transport options"],
   home: ["View home options"],
+  residential: ["View home options"],
+  shop: ["Browse shop"],
+  university: ["View courses", "Visit campus"],
+  transport: ["View transport options"],
+  workplace: ["View services", "Apply for work"],
+  landmark: ["Explore landmark"],
+  custom: ["Explore location"],
 };
 
 function getActions(location: CityLocationData): LocationActionDefinition[] {

@@ -86,7 +86,13 @@ function GameLayout() {
   const player = playerStateFromRows({ character, wallet, location: currentLocation });
 
   return (
-    <GameTimeProvider gameTime={gameTimeFromCharacter(character)}>
+    <GameTimeProvider
+      gameTime={gameTimeFromCharacter(character)}
+      character={character}
+      wallet={Number(wallet?.balance ?? 0)}
+      locationId={character.current_location_id}
+      locationType={simulationLocationType(currentLocation?.type)}
+    >
       <div
         className={cn(
           "game-shell city-game min-h-screen pb-20 md:pb-0",
@@ -176,4 +182,14 @@ function GameLayout() {
       </div>
     </GameTimeProvider>
   );
+}
+
+function simulationLocationType(
+  value: string | undefined,
+): "any" | "home" | "workplace" | "school" {
+  if (value === "residential" || value === "home") return "home";
+  if (value === "workplace" || value === "government" || value === "market" || value === "shop")
+    return "workplace";
+  if (value === "school" || value === "university") return "school";
+  return "any";
 }

@@ -102,6 +102,9 @@ export type Database = {
           user_id: string;
           wealth: number;
           xp: number;
+          virtual_latitude: number;
+          virtual_longitude: number;
+          movement_state: string;
         };
         Insert: {
           age: number;
@@ -134,6 +137,9 @@ export type Database = {
           user_id: string;
           wealth?: number;
           xp?: number;
+          virtual_latitude?: number;
+          virtual_longitude?: number;
+          movement_state?: string;
         };
         Update: {
           age?: number;
@@ -166,6 +172,9 @@ export type Database = {
           user_id?: string;
           wealth?: number;
           xp?: number;
+          virtual_latitude?: number;
+          virtual_longitude?: number;
+          movement_state?: string;
         };
         Relationships: [
           {
@@ -524,6 +533,7 @@ export type Database = {
           icon: string;
           image_url: string | null;
           is_active: boolean;
+          interaction_radius_m: number;
           latitude: number | null;
           level_required: number;
           longitude: number | null;
@@ -549,6 +559,7 @@ export type Database = {
           icon?: string;
           image_url?: string | null;
           is_active?: boolean;
+          interaction_radius_m?: number;
           latitude?: number | null;
           level_required?: number;
           longitude?: number | null;
@@ -574,6 +585,7 @@ export type Database = {
           icon?: string;
           image_url?: string | null;
           is_active?: boolean;
+          interaction_radius_m?: number;
           latitude?: number | null;
           level_required?: number;
           longitude?: number | null;
@@ -1320,6 +1332,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      save_player_map_position: {
+        Args: { p_latitude: number; p_longitude: number; p_movement_state: string };
+        Returns: Json;
+      };
       deposit_cash: { Args: { p_amount: number }; Returns: Json };
       withdraw_cash: { Args: { p_amount: number }; Returns: Json };
       purchase_shop_item: { Args: { p_quantity: number; p_shop_item_id: string }; Returns: Json };
@@ -1377,7 +1393,7 @@ export type Database = {
       perform_job: { Args: never; Returns: Json };
       refresh_my_energy: { Args: never; Returns: number };
       select_job: { Args: { p_job_id: string }; Returns: undefined };
-      travel_to_location: { Args: { p_location_id: string }; Returns: Json };
+      travel_to_location: { Args: { p_location_id: string; p_mode: string }; Returns: Json };
       visit_location: { Args: { p_location_id: string }; Returns: Json };
     };
     Enums: {
