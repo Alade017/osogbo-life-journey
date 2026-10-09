@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { canPlace, findPath, FURNITURE_CATALOG, HOME_LAYOUTS } from "@/lib/housing-service";
+import {
+  canPlace,
+  DEFAULT_HOUSING_SAVE,
+  findPath,
+  FURNITURE_CATALOG,
+  HOME_LAYOUTS,
+  parseHousingSave,
+} from "@/lib/housing-service";
+import { readLocalHousingSave, writeLocalHousingSave } from "@/lib/save-storage";
 
 describe("housing navigation and placement", () => {
   it("finds a walkable route around a furniture obstacle", () => {
@@ -25,5 +33,50 @@ describe("housing navigation and placement", () => {
     ).toBe(3);
     expect(FURNITURE_CATALOG.find((item) => item.id === "bed")?.effects.energy).toBeGreaterThan(0);
     expect(FURNITURE_CATALOG.some((item) => item.category === "bathroom")).toBe(true);
+  });
+
+  it("validates layout identifiers, bounds, needs, and furniture placement before restoring", () => {
+    expect(parseHousingSave(DEFAULT_HOUSING_SAVE)).toEqual(DEFAULT_HOUSING_SAVE);
+    expect(parseHousingSave({ ...DEFAULT_HOUSING_SAVE, x: 999 })).toBeNull();
+    expect(
+      parseHousingSave({
+        ...DEFAULT_HOUSING_SAVE,
+        needs: { ...DEFAULT_HOUSING_SAVE.needs, hunger: 101 },
+      }),
+    ).toBeNull();
+    expect(
+      parseHousingSave({
+        ...DEFAULT_HOUSING_SAVE,
+        furniture: [{ id: "bad", itemId: "unknown", room: "lounge", x: 0, y: 0, rotation: 0 }],
+      }),
+    ).toBeNull();
+  });
+
+  it("migrates legacy browser saves and recovers the prior valid backup", () => {
+    const key = "housing-save-test";
+    localStorage.clear();
+    localStorage.setItem(key, JSON.stringify(DEFAULT_HOUSING_SAVE));
+    expect(readLocalHousingSave(key)).toMatchObject({ migrated: true, recoveredFromBackup: false });
+    const first = {
+      ...DEFAULT_HOUSING_SAVE,
+      layoutId: "courtyard-room",
+      room: "lounge" as const,
+      x: 2,
+    };
+    const second = {
+      ...DEFAULT_HOUSING_SAVE,
+      layoutId: "family-courtyard",
+      room: "lounge" as const,
+      x: 4,
+    };
+    expect(writeLocalHousingSave(key, first)).toBe(true);
+    expect(writeLocalHousingSave(key, second)).toBe(true);
+    localStorage.setItem(key, "{corrupt json");
+    expect(readLocalHousingSave(key)).toMatchObject({
+      payload: first,
+      recoveredFromBackup: true,
+      migrated: false,
+    });
+    localStorage.clear();
   });
 });

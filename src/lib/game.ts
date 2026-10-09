@@ -72,6 +72,12 @@ export const q = {
       retry: false,
       queryFn: async () => unwrap(await supabase.from("characters").select("*").maybeSingle()),
     }),
+  homeSave: () =>
+    queryOptions({
+      queryKey: ["homeSave"],
+      retry: false,
+      queryFn: async () => unwrap(await supabase.rpc("my_home_save")) as Json,
+    }),
   npcs: () =>
     queryOptions({
       queryKey: ["npcs"],
@@ -87,7 +93,13 @@ export const q = {
     queryOptions({
       queryKey: ["npcEvents"],
       queryFn: async () =>
-        unwrap(await supabase.from("npc_interaction_events").select("*").order("created_at", { ascending: false }).limit(40)),
+        unwrap(
+          await supabase
+            .from("npc_interaction_events")
+            .select("*")
+            .order("created_at", { ascending: false })
+            .limit(40),
+        ),
     }),
   profile: () =>
     queryOptions({
@@ -351,12 +363,31 @@ export function useGameAction<TArgs, TResult>(
 }
 
 export const rpc = {
+  saveMyHome: async (payload: Json, expectedRevision: number) =>
+    unwrap(
+      await supabase.rpc("save_my_home", {
+        p_payload: payload,
+        p_expected_revision: expectedRevision,
+      }),
+    ) as Json,
   interactWithNpc: async (args: { npcId: string; action: string; requestId: string }) =>
-    unwrap(await supabase.rpc("interact_with_npc", {
-      p_npc_id: args.npcId,
-      p_action: args.action,
-      p_request_id: args.requestId,
-    })) as unknown as { event_id: string; accepted: boolean; message: string; friendship?: number; romance?: number; trust?: number; conflict?: number; meetings?: number; duplicate: boolean },
+    unwrap(
+      await supabase.rpc("interact_with_npc", {
+        p_npc_id: args.npcId,
+        p_action: args.action,
+        p_request_id: args.requestId,
+      }),
+    ) as unknown as {
+      event_id: string;
+      accepted: boolean;
+      message: string;
+      friendship?: number;
+      romance?: number;
+      trust?: number;
+      conflict?: number;
+      meetings?: number;
+      duplicate: boolean;
+    },
   refreshEnergy: async () => unwrap(await supabase.rpc("refresh_my_energy")),
   selectJob: async (jobId: string) => unwrap(await supabase.rpc("select_job", { p_job_id: jobId })),
   completeEducationCourse: async (courseSlug: string) =>

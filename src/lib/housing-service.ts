@@ -254,6 +254,94 @@ export const DEFAULT_HOUSING_SAVE: HousingSave = {
   upgrades: [],
   needs: { energy: 70, fun: 50, hygiene: 70, bladder: 30, hunger: 60, skill: 0 },
 };
+
+export function parseHousingSave(value: unknown): HousingSave | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const candidate = value as Partial<HousingSave>;
+  const layout = HOME_LAYOUTS.find((entry) => entry.id === candidate.layoutId);
+  if (!layout || !layout.rooms.some((room) => room.id === candidate.room)) return null;
+  const room = layout.rooms.find((entry) => entry.id === candidate.room)!;
+  if (
+    !Number.isInteger(candidate.x) ||
+    !Number.isInteger(candidate.y) ||
+    candidate.x! < 0 ||
+    candidate.y! < 0 ||
+    candidate.x! >= room.width ||
+    candidate.y! >= room.height ||
+    !Array.isArray(candidate.furniture) ||
+    candidate.furniture.length > 100 ||
+    !Array.isArray(candidate.storage) ||
+    candidate.storage.length > 100 ||
+    !candidate.storage.every((id) => FURNITURE_CATALOG.some((item) => item.id === id)) ||
+    !Array.isArray(candidate.upgrades) ||
+    candidate.upgrades.length > 100 ||
+    !candidate.upgrades.every((upgrade) =>
+      layout.rooms.some((entry) => entry.upgrades.includes(upgrade)),
+    ) ||
+    !candidate.needs ||
+    typeof candidate.needs !== "object" ||
+    Array.isArray(candidate.needs)
+  )
+    return null;
+  const needs = { ...DEFAULT_HOUSING_SAVE.needs };
+  for (const key of Object.keys(needs)) {
+    const amount = candidate.needs[key];
+    if (!Number.isFinite(amount) || amount! < 0 || amount! > 100) return null;
+    needs[key] = amount!;
+  }
+  const placedIds = new Set<string>();
+  const furniture: PlacedFurniture[] = [];
+  for (const raw of candidate.furniture) {
+    if (!raw || typeof raw !== "object") return null;
+    const placed = raw as PlacedFurniture;
+    const item = FURNITURE_CATALOG.find((entry) => entry.id === placed.itemId);
+    const placedRoom = layout.rooms.find((entry) => entry.id === placed.room);
+    if (
+      !item ||
+      !placedRoom ||
+      !placed.id ||
+      placedIds.has(placed.id) ||
+      !Number.isInteger(placed.x) ||
+      !Number.isInteger(placed.y) ||
+      ![0, 90, 180, 270].includes(placed.rotation) ||
+      !canPlace(
+        placedRoom,
+        item,
+        placed.x,
+        placed.y,
+        furniture.filter((other) => other.room === placed.room),
+        undefined,
+        placed.rotation,
+      )
+    )
+      return null;
+    placedIds.add(placed.id);
+    furniture.push(placed);
+  }
+  const exterior = candidate.exterior;
+  if (
+    exterior !== null &&
+    exterior !== undefined &&
+    (!Number.isFinite(exterior.lat) ||
+      !Number.isFinite(exterior.lng) ||
+      exterior.lat < 7.48 ||
+      exterior.lat > 8.02 ||
+      exterior.lng < 4.25 ||
+      exterior.lng > 4.88)
+  )
+    return null;
+  return {
+    layoutId: layout.id,
+    room: room.id,
+    x: candidate.x!,
+    y: candidate.y!,
+    exterior: exterior ?? null,
+    furniture,
+    storage: [...candidate.storage],
+    upgrades: [...candidate.upgrades],
+    needs,
+  };
+}
 export function findPath(
   width: number,
   height: number,

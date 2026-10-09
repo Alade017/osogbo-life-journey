@@ -16,12 +16,14 @@ import {
   interruptAction,
   isValidSimulationSnapshot,
   queueActions,
+  restoreLocalSimulationSnapshot,
   startAction,
   startNextQueuedAction,
   validateAction,
   type LifeActionId,
   type SimulationState,
 } from "@/lib/life-simulation";
+import { readLocalSave, writeLocalSave } from "@/lib/save-storage";
 
 function sameTime(a: GameTime, b: GameTime) {
   return a.minute === b.minute && a.hour === b.hour && a.day === b.day && a.weekday === b.weekday;
@@ -94,26 +96,15 @@ function makeInitialState(
   });
   if (typeof window !== "undefined") {
     try {
-      const saved: unknown = JSON.parse(window.localStorage.getItem(SAVE_KEY) ?? "null");
-      if (
-        isValidSimulationSnapshot(saved, character.id) &&
-        saved.lastUpdatedAt > Date.parse(character.updated_at)
-      ) {
-        state = {
-          ...state,
-          ...saved,
-          character: state.character,
-          // Activities are manually completed, so an interrupted browser session must not
-          // leave the character locked or charge the reserved cost permanently.
-          wallet: saved.wallet + (saved.currentAction?.reservedCost ?? 0),
-          currentAction: null,
-          travelState: "idle",
-          queuedActions: saved.currentAction
-            ? saved.queuedActions.filter((id) => id !== saved.currentAction?.actionId)
-            : saved.queuedActions,
-          lastUpdatedAt: Date.now(),
-        };
-      }
+      const validate = (value: unknown): SimulationState | null =>
+        isValidSimulationSnapshot(value, character.id) ? value : null;
+      const localSave =
+        readLocalSave(`${SAVE_KEY}:${character.id}`, validate) ?? readLocalSave(SAVE_KEY, validate);
+      const saved = localSave?.payload;
+      const savedAt = localSave?.savedAt
+        ? Date.parse(localSave.savedAt)
+        : (saved?.lastUpdatedAt ?? 0);
+      if (saved) state = restoreLocalSimulationSnapshot(state, saved, savedAt);
     } catch {
       /* Invalid snapshots are ignored and rebuilt from the character row. */
     }
@@ -213,12 +204,15 @@ export function GameTimeProvider({
   }, []);
   useEffect(() => {
     try {
-      if (typeof window !== "undefined")
-        window.localStorage.setItem(SAVE_KEY, JSON.stringify(simulation));
+      if (typeof window !== "undefined") {
+        const validate = (value: unknown): SimulationState | null =>
+          isValidSimulationSnapshot(value, character.id) ? value : null;
+        writeLocalSave(`${SAVE_KEY}:${character.id}`, simulation, validate);
+      }
     } catch {
       /* Storage can be unavailable in private browsing; memory state still works. */
     }
-  }, [simulation]);
+  }, [simulation, character.id]);
   const pause = useCallback(() => setSimulation((current) => ({ ...current, paused: true })), []);
   const resume = useCallback(
     () => setSimulation((current) => ({ ...current, paused: false, lastUpdatedAt: Date.now() })),

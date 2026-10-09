@@ -8,6 +8,33 @@ export type Database = {
   };
   public: {
     Tables: {
+      character_home_saves: {
+        Row: {
+          character_id: string;
+          user_id: string;
+          schema_version: number;
+          revision: number;
+          payload: Json;
+          updated_at: string;
+        };
+        Insert: {
+          character_id: string;
+          user_id: string;
+          schema_version?: number;
+          revision?: number;
+          payload: Json;
+          updated_at?: string;
+        };
+        Update: {
+          character_id?: string;
+          user_id?: string;
+          schema_version?: number;
+          revision?: number;
+          payload?: Json;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       npc_definitions: {
         Row: {
           id: string;
@@ -1476,6 +1503,8 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      my_home_save: { Args: never; Returns: Json };
+      save_my_home: { Args: { p_expected_revision: number; p_payload: Json }; Returns: Json };
       interact_with_npc: {
         Args: { p_npc_id: string; p_action: string; p_request_id: string };
         Returns: Json;

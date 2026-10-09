@@ -716,6 +716,40 @@ export function isValidSimulationSnapshot(
   return true;
 }
 
+/** Restore only valid local simulation state newer than the cloud snapshot.
+ * Account-owned money, XP, location, and unfinished activities always come from cloud state.
+ */
+export function restoreLocalSimulationSnapshot(
+  current: SimulationState,
+  candidate: unknown,
+  savedAt: number,
+): SimulationState {
+  const cloudUpdatedAt = Date.parse(current.serverSnapshot.updatedAt);
+  if (
+    !isValidSimulationSnapshot(candidate, current.character.id) ||
+    !Number.isFinite(savedAt) ||
+    !Number.isFinite(cloudUpdatedAt) ||
+    savedAt <= cloudUpdatedAt
+  )
+    return current;
+  const saved = candidate;
+  return {
+    ...current,
+    ...saved,
+    character: current.character,
+    wallet: current.wallet,
+    experience: current.experience,
+    locationId: current.locationId,
+    serverSnapshot: current.serverSnapshot,
+    currentAction: null,
+    travelState: "idle",
+    queuedActions: saved.currentAction
+      ? saved.queuedActions.filter((id) => id !== saved.currentAction?.actionId)
+      : saved.queuedActions,
+    lastUpdatedAt: Math.max(Date.now(), current.lastUpdatedAt + 1),
+  };
+}
+
 export function interruptAction(state: SimulationState, requestId?: string): SimulationState {
   if (!state.currentAction || (requestId && state.currentAction.requestId !== requestId))
     return state;

@@ -97,6 +97,21 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
     navigate({ to: "/home" });
   }
 
+  async function continueAsGuest() {
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.signInAnonymously({
+        options: { data: { username: "guest" } },
+      });
+      if (error) throw error;
+      navigate({ to: "/create-character" });
+    } catch (error) {
+      toast.error(`Guest play is unavailable. ${(error as Error).message}`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="auth-screen relative isolate min-h-screen overflow-hidden bg-ink">
       <img
@@ -297,6 +312,15 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
                     <Button variant="plain" size="lg" className="w-full" onClick={google}>
                       Continue with Google
                     </Button>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="mt-2 w-full"
+                      disabled={busy}
+                      onClick={continueAsGuest}
+                    >
+                      Continue as guest
+                    </Button>
                     <p className="mt-6 text-center text-sm">
                       New to Osogbo?{" "}
                       <Link to="/signup" className="font-bold text-primary underline">
@@ -306,12 +330,23 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
                   </>
                 )}
                 {!resettingPassword && mode === "signup" && (
-                  <p className="mt-6 text-center text-sm">
-                    Already playing?{" "}
-                    <Link to="/login" className="font-bold text-primary underline">
-                      Log in
-                    </Link>
-                  </p>
+                  <>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="mt-4 w-full"
+                      disabled={busy}
+                      onClick={continueAsGuest}
+                    >
+                      Continue as guest
+                    </Button>
+                    <p className="mt-6 text-center text-sm">
+                      Already playing?{" "}
+                      <Link to="/login" className="font-bold text-primary underline">
+                        Log in
+                      </Link>
+                    </p>
+                  </>
                 )}
                 <a
                   href="https://commons.wikimedia.org/wiki/File:Osogbo.jpg"

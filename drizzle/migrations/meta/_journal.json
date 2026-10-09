@@ -141,6 +141,13 @@
       "when": 1791245090855,
       "tag": "0018_milestone9_npc_social",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1791245090856,
+      "tag": "0019_milestone10_cloud_home_save",
+      "breakpoints": true
     }
   ]
 }

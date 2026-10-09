@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import {
   BedDouble,
   CookingPot,
@@ -22,6 +22,8 @@ import {
   type PlacedFurniture,
   type RoomId,
 } from "@/lib/housing-service";
+import { parseHousingSave } from "@/lib/housing-service";
+import { readLocalHousingSave, writeLocalHousingSave } from "@/lib/save-storage";
 import type { HouseRoomId } from "@/components/game/housing/HouseScene";
 
 const HouseScene = import.meta.env.SSR
@@ -50,46 +52,21 @@ const ROOM_ICONS = {
   dining: Sofa,
 };
 const SAVE_KEY = "osogbo-life-housing-v1";
-type Props = { balance?: number; onSave?: (save: HousingSave) => void };
+type Props = {
+  balance?: number;
+  saveKey?: string;
+  initialSave?: HousingSave;
+  onSave?: (save: HousingSave) => void;
+};
 
-function loadSave(): HousingSave {
+function loadSave(key: string): HousingSave {
   if (typeof window === "undefined") return DEFAULT_HOUSING_SAVE;
-  try {
-    const raw = window.localStorage.getItem(SAVE_KEY);
-    if (!raw) return DEFAULT_HOUSING_SAVE;
-    const value = JSON.parse(raw) as Partial<HousingSave>;
-    const layout = HOME_LAYOUTS.find((item) => item.id === value.layoutId) ?? HOME_LAYOUTS[1]!;
-    const furniture = (value.furniture ?? []).filter((placed) => {
-      const room = layout.rooms.find((entry) => entry.id === placed.room);
-      const item = FURNITURE_CATALOG.find((entry) => entry.id === placed.itemId);
-      return (
-        room &&
-        item &&
-        canPlace(
-          room,
-          item,
-          placed.x,
-          placed.y,
-          (value.furniture ?? []).filter((other) => other.id !== placed.id),
-          placed.id,
-        )
-      );
-    });
-    return {
-      ...DEFAULT_HOUSING_SAVE,
-      ...value,
-      furniture,
-      storage: value.storage ?? [],
-      upgrades: value.upgrades ?? [],
-      needs: { ...DEFAULT_HOUSING_SAVE.needs, ...value.needs },
-    } as HousingSave;
-  } catch {
-    return DEFAULT_HOUSING_SAVE;
-  }
+  return readLocalHousingSave(key)?.payload ?? DEFAULT_HOUSING_SAVE;
 }
 
-export function HomeInterior({ balance = 5000, onSave }: Props) {
-  const [saved, setSaved] = useState(loadSave);
+export function HomeInterior({ balance = 5000, saveKey = SAVE_KEY, initialSave, onSave }: Props) {
+  const [saved, setSaved] = useState(() => initialSave ?? loadSave(saveKey));
+  const onSaveRef = useRef(onSave);
   const [inside, setInside] = useState(false);
   const [lightsOn, setLightsOn] = useState(true);
   const [buildMode, setBuildMode] = useState(false);
@@ -99,6 +76,9 @@ export function HomeInterior({ balance = 5000, onSave }: Props) {
   const [target, setTarget] = useState<[number, number] | null>(null);
   const [notice, setNotice] = useState("");
   const [category, setCategory] = useState("all");
+  useEffect(() => {
+    onSaveRef.current = onSave;
+  }, [onSave]);
   const layout = HOME_LAYOUTS.find((entry) => entry.id === saved.layoutId) ?? HOME_LAYOUTS[1]!;
   const room = layout.rooms.find((entry) => entry.id === saved.room) ?? layout.rooms[0]!;
   const usableFurniture = useMemo(
@@ -119,12 +99,19 @@ export function HomeInterior({ balance = 5000, onSave }: Props) {
     return cells;
   }, [usableFurniture]);
   const save = (next: HousingSave) => {
-    setSaved(next);
+    const validated = parseHousingSave(next);
+    if (!validated) {
+      setNotice("That home change could not be saved safely.");
+      return;
+    }
+    setSaved(validated);
     if (typeof window !== "undefined") {
-      window.localStorage.setItem(SAVE_KEY, JSON.stringify(next));
+      const stored = writeLocalHousingSave(saveKey, validated);
+      if (!stored)
+        setNotice("Browser storage is unavailable. Your cloud save will still be attempted.");
       window.dispatchEvent(new Event("osogbo-life-home-changed"));
     }
-    onSave?.(next);
+    onSaveRef.current?.(validated);
   };
   useEffect(() => {
     if (!target || buildMode) return;
@@ -144,12 +131,18 @@ export function HomeInterior({ balance = 5000, onSave }: Props) {
       }
       setSaved((current) => {
         const next = { ...current, x: point[0], y: point[1] };
-        window.localStorage.setItem(SAVE_KEY, JSON.stringify(next));
-        return next;
+        const validated = parseHousingSave(next);
+        if (validated) {
+          writeLocalHousingSave(saveKey, validated);
+          onSaveRef.current?.(validated);
+          window.dispatchEvent(new Event("osogbo-life-home-changed"));
+          return validated;
+        }
+        return current;
       });
     }, 170);
     return () => window.clearInterval(timer);
-  }, [target, room, saved.x, saved.y, blocked, buildMode]);
+  }, [target, room, saved.x, saved.y, blocked, buildMode, saveKey]);
   const visitRoom = (nextRoom: RoomId) => {
     if (!room.connections.includes(nextRoom) && room.id !== nextRoom) {
       setNotice("That room is not connected from here.");
@@ -157,16 +150,7 @@ export function HomeInterior({ balance = 5000, onSave }: Props) {
     }
     const def = layout.rooms.find((entry) => entry.id === nextRoom);
     if (!def) return;
-    setSaved((current) => {
-      const next = {
-        ...current,
-        room: nextRoom,
-        x: Math.floor(def.width / 2),
-        y: Math.floor(def.height / 2),
-      };
-      window.localStorage.setItem(SAVE_KEY, JSON.stringify(next));
-      return next;
-    });
+    save({ ...saved, room: nextRoom, x: Math.floor(def.width / 2), y: Math.floor(def.height / 2) });
     setNotice(`Entered ${def.name}.`);
   };
   const placeAt = (x: number, y: number) => {

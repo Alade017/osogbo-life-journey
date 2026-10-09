@@ -11,6 +11,7 @@ import {
   NEED_NAMES,
   normalizeNeeds,
   queueActions,
+  restoreLocalSimulationSnapshot,
   startAction,
   startNextQueuedAction,
   statusForNeed,
@@ -204,5 +205,33 @@ describe("life simulation needs and clock", () => {
         "p1",
       ),
     ).toBe(false);
+  });
+
+  it("restores local state without trusting currency, XP, or cloud-owned location", () => {
+    const current = player({
+      serverSnapshot: {
+        ...player().serverSnapshot,
+        updatedAt: new Date(Date.now() - 1_000).toISOString(),
+      },
+    });
+    const edited = {
+      ...current,
+      wallet: 9_999_999,
+      experience: 8_888_888,
+      locationId: "another-player-location",
+    };
+    const restored = restoreLocalSimulationSnapshot(current, edited, Date.now() + 1_000);
+    expect(restored.wallet).toBe(current.wallet);
+    expect(restored.experience).toBe(current.experience);
+    expect(restored.locationId).toBe(current.locationId);
+    expect(restored.lastUpdatedAt).toBeGreaterThan(current.lastUpdatedAt);
+  });
+
+  it("ignores malformed or stale local simulation snapshots", () => {
+    const current = player();
+    expect(restoreLocalSimulationSnapshot(current, { wallet: -1 }, Date.now() + 1_000)).toBe(
+      current,
+    );
+    expect(restoreLocalSimulationSnapshot(current, current, 0)).toBe(current);
   });
 });
