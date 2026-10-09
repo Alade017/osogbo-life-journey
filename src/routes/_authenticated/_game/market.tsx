@@ -118,7 +118,13 @@ function MarketPage() {
                       type="button"
                       className="rounded-lg border-2 border-edge bg-primary px-4 py-2 font-bold text-primary-foreground disabled:opacity-50"
                       disabled={!canBuy || !!quote.error || purchase.isPending}
-                      onClick={() => purchase.mutate({ shopItemId: offer.id, quantity })}
+                      onClick={() =>
+                        purchase.mutate({
+                          shopItemId: offer.id,
+                          quantity,
+                          requestId: crypto.randomUUID(),
+                        })
+                      }
                     >
                       Buy
                     </button>

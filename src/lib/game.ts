@@ -394,11 +394,12 @@ export const rpc = {
     unwrap(await supabase.rpc("deposit_cash", { p_amount: amount })),
   withdrawCash: async (amount: number) =>
     unwrap(await supabase.rpc("withdraw_cash", { p_amount: amount })),
-  purchaseShopItem: async (args: { shopItemId: string; quantity: number }) =>
+  purchaseShopItem: async (args: { shopItemId: string; quantity: number; requestId: string }) =>
     unwrap(
       await supabase.rpc("purchase_shop_item", {
         p_shop_item_id: args.shopItemId,
         p_quantity: args.quantity,
+        p_request_id: args.requestId,
       }),
     ),
   sellInventoryItem: async (args: { shopId: string; inventoryId: string; quantity: number }) =>

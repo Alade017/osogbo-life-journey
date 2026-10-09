@@ -18,6 +18,7 @@ export type Database = {
           job_id: string;
           last_performed_at: string | null;
           times_performed: number;
+          career_level: number;
           updated_at: string;
           user_id: string;
         };
@@ -29,6 +30,7 @@ export type Database = {
           is_current?: boolean;
           last_performed_at?: string | null;
           times_performed?: number;
+          career_level?: number;
           hired_at?: string;
           created_at?: string;
           updated_at?: string;
@@ -42,6 +44,7 @@ export type Database = {
           job_id?: string;
           last_performed_at?: string | null;
           times_performed?: number;
+          career_level?: number;
           updated_at?: string;
           user_id?: string;
         };
@@ -273,6 +276,8 @@ export type Database = {
           required_level: number;
           requirements: Json;
           reputation_reward: number;
+          skill_reward_slug: string;
+          skill_reward_xp: number;
           salary: number;
           slug: string;
           sort_order: number;
@@ -299,6 +304,8 @@ export type Database = {
           required_level?: number;
           requirements?: Json;
           reputation_reward?: number;
+          skill_reward_slug?: string;
+          skill_reward_xp?: number;
           salary: number;
           slug: string;
           sort_order?: number;
@@ -325,6 +332,8 @@ export type Database = {
           required_level?: number;
           requirements?: Json;
           reputation_reward?: number;
+          skill_reward_slug?: string;
+          skill_reward_xp?: number;
           salary?: number;
           slug?: string;
           sort_order?: number;
@@ -1338,7 +1347,12 @@ export type Database = {
       };
       deposit_cash: { Args: { p_amount: number }; Returns: Json };
       withdraw_cash: { Args: { p_amount: number }; Returns: Json };
-      purchase_shop_item: { Args: { p_quantity: number; p_shop_item_id: string }; Returns: Json };
+      purchase_shop_item: {
+        Args: { p_quantity: number; p_shop_item_id: string; p_request_id: string };
+        Returns: Json;
+      };
+      promote_current_job: { Args: never; Returns: Json };
+      process_my_property_rent: { Args: never; Returns: Json };
       sell_inventory_item: {
         Args: { p_inventory_id: string; p_quantity: number; p_shop_id: string };
         Returns: Json;
