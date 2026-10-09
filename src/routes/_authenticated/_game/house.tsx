@@ -16,14 +16,36 @@ function HousePage() {
   const { data: listingsData, isLoading } = useQuery(q.propertyListings());
   const { data: character } = useQuery(q.character());
   const { data: wallet } = useQuery(q.wallet());
+  const { data: rentData } = useQuery(q.rentStatus());
   const acquire = useGameAction(rpc.acquireProperty, {
     onSuccess: () => toast.success("Property secured. Your wallet and housing record are updated."),
   });
   const listings = (Array.isArray(listingsData) ? listingsData : []) as PropertyListing[];
+  const rentStatus = rentData as {
+    next_due_at?: string | null;
+    next_amount?: number | null;
+    unpaid_total?: number;
+    unpaid_periods?: number;
+  } | null;
 
   return (
     <div className="space-y-6">
       <PageHeader title="Homes and property" />
+      {rentStatus?.next_due_at && (
+        <section className="game-panel p-4" aria-label="Rent obligations">
+          <h2 className="font-display font-bold">Rent obligations · game values</h2>
+          <p className="mt-1 text-sm">
+            {formatNaira(rentStatus.next_amount)} due{" "}
+            {new Date(rentStatus.next_due_at).toLocaleDateString("en-NG")}
+          </p>
+          {(rentStatus.unpaid_periods ?? 0) > 0 && (
+            <p className="mt-1 text-sm text-clay">
+              {rentStatus.unpaid_periods} unpaid period(s): {formatNaira(rentStatus.unpaid_total)}.
+              No eviction penalty applies.
+            </p>
+          )}
+        </section>
+      )}
       {isLoading ? (
         <LoadingState />
       ) : listings.length ? (

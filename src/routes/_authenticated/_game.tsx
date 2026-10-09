@@ -27,6 +27,7 @@ export const Route = createFileRoute("/_authenticated/_game")({
 
 const NAV = [
   { to: "/home", label: "Home", icon: House },
+  { to: "/house", label: "Property", icon: House },
   { to: "/map", label: "City", icon: Map },
   { to: "/jobs", label: "Jobs", icon: Briefcase },
   { to: "/inventory", label: "Inventory", icon: Package },
@@ -175,6 +176,14 @@ function GameLayout() {
           >
             <Briefcase className="h-4.75 w-4.75" />
             <span>Jobs</span>
+          </Link>
+          <Link
+            to="/house"
+            activeProps={{ className: "mobile-nav-active" }}
+            className="mobile-nav-link"
+          >
+            <House className="h-4.75 w-4.75" />
+            <span>Homes</span>
           </Link>
           <Link
             to="/inventory"
