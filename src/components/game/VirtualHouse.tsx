@@ -1,6 +1,18 @@
 import { useMemo, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bath, BedDouble, ChefHat, Heart, House, LampDesk, Sparkles, Sofa, Tv, Wand2 } from "lucide-react";
+import type { Character } from "@/lib/game";
+import {
+  Bath,
+  BedDouble,
+  ChefHat,
+  Heart,
+  House,
+  LampDesk,
+  Sparkles,
+  Sofa,
+  Tv,
+  Wand2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -30,7 +42,8 @@ const rooms: Room[] = [
     name: "Kitchen",
     emoji: "🍳",
     accent: "#b8d7d1",
-    description: "The cooking corner where quick meals and fresh ingredients help keep the home alive.",
+    description:
+      "The cooking corner where quick meals and fresh ingredients help keep the home alive.",
     activities: ["Cook", "Meal prep", "Clean up"],
     position: { left: "52%", top: "9%", width: "42%", height: "35%" },
   },
@@ -87,34 +100,110 @@ const ROOM_EFFECTS: Record<
   >
 > = {
   living: {
-    Relax: { energy: 12, happiness: 8, mood: "Chill mode active", toast: "You relaxed and settled in." },
-    "Watch TV": { energy: 6, happiness: 10, mood: "Good vibes only", toast: "TV time brought the room to life." },
-    "Host visitors": { happiness: 12, mood: "Social energy boosted", toast: "You hosted a quick visit and felt more connected." },
+    Relax: {
+      energy: 12,
+      happiness: 8,
+      mood: "Chill mode active",
+      toast: "You relaxed and settled in.",
+    },
+    "Watch TV": {
+      energy: 6,
+      happiness: 10,
+      mood: "Good vibes only",
+      toast: "TV time brought the room to life.",
+    },
+    "Host visitors": {
+      happiness: 12,
+      mood: "Social energy boosted",
+      toast: "You hosted a quick visit and felt more connected.",
+    },
   },
   kitchen: {
-    Cook: { hunger: -10, happiness: 6, mood: "Home cooking in motion", toast: "A quick meal made the place feel alive." },
+    Cook: {
+      hunger: -10,
+      happiness: 6,
+      mood: "Home cooking in motion",
+      toast: "A quick meal made the place feel alive.",
+    },
     "Meal prep": { hunger: -8, mood: "Prepared for the day", toast: "You prepped a simple meal." },
-    "Clean up": { happiness: 4, mood: "The home feels fresh", toast: "A tidy kitchen keeps the house balanced." },
+    "Clean up": {
+      happiness: 4,
+      mood: "The home feels fresh",
+      toast: "A tidy kitchen keeps the house balanced.",
+    },
   },
   bedroom: {
-    Sleep: { energy: 22, happiness: 5, mood: "Fully rested", toast: "You slept deeply and recovered energy." },
+    Sleep: {
+      energy: 22,
+      happiness: 5,
+      mood: "Fully rested",
+      toast: "You slept deeply and recovered energy.",
+    },
     Rest: { energy: 14, mood: "Recharge cycle unlocked", toast: "A calm rest reset your pace." },
-    Recharge: { energy: 18, hunger: 2, mood: "Resetting your energy", toast: "You took a quiet recharge break." },
+    Recharge: {
+      energy: 18,
+      hunger: 2,
+      mood: "Resetting your energy",
+      toast: "You took a quiet recharge break.",
+    },
   },
   study: {
-    Study: { energy: -8, happiness: 2, mood: "Learning mode on", toast: "You focused and sharpened your mind." },
-    "Work smart": { energy: -5, happiness: 4, mood: "Productive afternoon", toast: "You got a bit of useful work done." },
-    Read: { energy: -2, happiness: 6, mood: "Reading time", toast: "A quiet read gave your brain a boost." },
+    Study: {
+      energy: -8,
+      happiness: 2,
+      mood: "Learning mode on",
+      toast: "You focused and sharpened your mind.",
+    },
+    "Work smart": {
+      energy: -5,
+      happiness: 4,
+      mood: "Productive afternoon",
+      toast: "You got a bit of useful work done.",
+    },
+    Read: {
+      energy: -2,
+      happiness: 6,
+      mood: "Reading time",
+      toast: "A quiet read gave your brain a boost.",
+    },
   },
   bathroom: {
-    "Freshen up": { energy: 8, happiness: 5, mood: "Fresh and ready", toast: "You cleaned up and feel more awake." },
-    Shower: { energy: 10, happiness: 7, mood: "Fresh reset complete", toast: "A quick shower left you feeling renewed." },
-    Reset: { happiness: 6, mood: "Everything feels clearer", toast: "You reset your routine and felt better." },
+    "Freshen up": {
+      energy: 8,
+      happiness: 5,
+      mood: "Fresh and ready",
+      toast: "You cleaned up and feel more awake.",
+    },
+    Shower: {
+      energy: 10,
+      happiness: 7,
+      mood: "Fresh reset complete",
+      toast: "A quick shower left you feeling renewed.",
+    },
+    Reset: {
+      happiness: 6,
+      mood: "Everything feels clearer",
+      toast: "You reset your routine and felt better.",
+    },
   },
   courtyard: {
-    Stretch: { energy: 8, happiness: 5, mood: "Outdoors energy restored", toast: "A quick stretch improved your mood." },
-    "Breath in air": { energy: 6, happiness: 6, mood: "Calm and grounded", toast: "Fresh air helped you settle down." },
-    Socialize: { happiness: 10, mood: "A little more connected", toast: "You spent time socializing outside." },
+    Stretch: {
+      energy: 8,
+      happiness: 5,
+      mood: "Outdoors energy restored",
+      toast: "A quick stretch improved your mood.",
+    },
+    "Breath in air": {
+      energy: 6,
+      happiness: 6,
+      mood: "Calm and grounded",
+      toast: "Fresh air helped you settle down.",
+    },
+    Socialize: {
+      happiness: 10,
+      mood: "A little more connected",
+      toast: "You spent time socializing outside.",
+    },
   },
 };
 
@@ -159,7 +248,7 @@ export function VirtualHouse({ characterName }: { characterName: string }) {
     const roomEffect = ROOM_EFFECTS[roomId]?.[action];
     if (!roomEffect) return;
 
-    queryClient.setQueryData(["character"], (current: any) => {
+    queryClient.setQueryData(["character"], (current: Character | undefined) => {
       if (!current) return current;
 
       const next = { ...current };
@@ -281,7 +370,7 @@ export function VirtualHouse({ characterName }: { characterName: string }) {
               onClick={() => {
                 setMood("Cozy evening mode");
                 toast.success(`Home vibe updated for ${characterName}`);
-                queryClient.setQueryData(["character"], (current: any) => {
+                queryClient.setQueryData(["character"], (current: Character | undefined) => {
                   if (!current) return current;
                   return {
                     ...current,
@@ -299,7 +388,7 @@ export function VirtualHouse({ characterName }: { characterName: string }) {
               className="w-full"
               onClick={() => {
                 setMood("Reset and recharge");
-                queryClient.setQueryData(["character"], (current: any) => {
+                queryClient.setQueryData(["character"], (current: Character | undefined) => {
                   if (!current) return current;
                   return {
                     ...current,

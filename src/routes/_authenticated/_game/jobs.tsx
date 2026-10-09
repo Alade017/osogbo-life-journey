@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { BriefcaseBusiness, Clock, Lock, MapPin, Search, Star, Zap } from "lucide-react";
-import { q, rpc, formatNaira, useGameAction } from "@/lib/game";
+import { q, rpc, formatNaira, careerShiftPay, useGameAction } from "@/lib/game";
 import { pageMeta } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,12 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Chip, LoadingState } from "@/components/game/ui";
 import { cn } from "@/lib/utils";
-import {
-  JOB_CATEGORIES,
-  JOB_CATEGORY_LABELS,
-  parseJobActivityRequirements,
-  resolveJobCategory,
-} from "@/lib/job-activity-model";
+import { JOB_CATEGORIES, JOB_CATEGORY_LABELS, resolveJobCategory } from "@/lib/job-activity-model";
 import { checkJobEligibility, filterJobListings } from "@/lib/job-board-service";
 import { formatGameTime } from "@/lib/game-time";
 
@@ -56,13 +51,9 @@ function JobsPage() {
   const { data: places } = useQuery(q.places());
   const { data: courses } = useQuery(q.educationCourses());
   const { data: myCourses } = useQuery(q.myCourses());
-  const hasSkillRequirements =
-    jobs?.some(
-      (job) => (parseJobActivityRequirements(job.requirements ?? {}).skills?.length ?? 0) > 0,
-    ) ?? false;
   const { data: playerSkills } = useQuery({
     ...q.playerSkills(),
-    enabled: !!c && hasSkillRequirements,
+    enabled: !!c,
   });
   const select = useGameAction(rpc.selectJob, {
     onSuccess: () => toast.success("You got the job!"),
@@ -74,6 +65,9 @@ function JobsPage() {
         `Shift done! +${formatNaira(r.earned)} · +${r.xp} XP · ${r.duration_minutes} min · ${formatGameTime(r.game_time)}`,
       );
     },
+  });
+  const promote = useGameAction(rpc.promoteCurrentJob, {
+    onSuccess: () => toast.success("Promotion unlocked! Your career level has increased."),
   });
   const filteredJobs = useMemo(() => {
     const searchableJobs = (jobs ?? []).map((job) => ({
@@ -91,6 +85,17 @@ function JobsPage() {
   if (isLoading || !c || !jobs) return <LoadingState />;
   const current = myJobs?.find((j) => j.is_current);
   const currentJob = jobs.find((j) => j.id === current?.job_id);
+  const careerSkill = currentJob
+    ? playerSkills?.find((skill) => skill.skill_slug === currentJob.skill_reward_slug)
+    : undefined;
+  const nextCareerLevel = current?.career_level === 1 ? 2 : 3;
+  const shiftsForPromotion = nextCareerLevel === 2 ? 5 : 15;
+  const skillLevelForPromotion = nextCareerLevel === 2 ? 1 : 3;
+  const promotionReady =
+    !!current &&
+    current.career_level < 3 &&
+    current.times_performed >= shiftsForPromotion &&
+    (careerSkill?.level ?? 0) >= skillLevelForPromotion;
   const currentJobLocation = locations?.find((location) => location.id === currentJob?.location_id);
   const canWorkHere = !currentJob?.location_id || c.current_location_id === currentJob.location_id;
   const currentRequirement = currentJob?.required_course_slug
@@ -116,6 +121,9 @@ function JobsPage() {
       ? new Date(current.last_performed_at).getTime() + currentJob.cooldown_minutes * 60_000
       : 0;
   const cooling = readyAt > now;
+  const currentShiftPay = currentJob
+    ? careerShiftPay(currentJob.salary, current?.career_level ?? 1)
+    : 0;
 
   return (
     <div className="jobs-page">
@@ -166,7 +174,7 @@ function JobsPage() {
               <div className="rounded-lg border border-edge bg-card p-3">
                 <p className="text-muted-foreground">Expected pay · XP</p>
                 <p className="font-bold">
-                  {formatNaira(currentJob.salary)} · +{currentJob.xp_reward} XP
+                  {formatNaira(currentShiftPay)} · +{currentJob.xp_reward} XP
                 </p>
               </div>
             </div>
@@ -174,7 +182,10 @@ function JobsPage() {
               <Button variant="plain" onClick={() => setWorkSessionOpen(false)}>
                 Cancel
               </Button>
-              <Button disabled={work.isPending} onClick={() => work.mutate(undefined)}>
+              <Button
+                disabled={work.isPending}
+                onClick={() => work.mutate({ requestId: crypto.randomUUID() })}
+              >
                 {work.isPending ? "Completing shift…" : "Confirm and work"}
               </Button>
             </DialogFooter>
@@ -189,7 +200,8 @@ function JobsPage() {
             <h2>{currentJob.name}</h2>
             <p className="jobs-current-meta">
               <BriefcaseBusiness size={15} /> {currentJobLocation?.name ?? "Osogbo"}
-              <span /> {current?.times_performed ?? 0} shifts completed
+              <span /> {current?.times_performed ?? 0} shifts · {currentJob.shift_start_hour}:00–
+              {currentJob.shift_end_hour}:00
             </p>
           </div>
           {!canWorkHere && currentJobLocation ? (
@@ -218,10 +230,31 @@ function JobsPage() {
               ) : work.isPending ? (
                 "Working…"
               ) : (
-                `Start shift · ${formatNaira(currentJob.salary)}`
+                `Start shift · ${formatNaira(currentShiftPay)}`
               )}
             </Button>
           )}
+          <div className="md:col-span-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/40 p-3">
+            <p className="text-sm">
+              Career level {current?.career_level ?? 1}/3 · {current?.times_performed ?? 0} shifts ·{" "}
+              {currentJob.skill_reward_slug.replaceAll("_", " ")} level {careerSkill?.level ?? 0}
+              {current?.career_level !== undefined && current.career_level < 3 && (
+                <span className="block text-xs text-muted-foreground">
+                  Next promotion: {shiftsForPromotion} shifts and skill level{" "}
+                  {skillLevelForPromotion}
+                </span>
+              )}
+            </p>
+            {current?.career_level !== undefined && current.career_level < 3 && (
+              <Button
+                variant="plain"
+                disabled={!promotionReady || promote.isPending}
+                onClick={() => promote.mutate(undefined)}
+              >
+                {promotionReady ? "Claim promotion" : "Promotion requirements in progress"}
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
@@ -339,7 +372,9 @@ function JobsPage() {
                 <dl className="jobs-metrics mt-4 grid grid-cols-3 gap-2 text-center text-xs">
                   <div className="jobs-metric jobs-metric-pay">
                     <dt className="font-semibold">Pay</dt>
-                    <dd className="font-display text-sm font-bold">{formatNaira(j.salary)}</dd>
+                    <dd className="font-display text-sm font-bold">
+                      {formatNaira(isCurrent ? currentShiftPay : j.salary)}
+                    </dd>
                   </div>
                   <div className="jobs-metric jobs-metric-energy">
                     <dt className="flex items-center justify-center gap-0.5 font-semibold">
@@ -357,7 +392,9 @@ function JobsPage() {
                   </div>
                 </dl>
                 <p className="mt-2 text-xs text-muted-foreground">
-                  +{j.xp_reward} XP · boosts {j.stat_bonus} & career
+                  +{j.xp_reward} XP · +{j.skill_reward_xp}{" "}
+                  {j.skill_reward_slug.replaceAll("_", " ")} XP per shift · {j.shift_start_hour}:00–
+                  {j.shift_end_hour}:00
                 </p>
                 <div className="mt-3 rounded-lg border border-border bg-muted/60 p-3 text-xs">
                   <p className="font-bold">Requirements</p>

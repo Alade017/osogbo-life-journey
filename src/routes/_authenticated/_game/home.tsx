@@ -9,7 +9,7 @@ import { NeedsPanel } from "@/components/game/NeedsPanel";
 import { OsogboMap } from "@/components/game/OsogboMap";
 import { VirtualHouse } from "@/components/game/VirtualHouse";
 import { dashboardGreeting } from "@/lib/dashboard-greeting";
-import { q, formatNaira } from "@/lib/game";
+import { q, formatNaira, careerShiftPay } from "@/lib/game";
 import { pageMeta } from "@/lib/seo";
 import { useLiveClock } from "@/hooks/use-live-clock";
 
@@ -24,6 +24,7 @@ function CityHome() {
   const { data: jobs } = useQuery(q.jobs());
   const { data: myJobs } = useQuery(q.myJobs());
   const { data: locations } = useQuery(q.locations());
+  const { data: rentData } = useQuery(q.rentStatus());
 
   if (!character) return null;
 
@@ -40,6 +41,12 @@ function CityHome() {
     : "Explore the city and find a job that suits you";
   const nextPath = currentJob ? "/jobs" : "/map";
   const nextLabel = currentJob ? "View job" : "Explore";
+  const rentStatus = rentData as {
+    next_due_at?: string | null;
+    next_amount?: number | null;
+    unpaid_total?: number;
+    unpaid_periods?: number;
+  } | null;
 
   return (
     <div className="game-home home-only-page">
@@ -53,13 +60,21 @@ function CityHome() {
         {currentJob && (
           <Link to="/jobs" className="arrival-job">
             <Briefcase className="h-4 w-4" />
-            <span>{formatNaira(currentJob.salary)} per shift</span>
+            <span>
+              {formatNaira(
+                careerShiftPay(currentJob.salary, currentJobAssignment?.career_level ?? 1),
+              )}{" "}
+              per shift
+            </span>
           </Link>
         )}
       </div>
 
       <div className="mt-5">
         <VirtualHouse characterName={character.name} />
+        <Link to="/house" className="mt-2 inline-flex text-sm font-semibold text-primary underline">
+          Browse homes, rent, and property upgrades
+        </Link>
       </div>
 
       <div className="game-home-grid mt-6">
@@ -110,6 +125,23 @@ function CityHome() {
         <aside className="game-side-rail" aria-label="Player status and actions">
           <NeedsPanel />
           <GameQuickActions />
+          {rentStatus?.next_due_at && (
+            <section className="game-panel p-4" aria-label="Upcoming rent">
+              <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground">
+                Housing obligation · game value
+              </p>
+              <p className="mt-1 font-bold">
+                {formatNaira(rentStatus.next_amount)} due{" "}
+                {new Date(rentStatus.next_due_at).toLocaleDateString("en-NG")}
+              </p>
+              {(rentStatus.unpaid_periods ?? 0) > 0 && (
+                <p className="mt-1 text-sm text-clay">
+                  {rentStatus.unpaid_periods} unpaid period(s):{" "}
+                  {formatNaira(rentStatus.unpaid_total)}. No eviction penalty applies.
+                </p>
+              )}
+            </section>
+          )}
           <section className="day-objective" aria-label="Current objective">
             <span className="objective-icon">
               <Target className="h-4 w-4" />
@@ -123,7 +155,7 @@ function CityHome() {
               </h2>
               <p className="mt-1 text-xs text-muted-foreground">
                 {currentJob
-                  ? `${currentJob.name} · ${formatNaira(currentJob.salary)} per shift`
+                  ? `${currentJob.name} · ${formatNaira(careerShiftPay(currentJob.salary, currentJobAssignment?.career_level ?? 1))} per shift`
                   : "Choose a first job and start earning"}
               </p>
             </div>

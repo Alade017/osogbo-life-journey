@@ -278,6 +278,8 @@ export type Database = {
           reputation_reward: number;
           skill_reward_slug: string;
           skill_reward_xp: number;
+          shift_start_hour: number;
+          shift_end_hour: number;
           salary: number;
           slug: string;
           sort_order: number;
@@ -306,6 +308,8 @@ export type Database = {
           reputation_reward?: number;
           skill_reward_slug?: string;
           skill_reward_xp?: number;
+          shift_start_hour?: number;
+          shift_end_hour?: number;
           salary: number;
           slug: string;
           sort_order?: number;
@@ -334,6 +338,8 @@ export type Database = {
           reputation_reward?: number;
           skill_reward_slug?: string;
           skill_reward_xp?: number;
+          shift_start_hour?: number;
+          shift_end_hour?: number;
           salary?: number;
           slug?: string;
           sort_order?: number;
@@ -1353,6 +1359,9 @@ export type Database = {
       };
       promote_current_job: { Args: never; Returns: Json };
       process_my_property_rent: { Args: never; Returns: Json };
+      my_property_rent_status: { Args: never; Returns: Json };
+      my_game_property_listings: { Args: never; Returns: Json };
+      acquire_game_property: { Args: { p_property_id: string; p_tenure: string }; Returns: Json };
       sell_inventory_item: {
         Args: { p_inventory_id: string; p_quantity: number; p_shop_id: string };
         Returns: Json;
@@ -1404,7 +1413,7 @@ export type Database = {
         Returns: string;
       };
       mark_notifications_read: { Args: { p_id?: string }; Returns: undefined };
-      perform_job: { Args: never; Returns: Json };
+      perform_job: { Args: { p_request_id: string }; Returns: Json };
       refresh_my_energy: { Args: never; Returns: number };
       select_job: { Args: { p_job_id: string }; Returns: undefined };
       travel_to_location: { Args: { p_location_id: string; p_mode: string }; Returns: Json };

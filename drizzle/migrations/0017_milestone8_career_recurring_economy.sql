@@ -4,7 +4,11 @@
 alter table public.jobs
   add column if not exists skill_reward_slug text not null default 'communication',
   add column if not exists skill_reward_xp integer not null default 8
-    check (skill_reward_xp between 0 and 10000);
+    check (skill_reward_xp between 0 and 10000),
+  add column if not exists shift_start_hour smallint not null default 9
+    check (shift_start_hour between 0 and 23),
+  add column if not exists shift_end_hour smallint not null default 17
+    check (shift_end_hour between 1 and 24);
 alter table public.character_jobs
   add column if not exists career_level integer not null default 1
     check (career_level between 1 and 3);
@@ -30,6 +34,24 @@ update public.jobs set
     when 'food_hospitality' then 10
     when 'trading' then 10
     else 8
+  end,
+  shift_start_hour = case category
+    when 'transportation' then 6
+    when 'healthcare' then 7
+    when 'retail' then 8
+    when 'trading' then 6
+    when 'food_hospitality' then 10
+    else 9
+  end,
+  shift_end_hour = case category
+    when 'food_hospitality' then 22
+    when 'retail' then 18
+    when 'trading' then 17
+    when 'transportation' then 16
+    when 'education' then 16
+    when 'technology' then 18
+    when 'healthcare' then 19
+    else 17
   end;
 
 create table if not exists public.economy_request_results (
@@ -43,6 +65,37 @@ create table if not exists public.economy_request_results (
 alter table public.economy_request_results enable row level security;
 revoke all on public.economy_request_results from public, anon, authenticated;
 grant all on public.economy_request_results to service_role;
+
+-- Preserve the existing atomic work implementation behind a request-key wrapper.
+alter function public.perform_job() rename to _perform_job_once;
+revoke execute on function public._perform_job_once() from public, anon, authenticated;
+create function public.perform_job(p_request_id uuid)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare cid uuid := public._my_character_id(); result jsonb; pay_bonus bigint;
+  player public.characters%rowtype; cj public.character_jobs%rowtype; j public.jobs%rowtype;
+begin
+  if cid is null then raise exception 'No character'; end if;
+  if p_request_id is null then raise exception 'Shift request ID is required'; end if;
+  perform pg_advisory_xact_lock(hashtextextended(cid::text || p_request_id::text, 0));
+  select er.result into result from public.economy_request_results er
+    where er.character_id = cid and er.request_id = p_request_id and er.operation = 'job_shift';
+  if found then return result; end if;
+  select * into player from public.characters where id = cid and user_id = auth.uid() for update;
+  select * into cj from public.character_jobs where character_id = cid and is_current for update;
+  if not found then raise exception 'Select a job first'; end if;
+  select * into j from public.jobs where id = cj.job_id;
+  if player.game_time_hour < j.shift_start_hour or player.game_time_hour >= j.shift_end_hour then
+    raise exception 'This shift runs between %:00 and %:00 in game time', j.shift_start_hour, j.shift_end_hour;
+  end if;
+  result := public._perform_job_once();
+  pay_bonus := floor((result ->> 'earned')::numeric * greatest(0, cj.career_level - 1) * 0.10)::bigint;
+  result := jsonb_set(result, '{earned}', to_jsonb((result ->> 'earned')::bigint + pay_bonus), true);
+  insert into public.economy_request_results(character_id, request_id, operation, result)
+    values (cid, p_request_id, 'job_shift', result);
+  return result;
+end $$;
+revoke execute on function public.perform_job(uuid) from public, anon;
+grant execute on function public.perform_job(uuid) to authenticated;
 
 drop function public.purchase_shop_item(uuid, integer);
 create function public.purchase_shop_item(p_shop_item_id uuid, p_quantity integer, p_request_id uuid)
@@ -110,7 +163,7 @@ begin
   if not found or j.skill_reward_xp <= 0 then return new; end if;
   select experience into prior_xp from public.player_skills
     where character_id = new.character_id and skill_slug = j.skill_reward_slug for update;
-  next_xp := coalesce(prior_xp, 0) + j.skill_reward_xp;
+  next_xp := least(100000000, coalesce(prior_xp, 0) + j.skill_reward_xp);
   insert into public.player_skills(user_id, character_id, skill_slug, level, experience)
     values (new.user_id, new.character_id, j.skill_reward_slug,
       least(100, next_xp / 100), next_xp)
@@ -152,6 +205,27 @@ begin
 end $$;
 revoke execute on function public.promote_current_job() from public, anon;
 grant execute on function public.promote_current_job() to authenticated;
+
+create or replace function public._apply_career_pay_bonus()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare career_level integer; bonus bigint; new_balance bigint;
+begin
+  if new.kind <> 'income' or new.category <> 'job' then return new; end if;
+  select cj.career_level into career_level from public.character_jobs cj
+    where cj.character_id = new.character_id and cj.is_current;
+  bonus := floor(new.amount * greatest(0, coalesce(career_level, 1) - 1) * 0.10)::bigint;
+  if bonus <= 0 then return new; end if;
+  update public.wallets set balance = balance + bonus, total_income = total_income + bonus
+    where id = new.wallet_id returning balance into new_balance;
+  update public.transactions set amount = amount + bonus, balance_after = new_balance,
+    description = description || ' (career level ' || career_level || ' bonus)'
+    where id = new.id;
+  return new;
+end $$;
+drop trigger if exists t_career_pay_bonus on public.transactions;
+create trigger t_career_pay_bonus after insert on public.transactions
+  for each row execute function public._apply_career_pay_bonus();
+revoke execute on function public._apply_career_pay_bonus() from public, anon, authenticated;
 
 alter table public.player_properties
   add column if not exists rent_amount bigint,
@@ -216,7 +290,7 @@ begin
   if not found then raise exception 'Wallet not found'; end if;
   for p in select * from public.player_properties
       where character_id = cid and user_id = uid and is_active and tenure = 'rented'
-        and next_rent_due_at <= now() order by next_rent_due_at for update limit 24
+        and next_rent_due_at <= now() order by next_rent_due_at limit 24 for update
   loop
     insert into public.property_rent_ledger(user_id, character_id, player_property_id, due_at, amount)
       values (uid, cid, p.id, p.next_rent_due_at, p.rent_amount)
@@ -226,7 +300,7 @@ begin
   end loop;
   -- Retry previously unpaid bills first. No interest, eviction, or negative wallet balance.
   for bill in select * from public.property_rent_ledger
-      where character_id = cid and status = 'due' order by due_at for update limit 24
+      where character_id = cid and status = 'due' order by due_at limit 24 for update
   loop
     exit when w.balance < bill.amount;
     update public.wallets set balance = balance - bill.amount,
@@ -246,3 +320,44 @@ begin
 end $$;
 revoke execute on function public.process_my_property_rent() from public, anon;
 grant execute on function public.process_my_property_rent() to authenticated;
+
+create or replace function public.my_property_rent_status()
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare cid uuid := public._my_character_id();
+begin
+  if cid is null then raise exception 'No character'; end if;
+  return jsonb_build_object(
+    'next_due_at', (select min(next_rent_due_at) from public.player_properties
+      where character_id = cid and is_active and tenure = 'rented'),
+    'next_amount', (select rent_amount from public.player_properties
+      where character_id = cid and is_active and tenure = 'rented' limit 1),
+    'unpaid_total', coalesce((select sum(amount) from public.property_rent_ledger
+      where character_id = cid and status = 'due'), 0),
+    'unpaid_periods', (select count(*) from public.property_rent_ledger
+      where character_id = cid and status = 'due')
+  );
+end $$;
+revoke execute on function public.my_property_rent_status() from public, anon;
+grant execute on function public.my_property_rent_status() to authenticated;
+
+create or replace function public.my_game_property_listings()
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare cid uuid := public._my_character_id(); result jsonb;
+begin
+  if cid is null then raise exception 'No character'; end if;
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'id', gp.id, 'name', gp.name, 'description', gp.description,
+    'property_type', gp.property_type, 'purchase_price', gp.purchase_price,
+    'rent_price', gp.rent_price, 'rent_period_days', gp.rent_period_days,
+    'level_required', gp.level_required, 'active_tenure', pp.tenure,
+    'is_current', coalesce(pp.is_active, false)
+  ) order by gp.purchase_price nulls first, gp.rent_price), '[]'::jsonb)
+  into result
+  from public.game_properties gp
+  left join public.player_properties pp on pp.property_id = gp.id
+    and pp.character_id = cid and pp.is_active
+  where gp.is_active;
+  return result;
+end $$;
+revoke execute on function public.my_game_property_listings() from public, anon;
+grant execute on function public.my_game_property_listings() to authenticated;

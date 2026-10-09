@@ -5,7 +5,7 @@
 import { queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
+import type { Database, Json } from "@/integrations/supabase/types";
 import { normalizeCityLocation } from "@/lib/location-service";
 import { progressionFromExperience, XP_PER_LEVEL } from "@/lib/progression-service";
 
@@ -47,6 +47,8 @@ export function formatNaira(n: number | bigint | null | undefined) {
   return "₦" + Number(n ?? 0).toLocaleString("en-NG");
 }
 
+export { careerShiftPay } from "@/lib/economy-service";
+
 export function xpProgress(xp: number) {
   const progression = progressionFromExperience(xp);
   return {
@@ -79,6 +81,16 @@ export const q = {
     queryOptions({
       queryKey: ["wallet"],
       queryFn: async () => unwrap(await supabase.from("wallets").select("*").maybeSingle()),
+    }),
+  rentStatus: () =>
+    queryOptions({
+      queryKey: ["rentStatus"],
+      queryFn: async () => unwrap(await supabase.rpc("my_property_rent_status")),
+    }),
+  propertyListings: () =>
+    queryOptions({
+      queryKey: ["propertyListings"],
+      queryFn: async () => unwrap(await supabase.rpc("my_game_property_listings")),
     }),
   transactions: () =>
     queryOptions({
@@ -334,8 +346,8 @@ export const rpc = {
       intelligence_gain: number;
       career_gain: number;
     },
-  performJob: async () =>
-    unwrap(await supabase.rpc("perform_job")) as unknown as {
+  performJob: async (args: { requestId: string }) =>
+    unwrap(await supabase.rpc("perform_job", { p_request_id: args.requestId })) as unknown as {
       earned: number;
       xp: number;
       energy_spent: number;
@@ -346,6 +358,15 @@ export const rpc = {
       stress_gained: number;
       level: number;
     },
+  promoteCurrentJob: async () => unwrap(await supabase.rpc("promote_current_job")) as Json,
+  processPropertyRent: async () => unwrap(await supabase.rpc("process_my_property_rent")) as Json,
+  acquireProperty: async (args: { propertyId: string; tenure: "owned" | "rented" }) =>
+    unwrap(
+      await supabase.rpc("acquire_game_property", {
+        p_property_id: args.propertyId,
+        p_tenure: args.tenure,
+      }),
+    ) as Json,
   travelToLocation: async ({ locationId, mode }: { locationId: string; mode: string }) =>
     unwrap(
       await supabase.rpc("travel_to_location", { p_location_id: locationId, p_mode: mode }),

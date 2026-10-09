@@ -72,6 +72,20 @@ function GameLayout() {
     return () => clearInterval(id);
   }, [character?.id, qc]);
 
+  useEffect(() => {
+    if (!character?.id) return;
+    void rpc
+      .processPropertyRent()
+      .then(() =>
+        Promise.all([
+          qc.invalidateQueries({ queryKey: ["wallet"] }),
+          qc.invalidateQueries({ queryKey: ["transactions"] }),
+          qc.invalidateQueries({ queryKey: ["rentStatus"] }),
+        ]),
+      )
+      .catch(() => {});
+  }, [character?.id, qc]);
+
   if (isError)
     return (
       <GameDataUnavailable error={error} onRetry={() => void refetch()} isRetrying={isRefetching} />

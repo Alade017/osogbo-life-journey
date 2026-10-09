@@ -85,6 +85,55 @@
       "when": 1791245090847,
       "tag": "0011_job_time_needs",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791245090848,
+      "tag": "0012_location_search_index",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1791245090849,
+      "tag": "0012_milestone5_phase1_seed",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1791245090850,
+      "tag": "0013_virtual_player_movement",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1791245090851,
+      "tag": "0014_location_interaction_radius",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1791245090852,
+      "tag": "0015_backfill_starter_inventory",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1791245090853,
+      "tag": "0016_transport_mode_travel",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1791245090854,
+      "tag": "0017_milestone8_career_recurring_economy",
+      "breakpoints": true
     }
   ]
 }

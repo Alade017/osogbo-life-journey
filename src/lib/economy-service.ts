@@ -4,6 +4,36 @@ export type MoneySummary = {
   total: number;
 };
 
+/** Fictional in-game NGN assumptions aligned with the seeded item, property, and job catalogs. */
+export const ECONOMY_ASSUMPTIONS = Object.freeze({
+  currency: "NGN game value",
+  starterCash: 0,
+  weeklyStarterRent: 450,
+  basicFood: 1200,
+  localTransportFare: 100,
+  entryShiftPay: 3500,
+  entryShiftSkillXp: 8,
+  phoneUpgrade: 25000,
+});
+
+export function recoveryBudget(shiftCount: number) {
+  if (!Number.isSafeInteger(shiftCount) || shiftCount < 0)
+    throw new RangeError("Shift count must be a non-negative whole number.");
+  const income = shiftCount * ECONOMY_ASSUMPTIONS.entryShiftPay;
+  const essentials =
+    ECONOMY_ASSUMPTIONS.weeklyStarterRent +
+    ECONOMY_ASSUMPTIONS.basicFood +
+    ECONOMY_ASSUMPTIONS.localTransportFare;
+  return { income, essentials, remaining: income - essentials };
+}
+
+export function careerShiftPay(baseSalary: number, careerLevel: number): number {
+  if (!Number.isSafeInteger(baseSalary) || baseSalary < 0) return 0;
+  if (!Number.isInteger(careerLevel) || careerLevel < 1 || careerLevel > 3)
+    throw new RangeError("Career level must be between 1 and 3.");
+  return baseSalary + Math.floor((baseSalary * (careerLevel - 1)) / 10);
+}
+
 export function moneySummary(
   cash: number | null | undefined,
   bank: number | null | undefined,
