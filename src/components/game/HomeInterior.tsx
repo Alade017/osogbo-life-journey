@@ -53,7 +53,6 @@ const ROOM_ICONS = {
 };
 const SAVE_KEY = "osogbo-life-housing-v1";
 type Props = {
-  balance?: number;
   saveKey?: string;
   initialSave?: HousingSave;
   onSave?: (save: HousingSave) => void;
@@ -61,6 +60,8 @@ type Props = {
   readOnly?: boolean;
   visitorName?: string;
   onLeave?: () => void;
+  onPurchaseUpgrade?: (args: { roomId: RoomId; upgradeId: string }) => Promise<HousingSave>;
+  onPurchaseFurniture?: (args: { itemId: string }) => Promise<HousingSave>;
 };
 
 function loadSave(key: string): HousingSave {
@@ -69,7 +70,6 @@ function loadSave(key: string): HousingSave {
 }
 
 export function HomeInterior({
-  balance = 5000,
   saveKey = SAVE_KEY,
   initialSave,
   onSave,
@@ -77,6 +77,8 @@ export function HomeInterior({
   readOnly = false,
   visitorName,
   onLeave,
+  onPurchaseUpgrade,
+  onPurchaseFurniture,
 }: Props) {
   const [saved, setSaved] = useState(() => initialSave ?? loadSave(saveKey));
   const onSaveRef = useRef(onSave);
@@ -89,6 +91,7 @@ export function HomeInterior({
   const [target, setTarget] = useState<[number, number] | null>(null);
   const [notice, setNotice] = useState("");
   const [category, setCategory] = useState("all");
+  const [purchasingItemId, setPurchasingItemId] = useState<string | null>(null);
   useEffect(() => {
     onSaveRef.current = onSave;
   }, [onSave]);
@@ -198,13 +201,15 @@ export function HomeInterior({
       return;
     }
     if (!chosenItem) return;
+    const storedIndex = saved.storage.indexOf(chosenItem.id);
+    if (storedIndex < 0) {
+      setNotice("Buy this item first, then place it from home storage.");
+      setSelectedItem(null);
+      return;
+    }
     const valid = canPlace(room, chosenItem, x, y, saved.furniture, undefined, previewRotation);
     if (!valid) {
       setNotice("That footprint is blocked or outside the room.");
-      return;
-    }
-    if (balance < chosenItem.price) {
-      setNotice("You need more Naira for this item.");
       return;
     }
     const placed: PlacedFurniture = {
@@ -215,8 +220,12 @@ export function HomeInterior({
       y,
       rotation: previewRotation,
     };
-    save({ ...saved, furniture: [...saved.furniture, placed] });
-    setNotice(`${chosenItem.name} placed. Payment will be enabled with home services.`);
+    save({
+      ...saved,
+      furniture: [...saved.furniture, placed],
+      storage: saved.storage.filter((_, index) => index !== storedIndex),
+    });
+    setNotice(`${chosenItem.name} added to this saved layout.`);
     setSelectedItem(null);
     setPreviewRotation(0);
   };
@@ -438,7 +447,9 @@ export function HomeInterior({
                                     ...saved,
                                     furniture: saved.furniture.filter((entry) => entry.id !== f.id),
                                   });
-                                  setNotice("Furniture sold. Refunds require the home service.");
+                                  setNotice(
+                                    "Furniture removed from this layout. No refund was issued.",
+                                  );
                                 }}
                                 title="Sell"
                               >
@@ -534,26 +545,76 @@ export function HomeInterior({
                   ))}
                 </select>
               </div>
+              {!onPurchaseFurniture && <p>Save your home to the cloud before buying furniture.</p>}
               {FURNITURE_CATALOG.filter(
                 (item) => category === "all" || item.category === category,
               ).map((item) => (
                 <button
                   type="button"
                   key={item.id}
-                  className={selectedItem === item.id ? "selected" : ""}
+                  disabled={!onPurchaseFurniture || purchasingItemId !== null}
+                  title={
+                    !onPurchaseFurniture ? "Save your home before buying furniture" : undefined
+                  }
                   onClick={() => {
-                    setSelectedItem(item.id);
-                    setMovingItemId(null);
-                    setPreviewRotation(0);
+                    if (!onPurchaseFurniture) return;
+                    setPurchasingItemId(item.id);
+                    void onPurchaseFurniture({ itemId: item.id })
+                      .then((payload) => {
+                        const validated = parseHousingSave(payload);
+                        if (!validated)
+                          throw new Error("The server returned an invalid home save.");
+                        setSaved(validated);
+                        setNotice(`${item.name} purchased and added to home storage.`);
+                      })
+                      .catch((error: unknown) => {
+                        setNotice(
+                          error instanceof Error ? error.message : "Furniture purchase failed.",
+                        );
+                      })
+                      .finally(() => setPurchasingItemId(null));
                   }}
                 >
                   <span>{item.icon}</span>
                   <strong>{item.name}</strong>
                   <small>
-                    ₦{item.price.toLocaleString()} · {item.width}×{item.height}
+                    {purchasingItemId === item.id ? (
+                      "Purchasing..."
+                    ) : (
+                      <>
+                        Buy {String.fromCharCode(0x20a6)}
+                        {item.price.toLocaleString()}
+                      </>
+                    )}{" "}
+                    | {item.width}x{item.height}
                   </small>
                 </button>
               ))}
+              {saved.storage.length > 0 && (
+                <div className="home-furniture-storage">
+                  <strong>Your stored furniture</strong>
+                  {[...new Set(saved.storage)].map((itemId) => {
+                    const item = FURNITURE_CATALOG.find((entry) => entry.id === itemId);
+                    if (!item) return null;
+                    const quantity = saved.storage.filter((entry) => entry === itemId).length;
+                    return (
+                      <button
+                        type="button"
+                        key={itemId}
+                        className={selectedItem === itemId ? "selected" : ""}
+                        onClick={() => {
+                          setSelectedItem(itemId);
+                          setMovingItemId(null);
+                          setPreviewRotation(0);
+                          setNotice(`${item.name} selected. Choose an open tile to place it.`);
+                        }}
+                      >
+                        {item.icon} Place {item.name} ({quantity} stored)
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
               <button type="button" onClick={rotatePreview}>
                 <RotateCw size={14} />
                 Rotate {previewRotation}°
@@ -575,23 +636,33 @@ export function HomeInterior({
           {inside && !readOnly && (
             <div className="home-upgrades">
               <strong>Home upgrades</strong>
+              {!onPurchaseUpgrade && <p>Save your home to the cloud before buying upgrades.</p>}
               {room.upgrades.map((upgrade) => (
                 <button
                   type="button"
                   key={upgrade}
-                  className={saved.upgrades.includes(`${layout.id}:${upgrade}`) ? "is-owned" : ""}
+                  className={saved.upgrades.includes(upgrade) ? "is-owned" : ""}
+                  disabled={saved.upgrades.includes(upgrade) || !onPurchaseUpgrade}
                   onClick={() => {
-                    const id = `${layout.id}:${upgrade}`;
+                    const id = upgrade;
                     if (saved.upgrades.includes(id)) return;
-                    if (balance < 500) {
-                      setNotice("You need ₦500 for this upgrade.");
-                      return;
-                    }
-                    save({ ...saved, upgrades: [...saved.upgrades, id] });
-                    setNotice(`${upgrade} upgrade added.`);
+                    if (!onPurchaseUpgrade) return;
+                    void onPurchaseUpgrade({ roomId: room.id, upgradeId: upgrade })
+                      .then((payload) => {
+                        const validated = parseHousingSave(payload);
+                        if (!validated)
+                          throw new Error("The server returned an invalid home save.");
+                        setSaved(validated);
+                        setNotice(`${upgrade} upgrade purchased.`);
+                      })
+                      .catch((error: unknown) => {
+                        setNotice(
+                          error instanceof Error ? error.message : "Upgrade purchase failed.",
+                        );
+                      });
                   }}
                 >
-                  {saved.upgrades.includes(`${layout.id}:${upgrade}`) ? "✓ " : "+ "}
+                  {saved.upgrades.includes(upgrade) ? "✓ " : "+ "}
                   {upgrade} · ₦500
                 </button>
               ))}

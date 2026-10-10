@@ -55,6 +55,7 @@ describe("shared player HUD", () => {
         unread={3}
       />,
     );
+    expect(screen.getByLabelText(/\d+ of \d+ XP to next level/)).toBeInTheDocument();
     expect(screen.getByLabelText(/Hunger .*Show activity shortcut/)).toBeInTheDocument();
     fireEvent.click(screen.getByLabelText(/Hunger .*Show activity shortcut/));
     expect(screen.getByRole("link", { name: /Choose food from your inventory/ })).toHaveAttribute(

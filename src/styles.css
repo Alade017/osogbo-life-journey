@@ -5623,6 +5623,19 @@
   flex-basis: 100%;
   color: var(--muted-foreground);
 }
+.home-furniture-storage {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+.home-furniture-storage > strong {
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
 .catalog-filter {
   display: flex;
   justify-content: space-between;
@@ -6877,6 +6890,100 @@
 .game-mobile-nav :focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 3px;
+}
+
+/* Reference inspired game shell: grouped destinations and a compact player bar. */
+.game-desktop-nav {
+  gap: 12px;
+}
+.game-side-navigation {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.game-side-group {
+  display: grid;
+  gap: 6px;
+}
+.game-side-group .game-side-label {
+  margin: 0;
+  padding-inline: 10px;
+  color: var(--muted-foreground);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+.game-side-group .game-side-links {
+  display: grid;
+  gap: 3px;
+}
+.game-side-link {
+  min-height: 39px;
+  border-radius: 9px;
+}
+.game-side-link-active {
+  box-shadow: inset 3px 0 0 var(--primary);
+}
+.game-hud.hud-v2 {
+  grid-template-columns:
+    minmax(125px, 0.95fr) minmax(120px, 1fr) minmax(125px, 1fr)
+    minmax(175px, 1.25fr) auto 44px;
+  grid-template-areas: "player xp location time balance notifications" "needs needs needs needs needs needs" "live live sync sync sync sync";
+  gap: 8px 14px;
+  padding: 9px clamp(14px, 2vw, 28px);
+}
+.hud-v2 .game-hud-xp {
+  display: grid;
+  grid-area: xp;
+  gap: 5px;
+  min-width: 0;
+  margin: 0;
+}
+.hud-v2 .game-hud-xp-label {
+  gap: 8px;
+  font-size: 9px;
+}
+.hud-v2 .game-hud-xp-label strong {
+  font-size: 11px;
+}
+.hud-v2 .game-hud-xp-track {
+  height: 5px;
+}
+.hud-v2 .game-hud-location .game-hud-item-copy > span {
+  display: block;
+  font-size: 10px;
+}
+.hud-need:nth-child(1) summary > svg {
+  color: var(--color-clay);
+}
+.hud-need:nth-child(2) summary > svg {
+  color: var(--color-sun);
+}
+.hud-need:nth-child(3) summary > svg {
+  color: var(--color-leaf);
+}
+.hud-need:nth-child(4) summary > svg {
+  color: var(--primary);
+}
+.hud-need:nth-child(5) summary > svg {
+  color: var(--color-sky);
+}
+.hud-need:nth-child(6) summary > svg {
+  color: var(--primary);
+}
+
+@media (max-width: 1120px) {
+  .hud-v2 .game-hud-xp {
+    display: none;
+  }
+  .game-hud.hud-v2 {
+    grid-template-columns: minmax(130px, 1fr) minmax(120px, 1fr) minmax(175px, 1.2fr) auto 44px;
+    grid-template-areas: "player location time balance notifications" "needs needs needs needs needs" "live live sync sync sync";
+  }
 }
 @media (max-width: 820px) {
   .game-hud.hud-v2 {

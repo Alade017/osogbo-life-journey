@@ -48,4 +48,13 @@ describe("authoritative neighborhood movement", () => {
     expect(canOccupyNeighborhoodPoint(insideMarketFootprint, origin, marketObjects)).toBe(false);
     expect(canOccupyNeighborhoodPoint(insideMarketFootprint, origin, cityObjects)).toBe(true);
   });
+
+  it("uses generated district landmarks as shared server collision footprints", () => {
+    const districtObjects = neighborhoodAreaForSlug("student-district").objects;
+    const cityObjects = neighborhoodAreaForSlug("city-centre").objects;
+    const campusShop = districtObjects.find((object) => object.id === "market")!;
+    const insideFootprint = toWorld({ x: campusShop.x, y: campusShop.y - 45 }, origin);
+    expect(canOccupyNeighborhoodPoint(insideFootprint, origin, districtObjects)).toBe(false);
+    expect(canOccupyNeighborhoodPoint(insideFootprint, origin, cityObjects)).toBe(true);
+  });
 });

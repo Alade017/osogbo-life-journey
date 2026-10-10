@@ -27,16 +27,29 @@ export const Route = createFileRoute("/_authenticated/_game")({
   component: GameLayout,
 });
 
-const NAV = [
-  { to: "/home", label: "Home", icon: House },
-  { to: "/house", label: "Property", icon: House },
-  { to: "/map", label: "City", icon: Map },
-  { to: "/jobs", label: "Jobs", icon: Briefcase },
-  { to: "/social", label: "People", icon: Users },
-  { to: "/inventory", label: "Inventory", icon: Package },
-  { to: "/market", label: "Market", icon: ShoppingBag },
-  { to: "/wallet", label: "Bank", icon: Wallet },
-  { to: "/profile", label: "Profile", icon: UserRound },
+const NAV_GROUPS = [
+  {
+    label: "YOUR CITY",
+    items: [
+      { to: "/home", label: "Home", icon: House },
+      { to: "/map", label: "City", icon: Map },
+      { to: "/social", label: "People", icon: Users },
+    ],
+  },
+  {
+    label: "DAILY LIFE",
+    items: [
+      { to: "/house", label: "Property", icon: House },
+      { to: "/jobs", label: "Jobs", icon: Briefcase },
+      { to: "/inventory", label: "Inventory", icon: Package },
+      { to: "/market", label: "Market", icon: ShoppingBag },
+      { to: "/wallet", label: "Bank", icon: Wallet },
+    ],
+  },
+  {
+    label: "PLAYER",
+    items: [{ to: "/profile", label: "Profile", icon: UserRound }],
+  },
 ] as const;
 
 function GameLayout() {
@@ -116,23 +129,29 @@ function GameLayout() {
             >
               <Logo />
             </Link>
-            <p className="game-side-label">YOUR CITY</p>
-            <nav className="game-side-links">
-              {NAV.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    {...(item.to === "/social" ? { search: { playerId: undefined } } : {})}
-                    activeProps={{ className: "game-side-link-active" }}
-                    className="game-side-link"
-                  >
-                    <Icon className="h-4.5 w-4.5" />
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
+            <nav className="game-side-navigation" aria-label="City and player pages">
+              {NAV_GROUPS.map((group) => (
+                <div className="game-side-group" key={group.label}>
+                  <p className="game-side-label">{group.label}</p>
+                  <div className="game-side-links">
+                    {group.items.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <Link
+                          key={item.to}
+                          to={item.to}
+                          {...(item.to === "/social" ? { search: { playerId: undefined } } : {})}
+                          activeProps={{ className: "game-side-link-active" }}
+                          className="game-side-link"
+                        >
+                          <Icon className="h-4.5 w-4.5" />
+                          <span>{item.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </nav>
             <div className="mt-auto grid gap-2">
               <PhoneLauncher compact className="game-side-phone" />

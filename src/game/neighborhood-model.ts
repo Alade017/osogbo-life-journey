@@ -1,3 +1,5 @@
+import { OSOGBO_WORLD_NODES, type WorldMapCategory } from "../lib/city-world";
+
 export type WorldPoint = { x: number; y: number };
 export type NeighborhoodObject = {
   id: string;
@@ -69,7 +71,152 @@ export const OJA_OBA_AREA: NeighborhoodArea = {
   ],
 };
 
+const AREA_STYLE_BY_CATEGORY: Record<WorldMapCategory, NeighborhoodArea["style"]> = {
+  residential: {
+    ground: 0xe8eedf,
+    grid: 0xd3dfcb,
+    road: 0xbac6b4,
+    paving: 0xe8ddbd,
+    marking: 0xfffaf0,
+    verticalRoad: { x: 278, width: 84 },
+    horizontalRoad: { y: 260, height: 80 },
+  },
+  commercial: {
+    ground: 0xeee5d2,
+    grid: 0xded2ba,
+    road: 0xb8b5a5,
+    paving: 0xe1cfaa,
+    marking: 0xfff8e7,
+    verticalRoad: { x: 270, width: 92 },
+    horizontalRoad: { y: 236, height: 92 },
+  },
+  work_industrial: {
+    ground: 0xe1e3df,
+    grid: 0xcdd1cc,
+    road: 0xaeb3b0,
+    paving: 0xd4d0c4,
+    marking: 0xfff7dc,
+    verticalRoad: { x: 286, width: 96 },
+    horizontalRoad: { y: 250, height: 88 },
+  },
+  education: {
+    ground: 0xe6eddf,
+    grid: 0xcbd9c3,
+    road: 0xb7c1ae,
+    paving: 0xe7ddbb,
+    marking: 0xfffae8,
+    verticalRoad: { x: 256, width: 88 },
+    horizontalRoad: { y: 246, height: 96 },
+  },
+  health: {
+    ground: 0xe5eeeb,
+    grid: 0xcbd9d5,
+    road: 0xb2c1bc,
+    paving: 0xe7e2d0,
+    marking: 0xfffdf0,
+    verticalRoad: { x: 280, width: 88 },
+    horizontalRoad: { y: 254, height: 82 },
+  },
+  transport: {
+    ground: 0xece7d9,
+    grid: 0xd8d0bd,
+    road: 0xb7b1a1,
+    paving: 0xdfd2ad,
+    marking: 0xfff3d5,
+    verticalRoad: { x: 266, width: 104 },
+    horizontalRoad: { y: 240, height: 100 },
+  },
+  government: {
+    ground: 0xe7e9df,
+    grid: 0xd1d6c8,
+    road: 0xb5b9ae,
+    paving: 0xe4dec8,
+    marking: 0xfff8e8,
+    verticalRoad: { x: 274, width: 92 },
+    horizontalRoad: { y: 258, height: 84 },
+  },
+  recreation: {
+    ground: 0xe5eddf,
+    grid: 0xcbd9c2,
+    road: 0xb8c2ae,
+    paving: 0xe7dbb9,
+    marking: 0xfff9e5,
+    verticalRoad: { x: 250, width: 92 },
+    horizontalRoad: { y: 244, height: 88 },
+  },
+  water_nature: {
+    ground: 0xe0ede4,
+    grid: 0xc5d9ce,
+    road: 0xb0c2b9,
+    paving: 0xe1ddc0,
+    marking: 0xfffae8,
+    verticalRoad: { x: 284, width: 84 },
+    horizontalRoad: { y: 248, height: 86 },
+  },
+};
+
+const LEGACY_AREA_NODES: Readonly<Record<string, { name: string; category: WorldMapCategory }>> = {
+  residential: { name: "Residential District", category: "residential" },
+  "business-district": { name: "Business District", category: "commercial" },
+};
+
+const AREA_ANCHOR_SETS = [
+  [
+    { x: 150, y: 155 },
+    { x: 490, y: 155 },
+    { x: 490, y: 435 },
+    { x: 150, y: 435 },
+  ],
+  [
+    { x: 490, y: 155 },
+    { x: 150, y: 155 },
+    { x: 150, y: 435 },
+    { x: 490, y: 435 },
+  ],
+  [
+    { x: 150, y: 435 },
+    { x: 490, y: 435 },
+    { x: 490, y: 155 },
+    { x: 150, y: 155 },
+  ],
+  [
+    { x: 490, y: 435 },
+    { x: 150, y: 435 },
+    { x: 150, y: 155 },
+    { x: 490, y: 155 },
+  ],
+] as const;
+
+function generatedNeighborhoodArea(
+  slug: string,
+  name: string,
+  category: WorldMapCategory,
+): NeighborhoodArea {
+  const variant = [...slug].reduce((value, char) => (value * 31 + char.charCodeAt(0)) >>> 0, 7) % 4;
+  const anchors = AREA_ANCHOR_SETS[variant]!;
+  const [home, market, work, npc] = anchors;
+  return {
+    slug,
+    name,
+    objects: [
+      { id: "home", name: `${name} homes`, kind: "home", ...home },
+      { id: "market", name: `${name} shops`, kind: "market", ...market },
+      { id: "work", name: `${name} opportunities`, kind: "work", ...work },
+      { id: "npc", name: `Neighbour in ${name}`, kind: "npc", ...npc },
+    ],
+    style: AREA_STYLE_BY_CATEGORY[category],
+  };
+}
+
+const generatedAreas = Object.fromEntries(
+  [
+    ...Object.values(OSOGBO_WORLD_NODES),
+    ...Object.entries(LEGACY_AREA_NODES).map(([slug, node]) => ({ slug, ...node })),
+  ].map((node) => [node.slug, generatedNeighborhoodArea(node.slug, node.name, node.category)]),
+);
+
 export const NEIGHBORHOOD_AREAS: Readonly<Record<string, NeighborhoodArea>> = {
+  ...generatedAreas,
   [CITY_CENTRE_AREA.slug]: CITY_CENTRE_AREA,
   [OJA_OBA_AREA.slug]: OJA_OBA_AREA,
 };

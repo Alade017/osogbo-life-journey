@@ -36,9 +36,10 @@ try {
   });
   console.log("Shared HUD migration applied and committed. Supabase schema reload requested.");
 } catch (error) {
-  const message = error.code === "ERR_INVALID_URL"
-    ? "DATABASE_URL is invalid. URL-encode the database password."
-    : String(error.message).replaceAll(url, "[redacted connection]");
+  const message =
+    error.code === "ERR_INVALID_URL"
+      ? "DATABASE_URL is invalid. URL-encode the database password."
+      : String(error.message).replaceAll(url, "[redacted connection]");
   console.error(`Migration was not committed: ${message}`);
   process.exitCode = 1;
 } finally {

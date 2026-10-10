@@ -62,4 +62,54 @@ describe("walkable home experience", () => {
     expect(onSave).not.toHaveBeenCalled();
     expect(window.localStorage.length).toBe(0);
   });
+
+  it("submits an upgrade to the authoritative purchase callback", async () => {
+    const onPurchaseUpgrade = vi.fn().mockResolvedValue({
+      ...DEFAULT_HOUSING_SAVE,
+      layoutId: "garden-flat",
+      upgrades: ["finish"],
+    });
+    render(
+      <HomeInterior
+        initialSave={{ ...DEFAULT_HOUSING_SAVE, layoutId: "garden-flat" }}
+        onPurchaseUpgrade={onPurchaseUpgrade}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /enter home/i }));
+    const upgradeButton = await screen.findByRole("button", { name: /finish.*500/i });
+    fireEvent.click(upgradeButton);
+    await waitFor(() =>
+      expect(onPurchaseUpgrade).toHaveBeenCalledWith({ roomId: "lounge", upgradeId: "finish" }),
+    );
+    expect(await screen.findByText("finish upgrade purchased.")).toBeInTheDocument();
+  });
+
+  it("purchases furniture before placing it from storage", async () => {
+    const onPurchaseFurniture = vi.fn().mockResolvedValue({
+      ...DEFAULT_HOUSING_SAVE,
+      storage: ["sofa"],
+    });
+    const onSave = vi.fn();
+    render(
+      <HomeInterior
+        initialSave={DEFAULT_HOUSING_SAVE}
+        onPurchaseFurniture={onPurchaseFurniture}
+        onSave={onSave}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /enter home/i }));
+    fireEvent.click(screen.getByRole("button", { name: /build mode/i }));
+    fireEvent.click(await screen.findByRole("button", { name: /buy.*900/i }));
+    await waitFor(() => expect(onPurchaseFurniture).toHaveBeenCalledWith({ itemId: "sofa" }));
+    fireEvent.click(await screen.findByRole("button", { name: /place lounge sofa/i }));
+    fireEvent.click(screen.getByRole("button", { name: "1, 1 floor" }));
+    await waitFor(() =>
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({
+          storage: [],
+          furniture: [expect.objectContaining({ itemId: "sofa", room: "lounge" })],
+        }),
+      ),
+    );
+  });
 });

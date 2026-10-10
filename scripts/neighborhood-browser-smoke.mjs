@@ -8,7 +8,7 @@ await writeFile(
   `<!doctype html><html><head><title>Neighborhood smoke</title></head><body style="margin:0;background:#e8eedf"><div id="game" style="width:1024px;height:700px"></div><output id="result">RUNNING</output><script type="module">
 import { createNeighborhoodGame } from '/src/game/neighborhood-scene.ts';
 let checkpoints=0, interaction='';
-const {game,scene}=createNeighborhoodGame(document.getElementById('game'),{origin:{x:7,y:6},spawn:{x:7,y:6},onNearby:()=>{},onCheckpoint:()=>checkpoints++,onInteract:o=>interaction=o.kind,saveCheckpoint:async()=>true});
+const {game,scene}=createNeighborhoodGame(document.getElementById('game'),{origin:{x:7,y:6},spawn:{x:7,y:6},onNearby:()=>{},onCheckpoint:()=>checkpoints++,onInteract:o=>interaction=o.kind,onPlayerSelected:()=>{},onPlayerTooFar:()=>{},onMovementIntent:()=>{},saveCheckpoint:async()=>true});
 const fail=e=>document.getElementById('result').textContent='FAIL '+e.message;
 window.addEventListener('error',e=>fail(e.error||new Error(e.message)));
 const wait=setInterval(()=>{if(!scene.player)return;clearInterval(wait);try{

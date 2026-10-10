@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { OSOGBO_WORLD_NODES } from "@/lib/city-world";
 import {
   neighborhoodAreaForSlug,
   neighborhoodOrigin,
@@ -16,6 +17,17 @@ describe("neighborhood coordinates and interaction", () => {
     );
     expect(market.marketStalls).toHaveLength(3);
     expect(neighborhoodAreaForSlug("unmapped-district")).toBe(olaiya);
+  });
+  it("provides a deterministic playable template for every registered city district", () => {
+    for (const node of Object.values(OSOGBO_WORLD_NODES)) {
+      const area = neighborhoodAreaForSlug(node.slug);
+      expect(area.slug).toBe(node.slug);
+      expect(area.name).toBe(node.name);
+      expect(area.objects.map((object) => object.id)).toEqual(["home", "market", "work", "npc"]);
+      expect(new Set(area.objects.map((object) => `${object.x}:${object.y}`)).size).toBe(4);
+    }
+    expect(neighborhoodAreaForSlug("residential").name).toBe("Residential District");
+    expect(neighborhoodAreaForSlug("business-district").name).toBe("Business District");
   });
   it("keeps distant legacy checkpoints visible without replacing their coordinates", () => {
     const point = { x: 3, y: 8 };

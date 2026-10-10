@@ -79,7 +79,12 @@ describe("direct Supabase Google authentication", () => {
     fireEvent.change(screen.getByLabelText("Password"), { target: { value: "password123" } });
     fireEvent.click(screen.getByRole("button", { name: "Log in" }));
 
-    await waitFor(() => expect(auth.navigate).toHaveBeenCalledWith({ to: "/home" }));
+    await waitFor(() =>
+      expect(auth.navigate).toHaveBeenCalledWith({
+        to: "/home",
+        search: { visit: undefined },
+      }),
+    );
   });
 
   it("does not redirect a password-recovery session away from the reset form", async () => {

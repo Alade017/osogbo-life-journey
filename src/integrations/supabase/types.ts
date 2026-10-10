@@ -1600,6 +1600,19 @@ export type Database = {
       my_home_visit_policy: { Args: never; Returns: Json };
       set_my_home_visit_access: { Args: { p_allow_friends: boolean }; Returns: Json };
       get_friend_home_for_visit: { Args: { p_target_character_id: string }; Returns: Json };
+      purchase_home_upgrade: {
+        Args: {
+          p_room_id: string;
+          p_upgrade_id: string;
+          p_expected_revision: number;
+          p_request_id: string;
+        };
+        Returns: Json;
+      };
+      purchase_home_furniture: {
+        Args: { p_item_id: string; p_expected_revision: number; p_request_id: string };
+        Returns: Json;
+      };
       interact_with_npc: {
         Args: { p_npc_id: string; p_action: string; p_request_id: string };
         Returns: Json;

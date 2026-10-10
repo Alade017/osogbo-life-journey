@@ -526,4 +526,140 @@ describe("shared HUD database acceptance", () => {
     );
     expect(wallet.rows[0]!.balance).toBe(5000 + first.rows[0]!.result.earned);
   });
+
+  it("buys home upgrades atomically and returns the same receipt on retry", async () => {
+    await db.exec(`select set_config('test.user_id','${uid}',false)`);
+    const character = await db.query<{ id: string }>(
+      "select id from public.characters where user_id=$1",
+      [uid],
+    );
+    const characterId = character.rows[0]!.id;
+    await db.query(
+      `insert into public.wallets(user_id,character_id,balance,total_expenses)
+       values($1,$2,1000,0)
+       on conflict(character_id) do update set balance=1000,total_expenses=0`,
+      [uid, characterId],
+    );
+    const layout = {
+      layoutId: "garden-flat",
+      room: "lounge",
+      x: 1,
+      y: 1,
+      exterior: null,
+      furniture: [],
+      storage: [],
+      upgrades: [],
+      needs: { energy: 70, fun: 50, hygiene: 70, bladder: 30, hunger: 60, skill: 0 },
+    };
+    const saved = await db.query<{ result: { revision: number } }>(
+      "select public.save_my_home($1,0) as result",
+      [JSON.stringify(layout)],
+    );
+    const requestId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+    const purchase = await db.query<{
+      result: {
+        ok: boolean;
+        duplicate: boolean;
+        cash: number;
+        revision: number;
+        payload: { upgrades: string[] };
+      };
+    }>("select public.purchase_home_upgrade('lounge','finish',1,$1) as result", [requestId]);
+    expect(saved.rows[0]!.result.revision).toBe(1);
+    expect(purchase.rows[0]!.result).toMatchObject({
+      ok: true,
+      duplicate: false,
+      cash: 500,
+      revision: 2,
+      payload: { upgrades: ["finish"] },
+    });
+    const retry = await db.query<{
+      result: { ok: boolean; duplicate: boolean; cash: number; revision: number };
+    }>("select public.purchase_home_upgrade('lounge','finish',1,$1) as result", [requestId]);
+    expect(retry.rows[0]!.result).toMatchObject({
+      ok: true,
+      duplicate: true,
+      cash: 500,
+      revision: 2,
+    });
+    const wallet = await db.query<{ balance: number }>(
+      "select balance from public.wallets where character_id=$1",
+      [characterId],
+    );
+    const transaction = await db.query<{ count: number }>(
+      "select count(*)::int as count from public.transactions where character_id=$1 and category='home_upgrade'",
+      [characterId],
+    );
+    expect(wallet.rows[0]!.balance).toBe(500);
+    expect(transaction.rows[0]!.count).toBe(1);
+  });
+
+  it("buys home furniture once and rejects saves that duplicate unowned pieces", async () => {
+    await db.exec(`select set_config('test.user_id','${uid}',false)`);
+    const character = await db.query<{ id: string }>(
+      "select id from public.characters where user_id=$1",
+      [uid],
+    );
+    const characterId = character.rows[0]!.id;
+    await db.query(
+      "update public.wallets set balance=5000,total_expenses=0 where character_id=$1",
+      [characterId],
+    );
+    const before = await db.query<{ revision: number; payload: Record<string, unknown> }>(
+      "select revision,payload from public.character_home_saves where character_id=$1",
+      [characterId],
+    );
+    const requestId = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
+    const bought = await db.query<{
+      result: {
+        ok: boolean;
+        duplicate: boolean;
+        cash: number;
+        revision: number;
+        payload: { storage: string[] };
+      };
+    }>("select public.purchase_home_furniture('sofa',$1,$2) as result", [
+      before.rows[0]!.revision,
+      requestId,
+    ]);
+    expect(bought.rows[0]!.result).toMatchObject({
+      ok: true,
+      duplicate: false,
+      cash: 4100,
+      revision: before.rows[0]!.revision + 1,
+      payload: { storage: ["sofa"] },
+    });
+    const retry = await db.query<{
+      result: { ok: boolean; duplicate: boolean; cash: number; revision: number };
+    }>("select public.purchase_home_furniture('sofa',$1,$2) as result", [
+      before.rows[0]!.revision,
+      requestId,
+    ]);
+    expect(retry.rows[0]!.result).toMatchObject({
+      ok: true,
+      duplicate: true,
+      cash: 4100,
+      revision: before.rows[0]!.revision + 1,
+    });
+    const nextRevision = before.rows[0]!.revision + 1;
+    const forged = { ...bought.rows[0]!.result.payload, storage: ["sofa", "sofa"] };
+    await expect(
+      db.query("select public.save_my_home($1,$2)", [JSON.stringify(forged), nextRevision]),
+    ).rejects.toThrow(/do not own/);
+    const owned = await db.query<{ quantity: number }>(
+      "select quantity from public.character_home_furniture where character_id=$1 and item_id='sofa'",
+      [characterId],
+    );
+    const transaction = await db.query<{ count: number }>(
+      "select count(*)::int as count from public.transactions where character_id=$1 and category='home_furniture'",
+      [characterId],
+    );
+    const wallet = await db.query<{ balance: number }>(
+      "select balance from public.wallets where character_id=$1",
+      [characterId],
+    );
+    expect(owned.rows[0]!.quantity).toBe(1);
+    expect(transaction.rows[0]!.count).toBe(1);
+    expect(wallet.rows[0]!.balance).toBe(4100);
+  });
 });

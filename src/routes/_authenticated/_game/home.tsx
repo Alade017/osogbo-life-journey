@@ -221,6 +221,85 @@ function MyCityHome() {
     [isOnline, saveToCloud],
   );
 
+  const purchaseUpgrade = useCallback(
+    async ({ roomId, upgradeId }: { roomId: string; upgradeId: string }) => {
+      const result = await rpc.purchaseHomeUpgrade({
+        roomId,
+        upgradeId,
+        expectedRevision: revision.current,
+        requestId: crypto.randomUUID(),
+      });
+      if (!result || typeof result !== "object" || Array.isArray(result))
+        throw new Error("The server returned an invalid upgrade response.");
+      const response = result as {
+        ok?: boolean;
+        conflict?: boolean;
+        payload?: unknown;
+        revision?: number;
+        saved_at?: unknown;
+      };
+      if (response.conflict) {
+        await refetchHomeSave();
+        throw new Error(
+          "Your home changed on another device. The latest save has been loaded; try again.",
+        );
+      }
+      const updated = parseHousingSave(response.payload);
+      if (!response.ok || !updated || !Number.isSafeInteger(response.revision))
+        throw new Error("The server did not confirm the upgrade purchase.");
+      revision.current = response.revision!;
+      queryClient.setQueryData(q.homeSave().queryKey, {
+        payload: response.payload,
+        revision: response.revision,
+        saved_at: response.saved_at ?? new Date().toISOString(),
+      } as unknown as Json);
+      await queryClient.invalidateQueries({ queryKey: q.wallet().queryKey });
+      setSyncStatus("saved");
+      return updated;
+    },
+    [queryClient, refetchHomeSave],
+  );
+
+  const purchaseFurniture = useCallback(
+    async ({ itemId }: { itemId: string }) => {
+      if (!cloudSave || syncStatus !== "saved")
+        throw new Error("Wait for your home to finish saving before buying furniture.");
+      const result = await rpc.purchaseHomeFurniture({
+        itemId,
+        expectedRevision: revision.current,
+        requestId: crypto.randomUUID(),
+      });
+      if (!result || typeof result !== "object" || Array.isArray(result))
+        throw new Error("The server returned an invalid furniture purchase response.");
+      const response = result as {
+        ok?: boolean;
+        conflict?: boolean;
+        payload?: unknown;
+        revision?: number;
+        saved_at?: unknown;
+      };
+      if (response.conflict) {
+        await refetchHomeSave();
+        throw new Error(
+          "Your home changed on another device. The latest save has been loaded; try again.",
+        );
+      }
+      const updated = parseHousingSave(response.payload);
+      if (!response.ok || !updated || !Number.isSafeInteger(response.revision))
+        throw new Error("The server did not confirm the furniture purchase.");
+      revision.current = response.revision!;
+      queryClient.setQueryData(q.homeSave().queryKey, {
+        payload: response.payload,
+        revision: response.revision,
+        saved_at: response.saved_at ?? new Date().toISOString(),
+      } as unknown as Json);
+      await queryClient.invalidateQueries({ queryKey: q.wallet().queryKey });
+      setSyncStatus("saved");
+      return updated;
+    },
+    [cloudSave, queryClient, refetchHomeSave, syncStatus],
+  );
+
   const synchronizedLocalKey = useRef("");
   useEffect(() => {
     if (!character || homeQuery.isLoading || homeQuery.isError || !localSave || !localIsNewer)
@@ -381,6 +460,10 @@ function MyCityHome() {
                 ? { initialSave: cloudSave.payload }
                 : {})}
             onSave={scheduleSave}
+            onPurchaseUpgrade={purchaseUpgrade}
+            {...(cloudSave && syncStatus === "saved"
+              ? { onPurchaseFurniture: purchaseFurniture }
+              : {})}
             powerAvailable={world.data ? !isPowerOutageAt(world.data) : true}
           />
         </>

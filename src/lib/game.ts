@@ -425,6 +425,32 @@ export const rpc = {
     unwrap(
       await supabase.rpc("set_my_home_visit_access", { p_allow_friends: allowFriends }),
     ) as Json,
+  purchaseHomeUpgrade: async (args: {
+    roomId: string;
+    upgradeId: string;
+    expectedRevision: number;
+    requestId: string;
+  }) =>
+    unwrap(
+      await supabase.rpc("purchase_home_upgrade", {
+        p_room_id: args.roomId,
+        p_upgrade_id: args.upgradeId,
+        p_expected_revision: args.expectedRevision,
+        p_request_id: args.requestId,
+      }),
+    ) as Json,
+  purchaseHomeFurniture: async (args: {
+    itemId: string;
+    expectedRevision: number;
+    requestId: string;
+  }) =>
+    unwrap(
+      await supabase.rpc("purchase_home_furniture", {
+        p_item_id: args.itemId,
+        p_expected_revision: args.expectedRevision,
+        p_request_id: args.requestId,
+      }),
+    ) as Json,
   interactWithNpc: async (args: { npcId: string; action: string; requestId: string }) =>
     unwrap(
       await supabase.rpc("interact_with_npc", {
