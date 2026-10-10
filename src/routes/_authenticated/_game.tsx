@@ -189,30 +189,7 @@ function GameLayout() {
             <Users className="h-4.75 w-4.75" />
             <span>People</span>
           </Link>
-          <Link
-            to="/house"
-            activeProps={{ className: "mobile-nav-active" }}
-            className="mobile-nav-link"
-          >
-            <House className="h-4.75 w-4.75" />
-            <span>Homes</span>
-          </Link>
-          <Link
-            to="/inventory"
-            activeProps={{ className: "mobile-nav-active" }}
-            className="mobile-nav-link"
-          >
-            <Package className="h-4.75 w-4.75" />
-            <span>Items</span>
-          </Link>
-          <Link
-            to="/profile"
-            activeProps={{ className: "mobile-nav-active" }}
-            className="mobile-nav-link"
-          >
-            <UserRound className="h-4.75 w-4.75" />
-            <span>Profile</span>
-          </Link>
+          <PhoneLauncher compact className="mobile-nav-phone" />
         </nav>
       </div>
     </GameTimeProvider>

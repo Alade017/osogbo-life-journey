@@ -11,22 +11,28 @@ import {
   Backpack,
   Bell,
   Briefcase,
+  Building2,
+  House,
   Map,
   MessageCircle,
   Settings,
   ShoppingBag,
+  UserRound,
   Wallet,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 
 const PHONE_APPS = [
+  { label: "Home", to: "/home", icon: House, tone: "phone-app-green", active: true },
+  { label: "Property", to: "/house", icon: Building2, tone: "phone-app-green", active: true },
   { label: "Jobs", to: "/jobs", icon: Briefcase, tone: "phone-app-green", active: true },
   { label: "Bank", to: "/wallet", icon: Wallet, tone: "phone-app-gold", active: true },
   { label: "Market", to: "/market", icon: ShoppingBag, tone: "phone-app-green", active: true },
   { label: "Map", to: "/map", icon: Map, tone: "phone-app-blue", active: true },
-  { label: "Social", icon: MessageCircle, tone: "phone-app-coral", active: false },
+  { label: "Social", to: "/social", icon: MessageCircle, tone: "phone-app-coral", active: true },
   { label: "Inventory", to: "/inventory", icon: Backpack, tone: "phone-app-blue", active: true },
+  { label: "Profile", to: "/profile", icon: UserRound, tone: "phone-app-muted", active: true },
   { label: "Messages", icon: MessageCircle, tone: "phone-app-muted", active: false },
   {
     label: "Notifications",

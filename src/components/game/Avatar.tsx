@@ -22,7 +22,7 @@ export type Appearance = {
   headwear?: number;
 };
 
-const EDGE = "#2b3245";
+const EDGE = "#103d2c";
 
 export function Avatar({
   appearance,

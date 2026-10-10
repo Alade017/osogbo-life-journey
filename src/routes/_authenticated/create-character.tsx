@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { q } from "@/lib/game";
@@ -15,6 +15,10 @@ import {
   TROUSERS,
   type Appearance,
 } from "@/components/game/Avatar";
+import {
+  DEFAULT_CHARACTER_APPEARANCE,
+  randomizeCharacterAppearance,
+} from "@/lib/character-appearance";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -61,15 +65,15 @@ function Picker({
   swatches?: boolean;
 }) {
   return (
-    <div>
-      <Label className="mb-2 block">{label}</Label>
+    <fieldset className="m-0 min-w-0 border-0 p-0">
+      <legend className="mb-2 block text-sm font-medium">{label}</legend>
       <div className="flex flex-wrap gap-2">
         {options.map((o, i) => (
           <button
             key={o + i}
             type="button"
             onClick={() => onChange(i)}
-            aria-label={swatches ? `${label} ${i + 1}` : o}
+            aria-label={swatches ? `${label}, option ${i + 1}` : o}
             aria-pressed={value === i}
             className={cn(
               "game-control",
@@ -83,7 +87,7 @@ function Picker({
           </button>
         ))}
       </div>
-    </div>
+    </fieldset>
   );
 }
 
@@ -111,39 +115,42 @@ function CreateCharacter() {
   const [age, setAge] = useState(22);
   const [personality, setPersonality] = useState("ambitious");
   const [occupation, setOccupation] = useState<string>("");
-  const [ap, setAp] = useState<Required<Appearance>>({
-    skin: 1,
-    hair: 1,
-    hairColor: 0,
-    outfit: 0,
-    bottoms: 0,
-    shoes: 0,
-    headwear: 0,
-  });
+  const [ap, setAp] = useState<Required<Appearance>>(DEFAULT_CHARACTER_APPEARANCE);
   const [busy, setBusy] = useState(false);
+  const submitting = useRef(false);
 
   useEffect(() => {
     if (character) navigate({ to: "/home" });
   }, [character, navigate]);
 
+  function randomizeAppearance() {
+    setAp(randomizeCharacterAppearance(gender));
+  }
+
   async function submit() {
+    if (submitting.current || !valid) return;
+    submitting.current = true;
     setBusy(true);
-    const { error } = await supabase.rpc("create_character", {
-      p_name: name,
-      p_gender: gender,
-      p_appearance: ap,
-      p_age: age,
-      p_personality: personality,
-      p_occupation: occupation || null,
-    } as never);
-    setBusy(false);
-    if (error) {
-      toast.error(error.message);
-      return;
+    const cleanName = name.trim();
+    try {
+      const { error } = await supabase.rpc("create_character", {
+        p_name: cleanName,
+        p_gender: gender,
+        p_appearance: ap,
+        p_age: age,
+        p_personality: personality,
+        p_occupation: occupation || null,
+      } as never);
+      if (error) throw error;
+      await qc.invalidateQueries();
+      toast.success(`Welcome to Osogbo, ${cleanName}!`);
+      navigate({ to: "/home" });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Your character could not be created.");
+    } finally {
+      submitting.current = false;
+      setBusy(false);
     }
-    await qc.invalidateQueries();
-    toast.success(`Welcome to Osogbo, ${name}!`);
-    navigate({ to: "/home" });
   }
 
   if (isLoading)
@@ -178,12 +185,28 @@ function CreateCharacter() {
 
         <div className="mt-6 grid gap-6 md:grid-cols-[280px_1fr]">
           <div className="game-panel game-panel-accent flex flex-col items-center justify-center p-6 md:sticky md:top-6 md:self-start">
-            <div className="bob">
+            <div className="character-creation-preview" aria-live="polite">
               <Avatar appearance={ap} gender={gender} size={170} />
             </div>
             <div className="mt-4 rounded-lg border-2 border-edge bg-card px-4 py-1.5 font-display text-lg font-bold">
               {name.trim() || "Your name"}
             </div>
+            <div className="mt-4 flex w-full flex-wrap justify-center gap-2">
+              <Button
+                type="button"
+                variant="plain"
+                size="sm"
+                onClick={() => setAp(DEFAULT_CHARACTER_APPEARANCE)}
+              >
+                Reset look
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={randomizeAppearance}>
+                Surprise me
+              </Button>
+            </div>
+            <p className="mt-3 max-w-56 text-center text-xs text-muted-foreground">
+              Every change updates this preview. You can change your look before entering the city.
+            </p>
           </div>
 
           <div className="game-panel space-y-6 p-5 md:p-7">
@@ -319,8 +342,8 @@ function CreateCharacter() {
               variant="default"
               size="lg"
               className="w-full"
-              disabled={!valid || busy || jobsLoading}
-              onClick={submit}
+              disabled={!valid || busy || jobsLoading || submitting.current}
+              onClick={() => void submit()}
             >
               {busy ? "Entering Osogbo…" : jobsLoading ? "Loading careers…" : "Enter Osogbo"}
             </Button>
