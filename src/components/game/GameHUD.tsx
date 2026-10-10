@@ -70,7 +70,12 @@ export function GameHUD({
 
   return (
     <header className="game-hud hud-v2" aria-label="Player status">
-      <Link to="/home" className="game-hud-brand" aria-label="OSOGBO LIFE home">
+      <Link
+        to="/home"
+        search={{ visit: undefined }}
+        className="game-hud-brand"
+        aria-label="OSOGBO LIFE home"
+      >
         <Logo small />
         <span className="game-hud-brand-copy">
           <strong>OSOGBO LIFE</strong>

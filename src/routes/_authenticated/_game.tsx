@@ -108,7 +108,12 @@ function GameLayout() {
         <WorldEnvironment />
         <div className="city-game-frame">
           <aside className="game-desktop-nav" aria-label="Main navigation">
-            <Link to="/home" className="game-side-logo" aria-label="OSOGBO LIFE home">
+            <Link
+              to="/home"
+              search={{ visit: undefined }}
+              className="game-side-logo"
+              aria-label="OSOGBO LIFE home"
+            >
               <Logo />
             </Link>
             <p className="game-side-label">YOUR CITY</p>
@@ -119,6 +124,7 @@ function GameLayout() {
                   <Link
                     key={item.to}
                     to={item.to}
+                    {...(item.to === "/social" ? { search: { playerId: undefined } } : {})}
                     activeProps={{ className: "game-side-link-active" }}
                     className="game-side-link"
                   >
@@ -147,6 +153,7 @@ function GameLayout() {
         <nav className="game-mobile-nav" aria-label="Game navigation">
           <Link
             to="/home"
+            search={{ visit: undefined }}
             activeProps={{ className: "mobile-nav-active" }}
             className="mobile-nav-link"
           >
@@ -171,6 +178,7 @@ function GameLayout() {
           </Link>
           <Link
             to="/social"
+            search={{ playerId: undefined }}
             activeProps={{ className: "mobile-nav-active" }}
             className="mobile-nav-link"
           >

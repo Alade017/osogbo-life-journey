@@ -83,7 +83,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
         if (error) throw error;
         // The protected game shell redirects new accounts to character creation
         // and keeps returning accounts on their saved game.
-        navigate({ to: "/home" });
+        navigate({ to: "/home", search: { visit: undefined } });
       }
     } catch (err) {
       toast.error((err as Error).message);

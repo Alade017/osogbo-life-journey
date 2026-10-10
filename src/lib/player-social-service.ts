@@ -256,6 +256,17 @@ export function subscribeToSocialMessages(
   return channel.subscribe();
 }
 
+export function subscribeToFriendRequests(onChange: () => void) {
+  return supabase
+    .channel("social-friend-requests")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "player_friend_requests" },
+      onChange,
+    )
+    .subscribe();
+}
+
 export async function leaveSocialChannel(channel: ReturnType<typeof subscribeToSocialMessages>) {
   await supabase.removeChannel(channel);
 }

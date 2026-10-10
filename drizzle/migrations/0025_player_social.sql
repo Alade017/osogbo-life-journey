@@ -124,8 +124,7 @@ create policy social_conversations_participant_read on public.social_conversatio
   );
 create policy social_messages_authorized_read on public.social_messages
   for select to authenticated using (
-    sender_character_id = public._my_social_character_id()
-    or (
+    (
       channel = 'area'
       and location_id = (select c.current_location_id from public.characters c where c.id = public._my_social_character_id())
       and not public._social_blocked(sender_character_id)
@@ -471,8 +470,10 @@ grant execute on function public.search_player_profiles(text,integer), public.ge
 
 -- Realtime provides low-latency delivery; table RLS still filters each subscriber's rows.
 do $$ begin
-  execute 'alter publication supabase_realtime add table public.social_messages';
-  execute 'alter publication supabase_realtime add table public.player_friend_requests';
-  execute 'alter publication supabase_realtime add table public.player_friendships';
-exception when undefined_object or undefined_table or insufficient_privilege or duplicate_object then null;
+  begin execute 'alter publication supabase_realtime add table public.social_messages';
+  exception when undefined_object or undefined_table or insufficient_privilege or duplicate_object then null; end;
+  begin execute 'alter publication supabase_realtime add table public.player_friend_requests';
+  exception when undefined_object or undefined_table or insufficient_privilege or duplicate_object then null; end;
+  begin execute 'alter publication supabase_realtime add table public.player_friendships';
+  exception when undefined_object or undefined_table or insufficient_privilege or duplicate_object then null; end;
 end $$;

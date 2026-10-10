@@ -190,6 +190,20 @@
       "when": 1791594000004,
       "tag": "0025_player_social",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1791594000005,
+      "tag": "0026_milestone7_purchasable_upgrade",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1791594000006,
+      "tag": "0027_milestone8_friend_home_visits",
+      "breakpoints": true
     }
   ]
 }

@@ -175,6 +175,7 @@ export function HouseInterior() {
         <div className="flex gap-2">
           <Link
             to="/home"
+            search={{ visit: undefined }}
             className="inline-flex items-center rounded-full border border-border bg-background px-3 py-2 text-sm font-semibold text-ink hover:border-primary hover:text-primary"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />

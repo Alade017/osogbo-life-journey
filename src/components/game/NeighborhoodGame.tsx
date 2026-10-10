@@ -335,7 +335,9 @@ export function NeighborhoodGame() {
           <button onClick={() => setDirectory((value) => !value)}>Districts</button>
           <Link to="/jobs">Find work</Link>
           <Link to="/inventory">Your bag</Link>
-          <Link to="/home">Go home</Link>
+          <Link to="/home" search={{ visit: undefined }}>
+            Go home
+          </Link>
         </div>
       </header>
       <div className="neighborhood-stage">
@@ -486,7 +488,9 @@ export function NeighborhoodGame() {
               Ẹ káàbọ̀! Start with a shift nearby, pick up something to eat, then head home to
               recharge. You’ll find your rhythm here.
             </p>
-            <Link to="/social">Meet people</Link>
+            <Link to="/social" search={{ playerId: undefined }}>
+              Meet people
+            </Link>
             <button onClick={() => setDialogue(false)}>Back to the street</button>
           </div>
         )}

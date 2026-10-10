@@ -58,6 +58,9 @@ type Props = {
   initialSave?: HousingSave;
   onSave?: (save: HousingSave) => void;
   powerAvailable?: boolean;
+  readOnly?: boolean;
+  visitorName?: string;
+  onLeave?: () => void;
 };
 
 function loadSave(key: string): HousingSave {
@@ -71,10 +74,13 @@ export function HomeInterior({
   initialSave,
   onSave,
   powerAvailable = true,
+  readOnly = false,
+  visitorName,
+  onLeave,
 }: Props) {
   const [saved, setSaved] = useState(() => initialSave ?? loadSave(saveKey));
   const onSaveRef = useRef(onSave);
-  const [inside, setInside] = useState(false);
+  const [inside, setInside] = useState(readOnly);
   const [lightsOn, setLightsOn] = useState(true);
   const [buildMode, setBuildMode] = useState(false);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
@@ -112,13 +118,13 @@ export function HomeInterior({
       return;
     }
     setSaved(validated);
-    if (typeof window !== "undefined") {
+    if (!readOnly && typeof window !== "undefined") {
       const stored = writeLocalHousingSave(saveKey, validated);
       if (!stored)
         setNotice("Browser storage is unavailable. Your cloud save will still be attempted.");
       window.dispatchEvent(new Event("osogbo-life-home-changed"));
     }
-    onSaveRef.current?.(validated);
+    if (!readOnly) onSaveRef.current?.(validated);
   };
   useEffect(() => {
     if (!target || buildMode) return;
@@ -140,16 +146,18 @@ export function HomeInterior({
         const next = { ...current, x: point[0], y: point[1] };
         const validated = parseHousingSave(next);
         if (validated) {
-          writeLocalHousingSave(saveKey, validated);
-          onSaveRef.current?.(validated);
-          window.dispatchEvent(new Event("osogbo-life-home-changed"));
+          if (!readOnly) {
+            writeLocalHousingSave(saveKey, validated);
+            onSaveRef.current?.(validated);
+            window.dispatchEvent(new Event("osogbo-life-home-changed"));
+          }
           return validated;
         }
         return current;
       });
     }, 170);
     return () => window.clearInterval(timer);
-  }, [target, room, saved.x, saved.y, blocked, buildMode, saveKey]);
+  }, [target, room, saved.x, saved.y, blocked, buildMode, saveKey, readOnly]);
   const visitRoom = (nextRoom: RoomId) => {
     if (!room.connections.includes(nextRoom) && room.id !== nextRoom) {
       setNotice("That room is not connected from here.");
@@ -157,7 +165,13 @@ export function HomeInterior({
     }
     const def = layout.rooms.find((entry) => entry.id === nextRoom);
     if (!def) return;
-    save({ ...saved, room: nextRoom, x: Math.floor(def.width / 2), y: Math.floor(def.height / 2) });
+    const next = {
+      ...saved,
+      room: nextRoom,
+      x: Math.floor(def.width / 2),
+      y: Math.floor(def.height / 2),
+    };
+    save(next);
     setNotice(`Entered ${def.name}.`);
   };
   const placeAt = (x: number, y: number) => {
@@ -211,6 +225,10 @@ export function HomeInterior({
     setPreviewRotation((current) => ((current + 90) % 360) as 0 | 90 | 180 | 270);
   };
   const interact = (placed: PlacedFurniture) => {
+    if (readOnly) {
+      setNotice("This is a read-only saved home visit.");
+      return;
+    }
     const item = FURNITURE_CATALOG.find((entry) => entry.id === placed.itemId);
     if (!item) return;
     if (!powerAvailable && ["stove", "computer", "television"].includes(placed.itemId)) {
@@ -239,6 +257,10 @@ export function HomeInterior({
     setNotice("Furniture stored safely.");
   };
   const exitHome = () => {
+    if (readOnly) {
+      onLeave?.();
+      return;
+    }
     save({ ...saved, room: layout.rooms[0]!.id });
     setInside(false);
     setNotice("You stepped outside at your saved city location.");
@@ -250,26 +272,32 @@ export function HomeInterior({
     <section className="home-interior" aria-labelledby="home-interior-title">
       <div className="home-interior-heading">
         <div>
-          <p className="home-interior-eyebrow">YOUR PLACE IN OSOGBO</p>
+          <p className="home-interior-eyebrow">
+            {readOnly ? "FRIEND'S HOME · SAVED LAYOUT" : "YOUR PLACE IN OSOGBO"}
+          </p>
           <h2 id="home-interior-title">{inside ? layout.name : "Make yourself at home"}</h2>
           <p>
-            {inside
-              ? "Tap a clear floor tile to walk. Use connected doors to move between rooms."
-              : "Choose a starter home layout, then step inside to explore and furnish it."}
+            {readOnly
+              ? `Visiting ${visitorName ?? "a friend"}'s saved layout. Walking and room browsing are local to this visit.`
+              : inside
+                ? "Tap a clear floor tile to walk. Use connected doors to move between rooms."
+                : "Choose a starter home layout, then step inside to explore and furnish it."}
           </p>
         </div>
-        <button
-          type="button"
-          className="home-lights-toggle"
-          aria-pressed={powerAvailable && lightsOn}
-          disabled={!powerAvailable}
-          onClick={() => setLightsOn((on) => !on)}
-        >
-          <Lightbulb size={16} />
-          {!powerAvailable ? "Power outage" : lightsOn ? "Lights on" : "Lights off"}
-        </button>
+        {!readOnly && (
+          <button
+            type="button"
+            className="home-lights-toggle"
+            aria-pressed={powerAvailable && lightsOn}
+            disabled={!powerAvailable}
+            onClick={() => setLightsOn((on) => !on)}
+          >
+            <Lightbulb size={16} />
+            {!powerAvailable ? "Power outage" : lightsOn ? "Lights on" : "Lights off"}
+          </button>
+        )}
       </div>
-      {!inside ? (
+      {!inside && !readOnly ? (
         <div className="housing-layout-picker">
           {HOME_LAYOUTS.map((option) => (
             <button
@@ -472,24 +500,26 @@ export function HomeInterior({
           )}
           {inside && (
             <div className="home-build-tools">
-              <button
-                type="button"
-                className={buildMode ? "is-active" : ""}
-                onClick={() => {
-                  setBuildMode((v) => !v);
-                  setSelectedItem(null);
-                }}
-              >
-                <Hammer size={16} />
-                {buildMode ? "Finish building" : "Build mode"}
-              </button>
+              {!readOnly && (
+                <button
+                  type="button"
+                  className={buildMode ? "is-active" : ""}
+                  onClick={() => {
+                    setBuildMode((v) => !v);
+                    setSelectedItem(null);
+                  }}
+                >
+                  <Hammer size={16} />
+                  {buildMode ? "Finish building" : "Build mode"}
+                </button>
+              )}
               <button type="button" onClick={exitHome}>
                 <DoorOpen size={16} />
-                Leave home
+                {readOnly ? "End visit" : "Leave home"}
               </button>
             </div>
           )}
-          {inside && buildMode && (
+          {inside && buildMode && !readOnly && (
             <div className="home-catalog">
               <div className="catalog-filter">
                 <label htmlFor="furniture-category">Catalog</label>
@@ -542,7 +572,7 @@ export function HomeInterior({
               )}
             </div>
           )}
-          {inside && (
+          {inside && !readOnly && (
             <div className="home-upgrades">
               <strong>Home upgrades</strong>
               {room.upgrades.map((upgrade) => (
@@ -577,7 +607,7 @@ export function HomeInterior({
           </div>
         </aside>
       </div>
-      {!inside && (
+      {!inside && !readOnly && (
         <button
           type="button"
           className="home-enter-button"

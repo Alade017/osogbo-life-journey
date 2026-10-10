@@ -6,13 +6,13 @@ This document records the current gameplay boundary and Milestone 1 architecture
 
 ### Runtime ownership
 
-| Concern | Owner | Current boundary |
-| --- | --- | --- |
-| Public site, auth forms, onboarding, HUD, accessible menus and interaction panels | React/TanStack Start | Routes and components render user-facing state and issue domain commands. |
-| World frame loop, local input, camera, collision, animation and world-side proximity | Phaser 3 | `NeighborhoodScene` owns transient local presentation. It must not write durable economy or progression state. |
-| Rules and command adapters | `src/lib` domain services and `src/lib/game.ts` | Existing typed services and Supabase RPC wrappers remain the entry points for travel, jobs, inventory, purchases and persistence. |
-| Durable identity and player progression | Supabase Auth/Postgres/RPCs | Existing authenticated records and server-validated RPCs remain authoritative. Do not persist movement per rendered frame. |
-| Shared transient player state | Not implemented yet | A dedicated authoritative multiplayer runtime is the recommended target; remote players must not be fabricated in the client. |
+| Concern                                                                              | Owner                                           | Current boundary                                                                                                                  |
+| ------------------------------------------------------------------------------------ | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Public site, auth forms, onboarding, HUD, accessible menus and interaction panels    | React/TanStack Start                            | Routes and components render user-facing state and issue domain commands.                                                         |
+| World frame loop, local input, camera, collision, animation and world-side proximity | Phaser 3                                        | `NeighborhoodScene` owns transient local presentation. It must not write durable economy or progression state.                    |
+| Rules and command adapters                                                           | `src/lib` domain services and `src/lib/game.ts` | Existing typed services and Supabase RPC wrappers remain the entry points for travel, jobs, inventory, purchases and persistence. |
+| Durable identity and player progression                                              | Supabase Auth/Postgres/RPCs                     | Existing authenticated records and server-validated RPCs remain authoritative. Do not persist movement per rendered frame.        |
+| Shared transient player state                                                        | Colyseus 0.18 neighborhood room                 | Local room server owns movement and presence; production hosting and authenticated two-client verification remain open.           |
 
 React and Phaser communicate through the typed `NeighborhoodBridge` contract in `src/game/neighborhood-scene.ts`. It carries initial world coordinates, proximity/checkpoint notifications, interactions and an asynchronous checkpoint command. Keep that bridge narrow: UI commands flow into the scene through explicit methods, while scene events flow back through callbacks. Do not expose React state setters or Supabase clients to Phaser.
 
@@ -38,7 +38,15 @@ These are source and unit-test boundaries. Authenticated travel between two live
 
 Use stable area identifiers in the world layer and a data-driven scene/area definition for map reference, bounds, spawn points, exits, collision assets and room mapping. Keep the existing movement grid and database checkpoint format compatible until an explicit migration is reviewed. Travel remains a domain command validated by the existing Supabase RPC; when multiplayer arrives, the room transfer must be coordinated with that successful command so a client cannot teleport by changing local coordinates.
 
-Transient movement, facing, animation and room membership belong to the room runtime once implemented. Durable character appearance, validated wallet transactions, inventory, jobs, home saves and a safe checkpoint remain in Supabase. Local housing/simulation snapshots are not proof of server-persisted ownership or progression. Add social persistence only when a concrete social milestone defines ownership, access policies, retention and moderation requirements; the current schema audit found no player-to-player chat/friend/block/report model.
+Transient movement, facing, animation and room membership belong to the room runtime. Durable character appearance, validated wallet transactions, inventory, jobs, home saves and a safe checkpoint remain in Supabase. Local housing/simulation snapshots are not proof of server-persisted ownership or progression. The initial audit found no player-to-player social model; Milestone 6 now adds one with explicit ownership, access policies, retention, and moderation boundaries below.
+
+### Milestone 6 player social implementation
+
+Migration 0025_player_social.sql adds searchable profile RPCs, friend requests and canonical friendships, blocks, private conversations, persisted area/private messages, and private reports. Character table RLS stays owner-only. Area presence and positions remain in Colyseus; React search/profile/chat UI and Phaser nearby-player selection do not own persistent relationship state. Friend and message writes are security-definer RPCs, social reads are RLS-controlled, and message/request/report limits are checked in the database. See docs/player-social.md for privacy rules and the moderation/hosted-Realtime verification boundary.
+
+### Milestone 7 progression purchase
+
+Migration 0026_milestone7_purchasable_upgrade.sql seeds an Insulated Flask in existing market and supermarket catalogs. It costs fictional in-game ₦1,500, persists through `purchase_shop_item`, and restores 70 thirst points through the existing server-validated `use_inventory_item` action. No browser-side wallet, inventory, or character-stat mutation and no new table or RPC are introduced. Local database acceptance covers purchase retry idempotency, the single wallet debit and inventory row, and the authoritative item effect.
 
 ### Design-system baseline
 
@@ -69,6 +77,8 @@ Reuse the existing tokens in `src/styles.css` and current light game styling. Th
 - Existing server RPCs retain authority for purchases, work, progression and inventory. This phase requires no new database schema. Migration 0024 remains a separate deployment prerequisite for the previously implemented personal simulation.
 
 The existing navigable 3D house is preserved deliberately: it already has rooms, furniture, persistence and collision-aware navigation. Replacing it with a Phaser interior would be a separate conversion with no current gameplay benefit. Entry links to `/home`; the exterior checkpoint is saved before entry and restored on return to `/map`.
+
+Milestone 8 adds opt-in visits to a friend's saved home layout. The owner enables access from `/home`; an accepted friend opens the snapshot from the friends list. A security-definer RPC checks friendship and blocks, and returns only the saved layout with needs, exterior coordinates and position sanitized. Guests can browse rooms and walk locally, but cannot edit furniture, use it, change upgrades or persist movement. This is a saved snapshot, not a shared Colyseus interior or a live indication that the owner is home. The migration remains local until it is deliberately applied to a verified staging database.
 
 ## Art rules
 

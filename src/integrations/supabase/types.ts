@@ -15,6 +15,7 @@ export type Database = {
           schema_version: number;
           revision: number;
           payload: Json;
+          allow_friend_visits: boolean;
           updated_at: string;
         };
         Insert: {
@@ -23,6 +24,7 @@ export type Database = {
           schema_version?: number;
           revision?: number;
           payload: Json;
+          allow_friend_visits?: boolean;
           updated_at?: string;
         };
         Update: {
@@ -31,6 +33,7 @@ export type Database = {
           schema_version?: number;
           revision?: number;
           payload?: Json;
+          allow_friend_visits?: boolean;
           updated_at?: string;
         };
         Relationships: [];
@@ -1594,6 +1597,9 @@ export type Database = {
       join_city_event: { Args: { p_event: string }; Returns: Json };
       my_home_save: { Args: never; Returns: Json };
       save_my_home: { Args: { p_expected_revision: number; p_payload: Json }; Returns: Json };
+      my_home_visit_policy: { Args: never; Returns: Json };
+      set_my_home_visit_access: { Args: { p_allow_friends: boolean }; Returns: Json };
+      get_friend_home_for_visit: { Args: { p_target_character_id: string }; Returns: Json };
       interact_with_npc: {
         Args: { p_npc_id: string; p_action: string; p_request_id: string };
         Returns: Json;

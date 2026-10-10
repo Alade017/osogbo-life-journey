@@ -153,6 +153,7 @@ function HousePage() {
         </div>
         <Link
           to="/home"
+          search={{ visit: undefined }}
           className="inline-flex min-h-11 items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
         >
           Open home interior

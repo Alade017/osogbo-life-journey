@@ -30,10 +30,11 @@ function LoginPage() {
       return;
     let active = true;
     supabase.auth.getSession().then(({ data }) => {
-      if (active && data.session) navigate({ to: "/home" });
+      if (active && data.session) navigate({ to: "/home", search: { visit: undefined } });
     });
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
-      if (active && session && event === "SIGNED_IN") void navigate({ to: "/home" });
+      if (active && session && event === "SIGNED_IN")
+        void navigate({ to: "/home", search: { visit: undefined } });
     });
     return () => {
       active = false;

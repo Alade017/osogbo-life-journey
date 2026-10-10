@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { HomeInterior } from "@/components/game/HomeInterior";
@@ -18,18 +18,85 @@ import { useLiveClock } from "@/hooks/use-live-clock";
 import { toast } from "sonner";
 import { useWorldClock } from "@/hooks/use-world-clock";
 import { isPowerOutageAt } from "@/lib/world-simulation";
+import { parseHousingSave } from "@/lib/housing-service";
+import { useMutation } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/_game/home")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    visit: typeof search["visit"] === "string" ? search["visit"] : undefined,
+  }),
   head: () => pageMeta("Osogbo · Home", "Step into your day in Osogbo."),
   component: CityHome,
 });
 
 function CityHome() {
+  const { visit } = Route.useSearch();
+  if (visit) return <FriendHomeVisit characterId={visit} />;
+  return <MyCityHome />;
+}
+
+function FriendHomeVisit({ characterId }: { characterId: string }) {
+  const navigate = useNavigate();
+  const visitQuery = useQuery(q.friendHomeVisit(characterId));
+  const data =
+    visitQuery.data && typeof visitQuery.data === "object" && !Array.isArray(visitQuery.data)
+      ? (visitQuery.data as { player_name?: unknown; payload?: unknown })
+      : null;
+  const payload = parseHousingSave(data?.payload);
+  return (
+    <div className="game-home home-only-page">
+      <div className="arrival-line">
+        <div>
+          <p className="arrival-kicker">Friend visit</p>
+          <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">
+            Saved home layout
+          </h1>
+        </div>
+        <Link className="text-primary underline" to="/social" search={{ playerId: undefined }}>
+          Back to friends
+        </Link>
+      </div>
+      {visitQuery.isLoading ? (
+        <LoadingState />
+      ) : visitQuery.isError || !payload ? (
+        <section className="game-panel p-5" role="status">
+          <p>This home is private, unavailable, or no longer shared with you.</p>
+        </section>
+      ) : (
+        <>
+          <p className="game-panel p-3 text-sm">
+            Saved layout visit · read-only. The owner is not shown as present; this is not a live
+            multiplayer room.
+          </p>
+          <HomeInterior
+            key={`${characterId}:${JSON.stringify(payload)}`}
+            initialSave={payload}
+            readOnly
+            visitorName={typeof data?.player_name === "string" ? data.player_name : "your friend"}
+            onLeave={() => void navigate({ to: "/social", search: { playerId: undefined } })}
+          />
+        </>
+      )}
+    </div>
+  );
+}
+
+function MyCityHome() {
   const now = useLiveClock();
   const world = useWorldClock();
   const { data: character } = useQuery(q.character());
   const homeQuery = useQuery({ ...q.homeSave(), enabled: !!character });
+  const visitPolicyQuery = useQuery({ ...q.homeVisitPolicy(), enabled: !!character });
   const queryClient = useQueryClient();
+  const accessMutation = useMutation({
+    mutationFn: rpc.setHomeVisitAccess,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: q.homeVisitPolicy().queryKey });
+      toast.success("Home visit settings saved.");
+    },
+    onError: (error) => toast.error(error.message),
+  });
   const [syncStatus, setSyncStatus] = useState<
     "saved" | "saving" | "offline" | "conflict" | "unavailable"
   >("saved");
@@ -278,6 +345,32 @@ function CityHome() {
                 Retry cloud sync
               </button>
             )}
+          </section>
+          <section className="game-panel flex flex-wrap items-center justify-between gap-3 p-3 text-sm">
+            <div>
+              <strong>Friends visiting your home</strong>
+              <p className="text-muted-foreground">
+                Friends can browse your saved layout. Your character needs and position stay
+                private.
+              </p>
+            </div>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={
+                  visitPolicyQuery.data !== undefined &&
+                  !!(visitPolicyQuery.data as { allow_friend_visits?: boolean }).allow_friend_visits
+                }
+                disabled={
+                  !cloudSave ||
+                  accessMutation.isPending ||
+                  visitPolicyQuery.isLoading ||
+                  visitPolicyQuery.isError
+                }
+                onChange={(event) => accessMutation.mutate(event.target.checked)}
+              />
+              Allow friend visits
+            </label>
           </section>
           <HomeInterior
             key={`${character.id}:${reloadToken}`}

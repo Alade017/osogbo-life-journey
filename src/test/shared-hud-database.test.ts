@@ -186,11 +186,13 @@ describe("shared HUD database acceptance", () => {
   });
 
   it("enforces player discovery, friend requests, persistent chat, blocks, and report privacy", async () => {
-    const secondUser = "33333333-3333-4333-8333-333333333333";
+    const secondUser = "66666666-6666-4666-8666-666666666666";
     await db.exec(`insert into auth.users values('${secondUser}');
       insert into public.profiles(id) values('${secondUser}');
       insert into public.characters(user_id,name,gender,age,personality,energy,hunger,happiness,social)
       values('${secondUser}','Bola','female',22,'creative',80,20,70,60);
+      update public.characters set current_location_id=(select current_location_id from public.characters where user_id='${uid}')
+      where user_id='${secondUser}';
       select set_config('test.user_id','${uid}',false);`);
 
     const search = await db.query<{ result: Array<{ player_name: string; character_id: string }> }>(
@@ -291,5 +293,237 @@ describe("shared HUD database acceptance", () => {
         conversation.rows[0]!.result.id,
       ]),
     ).rejects.toThrow(/not found/);
+
+    await db.exec("set role authenticated");
+    await db.exec(`select set_config('test.user_id','${uid}',false)`);
+    const blockedPrivateRows = await db.query(
+      "select * from public.social_messages where conversation_id=$1",
+      [conversation.rows[0]!.result.id],
+    );
+    expect(blockedPrivateRows.rows).toHaveLength(0);
+    await db.exec("reset role");
+
+    await db.exec(
+      `update public.characters set current_location_id=(select id from public.locations where slug <> (select slug from public.locations where id=current_location_id) limit 1) where user_id='${uid}'`,
+    );
+    await db.exec("set role authenticated");
+    await db.exec(`select set_config('test.user_id','${uid}',false)`);
+    const departedAreaRows = await db.query(
+      "select * from public.social_messages where channel='area' and location_id=$1",
+      [locationId],
+    );
+    expect(departedAreaRows.rows).toHaveLength(0);
+    await expect(
+      db.query(
+        "insert into public.social_messages(sender_character_id,channel,location_id,request_id,body) values($1,'area',$2,gen_random_uuid(),'forged')",
+        [adeId, locationId],
+      ),
+    ).rejects.toThrow(/permission/);
+    await db.exec(`select set_config('test.user_id','${secondUser}',false)`);
+    await expect(db.query("select * from public.player_reports")).resolves.toMatchObject({
+      rows: [],
+    });
+    await db.exec("reset role");
+  });
+
+  it("buys and uses the persistent insulated flask upgrade exactly once on retry", async () => {
+    await db.exec(`select set_config('test.user_id','${uid}',false)`);
+    const offer = await db.query<{ shop_item_id: string; location_id: string }>(
+      `select si.id as shop_item_id, s.location_id
+       from public.shop_items si
+       join public.shops s on s.id=si.shop_id
+       join public.inventory_items i on i.id=si.item_id
+       where i.slug='insulated_flask' and s.category in ('market','supermarket','food-market')
+       order by s.slug limit 1`,
+    );
+    expect(offer.rows).toHaveLength(1);
+    const character = await db.query<{ id: string }>(
+      "select id from public.characters where user_id=$1",
+      [uid],
+    );
+    const characterId = character.rows[0]!.id;
+    await db.query(
+      "update public.characters set current_location_id=$1,game_time_hour=12,thirst=90 where id=$2",
+      [offer.rows[0]!.location_id, characterId],
+    );
+    await db.query(
+      `insert into public.wallets(user_id,character_id,balance,total_expenses)
+       values($1,$2,5000,0)
+       on conflict(character_id) do update set balance=5000,total_expenses=0`,
+      [uid, characterId],
+    );
+
+    const requestId = "99999999-9999-4999-8999-999999999999";
+    const firstPurchase = await db.query<{
+      result: { item: string; total: number; cash: number };
+    }>("select public.purchase_shop_item($1,1,$2) as result", [
+      offer.rows[0]!.shop_item_id,
+      requestId,
+    ]);
+    const retriedPurchase = await db.query<{
+      result: { item: string; total: number; cash: number };
+    }>("select public.purchase_shop_item($1,1,$2) as result", [
+      offer.rows[0]!.shop_item_id,
+      requestId,
+    ]);
+    expect(firstPurchase.rows[0]!.result).toEqual({
+      item: "Insulated Flask",
+      quantity: 1,
+      unit_price: 1500,
+      total: 1500,
+      cash: 3500,
+    });
+    expect(retriedPurchase.rows[0]!.result).toEqual(firstPurchase.rows[0]!.result);
+    const purchased = await db.query<{ id: string; quantity: number }>(
+      `select pi.id, pi.quantity from public.player_inventory pi
+       join public.inventory_items i on i.id=pi.item_id
+       where pi.character_id=$1 and i.slug='insulated_flask'`,
+      [characterId],
+    );
+    expect(purchased.rows).toEqual([{ id: expect.any(String), quantity: 1 }]);
+    const wallet = await db.query<{ balance: number }>(
+      "select balance from public.wallets where user_id=$1",
+      [uid],
+    );
+    expect(wallet.rows[0]!.balance).toBe(3500);
+
+    await db.query("select public.use_inventory_item($1)", [purchased.rows[0]!.id]);
+    const afterUse = await db.query<{ thirst: number }>(
+      "select thirst from public.characters where id=$1",
+      [characterId],
+    );
+    expect(afterUse.rows[0]!.thirst).toBe(20);
+    const remaining = await db.query(
+      `select 1 from public.player_inventory pi
+       join public.inventory_items i on i.id=pi.item_id
+       where pi.character_id=$1 and i.slug='insulated_flask'`,
+      [characterId],
+    );
+    expect(remaining.rows).toHaveLength(0);
+  });
+
+  it("allows only opted-in friends to read a sanitized saved home snapshot", async () => {
+    const secondUser = "33333333-3333-4333-8333-333333333333";
+    await db.exec(`insert into auth.users values('${secondUser}');
+      insert into public.profiles(id) values('${secondUser}');
+      insert into public.characters(user_id,name,gender,age,personality,energy,hunger,happiness,social)
+      values('${secondUser}','Bola','female',22,'creative',80,20,70,60);
+      select set_config('test.user_id','${uid}',false)`);
+    const ade = await db.query<{ id: string }>(
+      "select id from public.characters where user_id=$1",
+      [uid],
+    );
+    const bola = await db.query<{ id: string }>(
+      "select id from public.characters where user_id=$1",
+      [secondUser],
+    );
+    const ownerId = ade.rows[0]!.id;
+    const friendId = bola.rows[0]!.id;
+    await db.exec(`insert into public.player_friendships(first_character_id,second_character_id)
+      values(least('${ownerId}'::uuid,'${friendId}'::uuid),greatest('${ownerId}'::uuid,'${friendId}'::uuid));
+      select set_config('test.user_id','${uid}',false)`);
+    const layout = {
+      layoutId: "garden-flat",
+      room: "lounge",
+      x: 1,
+      y: 1,
+      exterior: null,
+      furniture: [],
+      storage: [],
+      upgrades: [],
+      needs: { energy: 12, fun: 13, hygiene: 14, bladder: 15, hunger: 16, skill: 0 },
+    };
+    await db.exec(`select set_config('test.user_id','${uid}',false)`);
+    const saved = await db.query<{ result: { revision: number } }>(
+      "select public.save_my_home($1,0) as result",
+      [JSON.stringify(layout)],
+    );
+    expect(saved.rows[0]!.result.revision).toBe(1);
+    await db.query("select public.set_my_home_visit_access(true)");
+    await db.exec(`select set_config('test.user_id','${secondUser}',false)`);
+    const policyRows = await db.query(
+      "select * from public.player_friendships where first_character_id=least($1::uuid,$2::uuid) and second_character_id=greatest($1::uuid,$2::uuid)",
+      [ownerId, friendId],
+    );
+    expect(policyRows.rows).toHaveLength(1);
+    const visit = await db.query<{
+      result: { character_id: string; player_name: string; payload: Record<string, unknown> };
+    }>("select public.get_friend_home_for_visit($1) as result", [ownerId]);
+    expect(visit.rows[0]!.result.player_name).toBe("Ade");
+    expect(visit.rows[0]!.result.payload).toMatchObject({
+      room: "lounge",
+      x: 3,
+      y: 3,
+      exterior: null,
+      needs: { energy: 70, fun: 50, hygiene: 70, bladder: 30, hunger: 60, skill: 0 },
+    });
+    const outsiderUser = "77777777-7777-4777-8777-777777777777";
+    await db.exec(`insert into auth.users values('${outsiderUser}'); insert into public.profiles(id) values('${outsiderUser}');
+      insert into public.characters(user_id,name,gender,age,personality,energy,hunger,happiness,social)
+      values('${outsiderUser}','Dayo','male',24,'easygoing',80,20,70,60);
+      select set_config('test.user_id','${outsiderUser}',false)`);
+    await expect(
+      db.query("select public.get_friend_home_for_visit($1)", [ownerId]),
+    ).rejects.toThrow(/not open/);
+    await db.exec("set role authenticated");
+    const privateRows = await db.query(
+      "select * from public.character_home_saves where character_id=$1",
+      [ownerId],
+    );
+    expect(privateRows.rows).toHaveLength(0);
+    await db.exec("reset role");
+    await db.exec(`select set_config('test.user_id','${uid}',false); select public.set_my_home_visit_access(false);
+      select set_config('test.user_id','${secondUser}',false)`);
+    await expect(
+      db.query("select public.get_friend_home_for_visit($1)", [ownerId]),
+    ).rejects.toThrow(/not open/);
+  });
+
+  it("pays and advances a qualified job shift only once when the same request is retried", async () => {
+    await db.exec(`select set_config('test.user_id','${uid}',false)`);
+    const job = await db.query<{ id: string; location_id: string | null }>(
+      `select id, location_id from public.jobs
+       where is_available and required_level <= 1 and required_course_slug is null
+         and shift_start_hour <= 12 and shift_end_hour > 12
+       order by sort_order limit 1`,
+    );
+    expect(job.rows).toHaveLength(1);
+    const character = await db.query<{ id: string }>(
+      "select id from public.characters where user_id=$1",
+      [uid],
+    );
+    const characterId = character.rows[0]!.id;
+    await db.query(
+      `update public.characters set current_location_id=coalesce($1,current_location_id),
+       game_time_hour=12,game_time_minute=0,energy=100,hunger=10,thirst=10 where id=$2`,
+      [job.rows[0]!.location_id, characterId],
+    );
+    await db.query(
+      `insert into public.wallets(user_id,character_id,balance,total_expenses)
+       values($1,$2,5000,0)
+       on conflict(character_id) do update set balance=5000,total_expenses=0`,
+      [uid, characterId],
+    );
+    await db.query("select public.select_job($1)", [job.rows[0]!.id]);
+    const requestId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    const first = await db.query<{
+      result: { earned: number; xp: number; level: number };
+    }>("select public.perform_job($1) as result", [requestId]);
+    const retried = await db.query<{
+      result: { earned: number; xp: number; level: number };
+    }>("select public.perform_job($1) as result", [requestId]);
+    expect(first.rows[0]!.result.earned).toBeGreaterThan(0);
+    expect(first.rows[0]!.result.xp).toBeGreaterThan(0);
+    expect(retried.rows[0]!.result).toEqual(first.rows[0]!.result);
+    const employment = await db.query<{ times_performed: number }>(
+      "select times_performed from public.character_jobs where character_id=$1 and job_id=$2",
+      [characterId, job.rows[0]!.id],
+    );
+    expect(employment.rows[0]!.times_performed).toBe(1);
+    const wallet = await db.query<{ balance: number }>(
+      "select balance from public.wallets where character_id=$1",
+      [characterId],
+    );
+    expect(wallet.rows[0]!.balance).toBe(5000 + first.rows[0]!.result.earned);
   });
 });

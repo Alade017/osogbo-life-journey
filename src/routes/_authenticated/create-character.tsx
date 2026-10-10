@@ -121,7 +121,7 @@ function CreateCharacter() {
   const submitting = useRef(false);
 
   useEffect(() => {
-    if (character) navigate({ to: "/home" });
+    if (character) navigate({ to: "/home", search: { visit: undefined } });
   }, [character, navigate]);
 
   function randomizeAppearance() {
@@ -145,7 +145,7 @@ function CreateCharacter() {
       if (error) throw error;
       await qc.invalidateQueries();
       toast.success(`Welcome to Osogbo, ${cleanName}!`);
-      navigate({ to: "/home" });
+      navigate({ to: "/home", search: { visit: undefined } });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Your character could not be created.");
     } finally {

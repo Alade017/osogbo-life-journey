@@ -1,8 +1,10 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { MessageCircle, Search, ShieldBan, UserPlus, Users } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar } from "@/components/game/Avatar";
+import type { Appearance } from "@/components/game/Avatar";
 import { Button } from "@/components/ui/button";
 import { q } from "@/lib/game";
 import {
@@ -20,6 +22,7 @@ import {
   sendFriendRequest,
   sendSocialMessage,
   subscribeToSocialMessages,
+  subscribeToFriendRequests,
   unblockPlayer,
   type SocialMessage,
   type SocialPlayer,
@@ -43,7 +46,11 @@ function PlayerAvatar({ player }: { player: Pick<SocialPlayer, "appearance" | "g
     <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl bg-leaf/10">
       <Avatar
         appearance={
-          player.appearance && typeof player.appearance === "object" ? player.appearance : {}
+          player.appearance &&
+          typeof player.appearance === "object" &&
+          !Array.isArray(player.appearance)
+            ? (player.appearance as Appearance)
+            : {}
         }
         gender={player.gender}
         size={38}
@@ -61,7 +68,7 @@ function PlayerRow({
   player: Pick<SocialPlayer, "character_id" | "player_name" | "appearance" | "gender" | "level">;
   action?: { label: string; run: () => void; disabled?: boolean };
   secondaryAction?: { label: string; run: () => void; disabled?: boolean };
-  status?: string;
+  status?: string | undefined;
 }) {
   return (
     <article className="flex min-w-0 flex-wrap items-center gap-3 rounded-xl border border-border bg-background p-3">
@@ -100,7 +107,7 @@ function MessageList({
   onReport,
 }: {
   messages: SocialMessage[];
-  ownCharacterId?: string;
+  ownCharacterId?: string | undefined;
   onReport: (message: SocialMessage) => void;
 }) {
   if (!messages.length)
@@ -187,7 +194,7 @@ function ChatComposer({
   );
 }
 
-export function PlayerSocial({ initialPlayerId }: { initialPlayerId?: string }) {
+export function PlayerSocial({ initialPlayerId }: { initialPlayerId?: string | undefined }) {
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>("players");
   const [query, setQuery] = useState("");
@@ -237,7 +244,7 @@ export function PlayerSocial({ initialPlayerId }: { initialPlayerId?: string }) 
 
   useEffect(() => {
     if (tab !== "messages") return;
-    const channels = [];
+    const channels: Array<ReturnType<typeof subscribeToSocialMessages>> = [];
     if (locationId) {
       channels.push(
         subscribeToSocialMessages({ locationId }, () => {
@@ -258,6 +265,16 @@ export function PlayerSocial({ initialPlayerId }: { initialPlayerId?: string }) 
       for (const channel of channels) void leaveSocialChannel(channel);
     };
   }, [activeChat?.conversationId, locationId, qc, tab]);
+
+  useEffect(() => {
+    const channel = subscribeToFriendRequests(() => {
+      void qc.invalidateQueries({ queryKey: ["playerSocialOverview"] });
+      void qc.invalidateQueries({ queryKey: ["playerSocialSearch"] });
+    });
+    return () => {
+      void leaveSocialChannel(channel);
+    };
+  }, [qc]);
 
   const refreshSocial = () =>
     Promise.all([
@@ -718,20 +735,28 @@ export function PlayerSocial({ initialPlayerId }: { initialPlayerId?: string }) 
             </h3>
             {overview?.friends.length ? (
               overview.friends.map((friend) => (
-                <PlayerRow
-                  key={friend.character_id}
-                  player={friend}
-                  action={{
-                    label: "Message",
-                    run: () => openChatMutation.mutate(friend.character_id),
-                    disabled: openChatMutation.isPending,
-                  }}
-                  secondaryAction={{
-                    label: "Remove",
-                    run: () => actionMutation.mutate({ kind: "remove", id: friend.character_id }),
-                    disabled: actionMutation.isPending,
-                  }}
-                />
+                <div key={friend.character_id} className="grid gap-1">
+                  <PlayerRow
+                    player={friend}
+                    action={{
+                      label: "Message",
+                      run: () => openChatMutation.mutate(friend.character_id),
+                      disabled: openChatMutation.isPending,
+                    }}
+                    secondaryAction={{
+                      label: "Remove",
+                      run: () => actionMutation.mutate({ kind: "remove", id: friend.character_id }),
+                      disabled: actionMutation.isPending,
+                    }}
+                  />
+                  <Link
+                    className="px-3 text-xs text-primary underline"
+                    to="/home"
+                    search={{ visit: friend.character_id }}
+                  >
+                    Visit saved home
+                  </Link>
+                </div>
               ))
             ) : (
               <p className="rounded-xl bg-background p-4 text-sm text-muted-foreground">
@@ -821,7 +846,7 @@ export function PlayerSocial({ initialPlayerId }: { initialPlayerId?: string }) 
                     targetCharacterId: reportTarget.id,
                     category: reportCategory,
                     details: reportDetails,
-                    messageId: reportTarget.messageId,
+                    ...(reportTarget.messageId ? { messageId: reportTarget.messageId } : {}),
                   })
                 }
               >

@@ -78,6 +78,23 @@ export const q = {
       retry: false,
       queryFn: async () => unwrap(await supabase.rpc("my_home_save")) as Json,
     }),
+  homeVisitPolicy: () =>
+    queryOptions({
+      queryKey: ["homeVisitPolicy"],
+      retry: false,
+      queryFn: async () => unwrap(await supabase.rpc("my_home_visit_policy")) as Json,
+    }),
+  friendHomeVisit: (characterId: string) =>
+    queryOptions({
+      queryKey: ["friendHomeVisit", characterId],
+      retry: false,
+      queryFn: async () =>
+        unwrap(
+          await supabase.rpc("get_friend_home_for_visit", {
+            p_target_character_id: characterId,
+          }),
+        ) as Json,
+    }),
   npcs: () =>
     queryOptions({
       queryKey: ["npcs"],
@@ -403,6 +420,10 @@ export const rpc = {
         p_payload: payload,
         p_expected_revision: expectedRevision,
       }),
+    ) as Json,
+  setHomeVisitAccess: async (allowFriends: boolean) =>
+    unwrap(
+      await supabase.rpc("set_my_home_visit_access", { p_allow_friends: allowFriends }),
     ) as Json,
   interactWithNpc: async (args: { npcId: string; action: string; requestId: string }) =>
     unwrap(
