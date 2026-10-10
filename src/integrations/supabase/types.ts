@@ -264,6 +264,10 @@ export type Database = {
           virtual_latitude: number;
           virtual_longitude: number;
           movement_state: string;
+          world_x: number;
+          world_y: number;
+          world_building_slug: string | null;
+          world_position_revision: number;
         };
         Insert: {
           age: number;
@@ -299,6 +303,10 @@ export type Database = {
           virtual_latitude?: number;
           virtual_longitude?: number;
           movement_state?: string;
+          world_x?: number;
+          world_y?: number;
+          world_building_slug?: string | null;
+          world_position_revision?: number;
         };
         Update: {
           age?: number;
@@ -334,6 +342,10 @@ export type Database = {
           virtual_latitude?: number;
           virtual_longitude?: number;
           movement_state?: string;
+          world_x?: number;
+          world_y?: number;
+          world_building_slug?: string | null;
+          world_position_revision?: number;
         };
         Relationships: [
           {
@@ -1511,6 +1523,27 @@ export type Database = {
       };
       save_player_map_position: {
         Args: { p_latitude: number; p_longitude: number; p_movement_state: string };
+        Returns: Json;
+      };
+      save_player_world_position: {
+        Args: {
+          p_world_x: number;
+          p_world_y: number;
+          p_building_slug: string | null;
+          p_expected_revision: number;
+          p_request_id: string;
+        };
+        Returns: Json;
+      };
+      travel_to_city_location: {
+        Args: {
+          p_location_id: string;
+          p_mode: string;
+          p_world_x: number;
+          p_world_y: number;
+          p_expected_revision: number;
+          p_request_id: string;
+        };
         Returns: Json;
       };
       deposit_cash: { Args: { p_amount: number }; Returns: Json };

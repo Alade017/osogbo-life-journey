@@ -363,6 +363,40 @@ export function useGameAction<TArgs, TResult>(
 }
 
 export const rpc = {
+  savePlayerWorldPosition: async (args: {
+    worldX: number;
+    worldY: number;
+    buildingSlug: string | null;
+    expectedRevision: number;
+    requestId: string;
+  }) =>
+    unwrap(
+      await supabase.rpc("save_player_world_position", {
+        p_world_x: args.worldX,
+        p_world_y: args.worldY,
+        p_building_slug: args.buildingSlug,
+        p_expected_revision: args.expectedRevision,
+        p_request_id: args.requestId,
+      }),
+    ) as Json,
+  travelToCityLocation: async (args: {
+    locationId: string;
+    mode: string;
+    worldX: number;
+    worldY: number;
+    expectedRevision: number;
+    requestId: string;
+  }) =>
+    unwrap(
+      await supabase.rpc("travel_to_city_location", {
+        p_location_id: args.locationId,
+        p_mode: args.mode,
+        p_world_x: args.worldX,
+        p_world_y: args.worldY,
+        p_expected_revision: args.expectedRevision,
+        p_request_id: args.requestId,
+      }),
+    ) as Json,
   saveMyHome: async (payload: Json, expectedRevision: number) =>
     unwrap(
       await supabase.rpc("save_my_home", {

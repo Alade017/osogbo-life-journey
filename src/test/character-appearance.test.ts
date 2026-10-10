@@ -53,7 +53,7 @@ describe("character appearance customization", () => {
   it("keeps an existing hairstyle selection valid when presentation changes", () => {
     expect(appearanceForGender({ ...DEFAULT_CHARACTER_APPEARANCE, hair: 5 }, "male").hair).toBe(5);
     expect(appearanceForGender({ ...DEFAULT_CHARACTER_APPEARANCE, hair: 99 }, "male").hair).toBe(
-      HAIR_STYLES_BY_GENDER.male.length - 1,
+      HAIR_STYLES_BY_GENDER["male"]!.length - 1,
     );
     expect(appearanceForGender({ ...DEFAULT_CHARACTER_APPEARANCE, hair: -4 }, "female").hair).toBe(
       0,

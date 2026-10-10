@@ -1,45 +1,30 @@
-# OSOGBO LIFE game map
+# OSOGBO LIFE city map
 
-The authenticated map route uses MapLibre GL JS and the hosted Stadia Maps Alidade Smooth vector style as its geographic base. The style provides a muted canvas for the game's player and location overlays. OSM attribution remains visible through MapLibre's attribution control.
+The authenticated `/map` route uses an original, fictional 2.5D isometric SVG city. It does not request map tiles, real-world coordinates, routing services, or a map-provider key. The layout takes visual cues from the supplied HUD reference while keeping the streets and districts fictional.
 
-## Provider configuration
+## World data and save compatibility
 
-Copy the map settings from `.env.example` into the local environment as needed:
+District geometry, road nodes, pathfinding, building placement, and legacy location-slug mapping live in `src/lib/city-world.ts`. The graph is presentation/game data and is not duplicated in the database. Existing location rows remain the source for names, availability, descriptions, and travel fares.
 
-- `VITE_OSOGBO_MAP_STYLE_URL` selects the style URL. It defaults to the Alidade Smooth hosted style.
-- `VITE_STADIA_MAPS_API_KEY` is optional for local development and can be used when the provider configuration requires a key. Values prefixed with `VITE_` are public in the browser bundle, so restrict keys to approved domains.
+Migration `0021_fictional_city_world.sql` adds bounded world coordinates and a position revision to characters. It backfills each existing `current_location_id` to an entrance node, retains existing wallet, career, inventory, and employment records, and adds an idempotency ledger for movement/travel operations. The old virtual latitude/longitude columns are retained for compatibility.
 
-Configure domain-based authentication for the production website in the Stadia Maps dashboard. The public OpenStreetMap raster endpoint exists only as a development fallback if the hosted style fails to load; it is not the production map provider. Do not prefetch or bulk-download tiles. Check the current provider terms and usage policies before deployment.
+Apply the ordered SQL migrations through `0021_fictional_city_world.sql` using the repository's controlled Supabase migration workflow (`LOVABLE_DB_MIGRATION_URL` is migration-job-only). Do not deploy the updated client before the migration is applied. The frontend falls back to the mapped entrance for old/null coordinate values, but authoritative walking and travel RPCs require this migration.
 
-## Locations and data quality
+## Movement and location interaction
 
-The map requests active locations for the current viewport through the existing Supabase query and uses GeoJSON clustering to keep dense views responsive. Locations with missing or invalid coordinates are omitted from the map. Location records are not fabricated by the client.
+- Drag to pan, scroll or use the controls to zoom, and pinch on touch screens. Reduced-motion settings disable animated traffic and panel transitions.
+- Tapping an open street calculates a route on the local road graph. The avatar follows a short route and the server validates distance, energy, game-time cost, bounds, and expected position revision before persisting it.
+- Selecting a different district opens a drawer over the map. Danfo, keke, okada, and car choices call the existing authoritative travel operation through the idempotent `travel_to_city_location` wrapper. The server remains authoritative for fare, simulation time, destination requirements, and wallet changes.
+- Selecting a location in the current district provides its details and the existing location page. Shops, jobs, and social systems remain connected through their existing routes and server actions.
+- Place, job, and NPC counts come from the existing Supabase records; decorative roads, trees, traffic, and district areas are client-side scenery.
 
-No verified real-world Osogbo POI seed dataset is included in the project migrations. Add real places to Supabase only after confirming each place's name and coordinates from a reliable source. Keep fictional gameplay locations clearly identified in their record metadata and descriptions.
+## Reproducible checks
 
-If a database has not been migrated to the current location/map schema, apply the existing migrations in order, including `0012_location_search_index.sql`, `0013_virtual_player_movement.sql`, and `0014_location_interaction_radius.sql`. These files are additive; they do not seed invented real-world coordinates.
+1. Apply migrations through `0021_fictional_city_world.sql` to the staging Supabase database.
+2. Sign in with a character whose `current_location_id` is populated. Confirm the character appears at the mapped entrance and that wallet and employment history are unchanged.
+3. Tap a nearby street. Verify the avatar follows the local route, energy and simulation time are charged once, and `world_position_revision` increments.
+4. Select a different district and travel by Danfo. Verify the existing wallet transaction, time advance, destination, and world position update once. Retry the same request ID in an RPC-level test and verify the idempotency ledger returns the original result.
+5. Test a low-energy walk, invalid/stale revision, and invalid position; the server must reject each without changing money or position.
+6. Verify drag, wheel/zoom controls, pinch zoom, filters, drawer dismissal, keyboard location selection, and mobile layout at narrow widths.
 
-## Map behavior
-
-- MapLibre owns the map instance and is torn down with its React component.
-- Locations are fetched for the visible geographic bounds, clustered at low zoom, and shown individually with category symbols and readable labels at closer zooms.
-- Use the map filters or the keyboard-accessible “Browse locations” list to select a mapped place and open its existing details popup.
-- If the hosted vector style fails during local development, the map attempts the OSM raster fallback with attribution. Production shows a retryable map error instead.
-- Player virtual movement and nearby-location prompts use the existing player and proximity architecture; this map update does not add GPS.
-
-## M5 destination and travel model
-
-- Keep one `locations` table as the source of destination records. Optional neighborhood data belongs in `metadata.neighborhood_id` and `metadata.neighborhood` (or `neighborhood_name`). The map exposes a neighborhood filter when this data exists.
-- Location category, opening hours, available actions, entry fee, accessibility, interaction type, unlock requirements, and transport restrictions use the typed normalization in `src/lib/location-service.ts` over optional metadata. An entry fee can be a number or `{ "amount": number }` and is treated as game Naira.
-- `metadata.available_transport_modes` can restrict a destination to a subset of `walking`, `danfo`, `keke`, `okada`, and `car`. Without a restriction, these are available as game simulation modes. They do not assert that a real public transport service is operating on a street.
-- Mode fare and simulation-time factors live in `src/lib/transport-service.ts` and are mirrored by the authoritative `travel_to_location(uuid, text)` RPC in migration `0016_transport_mode_travel.sql`. The RPC validates destination, unlock level, mode, and balance; charges atomically; records the visit; advances game time; and saves the in-bounds destination as the virtual player position.
-- OSRM driving geometry is an optional street-distance estimate only. A missing/unavailable route keeps the configured game fare/time estimates and shows a fallback message. It does not fabricate path geometry, walking routes, bus stops, or transfers.
-
-## Manual verification
-
-1. Apply pending SQL migrations in order through `0020_milestone11_world_conditions.sql` to the Supabase project. The travel RPC includes deterministic game-time traffic and weather adjustments; do not deploy the client and server migrations out of order.
-2. In Supabase, ensure active destination records have reviewed latitude/longitude. Populate optional `metadata.neighborhood` to test neighborhood filtering. Do not use the approximate virtual district markers as verified real-world POIs.
-3. Sign in, open **City Map**, pan and zoom, search a known mapped location, toggle its category, and select its marker to open the details popup.
-4. From a destination detail page, choose **Choose destination**. Confirm the origin/destination, select several travel modes, and verify fare and game duration change. When routing is available, confirm that the separate car-road distance is shown; disable/fail the configured routing endpoint to verify the labeled estimate fallback.
-5. Try a fare above the wallet balance and confirm the server rejects the trip with no balance change. Repeat with a valid fare and verify exactly one transaction, updated game time, visit record, and player location.
-6. Repeat on a narrow mobile viewport and verify map touch gestures, filter controls, destination details, and travel controls remain usable.
+The SQL migration must still be applied and exercised against staging before claiming database-level save compatibility or idempotency has been verified.
