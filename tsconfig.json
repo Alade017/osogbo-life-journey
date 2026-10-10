@@ -3,6 +3,8 @@
     "src/**/*.ts",
     "src/**/*.tsx",
     "vite.config.ts",
+    "vite.public.config.ts",
+    "public-site/**/*.tsx",
     "drizzle.config.ts",
     "vitest.config.ts",
     "eslint.config.js"

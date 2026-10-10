@@ -84,8 +84,12 @@ function CityHome() {
       setSyncStatus("saved");
   }, [homeQuery.isError, invalidCloudSave, isOnline]);
 
+  // Retry a failed read on an actual reconnection, not on every error transition.
+  const previouslyOnline = useRef(isOnline);
   useEffect(() => {
-    if (isOnline && homeQuery.isError) void refetchHomeSave();
+    const reconnected = isOnline && !previouslyOnline.current;
+    previouslyOnline.current = isOnline;
+    if (reconnected && homeQuery.isError) void refetchHomeSave();
   }, [homeQuery.isError, isOnline, refetchHomeSave]);
 
   const saveToCloud = useCallback(async () => {

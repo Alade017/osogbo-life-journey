@@ -15,7 +15,9 @@ export default defineConfig(({ command, mode }) => {
     plugins: [
       tailwindcss(),
       tanstackStart({ server: { entry: "server" } }),
-      ...(command === "build" ? [nitro({ preset: "node-server" })] : []),
+      ...(command === "build"
+        ? [nitro({ preset: process.env["NITRO_PRESET"] === "vercel" ? "vercel" : "node-server" })]
+        : []),
       react(),
     ],
     resolve: {
