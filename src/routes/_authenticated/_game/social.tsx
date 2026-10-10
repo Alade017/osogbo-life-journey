@@ -4,7 +4,7 @@ import { Heart, MapPin, MessageCircle, Sparkles, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Chip, EmptyState, LoadingState, PageHeader } from "@/components/game/ui";
 import { q, rpc } from "@/lib/game";
-import { gameTimeFromCharacter } from "@/lib/game-time";
+import { useGameTime } from "@/components/game/GameTimeProvider";
 import {
   NPC_CATALOG,
   npcActivityAt,
@@ -36,6 +36,7 @@ const ACTION_LABELS: Record<SocialAction, string> = {
 };
 
 function SocialPage() {
+  const { simulation } = useGameTime();
   const { data: character, isLoading: characterLoading } = useQuery(q.character());
   const { data: npcRowsData, isLoading: npcsLoading } = useQuery(q.npcs());
   const { data: locationsData } = useQuery(q.locations());
@@ -58,7 +59,7 @@ function SocialPage() {
     onError: (error: Error) => toast.error(error.message),
   });
   if (characterLoading || npcsLoading || !character) return <LoadingState />;
-  const time = gameTimeFromCharacter(character);
+  const time = simulation.gameTime;
   const placeBySlug = (slug: string) =>
     locations.find((location) => location.slug === slug) ?? null;
   const relationByNpc = new Map<string, Relationship>(

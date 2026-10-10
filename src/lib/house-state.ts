@@ -1,14 +1,7 @@
 export type HouseRoomId = "living-room" | "kitchen" | "bedroom" | "bathroom" | "study";
 
 export type FurnitureInteractionType =
-  | "sit"
-  | "sleep"
-  | "cook"
-  | "watch"
-  | "work"
-  | "shower"
-  | "inspect"
-  | "door";
+  "sit" | "sleep" | "cook" | "watch" | "work" | "shower" | "inspect" | "door";
 
 export type HouseFurniture = {
   id: string;

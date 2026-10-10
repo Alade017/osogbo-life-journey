@@ -37,7 +37,7 @@ If a database has not been migrated to the current location/map schema, apply th
 
 ## Manual verification
 
-1. Apply pending SQL migrations through `0016_transport_mode_travel.sql` to the Supabase project.
+1. Apply pending SQL migrations in order through `0020_milestone11_world_conditions.sql` to the Supabase project. The travel RPC includes deterministic game-time traffic and weather adjustments; do not deploy the client and server migrations out of order.
 2. In Supabase, ensure active destination records have reviewed latitude/longitude. Populate optional `metadata.neighborhood` to test neighborhood filtering. Do not use the approximate virtual district markers as verified real-world POIs.
 3. Sign in, open **City Map**, pan and zoom, search a known mapped location, toggle its category, and select its marker to open the details popup.
 4. From a destination detail page, choose **Choose destination**. Confirm the origin/destination, select several travel modes, and verify fare and game duration change. When routing is available, confirm that the separate car-road distance is shown; disable/fail the configured routing endpoint to verify the labeled estimate fallback.

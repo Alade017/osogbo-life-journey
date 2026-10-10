@@ -1,7 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { HouseInterior } from "@/components/game/HouseInterior";
 import { EmptyState, LoadingState, PageHeader } from "@/components/game/ui";
 import { formatNaira, q, rpc, useGameAction } from "@/lib/game";
 import { pageMeta } from "@/lib/seo";
@@ -121,7 +120,20 @@ function HousePage() {
       ) : (
         <EmptyState title="No listings available" body="Check back later for homes in the city." />
       )}
-      <HouseInterior />
+      <section className="game-panel flex flex-wrap items-center justify-between gap-4 p-5">
+        <div>
+          <h2 className="font-display text-lg font-bold">Your saved home interior</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Room layouts, furniture, and home activity progress are managed with your saved game.
+          </p>
+        </div>
+        <Link
+          to="/home"
+          className="inline-flex min-h-11 items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+        >
+          Open home interior
+        </Link>
+      </section>
     </div>
   );
 }

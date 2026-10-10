@@ -14,4 +14,31 @@ describe("App routing", () => {
 
     expect(matches.at(-1)?.routeId).not.toBe(rootRouteId);
   });
+
+  it("matches every shipped page and the parameterized district page", () => {
+    const router = createRouter({ routeTree, context: { queryClient: new QueryClient() } });
+    const routes = [
+      "/login",
+      "/signup",
+      "/create-character",
+      "/home",
+      "/house",
+      "/map",
+      "/jobs",
+      "/social",
+      "/inventory",
+      "/market",
+      "/wallet",
+      "/profile",
+      "/notifications",
+      "/missions",
+      "/education",
+      "/settings",
+      "/location/oke-fia",
+    ];
+
+    for (const path of routes) {
+      expect(router.matchRoutes(path).at(-1)?.routeId, path).not.toBe(rootRouteId);
+    }
+  });
 });

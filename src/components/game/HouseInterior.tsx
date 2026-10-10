@@ -27,7 +27,10 @@ import {
   type HouseState,
 } from "@/lib/house-state";
 
-const ROOM_LAYOUT: Record<HouseRoomId, { left: string; top: string; width: string; height: string }> = {
+const ROOM_LAYOUT: Record<
+  HouseRoomId,
+  { left: string; top: string; width: string; height: string }
+> = {
   "living-room": { left: "4%", top: "8%", width: "46%", height: "46%" },
   kitchen: { left: "52%", top: "8%", width: "42%", height: "36%" },
   bedroom: { left: "4%", top: "56%", width: "36%", height: "34%" },
@@ -75,15 +78,12 @@ export function HouseInterior() {
   const [interactionLog, setInteractionLog] = useState<string>("You are inside your home.");
   const [characterPosition, setCharacterPosition] = useState({ x: 18, y: 62 });
 
-  const currentRoomFurniture = useMemo(
-    () => getRoomFurniture(house.currentRoom, house),
-    [house],
-  );
+  const currentRoomFurniture = useMemo(() => getRoomFurniture(house.currentRoom, house), [house]);
 
   const selectedFurniture =
     selectedFurnitureId == null
       ? null
-      : Object.values(house.furniture).find((item) => item.id === selectedFurnitureId) ?? null;
+      : (Object.values(house.furniture).find((item) => item.id === selectedFurnitureId) ?? null);
 
   useEffect(() => {
     saveHouseState(house);
@@ -155,7 +155,9 @@ export function HouseInterior() {
       lastInteraction: `${furniture.label} upgraded to ${getUpgradeLabel(nextLevel)}.`,
     }));
 
-    setInteractionLog(`${furniture.label} upgraded to ${getUpgradeLabel(nextLevel)} (₦${upgradeCost.toLocaleString("en-NG")}).`);
+    setInteractionLog(
+      `${furniture.label} upgraded to ${getUpgradeLabel(nextLevel)} (₦${upgradeCost.toLocaleString("en-NG")}).`,
+    );
   };
 
   const roomInfo = ROOM_DEFINITIONS[house.currentRoom];
@@ -171,11 +173,17 @@ export function HouseInterior() {
           <h1 className="font-display text-3xl font-black text-ink">My house</h1>
         </div>
         <div className="flex gap-2">
-          <Link to="/home" className="inline-flex items-center rounded-full border border-border bg-background px-3 py-2 text-sm font-semibold text-ink hover:border-primary hover:text-primary">
+          <Link
+            to="/home"
+            className="inline-flex items-center rounded-full border border-border bg-background px-3 py-2 text-sm font-semibold text-ink hover:border-primary hover:text-primary"
+          >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to home
           </Link>
-          <Link to="/map" className="inline-flex items-center rounded-full bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90">
+          <Link
+            to="/map"
+            className="inline-flex items-center rounded-full bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary/90"
+          >
             <House className="mr-2 h-4 w-4" />
             World map
           </Link>
@@ -318,12 +326,17 @@ export function HouseInterior() {
                 <div className="rounded-xl border border-border bg-background p-3 text-xs text-muted-foreground">
                   <div className="flex items-center justify-between">
                     <span>Interaction</span>
-                    <span className="font-bold capitalize text-ink">{selectedFurniture.interactionType}</span>
+                    <span className="font-bold capitalize text-ink">
+                      {selectedFurniture.interactionType}
+                    </span>
                   </div>
                   <div className="mt-2 flex items-center justify-between">
                     <span>Upgrade cost</span>
                     <span className="font-bold text-ink">
-                      ₦{getFurnitureUpgradeCost(selectedFurniture, house.level).toLocaleString("en-NG")}
+                      ₦
+                      {getFurnitureUpgradeCost(selectedFurniture, house.level).toLocaleString(
+                        "en-NG",
+                      )}
                     </span>
                   </div>
                 </div>

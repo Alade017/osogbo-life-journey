@@ -47,11 +47,16 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
   const [virtualPlayer, setVirtualPlayer] =
     useState<ReturnType<typeof resolvePlayerLocation>>(null);
   const directionsRef = useRef<ReadonlySet<MovementDirection>>(new Set());
+  const pendingPositionSaveRef = useRef<{
+    location: NonNullable<typeof virtualPlayer>;
+    movementStatus: "idle" | "walking";
+  } | null>(null);
+  const positionSaveInFlightRef = useRef(false);
+  const [isMoving, setIsMoving] = useState(false);
   const followPlayerRef = useRef(false);
   const lastSavedAtRef = useRef(0);
   const lastPositionRef = useRef(virtualPlayer);
   lastPositionRef.current = virtualPlayer;
-  const saveQueueRef = useRef<Promise<void>>(Promise.resolve());
   const { data: character } = useQuery(q.character());
   const { data: currentLocation } = useQuery(
     q.locationById(character?.current_location_id ?? null),
@@ -84,30 +89,40 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
 
   const handleDirections = useCallback((directions: ReadonlySet<MovementDirection>) => {
     directionsRef.current = directions;
+    if (directions.size > 0) setIsMoving(true);
   }, []);
 
   const savePosition = useCallback(
     (location: NonNullable<typeof virtualPlayer>, movementStatus: "idle" | "walking") => {
       if (location.latitude === null || location.longitude === null) return;
-      saveQueueRef.current = saveQueueRef.current
-        .then(() =>
-          rpc.savePlayerMapPosition({
-            latitude: location.latitude!,
-            longitude: location.longitude!,
-            movementState: movementStatus,
-          }),
-        )
-        .then(() => {
-          lastSavedAtRef.current = Date.now();
-        })
-        .catch((error: unknown) => {
-          console.error("Could not save virtual player position", error);
-        });
+      pendingPositionSaveRef.current = { location, movementStatus };
+      if (positionSaveInFlightRef.current) return;
+      positionSaveInFlightRef.current = true;
+      void (async () => {
+        while (pendingPositionSaveRef.current) {
+          const pending = pendingPositionSaveRef.current;
+          pendingPositionSaveRef.current = null;
+          try {
+            await rpc.savePlayerMapPosition({
+              latitude: pending.location.latitude!,
+              longitude: pending.location.longitude!,
+              movementState: pending.movementStatus,
+            });
+            lastSavedAtRef.current = Date.now();
+          } catch (error) {
+            if (!pendingPositionSaveRef.current) pendingPositionSaveRef.current = pending;
+            console.error("Could not save virtual player position", error);
+            break;
+          }
+        }
+        positionSaveInFlightRef.current = false;
+      })();
     },
     [],
   );
 
   useEffect(() => {
+    if (!mapInstance || !isMoving) return;
     let frame = 0;
     let previousTime = 0;
     let lastPublish = 0;
@@ -130,7 +145,7 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
           publishPlayerMovement(position, "walking");
           lastPublish = time;
         }
-        if (Date.now() - lastSavedAtRef.current > 1000) {
+        if (Date.now() - lastSavedAtRef.current > 3000) {
           lastSavedAtRef.current = Date.now();
           savePosition(next, "walking");
         }
@@ -146,12 +161,14 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
           );
           savePosition(stopped, "idle");
         }
+        setIsMoving(false);
+        return;
       }
       frame = window.requestAnimationFrame(animate);
     };
     frame = window.requestAnimationFrame(animate);
     return () => window.cancelAnimationFrame(frame);
-  }, [mapInstance, savePosition]);
+  }, [isMoving, mapInstance, savePosition]);
 
   useEffect(() => {
     onMapReadyRef.current = onMapReady;

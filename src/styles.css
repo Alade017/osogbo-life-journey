@@ -2410,8 +2410,8 @@
 
 .player-dpad {
   display: grid;
-  grid-template-columns: repeat(3, 42px);
-  grid-template-rows: repeat(2, 42px);
+  grid-template-columns: repeat(3, 44px);
+  grid-template-rows: repeat(2, 44px);
   gap: 5px;
   grid-template-areas: ". north ." "west south east";
 }
@@ -2447,7 +2447,7 @@
 }
 
 .player-follow-toggle {
-  min-height: 36px;
+  min-height: 44px;
   gap: 6px;
   padding: 0 10px;
   font-size: 12px;
@@ -2466,8 +2466,8 @@
     bottom: 12px;
   }
   .player-dpad {
-    grid-template-columns: repeat(3, 46px);
-    grid-template-rows: repeat(2, 46px);
+    grid-template-columns: repeat(3, 48px);
+    grid-template-rows: repeat(2, 48px);
   }
 }
 
@@ -2892,8 +2892,13 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .home-district-list > a {
-    transition: none;
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
