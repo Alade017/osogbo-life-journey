@@ -35,6 +35,47 @@
   height: 100%;
   user-select: none;
 }
+.city-label-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.city-map-label-bg {
+  fill: #071714ef;
+  stroke: #e6d5a6;
+  stroke-opacity: 0.56;
+  stroke-width: 0.8px;
+  filter: drop-shadow(0 2px 3px #020907b8);
+}
+.city-map-label-text {
+  fill: #fffdf4;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.05px;
+  paint-order: stroke;
+  stroke: #071714;
+  stroke-linejoin: round;
+  stroke-width: 1.4px;
+}
+.city-map-label.is-active .city-map-label-bg {
+  fill: #173d2def;
+  stroke: #f1c454;
+  stroke-width: 1.5px;
+}
+.city-map-label-leader {
+  fill: none;
+  stroke: #fff1be;
+  stroke-opacity: 0.68;
+  stroke-width: 0.9px;
+  stroke-dasharray: 2 2;
+}
+.city-light-beacons {
+  pointer-events: none;
+}
 .city-world-svg text {
   font-family: inherit;
 }

@@ -708,6 +708,8 @@ export type Database = {
       };
       locations: {
         Row: {
+          canvas_x: number;
+          canvas_y: number;
           color: string;
           created_at: string;
           description: string;
@@ -722,7 +724,11 @@ export type Database = {
           longitude: number | null;
           map_x: number;
           map_y: number;
+          map_category: string;
           metadata: Json;
+          neighbor_slugs: string[];
+          job_contract_slugs: string[];
+          entry_loops: string[];
           name: string;
           planned_features: string[];
           slug: string;
@@ -734,6 +740,8 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          canvas_x: number;
+          canvas_y: number;
           color?: string;
           created_at?: string;
           description: string;
@@ -748,7 +756,11 @@ export type Database = {
           longitude?: number | null;
           map_x: number;
           map_y: number;
+          map_category?: string;
           metadata?: Json;
+          neighbor_slugs?: string[];
+          job_contract_slugs?: string[];
+          entry_loops?: string[];
           name: string;
           planned_features?: string[];
           slug: string;
@@ -760,6 +772,8 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          canvas_x?: number;
+          canvas_y?: number;
           color?: string;
           created_at?: string;
           description?: string;
@@ -774,7 +788,11 @@ export type Database = {
           longitude?: number | null;
           map_x?: number;
           map_y?: number;
+          map_category?: string;
           metadata?: Json;
+          neighbor_slugs?: string[];
+          job_contract_slugs?: string[];
+          entry_loops?: string[];
           name?: string;
           planned_features?: string[];
           slug?: string;

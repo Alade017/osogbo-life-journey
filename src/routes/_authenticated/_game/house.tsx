@@ -12,7 +12,13 @@ export const Route = createFileRoute("/_authenticated/_game/house")({
 });
 
 function HousePage() {
-  const { data: listingsData, isLoading } = useQuery(q.propertyListings());
+  const {
+    data: listingsData,
+    isLoading,
+    isError: listingsError,
+    isFetching: listingsFetching,
+    refetch: retryListings,
+  } = useQuery(q.propertyListings());
   const { data: character } = useQuery(q.character());
   const { data: wallet } = useQuery(q.wallet());
   const { data: rentData } = useQuery(q.rentStatus());
@@ -47,6 +53,20 @@ function HousePage() {
       )}
       {isLoading ? (
         <LoadingState />
+      ) : listingsError ? (
+        <section className="game-panel space-y-3 p-5" aria-label="Property listings error" role="alert">
+          <h2 className="font-display text-lg font-bold">Property listings are unavailable</h2>
+          <p className="text-sm text-muted-foreground">
+            We couldn’t load the current homes. Your saved home interior is still available below.
+          </p>
+          <button
+            className="min-h-11 rounded-lg border-2 border-edge px-4 py-2 text-sm font-semibold disabled:opacity-50"
+            disabled={listingsFetching}
+            onClick={() => void retryListings()}
+          >
+            {listingsFetching ? "Trying again…" : "Retry loading homes"}
+          </button>
+        </section>
       ) : listings.length ? (
         <section className="grid gap-3 sm:grid-cols-2" aria-label="Property listings">
           {listings.map((property) => {

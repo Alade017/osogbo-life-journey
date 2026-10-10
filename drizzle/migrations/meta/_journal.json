@@ -162,6 +162,20 @@
       "when": 1791594000000,
       "tag": "0021_fictional_city_world",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1791594000001,
+      "tag": "0022_osogbo_world_nodes",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1791594000002,
+      "tag": "0023_restore_travel_to_location_rpc",
+      "breakpoints": true
     }
   ]
 }

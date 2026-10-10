@@ -10,12 +10,12 @@ set world_x = case l.slug
       when 'city-centre' then 7 when 'oja-oba' then 3 when 'oke-fia' then 10
       when 'old-garage' then 3 when 'student-district' then 5 when 'residential' then 9
       when 'business-district' then 8 when 'cultural-district' then 2
-      when 'rural-outskirts' then 12 else 7 end,
+      when 'rural-outskirts' then 12 else round(greatest(0, least(14, l.map_x * 0.14))::numeric, 2) end,
     world_y = case l.slug
       when 'city-centre' then 6 when 'oja-oba' then 5 when 'oke-fia' then 3
       when 'old-garage' then 8 when 'student-district' then 9 when 'residential' then 9
       when 'business-district' then 6 when 'cultural-district' then 2
-      when 'rural-outskirts' then 11 else 6 end,
+      when 'rural-outskirts' then 11 else round(greatest(0, least(12, l.map_y * 0.12))::numeric, 2) end,
     world_building_slug = null,
     movement_state = 'idle'
 from public.locations l
@@ -180,12 +180,12 @@ begin
     when 'city-centre' then 7 when 'oja-oba' then 3 when 'oke-fia' then 10
     when 'old-garage' then 3 when 'student-district' then 5 when 'residential' then 9
     when 'business-district' then 8 when 'cultural-district' then 2
-    when 'rural-outskirts' then 12 else 7 end;
+    when 'rural-outskirts' then 12 else round(greatest(0, least(14, destination.map_x * 0.14))::numeric, 2) end;
   expected_y := case destination.slug
     when 'city-centre' then 6 when 'oja-oba' then 5 when 'oke-fia' then 3
     when 'old-garage' then 8 when 'student-district' then 9 when 'residential' then 9
     when 'business-district' then 6 when 'cultural-district' then 2
-    when 'rural-outskirts' then 11 else 6 end;
+    when 'rural-outskirts' then 11 else round(greatest(0, least(12, destination.map_y * 0.12))::numeric, 2) end;
   if p_world_x is distinct from expected_x or p_world_y is distinct from expected_y then
     raise exception 'Invalid fictional destination position';
   end if;

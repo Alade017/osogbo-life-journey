@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BriefcaseBusiness,
@@ -16,27 +16,38 @@ import {
 import { q, rpc, formatNaira } from "@/lib/game";
 import { Avatar } from "@/components/game/Avatar";
 import type { Appearance } from "@/components/game/Avatar";
-import type { Location } from "@/lib/game";
+import { CityLocationArtwork } from "@/components/game/CityLocationArtwork";
+import type { GamePlace, Job, Location } from "@/lib/game";
 import {
   CITY_DISTRICTS,
+  CITY_LIGHT_BEACONS,
   CITY_ROAD_EDGES,
   CITY_ROUNDABOUTS,
   cityDistrictForLocation,
+  cityEntranceForRecord,
   cityEntranceForLocation,
   cityIsoDiamond,
-  cityPositionForLocation,
+  cityPositionForRecord,
   cityWorldToIso,
   findCityRoadPath,
   stableCityOffset,
   type CityWorldPosition,
 } from "@/lib/city-world";
 import { TRAVEL_MODE_DETAILS, estimateTrip, type TravelMode } from "@/lib/transport-service";
+import {
+  layoutCityLabels,
+  type CityLabelPlacement,
+  type CityLabelRect,
+} from "@/lib/city-label-layout";
 import "./fictional-city.css";
 
 type Point = { x: number; y: number };
 const VIEW = { width: 1000, height: 760 };
 const categories = ["All", "Shop", "Jobs", "Service", "Landmark"];
 const icons = [ShoppingBasket, BriefcaseBusiness, CircleDollarSign, Users];
+const EMPTY_LOCATIONS: Location[] = [];
+const EMPTY_PLACES: GamePlace[] = [];
+const EMPTY_JOBS: Job[] = [];
 const roadPoints = (a: CityWorldPosition, b: CityWorldPosition) => {
   const p = cityWorldToIso(a);
   const q = cityWorldToIso(b);
@@ -48,15 +59,16 @@ export function FictionalCityMap() {
   const queryClient = useQueryClient();
   const { data: locationsData } = useQuery(q.locations());
   const { data: placesData } = useQuery(q.places());
-  const locations = locationsData ?? [];
-  const places = placesData ?? [];
+  const locations = locationsData ?? EMPTY_LOCATIONS;
+  const places = placesData ?? EMPTY_PLACES;
   const { data: wallet } = useQuery({ ...q.wallet(), enabled: !!character });
   const { data: jobsData } = useQuery({ ...q.jobs(), enabled: !!character });
   const { data: npcsData } = useQuery({ ...q.npcs(), enabled: !!character });
-  const jobs = jobsData ?? [];
+  const jobs = jobsData ?? EMPTY_JOBS;
   const npcs = npcsData ?? [];
   const clientName = character?.name ?? "Player";
   const center = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState<Point>({ x: 0, y: 0 });
   const [drag, setDrag] = useState<{
@@ -72,6 +84,7 @@ export function FictionalCityMap() {
   const [notice, setNotice] = useState("");
   const [walkingPosition, setWalkingPosition] = useState<Point | null>(null);
   const [walkingRoute, setWalkingRoute] = useState<CityWorldPosition[] | null>(null);
+  const [cityLabels, setCityLabels] = useState<CityLabelPlacement[]>([]);
   const movedPointer = useRef(false);
   const pointers = useRef(new Map<number, Point>());
   const pinchStart = useRef<{ distance: number; scale: number } | null>(null);
@@ -80,21 +93,108 @@ export function FictionalCityMap() {
   const persistedPosition =
     character && Number.isFinite(character.world_x) && Number.isFinite(character.world_y)
       ? { x: character.world_x, y: character.world_y }
-      : cityEntranceForLocation(current?.slug ?? "city-centre");
+      : current
+        ? cityEntranceForRecord(current)
+        : cityEntranceForLocation("city-centre");
   const position = persistedPosition;
   const displayPosition = walkingPosition ?? position;
   const revision = character?.world_position_revision ?? 0;
   const sceneTransform = `translate(${offset.x} ${offset.y}) translate(500 370) scale(${scale}) translate(-500 -370)`;
-  const activeLocations = locations.filter((item) => item.is_active);
-  const visibleLocations = activeLocations.filter((item) => {
-    if (filter === "All") return true;
-    const type = `${item.type} ${item.district_type}`.toLowerCase();
-    if (filter === "Shop") return /market|shop|commercial|retail/.test(type);
-    if (filter === "Jobs")
-      return jobs.some((job) => job.location_id === item.id && job.is_available);
-    if (filter === "Service") return /service|transport|health|bank|office/.test(type);
-    return /landmark|culture|university|residential|outskirt/.test(type);
-  });
+  const activeLocations = useMemo(() => locations.filter((item) => item.is_active), [locations]);
+  const visibleLocations = useMemo(
+    () =>
+      activeLocations.filter((item) => {
+        if (filter === "All") return true;
+        const type = `${item.type} ${item.district_type}`.toLowerCase();
+        if (filter === "Shop") return /market|shop|commercial|retail/.test(type);
+        if (filter === "Jobs")
+          return jobs.some((job) => job.location_id === item.id && job.is_available);
+        if (filter === "Service") return /service|transport|health|bank|office/.test(type);
+        return /landmark|culture|university|residential|outskirt/.test(type);
+      }),
+    [activeLocations, filter, jobs],
+  );
+
+  useEffect(() => {
+    const svg = svgRef.current;
+    const scene = center.current;
+    if (!svg || !scene) return;
+    const obstacleRoot = scene.closest<HTMLElement>(".fictional-city") ?? scene;
+    const update = () => {
+      const matrix = svg.getScreenCTM();
+      if (!matrix) return;
+      const inverse = matrix.inverse();
+      const toSvg = (x: number, y: number) => {
+        const point = svg.createSVGPoint();
+        point.x = x;
+        point.y = y;
+        const mapped = point.matrixTransform(inverse);
+        return { x: mapped.x, y: mapped.y };
+      };
+      const obstacles: CityLabelRect[] = [
+        ...obstacleRoot.querySelectorAll<HTMLElement>("[data-city-obstacle]"),
+      ].map((element) => {
+        const rect = element.getBoundingClientRect();
+        const topLeft = toSvg(rect.left, rect.top);
+        const bottomRight = toSvg(rect.right, rect.bottom);
+        return {
+          x: topLeft.x,
+          y: topLeft.y,
+          width: bottomRight.x - topLeft.x,
+          height: bottomRight.y - topLeft.y,
+        };
+      });
+      const project = (position: CityWorldPosition) => {
+        const iso = cityWorldToIso(position);
+        return {
+          x: (iso.x - 500) * scale + 500 + offset.x,
+          y: (iso.y - 370) * scale + 370 + offset.y,
+        };
+      };
+      for (const beacon of CITY_LIGHT_BEACONS) {
+        const top = project(beacon.position);
+        const bottom = project({ x: beacon.position.x, y: beacon.position.y + beacon.length });
+        obstacles.push({
+          x: top.x - 5,
+          y: Math.min(top.y, bottom.y),
+          width: 10,
+          height: Math.abs(bottom.y - top.y),
+        });
+      }
+      const labels = visibleLocations.map((location) => {
+        const base = cityPositionForRecord(location);
+        const jitter = stableCityOffset(location.id, 1);
+        const anchor = project({ x: base.x + jitter.x * 0.18, y: base.y + jitter.y * 0.18 });
+        return {
+          id: location.id,
+          text: location.name,
+          anchor,
+          priority: selectedId === location.id ? 100 : current?.id === location.id ? 50 : 0,
+        };
+      });
+      setCityLabels(
+        layoutCityLabels(labels, obstacles, { width: VIEW.width, height: VIEW.height }),
+      );
+    };
+    const frame = window.requestAnimationFrame(update);
+    const observer = new ResizeObserver(update);
+    observer.observe(obstacleRoot);
+    obstacleRoot
+      .querySelectorAll<HTMLElement>("[data-city-obstacle]")
+      .forEach((element) => observer.observe(element));
+    const mutationObserver = new MutationObserver(update);
+    mutationObserver.observe(obstacleRoot, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["class"],
+    });
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer.disconnect();
+      mutationObserver.disconnect();
+    };
+  }, [visibleLocations, scale, offset.x, offset.y, selectedId, current?.id]);
 
   async function walkTo(destination: Point, buildingSlug: string | null = null) {
     if (!character) return;
@@ -161,8 +261,8 @@ export function FictionalCityMap() {
       await rpc.travelToCityLocation({
         locationId: location.id,
         mode,
-        worldX: cityEntranceForLocation(location.slug).x,
-        worldY: cityEntranceForLocation(location.slug).y,
+        worldX: cityEntranceForRecord(location).x,
+        worldY: cityEntranceForRecord(location).y,
         expectedRevision: revision,
         requestId: crypto.randomUUID(),
       });
@@ -256,6 +356,7 @@ export function FictionalCityMap() {
         }
       >
         <svg
+          ref={svgRef}
           className="city-world-svg"
           viewBox={`0 0 ${VIEW.width} ${VIEW.height}`}
           role="img"
@@ -270,8 +371,19 @@ export function FictionalCityMap() {
             <pattern id="city-grid" width="62" height="40" patternUnits="userSpaceOnUse">
               <path d="M0 20 31 0 62 20 31 40Z" fill="none" stroke="#477260" strokeOpacity=".25" />
             </pattern>
+            <pattern id="roof-rusted" width="8" height="6" patternUnits="userSpaceOnUse">
+              <rect width="8" height="6" fill="#9b654c" />
+              <path d="M0 1h8M0 4h8" stroke="#c38960" strokeOpacity=".72" strokeWidth=".7" />
+            </pattern>
             <filter id="building-shadow" x="-30%" y="-30%" width="160%" height="180%">
               <feDropShadow dx="0" dy="5" stdDeviation="4" floodOpacity=".35" />
+            </filter>
+            <filter id="beacon-glow" x="-100%" y="-20%" width="300%" height="140%">
+              <feGaussianBlur stdDeviation="2.5" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
             </filter>
           </defs>
           <rect width="1000" height="760" fill="url(#city-ground)" />
@@ -338,6 +450,41 @@ export function FictionalCityMap() {
                 </g>
               );
             })}
+            <g className="city-light-beacons" aria-hidden="true" pointerEvents="none">
+              {CITY_LIGHT_BEACONS.map((beacon) => {
+                const top = cityWorldToIso(beacon.position, 12);
+                const bottom = cityWorldToIso({
+                  x: beacon.position.x,
+                  y: beacon.position.y + beacon.length,
+                });
+                return (
+                  <g key={beacon.id}>
+                    <line
+                      x1={top.x}
+                      y1={top.y}
+                      x2={bottom.x}
+                      y2={bottom.y}
+                      stroke={beacon.color}
+                      strokeWidth="2.2"
+                      strokeOpacity=".18"
+                      vectorEffect="non-scaling-stroke"
+                      filter="url(#beacon-glow)"
+                    />
+                    <line
+                      x1={top.x}
+                      y1={top.y}
+                      x2={bottom.x}
+                      y2={bottom.y}
+                      stroke={beacon.color}
+                      strokeWidth=".8"
+                      strokeOpacity=".72"
+                      vectorEffect="non-scaling-stroke"
+                    />
+                    <circle cx={top.x} cy={top.y} r="2" fill={beacon.color} fillOpacity=".75" />
+                  </g>
+                );
+              })}
+            </g>
             {walkingRoute && (
               <polyline
                 points={walkingRoute
@@ -366,37 +513,19 @@ export function FictionalCityMap() {
                 </g>
               );
             })}
-            <g className="city-vans" aria-hidden="true">
-              <g transform="translate(432 300)">
-                <rect x="-11" y="-7" width="22" height="11" rx="3" fill="#e6ad34" />
-                <rect x="-7" y="-5" width="6" height="4" fill="#213c3a" />
-                <rect x="2" y="-5" width="6" height="4" fill="#213c3a" />
-                <circle cx="-6" cy="5" r="2.5" fill="#131a18" />
-                <circle cx="7" cy="5" r="2.5" fill="#131a18" />
-              </g>
-              <g transform="translate(633 495)">
-                <rect x="-9" y="-6" width="18" height="10" rx="3" fill="#3d8eb5" />
-                <circle cx="-5" cy="5" r="2.3" fill="#131a18" />
-                <circle cx="6" cy="5" r="2.3" fill="#131a18" />
-              </g>
-            </g>
-            {visibleLocations.map((location, index) => {
-              const base = cityPositionForLocation(location.slug);
+            {visibleLocations.map((location) => {
+              const base = cityPositionForRecord(location);
               const jitter = stableCityOffset(location.id, 1);
               const building = { x: base.x + jitter.x * 0.18, y: base.y + jitter.y * 0.18 };
-              const p = cityWorldToIso(building, 20 + (index % 3) * 4);
               const selectedNow = selectedId === location.id;
-              const palette = ["#bb7447", "#a75443", "#507ca0", "#c18b37", "#738a58", "#8e6797"];
-              const roof = palette[index % palette.length];
               const category = String(location.type ?? "").toLowerCase();
-              const label = location.name;
               return (
                 <g
                   key={location.id}
                   className={`city-building ${selectedNow ? "is-selected" : ""}`}
                   role="button"
                   tabIndex={0}
-                  aria-label={`Select ${label}`}
+                  aria-label={`Select ${location.name}`}
                   onClick={(e) => {
                     e.stopPropagation();
                     if (!movedPointer.current) setSelectedId(location.id);
@@ -409,40 +538,31 @@ export function FictionalCityMap() {
                   }}
                   filter="url(#building-shadow)"
                 >
-                  <path
-                    d={`M${p.x - 19} ${p.y + 3} v22 l19 12 19-12 V${p.y + 3} l-19 12Z`}
-                    fill="#5a4b3d"
+                  <CityLocationArtwork
+                    location={location}
+                    position={building}
+                    places={places.filter((place) => place.location_id === location.id)}
                   />
-                  <path d={`M${p.x} ${p.y + 15} l19-12 v22 l-19 12Z`} fill="#70523c" />
-                  <path d={`M${p.x - 19} ${p.y + 3} l19-13 19 13-19 12Z`} fill={roof} />
-                  <path d={`M${p.x - 9} ${p.y + 9} v11 l7 4 V13Z`} fill="#f2c96e" />
-                  <path d={`M${p.x + 7} ${p.y + 5} v7 l6-4 V1Z`} fill="#f7e0a0" />
                   <circle
-                    cx={p.x}
-                    cy={p.y - 16}
-                    r="11"
+                    cx={cityWorldToIso(building).x}
+                    cy={cityWorldToIso(building).y - 25}
+                    r="10"
                     fill={selectedNow ? "#f1c454" : "#e6efe5"}
                     stroke="#10251f"
                     strokeWidth="2"
                   />
-                  <text x={p.x} y={p.y - 12} textAnchor="middle" fontSize="11" fill="#17382c">
+                  <text
+                    x={cityWorldToIso(building).x}
+                    y={cityWorldToIso(building).y - 21}
+                    textAnchor="middle"
+                    fontSize="10"
+                    fill="#17382c"
+                  >
                     {category.includes("market") || category.includes("shop") ? "₦" : "⌂"}
-                  </text>
-                  <rect
-                    x={p.x - 52}
-                    y={p.y + 37}
-                    width="104"
-                    height="17"
-                    rx="7"
-                    fill="#071714"
-                    fillOpacity=".9"
-                  />
-                  <text x={p.x} y={p.y + 49} textAnchor="middle" className="city-building-label">
-                    {label.length > 17 ? `${label.slice(0, 16)}…` : label}
                   </text>
                 </g>
               );
-            })}
+            })}{" "}
             {character &&
               (() => {
                 const p = cityWorldToIso(displayPosition, 20);
@@ -471,7 +591,50 @@ export function FictionalCityMap() {
             </text>
           </g>
         </svg>
-        <div className="city-map-tools" aria-label="Map controls">
+        <svg
+          className="city-label-layer"
+          viewBox={`0 0 ${VIEW.width} ${VIEW.height}`}
+          aria-hidden="true"
+        >
+          {cityLabels.map((label) => {
+            const left = label.center.x - label.width / 2;
+            const top = label.center.y - label.height / 2;
+            const shifted =
+              Math.abs(label.center.x - label.anchor.x) > 14 ||
+              Math.abs(label.center.y - label.anchor.y) > 28;
+            const active = label.id === selectedId || label.id === current?.id;
+            return (
+              <g key={label.id} className={`city-map-label ${active ? "is-active" : ""}`}>
+                {shifted && (
+                  <path
+                    className="city-map-label-leader"
+                    d={`M${label.anchor.x} ${label.anchor.y} L${label.center.x} ${label.center.y}`}
+                  />
+                )}
+                <rect
+                  className="city-map-label-bg"
+                  x={left}
+                  y={top}
+                  width={label.width}
+                  height={label.height}
+                  rx="8"
+                />
+                {label.lines.map((line, index) => (
+                  <text
+                    key={`${label.id}-${index}`}
+                    className="city-map-label-text"
+                    x={label.center.x}
+                    y={top + 14 + index * 12}
+                    textAnchor="middle"
+                  >
+                    {line}
+                  </text>
+                ))}
+              </g>
+            );
+          })}
+        </svg>
+        <div className="city-map-tools" data-city-obstacle aria-label="Map controls">
           <button aria-label="Zoom in" onClick={() => setScale((s) => Math.min(1.8, s + 0.15))}>
             <Plus />
           </button>
@@ -488,7 +651,7 @@ export function FictionalCityMap() {
             <Compass />
           </button>
         </div>
-        <aside className="city-status-card">
+        <aside className="city-status-card" data-city-obstacle>
           <div className="city-player-head">
             <div className="city-avatar-frame">
               <Avatar
@@ -528,7 +691,7 @@ export function FictionalCityMap() {
             Wallet <b>{formatNaira(wallet?.balance ?? 0)}</b>
           </small>
         </aside>
-        <aside className="city-quest-card">
+        <aside className="city-quest-card" data-city-obstacle>
           <span>WORLD ACTIVITY</span>
           <strong>{jobs.filter((job) => job.is_available).length} jobs hiring</strong>
           <p>Busy market roads today. Keep an eye on your energy before walking.</p>
@@ -541,14 +704,19 @@ export function FictionalCityMap() {
             </span>
           </div>
         </aside>
-        <div className="city-world-title">
+        <div className="city-world-title" data-city-obstacle>
           <span>
             <i /> SIMULATION LIVE
           </span>
           <strong>Osogbo, Osun State</strong>
           <small>Street life • markets • work • community</small>
         </div>
-        <div className="city-filter-bar" role="tablist" aria-label="Filter map locations">
+        <div
+          className="city-filter-bar"
+          data-city-obstacle
+          role="tablist"
+          aria-label="Filter map locations"
+        >
           {categories.map((item) => (
             <button
               key={item}
@@ -562,14 +730,16 @@ export function FictionalCityMap() {
           ))}
         </div>
         {notice && (
-          <div className="city-toast" role="status">
+          <div className="city-toast" data-city-obstacle role="status">
             {notice}
             <button aria-label="Dismiss message" onClick={() => setNotice("")}>
               <X size={15} />
             </button>
           </div>
         )}
-        <div className="city-touch-hint">Drag to explore · pinch or scroll to zoom</div>
+        <div className="city-touch-hint" data-city-obstacle>
+          Drag to explore · pinch or scroll to zoom
+        </div>
       </div>
       <nav className="city-bottom-shortcuts" aria-label="City shortcuts">
         <a href="/jobs">
@@ -598,6 +768,7 @@ export function FictionalCityMap() {
         >
           <section
             className="city-location-drawer"
+            data-city-obstacle
             role="dialog"
             aria-modal="true"
             aria-labelledby="city-drawer-title"
@@ -641,7 +812,7 @@ export function FictionalCityMap() {
               <div className="city-drawer-actions">
                 <button
                   disabled={busy}
-                  onClick={() => void walkTo(cityEntranceForLocation(selected.slug), selected.slug)}
+                  onClick={() => void walkTo(cityEntranceForRecord(selected), selected.slug)}
                 >
                   <MapPin /> Walk outside
                 </button>
@@ -662,8 +833,8 @@ export function FictionalCityMap() {
                         8,
                         Math.abs(
                           position.x -
-                            cityEntranceForLocation(selected.slug).x +
-                            (position.y - cityEntranceForLocation(selected.slug).y),
+                            cityEntranceForRecord(selected).x +
+                            (position.y - cityEntranceForRecord(selected).y),
                         ) * 4,
                       ),
                     );
@@ -688,7 +859,7 @@ export function FictionalCityMap() {
                 <button
                   className="city-walk-button"
                   disabled={busy}
-                  onClick={() => void walkTo(cityEntranceForLocation(selected.slug), selected.slug)}
+                  onClick={() => void walkTo(cityEntranceForRecord(selected), selected.slug)}
                 >
                   Walk to nearby street · costs energy
                 </button>

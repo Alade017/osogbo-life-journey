@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
   CITY_DISTRICTS,
+  OSOGBO_WORLD_NODES,
   CITY_ROAD_EDGES,
   CITY_ROAD_NODES,
   cityDistrictForLocation,
   cityEntranceForLocation,
   cityIsoDiamond,
+  cityPositionForRecord,
+  cityEntranceForRecord,
   cityWorldToIso,
   findCityRoadPath,
   nearestCityRoadNode,
@@ -13,6 +16,28 @@ import {
 } from "@/lib/city-world";
 
 describe("fictional city world model", () => {
+  it("defines all blueprint destinations with normalized anchors and valid connections", () => {
+    const nodes = Object.values(OSOGBO_WORLD_NODES);
+    const slugs = new Set(nodes.map((node) => node.slug));
+    expect(nodes).toHaveLength(15);
+    expect(slugs.size).toBe(nodes.length);
+    for (const node of nodes) {
+      expect(node.anchor.x).toBeGreaterThanOrEqual(0);
+      expect(node.anchor.x).toBeLessThanOrEqual(1);
+      expect(node.anchor.y).toBeGreaterThanOrEqual(0);
+      expect(node.anchor.y).toBeLessThanOrEqual(1);
+      expect(node.neighbors.length).toBeGreaterThan(0);
+      expect(node.neighbors.every((neighbor) => slugs.has(neighbor))).toBe(true);
+      expect(node.world.x).toBeGreaterThanOrEqual(0);
+      expect(node.world.x).toBeLessThanOrEqual(14);
+      expect(node.world.y).toBeGreaterThanOrEqual(0);
+      expect(node.world.y).toBeLessThanOrEqual(12);
+    }
+    expect(OSOGBO_WORLD_NODES["old-garage"].jobContracts).toContain("driver_rider");
+    expect(OSOGBO_WORLD_NODES["government-area"].entryLoops).toContain("work");
+    expect(OSOGBO_WORLD_NODES["state-hospital"].entryLoops).toContain("recover");
+  });
+
   it("projects stable world coordinates into an isometric scene", () => {
     expect(cityWorldToIso({ x: 7, y: 5 })).toEqual({ x: 562, y: 298 });
     expect(cityWorldToIso({ x: 7, y: 5 }, 18).y).toBe(280);
@@ -39,6 +64,16 @@ describe("fictional city world model", () => {
     expect(cityEntranceForLocation("oja-oba")).toEqual({ x: 3, y: 5 });
     expect(cityDistrictForLocation("student-district")).toBe("university");
     expect(cityEntranceForLocation("legacy-unknown")).toEqual({ x: 7, y: 6 });
+  });
+
+  it("uses configured map coordinates for newly added location records", () => {
+    const location = { slug: "new-waterfront-park", map_x: 41, map_y: 62 };
+    expect(cityPositionForRecord(location)).toEqual({ x: 5.74, y: 7.44 });
+    expect(cityEntranceForRecord(location)).toEqual({ x: 5.74, y: 7.44 });
+    expect(
+      cityPositionForRecord({ ...location, canvas_x: 0.1, canvas_y: 0.2 }),
+    ).toEqual({ x: 1.4, y: 2.4 });
+    expect(cityPositionForRecord({ slug: "oja-oba", map_x: 0, map_y: 0 })).toEqual({ x: 3, y: 4 });
   });
 
   it("keeps fallback district and building placement stable across reloads", () => {

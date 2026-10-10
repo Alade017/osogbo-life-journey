@@ -8,7 +8,7 @@ District geometry, road nodes, pathfinding, building placement, and legacy locat
 
 Migration `0021_fictional_city_world.sql` adds bounded world coordinates and a position revision to characters. It backfills each existing `current_location_id` to an entrance node, retains existing wallet, career, inventory, and employment records, and adds an idempotency ledger for movement/travel operations. The old virtual latitude/longitude columns are retained for compatibility.
 
-Apply the ordered SQL migrations through `0021_fictional_city_world.sql` using the repository's controlled Supabase migration workflow (`LOVABLE_DB_MIGRATION_URL` is migration-job-only). Do not deploy the updated client before the migration is applied. The frontend falls back to the mapped entrance for old/null coordinate values, but authoritative walking and travel RPCs require this migration.
+Apply the ordered SQL migrations through `0023_restore_travel_to_location_rpc.sql` using the repository's controlled Supabase migration workflow (`LOVABLE_DB_MIGRATION_URL` is migration-job-only). Do not deploy the updated client before the migration is applied. Migration 0023 restores the mode-aware `travel_to_location(uuid,text)` function and asks PostgREST to reload its schema cache; this resolves the missing-function error when migrations are behind or the cache is stale. The frontend falls back to the mapped entrance for old/null coordinate values, but authoritative walking and travel RPCs require these migrations.
 
 ## Movement and location interaction
 

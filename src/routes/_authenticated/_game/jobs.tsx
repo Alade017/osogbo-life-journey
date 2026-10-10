@@ -45,7 +45,13 @@ function JobsPage() {
   const [category, setCategory] = useState("all");
   const [workSessionOpen, setWorkSessionOpen] = useState(false);
   const { data: c } = useQuery(q.character());
-  const { data: jobs, isLoading } = useQuery(q.jobs());
+  const {
+    data: jobs,
+    isLoading,
+    isError: jobsError,
+    isFetching: jobsFetching,
+    refetch: retryJobs,
+  } = useQuery(q.jobs());
   const { data: myJobs } = useQuery(q.myJobs());
   const { data: locations } = useQuery(q.locations());
   const { data: places } = useQuery(q.places());
@@ -82,6 +88,19 @@ function JobsPage() {
     return filterJobListings(searchableJobs, search, category);
   }, [jobs, locations, places, search, category]);
 
+  if (jobsError) {
+    return (
+      <section className="game-panel mx-auto max-w-xl space-y-3 p-6 text-center" role="alert">
+        <h1 className="font-display text-xl font-bold">Jobs are unavailable</h1>
+        <p className="text-sm text-muted-foreground">
+          We couldn’t load the job board. Your character and career progress are unchanged.
+        </p>
+        <Button variant="plain" disabled={jobsFetching} onClick={() => void retryJobs()}>
+          {jobsFetching ? "Trying again…" : "Retry loading jobs"}
+        </Button>
+      </section>
+    );
+  }
   if (isLoading || !c || !jobs) return <LoadingState />;
   const current = myJobs?.find((j) => j.is_current);
   const currentJob = jobs.find((j) => j.id === current?.job_id);

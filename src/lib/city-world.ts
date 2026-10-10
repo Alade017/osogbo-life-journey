@@ -1,4 +1,27 @@
 export type CityWorldPosition = { x: number; y: number };
+export type WorldMapCategory =
+  | "residential"
+  | "commercial"
+  | "work_industrial"
+  | "education"
+  | "health"
+  | "transport"
+  | "government"
+  | "recreation"
+  | "water_nature";
+export type WorldEntryLoop = "shop" | "work" | "study" | "recover" | "travel" | "explore" | "social";
+export type WorldBlueprintNode = {
+  readonly slug: string;
+  readonly name: string;
+  readonly category: WorldMapCategory;
+  /** Normalized anchor in the 1536x1024 blueprint canvas. */
+  readonly anchor: Readonly<{ x: number; y: number }>;
+  /** Existing movement-grid coordinate, kept separate from presentation coordinates. */
+  readonly world: Readonly<CityWorldPosition>;
+  readonly neighbors: readonly string[];
+  readonly jobContracts: readonly string[];
+  readonly entryLoops: readonly WorldEntryLoop[];
+};
 export type CityWorldDistrict = {
   id: string;
   name: string;
@@ -17,6 +40,25 @@ export type CityRoadEdge = {
 
 export const CITY_WORLD_VERSION = 1;
 export const CITY_WORLD_BOUNDS = { minX: 0, maxX: 14, minY: 0, maxY: 12 } as const;
+
+/** Immutable blueprint registry. Coordinates are normalized for scalable rendering. */
+export const OSOGBO_WORLD_NODES = {
+  "city-centre": { slug: "city-centre", name: "Olaiya", category: "commercial", anchor: { x: 0.50, y: 0.47 }, world: { x: 7, y: 6 }, neighbors: ["oja-oba", "government-area", "state-hospital", "isale-osun", "old-garage", "oke-fia"], jobContracts: ["office_assistant", "shop_assistant", "stock_assistant"], entryLoops: ["shop", "social", "explore"] },
+  "oja-oba": { slug: "oja-oba", name: "Oja-Oba Market", category: "commercial", anchor: { x: 0.60, y: 0.26 }, world: { x: 3, y: 5 }, neighbors: ["city-centre", "government-area", "student-district", "isale-osun"], jobContracts: ["market_trader", "market_sales_assistant", "food_vendor"], entryLoops: ["shop", "work", "social"] },
+  "government-area": { slug: "government-area", name: "Government Area · State Secretariat", category: "government", anchor: { x: 0.38, y: 0.21 }, world: { x: 5.32, y: 2.52 }, neighbors: ["city-centre", "oja-oba", "student-district", "oke-fia"], jobContracts: [], entryLoops: ["work", "social"] },
+  "student-district": { slug: "student-district", name: "UNIOSUN Campus", category: "education", anchor: { x: 0.12, y: 0.24 }, world: { x: 5, y: 9 }, neighbors: ["oja-oba", "government-area", "stadium", "oke-fia"], jobContracts: ["junior_frontend_developer", "computer_assistant", "tech_support_assistant", "computer_instructor"], entryLoops: ["study", "work", "social"] },
+  "cultural-district": { slug: "cultural-district", name: "Sacred Grove · Osun Sacred Forest", category: "water_nature", anchor: { x: 0.69, y: 0.07 }, world: { x: 2, y: 2 }, neighbors: ["oke-baale", "atiku", "city-centre"], jobContracts: [], entryLoops: ["explore", "social"] },
+  stadium: { slug: "stadium", name: "Stadium", category: "recreation", anchor: { x: 0.53, y: 0.73 }, world: { x: 7.42, y: 8.76 }, neighbors: ["student-district", "industrial-area", "airport-terminal", "atiku"], jobContracts: [], entryLoops: ["work", "explore", "social"] },
+  "state-hospital": { slug: "state-hospital", name: "State Hospital", category: "health", anchor: { x: 0.32, y: 0.44 }, world: { x: 4.48, y: 5.28 }, neighbors: ["city-centre", "oke-fia", "old-garage"], jobContracts: [], entryLoops: ["recover", "work"] },
+  "old-garage": { slug: "old-garage", name: "Transport Hub · Old Garage", category: "transport", anchor: { x: 0.14, y: 0.60 }, world: { x: 3, y: 8 }, neighbors: ["city-centre", "state-hospital", "industrial-area", "isale-osun"], jobContracts: ["driver_rider", "delivery_rider", "mechanic", "mechanic_assistant", "workshop_assistant"], entryLoops: ["travel", "work", "social"] },
+  "airport-terminal": { slug: "airport-terminal", name: "Airport · Terminal", category: "transport", anchor: { x: 0.75, y: 0.80 }, world: { x: 10.5, y: 9.6 }, neighbors: ["stadium", "atiku", "rural-outskirts"], jobContracts: [], entryLoops: ["travel", "work"] },
+  "oke-baale": { slug: "oke-baale", name: "Oke-Baale · Hill View", category: "recreation", anchor: { x: 0.48, y: 0.06 }, world: { x: 6.72, y: 0.72 }, neighbors: ["cultural-district", "government-area", "atiku"], jobContracts: [], entryLoops: ["explore", "social"] },
+  "isale-osun": { slug: "isale-osun", name: "Isale-Osun", category: "commercial", anchor: { x: 0.68, y: 0.56 }, world: { x: 9.52, y: 6.72 }, neighbors: ["city-centre", "oja-oba", "old-garage", "atiku"], jobContracts: [], entryLoops: ["shop", "work", "social"] },
+  atiku: { slug: "atiku", name: "Atiku Residential", category: "residential", anchor: { x: 0.93, y: 0.44 }, world: { x: 13.02, y: 5.28 }, neighbors: ["cultural-district", "oke-baale", "isale-osun", "stadium", "airport-terminal"], jobContracts: [], entryLoops: ["social", "explore"] },
+  "rural-outskirts": { slug: "rural-outskirts", name: "Outskirts · Farms & Village", category: "water_nature", anchor: { x: 0.92, y: 0.66 }, world: { x: 13, y: 11 }, neighbors: ["airport-terminal", "stadium"], jobContracts: ["farm_assistant"], entryLoops: ["work", "explore", "social"] },
+  "oke-fia": { slug: "oke-fia", name: "Oke-Fia", category: "residential", anchor: { x: 0.07, y: 0.44 }, world: { x: 10, y: 3 }, neighbors: ["city-centre", "government-area", "student-district", "state-hospital"], jobContracts: [], entryLoops: ["social", "explore"] },
+  "industrial-area": { slug: "industrial-area", name: "Industrial Area", category: "work_industrial", anchor: { x: 0.33, y: 0.75 }, world: { x: 4.62, y: 9 }, neighbors: ["old-garage", "stadium", "rural-outskirts"], jobContracts: [], entryLoops: ["work"] },
+} as const satisfies Readonly<Record<string, WorldBlueprintNode>>;
 
 export const CITY_DISTRICTS: CityWorldDistrict[] = [
   {
@@ -178,6 +220,17 @@ export const CITY_ROUNDABOUTS: CityWorldPosition[] = [
   { x: 10, y: 4 },
 ];
 
+export const CITY_LIGHT_BEACONS = [
+  { id: "market-crossing", position: { x: 4, y: 3 }, length: 0.5, color: "#ffd477" },
+  { id: "central-square", position: { x: 7, y: 5 }, length: 0.7, color: "#b7e8ff" },
+  { id: "oke-fia-road", position: { x: 10, y: 3 }, length: 0.55, color: "#8cebe1" },
+  { id: "garage-entry", position: { x: 3, y: 8 }, length: 0.45, color: "#ffcb68" },
+  { id: "campus-walk", position: { x: 5, y: 9 }, length: 0.5, color: "#c3f09a" },
+  { id: "residential-corner", position: { x: 9, y: 9 }, length: 0.5, color: "#ffe19a" },
+  { id: "culture-lane", position: { x: 2, y: 2 }, length: 0.45, color: "#e6bbff" },
+  { id: "outskirts-road", position: { x: 12, y: 11 }, length: 0.4, color: "#c9edaa" },
+] as const;
+
 export function cityWorldToIso(position: CityWorldPosition, height = 0) {
   return {
     x: 500 + (position.x - position.y) * 31,
@@ -202,6 +255,40 @@ export function nearestCityRoadNode(position: CityWorldPosition) {
 
 export function cityPositionForLocation(slug: string, fallback?: CityWorldPosition) {
   return WORLD_LOCATION_NODES[slug]?.position ?? fallback ?? { x: 7, y: 6 };
+}
+
+/** New location records use the existing 0-100 map_x/map_y fields for a deterministic fictional placement. */
+export function cityPositionForRecord(location: {
+  slug: string;
+  map_x: number;
+  map_y: number;
+  canvas_x?: number;
+  canvas_y?: number;
+}): CityWorldPosition {
+  const known = WORLD_LOCATION_NODES[location.slug];
+  if (known) return known.position;
+  const canvasX = location.canvas_x;
+  const canvasY = location.canvas_y;
+  if (typeof canvasX === "number" && Number.isFinite(canvasX) && typeof canvasY === "number" && Number.isFinite(canvasY)) {
+    return {
+      x: Math.round(Math.max(0, Math.min(1, canvasX) * CITY_WORLD_BOUNDS.maxX) * 100) / 100,
+      y: Math.round(Math.max(0, Math.min(1, canvasY) * CITY_WORLD_BOUNDS.maxY) * 100) / 100,
+    };
+  }
+  return {
+    x: Math.round(Math.max(0, Math.min(14, location.map_x * 0.14)) * 100) / 100,
+    y: Math.round(Math.max(0, Math.min(12, location.map_y * 0.12)) * 100) / 100,
+  };
+}
+
+export function cityEntranceForRecord(location: {
+  slug: string;
+  map_x: number;
+  map_y: number;
+  canvas_x?: number;
+  canvas_y?: number;
+}): CityWorldPosition {
+  return WORLD_LOCATION_NODES[location.slug]?.entrance ?? cityPositionForRecord(location);
 }
 
 export function cityEntranceForLocation(slug: string) {
