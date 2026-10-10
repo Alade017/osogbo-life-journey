@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { ComingSoon, PageHeader } from "@/components/game/ui";
+import { PageHeader } from "@/components/game/ui";
+import { WorldAudioSettings } from "@/components/game/WorldAudioSettings";
 
 export const Route = createFileRoute("/_authenticated/_game/settings")({
   head: () => pageMeta("Settings", "Manage your OSOGBO LIFE account and preferences."),
@@ -165,12 +166,12 @@ function SettingsPage() {
             onCheckedChange={(v) => update({ reduced_motion: v })}
           />
         </label>
-        <div className="flex items-center justify-between gap-3">
-          <span>
-            <span className="block font-semibold">Sound & music</span>
-            <span className="text-xs text-muted-foreground">Game audio is not available yet.</span>
-          </span>
-          <ComingSoon />
+        <div className="space-y-3 border-t border-border pt-4">
+          <h3 className="font-semibold">Sound & music</h3>
+          <WorldAudioSettings
+            enabled={!!profile?.sound_enabled}
+            onEnabledChange={(sound_enabled) => void update({ sound_enabled })}
+          />
         </div>
       </section>
       <section className="game-panel p-5">

@@ -21,6 +21,12 @@ import {
   travelAnimationDurationMs,
   validateTripRequest,
 } from "@/lib/transport-service";
+import { useGameTime } from "@/components/game/GameTimeProvider";
+import {
+  adjustedTripMinutes,
+  travelConditionAdjustment,
+  weatherForDay,
+} from "@/lib/world-simulation";
 
 export const Route = createFileRoute("/_authenticated/_game/location/$slug")({
   head: () => pageMeta("District", "Visit a district of Osogbo."),
@@ -28,6 +34,9 @@ export const Route = createFileRoute("/_authenticated/_game/location/$slug")({
 });
 
 function LocationPage() {
+  const { simulation } = useGameTime();
+  const gameTime = simulation.gameTime;
+  const weather = weatherForDay(gameTime.day);
   const { slug } = Route.useParams();
   const [travelState, dispatchTravel] = useReducer(travelReducer, initialTravelState);
   const travelStartTimer = useRef<number | null>(null);
@@ -100,6 +109,8 @@ function LocationPage() {
           : routeQuery.isError
             ? "A street route could not be calculated. The saved travel-time estimate is shown."
             : null;
+  const conditions = travelConditionAdjustment(travelState.mode, gameTime, weather);
+  const travelMessage = [routeMessage, conditions.explanation].filter(Boolean).join(" ") || null;
   const visit = visits?.find((v) => v.location_id === loc?.id);
   const isHere = character?.current_location_id === loc?.id;
   const meetsLevelRequirement = !!character && !!loc && character.level >= loc.level_required;
@@ -171,7 +182,7 @@ function LocationPage() {
       destinationId: loc.id,
       destinationName: loc.name,
       fare: estimate.fare,
-      estimatedMinutes: estimate.minutes,
+      estimatedMinutes: adjustedTripMinutes(estimate.minutes, mode, gameTime),
       mode,
     });
   }
@@ -213,7 +224,7 @@ function LocationPage() {
       type: "set_mode",
       mode,
       fare: estimate.fare,
-      estimatedMinutes: estimate.minutes,
+      estimatedMinutes: adjustedTripMinutes(estimate.minutes, mode, gameTime),
     });
   }
 
@@ -304,7 +315,7 @@ function LocationPage() {
             isPending={travel.isPending}
             isRouteLoading={routeQuery.isFetching}
             route={routeQuery.data ?? null}
-            routeMessage={routeMessage}
+            routeMessage={travelMessage}
             onSelect={selectDestination}
             availableModes={availableModes}
             onModeChange={changeTravelMode}

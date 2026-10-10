@@ -57,6 +57,7 @@ type Props = {
   saveKey?: string;
   initialSave?: HousingSave;
   onSave?: (save: HousingSave) => void;
+  powerAvailable?: boolean;
 };
 
 function loadSave(key: string): HousingSave {
@@ -64,7 +65,13 @@ function loadSave(key: string): HousingSave {
   return readLocalHousingSave(key)?.payload ?? DEFAULT_HOUSING_SAVE;
 }
 
-export function HomeInterior({ balance = 5000, saveKey = SAVE_KEY, initialSave, onSave }: Props) {
+export function HomeInterior({
+  balance = 5000,
+  saveKey = SAVE_KEY,
+  initialSave,
+  onSave,
+  powerAvailable = true,
+}: Props) {
   const [saved, setSaved] = useState(() => initialSave ?? loadSave(saveKey));
   const onSaveRef = useRef(onSave);
   const [inside, setInside] = useState(false);
@@ -206,6 +213,12 @@ export function HomeInterior({ balance = 5000, saveKey = SAVE_KEY, initialSave, 
   const interact = (placed: PlacedFurniture) => {
     const item = FURNITURE_CATALOG.find((entry) => entry.id === placed.itemId);
     if (!item) return;
+    if (!powerAvailable && ["stove", "computer", "television"].includes(placed.itemId)) {
+      setNotice(
+        `${item.name} is unavailable during the outage. Rest, hygiene, and other home activities still work.`,
+      );
+      return;
+    }
     const delta = item.effects;
     const needs = { ...saved.needs };
     for (const [key, value] of Object.entries(delta))
@@ -248,11 +261,12 @@ export function HomeInterior({ balance = 5000, saveKey = SAVE_KEY, initialSave, 
         <button
           type="button"
           className="home-lights-toggle"
-          aria-pressed={lightsOn}
+          aria-pressed={powerAvailable && lightsOn}
+          disabled={!powerAvailable}
           onClick={() => setLightsOn((on) => !on)}
         >
           <Lightbulb size={16} />
-          {lightsOn ? "Lights on" : "Lights off"}
+          {!powerAvailable ? "Power outage" : lightsOn ? "Lights on" : "Lights off"}
         </button>
       </div>
       {!inside ? (
@@ -555,7 +569,11 @@ export function HomeInterior({ balance = 5000, saveKey = SAVE_KEY, initialSave, 
           )}
           <div className="home-room-footnote">
             <span />
-            {lightsOn ? "Warm daylight is filling the house" : "Ambient lighting dimmed"}
+            {!powerAvailable
+              ? "Power is out · natural light and essential activities remain available"
+              : lightsOn
+                ? "Warm daylight is filling the house"
+                : "Ambient lighting dimmed"}
           </div>
         </aside>
       </div>

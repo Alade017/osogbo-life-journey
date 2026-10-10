@@ -430,6 +430,8 @@ export const rpc = {
       fare: number;
       travel_minutes: number;
       first_visit: boolean;
+      weather?: string;
+      traffic?: string;
       game_time?: { minute: number; hour: number; day: number; weekday: number };
     },
   savePlayerMapPosition: async (position: {

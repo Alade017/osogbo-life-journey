@@ -148,6 +148,13 @@
       "when": 1791245090856,
       "tag": "0019_milestone10_cloud_home_save",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1791245090857,
+      "tag": "0020_milestone11_world_conditions",
+      "breakpoints": true
     }
   ]
 }

@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { GameHUD } from "@/components/game/GameHUD";
 import { PhoneLauncher } from "@/components/game/PhoneLauncher";
 import { GameTimeProvider } from "@/components/game/GameTimeProvider";
+import { WorldEnvironment } from "@/components/game/WorldEnvironment";
 import { gameTimeFromCharacter } from "@/lib/game-time";
 import { playerStateFromRows } from "@/lib/player-state";
 
@@ -116,6 +117,7 @@ function GameLayout() {
           profile?.reduced_motion && "reduce-motion",
         )}
       >
+        <WorldEnvironment />
         <div className="city-game-frame">
           <aside className="game-desktop-nav" aria-label="Main navigation">
             <Link to="/home" className="game-side-logo" aria-label="OSOGBO LIFE home">

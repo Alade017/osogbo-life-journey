@@ -14,6 +14,7 @@ import {
   type SocialAction,
 } from "@/lib/npc-simulation";
 import { pageMeta } from "@/lib/seo";
+import { weatherForDay } from "@/lib/world-simulation";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/_game/social")({
@@ -127,7 +128,12 @@ function SocialPage() {
                 lastInteractionDay: null,
                 lastInteractionText: null,
               };
-              const activity = npcActivityAt(npc, time, (slug) => placeBySlug(slug)?.id ?? null);
+              const activity = npcActivityAt(
+                npc,
+                time,
+                (slug) => placeBySlug(slug)?.id ?? null,
+                weatherForDay(time.day),
+              );
               const destination = placeBySlug(activity.destinationSlug);
               const canMeet = !!destination && character.current_location_id === destination.id;
               const availableActions = socialActionsFor(relation, canMeet && activity.available);

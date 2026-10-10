@@ -135,10 +135,14 @@ export function npcActivityAt(
   npc: NpcDefinition,
   time: GameTime,
   locationBySlug: (slug: string) => string | null,
+  weather: "sunny" | "cloudy" | "rainy" | "heavy-rain" = "sunny",
 ): NpcActivity {
   const routine = npc.routine.find((entry) => time.hour >= entry.start && time.hour < entry.end);
-  const destination =
-    routine?.destination === "work"
+  const weatherFallback =
+    (weather === "rainy" || weather === "heavy-rain") && routine?.destination === "park";
+  const destination = weatherFallback
+    ? npc.homeSlug
+    : routine?.destination === "work"
       ? npc.workSlug
       : routine?.destination === "home"
         ? npc.homeSlug
@@ -148,7 +152,9 @@ export function npcActivityAt(
   const destinationSlug = locationBySlug(destination) ? destination : npc.homeSlug;
   return {
     destinationSlug,
-    label: routine?.activity ?? "taking a quiet break",
+    label: weatherFallback
+      ? "staying indoors during the rain"
+      : (routine?.activity ?? "taking a quiet break"),
     available: time.hour >= 7 && time.hour < 22,
   };
 }

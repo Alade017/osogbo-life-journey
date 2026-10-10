@@ -38,6 +38,17 @@ describe("NPC routine and social simulation", () => {
     expect(NPC_CATALOG.find((npc) => npc.id === "npc-tunde")?.routine[0]!.start).toBe(8);
   });
 
+  it("sends NPCs with outdoor routines indoors during rain", () => {
+    const lookup = (slug: string) =>
+      slug === "residential" || slug === "cultural-district" ? slug : null;
+    const tunde = NPC_CATALOG.find((npc) => npc.id === "npc-tunde")!;
+    const rainyPark = npcActivityAt(tunde, { ...INITIAL_GAME_TIME, hour: 18 }, lookup, "rainy");
+    expect(rainyPark).toMatchObject({
+      destinationSlug: "residential",
+      label: "staying indoors during the rain",
+    });
+  });
+
   it("changes relationship dimensions according to conversation and personality", () => {
     const adeola = NPC_CATALOG.find((npc) => npc.id === "npc-adeola")!;
     const greeting = interactionOutcome("greet", adeola, newRelationship);
