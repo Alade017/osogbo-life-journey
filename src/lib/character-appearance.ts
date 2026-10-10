@@ -21,6 +21,17 @@ export const DEFAULT_CHARACTER_APPEARANCE: CharacterAppearance = {
   headwear: 0,
 };
 
+export function appearanceForGender(
+  appearance: CharacterAppearance,
+  gender: string,
+): CharacterAppearance {
+  const styles = HAIR_STYLES_BY_GENDER[gender] ?? HAIR_STYLES_BY_GENDER["nonbinary"] ?? [];
+  return {
+    ...appearance,
+    hair: Math.min(Math.max(appearance.hair, 0), Math.max(styles.length - 1, 0)),
+  };
+}
+
 function chooseIndex(optionCount: number, random: () => number): number {
   if (optionCount <= 0) return 0;
   return Math.min(optionCount - 1, Math.max(0, Math.floor(random() * optionCount)));

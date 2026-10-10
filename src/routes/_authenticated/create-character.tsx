@@ -16,6 +16,7 @@ import {
   type Appearance,
 } from "@/components/game/Avatar";
 import {
+  appearanceForGender,
   DEFAULT_CHARACTER_APPEARANCE,
   randomizeCharacterAppearance,
 } from "@/lib/character-appearance";
@@ -218,9 +219,23 @@ function CreateCharacter() {
                   maxLength={24}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  aria-invalid={name.length > 0 && !valid}
+                  aria-describedby="character-name-help"
                   placeholder="e.g. Adunni"
                   className="h-11 border-2 bg-card"
                 />
+                <p
+                  id="character-name-help"
+                  className={cn(
+                    "text-xs",
+                    name.length > 0 && !valid ? "text-destructive" : "text-muted-foreground",
+                  )}
+                  aria-live="polite"
+                >
+                  {name.length > 0 && !valid
+                    ? "Use 2 to 24 characters for your name."
+                    : "Choose a name between 2 and 24 characters."}
+                </p>
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="age">Age</Label>
@@ -240,7 +255,11 @@ function CreateCharacter() {
               label="Gender / presentation"
               options={GENDERS.map((g) => g.l)}
               value={GENDERS.findIndex((g) => g.v === gender)}
-              onChange={(i) => setGender(GENDERS[i]?.v ?? "female")}
+              onChange={(i) => {
+                const nextGender = GENDERS[i]?.v ?? "female";
+                setGender(nextGender);
+                setAp((current) => appearanceForGender(current, nextGender));
+              }}
             />
             <Picker
               label="Skin tone"
