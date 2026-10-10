@@ -9,6 +9,7 @@ import {
   type NeighborhoodObject,
   type WorldPoint,
 } from "./neighborhood-model";
+import type { NetworkPlayerSnapshot } from "./multiplayer-state";
 
 export type NeighborhoodBridge = {
   origin: WorldPoint;
@@ -17,6 +18,7 @@ export type NeighborhoodBridge = {
   onCheckpoint: (point: WorldPoint) => void;
   onInteract: (object: NeighborhoodObject) => void;
   saveCheckpoint: (point: WorldPoint) => Promise<boolean>;
+  onMovementIntent: (input: { x: number; y: number }) => void;
 };
 export type MovementInput = "up" | "down" | "left" | "right";
 
@@ -28,6 +30,14 @@ class NeighborhoodScene extends Phaser.Scene {
   private frozen = false;
   private moved = false;
   private nearby: NeighborhoodObject | null = null;
+  private remoteActors = new Map<
+    string,
+    { sprite: Phaser.GameObjects.Sprite; label: Phaser.GameObjects.Text; target: WorldPoint }
+  >();
+  private localSessionId: string | null = null;
+  private movementIntent = { x: 0, y: 0 };
+  private lastIntentSentAt = 0;
+  private authoritativeTarget: WorldPoint | null = null;
   constructor(private bridge: NeighborhoodBridge) {
     super("neighborhood");
   }
@@ -155,6 +165,11 @@ class NeighborhoodScene extends Phaser.Scene {
     this.cameras.main.setZoom(1.2);
     this.events.on(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.touch.clear();
+      for (const actor of this.remoteActors.values()) {
+        actor.sprite.destroy();
+        actor.label.destroy();
+      }
+      this.remoteActors.clear();
       this.bridge.onNearby(null);
     });
   }
@@ -173,7 +188,7 @@ class NeighborhoodScene extends Phaser.Scene {
     art.generateTexture(key, 32, 44);
     art.destroy();
   }
-  override update() {
+  override update(time: number, delta: number) {
     if (!this.player) return;
     let x = 0;
     let y = 0;
@@ -197,6 +212,16 @@ class NeighborhoodScene extends Phaser.Scene {
       }
     }
     const length = Math.hypot(x, y);
+    const intent = length ? { x: Math.sign(x), y: Math.sign(y) } : { x: 0, y: 0 };
+    if (
+      intent.x !== this.movementIntent.x ||
+      intent.y !== this.movementIntent.y ||
+      (length > 0 && time - this.lastIntentSentAt >= 100)
+    ) {
+      this.movementIntent = intent;
+      this.lastIntentSentAt = time;
+      this.bridge.onMovementIntent(intent);
+    }
     this.player.setVelocity(length ? (x / length) * 110 : 0, length ? (y / length) * 110 : 0);
     this.player.setDepth(this.player.y + 20);
     const moving = length > 0;
@@ -218,6 +243,72 @@ class NeighborhoodScene extends Phaser.Scene {
       this.nearby = nearby;
       this.bridge.onNearby(nearby);
     }
+
+    if (this.authoritativeTarget) {
+      const target = toScene(this.authoritativeTarget, this.bridge.origin);
+      const correction = Math.hypot(target.x - this.player.x, target.y - this.player.y);
+      if (!moving || correction > 18) this.player.setPosition(target.x, target.y);
+      else if (correction > 2) {
+        this.player.x += (target.x - this.player.x) * 0.2;
+        this.player.y += (target.y - this.player.y) * 0.2;
+      }
+    }
+    const blend = Math.min(1, Math.max(0, delta) * 0.012);
+    for (const actor of this.remoteActors.values()) {
+      actor.sprite.x += (actor.target.x - actor.sprite.x) * blend;
+      actor.sprite.y += (actor.target.y - actor.sprite.y) * blend;
+      actor.sprite.setDepth(actor.sprite.y + 20);
+      actor.label.setPosition(actor.sprite.x, actor.sprite.y - 35);
+    }
+  }
+
+  setLocalSessionId(sessionId: string | null) {
+    this.localSessionId = sessionId;
+  }
+  syncNetworkPlayers(players: Array<NetworkPlayerSnapshot & { sessionId: string }>) {
+    const active = new Set<string>();
+    for (const player of players) {
+      if (player.sessionId === this.localSessionId) {
+        this.authoritativeTarget = { x: player.x, y: player.y };
+        continue;
+      }
+      active.add(player.sessionId);
+      const position = toScene({ x: player.x, y: player.y }, this.bridge.origin);
+      let actor = this.remoteActors.get(player.sessionId);
+      if (!actor) {
+        const shirt = this.remoteColor(player.sessionId);
+        const texture = `remote-${player.sessionId}`;
+        this.makePerson(texture, shirt, 0x855733);
+        const sprite = this.add.sprite(position.x, position.y, texture).setDepth(position.y + 20);
+        const label = this.add
+          .text(position.x, position.y - 35, player.name.slice(0, 24), {
+            fontFamily: "sans-serif",
+            fontSize: "12px",
+            color: "#26332d",
+            backgroundColor: "#fffdf8",
+          })
+          .setOrigin(0.5)
+          .setPadding(5, 3)
+          .setDepth(900);
+        actor = { sprite, label, target: position };
+        this.remoteActors.set(player.sessionId, actor);
+      }
+      actor.target = position;
+      actor.sprite.setFlipX(player.facing === "west");
+      actor.label.setText(player.name.slice(0, 24));
+    }
+    for (const [sessionId, actor] of this.remoteActors) {
+      if (active.has(sessionId)) continue;
+      actor.sprite.destroy();
+      actor.label.destroy();
+      this.remoteActors.delete(sessionId);
+    }
+  }
+  private remoteColor(sessionId: string) {
+    const palette = [0x176b45, 0xb86e43, 0x647c9a, 0x915d86, 0x92722f];
+    let hash = 0;
+    for (const char of sessionId) hash = (hash * 31 + char.charCodeAt(0)) | 0;
+    return palette[Math.abs(hash) % palette.length] ?? 0x176b45;
   }
   setTouch(direction: MovementInput, pressed: boolean) {
     if (pressed) this.touch.add(direction);

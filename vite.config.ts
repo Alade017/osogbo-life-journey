@@ -12,6 +12,7 @@ export default defineConfig(({ command, mode }) => {
     if (process.env[key] === undefined) process.env[key] = value;
   }
   return {
+    cacheDir: "node_modules/.vite-game",
     plugins: [
       tailwindcss(),
       tanstackStart({ server: { entry: "server" } }),

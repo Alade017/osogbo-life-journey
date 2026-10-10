@@ -2,6 +2,7 @@
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx",
+    "multiplayer/**/*.ts",
     "vite.config.ts",
     "vite.public.config.ts",
     "public-site/**/*.tsx",
@@ -14,7 +15,7 @@
     "jsx": "react-jsx",
     "module": "ESNext",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
-    "types": ["vite/client", "vitest/globals"],
+    "types": ["vite/client", "vitest/globals", "node"],
 
     "moduleResolution": "Bundler",
     "allowImportingTsExtensions": true,

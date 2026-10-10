@@ -1,6 +1,59 @@
 # Playable neighborhood architecture
 
-The uploaded architecture reference governs this incremental implementation. The first scene provides one reusable neighborhood, not a finished full city. Phaser 3 replaces React's per-frame city animation because Arcade Physics gives the world a single owner for movement, collision, camera and depth. React retains menus, accessible controls, nearby interaction prompts and server data. No multiplayer infrastructure is added.
+This document records the current gameplay boundary and Milestone 1 architecture baseline for the OSOGBO LIFE multiplayer specification. The first scene provides one reusable neighborhood, not a finished full city. Phaser 3 owns world rendering and its frame loop because Arcade Physics gives the world one owner for movement, collision, camera and depth. React retains routes, accessible controls, menus, HUD, nearby interaction prompts and server data. The Milestone 1 baseline was single-player; Milestone 4 now adds a local authoritative room server, with production hosting and authenticated multi-client acceptance still outstanding.
+
+## Architecture decision baseline (Milestone 1)
+
+### Runtime ownership
+
+| Concern | Owner | Current boundary |
+| --- | --- | --- |
+| Public site, auth forms, onboarding, HUD, accessible menus and interaction panels | React/TanStack Start | Routes and components render user-facing state and issue domain commands. |
+| World frame loop, local input, camera, collision, animation and world-side proximity | Phaser 3 | `NeighborhoodScene` owns transient local presentation. It must not write durable economy or progression state. |
+| Rules and command adapters | `src/lib` domain services and `src/lib/game.ts` | Existing typed services and Supabase RPC wrappers remain the entry points for travel, jobs, inventory, purchases and persistence. |
+| Durable identity and player progression | Supabase Auth/Postgres/RPCs | Existing authenticated records and server-validated RPCs remain authoritative. Do not persist movement per rendered frame. |
+| Shared transient player state | Not implemented yet | A dedicated authoritative multiplayer runtime is the recommended target; remote players must not be fabricated in the client. |
+
+React and Phaser communicate through the typed `NeighborhoodBridge` contract in `src/game/neighborhood-scene.ts`. It carries initial world coordinates, proximity/checkpoint notifications, interactions and an asynchronous checkpoint command. Keep that bridge narrow: UI commands flow into the scene through explicit methods, while scene events flow back through callbacks. Do not expose React state setters or Supabase clients to Phaser.
+
+The current React host lazily imports the browser-only scene, creates one engine per mounted host, and destroys it on cleanup. It pauses movement for hidden/offline tabs and pending UI actions. Position saves are stop/interaction checkpoints through the existing revision-checked RPC path. These are source-level boundaries; they do not establish a multiplayer connection or live backend verification.
+
+### Multiplayer decision
+
+Adopt a **dedicated authoritative room server** as the target for shared movement, area membership, presence, disconnect cleanup and reconnect recovery. Keep Supabase Auth as the account identity source and validate a short-lived server-side join credential before admitting a player. Keep durable character, economy, inventory, jobs and home data in Supabase behind existing RLS/RPC rules. The room server owns transient room state; it must not become a second wallet or progression database.
+
+This fits Phaser's scene model and the requirement for validated room membership and movement, while preserving the existing Supabase persistence and React application. Supabase Realtime can be evaluated for low-frequency presence or notifications, but is not selected as the movement authority. Vercel remains suitable for frontend delivery only; do not assume its serverless functions host a continuously running room process.
+
+Milestone 4 selects **Colyseus 0.18** for room management and schema-based state synchronization. It is self-hostable; a paid managed host is deferred until staging needs are known. The local Node server authenticates Supabase access tokens against Supabase Auth, then reads the player's character and selected location through the same user token and database RLS. Each room is keyed by stable location ID, has a 32-player cap and 20 Hz server movement updates. The server accepts movement intent only, validates bounds and collision, and broadcasts transient positions; it does not write the database each frame. A rejected connection leaves the UI frozen until the player manually reconnects. The browser uses `VITE_MULTIPLAYER_URL`; the local default is `ws://127.0.0.1:2567`, and the room process starts with `npm.cmd run multiplayer:dev`.
+
+The room server is not deployed or covered by a live two-account session yet. Hosting, health monitoring, TLS/WSS, production origin configuration, restart/reconnect policy and region latency remain staging decisions. No live domain, auth redirect, paid service or production setting is changed here.
+
+### World and persistence model
+
+Use stable area identifiers in the world layer and a data-driven scene/area definition for map reference, bounds, spawn points, exits, collision assets and room mapping. Keep the existing movement grid and database checkpoint format compatible until an explicit migration is reviewed. Travel remains a domain command validated by the existing Supabase RPC; when multiplayer arrives, the room transfer must be coordinated with that successful command so a client cannot teleport by changing local coordinates.
+
+Transient movement, facing, animation and room membership belong to the room runtime once implemented. Durable character appearance, validated wallet transactions, inventory, jobs, home saves and a safe checkpoint remain in Supabase. Local housing/simulation snapshots are not proof of server-persisted ownership or progression. Add social persistence only when a concrete social milestone defines ownership, access policies, retention and moderation requirements; the current schema audit found no player-to-player chat/friend/block/report model.
+
+### Design-system baseline
+
+Reuse the existing tokens in `src/styles.css` and current light game styling. The root palette currently defines porcelain `--background: #f6f1e7`, forest `--primary: #176b45`, and charcoal `--foreground: #202820`; the title screen also uses warm ivory and deep green. Treat these as the current baseline, not a request to replace the design system with a second palette. Extend shared tokens/components only when a scoped screen need is identified. Phaser world colors remain scene-art values and should not be used as a competing React UI token set.
+
+### Domain boundaries and implementation map
+
+- Public website: `public-site/`, `vite.public.config.ts`, `src/routes/index.tsx` (game title route); separately buildable locally, with real domain separation still dependent on hosting configuration.
+- Authentication and onboarding: `src/routes/login.tsx`, `src/routes/signup.tsx`, `src/routes/_authenticated/route.tsx`, and `src/routes/_authenticated/create-character.tsx`.
+- Game shell and UI: `src/routes/_authenticated/_game.tsx`, `src/components/game/`, `src/styles.css`.
+- Phaser world and model: `src/game/neighborhood-scene.ts`, `src/game/neighborhood-model.ts`, `src/components/game/NeighborhoodGame.tsx`.
+- Persistent domain adapter: `src/lib/game.ts`, focused `src/lib/*-service.ts` modules, and `drizzle/migrations/`.
+- Deployment configuration: `vite.config.ts`, `vite.public.config.ts`, `docs/neighborhood-architecture.md`, and `docs/release-qa.md`; provider projects, production domains and deployed settings are not represented as verified local configuration.
+
+### Milestone 1 acceptance record
+
+- React/Phaser ownership and the typed bridge are documented against existing source.
+- Transient and persistent state have separate owners; existing authoritative RPC paths remain in place.
+- Existing design tokens are recorded and reused; no duplicate palette or UI framework is introduced.
+- Multiplayer is explicitly marked unimplemented, with an authoritative room-server direction and infrastructure decisions left open for evidence-based selection.
+- No database schema, package manifest, deployment setting or production service is changed by this baseline.
 
 ## Ownership and persistence
 

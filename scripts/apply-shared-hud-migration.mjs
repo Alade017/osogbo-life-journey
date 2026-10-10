@@ -15,8 +15,9 @@ const migration = readFileSync(
   "utf8",
 );
 const hash = createHash("sha256").update(migration).digest("hex");
-const sql = postgres(url, { max: 1, connect_timeout: 15 });
+let sql;
 try {
+  sql = postgres(url, { max: 1, connect_timeout: 15 });
   await sql.begin(async (tx) => {
     await tx`select pg_advisory_xact_lock(hashtextextended('osogbo-shared-hud-migration',0))`;
     const [state] = await tx`select to_regclass('public.character_simulations') as applied,
@@ -35,8 +36,11 @@ try {
   });
   console.log("Shared HUD migration applied and committed. Supabase schema reload requested.");
 } catch (error) {
-  console.error(`Migration was not committed: ${error.message}`);
+  const message = error.code === "ERR_INVALID_URL"
+    ? "DATABASE_URL is invalid. URL-encode the database password."
+    : String(error.message).replaceAll(url, "[redacted connection]");
+  console.error(`Migration was not committed: ${message}`);
   process.exitCode = 1;
 } finally {
-  await sql.end();
+  await sql?.end();
 }

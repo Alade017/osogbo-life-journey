@@ -22,6 +22,10 @@ export function neighborhoodOrigin(entrance: WorldPoint, checkpoint: WorldPoint)
       : { x: Math.floor(checkpoint.x / 3) * 3 + 1.5, y: Math.floor(checkpoint.y / 3) * 3 + 1.5 };
   return { x: Math.max(1.8, Math.min(12.2, anchor.x)), y: Math.max(1.9, Math.min(10.3, anchor.y)) };
 }
+/** Stable origin shared by every player in an area; per-checkpoint origins desync peers. */
+export function neighborhoodAreaOrigin(entrance: WorldPoint): WorldPoint {
+  return neighborhoodOrigin(entrance, entrance);
+}
 export function toScene(point: WorldPoint, origin: WorldPoint): WorldPoint {
   return {
     x: 320 + (point.x - origin.x) * WORLD_SCALE,

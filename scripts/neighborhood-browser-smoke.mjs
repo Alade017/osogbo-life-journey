@@ -58,7 +58,7 @@ try {
       "--disable-gpu",
       "--no-first-run",
       "--no-default-browser-check",
-      `--user-data-dir=${resolve(folder, "chrome-profile")}`,
+      `--user-data-dir=${resolve(folder, `chrome-profile-${process.pid}`)}`,
       "--virtual-time-budget=12000",
       "--window-size=1024,768",
       `--screenshot=${resolve(folder, "neighborhood.png")}`,

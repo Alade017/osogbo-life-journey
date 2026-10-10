@@ -12,11 +12,13 @@ import {
 } from "@/lib/transport-service";
 import { cityEntranceForRecord } from "@/lib/city-world";
 import {
-  neighborhoodOrigin,
+  neighborhoodAreaOrigin,
   type NeighborhoodObject,
   type WorldPoint,
 } from "@/game/neighborhood-model";
+import type { NetworkPlayerSnapshot } from "@/game/multiplayer-state";
 import type { createNeighborhoodGame, MovementInput } from "@/game/neighborhood-scene";
+import { joinNeighborhood, type NeighborhoodRoom } from "@/lib/multiplayer-service";
 import { useGameTime } from "./GameTimeProvider";
 import "./neighborhood.css";
 
@@ -40,6 +42,7 @@ export function NeighborhoodGame() {
   const { reconnect } = useGameTime();
   const host = useRef<HTMLDivElement>(null);
   const engine = useRef<Engine | null>(null);
+  const roomRef = useRef<NeighborhoodRoom | null>(null);
   const confirmed = useRef<WorldPoint>({ x: 7, y: 6 });
   const revision = useRef(0);
   const pending = useRef(false);
@@ -52,17 +55,27 @@ export function NeighborhoodGame() {
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [retry, setRetry] = useState(0);
+  const [connectionAttempt, setConnectionAttempt] = useState(0);
+  const [multiplayerStatus, setMultiplayerStatus] = useState<
+    "connecting" | "connected" | "error" | "disconnected"
+  >("connecting");
   const [status, setStatus] = useState("Walk with WASD or arrows. Tap the street to move.");
   const menuOpen = useRef(false);
   menuOpen.current = dialogue || directory;
   useEffect(() => {
     engine.current?.scene.lock(
-      busy || dialogue || directory || !navigator.onLine || document.hidden,
+      busy ||
+        dialogue ||
+        directory ||
+        multiplayerStatus !== "connected" ||
+        !navigator.onLine ||
+        document.hidden,
     );
-  }, [busy, dialogue, directory, loaded]);
+  }, [busy, dialogue, directory, loaded, multiplayerStatus]);
   const callbacks = useRef({
     checkpoint: async (_point: WorldPoint) => false,
     interact: (_object: NeighborhoodObject) => {},
+    movement: (_input: { x: number; y: number }) => {},
   });
   const checkpoint = async (point: WorldPoint) => {
     if (!character || pending.current) return false;
@@ -107,11 +120,14 @@ export function NeighborhoodGame() {
       pending.current = false;
       setBusy(false);
       engine.current?.scene.restore(confirmed.current);
-      engine.current?.scene.lock(!navigator.onLine || document.hidden);
+      engine.current?.scene.lock(
+        multiplayerStatus !== "connected" || !navigator.onLine || document.hidden,
+      );
     }
   };
   callbacks.current = {
     checkpoint,
+    movement: (input) => roomRef.current?.send("move", input),
     interact: (object) => {
       if (object.kind === "npc") {
         setDialogue(true);
@@ -171,7 +187,9 @@ export function NeighborhoodGame() {
       pending.current = false;
       setBusy(false);
       engine.current?.scene.restore(confirmed.current);
-      engine.current?.scene.lock(!navigator.onLine || document.hidden);
+      engine.current?.scene.lock(
+        multiplayerStatus !== "connected" || !navigator.onLine || document.hidden,
+      );
     }
   }
   const locationId = current?.id;
@@ -182,7 +200,7 @@ export function NeighborhoodGame() {
     setLoaded(false);
     setLoadError("");
     const entrance = current ? cityEntranceForRecord(current) : confirmed.current;
-    const origin = neighborhoodOrigin(entrance, confirmed.current);
+    const origin = neighborhoodAreaOrigin(entrance);
     loadNeighborhood()
       .then(({ createNeighborhoodGame: create }) => {
         if (cancelled || !host.current) return;
@@ -195,6 +213,7 @@ export function NeighborhoodGame() {
           },
           onInteract: (object) => callbacks.current.interact(object),
           saveCheckpoint: (point) => callbacks.current.checkpoint(point),
+          onMovementIntent: (input) => callbacks.current.movement(input),
         });
         engine.current = created;
         setLoaded(true);
@@ -207,7 +226,11 @@ export function NeighborhoodGame() {
       });
     const onVisibility = () => {
       engine.current?.scene.lock(
-        document.hidden || !navigator.onLine || pending.current || menuOpen.current,
+        document.hidden ||
+          !navigator.onLine ||
+          pending.current ||
+          menuOpen.current ||
+          multiplayerStatus !== "connected",
       );
       if (!navigator.onLine) setStatus("Offline. Movement is paused until you reconnect.");
     };
@@ -225,6 +248,65 @@ export function NeighborhoodGame() {
     // Snapshot changes restore the scene above; only district changes rebuild it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [characterId, locationId, locations.isPending, locations.isError, retry]);
+
+  useEffect(() => {
+    if (!loaded || !locationId || !engine.current) return;
+    let cancelled = false;
+    let joined: NeighborhoodRoom | null = null;
+    setMultiplayerStatus("connecting");
+    engine.current.scene.lock(true);
+
+    void joinNeighborhood(locationId)
+      .then((room) => {
+        if (cancelled) {
+          void room.leave();
+          return;
+        }
+        joined = room;
+        roomRef.current = room;
+        engine.current?.scene.setLocalSessionId(room.sessionId);
+        const syncPlayers = () => {
+          const snapshots = Array.from(
+            room.state.players.entries() as Iterable<[string, NetworkPlayerSnapshot]>,
+            ([sessionId, player]) => ({ sessionId, ...player }),
+          );
+          engine.current?.scene.syncNetworkPlayers(snapshots);
+        };
+        room.state.players.onAdd(syncPlayers);
+        room.state.players.onChange(syncPlayers);
+        room.state.players.onRemove(syncPlayers);
+        syncPlayers();
+        room.onLeave((_code, reason) => {
+          if (cancelled) return;
+          roomRef.current = null;
+          engine.current?.scene.setLocalSessionId(null);
+          engine.current?.scene.syncNetworkPlayers([]);
+          engine.current?.scene.lock(true);
+          setMultiplayerStatus("disconnected");
+          setStatus(
+            reason || "Connection lost. Reconnect to rejoin from your last saved checkpoint.",
+          );
+        });
+        setMultiplayerStatus("connected");
+        setStatus("Connected to your neighborhood. Other players here are real players.");
+        engine.current?.scene.lock(
+          !navigator.onLine || document.hidden || pending.current || menuOpen.current,
+        );
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        setMultiplayerStatus("error");
+        setStatus(error instanceof Error ? error.message : "Could not connect to the game server.");
+      });
+
+    return () => {
+      cancelled = true;
+      if (roomRef.current === joined) roomRef.current = null;
+      engine.current?.scene.setLocalSessionId(null);
+      engine.current?.scene.syncNetworkPlayers([]);
+      if (joined) void joined.leave();
+    };
+  }, [loaded, locationId, connectionAttempt]);
 
   const touch = (direction: MovementInput, pressed: boolean) =>
     engine.current?.scene.setTouch(direction, pressed);
@@ -314,7 +396,7 @@ export function NeighborhoodGame() {
           tabIndex={0}
         />
         {!loaded && !loadError && (
-          <div className="neighborhood-loading" role="status">
+          <div className="neighborhood-loading" aria-live="polite">
             Preparing your neighbourhood…
           </div>
         )}
@@ -331,6 +413,18 @@ export function NeighborhoodGame() {
             </button>
           </div>
         )}
+        {loaded && multiplayerStatus !== "connected" && !loadError && !locations.isError && (
+          <div className="neighborhood-loading" aria-live="polite">
+            <p>
+              {multiplayerStatus === "connecting"
+                ? "Connecting to the shared neighborhood…"
+                : status}
+            </p>
+            {multiplayerStatus !== "connecting" && (
+              <button onClick={() => setConnectionAttempt((value) => value + 1)}>Reconnect</button>
+            )}
+          </div>
+        )}
         <div className="neighborhood-zoom">
           <button aria-label="Zoom out" onClick={() => engine.current?.scene.zoom(-0.15)}>
             <Minus size={18} />
@@ -344,7 +438,7 @@ export function NeighborhoodGame() {
             <button
               key={direction}
               aria-label={label}
-              disabled={busy || !loaded}
+              disabled={busy || !loaded || multiplayerStatus !== "connected"}
               onPointerDown={(event) => {
                 event.currentTarget.setPointerCapture(event.pointerId);
                 touch(direction, true);
@@ -360,7 +454,7 @@ export function NeighborhoodGame() {
         {nearby && (
           <button
             className="neighborhood-interact"
-            disabled={busy}
+            disabled={busy || multiplayerStatus !== "connected"}
             onClick={() => engine.current?.scene.interact()}
           >
             {nearby.kind === "npc" ? "Talk to Bisi" : `Enter ${nearby.name}`}

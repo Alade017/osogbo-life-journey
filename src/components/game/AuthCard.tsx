@@ -22,7 +22,11 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
 
   useEffect(() => {
     if (mode !== "login") return;
-    if (new URLSearchParams(window.location.search).has("reset")) setResettingPassword(true);
+    if (
+      new URLSearchParams(window.location.search).has("reset") ||
+      new URLSearchParams(window.location.hash.slice(1)).get("type") === "recovery"
+    )
+      setResettingPassword(true);
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") setResettingPassword(true);
     });
@@ -65,7 +69,9 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
           email,
           password,
           options: {
-            emailRedirectTo: window.location.origin + "/create-character",
+            // Confirmation must return to a public route; the login page then
+            // resolves whether this account needs a character or has a save.
+            emailRedirectTo: `${window.location.origin}/login`,
             data: { username: username.trim() },
           },
         });
@@ -75,6 +81,8 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        // The protected game shell redirects new accounts to character creation
+        // and keeps returning accounts on their saved game.
         navigate({ to: "/home" });
       }
     } catch (err) {
@@ -155,8 +163,9 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
               <div>
                 <h2 className="text-2xl font-bold">Check your email</h2>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  We sent a confirmation link to <strong>{email}</strong>. Click it to activate your
-                  account, then come back to log in.
+                  We sent a confirmation link to <strong>{email}</strong>. Click it to confirm your
+                  account. You’ll return to the game to create a character or continue if you
+                  already have one.
                 </p>
                 <Button asChild variant="default" size="lg" className="mt-6 w-full">
                   <Link to="/login">Go to login</Link>

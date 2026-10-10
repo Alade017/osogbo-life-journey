@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite dev",
     "dev:public": "vite --config vite.public.config.ts",
+    "multiplayer:dev": "node --env-file-if-exists=.env --experimental-strip-types multiplayer/server.ts",
     "build:public": "vite build --config vite.public.config.ts",
     "build": "vite build",
     "build:dev": "vite build --mode development",
@@ -22,6 +23,8 @@
     "rolldown": "1.2.1"
   },
   "dependencies": {
+    "@colyseus/schema": "^5.0.8",
+    "@colyseus/sdk": "^0.18.5",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -61,8 +64,11 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
+    "colyseus": "^0.18.0",
+    "colyseus.js": "^0.16.0",
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
+    "express": "^5.3.0",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.575.0",
     "maplibre-gl": "^6.13.0",
@@ -79,13 +85,14 @@
     "three": "^0.186.1",
     "tw-animate-css": "^1.3.4",
     "vaul": "^1.1.2",
-    "zod": "^3.25.76"
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",
     "@eslint/js": "^9.32.0",
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.0.0",
+    "@types/express": "^5.0.6",
     "@types/node": "^22.16.5",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
