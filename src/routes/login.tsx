@@ -22,9 +22,20 @@ function LoginPage() {
   const navigate = useNavigate();
   // Returning from Google sign-in lands here; continue once the session exists.
   useEffect(() => {
+    // A recovery session must stay on the form until the password is changed.
+    if (new URLSearchParams(window.location.search).has("reset")) return;
+    let active = true;
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/home" });
+      if (active && data.session) navigate({ to: "/home" });
     });
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (active && session && (event === "SIGNED_IN" || event === "INITIAL_SESSION"))
+        void navigate({ to: "/home" });
+    });
+    return () => {
+      active = false;
+      data.subscription.unsubscribe();
+    };
   }, [navigate]);
   return <AuthCard mode="login" />;
 }

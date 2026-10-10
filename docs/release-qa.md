@@ -11,11 +11,11 @@
 ## Release configuration
 
 1. Configure `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` in the build environment. These values are browser-visible; use only the Supabase publishable/anon key. Do not place a service-role key in any `VITE_*` variable.
-2. Set server-only `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` in the deployment platform's secret store when the server runtime needs them. Configure `LOVABLE_CRON_SECRET` there only when scheduled endpoints are enabled. Keep `LOVABLE_DB_MIGRATION_URL` restricted to the migration job.
+2. Set server-only `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` in the deployment platform's secret store when the server runtime needs them. Configure `CRON_SECRET` there only when scheduled endpoints are enabled. Keep `DATABASE_URL` restricted to the migration job.
 3. Set a production map style in `VITE_OSOGBO_MAP_STYLE_URL`. If a Stadia key is required, `VITE_STADIA_MAPS_API_KEY` is public; restrict it to the production domain in the provider console.
 4. Set `VITE_ROUTING_BASE_URL` to a supported production routing service with suitable capacity and terms. The source's `router.project-osrm.org` default is a development fallback, not a production service commitment.
-5. Add the HTTPS production origin to Supabase Auth's site URL and redirect allowlist. Deploy the generated Cloudflare Module output using the repository's Lovable/Cloudflare release workflow and confirm HTTPS is enforced by the platform.
-6. Apply all ordered SQL migrations through `0023_restore_travel_to_location_rpc.sql` through the controlled database migration workflow. `drizzle.config.ts` reads `LOVABLE_DB_MIGRATION_URL`; the frontend does not apply migrations. Migration 0023 restores the mode-aware travel RPC and reloads PostgREST's schema cache.
+5. Add the HTTPS production origin to Supabase Auth's site URL and redirect allowlist. Deploy the generated Node server output to your chosen Node hosting service and confirm HTTPS is enforced by the platform.
+6. Apply all ordered SQL migrations through `0023_restore_travel_to_location_rpc.sql` through the controlled database migration workflow. `drizzle.config.ts` reads `DATABASE_URL`; the frontend does not apply migrations. Migration 0023 restores the mode-aware travel RPC and reloads PostgREST's schema cache.
 7. Verify RLS and RPC behavior against a staging Supabase project with two accounts before release. The local build cannot establish those permissions.
 
 ## Manual release checklist

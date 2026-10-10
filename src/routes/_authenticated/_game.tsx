@@ -63,19 +63,6 @@ function GameLayout() {
     if (!isLoading && !isError && !character) navigate({ to: "/create-character" });
   }, [isLoading, isError, character, navigate]);
 
-  // Server recalculates passive energy regeneration.
-  useEffect(() => {
-    if (!character?.id) return;
-    const tick = () =>
-      rpc
-        .refreshEnergy()
-        .then(() => qc.invalidateQueries({ queryKey: ["character"] }))
-        .catch(() => {});
-    tick();
-    const id = setInterval(tick, 120_000);
-    return () => clearInterval(id);
-  }, [character?.id, qc]);
-
   useEffect(() => {
     if (!character?.id) return;
     void rpc
@@ -105,6 +92,7 @@ function GameLayout() {
 
   return (
     <GameTimeProvider
+      key={character.id}
       gameTime={gameTimeFromCharacter(character)}
       character={character}
       wallet={Number(wallet?.balance ?? 0)}

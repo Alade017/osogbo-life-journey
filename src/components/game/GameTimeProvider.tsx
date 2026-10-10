@@ -1,116 +1,49 @@
-import {
+﻿import {
   createContext,
   useCallback,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import type { Character } from "@/lib/game";
 import type { GameTime } from "@/lib/game-time";
 import {
+  ACTION_CATALOG,
   createSimulationState,
-  advanceSimulation,
-  completeAction,
-  interruptAction,
-  isValidSimulationSnapshot,
-  queueActions,
-  restoreLocalSimulationSnapshot,
-  startAction,
-  startNextQueuedAction,
-  validateAction,
+  deriveMood,
   type LifeActionId,
   type SimulationState,
 } from "@/lib/life-simulation";
-import { readLocalSave, writeLocalSave } from "@/lib/save-storage";
+import {
+  simulationCommand,
+  type SimulationCommand,
+  type SimulationSnapshot,
+} from "@/lib/simulation-service";
 
-function sameTime(a: GameTime, b: GameTime) {
-  return a.minute === b.minute && a.hour === b.hour && a.day === b.day && a.weekday === b.weekday;
-}
-
-type GameTimeContextValue = {
+type ContextValue = {
   simulation: SimulationState;
+  syncError: string | null;
+  busy: boolean;
+  ready: boolean;
+  reconnect: () => void;
   pause: () => void;
   resume: () => void;
   setSpeed: (speed: 0.5 | 1 | 2) => void;
-  queue: (actions: readonly LifeActionId[]) => void;
-  startNext: (options?: { furniture?: readonly string[] }) => string | null;
+  queue: (actions: readonly LifeActionId[]) => Promise<string | null>;
+  startNext: (options?: { furniture?: readonly string[] }) => Promise<string | null>;
   start: (
     action: LifeActionId,
     requestId: string,
     options?: { furniture?: readonly string[]; targetLocationId?: string },
-  ) => string | null;
-  complete: (requestId: string) => string | null;
-  interrupt: (requestId?: string) => void;
+  ) => Promise<string | null>;
+  complete: (requestId: string) => Promise<string | null>;
+  interrupt: (requestId?: string) => Promise<string | null>;
 };
-
-const GameTimeContext = createContext<GameTimeContextValue | null>(null);
-const SAVE_KEY = "osogbo-life-simulation-v1";
-
-function makeInitialState(
-  character: Character,
-  wallet: number,
-  gameTime: GameTime,
-  locationType: SimulationState["locationType"],
-  locationId: string | null,
-) {
-  const personality = character.personality;
-  const traits: SimulationState["character"]["traits"] =
-    personality === "social"
-      ? ["sociable"]
-      : personality === "studious"
-        ? ["studious", "disciplined"]
-        : personality === "creative"
-          ? ["creative"]
-          : personality === "ambitious"
-            ? ["ambitious"]
-            : ["easygoing"];
-  let state = createSimulationState({
-    character: { id: character.id, name: character.name, level: character.level, traits },
-    needs: {
-      hunger: 100 - character.hunger,
-      energy: character.energy,
-      hygiene: 80,
-      bladder: 72,
-      fun: character.happiness,
-      social: character.social,
-    },
-    gameTime,
-    wallet,
-    locationId,
-    locationType,
-    experience: character.xp,
-    serverSnapshot: {
-      updatedAt: character.updated_at,
-      gameTime,
-      energy: character.energy,
-      hunger: character.hunger,
-      happiness: character.happiness,
-      social: character.social,
-      wallet,
-      experience: character.xp,
-      level: character.level,
-      locationId,
-    },
-  });
-  if (typeof window !== "undefined") {
-    try {
-      const validate = (value: unknown): SimulationState | null =>
-        isValidSimulationSnapshot(value, character.id) ? value : null;
-      const localSave =
-        readLocalSave(`${SAVE_KEY}:${character.id}`, validate) ?? readLocalSave(SAVE_KEY, validate);
-      const saved = localSave?.payload;
-      const savedAt = localSave?.savedAt
-        ? Date.parse(localSave.savedAt)
-        : (saved?.lastUpdatedAt ?? 0);
-      if (saved) state = restoreLocalSimulationSnapshot(state, saved, savedAt);
-    } catch {
-      /* Invalid snapshots are ignored and rebuilt from the character row. */
-    }
-  }
-  return state;
-}
+const GameTimeContext = createContext<ContextValue | null>(null);
 
 export function GameTimeProvider({
   children,
@@ -127,147 +60,240 @@ export function GameTimeProvider({
   locationType?: SimulationState["locationType"];
   locationId?: string | null;
 }) {
+  const qc = useQueryClient();
   const [simulation, setSimulation] = useState(() =>
-    makeInitialState(character, wallet, gameTime, locationType, locationId),
+    createSimulationState({
+      character: { id: character.id, name: character.name, level: character.level, traits: [] },
+      needs: {
+        hunger: 100 - character.hunger,
+        energy: character.energy,
+        hygiene: 80,
+        bladder: 72,
+        fun: character.happiness,
+        social: character.social,
+      },
+      gameTime,
+      wallet,
+      locationType,
+      locationId,
+      experience: character.xp,
+    }),
   );
-  useEffect(() => {
-    if (simulation.character.id !== character.id) {
-      setSimulation(makeInitialState(character, wallet, gameTime, locationType, locationId));
-      return;
-    }
-    setSimulation((current) => {
-      const source = current.serverSnapshot;
-      const incomingNeeds = { ...current.needs };
-      if (character.energy !== source.energy) incomingNeeds.energy = character.energy;
-      if (character.hunger !== source.hunger) incomingNeeds.hunger = 100 - character.hunger;
-      if (character.happiness !== source.happiness) incomingNeeds.fun = character.happiness;
-      if (character.social !== source.social) incomingNeeds.social = character.social;
-      const serverTimeChanged = !sameTime(gameTime, source.gameTime);
-      const walletChanged = wallet !== source.wallet;
-      const experienceChanged = character.xp !== source.experience;
-      const levelChanged = character.level !== source.level;
-      const locationChanged = locationId !== source.locationId;
-      const nextTime = serverTimeChanged ? gameTime : current.gameTime;
-      const nextLocationType = locationChanged ? locationType : current.locationType;
-      return {
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [ready, setReady] = useState(false);
+  const session = useRef<string>("");
+  const revision = useRef(0);
+  const inFlight = useRef(false);
+  const mounted = useRef(true);
+  const liveState = useRef(simulation);
+  liveState.current = simulation;
+
+  const applySnapshot = useCallback(
+    (s: SimulationSnapshot) => {
+      revision.current = s.revision;
+      setSimulation((current) => ({
         ...current,
-        character: { ...current.character, level: character.level },
-        needs: incomingNeeds,
-        gameTime: nextTime,
-        wallet: walletChanged ? wallet : current.wallet,
-        experience: experienceChanged ? character.xp : current.experience,
-        locationId: locationChanged ? locationId : current.locationId,
-        locationType: nextLocationType,
-        serverSnapshot: {
-          updatedAt: character.updated_at,
-          gameTime,
-          energy: character.energy,
-          hunger: character.hunger,
-          happiness: character.happiness,
-          social: character.social,
-          wallet,
-          experience: character.xp,
-          level: character.level,
-          locationId,
-        },
-      };
-    });
-  }, [
-    character.id,
-    character,
-    character.updated_at,
-    character.energy,
-    character.hunger,
-    character.happiness,
-    character.social,
-    character.xp,
-    character.level,
-    wallet,
-    gameTime.minute,
-    gameTime.hour,
-    gameTime.day,
-    gameTime.weekday,
-    gameTime,
-    locationId,
-    locationType,
-    simulation.character.id,
-  ]);
-  useEffect(() => {
-    const id = window.setInterval(
-      () =>
-        setSimulation((current) =>
-          advanceSimulation(current, Math.max(0, (Date.now() - current.lastUpdatedAt) / 1000)),
-        ),
-      6000,
-    );
-    return () => window.clearInterval(id);
-  }, []);
-  useEffect(() => {
-    try {
-      if (typeof window !== "undefined") {
-        const validate = (value: unknown): SimulationState | null =>
-          isValidSimulationSnapshot(value, character.id) ? value : null;
-        writeLocalSave(`${SAVE_KEY}:${character.id}`, simulation, validate);
-      }
-    } catch {
-      /* Storage can be unavailable in private browsing; memory state still works. */
-    }
-  }, [simulation, character.id]);
-  const pause = useCallback(() => setSimulation((current) => ({ ...current, paused: true })), []);
-  const resume = useCallback(
-    () => setSimulation((current) => ({ ...current, paused: false, lastUpdatedAt: Date.now() })),
-    [],
+        needs: s.needs,
+        gameTime: s.game_time,
+        paused: s.paused,
+        timeSpeed: s.speed,
+        skills: s.skills,
+        queuedActions: s.queued_actions,
+        mood: deriveMood(s.needs),
+        lastUpdatedAt: Date.now(),
+        currentAction:
+          s.action && s.request_id
+            ? {
+                actionId: s.action,
+                requestId: s.request_id,
+                startedAt: s.game_time,
+                animation: ACTION_CATALOG[s.action].animation,
+                reservedCost: 0,
+              }
+            : null,
+      }));
+      qc.setQueryData<Character | null>(["character"], (row) =>
+        row
+          ? {
+              ...row,
+              energy: Math.round(s.needs.energy),
+              hunger: 100 - Math.round(s.needs.hunger),
+              happiness: Math.round(s.needs.fun),
+              social: Math.round(s.needs.social),
+            }
+          : row,
+      );
+    },
+    [qc],
   );
+
+  const send = useCallback(
+    async (
+      command: SimulationCommand,
+      extra: {
+        action?: LifeActionId;
+        requestId?: string;
+        paused?: boolean;
+        speed?: 0.5 | 1 | 2;
+        queuedActions?: readonly LifeActionId[];
+      } = {},
+    ): Promise<string | null> => {
+      if (inFlight.current) return "Wait for the current activity to sync.";
+      if (document.hidden || !navigator.onLine) {
+        const message = "Reconnect and return to this tab to continue.";
+        if (!navigator.onLine) {
+          setReady(false);
+          setSyncError(message);
+        }
+        return message;
+      }
+      inFlight.current = true;
+      setBusy(true);
+      try {
+        if (!session.current) session.current = crypto.randomUUID();
+        const result = await simulationCommand({
+          session: session.current,
+          revision: revision.current,
+          command,
+          ...extra,
+        });
+        if (mounted.current) {
+          applySnapshot(result);
+          setReady(true);
+          setSyncError(null);
+        }
+        return null;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Could not sync your simulation.";
+        if (mounted.current) {
+          setSyncError(message);
+          setReady(false);
+        }
+        return message;
+      } finally {
+        inFlight.current = false;
+        if (mounted.current) setBusy(false);
+      }
+    },
+    [applySnapshot],
+  );
+
+  useEffect(() => {
+    mounted.current = true;
+    void send("open");
+    let needsOpen = false;
+    const onVisibility = () => {
+      needsOpen = true;
+      if (!navigator.onLine) {
+        setReady(false);
+        setSyncError("You are offline. Personal progress is stopped until you reconnect.");
+      }
+      if (!document.hidden && navigator.onLine) void send("open");
+    };
+    const tick = window.setInterval(() => {
+      if (document.hidden || !navigator.onLine || inFlight.current) {
+        needsOpen = true;
+        return;
+      }
+      const command = needsOpen ? "open" : "tick";
+      needsOpen = false;
+      void send(command).then((error) => {
+        if (error) needsOpen = true;
+      });
+    }, 6000);
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("online", onVisibility);
+    window.addEventListener("offline", onVisibility);
+    return () => {
+      mounted.current = false;
+      window.clearInterval(tick);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("online", onVisibility);
+      window.removeEventListener("offline", onVisibility);
+    };
+  }, [send]);
+
+  useEffect(() => {
+    setSimulation((current) => ({
+      ...current,
+      wallet,
+      experience: character.xp,
+      character: { ...current.character, name: character.name, level: character.level },
+      locationId,
+      locationType,
+    }));
+  }, [character.name, character.level, character.xp, wallet, locationId, locationType]);
+
+  const pause = useCallback(() => {
+    void send("settings", { paused: true });
+  }, [send]);
+  const resume = useCallback(() => {
+    void send("settings", { paused: false });
+  }, [send]);
   const setSpeed = useCallback(
-    (speed: 0.5 | 1 | 2) => setSimulation((current) => ({ ...current, timeSpeed: speed })),
-    [],
+    (speed: 0.5 | 1 | 2) => {
+      void send("settings", { speed });
+    },
+    [send],
   );
   const queue = useCallback(
-    (actions: readonly LifeActionId[]) =>
-      setSimulation((current) => queueActions(current, actions)),
-    [],
-  );
-  const startNext = useCallback(
-    (options?: { furniture?: readonly string[] }) => {
-      const result = startNextQueuedAction(simulation, options);
-      if (!result.error) setSimulation(result.state);
-      return result.error;
-    },
-    [simulation],
+    (actions: readonly LifeActionId[]) => send("queue", { queuedActions: actions }),
+    [send],
   );
   const start = useCallback(
-    (
-      action: LifeActionId,
-      requestId: string,
-      options?: { furniture?: readonly string[]; targetLocationId?: string },
-    ) => {
-      const error = validateAction(
-        simulation,
-        action,
-        options?.furniture,
-        options?.targetLocationId,
-      );
-      if (error) return error;
-      setSimulation((current) => startAction(current, action, requestId, options).state);
-      return null;
-    },
-    [simulation],
+    (action: LifeActionId, requestId: string) => send("start", { action, requestId }),
+    [send],
   );
+  const startNext = useCallback(async () => {
+    const action = liveState.current.queuedActions[0];
+    if (!action) return "Your activity queue is empty.";
+    const error = await start(action, `${action}-${crypto.randomUUID()}`);
+    return error;
+  }, [start]);
   const complete = useCallback(
     (requestId: string) => {
-      const result = completeAction(simulation, requestId);
-      if (!result.error) setSimulation(result.state);
-      return result.error;
+      const action = liveState.current.currentAction?.actionId;
+      if (!action) return Promise.resolve("There is no active activity.");
+      return send("complete", { action, requestId });
     },
-    [simulation],
+    [send],
   );
-  const interrupt = useCallback(
-    (requestId?: string) => setSimulation((current) => interruptAction(current, requestId)),
-    [],
-  );
+  const interrupt = useCallback(() => send("interrupt"), [send]);
+  const reconnect = useCallback(() => {
+    void send("open");
+  }, [send]);
   const value = useMemo(
-    () => ({ simulation, pause, resume, setSpeed, queue, startNext, start, complete, interrupt }),
-    [simulation, pause, resume, setSpeed, queue, startNext, start, complete, interrupt],
+    () => ({
+      simulation,
+      syncError,
+      busy,
+      ready,
+      reconnect,
+      pause,
+      resume,
+      setSpeed,
+      queue,
+      startNext,
+      start,
+      complete,
+      interrupt,
+    }),
+    [
+      simulation,
+      syncError,
+      busy,
+      ready,
+      reconnect,
+      pause,
+      resume,
+      setSpeed,
+      queue,
+      startNext,
+      start,
+      complete,
+      interrupt,
+    ],
   );
   return <GameTimeContext.Provider value={value}>{children}</GameTimeContext.Provider>;
 }

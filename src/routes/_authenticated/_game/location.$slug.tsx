@@ -21,7 +21,9 @@ import {
   travelAnimationDurationMs,
   validateTripRequest,
 } from "@/lib/transport-service";
-import { useGameTime } from "@/components/game/GameTimeProvider";
+import { useWorldClock } from "@/hooks/use-world-clock";
+import { INITIAL_GAME_TIME } from "@/lib/game-time";
+import { CityEventParticipation } from "@/components/game/CityEventParticipation";
 import {
   adjustedTripMinutes,
   travelConditionAdjustment,
@@ -34,8 +36,8 @@ export const Route = createFileRoute("/_authenticated/_game/location/$slug")({
 });
 
 function LocationPage() {
-  const { simulation } = useGameTime();
-  const gameTime = simulation.gameTime;
+  const { data: worldTime } = useWorldClock();
+  const gameTime = worldTime ?? INITIAL_GAME_TIME;
   const weather = weatherForDay(gameTime.day);
   const { slug } = Route.useParams();
   const [travelState, dispatchTravel] = useReducer(travelReducer, initialTravelState);
@@ -332,6 +334,7 @@ function LocationPage() {
       </div>
 
       {isHere && <CityBillboards locationId={loc.id} />}
+      <CityEventParticipation slug={slug} isHere={isHere} />
 
       {isHere && localPlaces.some((place) => ["bank", "atm"].includes(place.category)) && (
         <Link

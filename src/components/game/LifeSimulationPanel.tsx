@@ -28,8 +28,19 @@ const NEED_ICONS: Record<(typeof NEED_NAMES)[number], string> = {
 };
 
 export function LifeSimulationPanel() {
-  const { simulation, pause, resume, setSpeed, queue, startNext, start, complete, interrupt } =
-    useGameTime();
+  const {
+    simulation,
+    pause,
+    resume,
+    setSpeed,
+    queue,
+    startNext,
+    start,
+    complete,
+    interrupt,
+    busy,
+    ready,
+  } = useGameTime();
   const [message, setMessage] = useState("");
   const [requestId, setRequestId] = useState<string | null>(
     simulation.currentAction?.requestId ?? null,
@@ -56,9 +67,9 @@ export function LifeSimulationPanel() {
       window.removeEventListener("osogbo-life-home-changed", refreshFurniture);
     };
   }, []);
-  const doAction = (action: LifeActionId) => {
+  const doAction = async (action: LifeActionId) => {
     const id = `${action}-${crypto.randomUUID()}`;
-    const error = start(action, id, { furniture });
+    const error = await start(action, id, { furniture });
     if (error) {
       setMessage(error);
       return;
@@ -66,18 +77,18 @@ export function LifeSimulationPanel() {
     setRequestId(id);
     setMessage(`${ACTION_CATALOG[action].name} started.`);
   };
-  const finishAction = () => {
-    const id = requestId ?? simulation.currentAction?.requestId;
+  const finishAction = async () => {
+    const id = simulation.currentAction?.requestId ?? requestId;
     if (!id) return;
     const outcome = simulation.currentAction
       ? ACTION_CATALOG[simulation.currentAction.actionId].outcome
       : "Activity complete.";
-    const error = complete(id);
+    const error = await complete(id);
     setMessage(error ?? `${outcome} Needs and game clock updated.`);
     if (!error) setRequestId(null);
   };
-  const runQueue = () => {
-    const error = startNext();
+  const runQueue = async () => {
+    const error = await startNext();
     if (error) setMessage(error);
     else {
       setRequestId(simulation.currentAction?.requestId ?? null);
@@ -86,7 +97,11 @@ export function LifeSimulationPanel() {
   };
 
   return (
-    <section className="life-simulation-panel" aria-label="Life simulation">
+    <fieldset
+      disabled={busy || !ready}
+      className="life-simulation-panel min-w-0"
+      aria-label="Life simulation"
+    >
       <header className="life-simulation-head">
         <div>
           <p className="home-interior-eyebrow">LIFE SIMULATION</p>
@@ -173,9 +188,9 @@ export function LifeSimulationPanel() {
             </button>
             <button
               type="button"
-              onClick={() => {
-                queue(["study", "socialize"]);
-                setMessage("Study and socialize added to your action queue.");
+              onClick={async () => {
+                const error = await queue(["study", "socialize"]);
+                setMessage(error ?? "Study and socialize added to your action queue.");
               }}
               disabled={simulation.paused}
             >
@@ -227,10 +242,10 @@ export function LifeSimulationPanel() {
             </button>
             <button
               type="button"
-              onClick={() => {
-                interrupt(simulation.currentAction?.requestId);
-                setRequestId(null);
-                setMessage("Activity interrupted. Reserved resources were returned.");
+              onClick={async () => {
+                const error = await interrupt(simulation.currentAction?.requestId);
+                if (!error) setRequestId(null);
+                setMessage(error ?? "Activity interrupted.");
               }}
             >
               <RotateCcw size={15} />
@@ -249,6 +264,6 @@ export function LifeSimulationPanel() {
           {message}
         </p>
       )}
-    </section>
+    </fieldset>
   );
 }

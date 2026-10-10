@@ -420,25 +420,26 @@ What remains for Phase 2
 
 Build Phase 1 only.
 
-This project was built with [Lovable](https://lovable.dev).
+## Local development in VS Code
 
-**Live app**: https://osogbo-life-journey.lovable.app
+This repository builds independently with React, TanStack Start, Vite, Tailwind, and a Node server. Supabase provides authentication and the authoritative game database.
 
-## Build with Lovable
+Use Node.js 22.12 or newer. Open this folder in VS Code, configure .env using .env.example, and run:
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/71d03941-f17e-5bc2-bb21-66ffd5f50730).
-
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
-
-## Development
-
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
-
-```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
+```powershell
+npm.cmd install
+npm.cmd run dev
 ```
+
+Open http://127.0.0.1:3000. To test a production build locally:
+
+```powershell
+npm.cmd run build
+npm.cmd run preview
+```
+
+The production preview uses the Node server in .output/server/index.mjs. Stop the development server before starting preview if both use port 3000. Run npm.cmd run typecheck, npm.cmd run lint, and npm.cmd test for checks.
+
+Configure both VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY. For server features, configure SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY as well. Enable Google or guest authentication in your own Supabase project if using those login methods. Add http://127.0.0.1:3000/login and http://localhost:3000/login to Supabase Auth's redirect allowlist; also allow the character-creation and password-recovery redirects used by the interface.
+
+DATABASE_URL is a server-only PostgreSQL migration connection, separate from the public Supabase API URL/key. Apply the pending HUD migration with npm.cmd run db:migrate:hud once it is configured. See docs/shared-hud-simulation.md. Keep credentials out of version control.

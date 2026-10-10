@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import cityPhoto from "@/assets/osogbo-city.jpg";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -86,15 +85,18 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
   }
 
   async function google() {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + "/login",
-    });
-    if (result.error) {
-      toast.error(result.error.message ?? "Google sign-in failed");
-      return;
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/login` },
+      });
+      if (error) throw error;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Google sign-in failed");
+    } finally {
+      setBusy(false);
     }
-    if (result.redirected) return;
-    navigate({ to: "/home" });
   }
 
   async function continueAsGuest() {
@@ -309,7 +311,13 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
                       <span className="h-px flex-1 bg-border" /> OR{" "}
                       <span className="h-px flex-1 bg-border" />
                     </div>
-                    <Button variant="plain" size="lg" className="w-full" onClick={google}>
+                    <Button
+                      variant="plain"
+                      size="lg"
+                      className="w-full"
+                      onClick={google}
+                      disabled={busy}
+                    >
                       Continue with Google
                     </Button>
                     <Button

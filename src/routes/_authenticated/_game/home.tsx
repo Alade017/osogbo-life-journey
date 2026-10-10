@@ -16,7 +16,7 @@ import { LoadingState } from "@/components/game/ui";
 import { pageMeta } from "@/lib/seo";
 import { useLiveClock } from "@/hooks/use-live-clock";
 import { toast } from "sonner";
-import { useGameTime } from "@/components/game/GameTimeProvider";
+import { useWorldClock } from "@/hooks/use-world-clock";
 import { isPowerOutageAt } from "@/lib/world-simulation";
 
 export const Route = createFileRoute("/_authenticated/_game/home")({
@@ -26,7 +26,7 @@ export const Route = createFileRoute("/_authenticated/_game/home")({
 
 function CityHome() {
   const now = useLiveClock();
-  const { simulation } = useGameTime();
+  const world = useWorldClock();
   const { data: character } = useQuery(q.character());
   const homeQuery = useQuery({ ...q.homeSave(), enabled: !!character });
   const queryClient = useQueryClient();
@@ -284,7 +284,7 @@ function CityHome() {
                 ? { initialSave: cloudSave.payload }
                 : {})}
             onSave={scheduleSave}
-            powerAvailable={!isPowerOutageAt(simulation.gameTime)}
+            powerAvailable={world.data ? !isPowerOutageAt(world.data) : true}
           />
         </>
       )}

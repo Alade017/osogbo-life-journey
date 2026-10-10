@@ -9,7 +9,8 @@ export type WorldMapCategory =
   | "government"
   | "recreation"
   | "water_nature";
-export type WorldEntryLoop = "shop" | "work" | "study" | "recover" | "travel" | "explore" | "social";
+export type WorldEntryLoop =
+  "shop" | "work" | "study" | "recover" | "travel" | "explore" | "social";
 export type WorldBlueprintNode = {
   readonly slug: string;
   readonly name: string;
@@ -43,21 +44,174 @@ export const CITY_WORLD_BOUNDS = { minX: 0, maxX: 14, minY: 0, maxY: 12 } as con
 
 /** Immutable blueprint registry. Coordinates are normalized for scalable rendering. */
 export const OSOGBO_WORLD_NODES = {
-  "city-centre": { slug: "city-centre", name: "Olaiya", category: "commercial", anchor: { x: 0.50, y: 0.47 }, world: { x: 7, y: 6 }, neighbors: ["oja-oba", "government-area", "state-hospital", "isale-osun", "old-garage", "oke-fia"], jobContracts: ["office_assistant", "shop_assistant", "stock_assistant"], entryLoops: ["shop", "social", "explore"] },
-  "oja-oba": { slug: "oja-oba", name: "Oja-Oba Market", category: "commercial", anchor: { x: 0.60, y: 0.26 }, world: { x: 3, y: 5 }, neighbors: ["city-centre", "government-area", "student-district", "isale-osun"], jobContracts: ["market_trader", "market_sales_assistant", "food_vendor"], entryLoops: ["shop", "work", "social"] },
-  "government-area": { slug: "government-area", name: "Government Area · State Secretariat", category: "government", anchor: { x: 0.38, y: 0.21 }, world: { x: 5.32, y: 2.52 }, neighbors: ["city-centre", "oja-oba", "student-district", "oke-fia"], jobContracts: [], entryLoops: ["work", "social"] },
-  "student-district": { slug: "student-district", name: "UNIOSUN Campus", category: "education", anchor: { x: 0.12, y: 0.24 }, world: { x: 5, y: 9 }, neighbors: ["oja-oba", "government-area", "stadium", "oke-fia"], jobContracts: ["junior_frontend_developer", "computer_assistant", "tech_support_assistant", "computer_instructor"], entryLoops: ["study", "work", "social"] },
-  "cultural-district": { slug: "cultural-district", name: "Sacred Grove · Osun Sacred Forest", category: "water_nature", anchor: { x: 0.69, y: 0.07 }, world: { x: 2, y: 2 }, neighbors: ["oke-baale", "atiku", "city-centre"], jobContracts: [], entryLoops: ["explore", "social"] },
-  stadium: { slug: "stadium", name: "Stadium", category: "recreation", anchor: { x: 0.53, y: 0.73 }, world: { x: 7.42, y: 8.76 }, neighbors: ["student-district", "industrial-area", "airport-terminal", "atiku"], jobContracts: [], entryLoops: ["work", "explore", "social"] },
-  "state-hospital": { slug: "state-hospital", name: "State Hospital", category: "health", anchor: { x: 0.32, y: 0.44 }, world: { x: 4.48, y: 5.28 }, neighbors: ["city-centre", "oke-fia", "old-garage"], jobContracts: [], entryLoops: ["recover", "work"] },
-  "old-garage": { slug: "old-garage", name: "Transport Hub · Old Garage", category: "transport", anchor: { x: 0.14, y: 0.60 }, world: { x: 3, y: 8 }, neighbors: ["city-centre", "state-hospital", "industrial-area", "isale-osun"], jobContracts: ["driver_rider", "delivery_rider", "mechanic", "mechanic_assistant", "workshop_assistant"], entryLoops: ["travel", "work", "social"] },
-  "airport-terminal": { slug: "airport-terminal", name: "Airport · Terminal", category: "transport", anchor: { x: 0.75, y: 0.80 }, world: { x: 10.5, y: 9.6 }, neighbors: ["stadium", "atiku", "rural-outskirts"], jobContracts: [], entryLoops: ["travel", "work"] },
-  "oke-baale": { slug: "oke-baale", name: "Oke-Baale · Hill View", category: "recreation", anchor: { x: 0.48, y: 0.06 }, world: { x: 6.72, y: 0.72 }, neighbors: ["cultural-district", "government-area", "atiku"], jobContracts: [], entryLoops: ["explore", "social"] },
-  "isale-osun": { slug: "isale-osun", name: "Isale-Osun", category: "commercial", anchor: { x: 0.68, y: 0.56 }, world: { x: 9.52, y: 6.72 }, neighbors: ["city-centre", "oja-oba", "old-garage", "atiku"], jobContracts: [], entryLoops: ["shop", "work", "social"] },
-  atiku: { slug: "atiku", name: "Atiku Residential", category: "residential", anchor: { x: 0.93, y: 0.44 }, world: { x: 13.02, y: 5.28 }, neighbors: ["cultural-district", "oke-baale", "isale-osun", "stadium", "airport-terminal"], jobContracts: [], entryLoops: ["social", "explore"] },
-  "rural-outskirts": { slug: "rural-outskirts", name: "Outskirts · Farms & Village", category: "water_nature", anchor: { x: 0.92, y: 0.66 }, world: { x: 13, y: 11 }, neighbors: ["airport-terminal", "stadium"], jobContracts: ["farm_assistant"], entryLoops: ["work", "explore", "social"] },
-  "oke-fia": { slug: "oke-fia", name: "Oke-Fia", category: "residential", anchor: { x: 0.07, y: 0.44 }, world: { x: 10, y: 3 }, neighbors: ["city-centre", "government-area", "student-district", "state-hospital"], jobContracts: [], entryLoops: ["social", "explore"] },
-  "industrial-area": { slug: "industrial-area", name: "Industrial Area", category: "work_industrial", anchor: { x: 0.33, y: 0.75 }, world: { x: 4.62, y: 9 }, neighbors: ["old-garage", "stadium", "rural-outskirts"], jobContracts: [], entryLoops: ["work"] },
+  "city-centre": {
+    slug: "city-centre",
+    name: "Olaiya",
+    category: "commercial",
+    anchor: { x: 0.5, y: 0.47 },
+    world: { x: 7, y: 6 },
+    neighbors: [
+      "oja-oba",
+      "government-area",
+      "state-hospital",
+      "isale-osun",
+      "old-garage",
+      "oke-fia",
+    ],
+    jobContracts: ["office_assistant", "shop_assistant", "stock_assistant"],
+    entryLoops: ["shop", "social", "explore"],
+  },
+  "oja-oba": {
+    slug: "oja-oba",
+    name: "Oja-Oba Market",
+    category: "commercial",
+    anchor: { x: 0.6, y: 0.26 },
+    world: { x: 3, y: 5 },
+    neighbors: ["city-centre", "government-area", "student-district", "isale-osun"],
+    jobContracts: ["market_trader", "market_sales_assistant", "food_vendor"],
+    entryLoops: ["shop", "work", "social"],
+  },
+  "government-area": {
+    slug: "government-area",
+    name: "Government Area · State Secretariat",
+    category: "government",
+    anchor: { x: 0.38, y: 0.21 },
+    world: { x: 5.32, y: 2.52 },
+    neighbors: ["city-centre", "oja-oba", "student-district", "oke-fia"],
+    jobContracts: [],
+    entryLoops: ["work", "social"],
+  },
+  "student-district": {
+    slug: "student-district",
+    name: "UNIOSUN Campus",
+    category: "education",
+    anchor: { x: 0.12, y: 0.24 },
+    world: { x: 5, y: 9 },
+    neighbors: ["oja-oba", "government-area", "stadium", "oke-fia"],
+    jobContracts: [
+      "junior_frontend_developer",
+      "computer_assistant",
+      "tech_support_assistant",
+      "computer_instructor",
+    ],
+    entryLoops: ["study", "work", "social"],
+  },
+  "cultural-district": {
+    slug: "cultural-district",
+    name: "Sacred Grove · Osun Sacred Forest",
+    category: "water_nature",
+    anchor: { x: 0.69, y: 0.07 },
+    world: { x: 2, y: 2 },
+    neighbors: ["oke-baale", "atiku", "city-centre"],
+    jobContracts: [],
+    entryLoops: ["explore", "social"],
+  },
+  stadium: {
+    slug: "stadium",
+    name: "Stadium",
+    category: "recreation",
+    anchor: { x: 0.53, y: 0.73 },
+    world: { x: 7.42, y: 8.76 },
+    neighbors: ["student-district", "industrial-area", "airport-terminal", "atiku"],
+    jobContracts: [],
+    entryLoops: ["work", "explore", "social"],
+  },
+  "state-hospital": {
+    slug: "state-hospital",
+    name: "State Hospital",
+    category: "health",
+    anchor: { x: 0.32, y: 0.44 },
+    world: { x: 4.48, y: 5.28 },
+    neighbors: ["city-centre", "oke-fia", "old-garage"],
+    jobContracts: [],
+    entryLoops: ["recover", "work"],
+  },
+  "old-garage": {
+    slug: "old-garage",
+    name: "Transport Hub · Old Garage",
+    category: "transport",
+    anchor: { x: 0.14, y: 0.6 },
+    world: { x: 3, y: 8 },
+    neighbors: ["city-centre", "state-hospital", "industrial-area", "isale-osun"],
+    jobContracts: [
+      "driver_rider",
+      "delivery_rider",
+      "mechanic",
+      "mechanic_assistant",
+      "workshop_assistant",
+    ],
+    entryLoops: ["travel", "work", "social"],
+  },
+  "airport-terminal": {
+    slug: "airport-terminal",
+    name: "Airport · Terminal",
+    category: "transport",
+    anchor: { x: 0.75, y: 0.8 },
+    world: { x: 10.5, y: 9.6 },
+    neighbors: ["stadium", "atiku", "rural-outskirts"],
+    jobContracts: [],
+    entryLoops: ["travel", "work"],
+  },
+  "oke-baale": {
+    slug: "oke-baale",
+    name: "Oke-Baale · Hill View",
+    category: "recreation",
+    anchor: { x: 0.48, y: 0.06 },
+    world: { x: 6.72, y: 0.72 },
+    neighbors: ["cultural-district", "government-area", "atiku"],
+    jobContracts: [],
+    entryLoops: ["explore", "social"],
+  },
+  "isale-osun": {
+    slug: "isale-osun",
+    name: "Isale-Osun",
+    category: "commercial",
+    anchor: { x: 0.68, y: 0.56 },
+    world: { x: 9.52, y: 6.72 },
+    neighbors: ["city-centre", "oja-oba", "old-garage", "atiku"],
+    jobContracts: [],
+    entryLoops: ["shop", "work", "social"],
+  },
+  atiku: {
+    slug: "atiku",
+    name: "Atiku Residential",
+    category: "residential",
+    anchor: { x: 0.93, y: 0.44 },
+    world: { x: 13.02, y: 5.28 },
+    neighbors: ["cultural-district", "oke-baale", "isale-osun", "stadium", "airport-terminal"],
+    jobContracts: [],
+    entryLoops: ["social", "explore"],
+  },
+  "rural-outskirts": {
+    slug: "rural-outskirts",
+    name: "Outskirts · Farms & Village",
+    category: "water_nature",
+    anchor: { x: 0.92, y: 0.66 },
+    world: { x: 13, y: 11 },
+    neighbors: ["airport-terminal", "stadium"],
+    jobContracts: ["farm_assistant"],
+    entryLoops: ["work", "explore", "social"],
+  },
+  "oke-fia": {
+    slug: "oke-fia",
+    name: "Oke-Fia",
+    category: "residential",
+    anchor: { x: 0.07, y: 0.44 },
+    world: { x: 10, y: 3 },
+    neighbors: ["city-centre", "government-area", "student-district", "state-hospital"],
+    jobContracts: [],
+    entryLoops: ["social", "explore"],
+  },
+  "industrial-area": {
+    slug: "industrial-area",
+    name: "Industrial Area",
+    category: "work_industrial",
+    anchor: { x: 0.33, y: 0.75 },
+    world: { x: 4.62, y: 9 },
+    neighbors: ["old-garage", "stadium", "rural-outskirts"],
+    jobContracts: [],
+    entryLoops: ["work"],
+  },
 } as const satisfies Readonly<Record<string, WorldBlueprintNode>>;
 
 export const CITY_DISTRICTS: CityWorldDistrict[] = [
@@ -269,7 +423,12 @@ export function cityPositionForRecord(location: {
   if (known) return known.position;
   const canvasX = location.canvas_x;
   const canvasY = location.canvas_y;
-  if (typeof canvasX === "number" && Number.isFinite(canvasX) && typeof canvasY === "number" && Number.isFinite(canvasY)) {
+  if (
+    typeof canvasX === "number" &&
+    Number.isFinite(canvasX) &&
+    typeof canvasY === "number" &&
+    Number.isFinite(canvasY)
+  ) {
     return {
       x: Math.round(Math.max(0, Math.min(1, canvasX) * CITY_WORLD_BOUNDS.maxX) * 100) / 100,
       y: Math.round(Math.max(0, Math.min(1, canvasY) * CITY_WORLD_BOUNDS.maxY) * 100) / 100,

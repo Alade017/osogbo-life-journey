@@ -6602,3 +6602,331 @@
     transform: none;
   }
 }
+
+/* Shared game chrome: explicit grid areas prevent narrow clock columns. */
+.game-hud.hud-v2 {
+  grid-template-columns: minmax(0, 1fr) minmax(140px, 1fr) auto 44px;
+  grid-template-areas: "player xp balance notifications" "needs needs needs needs" "location time time time" "live live live live" "sync sync sync sync";
+  gap: 12px;
+  padding: 16px;
+  min-height: auto;
+  color: var(--foreground);
+  background: var(--card);
+  border-color: var(--border);
+}
+.hud-v2 .game-hud-brand {
+  display: none;
+}
+.hud-v2 .game-hud-player {
+  grid-area: player;
+  border: 0;
+  padding: 0;
+}
+.hud-v2 .game-hud-xp {
+  grid-area: xp;
+  display: block;
+}
+.hud-v2 .game-hud-balance {
+  grid-area: balance;
+  max-width: none;
+  padding: 9px 12px;
+}
+.hud-v2 .game-hud-notifications {
+  grid-area: notifications;
+  width: 44px;
+  height: 44px;
+}
+.hud-v2 .game-hud-avatar {
+  width: 40px;
+  height: 42px;
+  flex-basis: 40px;
+}
+.hud-v2 .game-hud-player > span:last-child > span:first-child {
+  font-size: 14px;
+}
+.hud-v2 .game-hud-balance .game-hud-item-copy strong {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.hud-v2 .game-hud-item-copy small {
+  font-size: 9px;
+  line-height: 1.4;
+}
+.hud-v2 .game-hud-location {
+  grid-area: location;
+  padding: 10px;
+  min-width: 0;
+}
+.hud-v2 .game-hud-location .game-hud-item-copy {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
+}
+.hud-v2 .game-hud-location .game-hud-item-copy small {
+  display: block;
+}
+.hud-v2 .game-hud-location .game-hud-item-copy strong {
+  font-size: 12px;
+}
+.hud-v2 .game-hud-location .game-hud-item-copy > span {
+  display: none;
+}
+.hud-v2 .game-hud-time {
+  grid-area: time;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  min-width: 0;
+}
+.hud-v2 .game-hud-time .game-hud-item-copy strong {
+  font-size: 16px;
+  white-space: nowrap;
+}
+.hud-v2 .game-hud-time .game-hud-item-copy > span {
+  display: block;
+  font-size: 10px;
+}
+.hud-v2 .game-hud-simulation-controls {
+  margin: 0;
+  gap: 6px;
+}
+.hud-v2 .game-hud-simulation-controls button,
+.hud-v2 .game-hud-simulation-controls select {
+  min-height: 40px;
+  min-width: 40px;
+  font-size: 12px;
+  color: var(--foreground);
+  border-color: var(--border);
+  background: var(--card);
+}
+.hud-v2 button:disabled,
+.hud-v2 select:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+.hud-needs {
+  grid-area: needs;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+.hud-need {
+  position: relative;
+  min-width: 0;
+  color: var(--muted-foreground);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--background);
+}
+.hud-need summary {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 5px;
+  padding: 10px;
+  cursor: pointer;
+  list-style: none;
+  font-size: 11px;
+  min-height: 44px;
+}
+.hud-need summary::-webkit-details-marker {
+  display: none;
+}
+.hud-need summary > span:not(.hud-need-track) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.hud-need summary strong {
+  color: var(--foreground);
+  font-variant-numeric: tabular-nums;
+}
+.hud-need-track {
+  grid-column: 1 / -1;
+  height: 3px;
+  border-radius: 4px;
+  background: var(--border);
+  overflow: hidden;
+}
+.hud-need-track i {
+  display: block;
+  height: 100%;
+  background: var(--primary);
+  border-radius: inherit;
+}
+.hud-need.is-warning .hud-need-track i {
+  background: var(--color-warning);
+}
+.hud-need.is-critical .hud-need-track i {
+  background: var(--destructive);
+}
+.hud-need-menu {
+  position: absolute;
+  z-index: 65;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 210px;
+  padding: 12px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  font-size: 12px;
+}
+.hud-need:nth-last-child(-n + 3) .hud-need-menu {
+  left: auto;
+  right: 0;
+}
+.hud-need-menu p {
+  margin-bottom: 6px;
+}
+.hud-need-menu a {
+  display: block;
+  color: var(--primary);
+  font-weight: 600;
+  padding-block: 8px;
+}
+.hud-live-clock {
+  grid-area: live;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 11px;
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+.hud-live-clock > span {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  font-weight: 700;
+}
+.hud-sync {
+  grid-area: sync;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+.hud-sync button {
+  color: var(--primary);
+  text-decoration: underline;
+  padding: 6px;
+}
+.world-environment {
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  padding: 10px 16px;
+  color: var(--foreground);
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.world-environment .world-condition {
+  color: var(--muted-foreground);
+}
+.world-environment .world-event {
+  margin-left: auto;
+  color: var(--primary);
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.world-environment .world-clock-label {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted-foreground);
+}
+.phone-compact-label {
+  font-size: 10px;
+  font-weight: 600;
+}
+.game-side-phone .phone-compact-label {
+  display: none;
+}
+.game-mobile-nav {
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+  align-items: stretch;
+}
+.game-mobile-nav .mobile-nav-link,
+.game-mobile-nav .mobile-nav-phone {
+  width: auto;
+  height: auto;
+  min-height: 54px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin: 0;
+  border: 0;
+  box-shadow: none;
+  border-radius: 12px;
+  background: transparent;
+  font-size: 11px;
+}
+.game-mobile-nav .mobile-nav-active {
+  background: var(--background);
+  font-weight: 700;
+}
+.game-mobile-nav .mobile-nav-phone .phone-launcher-icon {
+  width: 24px;
+  height: 27px;
+  border-radius: 7px;
+}
+.hud-v2 :focus-visible,
+.game-mobile-nav :focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+@media (max-width: 820px) {
+  .game-hud.hud-v2 {
+    grid-template-columns: minmax(0, 1fr) auto 44px;
+    grid-template-areas: "player balance notifications" "needs needs needs" "location location location" "time time time" "live live live" "sync sync sync";
+    gap: 10px;
+    margin: 8px;
+    padding: 12px;
+    top: 0;
+    position: relative;
+  }
+  .hud-v2 .game-hud-xp {
+    display: none;
+  }
+  .hud-needs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+  .hud-need summary {
+    padding: 8px;
+  }
+  .hud-need:nth-child(3n) .hud-need-menu {
+    left: auto;
+    right: 0;
+  }
+  .hud-need:nth-child(3n + 1) .hud-need-menu {
+    left: 0;
+    right: auto;
+  }
+  .hud-v2 .game-hud-location .game-hud-item-copy strong {
+    font-size: 13px;
+  }
+  .world-environment .world-event {
+    margin-left: 0;
+    flex-basis: 100%;
+  }
+}
+@media (max-width: 380px) {
+  .hud-need summary {
+    grid-template-columns: 14px minmax(0, 1fr);
+    font-size: 10px;
+  }
+  .hud-need summary strong {
+    grid-column: 2;
+  }
+  .hud-v2 .game-hud-balance {
+    padding-inline: 8px;
+  }
+  .hud-v2 .game-hud-avatar {
+    display: none;
+  }
+}

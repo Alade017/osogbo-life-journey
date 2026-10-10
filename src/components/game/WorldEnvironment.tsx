@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
 import { CalendarDays, CloudRain, Sun, Zap } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { useGameTime } from "@/components/game/GameTimeProvider";
+import { useWorldClock } from "@/hooks/use-world-clock";
+import { INITIAL_GAME_TIME } from "@/lib/game-time";
 import { formatGameTime } from "@/lib/game-time";
 import {
   activeCityEvents,
@@ -20,8 +21,8 @@ const WEATHER_LABEL = {
 } as const;
 
 export function WorldEnvironment() {
-  const { simulation } = useGameTime();
-  const time = simulation.gameTime;
+  const world = useWorldClock();
+  const time = world.data ?? INITIAL_GAME_TIME;
   const phase = dayPhaseAt(time);
   const weather = weatherForDay(time.day);
   const events = activeCityEvents(time, weather);
@@ -30,6 +31,7 @@ export function WorldEnvironment() {
   const lastAnnouncement = useRef("");
 
   useEffect(() => {
+    if (!world.data) return;
     const key = `${time.day}:${events.map((event) => event.id).join(",")}:${outage}`;
     if (lastAnnouncement.current && key !== lastAnnouncement.current) {
       for (const event of events)
@@ -44,7 +46,19 @@ export function WorldEnvironment() {
       if (previousEvents && !events.length) toast.message("The city event has ended.");
     }
     lastAnnouncement.current = key;
-  }, [events, outage, time.day]);
+  }, [events, outage, time.day, world.data]);
+
+  if (!world.data)
+    return (
+      <div className="world-environment" role="status">
+        {world.isError ? "City conditions unavailable" : "Connecting to the city clock…"}
+        {world.isError && (
+          <button type="button" onClick={() => void world.refetch()}>
+            Retry
+          </button>
+        )}
+      </div>
+    );
 
   return (
     <div
@@ -66,6 +80,7 @@ export function WorldEnvironment() {
       <span className="world-condition">
         <CloudRain size={15} /> {WEATHER_LABEL[weather]}
       </span>
+      <span className="world-clock-label">CITY · {formatGameTime(time)}</span>
       {outage && (
         <span className="world-condition world-outage">
           <Zap size={15} /> Home power outage · until 8 PM
@@ -78,7 +93,7 @@ export function WorldEnvironment() {
           params={{ slug: events[0]!.locationSlug }}
           title={events[0]!.participationRule}
         >
-          <CalendarDays size={15} /> {events[0]!.title} · {formatGameTime(time)}· Join
+          <CalendarDays size={15} /> {events[0]!.title} · View event →
         </Link>
       ) : upcoming ? (
         <Link

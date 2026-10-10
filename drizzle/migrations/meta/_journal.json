@@ -176,6 +176,13 @@
       "when": 1791594000002,
       "tag": "0023_restore_travel_to_location_rpc",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1791594000003,
+      "tag": "0024_shared_hud_simulation",
+      "breakpoints": true
     }
   ]
 }

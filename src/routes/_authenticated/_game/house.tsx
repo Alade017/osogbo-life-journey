@@ -54,7 +54,11 @@ function HousePage() {
       {isLoading ? (
         <LoadingState />
       ) : listingsError ? (
-        <section className="game-panel space-y-3 p-5" aria-label="Property listings error" role="alert">
+        <section
+          className="game-panel space-y-3 p-5"
+          aria-label="Property listings error"
+          role="alert"
+        >
           <h2 className="font-display text-lg font-bold">Property listings are unavailable</h2>
           <p className="text-sm text-muted-foreground">
             We couldn’t load the current homes. Your saved home interior is still available below.

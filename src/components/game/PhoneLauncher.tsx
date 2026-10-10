@@ -62,7 +62,7 @@ export function PhoneLauncher({
           <span className="phone-launcher-icon">
             <span />
           </span>
-          {!compact && <span>Phone</span>}
+          <span className={compact ? "phone-compact-label" : undefined}>Phone</span>
         </button>
       </DialogTrigger>
       <DialogContent className="phone-dialog">

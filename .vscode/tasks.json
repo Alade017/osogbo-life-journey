@@ -1,0 +1,37 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Game: develop",
+      "type": "shell",
+      "command": "npm.cmd",
+      "args": ["run", "dev"],
+      "isBackground": true,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Game: build",
+      "type": "shell",
+      "command": "npm.cmd",
+      "args": ["run", "build"],
+      "problemMatcher": [],
+      "group": { "kind": "build", "isDefault": true }
+    },
+    {
+      "label": "Game: check types",
+      "type": "shell",
+      "command": "npm.cmd",
+      "args": ["run", "typecheck"],
+      "problemMatcher": "$tsc"
+    },
+    {
+      "label": "Game: test",
+      "type": "shell",
+      "command": "npm.cmd",
+      "args": ["test", "--", "--maxWorkers=1", "--pool=threads"],
+      "problemMatcher": [],
+      "group": "test"
+    }
+  ]
+}

@@ -1533,6 +1533,21 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      world_clock: { Args: never; Returns: Json };
+      personal_simulation_command: {
+        Args: {
+          p_session: string;
+          p_revision: number;
+          p_command: string;
+          p_action?: string;
+          p_request?: string;
+          p_paused?: boolean;
+          p_speed?: number;
+          p_queue?: Json;
+        };
+        Returns: Json;
+      };
+      join_city_event: { Args: { p_event: string }; Returns: Json };
       my_home_save: { Args: never; Returns: Json };
       save_my_home: { Args: { p_expected_revision: number; p_payload: Json }; Returns: Json };
       interact_with_npc: {

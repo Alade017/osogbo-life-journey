@@ -70,9 +70,10 @@ describe("fictional city world model", () => {
     const location = { slug: "new-waterfront-park", map_x: 41, map_y: 62 };
     expect(cityPositionForRecord(location)).toEqual({ x: 5.74, y: 7.44 });
     expect(cityEntranceForRecord(location)).toEqual({ x: 5.74, y: 7.44 });
-    expect(
-      cityPositionForRecord({ ...location, canvas_x: 0.1, canvas_y: 0.2 }),
-    ).toEqual({ x: 1.4, y: 2.4 });
+    expect(cityPositionForRecord({ ...location, canvas_x: 0.1, canvas_y: 0.2 })).toEqual({
+      x: 1.4,
+      y: 2.4,
+    });
     expect(cityPositionForRecord({ slug: "oja-oba", map_x: 0, map_y: 0 })).toEqual({ x: 3, y: 4 });
   });
 

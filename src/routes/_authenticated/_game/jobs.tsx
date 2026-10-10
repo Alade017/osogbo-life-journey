@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { JOB_CATEGORIES, JOB_CATEGORY_LABELS, resolveJobCategory } from "@/lib/job-activity-model";
 import { checkJobEligibility, filterJobListings } from "@/lib/job-board-service";
 import { formatGameTime } from "@/lib/game-time";
+import { useWorldClock } from "@/hooks/use-world-clock";
 
 export const Route = createFileRoute("/_authenticated/_game/jobs")({
   head: () => pageMeta("Jobs", "Take a job in Osogbo and work shifts to earn in-game Naira."),
@@ -40,6 +41,7 @@ function fmt(ms: number) {
 }
 
 function JobsPage() {
+  const { data: worldTime } = useWorldClock();
   const now = useNow();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
@@ -143,6 +145,11 @@ function JobsPage() {
   const currentShiftPay = currentJob
     ? careerShiftPay(currentJob.salary, current?.career_level ?? 1)
     : 0;
+  const shiftOpen =
+    !!currentJob &&
+    !!worldTime &&
+    worldTime.hour >= currentJob.shift_start_hour &&
+    worldTime.hour < currentJob.shift_end_hour;
 
   return (
     <div className="jobs-page">
@@ -235,11 +242,17 @@ function JobsPage() {
               size="lg"
               className="jobs-start-button"
               disabled={
-                !currentQualified || cooling || work.isPending || c.energy < currentJob.energy_cost
+                !shiftOpen ||
+                !currentQualified ||
+                cooling ||
+                work.isPending ||
+                c.energy < currentJob.energy_cost
               }
               onClick={() => setWorkSessionOpen(true)}
             >
-              {!currentQualified ? (
+              {!shiftOpen ? (
+                `City shift hours: ${currentJob.shift_start_hour}:00–${currentJob.shift_end_hour}:00`
+              ) : !currentQualified ? (
                 (currentEligibility.reasons[0] ??
                 `Complete ${currentRequirement?.name ?? "required course"}`)
               ) : cooling ? (
