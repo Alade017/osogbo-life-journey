@@ -1,4 +1,4 @@
-import { OSOGBO_WORLD_NODES, type WorldMapCategory } from "../lib/city-world";
+import { OSOGBO_WORLD_NODES, type WorldMapCategory } from "../lib/city-world.ts";
 
 export type WorldPoint = { x: number; y: number };
 export type NeighborhoodObject = {

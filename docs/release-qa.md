@@ -1,5 +1,34 @@
 # Milestone 12 release QA
 
+## Milestone 9 verification update — 2026-10-11
+
+### Local checks
+
+- `npm.cmd run typecheck`: passed.
+- `npm.cmd run lint`: passed with 0 errors and 15 Fast Refresh warnings.
+- `npm.cmd run build`: passed. Existing client chunks over 500 kB and plugin timing notices remain.
+- `npm.cmd run build:public`: passed.
+- Focused Vitest runs passed: `neighborhood-model.test.ts` (6), `authoritative-movement.test.ts` (6), `player-social.test.tsx` (2), and `shared-hud-database.test.ts` (12), for 26 tests across 4 files.
+- The first local Colyseus startup failed because Node's native TypeScript runner could not resolve an extensionless import. `src/game/neighborhood-model.ts` now imports `../lib/city-world.ts` explicitly.
+- After that fix, `npm.cmd run multiplayer:dev` started at `127.0.0.1:2567`. Read-only client probes confirmed empty-token joins and joins without an allowed Origin are rejected before Supabase access. The local server was stopped after the probes.
+- `npm.cmd test -- --reporter=verbose --pool=forks --maxWorkers=1`: passed after the import fix, 180 tests across 44 files (202.88 seconds). The verbose reporter exposed progress that the earlier default-reporter runs did not show before they were interrupted.
+- `git diff --check`: passed.
+
+### Production delivery check
+
+- Vercel reported the production deployment `osogbo-life-journey-opurvfq6j-alade017.vercel.app` as Ready and attached the `osogbo-life-journey-alade017.vercel.app` production alias.
+- An authenticated read-only request returned the OSOGBO LIFE homepage HTML. Deployment Protection is enabled.
+- This verifies frontend delivery only. It does not verify browser interaction, Supabase operations, or multiplayer behavior.
+
+### Remaining acceptance gates
+
+- Authenticated Supabase checks with two accounts, including RLS, migration state, realtime subscriptions, and travel/economy RPCs, remain unverified. No database changes were made.
+- The Colyseus server still lacks a configured hosted endpoint and authenticated two-client production/staging verification.
+- Desktop/mobile rendering, accessibility, touch behavior, and device performance require real browser/device checks.
+- Operational monitoring, routing-provider capacity/terms, and end-to-end save recovery still require a configured staging environment.
+
+Milestone 9 is **in progress**, not complete. Production deployment readiness and local build/type/lint checks passed; the gates above remain prerequisites for release readiness.
+
 ## Baseline recorded before changes
 
 - `npm.cmd test`: passed, 118 tests in 29 files.

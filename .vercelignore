@@ -1,0 +1,14 @@
+.aws/
+.agents/
+.codex/
+.smoke/
+.npm-cache/
+.env*
+.output/
+.tanstack/
+.wrangler-cache/
+.hud-build.log
+supabase/.temp/
+dist/
+dist-public/
+dist-ssr/
