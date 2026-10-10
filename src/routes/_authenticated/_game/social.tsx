@@ -16,9 +16,13 @@ import {
 import { pageMeta } from "@/lib/seo";
 import { weatherForDay } from "@/lib/world-simulation";
 import { toast } from "sonner";
+import { PlayerSocial } from "@/components/game/PlayerSocial";
 
 export const Route = createFileRoute("/_authenticated/_game/social")({
   head: () => pageMeta("People of Osogbo", "Meet neighbours and build lasting relationships."),
+  validateSearch: (search: Record<string, unknown>) => ({
+    playerId: typeof search["playerId"] === "string" ? search["playerId"] : undefined,
+  }),
   component: SocialPage,
 });
 
@@ -36,6 +40,7 @@ const ACTION_LABELS: Record<SocialAction, string> = {
 };
 
 function SocialPage() {
+  const { playerId } = Route.useSearch();
   const { simulation } = useGameTime();
   const { data: character, isLoading: characterLoading } = useQuery(q.character());
   const { data: npcRowsData, isLoading: npcsLoading } = useQuery(q.npcs());
@@ -82,6 +87,7 @@ function SocialPage() {
 
   return (
     <div className="space-y-5">
+      <PlayerSocial initialPlayerId={playerId} />
       <PageHeader
         title="People of Osogbo"
         subtitle="Familiar faces keep their own routines. Meet them where the day takes them."

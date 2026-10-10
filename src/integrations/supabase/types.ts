@@ -1533,6 +1533,50 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      search_player_profiles: { Args: { p_query: string; p_limit?: number }; Returns: Json };
+      get_player_profile: { Args: { p_character_id: string }; Returns: Json };
+      get_player_social_overview: { Args: never; Returns: Json };
+      send_player_friend_request: {
+        Args: { p_target_character_id: string; p_request_id: string };
+        Returns: Json;
+      };
+      respond_player_friend_request: {
+        Args: { p_request_id: string; p_accept: boolean };
+        Returns: Json;
+      };
+      cancel_player_friend_request: { Args: { p_request_id: string }; Returns: Json };
+      remove_player_friend: { Args: { p_target_character_id: string }; Returns: Json };
+      block_player: { Args: { p_target_character_id: string }; Returns: Json };
+      unblock_player: { Args: { p_target_character_id: string }; Returns: Json };
+      get_or_create_player_conversation: { Args: { p_target_character_id: string }; Returns: Json };
+      send_social_message: {
+        Args: {
+          p_channel: string;
+          p_body: string;
+          p_request_id: string;
+          p_location_id?: string | null;
+          p_conversation_id?: string | null;
+        };
+        Returns: Json;
+      };
+      get_social_messages: {
+        Args: {
+          p_location_id?: string | null;
+          p_conversation_id?: string | null;
+          p_before?: string | null;
+          p_limit?: number;
+        };
+        Returns: Json;
+      };
+      report_player: {
+        Args: {
+          p_target_character_id: string;
+          p_category: string;
+          p_details?: string;
+          p_message_id?: string | null;
+        };
+        Returns: Json;
+      };
       world_clock: { Args: never; Returns: Json };
       personal_simulation_command: {
         Args: {

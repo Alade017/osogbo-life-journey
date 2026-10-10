@@ -1,10 +1,19 @@
 import type { MovementIntent, NetworkPlayerSnapshot } from "./multiplayer-state.ts";
-import { NEIGHBORHOOD_OBJECTS, toScene, type WorldPoint } from "./neighborhood-model.ts";
+import {
+  NEIGHBORHOOD_OBJECTS,
+  toScene,
+  type NeighborhoodObject,
+  type WorldPoint,
+} from "./neighborhood-model.ts";
 
 export const PLAYER_SPEED = 0.6875;
 export const PLAYER_WORLD_BOUNDS = { minX: 0, maxX: 14, minY: 0, maxY: 12 } as const;
 
-export function canOccupyNeighborhoodPoint(point: WorldPoint, origin: WorldPoint) {
+export function canOccupyNeighborhoodPoint(
+  point: WorldPoint,
+  origin: WorldPoint,
+  objects: readonly NeighborhoodObject[] = NEIGHBORHOOD_OBJECTS,
+) {
   const scenePoint = toScene(point, origin);
   const body = {
     left: scenePoint.x - 8,
@@ -12,7 +21,7 @@ export function canOccupyNeighborhoodPoint(point: WorldPoint, origin: WorldPoint
     top: scenePoint.y + 8,
     bottom: scenePoint.y + 20,
   };
-  return NEIGHBORHOOD_OBJECTS.every((object) => {
+  return objects.every((object) => {
     if (object.kind === "npc") return true;
     const solid = {
       left: object.x - 57,
@@ -53,6 +62,7 @@ export function stepAuthoritativePosition(
   intent: MovementIntent,
   deltaSeconds: number,
   origin: WorldPoint = { x: 7, y: 6 },
+  objects: readonly NeighborhoodObject[] = NEIGHBORHOOD_OBJECTS,
 ) {
   if (!Number.isFinite(deltaSeconds) || deltaSeconds <= 0) return { x: player.x, y: player.y };
   const magnitude = Math.hypot(intent.x, intent.y);
@@ -68,11 +78,13 @@ export function stepAuthoritativePosition(
       Math.min(PLAYER_WORLD_BOUNDS.maxY, player.y + intent.y * distance),
     ),
   };
-  if (canOccupyNeighborhoodPoint(next, origin)) return next;
+  if (canOccupyNeighborhoodPoint(next, origin, objects)) return next;
   const horizontal = { ...next, y: player.y };
-  if (canOccupyNeighborhoodPoint(horizontal, origin)) return horizontal;
+  if (canOccupyNeighborhoodPoint(horizontal, origin, objects)) return horizontal;
   const vertical = { x: player.x, y: next.y };
-  return canOccupyNeighborhoodPoint(vertical, origin) ? vertical : { x: player.x, y: player.y };
+  return canOccupyNeighborhoodPoint(vertical, origin, objects)
+    ? vertical
+    : { x: player.x, y: player.y };
 }
 
 export function movementFacing(intent: MovementIntent, currentFacing: string) {

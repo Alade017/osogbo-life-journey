@@ -1,11 +1,13 @@
 import * as Phaser from "phaser";
 import {
-  NEIGHBORHOOD_OBJECTS,
+  CITY_CENTRE_AREA,
   NEIGHBORHOOD_SIZE,
+  neighborhoodAreaForSlug,
   nearestInteraction,
   toScene,
   toWorld,
   validCheckpoint,
+  type NeighborhoodArea,
   type NeighborhoodObject,
   type WorldPoint,
 } from "./neighborhood-model";
@@ -14,9 +16,12 @@ import type { NetworkPlayerSnapshot } from "./multiplayer-state";
 export type NeighborhoodBridge = {
   origin: WorldPoint;
   spawn: WorldPoint;
+  area?: NeighborhoodArea;
   onNearby: (object: NeighborhoodObject | null) => void;
   onCheckpoint: (point: WorldPoint) => void;
   onInteract: (object: NeighborhoodObject) => void;
+  onPlayerSelected: (player: NetworkPlayerSnapshot) => void;
+  onPlayerTooFar: (name: string) => void;
   saveCheckpoint: (point: WorldPoint) => Promise<boolean>;
   onMovementIntent: (input: { x: number; y: number }) => void;
 };
@@ -32,19 +37,27 @@ class NeighborhoodScene extends Phaser.Scene {
   private nearby: NeighborhoodObject | null = null;
   private remoteActors = new Map<
     string,
-    { sprite: Phaser.GameObjects.Sprite; label: Phaser.GameObjects.Text; target: WorldPoint }
+    {
+      sprite: Phaser.GameObjects.Sprite;
+      label: Phaser.GameObjects.Text;
+      target: WorldPoint;
+      player: NetworkPlayerSnapshot;
+    }
   >();
   private localSessionId: string | null = null;
   private movementIntent = { x: 0, y: 0 };
   private lastIntentSentAt = 0;
   private authoritativeTarget: WorldPoint | null = null;
+  private get area() {
+    return this.bridge.area ?? neighborhoodAreaForSlug(CITY_CENTRE_AREA.slug);
+  }
   constructor(private bridge: NeighborhoodBridge) {
     super("neighborhood");
   }
 
   create() {
     const { width, height } = NEIGHBORHOOD_SIZE;
-    this.cameras.main.setBackgroundColor("#d8e6d0");
+    this.cameras.main.setBackgroundColor(this.area.style.ground);
     const low = toScene({ x: 0, y: 0 }, this.bridge.origin);
     const high = toScene({ x: 14, y: 12 }, this.bridge.origin);
     const left = Math.max(12, low.x);
@@ -56,19 +69,50 @@ class NeighborhoodScene extends Phaser.Scene {
       Math.min(height - 12, high.y) - top,
     );
     const ground = this.add.graphics();
-    ground.fillStyle(0xe8eedf).fillRect(0, 0, width, height);
-    ground.lineStyle(1, 0xd3dfcb, 0.7);
+    ground.fillStyle(this.area.style.ground).fillRect(0, 0, width, height);
+    ground.lineStyle(1, this.area.style.grid, 0.7);
     for (let x = 0; x < width; x += 32) ground.lineBetween(x, 0, x, height);
     for (let y = 0; y < height; y += 32) ground.lineBetween(0, y, width, y);
+    const roads = this.area.style;
     ground
-      .fillStyle(0xbac6b4)
-      .fillRoundedRect(278, 0, 84, height, 6)
-      .fillRoundedRect(0, 260, width, 80, 6);
-    ground.fillStyle(0xe8ddbd).fillRect(287, 0, 66, height).fillRect(0, 269, width, 62);
-    ground.lineStyle(2, 0xfffaf0, 0.65);
-    for (let y = 0; y < height; y += 40) ground.lineBetween(320, y, 320, y + 16);
+      .fillStyle(roads.road)
+      .fillRoundedRect(roads.verticalRoad.x, 0, roads.verticalRoad.width, height, 6)
+      .fillRoundedRect(0, roads.horizontalRoad.y, width, roads.horizontalRoad.height, 6);
+    ground
+      .fillStyle(roads.paving)
+      .fillRect(roads.verticalRoad.x + 9, 0, roads.verticalRoad.width - 18, height)
+      .fillRect(0, roads.horizontalRoad.y + 9, width, roads.horizontalRoad.height - 18);
+    ground.lineStyle(2, roads.marking, 0.65);
+    const verticalCenter = roads.verticalRoad.x + roads.verticalRoad.width / 2;
+    const horizontalCenter = roads.horizontalRoad.y + roads.horizontalRoad.height / 2;
+    for (let y = 0; y < height; y += 40)
+      ground.lineBetween(verticalCenter, y, verticalCenter, y + 16);
+    for (let x = 0; x < width; x += 40)
+      ground.lineBetween(x, horizontalCenter, x + 16, horizontalCenter);
+    if (this.area.marketStalls) {
+      const awningColors = [0xb34f3a, 0xe2a646, 0x567a56];
+      this.area.marketStalls.forEach((stall, index) => {
+        const graphics = this.add.graphics({ x: stall.x, y: stall.y });
+        graphics
+          .fillStyle(0x65503a, 0.18)
+          .fillEllipse(0, 17, 38, 10)
+          .fillStyle(0x8b6745)
+          .fillRect(-14, 1, 28, 13)
+          .fillStyle(awningColors[index % awningColors.length]!)
+          .fillPoints(
+            [
+              { x: -19, y: 1 },
+              { x: -13, y: -9 },
+              { x: 14, y: -9 },
+              { x: 19, y: 1 },
+            ],
+            true,
+          )
+          .setDepth(stall.y);
+      });
+    }
     const solids = this.physics.add.staticGroup();
-    for (const object of NEIGHBORHOOD_OBJECTS) {
+    for (const object of this.area.objects) {
       if (object.kind === "npc") {
         this.makePerson("neighbor", 0xdfa451, 0x784c32);
         this.add.sprite(object.x, object.y, "neighbor").setDepth(object.y);
@@ -155,9 +199,33 @@ class NeighborhoodScene extends Phaser.Scene {
       Phaser.Input.Keyboard.Key
     >;
     this.input.keyboard!.on("keydown-E", this.interact, this);
-    this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
-      if (!this.frozen) this.destination = { x: pointer.worldX, y: pointer.worldY };
-    });
+    this.input.on(
+      "pointerdown",
+      (pointer: Phaser.Input.Pointer, currentlyOver: Phaser.GameObjects.GameObject[]) => {
+        if (this.frozen) return;
+        const actor = [...this.remoteActors.values()].find(
+          (candidate) =>
+            currentlyOver.includes(candidate.sprite) || currentlyOver.includes(candidate.label),
+        );
+        if (actor) {
+          if (
+            Phaser.Math.Distance.Between(
+              this.player.x,
+              this.player.y,
+              actor.sprite.x,
+              actor.sprite.y,
+            ) <= 78
+          ) {
+            this.bridge.onPlayerSelected(actor.player);
+          } else {
+            this.destination = { x: actor.player.x, y: actor.player.y };
+            this.bridge.onPlayerTooFar(actor.player.name);
+          }
+          return;
+        }
+        this.destination = { x: pointer.worldX, y: pointer.worldY };
+      },
+    );
     this.input.on("wheel", (_pointer: unknown, _objects: unknown, _dx: number, dy: number) =>
       this.zoom(dy > 0 ? -0.1 : 0.1),
     );
@@ -238,7 +306,7 @@ class NeighborhoodScene extends Phaser.Scene {
       const point = toWorld(this.player, this.bridge.origin);
       if (validCheckpoint(point)) this.bridge.onCheckpoint(point);
     }
-    const nearby = nearestInteraction(this.player);
+    const nearby = nearestInteraction(this.player, this.area.objects);
     if (nearby?.id !== this.nearby?.id) {
       this.nearby = nearby;
       this.bridge.onNearby(nearby);
@@ -290,10 +358,13 @@ class NeighborhoodScene extends Phaser.Scene {
           .setOrigin(0.5)
           .setPadding(5, 3)
           .setDepth(900);
-        actor = { sprite, label, target: position };
+        sprite.setInteractive({ useHandCursor: true });
+        label.setInteractive({ useHandCursor: true });
+        actor = { sprite, label, target: position, player };
         this.remoteActors.set(player.sessionId, actor);
       }
       actor.target = position;
+      actor.player = player;
       actor.sprite.setFlipX(player.facing === "west");
       actor.label.setText(player.name.slice(0, 24));
     }

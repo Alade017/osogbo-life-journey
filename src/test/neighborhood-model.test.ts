@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  neighborhoodAreaForSlug,
   neighborhoodOrigin,
   nearestInteraction,
   toScene,
@@ -7,6 +8,15 @@ import {
   validCheckpoint,
 } from "@/game/neighborhood-model";
 describe("neighborhood coordinates and interaction", () => {
+  it("selects distinct shared street layouts for Olaiya and Oja-Oba", () => {
+    const olaiya = neighborhoodAreaForSlug("city-centre");
+    const market = neighborhoodAreaForSlug("oja-oba");
+    expect(olaiya.objects.find((object) => object.id === "market")?.x).not.toBe(
+      market.objects.find((object) => object.id === "market")?.x,
+    );
+    expect(market.marketStalls).toHaveLength(3);
+    expect(neighborhoodAreaForSlug("unmapped-district")).toBe(olaiya);
+  });
   it("keeps distant legacy checkpoints visible without replacing their coordinates", () => {
     const point = { x: 3, y: 8 };
     const scene = toScene(point, neighborhoodOrigin({ x: 7, y: 6 }, point));

@@ -5,6 +5,7 @@ import {
   PLAYER_SPEED,
   stepAuthoritativePosition,
 } from "@/game/authoritative-movement";
+import { neighborhoodAreaForSlug, toWorld } from "@/game/neighborhood-model";
 
 const origin = { x: 7, y: 6 };
 
@@ -37,5 +38,14 @@ describe("authoritative neighborhood movement", () => {
     expect(canOccupyNeighborhoodPoint({ x: 7, y: 6 }, origin)).toBe(true);
     const moved = stepAuthoritativePosition(blocked, { x: -1, y: 0 }, 0.05, origin);
     expect(moved).toEqual(blocked);
+  });
+
+  it("uses the destination area's collision layout on the server", () => {
+    const cityObjects = neighborhoodAreaForSlug("city-centre").objects;
+    const marketObjects = neighborhoodAreaForSlug("oja-oba").objects;
+    const marketShop = marketObjects.find((object) => object.id === "market")!;
+    const insideMarketFootprint = toWorld({ x: marketShop.x, y: marketShop.y - 45 }, origin);
+    expect(canOccupyNeighborhoodPoint(insideMarketFootprint, origin, marketObjects)).toBe(false);
+    expect(canOccupyNeighborhoodPoint(insideMarketFootprint, origin, cityObjects)).toBe(true);
   });
 });

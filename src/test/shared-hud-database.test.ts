@@ -184,4 +184,112 @@ describe("shared HUD database acceptance", () => {
     ).rejects.toThrow(/character/);
     await db.exec("reset role");
   });
+
+  it("enforces player discovery, friend requests, persistent chat, blocks, and report privacy", async () => {
+    const secondUser = "33333333-3333-4333-8333-333333333333";
+    await db.exec(`insert into auth.users values('${secondUser}');
+      insert into public.profiles(id) values('${secondUser}');
+      insert into public.characters(user_id,name,gender,age,personality,energy,hunger,happiness,social)
+      values('${secondUser}','Bola','female',22,'creative',80,20,70,60);
+      select set_config('test.user_id','${uid}',false);`);
+
+    const search = await db.query<{ result: Array<{ player_name: string; character_id: string }> }>(
+      "select public.search_player_profiles('bol',20) as result",
+    );
+    expect(search.rows[0]!.result).toHaveLength(1);
+    expect(search.rows[0]!.result[0]!.player_name).toBe("Bola");
+    const bolaId = search.rows[0]!.result[0]!.character_id;
+    const ade = await db.query<{ id: string }>(
+      "select id from public.characters where user_id=$1",
+      [uid],
+    );
+    const adeId = ade.rows[0]!.id;
+    const requestId = "44444444-4444-4444-8444-444444444444";
+    const request = await db.query<{ result: { status: string; duplicate: boolean } }>(
+      "select public.send_player_friend_request($1,$2) as result",
+      [bolaId, requestId],
+    );
+    expect(request.rows[0]!.result).toMatchObject({ status: "request_sent", duplicate: false });
+    const repeated = await db.query<{ result: { status: string; duplicate: boolean } }>(
+      "select public.send_player_friend_request($1,$2) as result",
+      [bolaId, requestId],
+    );
+    expect(repeated.rows[0]!.result).toMatchObject({ status: "pending", duplicate: true });
+
+    await db.exec(`select set_config('test.user_id','${secondUser}',false)`);
+    const reciprocal = await db.query<{ result: { status: string; accepted_reciprocal: boolean } }>(
+      "select public.send_player_friend_request($1,'55555555-5555-4555-8555-555555555555') as result",
+      [adeId],
+    );
+    expect(reciprocal.rows[0]!.result).toMatchObject({
+      status: "friends",
+      accepted_reciprocal: true,
+    });
+    const area = await db.query<{ current_location_id: string }>(
+      "select current_location_id from public.characters where user_id=$1",
+      [uid],
+    );
+    const locationId = area.rows[0]!.current_location_id;
+    const sentArea = await db.query<{ result: { body: string; duplicate: boolean } }>(
+      "select public.send_social_message('area','Hello, neighbours!','66666666-6666-4666-8666-666666666666',$1,null) as result",
+      [locationId],
+    );
+    expect(sentArea.rows[0]!.result).toMatchObject({
+      body: "Hello, neighbours!",
+      duplicate: false,
+    });
+    const conversation = await db.query<{ result: { id: string } }>(
+      "select public.get_or_create_player_conversation($1) as result",
+      [adeId],
+    );
+    const sentPrivate = await db.query<{ result: { body: string; channel: string } }>(
+      "select public.send_social_message('private','Private hello','77777777-7777-4777-8777-777777777777',null,$1) as result",
+      [conversation.rows[0]!.result.id],
+    );
+    expect(sentPrivate.rows[0]!.result).toMatchObject({
+      body: "Private hello",
+      channel: "private",
+    });
+
+    await db.exec(`select set_config('test.user_id','${uid}',false)`);
+    const history = await db.query<{ result: Array<{ body: string; sender_name: string }> }>(
+      "select public.get_social_messages($1,null,null,50) as result",
+      [locationId],
+    );
+    expect(history.rows[0]!.result).toContainEqual(
+      expect.objectContaining({ body: "Hello, neighbours!", sender_name: "Bola" }),
+    );
+    const directHistory = await db.query<{ result: Array<{ body: string }> }>(
+      "select public.get_social_messages(null,$1,null,50) as result",
+      [conversation.rows[0]!.result.id],
+    );
+    expect(directHistory.rows[0]!.result.map((message) => message.body)).toContain("Private hello");
+
+    const privateMessage = await db.query<{ id: string }>(
+      "select id from public.social_messages where body='Private hello'",
+    );
+    await db.exec(`select set_config('test.user_id','${secondUser}',false)`);
+    await db.exec(`select set_config('test.user_id','${uid}',false)`);
+    const report = await db.query<{ result: { status: string } }>(
+      "select public.report_player($1,'harassment','Please review this message',$2) as result",
+      [bolaId, privateMessage.rows[0]!.id],
+    );
+    expect(report.rows[0]!.result.status).toBe("open");
+    await db.exec(`select set_config('test.user_id','${secondUser}',false)`);
+    await db.query("select public.block_player($1)", [adeId]);
+    await expect(db.query("select public.get_player_profile($1)", [adeId])).rejects.toThrow(
+      /unavailable/,
+    );
+    await expect(
+      db.query(
+        "select public.send_social_message('private','Blocked','88888888-8888-4888-8888-888888888888',null,$1)",
+        [conversation.rows[0]!.result.id],
+      ),
+    ).rejects.toThrow(/unavailable/);
+    await expect(
+      db.query("select public.get_social_messages(null,$1,null,50)", [
+        conversation.rows[0]!.result.id,
+      ]),
+    ).rejects.toThrow(/not found/);
+  });
 });

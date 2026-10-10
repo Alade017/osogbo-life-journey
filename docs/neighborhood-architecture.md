@@ -28,6 +28,12 @@ Milestone 4 selects **Colyseus 0.18** for room management and schema-based state
 
 The room server is not deployed or covered by a live two-account session yet. Hosting, health monitoring, TLS/WSS, production origin configuration, restart/reconnect policy and region latency remain staging decisions. No live domain, auth redirect, paid service or production setting is changed here.
 
+### Milestone 5 area and transition implementation
+
+The first two seeded districts, `city-centre` (Olaiya) and `oja-oba` (Oja-Oba Market), now have separate scene layouts, road palettes and interaction/building positions. `neighborhoodAreaForSlug` is the shared source used by Phaser rendering and the room server's movement collision model, so an area cannot display one footprint while the server blocks another. Unknown location slugs retain the Olaiya layout until a scene is authored for them. District travel continues to use `travel_to_city_location`, including its server validation, request ID and expected position revision; a successful location change leaves the old location room and joins the new location room from the saved checkpoint. The personal 3D home remains the existing interior route, entered after a checkpoint and exited back to the city map.
+
+These are source and unit-test boundaries. Authenticated travel between two live clients and home access/visiting permissions have not been verified; home interiors are not yet shared multiplayer rooms. Additional locations need authored area layouts before they can be described as visually distinct.
+
 ### World and persistence model
 
 Use stable area identifiers in the world layer and a data-driven scene/area definition for map reference, bounds, spawn points, exits, collision assets and room mapping. Keep the existing movement grid and database checkpoint format compatible until an explicit migration is reviewed. Travel remains a domain command validated by the existing Supabase RPC; when multiplayer arrives, the room transfer must be coordinated with that successful command so a client cannot teleport by changing local coordinates.

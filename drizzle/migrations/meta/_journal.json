@@ -183,6 +183,13 @@
       "when": 1791594000003,
       "tag": "0024_shared_hud_simulation",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1791594000004,
+      "tag": "0025_player_social",
+      "breakpoints": true
     }
   ]
 }

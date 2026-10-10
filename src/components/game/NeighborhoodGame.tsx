@@ -13,6 +13,7 @@ import {
 import { cityEntranceForRecord } from "@/lib/city-world";
 import {
   neighborhoodAreaOrigin,
+  neighborhoodAreaForSlug,
   type NeighborhoodObject,
   type WorldPoint,
 } from "@/game/neighborhood-model";
@@ -37,6 +38,7 @@ export function NeighborhoodGame() {
   const current = locations.data?.find(
     (location) => location.id === character?.current_location_id,
   );
+  const area = neighborhoodAreaForSlug(current?.slug);
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { reconnect } = useGameTime();
@@ -75,6 +77,8 @@ export function NeighborhoodGame() {
   const callbacks = useRef({
     checkpoint: async (_point: WorldPoint) => false,
     interact: (_object: NeighborhoodObject) => {},
+    playerSelected: (_player: NetworkPlayerSnapshot) => {},
+    playerTooFar: (_name: string) => {},
     movement: (_input: { x: number; y: number }) => {},
   });
   const checkpoint = async (point: WorldPoint) => {
@@ -128,6 +132,10 @@ export function NeighborhoodGame() {
   callbacks.current = {
     checkpoint,
     movement: (input) => roomRef.current?.send("move", input),
+    playerSelected: (player) => {
+      void navigate({ to: "/social", search: { playerId: player.characterId } });
+    },
+    playerTooFar: (name) => setStatus("Move closer to " + name + " to view their profile."),
     interact: (object) => {
       if (object.kind === "npc") {
         setDialogue(true);
@@ -207,10 +215,13 @@ export function NeighborhoodGame() {
         created = create(host.current, {
           origin,
           spawn: confirmed.current,
+          area,
           onNearby: setNearby,
           onCheckpoint: (point) => {
             void callbacks.current.checkpoint(point);
           },
+          onPlayerSelected: (player) => callbacks.current.playerSelected(player),
+          onPlayerTooFar: (name) => callbacks.current.playerTooFar(name),
           onInteract: (object) => callbacks.current.interact(object),
           saveCheckpoint: (point) => callbacks.current.checkpoint(point),
           onMovementIntent: (input) => callbacks.current.movement(input),
@@ -457,7 +468,9 @@ export function NeighborhoodGame() {
             disabled={busy || multiplayerStatus !== "connected"}
             onClick={() => engine.current?.scene.interact()}
           >
-            {nearby.kind === "npc" ? "Talk to Bisi" : `Enter ${nearby.name}`}
+            {nearby.kind === "npc"
+              ? `Talk to ${nearby.name.split(" · ")[0]}`
+              : `Enter ${nearby.name}`}
             <span>E / tap</span>
           </button>
         )}
@@ -466,9 +479,9 @@ export function NeighborhoodGame() {
             className="neighborhood-dialogue"
             role="dialog"
             aria-modal="false"
-            aria-label="Talk to Bisi"
+            aria-label={`Talk to ${nearby?.name ?? "your neighbour"}`}
           >
-            <strong>Bisi · Your neighbour</strong>
+            <strong>{nearby?.name ?? "Your neighbour"}</strong>
             <p>
               Ẹ káàbọ̀! Start with a shift nearby, pick up something to eat, then head home to
               recharge. You’ll find your rhythm here.

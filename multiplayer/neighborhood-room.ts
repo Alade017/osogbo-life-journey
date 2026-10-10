@@ -6,7 +6,12 @@ import {
   stepAuthoritativePosition,
 } from "../src/game/authoritative-movement.ts";
 import { cityEntranceForRecord } from "../src/lib/city-world.ts";
-import { neighborhoodAreaOrigin, type WorldPoint } from "../src/game/neighborhood-model.ts";
+import {
+  neighborhoodAreaForSlug,
+  neighborhoodAreaOrigin,
+  type NeighborhoodArea,
+  type WorldPoint,
+} from "../src/game/neighborhood-model.ts";
 import type { MovementIntent, NetworkPlayerSnapshot } from "../src/game/multiplayer-state.ts";
 
 type CharacterRow = {
@@ -23,6 +28,7 @@ type LocationRow = { id: string; slug: string; map_x: number; map_y: number };
 type AuthenticatedPlayer = {
   userId: string;
   character: CharacterRow;
+  area: NeighborhoodArea;
   areaOrigin: WorldPoint;
 };
 
@@ -87,6 +93,7 @@ async function readCharacter(accessToken: string, locationId: string) {
   return {
     userId: user.id,
     character,
+    area: neighborhoodAreaForSlug(location.slug),
     areaOrigin: neighborhoodAreaOrigin(entrance),
   } satisfies AuthenticatedPlayer;
 }
@@ -117,6 +124,7 @@ export class NeighborhoodRoom extends Room {
 
   private readonly movement = new Map<string, InputState>();
   private areaOrigin: WorldPoint = { x: 7, y: 6 };
+  private area = neighborhoodAreaForSlug(undefined);
 
   override onCreate(options: { locationId?: unknown }) {
     if (typeof options.locationId !== "string" || !LOCATION_ID_PATTERN.test(options.locationId))
@@ -169,6 +177,7 @@ export class NeighborhoodRoom extends Room {
 
   override onJoin(client: Client, _options: unknown, auth: AuthenticatedPlayer) {
     this.areaOrigin = auth.areaOrigin;
+    this.area = auth.area;
     const player = new NetworkPlayer(playerSnapshot(auth.character, auth.areaOrigin));
     this.state.players.set(client.sessionId, player);
     this.movement.set(client.sessionId, { intent: { x: 0, y: 0 }, updatedAt: Date.now() });
@@ -186,7 +195,13 @@ export class NeighborhoodRoom extends Room {
       const input = this.movement.get(sessionId);
       if (!input) continue;
       const intent = now - input.updatedAt > 250 ? { x: 0, y: 0 } : input.intent;
-      const next = stepAuthoritativePosition(player, intent, delta, this.areaOrigin);
+      const next = stepAuthoritativePosition(
+        player,
+        intent,
+        delta,
+        this.areaOrigin,
+        this.area.objects,
+      );
       player.x = next.x;
       player.y = next.y;
       player.facing = movementFacing(intent, player.facing);

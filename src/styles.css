@@ -6603,12 +6603,12 @@
   }
 }
 
-/* Shared game chrome: explicit grid areas prevent narrow clock columns. */
+/* Shared game chrome: compact player status without hiding game controls. */
 .game-hud.hud-v2 {
-  grid-template-columns: minmax(0, 1fr) minmax(140px, 1fr) auto 44px;
-  grid-template-areas: "player xp balance notifications" "needs needs needs needs" "location time time time" "live live live live" "sync sync sync sync";
-  gap: 12px;
-  padding: 16px;
+  grid-template-columns: minmax(130px, 1fr) minmax(130px, 1fr) minmax(190px, 1.2fr) auto 44px;
+  grid-template-areas: "player location time balance notifications" "needs needs needs needs needs" "live live sync sync sync";
+  gap: 8px 12px;
+  padding: 10px 12px;
   min-height: auto;
   color: var(--foreground);
   background: var(--card);
@@ -6623,18 +6623,17 @@
   padding: 0;
 }
 .hud-v2 .game-hud-xp {
-  grid-area: xp;
-  display: block;
+  display: none;
 }
 .hud-v2 .game-hud-balance {
   grid-area: balance;
   max-width: none;
-  padding: 9px 12px;
+  padding: 7px 10px;
 }
 .hud-v2 .game-hud-notifications {
   grid-area: notifications;
-  width: 44px;
-  height: 44px;
+  width: 40px;
+  height: 40px;
 }
 .hud-v2 .game-hud-avatar {
   width: 40px;
@@ -6654,7 +6653,7 @@
 }
 .hud-v2 .game-hud-location {
   grid-area: location;
-  padding: 10px;
+  padding: 4px 0;
   min-width: 0;
 }
 .hud-v2 .game-hud-location .game-hud-item-copy {
@@ -6675,7 +6674,7 @@
   grid-area: time;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 12px;
+  padding: 4px 0;
   min-width: 0;
 }
 .hud-v2 .game-hud-time .game-hud-item-copy strong {
@@ -6692,8 +6691,8 @@
 }
 .hud-v2 .game-hud-simulation-controls button,
 .hud-v2 .game-hud-simulation-controls select {
-  min-height: 40px;
-  min-width: 40px;
+  min-height: 34px;
+  min-width: 34px;
   font-size: 12px;
   color: var(--foreground);
   border-color: var(--border);
@@ -6723,11 +6722,11 @@
   grid-template-columns: 16px minmax(0, 1fr) auto;
   align-items: center;
   gap: 5px;
-  padding: 10px;
+  padding: 6px 8px;
   cursor: pointer;
   list-style: none;
   font-size: 11px;
-  min-height: 44px;
+  min-height: 36px;
 }
 .hud-need summary::-webkit-details-marker {
   display: none;
@@ -6882,22 +6881,20 @@
 @media (max-width: 820px) {
   .game-hud.hud-v2 {
     grid-template-columns: minmax(0, 1fr) auto 44px;
-    grid-template-areas: "player balance notifications" "needs needs needs" "location location location" "time time time" "live live live" "sync sync sync";
-    gap: 10px;
+    grid-template-areas: "player balance notifications" "needs needs needs" "location time time" "live live live" "sync sync sync";
+    gap: 8px 10px;
     margin: 8px;
-    padding: 12px;
+    padding: 10px;
     top: 0;
     position: relative;
-  }
-  .hud-v2 .game-hud-xp {
-    display: none;
   }
   .hud-needs {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 6px;
   }
   .hud-need summary {
-    padding: 8px;
+    padding: 6px 8px;
+    min-height: 34px;
   }
   .hud-need:nth-child(3n) .hud-need-menu {
     left: auto;
@@ -6910,12 +6907,19 @@
   .hud-v2 .game-hud-location .game-hud-item-copy strong {
     font-size: 13px;
   }
+  .hud-v2 .game-hud-time {
+    justify-content: flex-end;
+  }
   .world-environment .world-event {
     margin-left: 0;
     flex-basis: 100%;
   }
 }
 @media (max-width: 380px) {
+  .game-hud.hud-v2 {
+    grid-template-columns: minmax(0, 1fr) auto 40px;
+    grid-template-areas: "player balance notifications" "needs needs needs" "location location location" "time time time" "live live live" "sync sync sync";
+  }
   .hud-need summary {
     grid-template-columns: 14px minmax(0, 1fr);
     font-size: 10px;
