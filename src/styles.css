@@ -7041,3 +7041,32 @@
     display: none;
   }
 }
+
+.game-page-header {
+  align-items: center;
+  gap: 16px;
+}
+.game-page-header h1 {
+  color: var(--ink);
+  font-size: clamp(24px, 3vw, 34px);
+  letter-spacing: -0.025em;
+  line-height: 1.12;
+}
+.game-page-header .game-page-eyebrow {
+  margin: 0 0 5px;
+  color: var(--primary);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+.game-page-header h1 + p {
+  max-width: 62ch;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  line-height: 1.5;
+}
+@media (max-width: 520px) {
+  .game-page-header {
+    align-items: flex-start;
+  }
+}

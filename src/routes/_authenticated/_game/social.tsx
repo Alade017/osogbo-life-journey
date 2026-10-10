@@ -89,6 +89,7 @@ function SocialPage() {
     <div className="space-y-5">
       <PlayerSocial initialPlayerId={playerId} />
       <PageHeader
+        eyebrow="THE NEIGHBOURHOOD"
         title="People of Osogbo"
         subtitle="Familiar faces keep their own routines. Meet them where the day takes them."
       />

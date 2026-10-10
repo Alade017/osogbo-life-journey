@@ -26,6 +26,7 @@ function MissionsPage() {
   return (
     <div>
       <PageHeader
+        eyebrow="YOUR NEXT STEPS"
         title="Missions"
         subtitle={`${sorted.filter((m) => m.status === "claimed").length}/${sorted.length} completed`}
       />

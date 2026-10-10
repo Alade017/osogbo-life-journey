@@ -48,7 +48,7 @@ function WalletPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Bank & wallet" />
+      <PageHeader eyebrow="YOUR FINANCES" title="Bank & wallet" />
       <div className="game-panel flex items-start gap-2 bg-sun p-3 text-sm">
         <Info className="mt-0.5 h-4 w-4 shrink-0" />
         <p>All balances are virtual in-game currency. They have no real-world value.</p>

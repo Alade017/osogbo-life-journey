@@ -35,7 +35,7 @@ function HousePage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Homes and property" />
+      <PageHeader eyebrow="YOUR PROPERTY" title="Homes and property" />
       {rentStatus?.next_due_at && (
         <section className="game-panel p-4" aria-label="Rent obligations">
           <h2 className="font-display font-bold">Rent obligations · game values</h2>

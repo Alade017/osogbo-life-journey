@@ -11,14 +11,14 @@ export default defineConfig(({ command, mode }) => {
   for (const [key, value] of Object.entries(env)) {
     if (process.env[key] === undefined) process.env[key] = value;
   }
+  const nitroPreset =
+    process.env["NITRO_PRESET"] ?? (process.env["VERCEL"] === "1" ? "vercel" : "node-server");
   return {
     cacheDir: "node_modules/.vite-game",
     plugins: [
       tailwindcss(),
       tanstackStart({ server: { entry: "server" } }),
-      ...(command === "build"
-        ? [nitro({ preset: process.env["NITRO_PRESET"] === "vercel" ? "vercel" : "node-server" })]
-        : []),
+      ...(command === "build" ? [nitro({ preset: nitroPreset })] : []),
       react(),
     ],
     resolve: {

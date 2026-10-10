@@ -94,7 +94,7 @@ function SettingsPage() {
 
   return (
     <div className="max-w-2xl space-y-5">
-      <PageHeader title="Settings" />
+      <PageHeader eyebrow="MAKE IT YOURS" title="Settings" />
       <section className="game-panel space-y-4 p-5">
         <h2 className="text-xl font-bold">Account</h2>
         <p className="text-sm text-muted-foreground">

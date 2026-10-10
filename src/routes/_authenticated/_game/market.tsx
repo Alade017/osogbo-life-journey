@@ -52,7 +52,7 @@ function MarketPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="City market" />
+      <PageHeader eyebrow="SHOPS AROUND THE CITY" title="City market" />
       <section className="game-panel flex flex-wrap items-center justify-between gap-3 p-4">
         <div>
           <p className="font-semibold">{currentLocation?.name ?? "No district selected"}</p>

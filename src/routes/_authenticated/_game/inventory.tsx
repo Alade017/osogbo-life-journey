@@ -108,6 +108,7 @@ function InventoryPage() {
   return (
     <div>
       <PageHeader
+        eyebrow="WHAT YOU CARRY"
         title="Your inventory"
         subtitle={`${inventory.length} item entries · ${countInventoryUnits(inventory)} items in your bag`}
       />

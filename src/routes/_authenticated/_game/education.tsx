@@ -33,6 +33,7 @@ function EducationPage() {
   return (
     <div>
       <PageHeader
+        eyebrow="LEARN & GROW"
         title="Study & Skills"
         subtitle="Build practical skills for Osogbo's next career step."
       />
