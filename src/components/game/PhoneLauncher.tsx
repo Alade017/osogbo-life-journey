@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
+import { useLiveClock } from "@/hooks/use-live-clock";
 
 const PHONE_APPS = [
   { label: "Home", to: "/home", icon: House, tone: "phone-app-green", active: true },
@@ -33,7 +34,8 @@ const PHONE_APPS = [
   { label: "Social", to: "/social", icon: MessageCircle, tone: "phone-app-coral", active: true },
   { label: "Inventory", to: "/inventory", icon: Backpack, tone: "phone-app-blue", active: true },
   { label: "Profile", to: "/profile", icon: UserRound, tone: "phone-app-muted", active: true },
-  { label: "Messages", icon: MessageCircle, tone: "phone-app-muted", active: false },
+  { label: "Messages", to: "/social", icon: MessageCircle, tone: "phone-app-coral", active: true },
+  { label: "Missions", to: "/missions", icon: Bell, tone: "phone-app-gold", active: true },
   {
     label: "Notifications",
     to: "/notifications",
@@ -51,6 +53,16 @@ export function PhoneLauncher({
   className?: string;
   compact?: boolean;
 }) {
+  const now = useLiveClock();
+  const phoneTime = now
+    ? new Intl.DateTimeFormat("en-NG", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+        timeZone: "Africa/Lagos",
+      }).format(now)
+    : "--:--";
+
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -68,12 +80,24 @@ export function PhoneLauncher({
       <DialogContent className="phone-dialog">
         <DialogHeader>
           <DialogTitle className="font-display text-2xl">Your phone</DialogTitle>
-          <DialogDescription>Tools for your day around Osogbo.</DialogDescription>
+          <DialogDescription>
+            Tools for your day around Osogbo. Select an app to open it.
+          </DialogDescription>
         </DialogHeader>
         <div className="phone-screen">
           <div className="phone-status">
-            <span>OSOGBO LIFE</span>
-            <span>LTE · 4G</span>
+            <span className="phone-status-time">{phoneTime}</span>
+            <span className="phone-status-brand">OSOGBO LIFE</span>
+            <span className="phone-status-indicators" aria-label="Game phone status">
+              <span className="phone-signal" aria-hidden="true">
+                <i />
+                <i />
+                <i />
+              </span>
+              <span className="phone-battery" aria-hidden="true">
+                <i />
+              </span>
+            </span>
           </div>
           <div className="phone-app-grid">
             {PHONE_APPS.map((app) => {

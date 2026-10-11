@@ -34,6 +34,8 @@ vi.mock("@/lib/game", () => ({
 vi.mock("@/components/game/GameTimeProvider", () => ({
   useGameTime: () => ({ reconnect: mocks.reconnect }),
 }));
+vi.mock("@/components/game/CityNeedsDock", () => ({ CityNeedsDock: () => null }));
+vi.mock("@/components/game/MissionChips", () => ({ MissionChips: () => null }));
 vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => mocks.navigate,
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
@@ -106,7 +108,11 @@ describe("Phaser to React checkpoint bridge", () => {
       expect(await bridge.saveCheckpoint({ x: 7.5, y: 6 })).toBe(false);
     });
     expect(mocks.restore).toHaveBeenLastCalledWith({ x: 6.8, y: 6 });
-    expect(screen.getByRole("status")).toHaveTextContent("Your city position changed.");
+    expect(
+      screen
+        .getAllByRole("status")
+        .some((element) => element.textContent === "Your city position changed."),
+    ).toBe(true);
   });
   it("destroys the scene on unmount and does not save an unchanged position", async () => {
     const bridge = await start();

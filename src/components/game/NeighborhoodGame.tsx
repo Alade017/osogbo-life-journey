@@ -21,6 +21,8 @@ import type { NetworkPlayerSnapshot } from "@/game/multiplayer-state";
 import type { createNeighborhoodGame, MovementInput } from "@/game/neighborhood-scene";
 import { joinNeighborhood, type NeighborhoodRoom } from "@/lib/multiplayer-service";
 import { useGameTime } from "./GameTimeProvider";
+import { CityNeedsDock } from "@/components/game/CityNeedsDock";
+import { MissionChips } from "@/components/game/MissionChips";
 import "./neighborhood.css";
 
 type Engine = ReturnType<typeof createNeighborhoodGame>;
@@ -53,6 +55,26 @@ export function NeighborhoodGame() {
   const [directory, setDirectory] = useState(false);
   const [destinationId, setDestinationId] = useState("");
   const destination = locations.data?.find((location) => location.id === destinationId);
+  const [selectedTravelMode, setSelectedTravelMode] = useState<TravelMode | null>(null);
+  const destinationTrips = destination
+    ? getAvailableTravelModes(destination.metadata).map((mode) => ({
+        mode,
+        trip: estimateTrip(
+          mode,
+          destination.travel_fare ?? 150,
+          Math.max(
+            8,
+            Math.ceil(
+              Math.hypot(
+                confirmed.current.x - cityEntranceForRecord(destination).x,
+                confirmed.current.y - cityEntranceForRecord(destination).y,
+              ) * 4,
+            ),
+          ),
+        ),
+      }))
+    : [];
+  const selectedTrip = destinationTrips.find(({ mode }) => mode === selectedTravelMode)?.trip;
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [loadError, setLoadError] = useState("");
@@ -61,6 +83,7 @@ export function NeighborhoodGame() {
   const [multiplayerStatus, setMultiplayerStatus] = useState<
     "connecting" | "connected" | "error" | "disconnected"
   >("connecting");
+  const [nearbyPlayerCount, setNearbyPlayerCount] = useState<number | null>(null);
   const [status, setStatus] = useState("Walk with WASD or arrows. Tap the street to move.");
   const menuOpen = useRef(false);
   menuOpen.current = dialogue || directory;
@@ -265,6 +288,7 @@ export function NeighborhoodGame() {
     let cancelled = false;
     let joined: NeighborhoodRoom | null = null;
     let removeStateListener: (() => void) | null = null;
+    setNearbyPlayerCount(null);
     setMultiplayerStatus("connecting");
     engine.current.scene.lock(true);
 
@@ -285,6 +309,7 @@ export function NeighborhoodGame() {
             players.entries() as Iterable<[string, NetworkPlayerSnapshot]>,
             ([sessionId, player]) => ({ sessionId, ...player }),
           );
+          setNearbyPlayerCount(snapshots.length);
           engine.current?.scene.syncNetworkPlayers(snapshots);
           if (stateBound) return;
           stateBound = true;
@@ -300,6 +325,7 @@ export function NeighborhoodGame() {
           engine.current?.scene.setLocalSessionId(null);
           engine.current?.scene.syncNetworkPlayers([]);
           engine.current?.scene.lock(true);
+          setNearbyPlayerCount(null);
           setMultiplayerStatus("disconnected");
           setStatus(
             reason || "Connection lost. Reconnect to rejoin from your last saved checkpoint.",
@@ -318,6 +344,7 @@ export function NeighborhoodGame() {
         removeStateListener = null;
         if (roomRef.current === joined) roomRef.current = null;
         if (joined) void joined.leave();
+        setNearbyPlayerCount(null);
         setMultiplayerStatus("error");
         setStatus(error instanceof Error ? error.message : "Could not connect to the game server.");
       });
@@ -354,6 +381,21 @@ export function NeighborhoodGame() {
         </div>
       </header>
       <div className="neighborhood-stage">
+        <MissionChips />
+        <CityNeedsDock />
+        <div
+          className="neighborhood-presence"
+          data-connection-state={multiplayerStatus}
+          role="status"
+          aria-live="polite"
+        >
+          <span aria-hidden="true" />
+          {nearbyPlayerCount !== null && multiplayerStatus === "connected"
+            ? `${nearbyPlayerCount} player${nearbyPlayerCount === 1 ? "" : "s"} in this area`
+            : multiplayerStatus === "connecting"
+              ? "Connecting to players"
+              : "Players unavailable"}
+        </div>
         {directory && (
           <div
             className="neighborhood-directory"
@@ -369,7 +411,10 @@ export function NeighborhoodGame() {
             <select
               aria-label="Choose district"
               value={destinationId}
-              onChange={(event) => setDestinationId(event.target.value)}
+              onChange={(event) => {
+                setDestinationId(event.target.value);
+                setSelectedTravelMode(null);
+              }}
             >
               <option value="">Choose a destination</option>
               {locations.data
@@ -382,33 +427,35 @@ export function NeighborhoodGame() {
             </select>
             {destination && (
               <div className="neighborhood-trips">
-                {getAvailableTravelModes(destination.metadata).map((mode) => {
-                  const trip = estimateTrip(
-                    mode,
-                    destination.travel_fare ?? 150,
-                    Math.max(
-                      8,
-                      Math.ceil(
-                        Math.hypot(
-                          confirmed.current.x - cityEntranceForRecord(destination).x,
-                          confirmed.current.y - cityEntranceForRecord(destination).y,
-                        ) * 4,
-                      ),
-                    ),
-                  );
-                  return (
-                    <button
-                      key={mode}
-                      disabled={busy}
-                      onClick={() => void travel(destination, mode)}
-                    >
-                      <strong>{TRAVEL_MODE_DETAILS[mode].label}</strong>
-                      <span>
-                        {formatNaira(trip.fare)} · ~{trip.minutes} min
-                      </span>
-                    </button>
-                  );
-                })}
+                <p className="neighborhood-destination-copy">{destination.description}</p>
+                {destinationTrips.map(({ mode, trip }) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    aria-pressed={selectedTravelMode === mode}
+                    className={selectedTravelMode === mode ? "is-selected" : undefined}
+                    disabled={busy}
+                    onClick={() => setSelectedTravelMode(mode)}
+                  >
+                    <strong>{TRAVEL_MODE_DETAILS[mode].label}</strong>
+                    <span>
+                      {formatNaira(trip.fare)} · ~{trip.minutes} min
+                    </span>
+                  </button>
+                ))}
+                <button
+                  className="neighborhood-trip-go"
+                  type="button"
+                  disabled={busy || !selectedTravelMode}
+                  onClick={() => {
+                    if (destination && selectedTravelMode)
+                      void travel(destination, selectedTravelMode);
+                  }}
+                >
+                  {selectedTravelMode && selectedTrip
+                    ? `Go · ${formatNaira(selectedTrip.fare)}`
+                    : "Choose transport"}
+                </button>
                 <p>Estimated fare and time. Your trip is validated before payment.</p>
               </div>
             )}

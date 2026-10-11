@@ -133,8 +133,8 @@ export function GameHUD({
           <small>PERSONAL TIME · DAY {simulation.gameTime.day}</small>
           <strong className="tabular-nums">{formatGameTime(simulation.gameTime)}</strong>
           <span>
-            {WEEKDAYS[simulation.gameTime.weekday]} ·{" "}
-            {simulation.paused ? "Paused" : "Active play only"}
+            {WEEKDAYS[simulation.gameTime.weekday]} · Mood: {simulation.mood.mood} ·{" "}
+            {simulation.paused ? "Paused" : "Active play"}
           </span>
         </span>
         <div className="game-hud-simulation-controls">

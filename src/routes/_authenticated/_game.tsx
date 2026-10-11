@@ -187,6 +187,7 @@ function GameLayout() {
             <Map className="h-4.75 w-4.75" />
             <span>City</span>
           </Link>
+          <PhoneLauncher compact className="mobile-nav-phone" />
           <Link
             to="/jobs"
             activeProps={{ className: "mobile-nav-active" }}
@@ -204,7 +205,6 @@ function GameLayout() {
             <Users className="h-4.75 w-4.75" />
             <span>People</span>
           </Link>
-          <PhoneLauncher compact className="mobile-nav-phone" />
         </nav>
       </div>
     </GameTimeProvider>
