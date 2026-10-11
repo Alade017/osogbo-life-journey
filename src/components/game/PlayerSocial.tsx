@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { MessageCircle, Search, ShieldBan, UserPlus, Users } from "lucide-react";
@@ -7,6 +7,7 @@ import { Avatar } from "@/components/game/Avatar";
 import type { Appearance } from "@/components/game/Avatar";
 import { Button } from "@/components/ui/button";
 import { q } from "@/lib/game";
+import { playGameSound } from "@/lib/game-audio";
 import {
   blockPlayer,
   cancelFriendRequest,
@@ -234,6 +235,20 @@ export function PlayerSocial({ initialPlayerId }: { initialPlayerId?: string | u
   });
   const areaMessages = areaMessagesQuery.data ?? [];
   const directMessages = directMessagesQuery.data ?? [];
+  const lastMessageIds = useRef<{ area: string | null; direct: string | null }>({ area: null, direct: null });
+  useEffect(() => {
+    const latestArea = areaMessages[areaMessages.length - 1];
+    const latestDirect = directMessages[directMessages.length - 1];
+    const previous = lastMessageIds.current;
+    if (latestArea && previous.area && latestArea.id !== previous.area && latestArea.sender_character_id !== character?.id)
+      playGameSound("message");
+    if (latestDirect && previous.direct && latestDirect.id !== previous.direct && latestDirect.sender_character_id !== character?.id)
+      playGameSound("message");
+    lastMessageIds.current = {
+      area: latestArea?.id ?? previous.area,
+      direct: latestDirect?.id ?? previous.direct,
+    };
+  }, [areaMessages, directMessages, character?.id]);
   useEffect(() => {
     if (initialProfileQuery.data) {
       setSubmittedQuery("");
