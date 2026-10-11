@@ -13,15 +13,34 @@ export type MusicTrack = {
 };
 
 // Only user-supplied files with complete license records belong here.
-export const musicTracks: MusicTrack[] = [];
+export const musicTracks: MusicTrack[] = [
+  {
+    id: "loyalty-freak-everyone-is-so-alive",
+    title: "Everyone Is So Alive",
+    artist: "Loyalty Freak Music",
+    filePath: "/audio/music/everyone-is-so-alive.mp3",
+    duration: 255.06,
+    sourceUrl:
+      "https://freemusicarchive.org/music/Loyalty_Freak_Music/Best_Of__Pick_Your_Player/Loyalty_Freak_Music_-_Best_Of_-_Pick_Your_Player_-_10_Everyone_is_so_alive/",
+    uploader: "Loyalty Freak Music",
+    licenseName: "CC0 1.0 Universal",
+    licenseUrl: "https://creativecommons.org/publicdomain/zero/1.0/",
+    licenseCheckedAt: "2026-10-11",
+    attribution:
+      "Everyone Is So Alive — Loyalty Freak Music. User supplied the MP3 downloaded from Chosic; matching track license recorded from Free Music Archive.",
+  },
+];
 
-export function validMusicTracks(records: readonly MusicTrack[]): MusicTrack[] {
+export function validMusicTracks(
+  records: readonly MusicTrack[],
+  directory: "music" | "sfx" = "music",
+): MusicTrack[] {
   const ids = new Set<string>();
   return records.filter((track) => {
     const required = [track.id, track.title, track.artist, track.uploader, track.licenseName];
     const valid =
       required.every((value) => typeof value === "string" && value.trim()) &&
-      /^\/audio\/music\/[a-zA-Z0-9_-]+\.(mp3|ogg|wav|m4a)$/.test(track.filePath) &&
+      new RegExp(`^/audio/${directory}/[a-zA-Z0-9_-]+\\.(mp3|ogg|wav|m4a)$`).test(track.filePath) &&
       Number.isFinite(track.duration) &&
       track.duration > 0 &&
       [track.sourceUrl, track.licenseUrl].every((url) => {

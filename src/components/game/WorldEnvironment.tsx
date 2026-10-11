@@ -13,8 +13,10 @@ import {
   weatherForDay,
 } from "@/lib/world-simulation";
 import { toast } from "sonner";
+import { useGameAudioEvents } from "@/hooks/use-game-audio-events";
 
 export function WorldEnvironment() {
+  useGameAudioEvents();
   const world = useWorldClock();
   const time = world.data ?? INITIAL_GAME_TIME;
   const phase = dayPhaseAt(time);

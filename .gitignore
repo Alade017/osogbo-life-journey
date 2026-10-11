@@ -40,3 +40,6 @@ dist-ssr
 *.sw?
 .vercel
 .env*
+
+# Mixkit permits game use, not redistribution with source files.
+public/audio/sfx/mixkit-*.wav

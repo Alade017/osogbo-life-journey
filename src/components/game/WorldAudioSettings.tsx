@@ -14,6 +14,7 @@ import {
   resumeGameMusic,
   nextGameMusic,
   playableMusicTracks,
+  playableSoundEffects,
 } from "@/lib/game-audio";
 
 type Levels = ReturnType<typeof readGameAudioLevels>;
@@ -126,8 +127,10 @@ export function WorldAudioSettings({
       </section>
       <details className="text-sm">
         <summary>Audio credits</summary>
-        {!playableMusicTracks.length && <p>No licensed recordings have been added.</p>}
-        {playableMusicTracks.map((track) => (
+        {!playableMusicTracks.length && !playableSoundEffects.length && (
+          <p>No licensed recordings have been added.</p>
+        )}
+        {[...playableMusicTracks, ...playableSoundEffects].map((track) => (
           <div key={track.id} className="py-2">
             <p>
               {track.title} · {track.artist}

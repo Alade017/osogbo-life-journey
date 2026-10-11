@@ -54,8 +54,17 @@ class FakeContext {
     return { getChannelData: () => new Float32Array(32) };
   }
   createBufferSource() {
-    return { connect: vi.fn(), start: vi.fn(), buffer: null, loop: false };
+    return {
+      connect: vi.fn(),
+      disconnect: vi.fn(),
+      start: vi.fn(),
+      stop: vi.fn(),
+      onended: null,
+      buffer: null,
+      loop: false,
+    };
   }
+  decodeAudioData = vi.fn(async () => ({ duration: 3 }));
   createBiquadFilter() {
     return { connect: vi.fn(), frequency: parameter(), type: "" };
   }
@@ -99,7 +108,11 @@ describe("game music playback", () => {
     vi.stubGlobal("Audio", FakeAudio);
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () => ({ ok: true, blob: async () => new Blob(["test"]) })),
+      vi.fn(async () => ({
+        ok: true,
+        blob: async () => new Blob(["test"]),
+        arrayBuffer: async () => new ArrayBuffer(4),
+      })),
     );
     vi.stubGlobal("caches", undefined);
     vi.stubGlobal(
@@ -161,7 +174,7 @@ describe("game music playback", () => {
     audio.configureGameMusic("other");
     expect(audio.getMusicState().track).toBeNull();
   });
-  it("does not restart an exhausted small library", async () => {
+  it("stops automatically and allows an explicit replay in a small library", async () => {
     catalog.tracks = [record];
     const audio = await import("../lib/game-audio");
     audio.configureGameMusic("player");
@@ -169,9 +182,15 @@ describe("game music playback", () => {
     await settle();
     media[0]!.onended?.();
     await settle();
-    await audio.resumeGameMusic();
     expect(media).toHaveLength(1);
     expect(audio.getMusicState().status).toContain("No eligible tracks");
+    await audio.resumeGameMusic();
+    expect(media).toHaveLength(2);
+    expect(audio.getMusicState().playing).toBe(true);
+    media[1]!.onended?.();
+    await settle();
+    expect(media).toHaveLength(2);
+    expect(audio.getMusicState().playing).toBe(false);
   });
   it("crossfades two sources and preserves the last five after reloading the manager", async () => {
     catalog.tracks = Array.from({ length: 6 }, (_, i) => ({ ...record, id: String(i) }));
@@ -215,5 +234,21 @@ describe("game music playback", () => {
     await settle();
     expect(media).toHaveLength(0);
     expect(audio.getMusicState().playing).toBe(false);
+  });
+  it("loads and decodes a licensed effect once through the effects bus", async () => {
+    const audio = await import("../lib/game-audio");
+    audio.playGameSound("level-up");
+    expect(fetch).not.toHaveBeenCalled();
+    await audio.enableGameAudio();
+    audio.playGameSound("level-up");
+    await settle();
+    audio.playGameSound("level-up");
+    await settle();
+    expect(fetch).toHaveBeenCalledTimes(1);
+    expect(contexts[0]!.decodeAudioData).toHaveBeenCalledTimes(1);
+    expect(contexts[0]!.gains[4]!.connect).toHaveBeenCalledWith(contexts[0]!.gains[3]);
+    await audio.disableGameAudio();
+    audio.playGameSound("level-up");
+    expect(fetch).toHaveBeenCalledTimes(1);
   });
 });

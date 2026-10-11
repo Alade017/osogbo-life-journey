@@ -14,4 +14,7 @@ offline or guarantee persistence when browser storage is cleared. Six valid
 tracks are required for continuous playback with strict last-five avoidance.
 
 Run `node scripts/generate-audio-credits.mjs` after updating the manifest.
-Phase 2 will add licensed file effects; current effects are original synthesis.
+Small libraries stop after eligible tracks are exhausted. The Resume button
+explicitly permits replay; automatic playback still avoids the last five tracks.
+The supplied Loyalty Freak Music MP3 is CC0; Chosic is its download provenance,
+and the matching Free Music Archive track listing supplies its license record.

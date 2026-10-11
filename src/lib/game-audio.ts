@@ -5,8 +5,8 @@ import {
   nextEligibleTrack,
   type MusicTrack,
 } from "./music-tracks";
+import { soundEffects, validSoundEffects, type SoundName } from "./sound-effects";
 type AudioLevels = { master: number; music: number; effects: number };
-type SoundName = "ui" | "interaction" | "player" | "message";
 
 type AudioGraph = {
   context: AudioContext;
@@ -21,6 +21,10 @@ const DEFAULT_LEVELS: AudioLevels = { master: 0.55, music: 0.2, effects: 0.45 };
 let graph: AudioGraph | null = null;
 
 export const playableMusicTracks = validMusicTracks(musicTracks);
+export const playableSoundEffects = validSoundEffects(soundEffects);
+let audioGeneration = 0;
+const effectsBuffers = new Map<string, Promise<AudioBuffer>>();
+const activeEffects = new Set<AudioBufferSourceNode>();
 type MusicState = { track: MusicTrack | null; status: string; playing: boolean };
 const emptyMusicState: MusicState = {
   track: null,
@@ -76,6 +80,7 @@ function saveQueue() {
 }
 export function configureGameMusic(id: string | null) {
   if (id === playerId) return;
+  stopEffects();
   pauseGameMusic();
   for (const value of [...decks]) disposeDeck(value);
   deck = null;
@@ -104,15 +109,21 @@ export function configureGameMusic(id: string | null) {
   });
 }
 
-async function localAudioUrl(track: MusicTrack): Promise<string> {
+async function localAudioResponse(filePath: string): Promise<Response> {
   const cache =
-    typeof caches !== "undefined" ? await caches.open("osogbo-music-v1").catch(() => null) : null;
-  let response = await cache?.match(track.filePath).catch(() => undefined);
+    typeof caches !== "undefined"
+      ? await caches.open("osogbo-local-audio-v1").catch(() => null)
+      : null;
+  let response = await cache?.match(filePath).catch(() => undefined);
   if (!response) {
-    response = await fetch(track.filePath);
+    response = await fetch(filePath);
     if (!response.ok) throw new Error("Audio file unavailable");
-    await cache?.put(track.filePath, response.clone()).catch(() => {});
+    await cache?.put(filePath, response.clone()).catch(() => {});
   }
+  return response;
+}
+async function localAudioUrl(track: MusicTrack): Promise<string> {
+  const response = await localAudioResponse(track.filePath);
   return URL.createObjectURL(await response.blob());
 }
 
@@ -130,10 +141,10 @@ export function pauseGameMusic() {
   });
 }
 
-export async function resumeGameMusic() {
+export async function resumeGameMusic(allowReplay = true) {
   if (!isGameAudioActive() || !playerId || loading) return;
   if (!deck) {
-    await nextGameMusic();
+    await nextGameMusic(allowReplay);
     return;
   }
   const token = revision;
@@ -149,14 +160,18 @@ export async function resumeGameMusic() {
   }
 }
 
-export async function nextGameMusic() {
+export async function nextGameMusic(allowReplay = false) {
   if (!graph || !isGameAudioActive() || !playerId || loading || !queue.length) return;
   loading = true;
   const token = ++revision;
   const failed: string[] = [];
   try {
     for (let attempt = 0; attempt < queue.length; attempt++) {
-      const next = nextEligibleTrack(queue, cursor, history);
+      const next =
+        nextEligibleTrack(queue, cursor, history) ??
+        (allowReplay && queue.length <= 5
+          ? { track: queue[cursor]!, cursor: (cursor + 1) % queue.length }
+          : null);
       if (!next) break;
       cursor = next.cursor;
       if (failed.includes(next.track.id)) continue;
@@ -228,7 +243,7 @@ export async function nextGameMusic() {
     deck = null;
     publishMusic({
       status:
-        "No eligible tracks. At least six tracks are needed for continuous playback without repeating the last five.",
+        "No eligible tracks. Music stopped; press Resume to play again. Automatic playback does not repeat the last five tracks.",
     });
   } finally {
     if (token === revision) loading = false;
@@ -263,7 +278,7 @@ function applyLevels(current: AudioGraph, levels: AudioLevels) {
   const now = current.context.currentTime;
   current.master.gain.setTargetAtTime(levels.master, now, 0.08);
   current.music.gain.setTargetAtTime(levels.music, now, 0.08);
-  current.effects.gain.setTargetAtTime(levels.effects * 0.08, now, 0.08);
+  current.effects.gain.setTargetAtTime(levels.effects, now, 0.08);
 }
 
 function createAudioGraph(levels: AudioLevels): AudioGraph | null {
@@ -307,7 +322,7 @@ export async function enableGameAudio(levels = readGameAudioLevels()): Promise<b
     if (!graph) return false;
     applyLevels(graph, levels);
     await graph.context.resume();
-    if (graph.context.state === "running") void resumeGameMusic();
+    if (graph.context.state === "running") void resumeGameMusic(false);
     return graph.context.state === "running";
   } catch {
     return false;
@@ -316,6 +331,7 @@ export async function enableGameAudio(levels = readGameAudioLevels()): Promise<b
 
 export async function disableGameAudio() {
   pauseGameMusic();
+  stopEffects();
   if (!graph) return;
   graph.master.gain.cancelScheduledValues(graph.context.currentTime);
   graph.master.gain.value = 0;
@@ -338,11 +354,55 @@ export function setGameAudioLevels(levels: AudioLevels) {
 export function playGameSound(name: SoundName) {
   const current = graph;
   if (!current || current.context.state !== "running") return;
+  const effect = playableSoundEffects.find((record) => record.sound === name);
+  if (effect) {
+    const generation = audioGeneration;
+    let buffer = effectsBuffers.get(effect.id);
+    if (!buffer) {
+      buffer = localAudioResponse(effect.filePath)
+        .then((response) => response.arrayBuffer())
+        .then((bytes) => current.context.decodeAudioData(bytes));
+      effectsBuffers.set(effect.id, buffer);
+    }
+    void buffer
+      .then((decoded) => {
+        if (generation !== audioGeneration || current.context.state !== "running") return;
+        const source = current.context.createBufferSource();
+        const trim = current.context.createGain();
+        trim.gain.value = 0.25;
+        source.buffer = decoded;
+        source.connect(trim);
+        trim.connect(current.effects);
+        activeEffects.add(source);
+        source.onended = () => {
+          activeEffects.delete(source);
+          source.disconnect();
+          trim.disconnect();
+        };
+        source.start();
+      })
+      .catch(() => {
+        effectsBuffers.delete(effect.id);
+        console.warn("Could not load local effect:", effect.id);
+        if (generation === audioGeneration && current.context.state === "running")
+          playSynthesizedSound(name, current);
+      });
+    return;
+  }
+  playSynthesizedSound(name, current);
+}
+function stopEffects() {
+  audioGeneration++;
+  for (const source of activeEffects) source.stop();
+  activeEffects.clear();
+}
+function playSynthesizedSound(name: SoundName, current: AudioGraph) {
   const patterns: Record<SoundName, number[]> = {
     ui: [660],
     interaction: [523.25, 659.25],
     player: [440, 554.37, 659.25],
     message: [784, 659.25],
+    "level-up": [523.25, 659.25, 784],
   };
   const now = current.context.currentTime;
   for (const [index, frequency] of patterns[name].entries()) {
@@ -352,7 +412,7 @@ export function playGameSound(name: SoundName) {
     oscillator.type = name === "message" ? "triangle" : "sine";
     oscillator.frequency.setValueAtTime(frequency, start);
     envelope.gain.setValueAtTime(0.0001, start);
-    envelope.gain.exponentialRampToValueAtTime(0.18, start + 0.012);
+    envelope.gain.exponentialRampToValueAtTime(0.18 * 0.08, start + 0.012);
     envelope.gain.exponentialRampToValueAtTime(0.0001, start + 0.12);
     oscillator.connect(envelope);
     envelope.connect(current.effects);
