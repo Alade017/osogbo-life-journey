@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ExternalLink, Music2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -39,13 +39,13 @@ export function NigerianTrendingMusic() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  async function loadChart(signal?: AbortSignal) {
+  const loadChart = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     setError("");
     try {
       const response = await fetch(CHART_URL, {
         headers: { Accept: "application/json" },
-        signal,
+        ...(signal ? { signal } : {}),
       });
       if (!response.ok) throw new Error("The Nigeria music chart is temporarily unavailable.");
       const payload: unknown = await response.json();
@@ -67,7 +67,7 @@ export function NigerianTrendingMusic() {
     } finally {
       if (!signal?.aborted) setLoading(false);
     }
-  }
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -77,7 +77,7 @@ export function NigerianTrendingMusic() {
       controller.abort();
       window.clearInterval(interval);
     };
-  }, []);
+  }, [loadChart]);
 
   return (
     <section className="space-y-3 border-t border-border pt-4" aria-labelledby="nigerian-chart-title">
