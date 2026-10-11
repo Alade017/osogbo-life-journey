@@ -1,3 +1,5 @@
+import type { IncomingMessage, Server as HttpServer } from "node:http";
+import type { Duplex } from "node:stream";
 import { Server, type ServerOptions } from "colyseus";
 import { NeighborhoodRoom } from "./neighborhood-room.ts";
 
@@ -66,6 +68,28 @@ const redisOptions = redisUrl
   : {};
 
 const server = new Server({ ...serverOptions, ...redisOptions });
+
+// WebSocket upgrade requests are handled by the transport's HTTP server and never reach the Express
+// middleware above, so the same Origin allowlist is enforced here. Requests without an Origin header
+// (non-browser clients) are allowed, matching the HTTP behavior. An empty allowlist rejects every
+// browser origin.
+const httpServer = (server as unknown as { transport?: { server?: HttpServer } }).transport?.server;
+if (!httpServer)
+  throw new Error("Colyseus transport did not expose an HTTP server; cannot enforce WebSocket origins.");
+
+const emitOriginal = httpServer.emit;
+httpServer.emit = function (this: HttpServer, event: string | symbol, ...args: unknown[]): boolean {
+  if (event === "upgrade") {
+    const [request, socket] = args as [IncomingMessage, Duplex];
+    const origin = request.headers.origin;
+    if (origin && !allowedOrigins.has(origin)) {
+      socket.end("HTTP/1.1 403 Forbidden\r\nConnection: close\r\nContent-Length: 0\r\n\r\n");
+      socket.destroy();
+      return true;
+    }
+  }
+  return emitOriginal.call(this, event, ...args);
+} as typeof httpServer.emit;
 
 server.define("neighborhood", NeighborhoodRoom).filterBy(["locationId"]);
 
