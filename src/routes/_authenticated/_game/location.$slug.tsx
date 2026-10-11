@@ -246,10 +246,15 @@ function LocationPage() {
         isOjaObaMarket && "oja-oba-market-screen",
       )}
     >
-      <Link to="/map" className="oja-oba-back-link inline-flex items-center gap-1 text-sm font-bold">
+      <Link
+        to="/map"
+        className="oja-oba-back-link inline-flex items-center gap-1 text-sm font-bold"
+      >
         <ArrowLeft className="h-4 w-4" /> Back to map
       </Link>
-      <div className={cn("game-panel game-panel-accent p-6 md:p-10", isOjaObaMarket && "oja-oba-hero")}>
+      <div
+        className={cn("game-panel game-panel-accent p-6 md:p-10", isOjaObaMarket && "oja-oba-hero")}
+      >
         <span
           className={cn(
             "inline-block rounded-lg border-2 border-edge px-3 py-1 font-display text-sm font-bold",
@@ -364,7 +369,10 @@ function LocationPage() {
         ) && (
           <Link
             to="/market"
-            className="ml-2 inline-flex rounded-lg border-2 border-edge bg-primary px-4 py-2 font-bold text-primary-foreground"
+            className={cn(
+              "ml-2 inline-flex rounded-lg border-2 border-edge bg-primary px-4 py-2 font-bold text-primary-foreground",
+              isOjaObaMarket && "oja-oba-primary-action",
+            )}
           >
             Browse local shops
           </Link>
@@ -476,7 +484,10 @@ function LocationPage() {
               return (
                 <article
                   key={job.id}
-                  className={cn("game-panel flex flex-col p-4", isOjaObaMarket && "oja-oba-job-card")}
+                  className={cn(
+                    "game-panel flex flex-col p-4",
+                    isOjaObaMarket && "oja-oba-job-card",
+                  )}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div>

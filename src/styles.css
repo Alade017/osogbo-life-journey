@@ -7335,3 +7335,312 @@
     font-size: 8px;
   }
 }
+
+/* Oja-Oba Market district treatment; the game shell and other districts keep their tokens. */
+.oja-oba-market-screen {
+  --background: #0f1419;
+  --foreground: #ffffff;
+  --card: #f8f9fa;
+  --card-foreground: #0f172a;
+  --popover: #f8f9fa;
+  --popover-foreground: #0f172a;
+  --primary: #10b981;
+  --primary-foreground: #0f172a;
+  --secondary: #1a222d;
+  --secondary-foreground: #ffffff;
+  --muted: #1a222d;
+  --muted-foreground: #cbd5e1;
+  --accent: #1a222d;
+  --accent-foreground: #ffffff;
+  --border: #cbd5e1;
+  --input: #cbd5e1;
+  --ring: #10b981;
+  --edge: #cbd5e1;
+  --sun: #f59e0b;
+  --sun-foreground: #0f172a;
+  --ink: #1a222d;
+  --ink-foreground: #ffffff;
+  --leaf: #10b981;
+  --game-night: #0f1419;
+  --game-panel: #f8f9fa;
+  --game-panel-raised: #f8f9fa;
+  --game-line: #334155;
+  --game-muted: #64748b;
+  --game-white: #ffffff;
+  min-height: calc(100vh - 160px);
+  padding-top: 14px;
+  padding-bottom: 28px;
+  border-radius: 18px;
+  color: #ffffff;
+  background: #0f1419;
+}
+
+.oja-oba-market-screen .oja-oba-back-link {
+  color: #cbd5e1;
+  text-decoration: none;
+}
+
+.oja-oba-market-screen .oja-oba-back-link:hover {
+  color: #ffffff;
+}
+
+.oja-oba-market-screen .game-panel {
+  border-color: #cbd5e1;
+  color: #0f172a;
+  background: #f8f9fa;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 18%);
+}
+
+.oja-oba-market-screen .oja-oba-hero {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(20px, 3vw, 36px);
+  border-color: #f8f9fa;
+  border-radius: 22px;
+}
+
+.oja-oba-market-screen .oja-oba-hero::after {
+  position: absolute;
+  right: -34px;
+  bottom: -54px;
+  width: 190px;
+  height: 150px;
+  border: 18px solid rgb(16 185 129 / 12%);
+  border-radius: 50%;
+  content: "";
+  pointer-events: none;
+}
+
+.oja-oba-market-screen .oja-oba-district-badge {
+  border-color: #f59e0b;
+  color: #0f172a;
+  background: #fef3c7;
+}
+
+.oja-oba-market-screen .oja-oba-hero h1 {
+  position: relative;
+  z-index: 1;
+  margin-top: 12px;
+  color: #0f172a;
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+}
+
+.oja-oba-market-screen .oja-oba-hero p {
+  position: relative;
+  z-index: 1;
+  color: #334155;
+}
+
+.oja-oba-market-screen .oja-oba-intro {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+
+.oja-oba-market-screen .oja-oba-intro .text-muted-foreground,
+.oja-oba-market-screen .game-panel .text-muted-foreground {
+  color: #334155;
+}
+
+.oja-oba-market-screen .oja-oba-presence {
+  border-color: #cbd5e1;
+  color: #0f172a;
+  background: #ffffff;
+}
+
+.oja-oba-market-screen .oja-oba-primary-action {
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid #10b981;
+  border-radius: 13px;
+  color: #0f172a;
+  background: #10b981;
+  box-shadow: 0 5px 14px rgb(16 185 129 / 22%);
+  font-weight: 800;
+  text-decoration: none;
+  transition:
+    background-color 140ms ease,
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.oja-oba-market-screen .oja-oba-primary-action:hover:not(:disabled) {
+  background: #34d399;
+  box-shadow: 0 7px 18px rgb(16 185 129 / 30%);
+  transform: translateY(-1px);
+}
+
+.oja-oba-market-screen .oja-oba-primary-action:disabled {
+  border-color: #64748b;
+  color: #64748b;
+  background: #e2e8f0;
+  box-shadow: none;
+}
+
+.oja-oba-market-screen .oja-oba-section {
+  padding: 18px;
+  border: 1px solid #334155;
+  border-radius: 18px;
+  background: #1a222d;
+}
+
+.oja-oba-market-screen .oja-oba-section h2 {
+  color: #ffffff;
+  font-size: clamp(1.1rem, 2.2vw, 1.4rem);
+}
+
+.oja-oba-market-screen .oja-oba-section > div:first-child > svg {
+  color: #10b981;
+}
+
+.oja-oba-market-screen .oja-oba-section > div:first-child > span {
+  border-color: #64748b;
+  color: #ffffff;
+  background: #0f1419;
+}
+
+.oja-oba-market-screen .oja-oba-place-card,
+.oja-oba-market-screen .oja-oba-job-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  padding: 16px;
+  border-color: #cbd5e1;
+  border-radius: 16px;
+  color: #0f172a;
+  background: #f8f9fa;
+}
+
+.oja-oba-market-screen .oja-oba-place-card h3,
+.oja-oba-market-screen .oja-oba-job-card h3 {
+  color: #0f172a;
+  line-height: 1.25;
+}
+
+.oja-oba-market-screen .oja-oba-place-card p,
+.oja-oba-market-screen .oja-oba-job-card p {
+  line-height: 1.5;
+}
+
+.oja-oba-market-screen .oja-oba-job-card > button {
+  width: 100%;
+  margin-top: 14px;
+}
+
+.oja-oba-market-screen .oja-oba-job-card > div.rounded-lg {
+  border-color: #cbd5e1;
+  color: #0f172a;
+  background: #eef2f6;
+}
+
+.oja-oba-market-screen .oja-oba-job-card li {
+  color: #9f1239;
+}
+
+.oja-oba-market-screen .oja-oba-features {
+  overflow: hidden;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  color: #cbd5e1;
+  background: #1a222d;
+}
+
+.oja-oba-market-screen .oja-oba-features summary {
+  padding: 12px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.oja-oba-market-screen .oja-oba-features ul {
+  display: grid;
+  gap: 8px;
+  padding: 0 16px 14px;
+}
+
+.oja-oba-market-screen .oja-oba-features li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px solid #334155;
+  color: #ffffff;
+  font-size: 13px;
+}
+
+.city-game-frame:has(.oja-oba-market-screen) {
+  grid-template-columns: 82px minmax(0, 1fr);
+}
+
+.city-game-frame:has(.oja-oba-market-screen) .game-desktop-nav {
+  align-items: center;
+  padding-inline: 8px;
+  border-right-color: #334155;
+  background: #1a222d;
+}
+
+.city-game-frame:has(.oja-oba-market-screen) .game-side-logo {
+  justify-content: center;
+}
+
+.city-game-frame:has(.oja-oba-market-screen) .game-side-logo > span > span:last-child {
+  display: none;
+}
+
+.city-game-frame:has(.oja-oba-market-screen) .game-side-label,
+.city-game-frame:has(.oja-oba-market-screen) .game-side-link > span,
+.city-game-frame:has(.oja-oba-market-screen) .game-side-phone .phone-compact-label {
+  display: none;
+}
+
+.city-game-frame:has(.oja-oba-market-screen) .game-side-link {
+  min-height: 44px;
+  grid-template-columns: 1fr;
+  justify-items: center;
+  padding-inline: 0;
+  color: #cbd5e1;
+}
+
+.city-game-frame:has(.oja-oba-market-screen) .game-side-link:hover,
+.city-game-frame:has(.oja-oba-market-screen) .game-side-link-active {
+  color: #10b981;
+  background: #0f1419;
+}
+
+.city-game-frame:has(.oja-oba-market-screen) .hud-need-track {
+  height: 7px;
+  border: 1px solid #94a3b8;
+  background: #e2e8f0;
+}
+
+.city-game-frame:has(.oja-oba-market-screen) .hud-need-track i {
+  background: #10b981;
+}
+
+.city-game-frame:has(.oja-oba-market-screen) .hud-need.is-warning .hud-need-track i {
+  background: #f59e0b;
+}
+
+.city-game-frame:has(.oja-oba-market-screen) .hud-need.is-critical .hud-need-track i {
+  background: #dc2626;
+}
+
+@media (max-width: 560px) {
+  .oja-oba-market-screen {
+    margin-inline: -12px;
+    padding-inline: 12px;
+    border-radius: 0;
+  }
+
+  .oja-oba-market-screen .oja-oba-section {
+    padding: 14px;
+  }
+
+  .oja-oba-market-screen .oja-oba-intro {
+    padding: 15px;
+  }
+}
