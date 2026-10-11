@@ -264,7 +264,7 @@ export function NeighborhoodGame() {
     if (!loaded || !locationId || !engine.current) return;
     let cancelled = false;
     let joined: NeighborhoodRoom | null = null;
-    let playersUnsubscribers: Array<() => void> = [];
+    let removeStateListener: (() => void) | null = null;
     setMultiplayerStatus("connecting");
     engine.current.scene.lock(true);
 
@@ -277,12 +277,22 @@ export function NeighborhoodGame() {
         joined = room;
         roomRef.current = room;
         engine.current?.scene.setLocalSessionId(room.sessionId);
-        const syncPlayers = (players: NonNullable<typeof room.state>["players"]) => {
+        let stateBound = false;
+        const syncPlayers = () => {
+          const players = room.state?.players;
+          if (!players) return;
           const snapshots = Array.from(
             players.entries() as Iterable<[string, NetworkPlayerSnapshot]>,
             ([sessionId, player]) => ({ sessionId, ...player }),
           );
           engine.current?.scene.syncNetworkPlayers(snapshots);
+          if (stateBound) return;
+          stateBound = true;
+          setMultiplayerStatus("connected");
+          setStatus("Connected to your neighborhood. Other players here are real players.");
+          engine.current?.scene.lock(
+            !navigator.onLine || document.hidden || pending.current || menuOpen.current,
+          );
         };
         room.onLeave((_code, reason) => {
           if (cancelled) return;
@@ -296,33 +306,16 @@ export function NeighborhoodGame() {
           );
         });
 
-        let stateBound = false;
-        const bindPlayers = () => {
-          const players = room.state?.players;
-          if (cancelled || stateBound || !players) return;
-          stateBound = true;
-          playersUnsubscribers = [
-            players.onAdd(() => syncPlayers(players)),
-            players.onChange(() => syncPlayers(players)),
-            players.onRemove(() => syncPlayers(players)),
-          ];
-          syncPlayers(players);
-          setMultiplayerStatus("connected");
-          setStatus("Connected to your neighborhood. Other players here are real players.");
-          engine.current?.scene.lock(
-            !navigator.onLine || document.hidden || pending.current || menuOpen.current,
-          );
-        };
-
-        // joinOrCreate resolves before Colyseus necessarily delivers the first
-        // ROOM_STATE message. Wait for it before subscribing to the state map.
-        room.onStateChange.once(bindPlayers);
-        bindPlayers();
+        // Schema collections are synchronized through the room signal in the
+        // installed Colyseus SDK; MapSchema itself has no onAdd/onChange API.
+        room.onStateChange(syncPlayers);
+        removeStateListener = () => room.onStateChange.remove(syncPlayers);
+        syncPlayers();
       })
       .catch((error: unknown) => {
         if (cancelled) return;
-        playersUnsubscribers.forEach((unsubscribe) => unsubscribe());
-        playersUnsubscribers = [];
+        removeStateListener?.();
+        removeStateListener = null;
         if (roomRef.current === joined) roomRef.current = null;
         if (joined) void joined.leave();
         setMultiplayerStatus("error");
@@ -334,7 +327,7 @@ export function NeighborhoodGame() {
       if (roomRef.current === joined) roomRef.current = null;
       engine.current?.scene.setLocalSessionId(null);
       engine.current?.scene.syncNetworkPlayers([]);
-      playersUnsubscribers.forEach((unsubscribe) => unsubscribe());
+      removeStateListener?.();
       if (joined) void joined.leave();
     };
   }, [loaded, locationId, connectionAttempt]);
