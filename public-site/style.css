@@ -30,10 +30,45 @@
   --interactive: #35b7a1;
   --disabled-bg: #e6e9e4;
   --disabled-text: #929b94;
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-soft: var(--primary-soft);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-subtle: var(--surface-subtle);
+  --color-surface-dark: var(--surface-dark);
+  --color-surface-dark-elevated: var(--surface-dark-raised);
+  --color-text: var(--text);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --color-border: var(--border);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+  --color-interactive: var(--interactive);
+  --color-disabled-background: var(--disabled-bg);
+  --color-disabled-text: var(--disabled-text);
+  --font-display: "Manrope", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
   --radius-card: 18px;
+  --radius-pill: 999px;
   --shadow-card: 0 4px 16px rgb(23 37 43 / 6%);
   --shadow-card-hover: 0 8px 24px rgb(23 37 43 / 9%);
   --duration-control: 180ms;
+  --duration-enter: 220ms;
+  --layer-base: 0;
+  --layer-navigation: 35;
+  --layer-overlay: 80;
+  --layer-modal: 90;
+  --layer-toast: 100;
   --forest: var(--primary);
   --green: var(--primary);
   --gold: var(--accent);
@@ -50,7 +85,7 @@ a {
   color: inherit;
   text-decoration: none;
 }
- a:focus-visible,
+a:focus-visible,
 button:focus-visible,
 summary:focus-visible {
   outline: 3px solid var(--interactive);
@@ -418,7 +453,14 @@ body {
 
 .hero-shade {
   z-index: -1;
-  background: linear-gradient(90deg, var(--background) 0%, var(--background) 36%, rgb(247 243 233 / 94%) 47%, rgb(247 243 233 / 30%) 68%, transparent 100%);
+  background: linear-gradient(
+    90deg,
+    var(--background) 0%,
+    var(--background) 36%,
+    rgb(247 243 233 / 94%) 47%,
+    rgb(247 243 233 / 30%) 68%,
+    transparent 100%
+  );
 }
 
 .hero-content {
@@ -522,7 +564,9 @@ body {
 
 .feature-card {
   min-height: 200px;
-  transition: transform var(--duration-control) ease, box-shadow var(--duration-control) ease;
+  transition:
+    transform var(--duration-control) ease,
+    box-shadow var(--duration-control) ease;
 }
 
 .feature-card:hover {
@@ -822,7 +866,14 @@ body {
   }
 
   .hero-shade {
-    background: linear-gradient(180deg, var(--background) 0%, var(--background) 42%, rgb(247 243 233 / 82%) 55%, rgb(247 243 233 / 10%) 78%, transparent 100%);
+    background: linear-gradient(
+      180deg,
+      var(--background) 0%,
+      var(--background) 42%,
+      rgb(247 243 233 / 82%) 55%,
+      rgb(247 243 233 / 10%) 78%,
+      transparent 100%
+    );
   }
 
   .hero-content {

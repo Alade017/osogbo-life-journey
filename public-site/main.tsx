@@ -54,8 +54,8 @@ function PublicWebsite() {
               </a>
             </div>
             <p className="availability">
-              <span aria-hidden="true" /> Playable life simulation · Online account saves ·
-              Multiplayer is in development
+              <span aria-hidden="true" /> Playable life simulation · Online account saves · Shared
+              city play and player messaging
             </p>
           </div>
           <a
@@ -73,8 +73,8 @@ function PublicWebsite() {
             <p className="eyebrow eyebrow-dark">A city life, at your pace</p>
             <h2>Small moments make a life.</h2>
             <p>
-              Create a character, explore a shared neighbourhood, find work, meet other players,
-              and make a home in a fictional city inspired by Osogbo.
+              Create a character, explore a shared neighbourhood, find work, meet other players, and
+              make a home in a fictional city inspired by Osogbo.
             </p>
           </div>
           <div className="feature-grid">
@@ -114,7 +114,9 @@ function PublicWebsite() {
             <article className="feature-card">
               <span className="feature-number">06</span>
               <h3>Explore your city</h3>
-              <p>Travel between districts, discover useful places, and return to your saved home.</p>
+              <p>
+                Travel between districts, discover useful places, and return to your saved home.
+              </p>
             </article>
           </div>
           <figure className="city-preview">
@@ -135,17 +137,29 @@ function PublicWebsite() {
             <p className="eyebrow eyebrow-dark">Your character. Your choices.</p>
             <h2 id="life-preview-title">Build a life one day at a time.</h2>
             <p>
-              Your story begins with a character and a place in the neighbourhood. Explore the
-              city, take a shift, grow your skills, and make your home your own.
+              Your story begins with a character and a place in the neighbourhood. Explore the city,
+              take a shift, grow your skills, and make your home your own.
             </p>
             <a className="text-link" href={`${gameUrl}/signup`}>
               Create your character <span aria-hidden="true">&gt;</span>
             </a>
           </div>
           <div className="life-preview-cards" aria-label="Game features">
-            <article><span aria-hidden="true">HOME</span><strong>A place to call home</strong><small>Arrange rooms and furniture in your saved home.</small></article>
-            <article><span aria-hidden="true">WORK</span><strong>Work and grow</strong><small>Take shifts and develop your character.</small></article>
-            <article><span aria-hidden="true">PEOPLE</span><strong>People around you</strong><small>Meet players and build friendships.</small></article>
+            <article>
+              <span aria-hidden="true">HOME</span>
+              <strong>A place to call home</strong>
+              <small>Arrange rooms and furniture in your saved home.</small>
+            </article>
+            <article>
+              <span aria-hidden="true">WORK</span>
+              <strong>Work and grow</strong>
+              <small>Take shifts and develop your character.</small>
+            </article>
+            <article>
+              <span aria-hidden="true">PEOPLE</span>
+              <strong>People around you</strong>
+              <small>Meet players and build friendships.</small>
+            </article>
           </div>
         </section>
 
@@ -182,13 +196,17 @@ function PublicWebsite() {
             </details>
             <details>
               <summary>Can I play on a phone?</summary>
-              <p>The game includes responsive screens and touch movement controls for mobile browsers.</p>
+              <p>
+                The game includes responsive screens and touch movement controls for mobile
+                browsers.
+              </p>
             </details>
             <details>
               <summary>How do I meet and message another player?</summary>
               <p>
-                Open People to find player profiles and send a friend request. Once accepted, you can
-                start a private conversation; area chat is available to players in the same area.
+                Open People to find player profiles and send a friend request. Once accepted, you
+                can start a private conversation; area chat is available to players in the same
+                area.
               </p>
             </details>
           </div>
