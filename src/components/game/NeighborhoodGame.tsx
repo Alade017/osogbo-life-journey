@@ -264,6 +264,7 @@ export function NeighborhoodGame() {
     if (!loaded || !locationId || !engine.current) return;
     let cancelled = false;
     let joined: NeighborhoodRoom | null = null;
+    let playersUnsubscribers: Array<() => void> = [];
     setMultiplayerStatus("connecting");
     engine.current.scene.lock(true);
 
@@ -276,17 +277,13 @@ export function NeighborhoodGame() {
         joined = room;
         roomRef.current = room;
         engine.current?.scene.setLocalSessionId(room.sessionId);
-        const syncPlayers = () => {
+        const syncPlayers = (players: NonNullable<typeof room.state>["players"]) => {
           const snapshots = Array.from(
-            room.state.players.entries() as Iterable<[string, NetworkPlayerSnapshot]>,
+            players.entries() as Iterable<[string, NetworkPlayerSnapshot]>,
             ([sessionId, player]) => ({ sessionId, ...player }),
           );
           engine.current?.scene.syncNetworkPlayers(snapshots);
         };
-        room.state.players.onAdd(syncPlayers);
-        room.state.players.onChange(syncPlayers);
-        room.state.players.onRemove(syncPlayers);
-        syncPlayers();
         room.onLeave((_code, reason) => {
           if (cancelled) return;
           roomRef.current = null;
@@ -298,14 +295,36 @@ export function NeighborhoodGame() {
             reason || "Connection lost. Reconnect to rejoin from your last saved checkpoint.",
           );
         });
-        setMultiplayerStatus("connected");
-        setStatus("Connected to your neighborhood. Other players here are real players.");
-        engine.current?.scene.lock(
-          !navigator.onLine || document.hidden || pending.current || menuOpen.current,
-        );
+
+        let stateBound = false;
+        const bindPlayers = () => {
+          const players = room.state?.players;
+          if (cancelled || stateBound || !players) return;
+          stateBound = true;
+          playersUnsubscribers = [
+            players.onAdd(() => syncPlayers(players)),
+            players.onChange(() => syncPlayers(players)),
+            players.onRemove(() => syncPlayers(players)),
+          ];
+          syncPlayers(players);
+          setMultiplayerStatus("connected");
+          setStatus("Connected to your neighborhood. Other players here are real players.");
+          engine.current?.scene.lock(
+            !navigator.onLine || document.hidden || pending.current || menuOpen.current,
+          );
+        };
+
+        // joinOrCreate resolves before Colyseus necessarily delivers the first
+        // ROOM_STATE message. Wait for it before subscribing to the state map.
+        room.onStateChange.once(bindPlayers);
+        bindPlayers();
       })
       .catch((error: unknown) => {
         if (cancelled) return;
+        playersUnsubscribers.forEach((unsubscribe) => unsubscribe());
+        playersUnsubscribers = [];
+        if (roomRef.current === joined) roomRef.current = null;
+        if (joined) void joined.leave();
         setMultiplayerStatus("error");
         setStatus(error instanceof Error ? error.message : "Could not connect to the game server.");
       });
@@ -315,6 +334,7 @@ export function NeighborhoodGame() {
       if (roomRef.current === joined) roomRef.current = null;
       engine.current?.scene.setLocalSessionId(null);
       engine.current?.scene.syncNetworkPlayers([]);
+      playersUnsubscribers.forEach((unsubscribe) => unsubscribe());
       if (joined) void joined.leave();
     };
   }, [loaded, locationId, connectionAttempt]);
