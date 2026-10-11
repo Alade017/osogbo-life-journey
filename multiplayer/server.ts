@@ -1,4 +1,4 @@
-import { Server, type ServerOptions } from "colyseus";
+import { matchMaker, Server, type ServerOptions } from "colyseus";
 import { NeighborhoodRoom } from "./neighborhood-room.ts";
 
 const redisUrl = process.env["REDIS_URL"]?.trim();
@@ -22,6 +22,13 @@ const allowedOrigins = new Set(
         ],
 );
 
+matchMaker.controller.getCorsHeaders = (headers) => {
+  const origin = headers.get("origin");
+  return {
+    "Access-Control-Allow-Origin": !origin || allowedOrigins.has(origin) ? (origin ?? "*") : "",
+  };
+};
+
 const publicAddress = (
   process.env["MULTIPLAYER_PUBLIC_ADDRESS"] ?? process.env["RAILWAY_PUBLIC_DOMAIN"]
 )
@@ -32,9 +39,6 @@ const publicAddress = (
 const serverOptions: ServerOptions = {
   ...(publicAddress ? { publicAddress } : {}),
   express: (app) => {
-    app.get("/healthz", (_request, response) => {
-      response.status(200).json({ status: "ok" });
-    });
     app.use((request, response, next) => {
       const origin = request.headers.origin;
       if (origin && !allowedOrigins.has(origin)) {
@@ -52,6 +56,9 @@ const serverOptions: ServerOptions = {
         return;
       }
       next();
+    });
+    app.get("/healthz", (_request, response) => {
+      response.status(200).json({ status: "ok" });
     });
   },
 };
