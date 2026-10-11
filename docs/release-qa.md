@@ -2,6 +2,17 @@
 
 ## Milestone 9 verification update — 2026-10-11
 
+### Railway multiplayer preparation
+
+- Added the Colyseus 0.18 Redis Presence and Redis Driver packages for shared multi-service matchmaking.
+- Added Railway `PORT` binding on `0.0.0.0`, generated-domain room routing, and `/healthz`.
+- Added a production requirement for `REDIS_URL` on Railway, with local in-memory mode retained for development.
+- Browser endpoint configuration accepts a comma-separated list and retries another configured host when matchmaking fails.
+- Railway does not provide sticky sessions, while Colyseus sockets must return to their room-owning process. The deployment guide therefore requires separate single-replica Colyseus services, each with an individual public domain, rather than multiple replicas behind one domain.
+- These changes prepare the repository only. No Railway services, domains, variables, database settings, or deployments were changed. Hosted two-client acceptance remains open.
+- This update: production build passed; typecheck passed; all 180 tests across 44 files passed; lint passed with 0 errors and the existing 15 Fast Refresh warnings. Local Railway-like startup bound to `0.0.0.0`, `/healthz` returned 200, disallowed origins received 403, and a Railway environment without `REDIS_URL` failed fast as configured.
+- Built-site preview returned HTTP 200 for `/`. No Redis instance or Railway environment was available, so Redis connectivity, direct multi-service room routing, and authenticated multi-client behavior remain unverified.
+
 ### Local checks
 
 - `npm.cmd run typecheck`: passed.

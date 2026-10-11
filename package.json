@@ -7,6 +7,7 @@
     "dev": "vite dev",
     "dev:public": "vite --config vite.public.config.ts",
     "multiplayer:dev": "node --env-file-if-exists=.env --experimental-strip-types multiplayer/server.ts",
+    "multiplayer:start": "node --experimental-strip-types multiplayer/server.ts",
     "build:public": "vite build --config vite.public.config.ts",
     "build": "vite build",
     "build:dev": "vite build --mode development",
@@ -23,6 +24,8 @@
     "rolldown": "1.2.1"
   },
   "dependencies": {
+    "@colyseus/redis-driver": "^0.18.0",
+    "@colyseus/redis-presence": "^0.18.0",
     "@colyseus/schema": "^5.0.8",
     "@colyseus/sdk": "^0.18.5",
     "@hookform/resolvers": "^5.2.2",

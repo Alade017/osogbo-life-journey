@@ -162,12 +162,14 @@ export class NeighborhoodRoom extends Room {
       .filter(Boolean);
     const allowedOrigins = configuredOrigins?.length
       ? configuredOrigins
-      : [
-          "http://127.0.0.1:3000",
-          "http://localhost:3000",
-          "http://127.0.0.1:3010",
-          "http://localhost:3010",
-        ];
+      : process.env["NODE_ENV"] === "production" || process.env["RAILWAY_ENVIRONMENT_NAME"]
+        ? []
+        : [
+            "http://127.0.0.1:3000",
+            "http://localhost:3000",
+            "http://127.0.0.1:3010",
+            "http://localhost:3010",
+          ];
     if (typeof origin !== "string" || !allowedOrigins.includes(origin))
       throw new Error("This website is not allowed to join the game server.");
 
