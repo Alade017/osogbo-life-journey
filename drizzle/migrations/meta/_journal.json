@@ -85,6 +85,139 @@
       "when": 1791245090847,
       "tag": "0011_job_time_needs",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1791245090848,
+      "tag": "0012_location_search_index",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1791245090849,
+      "tag": "0012_milestone5_phase1_seed",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1791245090850,
+      "tag": "0013_virtual_player_movement",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1791245090851,
+      "tag": "0014_location_interaction_radius",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1791245090852,
+      "tag": "0015_backfill_starter_inventory",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1791245090853,
+      "tag": "0016_transport_mode_travel",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1791245090854,
+      "tag": "0017_milestone8_career_recurring_economy",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1791245090855,
+      "tag": "0018_milestone9_npc_social",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1791245090856,
+      "tag": "0019_milestone10_cloud_home_save",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1791245090857,
+      "tag": "0020_milestone11_world_conditions",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1791594000000,
+      "tag": "0021_fictional_city_world",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1791594000001,
+      "tag": "0022_osogbo_world_nodes",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1791594000002,
+      "tag": "0023_restore_travel_to_location_rpc",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1791594000003,
+      "tag": "0024_shared_hud_simulation",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1791594000004,
+      "tag": "0025_player_social",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1791594000005,
+      "tag": "0026_milestone7_purchasable_upgrade",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1791594000006,
+      "tag": "0027_milestone8_friend_home_visits",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1791594000007,
+      "tag": "0028_milestone8_paid_home_upgrades",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1791594000008,
+      "tag": "0029_milestone8_purchased_home_furniture",
+      "breakpoints": true
     }
   ]
 }

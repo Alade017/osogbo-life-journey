@@ -26,6 +26,7 @@ function MissionsPage() {
   return (
     <div>
       <PageHeader
+        eyebrow="YOUR NEXT STEPS"
         title="Missions"
         subtitle={`${sorted.filter((m) => m.status === "claimed").length}/${sorted.length} completed`}
       />
@@ -36,7 +37,7 @@ function MissionsPage() {
           return (
             <div
               key={pm.id}
-              className={`game-panel p-5 ${pm.status === "completed" ? "bg-sun" : ""}`}
+              className={`game-panel border-l-4 p-5 ${pm.status === "completed" ? "border-l-sun" : "border-l-transparent"}`}
             >
               <div className="flex items-start justify-between gap-2">
                 <h3 className="text-xl font-bold">{m.title}</h3>

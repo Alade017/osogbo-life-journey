@@ -19,6 +19,7 @@ function NotificationsPage() {
   return (
     <div>
       <PageHeader
+        eyebrow="CITY UPDATES"
         title="Notifications"
         subtitle={`${unread} unread`}
         right={

@@ -15,6 +15,7 @@ function location(overrides: Partial<MapLocation> = {}) {
     icon: "map-pin",
     image_url: null,
     is_active: true,
+    interaction_radius_m: 50,
     level_required: 0,
     metadata: {},
     ...overrides,
@@ -45,14 +46,14 @@ describe("player location source", () => {
     });
   });
 
-  it("tracks the character's updated district without UI-owned coordinates", () => {
+  it("uses the virtual Osogbo spawn when the district lacks map coordinates", () => {
     const locations = [location(), location({ id: "district-b", latitude: null, longitude: null })];
 
     expect(resolvePlayerLocation(character("district-b"), locations)).toMatchObject({
       currentLocationId: "district-b",
       location: { id: "district-b" },
-      latitude: null,
-      longitude: null,
+      latitude: 7.7677,
+      longitude: 4.556,
     });
   });
 

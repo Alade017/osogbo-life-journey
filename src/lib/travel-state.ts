@@ -1,3 +1,5 @@
+import type { TravelMode } from "@/lib/transport-service";
+
 export type TravelStatus = "idle" | "selecting_destination" | "traveling" | "arrived" | "cancelled";
 
 export type TravelState = {
@@ -7,6 +9,7 @@ export type TravelState = {
   destinationName: string | null;
   fare: number | null;
   estimatedMinutes: number | null;
+  mode: TravelMode;
   error: string | null;
 };
 
@@ -18,9 +21,11 @@ export type TravelEvent =
       destinationName: string;
       fare: number;
       estimatedMinutes: number;
+      mode?: TravelMode;
     }
   | { type: "start" }
   | { type: "arrive"; estimatedMinutes: number }
+  | { type: "set_mode"; mode: TravelMode; fare: number; estimatedMinutes: number }
   | { type: "fail"; message: string }
   | { type: "cancel" }
   | { type: "reset" };
@@ -32,6 +37,7 @@ export const initialTravelState: TravelState = {
   destinationName: null,
   fare: null,
   estimatedMinutes: null,
+  mode: "danfo",
   error: null,
 };
 
@@ -45,6 +51,7 @@ export function travelReducer(state: TravelState, event: TravelEvent): TravelSta
         destinationName: event.destinationName,
         fare: event.fare,
         estimatedMinutes: event.estimatedMinutes,
+        mode: event.mode ?? "danfo",
         error: null,
       };
     case "start":
@@ -54,6 +61,16 @@ export function travelReducer(state: TravelState, event: TravelEvent): TravelSta
     case "arrive":
       return state.status === "traveling"
         ? { ...state, status: "arrived", estimatedMinutes: event.estimatedMinutes, error: null }
+        : state;
+    case "set_mode":
+      return state.status === "selecting_destination"
+        ? {
+            ...state,
+            mode: event.mode,
+            fare: event.fare,
+            estimatedMinutes: event.estimatedMinutes,
+            error: null,
+          }
         : state;
     case "fail":
       return state.status === "traveling"

@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import cityPhoto from "@/assets/osogbo-city.jpg";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,7 +22,11 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
 
   useEffect(() => {
     if (mode !== "login") return;
-    if (new URLSearchParams(window.location.search).has("reset")) setResettingPassword(true);
+    if (
+      new URLSearchParams(window.location.search).has("reset") ||
+      new URLSearchParams(window.location.hash.slice(1)).get("type") === "recovery"
+    )
+      setResettingPassword(true);
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY") setResettingPassword(true);
     });
@@ -66,7 +69,9 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
           email,
           password,
           options: {
-            emailRedirectTo: window.location.origin + "/create-character",
+            // Confirmation must return to a public route; the login page then
+            // resolves whether this account needs a character or has a save.
+            emailRedirectTo: `${window.location.origin}/login`,
             data: { username: username.trim() },
           },
         });
@@ -76,7 +81,9 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        navigate({ to: "/home" });
+        // The protected game shell redirects new accounts to character creation
+        // and keeps returning accounts on their saved game.
+        navigate({ to: "/home", search: { visit: undefined } });
       }
     } catch (err) {
       toast.error((err as Error).message);
@@ -86,15 +93,33 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
   }
 
   async function google() {
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + "/login",
-    });
-    if (result.error) {
-      toast.error(result.error.message ?? "Google sign-in failed");
-      return;
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${window.location.origin}/login` },
+      });
+      if (error) throw error;
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Google sign-in failed");
+    } finally {
+      setBusy(false);
     }
-    if (result.redirected) return;
-    navigate({ to: "/home" });
+  }
+
+  async function continueAsGuest() {
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.signInAnonymously({
+        options: { data: { username: "guest" } },
+      });
+      if (error) throw error;
+      navigate({ to: "/create-character" });
+    } catch (error) {
+      toast.error(`Guest play is unavailable. ${(error as Error).message}`);
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -138,8 +163,9 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
               <div>
                 <h2 className="text-2xl font-bold">Check your email</h2>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  We sent a confirmation link to <strong>{email}</strong>. Click it to activate your
-                  account, then come back to log in.
+                  We sent a confirmation link to <strong>{email}</strong>. Click it to confirm your
+                  account. You’ll return to the game to create a character or continue if you
+                  already have one.
                 </p>
                 <Button asChild variant="default" size="lg" className="mt-6 w-full">
                   <Link to="/login">Go to login</Link>
@@ -294,8 +320,23 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
                       <span className="h-px flex-1 bg-border" /> OR{" "}
                       <span className="h-px flex-1 bg-border" />
                     </div>
-                    <Button variant="plain" size="lg" className="w-full" onClick={google}>
+                    <Button
+                      variant="plain"
+                      size="lg"
+                      className="w-full"
+                      onClick={google}
+                      disabled={busy}
+                    >
                       Continue with Google
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="mt-2 w-full"
+                      disabled={busy}
+                      onClick={continueAsGuest}
+                    >
+                      Continue as guest
                     </Button>
                     <p className="mt-6 text-center text-sm">
                       New to Osogbo?{" "}
@@ -306,12 +347,23 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
                   </>
                 )}
                 {!resettingPassword && mode === "signup" && (
-                  <p className="mt-6 text-center text-sm">
-                    Already playing?{" "}
-                    <Link to="/login" className="font-bold text-primary underline">
-                      Log in
-                    </Link>
-                  </p>
+                  <>
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      className="mt-4 w-full"
+                      disabled={busy}
+                      onClick={continueAsGuest}
+                    >
+                      Continue as guest
+                    </Button>
+                    <p className="mt-6 text-center text-sm">
+                      Already playing?{" "}
+                      <Link to="/login" className="font-bold text-primary underline">
+                        Log in
+                      </Link>
+                    </p>
+                  </>
                 )}
                 <a
                   href="https://commons.wikimedia.org/wiki/File:Osogbo.jpg"

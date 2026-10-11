@@ -8,6 +8,165 @@ export type Database = {
   };
   public: {
     Tables: {
+      character_home_saves: {
+        Row: {
+          character_id: string;
+          user_id: string;
+          schema_version: number;
+          revision: number;
+          payload: Json;
+          allow_friend_visits: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          character_id: string;
+          user_id: string;
+          schema_version?: number;
+          revision?: number;
+          payload: Json;
+          allow_friend_visits?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          character_id?: string;
+          user_id?: string;
+          schema_version?: number;
+          revision?: number;
+          payload?: Json;
+          allow_friend_visits?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      npc_definitions: {
+        Row: {
+          id: string;
+          name: string;
+          role: string;
+          personality: string;
+          home_location_id: string | null;
+          work_location_id: string | null;
+          interests: string[];
+          topics: string[];
+          routine: Json;
+          created_at: string;
+        };
+        Insert: {
+          id: string;
+          name: string;
+          role: string;
+          personality: string;
+          home_location_id?: string | null;
+          work_location_id?: string | null;
+          interests?: string[];
+          topics?: string[];
+          routine?: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          role?: string;
+          personality?: string;
+          home_location_id?: string | null;
+          work_location_id?: string | null;
+          interests?: string[];
+          topics?: string[];
+          routine?: Json;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      character_npc_relationships: {
+        Row: {
+          id: string;
+          user_id: string;
+          character_id: string;
+          npc_id: string;
+          friendship: number;
+          romance: number;
+          trust: number;
+          conflict: number;
+          meetings: number;
+          last_interaction_day: number | null;
+          last_interaction_text: string | null;
+          daily_points: number;
+          daily_points_day: number | null;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          character_id: string;
+          npc_id: string;
+          friendship?: number;
+          romance?: number;
+          trust?: number;
+          conflict?: number;
+          meetings?: number;
+          last_interaction_day?: number | null;
+          last_interaction_text?: string | null;
+          daily_points?: number;
+          daily_points_day?: number | null;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          character_id?: string;
+          npc_id?: string;
+          friendship?: number;
+          romance?: number;
+          trust?: number;
+          conflict?: number;
+          meetings?: number;
+          last_interaction_day?: number | null;
+          last_interaction_text?: string | null;
+          daily_points?: number;
+          daily_points_day?: number | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      npc_interaction_events: {
+        Row: {
+          id: string;
+          user_id: string;
+          character_id: string;
+          npc_id: string;
+          request_id: string;
+          action: string;
+          accepted: boolean;
+          message: string;
+          game_day: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          character_id: string;
+          npc_id: string;
+          request_id: string;
+          action: string;
+          accepted?: boolean;
+          message: string;
+          game_day: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          character_id?: string;
+          npc_id?: string;
+          request_id?: string;
+          action?: string;
+          accepted?: boolean;
+          message?: string;
+          game_day?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
       character_jobs: {
         Row: {
           character_id: string;
@@ -18,6 +177,7 @@ export type Database = {
           job_id: string;
           last_performed_at: string | null;
           times_performed: number;
+          career_level: number;
           updated_at: string;
           user_id: string;
         };
@@ -29,6 +189,7 @@ export type Database = {
           is_current?: boolean;
           last_performed_at?: string | null;
           times_performed?: number;
+          career_level?: number;
           hired_at?: string;
           created_at?: string;
           updated_at?: string;
@@ -42,6 +203,7 @@ export type Database = {
           job_id?: string;
           last_performed_at?: string | null;
           times_performed?: number;
+          career_level?: number;
           updated_at?: string;
           user_id?: string;
         };
@@ -102,6 +264,13 @@ export type Database = {
           user_id: string;
           wealth: number;
           xp: number;
+          virtual_latitude: number;
+          virtual_longitude: number;
+          movement_state: string;
+          world_x: number;
+          world_y: number;
+          world_building_slug: string | null;
+          world_position_revision: number;
         };
         Insert: {
           age: number;
@@ -134,6 +303,13 @@ export type Database = {
           user_id: string;
           wealth?: number;
           xp?: number;
+          virtual_latitude?: number;
+          virtual_longitude?: number;
+          movement_state?: string;
+          world_x?: number;
+          world_y?: number;
+          world_building_slug?: string | null;
+          world_position_revision?: number;
         };
         Update: {
           age?: number;
@@ -166,6 +342,13 @@ export type Database = {
           user_id?: string;
           wealth?: number;
           xp?: number;
+          virtual_latitude?: number;
+          virtual_longitude?: number;
+          movement_state?: string;
+          world_x?: number;
+          world_y?: number;
+          world_building_slug?: string | null;
+          world_position_revision?: number;
         };
         Relationships: [
           {
@@ -264,6 +447,10 @@ export type Database = {
           required_level: number;
           requirements: Json;
           reputation_reward: number;
+          skill_reward_slug: string;
+          skill_reward_xp: number;
+          shift_start_hour: number;
+          shift_end_hour: number;
           salary: number;
           slug: string;
           sort_order: number;
@@ -290,6 +477,10 @@ export type Database = {
           required_level?: number;
           requirements?: Json;
           reputation_reward?: number;
+          skill_reward_slug?: string;
+          skill_reward_xp?: number;
+          shift_start_hour?: number;
+          shift_end_hour?: number;
           salary: number;
           slug: string;
           sort_order?: number;
@@ -316,6 +507,10 @@ export type Database = {
           required_level?: number;
           requirements?: Json;
           reputation_reward?: number;
+          skill_reward_slug?: string;
+          skill_reward_xp?: number;
+          shift_start_hour?: number;
+          shift_end_hour?: number;
           salary?: number;
           slug?: string;
           sort_order?: number;
@@ -516,6 +711,8 @@ export type Database = {
       };
       locations: {
         Row: {
+          canvas_x: number;
+          canvas_y: number;
           color: string;
           created_at: string;
           description: string;
@@ -524,12 +721,17 @@ export type Database = {
           icon: string;
           image_url: string | null;
           is_active: boolean;
+          interaction_radius_m: number;
           latitude: number | null;
           level_required: number;
           longitude: number | null;
           map_x: number;
           map_y: number;
+          map_category: string;
           metadata: Json;
+          neighbor_slugs: string[];
+          job_contract_slugs: string[];
+          entry_loops: string[];
           name: string;
           planned_features: string[];
           slug: string;
@@ -541,6 +743,8 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          canvas_x: number;
+          canvas_y: number;
           color?: string;
           created_at?: string;
           description: string;
@@ -549,12 +753,17 @@ export type Database = {
           icon?: string;
           image_url?: string | null;
           is_active?: boolean;
+          interaction_radius_m?: number;
           latitude?: number | null;
           level_required?: number;
           longitude?: number | null;
           map_x: number;
           map_y: number;
+          map_category?: string;
           metadata?: Json;
+          neighbor_slugs?: string[];
+          job_contract_slugs?: string[];
+          entry_loops?: string[];
           name: string;
           planned_features?: string[];
           slug: string;
@@ -566,6 +775,8 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          canvas_x?: number;
+          canvas_y?: number;
           color?: string;
           created_at?: string;
           description?: string;
@@ -574,12 +785,17 @@ export type Database = {
           icon?: string;
           image_url?: string | null;
           is_active?: boolean;
+          interaction_radius_m?: number;
           latitude?: number | null;
           level_required?: number;
           longitude?: number | null;
           map_x?: number;
           map_y?: number;
+          map_category?: string;
           metadata?: Json;
+          neighbor_slugs?: string[];
+          job_contract_slugs?: string[];
+          entry_loops?: string[];
           name?: string;
           planned_features?: string[];
           slug?: string;
@@ -1320,9 +1536,123 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      search_player_profiles: { Args: { p_query: string; p_limit?: number }; Returns: Json };
+      get_player_profile: { Args: { p_character_id: string }; Returns: Json };
+      get_player_social_overview: { Args: never; Returns: Json };
+      send_player_friend_request: {
+        Args: { p_target_character_id: string; p_request_id: string };
+        Returns: Json;
+      };
+      respond_player_friend_request: {
+        Args: { p_request_id: string; p_accept: boolean };
+        Returns: Json;
+      };
+      cancel_player_friend_request: { Args: { p_request_id: string }; Returns: Json };
+      remove_player_friend: { Args: { p_target_character_id: string }; Returns: Json };
+      block_player: { Args: { p_target_character_id: string }; Returns: Json };
+      unblock_player: { Args: { p_target_character_id: string }; Returns: Json };
+      get_or_create_player_conversation: { Args: { p_target_character_id: string }; Returns: Json };
+      send_social_message: {
+        Args: {
+          p_channel: string;
+          p_body: string;
+          p_request_id: string;
+          p_location_id?: string | null;
+          p_conversation_id?: string | null;
+        };
+        Returns: Json;
+      };
+      get_social_messages: {
+        Args: {
+          p_location_id?: string | null;
+          p_conversation_id?: string | null;
+          p_before?: string | null;
+          p_limit?: number;
+        };
+        Returns: Json;
+      };
+      report_player: {
+        Args: {
+          p_target_character_id: string;
+          p_category: string;
+          p_details?: string;
+          p_message_id?: string | null;
+        };
+        Returns: Json;
+      };
+      world_clock: { Args: never; Returns: Json };
+      personal_simulation_command: {
+        Args: {
+          p_session: string;
+          p_revision: number;
+          p_command: string;
+          p_action?: string;
+          p_request?: string;
+          p_paused?: boolean;
+          p_speed?: number;
+          p_queue?: Json;
+        };
+        Returns: Json;
+      };
+      join_city_event: { Args: { p_event: string }; Returns: Json };
+      my_home_save: { Args: never; Returns: Json };
+      save_my_home: { Args: { p_expected_revision: number; p_payload: Json }; Returns: Json };
+      my_home_visit_policy: { Args: never; Returns: Json };
+      set_my_home_visit_access: { Args: { p_allow_friends: boolean }; Returns: Json };
+      get_friend_home_for_visit: { Args: { p_target_character_id: string }; Returns: Json };
+      purchase_home_upgrade: {
+        Args: {
+          p_room_id: string;
+          p_upgrade_id: string;
+          p_expected_revision: number;
+          p_request_id: string;
+        };
+        Returns: Json;
+      };
+      purchase_home_furniture: {
+        Args: { p_item_id: string; p_expected_revision: number; p_request_id: string };
+        Returns: Json;
+      };
+      interact_with_npc: {
+        Args: { p_npc_id: string; p_action: string; p_request_id: string };
+        Returns: Json;
+      };
+      save_player_map_position: {
+        Args: { p_latitude: number; p_longitude: number; p_movement_state: string };
+        Returns: Json;
+      };
+      save_player_world_position: {
+        Args: {
+          p_world_x: number;
+          p_world_y: number;
+          p_building_slug: string | null;
+          p_expected_revision: number;
+          p_request_id: string;
+        };
+        Returns: Json;
+      };
+      travel_to_city_location: {
+        Args: {
+          p_location_id: string;
+          p_mode: string;
+          p_world_x: number;
+          p_world_y: number;
+          p_expected_revision: number;
+          p_request_id: string;
+        };
+        Returns: Json;
+      };
       deposit_cash: { Args: { p_amount: number }; Returns: Json };
       withdraw_cash: { Args: { p_amount: number }; Returns: Json };
-      purchase_shop_item: { Args: { p_quantity: number; p_shop_item_id: string }; Returns: Json };
+      purchase_shop_item: {
+        Args: { p_quantity: number; p_shop_item_id: string; p_request_id: string };
+        Returns: Json;
+      };
+      promote_current_job: { Args: never; Returns: Json };
+      process_my_property_rent: { Args: never; Returns: Json };
+      my_property_rent_status: { Args: never; Returns: Json };
+      my_game_property_listings: { Args: never; Returns: Json };
+      acquire_game_property: { Args: { p_property_id: string; p_tenure: string }; Returns: Json };
       sell_inventory_item: {
         Args: { p_inventory_id: string; p_quantity: number; p_shop_id: string };
         Returns: Json;
@@ -1374,10 +1704,10 @@ export type Database = {
         Returns: string;
       };
       mark_notifications_read: { Args: { p_id?: string }; Returns: undefined };
-      perform_job: { Args: never; Returns: Json };
+      perform_job: { Args: { p_request_id: string }; Returns: Json };
       refresh_my_energy: { Args: never; Returns: number };
       select_job: { Args: { p_job_id: string }; Returns: undefined };
-      travel_to_location: { Args: { p_location_id: string }; Returns: Json };
+      travel_to_location: { Args: { p_location_id: string; p_mode: string }; Returns: Json };
       visit_location: { Args: { p_location_id: string }; Returns: Json };
     };
     Enums: {

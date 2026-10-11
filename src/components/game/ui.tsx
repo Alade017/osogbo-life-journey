@@ -6,15 +6,18 @@ import { Button } from "@/components/ui/button";
 export function PageHeader({
   title,
   subtitle,
+  eyebrow,
   right,
 }: {
   title: string;
   subtitle?: string;
+  eyebrow?: string;
   right?: ReactNode;
 }) {
   return (
-    <div className="mb-5 flex items-end justify-between gap-3">
-      <div>
+    <div className="game-page-header mb-5 flex items-end justify-between gap-3">
+      <div className="min-w-0">
+        {eyebrow && <p className="game-page-eyebrow">{eyebrow}</p>}
         <h1 className="text-3xl font-bold md:text-4xl">{title}</h1>
         {subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}
       </div>

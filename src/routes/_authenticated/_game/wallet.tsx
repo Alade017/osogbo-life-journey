@@ -48,15 +48,15 @@ function WalletPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Bank & wallet" />
+      <PageHeader eyebrow="YOUR FINANCES" title="Bank & wallet" />
       <div className="game-panel flex items-start gap-2 bg-sun p-3 text-sm">
         <Info className="mt-0.5 h-4 w-4 shrink-0" />
         <p>All balances are virtual in-game currency. They have no real-world value.</p>
       </div>
       <div className="grid gap-4 sm:grid-cols-3">
-        <div className="game-panel bg-primary p-5 text-primary-foreground">
-          <p className="text-sm font-semibold">Cash</p>
-          <p className="font-display text-3xl font-bold">{formatNaira(funds.cash)}</p>
+        <div className="game-panel border-l-4 border-l-primary p-5">
+          <p className="text-sm font-semibold text-muted-foreground">Cash</p>
+          <p className="font-display text-3xl font-bold text-primary">{formatNaira(funds.cash)}</p>
         </div>
         <div className="game-panel p-5">
           <p className="text-sm font-semibold text-muted-foreground">Bank balance</p>

@@ -7,6 +7,7 @@ import { EmptyState, LoadingState, PageHeader } from "@/components/game/ui";
 import { formatNaira, q, rpc, useGameAction } from "@/lib/game";
 import { purchaseTotal, shopIsOpen } from "@/lib/economy-service";
 import { pageMeta } from "@/lib/seo";
+import { useWorldClock } from "@/hooks/use-world-clock";
 
 export const Route = createFileRoute("/_authenticated/_game/market")({
   head: () => pageMeta("Market", "Buy and sell goods at Osogbo shops."),
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/_authenticated/_game/market")({
 });
 
 function MarketPage() {
+  const { data: worldTime } = useWorldClock();
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const { data: character, isLoading: characterLoading } = useQuery(q.character());
   const { data: wallet } = useQuery(q.wallet());
@@ -34,10 +36,10 @@ function MarketPage() {
             offer.shop.is_open,
             offer.shop.opening_hour,
             offer.shop.closing_hour,
-            character?.game_time_hour ?? -1,
+            worldTime?.hour ?? -1,
           ),
       ) ?? [],
-    [shopItems, currentLocation, character?.game_time_hour],
+    [shopItems, currentLocation, worldTime?.hour],
   );
   const purchase = useGameAction(rpc.purchaseShopItem, {
     onSuccess: () => toast.success("Purchase complete. Your inventory has been updated."),
@@ -50,7 +52,7 @@ function MarketPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="City market" />
+      <PageHeader eyebrow="SHOPS AROUND THE CITY" title="City market" />
       <section className="game-panel flex flex-wrap items-center justify-between gap-3 p-4">
         <div>
           <p className="font-semibold">{currentLocation?.name ?? "No district selected"}</p>
@@ -118,7 +120,13 @@ function MarketPage() {
                       type="button"
                       className="rounded-lg border-2 border-edge bg-primary px-4 py-2 font-bold text-primary-foreground disabled:opacity-50"
                       disabled={!canBuy || !!quote.error || purchase.isPending}
-                      onClick={() => purchase.mutate({ shopItemId: offer.id, quantity })}
+                      onClick={() =>
+                        purchase.mutate({
+                          shopItemId: offer.id,
+                          quantity,
+                          requestId: crypto.randomUUID(),
+                        })
+                      }
                     >
                       Buy
                     </button>

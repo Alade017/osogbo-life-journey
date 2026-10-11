@@ -58,7 +58,11 @@ function ProfilePage() {
 
   return (
     <div>
-      <PageHeader title="Your character" subtitle="Your life and progress in Osogbo." />
+      <PageHeader
+        eyebrow="YOUR JOURNEY"
+        title="Your character"
+        subtitle="Your life and progress in Osogbo."
+      />
       <div className="grid gap-5 md:grid-cols-[300px_1fr]">
         <section
           className="game-panel player-profile-card p-5 text-center"

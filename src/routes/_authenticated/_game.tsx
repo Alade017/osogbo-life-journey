@@ -9,6 +9,7 @@ import {
   Settings,
   ShoppingBag,
   UserRound,
+  Users,
   Wallet,
 } from "lucide-react";
 import { q, rpc } from "@/lib/game";
@@ -18,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { GameHUD } from "@/components/game/GameHUD";
 import { PhoneLauncher } from "@/components/game/PhoneLauncher";
 import { GameTimeProvider } from "@/components/game/GameTimeProvider";
+import { WorldEnvironment } from "@/components/game/WorldEnvironment";
 import { gameTimeFromCharacter } from "@/lib/game-time";
 import { playerStateFromRows } from "@/lib/player-state";
 
@@ -25,14 +27,29 @@ export const Route = createFileRoute("/_authenticated/_game")({
   component: GameLayout,
 });
 
-const NAV = [
-  { to: "/home", label: "Home", icon: House },
-  { to: "/map", label: "City", icon: Map },
-  { to: "/jobs", label: "Jobs", icon: Briefcase },
-  { to: "/inventory", label: "Inventory", icon: Package },
-  { to: "/market", label: "Market", icon: ShoppingBag },
-  { to: "/wallet", label: "Bank", icon: Wallet },
-  { to: "/profile", label: "Profile", icon: UserRound },
+const NAV_GROUPS = [
+  {
+    label: "YOUR CITY",
+    items: [
+      { to: "/home", label: "Home", icon: House },
+      { to: "/map", label: "City", icon: Map },
+      { to: "/social", label: "People", icon: Users },
+    ],
+  },
+  {
+    label: "DAILY LIFE",
+    items: [
+      { to: "/house", label: "Property", icon: House },
+      { to: "/jobs", label: "Jobs", icon: Briefcase },
+      { to: "/inventory", label: "Inventory", icon: Package },
+      { to: "/market", label: "Market", icon: ShoppingBag },
+      { to: "/wallet", label: "Bank", icon: Wallet },
+    ],
+  },
+  {
+    label: "PLAYER",
+    items: [{ to: "/profile", label: "Profile", icon: UserRound }],
+  },
 ] as const;
 
 function GameLayout() {
@@ -59,17 +76,18 @@ function GameLayout() {
     if (!isLoading && !isError && !character) navigate({ to: "/create-character" });
   }, [isLoading, isError, character, navigate]);
 
-  // Server recalculates passive energy regeneration.
   useEffect(() => {
     if (!character?.id) return;
-    const tick = () =>
-      rpc
-        .refreshEnergy()
-        .then(() => qc.invalidateQueries({ queryKey: ["character"] }))
-        .catch(() => {});
-    tick();
-    const id = setInterval(tick, 120_000);
-    return () => clearInterval(id);
+    void rpc
+      .processPropertyRent()
+      .then(() =>
+        Promise.all([
+          qc.invalidateQueries({ queryKey: ["wallet"] }),
+          qc.invalidateQueries({ queryKey: ["transactions"] }),
+          qc.invalidateQueries({ queryKey: ["rentStatus"] }),
+        ]),
+      )
+      .catch(() => {});
   }, [character?.id, qc]);
 
   if (isError)
@@ -86,34 +104,54 @@ function GameLayout() {
   const player = playerStateFromRows({ character, wallet, location: currentLocation });
 
   return (
-    <GameTimeProvider gameTime={gameTimeFromCharacter(character)}>
+    <GameTimeProvider
+      key={character.id}
+      gameTime={gameTimeFromCharacter(character)}
+      character={character}
+      wallet={Number(wallet?.balance ?? 0)}
+      locationId={character.current_location_id}
+      locationType={simulationLocationType(currentLocation?.type)}
+    >
       <div
         className={cn(
           "game-shell city-game min-h-screen pb-20 md:pb-0",
           profile?.reduced_motion && "reduce-motion",
         )}
       >
+        <WorldEnvironment />
         <div className="city-game-frame">
           <aside className="game-desktop-nav" aria-label="Main navigation">
-            <Link to="/home" className="game-side-logo" aria-label="OSOGBO LIFE home">
+            <Link
+              to="/home"
+              search={{ visit: undefined }}
+              className="game-side-logo"
+              aria-label="OSOGBO LIFE home"
+            >
               <Logo />
             </Link>
-            <p className="game-side-label">YOUR CITY</p>
-            <nav className="game-side-links">
-              {NAV.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    key={item.to}
-                    to={item.to}
-                    activeProps={{ className: "game-side-link-active" }}
-                    className="game-side-link"
-                  >
-                    <Icon className="h-4.5 w-4.5" />
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
+            <nav className="game-side-navigation" aria-label="City and player pages">
+              {NAV_GROUPS.map((group) => (
+                <div className="game-side-group" key={group.label}>
+                  <p className="game-side-label">{group.label}</p>
+                  <div className="game-side-links">
+                    {group.items.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <Link
+                          key={item.to}
+                          to={item.to}
+                          {...(item.to === "/social" ? { search: { playerId: undefined } } : {})}
+                          activeProps={{ className: "game-side-link-active" }}
+                          className="game-side-link"
+                        >
+                          <Icon className="h-4.5 w-4.5" />
+                          <span>{item.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
             </nav>
             <div className="mt-auto grid gap-2">
               <PhoneLauncher compact className="game-side-phone" />
@@ -134,6 +172,7 @@ function GameLayout() {
         <nav className="game-mobile-nav" aria-label="Game navigation">
           <Link
             to="/home"
+            search={{ visit: undefined }}
             activeProps={{ className: "mobile-nav-active" }}
             className="mobile-nav-link"
           >
@@ -148,6 +187,7 @@ function GameLayout() {
             <Map className="h-4.75 w-4.75" />
             <span>City</span>
           </Link>
+          <PhoneLauncher compact className="mobile-nav-phone" />
           <Link
             to="/jobs"
             activeProps={{ className: "mobile-nav-active" }}
@@ -157,23 +197,26 @@ function GameLayout() {
             <span>Jobs</span>
           </Link>
           <Link
-            to="/inventory"
+            to="/social"
+            search={{ playerId: undefined }}
             activeProps={{ className: "mobile-nav-active" }}
             className="mobile-nav-link"
           >
-            <Package className="h-4.75 w-4.75" />
-            <span>Items</span>
-          </Link>
-          <Link
-            to="/profile"
-            activeProps={{ className: "mobile-nav-active" }}
-            className="mobile-nav-link"
-          >
-            <UserRound className="h-4.75 w-4.75" />
-            <span>Profile</span>
+            <Users className="h-4.75 w-4.75" />
+            <span>People</span>
           </Link>
         </nav>
       </div>
     </GameTimeProvider>
   );
+}
+
+function simulationLocationType(
+  value: string | undefined,
+): "any" | "home" | "workplace" | "school" {
+  if (value === "residential" || value === "home") return "home";
+  if (value === "workplace" || value === "government" || value === "market" || value === "shop")
+    return "workplace";
+  if (value === "school" || value === "university") return "school";
+  return "any";
 }

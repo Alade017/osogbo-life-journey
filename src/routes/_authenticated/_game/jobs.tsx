@@ -2,8 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Clock, Lock, MapPin, Search, Star, Zap } from "lucide-react";
-import { q, rpc, formatNaira, useGameAction } from "@/lib/game";
+import { BriefcaseBusiness, Clock, Lock, MapPin, Search, Star, Zap } from "lucide-react";
+import { q, rpc, formatNaira, careerShiftPay, useGameAction } from "@/lib/game";
 import { pageMeta } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,16 +14,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Chip, LoadingState, PageHeader } from "@/components/game/ui";
+import { Chip, LoadingState } from "@/components/game/ui";
 import { cn } from "@/lib/utils";
-import {
-  JOB_CATEGORIES,
-  JOB_CATEGORY_LABELS,
-  parseJobActivityRequirements,
-  resolveJobCategory,
-} from "@/lib/job-activity-model";
+import { JOB_CATEGORIES, JOB_CATEGORY_LABELS, resolveJobCategory } from "@/lib/job-activity-model";
 import { checkJobEligibility, filterJobListings } from "@/lib/job-board-service";
 import { formatGameTime } from "@/lib/game-time";
+import { useWorldClock } from "@/hooks/use-world-clock";
 
 export const Route = createFileRoute("/_authenticated/_game/jobs")({
   head: () => pageMeta("Jobs", "Take a job in Osogbo and work shifts to earn in-game Naira."),
@@ -45,24 +41,27 @@ function fmt(ms: number) {
 }
 
 function JobsPage() {
+  const { data: worldTime } = useWorldClock();
   const now = useNow();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [workSessionOpen, setWorkSessionOpen] = useState(false);
   const { data: c } = useQuery(q.character());
-  const { data: jobs, isLoading } = useQuery(q.jobs());
+  const {
+    data: jobs,
+    isLoading,
+    isError: jobsError,
+    isFetching: jobsFetching,
+    refetch: retryJobs,
+  } = useQuery(q.jobs());
   const { data: myJobs } = useQuery(q.myJobs());
   const { data: locations } = useQuery(q.locations());
   const { data: places } = useQuery(q.places());
   const { data: courses } = useQuery(q.educationCourses());
   const { data: myCourses } = useQuery(q.myCourses());
-  const hasSkillRequirements =
-    jobs?.some(
-      (job) => (parseJobActivityRequirements(job.requirements ?? {}).skills?.length ?? 0) > 0,
-    ) ?? false;
   const { data: playerSkills } = useQuery({
     ...q.playerSkills(),
-    enabled: !!c && hasSkillRequirements,
+    enabled: !!c,
   });
   const select = useGameAction(rpc.selectJob, {
     onSuccess: () => toast.success("You got the job!"),
@@ -74,6 +73,9 @@ function JobsPage() {
         `Shift done! +${formatNaira(r.earned)} · +${r.xp} XP · ${r.duration_minutes} min · ${formatGameTime(r.game_time)}`,
       );
     },
+  });
+  const promote = useGameAction(rpc.promoteCurrentJob, {
+    onSuccess: () => toast.success("Promotion unlocked! Your career level has increased."),
   });
   const filteredJobs = useMemo(() => {
     const searchableJobs = (jobs ?? []).map((job) => ({
@@ -88,9 +90,33 @@ function JobsPage() {
     return filterJobListings(searchableJobs, search, category);
   }, [jobs, locations, places, search, category]);
 
+  if (jobsError) {
+    return (
+      <section className="game-panel mx-auto max-w-xl space-y-3 p-6 text-center" role="alert">
+        <h1 className="font-display text-xl font-bold">Jobs are unavailable</h1>
+        <p className="text-sm text-muted-foreground">
+          We couldn’t load the job board. Your character and career progress are unchanged.
+        </p>
+        <Button variant="plain" disabled={jobsFetching} onClick={() => void retryJobs()}>
+          {jobsFetching ? "Trying again…" : "Retry loading jobs"}
+        </Button>
+      </section>
+    );
+  }
   if (isLoading || !c || !jobs) return <LoadingState />;
   const current = myJobs?.find((j) => j.is_current);
   const currentJob = jobs.find((j) => j.id === current?.job_id);
+  const careerSkill = currentJob
+    ? playerSkills?.find((skill) => skill.skill_slug === currentJob.skill_reward_slug)
+    : undefined;
+  const nextCareerLevel = current?.career_level === 1 ? 2 : 3;
+  const shiftsForPromotion = nextCareerLevel === 2 ? 5 : 15;
+  const skillLevelForPromotion = nextCareerLevel === 2 ? 1 : 3;
+  const promotionReady =
+    !!current &&
+    current.career_level < 3 &&
+    current.times_performed >= shiftsForPromotion &&
+    (careerSkill?.level ?? 0) >= skillLevelForPromotion;
   const currentJobLocation = locations?.find((location) => location.id === currentJob?.location_id);
   const canWorkHere = !currentJob?.location_id || c.current_location_id === currentJob.location_id;
   const currentRequirement = currentJob?.required_course_slug
@@ -116,13 +142,31 @@ function JobsPage() {
       ? new Date(current.last_performed_at).getTime() + currentJob.cooldown_minutes * 60_000
       : 0;
   const cooling = readyAt > now;
+  const currentShiftPay = currentJob
+    ? careerShiftPay(currentJob.salary, current?.career_level ?? 1)
+    : 0;
+  const shiftOpen =
+    !!currentJob &&
+    !!worldTime &&
+    worldTime.hour >= currentJob.shift_start_hour &&
+    worldTime.hour < currentJob.shift_end_hour;
 
   return (
-    <div>
-      <PageHeader
-        title="Jobs Around Osogbo"
-        subtitle={`You are in ${locations?.find((location) => location.id === c.current_location_id)?.name ?? "City Centre"}. Apply and work shifts at the listed district.`}
-      />
+    <div className="jobs-page">
+      <header className="jobs-heading">
+        <div>
+          <p className="jobs-eyebrow">MAKE YOUR MOVE</p>
+          <h1>Find your next shift</h1>
+          <p className="jobs-intro">
+            Build your career, earn a little extra, and make Osogbo yours.
+          </p>
+        </div>
+        <div className="jobs-location">
+          <MapPin size={15} />
+          {locations?.find((location) => location.id === c.current_location_id)?.name ??
+            "City Centre"}
+        </div>
+      </header>
 
       {currentJob && (
         <Dialog open={workSessionOpen} onOpenChange={setWorkSessionOpen}>
@@ -156,7 +200,7 @@ function JobsPage() {
               <div className="rounded-lg border border-edge bg-card p-3">
                 <p className="text-muted-foreground">Expected pay · XP</p>
                 <p className="font-bold">
-                  {formatNaira(currentJob.salary)} · +{currentJob.xp_reward} XP
+                  {formatNaira(currentShiftPay)} · +{currentJob.xp_reward} XP
                 </p>
               </div>
             </div>
@@ -164,7 +208,10 @@ function JobsPage() {
               <Button variant="plain" onClick={() => setWorkSessionOpen(false)}>
                 Cancel
               </Button>
-              <Button disabled={work.isPending} onClick={() => work.mutate(undefined)}>
+              <Button
+                disabled={work.isPending}
+                onClick={() => work.mutate({ requestId: crypto.randomUUID() })}
+              >
                 {work.isPending ? "Completing shift…" : "Confirm and work"}
               </Button>
             </DialogFooter>
@@ -173,11 +220,15 @@ function JobsPage() {
       )}
 
       {currentJob && (
-        <div className="game-panel pop-in mb-6 grid gap-4 bg-sun p-5 md:grid-cols-[1fr_auto] md:items-center">
+        <div className="game-panel jobs-current pop-in mb-6 grid gap-4 p-5 md:grid-cols-[1fr_auto] md:items-center">
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider">Current job</p>
-            <h2 className="text-3xl font-bold">{currentJob.name}</h2>
-            <p className="text-sm">Shifts completed: {current?.times_performed ?? 0}</p>
+            <p className="jobs-eyebrow">YOUR CURRENT ROLE</p>
+            <h2>{currentJob.name}</h2>
+            <p className="jobs-current-meta">
+              <BriefcaseBusiness size={15} /> {currentJobLocation?.name ?? "Osogbo"}
+              <span /> {current?.times_performed ?? 0} shifts · {currentJob.shift_start_hour}:00–
+              {currentJob.shift_end_hour}:00
+            </p>
           </div>
           {!canWorkHere && currentJobLocation ? (
             <Button asChild variant="default" size="lg">
@@ -189,12 +240,19 @@ function JobsPage() {
             <Button
               variant="default"
               size="lg"
+              className="jobs-start-button"
               disabled={
-                !currentQualified || cooling || work.isPending || c.energy < currentJob.energy_cost
+                !shiftOpen ||
+                !currentQualified ||
+                cooling ||
+                work.isPending ||
+                c.energy < currentJob.energy_cost
               }
               onClick={() => setWorkSessionOpen(true)}
             >
-              {!currentQualified ? (
+              {!shiftOpen ? (
+                `City shift hours: ${currentJob.shift_start_hour}:00–${currentJob.shift_end_hour}:00`
+              ) : !currentQualified ? (
                 (currentEligibility.reasons[0] ??
                 `Complete ${currentRequirement?.name ?? "required course"}`)
               ) : cooling ? (
@@ -204,14 +262,35 @@ function JobsPage() {
               ) : work.isPending ? (
                 "Working…"
               ) : (
-                `Start shift · ${formatNaira(currentJob.salary)}`
+                `Start shift · ${formatNaira(currentShiftPay)}`
               )}
             </Button>
           )}
+          <div className="md:col-span-2 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-muted/40 p-3">
+            <p className="text-sm">
+              Career level {current?.career_level ?? 1}/3 · {current?.times_performed ?? 0} shifts ·{" "}
+              {currentJob.skill_reward_slug.replaceAll("_", " ")} level {careerSkill?.level ?? 0}
+              {current?.career_level !== undefined && current.career_level < 3 && (
+                <span className="block text-xs text-muted-foreground">
+                  Next promotion: {shiftsForPromotion} shifts and skill level{" "}
+                  {skillLevelForPromotion}
+                </span>
+              )}
+            </p>
+            {current?.career_level !== undefined && current.career_level < 3 && (
+              <Button
+                variant="plain"
+                disabled={!promotionReady || promote.isPending}
+                onClick={() => promote.mutate(undefined)}
+              >
+                {promotionReady ? "Claim promotion" : "Promotion requirements in progress"}
+              </Button>
+            )}
+          </div>
         </div>
       )}
 
-      <details className="game-panel mb-5 p-4">
+      <details className="game-panel jobs-filters mb-5 p-4">
         <summary className="cursor-pointer font-display font-bold">
           Find a job{" "}
           <span className="ml-1 text-sm font-normal text-muted-foreground">
@@ -252,139 +331,159 @@ function JobsPage() {
         </div>
       </details>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {filteredJobs.map((j) => {
-          const requiredCourse = j.required_course_slug
-            ? courses?.find((course) => course.slug === j.required_course_slug)
-            : undefined;
-          const hasCourse =
-            !j.required_course_slug ||
-            !!myCourses?.some((course) => course.course_id === requiredCourse?.id);
-          const jobLocation = locations?.find((location) => location.id === j.location_id);
-          const workplace = places?.find((place) => place.id === j.place_id);
-          const isAtLocation = !j.location_id || c.current_location_id === j.location_id;
-          const eligibility = checkJobEligibility(
-            j,
-            { level: c.level, skills: playerSkills ?? [] },
-            {
-              required: !!j.required_course_slug,
-              completed: hasCourse,
-              ...(requiredCourse?.name ? { name: requiredCourse.name } : {}),
-            },
-          );
-          const locked = !eligibility.eligible;
-          const isCurrent = j.id === currentJob?.id;
-          const dream = c.occupation_preference === j.slug;
-          const jobCategory = resolveJobCategory(j.category, j.slug, j.name);
-          const durationMinutes =
-            Number.isInteger(j.duration_minutes) && j.duration_minutes > 0
-              ? j.duration_minutes
-              : 30;
-          return (
-            <div key={j.id} className={cn("game-panel flex flex-col p-5", locked && "opacity-75")}>
-              <div className="flex items-start justify-between gap-2">
-                <div>
-                  <p className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    <MapPin className="h-3 w-3" />
-                    {workplace?.name ?? "City-wide"} · {jobLocation?.name ?? "Osogbo"}
-                  </p>
-                  <h3 className="mt-1 text-xl font-bold">{j.name}</h3>
-                  <span className="mt-2 inline-flex">
-                    <Chip>{JOB_CATEGORY_LABELS[jobCategory]}</Chip>
-                  </span>
-                </div>
-                {isCurrent ? (
-                  <Chip tone="primary">Current</Chip>
-                ) : locked ? (
-                  <Chip>
-                    <Lock className="h-3 w-3" /> Locked
-                  </Chip>
-                ) : (
-                  <Chip tone="leaf">Open</Chip>
-                )}
-              </div>
-              {dream && (
-                <p className="mt-1 flex items-center gap-1 text-xs font-bold text-clay">
-                  <Star className="h-3 w-3" /> Your dream job
-                </p>
-              )}
-              <p className="mt-2 flex-1 text-sm text-muted-foreground">{j.description}</p>
-              <dl className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
-                <div className="rounded-lg border-2 border-edge bg-primary p-2 text-primary-foreground">
-                  <dt className="font-semibold">Pay</dt>
-                  <dd className="font-display text-sm font-bold">{formatNaira(j.salary)}</dd>
-                </div>
-                <div className="rounded-lg border-2 border-edge bg-sun p-2">
-                  <dt className="flex items-center justify-center gap-0.5 font-semibold">
-                    <Zap className="h-3 w-3" />
-                    Energy
-                  </dt>
-                  <dd className="font-display text-sm font-bold">{j.energy_cost}</dd>
-                </div>
-                <div className="rounded-lg border-2 border-edge bg-card p-2">
-                  <dt className="flex items-center justify-center gap-0.5 font-semibold">
-                    <Clock className="h-3 w-3" />
-                    Shift
-                  </dt>
-                  <dd className="font-display text-sm font-bold">{durationMinutes}m</dd>
-                </div>
-              </dl>
-              <p className="mt-2 text-xs text-muted-foreground">
-                +{j.xp_reward} XP · boosts {j.stat_bonus} & career
-              </p>
-              <div className="mt-3 rounded-lg border border-border bg-muted/60 p-3 text-xs">
-                <p className="font-bold">Requirements</p>
-                {eligibility.reasons.length ? (
-                  <ul className="mt-1 list-inside list-disc text-clay">
-                    {eligibility.reasons.map((reason) => (
-                      <li key={reason}>{reason}</li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="mt-1 text-muted-foreground">You meet this job’s requirements.</p>
-                )}
-              </div>
-              {!isCurrent &&
-                (!isAtLocation && jobLocation ? (
-                  <Button asChild variant="plain" className="mt-4">
-                    <Link to="/location/$slug" params={{ slug: jobLocation.slug }}>
-                      Travel here to apply
-                    </Link>
-                  </Button>
-                ) : (
-                  <Button
-                    variant={locked ? "plain" : "ink"}
-                    className="mt-4"
-                    disabled={locked || select.isPending}
-                    onClick={() => select.mutate(j.id)}
-                  >
-                    {locked
-                      ? (eligibility.reasons[0] ?? "Requirements not met")
-                      : currentJob
-                        ? "Switch to this job"
-                        : "Take this job"}
-                  </Button>
-                ))}
-            </div>
-          );
-        })}
-      </div>
-      {filteredJobs.length === 0 && (
-        <div className="game-panel mt-4 p-6 text-center">
-          <p className="font-display text-lg font-bold">No jobs match those filters</p>
-          <p className="mt-1 text-sm text-muted-foreground">Try another category or search term.</p>
-          <Button
-            className="mt-3"
-            variant="plain"
-            onClick={() => {
-              setSearch("");
-              setCategory("all");
-            }}
-          >
-            Clear filters
-          </Button>
+      <section className="jobs-listing">
+        <div className="jobs-listing-heading">
+          <div>
+            <h2>Opportunities around you</h2>
+            <p>Good work is closer than you think.</p>
+          </div>
+          <span>
+            {filteredJobs.length} {filteredJobs.length === 1 ? "role" : "roles"}
+          </span>
         </div>
-      )}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredJobs.map((j) => {
+            const requiredCourse = j.required_course_slug
+              ? courses?.find((course) => course.slug === j.required_course_slug)
+              : undefined;
+            const hasCourse =
+              !j.required_course_slug ||
+              !!myCourses?.some((course) => course.course_id === requiredCourse?.id);
+            const jobLocation = locations?.find((location) => location.id === j.location_id);
+            const workplace = places?.find((place) => place.id === j.place_id);
+            const isAtLocation = !j.location_id || c.current_location_id === j.location_id;
+            const eligibility = checkJobEligibility(
+              j,
+              { level: c.level, skills: playerSkills ?? [] },
+              {
+                required: !!j.required_course_slug,
+                completed: hasCourse,
+                ...(requiredCourse?.name ? { name: requiredCourse.name } : {}),
+              },
+            );
+            const locked = !eligibility.eligible;
+            const isCurrent = j.id === currentJob?.id;
+            const dream = c.occupation_preference === j.slug;
+            const jobCategory = resolveJobCategory(j.category, j.slug, j.name);
+            const durationMinutes =
+              Number.isInteger(j.duration_minutes) && j.duration_minutes > 0
+                ? j.duration_minutes
+                : 30;
+            return (
+              <div
+                key={j.id}
+                className={cn("game-panel jobs-card flex flex-col p-5", locked && "opacity-75")}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      <MapPin className="h-3 w-3" />
+                      {workplace?.name ?? "City-wide"} · {jobLocation?.name ?? "Osogbo"}
+                    </p>
+                    <h3 className="mt-1 text-xl font-bold">{j.name}</h3>
+                    <span className="mt-2 inline-flex">
+                      <Chip>{JOB_CATEGORY_LABELS[jobCategory]}</Chip>
+                    </span>
+                  </div>
+                  {isCurrent ? (
+                    <Chip tone="primary">Current</Chip>
+                  ) : locked ? (
+                    <Chip>
+                      <Lock className="h-3 w-3" /> Locked
+                    </Chip>
+                  ) : (
+                    <Chip tone="leaf">Open</Chip>
+                  )}
+                </div>
+                {dream && (
+                  <p className="mt-1 flex items-center gap-1 text-xs font-bold text-clay">
+                    <Star className="h-3 w-3" /> Your dream job
+                  </p>
+                )}
+                <p className="mt-2 flex-1 text-sm text-muted-foreground">{j.description}</p>
+                <dl className="jobs-metrics mt-4 grid grid-cols-3 gap-2 text-center text-xs">
+                  <div className="jobs-metric jobs-metric-pay">
+                    <dt className="font-semibold">Pay</dt>
+                    <dd className="font-display text-sm font-bold">
+                      {formatNaira(isCurrent ? currentShiftPay : j.salary)}
+                    </dd>
+                  </div>
+                  <div className="jobs-metric jobs-metric-energy">
+                    <dt className="flex items-center justify-center gap-0.5 font-semibold">
+                      <Zap className="h-3 w-3" />
+                      Energy
+                    </dt>
+                    <dd className="font-display text-sm font-bold">{j.energy_cost}</dd>
+                  </div>
+                  <div className="jobs-metric jobs-metric-shift">
+                    <dt className="flex items-center justify-center gap-0.5 font-semibold">
+                      <Clock className="h-3 w-3" />
+                      Shift
+                    </dt>
+                    <dd className="font-display text-sm font-bold">{durationMinutes}m</dd>
+                  </div>
+                </dl>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  +{j.xp_reward} XP · +{j.skill_reward_xp}{" "}
+                  {j.skill_reward_slug.replaceAll("_", " ")} XP per shift · {j.shift_start_hour}:00–
+                  {j.shift_end_hour}:00
+                </p>
+                <div className="mt-3 rounded-lg border border-border bg-muted/60 p-3 text-xs">
+                  <p className="font-bold">Requirements</p>
+                  {eligibility.reasons.length ? (
+                    <ul className="mt-1 list-inside list-disc text-clay">
+                      {eligibility.reasons.map((reason) => (
+                        <li key={reason}>{reason}</li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-1 text-muted-foreground">You meet this job’s requirements.</p>
+                  )}
+                </div>
+                {!isCurrent &&
+                  (!isAtLocation && jobLocation ? (
+                    <Button asChild variant="plain" className="mt-4">
+                      <Link to="/location/$slug" params={{ slug: jobLocation.slug }}>
+                        Travel here to apply
+                      </Link>
+                    </Button>
+                  ) : (
+                    <Button
+                      variant={locked ? "plain" : "ink"}
+                      className="mt-4"
+                      disabled={locked || select.isPending}
+                      onClick={() => select.mutate(j.id)}
+                    >
+                      {locked
+                        ? (eligibility.reasons[0] ?? "Requirements not met")
+                        : currentJob
+                          ? "Switch to this job"
+                          : "Take this job"}
+                    </Button>
+                  ))}
+              </div>
+            );
+          })}
+        </div>
+        {filteredJobs.length === 0 && (
+          <div className="game-panel mt-4 p-6 text-center">
+            <p className="font-display text-lg font-bold">No jobs match those filters</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Try another category or search term.
+            </p>
+            <Button
+              className="mt-3"
+              variant="plain"
+              onClick={() => {
+                setSearch("");
+                setCategory("all");
+              }}
+            >
+              Clear filters
+            </Button>
+          </div>
+        )}
+      </section>
     </div>
   );
 }
