@@ -61,6 +61,7 @@ function LocationPage() {
     enabled: !!character && hasSkillRequirements,
   });
   const loc = locations?.find((l) => l.slug === slug);
+  const isOjaObaMarket = loc?.slug === "oja-oba";
   const availableModes = loc ? getAvailableTravelModes(loc.metadata) : [];
   const origin = locations?.find((location) => location.id === character?.current_location_id);
   const savedPlayerCoordinates =
@@ -239,14 +240,20 @@ function LocationPage() {
   if (!loc) return <EmptyState title="District not found" body="That place isn't on the map." />;
 
   return (
-    <div className="-mx-3 space-y-5 px-3 py-5 md:-mx-4 md:px-4 md:py-8">
-      <Link to="/map" className="inline-flex items-center gap-1 text-sm font-bold">
+    <div
+      className={cn(
+        "-mx-3 space-y-5 px-3 py-5 md:-mx-4 md:px-4 md:py-8",
+        isOjaObaMarket && "oja-oba-market-screen",
+      )}
+    >
+      <Link to="/map" className="oja-oba-back-link inline-flex items-center gap-1 text-sm font-bold">
         <ArrowLeft className="h-4 w-4" /> Back to map
       </Link>
-      <div className={cn("game-panel game-panel-accent p-6 md:p-10")}>
+      <div className={cn("game-panel game-panel-accent p-6 md:p-10", isOjaObaMarket && "oja-oba-hero")}>
         <span
           className={cn(
             "inline-block rounded-lg border-2 border-edge px-3 py-1 font-display text-sm font-bold",
+            isOjaObaMarket && "oja-oba-district-badge",
             TONE_BG[loc.color],
           )}
         >
@@ -255,7 +262,7 @@ function LocationPage() {
         <h1 className="mt-3 text-4xl font-bold md:text-5xl">{loc.name}</h1>
         <p className="mt-1 text-lg font-semibold">{loc.tagline}</p>
       </div>
-      <div className="game-panel p-5 md:p-6">
+      <div className={cn("game-panel p-5 md:p-6", isOjaObaMarket && "oja-oba-intro")}>
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-2xl">
             <p>{loc.description}</p>
@@ -265,7 +272,7 @@ function LocationPage() {
                 : "Your first visit discovers this district and awards 10 XP."}
             </p>
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-edge bg-card px-3 py-1 text-xs font-bold">
+          <span className="oja-oba-presence inline-flex items-center gap-1.5 rounded-full border border-edge bg-card px-3 py-1 text-xs font-bold">
             <MapPin className="h-3.5 w-3.5" />
             {isHere ? "You are here" : "Not your current district"}
           </span>
@@ -363,7 +370,7 @@ function LocationPage() {
           </Link>
         )}
 
-      <section className="space-y-3">
+      <section className={cn("space-y-3", isOjaObaMarket && "oja-oba-section oja-oba-places")}>
         <div className="flex items-center gap-2">
           <Store className="h-5 w-5 text-primary" />
           <h2 className="text-2xl font-bold">Places in {loc.name}</h2>
@@ -373,7 +380,10 @@ function LocationPage() {
             {localPlaces.map((place) => {
               const placeJobs = localJobs.filter((job) => job.place_id === place.id);
               return (
-                <article key={place.id} className="game-panel p-4">
+                <article
+                  key={place.id}
+                  className={cn("game-panel p-4", isOjaObaMarket && "oja-oba-place-card")}
+                >
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <Chip tone="primary">{place.category}</Chip>
                     <Chip>
@@ -434,7 +444,7 @@ function LocationPage() {
         )}
       </section>
 
-      <section className="space-y-3">
+      <section className={cn("space-y-3", isOjaObaMarket && "oja-oba-section oja-oba-jobs")}>
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <Briefcase className="h-5 w-5 text-primary" />
@@ -464,7 +474,10 @@ function LocationPage() {
               );
               const qualified = eligibility.eligible;
               return (
-                <article key={job.id} className="game-panel flex flex-col p-4">
+                <article
+                  key={job.id}
+                  className={cn("game-panel flex flex-col p-4", isOjaObaMarket && "oja-oba-job-card")}
+                >
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -502,7 +515,8 @@ function LocationPage() {
                   {!isCurrentJob && (
                     <Button
                       className="mt-3"
-                      variant="ink"
+                      variant={isOjaObaMarket ? "default" : "ink"}
+                      className={isOjaObaMarket ? "oja-oba-primary-action" : undefined}
                       disabled={!isHere || !qualified || selectJob.isPending}
                       onClick={() => selectJob.mutate(job.id)}
                     >
@@ -528,22 +542,35 @@ function LocationPage() {
         )}
       </section>
 
-      {loc.planned_features.length > 0 && (
-        <div className="game-panel p-5">
-          <h2 className="text-lg font-bold">More district features</h2>
-          <ul className="mt-3 grid gap-2 sm:grid-cols-3">
-            {loc.planned_features.map((feature) => (
-              <li
-                key={feature}
-                className="flex items-center justify-between gap-2 rounded-md border border-dashed border-border p-3"
-              >
-                <span className="text-sm font-semibold">{feature}</span>
-                <ComingSoon />
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      {loc.planned_features.length > 0 &&
+        (isOjaObaMarket ? (
+          <details className="oja-oba-features">
+            <summary>More district features · {loc.planned_features.length}</summary>
+            <ul>
+              {loc.planned_features.map((feature) => (
+                <li key={feature}>
+                  <span>{feature}</span>
+                  <ComingSoon />
+                </li>
+              ))}
+            </ul>
+          </details>
+        ) : (
+          <div className="game-panel p-5">
+            <h2 className="text-lg font-bold">More district features</h2>
+            <ul className="mt-3 grid gap-2 sm:grid-cols-3">
+              {loc.planned_features.map((feature) => (
+                <li
+                  key={feature}
+                  className="flex items-center justify-between gap-2 rounded-md border border-dashed border-border p-3"
+                >
+                  <span className="text-sm font-semibold">{feature}</span>
+                  <ComingSoon />
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { ArrowRight, BriefcaseBusiness, Compass, House, MapPin } from "lucide-re
 import { Avatar, type Appearance } from "@/components/game/Avatar";
 import { Logo } from "@/components/game/Logo";
 import { Button } from "@/components/ui/button";
+import { SpotifyPlaylistLink } from "@/components/game/SpotifyPlaylistLink";
 import { supabase } from "@/integrations/supabase/client";
 import { q } from "@/lib/game";
 import cityPhoto from "@/assets/osogbo-city.jpg";
@@ -258,6 +259,7 @@ function Landing() {
       <footer className="landing-footer">
         <Logo />
         <span>OSOGBO LIFE · An original Nigerian life simulation</span>
+        <SpotifyPlaylistLink />
         <Link to="/login">Account & settings</Link>
       </footer>
     </main>

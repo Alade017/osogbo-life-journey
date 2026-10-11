@@ -15,6 +15,7 @@ import {
 import { LoadingState } from "@/components/game/ui";
 import { pageMeta } from "@/lib/seo";
 import { useLiveClock } from "@/hooks/use-live-clock";
+import { osogboHour } from "@/lib/osogbo-weather";
 import { toast } from "sonner";
 import { useWorldClock } from "@/hooks/use-world-clock";
 import { isPowerOutageAt } from "@/lib/world-simulation";
@@ -378,7 +379,7 @@ function MyCityHome() {
       <div className="arrival-line">
         <div>
           <p className="arrival-kicker">
-            {now ? dashboardGreeting(now.getHours()) : "Welcome home"}, {character.name}
+            {now ? dashboardGreeting(osogboHour(now)) : "Welcome home"}, {character.name}
           </p>
           <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">Your home</h1>
         </div>

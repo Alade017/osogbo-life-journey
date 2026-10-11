@@ -16,6 +16,7 @@ import { Avatar } from "@/components/game/Avatar";
 import { formatNaira, xpProgress } from "@/lib/game";
 import type { PlayerState } from "@/lib/player-state";
 import { useLiveClock } from "@/hooks/use-live-clock";
+import { OSOGBO_TIME_ZONE } from "@/lib/osogbo-weather";
 import { Logo } from "@/components/game/Logo";
 import { useGameTime } from "@/components/game/GameTimeProvider";
 import { formatGameTime, WEEKDAYS } from "@/lib/game-time";
@@ -54,7 +55,7 @@ export function GameHUD({
         weekday: "short",
         day: "numeric",
         month: "short",
-        timeZone: "Africa/Lagos",
+        timeZone: OSOGBO_TIME_ZONE,
       }).format(now)
     : "—";
   const clockLabel = now
@@ -63,7 +64,7 @@ export function GameHUD({
         minute: "2-digit",
         second: "2-digit",
         hourCycle: "h23",
-        timeZone: "Africa/Lagos",
+        timeZone: OSOGBO_TIME_ZONE,
       }).format(now)
     : "--:--:--";
   const xp = xpProgress(simulation.experience);
@@ -200,7 +201,7 @@ export function GameHUD({
         })}
       </div>
       <div className="hud-live-clock">
-        <span>LAGOS</span>
+        <span>OSOGBO · WAT</span>
         <time>
           {dateLabel} · {clockLabel}
         </time>

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
-import { CalendarDays, CloudRain, Sun, Zap } from "lucide-react";
+import { CalendarDays, Zap } from "lucide-react";
+import { LiveOsogboWeather } from "@/components/game/LiveOsogboWeather";
 import { Link } from "@tanstack/react-router";
 import { useWorldClock } from "@/hooks/use-world-clock";
 import { INITIAL_GAME_TIME } from "@/lib/game-time";
@@ -12,13 +13,6 @@ import {
   weatherForDay,
 } from "@/lib/world-simulation";
 import { toast } from "sonner";
-
-const WEATHER_LABEL = {
-  sunny: "Sunny",
-  cloudy: "Cloudy",
-  rainy: "Rain",
-  "heavy-rain": "Heavy rain",
-} as const;
 
 export function WorldEnvironment() {
   const world = useWorldClock();
@@ -51,6 +45,7 @@ export function WorldEnvironment() {
   if (!world.data)
     return (
       <div className="world-environment" role="status">
+        <LiveOsogboWeather />
         {world.isError ? "City conditions unavailable" : "Connecting to the city clock…"}
         {world.isError && (
           <button type="button" onClick={() => void world.refetch()}>
@@ -67,19 +62,7 @@ export function WorldEnvironment() {
       data-world-weather={weather}
       aria-label="Current world conditions"
     >
-      <span className="world-condition">
-        <Sun size={15} />{" "}
-        {phase === "sunrise"
-          ? "Sunrise"
-          : phase === "sunset"
-            ? "Sunset"
-            : phase === "day"
-              ? "Daytime"
-              : "Night"}
-      </span>
-      <span className="world-condition">
-        <CloudRain size={15} /> {WEATHER_LABEL[weather]}
-      </span>
+      <LiveOsogboWeather />
       <span className="world-clock-label">CITY · {formatGameTime(time)}</span>
       {outage && (
         <span className="world-condition world-outage">

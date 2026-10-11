@@ -1,6 +1,6 @@
 # Shared HUD and personal simulation
 
-The shared header separates identity, wallet, needs, location, personal simulation controls, and the Lagos wall clock. Needs tiles open existing food, home, and social routes. The mobile navigation includes a labeled phone launcher.
+The shared header separates identity, wallet, needs, location, personal simulation controls, and the Osogbo wall clock. Needs tiles open existing food, home, and social routes. The mobile navigation includes a labeled phone launcher. Live weather display and audio behavior are documented in [weather-and-audio.md](weather-and-audio.md).
 
 Personal needs, activities, queued actions, clock preferences, and simulation skills are persisted through `personal_simulation_command`. The server owns action definitions and effects; the browser never submits replacement stats, money, XP, duration, or rewards. Activity completion advances the personal clock by the configured duration, retaining the existing explicit Complete activity interaction. Simulation skill values remain separate from career skill rewards.
 

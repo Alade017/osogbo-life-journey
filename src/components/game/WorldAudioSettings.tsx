@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { SpotifyPlaylistLink } from "@/components/game/SpotifyPlaylistLink";
 
 type AudioGraph = {
   context: AudioContext;
@@ -201,9 +202,10 @@ export function WorldAudioSettings({
         </label>
       ))}
       <p className="text-xs text-muted-foreground">
-        No external weather or audio service is required. The music control adjusts the included
-        soft ambient tone layer.
+        The music control adjusts the original ambient tones. Listen to Nigeria's latest playlist
+        separately in Spotify using your own account.
       </p>
+      <SpotifyPlaylistLink />
     </div>
   );
 }

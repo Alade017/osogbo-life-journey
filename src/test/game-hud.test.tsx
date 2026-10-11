@@ -63,7 +63,7 @@ describe("shared player HUD", () => {
       "/inventory",
     );
     expect(screen.getByText(/PERSONAL TIME/)).toBeInTheDocument();
-    expect(screen.getByText("LAGOS")).toBeInTheDocument();
+    expect(screen.getByText("OSOGBO · WAT")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Pause simulation" }));
     expect(controls.pause).toHaveBeenCalled();
   });

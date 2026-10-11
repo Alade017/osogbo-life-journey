@@ -23,6 +23,7 @@ import {
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { useLiveClock } from "@/hooks/use-live-clock";
+import { OSOGBO_TIME_ZONE } from "@/lib/osogbo-weather";
 
 const PHONE_APPS = [
   { label: "Home", to: "/home", icon: House, tone: "phone-app-green", active: true },
@@ -59,7 +60,7 @@ export function PhoneLauncher({
         hour: "2-digit",
         minute: "2-digit",
         hourCycle: "h23",
-        timeZone: "Africa/Lagos",
+        timeZone: OSOGBO_TIME_ZONE,
       }).format(now)
     : "--:--";
 
@@ -87,7 +88,7 @@ export function PhoneLauncher({
         <div className="phone-screen">
           <div className="phone-status">
             <span className="phone-status-time">{phoneTime}</span>
-            <span className="phone-status-brand">OSOGBO LIFE</span>
+            <span className="phone-status-brand">OSOGBO · WAT</span>
             <span className="phone-status-indicators" aria-label="Game phone status">
               <span className="phone-signal" aria-hidden="true">
                 <i />
