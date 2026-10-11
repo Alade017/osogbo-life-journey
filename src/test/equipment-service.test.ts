@@ -5,6 +5,7 @@ import {
   filterEquippableInventoryForSlot,
   getEquipmentForSlot,
   isEquipmentSlot,
+  normalizeEquippedItems,
   removeEquippedItem,
   replaceEquippedItem,
   validateEquipItem,
@@ -40,6 +41,15 @@ describe("equipment model", () => {
     expect(EQUIPMENT_SLOTS).toEqual(["head", "top", "bottom", "shoes", "accessory"]);
     expect(isEquipmentSlot("top")).toBe(true);
     expect(isEquipmentSlot("food")).toBe(false);
+  });
+
+  it("drops unknown equipment slots before building the player view", () => {
+    expect(
+      normalizeEquippedItems([
+        { ...equipped("shirt", "top"), slot: "top" },
+        { ...equipped("unknown", "top"), slot: "gloves" },
+      ]),
+    ).toHaveLength(1);
   });
 
   it("requires an owned item definition that is equippable in the requested slot", () => {

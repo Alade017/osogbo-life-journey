@@ -12,6 +12,7 @@ import {
   type Tone,
 } from "@/components/game/ui";
 import { playerStateFromRows } from "@/lib/player-state";
+import { normalizeEquippedItems } from "@/lib/equipment-service";
 
 export const Route = createFileRoute("/_authenticated/_game/profile")({
   head: () => pageMeta("Player Profile", "Your character's stats and progress."),
@@ -44,7 +45,7 @@ function ProfilePage() {
     character: c,
     wallet,
     location: locations?.find((item) => item.id === c.current_location_id),
-    equipment: equipment ?? [],
+    equipment: normalizeEquippedItems(equipment),
   });
   const xp = xpProgress(player.experience);
   const dream = jobs?.find((j) => j.slug === c.occupation_preference);
@@ -130,7 +131,9 @@ function ProfilePage() {
           <div className="profile-data-row profile-data-row-single">
             <div>
               <span>Thirst satisfaction</span>
-              <strong>{player.thirst === null ? "Not tracked yet" : `${100 - player.thirst}/100`}</strong>
+              <strong>
+                {player.thirst === null ? "Not tracked yet" : `${100 - player.thirst}/100`}
+              </strong>
             </div>
           </div>
           {isWalletError && (

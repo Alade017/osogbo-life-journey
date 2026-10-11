@@ -41,6 +41,8 @@ describe("NigerianTrendingMusic", () => {
     render(<NigerianTrendingMusic />);
     const link = await screen.findByRole("link", { name: /Market Day by Osun Artist/i });
     expect(link).toHaveAttribute("href", "https://music.apple.com/ng/album/market-day/123");
-    expect(screen.getByText(/does not stream copyrighted tracks inside the game/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/does not stream copyrighted tracks inside the game/i),
+    ).toBeInTheDocument();
   });
 });

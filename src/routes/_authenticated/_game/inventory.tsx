@@ -138,7 +138,8 @@ export function InventoryPage() {
           </div>
           {requestedSlot && (
             <p className="inventory-detail-note" role="status">
-              Choose an item for the {requestedSlot} slot. Only owned, compatible equipment is shown.{" "}
+              Choose an item for the {requestedSlot} slot. Only owned, compatible equipment is
+              shown.{" "}
               <button type="button" onClick={() => setRequestedSlot(null)}>
                 Show all items
               </button>
@@ -146,7 +147,8 @@ export function InventoryPage() {
           )}
           {requestedSlot && compatibleItems.length === 0 && (
             <p className="inventory-detail-note" role="status">
-              You do not have any {requestedSlot} equipment in your bag yet. Visit the market to look for some.
+              You do not have any {requestedSlot} equipment in your bag yet. Visit the market to
+              look for some.
             </p>
           )}
           <div className="inventory-layout">

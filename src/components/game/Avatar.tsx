@@ -21,7 +21,7 @@ export type Appearance = {
   shoes?: number;
   headwear?: number;
 };
-type AvatarEquipment = { slot: "head" | "top" | "bottom" | "shoes" | "accessory" };
+type AvatarEquipment = { slot: string };
 
 const EDGE = "#103d2c";
 
@@ -223,7 +223,13 @@ export function Avatar({
         strokeLinejoin="round"
       />
       {worn.has("bottom") && (
-        <path data-equipment-slot="bottom" d="M28 90 L32 90 L29 103" fill="none" stroke="#d39a42" strokeWidth="3" />
+        <path
+          data-equipment-slot="bottom"
+          d="M28 90 L32 90 L29 103"
+          fill="none"
+          stroke="#d39a42"
+          strokeWidth="3"
+        />
       )}
       {/* shoes */}
       <path

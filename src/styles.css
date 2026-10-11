@@ -2076,7 +2076,7 @@
 }
 
 .home-districts,
-  .day-objective {
+.day-objective {
   border: 1px solid var(--border);
   border-radius: 12px;
   background: #fff;
@@ -7315,9 +7315,15 @@
   background: currentColor;
 }
 
-.phone-signal i:nth-child(1) { height: 5px; }
-.phone-signal i:nth-child(2) { height: 8px; }
-.phone-signal i:nth-child(3) { height: 11px; }
+.phone-signal i:nth-child(1) {
+  height: 5px;
+}
+.phone-signal i:nth-child(2) {
+  height: 8px;
+}
+.phone-signal i:nth-child(3) {
+  height: 11px;
+}
 
 .phone-battery {
   position: relative;

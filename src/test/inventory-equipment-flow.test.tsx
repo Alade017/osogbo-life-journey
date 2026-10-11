@@ -5,20 +5,22 @@ import { InventoryPage } from "@/routes/_authenticated/_game/inventory";
 const mocks = vi.hoisted(() => ({
   mutate: vi.fn(),
   ownedShirt: {
-  id: "owned-shirt",
-  item_id: "item-shirt",
-  quantity: 1,
-  item: {
-    id: "item-shirt",
-    slug: "basic_outfit",
-    name: "Basic Outfit",
-    description: "A simple outfit.",
-    category: "clothing",
-    icon: "shirt",
-    usable: false,
-    equippable: true,
-    equipment_slot: "top",
-  },
+    id: "owned-shirt",
+    character_id: "character-1",
+    user_id: "user-1",
+    item_id: "item-shirt",
+    quantity: 1,
+    item: {
+      id: "item-shirt",
+      slug: "basic_outfit",
+      name: "Basic Outfit",
+      description: "A simple outfit.",
+      category: "clothing",
+      icon: "shirt",
+      usable: false,
+      equippable: true,
+      equipment_slot: "top",
+    },
   },
 }));
 

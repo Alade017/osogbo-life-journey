@@ -3,7 +3,12 @@ import { describe, expect, it, vi } from "vitest";
 import { CityNeedsDock } from "@/components/game/CityNeedsDock";
 
 vi.mock("@tanstack/react-query", () => ({ useQuery: () => ({ data: null }) }));
-vi.mock("@/lib/game", () => ({ q: { character: () => ({ queryKey: ["character"] }) } }));
+vi.mock("@/lib/game", () => ({
+  q: {
+    character: () => ({ queryKey: ["character"] }),
+    equipment: () => ({ queryKey: ["equipment"] }),
+  },
+}));
 vi.mock("@/components/game/Avatar", () => ({ Avatar: () => <span>Avatar</span> }));
 vi.mock("@/components/game/GameTimeProvider", () => ({
   useGameTime: () => ({
@@ -19,7 +24,7 @@ describe("floating character needs", () => {
     const details = container.querySelector("details");
     const summary = container.querySelector("summary");
     expect(details).not.toHaveAttribute("open");
-    expect(summary).toHaveAttribute("aria-label", "Show character needs");
+    expect(summary).toHaveAttribute("aria-label", "Show character needs including thirst");
     fireEvent.click(summary!);
     expect(screen.getByRole("meter", { name: "Hunger" })).toHaveAttribute("aria-valuenow", "45");
     expect(screen.getByRole("meter", { name: "Social" })).toHaveAttribute("aria-valuenow", "20");

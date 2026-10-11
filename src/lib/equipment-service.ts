@@ -14,6 +14,14 @@ export function isEquipmentSlot(value: unknown): value is EquipmentSlot {
   return typeof value === "string" && EQUIPMENT_SLOTS.includes(value as EquipmentSlot);
 }
 
+export function normalizeEquippedItems(
+  items: readonly (Omit<EquippedItem, "slot"> & { slot: string })[] | null | undefined,
+): EquippedItem[] {
+  return (items ?? []).flatMap((item) =>
+    isEquipmentSlot(item.slot) ? [{ ...item, slot: item.slot }] : [],
+  );
+}
+
 export function filterEquippableInventoryForSlot(
   inventory: readonly PlayerInventoryEntry[],
   slot: EquipmentSlot,

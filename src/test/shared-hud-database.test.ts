@@ -113,7 +113,9 @@ describe("shared HUD database acceptance", () => {
     const before = await command("open");
     let after = before;
     for (let index = 0; index < 10; index += 1) {
-      await db.exec("update public.character_simulations set heartbeat_at=now()-interval '6 seconds'");
+      await db.exec(
+        "update public.character_simulations set heartbeat_at=now()-interval '6 seconds'",
+      );
       after = await command("tick");
     }
     const beforeMinutes = before.game_time.hour * 60 + before.game_time.minute;

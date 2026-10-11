@@ -108,13 +108,7 @@ export function NigerianTrendingMusic() {
             Apple Music Nigeria chart · refreshes every 30 minutes
           </p>
         </div>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          disabled={loading}
-          onClick={refreshChart}
-        >
+        <Button type="button" variant="outline" size="sm" disabled={loading} onClick={refreshChart}>
           <RefreshCw className="mr-2 h-3.5 w-3.5" />
           Refresh
         </Button>
@@ -126,7 +120,10 @@ export function NigerianTrendingMusic() {
       )}
       {error && (
         <p role="status" className="text-sm text-muted-foreground">
-          {error} {songs.length ? "Showing the last successfully loaded chart." : "The rest of Settings is still available."}
+          {error}{" "}
+          {songs.length
+            ? "Showing the last successfully loaded chart."
+            : "The rest of Settings is still available."}
         </p>
       )}
       {songs.length > 0 && (

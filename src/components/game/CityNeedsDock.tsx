@@ -44,7 +44,9 @@ export function CityNeedsDock() {
             );
           })}
           {character?.thirst != null && (
-            <span className={`city-needs-mini is-${statusForNeed("hunger", 100 - character.thirst)}`}>
+            <span
+              className={`city-needs-mini is-${statusForNeed("hunger", 100 - character.thirst)}`}
+            >
               <i style={{ width: `${100 - character.thirst}%` }} />
             </span>
           )}
@@ -78,7 +80,9 @@ export function CityNeedsDock() {
             </div>
           );
         })}
-        <div className={`city-needs-row is-${character?.thirst == null ? "untracked" : statusForNeed("hunger", 100 - character.thirst)}`}>
+        <div
+          className={`city-needs-row is-${character?.thirst == null ? "untracked" : statusForNeed("hunger", 100 - character.thirst)}`}
+        >
           <span className="city-needs-label">
             <GlassWater size={14} aria-hidden="true" />
             Thirst

@@ -22,6 +22,7 @@ import { GameTimeProvider } from "@/components/game/GameTimeProvider";
 import { WorldEnvironment } from "@/components/game/WorldEnvironment";
 import { gameTimeFromCharacter } from "@/lib/game-time";
 import { playerStateFromRows } from "@/lib/player-state";
+import { normalizeEquippedItems } from "@/lib/equipment-service";
 import { configureGameMusic, disableGameAudio } from "@/lib/game-audio";
 
 export const Route = createFileRoute("/_authenticated/_game")({
@@ -114,7 +115,7 @@ function GameLayout() {
     character,
     wallet,
     location: currentLocation,
-    equipment: equipment ?? [],
+    equipment: normalizeEquippedItems(equipment),
   });
 
   return (
