@@ -525,9 +525,8 @@ function LocationPage() {
                   </div>
                   {!isCurrentJob && (
                     <Button
-                      className="mt-3"
+                      className={cn("mt-3", isOjaObaMarket && "oja-oba-primary-action")}
                       variant={isOjaObaMarket ? "default" : "ink"}
-                      className={isOjaObaMarket ? "oja-oba-primary-action" : undefined}
                       disabled={!isHere || !qualified || selectJob.isPending}
                       onClick={() => selectJob.mutate(job.id)}
                     >

@@ -16,13 +16,14 @@ const REFRESH_MS = 30 * 60 * 1000;
 function validSong(value: unknown): ChartSong | null {
   if (!value || typeof value !== "object") return null;
   const item = value as Record<string, unknown>;
-  const id = typeof item.id === "string" ? item.id : "";
-  const name = typeof item.name === "string" ? item.name : "";
-  const artistName = typeof item.artistName === "string" ? item.artistName : "";
-  const url = typeof item.url === "string" ? item.url : "";
-  const artwork = item.artwork && typeof item.artwork === "object"
-    ? (item.artwork as Record<string, unknown>).url
-    : undefined;
+  const id = typeof item["id"] === "string" ? item["id"] : "";
+  const name = typeof item["name"] === "string" ? item["name"] : "";
+  const artistName = typeof item["artistName"] === "string" ? item["artistName"] : "";
+  const url = typeof item["url"] === "string" ? item["url"] : "";
+  const artwork =
+    item["artwork"] && typeof item["artwork"] === "object"
+      ? (item["artwork"] as Record<string, unknown>)["url"]
+      : undefined;
   if (!id || !name || !artistName || !/^https:\/\/music\.apple\.com\//.test(url)) return null;
   return {
     id,
@@ -49,12 +50,12 @@ export function NigerianTrendingMusic() {
       });
       if (!response.ok) throw new Error("The Nigeria music chart is temporarily unavailable.");
       const payload: unknown = await response.json();
-      const feed = payload && typeof payload === "object"
-        ? (payload as Record<string, unknown>).feed
-        : null;
-      const results = feed && typeof feed === "object"
-        ? (feed as Record<string, unknown>).results
-        : null;
+      const feed =
+        payload && typeof payload === "object"
+          ? (payload as Record<string, unknown>)["feed"]
+          : null;
+      const results =
+        feed && typeof feed === "object" ? (feed as Record<string, unknown>)["results"] : null;
       const next = Array.isArray(results)
         ? results.map(validSong).filter((song): song is ChartSong => song !== null)
         : [];
@@ -80,10 +81,15 @@ export function NigerianTrendingMusic() {
   }, [loadChart]);
 
   return (
-    <section className="space-y-3 border-t border-border pt-4" aria-labelledby="nigerian-chart-title">
+    <section
+      className="space-y-3 border-t border-border pt-4"
+      aria-labelledby="nigerian-chart-title"
+    >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h3 id="nigerian-chart-title" className="font-semibold">Trending in Nigeria</h3>
+          <h3 id="nigerian-chart-title" className="font-semibold">
+            Trending in Nigeria
+          </h3>
           <p className="text-xs text-muted-foreground">
             Apple Music Nigeria chart · refreshes every 30 minutes
           </p>
@@ -100,7 +106,9 @@ export function NigerianTrendingMusic() {
         </Button>
       </div>
       {loading && !songs.length && (
-        <p role="status" className="text-sm text-muted-foreground">Loading the latest chart…</p>
+        <p role="status" className="text-sm text-muted-foreground">
+          Loading the latest chart…
+        </p>
       )}
       {error && (
         <p role="status" className="text-sm text-muted-foreground">
@@ -110,12 +118,20 @@ export function NigerianTrendingMusic() {
       {songs.length > 0 && (
         <ol className="max-h-80 space-y-2 overflow-y-auto pr-1">
           {songs.map((song, index) => (
-            <li key={song.id} className="flex items-center gap-3 rounded-md border border-border p-2">
+            <li
+              key={song.id}
+              className="flex items-center gap-3 rounded-md border border-border p-2"
+            >
               <span className="w-5 shrink-0 text-center text-xs tabular-nums text-muted-foreground">
                 {index + 1}
               </span>
               {song.artworkUrl ? (
-                <img src={song.artworkUrl} alt="" loading="lazy" className="h-10 w-10 rounded object-cover" />
+                <img
+                  src={song.artworkUrl}
+                  alt=""
+                  loading="lazy"
+                  className="h-10 w-10 rounded object-cover"
+                />
               ) : (
                 <span className="flex h-10 w-10 items-center justify-center rounded bg-muted">
                   <Music2 size={17} aria-hidden="true" />
