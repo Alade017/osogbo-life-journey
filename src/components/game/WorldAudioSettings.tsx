@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
-import { SpotifyPlaylistLink } from "@/components/game/SpotifyPlaylistLink";
 import {
   disableGameAudio,
   enableGameAudio,
@@ -8,6 +7,13 @@ import {
   playGameSound,
   readGameAudioLevels,
   setGameAudioLevels,
+  subscribeMusic,
+  getMusicState,
+  getServerMusicState,
+  pauseGameMusic,
+  resumeGameMusic,
+  nextGameMusic,
+  playableMusicTracks,
 } from "@/lib/game-audio";
 
 type Levels = ReturnType<typeof readGameAudioLevels>;
@@ -22,6 +28,7 @@ export function WorldAudioSettings({
   const [levels, setLevels] = useState<Levels>(readGameAudioLevels);
   const [audioUnavailable, setAudioUnavailable] = useState(false);
   const [audioActive, setAudioActive] = useState(false);
+  const music = useSyncExternalStore(subscribeMusic, getMusicState, getServerMusicState);
 
   useEffect(() => {
     setAudioActive(isGameAudioActive());
@@ -76,7 +83,7 @@ export function WorldAudioSettings({
       {(["master", "music", "effects"] as const).map((key) => (
         <label key={key} className="grid grid-cols-[8rem_1fr_3rem] items-center gap-3 text-sm">
           <span className="capitalize">
-            {key === "effects" ? "Effects" : key === "master" ? "Master" : "Music ambience"}
+            {key === "effects" ? "Effects" : key === "master" ? "Master" : "Music"}
           </span>
           <input
             type="range"
@@ -90,11 +97,62 @@ export function WorldAudioSettings({
           <span className="tabular-nums">{Math.round(levels[key] * 100)}%</span>
         </label>
       ))}
+      <section className="space-y-3 rounded-xl border border-border p-4" aria-label="Now playing">
+        <h4 className="font-semibold">Now playing</h4>
+        {music.track && (
+          <p>
+            {music.track.title} · {music.track.artist}
+          </p>
+        )}
+        <p role="status" className="text-sm text-muted-foreground">
+          {music.status}
+        </p>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            disabled={!audioActive || !playableMusicTracks.length}
+            onClick={() => (music.playing ? pauseGameMusic() : void resumeGameMusic())}
+          >
+            {music.playing ? "Pause" : "Resume"}
+          </Button>
+          <Button
+            variant="outline"
+            disabled={!audioActive || !playableMusicTracks.length}
+            onClick={() => void nextGameMusic()}
+          >
+            Next
+          </Button>
+        </div>
+      </section>
+      <details className="text-sm">
+        <summary>Audio credits</summary>
+        {!playableMusicTracks.length && <p>No licensed recordings have been added.</p>}
+        {playableMusicTracks.map((track) => (
+          <div key={track.id} className="py-2">
+            <p>
+              {track.title} · {track.artist}
+            </p>
+            <a href={track.sourceUrl} target="_blank" rel="noreferrer" className="underline">
+              Source
+            </a>
+            {" · "}
+            <a href={track.licenseUrl} target="_blank" rel="noreferrer" className="underline">
+              {track.licenseName}
+            </a>
+            <p>
+              Uploader: {track.uploader} · License checked: {track.licenseCheckedAt}
+            </p>
+            {track.attribution && <p>{track.attribution}</p>}
+          </div>
+        ))}
+        <a href="/audio/CREDITS.md" className="underline">
+          Credits file
+        </a>
+      </details>
       <p className="text-xs text-muted-foreground">
-        The music control adjusts the original ambient tones. Listen to Nigeria's latest playlist
-        separately in Spotify using your own account.
+        Tracks are cached after loading for offline listening in this open game. Browser storage may
+        be cleared or evicted. Synthesized city ambience and effects remain available.
       </p>
-      <SpotifyPlaylistLink />
     </div>
   );
 }

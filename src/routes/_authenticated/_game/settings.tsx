@@ -11,7 +11,6 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { PageHeader } from "@/components/game/ui";
 import { WorldAudioSettings } from "@/components/game/WorldAudioSettings";
-import { NigerianTrendingMusic } from "@/components/game/NigerianTrendingMusic";
 
 export const Route = createFileRoute("/_authenticated/_game/settings")({
   head: () => pageMeta("Settings", "Manage your OSOGBO LIFE account and preferences."),
@@ -173,7 +172,6 @@ function SettingsPage() {
             enabled={!!profile?.sound_enabled}
             onEnabledChange={(sound_enabled) => void update({ sound_enabled })}
           />
-          <NigerianTrendingMusic />
         </div>
       </section>
       <section className="game-panel p-5">

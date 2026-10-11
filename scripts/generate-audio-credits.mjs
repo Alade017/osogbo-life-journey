@@ -1,0 +1,12 @@
+import { writeFileSync } from "node:fs";
+import { musicTracks, validMusicTracks } from "../src/lib/music-tracks.ts";
+
+const tracks = validMusicTracks(musicTracks);
+const credits = tracks.map(
+  (track) =>
+    `## ${track.title}\n\nArtist: ${track.artist}\nUploader: ${track.uploader}\nSource: ${track.sourceUrl}\nLicense: ${track.licenseName} (${track.licenseUrl})\nLicense checked: ${track.licenseCheckedAt}\nAttribution: ${track.attribution || "Not supplied"}\n`,
+);
+writeFileSync(
+  new URL("../public/audio/CREDITS.md", import.meta.url),
+  `# OSOGBO LIFE audio credits\n\n${credits.length ? credits.join("\n") : "No licensed recordings have been added.\n"}\nCity ambience and existing game effects are original synthesized audio.\n`,
+);
