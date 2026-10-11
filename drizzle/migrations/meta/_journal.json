@@ -218,6 +218,13 @@
       "when": 1791594000008,
       "tag": "0029_milestone8_purchased_home_furniture",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1791594000009,
+      "tag": "0030_personal_clock_rate",
+      "breakpoints": true
     }
   ]
 }

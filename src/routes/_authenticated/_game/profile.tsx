@@ -30,6 +30,7 @@ function ProfilePage() {
   const { data: wallet, isLoading: isWalletLoading, isError: isWalletError } = useQuery(q.wallet());
   const { data: jobs } = useQuery(q.jobs());
   const { data: locations } = useQuery(q.locations());
+  const { data: equipment } = useQuery(q.equipment());
   if (isCharacterError)
     return (
       <GameDataUnavailable
@@ -43,13 +44,14 @@ function ProfilePage() {
     character: c,
     wallet,
     location: locations?.find((item) => item.id === c.current_location_id),
+    equipment: equipment ?? [],
   });
   const xp = xpProgress(player.experience);
   const dream = jobs?.find((j) => j.slug === c.occupation_preference);
   const stats: [string, number, Tone][] = [
     ["Health", player.health, "clay"],
     ["Energy", player.energy, "sun"],
-    ["Hunger · more = hungrier", player.hunger, "clay"],
+    ["Hunger satisfaction", 100 - player.hunger, "clay"],
     ["Reputation", player.reputation, "ink"],
     ["Intelligence", c.intelligence, "ink"],
     ["Career", c.career, "primary"],
@@ -69,7 +71,12 @@ function ProfilePage() {
           aria-label="Character details"
         >
           <div className="player-profile-avatar mx-auto flex w-fit justify-center rounded-xl border border-border bg-muted p-4">
-            <Avatar appearance={c.appearance as object} gender={c.gender} size={130} />
+            <Avatar
+              appearance={c.appearance as object}
+              gender={c.gender}
+              size={130}
+              equipment={player.equipment}
+            />
           </div>
           <h2 className="mt-4 text-2xl font-bold text-ink">{player.name}</h2>
           <div className="mt-2 flex flex-wrap justify-center gap-1.5">
@@ -120,14 +127,10 @@ function ProfilePage() {
               <StatBar key={l} label={l} value={v} tone={t} />
             ))}
           </div>
-          <div className="profile-data-row">
+          <div className="profile-data-row profile-data-row-single">
             <div>
-              <span>Thirst · more = thirstier</span>
-              <strong>{player.thirst === null ? "Not tracked yet" : `${player.thirst}/100`}</strong>
-            </div>
-            <div>
-              <span>Wanted level</span>
-              <strong>{player.wantedLevel ?? "Not tracked yet"}</strong>
+              <span>Thirst satisfaction</span>
+              <strong>{player.thirst === null ? "Not tracked yet" : `${100 - player.thirst}/100`}</strong>
             </div>
           </div>
           {isWalletError && (

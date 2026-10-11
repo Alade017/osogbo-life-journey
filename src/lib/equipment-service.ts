@@ -1,5 +1,6 @@
 import { normalizeInventoryCategory } from "@/lib/inventory-service";
 import type { EquippedItem, EquipmentSlot, ItemDefinition } from "@/lib/player-state";
+import type { PlayerInventoryEntry } from "@/lib/player-state";
 
 export const EQUIPMENT_SLOTS: readonly EquipmentSlot[] = [
   "head",
@@ -11,6 +12,15 @@ export const EQUIPMENT_SLOTS: readonly EquipmentSlot[] = [
 
 export function isEquipmentSlot(value: unknown): value is EquipmentSlot {
   return typeof value === "string" && EQUIPMENT_SLOTS.includes(value as EquipmentSlot);
+}
+
+export function filterEquippableInventoryForSlot(
+  inventory: readonly PlayerInventoryEntry[],
+  slot: EquipmentSlot,
+): PlayerInventoryEntry[] {
+  return inventory.filter(
+    (entry) => entry.item?.equippable === true && entry.item.equipment_slot === slot,
+  );
 }
 
 export function validateEquipItem(

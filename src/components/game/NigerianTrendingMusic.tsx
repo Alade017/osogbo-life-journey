@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ExternalLink, Music2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -39,6 +39,7 @@ export function NigerianTrendingMusic() {
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const activeRequest = useRef<AbortController | null>(null);
 
   const loadChart = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
@@ -59,26 +60,39 @@ export function NigerianTrendingMusic() {
       const next = Array.isArray(results)
         ? results.map(validSong).filter((song): song is ChartSong => song !== null)
         : [];
-      if (!next.length) throw new Error("The chart did not return any playable listing details.");
+      if (!next.length) throw new Error("The chart returned no listings.");
       setSongs(next);
       setUpdatedAt(new Date());
     } catch (cause) {
       if (cause instanceof Error && cause.name === "AbortError") return;
-      setError(cause instanceof Error ? cause.message : "Could not load the Nigeria music chart.");
+      setError(
+        cause instanceof Error && !(cause instanceof TypeError)
+          ? cause.message
+          : "Could not reach the Nigeria music chart. Check your connection and try again.",
+      );
     } finally {
       if (!signal?.aborted) setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
+  const refreshChart = useCallback(() => {
+    activeRequest.current?.abort();
     const controller = new AbortController();
-    void loadChart(controller.signal);
-    const interval = window.setInterval(() => void loadChart(), REFRESH_MS);
-    return () => {
-      controller.abort();
-      window.clearInterval(interval);
-    };
+    activeRequest.current = controller;
+    void loadChart(controller.signal).finally(() => {
+      if (activeRequest.current === controller) activeRequest.current = null;
+    });
   }, [loadChart]);
+
+  useEffect(() => {
+    refreshChart();
+    const interval = window.setInterval(refreshChart, REFRESH_MS);
+    return () => {
+      window.clearInterval(interval);
+      activeRequest.current?.abort();
+      activeRequest.current = null;
+    };
+  }, [refreshChart]);
 
   return (
     <section
@@ -99,7 +113,7 @@ export function NigerianTrendingMusic() {
           variant="outline"
           size="sm"
           disabled={loading}
-          onClick={() => void loadChart()}
+          onClick={refreshChart}
         >
           <RefreshCw className="mr-2 h-3.5 w-3.5" />
           Refresh
@@ -112,7 +126,7 @@ export function NigerianTrendingMusic() {
       )}
       {error && (
         <p role="status" className="text-sm text-muted-foreground">
-          {error} {songs.length ? "Showing the last successfully loaded chart." : ""}
+          {error} {songs.length ? "Showing the last successfully loaded chart." : "The rest of Settings is still available."}
         </p>
       )}
       {songs.length > 0 && (

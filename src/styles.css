@@ -3364,7 +3364,7 @@
 
 .jobs-heading h1 {
   margin: 0;
-  color: var(--jobs-navy);
+  color: var(--color-text);
   font-size: clamp(1.8rem, 3vw, 2.35rem);
   font-weight: 800;
   letter-spacing: -0.045em;
@@ -3569,7 +3569,7 @@
 }
 .home-interior-heading h2 {
   margin: 0;
-  color: var(--home-ink);
+  color: var(--color-text);
   font-size: 1.22rem;
   font-weight: 800;
   letter-spacing: -0.035em;
@@ -4285,6 +4285,20 @@
   background: #f3f8fc;
 }
 
+.profile-data-row-single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.inventory-equipment-slot.is-selected {
+  border-color: var(--color-interactive);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-interactive) 22%, transparent);
+}
+
+.inventory-equipment-slot .button[aria-pressed="true"] {
+  color: var(--color-text-inverse);
+  background: var(--color-primary);
+}
+
 .inventory-equipment-slot-name {
   color: var(--muted-foreground);
   font-size: 10px;
@@ -4301,6 +4315,17 @@
 
 .inventory-equipment-slot .button {
   width: fit-content;
+}
+
+#inventory-items {
+  scroll-margin-top: 18px;
+}
+
+.inventory-detail-note button {
+  margin-left: 8px;
+  color: var(--color-primary);
+  font-weight: 700;
+  text-decoration: underline;
 }
 
 .nearby-location-prompt-icon {
@@ -6842,7 +6867,7 @@
   gap: 16px;
 }
 .game-page-header h1 {
-  color: var(--ink);
+  color: var(--color-text);
   font-size: clamp(24px, 3vw, 34px);
   letter-spacing: -0.025em;
   line-height: 1.12;

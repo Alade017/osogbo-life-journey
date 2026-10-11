@@ -1,64 +1,30 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { MissionChips } from "@/components/game/MissionChips";
 
 vi.mock("@tanstack/react-query", () => ({
-  useQuery: () => ({ data: rows }),
+  useQuery: () => ({
+    data: [
+      { id: "m1", status: "in_progress", progress: 1, mission: { title: "Market errands", target: 4, description: "Visit the market", reward_money: 20, reward_xp: 2 } },
+      { id: "m2", status: "in_progress", progress: 0, mission: { title: "Find a book", target: 1, description: "Visit the library", reward_money: 10, reward_xp: 1 } },
+    ],
+  }),
 }));
-const rows = [
-  {
-    id: "mission-1",
-    status: "in_progress",
-    progress: 4,
-    mission: {
-      title: "Visit the buka",
-      description: "Find a food spot in your district.",
-      target: 10,
-      reward_money: 500,
-      reward_xp: 15,
-    },
-  },
-  {
-    id: "mission-done",
-    status: "completed",
-    progress: 10,
-    mission: {
-      title: "Completed mission",
-      description: "Already done.",
-      target: 10,
-      reward_money: 100,
-      reward_xp: 0,
-    },
-  },
-];
-
-vi.mock("@/lib/game", () => ({
-  q: { missions: () => ({ queryKey: ["missions"] }) },
-  formatNaira: (amount: number) => `₦${amount.toLocaleString("en-NG")}`,
-}));
-
 vi.mock("@tanstack/react-router", () => ({
-  Link: ({ to, children, ...props }: { to: string; children: React.ReactNode }) => (
-    <a href={to} {...props}>
-      {children}
-    </a>
+  Link: ({ to, children, ...props }: React.PropsWithChildren<{ to: string }>) => (
+    <a href={to} {...props}>{children}</a>
   ),
 }));
+vi.mock("@/lib/game", () => ({
+  q: { missions: () => ({ queryKey: ["missions"] }) },
+  formatNaira: (amount: number) => `₦${amount}`,
+}));
 
-describe("map mission chips", () => {
-  it("shows only active persisted missions and expands to its progress and mission page", () => {
+describe("MissionChips", () => {
+  it("keeps the map overlay to one mission and explains the additional missions", () => {
     render(<MissionChips />);
-
-    expect(screen.getByText("Visit the buka")).toBeInTheDocument();
-    expect(screen.queryByText("Completed mission")).not.toBeInTheDocument();
-    fireEvent.click(screen.getByText("Visit the buka"));
-    expect(screen.getByRole("meter", { name: "Visit the buka progress" })).toHaveAttribute(
-      "aria-valuenow",
-      "4",
-    );
-    expect(screen.getByRole("link", { name: /View missions/ })).toHaveAttribute(
-      "href",
-      "/missions",
-    );
+    expect(screen.getByText("Market errands")).toBeInTheDocument();
+    expect(screen.queryByText("Find a book")).not.toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "View 1 other active mission" })).toHaveAttribute("href", "/missions");
   });
 });

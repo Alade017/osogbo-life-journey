@@ -68,6 +68,7 @@ function GameLayout() {
   const { data: notes } = useQuery({ ...q.notifications(), enabled: !!character });
   const { data: profile } = useQuery(q.profile());
   const { data: locations } = useQuery({ ...q.locations(), enabled: !!character });
+  const { data: equipment } = useQuery({ ...q.equipment(), enabled: !!character });
   const unread = notes?.filter((n) => !n.read_at).length ?? 0;
   useEffect(() => {
     configureGameMusic(character?.id ?? null);
@@ -109,7 +110,12 @@ function GameLayout() {
       </div>
     );
 
-  const player = playerStateFromRows({ character, wallet, location: currentLocation });
+  const player = playerStateFromRows({
+    character,
+    wallet,
+    location: currentLocation,
+    equipment: equipment ?? [],
+  });
 
   return (
     <GameTimeProvider

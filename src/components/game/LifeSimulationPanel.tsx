@@ -5,9 +5,12 @@ import {
   BookOpen,
   CirclePause,
   CirclePlay,
+  GlassWater,
   RotateCcw,
   Users,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { q } from "@/lib/game";
 import { useGameTime } from "@/components/game/GameTimeProvider";
 import {
   ACTION_CATALOG,
@@ -28,6 +31,7 @@ const NEED_ICONS: Record<(typeof NEED_NAMES)[number], string> = {
 };
 
 export function LifeSimulationPanel() {
+  const { data: character } = useQuery(q.character());
   const {
     simulation,
     pause,
@@ -124,6 +128,7 @@ export function LifeSimulationPanel() {
             Speed
             <select
               aria-label="Simulation speed"
+              title="At 1x, one game minute passes per real minute."
               value={simulation.timeSpeed}
               onChange={(event) => setSpeed(Number(event.target.value) as 0.5 | 1 | 2)}
             >
@@ -145,7 +150,9 @@ export function LifeSimulationPanel() {
               aria-label={`${NEED_RULES[name].label}: ${Math.round(value)} percent, ${status}`}
             >
               <span aria-hidden="true">{NEED_ICONS[name]}</span>
-              <span className="life-need-label">{NEED_RULES[name].label}</span>
+              <span className="life-need-label">
+                {name === "hunger" ? "Hunger satisfaction" : NEED_RULES[name].label}
+              </span>
               <strong>{Math.round(value)}%</strong>
               <div className="life-need-track">
                 <i style={{ width: `${value}%` }} />
@@ -160,6 +167,22 @@ export function LifeSimulationPanel() {
             </div>
           );
         })}
+        <div
+          className={`life-need is-${character?.thirst == null ? "untracked" : statusForNeed("hunger", 100 - character.thirst)}`}
+          aria-label={
+            character?.thirst == null
+              ? "Thirst is not tracked yet"
+              : `Thirst satisfaction: ${100 - character.thirst} percent`
+          }
+        >
+          <GlassWater size={16} aria-hidden="true" />
+          <span className="life-need-label">Thirst</span>
+          <strong>{character?.thirst == null ? "—" : `${100 - character.thirst}%`}</strong>
+          <div className="life-need-track">
+            {character?.thirst != null && <i style={{ width: `${100 - character.thirst}%` }} />}
+          </div>
+          <small>{character?.thirst == null ? "Not tracked" : "Satisfaction"}</small>
+        </div>
       </div>
       <div className="simulation-mood">
         <Activity size={17} />

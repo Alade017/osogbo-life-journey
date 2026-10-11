@@ -85,7 +85,12 @@ export function GameHUD({
       </Link>
       <Link to="/profile" className="game-hud-player" aria-label={`${player.name}, view profile`}>
         <span className="game-hud-avatar">
-          <Avatar appearance={player.avatar as object} gender={player.gender} size={36} />
+          <Avatar
+            appearance={player.avatar as object}
+            gender={player.gender}
+            size={36}
+            equipment={player.equipment}
+          />
         </span>
         <span className="min-w-0">
           <span className="block truncate font-display text-sm font-bold">{player.name}</span>
@@ -150,6 +155,7 @@ export function GameHUD({
           </button>
           <select
             aria-label="Simulation speed"
+            title="At 1x, one game minute passes per real minute."
             value={simulation.timeSpeed}
             disabled={!ready || busy}
             onChange={(event) => setSpeed(Number(event.target.value) as 0.5 | 1 | 2)}
@@ -177,7 +183,7 @@ export function GameHUD({
           return (
             <details className={`hud-need is-${status}`} key={name}>
               <summary
-                aria-label={`${NEED_RULES[name].label} ${value} percent. Show activity shortcut`}
+                aria-label={`${name === "hunger" ? "Hunger satisfaction" : NEED_RULES[name].label} ${value} percent. Show activity shortcut`}
               >
                 <Icon size={15} aria-hidden="true" />
                 <span>{NEED_RULES[name].label}</span>

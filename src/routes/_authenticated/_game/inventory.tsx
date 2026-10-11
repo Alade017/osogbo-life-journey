@@ -18,7 +18,7 @@ import {
 import { itemUseEffect } from "@/lib/item-service";
 import { validatePlayerAction } from "@/lib/player-action-service";
 import type { EquipmentSlot } from "@/lib/player-state";
-import { EQUIPMENT_SLOTS } from "@/lib/equipment-service";
+import { EQUIPMENT_SLOTS, filterEquippableInventoryForSlot } from "@/lib/equipment-service";
 
 export const Route = createFileRoute("/_authenticated/_game/inventory")({
   head: () => pageMeta("Inventory", "Items your character carries around Osogbo."),
@@ -33,7 +33,7 @@ const ICONS: Record<string, LucideIcon> = {
 };
 const TONES = ["bg-sun", "bg-leaf", "bg-sky", "bg-clay"];
 
-function InventoryPage() {
+export function InventoryPage() {
   const { data: items, isLoading, isError, error, refetch, isRefetching } = useQuery(q.inventory());
   const { data: character } = useQuery(q.character());
   const {
@@ -45,6 +45,7 @@ function InventoryPage() {
   } = useQuery(q.equipment());
   const [activeCategory, setActiveCategory] = useState<InventoryCategory | "all">("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [requestedSlot, setRequestedSlot] = useState<EquipmentSlot | null>(null);
   const useItem = useGameAction(rpc.useInventoryItem, {
     onSuccess: () => toast.success("Item used. Your needs and game time were updated."),
   });
@@ -82,6 +83,9 @@ function InventoryPage() {
 
   const inventory = items ?? [];
   const visibleItems = filterInventory(inventory, activeCategory);
+  const compatibleItems = requestedSlot
+    ? filterEquippableInventoryForSlot(visibleItems, requestedSlot)
+    : visibleItems;
   const selectedItem = items?.find((item) => item.id === selectedId);
   const itemActionsAvailable = typeof selectedItem?.item?.usable === "boolean";
   const selectedUse = selectedItem ? itemUseEffect(selectedItem.item) : null;
@@ -132,9 +136,22 @@ function InventoryPage() {
               </button>
             ))}
           </div>
+          {requestedSlot && (
+            <p className="inventory-detail-note" role="status">
+              Choose an item for the {requestedSlot} slot. Only owned, compatible equipment is shown.{" "}
+              <button type="button" onClick={() => setRequestedSlot(null)}>
+                Show all items
+              </button>
+            </p>
+          )}
+          {requestedSlot && compatibleItems.length === 0 && (
+            <p className="inventory-detail-note" role="status">
+              You do not have any {requestedSlot} equipment in your bag yet. Visit the market to look for some.
+            </p>
+          )}
           <div className="inventory-layout">
-            <div className="inventory-grid">
-              {visibleItems.map((item, index) => {
+            <div className="inventory-grid" id="inventory-items">
+              {compatibleItems.map((item, index) => {
                 const Icon = ICONS[item.item?.icon ?? ""] ?? Package;
                 return (
                   <button
@@ -199,7 +216,11 @@ function InventoryPage() {
                       {selectedSlot && (
                         <Button
                           variant="secondary"
-                          disabled={!!equipError || equipItem.isPending}
+                          disabled={
+                            !!equipError ||
+                            equipItem.isPending ||
+                            (!!requestedSlot && selectedSlot !== requestedSlot)
+                          }
                           onClick={() =>
                             equipItem.mutate({ id: selectedItem.id, slot: selectedSlot })
                           }
@@ -261,10 +282,28 @@ function InventoryPage() {
               return (
                 <div
                   key={slot}
-                  className={`inventory-equipment-slot ${equipped ? "is-equipped" : ""}`}
+                  className={`inventory-equipment-slot ${equipped ? "is-equipped" : ""} ${requestedSlot === slot ? "is-selected" : ""}`}
                 >
                   <span className="inventory-equipment-slot-name">{slot}</span>
                   <strong>{equipped?.item?.name ?? "Empty"}</strong>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    aria-pressed={requestedSlot === slot}
+                    onClick={() => {
+                      setRequestedSlot(slot);
+                      setActiveCategory("all");
+                      setSelectedId(null);
+                      window.requestAnimationFrame(() =>
+                        document.getElementById("inventory-items")?.scrollIntoView({
+                          behavior: "smooth",
+                          block: "start",
+                        }),
+                      );
+                    }}
+                  >
+                    {equipped ? "Change item" : "Choose from bag"}
+                  </Button>
                   {equipped && (
                     <Button
                       size="sm"

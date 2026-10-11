@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Droplets, Smile, Sparkles, Users, Utensils, Zap } from "lucide-react";
+import { Droplets, GlassWater, Smile, Sparkles, Users, Utensils, Zap } from "lucide-react";
 import { Avatar } from "@/components/game/Avatar";
 import { useGameTime } from "@/components/game/GameTimeProvider";
 import { NEED_NAMES, NEED_RULES, statusForNeed } from "@/lib/life-simulation";
@@ -17,16 +17,18 @@ const NEED_ICONS = {
 export function CityNeedsDock() {
   const { simulation } = useGameTime();
   const { data: character } = useQuery(q.character());
+  const { data: equipment } = useQuery({ ...q.equipment(), enabled: !!character });
 
   return (
     <details className="city-needs-dock">
-      <summary aria-label="Show character needs">
+      <summary aria-label="Show character needs including thirst">
         <span className="city-needs-avatar">
           {character ? (
             <Avatar
               appearance={character.appearance as object}
               gender={character.gender}
               size={34}
+              equipment={equipment ?? []}
             />
           ) : (
             <Users size={18} aria-hidden="true" />
@@ -41,6 +43,11 @@ export function CityNeedsDock() {
               </span>
             );
           })}
+          {character?.thirst != null && (
+            <span className={`city-needs-mini is-${statusForNeed("hunger", 100 - character.thirst)}`}>
+              <i style={{ width: `${100 - character.thirst}%` }} />
+            </span>
+          )}
         </span>
         <span className="city-needs-expand" aria-hidden="true">
           +
@@ -55,7 +62,7 @@ export function CityNeedsDock() {
             <div className={`city-needs-row is-${status}`} key={name}>
               <span className="city-needs-label">
                 <Icon size={14} aria-hidden="true" />
-                {NEED_RULES[name].label}
+                {name === "hunger" ? "Hunger satisfaction" : NEED_RULES[name].label}
               </span>
               <span
                 className="city-needs-track"
@@ -71,6 +78,23 @@ export function CityNeedsDock() {
             </div>
           );
         })}
+        <div className={`city-needs-row is-${character?.thirst == null ? "untracked" : statusForNeed("hunger", 100 - character.thirst)}`}>
+          <span className="city-needs-label">
+            <GlassWater size={14} aria-hidden="true" />
+            Thirst
+          </span>
+          <span
+            className="city-needs-track"
+            role="meter"
+            aria-label="Thirst satisfaction"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={character?.thirst == null ? undefined : 100 - character.thirst}
+          >
+            {character?.thirst != null && <i style={{ width: `${100 - character.thirst}%` }} />}
+          </span>
+          <strong>{character?.thirst == null ? "—" : `${100 - character.thirst}%`}</strong>
+        </div>
       </div>
     </details>
   );

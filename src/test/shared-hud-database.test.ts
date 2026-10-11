@@ -71,10 +71,13 @@ describe("shared HUD database acceptance", () => {
       [session, revision],
     );
     revision = paused.rows[0]!.result.revision;
-    await db.exec(
-      "update public.character_simulations set heartbeat_at=now()-interval '6 seconds'",
-    );
-    const tick = await command("tick");
+    let tick = before;
+    for (let index = 0; index < 10; index += 1) {
+      await db.exec(
+        "update public.character_simulations set heartbeat_at=now()-interval '6 seconds'",
+      );
+      tick = await command("tick");
+    }
     expect(tick.needs).toEqual(before.needs);
     expect(tick.game_time).toEqual(before.game_time);
     const queued = await db.query<{ result: { revision: number; queued_actions: string[] } }>(
@@ -106,12 +109,27 @@ describe("shared HUD database acceptance", () => {
     expect(recovered.rows[0]!.energy).toBe(Math.round(before.needs["energy"]!));
   });
 
+  it("advances one personal game minute per real minute at 1x", async () => {
+    const before = await command("open");
+    let after = before;
+    for (let index = 0; index < 10; index += 1) {
+      await db.exec("update public.character_simulations set heartbeat_at=now()-interval '6 seconds'");
+      after = await command("tick");
+    }
+    const beforeMinutes = before.game_time.hour * 60 + before.game_time.minute;
+    const afterMinutes = after.game_time.hour * 60 + after.game_time.minute;
+    expect(afterMinutes - beforeMinutes).toBe(1);
+  });
+
   it("advances only active heartbeat time and validates activity effects on the server", async () => {
     const before = await command("open");
-    await db.exec(
-      "update public.character_simulations set heartbeat_at=now()-interval '6 seconds'",
-    );
-    const tick = await command("tick");
+    let tick = before;
+    for (let index = 0; index < 10; index += 1) {
+      await db.exec(
+        "update public.character_simulations set heartbeat_at=now()-interval '6 seconds'",
+      );
+      tick = await command("tick");
+    }
     expect(tick.needs["energy"]).toBeLessThan(before.needs["energy"]!);
     const started = await command("start", "study", "study-1");
     expect(started.action).toBe("study");

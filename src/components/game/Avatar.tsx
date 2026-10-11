@@ -21,6 +21,7 @@ export type Appearance = {
   shoes?: number;
   headwear?: number;
 };
+type AvatarEquipment = { slot: "head" | "top" | "bottom" | "shoes" | "accessory" };
 
 const EDGE = "#103d2c";
 
@@ -28,10 +29,12 @@ export function Avatar({
   appearance,
   gender = "nonbinary",
   size = 96,
+  equipment = [],
 }: {
   appearance: Appearance;
   gender?: string;
   size?: number;
+  equipment?: readonly AvatarEquipment[];
 }) {
   const skin = SKIN_TONES[appearance.skin ?? 0] ?? SKIN_TONES[0];
   const hairC = HAIR_COLORS[appearance.hairColor ?? 0] ?? HAIR_COLORS[0];
@@ -42,12 +45,19 @@ export function Avatar({
   const head = appearance.headwear ?? 0;
   const isFemale = gender === "female";
   const isMale = gender === "male";
+  const worn = new Set(equipment.map((item) => item.slot));
 
   return (
     <svg viewBox="0 0 100 120" width={size} height={(size * 120) / 100} aria-hidden>
       {/* stud */}
       <rect x="40" y="4" width="20" height="8" rx="2" fill={skin} stroke={EDGE} strokeWidth="2.5" />
       {/* hair back */}
+      {worn.has("accessory") && (
+        <g data-equipment-slot="accessory" stroke={EDGE} strokeWidth="2.5">
+          <path d="M6 66 Q0 70 2 90 L18 96 L22 69Z" fill="#d39a42" />
+          <path d="M12 67 L15 90" fill="none" stroke="#f4d28d" strokeWidth="3" />
+        </g>
+      )}
       {hair === 0 && isFemale && (
         <path
           d="M66 18 Q82 17 84 30 Q84 42 73 45 L66 40Z"
@@ -172,6 +182,12 @@ export function Avatar({
           <rect x="60" y="16" width="26" height="6" rx="3" fill={outfit} />
         </g>
       )}
+      {worn.has("head") && (
+        <g data-equipment-slot="head" stroke={EDGE} strokeWidth="2.5">
+          <path d="M24 19 Q26 7 50 7 Q74 7 76 19Z" fill="#d39a42" />
+          <path d="M20 19 Q50 14 80 19" fill="none" stroke="#f4d28d" strokeWidth="3" />
+        </g>
+      )}
       {/* face */}
       <circle cx="40" cy="34" r="3.2" fill={EDGE} />
       <circle cx="60" cy="34" r="3.2" fill={EDGE} />
@@ -190,6 +206,13 @@ export function Avatar({
         strokeWidth="2.5"
         strokeLinejoin="round"
       />
+      {worn.has("top") && (
+        <g data-equipment-slot="top" pointerEvents="none">
+          <path d="M23 65 L33 64 L31 85 L22 85Z" fill="#f4d28d" opacity="0.9" />
+          <circle cx="28" cy="70" r="1.5" fill={EDGE} />
+          <circle cx="27" cy="76" r="1.5" fill={EDGE} />
+        </g>
+      )}
       <rect x="44" y="58" width="12" height="6" fill={skin} stroke={EDGE} strokeWidth="2" />
       {/* trousers */}
       <path
@@ -199,6 +222,9 @@ export function Avatar({
         strokeWidth="2.5"
         strokeLinejoin="round"
       />
+      {worn.has("bottom") && (
+        <path data-equipment-slot="bottom" d="M28 90 L32 90 L29 103" fill="none" stroke="#d39a42" strokeWidth="3" />
+      )}
       {/* shoes */}
       <path
         d="M23 105 L45 105 L44 112 L18 114 Q16 108 23 105Z"
@@ -214,6 +240,12 @@ export function Avatar({
         strokeWidth="2.5"
         strokeLinejoin="round"
       />
+      {worn.has("shoes") && (
+        <g data-equipment-slot="shoes" fill="none" stroke="#f4d28d" strokeWidth="2">
+          <path d="M22 109 L35 109" />
+          <path d="M65 109 L78 109" />
+        </g>
+      )}
       {/* arms */}
       <rect
         x="6"

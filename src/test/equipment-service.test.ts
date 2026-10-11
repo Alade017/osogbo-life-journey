@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { EquippedItem, ItemDefinition } from "@/lib/player-state";
 import {
   EQUIPMENT_SLOTS,
+  filterEquippableInventoryForSlot,
   getEquipmentForSlot,
   isEquipmentSlot,
   removeEquippedItem,
@@ -50,6 +51,20 @@ describe("equipment model", () => {
       "Consumables cannot be equipped.",
     );
     expect(validateEquipItem(item(), "top")).toBe("This item cannot be equipped.");
+  });
+
+  it("lists only owned equipment compatible with the selected slot", () => {
+    const entry = (id: string, slot: string | null, equippable: boolean) =>
+      ({
+        id,
+        item: item({ id: `item-${id}`, equipment_slot: slot, equippable }),
+      }) as never;
+    expect(
+      filterEquippableInventoryForSlot(
+        [entry("shirt", "top", true), entry("bag", "accessory", true), entry("pie", null, false)],
+        "top",
+      ).map((owned) => owned.id),
+    ).toEqual(["shirt"]);
   });
 
   it("keeps worn items separate and returns the displaced item on replacement", () => {

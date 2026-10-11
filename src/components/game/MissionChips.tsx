@@ -10,7 +10,7 @@ export function MissionChips() {
   );
 
   if (!activeMissions.length) return null;
-  const visibleMissions = activeMissions.slice(0, 3);
+  const visibleMissions = activeMissions.slice(0, 1);
 
   return (
     <section className="city-mission-chips" aria-label="Active missions">
@@ -54,7 +54,8 @@ export function MissionChips() {
       })}
       {activeMissions.length > visibleMissions.length && (
         <Link to="/missions" className="city-mission-more">
-          +{activeMissions.length - visibleMissions.length} more
+          View {activeMissions.length - visibleMissions.length} other active mission
+          {activeMissions.length - visibleMissions.length === 1 ? "" : "s"}
         </Link>
       )}
     </section>
