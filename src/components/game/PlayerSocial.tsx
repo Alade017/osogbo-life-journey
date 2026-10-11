@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { MessageCircle, Search, ShieldBan, UserPlus, Users } from "lucide-react";
@@ -233,16 +233,29 @@ export function PlayerSocial({ initialPlayerId }: { initialPlayerId?: string | u
     queryFn: () => getSocialMessages({ conversationId: activeChat!.conversationId }),
     enabled: tab === "messages" && !!activeChat?.conversationId,
   });
-  const areaMessages = areaMessagesQuery.data ?? [];
-  const directMessages = directMessagesQuery.data ?? [];
-  const lastMessageIds = useRef<{ area: string | null; direct: string | null }>({ area: null, direct: null });
+  const areaMessages = useMemo(() => areaMessagesQuery.data ?? [], [areaMessagesQuery.data]);
+  const directMessages = useMemo(() => directMessagesQuery.data ?? [], [directMessagesQuery.data]);
+  const lastMessageIds = useRef<{ area: string | null; direct: string | null }>({
+    area: null,
+    direct: null,
+  });
   useEffect(() => {
     const latestArea = areaMessages[areaMessages.length - 1];
     const latestDirect = directMessages[directMessages.length - 1];
     const previous = lastMessageIds.current;
-    if (latestArea && previous.area && latestArea.id !== previous.area && latestArea.sender_character_id !== character?.id)
+    if (
+      latestArea &&
+      previous.area &&
+      latestArea.id !== previous.area &&
+      latestArea.sender_character_id !== character?.id
+    )
       playGameSound("message");
-    if (latestDirect && previous.direct && latestDirect.id !== previous.direct && latestDirect.sender_character_id !== character?.id)
+    if (
+      latestDirect &&
+      previous.direct &&
+      latestDirect.id !== previous.direct &&
+      latestDirect.sender_character_id !== character?.id
+    )
       playGameSound("message");
     lastMessageIds.current = {
       area: latestArea?.id ?? previous.area,
