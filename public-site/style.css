@@ -1,19 +1,44 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap");
 
 :root {
-  font-family: "DM Sans", sans-serif;
-  color: #26332d;
-  background: #f6f1e7;
+  font-family: "Inter", system-ui, sans-serif;
+  color: var(--text);
+  background: var(--background);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   font-optical-sizing: auto;
   scroll-behavior: smooth;
-  --forest: #123b35;
-  --green: #176b45;
-  --gold: #f2b84b;
-  --porcelain: #f6f1e7;
-  --charcoal: #26332d;
+  --primary: #174a38;
+  --primary-hover: #103829;
+  --primary-soft: #d7e8dc;
+  --accent: #e8b04a;
+  --accent-hover: #d69b2d;
+  --background: #f7f3e9;
+  --surface: #ffffff;
+  --surface-subtle: #eef1ea;
+  --surface-dark: #17252b;
+  --surface-dark-raised: #21343b;
+  --text: #25352d;
+  --text-secondary: #66756d;
+  --text-muted: #85918a;
+  --border: #dce2dc;
+  --success: #26845d;
+  --warning: #d99520;
+  --danger: #e76f61;
+  --info: #65a9f0;
+  --interactive: #35b7a1;
+  --disabled-bg: #e6e9e4;
+  --disabled-text: #929b94;
+  --radius-card: 18px;
+  --shadow-card: 0 4px 16px rgb(23 37 43 / 6%);
+  --shadow-card-hover: 0 8px 24px rgb(23 37 43 / 9%);
+  --duration-control: 180ms;
+  --forest: var(--primary);
+  --green: var(--primary);
+  --gold: var(--accent);
+  --porcelain: var(--background);
+  --charcoal: var(--text);
 }
 * {
   box-sizing: border-box;
@@ -25,8 +50,10 @@ a {
   color: inherit;
   text-decoration: none;
 }
-a:focus-visible {
-  outline: 3px solid var(--gold);
+ a:focus-visible,
+button:focus-visible,
+summary:focus-visible {
+  outline: 3px solid var(--interactive);
   outline-offset: 4px;
   border-radius: 4px;
 }
@@ -327,6 +354,348 @@ main,
 .site-footer p {
   margin: 0;
 }
+
+/* OSOGBO LIFE: BEGINNINGS brand layer */
+body {
+  background: var(--background);
+  color: var(--text);
+}
+
+.site-header {
+  width: min(1360px, 100%);
+  min-height: 82px;
+}
+
+.brand {
+  color: var(--primary);
+  font-family: "Manrope", system-ui, sans-serif;
+  letter-spacing: -0.045em;
+}
+
+.brand span {
+  color: var(--text-secondary);
+  font-size: 0.72em;
+  letter-spacing: -0.02em;
+}
+
+.site-header nav {
+  color: var(--text-secondary);
+}
+
+.site-header nav .nav-join {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border-radius: 12px;
+  color: #fff;
+  background: var(--primary);
+  transition: background-color var(--duration-control) ease;
+}
+
+.site-header nav .nav-join:hover {
+  background: var(--primary-hover);
+  text-decoration: none;
+}
+
+.hero {
+  display: flex;
+  min-height: min(680px, calc(100svh - 94px));
+  margin: 0 18px;
+  border: 1px solid var(--border);
+  border-radius: 26px;
+  color: var(--text);
+  background: var(--background);
+}
+
+.hero-art {
+  inset: 0 0 0 auto;
+  width: 61%;
+  object-position: center 54%;
+  z-index: -2;
+}
+
+.hero-shade {
+  z-index: -1;
+  background: linear-gradient(90deg, var(--background) 0%, var(--background) 36%, rgb(247 243 233 / 94%) 47%, rgb(247 243 233 / 30%) 68%, transparent 100%);
+}
+
+.hero-content {
+  position: relative;
+  width: min(760px, 68%);
+  padding: clamp(54px, 8vw, 98px) clamp(24px, 7vw, 92px);
+}
+
+.hero .eyebrow,
+.eyebrow-dark {
+  color: var(--primary);
+}
+
+.hero h1,
+.section-heading h2,
+.start-section h2,
+.life-preview h2 {
+  font-family: "Manrope", system-ui, sans-serif;
+  color: var(--text);
+  letter-spacing: -0.045em;
+}
+
+.hero h1 {
+  font-size: clamp(44px, 6vw, 76px);
+}
+
+.hero h1 em {
+  color: var(--primary);
+}
+
+.hero-copy {
+  color: var(--text-secondary);
+}
+
+.button {
+  min-height: 48px;
+  border-radius: 12px;
+  transition-duration: var(--duration-control);
+}
+
+.button-primary {
+  color: #fff;
+  background: var(--primary);
+}
+
+.button-primary:hover {
+  background: var(--primary-hover);
+}
+
+.button-secondary {
+  border-color: var(--border);
+  color: var(--primary);
+  background: var(--surface);
+}
+
+.button-secondary:hover {
+  background: var(--primary-soft);
+}
+
+.availability {
+  color: var(--text-secondary);
+}
+
+.availability span {
+  background: var(--success);
+  box-shadow: 0 0 0 4px rgb(38 132 93 / 14%);
+}
+
+.photo-credit {
+  color: #fff;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 60%);
+}
+
+.city-section {
+  width: min(1360px, 100%);
+  margin-inline: auto;
+}
+
+.section-heading h2,
+.start-section h2,
+.life-preview h2 {
+  color: var(--text);
+}
+
+.section-heading > p:last-child,
+.feature-card p,
+.life-preview-copy > p:not(.eyebrow),
+.faq-list p {
+  color: var(--text-secondary);
+}
+
+.feature-card,
+.city-preview,
+.life-preview,
+.faq-list details {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: var(--shadow-card);
+}
+
+.feature-card {
+  min-height: 200px;
+  transition: transform var(--duration-control) ease, box-shadow var(--duration-control) ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.feature-number {
+  color: var(--primary);
+}
+
+.feature-card h3,
+.city-preview figcaption span:first-child {
+  color: var(--primary);
+}
+
+.city-preview {
+  overflow: hidden;
+}
+
+.city-preview img {
+  aspect-ratio: 2.3 / 1;
+}
+
+.city-preview figcaption {
+  color: var(--text-secondary);
+}
+
+.life-preview {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: clamp(24px, 5vw, 64px);
+  align-items: center;
+  margin: 0 clamp(20px, 7vw, 90px) clamp(52px, 7vw, 84px);
+  padding: clamp(24px, 5vw, 54px);
+  background: var(--surface-subtle);
+}
+
+.life-preview h2 {
+  margin: 12px 0;
+  font-size: clamp(30px, 4vw, 46px);
+  line-height: 1.08;
+}
+
+.life-preview-copy > p:not(.eyebrow) {
+  max-width: 510px;
+  line-height: 1.7;
+}
+
+.text-link {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 10px;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+.text-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.life-preview-cards {
+  display: grid;
+  gap: 10px;
+}
+
+.life-preview-cards article {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  align-items: center;
+  gap: 2px 13px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.life-preview-cards article > span {
+  display: grid;
+  grid-row: span 2;
+  min-height: 44px;
+  place-items: center;
+  border-radius: 12px;
+  color: var(--primary);
+  background: var(--primary-soft);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.life-preview-cards strong {
+  color: var(--text);
+  font-size: 14px;
+}
+
+.life-preview-cards small {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.start-section {
+  background: var(--surface-dark);
+}
+
+.start-section h2 {
+  color: #fff;
+}
+
+.button-light {
+  color: var(--surface-dark);
+  background: var(--accent);
+}
+
+.button-light:hover {
+  background: var(--accent-hover);
+}
+
+.faq-section {
+  width: min(900px, 100%);
+  margin: 0 auto clamp(56px, 8vw, 90px);
+  padding-inline: clamp(20px, 7vw, 40px);
+}
+
+.faq-list {
+  display: grid;
+  gap: 10px;
+}
+
+.faq-list details {
+  padding: 0 18px;
+}
+
+.faq-list summary {
+  min-height: 56px;
+  align-content: center;
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.faq-list p {
+  margin: 0;
+  padding: 0 0 18px;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.site-footer {
+  width: min(1360px, 100%);
+  border-color: var(--border);
+}
+
+.site-footer p,
+.site-footer > a:last-child,
+.footer-links a {
+  color: var(--text-secondary);
+}
+
+.footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.footer-links a:hover {
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 @media (max-width: 760px) {
   .site-header {
     height: 68px;
@@ -414,5 +783,130 @@ main,
   }
   .button:hover {
     transform: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .site-header {
+    min-height: 72px;
+    height: auto;
+    padding: 10px 18px;
+  }
+
+  .site-header nav {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px 12px;
+    font-size: 11px;
+  }
+
+  .site-header nav > a:first-child {
+    display: none;
+  }
+
+  .site-header nav .nav-join {
+    min-height: 40px;
+    padding-inline: 12px;
+  }
+
+  .hero {
+    min-height: 650px;
+    margin-inline: 10px;
+  }
+
+  .hero-art {
+    inset: auto 0 0;
+    width: 100%;
+    height: 48%;
+    object-position: 61% center;
+  }
+
+  .hero-shade {
+    background: linear-gradient(180deg, var(--background) 0%, var(--background) 42%, rgb(247 243 233 / 82%) 55%, rgb(247 243 233 / 10%) 78%, transparent 100%);
+  }
+
+  .hero-content {
+    width: 100%;
+    align-self: flex-start;
+    padding: 46px 24px 300px;
+  }
+
+  .hero h1 {
+    font-size: clamp(38px, 9vw, 56px);
+  }
+
+  .photo-credit {
+    right: 14px;
+    bottom: 10px;
+  }
+
+  .life-preview {
+    grid-template-columns: minmax(0, 1fr);
+    margin-inline: 18px;
+  }
+
+  .faq-section {
+    padding-inline: 18px;
+  }
+
+  .site-footer {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 420px) {
+  .brand {
+    max-width: 132px;
+    font-size: 16px;
+    line-height: 1.1;
+  }
+
+  .brand span {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.7em;
+  }
+
+  .site-header {
+    align-items: center;
+    padding-inline: 12px;
+  }
+
+  .site-header nav {
+    gap: 7px;
+    font-size: 10px;
+  }
+
+  .site-header nav a[href="#questions"] {
+    display: none;
+  }
+
+  .site-header nav .nav-join {
+    padding-inline: 9px;
+  }
+
+  .hero {
+    min-height: 620px;
+  }
+
+  .hero-content {
+    padding: 38px 18px 280px;
+  }
+
+  .feature-grid {
+    gap: 10px;
+  }
+
+  .feature-card {
+    padding: 18px;
+  }
+
+  .life-preview-cards article {
+    grid-template-columns: 48px minmax(0, 1fr);
+    padding: 11px;
+  }
+
+  .footer-links {
+    gap: 10px;
   }
 }
