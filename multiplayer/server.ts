@@ -1,3 +1,5 @@
+import type { IncomingMessage } from "node:http";
+import { WebSocketTransport } from "@colyseus/ws-transport";
 import { Server, type ServerOptions } from "colyseus";
 import { NeighborhoodRoom } from "./neighborhood-room.ts";
 
@@ -56,6 +58,23 @@ const serverOptions: ServerOptions = {
   },
 };
 
+// Express middleware does not see WebSocket upgrades, so enforce the same allowlist during the
+// ws handshake. Passing a two-argument verifyClient makes ws use the callback form, which lets us
+// answer 403 (ws responds 401 for a bare `false`) and close the socket.
+const webSocketTransport = new WebSocketTransport({
+  verifyClient: (
+    info: { req: IncomingMessage },
+    callback: (result: boolean, code?: number, message?: string) => void,
+  ) => {
+    const origin = info.req.headers.origin;
+    if (origin && !allowedOrigins.has(origin)) {
+      callback(false, 403, "Forbidden");
+      return;
+    }
+    callback(true);
+  },
+});
+
 const redisOptions = redisUrl
   ? await Promise.all([import("@colyseus/redis-presence"), import("@colyseus/redis-driver")]).then(
       ([presence, driver]) => ({
@@ -65,7 +84,11 @@ const redisOptions = redisUrl
     )
   : {};
 
-const server = new Server({ ...serverOptions, ...redisOptions });
+const server = new Server({
+  ...serverOptions,
+  ...redisOptions,
+  transport: webSocketTransport,
+});
 
 server.define("neighborhood", NeighborhoodRoom).filterBy(["locationId"]);
 

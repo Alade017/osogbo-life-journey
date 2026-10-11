@@ -23,6 +23,8 @@ Railway provides `PORT` and `RAILWAY_PUBLIC_DOMAIN`. The server binds to `0.0.0.
 | `MULTIPLAYER_ALLOWED_ORIGINS` | Exact comma-separated website origins, such as `https://your-site.vercel.app`             |
 | `REDIS_URL`                   | Private Railway Redis URL; use the same Redis service reference on every Colyseus service |
 
+`MULTIPLAYER_ALLOWED_ORIGINS` is enforced for both HTTP requests and WebSocket upgrades: a request with an `Origin` header that is not in the list is rejected with HTTP 403. Requests without an `Origin` header (non-browser clients) are allowed, and `/healthz` stays public.
+
 Do not set `MULTIPLAYER_PUBLIC_ADDRESS` unless overriding Railway's generated service domain. If set, use the service's hostname without `https://` or `wss://`.
 
 ## Multiple Colyseus services
