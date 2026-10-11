@@ -20,6 +20,7 @@ import {
 import type { NetworkPlayerSnapshot } from "@/game/multiplayer-state";
 import type { createNeighborhoodGame, MovementInput } from "@/game/neighborhood-scene";
 import { joinNeighborhood, type NeighborhoodRoom } from "@/lib/multiplayer-service";
+import { playGameSound } from "@/lib/game-audio";
 import { useGameTime } from "./GameTimeProvider";
 import { CityNeedsDock } from "@/components/game/CityNeedsDock";
 import { MissionChips } from "@/components/game/MissionChips";
@@ -156,10 +157,12 @@ export function NeighborhoodGame() {
     checkpoint,
     movement: (input) => roomRef.current?.send("move", input),
     playerSelected: (player) => {
+      playGameSound("player");
       void navigate({ to: "/social", search: { playerId: player.characterId } });
     },
     playerTooFar: (name) => setStatus("Move closer to " + name + " to view their profile."),
     interact: (object) => {
+      playGameSound("interaction");
       if (object.kind === "npc") {
         setDialogue(true);
         return;
@@ -209,6 +212,7 @@ export function NeighborhoodGame() {
         qc.invalidateQueries({ queryKey: ["transactions"] }),
       ]);
       setDirectory(false);
+      playGameSound("interaction");
       setStatus(`Arrived at ${destination.name}.`);
       reconnect();
     } catch (error) {
@@ -288,6 +292,7 @@ export function NeighborhoodGame() {
     let cancelled = false;
     let joined: NeighborhoodRoom | null = null;
     let removeStateListener: (() => void) | null = null;
+    let previousPlayerCount: number | null = null;
     setNearbyPlayerCount(null);
     setMultiplayerStatus("connecting");
     engine.current.scene.lock(true);
@@ -311,6 +316,9 @@ export function NeighborhoodGame() {
           );
           setNearbyPlayerCount(snapshots.length);
           engine.current?.scene.syncNetworkPlayers(snapshots);
+          if (stateBound && previousPlayerCount !== null && snapshots.length > previousPlayerCount)
+            playGameSound("player");
+          previousPlayerCount = snapshots.length;
           if (stateBound) return;
           stateBound = true;
           setMultiplayerStatus("connected");
