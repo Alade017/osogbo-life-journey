@@ -36,5 +36,7 @@ Playback begins after a user gesture. At a track's end, wait five seconds before
 the next track. Pause, sound-off, Next, sign-out and player changes cancel any
 pending restart. For libraries of five tracks or fewer, another seeded cycle
 is allowed once eligible tracks are exhausted. Automatic last-five avoidance
-continues for larger libraries. Track starts show a five-second notification;
-Settings keeps controls and a credits link, without track names.
+continues for larger libraries. Track starts show a ten-second notification;
+playback controls live in this popup, which can be reopened through the small
+music button after dismissal. Settings keeps volume and sound-off controls,
+without track names or credits text. License records and credits stay in files.

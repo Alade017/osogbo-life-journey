@@ -30,12 +30,14 @@ type MusicState = {
   status: string;
   playing: boolean;
   playbackId: number;
+  soundEnabled: boolean;
 };
 const emptyMusicState: MusicState = {
   track: null,
   status: "No licensed music added yet.",
   playing: false,
   playbackId: 0,
+  soundEnabled: false,
 };
 let musicState = emptyMusicState;
 const musicListeners = new Set<() => void>();
@@ -184,7 +186,7 @@ export async function nextGameMusic(allowReplay = false) {
       const next =
         nextEligibleTrack(queue, cursor, history) ??
         (allowReplay && queue.length <= 5
-          ? { track: queue[cursor]!, cursor: (cursor + 1) % queue.length }
+          ? nextEligibleTrack(queue, cursor, queue.length > 1 ? history.slice(-1) : [])
           : null);
       if (!next) break;
       cursor = next.cursor;
@@ -338,7 +340,8 @@ export async function enableGameAudio(levels = readGameAudioLevels()): Promise<b
     if (!graph) return false;
     applyLevels(graph, levels);
     await graph.context.resume();
-    if (graph.context.state === "running") void resumeGameMusic(false);
+    publishMusic({ soundEnabled: graph.context.state === "running" });
+    if (graph.context.state === "running") void resumeGameMusic(true);
     return graph.context.state === "running";
   } catch {
     return false;
@@ -347,6 +350,7 @@ export async function enableGameAudio(levels = readGameAudioLevels()): Promise<b
 
 export async function disableGameAudio() {
   pauseGameMusic();
+  publishMusic({ soundEnabled: false });
   stopEffects();
   if (!graph) return;
   graph.master.gain.cancelScheduledValues(graph.context.currentTime);

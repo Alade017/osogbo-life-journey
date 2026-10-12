@@ -10,10 +10,6 @@ import {
   subscribeMusic,
   getMusicState,
   getServerMusicState,
-  pauseGameMusic,
-  resumeGameMusic,
-  nextGameMusic,
-  playableMusicTracks,
 } from "@/lib/game-audio";
 
 type Levels = ReturnType<typeof readGameAudioLevels>;
@@ -97,33 +93,9 @@ export function WorldAudioSettings({
           <span className="tabular-nums">{Math.round(levels[key] * 100)}%</span>
         </label>
       ))}
-      <section className="space-y-3 rounded-xl border border-border p-4" aria-label="Now playing">
-        <h4 className="font-semibold">Now playing</h4>
-        <p role="status" className="text-sm text-muted-foreground">
-          {music.status}
-        </p>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            disabled={!audioActive || !playableMusicTracks.length}
-            onClick={() => (music.playing ? pauseGameMusic() : void resumeGameMusic())}
-          >
-            {music.playing ? "Pause" : "Resume"}
-          </Button>
-          <Button
-            variant="outline"
-            disabled={!audioActive || !playableMusicTracks.length}
-            onClick={() => void nextGameMusic()}
-          >
-            Next
-          </Button>
-        </div>
-      </section>
-      <div className="text-sm">
-        <a href="/audio/CREDITS.md" className="underline">
-          Credits file
-        </a>
-      </div>
+      <p role="status" className="text-sm text-muted-foreground">
+        {music.status}
+      </p>
       <p className="text-xs text-muted-foreground">
         Tracks are cached after loading for offline listening in this open game. Browser storage may
         be cleared or evicted. Synthesized city ambience and effects remain available.
