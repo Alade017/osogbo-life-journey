@@ -47,7 +47,7 @@ function resolveLocationStyle(location: Location) {
 }
 
 function MarketBlock({ position, places }: { position: CityWorldPosition; places: GamePlace[] }) {
-  const count = Math.max(12, Math.min(18, places.length));
+  const count = 12;
   return (
     <g className="city-market-block" aria-hidden="true">
       <path d={lotPath(position, 2.25, 1.72)} fill="#88744f" stroke="#d4ba80" strokeWidth="1.5" />
@@ -280,7 +280,7 @@ function CorporateBlock({ position }: { position: CityWorldPosition }) {
         const half = building.w / 2;
         const height = building.h;
         return (
-          <g key={index} filter="url(#building-shadow)">
+          <g key={index}>
             <path
               d={`M${x - half} ${y - height} l${half} -7 ${half} 7 v${height} l-${half} 7Z`}
               fill="#193e48"
@@ -327,7 +327,7 @@ function HousingCluster({ position, student }: { position: CityWorldPosition; st
         const p = cityWorldToIso({ x: position.x + dx, y: position.y + dy }, 9 + (index % 2) * 3);
         const roof = HOME_ROOFS[index % HOME_ROOFS.length]!;
         return (
-          <g key={index} filter="url(#building-shadow)">
+          <g key={index}>
             <path d={`M${p.x - 10} ${p.y + 2} v11 l10 6 10-6 V${p.y + 2} l-10 6Z`} fill="#8f6950" />
             <path d={`M${p.x} ${p.y + 8} l10-6 v11 l-10 6Z`} fill="#6b5142" />
             <path d={`M${p.x - 10} ${p.y + 2} l10-7 10 7-10 6Z`} fill={roof} />
@@ -348,7 +348,7 @@ function HousingCluster({ position, student }: { position: CityWorldPosition; st
 function CivicBlock({ position }: { position: CityWorldPosition }) {
   const p = cityWorldToIso(position, 15);
   return (
-    <g aria-hidden="true" filter="url(#building-shadow)">
+    <g aria-hidden="true">
       <path d={`M${p.x - 18} ${p.y}v19l18 11 18-11V${p.y}l-18 11Z`} fill="#685748" />
       <path d={`M${p.x} ${p.y + 11}l18-11v19L${p.x} ${p.y + 30}Z`} fill="#7f6348" />
       <path d={`M${p.x - 18} ${p.y}l18-12 18 12-18 11Z`} fill="#c59957" />

@@ -49,7 +49,6 @@
   stroke: #e6d5a6;
   stroke-opacity: 0.56;
   stroke-width: 0.8px;
-  filter: drop-shadow(0 2px 3px #020907b8);
 }
 .city-map-label-text {
   fill: #fffdf4;
@@ -76,22 +75,102 @@
 .city-light-beacons {
   pointer-events: none;
 }
+.city-time-overlay {
+  pointer-events: none;
+}
+.city-time-overlay--sunrise {
+  fill: #f4a261;
+  fill-opacity: 0.08;
+}
+.city-time-overlay--sunset {
+  fill: #e97743;
+  fill-opacity: 0.14;
+}
+.city-time-overlay--night {
+  fill: #101b4a;
+  fill-opacity: 0.32;
+}
+.city-road-underlay--local {
+  stroke: #0b1917;
+  stroke-width: 8;
+}
+.city-road-underlay--arterial {
+  stroke: #0b1917;
+  stroke-width: 13;
+}
+.city-road-surface--local {
+  stroke: #887d64;
+  stroke-opacity: 0.9;
+  stroke-width: 4;
+}
+.city-road-surface--arterial {
+  stroke: #c4a873;
+  stroke-opacity: 0.9;
+  stroke-width: 8;
+}
+.fictional-city[data-city-phase="night"] .city-light-beacons {
+  opacity: 1;
+}
+.fictional-city[data-city-phase="sunrise"] .city-light-beacons,
+.fictional-city[data-city-phase="day"] .city-light-beacons {
+  opacity: 0.42;
+}
 .city-world-svg text {
   font-family: inherit;
 }
 .city-building {
   cursor: pointer;
   outline: none;
-  transition: filter 0.18s ease;
+  transition: opacity 0.18s ease;
 }
 .city-building:hover,
 .city-building:focus-visible,
 .city-building.is-selected {
-  filter: brightness(1.28) drop-shadow(0 0 7px #f1c454);
+  opacity: 1;
+}
+.city-building:hover > circle,
+.city-building:focus-visible > circle,
+.city-building.is-selected > circle {
+  stroke: #f1c454;
+  stroke-width: 3;
 }
 .city-building:focus-visible {
   stroke: #fff;
   stroke-width: 3;
+}
+.city-place-marker,
+.city-npc-marker {
+  cursor: pointer;
+  outline: none;
+}
+.city-place-marker circle,
+.city-npc-marker circle {
+  stroke: #10251f;
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+}
+.city-place-marker circle {
+  fill: #f4bd4f;
+}
+.city-place-marker text,
+.city-npc-marker text {
+  fill: #10251f;
+  font-size: 7px;
+  font-weight: 900;
+  pointer-events: none;
+}
+.city-npc-marker circle {
+  fill: #74d4b0;
+  stroke: #eafff6;
+}
+.city-place-marker:hover circle,
+.city-place-marker:focus-visible circle,
+.city-place-marker.is-selected circle,
+.city-npc-marker:hover circle,
+.city-npc-marker:focus-visible circle,
+.city-npc-marker.is-selected circle {
+  stroke: #fff;
+  stroke-width: 2.7;
 }
 .city-building-label {
   fill: #fff;
@@ -132,7 +211,6 @@
   border-radius: 13px;
   background: #091511c9;
   border: 1px solid #ffffff1c;
-  backdrop-filter: blur(12px);
 }
 .city-world-title span,
 .city-quest-card > span,
@@ -169,7 +247,6 @@
   border-radius: 16px;
   background: linear-gradient(150deg, #172a2bef, #101c21ee);
   box-shadow: 0 12px 32px #07120f66;
-  backdrop-filter: blur(15px);
 }
 .city-player-head {
   display: flex;
@@ -315,7 +392,6 @@
   border: 1px solid #ffffff24;
   border-radius: 15px;
   background: #0c1717e8;
-  backdrop-filter: blur(12px);
 }
 .city-filter-bar button {
   min-width: 73px;
@@ -346,6 +422,18 @@
   color: #e5ebdfb0;
   font-size: 10px;
   pointer-events: none;
+}
+.city-cap-note {
+  position: absolute;
+  right: 22px;
+  bottom: 48px;
+  max-width: min(290px, calc(100% - 28px));
+  padding: 7px 10px;
+  border: 1px solid #ffffff2a;
+  border-radius: 9px;
+  background: #091511ed;
+  color: #e5ebdf;
+  font-size: 10px;
 }
 .city-toast,
 .city-busy-indicator {
@@ -386,7 +474,6 @@
   display: flex;
   justify-content: flex-end;
   background: #06110b66;
-  backdrop-filter: blur(2px);
 }
 .city-location-drawer {
   position: relative;
@@ -518,6 +605,61 @@
 }
 .city-local-places > div small {
   text-transform: capitalize;
+}
+.city-focused-interaction {
+  display: grid;
+  gap: 7px;
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid #9acb7b55;
+  border-radius: 13px;
+  background: #19372e;
+}
+.city-focused-interaction h3 {
+  margin: 0;
+}
+.city-focused-interaction h3 small,
+.city-focused-interaction > small {
+  color: #b9c8bd;
+  font-size: 10px;
+  font-weight: 500;
+}
+.city-focused-interaction p {
+  margin: 0;
+  color: #d7e1db;
+  font-size: 11px;
+  line-height: 1.5;
+}
+.city-service-link,
+.city-social-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid #79bf8a66;
+  border-radius: 10px;
+  background: #24513a;
+  color: #f5fff6;
+  font-size: 11px;
+  font-weight: 750;
+  text-decoration: none;
+  cursor: pointer;
+}
+.city-service-link svg {
+  width: 16px;
+  flex: none;
+}
+.city-service-link svg:last-child {
+  margin-left: auto;
+}
+.city-social-link {
+  min-height: auto;
+  padding: 5px 0 0;
+  border: 0;
+  background: transparent;
+  color: #b9ddf7;
+  font-weight: 600;
 }
 .city-location-drawer button:disabled {
   opacity: 0.55;

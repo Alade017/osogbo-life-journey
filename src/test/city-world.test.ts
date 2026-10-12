@@ -38,6 +38,31 @@ describe("fictional city world model", () => {
     expect(OSOGBO_WORLD_NODES["state-hospital"].entryLoops).toContain("recover");
   });
 
+  it("keeps every published location ID stable", () => {
+    expect(Object.keys(OSOGBO_WORLD_NODES).sort()).toEqual(
+      [
+        "airport-terminal",
+        "atiku",
+        "city-centre",
+        "cultural-district",
+        "government-area",
+        "industrial-area",
+        "isale-osun",
+        "oja-oba",
+        "oke-baale",
+        "oke-fia",
+        "old-garage",
+        "rural-outskirts",
+        "stadium",
+        "state-hospital",
+        "student-district",
+      ].sort(),
+    );
+    for (const [id, node] of Object.entries(OSOGBO_WORLD_NODES)) {
+      expect(node.slug).toBe(id);
+    }
+  });
+
   it("projects stable world coordinates into an isometric scene", () => {
     expect(cityWorldToIso({ x: 7, y: 5 })).toEqual({ x: 562, y: 298 });
     expect(cityWorldToIso({ x: 7, y: 5 }, 18).y).toBe(280);

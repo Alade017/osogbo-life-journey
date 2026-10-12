@@ -17,11 +17,13 @@ import { q, rpc, formatNaira } from "@/lib/game";
 import { Avatar } from "@/components/game/Avatar";
 import type { Appearance } from "@/components/game/Avatar";
 import { CityLocationArtwork } from "@/components/game/CityLocationArtwork";
+import { useGameTime } from "@/components/game/GameTimeProvider";
 import type { GamePlace, Job, Location } from "@/lib/game";
+import { NPC_CATALOG, npcActivityAt } from "@/lib/npc-simulation";
+import { weatherForDay } from "@/lib/world-simulation";
 import {
   CITY_DISTRICTS,
   CITY_LIGHT_BEACONS,
-  CITY_ROAD_EDGES,
   CITY_ROUNDABOUTS,
   cityDistrictForLocation,
   cityEntranceForRecord,
@@ -33,6 +35,14 @@ import {
   stableCityOffset,
   type CityWorldPosition,
 } from "@/lib/city-world";
+import { dayPhaseAt } from "@/lib/world-simulation";
+import {
+  CITY_KNOWN_LOCATION_SLUGS,
+  CITY_ROAD_SVG_PATHS,
+  CITY_TREE_POSITIONS,
+  MAX_CITY_LOCATIONS,
+  MAX_FICTIONAL_CITY_SVG_NODES,
+} from "@/game/fictional-city-rendering";
 import { TRAVEL_MODE_DETAILS, estimateTrip, type TravelMode } from "@/lib/transport-service";
 import {
   layoutCityLabels,
@@ -48,13 +58,10 @@ const icons = [ShoppingBasket, BriefcaseBusiness, CircleDollarSign, Users];
 const EMPTY_LOCATIONS: Location[] = [];
 const EMPTY_PLACES: GamePlace[] = [];
 const EMPTY_JOBS: Job[] = [];
-const roadPoints = (a: CityWorldPosition, b: CityWorldPosition) => {
-  const p = cityWorldToIso(a);
-  const q = cityWorldToIso(b);
-  return `${p.x},${p.y} ${q.x},${q.y}`;
-};
 
 export function FictionalCityMap() {
+  const { simulation } = useGameTime();
+  const lightingPhase = dayPhaseAt(simulation.gameTime);
   const { data: character } = useQuery(q.character());
   const queryClient = useQueryClient();
   const { data: locationsData } = useQuery(q.locations());
@@ -65,7 +72,7 @@ export function FictionalCityMap() {
   const { data: jobsData } = useQuery({ ...q.jobs(), enabled: !!character });
   const { data: npcsData } = useQuery({ ...q.npcs(), enabled: !!character });
   const jobs = jobsData ?? EMPTY_JOBS;
-  const npcs = npcsData ?? [];
+  const npcs = useMemo(() => npcsData ?? [], [npcsData]);
   const clientName = character?.name ?? "Player";
   const center = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -79,6 +86,8 @@ export function FictionalCityMap() {
     moved: boolean;
   } | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [focusedPlaceId, setFocusedPlaceId] = useState<string | null>(null);
+  const [focusedNpcId, setFocusedNpcId] = useState<string | null>(null);
   const [filter, setFilter] = useState("All");
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
@@ -89,6 +98,7 @@ export function FictionalCityMap() {
   const pointers = useRef(new Map<number, Point>());
   const pinchStart = useRef<{ distance: number; scale: number } | null>(null);
   const selected = locations.find((location) => location.id === selectedId) ?? null;
+  const focusedPlace = places.find((place) => place.id === focusedPlaceId) ?? null;
   const current = locations.find((location) => location.id === character?.current_location_id);
   const persistedPosition =
     character && Number.isFinite(character.world_x) && Number.isFinite(character.world_y)
@@ -100,7 +110,25 @@ export function FictionalCityMap() {
   const displayPosition = walkingPosition ?? position;
   const revision = character?.world_position_revision ?? 0;
   const sceneTransform = `translate(${offset.x} ${offset.y}) translate(500 370) scale(${scale}) translate(-500 -370)`;
-  const activeLocations = useMemo(() => locations.filter((item) => item.is_active), [locations]);
+  const allActiveLocations = useMemo(() => locations.filter((item) => item.is_active), [locations]);
+  const activeLocations = useMemo(() => {
+    if (allActiveLocations.length <= MAX_CITY_LOCATIONS) return allActiveLocations;
+    const keep = new Set(
+      allActiveLocations
+        .filter(
+          (location) =>
+            location.id === character?.current_location_id ||
+            CITY_KNOWN_LOCATION_SLUGS.has(location.slug),
+        )
+        .map((location) => location.id)
+        .slice(0, MAX_CITY_LOCATIONS),
+    );
+    for (const location of allActiveLocations) {
+      if (keep.size >= MAX_CITY_LOCATIONS) break;
+      keep.add(location.id);
+    }
+    return allActiveLocations.filter((location) => keep.has(location.id));
+  }, [allActiveLocations, character?.current_location_id]);
   const visibleLocations = useMemo(
     () =>
       activeLocations.filter((item) => {
@@ -114,6 +142,66 @@ export function FictionalCityMap() {
       }),
     [activeLocations, filter, jobs],
   );
+  const locationsBySlug = useMemo(
+    () => new Map(locations.map((location) => [location.slug, location])),
+    [locations],
+  );
+  const mapPlaces = useMemo(
+    () =>
+      places
+        .filter((place) => /bank|atm|market|supermarket|food-market/.test(place.category))
+        .sort((a, b) => {
+          const priority = (place: GamePlace) =>
+            /bank|atm/.test(place.category) ? 0 : /market/.test(place.category) ? 1 : 2;
+          return priority(a) - priority(b) || a.sort_order - b.sort_order;
+        })
+        .slice(0, 12),
+    [places],
+  );
+  const mapNpcs = useMemo(
+    () =>
+      NPC_CATALOG.flatMap((catalogNpc) => {
+        const row = npcs.find((npc) => npc.id === catalogNpc.id);
+        if (!row) return [];
+        const npc = {
+          ...catalogNpc,
+          name: row.name,
+          role: row.role,
+          personality: row.personality as typeof catalogNpc.personality,
+          interests: row.interests,
+          topics: row.topics,
+        };
+        const activity = npcActivityAt(
+          npc,
+          simulation.gameTime,
+          (slug) => locationsBySlug.get(slug)?.id ?? null,
+          weatherForDay(simulation.gameTime.day),
+        );
+        const location = locationsBySlug.get(activity.destinationSlug);
+        return location ? [{ npc, activity, location }] : [];
+      }),
+    [locationsBySlug, npcs, simulation.gameTime],
+  );
+
+  async function greetNpc(npcId: string) {
+    setBusy(true);
+    try {
+      const result = await rpc.interactWithNpc({
+        npcId,
+        action: "greet",
+        requestId: crypto.randomUUID(),
+      });
+      setNotice(result.message);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["npcRelationships"] }),
+        queryClient.invalidateQueries({ queryKey: ["npcEvents"] }),
+      ]);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Could not greet this neighbour.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   useEffect(() => {
     const svg = svgRef.current;
@@ -335,7 +423,13 @@ export function FictionalCityMap() {
   };
 
   return (
-    <section className="fictional-city" aria-label="Interactive fictional city map">
+    <section
+      className="fictional-city"
+      aria-label="Interactive fictional city map"
+      data-city-phase={lightingPhase}
+      data-city-location-cap={MAX_CITY_LOCATIONS}
+      data-city-locations-total={allActiveLocations.length}
+    >
       <div
         className="city-world-scene"
         ref={center}
@@ -361,6 +455,7 @@ export function FictionalCityMap() {
           viewBox={`0 0 ${VIEW.width} ${VIEW.height}`}
           role="img"
           aria-label="Illustrated isometric city with selectable districts and buildings"
+          data-svg-node-cap={MAX_FICTIONAL_CITY_SVG_NODES}
           onClick={walkFromMapTap}
         >
           <defs>
@@ -375,16 +470,6 @@ export function FictionalCityMap() {
               <rect width="8" height="6" fill="#9b654c" />
               <path d="M0 1h8M0 4h8" stroke="#c38960" strokeOpacity=".72" strokeWidth=".7" />
             </pattern>
-            <filter id="building-shadow" x="-30%" y="-30%" width="160%" height="180%">
-              <feDropShadow dx="0" dy="5" stdDeviation="4" floodOpacity=".35" />
-            </filter>
-            <filter id="beacon-glow" x="-100%" y="-20%" width="300%" height="140%">
-              <feGaussianBlur stdDeviation="2.5" result="blur" />
-              <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-              </feMerge>
-            </filter>
           </defs>
           <rect width="1000" height="760" fill="url(#city-ground)" />
           <g transform={sceneTransform}>
@@ -407,32 +492,24 @@ export function FictionalCityMap() {
                 strokeDasharray="4 8"
               />
             ))}
-            {CITY_ROAD_EDGES.map((edge) => {
-              const from = CITY_ROAD_EDGES.length ? edge.from.match(/road-(\d+)-(\d+)/) : null;
-              const to = edge.to.match(/road-(\d+)-(\d+)/);
-              if (!from || !to) return null;
-              const a = { x: Number(from[1]), y: Number(from[2]) };
-              const b = { x: Number(to[1]), y: Number(to[2]) };
-              return (
-                <g key={`${edge.from}-${edge.to}`}>
-                  <polyline
-                    points={roadPoints(a, b)}
-                    fill="none"
-                    stroke="#0b1917"
-                    strokeWidth={edge.kind === "arterial" ? 13 : 8}
-                    strokeLinecap="round"
-                  />
-                  <polyline
-                    points={roadPoints(a, b)}
-                    fill="none"
-                    stroke={edge.kind === "arterial" ? "#c4a873" : "#887d64"}
-                    strokeOpacity=".9"
-                    strokeWidth={edge.kind === "arterial" ? 8 : 4}
-                    strokeLinecap="round"
-                  />
-                </g>
-              );
-            })}
+            <g className="city-road-network" fill="none" strokeLinecap="round" aria-hidden="true">
+              <path
+                d={CITY_ROAD_SVG_PATHS.local}
+                className="city-road-underlay city-road-underlay--local"
+              />
+              <path
+                d={CITY_ROAD_SVG_PATHS.arterial}
+                className="city-road-underlay city-road-underlay--arterial"
+              />
+              <path
+                d={CITY_ROAD_SVG_PATHS.local}
+                className="city-road-surface city-road-surface--local"
+              />
+              <path
+                d={CITY_ROAD_SVG_PATHS.arterial}
+                className="city-road-surface city-road-surface--arterial"
+              />
+            </g>
             {CITY_ROUNDABOUTS.map((p, i) => {
               const c = cityWorldToIso(p);
               return (
@@ -468,7 +545,6 @@ export function FictionalCityMap() {
                       strokeWidth="2.2"
                       strokeOpacity=".18"
                       vectorEffect="non-scaling-stroke"
-                      filter="url(#beacon-glow)"
                     />
                     <line
                       x1={top.x}
@@ -501,12 +577,15 @@ export function FictionalCityMap() {
                 opacity=".9"
               />
             )}
-            {Array.from({ length: 58 }, (_, i) => {
-              const x = 1 + ((i * 37) % 13),
-                y = 1 + ((i * 19) % 11);
-              const p = cityWorldToIso({ x, y });
+            {CITY_TREE_POSITIONS.map((position, i) => {
+              const p = cityWorldToIso(position);
               return (
-                <g key={`tree-${i}`} transform={`translate(${p.x} ${p.y})`} opacity=".85">
+                <g
+                  className="city-tree"
+                  key={`tree-${i}`}
+                  transform={`translate(${p.x} ${p.y})`}
+                  opacity=".85"
+                >
                   <ellipse cy="3" rx="7" ry="3" fill="#0b1714" />
                   <path d="M0 -18 -8 -5 8 -5Z" fill={i % 2 ? "#43815a" : "#639553"} />
                   <path d="M0 -12 -6 -2 6 -2Z" fill="#8ba969" />
@@ -536,13 +615,21 @@ export function FictionalCityMap() {
                       setSelectedId(location.id);
                     }
                   }}
-                  filter="url(#building-shadow)"
                 >
-                  <CityLocationArtwork
-                    location={location}
-                    position={building}
-                    places={places.filter((place) => place.location_id === location.id)}
-                  />
+                  {CITY_KNOWN_LOCATION_SLUGS.has(location.slug) ? (
+                    <CityLocationArtwork
+                      location={location}
+                      position={building}
+                      places={places.filter((place) => place.location_id === location.id)}
+                    />
+                  ) : (
+                    <path
+                      d={`M${cityWorldToIso(building).x - 15} ${cityWorldToIso(building).y}l15-9 15 9-15 9Z`}
+                      fill="#b88752"
+                      stroke="#f0d69b"
+                      strokeWidth="1.5"
+                    />
+                  )}
                   <circle
                     cx={cityWorldToIso(building).x}
                     cy={cityWorldToIso(building).y - 25}
@@ -563,6 +650,81 @@ export function FictionalCityMap() {
                 </g>
               );
             })}{" "}
+            {mapPlaces.map((place, index) => {
+              const location = locations.find((item) => item.id === place.location_id);
+              if (!location) return null;
+              const base = cityPositionForRecord(location);
+              const jitter = stableCityOffset(place.slug, index + 17);
+              const point = cityWorldToIso(
+                { x: base.x + jitter.x * 0.52, y: base.y + jitter.y * 0.52 },
+                4,
+              );
+              const isBank = /bank|atm/.test(place.category);
+              return (
+                <g
+                  key={`place-${place.id}`}
+                  className={`city-place-marker ${focusedPlaceId === place.id ? "is-selected" : ""}`}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Open ${place.name} in ${location.name}`}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setSelectedId(location.id);
+                    setFocusedPlaceId(place.id);
+                    setFocusedNpcId(null);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setSelectedId(location.id);
+                      setFocusedPlaceId(place.id);
+                      setFocusedNpcId(null);
+                    }
+                  }}
+                >
+                  <circle cx={point.x} cy={point.y} r="8" />
+                  <text x={point.x} y={point.y + 3} textAnchor="middle">
+                    {isBank ? "₦" : "M"}
+                  </text>
+                </g>
+              );
+            })}
+            {mapNpcs.map(({ npc, activity, location }, index) => {
+              const base = cityPositionForRecord(location);
+              const jitter = stableCityOffset(npc.id, index + 37);
+              const point = cityWorldToIso(
+                { x: base.x + jitter.x * 0.62, y: base.y + jitter.y * 0.62 },
+                13,
+              );
+              return (
+                <g
+                  key={`npc-${npc.id}`}
+                  className={`city-npc-marker ${focusedNpcId === npc.id ? "is-selected" : ""}`}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${npc.name}, ${activity.label}, at ${location.name}`}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setSelectedId(location.id);
+                    setFocusedPlaceId(null);
+                    setFocusedNpcId(npc.id);
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      setSelectedId(location.id);
+                      setFocusedPlaceId(null);
+                      setFocusedNpcId(npc.id);
+                    }
+                  }}
+                >
+                  <circle cx={point.x} cy={point.y} r="10" />
+                  <text x={point.x} y={point.y + 3} textAnchor="middle">
+                    {npc.name.split(" ")[0]?.slice(0, 1)}
+                  </text>
+                </g>
+              );
+            })}
             {character &&
               (() => {
                 const p = cityWorldToIso(displayPosition, 20);
@@ -590,6 +752,14 @@ export function FictionalCityMap() {
               OSOGBO
             </text>
           </g>
+          <rect
+            className={`city-time-overlay city-time-overlay--${lightingPhase}`}
+            x="0"
+            y="0"
+            width={VIEW.width}
+            height={VIEW.height}
+            aria-hidden="true"
+          />
         </svg>
         <svg
           className="city-label-layer"
@@ -740,6 +910,12 @@ export function FictionalCityMap() {
         <div className="city-touch-hint" data-city-obstacle>
           Drag to explore · pinch or scroll to zoom
         </div>
+        {allActiveLocations.length > MAX_CITY_LOCATIONS && (
+          <div className="city-cap-note" role="status">
+            Showing {MAX_CITY_LOCATIONS} of {allActiveLocations.length} places to keep the map
+            smooth.
+          </div>
+        )}
       </div>
       <nav className="city-bottom-shortcuts" aria-label="City shortcuts">
         <a href="/jobs">
@@ -865,6 +1041,65 @@ export function FictionalCityMap() {
                 </button>
               </>
             )}
+            {focusedPlace && focusedPlace.location_id === selected.id && (
+              <div
+                className="city-focused-interaction"
+                aria-label={`${focusedPlace.name} services`}
+              >
+                <h3>{focusedPlace.name}</h3>
+                <p>{focusedPlace.description}</p>
+                {current?.id === selected.id ? (
+                  /bank|atm/.test(focusedPlace.category) ? (
+                    <a href="/wallet" className="city-service-link">
+                      <CircleDollarSign /> Open bank services <ChevronRight />
+                    </a>
+                  ) : (
+                    <a href="/market" className="city-service-link">
+                      <ShoppingBasket /> Browse market goods <ChevronRight />
+                    </a>
+                  )
+                ) : (
+                  <small>Travel here to use this service.</small>
+                )}
+              </div>
+            )}
+            {focusedNpcId &&
+              (() => {
+                const actor = mapNpcs.find((entry) => entry.npc.id === focusedNpcId);
+                if (!actor || actor.location.id !== selected.id) return null;
+                const canGreet = actor.activity.available && current?.id === selected.id;
+                return (
+                  <div
+                    className="city-focused-interaction"
+                    aria-label={`${actor.npc.name} interaction`}
+                  >
+                    <h3>
+                      {actor.npc.name} <small>· {actor.npc.role}</small>
+                    </h3>
+                    <p>
+                      {actor.activity.available
+                        ? `${actor.npc.name.split(" ")[0]} notices you and waves hello while ${actor.activity.label}.`
+                        : `${actor.npc.name.split(" ")[0]} is ${actor.activity.label}.`}
+                    </p>
+                    {canGreet ? (
+                      <button
+                        className="city-service-link"
+                        disabled={busy}
+                        onClick={() => void greetNpc(actor.npc.id)}
+                      >
+                        <Users /> Respond with a greeting <ChevronRight />
+                      </button>
+                    ) : current?.id !== selected.id ? (
+                      <small>Travel here to meet this neighbour.</small>
+                    ) : (
+                      <small>This neighbour is unavailable right now.</small>
+                    )}
+                    <a href="/social" className="city-social-link">
+                      View conversations and relationships
+                    </a>
+                  </div>
+                );
+              })()}
             <div className="city-local-places">
               <h3>Nearby places</h3>
               {places
