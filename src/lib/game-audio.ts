@@ -4,6 +4,7 @@ import {
   shuffledTracks,
   nextEligibleTrack,
   type MusicTrack,
+  welcomeMusicTrackId,
 } from "./music-tracks";
 import { soundEffects, validSoundEffects, type SoundName } from "./sound-effects";
 type AudioLevels = { master: number; music: number; effects: number };
@@ -57,6 +58,21 @@ let playerId: string | null = null;
 let queue: MusicTrack[] = [];
 let cursor = 0;
 let history: string[] = [];
+let pendingWelcomeId: string | null = null;
+const welcomeStatus = new Map<string, "pending" | "played">();
+const welcomeKey = (id: string) => `osogbo-welcome-music-v1:${id}`;
+/** Called only after the server confirms creation, never for returning logins. */
+export function queueCharacterWelcomeMusic(id: string) {
+  if (welcomeStatus.get(id) === "played") return;
+  try {
+    if (localStorage.getItem(welcomeKey(id)) === "played") return;
+    localStorage.setItem(welcomeKey(id), "pending");
+  } catch {
+    /* Keep a session-only welcome if storage is unavailable. */
+  }
+  welcomeStatus.set(id, "pending");
+  if (playerId === id) pendingWelcomeId = welcomeMusicTrackId;
+}
 let revision = 0;
 let loading = false;
 let restartTimer: ReturnType<typeof setTimeout> | null = null;
@@ -101,7 +117,10 @@ export function configureGameMusic(id: string | null) {
   queue = id ? shuffledTracks(playableMusicTracks, id) : [];
   cursor = 0;
   history = [];
+  pendingWelcomeId = id && welcomeStatus.get(id) === "pending" ? welcomeMusicTrackId : null;
   try {
+    if (id && localStorage.getItem(welcomeKey(id)) === "pending")
+      pendingWelcomeId = welcomeMusicTrackId;
     const saved = JSON.parse(localStorage.getItem(`osogbo-music-v1:${id}`) ?? "null");
     if (saved && Array.isArray(saved.history))
       history = saved.history.filter((item: unknown) => typeof item === "string").slice(-5);
@@ -183,7 +202,14 @@ export async function nextGameMusic(allowReplay = false) {
   const failed: string[] = [];
   try {
     for (let attempt = 0; attempt < queue.length; attempt++) {
+      const welcome =
+        pendingWelcomeId && !failed.includes(pendingWelcomeId)
+          ? queue.find((track) => track.id === pendingWelcomeId)
+          : undefined;
       const next =
+        (welcome
+          ? { track: welcome, cursor: (queue.indexOf(welcome) + 1) % queue.length }
+          : null) ??
         nextEligibleTrack(queue, cursor, history) ??
         (allowReplay && queue.length <= 5
           ? nextEligibleTrack(queue, cursor, queue.length > 1 ? history.slice(-1) : [])
@@ -216,6 +242,15 @@ export async function nextGameMusic(allowReplay = false) {
         deck = candidate;
         cursor = next.cursor;
         history = [...history, next.track.id].slice(-5);
+        if (pendingWelcomeId === next.track.id) {
+          pendingWelcomeId = null;
+          welcomeStatus.set(playerId, "played");
+          try {
+            localStorage.setItem(welcomeKey(playerId), "played");
+          } catch {
+            /* Session still records this start. */
+          }
+        }
         saveQueue();
         const now = graph.context.currentTime;
         gain.gain.setValueAtTime(0, now);

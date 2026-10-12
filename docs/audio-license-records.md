@@ -1,5 +1,34 @@
 # Supplied audio records
 
+## Pixabay audio 574010 — accepted
+
+- Title: Background - Background Music
+- Artist: Pavel Bekirov; uploader: paulyudin.
+- Source: https://pixabay.com/music/corporate-background-background-music-574010/
+- License: Pixabay Content License; https://pixabay.com/service/license-summary/
+- Certificate supplied: `corporate-background-background-music-574010-license.txt`.
+- Certificate download timestamp: 2026-10-12 01:24:55 UTC; reviewed 2026-10-12.
+- Duration measured from MP3 frames: 157.544 seconds.
+
+## Sun over Osogbo — accepted from user-confirmed generation record
+
+- Creator: project owner, generated using Eleven Music.
+- Source supplied by user: https://elevenlabs.io/music/songs/U3GsqG0NKAcAFW9nCkgM/embed
+- Local file supplied: `song-U3GsqG0NKAcAFW9nCkgM.mp3`.
+- User confirmed own generation and Starter plan on 2026-10-12.
+- License: ElevenLabs Music Terms, Starter plan; https://elevenlabs.io/music-terms
+- Terms reviewed 2026-10-12; permits indie-game use, excludes Studio Games.
+- Generation/account plan is user-confirmed, not independently verified through billing.
+- Duration measured from MP3 frames: 120.072 seconds.
+- Artist label: OSOGBO LIFE (Eleven Music), identifying project origin rather than a named performer.
+- No embedded player or remote song downloads are used.
+
+After successful server character creation, a local marker queues this song for
+the first sound-enabled playback for that character. The marker is consumed only
+after playback starts successfully; returning logins do not requeue it. This is
+device-local persistence, not a new account-wide database field. Existing shuffle,
+ten-second popup and five-second track gaps continue afterward.
+
 ## Pixabay audio 537751 — accepted
 
 - Title: No Copyright Music

@@ -1,5 +1,5 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
-import type { MusicTrack } from "../lib/music-tracks";
+import { welcomeMusicTrackId, type MusicTrack } from "../lib/music-tracks";
 
 const record: MusicTrack = {
   id: "a",
@@ -98,6 +98,59 @@ async function settle() {
   await new Promise((resolve) => setTimeout(resolve, 0));
 }
 describe("game music playback", () => {
+  it("prioritizes the welcome song after confirmed creation and consumes it only on playback", async () => {
+    catalog.tracks = [
+      { ...record, id: "normal" },
+      { ...record, id: welcomeMusicTrackId },
+    ];
+    const audio = await import("../lib/game-audio");
+    audio.queueCharacterWelcomeMusic("new-character");
+    audio.configureGameMusic("new-character");
+    expect(localStorage.getItem("osogbo-welcome-music-v1:new-character")).toBe("pending");
+    expect(fetch).not.toHaveBeenCalled();
+    await audio.enableGameAudio();
+    await settle();
+    expect(audio.getMusicState().track?.id).toBe(welcomeMusicTrackId);
+    expect(localStorage.getItem("osogbo-welcome-music-v1:new-character")).toBe("played");
+    audio.queueCharacterWelcomeMusic("new-character");
+    await audio.nextGameMusic(true);
+    expect(audio.getMusicState().track?.id).toBe("normal");
+    audio.configureGameMusic(null);
+  });
+  it("retains the welcome marker if sound is turned off during loading", async () => {
+    catalog.tracks = [{ ...record, id: welcomeMusicTrackId }];
+    let finish!: (value: { ok: boolean; blob: () => Promise<Blob> }) => void;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        () =>
+          new Promise((resolve) => {
+            finish = resolve;
+          }),
+      ),
+    );
+    const audio = await import("../lib/game-audio");
+    audio.queueCharacterWelcomeMusic("new-character");
+    audio.configureGameMusic("new-character");
+    await audio.enableGameAudio();
+    await audio.disableGameAudio();
+    finish({ ok: true, blob: async () => new Blob(["test"]) });
+    await settle();
+    expect(localStorage.getItem("osogbo-welcome-music-v1:new-character")).toBe("pending");
+    expect(media).toHaveLength(0);
+    audio.configureGameMusic(null);
+  });
+  it("previews the UI effect through the synthesized effects bus when enabled", async () => {
+    const audio = await import("../lib/game-audio");
+    await audio.enableGameAudio();
+    const oscillator = vi.spyOn(contexts[0]!, "createOscillator");
+    audio.playGameSound("ui");
+    expect(oscillator).toHaveBeenCalledTimes(1);
+    expect(oscillator.mock.results[0]!.value.start).toHaveBeenCalled();
+    await audio.disableGameAudio();
+    audio.playGameSound("ui");
+    expect(oscillator).toHaveBeenCalledTimes(1);
+  });
   beforeEach(() => {
     vi.resetModules();
     catalog.tracks = [];
