@@ -36,18 +36,25 @@ export function CityNeedsDock() {
         </span>
         <span className="city-needs-summary-bars" aria-hidden="true">
           {NEED_NAMES.map((name) => {
+            const Icon = NEED_ICONS[name];
             const value = Math.round(simulation.needs[name]);
             return (
-              <span className={`city-needs-mini is-${statusForNeed(name, value)}`} key={name}>
-                <i style={{ width: `${value}%` }} />
+              <span className="city-needs-mini-item" key={name} title={NEED_RULES[name].label}>
+                <Icon size={12} aria-hidden="true" />
+                <span className={`city-needs-mini is-${statusForNeed(name, value)}`}>
+                  <i style={{ width: `${value}%` }} />
+                </span>
               </span>
             );
           })}
           {character?.thirst != null && (
-            <span
-              className={`city-needs-mini is-${statusForNeed("hunger", 100 - character.thirst)}`}
-            >
-              <i style={{ width: `${100 - character.thirst}%` }} />
+            <span className="city-needs-mini-item" title="Thirst satisfaction">
+              <GlassWater size={12} aria-hidden="true" />
+              <span
+                className={`city-needs-mini is-${statusForNeed("hunger", 100 - character.thirst)}`}
+              >
+                <i style={{ width: `${100 - character.thirst}%` }} />
+              </span>
             </span>
           )}
         </span>
@@ -62,9 +69,8 @@ export function CityNeedsDock() {
           const status = statusForNeed(name, value);
           return (
             <div className={`city-needs-row is-${status}`} key={name}>
-              <span className="city-needs-label">
+              <span className="city-needs-label" title={NEED_RULES[name].label}>
                 <Icon size={14} aria-hidden="true" />
-                {name === "hunger" ? "Hunger satisfaction" : NEED_RULES[name].label}
               </span>
               <span
                 className="city-needs-track"
@@ -83,9 +89,8 @@ export function CityNeedsDock() {
         <div
           className={`city-needs-row is-${character?.thirst == null ? "untracked" : statusForNeed("hunger", 100 - character.thirst)}`}
         >
-          <span className="city-needs-label">
+          <span className="city-needs-label" title="Thirst satisfaction">
             <GlassWater size={14} aria-hidden="true" />
-            Thirst
           </span>
           <span
             className="city-needs-track"
