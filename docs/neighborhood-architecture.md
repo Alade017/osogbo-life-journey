@@ -1,5 +1,9 @@
 # Playable neighborhood architecture
 
+## Current verification note — 2026-10-12
+
+The historical baseline and milestone records below describe implementation stages and may contain older verification counts. Current evidence belongs in `docs/release-qa.md`. The user reports successful authenticated shared-world/message testing and further authenticated testing; these reports are not independent automated production verification. Live read-only delivery, health and allowed/rejected origin checks passed on 2026-10-12. Hosted migration state, negative permission cases, cross-device persistence, multi-service Redis routing and real-device performance still require explicit acceptance evidence. The selected architecture remains React/Phaser plus authoritative Colyseus movement and Supabase durable state.
+
 This document records the current gameplay boundary and Milestone 1 architecture baseline for the OSOGBO LIFE multiplayer specification. The first scene provides one reusable neighborhood, not a finished full city. Phaser 3 owns world rendering and its frame loop because Arcade Physics gives the world one owner for movement, collision, camera and depth. React retains routes, accessible controls, menus, HUD, nearby interaction prompts and server data. The Milestone 1 baseline was single-player; Milestone 4 now has a deployed authoritative Colyseus room server. Authenticated multi-client acceptance remains outstanding.
 
 ## Architecture decision baseline (Milestone 1)
@@ -12,7 +16,7 @@ This document records the current gameplay boundary and Milestone 1 architecture
 | World frame loop, local input, camera, collision, animation and world-side proximity | Phaser 3                                        | `NeighborhoodScene` owns transient local presentation. It must not write durable economy or progression state.                    |
 | Rules and command adapters                                                           | `src/lib` domain services and `src/lib/game.ts` | Existing typed services and Supabase RPC wrappers remain the entry points for travel, jobs, inventory, purchases and persistence. |
 | Durable identity and player progression                                              | Supabase Auth/Postgres/RPCs                     | Existing authenticated records and server-validated RPCs remain authoritative. Do not persist movement per rendered frame.        |
-| Shared transient player state                                                        | Colyseus 0.18 neighborhood room                 | Railway hosts the room server for movement and presence; authenticated two-client verification remains open.                        |
+| Shared transient player state                                                        | Colyseus 0.18 neighborhood room                 | Railway hosts the room server for movement and presence; authenticated two-client verification remains open.                      |
 
 React and Phaser communicate through the typed `NeighborhoodBridge` contract in `src/game/neighborhood-scene.ts`. It carries initial world coordinates, proximity/checkpoint notifications, interactions and an asynchronous checkpoint command. Keep that bridge narrow: UI commands flow into the scene through explicit methods, while scene events flow back through callbacks. Do not expose React state setters or Supabase clients to Phaser.
 

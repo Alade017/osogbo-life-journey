@@ -1,4 +1,32 @@
-# Milestone 12 release QA
+# Milestone 9 release QA
+
+## Readiness audit — 2026-10-12
+
+- The user reports that authenticated testing has already been performed. This is user-reported verification; the exact travel, persistence, security, device and multi-service scenarios have not been independently reproduced.
+- `node scripts/release-readiness-check.mjs` validates the local journal without loading `.env`, connecting to a database or applying SQL. All 33 registered migrations through `0031_server_validated_home_actions` have matching files, sequential journal indices and increasing timestamps. Both `0012` files have distinct journal entries; do not renumber published migrations.
+- Migration 0030 depends on the personal simulation function introduced by 0024 and expects its original clock-rate expression. Migration 0031 replaces that function and retains the corrected 1:1 rate. Apply the journal order; do not rerun 0030 after 0031 as a repair.
+- Existing `scripts/apply-shared-hud-migration.mjs` applies only 0024 and is not a general migration runner. It checks the travel RPC prerequisite and refuses an existing simulation table. Do not use it to apply later migrations or infer the hosted ledger.
+- Read-only live checks passed: `https://osogbo-life-journey.vercel.app` returned HTTP 200 HTML; Railway `/healthz` returned HTTP 200 and `status: ok`; the game origin was echoed in the allowed-origin response; an unrelated origin received HTTP 403 without an allow-origin header. The initial sandbox network requests failed; the permitted network retry passed. No deployment, provider setting or database was changed.
+- The checker makes GET requests only, prints no environment values or response bodies, and explicitly lists unverified authenticated and device checks. Health/origin checks do not prove Redis coordination, authenticated room joins or database permissions.
+- Application type checking passed. Full lint passed with 0 errors and 16 existing Fast Refresh warnings. Game and independent public-site production builds passed. The built local preview at `http://localhost:4193/` returned HTTP 200 HTML.
+- The existing browser startup checker rendered the local homepage with no captured JavaScript exceptions or failed requests after a permitted sandbox retry. The first restricted run failed at its DevTools connection. This is signed-out startup evidence, not authenticated interaction or mobile/accessibility verification.
+- Full regression run: 262 tests passed and 4 hit the five-second timeout, across 60 files. The affected city and inventory tests passed on isolated rerun; a home-only rerun still timed out on purchase/placement. Its broad button queries were scoped to the existing furniture panel and the floor tile's accessible label, preserving all purchase/save assertions. The subsequent focused run passed those previously failing scenarios without increasing timeouts or changing game logic. This record does not claim the initial full run passed.
+
+### Authenticated acceptance record
+
+For each scenario, record the environment, date, accounts by non-sensitive aliases, outcome and relevant screenshots/logs. Never record access tokens, passwords or private message content.
+
+| Scenario                                                      | Evidence required                                                 | Current evidence                                                               |
+| ------------------------------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| Two clients in the same area; movement and disconnect cleanup | Both views; no stale player after leaving                         | User reports shared-world testing; detailed evidence not captured              |
+| Private messages and friendship/block permissions             | Delivery, invalid recipient, blocked path rejected                | User reports messaging works; negative permission cases remain unverified live |
+| Travel between two districts and building entry/exit          | Correct room, spawn and return checkpoint                         | Source/local tests; hosted scenario details not captured                       |
+| Reconnect/reload and a second session                         | Saved location, wallet, inventory and home restored               | User reports testing; scenario details not captured                            |
+| Duplicate job, purchase and home-upgrade request              | One reward/debit and one receipt                                  | Local database acceptance; hosted behavior unverified                          |
+| Desktop and narrow mobile layout                              | Usable navigation, touch controls, keyboard focus and no overflow | Local control harness; real-device/accessibility checks outstanding            |
+| Multiple room services using Redis                            | Clients connected through separate endpoints share room state     | Not established by a single healthy service                                    |
+
+Milestone 9 remains in progress until its outstanding gates have recorded outcomes. No new milestone is introduced.
 
 ## Milestone 9 verification update — 2026-10-11
 

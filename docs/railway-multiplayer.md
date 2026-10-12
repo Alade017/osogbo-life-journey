@@ -43,6 +43,14 @@ Install dependencies and run `npm run multiplayer:dev`. Without Railway's `PORT`
 
 ## Release verification
 
+Run repository and read-only endpoint checks with Node 24:
+
+```powershell
+node scripts/release-readiness-check.mjs --site https://osogbo-life-journey.vercel.app --multiplayer wss://osogbo-life-journey-production.up.railway.app --origin https://osogbo-life-journey.vercel.app
+```
+
+Repeat `--multiplayer` for each additional service. With no arguments the script checks only the repository migration journal. It does not read `.env`, authenticate users, apply migrations or change hosted configuration. A failed network check can indicate local network restrictions; distinguish that from an HTTP failure. A successful check establishes delivery/health/origin behavior only.
+
 1. Confirm `/healthz` returns HTTP 200 for each public service.
 2. Check that production and any approved custom domains appear in `MULTIPLAYER_ALLOWED_ORIGINS`; do not add preview domains unless they are intentionally trusted.
 3. Sign in with two independent test accounts from two browser sessions and enter the same location. Verify each player sees the other, movement updates, and disconnect cleanup works when the accounts select different Colyseus service endpoints.

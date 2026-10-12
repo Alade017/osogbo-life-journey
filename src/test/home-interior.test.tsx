@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { HomeInterior } from "@/components/game/HomeInterior";
 import { DEFAULT_HOUSING_SAVE } from "@/lib/housing-service";
@@ -91,7 +91,7 @@ describe("walkable home experience", () => {
       storage: ["sofa"],
     });
     const onSave = vi.fn();
-    render(
+    const { container } = render(
       <HomeInterior
         initialSave={DEFAULT_HOUSING_SAVE}
         onPurchaseFurniture={onPurchaseFurniture}
@@ -99,11 +99,13 @@ describe("walkable home experience", () => {
       />,
     );
     fireEvent.click(screen.getByRole("button", { name: /enter home/i }));
-    fireEvent.click(screen.getByRole("button", { name: /build mode/i }));
-    fireEvent.click(await screen.findByRole("button", { name: /buy.*900/i }));
+    // Scope controls to the panel rather than calculating names/styles for every floor tile.
+    const furniturePanel = within(container.querySelector(".home-room-detail") as HTMLElement);
+    fireEvent.click(furniturePanel.getByRole("button", { name: /build mode/i }));
+    fireEvent.click(await furniturePanel.findByRole("button", { name: /buy.*900/i }));
     await waitFor(() => expect(onPurchaseFurniture).toHaveBeenCalledWith({ itemId: "sofa" }));
-    fireEvent.click(await screen.findByRole("button", { name: /place lounge sofa/i }));
-    fireEvent.click(screen.getByRole("button", { name: "1, 1 floor" }));
+    fireEvent.click(await furniturePanel.findByRole("button", { name: /place lounge sofa/i }));
+    fireEvent.click(screen.getByLabelText("1, 1 floor"));
     await waitFor(() =>
       expect(onSave).toHaveBeenCalledWith(
         expect.objectContaining({
