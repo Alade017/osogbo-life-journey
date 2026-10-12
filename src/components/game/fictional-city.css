@@ -336,6 +336,59 @@
   font-size: 11px;
   line-height: 1.5;
 }
+.city-greeting-card {
+  position: absolute;
+  right: 18px;
+  bottom: 86px;
+  display: grid;
+  gap: 7px;
+  width: min(240px, calc(100% - 36px));
+  padding: 10px;
+  border: 1px solid #ffffff2b;
+  border-radius: 13px;
+  background: #10231eef;
+  box-shadow: 0 8px 24px #06130f66;
+}
+.city-greeting-card > span {
+  color: #9acb7b;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+.city-greeting-card button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 6px;
+  border: 0;
+  border-radius: 9px;
+  background: #ffffff0b;
+  color: #f4f8f4;
+  text-align: left;
+  cursor: pointer;
+}
+.city-greeting-card button > span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.city-greeting-card strong {
+  font-size: 11px;
+}
+.city-greeting-card small {
+  overflow: hidden;
+  color: #bac9c1;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.city-greeting-card button:hover,
+.city-greeting-card button:focus-visible {
+  background: #24513a;
+  outline: 2px solid #9bd17a;
+}
 .city-activity-tags {
   display: flex;
   gap: 7px;

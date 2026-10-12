@@ -182,6 +182,9 @@ export function FictionalCityMap() {
       }),
     [locationsBySlug, npcs, simulation.gameTime],
   );
+  const ambientGreetings = mapNpcs
+    .filter(({ activity, location }) => location.id === current?.id && activity.available)
+    .slice(0, 2);
 
   async function greetNpc(npcId: string) {
     setBusy(true);
@@ -874,6 +877,28 @@ export function FictionalCityMap() {
             </span>
           </div>
         </aside>
+        {ambientGreetings.length > 0 && (
+          <aside className="city-greeting-card" data-city-obstacle aria-label="Neighbour greetings">
+            <span>NEIGHBOURS NEARBY</span>
+            {ambientGreetings.map(({ npc, activity, location }) => (
+              <button
+                key={npc.id}
+                onClick={() => {
+                  setSelectedId(location.id);
+                  setFocusedPlaceId(null);
+                  setFocusedNpcId(npc.id);
+                }}
+              >
+                <Users size={15} />
+                <span>
+                  <strong>{npc.name.split(" ")[0]} waves hello</strong>
+                  <small>While {activity.label} · respond</small>
+                </span>
+                <ChevronRight size={15} />
+              </button>
+            ))}
+          </aside>
+        )}
         <div className="city-world-title" data-city-obstacle>
           <span>
             <i /> SIMULATION LIVE

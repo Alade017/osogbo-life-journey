@@ -67,12 +67,13 @@ describe("fictional city rendering budget", () => {
     fixtures.hour = 22;
     fixtures.interactWithNpc.mockClear();
     const knownLocations = Object.keys(OSOGBO_WORLD_NODES).map(location);
+    const residentialLocation = location("residential", knownLocations.length);
     const extraLocations = Array.from({ length: 46 }, (_, index) =>
-      location(`community-${index}`, knownLocations.length + index),
+      location(`community-${index}`, knownLocations.length + index + 1),
     );
     fixtures.queryData = {
       character: null,
-      locations: [...knownLocations, ...extraLocations],
+      locations: [...knownLocations, residentialLocation, ...extraLocations],
       places: Array.from({ length: 12 }, (_, index) => ({
         id: `place-${index}`,
         slug: `oja-oba-market-${index}`,
@@ -151,7 +152,7 @@ describe("fictional city rendering budget", () => {
     for (const slug of Object.keys(OSOGBO_WORLD_NODES)) {
       expect(container.querySelector(`[aria-label="Select ${slug}"]`)).not.toBeNull();
     }
-    expect(container.textContent).toContain("Showing 60 of 61 places");
+    expect(container.textContent).toContain("Showing 60 of 62 places");
     expect(map).toHaveAttribute("data-svg-node-cap", String(MAX_FICTIONAL_CITY_SVG_NODES));
     expect(container.querySelectorAll("svg *").length).toBeLessThanOrEqual(
       MAX_FICTIONAL_CITY_SVG_NODES,
@@ -249,10 +250,13 @@ describe("fictional city rendering budget", () => {
     const { container, findByRole, getByRole } = render(<FictionalCityMap />);
 
     expect(container.querySelectorAll(".city-npc-marker")).toHaveLength(1);
+    expect(getByRole("complementary", { name: "Neighbour greetings" })).toHaveTextContent(
+      "Adeola waves hello",
+    );
     const marker = container.querySelector('[aria-label^="Adeola Akinyemi"]');
     expect(marker).not.toBeNull();
     await act(async () => {
-      marker?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+      getByRole("button", { name: /adeola waves hello/i }).click();
     });
     expect(await findByRole("dialog")).toHaveTextContent("notices you and waves hello");
     await act(async () => {
