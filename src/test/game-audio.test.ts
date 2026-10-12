@@ -129,6 +129,14 @@ describe("game music playback", () => {
     expect(oscillator).toHaveBeenCalledTimes(6);
     await audio.disableGameAudio();
   });
+  it("cancels synthesized cues on sound-off instead of leaving queued tones", async () => {
+    const audio = await import("../lib/game-audio");
+    await audio.enableGameAudio();
+    const oscillator = vi.spyOn(contexts[0]!, "createOscillator");
+    audio.playGameSound("mission-complete");
+    await audio.disableGameAudio();
+    for (const node of oscillator.mock.results) expect(node.value.stop).toHaveBeenLastCalledWith();
+  });
   it("primes login silently and automatically starts once the character is ready", async () => {
     catalog.tracks = [record];
     const audio = await import("../lib/game-audio");

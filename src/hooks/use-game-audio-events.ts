@@ -10,7 +10,7 @@ export function useGameAudioEvents() {
   const previous = useRef<{
     id: string;
     level: number;
-    experience: number;
+    xp: number;
     health: number;
     energy: number;
   } | null>(null);
@@ -25,14 +25,14 @@ export function useGameAudioEvents() {
     const before = previous.current;
     if (before?.id === character.id) {
       if (character.level > before.level) playGameSound("level-up");
-      else if (character.xp > before.experience) playGameSound("xp-gain");
+      else if (character.xp > before.xp) playGameSound("xp-gain");
       if (character.health - before.health >= 1) playGameSound("health-recharge");
       else if (character.energy - before.energy >= 1) playGameSound("energy-recharge");
     }
     previous.current = {
       id: character.id,
       level: character.level,
-      experience: character.xp,
+      xp: character.xp,
       health: character.health,
       energy: character.energy,
     };

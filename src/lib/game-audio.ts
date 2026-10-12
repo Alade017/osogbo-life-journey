@@ -61,6 +61,7 @@ export const playableSoundEffects = validSoundEffects(soundEffects);
 let audioGeneration = 0;
 const effectsBuffers = new Map<string, Promise<AudioBuffer>>();
 const activeEffects = new Set<AudioBufferSourceNode>();
+const activeTones = new Set<OscillatorNode>();
 const lastRechargeSound = new Map<SoundName, number>();
 type MusicState = {
   track: MusicTrack | null;
@@ -467,6 +468,8 @@ function stopEffects() {
   lastRechargeSound.clear();
   for (const source of activeEffects) source.stop();
   activeEffects.clear();
+  for (const tone of activeTones) tone.stop();
+  activeTones.clear();
 }
 function playSynthesizedSound(name: SoundName, current: AudioGraph) {
   const patterns: Record<SoundName, number[]> = {
@@ -493,6 +496,12 @@ function playSynthesizedSound(name: SoundName, current: AudioGraph) {
     envelope.gain.exponentialRampToValueAtTime(0.0001, start + 0.12);
     oscillator.connect(envelope);
     envelope.connect(current.effects);
+    activeTones.add(oscillator);
+    oscillator.onended = () => {
+      activeTones.delete(oscillator);
+      oscillator.disconnect();
+      envelope.disconnect();
+    };
     oscillator.start(start);
     oscillator.stop(start + 0.13);
   }
