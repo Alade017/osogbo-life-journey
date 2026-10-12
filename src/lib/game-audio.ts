@@ -4,7 +4,6 @@ import {
   shuffledTracks,
   nextEligibleTrack,
   type MusicTrack,
-  welcomeMusicTrackId,
 } from "./music-tracks";
 import { soundEffects, validSoundEffects, type SoundName } from "./sound-effects";
 type AudioLevels = { master: number; music: number; effects: number };
@@ -62,6 +61,7 @@ export const playableSoundEffects = validSoundEffects(soundEffects);
 let audioGeneration = 0;
 const effectsBuffers = new Map<string, Promise<AudioBuffer>>();
 const activeEffects = new Set<AudioBufferSourceNode>();
+const lastRechargeSound = new Map<SoundName, number>();
 type MusicState = {
   track: MusicTrack | null;
   status: string;
@@ -94,21 +94,6 @@ let playerId: string | null = null;
 let queue: MusicTrack[] = [];
 let cursor = 0;
 let history: string[] = [];
-let pendingWelcomeId: string | null = null;
-const welcomeStatus = new Map<string, "pending" | "played">();
-const welcomeKey = (id: string) => `osogbo-welcome-music-v1:${id}`;
-/** Called only after the server confirms creation, never for returning logins. */
-export function queueCharacterWelcomeMusic(id: string) {
-  if (welcomeStatus.get(id) === "played") return;
-  try {
-    if (localStorage.getItem(welcomeKey(id)) === "played") return;
-    localStorage.setItem(welcomeKey(id), "pending");
-  } catch {
-    /* Keep a session-only welcome if storage is unavailable. */
-  }
-  welcomeStatus.set(id, "pending");
-  if (playerId === id) pendingWelcomeId = welcomeMusicTrackId;
-}
 let revision = 0;
 let loading = false;
 let restartTimer: ReturnType<typeof setTimeout> | null = null;
@@ -153,10 +138,7 @@ export function configureGameMusic(id: string | null) {
   queue = id ? shuffledTracks(playableMusicTracks, id) : [];
   cursor = 0;
   history = [];
-  pendingWelcomeId = id && welcomeStatus.get(id) === "pending" ? welcomeMusicTrackId : null;
   try {
-    if (id && localStorage.getItem(welcomeKey(id)) === "pending")
-      pendingWelcomeId = welcomeMusicTrackId;
     const saved = JSON.parse(localStorage.getItem(`osogbo-music-v1:${id}`) ?? "null");
     if (saved && Array.isArray(saved.history))
       history = saved.history.filter((item: unknown) => typeof item === "string").slice(-5);
@@ -239,14 +221,7 @@ export async function nextGameMusic(allowReplay = false) {
   const failed: string[] = [];
   try {
     for (let attempt = 0; attempt < queue.length; attempt++) {
-      const welcome =
-        pendingWelcomeId && !failed.includes(pendingWelcomeId)
-          ? queue.find((track) => track.id === pendingWelcomeId)
-          : undefined;
       const next =
-        (welcome
-          ? { track: welcome, cursor: (queue.indexOf(welcome) + 1) % queue.length }
-          : null) ??
         nextEligibleTrack(queue, cursor, history) ??
         (allowReplay && queue.length <= 5
           ? nextEligibleTrack(queue, cursor, queue.length > 1 ? history.slice(-1) : [])
@@ -279,15 +254,6 @@ export async function nextGameMusic(allowReplay = false) {
         deck = candidate;
         cursor = next.cursor;
         history = [...history, next.track.id].slice(-5);
-        if (pendingWelcomeId === next.track.id) {
-          pendingWelcomeId = null;
-          welcomeStatus.set(playerId, "played");
-          try {
-            localStorage.setItem(welcomeKey(playerId), "played");
-          } catch {
-            /* Session still records this start. */
-          }
-        }
         saveQueue();
         const now = graph.context.currentTime;
         gain.gain.setValueAtTime(0, now);
@@ -453,6 +419,12 @@ export function setGameAudioLevels(levels: AudioLevels) {
 export function playGameSound(name: SoundName) {
   const current = graph;
   if (!current || current.context.state !== "running") return;
+  if (name === "health-recharge" || name === "energy-recharge") {
+    const now = Date.now();
+    const previous = lastRechargeSound.get(name);
+    if (previous !== undefined && now - previous < 10000) return;
+    lastRechargeSound.set(name, now);
+  }
   const effect = playableSoundEffects.find((record) => record.sound === name);
   if (effect) {
     const generation = audioGeneration;
@@ -492,6 +464,7 @@ export function playGameSound(name: SoundName) {
 }
 function stopEffects() {
   audioGeneration++;
+  lastRechargeSound.clear();
   for (const source of activeEffects) source.stop();
   activeEffects.clear();
 }
@@ -502,6 +475,11 @@ function playSynthesizedSound(name: SoundName, current: AudioGraph) {
     player: [440, 554.37, 659.25],
     message: [784, 659.25],
     "level-up": [523.25, 659.25, 784],
+    "mission-complete": [523.25, 659.25, 784, 1046.5],
+    reward: [880, 1318.51],
+    "xp-gain": [659.25, 880],
+    "health-recharge": [392, 523.25, 659.25],
+    "energy-recharge": [440, 587.33, 880],
   };
   const now = current.context.currentTime;
   for (const [index, frequency] of patterns[name].entries()) {

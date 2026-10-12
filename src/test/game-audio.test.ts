@@ -1,5 +1,5 @@
 import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
-import { welcomeMusicTrackId, type MusicTrack } from "../lib/music-tracks";
+import type { MusicTrack } from "../lib/music-tracks";
 
 const record: MusicTrack = {
   id: "a",
@@ -98,6 +98,37 @@ async function settle() {
   await new Promise((resolve) => setTimeout(resolve, 0));
 }
 describe("game music playback", () => {
+  it("plays original mission, reward and resource effects without fetching files", async () => {
+    const audio = await import("../lib/game-audio");
+    await audio.enableGameAudio();
+    const oscillator = vi.spyOn(contexts[0]!, "createOscillator");
+    for (const name of [
+      "mission-complete",
+      "reward",
+      "xp-gain",
+      "health-recharge",
+      "energy-recharge",
+    ] as const)
+      audio.playGameSound(name);
+    expect(oscillator).toHaveBeenCalledTimes(14);
+    expect(fetch).not.toHaveBeenCalled();
+    await audio.disableGameAudio();
+    audio.playGameSound("mission-complete");
+    expect(oscillator).toHaveBeenCalledTimes(14);
+  });
+  it("limits recharge cues during repeated recovery ticks", async () => {
+    const audio = await import("../lib/game-audio");
+    await audio.enableGameAudio();
+    const oscillator = vi.spyOn(contexts[0]!, "createOscillator");
+    const time = vi.spyOn(Date, "now").mockReturnValue(1000);
+    audio.playGameSound("health-recharge");
+    audio.playGameSound("health-recharge");
+    expect(oscillator).toHaveBeenCalledTimes(3);
+    time.mockReturnValue(11000);
+    audio.playGameSound("health-recharge");
+    expect(oscillator).toHaveBeenCalledTimes(6);
+    await audio.disableGameAudio();
+  });
   it("primes login silently and automatically starts once the character is ready", async () => {
     catalog.tracks = [record];
     const audio = await import("../lib/game-audio");
@@ -156,48 +187,6 @@ describe("game music playback", () => {
     expect(await enabled).toBe(false);
     expect(audio.getMusicState().soundEnabled).toBe(false);
     expect(fetch).not.toHaveBeenCalled();
-    audio.configureGameMusic(null);
-  });
-  it("prioritizes the welcome song after confirmed creation and consumes it only on playback", async () => {
-    catalog.tracks = [
-      { ...record, id: "normal" },
-      { ...record, id: welcomeMusicTrackId },
-    ];
-    const audio = await import("../lib/game-audio");
-    audio.queueCharacterWelcomeMusic("new-character");
-    audio.configureGameMusic("new-character");
-    expect(localStorage.getItem("osogbo-welcome-music-v1:new-character")).toBe("pending");
-    expect(fetch).not.toHaveBeenCalled();
-    await audio.enableGameAudio();
-    await settle();
-    expect(audio.getMusicState().track?.id).toBe(welcomeMusicTrackId);
-    expect(localStorage.getItem("osogbo-welcome-music-v1:new-character")).toBe("played");
-    audio.queueCharacterWelcomeMusic("new-character");
-    await audio.nextGameMusic(true);
-    expect(audio.getMusicState().track?.id).toBe("normal");
-    audio.configureGameMusic(null);
-  });
-  it("retains the welcome marker if sound is turned off during loading", async () => {
-    catalog.tracks = [{ ...record, id: welcomeMusicTrackId }];
-    let finish!: (value: { ok: boolean; blob: () => Promise<Blob> }) => void;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(
-        () =>
-          new Promise((resolve) => {
-            finish = resolve;
-          }),
-      ),
-    );
-    const audio = await import("../lib/game-audio");
-    audio.queueCharacterWelcomeMusic("new-character");
-    audio.configureGameMusic("new-character");
-    await audio.enableGameAudio();
-    await audio.disableGameAudio();
-    finish({ ok: true, blob: async () => new Blob(["test"]) });
-    await settle();
-    expect(localStorage.getItem("osogbo-welcome-music-v1:new-character")).toBe("pending");
-    expect(media).toHaveLength(0);
     audio.configureGameMusic(null);
   });
   it("previews the UI effect through the synthesized effects bus when enabled", async () => {

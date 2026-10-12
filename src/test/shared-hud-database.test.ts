@@ -191,6 +191,159 @@ describe("shared HUD database acceptance", () => {
     expect(again.rows[0]!.result.duplicate).toBe(true);
   });
 
+  it("validates, completes, and cools down every placed home furniture action", async () => {
+    const furnitureActions = [
+      ["sofa", "relax_sofa", "lounge"],
+      ["bed", "sleep", "bedroom"],
+      ["stove", "cook", "kitchen"],
+      ["shower", "shower", "bathroom"],
+      ["toilet", "toilet", "bathroom"],
+      ["computer", "study_computer", "study"],
+      ["television", "watch_tv", "lounge"],
+      ["plant", "tend_plant", "dining"],
+    ] as const;
+    await command("open");
+    const priorCharacter = await db.query<{
+      energy: number;
+      hunger: number;
+      happiness: number;
+      social: number;
+      current_location_id: string;
+      game_day: number;
+      game_time_hour: number;
+      game_time_minute: number;
+      game_weekday: number;
+    }>(
+      "select energy,hunger,happiness,social,current_location_id,game_day,game_time_hour,game_time_minute,game_weekday from public.characters where user_id=$1",
+      [uid],
+    );
+    const priorSimulation = await db.query<{
+      needs: Record<string, number>;
+      character_snapshot: Record<string, number>;
+      personal_time: Record<string, number>;
+      character_time: Record<string, number>;
+    }>(
+      "select needs,character_snapshot,personal_time,character_time from public.character_simulations where character_id=public._my_character_id()",
+    );
+    const priorHome = await db.query<{ payload: Record<string, unknown> }>(
+      "select payload from public.character_home_saves where character_id=public._my_character_id()",
+    );
+    try {
+      await db.exec(
+        "update public.characters set current_location_id=(select id from public.locations where slug='residential')",
+      );
+      let latest = await command("open");
+      for (const [itemId, action, room] of furnitureActions) {
+        const payload = {
+          layoutId: "family-courtyard",
+          room,
+          x: 0,
+          y: 0,
+          exterior: null,
+          furniture: [{ id: `${itemId}-test`, itemId, room, x: 0, y: 0, rotation: 0 }],
+          storage: [],
+          upgrades: [],
+          needs: { energy: 70, fun: 50, hygiene: 70, bladder: 30, hunger: 60, skill: 0 },
+        };
+        await db.query(
+          `insert into public.character_home_saves(character_id,user_id,payload)
+         values(public._my_character_id(),$1,$2::jsonb)
+         on conflict(character_id) do update set payload=excluded.payload`,
+          [uid, JSON.stringify(payload)],
+        );
+        const request = `furniture-${action}`;
+        latest = await command("start", action, request);
+        expect(latest.action).toBe(action);
+        latest = await command("complete", action, request);
+        expect(latest.action).toBeNull();
+        await expect(command("start", action, `${request}-cooldown`)).rejects.toThrow(
+          /cooling down/,
+        );
+      }
+      const receipts = await db.query<{ count: number }>(
+        "select count(*)::int as count from public.simulation_action_receipts where request_id like 'furniture-%'",
+      );
+      expect(receipts.rows[0]!.count).toBe(furnitureActions.length);
+
+      const noFurniture = {
+        layoutId: "family-courtyard",
+        room: "kitchen",
+        x: 0,
+        y: 0,
+        exterior: null,
+        furniture: [],
+        storage: [],
+        upgrades: [],
+        needs: { energy: 70, fun: 50, hygiene: 70, bladder: 30, hunger: 60, skill: 0 },
+      };
+      await db.query(
+        "update public.character_home_saves set payload=$1::jsonb where character_id=public._my_character_id()",
+        [JSON.stringify(noFurniture)],
+      );
+      await expect(command("start", "cook", "furniture-invalid-missing")).rejects.toThrow(/stove/);
+
+      const stove = {
+        ...noFurniture,
+        furniture: [
+          { id: "stove-test", itemId: "stove", room: "kitchen", x: 0, y: 0, rotation: 0 },
+        ],
+      };
+      await db.query(
+        "update public.character_home_saves set payload=$1::jsonb where character_id=public._my_character_id()",
+        [JSON.stringify(stove)],
+      );
+      await db.exec(
+        "update public.characters set current_location_id=(select id from public.locations where slug='city-centre')",
+      );
+      await expect(command("start", "cook", "furniture-invalid-location")).rejects.toThrow(
+        /Travel home/,
+      );
+    } finally {
+      await db.query(
+        "delete from public.simulation_action_receipts where character_id=public._my_character_id() and request_id like 'furniture-%'",
+      );
+      if (priorHome.rows[0]) {
+        await db.query(
+          "update public.character_home_saves set payload=$1::jsonb where character_id=public._my_character_id()",
+          [JSON.stringify(priorHome.rows[0].payload)],
+        );
+      } else {
+        await db.exec(
+          "delete from public.character_home_saves where character_id=public._my_character_id()",
+        );
+      }
+      const oldCharacter = priorCharacter.rows[0]!;
+      await db.query(
+        `update public.characters set energy=$2,hunger=$3,happiness=$4,social=$5,current_location_id=$6,
+          game_day=$7,game_time_hour=$8,game_time_minute=$9,game_weekday=$10 where user_id=$1`,
+        [
+          uid,
+          oldCharacter.energy,
+          oldCharacter.hunger,
+          oldCharacter.happiness,
+          oldCharacter.social,
+          oldCharacter.current_location_id,
+          oldCharacter.game_day,
+          oldCharacter.game_time_hour,
+          oldCharacter.game_time_minute,
+          oldCharacter.game_weekday,
+        ],
+      );
+      const oldSimulation = priorSimulation.rows[0]!;
+      await db.query(
+        `update public.character_simulations set needs=$1::jsonb,character_snapshot=$2::jsonb,
+          personal_time=$3::jsonb,character_time=$4::jsonb,active_action=null,active_request=null,
+          action_location=null,heartbeat_at=now() where character_id=public._my_character_id()`,
+        [
+          JSON.stringify(oldSimulation.needs),
+          JSON.stringify(oldSimulation.character_snapshot),
+          JSON.stringify(oldSimulation.personal_time),
+          JSON.stringify(oldSimulation.character_time),
+        ],
+      );
+    }
+  });
+
   it("enforces ownership and prevents direct writes under the authenticated role", async () => {
     await db.exec("set role authenticated");
     await expect(db.query("update public.character_simulations set speed=2")).rejects.toThrow(

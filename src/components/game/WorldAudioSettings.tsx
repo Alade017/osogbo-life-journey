@@ -1,106 +1,52 @@
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import {
   disableGameAudio,
   enableGameAudio,
-  isGameAudioActive,
-  playGameSound,
-  readGameAudioLevels,
-  setGameAudioLevels,
   subscribeMusic,
   getMusicState,
   getServerMusicState,
 } from "@/lib/game-audio";
 
-type Levels = ReturnType<typeof readGameAudioLevels>;
-
 export function WorldAudioSettings({
-  enabled,
   onEnabledChange,
 }: {
   enabled: boolean;
   onEnabledChange: (enabled: boolean) => void;
 }) {
-  const [levels, setLevels] = useState<Levels>(readGameAudioLevels);
-  const [audioUnavailable, setAudioUnavailable] = useState(false);
-  const [audioActive, setAudioActive] = useState(false);
-  const music = useSyncExternalStore(subscribeMusic, getMusicState, getServerMusicState);
-
-  useEffect(() => {
-    setAudioActive(music.soundEnabled && isGameAudioActive());
-  }, [music.soundEnabled]);
-
-  function setLevel(key: keyof Levels, value: number) {
-    const next = { ...levels, [key]: value };
-    setLevels(next);
-    setGameAudioLevels(next);
-  }
-
-  async function toggleAudio() {
-    if (audioActive) {
-      await disableGameAudio();
-      setAudioActive(false);
-      onEnabledChange(false);
-      return;
+  const audio = useSyncExternalStore(subscribeMusic, getMusicState, getServerMusicState);
+  const [busy, setBusy] = useState(false);
+  const [unavailable, setUnavailable] = useState(false);
+  async function toggle() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      if (audio.soundEnabled) {
+        await disableGameAudio();
+        onEnabledChange(false);
+      } else {
+        const active = await enableGameAudio();
+        setUnavailable(!active);
+        if (active) onEnabledChange(true);
+      }
+    } finally {
+      setBusy(false);
     }
-    const active = await enableGameAudio(levels);
-    setAudioActive(active);
-    setAudioUnavailable(!active);
-    if (active) onEnabledChange(true);
   }
-
-  function previewEffect() {
-    playGameSound("ui");
-  }
-
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">
-        Music and game sounds start when you enter the game. If your browser blocks playback, click
-        or tap to enable sound.
-      </p>
-      <div className="flex flex-wrap items-center gap-3">
-        <Button variant={audioActive ? "outline" : "default"} onClick={() => void toggleAudio()}>
-          {audioActive ? "Turn sound off" : "Enable sound"}
-        </Button>
-        {!audioActive && enabled && (
-          <span className="text-xs text-muted-foreground">
-            Your sound preference is saved · enable audio when ready
-          </span>
-        )}
-        {audioUnavailable && (
-          <span role="status" className="text-sm text-muted-foreground">
-            Audio is unavailable in this browser; the game still works normally.
-          </span>
-        )}
-      </div>
-      <Button variant="outline" disabled={!audioActive} onClick={previewEffect}>
-        Preview game sound
+    <div className="space-y-3">
+      <Button
+        variant={audio.soundEnabled ? "outline" : "default"}
+        disabled={busy}
+        onClick={() => void toggle()}
+      >
+        {audio.soundEnabled ? "Turn sound off" : "Enable sound"}
       </Button>
-      {(["master", "music", "effects"] as const).map((key) => (
-        <label key={key} className="grid grid-cols-[8rem_1fr_3rem] items-center gap-3 text-sm">
-          <span className="capitalize">
-            {key === "effects" ? "Effects" : key === "master" ? "Master" : "Music"}
-          </span>
-          <input
-            type="range"
-            min={0}
-            max={1}
-            step={0.05}
-            value={levels[key]}
-            aria-label={`${key} volume`}
-            onChange={(event) => setLevel(key, Number(event.target.value))}
-          />
-          <span className="tabular-nums">{Math.round(levels[key] * 100)}%</span>
-        </label>
-      ))}
-      <p role="status" className="text-sm text-muted-foreground">
-        {music.status}
-      </p>
-      <p className="text-xs text-muted-foreground">
-        Tracks are cached after loading for offline listening in this open game. Browser storage may
-        be cleared or evicted. Synthesized city ambience and effects remain available.
-      </p>
+      {unavailable && (
+        <p role="status" className="text-sm text-muted-foreground">
+          Sound is unavailable in this browser.
+        </p>
+      )}
     </div>
   );
 }

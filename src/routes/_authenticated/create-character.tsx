@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { q } from "@/lib/game";
-import { queueCharacterWelcomeMusic } from "@/lib/game-audio";
 import {
   Avatar,
   HAIR_COLORS,
@@ -145,8 +144,6 @@ function CreateCharacter() {
       } as never);
       if (error) throw error;
       await qc.invalidateQueries();
-      const created = qc.getQueryData(q.character().queryKey);
-      if (created?.id) queueCharacterWelcomeMusic(created.id);
       toast.success(`Welcome to Osogbo, ${cleanName}!`);
       navigate({ to: "/home", search: { visit: undefined } });
     } catch (error) {

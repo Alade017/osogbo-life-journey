@@ -10,7 +10,7 @@
 - Certificate download timestamp: 2026-10-12 01:24:55 UTC; reviewed 2026-10-12.
 - Duration measured from MP3 frames: 157.544 seconds.
 
-## Sun over Osogbo — accepted from user-confirmed generation record
+## Sun over Osogbo — removed from the game
 
 - Creator: project owner, generated using Eleven Music.
 - Source supplied by user: https://elevenlabs.io/music/songs/U3GsqG0NKAcAFW9nCkgM/embed
@@ -23,11 +23,9 @@
 - Artist label: OSOGBO LIFE (Eleven Music), identifying project origin rather than a named performer.
 - No embedded player or remote song downloads are used.
 
-After successful server character creation, a local marker queues this song for
-the first sound-enabled playback for that character. The marker is consumed only
-after playback starts successfully; returning logins do not requeue it. This is
-device-local persistence, not a new account-wide database field. Existing shuffle,
-ten-second popup and five-second track gaps continue afterward.
+Removed at the user's request on 2026-10-12. Its manifest entry, public playback
+file, welcome-song queue and active credits entry are removed. This record is
+retained only as historical license documentation, not as an active asset.
 
 ## Pixabay audio 537751 — accepted
 
@@ -68,10 +66,18 @@ playback, the first trusted in-game click, tap or keypress retries it. Sound-off
 removes this fallback until the next game entry. Saved volumes are retained.
 
 At a track's end, wait five seconds before
-the next track. Pause, sound-off, Next, sign-out and player changes cancel any
+the next track. Sound-off, sign-out and player changes cancel any
 pending restart. For libraries of five tracks or fewer, another seeded cycle
 is allowed once eligible tracks are exhausted. Automatic last-five avoidance
-continues for larger libraries. Track starts show a ten-second notification;
-playback controls live in this popup, which can be reopened through the small
-music button after dismissal. Settings keeps volume and sound-off controls,
-without track names or credits text. License records and credits stay in files.
+continues for larger libraries. Music plays without visible notifications,
+track names, playback controls or sliders. Settings offers only Enable sound /
+Turn sound off. License records and credits stay in files.
+
+Original synthesized effects cover UI, interactions, messages, XP gain, mission
+completion, reward collection, health recharge and energy recharge. These use
+no third-party recordings. The existing licensed Mixkit level-up file remains
+available with a synthesized fallback. Character and mission effects observe
+confirmed query data, skipping initial loads, character switches and unchanged
+refreshes. Health/energy recovery needs an increase of at least one point and
+has a ten-second per-effect cooldown. Level-up takes priority over XP gain;
+health recovery takes priority over energy recovery in the same snapshot.

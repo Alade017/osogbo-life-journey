@@ -50,6 +50,7 @@ describe("walkable home experience", () => {
       />,
     );
     expect(screen.getByText(/visiting Ayo's saved layout/i)).toBeInTheDocument();
+    expect(screen.queryByText("hunger")).not.toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: /build mode|enter home/i }),
     ).not.toBeInTheDocument();
@@ -111,5 +112,51 @@ describe("walkable home experience", () => {
         }),
       ),
     );
+  });
+
+  it("routes furniture use to the server and does not mutate saved needs", async () => {
+    const onSave = vi.fn();
+    const onFurnitureAction = vi.fn().mockResolvedValue(null);
+    const initialSave = {
+      ...DEFAULT_HOUSING_SAVE,
+      furniture: [
+        { id: "sofa-1", itemId: "sofa", room: "lounge" as const, x: 0, y: 0, rotation: 0 as const },
+      ],
+    };
+    render(
+      <HomeInterior
+        initialSave={initialSave}
+        onSave={onSave}
+        onFurnitureAction={onFurnitureAction}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /enter home/i }));
+    fireEvent.click(await screen.findByLabelText("1, 1 Lounge sofa"));
+    await waitFor(() => expect(onFurnitureAction).toHaveBeenCalledWith("relax_sofa"));
+    for (const [save] of onSave.mock.calls)
+      expect((save as { needs: unknown }).needs).toEqual(initialSave.needs);
+    expect(await screen.findByText("You took a moment to relax.")).toBeInTheDocument();
+  });
+
+  it("shows a server rejection without changing housing needs", async () => {
+    const onSave = vi.fn();
+    const initialSave = {
+      ...DEFAULT_HOUSING_SAVE,
+      furniture: [
+        { id: "sofa-1", itemId: "sofa", room: "lounge" as const, x: 0, y: 0, rotation: 0 as const },
+      ],
+    };
+    render(
+      <HomeInterior
+        initialSave={initialSave}
+        onSave={onSave}
+        onFurnitureAction={vi.fn().mockResolvedValue("Travel home before this activity")}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /enter home/i }));
+    fireEvent.click(await screen.findByLabelText("1, 1 Lounge sofa"));
+    expect(await screen.findByText("Travel home before this activity")).toBeInTheDocument();
+    for (const [save] of onSave.mock.calls)
+      expect((save as { needs: unknown }).needs).toEqual(initialSave.needs);
   });
 });

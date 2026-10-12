@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   type MusicTrack,
+  musicTracks,
   validMusicTracks,
   shuffledTracks,
   nextEligibleTrack,
@@ -20,6 +21,10 @@ const record: MusicTrack = {
 };
 const catalog = Array.from({ length: 8 }, (_, i) => ({ ...record, id: String(i) }));
 describe("local music catalog", () => {
+  it("excludes the removed Sun over Osogbo recording", () => {
+    expect(musicTracks.some((track) => track.title === "Sun over Osogbo")).toBe(false);
+    expect(musicTracks.some((track) => track.filePath.includes("sun-over-osogbo"))).toBe(false);
+  });
   it("supports an empty catalog", () => {
     expect(validMusicTracks([])).toEqual([]);
     expect(shuffledTracks([], "player")).toEqual([]);

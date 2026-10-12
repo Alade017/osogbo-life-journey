@@ -25,6 +25,8 @@ import {
 import { parseHousingSave } from "@/lib/housing-service";
 import { readLocalHousingSave, writeLocalHousingSave } from "@/lib/save-storage";
 import type { HouseRoomId } from "@/components/game/housing/HouseScene";
+import { ACTION_CATALOG, type LifeActionId, type Needs } from "@/lib/life-simulation";
+import { homeFurnitureAction } from "@/lib/home-furniture-actions";
 
 const HouseScene = import.meta.env.SSR
   ? (_props: {
@@ -62,6 +64,8 @@ type Props = {
   onLeave?: () => void;
   onPurchaseUpgrade?: (args: { roomId: RoomId; upgradeId: string }) => Promise<HousingSave>;
   onPurchaseFurniture?: (args: { itemId: string }) => Promise<HousingSave>;
+  onFurnitureAction?: (action: LifeActionId) => Promise<string | null>;
+  authoritativeNeeds?: Needs;
 };
 
 function loadSave(key: string): HousingSave {
@@ -79,6 +83,8 @@ export function HomeInterior({
   onLeave,
   onPurchaseUpgrade,
   onPurchaseFurniture,
+  onFurnitureAction,
+  authoritativeNeeds,
 }: Props) {
   const [saved, setSaved] = useState(() => initialSave ?? loadSave(saveKey));
   const onSaveRef = useRef(onSave);
@@ -92,6 +98,7 @@ export function HomeInterior({
   const [notice, setNotice] = useState("");
   const [category, setCategory] = useState("all");
   const [purchasingItemId, setPurchasingItemId] = useState<string | null>(null);
+  const [interactingItemId, setInteractingItemId] = useState<string | null>(null);
   useEffect(() => {
     onSaveRef.current = onSave;
   }, [onSave]);
@@ -233,7 +240,7 @@ export function HomeInterior({
     if (!selectedItem && !movingItemId) return;
     setPreviewRotation((current) => ((current + 90) % 360) as 0 | 90 | 180 | 270);
   };
-  const interact = (placed: PlacedFurniture) => {
+  const interact = async (placed: PlacedFurniture) => {
     if (readOnly) {
       setNotice("This is a read-only saved home visit.");
       return;
@@ -246,16 +253,22 @@ export function HomeInterior({
       );
       return;
     }
-    const delta = item.effects;
-    const needs = { ...saved.needs };
-    for (const [key, value] of Object.entries(delta))
-      needs[key] = Math.min(100, (needs[key] ?? 0) + (value ?? 0));
-    save({ ...saved, needs });
-    setNotice(
-      `${item.name}: ${Object.keys(delta)
-        .map((key) => `${key} +${delta[key as keyof typeof delta]}`)
-        .join(" · ")}`,
-    );
+    const action = homeFurnitureAction(placed.itemId);
+    if (!action || !onFurnitureAction) {
+      setNotice("Home activities are unavailable until the simulation reconnects.");
+      return;
+    }
+    if (interactingItemId) return;
+    setInteractingItemId(placed.id);
+    setNotice(`${item.name}: checking your home and activity status...`);
+    try {
+      const error = await onFurnitureAction(action);
+      setNotice(error ?? ACTION_CATALOG[action].outcome);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "That home activity could not start.");
+    } finally {
+      setInteractingItemId(null);
+    }
   };
   const storeItem = (placed: PlacedFurniture) => {
     save({
@@ -486,9 +499,11 @@ export function HomeInterior({
               ? `Move around the ${room.name.toLowerCase()} and use owned furniture. The room has ${room.upgrades.length} upgrade options.`
               : layout.description}
           </p>
-          {inside ? (
+          {inside && readOnly ? (
+            <p className="house-milestone-note">Character needs are private to the home owner.</p>
+          ) : inside ? (
             <div className="home-needs">
-              {Object.entries(saved.needs)
+              {Object.entries(authoritativeNeeds ?? saved.needs)
                 .filter(([key]) => key !== "skill")
                 .map(([key, value]) => (
                   <div key={key}>

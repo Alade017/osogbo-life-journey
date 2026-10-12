@@ -9,5 +9,5 @@ const credits = tracks.map(
 );
 writeFileSync(
   new URL("../public/audio/CREDITS.md", import.meta.url),
-  `# OSOGBO LIFE audio credits\n\n${credits.length ? credits.join("\n") : "No licensed recordings have been added.\n"}\nCity ambience and existing game effects are original synthesized audio.\n`,
+  `# OSOGBO LIFE audio credits\n\n${credits.length ? credits.join("\n") : "No licensed recordings have been added.\n"}\nCity ambience and UI, interaction, player, message, mission completion, reward, XP gain, health recharge and energy recharge cues are original synthesized audio, with no third-party recordings.\n`,
 );

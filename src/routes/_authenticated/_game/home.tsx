@@ -22,6 +22,8 @@ import { isPowerOutageAt } from "@/lib/world-simulation";
 import { parseHousingSave } from "@/lib/housing-service";
 import { useMutation } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { useGameTime } from "@/components/game/GameTimeProvider";
+import type { LifeActionId } from "@/lib/life-simulation";
 
 export const Route = createFileRoute("/_authenticated/_game/home")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -85,6 +87,13 @@ function FriendHomeVisit({ characterId }: { characterId: string }) {
 
 function MyCityHome() {
   const now = useLiveClock();
+  const {
+    simulation,
+    ready: simulationReady,
+    busy: simulationBusy,
+    start,
+    complete,
+  } = useGameTime();
   const world = useWorldClock();
   const { data: character } = useQuery(q.character());
   const homeQuery = useQuery({ ...q.homeSave(), enabled: !!character });
@@ -301,6 +310,29 @@ function MyCityHome() {
     [cloudSave, queryClient, refetchHomeSave, syncStatus],
   );
 
+  const performFurnitureAction = useCallback(
+    async (action: LifeActionId) => {
+      if (!cloudSave || syncStatus !== "saved")
+        return "Save your home layout to the cloud before using its furniture.";
+      if (!simulationReady || simulationBusy)
+        return "Your personal simulation is syncing. Try again in a moment.";
+      if (simulation.locationType !== "home") return "Travel home before using furniture.";
+      const requestId = `home-${crypto.randomUUID()}`;
+      const startError = await start(action, requestId);
+      if (startError) return startError;
+      return complete(requestId);
+    },
+    [
+      cloudSave,
+      syncStatus,
+      simulationReady,
+      simulationBusy,
+      simulation.locationType,
+      start,
+      complete,
+    ],
+  );
+
   const synchronizedLocalKey = useRef("");
   useEffect(() => {
     if (!character || homeQuery.isLoading || homeQuery.isError || !localSave || !localIsNewer)
@@ -462,6 +494,8 @@ function MyCityHome() {
                 : {})}
             onSave={scheduleSave}
             onPurchaseUpgrade={purchaseUpgrade}
+            onFurnitureAction={performFurnitureAction}
+            authoritativeNeeds={simulation.needs}
             {...(cloudSave && syncStatus === "saved"
               ? { onPurchaseFurniture: purchaseFurniture }
               : {})}

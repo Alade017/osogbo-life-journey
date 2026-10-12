@@ -1,6 +1,16 @@
 import { type MusicTrack, validMusicTracks } from "./music-tracks.ts";
 
-export type SoundName = "ui" | "interaction" | "player" | "message" | "level-up";
+export type SoundName =
+  | "ui"
+  | "interaction"
+  | "player"
+  | "message"
+  | "level-up"
+  | "mission-complete"
+  | "reward"
+  | "xp-gain"
+  | "health-recharge"
+  | "energy-recharge";
 export type SoundEffect = MusicTrack & { sound: SoundName };
 export const soundEffects: SoundEffect[] = [
   {
@@ -25,7 +35,18 @@ export function validSoundEffects(records: readonly SoundEffect[]): SoundEffect[
   return records.filter((record) => {
     if (!valid.has(record)) return false;
     if (
-      !["ui", "interaction", "player", "message", "level-up"].includes(record.sound) ||
+      ![
+        "ui",
+        "interaction",
+        "player",
+        "message",
+        "level-up",
+        "mission-complete",
+        "reward",
+        "xp-gain",
+        "health-recharge",
+        "energy-recharge",
+      ].includes(record.sound) ||
       sounds.has(record.sound)
     ) {
       console.warn("Skipping invalid or duplicate sound mapping:", record.id);

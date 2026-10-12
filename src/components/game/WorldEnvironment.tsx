@@ -14,7 +14,6 @@ import {
 } from "@/lib/world-simulation";
 import { toast } from "sonner";
 import { useGameAudioEvents } from "@/hooks/use-game-audio-events";
-import { MusicNowPlayingToast } from "@/components/game/MusicNowPlayingToast";
 
 export function WorldEnvironment() {
   useGameAudioEvents();
@@ -48,7 +47,6 @@ export function WorldEnvironment() {
   if (!world.data)
     return (
       <div className="world-environment" role="status">
-        <MusicNowPlayingToast />
         <LiveOsogboWeather />
         {world.isError ? "City conditions unavailable" : "Connecting to the city clock…"}
         {world.isError && (
@@ -66,7 +64,6 @@ export function WorldEnvironment() {
       data-world-weather={weather}
       aria-label="Current world conditions"
     >
-      <MusicNowPlayingToast />
       <LiveOsogboWeather />
       <span className="world-clock-label">CITY · {formatGameTime(time)}</span>
       {outage && (

@@ -21,6 +21,9 @@ export type LifeActionId =
   | "toilet"
   | "sleep"
   | "watch_tv"
+  | "relax_sofa"
+  | "study_computer"
+  | "tend_plant"
   | "study"
   | "exercise"
   | "socialize"
@@ -147,6 +150,46 @@ const ACTION_LIST: LifeAction[] = [
     skillXp: 0,
     animation: "watching",
     outcome: "You had some time to unwind.",
+  },
+  {
+    id: "relax_sofa",
+    name: "Relax on the sofa",
+    durationMinutes: 20,
+    requiredLocation: "home",
+    requiredFurniture: "sofa",
+    cost: 0,
+    reward: 0,
+    needs: { fun: 5 },
+    skillXp: 0,
+    animation: "watching",
+    outcome: "You took a moment to relax.",
+  },
+  {
+    id: "study_computer",
+    name: "Study at the computer",
+    durationMinutes: 30,
+    requiredLocation: "home",
+    requiredFurniture: "computer",
+    cost: 0,
+    reward: 0,
+    needs: { fun: -2, energy: -4 },
+    skill: "learning",
+    skillXp: 8,
+    animation: "studying",
+    outcome: "You made progress on your studies.",
+  },
+  {
+    id: "tend_plant",
+    name: "Tend the plant",
+    durationMinutes: 5,
+    requiredLocation: "home",
+    requiredFurniture: "plant",
+    cost: 0,
+    reward: 0,
+    needs: { fun: 2 },
+    skillXp: 0,
+    animation: "watching",
+    outcome: "You cared for your home plant.",
   },
   {
     id: "study",
