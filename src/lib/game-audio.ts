@@ -25,11 +25,17 @@ export const playableSoundEffects = validSoundEffects(soundEffects);
 let audioGeneration = 0;
 const effectsBuffers = new Map<string, Promise<AudioBuffer>>();
 const activeEffects = new Set<AudioBufferSourceNode>();
-type MusicState = { track: MusicTrack | null; status: string; playing: boolean };
+type MusicState = {
+  track: MusicTrack | null;
+  status: string;
+  playing: boolean;
+  playbackId: number;
+};
 const emptyMusicState: MusicState = {
   track: null,
   status: "No licensed music added yet.",
   playing: false,
+  playbackId: 0,
 };
 let musicState = emptyMusicState;
 const musicListeners = new Set<() => void>();
@@ -51,6 +57,11 @@ let cursor = 0;
 let history: string[] = [];
 let revision = 0;
 let loading = false;
+let restartTimer: ReturnType<typeof setTimeout> | null = null;
+function cancelMusicRestart() {
+  if (restartTimer !== null) clearTimeout(restartTimer);
+  restartTimer = null;
+}
 type Deck = {
   audio: HTMLAudioElement;
   gain: GainNode;
@@ -128,6 +139,7 @@ async function localAudioUrl(track: MusicTrack): Promise<string> {
 }
 
 export function pauseGameMusic() {
+  cancelMusicRestart();
   revision++;
   loading = false;
   for (const value of decks) {
@@ -143,6 +155,7 @@ export function pauseGameMusic() {
 
 export async function resumeGameMusic(allowReplay = true) {
   if (!isGameAudioActive() || !playerId || loading) return;
+  cancelMusicRestart();
   if (!deck) {
     await nextGameMusic(allowReplay);
     return;
@@ -154,7 +167,7 @@ export async function resumeGameMusic(allowReplay = true) {
       deck?.audio.pause();
       return;
     }
-    publishMusic({ playing: true, status: "Playing" });
+    publishMusic({ playing: true, status: "Playing", playbackId: musicState.playbackId + 1 });
   } catch {
     publishMusic({ playing: false, status: "Press resume to allow music playback." });
   }
@@ -162,6 +175,7 @@ export async function resumeGameMusic(allowReplay = true) {
 
 export async function nextGameMusic(allowReplay = false) {
   if (!graph || !isGameAudioActive() || !playerId || loading || !queue.length) return;
+  cancelMusicRestart();
   loading = true;
   const token = ++revision;
   const failed: string[] = [];
@@ -216,20 +230,22 @@ export async function nextGameMusic(allowReplay = false) {
           if (deck?.audio === audio) {
             disposeDeck(deck);
             deck = null;
-            publishMusic({ playing: false });
-            void nextGameMusic();
+            const endedRevision = revision;
+            publishMusic({ playing: false, status: "Next track in five seconds." });
+            cancelMusicRestart();
+            restartTimer = setTimeout(() => {
+              restartTimer = null;
+              if (endedRevision === revision && isGameAudioActive() && playerId)
+                void nextGameMusic(true);
+            }, 5000);
           }
         };
-        audio.ontimeupdate = () => {
-          if (
-            deck?.audio === audio &&
-            Number.isFinite(audio.duration) &&
-            audio.duration - audio.currentTime <= 1 &&
-            nextEligibleTrack(queue, cursor, history)
-          )
-            void nextGameMusic();
-        };
-        publishMusic({ track: next.track, playing: true, status: "Playing" });
+        publishMusic({
+          track: next.track,
+          playing: true,
+          status: "Playing",
+          playbackId: musicState.playbackId + 1,
+        });
         return;
       } catch {
         if (candidate) disposeDeck(candidate);

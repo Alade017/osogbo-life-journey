@@ -1,5 +1,14 @@
 # OSOGBO LIFE audio credits
 
+## No Copyright Music
+
+Artist: SigmaMusicArt
+Uploader: sigmamusicart
+Source: https://pixabay.com/music/future-bass-no-copyright-music-537751/
+License: Pixabay Content License (https://pixabay.com/service/license-summary/)
+License checked: 2026-10-12
+Attribution: Music by SigmaMusicArt via Pixabay. Supplied license certificate for audio ID 537751 reviewed on 2026-10-12; download timestamp 2026-10-11 23:31:08 UTC. Certificate identifies the license under https://pixabay.com/service/terms/.
+
 ## Everyone Is So Alive
 
 Artist: Loyalty Freak Music

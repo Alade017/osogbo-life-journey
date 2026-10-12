@@ -15,6 +15,20 @@ export type MusicTrack = {
 // Only user-supplied files with complete license records belong here.
 export const musicTracks: MusicTrack[] = [
   {
+    id: "pixabay-sigmamusicart-537751",
+    title: "No Copyright Music",
+    artist: "SigmaMusicArt",
+    filePath: "/audio/music/sigmamusicart-no-copyright-music-537751.mp3",
+    duration: 123.24,
+    sourceUrl: "https://pixabay.com/music/future-bass-no-copyright-music-537751/",
+    uploader: "sigmamusicart",
+    licenseName: "Pixabay Content License",
+    licenseUrl: "https://pixabay.com/service/license-summary/",
+    licenseCheckedAt: "2026-10-12",
+    attribution:
+      "Music by SigmaMusicArt via Pixabay. Supplied license certificate for audio ID 537751 reviewed on 2026-10-12; download timestamp 2026-10-11 23:31:08 UTC. Certificate identifies the license under https://pixabay.com/service/terms/.",
+  },
+  {
     id: "loyalty-freak-everyone-is-so-alive",
     title: "Everyone Is So Alive",
     artist: "Loyalty Freak Music",

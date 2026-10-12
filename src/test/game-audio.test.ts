@@ -128,6 +128,7 @@ describe("game music playback", () => {
     vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
   });
   afterEach(() => {
+    vi.useRealTimers();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
@@ -183,7 +184,7 @@ describe("game music playback", () => {
     media[0]!.onended?.();
     await settle();
     expect(media).toHaveLength(1);
-    expect(audio.getMusicState().status).toContain("No eligible tracks");
+    expect(audio.getMusicState().status).toContain("Next track in five seconds");
     await audio.resumeGameMusic();
     expect(media).toHaveLength(2);
     expect(audio.getMusicState().playing).toBe(true);
@@ -191,6 +192,40 @@ describe("game music playback", () => {
     await settle();
     expect(media).toHaveLength(2);
     expect(audio.getMusicState().playing).toBe(false);
+    audio.configureGameMusic(null);
+  });
+  it("waits five seconds before automatically replaying and supports repeated cycles", async () => {
+    catalog.tracks = [record];
+    const audio = await import("../lib/game-audio");
+    audio.configureGameMusic("player");
+    await audio.enableGameAudio();
+    await settle();
+    vi.useFakeTimers();
+    media[0]!.onended?.();
+    await vi.advanceTimersByTimeAsync(4999);
+    expect(media).toHaveLength(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(media).toHaveLength(2);
+    expect(audio.getMusicState().playbackId).toBe(2);
+    media[1]!.onended?.();
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(media).toHaveLength(3);
+    audio.configureGameMusic(null);
+  });
+  it.each(["pause", "off", "player"])("cancels restart on %s", async (mode) => {
+    catalog.tracks = [record];
+    const audio = await import("../lib/game-audio");
+    audio.configureGameMusic("player");
+    await audio.enableGameAudio();
+    await settle();
+    vi.useFakeTimers();
+    media[0]!.onended?.();
+    if (mode === "pause") audio.pauseGameMusic();
+    else if (mode === "off") await audio.disableGameAudio();
+    else audio.configureGameMusic(null);
+    await vi.advanceTimersByTimeAsync(6000);
+    expect(media).toHaveLength(1);
+    audio.configureGameMusic(null);
   });
   it("crossfades two sources and preserves the last five after reloading the manager", async () => {
     catalog.tracks = Array.from({ length: 6 }, (_, i) => ({ ...record, id: String(i) }));

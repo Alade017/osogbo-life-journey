@@ -14,7 +14,6 @@ import {
   resumeGameMusic,
   nextGameMusic,
   playableMusicTracks,
-  playableSoundEffects,
 } from "@/lib/game-audio";
 
 type Levels = ReturnType<typeof readGameAudioLevels>;
@@ -100,11 +99,6 @@ export function WorldAudioSettings({
       ))}
       <section className="space-y-3 rounded-xl border border-border p-4" aria-label="Now playing">
         <h4 className="font-semibold">Now playing</h4>
-        {music.track && (
-          <p>
-            {music.track.title} · {music.track.artist}
-          </p>
-        )}
         <p role="status" className="text-sm text-muted-foreground">
           {music.status}
         </p>
@@ -125,33 +119,11 @@ export function WorldAudioSettings({
           </Button>
         </div>
       </section>
-      <details className="text-sm">
-        <summary>Audio credits</summary>
-        {!playableMusicTracks.length && !playableSoundEffects.length && (
-          <p>No licensed recordings have been added.</p>
-        )}
-        {[...playableMusicTracks, ...playableSoundEffects].map((track) => (
-          <div key={track.id} className="py-2">
-            <p>
-              {track.title} · {track.artist}
-            </p>
-            <a href={track.sourceUrl} target="_blank" rel="noreferrer" className="underline">
-              Source
-            </a>
-            {" · "}
-            <a href={track.licenseUrl} target="_blank" rel="noreferrer" className="underline">
-              {track.licenseName}
-            </a>
-            <p>
-              Uploader: {track.uploader} · License checked: {track.licenseCheckedAt}
-            </p>
-            {track.attribution && <p>{track.attribution}</p>}
-          </div>
-        ))}
+      <div className="text-sm">
         <a href="/audio/CREDITS.md" className="underline">
           Credits file
         </a>
-      </details>
+      </div>
       <p className="text-xs text-muted-foreground">
         Tracks are cached after loading for offline listening in this open game. Browser storage may
         be cleared or evicted. Synthesized city ambience and effects remain available.
