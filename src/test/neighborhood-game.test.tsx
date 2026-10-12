@@ -17,6 +17,8 @@ const mocks = vi.hoisted(() => ({
     world_x: 7,
     world_y: 6,
     world_position_revision: 3,
+    appearance: {} as { skin?: number; hair?: number; outfit?: number },
+    gender: "nonbinary",
   },
 }));
 vi.mock("@/lib/game", () => ({
@@ -28,6 +30,7 @@ vi.mock("@/lib/game", () => ({
         { id: "olaiya", slug: "city-centre", name: "Olaiya", map_x: 50, map_y: 50 },
       ],
     }),
+    equipment: () => ({ queryKey: ["equipment"], queryFn: async () => [] }),
   },
   rpc: { savePlayerWorldPosition: mocks.save },
 }));
@@ -51,6 +54,8 @@ beforeEach(() => {
     world_x: 7,
     world_y: 6,
     world_position_revision: 3,
+    appearance: {} as { skin?: number; hair?: number; outfit?: number },
+    gender: "nonbinary",
   };
   mocks.create.mockReturnValue({
     game: { destroy: mocks.destroy },
@@ -60,6 +65,7 @@ beforeEach(() => {
       setTouch: vi.fn(),
       zoom: vi.fn(),
       interact: vi.fn(),
+      playAvatarAction: vi.fn(),
     },
   });
 });
@@ -120,5 +126,16 @@ describe("Phaser to React checkpoint bridge", () => {
     expect(mocks.save).not.toHaveBeenCalled();
     cleanup();
     expect(mocks.destroy).toHaveBeenCalledWith(true);
+  });
+
+  it("passes saved appearance and gender into the Phaser character scene", async () => {
+    mocks.character = {
+      ...mocks.character,
+      appearance: { skin: 5, hair: 4, outfit: 2 },
+      gender: "female",
+    };
+    const bridge = await start();
+    expect(bridge.appearance).toEqual({ skin: 5, hair: 4, outfit: 2 });
+    expect(bridge.gender).toBe("female");
   });
 });

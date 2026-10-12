@@ -12,11 +12,39 @@ import {
   type WorldPoint,
 } from "./neighborhood-model";
 import type { NetworkPlayerSnapshot } from "./multiplayer-state";
+import {
+  type Appearance,
+  type AvatarAnimationState,
+  type AvatarFacing,
+  type AvatarEquipment,
+} from "@/components/game/Avatar";
+import {
+  avatarAnimationKey,
+  avatarClipFrameRange,
+  facingFromMovement,
+  parseSavedAppearance,
+} from "./character-animation";
+import { avatarTextureKey, ensureAvatarTexture } from "./character-texture";
+
+type RemoteActor = {
+  sprite: Phaser.GameObjects.Sprite;
+  label: Phaser.GameObjects.Text;
+  target: WorldPoint;
+  player: NetworkPlayerSnapshot;
+  textureKey: string | null;
+  appearanceKey: string;
+  animationKey: string;
+  facing: AvatarFacing;
+  turning: boolean;
+};
 
 export type NeighborhoodBridge = {
   origin: WorldPoint;
   spawn: WorldPoint;
   area?: NeighborhoodArea;
+  appearance?: Appearance;
+  gender?: string;
+  equipment?: readonly AvatarEquipment[];
   onNearby: (object: NeighborhoodObject | null) => void;
   onCheckpoint: (point: WorldPoint) => void;
   onInteract: (object: NeighborhoodObject) => void;
@@ -35,19 +63,18 @@ class NeighborhoodScene extends Phaser.Scene {
   private frozen = false;
   private moved = false;
   private nearby: NeighborhoodObject | null = null;
-  private remoteActors = new Map<
-    string,
-    {
-      sprite: Phaser.GameObjects.Sprite;
-      label: Phaser.GameObjects.Text;
-      target: WorldPoint;
-      player: NetworkPlayerSnapshot;
-    }
-  >();
+  private remoteActors = new Map<string, RemoteActor>();
   private localSessionId: string | null = null;
   private movementIntent = { x: 0, y: 0 };
   private lastIntentSentAt = 0;
   private authoritativeTarget: WorldPoint | null = null;
+  private localTextureKey: string | null = null;
+  private localAnimationKey = "";
+  private localFacing: AvatarFacing = "south";
+  private localTurning = false;
+  private actionOverride: { state: "talk" | "work"; until: number | null } | null = null;
+  private reducedMotion = false;
+  private motionPreference: MediaQueryList | null = null;
   private get area() {
     return this.bridge.area ?? neighborhoodAreaForSlug(CITY_CENTRE_AREA.slug);
   }
@@ -114,10 +141,19 @@ class NeighborhoodScene extends Phaser.Scene {
     const solids = this.physics.add.staticGroup();
     for (const object of this.area.objects) {
       if (object.kind === "npc") {
-        this.makePerson("neighbor", 0xdfa451, 0x784c32);
-        this.add.sprite(object.x, object.y, "neighbor").setDepth(object.y);
+        this.makePerson("neighbor-fallback", 0xdfa451, 0x784c32);
+        const neighbor = this.add
+          .sprite(object.x, object.y, "neighbor-fallback")
+          .setDepth(object.y);
+        void ensureAvatarTexture(this, { skin: 2, hair: 2, outfit: 1 }, "female").then((key) => {
+          if (!key || !this.sys.isActive()) return;
+          neighbor.setTexture(key);
+          if (this.reducedMotion)
+            neighbor.setTexture(key, avatarClipFrameRange("idle", "south").start);
+          else neighbor.play(avatarAnimationKey(key, "idle", "south"));
+        });
         this.add
-          .text(object.x, object.y - 35, "Bisi", {
+          .text(object.x, object.y - 42, "Bisi", {
             fontFamily: "sans-serif",
             fontSize: "12px",
             color: "#344638",
@@ -180,17 +216,29 @@ class NeighborhoodScene extends Phaser.Scene {
       tree.fillStyle(0x4e7753).fillCircle(0, -38, 27);
       tree.fillStyle(0x74956a).fillCircle(-7, -48, 19).setDepth(y!);
     }
-    this.makePerson("player", 0x176746, 0x855733);
-    this.makePerson("player-step", 0x176746, 0x855733, true);
-    this.anims.create({
-      key: "walk",
-      frames: [{ key: "player" }, { key: "player-step" }],
-      frameRate: 8,
-      repeat: -1,
-    });
+    this.makePerson("player-fallback", 0x176746, 0x855733);
     const spawn = toScene(this.bridge.spawn, this.bridge.origin);
-    this.player = this.physics.add.sprite(spawn.x, spawn.y, "player").setCollideWorldBounds(true);
-    this.player.setSize(16, 12).setOffset(8, 30);
+    this.player = this.physics.add
+      .sprite(spawn.x, spawn.y, "player-fallback")
+      .setCollideWorldBounds(true);
+    this.player.setSize(18, 12).setOffset(15, 43);
+    void ensureAvatarTexture(
+      this,
+      this.bridge.appearance,
+      this.bridge.gender,
+      this.bridge.equipment,
+    ).then((key) => {
+      if (!key || !this.sys.isActive() || !this.player) return;
+      this.localTextureKey = key;
+      this.player.setTexture(key, avatarClipFrameRange("idle", "south").start);
+      this.setLocalAnimation("idle", this.localFacing);
+    });
+    this.motionPreference =
+      typeof window.matchMedia === "function"
+        ? window.matchMedia("(prefers-reduced-motion: reduce)")
+        : null;
+    this.reducedMotion = this.motionPreference?.matches ?? false;
+    this.motionPreference?.addEventListener("change", this.handleMotionPreference);
     this.physics.add.collider(this.player, solids, () => {
       this.destination = null;
     });
@@ -233,6 +281,7 @@ class NeighborhoodScene extends Phaser.Scene {
     this.cameras.main.setZoom(1.2);
     this.events.on(Phaser.Scenes.Events.SHUTDOWN, () => {
       this.touch.clear();
+      this.motionPreference?.removeEventListener("change", this.handleMotionPreference);
       for (const actor of this.remoteActors.values()) {
         actor.sprite.destroy();
         actor.label.destroy();
@@ -244,17 +293,57 @@ class NeighborhoodScene extends Phaser.Scene {
   private makePerson(key: string, shirt: number, skin: number, step = false) {
     if (this.textures.exists(key)) return;
     const art = this.make.graphics({ x: 0, y: 0 });
-    art.fillStyle(0x334d40, 0.2).fillEllipse(16, 38, 28, 10);
+    art.fillStyle(0x334d40, 0.2).fillEllipse(24, 52, 30, 9);
     art
       .fillStyle(0x344638)
-      .fillRect(8, 29, 6, step ? 8 : 10)
-      .fillRect(19, 29, 6, step ? 13 : 10);
-    art.fillStyle(shirt).fillRoundedRect(5, 16, 23, 18, 5);
-    art.fillStyle(skin).fillCircle(16, 11, 9);
-    art.fillStyle(0x332a25).fillEllipse(16, 5, 19, 10);
-    art.fillStyle(0x222222).fillCircle(13, 11, 1).fillCircle(20, 11, 1);
-    art.generateTexture(key, 32, 44);
+      .fillRoundedRect(17, 44, 8, step ? 13 : 15, 4)
+      .fillRoundedRect(27, 44, 8, step ? 15 : 13, 4);
+    art.fillStyle(shirt).fillRoundedRect(12, 27, 25, 22, 7);
+    art.fillStyle(skin).fillRoundedRect(13, 5, 23, 22, 9);
+    art.fillStyle(0x332a25).fillEllipse(24, 8, 26, 12);
+    art.fillStyle(0x222222).fillCircle(19, 16, 1.5).fillCircle(30, 16, 1.5);
+    art.generateTexture(key, 48, 60);
     art.destroy();
+  }
+  private handleMotionPreference = (event: MediaQueryListEvent) => {
+    this.reducedMotion = event.matches;
+    this.localAnimationKey = "";
+    for (const actor of this.remoteActors.values()) actor.animationKey = "";
+  };
+  private setLocalAnimation(state: AvatarAnimationState, facing: AvatarFacing) {
+    if (!this.localTextureKey || !this.player) return;
+    const activeState = this.reducedMotion ? "idle" : state;
+    const supportedFacing = facing === "west" ? "east" : facing;
+    const key = avatarAnimationKey(this.localTextureKey, activeState, supportedFacing);
+    this.player.setFlipX(facing === "west");
+    if (this.reducedMotion) {
+      const frame = avatarClipFrameRange("idle", supportedFacing).start;
+      this.player.anims.stop();
+      this.player.setTexture(this.localTextureKey, frame);
+      this.localAnimationKey = key;
+      return;
+    }
+    if (this.localAnimationKey !== key) {
+      this.player.anims.play(key, true);
+      this.localAnimationKey = key;
+    }
+  }
+  private setRemoteAnimation(actor: RemoteActor, state: AvatarAnimationState) {
+    if (!actor.textureKey) return;
+    const facing = actor.facing === "west" ? "east" : actor.facing;
+    const activeState = this.reducedMotion ? "idle" : state;
+    const key = avatarAnimationKey(actor.textureKey, activeState, facing);
+    actor.sprite.setFlipX(actor.facing === "west");
+    if (this.reducedMotion) {
+      actor.sprite.anims.stop();
+      actor.sprite.setTexture(actor.textureKey, avatarClipFrameRange("idle", facing).start);
+      actor.animationKey = key;
+      return;
+    }
+    if (actor.animationKey !== key) {
+      actor.sprite.anims.play(key, true);
+      actor.animationKey = key;
+    }
   }
   override update(time: number, delta: number) {
     if (!this.player) return;
@@ -293,12 +382,28 @@ class NeighborhoodScene extends Phaser.Scene {
     this.player.setVelocity(length ? (x / length) * 110 : 0, length ? (y / length) * 110 : 0);
     this.player.setDepth(this.player.y + 20);
     const moving = length > 0;
-    if (moving) {
-      this.player.play("walk", true);
-      if (x) this.player.setFlipX(x < 0);
-    } else {
-      this.player.anims.stop();
-      this.player.setTexture("player");
+    const facing = facingFromMovement(x, y, this.localFacing);
+    if (facing !== this.localFacing) {
+      this.localFacing = facing;
+      this.localAnimationKey = "";
+      if (!this.reducedMotion && this.localTextureKey) {
+        this.localTurning = true;
+        this.setLocalAnimation("turn", facing);
+        this.player.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+          this.localTurning = false;
+          this.localAnimationKey = "";
+        });
+      }
+    }
+    if (
+      this.actionOverride?.until !== null &&
+      this.actionOverride &&
+      time >= this.actionOverride.until
+    ) {
+      this.actionOverride = null;
+    }
+    if (!this.localTurning) {
+      this.setLocalAnimation(this.actionOverride?.state ?? (moving ? "walk" : "idle"), facing);
     }
     if (moving) this.moved = true;
     else if (this.moved) {
@@ -327,6 +432,9 @@ class NeighborhoodScene extends Phaser.Scene {
       actor.sprite.y += (actor.target.y - actor.sprite.y) * blend;
       actor.sprite.setDepth(actor.sprite.y + 20);
       actor.label.setPosition(actor.sprite.x, actor.sprite.y - 35);
+      const isWalking =
+        Math.hypot(actor.target.x - actor.sprite.x, actor.target.y - actor.sprite.y) > 2;
+      if (!actor.turning) this.setRemoteAnimation(actor, isWalking ? "walk" : "idle");
     }
   }
 
@@ -344,9 +452,8 @@ class NeighborhoodScene extends Phaser.Scene {
       const position = toScene({ x: player.x, y: player.y }, this.bridge.origin);
       let actor = this.remoteActors.get(player.sessionId);
       if (!actor) {
-        const shirt = this.remoteColor(player.sessionId);
-        const texture = `remote-${player.sessionId}`;
-        this.makePerson(texture, shirt, 0x855733);
+        const texture = "remote-fallback";
+        this.makePerson(texture, this.remoteColor(player.sessionId), 0x855733);
         const sprite = this.add.sprite(position.x, position.y, texture).setDepth(position.y + 20);
         const label = this.add
           .text(position.x, position.y - 35, player.name.slice(0, 24), {
@@ -360,13 +467,59 @@ class NeighborhoodScene extends Phaser.Scene {
           .setDepth(900);
         sprite.setInteractive({ useHandCursor: true });
         label.setInteractive({ useHandCursor: true });
-        actor = { sprite, label, target: position, player };
+        actor = {
+          sprite,
+          label,
+          target: position,
+          player,
+          textureKey: null,
+          appearanceKey: "",
+          animationKey: "",
+          facing: this.safeFacing(player.facing),
+          turning: false,
+        };
         this.remoteActors.set(player.sessionId, actor);
       }
       actor.target = position;
       actor.player = player;
-      actor.sprite.setFlipX(player.facing === "west");
+      const nextFacing = this.safeFacing(player.facing);
+      if (nextFacing !== actor.facing) {
+        actor.facing = nextFacing;
+        actor.animationKey = "";
+        if (!this.reducedMotion && actor.textureKey) {
+          actor.turning = true;
+          const turnKey = avatarAnimationKey(
+            actor.textureKey,
+            "turn",
+            nextFacing === "west" ? "east" : nextFacing,
+          );
+          actor.sprite.setFlipX(nextFacing === "west").anims.play(turnKey, true);
+          actor.animationKey = turnKey;
+          actor.sprite.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+            actor.turning = false;
+            actor.animationKey = "";
+          });
+        }
+      }
       actor.label.setText(player.name.slice(0, 24));
+      const savedAppearance = parseSavedAppearance(player.appearance);
+      const appearanceKey = avatarTextureKey(savedAppearance, player.gender);
+      if (appearanceKey !== actor.appearanceKey) {
+        actor.appearanceKey = appearanceKey;
+        void ensureAvatarTexture(this, savedAppearance, player.gender).then((key) => {
+          if (
+            !key ||
+            !this.sys.isActive() ||
+            !this.remoteActors.has(player.sessionId) ||
+            actor!.appearanceKey !== appearanceKey
+          )
+            return;
+          actor!.textureKey = key;
+          actor!.sprite.setTexture(key);
+          actor!.animationKey = "";
+          this.setRemoteAnimation(actor!, "idle");
+        });
+      }
     }
     for (const [sessionId, actor] of this.remoteActors) {
       if (active.has(sessionId)) continue;
@@ -380,6 +533,9 @@ class NeighborhoodScene extends Phaser.Scene {
     let hash = 0;
     for (const char of sessionId) hash = (hash * 31 + char.charCodeAt(0)) | 0;
     return palette[Math.abs(hash) % palette.length] ?? 0x176b45;
+  }
+  private safeFacing(value: string): AvatarFacing {
+    return value === "north" || value === "east" || value === "west" ? value : "south";
   }
   setTouch(direction: MovementInput, pressed: boolean) {
     if (pressed) this.touch.add(direction);
@@ -402,6 +558,16 @@ class NeighborhoodScene extends Phaser.Scene {
   }
   interact() {
     if (!this.frozen && this.nearby) this.bridge.onInteract(this.nearby);
+  }
+  playAvatarAction(state: "talk" | "work") {
+    this.actionOverride = { state, until: state === "talk" ? this.time.now + 1_200 : null };
+    this.localTurning = false;
+    this.localAnimationKey = "";
+    this.setLocalAnimation(state, this.localFacing);
+  }
+  clearAvatarAction() {
+    this.actionOverride = null;
+    this.localAnimationKey = "";
   }
   checkpoint() {
     return this.player

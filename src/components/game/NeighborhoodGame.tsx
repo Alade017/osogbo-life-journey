@@ -19,6 +19,8 @@ import {
 } from "@/game/neighborhood-model";
 import type { NetworkPlayerSnapshot } from "@/game/multiplayer-state";
 import type { createNeighborhoodGame, MovementInput } from "@/game/neighborhood-scene";
+import type { Appearance } from "@/components/game/Avatar";
+import { normalizeEquippedItems } from "@/lib/equipment-service";
 import { joinNeighborhood, type NeighborhoodRoom } from "@/lib/multiplayer-service";
 import { playGameSound } from "@/lib/game-audio";
 import { useGameTime } from "./GameTimeProvider";
@@ -37,6 +39,8 @@ const controls = [
 
 export function NeighborhoodGame() {
   const { data: character } = useQuery(q.character());
+  const { data: equipmentData } = useQuery({ ...q.equipment(), enabled: !!character });
+  const equipment = normalizeEquippedItems(equipmentData);
   const locations = useQuery(q.locations());
   const current = locations.data?.find(
     (location) => location.id === character?.current_location_id,
@@ -164,6 +168,7 @@ export function NeighborhoodGame() {
     interact: (object) => {
       playGameSound("interaction");
       if (object.kind === "npc") {
+        engine.current?.scene.playAvatarAction("talk");
         setDialogue(true);
         return;
       }
@@ -243,6 +248,9 @@ export function NeighborhoodGame() {
           origin,
           spawn: confirmed.current,
           area,
+          appearance: (character?.appearance as Appearance | null | undefined) ?? {},
+          gender: character?.gender ?? "nonbinary",
+          equipment,
           onNearby: setNearby,
           onCheckpoint: (point) => {
             void callbacks.current.checkpoint(point);

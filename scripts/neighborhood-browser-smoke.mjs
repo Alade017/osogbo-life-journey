@@ -5,15 +5,37 @@ const folder = resolve(".smoke");
 await mkdir(folder, { recursive: true });
 await writeFile(
   resolve(folder, "neighborhood.html"),
-  `<!doctype html><html><head><title>Neighborhood smoke</title></head><body style="margin:0;background:#e8eedf"><div id="game" style="width:1024px;height:700px"></div><output id="result">RUNNING</output><script type="module">
+  `<!doctype html><html><head><title>Neighborhood smoke</title></head><body style="margin:0;background:#e8eedf"><div id="game" style="width:1024px;height:700px"></div><output id="result">RUNNING</output><script>window.onerror=(m)=>document.getElementById('result').textContent='FAIL '+m;window.onunhandledrejection=(e)=>document.getElementById('result').textContent='FAIL '+(e.reason?.message||e.reason);</script><script type="module">
 import { createNeighborhoodGame } from '/src/game/neighborhood-scene.ts';
 let checkpoints=0, interaction='';
-const {game,scene}=createNeighborhoodGame(document.getElementById('game'),{origin:{x:7,y:6},spawn:{x:7,y:6},onNearby:()=>{},onCheckpoint:()=>checkpoints++,onInteract:o=>interaction=o.kind,onPlayerSelected:()=>{},onPlayerTooFar:()=>{},onMovementIntent:()=>{},saveCheckpoint:async()=>true});
-const fail=e=>document.getElementById('result').textContent='FAIL '+e.message;
+const {game,scene}=createNeighborhoodGame(document.getElementById('game'),{origin:{x:7,y:6},spawn:{x:7,y:6},appearance:{skin:5,hair:5,hairColor:3,outfit:5,bottoms:5,shoes:3,headwear:3},gender:'male',onNearby:()=>{},onCheckpoint:()=>checkpoints++,onInteract:o=>interaction=o.kind,onPlayerSelected:()=>{},onPlayerTooFar:()=>{},onMovementIntent:()=>{},saveCheckpoint:async()=>true});
+const fail=e=>{game.loop.stop();game.destroy(true);document.getElementById('result').textContent='FAIL '+e.message;};
 window.addEventListener('error',e=>fail(e.error||new Error(e.message)));
-const wait=setInterval(()=>{if(!scene.player)return;clearInterval(wait);try{
+const started=performance.now();
+const wait=setInterval(()=>{if(!scene.player)return;if(!scene.localTextureKey){if(performance.now()-started>10000){clearInterval(wait);fail(new Error('Cached avatar texture did not load'));}return;}clearInterval(wait);try{
   game.loop.stop();
   const p=scene.player;
+  if(!scene.textures.exists(scene.localTextureKey))throw new Error('Cached avatar texture is missing');
+  for(const state of ['idle','walk','turn','talk','work']){
+    const key=scene.localTextureKey+':'+state+':south';
+    if(!scene.anims.exists(key))throw new Error('Missing '+state+' animation');
+  }
+  scene.playAvatarAction('talk');
+  if(p.anims.currentAnim?.key!==scene.localTextureKey+':talk:south')throw new Error('Talk animation failed');
+  scene.clearAvatarAction();
+  scene.playAvatarAction('work');
+  if(p.anims.currentAnim?.key!==scene.localTextureKey+':work:south')throw new Error('Work animation failed');
+  scene.clearAvatarAction();
+  scene.keys.D.isDown=true;scene.update(100,16);
+  if(p.anims.currentAnim?.key!==scene.localTextureKey+':turn:east')throw new Error('Turn animation failed while changing direction');
+  scene.localTurning=false;scene.localAnimationKey='';scene.update(116,16);
+  if(p.anims.currentAnim?.key!==scene.localTextureKey+':walk:east')throw new Error('Walk animation failed');
+  scene.keys.D.isDown=false;
+  scene.update(116,16);
+  if(p.anims.currentAnim?.key!==scene.localTextureKey+':idle:east')throw new Error('Idle animation failed');
+  scene.keys.S.isDown=true;scene.update(132,16);scene.keys.S.isDown=false;
+  if(p.anims.currentAnim?.key!==scene.localTextureKey+':turn:south')throw new Error('Turn animation failed');
+  checkpoints=0;scene.moved=false;scene.localTurning=false;scene.localAnimationKey='';
   let time=0;
   const step=()=>{scene.update();time+=1000/60;scene.physics.world.update(time,1000/60+0.001);scene.physics.world.postUpdate()};
   const initial=p.x;
@@ -30,7 +52,8 @@ const wait=setInterval(()=>{if(!scene.player)return;clearInterval(wait);try{
   scene.setTouch('right',true);const touchX=p.x;for(let i=0;i<10;i++)step();scene.setTouch('right',false);step();if(p.x<=touchX)throw new Error('Touch movement failed');
   scene.lock(true);scene.keys.D.isDown=true;step();if(p.body.velocity.x!==0)throw new Error('Paused movement failed');scene.keys.D.isDown=false;scene.lock(false);
   p.body.reset(320,300);scene.update();game.renderer.snapshot(()=>{});
-  document.getElementById('result').textContent='PASS movement diagonal collision checkpoint NPC touch pause';
+  document.getElementById('result').textContent='PASS cached appearance idle walk turn talk work movement diagonal collision checkpoint NPC touch pause';
+  game.destroy(true);
 }catch(e){fail(e)}},100);
 </script></body></html>`,
 );
@@ -56,10 +79,12 @@ try {
     [
       "--headless",
       "--disable-gpu",
+      "--disable-background-networking",
+      "--disable-extensions",
       "--no-first-run",
       "--no-default-browser-check",
       `--user-data-dir=${resolve(folder, `chrome-profile-${process.pid}`)}`,
-      "--virtual-time-budget=12000",
+      "--virtual-time-budget=15000",
       "--window-size=1024,768",
       `--screenshot=${resolve(folder, "neighborhood.png")}`,
       "--dump-dom",
