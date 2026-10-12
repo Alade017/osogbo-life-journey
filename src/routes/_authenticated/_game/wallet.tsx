@@ -48,7 +48,19 @@ function WalletPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader eyebrow="YOUR FINANCES" title="Bank & wallet" />
+      <PageHeader
+        eyebrow="YOUR FINANCES"
+        title="Bank & wallet"
+        right={
+          <Link
+            to="/businesses"
+            search={{ mode: "invest" }}
+            className="text-sm font-semibold text-primary"
+          >
+            Businesses & investments
+          </Link>
+        }
+      />
       <div className="game-panel flex items-start gap-2 bg-sun p-3 text-sm">
         <Info className="mt-0.5 h-4 w-4 shrink-0" />
         <p>All balances are virtual in-game currency. They have no real-world value.</p>

@@ -1,0 +1,60 @@
+.business-finance-app {
+  display: grid;
+  min-width: 0;
+  gap: 12px;
+  padding: 12px;
+  overflow: auto;
+  color: var(--color-text-on-dark);
+  background: var(--color-surface-dark);
+  border-radius: inherit;
+}
+.business-finance-app h2,
+.business-finance-app h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+}
+.business-finance-app .phone-finance-list,
+.business-finance-app .phone-company-services {
+  display: grid;
+  gap: 8px;
+}
+.business-finance-app .phone-finance-card {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--color-surface-dark-border);
+  border-radius: 14px;
+  background: var(--color-surface-dark-elevated);
+  overflow-wrap: anywhere;
+}
+.business-finance-app small,
+.business-finance-app .phone-finance-card p {
+  display: block;
+  color: var(--color-text-on-dark-soft);
+  font-size: 12px;
+}
+.business-finance-app label {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.business-finance-app input {
+  min-height: 44px;
+  width: 100%;
+  padding: 6px 9px;
+  border: 1px solid var(--color-surface-dark-border);
+  border-radius: 8px;
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+.business-finance-app .phone-finance-disclaimer {
+  padding: 8px 10px;
+  border-radius: 10px;
+  color: var(--foreground);
+  background: var(--sun);
+  font-size: 11px;
+}

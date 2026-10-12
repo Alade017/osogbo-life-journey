@@ -1536,6 +1536,26 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      get_business_and_investment_market: { Args: never; Returns: Json };
+      buy_player_company: {
+        Args: { p_business_slug: string; p_request_id: string };
+        Returns: Json;
+      };
+      configure_player_company: { Args: { p_company_id: string; p_prices: Json }; Returns: Json };
+      claim_player_company_earnings: { Args: { p_company_id: string }; Returns: Json };
+      offer_player_company_shares: {
+        Args: { p_company_id: string; p_shares: number };
+        Returns: Json;
+      };
+      invest_in_player_company: {
+        Args: { p_company_id: string; p_shares: number; p_request_id: string };
+        Returns: Json;
+      };
+      create_fixed_term_investment: {
+        Args: { p_product_slug: string; p_amount: number; p_request_id: string };
+        Returns: Json;
+      };
+      claim_fixed_term_investment: { Args: { p_investment_id: string }; Returns: Json };
       search_player_profiles: { Args: { p_query: string; p_limit?: number }; Returns: Json };
       get_player_profile: { Args: { p_character_id: string }; Returns: Json };
       get_player_social_overview: { Args: never; Returns: Json };

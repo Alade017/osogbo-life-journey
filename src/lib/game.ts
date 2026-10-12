@@ -1,3 +1,4 @@
+import { getBusinessOverview, executeBusinessCommand } from "@/lib/business-service";
 // Client-side data access for OSOGBO LIFE.
 // Reads go through RLS-protected tables (players only ever see their own rows).
 // Every state change goes through server-validated database functions (RPCs);
@@ -66,6 +67,12 @@ function unwrap<T>(res: { data: T; error: { message: string } | null }): T {
 }
 
 export const q = {
+  businessMarket: () =>
+    queryOptions({
+      queryKey: ["businessInvestmentMarket"],
+      queryFn: getBusinessOverview,
+      refetchInterval: 60_000,
+    }),
   character: () =>
     queryOptions({
       queryKey: ["character"],
@@ -380,6 +387,7 @@ export function useGameAction<TArgs, TResult>(
 }
 
 export const rpc = {
+  businessAction: executeBusinessCommand,
   savePlayerWorldPosition: async (args: {
     worldX: number;
     worldY: number;

@@ -120,7 +120,10 @@ function MessageList({
   return (
     <ol className="grid max-h-72 gap-2 overflow-y-auto rounded-xl border border-border bg-background p-3">
       {messages.map((message) => (
-        <li key={message.id} className="rounded-lg bg-card px-3 py-2 text-sm">
+        <li
+          key={message.id}
+          className={`rounded-lg bg-card px-3 py-2 text-sm ${message.sender_character_id === ownCharacterId ? "is-own" : "is-other"}`}
+        >
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <strong>
               {message.sender_character_id === ownCharacterId ? "You" : message.sender_name}
@@ -195,9 +198,18 @@ function ChatComposer({
   );
 }
 
-export function PlayerSocial({ initialPlayerId }: { initialPlayerId?: string | undefined }) {
+export function PlayerSocial({
+  initialPlayerId,
+  initialTab = "players",
+  phoneMode = false,
+}: {
+  initialPlayerId?: string | undefined;
+  initialTab?: Tab;
+  phoneMode?: boolean;
+}) {
   const qc = useQueryClient();
-  const [tab, setTab] = useState<Tab>("players");
+  const [tab, setTab] = useState<Tab>(initialTab);
+  const [phoneMessageMode, setPhoneMessageMode] = useState<"private" | "area">("private");
   const [query, setQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [reportTarget, setReportTarget] = useState<ReportTarget | null>(null);
@@ -399,46 +411,52 @@ export function PlayerSocial({ initialPlayerId }: { initialPlayerId?: string | u
   };
 
   return (
-    <section className="game-panel space-y-4 p-4 sm:p-5" aria-labelledby="player-social-title">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-primary">
-            <Users size={15} /> REAL PLAYERS
-          </p>
-          <h2 id="player-social-title" className="font-display text-xl font-semibold">
-            Meet players
-          </h2>
-          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-            Search public character profiles, make friends, and chat with players around the city.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2" role="tablist" aria-label="Player social sections">
-          {(
-            [
-              ["players", "Find players"],
-              ["messages", "Messages"],
-              ["friends", "Friends & safety"],
-            ] as const
-          ).map(([value, label]) => (
-            <Button
-              key={value}
-              type="button"
-              size="sm"
-              variant={tab === value ? "default" : "outline"}
-              role="tab"
-              aria-selected={tab === value}
-              onClick={() => setTab(value)}
-            >
-              {label}
-              {value === "friends" && !!overview?.incoming.length && (
-                <span className="ml-1 rounded-full bg-card px-1.5 text-xs text-foreground">
-                  {overview.incoming.length}
-                </span>
-              )}
-            </Button>
-          ))}
-        </div>
-      </header>
+    <section
+      className={phoneMode ? "phone-messenger" : "game-panel space-y-4 p-4 sm:p-5"}
+      aria-labelledby={phoneMode ? undefined : "player-social-title"}
+      aria-label={phoneMode ? "Phone messages" : undefined}
+    >
+      {!phoneMode && (
+        <header className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-primary">
+              <Users size={15} /> REAL PLAYERS
+            </p>
+            <h2 id="player-social-title" className="font-display text-xl font-semibold">
+              Meet players
+            </h2>
+            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+              Search public character profiles, make friends, and chat with players around the city.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2" role="tablist" aria-label="Player social sections">
+            {(
+              [
+                ["players", "Find players"],
+                ["messages", "Messages"],
+                ["friends", "Friends & safety"],
+              ] as const
+            ).map(([value, label]) => (
+              <Button
+                key={value}
+                type="button"
+                size="sm"
+                variant={tab === value ? "default" : "outline"}
+                role="tab"
+                aria-selected={tab === value}
+                onClick={() => setTab(value)}
+              >
+                {label}
+                {value === "friends" && !!overview?.incoming.length && (
+                  <span className="ml-1 rounded-full bg-card px-1.5 text-xs text-foreground">
+                    {overview.incoming.length}
+                  </span>
+                )}
+              </Button>
+            ))}
+          </div>
+        </header>
+      )}
 
       {tab === "players" && (
         <div className="grid gap-4">
@@ -597,82 +615,72 @@ export function PlayerSocial({ initialPlayerId }: { initialPlayerId?: string | u
         </div>
       )}
 
-      {tab === "messages" && (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <section
-            className="grid content-start gap-3 rounded-2xl border border-border p-3 sm:p-4"
-            aria-labelledby="area-chat-title"
-          >
-            <div>
-              <h3 id="area-chat-title" className="font-display font-semibold">
+      {tab === "messages" &&
+        (phoneMode ? (
+          <div className="phone-message-content">
+            <div className="phone-message-switch" role="group" aria-label="Message type">
+              <button
+                type="button"
+                className={phoneMessageMode === "private" ? "is-active" : ""}
+                onClick={() => setPhoneMessageMode("private")}
+              >
+                Private
+              </button>
+              <button
+                type="button"
+                className={phoneMessageMode === "area" ? "is-active" : ""}
+                onClick={() => setPhoneMessageMode("area")}
+              >
                 Area chat
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                {locationsQuery.data?.find((location) => location.id === locationId)?.name ??
-                  "Current district"}{" "}
-                · visible to players in this area
-              </p>
+              </button>
             </div>
-            {!locationId ? (
-              <p className="text-sm text-muted-foreground">Your current area is still loading.</p>
-            ) : areaMessagesQuery.error ? (
-              <p className="text-sm text-destructive" role="alert">
-                {areaMessagesQuery.error.message}
-              </p>
-            ) : (
-              <MessageList
-                messages={areaMessages}
-                ownCharacterId={character?.id}
-                onReport={(message) =>
-                  setReportTarget({
-                    id: message.sender_character_id,
-                    name: message.sender_name,
-                    messageId: message.id,
-                  })
-                }
-              />
-            )}
-            <ChatComposer
-              label="Write an area message"
-              disabled={!locationId || sendMutation.isPending}
-              onSend={(body) => runMessage(body)}
-            />
-          </section>
-
-          <section
-            className="grid content-start gap-3 rounded-2xl border border-border p-3 sm:p-4"
-            aria-labelledby="private-chat-title"
-          >
-            <div>
-              <h3 id="private-chat-title" className="font-display font-semibold">
-                {activeChat ? "Private chat with " + activeChat.name : "Private messages"}
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                Private chats are available between friends.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2" aria-label="Friend conversations">
-              {(overview?.conversations ?? []).map((conversation) => (
-                <Button
-                  key={conversation.id}
+            {phoneMessageMode === "area" ? (
+              <section className="phone-chat-panel" aria-label="Area chat">
+                <p className="phone-chat-subtitle">
+                  {locationsQuery.data?.find((location) => location.id === locationId)?.name ??
+                    "Current district"}{" "}
+                  · messages visible to players in this area
+                </p>
+                {!locationId ? (
+                  <p className="text-sm text-muted-foreground">
+                    Your current area is still loading.
+                  </p>
+                ) : areaMessagesQuery.error ? (
+                  <p className="text-sm text-destructive" role="alert">
+                    {areaMessagesQuery.error.message}
+                  </p>
+                ) : (
+                  <MessageList
+                    messages={areaMessages}
+                    ownCharacterId={character?.id}
+                    onReport={(message) =>
+                      setReportTarget({
+                        id: message.sender_character_id,
+                        name: message.sender_name,
+                        messageId: message.id,
+                      })
+                    }
+                  />
+                )}
+                <ChatComposer
+                  label="Write an area message"
+                  disabled={!locationId || sendMutation.isPending}
+                  onSend={(body) => runMessage(body)}
+                />
+              </section>
+            ) : activeChat ? (
+              <section
+                className="phone-chat-panel"
+                aria-label={`Private chat with ${activeChat.name}`}
+              >
+                <button
                   type="button"
-                  size="sm"
-                  variant={activeChat?.conversationId === conversation.id ? "default" : "outline"}
-                  onClick={() => {
-                    setActiveChat({
-                      conversationId: conversation.id,
-                      characterId: conversation.character_id,
-                      name: conversation.player_name,
-                    });
-                    setTab("messages");
-                  }}
+                  className="phone-chat-back"
+                  onClick={() => setActiveChat(null)}
                 >
-                  {conversation.player_name}
-                </Button>
-              ))}
-            </div>
-            {activeChat ? (
-              <>
+                  ‹ All chats
+                </button>
+                <h3 className="font-display font-semibold">{activeChat.name}</h3>
                 {directMessagesQuery.error ? (
                   <p className="text-sm text-destructive" role="alert">
                     {directMessagesQuery.error.message}
@@ -691,19 +699,161 @@ export function PlayerSocial({ initialPlayerId }: { initialPlayerId?: string | u
                   />
                 )}
                 <ChatComposer
-                  label={"Message " + activeChat.name}
+                  label={`Message ${activeChat.name}`}
                   disabled={sendMutation.isPending}
                   onSend={(body) => runMessage(body, true)}
                 />
-              </>
+              </section>
             ) : (
-              <p className="rounded-xl bg-background p-4 text-sm text-muted-foreground">
-                Choose a friend to open a private chat.
-              </p>
+              <section className="phone-chat-panel" aria-label="Private chats">
+                <h3 className="font-display font-semibold">Chats</h3>
+                {overviewQuery.isPending ? (
+                  <p className="text-sm text-muted-foreground">Loading your chats…</p>
+                ) : overviewQuery.error ? (
+                  <p className="text-sm text-destructive" role="alert">
+                    {overviewQuery.error.message}
+                  </p>
+                ) : (overview?.conversations ?? []).length ? (
+                  <div className="phone-conversation-list">
+                    {(overview?.conversations ?? []).map((conversation) => (
+                      <button
+                        type="button"
+                        key={conversation.id}
+                        className="phone-conversation"
+                        onClick={() =>
+                          setActiveChat({
+                            conversationId: conversation.id,
+                            characterId: conversation.character_id,
+                            name: conversation.player_name,
+                          })
+                        }
+                      >
+                        <span className="phone-conversation-avatar" aria-hidden="true">
+                          {conversation.player_name.slice(0, 1).toUpperCase()}
+                        </span>
+                        <span>
+                          <strong>{conversation.player_name}</strong>
+                          <small>Open private conversation</small>
+                        </span>
+                        <span aria-hidden="true">›</span>
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="rounded-xl bg-background p-4 text-sm text-muted-foreground">
+                    No private chats yet. Start one from a friend’s profile in Social.
+                  </p>
+                )}
+              </section>
             )}
-          </section>
-        </div>
-      )}
+          </div>
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <section
+              className="grid content-start gap-3 rounded-2xl border border-border p-3 sm:p-4"
+              aria-labelledby="area-chat-title"
+            >
+              <div>
+                <h3 id="area-chat-title" className="font-display font-semibold">
+                  Area chat
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {locationsQuery.data?.find((location) => location.id === locationId)?.name ??
+                    "Current district"}{" "}
+                  · visible to players in this area
+                </p>
+              </div>
+              {!locationId ? (
+                <p className="text-sm text-muted-foreground">Your current area is still loading.</p>
+              ) : areaMessagesQuery.error ? (
+                <p className="text-sm text-destructive" role="alert">
+                  {areaMessagesQuery.error.message}
+                </p>
+              ) : (
+                <MessageList
+                  messages={areaMessages}
+                  ownCharacterId={character?.id}
+                  onReport={(message) =>
+                    setReportTarget({
+                      id: message.sender_character_id,
+                      name: message.sender_name,
+                      messageId: message.id,
+                    })
+                  }
+                />
+              )}
+              <ChatComposer
+                label="Write an area message"
+                disabled={!locationId || sendMutation.isPending}
+                onSend={(body) => runMessage(body)}
+              />
+            </section>
+
+            <section
+              className="grid content-start gap-3 rounded-2xl border border-border p-3 sm:p-4"
+              aria-labelledby="private-chat-title"
+            >
+              <div>
+                <h3 id="private-chat-title" className="font-display font-semibold">
+                  {activeChat ? "Private chat with " + activeChat.name : "Private messages"}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Private chats are available between friends.
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2" aria-label="Friend conversations">
+                {(overview?.conversations ?? []).map((conversation) => (
+                  <Button
+                    key={conversation.id}
+                    type="button"
+                    size="sm"
+                    variant={activeChat?.conversationId === conversation.id ? "default" : "outline"}
+                    onClick={() => {
+                      setActiveChat({
+                        conversationId: conversation.id,
+                        characterId: conversation.character_id,
+                        name: conversation.player_name,
+                      });
+                      setTab("messages");
+                    }}
+                  >
+                    {conversation.player_name}
+                  </Button>
+                ))}
+              </div>
+              {activeChat ? (
+                <>
+                  {directMessagesQuery.error ? (
+                    <p className="text-sm text-destructive" role="alert">
+                      {directMessagesQuery.error.message}
+                    </p>
+                  ) : (
+                    <MessageList
+                      messages={directMessages}
+                      ownCharacterId={character?.id}
+                      onReport={(message) =>
+                        setReportTarget({
+                          id: message.sender_character_id,
+                          name: message.sender_name,
+                          messageId: message.id,
+                        })
+                      }
+                    />
+                  )}
+                  <ChatComposer
+                    label={"Message " + activeChat.name}
+                    disabled={sendMutation.isPending}
+                    onSend={(body) => runMessage(body, true)}
+                  />
+                </>
+              ) : (
+                <p className="rounded-xl bg-background p-4 text-sm text-muted-foreground">
+                  Choose a friend to open a private chat.
+                </p>
+              )}
+            </section>
+          </div>
+        ))}
 
       {tab === "friends" && (
         <div className="grid gap-5 lg:grid-cols-2">

@@ -12,6 +12,7 @@ import {
   Bell,
   Briefcase,
   Building2,
+  ChartNoAxesCombined,
   House,
   Map,
   MessageCircle,
@@ -24,6 +25,9 @@ import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { useLiveClock } from "@/hooks/use-live-clock";
 import { OSOGBO_TIME_ZONE } from "@/lib/osogbo-weather";
+import { useState } from "react";
+import { PlayerSocial } from "@/components/game/PlayerSocial";
+import { BusinessInvestmentApp } from "@/components/game/BusinessInvestmentApp";
 
 const PHONE_APPS = [
   { label: "Home", to: "/home", icon: House, tone: "phone-app-green", active: true },
@@ -36,6 +40,14 @@ const PHONE_APPS = [
   { label: "Inventory", to: "/inventory", icon: Backpack, tone: "phone-app-blue", active: true },
   { label: "Profile", to: "/profile", icon: UserRound, tone: "phone-app-muted", active: true },
   { label: "Messages", to: "/social", icon: MessageCircle, tone: "phone-app-coral", active: true },
+  {
+    label: "Invest",
+    to: "/wallet",
+    icon: ChartNoAxesCombined,
+    tone: "phone-app-gold",
+    active: true,
+  },
+  { label: "Company", to: "/wallet", icon: Building2, tone: "phone-app-green", active: true },
   { label: "Missions", to: "/missions", icon: Bell, tone: "phone-app-gold", active: true },
   {
     label: "Notifications",
@@ -54,6 +66,7 @@ export function PhoneLauncher({
   className?: string;
   compact?: boolean;
 }) {
+  const [activeApp, setActiveApp] = useState<string | null>(null);
   const now = useLiveClock();
   const phoneTime = now
     ? new Intl.DateTimeFormat("en-NG", {
@@ -65,7 +78,7 @@ export function PhoneLauncher({
     : "--:--";
 
   return (
-    <Dialog>
+    <Dialog onOpenChange={(open) => !open && setActiveApp(null)}>
       <DialogTrigger asChild>
         <button
           type="button"
@@ -73,18 +86,21 @@ export function PhoneLauncher({
           aria-label="Open in-game phone"
         >
           <span className="phone-launcher-icon">
-            <span />
+            <span className="phone-launcher-fallback" />
+            <img
+              src="https://cdn-icons-png.flaticon.com/128/15665/15665521.png"
+              alt=""
+              aria-hidden="true"
+              onError={(event) => {
+                event.currentTarget.hidden = true;
+              }}
+            />
           </span>
           <span className={compact ? "phone-compact-label" : undefined}>Phone</span>
         </button>
       </DialogTrigger>
       <DialogContent className="phone-dialog">
-        <DialogHeader>
-          <DialogTitle className="font-display text-2xl">Your phone</DialogTitle>
-          <DialogDescription>
-            Tools for your day around Osogbo. Select an app to open it.
-          </DialogDescription>
-        </DialogHeader>
+        <DialogTitle className="sr-only">In-game phone</DialogTitle>
         <div className="phone-screen">
           <div className="phone-status">
             <span className="phone-status-time">{phoneTime}</span>
@@ -100,34 +116,93 @@ export function PhoneLauncher({
               </span>
             </span>
           </div>
-          <div className="phone-app-grid">
-            {PHONE_APPS.map((app) => {
-              const Icon = app.icon;
-              return app.active && app.to ? (
-                <DialogClose asChild key={app.label}>
-                  <Link to={app.to} className="phone-app">
-                    <span className={cn("phone-app-icon", app.tone)}>
-                      <Icon className="h-5 w-5" />
-                    </span>
-                    <span>{app.label}</span>
-                  </Link>
-                </DialogClose>
-              ) : (
-                <div
-                  className="phone-app phone-app-disabled"
-                  key={app.label}
-                  aria-disabled="true"
-                  title="Not available yet"
+          {activeApp === "Messages" ? (
+            <div className="phone-app-view">
+              <div className="phone-app-toolbar">
+                <button
+                  type="button"
+                  onClick={() => setActiveApp(null)}
+                  aria-label="Back to phone apps"
                 >
-                  <span className={cn("phone-app-icon", app.tone)}>
-                    <Icon className="h-5 w-5" />
-                  </span>
-                  <span>{app.label}</span>
-                  <small>Later</small>
-                </div>
-              );
-            })}
-          </div>
+                  ‹ <span>Apps</span>
+                </button>
+                <strong>Messages</strong>
+                <span aria-hidden="true" />
+              </div>
+              <PlayerSocial initialTab="messages" phoneMode />
+            </div>
+          ) : activeApp === "Invest" || activeApp === "Company" ? (
+            <div className="phone-app-view">
+              <div className="phone-app-toolbar">
+                <button
+                  type="button"
+                  onClick={() => setActiveApp(null)}
+                  aria-label="Back to phone apps"
+                >
+                  ‹ <span>Apps</span>
+                </button>
+                <strong>{activeApp}</strong>
+                <span aria-hidden="true" />
+              </div>
+              <BusinessInvestmentApp mode={activeApp === "Invest" ? "invest" : "company"} />
+            </div>
+          ) : (
+            <>
+              <DialogHeader className="phone-home-heading">
+                <DialogTitle className="font-display text-2xl">Your phone</DialogTitle>
+                <DialogDescription>
+                  Tools for your day around Osogbo. Select an app to open it.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="phone-app-grid">
+                {PHONE_APPS.map((app) => {
+                  const Icon = app.icon;
+                  if (
+                    app.label === "Messages" ||
+                    app.label === "Invest" ||
+                    app.label === "Company"
+                  ) {
+                    return (
+                      <button
+                        type="button"
+                        className="phone-app"
+                        key={app.label}
+                        onClick={() => setActiveApp(app.label)}
+                      >
+                        <span className={cn("phone-app-icon", app.tone)}>
+                          <Icon className="h-5 w-5" />
+                        </span>
+                        <span>{app.label}</span>
+                      </button>
+                    );
+                  }
+                  return app.active && app.to ? (
+                    <DialogClose asChild key={app.label}>
+                      <Link to={app.to} className="phone-app">
+                        <span className={cn("phone-app-icon", app.tone)}>
+                          <Icon className="h-5 w-5" />
+                        </span>
+                        <span>{app.label}</span>
+                      </Link>
+                    </DialogClose>
+                  ) : (
+                    <div
+                      className="phone-app phone-app-disabled"
+                      key={app.label}
+                      aria-disabled="true"
+                      title="Not available yet"
+                    >
+                      <span className={cn("phone-app-icon", app.tone)}>
+                        <Icon className="h-5 w-5" />
+                      </span>
+                      <span>{app.label}</span>
+                      <small>Later</small>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
       </DialogContent>
     </Dialog>

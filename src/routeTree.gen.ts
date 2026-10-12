@@ -15,6 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as AuthenticatedGameRouteImport } from './routes/_authenticated/_game'
 import { Route as AuthenticatedCreateCharacterRouteImport } from './routes/_authenticated/create-character'
+import { Route as AuthenticatedGameBusinessesRouteImport } from './routes/_authenticated/_game/businesses'
 import { Route as AuthenticatedGameEducationRouteImport } from './routes/_authenticated/_game/education'
 import { Route as AuthenticatedGameHomeRouteImport } from './routes/_authenticated/_game/home'
 import { Route as AuthenticatedGameHouseRouteImport } from './routes/_authenticated/_game/house'
@@ -58,6 +59,12 @@ const AuthenticatedCreateCharacterRoute =
     id: '/create-character',
     path: '/create-character',
     getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedGameBusinessesRoute =
+  AuthenticatedGameBusinessesRouteImport.update({
+    id: '/businesses',
+    path: '/businesses',
+    getParentRoute: () => AuthenticatedGameRoute,
   } as any)
 const AuthenticatedGameEducationRoute =
   AuthenticatedGameEducationRouteImport.update({
@@ -142,6 +149,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/create-character': typeof AuthenticatedCreateCharacterRoute
+  '/businesses': typeof AuthenticatedGameBusinessesRoute
   '/education': typeof AuthenticatedGameEducationRoute
   '/home': typeof AuthenticatedGameHomeRoute
   '/house': typeof AuthenticatedGameHouseRoute
@@ -162,6 +170,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/create-character': typeof AuthenticatedCreateCharacterRoute
+  '/businesses': typeof AuthenticatedGameBusinessesRoute
   '/education': typeof AuthenticatedGameEducationRoute
   '/home': typeof AuthenticatedGameHomeRoute
   '/house': typeof AuthenticatedGameHouseRoute
@@ -185,6 +194,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/_authenticated/_game': typeof AuthenticatedGameRouteWithChildren
   '/_authenticated/create-character': typeof AuthenticatedCreateCharacterRoute
+  '/_authenticated/_game/businesses': typeof AuthenticatedGameBusinessesRoute
   '/_authenticated/_game/education': typeof AuthenticatedGameEducationRoute
   '/_authenticated/_game/home': typeof AuthenticatedGameHomeRoute
   '/_authenticated/_game/house': typeof AuthenticatedGameHouseRoute
@@ -207,6 +217,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/create-character'
+    | '/businesses'
     | '/education'
     | '/home'
     | '/house'
@@ -227,6 +238,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/create-character'
+    | '/businesses'
     | '/education'
     | '/home'
     | '/house'
@@ -249,6 +261,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/_authenticated/_game'
     | '/_authenticated/create-character'
+    | '/_authenticated/_game/businesses'
     | '/_authenticated/_game/education'
     | '/_authenticated/_game/home'
     | '/_authenticated/_game/house'
@@ -315,6 +328,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/create-character'
       preLoaderRoute: typeof AuthenticatedCreateCharacterRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/_game/businesses': {
+      id: '/_authenticated/_game/businesses'
+      path: '/businesses'
+      fullPath: '/businesses'
+      preLoaderRoute: typeof AuthenticatedGameBusinessesRouteImport
+      parentRoute: typeof AuthenticatedGameRoute
     }
     '/_authenticated/_game/education': {
       id: '/_authenticated/_game/education'
@@ -418,6 +438,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedGameRouteChildren {
+  AuthenticatedGameBusinessesRoute: typeof AuthenticatedGameBusinessesRoute
   AuthenticatedGameEducationRoute: typeof AuthenticatedGameEducationRoute
   AuthenticatedGameHomeRoute: typeof AuthenticatedGameHomeRoute
   AuthenticatedGameHouseRoute: typeof AuthenticatedGameHouseRoute
@@ -435,6 +456,7 @@ interface AuthenticatedGameRouteChildren {
 }
 
 const AuthenticatedGameRouteChildren: AuthenticatedGameRouteChildren = {
+  AuthenticatedGameBusinessesRoute: AuthenticatedGameBusinessesRoute,
   AuthenticatedGameEducationRoute: AuthenticatedGameEducationRoute,
   AuthenticatedGameHomeRoute: AuthenticatedGameHomeRoute,
   AuthenticatedGameHouseRoute: AuthenticatedGameHouseRoute,

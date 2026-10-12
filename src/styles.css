@@ -7006,6 +7006,170 @@
   background: var(--color-surface-dark-border);
 }
 
+.phone-launcher-icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.phone-launcher-icon > img {
+  position: absolute;
+  width: 78%;
+  height: 78%;
+  object-fit: contain;
+  z-index: 1;
+}
+
+.phone-launcher-fallback {
+  width: 12px;
+  height: 20px;
+  border: 2px solid currentColor;
+  border-radius: 4px;
+}
+
+.phone-app-view {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.phone-app-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  color: var(--color-text-on-dark);
+  border-bottom: 1px solid var(--color-surface-dark-border);
+}
+
+.phone-app-toolbar button,
+.phone-chat-back {
+  color: var(--color-interactive);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.phone-app-toolbar button {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.phone-messenger {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+  color: var(--color-text-on-dark);
+  background: var(--color-surface-dark);
+}
+
+.phone-message-content {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+}
+.phone-message-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 10px 14px;
+}
+.phone-message-switch button {
+  min-height: 36px;
+  border-radius: 999px;
+  color: var(--color-text-on-dark-soft);
+  font-size: 13px;
+}
+.phone-message-switch button.is-active {
+  color: var(--color-text-inverse);
+  background: var(--color-primary);
+  font-weight: 700;
+}
+.phone-chat-panel {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  overflow: auto;
+  padding: 8px 14px 14px;
+}
+.phone-chat-subtitle {
+  color: var(--color-text-on-dark-soft);
+  font-size: 12px;
+}
+.phone-chat-panel > ol {
+  max-height: none;
+  min-height: 150px;
+  flex: 1;
+  align-content: start;
+  border: 0;
+  background: transparent;
+}
+.phone-chat-panel > ol > li {
+  width: fit-content;
+  max-width: 88%;
+  border-radius: 14px 14px 14px 4px;
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+.phone-chat-panel > ol > li.is-own {
+  align-self: end;
+  border-radius: 14px 14px 4px 14px;
+  background: #d7e8dc;
+}
+.phone-chat-panel > ol > li.is-other {
+  align-self: start;
+}
+.phone-chat-panel > ol > li:has(strong:first-child) {
+  box-shadow: 0 1px 2px rgb(0 0 0 / 12%);
+}
+.phone-chat-panel form {
+  position: sticky;
+  bottom: 0;
+}
+.phone-chat-panel form textarea {
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+.phone-conversation-list {
+  display: grid;
+  gap: 2px;
+}
+.phone-conversation {
+  display: flex;
+  min-height: 64px;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--color-surface-dark-border);
+  text-align: left;
+}
+.phone-conversation > span:nth-child(2) {
+  display: grid;
+  flex: 1;
+  gap: 3px;
+}
+.phone-conversation small {
+  color: var(--color-text-on-dark-soft);
+  font-size: 11px;
+}
+.phone-conversation-avatar {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--color-text-inverse);
+  background: var(--color-primary);
+  font-weight: 700;
+}
+
 .game-panel {
   border-color: var(--color-border);
   border-radius: var(--radius-card);
@@ -7098,6 +7262,78 @@
 
 .inventory-equipped h2 {
   color: var(--color-text);
+}
+
+.phone-finance-app {
+  display: grid;
+  min-height: 0;
+  flex: 1;
+  gap: 12px;
+  overflow: auto;
+  padding: 12px;
+  color: var(--color-text-on-dark);
+}
+.phone-finance-app h2,
+.phone-finance-app h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+}
+.phone-finance-app h2 {
+  font-size: 18px;
+}
+.phone-finance-app h3 {
+  font-size: 14px;
+}
+.phone-finance-disclaimer {
+  border-radius: 10px;
+  padding: 8px 10px;
+  color: #422c03;
+  background: #f6ce71;
+  font-size: 11px;
+}
+.phone-finance-list {
+  display: grid;
+  gap: 8px;
+}
+.phone-finance-card {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--color-surface-dark-border);
+  border-radius: 14px;
+  padding: 12px;
+  background: var(--color-surface-dark-elevated);
+}
+.phone-finance-card > div:first-child {
+  display: grid;
+  gap: 3px;
+}
+.phone-finance-card small,
+.phone-finance-card p {
+  color: var(--color-text-on-dark-soft);
+  font-size: 12px;
+}
+.phone-company-services {
+  display: grid;
+  gap: 6px;
+}
+.phone-company-services label,
+.phone-finance-share-input {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.phone-company-services input,
+.phone-finance-share-input input {
+  min-height: 38px;
+  width: 100%;
+  border: 1px solid var(--color-surface-dark-border);
+  border-radius: 8px;
+  padding: 6px 9px;
+  color: var(--color-text);
+  background: var(--color-surface);
 }
 
 .city-explorer-header,
@@ -7674,4 +7910,26 @@
   .oja-oba-market-screen .oja-oba-intro {
     padding: 15px;
   }
+}
+
+.phone-screen {
+  display: flex;
+  height: min(74vh, 690px);
+  min-height: 480px;
+  flex-direction: column;
+  overflow: hidden;
+}
+.phone-home-heading {
+  flex: none;
+  padding: 18px 14px 0;
+  color: var(--color-text-inverse);
+}
+.phone-home-heading p {
+  color: var(--color-text-on-dark-soft);
+}
+.phone-app-view {
+  flex: 1;
+}
+.phone-chat-panel > ol > li {
+  color: var(--color-text);
 }

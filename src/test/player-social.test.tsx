@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import type { ComponentProps } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PlayerSocial } from "@/components/game/PlayerSocial";
 
@@ -37,13 +38,13 @@ vi.mock("@/lib/game", () => ({
 }));
 vi.mock("@/lib/player-social-service", () => mocks);
 
-function renderSocial() {
+function renderSocial(props: ComponentProps<typeof PlayerSocial> = {}) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   return render(
     <QueryClientProvider client={client}>
-      <PlayerSocial />
+      <PlayerSocial {...props} />
     </QueryClientProvider>,
   );
 }
@@ -102,5 +103,33 @@ describe("real-player social panel", () => {
       body: "Hello, neighbours!",
       locationId: "area-olaiya",
     });
+  });
+
+  it("shows private conversations in phone mode and sends through the existing service", async () => {
+    mocks.getPlayerSocialOverview.mockResolvedValue({
+      friends: [],
+      incoming: [],
+      outgoing: [],
+      blocked: [],
+      conversations: [
+        { id: "conversation-ayo", character_id: "character-ayo", player_name: "Ayo" },
+      ],
+    });
+    renderSocial({ initialTab: "messages", phoneMode: true });
+
+    expect(await screen.findByRole("button", { name: /Ayo/ })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Ayo/ }));
+    const composer = await screen.findByLabelText("Message Ayo");
+    fireEvent.change(composer, { target: { value: "See you at the market" } });
+    fireEvent.submit(composer.closest("form")!);
+
+    await waitFor(() =>
+      expect(mocks.sendSocialMessage.mock.calls[0]?.[0]).toEqual({
+        channel: "private",
+        body: "See you at the market",
+        conversationId: "conversation-ayo",
+      }),
+    );
+    expect(screen.getByRole("button", { name: "‹ All chats" })).toBeInTheDocument();
   });
 });

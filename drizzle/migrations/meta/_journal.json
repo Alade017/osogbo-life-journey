@@ -232,6 +232,13 @@
       "when": 1791594000010,
       "tag": "0031_server_validated_home_actions",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1791594000011,
+      "tag": "0032_player_businesses_and_investments",
+      "breakpoints": true
     }
   ]
 }

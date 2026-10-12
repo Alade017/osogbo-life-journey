@@ -29,6 +29,7 @@ describe("App routing", () => {
       "/inventory",
       "/market",
       "/wallet",
+      "/businesses",
       "/profile",
       "/notifications",
       "/missions",

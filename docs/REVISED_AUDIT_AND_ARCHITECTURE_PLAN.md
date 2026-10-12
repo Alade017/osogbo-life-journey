@@ -772,6 +772,9 @@ Implement home access, furniture upgrades, permitted visits, and expandable dist
 ## Milestone 9 — Quality and release readiness
 Verify security, multiplayer behavior, travel, persistence, desktop/mobile support, performance, and deployment readiness.
 
+## Milestone 10 — Player businesses and investments (approved extension)
+Implement server-authoritative company ownership, bounded service pricing, elapsed-time earnings, share offers/dividends, and fixed-term investments. Reuse existing wallet transactions and request receipts. The scoped plan, permissions, tests and deployment boundaries are recorded in `docs/milestone10-businesses.md`. Milestone 9 remains open for its outstanding release gates; this extension does not certify release readiness.
+
 Adjust the sequence only where actual technical dependencies require it. Explain the reason for every adjustment.
 
 Each milestone must specify:
