@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "./Logo";
+import { primeGameAudioForLogin, disableGameAudio } from "@/lib/game-audio";
 
 export function AuthCard({ mode }: { mode: "login" | "signup" }) {
   const navigate = useNavigate();
@@ -65,6 +66,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
         if (error) throw error;
         toast.success("Password reset email sent.");
       } else if (mode === "signup") {
+        primeGameAudioForLogin();
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -77,8 +79,12 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
         });
         if (error) throw error;
         if (data.session) navigate({ to: "/create-character" });
-        else setSent(true);
+        else {
+          void disableGameAudio();
+          setSent(true);
+        }
       } else {
+        primeGameAudioForLogin();
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         // The protected game shell redirects new accounts to character creation
@@ -86,6 +92,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
         navigate({ to: "/home", search: { visit: undefined } });
       }
     } catch (err) {
+      void disableGameAudio();
       toast.error((err as Error).message);
     } finally {
       setBusy(false);
@@ -109,6 +116,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
 
   async function continueAsGuest() {
     setBusy(true);
+    primeGameAudioForLogin();
     try {
       const { error } = await supabase.auth.signInAnonymously({
         options: { data: { username: "guest" } },
@@ -117,6 +125,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
       navigate({ to: "/create-character" });
     } catch (error) {
       toast.error(`Guest play is unavailable. ${(error as Error).message}`);
+      void disableGameAudio();
     } finally {
       setBusy(false);
     }

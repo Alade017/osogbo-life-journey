@@ -61,7 +61,13 @@ Search and genre pages do not establish which recording was downloaded.
 
 ## Playback policy
 
-Playback begins after a user gesture. At a track's end, wait five seconds before
+Audio attempts to start automatically when the authenticated character enters
+the game. Login and guest-entry gestures prime the audio context silently;
+failed authentication leaves it muted. If the browser blocks restored-session
+playback, the first trusted in-game click, tap or keypress retries it. Sound-off
+removes this fallback until the next game entry. Saved volumes are retained.
+
+At a track's end, wait five seconds before
 the next track. Pause, sound-off, Next, sign-out and player changes cancel any
 pending restart. For libraries of five tracks or fewer, another seeded cycle
 is allowed once eligible tracks are exhausted. Automatic last-five avoidance

@@ -98,6 +98,66 @@ async function settle() {
   await new Promise((resolve) => setTimeout(resolve, 0));
 }
 describe("game music playback", () => {
+  it("primes login silently and automatically starts once the character is ready", async () => {
+    catalog.tracks = [record];
+    const audio = await import("../lib/game-audio");
+    audio.primeGameAudioForLogin();
+    await settle();
+    expect(contexts[0]!.gains[0]!.gain.value).toBe(0);
+    expect(fetch).not.toHaveBeenCalled();
+    audio.configureGameMusic("player");
+    audio.startGameAudioSession();
+    await settle();
+    expect(audio.getMusicState().playing).toBe(true);
+    expect(audio.getMusicState().soundEnabled).toBe(true);
+    audio.configureGameMusic(null);
+    await audio.disableGameAudio();
+  });
+  it("retries a blocked start on a trusted gesture and removes fallback after success", async () => {
+    catalog.tracks = [record];
+    const blocked = vi
+      .spyOn(FakeContext.prototype, "resume")
+      .mockRejectedValueOnce(new Error("blocked"));
+    const listen = vi.spyOn(document, "addEventListener");
+    const remove = vi.spyOn(document, "removeEventListener");
+    const audio = await import("../lib/game-audio");
+    audio.configureGameMusic("player");
+    audio.startGameAudioSession();
+    await settle();
+    expect(audio.getMusicState().playing).toBe(false);
+    const retry = listen.mock.calls.find((call) => call[0] === "pointerdown")![1] as EventListener;
+    retry({ isTrusted: false } as Event);
+    await settle();
+    expect(blocked).toHaveBeenCalledTimes(1);
+    retry({ isTrusted: true } as Event);
+    await settle();
+    expect(audio.getMusicState().playing).toBe(true);
+    expect(remove).toHaveBeenCalledWith("pointerdown", retry);
+    await audio.disableGameAudio();
+    retry({ isTrusted: true } as Event);
+    await settle();
+    expect(audio.getMusicState().soundEnabled).toBe(false);
+    audio.configureGameMusic(null);
+  });
+  it("does not reenable audio when a pending resume finishes after sound-off", async () => {
+    catalog.tracks = [record];
+    let finish!: () => void;
+    vi.spyOn(FakeContext.prototype, "resume").mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const audio = await import("../lib/game-audio");
+    audio.configureGameMusic("player");
+    const enabled = audio.enableGameAudio();
+    await audio.disableGameAudio();
+    finish();
+    expect(await enabled).toBe(false);
+    expect(audio.getMusicState().soundEnabled).toBe(false);
+    expect(fetch).not.toHaveBeenCalled();
+    audio.configureGameMusic(null);
+  });
   it("prioritizes the welcome song after confirmed creation and consumes it only on playback", async () => {
     catalog.tracks = [
       { ...record, id: "normal" },

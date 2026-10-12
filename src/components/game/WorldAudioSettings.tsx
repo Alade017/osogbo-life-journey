@@ -27,8 +27,8 @@ export function WorldAudioSettings({
   const music = useSyncExternalStore(subscribeMusic, getMusicState, getServerMusicState);
 
   useEffect(() => {
-    setAudioActive(isGameAudioActive());
-  }, []);
+    setAudioActive(music.soundEnabled && isGameAudioActive());
+  }, [music.soundEnabled]);
 
   function setLevel(key: keyof Levels, value: number) {
     const next = { ...levels, [key]: value };
@@ -56,7 +56,8 @@ export function WorldAudioSettings({
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
-        Original synthesized city ambience and game sounds. Audio starts only after you enable it.
+        Music and game sounds start when you enter the game. If your browser blocks playback, click
+        or tap to enable sound.
       </p>
       <div className="flex flex-wrap items-center gap-3">
         <Button variant={audioActive ? "outline" : "default"} onClick={() => void toggleAudio()}>

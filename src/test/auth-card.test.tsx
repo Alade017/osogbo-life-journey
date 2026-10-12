@@ -10,8 +10,15 @@ const auth = vi.hoisted(() => ({
   getSession: vi.fn(),
   navigate: vi.fn(),
   error: vi.fn(),
+  prime: vi.fn(),
+  mute: vi.fn(),
+  signInAnonymously: vi.fn(),
 }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { auth } }));
+vi.mock("@/lib/game-audio", () => ({
+  primeGameAudioForLogin: auth.prime,
+  disableGameAudio: auth.mute,
+}));
 vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => auth.navigate,
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
@@ -21,6 +28,24 @@ vi.mock("@tanstack/react-router", () => ({
 vi.mock("sonner", () => ({ toast: { error: auth.error } }));
 
 describe("direct Supabase Google authentication", () => {
+  it("primes guest entry and proceeds only after authentication succeeds", async () => {
+    auth.signInAnonymously.mockResolvedValue({ error: null });
+    render(<AuthCard mode="login" />);
+    fireEvent.click(screen.getByRole("button", { name: "Continue as guest" }));
+    expect(auth.prime).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(auth.navigate).toHaveBeenCalledWith({ to: "/create-character" }));
+    expect(auth.mute).not.toHaveBeenCalled();
+  });
+  it("unlocks audio in the login gesture but silences failed authentication", async () => {
+    auth.signInWithPassword.mockResolvedValue({ error: new Error("Wrong password") });
+    render(<AuthCard mode="login" />);
+    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "player@example.com" } });
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "password123" } });
+    fireEvent.click(screen.getByRole("button", { name: /log in/i }));
+    expect(auth.prime).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(auth.mute).toHaveBeenCalled());
+    expect(auth.navigate).not.toHaveBeenCalled();
+  });
   beforeEach(() => {
     vi.clearAllMocks();
     auth.onAuthStateChange.mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } });
@@ -84,6 +109,9 @@ describe("direct Supabase Google authentication", () => {
         to: "/home",
         search: { visit: undefined },
       }),
+    );
+    expect(auth.prime.mock.invocationCallOrder[0]).toBeLessThan(
+      auth.signInWithPassword.mock.invocationCallOrder[0]!,
     );
   });
 

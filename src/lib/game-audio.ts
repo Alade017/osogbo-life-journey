@@ -20,6 +20,42 @@ type AudioGraph = {
 const STORAGE_KEY = "osogbo-world-audio-v1";
 const DEFAULT_LEVELS: AudioLevels = { master: 0.55, music: 0.2, effects: 0.45 };
 let graph: AudioGraph | null = null;
+let automaticAudioAllowed = false;
+let removeAudioGestureListeners: (() => void) | null = null;
+function clearAudioGestureListeners() {
+  removeAudioGestureListeners?.();
+  removeAudioGestureListeners = null;
+}
+/** Prime from the login gesture without playing anything before authentication. */
+export function primeGameAudioForLogin() {
+  if (typeof window === "undefined") return;
+  automaticAudioAllowed = true;
+  try {
+    if (!graph) graph = createAudioGraph({ ...readGameAudioLevels(), master: 0 });
+    if (!graph) return;
+    graph.master.gain.cancelScheduledValues(graph.context.currentTime);
+    graph.master.gain.value = 0;
+    void graph.context.resume().catch(() => {});
+  } catch {
+    /* Audio never prevents login. */
+  }
+}
+export function startGameAudioSession() {
+  if (typeof document === "undefined" || !playerId) return;
+  automaticAudioAllowed = true;
+  clearAudioGestureListeners();
+  const retry = (event: Event) => {
+    if (!event.isTrusted || !automaticAudioAllowed || !playerId) return;
+    void enableGameAudio();
+  };
+  document.addEventListener("pointerdown", retry);
+  document.addEventListener("keydown", retry);
+  removeAudioGestureListeners = () => {
+    document.removeEventListener("pointerdown", retry);
+    document.removeEventListener("keydown", retry);
+  };
+  void enableGameAudio();
+}
 
 export const playableMusicTracks = validMusicTracks(musicTracks);
 export const playableSoundEffects = validSoundEffects(soundEffects);
@@ -189,6 +225,7 @@ export async function resumeGameMusic(allowReplay = true) {
       return;
     }
     publishMusic({ playing: true, status: "Playing", playbackId: musicState.playbackId + 1 });
+    clearAudioGestureListeners();
   } catch {
     publishMusic({ playing: false, status: "Press resume to allow music playback." });
   }
@@ -283,6 +320,7 @@ export async function nextGameMusic(allowReplay = false) {
           status: "Playing",
           playbackId: musicState.playbackId + 1,
         });
+        clearAudioGestureListeners();
         return;
       } catch {
         if (candidate) disposeDeck(candidate);
@@ -374,9 +412,13 @@ export async function enableGameAudio(levels = readGameAudioLevels()): Promise<b
     if (!graph) graph = createAudioGraph(levels);
     if (!graph) return false;
     applyLevels(graph, levels);
+    const generation = audioGeneration;
     await graph.context.resume();
+    if (generation !== audioGeneration) return false;
     publishMusic({ soundEnabled: graph.context.state === "running" });
     if (graph.context.state === "running") void resumeGameMusic(true);
+    if (graph.context.state === "running" && !playableMusicTracks.length)
+      clearAudioGestureListeners();
     return graph.context.state === "running";
   } catch {
     return false;
@@ -384,6 +426,8 @@ export async function enableGameAudio(levels = readGameAudioLevels()): Promise<b
 }
 
 export async function disableGameAudio() {
+  automaticAudioAllowed = false;
+  clearAudioGestureListeners();
   pauseGameMusic();
   publishMusic({ soundEnabled: false });
   stopEffects();

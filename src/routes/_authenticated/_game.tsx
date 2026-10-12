@@ -23,7 +23,7 @@ import { WorldEnvironment } from "@/components/game/WorldEnvironment";
 import { gameTimeFromCharacter } from "@/lib/game-time";
 import { playerStateFromRows } from "@/lib/player-state";
 import { normalizeEquippedItems } from "@/lib/equipment-service";
-import { configureGameMusic, disableGameAudio } from "@/lib/game-audio";
+import { configureGameMusic, disableGameAudio, startGameAudioSession } from "@/lib/game-audio";
 
 export const Route = createFileRoute("/_authenticated/_game")({
   component: GameLayout,
@@ -73,6 +73,7 @@ function GameLayout() {
   const unread = notes?.filter((n) => !n.read_at).length ?? 0;
   useEffect(() => {
     configureGameMusic(character?.id ?? null);
+    if (character?.id) startGameAudioSession();
     return () => {
       configureGameMusic(null);
       void disableGameAudio();
