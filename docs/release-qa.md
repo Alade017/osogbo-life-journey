@@ -2,6 +2,10 @@
 
 ## Readiness audit — 2026-10-12
 
+### Additional local control verification attempt — 2026-10-12
+
+The existing `scripts/neighborhood-browser-smoke.mjs` was rerun for keyboard movement, collision, touch input, checkpoint and pause checks at its 1024×768 harness viewport. Neither the initial restricted Chrome run nor the permitted Chrome retry produced a result. Chrome reported GPU/cache process failures on the first run; the retry ended without a result. An ignored `.smoke/` copy of the same harness was attempted with isolated headless Edge and also ended without a result, with browser renderer diagnostics. All three invocations exited with failure; no current control-test pass is claimed. These failures do not identify a gameplay defect. Earlier historical passes below remain historical evidence only. A working browser harness is required to close this gate; responsive device/accessibility verification remains separate. No game source, database, deployment or user browser profile was changed.
+
 - The user reports that authenticated testing has already been performed. This is user-reported verification; the exact travel, persistence, security, device and multi-service scenarios have not been independently reproduced.
 - `node scripts/release-readiness-check.mjs` validates the local journal without loading `.env`, connecting to a database or applying SQL. All 33 registered migrations through `0031_server_validated_home_actions` have matching files, sequential journal indices and increasing timestamps. Both `0012` files have distinct journal entries; do not renumber published migrations.
 - Migration 0030 depends on the personal simulation function introduced by 0024 and expects its original clock-rate expression. Migration 0031 replaces that function and retains the corrected 1:1 rate. Apply the journal order; do not rerun 0030 after 0031 as a repair.
