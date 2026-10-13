@@ -341,7 +341,7 @@ function JobsPage() {
             {filteredJobs.length} {filteredJobs.length === 1 ? "role" : "roles"}
           </span>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="jobs-card-grid grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredJobs.map((j) => {
             const requiredCourse = j.required_course_slug
               ? courses?.find((course) => course.slug === j.required_course_slug)

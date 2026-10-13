@@ -10,8 +10,12 @@ export type CharacterModel = {
   animationNames?: Readonly<Record<string, string>>;
 };
 export type CityLocationModel = {
-  id: string; name: string; modelPath: string; position: Vector3Tuple;
-  scale?: number | Vector3Tuple; roomPath?: string;
+  id: string;
+  name: string;
+  modelPath: string;
+  position: Vector3Tuple;
+  scale?: number | Vector3Tuple;
+  roomPath?: string;
 };
 export type SceneView = { kind: "city" } | { kind: "room"; locationId: string; modelPath: string };
 export const DRACO_PATH = "/models/draco/";

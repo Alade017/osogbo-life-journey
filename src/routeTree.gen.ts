@@ -24,6 +24,7 @@ import { Route as AuthenticatedGameJobsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedGameMapRouteImport } from './routes/_authenticated/_game/map'
 import { Route as AuthenticatedGameMarketRouteImport } from './routes/_authenticated/_game/market'
 import { Route as AuthenticatedGameMissionsRouteImport } from './routes/_authenticated/_game/missions'
+import { Route as AuthenticatedGameModelsRouteImport } from './routes/_authenticated/_game/models'
 import { Route as AuthenticatedGameNotificationsRouteImport } from './routes/_authenticated/_game/notifications'
 import { Route as AuthenticatedGameProfileRouteImport } from './routes/_authenticated/_game/profile'
 import { Route as AuthenticatedGameSettingsRouteImport } from './routes/_authenticated/_game/settings'
@@ -109,6 +110,11 @@ const AuthenticatedGameMissionsRoute =
     path: '/missions',
     getParentRoute: () => AuthenticatedGameRoute,
   } as any)
+const AuthenticatedGameModelsRoute = AuthenticatedGameModelsRouteImport.update({
+  id: '/models',
+  path: '/models',
+  getParentRoute: () => AuthenticatedGameRoute,
+} as any)
 const AuthenticatedGameNotificationsRoute =
   AuthenticatedGameNotificationsRouteImport.update({
     id: '/notifications',
@@ -158,6 +164,7 @@ export interface FileRoutesByFullPath {
   '/map': typeof AuthenticatedGameMapRoute
   '/market': typeof AuthenticatedGameMarketRoute
   '/missions': typeof AuthenticatedGameMissionsRoute
+  '/models': typeof AuthenticatedGameModelsRoute
   '/notifications': typeof AuthenticatedGameNotificationsRoute
   '/profile': typeof AuthenticatedGameProfileRoute
   '/settings': typeof AuthenticatedGameSettingsRoute
@@ -179,6 +186,7 @@ export interface FileRoutesByTo {
   '/map': typeof AuthenticatedGameMapRoute
   '/market': typeof AuthenticatedGameMarketRoute
   '/missions': typeof AuthenticatedGameMissionsRoute
+  '/models': typeof AuthenticatedGameModelsRoute
   '/notifications': typeof AuthenticatedGameNotificationsRoute
   '/profile': typeof AuthenticatedGameProfileRoute
   '/settings': typeof AuthenticatedGameSettingsRoute
@@ -203,6 +211,7 @@ export interface FileRoutesById {
   '/_authenticated/_game/map': typeof AuthenticatedGameMapRoute
   '/_authenticated/_game/market': typeof AuthenticatedGameMarketRoute
   '/_authenticated/_game/missions': typeof AuthenticatedGameMissionsRoute
+  '/_authenticated/_game/models': typeof AuthenticatedGameModelsRoute
   '/_authenticated/_game/notifications': typeof AuthenticatedGameNotificationsRoute
   '/_authenticated/_game/profile': typeof AuthenticatedGameProfileRoute
   '/_authenticated/_game/settings': typeof AuthenticatedGameSettingsRoute
@@ -226,6 +235,7 @@ export interface FileRouteTypes {
     | '/map'
     | '/market'
     | '/missions'
+    | '/models'
     | '/notifications'
     | '/profile'
     | '/settings'
@@ -247,6 +257,7 @@ export interface FileRouteTypes {
     | '/map'
     | '/market'
     | '/missions'
+    | '/models'
     | '/notifications'
     | '/profile'
     | '/settings'
@@ -270,6 +281,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_game/map'
     | '/_authenticated/_game/market'
     | '/_authenticated/_game/missions'
+    | '/_authenticated/_game/models'
     | '/_authenticated/_game/notifications'
     | '/_authenticated/_game/profile'
     | '/_authenticated/_game/settings'
@@ -392,6 +404,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGameMissionsRouteImport
       parentRoute: typeof AuthenticatedGameRoute
     }
+    '/_authenticated/_game/models': {
+      id: '/_authenticated/_game/models'
+      path: '/models'
+      fullPath: '/models'
+      preLoaderRoute: typeof AuthenticatedGameModelsRouteImport
+      parentRoute: typeof AuthenticatedGameRoute
+    }
     '/_authenticated/_game/notifications': {
       id: '/_authenticated/_game/notifications'
       path: '/notifications'
@@ -447,6 +466,7 @@ interface AuthenticatedGameRouteChildren {
   AuthenticatedGameMapRoute: typeof AuthenticatedGameMapRoute
   AuthenticatedGameMarketRoute: typeof AuthenticatedGameMarketRoute
   AuthenticatedGameMissionsRoute: typeof AuthenticatedGameMissionsRoute
+  AuthenticatedGameModelsRoute: typeof AuthenticatedGameModelsRoute
   AuthenticatedGameNotificationsRoute: typeof AuthenticatedGameNotificationsRoute
   AuthenticatedGameProfileRoute: typeof AuthenticatedGameProfileRoute
   AuthenticatedGameSettingsRoute: typeof AuthenticatedGameSettingsRoute
@@ -465,6 +485,7 @@ const AuthenticatedGameRouteChildren: AuthenticatedGameRouteChildren = {
   AuthenticatedGameMapRoute: AuthenticatedGameMapRoute,
   AuthenticatedGameMarketRoute: AuthenticatedGameMarketRoute,
   AuthenticatedGameMissionsRoute: AuthenticatedGameMissionsRoute,
+  AuthenticatedGameModelsRoute: AuthenticatedGameModelsRoute,
   AuthenticatedGameNotificationsRoute: AuthenticatedGameNotificationsRoute,
   AuthenticatedGameProfileRoute: AuthenticatedGameProfileRoute,
   AuthenticatedGameSettingsRoute: AuthenticatedGameSettingsRoute,

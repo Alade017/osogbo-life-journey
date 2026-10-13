@@ -45,7 +45,7 @@ vi.mock("@tanstack/react-router", () => ({
     <a href={to}>{children}</a>
   ),
 }));
-vi.mock("@/game/neighborhood-scene", () => ({ createNeighborhoodGame: mocks.create }));
+vi.mock("@/game/three-neighborhood", () => ({ createNeighborhoodGame: mocks.create }));
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.character = {
@@ -82,7 +82,7 @@ async function start() {
   await waitFor(() => expect(mocks.create).toHaveBeenCalled());
   return mocks.create.mock.calls[0]![1] as NeighborhoodBridge;
 }
-describe("Phaser to React checkpoint bridge", () => {
+describe("3D to React checkpoint bridge", () => {
   it("commits stopped movement through the trusted RPC and updates the revision", async () => {
     const bridge = await start();
     mocks.save.mockImplementation(async () => {

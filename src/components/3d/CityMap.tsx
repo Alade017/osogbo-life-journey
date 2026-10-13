@@ -14,19 +14,48 @@ export function RepeatedProps({ positions }: { positions: readonly Vector3Tuple[
   const mesh = useRef<InstancedMesh>(null);
   useEffect(() => {
     const object = new Object3D();
-    positions.forEach((position, index) => { object.position.set(...position); object.updateMatrix(); mesh.current?.setMatrixAt(index, object.matrix); });
-    if (mesh.current) { mesh.current.instanceMatrix.needsUpdate = true; mesh.current.computeBoundingSphere(); }
+    positions.forEach((position, index) => {
+      object.position.set(...position);
+      object.updateMatrix();
+      mesh.current?.setMatrixAt(index, object.matrix);
+    });
+    if (mesh.current) {
+      mesh.current.instanceMatrix.needsUpdate = true;
+      mesh.current.computeBoundingSphere();
+    }
   }, [positions]);
-  return <instancedMesh ref={mesh} args={[undefined, undefined, positions.length]}>
-    <coneGeometry args={[0.3, 1.1, 5]} /><meshLambertMaterial color="#176b45" />
-  </instancedMesh>;
+  return (
+    <instancedMesh ref={mesh} args={[undefined, undefined, positions.length]}>
+      <coneGeometry args={[0.3, 1.1, 5]} />
+      <meshLambertMaterial color="#176b45" />
+    </instancedMesh>
+  );
 }
-export const CityMap = memo(function CityMap({ modelPaths, locations, onLocationSelect }: { modelPaths: readonly string[]; locations: readonly CityLocationModel[]; onLocationSelect?: (id: string) => void }) {
+export const CityMap = memo(function CityMap({
+  modelPaths,
+  locations,
+  onLocationSelect,
+}: {
+  modelPaths: readonly string[];
+  locations: readonly CityLocationModel[];
+  onLocationSelect?: (id: string) => void;
+}) {
   const select = useCityInteractions(onLocationSelect);
-  return <group>
-    {modelPaths.map((path) => <Model key={path} modelPath={path} />)}
-    {locations.map((location) => <group key={location.id} position={location.position} scale={location.scale ?? 1} onClick={(event) => select(location.id, event)}>
-      <Model modelPath={location.modelPath} />
-    </group>)}
-  </group>;
+  return (
+    <group>
+      {modelPaths.map((path) => (
+        <Model key={path} modelPath={path} />
+      ))}
+      {locations.map((location) => (
+        <group
+          key={location.id}
+          position={location.position}
+          scale={location.scale ?? 1}
+          onClick={(event) => select(location.id, event)}
+        >
+          <Model modelPath={location.modelPath} />
+        </group>
+      ))}
+    </group>
+  );
 });

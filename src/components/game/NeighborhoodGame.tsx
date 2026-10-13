@@ -18,7 +18,8 @@ import {
   type WorldPoint,
 } from "@/game/neighborhood-model";
 import type { NetworkPlayerSnapshot } from "@/game/multiplayer-state";
-import type { createNeighborhoodGame, MovementInput } from "@/game/neighborhood-scene";
+import type { createNeighborhoodGame } from "@/game/three-neighborhood";
+import type { MovementInput } from "@/game/neighborhood-scene";
 import type { Appearance } from "@/components/game/Avatar";
 import { normalizeEquippedItems } from "@/lib/equipment-service";
 import { joinNeighborhood, type NeighborhoodRoom } from "@/lib/multiplayer-service";
@@ -29,7 +30,7 @@ import { MissionChips } from "@/components/game/MissionChips";
 import "./neighborhood.css";
 
 type Engine = ReturnType<typeof createNeighborhoodGame>;
-const loadNeighborhood = createClientOnlyFn(() => import("@/game/neighborhood-scene"));
+const loadNeighborhood = createClientOnlyFn(() => import("@/game/three-neighborhood"));
 const controls = [
   { direction: "up", Icon: ArrowUp, label: "Walk north" },
   { direction: "left", Icon: ArrowLeft, label: "Walk west" },
@@ -260,6 +261,7 @@ export function NeighborhoodGame() {
           onInteract: (object) => callbacks.current.interact(object),
           saveCheckpoint: (point) => callbacks.current.checkpoint(point),
           onMovementIntent: (input) => callbacks.current.movement(input),
+          onSceneError: (error) => setLoadError(error.message),
         });
         engine.current = created;
         setLoaded(true);

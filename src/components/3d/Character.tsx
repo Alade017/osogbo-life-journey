@@ -17,19 +17,41 @@ function Part({ part, body }: { part: ModelPart; body: Object3D }) {
         if (!(target instanceof Bone)) throw new Error(`Incompatible modular rig: ${bone.name}`);
         return target;
       });
-      node.bind(new Skeleton(bones, node.skeleton.boneInverses.map((matrix) => matrix.clone())), node.bindMatrix);
+      node.bind(
+        new Skeleton(
+          bones,
+          node.skeleton.boneInverses.map((matrix) => matrix.clone()),
+        ),
+        node.bindMatrix,
+      );
     });
     return copy;
   }, [gltf.scene, body]);
   const socket = part.socket ? body.getObjectByName(part.socket) : null;
   if (part.socket && !socket) throw new Error(`Missing attachment socket: ${part.socket}`);
-  return socket ? createPortal(<primitive object={object} dispose={null} />, socket) : <primitive object={object} dispose={null} />;
+  return socket ? (
+    createPortal(<primitive object={object} dispose={null} />, socket)
+  ) : (
+    <primitive object={object} dispose={null} />
+  );
 }
 
-export const Character = memo(function Character({ modelPath, position = [0, 0, 0], rotation = [0, 0, 0], scale = 1, currentAnimation = "Idle", animationNames, parts = [] }: CharacterModel) {
+export const Character = memo(function Character({
+  modelPath,
+  position = [0, 0, 0],
+  rotation = [0, 0, 0],
+  scale = 1,
+  currentAnimation = "Idle",
+  animationNames,
+  parts = [],
+}: CharacterModel) {
   const { scene } = useCharacter(modelPath, currentAnimation, animationNames);
-  return <group position={position} rotation={rotation} scale={scale}>
-    <primitive object={scene} dispose={null} />
-    {parts.map((part) => <Part key={`${part.modelPath}:${part.socket ?? "root"}`} part={part} body={scene} />)}
-  </group>;
+  return (
+    <group position={position} rotation={rotation} scale={scale}>
+      <primitive object={scene} dispose={null} />
+      {parts.map((part) => (
+        <Part key={`${part.modelPath}:${part.socket ?? "root"}`} part={part} body={scene} />
+      ))}
+    </group>
+  );
 });

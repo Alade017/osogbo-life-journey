@@ -25,6 +25,7 @@ import { playerStateFromRows } from "@/lib/player-state";
 import { normalizeEquippedItems } from "@/lib/equipment-service";
 import { configureGameMusic, disableGameAudio, startGameAudioSession } from "@/lib/game-audio";
 import "@/components/game/game-navigation.css";
+import "@/components/game/game-cards.css";
 
 export const Route = createFileRoute("/_authenticated/_game")({
   component: GameLayout,
@@ -131,7 +132,7 @@ function GameLayout() {
     >
       <div
         className={cn(
-          "game-shell city-game navigation-redesign min-h-screen pb-20 md:pb-0",
+          "game-shell city-game navigation-redesign card-refresh min-h-screen pb-20 md:pb-0",
           profile?.reduced_motion && "reduce-motion",
         )}
       >
