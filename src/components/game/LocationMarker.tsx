@@ -460,8 +460,10 @@ export function LocationMarker({ map }: { map: MapLibreMap }) {
           );
         })}
       </div>
-      <details className="location-map-keyboard-browse">
-        <summary>Browse locations ({visibleLocations.length})</summary>
+      <details className="location-map-keyboard-browse" open>
+        <summary>
+          Key locations <span>({visibleLocations.length})</span>
+        </summary>
         <div className="location-map-keyboard-list" aria-label="Locations in this map view">
           {visibleLocations.map((location) => (
             <button

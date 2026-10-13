@@ -1,6 +1,7 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { BriefcaseBusiness, Package, ShoppingBag, Users, Wallet } from "lucide-react";
 import { Link } from "@tanstack/react-router";
+import { OsogboMap } from "@/components/game/OsogboMap";
 
 const QUICK_ACTIONS = [
   { to: "/jobs", label: "Find work", icon: BriefcaseBusiness, tone: "jobs" },
@@ -11,6 +12,7 @@ const QUICK_ACTIONS = [
 ] as const;
 
 export function CityMapDashboard({ children }: { children: ReactNode }) {
+  const [view, setView] = useState<"atlas" | "neighborhood">("atlas");
   return (
     <div className="city-map-dashboard">
       <header className="city-map-heading">
@@ -24,13 +26,33 @@ export function CityMapDashboard({ children }: { children: ReactNode }) {
         </Link>
       </header>
 
+      <div className="city-map-view-switch" role="group" aria-label="Map view">
+        <button type="button" aria-pressed={view === "atlas"} onClick={() => setView("atlas")}>
+          City atlas
+        </button>
+        <button
+          type="button"
+          aria-pressed={view === "neighborhood"}
+          onClick={() => setView("neighborhood")}
+        >
+          3D neighborhood
+        </button>
+      </div>
       <p className="city-map-hint">
-        Tap a building or neighbour for details. Choose <strong>Go</strong> when you&apos;re ready
-        to walk over.
+        {view === "atlas" ? (
+          "Explore mapped places, filter by type or neighborhood, and open a location for details."
+        ) : (
+          <>
+            Tap a building or neighbour for details. Choose <strong>Go</strong> when you&apos;re
+            ready to walk over.
+          </>
+        )}
       </p>
 
-      <div className="city-map-layout">
-        <main className="city-map-world">{children}</main>
+      <div className={`city-map-layout is-${view}`}>
+        <main className={`city-map-world is-${view}`}>
+          {view === "atlas" ? <OsogboMap /> : children}
+        </main>
         <aside className="city-map-sidebar" aria-label="Quick actions">
           <section
             className="city-map-quick-actions game-panel"

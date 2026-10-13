@@ -2949,10 +2949,31 @@
 }
 
 .location-map-legend {
+  top: 14px;
+  right: 58px;
+  bottom: auto;
+  left: auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(100px, 1fr));
+  align-items: center;
+  gap: 3px 8px;
+  width: min(300px, calc(100% - 80px));
+  max-height: min(48vh, 360px);
+  overflow: auto;
+  padding: 10px;
+  border-color: rgb(255 255 255 / 18%);
+  border-radius: 12px;
+  color: #f8f6ed;
+  background: rgb(8 29 43 / 94%);
+  box-shadow: 0 5px 18px rgb(7 20 29 / 30%);
   flex-wrap: wrap;
-  gap: 6px 9px;
-  color: #425148;
   font-size: 9px;
+}
+
+.location-map-count,
+.location-map-neighborhood-filter,
+.location-map-legend > span:not(.location-map-count) {
+  grid-column: 1 / -1;
 }
 
 .location-map-filter {
@@ -2977,8 +2998,8 @@
 
 .location-map-count {
   padding-right: 7px;
-  border-right: 1px solid rgb(41 54 46 / 20%);
-  color: #2b4939;
+  border-right: 0;
+  color: #ffe18a;
   font-weight: 900;
 }
 
@@ -4400,7 +4421,7 @@
 .location-map-keyboard-browse {
   position: absolute;
   z-index: 4;
-  top: 14px;
+  bottom: 14px;
   left: 14px;
   width: min(320px, calc(100% - 28px));
   color: #263c55;
@@ -4411,10 +4432,11 @@
   min-height: 38px;
   align-items: center;
   padding: 0 13px;
-  border: 1px solid rgb(38 60 85 / 12%);
+  border: 1px solid rgb(255 255 255 / 16%);
   border-radius: 11px;
-  background: #fffdf8;
-  box-shadow: 0 3px 12px rgb(30 48 69 / 12%);
+  color: #fffdf8;
+  background: rgb(8 29 43 / 94%);
+  box-shadow: 0 3px 12px rgb(30 48 69 / 20%);
   cursor: pointer;
   font-size: 12px;
   font-weight: 700;
@@ -4427,14 +4449,15 @@
 
 .location-map-keyboard-list {
   display: grid;
-  max-height: min(55vh, 420px);
+  max-height: min(40vh, 330px);
   gap: 4px;
   overflow: auto;
   margin-top: 6px;
   padding: 6px;
-  border: 1px solid rgb(38 60 85 / 12%);
+  border: 1px solid rgb(255 255 255 / 16%);
   border-radius: 12px;
-  background: #fffdf8;
+  color: #f8f6ed;
+  background: rgb(8 29 43 / 96%);
   box-shadow: 0 8px 24px rgb(30 48 69 / 18%);
 }
 
@@ -4455,7 +4478,7 @@
 
 .location-map-keyboard-list > button:hover,
 .location-map-keyboard-list > button:focus-visible {
-  background: #f1f4f6;
+  background: rgb(255 255 255 / 12%);
 }
 
 .location-map-keyboard-list > button > span:nth-child(2) {
@@ -4467,8 +4490,28 @@
 }
 
 .location-map-keyboard-list small {
-  color: #64748b;
+  color: #c2cfcd;
   font-size: 10px;
+}
+
+@media (max-width: 640px) {
+  .location-map-legend {
+    top: 104px;
+    right: 8px;
+    width: min(210px, calc(100% - 24px));
+    max-height: min(25vh, 190px);
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .location-map-keyboard-browse {
+    bottom: 10px;
+    left: 8px;
+    width: min(300px, calc(100% - 16px));
+  }
+
+  .location-map-keyboard-list {
+    max-height: min(29vh, 230px);
+  }
 }
 
 /* Shared button shape: softly rounded controls across game, account, and utility screens. */

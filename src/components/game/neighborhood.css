@@ -364,9 +364,40 @@
   align-items: start;
   gap: 16px;
 }
+.city-map-layout.is-atlas {
+  grid-template-columns: minmax(0, 1fr);
+}
 .city-map-world,
 .city-map-sidebar {
   min-width: 0;
+}
+.city-map-world.is-atlas .osogbo-map-frame {
+  height: clamp(500px, 70vh, 820px);
+  min-height: 500px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: 0 8px 28px rgb(23 74 56 / 9%);
+}
+.city-map-view-switch {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.city-map-view-switch > button {
+  min-height: 40px;
+  padding: 0 15px;
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  background: var(--card);
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+}
+.city-map-view-switch > button[aria-pressed="true"] {
+  border-color: var(--primary);
+  color: white;
+  background: var(--primary);
 }
 .city-map-sidebar {
   display: grid;
@@ -475,6 +506,15 @@
   }
   .city-map-world .neighborhood-stage {
     height: 480px;
+  }
+  .city-map-world.is-atlas .osogbo-map-frame {
+    height: 68vh;
+    min-height: 540px;
+    max-height: 720px;
+  }
+  .city-map-view-switch > button {
+    flex: 1;
+    min-height: 44px;
   }
 }
 @media (prefers-reduced-motion: reduce) {
