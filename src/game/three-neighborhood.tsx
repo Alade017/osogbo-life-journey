@@ -8,8 +8,15 @@ import { Scene, preloadModels } from "@/components/3d/Scene";
 import { Character } from "@/components/3d/Character";
 import { CityMap, RepeatedProps } from "@/components/3d/CityMap";
 import { Room } from "@/components/3d/Room";
-import { DEVELOPMENT_MODELS, type CityLocationModel, type Vector3Tuple } from "@/types/models";
+import {
+  DEVELOPMENT_MODELS,
+  type CharacterAnimationState,
+  type CityLocationModel,
+  type Vector3Tuple,
+} from "@/types/models";
 import { nearestInteraction, toScene, toWorld, type WorldPoint } from "./neighborhood-model";
+import { characterAppearance3D } from "./character-3d-appearance";
+import { parseSavedAppearance } from "./character-animation";
 import type { NeighborhoodBridge, MovementInput } from "./neighborhood-scene";
 import type { NetworkPlayerSnapshot } from "./multiplayer-state";
 
@@ -43,6 +50,8 @@ export class ThreeNeighborhoodController {
   private destination: WorldPoint | null = null;
   private lastNearby: string | null = null;
   private wasMoving = false;
+  localAnimation: CharacterAnimationState | null = null;
+  private animationTimer: ReturnType<typeof setTimeout> | null = null;
   constructor(public bridge: NeighborhoodBridge) {
     this.point = { ...bridge.spawn };
   }
@@ -92,8 +101,22 @@ export class ThreeNeighborhoodController {
     this.zoomValue = Math.max(18, Math.min(80, this.zoomValue + change * 20));
     this.notify();
   }
-  playAvatarAction(_animation?: string) {
-    /* Unsupported emotes leave the loaded idle/walk clip unchanged. */
+  setAnimation(animation: CharacterAnimationState | null) {
+    this.localAnimation = animation;
+    if (this.animationTimer) clearTimeout(this.animationTimer);
+    this.animationTimer = null;
+    this.notify();
+  }
+  playAvatarAction(animation: CharacterAnimationState = "wave", durationMs = 1200) {
+    this.setAnimation(animation);
+    this.animationTimer = setTimeout(
+      () => {
+        this.localAnimation = null;
+        this.animationTimer = null;
+        this.notify();
+      },
+      Math.max(0, durationMs),
+    );
   }
   checkpoint() {
     return this.bridge.saveCheckpoint(this.point);
@@ -170,6 +193,8 @@ export class ThreeNeighborhoodController {
     const timer = setInterval(() => this.tick(), 100);
     return () => {
       clearInterval(timer);
+      if (this.animationTimer) clearTimeout(this.animationTimer);
+      this.animationTimer = null;
       stop();
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
@@ -191,7 +216,12 @@ function NetworkActor({ id, controller }: { id: string; controller: ThreeNeighbo
       ? Math.hypot(player.x - last.current.x, player.y - last.current.y)
       : 0;
     if (distance > 0.0001) movedAt.current = state.clock.elapsedTime;
-    const next = state.clock.elapsedTime - movedAt.current < 0.18 ? "Walk" : "Idle";
+    const next =
+      id === controller.localSessionId && controller.localAnimation
+        ? controller.localAnimation
+        : state.clock.elapsedTime - movedAt.current < 0.18
+          ? "walk"
+          : "idle";
     if (next !== animation) setAnimation(next);
     last.current = { x: player.x, y: player.y };
     root.current.position.x += (point[0] - root.current.position.x) * Math.min(1, delta * 16);
@@ -205,6 +235,8 @@ function NetworkActor({ id, controller }: { id: string; controller: ThreeNeighbo
             ? -Math.PI / 2
             : 0;
   });
+  const player = controller.players.get(id);
+  if (!player) return null;
   return (
     <group
       ref={root}
@@ -217,6 +249,12 @@ function NetworkActor({ id, controller }: { id: string; controller: ThreeNeighbo
       <Character
         modelPath={DEVELOPMENT_MODELS.character}
         currentAnimation={animation}
+        appearance={characterAppearance3D(
+          id === controller.localSessionId
+            ? controller.bridge.appearance
+            : parseSavedAppearance(player.appearance),
+          player.gender,
+        )}
         scale={0.65}
       />
     </group>
@@ -257,7 +295,7 @@ function World({ controller }: { controller: ThreeNeighborhoodController }) {
     .map((object) => ({
       id: object.id,
       name: object.name,
-      modelPath: DEVELOPMENT_MODELS.building,
+      kind: object.kind === "npc" ? "landmark" : object.kind,
       position: sceneTo3D({ x: object.x, y: object.y - 33 }),
     }));
   return (
@@ -283,6 +321,10 @@ function World({ controller }: { controller: ThreeNeighborhoodController }) {
             <Character
               modelPath={DEVELOPMENT_MODELS.character}
               currentAnimation="Idle"
+              appearance={characterAppearance3D(
+                controller.bridge.appearance,
+                controller.bridge.gender,
+              )}
               scale={0.65}
             />
             <Html

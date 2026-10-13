@@ -3,7 +3,12 @@ import { useGLTF } from "@react-three/drei";
 import { clone } from "three/addons/utils/SkeletonUtils.js";
 import { InstancedMesh, Object3D } from "three";
 import { useCityInteractions } from "@/hooks/useCityInteractions";
-import { DRACO_PATH, type CityLocationModel, type Vector3Tuple } from "@/types/models";
+import {
+  cityLocationModelPath,
+  DRACO_PATH,
+  type CityLocationModel,
+  type Vector3Tuple,
+} from "@/types/models";
 
 export function Model({ modelPath }: { modelPath: string }) {
   const gltf = useGLTF(modelPath, DRACO_PATH);
@@ -53,7 +58,7 @@ export const CityMap = memo(function CityMap({
           scale={location.scale ?? 1}
           onClick={(event) => select(location.id, event)}
         >
-          <Model modelPath={location.modelPath} />
+          <Model modelPath={cityLocationModelPath(location)} />
         </group>
       ))}
     </group>

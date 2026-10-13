@@ -1,7 +1,6 @@
 // Original, clearly labelled fixtures; replace these with reviewed Blender exports.
 import * as THREE from "three";
 import { GLTFExporter } from "three/addons/exporters/GLTFExporter.js";
-import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { mkdir, writeFile, copyFile } from "node:fs/promises";
 class NodeFileReader {
   result;
@@ -37,31 +36,57 @@ for (const file of ["draco_decoder.js", "draco_decoder.wasm", "draco_wasm_wrappe
   );
 const character = new THREE.Group();
 character.name = "Character";
-box(character, "Torso", [0.45, 0.6, 0.25], [0, 0.9, 0], 0x176b45);
-box(character, "Head", [0.32, 0.34, 0.3], [0, 1.4, 0], 0x775038);
-box(character, "LeftLeg", [0.17, 0.6, 0.2], [-0.12, 0.3, 0], 0x202820);
-box(character, "RightLeg", [0.17, 0.6, 0.2], [0.12, 0.3, 0], 0x202820);
-box(character, "LeftArm", [0.14, 0.55, 0.2], [-0.31, 0.92, 0], 0x775038);
-box(character, "RightArm", [0.14, 0.55, 0.2], [0.31, 0.92, 0], 0x775038);
-const geometries = character.children.map((child) => {
-  const geometry = child.geometry.clone().translate(...child.position.toArray());
-  const colors = [];
-  for (let i = 0; i < geometry.attributes.position.count; i++)
-    colors.push(...child.material.color.toArray());
-  geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
-  return geometry;
-});
-character.clear();
-const body = new THREE.Mesh(
-  mergeGeometries(geometries),
-  new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 }),
-);
+const body = new THREE.Group();
 body.name = "CharacterBody";
 character.add(body);
-const socket = new THREE.Object3D();
-socket.name = "Head";
-socket.position.y = 1.4;
-character.add(socket);
+function characterPart(parent, name, size, position, materialName, color) {
+  const mesh = new THREE.Mesh(
+    new THREE.BoxGeometry(...size),
+    new THREE.MeshStandardMaterial({ name: materialName, color, roughness: 1 }),
+  );
+  mesh.name = name;
+  mesh.position.set(...position);
+  parent.add(mesh);
+  return mesh;
+}
+function rotationTrack(name, times, angles, axis = "x") {
+  const values = angles.flatMap((angle) => {
+    const euler = new THREE.Euler(
+      axis === "x" ? angle : 0,
+      axis === "y" ? angle : 0,
+      axis === "z" ? angle : 0,
+    );
+    const quaternion = new THREE.Quaternion().setFromEuler(euler);
+    return quaternion.toArray();
+  });
+  return new THREE.QuaternionKeyframeTrack(`${name}.quaternion`, times, values);
+}
+characterPart(body, "Torso", [0.45, 0.6, 0.25], [0, 0.9, 0], "Outfit", 0x176b45);
+const head = new THREE.Group();
+head.name = "Head";
+head.position.y = 1.4;
+body.add(head);
+characterPart(head, "HeadMesh", [0.32, 0.34, 0.3], [0, 0, 0], "Skin", 0x775038);
+for (const [name, x] of [
+  ["LeftLeg", -0.12],
+  ["RightLeg", 0.12],
+]) {
+  const leg = new THREE.Group();
+  leg.name = name;
+  leg.position.set(x, 0.6, 0);
+  body.add(leg);
+  characterPart(leg, `${name}Mesh`, [0.17, 0.6, 0.2], [0, -0.3, 0], "Outfit", 0x202820);
+}
+for (const [name, x] of [
+  ["LeftArm", -0.31],
+  ["RightArm", 0.31],
+]) {
+  const arm = new THREE.Group();
+  arm.name = name;
+  arm.position.set(x, 1.2, 0);
+  body.add(arm);
+  characterPart(arm, `${name}Mesh`, [0.14, 0.55, 0.2], [0, -0.27, 0], "Skin", 0x775038);
+}
 const idle = new THREE.AnimationClip("Idle", 2, [
   new THREE.NumberKeyframeTrack("CharacterBody.position[y]", [0, 1, 2], [0, 0.01, 0]),
 ]);
@@ -72,7 +97,25 @@ const walk = new THREE.AnimationClip("Walk", 0.6, [
     [0, 0.04, 0, 0.04, 0],
   ),
 ]);
-await exportModel("public/models/characters/development-character.glb", character, [idle, walk]);
+const sit = new THREE.AnimationClip("Sit", 1.2, [
+  rotationTrack("CharacterBody", [0, 0.6, 1.2], [0, 0.35, 0.35]),
+  rotationTrack("LeftLeg", [0, 0.6, 1.2], [0, -0.7, -0.7]),
+  rotationTrack("RightLeg", [0, 0.6, 1.2], [0, -0.7, -0.7]),
+]);
+const work = new THREE.AnimationClip("Work", 0.8, [
+  rotationTrack("RightArm", [0, 0.2, 0.4, 0.6, 0.8], [0, -0.7, 0, -0.7, 0]),
+  new THREE.NumberKeyframeTrack("CharacterBody.position[y]", [0, 0.4, 0.8], [0, -0.025, 0]),
+]);
+const wave = new THREE.AnimationClip("Wave", 1, [
+  rotationTrack("RightArm", [0, 0.25, 0.5, 0.75, 1], [0, -1.2, -0.55, -1.2, 0], "z"),
+]);
+await exportModel("public/models/characters/development-character.glb", character, [
+  idle,
+  walk,
+  sit,
+  work,
+  wave,
+]);
 const city = new THREE.Group();
 city.name = "DevelopmentCity";
 box(city, "Ground", [18, 0.12, 16], [0, -0.07, 0], 0xe8eedf);

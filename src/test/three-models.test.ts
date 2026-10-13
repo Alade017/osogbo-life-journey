@@ -3,8 +3,16 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { clone } from "three/addons/utils/SkeletonUtils.js";
+import { Mesh } from "three";
 import { ThreeNeighborhoodController, sceneTo3D } from "@/game/three-neighborhood";
 import { CITY_CENTRE_AREA, toScene } from "@/game/neighborhood-model";
+import {
+  cityLocationModelPath,
+  CITY_LOCATION_MODEL_PATHS,
+  DEVELOPMENT_MODELS,
+} from "@/types/models";
+import { resolveCharacterAnimation } from "@/hooks/useCharacter";
+import { characterAppearance3D } from "@/game/character-3d-appearance";
 import type { NeighborhoodBridge } from "@/game/neighborhood-scene";
 
 function bridge(): NeighborhoodBridge {
@@ -22,6 +30,31 @@ function bridge(): NeighborhoodBridge {
   };
 }
 describe("3D loader fixtures and authoritative bridge", () => {
+  it("resolves semantic animation states and falls back to idle for older models", () => {
+    const clips = ["Idle", "Walk", "Wave"];
+    expect(resolveCharacterAnimation("wave", clips)).toBe("Wave");
+    expect(resolveCharacterAnimation("sit", clips)).toBe("Idle");
+    expect(resolveCharacterAnimation("walk", clips, { walk: "Walk" })).toBe("Walk");
+    expect(resolveCharacterAnimation("Unknown", clips)).toBe("Idle");
+  });
+  it("maps saved appearance palette indices to the 3D customization API", () => {
+    expect(characterAppearance3D({ skin: 4, hair: 2, hairColor: 3, outfit: 5 }, "female")).toEqual({
+      skinTone: "#c28a5e",
+      hairColor: "#8c8c8c",
+      hairStyle: "braids",
+      outfitColor: "#2b2f3a",
+    });
+    expect(characterAppearance3D({ hair: 3 })).toMatchObject({ hairStyle: "bald" });
+  });
+  it("selects location models by kind and supports a per-location override", () => {
+    expect(cityLocationModelPath({ kind: "home" })).toBe(CITY_LOCATION_MODEL_PATHS.home);
+    expect(cityLocationModelPath({ kind: "market" })).toBe(CITY_LOCATION_MODEL_PATHS.market);
+    expect(cityLocationModelPath({ kind: "work" })).toBe(CITY_LOCATION_MODEL_PATHS.work);
+    expect(cityLocationModelPath({})).toBe(DEVELOPMENT_MODELS.building);
+    expect(cityLocationModelPath({ kind: "home", modelPath: "/models/city/custom-home.glb" })).toBe(
+      "/models/city/custom-home.glb",
+    );
+  });
   it("loads actual GLBs with embedded idle/walk and independent cloned objects", async () => {
     const loader = new GLTFLoader();
     for (const path of [
@@ -40,8 +73,29 @@ describe("3D loader fixtures and authoritative bridge", () => {
         second = clone(gltf.scene);
       first.position.x = 4;
       expect(second.position.x).toBe(0);
-      if (path.startsWith("characters"))
-        expect(gltf.animations.map((clip) => clip.name)).toEqual(["Idle", "Walk"]);
+      if (path.startsWith("characters")) {
+        expect(gltf.animations.map((clip) => clip.name)).toEqual([
+          "Idle",
+          "Walk",
+          "Sit",
+          "Work",
+          "Wave",
+        ]);
+        const materialNames = new Set<string>();
+        gltf.scene.traverse((node) => {
+          if (!(node instanceof Mesh)) return;
+          const materials = Array.isArray(node.material) ? node.material : [node.material];
+          materials.forEach((material) => materialNames.add(material.name));
+        });
+        expect(materialNames).toContain("Skin");
+        expect(materialNames).toContain("Outfit");
+        expect(gltf.scene.getObjectByName("Head")).toBeDefined();
+        expect(
+          gltf.animations
+            .find((clip) => clip.name === "Wave")
+            ?.tracks.some((track) => track.name.includes("RightArm")),
+        ).toBe(true);
+      }
     }
     expect(readFileSync("public/models/draco/draco_decoder.wasm").length).toBeGreaterThan(0);
   });
