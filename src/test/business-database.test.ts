@@ -16,6 +16,7 @@ async function call(sql: string, args: unknown[] = []) {
     result: {
       companyId?: string;
       investmentId?: string;
+      advertisementId?: string;
       duplicate?: boolean;
       totalEarnings?: number;
       paid?: number;
@@ -63,7 +64,7 @@ describe("authoritative business and investment database", () => {
   });
   beforeEach(async () => {
     await db.exec(
-      "reset role; delete from public.player_fixed_investments; delete from public.player_company_shares; delete from public.player_companies; delete from public.economy_request_results; delete from public.transactions; update public.wallets set balance=20000000,total_income=0,total_expenses=0;",
+      "reset role; delete from public.player_advertisements; delete from public.player_fixed_investments; delete from public.player_company_shares; delete from public.player_companies; delete from public.economy_request_results; delete from public.transactions; update public.wallets set balance=20000000,total_income=0,total_expenses=0;",
     );
     await asUser(owner);
   });
@@ -207,5 +208,67 @@ describe("authoritative business and investment database", () => {
     await expect(
       call("public.claim_fixed_term_investment($1)", [investment["investmentId"]]),
     ).rejects.toThrow(/already been claimed/);
+  });
+
+  it("purchases billboard ads exactly once and exposes them to readers without allowing edits", async () => {
+    const board = (
+      await db.query<{ id: string }>(
+        "select id from public.game_billboards where slug='oke-fia-junction-001'",
+      )
+    ).rows[0]!.id;
+    const request = randomUUID();
+    const args = [
+      board,
+      "Ade Studios",
+      "New collection",
+      "Fresh designs in Osogbo",
+      "green",
+      7,
+      request,
+    ];
+    const first = await call("public.purchase_player_advertisement($1,$2,$3,$4,$5,$6,$7)", args);
+    expect(first["paid"]).toBe(35000);
+    expect(await balance(owner)).toBe(19965000);
+    const repeated = await call("public.purchase_player_advertisement($1,$2,$3,$4,$5,$6,$7)", args);
+    expect(repeated["advertisementId"]).toBe(first["advertisementId"]);
+    expect(repeated["duplicate"]).toBe(true);
+    expect(await balance(owner)).toBe(19965000);
+    await expect(
+      call("public.purchase_player_advertisement($1,$2,$3,$4,$5,$6,$7)", [
+        board,
+        "Ade Studios",
+        "New collection",
+        "Fresh designs in Osogbo",
+        "green",
+        30,
+        request,
+      ]),
+    ).rejects.toThrow(/different inputs/);
+    await expect(
+      call("public.purchase_player_advertisement($1,$2,$3,$4,$5,$6,$7)", [
+        board,
+        "Ade Studios",
+        "New collection",
+        "Fresh designs in Osogbo",
+        "green",
+        3,
+        randomUUID(),
+      ]),
+    ).rejects.toThrow(/7, 14 or 30/);
+
+    await asUser(investor);
+    await db.exec("set role authenticated");
+    const visible = await db.query<{ count: number }>(
+      "select count(*)::integer as count from public.player_advertisements where id=$1 and status='active' and ends_at>now()",
+      [first["advertisementId"]],
+    );
+    expect(visible.rows[0]!.count).toBe(1);
+    await expect(
+      db.query(
+        "update public.player_advertisements set title='changed by another player' where id=$1",
+        [first["advertisementId"]],
+      ),
+    ).rejects.toThrow();
+    await db.exec("reset role");
   });
 });

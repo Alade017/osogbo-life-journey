@@ -24,6 +24,7 @@ import { gameTimeFromCharacter } from "@/lib/game-time";
 import { playerStateFromRows } from "@/lib/player-state";
 import { normalizeEquippedItems } from "@/lib/equipment-service";
 import { configureGameMusic, disableGameAudio, startGameAudioSession } from "@/lib/game-audio";
+import "@/components/game/game-navigation.css";
 
 export const Route = createFileRoute("/_authenticated/_game")({
   component: GameLayout,
@@ -130,13 +131,13 @@ function GameLayout() {
     >
       <div
         className={cn(
-          "game-shell city-game min-h-screen pb-20 md:pb-0",
+          "game-shell city-game navigation-redesign min-h-screen pb-20 md:pb-0",
           profile?.reduced_motion && "reduce-motion",
         )}
       >
         <WorldEnvironment />
         <div className="city-game-frame">
-          <aside className="game-desktop-nav" aria-label="Main navigation">
+          <aside className="game-desktop-nav game-hover-sidebar" aria-label="Main navigation">
             <Link
               to="/home"
               search={{ visit: undefined }}
@@ -159,6 +160,8 @@ function GameLayout() {
                           {...(item.to === "/social" ? { search: { playerId: undefined } } : {})}
                           activeProps={{ className: "game-side-link-active" }}
                           className="game-side-link"
+                          aria-label={item.label}
+                          title={item.label}
                         >
                           <Icon className="h-4.5 w-4.5" />
                           <span>{item.label}</span>
@@ -171,7 +174,12 @@ function GameLayout() {
             </nav>
             <div className="mt-auto grid gap-2">
               <PhoneLauncher compact className="game-side-phone" />
-              <Link to="/settings" className="game-side-link">
+              <Link
+                to="/settings"
+                className="game-side-link"
+                aria-label="Settings"
+                title="Settings"
+              >
                 <Settings className="h-4.5 w-4.5" />
                 <span>Settings</span>
               </Link>
@@ -185,7 +193,15 @@ function GameLayout() {
           </div>
         </div>
 
-        <nav className="game-mobile-nav" aria-label="Game navigation">
+        <nav className="game-mobile-nav game-curved-dock" aria-label="Game navigation">
+          <svg
+            className="game-dock-surface"
+            viewBox="0 0 500 90"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+          >
+            <path d="M44 20H195C212 20 210 62 250 62S288 20 305 20H456C481 20 500 34 500 55S481 90 456 90H44C19 90 0 76 0 55S19 20 44 20Z" />
+          </svg>
           <Link
             to="/home"
             search={{ visit: undefined }}

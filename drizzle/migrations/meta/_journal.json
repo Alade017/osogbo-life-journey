@@ -239,6 +239,13 @@
       "when": 1791594000011,
       "tag": "0032_player_businesses_and_investments",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1791594000012,
+      "tag": "0033_player_billboard_advertising",
+      "breakpoints": true
     }
   ]
 }

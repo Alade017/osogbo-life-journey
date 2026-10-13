@@ -13,6 +13,22 @@ import {
 import { cn } from "@/lib/utils";
 import { q, type Advertisement, type GameBillboard } from "@/lib/game";
 
+type BillboardCampaign = {
+  id: string;
+  billboard_id: string;
+  advertiser_name: string;
+  title: string;
+  description: string;
+  creative_image_url: string | null;
+  creative_theme: string;
+  call_to_action: string | null;
+  destination_action: string;
+  destination_url: string | null;
+  starts_at: string;
+  ends_at: string | null;
+  status: string;
+};
+
 const CREATIVE_THEMES: Record<string, string> = {
   green: "bg-primary text-primary-foreground",
   ink: "bg-ink text-ink-foreground",
@@ -20,7 +36,7 @@ const CREATIVE_THEMES: Record<string, string> = {
   clay: "bg-clay text-clay-foreground",
 };
 
-function isCurrentAdvertisement(ad: Advertisement, now: number) {
+function isCurrentAdvertisement(ad: BillboardCampaign, now: number) {
   const startsAt = Date.parse(ad.starts_at);
   const endsAt = ad.ends_at ? Date.parse(ad.ends_at) : Number.POSITIVE_INFINITY;
   return ad.status === "active" && startsAt <= now && endsAt > now;
@@ -47,7 +63,7 @@ function CurrentCampaign({
   advertisement,
 }: {
   billboard: GameBillboard;
-  advertisement: Advertisement;
+  advertisement: BillboardCampaign;
 }) {
   const externalUrl =
     advertisement.destination_action === "external_url"
@@ -186,25 +202,47 @@ function CurrentCampaign({
 export function CityBillboards({ locationId }: { locationId: string }) {
   const { data: billboards } = useQuery(q.billboards());
   const { data: advertisements } = useQuery(q.advertisements());
+  const { data: playerAdvertisements } = useQuery(q.playerAdvertisements());
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    const timer = window.setInterval(() => setNow(Date.now()), 10_000);
     return () => window.clearInterval(timer);
   }, []);
 
-  const campaignsByBoard = new Map<string, Advertisement>();
-  for (const ad of advertisements ?? []) {
-    if (isCurrentAdvertisement(ad, now) && !campaignsByBoard.has(ad.billboard_id)) {
-      campaignsByBoard.set(ad.billboard_id, ad);
-    }
+  const campaignsByBoard = new Map<string, BillboardCampaign[]>();
+  const candidates: BillboardCampaign[] = [
+    ...(playerAdvertisements ?? []).map((ad) => ({
+      id: ad.id,
+      billboard_id: ad.billboard_id,
+      advertiser_name: ad.advertiser_name,
+      title: ad.title,
+      description: ad.description,
+      creative_image_url: null,
+      creative_theme: ad.creative_theme,
+      call_to_action: null,
+      destination_action: "none",
+      destination_url: null,
+      starts_at: ad.starts_at,
+      ends_at: ad.ends_at,
+      status: ad.status,
+    })),
+    ...(advertisements ?? []),
+  ];
+  for (const ad of candidates) {
+    if (!isCurrentAdvertisement(ad, now)) continue;
+    const campaigns = campaignsByBoard.get(ad.billboard_id) ?? [];
+    campaigns.push(ad);
+    campaignsByBoard.set(ad.billboard_id, campaigns);
   }
 
   const placements = (billboards ?? []).filter(
     (board) => board.location_id === locationId && board.status === "active",
   );
   const visible = placements.flatMap((board) => {
-    const advertisement = campaignsByBoard.get(board.id);
+    const campaigns = campaignsByBoard.get(board.id);
+    const adIndex = campaigns?.length ? Math.floor(now / 10_000) % campaigns.length : -1;
+    const advertisement = adIndex >= 0 ? campaigns?.[adIndex] : undefined;
     return advertisement ? [{ billboard: board, advertisement }] : [];
   });
 

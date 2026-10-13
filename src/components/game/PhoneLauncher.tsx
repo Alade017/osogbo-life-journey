@@ -15,6 +15,7 @@ import {
   ChartNoAxesCombined,
   House,
   Map,
+  Megaphone,
   MessageCircle,
   Settings,
   ShoppingBag,
@@ -28,6 +29,7 @@ import { OSOGBO_TIME_ZONE } from "@/lib/osogbo-weather";
 import { useState } from "react";
 import { PlayerSocial } from "@/components/game/PlayerSocial";
 import { BusinessInvestmentApp } from "@/components/game/BusinessInvestmentApp";
+import { BillboardAdApp } from "@/components/game/BillboardAdApp";
 
 const PHONE_APPS = [
   { label: "Home", to: "/home", icon: House, tone: "phone-app-green", active: true },
@@ -48,6 +50,7 @@ const PHONE_APPS = [
     active: true,
   },
   { label: "Company", to: "/wallet", icon: Building2, tone: "phone-app-green", active: true },
+  { label: "Billboards", to: null, icon: Megaphone, tone: "phone-app-gold", active: true },
   { label: "Missions", to: "/missions", icon: Bell, tone: "phone-app-gold", active: true },
   {
     label: "Notifications",
@@ -146,6 +149,21 @@ export function PhoneLauncher({
               </div>
               <BusinessInvestmentApp mode={activeApp === "Invest" ? "invest" : "company"} />
             </div>
+          ) : activeApp === "Billboards" ? (
+            <div className="phone-app-view">
+              <div className="phone-app-toolbar">
+                <button
+                  type="button"
+                  onClick={() => setActiveApp(null)}
+                  aria-label="Back to phone apps"
+                >
+                  ‹ <span>Apps</span>
+                </button>
+                <strong>Billboards</strong>
+                <span aria-hidden="true" />
+              </div>
+              <BillboardAdApp />
+            </div>
           ) : (
             <>
               <DialogHeader className="phone-home-heading">
@@ -160,7 +178,8 @@ export function PhoneLauncher({
                   if (
                     app.label === "Messages" ||
                     app.label === "Invest" ||
-                    app.label === "Company"
+                    app.label === "Company" ||
+                    app.label === "Billboards"
                   ) {
                     return (
                       <button

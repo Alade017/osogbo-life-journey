@@ -1,0 +1,254 @@
+/* Navigation-only palette; game surfaces keep their existing design tokens. */
+@media (min-width: 821px) {
+  .city-game.navigation-redesign .city-game-frame {
+    grid-template-columns: 82px minmax(0, 1fr);
+  }
+  .city-game.navigation-redesign .game-hover-sidebar {
+    width: 82px;
+    align-items: stretch;
+    padding: 18px 12px;
+    gap: 20px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    border-right: 1px solid #315a49;
+    background: linear-gradient(165deg, #174a38, #102f25);
+    color: #fffaf0;
+    transition:
+      width 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      box-shadow 240ms ease;
+    z-index: 60;
+  }
+  .city-game.navigation-redesign .game-hover-sidebar:is(:hover, :focus-within) {
+    width: 240px;
+    box-shadow: 16px 0 40px rgb(16 47 37 / 20%);
+  }
+  .city-game.navigation-redesign .game-hover-sidebar .game-side-logo {
+    width: 100%;
+    justify-content: start;
+    padding: 8px;
+    border: 0;
+    background: transparent;
+  }
+  .game-hover-sidebar .game-side-logo > span {
+    flex-shrink: 0;
+  }
+  .city-game.navigation-redesign .game-hover-sidebar .game-side-logo > span > span:last-child {
+    display: grid;
+    color: #fffaf0;
+    opacity: 0;
+    transition: opacity 160ms ease;
+  }
+  .game-hover-sidebar .game-side-logo .text-primary {
+    color: #efbd46;
+  }
+  .game-hover-sidebar .game-side-logo .text-muted-foreground {
+    color: #bad0c4;
+  }
+  .city-game.navigation-redesign .game-hover-sidebar .game-side-navigation {
+    width: 100%;
+  }
+  .city-game.navigation-redesign .game-hover-sidebar .game-side-label {
+    display: block;
+    height: 14px;
+    padding-left: 12px;
+    writing-mode: horizontal-tb;
+    transform: none;
+    white-space: nowrap;
+    color: #b4cdbf;
+    opacity: 0;
+    transition: opacity 160ms ease;
+  }
+  .city-game.navigation-redesign .game-hover-sidebar .game-side-link {
+    display: flex;
+    min-height: 46px;
+    justify-content: start;
+    gap: 14px;
+    padding: 10px 18px;
+    border: 0;
+    border-radius: 14px;
+    color: #d6e6dc;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  .game-hover-sidebar .game-side-link svg {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+  }
+  .city-game.navigation-redesign .game-hover-sidebar .game-side-link > span {
+    display: inline;
+    opacity: 0;
+    transition: opacity 160ms ease;
+  }
+  .city-game.navigation-redesign
+    .game-hover-sidebar:is(:hover, :focus-within)
+    :is(.game-side-label, .game-side-link > span, .game-side-logo > span > span:last-child) {
+    opacity: 1;
+  }
+  .city-game.navigation-redesign .game-hover-sidebar .game-side-link:hover {
+    background: #285b46;
+    color: #fffaf0;
+  }
+  .city-game.navigation-redesign .game-hover-sidebar .game-side-link-active {
+    color: #efbd46;
+    background: #2a5541;
+    box-shadow: inset 3px 0 #efbd46;
+  }
+  .city-game.navigation-redesign .game-hover-sidebar .game-side-phone {
+    display: flex;
+    justify-content: start;
+    gap: 14px;
+    width: 100%;
+    min-height: 48px;
+    padding: 10px 18px;
+    border: 0;
+    border-radius: 14px;
+    background: #efbd46;
+    color: #173d2e;
+  }
+  .city-game.navigation-redesign .game-hover-sidebar .game-side-phone .phone-launcher-icon {
+    flex-shrink: 0;
+    width: 20px;
+    height: 25px;
+    color: #173d2e;
+    background: transparent;
+  }
+  .city-game.navigation-redesign .game-hover-sidebar .phone-compact-label {
+    display: inline;
+    opacity: 0;
+    font-size: 13px;
+    transition: opacity 160ms ease;
+  }
+  .city-game.navigation-redesign
+    .game-hover-sidebar:is(:hover, :focus-within)
+    .phone-compact-label {
+    opacity: 1;
+  }
+}
+
+.game-dock-surface {
+  display: none;
+}
+@media (max-width: 820px) {
+  .city-game.navigation-redesign .game-curved-dock {
+    height: 72px;
+    padding: 8px 12px;
+    grid-template-columns: 1fr 1fr 76px 1fr 1fr;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    filter: drop-shadow(0 8px 12px rgb(16 47 37 / 22%));
+  }
+  .city-game.navigation-redesign .game-curved-dock::before {
+    content: none;
+  }
+  .game-curved-dock .game-dock-surface {
+    position: absolute;
+    inset: -18px 0 0;
+    z-index: -1;
+    display: block;
+    width: 100%;
+    height: 90px;
+    pointer-events: none;
+    fill: #174a38;
+  }
+  .city-game.navigation-redesign .game-curved-dock .mobile-nav-link {
+    color: #bcd2c5;
+    font-size: 10px;
+    transition:
+      color 180ms ease,
+      transform 180ms ease,
+      background 180ms ease;
+  }
+  .city-game.navigation-redesign .game-curved-dock .mobile-nav-link:is(:hover, .mobile-nav-active) {
+    background: #285b46;
+    color: #fffaf0;
+  }
+  .game-curved-dock .mobile-nav-active svg {
+    transform: translateY(-2px);
+    color: #efbd46;
+  }
+  .city-game.navigation-redesign .game-curved-dock .mobile-nav-phone {
+    justify-self: center;
+    width: 60px;
+    height: 60px;
+    min-height: 60px;
+    margin-top: -24px;
+    padding: 0;
+    border: 4px solid #fffaf0;
+    background: #efbd46 !important;
+    color: #173d2e;
+    box-shadow: 0 6px 16px rgb(239 189 70 / 30%);
+    transition:
+      transform 200ms ease,
+      box-shadow 200ms ease;
+  }
+  .city-game.navigation-redesign .game-curved-dock .mobile-nav-phone:hover {
+    transform: translateY(-4px);
+  }
+  .city-game.navigation-redesign .game-curved-dock .mobile-nav-phone:active {
+    transform: translateY(-1px) scale(0.95);
+  }
+  .city-game.navigation-redesign .game-curved-dock .mobile-nav-phone .phone-launcher-icon {
+    color: #173d2e;
+    border-color: #173d2e;
+  }
+  .city-game.navigation-redesign .game-curved-dock .mobile-nav-phone .phone-compact-label {
+    position: absolute;
+    top: 69px;
+    color: #fffaf0;
+    font-size: 9px;
+  }
+  .city-game.navigation-redesign {
+    padding-bottom: calc(104px + env(safe-area-inset-bottom));
+  }
+}
+@media (min-width: 821px) and (hover: none) {
+  .city-game.navigation-redesign .game-hover-sidebar {
+    width: 240px;
+  }
+  .city-game.navigation-redesign .city-game-frame {
+    grid-template-columns: 240px minmax(0, 1fr);
+  }
+  .city-game.navigation-redesign
+    .game-hover-sidebar
+    :is(
+      .game-side-label,
+      .game-side-link > span,
+      .game-side-logo > span > span:last-child,
+      .phone-compact-label
+    ) {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .game-hover-sidebar,
+  .game-hover-sidebar *,
+  .game-curved-dock * {
+    transition: none !important;
+  }
+}
+.reduce-motion :is(.game-hover-sidebar, .game-hover-sidebar *, .game-curved-dock *) {
+  transition: none !important;
+}
+
+/* Keyboard focus uses the navigation's own surface treatment instead of a colored ring. */
+.city-game.navigation-redesign :is(.game-hover-sidebar, .game-curved-dock) :is(a, button):focus {
+  outline: none;
+}
+.city-game.navigation-redesign
+  :is(.game-hover-sidebar, .game-curved-dock)
+  :is(.game-side-link, .mobile-nav-link, .game-side-logo):focus-visible {
+  background: #285b46;
+  color: #fffaf0;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.city-game.navigation-redesign
+  :is(.game-hover-sidebar, .game-curved-dock)
+  :is(.game-side-phone, .mobile-nav-phone):focus-visible {
+  filter: brightness(1.12);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}

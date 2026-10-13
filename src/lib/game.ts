@@ -1,4 +1,5 @@
 import { getBusinessOverview, executeBusinessCommand } from "@/lib/business-service";
+import { getAdvertisingMarket } from "@/lib/advertising-service";
 // Client-side data access for OSOGBO LIFE.
 // Reads go through RLS-protected tables (players only ever see their own rows).
 // Every state change goes through server-validated database functions (RPCs);
@@ -67,6 +68,24 @@ function unwrap<T>(res: { data: T; error: { message: string } | null }): T {
 }
 
 export const q = {
+  advertisingMarket: () =>
+    queryOptions({
+      queryKey: ["advertisingMarket"],
+      queryFn: getAdvertisingMarket,
+      refetchInterval: 60_000,
+    }),
+  playerAdvertisements: () =>
+    queryOptions({
+      queryKey: ["playerAdvertisements"],
+      staleTime: 30_000,
+      queryFn: async () =>
+        unwrap(
+          await supabase
+            .from("player_advertisements")
+            .select("*")
+            .order("starts_at", { ascending: false }),
+        ),
+    }),
   businessMarket: () =>
     queryOptions({
       queryKey: ["businessInvestmentMarket"],

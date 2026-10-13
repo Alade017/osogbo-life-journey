@@ -983,6 +983,68 @@ export type Database = {
           },
         ];
       };
+      player_advertisements: {
+        Row: {
+          advertiser_name: string;
+          amount_paid: number;
+          billboard_id: string;
+          created_at: string;
+          creative_theme: string;
+          description: string;
+          duration_days: number;
+          ends_at: string;
+          id: string;
+          owner_character_id: string;
+          owner_user_id: string;
+          request_id: string;
+          starts_at: string;
+          status: string;
+          title: string;
+        };
+        Insert: {
+          advertiser_name: string;
+          amount_paid: number;
+          billboard_id: string;
+          created_at?: string;
+          creative_theme: string;
+          description: string;
+          duration_days: number;
+          ends_at: string;
+          id?: string;
+          owner_character_id: string;
+          owner_user_id: string;
+          request_id: string;
+          starts_at?: string;
+          status?: string;
+          title: string;
+        };
+        Update: {
+          advertiser_name?: string;
+          amount_paid?: number;
+          billboard_id?: string;
+          created_at?: string;
+          creative_theme?: string;
+          description?: string;
+          duration_days?: number;
+          ends_at?: string;
+          id?: string;
+          owner_character_id?: string;
+          owner_user_id?: string;
+          request_id?: string;
+          starts_at?: string;
+          status?: string;
+          title?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "player_advertisements_billboard_id_fkey";
+            columns: ["billboard_id"];
+            isOneToOne: false;
+            referencedRelation: "game_billboards";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       missions: {
         Row: {
           created_at: string;
@@ -1536,6 +1598,19 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      get_player_advertising_market: { Args: never; Returns: Json };
+      purchase_player_advertisement: {
+        Args: {
+          p_advertiser_name: string;
+          p_billboard_id: string;
+          p_creative_theme: string;
+          p_description: string;
+          p_duration_days: number;
+          p_request_id: string;
+          p_title: string;
+        };
+        Returns: Json;
+      };
       get_business_and_investment_market: { Args: never; Returns: Json };
       buy_player_company: {
         Args: { p_business_slug: string; p_request_id: string };
