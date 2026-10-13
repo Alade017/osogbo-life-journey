@@ -8,6 +8,196 @@
  * OSOGBO LIFE game UI with a polished, city-inspired visual system.
  */
 
+:root {
+  --radius: 0.625rem;
+
+  /* Core Nature Green Palette */
+  --color-osogbo-green: #2d6a4f;
+  --color-deep-green: #10291f;
+  --color-terracotta: #e07868;
+  --color-warm-gold: #f4c95d;
+  --color-warm-ivory: #f2f6ed;
+  --color-white: #ffffff;
+  --color-ink: #173d2b;
+  --color-slate: #597461;
+  --color-mist: #d5e1d0;
+  --color-success: #43845a;
+  --color-danger: #c44740;
+  --color-warning: #b88900;
+  --color-blue-wash: #e7efdf;
+  --color-blue-line: #d5e1d0;
+  --color-blue-hover: #d8e8d0;
+  --color-surface-hover: #f8fbf5;
+  --color-slate-soft: #87968b;
+  --color-slate-strong: #3f5546;
+
+  /* Light Mode */
+  --background: #f2f6ed;
+  --foreground: #173d2b;
+  --card: #ffffff;
+  --card-foreground: #173d2b;
+  --popover: #ffffff;
+  --popover-foreground: #173d2b;
+  --primary: #2d6a4f;
+  --primary-foreground: #ffffff;
+  --secondary: #d8e8d0;
+  --secondary-foreground: #173d2b;
+  --muted: #e7efdf;
+  --muted-foreground: #597461;
+  --accent: #f4c95d;
+  --accent-foreground: #3d3215;
+  --destructive: #c44740;
+  --destructive-foreground: #ffffff;
+  --border: #d5e1d0;
+  --input: #d5e1d0;
+  --ring: #43845a;
+  --edge: #d5e1d0;
+  --sun: #f4c95d;
+  --sun-foreground: #3d3215;
+  --clay: #e07868;
+  --clay-foreground: #ffffff;
+  --ink: #173d2b;
+  --ink-foreground: #ffffff;
+  --leaf: #43845a;
+  --sky: #87ceeb;
+
+  /* Charts */
+  --chart-1: #2d6a4f;
+  --chart-2: #f4c95d;
+  --chart-3: #43845a;
+  --chart-4: #87ceeb;
+  --chart-5: #8b5e3c;
+
+  /* Sidebar */
+  --sidebar: #ffffff;
+  --sidebar-foreground: #173d2b;
+  --sidebar-primary: #2d6a4f;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #d8e8d0;
+  --sidebar-accent-foreground: #173d2b;
+  --sidebar-border: #d5e1d0;
+  --sidebar-ring: #43845a;
+
+  /* Product-Level Semantic Tokens */
+  --color-primary: #2d6a4f;
+  --color-primary-hover: #1e5039;
+  --color-primary-soft: #d8e8d0;
+  --color-accent: #f4c95d;
+  --color-accent-hover: #e3b638;
+  --color-background: #f2f6ed;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #e7efdf;
+  --color-surface-dark: #10291f;
+  --color-surface-dark-elevated: #204633;
+  --color-surface-dark-border: #3a6149;
+
+  /* Text */
+  --color-text-on-dark: #f4f7f1;
+  --color-text-on-dark-muted: #b9ccbe;
+  --color-text-on-dark-soft: #dce9d8;
+  --color-text-inverse: #ffffff;
+  --color-text: #173d2b;
+  --color-text-secondary: #597461;
+  --color-text-muted: #87968b;
+
+  /* Borders and Status */
+  --color-border: #d5e1d0;
+  --color-success: #43845a;
+  --color-warning: #b88900;
+  --color-danger: #c44740;
+  --color-info: #2879a6;
+  --color-info-soft: #e5f2f8;
+  --color-info-text: #174a65;
+
+  /* Rewards and Game Currency */
+  --color-reward-soft: #fbf2df;
+  --color-reward-text: #644716;
+  --color-interactive: #43845a;
+  --color-disabled-background: #e6eae2;
+  --color-disabled-text: #879187;
+
+  /* Dark Mode Surface Helpers */
+  --color-dark-background: #10291f;
+  --color-dark-surface: #15382b;
+  --color-dark-card: #204633;
+  --color-dark-elevated: #2b5840;
+  --color-dark-border: #3a6149;
+  --color-dark-text: #f4f7f1;
+  --color-dark-text-secondary: #b9ccbe;
+  --color-dark-primary: #4d8b57;
+  --color-dark-primary-hover: #43845a;
+
+  /* Shape */
+  --radius-card: 18px;
+  --radius-pill: 999px;
+
+  /* Shadows */
+  --shadow-card: 0 4px 16px rgb(16 41 31 / 8%);
+  --shadow-card-hover: 0 8px 24px rgb(16 41 31 / 12%);
+  --shadow-dock: 0 -6px 20px rgb(16 41 31 / 15%);
+
+  /* Animation */
+  --duration-control: 180ms;
+  --duration-enter: 220ms;
+
+  /* Layering */
+  --layer-base: 0;
+  --layer-environment: 20;
+  --layer-navigation: 35;
+  --layer-modal: 90;
+  --layer-toast: 100;
+}
+
+/* Dark Mode */
+.dark {
+  --background: #10291f;
+  --foreground: #f4f7f1;
+  --card: #204633;
+  --card-foreground: #f4f7f1;
+  --popover: #204633;
+  --popover-foreground: #f4f7f1;
+  --primary: #4d8b57;
+  --primary-foreground: #ffffff;
+  --secondary: #254b39;
+  --secondary-foreground: #dce9d8;
+  --muted: #204633;
+  --muted-foreground: #b9ccbe;
+  --accent: #f4c95d;
+  --accent-foreground: #3d3215;
+  --destructive: #f07870;
+  --destructive-foreground: #10291f;
+  --border: #3a6149;
+  --input: #3a6149;
+  --ring: #a7d18c;
+  --edge: #3a6149;
+
+  --color-primary: #4d8b57;
+  --color-primary-hover: #65a66d;
+  --color-primary-soft: #254b39;
+  --color-accent: #f4c95d;
+  --color-accent-hover: #ffda73;
+  --color-background: #10291f;
+  --color-surface: #15382b;
+  --color-surface-subtle: #204633;
+  --color-text: #f4f7f1;
+  --color-text-secondary: #b9ccbe;
+  --color-text-muted: #9db1a3;
+  --color-border: #3a6149;
+
+  --sidebar: #15382b;
+  --sidebar-foreground: #f4f7f1;
+  --sidebar-primary: #4d8b57;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #254b39;
+  --sidebar-accent-foreground: #dce9d8;
+  --sidebar-border: #3a6149;
+  --sidebar-ring: #a7d18c;
+
+  --shadow-card: 0 4px 16px rgb(0 0 0 / 15%);
+  --shadow-card-hover: 0 8px 24px rgb(0 0 0 / 22%);
+  --shadow-dock: 0 -6px 20px rgb(0 0 0 / 25%);
+}
+
 @theme inline {
   --font-display: "Manrope", ui-sans-serif, system-ui, sans-serif;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
@@ -62,7 +252,6 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 }
-
 :root {
   --radius: 0.625rem;
   --color-osogbo-green: #174a38;
@@ -7975,4 +8164,260 @@
 }
 .phone-chat-panel > ol > li {
   color: var(--color-text);
+}
+
+/* Compact floating player dashboard: preserve live state while reducing chrome. */
+.game-hud.hud-v2 {
+  width: calc(100% - 20px);
+  max-width: 1180px;
+  grid-template-columns: minmax(145px, 0.9fr) minmax(150px, 1fr) minmax(205px, 1.35fr) auto 40px;
+  grid-template-areas:
+    "player location time balance notifications"
+    "needs needs needs needs needs"
+    "sync sync sync sync sync";
+  gap: 5px 12px;
+  margin: 6px auto 0;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: rgb(255 253 248 / 96%);
+  box-shadow: 0 4px 14px rgb(23 43 67 / 7%);
+}
+
+.hud-v2 .game-hud-xp,
+.hud-v2 .hud-live-clock {
+  display: none;
+}
+
+.hud-v2 .game-hud-player {
+  gap: 8px;
+}
+
+.hud-v2 .game-hud-avatar {
+  width: 38px;
+  height: 40px;
+  flex-basis: 38px;
+}
+
+.hud-v2 .game-hud-balance {
+  min-height: 40px;
+  padding: 5px 9px;
+  border: 1px solid rgb(194 143 63 / 24%);
+  border-radius: 14px;
+  background: #fffaf0;
+}
+
+.hud-v2 .game-hud-notifications {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.hud-v2 .game-hud-location {
+  gap: 7px;
+  padding: 2px 0;
+}
+
+.hud-v2 .game-hud-location .game-hud-item-copy {
+  gap: 1px;
+}
+
+.hud-v2 .game-hud-location .game-hud-item-copy > span {
+  display: block;
+  overflow: hidden;
+  color: var(--muted-foreground);
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hud-v2 .game-hud-location-meta > span {
+  color: var(--muted-foreground);
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.hud-v2 .game-hud-time {
+  gap: 7px;
+  padding: 2px 0;
+}
+
+.hud-v2 .game-hud-time .game-hud-item-copy {
+  gap: 1px;
+}
+
+.hud-v2 .game-hud-time .game-hud-item-copy strong {
+  font-size: 15px;
+}
+
+.hud-v2 .game-hud-time .game-hud-item-copy > span {
+  font-size: 9px;
+}
+
+.hud-v2 .game-hud-simulation-controls {
+  gap: 4px;
+}
+
+.hud-v2 .game-hud-simulation-controls button,
+.hud-v2 .game-hud-simulation-controls select {
+  min-width: 32px;
+  min-height: 34px;
+}
+
+.hud-needs {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px 7px;
+}
+
+.hud-need {
+  border-color: rgb(41 54 46 / 10%);
+  border-radius: 10px;
+  background: #f7f5ec;
+  transition: background-color 140ms ease;
+}
+
+.hud-need summary {
+  min-height: 32px;
+  grid-template-columns: 15px minmax(0, 1fr) auto;
+  gap: 4px;
+  padding: 4px 7px;
+  font-size: 10px;
+}
+
+.hud-need-track {
+  height: 3px;
+}
+
+.hud-sync {
+  gap: 4px 8px;
+  font-size: 11px;
+}
+
+.world-environment {
+  min-height: 32px;
+  flex-wrap: nowrap;
+  gap: 6px 12px;
+  overflow-x: auto;
+  padding: 4px 12px;
+  scrollbar-width: none;
+}
+
+.world-environment::-webkit-scrollbar {
+  display: none;
+}
+
+.world-environment .world-event {
+  min-height: 26px;
+  max-width: 45vw;
+  flex: 0 1 auto;
+  overflow: hidden;
+  margin-left: auto;
+  text-overflow: ellipsis;
+  font-size: 10px;
+}
+
+@media (max-width: 980px) {
+  .game-hud.hud-v2 {
+    width: calc(100% - 12px);
+    grid-template-columns: minmax(0, 1fr) auto 40px;
+    grid-template-areas:
+      "player balance notifications"
+      "location time time"
+      "needs needs needs"
+      "sync sync sync";
+    gap: 5px 8px;
+    margin: 5px auto 0;
+    padding: 7px 8px;
+    border-radius: 14px;
+  }
+
+  .hud-needs {
+    gap: 4px 6px;
+  }
+
+  .hud-need summary {
+    min-height: 31px;
+    padding: 4px 6px;
+  }
+
+  .hud-v2 .game-hud-time {
+    justify-content: space-between;
+  }
+
+  .world-environment .world-condition small {
+    display: none;
+  }
+
+  .world-environment .world-event {
+    margin-left: auto;
+    flex-basis: auto;
+  }
+}
+
+@media (max-width: 420px) {
+  .game-hud.hud-v2 {
+    grid-template-columns: minmax(0, 1fr) auto 40px;
+    grid-template-areas:
+      "player balance notifications"
+      "location time time"
+      "needs needs needs"
+      "sync sync sync";
+    gap: 4px 6px;
+  }
+
+  .hud-v2 .game-hud-avatar {
+    width: 34px;
+    height: 36px;
+    flex-basis: 34px;
+  }
+
+  .hud-v2 .game-hud-player > span:last-child > span:first-child {
+    font-size: 13px;
+  }
+
+  .hud-v2 .game-hud-balance {
+    padding-inline: 7px;
+  }
+
+  .hud-needs {
+    gap: 3px;
+  }
+
+  .hud-need summary {
+    grid-template-columns: 13px minmax(0, 1fr) auto;
+    gap: 3px;
+    padding-inline: 5px;
+    font-size: 9px;
+  }
+
+  .hud-need summary > svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .hud-v2 .game-hud-time .game-hud-item-copy > span {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .world-environment {
+    gap: 5px 9px;
+    padding-inline: 8px;
+    font-size: 10px;
+  }
+
+  .world-environment .world-event {
+    max-width: 52vw;
+    font-size: 9px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hud-need {
+    transition: none;
+  }
 }

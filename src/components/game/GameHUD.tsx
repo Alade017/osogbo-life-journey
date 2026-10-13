@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Avatar } from "@/components/game/Avatar";
-import { formatNaira, xpProgress } from "@/lib/game";
+import { formatNaira } from "@/lib/game";
 import type { PlayerState } from "@/lib/player-state";
 import { useLiveClock } from "@/hooks/use-live-clock";
 import { OSOGBO_TIME_ZONE } from "@/lib/osogbo-weather";
@@ -67,8 +67,6 @@ export function GameHUD({
         timeZone: OSOGBO_TIME_ZONE,
       }).format(now)
     : "--:--:--";
-  const xp = xpProgress(simulation.experience);
-
   return (
     <header className="game-hud hud-v2" aria-label="Player status">
       <Link
@@ -98,19 +96,6 @@ export function GameHUD({
         </span>
       </Link>
 
-      <div className="game-hud-xp" aria-label={`${xp.into} of ${xp.needed} XP to next level`}>
-        <div className="game-hud-xp-label">
-          <span>LEVEL PROGRESS</span>
-          <strong>
-            {xp.into}
-            <small> / {xp.needed} XP</small>
-          </strong>
-        </div>
-        <div className="game-hud-xp-track">
-          <span style={{ width: `${xp.pct}%` }} />
-        </div>
-      </div>
-
       <Link
         to="/wallet"
         className="game-hud-balance"
@@ -130,7 +115,9 @@ export function GameHUD({
         <span className="game-hud-item-copy min-w-0">
           <small>CURRENT AREA</small>
           <strong className="truncate">{location}</strong>
-          <span>{dateLabel}</span>
+          <span className="game-hud-location-meta">
+            <span>OSOGBO Â· WAT</span> {dateLabel} Â· {clockLabel}
+          </span>
         </span>
       </div>
 
