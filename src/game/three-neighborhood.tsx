@@ -131,6 +131,11 @@ export class ThreeNeighborhoodController {
   selectLocation(id: string) {
     const object = this.bridge.area?.objects.find((entry) => entry.id === id);
     if (!object || this.frozen) return;
+    this.bridge.onLocationSelected(object);
+  }
+  goToLocation(id: string) {
+    const object = this.bridge.area?.objects.find((entry) => entry.id === id);
+    if (!object || this.frozen) return;
     const nearby = nearestInteraction(toScene(this.point, this.bridge.origin), [object]);
     if (nearby) this.bridge.onInteract(object);
     else this.destination = toWorld({ x: object.x, y: object.y + 20 }, this.bridge.origin);

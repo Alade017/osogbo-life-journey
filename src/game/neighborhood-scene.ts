@@ -47,6 +47,7 @@ export type NeighborhoodBridge = {
   equipment?: readonly AvatarEquipment[];
   onNearby: (object: NeighborhoodObject | null) => void;
   onCheckpoint: (point: WorldPoint) => void;
+  onLocationSelected: (object: NeighborhoodObject) => void;
   onInteract: (object: NeighborhoodObject) => void;
   onPlayerSelected: (player: NetworkPlayerSnapshot) => void;
   onPlayerTooFar: (name: string) => void;

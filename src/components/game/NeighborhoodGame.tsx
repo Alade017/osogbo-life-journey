@@ -38,7 +38,34 @@ const controls = [
   { direction: "right", Icon: ArrowRight, label: "Walk east" },
 ] as const;
 
+function locationDescription(object: NeighborhoodObject) {
+  switch (object.kind) {
+    case "home":
+      return "Your place to rest and reset between days around Osogbo.";
+    case "market":
+      return "Browse nearby stalls and find everyday goods in the neighbourhood.";
+    case "work":
+      return "Explore local work and opportunities available to your character.";
+    case "npc":
+      return `Meet ${object.name.split(" · ")[0]} and catch up with a neighbour.`;
+  }
+}
+
+function locationAction(object: NeighborhoodObject) {
+  switch (object.kind) {
+    case "home":
+      return "Enter your home";
+    case "market":
+      return "Browse the market";
+    case "work":
+      return "Find work";
+    case "npc":
+      return `Talk to ${object.name.split(" · ")[0]}`;
+  }
+}
+
 export function NeighborhoodGame() {
+  const online = typeof navigator === "undefined" || navigator.onLine;
   const { data: character } = useQuery(q.character());
   const { data: equipmentData } = useQuery({ ...q.equipment(), enabled: !!character });
   const equipment = normalizeEquippedItems(equipmentData);
@@ -57,6 +84,7 @@ export function NeighborhoodGame() {
   const revision = useRef(0);
   const pending = useRef(false);
   const [nearby, setNearby] = useState<NeighborhoodObject | null>(null);
+  const [selectedPoi, setSelectedPoi] = useState<NeighborhoodObject | null>(null);
   const [dialogue, setDialogue] = useState(false);
   const [directory, setDirectory] = useState(false);
   const [destinationId, setDestinationId] = useState("");
@@ -92,17 +120,18 @@ export function NeighborhoodGame() {
   const [nearbyPlayerCount, setNearbyPlayerCount] = useState<number | null>(null);
   const [status, setStatus] = useState("Walk with WASD or arrows. Tap the street to move.");
   const menuOpen = useRef(false);
-  menuOpen.current = dialogue || directory;
+  menuOpen.current = dialogue || directory || !!selectedPoi;
   useEffect(() => {
     engine.current?.scene.lock(
       busy ||
         dialogue ||
         directory ||
+        !!selectedPoi ||
         multiplayerStatus !== "connected" ||
         !navigator.onLine ||
         document.hidden,
     );
-  }, [busy, dialogue, directory, loaded, multiplayerStatus]);
+  }, [busy, dialogue, directory, loaded, multiplayerStatus, selectedPoi]);
   const callbacks = useRef({
     checkpoint: async (_point: WorldPoint) => false,
     interact: (_object: NeighborhoodObject) => {},
@@ -218,6 +247,7 @@ export function NeighborhoodGame() {
         qc.invalidateQueries({ queryKey: ["transactions"] }),
       ]);
       setDirectory(false);
+      setSelectedPoi(null);
       playGameSound("interaction");
       setStatus(`Arrived at ${destination.name}.`);
       reconnect();
@@ -253,6 +283,10 @@ export function NeighborhoodGame() {
           gender: character?.gender ?? "nonbinary",
           equipment,
           onNearby: setNearby,
+          onLocationSelected: (object) => {
+            setDirectory(false);
+            setSelectedPoi(object);
+          },
           onCheckpoint: (point) => {
             void callbacks.current.checkpoint(point);
           },
@@ -477,6 +511,101 @@ export function NeighborhoodGame() {
                 <p>Estimated fare and time. Your trip is validated before payment.</p>
               </div>
             )}
+          </div>
+        )}
+        {selectedPoi && (
+          <div
+            className="neighborhood-location-dialog"
+            role="dialog"
+            aria-modal="false"
+            aria-labelledby="neighborhood-location-title"
+          >
+            <div className="neighborhood-location-heading">
+              <div>
+                <span className="neighborhood-eyebrow">{area.name}</span>
+                <h2 id="neighborhood-location-title">{selectedPoi.name}</h2>
+              </div>
+              <button
+                type="button"
+                aria-label="Close location details"
+                onClick={() => setSelectedPoi(null)}
+              >
+                Close
+              </button>
+            </div>
+            <p className="neighborhood-location-description">{locationDescription(selectedPoi)}</p>
+            <div className="neighborhood-location-actions">
+              <strong>Available actions</strong>
+              <span>{locationAction(selectedPoi)}</span>
+            </div>
+            <button
+              className="neighborhood-trip-go neighborhood-location-go"
+              type="button"
+              disabled={busy || !loaded || multiplayerStatus !== "connected" || !online}
+              onClick={() => {
+                const scene = engine.current?.scene;
+                if (!scene) return;
+                setSelectedPoi(null);
+                scene.lock(false);
+                scene.goToLocation(selectedPoi.id);
+              }}
+            >
+              Go {selectedPoi.kind === "npc" ? "talk" : `to ${selectedPoi.name}`}
+            </button>
+            <details className="neighborhood-location-travel">
+              <summary>Travel to another district</summary>
+              <select
+                aria-label="Choose district"
+                value={destinationId}
+                onChange={(event) => {
+                  setDestinationId(event.target.value);
+                  setSelectedTravelMode(null);
+                }}
+              >
+                <option value="">Choose a destination</option>
+                {locations.data
+                  ?.filter((location) => location.is_active && location.id !== current?.id)
+                  .map((location) => (
+                    <option key={location.id} value={location.id}>
+                      {location.name}
+                    </option>
+                  ))}
+              </select>
+              {destination && (
+                <div className="neighborhood-trips">
+                  <p className="neighborhood-destination-copy">{destination.description}</p>
+                  {destinationTrips.map(({ mode, trip }) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      aria-pressed={selectedTravelMode === mode}
+                      className={selectedTravelMode === mode ? "is-selected" : undefined}
+                      disabled={busy}
+                      onClick={() => setSelectedTravelMode(mode)}
+                    >
+                      <strong>{TRAVEL_MODE_DETAILS[mode].label}</strong>
+                      <span>
+                        {formatNaira(trip.fare)} · ~{trip.minutes} min
+                      </span>
+                    </button>
+                  ))}
+                  <button
+                    className="neighborhood-trip-go"
+                    type="button"
+                    disabled={busy || !selectedTravelMode}
+                    onClick={() => {
+                      if (destination && selectedTravelMode)
+                        void travel(destination, selectedTravelMode);
+                    }}
+                  >
+                    {selectedTravelMode && selectedTrip
+                      ? `Travel · ${formatNaira(selectedTrip.fare)}`
+                      : "Choose transport"}
+                  </button>
+                  <p>Estimated fare and time. Your trip is validated before payment.</p>
+                </div>
+              )}
+            </details>
           </div>
         )}
         <div

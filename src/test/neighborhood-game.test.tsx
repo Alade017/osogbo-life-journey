@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   create: vi.fn(),
   lock: vi.fn(),
   restore: vi.fn(),
+  goToLocation: vi.fn(),
   destroy: vi.fn(),
   reconnect: vi.fn(),
   navigate: vi.fn(),
@@ -62,6 +63,7 @@ beforeEach(() => {
     scene: {
       lock: mocks.lock,
       restore: mocks.restore,
+      goToLocation: mocks.goToLocation,
       setTouch: vi.fn(),
       zoom: vi.fn(),
       interact: vi.fn(),
@@ -137,5 +139,23 @@ describe("3D to React checkpoint bridge", () => {
     const bridge = await start();
     expect(bridge.appearance).toEqual({ skin: 5, hair: 4, outfit: 2 });
     expect(bridge.gender).toBe("female");
+  });
+  it("shows location details and the available action", async () => {
+    const bridge = await start();
+    const location = {
+      id: "market",
+      name: "Neighbourhood market",
+      kind: "market" as const,
+      x: 470,
+      y: 210,
+    };
+    act(() => bridge.onLocationSelected(location));
+    expect(screen.getByRole("dialog")).toBeTruthy();
+    expect(screen.getByText("Browse the market")).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: "Go to Neighbourhood market" }).hasAttribute("disabled"),
+    ).toBe(true);
+    act(() => screen.getByRole("button", { name: "Close location details" }).click());
+    expect(screen.queryByRole("dialog")).toBeNull();
   });
 });

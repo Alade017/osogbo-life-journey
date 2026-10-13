@@ -22,6 +22,7 @@ function bridge(): NeighborhoodBridge {
     area: CITY_CENTRE_AREA,
     onNearby: vi.fn(),
     onCheckpoint: vi.fn(),
+    onLocationSelected: vi.fn(),
     onInteract: vi.fn(),
     onPlayerSelected: vi.fn(),
     onPlayerTooFar: vi.fn(),
@@ -137,15 +138,16 @@ describe("3D loader fixtures and authoritative bridge", () => {
     controller.syncNetworkPlayers([]);
     expect(controller.players.size).toBe(0);
   });
-  it("only activates a selected building within interaction range", () => {
+  it("opens details on selection and activates only after Go", () => {
     const callbacks = bridge(),
       controller = new ThreeNeighborhoodController(callbacks);
     controller.ready = true;
     controller.lock(false);
     controller.selectLocation("home");
+    expect(callbacks.onLocationSelected).toHaveBeenCalledWith(CITY_CENTRE_AREA.objects[0]);
     expect(callbacks.onInteract).not.toHaveBeenCalled();
     controller.restore({ x: 7 + (170 - 320) / 160, y: 6 + (210 - 300) / 160 });
-    controller.selectLocation("home");
+    controller.goToLocation("home");
     expect(callbacks.onInteract).toHaveBeenCalledWith(CITY_CENTRE_AREA.objects[0]);
     expect(sceneTo3D(toScene({ x: 7, y: 6 }, { x: 7, y: 6 }))).toEqual([0, 0, 0]);
   });

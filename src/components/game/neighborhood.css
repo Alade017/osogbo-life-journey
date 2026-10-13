@@ -65,6 +65,72 @@
   background: var(--card);
   box-shadow: 0 12px 36px #18302425;
 }
+.neighborhood-location-dialog {
+  position: absolute;
+  z-index: 25;
+  top: 72px;
+  left: 16px;
+  width: min(420px, calc(100% - 32px));
+  max-height: min(440px, calc(100% - 180px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  color: var(--foreground);
+  background: var(--card);
+  box-shadow: 0 16px 46px rgb(16 41 30 / 24%);
+}
+.neighborhood-location-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.neighborhood-location-heading h2 {
+  margin: 4px 0 0;
+  font-size: 19px;
+}
+.neighborhood-location-heading button,
+.neighborhood-location-go {
+  min-height: 44px;
+}
+.neighborhood-location-description {
+  margin: 12px 0;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  line-height: 1.55;
+}
+.neighborhood-location-actions {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 12px;
+  font-size: 12px;
+}
+.neighborhood-location-actions span {
+  color: var(--muted-foreground);
+}
+.neighborhood-location-go {
+  width: 100%;
+  margin-bottom: 12px;
+}
+.neighborhood-location-travel summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 750;
+}
+.neighborhood-location-travel select {
+  width: 100%;
+  margin: 8px 0 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+}
 .neighborhood-directory > div:first-child {
   display: flex;
   justify-content: space-between;
@@ -845,6 +911,14 @@
     max-width: none;
     padding: 14px;
     border-radius: 16px;
+  }
+
+  .neighborhood-location-dialog {
+    top: 68px;
+    left: 8px;
+    width: calc(100% - 16px);
+    max-height: calc(100% - 180px);
+    padding: 14px;
   }
 
   .neighborhood-trips {
