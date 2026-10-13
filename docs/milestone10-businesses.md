@@ -37,6 +37,8 @@ The private settlement helper cannot be called by `public`, `anon` or `authentic
 
 ## Deployment and rollback boundary
 
+The migration target is the main game Supabase project that owns characters, wallets and transactions (the project used by the game's Supabase client). Do not apply it to a separate multiplayer-only database that lacks that migration chain.
+
 No hosted migration or deployment is authorized by this implementation approval. Apply 0032 only through a separately authorized controlled migration workflow, after confirming that the target ledger reaches 0031 and reviewing a backup. If an earlier draft of 0032 was already applied, do not overwrite its ledger or rerun this create-table migration; prepare a forward migration after inspecting the hosted schema.
 
 Without 0032, the UI reports the RPC load failure and offers retry. Hosted two-account behavior, cross-device persistence, actual lock contention and mobile rendering remain release checks. Local tests/builds do not establish those results. Rollback the UI to the prior revision if necessary; preserve issued company/investment records and use a reviewed forward fix for a deployed database.

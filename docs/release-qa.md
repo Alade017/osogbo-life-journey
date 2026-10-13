@@ -1,5 +1,15 @@
 # Milestone 9 release QA
 
+## Milestone 10 local implementation verification — 2026-10-13
+
+- The approved business/investment extension is included in the user's `c404ba70` commit. Its reusable finance UI is available through `/businesses` and Wallet, with phone integration retained. The earlier commit was preserved; no history was rewritten.
+- Fresh full regression run passed: **282 tests across 64 files** (`npm.cmd test -- --maxWorkers=1 --reporter=verbose`, 495.59 seconds). No tests failed or were skipped. This current result is separate from the earlier timeout runs.
+- Business coverage includes local migration-chain application, exact-once purchase/investment receipts bound to their inputs, denied ownership/direct writes, bounded pricing, old-price settlement, seven-day accrual cap, preserved total shares/dividends, no historical dividends for new investors, and fixed-term maturity/yield snapshots. Service/UI tests cover malformed data, offset timestamps, unchanged retry IDs, invalid amounts, owner-offer filtering and load errors. Local PGlite competing attempts are serialized internally and do not establish hosted multi-connection contention behavior.
+- Repository readiness check passed: all 34 migration journal entries through `0032_player_businesses_and_investments` have matching SQL files and valid ordering. This does not inspect the hosted ledger or apply SQL.
+- Final `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run build` and `npm.cmd run build:public` passed. Lint has 0 errors and 16 existing Fast Refresh warnings. The earlier global lint attempt found formatting errors in concurrently added database scripts; the final rerun is clean. The earlier restricted build failed on Nitro's Windows `readlink` permission; the permitted build completed. Neither database script was executed.
+- Fresh built preview is running at `http://localhost:4194/`; `/` and `/businesses` returned HTTP 200. The isolated browser check of `/businesses` redirected a signed-out visitor to `/login`, rendered the login form, and captured no JavaScript exceptions or failed requests. This verifies the route/authentication boundary, not authenticated business operations or real-device layout.
+- No hosted database migration, provider setting, DNS, deployment or push was performed. Business functionality on a deployed site still requires separately authorized migration/deployment and hosted acceptance. Milestone 9's remaining device, permission and multi-service evidence gates remain open.
+
 ## Readiness audit — 2026-10-12
 
 ### Additional local control verification attempt — 2026-10-12
