@@ -38,7 +38,7 @@ export function createDevelopmentMapFallbackStyle() {
   };
 }
 
-/** Apply the Osogbo Life warm roads, blue waterways, green parks, and navy labels to OMT layers. */
+/** Apply the Osogbo Life ivory, forest green, gold, and soft water palette to OMT layers. */
 export function applyOsogboMapPalette(map: MapLibreMap) {
   if (!map.isStyleLoaded()) return;
   const layers = map.getStyle().layers;
@@ -49,38 +49,38 @@ export function applyOsogboMapPalette(map: MapLibreMap) {
     const id = layer.id.toLowerCase();
 
     if (layer.type === "background") {
-      map.setPaintProperty(layer.id, "background-color", "#f4f0e7");
+      map.setPaintProperty(layer.id, "background-color", "#f2f6ed");
       continue;
     }
 
     if (layer.type === "fill" && (sourceLayer === "water" || id.includes("water"))) {
-      map.setPaintProperty(layer.id, "fill-color", "#b8d5de");
+      map.setPaintProperty(layer.id, "fill-color", "#cde1e7");
       map.setPaintProperty(layer.id, "fill-opacity", 0.95);
     } else if (
       layer.type === "fill" &&
       (sourceLayer === "park" || id.includes("park") || id.includes("wood"))
     ) {
-      map.setPaintProperty(layer.id, "fill-color", "#c8d9bd");
+      map.setPaintProperty(layer.id, "fill-color", "#d8e8d0");
     } else if (layer.type === "fill" && (sourceLayer === "building" || id.includes("building"))) {
-      map.setPaintProperty(layer.id, "fill-color", "#e2d9cb");
-      map.setPaintProperty(layer.id, "fill-outline-color", "#d0c5b5");
+      map.setPaintProperty(layer.id, "fill-color", "#ffffff");
+      map.setPaintProperty(layer.id, "fill-outline-color", "#d5e1d0");
     } else if (layer.type === "line" && sourceLayer === "transportation") {
       map.setPaintProperty(layer.id, "line-color", [
         "match",
         ["get", "class"],
         ["motorway", "motorway_link", "trunk", "trunk_link", "primary", "primary_link"],
-        "#dfa75f",
+        "#e6c676",
         ["secondary", "secondary_link", "tertiary", "tertiary_link"],
-        "#efdab6",
+        "#e7efdf",
         ["rail", "transit", "ferry"],
-        "#a99a84",
-        "#faf5e9",
+        "#9eaf9f",
+        "#ffffff",
       ]);
     } else if (layer.type === "line" && sourceLayer === "waterway") {
-      map.setPaintProperty(layer.id, "line-color", "#a5cbd7");
+      map.setPaintProperty(layer.id, "line-color", "#b7d7df");
     } else if (layer.type === "symbol" && layer.layout?.["text-field"]) {
-      map.setPaintProperty(layer.id, "text-color", "#34485f");
-      map.setPaintProperty(layer.id, "text-halo-color", "#fffdf8");
+      map.setPaintProperty(layer.id, "text-color", "#173d2b");
+      map.setPaintProperty(layer.id, "text-halo-color", "#f2f6ed");
       map.setPaintProperty(layer.id, "text-halo-width", 1.1);
     }
   }

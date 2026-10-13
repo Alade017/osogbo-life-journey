@@ -24,7 +24,7 @@
   place-items: center;
   border: 1px solid rgb(255 255 255 / 18%);
   border-radius: 50%;
-  color: #f7f3e9;
+  color: var(--color-warm-ivory);
   background: rgb(16 39 31 / 84%);
   opacity: 1;
 }
@@ -139,7 +139,7 @@
   flex: none;
   padding: 6px 10px;
   border-bottom: 1px solid #e2e8e1;
-  color: #25352d;
+  color: var(--color-text);
   background: #fffefa;
 }
 
@@ -154,11 +154,11 @@
   justify-content: flex-start;
   padding: 0 6px;
   border-radius: 11px;
-  color: #174a38;
+  color: var(--color-primary);
 }
 
 .phone-app-toolbar button:hover {
-  background: #eef1ea;
+  background: var(--color-surface-subtle);
 }
 
 .phone-app-view > :not(.phone-app-toolbar) {
