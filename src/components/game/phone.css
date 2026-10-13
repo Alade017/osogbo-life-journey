@@ -1,0 +1,221 @@
+/* A consistent device shell for the launcher and every app opened inside it. */
+.phone-dialog.phone-dialog {
+  width: min(410px, calc(100vw - 20px)) !important;
+  max-width: none !important;
+  max-height: calc(100dvh - 20px);
+  gap: 0;
+  overflow: hidden;
+  padding: 6px !important;
+  border: 1px solid #344b42;
+  border-radius: 34px !important;
+  background: #12231f;
+  box-shadow:
+    0 28px 90px rgb(3 15 10 / 42%),
+    inset 0 1px rgb(255 255 255 / 12%);
+}
+
+.phone-dialog > button:last-child {
+  z-index: 3;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 50%;
+  color: #f7f3e9;
+  background: rgb(16 39 31 / 84%);
+  opacity: 1;
+}
+
+.phone-screen {
+  display: flex;
+  width: 100%;
+  height: min(760px, calc(100dvh - 34px));
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 12px;
+  border: 1px solid rgb(255 255 255 / 11%);
+  border-radius: 28px;
+  color: #fffaf0;
+  background:
+    radial-gradient(ellipse at 16% 8%, rgb(108 166 130 / 42%), transparent 42%),
+    linear-gradient(155deg, #244a39 0%, #17382d 48%, #102a24 100%);
+  box-shadow: inset 0 0 0 2px rgb(0 0 0 / 14%);
+}
+
+.phone-status {
+  display: grid;
+  flex: none;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  min-height: 26px;
+  gap: 8px;
+  padding: 0 34px 0 8px;
+  color: rgb(255 250 240 / 86%);
+  font-size: 10px;
+  letter-spacing: 0.02em;
+}
+
+.phone-status-brand {
+  font-size: 9px;
+  letter-spacing: 0.09em;
+}
+
+.phone-home-heading {
+  flex: none;
+  padding: 17px 9px 0;
+  text-align: left;
+}
+
+.phone-home-heading h2 {
+  margin: 0;
+  font-size: 24px;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+}
+
+.phone-home-heading p {
+  max-width: 28ch;
+  margin-top: 5px;
+  color: rgb(255 250 240 / 72%);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.phone-app-grid {
+  min-height: 0;
+  flex: 1;
+  align-content: start;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px 7px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 20px 6px 14px;
+}
+
+.phone-app {
+  min-width: 0;
+  min-height: 78px;
+  align-content: start;
+  gap: 7px;
+  padding: 3px 1px;
+  border-radius: 14px;
+  font-size: 10px;
+  line-height: 1.2;
+  text-align: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.phone-app-icon {
+  width: 50px;
+  height: 50px;
+  border: 1px solid rgb(255 255 255 / 28%);
+  border-radius: 16px;
+  box-shadow:
+    inset 0 1px rgb(255 255 255 / 28%),
+    0 7px 14px rgb(0 0 0 / 20%);
+}
+
+.phone-app:active .phone-app-icon {
+  transform: scale(0.94);
+}
+
+.phone-app-view {
+  min-height: 0;
+  margin: 10px 2px 3px;
+  border: 1px solid rgb(255 255 255 / 58%);
+  border-radius: 19px;
+  color: var(--foreground);
+  background: #fbfaf6;
+  box-shadow: 0 8px 20px rgb(0 0 0 / 16%);
+  animation: phone-app-open 180ms ease-out both;
+}
+
+.phone-app-toolbar {
+  min-height: 54px;
+  flex: none;
+  padding: 6px 10px;
+  border-bottom: 1px solid #e2e8e1;
+  color: #25352d;
+  background: #fffefa;
+}
+
+.phone-app-toolbar > strong {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.phone-app-toolbar button {
+  min-width: 54px;
+  min-height: 42px;
+  justify-content: flex-start;
+  padding: 0 6px;
+  border-radius: 11px;
+  color: #174a38;
+}
+
+.phone-app-toolbar button:hover {
+  background: #eef1ea;
+}
+
+.phone-app-view > :not(.phone-app-toolbar) {
+  min-height: 0;
+  flex: 1;
+}
+
+.phone-home-indicator {
+  width: 88px;
+  height: 4px;
+  flex: none;
+  margin: 10px auto 2px;
+  border-radius: 999px;
+  background: rgb(255 250 240 / 74%);
+}
+
+@keyframes phone-app-open {
+  from {
+    opacity: 0.65;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 480px) {
+  .phone-dialog.phone-dialog {
+    width: calc(100vw - 16px) !important;
+    max-height: calc(100dvh - 16px);
+    padding: 4px !important;
+    border-radius: 30px !important;
+  }
+
+  .phone-screen {
+    height: calc(100dvh - 26px);
+    padding: 10px;
+    border-radius: 25px;
+  }
+
+  .phone-app-grid {
+    gap: 12px 5px;
+    padding-inline: 2px;
+  }
+
+  .phone-app-icon {
+    width: 46px;
+    height: 46px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .phone-app-view {
+    animation: none;
+  }
+  .phone-app-icon {
+    transition: none;
+  }
+}

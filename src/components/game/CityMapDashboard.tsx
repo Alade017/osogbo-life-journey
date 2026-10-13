@@ -17,12 +17,17 @@ export function CityMapDashboard({ children }: { children: ReactNode }) {
         <div>
           <p className="city-map-eyebrow">THE CITY IS YOURS</p>
           <h1>Explore Osogbo</h1>
-          <p>Meet your neighbours, find work, and discover what&apos;s around you.</p>
+          <p>Choose a place, see what&apos;s available, then go explore.</p>
         </div>
         <Link to="/home" search={{ visit: undefined }} className="city-map-home-link">
           Go home
         </Link>
       </header>
+
+      <p className="city-map-hint">
+        Tap a building or neighbour for details. Choose <strong>Go</strong> when you&apos;re ready
+        to walk over.
+      </p>
 
       <div className="city-map-layout">
         <main className="city-map-world">{children}</main>

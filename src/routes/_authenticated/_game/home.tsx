@@ -24,6 +24,8 @@ import { useMutation } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useGameTime } from "@/components/game/GameTimeProvider";
 import type { LifeActionId } from "@/lib/life-simulation";
+import { BriefcaseBusiness, MapPinned, UsersRound, ScrollText } from "lucide-react";
+import "@/components/game/home-dashboard.css";
 
 export const Route = createFileRoute("/_authenticated/_game/home")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -417,6 +419,45 @@ function MyCityHome() {
         </div>
       </div>
       <LifeSimulationPanel />
+      <section className="home-next-steps" aria-labelledby="home-next-steps-title">
+        <div className="home-next-steps-heading">
+          <div>
+            <p className="arrival-kicker">MAKE TODAY YOURS</p>
+            <h2 id="home-next-steps-title">What would you like to do?</h2>
+          </div>
+          <span>Pick a next step</span>
+        </div>
+        <div className="home-next-steps-grid">
+          <Link to="/jobs" className="home-next-step is-work">
+            <span>
+              <BriefcaseBusiness size={19} aria-hidden="true" />
+            </span>
+            <strong>Find work</strong>
+            <small>See shifts and opportunities</small>
+          </Link>
+          <Link to="/map" className="home-next-step is-city">
+            <span>
+              <MapPinned size={19} aria-hidden="true" />
+            </span>
+            <strong>Explore the city</strong>
+            <small>Choose a place to visit</small>
+          </Link>
+          <Link to="/missions" className="home-next-step is-missions">
+            <span>
+              <ScrollText size={19} aria-hidden="true" />
+            </span>
+            <strong>Check your missions</strong>
+            <small>Continue a goal in progress</small>
+          </Link>
+          <Link to="/social" search={{ playerId: undefined }} className="home-next-step is-people">
+            <span>
+              <UsersRound size={19} aria-hidden="true" />
+            </span>
+            <strong>Meet people</strong>
+            <small>Catch up with your community</small>
+          </Link>
+        </div>
+      </section>
       {homeQuery.isLoading ? (
         <LoadingState />
       ) : (

@@ -30,6 +30,7 @@ import { useState } from "react";
 import { PlayerSocial } from "@/components/game/PlayerSocial";
 import { BusinessInvestmentApp } from "@/components/game/BusinessInvestmentApp";
 import { BillboardAdApp } from "@/components/game/BillboardAdApp";
+import "./phone.css";
 
 const PHONE_APPS = [
   { label: "Home", to: "/home", icon: House, tone: "phone-app-green", active: true },
@@ -222,6 +223,7 @@ export function PhoneLauncher({
               </div>
             </>
           )}
+          <div className="phone-home-indicator" aria-hidden="true" />
         </div>
       </DialogContent>
     </Dialog>
