@@ -330,6 +330,27 @@ export function MapCanvas({
     [applyTransform, zoomLevel],
   );
 
+  const changeZoomLevel = useCallback(
+    (level: MapZoomLevel) => {
+      const { width, height, fitScale } = viewportSizeRef.current;
+      const current = transformRef.current;
+      const center = {
+        x: (width / 2 - current.x) / current.scale,
+        y: (height / 2 - current.y) / current.scale,
+      };
+      setZoomLevel(level);
+      applyTransform(
+        {
+          x: width / 2 - center.x * fitScale * level,
+          y: height / 2 - center.y * fitScale * level,
+          scale: fitScale * level,
+        },
+        true,
+      );
+    },
+    [applyTransform],
+  );
+
   const selectDistrict = useCallback(
     (district: MapDistrict) => {
       const bounds = district.landmarks.reduce(
@@ -604,8 +625,22 @@ export function MapCanvas({
         <MemoizedMapBase data={typedMapData} onSelectDistrict={stableDistrictSelect} />
         {markerLayer}
       </div>
-      <div className="map-canvas-zoom-status" aria-live="polite" aria-atomic="true">
-        {zoomLevel === 1 ? "Overview" : zoomLevel === 2 ? "Street view" : "Detail view"}
+      <div className="map-canvas-zoom-controls" role="group" aria-label="Map zoom level">
+        {ZOOM_LEVELS.map((level) => {
+          const label = level === 1 ? "Overview" : level === 2 ? "Street" : "Detail";
+          return (
+            <button
+              className="map-canvas-zoom-button"
+              key={level}
+              type="button"
+              aria-pressed={zoomLevel === level}
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={() => changeZoomLevel(level)}
+            >
+              {label}
+            </button>
+          );
+        })}
       </div>
     </div>
   );

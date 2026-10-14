@@ -1,16 +1,13 @@
-import { useMemo, useState } from "react";
-import { BadgeCheck, MapPin, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import type { Activity, Job, MapLocation } from "@/lib/game";
-import { careerShiftPay, q } from "@/lib/game";
+import { BadgeCheck, MapPin, X } from "lucide-react";
 import { formatMapNaira } from "@/components/map/map-ui-utils";
+import { MapApiError, requestMapLandmark } from "@/lib/map-api";
+import { careerShiftPay } from "@/lib/economy-service";
 
 export function LandmarkSheet({
   landmark,
   description,
-  location,
   offline,
-  playerAge,
   onClose,
   onTravel,
   onApply,
@@ -20,28 +17,29 @@ export function LandmarkSheet({
 }: {
   landmark: { id: string; label: string; category: string; verify: boolean };
   description: string;
-  location: MapLocation | null | undefined;
   offline: boolean;
-  playerAge: number | null;
   onClose: () => void;
-  onTravel: (id: string, mode: string) => void;
-  onApply: (id: string) => void;
-  travelResult?: { fare: number; travel_minutes: number; location: string } | null;
+  onTravel: (landmarkId: string) => void;
+  onApply: (jobId: string) => void;
+  travelResult?: { fare: number; travel_minutes: number; landmark_id: string } | null;
   pending: boolean;
   error?: string;
 }) {
-  const id = location?.id;
-  const activitiesQuery = useQuery({ ...q.locationActivities(id ?? ""), enabled: !!id });
-  const jobsQuery = useQuery({ ...q.locationJobs(id ?? ""), enabled: !!id });
-  const [mode, setMode] = useState("walking");
-  const restricted = useMemo(() => {
-    const metadata = location?.metadata as Record<string, unknown> | null;
-    const flags = metadata?.["flags"];
-    return (
-      Number(metadata?.["min_age"] ?? 0) >= 18 || (Array.isArray(flags) && flags.includes("18+"))
-    );
-  }, [location]);
-  const tooYoung = restricted && (playerAge === null || playerAge < 18);
+  const detailsQuery = useQuery({
+    queryKey: ["mapLandmarkDetails", landmark.id],
+    queryFn: () => requestMapLandmark(landmark.id),
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+  const restricted =
+    (detailsQuery.error instanceof MapApiError && detailsQuery.error.code === "AGE_RESTRICTED") ||
+    (detailsQuery.data?.landmark.min_age ?? 0) >= 18;
+  const detailError =
+    detailsQuery.error instanceof MapApiError && detailsQuery.error.code !== "AGE_RESTRICTED"
+      ? detailsQuery.error.code
+      : undefined;
+  const canAct = !!detailsQuery.data && !offline && !pending;
+
   return (
     <section
       className="map-sheet map-landmark-sheet"
@@ -61,91 +59,87 @@ export function LandmarkSheet({
           <X size={18} />
         </button>
       </header>
-      <p>{description}</p>
+      <p>{detailsQuery.data?.landmark.description ?? description}</p>
       {restricted && (
         <p className="map-age-badge">
           <BadgeCheck size={15} /> 18+
         </p>
       )}
-      <section>
-        <h3>Activities</h3>
-        {activitiesQuery.isPending ? (
-          <p>Loading activities…</p>
-        ) : activitiesQuery.data?.length ? (
-          <ul className="map-sheet-list">
-            {activitiesQuery.data.map((activity: Activity) => (
-              <li key={activity.id}>
-                <span>{activity.name}</span>
-                <small>{activity.description}</small>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No activities are listed here yet.</p>
-        )}
-      </section>
-      <section>
-        <h3>Available jobs</h3>
-        {jobsQuery.isPending ? (
-          <p>Loading jobs…</p>
-        ) : jobsQuery.data?.length ? (
-          <ul className="map-sheet-list">
-            {jobsQuery.data.map((job: Job) => (
-              <li key={job.id}>
-                <span>
-                  {job.name}
-                  <small>
-                    {formatMapNaira(careerShiftPay(job.salary, 1))}–
-                    {formatMapNaira(careerShiftPay(job.salary, 3))} per shift
-                  </small>
-                </span>
-                <button disabled={offline || pending || tooYoung} onClick={() => onApply(job.id)}>
-                  {offline ? "Reconnect to apply" : "Apply"}
-                </button>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No open jobs here.</p>
-        )}
-      </section>
-      {tooYoung && <p className="map-age-notice">This place is for players 18 and over.</p>}
+      {detailsQuery.isPending ? (
+        <p role="status">Loading place details…</p>
+      ) : restricted ? (
+        <p className="map-age-notice">This place is for players 18 and over.</p>
+      ) : detailError ? (
+        <p role="alert" className="map-action-error">
+          {detailError === "UNKNOWN_LANDMARK"
+            ? "This place is no longer available."
+            : "Place details could not be loaded. Reconnect and try again."}
+        </p>
+      ) : (
+        <>
+          <section>
+            <h3>Activities</h3>
+            {detailsQuery.data?.activities.length ? (
+              <ul className="map-sheet-list">
+                {detailsQuery.data.activities.map((activity) => (
+                  <li key={activity.id}>
+                    <span>{activity.name}</span>
+                    <small>{activity.description}</small>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>No activities are listed here yet.</p>
+            )}
+          </section>
+          <section>
+            <h3>Available jobs</h3>
+            {detailsQuery.data?.jobs.length ? (
+              <ul className="map-sheet-list">
+                {detailsQuery.data.jobs.map((job) => (
+                  <li key={job.id}>
+                    <span>
+                      {job.name}
+                      <small>
+                        {formatMapNaira(careerShiftPay(job.salary, 1))}–
+                        {formatMapNaira(careerShiftPay(job.salary, 3))} per shift
+                      </small>
+                    </span>
+                    <button disabled={!canAct} onClick={() => onApply(job.id)}>
+                      {offline ? "Reconnect to apply" : "Apply"}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>No open jobs here.</p>
+            )}
+          </section>
+        </>
+      )}
       {error && (
         <p role="alert" className="map-action-error">
           {error}
         </p>
       )}
       <footer className="map-sheet-actions">
-        <label>
-          Travel mode{" "}
-          <select value={mode} onChange={(e) => setMode(e.target.value)}>
-            <option value="walking">Walking</option>
-            <option value="danfo">Danfo</option>
-            <option value="keke">Keke</option>
-            <option value="okada">Okada</option>
-            <option value="car">Car</option>
-          </select>
-        </label>
         <button
           className="map-primary-button"
-          disabled={!id || offline || pending || tooYoung}
-          onClick={() => id && onTravel(id, mode)}
+          disabled={!canAct || restricted}
+          onClick={() => onTravel(landmark.id)}
         >
           <MapPin size={17} />
           {offline
             ? "Reconnect to travel"
-            : tooYoung
+            : restricted
               ? "This place is for players 18 and over."
-              : !id
-                ? "Not a playable destination"
-                : pending
-                  ? "Requesting route…"
-                  : "Travel here"}
+              : pending
+                ? "Requesting route…"
+                : "Travel here"}
         </button>
         {travelResult && (
           <p role="status">
-            {travelResult.location}: {travelResult.travel_minutes} min ·{" "}
-            {formatMapNaira(travelResult.fare)}
+            Travel started: {travelResult.travel_minutes} min · {formatMapNaira(travelResult.fare)}
           </p>
         )}
       </footer>

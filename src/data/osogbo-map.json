@@ -18,6 +18,7 @@
       "theme": "market",
       "traffic": "high",
       "description": "A busy market district where players can browse stalls, trade goods, and meet neighbours.",
+      "shape": [[22, 40], [70, 22], [248, 32], [278, 75], [270, 278], [235, 350], [62, 365], [25, 325], [12, 110]],
       "landmarks": [
         {
           "id": "oja-oba-market",
@@ -51,6 +52,7 @@
       "theme": "residential",
       "traffic": "medium",
       "description": "A neighbourhood hub for home visits, community errands, and everyday services.",
+      "shape": [[326, 36], [382, 20], [560, 39], [583, 92], [570, 312], [528, 358], [355, 368], [320, 322], [315, 104]],
       "landmarks": [
         {
           "id": "ataoja-palace-area",
@@ -84,6 +86,7 @@
       "theme": "residential",
       "traffic": "medium",
       "description": "A residential district for settling into a home, visiting friends, and handling local errands.",
+      "shape": [[625, 35], [684, 20], [858, 38], [884, 83], [872, 305], [842, 357], [654, 369], [619, 330], [614, 98]],
       "landmarks": [
         {
           "id": "aleku-wodo-school",
@@ -117,6 +120,7 @@
       "theme": "transport",
       "traffic": "high",
       "description": "A lively junction district where players can meet rides, change routes, and start city trips.",
+      "shape": [[925, 38], [970, 20], [1145, 30], [1180, 72], [1172, 290], [1140, 352], [957, 370], [918, 330], [914, 102]],
       "landmarks": [
         {
           "id": "olaiya-junction",
@@ -150,6 +154,7 @@
       "theme": "leisure",
       "traffic": "medium",
       "description": "A mixed-use district with casual recreation, community meetups, and city connections.",
+      "shape": [[20, 438], [66, 419], [250, 430], [280, 478], [269, 704], [236, 766], [55, 780], [18, 742], [12, 500]],
       "landmarks": [
         {
           "id": "oke-fia-station",
@@ -184,6 +189,7 @@
       "theme": "school",
       "traffic": "medium",
       "description": "A learning-focused district where players can attend classes, build skills, and gather after lessons.",
+      "shape": [[326, 435], [377, 418], [560, 431], [584, 480], [570, 706], [536, 766], [354, 780], [319, 740], [315, 495]],
       "landmarks": [
         {
           "id": "oke-baale-school",
@@ -218,6 +224,7 @@
       "theme": "market",
       "traffic": "medium",
       "description": "A compact community market area for shopping, food stops, and player-run services.",
+      "shape": [[625, 436], [678, 418], [858, 430], [884, 476], [871, 702], [837, 765], [652, 779], [619, 740], [614, 498]],
       "landmarks": [
         {
           "id": "isale-aro-market",
@@ -252,6 +259,7 @@
       "theme": "outskirts",
       "traffic": "low",
       "description": "A quieter edge district for spacious homes, slower journeys, and neighbourhood gatherings.",
+      "shape": [[924, 437], [972, 418], [1148, 429], [1181, 475], [1171, 701], [1138, 764], [956, 780], [918, 740], [914, 497]],
       "landmarks": [
         {
           "id": "ogo-oluwa-worship",

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   BusFront,
   Church,
@@ -43,13 +43,9 @@ export type MapDistrict = {
   theme: DistrictTheme;
   traffic: Traffic;
   description: string;
+  shape: [number, number][];
   landmarks: MapLandmark[];
 };
-
-type Point = { x: number; y: number };
-type Bounds = { x: number; y: number; width: number; height: number };
-
-const districts = mapData.districts as MapDistrict[];
 
 const districtFill: Record<DistrictTheme, string> = {
   market: "#E7D9B4",
@@ -58,15 +54,6 @@ const districtFill: Record<DistrictTheme, string> = {
   transport: "#D9DEE6",
   school: "#F8F3F0",
   outskirts: "#E9EDF2",
-};
-
-const districtShade: Record<DistrictTheme, string> = {
-  market: "#D0C197",
-  residential: "#BCC9DE",
-  leisure: "#98ADD5",
-  transport: "#BAC3D0",
-  school: "#E0D6D1",
-  outskirts: "#D1D8E1",
 };
 
 const categoryIcons = {
@@ -81,66 +68,12 @@ const categoryIcons = {
   services: Landmark,
 } satisfies Record<LandmarkCategory, typeof MapPin>;
 
-function districtBounds(district: MapDistrict): Bounds {
-  const xs = district.landmarks.map((landmark) => landmark.x);
-  const ys = district.landmarks.map((landmark) => landmark.y);
-  const minX = Math.min(...xs);
-  const maxX = Math.max(...xs);
-  const minY = Math.min(...ys);
-  const maxY = Math.max(...ys);
-  const padX = 70;
-  const padTop = 72;
-  const padBottom = 52;
-
-  return {
-    x: minX - padX,
-    y: minY - padTop,
-    width: maxX - minX + padX * 2,
-    height: maxY - minY + padTop + padBottom,
-  };
-}
-
-function boundsCenter(bounds: Bounds): Point {
-  return { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
-}
-
-function roadPath(points: Point[]) {
-  return points.map((point, index) => `${index === 0 ? "M" : "L"}${point.x} ${point.y}`).join(" ");
-}
-
-function roadRoutes(districtBoundsById: Map<string, Bounds>) {
-  const rows = [districts.slice(0, 4), districts.slice(4, 8)];
-  const horizontalRoutes = rows.map((row) => {
-    const points = row
-      .map((district) => districtBoundsById.get(district.id))
-      .filter((bounds): bounds is Bounds => !!bounds)
-      .map(boundsCenter)
-      .sort((a, b) => a.x - b.x);
-    return roadPath(points);
-  });
-
-  const firstRow = rows[0] ?? [];
-  const secondRow = rows[1] ?? [];
-  const verticalRoutes = [0, 2].map((leftIndex) => {
-    const upperLeft = districtBoundsById.get(firstRow[leftIndex]?.id ?? "");
-    const upperRight = districtBoundsById.get(firstRow[leftIndex + 1]?.id ?? "");
-    const lowerLeft = districtBoundsById.get(secondRow[leftIndex]?.id ?? "");
-    const lowerRight = districtBoundsById.get(secondRow[leftIndex + 1]?.id ?? "");
-    if (!upperLeft || !upperRight || !lowerLeft || !lowerRight) return "";
-
-    const upperGapX = (upperLeft.x + upperLeft.width + upperRight.x) / 2;
-    const lowerGapX = (lowerLeft.x + lowerLeft.width + lowerRight.x) / 2;
-    const upperGapY = Math.max(upperLeft.y + upperLeft.height, upperRight.y + upperRight.height);
-    const lowerGapY = Math.min(lowerLeft.y, lowerRight.y);
-    return roadPath([
-      { x: upperGapX, y: upperGapY },
-      { x: (upperGapX + lowerGapX) / 2, y: (upperGapY + lowerGapY) / 2 },
-      { x: lowerGapX, y: lowerGapY },
-    ]);
-  });
-
-  return [...horizontalRoutes, ...verticalRoutes].filter(Boolean);
-}
+const roads = [
+  "M-30 400 C180 393 255 407 410 400 S660 394 800 400 S1040 406 1230 400",
+  "M300 -30 V830",
+  "M600 -30 V830",
+  "M900 -30 V830",
+];
 
 export type OsogboMapSvgProps = {
   data?: typeof mapData;
@@ -160,10 +93,10 @@ export function OsogboMapSvg({
   onLandmarkSelect,
 }: OsogboMapSvgProps) {
   const districts = data.districts as MapDistrict[];
-  const { boundsById, roads } = useMemo(() => {
-    const bounds = new Map(districts.map((district) => [district.id, districtBounds(district)]));
-    return { boundsById: bounds, roads: roadRoutes(bounds) };
-  }, [districts]);
+  const [reviewMode, setReviewMode] = useState(false);
+  useEffect(() => {
+    setReviewMode(new URLSearchParams(window.location.search).get("review") === "1");
+  }, []);
 
   return (
     <svg
@@ -175,19 +108,16 @@ export function OsogboMapSvg({
     >
       <rect className="map-background" width="1200" height="800" />
 
-      <g className="map-roads" aria-label="Roads">
-        {roads.map((path, index) => (
-          <g className="map-road" key={`road-${index}`}>
-            <path d={path} className="map-road-edge" />
-            <path d={path} className="map-road-fill" />
-          </g>
-        ))}
-      </g>
-
       <g className="map-districts" aria-label="Districts">
         {districts.map((district) => {
-          const bounds = boundsById.get(district.id);
-          if (!bounds) return null;
+          if (district.shape.length < 6 || district.shape.length > 10) return null;
+          const xs = district.shape.map(([x]) => x);
+          const ys = district.shape.map(([, y]) => y);
+          const minX = Math.min(...xs);
+          const minY = Math.min(...ys);
+          const maxY = Math.max(...ys);
+          const points = district.shape.map(([x, y]) => `${x},${y}`).join(" ");
+          const offsetPoints = district.shape.map(([x, y]) => `${x + 2},${y + 4}`).join(" ");
           const trafficCount =
             district.traffic === "high" ? 3 : district.traffic === "medium" ? 2 : 1;
           const isSelected = selectedDistrictId === district.id;
@@ -211,52 +141,54 @@ export function OsogboMapSvg({
                 }
               }}
             >
-              <rect
+              <polygon
                 className="map-district-depth"
-                x={bounds.x + 2}
-                y={bounds.y + 4}
-                width={bounds.width}
-                height={bounds.height}
-                rx="12"
-                fill={districtShade[district.theme]}
+                points={offsetPoints}
+                fill="#14213D"
+                fillOpacity="0.12"
               />
-              <rect
+              <polygon
                 className="map-district-shape"
-                x={bounds.x}
-                y={bounds.y}
-                width={bounds.width}
-                height={bounds.height}
-                rx="12"
+                points={points}
                 fill={districtFill[district.theme]}
               />
-              <text className="map-district-name" x={bounds.x + 14} y={bounds.y + 26}>
+              <text className="map-district-name" x={minX + 18} y={minY + 30}>
                 {district.name}
               </text>
-              <text className="map-district-theme" x={bounds.x + 14} y={bounds.y + 43}>
+              <text className="map-district-theme" x={minX + 18} y={minY + 47}>
                 {district.theme[0]?.toUpperCase()}
                 {district.theme.slice(1)}
-                {district.verify ? " · Verify" : ""}
+                {reviewMode && district.verify ? " \u00b7 verify" : ""}
               </text>
               <g className="traffic" aria-label={`${district.traffic} traffic`}>
                 {[0, 1, 2].map((bar) => (
                   <rect
                     className={bar < trafficCount ? "traffic-bar is-active" : "traffic-bar"}
                     key={bar}
-                    x={bounds.x + bounds.width - 45 + bar * 9}
-                    y={bounds.y + 23 - bar * 2}
+                    x={minX + 58 + bar * 9}
+                    y={maxY - 25 - bar * 2}
                     width="5"
                     height={7 + bar * 2}
                     rx="2"
                   />
                 ))}
-                <text className="traffic-label" x={bounds.x + bounds.width - 45} y={bounds.y + 42}>
+                <text className="traffic-label" x={minX + 94} y={maxY - 14}>
                   {district.traffic[0]?.toUpperCase()}
-                  {district.traffic.slice(1)}
+                  {district.traffic.slice(1)} traffic
                 </text>
               </g>
             </g>
           );
         })}
+      </g>
+
+      <g className="map-roads" aria-label="Roads">
+        {roads.map((path, index) => (
+          <g className="map-road" key={`road-${index}`}>
+            <path d={path} className="map-road-edge" />
+            <path d={path} className="map-road-fill" />
+          </g>
+        ))}
       </g>
 
       {showLandmarks && (
@@ -276,7 +208,7 @@ export function OsogboMapSvg({
                   key={landmark.id}
                   role="button"
                   tabIndex={0}
-                  aria-label={`${landmark.label}, ${district.name}${landmark.verify ? ", needs verification" : ""}`}
+                  aria-label={`${landmark.label}, ${district.name}${reviewMode && landmark.verify ? ", verify" : ""}`}
                   onClick={activate}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ") {
@@ -301,6 +233,7 @@ export function OsogboMapSvg({
                     y={landmark.y + 28}
                   >
                     {landmark.label}
+                    {reviewMode && landmark.verify ? " \u00b7 verify" : ""}
                   </text>
                   {landmark.verify && (
                     <circle

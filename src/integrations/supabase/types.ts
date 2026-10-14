@@ -235,6 +235,8 @@ export type Database = {
       characters: {
         Row: {
           age: number;
+          is_adult: boolean;
+          map_district_id: string;
           appearance: Json;
           career: number;
           created_at: string;
@@ -274,6 +276,7 @@ export type Database = {
         };
         Insert: {
           age: number;
+          map_district_id?: string;
           appearance?: Json;
           career?: number;
           created_at?: string;
@@ -313,6 +316,7 @@ export type Database = {
         };
         Update: {
           age?: number;
+          map_district_id?: string;
           appearance?: Json;
           career?: number;
           created_at?: string;
@@ -1598,6 +1602,18 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      map_start_travel: {
+        Args: { p_user_id: string; p_landmark_id: string; p_idempotency_key: string };
+        Returns: Json;
+      };
+      map_get_landmark_details: {
+        Args: { p_user_id: string; p_landmark_id: string };
+        Returns: Json;
+      };
+      map_log_age_check: {
+        Args: { p_player_id: string; p_landmark_id: string };
+        Returns: undefined;
+      };
       get_player_advertising_market: { Args: never; Returns: Json };
       purchase_player_advertisement: {
         Args: {

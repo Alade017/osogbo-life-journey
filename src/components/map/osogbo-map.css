@@ -28,12 +28,12 @@
 
 .map-road-edge {
   stroke: #d9dee6;
-  stroke-width: 18px;
+  stroke-width: 20px;
 }
 
 .map-road-fill {
   stroke: #fff;
-  stroke-width: 14px;
+  stroke-width: 16px;
 }
 
 .map-district-depth {
@@ -43,6 +43,7 @@
 .map-district-shape {
   stroke: #14213d;
   stroke-width: 2px;
+  stroke-linejoin: round;
   transition: stroke-width 120ms ease;
 }
 

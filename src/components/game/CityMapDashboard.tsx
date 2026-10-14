@@ -7,7 +7,13 @@ import { LandmarkSheet } from "@/components/map/LandmarkSheet";
 import { MAP_LANDMARK_LOCATION_SLUG } from "@/components/map/map-location-links";
 import { formatMapNaira } from "@/components/map/map-ui-utils";
 import mapData from "@/data/osogbo-map.json";
-import { formatNaira, q, rpc, type MapLocation } from "@/lib/game";
+import { formatNaira, q, rpc } from "@/lib/game";
+import {
+  clearPendingTravelKey,
+  getPendingTravelKey,
+  requestMapTravel,
+  type MapTravelResponse,
+} from "@/lib/map-api";
 import { useWorldClock } from "@/hooks/use-world-clock";
 import { activeCityEvents } from "@/lib/world-simulation";
 import type { MapDistrict, MapLandmark } from "@/components/map/OsogboMap.svg";
@@ -38,11 +44,7 @@ export function CityMapDashboard({
   const [search, setSearch] = useState("");
   const [searchTarget, setSearchTarget] = useState<MapSearchTarget | null>(null);
   const [offline, setOffline] = useState(typeof navigator !== "undefined" && !navigator.onLine);
-  const [travelInfo, setTravelInfo] = useState<{
-    fare: number;
-    travel_minutes: number;
-    location: string;
-  } | null>(null);
+  const [travelInfo, setTravelInfo] = useState<MapTravelResponse | null>(null);
   const [actionError, setActionError] = useState("");
   const queryClient = useQueryClient();
   const character = useQuery(q.character());
@@ -60,17 +62,15 @@ export function CityMapDashboard({
       window.removeEventListener("offline", update);
     };
   }, []);
-  const slug = selectedLandmark ? MAP_LANDMARK_LOCATION_SLUG[selectedLandmark.id] : undefined;
-  const locationQuery = useQuery({ ...q.mapLocationBySlug(slug ?? ""), enabled: !!slug });
-  const location = locationQuery.data as MapLocation | undefined;
   const activeEvents = world.data
     ? activeCityEvents(world.data).filter((e) => e.locationSlug === selectedDistrict?.id)
     : [];
   const travel = useMutation({
-    mutationFn: ({ id, mode }: { id: string; mode: string }) =>
-      rpc.travelToLocation({ locationId: id, mode }),
-    onSuccess: async (result) => {
+    mutationFn: ({ landmarkId, idempotencyKey }: { landmarkId: string; idempotencyKey: string }) =>
+      requestMapTravel(landmarkId, idempotencyKey),
+    onSuccess: async (result, variables) => {
       setTravelInfo(result);
+      clearPendingTravelKey(variables.idempotencyKey);
       setActionError("");
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["character"] }),
@@ -233,16 +233,16 @@ export function CityMapDashboard({
         <LandmarkSheet
           landmark={selectedLandmark}
           description={
-            location?.description ??
-            (selectedLandmark.category === "worship"
+            selectedLandmark.category === "worship"
               ? "This map marker is informational and is not an in-game destination."
-              : `${selectedLandmark.category[0]!.toUpperCase()}${selectedLandmark.category.slice(1)} destination in ${selectedLandmark.district.name}.`)
+              : `${selectedLandmark.category[0]!.toUpperCase()}${selectedLandmark.category.slice(1)} destination in ${selectedLandmark.district.name}.`
           }
-          location={location}
           offline={offline}
-          playerAge={character.data?.age ?? null}
           onClose={() => setSelectedLandmark(null)}
-          onTravel={(id, mode) => travel.mutate({ id, mode })}
+          onTravel={(landmarkId) => {
+            const idempotencyKey = getPendingTravelKey(landmarkId);
+            travel.mutate({ landmarkId, idempotencyKey });
+          }}
           onApply={(id) => apply.mutate(id)}
           travelResult={travelInfo}
           pending={travel.isPending || apply.isPending}

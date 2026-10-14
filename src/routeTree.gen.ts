@@ -30,7 +30,9 @@ import { Route as AuthenticatedGameProfileRouteImport } from './routes/_authenti
 import { Route as AuthenticatedGameSettingsRouteImport } from './routes/_authenticated/_game/settings'
 import { Route as AuthenticatedGameSocialRouteImport } from './routes/_authenticated/_game/social'
 import { Route as AuthenticatedGameWalletRouteImport } from './routes/_authenticated/_game/wallet'
+import { Route as ApiMapTravelRouteImport } from './routes/api/map/travel'
 import { Route as AuthenticatedGameLocationSlugRouteImport } from './routes/_authenticated/_game/location.$slug'
+import { Route as ApiMapLandmarkIdRouteImport } from './routes/api/map/landmark.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -143,12 +145,22 @@ const AuthenticatedGameWalletRoute = AuthenticatedGameWalletRouteImport.update({
   path: '/wallet',
   getParentRoute: () => AuthenticatedGameRoute,
 } as any)
+const ApiMapTravelRoute = ApiMapTravelRouteImport.update({
+  id: '/api/map/travel',
+  path: '/api/map/travel',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedGameLocationSlugRoute =
   AuthenticatedGameLocationSlugRouteImport.update({
     id: '/location/$slug',
     path: '/location/$slug',
     getParentRoute: () => AuthenticatedGameRoute,
   } as any)
+const ApiMapLandmarkIdRoute = ApiMapLandmarkIdRouteImport.update({
+  id: '/api/map/landmark/$id',
+  path: '/api/map/landmark/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -170,7 +182,9 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedGameSettingsRoute
   '/social': typeof AuthenticatedGameSocialRoute
   '/wallet': typeof AuthenticatedGameWalletRoute
+  '/api/map/travel': typeof ApiMapTravelRoute
   '/location/$slug': typeof AuthenticatedGameLocationSlugRoute
+  '/api/map/landmark/$id': typeof ApiMapLandmarkIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -192,7 +206,9 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedGameSettingsRoute
   '/social': typeof AuthenticatedGameSocialRoute
   '/wallet': typeof AuthenticatedGameWalletRoute
+  '/api/map/travel': typeof ApiMapTravelRoute
   '/location/$slug': typeof AuthenticatedGameLocationSlugRoute
+  '/api/map/landmark/$id': typeof ApiMapLandmarkIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -217,7 +233,9 @@ export interface FileRoutesById {
   '/_authenticated/_game/settings': typeof AuthenticatedGameSettingsRoute
   '/_authenticated/_game/social': typeof AuthenticatedGameSocialRoute
   '/_authenticated/_game/wallet': typeof AuthenticatedGameWalletRoute
+  '/api/map/travel': typeof ApiMapTravelRoute
   '/_authenticated/_game/location/$slug': typeof AuthenticatedGameLocationSlugRoute
+  '/api/map/landmark/$id': typeof ApiMapLandmarkIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -241,7 +259,9 @@ export interface FileRouteTypes {
     | '/settings'
     | '/social'
     | '/wallet'
+    | '/api/map/travel'
     | '/location/$slug'
+    | '/api/map/landmark/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -263,7 +283,9 @@ export interface FileRouteTypes {
     | '/settings'
     | '/social'
     | '/wallet'
+    | '/api/map/travel'
     | '/location/$slug'
+    | '/api/map/landmark/$id'
   id:
     | '__root__'
     | '/'
@@ -287,7 +309,9 @@ export interface FileRouteTypes {
     | '/_authenticated/_game/settings'
     | '/_authenticated/_game/social'
     | '/_authenticated/_game/wallet'
+    | '/api/map/travel'
     | '/_authenticated/_game/location/$slug'
+    | '/api/map/landmark/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -295,6 +319,8 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
+  ApiMapTravelRoute: typeof ApiMapTravelRoute
+  ApiMapLandmarkIdRoute: typeof ApiMapLandmarkIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -446,12 +472,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGameWalletRouteImport
       parentRoute: typeof AuthenticatedGameRoute
     }
+    '/api/map/travel': {
+      id: '/api/map/travel'
+      path: '/api/map/travel'
+      fullPath: '/api/map/travel'
+      preLoaderRoute: typeof ApiMapTravelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/_game/location/$slug': {
       id: '/_authenticated/_game/location/$slug'
       path: '/location/$slug'
       fullPath: '/location/$slug'
       preLoaderRoute: typeof AuthenticatedGameLocationSlugRouteImport
       parentRoute: typeof AuthenticatedGameRoute
+    }
+    '/api/map/landmark/$id': {
+      id: '/api/map/landmark/$id'
+      path: '/api/map/landmark/$id'
+      fullPath: '/api/map/landmark/$id'
+      preLoaderRoute: typeof ApiMapLandmarkIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -515,6 +555,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
+  ApiMapTravelRoute: ApiMapTravelRoute,
+  ApiMapLandmarkIdRoute: ApiMapLandmarkIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
