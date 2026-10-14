@@ -234,6 +234,7 @@ export type Database = {
       };
       characters: {
         Row: {
+          onboarding_step: string;
           age: number;
           is_adult: boolean;
           map_district_id: string;
@@ -275,6 +276,7 @@ export type Database = {
           world_position_revision: number;
         };
         Insert: {
+          onboarding_step?: string;
           age: number;
           map_district_id?: string;
           appearance?: Json;
@@ -315,6 +317,7 @@ export type Database = {
           world_position_revision?: number;
         };
         Update: {
+          onboarding_step?: string;
           age?: number;
           map_district_id?: string;
           appearance?: Json;
@@ -370,6 +373,125 @@ export type Database = {
             referencedColumns: ["id"];
           },
         ];
+      };
+      house_types: {
+        Row: {
+          id: string;
+          label: string;
+          bedrooms: number;
+          kitchen_access: string;
+          bathroom_access: string;
+          monthly_rent: number;
+          deposit: number;
+          asset_key: string;
+          slots: Json;
+          is_active: boolean;
+          sort_order: number;
+        };
+        Insert: {
+          id: string;
+          label: string;
+          bedrooms: number;
+          kitchen_access: string;
+          bathroom_access: string;
+          monthly_rent: number;
+          deposit: number;
+          asset_key: string;
+          slots?: Json;
+          is_active?: boolean;
+          sort_order?: number;
+        };
+        Update: {
+          id?: string;
+          label?: string;
+          bedrooms?: number;
+          kitchen_access?: string;
+          bathroom_access?: string;
+          monthly_rent?: number;
+          deposit?: number;
+          asset_key?: string;
+          slots?: Json;
+          is_active?: boolean;
+          sort_order?: number;
+        };
+        Relationships: [];
+      };
+      player_homes: {
+        Row: {
+          id: string;
+          user_id: string;
+          character_id: string;
+          house_type_id: string;
+          moved_in_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          character_id: string;
+          house_type_id: string;
+          moved_in_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          character_id?: string;
+          house_type_id?: string;
+          moved_in_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "player_homes_house_type_id_fkey";
+            columns: ["house_type_id"];
+            isOneToOne: false;
+            referencedRelation: "house_types";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      home_items: {
+        Row: {
+          id: string;
+          user_id: string;
+          character_id: string;
+          item_id: string;
+          slot_type: string;
+          slot_id: string | null;
+          x: number;
+          y: number;
+          z: number;
+          placed: boolean;
+          equipped: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          character_id: string;
+          item_id: string;
+          slot_type: string;
+          slot_id?: string | null;
+          x?: number;
+          y?: number;
+          z?: number;
+          placed?: boolean;
+          equipped?: boolean;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          character_id?: string;
+          item_id?: string;
+          slot_type?: string;
+          slot_id?: string | null;
+          x?: number;
+          y?: number;
+          z?: number;
+          placed?: boolean;
+          equipped?: boolean;
+          updated_at?: string;
+        };
+        Relationships: [];
       };
       inventory_items: {
         Row: {
@@ -1602,6 +1724,24 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      housing_eligible_houses: { Args: { p_user_id: string }; Returns: Json };
+      housing_choose: {
+        Args: { p_user_id: string; p_house_type_id: string; p_idempotency_key: string };
+        Returns: Json;
+      };
+      housing_defer: { Args: { p_user_id: string }; Returns: Json };
+      home_item_mutate: {
+        Args: {
+          p_user_id: string;
+          p_action: string;
+          p_item_id: string;
+          p_slot_id: string | null;
+          p_idempotency_key: string;
+          p_x?: number;
+          p_y?: number;
+        };
+        Returns: Json;
+      };
       map_start_travel: {
         Args: { p_user_id: string; p_landmark_id: string; p_idempotency_key: string };
         Returns: Json;

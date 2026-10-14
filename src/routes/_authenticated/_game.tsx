@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Briefcase,
   House,
@@ -18,6 +18,7 @@ import { GameDataUnavailable, LoadingState } from "@/components/game/ui";
 import { cn } from "@/lib/utils";
 import { GameHUD } from "@/components/game/GameHUD";
 import { PhoneLauncher } from "@/components/game/PhoneLauncher";
+import { HousingChooser } from "@/components/game/housing/HousingChooser";
 import { GameTimeProvider } from "@/components/game/GameTimeProvider";
 import { WorldEnvironment } from "@/components/game/WorldEnvironment";
 import { gameTimeFromCharacter } from "@/lib/game-time";
@@ -72,6 +73,13 @@ function GameLayout() {
   const { data: profile } = useQuery(q.profile());
   const { data: locations } = useQuery({ ...q.locations(), enabled: !!character });
   const { data: equipment } = useQuery({ ...q.equipment(), enabled: !!character });
+  const [housingOpen, setHousingOpen] = useState(false);
+  const [housingRequested, setHousingRequested] = useState(false);
+  const housingHandledThisSession = useRef(false);
+  const onboardingStep = (
+    character as (typeof character & { onboarding_step?: string }) | undefined
+  )?.onboarding_step;
+  const housingPending = onboardingStep === "housing";
   const unread = notes?.filter((n) => !n.read_at).length ?? 0;
   useEffect(() => {
     configureGameMusic(character?.id ?? null);
@@ -88,6 +96,20 @@ function GameLayout() {
   useEffect(() => {
     if (!isLoading && !isError && !character) navigate({ to: "/create-character" });
   }, [isLoading, isError, character, navigate]);
+
+  useEffect(() => {
+    if (housingPending && !housingHandledThisSession.current) setHousingOpen(true);
+  }, [housingPending]);
+
+  useEffect(() => {
+    const reopen = () => {
+      housingHandledThisSession.current = false;
+      setHousingRequested(true);
+      setHousingOpen(true);
+    };
+    window.addEventListener("osogbo-open-housing", reopen);
+    return () => window.removeEventListener("osogbo-open-housing", reopen);
+  }, []);
 
   useEffect(() => {
     if (!character?.id) return;
@@ -239,6 +261,15 @@ function GameLayout() {
             <span>People</span>
           </Link>
         </nav>
+        <HousingChooser
+          open={housingOpen}
+          pending={housingPending || housingRequested}
+          onClose={() => {
+            housingHandledThisSession.current = true;
+            setHousingRequested(false);
+            setHousingOpen(false);
+          }}
+        />
       </div>
     </GameTimeProvider>
   );

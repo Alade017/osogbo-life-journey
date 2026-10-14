@@ -30,6 +30,15 @@ import { Route as AuthenticatedGameProfileRouteImport } from './routes/_authenti
 import { Route as AuthenticatedGameSettingsRouteImport } from './routes/_authenticated/_game/settings'
 import { Route as AuthenticatedGameSocialRouteImport } from './routes/_authenticated/_game/social'
 import { Route as AuthenticatedGameWalletRouteImport } from './routes/_authenticated/_game/wallet'
+import { Route as ApiHomeEquipRouteImport } from './routes/api/home/equip'
+import { Route as ApiHomePlaceRouteImport } from './routes/api/home/place'
+import { Route as ApiHomeRemoveRouteImport } from './routes/api/home/remove'
+import { Route as ApiHomeUnequipRouteImport } from './routes/api/home/unequip'
+import { Route as ApiHousingChooseRouteImport } from './routes/api/housing/choose'
+import { Route as ApiHousingDeferRouteImport } from './routes/api/housing/defer'
+import { Route as ApiHousingEligibleRouteImport } from './routes/api/housing/eligible'
+import { Route as ApiHousingHomeRouteImport } from './routes/api/housing/home'
+import { Route as ApiHousingItemRouteImport } from './routes/api/housing/item'
 import { Route as ApiMapTravelRouteImport } from './routes/api/map/travel'
 import { Route as AuthenticatedGameLocationSlugRouteImport } from './routes/_authenticated/_game/location.$slug'
 import { Route as ApiMapLandmarkIdRouteImport } from './routes/api/map/landmark.$id'
@@ -145,6 +154,51 @@ const AuthenticatedGameWalletRoute = AuthenticatedGameWalletRouteImport.update({
   path: '/wallet',
   getParentRoute: () => AuthenticatedGameRoute,
 } as any)
+const ApiHomeEquipRoute = ApiHomeEquipRouteImport.update({
+  id: '/api/home/equip',
+  path: '/api/home/equip',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHomePlaceRoute = ApiHomePlaceRouteImport.update({
+  id: '/api/home/place',
+  path: '/api/home/place',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHomeRemoveRoute = ApiHomeRemoveRouteImport.update({
+  id: '/api/home/remove',
+  path: '/api/home/remove',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHomeUnequipRoute = ApiHomeUnequipRouteImport.update({
+  id: '/api/home/unequip',
+  path: '/api/home/unequip',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHousingChooseRoute = ApiHousingChooseRouteImport.update({
+  id: '/api/housing/choose',
+  path: '/api/housing/choose',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHousingDeferRoute = ApiHousingDeferRouteImport.update({
+  id: '/api/housing/defer',
+  path: '/api/housing/defer',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHousingEligibleRoute = ApiHousingEligibleRouteImport.update({
+  id: '/api/housing/eligible',
+  path: '/api/housing/eligible',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHousingHomeRoute = ApiHousingHomeRouteImport.update({
+  id: '/api/housing/home',
+  path: '/api/housing/home',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHousingItemRoute = ApiHousingItemRouteImport.update({
+  id: '/api/housing/item',
+  path: '/api/housing/item',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMapTravelRoute = ApiMapTravelRouteImport.update({
   id: '/api/map/travel',
   path: '/api/map/travel',
@@ -182,6 +236,15 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedGameSettingsRoute
   '/social': typeof AuthenticatedGameSocialRoute
   '/wallet': typeof AuthenticatedGameWalletRoute
+  '/api/home/equip': typeof ApiHomeEquipRoute
+  '/api/home/place': typeof ApiHomePlaceRoute
+  '/api/home/remove': typeof ApiHomeRemoveRoute
+  '/api/home/unequip': typeof ApiHomeUnequipRoute
+  '/api/housing/choose': typeof ApiHousingChooseRoute
+  '/api/housing/defer': typeof ApiHousingDeferRoute
+  '/api/housing/eligible': typeof ApiHousingEligibleRoute
+  '/api/housing/home': typeof ApiHousingHomeRoute
+  '/api/housing/item': typeof ApiHousingItemRoute
   '/api/map/travel': typeof ApiMapTravelRoute
   '/location/$slug': typeof AuthenticatedGameLocationSlugRoute
   '/api/map/landmark/$id': typeof ApiMapLandmarkIdRoute
@@ -206,6 +269,15 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedGameSettingsRoute
   '/social': typeof AuthenticatedGameSocialRoute
   '/wallet': typeof AuthenticatedGameWalletRoute
+  '/api/home/equip': typeof ApiHomeEquipRoute
+  '/api/home/place': typeof ApiHomePlaceRoute
+  '/api/home/remove': typeof ApiHomeRemoveRoute
+  '/api/home/unequip': typeof ApiHomeUnequipRoute
+  '/api/housing/choose': typeof ApiHousingChooseRoute
+  '/api/housing/defer': typeof ApiHousingDeferRoute
+  '/api/housing/eligible': typeof ApiHousingEligibleRoute
+  '/api/housing/home': typeof ApiHousingHomeRoute
+  '/api/housing/item': typeof ApiHousingItemRoute
   '/api/map/travel': typeof ApiMapTravelRoute
   '/location/$slug': typeof AuthenticatedGameLocationSlugRoute
   '/api/map/landmark/$id': typeof ApiMapLandmarkIdRoute
@@ -233,6 +305,15 @@ export interface FileRoutesById {
   '/_authenticated/_game/settings': typeof AuthenticatedGameSettingsRoute
   '/_authenticated/_game/social': typeof AuthenticatedGameSocialRoute
   '/_authenticated/_game/wallet': typeof AuthenticatedGameWalletRoute
+  '/api/home/equip': typeof ApiHomeEquipRoute
+  '/api/home/place': typeof ApiHomePlaceRoute
+  '/api/home/remove': typeof ApiHomeRemoveRoute
+  '/api/home/unequip': typeof ApiHomeUnequipRoute
+  '/api/housing/choose': typeof ApiHousingChooseRoute
+  '/api/housing/defer': typeof ApiHousingDeferRoute
+  '/api/housing/eligible': typeof ApiHousingEligibleRoute
+  '/api/housing/home': typeof ApiHousingHomeRoute
+  '/api/housing/item': typeof ApiHousingItemRoute
   '/api/map/travel': typeof ApiMapTravelRoute
   '/_authenticated/_game/location/$slug': typeof AuthenticatedGameLocationSlugRoute
   '/api/map/landmark/$id': typeof ApiMapLandmarkIdRoute
@@ -259,6 +340,15 @@ export interface FileRouteTypes {
     | '/settings'
     | '/social'
     | '/wallet'
+    | '/api/home/equip'
+    | '/api/home/place'
+    | '/api/home/remove'
+    | '/api/home/unequip'
+    | '/api/housing/choose'
+    | '/api/housing/defer'
+    | '/api/housing/eligible'
+    | '/api/housing/home'
+    | '/api/housing/item'
     | '/api/map/travel'
     | '/location/$slug'
     | '/api/map/landmark/$id'
@@ -283,6 +373,15 @@ export interface FileRouteTypes {
     | '/settings'
     | '/social'
     | '/wallet'
+    | '/api/home/equip'
+    | '/api/home/place'
+    | '/api/home/remove'
+    | '/api/home/unequip'
+    | '/api/housing/choose'
+    | '/api/housing/defer'
+    | '/api/housing/eligible'
+    | '/api/housing/home'
+    | '/api/housing/item'
     | '/api/map/travel'
     | '/location/$slug'
     | '/api/map/landmark/$id'
@@ -309,6 +408,15 @@ export interface FileRouteTypes {
     | '/_authenticated/_game/settings'
     | '/_authenticated/_game/social'
     | '/_authenticated/_game/wallet'
+    | '/api/home/equip'
+    | '/api/home/place'
+    | '/api/home/remove'
+    | '/api/home/unequip'
+    | '/api/housing/choose'
+    | '/api/housing/defer'
+    | '/api/housing/eligible'
+    | '/api/housing/home'
+    | '/api/housing/item'
     | '/api/map/travel'
     | '/_authenticated/_game/location/$slug'
     | '/api/map/landmark/$id'
@@ -319,6 +427,15 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
+  ApiHomeEquipRoute: typeof ApiHomeEquipRoute
+  ApiHomePlaceRoute: typeof ApiHomePlaceRoute
+  ApiHomeRemoveRoute: typeof ApiHomeRemoveRoute
+  ApiHomeUnequipRoute: typeof ApiHomeUnequipRoute
+  ApiHousingChooseRoute: typeof ApiHousingChooseRoute
+  ApiHousingDeferRoute: typeof ApiHousingDeferRoute
+  ApiHousingEligibleRoute: typeof ApiHousingEligibleRoute
+  ApiHousingHomeRoute: typeof ApiHousingHomeRoute
+  ApiHousingItemRoute: typeof ApiHousingItemRoute
   ApiMapTravelRoute: typeof ApiMapTravelRoute
   ApiMapLandmarkIdRoute: typeof ApiMapLandmarkIdRoute
 }
@@ -472,6 +589,69 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGameWalletRouteImport
       parentRoute: typeof AuthenticatedGameRoute
     }
+    '/api/home/equip': {
+      id: '/api/home/equip'
+      path: '/api/home/equip'
+      fullPath: '/api/home/equip'
+      preLoaderRoute: typeof ApiHomeEquipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/home/place': {
+      id: '/api/home/place'
+      path: '/api/home/place'
+      fullPath: '/api/home/place'
+      preLoaderRoute: typeof ApiHomePlaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/home/remove': {
+      id: '/api/home/remove'
+      path: '/api/home/remove'
+      fullPath: '/api/home/remove'
+      preLoaderRoute: typeof ApiHomeRemoveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/home/unequip': {
+      id: '/api/home/unequip'
+      path: '/api/home/unequip'
+      fullPath: '/api/home/unequip'
+      preLoaderRoute: typeof ApiHomeUnequipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/housing/choose': {
+      id: '/api/housing/choose'
+      path: '/api/housing/choose'
+      fullPath: '/api/housing/choose'
+      preLoaderRoute: typeof ApiHousingChooseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/housing/defer': {
+      id: '/api/housing/defer'
+      path: '/api/housing/defer'
+      fullPath: '/api/housing/defer'
+      preLoaderRoute: typeof ApiHousingDeferRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/housing/eligible': {
+      id: '/api/housing/eligible'
+      path: '/api/housing/eligible'
+      fullPath: '/api/housing/eligible'
+      preLoaderRoute: typeof ApiHousingEligibleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/housing/home': {
+      id: '/api/housing/home'
+      path: '/api/housing/home'
+      fullPath: '/api/housing/home'
+      preLoaderRoute: typeof ApiHousingHomeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/housing/item': {
+      id: '/api/housing/item'
+      path: '/api/housing/item'
+      fullPath: '/api/housing/item'
+      preLoaderRoute: typeof ApiHousingItemRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/map/travel': {
       id: '/api/map/travel'
       path: '/api/map/travel'
@@ -555,6 +735,15 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
+  ApiHomeEquipRoute: ApiHomeEquipRoute,
+  ApiHomePlaceRoute: ApiHomePlaceRoute,
+  ApiHomeRemoveRoute: ApiHomeRemoveRoute,
+  ApiHomeUnequipRoute: ApiHomeUnequipRoute,
+  ApiHousingChooseRoute: ApiHousingChooseRoute,
+  ApiHousingDeferRoute: ApiHousingDeferRoute,
+  ApiHousingEligibleRoute: ApiHousingEligibleRoute,
+  ApiHousingHomeRoute: ApiHousingHomeRoute,
+  ApiHousingItemRoute: ApiHousingItemRoute,
   ApiMapTravelRoute: ApiMapTravelRoute,
   ApiMapLandmarkIdRoute: ApiMapLandmarkIdRoute,
 }

@@ -2,8 +2,10 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { HomeInterior } from "@/components/game/HomeInterior";
+import { LayeredHomeScene } from "@/components/game/housing/LayeredHomeScene";
 import { dashboardGreeting } from "@/lib/dashboard-greeting";
 import { q, rpc } from "@/lib/game";
+import { supabase } from "@/integrations/supabase/client";
 import { type HousingSave } from "@/lib/housing-service";
 import type { Json } from "@/integrations/supabase/types";
 import {
@@ -97,9 +99,153 @@ function MyCityHome() {
   } = useGameTime();
   const world = useWorldClock();
   const { data: character } = useQuery(q.character());
+  const { data: equippedItems } = useQuery({ ...q.equipment(), enabled: !!character });
+  const housingHomeQuery = useQuery({
+    queryKey: ["housingHome"],
+    enabled: !!character,
+    queryFn: async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const response = await fetch("/api/housing/home", {
+        headers: sessionData.session
+          ? { Authorization: `Bearer ${sessionData.session.access_token}` }
+          : {},
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body?.error?.code ?? "Home could not be loaded.");
+      return body as {
+        home: null | {
+          id: string;
+          house_type_id: string;
+          house_types: {
+            label: string;
+            asset_key: string;
+            slots: { id: string; slot_type: string; x?: number; y?: number }[];
+          };
+        };
+        home_items: {
+          id: string;
+          item_id: string;
+          slot_type: string;
+          slot_id: string | null;
+          x: number;
+          y: number;
+          z: number;
+          placed: boolean;
+          equipped: boolean;
+        }[];
+      };
+    },
+  });
   const homeQuery = useQuery({ ...q.homeSave(), enabled: !!character });
   const visitPolicyQuery = useQuery({ ...q.homeVisitPolicy(), enabled: !!character });
   const queryClient = useQueryClient();
+  const homeItemRequestKeys = useRef(new Map<string, string>());
+  useEffect(() => {
+    if (!character?.id) return;
+    const channel = supabase
+      .channel(`home-items-${character.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "home_items",
+          filter: `character_id=eq.${character.id}`,
+        },
+        () => {
+          void queryClient.invalidateQueries({ queryKey: ["housingHome"] });
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [character?.id, queryClient]);
+  const homeItemMutation = useMutation({
+    mutationFn: async (args: {
+      action: "place" | "remove" | "equip" | "unequip";
+      itemId: string;
+      slotId?: string;
+      requestKey: string;
+    }) => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const response = await fetch(`/api/home/${args.action}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": args.requestKey,
+          ...(sessionData.session
+            ? { Authorization: `Bearer ${sessionData.session.access_token}` }
+            : {}),
+        },
+        body: JSON.stringify({ item_id: args.itemId, slot_id: args.slotId }),
+      });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body?.error?.code ?? "Home update failed.");
+      return body as {
+        home_items: {
+          id: string;
+          item_id: string;
+          slot_type: string;
+          slot_id: string | null;
+          x: number;
+          y: number;
+          z: number;
+          placed: boolean;
+          equipped: boolean;
+        }[];
+      };
+    },
+    onMutate: async (args) => {
+      await queryClient.cancelQueries({ queryKey: ["housingHome"] });
+      const previous = queryClient.getQueryData<typeof housingHomeQuery.data>(["housingHome"]);
+      queryClient.setQueryData(["housingHome"], (current: typeof housingHomeQuery.data) =>
+        current
+          ? {
+              ...current,
+              home_items: current.home_items.map((item) =>
+                item.item_id === args.itemId
+                  ? {
+                      ...item,
+                      placed:
+                        args.action === "place"
+                          ? true
+                          : args.action === "remove"
+                            ? false
+                            : item.placed,
+                      equipped:
+                        args.action === "equip"
+                          ? true
+                          : args.action === "unequip"
+                            ? false
+                            : item.equipped,
+                      slot_id:
+                        args.action === "place"
+                          ? (args.slotId ?? item.slot_id)
+                          : args.action === "remove"
+                            ? null
+                            : item.slot_id,
+                    }
+                  : item,
+              ),
+            }
+          : current,
+      );
+      return { previous };
+    },
+    onError: (error, _args, context) => {
+      if (context?.previous) queryClient.setQueryData(["housingHome"], context.previous);
+      toast.error(
+        `That home change was not saved: ${error.message.replaceAll("_", " ").toLowerCase()}.`,
+      );
+    },
+    onSuccess: (result, args) => {
+      homeItemRequestKeys.current.delete(`${args.action}:${args.itemId}:${args.slotId ?? ""}`);
+      queryClient.setQueryData(["housingHome"], (current: typeof housingHomeQuery.data) =>
+        current ? { ...current, home_items: result.home_items } : current,
+      );
+    },
+  });
   const accessMutation = useMutation({
     mutationFn: rpc.setHomeVisitAccess,
     onSuccess: async () => {
@@ -417,6 +563,25 @@ function MyCityHome() {
           <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">Your home</h1>
         </div>
       </div>
+      {((character as typeof character & { onboarding_step?: string })?.onboarding_step ===
+        "housing" ||
+        housingHomeQuery.data?.home === null) && (
+        <button
+          type="button"
+          className="game-panel flex w-full items-center justify-between gap-3 p-4 text-left"
+          onClick={() => window.dispatchEvent(new Event("osogbo-open-housing"))}
+        >
+          <span>
+            <strong>Find a place</strong>
+            <span className="mt-1 block text-sm text-muted-foreground">
+              Choose a home to settle into Osogbo.
+            </span>
+          </span>
+          <span aria-hidden="true" className="text-primary">
+            ›
+          </span>
+        </button>
+      )}
       <section className="home-next-steps" aria-labelledby="home-next-steps-title">
         <div className="home-next-steps-heading">
           <div>
@@ -460,6 +625,53 @@ function MyCityHome() {
         <LoadingState />
       ) : (
         <>
+          {housingHomeQuery.isLoading ? (
+            <LoadingState />
+          ) : housingHomeQuery.data?.home ? (
+            <LayeredHomeScene
+              house={{
+                label: housingHomeQuery.data.home.house_types.label,
+                asset_key: housingHomeQuery.data.home.house_types.asset_key,
+                slots: housingHomeQuery.data.home.house_types.slots,
+              }}
+              items={housingHomeQuery.data.home_items}
+              appearance={(character.appearance ?? {}) as Record<string, unknown>}
+              gender={character.gender}
+              equipment={[
+                ...(equippedItems ?? []).map((item) => ({ slot: item.slot })),
+                ...housingHomeQuery.data.home_items
+                  .filter((item) => item.equipped)
+                  .map((item) => ({ slot: item.slot_type === "hat" ? "head" : item.slot_type })),
+              ]}
+              onAction={(action, itemId, slot) => {
+                const slotId = slot?.id;
+                const keyId = `${action}:${itemId}:${slotId ?? ""}`;
+                const requestKey = homeItemRequestKeys.current.get(keyId) ?? crypto.randomUUID();
+                homeItemRequestKeys.current.set(keyId, requestKey);
+                homeItemMutation.mutate({
+                  action,
+                  itemId,
+                  requestKey,
+                  ...(slotId ? { slotId } : {}),
+                });
+              }}
+            />
+          ) : (
+            <section className="game-panel p-5" role="status">
+              <h2 className="font-display text-lg font-bold">You do not have a home yet</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Your home is empty. Visit the shop to get furniture. Choose a place to live to set
+                up your home.
+              </p>
+              <button
+                type="button"
+                className="mt-3 text-sm font-semibold text-primary underline"
+                onClick={() => window.dispatchEvent(new Event("osogbo-open-housing"))}
+              >
+                Choose a home
+              </button>
+            </section>
+          )}
           <section
             className="game-panel flex flex-wrap items-center justify-between gap-3 p-3 text-sm"
             aria-live="polite"
@@ -523,23 +735,30 @@ function MyCityHome() {
               Allow friend visits
             </label>
           </section>
-          <HomeInterior
-            key={`${character.id}:${reloadToken}`}
-            saveKey={storageKey}
-            {...(localIsNewer && localSave
-              ? { initialSave: localSave.payload }
-              : cloudSave
-                ? { initialSave: cloudSave.payload }
-                : {})}
-            onSave={scheduleSave}
-            onPurchaseUpgrade={purchaseUpgrade}
-            onFurnitureAction={performFurnitureAction}
-            authoritativeNeeds={simulation.needs}
-            {...(cloudSave && syncStatus === "saved"
-              ? { onPurchaseFurniture: purchaseFurniture }
-              : {})}
-            powerAvailable={world.data ? !isPowerOutageAt(world.data) : true}
-          />
+          {housingHomeQuery.data?.home && (
+            <details className="game-panel p-3">
+              <summary className="cursor-pointer font-semibold focus-visible:outline-2 focus-visible:outline-[var(--ring)]">
+                Room layout and furniture shop
+              </summary>
+              <HomeInterior
+                key={`${character.id}:${reloadToken}`}
+                saveKey={storageKey}
+                {...(localIsNewer && localSave
+                  ? { initialSave: localSave.payload }
+                  : cloudSave
+                    ? { initialSave: cloudSave.payload }
+                    : {})}
+                onSave={scheduleSave}
+                onPurchaseUpgrade={purchaseUpgrade}
+                onFurnitureAction={performFurnitureAction}
+                authoritativeNeeds={simulation.needs}
+                {...(cloudSave && syncStatus === "saved"
+                  ? { onPurchaseFurniture: purchaseFurniture }
+                  : {})}
+                powerAvailable={world.data ? !isPowerOutageAt(world.data) : true}
+              />
+            </details>
+          )}
         </>
       )}
     </div>
