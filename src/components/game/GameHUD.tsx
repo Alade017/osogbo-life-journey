@@ -43,10 +43,12 @@ export function GameHUD({
   player,
   location,
   unread,
+  showNeeds = true,
 }: {
   player: PlayerState;
   location: string;
   unread: number;
+  showNeeds?: boolean;
 }) {
   const now = useLiveClock();
   const { simulation, pause, resume, setSpeed, ready, busy, syncError, reconnect } = useGameTime();
@@ -163,37 +165,39 @@ export function GameHUD({
         <Bell className="h-4.5 w-4.5" />
         {unread > 0 && <span className="game-notification-dot">{unread > 9 ? "9+" : unread}</span>}
       </Link>
-      <div className="hud-needs" aria-label="Player needs and activity shortcuts">
-        {NEED_NAMES.map((name) => {
-          const Icon = VITAL_ICONS[name];
-          const value = Math.round(simulation.needs[name]);
-          const status = statusForNeed(name, value);
-          return (
-            <details className={`hud-need is-${status}`} key={name}>
-              <summary
-                aria-label={`${name === "hunger" ? "Hunger satisfaction" : NEED_RULES[name].label} ${value} percent. Show activity shortcut`}
-              >
-                <Icon size={15} aria-hidden="true" />
-                <span>{NEED_RULES[name].label}</span>
-                <strong>{value}%</strong>
-                <span className="hud-need-track" aria-hidden="true">
-                  <i style={{ width: `${value}%` }} />
-                </span>
-              </summary>
-              <div className="hud-need-menu">
-                <p>
-                  {status === "healthy"
-                    ? "Doing well"
-                    : status === "warning"
-                      ? "Needs attention"
-                      : "Needs care soon"}
-                </p>
-                <Link to={NEED_SHORTCUTS[name].to}>{NEED_SHORTCUTS[name].label} →</Link>
-              </div>
-            </details>
-          );
-        })}
-      </div>
+      {showNeeds && (
+        <div className="hud-needs" aria-label="Player needs and activity shortcuts">
+          {NEED_NAMES.map((name) => {
+            const Icon = VITAL_ICONS[name];
+            const value = Math.round(simulation.needs[name]);
+            const status = statusForNeed(name, value);
+            return (
+              <details className={`hud-need is-${status}`} key={name}>
+                <summary
+                  aria-label={`${name === "hunger" ? "Hunger satisfaction" : NEED_RULES[name].label} ${value} percent. Show activity shortcut`}
+                >
+                  <Icon size={15} aria-hidden="true" />
+                  <span>{NEED_RULES[name].label}</span>
+                  <strong>{value}%</strong>
+                  <span className="hud-need-track" aria-hidden="true">
+                    <i style={{ width: `${value}%` }} />
+                  </span>
+                </summary>
+                <div className="hud-need-menu">
+                  <p>
+                    {status === "healthy"
+                      ? "Doing well"
+                      : status === "warning"
+                        ? "Needs attention"
+                        : "Needs care soon"}
+                  </p>
+                  <Link to={NEED_SHORTCUTS[name].to}>{NEED_SHORTCUTS[name].label} →</Link>
+                </div>
+              </details>
+            );
+          })}
+        </div>
+      )}
       <div className="hud-live-clock">
         <span>OSOGBO · WAT</span>
         <time>

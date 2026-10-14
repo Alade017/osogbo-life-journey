@@ -50,13 +50,28 @@ function SettingsPage() {
     sound_enabled?: boolean;
   }) {
     if (!profile) return;
-    const { error } = await supabase.from("profiles").update(patch).eq("id", profile.id);
+    if (patch.display_name !== undefined && !patch.display_name.trim()) {
+      toast.error("Enter a display name before saving.");
+      return;
+    }
+    const { data, error } = await supabase
+      .from("profiles")
+      .update({
+        ...patch,
+        ...(patch.display_name !== undefined ? { display_name: patch.display_name.trim() } : {}),
+      })
+      .eq("id", profile.id)
+      .select()
+      .single();
     if (error) {
       toast.error(error.message);
       return;
     }
-    toast.success("Saved");
-    qc.invalidateQueries({ queryKey: ["profile"] });
+    qc.setQueryData(["profile"], data);
+    await qc.invalidateQueries({ queryKey: q.profile().queryKey });
+    toast.success(
+      patch.display_name !== undefined ? "Display name updated." : "Preferences saved.",
+    );
   }
 
   async function signOut() {
@@ -102,7 +117,7 @@ function SettingsPage() {
   }
 
   return (
-    <div className="max-w-2xl space-y-5">
+    <div className="mx-auto w-full max-w-2xl space-y-5">
       <PageHeader eyebrow="MAKE IT YOURS" title="Settings" />
       <section className="game-panel space-y-4 p-5">
         <h2 className="text-xl font-bold">Account</h2>

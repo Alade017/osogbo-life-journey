@@ -1,4 +1,4 @@
-import { createFileRoute, Link, Outlet, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import {
@@ -59,6 +59,7 @@ const NAV_GROUPS = [
 
 function GameLayout() {
   const navigate = useNavigate();
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const qc = useQueryClient();
   const {
     data: character,
@@ -209,7 +210,12 @@ function GameLayout() {
             </div>
           </aside>
           <div className="city-game-content">
-            <GameHUD player={player} location={currentLocation?.name ?? "Osogbo"} unread={unread} />
+            <GameHUD
+              player={player}
+              location={currentLocation?.name ?? "Osogbo"}
+              unread={unread}
+              showNeeds={pathname !== "/settings"}
+            />
             <main className="city-game-main">
               <Outlet />
             </main>
