@@ -116,19 +116,6 @@ await exportModel("public/models/characters/development-character.glb", characte
   work,
   wave,
 ]);
-const city = new THREE.Group();
-city.name = "DevelopmentCity";
-box(city, "Ground", [18, 0.12, 16], [0, -0.07, 0], 0xe8eedf);
-box(city, "MainRoad", [2, 0.02, 16], [0, 0, 0], 0x89938e);
-box(city, "CrossRoad", [18, 0.025, 2], [0, 0, 0], 0x89938e);
-await exportModel("public/models/city/development-city.glb", city);
-const building = new THREE.Group();
-building.name = "DevelopmentBuilding";
-// Footprint: 114×58 server scene pixels at 40 pixels per 3D unit.
-box(building, "Walls", [2.85, 1.7, 1.45], [0, 0.85, 0], 0xd9c4a1);
-box(building, "Roof", [2.85, 0.18, 1.45], [0, 1.8, 0], 0x176b45);
-box(building, "Door", [0.45, 0.9, 0.025], [0, 0.45, 0.73], 0x5c3927);
-await exportModel("public/models/city/development-building.glb", building);
 const room = new THREE.Group();
 room.name = "DevelopmentRoom";
 box(room, "Floor", [6, 0.12, 6], [0, -0.06, 0], 0xd8c6a4);
@@ -136,4 +123,4 @@ box(room, "BackWall", [6, 2, 0.1], [0, 1, -3], 0xe4decf);
 box(room, "SideWall", [0.1, 2, 6], [-3, 1, 0], 0xe4decf);
 box(room, "Seat", [1.5, 0.6, 0.65], [-1.5, 0.3, -2.4], 0x176b45);
 await exportModel("public/models/rooms/development-room.glb", room);
-console.log("Generated original development GLBs and copied the local Three.js Draco decoder.");
+console.log("Generated character and room fixtures and copied the local Three.js Draco decoder.");

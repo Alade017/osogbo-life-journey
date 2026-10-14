@@ -202,9 +202,7 @@ function Landing() {
           target="_blank"
           rel="noreferrer"
           className="landing-photo-credit"
-        >
-          Osogbo skyline · El-Shaddaites · CC BY-SA 4.0
-        </a>
+        ></a>
       </section>
 
       <section id="your-story" className="landing-story" aria-label="Ways to play">

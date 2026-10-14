@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { normalizeCityLocation } from "@/lib/location-service";
 import {
   hasValidCoordinates,
+  isFictionalMapDestination,
   locationsToFeatureCollection,
   type MappableLocation,
 } from "@/lib/location-map-model";
@@ -21,7 +22,7 @@ function location(overrides: Partial<MapLocation> = {}): MapLocation {
     is_active: true,
     interaction_radius_m: 50,
     level_required: 0,
-    metadata: {},
+    metadata: { origin: "fictional", map_role: "fictional_destination" },
     ...overrides,
   };
 }
@@ -61,6 +62,23 @@ describe("city location model", () => {
   it("keeps active status from the Supabase record", () => {
     expect(normalizeCityLocation(location()).status).toBe("active");
     expect(normalizeCityLocation(location({ is_active: false })).status).toBe("inactive");
+  });
+
+  it("only exposes fictional, non-religious destinations as interactive map places", () => {
+    expect(isFictionalMapDestination(normalizeCityLocation(location()))).toBe(true);
+    expect(
+      isFictionalMapDestination(
+        normalizeCityLocation(location({ metadata: { category: "religious" } })),
+      ),
+    ).toBe(false);
+    expect(
+      isFictionalMapDestination(normalizeCityLocation(location({ name: "Sacred Grove" }))),
+    ).toBe(false);
+    expect(
+      isFictionalMapDestination(
+        normalizeCityLocation(location({ metadata: { origin: "real-world-inspired" } })),
+      ),
+    ).toBe(false);
   });
 
   it("converts valid latitude and longitude into MapLibre longitude-latitude features", () => {

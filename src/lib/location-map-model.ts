@@ -14,6 +14,27 @@ export type MappableLocation = CityLocationData & {
   longitude: number;
 };
 
+/** Only fictional game destinations belong in the interactive map overlay. */
+export function isFictionalMapDestination(location: CityLocationData): boolean {
+  const metadata =
+    location.metadata !== null &&
+    typeof location.metadata === "object" &&
+    !Array.isArray(location.metadata)
+      ? location.metadata
+      : null;
+  const origin = metadata?.["origin"];
+  const role = metadata?.["map_role"];
+  const label = `${location.name} ${location.slug}`;
+
+  return (
+    location.is_active &&
+    getLocationCategory(location) !== "religious" &&
+    origin === "fictional" &&
+    role === "fictional_destination" &&
+    !/sacred|grove|shrine|mosque|church|chapel|temple/i.test(label)
+  );
+}
+
 export function hasValidCoordinates(location: CityLocationData): location is MappableLocation {
   return (
     typeof location.latitude === "number" &&

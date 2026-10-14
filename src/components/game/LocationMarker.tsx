@@ -11,7 +11,11 @@ import { useQuery } from "@tanstack/react-query";
 import type { MapLocationBounds } from "@/lib/game";
 import { q } from "@/lib/game";
 import type { MappableLocation } from "@/lib/location-map-model";
-import { hasValidCoordinates, locationsToFeatureCollection } from "@/lib/location-map-model";
+import {
+  hasValidCoordinates,
+  isFictionalMapDestination,
+  locationsToFeatureCollection,
+} from "@/lib/location-map-model";
 import { LocationPopup } from "@/components/game/LocationPopup";
 import {
   LOCATION_CATEGORIES,
@@ -75,9 +79,13 @@ export function LocationMarker({ map }: { map: MapLibreMap }) {
     error,
     refetch,
   } = useQuery(q.mapLocations(bounds));
-  const locations = useMemo<MappableLocation[]>(
-    () => (activeLocations ?? []).filter(hasValidCoordinates),
+  const eligibleLocations = useMemo(
+    () => (activeLocations ?? []).filter(isFictionalMapDestination),
     [activeLocations],
+  );
+  const locations = useMemo<MappableLocation[]>(
+    () => eligibleLocations.filter(hasValidCoordinates),
+    [eligibleLocations],
   );
   const [visibleTypes, setVisibleTypes] = useState<Set<string> | null>(null);
   const [selectedNeighborhood, setSelectedNeighborhood] = useState<string | null>(null);
@@ -107,7 +115,7 @@ export function LocationMarker({ map }: { map: MapLibreMap }) {
     () => locationsToFeatureCollection(visibleLocations),
     [visibleLocations],
   );
-  const skippedCount = Math.max(0, (activeLocations?.length ?? 0) - locations.length);
+  const skippedCount = Math.max(0, eligibleLocations.length - locations.length);
 
   useEffect(() => {
     const updateBounds = () => {

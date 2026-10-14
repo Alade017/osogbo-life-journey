@@ -46,7 +46,7 @@ export const CITY_WORLD_BOUNDS = { minX: 0, maxX: 14, minY: 0, maxY: 12 } as con
 export const OSOGBO_WORLD_NODES = {
   "city-centre": {
     slug: "city-centre",
-    name: "Olaiya",
+    name: "Central Crossing",
     category: "commercial",
     anchor: { x: 0.5, y: 0.47 },
     world: { x: 7, y: 6 },
@@ -63,7 +63,7 @@ export const OSOGBO_WORLD_NODES = {
   },
   "oja-oba": {
     slug: "oja-oba",
-    name: "Oja-Oba Market",
+    name: "Market Square",
     category: "commercial",
     anchor: { x: 0.6, y: 0.26 },
     world: { x: 3, y: 5 },
@@ -73,7 +73,7 @@ export const OSOGBO_WORLD_NODES = {
   },
   "government-area": {
     slug: "government-area",
-    name: "Government Area · State Secretariat",
+    name: "Civic Services District",
     category: "government",
     anchor: { x: 0.38, y: 0.21 },
     world: { x: 5.32, y: 2.52 },
@@ -83,7 +83,7 @@ export const OSOGBO_WORLD_NODES = {
   },
   "student-district": {
     slug: "student-district",
-    name: "UNIOSUN Campus",
+    name: "Campus Quarter",
     category: "education",
     anchor: { x: 0.12, y: 0.24 },
     world: { x: 5, y: 9 },
@@ -98,8 +98,8 @@ export const OSOGBO_WORLD_NODES = {
   },
   "cultural-district": {
     slug: "cultural-district",
-    name: "Sacred Grove · Osun Sacred Forest",
-    category: "water_nature",
+    name: "Arts Quarter",
+    category: "recreation",
     anchor: { x: 0.69, y: 0.07 },
     world: { x: 2, y: 2 },
     neighbors: ["oke-baale", "atiku", "city-centre"],
@@ -108,7 +108,7 @@ export const OSOGBO_WORLD_NODES = {
   },
   stadium: {
     slug: "stadium",
-    name: "Stadium",
+    name: "Northfield Stadium",
     category: "recreation",
     anchor: { x: 0.53, y: 0.73 },
     world: { x: 7.42, y: 8.76 },
@@ -118,7 +118,7 @@ export const OSOGBO_WORLD_NODES = {
   },
   "state-hospital": {
     slug: "state-hospital",
-    name: "State Hospital",
+    name: "Green Cross Clinic",
     category: "health",
     anchor: { x: 0.32, y: 0.44 },
     world: { x: 4.48, y: 5.28 },
@@ -128,7 +128,7 @@ export const OSOGBO_WORLD_NODES = {
   },
   "old-garage": {
     slug: "old-garage",
-    name: "Transport Hub · Old Garage",
+    name: "North Gate Transit Hub",
     category: "transport",
     anchor: { x: 0.14, y: 0.6 },
     world: { x: 3, y: 8 },
@@ -144,7 +144,7 @@ export const OSOGBO_WORLD_NODES = {
   },
   "airport-terminal": {
     slug: "airport-terminal",
-    name: "Airport · Terminal",
+    name: "Regional Air Terminal",
     category: "transport",
     anchor: { x: 0.75, y: 0.8 },
     world: { x: 10.5, y: 9.6 },
@@ -154,7 +154,7 @@ export const OSOGBO_WORLD_NODES = {
   },
   "oke-baale": {
     slug: "oke-baale",
-    name: "Oke-Baale · Hill View",
+    name: "Highland Commons",
     category: "recreation",
     anchor: { x: 0.48, y: 0.06 },
     world: { x: 6.72, y: 0.72 },
@@ -164,7 +164,7 @@ export const OSOGBO_WORLD_NODES = {
   },
   "isale-osun": {
     slug: "isale-osun",
-    name: "Isale-Osun",
+    name: "South Market Row",
     category: "commercial",
     anchor: { x: 0.68, y: 0.56 },
     world: { x: 9.52, y: 6.72 },
@@ -174,7 +174,7 @@ export const OSOGBO_WORLD_NODES = {
   },
   atiku: {
     slug: "atiku",
-    name: "Atiku Residential",
+    name: "Greenbank Estates",
     category: "residential",
     anchor: { x: 0.93, y: 0.44 },
     world: { x: 13.02, y: 5.28 },
@@ -184,7 +184,7 @@ export const OSOGBO_WORLD_NODES = {
   },
   "rural-outskirts": {
     slug: "rural-outskirts",
-    name: "Outskirts · Farms & Village",
+    name: "Greenbelt Outskirts",
     category: "water_nature",
     anchor: { x: 0.92, y: 0.66 },
     world: { x: 13, y: 11 },
@@ -194,7 +194,7 @@ export const OSOGBO_WORLD_NODES = {
   },
   "oke-fia": {
     slug: "oke-fia",
-    name: "Oke-Fia",
+    name: "Hillview Quarter",
     category: "residential",
     anchor: { x: 0.07, y: 0.44 },
     world: { x: 10, y: 3 },
@@ -204,7 +204,7 @@ export const OSOGBO_WORLD_NODES = {
   },
   "industrial-area": {
     slug: "industrial-area",
-    name: "Industrial Area",
+    name: "Workshop Quarter",
     category: "work_industrial",
     anchor: { x: 0.33, y: 0.75 },
     world: { x: 4.62, y: 9 },
@@ -217,7 +217,7 @@ export const OSOGBO_WORLD_NODES = {
 export const CITY_DISTRICTS: CityWorldDistrict[] = [
   {
     id: "central",
-    name: "Central Market District",
+    name: "Central Crossing",
     tone: "central",
     center: { x: 7, y: 5 },
     radius: { x: 2.5, y: 2 },
@@ -225,7 +225,7 @@ export const CITY_DISTRICTS: CityWorldDistrict[] = [
   },
   {
     id: "market",
-    name: "Oja Central Market",
+    name: "Market Square",
     tone: "market",
     center: { x: 3, y: 4 },
     radius: { x: 2.2, y: 2 },
@@ -249,7 +249,7 @@ export const CITY_DISTRICTS: CityWorldDistrict[] = [
   },
   {
     id: "university",
-    name: "University District",
+    name: "Campus Quarter",
     tone: "university",
     center: { x: 5, y: 10 },
     radius: { x: 2.4, y: 1.6 },
@@ -273,7 +273,7 @@ export const CITY_DISTRICTS: CityWorldDistrict[] = [
   },
   {
     id: "culture",
-    name: "Cultural District",
+    name: "Arts Quarter",
     tone: "culture",
     center: { x: 1, y: 1.5 },
     radius: { x: 2, y: 1.5 },

@@ -8,7 +8,7 @@ import { CityBillboards } from "@/components/game/CityBillboards";
 import { pageMeta } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
 import { Chip, ComingSoon, EmptyState, LoadingState } from "@/components/game/ui";
-import { TONE_BG } from "@/components/game/CityBoard";
+import { LOCATION_TONE_BG } from "@/lib/location-theme";
 import { cn } from "@/lib/utils";
 import { TravelPanel } from "@/components/game/TravelPanel";
 import { initialTravelState, travelReducer } from "@/lib/travel-state";
@@ -260,7 +260,7 @@ function LocationPage() {
           className={cn(
             "inline-block rounded-lg border-2 border-edge px-3 py-1 font-display text-sm font-bold",
             isOjaObaMarket && "oja-oba-district-badge",
-            TONE_BG[loc.color],
+            LOCATION_TONE_BG[loc.color],
           )}
         >
           {loc.district_type}

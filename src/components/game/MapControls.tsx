@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { Map as MapLibreMap } from "maplibre-gl";
 import type { PlayerLocation } from "@/lib/player-location";
 import { q, type MapLocation } from "@/lib/game";
+import { isFictionalMapDestination } from "@/lib/location-map-model";
 
 const OSOGBO_CENTER: [number, number] = [4.556, 7.7677];
 
@@ -36,7 +37,7 @@ export function MapControls({
     error: searchError,
     refetch: retrySearch,
   } = useQuery(q.searchMapLocations(searchTerm));
-  const searchResults = matches ?? [];
+  const searchResults = (matches ?? []).filter(isFictionalMapDestination);
   const canCenterOnPlayer = hasPlayerCoordinates(playerLocation);
 
   function selectLocation(location: MapLocation) {

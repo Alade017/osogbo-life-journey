@@ -8247,8 +8247,8 @@
   }
 }
 
-/* The map route gives the city atlas all space beneath the shared HUD. */
-.city-game:has(.city-map-dashboard.is-atlas) {
+/* The map route gives the geographic world map all space beneath the shared HUD. */
+.city-game:has(.city-map-dashboard.is-world-map) {
   display: flex;
   height: 100dvh;
   min-height: 0;
@@ -8257,27 +8257,27 @@
   padding-bottom: 0 !important;
 }
 
-.city-game:has(.city-map-dashboard.is-atlas) > .world-environment {
+.city-game:has(.city-map-dashboard.is-world-map) > .world-environment {
   flex: 0 0 auto;
 }
 
-.city-game:has(.city-map-dashboard.is-atlas) .city-game-frame {
+.city-game:has(.city-map-dashboard.is-world-map) .city-game-frame {
   height: calc(100dvh - 32px);
   min-height: 0;
   flex: 1 1 auto;
 }
 
-.city-game:has(.city-map-dashboard.is-atlas) .city-game-content {
+.city-game:has(.city-map-dashboard.is-world-map) .city-game-content {
   display: flex;
   min-height: 0;
   flex-direction: column;
 }
 
-.city-game:has(.city-map-dashboard.is-atlas) .game-hud {
+.city-game:has(.city-map-dashboard.is-world-map) .game-hud {
   flex: 0 0 auto;
 }
 
-.city-game:has(.city-map-dashboard.is-atlas) .city-game-main {
+.city-game:has(.city-map-dashboard.is-world-map) .city-game-main {
   display: flex;
   width: 100%;
   min-height: 0;
@@ -8287,19 +8287,95 @@
   padding: 0;
 }
 
-.city-game:has(.city-map-dashboard.is-atlas) .city-map-dashboard.is-atlas,
-.city-game:has(.city-map-dashboard.is-atlas) .city-map-dashboard.is-atlas .city-map-world {
+.city-game:has(.city-map-dashboard.is-world-map) .city-map-dashboard.is-world-map {
   min-height: 0;
   flex: 1 1 auto;
 }
 
+/* The rebuilt world map is a single flat view beneath the shared compact HUD. */
+.city-map-dashboard.is-world-map {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  background: var(--background);
+}
+
+.city-map-dashboard.is-world-map > .osogbo-map-frame {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.city-map-dashboard .city-map-loading {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  min-height: 280px;
+  place-items: center;
+  color: var(--muted-foreground);
+  background: var(--background);
+  font-size: 13px;
+}
+
+.osogbo-map-place-label {
+  flex-wrap: wrap;
+  max-width: min(310px, calc(100% - 30px));
+}
+
+.osogbo-map-place-label small {
+  width: 100%;
+  margin-left: 16px;
+  color: var(--muted-foreground);
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+
+.location-map-legend {
+  max-width: min(280px, calc(100% - 24px));
+  max-height: min(42vh, 320px);
+  backdrop-filter: blur(12px);
+}
+
+@media (max-width: 640px) {
+  .city-game:has(.city-map-dashboard.is-world-map) .city-game-frame {
+    width: 100%;
+    height: calc(100dvh - 32px);
+  }
+
+  .city-game:has(.city-map-dashboard.is-world-map) .game-hud {
+    padding: 4px 8px;
+  }
+
+  .city-map-dashboard.is-world-map > .osogbo-map-frame {
+    min-height: 0;
+  }
+
+  .location-map-legend {
+    top: 104px;
+    right: 8px;
+    width: min(210px, calc(100% - 24px));
+    max-height: min(25vh, 190px);
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 @media (max-width: 820px) {
-  .city-game:has(.city-map-dashboard.is-atlas) .city-game-frame {
+  .city-game:has(.city-map-dashboard.is-world-map) .city-game-frame {
     display: flex;
     width: 100%;
   }
 
-  .city-game:has(.city-map-dashboard.is-atlas) .city-game-content {
+  .city-game:has(.city-map-dashboard.is-world-map) .city-game-content {
     width: 100%;
   }
 }

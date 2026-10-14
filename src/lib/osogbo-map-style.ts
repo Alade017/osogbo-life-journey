@@ -1,8 +1,25 @@
-import type { Map as MapLibreMap } from "maplibre-gl";
+import type { FilterSpecification, Map as MapLibreMap } from "maplibre-gl";
 
 const DEFAULT_VECTOR_STYLE = "https://tiles.openfreemap.org/styles/liberty";
-const OSM_RASTER_ATTRIBUTION =
-  '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap contributors</a>';
+const HILLSHADE_URL =
+  "https://services.arcgisonline.com/ArcGIS/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}";
+const ORIENTATION_LANDMARKS = {
+  type: "FeatureCollection" as const,
+  features: [
+    {
+      type: "Feature" as const,
+      id: "olaiya-roundabout",
+      geometry: { type: "Point" as const, coordinates: [4.556, 7.7677] },
+      properties: { name: "Olaiya Roundabout" },
+    },
+    {
+      type: "Feature" as const,
+      id: "mandela-freedom-park",
+      geometry: { type: "Point" as const, coordinates: [4.545888, 7.778321] },
+      properties: { name: "Nelson Mandela Freedom Park" },
+    },
+  ],
+};
 
 export function getOsogboMapStyleUrl(): string {
   const styleUrl = import.meta.env["VITE_OSOGBO_MAP_STYLE_URL"] || DEFAULT_VECTOR_STYLE;
@@ -14,31 +31,15 @@ export function getOsogboMapStyleUrl(): string {
   return url.toString();
 }
 
-export function createOpenStreetMapFallbackStyle() {
-  return {
-    version: 8 as const,
-    sources: {
-      osm: {
-        type: "raster" as const,
-        tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
-        tileSize: 256,
-        attribution: OSM_RASTER_ATTRIBUTION,
-        maxzoom: 19,
-      },
-    },
-    layers: [
-      {
-        id: "osm-raster-fallback",
-        type: "raster" as const,
-        source: "osm",
-        minzoom: 0,
-        maxzoom: 22,
-      },
-    ],
-  };
+export function shouldHideBaseMapLayer(id: string, sourceLayer = "") {
+  return /building|poi|housenumber|address/i.test(`${id} ${sourceLayer}`);
 }
 
-/** Apply the Osogbo Life ivory, forest green, gold, and soft water palette to OMT layers. */
+export function isExcludedBaseMapLabel(name: string) {
+  return /sacred|grove|shrine|mosque|church|chapel|temple/i.test(name);
+}
+
+/** Keep the basemap geographic: roads, water, land cover, place names, and terrain only. */
 export function applyOsogboMapPalette(map: MapLibreMap) {
   if (!map.isStyleLoaded()) return;
   const layers = map.getStyle().layers;
@@ -47,6 +48,11 @@ export function applyOsogboMapPalette(map: MapLibreMap) {
     const spec = layer as typeof layer & { "source-layer"?: string };
     const sourceLayer = spec["source-layer"]?.toLowerCase() ?? "";
     const id = layer.id.toLowerCase();
+
+    if (shouldHideBaseMapLayer(id, sourceLayer)) {
+      if (layer.type !== "background") map.setLayoutProperty(layer.id, "visibility", "none");
+      continue;
+    }
 
     if (layer.type === "background") {
       map.setPaintProperty(layer.id, "background-color", "#f2f6ed");
@@ -79,48 +85,89 @@ export function applyOsogboMapPalette(map: MapLibreMap) {
     } else if (layer.type === "line" && sourceLayer === "waterway") {
       map.setPaintProperty(layer.id, "line-color", "#b7d7df");
     } else if (layer.type === "symbol" && layer.layout?.["text-field"]) {
+      const labelText = layer.layout["text-field"];
+      if (typeof labelText === "string" && isExcludedBaseMapLabel(labelText)) {
+        map.setLayoutProperty(layer.id, "visibility", "none");
+        continue;
+      }
+      const existingFilter = layer.filter;
+      const safeName = ["downcase", ["to-string", ["coalesce", ["get", "name"], ""]]];
+      const excludedNames = ["sacred", "grove", "shrine", "mosque", "church", "chapel", "temple"];
+      const safeLabelFilter = [
+        "all",
+        ...(existingFilter ? [existingFilter] : []),
+        ["!", ["any", ...excludedNames.map((name) => [">=", ["index-of", name, safeName], 0])]],
+      ] as unknown as FilterSpecification;
+      map.setFilter(layer.id, safeLabelFilter);
       map.setPaintProperty(layer.id, "text-color", "#173d2b");
       map.setPaintProperty(layer.id, "text-halo-color", "#f2f6ed");
       map.setPaintProperty(layer.id, "text-halo-width", 1.1);
     }
   }
 
-  // Extrude only real OSM building footprints at close zoom; this adds depth without
-  // turning the whole city into a costly 3D scene on small screens.
-  const buildingLayer = layers.find((layer) => {
-    const spec = layer as typeof layer & { "source-layer"?: string };
-    return layer.type === "fill" && spec["source-layer"]?.toLowerCase() === "building";
-  }) as ((typeof layers)[number] & { "source-layer"?: string; source: string }) | undefined;
-  if (
-    buildingLayer &&
-    buildingLayer["source-layer"] &&
-    !map.getLayer("osogbo-building-extrusions")
-  ) {
-    const firstSymbol = layers.find((layer) => layer.type === "symbol")?.id;
+  const hillshadeSourceId = "osogbo-elevation-hillshade";
+  const hillshadeLayerId = "osogbo-elevation-context";
+  if (!map.getSource(hillshadeSourceId)) {
+    map.addSource(hillshadeSourceId, {
+      type: "raster",
+      tiles: [HILLSHADE_URL],
+      tileSize: 256,
+      maxzoom: 16,
+      attribution:
+        'Elevation relief © <a href="https://www.esri.com/en-us/legal/terms/full-master-agreement" target="_blank" rel="noreferrer">Esri and data providers</a>',
+    });
+  }
+  if (!map.getLayer(hillshadeLayerId)) {
+    const firstRoad = layers.find((layer) => {
+      const sourceLayer = (layer as typeof layer & { "source-layer"?: string })["source-layer"];
+      return layer.type === "line" && sourceLayer?.toLowerCase() === "transportation";
+    })?.id;
     map.addLayer(
       {
-        id: "osogbo-building-extrusions",
-        type: "fill-extrusion",
-        source: buildingLayer.source,
-        "source-layer": buildingLayer["source-layer"],
-        minzoom: 15.5,
-        filter: ["any", ["has", "render_height"], ["has", "height"]],
-        paint: {
-          "fill-extrusion-color": "#e9e5d8",
-          "fill-extrusion-height": [
-            "max",
-            ["to-number", ["get", "render_height"], 0],
-            ["to-number", ["get", "height"], 0],
-          ],
-          "fill-extrusion-base": [
-            "max",
-            ["to-number", ["get", "render_min_height"], 0],
-            ["to-number", ["get", "min_height"], 0],
-          ],
-          "fill-extrusion-opacity": 0.82,
-        },
+        id: hillshadeLayerId,
+        type: "raster",
+        source: hillshadeSourceId,
+        paint: { "raster-opacity": 0.16, "raster-resampling": "linear" },
       },
-      firstSymbol,
+      firstRoad,
     );
+  }
+
+  const landmarkSourceId = "osogbo-orientation-landmarks";
+  if (!map.getSource(landmarkSourceId)) {
+    map.addSource(landmarkSourceId, { type: "geojson", data: ORIENTATION_LANDMARKS });
+  }
+  if (!map.getLayer(`${landmarkSourceId}-markers`)) {
+    map.addLayer({
+      id: `${landmarkSourceId}-markers`,
+      type: "circle",
+      source: landmarkSourceId,
+      paint: {
+        "circle-radius": 5,
+        "circle-color": "#d69b32",
+        "circle-stroke-color": "#fffaf0",
+        "circle-stroke-width": 2,
+      },
+    });
+  }
+  if (!map.getLayer(`${landmarkSourceId}-labels`)) {
+    map.addLayer({
+      id: `${landmarkSourceId}-labels`,
+      type: "symbol",
+      source: landmarkSourceId,
+      layout: {
+        "text-field": ["get", "name"],
+        "text-font": ["Open Sans Regular"],
+        "text-size": 11,
+        "text-offset": [0, 1.2],
+        "text-anchor": "top",
+        "text-allow-overlap": false,
+      },
+      paint: {
+        "text-color": "#173d2b",
+        "text-halo-color": "#f2f6ed",
+        "text-halo-width": 1.5,
+      },
+    });
   }
 }

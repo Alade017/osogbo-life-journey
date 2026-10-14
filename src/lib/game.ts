@@ -248,7 +248,10 @@ export const q = {
     queryOptions({
       queryKey: ["locations"],
       staleTime: 5 * 60_000,
-      queryFn: async () => unwrap(await supabase.from("locations").select("*").order("sort_order")),
+      queryFn: async () =>
+        unwrap(
+          await supabase.from("locations").select("*").eq("is_active", true).order("sort_order"),
+        ),
     }),
   mapLocations: (bounds?: MapLocationBounds) =>
     queryOptions({

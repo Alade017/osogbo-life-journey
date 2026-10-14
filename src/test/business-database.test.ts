@@ -272,7 +272,7 @@ describe("authoritative business and investment database", () => {
     await db.exec("reset role");
   });
 
-  it("records worship, tithe and court cases through location-gated idempotent actions", async () => {
+  it("excludes religious locations and preserves fictional court roleplay", async () => {
     const ownerCharacter = await db.query<{ id: string }>(
       "select id from public.characters where user_id=$1",
       [owner],
@@ -283,45 +283,17 @@ describe("authoritative business and investment database", () => {
     );
     const characterId = ownerCharacter.rows[0]!.id;
     const targetId = targetCharacter.rows[0]!.id;
-    const church = await db.query<{ id: string }>(
-      "select id from public.locations where slug='osogbo-central-mosque'",
+    const religiousPlace = await db.query<{ id: string; is_active: boolean }>(
+      "select id, is_active from public.locations where slug='osogbo-central-mosque'",
     );
-    await db.query("update public.characters set current_location_id=$1 where id=$2", [
-      church.rows[0]!.id,
-      characterId,
-    ]);
-
-    const worshipRequest = randomUUID();
-    await call("public.perform_location_activity($1,'worship',$2,0,null,null)", [
-      church.rows[0]!.id,
-      worshipRequest,
-    ]);
+    expect(religiousPlace.rows[0]!.is_active).toBe(false);
     await expect(
       call("public.perform_location_activity($1,'worship',$2,0,null,null)", [
-        church.rows[0]!.id,
+        religiousPlace.rows[0]!.id,
         randomUUID(),
       ]),
-    ).rejects.toThrow(/already attended worship today/);
-    await call("public.perform_location_activity($1,'worship',$2,0,null,null)", [
-      church.rows[0]!.id,
-      worshipRequest,
-    ]);
-    const happiness = await db.query<{ happiness: number }>(
-      "select happiness from public.characters where id=$1",
-      [characterId],
-    );
-    expect(happiness.rows[0]!.happiness).toBe(72);
-
-    const titheRequest = randomUUID();
-    await call("public.perform_location_activity($1,'tithe',$2,500,null,null)", [
-      church.rows[0]!.id,
-      titheRequest,
-    ]);
-    await call("public.perform_location_activity($1,'tithe',$2,500,null,null)", [
-      church.rows[0]!.id,
-      titheRequest,
-    ]);
-    expect(await balance(owner)).toBe(19_999_500);
+    ).rejects.toThrow(/unavailable/);
+    expect(await balance(owner)).toBe(20_000_000);
 
     const court = await db.query<{ id: string }>(
       "select id from public.locations where slug='osogbo-high-court'",

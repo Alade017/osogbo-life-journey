@@ -15,11 +15,7 @@ import { PlayerMarker } from "@/components/game/PlayerMarker";
 import { PlayerMovementControls } from "@/components/game/PlayerMovementControls";
 import { NearbyLocationPrompt } from "@/components/game/NearbyLocationPrompt";
 import { useNearbyLocations } from "@/hooks/use-nearby-locations";
-import {
-  applyOsogboMapPalette,
-  createOpenStreetMapFallbackStyle,
-  getOsogboMapStyleUrl,
-} from "@/lib/osogbo-map-style";
+import { applyOsogboMapPalette, getOsogboMapStyleUrl } from "@/lib/osogbo-map-style";
 import { q, rpc } from "@/lib/game";
 import { resolvePlayerLocation } from "@/lib/player-location";
 import {
@@ -178,7 +174,6 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
     if (!containerRef.current || mapRef.current) return;
     const container = containerRef.current;
     let didLoad = false;
-    let usingFallback = false;
     setLoaded(false);
     setMapError(null);
     setMapInstance(null);
@@ -188,12 +183,12 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
       map = new MapLibreMap({
         container,
         center: OSOGBO_CENTER,
-        zoom: 12.2,
-        pitch: 36,
-        bearing: -12,
+        zoom: 12.8,
+        pitch: 0,
+        bearing: 0,
         minZoom: 10,
         maxZoom: 19,
-        maxPitch: 52,
+        maxPitch: 0,
         maxBounds: [
           [OSOGBO_PLAYABLE_BOUNDS.west, OSOGBO_PLAYABLE_BOUNDS.south],
           [OSOGBO_PLAYABLE_BOUNDS.east, OSOGBO_PLAYABLE_BOUNDS.north],
@@ -211,26 +206,10 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
     map.addControl(new NavigationControl({ visualizePitch: false }), "top-right");
     map.addControl(new FullscreenControl(), "top-right");
     map.addControl(new AttributionControl({ compact: true }), "bottom-right");
-    let loadTimer = 0;
-    const fallbackToRaster = () => {
-      if (didLoad) return;
-      if (usingFallback) {
-        setMapError("Map data could not be loaded. Check your connection and retry.");
-        return;
-      }
-      usingFallback = true;
-      if (loadTimer) window.clearTimeout(loadTimer);
-      try {
-        map.setStyle(createOpenStreetMapFallbackStyle());
-      } catch {
-        setMapError("The Osogbo map could not start. Check your connection and retry.");
-        return;
-      }
-      loadTimer = window.setTimeout(() => {
-        if (!didLoad) fallbackToRaster();
-      }, 15_000);
-    };
-    loadTimer = window.setTimeout(fallbackToRaster, 15_000);
+    const loadTimer = window.setTimeout(() => {
+      if (!didLoad)
+        setMapError("The Osogbo map is taking too long to load. Check your connection and retry.");
+    }, 15_000);
     map.once("load", () => {
       didLoad = true;
       if (loadTimer) window.clearTimeout(loadTimer);
@@ -242,9 +221,10 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
     const handleStyleLoad = () => applyOsogboMapPalette(map);
     map.on("style.load", handleStyleLoad);
     const handleMapError = () => {
-      if (!didLoad && !map.isStyleLoaded()) {
-        fallbackToRaster();
-      }
+      if (!didLoad && !map.isStyleLoaded())
+        setMapError(
+          "The map service could not load Osogbo streets. Check your connection and retry.",
+        );
     };
     map.on("error", handleMapError);
     const updateCameraMetadata = () => {
@@ -316,11 +296,14 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
         <span className="osogbo-map-live-dot" />
         <span>
           {displayedPlayer?.location
-            ? `PLAYER POSITION · ${displayedPlayer.location.name.toUpperCase()}`
+            ? `PLAYER · ${displayedPlayer.location.name.toUpperCase()}`
             : displayedPlayer?.currentLocationId
               ? "PLAYER POSITION · OSOGBO"
               : "OSOGBO, OSUN STATE"}
         </span>
+        <small>
+          Real streets &amp; terrain · fictional venues · gold dots are orientation only
+        </small>
       </div>
     </div>
   );

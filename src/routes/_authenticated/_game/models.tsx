@@ -1,12 +1,9 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { WorldScene } from "@/components/3d/WorldScene";
-import {
-  DEVELOPMENT_MODELS,
-  type CharacterAnimationState,
-  type SceneView,
-  type CityLocationModel,
-} from "@/types/models";
+import { Character } from "@/components/3d/Character";
+import { Room } from "@/components/3d/Room";
+import { Scene } from "@/components/3d/Scene";
+import { DEVELOPMENT_MODELS, type CharacterAnimationState } from "@/types/models";
 import {
   HAIR_COLORS,
   HAIR_STYLES_BY_GENDER,
@@ -16,21 +13,11 @@ import {
 } from "@/game/avatar-appearance";
 import { characterAppearance3D } from "@/game/character-3d-appearance";
 import { pageMeta } from "@/lib/seo";
-const locations: CityLocationModel[] = [
-  {
-    id: "fixture-home",
-    name: "Development room",
-    modelPath: DEVELOPMENT_MODELS.building,
-    position: [3, 0, -2],
-    roomPath: DEVELOPMENT_MODELS.room,
-  },
-];
 export const Route = createFileRoute("/_authenticated/_game/models")({
-  head: () => pageMeta("3D model lab", "Inspect development assets and city/interior switching."),
+  head: () => pageMeta("3D model lab", "Inspect character and interior development assets."),
   component: ModelLab,
 });
 function ModelLab() {
-  const [view, setView] = useState<SceneView>({ kind: "city" });
   const [animation, setAnimation] = useState<CharacterAnimationState>("idle");
   const [appearance, setAppearance] = useState<Appearance>({
     skin: 1,
@@ -45,24 +32,9 @@ function ModelLab() {
       <h1 className="text-2xl font-bold">3D model lab</h1>
       <p>
         Development fixtures only. This preview does not change saved character data or grant
-        access.
+        access. The preview is limited to a character and an interior scene.
       </p>
       <div className="flex flex-wrap gap-3 py-3">
-        <button type="button" onClick={() => setView({ kind: "city" })}>
-          City
-        </button>
-        <button
-          type="button"
-          onClick={() =>
-            setView({
-              kind: "room",
-              locationId: "fixture-home",
-              modelPath: DEVELOPMENT_MODELS.room,
-            })
-          }
-        >
-          Room
-        </button>
         <label>
           Animation
           <select
@@ -135,23 +107,15 @@ function ModelLab() {
         </label>
       </div>
       <div style={{ height: "min(70vh,640px)", minHeight: 320 }}>
-        <WorldScene
-          view={view}
-          character={{
-            modelPath: DEVELOPMENT_MODELS.character,
-            currentAnimation: animation,
-            appearance: characterAppearance3D(appearance, "female"),
-          }}
-          cityPaths={[DEVELOPMENT_MODELS.city]}
-          locations={locations}
-          onLocationSelect={() =>
-            setView({
-              kind: "room",
-              locationId: "fixture-home",
-              modelPath: DEVELOPMENT_MODELS.room,
-            })
-          }
-        />
+        <Scene animated={animation !== "idle"}>
+          <Room modelPath={DEVELOPMENT_MODELS.room}>
+            <Character
+              modelPath={DEVELOPMENT_MODELS.character}
+              currentAnimation={animation}
+              appearance={characterAppearance3D(appearance, "female")}
+            />
+          </Room>
+        </Scene>
       </div>
     </section>
   );
