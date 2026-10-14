@@ -8430,11 +8430,12 @@
   padding: 8px 14px;
   transform: translateX(-50%);
   overflow: visible;
-  border: 1px solid color-mix(in srgb, var(--brand-cream) 16%, transparent);
-  border-radius: var(--shape-pill);
-  background: color-mix(in srgb, var(--brand-ink) 96%, transparent);
-  box-shadow: var(--elevation-dock);
-  backdrop-filter: blur(16px);
+  border: 1px solid rgb(255 255 255 / 30%);
+  border-radius: 16px;
+  background: rgb(248 243 240 / 90%);
+  box-shadow: 0 4px 30px rgb(0 0 0 / 10%);
+  -webkit-backdrop-filter: blur(15px);
+  backdrop-filter: blur(15px);
 }
 
 .city-game.navigation-redesign .game-dock-surface {
@@ -8450,7 +8451,7 @@
   justify-content: center;
   gap: 5px;
   border-radius: var(--shape-button);
-  color: var(--color-text-on-dark-soft);
+  color: var(--brand-ink);
   font-size: 11px;
 }
 
@@ -8460,8 +8461,8 @@
 }
 
 .city-game.navigation-redesign .game-mobile-nav .mobile-nav-active {
-  color: var(--chart-4);
-  background: var(--color-surface-dark-elevated);
+  color: var(--primary-foreground);
+  background: var(--primary);
 }
 
 .city-game.navigation-redesign .game-mobile-nav .mobile-nav-phone {
@@ -8519,6 +8520,17 @@
 
 .city-game.navigation-redesign {
   padding-bottom: calc(104px + env(safe-area-inset-bottom)) !important;
+}
+
+.city-game.navigation-redesign:has(.game-home) {
+  --game-night: var(--brand-porcelain);
+  --game-panel: var(--card);
+  --game-panel-raised: var(--color-surface);
+  --game-line: var(--border);
+  --game-muted: var(--muted-foreground);
+  --game-white: var(--foreground);
+  color: var(--foreground);
+  background: var(--brand-porcelain);
 }
 
 .city-game.navigation-redesign:has(.city-map-dashboard.is-world-map) {
