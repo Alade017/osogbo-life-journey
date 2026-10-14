@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { HomeInterior } from "@/components/game/HomeInterior";
-import { LifeSimulationPanel } from "@/components/game/LifeSimulationPanel";
 import { dashboardGreeting } from "@/lib/dashboard-greeting";
 import { q, rpc } from "@/lib/game";
 import { type HousingSave } from "@/lib/housing-service";
@@ -418,7 +417,6 @@ function MyCityHome() {
           <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">Your home</h1>
         </div>
       </div>
-      <LifeSimulationPanel />
       <section className="home-next-steps" aria-labelledby="home-next-steps-title">
         <div className="home-next-steps-heading">
           <div>

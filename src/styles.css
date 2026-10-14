@@ -7234,8 +7234,18 @@
 .game-panel {
   border-color: var(--color-border);
   border-radius: var(--shape-card);
+  color: var(--foreground);
   background-color: var(--color-surface);
   box-shadow: var(--elevation-card);
+}
+
+.game-panel-accent {
+  color: var(--foreground);
+}
+
+.game-panel .text-muted-foreground,
+.game-panel-accent .text-muted-foreground {
+  color: var(--color-text-secondary);
 }
 
 .game-panel:hover {
@@ -8531,6 +8541,128 @@
   --game-white: var(--foreground);
   color: var(--foreground);
   background: var(--brand-porcelain);
+}
+
+.city-game.navigation-redesign:has(.game-home) .city-eyebrow {
+  color: var(--muted-foreground);
+}
+
+.city-game.navigation-redesign:has(.game-home) .life-simulation-panel {
+  margin: 0;
+  padding: 14px;
+  border-color: var(--border);
+  border-radius: 16px;
+  color: var(--foreground);
+  background: var(--color-surface);
+}
+
+.city-game.navigation-redesign:has(.game-home) .life-simulation-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.city-game.navigation-redesign:has(.game-home) .life-simulation-head > div:first-child {
+  min-width: 0;
+  flex: 1 1 220px;
+}
+
+.city-game.navigation-redesign:has(.game-home) .life-simulation-head h2 {
+  color: var(--foreground);
+  font-size: 17px;
+}
+
+.city-game.navigation-redesign:has(.game-home) .life-simulation-head p:last-child {
+  color: var(--muted-foreground);
+  line-height: 1.35;
+}
+
+.city-game.navigation-redesign:has(.game-home) .life-needs-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  margin: 12px 0;
+}
+
+.city-game.navigation-redesign:has(.game-home) .life-need {
+  min-width: 0;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  gap: 4px 6px;
+  padding: 8px;
+  border-color: var(--border);
+  color: var(--foreground);
+  background: var(--background);
+}
+
+.city-game.navigation-redesign:has(.game-home) .life-need-label {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 10px;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.city-game.navigation-redesign:has(.game-home) .life-need strong {
+  font-size: 11px;
+}
+
+.city-game.navigation-redesign:has(.game-home) .life-need-track {
+  background: var(--secondary);
+}
+
+.city-game.navigation-redesign:has(.game-home) .life-need small {
+  color: var(--muted-foreground);
+  font-size: 9px;
+}
+
+.city-game.navigation-redesign:has(.game-home) .simulation-mood {
+  padding: 8px 10px;
+  color: var(--foreground);
+}
+
+.city-game.navigation-redesign:has(.game-home) .simulation-mood small {
+  color: var(--muted-foreground);
+  font-size: 10px;
+}
+
+.city-game.navigation-redesign:has(.game-home) .simulation-activities {
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.city-game.navigation-redesign:has(.game-home) .simulation-activities button,
+.city-game.navigation-redesign:has(.game-home) .simulation-avatar-state {
+  min-height: 34px;
+  padding: 7px 10px;
+  font-size: 11px;
+}
+
+.city-game.navigation-redesign:has(.game-home) .home-next-steps {
+  gap: 10px;
+  padding: 16px;
+  border-radius: 16px;
+}
+
+.city-game.navigation-redesign:has(.game-home) .home-next-steps-grid {
+  gap: 8px;
+}
+
+.city-game.navigation-redesign:has(.game-home) .home-next-step {
+  min-height: 92px;
+  gap: 4px;
+  padding: 10px;
+  border-radius: 12px;
+}
+
+.city-game.navigation-redesign:has(.game-home) .home-next-step > span {
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+}
+
+.city-game.navigation-redesign:has(.game-home) .home-next-step small {
+  font-size: 10px;
 }
 
 .city-game.navigation-redesign:has(.city-map-dashboard.is-world-map) {
