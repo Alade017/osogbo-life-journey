@@ -346,25 +346,41 @@
   --game-white: var(--color-surface);
   color: var(--game-white);
   background:
-    radial-gradient(ellipse at 65% 8%, color-mix(in srgb, var(--primary) 12%, transparent), transparent 34rem),
+    radial-gradient(
+      ellipse at 65% 8%,
+      color-mix(in srgb, var(--primary) 12%, transparent),
+      transparent 34rem
+    ),
     linear-gradient(180deg, var(--brand-ink), var(--brand-ink) 70%);
 }
 
 .city-game:has(.world-environment[data-world-phase="night"]) {
   background:
-    radial-gradient(ellipse at 72% 4%, color-mix(in srgb, var(--scene-sky) 13%, transparent), transparent 32rem),
+    radial-gradient(
+      ellipse at 72% 4%,
+      color-mix(in srgb, var(--scene-sky) 13%, transparent),
+      transparent 32rem
+    ),
     linear-gradient(180deg, var(--brand-ink), var(--brand-ink) 72%);
 }
 
 .city-game:has(.world-environment[data-world-phase="sunrise"]) {
   background:
-    radial-gradient(ellipse at 70% 2%, color-mix(in srgb, var(--destructive) 15%, transparent), transparent 32rem),
+    radial-gradient(
+      ellipse at 70% 2%,
+      color-mix(in srgb, var(--destructive) 15%, transparent),
+      transparent 32rem
+    ),
     linear-gradient(180deg, var(--brand-ink), var(--brand-ink) 70%);
 }
 
 .city-game:has(.world-environment[data-world-phase="sunset"]) {
   background:
-    radial-gradient(ellipse at 74% 4%, color-mix(in srgb, var(--destructive) 16%, transparent), transparent 34rem),
+    radial-gradient(
+      ellipse at 74% 4%,
+      color-mix(in srgb, var(--destructive) 16%, transparent),
+      transparent 34rem
+    ),
     linear-gradient(180deg, var(--brand-ink), var(--brand-ink) 72%);
 }
 
@@ -379,7 +395,11 @@
   gap: 8px 16px;
   border-bottom: 1px solid color-mix(in srgb, var(--border) 12%, transparent);
   padding: 7px 16px;
-  background: linear-gradient(90deg, color-mix(in srgb, var(--brand-ink) 96%, transparent), color-mix(in srgb, var(--brand-ink) 94%, transparent));
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--brand-ink) 96%, transparent),
+    color-mix(in srgb, var(--brand-ink) 94%, transparent)
+  );
   color: var(--game-white);
   font-size: 11px;
   transition:
@@ -388,12 +408,20 @@
 }
 
 .world-environment[data-world-phase="night"] {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--brand-ink) 97%, transparent), color-mix(in srgb, var(--brand-ink) 96%, transparent));
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--brand-ink) 97%, transparent),
+    color-mix(in srgb, var(--brand-ink) 96%, transparent)
+  );
 }
 
 .world-environment[data-world-phase="sunrise"],
 .world-environment[data-world-phase="sunset"] {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--destructive) 95%, transparent), color-mix(in srgb, var(--brand-ink) 94%, transparent));
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--destructive) 95%, transparent),
+    color-mix(in srgb, var(--brand-ink) 94%, transparent)
+  );
 }
 
 .world-environment[data-world-weather="rainy"],
@@ -723,7 +751,12 @@
 
 .stage-haze {
   z-index: -4;
-  background: linear-gradient(180deg, transparent 31%, color-mix(in srgb, var(--border) 48%, transparent) 61%, transparent 81%);
+  background: linear-gradient(
+    180deg,
+    transparent 31%,
+    color-mix(in srgb, var(--border) 48%, transparent) 61%,
+    transparent 81%
+  );
 }
 
 .stage-sun {
@@ -1215,7 +1248,11 @@
   border-radius: 18px;
   color: var(--color-surface);
   background:
-    radial-gradient(circle at 85% 12%, color-mix(in srgb, var(--secondary) 14%, transparent), transparent 48%),
+    radial-gradient(
+      circle at 85% 12%,
+      color-mix(in srgb, var(--secondary) 14%, transparent),
+      transparent 48%
+    ),
     linear-gradient(160deg, var(--success), var(--brand-ink) 70%);
 }
 
@@ -1305,7 +1342,11 @@
   padding: 13px 15px;
   border: 1px solid var(--game-line);
   border-radius: 13px;
-  background: linear-gradient(110deg, color-mix(in srgb, var(--brand-ink) 95%, transparent), color-mix(in srgb, var(--brand-ink) 83%, transparent));
+  background: linear-gradient(
+    110deg,
+    color-mix(in srgb, var(--brand-ink) 95%, transparent),
+    color-mix(in srgb, var(--brand-ink) 83%, transparent)
+  );
 }
 
 .objective-icon {
@@ -3688,8 +3729,16 @@
 .home-room-wood {
   background-color: var(--scene-building);
   background-image:
-    repeating-linear-gradient(45deg, transparent 0 16px, color-mix(in srgb, var(--destructive) 8%, transparent) 16px 17px),
-    repeating-linear-gradient(135deg, transparent 0 16px, color-mix(in srgb, var(--color-surface) 12%, transparent) 16px 17px),
+    repeating-linear-gradient(
+      45deg,
+      transparent 0 16px,
+      color-mix(in srgb, var(--destructive) 8%, transparent) 16px 17px
+    ),
+    repeating-linear-gradient(
+      135deg,
+      transparent 0 16px,
+      color-mix(in srgb, var(--color-surface) 12%, transparent) 16px 17px
+    ),
     linear-gradient(120deg, var(--destructive), var(--destructive));
 }
 .home-room-tile {
@@ -3771,7 +3820,12 @@
   transform: skewY(-8deg);
   border: 3px solid var(--primary);
   border-radius: 9px 9px 4px 4px;
-  background: linear-gradient(90deg, var(--brand-ink) 0 31%, var(--scene-hill-front) 32% 67%, var(--brand-ink) 68%);
+  background: linear-gradient(
+    90deg,
+    var(--brand-ink) 0 31%,
+    var(--scene-hill-front) 32% 67%,
+    var(--brand-ink) 68%
+  );
 }
 .lounge-table {
   z-index: 2;
@@ -3873,7 +3927,12 @@
   transform: skewY(-7deg);
   border: 3px solid var(--scene-wood-line);
   border-radius: 7px 7px 3px 3px;
-  background: linear-gradient(180deg, var(--brand-cream) 0 20%, var(--scene-building) 21% 36%, var(--brand-slate) 37%);
+  background: linear-gradient(
+    180deg,
+    var(--brand-cream) 0 20%,
+    var(--scene-building) 21% 36%,
+    var(--brand-slate) 37%
+  );
 }
 .bedroom-nightstand {
   top: 33%;
@@ -4543,7 +4602,11 @@
   border: 1px solid var(--color-surface);
   border-radius: 24px;
   background:
-    radial-gradient(ellipse at 4% 8%, color-mix(in srgb, var(--destructive) 11%, transparent), transparent 38%),
+    radial-gradient(
+      ellipse at 4% 8%,
+      color-mix(in srgb, var(--destructive) 11%, transparent),
+      transparent 38%
+    ),
     linear-gradient(125deg, var(--color-surface), var(--color-surface) 64%);
   box-shadow: var(--elevation-card);
 }
@@ -5893,7 +5956,11 @@
 .house-material-swatch.is-wood {
   background-color: var(--scene-wood-line);
   background-image:
-    repeating-linear-gradient(45deg, transparent 0 7px, color-mix(in srgb, var(--destructive) 38%, transparent) 7px 8px),
+    repeating-linear-gradient(
+      45deg,
+      transparent 0 7px,
+      color-mix(in srgb, var(--destructive) 38%, transparent) 7px 8px
+    ),
     repeating-linear-gradient(135deg, var(--destructive) 0 11px, var(--destructive) 11px 22px);
 }
 
@@ -6105,7 +6172,11 @@
 }
 
 .landing-hero-shade {
-  background: linear-gradient(90deg, color-mix(in srgb, var(--brand-ink) 80%, transparent), transparent);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--brand-ink) 80%, transparent),
+    transparent
+  );
 }
 
 .landing-hero-content {
@@ -6226,7 +6297,11 @@
   aspect-ratio: 1;
   border: 1px solid color-mix(in srgb, var(--color-surface) 35%, transparent);
   border-radius: 50%;
-  background: radial-gradient(circle, color-mix(in srgb, var(--border) 35%, transparent), color-mix(in srgb, var(--border) 4%, transparent) 68%);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--border) 35%, transparent),
+    color-mix(in srgb, var(--border) 4%, transparent) 68%
+  );
   box-shadow: var(--elevation-card);
 }
 
@@ -6392,7 +6467,11 @@
   }
 
   .landing-hero-shade {
-    background: linear-gradient(90deg, color-mix(in srgb, var(--brand-ink) 80%, transparent), transparent);
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--brand-ink) 80%, transparent),
+      transparent
+    );
   }
 }
 
@@ -8326,5 +8405,141 @@
   }
   .landing-story-link:hover {
     transform: none;
+  }
+}
+
+/* Use one persistent bottom dock across desktop, tablet, and mobile game screens. */
+.city-game.navigation-redesign .city-game-frame {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.city-game.navigation-redesign .game-desktop-nav {
+  display: none !important;
+}
+
+.city-game.navigation-redesign .game-mobile-nav {
+  position: fixed;
+  inset: auto auto calc(10px + env(safe-area-inset-bottom)) 50%;
+  z-index: 110;
+  display: grid;
+  width: min(560px, calc(100vw - 32px));
+  min-height: 72px;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 72px minmax(0, 1fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 4px;
+  padding: 8px 14px;
+  transform: translateX(-50%);
+  overflow: visible;
+  border: 1px solid color-mix(in srgb, var(--brand-cream) 16%, transparent);
+  border-radius: var(--shape-pill);
+  background: color-mix(in srgb, var(--brand-ink) 96%, transparent);
+  box-shadow: var(--elevation-dock);
+  backdrop-filter: blur(16px);
+}
+
+.city-game.navigation-redesign .game-dock-surface {
+  display: none;
+}
+
+.city-game.navigation-redesign .game-mobile-nav .mobile-nav-link {
+  display: flex;
+  min-width: 0;
+  min-height: 50px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border-radius: var(--shape-button);
+  color: var(--color-text-on-dark-soft);
+  font-size: 11px;
+}
+
+.city-game.navigation-redesign .game-mobile-nav .mobile-nav-link svg {
+  width: 21px;
+  height: 21px;
+}
+
+.city-game.navigation-redesign .game-mobile-nav .mobile-nav-active {
+  color: var(--chart-4);
+  background: var(--color-surface-dark-elevated);
+}
+
+.city-game.navigation-redesign .game-mobile-nav .mobile-nav-phone {
+  position: relative;
+  display: flex;
+  width: 60px;
+  height: 60px;
+  min-height: 60px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  justify-self: center;
+  gap: 1px;
+  margin: -20px 0 0;
+  padding: 4px;
+  border: 3px solid var(--brand-cream);
+  border-radius: 19px;
+  color: var(--brand-ink);
+  background: var(--chart-4);
+  box-shadow: var(--elevation-lift);
+  font-size: 9px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.city-game.navigation-redesign .game-mobile-nav .mobile-nav-phone .phone-launcher-icon {
+  display: grid;
+  width: 29px;
+  height: 31px;
+  place-items: center;
+  border: 0;
+  border-radius: 0;
+  color: var(--brand-ink);
+  background: transparent;
+  box-shadow: none;
+}
+
+.city-game.navigation-redesign .game-mobile-nav .mobile-nav-phone .phone-launcher-icon::before,
+.city-game.navigation-redesign .game-mobile-nav .mobile-nav-phone .phone-launcher-icon::after {
+  display: none;
+}
+
+.city-game.navigation-redesign .game-mobile-nav .mobile-nav-phone .phone-launcher-icon > svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 2.4;
+}
+
+.city-game.navigation-redesign .game-mobile-nav .mobile-nav-phone .phone-compact-label {
+  position: static;
+  color: var(--brand-ink);
+  font-size: 9px;
+  line-height: 1;
+}
+
+.city-game.navigation-redesign {
+  padding-bottom: calc(104px + env(safe-area-inset-bottom)) !important;
+}
+
+.city-game.navigation-redesign:has(.city-map-dashboard.is-world-map) {
+  padding-bottom: 0 !important;
+}
+
+@media (max-width: 560px) {
+  .city-game.navigation-redesign .game-mobile-nav {
+    width: calc(100vw - 20px);
+    min-height: 68px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 64px minmax(0, 1fr) minmax(0, 1fr);
+    padding-inline: 8px;
+  }
+
+  .city-game.navigation-redesign .game-mobile-nav .mobile-nav-link {
+    font-size: 9px;
+  }
+
+  .city-game.navigation-redesign .game-mobile-nav .mobile-nav-phone {
+    width: 56px;
+    height: 56px;
+    min-height: 56px;
   }
 }
