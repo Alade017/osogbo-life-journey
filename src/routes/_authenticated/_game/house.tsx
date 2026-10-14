@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { House, Pencil, WifiOff } from "lucide-react";
 import { HouseEditSheets } from "@/components/game/housing/HouseEditSheets";
@@ -17,6 +17,12 @@ import type { Appearance } from "@/game/avatar-appearance";
 import housingData from "@/data/housing.json";
 import { formatNaira, q, rpc, useGameAction } from "@/lib/game";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  houseStateQueryKey,
+  subscribeToHouseStateChanges,
+  updateHouseStateStore,
+  type HouseRealtimeClient,
+} from "@/lib/house-state-sync";
 import { pageMeta } from "@/lib/seo";
 import "@/components/game/housing/house-screen.css";
 
@@ -44,6 +50,7 @@ type HouseState = {
   outfit: HouseOutfit;
   inventory: HouseInventoryItem[];
 };
+type HouseStateSnapshot = { state: HouseState; source: "server" | "saved" };
 type CatalogItem = {
   id: string;
   category: string;
@@ -101,27 +108,66 @@ function HousePage() {
   const [selectedSlot, setSelectedSlot] = useState<HouseSlot | null>(null);
   const [selectedPlacement, setSelectedPlacement] = useState<HousePlacement | null>(null);
   const [apiError, setApiError] = useState("");
+  const [playerId, setPlayerId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      setPlayerId(session?.user.id ?? null);
+      if (session?.access_token) void supabase.realtime.setAuth(session.access_token);
+    });
+    return () => {
+      data.subscription.unsubscribe();
+    };
+  }, []);
+
+  const refreshHouseState = useCallback(() => {
+    if (!character?.id) return;
+    void queryClient.invalidateQueries({ queryKey: houseStateQueryKey(character.id), exact: true });
+  }, [character?.id, queryClient]);
 
   useEffect(() => {
     const goOnline = () => {
       setOnline(true);
-      void queryClient.invalidateQueries({ queryKey: ["authoritativeHouseState", character?.id] });
+      refreshHouseState();
     };
     const goOffline = () => setOnline(false);
+    const onFocus = () => refreshHouseState();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") refreshHouseState();
+    };
     window.addEventListener("online", goOnline);
     window.addEventListener("offline", goOffline);
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
       window.removeEventListener("online", goOnline);
       window.removeEventListener("offline", goOffline);
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [character?.id, queryClient]);
+  }, [refreshHouseState]);
 
   const stateQuery = useQuery({
-    queryKey: ["authoritativeHouseState", character?.id],
+    queryKey: character?.id
+      ? houseStateQueryKey(character.id)
+      : ["authoritativeHouseState", "none"],
     enabled: !!character?.id,
     retry: false,
-    queryFn: async (): Promise<HouseState> => {
-      const response = await authorizedFetch("/api/house/state");
+    queryFn: async (): Promise<HouseStateSnapshot> => {
+      let response: Response;
+      try {
+        response = await authorizedFetch("/api/house/state");
+      } catch (error) {
+        try {
+          const cached = JSON.parse(
+            localStorage.getItem(`${CACHE_PREFIX}${character!.id}`) ?? "null",
+          );
+          if (isHouseState(cached)) return { state: cached, source: "saved" };
+        } catch {
+          // Continue with the network error when no usable saved state exists.
+        }
+        throw error;
+      }
       const result = await response.json().catch(() => null);
       if (!response.ok) throw new Error(result?.error?.code ?? "House state could not be loaded.");
       if (!isHouseState(result)) throw new Error("House state response is invalid.");
@@ -130,21 +176,22 @@ function HousePage() {
       } catch {
         /* Storage may be unavailable. */
       }
-      return result;
+      return { state: result, source: "server" };
     },
   });
-  const [savedOffline, setSavedOffline] = useState<HouseState | null>(null);
+  const snapshot = stateQuery.data;
+  const serverState = snapshot?.state;
+  const usingSaved = snapshot?.source === "saved";
+
   useEffect(() => {
-    if (!stateQuery.isError || !character?.id) return;
-    try {
-      const saved = JSON.parse(localStorage.getItem(`${CACHE_PREFIX}${character.id}`) ?? "null");
-      if (isHouseState(saved)) setSavedOffline(saved);
-    } catch {
-      setSavedOffline(null);
-    }
-  }, [stateQuery.isError, character?.id]);
-  const serverState = stateQuery.data ?? savedOffline;
-  const usingSaved = !stateQuery.data && !!savedOffline;
+    if (!playerId) return;
+    return subscribeToHouseStateChanges(
+      supabase as unknown as HouseRealtimeClient,
+      playerId,
+      serverState?.house?.id ?? null,
+      refreshHouseState,
+    );
+  }, [playerId, refreshHouseState, serverState?.house?.id]);
   const houseTypeId = serverState?.house?.house_type_id;
   const roomLayout = houseTypes.find((entry) => entry.id === houseTypeId);
   const slots = useMemo(() => {
@@ -211,7 +258,10 @@ function HousePage() {
       return result.state as HouseState;
     },
     onSuccess: (state) => {
-      queryClient.setQueryData(["authoritativeHouseState", character?.id], state);
+      if (character?.id) {
+        const serverSnapshot: HouseStateSnapshot = { state, source: "server" };
+        updateHouseStateStore(queryClient, character.id, serverSnapshot);
+      }
       try {
         if (character?.id)
           localStorage.setItem(`${CACHE_PREFIX}${character.id}`, JSON.stringify(state));
@@ -243,7 +293,7 @@ function HousePage() {
   const acquire = useGameAction(rpc.acquireProperty, {
     onSuccess: () => {
       toast.success("Property secured. Your wallet and housing record are updated.");
-      void queryClient.invalidateQueries({ queryKey: ["authoritativeHouseState", character?.id] });
+      refreshHouseState();
     },
   });
   const listings = (Array.isArray(listingsData) ? listingsData : []) as PropertyListing[];
@@ -255,7 +305,7 @@ function HousePage() {
   const openHousingFlow = () =>
     window.dispatchEvent(new CustomEvent("osogbo-open-housing", { detail: { source: "profile" } }));
 
-  if (characterLoading || (stateQuery.isLoading && !savedOffline))
+  if (characterLoading || (stateQuery.isLoading && !snapshot))
     return (
       <div className="house-page">
         <div className="house-skeleton" aria-label="Loading your room">
@@ -267,7 +317,7 @@ function HousePage() {
       </div>
     );
 
-  if (stateQuery.isError && !savedOffline)
+  if (stateQuery.isError && !snapshot)
     return (
       <div className="house-page">
         <section className="house-error-card" role="alert">
@@ -361,14 +411,6 @@ function HousePage() {
             Pay
           </Link>
         </div>
-      )}
-      {stateQuery.isError && !savedOffline && (
-        <section className="house-error-card" role="alert">
-          <p>Your house couldn’t load.</p>
-          <button type="button" onClick={() => void stateQuery.refetch()}>
-            Try again
-          </button>
-        </section>
       )}
       <section
         className={`house-room-card${house.status === "overdue" ? " room-overdue" : ""}`}

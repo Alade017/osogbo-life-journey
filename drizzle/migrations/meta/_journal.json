@@ -302,6 +302,13 @@
       "when": 1791940000005,
       "tag": "0041_server_house_inventory",
       "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1791940000006,
+      "tag": "0042_private_house_state_broadcast",
+      "breakpoints": true
     }
   ]
 }
