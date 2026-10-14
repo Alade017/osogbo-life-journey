@@ -1,0 +1,105 @@
+[
+  {
+    "id": "shared-room",
+    "name": "Shared room",
+    "description": "A low-cost room in a shared home with common facilities.",
+    "bedrooms": 1,
+    "floors": 1,
+    "shared_facilities": true,
+    "weekly_rent_minor": 2000,
+    "min_weekly_income_minor": 0,
+    "preference_tags": ["starter", "shared", "budget"],
+    "deposit_weeks": 2,
+    "art_key": "shared-room",
+    "verify": true,
+    "placeholder": true,
+    "extra_requirements": []
+  },
+  {
+    "id": "single-room",
+    "name": "Private room",
+    "description": "A private bedroom with shared household facilities.",
+    "bedrooms": 1,
+    "floors": 1,
+    "shared_facilities": true,
+    "weekly_rent_minor": 4000,
+    "min_weekly_income_minor": 8000,
+    "preference_tags": ["starter", "private-room", "budget"],
+    "deposit_weeks": 2,
+    "art_key": "single-room",
+    "verify": true,
+    "placeholder": true,
+    "extra_requirements": []
+  },
+  {
+    "id": "studio-flat",
+    "name": "Studio flat",
+    "description": "A compact private flat with its own kitchen and bathroom.",
+    "bedrooms": 1,
+    "floors": 1,
+    "shared_facilities": false,
+    "weekly_rent_minor": 7000,
+    "min_weekly_income_minor": 14000,
+    "preference_tags": ["starter", "private", "independent", "comfortable", "close-to-work"],
+    "deposit_weeks": 2,
+    "art_key": "studio-flat",
+    "verify": true,
+    "placeholder": true,
+    "extra_requirements": []
+  },
+  {
+    "id": "mini-flat",
+    "name": "Mini flat",
+    "description": "A small self-contained flat suited to a solo player or couple.",
+    "bedrooms": 1,
+    "floors": 1,
+    "shared_facilities": false,
+    "weekly_rent_minor": 12000,
+    "min_weekly_income_minor": 24000,
+    "preference_tags": ["private", "independent", "couple", "comfortable", "close-to-work"],
+    "deposit_weeks": 2,
+    "art_key": "mini-flat",
+    "verify": true,
+    "placeholder": true,
+    "extra_requirements": []
+  },
+  {
+    "id": "bungalow",
+    "name": "Bungalow",
+    "description": "A single-storey family home with room for shared household life.",
+    "bedrooms": 3,
+    "floors": 1,
+    "shared_facilities": false,
+    "weekly_rent_minor": 22000,
+    "min_weekly_income_minor": 44000,
+    "preference_tags": ["family", "private", "space", "comfortable"],
+    "deposit_weeks": 3,
+    "art_key": "bungalow",
+    "verify": true,
+    "placeholder": true,
+    "extra_requirements": []
+  },
+  {
+    "id": "duplex",
+    "name": "Duplex",
+    "description": "A two-storey family home with separate spaces for work and rest.",
+    "bedrooms": 4,
+    "floors": 2,
+    "shared_facilities": false,
+    "weekly_rent_minor": 35000,
+    "min_weekly_income_minor": 70000,
+    "preference_tags": ["family", "private", "space", "premium", "comfortable"],
+    "deposit_weeks": 3,
+    "art_key": "duplex",
+    "verify": true,
+    "placeholder": true,
+    "extra_requirements": [
+      {
+        "any_of": [
+          { "type": "job_income_band", "value": "high" },
+          { "type": "income_sources_at_least", "value": 2 }
+        ]
+      }
+    ]
+  }
+]

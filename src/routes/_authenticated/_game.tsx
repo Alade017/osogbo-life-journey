@@ -76,6 +76,7 @@ function GameLayout() {
   const { data: equipment } = useQuery({ ...q.equipment(), enabled: !!character });
   const [housingOpen, setHousingOpen] = useState(false);
   const [housingRequested, setHousingRequested] = useState(false);
+  const [housingSource, setHousingSource] = useState<"home" | "profile">("home");
   const housingHandledThisSession = useRef(false);
   const onboardingStep = (
     character as (typeof character & { onboarding_step?: string }) | undefined
@@ -103,8 +104,10 @@ function GameLayout() {
   }, [housingPending]);
 
   useEffect(() => {
-    const reopen = () => {
+    const reopen = (event: Event) => {
+      const source = (event as CustomEvent<{ source?: string }>).detail?.source;
       housingHandledThisSession.current = false;
+      setHousingSource(source === "profile" ? "profile" : "home");
       setHousingRequested(true);
       setHousingOpen(true);
     };
@@ -269,7 +272,8 @@ function GameLayout() {
         </nav>
         <HousingChooser
           open={housingOpen}
-          pending={housingPending || housingRequested}
+          pending={housingPending || (housingRequested && housingSource === "profile")}
+          allowSkip={housingPending}
           onClose={() => {
             housingHandledThisSession.current = true;
             setHousingRequested(false);

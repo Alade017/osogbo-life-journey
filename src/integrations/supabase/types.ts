@@ -378,12 +378,22 @@ export type Database = {
         Row: {
           id: string;
           label: string;
+          description: string;
           bedrooms: number;
+          floors: number;
+          shared_facilities: boolean;
           kitchen_access: string;
           bathroom_access: string;
           monthly_rent: number;
           deposit: number;
+          weekly_rent_minor: number;
+          min_weekly_income_minor: number;
+          preference_tags: string[];
+          deposit_weeks: number;
           asset_key: string;
+          verify: boolean;
+          placeholder: boolean;
+          extra_requirements: Json;
           slots: Json;
           is_active: boolean;
           sort_order: number;
@@ -391,12 +401,22 @@ export type Database = {
         Insert: {
           id: string;
           label: string;
+          description?: string;
           bedrooms: number;
+          floors?: number;
+          shared_facilities?: boolean;
           kitchen_access: string;
           bathroom_access: string;
           monthly_rent: number;
           deposit: number;
+          weekly_rent_minor?: number;
+          min_weekly_income_minor?: number;
+          preference_tags?: string[];
+          deposit_weeks?: number;
           asset_key: string;
+          verify?: boolean;
+          placeholder?: boolean;
+          extra_requirements?: Json;
           slots?: Json;
           is_active?: boolean;
           sort_order?: number;
@@ -404,15 +424,192 @@ export type Database = {
         Update: {
           id?: string;
           label?: string;
+          description?: string;
           bedrooms?: number;
+          floors?: number;
+          shared_facilities?: boolean;
           kitchen_access?: string;
           bathroom_access?: string;
           monthly_rent?: number;
           deposit?: number;
+          weekly_rent_minor?: number;
+          min_weekly_income_minor?: number;
+          preference_tags?: string[];
+          deposit_weeks?: number;
           asset_key?: string;
+          verify?: boolean;
+          placeholder?: boolean;
+          extra_requirements?: Json;
           slots?: Json;
           is_active?: boolean;
           sort_order?: number;
+        };
+        Relationships: [];
+      };
+      content_items: {
+        Row: {
+          id: string;
+          category: string;
+          slot_type: string;
+          art_key: string;
+          price_minor: number;
+          verify: boolean;
+          stackable: boolean;
+          is_active: boolean;
+        };
+        Insert: {
+          id: string;
+          category: string;
+          slot_type: string;
+          art_key: string;
+          price_minor?: number;
+          verify?: boolean;
+          stackable?: boolean;
+          is_active?: boolean;
+        };
+        Update: {
+          id?: string;
+          category?: string;
+          slot_type?: string;
+          art_key?: string;
+          price_minor?: number;
+          verify?: boolean;
+          stackable?: boolean;
+          is_active?: boolean;
+        };
+        Relationships: [];
+      };
+      player_houses: {
+        Row: {
+          id: string;
+          player_id: string;
+          house_type_id: string;
+          rented_at: string;
+          next_rent_due_at: string;
+          status: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          player_id: string;
+          house_type_id: string;
+          rented_at?: string;
+          next_rent_due_at: string;
+          status?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          player_id?: string;
+          house_type_id?: string;
+          rented_at?: string;
+          next_rent_due_at?: string;
+          status?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "player_houses_house_type_id_fkey";
+            columns: ["house_type_id"];
+            isOneToOne: false;
+            referencedRelation: "house_types";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      house_placements: {
+        Row: {
+          id: string;
+          player_house_id: string;
+          item_id: string;
+          slot: string;
+          placed_at: string;
+        };
+        Insert: {
+          id?: string;
+          player_house_id: string;
+          item_id: string;
+          slot: string;
+          placed_at?: string;
+        };
+        Update: {
+          id?: string;
+          player_house_id?: string;
+          item_id?: string;
+          slot?: string;
+          placed_at?: string;
+        };
+        Relationships: [];
+      };
+      player_items: {
+        Row: {
+          id: string;
+          player_id: string;
+          item_id: string;
+          acquired_at: string;
+          source: string;
+          is_stackable: boolean;
+          quantity: number;
+        };
+        Insert: {
+          id?: string;
+          player_id: string;
+          item_id: string;
+          acquired_at?: string;
+          source: string;
+          is_stackable?: boolean;
+          quantity?: number;
+        };
+        Update: {
+          id?: string;
+          player_id?: string;
+          item_id?: string;
+          acquired_at?: string;
+          source?: string;
+          is_stackable?: boolean;
+          quantity?: number;
+        };
+        Relationships: [];
+      };
+      player_outfit: {
+        Row: { player_id: string; slots: Json; updated_at: string };
+        Insert: { player_id: string; slots?: Json; updated_at?: string };
+        Update: { player_id?: string; slots?: Json; updated_at?: string };
+        Relationships: [];
+      };
+      game_action_audit: {
+        Row: {
+          id: string;
+          player_id: string;
+          action: string;
+          target_id: string | null;
+          outcome: string;
+          error_code: string | null;
+          idempotency_key: string | null;
+          metadata: Json;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          player_id: string;
+          action: string;
+          target_id?: string | null;
+          outcome: string;
+          error_code?: string | null;
+          idempotency_key?: string | null;
+          metadata?: Json;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          player_id?: string;
+          action?: string;
+          target_id?: string | null;
+          outcome?: string;
+          error_code?: string | null;
+          idempotency_key?: string | null;
+          metadata?: Json;
+          created_at?: string;
         };
         Relationships: [];
       };
@@ -423,6 +620,7 @@ export type Database = {
           character_id: string;
           house_type_id: string;
           moved_in_at: string;
+          next_rent_at: string | null;
         };
         Insert: {
           id?: string;
@@ -430,6 +628,7 @@ export type Database = {
           character_id: string;
           house_type_id: string;
           moved_in_at?: string;
+          next_rent_at?: string | null;
         };
         Update: {
           id?: string;
@@ -437,6 +636,7 @@ export type Database = {
           character_id?: string;
           house_type_id?: string;
           moved_in_at?: string;
+          next_rent_at?: string | null;
         };
         Relationships: [
           {
@@ -564,6 +764,7 @@ export type Database = {
           hunger_cost: number;
           icon: string;
           id: string;
+          income_band: string;
           is_available: boolean;
           location_id: string | null;
           metadata: Json;
@@ -594,6 +795,7 @@ export type Database = {
           hunger_cost?: number;
           icon?: string;
           id?: string;
+          income_band?: string;
           is_available?: boolean;
           location_id?: string | null;
           metadata?: Json;
@@ -624,6 +826,7 @@ export type Database = {
           hunger_cost?: number;
           icon?: string;
           id?: string;
+          income_band?: string;
           is_available?: boolean;
           location_id?: string | null;
           metadata?: Json;
@@ -1727,6 +1930,22 @@ export type Database = {
       housing_eligible_houses: { Args: { p_user_id: string }; Returns: Json };
       housing_choose: {
         Args: { p_user_id: string; p_house_type_id: string; p_idempotency_key: string };
+        Returns: Json;
+      };
+      housing_rent: {
+        Args: { p_user_id: string; p_house_type_id: string; p_idempotency_key: string };
+        Returns: Json;
+      };
+      get_house_state: { Args: { p_player_id: string }; Returns: Json };
+      house_place: {
+        Args: { p_player_id: string; p_item_id: string; p_slot: string };
+        Returns: Json;
+      };
+      house_remove: { Args: { p_player_id: string; p_slot: string }; Returns: Json };
+      outfit_equip: { Args: { p_player_id: string; p_item_id: string }; Returns: Json };
+      outfit_unequip: { Args: { p_player_id: string; p_slot: string }; Returns: Json };
+      shop_buy: {
+        Args: { p_player_id: string; p_item_id: string; p_idempotency_key: string };
         Returns: Json;
       };
       housing_defer: { Args: { p_user_id: string }; Returns: Json };

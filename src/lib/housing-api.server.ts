@@ -2,6 +2,7 @@ type HousingApiDependencies = {
   authenticate: (request: Request) => Promise<string | null>;
   eligible: (userId: string) => Promise<unknown>;
   choose: (userId: string, houseTypeId: string, key: string) => Promise<unknown>;
+  rent: (userId: string, houseTypeId: string, key: string) => Promise<unknown>;
   defer: (userId: string) => Promise<unknown>;
   home: (userId: string) => Promise<unknown>;
   mutateItem: (userId: string, payload: Record<string, unknown>) => Promise<unknown>;
@@ -13,7 +14,10 @@ const statusByCode: Record<string, number> = {
   INVALID_IDEMPOTENCY_KEY: 400,
   NO_CHARACTER: 404,
   UNKNOWN_HOUSE: 404,
+  ALREADY_RENTING: 409,
+  HOUSE_INELIGIBLE: 409,
   INSUFFICIENT_FUNDS: 409,
+  INCOME_TOO_LOW: 409,
   RENT_TOO_HIGH: 409,
   IDEMPOTENCY_CONFLICT: 409,
   HOUSING_NOT_PENDING: 409,
@@ -22,6 +26,16 @@ const statusByCode: Record<string, number> = {
   ITEM_NOT_WEARABLE: 409,
   UNKNOWN_ITEM: 404,
   SLOT_MISMATCH: 409,
+};
+
+const reasonByCode: Record<string, string> = {
+  INSUFFICIENT_FUNDS:
+    "The deposit and first week’s rent are more than your available wallet balance.",
+  INCOME_TOO_LOW: "This home needs more weekly income or additional income sources.",
+  UNKNOWN_HOUSE: "This home is no longer available. Refresh the list and choose another.",
+  IDEMPOTENCY_CONFLICT: "This rent request key was already used for a different home.",
+  ALREADY_RENTING: "You already have an active rental.",
+  HOUSE_INELIGIBLE: "You do not meet the requirements for this home.",
 };
 
 function errorCode(error: unknown) {
@@ -46,7 +60,10 @@ export function createHousingApiHandlers(deps: HousingApiDependencies) {
       return json(await run(userId));
     } catch (error) {
       const code = errorCode(error);
-      return json({ error: { code } }, statusByCode[code] ?? 500);
+      return json(
+        { error: { code, reason: reasonByCode[code] ?? code.replaceAll("_", " ").toLowerCase() } },
+        statusByCode[code] ?? 500,
+      );
     }
   }
   return {
@@ -59,6 +76,15 @@ export function createHousingApiHandlers(deps: HousingApiDependencies) {
         const key = request.headers.get("Idempotency-Key")?.trim();
         if (!key || key.length < 16 || key.length > 128) throw new Error("INVALID_IDEMPOTENCY_KEY");
         return deps.choose(userId, body["house_type_id"] as string, key);
+      }),
+    postRent: (request: Request) =>
+      withUser(request, async (userId) => {
+        const body: unknown = await request.json().catch(() => null);
+        if (!validBody(body) || typeof body["house_type_id"] !== "string")
+          throw new Error("INVALID_REQUEST");
+        const key = request.headers.get("Idempotency-Key")?.trim();
+        if (!key || key.length < 16 || key.length > 128) throw new Error("INVALID_IDEMPOTENCY_KEY");
+        return deps.rent(userId, body["house_type_id"] as string, key);
       }),
     postDefer: (request: Request) => withUser(request, deps.defer),
     getHome: (request: Request) => withUser(request, deps.home),
@@ -105,6 +131,18 @@ async function productionHandlers() {
       if (error) throw new Error(error.message);
       return data;
     },
+    rent: async (userId, houseTypeId, key) => {
+      const { data, error } = await supabaseAdmin.rpc("housing_rent", {
+        p_user_id: userId,
+        p_house_type_id: houseTypeId,
+        p_idempotency_key: key,
+      });
+      if (error) throw new Error(error.message);
+      if (data && typeof data === "object" && "ok" in data && data["ok"] === false) {
+        throw new Error(String("code" in data ? data["code"] : "HOUSE_INELIGIBLE"));
+      }
+      return data;
+    },
     defer: async (userId) => {
       const { data, error } = await supabaseAdmin.rpc("housing_defer", { p_user_id: userId });
       if (error) throw new Error(error.message);
@@ -121,7 +159,7 @@ async function productionHandlers() {
       const { data: home, error } = await supabaseAdmin
         .from("player_homes")
         .select(
-          "id,house_type_id,moved_in_at,house_types(id,label,bedrooms,kitchen_access,bathroom_access,monthly_rent,deposit,asset_key,slots)",
+          "id,house_type_id,moved_in_at,next_rent_at,house_types(id,label,bedrooms,kitchen_access,bathroom_access,monthly_rent,deposit,weekly_rent_minor,asset_key,slots)",
         )
         .eq("character_id", character.id)
         .maybeSingle();
@@ -152,12 +190,22 @@ async function productionHandlers() {
 
 export async function handleHousingRequest(
   name:
-    "eligible" | "choose" | "defer" | "home" | "item" | "place" | "remove" | "equip" | "unequip",
+    | "eligible"
+    | "choose"
+    | "rent"
+    | "defer"
+    | "home"
+    | "item"
+    | "place"
+    | "remove"
+    | "equip"
+    | "unequip",
   request: Request,
 ) {
   const handlers = await productionHandlers();
   if (name === "eligible") return handlers.getEligible(request);
   if (name === "choose") return handlers.postChoose(request);
+  if (name === "rent") return handlers.postRent(request);
   if (name === "defer") return handlers.postDefer(request);
   if (name === "home") return handlers.getHome(request);
   return handlers.postItem(request, name === "item" ? undefined : name);

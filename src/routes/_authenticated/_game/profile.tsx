@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { House } from "lucide-react";
 import { q, formatNaira, xpProgress } from "@/lib/game";
 import { pageMeta } from "@/lib/seo";
 import { Avatar } from "@/components/game/Avatar";
@@ -66,6 +67,23 @@ function ProfilePage() {
         title="Your character"
         subtitle="Your life and progress in Osogbo."
       />
+      <section className="game-panel mb-5 flex flex-wrap items-center justify-between gap-4 p-4">
+        <div>
+          <h2 className="font-display text-lg font-bold">Your home</h2>
+          <p className="text-sm text-muted-foreground">Find a place or choose a different home.</p>
+        </div>
+        <button
+          type="button"
+          className="game-control inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-4 text-primary-foreground"
+          onClick={() =>
+            window.dispatchEvent(
+              new CustomEvent("osogbo-open-housing", { detail: { source: "profile" } }),
+            )
+          }
+        >
+          <House size={17} aria-hidden="true" /> Find a place
+        </button>
+      </section>
       <div className="grid gap-5 md:grid-cols-[300px_1fr]">
         <section
           className="game-panel player-profile-card p-5 text-center"

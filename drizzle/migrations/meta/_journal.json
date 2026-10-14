@@ -281,6 +281,27 @@
       "when": 1791940000002,
       "tag": "0038_housing_onboarding",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1791940000003,
+      "tag": "0039_mission_reward_claim",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1791940000004,
+      "tag": "0040_weekly_housing",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1791940000005,
+      "tag": "0041_server_house_inventory",
+      "breakpoints": true
     }
   ]
 }
