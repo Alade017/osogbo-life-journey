@@ -8733,3 +8733,30 @@
   min-height: 0;
   flex: 1 1 auto;
 }
+
+/* A translucent blue-black pill keeps the shared game dock distinct over every scene. */
+.city-game.navigation-redesign .game-mobile-nav {
+  border: 1px solid color-mix(in srgb, var(--primary) 34%, transparent);
+  border-radius: 999px;
+  background:
+    radial-gradient(
+      ellipse at 50% 0%,
+      color-mix(in srgb, var(--primary) 28%, transparent),
+      transparent 72%
+    ),
+    color-mix(in srgb, var(--brand-ink) 88%, transparent);
+  box-shadow:
+    0 8px 30px color-mix(in srgb, var(--brand-ink) 28%, transparent),
+    0 0 24px color-mix(in srgb, var(--primary) 18%, transparent);
+  -webkit-backdrop-filter: blur(15px);
+  backdrop-filter: blur(15px);
+}
+
+.city-game.navigation-redesign .game-mobile-nav .mobile-nav-link {
+  color: var(--primary-foreground);
+}
+
+.city-game.navigation-redesign .game-mobile-nav .mobile-nav-link:is(:hover, :focus-visible) {
+  background: color-mix(in srgb, var(--primary) 26%, transparent);
+  color: var(--primary-foreground);
+}
