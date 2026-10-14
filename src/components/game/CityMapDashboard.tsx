@@ -1,5 +1,8 @@
-import { useState, type ReactNode } from "react";
-import { OsogboMap } from "@/components/game/OsogboMap";
+import { lazy, Suspense, useState, type ReactNode } from "react";
+
+const OsogboMap = lazy(() =>
+  import("@/components/game/OsogboMap").then((module) => ({ default: module.OsogboMap })),
+);
 
 export function CityMapDashboard({ children }: { children: ReactNode }) {
   const [view, setView] = useState<"atlas" | "neighborhood">("atlas");
@@ -18,7 +21,19 @@ export function CityMapDashboard({ children }: { children: ReactNode }) {
         </button>
       </div>
       <main className={`city-map-world is-${view}`}>
-        {view === "atlas" ? <OsogboMap /> : children}
+        {view === "atlas" ? (
+          <Suspense
+            fallback={
+              <div className="city-map-loading" role="status">
+                Loading city map…
+              </div>
+            }
+          >
+            <OsogboMap />
+          </Suspense>
+        ) : (
+          children
+        )}
       </main>
     </div>
   );

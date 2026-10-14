@@ -36,7 +36,7 @@ export function CityBoard({ compact = false }: { compact?: boolean }) {
         <path
           d="M0 12 C 20 18, 30 6, 45 14 S 70 30, 100 22"
           fill="none"
-          stroke="var(--sky)"
+          style={{ stroke: "var(--info)" }}
           strokeWidth="5"
           strokeLinecap="round"
         />
@@ -49,7 +49,7 @@ export function CityBoard({ compact = false }: { compact?: boolean }) {
         <path
           d="M50 0 L50 100 M0 50 L100 50 M20 85 L80 20"
           fill="none"
-          stroke="var(--edge)"
+          style={{ stroke: "var(--border)" }}
           strokeWidth="0.4"
           strokeDasharray="2 2"
         />

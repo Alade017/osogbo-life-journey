@@ -4,251 +4,168 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/*
- * OSOGBO LIFE game UI with a polished, city-inspired visual system.
- */
+/* ==========================================================
+   OSOGBO LIFE — Flat design with depth
+   Light first. Dark is defined so nothing breaks, but not shipped yet.
+   ========================================================== */
 
 :root {
+  /* Shape */
   --radius: 0.625rem;
 
-  /* Core Nature Green Palette */
-  --color-osogbo-green: #2d6a4f;
-  --color-deep-green: #10291f;
-  --color-terracotta: #e07868;
-  --color-warm-gold: #f4c95d;
-  --color-warm-ivory: #f2f6ed;
-  --color-white: #ffffff;
-  --color-ink: #173d2b;
-  --color-slate: #597461;
-  --color-mist: #d5e1d0;
-  --color-success: #43845a;
-  --color-danger: #c44740;
-  --color-warning: #b88900;
-  --color-blue-wash: #e7efdf;
-  --color-blue-line: #d5e1d0;
-  --color-blue-hover: #d8e8d0;
-  --color-surface-hover: #f8fbf5;
-  --color-slate-soft: #87968b;
-  --color-slate-strong: #3f5546;
+  /* Brand palette (reference only; components use the semantic tokens below) */
+  --brand-laterite: #b8462e;
+  --brand-ochre: #e0a526;
+  --brand-forest: #1f4d3a;
+  --brand-cobalt: #2f5fa8;
+  --brand-night: #1b1a1f;
+  --brand-chalk: #f6f1e6;
 
-  /* Light Mode */
-  --background: #f2f6ed;
-  --foreground: #173d2b;
+  /* Surfaces */
+  --background: #f6f1e6;
+  --foreground: #1b1a1f;
   --card: #ffffff;
-  --card-foreground: #173d2b;
+  --card-foreground: #1b1a1f;
   --popover: #ffffff;
-  --popover-foreground: #173d2b;
-  --primary: #2d6a4f;
+  --popover-foreground: #1b1a1f;
+
+  /* Actions */
+  --primary: #b8462e;
   --primary-foreground: #ffffff;
-  --secondary: #d8e8d0;
-  --secondary-foreground: #173d2b;
-  --muted: #e7efdf;
-  --muted-foreground: #597461;
-  --accent: #f4c95d;
-  --accent-foreground: #3d3215;
-  --destructive: #c44740;
+  --secondary: #ede6d6;
+  --secondary-foreground: #1b1a1f;
+  --accent: #e0a526;
+  --accent-foreground: #1b1a1f;
+  --destructive: #a8321f;
   --destructive-foreground: #ffffff;
-  --border: #d5e1d0;
-  --input: #d5e1d0;
-  --ring: #43845a;
-  --edge: #d5e1d0;
-  --sun: #f4c95d;
-  --sun-foreground: #3d3215;
-  --clay: #e07868;
-  --clay-foreground: #ffffff;
-  --ink: #173d2b;
-  --ink-foreground: #ffffff;
-  --leaf: #43845a;
-  --sky: #87ceeb;
+
+  /* Muted text and surfaces (muted-foreground passes 4.5:1 on chalk) */
+  --muted: #ece5d5;
+  --muted-foreground: #5c5a55;
+
+  /* Borders and focus */
+  --border: #ddd5c4;
+  --input: #ddd5c4;
+  --ring: #e0a526;
+
+  /* Status */
+  --success: #1f4d3a;
+  --success-foreground: #ffffff;
+  --warning: #e0a526;
+  --warning-foreground: #1b1a1f;
+  --info: #2f5fa8;
+  --info-foreground: #ffffff;
 
   /* Charts */
-  --chart-1: #2d6a4f;
-  --chart-2: #f4c95d;
-  --chart-3: #43845a;
-  --chart-4: #87ceeb;
-  --chart-5: #8b5e3c;
+  --chart-1: #2f5fa8;
+  --chart-2: #e0a526;
+  --chart-3: #1f4d3a;
+  --chart-4: #b8462e;
+  --chart-5: #8a7a5c;
 
   /* Sidebar */
   --sidebar: #ffffff;
-  --sidebar-foreground: #173d2b;
-  --sidebar-primary: #2d6a4f;
+  --sidebar-foreground: #1b1a1f;
+  --sidebar-primary: #b8462e;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #d8e8d0;
-  --sidebar-accent-foreground: #173d2b;
-  --sidebar-border: #d5e1d0;
-  --sidebar-ring: #43845a;
+  --sidebar-accent: #ede6d6;
+  --sidebar-accent-foreground: #1b1a1f;
+  --sidebar-border: #ddd5c4;
+  --sidebar-ring: #e0a526;
 
-  /* Product-Level Semantic Tokens */
-  --color-primary: #2d6a4f;
-  --color-primary-hover: #1e5039;
-  --color-primary-soft: #d8e8d0;
-  --color-accent: #f4c95d;
-  --color-accent-hover: #e3b638;
-  --color-background: #f2f6ed;
-  --color-surface: #ffffff;
-  --color-surface-subtle: #e7efdf;
-  --color-surface-dark: #10291f;
-  --color-surface-dark-elevated: #204633;
-  --color-surface-dark-border: #3a6149;
+  /* Depth: flat base with soft shadows, light from top-left */
+  --shadow-rest: 0 2px 4px rgb(27 26 31 / 0.12);
+  --shadow-card: 0 4px 16px rgb(27 26 31 / 0.08);
+  --shadow-lift: 0 6px 16px rgb(27 26 31 / 0.16);
+  --shadow-press: 0 1px 2px rgb(27 26 31 / 0.1);
+  --shadow-dock: 0 -6px 20px rgb(27 26 31 / 0.1);
 
-  /* Text */
-  --color-text-on-dark: #f4f7f1;
-  --color-text-on-dark-muted: #b9ccbe;
-  --color-text-on-dark-soft: #dce9d8;
-  --color-text-inverse: #ffffff;
-  --color-text: #173d2b;
-  --color-text-secondary: #597461;
-  --color-text-muted: #87968b;
-
-  /* Borders and Status */
-  --color-border: #d5e1d0;
-  --color-success: #43845a;
-  --color-warning: #b88900;
-  --color-danger: #c44740;
-  --color-info: #2879a6;
-  --color-info-soft: #e5f2f8;
-  --color-info-text: #174a65;
-
-  /* Rewards and Game Currency */
-  --color-reward-soft: #fbf2df;
-  --color-reward-text: #644716;
-  --color-interactive: #43845a;
-  --color-disabled-background: #e6eae2;
-  --color-disabled-text: #879187;
-
-  /* Dark Mode Surface Helpers */
-  --color-dark-background: #10291f;
-  --color-dark-surface: #15382b;
-  --color-dark-card: #204633;
-  --color-dark-elevated: #2b5840;
-  --color-dark-border: #3a6149;
-  --color-dark-text: #f4f7f1;
-  --color-dark-text-secondary: #b9ccbe;
-  --color-dark-primary: #4d8b57;
-  --color-dark-primary-hover: #43845a;
-
-  /* Shape */
-  --radius-card: 18px;
+  /* Shape scale */
+  --radius-card: 16px;
+  --radius-button: 12px;
   --radius-pill: 999px;
 
-  /* Shadows */
-  --shadow-card: 0 4px 16px rgb(16 41 31 / 8%);
-  --shadow-card-hover: 0 8px 24px rgb(16 41 31 / 12%);
-  --shadow-dock: 0 -6px 20px rgb(16 41 31 / 15%);
-
-  /* Animation */
+  /* Motion */
   --duration-control: 180ms;
   --duration-enter: 220ms;
 
-  /* Layering */
+  /* Layers */
   --layer-base: 0;
   --layer-environment: 20;
   --layer-navigation: 35;
   --layer-modal: 90;
   --layer-toast: 100;
+
+  /* Type */
+  --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
-/* Dark Mode */
 .dark {
-  --color-osogbo-green: #4d8b57;
-  --color-deep-green: #10291f;
-  --color-terracotta: #f07870;
-  --color-warm-gold: #f4c95d;
-  --color-warm-ivory: #10291f;
-  --color-white: #ffffff;
-  --color-ink: #f4f7f1;
-  --color-slate: #b9ccbe;
-  --color-mist: #3a6149;
-  --color-success: #8bc69a;
-  --color-danger: #f07870;
-  --color-warning: #f4c95d;
-  --color-blue-wash: #204633;
-  --color-blue-line: #3a6149;
-  --color-blue-hover: #254b39;
-  --color-surface-hover: #204633;
-  --color-slate-soft: #9db1a3;
-  --color-slate-strong: #dce9d8;
+  --background: #1b1a1f;
+  --foreground: #f6f1e6;
+  --card: #26242b;
+  --card-foreground: #f6f1e6;
+  --popover: #26242b;
+  --popover-foreground: #f6f1e6;
 
-  --background: #10291f;
-  --foreground: #f4f7f1;
-  --card: #204633;
-  --card-foreground: #f4f7f1;
-  --popover: #204633;
-  --popover-foreground: #f4f7f1;
-  --primary: #4d8b57;
-  --primary-foreground: #ffffff;
-  --secondary: #254b39;
-  --secondary-foreground: #dce9d8;
-  --muted: #204633;
-  --muted-foreground: #b9ccbe;
-  --accent: #f4c95d;
-  --accent-foreground: #3d3215;
-  --destructive: #f07870;
-  --destructive-foreground: #10291f;
-  --border: #3a6149;
-  --input: #3a6149;
-  --ring: #a7d18c;
-  --edge: #3a6149;
-  --sun: #f4c95d;
-  --sun-foreground: #3d3215;
-  --clay: #f07870;
-  --clay-foreground: #10291f;
-  --ink: #f4f7f1;
-  --ink-foreground: #10291f;
-  --leaf: #8bc69a;
-  --sky: #87ceeb;
-  --chart-1: #4d8b57;
-  --chart-2: #f4c95d;
-  --chart-3: #8bc69a;
-  --chart-4: #87ceeb;
-  --chart-5: #f07870;
+  --primary: #d9583f;
+  --primary-foreground: #1b1a1f;
+  --secondary: #2e2b33;
+  --secondary-foreground: #f6f1e6;
+  --accent: #e0a526;
+  --accent-foreground: #1b1a1f;
+  --destructive: #e0604a;
+  --destructive-foreground: #1b1a1f;
 
-  --color-primary: #4d8b57;
-  --color-primary-hover: #65a66d;
-  --color-primary-soft: #254b39;
-  --color-accent: #f4c95d;
-  --color-accent-hover: #ffda73;
-  --color-background: #10291f;
-  --color-surface: #15382b;
-  --color-surface-subtle: #204633;
-  --color-text: #f4f7f1;
-  --color-text-secondary: #b9ccbe;
-  --color-text-muted: #9db1a3;
-  --color-border: #3a6149;
-  --color-info: #87ceeb;
-  --color-info-soft: #193b49;
-  --color-info-text: #c8e7f4;
-  --color-reward-soft: #423a22;
-  --color-reward-text: #f4c95d;
-  --color-interactive: #a7d18c;
-  --color-disabled-background: #254b39;
-  --color-disabled-text: #9db1a3;
+  --muted: #2e2b33;
+  --muted-foreground: #b8b2a6;
 
-  --sidebar: #15382b;
-  --sidebar-foreground: #f4f7f1;
-  --sidebar-primary: #4d8b57;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #254b39;
-  --sidebar-accent-foreground: #dce9d8;
-  --sidebar-border: #3a6149;
-  --sidebar-ring: #a7d18c;
+  --border: #3a373f;
+  --input: #3a373f;
+  --ring: #e0a526;
 
-  --shadow-card: 0 4px 16px rgb(0 0 0 / 15%);
-  --shadow-card-hover: 0 8px 24px rgb(0 0 0 / 22%);
-  --shadow-dock: 0 -6px 20px rgb(0 0 0 / 25%);
+  --success: #7fb08f;
+  --success-foreground: #1b1a1f;
+  --warning: #e0a526;
+  --warning-foreground: #1b1a1f;
+  --info: #7fa8e0;
+  --info-foreground: #1b1a1f;
+
+  --chart-1: #7fa8e0;
+  --chart-2: #e0a526;
+  --chart-3: #7fb08f;
+  --chart-4: #d9583f;
+  --chart-5: #b8a77f;
+
+  --sidebar: #201e24;
+  --sidebar-foreground: #f6f1e6;
+  --sidebar-primary: #d9583f;
+  --sidebar-primary-foreground: #1b1a1f;
+  --sidebar-accent: #2e2b33;
+  --sidebar-accent-foreground: #f6f1e6;
+  --sidebar-border: #3a373f;
+  --sidebar-ring: #e0a526;
+
+  --shadow-rest: 0 2px 4px rgb(0 0 0 / 0.4);
+  --shadow-card: 0 4px 16px rgb(0 0 0 / 0.35);
+  --shadow-lift: 0 6px 16px rgb(0 0 0 / 0.5);
+  --shadow-press: 0 1px 2px rgb(0 0 0 / 0.3);
+  --shadow-dock: 0 -6px 20px rgb(0 0 0 / 0.4);
 }
 
 @theme inline {
-  --font-display: "Manrope", ui-sans-serif, system-ui, sans-serif;
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
+  --radius-card: var(--radius-card);
+  --radius-button: var(--radius-button);
+  --radius-pill: var(--radius-pill);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -268,21 +185,19 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-ring-offset-background: var(--background);
-  --color-edge: var(--edge);
-  --color-sun: var(--sun);
-  --color-sun-foreground: var(--sun-foreground);
-  --color-clay: var(--clay);
-  --color-clay-foreground: var(--clay-foreground);
-  --color-ink: var(--ink);
-  --color-ink-foreground: var(--ink-foreground);
-  --color-leaf: var(--leaf);
-  --color-sky: var(--sky);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
+
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -291,20 +206,27 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  --shadow-rest: var(--shadow-rest);
+  --shadow-card: var(--shadow-card);
+  --shadow-lift: var(--shadow-lift);
+  --shadow-press: var(--shadow-press);
+  --shadow-dock: var(--shadow-dock);
 }
 
 @layer base {
-  body {
-    background-color: var(--color-background);
-    color: var(--color-foreground);
-    font-family: var(--font-sans);
+  * {
+    @apply border-border outline-ring/50;
   }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+
   h1,
   h2,
-  h3,
-  h4 {
+  h3 {
     font-family: var(--font-display);
-    letter-spacing: 0;
   }
 }
 
@@ -1834,7 +1756,7 @@
 
 .game-side-label {
   padding: 0 10px;
-  color: var(--color-slate-soft);
+  color: var(--muted-foreground);
   font-size: 10px;
   writing-mode: horizontal-tb;
   transform: none;
@@ -1864,13 +1786,13 @@
 
 .game-side-phone .phone-launcher-icon {
   border-color: var(--border);
-  color: var(--ink);
+  color: var(--foreground);
   background: var(--background);
 }
 
 .phone-launcher-icon {
-  border-color: var(--color-blue-line);
-  background: var(--ink);
+  border-color: var(--border);
+  background: var(--foreground);
   box-shadow: var(--shadow-sm);
 }
 
@@ -1904,12 +1826,12 @@
 
 .phone-app-green,
 .phone-app-coral {
-  background: var(--leaf);
+  background: var(--success);
 }
 
 .phone-app-gold {
   color: var(--foreground);
-  background: var(--sun);
+  background: var(--accent);
 }
 
 .phone-app-blue {
@@ -1943,7 +1865,7 @@
 }
 
 .game-hud-avatar {
-  border-color: var(--color-blue-line);
+  border-color: var(--border);
   border-radius: 10px;
   background: var(--secondary);
 }
@@ -1956,7 +1878,7 @@
 
 .game-notification-dot {
   border-color: #fff;
-  background: var(--sun);
+  background: var(--accent);
   color: var(--foreground);
 }
 
@@ -1977,9 +1899,9 @@
 }
 
 .arrival-job {
-  border-color: var(--color-blue-line);
+  border-color: var(--border);
   border-radius: 8px;
-  color: var(--ink);
+  color: var(--foreground);
   background: #fff;
 }
 
@@ -2009,7 +1931,7 @@
 }
 
 .home-map-heading .city-live-dot {
-  background: var(--leaf);
+  background: var(--success);
   box-shadow: 0 0 0 4px rgb(21 154 108 / 12%);
 }
 
@@ -2022,7 +1944,7 @@
   min-height: 430px;
   border-color: var(--color-border);
   border-radius: 12px;
-  background: var(--color-surface-subtle);
+  background: var(--muted);
   box-shadow: var(--shadow-md);
 }
 
@@ -2055,7 +1977,7 @@
 }
 
 .osogbo-map-search input::placeholder {
-  color: var(--color-slate-soft);
+  color: var(--muted-foreground);
 }
 
 .osogbo-map-search > button {
@@ -2118,7 +2040,7 @@
 
 .osogbo-map-recenter {
   border-color: var(--border);
-  color: var(--ink);
+  color: var(--foreground);
   background: #fff;
   box-shadow: var(--shadow-md);
 }
@@ -2140,7 +2062,7 @@
 }
 
 .osogbo-map-live-dot {
-  background: var(--leaf);
+  background: var(--success);
   box-shadow: 0 0 0 3px rgb(21 154 108 / 14%);
 }
 
@@ -2246,7 +2168,7 @@
 }
 
 .home-district-list > a:hover {
-  border-color: var(--color-blue-hover);
+  border-color: var(--secondary);
   background: #f7faff;
 }
 
@@ -2285,7 +2207,7 @@
 }
 
 .objective-icon {
-  color: var(--ink);
+  color: var(--foreground);
   background: var(--secondary);
 }
 
@@ -2302,7 +2224,7 @@
 
 .city-location-card:hover,
 .city-location-link:hover .city-location-card {
-  border-color: var(--color-blue-hover);
+  border-color: var(--secondary);
   box-shadow: var(--shadow-md);
 }
 
@@ -2413,7 +2335,7 @@
 }
 
 .mobile-nav-phone {
-  border-color: var(--color-blue-line);
+  border-color: var(--border);
   background: #fff;
   box-shadow:
     0 0 0 4px var(--background),
@@ -2531,7 +2453,7 @@
   flex: 0 0 46px;
   place-items: center;
   border-radius: 9px;
-  color: var(--ink);
+  color: var(--foreground);
 }
 
 .inventory-item-copy {
@@ -2834,7 +2756,7 @@
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
-  background: var(--color-surface-subtle);
+  background: var(--muted);
   box-shadow: 0 16px 35px rgb(18 36 29 / 13%);
 }
 
@@ -4436,7 +4358,7 @@
 }
 
 .inventory-equipment-slot .button[aria-pressed="true"] {
-  color: var(--color-text-inverse);
+  color: var(--primary-foreground);
   background: var(--color-primary);
 }
 
@@ -7061,7 +6983,7 @@
 
 .game-desktop-nav {
   border-right-color: var(--color-surface-dark-border);
-  background: var(--color-surface-dark);
+  background: var(--brand-night);
 }
 
 .game-side-group .game-side-label {
@@ -7069,7 +6991,7 @@
 }
 
 .game-side-link {
-  color: var(--color-text-on-dark);
+  color: var(--brand-chalk);
   transition:
     color var(--duration-control) ease,
     background-color var(--duration-control) ease,
@@ -7078,7 +7000,7 @@
 
 .game-side-link:hover,
 .game-side-link-active {
-  color: var(--color-text-inverse);
+  color: var(--primary-foreground);
   background: var(--color-surface-dark-elevated);
 }
 
@@ -7088,23 +7010,23 @@
 
 .game-side-phone .phone-launcher-icon {
   border-color: var(--color-surface-dark-border);
-  color: var(--color-text-inverse);
+  color: var(--primary-foreground);
   background: var(--color-surface-dark-elevated);
 }
 
 .game-mobile-nav {
   border-color: var(--color-surface-dark-border);
-  background: var(--color-surface-dark);
+  background: var(--brand-night);
   box-shadow: var(--shadow-dock);
 }
 
 .game-mobile-nav .mobile-nav-link,
 .game-mobile-nav .mobile-nav-phone {
-  color: var(--color-text-on-dark);
+  color: var(--brand-chalk);
 }
 
 .game-mobile-nav .mobile-nav-active {
-  color: var(--color-text-inverse);
+  color: var(--primary-foreground);
   background: var(--color-surface-dark-elevated);
   box-shadow: inset 0 2px 0 var(--color-interactive);
 }
@@ -7116,8 +7038,8 @@
 
 .phone-launcher-icon {
   border-color: var(--color-surface-dark-border);
-  color: var(--color-text-inverse);
-  background: var(--color-surface-dark);
+  color: var(--primary-foreground);
+  background: var(--brand-night);
 }
 
 .phone-dialog {
@@ -7129,8 +7051,8 @@
 .phone-screen {
   border-color: var(--color-surface-dark-border);
   border-radius: 18px;
-  color: var(--color-text-inverse);
-  background: var(--color-surface-dark);
+  color: var(--primary-foreground);
+  background: var(--brand-night);
 }
 
 .phone-status {
@@ -7140,7 +7062,7 @@
 .phone-app {
   min-height: 76px;
   border-radius: 14px;
-  color: var(--color-text-inverse);
+  color: var(--primary-foreground);
 }
 
 .phone-app:focus-visible {
@@ -7150,22 +7072,22 @@
 
 .phone-app-green,
 .phone-app-coral {
-  color: var(--color-text-inverse);
+  color: var(--primary-foreground);
   background: var(--color-primary);
 }
 
 .phone-app-gold {
-  color: var(--color-surface-dark);
+  color: var(--brand-night);
   background: var(--color-accent);
 }
 
 .phone-app-blue {
-  color: var(--color-surface-dark);
+  color: var(--brand-night);
   background: var(--color-info);
 }
 
 .phone-app-muted {
-  color: var(--color-text-inverse);
+  color: var(--primary-foreground);
   background: var(--color-surface-dark-border);
 }
 
@@ -7195,7 +7117,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  color: var(--color-text-on-dark);
+  color: var(--brand-chalk);
   border-bottom: 1px solid var(--color-surface-dark-border);
 }
 
@@ -7218,8 +7140,8 @@
   flex: 1;
   flex-direction: column;
   overflow: hidden;
-  color: var(--color-text-on-dark);
-  background: var(--color-surface-dark);
+  color: var(--brand-chalk);
+  background: var(--brand-night);
 }
 
 .phone-message-content {
@@ -7241,7 +7163,7 @@
   font-size: 13px;
 }
 .phone-message-switch button.is-active {
-  color: var(--color-text-inverse);
+  color: var(--primary-foreground);
   background: var(--color-primary);
   font-weight: 700;
 }
@@ -7319,7 +7241,7 @@
   height: 42px;
   place-items: center;
   border-radius: 50%;
-  color: var(--color-text-inverse);
+  color: var(--primary-foreground);
   background: var(--color-primary);
   font-weight: 700;
 }
@@ -7361,7 +7283,7 @@
 .jobs-page .jobs-start-button {
   min-height: 44px;
   border-color: var(--color-primary);
-  color: var(--color-text-inverse);
+  color: var(--primary-foreground);
   background: var(--color-primary);
   box-shadow: none;
 }
@@ -7377,7 +7299,7 @@
 
 .jobs-metric-energy {
   color: var(--color-text-secondary);
-  background: var(--color-surface-subtle);
+  background: var(--muted);
 }
 
 .jobs-metric-shift {
@@ -7396,7 +7318,7 @@
 
 .inventory-categories button[aria-pressed="true"] {
   border-color: var(--color-primary);
-  color: var(--color-text-inverse);
+  color: var(--primary-foreground);
   background: var(--color-primary);
 }
 
@@ -7411,7 +7333,7 @@
 .inventory-card:hover,
 .inventory-card-selected {
   border-color: var(--color-interactive);
-  background: var(--color-surface-subtle);
+  background: var(--muted);
 }
 
 .inventory-equipped h2 {
@@ -7425,7 +7347,7 @@
   gap: 12px;
   overflow: auto;
   padding: 12px;
-  color: var(--color-text-on-dark);
+  color: var(--brand-chalk);
 }
 .phone-finance-app h2,
 .phone-finance-app h3 {
@@ -7512,13 +7434,13 @@
 .osogbo-map-search,
 .osogbo-map-recenter {
   border-color: var(--color-surface-dark-border);
-  color: var(--color-text-inverse);
-  background: var(--color-surface-dark);
+  color: var(--primary-foreground);
+  background: var(--brand-night);
   box-shadow: 0 4px 14px rgb(23 37 43 / 18%);
 }
 
 .osogbo-map-search input {
-  color: var(--color-text-inverse);
+  color: var(--primary-foreground);
   background: transparent;
 }
 
@@ -7528,7 +7450,7 @@
 
 .osogbo-map-search > button,
 .osogbo-map-recenter:hover {
-  color: var(--color-text-inverse);
+  color: var(--primary-foreground);
   background: var(--color-surface-dark-elevated);
 }
 
@@ -7632,7 +7554,7 @@
   }
 
   .game-mobile-nav .mobile-nav-active {
-    color: var(--color-text-inverse);
+    color: var(--primary-foreground);
     background: var(--color-primary);
   }
 
@@ -8076,7 +7998,7 @@
 .phone-home-heading {
   flex: none;
   padding: 18px 14px 0;
-  color: var(--color-text-inverse);
+  color: var(--primary-foreground);
 }
 .phone-home-heading p {
   color: var(--color-text-on-dark-soft);

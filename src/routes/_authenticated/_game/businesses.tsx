@@ -44,7 +44,7 @@ function BusinessesPage() {
           <Link to="/wallet">Wallet</Link>
         </Button>
       </nav>
-      <section className="rounded-2xl" style={{ background: "var(--color-surface-dark)" }}>
+      <section className="rounded-2xl bg-card text-card-foreground">
         <BusinessInvestmentApp mode={mode} />
       </section>
     </div>

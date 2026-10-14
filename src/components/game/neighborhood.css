@@ -50,7 +50,7 @@
 .neighborhood-stage {
   height: clamp(400px, 64vh, 650px);
   position: relative;
-  background: var(--color-surface-subtle);
+  background: var(--muted);
 }
 .neighborhood-directory {
   position: absolute;
@@ -594,12 +594,12 @@
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: var(--leaf);
+  background: var(--success);
 }
 
 .city-needs-mini.is-warning i,
 .city-needs-row.is-warning .city-needs-track i {
-  background: var(--sun);
+  background: var(--accent);
 }
 
 .city-needs-mini.is-critical i,
@@ -833,11 +833,11 @@
   height: 8px;
   flex: 0 0 8px;
   border-radius: 50%;
-  background: var(--leaf);
+  background: var(--success);
 }
 
 .neighborhood-presence[data-connection-state="connecting"] > span {
-  background: var(--sun);
+  background: var(--accent);
 }
 
 .neighborhood-presence[data-connection-state="error"] > span,

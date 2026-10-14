@@ -4,8 +4,8 @@
   gap: 12px;
   padding: 12px;
   overflow: auto;
-  color: var(--color-text-on-dark);
-  background: var(--color-surface-dark);
+  color: var(--brand-chalk);
+  background: var(--brand-night);
   border-radius: inherit;
 }
 .business-finance-app h2,
@@ -55,6 +55,6 @@
   padding: 8px 10px;
   border-radius: 10px;
   color: var(--foreground);
-  background: var(--sun);
+  background: var(--accent);
   font-size: 11px;
 }
