@@ -1,0 +1,28 @@
+/** Explicit links keep the hand-placed illustration separate from database ids. */
+export const MAP_LANDMARK_LOCATION_SLUG: Record<string, string | null> = {
+  "oja-oba-market": "aiyegbaju-market",
+  "old-garage-park": "old-garage",
+  "oja-oba-junction": "oja-oba",
+  "ataoja-palace-area": "government-area",
+  "ataoja-community-school": "student-district",
+  "ataoja-junction": "city-centre",
+  "aleku-wodo-school": "student-district",
+  "aleku-wodo-junction": "residential",
+  "aleku-wodo-services": "business-district",
+  "olaiya-junction": "city-centre",
+  "olaiya-park": "old-garage",
+  "olaiya-market": "aiyegbaju-market",
+  "oke-fia-station": "old-garage",
+  "oke-fia-sports-ground": "stadium",
+  "oke-fia-junction": "oke-fia",
+  "oke-baale-school": "student-district",
+  "oke-baale-health": "state-hospital",
+  "oke-baale-junction": "oke-baale",
+  "isale-aro-market": "isale-osun",
+  "isale-aro-food": "osun-mall",
+  "isale-aro-junction": "isale-osun",
+  // Worship remains visible as a map category but is not a playable destination.
+  "ogo-oluwa-worship": null,
+  "ogo-oluwa-sports-ground": "stadium",
+  "ogo-oluwa-junction": "rural-outskirts",
+};

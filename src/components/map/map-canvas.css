@@ -5,7 +5,7 @@
   min-width: 0;
   min-height: 0;
   overflow: hidden;
-  background: #f2f4f7;
+  background: var(--background);
   touch-action: none;
   user-select: none;
 }
@@ -60,25 +60,25 @@
 }
 
 .map-canvas-marker-dot {
-  fill: #fff;
-  stroke: #14213d;
+  fill: var(--card);
+  stroke: var(--foreground);
   stroke-width: 2px;
   pointer-events: none;
 }
 
 .map-canvas-marker-icon {
-  color: #14213d;
+  color: var(--foreground);
   stroke-width: 2px;
   pointer-events: none;
 }
 
 .map-canvas-marker-label {
-  fill: #14213d;
+  fill: var(--foreground);
   font:
     650 13px/1.2 system-ui,
     sans-serif;
   paint-order: stroke;
-  stroke: #f2f4f7;
+  stroke: var(--background);
   stroke-linejoin: round;
   stroke-width: 4px;
   text-anchor: middle;
@@ -97,26 +97,26 @@
 
 .map-live-marker-core {
   fill: var(--primary);
-  stroke: #fff;
+  stroke: var(--card);
   stroke-width: 3px;
 }
 
 .map-live-marker-stall .map-live-marker-core {
-  fill: #d97706;
+  fill: var(--accent);
 }
 
 .map-live-marker-job .map-live-marker-core {
-  fill: #2563eb;
+  fill: var(--primary);
 }
 
 .map-live-marker-label,
 .map-live-marker-hint {
-  fill: #14213d;
+  fill: var(--foreground);
   font:
     650 13px/1.2 system-ui,
     sans-serif;
   paint-order: stroke;
-  stroke: #fff;
+  stroke: var(--card);
   stroke-linejoin: round;
   stroke-width: 4px;
   text-anchor: middle;
@@ -131,13 +131,13 @@
 }
 
 .map-event-chip rect {
-  fill: #14213d;
-  stroke: #fff;
+  fill: var(--foreground);
+  stroke: var(--card);
   stroke-width: 2px;
 }
 
 .map-event-chip text {
-  fill: #fff;
+  fill: var(--card);
   font:
     650 12px/1 system-ui,
     sans-serif;
@@ -149,10 +149,10 @@
   bottom: 12px;
   z-index: 5;
   padding: 7px 10px;
-  border: 1px solid #14213d;
+  border: 1px solid var(--ring);
   border-radius: 999px;
-  color: #14213d;
-  background: #fff;
+  color: var(--foreground);
+  background: var(--card);
   font-size: 12px;
   font-weight: 650;
   pointer-events: none;

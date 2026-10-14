@@ -541,7 +541,7 @@
   border-bottom: 1px solid var(--game-line);
   background: color-mix(in srgb, var(--brand-ink) 95%, transparent);
   box-shadow: var(--elevation-card);
-  backdrop-filter: blur(30px);
+  backdrop-filter: blur(15px);
 }
 
 .game-hud-player {

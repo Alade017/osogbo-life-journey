@@ -260,6 +260,13 @@
       "when": 1791594000014,
       "tag": "0035_fictional_world_map",
       "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1791940000000,
+      "tag": "0036_map_age_restrictions",
+      "breakpoints": true
     }
   ]
 }

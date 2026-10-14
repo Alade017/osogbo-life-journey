@@ -24,7 +24,7 @@ import { OsogboMapSvg, type MapDistrict, type MapLandmark } from "@/components/m
 import "./map-canvas.css";
 
 export type MapZoomLevel = 1 | 2 | 3;
-export type MapFilter = MapLandmark["category"] | "all";
+export type MapFilter = MapLandmark["category"] | "jobs" | "all";
 export type MapSearchTarget = string | { id: string; kind?: "district" | "landmark" };
 
 export type MapPlayerLocation = {
@@ -49,6 +49,7 @@ export interface MapCanvasProps {
   searchTarget?: MapSearchTarget | null;
   playerLocation?: MapPlayerLocation | null;
   eventChips?: MapEventChip[];
+  jobLandmarkIds?: string[];
 }
 
 type Point = { x: number; y: number };
@@ -92,6 +93,7 @@ function MarkerLayer({
   activeFilter,
   playerLocation,
   eventChips,
+  jobLandmarkIds = [],
   screenScale,
   onSelectLandmark,
 }: {
@@ -99,6 +101,7 @@ function MarkerLayer({
   activeFilter: MapFilter;
   playerLocation?: MapPlayerLocation | null;
   eventChips: MapEventChip[];
+  jobLandmarkIds: string[];
   screenScale: number;
   onSelectLandmark: (landmark: MapLandmark) => void;
 }) {
@@ -106,10 +109,14 @@ function MarkerLayer({
 
   const hitSize = Math.max(44 / Math.max(screenScale, 0.01), 24);
   const hitOffset = hitSize / 2;
-  const visibleLandmarks =
-    activeFilter === "all"
-      ? allLandmarks
-      : allLandmarks.filter((landmark) => landmark.category === activeFilter);
+  const filteredCategory: Record<string, MapLandmark["category"][]> = {
+    food: ["food", "market"],
+    health: ["health"],
+    services: ["services", "junction"],
+    worship: ["worship"],
+    transport: ["transport"],
+    sport: ["sport"],
+  };
 
   return (
     <svg
@@ -119,13 +126,19 @@ function MarkerLayer({
       aria-hidden="false"
     >
       <g className="map-landmark-markers" aria-label="Landmarks">
-        {visibleLandmarks.map((landmark) => {
+        {allLandmarks.map((landmark) => {
+          const matches =
+            activeFilter === "all" ||
+            (activeFilter === "jobs"
+              ? jobLandmarkIds.includes(landmark.id)
+              : (filteredCategory[activeFilter] ?? [activeFilter]).includes(landmark.category));
           const Icon = categoryIcons[landmark.category];
           const activate = () => onSelectLandmark(landmark);
           return (
             <g
               key={landmark.id}
               className="map-canvas-marker"
+              style={{ opacity: matches ? 1 : 0.35 }}
               data-map-interactive="true"
               data-landmark-id={landmark.id}
               role="button"
@@ -225,6 +238,7 @@ export function MapCanvas({
   searchTarget = null,
   playerLocation = null,
   eventChips = [],
+  jobLandmarkIds = [],
 }: MapCanvasProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<HTMLDivElement>(null);
@@ -389,7 +403,12 @@ export function MapCanvas({
       const district = districts.find((item) =>
         item.landmarks.some(({ id: itemId }) => itemId === id),
       );
-      centerOn({ x: landmark.x, y: landmark.y }, true, undefined, 2);
+      centerOn(
+        { x: landmark.x, y: landmark.y },
+        true,
+        () => callbacksRef.current.onSelectLandmark(landmark.id),
+        2,
+      );
       if (!district) return;
       return;
     }
@@ -403,7 +422,7 @@ export function MapCanvas({
       centerOn(
         { x: center.x / district.landmarks.length, y: center.y / district.landmarks.length },
         true,
-        undefined,
+        () => callbacksRef.current.onSelectDistrict(district.id),
         2,
       );
     }
@@ -546,11 +565,20 @@ export function MapCanvas({
         activeFilter={activeFilter}
         playerLocation={playerLocation}
         eventChips={eventChips}
+        jobLandmarkIds={jobLandmarkIds}
         screenScale={screenScale}
         onSelectLandmark={selectLandmark}
       />
     ),
-    [activeFilter, eventChips, playerLocation, screenScale, selectLandmark, zoomLevel],
+    [
+      activeFilter,
+      eventChips,
+      jobLandmarkIds,
+      playerLocation,
+      screenScale,
+      selectLandmark,
+      zoomLevel,
+    ],
   );
 
   return (

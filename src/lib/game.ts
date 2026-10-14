@@ -46,7 +46,7 @@ export { XP_PER_LEVEL };
 export const ENERGY_REGEN_SECONDS = 120;
 
 export function formatNaira(n: number | bigint | null | undefined) {
-  return "₦" + Number(n ?? 0).toLocaleString("en-NG");
+  return "\u20A6" + Number(n ?? 0).toLocaleString("en-NG");
 }
 
 export { careerShiftPay } from "@/lib/economy-service";
@@ -191,6 +191,48 @@ export const q = {
       queryFn: async () =>
         unwrap(
           await supabase.from("activities").select("*").eq("is_available", true).order("name"),
+        ),
+    }),
+  mapLocationBySlug: (slug: string) =>
+    queryOptions({
+      queryKey: ["mapLocationBySlug", slug],
+      staleTime: 5 * 60_000,
+      queryFn: async () =>
+        unwrap(
+          await supabase
+            .from("locations")
+            .select("*")
+            .eq("slug", slug)
+            .eq("is_active", true)
+            .maybeSingle(),
+        ),
+    }),
+  locationActivities: (locationId: string) =>
+    queryOptions({
+      queryKey: ["locationActivities", locationId],
+      staleTime: 5 * 60_000,
+      queryFn: async () =>
+        unwrap(
+          await supabase
+            .from("activities")
+            .select("*")
+            .eq("location_id", locationId)
+            .eq("is_available", true)
+            .order("name"),
+        ),
+    }),
+  locationJobs: (locationId: string) =>
+    queryOptions({
+      queryKey: ["locationJobs", locationId],
+      staleTime: 5 * 60_000,
+      queryFn: async () =>
+        unwrap(
+          await supabase
+            .from("jobs")
+            .select("*")
+            .eq("location_id", locationId)
+            .eq("is_available", true)
+            .order("sort_order"),
         ),
     }),
   places: () =>
