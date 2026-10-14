@@ -32,7 +32,7 @@ const rooms: Room[] = [
     id: "living",
     name: "Living Room",
     emoji: "🛋️",
-    accent: "#f5d59d",
+    accent: "var(--scene-accent)",
     description: "A warm family lounge with a couch, TV, and a small coffee table for downtime.",
     activities: ["Relax", "Watch TV", "Host visitors"],
     position: { left: "7%", top: "9%", width: "43%", height: "42%" },
@@ -41,7 +41,7 @@ const rooms: Room[] = [
     id: "kitchen",
     name: "Kitchen",
     emoji: "🍳",
-    accent: "#b8d7d1",
+    accent: "var(--scene-sky)",
     description:
       "The cooking corner where quick meals and fresh ingredients help keep the home alive.",
     activities: ["Cook", "Meal prep", "Clean up"],
@@ -51,7 +51,7 @@ const rooms: Room[] = [
     id: "bedroom",
     name: "Bedroom",
     emoji: "🛏️",
-    accent: "#d8c2ea",
+    accent: "var(--scene-building-edge)",
     description: "Your personal retreat for rest, recovery, and quiet time after a busy day.",
     activities: ["Sleep", "Rest", "Recharge"],
     position: { left: "7%", top: "54%", width: "35%", height: "33%" },
@@ -60,7 +60,7 @@ const rooms: Room[] = [
     id: "study",
     name: "Study",
     emoji: "📚",
-    accent: "#d4e6c7",
+    accent: "var(--scene-hill)",
     description: "A focused workspace built for learning, planning, and personal growth.",
     activities: ["Study", "Work smart", "Read"],
     position: { left: "45%", top: "48%", width: "24%", height: "32%" },
@@ -69,7 +69,7 @@ const rooms: Room[] = [
     id: "bathroom",
     name: "Bathroom",
     emoji: "🛁",
-    accent: "#dfeaf1",
+    accent: "var(--scene-sky)",
     description: "Clean and fresh, ready for refresh routines and daily reset moments.",
     activities: ["Freshen up", "Shower", "Reset"],
     position: { left: "72%", top: "48%", width: "22%", height: "30%" },
@@ -78,7 +78,7 @@ const rooms: Room[] = [
     id: "courtyard",
     name: "Courtyard",
     emoji: "🌿",
-    accent: "#cfe6a9",
+    accent: "var(--scene-hill)",
     description: "An open outdoor area with a little greenery and a chance to decompress outdoors.",
     activities: ["Stretch", "Breath in air", "Socialize"],
     position: { left: "69%", top: "78%", width: "23%", height: "16%" },
@@ -280,11 +280,11 @@ export function VirtualHouse({ characterName }: { characterName: string }) {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1.45fr_0.75fr]">
-        <div className="rounded-[28px] border-[3px] border-[#d7e7c2] bg-[#dfeec7] p-3 shadow-inner shadow-[#b7cf9c]">
-          <div className="relative aspect-[1.45] overflow-hidden rounded-[22px] border-[3px] border-[#c9d9ae] bg-[linear-gradient(180deg,#dfeec7_0%,#d5e7b5_100%)]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(255,255,255,0.2),transparent_35%)]" />
-            <div className="absolute inset-x-0 bottom-0 h-[18%] bg-[linear-gradient(180deg,#8ec06d,#6fa853)]" />
-            <div className="absolute inset-x-[7%] bottom-[13%] top-[9%] rounded-[22px] border-[5px] border-[#e0d0ac] bg-[#f1e4d0] shadow-[inset_0_0_0_3px_rgba(112,80,52,0.12)]" />
+        <div className="rounded-[28px] border-[3px] border-[var(--scene-sky)] bg-[var(--scene-sky)] p-3 shadow-inner shadow-[var(--scene-building-edge)]">
+          <div className="relative aspect-[1.45] overflow-hidden rounded-[22px] border-[3px] border-[var(--border)] bg-[linear-gradient(180deg,var(--scene-sky)_0%,#d5e7b5_100%)]">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,color-mix(in srgb, var(--color-surface) 20%, transparent),transparent_35%)]" />
+            <div className="absolute inset-x-0 bottom-0 h-[18%] bg-[linear-gradient(180deg,var(--scene-hill),var(--scene-hill-front))]" />
+            <div className="absolute inset-x-[7%] bottom-[13%] top-[9%] rounded-[22px] border-[5px] border-[var(--scene-building-edge)] bg-[var(--scene-building)] shadow-[inset_0_0_0_3px_color-mix(in srgb, var(--destructive) 12%, transparent)]" />
 
             {rooms.map((room) => {
               const isSelected = room.id === selectedId;
@@ -295,10 +295,10 @@ export function VirtualHouse({ characterName }: { characterName: string }) {
                   onClick={() => setSelectedId(room.id)}
                   className={cn(
                     "absolute rounded-[18px] border-[3px] transition-all duration-200 ease-out",
-                    "flex items-center justify-center shadow-[0_8px_18px_rgba(53,75,39,0.14)]",
+                    "flex items-center justify-center shadow-[0_8px_18px_color-mix(in srgb, var(--primary) 14%, transparent)]",
                     isSelected
-                      ? "border-[#2d4f4a] ring-4 ring-[#bcd7bb]"
-                      : "border-[#e8d8b9] hover:border-[#b4c6a6]",
+                      ? "border-[var(--brand-royal)] ring-4 ring-[var(--color-primary-soft)]"
+                      : "border-[var(--scene-building-edge)] hover:border-[var(--scene-building-edge)]",
                   )}
                   style={{
                     left: room.position.left,
@@ -308,7 +308,7 @@ export function VirtualHouse({ characterName }: { characterName: string }) {
                     background: room.accent,
                   }}
                 >
-                  <div className="flex flex-col items-center justify-center gap-1 text-center leading-none text-[#1d2d1a]">
+                  <div className="flex flex-col items-center justify-center gap-1 text-center leading-none text-[var(--brand-ink)]">
                     <span className="text-xl md:text-2xl">{room.emoji}</span>
                     <span className="text-[10px] font-extrabold uppercase tracking-[0.12em] md:text-[11px]">
                       {room.name}
@@ -318,14 +318,14 @@ export function VirtualHouse({ characterName }: { characterName: string }) {
               );
             })}
 
-            <div className="absolute bottom-[16%] left-[54%] h-[18%] w-[22%] rounded-[18px] border-[3px] border-[#8fb7a1] bg-[#d8efc5]" />
-            <div className="absolute bottom-[16%] left-[78%] h-[12%] w-[10%] rounded-[12px] border-[3px] border-[#7fae9d] bg-[#d7f0dc]" />
-            <div className="absolute bottom-[18%] left-[18%] h-[10%] w-[18%] rounded-[16px] border-[3px] border-[#b57d63] bg-[#f7e8d4]" />
-            <div className="absolute bottom-[23%] left-[24%] h-[6%] w-[10%] rounded-[10px] bg-[#b98761]" />
-            <div className="absolute left-[62%] top-[26%] h-[18%] w-[9%] rounded-full border-[4px] border-[#efc993] bg-[#f9e4c0]" />
-            <div className="absolute left-[70%] top-[22%] h-[16%] w-[14%] rounded-[16px] border-[3px] border-[#9b8e7d] bg-[#e9d8c7]" />
-            <div className="absolute left-[18%] top-[18%] h-[10%] w-[14%] rounded-[14px] border-[3px] border-[#b5a8a0] bg-[#f2d9bf]" />
-            <div className="absolute left-[78%] top-[24%] h-[14%] w-[9%] rounded-[14px] border-[3px] border-[#e1c7aa] bg-[#f3ebd8]" />
+            <div className="absolute bottom-[16%] left-[54%] h-[18%] w-[22%] rounded-[18px] border-[3px] border-[var(--scene-building-edge)] bg-[var(--scene-sky)]" />
+            <div className="absolute bottom-[16%] left-[78%] h-[12%] w-[10%] rounded-[12px] border-[3px] border-[var(--scene-building-edge)] bg-[var(--scene-sky)]" />
+            <div className="absolute bottom-[18%] left-[18%] h-[10%] w-[18%] rounded-[16px] border-[3px] border-[var(--scene-building-edge)] bg-[var(--scene-building)]" />
+            <div className="absolute bottom-[23%] left-[24%] h-[6%] w-[10%] rounded-[10px] bg-[var(--scene-wood-line)]" />
+            <div className="absolute left-[62%] top-[26%] h-[18%] w-[9%] rounded-full border-[4px] border-[var(--chart-4)] bg-[var(--scene-building)]" />
+            <div className="absolute left-[70%] top-[22%] h-[16%] w-[14%] rounded-[16px] border-[3px] border-[var(--scene-building-edge)] bg-[var(--scene-building)]" />
+            <div className="absolute left-[18%] top-[18%] h-[10%] w-[14%] rounded-[14px] border-[3px] border-[var(--scene-building-edge)] bg-[var(--scene-building)]" />
+            <div className="absolute left-[78%] top-[24%] h-[14%] w-[9%] rounded-[14px] border-[3px] border-[var(--scene-building-edge)] bg-[var(--scene-building)]" />
           </div>
         </div>
 

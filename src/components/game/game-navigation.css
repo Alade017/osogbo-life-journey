@@ -10,17 +10,17 @@
     gap: 20px;
     overflow-x: hidden;
     overflow-y: auto;
-    border-right: 1px solid #315a49;
-    background: linear-gradient(165deg, var(--brand-royal), #163a2b);
-    color: #fffaf0;
+    border-right: 1px solid var(--border);
+    background: linear-gradient(165deg, var(--brand-royal), var(--brand-ink));
+    color: var(--brand-cream);
     transition:
       width 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
-      box-shadow 240ms ease;
+      box-shadow var(--duration-control) ease;
     z-index: 60;
   }
   .city-game.navigation-redesign .game-hover-sidebar:is(:hover, :focus-within) {
     width: 240px;
-    box-shadow: 16px 0 40px rgb(16 47 37 / 20%);
+    box-shadow: var(--elevation-card);
   }
   .city-game.navigation-redesign .game-hover-sidebar .game-side-logo {
     width: 100%;
@@ -34,15 +34,15 @@
   }
   .city-game.navigation-redesign .game-hover-sidebar .game-side-logo > span > span:last-child {
     display: grid;
-    color: #fffaf0;
+    color: var(--brand-cream);
     opacity: 0;
-    transition: opacity 160ms ease;
+    transition: opacity var(--duration-control) ease;
   }
   .game-hover-sidebar .game-side-logo .text-primary {
-    color: #efbd46;
+    color: var(--chart-4);
   }
   .game-hover-sidebar .game-side-logo .text-muted-foreground {
-    color: #bad0c4;
+    color: var(--color-text-on-dark-soft);
   }
   .city-game.navigation-redesign .game-hover-sidebar .game-side-navigation {
     width: 100%;
@@ -54,9 +54,9 @@
     writing-mode: horizontal-tb;
     transform: none;
     white-space: nowrap;
-    color: #b4cdbf;
+    color: var(--color-text-on-dark-soft);
     opacity: 0;
-    transition: opacity 160ms ease;
+    transition: opacity var(--duration-control) ease;
   }
   .city-game.navigation-redesign .game-hover-sidebar .game-side-link {
     display: flex;
@@ -66,7 +66,7 @@
     padding: 10px 18px;
     border: 0;
     border-radius: 14px;
-    color: #d6e6dc;
+    color: var(--color-text-on-dark-soft);
     font-size: 13px;
     white-space: nowrap;
   }
@@ -78,7 +78,7 @@
   .city-game.navigation-redesign .game-hover-sidebar .game-side-link > span {
     display: inline;
     opacity: 0;
-    transition: opacity 160ms ease;
+    transition: opacity var(--duration-control) ease;
   }
   .city-game.navigation-redesign
     .game-hover-sidebar:is(:hover, :focus-within)
@@ -86,13 +86,13 @@
     opacity: 1;
   }
   .city-game.navigation-redesign .game-hover-sidebar .game-side-link:hover {
-    background: #285b46;
-    color: #fffaf0;
+    background: var(--color-surface-dark-elevated);
+    color: var(--brand-cream);
   }
   .city-game.navigation-redesign .game-hover-sidebar .game-side-link-active {
-    color: #efbd46;
-    background: #2a5541;
-    box-shadow: inset 3px 0 #efbd46;
+    color: var(--chart-4);
+    background: var(--color-surface-dark-elevated);
+    box-shadow: var(--elevation-card);
   }
   .city-game.navigation-redesign .game-hover-sidebar .game-side-phone {
     display: flex;
@@ -103,21 +103,21 @@
     padding: 10px 18px;
     border: 0;
     border-radius: 14px;
-    background: #efbd46;
-    color: #173d2e;
+    background: var(--chart-4);
+    color: var(--brand-ink);
   }
   .city-game.navigation-redesign .game-hover-sidebar .game-side-phone .phone-launcher-icon {
     flex-shrink: 0;
     width: 20px;
     height: 25px;
-    color: #173d2e;
+    color: var(--brand-ink);
     background: transparent;
   }
   .city-game.navigation-redesign .game-hover-sidebar .phone-compact-label {
     display: inline;
     opacity: 0;
     font-size: 13px;
-    transition: opacity 160ms ease;
+    transition: opacity var(--duration-control) ease;
   }
   .city-game.navigation-redesign
     .game-hover-sidebar:is(:hover, :focus-within)
@@ -136,9 +136,9 @@
     grid-template-columns: 1fr 1fr 76px 1fr 1fr;
     border: 0;
     background: transparent;
-    box-shadow: none;
+    box-shadow: var(--elevation-card);
     backdrop-filter: none;
-    filter: drop-shadow(0 8px 12px rgb(16 47 37 / 22%));
+    box-shadow: var(--elevation-lift);
   }
   .city-game.navigation-redesign .game-curved-dock::before {
     content: none;
@@ -151,23 +151,23 @@
     width: 100%;
     height: 90px;
     pointer-events: none;
-    fill: var(--color-osogbo-green);
+    fill: var(--brand-ink);
   }
   .city-game.navigation-redesign .game-curved-dock .mobile-nav-link {
-    color: #bcd2c5;
+    color: var(--color-text-on-dark-soft);
     font-size: 10px;
     transition:
-      color 180ms ease,
-      transform 180ms ease,
-      background 180ms ease;
+      color var(--duration-control) ease,
+      transform var(--duration-control) ease,
+      background var(--duration-control) ease;
   }
   .city-game.navigation-redesign .game-curved-dock .mobile-nav-link:is(:hover, .mobile-nav-active) {
-    background: #285b46;
-    color: #fffaf0;
+    background: var(--color-surface-dark-elevated);
+    color: var(--brand-cream);
   }
   .game-curved-dock .mobile-nav-active svg {
     transform: translateY(-2px);
-    color: #efbd46;
+    color: var(--chart-4);
   }
   .city-game.navigation-redesign .game-curved-dock .mobile-nav-phone {
     justify-self: center;
@@ -176,13 +176,13 @@
     min-height: 60px;
     margin-top: -24px;
     padding: 0;
-    border: 4px solid #fffaf0;
-    background: #efbd46 !important;
-    color: #173d2e;
-    box-shadow: 0 6px 16px rgb(239 189 70 / 30%);
+    border: 4px solid var(--brand-cream);
+    background: var(--chart-4) !important;
+    color: var(--brand-ink);
+    box-shadow: var(--elevation-card);
     transition:
-      transform 200ms ease,
-      box-shadow 200ms ease;
+      transform var(--duration-control) ease,
+      box-shadow var(--duration-control) ease;
   }
   .city-game.navigation-redesign .game-curved-dock .mobile-nav-phone:hover {
     transform: translateY(-4px);
@@ -191,13 +191,13 @@
     transform: translateY(-1px) scale(0.95);
   }
   .city-game.navigation-redesign .game-curved-dock .mobile-nav-phone .phone-launcher-icon {
-    color: #173d2e;
-    border-color: #173d2e;
+    color: var(--brand-ink);
+    border-color: var(--brand-ink);
   }
   .city-game.navigation-redesign .game-curved-dock .mobile-nav-phone .phone-compact-label {
     position: absolute;
     top: 69px;
-    color: #fffaf0;
+    color: var(--brand-cream);
     font-size: 9px;
   }
   .city-game.navigation-redesign {
@@ -240,8 +240,8 @@
 .city-game.navigation-redesign
   :is(.game-hover-sidebar, .game-curved-dock)
   :is(.game-side-link, .mobile-nav-link, .game-side-logo):focus-visible {
-  background: #285b46;
-  color: #fffaf0;
+  background: var(--color-surface-dark-elevated);
+  color: var(--brand-cream);
   text-decoration: underline;
   text-underline-offset: 4px;
 }

@@ -4,6 +4,7 @@ import { Html, useGLTF } from "@react-three/drei";
 import { Camera } from "./Camera";
 import { Lights } from "./Lights";
 import { DRACO_PATH } from "@/types/models";
+import { getSceneColor } from "@/lib/scene-colors";
 
 class SceneError extends Component<
   { children: ReactNode; onError?: (error: Error) => void },
@@ -39,6 +40,7 @@ export function Scene({
   onError?: (error: Error) => void;
 }) {
   const [visible, setVisible] = useState(true);
+  const sceneSky = getSceneColor("--scene-sky");
   useEffect(() => {
     const update = () => setVisible(!document.hidden);
     update();
@@ -56,7 +58,7 @@ export function Scene({
         gl={{ antialias: false, alpha: false, powerPreference: "low-power" }}
         style={{ width: "100%", height: "100%" }}
       >
-        <color attach="background" args={["#e8eedf"]} />
+        <color attach="background" args={[sceneSky]} />
         <Camera zoom={zoom ?? 38} />
         <Lights />
         <Suspense

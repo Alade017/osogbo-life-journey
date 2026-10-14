@@ -35,27 +35,27 @@ export const ROOM_DEFINITIONS: Record<
 > = {
   "living-room": {
     label: "Living Room",
-    accent: "#f3d9a2",
+    accent: "var(--secondary)",
     description: "The main social space for relaxing, TV, and welcoming guests.",
   },
   kitchen: {
     label: "Kitchen",
-    accent: "#c4e1cf",
+    accent: "var(--border)",
     description: "Where meals, prep, and daily routines happen.",
   },
   bedroom: {
     label: "Bedroom",
-    accent: "#d8c0ea",
+    accent: "var(--scene-sky)",
     description: "A quiet private space for rest, recovery, and sleep.",
   },
   bathroom: {
     label: "Bathroom",
-    accent: "#d5e7f2",
+    accent: "var(--scene-sky)",
     description: "A clean, relaxing space for hygiene and reset moments.",
   },
   study: {
     label: "Study",
-    accent: "#dfeec6",
+    accent: "var(--border)",
     description: "A productive area for learning, planning, and work.",
   },
 };

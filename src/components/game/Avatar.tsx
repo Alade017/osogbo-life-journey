@@ -26,7 +26,7 @@ export type AvatarFacing = "north" | "east" | "south" | "west";
 export type AvatarAnimationState = "idle" | "walk" | "turn" | "talk" | "work";
 
 export const AVATAR_VIEWBOX = { width: 64, height: 80 } as const;
-const EDGE = "#17231f";
+const EDGE = "var(--brand-ink)";
 function poseFor(state: AvatarAnimationState, frame: number) {
   const index = Number.isFinite(frame) ? Math.abs(Math.floor(frame)) : 0;
   const walk = [-1, 1, 1, -1][index % 4]!;
@@ -92,7 +92,7 @@ export function AvatarArtwork({
       data-avatar-facing={facing}
       shapeRendering="geometricPrecision"
     >
-      <ellipse cx="32" cy="74" rx="17" ry="4" fill="#17231f" opacity=".2" />
+      <ellipse cx="32" cy="74" rx="17" ry="4" fill="var(--brand-ink)" opacity=".2" />
       <g transform={directionTransform}>
         <g transform={`translate(0 ${pose.bob}) rotate(${pose.lean} 32 48)`}>
           {/* Legs pivot independently to make the walk and generic work cycles legible. */}
@@ -152,26 +152,31 @@ export function AvatarArtwork({
           <path d="M29 31h6v5h-6z" fill={skin} stroke={EDGE} strokeWidth="1.4" />
           {worn.has("top") && (
             <g data-equipment-slot="top" pointerEvents="none">
-              <path d="M20 39h5v14h-5z" fill="#f4d28d" opacity=".9" />
+              <path d="M20 39h5v14h-5z" fill="var(--chart-4)" opacity=".9" />
               <circle cx="22.5" cy="42" r=".8" fill={EDGE} />
               <circle cx="22.5" cy="46" r=".8" fill={EDGE} />
             </g>
           )}
           {worn.has("bottom") && (
-            <path data-equipment-slot="bottom" d="M24 58v9" stroke="#d39a42" strokeWidth="2.5" />
+            <path
+              data-equipment-slot="bottom"
+              d="M24 58v9"
+              stroke="var(--chart-4)"
+              strokeWidth="2.5"
+            />
           )}
           {worn.has("shoes") && (
             <path
               data-equipment-slot="shoes"
               d="M21 72h5m11 0h5"
-              stroke="#f4d28d"
+              stroke="var(--chart-4)"
               strokeWidth="1.5"
             />
           )}
           {worn.has("accessory") && (
             <g data-equipment-slot="accessory" stroke={EDGE} strokeWidth="1.5">
-              <path d="m10 39 5-3 4 4-4 15-6-2z" fill="#d39a42" />
-              <path d="m12 40 4 2" stroke="#f4d28d" />
+              <path d="m10 39 5-3 4 4-4 15-6-2z" fill="var(--chart-4)" />
+              <path d="m12 40 4 2" stroke="var(--chart-4)" />
             </g>
           )}
           {/* Back view shows hair and outfit details without a front-facing expression. */}
@@ -292,7 +297,7 @@ export function AvatarArtwork({
             <path
               data-equipment-slot="head"
               d="M19 14q2-10 13-10t13 10q-13-4-26 0z"
-              fill="#d39a42"
+              fill="var(--chart-4)"
               stroke={EDGE}
               strokeWidth="1.8"
             />

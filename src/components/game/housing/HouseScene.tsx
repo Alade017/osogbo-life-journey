@@ -1,6 +1,7 @@
 import { Suspense, useEffect, useMemo } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
+import { getSceneColor } from "@/lib/scene-colors";
 import { OrbitControls as OrbitControlsImpl } from "three/examples/jsm/controls/OrbitControls.js";
 
 export type HouseRoomId = "lounge" | "den" | "kitchen" | "bedroom";
@@ -11,10 +12,20 @@ const ROOMS: Array<{
   floor: "wood" | "tile";
   color: string;
 }> = [
-  { id: "lounge", position: [-3.1, 0, 3.1], floor: "wood", color: "#e8b96f" },
-  { id: "den", position: [3.1, 0, 3.1], floor: "tile", color: "#e8b96f" },
-  { id: "kitchen", position: [-3.1, 0, -3.1], floor: "tile", color: "#e8b96f" },
-  { id: "bedroom", position: [3.1, 0, -3.1], floor: "wood", color: "#e8b96f" },
+  { id: "lounge", position: [-3.1, 0, 3.1], floor: "wood", color: getSceneColor("--scene-accent") },
+  { id: "den", position: [3.1, 0, 3.1], floor: "tile", color: getSceneColor("--scene-accent") },
+  {
+    id: "kitchen",
+    position: [-3.1, 0, -3.1],
+    floor: "tile",
+    color: getSceneColor("--scene-accent"),
+  },
+  {
+    id: "bedroom",
+    position: [3.1, 0, -3.1],
+    floor: "wood",
+    color: getSceneColor("--scene-accent"),
+  },
 ];
 
 function makeFloorTexture(kind: "wood" | "tile") {
@@ -24,36 +35,19 @@ function makeFloorTexture(kind: "wood" | "tile") {
   const context = canvas.getContext("2d");
   if (!context) return null;
 
-  if (kind === "wood") {
-    context.fillStyle = "#805b43";
-    context.fillRect(0, 0, 256, 256);
-    const plankColors = ["#b6875f", "#c3976d", "#a97a56", "#bd8f67"];
-    for (let row = 0; row < 8; row += 1) {
-      for (let column = 0; column < 8; column += 1) {
-        context.fillStyle = plankColors[(row * 3 + column) % plankColors.length] ?? "#b6875f";
-        context.fillRect(column * 32 + 1, row * 32 + 1, 30, 30);
-        context.fillStyle = "rgb(255 235 205 / 12%)";
-        context.fillRect(column * 32 + 3, row * 32 + 3, 26, 1);
-      }
-    }
-    context.strokeStyle = "rgb(75 47 33 / 27%)";
-    context.lineWidth = 2;
-    for (let offset = -256; offset < 512; offset += 64) {
-      context.beginPath();
-      context.moveTo(offset, 0);
-      context.lineTo(offset + 256, 256);
-      context.stroke();
-    }
-  } else {
-    context.fillStyle = "#d6d4ce";
-    context.fillRect(0, 0, 256, 256);
-    for (let row = 0; row < 4; row += 1) {
-      for (let column = 0; column < 4; column += 1) {
-        const inset = (row + column) % 2 ? 2 : 4;
-        context.fillStyle = (row + column) % 2 ? "#e7e4dd" : "#dfdcd4";
-        context.fillRect(column * 64 + inset, row * 64 + inset, 60 - inset, 60 - inset);
-      }
-    }
+  const fillToken = kind === "wood" ? "--scene-wood" : "--scene-tile";
+  const lineToken = kind === "wood" ? "--scene-wood-line" : "--scene-tile-line";
+  context.fillStyle = getSceneColor(fillToken);
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.strokeStyle = getSceneColor(lineToken);
+  context.lineWidth = 1;
+  for (let offset = 64; offset < 256; offset += 64) {
+    context.beginPath();
+    context.moveTo(offset, 0);
+    context.lineTo(offset, 256);
+    context.moveTo(0, offset);
+    context.lineTo(256, offset);
+    context.stroke();
   }
 
   const texture = new THREE.CanvasTexture(canvas);
@@ -64,7 +58,6 @@ function makeFloorTexture(kind: "wood" | "tile") {
   texture.anisotropy = 4;
   return texture;
 }
-
 function Box({
   position,
   size,
@@ -117,31 +110,71 @@ function WindowUnit({
       <Box
         position={[0, 0, 0]}
         size={acrossX ? [width - 0.18, 1.02, 0.05] : [0.05, 1.02, width - 0.18]}
-        color="#a7c9d2"
+        color={getSceneColor("--scene-sky")}
         material="glass"
         opacity={0.72}
       />
       {acrossX ? (
         <>
-          <Box position={[0, 0.56, 0]} size={[width, 0.09, 0.16]} color="#f4ead7" />
-          <Box position={[0, -0.56, 0]} size={[width, 0.09, 0.16]} color="#f4ead7" />
-          <Box position={[-width / 2 + 0.04, 0, 0]} size={[0.09, 1.15, 0.16]} color="#f4ead7" />
-          <Box position={[width / 2 - 0.04, 0, 0]} size={[0.09, 1.15, 0.16]} color="#f4ead7" />
-          <Box position={[0, 0, 0.01]} size={[0.045, 1.05, 0.17]} color="#f4ead7" />
+          <Box
+            position={[0, 0.56, 0]}
+            size={[width, 0.09, 0.16]}
+            color={getSceneColor("--scene-building")}
+          />
+          <Box
+            position={[0, -0.56, 0]}
+            size={[width, 0.09, 0.16]}
+            color={getSceneColor("--scene-building")}
+          />
+          <Box
+            position={[-width / 2 + 0.04, 0, 0]}
+            size={[0.09, 1.15, 0.16]}
+            color={getSceneColor("--scene-building")}
+          />
+          <Box
+            position={[width / 2 - 0.04, 0, 0]}
+            size={[0.09, 1.15, 0.16]}
+            color={getSceneColor("--scene-building")}
+          />
+          <Box
+            position={[0, 0, 0.01]}
+            size={[0.045, 1.05, 0.17]}
+            color={getSceneColor("--scene-building")}
+          />
         </>
       ) : (
         <>
-          <Box position={[0, 0.56, 0]} size={[0.16, 0.09, width]} color="#f4ead7" />
-          <Box position={[0, -0.56, 0]} size={[0.16, 0.09, width]} color="#f4ead7" />
-          <Box position={[0, 0, -width / 2 + 0.04]} size={[0.16, 1.15, 0.09]} color="#f4ead7" />
-          <Box position={[0, 0, width / 2 - 0.04]} size={[0.16, 1.15, 0.09]} color="#f4ead7" />
-          <Box position={[0.01, 0, 0]} size={[0.17, 1.05, 0.045]} color="#f4ead7" />
+          <Box
+            position={[0, 0.56, 0]}
+            size={[0.16, 0.09, width]}
+            color={getSceneColor("--scene-building")}
+          />
+          <Box
+            position={[0, -0.56, 0]}
+            size={[0.16, 0.09, width]}
+            color={getSceneColor("--scene-building")}
+          />
+          <Box
+            position={[0, 0, -width / 2 + 0.04]}
+            size={[0.16, 1.15, 0.09]}
+            color={getSceneColor("--scene-building")}
+          />
+          <Box
+            position={[0, 0, width / 2 - 0.04]}
+            size={[0.16, 1.15, 0.09]}
+            color={getSceneColor("--scene-building")}
+          />
+          <Box
+            position={[0.01, 0, 0]}
+            size={[0.17, 1.05, 0.045]}
+            color={getSceneColor("--scene-building")}
+          />
         </>
       )}
       <Box
         position={acrossX ? [0, -0.59, 0.02] : [0.02, -0.59, 0]}
         size={acrossX ? [width + 0.2, 0.1, 0.18] : [0.18, 0.1, width + 0.2]}
-        color="#d8c4a3"
+        color={getSceneColor("--scene-building-edge")}
       />
     </group>
   );
@@ -150,14 +183,34 @@ function WindowUnit({
 function EntryDoor() {
   return (
     <group position={[-3.1, 0, 6.16]}>
-      <Box position={[-0.58, 1.05, 0]} size={[0.16, 2.1, 0.18]} color="#eee0ca" />
-      <Box position={[0.58, 1.05, 0]} size={[0.16, 2.1, 0.18]} color="#eee0ca" />
-      <Box position={[0, 2.08, 0]} size={[1.3, 0.16, 0.18]} color="#eee0ca" />
+      <Box
+        position={[-0.58, 1.05, 0]}
+        size={[0.16, 2.1, 0.18]}
+        color={getSceneColor("--scene-building")}
+      />
+      <Box
+        position={[0.58, 1.05, 0]}
+        size={[0.16, 2.1, 0.18]}
+        color={getSceneColor("--scene-building")}
+      />
+      <Box
+        position={[0, 2.08, 0]}
+        size={[1.3, 0.16, 0.18]}
+        color={getSceneColor("--scene-building")}
+      />
       <group position={[-0.48, 0.98, 0.12]} rotation={[0, -0.5, 0]}>
-        <Box position={[0.48, 0.05, 0]} size={[0.96, 1.9, 0.09]} color="#755139" />
+        <Box
+          position={[0.48, 0.05, 0]}
+          size={[0.96, 1.9, 0.09]}
+          color={getSceneColor("--scene-wood-line")}
+        />
         <mesh position={[0.82, 0.05, 0.055]} castShadow>
           <sphereGeometry args={[0.045, 12, 12]} />
-          <meshStandardMaterial color="#d1a64f" metalness={0.72} roughness={0.25} />
+          <meshStandardMaterial
+            color={getSceneColor("--scene-accent")}
+            metalness={0.72}
+            roughness={0.25}
+          />
         </mesh>
       </group>
     </group>
@@ -186,7 +239,7 @@ function RoomFloor({
         }}
       >
         <boxGeometry args={[6.05, 0.24, 6.05]} />
-        <meshStandardMaterial color="#c3b8a8" roughness={0.9} />
+        <meshStandardMaterial color={getSceneColor("--scene-building-edge")} roughness={0.9} />
       </mesh>
       <mesh
         position={[0, 0.006, 0]}
@@ -198,7 +251,11 @@ function RoomFloor({
         }}
       >
         <planeGeometry args={[6, 6]} />
-        <meshStandardMaterial map={texture} color="#ffffff" roughness={0.8} />
+        <meshStandardMaterial
+          map={texture}
+          color={getSceneColor("--scene-marking")}
+          roughness={0.8}
+        />
       </mesh>
       {selected && (
         <mesh position={[0, 0.014, 0]} rotation={[-Math.PI / 2, 0, 0]}>
@@ -211,8 +268,8 @@ function RoomFloor({
 }
 
 function HouseStructure() {
-  const wall = "#f3eee5";
-  const inner = "#e9e1d4";
+  const wall = getSceneColor("--scene-building");
+  const inner = getSceneColor("--scene-building");
   return (
     <group>
       {/* Open-front cutaway shell keeps all four room floors visible. */}
@@ -235,21 +292,61 @@ function HouseStructure() {
       <Box position={[1.65, 0.78, 0]} size={[1.8, 1.56, 0.16]} color={inner} />
 
       {/* Brass-toned thresholds make the internal door openings legible. */}
-      <Box position={[0, 0.05, -3.1]} size={[0.2, 0.08, 1.12]} color="#b7955c" material="metal" />
-      <Box position={[0, 0.05, 3.1]} size={[0.2, 0.08, 1.12]} color="#b7955c" material="metal" />
-      <Box position={[-3.1, 0.05, 0]} size={[1.12, 0.08, 0.2]} color="#b7955c" material="metal" />
-      <Box position={[3.1, 0.05, 0]} size={[1.12, 0.08, 0.2]} color="#b7955c" material="metal" />
+      <Box
+        position={[0, 0.05, -3.1]}
+        size={[0.2, 0.08, 1.12]}
+        color={getSceneColor("--scene-accent")}
+        material="metal"
+      />
+      <Box
+        position={[0, 0.05, 3.1]}
+        size={[0.2, 0.08, 1.12]}
+        color={getSceneColor("--scene-accent")}
+        material="metal"
+      />
+      <Box
+        position={[-3.1, 0.05, 0]}
+        size={[1.12, 0.08, 0.2]}
+        color={getSceneColor("--scene-accent")}
+        material="metal"
+      />
+      <Box
+        position={[3.1, 0.05, 0]}
+        size={[1.12, 0.08, 0.2]}
+        color={getSceneColor("--scene-accent")}
+        material="metal"
+      />
 
       <WindowUnit position={[1.8, 1.48, -6.18]} width={2.3} />
       <WindowUnit position={[6.18, 1.48, -2.3]} width={2.1} orientation="side" />
       <EntryDoor />
 
       {/* Small entry terrace and step. */}
-      <Box position={[-3.1, -0.13, 6.85]} size={[3.5, 0.22, 1.25]} color="#b6a48c" />
-      <Box position={[-3.1, -0.26, 7.42]} size={[2.7, 0.16, 0.35]} color="#a8957b" />
-      <Box position={[-6.17, 1.02, 0]} size={[0.34, 0.12, 12.3]} color="#d9c4a1" />
-      <Box position={[6.17, 1.02, -0.28]} size={[0.34, 0.12, 11.7]} color="#d9c4a1" />
-      <Box position={[0, 1.02, -6.17]} size={[12.3, 0.12, 0.34]} color="#d9c4a1" />
+      <Box
+        position={[-3.1, -0.13, 6.85]}
+        size={[3.5, 0.22, 1.25]}
+        color={getSceneColor("--scene-building-edge")}
+      />
+      <Box
+        position={[-3.1, -0.26, 7.42]}
+        size={[2.7, 0.16, 0.35]}
+        color={getSceneColor("--scene-building-edge")}
+      />
+      <Box
+        position={[-6.17, 1.02, 0]}
+        size={[0.34, 0.12, 12.3]}
+        color={getSceneColor("--scene-building-edge")}
+      />
+      <Box
+        position={[6.17, 1.02, -0.28]}
+        size={[0.34, 0.12, 11.7]}
+        color={getSceneColor("--scene-building-edge")}
+      />
+      <Box
+        position={[0, 1.02, -6.17]}
+        size={[12.3, 0.12, 0.34]}
+        color={getSceneColor("--scene-building-edge")}
+      />
     </group>
   );
 }
@@ -298,9 +395,18 @@ function SceneContents({
 
   return (
     <>
-      <color attach="background" args={[lightsOn ? "#f0eee8" : "#191d29"]} />
+      <color
+        attach="background"
+        args={[lightsOn ? getSceneColor("--brand-porcelain") : getSceneColor("--brand-ink")]}
+      />
       <ambientLight intensity={lightsOn ? 1.35 : 0.48} />
-      <hemisphereLight args={[lightsOn ? "#f7f4eb" : "#667087", "#7a6b5c", 0.7]} />
+      <hemisphereLight
+        args={[
+          lightsOn ? getSceneColor("--brand-cream") : getSceneColor("--brand-slate"),
+          getSceneColor("--scene-road"),
+          0.7,
+        ]}
+      />
       <directionalLight
         position={[-8, 13, 9]}
         intensity={lightsOn ? 2.1 : 0.55}
@@ -313,12 +419,20 @@ function SceneContents({
         shadow-camera-bottom={-12}
         shadow-bias={-0.0003}
       />
-      <pointLight position={[-3, 3.4, 2.8]} color="#ffc978" intensity={lightsOn ? 1.1 : 0.12} />
-      <pointLight position={[3, 3.2, -3]} color="#e9f3ff" intensity={lightsOn ? 0.65 : 0.08} />
+      <pointLight
+        position={[-3, 3.4, 2.8]}
+        color={getSceneColor("--scene-accent")}
+        intensity={lightsOn ? 1.1 : 0.12}
+      />
+      <pointLight
+        position={[3, 3.2, -3]}
+        color={getSceneColor("--scene-sky")}
+        intensity={lightsOn ? 0.65 : 0.08}
+      />
 
       <mesh position={[0, -0.42, 0]} receiveShadow>
         <boxGeometry args={[12.65, 0.32, 12.65]} />
-        <meshStandardMaterial color="#75634f" roughness={0.9} />
+        <meshStandardMaterial color={getSceneColor("--scene-road")} roughness={0.9} />
       </mesh>
       {ROOMS.map((room) => (
         <RoomFloor
@@ -357,7 +471,10 @@ export function HouseScene({
         camera={{ position: [15, 18, 16], zoom: 45, near: 0.1, far: 100 }}
         gl={{ antialias: true, alpha: false, powerPreference: "low-power" }}
         onCreated={({ gl }) => {
-          gl.setClearColor(lightsOn ? "#f0eee8" : "#191d29", 1);
+          gl.setClearColor(
+            lightsOn ? getSceneColor("--brand-porcelain") : getSceneColor("--brand-ink"),
+            1,
+          );
           gl.shadowMap.type = THREE.PCFSoftShadowMap;
         }}
       >

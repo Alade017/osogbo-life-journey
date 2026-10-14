@@ -210,8 +210,8 @@ export function HouseInterior() {
             ))}
           </div>
 
-          <div className="relative overflow-hidden rounded-[24px] border-[3px] border-[#dfe5b2] bg-[linear-gradient(180deg,#eaf4d7_0%,#dfeec9_100%)] p-3 shadow-inner shadow-[#c8d6b3]">
-            <div className="absolute inset-x-0 bottom-0 h-[18%] bg-[linear-gradient(180deg,#90c76d,#70a95d)]" />
+          <div className="relative overflow-hidden rounded-[24px] border-[3px] border-[var(--border)] bg-[linear-gradient(180deg,#eaf4d7_0%,#dfeec9_100%)] p-3 shadow-inner shadow-[var(--scene-building-edge)]">
+            <div className="absolute inset-x-0 bottom-0 h-[18%] bg-[linear-gradient(180deg,var(--primary),var(--primary))]" />
 
             {Object.entries(ROOM_LAYOUT).map(([roomId, roomStyle]) => {
               const room = ROOM_DEFINITIONS[roomId as HouseRoomId];
@@ -224,8 +224,8 @@ export function HouseInterior() {
                   onClick={() => goToRoom(roomId as HouseRoomId)}
                   className={
                     active
-                      ? "absolute rounded-[18px] border-[3px] border-[#2d4f4a] shadow-[0_10px_20px_rgba(42,70,46,0.16)]"
-                      : "absolute rounded-[18px] border-[3px] border-[#d7d7c8] opacity-80"
+                      ? "absolute rounded-[18px] border-[3px] border-[var(--brand-royal)] shadow-[0_10px_20px_color-mix(in srgb, var(--brand-ink) 16%, transparent)]"
+                      : "absolute rounded-[18px] border-[3px] border-[var(--border)] opacity-80"
                   }
                   style={{
                     left: roomStyle.left,
@@ -237,7 +237,7 @@ export function HouseInterior() {
                 >
                   <div className="flex h-full items-center justify-center text-center">
                     <div>
-                      <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#234024]">
+                      <div className="text-[10px] font-bold uppercase tracking-[0.12em] text-[var(--brand-ink)]">
                         {room.label}
                       </div>
                     </div>
@@ -246,13 +246,13 @@ export function HouseInterior() {
               );
             })}
 
-            <div className="absolute left-[8%] top-[10%] h-[7%] w-[12%] rounded-[14px] border-[3px] border-[#d0c19d] bg-[#f4dcb4]" />
-            <div className="absolute left-[18%] top-[18%] h-[18%] w-[16%] rounded-[16px] border-[3px] border-[#5d7a7e] bg-[#f7e3c2]" />
-            <div className="absolute right-[12%] top-[16%] h-[18%] w-[18%] rounded-[18px] border-[3px] border-[#3a4a48] bg-[#d8ebdb]" />
-            <div className="absolute left-[58%] top-[15%] h-[12%] w-[12%] rounded-[14px] border-[3px] border-[#91b7cb] bg-[#d3e9f4]" />
-            <div className="absolute left-[58%] top-[58%] h-[16%] w-[18%] rounded-[14px] border-[3px] border-[#91a58c] bg-[#d6e2d0]" />
-            <div className="absolute left-[23%] top-[62%] h-[18%] w-[18%] rounded-[18px] border-[3px] border-[#9987a7] bg-[#d6c5ea]" />
-            <div className="absolute left-[76%] top-[56%] h-[16%] w-[12%] rounded-[14px] border-[3px] border-[#98afcf] bg-[#dbe7f4]" />
+            <div className="absolute left-[8%] top-[10%] h-[7%] w-[12%] rounded-[14px] border-[3px] border-[var(--border)] bg-[var(--secondary)]" />
+            <div className="absolute left-[18%] top-[18%] h-[18%] w-[16%] rounded-[16px] border-[3px] border-[var(--brand-royal)] bg-[var(--border)]" />
+            <div className="absolute right-[12%] top-[16%] h-[18%] w-[18%] rounded-[18px] border-[3px] border-[var(--brand-slate)] bg-[var(--color-surface)]" />
+            <div className="absolute left-[58%] top-[15%] h-[12%] w-[12%] rounded-[14px] border-[3px] border-[var(--scene-sky)] bg-[var(--scene-sky)]" />
+            <div className="absolute left-[58%] top-[58%] h-[16%] w-[18%] rounded-[14px] border-[3px] border-[var(--border)] bg-[var(--border)]" />
+            <div className="absolute left-[23%] top-[62%] h-[18%] w-[18%] rounded-[18px] border-[3px] border-[var(--scene-sky)] bg-[var(--scene-sky)]" />
+            <div className="absolute left-[76%] top-[56%] h-[16%] w-[12%] rounded-[14px] border-[3px] border-[var(--scene-sky)] bg-[var(--scene-sky)]" />
 
             {currentRoomFurniture.map((furniture) => (
               <button
@@ -262,7 +262,7 @@ export function HouseInterior() {
                 className={
                   selectedFurnitureId === furniture.id
                     ? "absolute flex items-center justify-center rounded-xl border-2 border-primary bg-primary/10 text-primary shadow-lg"
-                    : "absolute flex items-center justify-center rounded-xl border-2 border-[#7d8f72] bg-white/30 text-[#1d2d1a]"
+                    : "absolute flex items-center justify-center rounded-xl border-2 border-[var(--brand-slate)] bg-white/30 text-[var(--brand-ink)]"
                 }
                 style={{
                   left: `${furniture.position.x}%`,
@@ -280,7 +280,7 @@ export function HouseInterior() {
             ))}
 
             <div
-              className="absolute z-10 flex h-10 w-10 items-center justify-center rounded-full border-[3px] border-[#1d2d1a] bg-[#f5d58a] text-xs font-black text-[#1d2d1a] shadow-[0_8px_18px_rgba(29,45,26,0.25)] transition-all duration-500"
+              className="absolute z-10 flex h-10 w-10 items-center justify-center rounded-full border-[3px] border-[var(--brand-ink)] bg-[var(--chart-4)] text-xs font-black text-[var(--brand-ink)] shadow-[0_8px_18px_color-mix(in srgb, var(--brand-ink) 25%, transparent)] transition-all duration-500"
               style={{
                 left: `${characterPosition.x}%`,
                 top: `${characterPosition.y}%`,

@@ -28,6 +28,13 @@ import {
 const SOURCE_ID = "game-locations";
 const LAYER_ID = "game-location-markers";
 
+function resolvePaletteColor(value: string) {
+  const token = value.match(/^var\((--[^)]+)\)$/)?.[1];
+  return token
+    ? getComputedStyle(document.documentElement).getPropertyValue(token).trim() || value
+    : value;
+}
+
 function boundsForMap(map: MapLibreMap): MapLocationBounds {
   const bounds = map.getBounds();
   const rounded = (value: number) => Math.round(value * 1000) / 1000;
@@ -51,12 +58,12 @@ function markerImage(map: MapLibreMap, category: string) {
 
   context.beginPath();
   context.arc(32, 32, 28, 0, Math.PI * 2);
-  context.fillStyle = locationCategoryColour(category);
+  context.fillStyle = resolvePaletteColor(locationCategoryColour(category));
   context.fill();
   context.lineWidth = 4;
-  context.strokeStyle = "#fff";
+  context.strokeStyle = resolvePaletteColor("var(--color-surface)");
   context.stroke();
-  context.fillStyle = "#fff";
+  context.fillStyle = resolvePaletteColor("var(--color-surface)");
   context.font = "700 27px Arial, sans-serif";
   context.textAlign = "center";
   context.textBaseline = "middle";
@@ -163,9 +170,9 @@ export function LocationMarker({ map }: { map: MapLibreMap }) {
         source: SOURCE_ID,
         filter: ["has", "point_count"],
         paint: {
-          "circle-color": "#344b68",
+          "circle-color": resolvePaletteColor("var(--brand-ink)"),
           "circle-radius": ["step", ["get", "point_count"], 16, 25, 21, 100, 27],
-          "circle-stroke-color": "#fffdf8",
+          "circle-stroke-color": resolvePaletteColor("var(--brand-cream)"),
           "circle-stroke-width": 2,
         },
       });
@@ -182,7 +189,7 @@ export function LocationMarker({ map }: { map: MapLibreMap }) {
           "text-font": ["Stadia Semibold"],
           "text-size": 12,
         },
-        paint: { "text-color": "#ffffff" },
+        paint: { "text-color": resolvePaletteColor("var(--color-surface)") },
       });
     }
 
@@ -192,9 +199,9 @@ export function LocationMarker({ map }: { map: MapLibreMap }) {
         ["get", "category"],
         ...Object.entries(LOCATION_CATEGORIES).flatMap(([category, definition]) => [
           category,
-          definition.colour,
+          resolvePaletteColor(definition.colour),
         ]),
-        locationCategoryColour("other"),
+        resolvePaletteColor(locationCategoryColour("other")),
       ] as unknown as ExpressionSpecification;
 
       map.addLayer({
@@ -214,12 +221,12 @@ export function LocationMarker({ map }: { map: MapLibreMap }) {
           "circle-color": [
             "case",
             ["boolean", ["feature-state", "selected"], false],
-            "#eea43a",
+            resolvePaletteColor("var(--chart-4)"),
             ["boolean", ["feature-state", "hovered"], false],
-            "#e59a31",
+            resolvePaletteColor("var(--chart-4)"),
             colorExpression,
           ],
-          "circle-stroke-color": "#fff9e9",
+          "circle-stroke-color": resolvePaletteColor("var(--color-surface)"),
           "circle-stroke-width": [
             "case",
             ["boolean", ["feature-state", "selected"], false],
@@ -267,8 +274,8 @@ export function LocationMarker({ map }: { map: MapLibreMap }) {
           "text-padding": 4,
         },
         paint: {
-          "text-color": "#263c55",
-          "text-halo-color": "#fffdf8",
+          "text-color": resolvePaletteColor("var(--brand-ink)"),
+          "text-halo-color": resolvePaletteColor("var(--brand-cream)"),
           "text-halo-width": 1.2,
         },
       });

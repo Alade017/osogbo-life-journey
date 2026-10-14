@@ -86,7 +86,7 @@ function CurrentCampaign({
             <Megaphone className="h-3.5 w-3.5" />
             {billboard.name}
           </span>
-          <span className="block rounded-sm border-[7px] border-ink bg-ink p-1 shadow-[0_8px_0_rgba(27,37,48,0.22)] transition-transform group-hover:-translate-y-1">
+          <span className="block rounded-sm border-[7px] border-ink bg-ink p-1 shadow-[0_8px_0_color-mix(in srgb, var(--brand-ink) 22%, transparent)] transition-transform group-hover:-translate-y-1">
             <span
               className={cn(
                 "relative flex min-h-40 flex-col justify-between overflow-hidden px-5 py-4 text-left sm:min-h-48 sm:px-8 sm:py-6",

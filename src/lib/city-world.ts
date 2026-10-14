@@ -375,14 +375,14 @@ export const CITY_ROUNDABOUTS: CityWorldPosition[] = [
 ];
 
 export const CITY_LIGHT_BEACONS = [
-  { id: "market-crossing", position: { x: 4, y: 3 }, length: 0.5, color: "#ffd477" },
-  { id: "central-square", position: { x: 7, y: 5 }, length: 0.7, color: "#b7e8ff" },
-  { id: "oke-fia-road", position: { x: 10, y: 3 }, length: 0.55, color: "#8cebe1" },
-  { id: "garage-entry", position: { x: 3, y: 8 }, length: 0.45, color: "#ffcb68" },
-  { id: "campus-walk", position: { x: 5, y: 9 }, length: 0.5, color: "#c3f09a" },
-  { id: "residential-corner", position: { x: 9, y: 9 }, length: 0.5, color: "#ffe19a" },
-  { id: "culture-lane", position: { x: 2, y: 2 }, length: 0.45, color: "#e6bbff" },
-  { id: "outskirts-road", position: { x: 12, y: 11 }, length: 0.4, color: "#c9edaa" },
+  { id: "market-crossing", position: { x: 4, y: 3 }, length: 0.5, color: "var(--scene-accent)" },
+  { id: "central-square", position: { x: 7, y: 5 }, length: 0.7, color: "var(--scene-accent)" },
+  { id: "oke-fia-road", position: { x: 10, y: 3 }, length: 0.55, color: "var(--scene-accent)" },
+  { id: "garage-entry", position: { x: 3, y: 8 }, length: 0.45, color: "var(--scene-accent)" },
+  { id: "campus-walk", position: { x: 5, y: 9 }, length: 0.5, color: "var(--scene-accent)" },
+  { id: "residential-corner", position: { x: 9, y: 9 }, length: 0.5, color: "var(--scene-accent)" },
+  { id: "culture-lane", position: { x: 2, y: 2 }, length: 0.45, color: "var(--scene-accent)" },
+  { id: "outskirts-road", position: { x: 12, y: 11 }, length: 0.4, color: "var(--scene-accent)" },
 ] as const;
 
 export function cityWorldToIso(position: CityWorldPosition, height = 0) {

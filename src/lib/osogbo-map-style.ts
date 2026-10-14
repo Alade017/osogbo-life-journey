@@ -1,4 +1,5 @@
 import type { FilterSpecification, Map as MapLibreMap } from "maplibre-gl";
+import { getSceneColor } from "@/lib/scene-colors";
 
 const DEFAULT_VECTOR_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 const HILLSHADE_URL =
@@ -55,35 +56,35 @@ export function applyOsogboMapPalette(map: MapLibreMap) {
     }
 
     if (layer.type === "background") {
-      map.setPaintProperty(layer.id, "background-color", "#f2f6ed");
+      map.setPaintProperty(layer.id, "background-color", getSceneColor("--brand-porcelain"));
       continue;
     }
 
     if (layer.type === "fill" && (sourceLayer === "water" || id.includes("water"))) {
-      map.setPaintProperty(layer.id, "fill-color", "#cde1e7");
+      map.setPaintProperty(layer.id, "fill-color", getSceneColor("--scene-sky"));
       map.setPaintProperty(layer.id, "fill-opacity", 0.95);
     } else if (
       layer.type === "fill" &&
       (sourceLayer === "park" || id.includes("park") || id.includes("wood"))
     ) {
-      map.setPaintProperty(layer.id, "fill-color", "#d8e8d0");
+      map.setPaintProperty(layer.id, "fill-color", getSceneColor("--scene-hill"));
     } else if (layer.type === "fill" && (sourceLayer === "building" || id.includes("building"))) {
-      map.setPaintProperty(layer.id, "fill-color", "#ffffff");
-      map.setPaintProperty(layer.id, "fill-outline-color", "#d5e1d0");
+      map.setPaintProperty(layer.id, "fill-color", getSceneColor("--color-surface"));
+      map.setPaintProperty(layer.id, "fill-outline-color", getSceneColor("--brand-mist"));
     } else if (layer.type === "line" && sourceLayer === "transportation") {
       map.setPaintProperty(layer.id, "line-color", [
         "match",
         ["get", "class"],
         ["motorway", "motorway_link", "trunk", "trunk_link", "primary", "primary_link"],
-        "#e6c676",
+        getSceneColor("--scene-accent"),
         ["secondary", "secondary_link", "tertiary", "tertiary_link"],
-        "#e7efdf",
+        getSceneColor("--brand-cream"),
         ["rail", "transit", "ferry"],
-        "#9eaf9f",
-        "#ffffff",
+        getSceneColor("--brand-slate"),
+        getSceneColor("--color-surface"),
       ]);
     } else if (layer.type === "line" && sourceLayer === "waterway") {
-      map.setPaintProperty(layer.id, "line-color", "#b7d7df");
+      map.setPaintProperty(layer.id, "line-color", getSceneColor("--scene-sky"));
     } else if (layer.type === "symbol" && layer.layout?.["text-field"]) {
       const labelText = layer.layout["text-field"];
       if (typeof labelText === "string" && isExcludedBaseMapLabel(labelText)) {
@@ -99,8 +100,8 @@ export function applyOsogboMapPalette(map: MapLibreMap) {
         ["!", ["any", ...excludedNames.map((name) => [">=", ["index-of", name, safeName], 0])]],
       ] as unknown as FilterSpecification;
       map.setFilter(layer.id, safeLabelFilter);
-      map.setPaintProperty(layer.id, "text-color", "#173d2b");
-      map.setPaintProperty(layer.id, "text-halo-color", "#f2f6ed");
+      map.setPaintProperty(layer.id, "text-color", getSceneColor("--brand-ink"));
+      map.setPaintProperty(layer.id, "text-halo-color", getSceneColor("--brand-porcelain"));
       map.setPaintProperty(layer.id, "text-halo-width", 1.1);
     }
   }
@@ -144,8 +145,8 @@ export function applyOsogboMapPalette(map: MapLibreMap) {
       source: landmarkSourceId,
       paint: {
         "circle-radius": 5,
-        "circle-color": "#d69b32",
-        "circle-stroke-color": "#fffaf0",
+        "circle-color": getSceneColor("--scene-accent"),
+        "circle-stroke-color": getSceneColor("--brand-cream"),
         "circle-stroke-width": 2,
       },
     });
@@ -164,8 +165,8 @@ export function applyOsogboMapPalette(map: MapLibreMap) {
         "text-allow-overlap": false,
       },
       paint: {
-        "text-color": "#173d2b",
-        "text-halo-color": "#f2f6ed",
+        "text-color": getSceneColor("--brand-ink"),
+        "text-halo-color": getSceneColor("--brand-porcelain"),
         "text-halo-width": 1.5,
       },
     });

@@ -55,6 +55,6 @@
   padding: 8px 10px;
   border-radius: 10px;
   color: var(--foreground);
-  background: var(--accent);
+  background: var(--card);
   font-size: 11px;
 }
