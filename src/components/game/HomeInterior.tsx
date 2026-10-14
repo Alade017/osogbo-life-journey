@@ -11,6 +11,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Avatar } from "@/components/game/Avatar";
+import type { Appearance } from "@/game/avatar-appearance";
 import {
   canPlace,
   DEFAULT_HOUSING_SAVE,
@@ -32,6 +33,11 @@ const HouseScene = import.meta.env.SSR
       selectedRoom: HouseRoomId;
       lightsOn: boolean;
       onSelectRoom: (room: HouseRoomId) => void;
+      furniture: PlacedFurniture[];
+      avatarRoom: RoomId;
+      appearance: Appearance;
+      gender: string;
+      equipment: readonly { slot: string }[];
     }) => (
       <div className="house-scene house-scene-loading" role="status">
         Preparing your home...
@@ -65,6 +71,9 @@ type Props = {
   onPurchaseFurniture?: (args: { itemId: string }) => Promise<HousingSave>;
   onFurnitureAction?: (action: LifeActionId) => Promise<string | null>;
   authoritativeNeeds?: Needs;
+  appearance?: Appearance | null;
+  gender?: string;
+  equipment?: readonly { slot: string }[];
 };
 
 function loadSave(key: string): HousingSave {
@@ -84,6 +93,9 @@ export function HomeInterior({
   onPurchaseFurniture,
   onFurnitureAction,
   authoritativeNeeds,
+  appearance,
+  gender = "nonbinary",
+  equipment = [],
 }: Props) {
   const [saved, setSaved] = useState(() => initialSave ?? loadSave(saveKey));
   const onSaveRef = useRef(onSave);
@@ -102,6 +114,14 @@ export function HomeInterior({
   }, [onSave]);
   const layout = HOME_LAYOUTS.find((entry) => entry.id === saved.layoutId) ?? HOME_LAYOUTS[1]!;
   const room = layout.rooms.find((entry) => entry.id === saved.room) ?? layout.rooms[0]!;
+  const incomingSaveKey = initialSave ? JSON.stringify(initialSave) : null;
+  const lastIncomingSaveKey = useRef(incomingSaveKey);
+  useEffect(() => {
+    if (!incomingSaveKey || incomingSaveKey === lastIncomingSaveKey.current) return;
+    lastIncomingSaveKey.current = incomingSaveKey;
+    const incoming = parseHousingSave(initialSave);
+    if (incoming) setSaved(incoming);
+  }, [incomingSaveKey, initialSave]);
   const usableFurniture = useMemo(
     () => saved.furniture.filter((item) => item.room === room.id),
     [saved.furniture, room.id],
@@ -330,6 +350,11 @@ export function HomeInterior({
             <HouseScene
               selectedRoom={room.id as HouseRoomId}
               lightsOn
+              furniture={saved.furniture}
+              avatarRoom={room.id}
+              appearance={appearance ?? ({} as Appearance)}
+              gender={gender}
+              equipment={equipment}
               onSelectRoom={(id) =>
                 inside ? visitRoom(id as RoomId) : save({ ...saved, room: id as RoomId })
               }

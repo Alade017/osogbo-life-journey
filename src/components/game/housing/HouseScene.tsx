@@ -1,7 +1,15 @@
-import { Suspense, useEffect, useMemo } from "react";
+import { Suspense, memo, useEffect, useMemo } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { getSceneColor } from "@/lib/scene-colors";
+import {
+  FURNITURE_CATALOG,
+  HOME_LAYOUTS,
+  type PlacedFurniture,
+  type RoomId,
+} from "@/lib/housing-service";
+import { RoomAvatarSprite } from "@/components/game/housing/RoomAvatarSprite";
+import type { Appearance } from "@/game/avatar-appearance";
 import { OrbitControls as OrbitControlsImpl } from "three/examples/jsm/controls/OrbitControls.js";
 
 export type HouseRoomId = "lounge" | "den" | "kitchen" | "bedroom";
@@ -27,6 +35,212 @@ const ROOMS: Array<{
     color: getSceneColor("--scene-accent"),
   },
 ];
+
+const ROOM_CENTERS: Record<HouseRoomId, [number, number, number]> = {
+  lounge: [-3.1, 0, 3.1],
+  den: [3.1, 0, 3.1],
+  kitchen: [-3.1, 0, -3.1],
+  bedroom: [3.1, 0, -3.1],
+};
+const ROOM_FOR_SAVE: Record<RoomId, HouseRoomId> = {
+  lounge: "lounge",
+  dining: "den",
+  study: "den",
+  kitchen: "kitchen",
+  bathroom: "den",
+  bedroom: "bedroom",
+};
+const AVATAR_POINTS: Record<RoomId, [number, number, number]> = {
+  lounge: [-3.1, 0.85, 4.72],
+  dining: [1.62, 0.85, 3.1],
+  study: [4.7, 0.85, 3.1],
+  kitchen: [-3.1, 0.85, -1.62],
+  bathroom: [4.7, 0.85, -3.1],
+  bedroom: [3.1, 0.85, -1.62],
+};
+
+type FurniturePlacement = { placement: PlacedFurniture; item: (typeof FURNITURE_CATALOG)[number] };
+
+function savedFurniturePosition({ placement, item }: FurniturePlacement): [number, number, number] {
+  const room = HOME_LAYOUTS.find((layout) =>
+    layout.rooms.some((entry) => entry.id === placement.room),
+  )?.rooms.find((entry) => entry.id === placement.room);
+  const center = ROOM_CENTERS[ROOM_FOR_SAVE[placement.room]];
+  const cell = 0.68;
+  const localX = (placement.x + (item.width - 1) / 2 - ((room?.width ?? 6) - 1) / 2) * cell;
+  const localZ = (placement.y + (item.height - 1) / 2 - ((room?.height ?? 6) - 1) / 2) * cell;
+  const [offsetX, offsetY, offsetZ] = item.scenePosition ?? [0, 0, 0];
+  return [center[0] + localX + offsetX, 0.08 + offsetY, center[2] + localZ + offsetZ];
+}
+
+const PlacedFurnitureModel = memo(function PlacedFurnitureModel({
+  placement,
+  item,
+}: FurniturePlacement) {
+  const width = Math.max(0.55, Math.min(1.55, item.width * 0.62));
+  const depth = Math.max(0.55, Math.min(1.55, item.height * 0.62));
+  const position = savedFurniturePosition({ placement, item });
+  return (
+    <group position={position} rotation={[0, (placement.rotation * Math.PI) / 180, 0]}>
+      {item.id === "sofa" ? (
+        <>
+          <Box
+            position={[0, 0.28, 0]}
+            size={[width, 0.38, depth]}
+            color={getSceneColor("--scene-accent")}
+          />
+          <Box
+            position={[0, 0.62, -depth * 0.39]}
+            size={[width * 0.9, 0.52, 0.18]}
+            color={getSceneColor("--scene-building")}
+          />
+          <Box
+            position={[-width * 0.44, 0.4, 0]}
+            size={[0.16, 0.52, depth]}
+            color={getSceneColor("--scene-building")}
+          />
+          <Box
+            position={[width * 0.44, 0.4, 0]}
+            size={[0.16, 0.52, depth]}
+            color={getSceneColor("--scene-building")}
+          />
+        </>
+      ) : item.id === "bed" ? (
+        <>
+          <Box
+            position={[0, 0.22, 0]}
+            size={[width, 0.4, depth]}
+            color={getSceneColor("--scene-building-edge")}
+          />
+          <Box
+            position={[0, 0.48, 0]}
+            size={[width * 0.94, 0.14, depth * 0.9]}
+            color={getSceneColor("--brand-cream")}
+          />
+          <Box
+            position={[0, 0.62, -depth * 0.32]}
+            size={[width * 0.38, 0.12, depth * 0.2]}
+            color={getSceneColor("--brand-porcelain")}
+          />
+        </>
+      ) : item.id === "plant" ? (
+        <>
+          <mesh position={[0, 0.28, 0]} castShadow>
+            <cylinderGeometry args={[0.22, 0.28, 0.52, 8]} />
+            <meshStandardMaterial color={getSceneColor("--scene-wood-line")} />
+          </mesh>
+          <mesh position={[0, 0.82, 0]} castShadow>
+            <coneGeometry args={[0.42, 0.85, 7]} />
+            <meshStandardMaterial color={getSceneColor("--scene-hill-front")} />
+          </mesh>
+        </>
+      ) : item.id === "stove" ? (
+        <>
+          <Box
+            position={[0, 0.36, 0]}
+            size={[width, 0.7, depth]}
+            color={getSceneColor("--scene-building")}
+          />
+          {[-0.22, 0.22].map((x) =>
+            [-0.18, 0.18].map((z) => (
+              <mesh key={`${x}:${z}`} position={[x, 0.74, z]}>
+                <cylinderGeometry args={[0.12, 0.12, 0.05, 12]} />
+                <meshStandardMaterial color={getSceneColor("--brand-ink")} />
+              </mesh>
+            )),
+          )}
+        </>
+      ) : item.id === "toilet" ? (
+        <>
+          <Box
+            position={[0, 0.22, 0]}
+            size={[0.46, 0.42, 0.52]}
+            color={getSceneColor("--brand-porcelain")}
+          />
+          <mesh position={[0, 0.49, 0.03]} rotation={[-Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.28, 0.25, 0.12, 16]} />
+            <meshStandardMaterial color={getSceneColor("--brand-porcelain")} />
+          </mesh>
+          <Box
+            position={[0, 0.56, -0.25]}
+            size={[0.42, 0.58, 0.18]}
+            color={getSceneColor("--brand-porcelain")}
+          />
+        </>
+      ) : item.id === "shower" ? (
+        <>
+          <Box
+            position={[0.24, 0.95, 0]}
+            size={[0.08, 1.8, 0.08]}
+            color={getSceneColor("--scene-building-edge")}
+          />
+          <Box
+            position={[0, 1.76, 0]}
+            size={[0.58, 0.08, 0.08]}
+            color={getSceneColor("--scene-building-edge")}
+          />
+          <Box
+            position={[-0.22, 0.18, 0]}
+            size={[0.08, 0.36, depth]}
+            color={getSceneColor("--scene-sky")}
+          />
+        </>
+      ) : item.id === "computer" || item.id === "television" ? (
+        <>
+          <Box
+            position={[0, 0.46, 0]}
+            size={[width, 0.12, depth]}
+            color={getSceneColor("--scene-wood-line")}
+          />
+          <Box
+            position={[0, 0.86, -depth * 0.3]}
+            size={[width * 0.58, 0.64, 0.1]}
+            color={getSceneColor("--brand-ink")}
+          />
+          <Box
+            position={[0, 0.86, -depth * 0.23]}
+            size={[width * 0.49, 0.48, 0.025]}
+            color={getSceneColor("--scene-sky")}
+          />
+          <Box
+            position={[-width * 0.38, 0.22, 0]}
+            size={[0.08, 0.44, 0.08]}
+            color={getSceneColor("--scene-wood-line")}
+          />
+          <Box
+            position={[width * 0.38, 0.22, 0]}
+            size={[0.08, 0.44, 0.08]}
+            color={getSceneColor("--scene-wood-line")}
+          />
+        </>
+      ) : null}
+    </group>
+  );
+});
+
+const FurnitureLayer = memo(function FurnitureLayer({
+  furniture,
+}: {
+  furniture: PlacedFurniture[];
+}) {
+  const renderable = useMemo(() => {
+    const result: FurniturePlacement[] = [];
+    for (const placement of furniture) {
+      const item = FURNITURE_CATALOG.find((entry) => entry.id === placement.itemId);
+      if (!item) {
+        console.warn(`[HomeScene] Skipping unknown furniture catalogue item: ${placement.itemId}`);
+        continue;
+      }
+      if (!item.scenePosition) {
+        console.warn(`[HomeScene] Skipping ${item.id}: no catalogue scene position is defined.`);
+        continue;
+      }
+      result.push({ placement, item });
+    }
+    return result;
+  }, [furniture]);
+  return renderable.map((entry) => <PlacedFurnitureModel key={entry.placement.id} {...entry} />);
+});
 
 function makeFloorTexture(kind: "wood" | "tile") {
   const canvas = document.createElement("canvas");
@@ -378,10 +592,20 @@ function SceneContents({
   selectedRoom,
   lightsOn,
   onSelectRoom,
+  furniture,
+  avatarRoom,
+  appearance,
+  gender,
+  equipment,
 }: {
   selectedRoom: HouseRoomId;
   lightsOn: boolean;
   onSelectRoom: (room: HouseRoomId) => void;
+  furniture: PlacedFurniture[];
+  avatarRoom: RoomId;
+  appearance: Appearance;
+  gender: string;
+  equipment: readonly { slot: string }[];
 }) {
   const woodTexture = useMemo(() => makeFloorTexture("wood"), []);
   const tileTexture = useMemo(() => makeFloorTexture("tile"), []);
@@ -444,6 +668,13 @@ function SceneContents({
         />
       ))}
       <HouseStructure />
+      <FurnitureLayer furniture={furniture} />
+      <RoomAvatarSprite
+        position={AVATAR_POINTS[avatarRoom]}
+        appearance={appearance}
+        gender={gender}
+        equipment={equipment}
+      />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.62, 0]} receiveShadow>
         <planeGeometry args={[200, 200]} />
         <shadowMaterial transparent opacity={0.16} />
@@ -457,10 +688,20 @@ export function HouseScene({
   selectedRoom,
   lightsOn,
   onSelectRoom,
+  furniture,
+  avatarRoom,
+  appearance,
+  gender,
+  equipment,
 }: {
   selectedRoom: HouseRoomId;
   lightsOn: boolean;
   onSelectRoom: (room: HouseRoomId) => void;
+  furniture: PlacedFurniture[];
+  avatarRoom: RoomId;
+  appearance: Appearance;
+  gender: string;
+  equipment: readonly { slot: string }[];
 }) {
   return (
     <div className={`house-scene ${lightsOn ? "is-lit" : "is-dim"}`}>
@@ -483,6 +724,11 @@ export function HouseScene({
             selectedRoom={selectedRoom}
             lightsOn={lightsOn}
             onSelectRoom={onSelectRoom}
+            furniture={furniture}
+            avatarRoom={avatarRoom}
+            appearance={appearance}
+            gender={gender}
+            equipment={equipment}
           />
         </Suspense>
       </Canvas>

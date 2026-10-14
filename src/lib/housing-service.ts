@@ -8,6 +8,8 @@ export type FurnitureItem = {
   icon: string;
   width: number;
   height: number;
+  /** Small local render offset from the saved placement's floor-grid anchor. */
+  scenePosition?: [number, number, number];
   effects: Partial<Record<"energy" | "fun" | "hygiene" | "bladder" | "hunger" | "skill", number>>;
 };
 export type PlacedFurniture = {
@@ -159,6 +161,7 @@ export const FURNITURE_CATALOG: FurnitureItem[] = [
     icon: "🛋️",
     width: 2,
     height: 1,
+    scenePosition: [0, 0.08, 0],
     effects: { fun: 5 },
   },
   {
@@ -169,6 +172,7 @@ export const FURNITURE_CATALOG: FurnitureItem[] = [
     icon: "🛏️",
     width: 2,
     height: 2,
+    scenePosition: [0, 0.06, 0],
     effects: { energy: 25 },
   },
   {
@@ -179,6 +183,7 @@ export const FURNITURE_CATALOG: FurnitureItem[] = [
     icon: "♨️",
     width: 2,
     height: 1,
+    scenePosition: [0, 0.08, 0],
     effects: { hunger: 10 },
   },
   {
@@ -189,6 +194,7 @@ export const FURNITURE_CATALOG: FurnitureItem[] = [
     icon: "🚿",
     width: 1,
     height: 2,
+    scenePosition: [0, 0.04, 0],
     effects: { hygiene: 25 },
   },
   {
@@ -199,6 +205,7 @@ export const FURNITURE_CATALOG: FurnitureItem[] = [
     icon: "🚽",
     width: 1,
     height: 1,
+    scenePosition: [0, 0.04, 0],
     effects: { bladder: 25 },
   },
   {
@@ -209,6 +216,7 @@ export const FURNITURE_CATALOG: FurnitureItem[] = [
     icon: "💻",
     width: 2,
     height: 1,
+    scenePosition: [0, 0.08, 0],
     effects: { skill: 5 },
   },
   {
@@ -219,6 +227,7 @@ export const FURNITURE_CATALOG: FurnitureItem[] = [
     icon: "📺",
     width: 2,
     height: 1,
+    scenePosition: [0, 0.08, 0],
     effects: { fun: 5 },
   },
   {
@@ -229,6 +238,7 @@ export const FURNITURE_CATALOG: FurnitureItem[] = [
     icon: "🪴",
     width: 1,
     height: 1,
+    scenePosition: [0, 0.08, 0],
     effects: { fun: 2 },
   },
 ];

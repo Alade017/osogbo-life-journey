@@ -150,13 +150,6 @@ export function AvatarArtwork({
             strokeWidth="2"
           />
           <path d="M29 31h6v5h-6z" fill={skin} stroke={EDGE} strokeWidth="1.4" />
-          {worn.has("top") && (
-            <g data-equipment-slot="top" pointerEvents="none">
-              <path d="M20 39h5v14h-5z" fill="var(--chart-4)" opacity=".9" />
-              <circle cx="22.5" cy="42" r=".8" fill={EDGE} />
-              <circle cx="22.5" cy="46" r=".8" fill={EDGE} />
-            </g>
-          )}
           {worn.has("bottom") && (
             <path
               data-equipment-slot="bottom"
@@ -165,6 +158,13 @@ export function AvatarArtwork({
               strokeWidth="2.5"
             />
           )}
+          {worn.has("top") && (
+            <g data-equipment-slot="top" pointerEvents="none">
+              <path d="M20 39h5v14h-5z" fill="var(--chart-4)" opacity=".9" />
+              <circle cx="22.5" cy="42" r=".8" fill={EDGE} />
+              <circle cx="22.5" cy="46" r=".8" fill={EDGE} />
+            </g>
+          )}
           {worn.has("shoes") && (
             <path
               data-equipment-slot="shoes"
@@ -172,12 +172,6 @@ export function AvatarArtwork({
               stroke="var(--chart-4)"
               strokeWidth="1.5"
             />
-          )}
-          {worn.has("accessory") && (
-            <g data-equipment-slot="accessory" stroke={EDGE} strokeWidth="1.5">
-              <path d="m10 39 5-3 4 4-4 15-6-2z" fill="var(--chart-4)" />
-              <path d="m12 40 4 2" stroke="var(--chart-4)" />
-            </g>
           )}
           {/* Back view shows hair and outfit details without a front-facing expression. */}
           <path
@@ -301,6 +295,12 @@ export function AvatarArtwork({
               stroke={EDGE}
               strokeWidth="1.8"
             />
+          )}
+          {worn.has("accessory") && (
+            <g data-equipment-slot="accessory" stroke={EDGE} strokeWidth="1.5">
+              <path d="m10 39 5-3 4 4-4 15-6-2z" fill="var(--chart-4)" />
+              <path d="m12 40 4 2" stroke="var(--chart-4)" />
+            </g>
           )}
           <rect
             x="27"

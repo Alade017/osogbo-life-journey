@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { HomeInterior } from "@/components/game/HomeInterior";
 import { LayeredHomeScene } from "@/components/game/housing/LayeredHomeScene";
 import { dashboardGreeting } from "@/lib/dashboard-greeting";
@@ -21,6 +21,7 @@ import { osogboHour } from "@/lib/osogbo-weather";
 import { isPowerOutageAt } from "@/lib/world-simulation";
 import { toast } from "sonner";
 import { parseHousingSave } from "@/lib/housing-service";
+import { normalizeEquippedItems } from "@/lib/equipment-service";
 import { useMutation } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useGameTime } from "@/components/game/GameTimeProvider";
@@ -98,6 +99,10 @@ function MyCityHome() {
   } = useGameTime();
   const { data: character } = useQuery(q.character());
   const { data: equippedItems } = useQuery({ ...q.equipment(), enabled: !!character });
+  const roomEquipment = useMemo(
+    () => normalizeEquippedItems(equippedItems).map(({ slot }) => ({ slot })),
+    [equippedItems],
+  );
   const housingHomeQuery = useQuery({
     queryKey: ["housingHome"],
     enabled: !!character,
@@ -152,6 +157,25 @@ function MyCityHome() {
         () => {
           void queryClient.invalidateQueries({ queryKey: ["housingHome"] });
         },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [character?.id, queryClient]);
+  useEffect(() => {
+    if (!character?.id) return;
+    const channel = supabase
+      .channel(`player-equipment-home-${character.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "player_equipment",
+          filter: `character_id=eq.${character.id}`,
+        },
+        () => void queryClient.invalidateQueries({ queryKey: q.equipment().queryKey }),
       )
       .subscribe();
     return () => {
@@ -671,6 +695,9 @@ function MyCityHome() {
                     ? { initialSave: cloudSave.payload }
                     : {})}
                 onSave={scheduleSave}
+                appearance={character.appearance as never}
+                gender={character.gender}
+                equipment={roomEquipment}
                 onPurchaseUpgrade={purchaseUpgrade}
                 onFurnitureAction={performFurnitureAction}
                 authoritativeNeeds={simulation.needs}
