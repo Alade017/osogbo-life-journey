@@ -13,7 +13,7 @@
 :root {
   --radius: 0.8rem;
 
-  --brand-porcelain: #f2f4f7;
+  --brand-porcelain: #f5f2ea;
   --brand-cream: #f8f3f0;
   --brand-royal: #014baa;
   --brand-royal-deep: #013d8a;
@@ -32,7 +32,7 @@
   --elevation-dock: 0 -6px 20px rgb(20 33 61 / 0.1);
   --shadow-card-hover: 0 8px 24px rgb(20 33 61 / 0.14);
   --duration-control: 140ms;
-  --color-text: var(--brand-ink);
+  --color-text: #0a0a0a;
   --color-text-secondary: var(--brand-slate);
   --color-surface: #ffffff;
   --shadow-sm: var(--elevation-rest);
@@ -72,11 +72,11 @@
 
   /* Surfaces */
   --background: var(--brand-porcelain);
-  --foreground: var(--brand-ink);
+  --foreground: var(--color-text);
   --card: var(--brand-cream);
-  --card-foreground: var(--brand-ink);
+  --card-foreground: var(--color-text);
   --popover: #ffffff;
-  --popover-foreground: var(--brand-ink);
+  --popover-foreground: var(--color-text);
 
   /* Actions */
   --primary: var(--brand-royal);
@@ -8734,33 +8734,70 @@
   flex: 1 1 auto;
 }
 
-/* A translucent blue-black pill keeps the shared game dock distinct over every scene. */
+/* A translucent porcelain pill keeps the shared game dock distinct over every scene. */
 .city-game.navigation-redesign .game-mobile-nav {
-  border: 1px solid color-mix(in srgb, var(--primary) 34%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand-ink) 14%, transparent);
   border-radius: 999px;
   background:
     radial-gradient(
       ellipse at 50% 0%,
-      color-mix(in srgb, var(--primary) 28%, transparent),
+      color-mix(in srgb, var(--primary) 12%, transparent),
       transparent 72%
     ),
-    color-mix(in srgb, var(--brand-ink) 88%, transparent);
+    color-mix(in srgb, var(--brand-cream) 94%, transparent);
   box-shadow:
-    0 8px 30px color-mix(in srgb, var(--brand-ink) 28%, transparent),
-    0 0 24px color-mix(in srgb, var(--primary) 18%, transparent);
+    0 8px 30px color-mix(in srgb, var(--brand-ink) 12%, transparent),
+    0 0 24px color-mix(in srgb, var(--primary) 10%, transparent);
   -webkit-backdrop-filter: blur(15px);
   backdrop-filter: blur(15px);
 }
 
 .city-game.navigation-redesign .game-mobile-nav .mobile-nav-link {
-  color: var(--primary-foreground);
+  color: var(--color-text);
 }
 
 .city-game.navigation-redesign .game-mobile-nav .mobile-nav-link:is(:hover, :focus-visible) {
-  background: color-mix(in srgb, var(--primary) 26%, transparent);
-  color: var(--primary-foreground);
+  background: color-mix(in srgb, var(--primary) 12%, transparent);
+  color: var(--brand-royal-deep);
 }
 
 .game-shell:has(.game-home) > .world-environment {
   display: none;
+}
+
+/* Consistent light game surfaces with near-black readable text. */
+.city-game {
+  --game-night: var(--brand-porcelain);
+  --game-panel: var(--card);
+  --game-panel-raised: var(--color-surface);
+  --game-line: var(--border);
+  --game-muted: var(--muted-foreground);
+  --game-white: var(--color-text);
+  color: var(--color-text);
+  background: var(--brand-porcelain);
+}
+
+.city-game:has(.world-environment[data-world-phase]) {
+  color: var(--color-text);
+  background: var(--brand-porcelain);
+}
+
+.world-environment,
+.world-environment[data-world-phase],
+.world-environment[data-world-phase="night"],
+.world-environment[data-world-phase="sunrise"],
+.world-environment[data-world-phase="sunset"] {
+  border-bottom-color: var(--border);
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--brand-cream) 92%, transparent);
+}
+
+.world-event,
+.world-outage {
+  color: var(--brand-royal-deep);
+}
+
+.city-game .game-hud.hud-v2 {
+  color: var(--color-text);
+  background: color-mix(in srgb, var(--color-surface) 94%, transparent);
 }

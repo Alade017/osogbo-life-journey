@@ -233,6 +233,38 @@
   transition: none !important;
 }
 
+/* Light porcelain navigation treatment shared with the game page palette. */
+.city-game.navigation-redesign .game-hover-sidebar {
+  border-color: var(--border);
+  background: var(--brand-cream);
+  color: var(--color-text);
+}
+.city-game.navigation-redesign .game-hover-sidebar .game-side-label,
+.city-game.navigation-redesign .game-hover-sidebar .game-side-link {
+  color: var(--color-text-secondary);
+}
+.city-game.navigation-redesign .game-hover-sidebar .game-side-link:hover,
+.city-game.navigation-redesign .game-hover-sidebar .game-side-link-active {
+  color: var(--brand-royal-deep);
+  background: var(--color-primary-soft);
+}
+.city-game.navigation-redesign .game-curved-dock .game-dock-surface {
+  fill: var(--brand-cream);
+}
+.city-game.navigation-redesign .game-curved-dock .mobile-nav-link {
+  color: var(--color-text);
+}
+.city-game.navigation-redesign .game-curved-dock .mobile-nav-link:is(:hover, .mobile-nav-active) {
+  color: var(--brand-royal-deep);
+  background: var(--color-primary-soft);
+}
+.city-game.navigation-redesign .game-curved-dock .mobile-nav-active svg {
+  color: var(--brand-royal-deep);
+}
+.city-game.navigation-redesign .game-curved-dock .mobile-nav-phone .phone-compact-label {
+  color: var(--color-text);
+}
+
 /* Keyboard focus uses the navigation's own surface treatment instead of a colored ring. */
 .city-game.navigation-redesign :is(.game-hover-sidebar, .game-curved-dock) :is(a, button):focus {
   outline: none;
@@ -240,8 +272,8 @@
 .city-game.navigation-redesign
   :is(.game-hover-sidebar, .game-curved-dock)
   :is(.game-side-link, .mobile-nav-link, .game-side-logo):focus-visible {
-  background: var(--color-surface-dark-elevated);
-  color: var(--brand-cream);
+  background: var(--color-primary-soft);
+  color: var(--brand-royal-deep);
   text-decoration: underline;
   text-underline-offset: 4px;
 }
