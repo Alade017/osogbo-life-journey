@@ -1,0 +1,167 @@
+.city-map-dashboard.is-world-map {
+  position: relative;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+  background: #f2f4f7;
+}
+
+.osogbo-map-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: #f2f4f7;
+  touch-action: manipulation;
+}
+
+.map-background {
+  fill: #f2f4f7;
+}
+
+.map-road-edge,
+.map-road-fill {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.map-road-edge {
+  stroke: #d9dee6;
+  stroke-width: 18px;
+}
+
+.map-road-fill {
+  stroke: #fff;
+  stroke-width: 14px;
+}
+
+.map-district-depth {
+  stroke: none;
+}
+
+.map-district-shape {
+  stroke: #14213d;
+  stroke-width: 2px;
+  transition: stroke-width 120ms ease;
+}
+
+.map-district {
+  cursor: pointer;
+  outline: none;
+}
+
+.map-district:focus-visible .map-district-shape,
+.map-district.is-selected .map-district-shape {
+  stroke-width: 4px;
+}
+
+.map-district-name {
+  fill: #14213d;
+  font: 700 15px/1 system-ui, sans-serif;
+  pointer-events: none;
+}
+
+.map-district-theme,
+.traffic-label {
+  fill: #46556e;
+  font: 600 10px/1 system-ui, sans-serif;
+  letter-spacing: 0.06em;
+  pointer-events: none;
+}
+
+.traffic-bar {
+  fill: #b7c0cc;
+}
+
+.traffic-bar.is-active {
+  fill: #14213d;
+}
+
+.map-landmark {
+  cursor: pointer;
+  outline: none;
+}
+
+.map-landmark-marker {
+  fill: #fff;
+  stroke: #14213d;
+  stroke-width: 2px;
+}
+
+.map-landmark-icon {
+  color: #14213d;
+  stroke-width: 2px;
+  pointer-events: none;
+}
+
+.map-landmark:focus-visible .map-landmark-marker {
+  stroke-width: 4px;
+}
+
+.landmark-label {
+  fill: #14213d;
+  font: 600 12px/1 system-ui, sans-serif;
+  text-anchor: middle;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.show-landmark-labels .landmark-label {
+  opacity: 1;
+  visibility: visible;
+}
+
+.map-review-dot {
+  fill: #d97706;
+  stroke: #fff;
+  stroke-width: 1px;
+}
+
+.city-map-toolbar {
+  position: absolute;
+  z-index: 2;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: calc(100% - 24px);
+}
+
+.city-map-label-toggle {
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid #14213d;
+  border-radius: 12px;
+  color: #14213d;
+  background: #fff;
+  font: 600 13px/1.2 system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.city-map-label-toggle:focus-visible {
+  outline: 3px solid var(--ring, #14213d);
+  outline-offset: 2px;
+}
+
+.city-map-selection {
+  max-width: 320px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #14213d;
+  border-radius: 12px;
+  color: #14213d;
+  background: #fff;
+  font: 500 12px/1.4 system-ui, sans-serif;
+}
+
+@media (max-width: 600px) {
+  .city-map-toolbar {
+    top: 8px;
+    left: 8px;
+    flex-direction: column;
+    max-width: calc(100% - 16px);
+  }
+}

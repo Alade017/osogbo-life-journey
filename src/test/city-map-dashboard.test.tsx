@@ -7,9 +7,14 @@ describe("city map overview", () => {
   it("shows the hand-placed district map without the old geographic map", () => {
     render(<CityMapDashboard />);
     expect(
-      screen.getByRole("group", { name: "Eight districts with selectable landmarks" }),
+      screen.getByRole("group", { name: "Hand-placed Osogbo district map" }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Oja Oba Market, Oja Oba/ })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "Oja Oba, high traffic" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Oja Oba Market, Oja Oba/ }),
+    ).toBeInTheDocument();
     expect(screen.queryByText("Living Osogbo map")).not.toBeInTheDocument();
   });
 
