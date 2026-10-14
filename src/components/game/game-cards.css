@@ -4,7 +4,7 @@
 }
 .city-game.card-refresh .city-game-main .game-panel {
   min-width: 0;
-  border-radius: var(--radius-card);
+  border-radius: var(--shape-card);
   border-top-width: 1px;
   border-right-width: 1px;
   border-bottom-width: 1px;

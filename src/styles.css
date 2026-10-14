@@ -121,17 +121,20 @@
 }
 
 @theme inline {
-  --font-display: var(--font-display);
-  --font-sans: var(--font-sans);
+  /* Typography */
+  --font-display: var(--typeface-display);
+  --font-sans: var(--typeface-body);
 
+  /* Shape */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --radius-card: var(--radius-card);
-  --radius-button: var(--radius-button);
-  --radius-pill: var(--radius-pill);
+  --radius-card: var(--shape-card);
+  --radius-button: var(--shape-button);
+  --radius-pill: var(--shape-pill);
 
+  /* Semantic colours (used by shadcn-style components) */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -158,12 +161,23 @@
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
 
+  /* Brand colours (use as bg-royal, text-ink, bg-cream, bg-porcelain) */
+  --color-royal: var(--brand-royal);
+  --color-royal-deep: var(--brand-royal-deep);
+  --color-ink: var(--brand-ink);
+  --color-cream: var(--brand-cream);
+  --color-porcelain: var(--brand-porcelain);
+  --color-slate: var(--brand-slate);
+  --color-mist: var(--brand-mist);
+
+  /* Charts */
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
 
+  /* Sidebar */
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -173,11 +187,12 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --shadow-rest: var(--shadow-rest);
-  --shadow-card: var(--shadow-card);
-  --shadow-lift: var(--shadow-lift);
-  --shadow-press: var(--shadow-press);
-  --shadow-dock: var(--shadow-dock);
+  /* Elevation (use as shadow-card, shadow-lift, etc.) */
+  --shadow-rest: var(--elevation-rest);
+  --shadow-card: var(--elevation-card);
+  --shadow-lift: var(--elevation-lift);
+  --shadow-press: var(--elevation-press);
+  --shadow-dock: var(--elevation-dock);
 }
 
 @layer base {
@@ -192,7 +207,7 @@
   h1,
   h2,
   h3 {
-    font-family: var(--font-display);
+    font-family: var(--typeface-display);
   }
 }
 
@@ -208,7 +223,7 @@
   border: 1px solid var(--color-border);
   border-radius: 0.65rem;
   box-shadow: 0 1px 3px rgb(15 23 42 / 8%);
-  font-family: var(--font-sans);
+  font-family: var(--typeface-body);
   font-weight: 600;
   transition:
     transform 140ms ease,
@@ -1666,8 +1681,8 @@
 
 .game-panel,
 .game-panel-accent {
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card);
+  border-radius: var(--shape-card);
+  box-shadow: var(--elevation-card);
 }
 
 :where(button, [role="button"], input, select, textarea, a).focus-visible,
@@ -3111,7 +3126,7 @@
   margin: 0;
   overflow: hidden;
   color: #293b31;
-  font-family: var(--font-display);
+  font-family: var(--typeface-display);
   font-size: 15px;
   font-weight: 800;
   text-overflow: ellipsis;
@@ -6983,7 +6998,7 @@
 .game-mobile-nav {
   border-color: var(--color-surface-dark-border);
   background: var(--brand-ink);
-  box-shadow: var(--shadow-dock);
+  box-shadow: var(--elevation-dock);
 }
 
 .game-mobile-nav .mobile-nav-link,
@@ -7214,13 +7229,13 @@
 
 .game-panel {
   border-color: var(--color-border);
-  border-radius: var(--radius-card);
+  border-radius: var(--shape-card);
   background-color: var(--color-surface);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--elevation-card);
 }
 
 .game-panel:hover {
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--elevation-card);
 }
 
 .city-game :focus-visible {
@@ -7238,8 +7253,8 @@
 .jobs-current,
 .jobs-filters,
 .jobs-card {
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card);
+  border-radius: var(--shape-card);
+  box-shadow: var(--elevation-card);
 }
 
 .jobs-current {
@@ -7293,7 +7308,7 @@
 .inventory-equipped {
   border-radius: 16px;
   background: var(--color-surface);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--elevation-card);
 }
 
 .inventory-card:hover,
@@ -7382,9 +7397,9 @@
 .city-explorer-map-section,
 .city-explorer-places {
   border-color: var(--color-border);
-  border-radius: var(--radius-card);
+  border-radius: var(--shape-card);
   background: var(--color-surface);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--elevation-card);
 }
 
 .city-explorer-intro h1,

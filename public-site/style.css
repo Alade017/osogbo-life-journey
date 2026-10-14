@@ -557,9 +557,9 @@ body {
 .life-preview,
 .faq-list details {
   border: 1px solid var(--border);
-  border-radius: var(--radius-card);
+  border-radius: var(--shape-card);
   background: var(--surface);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--elevation-card);
 }
 
 .feature-card {
