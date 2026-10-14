@@ -135,7 +135,7 @@
   stroke-width: 3;
 }
 .city-building:focus-visible {
-  stroke: #fff;
+  stroke: var(--ring);
   stroke-width: 3;
 }
 .city-place-marker,
@@ -387,7 +387,7 @@
 .city-greeting-card button:hover,
 .city-greeting-card button:focus-visible {
   background: #24513a;
-  outline: 2px solid #9bd17a;
+  outline: 2px solid var(--ring);
 }
 .city-activity-tags {
   display: flex;
@@ -426,7 +426,7 @@
 .city-map-tools button:hover,
 .city-map-tools button:focus-visible {
   background: #31644c;
-  outline: 2px solid #9bd17a;
+  outline: 2px solid var(--ring);
 }
 .city-map-tools svg {
   width: 19px;
@@ -465,7 +465,7 @@
 .city-bottom-shortcuts a:focus-visible,
 .city-location-drawer button:focus-visible,
 .city-location-drawer a:focus-visible {
-  outline: 2px solid #a9d887;
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
 .city-touch-hint {
