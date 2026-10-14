@@ -1,7 +1,24 @@
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CityMapDashboard } from "@/components/game/CityMapDashboard";
 import mapData from "@/data/osogbo-map.json";
+
+beforeEach(() => {
+  class TestResizeObserver {
+    constructor(private readonly callback: ResizeObserverCallback) {}
+    observe() {
+      this.callback(
+        [{ contentRect: { width: 1200, height: 800 } } as ResizeObserverEntry],
+        this as unknown as ResizeObserver,
+      );
+    }
+    disconnect() {}
+    unobserve() {}
+  }
+  vi.stubGlobal("ResizeObserver", TestResizeObserver);
+});
+
+afterEach(() => vi.unstubAllGlobals());
 
 describe("city map overview", () => {
   it("shows the hand-placed district map without the old geographic map", () => {
@@ -9,12 +26,8 @@ describe("city map overview", () => {
     expect(
       screen.getByRole("group", { name: "Hand-placed Osogbo district map" }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Oja Oba, high traffic" }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: /Oja Oba Market, Oja Oba/ }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Oja Oba, high traffic" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Oja Oba Market/ })).not.toBeInTheDocument();
     expect(screen.queryByText("Living Osogbo map")).not.toBeInTheDocument();
   });
 

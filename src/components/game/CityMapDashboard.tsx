@@ -1,32 +1,40 @@
-import { useState } from "react";
-import { OsogboMapSvg, type MapDistrict } from "@/components/map/OsogboMap.svg";
+import { useMemo, useState } from "react";
+import { MapCanvas } from "@/components/map/MapCanvas";
+import mapData from "@/data/osogbo-map.json";
+
+type SelectedPlace = { title: string; details: string };
 
 export function CityMapDashboard() {
-  const [labelsVisible, setLabelsVisible] = useState(false);
-  const [selectedDistrict, setSelectedDistrict] = useState<MapDistrict | null>(null);
+  const [selectedPlace, setSelectedPlace] = useState<SelectedPlace | null>(null);
+  const landmarks = useMemo(() => mapData.districts.flatMap((district) => district.landmarks), []);
+
+  const handleDistrictSelect = (id: string) => {
+    const district = mapData.districts.find((item) => item.id === id);
+    if (district) setSelectedPlace({ title: district.name, details: district.description });
+  };
+
+  const handleLandmarkSelect = (id: string) => {
+    const landmark = landmarks.find((item) => item.id === id);
+    if (!landmark) return;
+    const district = mapData.districts.find((item) =>
+      item.landmarks.some((place) => place.id === landmark.id),
+    );
+    setSelectedPlace({
+      title: landmark.label,
+      details: `${landmark.category} · ${district?.name ?? "Osogbo"}`,
+    });
+  };
 
   return (
     <section className="city-map-dashboard is-world-map" aria-label="Osogbo district map">
       <div className="city-map-toolbar">
-        <button
-          className="city-map-label-toggle"
-          type="button"
-          aria-pressed={labelsVisible}
-          onClick={() => setLabelsVisible((visible) => !visible)}
-        >
-          {labelsVisible ? "Hide landmark labels" : "Show landmark labels"}
-        </button>
-        {selectedDistrict && (
+        {selectedPlace && (
           <p className="city-map-selection" aria-live="polite">
-            {selectedDistrict.name} · {selectedDistrict.description}
+            <strong>{selectedPlace.title}</strong> · {selectedPlace.details}
           </p>
         )}
       </div>
-      <OsogboMapSvg
-        labelsVisible={labelsVisible}
-        selectedDistrictId={selectedDistrict?.id}
-        onDistrictSelect={setSelectedDistrict}
-      />
+      <MapCanvas onSelectDistrict={handleDistrictSelect} onSelectLandmark={handleLandmarkSelect} />
     </section>
   );
 }

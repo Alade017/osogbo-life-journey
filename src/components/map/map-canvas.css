@@ -1,0 +1,165 @@
+.map-canvas {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: #f2f4f7;
+  touch-action: none;
+  user-select: none;
+}
+
+.map-canvas-transform {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.map-canvas-transform.is-animated {
+  transition: transform 280ms cubic-bezier(0.2, 0.75, 0.25, 1);
+}
+
+.map-canvas-transform > .osogbo-map-svg,
+.map-canvas-transform > .map-marker-layer {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 1200px;
+  height: 800px;
+  min-height: 0;
+}
+
+.map-canvas-transform .map-district:focus-visible .map-district-shape {
+  stroke: var(--ring);
+}
+
+.map-canvas-transform > .map-marker-layer {
+  overflow: visible;
+  pointer-events: none;
+}
+
+.map-canvas-marker {
+  cursor: pointer;
+  outline: none;
+  pointer-events: auto;
+}
+
+.map-marker-hit {
+  fill: transparent;
+  stroke: transparent;
+  pointer-events: all;
+}
+
+.map-canvas-marker:focus-visible .map-marker-hit {
+  fill: color-mix(in srgb, var(--ring) 12%, transparent);
+  stroke: var(--ring);
+  stroke-width: 3px;
+}
+
+.map-canvas-marker-dot {
+  fill: #fff;
+  stroke: #14213d;
+  stroke-width: 2px;
+  pointer-events: none;
+}
+
+.map-canvas-marker-icon {
+  color: #14213d;
+  stroke-width: 2px;
+  pointer-events: none;
+}
+
+.map-canvas-marker-label {
+  fill: #14213d;
+  font:
+    650 13px/1.2 system-ui,
+    sans-serif;
+  paint-order: stroke;
+  stroke: #f2f4f7;
+  stroke-linejoin: round;
+  stroke-width: 4px;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.map-live-marker {
+  pointer-events: none;
+}
+
+.map-live-marker-pulse {
+  fill: color-mix(in srgb, var(--primary) 20%, transparent);
+  stroke: var(--primary);
+  stroke-width: 2px;
+}
+
+.map-live-marker-core {
+  fill: var(--primary);
+  stroke: #fff;
+  stroke-width: 3px;
+}
+
+.map-live-marker-stall .map-live-marker-core {
+  fill: #d97706;
+}
+
+.map-live-marker-job .map-live-marker-core {
+  fill: #2563eb;
+}
+
+.map-live-marker-label,
+.map-live-marker-hint {
+  fill: #14213d;
+  font:
+    650 13px/1.2 system-ui,
+    sans-serif;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-linejoin: round;
+  stroke-width: 4px;
+  text-anchor: middle;
+}
+
+.map-live-marker-hint {
+  font-weight: 500;
+}
+
+.map-event-chip {
+  pointer-events: none;
+}
+
+.map-event-chip rect {
+  fill: #14213d;
+  stroke: #fff;
+  stroke-width: 2px;
+}
+
+.map-event-chip text {
+  fill: #fff;
+  font:
+    650 12px/1 system-ui,
+    sans-serif;
+}
+
+.map-canvas-zoom-status {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 5;
+  padding: 7px 10px;
+  border: 1px solid #14213d;
+  border-radius: 999px;
+  color: #14213d;
+  background: #fff;
+  font-size: 12px;
+  font-weight: 650;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-canvas-transform.is-animated {
+    transition: none;
+  }
+}

@@ -58,14 +58,18 @@
 
 .map-district-name {
   fill: #14213d;
-  font: 700 15px/1 system-ui, sans-serif;
+  font:
+    700 15px/1 system-ui,
+    sans-serif;
   pointer-events: none;
 }
 
 .map-district-theme,
 .traffic-label {
   fill: #46556e;
-  font: 600 10px/1 system-ui, sans-serif;
+  font:
+    600 10px/1 system-ui,
+    sans-serif;
   letter-spacing: 0.06em;
   pointer-events: none;
 }
@@ -101,7 +105,9 @@
 
 .landmark-label {
   fill: #14213d;
-  font: 600 12px/1 system-ui, sans-serif;
+  font:
+    600 12px/1 system-ui,
+    sans-serif;
   text-anchor: middle;
   opacity: 0;
   visibility: hidden;
@@ -137,7 +143,9 @@
   border-radius: 12px;
   color: #14213d;
   background: #fff;
-  font: 600 13px/1.2 system-ui, sans-serif;
+  font:
+    600 13px/1.2 system-ui,
+    sans-serif;
   cursor: pointer;
 }
 
@@ -154,7 +162,9 @@
   border-radius: 12px;
   color: #14213d;
   background: #fff;
-  font: 500 12px/1.4 system-ui, sans-serif;
+  font:
+    500 12px/1.4 system-ui,
+    sans-serif;
 }
 
 @media (max-width: 600px) {

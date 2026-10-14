@@ -27,7 +27,7 @@ type LandmarkCategory =
 type DistrictTheme = "market" | "residential" | "leisure" | "transport" | "school" | "outskirts";
 type Traffic = "low" | "medium" | "high";
 
-type MapLandmark = {
+export type MapLandmark = {
   id: string;
   label: string;
   category: LandmarkCategory;
@@ -143,22 +143,27 @@ function roadRoutes(districtBoundsById: Map<string, Bounds>) {
 }
 
 export type OsogboMapSvgProps = {
+  data?: typeof mapData;
   labelsVisible?: boolean;
+  showLandmarks?: boolean;
   selectedDistrictId?: string | null;
   onDistrictSelect?: (district: MapDistrict) => void;
   onLandmarkSelect?: (landmark: MapLandmark, district: MapDistrict) => void;
 };
 
 export function OsogboMapSvg({
+  data = mapData,
   labelsVisible = false,
+  showLandmarks = true,
   selectedDistrictId,
   onDistrictSelect,
   onLandmarkSelect,
 }: OsogboMapSvgProps) {
+  const districts = data.districts as MapDistrict[];
   const { boundsById, roads } = useMemo(() => {
     const bounds = new Map(districts.map((district) => [district.id, districtBounds(district)]));
     return { boundsById: bounds, roads: roadRoutes(bounds) };
-  }, []);
+  }, [districts]);
 
   return (
     <svg
@@ -183,7 +188,8 @@ export function OsogboMapSvg({
         {districts.map((district) => {
           const bounds = boundsById.get(district.id);
           if (!bounds) return null;
-          const trafficCount = district.traffic === "high" ? 3 : district.traffic === "medium" ? 2 : 1;
+          const trafficCount =
+            district.traffic === "high" ? 3 : district.traffic === "medium" ? 2 : 1;
           const isSelected = selectedDistrictId === district.id;
           const activate = () => onDistrictSelect?.(district);
 
@@ -227,8 +233,9 @@ export function OsogboMapSvg({
                 {district.name}
               </text>
               <text className="map-district-theme" x={bounds.x + 14} y={bounds.y + 43}>
-                {district.theme.toUpperCase()}
-                {district.verify ? " · VERIFY" : ""}
+                {district.theme[0]?.toUpperCase()}
+                {district.theme.slice(1)}
+                {district.verify ? " · Verify" : ""}
               </text>
               <g className="traffic" aria-label={`${district.traffic} traffic`}>
                 {[0, 1, 2].map((bar) => (
@@ -243,7 +250,8 @@ export function OsogboMapSvg({
                   />
                 ))}
                 <text className="traffic-label" x={bounds.x + bounds.width - 45} y={bounds.y + 42}>
-                  {district.traffic.toUpperCase()}
+                  {district.traffic[0]?.toUpperCase()}
+                  {district.traffic.slice(1)}
                 </text>
               </g>
             </g>
@@ -251,62 +259,64 @@ export function OsogboMapSvg({
         })}
       </g>
 
-      <g
-        className={`map-landmarks${labelsVisible ? " show-landmark-labels" : ""}`}
-        aria-label="Landmarks"
-      >
-        {districts.flatMap((district) =>
-          district.landmarks.map((landmark) => {
-            const Icon = categoryIcons[landmark.category];
-            const activate = () => onLandmarkSelect?.(landmark, district);
-            return (
-              <g
-                id={`landmark-${landmark.id}`}
-                data-landmark-id={landmark.id}
-                className="map-landmark"
-                key={landmark.id}
-                role="button"
-                tabIndex={0}
-                aria-label={`${landmark.label}, ${district.name}${landmark.verify ? ", needs verification" : ""}`}
-                onClick={activate}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    activate();
-                  }
-                }}
-              >
-                <circle className="map-landmark-marker" cx={landmark.x} cy={landmark.y} r="13" />
-                <Icon
-                  className="map-landmark-icon"
-                  x={landmark.x - 12}
-                  y={landmark.y - 12}
-                  width={24}
-                  height={24}
-                  aria-hidden="true"
-                />
-                <text
-                  className="landmark-label"
-                  aria-hidden={!labelsVisible}
-                  x={landmark.x}
-                  y={landmark.y + 28}
+      {showLandmarks && (
+        <g
+          className={`map-landmarks${labelsVisible ? " show-landmark-labels" : ""}`}
+          aria-label="Landmarks"
+        >
+          {districts.flatMap((district) =>
+            district.landmarks.map((landmark) => {
+              const Icon = categoryIcons[landmark.category];
+              const activate = () => onLandmarkSelect?.(landmark, district);
+              return (
+                <g
+                  id={`landmark-${landmark.id}`}
+                  data-landmark-id={landmark.id}
+                  className="map-landmark"
+                  key={landmark.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${landmark.label}, ${district.name}${landmark.verify ? ", needs verification" : ""}`}
+                  onClick={activate}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      activate();
+                    }
+                  }}
                 >
-                  {landmark.label}
-                </text>
-                {landmark.verify && (
-                  <circle
-                    className="map-review-dot"
-                    cx={landmark.x + 10}
-                    cy={landmark.y - 10}
-                    r="3"
-                    aria-label="Name or category needs review"
+                  <circle className="map-landmark-marker" cx={landmark.x} cy={landmark.y} r="13" />
+                  <Icon
+                    className="map-landmark-icon"
+                    x={landmark.x - 12}
+                    y={landmark.y - 12}
+                    width={24}
+                    height={24}
+                    aria-hidden="true"
                   />
-                )}
-              </g>
-            );
-          }),
-        )}
-      </g>
+                  <text
+                    className="landmark-label"
+                    aria-hidden={!labelsVisible}
+                    x={landmark.x}
+                    y={landmark.y + 28}
+                  >
+                    {landmark.label}
+                  </text>
+                  {landmark.verify && (
+                    <circle
+                      className="map-review-dot"
+                      cx={landmark.x + 10}
+                      cy={landmark.y - 10}
+                      r="3"
+                      aria-label="Name or category needs review"
+                    />
+                  )}
+                </g>
+              );
+            }),
+          )}
+        </g>
+      )}
     </svg>
   );
 }
