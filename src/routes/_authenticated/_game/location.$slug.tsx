@@ -24,6 +24,7 @@ import {
 import { useWorldClock } from "@/hooks/use-world-clock";
 import { INITIAL_GAME_TIME } from "@/lib/game-time";
 import { CityEventParticipation } from "@/components/game/CityEventParticipation";
+import { LocationActivities } from "@/components/game/LocationActivities";
 import {
   adjustedTripMinutes,
   travelConditionAdjustment,
@@ -347,6 +348,22 @@ function LocationPage() {
 
       {isHere && <CityBillboards locationId={loc.id} />}
       <CityEventParticipation slug={slug} isHere={isHere} />
+      {isHere && (
+        <section className="game-panel flex flex-wrap items-center justify-between gap-3 p-4">
+          <div>
+            <h2 className="font-bold">People around {loc.name}</h2>
+            <p className="text-sm text-muted-foreground">
+              Meet residents on their daily routines or message players in this area.
+            </p>
+          </div>
+          <Button asChild variant="outline">
+            <Link to="/social" search={{ playerId: undefined }}>
+              Meet people & chat
+            </Link>
+          </Button>
+        </section>
+      )}
+      <LocationActivities locationId={loc.id} slug={slug} isHere={isHere} />
 
       {isHere && localPlaces.some((place) => ["bank", "atm"].includes(place.category)) && (
         <Link

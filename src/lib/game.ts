@@ -599,6 +599,24 @@ export const rpc = {
     unwrap(await supabase.rpc("visit_location", { p_location_id: id })) as unknown as {
       first_visit: boolean;
     },
+  performLocationActivity: async (args: {
+    locationId: string;
+    action: "worship" | "tithe" | "file_complaint";
+    amount?: number;
+    targetCharacterId?: string | null;
+    details?: string | null;
+    requestId: string;
+  }) =>
+    unwrap(
+      await supabase.rpc("perform_location_activity", {
+        p_location_id: args.locationId,
+        p_action: args.action,
+        p_request_id: args.requestId,
+        p_amount: args.amount ?? 0,
+        p_target_character_id: args.targetCharacterId ?? null,
+        p_details: args.details ?? null,
+      }),
+    ),
   claimMission: async (id: string) =>
     unwrap(await supabase.rpc("claim_mission", { p_player_mission_id: id })) as unknown as {
       money: number;

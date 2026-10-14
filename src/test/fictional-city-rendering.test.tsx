@@ -223,16 +223,16 @@ describe("fictional city rendering budget", () => {
   it("shows scheduled NPCs on the map and sends greetings through the server RPC", async () => {
     fixtures.hour = 12;
     const knownLocations = Object.keys(OSOGBO_WORLD_NODES).map(location);
-    const ojaOba = knownLocations.find((item) => item.slug === "oja-oba")!;
+    const aiyegbaju = location("aiyegbaju-market", knownLocations.length);
     fixtures.queryData = {
       character: {
         name: "Player",
-        current_location_id: ojaOba.id,
+        current_location_id: aiyegbaju.id,
         world_x: 4,
         world_y: 5,
         world_position_revision: 0,
       },
-      locations: knownLocations,
+      locations: [...knownLocations, aiyegbaju],
       places: [],
       wallet: null,
       jobs: [],

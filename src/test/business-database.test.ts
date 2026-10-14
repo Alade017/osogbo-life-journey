@@ -271,4 +271,96 @@ describe("authoritative business and investment database", () => {
     ).rejects.toThrow();
     await db.exec("reset role");
   });
+
+  it("records worship, tithe and court cases through location-gated idempotent actions", async () => {
+    const ownerCharacter = await db.query<{ id: string }>(
+      "select id from public.characters where user_id=$1",
+      [owner],
+    );
+    const targetCharacter = await db.query<{ id: string }>(
+      "select id from public.characters where user_id=$1",
+      [investor],
+    );
+    const characterId = ownerCharacter.rows[0]!.id;
+    const targetId = targetCharacter.rows[0]!.id;
+    const church = await db.query<{ id: string }>(
+      "select id from public.locations where slug='osogbo-central-mosque'",
+    );
+    await db.query("update public.characters set current_location_id=$1 where id=$2", [
+      church.rows[0]!.id,
+      characterId,
+    ]);
+
+    const worshipRequest = randomUUID();
+    await call("public.perform_location_activity($1,'worship',$2,0,null,null)", [
+      church.rows[0]!.id,
+      worshipRequest,
+    ]);
+    await expect(
+      call("public.perform_location_activity($1,'worship',$2,0,null,null)", [
+        church.rows[0]!.id,
+        randomUUID(),
+      ]),
+    ).rejects.toThrow(/already attended worship today/);
+    await call("public.perform_location_activity($1,'worship',$2,0,null,null)", [
+      church.rows[0]!.id,
+      worshipRequest,
+    ]);
+    const happiness = await db.query<{ happiness: number }>(
+      "select happiness from public.characters where id=$1",
+      [characterId],
+    );
+    expect(happiness.rows[0]!.happiness).toBe(72);
+
+    const titheRequest = randomUUID();
+    await call("public.perform_location_activity($1,'tithe',$2,500,null,null)", [
+      church.rows[0]!.id,
+      titheRequest,
+    ]);
+    await call("public.perform_location_activity($1,'tithe',$2,500,null,null)", [
+      church.rows[0]!.id,
+      titheRequest,
+    ]);
+    expect(await balance(owner)).toBe(19_999_500);
+
+    const court = await db.query<{ id: string }>(
+      "select id from public.locations where slug='osogbo-high-court'",
+    );
+    await db.query("update public.characters set current_location_id=$1 where id=$2", [
+      court.rows[0]!.id,
+      characterId,
+    ]);
+    const complaint = await call(
+      "public.perform_location_activity($1,'file_complaint',$2,0,$3,$4)",
+      [court.rows[0]!.id, randomUUID(), targetId, "A fictional dispute about a shared game venue."],
+    );
+    expect(complaint).toMatchObject({ action: "file_complaint" });
+    await expect(
+      call("public.perform_location_activity($1,'file_complaint',$2,0,$3,$4)", [
+        court.rows[0]!.id,
+        randomUUID(),
+        targetId,
+        "Another fictional dispute about the same game venue.",
+      ]),
+    ).rejects.toThrow();
+    const caseCount = await db.query<{ count: number }>(
+      "select count(*)::integer as count from public.city_civic_cases where claimant_character_id=$1",
+      [characterId],
+    );
+    expect(caseCount.rows[0]!.count).toBe(1);
+
+    const venueCount = await db.query<{ count: number }>(
+      "select count(*)::integer as count from public.locations where slug in ('osun-mall','aiyegbaju-market','osogbo-high-court')",
+    );
+    expect(venueCount.rows[0]!.count).toBe(3);
+
+    await db.query(
+      "update public.characters set current_location_id=$1, game_time_hour=10 where id=$2",
+      [court.rows[0]!.id, characterId],
+    );
+    const npcGreeting = await call("public.interact_with_npc('npc-sade','greet',$1)", [
+      randomUUID(),
+    ]);
+    expect(npcGreeting).toMatchObject({ accepted: true });
+  });
 });

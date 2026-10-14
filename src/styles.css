@@ -7179,19 +7179,10 @@
   overflow: hidden;
 }
 
-.phone-launcher-icon > img {
-  position: absolute;
-  width: 78%;
-  height: 78%;
-  object-fit: contain;
-  z-index: 1;
-}
-
-.phone-launcher-fallback {
-  width: 12px;
-  height: 20px;
-  border: 2px solid currentColor;
-  border-radius: 4px;
+.phone-launcher-icon > svg {
+  width: 19px;
+  height: 19px;
+  stroke-width: 2.25;
 }
 
 .phone-app-view {

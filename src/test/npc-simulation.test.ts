@@ -21,12 +21,13 @@ const newRelationship: Relationship = {
 
 describe("NPC routine and social simulation", () => {
   it("follows distinct work schedules and selects a home fallback when a venue is unavailable", () => {
-    const lookup = (slug: string) => (slug === "residential" || slug === "oja-oba" ? slug : null);
+    const lookup = (slug: string) =>
+      ["residential", "oja-oba", "aiyegbaju-market"].includes(slug) ? slug : null;
     const adeola = NPC_CATALOG.find((npc) => npc.id === "npc-adeola")!;
     const atWork = npcActivityAt(adeola, { ...INITIAL_GAME_TIME, hour: 9 }, lookup);
     const atNight = npcActivityAt(adeola, { ...INITIAL_GAME_TIME, hour: 2 }, lookup);
     expect(atWork).toMatchObject({
-      destinationSlug: "oja-oba",
+      destinationSlug: "aiyegbaju-market",
       label: "selling produce",
       available: true,
     });
@@ -36,6 +37,20 @@ describe("NPC routine and social simulation", () => {
       available: false,
     });
     expect(NPC_CATALOG.find((npc) => npc.id === "npc-tunde")?.routine[0]!.start).toBe(8);
+  });
+
+  it("places fictional residents at the court, mall, and park during their work shifts", () => {
+    const lookup = (slug: string) => slug;
+    for (const [id, slug] of [
+      ["npc-sade", "osogbo-high-court"],
+      ["npc-kunle", "osun-mall"],
+      ["npc-bisola", "mandela-freedom-park"],
+    ]) {
+      const npc = NPC_CATALOG.find((person) => person.id === id)!;
+      expect(npcActivityAt(npc, { ...INITIAL_GAME_TIME, hour: 10 }, lookup).destinationSlug).toBe(
+        slug,
+      );
+    }
   });
 
   it("sends NPCs with outdoor routines indoors during rain", () => {

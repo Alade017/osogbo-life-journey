@@ -1804,6 +1804,17 @@ export type Database = {
       select_job: { Args: { p_job_id: string }; Returns: undefined };
       travel_to_location: { Args: { p_location_id: string; p_mode: string }; Returns: Json };
       visit_location: { Args: { p_location_id: string }; Returns: Json };
+      perform_location_activity: {
+        Args: {
+          p_location_id: string;
+          p_action: string;
+          p_request_id: string;
+          p_amount?: number;
+          p_target_character_id?: string | null;
+          p_details?: string | null;
+        };
+        Returns: Json;
+      };
     };
     Enums: {
       [_ in never]: never;

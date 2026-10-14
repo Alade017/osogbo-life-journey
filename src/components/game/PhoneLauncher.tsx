@@ -10,17 +10,21 @@ import {
 import {
   Backpack,
   Bell,
-  Briefcase,
+  BriefcaseBusiness,
   Building2,
   ChartNoAxesCombined,
   House,
-  Map,
-  Megaphone,
-  MessageCircle,
+  HousePlus,
+  MapPinned,
+  MessagesSquare,
+  PanelsTopLeft,
+  Target,
+  Landmark,
   Settings,
-  ShoppingBag,
+  Store,
+  Smartphone,
   UserRound,
-  Wallet,
+  UsersRound,
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
@@ -34,15 +38,15 @@ import "./phone.css";
 
 const PHONE_APPS = [
   { label: "Home", to: "/home", icon: House, tone: "phone-app-green", active: true },
-  { label: "Property", to: "/house", icon: Building2, tone: "phone-app-green", active: true },
-  { label: "Jobs", to: "/jobs", icon: Briefcase, tone: "phone-app-green", active: true },
-  { label: "Bank", to: "/wallet", icon: Wallet, tone: "phone-app-gold", active: true },
-  { label: "Market", to: "/market", icon: ShoppingBag, tone: "phone-app-green", active: true },
-  { label: "Map", to: "/map", icon: Map, tone: "phone-app-blue", active: true },
-  { label: "Social", to: "/social", icon: MessageCircle, tone: "phone-app-coral", active: true },
+  { label: "Property", to: "/house", icon: HousePlus, tone: "phone-app-green", active: true },
+  { label: "Jobs", to: "/jobs", icon: BriefcaseBusiness, tone: "phone-app-gold", active: true },
+  { label: "Bank", to: "/wallet", icon: Landmark, tone: "phone-app-blue", active: true },
+  { label: "Market", to: "/market", icon: Store, tone: "phone-app-coral", active: true },
+  { label: "Map", to: "/map", icon: MapPinned, tone: "phone-app-blue", active: true },
+  { label: "Social", to: "/social", icon: UsersRound, tone: "phone-app-coral", active: true },
   { label: "Inventory", to: "/inventory", icon: Backpack, tone: "phone-app-blue", active: true },
   { label: "Profile", to: "/profile", icon: UserRound, tone: "phone-app-muted", active: true },
-  { label: "Messages", to: "/social", icon: MessageCircle, tone: "phone-app-coral", active: true },
+  { label: "Messages", to: "/social", icon: MessagesSquare, tone: "phone-app-coral", active: true },
   {
     label: "Invest",
     to: "/wallet",
@@ -51,8 +55,8 @@ const PHONE_APPS = [
     active: true,
   },
   { label: "Company", to: "/wallet", icon: Building2, tone: "phone-app-green", active: true },
-  { label: "Billboards", to: null, icon: Megaphone, tone: "phone-app-gold", active: true },
-  { label: "Missions", to: "/missions", icon: Bell, tone: "phone-app-gold", active: true },
+  { label: "Billboards", to: null, icon: PanelsTopLeft, tone: "phone-app-gold", active: true },
+  { label: "Missions", to: "/missions", icon: Target, tone: "phone-app-gold", active: true },
   {
     label: "Notifications",
     to: "/notifications",
@@ -90,15 +94,7 @@ export function PhoneLauncher({
           aria-label="Open in-game phone"
         >
           <span className="phone-launcher-icon">
-            <span className="phone-launcher-fallback" />
-            <img
-              src="https://cdn-icons-png.flaticon.com/128/15665/15665521.png"
-              alt=""
-              aria-hidden="true"
-              onError={(event) => {
-                event.currentTarget.hidden = true;
-              }}
-            />
+            <Smartphone size={19} aria-hidden="true" />
           </span>
           <span className={compact ? "phone-compact-label" : undefined}>Phone</span>
         </button>
@@ -167,12 +163,6 @@ export function PhoneLauncher({
             </div>
           ) : (
             <>
-              <DialogHeader className="phone-home-heading">
-                <DialogTitle className="font-display text-2xl">Your phone</DialogTitle>
-                <DialogDescription>
-                  Tools for your day around Osogbo. Select an app to open it.
-                </DialogDescription>
-              </DialogHeader>
               <div className="phone-app-grid">
                 {PHONE_APPS.map((app) => {
                   const Icon = app.icon;

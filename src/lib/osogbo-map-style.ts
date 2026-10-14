@@ -1,11 +1,11 @@
 import type { Map as MapLibreMap } from "maplibre-gl";
 
-const STADIA_VECTOR_STYLE = "https://tiles.stadiamaps.com/styles/alidade_smooth.json";
+const DEFAULT_VECTOR_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 const OSM_RASTER_ATTRIBUTION =
   '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap contributors</a>';
 
 export function getOsogboMapStyleUrl(): string {
-  const styleUrl = import.meta.env["VITE_OSOGBO_MAP_STYLE_URL"] || STADIA_VECTOR_STYLE;
+  const styleUrl = import.meta.env["VITE_OSOGBO_MAP_STYLE_URL"] || DEFAULT_VECTOR_STYLE;
   const apiKey = import.meta.env["VITE_STADIA_MAPS_API_KEY"];
   if (!apiKey || !styleUrl.startsWith("https://tiles.stadiamaps.com/")) return styleUrl;
 
@@ -14,7 +14,7 @@ export function getOsogboMapStyleUrl(): string {
   return url.toString();
 }
 
-export function createDevelopmentMapFallbackStyle() {
+export function createOpenStreetMapFallbackStyle() {
   return {
     version: 8 as const,
     sources: {
@@ -83,5 +83,44 @@ export function applyOsogboMapPalette(map: MapLibreMap) {
       map.setPaintProperty(layer.id, "text-halo-color", "#f2f6ed");
       map.setPaintProperty(layer.id, "text-halo-width", 1.1);
     }
+  }
+
+  // Extrude only real OSM building footprints at close zoom; this adds depth without
+  // turning the whole city into a costly 3D scene on small screens.
+  const buildingLayer = layers.find((layer) => {
+    const spec = layer as typeof layer & { "source-layer"?: string };
+    return layer.type === "fill" && spec["source-layer"]?.toLowerCase() === "building";
+  }) as ((typeof layers)[number] & { "source-layer"?: string; source: string }) | undefined;
+  if (
+    buildingLayer &&
+    buildingLayer["source-layer"] &&
+    !map.getLayer("osogbo-building-extrusions")
+  ) {
+    const firstSymbol = layers.find((layer) => layer.type === "symbol")?.id;
+    map.addLayer(
+      {
+        id: "osogbo-building-extrusions",
+        type: "fill-extrusion",
+        source: buildingLayer.source,
+        "source-layer": buildingLayer["source-layer"],
+        minzoom: 15.5,
+        filter: ["any", ["has", "render_height"], ["has", "height"]],
+        paint: {
+          "fill-extrusion-color": "#e9e5d8",
+          "fill-extrusion-height": [
+            "max",
+            ["to-number", ["get", "render_height"], 0],
+            ["to-number", ["get", "height"], 0],
+          ],
+          "fill-extrusion-base": [
+            "max",
+            ["to-number", ["get", "render_min_height"], 0],
+            ["to-number", ["get", "min_height"], 0],
+          ],
+          "fill-extrusion-opacity": 0.82,
+        },
+      },
+      firstSymbol,
+    );
   }
 }
