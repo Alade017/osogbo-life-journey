@@ -158,6 +158,7 @@ export function GameHUD({
         to="/notifications"
         className="game-hud-notifications"
         aria-label={`Notifications, ${unread} unread`}
+        title={`Notifications${unread > 0 ? ` · ${unread} unread` : ""}`}
       >
         <Bell className="h-4.5 w-4.5" />
         {unread > 0 && <span className="game-notification-dot">{unread > 9 ? "9+" : unread}</span>}

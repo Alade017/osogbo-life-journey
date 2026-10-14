@@ -16,17 +16,15 @@ import {
 import { LoadingState } from "@/components/game/ui";
 import { pageMeta } from "@/lib/seo";
 import { useLiveClock } from "@/hooks/use-live-clock";
-import { osogboHour } from "@/lib/osogbo-weather";
-import { toast } from "sonner";
 import { useWorldClock } from "@/hooks/use-world-clock";
+import { osogboHour } from "@/lib/osogbo-weather";
 import { isPowerOutageAt } from "@/lib/world-simulation";
+import { toast } from "sonner";
 import { parseHousingSave } from "@/lib/housing-service";
 import { useMutation } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useGameTime } from "@/components/game/GameTimeProvider";
 import type { LifeActionId } from "@/lib/life-simulation";
-import { BriefcaseBusiness, MapPinned, UsersRound, ScrollText } from "lucide-react";
-import "@/components/game/home-dashboard.css";
 
 export const Route = createFileRoute("/_authenticated/_game/home")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -90,6 +88,7 @@ function FriendHomeVisit({ characterId }: { characterId: string }) {
 
 function MyCityHome() {
   const now = useLiveClock();
+  const world = useWorldClock();
   const {
     simulation,
     ready: simulationReady,
@@ -97,7 +96,6 @@ function MyCityHome() {
     start,
     complete,
   } = useGameTime();
-  const world = useWorldClock();
   const { data: character } = useQuery(q.character());
   const { data: equippedItems } = useQuery({ ...q.equipment(), enabled: !!character });
   const housingHomeQuery = useQuery({
@@ -137,7 +135,6 @@ function MyCityHome() {
     },
   });
   const homeQuery = useQuery({ ...q.homeSave(), enabled: !!character });
-  const visitPolicyQuery = useQuery({ ...q.homeVisitPolicy(), enabled: !!character });
   const queryClient = useQueryClient();
   const homeItemRequestKeys = useRef(new Map<string, string>());
   useEffect(() => {
@@ -245,14 +242,6 @@ function MyCityHome() {
         current ? { ...current, home_items: result.home_items } : current,
       );
     },
-  });
-  const accessMutation = useMutation({
-    mutationFn: rpc.setHomeVisitAccess,
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: q.homeVisitPolicy().queryKey });
-      toast.success("Home visit settings saved.");
-    },
-    onError: (error) => toast.error(error.message),
   });
   const [syncStatus, setSyncStatus] = useState<
     "saved" | "saving" | "offline" | "conflict" | "unavailable"
@@ -582,45 +571,6 @@ function MyCityHome() {
           </span>
         </button>
       )}
-      <section className="home-next-steps" aria-labelledby="home-next-steps-title">
-        <div className="home-next-steps-heading">
-          <div>
-            <p className="arrival-kicker">MAKE TODAY YOURS</p>
-            <h2 id="home-next-steps-title">What would you like to do?</h2>
-          </div>
-          <span>Pick a next step</span>
-        </div>
-        <div className="home-next-steps-grid">
-          <Link to="/jobs" className="home-next-step is-work">
-            <span>
-              <BriefcaseBusiness size={19} aria-hidden="true" />
-            </span>
-            <strong>Find work</strong>
-            <small>See shifts and opportunities</small>
-          </Link>
-          <Link to="/map" className="home-next-step is-city">
-            <span>
-              <MapPinned size={19} aria-hidden="true" />
-            </span>
-            <strong>Explore the city</strong>
-            <small>Choose a place to visit</small>
-          </Link>
-          <Link to="/missions" className="home-next-step is-missions">
-            <span>
-              <ScrollText size={19} aria-hidden="true" />
-            </span>
-            <strong>Check your missions</strong>
-            <small>Continue a goal in progress</small>
-          </Link>
-          <Link to="/social" search={{ playerId: undefined }} className="home-next-step is-people">
-            <span>
-              <UsersRound size={19} aria-hidden="true" />
-            </span>
-            <strong>Meet people</strong>
-            <small>Catch up with your community</small>
-          </Link>
-        </div>
-      </section>
       {homeQuery.isLoading ? (
         <LoadingState />
       ) : (
@@ -672,73 +622,45 @@ function MyCityHome() {
               </button>
             </section>
           )}
-          <section
-            className="game-panel flex flex-wrap items-center justify-between gap-3 p-3 text-sm"
-            aria-live="polite"
-          >
-            <span>
-              {syncStatus === "saving"
-                ? "Saving home to your account…"
-                : syncStatus === "offline"
+          {syncStatus !== "saved" && syncStatus !== "saving" && (
+            <section
+              className="game-panel flex flex-wrap items-center justify-between gap-3 p-3 text-sm"
+              aria-live="polite"
+            >
+              <span>
+                {syncStatus === "offline"
                   ? "Offline · device backup saved; cloud sync will retry when connected."
                   : syncStatus === "conflict"
                     ? "A newer home save exists on another device."
-                    : syncStatus === "unavailable"
-                      ? "Cloud save unavailable · your validated device backup is kept."
-                      : `Home saved to this device${cloudSave ? " and your account" : ""}.`}
-            </span>
-            {syncStatus === "conflict" && (
-              <div className="flex gap-2">
-                <button
-                  className="text-primary underline"
-                  onClick={() => void resolveConflict(false)}
-                >
-                  Load cloud copy
+                    : "Cloud save unavailable · your validated device backup is kept."}
+              </span>
+              {syncStatus === "conflict" && (
+                <div className="flex gap-2">
+                  <button
+                    className="text-primary underline"
+                    onClick={() => void resolveConflict(false)}
+                  >
+                    Load cloud copy
+                  </button>
+                  <button
+                    className="text-primary underline"
+                    onClick={() => void resolveConflict(true)}
+                  >
+                    Keep this device's copy
+                  </button>
+                </div>
+              )}
+              {syncStatus === "unavailable" && latestLocalSave.current && (
+                <button className="text-primary underline" onClick={retryCloudSave}>
+                  Retry cloud sync
                 </button>
-                <button
-                  className="text-primary underline"
-                  onClick={() => void resolveConflict(true)}
-                >
-                  Keep this device's copy
-                </button>
-              </div>
-            )}
-            {syncStatus === "unavailable" && latestLocalSave.current && (
-              <button className="text-primary underline" onClick={retryCloudSave}>
-                Retry cloud sync
-              </button>
-            )}
-          </section>
-          <section className="game-panel flex flex-wrap items-center justify-between gap-3 p-3 text-sm">
-            <div>
-              <strong>Friends visiting your home</strong>
-              <p className="text-muted-foreground">
-                Friends can browse your saved layout. Your character needs and position stay
-                private.
-              </p>
-            </div>
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={
-                  visitPolicyQuery.data !== undefined &&
-                  !!(visitPolicyQuery.data as { allow_friend_visits?: boolean }).allow_friend_visits
-                }
-                disabled={
-                  !cloudSave ||
-                  accessMutation.isPending ||
-                  visitPolicyQuery.isLoading ||
-                  visitPolicyQuery.isError
-                }
-                onChange={(event) => accessMutation.mutate(event.target.checked)}
-              />
-              Allow friend visits
-            </label>
-          </section>
+              )}
+            </section>
+          )}
           {housingHomeQuery.data?.home && (
             <details className="game-panel p-3">
               <summary className="cursor-pointer font-semibold focus-visible:outline-2 focus-visible:outline-[var(--ring)]">
-                Room layout and furniture shop
+                Home activities and furniture
               </summary>
               <HomeInterior
                 key={`${character.id}:${reloadToken}`}

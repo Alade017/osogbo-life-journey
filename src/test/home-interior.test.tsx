@@ -10,26 +10,25 @@ vi.mock("@/components/game/housing/HouseScene", () => ({
 describe("walkable home experience", () => {
   beforeEach(() => window.localStorage.clear());
 
-  it("enters home, selects connected rooms and exits", async () => {
-    render(<HomeInterior />);
-    fireEvent.click(screen.getByRole("button", { name: /family courtyard home/i }));
-    fireEvent.click(screen.getByRole("button", { name: /enter home/i }));
+  it("opens directly inside the saved home and switches connected rooms", async () => {
+    render(
+      <HomeInterior
+        initialSave={{ ...DEFAULT_HOUSING_SAVE, layoutId: "family-courtyard", room: "lounge" }}
+      />,
+    );
     expect(await screen.findByLabelText(/walkable floor/i)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Dining room" }));
     await waitFor(() =>
       expect(screen.getByLabelText("Dining room walkable floor")).toBeInTheDocument(),
     );
-    fireEvent.click(screen.getByRole("button", { name: /leave home/i }));
-    expect(screen.getByRole("button", { name: /enter home/i })).toBeInTheDocument();
   }, 15_000);
 
-  it("restores the selected starter layout after refresh", () => {
-    const { unmount } = render(<HomeInterior />);
-    fireEvent.click(screen.getByRole("button", { name: /courtyard room/i }));
-    expect(window.localStorage.getItem("osogbo-life-housing-v1")).toContain("courtyard-room");
-    unmount();
+  it("does not show a second home template picker or enter-home step", () => {
     render(<HomeInterior />);
-    expect(screen.getByRole("heading", { name: "Courtyard Room" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Garden Court Flat" })).toBeInTheDocument();
+    expect(screen.queryByText(/choose a starter home layout/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /enter home/i })).not.toBeInTheDocument();
+    expect(screen.queryByText(/playable home template/i)).not.toBeInTheDocument();
   });
 
   it("keeps friend visits read-only while allowing room browsing", async () => {
@@ -76,7 +75,6 @@ describe("walkable home experience", () => {
         onPurchaseUpgrade={onPurchaseUpgrade}
       />,
     );
-    fireEvent.click(screen.getByRole("button", { name: /enter home/i }));
     const upgradeButton = await screen.findByRole("button", { name: /finish.*500/i });
     fireEvent.click(upgradeButton);
     await waitFor(() =>
@@ -98,7 +96,6 @@ describe("walkable home experience", () => {
         onSave={onSave}
       />,
     );
-    fireEvent.click(screen.getByRole("button", { name: /enter home/i }));
     // Scope controls to the panel rather than calculating names/styles for every floor tile.
     const furniturePanel = within(container.querySelector(".home-room-detail") as HTMLElement);
     fireEvent.click(furniturePanel.getByRole("button", { name: /build mode/i }));
@@ -132,7 +129,6 @@ describe("walkable home experience", () => {
         onFurnitureAction={onFurnitureAction}
       />,
     );
-    fireEvent.click(screen.getByRole("button", { name: /enter home/i }));
     fireEvent.click(await screen.findByLabelText("1, 1 Lounge sofa"));
     await waitFor(() => expect(onFurnitureAction).toHaveBeenCalledWith("relax_sofa"));
     for (const [save] of onSave.mock.calls)
@@ -155,7 +151,6 @@ describe("walkable home experience", () => {
         onFurnitureAction={vi.fn().mockResolvedValue("Travel home before this activity")}
       />,
     );
-    fireEvent.click(screen.getByRole("button", { name: /enter home/i }));
     fireEvent.click(await screen.findByLabelText("1, 1 Lounge sofa"));
     expect(await screen.findByText("Travel home before this activity")).toBeInTheDocument();
     for (const [save] of onSave.mock.calls)

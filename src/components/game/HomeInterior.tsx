@@ -3,7 +3,6 @@ import {
   BedDouble,
   CookingPot,
   Gamepad2,
-  Lightbulb,
   Sofa,
   DoorOpen,
   Hammer,
@@ -88,8 +87,7 @@ export function HomeInterior({
 }: Props) {
   const [saved, setSaved] = useState(() => initialSave ?? loadSave(saveKey));
   const onSaveRef = useRef(onSave);
-  const [inside, setInside] = useState(readOnly);
-  const [lightsOn, setLightsOn] = useState(true);
+  const inside = true;
   const [buildMode, setBuildMode] = useState(false);
   const [selectedItem, setSelectedItem] = useState<string | null>(null);
   const [previewRotation, setPreviewRotation] = useState<0 | 90 | 180 | 270>(0);
@@ -279,13 +277,7 @@ export function HomeInterior({
     setNotice("Furniture stored safely.");
   };
   const exitHome = () => {
-    if (readOnly) {
-      onLeave?.();
-      return;
-    }
-    save({ ...saved, room: layout.rooms[0]!.id });
-    setInside(false);
-    setNotice("You stepped outside at your saved city location.");
+    onLeave?.();
   };
   const currentIcon = ROOM_ICONS[room.id] ?? Sofa;
   const RoomIcon = currentIcon;
@@ -297,55 +289,14 @@ export function HomeInterior({
           <p className="home-interior-eyebrow">
             {readOnly ? "FRIEND'S HOME · SAVED LAYOUT" : "YOUR PLACE IN OSOGBO"}
           </p>
-          <h2 id="home-interior-title">{inside ? layout.name : "Make yourself at home"}</h2>
+          <h2 id="home-interior-title">{layout.name}</h2>
           <p>
             {readOnly
               ? `Visiting ${visitorName ?? "a friend"}'s saved layout. Walking and room browsing are local to this visit.`
-              : inside
-                ? "Tap a clear floor tile to walk. Use connected doors to move between rooms."
-                : "Choose a starter home layout, then step inside to explore and furnish it."}
+              : "Tap a clear floor tile to walk. Use connected doors to move between rooms."}
           </p>
         </div>
-        {!readOnly && (
-          <button
-            type="button"
-            className="home-lights-toggle"
-            aria-pressed={powerAvailable && lightsOn}
-            disabled={!powerAvailable}
-            onClick={() => setLightsOn((on) => !on)}
-          >
-            <Lightbulb size={16} />
-            {!powerAvailable ? "Power outage" : lightsOn ? "Lights on" : "Lights off"}
-          </button>
-        )}
       </div>
-      {!inside && !readOnly ? (
-        <div className="housing-layout-picker">
-          {HOME_LAYOUTS.map((option) => (
-            <button
-              type="button"
-              key={option.id}
-              className={option.id === layout.id ? "is-active" : ""}
-              onClick={() =>
-                save({
-                  ...saved,
-                  layoutId: option.id,
-                  room: option.rooms[0]!.id,
-                  x: Math.floor(option.rooms[0]!.width / 2),
-                  y: Math.floor(option.rooms[0]!.height / 2),
-                })
-              }
-            >
-              <span>{option.propertyType}</span>
-              <strong>{option.name}</strong>
-              <small>{option.description}</small>
-              <small>
-                {option.rooms.length} rooms · {option.rooms.map((entry) => entry.name).join(" · ")}
-              </small>
-            </button>
-          ))}
-        </div>
-      ) : null}
       <div className="home-interior-layout house-interior-layout">
         <div className="house-view-column">
           {inside && (
@@ -378,7 +329,7 @@ export function HomeInterior({
           >
             <HouseScene
               selectedRoom={room.id as HouseRoomId}
-              lightsOn={lightsOn}
+              lightsOn
               onSelectRoom={(id) =>
                 inside ? visitRoom(id as RoomId) : save({ ...saved, room: id as RoomId })
               }
@@ -489,15 +440,12 @@ export function HomeInterior({
             <span className="home-room-detail-icon">
               <RoomIcon size={19} />
             </span>
-            <span className="home-room-detail-caption">
-              {inside ? "ROOM & CHARACTER" : "HOME OVERVIEW"}
-            </span>
+            <span className="home-room-detail-caption">ROOM & CHARACTER</span>
           </div>
-          <h3>{inside ? room.name : layout.name}</h3>
+          <h3>{room.name}</h3>
           <p className="home-room-description">
-            {inside
-              ? `Move around the ${room.name.toLowerCase()} and use owned furniture. The room has ${room.upgrades.length} upgrade options.`
-              : layout.description}
+            Move around the {room.name.toLowerCase()} and use owned furniture. The room has{" "}
+            {room.upgrades.length} upgrade options.
           </p>
           {inside && readOnly ? (
             <p className="house-milestone-note">Character needs are private to the home owner.</p>
@@ -513,17 +461,7 @@ export function HomeInterior({
                   </div>
                 ))}
             </div>
-          ) : (
-            <div className="house-milestone-note">
-              <span className="house-milestone-status">
-                <i /> STARTER HOME
-              </span>
-              <p>
-                Property acquisition remains separate from furniture purchases. This room layout is
-                a playable home template.
-              </p>
-            </div>
-          )}
+          ) : null}
           {inside && (
             <div className="home-build-tools">
               {!readOnly && (
@@ -539,10 +477,11 @@ export function HomeInterior({
                   {buildMode ? "Finish building" : "Build mode"}
                 </button>
               )}
-              <button type="button" onClick={exitHome}>
-                <DoorOpen size={16} />
-                {readOnly ? "End visit" : "Leave home"}
-              </button>
+              {readOnly && (
+                <button type="button" onClick={exitHome}>
+                  <DoorOpen size={16} /> End visit
+                </button>
+              )}
             </div>
           )}
           {inside && buildMode && !readOnly && (
@@ -683,35 +622,8 @@ export function HomeInterior({
               ))}
             </div>
           )}
-          <div className="home-room-footnote">
-            <span />
-            {!powerAvailable
-              ? "Power is out · natural light and essential activities remain available"
-              : lightsOn
-                ? "Warm daylight is filling the house"
-                : "Ambient lighting dimmed"}
-          </div>
         </aside>
       </div>
-      {!inside && !readOnly && (
-        <button
-          type="button"
-          className="home-enter-button"
-          onClick={() => {
-            const first = layout.rooms[0]!;
-            save({
-              ...saved,
-              room: first.id,
-              x: Math.floor(first.width / 2),
-              y: Math.floor(first.height / 2),
-            });
-            setInside(true);
-            setNotice("Welcome home. You are at the entrance.");
-          }}
-        >
-          Enter home <DoorOpen size={17} />
-        </button>
-      )}
       {notice && (
         <div className="housing-notice" role="status">
           <span>{notice}</span>

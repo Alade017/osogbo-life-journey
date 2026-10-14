@@ -1,9 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { q } from "@/lib/game";
+import { q, rpc } from "@/lib/game";
 import { pageMeta } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,12 +21,21 @@ function SettingsPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { data: profile } = useQuery(q.profile());
+  const homeVisitPolicy = useQuery(q.homeVisitPolicy());
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [isGuest, setIsGuest] = useState(false);
   const [recoveryEmail, setRecoveryEmail] = useState("");
   const [recoveryPassword, setRecoveryPassword] = useState("");
   const [linkingAccount, setLinkingAccount] = useState(false);
+  const homeVisitMutation = useMutation({
+    mutationFn: rpc.setHomeVisitAccess,
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: q.homeVisitPolicy().queryKey });
+      toast.success("Home visit settings saved.");
+    },
+    onError: (error) => toast.error(error.message),
+  });
   useEffect(() => setName(profile?.display_name ?? ""), [profile?.display_name]);
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -173,6 +182,28 @@ function SettingsPage() {
             onEnabledChange={(sound_enabled) => void update({ sound_enabled })}
           />
         </div>
+      </section>
+      <section className="game-panel space-y-4 p-5">
+        <h2 className="text-xl font-bold">Home privacy</h2>
+        <label className="flex items-center justify-between gap-3">
+          <span>
+            <span className="block font-semibold">Allow friend visits</span>
+            <span className="text-xs text-muted-foreground">
+              Friends can browse your saved layout. Your needs and position stay private.
+            </span>
+          </span>
+          <Switch
+            checked={
+              !!(homeVisitPolicy.data as { allow_friend_visits?: boolean } | undefined)
+                ?.allow_friend_visits
+            }
+            disabled={
+              homeVisitPolicy.isLoading || homeVisitPolicy.isError || homeVisitMutation.isPending
+            }
+            onCheckedChange={(allow) => homeVisitMutation.mutate(allow)}
+            aria-label="Allow friend visits"
+          />
+        </label>
       </section>
       <section className="game-panel p-5">
         <Button variant="clay" onClick={signOut}>
