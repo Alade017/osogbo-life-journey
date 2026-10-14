@@ -13,7 +13,94 @@
     "art_key": "shared-room",
     "verify": true,
     "placeholder": true,
-    "extra_requirements": []
+    "extra_requirements": [],
+    "home_slots": [
+      {
+        "y": 66,
+        "slot_type": "bed",
+        "id": "bed",
+        "z": 2,
+        "x": 24
+      },
+      {
+        "y": 72,
+        "slot_type": "storage",
+        "id": "storage",
+        "z": 2,
+        "x": 78
+      },
+      {
+        "y": 34,
+        "slot_type": "decor",
+        "id": "decor-1",
+        "z": 1,
+        "x": 18
+      },
+      {
+        "y": 33,
+        "slot_type": "decor",
+        "id": "decor-2",
+        "z": 1,
+        "x": 83
+      },
+      {
+        "y": 24,
+        "slot_type": "light",
+        "id": "light",
+        "z": 1,
+        "x": 57
+      },
+      {
+        "y": 71,
+        "slot_type": "seat",
+        "id": "seat",
+        "z": 3,
+        "x": 55
+      },
+      {
+        "y": 53,
+        "slot_type": "kitchen",
+        "id": "kitchen",
+        "z": 2,
+        "x": 72
+      },
+      {
+        "y": 75,
+        "slot_type": "plant",
+        "id": "plant",
+        "z": 3,
+        "x": 89
+      },
+      {
+        "y": 52,
+        "slot_type": "bathroom",
+        "id": "bathroom",
+        "z": 2,
+        "x": 92
+      },
+      {
+        "y": 46,
+        "slot_type": "device",
+        "id": "device",
+        "z": 2,
+        "x": 40
+      },
+      {
+        "y": 74,
+        "slot_type": "table",
+        "id": "table",
+        "z": 3,
+        "x": 41
+      }
+    ],
+    "walkable_area": {
+      "max_x": 92,
+      "max_y": 86,
+      "y": 78,
+      "x": 52,
+      "min_x": 8,
+      "min_y": 30
+    }
   },
   {
     "id": "single-room",
@@ -29,7 +116,94 @@
     "art_key": "single-room",
     "verify": true,
     "placeholder": true,
-    "extra_requirements": []
+    "extra_requirements": [],
+    "home_slots": [
+      {
+        "y": 66,
+        "slot_type": "bed",
+        "id": "bed",
+        "z": 2,
+        "x": 24
+      },
+      {
+        "y": 72,
+        "slot_type": "storage",
+        "id": "storage",
+        "z": 2,
+        "x": 78
+      },
+      {
+        "y": 34,
+        "slot_type": "decor",
+        "id": "decor-1",
+        "z": 1,
+        "x": 18
+      },
+      {
+        "y": 33,
+        "slot_type": "decor",
+        "id": "decor-2",
+        "z": 1,
+        "x": 83
+      },
+      {
+        "y": 24,
+        "slot_type": "light",
+        "id": "light",
+        "z": 1,
+        "x": 57
+      },
+      {
+        "y": 71,
+        "slot_type": "seat",
+        "id": "seat",
+        "z": 3,
+        "x": 55
+      },
+      {
+        "y": 53,
+        "slot_type": "kitchen",
+        "id": "kitchen",
+        "z": 2,
+        "x": 72
+      },
+      {
+        "y": 75,
+        "slot_type": "plant",
+        "id": "plant",
+        "z": 3,
+        "x": 89
+      },
+      {
+        "y": 52,
+        "slot_type": "bathroom",
+        "id": "bathroom",
+        "z": 2,
+        "x": 92
+      },
+      {
+        "y": 46,
+        "slot_type": "device",
+        "id": "device",
+        "z": 2,
+        "x": 40
+      },
+      {
+        "y": 74,
+        "slot_type": "table",
+        "id": "table",
+        "z": 3,
+        "x": 41
+      }
+    ],
+    "walkable_area": {
+      "max_x": 92,
+      "max_y": 86,
+      "y": 78,
+      "x": 52,
+      "min_x": 8,
+      "min_y": 30
+    }
   },
   {
     "id": "studio-flat",
@@ -45,7 +219,94 @@
     "art_key": "studio-flat",
     "verify": true,
     "placeholder": true,
-    "extra_requirements": []
+    "extra_requirements": [],
+    "home_slots": [
+      {
+        "y": 66,
+        "slot_type": "bed",
+        "id": "bed",
+        "z": 2,
+        "x": 24
+      },
+      {
+        "y": 72,
+        "slot_type": "storage",
+        "id": "storage",
+        "z": 2,
+        "x": 78
+      },
+      {
+        "y": 34,
+        "slot_type": "decor",
+        "id": "decor-1",
+        "z": 1,
+        "x": 18
+      },
+      {
+        "y": 33,
+        "slot_type": "decor",
+        "id": "decor-2",
+        "z": 1,
+        "x": 83
+      },
+      {
+        "y": 24,
+        "slot_type": "light",
+        "id": "light",
+        "z": 1,
+        "x": 57
+      },
+      {
+        "y": 71,
+        "slot_type": "seat",
+        "id": "seat",
+        "z": 3,
+        "x": 55
+      },
+      {
+        "y": 53,
+        "slot_type": "kitchen",
+        "id": "kitchen",
+        "z": 2,
+        "x": 72
+      },
+      {
+        "y": 75,
+        "slot_type": "plant",
+        "id": "plant",
+        "z": 3,
+        "x": 89
+      },
+      {
+        "y": 52,
+        "slot_type": "bathroom",
+        "id": "bathroom",
+        "z": 2,
+        "x": 92
+      },
+      {
+        "y": 46,
+        "slot_type": "device",
+        "id": "device",
+        "z": 2,
+        "x": 40
+      },
+      {
+        "y": 74,
+        "slot_type": "table",
+        "id": "table",
+        "z": 3,
+        "x": 41
+      }
+    ],
+    "walkable_area": {
+      "max_x": 92,
+      "max_y": 86,
+      "y": 78,
+      "x": 52,
+      "min_x": 8,
+      "min_y": 30
+    }
   },
   {
     "id": "mini-flat",
@@ -61,7 +322,94 @@
     "art_key": "mini-flat",
     "verify": true,
     "placeholder": true,
-    "extra_requirements": []
+    "extra_requirements": [],
+    "home_slots": [
+      {
+        "y": 66,
+        "slot_type": "bed",
+        "id": "bed",
+        "z": 2,
+        "x": 24
+      },
+      {
+        "y": 72,
+        "slot_type": "storage",
+        "id": "storage",
+        "z": 2,
+        "x": 78
+      },
+      {
+        "y": 34,
+        "slot_type": "decor",
+        "id": "decor-1",
+        "z": 1,
+        "x": 18
+      },
+      {
+        "y": 33,
+        "slot_type": "decor",
+        "id": "decor-2",
+        "z": 1,
+        "x": 83
+      },
+      {
+        "y": 24,
+        "slot_type": "light",
+        "id": "light",
+        "z": 1,
+        "x": 57
+      },
+      {
+        "y": 71,
+        "slot_type": "seat",
+        "id": "seat",
+        "z": 3,
+        "x": 55
+      },
+      {
+        "y": 53,
+        "slot_type": "kitchen",
+        "id": "kitchen",
+        "z": 2,
+        "x": 72
+      },
+      {
+        "y": 75,
+        "slot_type": "plant",
+        "id": "plant",
+        "z": 3,
+        "x": 89
+      },
+      {
+        "y": 52,
+        "slot_type": "bathroom",
+        "id": "bathroom",
+        "z": 2,
+        "x": 92
+      },
+      {
+        "y": 46,
+        "slot_type": "device",
+        "id": "device",
+        "z": 2,
+        "x": 40
+      },
+      {
+        "y": 74,
+        "slot_type": "table",
+        "id": "table",
+        "z": 3,
+        "x": 41
+      }
+    ],
+    "walkable_area": {
+      "max_x": 92,
+      "max_y": 86,
+      "y": 78,
+      "x": 52,
+      "min_x": 8,
+      "min_y": 30
+    }
   },
   {
     "id": "bungalow",
@@ -77,7 +425,94 @@
     "art_key": "bungalow",
     "verify": true,
     "placeholder": true,
-    "extra_requirements": []
+    "extra_requirements": [],
+    "home_slots": [
+      {
+        "y": 66,
+        "slot_type": "bed",
+        "id": "bed",
+        "z": 2,
+        "x": 24
+      },
+      {
+        "y": 72,
+        "slot_type": "storage",
+        "id": "storage",
+        "z": 2,
+        "x": 78
+      },
+      {
+        "y": 34,
+        "slot_type": "decor",
+        "id": "decor-1",
+        "z": 1,
+        "x": 18
+      },
+      {
+        "y": 33,
+        "slot_type": "decor",
+        "id": "decor-2",
+        "z": 1,
+        "x": 83
+      },
+      {
+        "y": 24,
+        "slot_type": "light",
+        "id": "light",
+        "z": 1,
+        "x": 57
+      },
+      {
+        "y": 71,
+        "slot_type": "seat",
+        "id": "seat",
+        "z": 3,
+        "x": 55
+      },
+      {
+        "y": 53,
+        "slot_type": "kitchen",
+        "id": "kitchen",
+        "z": 2,
+        "x": 72
+      },
+      {
+        "y": 75,
+        "slot_type": "plant",
+        "id": "plant",
+        "z": 3,
+        "x": 89
+      },
+      {
+        "y": 52,
+        "slot_type": "bathroom",
+        "id": "bathroom",
+        "z": 2,
+        "x": 92
+      },
+      {
+        "y": 46,
+        "slot_type": "device",
+        "id": "device",
+        "z": 2,
+        "x": 40
+      },
+      {
+        "y": 74,
+        "slot_type": "table",
+        "id": "table",
+        "z": 3,
+        "x": 41
+      }
+    ],
+    "walkable_area": {
+      "max_x": 92,
+      "max_y": 86,
+      "y": 78,
+      "x": 52,
+      "min_x": 8,
+      "min_y": 30
+    }
   },
   {
     "id": "duplex",
@@ -96,10 +531,103 @@
     "extra_requirements": [
       {
         "any_of": [
-          { "type": "job_income_band", "value": "high" },
-          { "type": "income_sources_at_least", "value": 2 }
+          {
+            "type": "job_income_band",
+            "value": "high"
+          },
+          {
+            "type": "income_sources_at_least",
+            "value": 2
+          }
         ]
       }
-    ]
+    ],
+    "home_slots": [
+      {
+        "y": 66,
+        "slot_type": "bed",
+        "id": "bed",
+        "z": 2,
+        "x": 24
+      },
+      {
+        "y": 72,
+        "slot_type": "storage",
+        "id": "storage",
+        "z": 2,
+        "x": 78
+      },
+      {
+        "y": 34,
+        "slot_type": "decor",
+        "id": "decor-1",
+        "z": 1,
+        "x": 18
+      },
+      {
+        "y": 33,
+        "slot_type": "decor",
+        "id": "decor-2",
+        "z": 1,
+        "x": 83
+      },
+      {
+        "y": 24,
+        "slot_type": "light",
+        "id": "light",
+        "z": 1,
+        "x": 57
+      },
+      {
+        "y": 71,
+        "slot_type": "seat",
+        "id": "seat",
+        "z": 3,
+        "x": 55
+      },
+      {
+        "y": 53,
+        "slot_type": "kitchen",
+        "id": "kitchen",
+        "z": 2,
+        "x": 72
+      },
+      {
+        "y": 75,
+        "slot_type": "plant",
+        "id": "plant",
+        "z": 3,
+        "x": 89
+      },
+      {
+        "y": 52,
+        "slot_type": "bathroom",
+        "id": "bathroom",
+        "z": 2,
+        "x": 92
+      },
+      {
+        "y": 46,
+        "slot_type": "device",
+        "id": "device",
+        "z": 2,
+        "x": 40
+      },
+      {
+        "y": 74,
+        "slot_type": "table",
+        "id": "table",
+        "z": 3,
+        "x": 41
+      }
+    ],
+    "walkable_area": {
+      "max_x": 92,
+      "max_y": 86,
+      "y": 78,
+      "x": 52,
+      "min_x": 8,
+      "min_y": 30
+    }
   }
 ]

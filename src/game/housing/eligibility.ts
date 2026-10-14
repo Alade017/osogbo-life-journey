@@ -21,6 +21,15 @@ export type HouseType = {
   verify: boolean;
   placeholder: boolean;
   extra_requirements: { any_of: ExtraRequirement[] }[];
+  home_slots?: { id: string; slot_type: string; x: number; y: number; z?: number }[];
+  walkable_area?: {
+    x: number;
+    y: number;
+    min_x: number;
+    max_x: number;
+    min_y: number;
+    max_y: number;
+  };
 };
 
 export type HousingPlayer = {
