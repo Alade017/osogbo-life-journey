@@ -61,6 +61,67 @@
   stroke-width: 3px;
 }
 
+.map-billboard-marker {
+  cursor: pointer;
+  outline: none;
+  pointer-events: auto;
+}
+
+.map-billboard-hit {
+  fill: transparent;
+  stroke: transparent;
+  pointer-events: all;
+}
+
+.map-billboard-marker:focus-visible .map-billboard-hit {
+  fill: color-mix(in srgb, var(--ring) 18%, transparent);
+  stroke: var(--ring);
+  stroke-width: 3px;
+}
+
+.map-billboard-sign {
+  pointer-events: none;
+}
+
+.map-billboard-board {
+  fill: var(--primary);
+  stroke: var(--foreground);
+  stroke-width: 2px;
+}
+
+.map-billboard-icon {
+  color: var(--primary-foreground);
+  stroke-width: 2px;
+}
+
+.map-billboard-name {
+  fill: var(--primary-foreground);
+  font:
+    700 12px/1 system-ui,
+    sans-serif;
+  pointer-events: none;
+}
+
+.map-billboard-pole {
+  fill: none;
+  stroke: var(--foreground);
+  stroke-linecap: round;
+  stroke-width: 3px;
+}
+
+.map-billboard-count circle {
+  fill: var(--accent);
+  stroke: var(--foreground);
+  stroke-width: 1.5px;
+}
+
+.map-billboard-count text {
+  fill: var(--foreground);
+  font:
+    800 11px/1 system-ui,
+    sans-serif;
+}
+
 .map-canvas-marker-dot {
   fill: var(--card);
   stroke: var(--foreground);

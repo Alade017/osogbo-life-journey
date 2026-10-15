@@ -1,10 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Banknote, CalendarDays, CloudOff, Compass, Smile } from "lucide-react";
-import { MapCanvas, type MapFilter, type MapSearchTarget } from "@/components/map/MapCanvas";
+import {
+  MapCanvas,
+  type MapBillboardMarker,
+  type MapFilter,
+  type MapSearchTarget,
+} from "@/components/map/MapCanvas";
 import { DistrictSheet } from "@/components/map/DistrictSheet";
 import { LandmarkSheet } from "@/components/map/LandmarkSheet";
-import { CityBillboards } from "@/components/game/CityBillboards";
+import { MapBillboardCampaignDialog } from "@/components/game/CityBillboards";
 import { MAP_LANDMARK_LOCATION_SLUG } from "@/components/map/map-location-links";
 import { formatMapNaira } from "@/components/map/map-ui-utils";
 import mapData from "@/data/osogbo-map.json";
@@ -22,6 +27,7 @@ import type { PlaceActionResult } from "@/components/map/PlaceActionMenu";
 import { useWorldClock } from "@/hooks/use-world-clock";
 import { activeCityEvents } from "@/lib/world-simulation";
 import { formatCalendarDate, lagosDateKey, upcomingCalendarEvents } from "@/lib/osogbo-calendar";
+import { getCurrentMapBillboards, type CurrentMapBillboard } from "@/lib/map-billboard-map";
 import type { MapDistrict, MapLandmark } from "@/components/map/OsogboMap.svg";
 import "@/components/map/map-ui.css";
 
@@ -53,13 +59,18 @@ export function CityMapDashboard({
   const [travelInfo, setTravelInfo] = useState<MapTravelResponse | null>(null);
   const [actionError, setActionError] = useState("");
   const [placeActionResult, setPlaceActionResult] = useState<PlaceActionResult | null>(null);
+  const [selectedBillboard, setSelectedBillboard] = useState<CurrentMapBillboard | null>(null);
+  const [billboardNow, setBillboardNow] = useState(() => Date.now());
   const queryClient = useQueryClient();
   const character = useQuery(q.character());
   const wallet = useQuery(q.wallet());
   const rent = useQuery(q.rentStatus());
   const world = useWorldClock();
   const jobCatalog = useQuery({ ...q.jobs(), enabled: filter === "jobs" });
-  const locations = useQuery({ ...q.locations(), enabled: filter === "jobs" });
+  const locations = useQuery(q.locations());
+  const billboards = useQuery(q.billboards());
+  const advertisements = useQuery(q.advertisements());
+  const playerAdvertisements = useQuery(q.playerAdvertisements());
   useEffect(() => {
     const update = () => setOffline(!navigator.onLine);
     window.addEventListener("online", update);
@@ -69,6 +80,27 @@ export function CityMapDashboard({
       window.removeEventListener("offline", update);
     };
   }, []);
+  useEffect(() => {
+    const timer = window.setInterval(() => setBillboardNow(Date.now()), 10_000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const activeMapBillboards = useMemo(
+    () =>
+      getCurrentMapBillboards(
+        billboards.data ?? [],
+        advertisements.data ?? [],
+        playerAdvertisements.data ?? [],
+        locations.data ?? [],
+        billboardNow,
+      ),
+    [advertisements.data, billboardNow, billboards.data, locations.data, playerAdvertisements.data],
+  );
+  const billboardMarkers: MapBillboardMarker[] = activeMapBillboards.map((entry) => ({
+    campaignId: entry.advertisement.id,
+    landmarkId: entry.landmarkId,
+    advertiserName: entry.advertisement.advertiser_name,
+    count: entry.count,
+  }));
   const activeEvents = world.data
     ? activeCityEvents(world.data).filter((e) => e.locationSlug === selectedDistrict?.id)
     : [];
@@ -266,8 +298,18 @@ export function CityMapDashboard({
         activeFilter={filter}
         searchTarget={searchTarget}
         jobLandmarkIds={jobLandmarkIds}
+        billboardMarkers={billboardMarkers}
+        onSelectBillboard={(campaignId) => {
+          setSelectedBillboard(
+            activeMapBillboards.find(({ advertisement }) => advertisement.id === campaignId) ??
+              null,
+          );
+        }}
       />
-      <CityBillboards mapMode />
+      <MapBillboardCampaignDialog
+        campaign={selectedBillboard}
+        onClose={() => setSelectedBillboard(null)}
+      />
       {selectedDistrict && (
         <DistrictSheet
           district={selectedDistrict}

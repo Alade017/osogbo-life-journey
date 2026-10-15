@@ -14,6 +14,7 @@ import {
   HeartPulse,
   Landmark,
   MapPin,
+  Megaphone,
   School,
   ShoppingBasket,
   Trophy,
@@ -23,6 +24,7 @@ import mapData from "@/data/osogbo-map.json";
 import { OsogboMapSvg, type MapDistrict, type MapLandmark } from "@/components/map/OsogboMap.svg";
 import { IsometricMapSvg } from "@/components/map/IsometricMap.svg";
 import { isoCellToScreen, mapPointForMode, type MapProjectionMode } from "@/lib/map-projection";
+import { isQuickMapTap, type MapPointerSample } from "@/lib/map-gesture";
 import "./map-canvas.css";
 
 export type MapZoomLevel = 1 | 2 | 3;
@@ -44,6 +46,13 @@ export type MapEventChip = {
   y: number;
 };
 
+export type MapBillboardMarker = {
+  campaignId: string;
+  landmarkId: string;
+  advertiserName: string;
+  count: number;
+};
+
 export interface MapCanvasProps {
   onSelectDistrict: (id: string) => void;
   onSelectLandmark: (id: string) => void;
@@ -52,6 +61,8 @@ export interface MapCanvasProps {
   playerLocation?: MapPlayerLocation | null;
   eventChips?: MapEventChip[];
   jobLandmarkIds?: string[];
+  billboardMarkers?: MapBillboardMarker[];
+  onSelectBillboard?: (campaignId: string) => void;
 }
 
 type Point = { x: number; y: number };
@@ -96,21 +107,23 @@ function MarkerLayer({
   playerLocation,
   eventChips,
   jobLandmarkIds = [],
+  billboardMarkers = [],
   screenScale,
   viewMode,
   onSelectLandmark,
+  onSelectBillboard,
 }: {
   zoomLevel: MapZoomLevel;
   activeFilter: MapFilter;
   playerLocation?: MapPlayerLocation | null;
   eventChips: MapEventChip[];
   jobLandmarkIds: string[];
+  billboardMarkers: MapBillboardMarker[];
   screenScale: number;
   viewMode: MapProjectionMode;
   onSelectLandmark: (landmark: MapLandmark) => void;
+  onSelectBillboard?: (campaignId: string) => void;
 }) {
-  if (zoomLevel === 1) return null;
-
   const hitSize = Math.max(44 / Math.max(screenScale, 0.01), 24);
   const hitOffset = hitSize / 2;
   const filteredCategory: Record<string, MapLandmark["category"][]> = {
@@ -129,54 +142,125 @@ function MarkerLayer({
       aria-label="Map markers"
       aria-hidden="false"
     >
-      <g className="map-landmark-markers" aria-label="Landmarks">
-        {allLandmarks.map((landmark) => {
-          const matches =
-            activeFilter === "all" ||
-            (activeFilter === "jobs"
-              ? jobLandmarkIds.includes(landmark.id)
-              : (filteredCategory[activeFilter] ?? [activeFilter]).includes(landmark.category));
-          const Icon = categoryIcons[landmark.category];
-          const activate = () => onSelectLandmark(landmark);
-          const position = landmarkPoint(landmark, viewMode);
+      {zoomLevel > 1 && (
+        <g className="map-landmark-markers" aria-label="Landmarks">
+          {allLandmarks.map((landmark) => {
+            const matches =
+              activeFilter === "all" ||
+              (activeFilter === "jobs"
+                ? jobLandmarkIds.includes(landmark.id)
+                : (filteredCategory[activeFilter] ?? [activeFilter]).includes(landmark.category));
+            const Icon = categoryIcons[landmark.category];
+            const activate = () => onSelectLandmark(landmark);
+            const position = landmarkPoint(landmark, viewMode);
+            return (
+              <g
+                key={landmark.id}
+                className="map-canvas-marker"
+                style={{ opacity: matches ? 1 : 0.35 }}
+                data-map-interactive="true"
+                data-landmark-id={landmark.id}
+                role="button"
+                tabIndex={0}
+                aria-label={sentenceCase(landmark.label)}
+                onClick={activate}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    activate();
+                  }
+                }}
+              >
+                <rect
+                  className="map-marker-hit"
+                  x={position.x - hitOffset}
+                  y={position.y - hitOffset}
+                  width={hitSize}
+                  height={hitSize}
+                  rx="8"
+                />
+                <circle className="map-canvas-marker-dot" cx={position.x} cy={position.y} r="15" />
+                <Icon
+                  className="map-canvas-marker-icon"
+                  x={position.x - 12}
+                  y={position.y - 12}
+                  width={24}
+                  height={24}
+                  aria-hidden="true"
+                />
+                <text className="map-canvas-marker-label" x={position.x} y={position.y + 32}>
+                  {sentenceCase(landmark.label)}
+                </text>
+              </g>
+            );
+          })}
+        </g>
+      )}
+
+      <g className="map-billboard-markers" aria-label="City billboards">
+        {billboardMarkers.map((billboard) => {
+          const landmark = allLandmarks.find(({ id }) => id === billboard.landmarkId);
+          if (!landmark) return null;
+          const point = landmarkPoint(landmark, viewMode);
+          const inverseScale = 1 / Math.max(screenScale, 0.01);
+          const label = billboard.advertiserName.trim();
+          const shortLabel = label.length > 15 ? `${label.slice(0, 14)}…` : label;
           return (
             <g
-              key={landmark.id}
-              className="map-canvas-marker"
-              style={{ opacity: matches ? 1 : 0.35 }}
-              data-map-interactive="true"
-              data-landmark-id={landmark.id}
+              key={billboard.campaignId}
+              className="map-billboard-marker"
+              transform={`translate(${point.x} ${point.y})`}
               role="button"
               tabIndex={0}
-              aria-label={sentenceCase(landmark.label)}
-              onClick={activate}
+              aria-label={`Billboard for ${label}${billboard.count > 1 ? `, ${billboard.count} active campaigns` : ""}`}
+              data-map-interactive="true"
+              data-billboard-id={billboard.campaignId}
+              onClick={() => onSelectBillboard?.(billboard.campaignId)}
               onKeyDown={(event) => {
                 if (event.key === "Enter" || event.key === " ") {
                   event.preventDefault();
-                  activate();
+                  onSelectBillboard?.(billboard.campaignId);
                 }
               }}
             >
               <rect
-                className="map-marker-hit"
-                x={position.x - hitOffset}
-                y={position.y - hitOffset}
-                width={hitSize}
-                height={hitSize}
+                className="map-billboard-hit map-billboard-hit-area"
+                x={-22 * inverseScale}
+                y={-47 * inverseScale}
+                width={44 * inverseScale}
+                height={44 * inverseScale}
                 rx="8"
               />
-              <circle className="map-canvas-marker-dot" cx={position.x} cy={position.y} r="15" />
-              <Icon
-                className="map-canvas-marker-icon"
-                x={position.x - 12}
-                y={position.y - 12}
-                width={24}
-                height={24}
-                aria-hidden="true"
-              />
-              <text className="map-canvas-marker-label" x={position.x} y={position.y + 32}>
-                {sentenceCase(landmark.label)}
-              </text>
+              <g transform={`scale(${inverseScale})`} className="map-billboard-sign">
+                <rect
+                  className="map-billboard-board"
+                  x="-64"
+                  y="-43"
+                  width="128"
+                  height="34"
+                  rx="5"
+                />
+                <Megaphone
+                  x={-56}
+                  y={-36}
+                  width={20}
+                  height={20}
+                  className="map-billboard-icon"
+                  aria-hidden="true"
+                />
+                <text className="map-billboard-name" x="-31" y="-22">
+                  {shortLabel}
+                </text>
+                {billboard.count > 1 && (
+                  <g className="map-billboard-count" transform="translate(57 -41)">
+                    <circle r="10" />
+                    <text textAnchor="middle" dominantBaseline="central">
+                      {billboard.count > 9 ? "9+" : billboard.count}
+                    </text>
+                  </g>
+                )}
+                <path className="map-billboard-pole" d="M0 -9V8M-11 9H11" />
+              </g>
             </g>
           );
         })}
@@ -269,13 +353,18 @@ export function MapCanvas({
   playerLocation = null,
   eventChips = [],
   jobLandmarkIds = [],
+  billboardMarkers = [],
+  onSelectBillboard,
 }: MapCanvasProps) {
   const viewportRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<HTMLDivElement>(null);
-  const callbacksRef = useRef({ onSelectDistrict, onSelectLandmark });
+  const callbacksRef = useRef({ onSelectDistrict, onSelectLandmark, onSelectBillboard });
   const transformRef = useRef<ViewTransform>({ x: 0, y: 0, scale: 1 });
   const viewportSizeRef = useRef({ width: 0, height: 0, fitScale: 1 });
   const pointersRef = useRef(new Map<number, Point>());
+  const pointerStartRef = useRef<MapPointerSample | null>(null);
+  const pointerSequenceRef = useRef(false);
+  const blockedClickRef = useRef(false);
   const gestureRef = useRef<{
     start: Point | undefined;
     startTransform: ViewTransform | undefined;
@@ -297,7 +386,7 @@ export function MapCanvas({
   const [screenScale, setScreenScale] = useState(1);
   const [viewMode, setViewMode] = useState<MapProjectionMode>("2d");
 
-  callbacksRef.current = { onSelectDistrict, onSelectLandmark };
+  callbacksRef.current = { onSelectDistrict, onSelectLandmark, onSelectBillboard };
 
   const clampTransform = useCallback((transform: ViewTransform): ViewTransform => {
     const { width, height } = viewportSizeRef.current;
@@ -487,11 +576,17 @@ export function MapCanvas({
     pointersRef.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
     const current = transformRef.current;
     const gesture = gestureRef.current;
-    gesture.moved = false;
+    pointerSequenceRef.current = true;
     if (pointersRef.current.size === 1) {
+      gesture.moved = false;
+      blockedClickRef.current = false;
+      pointerStartRef.current = { x: event.clientX, y: event.clientY, at: Date.now() };
       gesture.start = { x: event.clientX, y: event.clientY };
       gesture.startTransform = current;
     } else if (pointersRef.current.size === 2) {
+      gesture.moved = true;
+      blockedClickRef.current = true;
+      pointerStartRef.current = null;
       const [first, second] = [...pointersRef.current.values()];
       if (!first || !second) return;
       const midpoint = { x: (first.x + second.x) / 2, y: (first.y + second.y) / 2 };
@@ -549,7 +644,8 @@ export function MapCanvas({
     if (gesture.start && gesture.startTransform) {
       const dx = event.clientX - gesture.start.x;
       const dy = event.clientY - gesture.start.y;
-      if (Math.abs(dx) + Math.abs(dy) > 4) gesture.moved = true;
+      if (!gesture.moved && Math.hypot(dx, dy) < 6) return;
+      gesture.moved = true;
       applyTransform(
         {
           ...gesture.startTransform,
@@ -562,6 +658,7 @@ export function MapCanvas({
   };
 
   const finishPointer = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (!pointersRef.current.has(event.pointerId)) return;
     pointersRef.current.delete(event.pointerId);
     const gesture = gestureRef.current;
     if (gesture.pinchDistance) {
@@ -595,14 +692,28 @@ export function MapCanvas({
       gesture.start = undefined;
       gesture.startTransform = undefined;
     }
+    if (pointersRef.current.size === 0) {
+      const start = pointerStartRef.current;
+      blockedClickRef.current =
+        gesture.moved ||
+        !start ||
+        !isQuickMapTap(start, { x: event.clientX, y: event.clientY, at: Date.now() });
+      pointerStartRef.current = null;
+    }
   };
 
   const onClickCapture = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (gestureRef.current.moved) {
+    if (event.detail === 0) {
+      pointerSequenceRef.current = false;
+      blockedClickRef.current = false;
+      return;
+    }
+    if (pointerSequenceRef.current && blockedClickRef.current) {
       event.preventDefault();
       event.stopPropagation();
-      gestureRef.current.moved = false;
     }
+    pointerSequenceRef.current = false;
+    blockedClickRef.current = false;
   };
 
   const onTransformEnd = () => {
@@ -647,14 +758,18 @@ export function MapCanvas({
         playerLocation={playerLocation}
         eventChips={eventChips}
         jobLandmarkIds={jobLandmarkIds}
+        billboardMarkers={billboardMarkers}
         screenScale={screenScale}
         onSelectLandmark={selectLandmark}
+        {...(onSelectBillboard ? { onSelectBillboard } : {})}
       />
     ),
     [
       activeFilter,
       eventChips,
       jobLandmarkIds,
+      billboardMarkers,
+      onSelectBillboard,
       playerLocation,
       screenScale,
       selectLandmark,

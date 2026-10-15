@@ -18,6 +18,14 @@ beforeEach(() => {
     unobserve() {}
   }
   vi.stubGlobal("ResizeObserver", TestResizeObserver);
+  class TestPointerEvent extends MouseEvent {
+    pointerId: number;
+    constructor(type: string, init: PointerEventInit = {}) {
+      super(type, init);
+      this.pointerId = init.pointerId ?? 1;
+    }
+  }
+  vi.stubGlobal("PointerEvent", TestPointerEvent);
 });
 
 afterEach(() => vi.unstubAllGlobals());
@@ -84,5 +92,76 @@ describe("city map overview", () => {
     expect(map).toHaveAttribute("data-zoom-level", "2");
     fireEvent.wheel(map, { deltaY: 40, clientX: 600, clientY: 400 });
     expect(map).toHaveAttribute("data-zoom-level", "1");
+  });
+
+  it("keeps a quick marker tap actionable and prevents a pan from opening its sheet", () => {
+    const onSelectBillboard = vi.fn();
+    const billboardMarkers = [
+      {
+        campaignId: "campaign-1",
+        landmarkId: "oke-fia-flyover",
+        advertiserName: "Aladtech",
+        count: 1,
+      },
+    ];
+    render(
+      <MapCanvas
+        onSelectDistrict={() => {}}
+        onSelectLandmark={() => {}}
+        billboardMarkers={billboardMarkers}
+        onSelectBillboard={onSelectBillboard}
+      />,
+    );
+    const map = screen.getByRole("region", { name: "Interactive Osogbo map" });
+    const marker = screen.getByRole("button", { name: "Billboard for Aladtech" });
+    Object.defineProperty(map, "setPointerCapture", { value: vi.fn(), configurable: true });
+
+    fireEvent.pointerDown(marker, { pointerId: 4, button: 0, clientX: 350, clientY: 250 });
+    fireEvent.pointerUp(map, { pointerId: 4, button: 0, clientX: 352, clientY: 251 });
+    fireEvent.click(marker, { detail: 1 });
+    expect(onSelectBillboard).toHaveBeenCalledTimes(1);
+
+    onSelectBillboard.mockClear();
+    fireEvent.pointerDown(marker, { pointerId: 5, button: 0, clientX: 350, clientY: 250 });
+    fireEvent.pointerMove(map, { pointerId: 5, button: 0, clientX: 370, clientY: 250 });
+    fireEvent.pointerUp(map, { pointerId: 5, button: 0, clientX: 370, clientY: 250 });
+    fireEvent.click(marker, { detail: 1 });
+    expect(onSelectBillboard).not.toHaveBeenCalled();
+  });
+
+  it("continues to update the map transform during pan and pinch gestures", () => {
+    const renderMap = () => {
+      class TestResizeObserver {
+        constructor(private readonly callback: ResizeObserverCallback) {}
+        observe() {
+          this.callback(
+            [{ contentRect: { width: 700, height: 500 } } as ResizeObserverEntry],
+            this as unknown as ResizeObserver,
+          );
+        }
+        disconnect() {}
+        unobserve() {}
+      }
+      vi.stubGlobal("ResizeObserver", TestResizeObserver);
+      return render(<MapCanvas onSelectDistrict={() => {}} onSelectLandmark={() => {}} />);
+    };
+    const { container } = renderMap();
+    const map = screen.getByRole("region", { name: "Interactive Osogbo map" });
+    Object.defineProperty(map, "setPointerCapture", { value: vi.fn(), configurable: true });
+    fireEvent.click(screen.getByRole("button", { name: "Street" }));
+    const transform = container.querySelector<HTMLElement>(".map-canvas-transform")!;
+    const beforePan = transform.style.transform;
+    fireEvent.pointerDown(map, { pointerId: 10, button: 0, clientX: 350, clientY: 250 });
+    fireEvent.pointerMove(map, { pointerId: 10, button: 0, clientX: 370, clientY: 260 });
+    fireEvent.pointerUp(map, { pointerId: 10, button: 0, clientX: 370, clientY: 260 });
+    expect(transform.style.transform).not.toBe(beforePan);
+
+    const beforePinch = transform.style.transform;
+    fireEvent.pointerDown(map, { pointerId: 11, button: 0, clientX: 250, clientY: 240 });
+    fireEvent.pointerDown(map, { pointerId: 12, button: 0, clientX: 350, clientY: 240 });
+    fireEvent.pointerMove(map, { pointerId: 12, button: 0, clientX: 420, clientY: 240 });
+    expect(transform.style.transform).not.toBe(beforePinch);
+    fireEvent.pointerUp(map, { pointerId: 12, button: 0, clientX: 420, clientY: 240 });
+    fireEvent.pointerUp(map, { pointerId: 11, button: 0, clientX: 250, clientY: 240 });
   });
 });

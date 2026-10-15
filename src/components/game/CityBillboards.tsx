@@ -12,22 +12,12 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { q, type Advertisement, type GameBillboard } from "@/lib/game";
-
-type BillboardCampaign = {
-  id: string;
-  billboard_id: string;
-  advertiser_name: string;
-  title: string;
-  description: string;
-  creative_image_url: string | null;
-  creative_theme: string;
-  call_to_action: string | null;
-  destination_action: string;
-  destination_url: string | null;
-  starts_at: string;
-  ends_at: string | null;
-  status: string;
-};
+import {
+  isCurrentAdvertisement,
+  playerCampaignAsAdvertisement,
+  type BillboardCampaign,
+  type CurrentMapBillboard,
+} from "@/lib/map-billboard-map";
 
 const CREATIVE_THEMES: Record<string, string> = {
   green: "bg-primary text-primary-foreground",
@@ -35,12 +25,6 @@ const CREATIVE_THEMES: Record<string, string> = {
   sun: "bg-sun text-sun-foreground",
   clay: "bg-clay text-clay-foreground",
 };
-
-function isCurrentAdvertisement(ad: BillboardCampaign, now: number) {
-  const startsAt = Date.parse(ad.starts_at);
-  const endsAt = ad.ends_at ? Date.parse(ad.ends_at) : Number.POSITIVE_INFINITY;
-  return ad.status === "active" && startsAt <= now && endsAt > now;
-}
 
 function safeExternalUrl(value: string | null) {
   if (!value) return undefined;
@@ -61,9 +45,15 @@ function safeInternalPath(value: string | null) {
 function CurrentCampaign({
   billboard,
   advertisement,
+  showTrigger = true,
+  open,
+  onClose,
 }: {
   billboard: GameBillboard;
   advertisement: BillboardCampaign;
+  showTrigger?: boolean;
+  open?: boolean;
+  onClose?: () => void;
 }) {
   const externalUrl =
     advertisement.destination_action === "external_url"
@@ -75,72 +65,79 @@ function CurrentCampaign({
       : undefined;
 
   return (
-    <Dialog>
-      <DialogTrigger asChild>
-        <button
-          type="button"
-          aria-label={`View ${advertisement.advertiser_name} ad on ${billboard.name}`}
-          className="group block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4"
-        >
-          <span className="mx-auto flex h-7 items-center justify-center gap-2 rounded-t-sm bg-ink px-3 text-[10px] font-bold uppercase tracking-[0.14em] text-ink-foreground">
-            <Megaphone className="h-3.5 w-3.5" />
-            {billboard.name}
-          </span>
-          <span className="block rounded-sm border-[7px] border-ink bg-ink p-1 shadow-[0_8px_0_color-mix(in srgb, var(--brand-ink) 22%, transparent)] transition-transform group-hover:-translate-y-1">
-            <span
-              className={cn(
-                "relative flex min-h-40 flex-col justify-between overflow-hidden px-5 py-4 text-left sm:min-h-48 sm:px-8 sm:py-6",
-                CREATIVE_THEMES[advertisement.creative_theme] ?? CREATIVE_THEMES["green"],
-              )}
-            >
-              {advertisement.creative_image_url && (
-                <img
-                  src={advertisement.creative_image_url}
-                  alt=""
-                  loading="lazy"
-                  referrerPolicy="no-referrer"
-                  className="absolute inset-0 h-full w-full object-cover"
-                />
-              )}
-              {advertisement.creative_image_url && (
-                <span className="absolute inset-0 bg-slate-950/35" />
-              )}
-              <span className="relative flex items-center justify-between gap-3">
-                <span className="font-display text-2xl font-bold leading-none sm:text-4xl">
-                  {advertisement.advertiser_name.toUpperCase()}
-                </span>
-                <span className="rounded-full border border-current/50 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.14em]">
-                  Advertisement
-                </span>
-              </span>
-              <span className="relative mt-4 grid gap-1 sm:grid-cols-[1fr_auto] sm:items-end sm:gap-4">
-                <span>
-                  <span className="block text-sm font-bold leading-snug sm:text-lg">
-                    {advertisement.description}
-                  </span>
-                  <span className="mt-2 block font-display text-base font-semibold leading-tight sm:text-2xl">
-                    {advertisement.title}
-                  </span>
-                </span>
-                {advertisement.call_to_action && (
-                  <span className="mt-2 inline-flex w-fit items-center gap-1 border-b border-current pb-1 text-xs font-bold uppercase tracking-wide sm:justify-self-end">
-                    {advertisement.call_to_action}
-                    <ArrowDownRight className="h-4 w-4" />
-                  </span>
+    <Dialog
+      {...(open !== undefined ? { open } : {})}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) onClose?.();
+      }}
+    >
+      {showTrigger && (
+        <DialogTrigger asChild>
+          <button
+            type="button"
+            aria-label={`View ${advertisement.advertiser_name} ad on ${billboard.name}`}
+            className="group block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-4"
+          >
+            <span className="mx-auto flex h-7 items-center justify-center gap-2 rounded-t-sm bg-ink px-3 text-[10px] font-bold uppercase tracking-[0.14em] text-ink-foreground">
+              <Megaphone className="h-3.5 w-3.5" />
+              {billboard.name}
+            </span>
+            <span className="block rounded-sm border-[7px] border-ink bg-ink p-1 shadow-[0_8px_0_color-mix(in srgb, var(--brand-ink) 22%, transparent)] transition-transform group-hover:-translate-y-1">
+              <span
+                className={cn(
+                  "relative flex min-h-40 flex-col justify-between overflow-hidden px-5 py-4 text-left sm:min-h-48 sm:px-8 sm:py-6",
+                  CREATIVE_THEMES[advertisement.creative_theme] ?? CREATIVE_THEMES["green"],
                 )}
+              >
+                {advertisement.creative_image_url && (
+                  <img
+                    src={advertisement.creative_image_url}
+                    alt=""
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
+                    className="absolute inset-0 h-full w-full object-cover"
+                  />
+                )}
+                {advertisement.creative_image_url && (
+                  <span className="absolute inset-0 bg-slate-950/35" />
+                )}
+                <span className="relative flex items-center justify-between gap-3">
+                  <span className="font-display text-2xl font-bold leading-none sm:text-4xl">
+                    {advertisement.advertiser_name.toUpperCase()}
+                  </span>
+                  <span className="rounded-full border border-current/50 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.14em]">
+                    Advertisement
+                  </span>
+                </span>
+                <span className="relative mt-4 grid gap-1 sm:grid-cols-[1fr_auto] sm:items-end sm:gap-4">
+                  <span>
+                    <span className="block text-sm font-bold leading-snug sm:text-lg">
+                      {advertisement.description}
+                    </span>
+                    <span className="mt-2 block font-display text-base font-semibold leading-tight sm:text-2xl">
+                      {advertisement.title}
+                    </span>
+                  </span>
+                  {advertisement.call_to_action && (
+                    <span className="mt-2 inline-flex w-fit items-center gap-1 border-b border-current pb-1 text-xs font-bold uppercase tracking-wide sm:justify-self-end">
+                      {advertisement.call_to_action}
+                      <ArrowDownRight className="h-4 w-4" />
+                    </span>
+                  )}
+                </span>
               </span>
             </span>
-          </span>
-          <span
-            className="mx-auto block h-8 w-16 border-x-8 border-ink bg-secondary shadow-sm"
-            aria-hidden="true"
-          />
-          <span className="mx-auto block h-2 w-28 rounded-full bg-ink" aria-hidden="true" />
-          <span className="sr-only">
-            Open {advertisement.advertiser_name} advertisement details
-          </span>
-        </button>
-      </DialogTrigger>
+            <span
+              className="mx-auto block h-8 w-16 border-x-8 border-ink bg-secondary shadow-sm"
+              aria-hidden="true"
+            />
+            <span className="mx-auto block h-2 w-28 rounded-full bg-ink" aria-hidden="true" />
+            <span className="sr-only">
+              Open {advertisement.advertiser_name} advertisement details
+            </span>
+          </button>
+        </DialogTrigger>
+      )}
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{advertisement.advertiser_name}</DialogTitle>
@@ -199,13 +196,26 @@ function CurrentCampaign({
   );
 }
 
-export function CityBillboards({
-  locationId,
-  mapMode = false,
+export function MapBillboardCampaignDialog({
+  campaign,
+  onClose,
 }: {
-  locationId?: string;
-  mapMode?: boolean;
+  campaign: CurrentMapBillboard | null;
+  onClose: () => void;
 }) {
+  if (!campaign) return null;
+  return (
+    <CurrentCampaign
+      billboard={campaign.billboard}
+      advertisement={campaign.advertisement}
+      showTrigger={false}
+      open
+      onClose={onClose}
+    />
+  );
+}
+
+export function CityBillboards({ locationId }: { locationId?: string }) {
   const { data: billboards } = useQuery(q.billboards());
   const { data: advertisements } = useQuery(q.advertisements());
   const { data: playerAdvertisements } = useQuery(q.playerAdvertisements());
@@ -218,21 +228,7 @@ export function CityBillboards({
 
   const campaignsByBoard = new Map<string, BillboardCampaign[]>();
   const candidates: BillboardCampaign[] = [
-    ...(playerAdvertisements ?? []).map((ad) => ({
-      id: ad.id,
-      billboard_id: ad.billboard_id,
-      advertiser_name: ad.advertiser_name,
-      title: ad.title,
-      description: ad.description,
-      creative_image_url: null,
-      creative_theme: ad.creative_theme,
-      call_to_action: null,
-      destination_action: "none",
-      destination_url: null,
-      starts_at: ad.starts_at,
-      ends_at: ad.ends_at,
-      status: ad.status,
-    })),
+    ...(playerAdvertisements ?? []).map(playerCampaignAsAdvertisement),
     ...(advertisements ?? []),
   ];
   for (const ad of candidates) {
@@ -243,7 +239,7 @@ export function CityBillboards({
   }
 
   const placements = (billboards ?? []).filter(
-    (board) => board.status === "active" && (mapMode || board.location_id === locationId),
+    (board) => board.status === "active" && board.location_id === locationId,
   );
   const visible = placements.flatMap((board) => {
     const campaigns = campaignsByBoard.get(board.id);
@@ -258,14 +254,14 @@ export function CityBillboards({
     <section aria-label="City advertisements" className="space-y-3 py-2">
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">
-          {mapMode ? "Across the city" : "Around the district"}
+          Around the district
         </p>
         <h2 className="mt-1 flex items-center gap-2 text-xl font-bold">
           <Megaphone className="h-5 w-5 text-primary" />
-          {mapMode ? "Live city billboards" : "Roadside billboard"}
+          Roadside billboard
         </h2>
       </div>
-      <div className={`mx-auto max-w-3xl ${mapMode ? "grid gap-5 sm:grid-cols-2" : ""}`}>
+      <div className="mx-auto max-w-3xl">
         {visible.map(({ billboard, advertisement }) => (
           <CurrentCampaign key={billboard.id} billboard={billboard} advertisement={advertisement} />
         ))}
