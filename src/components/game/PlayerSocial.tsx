@@ -1,7 +1,17 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { MessageCircle, Search, ShieldBan, UserPlus, Users } from "lucide-react";
+import {
+  ArrowLeft,
+  ChevronRight,
+  MessageCircle,
+  Plus,
+  Search,
+  Send,
+  ShieldBan,
+  UserPlus,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Avatar } from "@/components/game/Avatar";
 import type { Appearance } from "@/components/game/Avatar";
@@ -106,35 +116,49 @@ function MessageList({
   messages,
   ownCharacterId,
   onReport,
+  phoneMode = false,
 }: {
   messages: SocialMessage[];
   ownCharacterId?: string | undefined;
   onReport: (message: SocialMessage) => void;
+  phoneMode?: boolean;
 }) {
+  const listRef = useRef<HTMLOListElement>(null);
+  useEffect(() => {
+    if (phoneMode && listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
+  }, [messages, phoneMode]);
   if (!messages.length)
     return (
-      <p className="rounded-xl bg-background p-4 text-sm text-muted-foreground">
+      <p className={phoneMode ? "phone-chat-empty" : "rounded-xl bg-background p-4 text-sm text-muted-foreground"}>
         No messages yet. Say hello.
       </p>
     );
   return (
-    <ol className="grid max-h-72 gap-2 overflow-y-auto rounded-xl border border-border bg-background p-3">
+    <ol
+      ref={listRef}
+      aria-label="Message history"
+      className={phoneMode ? "phone-message-history" : "grid max-h-72 gap-2 overflow-y-auto rounded-xl border border-border bg-background p-3"}
+    >
       {messages.map((message) => (
         <li
           key={message.id}
-          className={`rounded-lg bg-card px-3 py-2 text-sm ${message.sender_character_id === ownCharacterId ? "is-own" : "is-other"}`}
+          className={`${phoneMode ? "phone-message-bubble" : "rounded-lg bg-card px-3 py-2 text-sm"} ${message.sender_character_id === ownCharacterId ? "is-own" : "is-other"}`}
         >
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <strong>
-              {message.sender_character_id === ownCharacterId ? "You" : message.sender_name}
-            </strong>
-            <time className="text-[11px] text-muted-foreground">
-              {new Intl.DateTimeFormat("en-NG", { hour: "2-digit", minute: "2-digit" }).format(
-                new Date(message.created_at),
-              )}
-            </time>
-          </div>
-          <p className="mt-1 whitespace-pre-wrap break-words">{message.body}</p>
+          {!phoneMode && (
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <strong>
+                {message.sender_character_id === ownCharacterId ? "You" : message.sender_name}
+              </strong>
+            </div>
+          )}
+          <p className="whitespace-pre-wrap break-words">{message.body}</p>
+          <time className={phoneMode ? "phone-message-time" : "mt-1 block text-right text-[11px] text-muted-foreground"}>
+            {new Intl.DateTimeFormat("en-NG", {
+              hour: "2-digit",
+              minute: "2-digit",
+              timeZone: "Africa/Lagos",
+            }).format(new Date(message.created_at))}
+          </time>
           {message.sender_character_id !== ownCharacterId && (
             <button
               type="button"
@@ -154,10 +178,12 @@ function ChatComposer({
   label,
   disabled,
   onSend,
+  phoneMode = false,
 }: {
   label: string;
   disabled?: boolean;
   onSend: (body: string) => Promise<void>;
+  phoneMode?: boolean;
 }) {
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
@@ -174,7 +200,10 @@ function ChatComposer({
     }
   };
   return (
-    <form onSubmit={(event) => void submit(event)} className="grid gap-2">
+    <form
+      onSubmit={(event) => void submit(event)}
+      className={phoneMode ? "phone-chat-composer" : "grid gap-2"}
+    >
       <label className="sr-only" htmlFor={label.replaceAll(" ", "-")}>
         {label}
       </label>
@@ -186,14 +215,30 @@ function ChatComposer({
         disabled={disabled || sending}
         onChange={(event) => setBody(event.target.value)}
         placeholder={label}
-        className="w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        className={
+          phoneMode
+            ? "phone-chat-input"
+            : "w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        }
       />
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-xs text-muted-foreground">{body.length}/500</span>
-        <Button size="sm" type="submit" disabled={disabled || sending || !body.trim()}>
-          <MessageCircle size={15} /> Send
+      {phoneMode ? (
+        <Button
+          className="phone-chat-send"
+          size="icon"
+          type="submit"
+          aria-label="Send message"
+          disabled={disabled || sending || !body.trim()}
+        >
+          <Send size={17} />
         </Button>
-      </div>
+      ) : (
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-xs text-muted-foreground">{body.length}/500</span>
+          <Button size="sm" type="submit" disabled={disabled || sending || !body.trim()}>
+            <MessageCircle size={15} /> Send
+          </Button>
+        </div>
+      )}
     </form>
   );
 }
@@ -211,6 +256,7 @@ export function PlayerSocial({
   const [tab, setTab] = useState<Tab>(initialTab);
   const [phoneMessageMode] = useState<"private" | "area">("private");
   const [query, setQuery] = useState("");
+  const [conversationSearch, setConversationSearch] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [reportTarget, setReportTarget] = useState<ReportTarget | null>(null);
   const [reportCategory, setReportCategory] = useState<SocialReportCategory>("harassment");
@@ -225,6 +271,12 @@ export function PlayerSocial({
     queryFn: getPlayerSocialOverview,
   });
   const overview = overviewQuery.data;
+  const visibleConversations = useMemo(() => {
+    const filter = conversationSearch.trim().toLocaleLowerCase();
+    return (overview?.conversations ?? []).filter((conversation) =>
+      conversation.player_name.toLocaleLowerCase().includes(filter),
+    );
+  }, [conversationSearch, overview?.conversations]);
   const searchQuery = useQuery({
     queryKey: ["playerSocialSearch", submittedQuery],
     queryFn: () => searchPlayerProfiles(submittedQuery),
@@ -235,6 +287,14 @@ export function PlayerSocial({
     queryFn: () => getPlayerProfile(initialPlayerId!),
     enabled: !!initialPlayerId,
   });
+  const activeChatPlayer =
+    overview?.conversations.find(
+      (conversation) => conversation.character_id === activeChat?.characterId,
+    ) ??
+    overview?.friends.find((friend) => friend.character_id === activeChat?.characterId) ??
+    (initialProfileQuery.data?.character_id === activeChat?.characterId
+      ? initialProfileQuery.data
+      : undefined);
   const areaMessagesQuery = useQuery({
     queryKey: ["socialMessages", "area", locationId],
     queryFn: () => getSocialMessages({ locationId: locationId! }),
@@ -461,34 +521,76 @@ export function PlayerSocial({
       {tab === "players" && (
         <div className="grid gap-4">
           {phoneMode && (
-            <div className="flex items-center justify-between gap-3">
+            <div className="phone-new-chat-heading">
+              <button
+                type="button"
+                className="phone-icon-button"
+                aria-label="Back to chats"
+                onClick={() => setTab("messages")}
+              >
+                <ArrowLeft size={18} />
+              </button>
               <div>
                 <h3 className="font-display font-semibold">New message</h3>
-                <p className="text-xs text-muted-foreground">
-                  Chat with another player from your contacts.
-                </p>
+                <p className="text-xs text-muted-foreground">Choose a friend or find a player.</p>
               </div>
-              <Button size="sm" variant="outline" onClick={() => setTab("messages")}>
-                Chats
-              </Button>
             </div>
           )}
-          <form onSubmit={submitSearch} className="flex flex-wrap gap-2">
+          <form
+            onSubmit={submitSearch}
+            className={phoneMode ? "phone-player-search" : "flex flex-wrap gap-2"}
+          >
             <label className="sr-only" htmlFor="player-search">
               Search player names
             </label>
+            {phoneMode && <Search size={17} aria-hidden="true" />}
             <input
               id="player-search"
               value={query}
               maxLength={24}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search player names"
-              className="min-h-10 min-w-0 flex-1 rounded-xl border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className={
+                phoneMode
+                  ? "phone-player-search-input"
+                  : "min-h-10 min-w-0 flex-1 rounded-xl border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              }
             />
-            <Button type="submit" disabled={searchQuery.isFetching}>
-              <Search size={16} /> Search
-            </Button>
+            {!phoneMode && (
+              <Button type="submit" disabled={searchQuery.isFetching}>
+                <Search size={16} /> Search
+              </Button>
+            )}
           </form>
+          {phoneMode && (
+            <section className="phone-contact-section" aria-label="Friends you can message">
+              <h4>Friends</h4>
+              {overview?.friends.length ? (
+                <div className="phone-contact-list">
+                  {overview.friends.map((friend) => (
+                    <button
+                      type="button"
+                      className="phone-contact-row"
+                      key={friend.character_id}
+                      onClick={() => openChatMutation.mutate(friend.character_id)}
+                      disabled={openChatMutation.isPending}
+                    >
+                      <PlayerAvatar player={friend} />
+                      <span className="phone-contact-copy">
+                        <strong>{friend.player_name}</strong>
+                        <small>Friend · start a private chat</small>
+                      </span>
+                      <ChevronRight size={17} aria-hidden="true" />
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="phone-contact-empty">
+                  Friends you can message will appear here. Meet players in People first.
+                </p>
+              )}
+            </section>
+          )}
           {initialPlayerId && initialProfileQuery.isPending && (
             <p className="text-sm text-muted-foreground" role="status">
               Loading player profile…
