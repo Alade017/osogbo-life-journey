@@ -36,7 +36,29 @@ export type MapLandmark = {
   verify: boolean;
   source?: string;
   isoCell?: { col: number; row: number };
+  buildingId?: string;
   actions?: MapPlaceAction[];
+};
+
+export type MapBuilding = {
+  id: string;
+  landmark_id: string;
+  name: string;
+  short_name?: string;
+  category: LandmarkCategory;
+  position: { col: number; row: number };
+  footprint: { width: number; depth: number };
+  facade_slot?: string;
+  verify: boolean;
+};
+
+export type MapTownProp = {
+  id: string;
+  kind: "home" | "shop" | "tree";
+  position: { col: number; row: number };
+  footprint: { width: number; depth: number };
+  interactive: false;
+  verify: boolean;
 };
 
 export type MapPlaceAction = {
@@ -65,15 +87,8 @@ export type MapDistrict = {
   isoCells?: { col: number; row: number }[];
   height?: number;
   landmarks: MapLandmark[];
-};
-
-const districtFill: Record<DistrictTheme, string> = {
-  market: "#E7D9B4",
-  residential: "#DDE6F5",
-  leisure: "#B9CCF0",
-  transport: "#D9DEE6",
-  school: "#F8F3F0",
-  outskirts: "#E9EDF2",
+  buildings?: MapBuilding[];
+  props?: MapTownProp[];
 };
 
 const categoryIcons = {
@@ -89,10 +104,10 @@ const categoryIcons = {
 } satisfies Record<LandmarkCategory, typeof MapPin>;
 
 const roads = [
-  "M-30 400 C180 393 255 407 410 400 S660 394 800 400 S1040 406 1230 400",
-  "M300 -30 V830",
-  "M600 -30 V830",
-  "M900 -30 V830",
+  "M-60 270 C140 285 235 330 390 350 S670 375 810 340 S1050 315 1260 350",
+  "M-60 590 C170 560 270 505 430 500 S700 535 860 495 S1080 430 1260 425",
+  "M285 -50 C305 115 335 245 310 365 S290 615 345 850",
+  "M875 -50 C845 140 815 255 855 375 S905 620 845 850",
 ];
 
 export type OsogboMapSvgProps = {
@@ -147,7 +162,7 @@ export function OsogboMapSvg({
             <g
               id={`district-${district.id}`}
               data-district-id={district.id}
-              className={`map-district${isSelected ? " is-selected" : ""}`}
+              className={`map-district region-${district.theme}${isSelected ? " is-selected" : ""}`}
               key={district.id}
               role="button"
               tabIndex={0}
@@ -167,11 +182,7 @@ export function OsogboMapSvg({
                 fill="#14213D"
                 fillOpacity="0.12"
               />
-              <polygon
-                className="map-district-shape"
-                points={points}
-                fill={districtFill[district.theme]}
-              />
+              <polygon className="map-district-shape" points={points} fill="currentColor" />
               <text className="map-district-name" x={minX + 18} y={minY + 30}>
                 {district.name}
               </text>

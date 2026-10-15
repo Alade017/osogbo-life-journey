@@ -38,11 +38,9 @@ describe("city map overview", () => {
         <CityMapDashboard />
       </QueryClientProvider>,
     );
-    expect(
-      screen.getByRole("group", { name: "Hand-placed Osogbo district map" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("group", { name: "Isometric Osogbo town map" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Oja Oba, high traffic" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Oja Oba Market/ })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Oja oba market/i })).toBeInTheDocument();
     expect(screen.queryByText("Living Osogbo map")).not.toBeInTheDocument();
   });
 
@@ -70,19 +68,45 @@ describe("city map overview", () => {
         ).toBeGreaterThanOrEqual(60);
       }
     }
-    expect(landmarks).toHaveLength(8);
+    expect(landmarks).toHaveLength(10);
     expect(landmarks.every((landmark) => landmark.actions?.length === 4)).toBe(true);
     expect(landmarks.every((landmark) => landmark.source && landmark.isoCell)).toBe(true);
     expect(landmarks.some((landmark) => landmark.label === "Osogbo Sacred Grove")).toBe(false);
+    for (const district of mapData.districts) {
+      expect(district.buildings).toHaveLength(district.landmarks.length);
+      expect(district.buildings?.every((building) => building.position && building.footprint)).toBe(
+        true,
+      );
+      expect(district.props?.every((prop) => prop.interactive === false)).toBe(true);
+    }
+    expect(landmarks.map((landmark) => landmark.label)).toContain("Township food court");
+    expect(landmarks.map((landmark) => landmark.label)).toContain("Osogbo Grand Mosque");
   });
 
   it("switches to the isometric renderer without changing map selection callbacks", () => {
     render(<MapCanvas onSelectDistrict={() => {}} onSelectLandmark={() => {}} />);
-    fireEvent.click(screen.getByRole("button", { name: "Isometric" }));
+    fireEvent.click(screen.getByRole("button", { name: "2D" }));
     expect(
-      screen.getByRole("group", { name: "Isometric Osogbo district map" }),
+      screen.getByRole("group", { name: "Hand-placed Osogbo district map" }),
     ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Isometric" }));
+    expect(screen.getByRole("group", { name: "Isometric Osogbo town map" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Oja Oba, high traffic" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Oja oba market/i })).toHaveAttribute(
+      "data-building-category",
+      "market",
+    );
+  });
+
+  it("shows category buildings and icons at overview, then readable names at street zoom", () => {
+    const { container } = render(
+      <MapCanvas onSelectDistrict={() => {}} onSelectLandmark={() => {}} />,
+    );
+    expect(screen.getByRole("button", { name: /Oja oba market/i })).toBeInTheDocument();
+    expect(container.querySelectorAll(".map-district-overlay-label")).toHaveLength(8);
+    expect(container.querySelector(".map-building-label")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Street" }));
+    expect(container.querySelector(".map-building-label")).not.toBeNull();
   });
 
   it("snaps mouse wheel input between the three supported zoom levels", () => {

@@ -11,18 +11,20 @@ const districts = mapData.districts as unknown as {
   isoCells: IsoCell[];
 }[];
 const SCALE = 1.5;
+const ISO_CENTER_X = 437;
+const ISO_CENTER_Y = 175;
 
 export function isoCellToScreen(cell: IsoCell, height = 0): MapPoint {
   const point = cityWorldToIso({ x: cell.col, y: cell.row }, height * 8);
   return {
-    x: (point.x - 500) * SCALE + 600,
-    y: (point.y - 58) * SCALE + 100,
+    x: (point.x - 500) * SCALE + ISO_CENTER_X,
+    y: (point.y - 58) * SCALE + ISO_CENTER_Y,
   };
 }
 
 export function screenToIsoCell(point: MapPoint, height = 0): IsoCell {
-  const worldX = (point.x - 600) / SCALE + 500;
-  const worldY = (point.y - 100) / SCALE + 58 + height * 8;
+  const worldX = (point.x - ISO_CENTER_X) / SCALE + 500;
+  const worldY = (point.y - ISO_CENTER_Y) / SCALE + 58 + height * 8;
   const difference = (worldX - 500) / 31;
   const sum = (worldY - 58) / 20;
   return { col: (sum + difference) / 2, row: (sum - difference) / 2 };

@@ -19,12 +19,25 @@ import {
   ShoppingBasket,
   Trophy,
   Utensils,
+  Bus,
 } from "lucide-react";
 import mapData from "@/data/osogbo-map.json";
-import { OsogboMapSvg, type MapDistrict, type MapLandmark } from "@/components/map/OsogboMap.svg";
+import {
+  OsogboMapSvg,
+  type MapBuilding,
+  type MapDistrict,
+  type MapLandmark,
+  type MapTownProp,
+} from "@/components/map/OsogboMap.svg";
 import { IsometricMapSvg } from "@/components/map/IsometricMap.svg";
-import { isoCellToScreen, mapPointForMode, type MapProjectionMode } from "@/lib/map-projection";
+import {
+  isoCellTo2dViewBox,
+  isoCellToScreen,
+  mapPointForMode,
+  type MapProjectionMode,
+} from "@/lib/map-projection";
 import { isQuickMapTap, type MapPointerSample } from "@/lib/map-gesture";
+import { layoutCityLabels } from "@/lib/city-label-layout";
 import "./map-canvas.css";
 
 export type MapZoomLevel = 1 | 2 | 3;
@@ -70,10 +83,31 @@ type ViewTransform = { x: number; y: number; scale: number };
 
 const VIEW_WIDTH = 1200;
 const VIEW_HEIGHT = 800;
+// The SVG keeps a 1200x800 coordinate system for shared marker/action data;
+// fit and clamp to the hand-drawn town bounds so phones see the whole town.
+const ISOMETRIC_TOWN_BOUNDS = { x: 80, y: 20, width: 1000, height: 650 };
 const ZOOM_LEVELS: MapZoomLevel[] = [1, 2, 3];
 const typedMapData = mapData as typeof mapData;
 const districts = typedMapData.districts as MapDistrict[];
 const allLandmarks = districts.flatMap((district) => district.landmarks);
+const allBuildings = districts.flatMap((district) => district.buildings ?? []);
+const allTownProps = districts.flatMap((district) =>
+  (district.props ?? []).map((prop) => ({ district, prop })),
+);
+const buildingsByLandmark = new Map(
+  allBuildings.map((building) => [building.landmark_id, building]),
+);
+
+function getMapFitScale(width: number, height: number, mode: MapProjectionMode) {
+  const bounds = getMapBounds(mode);
+  return Math.min(width / bounds.width, height / bounds.height);
+}
+
+function getMapBounds(mode: MapProjectionMode) {
+  return mode === "isometric"
+    ? ISOMETRIC_TOWN_BOUNDS
+    : { x: 0, y: 0, width: VIEW_WIDTH, height: VIEW_HEIGHT };
+}
 
 const categoryIcons = {
   market: ShoppingBasket,
@@ -108,6 +142,7 @@ function MarkerLayer({
   eventChips,
   jobLandmarkIds = [],
   billboardMarkers = [],
+  labelViewport,
   screenScale,
   viewMode,
   onSelectLandmark,
@@ -119,13 +154,18 @@ function MarkerLayer({
   eventChips: MapEventChip[];
   jobLandmarkIds: string[];
   billboardMarkers: MapBillboardMarker[];
+  labelViewport: { width: number; height: number };
   screenScale: number;
   viewMode: MapProjectionMode;
   onSelectLandmark: (landmark: MapLandmark) => void;
   onSelectBillboard?: (campaignId: string) => void;
 }) {
-  const hitSize = Math.max(44 / Math.max(screenScale, 0.01), 24);
-  const hitOffset = hitSize / 2;
+  const inverseScale = 1 / Math.max(screenScale, 0.01);
+  const mapBounds = getMapBounds(viewMode);
+  const centeredOffset = {
+    x: labelViewport.width / 2 - (mapBounds.x + mapBounds.width / 2) * screenScale,
+    y: labelViewport.height / 2 - (mapBounds.y + mapBounds.height / 2) * screenScale,
+  };
   const filteredCategory: Record<string, MapLandmark["category"][]> = {
     food: ["food", "market"],
     health: ["health"],
@@ -134,6 +174,68 @@ function MarkerLayer({
     transport: ["transport"],
     sport: ["sport"],
   };
+  const labels = useMemo(() => {
+    if (screenScale <= 0) return new Map<string, ReturnType<typeof layoutCityLabels>[number]>();
+    const anchors =
+      zoomLevel === 1
+        ? districts.map((district) => {
+            const point = districtMapPoint(district, viewMode);
+            const name = sentenceCase(district.name);
+            return {
+              id: `district-${district.id}`,
+              text: name,
+              anchor: {
+                x: point.x * screenScale + centeredOffset.x,
+                y: point.y * screenScale + centeredOffset.y,
+              },
+              priority: 10,
+              width: Math.max(104, name.length * 7 + 20),
+              height: 36,
+            };
+          })
+        : allLandmarks.map((landmark) => {
+            const point = landmarkPoint(landmark, viewMode);
+            const name = buildingsByLandmark.get(landmark.id)?.short_name ?? landmark.label;
+            return {
+              id: landmark.id,
+              text: sentenceCase(name),
+              anchor: {
+                x: point.x * screenScale + centeredOffset.x,
+                y: point.y * screenScale + centeredOffset.y,
+              },
+              priority: landmark.category === "junction" ? 1 : 2,
+            };
+          });
+    const buildingObstacles = allLandmarks.map((landmark) => {
+      const point = landmarkPoint(landmark, viewMode);
+      const building = buildingsByLandmark.get(landmark.id);
+      const width = (building?.footprint.width ?? 1) * 34 * screenScale;
+      const height = (building?.footprint.depth ?? 0.9) * 26 * screenScale;
+      return {
+        x: point.x * screenScale + centeredOffset.x - width / 2 - 5,
+        y: point.y * screenScale + centeredOffset.y - height - 7,
+        width: width + 10,
+        height: height + 18,
+      };
+    });
+    const propObstacles = allTownProps.map(({ district, prop }) => {
+      const point = townPropPoint(district, prop, viewMode);
+      const size =
+        prop.kind === "tree" ? 20 : Math.max(prop.footprint.width, prop.footprint.depth) * 26;
+      return {
+        x: point.x * screenScale + centeredOffset.x - size * screenScale,
+        y: point.y * screenScale + centeredOffset.y - size * screenScale,
+        width: size * 2 * screenScale,
+        height: size * 2 * screenScale,
+      };
+    });
+    return new Map(
+      layoutCityLabels(anchors, zoomLevel === 1 ? [] : [...buildingObstacles, ...propObstacles], {
+        width: Math.min(VIEW_WIDTH * screenScale, labelViewport.width),
+        height: Math.min(VIEW_HEIGHT * screenScale, labelViewport.height),
+      }).map((placement) => [placement.id, placement]),
+    );
+  }, [centeredOffset.x, centeredOffset.y, labelViewport, screenScale, viewMode, zoomLevel]);
 
   return (
     <svg
@@ -142,54 +244,149 @@ function MarkerLayer({
       aria-label="Map markers"
       aria-hidden="false"
     >
+      <g className="map-town-props" aria-hidden="true">
+        {allTownProps.map(({ district, prop }) => (
+          <TownProp key={prop.id} district={district} prop={prop} viewMode={viewMode} />
+        ))}
+      </g>
+
+      <g className="map-landmark-markers" aria-label="Places">
+        {allLandmarks.map((landmark) => {
+          const matches =
+            activeFilter === "all" ||
+            (activeFilter === "jobs"
+              ? jobLandmarkIds.includes(landmark.id)
+              : (filteredCategory[activeFilter] ?? [activeFilter]).includes(landmark.category));
+          const Icon = categoryIcons[landmark.category];
+          const building = buildingsByLandmark.get(landmark.id) ?? fallbackBuilding(landmark);
+          const position = landmarkPoint(landmark, viewMode);
+          const activate = () => onSelectLandmark(landmark);
+          return (
+            <g
+              key={landmark.id}
+              className="map-canvas-marker"
+              transform={`translate(${position.x} ${position.y})`}
+              style={{ opacity: matches ? 1 : 0.35 }}
+              data-map-interactive="true"
+              data-landmark-id={landmark.id}
+              data-building-category={landmark.category}
+              role="button"
+              tabIndex={0}
+              aria-label={sentenceCase(landmark.label)}
+              onClick={activate}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  activate();
+                }
+              }}
+            >
+              <BuildingArtwork building={building} label={landmark.label} />
+              <g className="map-building-icon" transform={`scale(${inverseScale})`}>
+                <rect className="map-marker-hit" x="-22" y="-48" width="44" height="44" rx="9" />
+                <circle className="map-building-icon-disc" cy="-26" r="12" />
+                <Icon
+                  className="map-canvas-marker-icon"
+                  x="-9"
+                  y="-35"
+                  width="18"
+                  height="18"
+                  aria-hidden="true"
+                />
+              </g>
+            </g>
+          );
+        })}
+      </g>
+
+      {zoomLevel === 1 && (
+        <g
+          className="map-district-labels"
+          aria-label="District names and traffic"
+          aria-hidden="true"
+        >
+          {districts.map((district) => {
+            const placement = labels.get(`district-${district.id}`);
+            if (!placement) return null;
+            const center = {
+              x: (placement.center.x - centeredOffset.x) * inverseScale,
+              y: (placement.center.y - centeredOffset.y) * inverseScale,
+            };
+            const width = placement.width;
+            const height = placement.height;
+            const trafficCount =
+              district.traffic === "high" ? 3 : district.traffic === "medium" ? 2 : 1;
+            return (
+              <g
+                key={district.id}
+                className="map-district-overlay-label"
+                data-district-label={district.id}
+                transform={`translate(${center.x} ${center.y}) scale(${inverseScale})`}
+              >
+                <rect x={-width / 2} y={-height / 2} width={width} height={height} rx="7" />
+                <text className="district-overlay-name" textAnchor="middle" y="-5">
+                  {sentenceCase(district.name)}
+                </text>
+                <text className="district-overlay-traffic" textAnchor="middle" y="9">
+                  {district.traffic[0]!.toUpperCase() + district.traffic.slice(1)} traffic
+                </text>
+                {[0, 1, 2].map((bar) => (
+                  <rect
+                    key={bar}
+                    className={
+                      bar < trafficCount ? "district-traffic-bar is-active" : "district-traffic-bar"
+                    }
+                    x={width / 2 - 19 + bar * 6}
+                    y="14"
+                    width="4"
+                    height={bar < trafficCount ? 6 : 3}
+                    rx="1"
+                  />
+                ))}
+              </g>
+            );
+          })}
+        </g>
+      )}
+
       {zoomLevel > 1 && (
-        <g className="map-landmark-markers" aria-label="Landmarks">
+        <g className="map-building-labels" aria-hidden="true">
           {allLandmarks.map((landmark) => {
-            const matches =
-              activeFilter === "all" ||
-              (activeFilter === "jobs"
-                ? jobLandmarkIds.includes(landmark.id)
-                : (filteredCategory[activeFilter] ?? [activeFilter]).includes(landmark.category));
-            const Icon = categoryIcons[landmark.category];
-            const activate = () => onSelectLandmark(landmark);
-            const position = landmarkPoint(landmark, viewMode);
+            const placement = labels.get(landmark.id);
+            if (!placement) return null;
+            const anchor = landmarkPoint(landmark, viewMode);
+            const center = {
+              x: (placement.center.x - centeredOffset.x) * inverseScale,
+              y: (placement.center.y - centeredOffset.y) * inverseScale,
+            };
+            const width = placement.width;
+            const height = placement.height;
+            const dx = anchor.x * screenScale - placement.center.x;
+            const dy = anchor.y * screenScale - placement.center.y;
             return (
               <g
                 key={landmark.id}
-                className="map-canvas-marker"
-                style={{ opacity: matches ? 1 : 0.35 }}
-                data-map-interactive="true"
-                data-landmark-id={landmark.id}
-                role="button"
-                tabIndex={0}
-                aria-label={sentenceCase(landmark.label)}
-                onClick={activate}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault();
-                    activate();
-                  }
-                }}
+                className="map-building-label"
+                transform={`translate(${center.x} ${center.y}) scale(${inverseScale})`}
               >
-                <rect
-                  className="map-marker-hit"
-                  x={position.x - hitOffset}
-                  y={position.y - hitOffset}
-                  width={hitSize}
-                  height={hitSize}
-                  rx="8"
+                <line
+                  x1="0"
+                  y1={height / 2}
+                  x2={dx}
+                  y2={dy}
+                  className="map-building-label-leader"
                 />
-                <circle className="map-canvas-marker-dot" cx={position.x} cy={position.y} r="15" />
-                <Icon
-                  className="map-canvas-marker-icon"
-                  x={position.x - 12}
-                  y={position.y - 12}
-                  width={24}
-                  height={24}
-                  aria-hidden="true"
-                />
-                <text className="map-canvas-marker-label" x={position.x} y={position.y + 32}>
-                  {sentenceCase(landmark.label)}
+                <rect x={-width / 2} y={-height / 2} width={width} height={height} rx="7" />
+                <text textAnchor="middle" dominantBaseline="central">
+                  {placement.lines.map((line, index) => (
+                    <tspan
+                      key={`${landmark.id}-${index}`}
+                      x="0"
+                      dy={index === 0 ? (1 - placement.lines.length) * 6 : 12}
+                    >
+                      {line}
+                    </tspan>
+                  ))}
                 </text>
               </g>
             );
@@ -202,7 +399,6 @@ function MarkerLayer({
           const landmark = allLandmarks.find(({ id }) => id === billboard.landmarkId);
           if (!landmark) return null;
           const point = landmarkPoint(landmark, viewMode);
-          const inverseScale = 1 / Math.max(screenScale, 0.01);
           const label = billboard.advertiserName.trim();
           const shortLabel = label.length > 15 ? `${label.slice(0, 14)}…` : label;
           return (
@@ -308,9 +504,214 @@ function MarkerLayer({
   );
 }
 
+function fallbackBuilding(landmark: MapLandmark): MapBuilding {
+  return {
+    id: `building-${landmark.id}`,
+    landmark_id: landmark.id,
+    name: landmark.label,
+    category: landmark.category,
+    position: landmark.isoCell ?? { col: 0, row: 0 },
+    footprint: { width: 1, depth: 0.8 },
+    facade_slot: "front",
+    verify: Boolean(landmark.verify),
+  };
+}
+
+function BuildingArtwork({ building, label }: { building: MapBuilding; label: string }) {
+  const width = 29 * building.footprint.width;
+  const depth = 23 * building.footprint.depth;
+  const halfWidth = width / 2;
+  const halfDepth = depth / 2;
+  const tall = building.category === "worship" ? 23 : building.category === "services" ? 19 : 15;
+  const top = -tall;
+  const leftWall = `${-halfWidth},0 0,${halfDepth} 0,${top} ${-halfWidth},${top - halfDepth}`;
+  const rightWall = `0,${halfDepth} ${halfWidth},0 ${halfWidth},${top} 0,${top - halfDepth}`;
+  const roof = `${-halfWidth},${top - halfDepth} 0,${top - depth} ${halfWidth},${top - halfDepth} 0,${top}`;
+  const isMosque = label.toLocaleLowerCase().includes("mosque");
+
+  return (
+    <g className={`map-building-art building-${building.category}`} aria-hidden="true">
+      <polygon
+        className="building-ground"
+        points={`${-halfWidth - 6},2 0,${halfDepth + 6} ${halfWidth + 6},2 0,${-halfDepth - 4}`}
+      />
+      {building.category === "sport" ? (
+        <g className="building-stadium">
+          <polygon points={`${-halfWidth},0 0,${halfDepth} ${halfWidth},0 0,${-halfDepth}`} />
+          <path
+            d={`M${-halfWidth * 0.62} 0H${halfWidth * 0.62} M0 ${-halfDepth * 0.62}V${halfDepth * 0.62} M${-halfWidth * 0.62} ${-halfDepth * 0.42}H${halfWidth * 0.62}`}
+          />
+          <rect x="-3" y="-3" width="6" height="6" />
+          <path className="stadium-stand" d={`M${-halfWidth} -2L0 ${-halfDepth} ${halfWidth} -2`} />
+        </g>
+      ) : building.category === "junction" ? (
+        <g className="building-junction">
+          <path d="M-17 0H17M0 -12V12" />
+          <path className="junction-crossing" d="M-5 -3H5M-5 0H5M-5 3H5" />
+          <circle cx="0" cy="-15" r="4" />
+        </g>
+      ) : (
+        <>
+          <polygon
+            className="building-shadow building-left-wall"
+            points={leftWall}
+            transform="translate(2 4)"
+          />
+          <polygon
+            className="building-shadow building-right-wall"
+            points={rightWall}
+            transform="translate(2 4)"
+          />
+          <polygon className="building-left-wall" points={leftWall} />
+          <polygon className="building-right-wall" points={rightWall} />
+          <polygon className="building-roof" points={roof} />
+          {building.category === "market" && (
+            <g className="building-market-stalls">
+              {[-0.65, 0, 0.65].map((ratio, index) => (
+                <g key={index} transform={`translate(${ratio * halfWidth} ${top - 2})`}>
+                  <path d="M-6 0L0 -4L6 0V4H-6Z" />
+                  <circle cx="-2" cy="2" r="1" />
+                  <circle cx="2" cy="2" r="1" />
+                </g>
+              ))}
+            </g>
+          )}
+          {building.category === "school" && (
+            <g className="building-school-details">
+              <path
+                d={`M${halfWidth - 2} ${top - depth + 2}V${top - depth - 12}h12l-4 4 4 4h-12`}
+              />
+              <path d={`M${-halfWidth - 8} 4h9m-7 -4v8m5 -8v8`} />
+            </g>
+          )}
+          {building.category === "health" && (
+            <path
+              className="building-medical-cross"
+              d={`M-2 ${top + 4}h4v4h4v4h-4v4h-4v-4h-4v-4h4Z`}
+            />
+          )}
+          {building.category === "worship" &&
+            (isMosque ? (
+              <g className="building-mosque-details">
+                <ellipse cx="0" cy={top - depth + 3} rx="7" ry="5" />
+                <path d={`M0 ${top - depth - 3}V${top - depth - 9}m-4 3h8`} />
+                <rect x={halfWidth - 5} y={top - depth - 3} width="4" height="14" rx="1" />
+              </g>
+            ) : (
+              <g className="building-church-details">
+                <path d={`M${halfWidth - 7} ${top - depth + 3}V${top - depth - 16}h11v16`} />
+                <path d={`M${halfWidth - 1.5} ${top - depth - 13}v8m-4 -4h8`} />
+              </g>
+            ))}
+          {building.category === "food" && (
+            <g className="building-food-details">
+              {[-9, 0, 9].map((x) => (
+                <g key={x} transform={`translate(${x} ${top - depth - 4})`}>
+                  <path d="M-5 0L0 -5L5 0ZM0 0v8" />
+                  <circle cx="0" cy="7" r="1.5" />
+                </g>
+              ))}
+            </g>
+          )}
+          {building.category === "transport" && (
+            <g className="building-transport-details">
+              <path d={`M${-halfWidth - 5} ${top - 1}h${width + 10}l-4 -8h-${width + 2}Z`} />
+              <path d={`M${-halfWidth + 2} ${top}v10m${width - 4} -10v10`} />
+              <Bus x={-5} y={top + 1} width={10} height={10} />
+            </g>
+          )}
+          {building.category === "services" && (
+            <g className="building-services-details">
+              <path
+                d={`M${-halfWidth + 4} ${top + 4}v${tall - 5}m${width / 3} -${tall - 4}v${tall - 5}m${width / 3} -${tall - 4}v${tall - 5}`}
+              />
+              <path d={`M${-halfWidth + 2} ${top + 2}h${width - 4}`} />
+            </g>
+          )}
+        </>
+      )}
+      <title>{sentenceCase(label)}</title>
+    </g>
+  );
+}
+
+function TownProp({
+  district,
+  prop,
+  viewMode,
+}: {
+  district: MapDistrict;
+  prop: MapTownProp;
+  viewMode: MapProjectionMode;
+}) {
+  const point = townPropPoint(district, prop, viewMode);
+  if (prop.kind === "tree") {
+    return (
+      <g className="town-prop town-prop-tree" transform={`translate(${point.x} ${point.y})`}>
+        <ellipse cx="0" cy="0" rx="10" ry="4" className="prop-ground" />
+        <path d="M-1 1v-10h2V1Z" className="prop-trunk" />
+        <circle cx="0" cy="-12" r="7" className="prop-canopy" />
+        <circle cx="-5" cy="-8" r="4" className="prop-canopy-light" />
+        <circle cx="5" cy="-8" r="4" className="prop-canopy-light" />
+      </g>
+    );
+  }
+  const width = 17 * prop.footprint.width;
+  const depth = 14 * prop.footprint.depth;
+  return (
+    <g
+      className={`town-prop town-prop-${prop.kind}`}
+      transform={`translate(${point.x} ${point.y})`}
+    >
+      <polygon
+        className="prop-ground"
+        points={`${-width},1 0,${depth / 2 + 2} ${width},1 0,${-depth / 2}`}
+      />
+      <polygon
+        className="prop-wall"
+        points={`${-width / 2},0 0,${depth / 2} 0,-8 ${-width / 2},${-8 - depth / 2}`}
+      />
+      <polygon
+        className="prop-wall-side"
+        points={`0,${depth / 2} ${width / 2},0 ${width / 2},-8 0,${-8 - depth / 2}`}
+      />
+      <polygon
+        className="prop-roof"
+        points={`${-width / 2 - 2},${-8 - depth / 2} 0,${-12 - depth} ${width / 2 + 2},${-8 - depth / 2} 0,-8`}
+      />
+    </g>
+  );
+}
+
+function townPropPoint(district: MapDistrict, prop: MapTownProp, viewMode: MapProjectionMode) {
+  return viewMode === "isometric"
+    ? isoCellToScreen(prop.position)
+    : isoCellTo2dViewBox(prop.position, district.id);
+}
+
+function districtMapPoint(district: MapDistrict, viewMode: MapProjectionMode): Point {
+  if (viewMode === "isometric" && district.isoCells?.length) {
+    const center = district.isoCells.reduce(
+      (sum, cell) => ({ col: sum.col + cell.col, row: sum.row + cell.row }),
+      { col: 0, row: 0 },
+    );
+    return isoCellToScreen({
+      col: center.col / district.isoCells.length,
+      row: center.row / district.isoCells.length,
+    });
+  }
+  const center = districtPoint(district);
+  if (district.landmarks.length) {
+    center.x /= district.landmarks.length;
+    center.y /= district.landmarks.length;
+  }
+  return center;
+}
+
 function landmarkPoint(landmark: MapLandmark, viewMode: MapProjectionMode) {
-  return viewMode === "isometric" && landmark.isoCell
-    ? isoCellToScreen(landmark.isoCell)
+  const buildingPosition = buildingsByLandmark.get(landmark.id)?.position ?? landmark.isoCell;
+  return viewMode === "isometric" && buildingPosition
+    ? isoCellToScreen(buildingPosition)
     : { x: landmark.x, y: landmark.y };
 }
 
@@ -361,6 +762,7 @@ export function MapCanvas({
   const callbacksRef = useRef({ onSelectDistrict, onSelectLandmark, onSelectBillboard });
   const transformRef = useRef<ViewTransform>({ x: 0, y: 0, scale: 1 });
   const viewportSizeRef = useRef({ width: 0, height: 0, fitScale: 1 });
+  const hasInitializedViewportRef = useRef(false);
   const pointersRef = useRef(new Map<number, Point>());
   const pointerStartRef = useRef<MapPointerSample | null>(null);
   const pointerSequenceRef = useRef(false);
@@ -384,26 +786,37 @@ export function MapCanvas({
   const reducedMotionRef = useRef(false);
   const [zoomLevel, setZoomLevel] = useState<MapZoomLevel>(1);
   const [screenScale, setScreenScale] = useState(1);
-  const [viewMode, setViewMode] = useState<MapProjectionMode>("2d");
+  const [labelViewport, setLabelViewport] = useState({ width: 1200, height: 800 });
+  const [viewMode, setViewMode] = useState<MapProjectionMode>("isometric");
 
   callbacksRef.current = { onSelectDistrict, onSelectLandmark, onSelectBillboard };
 
-  const clampTransform = useCallback((transform: ViewTransform): ViewTransform => {
-    const { width, height } = viewportSizeRef.current;
-    const mapWidth = VIEW_WIDTH * transform.scale;
-    const mapHeight = VIEW_HEIGHT * transform.scale;
-    return {
-      ...transform,
-      x:
-        mapWidth <= width
-          ? (width - mapWidth) / 2
-          : Math.max(width - mapWidth, Math.min(0, transform.x)),
-      y:
-        mapHeight <= height
-          ? (height - mapHeight) / 2
-          : Math.max(height - mapHeight, Math.min(0, transform.y)),
-    };
-  }, []);
+  const clampTransform = useCallback(
+    (transform: ViewTransform): ViewTransform => {
+      const { width, height } = viewportSizeRef.current;
+      const bounds = getMapBounds(viewMode);
+      const mapWidth = bounds.width * transform.scale;
+      const mapHeight = bounds.height * transform.scale;
+      return {
+        ...transform,
+        x:
+          mapWidth <= width
+            ? width / 2 - (bounds.x + bounds.width / 2) * transform.scale
+            : Math.max(
+                width - (bounds.x + bounds.width) * transform.scale,
+                Math.min(-bounds.x * transform.scale, transform.x),
+              ),
+        y:
+          mapHeight <= height
+            ? height / 2 - (bounds.y + bounds.height / 2) * transform.scale
+            : Math.max(
+                height - (bounds.y + bounds.height) * transform.scale,
+                Math.min(-bounds.y * transform.scale, transform.y),
+              ),
+      };
+    },
+    [viewMode],
+  );
 
   const applyTransform = useCallback(
     (transform: ViewTransform, animate: boolean) => {
@@ -514,14 +927,22 @@ export function MapCanvas({
       if (!entry) return;
       const width = entry.contentRect.width;
       const height = entry.contentRect.height;
-      const fitScale = Math.min(width / VIEW_WIDTH, height / VIEW_HEIGHT);
+      setLabelViewport({ width, height });
+      const fitScale = getMapFitScale(width, height, viewMode);
       viewportSizeRef.current = { width, height, fitScale };
       setScreenScale(fitScale * zoomLevel);
       const current = transformRef.current;
-      const point = {
-        x: (width / 2 - current.x) / Math.max(current.scale, 0.001),
-        y: (height / 2 - current.y) / Math.max(current.scale, 0.001),
-      };
+      const point =
+        !hasInitializedViewportRef.current && !searchTarget
+          ? (() => {
+              const bounds = getMapBounds(viewMode);
+              return { x: bounds.x + bounds.width / 2, y: bounds.y + bounds.height / 2 };
+            })()
+          : {
+              x: (width / 2 - current.x) / Math.max(current.scale, 0.001),
+              y: (height / 2 - current.y) / Math.max(current.scale, 0.001),
+            };
+      hasInitializedViewportRef.current = true;
       const scale = fitScale * zoomLevel;
       applyTransform(
         { x: width / 2 - point.x * scale, y: height / 2 - point.y * scale, scale },
@@ -530,7 +951,7 @@ export function MapCanvas({
     });
     observer.observe(viewport);
     return () => observer.disconnect();
-  }, [applyTransform, zoomLevel]);
+  }, [applyTransform, searchTarget, viewMode, zoomLevel]);
 
   useEffect(() => {
     if (!searchTarget) return;
@@ -759,6 +1180,7 @@ export function MapCanvas({
         eventChips={eventChips}
         jobLandmarkIds={jobLandmarkIds}
         billboardMarkers={billboardMarkers}
+        labelViewport={labelViewport}
         screenScale={screenScale}
         onSelectLandmark={selectLandmark}
         {...(onSelectBillboard ? { onSelectBillboard } : {})}
@@ -769,6 +1191,7 @@ export function MapCanvas({
       eventChips,
       jobLandmarkIds,
       billboardMarkers,
+      labelViewport,
       onSelectBillboard,
       playerLocation,
       screenScale,

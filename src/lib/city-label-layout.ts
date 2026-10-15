@@ -5,6 +5,8 @@ export type CityLabelInput = {
   text: string;
   anchor: CityScreenPoint;
   priority?: number;
+  width?: number;
+  height?: number;
 };
 export type CityLabelPlacement = {
   id: string;
@@ -29,13 +31,18 @@ export function layoutCityLabels(
   );
 
   for (const label of ordered) {
-    const width = Math.min(210, Math.max(78, label.text.length * 5.8 + 18));
+    const width = Math.min(
+      210,
+      Math.max(16, bounds.width - 8),
+      label.width ?? Math.max(78, label.text.length * 5.8 + 18),
+    );
     const lines = wrapCityLabel(label.text, Math.max(14, Math.floor((width - 14) / 5.8)));
-    const height = Math.max(21, lines.length * 12 + 9);
+    const height = Math.max(label.height ?? 0, 21, lines.length * 12 + 9);
     const horizontalOffsets = [0, -width * 0.58, width * 0.58, -width * 1.05, width * 1.05];
     const verticalOffsets = [
-      38, 58, 78, 98, 118, 138, 158, 178, 198, 218, 238, 258, 278, 298, 318, 338, -34, -54, -74,
-      -94, -114, -134,
+      0,
+      ...Array.from({ length: Math.ceil(bounds.height / 42) }, (_, index) => (index + 1) * 42),
+      ...Array.from({ length: Math.ceil(bounds.height / 42) }, (_, index) => -(index + 1) * 42),
     ];
     let best: CityScreenPoint | null = null;
 
@@ -54,13 +61,8 @@ export function layoutCityLabels(
       if (best) break;
     }
 
-    // Dense maps keep every label: use the first bounded slot even if an obstacle set is full.
-    if (!best) {
-      best = {
-        x: clamp(label.anchor.x, width / 2 + 4, bounds.width - width / 2 - 4),
-        y: clamp(label.anchor.y + 358, height / 2 + 4, bounds.height - height / 2 - 4),
-      };
-    }
+    // Skip lower-priority names when the viewport has no collision-free slot.
+    if (!best) continue;
     const placement: CityLabelPlacement = {
       id: label.id,
       text: label.text,

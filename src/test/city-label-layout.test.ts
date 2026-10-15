@@ -35,4 +35,17 @@ describe("city label layout", () => {
       "Market",
     ]);
   });
+
+  it("hides labels when the viewport contains no collision-free space", () => {
+    const labels = layoutCityLabels(
+      [
+        { id: "primary", text: "Central place", anchor: { x: 60, y: 60 }, priority: 10 },
+        { id: "secondary", text: "Nearby place", anchor: { x: 60, y: 60 }, priority: 1 },
+      ],
+      [{ x: 0, y: 0, width: 120, height: 120 }],
+      { width: 120, height: 120 },
+    );
+
+    expect(labels).toEqual([]);
+  });
 });

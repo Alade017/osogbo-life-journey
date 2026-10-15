@@ -176,3 +176,87 @@
     max-width: calc(100% - 16px);
   }
 }
+
+/* Districts are subtle area washes beneath the connected road and building layers. */
+.osogbo-map-svg .map-background {
+  fill: var(--background);
+}
+
+.osogbo-map-svg .map-district-shape {
+  stroke: transparent;
+  stroke-width: 0;
+  opacity: 0.15;
+}
+
+.osogbo-map-svg .region-market {
+  color: var(--accent);
+}
+
+.osogbo-map-svg .region-residential,
+.osogbo-map-svg .region-school {
+  color: var(--primary);
+}
+
+.osogbo-map-svg .region-leisure,
+.osogbo-map-svg .region-outskirts {
+  color: color-mix(in srgb, var(--primary) 45%, var(--card));
+}
+
+.osogbo-map-svg .region-transport {
+  color: var(--muted);
+}
+
+.osogbo-map-svg .map-district-depth {
+  display: none;
+}
+
+.osogbo-map-svg .map-district:focus-visible .map-district-shape {
+  stroke: var(--ring);
+  stroke-width: 3px;
+  opacity: 0.35;
+}
+
+.osogbo-map-svg .map-district-name {
+  fill: var(--foreground);
+  font-size: 13px;
+  paint-order: stroke;
+  stroke: var(--background);
+  stroke-width: 3px;
+}
+
+.osogbo-map-svg .map-district-theme,
+.osogbo-map-svg .traffic-label {
+  fill: var(--muted-foreground);
+  font-size: 10px;
+  letter-spacing: normal;
+  paint-order: stroke;
+  stroke: var(--background);
+  stroke-width: 3px;
+}
+
+.osogbo-map-svg .traffic-bar {
+  fill: var(--border);
+}
+
+.osogbo-map-svg .traffic-bar.is-active {
+  fill: var(--primary);
+}
+
+.osogbo-map-svg .map-road-edge {
+  stroke: var(--border);
+  stroke-width: 29px;
+}
+
+.osogbo-map-svg .map-road-fill {
+  stroke: var(--card);
+  stroke-width: 24px;
+}
+
+.map-canvas[data-zoom-level="2"] .osogbo-map-svg .map-district-name,
+.map-canvas[data-zoom-level="2"] .osogbo-map-svg .map-district-theme,
+.map-canvas[data-zoom-level="2"] .osogbo-map-svg .traffic,
+.map-canvas[data-zoom-level="3"] .osogbo-map-svg .map-district-name,
+.map-canvas[data-zoom-level="3"] .osogbo-map-svg .map-district-theme,
+.map-canvas[data-zoom-level="3"] .osogbo-map-svg .traffic {
+  opacity: 0;
+}

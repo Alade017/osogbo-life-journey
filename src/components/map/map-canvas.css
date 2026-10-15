@@ -79,6 +79,301 @@
   stroke-width: 3px;
 }
 
+.map-building-art {
+  stroke: color-mix(in srgb, var(--foreground) 60%, transparent);
+  stroke-width: 1px;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+.building-ground,
+.prop-ground {
+  fill: color-mix(in srgb, var(--foreground) 9%, transparent);
+  stroke: none;
+}
+
+.building-left-wall {
+  fill: color-mix(in srgb, var(--card) 94%, var(--primary));
+}
+
+.building-right-wall {
+  fill: color-mix(in srgb, var(--card) 82%, var(--primary));
+}
+
+.building-roof {
+  fill: color-mix(in srgb, var(--accent) 74%, var(--card));
+}
+
+.building-market-stalls path,
+.building-food-details path,
+.building-transport-details path,
+.building-services-details path,
+.building-school-details path {
+  fill: var(--accent);
+  stroke: color-mix(in srgb, var(--foreground) 55%, transparent);
+}
+
+.building-market-stalls circle,
+.building-food-details circle {
+  fill: var(--primary);
+  stroke: none;
+}
+
+.building-school-details path:first-child {
+  fill: var(--primary);
+}
+
+.building-medical-cross {
+  fill: var(--destructive, #b42318);
+  stroke: var(--card);
+  stroke-width: 0.7px;
+}
+
+.building-mosque-details ellipse,
+.building-mosque-details path,
+.building-mosque-details rect,
+.building-church-details path {
+  fill: var(--accent);
+  stroke: color-mix(in srgb, var(--foreground) 65%, transparent);
+}
+
+.building-stadium > polygon {
+  fill: color-mix(in srgb, var(--primary) 72%, var(--card));
+  stroke: var(--foreground);
+}
+
+.building-stadium path {
+  fill: none;
+  stroke: var(--card);
+  stroke-width: 1px;
+}
+
+.building-stadium .stadium-stand {
+  stroke: var(--accent);
+  stroke-width: 4px;
+}
+
+.building-junction path {
+  fill: none;
+  stroke: var(--card);
+  stroke-width: 5px;
+}
+
+.building-junction .junction-crossing {
+  stroke: var(--foreground);
+  stroke-width: 1.5px;
+}
+
+.building-junction circle {
+  fill: var(--accent);
+  stroke: var(--foreground);
+}
+
+.map-building-icon {
+  pointer-events: none;
+}
+
+.map-building-icon-disc {
+  fill: var(--card);
+  stroke: var(--primary);
+  stroke-width: 2px;
+}
+
+.map-building-labels {
+  pointer-events: none;
+}
+
+.map-building-label-leader {
+  stroke: color-mix(in srgb, var(--foreground) 50%, transparent);
+  stroke-width: 1px;
+}
+
+.map-building-label rect {
+  fill: var(--card);
+  stroke: var(--border);
+  stroke-width: 1px;
+}
+
+.map-building-label text {
+  fill: var(--foreground);
+  font:
+    650 12px/12px system-ui,
+    sans-serif;
+}
+
+.town-prop {
+  pointer-events: none;
+  stroke: color-mix(in srgb, var(--foreground) 42%, transparent);
+  stroke-width: 0.7px;
+  stroke-linejoin: round;
+}
+
+.town-prop-home .prop-wall,
+.town-prop-shop .prop-wall {
+  fill: color-mix(in srgb, var(--card) 90%, var(--primary));
+}
+
+.town-prop-home .prop-wall-side,
+.town-prop-shop .prop-wall-side {
+  fill: color-mix(in srgb, var(--card) 74%, var(--primary));
+}
+
+.town-prop-home .prop-roof {
+  fill: color-mix(in srgb, var(--accent) 57%, var(--card));
+}
+
+.town-prop-shop .prop-roof {
+  fill: color-mix(in srgb, var(--primary) 38%, var(--accent));
+}
+
+.prop-trunk {
+  fill: color-mix(in srgb, var(--foreground) 42%, var(--accent));
+  stroke: none;
+}
+
+.prop-canopy {
+  fill: var(--primary);
+  stroke: color-mix(in srgb, var(--primary) 65%, var(--foreground));
+}
+
+.prop-canopy-light {
+  fill: color-mix(in srgb, var(--primary) 75%, var(--card));
+  stroke: none;
+}
+
+.map-canvas-marker:focus-visible .map-building-icon-disc {
+  stroke: var(--ring);
+  stroke-width: 3px;
+}
+
+.map-canvas[data-zoom-level="2"] .isometric-district-label,
+.map-canvas[data-zoom-level="3"] .isometric-district-label {
+  opacity: 0;
+}
+
+.map-canvas[data-zoom-level="1"] .map-building-labels {
+  visibility: hidden;
+}
+
+.isometric-map-svg .district-region-shape {
+  stroke: none;
+  opacity: 0.09;
+}
+
+.isometric-map-svg .region-market .district-region-shape {
+  fill: var(--accent);
+}
+
+.isometric-map-svg .region-residential .district-region-shape,
+.isometric-map-svg .region-school .district-region-shape {
+  fill: var(--primary);
+}
+
+.isometric-map-svg .region-leisure .district-region-shape,
+.isometric-map-svg .region-outskirts .district-region-shape {
+  fill: color-mix(in srgb, var(--primary) 45%, var(--card));
+}
+
+.isometric-map-svg .region-transport .district-region-shape {
+  fill: var(--muted);
+}
+
+.isometric-map-svg .map-district:focus-visible .district-region-shape {
+  stroke: var(--ring);
+  stroke-width: 3px;
+  opacity: 0.5;
+}
+
+.isometric-district-label .map-district-name {
+  fill: var(--foreground);
+  paint-order: stroke;
+  stroke: var(--background);
+  stroke-linejoin: round;
+  stroke-width: 3px;
+  font:
+    700 13px/1 system-ui,
+    sans-serif;
+}
+
+.isometric-district-label .map-district-traffic {
+  fill: var(--muted-foreground);
+  paint-order: stroke;
+  stroke: var(--background);
+  stroke-linejoin: round;
+  stroke-width: 3px;
+  font:
+    600 10px/1 system-ui,
+    sans-serif;
+}
+
+.map-canvas .osogbo-map-svg .map-district-name,
+.map-canvas .osogbo-map-svg .map-district-theme,
+.map-canvas .osogbo-map-svg .traffic {
+  opacity: 0;
+}
+
+.map-district-labels,
+.map-building-labels {
+  pointer-events: none;
+}
+
+.map-district-overlay-label rect {
+  fill: color-mix(in srgb, var(--card) 96%, transparent);
+  stroke: color-mix(in srgb, var(--border) 82%, transparent);
+  stroke-width: 1px;
+}
+
+.map-district-overlay-label .district-overlay-name {
+  fill: var(--foreground);
+  font:
+    700 12px/1 system-ui,
+    sans-serif;
+}
+
+.map-district-overlay-label .district-overlay-traffic {
+  fill: var(--muted-foreground);
+  font:
+    600 10px/1 system-ui,
+    sans-serif;
+}
+
+.district-traffic-bar {
+  fill: var(--border);
+}
+
+.district-traffic-bar.is-active {
+  fill: var(--primary);
+}
+
+.isometric-roads path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.town-road-edge {
+  stroke: var(--border);
+  stroke-width: 32px;
+}
+
+.town-road-fill {
+  stroke: var(--card);
+  stroke-width: 26px;
+}
+
+.town-road-center {
+  stroke: color-mix(in srgb, var(--border) 65%, var(--card));
+  stroke-width: 1.5px;
+  stroke-dasharray: 9 15;
+}
+
+.town-green-patch {
+  fill: color-mix(in srgb, var(--primary) 10%, transparent);
+  stroke: none;
+}
+
 .map-billboard-sign {
   pointer-events: none;
 }

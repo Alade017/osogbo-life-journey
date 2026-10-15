@@ -122,6 +122,97 @@
               "verify": true
             }
           ]
+        },
+        {
+          "id": "osogbo-grand-mosque",
+          "label": "Osogbo Grand Mosque",
+          "category": "worship",
+          "x": 205,
+          "y": 245,
+          "isoCell": {
+            "col": 2.3,
+            "row": 0.65
+          },
+          "source": "Public landmark name supplied by the player; position is hand-placed gameplay art",
+          "verify": true,
+          "actions": [
+            {
+              "id": "osogbo-grand-mosque-community-gathering",
+              "label": "Attend a community gathering",
+              "description": "Join a fictional community gathering.",
+              "time_cost_minutes": 15,
+              "money_minor": {
+                "min": 0,
+                "max": 0
+              },
+              "mood_effect": 1,
+              "needs_effects": {},
+              "requirement": "Travel here first",
+              "open_hours": {
+                "start": 7,
+                "end": 22
+              },
+              "cooldown_game_minutes": 20,
+              "verify": true
+            },
+            {
+              "id": "osogbo-grand-mosque-greet-neighbours",
+              "label": "Greet neighbours",
+              "description": "Meet fictional neighbours in the game.",
+              "time_cost_minutes": 15,
+              "money_minor": {
+                "min": 0,
+                "max": 0
+              },
+              "mood_effect": 1,
+              "needs_effects": {},
+              "requirement": "Travel here first",
+              "open_hours": {
+                "start": 7,
+                "end": 22
+              },
+              "cooldown_game_minutes": 20,
+              "verify": true
+            },
+            {
+              "id": "osogbo-grand-mosque-community-help",
+              "label": "Ask about community help",
+              "description": "Ask a fictional community helper for guidance.",
+              "time_cost_minutes": 15,
+              "money_minor": {
+                "min": 0,
+                "max": 0
+              },
+              "mood_effect": 1,
+              "needs_effects": {},
+              "requirement": "Travel here first",
+              "open_hours": {
+                "start": 7,
+                "end": 22
+              },
+              "cooldown_game_minutes": 20,
+              "verify": true
+            },
+            {
+              "id": "osogbo-grand-mosque-quiet-moment",
+              "label": "Take a quiet moment",
+              "description": "Spend a short quiet moment in the game.",
+              "time_cost_minutes": 15,
+              "money_minor": {
+                "min": 0,
+                "max": 0
+              },
+              "mood_effect": 1,
+              "needs_effects": {},
+              "requirement": "Travel here first",
+              "open_hours": {
+                "start": 7,
+                "end": 22
+              },
+              "cooldown_game_minutes": 20,
+              "verify": true
+            }
+          ]
         }
       ],
       "height": 0,
@@ -152,7 +243,86 @@
         }
       ],
       "source": "Public district name; hand-placed gameplay layout",
-      "verify": false
+      "verify": false,
+      "buildings": [
+        {
+          "id": "building-oja-oba-market",
+          "landmark_id": "oja-oba-market",
+          "name": "Oja Oba Market",
+          "category": "market",
+          "position": {
+            "col": 1.03,
+            "row": 0.83
+          },
+          "footprint": {
+            "width": 1.2,
+            "depth": 0.85
+          },
+          "facade_slot": "front",
+          "verify": false
+        },
+        {
+          "id": "building-osogbo-grand-mosque",
+          "landmark_id": "osogbo-grand-mosque",
+          "name": "Osogbo Grand Mosque",
+          "category": "worship",
+          "position": {
+            "col": 2.3,
+            "row": 0.65
+          },
+          "footprint": {
+            "width": 1.15,
+            "depth": 1
+          },
+          "facade_slot": "front",
+          "verify": true,
+          "short_name": "Grand mosque"
+        }
+      ],
+      "props": [
+        {
+          "id": "oja-oba-block-1",
+          "kind": "shop",
+          "position": {
+            "col": -0.18,
+            "row": 0.2
+          },
+          "footprint": {
+            "width": 0.58,
+            "depth": 0.45
+          },
+          "interactive": false,
+          "verify": false
+        },
+        {
+          "id": "oja-oba-block-2",
+          "kind": "shop",
+          "position": {
+            "col": 2.2,
+            "row": -0.18
+          },
+          "footprint": {
+            "width": 0.58,
+            "depth": 0.45
+          },
+          "interactive": false,
+          "verify": false
+        },
+        {
+          "id": "oja-oba-block-3",
+          "kind": "tree",
+          "position": {
+            "col": 1.82,
+            "row": 0.8200000000000001
+          },
+          "footprint": {
+            "width": 0.3,
+            "depth": 0.3
+          },
+          "interactive": false,
+          "verify": false
+        }
+      ]
     },
     {
       "id": "ataoja",
@@ -383,7 +553,87 @@
         }
       ],
       "source": "Public district name; hand-placed gameplay layout",
-      "verify": false
+      "verify": false,
+      "buildings": [
+        {
+          "id": "building-ataoja-police-station",
+          "landmark_id": "ataoja-police-station",
+          "name": "Ataoja Police Station",
+          "category": "services",
+          "position": {
+            "col": 3.77,
+            "row": 0.79
+          },
+          "footprint": {
+            "width": 1.2,
+            "depth": 0.9
+          },
+          "facade_slot": "front",
+          "verify": true,
+          "short_name": "Police station"
+        },
+        {
+          "id": "building-ataoja-palace",
+          "landmark_id": "ataoja-palace",
+          "name": "Ataoja Palace",
+          "category": "services",
+          "position": {
+            "col": 4.55,
+            "row": 0.87
+          },
+          "footprint": {
+            "width": 1.2,
+            "depth": 0.9
+          },
+          "facade_slot": "front",
+          "verify": true,
+          "short_name": "Ataoja palace"
+        }
+      ],
+      "props": [
+        {
+          "id": "ataoja-block-1",
+          "kind": "home",
+          "position": {
+            "col": 2.82,
+            "row": 0.2
+          },
+          "footprint": {
+            "width": 0.58,
+            "depth": 0.45
+          },
+          "interactive": false,
+          "verify": false
+        },
+        {
+          "id": "ataoja-block-2",
+          "kind": "home",
+          "position": {
+            "col": 5.2,
+            "row": -0.18
+          },
+          "footprint": {
+            "width": 0.58,
+            "depth": 0.45
+          },
+          "interactive": false,
+          "verify": false
+        },
+        {
+          "id": "ataoja-block-3",
+          "kind": "tree",
+          "position": {
+            "col": 4.82,
+            "row": 0.8200000000000001
+          },
+          "footprint": {
+            "width": 0.3,
+            "depth": 0.3
+          },
+          "interactive": false,
+          "verify": false
+        }
+      ]
     },
     {
       "id": "aleku-wodo",
@@ -523,7 +773,70 @@
         }
       ],
       "source": "Public district name; hand-placed gameplay layout",
-      "verify": false
+      "verify": false,
+      "buildings": [
+        {
+          "id": "building-aleku-wodo-road-network",
+          "landmark_id": "aleku-wodo-road-network",
+          "name": "Alekuwodo Road Network",
+          "category": "junction",
+          "position": {
+            "col": 7.55,
+            "row": 0.89
+          },
+          "footprint": {
+            "width": 1.05,
+            "depth": 0.72
+          },
+          "facade_slot": "front",
+          "verify": true,
+          "short_name": "Alekuwodo road"
+        }
+      ],
+      "props": [
+        {
+          "id": "aleku-wodo-block-1",
+          "kind": "home",
+          "position": {
+            "col": 5.82,
+            "row": 0.2
+          },
+          "footprint": {
+            "width": 0.58,
+            "depth": 0.45
+          },
+          "interactive": false,
+          "verify": false
+        },
+        {
+          "id": "aleku-wodo-block-2",
+          "kind": "home",
+          "position": {
+            "col": 8.2,
+            "row": -0.18
+          },
+          "footprint": {
+            "width": 0.58,
+            "depth": 0.45
+          },
+          "interactive": false,
+          "verify": false
+        },
+        {
+          "id": "aleku-wodo-block-3",
+          "kind": "tree",
+          "position": {
+            "col": 7.82,
+            "row": 0.8200000000000001
+          },
+          "footprint": {
+            "width": 0.3,
+            "depth": 0.3
+          },
+          "interactive": false,
+          "verify": false
+        }
+      ]
     },
     {
       "id": "olaiya",
@@ -571,7 +884,52 @@
         }
       ],
       "source": "Public district name; hand-placed gameplay layout",
-      "verify": false
+      "verify": false,
+      "buildings": [],
+      "props": [
+        {
+          "id": "olaiya-block-1",
+          "kind": "shop",
+          "position": {
+            "col": 8.82,
+            "row": 0.2
+          },
+          "footprint": {
+            "width": 0.58,
+            "depth": 0.45
+          },
+          "interactive": false,
+          "verify": false
+        },
+        {
+          "id": "olaiya-block-2",
+          "kind": "shop",
+          "position": {
+            "col": 11.2,
+            "row": -0.18
+          },
+          "footprint": {
+            "width": 0.58,
+            "depth": 0.45
+          },
+          "interactive": false,
+          "verify": false
+        },
+        {
+          "id": "olaiya-block-3",
+          "kind": "tree",
+          "position": {
+            "col": 10.82,
+            "row": 0.8200000000000001
+          },
+          "footprint": {
+            "width": 0.3,
+            "depth": 0.3
+          },
+          "interactive": false,
+          "verify": false
+        }
+      ]
     },
     {
       "id": "oke-fia",
@@ -711,7 +1069,69 @@
         }
       ],
       "source": "Public district name; hand-placed gameplay layout",
-      "verify": false
+      "verify": false,
+      "buildings": [
+        {
+          "id": "building-oke-fia-flyover",
+          "landmark_id": "oke-fia-flyover",
+          "name": "Oke-Fia Flyover",
+          "category": "junction",
+          "position": {
+            "col": 1.03,
+            "row": 5.76
+          },
+          "footprint": {
+            "width": 1.05,
+            "depth": 0.72
+          },
+          "facade_slot": "front",
+          "verify": true
+        }
+      ],
+      "props": [
+        {
+          "id": "oke-fia-block-1",
+          "kind": "home",
+          "position": {
+            "col": -0.18,
+            "row": 5.2
+          },
+          "footprint": {
+            "width": 0.58,
+            "depth": 0.45
+          },
+          "interactive": false,
+          "verify": false
+        },
+        {
+          "id": "oke-fia-block-2",
+          "kind": "home",
+          "position": {
+            "col": 2.2,
+            "row": 4.82
+          },
+          "footprint": {
+            "width": 0.58,
+            "depth": 0.45
+          },
+          "interactive": false,
+          "verify": false
+        },
+        {
+          "id": "oke-fia-block-3",
+          "kind": "tree",
+          "position": {
+            "col": 1.82,
+            "row": 5.82
+          },
+          "footprint": {
+            "width": 0.3,
+            "depth": 0.3
+          },
+          "interactive": false,
+          "verify": false
+        }
+      ]
     },
     {
       "id": "oke-baale",
@@ -942,7 +1362,87 @@
           "row": 6
         }
       ],
-      "source": "Public district name; hand-placed gameplay layout"
+      "source": "Public district name; hand-placed gameplay layout",
+      "buildings": [
+        {
+          "id": "building-oke-baale-local-government-hq",
+          "landmark_id": "oke-baale-local-government-hq",
+          "name": "Oke-Baale Local Government Headquarters",
+          "category": "services",
+          "position": {
+            "col": 3.77,
+            "row": 5.74
+          },
+          "footprint": {
+            "width": 1.2,
+            "depth": 0.9
+          },
+          "facade_slot": "front",
+          "verify": true,
+          "short_name": "Local government office"
+        },
+        {
+          "id": "building-osogbo-school-of-art",
+          "landmark_id": "osogbo-school-of-art",
+          "name": "Osogbo School of Art",
+          "category": "school",
+          "position": {
+            "col": 4.55,
+            "row": 5.82
+          },
+          "footprint": {
+            "width": 1.25,
+            "depth": 0.95
+          },
+          "facade_slot": "front",
+          "verify": true,
+          "short_name": "School of art"
+        }
+      ],
+      "props": [
+        {
+          "id": "oke-baale-block-1",
+          "kind": "home",
+          "position": {
+            "col": 2.82,
+            "row": 5.2
+          },
+          "footprint": {
+            "width": 0.58,
+            "depth": 0.45
+          },
+          "interactive": false,
+          "verify": false
+        },
+        {
+          "id": "oke-baale-block-2",
+          "kind": "home",
+          "position": {
+            "col": 5.2,
+            "row": 4.82
+          },
+          "footprint": {
+            "width": 0.58,
+            "depth": 0.45
+          },
+          "interactive": false,
+          "verify": false
+        },
+        {
+          "id": "oke-baale-block-3",
+          "kind": "tree",
+          "position": {
+            "col": 4.82,
+            "row": 5.82
+          },
+          "footprint": {
+            "width": 0.3,
+            "depth": 0.3
+          },
+          "interactive": false,
+          "verify": false
+        }
+      ]
     },
     {
       "id": "isale-aro",
@@ -990,7 +1490,52 @@
           "row": 6
         }
       ],
-      "source": "Public district name; hand-placed gameplay layout"
+      "source": "Public district name; hand-placed gameplay layout",
+      "buildings": [],
+      "props": [
+        {
+          "id": "isale-aro-block-1",
+          "kind": "shop",
+          "position": {
+            "col": 5.82,
+            "row": 5.2
+          },
+          "footprint": {
+            "width": 0.58,
+            "depth": 0.45
+          },
+          "interactive": false,
+          "verify": false
+        },
+        {
+          "id": "isale-aro-block-2",
+          "kind": "shop",
+          "position": {
+            "col": 8.2,
+            "row": 4.82
+          },
+          "footprint": {
+            "width": 0.58,
+            "depth": 0.45
+          },
+          "interactive": false,
+          "verify": false
+        },
+        {
+          "id": "isale-aro-block-3",
+          "kind": "tree",
+          "position": {
+            "col": 7.82,
+            "row": 5.82
+          },
+          "footprint": {
+            "width": 0.3,
+            "depth": 0.3
+          },
+          "interactive": false,
+          "verify": false
+        }
+      ]
     },
     {
       "id": "ogo-oluwa",
@@ -1101,6 +1646,97 @@
               "verify": true
             }
           ]
+        },
+        {
+          "id": "township-food-court",
+          "label": "Township food court",
+          "category": "food",
+          "x": 1110,
+          "y": 650,
+          "isoCell": {
+            "col": 11.25,
+            "row": 3.3
+          },
+          "source": "Fictional gameplay place; position is hand-placed map art",
+          "verify": true,
+          "actions": [
+            {
+              "id": "township-food-court-order-meal",
+              "label": "Order a meal",
+              "description": "Order food in a fictional game activity.",
+              "time_cost_minutes": 15,
+              "money_minor": {
+                "min": 0,
+                "max": 0
+              },
+              "mood_effect": 1,
+              "needs_effects": {},
+              "requirement": "Travel here first",
+              "open_hours": {
+                "start": 7,
+                "end": 22
+              },
+              "cooldown_game_minutes": 20,
+              "verify": true
+            },
+            {
+              "id": "township-food-court-share-table",
+              "label": "Share a table",
+              "description": "Meet fictional neighbours over a meal.",
+              "time_cost_minutes": 15,
+              "money_minor": {
+                "min": 0,
+                "max": 0
+              },
+              "mood_effect": 1,
+              "needs_effects": {},
+              "requirement": "Travel here first",
+              "open_hours": {
+                "start": 7,
+                "end": 22
+              },
+              "cooldown_game_minutes": 20,
+              "verify": true
+            },
+            {
+              "id": "township-food-court-collect-order",
+              "label": "Collect an order",
+              "description": "Collect a fictional game order.",
+              "time_cost_minutes": 15,
+              "money_minor": {
+                "min": 0,
+                "max": 0
+              },
+              "mood_effect": 1,
+              "needs_effects": {},
+              "requirement": "Travel here first",
+              "open_hours": {
+                "start": 7,
+                "end": 22
+              },
+              "cooldown_game_minutes": 20,
+              "verify": true
+            },
+            {
+              "id": "township-food-court-ask-menu",
+              "label": "Ask about the menu",
+              "description": "Ask a fictional server about available food.",
+              "time_cost_minutes": 15,
+              "money_minor": {
+                "min": 0,
+                "max": 0
+              },
+              "mood_effect": 1,
+              "needs_effects": {},
+              "requirement": "Travel here first",
+              "open_hours": {
+                "start": 7,
+                "end": 22
+              },
+              "cooldown_game_minutes": 20,
+              "verify": true
+            }
+          ]
         }
       ],
       "height": 0,
@@ -1130,7 +1766,86 @@
           "row": 6
         }
       ],
-      "source": "Public district name; hand-placed gameplay layout"
+      "source": "Public district name; hand-placed gameplay layout",
+      "buildings": [
+        {
+          "id": "building-osogbo-township-stadium",
+          "landmark_id": "osogbo-township-stadium",
+          "name": "Osogbo Township Stadium",
+          "category": "sport",
+          "position": {
+            "col": 10.17,
+            "row": 5.76
+          },
+          "footprint": {
+            "width": 1.65,
+            "depth": 1.25
+          },
+          "facade_slot": "front",
+          "verify": false,
+          "short_name": "Township stadium"
+        },
+        {
+          "id": "building-township-food-court",
+          "landmark_id": "township-food-court",
+          "name": "Township food court",
+          "category": "food",
+          "position": {
+            "col": 11.25,
+            "row": 3.3
+          },
+          "footprint": {
+            "width": 1.15,
+            "depth": 0.85
+          },
+          "facade_slot": "front",
+          "verify": true
+        }
+      ],
+      "props": [
+        {
+          "id": "ogo-oluwa-block-1",
+          "kind": "home",
+          "position": {
+            "col": 8.82,
+            "row": 5.2
+          },
+          "footprint": {
+            "width": 0.58,
+            "depth": 0.45
+          },
+          "interactive": false,
+          "verify": false
+        },
+        {
+          "id": "ogo-oluwa-block-2",
+          "kind": "home",
+          "position": {
+            "col": 11.2,
+            "row": 4.82
+          },
+          "footprint": {
+            "width": 0.58,
+            "depth": 0.45
+          },
+          "interactive": false,
+          "verify": false
+        },
+        {
+          "id": "ogo-oluwa-block-3",
+          "kind": "tree",
+          "position": {
+            "col": 10.82,
+            "row": 5.82
+          },
+          "footprint": {
+            "width": 0.3,
+            "depth": 0.3
+          },
+          "interactive": false,
+          "verify": false
+        }
+      ]
     }
   ]
 }
