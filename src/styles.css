@@ -9113,3 +9113,196 @@
     padding-inline: 3px;
   }
 }
+
+/* Compact identity and world summary with a separate time-control card. */
+.game-hud.hud-v2 {
+  grid-template-areas: "identity" "context" "sync";
+  gap: 6px;
+  padding: 0;
+}
+
+.hud-v2 .game-hud-brand {
+  display: none;
+}
+
+.hud-v2 .game-hud-top-row {
+  grid-template-columns: minmax(108px, 0.8fr) minmax(145px, 1.1fr) minmax(132px, 0.95fr) minmax(
+      96px,
+      0.65fr
+    ) 36px;
+  grid-template-areas: "player location summary wallet notifications";
+  gap: 8px;
+  padding: 7px 9px;
+  border-radius: 17px;
+}
+
+.hud-v2 .game-hud-player {
+  grid-area: player;
+  gap: 7px;
+  padding-right: 7px;
+}
+
+.hud-v2 .game-hud-avatar {
+  width: 34px;
+  height: 36px;
+  flex-basis: 34px;
+  border-radius: 11px;
+}
+
+.hud-v2 .game-hud-top-row .game-hud-location {
+  grid-area: location;
+  gap: 6px;
+  padding: 3px 6px;
+  border: 0;
+  background: transparent;
+}
+
+.hud-v2 .game-hud-location-icon {
+  width: 28px;
+  height: 28px;
+  flex-basis: 28px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--primary) 8%, var(--card));
+}
+
+.hud-v2 .game-hud-time-summary {
+  grid-area: summary;
+  min-width: 0;
+  padding-inline: 8px;
+  border-left: 1px solid var(--border);
+}
+
+.hud-v2 .game-hud-time-summary .game-hud-item-copy,
+.hud-v2 .game-hud-context-row .game-hud-item-copy {
+  gap: 2px;
+}
+
+.hud-v2 .game-hud-top-row .game-hud-balance {
+  grid-area: wallet;
+  min-height: 38px;
+  gap: 6px;
+  padding: 4px 7px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--card));
+}
+
+.hud-v2 .game-hud-balance > svg {
+  width: 15px;
+  height: 15px;
+}
+
+.hud-v2 .game-hud-top-row .game-hud-notifications {
+  grid-area: notifications;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+}
+
+.hud-v2 .game-hud-top-row .game-hud-player > span:last-child > span:first-child,
+.hud-v2 .game-hud-top-row .game-hud-location .game-hud-item-copy strong,
+.hud-v2 .game-hud-time-summary .game-hud-item-copy strong,
+.hud-v2 .game-hud-top-row .game-hud-balance .game-hud-item-copy strong {
+  color: #0a0a0a;
+  font-size: 0.78rem;
+}
+
+.hud-v2 .game-hud-top-row .game-hud-item-copy small,
+.hud-v2 .game-hud-time-summary .game-hud-item-copy > span,
+.hud-v2 .game-hud-top-row .game-hud-location-meta {
+  color: #62666c;
+  font-size: 0.62rem;
+}
+
+.hud-v2 .game-hud-context-row {
+  width: min(68%, 460px);
+  min-height: 54px;
+  justify-self: center;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 15px;
+}
+
+.hud-v2 .game-hud-context-row .game-hud-time {
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.hud-v2 .game-hud-control-icon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 7%, var(--card));
+}
+
+.hud-v2 .game-hud-context-row .game-hud-item-copy small {
+  color: #62666c;
+  font-size: 0.61rem;
+}
+
+.hud-v2 .game-hud-context-row .game-hud-item-copy strong {
+  color: #0a0a0a;
+  font-size: 0.9rem;
+}
+
+.hud-v2 .game-hud-context-row .game-hud-item-copy > span {
+  color: #62666c;
+  font-size: 0.62rem;
+}
+
+.hud-v2 .game-hud-context-row .game-hud-simulation-controls button,
+.hud-v2 .game-hud-context-row .game-hud-simulation-controls select {
+  min-width: 38px;
+  min-height: 38px;
+  border-radius: 12px;
+}
+
+@media (max-width: 720px) {
+  .hud-v2 .game-hud-top-row {
+    grid-template-columns: minmax(0, 1fr) auto 34px;
+    grid-template-areas: "player wallet notifications" "location summary summary";
+    gap: 4px 7px;
+    padding: 6px 7px;
+  }
+
+  .hud-v2 .game-hud-time-summary {
+    padding-left: 7px;
+  }
+
+  .hud-v2 .game-hud-top-row .game-hud-location {
+    padding-left: 0;
+  }
+
+  .hud-v2 .game-hud-top-row .game-hud-location-icon,
+  .hud-v2 .game-hud-top-row .game-hud-location-meta {
+    display: none;
+  }
+
+  .hud-v2 .game-hud-context-row {
+    width: min(100%, 460px);
+  }
+}
+
+@media (max-width: 420px) {
+  .hud-v2 .game-hud-top-row .game-hud-player > span:last-child > span:first-child,
+  .hud-v2 .game-hud-top-row .game-hud-location .game-hud-item-copy strong,
+  .hud-v2 .game-hud-time-summary .game-hud-item-copy strong,
+  .hud-v2 .game-hud-top-row .game-hud-balance .game-hud-item-copy strong {
+    font-size: 0.72rem;
+  }
+
+  .hud-v2 .game-hud-context-row .game-hud-item-copy > span {
+    max-width: 175px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}

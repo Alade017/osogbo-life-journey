@@ -1,4 +1,4 @@
-import { Bell, CirclePause, CirclePlay, Coins, MapPin } from "lucide-react";
+import { Bell, CirclePause, CirclePlay, Clock3, Coins, MapPin } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Avatar } from "@/components/game/Avatar";
 import { formatNaira } from "@/lib/game";
@@ -51,7 +51,7 @@ export function GameHUD({
           <small>PLAYER DASHBOARD</small>
         </span>
       </Link>
-      <div className="game-hud-top-row" role="group" aria-label="Player and wallet">
+      <div className="game-hud-top-row" role="group" aria-label="Player dashboard">
         <Link to="/profile" className="game-hud-player" aria-label={`${player.name}, view profile`}>
           <span className="game-hud-avatar">
             <Avatar
@@ -67,6 +67,30 @@ export function GameHUD({
           </span>
         </Link>
 
+        <div className="game-hud-location">
+          <span className="game-hud-location-icon">
+            <MapPin className="h-4 w-4 shrink-0" />
+          </span>
+          <span className="game-hud-item-copy min-w-0">
+            <small>Current area</small>
+            <strong className="truncate">{location}</strong>
+            <span className="game-hud-location-meta">
+              <span>Osogbo · WAT</span> {dateLabel} · {clockLabel}
+            </span>
+          </span>
+        </div>
+
+        <div className="game-hud-time-summary" aria-label="Personal game time">
+          <span className="game-hud-item-copy">
+            <small>Personal time · Day {simulation.gameTime.day}</small>
+            <strong className="tabular-nums">{formatGameTime(simulation.gameTime)}</strong>
+            <span>
+              {WEEKDAYS[simulation.gameTime.weekday]} · {simulation.mood.mood} ·{" "}
+              {simulation.paused ? "Paused" : "Active play"}
+            </span>
+          </span>
+        </div>
+
         <Link
           to="/wallet"
           className="game-hud-balance"
@@ -74,35 +98,33 @@ export function GameHUD({
         >
           <Coins className="h-4 w-4 text-emerald" />
           <span className="game-hud-item-copy">
-            <small>WALLET</small>
+            <small>Wallet</small>
             <strong>{formatNaira(player.cash)}</strong>
           </span>
         </Link>
-      </div>
-      <div
-        className="game-hud-context-row"
-        role="group"
-        aria-label="Current area, game time, and notifications"
-      >
-        <div className="game-hud-location">
-          <span className="game-hud-location-icon">
-            <MapPin className="h-4 w-4 shrink-0" />
-          </span>
-          <span className="game-hud-item-copy min-w-0">
-            <small>CURRENT AREA</small>
-            <strong className="truncate">{location}</strong>
-            <span className="game-hud-location-meta">
-              <span>OSOGBO Â· WAT</span> {dateLabel} Â· {clockLabel}
-            </span>
-          </span>
-        </div>
 
+        <Link
+          to="/notifications"
+          className="game-hud-notifications"
+          aria-label={`Notifications, ${unread} unread`}
+          title={`Notifications${unread > 0 ? ` · ${unread} unread` : ""}`}
+        >
+          <Bell className="h-4.5 w-4.5" />
+          {unread > 0 && (
+            <span className="game-notification-dot">{unread > 9 ? "9+" : unread}</span>
+          )}
+        </Link>
+      </div>
+      <div className="game-hud-context-row" role="group" aria-label="Personal time controls">
         <div className="game-hud-time" aria-label="Simulation clock">
+          <span className="game-hud-control-icon" aria-hidden="true">
+            <Clock3 size={17} />
+          </span>
           <span className="game-hud-item-copy">
-            <small>PERSONAL TIME · DAY {simulation.gameTime.day}</small>
+            <small>Personal time · Day {simulation.gameTime.day}</small>
             <strong className="tabular-nums">{formatGameTime(simulation.gameTime)}</strong>
             <span>
-              {WEEKDAYS[simulation.gameTime.weekday]} · Mood: {simulation.mood.mood} ·{" "}
+              {WEEKDAYS[simulation.gameTime.weekday]} · {simulation.mood.mood} ·{" "}
               {simulation.paused ? "Paused" : "Active play"}
             </span>
           </span>
@@ -129,18 +151,6 @@ export function GameHUD({
             </select>
           </div>
         </div>
-
-        <Link
-          to="/notifications"
-          className="game-hud-notifications"
-          aria-label={`Notifications, ${unread} unread`}
-          title={`Notifications${unread > 0 ? ` · ${unread} unread` : ""}`}
-        >
-          <Bell className="h-4.5 w-4.5" />
-          {unread > 0 && (
-            <span className="game-notification-dot">{unread > 9 ? "9+" : unread}</span>
-          )}
-        </Link>
       </div>
       <div className="hud-live-clock">
         <span>OSOGBO · WAT</span>

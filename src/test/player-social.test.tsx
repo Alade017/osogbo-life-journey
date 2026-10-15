@@ -91,7 +91,9 @@ describe("real-player social panel", () => {
     }));
 
     renderSocial({ initialTab: "messages", phoneMode: true });
-    expect(await screen.findByRole("button", { name: /Ayo/, timeout: 10_000 })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: /Ayo/ }, { timeout: 10_000 }),
+    ).toBeInTheDocument();
     fireEvent.change(screen.getByRole("searchbox", { name: "Search chats" }), {
       target: { value: "Bol" },
     });

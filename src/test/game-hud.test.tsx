@@ -34,7 +34,7 @@ vi.mock("@/components/game/GameTimeProvider", () => ({
   }),
 }));
 describe("shared player HUD", () => {
-  it("exposes needs shortcuts separately from the profile and labels both clocks", () => {
+  it("shows the compact player summary and keeps simulation controls available", () => {
     const character = {
       id: "c1",
       name: "Ade",
@@ -56,14 +56,13 @@ describe("shared player HUD", () => {
       />,
     );
     expect(screen.queryByLabelText(/\d+ of \d+ XP to next level/)).not.toBeInTheDocument();
-    expect(screen.getByLabelText(/Hunger .*Show activity shortcut/)).toBeInTheDocument();
-    fireEvent.click(screen.getByLabelText(/Hunger .*Show activity shortcut/));
-    expect(screen.getByRole("link", { name: /Choose food from your inventory/ })).toHaveAttribute(
-      "href",
-      "/inventory",
-    );
-    expect(screen.getByText(/PERSONAL TIME/)).toBeInTheDocument();
-    expect(screen.getByText("OSOGBO · WAT")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Ade, view profile" })).toBeInTheDocument();
+    expect(screen.getByText("Student District")).toBeInTheDocument();
+    expect(screen.getByLabelText("Personal game time")).toBeInTheDocument();
+    expect(screen.getByLabelText("Simulation clock")).toBeInTheDocument();
+    expect(screen.getByText("Osogbo · WAT")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Wallet/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /Notifications, 3 unread/ })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Pause simulation" }));
     expect(controls.pause).toHaveBeenCalled();
   });
