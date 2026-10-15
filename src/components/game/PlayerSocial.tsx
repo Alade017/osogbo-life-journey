@@ -129,7 +129,13 @@ function MessageList({
   }, [messages, phoneMode]);
   if (!messages.length)
     return (
-      <p className={phoneMode ? "phone-chat-empty" : "rounded-xl bg-background p-4 text-sm text-muted-foreground"}>
+      <p
+        className={
+          phoneMode
+            ? "phone-chat-empty"
+            : "rounded-xl bg-background p-4 text-sm text-muted-foreground"
+        }
+      >
         No messages yet. Say hello.
       </p>
     );
@@ -137,7 +143,11 @@ function MessageList({
     <ol
       ref={listRef}
       aria-label="Message history"
-      className={phoneMode ? "phone-message-history" : "grid max-h-72 gap-2 overflow-y-auto rounded-xl border border-border bg-background p-3"}
+      className={
+        phoneMode
+          ? "phone-message-history"
+          : "grid max-h-72 gap-2 overflow-y-auto rounded-xl border border-border bg-background p-3"
+      }
     >
       {messages.map((message) => (
         <li
@@ -152,7 +162,13 @@ function MessageList({
             </div>
           )}
           <p className="whitespace-pre-wrap break-words">{message.body}</p>
-          <time className={phoneMode ? "phone-message-time" : "mt-1 block text-right text-[11px] text-muted-foreground"}>
+          <time
+            className={
+              phoneMode
+                ? "phone-message-time"
+                : "mt-1 block text-right text-[11px] text-muted-foreground"
+            }
+          >
             {new Intl.DateTimeFormat("en-NG", {
               hour: "2-digit",
               minute: "2-digit",
@@ -519,7 +535,7 @@ export function PlayerSocial({
       )}
 
       {tab === "players" && (
-        <div className="grid gap-4">
+        <div className={phoneMode ? "phone-new-chat-panel" : "grid gap-4"}>
           {phoneMode && (
             <div className="phone-new-chat-heading">
               <button
@@ -556,7 +572,11 @@ export function PlayerSocial({
                   : "min-h-10 min-w-0 flex-1 rounded-xl border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               }
             />
-            {!phoneMode && (
+            {phoneMode ? (
+              <button type="submit" className="phone-search-submit" aria-label="Search players">
+                <Search size={16} />
+              </button>
+            ) : (
               <Button type="submit" disabled={searchQuery.isFetching}>
                 <Search size={16} /> Search
               </Button>
@@ -772,14 +792,27 @@ export function PlayerSocial({
                 className="phone-chat-panel"
                 aria-label={`Private chat with ${activeChat.name}`}
               >
-                <button
-                  type="button"
-                  className="phone-chat-back"
-                  onClick={() => setActiveChat(null)}
-                >
-                  ‹ All chats
-                </button>
-                <h3 className="font-display font-semibold">{activeChat.name}</h3>
+                <header className="phone-thread-header">
+                  <button
+                    type="button"
+                    className="phone-thread-back"
+                    onClick={() => setActiveChat(null)}
+                    aria-label="Back to chats"
+                  >
+                    <ArrowLeft size={18} />
+                  </button>
+                  {activeChatPlayer ? (
+                    <PlayerAvatar player={activeChatPlayer} />
+                  ) : (
+                    <span className="phone-conversation-avatar" aria-hidden="true">
+                      {activeChat.name.slice(0, 1).toUpperCase()}
+                    </span>
+                  )}
+                  <div className="phone-thread-person">
+                    <strong>{activeChat.name}</strong>
+                    <small>Private chat</small>
+                  </div>
+                </header>
                 {directMessagesQuery.error ? (
                   <p className="text-sm text-destructive" role="alert">
                     {directMessagesQuery.error.message}
@@ -788,6 +821,7 @@ export function PlayerSocial({
                   <MessageList
                     messages={directMessages}
                     ownCharacterId={character?.id}
+                    phoneMode
                     onReport={(message) =>
                       setReportTarget({
                         id: message.sender_character_id,
@@ -801,32 +835,48 @@ export function PlayerSocial({
                   label={`Message ${activeChat.name}`}
                   disabled={sendMutation.isPending}
                   onSend={(body) => runMessage(body, true)}
+                  phoneMode
                 />
               </section>
             ) : (
               <section className="phone-chat-panel" aria-label="Private chats">
-                <div className="flex items-center justify-between gap-2">
-                  <h3 className="font-display font-semibold">Chats</h3>
-                  <Button
-                    size="sm"
+                <div className="phone-inbox-heading">
+                  <div>
+                    <h3>Chats</h3>
+                    <p>Messages with your friends</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="phone-new-message-button"
                     onClick={() => {
                       setQuery("");
                       setSubmittedQuery("");
                       setTab("players");
                     }}
+                    aria-label="New message"
                   >
-                    New message
-                  </Button>
+                    <Plus size={19} />
+                  </button>
                 </div>
+                <label className="phone-inbox-search">
+                  <Search size={16} aria-hidden="true" />
+                  <span className="sr-only">Search chats</span>
+                  <input
+                    type="search"
+                    value={conversationSearch}
+                    onChange={(event) => setConversationSearch(event.target.value)}
+                    placeholder="Search chats"
+                  />
+                </label>
                 {overviewQuery.isPending ? (
                   <p className="text-sm text-muted-foreground">Loading your chats…</p>
                 ) : overviewQuery.error ? (
                   <p className="text-sm text-destructive" role="alert">
                     {overviewQuery.error.message}
                   </p>
-                ) : (overview?.conversations ?? []).length ? (
+                ) : visibleConversations.length ? (
                   <div className="phone-conversation-list">
-                    {(overview?.conversations ?? []).map((conversation) => (
+                    {visibleConversations.map((conversation) => (
                       <button
                         type="button"
                         key={conversation.id}
@@ -839,12 +889,10 @@ export function PlayerSocial({
                           })
                         }
                       >
-                        <span className="phone-conversation-avatar" aria-hidden="true">
-                          {conversation.player_name.slice(0, 1).toUpperCase()}
-                        </span>
-                        <span>
+                        <PlayerAvatar player={conversation} />
+                        <span className="phone-conversation-copy">
                           <strong>{conversation.player_name}</strong>
-                          <small>Open private conversation</small>
+                          <small>Private conversation</small>
                         </span>
                         <span aria-hidden="true">›</span>
                       </button>
@@ -965,6 +1013,32 @@ export function PlayerSocial({
             </section>
           </div>
         ))}
+
+      {phoneMode && (tab === "players" || (tab === "messages" && !activeChat)) && (
+        <nav className="phone-message-nav" aria-label="Messages navigation">
+          <button
+            type="button"
+            className={tab === "messages" ? "is-active" : ""}
+            aria-current={tab === "messages" ? "page" : undefined}
+            onClick={() => {
+              setActiveChat(null);
+              setTab("messages");
+            }}
+          >
+            <MessageCircle size={18} aria-hidden="true" />
+            <span>Chats</span>
+          </button>
+          <button
+            type="button"
+            className={tab === "players" ? "is-active" : ""}
+            aria-current={tab === "players" ? "page" : undefined}
+            onClick={() => setTab("players")}
+          >
+            <Users size={18} aria-hidden="true" />
+            <span>People</span>
+          </button>
+        </nav>
+      )}
 
       {tab === "friends" && (
         <div className="grid gap-5 lg:grid-cols-2">

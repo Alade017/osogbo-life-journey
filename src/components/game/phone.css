@@ -238,6 +238,431 @@
   background: var(--color-text-on-dark-soft);
 }
 
+.phone-app-view .phone-messenger {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  color: #0a0a0a;
+  background: var(--brand-porcelain, var(--background));
+}
+
+.phone-message-content {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.phone-messenger .phone-chat-panel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  gap: 0;
+  overflow: hidden;
+  color: #0a0a0a;
+  background: var(--brand-porcelain, var(--background));
+}
+
+.phone-inbox-heading {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 14px 10px;
+}
+
+.phone-inbox-heading h3 {
+  margin: 0;
+  font-size: 23px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.phone-inbox-heading p {
+  margin: 3px 0 0;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+
+.phone-new-message-button,
+.phone-icon-button {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--success) 28%, var(--border));
+  border-radius: 50%;
+  color: var(--success);
+  background: var(--card);
+}
+
+.phone-inbox-search,
+.phone-player-search {
+  display: flex;
+  min-height: 44px;
+  flex: none;
+  align-items: center;
+  gap: 9px;
+  margin: 2px 12px 10px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  color: var(--muted-foreground);
+  background: color-mix(in srgb, var(--card) 86%, var(--brand-porcelain, #f7f4ec));
+}
+
+.phone-inbox-search input,
+.phone-player-search-input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  color: #0a0a0a;
+  background: transparent;
+  font-size: 14px;
+}
+
+.phone-inbox-search input::placeholder,
+.phone-player-search-input::placeholder {
+  color: var(--muted-foreground);
+}
+
+.phone-conversation-list {
+  display: grid;
+  min-height: 0;
+  flex: 1;
+  align-content: start;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 8px 8px;
+}
+
+.phone-conversation {
+  display: flex;
+  min-height: 72px;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 7px;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  color: #0a0a0a;
+  background: transparent;
+  text-align: left;
+}
+
+.phone-conversation:hover,
+.phone-contact-row:hover {
+  background: color-mix(in srgb, var(--success) 6%, transparent);
+}
+
+.phone-conversation-copy,
+.phone-thread-person {
+  display: grid;
+  min-width: 0;
+  flex: 1;
+  gap: 4px;
+}
+
+.phone-conversation-copy strong,
+.phone-thread-person strong {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phone-conversation-copy small,
+.phone-thread-person small {
+  color: var(--muted-foreground);
+  font-size: 11px;
+}
+
+.phone-conversation > svg {
+  flex: none;
+  color: var(--muted-foreground);
+}
+
+.phone-inbox-state,
+.phone-chat-empty {
+  margin: auto 18px;
+  padding: 18px 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  color: var(--muted-foreground);
+  background: var(--card);
+  font-size: 13px;
+  text-align: center;
+}
+
+.phone-thread-header {
+  display: flex;
+  min-height: 64px;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border);
+  color: #fff;
+  background: var(--success);
+}
+
+.phone-thread-back {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, #fff 34%, transparent);
+  border-radius: 50%;
+  color: #fff;
+  background: color-mix(in srgb, #fff 13%, transparent);
+}
+
+.phone-thread-header .phone-icon-button {
+  width: 40px;
+  height: 40px;
+  border-color: color-mix(in srgb, #fff 34%, transparent);
+  color: #fff;
+  background: color-mix(in srgb, #fff 13%, transparent);
+}
+
+.phone-thread-header .grid.h-11.w-11 {
+  width: 40px;
+  height: 40px;
+  border-color: color-mix(in srgb, #fff 50%, transparent);
+  border-radius: 50%;
+  background: var(--card);
+}
+
+.phone-thread-person small {
+  color: color-mix(in srgb, #fff 83%, transparent);
+}
+
+.phone-messenger .phone-message-history {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 14px 10px;
+  border: 0;
+  background:
+    radial-gradient(
+      ellipse at 18% 28%,
+      color-mix(in srgb, var(--success) 5%, transparent),
+      transparent 42%
+    ),
+    var(--brand-porcelain, var(--background));
+}
+
+.phone-message-bubble {
+  display: grid;
+  max-width: 84%;
+  gap: 4px;
+  padding: 8px 10px 5px;
+  border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
+  border-radius: 16px 16px 16px 5px;
+  color: #0a0a0a;
+  background: var(--card);
+  box-shadow: 0 1px 2px color-mix(in srgb, #0a0a0a 8%, transparent);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.phone-message-bubble.is-own {
+  align-self: flex-end;
+  border-color: color-mix(in srgb, var(--success) 22%, transparent);
+  border-radius: 16px 16px 5px 16px;
+  background: color-mix(in srgb, var(--success) 15%, var(--card));
+}
+
+.phone-message-time {
+  justify-self: end;
+  color: var(--muted-foreground);
+  font-size: 10px;
+  line-height: 1.2;
+}
+
+.phone-chat-composer {
+  display: flex;
+  flex: none;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 9px 10px;
+  border-top: 1px solid var(--border);
+  background: var(--brand-porcelain, var(--background));
+}
+
+.phone-chat-input {
+  min-height: 42px;
+  max-height: 100px;
+  flex: 1;
+  resize: none;
+  padding: 10px 13px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  outline: 0;
+  color: #0a0a0a;
+  background: var(--card);
+  font-size: 14px;
+}
+
+.phone-chat-input:focus-visible,
+.phone-inbox-search:focus-within,
+.phone-player-search:focus-within {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ring) 25%, transparent);
+}
+
+.phone-chat-send {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--success);
+}
+
+.phone-chat-send:disabled {
+  opacity: 0.55;
+}
+
+.phone-message-nav {
+  display: flex;
+  min-height: 60px;
+  flex: none;
+  justify-content: space-around;
+  padding: 5px 12px max(5px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+  background: var(--card);
+}
+
+.phone-message-nav button {
+  display: grid;
+  min-width: 74px;
+  min-height: 44px;
+  justify-items: center;
+  gap: 2px;
+  border: 0;
+  border-radius: 12px;
+  color: var(--muted-foreground);
+  background: transparent;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.phone-message-nav button.is-active {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 9%, transparent);
+}
+
+.phone-new-chat-panel {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  padding: 5px 8px 10px;
+}
+
+.phone-new-chat-heading {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 4px 0;
+}
+
+.phone-new-chat-heading h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.phone-new-chat-heading p {
+  margin: 2px 0 0;
+}
+
+.phone-player-search {
+  margin: 0;
+}
+
+.phone-search-submit {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: none;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: var(--success);
+  background: transparent;
+}
+
+.phone-contact-section {
+  display: grid;
+  flex: none;
+  gap: 6px;
+}
+
+.phone-contact-section h4 {
+  margin: 2px 5px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.phone-contact-list {
+  display: grid;
+}
+
+.phone-contact-row {
+  display: flex;
+  min-height: 62px;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 6px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  color: #0a0a0a;
+  background: transparent;
+  text-align: left;
+}
+
+.phone-contact-copy {
+  display: grid;
+  flex: 1;
+  gap: 3px;
+}
+
+.phone-contact-copy small,
+.phone-contact-empty {
+  color: var(--muted-foreground);
+  font-size: 11px;
+}
+
+.phone-contact-empty {
+  margin: 0;
+  padding: 9px 6px;
+}
+
+@media (max-width: 480px) {
+  .phone-thread-header {
+    min-height: 58px;
+  }
+}
+
 @keyframes phone-app-open {
   from {
     opacity: 0.65;

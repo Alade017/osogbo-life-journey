@@ -78,6 +78,27 @@ describe("real-player social panel", () => {
     mocks.leaveSocialChannel.mockResolvedValue(undefined);
   });
 
+  it("filters the phone inbox by player name", async () => {
+    mocks.getPlayerSocialOverview.mockImplementation(async () => ({
+      friends: [],
+      incoming: [],
+      outgoing: [],
+      blocked: [],
+      conversations: [
+        { id: "conversation-ayo", character_id: "character-ayo", player_name: "Ayo" },
+        { id: "conversation-bola", character_id: "character-bola", player_name: "Bola" },
+      ],
+    }));
+
+    renderSocial({ initialTab: "messages", phoneMode: true });
+    expect(await screen.findByRole("button", { name: /Ayo/, timeout: 10_000 })).toBeInTheDocument();
+    fireEvent.change(screen.getByRole("searchbox", { name: "Search chats" }), {
+      target: { value: "Bol" },
+    });
+    expect(screen.getByRole("button", { name: /Bola/ })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Ayo/ })).not.toBeInTheDocument();
+  }, 20_000);
+
   it("searches public player profiles and sends a friend request", async () => {
     renderSocial();
     fireEvent.change(screen.getByLabelText("Search player names"), {
@@ -130,6 +151,6 @@ describe("real-player social panel", () => {
         conversationId: "conversation-ayo",
       }),
     );
-    expect(screen.getByRole("button", { name: "‹ All chats" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Back to chats" })).toBeInTheDocument();
   });
 });
