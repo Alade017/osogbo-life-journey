@@ -8980,3 +8980,114 @@
   color: var(--color-text);
   background: color-mix(in srgb, var(--color-surface) 94%, transparent);
 }
+
+/* Split player identity and world context into separate, staggered panels. */
+.game-hud.hud-v2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "identity" "context" "live" "sync";
+  align-items: stretch;
+  gap: 7px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.hud-v2 .game-hud-top-row,
+.hud-v2 .game-hud-context-row {
+  display: grid;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--card) 96%, transparent);
+  box-shadow: var(--elevation-card);
+}
+
+.hud-v2 .game-hud-top-row {
+  grid-area: identity;
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr) auto 40px;
+}
+
+.hud-v2 .game-hud-context-row {
+  grid-area: context;
+  width: 90%;
+  justify-self: end;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr) 40px;
+}
+
+.hud-v2 .game-hud-top-row .game-hud-player,
+.hud-v2 .game-hud-context-row .game-hud-location,
+.hud-v2 .game-hud-context-row .game-hud-time {
+  min-width: 0;
+}
+
+.hud-v2 .game-hud-context-row .game-hud-time {
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.hud-v2 .game-hud-context-row .game-hud-simulation-controls {
+  flex: 0 0 auto;
+}
+
+.hud-v2 .game-hud-context-row .game-hud-notifications {
+  grid-column: 3;
+}
+
+.hud-v2 .hud-live-clock {
+  grid-area: live;
+}
+
+.hud-v2 .hud-sync {
+  grid-area: sync;
+}
+
+@media (max-width: 640px) {
+  .game-hud.hud-v2 {
+    gap: 6px;
+  }
+
+  .hud-v2 .game-hud-top-row,
+  .hud-v2 .game-hud-context-row {
+    padding: 7px;
+    gap: 6px;
+  }
+
+  .hud-v2 .game-hud-context-row {
+    width: 96%;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr) 34px;
+  }
+
+  .hud-v2 .game-hud-context-row .game-hud-location-icon {
+    display: none;
+  }
+
+  .hud-v2 .game-hud-context-row .game-hud-time {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 420px) {
+  .hud-v2 .game-hud-context-row {
+    width: 100%;
+    grid-template-columns: minmax(0, 0.78fr) minmax(0, 1.22fr) 32px;
+    padding: 6px;
+  }
+
+  .hud-v2 .game-hud-top-row {
+    grid-template-columns: minmax(0, 1fr) auto 34px;
+    padding: 6px;
+  }
+
+  .hud-v2 .game-hud-context-row .game-hud-simulation-controls button,
+  .hud-v2 .game-hud-context-row .game-hud-simulation-controls select {
+    min-width: 28px;
+    min-height: 30px;
+    padding-inline: 3px;
+  }
+}

@@ -51,88 +51,97 @@ export function GameHUD({
           <small>PLAYER DASHBOARD</small>
         </span>
       </Link>
-      <Link to="/profile" className="game-hud-player" aria-label={`${player.name}, view profile`}>
-        <span className="game-hud-avatar">
-          <Avatar
-            appearance={player.avatar as object}
-            gender={player.gender}
-            size={36}
-            equipment={player.equipment}
-          />
-        </span>
-        <span className="min-w-0">
-          <span className="block truncate font-display text-sm font-bold">{player.name}</span>
-          <span className="block text-[11px] text-muted-foreground">Level {player.level}</span>
-        </span>
-      </Link>
-
-      <Link
-        to="/wallet"
-        className="game-hud-balance"
-        aria-label={`Wallet ${formatNaira(player.cash)}`}
-      >
-        <Coins className="h-4 w-4 text-emerald" />
-        <span className="game-hud-item-copy">
-          <small>WALLET</small>
-          <strong>{formatNaira(player.cash)}</strong>
-        </span>
-      </Link>
-
-      <div className="game-hud-location">
-        <span className="game-hud-location-icon">
-          <MapPin className="h-4 w-4 shrink-0" />
-        </span>
-        <span className="game-hud-item-copy min-w-0">
-          <small>CURRENT AREA</small>
-          <strong className="truncate">{location}</strong>
-          <span className="game-hud-location-meta">
-            <span>OSOGBO Â· WAT</span> {dateLabel} Â· {clockLabel}
+      <div className="game-hud-top-row" role="group" aria-label="Player and wallet">
+        <Link to="/profile" className="game-hud-player" aria-label={`${player.name}, view profile`}>
+          <span className="game-hud-avatar">
+            <Avatar
+              appearance={player.avatar as object}
+              gender={player.gender}
+              size={36}
+              equipment={player.equipment}
+            />
           </span>
-        </span>
+          <span className="min-w-0">
+            <span className="block truncate font-display text-sm font-bold">{player.name}</span>
+            <span className="block text-[11px] text-muted-foreground">Level {player.level}</span>
+          </span>
+        </Link>
+
+        <Link
+          to="/wallet"
+          className="game-hud-balance"
+          aria-label={`Wallet ${formatNaira(player.cash)}`}
+        >
+          <Coins className="h-4 w-4 text-emerald" />
+          <span className="game-hud-item-copy">
+            <small>WALLET</small>
+            <strong>{formatNaira(player.cash)}</strong>
+          </span>
+        </Link>
       </div>
-
-      <div className="game-hud-time" aria-label="Simulation clock">
-        <span className="game-hud-item-copy">
-          <small>PERSONAL TIME · DAY {simulation.gameTime.day}</small>
-          <strong className="tabular-nums">{formatGameTime(simulation.gameTime)}</strong>
-          <span>
-            {WEEKDAYS[simulation.gameTime.weekday]} · Mood: {simulation.mood.mood} ·{" "}
-            {simulation.paused ? "Paused" : "Active play"}
+      <div
+        className="game-hud-context-row"
+        role="group"
+        aria-label="Current area, game time, and notifications"
+      >
+        <div className="game-hud-location">
+          <span className="game-hud-location-icon">
+            <MapPin className="h-4 w-4 shrink-0" />
           </span>
-        </span>
-        <div className="game-hud-simulation-controls">
-          <button
-            type="button"
-            aria-label={simulation.paused ? "Resume simulation" : "Pause simulation"}
-            title={simulation.paused ? "Resume simulation" : "Pause simulation"}
-            onClick={() => (simulation.paused ? resume() : pause())}
-            disabled={!ready || busy}
-          >
-            {simulation.paused ? <CirclePlay size={14} /> : <CirclePause size={14} />}
-          </button>
-          <select
-            aria-label="Simulation speed"
-            title="At 1x, one game minute passes per real minute."
-            value={simulation.timeSpeed}
-            disabled={!ready || busy}
-            onChange={(event) => setSpeed(Number(event.target.value) as 0.5 | 1 | 2)}
-          >
-            <option value={0.5}>½×</option>
-            <option value={1}>1×</option>
-            <option value={2}>2×</option>
-          </select>
+          <span className="game-hud-item-copy min-w-0">
+            <small>CURRENT AREA</small>
+            <strong className="truncate">{location}</strong>
+            <span className="game-hud-location-meta">
+              <span>OSOGBO Â· WAT</span> {dateLabel} Â· {clockLabel}
+            </span>
+          </span>
         </div>
-      </div>
 
-      <Link
-        to="/notifications"
-        className="game-hud-notifications"
-        aria-label={`Notifications, ${unread} unread`}
-        title={`Notifications${unread > 0 ? ` · ${unread} unread` : ""}`}
-      >
-        <Bell className="h-4.5 w-4.5" />
-        {unread > 0 && <span className="game-notification-dot">{unread > 9 ? "9+" : unread}</span>}
-      </Link>
+        <div className="game-hud-time" aria-label="Simulation clock">
+          <span className="game-hud-item-copy">
+            <small>PERSONAL TIME · DAY {simulation.gameTime.day}</small>
+            <strong className="tabular-nums">{formatGameTime(simulation.gameTime)}</strong>
+            <span>
+              {WEEKDAYS[simulation.gameTime.weekday]} · Mood: {simulation.mood.mood} ·{" "}
+              {simulation.paused ? "Paused" : "Active play"}
+            </span>
+          </span>
+          <div className="game-hud-simulation-controls">
+            <button
+              type="button"
+              aria-label={simulation.paused ? "Resume simulation" : "Pause simulation"}
+              title={simulation.paused ? "Resume simulation" : "Pause simulation"}
+              onClick={() => (simulation.paused ? resume() : pause())}
+              disabled={!ready || busy}
+            >
+              {simulation.paused ? <CirclePlay size={14} /> : <CirclePause size={14} />}
+            </button>
+            <select
+              aria-label="Simulation speed"
+              title="At 1x, one game minute passes per real minute."
+              value={simulation.timeSpeed}
+              disabled={!ready || busy}
+              onChange={(event) => setSpeed(Number(event.target.value) as 0.5 | 1 | 2)}
+            >
+              <option value={0.5}>½×</option>
+              <option value={1}>1×</option>
+              <option value={2}>2×</option>
+            </select>
+          </div>
+        </div>
+
+        <Link
+          to="/notifications"
+          className="game-hud-notifications"
+          aria-label={`Notifications, ${unread} unread`}
+          title={`Notifications${unread > 0 ? ` · ${unread} unread` : ""}`}
+        >
+          <Bell className="h-4.5 w-4.5" />
+          {unread > 0 && (
+            <span className="game-notification-dot">{unread > 9 ? "9+" : unread}</span>
+          )}
+        </Link>
+      </div>
       <div className="hud-live-clock">
         <span>OSOGBO · WAT</span>
         <time>
