@@ -1,16 +1,4 @@
-import {
-  Bell,
-  CirclePause,
-  CirclePlay,
-  Coins,
-  Activity,
-  MapPin,
-  Smile,
-  Sparkles,
-  Utensils,
-  Users,
-  Zap,
-} from "lucide-react";
+import { Bell, CirclePause, CirclePlay, Coins, MapPin } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Avatar } from "@/components/game/Avatar";
 import { formatNaira } from "@/lib/game";
@@ -20,35 +8,15 @@ import { OSOGBO_TIME_ZONE } from "@/lib/osogbo-weather";
 import { Logo } from "@/components/game/Logo";
 import { useGameTime } from "@/components/game/GameTimeProvider";
 import { formatGameTime, WEEKDAYS } from "@/lib/game-time";
-import { NEED_NAMES, NEED_RULES, statusForNeed } from "@/lib/life-simulation";
-
-const VITAL_ICONS = {
-  hunger: Utensils,
-  energy: Zap,
-  hygiene: Sparkles,
-  bladder: Activity,
-  fun: Smile,
-  social: Users,
-};
-const NEED_SHORTCUTS = {
-  hunger: { to: "/inventory", label: "Choose food from your inventory" },
-  energy: { to: "/home", label: "Go home to rest" },
-  hygiene: { to: "/home", label: "Go home to shower" },
-  bladder: { to: "/home", label: "Use your home facilities" },
-  fun: { to: "/home", label: "Relax at home" },
-  social: { to: "/social", label: "Meet people nearby" },
-} as const;
 
 export function GameHUD({
   player,
   location,
   unread,
-  showNeeds = true,
 }: {
   player: PlayerState;
   location: string;
   unread: number;
-  showNeeds?: boolean;
 }) {
   const now = useLiveClock();
   const { simulation, pause, resume, setSpeed, ready, busy, syncError, reconnect } = useGameTime();
@@ -165,39 +133,6 @@ export function GameHUD({
         <Bell className="h-4.5 w-4.5" />
         {unread > 0 && <span className="game-notification-dot">{unread > 9 ? "9+" : unread}</span>}
       </Link>
-      {showNeeds && (
-        <div className="hud-needs" aria-label="Player needs and activity shortcuts">
-          {NEED_NAMES.map((name) => {
-            const Icon = VITAL_ICONS[name];
-            const value = Math.round(simulation.needs[name]);
-            const status = statusForNeed(name, value);
-            return (
-              <details className={`hud-need is-${status}`} key={name}>
-                <summary
-                  aria-label={`${name === "hunger" ? "Hunger satisfaction" : NEED_RULES[name].label} ${value} percent. Show activity shortcut`}
-                >
-                  <Icon size={15} aria-hidden="true" />
-                  <span>{NEED_RULES[name].label}</span>
-                  <strong>{value}%</strong>
-                  <span className="hud-need-track" aria-hidden="true">
-                    <i style={{ width: `${value}%` }} />
-                  </span>
-                </summary>
-                <div className="hud-need-menu">
-                  <p>
-                    {status === "healthy"
-                      ? "Doing well"
-                      : status === "warning"
-                        ? "Needs attention"
-                        : "Needs care soon"}
-                  </p>
-                  <Link to={NEED_SHORTCUTS[name].to}>{NEED_SHORTCUTS[name].label} →</Link>
-                </div>
-              </details>
-            );
-          })}
-        </div>
-      )}
       <div className="hud-live-clock">
         <span>OSOGBO · WAT</span>
         <time>

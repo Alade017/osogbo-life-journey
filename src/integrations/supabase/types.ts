@@ -1922,6 +1922,39 @@ export type Database = {
           },
         ];
       };
+      npc_public_encounters: {
+        Row: {
+          id: string;
+          player_id: string;
+          character_id: string;
+          location_id: string;
+          npc_id: string;
+          action: string;
+          player_name: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          player_id: string;
+          character_id: string;
+          location_id: string;
+          npc_id: string;
+          action: string;
+          player_name: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          player_id?: string;
+          character_id?: string;
+          location_id?: string;
+          npc_id?: string;
+          action?: string;
+          player_name?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -2006,6 +2039,13 @@ export type Database = {
         Returns: Json;
       };
       claim_fixed_term_investment: { Args: { p_investment_id: string }; Returns: Json };
+      cancel_fixed_term_investment: {
+        Args: { p_investment_id: string; p_request_id: string };
+        Returns: Json;
+      };
+      cancel_player_house: { Args: { p_user_id: string }; Returns: Json };
+      publish_npc_encounter: { Args: { p_npc_id: string; p_action: string }; Returns: Json };
+      get_nearby_npc_encounters: { Args: never; Returns: Json };
       search_player_profiles: { Args: { p_query: string; p_limit?: number }; Returns: Json };
       get_player_profile: { Args: { p_character_id: string }; Returns: Json };
       get_player_social_overview: { Args: never; Returns: Json };

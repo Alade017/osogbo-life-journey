@@ -296,18 +296,42 @@ export function BusinessInvestmentApp({ mode }: { mode: "company" | "invest" }) 
                   timeStyle: "short",
                 })}
               </small>
-              {investment.claimedAt ? (
+              {investment.cancelledAt ? (
+                <small>Cancelled · principal returned; yield forfeited</small>
+              ) : investment.claimedAt ? (
                 <small>Claimed</small>
               ) : (
-                new Date(investment.maturesAt).getTime() <= Date.now() && (
-                  <Button
-                    size="sm"
-                    disabled={mutation.isPending}
-                    onClick={() => mutation.mutate({ kind: "claimFixed", id: investment.id })}
-                  >
-                    Claim matured funds
-                  </Button>
-                )
+                <div className="flex flex-wrap gap-2">
+                  {new Date(investment.maturesAt).getTime() <= Date.now() ? (
+                    <Button
+                      size="sm"
+                      disabled={mutation.isPending}
+                      onClick={() => mutation.mutate({ kind: "claimFixed", id: investment.id })}
+                    >
+                      Claim matured funds
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={mutation.isPending}
+                      onClick={() => {
+                        if (
+                          window.confirm(
+                            "Cancel this investment? Your principal will be returned and the yield will be forfeited.",
+                          )
+                        )
+                          mutation.mutate({
+                            kind: "cancelFixed",
+                            id: investment.id,
+                            requestId: crypto.randomUUID(),
+                          });
+                      }}
+                    >
+                      Cancel investment
+                    </Button>
+                  )}
+                </div>
               )}
             </article>
           ))}

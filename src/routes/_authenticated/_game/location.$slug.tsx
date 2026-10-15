@@ -358,7 +358,7 @@ function LocationPage() {
           </div>
           <Button asChild variant="outline">
             <Link to="/social" search={{ playerId: undefined }}>
-              Meet people & chat
+              Meet neighbours
             </Link>
           </Button>
         </section>

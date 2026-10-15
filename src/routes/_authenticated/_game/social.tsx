@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Heart, MapPin, MessageCircle, Sparkles, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,7 +17,7 @@ import {
 import { pageMeta } from "@/lib/seo";
 import { weatherForDay } from "@/lib/world-simulation";
 import { toast } from "sonner";
-import { PlayerSocial } from "@/components/game/PlayerSocial";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/_game/social")({
   head: () => pageMeta("People of Osogbo", "Meet neighbours and build lasting relationships."),
@@ -40,22 +41,74 @@ const ACTION_LABELS: Record<SocialAction, string> = {
 };
 
 function SocialPage() {
-  const { playerId } = Route.useSearch();
   const { simulation } = useGameTime();
   const { data: character, isLoading: characterLoading } = useQuery(q.character());
   const { data: npcRowsData, isLoading: npcsLoading } = useQuery(q.npcs());
   const { data: locationsData } = useQuery(q.locations());
   const { data: relationshipsData } = useQuery({ ...q.npcRelationships(), enabled: !!character });
   const { data: eventsData } = useQuery({ ...q.npcEvents(), enabled: !!character });
+  const nearbyEncounters = useQuery({
+    queryKey: ["nearbyNpcEncounters", character?.current_location_id],
+    enabled: !!character?.current_location_id,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_nearby_npc_encounters");
+      if (error) throw error;
+      return Array.isArray(data)
+        ? (data as Array<{
+            id: string;
+            npcId: string;
+            action: string;
+            playerName: string;
+            createdAt: string;
+          }>)
+        : [];
+    },
+    refetchInterval: 60_000,
+  });
   const npcRows = npcRowsData ?? [];
   const locations = locationsData ?? [];
   const relationships = relationshipsData ?? [];
   const events = eventsData ?? [];
   const qc = useQueryClient();
+  const [onlinePlayers, setOnlinePlayers] = useState<Array<{ characterId: string; name: string }>>(
+    [],
+  );
+  useEffect(() => {
+    if (!character?.id || !character.current_location_id) return;
+    const channel = supabase.channel(`people-area:${character.current_location_id}`);
+    channel.on("presence", { event: "sync" }, () => {
+      const states = channel.presenceState<{ characterId?: string; name?: string }>();
+      setOnlinePlayers(
+        Object.entries(states).flatMap(([key, rows]) => {
+          if (key === character.id) return [];
+          const player = rows[0];
+          return player?.name
+            ? [{ characterId: player.characterId ?? key, name: player.name }]
+            : [];
+        }),
+      );
+    });
+    channel.subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+      setOnlinePlayers([]);
+    };
+  }, [character?.id, character?.current_location_id]);
   const interact = useMutation({
     mutationFn: rpc.interactWithNpc,
-    onSuccess: (result) => {
+    onSuccess: (result, variables) => {
       toast[result.accepted ? "success" : "message"](result.message);
+      if (result.accepted) {
+        void supabase
+          .rpc("publish_npc_encounter", {
+            p_npc_id: variables.npcId,
+            p_action: variables.action,
+          })
+          .then(({ error }) => {
+            if (error) return;
+            void qc.invalidateQueries({ queryKey: ["nearbyNpcEncounters"] });
+          });
+      }
       void Promise.all([
         qc.invalidateQueries({ queryKey: ["npcRelationships"] }),
         qc.invalidateQueries({ queryKey: ["npcEvents"] }),
@@ -63,6 +116,26 @@ function SocialPage() {
     },
     onError: (error: Error) => toast.error(error.message),
   });
+  useEffect(() => {
+    const locationId = character?.current_location_id;
+    if (!locationId) return;
+    const channel = supabase
+      .channel(`npc-encounters:${locationId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "npc_public_encounters",
+          filter: `location_id=eq.${locationId}`,
+        },
+        () => void qc.invalidateQueries({ queryKey: ["nearbyNpcEncounters", locationId] }),
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [character?.current_location_id, qc]);
   if (characterLoading || npcsLoading || !character) return <LoadingState />;
   const time = simulation.gameTime;
   const placeBySlug = (slug: string) =>
@@ -87,7 +160,6 @@ function SocialPage() {
 
   return (
     <div className="space-y-5">
-      <PlayerSocial initialPlayerId={playerId} />
       <PageHeader
         eyebrow="THE NEIGHBOURHOOD"
         title="People of Osogbo"
@@ -111,6 +183,45 @@ function SocialPage() {
           {time.day}
         </Chip>
       </section>
+      {!!onlinePlayers.length && (
+        <section className="game-panel space-y-2 p-4" aria-label="Online neighbours nearby">
+          <h2 className="font-display font-semibold">Players here now</h2>
+          <p className="text-sm text-muted-foreground">
+            These neighbours are online in your current area.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {onlinePlayers.map((player) => (
+              <button
+                key={player.characterId}
+                type="button"
+                className="min-h-11 rounded-full border border-border bg-card px-4 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                onClick={() =>
+                  window.dispatchEvent(
+                    new CustomEvent("osogbo-open-messages", {
+                      detail: { playerId: player.characterId },
+                    }),
+                  )
+                }
+              >
+                Message {player.name}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+      {!!nearbyEncounters.data?.length && (
+        <section className="game-panel space-y-2 p-4" aria-label="Recent neighbour conversations">
+          <h2 className="font-display font-semibold">Neighbourhood activity</h2>
+          <ul className="grid gap-1 text-sm">
+            {nearbyEncounters.data.slice(0, 4).map((encounter) => (
+              <li key={encounter.id}>
+                {encounter.playerName} spoke with{" "}
+                {NPC_CATALOG.find((npc) => npc.id === encounter.npcId)?.name ?? "a neighbour"}.
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       {npcRows.length === 0 ? (
         <EmptyState title="No neighbours yet" body="Check back when people arrive in town." />
       ) : (

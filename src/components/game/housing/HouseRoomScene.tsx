@@ -78,19 +78,45 @@ const OutfitSprites = memo(function OutfitSprites({
   return (
     <div className="house-avatar-outfit" aria-hidden="true">
       {equipped.map(({ slot, item }) => (
-        <img
-          key={slot}
-          data-outfit-layer={slot}
-          src={assetPath(item.art_key)}
-          alt=""
-          onError={(event) => {
-            event.currentTarget.hidden = true;
-          }}
-        />
+        <GarmentSprite key={slot} slot={slot} itemId={item.item_id} artKey={item.art_key} />
       ))}
     </div>
   );
 });
+
+/** A small local vector fallback keeps catalogue wearables visible without per-item image files. */
+function GarmentSprite({ slot, itemId, artKey }: { slot: string; itemId: string; artKey: string }) {
+  const seed = `${itemId}:${artKey}`
+    .split("")
+    .reduce((value, char) => value + char.charCodeAt(0), 0);
+  const colors = ["#22543d", "#174b83", "#9b3f36", "#6c4b91", "#b7791f", "#263238"];
+  const fill = colors[seed % colors.length];
+  const paths: Record<string, string> = {
+    bottom: "M30 8h40l-4 78H51l-2-48-3 48H30z",
+    top: "M27 12 42 6h16l15 6 10 23-14 6-5-11v47H36V30l-5 11-14-6z",
+    shoes: "M18 60h27v14c0 7-8 11-25 10l-5-5zm38 0h27l4 18c-4 5-13 7-29 5z",
+    head: "M22 37c1-20 12-31 28-31s27 11 28 31l-8 4-4-16-5 14H36l-5-14-2 16z",
+    accessory: "M31 15h38l-4 13H35zM42 28h16l-4 31h-8z",
+  };
+  return (
+    <svg data-outfit-layer={slot} viewBox="0 0 100 100" focusable="false" aria-hidden="true">
+      <path
+        d={paths[slot] ?? paths["accessory"]}
+        fill={fill}
+        stroke="#14213d"
+        strokeWidth="3"
+        strokeLinejoin="round"
+      />
+      {slot === "top" && (
+        <path d="M50 9v72" fill="none" stroke="#fff" strokeOpacity=".45" strokeWidth="2" />
+      )}
+      {slot === "head" && <path d="M21 35h58" fill="none" stroke="#f5c542" strokeWidth="5" />}
+      {slot === "accessory" && (
+        <circle cx="50" cy="64" r="8" fill="#f5c542" stroke="#14213d" strokeWidth="2" />
+      )}
+    </svg>
+  );
+}
 
 const equippedSpriteKey = (outfit: HouseOutfit, inventory: HouseInventoryItem[]) =>
   OUTFIT_ORDER.map((slot) => {

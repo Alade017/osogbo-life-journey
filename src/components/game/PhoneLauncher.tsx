@@ -30,7 +30,7 @@ import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { useLiveClock } from "@/hooks/use-live-clock";
 import { OSOGBO_TIME_ZONE } from "@/lib/osogbo-weather";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PlayerSocial } from "@/components/game/PlayerSocial";
 import { BusinessInvestmentApp } from "@/components/game/BusinessInvestmentApp";
 import { BillboardAdApp } from "@/components/game/BillboardAdApp";
@@ -75,6 +75,18 @@ export function PhoneLauncher({
   compact?: boolean;
 }) {
   const [activeApp, setActiveApp] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [messagePlayerId, setMessagePlayerId] = useState<string | undefined>();
+  useEffect(() => {
+    const openMessages = (event: Event) => {
+      const playerId = (event as CustomEvent<{ playerId?: string }>).detail?.playerId;
+      setMessagePlayerId(playerId);
+      setActiveApp("Messages");
+      setDialogOpen(true);
+    };
+    window.addEventListener("osogbo-open-messages", openMessages);
+    return () => window.removeEventListener("osogbo-open-messages", openMessages);
+  }, []);
   const now = useLiveClock();
   const phoneTime = now
     ? new Intl.DateTimeFormat("en-NG", {
@@ -86,10 +98,20 @@ export function PhoneLauncher({
     : "--:--";
 
   return (
-    <Dialog onOpenChange={(open) => !open && setActiveApp(null)}>
+    <Dialog
+      open={dialogOpen}
+      onOpenChange={(open) => {
+        setDialogOpen(open);
+        if (!open) {
+          setActiveApp(null);
+          setMessagePlayerId(undefined);
+        }
+      }}
+    >
       <DialogTrigger asChild>
         <button
           type="button"
+          onClick={() => setDialogOpen(true)}
           className={cn("phone-launcher", compact && "phone-launcher-compact", className)}
           aria-label="Open in-game phone"
         >
@@ -129,7 +151,11 @@ export function PhoneLauncher({
                 <strong>Messages</strong>
                 <span aria-hidden="true" />
               </div>
-              <PlayerSocial initialTab="messages" phoneMode />
+              <PlayerSocial
+                initialTab={messagePlayerId ? "players" : "messages"}
+                initialPlayerId={messagePlayerId}
+                phoneMode
+              />
             </div>
           ) : activeApp === "Invest" || activeApp === "Company" ? (
             <div className="phone-app-view">

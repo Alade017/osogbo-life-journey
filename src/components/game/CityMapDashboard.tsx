@@ -4,6 +4,7 @@ import { Banknote, CloudOff, Compass, Smile } from "lucide-react";
 import { MapCanvas, type MapFilter, type MapSearchTarget } from "@/components/map/MapCanvas";
 import { DistrictSheet } from "@/components/map/DistrictSheet";
 import { LandmarkSheet } from "@/components/map/LandmarkSheet";
+import { CityBillboards } from "@/components/game/CityBillboards";
 import { MAP_LANDMARK_LOCATION_SLUG } from "@/components/map/map-location-links";
 import { formatMapNaira } from "@/components/map/map-ui-utils";
 import mapData from "@/data/osogbo-map.json";
@@ -217,6 +218,7 @@ export function CityMapDashboard({
         searchTarget={searchTarget}
         jobLandmarkIds={jobLandmarkIds}
       />
+      <CityBillboards mapMode />
       {selectedDistrict && (
         <DistrictSheet
           district={selectedDistrict}

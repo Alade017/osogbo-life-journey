@@ -88,8 +88,16 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px 7px;
   overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   overscroll-behavior: contain;
   padding: 20px 6px 14px;
+}
+
+.phone-app-grid::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .phone-app {
@@ -122,8 +130,8 @@
   margin: 10px 2px 3px;
   border: 1px solid color-mix(in srgb, var(--brand-cream) 58%, transparent);
   border-radius: var(--shape-card);
-  color: var(--foreground);
-  background: var(--brand-cream);
+  color: #0a0a0a;
+  background: var(--brand-porcelain, var(--background));
   box-shadow: var(--elevation-card);
   animation: phone-app-open 180ms ease-out both;
 }
@@ -135,6 +143,11 @@
   border-bottom: 1px solid var(--border);
   color: var(--color-text);
   background: var(--color-surface);
+}
+
+.phone-app-view .phone-app-toolbar {
+  color: #0a0a0a;
+  background: var(--brand-porcelain, var(--background));
 }
 
 .phone-app-toolbar > strong {
@@ -158,6 +171,62 @@
 .phone-app-view > :not(.phone-app-toolbar) {
   min-height: 0;
   flex: 1;
+}
+
+.phone-app-view .phone-messenger {
+  min-height: 0;
+  padding: 8px 10px 14px;
+  background: var(--brand-porcelain, var(--background));
+  color: #0a0a0a;
+}
+
+.phone-messenger .phone-chat-panel {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--brand-porcelain, var(--background));
+  color: #0a0a0a;
+}
+
+.phone-messenger .phone-chat-panel ol {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  max-height: none;
+  border: 0;
+  background: var(--brand-porcelain, var(--background));
+}
+
+.phone-messenger .phone-chat-panel li {
+  max-width: 86%;
+  border: 1px solid var(--border);
+  border-radius: 16px 16px 16px 5px;
+  background: var(--card);
+  color: #0a0a0a;
+  box-shadow: var(--elevation-card);
+}
+
+.phone-messenger .phone-chat-panel li.is-own {
+  align-self: flex-end;
+  border-radius: 16px 16px 5px 16px;
+  background: color-mix(in srgb, var(--primary) 12%, var(--brand-porcelain, #f7f4ec));
+}
+
+.phone-messenger textarea,
+.phone-messenger input {
+  color: #0a0a0a;
+  background: var(--brand-porcelain, var(--background));
+}
+
+.phone-app-view .phone-finance-app,
+.phone-app-view .phone-finance-card,
+.phone-app-view .billboard-ad-app {
+  color: #0a0a0a;
+  background: var(--brand-porcelain, var(--background));
 }
 
 .phone-home-indicator {

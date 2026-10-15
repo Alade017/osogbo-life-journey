@@ -515,7 +515,14 @@ function MyCityHome() {
     async (keepThisDevice: boolean) => {
       const { data, error } = await refetchHomeSave();
       if (error) {
-        toast.error("Could not load the latest cloud home save.");
+        if (keepThisDevice && latestLocalSave.current) {
+          hasConflict.current = false;
+          pendingSave.current = latestLocalSave.current;
+          setSyncStatus("saving");
+          await saveToCloud();
+          return;
+        }
+        toast.error("The latest cloud home save is unavailable. Your device copy is still saved.");
         return;
       }
       const latest = housingSaveFromCloud(data);

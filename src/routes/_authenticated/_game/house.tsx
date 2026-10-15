@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { House, Pencil, WifiOff } from "lucide-react";
 import { HouseEditSheets } from "@/components/game/housing/HouseEditSheets";
@@ -80,6 +80,25 @@ const houseTypes = housingData as Array<{
 }>;
 const CACHE_PREFIX = "osogbo-house-state-v1:";
 
+function getBuyRequestKey(playerId: string, itemId: string, memory: Map<string, string>) {
+  const storageKey = `${CACHE_PREFIX}buy-request:${playerId}:${itemId}`;
+  let key = memory.get(storageKey);
+  if (key) return key;
+  try {
+    key = localStorage.getItem(storageKey) ?? undefined;
+  } catch {
+    // Keep the retry key in memory if browser storage is unavailable.
+  }
+  key ??= globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}-${Math.random()}`;
+  memory.set(storageKey, key);
+  try {
+    localStorage.setItem(storageKey, key);
+  } catch {
+    /* Storage may be unavailable. */
+  }
+  return key;
+}
+
 function isHouseState(value: unknown): value is HouseState {
   return (
     !!value &&
@@ -87,6 +106,101 @@ function isHouseState(value: unknown): value is HouseState {
     "house" in value &&
     Array.isArray((value as HouseState).placements)
   );
+}
+
+function legacyHouseState(value: unknown): HouseState | null {
+  if (
+    !value ||
+    typeof value !== "object" ||
+    !Array.isArray((value as { home_items?: unknown }).home_items)
+  )
+    return null;
+  const legacy = value as {
+    home?: null | {
+      id?: string;
+      house_type_id?: string;
+      next_rent_at?: string;
+      moved_in_at?: string;
+      house_types?: {
+        id?: string;
+        label?: string;
+        bedrooms?: number;
+        asset_key?: string;
+        weekly_rent_minor?: number;
+        slots?: HouseSlot[];
+      };
+    };
+    home_items: Array<{
+      id: string;
+      item_id: string;
+      slot_type: string;
+      slot_id: string | null;
+      placed: boolean;
+      equipped: boolean;
+    }>;
+  };
+  const home = legacy.home;
+  if (!home) return { house: null, placements: [], outfit: EMPTY_OUTFIT, inventory: [] };
+  const type = home.house_types;
+  if (!home.id || !home.house_type_id || !type?.id || !type.label || !type.asset_key) return null;
+  const slotAliases: Record<string, keyof HouseOutfit> = {
+    hat: "head",
+    head: "head",
+    top: "top",
+    bottom: "bottom",
+    shoes: "shoes",
+    accessory: "accessory",
+  };
+  const outfit: HouseOutfit = { ...EMPTY_OUTFIT };
+  for (const item of legacy.home_items) {
+    const slot = slotAliases[item.slot_type];
+    if (item.equipped && slot) outfit[slot] = item.item_id;
+  }
+  const inventory: HouseInventoryItem[] = legacy.home_items.map((item) => {
+    const wearableSlot = slotAliases[item.slot_type];
+    return {
+      id: item.id,
+      item_id: item.item_id,
+      category: wearableSlot
+        ? wearableSlot === "accessory"
+          ? "accessory"
+          : "outfit"
+        : "furniture",
+      slot_type: wearableSlot ?? item.slot_type,
+      art_key: item.item_id,
+      price_minor: 0,
+      quantity: 1,
+    };
+  });
+  const placements: HousePlacement[] = legacy.home_items
+    .filter((item) => item.placed)
+    .map((item) => ({
+      id: item.id,
+      item_id: item.item_id,
+      slot: item.slot_id ?? item.item_id,
+      art_key: item.item_id,
+      category: "furniture",
+      slot_type: item.slot_type,
+    }));
+  return {
+    house: {
+      id: home.id,
+      house_type_id: home.house_type_id,
+      status: "active",
+      next_rent_due_at: home.next_rent_at ?? home.moved_in_at ?? new Date().toISOString(),
+      house_type: {
+        id: type.id,
+        label: type.label,
+        bedrooms: type.bedrooms ?? 1,
+        asset_key: type.asset_key,
+        slots: type.slots ?? [],
+        weekly_rent_minor: type.weekly_rent_minor ?? 0,
+      },
+    },
+    placements,
+    outfit,
+    inventory,
+  };
 }
 
 async function authorizedFetch(path: string, init?: RequestInit) {
@@ -109,6 +223,7 @@ function HousePage() {
   const [selectedPlacement, setSelectedPlacement] = useState<HousePlacement | null>(null);
   const [apiError, setApiError] = useState("");
   const [playerId, setPlayerId] = useState<string | null>(null);
+  const buyRequestKeys = useRef(new Map<string, string>());
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -159,6 +274,13 @@ function HousePage() {
         response = await authorizedFetch("/api/house/state");
       } catch (error) {
         try {
+          const legacyResponse = await authorizedFetch("/api/housing/home");
+          const fallback = legacyHouseState(await legacyResponse.json().catch(() => null));
+          if (legacyResponse.ok && fallback) return { state: fallback, source: "server" };
+        } catch {
+          // Use the last saved snapshot below if both state endpoints are unavailable.
+        }
+        try {
           const cached = JSON.parse(
             localStorage.getItem(`${CACHE_PREFIX}${character!.id}`) ?? "null",
           );
@@ -169,8 +291,27 @@ function HousePage() {
         throw error;
       }
       const result = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(result?.error?.code ?? "House state could not be loaded.");
-      if (!isHouseState(result)) throw new Error("House state response is invalid.");
+      if (!response.ok || !isHouseState(result)) {
+        try {
+          const legacyResponse = await authorizedFetch("/api/housing/home");
+          const fallback = legacyHouseState(await legacyResponse.json().catch(() => null));
+          if (legacyResponse.ok && fallback) {
+            try {
+              localStorage.setItem(`${CACHE_PREFIX}${character!.id}`, JSON.stringify(fallback));
+            } catch {
+              /* Storage may be unavailable. */
+            }
+            return { state: fallback, source: "server" };
+          }
+        } catch {
+          // Continue with the primary endpoint's error below.
+        }
+        throw new Error(
+          response.ok
+            ? "House state response is invalid."
+            : (result?.error?.code ?? "House state could not be loaded."),
+        );
+      }
       try {
         localStorage.setItem(`${CACHE_PREFIX}${character!.id}`, JSON.stringify(result));
       } catch {
@@ -237,8 +378,8 @@ function HousePage() {
         buy: "/api/shop/buy",
       };
       const key =
-        action === "buy"
-          ? (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`).padEnd(16, "0")
+        action === "buy" && itemId
+          ? getBuyRequestKey(character?.id ?? "anonymous", itemId, buyRequestKeys.current)
           : undefined;
       const response = await authorizedFetch(paths[action], {
         method: "POST",
@@ -252,12 +393,32 @@ function HousePage() {
         ),
       });
       const result = await response.json().catch(() => null);
-      if (!response.ok) throw new Error(result?.error?.code ?? "That change was not saved.");
+      if (!response.ok) {
+        if (action === "buy" && itemId && response.status < 500) {
+          const storageKey = `${CACHE_PREFIX}buy-request:${character?.id ?? "anonymous"}:${itemId}`;
+          buyRequestKeys.current.delete(storageKey);
+          try {
+            localStorage.removeItem(storageKey);
+          } catch {
+            /* Storage may be unavailable. */
+          }
+        }
+        throw new Error(result?.error?.code ?? "That change was not saved.");
+      }
       if (!isHouseState(result?.state))
         throw new Error("The server returned an incomplete house update.");
       return result.state as HouseState;
     },
-    onSuccess: (state) => {
+    onSuccess: (state, variables) => {
+      if (variables.action === "buy" && variables.itemId) {
+        const storageKey = `${CACHE_PREFIX}buy-request:${character?.id ?? "anonymous"}:${variables.itemId}`;
+        buyRequestKeys.current.delete(storageKey);
+        try {
+          localStorage.removeItem(storageKey);
+        } catch {
+          /* Storage may be unavailable. */
+        }
+      }
       if (character?.id) {
         const serverSnapshot: HouseStateSnapshot = { state, source: "server" };
         updateHouseStateStore(queryClient, character.id, serverSnapshot);
@@ -279,6 +440,28 @@ function HousePage() {
       setApiError(message);
       toast.error(message);
     },
+  });
+  const cancelTenancy = useMutation({
+    mutationFn: async () => {
+      if (!playerId) throw new Error("Sign in again to manage your tenancy.");
+      const { data, error } = await supabase.rpc("cancel_player_house", { p_user_id: playerId });
+      if (error) throw new Error(error.message);
+      if (!data || typeof data !== "object" || Array.isArray(data) || data["ok"] !== true)
+        throw new Error("The server did not confirm the tenancy cancellation.");
+      return data;
+    },
+    onSuccess: async () => {
+      toast.success(
+        "Your tenancy has ended. Your furniture remains in your inventory; rent and deposit are not refunded.",
+      );
+      refreshHouseState();
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["authoritativeHouseState"] }),
+        queryClient.invalidateQueries({ queryKey: ["rentStatus"] }),
+        queryClient.invalidateQueries({ queryKey: ["homeSave"] }),
+      ]);
+    },
+    onError: (error: Error) => toast.error(error.message),
   });
 
   const placements = serverState?.placements ?? [];
@@ -495,6 +678,25 @@ function HousePage() {
         </div>
         {inventory.length === 0 && (
           <p className="house-empty-copy">Your home is empty. Visit the shop to get furniture.</p>
+        )}
+        {(house.status === "active" || house.status === "overdue") && (
+          <div className="house-tenancy-actions">
+            <p>
+              Ending your tenancy gives no rent or deposit refund. Your furniture stays owned and
+              returns to your inventory.
+            </p>
+            <button
+              type="button"
+              className="house-secondary-button"
+              disabled={cancelTenancy.isPending || isOffline}
+              onClick={() => {
+                if (window.confirm("End this tenancy now? Rent and deposit are not refunded."))
+                  cancelTenancy.mutate();
+              }}
+            >
+              {cancelTenancy.isPending ? "Ending tenancy…" : "Cancel rent"}
+            </button>
+          </div>
         )}
       </section>
       <PropertyListings

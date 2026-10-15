@@ -209,7 +209,7 @@ export function PlayerSocial({
 }) {
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>(initialTab);
-  const [phoneMessageMode, setPhoneMessageMode] = useState<"private" | "area">("private");
+  const [phoneMessageMode] = useState<"private" | "area">("private");
   const [query, setQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [reportTarget, setReportTarget] = useState<ReportTarget | null>(null);
@@ -238,7 +238,7 @@ export function PlayerSocial({
   const areaMessagesQuery = useQuery({
     queryKey: ["socialMessages", "area", locationId],
     queryFn: () => getSocialMessages({ locationId: locationId! }),
-    enabled: tab === "messages" && !!locationId,
+    enabled: tab === "messages" && !phoneMode && !!locationId,
   });
   const directMessagesQuery = useQuery({
     queryKey: ["socialMessages", "private", activeChat?.conversationId],
@@ -285,7 +285,7 @@ export function PlayerSocial({
   useEffect(() => {
     if (tab !== "messages") return;
     const channels: Array<ReturnType<typeof subscribeToSocialMessages>> = [];
-    if (locationId) {
+    if (locationId && !phoneMode) {
       channels.push(
         subscribeToSocialMessages({ locationId }, () => {
           void qc.invalidateQueries({ queryKey: ["socialMessages", "area", locationId] });
@@ -304,7 +304,7 @@ export function PlayerSocial({
     return () => {
       for (const channel of channels) void leaveSocialChannel(channel);
     };
-  }, [activeChat?.conversationId, locationId, qc, tab]);
+  }, [activeChat?.conversationId, locationId, phoneMode, qc, tab]);
 
   useEffect(() => {
     const channel = subscribeToFriendRequests(() => {
@@ -460,6 +460,19 @@ export function PlayerSocial({
 
       {tab === "players" && (
         <div className="grid gap-4">
+          {phoneMode && (
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <h3 className="font-display font-semibold">New message</h3>
+                <p className="text-xs text-muted-foreground">
+                  Chat with another player from your contacts.
+                </p>
+              </div>
+              <Button size="sm" variant="outline" onClick={() => setTab("messages")}>
+                Chats
+              </Button>
+            </div>
+          )}
           <form onSubmit={submitSearch} className="flex flex-wrap gap-2">
             <label className="sr-only" htmlFor="player-search">
               Search player names
@@ -618,22 +631,6 @@ export function PlayerSocial({
       {tab === "messages" &&
         (phoneMode ? (
           <div className="phone-message-content">
-            <div className="phone-message-switch" role="group" aria-label="Message type">
-              <button
-                type="button"
-                className={phoneMessageMode === "private" ? "is-active" : ""}
-                onClick={() => setPhoneMessageMode("private")}
-              >
-                Private
-              </button>
-              <button
-                type="button"
-                className={phoneMessageMode === "area" ? "is-active" : ""}
-                onClick={() => setPhoneMessageMode("area")}
-              >
-                Area chat
-              </button>
-            </div>
             {phoneMessageMode === "area" ? (
               <section className="phone-chat-panel" aria-label="Area chat">
                 <p className="phone-chat-subtitle">
@@ -647,7 +644,7 @@ export function PlayerSocial({
                   </p>
                 ) : areaMessagesQuery.error ? (
                   <p className="text-sm text-destructive" role="alert">
-                    {areaMessagesQuery.error.message}
+                    {areaMessagesQuery.error?.message ?? "Area messages could not be loaded."}
                   </p>
                 ) : (
                   <MessageList
@@ -706,7 +703,19 @@ export function PlayerSocial({
               </section>
             ) : (
               <section className="phone-chat-panel" aria-label="Private chats">
-                <h3 className="font-display font-semibold">Chats</h3>
+                <div className="flex items-center justify-between gap-2">
+                  <h3 className="font-display font-semibold">Chats</h3>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setQuery("");
+                      setSubmittedQuery("");
+                      setTab("players");
+                    }}
+                  >
+                    New message
+                  </Button>
+                </div>
                 {overviewQuery.isPending ? (
                   <p className="text-sm text-muted-foreground">Loading your chats…</p>
                 ) : overviewQuery.error ? (

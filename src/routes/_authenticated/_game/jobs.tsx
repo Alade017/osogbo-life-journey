@@ -290,14 +290,14 @@ function JobsPage() {
         </div>
       )}
 
-      <details className="game-panel jobs-filters mb-5 p-4">
-        <summary className="cursor-pointer font-display font-bold">
-          Find a job{" "}
-          <span className="ml-1 text-sm font-normal text-muted-foreground">
-            ({filteredJobs.length} available)
-          </span>
-        </summary>
-        <div className="mt-4 grid gap-3 sm:grid-cols-[minmax(0,1fr)_220px]">
+      <section className="game-panel jobs-filters mb-5 p-4" aria-labelledby="jobs-search-title">
+        <div className="mb-3 flex flex-wrap items-baseline justify-between gap-2">
+          <h2 id="jobs-search-title" className="font-display font-bold">
+            Find a job
+          </h2>
+          <span className="text-sm text-muted-foreground">{filteredJobs.length} available</span>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_220px]">
           <label className="grid gap-1 text-sm font-semibold" htmlFor="job-search">
             Search jobs
             <span className="relative">
@@ -329,7 +329,7 @@ function JobsPage() {
             </select>
           </label>
         </div>
-      </details>
+      </section>
 
       <section className="jobs-listing">
         <div className="jobs-listing-heading">
@@ -372,7 +372,10 @@ function JobsPage() {
             return (
               <div
                 key={j.id}
-                className={cn("game-panel jobs-card flex flex-col p-5", locked && "opacity-75")}
+                className={cn(
+                  "game-panel jobs-card flex flex-col p-5",
+                  locked && "jobs-card-locked",
+                )}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>

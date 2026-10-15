@@ -17,11 +17,13 @@ import { Logo } from "@/components/game/Logo";
 import { GameDataUnavailable, LoadingState } from "@/components/game/ui";
 import { cn } from "@/lib/utils";
 import { GameHUD } from "@/components/game/GameHUD";
+import { GameNeedsRail } from "@/components/game/GameNeedsRail";
 import { PhoneLauncher } from "@/components/game/PhoneLauncher";
 import { HousingChooser } from "@/components/game/housing/HousingChooser";
 import { GameTimeProvider } from "@/components/game/GameTimeProvider";
 import { WorldEnvironment } from "@/components/game/WorldEnvironment";
 import { gameTimeFromCharacter } from "@/lib/game-time";
+import { supabase } from "@/integrations/supabase/client";
 import { playerStateFromRows } from "@/lib/player-state";
 import { normalizeEquippedItems } from "@/lib/equipment-service";
 import { configureGameMusic, disableGameAudio, startGameAudioSession } from "@/lib/game-audio";
@@ -91,6 +93,19 @@ function GameLayout() {
       void disableGameAudio();
     };
   }, [character?.id]);
+  useEffect(() => {
+    if (!character?.id || !character.current_location_id) return;
+    const channel = supabase.channel(`people-area:${character.current_location_id}`, {
+      config: { presence: { key: character.id }, broadcast: { self: false } },
+    });
+    channel.subscribe((status) => {
+      if (status === "SUBSCRIBED")
+        void channel.track({ characterId: character.id, name: character.name });
+    });
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [character?.id, character?.current_location_id, character?.name]);
   const currentLocation = locations?.find(
     (location) => location.id === character?.current_location_id,
   );
@@ -213,12 +228,8 @@ function GameLayout() {
             </div>
           </aside>
           <div className="city-game-content">
-            <GameHUD
-              player={player}
-              location={currentLocation?.name ?? "Osogbo"}
-              unread={unread}
-              showNeeds={pathname !== "/settings"}
-            />
+            <GameHUD player={player} location={currentLocation?.name ?? "Osogbo"} unread={unread} />
+            {pathname !== "/settings" && <GameNeedsRail />}
             <main className="city-game-main">
               <Outlet />
             </main>

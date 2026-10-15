@@ -9,6 +9,8 @@
   border-right-width: 1px;
   border-bottom-width: 1px;
   box-shadow: var(--elevation-card);
+  color: var(--foreground);
+  background-color: var(--card);
 }
 .city-game.card-refresh .city-game-main .game-panel:not(.border-l-4) {
   border-left-width: 1px;
@@ -51,6 +53,8 @@
 }
 .city-game.card-refresh .city-game-main .jobs-card {
   padding: 20px;
+  background: var(--card);
+  color: var(--foreground);
 }
 .city-game.card-refresh .jobs-card h3 {
   font-size: 18px;

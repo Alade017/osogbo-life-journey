@@ -53,6 +53,7 @@ const investment = z.object({
   principal: money,
   maturesAt: z.string().datetime({ offset: true }),
   claimedAt: z.string().datetime({ offset: true }).nullable(),
+  cancelledAt: z.string().datetime({ offset: true }).nullable().optional(),
   yieldBps: money,
 });
 const overviewSchema = z.object({
@@ -84,7 +85,8 @@ export type BusinessCommand =
   | { kind: "invest"; id: string; shares: number; requestId: string }
   | { kind: "configure"; id: string; prices: Record<string, number> }
   | { kind: "offer"; id: string; shares: number }
-  | { kind: "claimBusiness" | "claimFixed"; id: string };
+  | { kind: "claimBusiness" | "claimFixed"; id: string }
+  | { kind: "cancelFixed"; id: string; requestId: string };
 
 export async function getBusinessOverview() {
   const { data, error } = await supabase.rpc("get_business_and_investment_market");
@@ -126,6 +128,11 @@ export async function executeBusinessCommand(command: BusinessCommand) {
         return supabase.rpc("claim_player_company_earnings", { p_company_id: command.id });
       case "claimFixed":
         return supabase.rpc("claim_fixed_term_investment", { p_investment_id: command.id });
+      case "cancelFixed":
+        return supabase.rpc("cancel_fixed_term_investment", {
+          p_investment_id: command.id,
+          p_request_id: command.requestId,
+        });
     }
   })();
   if (result.error) throw new Error(result.error.message);

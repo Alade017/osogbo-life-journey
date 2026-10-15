@@ -199,7 +199,13 @@ function CurrentCampaign({
   );
 }
 
-export function CityBillboards({ locationId }: { locationId: string }) {
+export function CityBillboards({
+  locationId,
+  mapMode = false,
+}: {
+  locationId?: string;
+  mapMode?: boolean;
+}) {
   const { data: billboards } = useQuery(q.billboards());
   const { data: advertisements } = useQuery(q.advertisements());
   const { data: playerAdvertisements } = useQuery(q.playerAdvertisements());
@@ -237,7 +243,7 @@ export function CityBillboards({ locationId }: { locationId: string }) {
   }
 
   const placements = (billboards ?? []).filter(
-    (board) => board.location_id === locationId && board.status === "active",
+    (board) => board.status === "active" && (mapMode || board.location_id === locationId),
   );
   const visible = placements.flatMap((board) => {
     const campaigns = campaignsByBoard.get(board.id);
@@ -252,14 +258,14 @@ export function CityBillboards({ locationId }: { locationId: string }) {
     <section aria-label="City advertisements" className="space-y-3 py-2">
       <div>
         <p className="text-xs font-bold uppercase tracking-[0.14em] text-muted-foreground">
-          Around the district
+          {mapMode ? "Across the city" : "Around the district"}
         </p>
         <h2 className="mt-1 flex items-center gap-2 text-xl font-bold">
           <Megaphone className="h-5 w-5 text-primary" />
-          Roadside billboard
+          {mapMode ? "Live city billboards" : "Roadside billboard"}
         </h2>
       </div>
-      <div className="mx-auto max-w-3xl">
+      <div className={`mx-auto max-w-3xl ${mapMode ? "grid gap-5 sm:grid-cols-2" : ""}`}>
         {visible.map(({ billboard, advertisement }) => (
           <CurrentCampaign key={billboard.id} billboard={billboard} advertisement={advertisement} />
         ))}
