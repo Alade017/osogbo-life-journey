@@ -12,7 +12,7 @@ import { LandmarkSheet } from "@/components/map/LandmarkSheet";
 import { MapBillboardCampaignDialog } from "@/components/game/CityBillboards";
 import { MAP_LANDMARK_LOCATION_SLUG } from "@/components/map/map-location-links";
 import { formatMapNaira } from "@/components/map/map-ui-utils";
-import mapData from "@/data/osogbo-map.json";
+import townData from "@/data/osogbo-town.json";
 import { formatNaira, q, rpc } from "@/lib/game";
 import {
   clearPendingTravelKey,
@@ -40,8 +40,14 @@ const categories: { id: MapFilter; label: string }[] = [
   { id: "transport", label: "Transport" },
   { id: "sport", label: "Sport" },
 ];
-const districts = mapData.districts as MapDistrict[];
-const landmarks = districts.flatMap((d) => d.landmarks.map((l) => ({ ...l, district: d })));
+const townLandmarks = townData.landmarks as (MapLandmark & { districtId: string })[];
+const districts = townData.districts.map((district) => ({
+  ...district,
+  landmarks: townLandmarks.filter((landmark) => landmark.districtId === district.id),
+})) as unknown as MapDistrict[];
+const landmarks = districts.flatMap((district) =>
+  district.landmarks.map((landmark) => ({ ...landmark, district })),
+);
 
 export function CityMapDashboard({
   money,
@@ -99,6 +105,8 @@ export function CityMapDashboard({
     campaignId: entry.advertisement.id,
     landmarkId: entry.landmarkId,
     advertiserName: entry.advertisement.advertiser_name,
+    title: entry.advertisement.title,
+    imageUrl: entry.advertisement.creative_image_url,
     count: entry.count,
   }));
   const activeEvents = world.data

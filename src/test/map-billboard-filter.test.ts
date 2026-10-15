@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { getCurrentMapBillboards } from "@/lib/map-billboard-map";
 import type { Advertisement, GameBillboard, Location } from "@/lib/game";
 
-const location = { id: "location-oke-fia", slug: "oke-fia" } as Location;
+const location = { id: "location-cedar", slug: "cedar-bank" } as Location;
 const board = {
   id: "billboard-1",
-  name: "Oke-Fia Board",
+  name: "Cedar Bank Board",
   location_id: location.id,
   status: "active",
 } as GameBillboard;
@@ -43,7 +43,7 @@ describe("map billboard campaign filtering", () => {
     );
 
     expect(entries).toHaveLength(1);
-    expect(entries[0]?.landmarkId).toBe("oke-fia-flyover");
+    expect(entries[0]?.landmarkId).toBe("cedar-bank");
     expect(entries[0]?.count).toBe(2);
     expect(["active-1", "active-2"]).toContain(entries[0]?.advertisement.id);
   });

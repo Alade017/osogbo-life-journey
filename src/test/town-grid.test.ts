@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   clampTownTarget,
+  expandTownGridLayout,
   isTownTap,
   mapTownGridToScene,
   type TownGrid,
@@ -39,6 +40,25 @@ describe("3D town grid", () => {
         { x: 2, z: 1 },
       ),
     ).toEqual({ x: 8, z: -5 });
+  });
+
+  it("expands JSON row codes and applies place cells as building overlays", () => {
+    const grid = expandTownGridLayout(
+      {
+        rows: ["ggg", "rrr"],
+        plotCells: [[1, 0]],
+        buildings: [{ placeId: "cedar-bank", x: 2, z: 0, buildingType: "bank" }],
+      },
+      { g: "grass", r: "road" },
+    );
+    expect(grid.cells).toEqual([
+      { x: 0, z: 0, kind: "grass", seed: 0 },
+      { x: 1, z: 0, kind: "plot" },
+      { x: 2, z: 0, kind: "building", buildingType: "bank", placeId: "cedar-bank" },
+      { x: 0, z: 1, kind: "road", seed: 3 },
+      { x: 1, z: 1, kind: "road", seed: 4 },
+      { x: 2, z: 1, kind: "road", seed: 5 },
+    ]);
   });
 
   it("treats short presses as taps and longer movement or time as a drag", () => {

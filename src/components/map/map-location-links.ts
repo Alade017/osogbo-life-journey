@@ -1,4 +1,4 @@
-/** Explicit links keep the hand-placed illustration separate from database ids. */
+/** Explicit links connect fictional map markers to stable server location slugs. */
 export const MAP_LANDMARK_LOCATION_SLUG: Record<string, string | null> = {
   "oja-oba-market": "oja-oba",
   "ataoja-police-station": "government-area",
@@ -8,4 +8,13 @@ export const MAP_LANDMARK_LOCATION_SLUG: Record<string, string | null> = {
   "osogbo-township-stadium": "stadium",
   "aleku-wodo-road-network": "residential",
   "oke-fia-flyover": "oke-fia",
+  "town-market": "town-market",
+  "civic-court": "civic-court",
+  "community-police": "community-police",
+  "cedar-bank": "cedar-bank",
+  "meridian-bank": "meridian-bank",
+  "lantern-club": "lantern-club",
+  "community-clinic": "community-clinic",
+  "transit-park": "transit-park",
+  "sports-ground": "sports-ground",
 };

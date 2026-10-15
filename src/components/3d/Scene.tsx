@@ -32,11 +32,13 @@ export function Scene({
   children,
   zoom,
   animated = false,
+  mapControls = false,
   onError,
 }: {
   children: ReactNode;
   zoom?: number;
   animated?: boolean;
+  mapControls?: boolean;
   onError?: (error: Error) => void;
 }) {
   const [visible, setVisible] = useState(true);
@@ -59,7 +61,7 @@ export function Scene({
         style={{ width: "100%", height: "100%" }}
       >
         <color attach="background" args={[sceneSky]} />
-        <Camera zoom={zoom ?? 38} />
+        <Camera zoom={zoom ?? 38} mapControls={mapControls} />
         <Lights />
         <Suspense
           fallback={

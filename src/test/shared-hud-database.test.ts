@@ -3,7 +3,7 @@ import { PGlite } from "@electric-sql/pglite";
 import { pg_trgm } from "@electric-sql/pglite/contrib/pg_trgm";
 import { readFileSync, readdirSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import mapData from "@/data/osogbo-map.json";
+import townData from "@/data/osogbo-town.json";
 
 const uid = "11111111-1111-4111-8111-111111111111";
 const session = "22222222-2222-4222-8222-222222222222";
@@ -30,6 +30,45 @@ async function command(kind: string, action: string | null = null, request: stri
 }
 
 describe("shared HUD database acceptance", () => {
+  it("seeds address-free public venues with fictional route districts and server age gates", async () => {
+    const places = await db.query<{
+      id: string;
+      district_id: string;
+      min_age: number;
+      latitude: number | null;
+      longitude: number | null;
+    }>(
+      `select landmark.id,landmark.district_id,landmark.min_age,location.latitude,location.longitude
+       from public.map_landmarks landmark join public.locations location on location.id=landmark.location_id
+       where landmark.is_available order by landmark.id`,
+    );
+    expect(places.rows).toHaveLength(9);
+    expect(places.rows.every((place) => place.latitude === null && place.longitude === null)).toBe(
+      true,
+    );
+    expect(
+      places.rows.every(
+        (place) =>
+          ![
+            "oja-oba",
+            "ataoja",
+            "aleku-wodo",
+            "olaiya",
+            "oke-fia",
+            "oke-baale",
+            "isale-aro",
+            "ogo-oluwa",
+          ].includes(place.district_id),
+      ),
+    ).toBe(true);
+    expect(places.rows.find((place) => place.id === "lantern-club")?.min_age).toBe(18);
+    const route = await db.query<{ count: number }>(
+      `select count(*)::int as count from public.map_district_distances
+       where from_district_id='market-quarter' and to_district_id='civic-quarter'`,
+    );
+    expect(route.rows[0]?.count).toBe(1);
+  });
+
   beforeAll(async () => {
     db = new PGlite({ extensions: { pg_trgm } });
     await db.exec(`create role anon; create role authenticated; create role service_role;
@@ -153,12 +192,10 @@ describe("shared HUD database acceptance", () => {
   });
 
   it("applies JSON-defined map actions once and keeps their wallet, mood, and time effects server-side", async () => {
-    const market = mapData.districts
-      .flatMap((district) => district.landmarks)
-      .find((landmark) => landmark.id === "oja-oba-market")!;
-    const action = market.actions!.find(({ label }) => label === "Buy food")!;
+    const market = townData.landmarks.find((landmark) => landmark.id === "town-market")!;
+    const action = market.actions.find(({ id }) => id === "browse-market")!;
     const location = await db.query<{ id: string }>(
-      "select id from public.locations where slug='oja-oba'",
+      "select id from public.locations where slug='town-market'",
     );
     const previousPlayer = await db.query<{
       current_location_id: string;
@@ -207,10 +244,9 @@ describe("shared HUD database acceptance", () => {
       "select balance from public.wallets where user_id=$1",
       [uid],
     );
-    expect(first.rows[0]!.result.balance).toBeGreaterThanOrEqual(550);
-    expect(first.rows[0]!.result.balance).toBeLessThanOrEqual(750);
-    expect(first.rows[0]!.result.game_time.minute).toBe(20);
-    expect(first.rows[0]!.result.hunger).toBe(0);
+    expect(first.rows[0]!.result.balance).toBe(1000);
+    expect(first.rows[0]!.result.game_time.minute).toBe(12);
+    expect(first.rows[0]!.result.hunger).toBe(20);
     expect(retry.rows[0]!.result).toEqual(first.rows[0]!.result);
     expect(afterRetry.rows[0]!.balance).toBe(afterFirst.rows[0]!.balance);
     await expect(call("44444444-4444-4444-8444-444444444444")).rejects.toThrow(/COOLDOWN/);

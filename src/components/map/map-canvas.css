@@ -12,6 +12,141 @@
   user-select: none;
 }
 
+.town-map-canvas {
+  position: relative;
+  isolation: isolate;
+  background: var(--background);
+  overflow: hidden;
+}
+
+.town-map-canvas > div:first-child,
+.town-map-canvas canvas {
+  touch-action: none;
+}
+
+.town-map-canvas canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  outline: none;
+}
+
+.town-map-canvas .town-place-bubble,
+.town-map-canvas .town-place-label,
+.town-map-canvas .town-district-label,
+.town-map-canvas .town-billboard {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 8px 11px;
+  border: 1px solid var(--ring);
+  border-radius: 999px;
+  color: var(--foreground);
+  background: var(--card);
+  box-shadow: var(--elevation-card);
+  font:
+    650 12px/1.2 system-ui,
+    sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  touch-action: manipulation;
+}
+
+.town-map-canvas .town-billboard img {
+  width: 28px;
+  height: 20px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.town-map-canvas .town-place-bubble {
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0;
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+.town-map-canvas .town-place-label {
+  min-height: 32px;
+  border-radius: 12px;
+  font-size: 11px;
+}
+
+.town-map-canvas .town-district-label {
+  display: flex;
+  flex-direction: column;
+  min-width: 112px;
+  min-height: 44px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+}
+
+.town-map-canvas .town-district-label small {
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.town-map-canvas .town-billboard {
+  min-height: 32px;
+  max-width: 150px;
+  overflow: hidden;
+  border-radius: 8px;
+  text-overflow: ellipsis;
+  color: var(--foreground);
+  background: var(--accent);
+}
+
+.town-map-canvas :is(button):focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 3px;
+}
+
+.town-map-zoom-controls {
+  position: absolute;
+  z-index: 20;
+  right: 12px;
+  bottom: calc(var(--map-dock-clearance, 90px) + env(safe-area-inset-bottom, 0px) + 12px);
+  display: grid;
+  gap: 5px;
+  padding: 5px;
+  border: 1px solid var(--ring);
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: var(--elevation-card);
+}
+
+.town-map-zoom-controls button {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 12px;
+  color: var(--foreground);
+  background: transparent;
+  font:
+    700 22px/1 system-ui,
+    sans-serif;
+  cursor: pointer;
+}
+
+.town-map-accessible-list {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
 .map-canvas-transform {
   position: absolute;
   top: 0;

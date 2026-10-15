@@ -1,4 +1,4 @@
-import mapData from "@/data/osogbo-map.json";
+import townData from "@/data/osogbo-town.json";
 import { MAP_LANDMARK_LOCATION_SLUG } from "@/components/map/map-location-links";
 import type { Advertisement, GameBillboard, Location } from "@/lib/game";
 import type { Database } from "@/integrations/supabase/types";
@@ -53,13 +53,11 @@ export function getCurrentMapBillboards(
 ): CurrentMapBillboard[] {
   const locationBySlug = new Map(locations.map((location) => [location.slug, location.id]));
   const landmarkByLocationId = new Map<string, string>();
-  for (const district of mapData.districts) {
-    for (const landmark of district.landmarks) {
-      const slug = MAP_LANDMARK_LOCATION_SLUG[landmark.id];
-      const locationId = slug ? locationBySlug.get(slug) : undefined;
-      if (locationId && !landmarkByLocationId.has(locationId)) {
-        landmarkByLocationId.set(locationId, landmark.id);
-      }
+  for (const landmark of townData.landmarks) {
+    const slug = MAP_LANDMARK_LOCATION_SLUG[landmark.id];
+    const locationId = slug ? locationBySlug.get(slug) : undefined;
+    if (locationId && !landmarkByLocationId.has(locationId)) {
+      landmarkByLocationId.set(locationId, landmark.id);
     }
   }
 

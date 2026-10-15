@@ -17,6 +17,49 @@ export type TownGrid = {
   cells: TownGridCell[];
 };
 
+export type TownGridLayout = {
+  rows: string[];
+  cellSize?: number;
+  waterCells?: [number, number][];
+  plotCells?: [number, number][];
+  buildings?: Array<{ placeId: string; x: number; z: number; buildingType: string }>;
+  treeCells?: [number, number][];
+  carCells?: [number, number][];
+};
+
+/** Expands compact JSON rows into explicit cells, applying authored overlays. */
+export function expandTownGridLayout(
+  layout: TownGridLayout,
+  legend: Record<string, TownCellKind>,
+): TownGrid {
+  if (!layout.rows.length || layout.rows.some((row) => row.length !== layout.rows[0]!.length)) {
+    throw new Error("Town grid rows must be non-empty and have equal width");
+  }
+  const columns = layout.rows[0]!.length;
+  const rows = layout.rows.length;
+  const byPosition = new Map<string, TownGridCell>();
+  const add = (cell: TownGridCell) => byPosition.set(`${cell.x}:${cell.z}`, cell);
+  layout.rows.forEach((row, z) => {
+    [...row].forEach((key, x) => {
+      const kind = legend[key];
+      if (!kind) throw new Error(`Unknown town grid cell key: ${key}`);
+      add({ x, z, kind, seed: z * columns + x });
+    });
+  });
+  for (const [x, z] of layout.waterCells ?? []) add({ x, z, kind: "water" });
+  for (const [x, z] of layout.plotCells ?? []) add({ x, z, kind: "plot" });
+  for (const building of layout.buildings ?? []) {
+    add({
+      x: building.x,
+      z: building.z,
+      kind: "building",
+      buildingType: building.buildingType,
+      placeId: building.placeId,
+    });
+  }
+  return { columns, rows, cellSize: layout.cellSize ?? 2, cells: [...byPosition.values()] };
+}
+
 export type TownSceneCell = {
   x: number;
   y: number;
