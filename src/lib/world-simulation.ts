@@ -111,7 +111,7 @@ export const CITY_EVENTS: readonly CityEvent[] = [
   {
     id: "riverlight-gathering",
     title: "Riverlight Community Gathering",
-    description: "A fictional evening of music, food, and neighbourly conversation.",
+    description: "An evening of music, food, and neighbourly conversation.",
     locationSlug: "cultural-district",
     locationName: "Cultural District",
     weekday: 4,
@@ -124,7 +124,7 @@ export const CITY_EVENTS: readonly CityEvent[] = [
   {
     id: "weekend-arts",
     title: "Open Courtyard Arts",
-    description: "A fictional open-air showcase by local artists and makers.",
+    description: "An open-air showcase by local artists and makers.",
     locationSlug: "cultural-district",
     locationName: "Cultural District",
     weekday: 5,

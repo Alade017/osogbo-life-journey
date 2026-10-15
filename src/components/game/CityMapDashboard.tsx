@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Banknote, CloudOff, Compass, Smile } from "lucide-react";
+import { Banknote, CalendarDays, CloudOff, Compass, Smile } from "lucide-react";
 import { MapCanvas, type MapFilter, type MapSearchTarget } from "@/components/map/MapCanvas";
 import { DistrictSheet } from "@/components/map/DistrictSheet";
 import { LandmarkSheet } from "@/components/map/LandmarkSheet";
@@ -17,6 +17,7 @@ import {
 } from "@/lib/map-api";
 import { useWorldClock } from "@/hooks/use-world-clock";
 import { activeCityEvents } from "@/lib/world-simulation";
+import { formatCalendarDate, lagosDateKey, upcomingCalendarEvents } from "@/lib/osogbo-calendar";
 import type { MapDistrict, MapLandmark } from "@/components/map/OsogboMap.svg";
 import "@/components/map/map-ui.css";
 
@@ -66,6 +67,7 @@ export function CityMapDashboard({
   const activeEvents = world.data
     ? activeCityEvents(world.data).filter((e) => e.locationSlug === selectedDistrict?.id)
     : [];
+  const nextRealEvent = upcomingCalendarEvents(lagosDateKey(), 1)[0] ?? null;
   const travel = useMutation({
     mutationFn: ({ landmarkId, idempotencyKey }: { landmarkId: string; idempotencyKey: string }) =>
       requestMapTravel(landmarkId, idempotencyKey),
@@ -174,6 +176,12 @@ export function CityMapDashboard({
             ? `Rent due ${new Intl.DateTimeFormat("en-NG", { timeZone: "Africa/Lagos", dateStyle: "medium", timeStyle: "short" }).format(new Date(due))}`
             : "Rent schedule unavailable"}
         </span>
+        {nextRealEvent && (
+          <span>
+            <CalendarDays size={16} />
+            Next: {nextRealEvent.title} · {formatCalendarDate(nextRealEvent.startsOn)}
+          </span>
+        )}
       </header>
       {offline && (
         <div role="status" className="map-offline-banner">
