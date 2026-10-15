@@ -59,12 +59,14 @@ describe("shared HUD database acceptance", () => {
     await db?.close();
   });
 
-  it("applies the full migration chain and makes reconnects skip offline time", async () => {
+  it("applies the full migration chain and catches up personal game time after reconnect", async () => {
     const before = await command("open");
     await db.exec("update public.character_simulations set heartbeat_at=now()-interval '2 days'");
     const after = await command("open");
-    expect(after.needs).toEqual(before.needs);
-    expect(after.game_time).toEqual(before.game_time);
+    const totalMinutes = (time: typeof before.game_time) =>
+      time.day * 1440 + time.hour * 60 + time.minute;
+    expect(totalMinutes(after.game_time) - totalMinutes(before.game_time)).toBe(2 * 24 * 60);
+    expect(after.needs["hunger"]!).toBeLessThan(before.needs["hunger"]!);
     const clock = await db.query<{ time: { hour: number } }>("select public.world_clock() as time");
     expect(clock.rows[0]!.time.hour).toBeGreaterThanOrEqual(0);
   });
