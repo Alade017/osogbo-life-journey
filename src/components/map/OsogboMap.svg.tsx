@@ -34,6 +34,23 @@ export type MapLandmark = {
   x: number;
   y: number;
   verify: boolean;
+  source?: string;
+  isoCell?: { col: number; row: number };
+  actions?: MapPlaceAction[];
+};
+
+export type MapPlaceAction = {
+  id: string;
+  label: string;
+  description: string;
+  time_cost_minutes: number;
+  money_minor: { min: number; max: number };
+  mood_effect: number;
+  requirement: string;
+  open_hours: { start: number; end: number };
+  cooldown_game_minutes?: number;
+  needs_effects?: { hunger_satisfaction?: number };
+  verify: boolean;
 };
 
 export type MapDistrict = {
@@ -44,6 +61,9 @@ export type MapDistrict = {
   traffic: Traffic;
   description: string;
   shape: [number, number][];
+  source?: string;
+  isoCells?: { col: number; row: number }[];
+  height?: number;
   landmarks: MapLandmark[];
 };
 

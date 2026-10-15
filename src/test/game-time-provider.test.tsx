@@ -66,5 +66,11 @@ describe("active session simulation", () => {
     });
     expect(server.command).toHaveBeenLastCalledWith(expect.objectContaining({ command: "open" }));
     expect(server.command.mock.calls.at(-1)?.[0]).not.toHaveProperty("elapsedSeconds");
+    const beforeServerRefresh = server.command.mock.calls.length;
+    await act(async () => {
+      window.dispatchEvent(new Event("osogbo:server-state-changed"));
+    });
+    expect(server.command).toHaveBeenCalledTimes(beforeServerRefresh + 1);
+    expect(server.command).toHaveBeenLastCalledWith(expect.objectContaining({ command: "open" }));
   });
 });

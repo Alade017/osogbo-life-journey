@@ -309,6 +309,13 @@
       "when": 1791940000006,
       "tag": "0042_private_house_state_broadcast",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1791940000007,
+      "tag": "0044_map_place_actions",
+      "breakpoints": true
     }
   ]
 }

@@ -2230,6 +2230,16 @@ export type Database = {
         };
         Returns: Json;
       };
+      perform_map_place_action: {
+        Args: {
+          p_user_id: string;
+          p_landmark_id: string;
+          p_action_id: string;
+          p_request_id: string;
+          p_action_definition: Json;
+        };
+        Returns: Json;
+      };
     };
     Enums: {
       [_ in never]: never;

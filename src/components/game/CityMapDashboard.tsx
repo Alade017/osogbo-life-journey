@@ -13,8 +13,12 @@ import {
   clearPendingTravelKey,
   getPendingTravelKey,
   requestMapTravel,
+  requestMapPlaceAction,
+  getPendingMapActionKey,
+  clearPendingMapActionKey,
   type MapTravelResponse,
 } from "@/lib/map-api";
+import type { PlaceActionResult } from "@/components/map/PlaceActionMenu";
 import { useWorldClock } from "@/hooks/use-world-clock";
 import { activeCityEvents } from "@/lib/world-simulation";
 import { formatCalendarDate, lagosDateKey, upcomingCalendarEvents } from "@/lib/osogbo-calendar";
@@ -48,6 +52,7 @@ export function CityMapDashboard({
   const [offline, setOffline] = useState(typeof navigator !== "undefined" && !navigator.onLine);
   const [travelInfo, setTravelInfo] = useState<MapTravelResponse | null>(null);
   const [actionError, setActionError] = useState("");
+  const [placeActionResult, setPlaceActionResult] = useState<PlaceActionResult | null>(null);
   const queryClient = useQueryClient();
   const character = useQuery(q.character());
   const wallet = useQuery(q.wallet());
@@ -80,6 +85,7 @@ export function CityMapDashboard({
         queryClient.invalidateQueries({ queryKey: ["wallet"] }),
         queryClient.invalidateQueries({ queryKey: ["worldClock"] }),
       ]);
+      window.dispatchEvent(new Event("osogbo:server-state-changed"));
     },
     onError: (e) => setActionError(e.message),
   });
@@ -91,6 +97,40 @@ export function CityMapDashboard({
       await queryClient.invalidateQueries({ queryKey: ["jobs"] });
     },
     onError: (e) => setActionError(e.message),
+  });
+  const runPlaceAction = useMutation({
+    mutationFn: ({
+      landmarkId,
+      actionId,
+      requestId,
+    }: {
+      landmarkId: string;
+      actionId: string;
+      requestId: string;
+    }) => requestMapPlaceAction(landmarkId, actionId, requestId),
+    onSuccess: async (result, variables) => {
+      setPlaceActionResult(result);
+      setActionError("");
+      clearPendingMapActionKey(variables.landmarkId, variables.actionId, variables.requestId);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["character"] }),
+        queryClient.invalidateQueries({ queryKey: ["wallet"] }),
+        queryClient.invalidateQueries({ queryKey: ["worldClock"] }),
+      ]);
+      window.dispatchEvent(new Event("osogbo:server-state-changed"));
+    },
+    onError: (error) => {
+      const messages: Record<string, string> = {
+        NOT_AT_PLACE: "Travel here before starting this activity.",
+        PLACE_CLOSED: "This place is closed right now.",
+        INSUFFICIENT_FUNDS: "You do not have enough money for this activity.",
+        REQUIREMENT_NOT_MET: "Meet this activity's requirement before trying again.",
+        COOLDOWN: "Wait a little before repeating that activity.",
+      };
+      setActionError(
+        messages[error.message] ?? "The activity could not be completed. Please retry.",
+      );
+    },
   });
   const onDistrict = (id: string) => {
     const d = districts.find((item) => item.id === id);
@@ -106,6 +146,7 @@ export function CityMapDashboard({
       setSelectedLandmark(found);
       setTravelInfo(null);
       setActionError("");
+      setPlaceActionResult(null);
     }
   };
   const searchMatches = useMemo(() => {
@@ -257,6 +298,12 @@ export function CityMapDashboard({
           travelResult={travelInfo}
           pending={travel.isPending || apply.isPending}
           error={actionError}
+          onRunPlaceAction={(actionId) => {
+            const requestId = getPendingMapActionKey(selectedLandmark.id, actionId);
+            runPlaceAction.mutate({ landmarkId: selectedLandmark.id, actionId, requestId });
+          }}
+          actionPending={runPlaceAction.isPending}
+          actionResult={placeActionResult}
         />
       )}
     </section>

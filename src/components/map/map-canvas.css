@@ -87,6 +87,40 @@
   pointer-events: none;
 }
 
+.isometric-map-svg .map-district:focus-visible .map-district-shape {
+  stroke: var(--ring);
+  stroke-width: 3px;
+}
+
+.isometric-roads path {
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+.isometric-district polygon {
+  pointer-events: visiblePainted;
+}
+
+.isometric-district:focus-visible {
+  outline: none;
+}
+
+.isometric-district-label .map-district-name,
+.isometric-district-label .map-district-theme {
+  fill: var(--foreground);
+  paint-order: stroke;
+  stroke: var(--background);
+  stroke-linejoin: round;
+  stroke-width: 3px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.isometric-district-label .map-district-theme {
+  font-size: 10px;
+  font-weight: 600;
+}
+
 .map-live-marker {
   pointer-events: none;
 }

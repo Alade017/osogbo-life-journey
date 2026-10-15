@@ -3,6 +3,7 @@ import { PGlite } from "@electric-sql/pglite";
 import { pg_trgm } from "@electric-sql/pglite/contrib/pg_trgm";
 import { readFileSync, readdirSync } from "node:fs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import mapData from "@/data/osogbo-map.json";
 
 const uid = "11111111-1111-4111-8111-111111111111";
 const session = "22222222-2222-4222-8222-222222222222";
@@ -32,8 +33,12 @@ describe("shared HUD database acceptance", () => {
   beforeAll(async () => {
     db = new PGlite({ extensions: { pg_trgm } });
     await db.exec(`create role anon; create role authenticated; create role service_role;
-      create schema auth; create schema extensions; create table auth.users(id uuid primary key);
+      create schema auth; create schema extensions; create schema realtime;
+      create table auth.users(id uuid primary key);
+      create table realtime.messages(id bigint generated always as identity);
       create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('test.user_id',true),'')::uuid $$;
+      create function realtime.topic() returns text language sql stable as $$ select ''::text $$;
+      create function realtime.broadcast_changes(text,text,text,text,text,anyelement,anyelement) returns void language plpgsql as $$ begin return; end $$;
       grant usage on schema auth to authenticated;
       grant execute on function auth.uid() to authenticated;`);
     for (const file of readdirSync("drizzle/migrations")
@@ -143,6 +148,91 @@ describe("shared HUD database acceptance", () => {
       "select count(*)::int as count from public.simulation_action_receipts",
     );
     expect(receipt.rows[0]!.count).toBe(1);
+  });
+
+  it("applies JSON-defined map actions once and keeps their wallet, mood, and time effects server-side", async () => {
+    const market = mapData.districts
+      .flatMap((district) => district.landmarks)
+      .find((landmark) => landmark.id === "oja-oba-market")!;
+    const action = market.actions!.find(({ label }) => label === "Buy food")!;
+    const location = await db.query<{ id: string }>(
+      "select id from public.locations where slug='oja-oba'",
+    );
+    const previousPlayer = await db.query<{
+      current_location_id: string;
+      game_time_hour: number;
+      game_time_minute: number;
+      game_day: number;
+      game_weekday: number;
+      hunger: number;
+      happiness: number;
+    }>(
+      "select current_location_id,game_time_hour,game_time_minute,game_day,game_weekday,hunger,happiness from public.characters where user_id=$1",
+      [uid],
+    );
+    const previousWallet = await db.query<{ balance: number }>(
+      "select balance from public.wallets where user_id=$1",
+      [uid],
+    );
+    await db.exec(
+      `update public.characters set current_location_id='${location.rows[0]!.id}', game_time_hour=10, game_time_minute=0, hunger=20`,
+    );
+    await db.exec(
+      `insert into public.wallets(user_id,character_id,balance) select '${uid}',id,1000 from public.characters where user_id='${uid}'`,
+    );
+    const call = (requestId = "33333333-3333-4333-8333-333333333333") =>
+      db.query<{
+        result: {
+          balance: number;
+          happiness: number;
+          hunger: number;
+          game_time: { minute: number };
+        };
+      }>("select public.perform_map_place_action($1,$2,$3,$4,$5::jsonb) as result", [
+        uid,
+        market.id,
+        action.id,
+        requestId,
+        JSON.stringify(action),
+      ]);
+    const first = await call();
+    const afterFirst = await db.query<{ balance: number }>(
+      "select balance from public.wallets where user_id=$1",
+      [uid],
+    );
+    const retry = await call();
+    const afterRetry = await db.query<{ balance: number }>(
+      "select balance from public.wallets where user_id=$1",
+      [uid],
+    );
+    expect(first.rows[0]!.result.balance).toBeGreaterThanOrEqual(550);
+    expect(first.rows[0]!.result.balance).toBeLessThanOrEqual(750);
+    expect(first.rows[0]!.result.game_time.minute).toBe(20);
+    expect(first.rows[0]!.result.hunger).toBe(0);
+    expect(retry.rows[0]!.result).toEqual(first.rows[0]!.result);
+    expect(afterRetry.rows[0]!.balance).toBe(afterFirst.rows[0]!.balance);
+    await expect(call("44444444-4444-4444-8444-444444444444")).rejects.toThrow(/COOLDOWN/);
+    await db.query(
+      "update public.characters set current_location_id=$1,game_time_hour=$2,game_time_minute=$3,game_day=$4,game_weekday=$5,hunger=$6,happiness=$7 where user_id=$8",
+      [
+        previousPlayer.rows[0]!.current_location_id,
+        previousPlayer.rows[0]!.game_time_hour,
+        previousPlayer.rows[0]!.game_time_minute,
+        previousPlayer.rows[0]!.game_day,
+        previousPlayer.rows[0]!.game_weekday,
+        previousPlayer.rows[0]!.hunger,
+        previousPlayer.rows[0]!.happiness,
+        uid,
+      ],
+    );
+    if (previousWallet.rows[0]) {
+      await db.query("update public.wallets set balance=$1 where user_id=$2", [
+        previousWallet.rows[0].balance,
+        uid,
+      ]);
+    } else {
+      await db.query("delete from public.wallets where user_id=$1", [uid]);
+    }
   });
 
   it("reconciles server job/travel time and needs without applying their effects twice", async () => {

@@ -22,7 +22,11 @@ describe("neighborhood coordinates and interaction", () => {
     for (const node of Object.values(OSOGBO_WORLD_NODES)) {
       const area = neighborhoodAreaForSlug(node.slug);
       expect(area.slug).toBe(node.slug);
-      expect(area.name).toBe(node.name);
+      const displayNameOverrides: Record<string, string> = {
+        "city-centre": "Olaiya",
+        "oja-oba": "Oja-Oba Market",
+      };
+      expect(area.name).toBe(displayNameOverrides[node.slug] ?? node.name);
       expect(area.objects.map((object) => object.id)).toEqual(["home", "market", "work", "npc"]);
       expect(new Set(area.objects.map((object) => `${object.x}:${object.y}`)).size).toBe(4);
     }

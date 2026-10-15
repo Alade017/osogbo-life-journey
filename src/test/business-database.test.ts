@@ -40,8 +40,11 @@ describe("authoritative business and investment database", () => {
   beforeAll(async () => {
     db = new PGlite({ extensions: { pg_trgm } });
     await db.exec(`create role anon; create role authenticated; create role service_role;
-      create schema auth; create schema extensions; create table auth.users(id uuid primary key);
+      create schema auth; create schema extensions; create schema realtime;
+      create table auth.users(id uuid primary key); create table realtime.messages(id bigint generated always as identity);
       create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('test.user_id',true),'')::uuid $$;
+      create function realtime.topic() returns text language sql stable as $$ select ''::text $$;
+      create function realtime.broadcast_changes(text,text,text,text,text,anyelement,anyelement) returns void language plpgsql as $$ begin return; end $$;
       grant usage on schema auth to authenticated; grant execute on function auth.uid() to authenticated;`);
     const journal = JSON.parse(readFileSync("drizzle/migrations/meta/_journal.json", "utf8"));
     for (const { tag } of journal.entries)

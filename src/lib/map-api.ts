@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Activity, Job } from "@/lib/game";
+import type { PlaceActionResult } from "@/components/map/PlaceActionMenu";
 
 export type MapTravelResponse = {
   travel_id: string;
@@ -76,6 +77,33 @@ export async function requestMapLandmark(landmarkId: string) {
   return result as MapLandmarkDetails;
 }
 
+export async function requestMapPlaceAction(
+  landmarkId: string,
+  actionId: string,
+  requestId: string,
+) {
+  const { data, error } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (error || !token) throw new MapApiError("Sign in to do this activity.", "UNAUTHORIZED");
+  const response = await fetch("/api/map/action", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      "Idempotency-Key": requestId,
+    },
+    body: JSON.stringify({ landmarkId, actionId }),
+  });
+  const result = (await response.json().catch(() => null)) as
+    PlaceActionResult | { error?: { code?: string } } | null;
+  if (!response.ok) {
+    const code =
+      result && "error" in result ? (result.error?.code ?? "INTERNAL_ERROR") : "INTERNAL_ERROR";
+    throw new MapApiError(code, code);
+  }
+  return result as PlaceActionResult;
+}
+
 export function getPendingTravelKey(landmarkId: string) {
   const storageKey = "osogbo-map-travel-request-v1";
   try {
@@ -100,5 +128,40 @@ export function clearPendingTravelKey(idempotencyKey: string) {
     if (pending?.key === idempotencyKey) window.localStorage.removeItem(storageKey);
   } catch {
     // Storage can be unavailable in private browsing; server idempotency still applies per request.
+  }
+}
+
+export function getPendingMapActionKey(landmarkId: string, actionId: string) {
+  const storageKey = "osogbo-map-action-requests-v1";
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(storageKey) ?? "{}") as Record<
+      string,
+      unknown
+    >;
+    const key = `${landmarkId}:${actionId}`;
+    if (typeof stored[key] === "string") return stored[key] as string;
+    const requestId = crypto.randomUUID();
+    stored[key] = requestId;
+    window.localStorage.setItem(storageKey, JSON.stringify(stored));
+    return requestId;
+  } catch {
+    return crypto.randomUUID();
+  }
+}
+
+export function clearPendingMapActionKey(landmarkId: string, actionId: string, requestId: string) {
+  const storageKey = "osogbo-map-action-requests-v1";
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(storageKey) ?? "{}") as Record<
+      string,
+      unknown
+    >;
+    const key = `${landmarkId}:${actionId}`;
+    if (stored[key] === requestId) {
+      delete stored[key];
+      window.localStorage.setItem(storageKey, JSON.stringify(stored));
+    }
+  } catch {
+    // The server still guarantees idempotency for the key attached to the request.
   }
 }

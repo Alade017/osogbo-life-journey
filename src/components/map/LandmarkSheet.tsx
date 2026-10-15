@@ -3,6 +3,8 @@ import { BadgeCheck, MapPin, X } from "lucide-react";
 import { formatMapNaira } from "@/components/map/map-ui-utils";
 import { MapApiError, requestMapLandmark } from "@/lib/map-api";
 import { careerShiftPay } from "@/lib/economy-service";
+import { PlaceActionMenu, type PlaceActionResult } from "@/components/map/PlaceActionMenu";
+import type { MapPlaceAction } from "@/components/map/OsogboMap.svg";
 
 export function LandmarkSheet({
   landmark,
@@ -14,8 +16,17 @@ export function LandmarkSheet({
   travelResult,
   pending,
   error,
+  onRunPlaceAction,
+  actionPending,
+  actionResult,
 }: {
-  landmark: { id: string; label: string; category: string; verify: boolean };
+  landmark: {
+    id: string;
+    label: string;
+    category: string;
+    verify: boolean;
+    actions?: MapPlaceAction[];
+  };
   description: string;
   offline: boolean;
   onClose: () => void;
@@ -24,6 +35,9 @@ export function LandmarkSheet({
   travelResult?: { fare: number; travel_minutes: number; landmark_id: string } | null;
   pending: boolean;
   error?: string;
+  onRunPlaceAction: (actionId: string) => void;
+  actionPending: boolean;
+  actionResult?: PlaceActionResult | null;
 }) {
   const detailsQuery = useQuery({
     queryKey: ["mapLandmarkDetails", landmark.id],
@@ -77,6 +91,13 @@ export function LandmarkSheet({
         </p>
       ) : (
         <>
+          <PlaceActionMenu
+            actions={landmark.actions ?? []}
+            offline={offline}
+            pending={actionPending}
+            result={actionResult}
+            onRun={onRunPlaceAction}
+          />
           <section>
             <h3>Activities</h3>
             {detailsQuery.data?.activities.length ? (

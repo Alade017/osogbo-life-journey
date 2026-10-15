@@ -21,6 +21,8 @@ import {
 } from "lucide-react";
 import mapData from "@/data/osogbo-map.json";
 import { OsogboMapSvg, type MapDistrict, type MapLandmark } from "@/components/map/OsogboMap.svg";
+import { IsometricMapSvg } from "@/components/map/IsometricMap.svg";
+import { isoCellToScreen, mapPointForMode, type MapProjectionMode } from "@/lib/map-projection";
 import "./map-canvas.css";
 
 export type MapZoomLevel = 1 | 2 | 3;
@@ -95,6 +97,7 @@ function MarkerLayer({
   eventChips,
   jobLandmarkIds = [],
   screenScale,
+  viewMode,
   onSelectLandmark,
 }: {
   zoomLevel: MapZoomLevel;
@@ -103,6 +106,7 @@ function MarkerLayer({
   eventChips: MapEventChip[];
   jobLandmarkIds: string[];
   screenScale: number;
+  viewMode: MapProjectionMode;
   onSelectLandmark: (landmark: MapLandmark) => void;
 }) {
   if (zoomLevel === 1) return null;
@@ -134,6 +138,7 @@ function MarkerLayer({
               : (filteredCategory[activeFilter] ?? [activeFilter]).includes(landmark.category));
           const Icon = categoryIcons[landmark.category];
           const activate = () => onSelectLandmark(landmark);
+          const position = landmarkPoint(landmark, viewMode);
           return (
             <g
               key={landmark.id}
@@ -154,22 +159,22 @@ function MarkerLayer({
             >
               <rect
                 className="map-marker-hit"
-                x={landmark.x - hitOffset}
-                y={landmark.y - hitOffset}
+                x={position.x - hitOffset}
+                y={position.y - hitOffset}
                 width={hitSize}
                 height={hitSize}
                 rx="8"
               />
-              <circle className="map-canvas-marker-dot" cx={landmark.x} cy={landmark.y} r="15" />
+              <circle className="map-canvas-marker-dot" cx={position.x} cy={position.y} r="15" />
               <Icon
                 className="map-canvas-marker-icon"
-                x={landmark.x - 12}
-                y={landmark.y - 12}
+                x={position.x - 12}
+                y={position.y - 12}
                 width={24}
                 height={24}
                 aria-hidden="true"
               />
-              <text className="map-canvas-marker-label" x={landmark.x} y={landmark.y + 32}>
+              <text className="map-canvas-marker-label" x={position.x} y={position.y + 32}>
                 {sentenceCase(landmark.label)}
               </text>
             </g>
@@ -180,7 +185,7 @@ function MarkerLayer({
       {zoomLevel === 3 && playerLocation && (
         <g
           className={`map-live-marker map-live-marker-${playerLocation.markerType ?? "player"}`}
-          transform={`translate(${playerLocation.x} ${playerLocation.y})`}
+          transform={`translate(${mapPointForMode(playerLocation, viewMode).x} ${mapPointForMode(playerLocation, viewMode).y})`}
           role="img"
           aria-label={sentenceCase(playerLocation.label ?? "Your location")}
         >
@@ -203,7 +208,7 @@ function MarkerLayer({
             <g
               key={chip.id}
               className="map-event-chip"
-              transform={`translate(${chip.x} ${chip.y})`}
+              transform={`translate(${mapPointForMode(chip, viewMode).x} ${mapPointForMode(chip, viewMode).y})`}
               role="img"
               aria-label={sentenceCase(chip.label)}
             >
@@ -217,6 +222,31 @@ function MarkerLayer({
       )}
     </svg>
   );
+}
+
+function landmarkPoint(landmark: MapLandmark, viewMode: MapProjectionMode) {
+  return viewMode === "isometric" && landmark.isoCell
+    ? isoCellToScreen(landmark.isoCell)
+    : { x: landmark.x, y: landmark.y };
+}
+
+function districtPoint(district: MapDistrict) {
+  if (district.landmarks.length) {
+    return district.landmarks.reduce(
+      (point, landmark) => ({ x: point.x + landmark.x, y: point.y + landmark.y }),
+      { x: 0, y: 0 },
+    );
+  }
+  const bounds = district.shape.reduce(
+    (box, [x, y]) => ({
+      minX: Math.min(box.minX, x),
+      maxX: Math.max(box.maxX, x),
+      minY: Math.min(box.minY, y),
+      maxY: Math.max(box.maxY, y),
+    }),
+    { minX: Infinity, maxX: -Infinity, minY: Infinity, maxY: -Infinity },
+  );
+  return { x: (bounds.minX + bounds.maxX) / 2, y: (bounds.minY + bounds.maxY) / 2 };
 }
 
 function getDistance(first: Point, second: Point) {
@@ -265,6 +295,7 @@ export function MapCanvas({
   const reducedMotionRef = useRef(false);
   const [zoomLevel, setZoomLevel] = useState<MapZoomLevel>(1);
   const [screenScale, setScreenScale] = useState(1);
+  const [viewMode, setViewMode] = useState<MapProjectionMode>("2d");
 
   callbacksRef.current = { onSelectDistrict, onSelectLandmark };
 
@@ -353,18 +384,16 @@ export function MapCanvas({
 
   const selectDistrict = useCallback(
     (district: MapDistrict) => {
-      const bounds = district.landmarks.reduce(
-        (total, landmark) => ({ x: total.x + landmark.x, y: total.y + landmark.y }),
-        { x: 0, y: 0 },
-      );
-      const center = {
-        x: bounds.x / district.landmarks.length,
-        y: bounds.y / district.landmarks.length,
-      };
+      const center = districtPoint(district);
+      if (district.landmarks.length) {
+        center.x /= district.landmarks.length;
+        center.y /= district.landmarks.length;
+      }
       setZoomLevel(2);
-      centerOn(center, true, () => callbacksRef.current.onSelectDistrict(district.id), 2);
+      const projected = mapPointForMode(center, viewMode);
+      centerOn(projected, true, () => callbacksRef.current.onSelectDistrict(district.id), 2);
     },
-    [centerOn],
+    [centerOn, viewMode],
   );
 
   const selectLandmark = useCallback((landmark: MapLandmark) => {
@@ -425,7 +454,7 @@ export function MapCanvas({
         item.landmarks.some(({ id: itemId }) => itemId === id),
       );
       centerOn(
-        { x: landmark.x, y: landmark.y },
+        landmarkPoint(landmark, viewMode),
         true,
         () => callbacksRef.current.onSelectLandmark(landmark.id),
         2,
@@ -435,19 +464,22 @@ export function MapCanvas({
     }
     const district = kind !== "landmark" ? districts.find((item) => item.id === id) : undefined;
     if (district) {
-      const center = district.landmarks.reduce(
-        (point, landmarkItem) => ({ x: point.x + landmarkItem.x, y: point.y + landmarkItem.y }),
-        { x: 0, y: 0 },
-      );
+      const center = districtPoint(district);
       setZoomLevel(2);
       centerOn(
-        { x: center.x / district.landmarks.length, y: center.y / district.landmarks.length },
+        mapPointForMode(
+          {
+            x: district.landmarks.length ? center.x / district.landmarks.length : center.x,
+            y: district.landmarks.length ? center.y / district.landmarks.length : center.y,
+          },
+          viewMode,
+        ),
         true,
         () => callbacksRef.current.onSelectDistrict(district.id),
         2,
       );
     }
-  }, [centerOn, searchTarget]);
+  }, [centerOn, searchTarget, viewMode]);
 
   const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     if (event.button !== 0) return;
@@ -579,10 +611,38 @@ export function MapCanvas({
     selection?.();
   };
 
+  const onWheel = (event: React.WheelEvent<HTMLDivElement>) => {
+    if ((event.target as Element).closest(".map-canvas-zoom-controls")) return;
+    event.preventDefault();
+    const nextLevel = Math.max(
+      1,
+      Math.min(3, zoomLevel + (event.deltaY < 0 ? 1 : -1)),
+    ) as MapZoomLevel;
+    if (nextLevel === zoomLevel) return;
+    const bounds = viewportRef.current?.getBoundingClientRect();
+    if (!bounds) return;
+    const current = transformRef.current;
+    const focalPoint = {
+      x: (event.clientX - bounds.left - current.x) / current.scale,
+      y: (event.clientY - bounds.top - current.y) / current.scale,
+    };
+    const nextScale = viewportSizeRef.current.fitScale * nextLevel;
+    setZoomLevel(nextLevel);
+    applyTransform(
+      {
+        x: event.clientX - bounds.left - focalPoint.x * nextScale,
+        y: event.clientY - bounds.top - focalPoint.y * nextScale,
+        scale: nextScale,
+      },
+      true,
+    );
+  };
+
   const markerLayer = useMemo(
     () => (
       <MarkerLayer
         zoomLevel={zoomLevel}
+        viewMode={viewMode}
         activeFilter={activeFilter}
         playerLocation={playerLocation}
         eventChips={eventChips}
@@ -598,6 +658,7 @@ export function MapCanvas({
       playerLocation,
       screenScale,
       selectLandmark,
+      viewMode,
       zoomLevel,
     ],
   );
@@ -612,6 +673,7 @@ export function MapCanvas({
       onPointerMove={onPointerMove}
       onPointerUp={finishPointer}
       onPointerCancel={finishPointer}
+      onWheel={onWheel}
       onClickCapture={onClickCapture}
       onLostPointerCapture={finishPointer}
       aria-label="Interactive Osogbo map"
@@ -622,10 +684,26 @@ export function MapCanvas({
         onTransitionEnd={onTransformEnd}
         style={{ width: VIEW_WIDTH, height: VIEW_HEIGHT }}
       >
-        <MemoizedMapBase data={typedMapData} onSelectDistrict={stableDistrictSelect} />
+        {viewMode === "2d" ? (
+          <MemoizedMapBase data={typedMapData} onSelectDistrict={stableDistrictSelect} />
+        ) : (
+          <IsometricMapSvg onSelectDistrict={stableDistrictSelect} />
+        )}
         {markerLayer}
       </div>
       <div className="map-canvas-zoom-controls" role="group" aria-label="Map zoom level">
+        {(["2d", "isometric"] as const).map((mode) => (
+          <button
+            className="map-canvas-zoom-button"
+            key={mode}
+            type="button"
+            aria-pressed={viewMode === mode}
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={() => setViewMode(mode)}
+          >
+            {mode === "2d" ? "2D" : "Isometric"}
+          </button>
+        ))}
         {ZOOM_LEVELS.map((level) => {
           const label = level === 1 ? "Overview" : level === 2 ? "Street" : "Detail";
           return (

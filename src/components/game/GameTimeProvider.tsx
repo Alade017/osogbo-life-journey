@@ -191,6 +191,14 @@ export function GameTimeProvider({
       }
       if (!document.hidden && navigator.onLine) void send("open");
     };
+    const onServerStateChanged = () => {
+      needsOpen = true;
+      if (document.hidden || !navigator.onLine) return;
+      needsOpen = false;
+      void send("open").then((error) => {
+        if (error) needsOpen = true;
+      });
+    };
     const tick = window.setInterval(() => {
       if (document.hidden || !navigator.onLine || inFlight.current) {
         needsOpen = true;
@@ -203,12 +211,14 @@ export function GameTimeProvider({
       });
     }, 6000);
     document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("osogbo:server-state-changed", onServerStateChanged);
     window.addEventListener("online", onVisibility);
     window.addEventListener("offline", onVisibility);
     return () => {
       mounted.current = false;
       window.clearInterval(tick);
       document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("osogbo:server-state-changed", onServerStateChanged);
       window.removeEventListener("online", onVisibility);
       window.removeEventListener("offline", onVisibility);
     };

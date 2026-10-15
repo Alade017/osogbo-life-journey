@@ -43,6 +43,7 @@ import { Route as ApiHousingEligibleRouteImport } from './routes/api/housing/eli
 import { Route as ApiHousingHomeRouteImport } from './routes/api/housing/home'
 import { Route as ApiHousingItemRouteImport } from './routes/api/housing/item'
 import { Route as ApiHousingRentRouteImport } from './routes/api/housing/rent'
+import { Route as ApiMapActionRouteImport } from './routes/api/map/action'
 import { Route as ApiMapTravelRouteImport } from './routes/api/map/travel'
 import { Route as ApiOutfitEquipRouteImport } from './routes/api/outfit/equip'
 import { Route as ApiOutfitUnequipRouteImport } from './routes/api/outfit/unequip'
@@ -226,6 +227,11 @@ const ApiHousingRentRoute = ApiHousingRentRouteImport.update({
   path: '/api/housing/rent',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMapActionRoute = ApiMapActionRouteImport.update({
+  id: '/api/map/action',
+  path: '/api/map/action',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMapTravelRoute = ApiMapTravelRouteImport.update({
   id: '/api/map/travel',
   path: '/api/map/travel',
@@ -291,6 +297,7 @@ export interface FileRoutesByFullPath {
   '/api/housing/home': typeof ApiHousingHomeRoute
   '/api/housing/item': typeof ApiHousingItemRoute
   '/api/housing/rent': typeof ApiHousingRentRoute
+  '/api/map/action': typeof ApiMapActionRoute
   '/api/map/travel': typeof ApiMapTravelRoute
   '/api/outfit/equip': typeof ApiOutfitEquipRoute
   '/api/outfit/unequip': typeof ApiOutfitUnequipRoute
@@ -331,6 +338,7 @@ export interface FileRoutesByTo {
   '/api/housing/home': typeof ApiHousingHomeRoute
   '/api/housing/item': typeof ApiHousingItemRoute
   '/api/housing/rent': typeof ApiHousingRentRoute
+  '/api/map/action': typeof ApiMapActionRoute
   '/api/map/travel': typeof ApiMapTravelRoute
   '/api/outfit/equip': typeof ApiOutfitEquipRoute
   '/api/outfit/unequip': typeof ApiOutfitUnequipRoute
@@ -374,6 +382,7 @@ export interface FileRoutesById {
   '/api/housing/home': typeof ApiHousingHomeRoute
   '/api/housing/item': typeof ApiHousingItemRoute
   '/api/housing/rent': typeof ApiHousingRentRoute
+  '/api/map/action': typeof ApiMapActionRoute
   '/api/map/travel': typeof ApiMapTravelRoute
   '/api/outfit/equip': typeof ApiOutfitEquipRoute
   '/api/outfit/unequip': typeof ApiOutfitUnequipRoute
@@ -416,6 +425,7 @@ export interface FileRouteTypes {
     | '/api/housing/home'
     | '/api/housing/item'
     | '/api/housing/rent'
+    | '/api/map/action'
     | '/api/map/travel'
     | '/api/outfit/equip'
     | '/api/outfit/unequip'
@@ -456,6 +466,7 @@ export interface FileRouteTypes {
     | '/api/housing/home'
     | '/api/housing/item'
     | '/api/housing/rent'
+    | '/api/map/action'
     | '/api/map/travel'
     | '/api/outfit/equip'
     | '/api/outfit/unequip'
@@ -498,6 +509,7 @@ export interface FileRouteTypes {
     | '/api/housing/home'
     | '/api/housing/item'
     | '/api/housing/rent'
+    | '/api/map/action'
     | '/api/map/travel'
     | '/api/outfit/equip'
     | '/api/outfit/unequip'
@@ -524,6 +536,7 @@ export interface RootRouteChildren {
   ApiHousingHomeRoute: typeof ApiHousingHomeRoute
   ApiHousingItemRoute: typeof ApiHousingItemRoute
   ApiHousingRentRoute: typeof ApiHousingRentRoute
+  ApiMapActionRoute: typeof ApiMapActionRoute
   ApiMapTravelRoute: typeof ApiMapTravelRoute
   ApiOutfitEquipRoute: typeof ApiOutfitEquipRoute
   ApiOutfitUnequipRoute: typeof ApiOutfitUnequipRoute
@@ -771,6 +784,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHousingRentRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/map/action': {
+      id: '/api/map/action'
+      path: '/api/map/action'
+      fullPath: '/api/map/action'
+      preLoaderRoute: typeof ApiMapActionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/map/travel': {
       id: '/api/map/travel'
       path: '/api/map/travel'
@@ -888,6 +908,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHousingHomeRoute: ApiHousingHomeRoute,
   ApiHousingItemRoute: ApiHousingItemRoute,
   ApiHousingRentRoute: ApiHousingRentRoute,
+  ApiMapActionRoute: ApiMapActionRoute,
   ApiMapTravelRoute: ApiMapTravelRoute,
   ApiOutfitEquipRoute: ApiOutfitEquipRoute,
   ApiOutfitUnequipRoute: ApiOutfitUnequipRoute,
