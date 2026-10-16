@@ -96,7 +96,7 @@ function PlayerRow({
         <h3 className="font-display text-sm font-semibold">{player.player_name}</h3>
         <p className="text-xs text-muted-foreground">
           Level {player.level}
-          {status ? " · " + status : ""}
+          {status ? ", " + status : ""}
         </p>
       </div>
       <div className="flex flex-wrap gap-2">
@@ -665,8 +665,8 @@ export function PlayerSocial({
                       <span className="phone-contact-copy">
                         <strong>{friend.player_name}</strong>
                         <small>
-                          {isFriendOnline(friend.character_id) ? "Online" : "Offline"} · start a
-                          private chat
+                          {isFriendOnline(friend.character_id) ? "Online" : "Offline"}. Start a
+                          private chat.
                         </small>
                       </span>
                       <ChevronRight size={17} aria-hidden="true" />
@@ -826,8 +826,8 @@ export function PlayerSocial({
               <section className="phone-chat-panel" aria-label="Area chat">
                 <p className="phone-chat-subtitle">
                   {locationsQuery.data?.find((location) => location.id === locationId)?.name ??
-                    "Current district"}{" "}
-                  · messages visible to players in this area
+                    "Current district"}
+                  . Messages visible to players in this area
                 </p>
                 {!locationId ? (
                   <p className="text-sm text-muted-foreground">
@@ -963,7 +963,7 @@ export function PlayerSocial({
                           <strong>{conversation.player_name}</strong>
                           <small>Private conversation</small>
                         </span>
-                        <span aria-hidden="true">›</span>
+                        <ChevronRight size={17} aria-hidden="true" />
                       </button>
                     ))}
                   </div>
@@ -987,8 +987,8 @@ export function PlayerSocial({
                 </h3>
                 <p className="text-xs text-muted-foreground">
                   {locationsQuery.data?.find((location) => location.id === locationId)?.name ??
-                    "Current district"}{" "}
-                  · visible to players in this area
+                    "Current district"}
+                  . Visible to players in this area
                 </p>
               </div>
               {!locationId ? (

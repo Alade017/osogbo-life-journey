@@ -8649,7 +8649,7 @@
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 72px minmax(0, 1fr) minmax(0, 1fr);
   align-items: center;
   gap: 4px;
-  padding: 8px 14px;
+  padding: 8px 14px max(14px, env(safe-area-inset-bottom));
   transform: translateX(-50%);
   overflow: visible;
   border: 1px solid rgb(255 255 255 / 30%);
@@ -8683,8 +8683,12 @@
 }
 
 .city-game.navigation-redesign .game-mobile-nav .mobile-nav-active {
+  position: relative;
+  z-index: 2;
+  transform: translateY(-3px);
   color: var(--primary-foreground);
   background: var(--primary);
+  box-shadow: var(--elevation-card);
 }
 
 .city-game.navigation-redesign .game-mobile-nav .mobile-nav-phone {

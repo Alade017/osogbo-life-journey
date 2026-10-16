@@ -13,6 +13,7 @@ import {
   BriefcaseBusiness,
   Building2,
   ChartNoAxesCombined,
+  ChevronLeft,
   House,
   HousePlus,
   MapPinned,
@@ -126,7 +127,7 @@ export function PhoneLauncher({
         <div className="phone-screen">
           <div className="phone-status">
             <span className="phone-status-time">{phoneTime}</span>
-            <span className="phone-status-brand">OSOGBO · WAT</span>
+            <span className="phone-status-brand">OSUN WAT</span>
             <span className="phone-status-indicators" aria-label="Game phone status">
               <span className="phone-signal" aria-hidden="true">
                 <i />
@@ -146,7 +147,7 @@ export function PhoneLauncher({
                   onClick={() => setActiveApp(null)}
                   aria-label="Back to phone apps"
                 >
-                  ‹ <span>Apps</span>
+                  <ChevronLeft size={16} aria-hidden="true" /> <span>Apps</span>
                 </button>
                 <strong>Messages</strong>
                 <span aria-hidden="true" />
@@ -165,7 +166,7 @@ export function PhoneLauncher({
                   onClick={() => setActiveApp(null)}
                   aria-label="Back to phone apps"
                 >
-                  ‹ <span>Apps</span>
+                  <ChevronLeft size={16} aria-hidden="true" /> <span>Apps</span>
                 </button>
                 <strong>{activeApp}</strong>
                 <span aria-hidden="true" />
@@ -180,7 +181,7 @@ export function PhoneLauncher({
                   onClick={() => setActiveApp(null)}
                   aria-label="Back to phone apps"
                 >
-                  ‹ <span>Apps</span>
+                  <ChevronLeft size={16} aria-hidden="true" /> <span>Apps</span>
                 </button>
                 <strong>Billboards</strong>
                 <span aria-hidden="true" />

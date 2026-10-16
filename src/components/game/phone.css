@@ -740,11 +740,13 @@
 }
 
 .phone-message-nav {
+  position: relative;
+  z-index: 2;
   display: flex;
-  min-height: 60px;
+  min-height: 66px;
   flex: none;
   justify-content: space-around;
-  padding: 5px 12px max(5px, env(safe-area-inset-bottom));
+  padding: 5px 12px max(11px, env(safe-area-inset-bottom));
   border-top: 1px solid var(--border);
   background: var(--card);
 }
@@ -764,6 +766,9 @@
 }
 
 .phone-message-nav button.is-active {
+  position: relative;
+  z-index: 1;
+  transform: translateY(-2px);
   color: var(--success);
   background: color-mix(in srgb, var(--success) 9%, transparent);
 }

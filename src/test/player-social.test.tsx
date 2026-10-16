@@ -20,6 +20,10 @@ const mocks = vi.hoisted(() => ({
   reportPlayer: vi.fn(),
   subscribeToSocialMessages: vi.fn(),
   subscribeToFriendRequests: vi.fn(),
+  subscribeToStatusPosts: vi.fn(),
+  getFriendStatusPosts: vi.fn(),
+  createPlayerStatus: vi.fn(),
+  deletePlayerStatus: vi.fn(),
   leaveSocialChannel: vi.fn(),
 }));
 
@@ -71,10 +75,14 @@ describe("real-player social panel", () => {
       },
     ]);
     mocks.getSocialMessages.mockResolvedValue([]);
+    mocks.getFriendStatusPosts.mockResolvedValue([]);
+    mocks.createPlayerStatus.mockResolvedValue({ id: "status-1" });
+    mocks.deletePlayerStatus.mockResolvedValue({ ok: true });
     mocks.sendFriendRequest.mockResolvedValue({ status: "request_sent" });
     mocks.sendSocialMessage.mockResolvedValue({ id: "message-1" });
     mocks.subscribeToSocialMessages.mockReturnValue({});
     mocks.subscribeToFriendRequests.mockReturnValue({});
+    mocks.subscribeToStatusPosts.mockReturnValue({});
     mocks.leaveSocialChannel.mockResolvedValue(undefined);
   });
 
