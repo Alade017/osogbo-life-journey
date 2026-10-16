@@ -19,6 +19,7 @@ import { itemUseEffect } from "@/lib/item-service";
 import { validatePlayerAction } from "@/lib/player-action-service";
 import type { EquipmentSlot } from "@/lib/player-state";
 import { EQUIPMENT_SLOTS, filterEquippableInventoryForSlot } from "@/lib/equipment-service";
+import { getItemArt } from "@/lib/item-art";
 
 export const Route = createFileRoute("/_authenticated/_game/inventory")({
   head: () => pageMeta("Inventory", "Items your character carries around Osogbo."),
@@ -155,6 +156,7 @@ export function InventoryPage() {
             <div className="inventory-grid" id="inventory-items">
               {compatibleItems.map((item, index) => {
                 const Icon = ICONS[item.item?.icon ?? ""] ?? Package;
+                const artwork = getItemArt(item.item?.slug);
                 return (
                   <button
                     key={item.id}
@@ -165,10 +167,14 @@ export function InventoryPage() {
                     style={{ animationDelay: `${index * 60}ms` }}
                   >
                     <span
-                      className={`inventory-item-icon ${TONES[index % TONES.length]}`}
+                      className={`inventory-item-icon inventory-item-art ${TONES[index % TONES.length]}`}
                       aria-hidden="true"
                     >
-                      <Icon className="h-7 w-7" />
+                      {artwork ? (
+                        <img src={artwork} alt="" loading="lazy" width={72} height={72} />
+                      ) : (
+                        <Icon className="h-7 w-7" />
+                      )}
                     </span>
                     <span className="inventory-item-copy">
                       <strong>{item.item?.name}</strong>
@@ -281,12 +287,20 @@ export function InventoryPage() {
           <div className="inventory-equipment-grid">
             {EQUIPMENT_SLOTS.map((slot) => {
               const equipped = equipment?.find((item) => item.slot === slot);
+              const equippedArt = getItemArt(equipped?.item?.slug);
               return (
                 <div
                   key={slot}
                   className={`inventory-equipment-slot ${equipped ? "is-equipped" : ""} ${requestedSlot === slot ? "is-selected" : ""}`}
                 >
                   <span className="inventory-equipment-slot-name">{slot}</span>
+                  <span className="inventory-equipped-art" aria-hidden="true">
+                    {equippedArt ? (
+                      <img src={equippedArt} alt="" loading="lazy" width={64} height={64} />
+                    ) : (
+                      <Shirt size={24} />
+                    )}
+                  </span>
                   <strong>{equipped?.item?.name ?? "Empty"}</strong>
                   <Button
                     size="sm"

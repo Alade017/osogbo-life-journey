@@ -4,8 +4,8 @@
   gap: 12px;
   padding: 12px;
   overflow: auto;
-  color: var(--brand-cream);
-  background: var(--brand-ink);
+  color: var(--foreground);
+  background: var(--brand-porcelain, var(--background));
   border-radius: inherit;
 }
 .business-finance-app h2,
@@ -25,16 +25,61 @@
   min-width: 0;
   gap: 8px;
   padding: 12px;
-  border: 1px solid var(--color-surface-dark-border);
+  border: 1px solid var(--border);
   border-radius: 14px;
-  background: var(--color-surface-dark-elevated);
+  color: var(--foreground);
+  background: var(--card);
   overflow-wrap: anywhere;
 }
 .business-finance-app small,
 .business-finance-app .phone-finance-card p {
   display: block;
-  color: var(--color-text-on-dark-soft);
+  color: var(--muted-foreground);
   font-size: 12px;
+}
+.investment-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+.investment-summary > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.2rem;
+  padding: 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  background: var(--card);
+}
+.investment-summary svg {
+  color: var(--primary);
+}
+.investment-summary span {
+  color: var(--muted-foreground);
+  font-size: 0.62rem;
+}
+.investment-summary strong {
+  overflow: hidden;
+  color: var(--foreground);
+  font-size: 0.78rem;
+  text-overflow: ellipsis;
+}
+.investment-progress {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--muted);
+}
+.investment-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary);
+}
+@media (max-width: 390px) {
+  .investment-summary {
+    grid-template-columns: 1fr;
+  }
 }
 .business-finance-app label {
   display: grid;

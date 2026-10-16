@@ -76,11 +76,13 @@ function MarketPage() {
             {itemsHere.map((offer) => {
               const item = offer.item;
               const unitPrice = offer.buy_price ?? item?.buy_price ?? 0;
-              const quantity = quantities[offer.id] ?? 1;
+              const minimumQuantity = offer.minimum_quantity ?? 1;
+              const quantity = quantities[offer.id] ?? minimumQuantity;
               const quote = purchaseTotal(unitPrice, quantity, wallet?.balance ?? 0);
               const canBuy =
                 item &&
                 unitPrice > 0 &&
+                quantity >= minimumQuantity &&
                 (offer.stock === null || offer.stock >= quantity) &&
                 (item.stackable ? quantity <= item.max_stack : quantity === 1);
               return (
@@ -97,6 +99,11 @@ function MarketPage() {
                     </div>
                   </div>
                   <p className="font-semibold">{formatNaira(unitPrice)} each</p>
+                  {minimumQuantity > 1 && (
+                    <p className="rounded-lg bg-accent/20 px-3 py-2 text-xs font-semibold text-foreground">
+                      Wholesale offer · minimum {minimumQuantity} items
+                    </p>
+                  )}
                   <label className="text-sm" htmlFor={`quantity-${offer.id}`}>
                     Quantity
                   </label>
@@ -104,7 +111,7 @@ function MarketPage() {
                     id={`quantity-${offer.id}`}
                     className="w-full rounded-lg border-2 border-edge bg-background px-3 py-2"
                     type="number"
-                    min={1}
+                    min={minimumQuantity}
                     max={item?.stackable ? item.max_stack : 1}
                     step={1}
                     value={quantity}

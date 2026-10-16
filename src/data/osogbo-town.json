@@ -171,7 +171,8 @@
       { "placeId": "lantern-club", "x": 9, "z": 7, "buildingType": "club" },
       { "placeId": "community-clinic", "x": 4, "z": 7, "buildingType": "clinic" },
       { "placeId": "transit-park", "x": 2, "z": 9, "buildingType": "transit" },
-      { "placeId": "sports-ground", "x": 7, "z": 9, "buildingType": "sport" }
+      { "placeId": "sports-ground", "x": 7, "z": 9, "buildingType": "sport" },
+      { "placeId": "osun-mall", "x": 10, "z": 5, "buildingType": "market" }
     ],
     "treeCells": [
       [0, 0],
@@ -663,6 +664,43 @@
           "requirement": "Travel here first",
           "open_hours": { "start": 5, "end": 23 },
           "verify": false
+        }
+      ]
+    },
+    {
+      "id": "osun-mall",
+      "label": "Osun Mall",
+      "category": "market",
+      "districtId": "commerce-quarter",
+      "locationSlug": "osun-mall",
+      "x": 850,
+      "y": 365,
+      "verify": true,
+      "grid": { "x": 10, "z": 5 },
+      "buildingType": "market",
+      "model": "/models/city/commercial/Models/GLB%20format/building-j.glb",
+      "actions": [
+        {
+          "id": "mall-bulk-shopping",
+          "label": "Shop bulk offers",
+          "description": "Buy larger packs at server-set wholesale prices.",
+          "time_cost_minutes": 20,
+          "money_minor": { "min": 0, "max": 0 },
+          "mood_effect": 1,
+          "requirement": "Travel here first",
+          "open_hours": { "start": 8, "end": 21 },
+          "verify": true
+        },
+        {
+          "id": "mall-career-board",
+          "label": "Check supermarket careers",
+          "description": "Browse stock, retail and customer service career opportunities.",
+          "time_cost_minutes": 8,
+          "money_minor": { "min": 0, "max": 0 },
+          "mood_effect": 1,
+          "requirement": "Travel here first",
+          "open_hours": { "start": 8, "end": 20 },
+          "verify": true
         }
       ]
     },

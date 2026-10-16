@@ -3579,6 +3579,39 @@
   color: var(--jobs-navy);
   letter-spacing: -0.025em;
 }
+.inventory-item-art {
+  overflow: hidden;
+}
+.inventory-item-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.inventory-equipped-art {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--background);
+}
+.inventory-equipped-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.jobs-card-career {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin: 0 0 0.3rem;
+  color: var(--primary);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
 .jobs-metrics {
   gap: 8px;
 }
@@ -9126,10 +9159,9 @@
 }
 
 .hud-v2 .game-hud-top-row {
-  grid-template-columns: minmax(108px, 0.8fr) minmax(145px, 1.1fr) minmax(132px, 0.95fr) minmax(
-      96px,
-      0.65fr
-    ) 36px;
+  grid-template-columns:
+    minmax(108px, 0.8fr) minmax(145px, 1.1fr) minmax(132px, 0.95fr) minmax(96px, 0.65fr)
+    36px;
   grid-template-areas: "player location summary wallet notifications";
   gap: 8px;
   padding: 7px 9px;

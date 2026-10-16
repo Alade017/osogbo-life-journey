@@ -1762,6 +1762,7 @@ export type Database = {
           created_at: string;
           id: string;
           is_available: boolean;
+          minimum_quantity: number;
           item_id: string;
           sell_price: number | null;
           shop_id: string;
@@ -1773,6 +1774,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           is_available?: boolean;
+          minimum_quantity?: number;
           item_id: string;
           sell_price?: number | null;
           shop_id: string;
@@ -1784,6 +1786,7 @@ export type Database = {
           created_at?: string;
           id?: string;
           is_available?: boolean;
+          minimum_quantity?: number;
           item_id?: string;
           sell_price?: number | null;
           shop_id?: string;
@@ -2031,6 +2034,19 @@ export type Database = {
         };
         Returns: Json;
       };
+      update_player_advertisement: {
+        Args: {
+          p_advertisement_id: string;
+          p_advertiser_name: string;
+          p_title: string;
+          p_description: string;
+          p_creative_theme: string;
+        };
+        Returns: Json;
+      };
+      get_friend_status_posts: { Args: never; Returns: Json };
+      create_player_status: { Args: { p_body: string; p_theme: string }; Returns: Json };
+      delete_player_status: { Args: { p_status_id: string }; Returns: Json };
       get_business_and_investment_market: { Args: never; Returns: Json };
       buy_player_company: {
         Args: { p_business_slug: string; p_request_id: string };

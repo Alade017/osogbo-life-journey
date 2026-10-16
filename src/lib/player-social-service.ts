@@ -37,6 +37,20 @@ export type SocialMessage = {
 export type SocialReportCategory =
   "spam" | "harassment" | "inappropriate_content" | "impersonation" | "other";
 
+export type StatusTheme = "porcelain" | "leaf" | "ink" | "sunset";
+export type PlayerStatusPost = {
+  id: string;
+  characterId: string;
+  playerName: string;
+  appearance: Json;
+  gender: string;
+  body: string;
+  theme: StatusTheme;
+  createdAt: string;
+  expiresAt: string;
+  isOwn: boolean;
+};
+
 function unwrap<T>(response: { data: T | null; error: { message: string } | null }): T {
   if (response.error) throw new Error(response.error.message);
   if (response.data === null) throw new Error("The social request returned no result.");
@@ -234,6 +248,45 @@ export async function reportPlayer(input: {
       p_message_id: input.messageId ?? null,
     }),
   );
+}
+
+export async function getFriendStatusPosts(): Promise<PlayerStatusPost[]> {
+  const data = unwrap(await supabase.rpc("get_friend_status_posts"));
+  if (!Array.isArray(data)) throw new Error("Invalid status response.");
+  return data.map((value) => {
+    const row = object(value, "Invalid status post.");
+    return {
+      id: string(row["id"], "id"),
+      characterId: string(row["characterId"], "characterId"),
+      playerName: string(row["playerName"], "playerName"),
+      appearance: row["appearance"] ?? {},
+      gender: string(row["gender"], "gender"),
+      body: string(row["body"], "body"),
+      theme: string(row["theme"], "theme") as StatusTheme,
+      createdAt: string(row["createdAt"], "createdAt"),
+      expiresAt: string(row["expiresAt"], "expiresAt"),
+      isOwn: row["isOwn"] === true,
+    };
+  });
+}
+
+export async function createPlayerStatus(body: string, theme: StatusTheme) {
+  return unwrap(await supabase.rpc("create_player_status", { p_body: body, p_theme: theme }));
+}
+
+export async function deletePlayerStatus(statusId: string) {
+  return unwrap(await supabase.rpc("delete_player_status", { p_status_id: statusId }));
+}
+
+export function subscribeToStatusPosts(onChange: () => void) {
+  return supabase
+    .channel("player-status-posts")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "player_status_posts" },
+      onChange,
+    )
+    .subscribe();
 }
 
 export function subscribeToSocialMessages(

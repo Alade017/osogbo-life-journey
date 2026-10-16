@@ -1,6 +1,14 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Building2, ChartNoAxesCombined, Coins, Landmark, LockKeyhole } from "lucide-react";
+import {
+  Building2,
+  ChartNoAxesCombined,
+  Coins,
+  Landmark,
+  LockKeyhole,
+  TrendingUp,
+  WalletCards,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
@@ -36,6 +44,13 @@ export function BusinessInvestmentApp({ mode }: { mode: "company" | "invest" }) 
       </div>
     );
 
+  const activeFixed = data.myInvestments.filter((item) => !item.cancelledAt && !item.claimedAt);
+  const investedTotal = activeFixed.reduce((sum, item) => sum + item.principal, 0);
+  const expectedReturn = activeFixed.reduce(
+    (sum, item) => sum + Math.floor((item.principal * item.yieldBps) / 10_000),
+    0,
+  );
+
   return (
     <div className="phone-finance-app business-finance-app">
       {mutation.isError && (
@@ -52,6 +67,25 @@ export function BusinessInvestmentApp({ mode }: { mode: "company" | "invest" }) 
       <p className="phone-finance-disclaimer">
         Virtual in-game Naira only. These features have no real-world value.
       </p>
+      {mode === "invest" && (
+        <section className="investment-summary" aria-label="Investment portfolio summary">
+          <div>
+            <WalletCards size={17} />
+            <span>Active principal</span>
+            <strong>{formatNaira(investedTotal)}</strong>
+          </div>
+          <div>
+            <TrendingUp size={17} />
+            <span>Expected return</span>
+            <strong>{formatNaira(expectedReturn)}</strong>
+          </div>
+          <div>
+            <Coins size={17} />
+            <span>Open products</span>
+            <strong>{activeFixed.length}</strong>
+          </div>
+        </section>
+      )}
       {mode === "company" ? (
         <>
           <h2>
@@ -331,6 +365,18 @@ export function BusinessInvestmentApp({ mode }: { mode: "company" | "invest" }) 
                       Cancel investment
                     </Button>
                   )}
+                </div>
+              )}
+              {!investment.cancelledAt && !investment.claimedAt && (
+                <div
+                  className="investment-progress"
+                  aria-label={`Matures ${new Date(investment.maturesAt).toLocaleDateString("en-NG")}`}
+                >
+                  <span
+                    style={{
+                      width: `${Math.max(4, Math.min(100, 100 - ((new Date(investment.maturesAt).getTime() - Date.now()) / (24 * 60 * 60 * 1000 * 30)) * 100))}%`,
+                    }}
+                  />
                 </div>
               )}
             </article>

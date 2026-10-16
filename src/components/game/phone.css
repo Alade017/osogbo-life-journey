@@ -12,6 +12,207 @@
   box-shadow: var(--elevation-card);
 }
 
+/* Full-height phone apps keep native scrolling while hiding visual scrollbars. */
+.scrollbar-hidden,
+.phone-app-view,
+.phone-app-view *,
+.phone-finance-app,
+.phone-conversation-list,
+.phone-message-history,
+.phone-new-chat-panel {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hidden::-webkit-scrollbar,
+.phone-app-view::-webkit-scrollbar,
+.phone-app-view *::-webkit-scrollbar,
+.phone-finance-app::-webkit-scrollbar,
+.phone-conversation-list::-webkit-scrollbar,
+.phone-message-history::-webkit-scrollbar,
+.phone-new-chat-panel::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+.phone-app-view {
+  min-height: 0;
+  flex: 1;
+  color: #0a0a0a;
+  background: var(--brand-porcelain, var(--background));
+}
+.phone-app-view .phone-app-toolbar {
+  color: #0a0a0a;
+  background: var(--card);
+  border-bottom-color: var(--border);
+}
+.phone-status-page,
+.phone-theme-page {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.8rem;
+  overflow-y: auto;
+  padding: 0.9rem;
+  color: #0a0a0a;
+  background: var(--brand-porcelain, var(--background));
+}
+.phone-status-page > header,
+.phone-theme-page > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.phone-status-page h3,
+.phone-theme-page h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 800;
+}
+.phone-status-page header p,
+.phone-theme-page header p {
+  margin: 0.15rem 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+}
+.phone-status-page form {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--card);
+}
+.phone-status-page form label {
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+.phone-status-page textarea {
+  min-height: 88px;
+  resize: vertical;
+  padding: 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  color: #0a0a0a;
+  background: var(--background);
+}
+.phone-status-themes {
+  display: flex;
+  gap: 0.55rem;
+}
+.phone-status-themes button {
+  width: 44px;
+  height: 44px;
+  border: 2px solid transparent;
+  border-radius: 50%;
+}
+.phone-status-themes button[aria-pressed="true"] {
+  border-color: var(--ring);
+  outline: 2px solid var(--card);
+  outline-offset: -4px;
+}
+.phone-status-feed {
+  display: grid;
+  gap: 0.65rem;
+}
+.phone-status-card {
+  display: grid;
+  gap: 1rem;
+  min-height: 130px;
+  padding: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+}
+.phone-status-card > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+}
+.phone-status-card p {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+.phone-status-card button {
+  justify-self: start;
+  min-height: 44px;
+  text-decoration: underline;
+  font-size: 0.72rem;
+}
+.status-theme-porcelain {
+  color: #0a0a0a;
+  background: var(--brand-porcelain, var(--background));
+}
+.status-theme-leaf {
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+.status-theme-ink {
+  color: var(--brand-cream);
+  background: var(--brand-ink);
+}
+.status-theme-sunset {
+  color: #0a0a0a;
+  background: var(--accent);
+}
+.phone-theme-options {
+  display: grid;
+  gap: 0.6rem;
+}
+.phone-theme-options button {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  min-height: 58px;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  background: var(--card);
+  text-align: left;
+}
+.phone-theme-options button[aria-pressed="true"] {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ring) 20%, transparent);
+}
+.phone-theme-options small {
+  color: var(--primary);
+}
+.message-theme-swatch {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+}
+.theme-porcelain {
+  background: var(--brand-porcelain, var(--background));
+}
+.theme-leaf {
+  background: var(--primary);
+}
+.theme-ink {
+  background: var(--brand-ink);
+}
+.theme-warm {
+  background: var(--accent);
+}
+.phone-messenger[data-message-theme="leaf"] .phone-message-history {
+  background: color-mix(in srgb, var(--primary) 9%, var(--brand-porcelain, var(--background)));
+}
+.phone-messenger[data-message-theme="ink"] .phone-message-history {
+  background: var(--brand-ink);
+}
+.phone-messenger[data-message-theme="warm"] .phone-message-history {
+  background: color-mix(in srgb, var(--accent) 18%, var(--brand-porcelain, var(--background)));
+}
+.phone-message-nav button {
+  min-width: 0;
+  flex: 1;
+}
+
 .phone-dialog > button:last-child {
   z-index: 3;
   top: 12px;

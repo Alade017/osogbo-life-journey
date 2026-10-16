@@ -341,7 +341,7 @@ function JobsPage() {
             {filteredJobs.length} {filteredJobs.length === 1 ? "role" : "roles"}
           </span>
         </div>
-        <div className="jobs-card-grid grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="jobs-card-grid grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {filteredJobs.map((j) => {
             const requiredCourse = j.required_course_slug
               ? courses?.find((course) => course.slug === j.required_course_slug)
@@ -373,12 +373,15 @@ function JobsPage() {
               <div
                 key={j.id}
                 className={cn(
-                  "game-panel jobs-card flex flex-col p-5",
+                  "game-panel jobs-card flex flex-col p-4",
                   locked && "jobs-card-locked",
                 )}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
+                    <p className="jobs-card-career">
+                      <BriefcaseBusiness size={12} /> Career path
+                    </p>
                     <p className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
                       <MapPin className="h-3 w-3" />
                       {workplace?.name ?? "City-wide"} · {jobLocation?.name ?? "Osogbo"}

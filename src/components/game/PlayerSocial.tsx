@@ -5,6 +5,8 @@ import {
   ArrowLeft,
   ChevronRight,
   MessageCircle,
+  CircleDashed,
+  Palette,
   Plus,
   Search,
   Send,
@@ -33,15 +35,20 @@ import {
   searchPlayerProfiles,
   sendFriendRequest,
   sendSocialMessage,
+  createPlayerStatus,
+  deletePlayerStatus,
+  getFriendStatusPosts,
+  subscribeToStatusPosts,
   subscribeToSocialMessages,
   subscribeToFriendRequests,
   unblockPlayer,
   type SocialMessage,
   type SocialPlayer,
   type SocialReportCategory,
+  type StatusTheme,
 } from "@/lib/player-social-service";
 
-type Tab = "players" | "messages" | "friends";
+type Tab = "players" | "messages" | "friends" | "status" | "settings";
 type ReportTarget = { id: string; name: string; messageId?: string };
 type ActiveChat = { conversationId: string; characterId: string; name: string };
 
@@ -279,6 +286,13 @@ export function PlayerSocial({
   const [reportCategory, setReportCategory] = useState<SocialReportCategory>("harassment");
   const [reportDetails, setReportDetails] = useState("");
   const [activeChat, setActiveChat] = useState<ActiveChat | null>(null);
+  const [statusBody, setStatusBody] = useState("");
+  const [statusTheme, setStatusTheme] = useState<StatusTheme>("leaf");
+  const [messageTheme, setMessageTheme] = useState(() =>
+    typeof window === "undefined"
+      ? "porcelain"
+      : (localStorage.getItem("osogbo-message-theme") ?? "porcelain"),
+  );
   const characterQuery = useQuery(q.character());
   const locationsQuery = useQuery(q.locations());
   const character = characterQuery.data;
@@ -288,6 +302,11 @@ export function PlayerSocial({
     queryFn: getPlayerSocialOverview,
   });
   const overview = overviewQuery.data;
+  const statusQuery = useQuery({
+    queryKey: ["playerStatusPosts"],
+    queryFn: getFriendStatusPosts,
+    enabled: phoneMode,
+  });
   const friendIds = useMemo(
     () => (overview?.friends ?? []).map((friend) => friend.character_id),
     [overview?.friends],
@@ -413,6 +432,15 @@ export function PlayerSocial({
       void leaveSocialChannel(channel);
     };
   }, [qc]);
+  useEffect(() => {
+    if (!phoneMode) return;
+    const channel = subscribeToStatusPosts(
+      () => void qc.invalidateQueries({ queryKey: ["playerStatusPosts"] }),
+    );
+    return () => {
+      void leaveSocialChannel(channel);
+    };
+  }, [phoneMode, qc]);
 
   const refreshSocial = () =>
     Promise.all([
@@ -487,6 +515,21 @@ export function PlayerSocial({
     },
     onError: (error: Error) => toast.error(error.message),
   });
+  const statusMutation = useMutation({
+    mutationFn: ({ body, theme }: { body: string; theme: StatusTheme }) =>
+      createPlayerStatus(body, theme),
+    onSuccess: async () => {
+      setStatusBody("");
+      toast.success("Your status is live for 24 hours.");
+      await qc.invalidateQueries({ queryKey: ["playerStatusPosts"] });
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const deleteStatusMutation = useMutation({
+    mutationFn: deletePlayerStatus,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["playerStatusPosts"] }),
+    onError: (error: Error) => toast.error(error.message),
+  });
   const runMessage = async (body: string, direct = false) => {
     if (direct && activeChat) {
       await sendMutation.mutateAsync({
@@ -511,6 +554,7 @@ export function PlayerSocial({
   return (
     <section
       className={phoneMode ? "phone-messenger" : "game-panel space-y-4 p-4 sm:p-5"}
+      data-message-theme={phoneMode ? messageTheme : undefined}
       aria-labelledby={phoneMode ? undefined : "player-social-title"}
       aria-label={phoneMode ? "Phone messages" : undefined}
     >
@@ -1039,7 +1083,114 @@ export function PlayerSocial({
           </div>
         ))}
 
-      {phoneMode && (tab === "players" || (tab === "messages" && !activeChat)) && (
+      {phoneMode && tab === "status" && (
+        <section className="phone-status-page scrollbar-hidden" aria-label="Player statuses">
+          <header>
+            <div>
+              <h3>Status</h3>
+              <p>Share an update with friends for 24 hours.</p>
+            </div>
+            <CircleDashed size={22} />
+          </header>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              statusMutation.mutate({ body: statusBody.trim(), theme: statusTheme });
+            }}
+          >
+            <label htmlFor="player-status-body">New status</label>
+            <textarea
+              id="player-status-body"
+              maxLength={280}
+              rows={4}
+              value={statusBody}
+              onChange={(event) => setStatusBody(event.target.value)}
+              placeholder="What’s happening in your Osogbo Life?"
+            />
+            <div className="phone-status-themes" aria-label="Status background">
+              {(["porcelain", "leaf", "ink", "sunset"] as const).map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={`status-theme-${value}`}
+                  aria-label={`${value} status theme`}
+                  aria-pressed={statusTheme === value}
+                  onClick={() => setStatusTheme(value)}
+                />
+              ))}
+            </div>
+            <Button type="submit" disabled={!statusBody.trim() || statusMutation.isPending}>
+              {statusMutation.isPending ? "Posting…" : "Post status"}
+            </Button>
+          </form>
+          <div className="phone-status-feed">
+            {statusQuery.isPending ? (
+              <p>Loading statuses…</p>
+            ) : statusQuery.error ? (
+              <p role="alert">{statusQuery.error.message}</p>
+            ) : statusQuery.data?.length ? (
+              statusQuery.data.map((post) => (
+                <article key={post.id} className={`phone-status-card status-theme-${post.theme}`}>
+                  <div>
+                    <strong>{post.isOwn ? "Your status" : post.playerName}</strong>
+                    <time>
+                      {new Intl.DateTimeFormat("en-NG", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        timeZone: "Africa/Lagos",
+                      }).format(new Date(post.createdAt))}
+                    </time>
+                  </div>
+                  <p>{post.body}</p>
+                  {post.isOwn && (
+                    <button type="button" onClick={() => deleteStatusMutation.mutate(post.id)}>
+                      Delete status
+                    </button>
+                  )}
+                </article>
+              ))
+            ) : (
+              <p className="phone-inbox-state">No active statuses. Post the first update.</p>
+            )}
+          </div>
+        </section>
+      )}
+
+      {phoneMode && tab === "settings" && (
+        <section className="phone-theme-page">
+          <header>
+            <Palette size={22} />
+            <div>
+              <h3>Chat theme</h3>
+              <p>Choose how Messages looks on this device.</p>
+            </div>
+          </header>
+          <div className="phone-theme-options">
+            {[
+              { id: "porcelain", label: "Porcelain" },
+              { id: "leaf", label: "Leaf green" },
+              { id: "ink", label: "Night ink" },
+              { id: "warm", label: "Warm cream" },
+            ].map((choice) => (
+              <button
+                key={choice.id}
+                type="button"
+                aria-pressed={messageTheme === choice.id}
+                onClick={() => {
+                  setMessageTheme(choice.id);
+                  localStorage.setItem("osogbo-message-theme", choice.id);
+                }}
+              >
+                <span className={`message-theme-swatch theme-${choice.id}`} />
+                <strong>{choice.label}</strong>
+                {messageTheme === choice.id && <small>Selected</small>}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {phoneMode && !activeChat && (
         <nav className="phone-message-nav" aria-label="Messages navigation">
           <button
             type="button"
@@ -1061,6 +1212,24 @@ export function PlayerSocial({
           >
             <Users size={18} aria-hidden="true" />
             <span>People</span>
+          </button>
+          <button
+            type="button"
+            className={tab === "status" ? "is-active" : ""}
+            aria-current={tab === "status" ? "page" : undefined}
+            onClick={() => setTab("status")}
+          >
+            <CircleDashed size={18} aria-hidden="true" />
+            <span>Status</span>
+          </button>
+          <button
+            type="button"
+            className={tab === "settings" ? "is-active" : ""}
+            aria-current={tab === "settings" ? "page" : undefined}
+            onClick={() => setTab("settings")}
+          >
+            <Palette size={18} aria-hidden="true" />
+            <span>Theme</span>
           </button>
         </nav>
       )}

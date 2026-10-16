@@ -70,6 +70,25 @@ export async function purchasePlayerAd(input: PurchaseAdInput) {
   return data;
 }
 
+export type UpdateAdInput = Pick<
+  PurchaseAdInput,
+  "advertiserName" | "title" | "description" | "creativeTheme"
+> & { advertisementId: string };
+
+export async function updatePlayerAd(input: UpdateAdInput) {
+  const { data, error } = await supabase.rpc("update_player_advertisement", {
+    p_advertisement_id: input.advertisementId,
+    p_advertiser_name: input.advertiserName,
+    p_title: input.title,
+    p_description: input.description,
+    p_creative_theme: input.creativeTheme,
+  });
+  if (error) throw new Error(error.message);
+  if (!data || typeof data !== "object" || Array.isArray(data) || data["ok"] !== true)
+    throw new Error("The server did not confirm the billboard update.");
+  return data;
+}
+
 export function billboardCampaignPrice(dailyPrice: number, durationDays: number) {
   return dailyPrice * durationDays;
 }

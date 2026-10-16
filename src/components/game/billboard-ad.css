@@ -65,3 +65,10 @@
   border-top: 1px solid var(--border);
   padding-top: 0.5rem;
 }
+
+.billboard-edit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
