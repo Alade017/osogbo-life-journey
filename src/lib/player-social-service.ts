@@ -31,6 +31,15 @@ export type SocialMessage = {
   location_id: string | null;
   conversation_id: string | null;
   body: string;
+  message_type: "text" | "voice";
+  voice_duration_ms: number | null;
+  reply_to_message_id: string | null;
+  reply: {
+    messageType: "text" | "voice";
+    body: string;
+    voiceDurationMs: number | null;
+    senderName: string;
+  } | null;
   created_at: string;
 };
 
@@ -197,16 +206,27 @@ export async function sendSocialMessage(input: {
   body: string;
   locationId?: string;
   conversationId?: string;
+  replyToMessageId?: string;
 }) {
-  return unwrap(
-    await supabase.rpc("send_social_message", {
-      p_channel: input.channel,
-      p_body: input.body,
-      p_request_id: crypto.randomUUID(),
-      p_location_id: input.locationId ?? null,
-      p_conversation_id: input.conversationId ?? null,
-    }),
-  );
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw new Error("Sign in to send messages.");
+  const response = await fetch("/api/messages/send", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      "Idempotency-Key": crypto.randomUUID(),
+    },
+    body: JSON.stringify(input),
+  });
+  const result = (await response.json().catch(() => null)) as {
+    error?: { code?: string };
+    [key: string]: unknown;
+  } | null;
+  if (!response.ok)
+    throw new Error(result?.error?.code ?? "Your message could not be sent. Try again.");
+  return result;
 }
 
 export async function getSocialMessages(input: { locationId?: string; conversationId?: string }) {
@@ -229,6 +249,24 @@ export async function getSocialMessages(input: { locationId?: string; conversati
       location_id: typeof row["location_id"] === "string" ? row["location_id"] : null,
       conversation_id: typeof row["conversation_id"] === "string" ? row["conversation_id"] : null,
       body: string(row["body"], "body"),
+      message_type: row["message_type"] === "voice" ? "voice" : "text",
+      voice_duration_ms:
+        typeof row["voice_duration_ms"] === "number" ? row["voice_duration_ms"] : null,
+      reply_to_message_id:
+        typeof row["reply_to_message_id"] === "string" ? row["reply_to_message_id"] : null,
+      reply:
+        typeof row["reply_to_message_id"] === "string"
+          ? {
+              messageType: row["reply_message_type"] === "voice" ? "voice" : "text",
+              body: typeof row["reply_body"] === "string" ? row["reply_body"] : "",
+              voiceDurationMs:
+                typeof row["reply_voice_duration_ms"] === "number"
+                  ? row["reply_voice_duration_ms"]
+                  : null,
+              senderName:
+                typeof row["reply_sender_name"] === "string" ? row["reply_sender_name"] : "Player",
+            }
+          : null,
       created_at: string(row["created_at"], "created_at"),
     } satisfies SocialMessage;
   });

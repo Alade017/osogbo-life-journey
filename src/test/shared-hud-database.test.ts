@@ -42,7 +42,7 @@ describe("shared HUD database acceptance", () => {
        from public.map_landmarks landmark join public.locations location on location.id=landmark.location_id
        where landmark.is_available order by landmark.id`,
     );
-    expect(places.rows).toHaveLength(9);
+    expect(places.rows).toHaveLength(10);
     expect(places.rows.every((place) => place.latitude === null && place.longitude === null)).toBe(
       true,
     );
@@ -670,6 +670,7 @@ describe("shared HUD database acceptance", () => {
     expect(firstPurchase.rows[0]!.result).toEqual({
       item: "Insulated Flask",
       quantity: 1,
+      minimum_quantity: 1,
       unit_price: 1500,
       total: 1500,
       cash: 3500,
@@ -962,5 +963,123 @@ describe("shared HUD database acceptance", () => {
     expect(owned.rows[0]!.quantity).toBe(1);
     expect(transaction.rows[0]!.count).toBe(1);
     expect(wallet.rows[0]!.balance).toBe(4100);
+  });
+
+  it("enforces chat pin, mute, block, and blocked voice rules on the server", async () => {
+    const me = await db.query<{ id: string }>("select id from public.characters where user_id=$1", [
+      uid,
+    ]);
+    const otherUsers = [
+      "31111111-1111-4111-8111-111111111111",
+      "41111111-1111-4111-8111-111111111111",
+      "51111111-1111-4111-8111-111111111111",
+      "61111111-1111-4111-8111-111111111111",
+    ];
+    const threadIds: string[] = [];
+
+    for (const [index, userId] of otherUsers.entries()) {
+      await db.query("insert into auth.users(id) values($1)", [userId]);
+      await db.query("insert into public.profiles(id) values($1)", [userId]);
+      const other = await db.query<{ id: string }>(
+        `insert into public.characters(user_id,name,gender,age,personality,energy,hunger,happiness,social)
+         values($1,$2,'female',21,'social',80,20,70,60) returning id`,
+        [userId, `Chat friend ${index + 1}`],
+      );
+      await db.query(
+        `insert into public.player_friendships(first_character_id,second_character_id)
+         values(least($1::uuid,$2::uuid),greatest($1::uuid,$2::uuid))`,
+        [me.rows[0]!.id, other.rows[0]!.id],
+      );
+      const thread = await db.query<{ id: string }>(
+        `insert into public.social_conversations(first_character_id,second_character_id)
+         values(least($1::uuid,$2::uuid),greatest($1::uuid,$2::uuid)) returning id`,
+        [me.rows[0]!.id, other.rows[0]!.id],
+      );
+      threadIds.push(thread.rows[0]!.id);
+    }
+
+    for (const threadId of threadIds.slice(0, 2)) {
+      await db.query("select public.thread_pref_action_as_user($1,$2,'pin',null)", [uid, threadId]);
+    }
+    const concurrentPins = await Promise.allSettled(
+      threadIds
+        .slice(2)
+        .map((threadId) =>
+          db.query("select public.thread_pref_action_as_user($1,$2,'pin',null)", [uid, threadId]),
+        ),
+    );
+    expect(concurrentPins.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+    expect(concurrentPins.filter((result) => result.status === "rejected")).toHaveLength(1);
+
+    await db.query("select public.thread_pref_action_as_user($1,$2,'mute','8h')", [
+      uid,
+      threadIds[0],
+    ]);
+    const mutedUtc = await db.query<{ expires: number; remaining: number }>(
+      `select extract(epoch from muted_until)::float8 as expires,
+        extract(epoch from muted_until-now())::float8 as remaining
+       from public.thread_prefs where account_id=$1 and thread_id=$2`,
+      [uid, threadIds[0]],
+    );
+    expect(mutedUtc.rows[0]!.remaining).toBeGreaterThan(8 * 60 * 60 - 5);
+    expect(mutedUtc.rows[0]!.remaining).toBeLessThanOrEqual(8 * 60 * 60);
+    await db.exec("set time zone 'Pacific/Auckland'");
+    const mutedAfterZoneChange = await db.query<{ expires: number }>(
+      "select extract(epoch from muted_until)::float8 as expires from public.thread_prefs where account_id=$1 and thread_id=$2",
+      [uid, threadIds[0]],
+    );
+    expect(mutedAfterZoneChange.rows[0]!.expires).toBe(mutedUtc.rows[0]!.expires);
+    await db.exec("set time zone 'UTC'");
+
+    const voiceThread = threadIds[1]!;
+    const voice = await db.query<{ result: { id: string } }>(
+      "select public.create_voice_message_as_user($1,$2,$3,4200,$4) as result",
+      [uid, voiceThread, `voice/${voiceThread}/quoted.ogg`, "81111111-1111-4111-8111-111111111111"],
+    );
+    await db.query(
+      "select public.send_social_message_as_user($1,'private','Got it',$2,null,$3,$4)",
+      [uid, "91111111-1111-4111-8111-111111111111", voiceThread, voice.rows[0]!.result.id],
+    );
+    const history = await db.query<{ result: Array<Record<string, unknown>> }>(
+      "select public.get_social_messages(null,$1,null,50) as result",
+      [voiceThread],
+    );
+    expect(history.rows[0]!.result.find((message) => message["body"] === "Got it")).toMatchObject({
+      reply_to_message_id: voice.rows[0]!.result.id,
+      reply_message_type: "voice",
+      reply_voice_duration_ms: 4200,
+    });
+
+    const blockedThread = threadIds[0]!;
+    const blockedCharacter = await db.query<{ id: string }>(
+      `select case when first_character_id=$1 then second_character_id else first_character_id end as id
+       from public.social_conversations where id=$2`,
+      [me.rows[0]!.id, blockedThread],
+    );
+    await db.query(
+      "insert into public.player_blocks(blocker_character_id,blocked_character_id) values($1,$2)",
+      [me.rows[0]!.id, blockedCharacter.rows[0]!.id],
+    );
+    const cleared = await db.query<{ count: number }>(
+      "select count(*)::int as count from public.thread_prefs where thread_id=$1",
+      [blockedThread],
+    );
+    expect(cleared.rows[0]!.count).toBe(0);
+
+    const accepted = await db.query<{ result: { accepted: boolean; delivered: boolean } }>(
+      "select public.create_voice_message_as_user($1,$2,$3,1000,$4) as result",
+      [
+        uid,
+        blockedThread,
+        `voice/${blockedThread}/blocked.ogg`,
+        "71111111-1111-4111-8111-111111111111",
+      ],
+    );
+    expect(accepted.rows[0]!.result).toMatchObject({ accepted: true, delivered: false });
+    const delivered = await db.query<{ count: number }>(
+      "select count(*)::int as count from public.social_messages where request_id=$1",
+      ["71111111-1111-4111-8111-111111111111"],
+    );
+    expect(delivered.rows[0]!.count).toBe(0);
   });
 });
