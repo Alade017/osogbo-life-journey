@@ -7,6 +7,7 @@ export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
       { title: "Log in — OSOGBO LIFE" },
+      { name: "robots", content: "noindex, follow" },
       { name: "description", content: "Log in to continue your life in the city of Osogbo." },
       { property: "og:title", content: "Log in — OSOGBO LIFE" },
       {
@@ -30,11 +31,10 @@ function LoginPage() {
       return;
     let active = true;
     supabase.auth.getSession().then(({ data }) => {
-      if (active && data.session) navigate({ to: "/home", search: { visit: undefined } });
+      if (active && data.session) navigate({ to: "/enter" });
     });
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
-      if (active && session && event === "SIGNED_IN")
-        void navigate({ to: "/home", search: { visit: undefined } });
+      if (active && session && event === "SIGNED_IN") void navigate({ to: "/enter" });
     });
     return () => {
       active = false;

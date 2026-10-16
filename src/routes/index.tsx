@@ -24,7 +24,17 @@ export const Route = createFileRoute("/")({
         property: "og:description",
         content: "Create your character and make a life in a miniature Osogbo-inspired city.",
       },
+      { name: "twitter:title", content: "OSOGBO LIFE — A Nigerian life simulation game" },
+      {
+        name: "twitter:description",
+        content:
+          "Explore a fictional Osogbo-inspired city, find work, and build your virtual life.",
+      },
+      { name: "robots", content: "index, follow" },
     ],
+    links: import.meta.env["VITE_SITE_URL"]
+      ? [{ rel: "canonical", href: import.meta.env["VITE_SITE_URL"].replace(/\/$/, "") + "/" }]
+      : [],
   }),
   component: Landing,
 });
@@ -78,7 +88,7 @@ function Landing() {
     sessionState === "checking" || (sessionState === "signed-in" && characterQuery.isLoading);
 
   const primaryLink = character
-    ? "/home"
+    ? "/enter"
     : sessionState === "signed-in"
       ? "/create-character"
       : "/signup";

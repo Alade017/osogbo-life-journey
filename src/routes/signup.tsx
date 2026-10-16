@@ -5,6 +5,7 @@ export const Route = createFileRoute("/signup")({
   head: () => ({
     meta: [
       { title: "Sign up — OSOGBO LIFE" },
+      { name: "robots", content: "noindex, follow" },
       {
         name: "description",
         content: "Create your OSOGBO LIFE account and start a new life in the city.",

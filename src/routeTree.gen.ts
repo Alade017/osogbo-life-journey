@@ -15,6 +15,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as SignupRouteImport } from './routes/signup'
 import { Route as AuthenticatedGameRouteImport } from './routes/_authenticated/_game'
 import { Route as AuthenticatedCreateCharacterRouteImport } from './routes/_authenticated/create-character'
+import { Route as AuthenticatedEnterRouteImport } from './routes/_authenticated/enter'
 import { Route as AuthenticatedGameBusinessesRouteImport } from './routes/_authenticated/_game/businesses'
 import { Route as AuthenticatedGameEducationRouteImport } from './routes/_authenticated/_game/education'
 import { Route as AuthenticatedGameHomeRouteImport } from './routes/_authenticated/_game/home'
@@ -80,6 +81,11 @@ const AuthenticatedCreateCharacterRoute =
     path: '/create-character',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedEnterRoute = AuthenticatedEnterRouteImport.update({
+  id: '/enter',
+  path: '/enter',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedGameBusinessesRoute =
   AuthenticatedGameBusinessesRouteImport.update({
     id: '/businesses',
@@ -269,6 +275,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/create-character': typeof AuthenticatedCreateCharacterRoute
+  '/enter': typeof AuthenticatedEnterRoute
   '/businesses': typeof AuthenticatedGameBusinessesRoute
   '/education': typeof AuthenticatedGameEducationRoute
   '/home': typeof AuthenticatedGameHomeRoute
@@ -310,6 +317,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/signup': typeof SignupRoute
   '/create-character': typeof AuthenticatedCreateCharacterRoute
+  '/enter': typeof AuthenticatedEnterRoute
   '/businesses': typeof AuthenticatedGameBusinessesRoute
   '/education': typeof AuthenticatedGameEducationRoute
   '/home': typeof AuthenticatedGameHomeRoute
@@ -354,6 +362,7 @@ export interface FileRoutesById {
   '/signup': typeof SignupRoute
   '/_authenticated/_game': typeof AuthenticatedGameRouteWithChildren
   '/_authenticated/create-character': typeof AuthenticatedCreateCharacterRoute
+  '/_authenticated/enter': typeof AuthenticatedEnterRoute
   '/_authenticated/_game/businesses': typeof AuthenticatedGameBusinessesRoute
   '/_authenticated/_game/education': typeof AuthenticatedGameEducationRoute
   '/_authenticated/_game/home': typeof AuthenticatedGameHomeRoute
@@ -397,6 +406,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/create-character'
+    | '/enter'
     | '/businesses'
     | '/education'
     | '/home'
@@ -438,6 +448,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/signup'
     | '/create-character'
+    | '/enter'
     | '/businesses'
     | '/education'
     | '/home'
@@ -481,6 +492,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/_authenticated/_game'
     | '/_authenticated/create-character'
+    | '/_authenticated/enter'
     | '/_authenticated/_game/businesses'
     | '/_authenticated/_game/education'
     | '/_authenticated/_game/home'
@@ -586,6 +598,13 @@ declare module '@tanstack/react-router' {
       path: '/create-character'
       fullPath: '/create-character'
       preLoaderRoute: typeof AuthenticatedCreateCharacterRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/enter': {
+      id: '/_authenticated/enter'
+      path: '/enter'
+      fullPath: '/enter'
+      preLoaderRoute: typeof AuthenticatedEnterRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/_game/businesses': {
@@ -880,11 +899,13 @@ const AuthenticatedGameRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedGameRoute: typeof AuthenticatedGameRouteWithChildren
   AuthenticatedCreateCharacterRoute: typeof AuthenticatedCreateCharacterRoute
+  AuthenticatedEnterRoute: typeof AuthenticatedEnterRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGameRoute: AuthenticatedGameRouteWithChildren,
   AuthenticatedCreateCharacterRoute: AuthenticatedCreateCharacterRoute,
+  AuthenticatedEnterRoute: AuthenticatedEnterRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

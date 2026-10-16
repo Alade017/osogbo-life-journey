@@ -14,6 +14,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 import appCss from "../styles.css?url";
 
+const siteOrigin = import.meta.env["VITE_SITE_URL"]?.replace(/\/$/, "");
+const socialImage = siteOrigin ? `${siteOrigin}/social-preview.png` : "/social-preview.png";
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -84,14 +87,22 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content: "A playful Nigerian life simulation game set in a miniature Osogbo-inspired city.",
       },
       { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "OSOGBO LIFE" },
+      { property: "og:image", content: socialImage },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:image", content: socialImage },
+      { name: "theme-color", content: "#f5f2ea" },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+      { rel: "icon", href: "/favicon.ico", sizes: "any" },
+      { rel: "icon", href: "/favicon-32.png", type: "image/png", sizes: "32x32" },
+      { rel: "apple-touch-icon", href: "/favicon-192.png", sizes: "192x192" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {

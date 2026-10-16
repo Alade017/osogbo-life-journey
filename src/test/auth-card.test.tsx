@@ -97,19 +97,14 @@ describe("direct Supabase Google authentication", () => {
     expect(await screen.findByText(/You’ll return to the game/)).toBeInTheDocument();
   });
 
-  it("routes successful password login through the authenticated game shell", async () => {
+  it("routes successful password login through the authenticated entry page", async () => {
     auth.signInWithPassword.mockResolvedValue({ error: null });
     render(<AuthCard mode="login" />);
     fireEvent.change(screen.getByLabelText("Email"), { target: { value: "player@example.com" } });
     fireEvent.change(screen.getByLabelText("Password"), { target: { value: "password123" } });
     fireEvent.click(screen.getByRole("button", { name: "Log in" }));
 
-    await waitFor(() =>
-      expect(auth.navigate).toHaveBeenCalledWith({
-        to: "/home",
-        search: { visit: undefined },
-      }),
-    );
+    await waitFor(() => expect(auth.navigate).toHaveBeenCalledWith({ to: "/enter" }));
     expect(auth.prime.mock.invocationCallOrder[0]).toBeLessThan(
       auth.signInWithPassword.mock.invocationCallOrder[0]!,
     );

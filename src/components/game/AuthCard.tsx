@@ -87,9 +87,8 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
         primeGameAudioForLogin();
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        // The protected game shell redirects new accounts to character creation
-        // and keeps returning accounts on their saved game.
-        navigate({ to: "/home", search: { visit: undefined } });
+        // The entry page checks the saved character before opening the game.
+        navigate({ to: "/enter" });
       }
     } catch (err) {
       void disableGameAudio();

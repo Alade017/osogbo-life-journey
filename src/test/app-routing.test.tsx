@@ -21,6 +21,7 @@ describe("App routing", () => {
       "/login",
       "/signup",
       "/create-character",
+      "/enter",
       "/home",
       "/house",
       "/map",
