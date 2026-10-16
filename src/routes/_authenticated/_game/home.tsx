@@ -113,8 +113,11 @@ function MyCityHome() {
           ? { Authorization: `Bearer ${sessionData.session.access_token}` }
           : {},
       });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body?.error?.code ?? "Home could not be loaded.");
+      const body = await response.json().catch(() => null);
+      if (!response.ok)
+        throw new Error(
+          body?.error?.reason ?? body?.error?.code ?? "Home could not be loaded. Please retry.",
+        );
       return body as {
         home: null | {
           id: string;
@@ -608,6 +611,22 @@ function MyCityHome() {
         <>
           {housingHomeQuery.isLoading ? (
             <LoadingState />
+          ) : housingHomeQuery.isError ? (
+            <section className="game-panel p-5" role="alert">
+              <h2 className="font-display text-lg font-bold">Your home could not load</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {housingHomeQuery.error instanceof Error
+                  ? housingHomeQuery.error.message
+                  : "Check your connection and try again."}
+              </p>
+              <button
+                type="button"
+                className="mt-3 min-h-11 rounded-full bg-primary px-4 text-primary-foreground"
+                onClick={() => void housingHomeQuery.refetch()}
+              >
+                Retry loading home
+              </button>
+            </section>
           ) : housingHomeQuery.data?.home ? (
             <LayeredHomeScene
               house={{

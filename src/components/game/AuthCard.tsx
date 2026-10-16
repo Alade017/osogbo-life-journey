@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import cityPhoto from "@/assets/osogbo-city.jpg";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +15,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -67,26 +69,35 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
         toast.success("Password reset email sent.");
       } else if (mode === "signup") {
         primeGameAudioForLogin();
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            // Confirmation must return to a public route; the login page then
-            // resolves whether this account needs a character or has a save.
-            emailRedirectTo: `${window.location.origin}/login`,
-            data: { username: username.trim() },
-          },
+        const response = await fetch("/api/auth/username/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
         });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error ?? "Could not create account.");
+        const { error } = await supabase.auth.setSession(result);
         if (error) throw error;
-        if (data.session) navigate({ to: "/create-character" });
-        else {
-          void disableGameAudio();
-          setSent(true);
-        }
+        navigate({ to: "/create-character" });
       } else {
         primeGameAudioForLogin();
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        if (username.includes("@")) {
+          const { error } = await supabase.auth.signInWithPassword({
+            email: username.trim(),
+            password,
+          });
+          if (error) throw error;
+        } else {
+          const response = await fetch("/api/auth/username/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password }),
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error ?? "Username or password is incorrect.");
+          const { error } = await supabase.auth.setSession(result);
+          if (error) throw error;
+        }
         // The entry page checks the saved character before opening the game.
         navigate({ to: "/enter" });
       }
@@ -108,23 +119,6 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
       if (error) throw error;
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Google sign-in failed");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function continueAsGuest() {
-    setBusy(true);
-    primeGameAudioForLogin();
-    try {
-      const { error } = await supabase.auth.signInAnonymously({
-        options: { data: { username: "guest" } },
-      });
-      if (error) throw error;
-      navigate({ to: "/create-character" });
-    } catch (error) {
-      toast.error(`Guest play is unavailable. ${(error as Error).message}`);
-      void disableGameAudio();
     } finally {
       setBusy(false);
     }
@@ -167,19 +161,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
             <Link to="/" className="mb-7 inline-block">
               <Logo />
             </Link>
-            {sent ? (
-              <div>
-                <h2 className="text-2xl font-bold">Check your email</h2>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  We sent a confirmation link to <strong>{email}</strong>. Click it to confirm your
-                  account. You’ll return to the game to create a character or continue if you
-                  already have one.
-                </p>
-                <Button asChild variant="default" size="lg" className="mt-6 w-full">
-                  <Link to="/login">Go to login</Link>
-                </Button>
-              </div>
-            ) : recoverySent ? (
+            {recoverySent ? (
               <div>
                 <h2 className="text-2xl font-bold">Reset your password</h2>
                 <p className="mt-2 text-sm text-muted-foreground">
@@ -234,52 +216,52 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
                 <form onSubmit={submit} className="mt-6 space-y-4">
                   {!resettingPassword && (
                     <div className="space-y-1.5">
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        autoComplete="email"
-                        required
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="h-11 border bg-card"
-                      />
-                    </div>
-                  )}
-                  {mode === "signup" && (
-                    <div className="space-y-1.5">
-                      <Label htmlFor="username">Username</Label>
+                      <Label htmlFor="username">
+                        {mode === "signup" ? "Username" : "Username or email"}
+                      </Label>
                       <Input
                         id="username"
                         autoComplete="username"
-                        minLength={3}
-                        maxLength={24}
-                        pattern="[A-Za-z0-9_]{3,24}"
                         required
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
-                        placeholder="e.g. adunni_ade"
                         className="h-11 border bg-card"
                       />
-                      <p className="text-xs text-muted-foreground">
-                        3–24 letters, numbers or underscores.
-                      </p>
+                      {mode === "signup" && (
+                        <p className="text-xs text-muted-foreground">
+                          3–24 letters, numbers or underscores. Email can be added later in
+                          Settings.
+                        </p>
+                      )}
                     </div>
                   )}
                   <div className="space-y-1.5">
                     <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      required
-                      minLength={8}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="h-11 border bg-card"
-                      autoComplete={
-                        mode === "signup" || resettingPassword ? "new-password" : "current-password"
-                      }
-                    />
+                    <div className="relative">
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        required
+                        minLength={8}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="h-11 border bg-card pr-12"
+                        autoComplete={
+                          mode === "signup" || resettingPassword
+                            ? "new-password"
+                            : "current-password"
+                        }
+                      />
+                      <button
+                        type="button"
+                        className="absolute inset-y-0 right-0 flex min-w-11 items-center justify-center text-muted-foreground focus-visible:outline-2 focus-visible:outline-[var(--ring)]"
+                        onClick={() => setShowPassword((value) => !value)}
+                        aria-label={showPassword ? "Hide password" : "Show password"}
+                        aria-pressed={showPassword}
+                      >
+                        {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+                      </button>
+                    </div>
                     {(mode === "signup" || resettingPassword) && (
                       <p className="text-xs text-muted-foreground">At least 8 characters.</p>
                     )}
@@ -289,7 +271,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
                       <Label htmlFor="confirm-password">Confirm password</Label>
                       <Input
                         id="confirm-password"
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         required
                         minLength={8}
                         value={confirmPassword}
@@ -337,15 +319,6 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
                     >
                       Continue with Google
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      className="mt-2 w-full"
-                      disabled={busy}
-                      onClick={continueAsGuest}
-                    >
-                      Continue as guest
-                    </Button>
                     <p className="mt-6 text-center text-sm">
                       New to Osogbo?{" "}
                       <Link to="/signup" className="font-bold text-primary underline">
@@ -356,15 +329,6 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
                 )}
                 {!resettingPassword && mode === "signup" && (
                   <>
-                    <Button
-                      variant="outline"
-                      size="lg"
-                      className="mt-4 w-full"
-                      disabled={busy}
-                      onClick={continueAsGuest}
-                    >
-                      Continue as guest
-                    </Button>
                     <p className="mt-6 text-center text-sm">
                       Already playing?{" "}
                       <Link to="/login" className="font-bold text-primary underline">

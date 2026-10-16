@@ -106,6 +106,46 @@ function GameLayout() {
       void supabase.removeChannel(channel);
     };
   }, [character?.id, character?.current_location_id, character?.name]);
+
+  useEffect(() => {
+    if (!character?.id) return;
+    const touch = () => {
+      if (!document.hidden && navigator.onLine) void supabase.rpc("touch_player_presence");
+    };
+    touch();
+    const timer = window.setInterval(touch, 25000);
+    window.addEventListener("focus", touch);
+    window.addEventListener("online", touch);
+    document.addEventListener("visibilitychange", touch);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", touch);
+      window.removeEventListener("online", touch);
+      document.removeEventListener("visibilitychange", touch);
+    };
+  }, [character?.id]);
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    const channel = supabase
+      .channel(`player-notifications:${profile.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `user_id=eq.${profile.id}`,
+        },
+        () => {
+          void qc.invalidateQueries({ queryKey: q.notifications().queryKey });
+        },
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [profile?.id, qc]);
   const currentLocation = locations?.find(
     (location) => location.id === character?.current_location_id,
   );

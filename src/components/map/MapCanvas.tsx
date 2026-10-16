@@ -1,4 +1,5 @@
 import {
+  Component,
   memo,
   useCallback,
   useEffect,
@@ -7,6 +8,7 @@ import {
   useRef,
   useState,
   type MutableRefObject,
+  type ReactNode,
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import type * as React from "react";
@@ -23,7 +25,7 @@ import {
   Trophy,
   Utensils,
 } from "lucide-react";
-import { Scene, preloadModels } from "@/components/3d/Scene";
+import { Scene } from "@/components/3d/Scene";
 import { Model } from "@/components/3d/Model";
 import townData from "@/data/osogbo-town.json";
 import { getSceneColor } from "@/lib/scene-colors";
@@ -101,7 +103,6 @@ const landmarks = rawLandmarks as (MapLandmark & {
   model: string;
   min_age?: number;
 })[];
-const modelPaths = [...new Set(landmarks.map(({ model }) => model))];
 const scenePointForGrid = (x: number, z: number) => ({
   x: (x - (grid.columns - 1) / 2) * grid.cellSize,
   z: (z - (grid.rows - 1) / 2) * grid.cellSize,
@@ -121,6 +122,30 @@ const icons = {
 
 const labelFor = (value: string) =>
   value.length ? value[0]!.toUpperCase() + value.slice(1) : value;
+
+// A failed optional model must not make the whole playable map disappear.
+class MapModelBoundary extends Component<
+  { children: ReactNode; name: string },
+  { failed: boolean }
+> {
+  override state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  override componentDidCatch(error: Error) {
+    console.warn(`Map model unavailable: ${this.props.name}`, error);
+  }
+  override render() {
+    return this.state.failed ? (
+      <mesh position={[0, 0.55, 0]}>
+        <boxGeometry args={[0.9, 1.1, 0.9]} />
+        <meshStandardMaterial color={getSceneColor("--scene-building")} />
+      </mesh>
+    ) : (
+      this.props.children
+    );
+  }
+}
 
 function TownInstances({
   cells,
@@ -278,7 +303,9 @@ function PlaceModels() {
         const point = mapTownGridToScene({ ...grid, cells: [cell] })[0]!;
         return (
           <group key={place.id} position={[point.x, 0.02, point.z]} scale={1.45}>
-            <Model modelPath={place.model} />
+            <MapModelBoundary name={place.label}>
+              <Model modelPath={place.model} />
+            </MapModelBoundary>
           </group>
         );
       })}
@@ -498,9 +525,6 @@ function IsometricTown({
   zoom,
   ...props
 }: Omit<React.ComponentProps<typeof PlaceOverlays>, "zoom"> & { zoom: number }) {
-  useEffect(() => {
-    preloadModels(modelPaths);
-  }, []);
   return (
     <Scene zoom={zoom} mapControls>
       <TownBase />

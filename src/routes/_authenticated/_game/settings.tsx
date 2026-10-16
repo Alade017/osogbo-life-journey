@@ -28,6 +28,7 @@ function SettingsPage() {
   const [recoveryEmail, setRecoveryEmail] = useState("");
   const [recoveryPassword, setRecoveryPassword] = useState("");
   const [linkingAccount, setLinkingAccount] = useState(false);
+  const [savingBackupEmail, setSavingBackupEmail] = useState(false);
   const homeVisitMutation = useMutation({
     mutationFn: rpc.setHomeVisitAccess,
     onSuccess: async () => {
@@ -116,15 +117,60 @@ function SettingsPage() {
     }
   }
 
+  async function addBackupEmail() {
+    const address = recoveryEmail.trim();
+    if (!address || !address.includes("@")) {
+      toast.error("Enter a valid email address.");
+      return;
+    }
+    setSavingBackupEmail(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ email: address });
+      if (error) throw error;
+      setRecoveryEmail("");
+      toast.success(
+        "Check your inbox to verify the backup email. Your username still works for sign-in.",
+      );
+    } catch (error) {
+      toast.error((error as Error).message);
+    } finally {
+      setSavingBackupEmail(false);
+    }
+  }
+
   return (
     <div className="mx-auto w-full max-w-2xl space-y-5">
       <PageHeader eyebrow="MAKE IT YOURS" title="Settings" />
       <section className="game-panel space-y-4 p-5">
         <h2 className="text-xl font-bold">Account</h2>
         <p className="text-sm text-muted-foreground">
-          {isGuest ? "Guest save on this device" : "Signed in as"}{" "}
-          <strong>{email || "temporary guest"}</strong>
+          {isGuest ? "Legacy guest save on this device" : "Account"}{" "}
+          <strong>
+            {email.endsWith("@example.com") ? "Username sign-in" : email || "No backup email"}
+          </strong>
         </p>
+        {!isGuest && email.endsWith("@example.com") && (
+          <div className="space-y-2 rounded-lg border border-border bg-muted/50 p-4">
+            <Label htmlFor="backup-email">Add a backup email (optional)</Label>
+            <p className="text-xs text-muted-foreground">
+              Verify it to enable password recovery by email. Your username remains your sign-in
+              name.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Input
+                id="backup-email"
+                type="email"
+                autoComplete="email"
+                className="min-w-0 flex-1 bg-card"
+                value={recoveryEmail}
+                onChange={(event) => setRecoveryEmail(event.target.value)}
+              />
+              <Button disabled={savingBackupEmail} onClick={() => void addBackupEmail()}>
+                {savingBackupEmail ? "Saving…" : "Add email"}
+              </Button>
+            </div>
+          </div>
+        )}
         {isGuest && (
           <div className="space-y-3 rounded-lg border border-border bg-muted/50 p-4">
             <p className="text-sm text-muted-foreground">
@@ -192,10 +238,12 @@ function SettingsPage() {
         </label>
         <div className="space-y-3 border-t border-border pt-4">
           <h3 className="font-semibold">Sound & music</h3>
-          <WorldAudioSettings
-            enabled={!!profile?.sound_enabled}
-            onEnabledChange={(sound_enabled) => void update({ sound_enabled })}
-          />
+          {profile && (
+            <WorldAudioSettings
+              enabled={profile.sound_enabled}
+              onEnabledChange={(sound_enabled) => void update({ sound_enabled })}
+            />
+          )}
         </div>
       </section>
       <section className="game-panel space-y-4 p-5">

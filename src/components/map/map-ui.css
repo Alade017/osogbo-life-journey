@@ -4,6 +4,7 @@
   flex-direction: column;
   gap: 0.5rem;
   min-height: 0;
+  height: 100%;
   isolation: isolate;
 }
 .map-topbar {
@@ -99,7 +100,8 @@
   font-size: 0.875rem;
 }
 .map-experience .map-canvas {
-  flex: 1;
+  flex: 1 1 auto;
+  height: auto;
   min-height: 250px;
   border-radius: var(--shape-card);
 }

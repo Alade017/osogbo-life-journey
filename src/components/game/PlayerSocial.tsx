@@ -17,6 +17,7 @@ import { Avatar } from "@/components/game/Avatar";
 import type { Appearance } from "@/components/game/Avatar";
 import { Button } from "@/components/ui/button";
 import { q } from "@/lib/game";
+import { supabase } from "@/integrations/supabase/client";
 import { playGameSound } from "@/lib/game-audio";
 import {
   blockPlayer,
@@ -287,6 +288,27 @@ export function PlayerSocial({
     queryFn: getPlayerSocialOverview,
   });
   const overview = overviewQuery.data;
+  const friendIds = useMemo(
+    () => (overview?.friends ?? []).map((friend) => friend.character_id),
+    [overview?.friends],
+  );
+  const friendPresence = useQuery({
+    queryKey: ["friendPresence", friendIds],
+    enabled: friendIds.length > 0,
+    refetchInterval: 10000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("player_online_presence")
+        .select("character_id,seen_at")
+        .in("character_id", friendIds);
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+  const isFriendOnline = (id: string) => {
+    const seenAt = friendPresence.data?.find((row) => row.character_id === id)?.seen_at;
+    return !!seenAt && Date.now() - new Date(seenAt).getTime() < 60000;
+  };
   const visibleConversations = useMemo(() => {
     const filter = conversationSearch.trim().toLocaleLowerCase();
     return (overview?.conversations ?? []).filter((conversation) =>
@@ -598,7 +620,10 @@ export function PlayerSocial({
                       <PlayerAvatar player={friend} />
                       <span className="phone-contact-copy">
                         <strong>{friend.player_name}</strong>
-                        <small>Friend · start a private chat</small>
+                        <small>
+                          {isFriendOnline(friend.character_id) ? "Online" : "Offline"} · start a
+                          private chat
+                        </small>
                       </span>
                       <ChevronRight size={17} aria-hidden="true" />
                     </button>
@@ -1101,6 +1126,7 @@ export function PlayerSocial({
                 <div key={friend.character_id} className="grid gap-1">
                   <PlayerRow
                     player={friend}
+                    status={isFriendOnline(friend.character_id) ? "Online" : "Offline"}
                     action={{
                       label: "Message",
                       run: () => openChatMutation.mutate(friend.character_id),

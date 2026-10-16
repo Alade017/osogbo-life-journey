@@ -1,6 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { House } from "lucide-react";
+import { House, Settings2, Users } from "lucide-react";
 import { q, formatNaira, xpProgress } from "@/lib/game";
 import { pageMeta } from "@/lib/seo";
 import { Avatar } from "@/components/game/Avatar";
@@ -61,15 +61,15 @@ function ProfilePage() {
   ];
 
   return (
-    <div>
+    <div className="mx-auto w-full max-w-5xl space-y-4 text-foreground">
       <PageHeader
         eyebrow="YOUR JOURNEY"
         title="Your character"
         subtitle="Your life and progress in Osogbo."
       />
-      <section className="game-panel mb-5 flex flex-wrap items-center justify-between gap-4 p-4">
+      <section className="game-panel flex flex-wrap items-center justify-between gap-3 p-3 sm:p-4">
         <div>
-          <h2 className="font-display text-lg font-bold">Your home</h2>
+          <h2 className="font-display text-base font-bold">Your home</h2>
           <p className="text-sm text-muted-foreground">Find a place or choose a different home.</p>
         </div>
         <button
@@ -84,21 +84,18 @@ function ProfilePage() {
           <House size={17} aria-hidden="true" /> Find a place
         </button>
       </section>
-      <div className="grid gap-5 md:grid-cols-[300px_1fr]">
-        <section
-          className="game-panel player-profile-card p-5 text-center"
-          aria-label="Character details"
-        >
-          <div className="player-profile-avatar mx-auto flex w-fit justify-center rounded-xl border border-border bg-muted p-4">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <section className="game-panel player-profile-card p-4" aria-label="Character details">
+          <div className="player-profile-avatar inline-flex justify-center rounded-xl border border-border bg-muted p-2">
             <Avatar
               appearance={c.appearance as object}
               gender={c.gender}
-              size={130}
+              size={84}
               equipment={player.equipment}
             />
           </div>
-          <h2 className="mt-4 text-2xl font-bold text-ink">{player.name}</h2>
-          <div className="mt-2 flex flex-wrap justify-center gap-1.5">
+          <h2 className="mt-3 text-xl font-bold text-foreground">{player.name}</h2>
+          <div className="mt-2 flex flex-wrap gap-1.5">
             <Chip tone="primary">Level {player.level}</Chip>
             <Chip>{c.age} yrs</Chip>
             <Chip>{c.personality}</Chip>
@@ -125,8 +122,23 @@ function ProfilePage() {
           <p className="mt-1 text-xs text-muted-foreground">
             In Osogbo since {new Date(player.createdAt).toLocaleDateString("en-NG")}
           </p>
+          <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-3">
+            <Link
+              to="/social"
+              search={{ playerId: undefined }}
+              className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-card px-3 text-sm font-semibold text-foreground focus-visible:outline-2 focus-visible:outline-[var(--ring)]"
+            >
+              <Users size={16} /> Friends
+            </Link>
+            <Link
+              to="/settings"
+              className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-card px-3 text-sm font-semibold text-foreground focus-visible:outline-2 focus-visible:outline-[var(--ring)]"
+            >
+              <Settings2 size={16} /> Settings
+            </Link>
+          </div>
         </section>
-        <section className="game-panel space-y-5 p-5" aria-label="Character stats and progress">
+        <section className="game-panel space-y-4 p-4" aria-label="Character stats and progress">
           <div>
             <div className="flex items-baseline justify-between">
               <div>

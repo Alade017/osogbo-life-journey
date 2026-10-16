@@ -4,15 +4,13 @@ import { AuthCard } from "@/components/game/AuthCard";
 
 const auth = vi.hoisted(() => ({
   signInWithOAuth: vi.fn(),
-  signUp: vi.fn(),
   signInWithPassword: vi.fn(),
+  setSession: vi.fn(),
   onAuthStateChange: vi.fn(),
-  getSession: vi.fn(),
   navigate: vi.fn(),
   error: vi.fn(),
   prime: vi.fn(),
   mute: vi.fn(),
-  signInAnonymously: vi.fn(),
 }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { auth } }));
 vi.mock("@/lib/game-audio", () => ({
@@ -27,34 +25,62 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 vi.mock("sonner", () => ({ toast: { error: auth.error } }));
 
-describe("direct Supabase Google authentication", () => {
-  it("primes guest entry and proceeds only after authentication succeeds", async () => {
-    auth.signInAnonymously.mockResolvedValue({ error: null });
-    render(<AuthCard mode="login" />);
-    fireEvent.click(screen.getByRole("button", { name: "Continue as guest" }));
-    expect(auth.prime).toHaveBeenCalledTimes(1);
-    await waitFor(() => expect(auth.navigate).toHaveBeenCalledWith({ to: "/create-character" }));
-    expect(auth.mute).not.toHaveBeenCalled();
-  });
-  it("unlocks audio in the login gesture but silences failed authentication", async () => {
-    auth.signInWithPassword.mockResolvedValue({ error: new Error("Wrong password") });
-    render(<AuthCard mode="login" />);
-    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "player@example.com" } });
-    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "password123" } });
-    fireEvent.click(screen.getByRole("button", { name: /log in/i }));
-    expect(auth.prime).toHaveBeenCalledTimes(1);
-    await waitFor(() => expect(auth.mute).toHaveBeenCalled());
-    expect(auth.navigate).not.toHaveBeenCalled();
-  });
+describe("account sign-in", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     auth.onAuthStateChange.mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } });
   });
-  it("sends Google sign-in directly to Supabase with the current local callback", async () => {
-    auth.signInWithOAuth.mockResolvedValue({
-      data: { url: "https://example.test/oauth" },
-      error: null,
+
+  it("does not offer new guest sessions and reveals the password on request", () => {
+    render(<AuthCard mode="login" />);
+    expect(screen.queryByRole("button", { name: "Continue as guest" })).not.toBeInTheDocument();
+    const password = screen.getByLabelText("Password");
+    expect(password).toHaveAttribute("type", "password");
+    fireEvent.click(screen.getByRole("button", { name: "Show password" }));
+    expect(password).toHaveAttribute("type", "text");
+  });
+
+  it("creates a username account without requiring email", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({ access_token: "access", refresh_token: "refresh" }),
+      }),
+    );
+    auth.setSession.mockResolvedValue({ error: null });
+    render(<AuthCard mode="signup" />);
+    fireEvent.change(screen.getByLabelText("Username"), { target: { value: "osogbo_player" } });
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "password123" } });
+    fireEvent.change(screen.getByLabelText("Confirm password"), {
+      target: { value: "password123" },
     });
+    fireEvent.click(screen.getByRole("button", { name: "Create account" }));
+    await waitFor(() => expect(auth.navigate).toHaveBeenCalledWith({ to: "/create-character" }));
+    expect(fetch).toHaveBeenCalledWith(
+      "/api/auth/username/register",
+      expect.objectContaining({ method: "POST" }),
+    );
+    vi.unstubAllGlobals();
+  });
+
+  it("keeps existing email and password accounts working", async () => {
+    auth.signInWithPassword.mockResolvedValue({ error: null });
+    render(<AuthCard mode="login" />);
+    fireEvent.change(screen.getByLabelText("Username or email"), {
+      target: { value: "player@example.com" },
+    });
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "password123" } });
+    fireEvent.click(screen.getByRole("button", { name: "Log in" }));
+    await waitFor(() => expect(auth.navigate).toHaveBeenCalledWith({ to: "/enter" }));
+    expect(auth.signInWithPassword).toHaveBeenCalledWith({
+      email: "player@example.com",
+      password: "password123",
+    });
+  });
+
+  it("supports Google sign-in", async () => {
+    auth.signInWithOAuth.mockResolvedValue({ error: null });
     render(<AuthCard mode="login" />);
     fireEvent.click(screen.getByRole("button", { name: "Continue with Google" }));
     await waitFor(() =>
@@ -63,61 +89,5 @@ describe("direct Supabase Google authentication", () => {
         options: { redirectTo: `${window.location.origin}/login` },
       }),
     );
-    expect(auth.navigate).not.toHaveBeenCalled();
-  });
-  it("reports provider failures and re-enables the login button", async () => {
-    auth.signInWithOAuth.mockResolvedValue({ error: new Error("Google provider is disabled") });
-    render(<AuthCard mode="login" />);
-    fireEvent.click(screen.getByRole("button", { name: "Continue with Google" }));
-    await waitFor(() => expect(auth.error).toHaveBeenCalledWith("Google provider is disabled"));
-    expect(screen.getByRole("button", { name: "Continue with Google" })).toBeEnabled();
-  });
-
-  it("returns email confirmation to the public login route", async () => {
-    auth.signUp.mockResolvedValue({ data: { session: null }, error: null });
-    render(<AuthCard mode="signup" />);
-    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "player@example.com" } });
-    fireEvent.change(screen.getByLabelText("Username"), { target: { value: "osogbo_player" } });
-    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "password123" } });
-    fireEvent.change(screen.getByLabelText("Confirm password"), {
-      target: { value: "password123" },
-    });
-    fireEvent.click(screen.getByRole("button", { name: "Create account" }));
-
-    await waitFor(() =>
-      expect(auth.signUp).toHaveBeenCalledWith({
-        email: "player@example.com",
-        password: "password123",
-        options: {
-          emailRedirectTo: `${window.location.origin}/login`,
-          data: { username: "osogbo_player" },
-        },
-      }),
-    );
-    expect(await screen.findByText(/You’ll return to the game/)).toBeInTheDocument();
-  });
-
-  it("routes successful password login through the authenticated entry page", async () => {
-    auth.signInWithPassword.mockResolvedValue({ error: null });
-    render(<AuthCard mode="login" />);
-    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "player@example.com" } });
-    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "password123" } });
-    fireEvent.click(screen.getByRole("button", { name: "Log in" }));
-
-    await waitFor(() => expect(auth.navigate).toHaveBeenCalledWith({ to: "/enter" }));
-    expect(auth.prime.mock.invocationCallOrder[0]).toBeLessThan(
-      auth.signInWithPassword.mock.invocationCallOrder[0]!,
-    );
-  });
-
-  it("does not redirect a password-recovery session away from the reset form", async () => {
-    window.history.replaceState({}, "", "/login#access_token=temporary&type=recovery");
-    auth.getSession.mockResolvedValue({ data: { session: { user: { id: "player" } } } });
-    render(<AuthCard mode="login" />);
-    expect(
-      await screen.findByRole("heading", { name: "Choose a new password" }),
-    ).toBeInTheDocument();
-    expect(auth.navigate).not.toHaveBeenCalled();
-    window.history.replaceState({}, "", "/");
   });
 });

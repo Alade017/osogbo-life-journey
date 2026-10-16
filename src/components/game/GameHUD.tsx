@@ -1,4 +1,4 @@
-import { Bell, CirclePause, CirclePlay, Clock3, Coins, MapPin } from "lucide-react";
+import { Bell, Coins, MapPin } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Avatar } from "@/components/game/Avatar";
 import { formatNaira } from "@/lib/game";
@@ -6,8 +6,6 @@ import type { PlayerState } from "@/lib/player-state";
 import { useLiveClock } from "@/hooks/use-live-clock";
 import { OSOGBO_TIME_ZONE } from "@/lib/osogbo-weather";
 import { Logo } from "@/components/game/Logo";
-import { useGameTime } from "@/components/game/GameTimeProvider";
-import { formatGameTime, WEEKDAYS } from "@/lib/game-time";
 
 export function GameHUD({
   player,
@@ -19,7 +17,6 @@ export function GameHUD({
   unread: number;
 }) {
   const now = useLiveClock();
-  const { simulation, pause, resume, setSpeed, ready, busy, syncError, reconnect } = useGameTime();
   const dateLabel = now
     ? new Intl.DateTimeFormat("en-NG", {
         weekday: "short",
@@ -80,17 +77,6 @@ export function GameHUD({
           </span>
         </div>
 
-        <div className="game-hud-time-summary" aria-label="Personal game time">
-          <span className="game-hud-item-copy">
-            <small>Personal time · Day {simulation.gameTime.day}</small>
-            <strong className="tabular-nums">{formatGameTime(simulation.gameTime)}</strong>
-            <span>
-              {WEEKDAYS[simulation.gameTime.weekday]} · {simulation.mood.mood} ·{" "}
-              {simulation.paused ? "Paused" : "Active play"}
-            </span>
-          </span>
-        </div>
-
         <Link
           to="/wallet"
           className="game-hud-balance"
@@ -115,63 +101,12 @@ export function GameHUD({
           )}
         </Link>
       </div>
-      <div className="game-hud-context-row" role="group" aria-label="Personal time controls">
-        <div className="game-hud-time" aria-label="Simulation clock">
-          <span className="game-hud-control-icon" aria-hidden="true">
-            <Clock3 size={17} />
-          </span>
-          <span className="game-hud-item-copy">
-            <small>Personal time · Day {simulation.gameTime.day}</small>
-            <strong className="tabular-nums">{formatGameTime(simulation.gameTime)}</strong>
-            <span>
-              {WEEKDAYS[simulation.gameTime.weekday]} · {simulation.mood.mood} ·{" "}
-              {simulation.paused ? "Paused" : "Active play"}
-            </span>
-          </span>
-          <div className="game-hud-simulation-controls">
-            <button
-              type="button"
-              aria-label={simulation.paused ? "Resume simulation" : "Pause simulation"}
-              title={simulation.paused ? "Resume simulation" : "Pause simulation"}
-              onClick={() => (simulation.paused ? resume() : pause())}
-              disabled={!ready || busy}
-            >
-              {simulation.paused ? <CirclePlay size={14} /> : <CirclePause size={14} />}
-            </button>
-            <select
-              aria-label="Simulation speed"
-              title="At 1x, one game minute passes per real minute."
-              value={simulation.timeSpeed}
-              disabled={!ready || busy}
-              onChange={(event) => setSpeed(Number(event.target.value) as 0.5 | 1 | 2)}
-            >
-              <option value={0.5}>½×</option>
-              <option value={1}>1×</option>
-              <option value={2}>2×</option>
-            </select>
-          </div>
-        </div>
-      </div>
       <div className="hud-live-clock">
         <span>OSOGBO · WAT</span>
         <time>
           {dateLabel} · {clockLabel}
         </time>
       </div>
-      {(!ready || syncError) && (
-        <div className="hud-sync" role="status">
-          <span>
-            {syncError
-              ? `Personal simulation unavailable: ${syncError}`
-              : "Connecting personal simulation…"}
-          </span>
-          {syncError && (
-            <button type="button" onClick={reconnect} disabled={busy}>
-              Retry connection
-            </button>
-          )}
-        </div>
-      )}
     </header>
   );
 }

@@ -1687,6 +1687,18 @@ export type Database = {
         };
         Relationships: [];
       };
+      username_accounts: {
+        Row: { username: string; user_id: string; created_at: string };
+        Insert: { username: string; user_id: string; created_at?: string };
+        Update: { username?: string; user_id?: string; created_at?: string };
+        Relationships: [];
+      };
+      player_online_presence: {
+        Row: { character_id: string; user_id: string; seen_at: string };
+        Insert: { character_id: string; user_id: string; seen_at?: string };
+        Update: { character_id?: string; user_id?: string; seen_at?: string };
+        Relationships: [];
+      };
       shops: {
         Row: {
           category: string;
@@ -2053,6 +2065,8 @@ export type Database = {
         Args: { p_target_character_id: string; p_request_id: string };
         Returns: Json;
       };
+      touch_player_presence: { Args: never; Returns: undefined };
+      record_username_auth_attempt: { Args: { p_attempt_key: string }; Returns: boolean };
       respond_player_friend_request: {
         Args: { p_request_id: string; p_accept: boolean };
         Returns: Json;

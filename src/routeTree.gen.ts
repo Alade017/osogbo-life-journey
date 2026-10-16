@@ -50,6 +50,8 @@ import { Route as ApiOutfitEquipRouteImport } from './routes/api/outfit/equip'
 import { Route as ApiOutfitUnequipRouteImport } from './routes/api/outfit/unequip'
 import { Route as ApiShopBuyRouteImport } from './routes/api/shop/buy'
 import { Route as AuthenticatedGameLocationSlugRouteImport } from './routes/_authenticated/_game/location.$slug'
+import { Route as ApiAuthUsernameLoginRouteImport } from './routes/api/auth/username/login'
+import { Route as ApiAuthUsernameRegisterRouteImport } from './routes/api/auth/username/register'
 import { Route as ApiMapLandmarkIdRouteImport } from './routes/api/map/landmark.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -264,6 +266,16 @@ const AuthenticatedGameLocationSlugRoute =
     path: '/location/$slug',
     getParentRoute: () => AuthenticatedGameRoute,
   } as any)
+const ApiAuthUsernameLoginRoute = ApiAuthUsernameLoginRouteImport.update({
+  id: '/api/auth/username/login',
+  path: '/api/auth/username/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthUsernameRegisterRoute = ApiAuthUsernameRegisterRouteImport.update({
+  id: '/api/auth/username/register',
+  path: '/api/auth/username/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMapLandmarkIdRoute = ApiMapLandmarkIdRouteImport.update({
   id: '/api/map/landmark/$id',
   path: '/api/map/landmark/$id',
@@ -310,6 +322,8 @@ export interface FileRoutesByFullPath {
   '/api/outfit/unequip': typeof ApiOutfitUnequipRoute
   '/api/shop/buy': typeof ApiShopBuyRoute
   '/location/$slug': typeof AuthenticatedGameLocationSlugRoute
+  '/api/auth/username/login': typeof ApiAuthUsernameLoginRoute
+  '/api/auth/username/register': typeof ApiAuthUsernameRegisterRoute
   '/api/map/landmark/$id': typeof ApiMapLandmarkIdRoute
 }
 export interface FileRoutesByTo {
@@ -352,6 +366,8 @@ export interface FileRoutesByTo {
   '/api/outfit/unequip': typeof ApiOutfitUnequipRoute
   '/api/shop/buy': typeof ApiShopBuyRoute
   '/location/$slug': typeof AuthenticatedGameLocationSlugRoute
+  '/api/auth/username/login': typeof ApiAuthUsernameLoginRoute
+  '/api/auth/username/register': typeof ApiAuthUsernameRegisterRoute
   '/api/map/landmark/$id': typeof ApiMapLandmarkIdRoute
 }
 export interface FileRoutesById {
@@ -397,6 +413,8 @@ export interface FileRoutesById {
   '/api/outfit/unequip': typeof ApiOutfitUnequipRoute
   '/api/shop/buy': typeof ApiShopBuyRoute
   '/_authenticated/_game/location/$slug': typeof AuthenticatedGameLocationSlugRoute
+  '/api/auth/username/login': typeof ApiAuthUsernameLoginRoute
+  '/api/auth/username/register': typeof ApiAuthUsernameRegisterRoute
   '/api/map/landmark/$id': typeof ApiMapLandmarkIdRoute
 }
 export interface FileRouteTypes {
@@ -441,6 +459,8 @@ export interface FileRouteTypes {
     | '/api/outfit/unequip'
     | '/api/shop/buy'
     | '/location/$slug'
+    | '/api/auth/username/login'
+    | '/api/auth/username/register'
     | '/api/map/landmark/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -483,6 +503,8 @@ export interface FileRouteTypes {
     | '/api/outfit/unequip'
     | '/api/shop/buy'
     | '/location/$slug'
+    | '/api/auth/username/login'
+    | '/api/auth/username/register'
     | '/api/map/landmark/$id'
   id:
     | '__root__'
@@ -527,6 +549,8 @@ export interface FileRouteTypes {
     | '/api/outfit/unequip'
     | '/api/shop/buy'
     | '/_authenticated/_game/location/$slug'
+    | '/api/auth/username/login'
+    | '/api/auth/username/register'
     | '/api/map/landmark/$id'
   fileRoutesById: FileRoutesById
 }
@@ -553,6 +577,8 @@ export interface RootRouteChildren {
   ApiOutfitEquipRoute: typeof ApiOutfitEquipRoute
   ApiOutfitUnequipRoute: typeof ApiOutfitUnequipRoute
   ApiShopBuyRoute: typeof ApiShopBuyRoute
+  ApiAuthUsernameLoginRoute: typeof ApiAuthUsernameLoginRoute
+  ApiAuthUsernameRegisterRoute: typeof ApiAuthUsernameRegisterRoute
   ApiMapLandmarkIdRoute: typeof ApiMapLandmarkIdRoute
 }
 
@@ -845,6 +871,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGameLocationSlugRouteImport
       parentRoute: typeof AuthenticatedGameRoute
     }
+    '/api/auth/username/login': {
+      id: '/api/auth/username/login'
+      path: '/api/auth/username/login'
+      fullPath: '/api/auth/username/login'
+      preLoaderRoute: typeof ApiAuthUsernameLoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/username/register': {
+      id: '/api/auth/username/register'
+      path: '/api/auth/username/register'
+      fullPath: '/api/auth/username/register'
+      preLoaderRoute: typeof ApiAuthUsernameRegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/map/landmark/$id': {
       id: '/api/map/landmark/$id'
       path: '/api/map/landmark/$id'
@@ -934,6 +974,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiOutfitEquipRoute: ApiOutfitEquipRoute,
   ApiOutfitUnequipRoute: ApiOutfitUnequipRoute,
   ApiShopBuyRoute: ApiShopBuyRoute,
+  ApiAuthUsernameLoginRoute: ApiAuthUsernameLoginRoute,
+  ApiAuthUsernameRegisterRoute: ApiAuthUsernameRegisterRoute,
   ApiMapLandmarkIdRoute: ApiMapLandmarkIdRoute,
 }
 export const routeTree = rootRouteImport
