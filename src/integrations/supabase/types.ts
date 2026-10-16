@@ -2105,6 +2105,53 @@ export type Database = {
         };
         Returns: Json;
       };
+      send_social_message_as_user: {
+        Args: {
+          p_user_id: string;
+          p_channel: string;
+          p_body: string;
+          p_request_id: string;
+          p_location_id?: string | null;
+          p_conversation_id?: string | null;
+          p_reply_to_message_id?: string | null;
+        };
+        Returns: Json;
+      };
+      thread_pref_action_as_user: {
+        Args: {
+          p_user_id: string;
+          p_thread_id: string;
+          p_action: string;
+          p_duration?: string | null;
+        };
+        Returns: Json;
+      };
+      get_social_thread_summaries_as_user: {
+        Args: { p_user_id: string };
+        Returns: Json;
+      };
+      create_voice_message_as_user: {
+        Args: {
+          p_user_id: string;
+          p_thread_id: string;
+          p_path: string;
+          p_duration_ms: number;
+          p_request_id: string;
+        };
+        Returns: Json;
+      };
+      get_voice_note_as_user: {
+        Args: { p_user_id: string; p_message_id: string };
+        Returns: Json;
+      };
+      list_expired_voice_notes: {
+        Args: never;
+        Returns: Array<{ message_id: string; path: string }>;
+      };
+      finalize_expired_voice_notes: {
+        Args: { p_message_ids: string[] };
+        Returns: number;
+      };
       get_social_messages: {
         Args: {
           p_location_id?: string | null;

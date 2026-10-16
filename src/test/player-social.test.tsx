@@ -25,6 +25,10 @@ const mocks = vi.hoisted(() => ({
   createPlayerStatus: vi.fn(),
   deletePlayerStatus: vi.fn(),
   leaveSocialChannel: vi.fn(),
+  getThreadSummaries: vi.fn(),
+  runThreadAction: vi.fn(),
+  flushThreadActionQueue: vi.fn(),
+  subscribeToInboxSummaries: vi.fn(),
 }));
 
 vi.mock("@/components/game/Avatar", () => ({ Avatar: () => <span>Avatar</span> }));
@@ -41,6 +45,7 @@ vi.mock("@/lib/game", () => ({
   },
 }));
 vi.mock("@/lib/player-social-service", () => mocks);
+vi.mock("@/lib/thread-preferences", () => mocks);
 
 function renderSocial(props: ComponentProps<typeof PlayerSocial> = {}) {
   const client = new QueryClient({
@@ -84,6 +89,10 @@ describe("real-player social panel", () => {
     mocks.subscribeToFriendRequests.mockReturnValue({});
     mocks.subscribeToStatusPosts.mockReturnValue({});
     mocks.leaveSocialChannel.mockResolvedValue(undefined);
+    mocks.getThreadSummaries.mockResolvedValue([]);
+    mocks.runThreadAction.mockResolvedValue({ ok: true });
+    mocks.flushThreadActionQueue.mockResolvedValue({ sent: 0, remaining: 0 });
+    mocks.subscribeToInboxSummaries.mockReturnValue({ channel: {}, clear: vi.fn() });
   });
 
   it("filters the phone inbox by player name", async () => {

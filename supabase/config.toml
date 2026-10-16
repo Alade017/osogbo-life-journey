@@ -1,1 +1,3 @@
 project_id = "btpiqjhhxkvjwgwtznav"
+[functions.username-auth]
+verify-jwt = false

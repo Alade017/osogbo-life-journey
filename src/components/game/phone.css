@@ -556,6 +556,8 @@
   color: #0a0a0a;
   background: transparent;
   text-align: left;
+  content-visibility: auto;
+  contain-intrinsic-size: 72px;
 }
 
 .phone-conversation:hover,
@@ -578,6 +580,119 @@
   font-weight: 750;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.phone-conversation-copy strong {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.phone-conversation-section {
+  display: flex;
+  min-height: 32px;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 8px 7px 2px;
+  color: var(--muted-foreground);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.phone-conversation-status {
+  display: grid;
+  min-width: 28px;
+  justify-items: end;
+  gap: 4px;
+  color: var(--muted-foreground);
+}
+
+.phone-conversation-status > span {
+  display: grid;
+  min-width: 21px;
+  min-height: 21px;
+  place-items: center;
+  padding-inline: 5px;
+  border-radius: 999px;
+  color: var(--primary-foreground);
+  background: var(--primary);
+  font-size: 10px;
+  font-weight: 850;
+}
+
+.phone-thread-menu-backdrop {
+  position: absolute;
+  z-index: 40;
+  inset: 0;
+  display: grid;
+  align-items: end;
+  background: color-mix(in srgb, var(--foreground) 34%, transparent);
+}
+
+.phone-thread-menu {
+  display: grid;
+  gap: 4px;
+  padding: 16px 12px max(18px, env(safe-area-inset-bottom));
+  border: 1px solid var(--border);
+  border-radius: 22px 22px 0 0;
+  background: var(--card);
+  box-shadow: var(--elevation-card);
+}
+
+.phone-thread-menu > strong,
+.phone-thread-menu > p {
+  padding: 5px 10px;
+}
+
+.phone-thread-menu > p {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.phone-thread-menu > button {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 12px;
+  color: var(--foreground);
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+}
+
+.phone-thread-menu > button:hover,
+.phone-thread-menu > button:focus-visible {
+  background: var(--secondary);
+}
+
+.phone-thread-menu svg {
+  width: 18px;
+  height: 18px;
+}
+
+.phone-thread-mute-options {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.phone-thread-mute-options button {
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--foreground);
+  background: var(--secondary);
+  font-size: 12px;
+  font-weight: 750;
 }
 
 .phone-conversation-copy small,
@@ -679,6 +794,8 @@
   box-shadow: 0 1px 2px color-mix(in srgb, #0a0a0a 8%, transparent);
   font-size: 14px;
   line-height: 1.4;
+  content-visibility: auto;
+  contain-intrinsic-size: 64px;
 }
 
 .phone-message-bubble.is-own {
@@ -695,14 +812,278 @@
   line-height: 1.2;
 }
 
-.phone-chat-composer {
+.message-reply-quote {
+  display: grid;
+  gap: 0.125rem;
+  margin-block: 0 0.4rem;
+  padding: 0.4rem 0.55rem;
+  border-inline-start: 3px solid var(--primary);
+  border-radius: 0.45rem;
+  background: color-mix(in srgb, var(--background) 72%, transparent);
+  font-size: 0.78rem;
+}
+
+.message-reply-quote > span,
+.message-reply-quote > strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.message-reply-quote > span {
   display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--muted-foreground);
+}
+
+.message-reply-quote svg {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+.message-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.2rem;
+}
+
+.message-actions button,
+.message-composer-reply button {
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+}
+
+.message-actions svg,
+.message-composer-reply svg {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.message-composer-reply {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.35rem 0.5rem;
+  border-inline-start: 3px solid var(--primary);
+  border-radius: 0.5rem;
+  background: var(--card);
+  color: var(--foreground);
+}
+
+.message-composer-reply > span {
+  min-width: 0;
+  display: grid;
+}
+
+.message-composer-reply small {
+  overflow: hidden;
+  color: var(--muted-foreground);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phone-chat-composer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
   flex: none;
   align-items: flex-end;
   gap: 8px;
   padding: 9px 10px;
   border-top: 1px solid var(--border);
   background: var(--brand-porcelain, var(--background));
+}
+
+.phone-chat-composer .message-format-toolbar,
+.phone-chat-composer .message-character-count {
+  grid-column: 1 / -1;
+}
+
+.message-format-toolbar {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 3px;
+}
+
+.message-format-toolbar button {
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 12px;
+  color: var(--foreground);
+  background: transparent;
+}
+
+.message-format-toolbar button:hover,
+.message-format-toolbar button:focus-visible {
+  background: var(--secondary);
+}
+
+.message-format-toolbar svg {
+  width: 17px;
+  height: 17px;
+}
+
+.message-format-more {
+  position: relative;
+}
+
+.message-format-toolbar .message-format-popover {
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  bottom: calc(100% + 5px);
+  gap: 7px;
+  padding-inline: 12px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: var(--elevation-card);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.message-character-count {
+  justify-self: end;
+  color: var(--muted-foreground);
+  font-size: 11px;
+}
+
+.formatted-message strong {
+  font-weight: 800;
+}
+.formatted-message em {
+  font-style: italic;
+}
+.formatted-message del {
+  text-decoration-thickness: 1.5px;
+}
+
+.voice-note-recorder {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  padding: 0 10px 8px;
+  background: var(--brand-porcelain, var(--background));
+}
+
+.voice-record-button,
+.voice-retry,
+.voice-note-player button {
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--foreground);
+  background: var(--card);
+}
+
+.voice-record-button svg,
+.voice-retry svg,
+.voice-note-player svg {
+  width: 17px;
+  height: 17px;
+}
+
+.voice-record-button:disabled {
+  opacity: 0.5;
+}
+
+.voice-recording-strip {
+  display: flex;
+  min-height: 44px;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  color: var(--foreground);
+  background: var(--card);
+  font-size: 11px;
+}
+
+.voice-recording-strip.is-cancelling {
+  border-color: var(--destructive);
+}
+
+.voice-waveform {
+  display: flex;
+  min-width: 60px;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.voice-waveform i {
+  width: 2px;
+  max-height: 22px;
+  border-radius: 2px;
+  background: var(--primary);
+}
+
+.voice-note-hint {
+  position: absolute;
+  right: 10px;
+  bottom: calc(100% + 5px);
+  max-width: 260px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--foreground);
+  background: var(--card);
+  box-shadow: var(--elevation-card);
+  font-size: 11px;
+}
+
+.voice-retry {
+  gap: 5px;
+  padding-inline: 12px;
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+.voice-note-player {
+  display: grid;
+  min-width: min(250px, 68vw);
+  grid-template-columns: 44px minmax(60px, 1fr) auto 44px;
+  align-items: center;
+  gap: 6px;
+}
+
+.voice-note-player input {
+  width: 100%;
+  accent-color: var(--primary);
+}
+
+.voice-note-player small {
+  color: var(--muted-foreground);
+  font-size: 10px;
+}
+
+.voice-note-player button:last-child {
+  border: 0;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 800;
 }
 
 .phone-chat-input {
