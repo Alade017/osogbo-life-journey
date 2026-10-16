@@ -224,7 +224,7 @@ function GameLayout() {
               to="/home"
               search={{ visit: undefined }}
               className="game-side-logo"
-              aria-label="OSOGBO LIFE home"
+              aria-label="OSUN LIFE home"
             >
               <Logo />
             </Link>

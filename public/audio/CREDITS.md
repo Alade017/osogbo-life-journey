@@ -1,4 +1,4 @@
-# OSOGBO LIFE audio credits
+# OSUN LIFE audio credits
 
 ## Background - Background Music
 

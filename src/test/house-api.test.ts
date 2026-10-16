@@ -65,4 +65,23 @@ describe("house API handlers", () => {
     expect(response.status).toBe(403);
     expect(await response.json()).toEqual({ error: { code: "NOT_OWNED" } });
   });
+
+  it("reports a missing house migration without exposing the database message", async () => {
+    const { handlers } = setup();
+    const broken = createHouseApiHandlers({
+      authenticate: async () => "player-1",
+      state: async () => {
+        throw new Error("Could not find the function public.get_house_state in the schema cache");
+      },
+      place: async () => ({}),
+      remove: async () => ({}),
+      equip: async () => ({}),
+      unequip: async () => ({}),
+      buy: async () => ({}),
+    });
+    expect(handlers).toBeDefined();
+    const response = await broken.getState(new Request("https://game.test/api/house/state"));
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ error: { code: "HOUSE_SETUP_REQUIRED" } });
+  });
 });

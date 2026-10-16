@@ -30,9 +30,9 @@ import { GameDataUnavailable, LoadingState } from "@/components/game/ui";
 export const Route = createFileRoute("/_authenticated/create-character")({
   head: () => ({
     meta: [
-      { title: "Create your character — OSOGBO LIFE" },
+      { title: "Create your character — OSUN LIFE" },
       { name: "description", content: "Design your character before entering Osogbo." },
-      { property: "og:title", content: "Create your character — OSOGBO LIFE" },
+      { property: "og:title", content: "Create your character — OSUN LIFE" },
       { property: "og:description", content: "Design your character before entering Osogbo." },
     ],
   }),

@@ -6,10 +6,10 @@ import { AuthCard } from "@/components/game/AuthCard";
 export const Route = createFileRoute("/login")({
   head: () => ({
     meta: [
-      { title: "Log in — OSOGBO LIFE" },
+      { title: "Log in — OSUN LIFE" },
       { name: "robots", content: "noindex, follow" },
       { name: "description", content: "Log in to continue your life in the city of Osogbo." },
-      { property: "og:title", content: "Log in — OSOGBO LIFE" },
+      { property: "og:title", content: "Log in — OSUN LIFE" },
       {
         property: "og:description",
         content: "Log in to continue your life in the city of Osogbo.",

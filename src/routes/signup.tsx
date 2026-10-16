@@ -4,16 +4,16 @@ import { AuthCard } from "@/components/game/AuthCard";
 export const Route = createFileRoute("/signup")({
   head: () => ({
     meta: [
-      { title: "Sign up — OSOGBO LIFE" },
+      { title: "Sign up — OSUN LIFE" },
       { name: "robots", content: "noindex, follow" },
       {
         name: "description",
-        content: "Create your OSOGBO LIFE account and start a new life in the city.",
+        content: "Create your OSUN LIFE account and start a new life in the city.",
       },
-      { property: "og:title", content: "Sign up — OSOGBO LIFE" },
+      { property: "og:title", content: "Sign up — OSUN LIFE" },
       {
         property: "og:description",
-        content: "Create your OSOGBO LIFE account and start a new life in the city.",
+        content: "Create your OSUN LIFE account and start a new life in the city.",
       },
     ],
   }),

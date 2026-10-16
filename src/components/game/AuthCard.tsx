@@ -134,7 +134,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
       <div className="absolute inset-0 bg-slate-950/55" />
       <div className="relative mx-auto grid min-h-screen max-w-7xl lg:grid-cols-2">
         <section className="flex min-h-57.5 flex-col justify-end px-5 pb-7 pt-8 text-white sm:px-8 lg:min-h-screen lg:justify-between lg:px-12 lg:py-12">
-          <p className="hidden text-sm font-bold tracking-wide lg:block">OSOGBO LIFE</p>
+          <p className="hidden text-sm font-bold tracking-wide lg:block">OSUN LIFE</p>
           <div className="max-w-lg">
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-white/75">
               Your next chapter starts here

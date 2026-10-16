@@ -83,4 +83,4 @@ if (!Number.isInteger(port) || port < 1 || port > 65_535)
   throw new Error("PORT or MULTIPLAYER_PORT must be a valid TCP port.");
 
 await server.listen(port, host);
-console.info(`OSOGBO LIFE multiplayer server listening at ${host}:${port}`);
+console.info(`OSUN LIFE multiplayer server listening at ${host}:${port}`);

@@ -9,7 +9,7 @@ export function Logo({ small = false }: { small?: boolean }) {
       {!small && (
         <span className="grid gap-1 text-left leading-none">
           <span className="font-display text-lg font-bold">
-            OSOGBO <span className="text-primary">LIFE</span>
+            OSUN <span className="text-primary">LIFE</span>
           </span>
           <span className="text-[8px] font-bold tracking-[0.16em] text-muted-foreground">
             BEGINNINGS

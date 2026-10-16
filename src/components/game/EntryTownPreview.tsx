@@ -30,7 +30,7 @@ export function EntryTownPreview() {
         aria-labelledby="entry-world-title"
         preserveAspectRatio="xMidYMid meet"
       >
-        <title id="entry-world-title">Illustrated preview of the playable Osogbo Life town</title>
+        <title id="entry-world-title">Illustrated preview of the playable Osun Life town</title>
         <rect width="1200" height="800" fill="#d7e3d9" />
         <path d="M0 712 Q230 640 395 728 T805 715 T1200 670 V800 H0Z" fill="#8eb5bb" />
         {town.districts.map((district) => {

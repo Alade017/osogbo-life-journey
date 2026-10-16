@@ -1,6 +1,6 @@
 import { getBusinessOverview, executeBusinessCommand } from "@/lib/business-service";
 import { getAdvertisingMarket } from "@/lib/advertising-service";
-// Client-side data access for OSOGBO LIFE.
+// Client-side data access for OSUN LIFE.
 // Reads go through RLS-protected tables (players only ever see their own rows).
 // Every state change goes through server-validated database functions (RPCs);
 // the browser has no write access to characters, wallets, missions, etc.

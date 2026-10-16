@@ -81,13 +81,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "OSOGBO LIFE" },
+      { title: "OSUN LIFE" },
+      { name: "application-name", content: "OSUN LIFE" },
       {
         name: "description",
-        content: "A playful Nigerian life simulation game set in a miniature Osogbo-inspired city.",
+        content:
+          "A Nigerian life simulation game set across a fictional, game-inspired Osun State.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:site_name", content: "OSOGBO LIFE" },
+      { property: "og:site_name", content: "OSUN LIFE" },
       { property: "og:image", content: socialImage },
       { property: "og:image:width", content: "1200" },
       { property: "og:image:height", content: "630" },
@@ -103,6 +105,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "icon", href: "/favicon.ico", sizes: "any" },
       { rel: "icon", href: "/favicon-32.png", type: "image/png", sizes: "32x32" },
       { rel: "apple-touch-icon", href: "/favicon-192.png", sizes: "192x192" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {

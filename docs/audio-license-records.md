@@ -20,7 +20,7 @@
 - Terms reviewed 2026-10-12; permits indie-game use, excludes Studio Games.
 - Generation/account plan is user-confirmed, not independently verified through billing.
 - Duration measured from MP3 frames: 120.072 seconds.
-- Artist label: OSOGBO LIFE (Eleven Music), identifying project origin rather than a named performer.
+- Artist label: OSUN LIFE (Eleven Music), identifying project origin rather than a named performer.
 - No embedded player or remote song downloads are used.
 
 Removed at the user's request on 2026-10-12. Its manifest entry, public playback

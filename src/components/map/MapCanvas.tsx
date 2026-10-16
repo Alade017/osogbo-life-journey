@@ -549,7 +549,6 @@ export function MapCanvas({
   const pointerStart = useRef<{ x: number; y: number; time: number } | null>(null);
   const tapAllowed = useRef(false);
   const [zoom, setZoom] = useState(18);
-  const [zoomRange, setZoomRange] = useState({ min: 8, max: 54 });
   const callbacks = useRef({ onSelectDistrict, onSelectLandmark, onSelectBillboard });
   callbacks.current = { onSelectDistrict, onSelectLandmark, onSelectBillboard };
 
@@ -560,7 +559,6 @@ export function MapCanvas({
       if (!entry) return;
       const fit = Math.min(entry.contentRect.width / 30, entry.contentRect.height / 23);
       const min = Math.max(8, Math.min(20, fit));
-      setZoomRange({ min, max: Math.max(min + 18, 54) });
       setZoom((current) =>
         current === 18
           ? Math.min(54, Math.max(min, fit * 1.08))
@@ -629,15 +627,25 @@ export function MapCanvas({
     )
       tapAllowed.current = false;
   }, []);
-  const adjustZoom = (delta: number) =>
-    setZoom((value) => Math.max(zoomRange.min, Math.min(zoomRange.max, value + delta)));
+  const onKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== "+" && event.key !== "=" && event.key !== "-") return;
+    event.preventDefault();
+    window.dispatchEvent(
+      new CustomEvent("osogbo:map-zoom", {
+        detail: { direction: event.key === "-" ? -1 : 1 },
+      }),
+    );
+  }, []);
 
   return (
     <div
       ref={rootRef}
       className="map-canvas town-map-canvas"
       role="region"
-      aria-label="Interactive isometric town map"
+      aria-label="Interactive isometric town map. Drag to pan, use the wheel or pinch to zoom."
+      tabIndex={0}
+      onKeyDown={onKeyDown}
+      onDoubleClick={() => window.dispatchEvent(new Event("osogbo:map-overview"))}
       onPointerDownCapture={onPointerDown}
       onPointerMoveCapture={onPointerMove}
       onPointerUpCapture={onPointerUp}
@@ -656,14 +664,9 @@ export function MapCanvas({
           : {})}
         tapAllowed={tapAllowed}
       />
-      <div className="town-map-zoom-controls" role="group" aria-label="Map zoom">
-        <button type="button" aria-label="Zoom in" onClick={() => adjustZoom(3)}>
-          +
-        </button>
-        <button type="button" aria-label="Zoom out" onClick={() => adjustZoom(-3)}>
-          −
-        </button>
-      </div>
+      <p className="town-map-gesture-hint">
+        Drag to move · Wheel, pinch or right-drag to zoom · Double-click for overview
+      </p>
       <ul className="town-map-accessible-list" aria-label="Places on the map">
         {availablePlaces.map((place) => (
           <li key={place.id}>

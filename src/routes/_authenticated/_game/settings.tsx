@@ -13,7 +13,7 @@ import { PageHeader } from "@/components/game/ui";
 import { WorldAudioSettings } from "@/components/game/WorldAudioSettings";
 
 export const Route = createFileRoute("/_authenticated/_game/settings")({
-  head: () => pageMeta("Settings", "Manage your OSOGBO LIFE account and preferences."),
+  head: () => pageMeta("Settings", "Manage your OSUN LIFE account and preferences."),
   component: SettingsPage,
 });
 

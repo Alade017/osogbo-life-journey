@@ -12,9 +12,9 @@ import "@/components/game/game-entry.css";
 export const Route = createFileRoute("/_authenticated/enter")({
   head: () => ({
     meta: [
-      { title: "Enter Osogbo — OSOGBO LIFE" },
+      { title: "Enter Osogbo — OSUN LIFE" },
       { name: "robots", content: "noindex, nofollow" },
-      { name: "description", content: "Return to your saved OSOGBO LIFE journey." },
+      { name: "description", content: "Return to your saved OSUN LIFE journey." },
     ],
   }),
   component: GameEntry,
@@ -42,7 +42,7 @@ function GameEntry() {
   return (
     <main className="game-entry">
       <header className="game-entry-header">
-        <Link to="/" aria-label="OSOGBO LIFE public home">
+        <Link to="/" aria-label="OSUN LIFE public home">
           <Logo />
         </Link>
         <span className="game-entry-header-note">Your city is waiting</span>
@@ -102,7 +102,7 @@ function GameEntry() {
             </>
           ) : null}
           <p className="game-entry-note">Money and prices are part of the game.</p>
-          <ul className="game-entry-activities" aria-label="Things to do in Osogbo Life">
+          <ul className="game-entry-activities" aria-label="Things to do in Osun Life">
             <li>
               <Compass aria-hidden="true" /> Explore the city
             </li>
@@ -119,7 +119,7 @@ function GameEntry() {
             <span>
               <MapPin size={15} aria-hidden="true" /> Your world awaits
             </span>
-            <span>OSOGBO LIFE / BEGINNINGS</span>
+            <span>OSUN LIFE / BEGINNINGS</span>
           </div>
           <EntryTownPreview />
           {character && (

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Banknote, CalendarDays, CloudOff, Compass, Smile } from "lucide-react";
+import { Banknote, CalendarDays, CloudOff, Compass, MapPinned, Smile } from "lucide-react";
 import {
   MapCanvas,
   type MapBillboardMarker,
@@ -10,6 +10,7 @@ import {
 import { DistrictSheet } from "@/components/map/DistrictSheet";
 import { LandmarkSheet } from "@/components/map/LandmarkSheet";
 import { MapBillboardCampaignDialog } from "@/components/game/CityBillboards";
+import { OsunStateOverview } from "@/components/map/OsunStateOverview";
 import { MAP_LANDMARK_LOCATION_SLUG } from "@/components/map/map-location-links";
 import { formatMapNaira } from "@/components/map/map-ui-utils";
 import townData from "@/data/osogbo-town.json";
@@ -67,6 +68,8 @@ export function CityMapDashboard({
   const [placeActionResult, setPlaceActionResult] = useState<PlaceActionResult | null>(null);
   const [selectedBillboard, setSelectedBillboard] = useState<CurrentMapBillboard | null>(null);
   const [billboardNow, setBillboardNow] = useState(() => Date.now());
+  const [mapLevel, setMapLevel] = useState<"town" | "state">("town");
+  const [selectedTownId, setSelectedTownId] = useState("osogbo");
   const queryClient = useQueryClient();
   const character = useQuery(q.character());
   const wallet = useQuery(q.wallet());
@@ -238,10 +241,7 @@ export function CityMapDashboard({
           : "Low"
       : "Settled");
   return (
-    <section
-      className="city-map-dashboard is-world-map map-experience"
-      aria-label="Osogbo district map"
-    >
+    <section className="city-map-dashboard is-world-map map-experience" aria-label="Osun Life map">
       <header className="map-topbar">
         <span>
           <Banknote size={16} />
@@ -263,6 +263,14 @@ export function CityMapDashboard({
             Next: {nextRealEvent.title} · {formatCalendarDate(nextRealEvent.startsOn)}
           </span>
         )}
+        <button
+          className="map-level-toggle"
+          type="button"
+          onClick={() => setMapLevel((level) => (level === "town" ? "state" : "town"))}
+        >
+          <MapPinned size={16} />
+          {mapLevel === "town" ? "Explore Osun" : "Osogbo map"}
+        </button>
       </header>
       {offline && (
         <div role="status" className="map-offline-banner">
@@ -270,55 +278,65 @@ export function CityMapDashboard({
           Offline. Showing your last saved map.
         </div>
       )}
-      <div className="map-controls">
-        <div className="map-category-chips" aria-label="Filter places">
-          {categories.map((c) => (
-            <button
-              key={c.id}
-              aria-pressed={filter === c.id}
-              onClick={() => setFilter(filter === c.id ? "all" : c.id)}
-            >
-              {c.label}
+      {mapLevel === "town" && (
+        <div className="map-controls">
+          <div className="map-category-chips" aria-label="Filter places">
+            {categories.map((c) => (
+              <button
+                key={c.id}
+                aria-pressed={filter === c.id}
+                onClick={() => setFilter(filter === c.id ? "all" : c.id)}
+              >
+                {c.label}
+              </button>
+            ))}
+          </div>
+          <form
+            className="map-search"
+            onSubmit={(e) => {
+              e.preventDefault();
+              submitSearch();
+            }}
+          >
+            <input
+              aria-label="Search districts and landmarks"
+              placeholder="Search map"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <button type="submit" disabled={!searchMatches}>
+              Search
             </button>
-          ))}
+          </form>
         </div>
-        <form
-          className="map-search"
-          onSubmit={(e) => {
-            e.preventDefault();
-            submitSearch();
+      )}
+      {mapLevel === "town" ? (
+        <MapCanvas
+          onSelectDistrict={onDistrict}
+          onSelectLandmark={onLandmark}
+          activeFilter={filter}
+          searchTarget={searchTarget}
+          jobLandmarkIds={jobLandmarkIds}
+          billboardMarkers={billboardMarkers}
+          onSelectBillboard={(campaignId) => {
+            setSelectedBillboard(
+              activeMapBillboards.find(({ advertisement }) => advertisement.id === campaignId) ??
+                null,
+            );
           }}
-        >
-          <input
-            aria-label="Search districts and landmarks"
-            placeholder="Search map"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <button type="submit" disabled={!searchMatches}>
-            Search
-          </button>
-        </form>
-      </div>
-      <MapCanvas
-        onSelectDistrict={onDistrict}
-        onSelectLandmark={onLandmark}
-        activeFilter={filter}
-        searchTarget={searchTarget}
-        jobLandmarkIds={jobLandmarkIds}
-        billboardMarkers={billboardMarkers}
-        onSelectBillboard={(campaignId) => {
-          setSelectedBillboard(
-            activeMapBillboards.find(({ advertisement }) => advertisement.id === campaignId) ??
-              null,
-          );
-        }}
-      />
+        />
+      ) : (
+        <OsunStateOverview
+          selectedTownId={selectedTownId}
+          onSelectTown={setSelectedTownId}
+          onOpenOsogbo={() => setMapLevel("town")}
+        />
+      )}
       <MapBillboardCampaignDialog
         campaign={selectedBillboard}
         onClose={() => setSelectedBillboard(null)}
       />
-      {selectedDistrict && (
+      {mapLevel === "town" && selectedDistrict && (
         <DistrictSheet
           district={selectedDistrict}
           event={
@@ -330,7 +348,7 @@ export function CityMapDashboard({
           onLandmark={onLandmark}
         />
       )}
-      {selectedLandmark && (
+      {mapLevel === "town" && selectedLandmark && (
         <LandmarkSheet
           landmark={selectedLandmark}
           description={

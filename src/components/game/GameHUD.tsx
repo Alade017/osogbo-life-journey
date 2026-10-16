@@ -40,11 +40,11 @@ export function GameHUD({
         to="/home"
         search={{ visit: undefined }}
         className="game-hud-brand"
-        aria-label="OSOGBO LIFE home"
+        aria-label="OSUN LIFE home"
       >
         <Logo small />
         <span className="game-hud-brand-copy">
-          <strong>OSOGBO LIFE</strong>
+          <strong>OSUN LIFE</strong>
           <small>PLAYER DASHBOARD</small>
         </span>
       </Link>

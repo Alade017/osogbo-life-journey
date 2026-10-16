@@ -358,6 +358,13 @@
       "when": 1791940000013,
       "tag": "0049_phone_market_and_careers",
       "breakpoints": true
+    },
+    {
+      "idx": 51,
+      "version": "7",
+      "when": 1791940000014,
+      "tag": "0050_osun_life_brand",
+      "breakpoints": true
     }
   ]
 }

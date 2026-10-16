@@ -104,36 +104,10 @@
   background: var(--accent);
 }
 
+.town-map-canvas:focus-visible,
 .town-map-canvas :is(button):focus-visible {
   outline: 3px solid var(--ring);
   outline-offset: 3px;
-}
-
-.town-map-zoom-controls {
-  position: absolute;
-  z-index: 20;
-  right: 12px;
-  bottom: calc(var(--map-dock-clearance, 90px) + env(safe-area-inset-bottom, 0px) + 12px);
-  display: grid;
-  gap: 5px;
-  padding: 5px;
-  border: 1px solid var(--ring);
-  border-radius: 16px;
-  background: var(--card);
-  box-shadow: var(--elevation-card);
-}
-
-.town-map-zoom-controls button {
-  width: 44px;
-  height: 44px;
-  border: 0;
-  border-radius: 12px;
-  color: var(--foreground);
-  background: transparent;
-  font:
-    700 22px/1 system-ui,
-    sans-serif;
-  cursor: pointer;
 }
 
 .town-map-accessible-list {
@@ -145,6 +119,32 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   clip-path: inset(50%);
+}
+
+.town-map-gesture-hint {
+  position: absolute;
+  z-index: 5;
+  left: 50%;
+  bottom: calc(var(--map-dock-clearance, 90px) + env(safe-area-inset-bottom, 0px) + 10px);
+  max-width: calc(100% - 2rem);
+  margin: 0;
+  padding: 0.35rem 0.65rem;
+  transform: translateX(-50%);
+  border: 1px solid var(--ring);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow: var(--elevation-card);
+  font-size: 0.72rem;
+  text-align: center;
+  pointer-events: none;
+}
+
+@media (max-width: 520px) {
+  .town-map-gesture-hint {
+    width: max-content;
+    font-size: 0.65rem;
+  }
 }
 
 .map-canvas-transform {

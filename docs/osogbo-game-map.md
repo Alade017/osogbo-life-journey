@@ -1,4 +1,4 @@
-# OSOGBO LIFE city map
+# OSUN LIFE city map
 
 The authenticated `/map` route uses an original, fictional 2.5D isometric SVG city. It does not request map tiles, real-world coordinates, routing services, or a map-provider key. The layout takes visual cues from the supplied HUD reference while keeping the streets and districts fictional.
 

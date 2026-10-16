@@ -1,12 +1,12 @@
-# Osogbo Life: Origins
+# Osun Life: Origins
 
-Build Phase 1 of a production-quality browser game called OSOGBO LIFE.
+Build Phase 1 of a production-quality browser game called OSUN LIFE.
 
-OSOGBO LIFE is an original Nigerian browser-based life simulation game set in a fictionalized, game-inspired version of Osogbo, Nigeria.
+OSUN LIFE is an original Nigerian browser-based life simulation game set in fictionalized, game-inspired towns across Osun State, Nigeria.
 
 The core concept is:
 
-Create your character → enter Osogbo → get a job → earn virtual money → complete missions → improve your life → save your progress.
+Create your character → enter Osun State → choose a town → get a job → earn virtual money → complete missions → improve your life → save your progress.
 
 Do NOT attempt to build the entire game yet. Build only the foundation and MVP.
 

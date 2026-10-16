@@ -1,0 +1,188 @@
+{
+  "meta": {
+    "version": 1,
+    "source": "Hand-placed game overview, not geographic data",
+    "reviewed": false
+  },
+  "towns": [
+    {
+      "id": "osogbo",
+      "name": "Osogbo",
+      "x": 50,
+      "y": 46,
+      "detailed": true,
+      "publicPlaces": []
+    },
+    {
+      "id": "ile-ife",
+      "name": "Ile-Ife",
+      "x": 69,
+      "y": 72,
+      "detailed": false,
+      "publicPlaces": [
+        {
+          "id": "ile-ife-supermarket",
+          "label": "Town supermarket",
+          "category": "supermarket",
+          "fictional": true
+        },
+        { "id": "ile-ife-club", "label": "Community club", "category": "club", "fictional": true },
+        { "id": "ile-ife-court", "label": "Civic court", "category": "court", "fictional": true },
+        {
+          "id": "ile-ife-phone-store",
+          "label": "Phone store",
+          "category": "phone_store",
+          "fictional": true
+        }
+      ]
+    },
+    {
+      "id": "ilesa",
+      "name": "Ilesa",
+      "x": 81,
+      "y": 37,
+      "detailed": false,
+      "publicPlaces": [
+        {
+          "id": "ilesa-supermarket",
+          "label": "Town supermarket",
+          "category": "supermarket",
+          "fictional": true
+        },
+        { "id": "ilesa-club", "label": "Community club", "category": "club", "fictional": true },
+        { "id": "ilesa-court", "label": "Civic court", "category": "court", "fictional": true },
+        {
+          "id": "ilesa-phone-store",
+          "label": "Phone store",
+          "category": "phone_store",
+          "fictional": true
+        }
+      ]
+    },
+    {
+      "id": "ede",
+      "name": "Ede",
+      "x": 35,
+      "y": 57,
+      "detailed": false,
+      "publicPlaces": [
+        {
+          "id": "ede-supermarket",
+          "label": "Town supermarket",
+          "category": "supermarket",
+          "fictional": true
+        },
+        { "id": "ede-club", "label": "Community club", "category": "club", "fictional": true },
+        { "id": "ede-court", "label": "Civic court", "category": "court", "fictional": true },
+        {
+          "id": "ede-phone-store",
+          "label": "Phone store",
+          "category": "phone_store",
+          "fictional": true
+        }
+      ]
+    },
+    {
+      "id": "iwo",
+      "name": "Iwo",
+      "x": 17,
+      "y": 54,
+      "detailed": false,
+      "publicPlaces": [
+        {
+          "id": "iwo-supermarket",
+          "label": "Town supermarket",
+          "category": "supermarket",
+          "fictional": true
+        },
+        { "id": "iwo-club", "label": "Community club", "category": "club", "fictional": true },
+        { "id": "iwo-court", "label": "Civic court", "category": "court", "fictional": true },
+        {
+          "id": "iwo-phone-store",
+          "label": "Phone store",
+          "category": "phone_store",
+          "fictional": true
+        }
+      ]
+    },
+    {
+      "id": "ikirun",
+      "name": "Ikirun",
+      "x": 49,
+      "y": 25,
+      "detailed": false,
+      "publicPlaces": [
+        {
+          "id": "ikirun-supermarket",
+          "label": "Town supermarket",
+          "category": "supermarket",
+          "fictional": true
+        },
+        { "id": "ikirun-club", "label": "Community club", "category": "club", "fictional": true },
+        { "id": "ikirun-court", "label": "Civic court", "category": "court", "fictional": true },
+        {
+          "id": "ikirun-phone-store",
+          "label": "Phone store",
+          "category": "phone_store",
+          "fictional": true
+        }
+      ]
+    },
+    {
+      "id": "ejigbo",
+      "name": "Ejigbo",
+      "x": 24,
+      "y": 30,
+      "detailed": false,
+      "publicPlaces": [
+        {
+          "id": "ejigbo-supermarket",
+          "label": "Town supermarket",
+          "category": "supermarket",
+          "fictional": true
+        },
+        { "id": "ejigbo-club", "label": "Community club", "category": "club", "fictional": true },
+        { "id": "ejigbo-court", "label": "Civic court", "category": "court", "fictional": true },
+        {
+          "id": "ejigbo-phone-store",
+          "label": "Phone store",
+          "category": "phone_store",
+          "fictional": true
+        }
+      ]
+    },
+    {
+      "id": "ila-orangun",
+      "name": "Ila-Orangun",
+      "x": 68,
+      "y": 18,
+      "detailed": false,
+      "publicPlaces": [
+        {
+          "id": "ila-orangun-supermarket",
+          "label": "Town supermarket",
+          "category": "supermarket",
+          "fictional": true
+        },
+        {
+          "id": "ila-orangun-club",
+          "label": "Community club",
+          "category": "club",
+          "fictional": true
+        },
+        {
+          "id": "ila-orangun-court",
+          "label": "Civic court",
+          "category": "court",
+          "fictional": true
+        },
+        {
+          "id": "ila-orangun-phone-store",
+          "label": "Phone store",
+          "category": "phone_store",
+          "fictional": true
+        }
+      ]
+    }
+  ]
+}

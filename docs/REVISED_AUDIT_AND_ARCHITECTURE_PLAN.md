@@ -1,8 +1,8 @@
-# OSOGBO LIFE
+# OSUN LIFE
 ## Revised Repository Audit and Technical Architecture Plan
 
 **Document status:** Proposed architecture and implementation specification  
-**Product:** OSOGBO LIFE — Online Multiplayer Life Simulation  
+**Product:** OSUN LIFE — Online Multiplayer Life Simulation
 **Primary reference experiences:** https://lagoslife.app/ and https://lagoslove.app/city  
 **Frontend:** React + TypeScript  
 **Game engine:** Phaser 3  
@@ -14,7 +14,7 @@
 
 # 1. PRODUCT VISION
 
-OSOGBO LIFE is an online multiplayer life-simulation game set in an original fictional city inspired by Osogbo, Nigeria.
+OSUN LIFE is an online multiplayer life-simulation game set in an original fictional city inspired by Osogbo, Nigeria.
 
 Players create characters, explore neighborhoods, encounter other real players, communicate, make friends, travel between districts, enter buildings, visit homes, complete jobs, earn currency, purchase items, and progress through a persistent game world.
 
@@ -24,7 +24,7 @@ The product must combine three connected experiences:
 2. A secure authentication and character-onboarding experience.
 3. A functional, interactive multiplayer game with real player interactions and persistent progression.
 
-LagosLife and LagosLove are reference experiences for interaction quality, city-life presentation, and product structure. OSOGBO LIFE must establish its own visual identity, original art, world design, and gameplay.
+LagosLife and LagosLove are reference experiences for interaction quality, city-life presentation, and product structure. OSUN LIFE must establish its own visual identity, original art, world design, and gameplay.
 
 ## Product principles
 
@@ -245,7 +245,7 @@ Identify deployment dependencies that must be resolved before implementation or 
 
 ## 4.1 Public website
 
-The homepage should establish the identity of OSOGBO LIFE immediately.
+The homepage should establish the identity of OSUN LIFE immediately.
 
 Required elements:
 - Original brand identity.
@@ -310,7 +310,7 @@ Every control must produce a defined outcome and appropriate feedback.
 
 ## 5.1 Architectural requirement
 
-OSOGBO LIFE is an online multiplayer product. The architecture must support real authenticated players in a shared world from the foundational implementation.
+OSUN LIFE is an online multiplayer product. The architecture must support real authenticated players in a shared world from the foundational implementation.
 
 Do not design the game as single-player with multiplayer merely listed as a future possibility.
 

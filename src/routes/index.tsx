@@ -13,22 +13,23 @@ import miniatureCity from "@/assets/hero-city.jpg";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "OSOGBO LIFE — A Nigerian life simulation game" },
+      { title: "OSUN LIFE — A Nigerian life simulation game" },
       {
         name: "description",
         content:
-          "Create your character, build a career, and make a life in a miniature Osogbo-inspired city.",
+          "Create your character, build a career, and make a life across a fictional, game-inspired Osun State.",
       },
-      { property: "og:title", content: "OSOGBO LIFE — A Nigerian life simulation game" },
+      { property: "og:title", content: "OSUN LIFE — A Nigerian life simulation game" },
       {
         property: "og:description",
-        content: "Create your character and make a life in a miniature Osogbo-inspired city.",
+        content:
+          "Create your character and make a life across a fictional, game-inspired Osun State.",
       },
-      { name: "twitter:title", content: "OSOGBO LIFE — A Nigerian life simulation game" },
+      { name: "twitter:title", content: "OSUN LIFE — A Nigerian life simulation game" },
       {
         name: "twitter:description",
         content:
-          "Explore a fictional Osogbo-inspired city, find work, and build your virtual life.",
+          "Explore fictional towns across Osun State, find work, and build your virtual life.",
       },
       { name: "robots", content: "index, follow" },
     ],
@@ -106,7 +107,7 @@ function Landing() {
   return (
     <main className="landing-screen min-h-screen bg-background text-foreground">
       <header className="landing-header">
-        <Link to="/" aria-label="OSOGBO LIFE home">
+        <Link to="/" aria-label="OSUN LIFE home">
           <Logo />
         </Link>
         <div className="flex items-center gap-2">
@@ -265,7 +266,7 @@ function Landing() {
 
       <footer className="landing-footer">
         <Logo />
-        <span>OSOGBO LIFE · An original Nigerian life simulation</span>
+        <span>OSUN LIFE · An original Nigerian life simulation</span>
         <Link to="/login">Account & settings</Link>
       </footer>
     </main>

@@ -24,7 +24,19 @@ const statusByCode: Record<string, number> = {
   INVALID_SLOT: 400,
   INSUFFICIENT_FUNDS: 409,
   IDEMPOTENCY_CONFLICT: 409,
+  HOUSE_SETUP_REQUIRED: 503,
+  HOUSE_SERVICE_UNAVAILABLE: 503,
 };
+
+const knownCodes = new Set(Object.keys(statusByCode));
+
+function safeServerErrorCode(message: string) {
+  const explicit = message.match(/\b[A-Z][A-Z0-9_]{2,}\b/)?.[0];
+  if (explicit && knownCodes.has(explicit)) return explicit;
+  if (/schema cache|function .* does not exist|relation .* does not exist/i.test(message))
+    return "HOUSE_SETUP_REQUIRED";
+  return "HOUSE_SERVICE_UNAVAILABLE";
+}
 
 function json(body: unknown, status = 200) {
   return Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
@@ -54,7 +66,8 @@ export function createHouseApiHandlers(deps: HouseApiDependencies) {
       return json(result);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      const code = message.split(/[\s:]/, 1)[0] ?? "INTERNAL_ERROR";
+      const code = safeServerErrorCode(message);
+      console.error("House API request failed", { code, message });
       return json({ error: { code } }, statusByCode[code] ?? 500);
     }
   }

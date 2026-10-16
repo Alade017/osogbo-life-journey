@@ -1,5 +1,5 @@
 export function pageMeta(title: string, description: string) {
-  const t = `${title} — OSOGBO LIFE`;
+  const t = `${title} — OSUN LIFE`;
   return {
     meta: [
       { title: t },

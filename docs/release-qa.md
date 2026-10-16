@@ -85,7 +85,7 @@ Milestone 9 remains in progress until its outstanding gates have recorded outcom
 ### Production delivery check
 
 - Vercel reported the production deployment `osogbo-life-journey-opurvfq6j-alade017.vercel.app` as Ready and attached the `osogbo-life-journey-alade017.vercel.app` production alias.
-- An authenticated read-only request returned the OSOGBO LIFE homepage HTML. Deployment Protection is enabled.
+- An authenticated read-only request returned the OSUN LIFE homepage HTML. Deployment Protection is enabled.
 - This verifies frontend delivery only. It does not verify browser interaction, Supabase operations, or multiplayer behavior.
 
 ### Remaining acceptance gates

@@ -9,7 +9,7 @@ function PublicWebsite() {
   return (
     <>
       <header className="site-header">
-        <a href="#top" className="brand" aria-label="Osogbo Life home">
+        <a href="#top" className="brand" aria-label="Osun Life home">
           OSOGBO <span>LIFE: BEGINNINGS</span>
         </a>
         <nav aria-label="Main navigation">
@@ -35,7 +35,7 @@ function PublicWebsite() {
           />
           <div className="hero-shade" />
           <div className="hero-content">
-            <p className="eyebrow">OSOGBO LIFE: BEGINNINGS - Inspired by Osogbo, Nigeria</p>
+            <p className="eyebrow">OSUN LIFE: BEGINNINGS - Inspired by Osun State, Nigeria</p>
             <h1 id="hero-title">
               A new day.
               <br />
@@ -126,7 +126,7 @@ function PublicWebsite() {
               loading="lazy"
             />
             <figcaption>
-              <span>OSOGBO LIFE</span>
+              <span>OSUN LIFE</span>
               <span>A fictional city inspired by real places and everyday stories.</span>
             </figcaption>
           </figure>
@@ -184,7 +184,7 @@ function PublicWebsite() {
           </div>
           <div className="faq-list">
             <details>
-              <summary>What is OSOGBO LIFE: BEGINNINGS?</summary>
+              <summary>What is OSUN LIFE: BEGINNINGS?</summary>
               <p>
                 It is an online life simulation set in a fictional city inspired by Osogbo, Nigeria.
                 Create a character, explore, work, meet players, and shape a home.

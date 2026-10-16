@@ -99,13 +99,76 @@ function getBuyRequestKey(playerId: string, itemId: string, memory: Map<string, 
   return key;
 }
 
-function isHouseState(value: unknown): value is HouseState {
-  return (
-    !!value &&
-    typeof value === "object" &&
-    "house" in value &&
-    Array.isArray((value as HouseState).placements)
-  );
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function normalizeHouseState(value: unknown): HouseState | null {
+  if (!isRecord(value) || !("house" in value)) return null;
+  const rawHouse = value["house"];
+  let house: HouseState["house"] = null;
+  if (rawHouse !== null) {
+    if (!isRecord(rawHouse) || !isRecord(rawHouse["house_type"])) return null;
+    const type = rawHouse["house_type"];
+    if (
+      typeof rawHouse["id"] !== "string" ||
+      typeof rawHouse["house_type_id"] !== "string" ||
+      typeof rawHouse["status"] !== "string" ||
+      typeof rawHouse["next_rent_due_at"] !== "string" ||
+      typeof type["id"] !== "string" ||
+      typeof type["label"] !== "string" ||
+      typeof type["asset_key"] !== "string"
+    )
+      return null;
+    house = {
+      id: rawHouse["id"],
+      house_type_id: rawHouse["house_type_id"],
+      status: rawHouse["status"],
+      next_rent_due_at: rawHouse["next_rent_due_at"],
+      house_type: {
+        id: type["id"],
+        label: type["label"],
+        bedrooms: typeof type["bedrooms"] === "number" ? type["bedrooms"] : 1,
+        asset_key: type["asset_key"],
+        slots: Array.isArray(type["slots"]) ? (type["slots"] as HouseSlot[]) : [],
+        weekly_rent_minor:
+          typeof type["weekly_rent_minor"] === "number" ? type["weekly_rent_minor"] : 0,
+      },
+    };
+  }
+  const rawOutfit = isRecord(value["outfit"]) ? value["outfit"] : {};
+  const outfit = Object.fromEntries(
+    Object.keys(EMPTY_OUTFIT).map((slot) => [
+      slot,
+      typeof rawOutfit[slot] === "string" ? rawOutfit[slot] : null,
+    ]),
+  ) as HouseOutfit;
+  return {
+    house,
+    placements: Array.isArray(value["placements"]) ? (value["placements"] as HousePlacement[]) : [],
+    outfit,
+    inventory: Array.isArray(value["inventory"])
+      ? (value["inventory"] as HouseInventoryItem[])
+      : [],
+  };
+}
+
+function readSavedHouseState(characterId: string): HouseState | null {
+  try {
+    return normalizeHouseState(
+      JSON.parse(localStorage.getItem(`${CACHE_PREFIX}${characterId}`) ?? "null"),
+    );
+  } catch {
+    return null;
+  }
+}
+
+function houseLoadMessage(error: unknown) {
+  const code = error instanceof Error ? error.message : "";
+  if (code === "UNAUTHORIZED") return "Your session expired. Sign in again to load your home.";
+  if (code === "HOUSE_SETUP_REQUIRED")
+    return "Your home needs the latest database update before it can load.";
+  return "Your house could not be loaded. Check your connection and try again.";
 }
 
 function legacyHouseState(value: unknown): HouseState | null {
@@ -226,6 +289,10 @@ function HousePage() {
   const buyRequestKeys = useRef(new Map<string, string>());
 
   useEffect(() => {
+    void supabase.auth.getSession().then(({ data }) => {
+      setPlayerId(data.session?.user.id ?? null);
+      if (data.session?.access_token) void supabase.realtime.setAuth(data.session.access_token);
+    });
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
       setPlayerId(session?.user.id ?? null);
       if (session?.access_token) void supabase.realtime.setAuth(session.access_token);
@@ -269,55 +336,47 @@ function HousePage() {
     enabled: !!character?.id,
     retry: false,
     queryFn: async (): Promise<HouseStateSnapshot> => {
-      let response: Response;
+      let primaryError: Error | null = null;
       try {
-        response = await authorizedFetch("/api/house/state");
-      } catch (error) {
-        try {
-          const legacyResponse = await authorizedFetch("/api/housing/home");
-          const fallback = legacyHouseState(await legacyResponse.json().catch(() => null));
-          if (legacyResponse.ok && fallback) return { state: fallback, source: "server" };
-        } catch {
-          // Use the last saved snapshot below if both state endpoints are unavailable.
-        }
-        try {
-          const cached = JSON.parse(
-            localStorage.getItem(`${CACHE_PREFIX}${character!.id}`) ?? "null",
+        const response = await authorizedFetch("/api/house/state");
+        const result = await response.json().catch(() => null);
+        const normalized = normalizeHouseState(result);
+        if (!response.ok || !normalized) {
+          primaryError = new Error(
+            response.ok
+              ? "INVALID_HOUSE_STATE"
+              : isRecord(result) &&
+                  isRecord(result["error"]) &&
+                  typeof result["error"]["code"] === "string"
+                ? result["error"]["code"]
+                : "HOUSE_SERVICE_UNAVAILABLE",
           );
-          if (isHouseState(cached)) return { state: cached, source: "saved" };
-        } catch {
-          // Continue with the network error when no usable saved state exists.
-        }
-        throw error;
-      }
-      const result = await response.json().catch(() => null);
-      if (!response.ok || !isHouseState(result)) {
-        try {
-          const legacyResponse = await authorizedFetch("/api/housing/home");
-          const fallback = legacyHouseState(await legacyResponse.json().catch(() => null));
-          if (legacyResponse.ok && fallback) {
-            try {
-              localStorage.setItem(`${CACHE_PREFIX}${character!.id}`, JSON.stringify(fallback));
-            } catch {
-              /* Storage may be unavailable. */
-            }
-            return { state: fallback, source: "server" };
+        } else {
+          try {
+            localStorage.setItem(`${CACHE_PREFIX}${character!.id}`, JSON.stringify(normalized));
+          } catch {
+            /* Storage may be unavailable. */
           }
-        } catch {
-          // Continue with the primary endpoint's error below.
+          return { state: normalized, source: "server" };
         }
-        throw new Error(
-          response.ok
-            ? "House state response is invalid."
-            : (result?.error?.code ?? "House state could not be loaded."),
-        );
+      } catch (error) {
+        primaryError = error instanceof Error ? error : new Error("HOUSE_SERVICE_UNAVAILABLE");
       }
+
       try {
-        localStorage.setItem(`${CACHE_PREFIX}${character!.id}`, JSON.stringify(result));
+        const legacyResponse = await authorizedFetch("/api/housing/home");
+        const fallback = legacyHouseState(await legacyResponse.json().catch(() => null));
+        if (legacyResponse.ok && fallback) {
+          localStorage.setItem(`${CACHE_PREFIX}${character!.id}`, JSON.stringify(fallback));
+          return { state: fallback, source: "server" };
+        }
       } catch {
-        /* Storage may be unavailable. */
+        // The saved snapshot below remains usable when either endpoint is unavailable.
       }
-      return { state: result, source: "server" };
+
+      const saved = readSavedHouseState(character!.id);
+      if (saved) return { state: saved, source: "saved" };
+      throw primaryError ?? new Error("HOUSE_SERVICE_UNAVAILABLE");
     },
   });
   const snapshot = stateQuery.data;
@@ -405,9 +464,9 @@ function HousePage() {
         }
         throw new Error(result?.error?.code ?? "That change was not saved.");
       }
-      if (!isHouseState(result?.state))
-        throw new Error("The server returned an incomplete house update.");
-      return result.state as HouseState;
+      const nextState = normalizeHouseState(result?.state);
+      if (!nextState) throw new Error("The server returned an incomplete house update.");
+      return nextState;
     },
     onSuccess: (state, variables) => {
       if (variables.action === "buy" && variables.itemId) {
@@ -504,7 +563,7 @@ function HousePage() {
     return (
       <div className="house-page">
         <section className="house-error-card" role="alert">
-          <p>Your house could not be loaded. Reconnect and try again.</p>
+          <p>{houseLoadMessage(stateQuery.error)}</p>
           <button type="button" onClick={() => void stateQuery.refetch()}>
             Try again
           </button>

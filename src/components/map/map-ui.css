@@ -29,6 +29,172 @@
 .map-topbar svg {
   color: var(--primary);
 }
+.map-level-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 36px;
+  margin-left: auto;
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--ring);
+  border-radius: 999px;
+  background: var(--background);
+  color: var(--foreground);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.osun-state-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(230px, 300px);
+  flex: 1 1 auto;
+  min-height: 320px;
+  gap: 0.75rem;
+}
+.osun-state-board {
+  position: relative;
+  min-height: 360px;
+  overflow: hidden;
+  border: 1px solid var(--ring);
+  border-radius: var(--shape-card);
+  background: var(--background);
+  box-shadow: var(--elevation-card);
+}
+.osun-state-board::before {
+  content: "";
+  position: absolute;
+  inset: 8% 10%;
+  border: 2px solid color-mix(in srgb, var(--primary) 38%, transparent);
+  border-radius: 42% 58% 55% 45% / 48% 38% 62% 52%;
+  background: color-mix(in srgb, var(--accent) 50%, var(--card));
+}
+.osun-state-route {
+  position: absolute;
+  z-index: 1;
+  width: 65%;
+  height: 2px;
+  left: 17%;
+  top: 48%;
+  background: var(--card);
+  border: 1px solid var(--ring);
+  transform: rotate(-17deg);
+}
+.osun-state-route-two {
+  width: 52%;
+  left: 27%;
+  top: 44%;
+  transform: rotate(54deg);
+}
+.osun-town-marker {
+  position: absolute;
+  z-index: 2;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0.35rem 0.55rem;
+  transform: translate(-50%, -50%);
+  border: 2px solid var(--card);
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: var(--elevation-card);
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.osun-town-marker[aria-pressed="true"] {
+  outline: 3px solid var(--ring);
+  outline-offset: 3px;
+}
+.osun-town-panel {
+  align-self: stretch;
+  padding: 1rem;
+  overflow: auto;
+  border: 1px solid var(--ring);
+  border-radius: var(--shape-card);
+  background: var(--card);
+  box-shadow: var(--elevation-card);
+  color: var(--foreground);
+}
+.osun-town-panel header {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+.osun-town-panel h2,
+.osun-town-panel p {
+  margin: 0;
+}
+.osun-town-panel > p {
+  margin-top: 0.75rem;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+.osun-town-panel header p,
+.osun-town-panel small {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+}
+.osun-town-icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--accent);
+  color: var(--foreground);
+}
+.osun-public-place-list {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0.8rem 0;
+  padding: 0;
+  list-style: none;
+}
+.osun-public-place-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 44px;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--ring);
+  border-radius: calc(var(--shape-card) * 0.7);
+  background: var(--background);
+  color: var(--foreground);
+  font-size: 0.875rem;
+  font-weight: 650;
+}
+.osun-public-place-list svg {
+  color: var(--primary);
+}
+.osun-open-town {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 0.8rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+@media (max-width: 720px) {
+  .map-topbar {
+    overflow-x: auto;
+  }
+  .osun-state-overview {
+    grid-template-columns: 1fr;
+    overflow: auto;
+  }
+  .osun-state-board {
+    min-height: 330px;
+  }
+  .osun-town-panel {
+    min-height: 230px;
+  }
+}
 .map-offline-banner {
   z-index: 6;
   display: flex;

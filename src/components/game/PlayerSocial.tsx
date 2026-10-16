@@ -1105,7 +1105,7 @@ export function PlayerSocial({
               rows={4}
               value={statusBody}
               onChange={(event) => setStatusBody(event.target.value)}
-              placeholder="What’s happening in your Osogbo Life?"
+              placeholder="What’s happening in your Osun Life?"
             />
             <div className="phone-status-themes" aria-label="Status background">
               {(["porcelain", "leaf", "ink", "sunset"] as const).map((value) => (

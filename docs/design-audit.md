@@ -1,4 +1,4 @@
-# OSOGBO LIFE design and interaction audit
+# OSUN LIFE design and interaction audit
 
 Audit date: 2026-10-10. This is a source-level audit of the existing TanStack Start, React, Supabase, MapLibre, and Three.js application. Routes and current claims were checked against the route tree, components, service modules, migrations, and tests. A configured browser session and staging Supabase account were not available, so live gameplay and visual behavior remain unverified.
 

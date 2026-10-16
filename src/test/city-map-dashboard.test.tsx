@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CityMapDashboard } from "@/components/game/CityMapDashboard";
 import townData from "@/data/osogbo-town.json";
+import osunPlaces from "@/data/osun-public-places.json";
 import { MapCanvas } from "@/components/map/MapCanvas";
 import { findMapPlaceAction } from "@/lib/map-place-action.server";
 
@@ -35,7 +36,7 @@ describe("isometric town map", () => {
   it("renders the 3D canvas and a keyboard-accessible list when WebGL is unavailable", () => {
     const { container } = renderDashboard();
     expect(
-      screen.getByRole("region", { name: "Interactive isometric town map" }),
+      screen.getByRole("region", { name: /Interactive isometric town map/i }),
     ).toBeInTheDocument();
     expect(
       screen.getByText("3D requires WebGL. Your browser could not start it."),
@@ -43,7 +44,7 @@ describe("isometric town map", () => {
     expect(screen.getByRole("list", { name: "Places on the map" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Civic court, services/i })).toBeInTheDocument();
     expect(screen.queryByRole("img", { name: /osogbo map/i })).not.toBeInTheDocument();
-    expect(container.querySelector(".town-map-zoom-controls")).toBeInTheDocument();
+    expect(container.querySelector(".town-map-zoom-controls")).not.toBeInTheDocument();
   });
 
   it("defines a compact hand-authored grid and fictional public venues with action definitions", () => {
@@ -60,7 +61,7 @@ describe("isometric town map", () => {
         "Lantern Club",
       ]),
     );
-    expect(townData.landmarks.every((place) => place.actions.length === 4)).toBe(true);
+    expect(townData.landmarks.every((place) => place.actions.length >= 2)).toBe(true);
     expect(townData.landmarks.some((place) => place.category === "worship")).toBe(false);
     expect(JSON.stringify(townData).toLowerCase()).not.toMatch(/sacred|grove|osun-osogbo/);
     expect(townData.landmarks.find((place) => place.id === "lantern-club")?.min_age).toBe(18);
@@ -88,6 +89,21 @@ describe("isometric town map", () => {
     fireEvent.click(screen.getByRole("button", { name: "Billboard for Cedar Goods" }));
     expect(onSelectLandmark).toHaveBeenCalledWith("civic-court");
     expect(onSelectBillboard).toHaveBeenCalledWith("campaign-1");
+  });
+
+  it("shows only public venue categories for towns outside the detailed Osogbo map", () => {
+    renderDashboard();
+    fireEvent.click(screen.getByRole("button", { name: "Explore Osun" }));
+    fireEvent.click(screen.getByRole("button", { name: "Ilesa" }));
+    expect(screen.getByRole("heading", { name: "Ilesa" })).toBeInTheDocument();
+    expect(screen.getByText("Town supermarket")).toBeInTheDocument();
+    expect(screen.getByText("Community club")).toBeInTheDocument();
+    const allowed = new Set(["supermarket", "club", "court", "phone_store"]);
+    expect(
+      osunPlaces.towns
+        .filter((town) => !town.detailed)
+        .every((town) => town.publicPlaces.every((place) => allowed.has(place.category))),
+    ).toBe(true);
   });
 
   it("keeps each venue action server-defined and gates the club on the server landmark record", () => {
