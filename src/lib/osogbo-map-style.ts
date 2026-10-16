@@ -22,14 +22,38 @@ const ORIENTATION_LANDMARKS = {
   ],
 };
 
-export function getOsogboMapStyleUrl(): string {
-  const styleUrl = import.meta.env["VITE_OSOGBO_MAP_STYLE_URL"] || DEFAULT_VECTOR_STYLE;
-  const apiKey = import.meta.env["VITE_STADIA_MAPS_API_KEY"];
+type MapStyleEnvironment = {
+  VITE_OSOGBO_MAP_STYLE_URL?: string;
+  VITE_OSOGBO_MAP_FALLBACK_STYLE_URL?: string;
+  VITE_STADIA_MAPS_API_KEY?: string;
+};
+
+function withPublishableStadiaKey(styleUrl: string, apiKey?: string) {
   if (!apiKey || !styleUrl.startsWith("https://tiles.stadiamaps.com/")) return styleUrl;
 
   const url = new URL(styleUrl);
   url.searchParams.set("api_key", apiKey);
   return url.toString();
+}
+
+export function buildOsogboMapStyleUrls(environment: MapStyleEnvironment = {}) {
+  const primary = environment.VITE_OSOGBO_MAP_STYLE_URL || DEFAULT_VECTOR_STYLE;
+  const secondary = environment.VITE_OSOGBO_MAP_FALLBACK_STYLE_URL;
+  return [...new Set([primary, secondary].filter((value): value is string => Boolean(value)))].map(
+    (styleUrl) => withPublishableStadiaKey(styleUrl, environment.VITE_STADIA_MAPS_API_KEY),
+  );
+}
+
+export function getOsogboMapStyleUrls() {
+  return buildOsogboMapStyleUrls({
+    VITE_OSOGBO_MAP_STYLE_URL: import.meta.env["VITE_OSOGBO_MAP_STYLE_URL"],
+    VITE_OSOGBO_MAP_FALLBACK_STYLE_URL: import.meta.env["VITE_OSOGBO_MAP_FALLBACK_STYLE_URL"],
+    VITE_STADIA_MAPS_API_KEY: import.meta.env["VITE_STADIA_MAPS_API_KEY"],
+  });
+}
+
+export function getOsogboMapStyleUrl(): string {
+  return getOsogboMapStyleUrls()[0]!;
 }
 
 export function shouldHideBaseMapLayer(id: string, sourceLayer = "") {

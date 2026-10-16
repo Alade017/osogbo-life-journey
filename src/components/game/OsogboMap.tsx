@@ -14,8 +14,15 @@ import { MapControls } from "@/components/game/MapControls";
 import { PlayerMarker } from "@/components/game/PlayerMarker";
 import { PlayerMovementControls } from "@/components/game/PlayerMovementControls";
 import { NearbyLocationPrompt } from "@/components/game/NearbyLocationPrompt";
+import { OsogboMapSvg } from "@/components/map/OsogboMap.svg";
 import { useNearbyLocations } from "@/hooks/use-nearby-locations";
-import { applyOsogboMapPalette, getOsogboMapStyleUrl } from "@/lib/osogbo-map-style";
+import {
+  isBaseSourceReady,
+  isCriticalMapError,
+  isWebGlAvailable,
+  preflightMapStyle,
+} from "@/lib/map-load-health";
+import { applyOsogboMapPalette, getOsogboMapStyleUrls } from "@/lib/osogbo-map-style";
 import { q, rpc } from "@/lib/game";
 import { resolvePlayerLocation } from "@/lib/player-location";
 import {
@@ -30,16 +37,18 @@ setWorkerUrl(mapWorkerUrl);
 
 export type OsogboMapProps = {
   onMapReady?: (map: MapLibreMap) => void;
+  onSelectDistrict?: (id: string) => void;
+  onSelectLandmark?: (id: string) => void;
 };
 
-export function OsogboMap({ onMapReady }: OsogboMapProps) {
+export function OsogboMap({ onMapReady, onSelectDistrict, onSelectLandmark }: OsogboMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const onMapReadyRef = useRef(onMapReady);
   const [retryKey, setRetryKey] = useState(0);
+  const [providerIndex, setProviderIndex] = useState(0);
   const [mapInstance, setMapInstance] = useState<MapLibreMap | null>(null);
-  const [loaded, setLoaded] = useState(false);
-  const [mapError, setMapError] = useState<string | null>(null);
+  const [surface, setSurface] = useState<"loading" | "street" | "fallback">("loading");
   const [virtualPlayer, setVirtualPlayer] =
     useState<ReturnType<typeof resolvePlayerLocation>>(null);
   const directionsRef = useRef<ReadonlySet<MovementDirection>>(new Set());
@@ -173,92 +182,162 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
     const container = containerRef.current;
-    let didLoad = false;
-    setLoaded(false);
-    setMapError(null);
+    const styleUrls = getOsogboMapStyleUrls();
+    const styleUrl = styleUrls[providerIndex];
+    let active = true;
+    let usable = false;
+    let sourceReady = false;
+    let loadTimer = 0;
+    const abortController = new AbortController();
+    setSurface("loading");
     setMapInstance(null);
 
-    let map: MapLibreMap;
-    try {
-      map = new MapLibreMap({
-        container,
-        center: OSOGBO_CENTER,
-        zoom: 12.8,
-        pitch: 0,
-        bearing: 0,
-        minZoom: 10,
-        maxZoom: 19,
-        maxPitch: 0,
-        maxBounds: [
-          [OSOGBO_PLAYABLE_BOUNDS.west, OSOGBO_PLAYABLE_BOUNDS.south],
-          [OSOGBO_PLAYABLE_BOUNDS.east, OSOGBO_PLAYABLE_BOUNDS.north],
-        ],
-        attributionControl: false,
-        style: getOsogboMapStyleUrl(),
-        cooperativeGestures: true,
-      });
-    } catch {
-      setMapError("The Osogbo map could not start.");
-      return;
-    }
-
-    mapRef.current = map;
-    map.addControl(new NavigationControl({ visualizePitch: false }), "top-right");
-    map.addControl(new FullscreenControl(), "top-right");
-    map.addControl(new AttributionControl({ compact: true }), "bottom-right");
-    const loadTimer = window.setTimeout(() => {
-      if (!didLoad)
-        setMapError("The Osogbo map is taking too long to load. Check your connection and retry.");
-    }, 15_000);
-    map.once("load", () => {
-      didLoad = true;
+    const showNextProviderOrFallback = () => {
+      if (!active) return;
+      abortController.abort();
       if (loadTimer) window.clearTimeout(loadTimer);
-      setLoaded(true);
-      setMapError(null);
-      setMapInstance(map);
-      onMapReadyRef.current?.(map);
-    });
-    const handleStyleLoad = () => applyOsogboMapPalette(map);
-    map.on("style.load", handleStyleLoad);
-    const handleMapError = () => {
-      if (!didLoad && !map.isStyleLoaded())
-        setMapError(
-          "The map service could not load Osogbo streets. Check your connection and retry.",
-        );
+      if (providerIndex + 1 < styleUrls.length) setProviderIndex(providerIndex + 1);
+      else setSurface("fallback");
     };
-    map.on("error", handleMapError);
-    const updateCameraMetadata = () => {
-      const center = map.getCenter();
-      container.dataset["mapCenter"] = `${center.lat.toFixed(4)},${center.lng.toFixed(4)}`;
-      container.dataset["mapZoom"] = map.getZoom().toFixed(2);
+
+    let resizeObserver: ResizeObserver | null = null;
+    let handleStyleLoad: (() => void) | null = null;
+    let handleMapError: ((event: unknown) => void) | null = null;
+    let handleSourceData: ((event: unknown) => void) | null = null;
+    let handleIdle: (() => void) | null = null;
+    let updateCameraMetadata: (() => void) | null = null;
+
+    const start = async () => {
+      if (!styleUrl || !isWebGlAvailable()) {
+        setSurface("fallback");
+        return;
+      }
+
+      loadTimer = window.setTimeout(showNextProviderOrFallback, 15_000);
+      const preflight = await preflightMapStyle(styleUrl, { signal: abortController.signal });
+      if (!active) return;
+      if (!preflight.ok) {
+        showNextProviderOrFallback();
+        return;
+      }
+
+      const baseSourceIds = new Set(preflight.sourceIds);
+      sourceReady = baseSourceIds.size === 0;
+      let map: MapLibreMap;
+      try {
+        map = new MapLibreMap({
+          container,
+          center: OSOGBO_CENTER,
+          zoom: 12.8,
+          pitch: 0,
+          bearing: 0,
+          minZoom: 10,
+          maxZoom: 19,
+          maxPitch: 0,
+          maxBounds: [
+            [OSOGBO_PLAYABLE_BOUNDS.west, OSOGBO_PLAYABLE_BOUNDS.south],
+            [OSOGBO_PLAYABLE_BOUNDS.east, OSOGBO_PLAYABLE_BOUNDS.north],
+          ],
+          attributionControl: false,
+          style: styleUrl,
+          cooperativeGestures: true,
+        });
+      } catch {
+        showNextProviderOrFallback();
+        return;
+      }
+
+      mapRef.current = map;
+      map.addControl(new NavigationControl({ visualizePitch: false }), "top-right");
+      map.addControl(new FullscreenControl(), "top-right");
+      map.addControl(new AttributionControl({ compact: true }), "bottom-right");
+
+      const markUsable = () => {
+        if (!active || usable || !map.isStyleLoaded() || !sourceReady) return;
+        usable = true;
+        if (loadTimer) window.clearTimeout(loadTimer);
+        setSurface("street");
+        setMapInstance(map);
+        onMapReadyRef.current?.(map);
+      };
+      handleStyleLoad = () => applyOsogboMapPalette(map);
+      handleSourceData = (event) => {
+        if (isBaseSourceReady(event, baseSourceIds)) sourceReady = true;
+      };
+      handleIdle = markUsable;
+      handleMapError = (event) => {
+        if (isCriticalMapError(event, { usable, baseSourceIds })) {
+          showNextProviderOrFallback();
+        }
+      };
+      map.on("style.load", handleStyleLoad);
+      map.on("sourcedata", handleSourceData);
+      map.on("idle", handleIdle);
+      map.on("error", handleMapError);
+      map.once("load", markUsable);
+
+      updateCameraMetadata = () => {
+        const center = map.getCenter();
+        container.dataset["mapCenter"] = `${center.lat.toFixed(4)},${center.lng.toFixed(4)}`;
+        container.dataset["mapZoom"] = map.getZoom().toFixed(2);
+      };
+      map.on("moveend", updateCameraMetadata);
+      map.on("zoomend", updateCameraMetadata);
+      updateCameraMetadata();
+      resizeObserver = new ResizeObserver(() => map.resize());
+      resizeObserver.observe(container);
     };
-    map.on("moveend", updateCameraMetadata);
-    map.on("zoomend", updateCameraMetadata);
-    updateCameraMetadata();
-    const resizeObserver = new ResizeObserver(() => map.resize());
-    resizeObserver.observe(container);
+    void start();
 
     return () => {
-      resizeObserver.disconnect();
-      map.off("moveend", updateCameraMetadata);
-      map.off("zoomend", updateCameraMetadata);
-      map.off("error", handleMapError);
-      map.off("style.load", handleStyleLoad);
+      active = false;
+      abortController.abort();
+      resizeObserver?.disconnect();
+      const map = mapRef.current;
+      if (map && updateCameraMetadata) {
+        map.off("moveend", updateCameraMetadata);
+        map.off("zoomend", updateCameraMetadata);
+      }
+      if (map && handleMapError) map.off("error", handleMapError);
+      if (map && handleStyleLoad) map.off("style.load", handleStyleLoad);
+      if (map && handleSourceData) map.off("sourcedata", handleSourceData);
+      if (map && handleIdle) map.off("idle", handleIdle);
       if (loadTimer) window.clearTimeout(loadTimer);
-      map.remove();
+      map?.remove();
       mapRef.current = null;
     };
-  }, [retryKey]);
+  }, [providerIndex, retryKey]);
+
+  const retryMap = () => {
+    setProviderIndex(0);
+    setRetryKey((value) => value + 1);
+  };
 
   return (
     <div className="osogbo-map-frame">
       <div
         ref={containerRef}
-        className="osogbo-map-canvas"
+        className={`osogbo-map-canvas${surface === "fallback" ? " is-hidden" : ""}`}
         role="application"
         aria-label="Interactive OpenStreetMap map centered on Osogbo, Osun State, Nigeria"
         data-map-center={`${OSOGBO_CENTER[1]},${OSOGBO_CENTER[0]}`}
       />
+      {surface === "fallback" && (
+        <div className="osogbo-map-fallback">
+          <OsogboMapSvg
+            labelsVisible
+            showLandmarks
+            onDistrictSelect={(district) => onSelectDistrict?.(district.id)}
+            onLandmarkSelect={(landmark) => onSelectLandmark?.(landmark.id)}
+          />
+          <div className="osogbo-map-fallback-notice" role="status" aria-live="polite">
+            <span>Street map unavailable on this connection. Showing the simplified map.</span>
+            <button type="button" onClick={retryMap}>
+              Retry street map
+            </button>
+          </div>
+        </div>
+      )}
       {mapInstance && <LocationMarker map={mapInstance} />}
       {mapInstance && <PlayerMarker map={mapInstance} playerLocation={displayedPlayer} />}
       {mapInstance && <MapControls map={mapInstance} playerLocation={displayedPlayer} />}
@@ -279,17 +358,9 @@ export function OsogboMap({ onMapReady }: OsogboMapProps) {
         />
       )}
       {mapInstance && <NearbyLocationPrompt nearbyLocations={nearbyLocations} />}
-      {!loaded && !mapError && (
+      {surface === "loading" && (
         <div className="osogbo-map-loading" aria-live="polite">
           Loading Osogbo map…
-        </div>
-      )}
-      {mapError && (
-        <div className="osogbo-map-error" role="alert">
-          <span>{mapError}</span>
-          <button type="button" onClick={() => setRetryKey((value) => value + 1)}>
-            Retry map
-          </button>
         </div>
       )}
       <div className="osogbo-map-place-label" aria-live="polite">

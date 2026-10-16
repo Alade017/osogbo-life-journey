@@ -2771,6 +2771,62 @@
   touch-action: pan-x pan-y;
 }
 
+.osogbo-map-canvas.is-hidden {
+  visibility: hidden;
+}
+
+.osogbo-map-fallback {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  overflow: hidden;
+  background: var(--background);
+}
+
+.osogbo-map-fallback .osogbo-map-svg {
+  grid-area: 1 / 1;
+  width: 100%;
+  height: 100%;
+}
+
+.osogbo-map-fallback-notice {
+  align-self: end;
+  justify-self: center;
+  z-index: 3;
+  display: flex;
+  width: min(620px, calc(100% - 24px));
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card);
+  color: var(--foreground);
+  background: var(--card);
+  box-shadow: var(--elevation-card);
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.osogbo-map-fallback-notice button {
+  min-width: max-content;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--primary-foreground);
+  background: var(--primary);
+  font: inherit;
+  cursor: pointer;
+}
+
+.osogbo-map-fallback-notice button:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}
+
 .osogbo-map-loading {
   position: absolute;
   top: 50%;
@@ -4216,6 +4272,11 @@
     left: 10px;
     padding: 8px 10px;
     font-size: 9px;
+  }
+
+  .osogbo-map-fallback-notice {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .osogbo-map-frame .maplibregl-ctrl-top-right {
