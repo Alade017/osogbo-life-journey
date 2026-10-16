@@ -1,0 +1,3 @@
+{
+  "crons": [{ "path": "/api/messages/voice/cleanup", "schedule": "15 3 * * *" }]
+}

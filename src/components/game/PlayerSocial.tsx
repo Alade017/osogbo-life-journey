@@ -5,18 +5,27 @@ import {
   ArrowLeft,
   ChevronRight,
   MessageCircle,
+  Mic,
   CircleDashed,
+  BellOff,
+  CheckCheck,
   Palette,
+  Pin,
   Plus,
+  Reply,
   Search,
   Send,
   ShieldBan,
+  Star,
   UserPlus,
   Users,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Avatar } from "@/components/game/Avatar";
 import type { Appearance } from "@/components/game/Avatar";
+import { FormattedMessage, MessageFormattingToolbar } from "@/components/game/MessageFormatting";
+import { VoiceNotePlayer, VoiceNoteRecorder } from "@/components/game/VoiceNotes";
 import { Button } from "@/components/ui/button";
 import { q } from "@/lib/game";
 import { supabase } from "@/integrations/supabase/client";
@@ -47,10 +56,27 @@ import {
   type SocialReportCategory,
   type StatusTheme,
 } from "@/lib/player-social-service";
+import {
+  flushThreadActionQueue,
+  getThreadSummaries,
+  runThreadAction,
+  subscribeToInboxSummaries,
+  type MuteDuration,
+  type ThreadCommand,
+  type ThreadSummary,
+} from "@/lib/thread-preferences";
 
 type Tab = "players" | "messages" | "friends" | "status" | "settings";
 type ReportTarget = { id: string; name: string; messageId?: string };
 type ActiveChat = { conversationId: string; characterId: string; name: string };
+type InboxConversation = SocialPlayer & {
+  id: string;
+  preview?: string;
+  unreadCount?: number;
+  pinnedAt?: string | null;
+  mutedUntil?: string | null;
+  starredAt?: string | null;
+};
 
 const REPORT_OPTIONS: Array<{ value: SocialReportCategory; label: string }> = [
   { value: "spam", label: "Spam" },
@@ -124,11 +150,13 @@ function MessageList({
   messages,
   ownCharacterId,
   onReport,
+  onReply,
   phoneMode = false,
 }: {
   messages: SocialMessage[];
   ownCharacterId?: string | undefined;
   onReport: (message: SocialMessage) => void;
+  onReply: (message: SocialMessage) => void;
   phoneMode?: boolean;
 }) {
   const listRef = useRef<HTMLOListElement>(null);
@@ -169,7 +197,26 @@ function MessageList({
               </strong>
             </div>
           )}
-          <p className="whitespace-pre-wrap break-words">{message.body}</p>
+          {message.reply && (
+            <blockquote className="message-reply-quote">
+              <strong>{message.reply.senderName}</strong>
+              {message.reply.messageType === "voice" ? (
+                <span>
+                  <Mic aria-hidden="true" /> Voice note ·{" "}
+                  {Math.max(1, Math.round((message.reply.voiceDurationMs ?? 0) / 1000))}s
+                </span>
+              ) : (
+                <span>{message.reply.body.slice(0, 100)}</span>
+              )}
+            </blockquote>
+          )}
+          {message.message_type === "voice" && message.voice_duration_ms ? (
+            <VoiceNotePlayer messageId={message.id} durationMs={message.voice_duration_ms} />
+          ) : (
+            <p className="whitespace-pre-wrap break-words">
+              <FormattedMessage body={message.body} />
+            </p>
+          )}
           <time
             className={
               phoneMode
@@ -183,15 +230,16 @@ function MessageList({
               timeZone: "Africa/Lagos",
             }).format(new Date(message.created_at))}
           </time>
-          {message.sender_character_id !== ownCharacterId && (
-            <button
-              type="button"
-              className="mt-1 text-xs text-muted-foreground underline underline-offset-2"
-              onClick={() => onReport(message)}
-            >
-              Report message
+          <span className="message-actions">
+            <button type="button" onClick={() => onReply(message)}>
+              <Reply aria-hidden="true" /> Reply
             </button>
-          )}
+            {message.sender_character_id !== ownCharacterId && (
+              <button type="button" onClick={() => onReport(message)}>
+                Report
+              </button>
+            )}
+          </span>
         </li>
       ))}
     </ol>
@@ -202,23 +250,29 @@ function ChatComposer({
   label,
   disabled,
   onSend,
+  replyTo,
+  onCancelReply,
   phoneMode = false,
 }: {
   label: string;
   disabled?: boolean;
-  onSend: (body: string) => Promise<void>;
+  onSend: (body: string, replyToMessageId?: string) => Promise<void>;
+  replyTo?: SocialMessage | null;
+  onCancelReply?: () => void;
   phoneMode?: boolean;
 }) {
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const clean = body.trim();
     if (!clean || sending) return;
     setSending(true);
     try {
-      await onSend(clean);
+      await onSend(clean, replyTo?.id);
       setBody("");
+      onCancelReply?.();
     } finally {
       setSending(false);
     }
@@ -228,13 +282,35 @@ function ChatComposer({
       onSubmit={(event) => void submit(event)}
       className={phoneMode ? "phone-chat-composer" : "grid gap-2"}
     >
+      {replyTo && (
+        <div className="message-composer-reply" role="status">
+          <span>
+            <strong>Reply to {replyTo.sender_name}</strong>
+            <small>
+              {replyTo.message_type === "voice"
+                ? `Voice note · ${Math.max(1, Math.round((replyTo.voice_duration_ms ?? 0) / 1000))}s`
+                : replyTo.body.slice(0, 100)}
+            </small>
+          </span>
+          <button type="button" onClick={onCancelReply} aria-label="Cancel reply">
+            <X aria-hidden="true" />
+          </button>
+        </div>
+      )}
+      <MessageFormattingToolbar
+        textareaRef={textareaRef}
+        value={body}
+        onChange={setBody}
+        disabled={disabled || sending}
+      />
       <label className="sr-only" htmlFor={label.replaceAll(" ", "-")}>
         {label}
       </label>
       <textarea
+        ref={textareaRef}
         id={label.replaceAll(" ", "-")}
         value={body}
-        maxLength={500}
+        maxLength={1000}
         rows={2}
         disabled={disabled || sending}
         onChange={(event) => setBody(event.target.value)}
@@ -245,6 +321,9 @@ function ChatComposer({
             : "w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         }
       />
+      <span className="message-character-count" aria-live="polite">
+        {body.length}/1000
+      </span>
       {phoneMode ? (
         <Button
           className="phone-chat-send"
@@ -257,7 +336,7 @@ function ChatComposer({
         </Button>
       ) : (
         <div className="flex items-center justify-between gap-2">
-          <span className="text-xs text-muted-foreground">{body.length}/500</span>
+          <span />
           <Button size="sm" type="submit" disabled={disabled || sending || !body.trim()}>
             <MessageCircle size={15} /> Send
           </Button>
@@ -293,6 +372,9 @@ export function PlayerSocial({
       ? "porcelain"
       : (localStorage.getItem("osogbo-message-theme") ?? "porcelain"),
   );
+  const [threadMenu, setThreadMenu] = useState<InboxConversation | null>(null);
+  const [replyTarget, setReplyTarget] = useState<SocialMessage | null>(null);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const characterQuery = useQuery(q.character());
   const locationsQuery = useQuery(q.locations());
   const character = characterQuery.data;
@@ -302,6 +384,21 @@ export function PlayerSocial({
     queryFn: getPlayerSocialOverview,
   });
   const overview = overviewQuery.data;
+  const threadQuery = useQuery({
+    queryKey: ["socialThreadSummaries"],
+    queryFn: getThreadSummaries,
+    enabled: phoneMode,
+    retry: false,
+  });
+  const accountQuery = useQuery({
+    queryKey: ["socialAccountId"],
+    enabled: phoneMode,
+    queryFn: async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (error || !data.user) throw error ?? new Error("Sign in to load chats.");
+      return data.user.id;
+    },
+  });
   const statusQuery = useQuery({
     queryKey: ["playerStatusPosts"],
     queryFn: getFriendStatusPosts,
@@ -328,12 +425,31 @@ export function PlayerSocial({
     const seenAt = friendPresence.data?.find((row) => row.character_id === id)?.seen_at;
     return !!seenAt && Date.now() - new Date(seenAt).getTime() < 60000;
   };
+  const inboxConversations = useMemo<InboxConversation[]>(() => {
+    if (threadQuery.data?.length) return threadQuery.data;
+    return (overview?.conversations ?? []).map((conversation) => ({
+      ...conversation,
+      preview: "Private conversation",
+      unreadCount: 0,
+      pinnedAt: null,
+      mutedUntil: null,
+      starredAt: null,
+    }));
+  }, [overview?.conversations, threadQuery.data]);
   const visibleConversations = useMemo(() => {
     const filter = conversationSearch.trim().toLocaleLowerCase();
-    return (overview?.conversations ?? []).filter((conversation) =>
+    return inboxConversations.filter((conversation) =>
       conversation.player_name.toLocaleLowerCase().includes(filter),
     );
-  }, [conversationSearch, overview?.conversations]);
+  }, [conversationSearch, inboxConversations]);
+  const pinnedConversations = useMemo(
+    () => visibleConversations.filter((conversation) => conversation.pinnedAt),
+    [visibleConversations],
+  );
+  const regularConversations = useMemo(
+    () => visibleConversations.filter((conversation) => !conversation.pinnedAt),
+    [visibleConversations],
+  );
   const searchQuery = useQuery({
     queryKey: ["playerSocialSearch", submittedQuery],
     queryFn: () => searchPlayerProfiles(submittedQuery),
@@ -441,6 +557,24 @@ export function PlayerSocial({
       void leaveSocialChannel(channel);
     };
   }, [phoneMode, qc]);
+  useEffect(() => {
+    if (!phoneMode || !accountQuery.data) return;
+    const subscription = subscribeToInboxSummaries(accountQuery.data, () => {
+      void qc.invalidateQueries({ queryKey: ["socialThreadSummaries"] });
+    });
+    const reconnect = () => {
+      void flushThreadActionQueue((message) =>
+        toast.error(message === "PIN_LIMIT_REACHED" ? "You can pin up to three chats." : message),
+      ).then(() => qc.invalidateQueries({ queryKey: ["socialThreadSummaries"] }));
+    };
+    window.addEventListener("online", reconnect);
+    if (navigator.onLine) reconnect();
+    return () => {
+      subscription.clear();
+      void leaveSocialChannel(subscription.channel);
+      window.removeEventListener("online", reconnect);
+    };
+  }, [accountQuery.data, phoneMode, qc]);
 
   const refreshSocial = () =>
     Promise.all([
@@ -488,6 +622,7 @@ export function PlayerSocial({
   const openChatMutation = useMutation({
     mutationFn: openPlayerConversation,
     onSuccess: async (result, characterId) => {
+      setReplyTarget(null);
       const friend = overview?.friends.find((item) => item.character_id === characterId);
       const searchProfile = searchQuery.data?.find((item) => item.character_id === characterId);
       const initialProfile =
@@ -525,21 +660,84 @@ export function PlayerSocial({
     },
     onError: (error: Error) => toast.error(error.message),
   });
+  const threadMutation = useMutation({
+    mutationFn: ({
+      threadId,
+      command,
+      duration,
+    }: {
+      threadId: string;
+      command: ThreadCommand;
+      duration?: MuteDuration;
+    }) => runThreadAction(threadId, command, duration),
+    onMutate: async ({ threadId, command }) => {
+      await qc.cancelQueries({ queryKey: ["socialThreadSummaries"] });
+      const previous = qc.getQueryData<ThreadSummary[]>(["socialThreadSummaries"]);
+      qc.setQueryData<ThreadSummary[]>(["socialThreadSummaries"], (current = []) =>
+        current.map((thread) => {
+          if (thread.id !== threadId) return thread;
+          if (command === "pin") return { ...thread, pinnedAt: thread.pinnedAt ?? "pending" };
+          if (command === "unpin") return { ...thread, pinnedAt: null };
+          if (command === "star") return { ...thread, starredAt: thread.starredAt ?? "pending" };
+          if (command === "unstar") return { ...thread, starredAt: null };
+          if (command === "read") return { ...thread, unreadCount: 0 };
+          return thread;
+        }),
+      );
+      return { previous };
+    },
+    onSuccess: (result) => {
+      if (result && "queued" in result)
+        toast.message("Chat preference queued until you reconnect.");
+      else void qc.invalidateQueries({ queryKey: ["socialThreadSummaries"] });
+      setThreadMenu(null);
+    },
+    onError: (error: Error, _variables, context) => {
+      if (context?.previous) qc.setQueryData(["socialThreadSummaries"], context.previous);
+      toast.error(
+        error.message === "PIN_LIMIT_REACHED" ? "You can pin up to three chats." : error.message,
+      );
+    },
+  });
   const deleteStatusMutation = useMutation({
     mutationFn: deletePlayerStatus,
     onSuccess: () => qc.invalidateQueries({ queryKey: ["playerStatusPosts"] }),
     onError: (error: Error) => toast.error(error.message),
   });
-  const runMessage = async (body: string, direct = false) => {
+  const runMessage = async (body: string, direct = false, replyToMessageId?: string) => {
     if (direct && activeChat) {
       await sendMutation.mutateAsync({
         channel: "private",
         body,
         conversationId: activeChat.conversationId,
+        ...(replyToMessageId ? { replyToMessageId } : {}),
       });
     } else if (locationId) {
-      await sendMutation.mutateAsync({ channel: "area", body, locationId });
+      await sendMutation.mutateAsync({
+        channel: "area",
+        body,
+        locationId,
+        ...(replyToMessageId ? { replyToMessageId } : {}),
+      });
     }
+  };
+  const openConversation = (conversation: InboxConversation) => {
+    setReplyTarget(null);
+    setActiveChat({
+      conversationId: conversation.id,
+      characterId: conversation.character_id,
+      name: conversation.player_name,
+    });
+    if (conversation.unreadCount)
+      threadMutation.mutate({ threadId: conversation.id, command: "read" });
+  };
+  const beginLongPress = (conversation: InboxConversation) => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    longPressTimer.current = setTimeout(() => setThreadMenu(conversation), 500);
+  };
+  const cancelLongPress = () => {
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    longPressTimer.current = null;
   };
   const submitSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -841,6 +1039,7 @@ export function PlayerSocial({
                   <MessageList
                     messages={areaMessages}
                     ownCharacterId={character?.id}
+                    onReply={setReplyTarget}
                     onReport={(message) =>
                       setReportTarget({
                         id: message.sender_character_id,
@@ -853,7 +1052,9 @@ export function PlayerSocial({
                 <ChatComposer
                   label="Write an area message"
                   disabled={!locationId || sendMutation.isPending}
-                  onSend={(body) => runMessage(body)}
+                  onSend={(body, replyId) => runMessage(body, false, replyId)}
+                  replyTo={replyTarget}
+                  onCancelReply={() => setReplyTarget(null)}
                 />
               </section>
             ) : activeChat ? (
@@ -865,7 +1066,10 @@ export function PlayerSocial({
                   <button
                     type="button"
                     className="phone-thread-back"
-                    onClick={() => setActiveChat(null)}
+                    onClick={() => {
+                      setReplyTarget(null);
+                      setActiveChat(null);
+                    }}
                     aria-label="Back to chats"
                   >
                     <ArrowLeft size={18} />
@@ -891,6 +1095,7 @@ export function PlayerSocial({
                     messages={directMessages}
                     ownCharacterId={character?.id}
                     phoneMode
+                    onReply={setReplyTarget}
                     onReport={(message) =>
                       setReportTarget({
                         id: message.sender_character_id,
@@ -903,8 +1108,19 @@ export function PlayerSocial({
                 <ChatComposer
                   label={`Message ${activeChat.name}`}
                   disabled={sendMutation.isPending}
-                  onSend={(body) => runMessage(body, true)}
+                  onSend={(body, replyId) => runMessage(body, true, replyId)}
+                  replyTo={replyTarget}
+                  onCancelReply={() => setReplyTarget(null)}
                   phoneMode
+                />
+                <VoiceNoteRecorder
+                  threadId={activeChat.conversationId}
+                  disabled={sendMutation.isPending}
+                  onSent={() =>
+                    void qc.invalidateQueries({
+                      queryKey: ["socialMessages", "private", activeChat.conversationId],
+                    })
+                  }
                 />
               </section>
             ) : (
@@ -945,25 +1161,47 @@ export function PlayerSocial({
                   </p>
                 ) : visibleConversations.length ? (
                   <div className="phone-conversation-list">
-                    {visibleConversations.map((conversation) => (
+                    {pinnedConversations.length > 0 && (
+                      <p className="phone-conversation-section">
+                        <Pin size={13} aria-hidden="true" /> Pinned
+                      </p>
+                    )}
+                    {[...pinnedConversations, ...regularConversations].map((conversation) => (
                       <button
                         type="button"
                         key={conversation.id}
                         className="phone-conversation"
-                        onClick={() =>
-                          setActiveChat({
-                            conversationId: conversation.id,
-                            characterId: conversation.character_id,
-                            name: conversation.player_name,
-                          })
-                        }
+                        onClick={() => openConversation(conversation)}
+                        onContextMenu={(event) => {
+                          event.preventDefault();
+                          setThreadMenu(conversation);
+                        }}
+                        onPointerDown={(event) => {
+                          if (event.pointerType !== "mouse") beginLongPress(conversation);
+                        }}
+                        onPointerUp={cancelLongPress}
+                        onPointerCancel={cancelLongPress}
+                        onPointerMove={cancelLongPress}
                       >
                         <PlayerAvatar player={conversation} />
                         <span className="phone-conversation-copy">
-                          <strong>{conversation.player_name}</strong>
-                          <small>Private conversation</small>
+                          <strong>
+                            {conversation.player_name}
+                            {conversation.starredAt && <Star size={12} aria-label="Starred chat" />}
+                          </strong>
+                          <small>{conversation.preview || "Private conversation"}</small>
                         </span>
-                        <ChevronRight size={17} aria-hidden="true" />
+                        <span className="phone-conversation-status">
+                          {conversation.mutedUntil && <BellOff size={13} aria-label="Muted chat" />}
+                          {(conversation.unreadCount ?? 0) > 0 && (
+                            <span aria-label={`${conversation.unreadCount} unread messages`}>
+                              {(conversation.unreadCount ?? 0) > 99
+                                ? "99+"
+                                : conversation.unreadCount}
+                            </span>
+                          )}
+                          <ChevronRight size={17} aria-hidden="true" />
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -1001,6 +1239,7 @@ export function PlayerSocial({
                 <MessageList
                   messages={areaMessages}
                   ownCharacterId={character?.id}
+                  onReply={setReplyTarget}
                   onReport={(message) =>
                     setReportTarget({
                       id: message.sender_character_id,
@@ -1013,7 +1252,9 @@ export function PlayerSocial({
               <ChatComposer
                 label="Write an area message"
                 disabled={!locationId || sendMutation.isPending}
-                onSend={(body) => runMessage(body)}
+                onSend={(body, replyId) => runMessage(body, false, replyId)}
+                replyTo={replyTarget}
+                onCancelReply={() => setReplyTarget(null)}
               />
             </section>
 
@@ -1037,6 +1278,7 @@ export function PlayerSocial({
                     size="sm"
                     variant={activeChat?.conversationId === conversation.id ? "default" : "outline"}
                     onClick={() => {
+                      setReplyTarget(null);
                       setActiveChat({
                         conversationId: conversation.id,
                         characterId: conversation.character_id,
@@ -1059,6 +1301,7 @@ export function PlayerSocial({
                     <MessageList
                       messages={directMessages}
                       ownCharacterId={character?.id}
+                      onReply={setReplyTarget}
                       onReport={(message) =>
                         setReportTarget({
                           id: message.sender_character_id,
@@ -1071,7 +1314,9 @@ export function PlayerSocial({
                   <ChatComposer
                     label={"Message " + activeChat.name}
                     disabled={sendMutation.isPending}
-                    onSend={(body) => runMessage(body, true)}
+                    onSend={(body, replyId) => runMessage(body, true, replyId)}
+                    replyTo={replyTarget}
+                    onCancelReply={() => setReplyTarget(null)}
                   />
                 </>
               ) : (
@@ -1345,6 +1590,88 @@ export function PlayerSocial({
                 ))}
               </div>
             )}
+          </section>
+        </div>
+      )}
+
+      {phoneMode && threadMenu && (
+        <div
+          className="phone-thread-menu-backdrop"
+          role="presentation"
+          onClick={() => setThreadMenu(null)}
+        >
+          <section
+            className="phone-thread-menu"
+            role="menu"
+            aria-label={`Actions for ${threadMenu.player_name}`}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <strong>{threadMenu.player_name}</strong>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() =>
+                threadMutation.mutate({
+                  threadId: threadMenu.id,
+                  command: threadMenu.pinnedAt ? "unpin" : "pin",
+                })
+              }
+            >
+              <Pin aria-hidden="true" /> {threadMenu.pinnedAt ? "Unpin chat" : "Pin chat"}
+            </button>
+            <p>Mute</p>
+            <div className="phone-thread-mute-options">
+              {threadMenu.mutedUntil && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    threadMutation.mutate({ threadId: threadMenu.id, command: "unmute" })
+                  }
+                >
+                  Unmute
+                </button>
+              )}
+              {(["8h", "1w", "always"] as const).map((duration) => (
+                <button
+                  type="button"
+                  key={duration}
+                  onClick={() =>
+                    threadMutation.mutate({ threadId: threadMenu.id, command: "mute", duration })
+                  }
+                >
+                  {duration === "8h" ? "8 hours" : duration === "1w" ? "1 week" : "Always"}
+                </button>
+              ))}
+            </div>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => threadMutation.mutate({ threadId: threadMenu.id, command: "read" })}
+            >
+              <CheckCheck aria-hidden="true" /> Mark as read
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() =>
+                threadMutation.mutate({
+                  threadId: threadMenu.id,
+                  command: threadMenu.starredAt ? "unstar" : "star",
+                })
+              }
+            >
+              <Star aria-hidden="true" /> {threadMenu.starredAt ? "Unstar thread" : "Star thread"}
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                actionMutation.mutate({ kind: "block", id: threadMenu.character_id });
+                setThreadMenu(null);
+              }}
+            >
+              <ShieldBan aria-hidden="true" /> Block player
+            </button>
           </section>
         </div>
       )}

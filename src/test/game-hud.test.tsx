@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { createSimulationState } from "@/lib/life-simulation";
 import { INITIAL_GAME_TIME } from "@/lib/game-time";
@@ -34,7 +34,7 @@ vi.mock("@/components/game/GameTimeProvider", () => ({
   }),
 }));
 describe("shared player HUD", () => {
-  it("shows the compact player summary and keeps simulation controls available", () => {
+  it("shows the compact player summary with the live Osogbo clock", () => {
     const character = {
       id: "c1",
       name: "Ade",
@@ -58,12 +58,10 @@ describe("shared player HUD", () => {
     expect(screen.queryByLabelText(/\d+ of \d+ XP to next level/)).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Ade, view profile" })).toBeInTheDocument();
     expect(screen.getByText("Student District")).toBeInTheDocument();
-    expect(screen.getByLabelText("Personal game time")).toBeInTheDocument();
-    expect(screen.getByLabelText("Simulation clock")).toBeInTheDocument();
+    expect(screen.queryByLabelText("Personal game time")).not.toBeInTheDocument();
+    expect(screen.queryByLabelText("Simulation clock")).not.toBeInTheDocument();
     expect(screen.getByText("Osogbo · WAT")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Wallet/ })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Notifications, 3 unread/ })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Pause simulation" }));
-    expect(controls.pause).toHaveBeenCalled();
   });
 });

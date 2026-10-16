@@ -46,13 +46,22 @@ import { Route as ApiHousingItemRouteImport } from './routes/api/housing/item'
 import { Route as ApiHousingRentRouteImport } from './routes/api/housing/rent'
 import { Route as ApiMapActionRouteImport } from './routes/api/map/action'
 import { Route as ApiMapTravelRouteImport } from './routes/api/map/travel'
+import { Route as ApiMessagesSendRouteImport } from './routes/api/messages/send'
 import { Route as ApiOutfitEquipRouteImport } from './routes/api/outfit/equip'
 import { Route as ApiOutfitUnequipRouteImport } from './routes/api/outfit/unequip'
 import { Route as ApiShopBuyRouteImport } from './routes/api/shop/buy'
+import { Route as ApiThreadsIndexRouteImport } from './routes/api/threads/index'
 import { Route as AuthenticatedGameLocationSlugRouteImport } from './routes/_authenticated/_game/location.$slug'
 import { Route as ApiAuthUsernameLoginRouteImport } from './routes/api/auth/username/login'
 import { Route as ApiAuthUsernameRegisterRouteImport } from './routes/api/auth/username/register'
 import { Route as ApiMapLandmarkIdRouteImport } from './routes/api/map/landmark.$id'
+import { Route as ApiMessagesVoiceIndexRouteImport } from './routes/api/messages/voice/index'
+import { Route as ApiMessagesVoiceIdRouteImport } from './routes/api/messages/voice/$id'
+import { Route as ApiMessagesVoiceCleanupRouteImport } from './routes/api/messages/voice/cleanup'
+import { Route as ApiThreadsIdMuteRouteImport } from './routes/api/threads/$id/mute'
+import { Route as ApiThreadsIdPinRouteImport } from './routes/api/threads/$id/pin'
+import { Route as ApiThreadsIdReadRouteImport } from './routes/api/threads/$id/read'
+import { Route as ApiThreadsIdStarRouteImport } from './routes/api/threads/$id/star'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -245,6 +254,11 @@ const ApiMapTravelRoute = ApiMapTravelRouteImport.update({
   path: '/api/map/travel',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMessagesSendRoute = ApiMessagesSendRouteImport.update({
+  id: '/api/messages/send',
+  path: '/api/messages/send',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiOutfitEquipRoute = ApiOutfitEquipRouteImport.update({
   id: '/api/outfit/equip',
   path: '/api/outfit/equip',
@@ -258,6 +272,11 @@ const ApiOutfitUnequipRoute = ApiOutfitUnequipRouteImport.update({
 const ApiShopBuyRoute = ApiShopBuyRouteImport.update({
   id: '/api/shop/buy',
   path: '/api/shop/buy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiThreadsIndexRoute = ApiThreadsIndexRouteImport.update({
+  id: '/api/threads/',
+  path: '/api/threads/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedGameLocationSlugRoute =
@@ -279,6 +298,41 @@ const ApiAuthUsernameRegisterRoute = ApiAuthUsernameRegisterRouteImport.update({
 const ApiMapLandmarkIdRoute = ApiMapLandmarkIdRouteImport.update({
   id: '/api/map/landmark/$id',
   path: '/api/map/landmark/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMessagesVoiceIndexRoute = ApiMessagesVoiceIndexRouteImport.update({
+  id: '/api/messages/voice/',
+  path: '/api/messages/voice/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMessagesVoiceIdRoute = ApiMessagesVoiceIdRouteImport.update({
+  id: '/api/messages/voice/$id',
+  path: '/api/messages/voice/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMessagesVoiceCleanupRoute = ApiMessagesVoiceCleanupRouteImport.update({
+  id: '/api/messages/voice/cleanup',
+  path: '/api/messages/voice/cleanup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiThreadsIdMuteRoute = ApiThreadsIdMuteRouteImport.update({
+  id: '/api/threads/$id/mute',
+  path: '/api/threads/$id/mute',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiThreadsIdPinRoute = ApiThreadsIdPinRouteImport.update({
+  id: '/api/threads/$id/pin',
+  path: '/api/threads/$id/pin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiThreadsIdReadRoute = ApiThreadsIdReadRouteImport.update({
+  id: '/api/threads/$id/read',
+  path: '/api/threads/$id/read',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiThreadsIdStarRoute = ApiThreadsIdStarRouteImport.update({
+  id: '/api/threads/$id/star',
+  path: '/api/threads/$id/star',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -318,13 +372,22 @@ export interface FileRoutesByFullPath {
   '/api/housing/rent': typeof ApiHousingRentRoute
   '/api/map/action': typeof ApiMapActionRoute
   '/api/map/travel': typeof ApiMapTravelRoute
+  '/api/messages/send': typeof ApiMessagesSendRoute
   '/api/outfit/equip': typeof ApiOutfitEquipRoute
   '/api/outfit/unequip': typeof ApiOutfitUnequipRoute
   '/api/shop/buy': typeof ApiShopBuyRoute
+  '/api/threads/': typeof ApiThreadsIndexRoute
   '/location/$slug': typeof AuthenticatedGameLocationSlugRoute
   '/api/auth/username/login': typeof ApiAuthUsernameLoginRoute
   '/api/auth/username/register': typeof ApiAuthUsernameRegisterRoute
   '/api/map/landmark/$id': typeof ApiMapLandmarkIdRoute
+  '/api/messages/voice/$id': typeof ApiMessagesVoiceIdRoute
+  '/api/messages/voice/cleanup': typeof ApiMessagesVoiceCleanupRoute
+  '/api/threads/$id/mute': typeof ApiThreadsIdMuteRoute
+  '/api/threads/$id/pin': typeof ApiThreadsIdPinRoute
+  '/api/threads/$id/read': typeof ApiThreadsIdReadRoute
+  '/api/threads/$id/star': typeof ApiThreadsIdStarRoute
+  '/api/messages/voice/': typeof ApiMessagesVoiceIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -362,13 +425,22 @@ export interface FileRoutesByTo {
   '/api/housing/rent': typeof ApiHousingRentRoute
   '/api/map/action': typeof ApiMapActionRoute
   '/api/map/travel': typeof ApiMapTravelRoute
+  '/api/messages/send': typeof ApiMessagesSendRoute
   '/api/outfit/equip': typeof ApiOutfitEquipRoute
   '/api/outfit/unequip': typeof ApiOutfitUnequipRoute
   '/api/shop/buy': typeof ApiShopBuyRoute
+  '/api/threads': typeof ApiThreadsIndexRoute
   '/location/$slug': typeof AuthenticatedGameLocationSlugRoute
   '/api/auth/username/login': typeof ApiAuthUsernameLoginRoute
   '/api/auth/username/register': typeof ApiAuthUsernameRegisterRoute
   '/api/map/landmark/$id': typeof ApiMapLandmarkIdRoute
+  '/api/messages/voice/$id': typeof ApiMessagesVoiceIdRoute
+  '/api/messages/voice/cleanup': typeof ApiMessagesVoiceCleanupRoute
+  '/api/threads/$id/mute': typeof ApiThreadsIdMuteRoute
+  '/api/threads/$id/pin': typeof ApiThreadsIdPinRoute
+  '/api/threads/$id/read': typeof ApiThreadsIdReadRoute
+  '/api/threads/$id/star': typeof ApiThreadsIdStarRoute
+  '/api/messages/voice': typeof ApiMessagesVoiceIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -409,13 +481,22 @@ export interface FileRoutesById {
   '/api/housing/rent': typeof ApiHousingRentRoute
   '/api/map/action': typeof ApiMapActionRoute
   '/api/map/travel': typeof ApiMapTravelRoute
+  '/api/messages/send': typeof ApiMessagesSendRoute
   '/api/outfit/equip': typeof ApiOutfitEquipRoute
   '/api/outfit/unequip': typeof ApiOutfitUnequipRoute
   '/api/shop/buy': typeof ApiShopBuyRoute
+  '/api/threads/': typeof ApiThreadsIndexRoute
   '/_authenticated/_game/location/$slug': typeof AuthenticatedGameLocationSlugRoute
   '/api/auth/username/login': typeof ApiAuthUsernameLoginRoute
   '/api/auth/username/register': typeof ApiAuthUsernameRegisterRoute
   '/api/map/landmark/$id': typeof ApiMapLandmarkIdRoute
+  '/api/messages/voice/$id': typeof ApiMessagesVoiceIdRoute
+  '/api/messages/voice/cleanup': typeof ApiMessagesVoiceCleanupRoute
+  '/api/threads/$id/mute': typeof ApiThreadsIdMuteRoute
+  '/api/threads/$id/pin': typeof ApiThreadsIdPinRoute
+  '/api/threads/$id/read': typeof ApiThreadsIdReadRoute
+  '/api/threads/$id/star': typeof ApiThreadsIdStarRoute
+  '/api/messages/voice/': typeof ApiMessagesVoiceIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -455,13 +536,22 @@ export interface FileRouteTypes {
     | '/api/housing/rent'
     | '/api/map/action'
     | '/api/map/travel'
+    | '/api/messages/send'
     | '/api/outfit/equip'
     | '/api/outfit/unequip'
     | '/api/shop/buy'
+    | '/api/threads/'
     | '/location/$slug'
     | '/api/auth/username/login'
     | '/api/auth/username/register'
     | '/api/map/landmark/$id'
+    | '/api/messages/voice/$id'
+    | '/api/messages/voice/cleanup'
+    | '/api/threads/$id/mute'
+    | '/api/threads/$id/pin'
+    | '/api/threads/$id/read'
+    | '/api/threads/$id/star'
+    | '/api/messages/voice/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -499,13 +589,22 @@ export interface FileRouteTypes {
     | '/api/housing/rent'
     | '/api/map/action'
     | '/api/map/travel'
+    | '/api/messages/send'
     | '/api/outfit/equip'
     | '/api/outfit/unequip'
     | '/api/shop/buy'
+    | '/api/threads'
     | '/location/$slug'
     | '/api/auth/username/login'
     | '/api/auth/username/register'
     | '/api/map/landmark/$id'
+    | '/api/messages/voice/$id'
+    | '/api/messages/voice/cleanup'
+    | '/api/threads/$id/mute'
+    | '/api/threads/$id/pin'
+    | '/api/threads/$id/read'
+    | '/api/threads/$id/star'
+    | '/api/messages/voice'
   id:
     | '__root__'
     | '/'
@@ -545,13 +644,22 @@ export interface FileRouteTypes {
     | '/api/housing/rent'
     | '/api/map/action'
     | '/api/map/travel'
+    | '/api/messages/send'
     | '/api/outfit/equip'
     | '/api/outfit/unequip'
     | '/api/shop/buy'
+    | '/api/threads/'
     | '/_authenticated/_game/location/$slug'
     | '/api/auth/username/login'
     | '/api/auth/username/register'
     | '/api/map/landmark/$id'
+    | '/api/messages/voice/$id'
+    | '/api/messages/voice/cleanup'
+    | '/api/threads/$id/mute'
+    | '/api/threads/$id/pin'
+    | '/api/threads/$id/read'
+    | '/api/threads/$id/star'
+    | '/api/messages/voice/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -574,12 +682,21 @@ export interface RootRouteChildren {
   ApiHousingRentRoute: typeof ApiHousingRentRoute
   ApiMapActionRoute: typeof ApiMapActionRoute
   ApiMapTravelRoute: typeof ApiMapTravelRoute
+  ApiMessagesSendRoute: typeof ApiMessagesSendRoute
   ApiOutfitEquipRoute: typeof ApiOutfitEquipRoute
   ApiOutfitUnequipRoute: typeof ApiOutfitUnequipRoute
   ApiShopBuyRoute: typeof ApiShopBuyRoute
+  ApiThreadsIndexRoute: typeof ApiThreadsIndexRoute
   ApiAuthUsernameLoginRoute: typeof ApiAuthUsernameLoginRoute
   ApiAuthUsernameRegisterRoute: typeof ApiAuthUsernameRegisterRoute
   ApiMapLandmarkIdRoute: typeof ApiMapLandmarkIdRoute
+  ApiMessagesVoiceIdRoute: typeof ApiMessagesVoiceIdRoute
+  ApiMessagesVoiceCleanupRoute: typeof ApiMessagesVoiceCleanupRoute
+  ApiThreadsIdMuteRoute: typeof ApiThreadsIdMuteRoute
+  ApiThreadsIdPinRoute: typeof ApiThreadsIdPinRoute
+  ApiThreadsIdReadRoute: typeof ApiThreadsIdReadRoute
+  ApiThreadsIdStarRoute: typeof ApiThreadsIdStarRoute
+  ApiMessagesVoiceIndexRoute: typeof ApiMessagesVoiceIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -843,6 +960,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMapTravelRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/messages/send': {
+      id: '/api/messages/send'
+      path: '/api/messages/send'
+      fullPath: '/api/messages/send'
+      preLoaderRoute: typeof ApiMessagesSendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/outfit/equip': {
       id: '/api/outfit/equip'
       path: '/api/outfit/equip'
@@ -862,6 +986,13 @@ declare module '@tanstack/react-router' {
       path: '/api/shop/buy'
       fullPath: '/api/shop/buy'
       preLoaderRoute: typeof ApiShopBuyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/threads/': {
+      id: '/api/threads/'
+      path: '/api/threads'
+      fullPath: '/api/threads/'
+      preLoaderRoute: typeof ApiThreadsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/_game/location/$slug': {
@@ -890,6 +1021,55 @@ declare module '@tanstack/react-router' {
       path: '/api/map/landmark/$id'
       fullPath: '/api/map/landmark/$id'
       preLoaderRoute: typeof ApiMapLandmarkIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/messages/voice/': {
+      id: '/api/messages/voice/'
+      path: '/api/messages/voice'
+      fullPath: '/api/messages/voice/'
+      preLoaderRoute: typeof ApiMessagesVoiceIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/messages/voice/$id': {
+      id: '/api/messages/voice/$id'
+      path: '/api/messages/voice/$id'
+      fullPath: '/api/messages/voice/$id'
+      preLoaderRoute: typeof ApiMessagesVoiceIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/messages/voice/cleanup': {
+      id: '/api/messages/voice/cleanup'
+      path: '/api/messages/voice/cleanup'
+      fullPath: '/api/messages/voice/cleanup'
+      preLoaderRoute: typeof ApiMessagesVoiceCleanupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/threads/$id/mute': {
+      id: '/api/threads/$id/mute'
+      path: '/api/threads/$id/mute'
+      fullPath: '/api/threads/$id/mute'
+      preLoaderRoute: typeof ApiThreadsIdMuteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/threads/$id/pin': {
+      id: '/api/threads/$id/pin'
+      path: '/api/threads/$id/pin'
+      fullPath: '/api/threads/$id/pin'
+      preLoaderRoute: typeof ApiThreadsIdPinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/threads/$id/read': {
+      id: '/api/threads/$id/read'
+      path: '/api/threads/$id/read'
+      fullPath: '/api/threads/$id/read'
+      preLoaderRoute: typeof ApiThreadsIdReadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/threads/$id/star': {
+      id: '/api/threads/$id/star'
+      path: '/api/threads/$id/star'
+      fullPath: '/api/threads/$id/star'
+      preLoaderRoute: typeof ApiThreadsIdStarRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -971,12 +1151,21 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHousingRentRoute: ApiHousingRentRoute,
   ApiMapActionRoute: ApiMapActionRoute,
   ApiMapTravelRoute: ApiMapTravelRoute,
+  ApiMessagesSendRoute: ApiMessagesSendRoute,
   ApiOutfitEquipRoute: ApiOutfitEquipRoute,
   ApiOutfitUnequipRoute: ApiOutfitUnequipRoute,
   ApiShopBuyRoute: ApiShopBuyRoute,
+  ApiThreadsIndexRoute: ApiThreadsIndexRoute,
   ApiAuthUsernameLoginRoute: ApiAuthUsernameLoginRoute,
   ApiAuthUsernameRegisterRoute: ApiAuthUsernameRegisterRoute,
   ApiMapLandmarkIdRoute: ApiMapLandmarkIdRoute,
+  ApiMessagesVoiceIdRoute: ApiMessagesVoiceIdRoute,
+  ApiMessagesVoiceCleanupRoute: ApiMessagesVoiceCleanupRoute,
+  ApiThreadsIdMuteRoute: ApiThreadsIdMuteRoute,
+  ApiThreadsIdPinRoute: ApiThreadsIdPinRoute,
+  ApiThreadsIdReadRoute: ApiThreadsIdReadRoute,
+  ApiThreadsIdStarRoute: ApiThreadsIdStarRoute,
+  ApiMessagesVoiceIndexRoute: ApiMessagesVoiceIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
