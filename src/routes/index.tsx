@@ -1,14 +1,34 @@
-import { useEffect, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, BriefcaseBusiness, Compass, House, MapPin } from "lucide-react";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  ArrowRight,
+  BriefcaseBusiness,
+  Compass,
+  Headphones,
+  House,
+  LogOut,
+  MapPin,
+  Music2,
+  Sparkles,
+  VolumeX,
+  WalletCards,
+} from "lucide-react";
 import { Avatar, type Appearance } from "@/components/game/Avatar";
+import { EntryTownPreview } from "@/components/game/EntryTownPreview";
 import { Logo } from "@/components/game/Logo";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { q } from "@/lib/game";
-import cityPhoto from "@/assets/osogbo-city.jpg";
-import miniatureCity from "@/assets/hero-city.jpg";
+import {
+  configureGameMusic,
+  disableGameAudio,
+  enableGameAudio,
+  getMusicState,
+  getServerMusicState,
+  subscribeMusic,
+} from "@/lib/game-audio";
+import { formatNaira, q } from "@/lib/game";
+import "@/components/game/landing.css";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -17,19 +37,17 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Create your character, build a career, and make a life across a fictional, game-inspired Osun State.",
+          "Create your character, find work, make a home, and build a life across a fictional Osun-inspired world.",
       },
       { property: "og:title", content: "OSUN LIFE — A Nigerian life simulation game" },
       {
         property: "og:description",
-        content:
-          "Create your character and make a life across a fictional, game-inspired Osun State.",
+        content: "Start a new story or return to your saved life in OSUN LIFE.",
       },
       { name: "twitter:title", content: "OSUN LIFE — A Nigerian life simulation game" },
       {
         name: "twitter:description",
-        content:
-          "Explore fictional towns across Osun State, find work, and build your virtual life.",
+        content: "Find work, make a home, meet people, and shape your virtual life.",
       },
       { name: "robots", content: "index, follow" },
     ],
@@ -40,7 +58,34 @@ export const Route = createFileRoute("/")({
   component: Landing,
 });
 
-type SessionState = "checking" | "signed-out" | "signed-in" | "error";
+export type SessionState = "checking" | "signed-out" | "signed-in" | "error";
+export type LandingExperience = {
+  mode: "checking" | "error" | "new" | "returning";
+  primaryLink: "/signup" | "/create-character" | "/enter";
+  primaryLabel: string;
+};
+
+export function resolveLandingExperience(
+  sessionState: SessionState,
+  hasCharacter: boolean,
+  characterError = false,
+): LandingExperience {
+  if (sessionState === "checking")
+    return {
+      mode: "checking",
+      primaryLink: "/signup",
+      primaryLabel: "Checking your save…",
+    };
+  if (sessionState === "error" || characterError)
+    return { mode: "error", primaryLink: "/signup", primaryLabel: "Retry account check" };
+  if (hasCharacter)
+    return { mode: "returning", primaryLink: "/enter", primaryLabel: "Continue your life" };
+  return {
+    mode: "new",
+    primaryLink: sessionState === "signed-in" ? "/create-character" : "/signup",
+    primaryLabel: "Start a new life",
+  };
+}
 
 async function readSessionState(): Promise<SessionState> {
   try {
@@ -52,19 +97,58 @@ async function readSessionState(): Promise<SessionState> {
   }
 }
 
+function LandingAudio({ identity }: { identity: string }) {
+  const music = useSyncExternalStore(subscribeMusic, getMusicState, getServerMusicState);
+  const [changing, setChanging] = useState(false);
+
+  useEffect(() => {
+    configureGameMusic(identity);
+    return () => {
+      configureGameMusic(null);
+      void disableGameAudio();
+    };
+  }, [identity]);
+
+  async function toggleAudio() {
+    setChanging(true);
+    if (music.soundEnabled) await disableGameAudio();
+    else await enableGameAudio();
+    setChanging(false);
+  }
+
+  return (
+    <button
+      type="button"
+      className="landing-v2-audio"
+      role="switch"
+      aria-checked={music.soundEnabled}
+      aria-label={music.soundEnabled ? "Turn town music off" : "Turn town music on"}
+      disabled={changing}
+      onClick={() => void toggleAudio()}
+    >
+      <span className="landing-v2-audio-active">
+        {music.soundEnabled ? <Music2 aria-hidden="true" /> : <Headphones aria-hidden="true" />}
+        Town music
+      </span>
+      <span>{music.soundEnabled ? "Mute" : "Play"}</span>
+    </button>
+  );
+}
+
 function Landing() {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [sessionState, setSessionState] = useState<SessionState>("checking");
+  const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
     let active = true;
     const { data } = supabase.auth.onAuthStateChange((_event, session) => {
       setSessionState(session ? "signed-in" : "signed-out");
     });
-
     void readSessionState().then((state) => {
       if (active) setSessionState(state);
     });
-
     return () => {
       active = false;
       data.subscription.unsubscribe();
@@ -76,198 +160,207 @@ function Landing() {
     enabled: sessionState === "signed-in",
     staleTime: 30_000,
   });
+  const character = characterQuery.data;
+  const walletQuery = useQuery({ ...q.wallet(), enabled: !!character, staleTime: 30_000 });
   const locationsQuery = useQuery({
     ...q.locations(),
-    enabled: !!characterQuery.data,
+    enabled: !!character,
     staleTime: 5 * 60_000,
   });
-  const character = characterQuery.data;
   const location = locationsQuery.data?.find(
     (place) => place.id === character?.current_location_id,
   );
-  const isChecking =
-    sessionState === "checking" || (sessionState === "signed-in" && characterQuery.isLoading);
-
-  const primaryLink = character
-    ? "/enter"
-    : sessionState === "signed-in"
-      ? "/create-character"
-      : "/signup";
-  const primaryLabel = isChecking
-    ? "Checking your save…"
-    : character
-      ? "Continue life"
-      : "Start a new life";
+  const waitingForCharacter = sessionState === "signed-in" && characterQuery.isLoading;
+  const experience = resolveLandingExperience(
+    waitingForCharacter ? "checking" : sessionState,
+    Boolean(character),
+    sessionState === "signed-in" && characterQuery.isError,
+  );
 
   async function retrySessionCheck() {
     setSessionState("checking");
-    setSessionState(await readSessionState());
+    const state = await readSessionState();
+    setSessionState(state);
+    if (state === "signed-in") await characterQuery.refetch();
   }
 
+  async function signOut() {
+    setSigningOut(true);
+    const { error } = await supabase.auth.signOut();
+    if (!error) {
+      queryClient.clear();
+      setSessionState("signed-out");
+      await navigate({ to: "/" });
+    }
+    setSigningOut(false);
+  }
+
+  const returning = experience.mode === "returning" && character;
+
   return (
-    <main className="landing-screen min-h-screen bg-background text-foreground">
-      <header className="landing-header">
+    <main className="landing-v2">
+      <header className="landing-v2-header">
         <Link to="/" aria-label="OSUN LIFE home">
           <Logo />
         </Link>
-        <div className="flex items-center gap-2">
-          <Link to="/login" className="landing-login-link">
-            Log in
-          </Link>
-        </div>
+        <LandingAudio identity={character?.id ?? "public-landing"} />
       </header>
 
-      <section className="landing-hero" aria-labelledby="landing-title">
-        <img
-          src={cityPhoto}
-          alt="A view over Osogbo, Nigeria"
-          className="landing-hero-image"
-          fetchPriority="high"
-        />
-        <div className="landing-hero-shade" />
-        <div className="landing-hero-content">
-          <div className="landing-copy">
-            <p className="landing-kicker">A life simulation · Osogbo, Nigeria</p>
-            <h1 id="landing-title">
-              Your life.
-              <br />
-              Your Osogbo.
-            </h1>
-            <p className="landing-description">
-              Meet the city one day at a time. Find work, discover familiar places, and shape a life
-              that feels like yours.
-            </p>
-            {character && (
-              <div className="landing-save-summary" aria-live="polite">
-                <span className="landing-save-avatar" aria-hidden="true">
+      <section className="landing-v2-hero" aria-labelledby="landing-title">
+        <div className="landing-v2-intro">
+          <p className="landing-v2-eyebrow">
+            <Sparkles aria-hidden="true" /> A Nigerian life simulation
+          </p>
+          <h1 id="landing-title">
+            Build a life that <em>feels like yours.</em>
+          </h1>
+          <p>
+            Work, make a home, meet people, and find your place in a fictional world inspired by
+            everyday life across Osun State.
+          </p>
+        </div>
+
+        <div className="landing-v2-world" aria-label="A preview of the OSUN LIFE world">
+          <EntryTownPreview />
+          <div className="landing-v2-world-avatar" aria-hidden="true">
+            <Avatar
+              appearance={(character?.appearance as Appearance | null | undefined) ?? {}}
+              gender={character?.gender ?? "female"}
+              size={154}
+            />
+          </div>
+          <span className="landing-v2-world-label">
+            <MapPin aria-hidden="true" /> Your story starts here
+          </span>
+        </div>
+
+        <section className="landing-v2-start-card" aria-live="polite">
+          {experience.mode === "checking" ? (
+            <div className="landing-v2-state" role="status">
+              <span className="landing-v2-loader" aria-hidden="true" />
+              <strong>Finding your saved life</strong>
+              <small>This will only take a moment.</small>
+            </div>
+          ) : experience.mode === "error" ? (
+            <div className="landing-v2-state" role="alert">
+              <VolumeX aria-hidden="true" />
+              <strong>Your account could not be checked.</strong>
+              <small>Your existing progress is safe. Try loading it again.</small>
+              <Button onClick={() => void retrySessionCheck()}>Retry account check</Button>
+            </div>
+          ) : returning ? (
+            <>
+              <p className="landing-v2-card-kicker">Welcome back</p>
+              <div className="landing-v2-player">
+                <span className="landing-v2-player-avatar" aria-hidden="true">
                   <Avatar
-                    appearance={(character.appearance as Appearance | null) ?? {}}
-                    gender={character.gender}
-                    size={46}
+                    appearance={(returning.appearance as Appearance | null) ?? {}}
+                    gender={returning.gender}
+                    size={58}
                   />
                 </span>
-                <span>
-                  <strong>Welcome back, {character.name}</strong>
-                  <small>{location?.name ?? "Last saved in Osogbo"}</small>
+                <span className="landing-v2-player-copy">
+                  <strong>{returning.name}</strong>
+                  <small>
+                    Level {returning.level} · {location?.name ?? "Saved in Osun"}
+                  </small>
+                </span>
+                <span className="landing-v2-balance">
+                  <WalletCards aria-hidden="true" />
+                  {walletQuery.isLoading
+                    ? "Loading wallet"
+                    : walletQuery.data
+                      ? formatNaira(walletQuery.data.balance)
+                      : "Wallet unavailable"}
                 </span>
               </div>
-            )}
-            {characterQuery.isError && sessionState === "signed-in" && (
-              <p className="landing-save-error" role="status">
-                Your save could not be checked. Retry before starting a new life.
+              <Button asChild size="lg" className="landing-v2-primary">
+                <Link to="/enter">
+                  Continue your life <ArrowRight aria-hidden="true" />
+                </Link>
+              </Button>
+              <div className="landing-v2-account-actions">
+                <Link to="/profile">Account and profile</Link>
+                <button type="button" disabled={signingOut} onClick={() => void signOut()}>
+                  <LogOut aria-hidden="true" /> {signingOut ? "Signing out…" : "Sign out"}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="landing-v2-card-kicker">Your next chapter</p>
+              <h2>Start with a choice. Grow from there.</h2>
+              <p className="landing-v2-card-copy">
+                Create your player and turn ordinary days into your own story.
               </p>
-            )}
-            {sessionState === "error" && (
-              <p className="landing-save-error" role="status">
-                Your account could not be checked. Retry so the game can safely find your progress.
-              </p>
-            )}
-            <div className="landing-actions">
-              {isChecking ? (
-                <Button size="lg" variant="default" disabled>
-                  {primaryLabel}
-                </Button>
-              ) : sessionState === "error" ? (
-                <Button size="lg" variant="default" onClick={() => void retrySessionCheck()}>
-                  Retry account check
-                </Button>
-              ) : characterQuery.isError ? (
-                <Button
-                  size="lg"
-                  variant="default"
-                  disabled={characterQuery.isRefetching}
-                  onClick={() => void characterQuery.refetch()}
-                >
-                  {characterQuery.isRefetching ? "Checking…" : "Retry save check"}
-                </Button>
+              <ol className="landing-v2-steps" aria-label="How your story begins">
+                <li>
+                  <span>1</span>
+                  <strong>Earn</strong>
+                </li>
+                <li>
+                  <span>2</span>
+                  <strong>Find a home</strong>
+                </li>
+                <li>
+                  <span>3</span>
+                  <strong>Build a life</strong>
+                </li>
+              </ol>
+              <Button asChild size="lg" className="landing-v2-primary">
+                <Link to={experience.primaryLink}>
+                  {experience.primaryLabel} <ArrowRight aria-hidden="true" />
+                </Link>
+              </Button>
+              {sessionState === "signed-out" ? (
+                <Link to="/login" className="landing-v2-secondary">
+                  I already have an account
+                </Link>
               ) : (
-                <Button asChild size="lg" variant="default">
-                  <Link to={primaryLink}>
-                    {primaryLabel} <ArrowRight aria-hidden="true" />
-                  </Link>
-                </Button>
+                <button
+                  type="button"
+                  className="landing-v2-secondary"
+                  onClick={() => void signOut()}
+                >
+                  Sign out
+                </button>
               )}
-              <a href="#your-story" className="landing-secondary-action">
-                Discover the game
-              </a>
-            </div>
-            <p className="landing-economy-note">
-              All money and prices are simulated in-game values.
-            </p>
-          </div>
-
-          <div className="landing-character-stage" aria-hidden="true">
-            <div className="landing-character-halo" />
-            <div className="landing-character-avatar">
-              <Avatar
-                appearance={(character?.appearance as Appearance | null | undefined) ?? {}}
-                gender={character?.gender ?? "female"}
-                size={260}
-              />
-            </div>
-            <p>{character?.name ?? "A new story begins here"}</p>
-          </div>
-        </div>
-        <a
-          href="https://commons.wikimedia.org/wiki/File:Osogbo.jpg"
-          target="_blank"
-          rel="noreferrer"
-          className="landing-photo-credit"
-        ></a>
+              <small className="landing-v2-money-note">
+                Free to play. All naira amounts are fictional game values.
+              </small>
+            </>
+          )}
+        </section>
       </section>
 
-      <section id="your-story" className="landing-story" aria-label="Ways to play">
-        <div className="landing-story-heading">
-          <p className="landing-kicker landing-kicker-dark">A city to grow into</p>
-          <h2>Make the everyday yours.</h2>
+      <section className="landing-v2-life" aria-labelledby="landing-life-title">
+        <div>
+          <p className="landing-v2-eyebrow">A world shaped by your choices</p>
+          <h2 id="landing-life-title">There is always something to do next.</h2>
         </div>
-        <div className="landing-story-grid">
-          <Link
-            to={sessionState === "signed-in" ? "/map" : "/signup"}
-            className="landing-story-link"
-          >
-            <Compass aria-hidden="true" />
-            <span>
-              <strong>Find your way</strong>
-              <small>Explore the city and choose where to go.</small>
-            </span>
-            <ArrowRight aria-hidden="true" />
-          </Link>
-          <Link
-            to={sessionState === "signed-in" ? "/jobs" : "/signup"}
-            className="landing-story-link"
-          >
+        <div className="landing-v2-life-grid">
+          <article>
             <BriefcaseBusiness aria-hidden="true" />
-            <span>
-              <strong>Build a working life</strong>
-              <small>Apply for jobs, work shifts, and grow.</small>
-            </span>
-            <ArrowRight aria-hidden="true" />
-          </Link>
-          <Link
-            to={sessionState === "signed-in" ? "/home" : "/signup"}
-            className="landing-story-link"
-          >
+            <h3>Build your working life</h3>
+            <p>Apply for jobs, work shifts, learn skills, and grow your income.</p>
+          </article>
+          <article>
+            <Compass aria-hidden="true" />
+            <h3>Explore public places</h3>
+            <p>Travel through the city and discover activities at each destination.</p>
+          </article>
+          <article>
             <House aria-hidden="true" />
-            <span>
-              <strong>Come home</strong>
-              <small>Make a space and settle into your routine.</small>
-            </span>
-            <ArrowRight aria-hidden="true" />
-          </Link>
+            <h3>Make a home</h3>
+            <p>Choose a place to live, collect furniture, and make it feel personal.</p>
+          </article>
         </div>
-        <figure className="landing-city-card">
-          <img src={miniatureCity} alt="A miniature Osogbo-inspired city" loading="lazy" />
-          <figcaption>
-            <MapPin aria-hidden="true" /> Inspired by Osogbo, built for your story.
-          </figcaption>
-        </figure>
       </section>
 
-      <footer className="landing-footer">
+      <footer className="landing-v2-footer">
         <Logo />
-        <span>OSUN LIFE · An original Nigerian life simulation</span>
-        <Link to="/login">Account & settings</Link>
+        <span>OSUN LIFE. An original Nigerian life simulation.</span>
+        <Link to="/login">Account</Link>
       </footer>
     </main>
   );
