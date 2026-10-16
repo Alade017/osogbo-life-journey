@@ -102,7 +102,10 @@ const landmarks = rawLandmarks as (MapLandmark & {
   min_age?: number;
 })[];
 const modelPaths = [...new Set(landmarks.map(({ model }) => model))];
-const sceneBounds = { minX: -14, maxX: 14, minZ: -10, maxZ: 10 };
+const scenePointForGrid = (x: number, z: number) => ({
+  x: (x - (grid.columns - 1) / 2) * grid.cellSize,
+  z: (z - (grid.rows - 1) / 2) * grid.cellSize,
+});
 
 const icons = {
   market: ShoppingBasket,
@@ -166,6 +169,10 @@ const TownBase = memo(function TownBase() {
   );
   return (
     <group>
+      <mesh position={[0, -0.2, 0]}>
+        <boxGeometry args={[grid.columns * grid.cellSize, 0.2, grid.rows * grid.cellSize]} />
+        <meshStandardMaterial color={colors.grass} roughness={1} />
+      </mesh>
       <TownInstances cells={sceneCells} kind="grass" color={colors.grass} height={0.24} />
       <TownInstances cells={sceneCells} kind="road" color={colors.road} height={0.28} />
       <TownInstances cells={sceneCells} kind="water" color={colors.water} height={0.22} />
@@ -407,12 +414,11 @@ function PlaceOverlays({
             gridArea: { x: number; z: number; width: number; depth: number };
           }
         ).gridArea;
-        const point = mapTownGridToScene({
-          ...grid,
-          cells: [
-            { x: area.x + (area.width - 1) / 2, z: area.z + (area.depth - 1) / 2, kind: "grass" },
-          ],
-        })[0]!;
+        const center = scenePointForGrid(
+          area.x + (area.width - 1) / 2,
+          area.z + (area.depth - 1) / 2,
+        );
+        const point = { ...center, y: 0 };
         return { district, point };
       }),
     [],
@@ -465,7 +471,14 @@ function PlaceOverlays({
               aria-label={`${district.name} district, ${district.traffic} traffic`}
               onClick={(event) => {
                 event.stopPropagation();
-                if (event.detail === 0 || tapAllowed.current) onSelectDistrict(district.id);
+                if (event.detail === 0 || tapAllowed.current) {
+                  window.dispatchEvent(
+                    new CustomEvent("osogbo:map-focus", {
+                      detail: { x: point.x, z: point.z },
+                    }),
+                  );
+                  onSelectDistrict(district.id);
+                }
               }}
             >
               {district.name}
@@ -548,7 +561,16 @@ export function MapCanvas({
       return;
     }
     const district = districts.find((item) => item.id === id);
-    if (district) callbacks.current.onSelectDistrict(id);
+    if (district) {
+      const area = (
+        district as MapDistrict & {
+          gridArea: { x: number; z: number; width: number; depth: number };
+        }
+      ).gridArea;
+      const point = scenePointForGrid(area.x + (area.width - 1) / 2, area.z + (area.depth - 1) / 2);
+      window.dispatchEvent(new CustomEvent("osogbo:map-focus", { detail: point }));
+      callbacks.current.onSelectDistrict(id);
+    }
   }, [searchTarget]);
 
   const availablePlaces = useMemo(
