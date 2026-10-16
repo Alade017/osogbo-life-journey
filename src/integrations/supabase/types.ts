@@ -1329,6 +1329,7 @@ export type Database = {
           starts_at: string;
           status: string;
           title: string;
+          updated_at: string;
         };
         Insert: {
           advertiser_name: string;
@@ -1346,6 +1347,7 @@ export type Database = {
           starts_at?: string;
           status?: string;
           title: string;
+          updated_at?: string;
         };
         Update: {
           advertiser_name?: string;
@@ -1363,6 +1365,7 @@ export type Database = {
           starts_at?: string;
           status?: string;
           title?: string;
+          updated_at?: string;
         };
         Relationships: [
           {

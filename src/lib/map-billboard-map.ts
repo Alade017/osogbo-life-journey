@@ -40,7 +40,7 @@ export function playerCampaignAsAdvertisement(
     ends_at: campaign.ends_at,
     status: campaign.status,
     created_at: campaign.created_at,
-    updated_at: campaign.created_at,
+    updated_at: campaign.updated_at,
   };
 }
 

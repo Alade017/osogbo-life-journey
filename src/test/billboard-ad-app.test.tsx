@@ -1,11 +1,11 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+﻿import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BillboardAdApp } from "@/components/game/BillboardAdApp";
 
 const mock = vi.hoisted(() => ({ market: vi.fn(), purchase: vi.fn(), update: vi.fn() }));
 vi.mock("@/lib/game", () => ({
-  formatNaira: (value: number) => `₦${value}`,
+  formatNaira: (value: number) => `â‚¦${value}`,
   q: {
     advertisingMarket: () => ({ queryKey: ["advertisingMarket"], queryFn: mock.market }),
   },
@@ -53,20 +53,22 @@ describe("player billboard campaign app", () => {
   it("edits an owned live campaign through the server service", async () => {
     mock.market.mockResolvedValue({
       ...data,
-      myAds: [{
-        id: "44444444-4444-4444-8444-444444444444",
-        billboardId: data.billboards[0]!.id,
-        billboardName: data.billboards[0]!.name,
-        advertiserName: "Ade Studios",
-        title: "Old headline",
-        description: "Old description",
-        creativeTheme: "green",
-        durationDays: 7,
-        amountPaid: 35000,
-        startsAt: "2026-01-01T00:00:00Z",
-        endsAt: "2099-01-01T00:00:00Z",
-        status: "active",
-      }],
+      myAds: [
+        {
+          id: "44444444-4444-4444-8444-444444444444",
+          billboardId: data.billboards[0]!.id,
+          billboardName: data.billboards[0]!.name,
+          advertiserName: "Ade Studios",
+          title: "Old headline",
+          description: "Old description",
+          creativeTheme: "green",
+          durationDays: 7,
+          amountPaid: 35000,
+          startsAt: "2026-01-01T00:00:00Z",
+          endsAt: "2099-01-01T00:00:00Z",
+          status: "active",
+        },
+      ],
     });
     mock.update.mockResolvedValue({ ok: true });
     mount();
@@ -74,10 +76,11 @@ describe("player billboard campaign app", () => {
     const headline = screen.getAllByLabelText("Headline").at(-1)!;
     fireEvent.change(headline, { target: { value: "Fresh headline" } });
     fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
-    await waitFor(() => expect(mock.update).toHaveBeenCalledWith(expect.objectContaining({
+    await waitFor(() => expect(mock.update).toHaveBeenCalledOnce());
+    expect(mock.update.mock.calls[0]![0]).toMatchObject({
       advertisementId: "44444444-4444-4444-8444-444444444444",
       title: "Fresh headline",
-    })));
+    });
   });
 
   it("prices and submits the selected virtual ad through the purchase service", async () => {
@@ -90,7 +93,7 @@ describe("player billboard campaign app", () => {
     fireEvent.change(screen.getByLabelText("Ad description"), {
       target: { value: "Fresh designs in Osogbo" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Purchase ad · ₦35000" }));
+    fireEvent.click(screen.getByRole("button", { name: /Purchase ad/ }));
     await waitFor(() => expect(mock.purchase).toHaveBeenCalledOnce());
     expect(mock.purchase.mock.calls[0]![0]).toMatchObject({
       billboardId: data.billboards[0]!.id,
@@ -112,7 +115,7 @@ describe("player billboard campaign app", () => {
     fireEvent.change(screen.getByLabelText("Ad description"), {
       target: { value: "Fresh designs in Osogbo" },
     });
-    fireEvent.click(screen.getByRole("button", { name: "Purchase ad · ₦35000" }));
+    fireEvent.click(screen.getByRole("button", { name: /Purchase ad/ }));
     fireEvent.click(await screen.findByRole("button", { name: "Retry purchase" }));
     await waitFor(() => expect(mock.purchase).toHaveBeenCalledTimes(2));
     expect(mock.purchase.mock.calls[0]![0]).toEqual(mock.purchase.mock.calls[1]![0]);

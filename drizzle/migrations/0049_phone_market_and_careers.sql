@@ -215,7 +215,7 @@ insert into public.jobs
 select seed.slug,seed.name,seed.description,seed.salary,seed.energy,seed.level,45,18,'career',seed.icon,
  seed.ordering,seed.category,240,7,4,l.id,true,seed.band,seed.requirements::jsonb,seed.skill,24,8,17
 from (values
- ('osun_mall_stock_associate','Wholesale Stock Associate','Manage bulk stock and prepare customer orders.',5200,18,1,'package-open',230,'retail','entry','{}','customer_service'),
+ ('osun_mall_stock_associate','Wholesale Stock Associate','Manage bulk stock and prepare customer orders.',5200,18,1,'package-open',230,'retail','low','{}','customer_service'),
  ('junior_software_support','Junior Software Support','Help a fictional city office resolve everyday computer issues.',7600,20,3,'laptop',231,'technology','medium','{"skills":{"digital_literacy":1}}','digital_literacy'),
  ('community_health_assistant','Community Health Assistant','Support visitors and records at the fictional community clinic.',7200,22,3,'heart-pulse',232,'healthcare','medium','{"skills":{"healthcare":1}}','healthcare'),
  ('finance_operations_assistant','Finance Operations Assistant','Process fictional account records at a city finance desk.',8200,20,4,'landmark',233,'services','medium','{"skills":{"financial_literacy":2}}','financial_literacy'),

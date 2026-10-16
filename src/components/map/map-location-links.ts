@@ -17,4 +17,5 @@ export const MAP_LANDMARK_LOCATION_SLUG: Record<string, string | null> = {
   "community-clinic": "community-clinic",
   "transit-park": "transit-park",
   "sports-ground": "sports-ground",
+  "osun-mall": "osun-mall",
 };

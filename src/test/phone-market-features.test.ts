@@ -1,10 +1,11 @@
 import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import map from "@/data/osogbo-town.json";
 import { getItemArt } from "@/lib/item-art";
 
 const migration = readFileSync(
-  new URL("../../drizzle/migrations/0049_phone_market_and_careers.sql", import.meta.url),
+  join(process.cwd(), "drizzle/migrations/0049_phone_market_and_careers.sql"),
   "utf8",
 );
 
