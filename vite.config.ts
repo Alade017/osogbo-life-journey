@@ -25,6 +25,11 @@ export default defineConfig(({ command, mode }) => {
       alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
       dedupe: ["react", "react-dom", "@tanstack/react-router", "@tanstack/react-query"],
     },
+    build: {
+      // The map/house 3D runtime is route-split and currently ~912 kB raw (~242 kB gzip).
+      // Keep a meaningful ceiling above it while still warning on future 3D bundle growth.
+      chunkSizeWarningLimit: 1_000,
+    },
     server: { host: "127.0.0.1", port: 3000, strictPort: true },
   };
 });
