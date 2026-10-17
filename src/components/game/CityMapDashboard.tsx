@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Banknote, CalendarDays, CloudOff, Compass, MapPinned, Smile } from "lucide-react";
+import { CloudOff, Compass, MapPinned, Smile } from "lucide-react";
 import {
   MapCanvas,
   type MapBillboardMarker,
@@ -14,7 +14,7 @@ import { OsunStateOverview } from "@/components/map/OsunStateOverview";
 import { MAP_LANDMARK_LOCATION_SLUG } from "@/components/map/map-location-links";
 import { formatMapNaira } from "@/components/map/map-ui-utils";
 import townData from "@/data/osogbo-town.json";
-import { formatNaira, q, rpc } from "@/lib/game";
+import { q, rpc } from "@/lib/game";
 import {
   clearPendingTravelKey,
   getPendingTravelKey,
@@ -27,7 +27,6 @@ import {
 import type { PlaceActionResult } from "@/components/map/PlaceActionMenu";
 import { useWorldClock } from "@/hooks/use-world-clock";
 import { activeCityEvents } from "@/lib/world-simulation";
-import { formatCalendarDate, lagosDateKey, upcomingCalendarEvents } from "@/lib/osogbo-calendar";
 import { getCurrentMapBillboards, type CurrentMapBillboard } from "@/lib/map-billboard-map";
 import type { MapDistrict, MapLandmark } from "@/components/map/OsogboMap.svg";
 import "@/components/map/map-ui.css";
@@ -51,7 +50,6 @@ const landmarks = districts.flatMap((district) =>
 );
 
 export function CityMapDashboard({
-  money,
   mood,
   nextRentDueAt,
 }: { money?: number; mood?: string; nextRentDueAt?: string } = {}) {
@@ -72,7 +70,6 @@ export function CityMapDashboard({
   const [selectedTownId, setSelectedTownId] = useState("osogbo");
   const queryClient = useQueryClient();
   const character = useQuery(q.character());
-  const wallet = useQuery(q.wallet());
   const rent = useQuery(q.rentStatus());
   const world = useWorldClock();
   const jobCatalog = useQuery({ ...q.jobs(), enabled: filter === "jobs" });
@@ -115,7 +112,6 @@ export function CityMapDashboard({
   const activeEvents = world.data
     ? activeCityEvents(world.data).filter((e) => e.locationSlug === selectedDistrict?.id)
     : [];
-  const nextRealEvent = upcomingCalendarEvents(lagosDateKey(), 1)[0] ?? null;
   const travel = useMutation({
     mutationFn: ({ landmarkId, idempotencyKey }: { landmarkId: string; idempotencyKey: string }) =>
       requestMapTravel(landmarkId, idempotencyKey),
@@ -243,26 +239,26 @@ export function CityMapDashboard({
   return (
     <section className="city-map-dashboard is-world-map map-experience" aria-label="Osun Life map">
       <header className="map-topbar">
-        <span>
-          <Banknote size={16} />
-          {formatNaira(money ?? wallet.data?.balance ?? 0)}
-        </span>
-        <span>
-          <Smile size={16} />
-          {displayedMood}
-        </span>
-        <span>
-          <Compass size={16} />
-          {due
-            ? `Rent due ${new Intl.DateTimeFormat("en-NG", { timeZone: "Africa/Lagos", dateStyle: "medium", timeStyle: "short" }).format(new Date(due))}`
-            : "Rent schedule unavailable"}
-        </span>
-        {nextRealEvent && (
+        <div className="map-topbar-status" aria-label="Map status">
           <span>
-            <CalendarDays size={16} />
-            Next: {nextRealEvent.title} · {formatCalendarDate(nextRealEvent.startsOn)}
+            <Smile size={15} aria-hidden="true" />
+            <small>Mood</small>
+            <strong>{displayedMood}</strong>
           </span>
-        )}
+          <span>
+            <Compass size={15} aria-hidden="true" />
+            <small>Rent</small>
+            <strong>
+              {due
+                ? new Intl.DateTimeFormat("en-NG", {
+                    timeZone: "Africa/Lagos",
+                    day: "numeric",
+                    month: "short",
+                  }).format(new Date(due))
+                : "Not scheduled"}
+            </strong>
+          </span>
+        </div>
         <button
           className="map-level-toggle"
           type="button"

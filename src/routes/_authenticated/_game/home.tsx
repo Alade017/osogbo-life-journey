@@ -26,6 +26,7 @@ import { useMutation } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useGameTime } from "@/components/game/GameTimeProvider";
 import type { LifeActionId } from "@/lib/life-simulation";
+import { homeSceneFromAuthoritativeState, type HomeScenePayload } from "@/lib/home-scene-state";
 
 export const Route = createFileRoute("/_authenticated/_game/home")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -34,6 +35,45 @@ export const Route = createFileRoute("/_authenticated/_game/home")({
   head: () => pageMeta("Osogbo · Home", "Step into your day in Osogbo."),
   component: CityHome,
 });
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+async function authorizedHomeFetch(path: string) {
+  const { data } = await supabase.auth.getSession();
+  const response = await fetch(path, {
+    headers: data.session ? { Authorization: `Bearer ${data.session.access_token}` } : {},
+  });
+  return { response, body: await response.json().catch(() => null) };
+}
+async function loadHomeScene(): Promise<HomeScenePayload> {
+  let primaryCode = "HOUSE_SERVICE_UNAVAILABLE";
+  try {
+    const { response, body } = await authorizedHomeFetch("/api/house/state");
+    const state = homeSceneFromAuthoritativeState(body);
+    if (response.ok && state) return state;
+    if (isRecord(body) && isRecord(body["error"]) && typeof body["error"]["code"] === "string")
+      primaryCode = body["error"]["code"];
+  } catch {
+    // Older deployments can still provide the compatible housing endpoint below.
+  }
+  try {
+    const { response, body } = await authorizedHomeFetch("/api/housing/home");
+    if (
+      response.ok &&
+      isRecord(body) &&
+      Array.isArray(body["home_items"]) &&
+      (body["home"] === null || isRecord(body["home"]))
+    )
+      return body as HomeScenePayload;
+  } catch {
+    // The player-facing error below includes the actionable setup case.
+  }
+  if (primaryCode === "HOUSE_SETUP_REQUIRED")
+    throw new Error("Your home needs the latest database update before it can load.");
+  throw new Error("Home could not be loaded. Check your connection and try again.");
+}
 
 function CityHome() {
   const { visit } = Route.useSearch();
@@ -106,41 +146,8 @@ function MyCityHome() {
   const housingHomeQuery = useQuery({
     queryKey: ["housingHome"],
     enabled: !!character,
-    queryFn: async () => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const response = await fetch("/api/housing/home", {
-        headers: sessionData.session
-          ? { Authorization: `Bearer ${sessionData.session.access_token}` }
-          : {},
-      });
-      const body = await response.json().catch(() => null);
-      if (!response.ok)
-        throw new Error(
-          body?.error?.reason ?? body?.error?.code ?? "Home could not be loaded. Please retry.",
-        );
-      return body as {
-        home: null | {
-          id: string;
-          house_type_id: string;
-          house_types: {
-            label: string;
-            asset_key: string;
-            slots: { id: string; slot_type: string; x?: number; y?: number }[];
-          };
-        };
-        home_items: {
-          id: string;
-          item_id: string;
-          slot_type: string;
-          slot_id: string | null;
-          x: number;
-          y: number;
-          z: number;
-          placed: boolean;
-          equipped: boolean;
-        }[];
-      };
-    },
+    queryFn: loadHomeScene,
+    retry: 1,
   });
   const homeQuery = useQuery({ ...q.homeSave(), enabled: !!character });
   const queryClient = useQueryClient();

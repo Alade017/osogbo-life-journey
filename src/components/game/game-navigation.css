@@ -284,3 +284,41 @@
   text-decoration: underline;
   text-underline-offset: 4px;
 }
+
+/* Keep the phone control inside its reserved dock cell and above the safe-area boundary. */
+@media (max-width: 820px) {
+  .city-game.navigation-redesign .game-curved-dock {
+    height: calc(76px + env(safe-area-inset-bottom));
+    align-items: center;
+    padding: 8px 10px max(10px, env(safe-area-inset-bottom));
+  }
+
+  .city-game.navigation-redesign .game-curved-dock .mobile-nav-phone {
+    position: relative;
+    z-index: 3;
+    align-self: center;
+    width: 54px;
+    height: 54px;
+    min-height: 54px;
+    margin: 0;
+    transform: translateY(-10px);
+  }
+
+  .city-game.navigation-redesign .game-curved-dock .mobile-nav-phone:hover {
+    transform: translateY(-13px);
+  }
+
+  .city-game.navigation-redesign .game-curved-dock .mobile-nav-phone:active {
+    transform: translateY(-8px) scale(0.96);
+  }
+
+  .city-game.navigation-redesign .game-curved-dock .mobile-nav-phone .phone-compact-label {
+    top: auto;
+    bottom: -15px;
+  }
+
+  .city-game.navigation-redesign .game-curved-dock .mobile-nav-active {
+    z-index: 2;
+    transform: translateY(-2px);
+  }
+}

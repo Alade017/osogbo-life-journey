@@ -134,7 +134,7 @@ export function HousingChooser({
     queryFn: () => api("/api/housing/eligible"),
     staleTime: 0,
   });
-  const [questionIndex, setQuestionIndex] = useState(0);
+  const [questionIndex, setQuestionIndex] = useState(QUESTIONS.length);
   const [answers, setAnswers] = useState<Answers>({});
   const [confirming, setConfirming] = useState<HouseOption | null>(null);
   const [busy, setBusy] = useState(false);
@@ -144,7 +144,7 @@ export function HousingChooser({
 
   useEffect(() => {
     if (!open) return;
-    setQuestionIndex(0);
+    setQuestionIndex(QUESTIONS.length);
     setAnswers({});
     setConfirming(null);
     setError("");
@@ -236,21 +236,25 @@ export function HousingChooser({
 
   return (
     <div
-      className="fixed inset-0 z-[120] flex items-end justify-center bg-ink/45 p-0 sm:items-center sm:p-4"
+      className="housing-choice-overlay fixed inset-0 z-[120] flex items-end justify-center bg-ink/45 p-0 sm:items-center sm:p-4"
       role="presentation"
     >
       <section
         aria-labelledby="housing-title"
         aria-modal="true"
         role="dialog"
-        className="w-full max-h-[92dvh] overflow-y-auto rounded-t-[24px] border border-edge bg-card p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-card-foreground shadow-2xl sm:max-w-2xl sm:rounded-[24px]"
+        className="housing-choice-sheet w-full max-h-[92dvh] overflow-y-auto rounded-t-[24px] border border-edge bg-card p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] text-card-foreground shadow-2xl sm:max-w-3xl sm:rounded-[24px]"
       >
         <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-muted sm:hidden" />
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-xs font-bold uppercase tracking-[.16em] text-primary">Your home</p>
             <h2 id="housing-title" className="mt-1 font-display text-2xl font-bold">
-              {confirming ? "Confirm your rent" : "Where will you live?"}
+              {confirming
+                ? "Confirm your rent"
+                : questionIndex < QUESTIONS.length
+                  ? "Help me choose"
+                  : "Places to live in Osogbo"}
             </h2>
             {!confirming && questionIndex < QUESTIONS.length && (
               <p className="mt-1 text-sm text-muted-foreground">
@@ -393,10 +397,22 @@ export function HousingChooser({
           </div>
         ) : (
           <div className="mt-5">
-            <p className="mb-3 text-sm text-muted-foreground">
-              Your first week and deposit are due when you move in. Eligibility is checked by the
-              server.
-            </p>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+              <p className="max-w-xl text-sm text-muted-foreground">
+                Compare every available home. Your first week and deposit are due when you move in,
+                and eligibility is checked by the server.
+              </p>
+              <Button
+                variant="outline"
+                className="min-h-11"
+                onClick={() => {
+                  setAnswers({});
+                  setQuestionIndex(0);
+                }}
+              >
+                <Sparkles size={16} aria-hidden="true" /> Help me choose
+              </Button>
+            </div>
             {eligibleQuery.isLoading ? (
               <div className="flex justify-center py-10">
                 <LoaderCircle className="animate-spin" aria-label="Loading homes" />
@@ -416,7 +432,7 @@ export function HousingChooser({
                 </Button>
               </div>
             ) : (
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="housing-choice-grid grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 {recommended.map((house) => {
                   const catalogue = HOUSING.find((item) => item.id === house.id);
                   const matched = (catalogue?.preference_tags ?? []).some((tag) =>
@@ -425,7 +441,7 @@ export function HousingChooser({
                   return (
                     <article
                       key={house.id}
-                      className={`rounded-2xl border border-border bg-background p-4 ${house.eligible ? "" : "opacity-60"}`}
+                      className={`housing-choice-card rounded-2xl border border-border bg-background p-4 ${house.eligible ? "" : "is-ineligible opacity-60"}`}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex min-w-0 items-center gap-3">
