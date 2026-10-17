@@ -4,13 +4,17 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowRight,
   BriefcaseBusiness,
+  Check,
   Compass,
   Headphones,
   House,
+  Map,
   LogOut,
   MapPin,
   Music2,
+  Palette,
   Sparkles,
+  UsersRound,
   VolumeX,
   WalletCards,
 } from "lucide-react";
@@ -28,6 +32,7 @@ import {
   subscribeMusic,
 } from "@/lib/game-audio";
 import { formatNaira, q } from "@/lib/game";
+import osogboCityImage from "@/assets/osogbo-city.jpg";
 import "@/components/game/landing.css";
 
 export const Route = createFileRoute("/")({
@@ -203,25 +208,48 @@ function Landing() {
         <Link to="/" aria-label="OSUN LIFE home">
           <Logo />
         </Link>
-        <LandingAudio identity={character?.id ?? "public-landing"} />
+        <div className="landing-v2-header-actions">
+          <nav className="landing-v2-nav" aria-label="Explore OSUN LIFE">
+            <a href="#life">Your life</a>
+            <a href="#world">The world</a>
+          </nav>
+          <LandingAudio identity={character?.id ?? "public-landing"} />
+        </div>
       </header>
 
       <section className="landing-v2-hero" aria-labelledby="landing-title">
         <div className="landing-v2-intro">
           <p className="landing-v2-eyebrow">
-            <Sparkles aria-hidden="true" /> A Nigerian life simulation
+            <Sparkles aria-hidden="true" /> An original Nigerian life simulation
           </p>
           <h1 id="landing-title">
-            Build a life that <em>feels like yours.</em>
+            Your life has a <em>place to grow.</em>
           </h1>
           <p>
-            Work, make a home, meet people, and find your place in a fictional world inspired by
-            everyday life across Osun State.
+            Create a character, find work, make a home, and meet people in a fictional social world
+            inspired by everyday life across Osun State.
           </p>
+          <div className="landing-v2-hero-signals" aria-label="Game highlights">
+            <span>
+              <Check aria-hidden="true" /> Build your character
+            </span>
+            <span>
+              <Check aria-hidden="true" /> Shape your home
+            </span>
+          </div>
         </div>
 
         <div className="landing-v2-world" aria-label="A preview of the OSUN LIFE world">
-          <EntryTownPreview />
+          <img
+            className="landing-v2-world-photo"
+            src={osogboCityImage}
+            alt="Panoramic view of Osogbo, the real world inspiration for OSUN LIFE"
+            fetchPriority="high"
+          />
+          <div className="landing-v2-world-shade" aria-hidden="true" />
+          <div className="landing-v2-world-map">
+            <EntryTownPreview />
+          </div>
           <div className="landing-v2-world-avatar" aria-hidden="true">
             <Avatar
               appearance={(character?.appearance as Appearance | null | undefined) ?? {}}
@@ -230,8 +258,9 @@ function Landing() {
             />
           </div>
           <span className="landing-v2-world-label">
-            <MapPin aria-hidden="true" /> Your story starts here
+            <MapPin aria-hidden="true" /> A world with room for your story
           </span>
+          <span className="landing-v2-photo-credit">Photo: El-Shaddaites · CC BY-SA 4.0</span>
         </div>
 
         <section className="landing-v2-start-card" aria-live="polite">
@@ -250,7 +279,7 @@ function Landing() {
             </div>
           ) : returning ? (
             <>
-              <p className="landing-v2-card-kicker">Welcome back</p>
+              <p className="landing-v2-card-kicker">Your saved life</p>
               <div className="landing-v2-player">
                 <span className="landing-v2-player-avatar" aria-hidden="true">
                   <Avatar
@@ -288,23 +317,24 @@ function Landing() {
             </>
           ) : (
             <>
-              <p className="landing-v2-card-kicker">Your next chapter</p>
-              <h2>Start with a choice. Grow from there.</h2>
+              <p className="landing-v2-card-kicker">Start your story</p>
+              <h2>Make today the beginning of something yours.</h2>
               <p className="landing-v2-card-copy">
-                Create your player and turn ordinary days into your own story.
+                Set up your player, choose your first direction, and let the city open up around
+                you.
               </p>
               <ol className="landing-v2-steps" aria-label="How your story begins">
                 <li>
                   <span>1</span>
-                  <strong>Earn</strong>
+                  <strong>Create</strong>
                 </li>
                 <li>
                   <span>2</span>
-                  <strong>Find a home</strong>
+                  <strong>Settle in</strong>
                 </li>
                 <li>
                   <span>3</span>
-                  <strong>Build a life</strong>
+                  <strong>Explore</strong>
                 </li>
               </ol>
               <Button asChild size="lg" className="landing-v2-primary">
@@ -333,33 +363,92 @@ function Landing() {
         </section>
       </section>
 
-      <section className="landing-v2-life" aria-labelledby="landing-life-title">
-        <div>
-          <p className="landing-v2-eyebrow">A world shaped by your choices</p>
-          <h2 id="landing-life-title">There is always something to do next.</h2>
+      <section id="life" className="landing-v2-life" aria-labelledby="landing-life-title">
+        <div className="landing-v2-section-heading">
+          <p className="landing-v2-eyebrow">One life. Many directions.</p>
+          <h2 id="landing-life-title">A life sim built around the choices you make.</h2>
+          <p>
+            Begin with who you want to be, then build routines, relationships, and a place that
+            feels like yours.
+          </p>
         </div>
         <div className="landing-v2-life-grid">
           <article>
-            <BriefcaseBusiness aria-hidden="true" />
-            <h3>Build your working life</h3>
-            <p>Apply for jobs, work shifts, learn skills, and grow your income.</p>
-          </article>
-          <article>
-            <Compass aria-hidden="true" />
-            <h3>Explore public places</h3>
-            <p>Travel through the city and discover activities at each destination.</p>
+            <Palette aria-hidden="true" />
+            <p className="landing-v2-feature-number">01 · Identity</p>
+            <h3>Make a character your own</h3>
+            <p>Choose a look, shape a routine, and grow through the choices you make.</p>
           </article>
           <article>
             <House aria-hidden="true" />
-            <h3>Make a home</h3>
-            <p>Choose a place to live, collect furniture, and make it feel personal.</p>
+            <p className="landing-v2-feature-number">02 · Home</p>
+            <h3>Turn a room into your place</h3>
+            <p>Find a home, collect furniture, and arrange the things you own.</p>
+          </article>
+          <article>
+            <Map aria-hidden="true" />
+            <p className="landing-v2-feature-number">03 · World</p>
+            <h3>Find somewhere worth going</h3>
+            <p>Explore fictional public places, travel through town, and discover new activities.</p>
+          </article>
+          <article>
+            <UsersRound aria-hidden="true" />
+            <p className="landing-v2-feature-number">04 · Community</p>
+            <h3>Make space for people</h3>
+            <p>Meet other players, make friends, and keep in touch through your in-game phone.</p>
           </article>
         </div>
       </section>
 
+      <section className="landing-v2-progression" aria-labelledby="landing-progression-title">
+        <div>
+          <p className="landing-v2-eyebrow">A day becomes a story</p>
+          <h2 id="landing-progression-title">Start small. Keep going.</h2>
+        </div>
+        <ol>
+          <li>
+            <span>01</span>
+            <strong>Create your player</strong>
+            <small>Choose who steps into the world.</small>
+          </li>
+          <li>
+            <span>02</span>
+            <strong>Find your footing</strong>
+            <small>Take jobs, build skills, and earn.</small>
+          </li>
+          <li>
+            <span>03</span>
+            <strong>Make a home</strong>
+            <small>Settle in and make it personal.</small>
+          </li>
+          <li>
+            <span>04</span>
+            <strong>Grow your circle</strong>
+            <small>Meet people and see where life leads.</small>
+          </li>
+        </ol>
+      </section>
+
+      <section id="world" className="landing-v2-world-callout" aria-labelledby="landing-world-title">
+        <div>
+          <p className="landing-v2-eyebrow">The city is waiting</p>
+          <h2 id="landing-world-title">A place to work, live, and belong.</h2>
+          <p>
+            Every route begins with your player. Choose a direction and enter a fictional world
+            made for everyday stories.
+          </p>
+        </div>
+        <Button asChild className="landing-v2-world-action">
+          <Link to={experience.primaryLink}>
+            {experience.mode === "returning" ? "Continue your life" : "Enter OSUN LIFE"}
+            <ArrowRight aria-hidden="true" />
+          </Link>
+        </Button>
+      </section>
+
       <footer className="landing-v2-footer">
         <Logo />
-        <span>OSUN LIFE. An original Nigerian life simulation.</span>
+        <span>OSUN LIFE. An original fictional Nigerian life simulation.</span>
         <Link to="/login">Account</Link>
       </footer>
     </main>
