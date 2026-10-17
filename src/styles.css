@@ -137,6 +137,121 @@
   --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
+@keyframes osun-loading-skeleton-pulse {
+  50% {
+    opacity: 0.48;
+  }
+}
+
+.loading-ui-skeleton {
+  animation: osun-loading-skeleton-pulse var(--skeleton-duration, 1.8s) cubic-bezier(0.4, 0, 0.6, 1)
+    infinite;
+}
+
+.game-inline-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 8rem;
+  padding: 2rem 1rem;
+}
+
+.game-loading-list {
+  display: grid;
+  gap: 0.75rem;
+  width: min(100%, 58rem);
+  padding: 0.25rem 0;
+}
+
+.game-loading-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-height: 5.25rem;
+  padding: 0.875rem;
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card);
+  background: var(--card);
+  box-shadow: var(--elevation-rest);
+}
+
+.home-loading-skeleton,
+.house-loading-skeleton {
+  display: grid;
+  gap: 0.75rem;
+  width: min(100%, 70rem);
+}
+
+.home-loading-summary,
+.house-loading-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-height: 4rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card);
+  background: var(--card);
+  box-shadow: var(--elevation-rest);
+}
+
+.home-loading-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.home-loading-scene,
+.house-loading-room,
+.map-loading-skeleton {
+  position: relative;
+  min-height: 21rem;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card);
+  background: var(--card);
+}
+
+.house-loading-room {
+  min-height: 30.625rem;
+}
+
+.map-loading-skeleton {
+  width: 100%;
+  min-height: 100%;
+  border: 0;
+  border-radius: inherit;
+}
+
+.map-loading-skeleton-label {
+  position: absolute;
+  inset-inline-start: 1rem;
+  inset-block-end: 1rem;
+  padding: 0.4rem 0.625rem;
+  border: 1px solid var(--border);
+  border-radius: var(--shape-pill);
+  color: var(--muted-foreground);
+  background: var(--card);
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+@media (max-width: 420px) {
+  .home-loading-shortcuts > :last-child {
+    display: none;
+  }
+
+  .home-loading-shortcuts {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-ui-skeleton {
+    animation: none;
+  }
+}
+
 /* Inventory and profile refresh: static artwork keeps these routes light on mobile. */
 .inventory-card {
   position: relative;

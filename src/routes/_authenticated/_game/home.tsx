@@ -14,6 +14,7 @@ import {
   writeLocalHousingSave,
 } from "@/lib/save-storage";
 import { LoadingState } from "@/components/game/ui";
+import { HomeSceneSkeleton } from "@/components/game/loading-skeletons";
 import { pageMeta } from "@/lib/seo";
 import { useLiveClock } from "@/hooks/use-live-clock";
 import { useWorldClock } from "@/hooks/use-world-clock";
@@ -615,11 +616,11 @@ function MyCityHome() {
         </button>
       )}
       {homeQuery.isLoading ? (
-        <LoadingState />
+        <HomeSceneSkeleton />
       ) : (
         <>
           {housingHomeQuery.isLoading ? (
-            <LoadingState />
+            <HomeSceneSkeleton />
           ) : housingHomeQuery.isError ? (
             <section className="game-panel p-5" role="alert">
               <h2 className="font-display text-lg font-bold">Your home could not load</h2>

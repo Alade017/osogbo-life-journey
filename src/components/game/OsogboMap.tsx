@@ -15,6 +15,7 @@ import { PlayerMarker } from "@/components/game/PlayerMarker";
 import { PlayerMovementControls } from "@/components/game/PlayerMovementControls";
 import { NearbyLocationPrompt } from "@/components/game/NearbyLocationPrompt";
 import { OsogboMapSvg } from "@/components/map/OsogboMap.svg";
+import { MapSceneSkeleton } from "@/components/game/loading-skeletons";
 import { useNearbyLocations } from "@/hooks/use-nearby-locations";
 import {
   isBaseSourceReady,
@@ -360,7 +361,7 @@ export function OsogboMap({ onMapReady, onSelectDistrict, onSelectLandmark }: Os
       {mapInstance && <NearbyLocationPrompt nearbyLocations={nearbyLocations} />}
       {surface === "loading" && (
         <div className="osogbo-map-loading" aria-live="polite">
-          Loading Osogbo map…
+          <MapSceneSkeleton />
         </div>
       )}
       <div className="osogbo-map-place-label" aria-live="polite">

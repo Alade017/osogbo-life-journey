@@ -14,7 +14,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Chip, LoadingState } from "@/components/game/ui";
+import { Chip } from "@/components/game/ui";
+import { CardListSkeleton } from "@/components/game/loading-skeletons";
 import { cn } from "@/lib/utils";
 import { JOB_CATEGORIES, JOB_CATEGORY_LABELS, resolveJobCategory } from "@/lib/job-activity-model";
 import { checkJobEligibility, filterJobListings } from "@/lib/job-board-service";
@@ -103,7 +104,7 @@ function JobsPage() {
       </section>
     );
   }
-  if (isLoading || !c || !jobs) return <LoadingState />;
+  if (isLoading || !c || !jobs) return <CardListSkeleton label="Loading jobs" cards={4} />;
   const current = myJobs?.find((j) => j.is_current);
   const currentJob = jobs.find((j) => j.id === current?.job_id);
   const careerSkill = currentJob

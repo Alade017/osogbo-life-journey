@@ -11,7 +11,8 @@ import {
   type HousePlacement,
   type HouseSlot,
 } from "@/components/game/housing/HouseRoomScene";
-import { EmptyState, LoadingState } from "@/components/game/ui";
+import { EmptyState } from "@/components/game/ui";
+import { HouseSceneSkeleton } from "@/components/game/loading-skeletons";
 import { Avatar } from "@/components/game/Avatar";
 import type { Appearance } from "@/game/avatar-appearance";
 import housingData from "@/data/housing.json";
@@ -550,12 +551,7 @@ function HousePage() {
   if (characterLoading || (stateQuery.isLoading && !snapshot))
     return (
       <div className="house-page">
-        <div className="house-skeleton" aria-label="Loading your room">
-          <div />
-          <div />
-          <div />
-        </div>
-        <LoadingState />
+        <HouseSceneSkeleton />
       </div>
     );
 

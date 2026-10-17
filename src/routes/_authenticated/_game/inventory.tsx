@@ -13,7 +13,8 @@ import {
 import { toast } from "sonner";
 import { q, rpc, useGameAction } from "@/lib/game";
 import { pageMeta } from "@/lib/seo";
-import { Chip, EmptyState, LoadingState, PageHeader } from "@/components/game/ui";
+import { Chip, EmptyState, PageHeader } from "@/components/game/ui";
+import { CardListSkeleton } from "@/components/game/loading-skeletons";
 import { Button } from "@/components/ui/button";
 import {
   countInventoryUnits,
@@ -85,7 +86,7 @@ export function InventoryPage() {
       onSuccess: () => toast.success("Item discarded."),
     },
   );
-  if (isLoading) return <LoadingState />;
+  if (isLoading) return <CardListSkeleton label="Loading inventory" cards={4} />;
   if (isError)
     return (
       <section className="game-panel p-5" role="alert">
