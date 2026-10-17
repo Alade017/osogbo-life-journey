@@ -12,6 +12,19 @@
   box-shadow: var(--elevation-card);
 }
 
+/* The dock remains visible and in its own layout layer while the phone opens above it. */
+@media (max-width: 820px) {
+  .phone-dialog.phone-dialog {
+    z-index: 120 !important;
+    top: calc(50% - 48px);
+    max-height: calc(100dvh - 112px);
+  }
+
+  .phone-dialog.phone-dialog .phone-screen {
+    height: min(660px, calc(100dvh - 126px));
+  }
+}
+
 /* Full-height phone apps keep native scrolling while hiding visual scrollbars. */
 .scrollbar-hidden,
 .phone-app-view,

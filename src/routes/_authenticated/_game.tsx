@@ -9,7 +9,6 @@ import {
   Settings,
   ShoppingBag,
   UserRound,
-  Users,
   Wallet,
 } from "lucide-react";
 import { q, rpc } from "@/lib/game";
@@ -40,7 +39,6 @@ const NAV_GROUPS = [
     items: [
       { to: "/home", label: "Home", icon: House },
       { to: "/map", label: "City", icon: Map },
-      { to: "/social", label: "People", icon: Users },
     ],
   },
   {
@@ -239,7 +237,6 @@ function GameLayout() {
                         <Link
                           key={item.to}
                           to={item.to}
-                          {...(item.to === "/social" ? { search: { playerId: undefined } } : {})}
                           activeProps={{ className: "game-side-link-active" }}
                           className="game-side-link"
                           aria-label={item.label}
@@ -310,15 +307,6 @@ function GameLayout() {
           >
             <Briefcase className="h-4.75 w-4.75" />
             <span>Jobs</span>
-          </Link>
-          <Link
-            to="/social"
-            search={{ playerId: undefined }}
-            activeProps={{ className: "mobile-nav-active" }}
-            className="mobile-nav-link"
-          >
-            <Users className="h-4.75 w-4.75" />
-            <span>People</span>
           </Link>
         </nav>
         <HousingChooser

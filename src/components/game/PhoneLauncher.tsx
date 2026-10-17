@@ -45,7 +45,7 @@ const PHONE_APPS = [
   { label: "Bank", to: "/wallet", icon: Landmark, tone: "phone-app-blue", active: true },
   { label: "Market", to: "/market", icon: Store, tone: "phone-app-coral", active: true },
   { label: "Map", to: "/map", icon: MapPinned, tone: "phone-app-blue", active: true },
-  { label: "Social", to: "/social", icon: UsersRound, tone: "phone-app-coral", active: true },
+  { label: "People", to: "/social", icon: UsersRound, tone: "phone-app-coral", active: true },
   { label: "Inventory", to: "/inventory", icon: Backpack, tone: "phone-app-blue", active: true },
   { label: "Profile", to: "/profile", icon: UserRound, tone: "phone-app-muted", active: true },
   { label: "Messages", to: "/social", icon: MessagesSquare, tone: "phone-app-coral", active: true },
@@ -249,7 +249,11 @@ export function PhoneLauncher({
                   }
                   return app.active && app.to ? (
                     <DialogClose asChild key={app.label}>
-                      <Link to={app.to} className="phone-app">
+                      <Link
+                        to={app.to}
+                        {...(app.to === "/social" ? { search: { playerId: undefined } } : {})}
+                        className="phone-app"
+                      >
                         <span className={cn("phone-app-icon", app.tone)}>
                           <Icon className="h-5 w-5" />
                         </span>
