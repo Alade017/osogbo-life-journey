@@ -18,7 +18,10 @@ async function attemptKey(request: Request, username: string) {
 function passwordClient() {
   const url = process.env["SUPABASE_URL"] || process.env["VITE_SUPABASE_URL"];
   const key =
-    process.env["SUPABASE_PUBLISHABLE_KEY"] || process.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
+    process.env["SUPABASE_PUBLISHABLE_KEY"] ||
+    process.env["SUPABASE_ANON_KEY"] ||
+    process.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ||
+    process.env["VITE_SUPABASE_ANON_KEY"];
   if (!url || !key) throw new Error("Authentication is not configured.");
   return createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
@@ -104,6 +107,18 @@ export async function handleUsernameAuth(request: Request, action: "register" | 
     });
   } catch (error) {
     console.error("Username authentication failed", error);
+    const message = error instanceof Error ? error.message.toLowerCase() : "";
+    if (
+      message.includes("authentication is not configured") ||
+      message.includes("missing supabase environment variable")
+    )
+      return json({ error: "Account service configuration is incomplete." }, 503);
+    if (
+      message.includes("record_username_auth_attempt") ||
+      message.includes("username_accounts") ||
+      message.includes("schema cache")
+    )
+      return json({ error: "Account database setup is incomplete." }, 503);
     return json({ error: "Account service is unavailable. Try again." }, 503);
   }
 }

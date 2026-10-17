@@ -50,11 +50,9 @@ describe("account sign-in", () => {
     );
     auth.setSession.mockResolvedValue({ error: null });
     render(<AuthCard mode="signup" />);
+    expect(screen.queryByLabelText("Confirm password")).not.toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Username"), { target: { value: "osogbo_player" } });
     fireEvent.change(screen.getByLabelText("Password"), { target: { value: "password123" } });
-    fireEvent.change(screen.getByLabelText("Confirm password"), {
-      target: { value: "password123" },
-    });
     fireEvent.click(screen.getByRole("button", { name: "Create account" }));
     await waitFor(() => expect(auth.navigate).toHaveBeenCalledWith({ to: "/create-character" }));
     expect(fetch).toHaveBeenCalledWith(

@@ -44,10 +44,6 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
         toast.error("Username must be 3–24 characters using letters, numbers or underscores.");
         return;
       }
-      if (password !== confirmPassword) {
-        toast.error("Your passwords do not match.");
-        return;
-      }
     }
     if (resettingPassword && password !== confirmPassword) {
       toast.error("Your passwords do not match.");
@@ -266,7 +262,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
                       <p className="text-xs text-muted-foreground">At least 8 characters.</p>
                     )}
                   </div>
-                  {(mode === "signup" || resettingPassword) && (
+                  {resettingPassword && (
                     <div className="space-y-1.5">
                       <Label htmlFor="confirm-password">Confirm password</Label>
                       <Input

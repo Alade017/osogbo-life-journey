@@ -440,7 +440,7 @@ npm.cmd run preview
 
 The production preview uses the Node server in .output/server/index.mjs. Stop the development server before starting preview if both use port 3000. Run npm.cmd run typecheck, npm.cmd run lint, and npm.cmd test for checks.
 
-Configure both VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY. For server features, configure SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY as well. Enable Google or guest authentication in your own Supabase project if using those login methods. Add http://127.0.0.1:3000/login and http://localhost:3000/login to Supabase Auth's redirect allowlist; also allow the character-creation and password-recovery redirects used by the interface.
+Configure both VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY. For server features, configure SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY as well. Username account creation also requires the server-only SUPABASE_SECRET_KEY (or the legacy SUPABASE_SERVICE_ROLE_KEY); never prefix either secret with VITE_. Apply migration 0047_username_accounts before enabling username login. Enable Google authentication in your own Supabase project if using it. Add http://127.0.0.1:3000/login and http://localhost:3000/login to Supabase Auth's redirect allowlist; also allow the character-creation and password-recovery redirects used by the interface.
 
 DATABASE_URL is a server-only PostgreSQL migration connection, separate from the public Supabase API URL/key. Apply the pending HUD migration with npm.cmd run db:migrate:hud once it is configured. See docs/shared-hud-simulation.md. Keep credentials out of version control.
 
