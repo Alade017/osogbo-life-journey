@@ -128,8 +128,8 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
         className="absolute inset-0 h-full w-full object-cover object-center"
       />
       <div className="absolute inset-0 bg-slate-950/55" />
-      <div className="relative mx-auto grid min-h-screen max-w-7xl lg:grid-cols-2">
-        <section className="flex min-h-57.5 flex-col justify-end px-5 pb-7 pt-8 text-white sm:px-8 lg:min-h-screen lg:justify-between lg:px-12 lg:py-12">
+      <div className="auth-layout relative mx-auto grid min-h-screen max-w-7xl lg:grid-cols-2">
+        <section className="auth-story-panel flex min-h-57.5 flex-col justify-end px-5 pb-7 pt-8 text-white sm:px-8 lg:min-h-screen lg:justify-between lg:px-12 lg:py-12">
           <p className="hidden text-sm font-bold tracking-wide lg:block">OSUN LIFE</p>
           <div className="max-w-lg">
             <p className="text-xs font-bold uppercase tracking-[0.14em] text-white/75">
@@ -152,8 +152,8 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
           </a>
         </section>
 
-        <section className="flex items-center justify-center bg-background/95 px-4 py-8 backdrop-blur-sm sm:px-8 lg:my-6 lg:rounded-l-2xl lg:px-10">
-          <div className="game-panel pop-in w-full max-w-md p-6 sm:p-8">
+        <section className="auth-form-panel flex items-center justify-center bg-background/95 px-4 py-8 backdrop-blur-sm sm:px-8 lg:my-6 lg:rounded-l-2xl lg:px-10">
+          <div className="auth-form-card game-panel pop-in w-full max-w-md p-6 sm:p-8">
             <Link to="/" className="mb-7 inline-block">
               <Logo />
             </Link>

@@ -144,7 +144,10 @@
   border-color: color-mix(in srgb, var(--brand-royal) 14%, var(--border));
   background: var(--brand-porcelain);
   box-shadow: var(--elevation-card);
-  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .inventory-card:hover,
@@ -270,7 +273,7 @@
   color: var(--brand-royal);
   font-size: 11px;
   font-weight: 800;
-  letter-spacing: .08em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
@@ -429,18 +432,38 @@
 }
 
 @media (max-width: 620px) {
-  .profile-page { padding-inline: 2px; }
-  .profile-hero { grid-template-columns: 1fr; padding: 14px; }
-  .profile-portrait-stage { min-height: 176px; }
-  .profile-glance { grid-template-columns: 1fr 1fr; }
-  .profile-glance-card:first-child { grid-column: 1 / -1; }
-  .profile-columns { grid-template-columns: 1fr; }
-  .profile-actions > * { flex: 1 1 120px; }
+  .profile-page {
+    padding-inline: 2px;
+  }
+  .profile-hero {
+    grid-template-columns: 1fr;
+    padding: 14px;
+  }
+  .profile-portrait-stage {
+    min-height: 176px;
+  }
+  .profile-glance {
+    grid-template-columns: 1fr 1fr;
+  }
+  .profile-glance-card:first-child {
+    grid-column: 1 / -1;
+  }
+  .profile-columns {
+    grid-template-columns: 1fr;
+  }
+  .profile-actions > * {
+    flex: 1 1 120px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .inventory-card { transition: none; }
-  .inventory-card:hover, .inventory-card-selected { transform: none; }
+  .inventory-card {
+    transition: none;
+  }
+  .inventory-card:hover,
+  .inventory-card-selected {
+    transform: none;
+  }
 }
 
 .dark {
@@ -8125,6 +8148,161 @@
   .game-mobile-nav .mobile-nav-link,
   .game-mobile-nav .mobile-nav-phone {
     font-size: 8px;
+  }
+}
+
+/* Compact Home shortcuts */
+.dashboard-feature-strip {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  width: 100%;
+  height: 60px;
+  gap: 4px;
+  padding: 4px 6px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card);
+  background: var(--card);
+  box-shadow: var(--elevation-card);
+}
+
+.dashboard-feature-tile {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 50px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 0;
+  border-radius: 11px;
+  color: var(--foreground);
+  background: transparent;
+  font-size: 0.65rem;
+  font-weight: 750;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.dashboard-feature-tile:hover,
+.dashboard-feature-tile:focus-visible {
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 9%, var(--card));
+}
+
+.dashboard-feature-tile:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+
+.dashboard-feature-icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  color: var(--primary);
+}
+
+.dashboard-feature-icon b {
+  position: absolute;
+  top: -7px;
+  right: -11px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border: 2px solid var(--card);
+  border-radius: 999px;
+  color: var(--primary-foreground);
+  background: var(--primary);
+  font-size: 0.55rem;
+  line-height: 12px;
+  text-align: center;
+}
+
+.dashboard-shortcut-editor {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  color: var(--foreground);
+}
+
+.dashboard-shortcut-editor > p,
+.dashboard-shortcut-editor > small {
+  margin: 0 0 4px;
+  color: var(--muted-foreground);
+  font-size: 0.76rem;
+}
+
+.dashboard-shortcut-editor label {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 10px;
+  padding: 0 11px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.dashboard-shortcut-editor input {
+  accent-color: var(--primary);
+}
+
+/* Authentication entry experience */
+.auth-screen {
+  background: var(--background);
+}
+
+.auth-story-panel {
+  isolation: isolate;
+}
+
+.auth-form-panel {
+  background: color-mix(in srgb, var(--background) 96%, transparent);
+}
+
+.auth-form-card {
+  border-color: color-mix(in srgb, var(--primary) 18%, var(--border));
+  border-radius: clamp(20px, 4vw, 30px);
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--card) 97%, transparent);
+}
+
+.auth-form-card input {
+  color: var(--foreground);
+  background: var(--background);
+}
+
+.auth-form-card input::placeholder {
+  color: var(--muted-foreground);
+}
+
+@media (max-width: 1023px) {
+  .auth-layout {
+    grid-template-rows: minmax(210px, 34vh) 1fr;
+  }
+
+  .auth-form-panel {
+    align-items: start;
+    border-radius: 24px 24px 0 0;
+  }
+
+  .auth-form-card {
+    margin-top: -28px;
+  }
+}
+
+@media (max-width: 360px) {
+  .dashboard-feature-strip {
+    padding-inline: 3px;
+  }
+
+  .dashboard-feature-tile {
+    font-size: 0.59rem;
   }
 }
 

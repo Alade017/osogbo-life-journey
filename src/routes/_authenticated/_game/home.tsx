@@ -27,6 +27,7 @@ import { Link } from "@tanstack/react-router";
 import { useGameTime } from "@/components/game/GameTimeProvider";
 import type { LifeActionId } from "@/lib/life-simulation";
 import { homeSceneFromAuthoritativeState, type HomeScenePayload } from "@/lib/home-scene-state";
+import { DashboardFeatureStrip } from "@/components/game/DashboardFeatureStrip";
 
 export const Route = createFileRoute("/_authenticated/_game/home")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -102,6 +103,7 @@ function FriendHomeVisit({ characterId }: { characterId: string }) {
           Back to friends
         </Link>
       </div>
+      <DashboardFeatureStrip />
       {visitQuery.isLoading ? (
         <LoadingState />
       ) : visitQuery.isError || !payload ? (

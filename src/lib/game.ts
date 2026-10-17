@@ -578,6 +578,8 @@ export const rpc = {
       await supabase.rpc("equip_inventory_item", { p_inventory_id: inventoryId, p_slot: slot }),
     ),
   unequipItem: async (slot: string) => unwrap(await supabase.rpc("unequip_item", { p_slot: slot })),
+  saveDashboardPins: async (pins: string[]) =>
+    unwrap(await supabase.rpc("save_dashboard_pins", { p_pins: pins })) as Json,
   depositCash: async (amount: number) =>
     unwrap(await supabase.rpc("deposit_cash", { p_amount: amount })),
   withdrawCash: async (amount: number) =>

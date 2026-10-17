@@ -1666,6 +1666,7 @@ export type Database = {
       profiles: {
         Row: {
           created_at: string;
+          dashboard_pins: Json;
           display_name: string | null;
           id: string;
           reduced_motion: boolean;
@@ -1674,6 +1675,7 @@ export type Database = {
         };
         Insert: {
           created_at?: string;
+          dashboard_pins?: Json;
           display_name?: string | null;
           id: string;
           reduced_motion?: boolean;
@@ -1682,6 +1684,7 @@ export type Database = {
         };
         Update: {
           created_at?: string;
+          dashboard_pins?: Json;
           display_name?: string | null;
           id?: string;
           reduced_motion?: boolean;
@@ -1978,6 +1981,7 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      save_dashboard_pins: { Args: { p_pins: Json }; Returns: Json };
       housing_eligible_houses: { Args: { p_user_id: string }; Returns: Json };
       housing_choose: {
         Args: { p_user_id: string; p_house_type_id: string; p_idempotency_key: string };

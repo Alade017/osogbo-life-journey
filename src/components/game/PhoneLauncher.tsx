@@ -24,6 +24,7 @@ import {
   Settings,
   Store,
   Smartphone,
+  SlidersHorizontal,
   UserRound,
   UsersRound,
 } from "lucide-react";
@@ -31,7 +32,7 @@ import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { useLiveClock } from "@/hooks/use-live-clock";
 import { OSOGBO_TIME_ZONE } from "@/lib/osogbo-weather";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { PlayerSocial } from "@/components/game/PlayerSocial";
 import { BusinessInvestmentApp } from "@/components/game/BusinessInvestmentApp";
 import { BillboardAdApp } from "@/components/game/BillboardAdApp";
@@ -71,9 +72,13 @@ const PHONE_APPS = [
 export function PhoneLauncher({
   className,
   compact = false,
+  trigger,
+  shortcutEditor,
 }: {
   className?: string;
   compact?: boolean;
+  trigger?: ReactNode;
+  shortcutEditor?: ReactNode;
 }) {
   const [activeApp, setActiveApp] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -110,17 +115,19 @@ export function PhoneLauncher({
       }}
     >
       <DialogTrigger asChild>
-        <button
-          type="button"
-          onClick={() => setDialogOpen(true)}
-          className={cn("phone-launcher", compact && "phone-launcher-compact", className)}
-          aria-label="Open in-game phone"
-        >
-          <span className="phone-launcher-icon">
-            <Smartphone size={19} aria-hidden="true" />
-          </span>
-          <span className={compact ? "phone-compact-label" : undefined}>Phone</span>
-        </button>
+        {trigger ?? (
+          <button
+            type="button"
+            onClick={() => setDialogOpen(true)}
+            className={cn("phone-launcher", compact && "phone-launcher-compact", className)}
+            aria-label="Open in-game phone"
+          >
+            <span className="phone-launcher-icon">
+              <Smartphone size={19} aria-hidden="true" />
+            </span>
+            <span className={compact ? "phone-compact-label" : undefined}>Phone</span>
+          </button>
+        )}
       </DialogTrigger>
       <DialogContent className="phone-dialog">
         <DialogTitle className="sr-only">In-game phone</DialogTitle>
@@ -139,7 +146,22 @@ export function PhoneLauncher({
               </span>
             </span>
           </div>
-          {activeApp === "Messages" ? (
+          {activeApp === "Shortcuts" ? (
+            <div className="phone-app-view">
+              <div className="phone-app-toolbar">
+                <button
+                  type="button"
+                  onClick={() => setActiveApp(null)}
+                  aria-label="Back to phone apps"
+                >
+                  <ChevronLeft size={16} aria-hidden="true" /> <span>Apps</span>
+                </button>
+                <strong>Shortcuts</strong>
+                <span aria-hidden="true" />
+              </div>
+              {shortcutEditor}
+            </div>
+          ) : activeApp === "Messages" ? (
             <div className="phone-app-view">
               <div className="phone-app-toolbar">
                 <button
@@ -191,6 +213,18 @@ export function PhoneLauncher({
           ) : (
             <>
               <div className="phone-app-grid">
+                {shortcutEditor && (
+                  <button
+                    type="button"
+                    className="phone-app"
+                    onClick={() => setActiveApp("Shortcuts")}
+                  >
+                    <span className="phone-app-icon phone-app-muted">
+                      <SlidersHorizontal className="h-5 w-5" />
+                    </span>
+                    <span>Shortcuts</span>
+                  </button>
+                )}
                 {PHONE_APPS.map((app) => {
                   const Icon = app.icon;
                   if (
