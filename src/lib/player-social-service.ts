@@ -207,19 +207,37 @@ export async function sendSocialMessage(input: {
   locationId?: string;
   conversationId?: string;
   replyToMessageId?: string;
+  /** Reused only for a network retry so a successful first write is never duplicated. */
+  idempotencyKey?: string;
 }) {
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
   if (!token) throw new Error("Sign in to send messages.");
-  const response = await fetch("/api/messages/send", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      "Idempotency-Key": crypto.randomUUID(),
-    },
-    body: JSON.stringify(input),
-  });
+  const { idempotencyKey = crypto.randomUUID(), ...payload } = input;
+  const send = () =>
+    fetch("/api/messages/send", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        "Idempotency-Key": idempotencyKey,
+      },
+      body: JSON.stringify(payload),
+    });
+
+  let response: Response;
+  try {
+    response = await send();
+  } catch (firstError) {
+    // A browser may lose the response after the server commits. Retrying once with
+    // the same key lets the server return the original message instead of duplicating it.
+    if (!(firstError instanceof TypeError)) throw firstError;
+    try {
+      response = await send();
+    } catch {
+      throw new Error("MESSAGE_DELIVERY_UNCONFIRMED");
+    }
+  }
   const result = (await response.json().catch(() => null)) as {
     error?: { code?: string };
     [key: string]: unknown;

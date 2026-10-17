@@ -273,6 +273,8 @@ function ChatComposer({
       await onSend(clean, replyTo?.id);
       setBody("");
       onCancelReply?.();
+    } catch {
+      // The mutation exposes a player-facing error; preserve the draft for a retry.
     } finally {
       setSending(false);
     }
@@ -575,6 +577,25 @@ export function PlayerSocial({
       window.removeEventListener("online", reconnect);
     };
   }, [accountQuery.data, phoneMode, qc]);
+  useEffect(() => {
+    const refreshMessagingState = () => {
+      if (document.visibilityState === "hidden") return;
+      void qc.invalidateQueries({ queryKey: ["playerSocialOverview"] });
+      void qc.invalidateQueries({ queryKey: ["socialThreadSummaries"] });
+      if (locationId)
+        void qc.invalidateQueries({ queryKey: ["socialMessages", "area", locationId] });
+      if (activeChat?.conversationId)
+        void qc.invalidateQueries({
+          queryKey: ["socialMessages", "private", activeChat.conversationId],
+        });
+    };
+    window.addEventListener("online", refreshMessagingState);
+    document.addEventListener("visibilitychange", refreshMessagingState);
+    return () => {
+      window.removeEventListener("online", refreshMessagingState);
+      document.removeEventListener("visibilitychange", refreshMessagingState);
+    };
+  }, [activeChat?.conversationId, locationId, qc]);
 
   const refreshSocial = () =>
     Promise.all([
@@ -608,7 +629,13 @@ export function PlayerSocial({
       await refreshSocial();
       toast.success("Your player social list is up to date.");
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: (error: Error) => {
+      const message =
+        error.message === "MESSAGE_DELIVERY_UNCONFIRMED"
+          ? "Your connection dropped before delivery could be confirmed. Your draft is still here."
+          : error.message;
+      toast.error(message);
+    },
   });
   const reportMutation = useMutation({
     mutationFn: reportPlayer,
