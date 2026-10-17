@@ -13,6 +13,16 @@ export type MapTravelResponse = {
   status: "travelling" | "completed";
 };
 
+export type TownTravelResponse = {
+  travel_id: string;
+  from_town_id: string;
+  to_town_id: string;
+  fare: number;
+  travel_minutes: number;
+  arrival_at: string;
+  status: "travelling" | "completed";
+};
+
 export type MapLandmarkDetails = {
   landmark: {
     id: string;
@@ -58,6 +68,51 @@ export async function requestMapTravel(landmarkId: string, idempotencyKey: strin
     throw new MapApiError(code, code);
   }
   return result as MapTravelResponse;
+}
+
+export async function requestTownTravel(destinationTownId: string, idempotencyKey: string) {
+  const { data, error } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (error || !token) throw new MapApiError("Sign in to travel.", "UNAUTHORIZED");
+  const response = await fetch("/api/map/town-travel", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      "Idempotency-Key": idempotencyKey,
+    },
+    body: JSON.stringify({ destination_town_id: destinationTownId }),
+  });
+  const result = (await response.json().catch(() => null)) as
+    TownTravelResponse | { error?: { code?: string } } | null;
+  if (!response.ok) {
+    const code =
+      result && "error" in result ? (result.error?.code ?? "INTERNAL_ERROR") : "INTERNAL_ERROR";
+    throw new MapApiError(code, code);
+  }
+  return result as TownTravelResponse;
+}
+
+export function getPendingTownTravelKey(townId: string) {
+  const storageKey = `osun-town-travel-request-v1:${townId}`;
+  try {
+    const existing = localStorage.getItem(storageKey);
+    if (existing) return existing;
+    const key = crypto.randomUUID();
+    localStorage.setItem(storageKey, key);
+    return key;
+  } catch {
+    return crypto.randomUUID();
+  }
+}
+
+export function clearPendingTownTravelKey(townId: string, requestId: string) {
+  const storageKey = `osun-town-travel-request-v1:${townId}`;
+  try {
+    if (localStorage.getItem(storageKey) === requestId) localStorage.removeItem(storageKey);
+  } catch {
+    // Server idempotency still protects the request when storage is unavailable.
+  }
 }
 
 export async function requestMapLandmark(landmarkId: string) {

@@ -45,6 +45,7 @@ import { Route as ApiHousingHomeRouteImport } from './routes/api/housing/home'
 import { Route as ApiHousingItemRouteImport } from './routes/api/housing/item'
 import { Route as ApiHousingRentRouteImport } from './routes/api/housing/rent'
 import { Route as ApiMapActionRouteImport } from './routes/api/map/action'
+import { Route as ApiMapTownTravelRouteImport } from './routes/api/map/town-travel'
 import { Route as ApiMapTravelRouteImport } from './routes/api/map/travel'
 import { Route as ApiMessagesSendRouteImport } from './routes/api/messages/send'
 import { Route as ApiOutfitEquipRouteImport } from './routes/api/outfit/equip'
@@ -249,6 +250,11 @@ const ApiMapActionRoute = ApiMapActionRouteImport.update({
   path: '/api/map/action',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMapTownTravelRoute = ApiMapTownTravelRouteImport.update({
+  id: '/api/map/town-travel',
+  path: '/api/map/town-travel',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMapTravelRoute = ApiMapTravelRouteImport.update({
   id: '/api/map/travel',
   path: '/api/map/travel',
@@ -371,6 +377,7 @@ export interface FileRoutesByFullPath {
   '/api/housing/item': typeof ApiHousingItemRoute
   '/api/housing/rent': typeof ApiHousingRentRoute
   '/api/map/action': typeof ApiMapActionRoute
+  '/api/map/town-travel': typeof ApiMapTownTravelRoute
   '/api/map/travel': typeof ApiMapTravelRoute
   '/api/messages/send': typeof ApiMessagesSendRoute
   '/api/outfit/equip': typeof ApiOutfitEquipRoute
@@ -424,6 +431,7 @@ export interface FileRoutesByTo {
   '/api/housing/item': typeof ApiHousingItemRoute
   '/api/housing/rent': typeof ApiHousingRentRoute
   '/api/map/action': typeof ApiMapActionRoute
+  '/api/map/town-travel': typeof ApiMapTownTravelRoute
   '/api/map/travel': typeof ApiMapTravelRoute
   '/api/messages/send': typeof ApiMessagesSendRoute
   '/api/outfit/equip': typeof ApiOutfitEquipRoute
@@ -480,6 +488,7 @@ export interface FileRoutesById {
   '/api/housing/item': typeof ApiHousingItemRoute
   '/api/housing/rent': typeof ApiHousingRentRoute
   '/api/map/action': typeof ApiMapActionRoute
+  '/api/map/town-travel': typeof ApiMapTownTravelRoute
   '/api/map/travel': typeof ApiMapTravelRoute
   '/api/messages/send': typeof ApiMessagesSendRoute
   '/api/outfit/equip': typeof ApiOutfitEquipRoute
@@ -535,6 +544,7 @@ export interface FileRouteTypes {
     | '/api/housing/item'
     | '/api/housing/rent'
     | '/api/map/action'
+    | '/api/map/town-travel'
     | '/api/map/travel'
     | '/api/messages/send'
     | '/api/outfit/equip'
@@ -588,6 +598,7 @@ export interface FileRouteTypes {
     | '/api/housing/item'
     | '/api/housing/rent'
     | '/api/map/action'
+    | '/api/map/town-travel'
     | '/api/map/travel'
     | '/api/messages/send'
     | '/api/outfit/equip'
@@ -643,6 +654,7 @@ export interface FileRouteTypes {
     | '/api/housing/item'
     | '/api/housing/rent'
     | '/api/map/action'
+    | '/api/map/town-travel'
     | '/api/map/travel'
     | '/api/messages/send'
     | '/api/outfit/equip'
@@ -681,6 +693,7 @@ export interface RootRouteChildren {
   ApiHousingItemRoute: typeof ApiHousingItemRoute
   ApiHousingRentRoute: typeof ApiHousingRentRoute
   ApiMapActionRoute: typeof ApiMapActionRoute
+  ApiMapTownTravelRoute: typeof ApiMapTownTravelRoute
   ApiMapTravelRoute: typeof ApiMapTravelRoute
   ApiMessagesSendRoute: typeof ApiMessagesSendRoute
   ApiOutfitEquipRoute: typeof ApiOutfitEquipRoute
@@ -953,6 +966,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMapActionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/map/town-travel': {
+      id: '/api/map/town-travel'
+      path: '/api/map/town-travel'
+      fullPath: '/api/map/town-travel'
+      preLoaderRoute: typeof ApiMapTownTravelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/map/travel': {
       id: '/api/map/travel'
       path: '/api/map/travel'
@@ -1150,6 +1170,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHousingItemRoute: ApiHousingItemRoute,
   ApiHousingRentRoute: ApiHousingRentRoute,
   ApiMapActionRoute: ApiMapActionRoute,
+  ApiMapTownTravelRoute: ApiMapTownTravelRoute,
   ApiMapTravelRoute: ApiMapTravelRoute,
   ApiMessagesSendRoute: ApiMessagesSendRoute,
   ApiOutfitEquipRoute: ApiOutfitEquipRoute,

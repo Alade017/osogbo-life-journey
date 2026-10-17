@@ -1981,6 +1981,10 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      start_osun_town_travel: {
+        Args: { p_user_id: string; p_destination_id: string; p_idempotency_key: string };
+        Returns: Json;
+      };
       save_dashboard_pins: { Args: { p_pins: Json }; Returns: Json };
       housing_eligible_houses: { Args: { p_user_id: string }; Returns: Json };
       housing_choose: {

@@ -19,7 +19,8 @@
     "test:watch": "vitest",
     "start": "node --env-file-if-exists=.env .output/server/index.mjs",
     "typecheck": "tsc --noEmit",
-    "db:migrate:hud": "node scripts/apply-shared-hud-migration.mjs"
+    "db:migrate:hud": "node scripts/apply-shared-hud-migration.mjs",
+    "verify:map:live": "node scripts/verify-live-map.mjs"
   },
   "overrides": {
     "rolldown": "1.2.1"

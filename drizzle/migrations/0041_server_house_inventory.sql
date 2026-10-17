@@ -175,10 +175,10 @@ select distinct h.user_id,h.item_id,coalesce(h.updated_at,now()),'reward',false,
 from public.home_items h join public.content_items ci on ci.id=h.item_id
 on conflict(player_id,item_id) where not is_stackable do nothing;
 insert into public.player_items(player_id,item_id,acquired_at,source,is_stackable,quantity)
-select f.user_id,f.item_id,f.created_at,'reward',false,f.quantity
+select f.user_id,f.item_id,min(f.created_at),'reward',false,1
 from public.character_home_furniture f join public.content_items ci on ci.id=f.item_id
-on conflict(player_id,item_id) where not is_stackable do update
-  set quantity=greatest(public.player_items.quantity,excluded.quantity);
+group by f.user_id,f.item_id
+on conflict(player_id,item_id) where not is_stackable do nothing;
 
 insert into public.house_placements(player_house_id,item_id,slot,placed_at)
 select ph.id,hi.item_id,coalesce(nullif(hi.slot_id,''),hi.item_id),hi.updated_at

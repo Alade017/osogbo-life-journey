@@ -1,5 +1,12 @@
 import { Building2, Music2, Scale, ShoppingBasket, Smartphone } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
 import worldData from "@/data/osun-public-places.json";
+import {
+  clearPendingTownTravelKey,
+  getPendingTownTravelKey,
+  requestTownTravel,
+} from "@/lib/map-api";
 
 type Town = (typeof worldData.towns)[number];
 
@@ -45,6 +52,26 @@ export function OsunStateOverview({
 }
 
 function TownPublicPlaces({ town, onOpenOsogbo }: { town: Town; onOpenOsogbo: () => void }) {
+  const travel = useMutation({
+    mutationFn: ({ townId, requestId }: { townId: string; requestId: string }) =>
+      requestTownTravel(townId, requestId),
+    onSuccess: (result, variables) => {
+      clearPendingTownTravelKey(variables.townId, variables.requestId);
+      toast.success(
+        `Your trip to ${town.name} has started. Arrival in ${result.travel_minutes} minutes.`,
+      );
+    },
+    onError: (error: Error) => {
+      const messages: Record<string, string> = {
+        ALREADY_TRAVELLING: "Finish your current trip before starting another.",
+        ALREADY_THERE: `You are already in ${town.name}.`,
+        INSUFFICIENT_FUNDS: "You do not have enough money for this trip.",
+        TOWN_UNAVAILABLE: "Travel to this town is not available yet.",
+      };
+      toast.error(messages[error.message] ?? "Town travel could not start.");
+    },
+  });
+  const canTravel = town.id === "ede";
   return (
     <aside className="osun-town-panel" aria-live="polite">
       <header>
@@ -80,7 +107,21 @@ function TownPublicPlaces({ town, onOpenOsogbo }: { town: Town; onOpenOsogbo: ()
               );
             })}
           </ul>
-          <small>Detailed town travel will unlock when its server route is available.</small>
+          {canTravel ? (
+            <button
+              className="osun-open-town"
+              type="button"
+              disabled={travel.isPending}
+              onClick={() => {
+                const requestId = getPendingTownTravelKey(town.id);
+                travel.mutate({ townId: town.id, requestId });
+              }}
+            >
+              {travel.isPending ? "Starting trip…" : "Travel to Ede"}
+            </button>
+          ) : (
+            <small>Detailed town travel will unlock when its server route is available.</small>
+          )}
         </>
       )}
     </aside>
