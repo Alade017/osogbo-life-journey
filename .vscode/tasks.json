@@ -5,7 +5,10 @@
       "label": "Public website: develop",
       "type": "shell",
       "command": "npm.cmd",
-      "args": ["run", "dev:public"],
+      "args": [
+        "run",
+        "dev:public"
+      ],
       "isBackground": true,
       "problemMatcher": []
     },
@@ -13,14 +16,20 @@
       "label": "Public website: build",
       "type": "shell",
       "command": "npm.cmd",
-      "args": ["run", "build:public"],
+      "args": [
+        "run",
+        "build:public"
+      ],
       "problemMatcher": []
     },
     {
       "label": "Game: develop",
       "type": "shell",
       "command": "npm.cmd",
-      "args": ["run", "dev"],
+      "args": [
+        "run",
+        "dev"
+      ],
       "isBackground": true,
       "problemMatcher": [],
       "group": "build"
@@ -29,24 +38,79 @@
       "label": "Game: build",
       "type": "shell",
       "command": "npm.cmd",
-      "args": ["run", "build"],
+      "args": [
+        "run",
+        "build"
+      ],
       "problemMatcher": [],
-      "group": { "kind": "build", "isDefault": true }
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
     },
     {
       "label": "Game: check types",
       "type": "shell",
       "command": "npm.cmd",
-      "args": ["run", "typecheck"],
+      "args": [
+        "run",
+        "typecheck"
+      ],
       "problemMatcher": "$tsc"
     },
     {
       "label": "Game: test",
       "type": "shell",
       "command": "npm.cmd",
-      "args": ["test", "--", "--maxWorkers=1", "--pool=threads"],
+      "args": [
+        "test",
+        "--",
+        "--maxWorkers=1",
+        "--pool=threads"
+      ],
       "problemMatcher": [],
       "group": "test"
+    },
+    {
+      "type": "docker-build",
+      "label": "docker-build",
+      "platform": "node",
+      "dockerBuild": {
+        "dockerfile": "${workspaceFolder}/.output/server/Dockerfile",
+        "context": "${workspaceFolder}/.output/server",
+        "pull": true
+      },
+      "node": {
+        "package": "${workspaceFolder}/.output/server/package.json"
+      }
+    },
+    {
+      "type": "docker-run",
+      "label": "docker-run: release",
+      "dependsOn": [
+        "docker-build"
+      ],
+      "platform": "node",
+      "node": {
+        "package": "${workspaceFolder}/.output/server/package.json"
+      }
+    },
+    {
+      "type": "docker-run",
+      "label": "docker-run: debug",
+      "dependsOn": [
+        "docker-build"
+      ],
+      "dockerRun": {
+        "env": {
+          "DEBUG": "*",
+          "NODE_ENV": "development"
+        }
+      },
+      "node": {
+        "package": "${workspaceFolder}/.output/server/package.json",
+        "enableDebugging": true
+      }
     }
   ]
 }
