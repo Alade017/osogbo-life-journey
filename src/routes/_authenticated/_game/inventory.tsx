@@ -1,7 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Backpack, GlassWater, Package, Shirt, Smartphone, type LucideIcon } from "lucide-react";
+import {
+  Backpack,
+  Check,
+  GlassWater,
+  Package,
+  Shirt,
+  Smartphone,
+  type LucideIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 import { q, rpc, useGameAction } from "@/lib/game";
 import { pageMeta } from "@/lib/seo";
@@ -18,8 +26,14 @@ import {
 import { itemUseEffect } from "@/lib/item-service";
 import { validatePlayerAction } from "@/lib/player-action-service";
 import type { EquipmentSlot } from "@/lib/player-state";
-import { EQUIPMENT_SLOTS, filterEquippableInventoryForSlot } from "@/lib/equipment-service";
+import {
+  announceEquipmentRefresh,
+  EQUIPMENT_SLOTS,
+  filterEquippableInventoryForSlot,
+  normalizeEquippedItems,
+} from "@/lib/equipment-service";
 import { getItemArt } from "@/lib/item-art";
+import { Avatar } from "@/components/game/Avatar";
 
 export const Route = createFileRoute("/_authenticated/_game/inventory")({
   head: () => pageMeta("Inventory", "Items your character carries around Osogbo."),
@@ -53,11 +67,17 @@ export function InventoryPage() {
   const equipItem = useGameAction(
     ({ id, slot }: { id: string; slot: string }) => rpc.equipInventoryItem(id, slot),
     {
-      onSuccess: () => toast.success("Equipment updated."),
+      onSuccess: () => {
+        announceEquipmentRefresh();
+        toast.success("Equipment updated.");
+      },
     },
   );
   const unequipItem = useGameAction(rpc.unequipItem, {
-    onSuccess: () => toast.success("Item returned to your inventory."),
+    onSuccess: () => {
+      announceEquipmentRefresh();
+      toast.success("Item returned to your inventory.");
+    },
   });
   const discardItem = useGameAction(
     ({ id, quantity }: { id: string; quantity: number }) => rpc.discardInventoryItem(id, quantity),
@@ -109,13 +129,17 @@ export function InventoryPage() {
         })
       : "This item cannot be equipped.";
   const categoryFilters: (InventoryCategory | "all")[] = ["all", ...INVENTORY_CATEGORIES];
+  const normalizedEquipment = normalizeEquippedItems(equipment);
+  const previewEquipment = selectedSlot
+    ? [...normalizedEquipment.filter((item) => item.slot !== selectedSlot), { slot: selectedSlot }]
+    : normalizedEquipment;
 
   return (
     <div>
       <PageHeader
-        eyebrow="WHAT YOU CARRY"
-        title="Your inventory"
-        subtitle={`${inventory.length} item entries · ${countInventoryUnits(inventory)} items in your bag`}
+        eyebrow="Your collection"
+        title="Inventory"
+        subtitle={`${inventory.length} item types · ${countInventoryUnits(inventory)} items ready to use`}
       />
       {!items?.length ? (
         <EmptyState title="Empty backpack" body="You don't own any items yet." />
@@ -190,6 +214,18 @@ export function InventoryPage() {
             <aside className="inventory-detail game-panel" aria-live="polite">
               {selectedItem ? (
                 <>
+                  <div className="inventory-detail-stage" aria-hidden="true">
+                    {getItemArt(selectedItem.item?.slug) ? (
+                      <img
+                        src={getItemArt(selectedItem.item?.slug)!}
+                        alt=""
+                        width={164}
+                        height={164}
+                      />
+                    ) : (
+                      <Package size={62} />
+                    )}
+                  </div>
                   <p className="inventory-detail-label">Item details</p>
                   <h2>{selectedItem.item?.name}</h2>
                   <p className="inventory-detail-description">{selectedItem.item?.description}</p>
@@ -266,7 +302,20 @@ export function InventoryPage() {
         </>
       )}
       <section className="inventory-equipped game-panel" aria-label="Equipped items">
-        <h2>Equipment</h2>
+        <div className="inventory-equipped-heading">
+          <div>
+            <p className="inventory-detail-label">Your look</p>
+            <h2>Equipment</h2>
+          </div>
+          <div className="inventory-avatar-preview" aria-label="Current outfit preview">
+            <Avatar
+              appearance={(character?.appearance as object) ?? {}}
+              gender={character?.gender ?? "nonbinary"}
+              size={76}
+              equipment={previewEquipment}
+            />
+          </div>
+        </div>
         {equipmentLoading ? (
           <p className="inventory-detail-note" role="status">
             Loading equipment…
@@ -294,6 +343,9 @@ export function InventoryPage() {
                   className={`inventory-equipment-slot ${equipped ? "is-equipped" : ""} ${requestedSlot === slot ? "is-selected" : ""}`}
                 >
                   <span className="inventory-equipment-slot-name">{slot}</span>
+                  {equipped && (
+                    <Check className="inventory-equipped-check" size={15} aria-hidden="true" />
+                  )}
                   <span className="inventory-equipped-art" aria-hidden="true">
                     {equippedArt ? (
                       <img src={equippedArt} alt="" loading="lazy" width={64} height={64} />
@@ -302,6 +354,7 @@ export function InventoryPage() {
                     )}
                   </span>
                   <strong>{equipped?.item?.name ?? "Empty"}</strong>
+                  <small>{equipped ? "Equipped now" : "Nothing equipped"}</small>
                   <Button
                     size="sm"
                     variant="outline"

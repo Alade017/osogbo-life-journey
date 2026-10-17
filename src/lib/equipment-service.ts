@@ -10,6 +10,13 @@ export const EQUIPMENT_SLOTS: readonly EquipmentSlot[] = [
   "accessory",
 ];
 
+export const EQUIPMENT_REFRESH_EVENT = "osun-life-equipment-refresh";
+
+/** Tell active renderers to ask their server for fresh equipment. No item data is trusted here. */
+export function announceEquipmentRefresh() {
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(EQUIPMENT_REFRESH_EVENT));
+}
+
 export function isEquipmentSlot(value: unknown): value is EquipmentSlot {
   return typeof value === "string" && EQUIPMENT_SLOTS.includes(value as EquipmentSlot);
 }

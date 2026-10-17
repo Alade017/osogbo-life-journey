@@ -1,6 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { EquippedItem, ItemDefinition } from "@/lib/player-state";
 import {
+  announceEquipmentRefresh,
+  EQUIPMENT_REFRESH_EVENT,
   EQUIPMENT_SLOTS,
   filterEquippableInventoryForSlot,
   getEquipmentForSlot,
@@ -37,6 +39,16 @@ function equipped(id: string, slot: EquippedItem["slot"]): EquippedItem {
 }
 
 describe("equipment model", () => {
+  it("announces a refresh without sending equipment data", () => {
+    const listener = vi.fn();
+    window.addEventListener(EQUIPMENT_REFRESH_EVENT, listener);
+    announceEquipmentRefresh();
+    expect(listener).toHaveBeenCalledOnce();
+    expect(listener.mock.calls[0]).toEqual([
+      expect.objectContaining({ type: EQUIPMENT_REFRESH_EVENT }),
+    ]);
+    window.removeEventListener(EQUIPMENT_REFRESH_EVENT, listener);
+  });
   it("supports the five defined slots", () => {
     expect(EQUIPMENT_SLOTS).toEqual(["head", "top", "bottom", "shoes", "accessory"]);
     expect(isEquipmentSlot("top")).toBe(true);

@@ -1,5 +1,6 @@
 import { Client } from "@colyseus/sdk";
 import { supabase } from "@/integrations/supabase/client";
+import { EQUIPMENT_REFRESH_EVENT } from "@/lib/equipment-service";
 
 export type NeighborhoodRoom = Awaited<ReturnType<typeof joinNeighborhood>>;
 
@@ -23,7 +24,11 @@ export async function joinNeighborhood(locationId: string) {
 
     try {
       const client = new Client(endpoint);
-      return await client.joinOrCreate("neighborhood", { locationId, accessToken });
+      const room = await client.joinOrCreate("neighborhood", { locationId, accessToken });
+      const refreshEquipment = () => room.send("refresh-equipment");
+      window.addEventListener(EQUIPMENT_REFRESH_EVENT, refreshEquipment);
+      room.onLeave(() => window.removeEventListener(EQUIPMENT_REFRESH_EVENT, refreshEquipment));
+      return room;
     } catch (error) {
       lastError = error;
     }

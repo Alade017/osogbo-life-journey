@@ -85,13 +85,19 @@ export const Character = memo(function Character({
   currentAnimation = "Idle",
   animationNames,
   parts = [],
+  equipmentParts = [],
   appearance,
 }: CharacterModel) {
   const { scene } = useCharacter(modelPath, currentAnimation, animationNames, appearance);
   const head = scene.getObjectByName("Head");
   const characterParts = useMemo(
-    () => [parts, [appearance?.hairPart, appearance?.outfitPart].filter((part) => !!part)].flat(),
-    [parts, appearance?.hairPart, appearance?.outfitPart],
+    () =>
+      [
+        parts,
+        equipmentParts,
+        [appearance?.hairPart, appearance?.outfitPart].filter((part) => !!part),
+      ].flat(),
+    [parts, equipmentParts, appearance?.hairPart, appearance?.outfitPart],
   );
   return (
     <group position={position} rotation={rotation} scale={scale}>

@@ -3,7 +3,7 @@ export type ModelPart = {
   modelPath: string;
   socket?: string;
   /** Stable wardrobe category for callers; the GLB socket and rig remain asset-defined. */
-  slot?: "hair" | "outfit" | "accessory";
+  slot?: "hair" | "head" | "top" | "bottom" | "shoes" | "outfit" | "accessory";
 };
 export type CharacterAnimationState = "idle" | "walk" | "sit" | "work" | "wave" | "talk";
 export type CharacterAppearance3D = {
@@ -17,6 +17,8 @@ export type CharacterAppearance3D = {
 export type CharacterModel = {
   modelPath: string;
   parts?: readonly ModelPart[];
+  /** Server-validated wearable GLB parts, when matching assets exist. */
+  equipmentParts?: readonly ModelPart[];
   appearance?: CharacterAppearance3D;
   position?: Vector3Tuple;
   rotation?: Vector3Tuple;

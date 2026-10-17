@@ -27,7 +27,9 @@ type LocationRow = { id: string; slug: string; map_x: number; map_y: number };
 
 type AuthenticatedPlayer = {
   userId: string;
+  accessToken: string;
   character: CharacterRow;
+  equipment: string;
   area: NeighborhoodArea;
   areaOrigin: WorldPoint;
 };
@@ -37,6 +39,14 @@ type InputState = { intent: MovementIntent; updatedAt: number };
 const LOCATION_ID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const EMPTY_APPEARANCE = "{}";
+const EMPTY_EQUIPMENT = "[]";
+
+function serializeEquipment(rows: { slot?: unknown }[]) {
+  const allowed = new Set(["head", "top", "bottom", "shoes", "accessory"]);
+  return JSON.stringify(
+    rows.flatMap(({ slot }) => (typeof slot === "string" && allowed.has(slot) ? [{ slot }] : [])),
+  );
+}
 
 function supabaseSettings() {
   const url = process.env["SUPABASE_URL"] ?? process.env["VITE_SUPABASE_URL"];
@@ -89,16 +99,32 @@ async function readCharacter(accessToken: string, locationId: string) {
   const locationRows = (await locationResponse.json()) as LocationRow[];
   const location = locationRows[0];
   if (!location) throw new Error("The neighborhood could not be loaded.");
+  const equipmentQuery = new URLSearchParams({
+    select: "slot",
+    character_id: `eq.${character.id}`,
+  });
+  const equipmentResponse = await fetch(`${url}/rest/v1/player_equipment?${equipmentQuery}`, {
+    headers,
+    signal: AbortSignal.timeout(5_000),
+  });
+  if (!equipmentResponse.ok) throw new Error("Your equipped items could not be loaded.");
+  const equipment = serializeEquipment((await equipmentResponse.json()) as { slot?: unknown }[]);
   const entrance = cityEntranceForRecord(location);
   return {
     userId: user.id,
+    accessToken,
     character,
+    equipment,
     area: neighborhoodAreaForSlug(location.slug),
     areaOrigin: neighborhoodAreaOrigin(entrance),
   } satisfies AuthenticatedPlayer;
 }
 
-function playerSnapshot(character: CharacterRow, areaOrigin: WorldPoint): NetworkPlayerSnapshot {
+function playerSnapshot(
+  character: CharacterRow,
+  areaOrigin: WorldPoint,
+  equipment = EMPTY_EQUIPMENT,
+): NetworkPlayerSnapshot {
   let appearance = EMPTY_APPEARANCE;
   try {
     appearance = JSON.stringify(character.appearance ?? {}) ?? EMPTY_APPEARANCE;
@@ -110,6 +136,7 @@ function playerSnapshot(character: CharacterRow, areaOrigin: WorldPoint): Networ
     name: String(character.name ?? "Neighbour").slice(0, 24),
     gender: String(character.gender ?? "nonbinary").slice(0, 16),
     appearance,
+    equipment,
     x: Number.isFinite(character.world_x) ? (character.world_x as number) : areaOrigin.x,
     y: Number.isFinite(character.world_y) ? (character.world_y as number) : areaOrigin.y,
     facing: "south",
@@ -123,6 +150,8 @@ export class NeighborhoodRoom extends Room {
   override patchRate = 50;
 
   private readonly movement = new Map<string, InputState>();
+  private readonly credentials = new Map<string, { accessToken: string; locationId: string }>();
+  private readonly equipmentRefreshAt = new Map<string, number>();
   private areaOrigin: WorldPoint = { x: 7, y: 6 };
   private area = neighborhoodAreaForSlug(undefined);
 
@@ -138,6 +167,7 @@ export class NeighborhoodRoom extends Room {
       }
       this.movement.set(client.sessionId, { intent, updatedAt: Date.now() });
     });
+    this.onMessage("refresh-equipment", (client) => void this.refreshEquipment(client));
     this.setSimulationInterval(() => this.stepPlayers(), 50);
   }
 
@@ -180,14 +210,37 @@ export class NeighborhoodRoom extends Room {
   override onJoin(client: Client, _options: unknown, auth: AuthenticatedPlayer) {
     this.areaOrigin = auth.areaOrigin;
     this.area = auth.area;
-    const player = new NetworkPlayer(playerSnapshot(auth.character, auth.areaOrigin));
+    const player = new NetworkPlayer(
+      playerSnapshot(auth.character, auth.areaOrigin, auth.equipment),
+    );
     this.state.players.set(client.sessionId, player);
+    this.credentials.set(client.sessionId, {
+      accessToken: auth.accessToken,
+      locationId: auth.character.current_location_id!,
+    });
     this.movement.set(client.sessionId, { intent: { x: 0, y: 0 }, updatedAt: Date.now() });
   }
 
   override onLeave(client: Client) {
     this.state.players.delete(client.sessionId);
     this.movement.delete(client.sessionId);
+    this.credentials.delete(client.sessionId);
+    this.equipmentRefreshAt.delete(client.sessionId);
+  }
+
+  private async refreshEquipment(client: Client) {
+    const now = Date.now();
+    if (now - (this.equipmentRefreshAt.get(client.sessionId) ?? 0) < 1_000) return;
+    this.equipmentRefreshAt.set(client.sessionId, now);
+    const credentials = this.credentials.get(client.sessionId);
+    const player = this.state.players.get(client.sessionId);
+    if (!credentials || !player) return;
+    try {
+      const fresh = await readCharacter(credentials.accessToken, credentials.locationId);
+      player.equipment = fresh.equipment;
+    } catch {
+      // Keep the last verified snapshot; the normal reconnect path will retry.
+    }
   }
 
   private stepPlayers() {

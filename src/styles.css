@@ -137,6 +137,312 @@
   --font-sans: system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
+/* Inventory and profile refresh: static artwork keeps these routes light on mobile. */
+.inventory-card {
+  position: relative;
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--brand-royal) 14%, var(--border));
+  background: var(--brand-porcelain);
+  box-shadow: var(--elevation-card);
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.inventory-card:hover,
+.inventory-card-selected {
+  transform: translateY(-2px);
+  border-color: var(--brand-royal);
+  box-shadow: var(--elevation-raised);
+}
+
+.inventory-item-art {
+  position: relative;
+  overflow: visible;
+  background: var(--brand-cream);
+}
+
+.inventory-item-art::after,
+.inventory-detail-stage::after {
+  position: absolute;
+  right: 15%;
+  bottom: 7%;
+  left: 15%;
+  height: 9%;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--brand-ink) 18%, transparent);
+  content: "";
+}
+
+.inventory-item-art img {
+  position: relative;
+  z-index: 1;
+  width: 88%;
+  height: 88%;
+  object-fit: contain;
+}
+
+.inventory-detail-stage {
+  position: relative;
+  display: grid;
+  min-height: 176px;
+  margin: -4px -4px 14px;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card);
+  color: var(--brand-royal);
+  background: var(--brand-cream);
+}
+
+.inventory-detail-stage img {
+  position: relative;
+  z-index: 1;
+  width: min(78%, 164px);
+  height: 164px;
+  object-fit: contain;
+}
+
+.inventory-equipped-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.inventory-avatar-preview {
+  display: grid;
+  width: 94px;
+  min-height: 104px;
+  place-items: end center;
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card);
+  background: var(--brand-cream);
+}
+
+.inventory-equipment-slot {
+  position: relative;
+  background: var(--brand-porcelain);
+}
+
+.inventory-equipment-slot small {
+  color: var(--brand-slate);
+  font-size: 10px;
+}
+
+.inventory-equipped-check {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  color: var(--brand-royal);
+}
+
+.profile-page {
+  width: 100%;
+  max-width: 1040px;
+  margin-inline: auto;
+  color: var(--brand-ink);
+}
+
+.profile-hero {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.62fr) minmax(0, 1.38fr);
+  gap: 22px;
+  padding: 20px;
+  background: var(--brand-porcelain);
+}
+
+.profile-portrait-stage {
+  display: grid;
+  min-height: 210px;
+  place-items: end center;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card);
+  background: var(--brand-cream);
+}
+
+.profile-identity {
+  align-self: center;
+  min-width: 0;
+}
+
+.profile-kicker {
+  margin: 0;
+  color: var(--brand-royal);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.profile-identity h2 {
+  margin: 4px 0 10px;
+  font-family: var(--font-display);
+  font-size: clamp(26px, 5vw, 42px);
+  line-height: 1;
+}
+
+.profile-chip-row,
+.profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.profile-xp {
+  max-width: 430px;
+  margin-top: 18px;
+}
+
+.profile-primary-action,
+.profile-actions a,
+.profile-actions button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--brand-ink);
+  background: var(--brand-porcelain);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.profile-primary-action {
+  margin-top: 18px;
+  padding: 0 17px;
+  border-color: var(--brand-royal);
+  color: var(--primary-foreground);
+  background: var(--brand-royal);
+}
+
+.profile-glance {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.profile-glance-card {
+  display: grid;
+  gap: 3px;
+  padding: 15px;
+  background: var(--brand-porcelain);
+}
+
+.profile-glance-card span,
+.profile-glance-card small,
+.profile-data-note,
+.profile-milestones p {
+  color: var(--brand-slate);
+  font-size: 11px;
+}
+
+.profile-glance-card strong {
+  font-family: var(--font-display);
+  font-size: 21px;
+}
+
+.profile-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.profile-story,
+.profile-milestones {
+  padding: 16px;
+  background: var(--brand-porcelain);
+}
+
+.profile-story h3,
+.profile-milestones h3 {
+  margin: 0 0 12px;
+  font-family: var(--font-display);
+  font-size: 17px;
+}
+
+.profile-story dl,
+.profile-milestones ul {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.profile-story dl > div,
+.profile-milestones li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.profile-story dt,
+.profile-milestones li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--brand-slate);
+  font-size: 12px;
+}
+
+.profile-story dd {
+  margin: 0;
+  color: var(--brand-ink);
+  font-size: 12px;
+  font-weight: 750;
+  text-align: right;
+}
+
+.profile-milestones li span {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+}
+
+.profile-milestones li strong {
+  color: var(--brand-ink);
+  font-size: 12px;
+}
+
+.profile-milestones li small {
+  color: var(--brand-slate);
+  font-size: 10px;
+}
+
+.profile-actions {
+  margin-top: 12px;
+}
+
+.profile-actions a,
+.profile-actions button {
+  padding: 0 15px;
+}
+
+@media (max-width: 620px) {
+  .profile-page { padding-inline: 2px; }
+  .profile-hero { grid-template-columns: 1fr; padding: 14px; }
+  .profile-portrait-stage { min-height: 176px; }
+  .profile-glance { grid-template-columns: 1fr 1fr; }
+  .profile-glance-card:first-child { grid-column: 1 / -1; }
+  .profile-columns { grid-template-columns: 1fr; }
+  .profile-actions > * { flex: 1 1 120px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inventory-card { transition: none; }
+  .inventory-card:hover, .inventory-card-selected { transform: none; }
+}
+
 .dark {
   --background: #0e1830;
   --foreground: var(--brand-cream);
@@ -7820,6 +8126,26 @@
   .game-mobile-nav .mobile-nav-phone {
     font-size: 8px;
   }
+}
+
+/* Keep the refreshed inventory treatment above older compatibility rules. */
+.city-game .inventory-card {
+  border-color: color-mix(in srgb, var(--brand-royal) 14%, var(--border));
+  background: var(--brand-porcelain);
+  box-shadow: var(--elevation-card);
+}
+
+.city-game .inventory-card:hover,
+.city-game .inventory-card-selected {
+  border-color: var(--brand-royal);
+  background: var(--brand-porcelain);
+  box-shadow: var(--elevation-raised);
+}
+
+.city-game .inventory-equipped,
+.city-game .inventory-detail {
+  color: var(--brand-ink);
+  background: var(--brand-porcelain);
 }
 
 /* Oja-Oba Market district treatment; the game shell and other districts keep their tokens. */

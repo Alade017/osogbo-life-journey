@@ -1,178 +1,181 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { House, Settings2, Users } from "lucide-react";
+import { Award, BriefcaseBusiness, House, MapPin, Settings2, Shirt, Users } from "lucide-react";
 import { q, formatNaira, xpProgress } from "@/lib/game";
 import { pageMeta } from "@/lib/seo";
 import { Avatar } from "@/components/game/Avatar";
-import {
-  Chip,
-  GameDataUnavailable,
-  LoadingState,
-  PageHeader,
-  StatBar,
-  type Tone,
-} from "@/components/game/ui";
+import { Chip, GameDataUnavailable, LoadingState, PageHeader, StatBar } from "@/components/game/ui";
 import { playerStateFromRows } from "@/lib/player-state";
 import { normalizeEquippedItems } from "@/lib/equipment-service";
+import { moodLabel } from "@/lib/profile-service";
 
 export const Route = createFileRoute("/_authenticated/_game/profile")({
-  head: () => pageMeta("Player Profile", "Your character's stats and progress."),
+  head: () => pageMeta("Player Profile", "Your OSUN LIFE character, outfit and progress."),
   component: ProfilePage,
 });
 
-function ProfilePage() {
-  const {
-    data: c,
-    isLoading: isCharacterLoading,
-    isError: isCharacterError,
-    error: characterError,
-    refetch,
-    isRefetching,
-  } = useQuery(q.character());
-  const { data: wallet, isLoading: isWalletLoading, isError: isWalletError } = useQuery(q.wallet());
+export function ProfilePage() {
+  const characterQuery = useQuery(q.character());
+  const walletQuery = useQuery(q.wallet());
   const { data: jobs } = useQuery(q.jobs());
   const { data: locations } = useQuery(q.locations());
   const { data: equipment } = useQuery(q.equipment());
-  if (isCharacterError)
+  const { data: missions } = useQuery(q.missions());
+
+  if (characterQuery.isError)
     return (
       <GameDataUnavailable
-        error={characterError}
-        onRetry={() => void refetch()}
-        isRetrying={isRefetching}
+        error={characterQuery.error}
+        onRetry={() => void characterQuery.refetch()}
+        isRetrying={characterQuery.isRefetching}
       />
     );
-  if (isCharacterLoading || !c || isWalletLoading) return <LoadingState />;
+  if (characterQuery.isLoading || !characterQuery.data || walletQuery.isLoading)
+    return <LoadingState />;
+
+  const c = characterQuery.data;
   const player = playerStateFromRows({
     character: c,
-    wallet,
+    wallet: walletQuery.data,
     location: locations?.find((item) => item.id === c.current_location_id),
     equipment: normalizeEquippedItems(equipment),
   });
   const xp = xpProgress(player.experience);
-  const dream = jobs?.find((j) => j.slug === c.occupation_preference);
-  const stats: [string, number, Tone][] = [
-    ["Health", player.health, "clay"],
-    ["Energy", player.energy, "sun"],
-    ["Hunger satisfaction", 100 - player.hunger, "clay"],
-    ["Reputation", player.reputation, "ink"],
-    ["Intelligence", c.intelligence, "ink"],
-    ["Career", c.career, "primary"],
-    ["Wealth", c.wealth, "leaf"],
-  ];
+  const occupation =
+    jobs?.find((job) => job.slug === c.occupation_preference)?.name ?? "Exploring options";
+  const milestones = (missions ?? [])
+    .filter((mission) => mission.completed_at || mission.claimed_at)
+    .sort((a, b) =>
+      String(b.completed_at ?? b.claimed_at).localeCompare(String(a.completed_at ?? a.claimed_at)),
+    )
+    .slice(0, 3);
+  const mood = moodLabel(c.happiness, c.stress);
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-4 text-foreground">
+    <div className="profile-page">
       <PageHeader
-        eyebrow="YOUR JOURNEY"
-        title="Your character"
-        subtitle="Your life and progress in Osogbo."
+        eyebrow="Your journey"
+        title="Player profile"
+        subtitle="Your life, look and progress across Osun."
       />
-      <section className="game-panel flex flex-wrap items-center justify-between gap-3 p-3 sm:p-4">
-        <div>
-          <h2 className="font-display text-base font-bold">Your home</h2>
-          <p className="text-sm text-muted-foreground">Find a place or choose a different home.</p>
+      <section className="profile-hero game-panel" aria-label="Player identity">
+        <div className="profile-portrait-stage">
+          <Avatar
+            appearance={c.appearance as object}
+            gender={c.gender}
+            size={142}
+            equipment={player.equipment}
+          />
         </div>
+        <div className="profile-identity">
+          <p className="profile-kicker">Level {player.level} resident</p>
+          <h2>{player.name}</h2>
+          <div className="profile-chip-row">
+            <Chip tone="primary">{mood}</Chip>
+            <Chip>{c.personality}</Chip>
+            <Chip>{occupation}</Chip>
+          </div>
+          <div className="profile-xp">
+            <StatBar
+              label={`${xp.toNextLevel} XP to level ${player.level + 1}`}
+              value={xp.into}
+              max={xp.needed}
+              tone="primary"
+            />
+          </div>
+          <Link to="/inventory" className="profile-primary-action">
+            <Shirt size={18} aria-hidden="true" /> Edit outfit
+          </Link>
+        </div>
+      </section>
+      <section className="profile-glance" aria-label="Life at a glance">
+        <article className="profile-glance-card game-panel">
+          <span>Wallet</span>
+          <strong>{formatNaira(player.cash)}</strong>
+          <small>Fictional naira</small>
+        </article>
+        <article className="profile-glance-card game-panel">
+          <span>Energy</span>
+          <strong>{player.energy}%</strong>
+          <small>{player.energy < 30 ? "Time to rest" : "Ready for the day"}</small>
+        </article>
+        <article className="profile-glance-card game-panel">
+          <span>Mood</span>
+          <strong>{mood}</strong>
+          <small>{c.happiness}% happiness</small>
+        </article>
+      </section>
+      <div className="profile-columns">
+        <section className="profile-story game-panel" aria-labelledby="profile-life-title">
+          <h3 id="profile-life-title">Your life</h3>
+          <dl>
+            <div>
+              <dt>
+                <BriefcaseBusiness size={16} /> Occupation
+              </dt>
+              <dd>{occupation}</dd>
+            </div>
+            <div>
+              <dt>
+                <MapPin size={16} /> Current district
+              </dt>
+              <dd>{player.location?.name ?? "Osogbo"}</dd>
+            </div>
+            <div>
+              <dt>
+                <Award size={16} /> Reputation
+              </dt>
+              <dd>{player.reputation}/100</dd>
+            </div>
+          </dl>
+        </section>
+        <section
+          className="profile-milestones game-panel"
+          aria-labelledby="profile-milestones-title"
+        >
+          <h3 id="profile-milestones-title">Recent milestones</h3>
+          {milestones.length ? (
+            <ul>
+              {milestones.map((milestone) => (
+                <li key={milestone.id}>
+                  <Award size={17} aria-hidden="true" />
+                  <span>
+                    <strong>Mission completed</strong>
+                    <small>
+                      {new Date(milestone.completed_at ?? milestone.claimed_at!).toLocaleDateString(
+                        "en-NG",
+                      )}
+                    </small>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>Complete missions to build your story here.</p>
+          )}
+        </section>
+      </div>
+      <nav className="profile-actions" aria-label="Profile actions">
         <button
           type="button"
-          className="game-control inline-flex min-h-11 items-center gap-2 rounded-full bg-primary px-4 text-primary-foreground"
           onClick={() =>
             window.dispatchEvent(
               new CustomEvent("osogbo-open-housing", { detail: { source: "profile" } }),
             )
           }
         >
-          <House size={17} aria-hidden="true" /> Find a place
+          <House size={17} /> Find a place
         </button>
-      </section>
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-        <section className="game-panel player-profile-card p-4" aria-label="Character details">
-          <div className="player-profile-avatar inline-flex justify-center rounded-xl border border-border bg-muted p-2">
-            <Avatar
-              appearance={c.appearance as object}
-              gender={c.gender}
-              size={84}
-              equipment={player.equipment}
-            />
-          </div>
-          <h2 className="mt-3 text-xl font-bold text-foreground">{player.name}</h2>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            <Chip tone="primary">Level {player.level}</Chip>
-            <Chip>{c.age} yrs</Chip>
-            <Chip>{c.personality}</Chip>
-          </div>
-          <div className="profile-cash-line">
-            <span>Wallet</span>
-            <strong>{formatNaira(player.cash)}</strong>
-          </div>
-          <div className="profile-cash-line">
-            <span>Bank balance</span>
-            <strong>
-              {player.bankBalance === null ? "Not set up yet" : formatNaira(player.bankBalance)}
-            </strong>
-          </div>
-          <div className="profile-cash-line">
-            <span>Current district</span>
-            <strong>{player.location?.name ?? "Osogbo"}</strong>
-          </div>
-          {dream && (
-            <p className="mt-3 text-sm text-muted-foreground">
-              Dream job: <strong>{dream.name}</strong>
-            </p>
-          )}
-          <p className="mt-1 text-xs text-muted-foreground">
-            In Osogbo since {new Date(player.createdAt).toLocaleDateString("en-NG")}
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2 border-t border-border pt-3">
-            <Link
-              to="/social"
-              search={{ playerId: undefined }}
-              className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-card px-3 text-sm font-semibold text-foreground focus-visible:outline-2 focus-visible:outline-[var(--ring)]"
-            >
-              <Users size={16} /> Friends
-            </Link>
-            <Link
-              to="/settings"
-              className="inline-flex min-h-11 items-center gap-2 rounded-full border border-border bg-card px-3 text-sm font-semibold text-foreground focus-visible:outline-2 focus-visible:outline-[var(--ring)]"
-            >
-              <Settings2 size={16} /> Settings
-            </Link>
-          </div>
-        </section>
-        <section className="game-panel space-y-4 p-4" aria-label="Character stats and progress">
-          <div>
-            <div className="flex items-baseline justify-between">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                  Experience
-                </p>
-                <h3 className="mt-1 text-xl font-bold text-ink">Level {player.level}</h3>
-              </div>
-              <span className="text-sm font-semibold text-ink">{player.experience} XP total</span>
-            </div>
-            <div className="mt-2">
-              <StatBar label="Progress to next level" value={xp.into} max={xp.needed} tone="ink" />
-            </div>
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {stats.map(([l, v, t]) => (
-              <StatBar key={l} label={l} value={v} tone={t} />
-            ))}
-          </div>
-          <div className="profile-data-row profile-data-row-single">
-            <div>
-              <span>Thirst satisfaction</span>
-              <strong>
-                {player.thirst === null ? "Not tracked yet" : `${100 - player.thirst}/100`}
-              </strong>
-            </div>
-          </div>
-          {isWalletError && (
-            <p className="text-xs text-muted-foreground">
-              Your wallet could not be loaded. Character stats remain available.
-            </p>
-          )}
-        </section>
-      </div>
+        <Link to="/social" search={{ playerId: undefined }}>
+          <Users size={17} /> Friends
+        </Link>
+        <Link to="/settings">
+          <Settings2 size={17} /> Settings
+        </Link>
+      </nav>
+      {walletQuery.isError && (
+        <p className="profile-data-note">Your wallet is temporarily unavailable.</p>
+      )}
     </div>
   );
 }

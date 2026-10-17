@@ -6,6 +6,7 @@ export const NetworkPlayer = schema({
   name: t.string(),
   gender: t.string(),
   appearance: t.string(),
+  equipment: t.string(),
   x: t.number(),
   y: t.number(),
   facing: t.string(),
@@ -20,6 +21,7 @@ export type NetworkPlayerSnapshot = {
   name: string;
   gender: string;
   appearance: string;
+  equipment: string;
   x: number;
   y: number;
   facing: string;
