@@ -1,10 +1,3 @@
-type RpcClient = {
-  rpc: (
-    name: string,
-    args: Record<string, unknown>,
-  ) => Promise<{ data: unknown; error: { message: string } | null }>;
-};
-
 const statusByCode: Record<string, number> = {
   UNAUTHORIZED: 401,
   INVALID_REQUEST: 400,
@@ -36,15 +29,6 @@ async function authenticatedUserId(request: Request) {
   return error ? null : (data.user?.id ?? null);
 }
 
-async function callRpc(name: string, args: Record<string, unknown>) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  // RPCs from the pending migration are intentionally not present in the
-  // generated database type until that migration is applied and types refresh.
-  const { data, error } = await (supabaseAdmin as unknown as RpcClient).rpc(name, args);
-  if (error) throw new Error(error.message);
-  return data;
-}
-
 function idempotencyKey(request: Request) {
   const key = request.headers.get("idempotency-key")?.trim();
   return key && key.length >= 16 && key.length <= 128 ? key : null;
@@ -62,13 +46,14 @@ export async function handleAccessoryBudgetRequest(request: Request) {
   )
     return response({ error: { code: "INVALID_REQUEST" } }, userId ? 400 : 401);
   try {
-    return response(
-      await callRpc("choose_move_in_accessory_budget", {
-        p_user_id: userId,
-        p_budget_minor: body.budgetMinor,
-        p_request_id: key,
-      }),
-    );
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin.rpc("choose_move_in_accessory_budget", {
+      p_user_id: userId,
+      p_budget_minor: body.budgetMinor,
+      p_request_id: key,
+    });
+    if (error) throw new Error(error.message);
+    return response(data);
   } catch (error) {
     const code = errorCode(error);
     return response({ error: { code } }, statusByCode[code] ?? 500);
@@ -93,15 +78,31 @@ export async function handleRentReliefRequest(request: Request) {
   )
     return response({ error: { code: "INVALID_REQUEST" } }, 400);
   try {
-    const result =
-      action === "apply"
-        ? await callRpc("apply_rent_relief_hustle", { p_user_id: userId, p_request_id: key })
-        : await callRpc(action === "complete" ? "complete_rent_relief_shift" : "drop_side_hustle", {
-            p_user_id: userId,
-            p_hustle_id: body.hustleId,
-            p_request_id: key,
-          });
-    return response(result);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (action === "apply") {
+      const { data, error } = await supabaseAdmin.rpc("apply_rent_relief_hustle", {
+        p_user_id: userId,
+        p_request_id: key,
+      });
+      if (error) throw new Error(error.message);
+      return response(data);
+    }
+    if (action === "complete") {
+      const { data, error } = await supabaseAdmin.rpc("complete_rent_relief_shift", {
+        p_user_id: userId,
+        p_hustle_id: body.hustleId,
+        p_request_id: key,
+      });
+      if (error) throw new Error(error.message);
+      return response(data);
+    }
+    const { data, error } = await supabaseAdmin.rpc("drop_side_hustle", {
+      p_user_id: userId,
+      p_hustle_id: body.hustleId,
+      p_request_id: key,
+    });
+    if (error) throw new Error(error.message);
+    return response(data);
   } catch (error) {
     const code = errorCode(error);
     return response({ error: { code } }, statusByCode[code] ?? 500);

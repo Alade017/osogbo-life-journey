@@ -393,6 +393,27 @@
       "when": 1791940000018,
       "tag": "0054_dashboard_pins",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1791940000019,
+      "tag": "0055_unified_property_housing",
+      "breakpoints": true
+    },
+    {
+      "idx": 57,
+      "version": "7",
+      "when": 1791940000020,
+      "tag": "0056_housing_accessories_and_rent_relief",
+      "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1791940000021,
+      "tag": "0057_reconcile_housing_accessories_and_rent_relief",
+      "breakpoints": true
     }
   ]
 }
