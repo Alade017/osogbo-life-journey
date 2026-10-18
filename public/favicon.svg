@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <pattern id="adire-a" width="128" height="128" patternUnits="userSpaceOnUse">
+      <path d="M64 8L120 64L64 120L8 64Z" fill="none" stroke="#1D2C74" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M64 40L88 64L64 88L40 64Z" fill="none" stroke="#1D2C74" stroke-width="7" stroke-linejoin="round"/>
+      <path d="M-8 -8L8 8M120 8L136 -8M-8 136L8 120M120 120L136 136" stroke="#1D2C74" stroke-width="7" stroke-linecap="round"/>
+    </pattern>
+  </defs>
+  <rect width="1024" height="1024" fill="#16225C"/>
+  <rect width="1024" height="1024" fill="url(#adire-a)"/>
+
+  <defs>
+    <clipPath id="hole-a"><circle cx="512" cy="512" r="212"/></clipPath>
+  </defs>
+  <!-- ring depth -->
+  <path transform="translate(0,18)" fill="#B8820A" fill-rule="evenodd"
+    d="M512 182a330 330 0 1 0 0 660a330 330 0 1 0 0-660zm0 120a210 210 0 1 1 0 420a210 210 0 1 1 0-420z"/>
+  <!-- ring face -->
+  <path fill="#F2B21C" fill-rule="evenodd"
+    d="M512 182a330 330 0 1 0 0 660a330 330 0 1 0 0-660zm0 120a210 210 0 1 1 0 420a210 210 0 1 1 0-420z"/>
+  <!-- top highlight -->
+  <path d="M296 300 A290 290 0 0 1 560 222" fill="none" stroke="#F8D774" stroke-width="16" stroke-linecap="round" opacity=".8"/>
+  <!-- inner disc -->
+  <circle cx="512" cy="512" r="212" fill="#101A4A"/>
+  <!-- river inside the ring -->
+  <g clip-path="url(#hole-a)">
+    <path fill="#1E9A5F" d="M280 610C350 560 420 560 480 600C540 640 610 640 744 590L744 760L280 760Z"/>
+    <path fill="#12683E" d="M280 668C360 632 430 632 500 662C570 692 650 688 744 646L744 760L280 760Z"/>
+    <path d="M300 604C360 566 424 568 480 604C540 640 610 638 724 596" fill="none" stroke="#6FD0A0" stroke-width="9" stroke-linecap="round"/>
+  </g>
+  <!-- adire diamond, two layers -->
+  <path transform="translate(0,9)" fill="#8E2B18" d="M512 372L596 456L512 540L428 456Z"/>
+  <path fill="#C8452D" d="M512 372L596 456L512 540L428 456Z"/>
+  <path fill="#F2B21C" d="M512 414L554 456L512 498L470 456Z"/>
+</svg>

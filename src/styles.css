@@ -10,6 +10,28 @@
    Light first. Dark is defined so nothing breaks, but not shipped yet.
    ========================================================== */
 
+.osun-life-logo {
+  display: inline-flex;
+  width: min(178px, 42vw);
+  line-height: 0;
+}
+
+.osun-life-logo-image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.osun-life-logo-small {
+  width: 38px;
+  height: 38px;
+}
+
+.osun-life-logo-small .osun-life-logo-image {
+  width: 100%;
+  height: 100%;
+}
+
 :root {
   --radius: 0.8rem;
 
