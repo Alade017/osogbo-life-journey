@@ -1,4 +1,5 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Bell,
   Bike,
@@ -47,6 +48,47 @@ const stories = [
   },
 ];
 
+type ExternalNewsItem = {
+  id: string;
+  title: string;
+  sourceName: string;
+  sourceUrl: string;
+  publishedAt: string | null;
+};
+
+function useExternalNews(region: "nigeria" | "world") {
+  const [items, setItems] = useState<ExternalNewsItem[]>([]);
+  const [state, setState] = useState<"loading" | "ready" | "unavailable">("loading");
+
+  useEffect(() => {
+    let live = true;
+    async function load() {
+      setState("loading");
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (!data.session?.access_token) throw new Error("No active session");
+        const response = await fetch(`/api/news?region=${region}`, {
+          headers: { Authorization: `Bearer ${data.session.access_token}` },
+        });
+        if (!response.ok) throw new Error("News is unavailable");
+        const payload = (await response.json()) as { items?: ExternalNewsItem[] };
+        if (live) {
+          setItems(payload.items ?? []);
+          setState("ready");
+        }
+      } catch {
+        if (live) setState("unavailable");
+      }
+    }
+    void load();
+    return () => {
+      live = false;
+    };
+  }, [region]);
+
+  return { items, state };
+}
+
 function AppCard({ children }: { children: ReactNode }) {
   return <div className="phone-local-card">{children}</div>;
 }
@@ -58,6 +100,8 @@ export function CommunityPhoneApps({ app }: { app: CommunityPhoneApp }) {
   const [contribution, setContribution] = useState(500);
   const [contributed, setContributed] = useState(false);
   const [reactionCount, setReactionCount] = useState(12);
+  const [newsRegion, setNewsRegion] = useState<"nigeria" | "world">("nigeria");
+  const externalNews = useExternalNews(newsRegion);
   const foodTotal = useMemo(
     () =>
       meals.filter((meal) => basket.includes(meal.name)).reduce((sum, meal) => sum + meal.price, 0),
@@ -266,11 +310,32 @@ export function CommunityPhoneApps({ app }: { app: CommunityPhoneApp }) {
       <header>
         <Newspaper aria-hidden="true" />
         <span>
-          <strong>Town news</strong>
-          <small>Local updates from around Osogbo</small>
+          <strong>News feed</strong>
+          <small>Nigeria, world, and town updates</small>
         </span>
       </header>
+      <div className="phone-local-tabs" role="tablist" aria-label="News source">
+        <button type="button" role="tab" aria-selected={newsRegion === "nigeria"} onClick={() => setNewsRegion("nigeria")}>
+          Nigeria
+        </button>
+        <button type="button" role="tab" aria-selected={newsRegion === "world"} onClick={() => setNewsRegion("world")}>
+          World
+        </button>
+      </div>
       <div className="phone-local-list">
+        {externalNews.state === "loading" ? (
+          <AppCard><small>Updating {newsRegion === "nigeria" ? "Nigeria" : "world"} headlines…</small></AppCard>
+        ) : externalNews.state === "ready" && externalNews.items.length ? externalNews.items.map((story) => (
+          <AppCard key={story.id}>
+            <div>
+              <small>{story.sourceName}{story.publishedAt ? ` · ${new Date(story.publishedAt).toLocaleDateString("en-NG")}` : ""}</small>
+              <strong>{story.title}</strong>
+            </div>
+            <a href={story.sourceUrl} target="_blank" rel="noreferrer">Read</a>
+          </AppCard>
+        )) : (
+          <AppCard><small>Live headlines are temporarily unavailable. Town updates are still available below.</small></AppCard>
+        )}
         {stories.map((story, index) => (
           <AppCard key={story.title}>
             <div>

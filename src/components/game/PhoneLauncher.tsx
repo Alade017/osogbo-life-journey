@@ -19,7 +19,6 @@ import {
   ChevronLeft,
   GraduationCap,
   HandCoins,
-  House,
   HousePlus,
   MapPinned,
   MessagesSquare,
@@ -48,32 +47,35 @@ import { BusinessInvestmentApp } from "@/components/game/BusinessInvestmentApp";
 import { BillboardAdApp } from "@/components/game/BillboardAdApp";
 import { CommunityPhoneApps, type CommunityPhoneApp } from "@/components/game/CommunityPhoneApps";
 import { CourseAndStallApps, type CourseAndStallApp } from "@/components/game/CourseAndStallApps";
+import {
+  PhoneContentPreview,
+  type PhoneContentPreviewApp,
+} from "@/components/game/PhoneContentPreview";
 import "./phone.css";
 
 const PHONE_APPS = [
-  { label: "Home", to: "/home", icon: House, tone: "phone-app-green", active: true },
   { label: "Property", to: "/house", icon: HousePlus, tone: "phone-app-green", active: true },
   {
     label: "Find homes",
-    to: "/properties",
+    to: null,
     icon: Building2,
     tone: "phone-app-green",
     active: true,
   },
   { label: "Jobs", to: "/jobs", icon: BriefcaseBusiness, tone: "phone-app-gold", active: true },
-  { label: "Bank", to: "/wallet", icon: Landmark, tone: "phone-app-blue", active: true },
-  { label: "Market", to: "/market", icon: Store, tone: "phone-app-coral", active: true },
+  { label: "Bank", to: null, icon: Landmark, tone: "phone-app-blue", active: true },
+  { label: "Market", to: null, icon: Store, tone: "phone-app-coral", active: true },
   {
     label: "Education",
-    to: "/education",
+    to: null,
     icon: GraduationCap,
     tone: "phone-app-blue",
     active: true,
   },
-  { label: "Map", to: "/map", icon: MapPinned, tone: "phone-app-blue", active: true },
-  { label: "People", to: "/social", icon: UsersRound, tone: "phone-app-coral", active: true },
-  { label: "Inventory", to: "/inventory", icon: Backpack, tone: "phone-app-blue", active: true },
-  { label: "Profile", to: "/profile", icon: UserRound, tone: "phone-app-muted", active: true },
+  { label: "Map", to: null, icon: MapPinned, tone: "phone-app-blue", active: true },
+  { label: "People", to: null, icon: UsersRound, tone: "phone-app-coral", active: true },
+  { label: "Inventory", to: null, icon: Backpack, tone: "phone-app-blue", active: true },
+  { label: "Profile", to: null, icon: UserRound, tone: "phone-app-muted", active: true },
   { label: "Messages", to: "/social", icon: MessagesSquare, tone: "phone-app-coral", active: true },
   {
     label: "Invest",
@@ -85,21 +87,21 @@ const PHONE_APPS = [
   { label: "Company", to: "/wallet", icon: Building2, tone: "phone-app-green", active: true },
   {
     label: "Businesses",
-    to: "/businesses",
+    to: null,
     icon: Building2,
     tone: "phone-app-green",
     active: true,
   },
   { label: "Billboards", to: null, icon: PanelsTopLeft, tone: "phone-app-gold", active: true },
-  { label: "Missions", to: "/missions", icon: Target, tone: "phone-app-gold", active: true },
+  { label: "Missions", to: null, icon: Target, tone: "phone-app-gold", active: true },
   {
     label: "Notifications",
-    to: "/notifications",
+    to: null,
     icon: Bell,
     tone: "phone-app-gold",
     active: true,
   },
-  { label: "Settings", to: "/settings", icon: Settings, tone: "phone-app-muted", active: true },
+  { label: "Settings", to: null, icon: Settings, tone: "phone-app-muted", active: true },
   { label: "Calendar", to: null, icon: CalendarDays, tone: "phone-app-blue", active: true },
   {
     label: "Food Delivery",
@@ -125,6 +127,20 @@ const COMMUNITY_APPS = new Set<CommunityPhoneApp>([
   "Town News",
 ]);
 const COURSE_AND_STALL_APPS = new Set<CourseAndStallApp>(["Courses", "Market Stalls"]);
+const PREVIEW_APPS = new Set<PhoneContentPreviewApp>([
+  "Find homes",
+  "Bank",
+  "Market",
+  "Education",
+  "Map",
+  "People",
+  "Inventory",
+  "Profile",
+  "Businesses",
+  "Missions",
+  "Notifications",
+  "Settings",
+]);
 
 export function PhoneLauncher({
   className,
@@ -307,6 +323,21 @@ export function PhoneLauncher({
               </div>
               <CourseAndStallApps app={activeApp as CourseAndStallApp} />
             </div>
+          ) : activeApp && PREVIEW_APPS.has(activeApp as PhoneContentPreviewApp) ? (
+            <div className="phone-app-view">
+              <div className="phone-app-toolbar">
+                <button
+                  type="button"
+                  onClick={() => setActiveApp(null)}
+                  aria-label="Back to phone apps"
+                >
+                  <ChevronLeft size={16} aria-hidden="true" /> <span>Apps</span>
+                </button>
+                <strong>{activeApp}</strong>
+                <span aria-hidden="true" />
+              </div>
+              <PhoneContentPreview app={activeApp as PhoneContentPreviewApp} />
+            </div>
           ) : (
             <>
               {missionCount > 0 && (
@@ -347,7 +378,8 @@ export function PhoneLauncher({
                     app.label === "Company" ||
                     app.label === "Billboards" ||
                     COMMUNITY_APPS.has(app.label as CommunityPhoneApp) ||
-                    COURSE_AND_STALL_APPS.has(app.label as CourseAndStallApp)
+                    COURSE_AND_STALL_APPS.has(app.label as CourseAndStallApp) ||
+                    PREVIEW_APPS.has(app.label as PhoneContentPreviewApp)
                   ) {
                     return (
                       <button

@@ -1485,6 +1485,7 @@
   line-height: 1.4;
 }
 .phone-local-card button,
+.phone-local-card a,
 .phone-local-tabs button {
   min-width: 44px;
   min-height: 36px;
@@ -1496,8 +1497,13 @@
   font: inherit;
   font-size: 0.72rem;
   font-weight: 800;
+  text-decoration: none;
 }
 .phone-local-card button[aria-pressed="true"] {
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+.phone-local-tabs button[aria-selected="true"] {
   color: var(--primary-foreground);
   background: var(--primary);
 }
