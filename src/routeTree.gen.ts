@@ -38,12 +38,14 @@ import { Route as ApiHomeUnequipRouteImport } from './routes/api/home/unequip'
 import { Route as ApiHousePlaceRouteImport } from './routes/api/house/place'
 import { Route as ApiHouseRemoveRouteImport } from './routes/api/house/remove'
 import { Route as ApiHouseStateRouteImport } from './routes/api/house/state'
+import { Route as ApiHousingAccessoriesRouteImport } from './routes/api/housing/accessories'
 import { Route as ApiHousingChooseRouteImport } from './routes/api/housing/choose'
 import { Route as ApiHousingDeferRouteImport } from './routes/api/housing/defer'
 import { Route as ApiHousingEligibleRouteImport } from './routes/api/housing/eligible'
 import { Route as ApiHousingHomeRouteImport } from './routes/api/housing/home'
 import { Route as ApiHousingItemRouteImport } from './routes/api/housing/item'
 import { Route as ApiHousingRentRouteImport } from './routes/api/housing/rent'
+import { Route as ApiHousingRentReliefRouteImport } from './routes/api/housing/rent-relief'
 import { Route as ApiMapActionRouteImport } from './routes/api/map/action'
 import { Route as ApiMapTownTravelRouteImport } from './routes/api/map/town-travel'
 import { Route as ApiMapTravelRouteImport } from './routes/api/map/travel'
@@ -215,6 +217,11 @@ const ApiHouseStateRoute = ApiHouseStateRouteImport.update({
   path: '/api/house/state',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHousingAccessoriesRoute = ApiHousingAccessoriesRouteImport.update({
+  id: '/api/housing/accessories',
+  path: '/api/housing/accessories',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHousingChooseRoute = ApiHousingChooseRouteImport.update({
   id: '/api/housing/choose',
   path: '/api/housing/choose',
@@ -243,6 +250,11 @@ const ApiHousingItemRoute = ApiHousingItemRouteImport.update({
 const ApiHousingRentRoute = ApiHousingRentRouteImport.update({
   id: '/api/housing/rent',
   path: '/api/housing/rent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHousingRentReliefRoute = ApiHousingRentReliefRouteImport.update({
+  id: '/api/housing/rent-relief',
+  path: '/api/housing/rent-relief',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiMapActionRoute = ApiMapActionRouteImport.update({
@@ -370,12 +382,14 @@ export interface FileRoutesByFullPath {
   '/api/house/place': typeof ApiHousePlaceRoute
   '/api/house/remove': typeof ApiHouseRemoveRoute
   '/api/house/state': typeof ApiHouseStateRoute
+  '/api/housing/accessories': typeof ApiHousingAccessoriesRoute
   '/api/housing/choose': typeof ApiHousingChooseRoute
   '/api/housing/defer': typeof ApiHousingDeferRoute
   '/api/housing/eligible': typeof ApiHousingEligibleRoute
   '/api/housing/home': typeof ApiHousingHomeRoute
   '/api/housing/item': typeof ApiHousingItemRoute
   '/api/housing/rent': typeof ApiHousingRentRoute
+  '/api/housing/rent-relief': typeof ApiHousingRentReliefRoute
   '/api/map/action': typeof ApiMapActionRoute
   '/api/map/town-travel': typeof ApiMapTownTravelRoute
   '/api/map/travel': typeof ApiMapTravelRoute
@@ -424,12 +438,14 @@ export interface FileRoutesByTo {
   '/api/house/place': typeof ApiHousePlaceRoute
   '/api/house/remove': typeof ApiHouseRemoveRoute
   '/api/house/state': typeof ApiHouseStateRoute
+  '/api/housing/accessories': typeof ApiHousingAccessoriesRoute
   '/api/housing/choose': typeof ApiHousingChooseRoute
   '/api/housing/defer': typeof ApiHousingDeferRoute
   '/api/housing/eligible': typeof ApiHousingEligibleRoute
   '/api/housing/home': typeof ApiHousingHomeRoute
   '/api/housing/item': typeof ApiHousingItemRoute
   '/api/housing/rent': typeof ApiHousingRentRoute
+  '/api/housing/rent-relief': typeof ApiHousingRentReliefRoute
   '/api/map/action': typeof ApiMapActionRoute
   '/api/map/town-travel': typeof ApiMapTownTravelRoute
   '/api/map/travel': typeof ApiMapTravelRoute
@@ -481,12 +497,14 @@ export interface FileRoutesById {
   '/api/house/place': typeof ApiHousePlaceRoute
   '/api/house/remove': typeof ApiHouseRemoveRoute
   '/api/house/state': typeof ApiHouseStateRoute
+  '/api/housing/accessories': typeof ApiHousingAccessoriesRoute
   '/api/housing/choose': typeof ApiHousingChooseRoute
   '/api/housing/defer': typeof ApiHousingDeferRoute
   '/api/housing/eligible': typeof ApiHousingEligibleRoute
   '/api/housing/home': typeof ApiHousingHomeRoute
   '/api/housing/item': typeof ApiHousingItemRoute
   '/api/housing/rent': typeof ApiHousingRentRoute
+  '/api/housing/rent-relief': typeof ApiHousingRentReliefRoute
   '/api/map/action': typeof ApiMapActionRoute
   '/api/map/town-travel': typeof ApiMapTownTravelRoute
   '/api/map/travel': typeof ApiMapTravelRoute
@@ -537,12 +555,14 @@ export interface FileRouteTypes {
     | '/api/house/place'
     | '/api/house/remove'
     | '/api/house/state'
+    | '/api/housing/accessories'
     | '/api/housing/choose'
     | '/api/housing/defer'
     | '/api/housing/eligible'
     | '/api/housing/home'
     | '/api/housing/item'
     | '/api/housing/rent'
+    | '/api/housing/rent-relief'
     | '/api/map/action'
     | '/api/map/town-travel'
     | '/api/map/travel'
@@ -591,12 +611,14 @@ export interface FileRouteTypes {
     | '/api/house/place'
     | '/api/house/remove'
     | '/api/house/state'
+    | '/api/housing/accessories'
     | '/api/housing/choose'
     | '/api/housing/defer'
     | '/api/housing/eligible'
     | '/api/housing/home'
     | '/api/housing/item'
     | '/api/housing/rent'
+    | '/api/housing/rent-relief'
     | '/api/map/action'
     | '/api/map/town-travel'
     | '/api/map/travel'
@@ -647,12 +669,14 @@ export interface FileRouteTypes {
     | '/api/house/place'
     | '/api/house/remove'
     | '/api/house/state'
+    | '/api/housing/accessories'
     | '/api/housing/choose'
     | '/api/housing/defer'
     | '/api/housing/eligible'
     | '/api/housing/home'
     | '/api/housing/item'
     | '/api/housing/rent'
+    | '/api/housing/rent-relief'
     | '/api/map/action'
     | '/api/map/town-travel'
     | '/api/map/travel'
@@ -686,12 +710,14 @@ export interface RootRouteChildren {
   ApiHousePlaceRoute: typeof ApiHousePlaceRoute
   ApiHouseRemoveRoute: typeof ApiHouseRemoveRoute
   ApiHouseStateRoute: typeof ApiHouseStateRoute
+  ApiHousingAccessoriesRoute: typeof ApiHousingAccessoriesRoute
   ApiHousingChooseRoute: typeof ApiHousingChooseRoute
   ApiHousingDeferRoute: typeof ApiHousingDeferRoute
   ApiHousingEligibleRoute: typeof ApiHousingEligibleRoute
   ApiHousingHomeRoute: typeof ApiHousingHomeRoute
   ApiHousingItemRoute: typeof ApiHousingItemRoute
   ApiHousingRentRoute: typeof ApiHousingRentRoute
+  ApiHousingRentReliefRoute: typeof ApiHousingRentReliefRoute
   ApiMapActionRoute: typeof ApiMapActionRoute
   ApiMapTownTravelRoute: typeof ApiMapTownTravelRoute
   ApiMapTravelRoute: typeof ApiMapTravelRoute
@@ -917,6 +943,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHouseStateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/housing/accessories': {
+      id: '/api/housing/accessories'
+      path: '/api/housing/accessories'
+      fullPath: '/api/housing/accessories'
+      preLoaderRoute: typeof ApiHousingAccessoriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/housing/choose': {
       id: '/api/housing/choose'
       path: '/api/housing/choose'
@@ -957,6 +990,13 @@ declare module '@tanstack/react-router' {
       path: '/api/housing/rent'
       fullPath: '/api/housing/rent'
       preLoaderRoute: typeof ApiHousingRentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/housing/rent-relief': {
+      id: '/api/housing/rent-relief'
+      path: '/api/housing/rent-relief'
+      fullPath: '/api/housing/rent-relief'
+      preLoaderRoute: typeof ApiHousingRentReliefRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/map/action': {
@@ -1163,12 +1203,14 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHousePlaceRoute: ApiHousePlaceRoute,
   ApiHouseRemoveRoute: ApiHouseRemoveRoute,
   ApiHouseStateRoute: ApiHouseStateRoute,
+  ApiHousingAccessoriesRoute: ApiHousingAccessoriesRoute,
   ApiHousingChooseRoute: ApiHousingChooseRoute,
   ApiHousingDeferRoute: ApiHousingDeferRoute,
   ApiHousingEligibleRoute: ApiHousingEligibleRoute,
   ApiHousingHomeRoute: ApiHousingHomeRoute,
   ApiHousingItemRoute: ApiHousingItemRoute,
   ApiHousingRentRoute: ApiHousingRentRoute,
+  ApiHousingRentReliefRoute: ApiHousingRentReliefRoute,
   ApiMapActionRoute: ApiMapActionRoute,
   ApiMapTownTravelRoute: ApiMapTownTravelRoute,
   ApiMapTravelRoute: ApiMapTravelRoute,
