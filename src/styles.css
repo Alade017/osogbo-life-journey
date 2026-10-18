@@ -32,6 +32,33 @@
   height: 100%;
 }
 
+.auth-submit-button[aria-busy="true"] {
+  cursor: wait;
+}
+
+.auth-submit-button[aria-busy="true"]::before {
+  width: 0.9rem;
+  height: 0.9rem;
+  margin-right: 0.45rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  content: "";
+  animation: auth-button-spin 700ms linear infinite;
+}
+
+@keyframes auth-button-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-submit-button[aria-busy="true"]::before {
+    animation: none;
+  }
+}
+
 :root {
   --game-dock-height: 64px;
   --game-navigation-layer: 110;

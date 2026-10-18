@@ -41,7 +41,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
     if (mode === "signup") {
       const cleanUsername = username.trim();
       if (!/^[a-zA-Z0-9_]{3,24}$/.test(cleanUsername)) {
-        toast.error("Username must be 3–24 characters using letters, numbers or underscores.");
+        toast.error("Username must be 3â€“24 characters using letters, numbers or underscores.");
         return;
       }
     }
@@ -148,7 +148,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
             rel="noreferrer"
             className="hidden text-[11px] text-white/75 underline underline-offset-2 lg:block"
           >
-            Photo: El-Shaddaites · CC BY-SA 4.0
+            Photo: El-Shaddaites Â· CC BY-SA 4.0
           </a>
         </section>
 
@@ -161,7 +161,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
               <div>
                 <h2 className="text-2xl font-bold">Reset your password</h2>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Enter your account email and we’ll send a secure reset link.
+                  Enter your account email and weâ€™ll send a secure reset link.
                 </p>
                 <form onSubmit={submit} className="mt-6 space-y-4">
                   <div className="space-y-1.5">
@@ -179,10 +179,11 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
                     type="submit"
                     variant="default"
                     size="lg"
-                    className="w-full"
+                    className="auth-submit-button w-full"
                     disabled={busy}
+                    aria-busy={busy}
                   >
-                    {busy ? "Sending…" : "Send reset link"}
+                    {busy ? "Sendingâ€¦" : "Send reset link"}
                   </Button>
                 </form>
                 <button
@@ -225,7 +226,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
                       />
                       {mode === "signup" && (
                         <p className="text-xs text-muted-foreground">
-                          3–24 letters, numbers or underscores. Email can be added later in
+                          3â€“24 letters, numbers or underscores. Email can be added later in
                           Settings.
                         </p>
                       )}
@@ -281,11 +282,12 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
                     type="submit"
                     variant="default"
                     size="lg"
-                    className="w-full"
+                    className="auth-submit-button w-full"
                     disabled={busy}
+                    aria-busy={busy}
                   >
                     {busy
-                      ? "Please wait…"
+                      ? "Please waitâ€¦"
                       : resettingPassword
                         ? "Update password"
                         : mode === "signup"
@@ -309,9 +311,10 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
                     <Button
                       variant="plain"
                       size="lg"
-                      className="w-full"
+                      className="auth-submit-button w-full"
                       onClick={google}
                       disabled={busy}
+                    aria-busy={busy}
                     >
                       Continue with Google
                     </Button>
@@ -339,7 +342,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
                   rel="noreferrer"
                   className="mt-6 block text-center text-[10px] text-muted-foreground underline underline-offset-2 lg:hidden"
                 >
-                  Photo: El-Shaddaites · CC BY-SA 4.0
+                  Photo: El-Shaddaites Â· CC BY-SA 4.0
                 </a>
               </>
             )}

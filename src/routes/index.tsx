@@ -4,15 +4,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowRight,
   BriefcaseBusiness,
-  Check,
-  Compass,
   Headphones,
   House,
-  Map,
   LogOut,
   MapPin,
   Music2,
-  Palette,
   Sparkles,
   UsersRound,
   VolumeX,
@@ -38,18 +34,18 @@ import "@/components/game/landing.css";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "OSUN LIFE — A Nigerian life simulation game" },
+      { title: "OSUN LIFE â€” A Nigerian life simulation game" },
       {
         name: "description",
         content:
           "Create your character, find work, make a home, and build a life across a fictional Osun-inspired world.",
       },
-      { property: "og:title", content: "OSUN LIFE — A Nigerian life simulation game" },
+      { property: "og:title", content: "OSUN LIFE â€” A Nigerian life simulation game" },
       {
         property: "og:description",
         content: "Start a new story or return to your saved life in OSUN LIFE.",
       },
-      { name: "twitter:title", content: "OSUN LIFE — A Nigerian life simulation game" },
+      { name: "twitter:title", content: "OSUN LIFE â€” A Nigerian life simulation game" },
       {
         name: "twitter:description",
         content: "Find work, make a home, meet people, and shape your virtual life.",
@@ -79,7 +75,7 @@ export function resolveLandingExperience(
     return {
       mode: "checking",
       primaryLink: "/signup",
-      primaryLabel: "Checking your save…",
+      primaryLabel: "Checking your saveâ€¦",
     };
   if (sessionState === "error" || characterError)
     return { mode: "error", primaryLink: "/signup", primaryLabel: "Retry account check" };
@@ -208,37 +204,10 @@ function Landing() {
         <Link to="/" aria-label="OSUN LIFE home">
           <Logo />
         </Link>
-        <div className="landing-v2-header-actions">
-          <nav className="landing-v2-nav" aria-label="Explore OSUN LIFE">
-            <a href="#life">Your life</a>
-            <a href="#world">The world</a>
-          </nav>
-          <LandingAudio identity={character?.id ?? "public-landing"} />
-        </div>
+        <LandingAudio identity={character?.id ?? "public-landing"} />
       </header>
 
-      <section className="landing-v2-hero" aria-labelledby="landing-title">
-        <div className="landing-v2-intro">
-          <p className="landing-v2-eyebrow">
-            <Sparkles aria-hidden="true" /> An original Nigerian life simulation
-          </p>
-          <h1 id="landing-title">
-            Your life has a <em>place to grow.</em>
-          </h1>
-          <p>
-            Create a character, find work, make a home, and meet people in a fictional social world
-            inspired by everyday life across Osun State.
-          </p>
-          <div className="landing-v2-hero-signals" aria-label="Game highlights">
-            <span>
-              <Check aria-hidden="true" /> Build your character
-            </span>
-            <span>
-              <Check aria-hidden="true" /> Shape your home
-            </span>
-          </div>
-        </div>
-
+      <section className="landing-v2-stage" aria-labelledby="landing-title">
         <div className="landing-v2-world" aria-label="A preview of the OSUN LIFE world">
           <img
             className="landing-v2-world-photo"
@@ -258,9 +227,27 @@ function Landing() {
             />
           </div>
           <span className="landing-v2-world-label">
-            <MapPin aria-hidden="true" /> A world with room for your story
+            <MapPin aria-hidden="true" /> Your Osun story starts here
           </span>
           <span className="landing-v2-photo-credit">Photo: El-Shaddaites · CC BY-SA 4.0</span>
+        </div>
+
+        <div className="landing-v2-intro">
+          <p className="landing-v2-eyebrow">
+            <Sparkles aria-hidden="true" /> An original Nigerian life simulation
+          </p>
+          <h1 id="landing-title">
+            Make your life <em>your own.</em>
+          </h1>
+          <p>
+            Create your character, find your place, and grow a life in a fictional Osun-inspired
+            social world.
+          </p>
+          <div className="landing-v2-hero-signals" aria-label="Game highlights">
+            <span><House aria-hidden="true" /> Make a home</span>
+            <span><BriefcaseBusiness aria-hidden="true" /> Build a career</span>
+            <span><UsersRound aria-hidden="true" /> Meet people</span>
+          </div>
         </div>
 
         <section className="landing-v2-start-card" aria-live="polite">
@@ -290,9 +277,7 @@ function Landing() {
                 </span>
                 <span className="landing-v2-player-copy">
                   <strong>{returning.name}</strong>
-                  <small>
-                    Level {returning.level} · {location?.name ?? "Saved in Osun"}
-                  </small>
+                  <small>Level {returning.level} · {location?.name ?? "Saved in Osun"}</small>
                 </span>
                 <span className="landing-v2-balance">
                   <WalletCards aria-hidden="true" />
@@ -304,69 +289,39 @@ function Landing() {
                 </span>
               </div>
               <Button asChild size="lg" className="landing-v2-primary">
-                <Link to="/enter">
-                  Continue your life <ArrowRight aria-hidden="true" />
-                </Link>
+                <Link to="/enter">Continue your life <ArrowRight aria-hidden="true" /></Link>
               </Button>
               <div className="landing-v2-account-actions">
                 <Link to="/profile">Account and profile</Link>
                 <button type="button" disabled={signingOut} onClick={() => void signOut()}>
-                  <LogOut aria-hidden="true" /> {signingOut ? "Signing out…" : "Sign out"}
+                  <LogOut aria-hidden="true" /> {signingOut ? "Signing out..." : "Sign out"}
                 </button>
               </div>
             </>
           ) : (
             <>
               <p className="landing-v2-card-kicker">Start your story</p>
-              <h2>Make today the beginning of something yours.</h2>
-              <p className="landing-v2-card-copy">
-                Set up your player, choose your first direction, and let the city open up around
-                you.
-              </p>
+              <h2>Begin with a life that grows with you.</h2>
               <ol className="landing-v2-steps" aria-label="How your story begins">
-                <li>
-                  <span>1</span>
-                  <strong>Create</strong>
-                </li>
-                <li>
-                  <span>2</span>
-                  <strong>Settle in</strong>
-                </li>
-                <li>
-                  <span>3</span>
-                  <strong>Explore</strong>
-                </li>
+                <li><span>1</span><strong>Create</strong></li>
+                <li><span>2</span><strong>Settle in</strong></li>
+                <li><span>3</span><strong>Explore</strong></li>
               </ol>
               <Button asChild size="lg" className="landing-v2-primary">
-                <Link to={experience.primaryLink}>
-                  {experience.primaryLabel} <ArrowRight aria-hidden="true" />
-                </Link>
+                <Link to={experience.primaryLink}>{experience.primaryLabel} <ArrowRight aria-hidden="true" /></Link>
               </Button>
               {sessionState === "signed-out" ? (
-                <Link to="/login" className="landing-v2-secondary">
-                  I already have an account
-                </Link>
+                <Link to="/login" className="landing-v2-secondary">I already have an account</Link>
               ) : (
-                <button
-                  type="button"
-                  className="landing-v2-secondary"
-                  onClick={() => void signOut()}
-                >
+                <button type="button" className="landing-v2-secondary" onClick={() => void signOut()}>
                   Sign out
                 </button>
               )}
-              <small className="landing-v2-money-note">
-                Free to play. All naira amounts are fictional game values.
-              </small>
+              <small className="landing-v2-money-note">Free to play. All naira amounts are fictional game values.</small>
             </>
           )}
         </section>
       </section>
-      <footer className="landing-v2-footer">
-        <Logo />
-        <span>OSUN LIFE. An original fictional Nigerian life simulation.</span>
-        <Link to="/login">Account</Link>
-      </footer>
     </main>
   );
 }
