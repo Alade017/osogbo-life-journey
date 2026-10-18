@@ -15,8 +15,45 @@
 .town-map-canvas {
   position: relative;
   isolation: isolate;
-  background: var(--background);
+  background: color-mix(in srgb, var(--scene-sky) 68%, var(--background));
   overflow: hidden;
+}
+
+.town-map-canvas .town-map-loading {
+  max-width: calc(100vw - 2rem);
+  padding: 0.65rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  box-shadow: var(--elevation-card);
+  font:
+    600 0.8rem/1.2 system-ui,
+    sans-serif;
+  white-space: nowrap;
+}
+
+.town-map-canvas .town-house-badge {
+  display: inline-block;
+  max-width: 12rem;
+  padding: 0.3rem 0.55rem;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 85%, transparent);
+  border-radius: 999px;
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--card) 94%, transparent);
+  box-shadow: var(--elevation-card);
+  font:
+    650 0.68rem/1.2 system-ui,
+    sans-serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.town-map-canvas .town-house-badge.is-rent_due,
+.town-map-canvas .town-house-badge.is-overdue {
+  border-color: color-mix(in srgb, var(--destructive, #b42318) 55%, var(--border));
 }
 
 .town-map-canvas > div:first-child,

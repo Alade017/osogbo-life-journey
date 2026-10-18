@@ -1,6 +1,7 @@
 import {
   Component,
   memo,
+  Suspense,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -12,7 +13,9 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import type * as React from "react";
-import { SceneHtml as Html } from "@/components/3d/SceneHtml";
+import { Canvas } from "@react-three/fiber";
+import { Html, useGLTF, useProgress } from "@react-three/drei";
+import { clone } from "three/addons/utils/SkeletonUtils.js";
 import {
   BusFront,
   Cloud,
@@ -25,10 +28,12 @@ import {
   Trophy,
   Utensils,
 } from "lucide-react";
-import { Scene } from "@/components/3d/Scene";
+import { Camera } from "@/components/3d/Camera";
+import { Lights } from "@/components/3d/Lights";
 import { Model } from "@/components/3d/Model";
 import townData from "@/data/osogbo-town.json";
 import { getSceneColor } from "@/lib/scene-colors";
+import { DRACO_PATH } from "@/types/models";
 import {
   expandTownGridLayout,
   mapTownGridToScene,
@@ -61,6 +66,14 @@ export type MapBillboardMarker = {
   imageUrl?: string | null;
   count: number;
 };
+export type MapProperty = {
+  id: string;
+  type: "compound" | "flat" | "shophouse";
+  tier: number;
+  status: "owned" | "rent_due" | "overdue" | "vacant";
+  position: [number, number, number];
+  ownerName?: string;
+};
 
 export interface MapCanvasProps {
   onSelectDistrict: (id: string) => void;
@@ -72,6 +85,7 @@ export interface MapCanvasProps {
   jobLandmarkIds?: string[];
   billboardMarkers?: MapBillboardMarker[];
   onSelectBillboard?: (campaignId: string) => void;
+  properties?: MapProperty[];
 }
 
 const gridLayout = townData.grid;
@@ -125,7 +139,7 @@ const labelFor = (value: string) =>
 
 // A failed optional model must not make the whole playable map disappear.
 class MapModelBoundary extends Component<
-  { children: ReactNode; name: string },
+  { children: ReactNode; name: string; fallback?: ReactNode },
   { failed: boolean }
 > {
   override state = { failed: false };
@@ -136,14 +150,14 @@ class MapModelBoundary extends Component<
     console.warn(`Map model unavailable: ${this.props.name}`, error);
   }
   override render() {
-    return this.state.failed ? (
-      <mesh position={[0, 0.55, 0]}>
-        <boxGeometry args={[0.9, 1.1, 0.9]} />
-        <meshStandardMaterial color={getSceneColor("--scene-building")} />
-      </mesh>
-    ) : (
-      this.props.children
-    );
+    return this.state.failed
+      ? (this.props.fallback ?? (
+          <mesh position={[0, 0.55, 0]}>
+            <boxGeometry args={[0.9, 1.1, 0.9]} />
+            <meshStandardMaterial color={getSceneColor("--scene-building")} />
+          </mesh>
+        ))
+      : this.props.children;
   }
 }
 
@@ -182,7 +196,7 @@ function TownInstances({
   );
 }
 
-const TownBase = memo(function TownBase() {
+const TownBaseFallback = memo(function TownBaseFallback() {
   const colors = useMemo(
     () => ({
       grass: getSceneColor("--scene-hill"),
@@ -207,6 +221,77 @@ const TownBase = memo(function TownBase() {
     </group>
   );
 });
+
+function TownBase() {
+  return (
+    <MapModelBoundary name="town.glb" fallback={<TownBaseFallback />}>
+      <Model modelPath="/models/town.glb" />
+    </MapModelBoundary>
+  );
+}
+
+const HOUSE_MODELS: Record<MapProperty["type"], string> = {
+  compound: "/models/compound.glb",
+  flat: "/models/flat.glb",
+  shophouse: "/models/shophouse.glb",
+};
+const PROPERTY_STATUS_LABEL: Record<MapProperty["status"], string> = {
+  owned: "Owned",
+  rent_due: "Rent due",
+  overdue: "Rent overdue",
+  vacant: "Vacant",
+};
+
+function HouseAsset({ type, tier }: Pick<MapProperty, "type" | "tier">) {
+  const { scene } = useGLTF(HOUSE_MODELS[type], DRACO_PATH);
+  const object = useMemo(() => clone(scene), [scene]);
+  useLayoutEffect(() => {
+    object.traverse((child) => {
+      if (!child.name.startsWith("Accessory_Tier")) return;
+      const match = child.name.match(/^Accessory_Tier(\d+)/);
+      if (match) child.visible = Number(match[1]) <= tier;
+    });
+  }, [object, tier]);
+  return <primitive object={object} dispose={null} />;
+}
+
+function House({ property }: { property: MapProperty }) {
+  const badge =
+    property.status === "owned" && property.ownerName
+      ? property.ownerName
+      : PROPERTY_STATUS_LABEL[property.status];
+  return (
+    <group position={property.position}>
+      <MapModelBoundary key={HOUSE_MODELS[property.type]} name={HOUSE_MODELS[property.type]}>
+        <HouseAsset type={property.type} tier={property.tier} />
+      </MapModelBoundary>
+      <Html position={[0, 2.2, 0]} center distanceFactor={12}>
+        <span className={`town-house-badge is-${property.status}`}>{badge}</span>
+      </Html>
+    </group>
+  );
+}
+
+function PropertyHouses({ properties }: { properties: MapProperty[] }) {
+  return (
+    <>
+      {properties.map((property) => (
+        <House key={property.id} property={property} />
+      ))}
+    </>
+  );
+}
+
+function MapLoading() {
+  const { progress } = useProgress();
+  return (
+    <Html center>
+      <div className="town-map-loading" role="status">
+        Loading town… {Math.round(progress)}%
+      </div>
+    </Html>
+  );
+}
 
 function TownPropInstances({ kind }: { kind: "tree" | "car" }) {
   const first = useRef<InstancedMesh>(null);
@@ -547,14 +632,33 @@ function PlaceOverlays({
 
 function IsometricTown({
   zoom,
+  properties,
   ...props
-}: Omit<React.ComponentProps<typeof PlaceOverlays>, "zoom"> & { zoom: number }) {
+}: Omit<React.ComponentProps<typeof PlaceOverlays>, "zoom"> & {
+  zoom: number;
+  properties: MapProperty[];
+}) {
   return (
-    <Scene zoom={zoom} mapControls>
-      <TownBase />
-      <PlaceModels />
-      <PlaceOverlays zoom={zoom} {...props} />
-    </Scene>
+    <Canvas
+      orthographic
+      dpr={[1, 2]}
+      shadows={false}
+      frameloop="demand"
+      gl={{ antialias: false, alpha: false, powerPreference: "low-power" }}
+      fallback={<p role="alert">3D requires WebGL. Your browser could not start it.</p>}
+      camera={{ position: [16, 18, 16], zoom, near: 0.1, far: 100 }}
+      style={{ width: "100%", height: "100%" }}
+    >
+      <color attach="background" args={[getSceneColor("--scene-sky")]} />
+      <Camera zoom={zoom} mapControls />
+      <Lights />
+      <Suspense fallback={<MapLoading />}>
+        <TownBase />
+        <PlaceModels />
+        <PropertyHouses properties={properties} />
+        <PlaceOverlays zoom={zoom} {...props} />
+      </Suspense>
+    </Canvas>
   );
 }
 
@@ -568,6 +672,7 @@ export function MapCanvas({
   jobLandmarkIds = [],
   billboardMarkers = [],
   onSelectBillboard,
+  properties = [],
 }: MapCanvasProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const pointerStart = useRef<{ x: number; y: number; time: number } | null>(null);
@@ -687,6 +792,7 @@ export function MapCanvas({
           ? { onSelectBillboard: (id: string) => callbacks.current.onSelectBillboard?.(id) }
           : {})}
         tapAllowed={tapAllowed}
+        properties={properties}
       />
       <p className="town-map-gesture-hint">
         Drag to move · Wheel, pinch or right-drag to zoom · Double-click for overview
