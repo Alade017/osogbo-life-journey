@@ -2,11 +2,17 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, expect, it, vi } from "vitest";
 import { WorldAudioSettings } from "../components/game/WorldAudioSettings";
 
-const audio = vi.hoisted(() => ({ enable: vi.fn(), save: vi.fn(), disable: vi.fn() }));
+const audio = vi.hoisted(() => ({
+  enable: vi.fn(),
+  save: vi.fn(),
+  disable: vi.fn(),
+  play: vi.fn(),
+}));
 vi.mock("@/lib/game-audio", () => ({
   readGameAudioLevels: () => ({ master: 0.55, music: 0.2, effects: 0.45 }),
   setGameAudioLevels: audio.save,
   enableGameAudio: audio.enable,
+  playGameSound: audio.play,
   disableGameAudio: audio.disable,
 }));
 beforeEach(() => {
@@ -28,6 +34,11 @@ it("turns music off while keeping effects on", async () => {
   );
   expect(screen.getByRole("switch", { name: "Sound effects" })).toBeChecked();
   expect(changed).toHaveBeenCalledWith(true);
+});
+it("previews effects only when that channel is turned on", async () => {
+  render(<WorldAudioSettings enabled={false} onEnabledChange={() => {}} />);
+  fireEvent.click(screen.getByRole("switch", { name: "Sound effects" }));
+  await waitFor(() => expect(audio.play).toHaveBeenCalledWith("ui"));
 });
 it("reports unavailable audio without claiming the preference saved", async () => {
   audio.enable.mockResolvedValue(false);

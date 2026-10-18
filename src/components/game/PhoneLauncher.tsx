@@ -10,17 +10,24 @@ import {
 import {
   Backpack,
   Bell,
+  Bike,
+  BookOpen,
   BriefcaseBusiness,
   Building2,
+  CalendarDays,
   ChartNoAxesCombined,
   ChevronLeft,
   GraduationCap,
+  HandCoins,
   House,
   HousePlus,
   MapPinned,
   MessagesSquare,
+  Newspaper,
   PanelsTopLeft,
   Target,
+  Trophy,
+  UtensilsCrossed,
   Landmark,
   Settings,
   Store,
@@ -39,6 +46,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import { PlayerSocial } from "@/components/game/PlayerSocial";
 import { BusinessInvestmentApp } from "@/components/game/BusinessInvestmentApp";
 import { BillboardAdApp } from "@/components/game/BillboardAdApp";
+import { CommunityPhoneApps, type CommunityPhoneApp } from "@/components/game/CommunityPhoneApps";
+import { CourseAndStallApps, type CourseAndStallApp } from "@/components/game/CourseAndStallApps";
 import "./phone.css";
 
 const PHONE_APPS = [
@@ -91,7 +100,31 @@ const PHONE_APPS = [
     active: true,
   },
   { label: "Settings", to: "/settings", icon: Settings, tone: "phone-app-muted", active: true },
+  { label: "Calendar", to: null, icon: CalendarDays, tone: "phone-app-blue", active: true },
+  {
+    label: "Food Delivery",
+    to: null,
+    icon: UtensilsCrossed,
+    tone: "phone-app-coral",
+    active: true,
+  },
+  { label: "Okada Rides", to: null, icon: Bike, tone: "phone-app-green", active: true },
+  { label: "Contribution", to: null, icon: HandCoins, tone: "phone-app-gold", active: true },
+  { label: "Leaderboard", to: null, icon: Trophy, tone: "phone-app-gold", active: true },
+  { label: "Town News", to: null, icon: Newspaper, tone: "phone-app-blue", active: true },
+  { label: "Courses", to: null, icon: BookOpen, tone: "phone-app-blue", active: true },
+  { label: "Market Stalls", to: null, icon: Store, tone: "phone-app-green", active: true },
 ] as const;
+
+const COMMUNITY_APPS = new Set<CommunityPhoneApp>([
+  "Calendar",
+  "Food Delivery",
+  "Okada Rides",
+  "Contribution",
+  "Leaderboard",
+  "Town News",
+]);
+const COURSE_AND_STALL_APPS = new Set<CourseAndStallApp>(["Courses", "Market Stalls"]);
 
 export function PhoneLauncher({
   className,
@@ -244,6 +277,36 @@ export function PhoneLauncher({
               </div>
               <BillboardAdApp />
             </div>
+          ) : activeApp && COMMUNITY_APPS.has(activeApp as CommunityPhoneApp) ? (
+            <div className="phone-app-view">
+              <div className="phone-app-toolbar">
+                <button
+                  type="button"
+                  onClick={() => setActiveApp(null)}
+                  aria-label="Back to phone apps"
+                >
+                  <ChevronLeft size={16} aria-hidden="true" /> <span>Apps</span>
+                </button>
+                <strong>{activeApp}</strong>
+                <span aria-hidden="true" />
+              </div>
+              <CommunityPhoneApps app={activeApp as CommunityPhoneApp} />
+            </div>
+          ) : activeApp && COURSE_AND_STALL_APPS.has(activeApp as CourseAndStallApp) ? (
+            <div className="phone-app-view">
+              <div className="phone-app-toolbar">
+                <button
+                  type="button"
+                  onClick={() => setActiveApp(null)}
+                  aria-label="Back to phone apps"
+                >
+                  <ChevronLeft size={16} aria-hidden="true" /> <span>Apps</span>
+                </button>
+                <strong>{activeApp}</strong>
+                <span aria-hidden="true" />
+              </div>
+              <CourseAndStallApps app={activeApp as CourseAndStallApp} />
+            </div>
           ) : (
             <>
               {missionCount > 0 && (
@@ -282,7 +345,9 @@ export function PhoneLauncher({
                     app.label === "Messages" ||
                     app.label === "Invest" ||
                     app.label === "Company" ||
-                    app.label === "Billboards"
+                    app.label === "Billboards" ||
+                    COMMUNITY_APPS.has(app.label as CommunityPhoneApp) ||
+                    COURSE_AND_STALL_APPS.has(app.label as CourseAndStallApp)
                   ) {
                     return (
                       <button

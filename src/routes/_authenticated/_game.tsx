@@ -93,11 +93,17 @@ function GameLayout() {
   const unread = notes?.filter((n) => !n.read_at).length ?? 0;
   useEffect(() => {
     configureGameMusic(character?.id ?? null);
-    if (character?.id && profile?.sound_enabled) startGameAudioSession();
     return () => {
       configureGameMusic(null);
       void disableGameAudio();
     };
+  }, [character?.id]);
+  useEffect(() => {
+    if (character?.id && profile?.sound_enabled) {
+      startGameAudioSession();
+      return;
+    }
+    void disableGameAudio();
   }, [character?.id, profile?.sound_enabled]);
   useEffect(() => {
     if (!character?.id || !character.current_location_id) return;
@@ -279,7 +285,13 @@ function GameLayout() {
             </div>
           </aside>
           <div className="city-game-content">
-            <GameHUD player={player} location={currentLocation?.name ?? "Osogbo"} unread={unread} />
+            {pathname === "/home" && (
+              <GameHUD
+                player={player}
+                location={currentLocation?.name ?? "Osogbo"}
+                unread={unread}
+              />
+            )}
             {pathname !== "/settings" && <GameNeedsRail />}
             <main className="city-game-main">
               <Outlet />

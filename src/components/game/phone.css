@@ -1366,3 +1366,256 @@
     transition: none;
   }
 }
+
+/* Phone apps inherit the active phone theme. Fixed black text made the
+   messaging, finance and billboard cards unreadable on dark surfaces. */
+.phone-app-view,
+.phone-app-view .phone-app-toolbar,
+.phone-status-page,
+.phone-theme-page,
+.phone-messenger,
+.phone-messenger .phone-chat-panel,
+.phone-messenger .phone-chat-panel li,
+.phone-messenger textarea,
+.phone-messenger input,
+.phone-inbox-search input,
+.phone-player-search-input,
+.phone-conversation,
+.phone-contact-row,
+.phone-message-bubble,
+.phone-chat-input,
+.phone-app-view .phone-finance-app,
+.phone-app-view .phone-finance-card,
+.phone-app-view .billboard-ad-app {
+  color: var(--foreground);
+}
+
+.phone-app-view .phone-app-toolbar,
+.phone-messenger .phone-chat-panel li,
+.phone-message-bubble,
+.phone-chat-input,
+.phone-app-view .phone-finance-card {
+  background: var(--card);
+}
+
+.phone-messenger textarea,
+.phone-messenger input,
+.phone-inbox-search input,
+.phone-player-search-input {
+  background: transparent;
+}
+
+.phone-app-view .phone-finance-app,
+.phone-app-view .billboard-ad-app {
+  background: var(--background);
+}
+
+/* Local-only community apps: all interaction stays in component state. */
+.phone-local-app {
+  display: grid;
+  min-height: 0;
+  flex: 1;
+  align-content: start;
+  gap: 0.75rem;
+  overflow-y: auto;
+  padding: 0.9rem;
+  color: var(--foreground);
+  background: var(--background);
+}
+.phone-local-app > header,
+.phone-local-card {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+.phone-local-app > header > svg {
+  width: 2.5rem;
+  height: 2.5rem;
+  flex: 0 0 2.5rem;
+  padding: 0.55rem;
+  border-radius: 0.8rem;
+  color: var(--primary);
+  background: var(--secondary);
+}
+.phone-local-app header span,
+.phone-local-card > div,
+.phone-local-ranks span {
+  display: grid;
+  min-width: 0;
+  gap: 0.16rem;
+}
+.phone-local-app strong {
+  font-size: 0.9rem;
+}
+.phone-local-app small,
+.phone-local-note {
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+}
+.phone-local-list {
+  display: grid;
+  gap: 0.55rem;
+}
+.phone-local-card {
+  min-height: 4.6rem;
+  justify-content: space-between;
+  padding: 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 0.85rem;
+  background: var(--card);
+}
+.phone-local-card time,
+.phone-local-card > b {
+  color: var(--primary);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+.phone-local-card > svg {
+  width: 1rem;
+  color: var(--muted-foreground);
+}
+.phone-local-card b {
+  color: var(--primary);
+  font-size: 0.78rem;
+}
+.phone-local-card p {
+  margin: 0.15rem 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+.phone-local-card button,
+.phone-local-tabs button {
+  min-width: 44px;
+  min-height: 36px;
+  padding: 0 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  color: var(--primary);
+  background: var(--background);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+.phone-local-card button[aria-pressed="true"] {
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+.phone-local-action {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0 0.9rem;
+  border: 0;
+  border-radius: 0.8rem;
+  color: var(--primary-foreground);
+  background: var(--primary);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+.phone-local-action:disabled {
+  opacity: 0.52;
+}
+.phone-local-app > footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  padding-top: 0.25rem;
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+}
+.phone-local-app > footer button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 0.7rem;
+  color: var(--primary-foreground);
+  background: var(--primary);
+  font: inherit;
+  font-weight: 800;
+}
+.phone-local-field {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--foreground);
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+.phone-local-field :is(input, select) {
+  min-height: 44px;
+  padding: 0 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  color: var(--foreground);
+  background: var(--card);
+  font: inherit;
+}
+.phone-local-card progress {
+  width: 100%;
+  height: 0.45rem;
+  accent-color: var(--primary);
+}
+.phone-local-tabs {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+}
+.phone-local-tabs button[aria-pressed="true"] {
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+.phone-local-ranks {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+.phone-local-ranks li {
+  display: flex;
+  min-height: 3.7rem;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  background: var(--card);
+}
+.phone-local-ranks li > b {
+  display: grid;
+  width: 1.75rem;
+  height: 1.75rem;
+  flex: 0 0 1.75rem;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--primary);
+  background: var(--secondary);
+  font-size: 0.75rem;
+}
+.phone-local-ranks li > svg {
+  margin-left: auto;
+  width: 1rem;
+  color: #b7791f;
+}
+.phone-stall-builder {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  background: color-mix(in srgb, var(--secondary) 42%, var(--card));
+}
+.phone-stall-builder > strong {
+  color: var(--foreground);
+}
+@media (max-width: 360px) {
+  .phone-local-app {
+    padding: 0.7rem;
+  }
+  .phone-local-card {
+    padding: 0.6rem;
+  }
+}

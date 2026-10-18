@@ -131,6 +131,32 @@ export const soundEffects: SoundEffect[] = [
     licenseUrl: "https://creativecommons.org/publicdomain/zero/1.0/",
     licenseCheckedAt: "2026-10-18",
   },
+  {
+    id: "kenney-confirmation_001-health-recharge",
+    sound: "health-recharge",
+    title: "Interface Sounds - confirmation_001 (health recovery)",
+    artist: "Kenney",
+    uploader: "Kenney",
+    filePath: "/audio/sfx/kenney-confirmation_001.ogg",
+    duration: 0.28984126984126984,
+    sourceUrl: "https://kenney.nl/assets/interface-sounds",
+    licenseName: "CC0 1.0 Universal",
+    licenseUrl: "https://creativecommons.org/publicdomain/zero/1.0/",
+    licenseCheckedAt: "2026-10-18",
+  },
+  {
+    id: "kenney-open_001-energy-recharge",
+    sound: "energy-recharge",
+    title: "Interface Sounds - open_001 (energy recovery)",
+    artist: "Kenney",
+    uploader: "Kenney",
+    filePath: "/audio/sfx/kenney-open_001.ogg",
+    duration: 0.14777777777777779,
+    sourceUrl: "https://kenney.nl/assets/interface-sounds",
+    licenseName: "CC0 1.0 Universal",
+    licenseUrl: "https://creativecommons.org/publicdomain/zero/1.0/",
+    licenseCheckedAt: "2026-10-18",
+  },
 ];
 export function validSoundEffects(records: readonly SoundEffect[]): SoundEffect[] {
   const valid = new Set(validMusicTracks(records, "sfx"));

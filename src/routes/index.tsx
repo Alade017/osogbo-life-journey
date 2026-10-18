@@ -34,18 +34,18 @@ import "@/components/game/landing.css";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "OSUN LIFE â€” A Nigerian life simulation game" },
+      { title: "OSUN LIFE — A Nigerian life simulation game" },
       {
         name: "description",
         content:
           "Create your character, find work, make a home, and build a life across a fictional Osun-inspired world.",
       },
-      { property: "og:title", content: "OSUN LIFE â€” A Nigerian life simulation game" },
+      { property: "og:title", content: "OSUN LIFE — A Nigerian life simulation game" },
       {
         property: "og:description",
         content: "Start a new story or return to your saved life in OSUN LIFE.",
       },
-      { name: "twitter:title", content: "OSUN LIFE â€” A Nigerian life simulation game" },
+      { name: "twitter:title", content: "OSUN LIFE — A Nigerian life simulation game" },
       {
         name: "twitter:description",
         content: "Find work, make a home, meet people, and shape your virtual life.",
@@ -75,7 +75,7 @@ export function resolveLandingExperience(
     return {
       mode: "checking",
       primaryLink: "/signup",
-      primaryLabel: "Checking your saveâ€¦",
+      primaryLabel: "Checking your save…",
     };
   if (sessionState === "error" || characterError)
     return { mode: "error", primaryLink: "/signup", primaryLabel: "Retry account check" };
@@ -244,9 +244,15 @@ function Landing() {
             social world.
           </p>
           <div className="landing-v2-hero-signals" aria-label="Game highlights">
-            <span><House aria-hidden="true" /> Make a home</span>
-            <span><BriefcaseBusiness aria-hidden="true" /> Build a career</span>
-            <span><UsersRound aria-hidden="true" /> Meet people</span>
+            <span>
+              <House aria-hidden="true" /> Make a home
+            </span>
+            <span>
+              <BriefcaseBusiness aria-hidden="true" /> Build a career
+            </span>
+            <span>
+              <UsersRound aria-hidden="true" /> Meet people
+            </span>
           </div>
         </div>
 
@@ -277,7 +283,9 @@ function Landing() {
                 </span>
                 <span className="landing-v2-player-copy">
                   <strong>{returning.name}</strong>
-                  <small>Level {returning.level} · {location?.name ?? "Saved in Osun"}</small>
+                  <small>
+                    Level {returning.level} · {location?.name ?? "Saved in Osun"}
+                  </small>
                 </span>
                 <span className="landing-v2-balance">
                   <WalletCards aria-hidden="true" />
@@ -289,7 +297,9 @@ function Landing() {
                 </span>
               </div>
               <Button asChild size="lg" className="landing-v2-primary">
-                <Link to="/enter">Continue your life <ArrowRight aria-hidden="true" /></Link>
+                <Link to="/enter">
+                  Continue your life <ArrowRight aria-hidden="true" />
+                </Link>
               </Button>
               <div className="landing-v2-account-actions">
                 <Link to="/profile">Account and profile</Link>
@@ -303,21 +313,40 @@ function Landing() {
               <p className="landing-v2-card-kicker">Start your story</p>
               <h2>Begin with a life that grows with you.</h2>
               <ol className="landing-v2-steps" aria-label="How your story begins">
-                <li><span>1</span><strong>Create</strong></li>
-                <li><span>2</span><strong>Settle in</strong></li>
-                <li><span>3</span><strong>Explore</strong></li>
+                <li>
+                  <span>1</span>
+                  <strong>Create</strong>
+                </li>
+                <li>
+                  <span>2</span>
+                  <strong>Settle in</strong>
+                </li>
+                <li>
+                  <span>3</span>
+                  <strong>Explore</strong>
+                </li>
               </ol>
               <Button asChild size="lg" className="landing-v2-primary">
-                <Link to={experience.primaryLink}>{experience.primaryLabel} <ArrowRight aria-hidden="true" /></Link>
+                <Link to={experience.primaryLink}>
+                  {experience.primaryLabel} <ArrowRight aria-hidden="true" />
+                </Link>
               </Button>
               {sessionState === "signed-out" ? (
-                <Link to="/login" className="landing-v2-secondary">I already have an account</Link>
+                <Link to="/login" className="landing-v2-secondary">
+                  I already have an account
+                </Link>
               ) : (
-                <button type="button" className="landing-v2-secondary" onClick={() => void signOut()}>
+                <button
+                  type="button"
+                  className="landing-v2-secondary"
+                  onClick={() => void signOut()}
+                >
                   Sign out
                 </button>
               )}
-              <small className="landing-v2-money-note">Free to play. All naira amounts are fictional game values.</small>
+              <small className="landing-v2-money-note">
+                Free to play. All naira amounts are fictional game values.
+              </small>
             </>
           )}
         </section>

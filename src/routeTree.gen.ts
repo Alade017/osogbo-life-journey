@@ -41,6 +41,7 @@ import { Route as ApiHouseRemoveRouteImport } from './routes/api/house/remove'
 import { Route as ApiHouseStateRouteImport } from './routes/api/house/state'
 import { Route as ApiHousingAccessoriesRouteImport } from './routes/api/housing/accessories'
 import { Route as ApiHousingChooseRouteImport } from './routes/api/housing/choose'
+import { Route as ApiHousingCurrentHomeRouteImport } from './routes/api/housing/current-home'
 import { Route as ApiHousingDeferRouteImport } from './routes/api/housing/defer'
 import { Route as ApiHousingEligibleRouteImport } from './routes/api/housing/eligible'
 import { Route as ApiHousingHomeRouteImport } from './routes/api/housing/home'
@@ -237,6 +238,11 @@ const ApiHousingChooseRoute = ApiHousingChooseRouteImport.update({
   path: '/api/housing/choose',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHousingCurrentHomeRoute = ApiHousingCurrentHomeRouteImport.update({
+  id: '/api/housing/current-home',
+  path: '/api/housing/current-home',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHousingDeferRoute = ApiHousingDeferRouteImport.update({
   id: '/api/housing/defer',
   path: '/api/housing/defer',
@@ -411,6 +417,7 @@ export interface FileRoutesByFullPath {
   '/api/house/state': typeof ApiHouseStateRoute
   '/api/housing/accessories': typeof ApiHousingAccessoriesRoute
   '/api/housing/choose': typeof ApiHousingChooseRoute
+  '/api/housing/current-home': typeof ApiHousingCurrentHomeRoute
   '/api/housing/defer': typeof ApiHousingDeferRoute
   '/api/housing/eligible': typeof ApiHousingEligibleRoute
   '/api/housing/home': typeof ApiHousingHomeRoute
@@ -471,6 +478,7 @@ export interface FileRoutesByTo {
   '/api/house/state': typeof ApiHouseStateRoute
   '/api/housing/accessories': typeof ApiHousingAccessoriesRoute
   '/api/housing/choose': typeof ApiHousingChooseRoute
+  '/api/housing/current-home': typeof ApiHousingCurrentHomeRoute
   '/api/housing/defer': typeof ApiHousingDeferRoute
   '/api/housing/eligible': typeof ApiHousingEligibleRoute
   '/api/housing/home': typeof ApiHousingHomeRoute
@@ -534,6 +542,7 @@ export interface FileRoutesById {
   '/api/house/state': typeof ApiHouseStateRoute
   '/api/housing/accessories': typeof ApiHousingAccessoriesRoute
   '/api/housing/choose': typeof ApiHousingChooseRoute
+  '/api/housing/current-home': typeof ApiHousingCurrentHomeRoute
   '/api/housing/defer': typeof ApiHousingDeferRoute
   '/api/housing/eligible': typeof ApiHousingEligibleRoute
   '/api/housing/home': typeof ApiHousingHomeRoute
@@ -596,6 +605,7 @@ export interface FileRouteTypes {
     | '/api/house/state'
     | '/api/housing/accessories'
     | '/api/housing/choose'
+    | '/api/housing/current-home'
     | '/api/housing/defer'
     | '/api/housing/eligible'
     | '/api/housing/home'
@@ -656,6 +666,7 @@ export interface FileRouteTypes {
     | '/api/house/state'
     | '/api/housing/accessories'
     | '/api/housing/choose'
+    | '/api/housing/current-home'
     | '/api/housing/defer'
     | '/api/housing/eligible'
     | '/api/housing/home'
@@ -718,6 +729,7 @@ export interface FileRouteTypes {
     | '/api/house/state'
     | '/api/housing/accessories'
     | '/api/housing/choose'
+    | '/api/housing/current-home'
     | '/api/housing/defer'
     | '/api/housing/eligible'
     | '/api/housing/home'
@@ -762,6 +774,7 @@ export interface RootRouteChildren {
   ApiHouseStateRoute: typeof ApiHouseStateRoute
   ApiHousingAccessoriesRoute: typeof ApiHousingAccessoriesRoute
   ApiHousingChooseRoute: typeof ApiHousingChooseRoute
+  ApiHousingCurrentHomeRoute: typeof ApiHousingCurrentHomeRoute
   ApiHousingDeferRoute: typeof ApiHousingDeferRoute
   ApiHousingEligibleRoute: typeof ApiHousingEligibleRoute
   ApiHousingHomeRoute: typeof ApiHousingHomeRoute
@@ -1015,6 +1028,13 @@ declare module '@tanstack/react-router' {
       path: '/api/housing/choose'
       fullPath: '/api/housing/choose'
       preLoaderRoute: typeof ApiHousingChooseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/housing/current-home': {
+      id: '/api/housing/current-home'
+      path: '/api/housing/current-home'
+      fullPath: '/api/housing/current-home'
+      preLoaderRoute: typeof ApiHousingCurrentHomeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/housing/defer': {
@@ -1288,6 +1308,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHouseStateRoute: ApiHouseStateRoute,
   ApiHousingAccessoriesRoute: ApiHousingAccessoriesRoute,
   ApiHousingChooseRoute: ApiHousingChooseRoute,
+  ApiHousingCurrentHomeRoute: ApiHousingCurrentHomeRoute,
   ApiHousingDeferRoute: ApiHousingDeferRoute,
   ApiHousingEligibleRoute: ApiHousingEligibleRoute,
   ApiHousingHomeRoute: ApiHousingHomeRoute,

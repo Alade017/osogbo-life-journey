@@ -35,7 +35,7 @@ export function GameHUD({
       }).format(now)
     : "--:--:--";
   return (
-    <header className="game-hud hud-v2" aria-label="Player status">
+    <header className="game-hud hud-v2 home-account-dashboard" aria-label="Player status">
       <Link
         to="/home"
         search={{ visit: undefined }}
@@ -99,9 +99,9 @@ export function GameHUD({
           </span>
         </div>
         <div className="hud-live-clock">
-          <span>OSOGBO WAT</span>
+          <span>Osogbo · WAT</span>
           <time>
-            {dateLabel} / {clockLabel}
+            {dateLabel} · {clockLabel}
           </time>
         </div>
       </div>

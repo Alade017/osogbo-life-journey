@@ -98,7 +98,7 @@ async function settle() {
   await new Promise((resolve) => setTimeout(resolve, 0));
 }
 describe("game music playback", () => {
-  it("plays local mission/reward cues and synthesized resource fallbacks", async () => {
+  it("plays licensed cues for missions, rewards and resource recovery", async () => {
     const audio = await import("../lib/game-audio");
     await audio.enableGameAudio();
     const oscillator = vi.spyOn(contexts[0]!, "createOscillator");
@@ -111,23 +111,25 @@ describe("game music playback", () => {
     ] as const)
       audio.playGameSound(name);
     await settle();
-    expect(oscillator).toHaveBeenCalledTimes(6);
-    expect(fetch).toHaveBeenCalledTimes(3);
+    expect(oscillator).not.toHaveBeenCalled();
+    expect(fetch).toHaveBeenCalledTimes(5);
     await audio.disableGameAudio();
     audio.playGameSound("mission-complete");
-    expect(oscillator).toHaveBeenCalledTimes(6);
+    expect(oscillator).not.toHaveBeenCalled();
   });
-  it("limits recharge cues during repeated recovery ticks", async () => {
+  it("limits licensed recharge cues during repeated recovery ticks", async () => {
     const audio = await import("../lib/game-audio");
     await audio.enableGameAudio();
-    const oscillator = vi.spyOn(contexts[0]!, "createOscillator");
+    const source = vi.spyOn(contexts[0]!, "createBufferSource");
     const time = vi.spyOn(Date, "now").mockReturnValue(1000);
     audio.playGameSound("health-recharge");
     audio.playGameSound("health-recharge");
-    expect(oscillator).toHaveBeenCalledTimes(3);
+    await settle();
+    expect(source).toHaveBeenCalledTimes(1);
     time.mockReturnValue(11000);
     audio.playGameSound("health-recharge");
-    expect(oscillator).toHaveBeenCalledTimes(6);
+    await settle();
+    expect(source).toHaveBeenCalledTimes(2);
     await audio.disableGameAudio();
   });
   it("cancels synthesized cues on sound-off instead of leaving queued tones", async () => {

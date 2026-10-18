@@ -10467,7 +10467,7 @@
 }
 .city-game.navigation-redesign nav.game-floating-nav {
   position: fixed;
-  inset: auto 80px calc(12px + env(safe-area-inset-bottom)) 12px;
+  inset: auto 12px calc(12px + env(safe-area-inset-bottom)) 80px;
   z-index: 70;
   display: grid;
   width: auto;
@@ -10515,14 +10515,29 @@
   white-space: nowrap;
 }
 .city-game.navigation-redesign .game-phone-fab {
-  right: 12px;
+  left: 16px;
+  right: auto;
   bottom: calc(20px + env(safe-area-inset-bottom));
   z-index: 75;
 }
 .game-phone-fab-trigger {
   width: 48px;
   height: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0;
+  border: 1px solid #d5dde5;
+  border-radius: 50%;
+  background: #fff;
   box-shadow: 0 2px 6px #17212b14;
+}
+.game-phone-fab-trigger .phone-compact-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 .game-floating-nav a:focus-visible,
 .game-phone-fab-trigger:focus-visible {
@@ -10697,6 +10712,353 @@
 .reduce-motion :is(.phone-dialog *, .game-floating-nav *, .game-phone-fab *) {
   animation: none !important;
   transition: none !important;
+}
+
+/* Login and sign-up share a simple, responsive account-entry layout. */
+.auth-screen {
+  --auth-ink: #17212b;
+  --auth-muted: #526170;
+  --auth-blue: #2449a6;
+  color: var(--auth-ink);
+  background: #0d1722;
+}
+.auth-screen-scrim {
+  background: linear-gradient(
+    110deg,
+    rgb(9 20 32 / 82%),
+    rgb(17 33 48 / 60%) 55%,
+    rgb(8 17 27 / 78%)
+  );
+}
+.auth-layout {
+  padding: clamp(0.75rem, 2vw, 1.5rem);
+}
+.auth-story-panel {
+  gap: clamp(2.5rem, 8vh, 6rem);
+  border-radius: 1.5rem 0 0 1.5rem;
+  background: linear-gradient(180deg, rgb(15 34 52 / 28%), rgb(9 20 32 / 78%));
+}
+.auth-story-brand {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 0.55rem;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+}
+.auth-story-brand svg {
+  width: 2rem;
+  height: 2rem;
+}
+.auth-story-kicker,
+.auth-form-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  color: #97b9e7;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.auth-story-title {
+  max-width: 10ch;
+  margin: 0.75rem 0 0;
+  color: #fff;
+  font-size: clamp(2.25rem, 4.3vw, 4.5rem);
+  font-weight: 850;
+  letter-spacing: -0.05em;
+  line-height: 1.02;
+}
+.auth-story-copy {
+  max-width: 31rem;
+  margin: 1rem 0 0;
+  color: #dce8f4;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+.auth-story-points {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0;
+  margin: 1.4rem 0 0;
+  color: #fff;
+  font-size: 0.83rem;
+  font-weight: 650;
+  list-style: none;
+}
+.auth-story-points li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.auth-story-points svg {
+  color: #9cc2f5;
+}
+.auth-form-panel {
+  border-radius: 0 1.5rem 1.5rem 0;
+  background: #f6f8fb;
+}
+.auth-form-card {
+  border: 1px solid #d5dde5;
+  border-radius: 1.25rem;
+  color: var(--auth-ink);
+  background: #fff;
+  box-shadow: 0 8px 24px rgb(23 33 43 / 10%);
+}
+.auth-form-logo {
+  display: inline-flex;
+  margin-bottom: 1.4rem;
+}
+.auth-form-eyebrow {
+  margin-bottom: 0.6rem;
+  color: var(--auth-blue);
+}
+.auth-form-card h2 {
+  color: var(--auth-ink);
+  letter-spacing: -0.035em;
+}
+.auth-form-card :is(label, p, button) {
+  color: inherit;
+}
+.auth-form-card .text-muted-foreground {
+  color: var(--auth-muted);
+}
+.auth-form-card input {
+  border-color: #b8c5d0;
+  color: var(--auth-ink);
+  background: #fff;
+}
+.auth-form-card input:focus-visible {
+  border-color: var(--auth-blue);
+  outline: 3px solid rgb(36 73 166 / 18%);
+  outline-offset: 1px;
+}
+.auth-form-card .auth-submit-button {
+  min-height: 2.9rem;
+  border-color: var(--auth-blue);
+  color: #fff;
+  background: var(--auth-blue);
+}
+.auth-form-card .auth-submit-button:hover:not(:disabled) {
+  background: #183b88;
+}
+.auth-form-card a {
+  color: var(--auth-blue);
+}
+@media (max-width: 1023px) {
+  .auth-layout {
+    max-width: 42rem;
+    padding: 0;
+  }
+  .auth-story-panel {
+    min-height: 18rem;
+    border-radius: 0;
+  }
+  .auth-story-brand {
+    display: none;
+  }
+  .auth-story-title {
+    max-width: 15ch;
+    font-size: clamp(2rem, 8vw, 3rem);
+  }
+  .auth-story-points {
+    display: none;
+  }
+  .auth-form-panel {
+    border-radius: 0;
+  }
+}
+@media (max-width: 560px) {
+  .auth-layout {
+    min-height: 100dvh;
+  }
+  .auth-story-panel {
+    min-height: 15rem;
+    padding-bottom: 1.5rem;
+  }
+  .auth-story-copy {
+    font-size: 0.88rem;
+  }
+  .auth-form-panel {
+    align-items: flex-start;
+    padding-block: 1.25rem;
+  }
+  .auth-form-card {
+    border-radius: 1rem;
+  }
+}
+
+/* Home-only profile and account dashboard. */
+.home-account-dashboard.game-hud.hud-v2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "account" "context";
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.home-account-dashboard .game-hud-brand {
+  display: none;
+}
+.home-account-dashboard .game-hud-top-row {
+  display: grid;
+  grid-area: account;
+  grid-template-columns: minmax(11rem, 1fr) minmax(9rem, auto) 44px;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 4.5rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid #d5dde5;
+  border-radius: 1.1rem;
+  color: #17212b;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(23 33 43 / 8%);
+}
+.home-account-dashboard .game-hud-player {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.7rem;
+  color: #17212b;
+}
+.home-account-dashboard .game-hud-avatar {
+  display: grid;
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: 0 0 2.75rem;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid #c7d5e4;
+  border-radius: 50%;
+  background: #edf3fa;
+}
+.home-account-dashboard .game-hud-player > span:last-child > span:first-child {
+  color: #17212b;
+  font-size: 0.9rem;
+}
+.home-account-dashboard .game-hud-player > span:last-child > span:nth-child(2),
+.home-account-dashboard .game-hud-item-copy small,
+.home-account-dashboard .hud-live-clock > span {
+  color: #526170;
+  font-size: 0.68rem;
+}
+.home-account-dashboard .game-hud-balance {
+  display: flex;
+  min-width: 0;
+  min-height: 3rem;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid #c9d8ed;
+  border-radius: 0.8rem;
+  color: #173d76;
+  background: #eef5ff;
+}
+.home-account-dashboard .game-hud-balance > svg {
+  color: #b76516;
+}
+.home-account-dashboard .game-hud-item-copy {
+  display: grid;
+  min-width: 0;
+  gap: 0.12rem;
+}
+.home-account-dashboard .game-hud-item-copy strong {
+  color: #17212b;
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+.home-account-dashboard .game-hud-notifications {
+  position: relative;
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border: 1px solid #d5dde5;
+  border-radius: 50%;
+  color: #2449a6;
+  background: #fff;
+}
+.home-account-dashboard .game-hud-notifications .game-notification-dot {
+  position: absolute;
+  top: -0.2rem;
+  right: -0.2rem;
+}
+.home-account-dashboard .game-hud-context-row {
+  display: grid;
+  grid-area: context;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 3.5rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid #d5dde5;
+  border-radius: 1rem;
+  color: #17212b;
+  background: #fff;
+}
+.home-account-dashboard .game-hud-location {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.5rem;
+}
+.home-account-dashboard .game-hud-location-icon {
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  flex: 0 0 2rem;
+  place-items: center;
+  border-radius: 50%;
+  color: #2449a6;
+  background: #edf3fa;
+}
+.home-account-dashboard .hud-live-clock {
+  display: grid;
+  justify-items: end;
+  gap: 0.14rem;
+  text-align: right;
+}
+.home-account-dashboard .hud-live-clock time {
+  color: #17212b;
+  font-size: 0.78rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+.home-account-dashboard
+  :is(.game-hud-player, .game-hud-balance, .game-hud-notifications):focus-visible {
+  outline: 3px solid #2449a6;
+  outline-offset: 2px;
+}
+@media (max-width: 560px) {
+  .home-account-dashboard .game-hud-top-row {
+    grid-template-columns: minmax(0, 1fr) 44px;
+    gap: 0.5rem;
+  }
+  .home-account-dashboard .game-hud-balance {
+    grid-column: 1;
+    grid-row: 2;
+    width: max-content;
+    max-width: 100%;
+  }
+  .home-account-dashboard .game-hud-notifications {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+  }
+  .home-account-dashboard .game-hud-context-row {
+    gap: 0.5rem;
+  }
+  .home-account-dashboard .hud-live-clock time {
+    font-size: 0.7rem;
+  }
 }
 
 /* Jobs remain readable in every theme; amber is reserved for paid-work actions. */

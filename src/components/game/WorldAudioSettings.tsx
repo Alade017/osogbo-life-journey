@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import {
   disableGameAudio,
   enableGameAudio,
+  playGameSound,
   readGameAudioLevels,
   setGameAudioLevels,
 } from "@/lib/game-audio";
@@ -22,6 +23,13 @@ export function WorldAudioSettings({
   const [unavailable, setUnavailable] = useState(false);
   const [changing, setChanging] = useState(false);
 
+  // Profile updates can arrive after this screen first renders. Keep the
+  // controls truthful without resetting a change currently being saved.
+  useEffect(() => {
+    const saved = readGameAudioLevels();
+    setLevels(enabled ? saved : { ...saved, music: 0, effects: 0 });
+  }, [enabled]);
+
   async function toggle(channel: "music" | "effects", checked: boolean) {
     if (changing) return;
     const next = { ...levels, [channel]: checked ? (channel === "music" ? 0.2 : 0.45) : 0 };
@@ -37,6 +45,7 @@ export function WorldAudioSettings({
       setGameAudioLevels(next);
       setLevels(next);
       if (!next.music && !next.effects) await disableGameAudio();
+      if (checked && channel === "effects") playGameSound("ui");
       onEnabledChange(next.music > 0 || next.effects > 0);
     } finally {
       setChanging(false);

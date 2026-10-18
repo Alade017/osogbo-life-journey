@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Check, Eye, EyeOff, ShieldCheck } from "lucide-react";
 import cityPhoto from "@/assets/osogbo-city.jpg";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -127,20 +127,31 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
         alt="Osogbo city panorama"
         className="absolute inset-0 h-full w-full object-cover object-center"
       />
-      <div className="absolute inset-0 bg-slate-950/55" />
+      <div className="absolute inset-0 auth-screen-scrim" />
       <div className="auth-layout relative mx-auto grid min-h-screen max-w-7xl lg:grid-cols-2">
         <section className="auth-story-panel flex min-h-57.5 flex-col justify-end px-5 pb-7 pt-8 text-white sm:px-8 lg:min-h-screen lg:justify-between lg:px-12 lg:py-12">
-          <p className="hidden text-sm font-bold tracking-wide lg:block">OSUN LIFE</p>
+          <Link to="/" className="auth-story-brand" aria-label="OSUN LIFE home">
+            <Logo small /> <span>OSUN LIFE</span>
+          </Link>
           <div className="max-w-lg">
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-white/75">
-              Your next chapter starts here
-            </p>
-            <h1 className="mt-3 text-3xl font-bold leading-tight sm:text-4xl lg:text-6xl">
+            <p className="auth-story-kicker">Your next chapter starts here</p>
+            <h1 className="auth-story-title">
               {mode === "signup" ? "Make a life in Osogbo." : "Good to have you back."}
             </h1>
-            <p className="mt-3 max-w-md text-sm leading-relaxed text-white/80 sm:text-base">
+            <p className="auth-story-copy">
               Explore the city, find work and build your own way forward.
             </p>
+            <ul className="auth-story-points" aria-label="Game highlights">
+              <li>
+                <Check size={15} aria-hidden="true" /> Build your own story
+              </li>
+              <li>
+                <Check size={15} aria-hidden="true" /> Find work and community
+              </li>
+              <li>
+                <Check size={15} aria-hidden="true" /> Play at your own pace
+              </li>
+            </ul>
           </div>
           <a
             href="https://commons.wikimedia.org/wiki/File:Osogbo.jpg"
@@ -152,11 +163,14 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
           </a>
         </section>
 
-        <section className="auth-form-panel flex items-center justify-center bg-background/95 px-4 py-8 backdrop-blur-sm sm:px-8 lg:my-6 lg:rounded-l-2xl lg:px-10">
+        <section className="auth-form-panel flex items-center justify-center px-4 py-8 sm:px-8 lg:my-6 lg:rounded-l-2xl lg:px-10">
           <div className="auth-form-card game-panel pop-in w-full max-w-md p-6 sm:p-8">
-            <Link to="/" className="mb-7 inline-block">
+            <Link to="/" className="auth-form-logo" aria-label="OSUN LIFE home">
               <Logo />
             </Link>
+            <p className="auth-form-eyebrow">
+              <ShieldCheck size={14} aria-hidden="true" /> Secure player access
+            </p>
             {recoverySent ? (
               <div>
                 <h2 className="text-2xl font-bold">Reset your password</h2>
@@ -314,7 +328,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
                       className="auth-submit-button w-full"
                       onClick={google}
                       disabled={busy}
-                    aria-busy={busy}
+                      aria-busy={busy}
                     >
                       Continue with Google
                     </Button>
