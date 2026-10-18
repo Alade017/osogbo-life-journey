@@ -16,9 +16,12 @@ export function mountSceneOverlay(target: HTMLElement) {
       if (disposed) return;
       disposed = true;
       // Navigation or a blur handler may already have detached or moved the host.
-      element.remove();
       // Disposing another root during a React commit can race its own DOM removal.
-      queueMicrotask(() => root.unmount());
+      queueMicrotask(() => {
+        root.unmount();
+        const parent = element.parentNode;
+        if (parent) parent.removeChild(element);
+      });
     },
   };
 }
