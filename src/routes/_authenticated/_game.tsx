@@ -25,7 +25,12 @@ import { gameTimeFromCharacter } from "@/lib/game-time";
 import { supabase } from "@/integrations/supabase/client";
 import { playerStateFromRows } from "@/lib/player-state";
 import { normalizeEquippedItems } from "@/lib/equipment-service";
-import { configureGameMusic, disableGameAudio, startGameAudioSession } from "@/lib/game-audio";
+import {
+  configureGameMusic,
+  disableGameAudio,
+  startGameAudioSession,
+  playGameSound,
+} from "@/lib/game-audio";
 import "@/components/game/game-navigation.css";
 import "@/components/game/game-cards.css";
 
@@ -86,12 +91,12 @@ function GameLayout() {
   const unread = notes?.filter((n) => !n.read_at).length ?? 0;
   useEffect(() => {
     configureGameMusic(character?.id ?? null);
-    if (character?.id) startGameAudioSession();
+    if (character?.id && profile?.sound_enabled) startGameAudioSession();
     return () => {
       configureGameMusic(null);
       void disableGameAudio();
     };
-  }, [character?.id]);
+  }, [character?.id, profile?.sound_enabled]);
   useEffect(() => {
     if (!character?.id || !character.current_location_id) return;
     const channel = supabase.channel(`people-area:${character.current_location_id}`, {
@@ -137,6 +142,7 @@ function GameLayout() {
           filter: `user_id=eq.${profile.id}`,
         },
         () => {
+          playGameSound("notification");
           void qc.invalidateQueries({ queryKey: q.notifications().queryKey });
         },
       )

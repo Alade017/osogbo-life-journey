@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { Switch } from "@/components/ui/switch";
-import { enableGameAudio, readGameAudioLevels, setGameAudioLevels } from "@/lib/game-audio";
+import {
+  disableGameAudio,
+  enableGameAudio,
+  readGameAudioLevels,
+  setGameAudioLevels,
+} from "@/lib/game-audio";
 
 // The audio graph has independent music and effects channels.
 export function WorldAudioSettings({
@@ -15,33 +20,54 @@ export function WorldAudioSettings({
     return enabled ? saved : { ...saved, music: 0, effects: 0 };
   });
   const [unavailable, setUnavailable] = useState(false);
+  const [changing, setChanging] = useState(false);
 
   async function toggle(channel: "music" | "effects", checked: boolean) {
+    if (changing) return;
     const next = { ...levels, [channel]: checked ? (channel === "music" ? 0.2 : 0.45) : 0 };
-    const active = await enableGameAudio(next);
-    setUnavailable(!active);
-    if (active) {
-      setLevels(next);
+    setChanging(true);
+    try {
+      // Turning a channel off must never resume the audio context.
+      if (checked && !(await enableGameAudio(next))) {
+        setGameAudioLevels(levels);
+        setUnavailable(true);
+        return;
+      }
+      setUnavailable(false);
       setGameAudioLevels(next);
+      setLevels(next);
+      if (!next.music && !next.effects) await disableGameAudio();
       onEnabledChange(next.music > 0 || next.effects > 0);
+    } finally {
+      setChanging(false);
     }
   }
 
   return (
-    <div className="space-y-4">
-      <label className="flex min-h-11 items-center justify-between gap-3">
-        <span className="font-semibold">Sound effects</span>
+    <div className="grid grid-cols-1 gap-3">
+      <label className="flex min-h-16 items-center justify-between gap-4 rounded-xl border border-border p-3">
+        <span>
+          <span className="block font-semibold">Sound effects</span>
+          <span className="text-xs text-muted-foreground">
+            Notifications, messages and game actions
+          </span>
+        </span>
         <Switch
           aria-label="Sound effects"
           checked={levels.effects > 0}
+          disabled={changing}
           onCheckedChange={(value) => void toggle("effects", value)}
         />
       </label>
-      <label className="flex min-h-11 items-center justify-between gap-3">
-        <span className="font-semibold">Music</span>
+      <label className="flex min-h-16 items-center justify-between gap-4 rounded-xl border border-border p-3">
+        <span>
+          <span className="block font-semibold">Music</span>
+          <span className="text-xs text-muted-foreground">Background music during gameplay</span>
+        </span>
         <Switch
           aria-label="Music"
           checked={levels.music > 0}
+          disabled={changing}
           onCheckedChange={(value) => void toggle("music", value)}
         />
       </label>

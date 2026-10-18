@@ -1,15 +1,15 @@
 # Local sound effects
 
-The user supplied `mixkit-level-increased-2062.wav` (Mixkit item 2062).
-Its duration is 3.098 seconds. The individual creator is not identified by the
-source listing; Mixkit is recorded as publisher, without inventing an author.
+Nine original OGG files from Kenney's Interface Sounds 1.0 pack are bundled here.
+They total about 67 kB, load on demand, and are cached locally after first use.
 
-License: https://mixkit.co/license/modal/sfxFree/ (checked 2026-10-11).
-Use is permitted within games, but not standalone redistribution or distribution
-with source files. Mixkit binaries are excluded from Git; provide this file
-locally before building the end product. Do not publish them as an asset library.
+Source: https://kenney.nl/assets/interface-sounds
+License: CC0 1.0 Universal. Verified 2026-10-18 against the creator page and the
+archive's License.txt; see KENNEY-LICENSE.txt and ../CREDITS.md.
 
-Add other user-supplied sounds only with complete source and license records in
-`src/lib/sound-effects.ts`, then regenerate `public/audio/CREDITS.md`.
-UI, interaction, player and message effects retain synthesized fallbacks until
-licensed replacements are supplied. Files are cached when first used.
+Mappings and exact durations are in src/lib/sound-effects.ts. Notification,
+message, click, interaction, player, level-up, mission, reward, and XP cues use
+these recordings. Health/energy recovery and unsupported-format or network-error
+fallbacks use the original synthesized tones. No runtime third-party requests.
+
+The legacy Mixkit recording is no longer required or selected.

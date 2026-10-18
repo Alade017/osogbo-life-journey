@@ -98,7 +98,7 @@ async function settle() {
   await new Promise((resolve) => setTimeout(resolve, 0));
 }
 describe("game music playback", () => {
-  it("plays original mission, reward and resource effects without fetching files", async () => {
+  it("plays local mission/reward cues and synthesized resource fallbacks", async () => {
     const audio = await import("../lib/game-audio");
     await audio.enableGameAudio();
     const oscillator = vi.spyOn(contexts[0]!, "createOscillator");
@@ -110,11 +110,12 @@ describe("game music playback", () => {
       "energy-recharge",
     ] as const)
       audio.playGameSound(name);
-    expect(oscillator).toHaveBeenCalledTimes(14);
-    expect(fetch).not.toHaveBeenCalled();
+    await settle();
+    expect(oscillator).toHaveBeenCalledTimes(6);
+    expect(fetch).toHaveBeenCalledTimes(3);
     await audio.disableGameAudio();
     audio.playGameSound("mission-complete");
-    expect(oscillator).toHaveBeenCalledTimes(14);
+    expect(oscillator).toHaveBeenCalledTimes(6);
   });
   it("limits recharge cues during repeated recovery ticks", async () => {
     const audio = await import("../lib/game-audio");
@@ -133,7 +134,7 @@ describe("game music playback", () => {
     const audio = await import("../lib/game-audio");
     await audio.enableGameAudio();
     const oscillator = vi.spyOn(contexts[0]!, "createOscillator");
-    audio.playGameSound("mission-complete");
+    audio.playGameSound("health-recharge");
     await audio.disableGameAudio();
     for (const node of oscillator.mock.results) expect(node.value.stop).toHaveBeenLastCalledWith();
   });
@@ -197,16 +198,17 @@ describe("game music playback", () => {
     expect(fetch).not.toHaveBeenCalled();
     audio.configureGameMusic(null);
   });
-  it("previews the UI effect through the synthesized effects bus when enabled", async () => {
+  it("previews the local UI effect only when enabled", async () => {
     const audio = await import("../lib/game-audio");
     await audio.enableGameAudio();
-    const oscillator = vi.spyOn(contexts[0]!, "createOscillator");
+    const source = vi.spyOn(contexts[0]!, "createBufferSource");
     audio.playGameSound("ui");
-    expect(oscillator).toHaveBeenCalledTimes(1);
-    expect(oscillator.mock.results[0]!.value.start).toHaveBeenCalled();
+    await settle();
+    expect(source).toHaveBeenCalledTimes(1);
+    expect(source.mock.results[0]!.value.start).toHaveBeenCalled();
     await audio.disableGameAudio();
     audio.playGameSound("ui");
-    expect(oscillator).toHaveBeenCalledTimes(1);
+    expect(source).toHaveBeenCalledTimes(1);
   });
   beforeEach(() => {
     vi.resetModules();
@@ -237,7 +239,10 @@ describe("game music playback", () => {
     vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:test");
     vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
   });
-  afterEach(() => {
+  afterEach(async () => {
+    const audio = await import("../lib/game-audio");
+    audio.configureGameMusic(null);
+    await audio.disableGameAudio();
     vi.useRealTimers();
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
@@ -395,5 +400,65 @@ describe("game music playback", () => {
     await audio.disableGameAudio();
     audio.playGameSound("level-up");
     expect(fetch).toHaveBeenCalledTimes(1);
+  });
+  it("stops on background/page exit and resumes only enabled channels", async () => {
+    catalog.tracks = [record];
+    const audio = await import("../lib/game-audio");
+    audio.configureGameMusic("player");
+    audio.startGameAudioSession();
+    await settle();
+    expect(audio.getMusicState().playing).toBe(true);
+    Object.defineProperty(document, "hidden", { configurable: true, value: true });
+    document.dispatchEvent(new Event("visibilitychange"));
+    await settle();
+    expect(audio.isGameAudioActive()).toBe(false);
+    expect(audio.getMusicState().playing).toBe(false);
+    Object.defineProperty(document, "hidden", { configurable: true, value: false });
+    document.dispatchEvent(new Event("visibilitychange"));
+    await settle();
+    expect(audio.getMusicState().playing).toBe(true);
+    window.dispatchEvent(new Event("pagehide"));
+    await settle();
+    expect(audio.isGameAudioActive()).toBe(false);
+    audio.configureGameMusic(null);
+    window.dispatchEvent(new Event("pageshow"));
+    await settle();
+    expect(audio.isGameAudioActive()).toBe(false);
+  });
+  it("keeps music off across session starts while effects stay enabled", async () => {
+    catalog.tracks = [record];
+    const audio = await import("../lib/game-audio");
+    audio.setGameAudioLevels({ master: 0.55, music: 0, effects: 0.45 });
+    audio.configureGameMusic("player");
+    audio.startGameAudioSession();
+    await settle();
+    expect(audio.getMusicState().playing).toBe(false);
+    expect(fetch).not.toHaveBeenCalled();
+    audio.playGameSound("notification");
+    await settle();
+    expect(fetch).toHaveBeenCalledTimes(1);
+    audio.setGameAudioLevels({ master: 0.55, music: 0, effects: 0 });
+    audio.startGameAudioSession();
+    await settle();
+    expect(audio.isGameAudioActive()).toBe(false);
+  });
+  it("cancels decoded effects that finish loading after effects are switched off", async () => {
+    const audio = await import("../lib/game-audio");
+    await audio.enableGameAudio();
+    let finish!: (buffer: { duration: number }) => void;
+    contexts[0]!.decodeAudioData.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const source = vi.spyOn(contexts[0]!, "createBufferSource");
+    audio.playGameSound("notification");
+    await settle();
+    audio.setGameAudioLevels({ master: 0.55, music: 0.2, effects: 0 });
+    finish({ duration: 1 });
+    await settle();
+    expect(source).not.toHaveBeenCalled();
+    expect(contexts[0]!.gains[1]!.gain.value).toBe(0);
   });
 });

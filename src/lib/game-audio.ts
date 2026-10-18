@@ -20,6 +20,8 @@ const STORAGE_KEY = "osogbo-world-audio-v1";
 const DEFAULT_LEVELS: AudioLevels = { master: 0.55, music: 0.2, effects: 0.45 };
 let graph: AudioGraph | null = null;
 let automaticAudioAllowed = false;
+let sessionCleanup: (() => void) | null = null;
+let sessionLevels: AudioLevels | null = null;
 let removeAudioGestureListeners: (() => void) | null = null;
 function clearAudioGestureListeners() {
   removeAudioGestureListeners?.();
@@ -41,6 +43,32 @@ export function primeGameAudioForLogin() {
 }
 export function startGameAudioSession() {
   if (typeof document === "undefined" || !playerId) return;
+  sessionCleanup?.();
+  let resumeOnReturn = false;
+  const hide = () => {
+    resumeOnReturn = resumeOnReturn || automaticAudioAllowed;
+    void disableGameAudio();
+  };
+  const show = () => {
+    if (!document.hidden && resumeOnReturn && playerId) {
+      resumeOnReturn = false;
+      startGameAudioSession();
+    }
+  };
+  const visibility = () => {
+    if (document.hidden) hide();
+    else show();
+  };
+  document.addEventListener("visibilitychange", visibility);
+  window.addEventListener("pagehide", hide);
+  window.addEventListener("pageshow", show);
+  sessionCleanup = () => {
+    document.removeEventListener("visibilitychange", visibility);
+    window.removeEventListener("pagehide", hide);
+    window.removeEventListener("pageshow", show);
+  };
+  const levels = readGameAudioLevels();
+  if ((!levels.music && !levels.effects) || document.hidden) return;
   automaticAudioAllowed = true;
   clearAudioGestureListeners();
   const retry = (event: Event) => {
@@ -131,8 +159,9 @@ function saveQueue() {
 }
 export function configureGameMusic(id: string | null) {
   if (id === playerId) return;
-  stopEffects();
-  pauseGameMusic();
+  sessionCleanup?.();
+  sessionCleanup = null;
+  void disableGameAudio();
   for (const value of [...decks]) disposeDeck(value);
   deck = null;
   playerId = id;
@@ -194,7 +223,7 @@ export function pauseGameMusic() {
 }
 
 export async function resumeGameMusic(allowReplay = true) {
-  if (!isGameAudioActive() || !playerId || loading) return;
+  if (!isGameAudioActive() || !readGameAudioLevels().music || !playerId || loading) return;
   cancelMusicRestart();
   if (!deck) {
     await nextGameMusic(allowReplay);
@@ -215,7 +244,15 @@ export async function resumeGameMusic(allowReplay = true) {
 }
 
 export async function nextGameMusic(allowReplay = false) {
-  if (!graph || !isGameAudioActive() || !playerId || loading || !queue.length) return;
+  if (
+    !graph ||
+    !isGameAudioActive() ||
+    !readGameAudioLevels().music ||
+    !playerId ||
+    loading ||
+    !queue.length
+  )
+    return;
   cancelMusicRestart();
   loading = true;
   const token = ++revision;
@@ -309,6 +346,7 @@ export async function nextGameMusic(allowReplay = false) {
 }
 
 export function readGameAudioLevels(): AudioLevels {
+  if (sessionLevels) return sessionLevels;
   if (typeof window === "undefined") return DEFAULT_LEVELS;
   try {
     const value: unknown = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
@@ -325,6 +363,7 @@ export function readGameAudioLevels(): AudioLevels {
 }
 
 function saveLevels(levels: AudioLevels) {
+  sessionLevels = levels;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(levels));
   } catch {
@@ -337,6 +376,7 @@ function applyLevels(current: AudioGraph, levels: AudioLevels) {
   current.master.gain.setTargetAtTime(levels.master, now, 0.08);
   current.music.gain.setTargetAtTime(levels.music, now, 0.08);
   current.effects.gain.setTargetAtTime(levels.effects, now, 0.08);
+  current.ambience.gain.value = levels.effects > 0 ? 0.035 : 0;
 }
 
 function createAudioGraph(levels: AudioLevels): AudioGraph | null {
@@ -349,7 +389,7 @@ function createAudioGraph(levels: AudioLevels): AudioGraph | null {
   const effects = context.createGain();
   const current = { context, master, ambience, music, effects };
   applyLevels(current, levels);
-  ambience.gain.value = 0.035;
+  ambience.gain.value = levels.effects > 0 ? 0.035 : 0;
   ambience.connect(master);
   music.connect(master);
   effects.connect(master);
@@ -374,14 +414,20 @@ function createAudioGraph(levels: AudioLevels): AudioGraph | null {
 }
 
 export async function enableGameAudio(levels = readGameAudioLevels()): Promise<boolean> {
-  if (typeof window === "undefined") return false;
+  if (typeof window === "undefined" || document.hidden || (!levels.music && !levels.effects))
+    return false;
+  automaticAudioAllowed = true;
+  saveLevels(levels);
   try {
     if (!graph) graph = createAudioGraph(levels);
     if (!graph) return false;
     applyLevels(graph, levels);
     const generation = audioGeneration;
     await graph.context.resume();
-    if (generation !== audioGeneration) return false;
+    if (generation !== audioGeneration || document.hidden || !automaticAudioAllowed) {
+      if (!automaticAudioAllowed || document.hidden) await graph.context.suspend().catch(() => {});
+      return false;
+    }
     publishMusic({ soundEnabled: graph.context.state === "running" });
     if (graph.context.state === "running") void resumeGameMusic(true);
     if (graph.context.state === "running" && !playableMusicTracks.length)
@@ -409,17 +455,20 @@ export async function disableGameAudio() {
 }
 
 export function isGameAudioActive() {
-  return graph?.context.state === "running";
+  return automaticAudioAllowed && !document.hidden && graph?.context.state === "running";
 }
 
 export function setGameAudioLevels(levels: AudioLevels) {
   saveLevels(levels);
   if (graph) applyLevels(graph, levels);
+  if (!levels.effects) stopEffects();
+  if (!levels.music) pauseGameMusic();
+  if (!levels.music && !levels.effects) void disableGameAudio();
 }
 
 export function playGameSound(name: SoundName) {
   const current = graph;
-  if (!current || current.context.state !== "running") return;
+  if (!current || !isGameAudioActive() || !readGameAudioLevels().effects) return;
   if (name === "health-recharge" || name === "energy-recharge") {
     const now = Date.now();
     const previous = lastRechargeSound.get(name);
@@ -438,7 +487,12 @@ export function playGameSound(name: SoundName) {
     }
     void buffer
       .then((decoded) => {
-        if (generation !== audioGeneration || current.context.state !== "running") return;
+        if (
+          generation !== audioGeneration ||
+          !isGameAudioActive() ||
+          !readGameAudioLevels().effects
+        )
+          return;
         const source = current.context.createBufferSource();
         const trim = current.context.createGain();
         trim.gain.value = 0.25;
@@ -456,7 +510,11 @@ export function playGameSound(name: SoundName) {
       .catch(() => {
         effectsBuffers.delete(effect.id);
         console.warn("Could not load local effect:", effect.id);
-        if (generation === audioGeneration && current.context.state === "running")
+        if (
+          generation === audioGeneration &&
+          isGameAudioActive() &&
+          readGameAudioLevels().effects > 0
+        )
           playSynthesizedSound(name, current);
       });
     return;
@@ -477,6 +535,7 @@ function playSynthesizedSound(name: SoundName, current: AudioGraph) {
     interaction: [523.25, 659.25],
     player: [440, 554.37, 659.25],
     message: [784, 659.25],
+    notification: [659.25, 880],
     "level-up": [523.25, 659.25, 784],
     "mission-complete": [523.25, 659.25, 784, 1046.5],
     reward: [880, 1318.51],

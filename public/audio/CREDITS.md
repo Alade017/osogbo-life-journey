@@ -36,4 +36,16 @@ License: Mixkit Sound Effects Free License (https://mixkit.co/license/modal/sfxF
 License checked: 2026-10-11
 Attribution: Sound provided by Mixkit. User-supplied file 2062; use within the game only, not redistribution with source files or as a sound library.
 
-City ambience and UI, interaction, player, message, mission completion, reward, XP gain, health recharge and energy recharge cues are original synthesized audio, with no third-party recordings.
+## Kenney Interface Sounds (1.0)
+
+Creator: Kenney (https://kenney.nl)
+Source: https://kenney.nl/assets/interface-sounds
+Official archive: https://kenney.nl/media/pages/assets/interface-sounds/fa43c1dd4d-1677589452/kenney_interface-sounds.zip
+License: CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/)
+Verified: 2026-10-18 against the creator page and archive License.txt.
+Included files: click_001, select_002, open_001, confirmation_001, glass_001,
+confirmation_004, confirmation_003, pluck_001, tick_001 (OGG originals, unchanged).
+License copy: sfx/KENNEY-LICENSE.txt. These replace the unavailable legacy Mixkit cue.
+
+City ambience, health/energy recharge, and fallback tones are original synthesized audio.
+Effects are served locally and decoded on demand; no runtime third-party requests.
