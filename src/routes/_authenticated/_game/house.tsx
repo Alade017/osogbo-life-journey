@@ -4,13 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { House, Pencil, WifiOff } from "lucide-react";
 import { HouseEditSheets } from "@/components/game/housing/HouseEditSheets";
-import {
-  HouseScene as HouseRoomScene,
-  type HouseInventoryItem,
-  type HouseOutfit,
-  type HousePlacement,
-  type HouseSlot,
+import type {
+  HouseInventoryItem,
+  HouseOutfit,
+  HousePlacement,
+  HouseSlot,
 } from "@/components/game/housing/HouseRoomScene";
+import { HouseRoom3D } from "@/components/game/housing/HouseRoom3D";
 import { EmptyState } from "@/components/game/ui";
 import { HouseSceneSkeleton } from "@/components/game/loading-skeletons";
 import { Avatar } from "@/components/game/Avatar";
@@ -52,6 +52,18 @@ type HouseState = {
   inventory: HouseInventoryItem[];
 };
 type HouseStateSnapshot = { state: HouseState; source: "server" | "saved" };
+type CanonicalHome = {
+  propertyId: string;
+  houseTypeId: string;
+  name: string;
+  tenure: string;
+  status: string | null;
+  dueAt: string | null;
+  graceEndsAt: string | null;
+  rescueEndsAt: string | null;
+  weeklyRentMinor: number;
+  accessoryBand: string;
+};
 type CatalogItem = {
   id: string;
   category: string;
@@ -170,6 +182,35 @@ function houseLoadMessage(error: unknown) {
   if (code === "HOUSE_SETUP_REQUIRED")
     return "Your home needs the latest database update before it can load.";
   return "Your house could not be loaded. Check your connection and try again.";
+}
+
+function formatRentDate(value: string | null | undefined) {
+  if (!value) return "Not scheduled";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Not scheduled";
+  return new Intl.DateTimeFormat("en-NG", {
+    dateStyle: "medium",
+    timeZone: "Africa/Lagos",
+  }).format(date);
+}
+
+function normalizeCanonicalHome(value: unknown): CanonicalHome | null {
+  if (!isRecord(value) || typeof value["propertyId"] !== "string") return null;
+  if (typeof value["houseTypeId"] !== "string" || typeof value["name"] !== "string")
+    return null;
+  return {
+    propertyId: value["propertyId"],
+    houseTypeId: value["houseTypeId"],
+    name: value["name"],
+    tenure: typeof value["tenure"] === "string" ? value["tenure"] : "rented",
+    status: typeof value["status"] === "string" ? value["status"] : null,
+    dueAt: typeof value["dueAt"] === "string" ? value["dueAt"] : null,
+    graceEndsAt: typeof value["graceEndsAt"] === "string" ? value["graceEndsAt"] : null,
+    rescueEndsAt: typeof value["rescueEndsAt"] === "string" ? value["rescueEndsAt"] : null,
+    weeklyRentMinor:
+      typeof value["weeklyRentMinor"] === "number" ? value["weeklyRentMinor"] : 0,
+    accessoryBand: typeof value["accessoryBand"] === "string" ? value["accessoryBand"] : "basic",
+  };
 }
 
 function legacyHouseState(value: unknown): HouseState | null {
@@ -383,6 +424,16 @@ function HousePage() {
   const snapshot = stateQuery.data;
   const serverState = snapshot?.state;
   const usingSaved = snapshot?.source === "saved";
+  const canonicalHomeQuery = useQuery({
+    queryKey: ["canonicalHousingHome", character?.id],
+    enabled: !!character?.id && online,
+    staleTime: 15_000,
+    queryFn: async () => {
+      const response = await authorizedFetch("/api/housing/current-home");
+      if (!response.ok) throw new Error("HOME_UNAVAILABLE");
+      return normalizeCanonicalHome(await response.json().catch(() => null));
+    },
+  });
 
   useEffect(() => {
     if (!playerId) return;
@@ -499,6 +550,7 @@ function HousePage() {
       const message = `Your change wasn’t saved. ${error.message.replaceAll("_", " ").toLowerCase()}.`;
       setApiError(message);
       toast.error(message);
+      refreshHouseState();
     },
   });
   const cancelTenancy = useMutation({
@@ -519,7 +571,39 @@ function HousePage() {
         queryClient.invalidateQueries({ queryKey: ["authoritativeHouseState"] }),
         queryClient.invalidateQueries({ queryKey: ["rentStatus"] }),
         queryClient.invalidateQueries({ queryKey: ["homeSave"] }),
+        queryClient.invalidateQueries({ queryKey: ["canonicalHousingHome"] }),
       ]);
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const payRentKey = useRef<string | null>(null);
+  const payRent = useMutation({
+    mutationFn: async () => {
+      const key = payRentKey.current ?? crypto.randomUUID();
+      payRentKey.current = key;
+      const response = await authorizedFetch("/api/housing/pay-rent", {
+        method: "POST",
+        headers: { "Idempotency-Key": key },
+      });
+      const result = await response.json().catch(() => null);
+      if (!response.ok)
+        throw new Error(
+          isRecord(result) && isRecord(result["error"]) &&
+            typeof result["error"]["reason"] === "string"
+            ? result["error"]["reason"]
+            : "Rent could not be paid. Try again.",
+        );
+      return result;
+    },
+    onSuccess: async () => {
+      payRentKey.current = null;
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["canonicalHousingHome"] }),
+        queryClient.invalidateQueries({ queryKey: ["authoritativeHouseState"] }),
+        queryClient.invalidateQueries({ queryKey: q.wallet().queryKey }),
+        queryClient.invalidateQueries({ queryKey: ["transactions"] }),
+      ]);
+      toast.success("Rent paid. Your next due date is updated.");
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -540,14 +624,24 @@ function HousePage() {
     },
   });
   const listings = (Array.isArray(listingsData) ? listingsData : []) as PropertyListing[];
+  const canonicalHome = canonicalHomeQuery.data;
+  const rentStatus = canonicalHome?.status ?? serverState?.house?.status ?? "unknown";
+  const rentDueAt = canonicalHome?.dueAt ?? serverState?.house?.next_rent_due_at;
+  const isOverdue = rentStatus === "rescue" || rentStatus === "overdue";
+  const rentStatusLabel: Record<string, string> = {
+    current: "Current",
+    active: "Current",
+    due: "Rent due",
+    grace: "In grace period",
+    rescue: "Overdue",
+    overdue: "Overdue",
+    owned: "Owned",
+  };
 
   const requestAction = (args: Parameters<typeof actionMutation.mutate>[0]) => {
     if (isOffline || actionMutation.isPending) return;
     actionMutation.mutate(args);
   };
-  const openHousingFlow = () =>
-    window.dispatchEvent(new CustomEvent("osogbo-open-housing", { detail: { source: "profile" } }));
-
   if (characterLoading || (stateQuery.isLoading && !snapshot))
     return (
       <div className="house-page">
@@ -584,11 +678,19 @@ function HousePage() {
             <House size={44} strokeWidth={1.5} />
           </div>
           <div>
-            <h2>You don’t have a place yet</h2>
-            <p>Choose a home to get your own room and space for furniture.</p>
-            <button className="house-primary-button" type="button" onClick={openHousingFlow}>
-              Find a place
-            </button>
+            <h2>{canonicalHome ? "Your room is being prepared" : "You don’t have a place yet"}</h2>
+            <p>
+              {canonicalHome
+                ? "Your rental is recorded, but the room is not ready to display. Refresh the page after the housing update is applied."
+                : "Choose a home to get your own room and space for furniture."}
+            </p>
+            {canonicalHome ? (
+              <button className="house-primary-button" type="button" onClick={() => void stateQuery.refetch()}>
+                Refresh room
+              </button>
+            ) : (
+              <Link className="house-primary-button" to="/properties">Find a place</Link>
+            )}
           </div>
         </section>
         <PropertyListings
@@ -606,10 +708,10 @@ function HousePage() {
       <header className="house-page-header">
         <div>
           <p className="house-eyebrow">Your home</p>
-          <h1>{house.house_type.label}</h1>
+          <h1>{canonicalHome?.name ?? house.house_type.label}</h1>
           <p className="house-subtitle">
             {house.house_type.bedrooms} bedroom{house.house_type.bedrooms === 1 ? "" : "s"} · Rent{" "}
-            {formatNaira(house.house_type.weekly_rent_minor)} a week
+            {formatNaira(canonicalHome?.weeklyRentMinor ?? house.house_type.weekly_rent_minor)} a week
           </p>
         </div>
         <div className="house-header-actions">
@@ -640,37 +742,51 @@ function HousePage() {
           {apiError}
         </div>
       )}
-      {house.status === "overdue" && (
+      <section className="house-rent-summary" aria-label="Rent status">
+        <div><span>Status</span><strong>{rentStatusLabel[rentStatus] ?? "Checking"}</strong></div>
+        <div><span>Next rent due</span><strong>{formatRentDate(rentDueAt)}</strong></div>
+        <div><span>Weekly rent</span><strong>{formatNaira(canonicalHome?.weeklyRentMinor ?? house.house_type.weekly_rent_minor)}</strong></div>
+      </section>
+      {isOverdue && (
         <div className="house-rent-banner">
           <span>
-            <strong>Rent is overdue.</strong> Pay by Sunday to keep your home
+            <strong>Rent is overdue.</strong>{" "}
+            {canonicalHome?.rescueEndsAt
+              ? `Respond by ${formatRentDate(canonicalHome.rescueEndsAt)} to keep your home.`
+              : "Pay now to keep your home."}
           </span>
-          <Link to="/wallet" className="house-pay-button">
-            Pay
-          </Link>
+          {canonicalHome ? (
+            <button
+              type="button"
+              className="house-pay-button"
+              disabled={payRent.isPending || isOffline}
+              onClick={() => payRent.mutate()}
+            >
+              {payRent.isPending ? "Paying…" : "Pay now"}
+            </button>
+          ) : <Link to="/wallet" className="house-pay-button">Pay</Link>}
         </div>
+      )}
+      {!isOverdue && canonicalHome?.tenure === "rented" && (
+        <button
+          type="button"
+          className="house-rent-early-button"
+          disabled={payRent.isPending || isOffline}
+          onClick={() => payRent.mutate()}
+        >
+          {payRent.isPending ? "Paying rent…" : "Pay next week’s rent"}
+        </button>
       )}
       <section
         className={`house-room-card${house.status === "overdue" ? " room-overdue" : ""}`}
         aria-label={`${house.house_type.label} room`}
       >
-        <HouseRoomScene
-          house={{
-            house_type_id: house.house_type_id,
-            label: house.house_type.label,
-            asset_key: house.house_type.asset_key,
-            status: house.status,
-          }}
+        <HouseRoom3D
+          houseTypeId={house.house_type_id}
+          accessoryBand={canonicalHome?.accessoryBand ?? "basic"}
           slots={slots}
           placements={placements}
-          outfit={outfit}
-          inventory={inventory}
-          appearance={appearance}
-          gender={character?.gender ?? "nonbinary"}
           editMode={editing}
-          walkableArea={
-            roomLayout?.walkable_area ?? { x: 52, y: 78, min_x: 8, max_x: 92, min_y: 30, max_y: 86 }
-          }
           onSelectPlacement={setSelectedPlacement}
           onSelectSlot={setSelectedSlot}
         />
@@ -678,7 +794,7 @@ function HousePage() {
           <span>
             {editing
               ? "Choose an item or an open slot to edit your room."
-              : "Tap the room to walk around."}
+              : "Drag to look around the room."}
           </span>
           <span>
             {placements.length} placed item{placements.length === 1 ? "" : "s"}
