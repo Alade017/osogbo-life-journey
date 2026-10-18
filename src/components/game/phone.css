@@ -15,7 +15,7 @@
 /* The dock remains visible and in its own layout layer while the phone opens above it. */
 @media (max-width: 820px) {
   .phone-dialog.phone-dialog {
-    z-index: 120 !important;
+    z-index: var(--game-dialog-layer) !important;
     top: calc(50% - 48px);
     max-height: calc(100dvh - 112px);
   }

@@ -352,6 +352,7 @@ export function CityMapDashboard({
               ? "This map marker is informational and is not an in-game destination."
               : `${selectedLandmark.category[0]!.toUpperCase()}${selectedLandmark.category.slice(1)} destination in ${selectedLandmark.district.name}.`
           }
+          locationName={selectedLandmark.district.name}
           offline={offline}
           onClose={() => setSelectedLandmark(null)}
           onTravel={(landmarkId) => {

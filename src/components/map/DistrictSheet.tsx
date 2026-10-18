@@ -1,4 +1,5 @@
 import { useRef, useState, type PointerEvent } from "react";
+import { createPortal } from "react-dom";
 import { MapPin, X } from "lucide-react";
 import type { MapDistrict } from "@/components/map/OsogboMap.svg";
 import { formatGameHourInLagos, formatMapEventEnd } from "@/components/map/map-ui-utils";
@@ -31,7 +32,9 @@ export function DistrictSheet({
     start.current = null;
   };
   const trafficLabel = `${district.traffic[0]!.toUpperCase()}${district.traffic.slice(1)} traffic`;
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <section
       className={`map-sheet ${expanded ? "is-expanded" : ""}`}
       role="dialog"
@@ -88,6 +91,7 @@ export function DistrictSheet({
           </li>
         ))}
       </ul>
-    </section>
+    </section>,
+    document.body,
   );
 }

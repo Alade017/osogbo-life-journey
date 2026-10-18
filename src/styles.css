@@ -33,6 +33,10 @@
 }
 
 :root {
+  --game-dock-height: 64px;
+  --game-navigation-layer: 110;
+  --game-sheet-layer: 130;
+  --game-dialog-layer: 140;
   --radius: 0.8rem;
 
   --brand-porcelain: #f5f2ea;
@@ -10096,5 +10100,59 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+}
+
+/* Shared game-control dimensions keep every screen inside the mobile play area. */
+.game-hud.hud-v2 {
+  grid-template-areas: "identity" "context";
+  gap: 6px;
+}
+
+.hud-v2 .game-hud-top-row {
+  min-height: 64px;
+  grid-template-columns: minmax(0, 1fr) auto 36px;
+  grid-template-areas: "player wallet notifications";
+  align-items: center;
+}
+
+.hud-v2 .game-hud-context-row {
+  display: grid;
+  width: min(68%, 460px);
+  min-height: 52px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.hud-v2 .hud-live-clock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  color: #62666c;
+  font-size: 0.68rem;
+  text-align: right;
+}
+
+.hud-v2 .hud-live-clock > span {
+  color: #62666c;
+  font-size: 0.61rem;
+}
+
+:is(.map-icon-button, .house-icon-button) {
+  width: 46px;
+  height: 46px;
+}
+
+@media (max-width: 720px) {
+  .hud-v2 .game-hud-top-row {
+    min-height: 56px;
+    grid-template-columns: minmax(0, 1fr) auto 34px;
+    grid-template-areas: "player wallet notifications";
+  }
+
+  .hud-v2 .game-hud-context-row {
+    width: min(88%, 460px);
+    min-height: 50px;
   }
 }

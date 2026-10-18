@@ -75,6 +75,7 @@ function GameLayout() {
   const { data: locations } = useQuery({ ...q.locations(), enabled: !!character });
   const { data: equipment } = useQuery({ ...q.equipment(), enabled: !!character });
   const [housingOpen, setHousingOpen] = useState(false);
+  const [phoneOpen, setPhoneOpen] = useState(false);
   const [housingRequested, setHousingRequested] = useState(false);
   const [housingSource, setHousingSource] = useState<"home" | "profile">("home");
   const housingHandledThisSession = useRef(false);
@@ -217,7 +218,12 @@ function GameLayout() {
       >
         <WorldEnvironment />
         <div className="city-game-frame">
-          <aside className="game-desktop-nav game-hover-sidebar" aria-label="Main navigation">
+          <aside
+            className="game-desktop-nav game-hover-sidebar"
+            aria-label="Main navigation"
+            aria-hidden={phoneOpen || undefined}
+            inert={phoneOpen || undefined}
+          >
             <Link
               to="/home"
               search={{ visit: undefined }}
@@ -252,7 +258,7 @@ function GameLayout() {
               ))}
             </nav>
             <div className="mt-auto grid gap-2">
-              <PhoneLauncher compact className="game-side-phone" />
+              <PhoneLauncher compact className="game-side-phone" onOpenChange={setPhoneOpen} />
               <Link
                 to="/settings"
                 className="game-side-link"
@@ -273,7 +279,12 @@ function GameLayout() {
           </div>
         </div>
 
-        <nav className="game-mobile-nav game-curved-dock" aria-label="Game navigation">
+        <nav
+          className="game-mobile-nav game-curved-dock"
+          aria-label="Game navigation"
+          aria-hidden={phoneOpen || undefined}
+          inert={phoneOpen || undefined}
+        >
           <svg
             className="game-dock-surface"
             viewBox="0 0 500 90"
@@ -299,7 +310,7 @@ function GameLayout() {
             <Map className="h-4.75 w-4.75" />
             <span>City</span>
           </Link>
-          <PhoneLauncher compact className="mobile-nav-phone" />
+          <PhoneLauncher compact className="mobile-nav-phone" onOpenChange={setPhoneOpen} />
           <Link
             to="/jobs"
             activeProps={{ className: "mobile-nav-active" }}

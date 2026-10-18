@@ -24,7 +24,7 @@ export function GameHUD({
         month: "short",
         timeZone: OSOGBO_TIME_ZONE,
       }).format(now)
-    : "—";
+    : "ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â";
   const clockLabel = now
     ? new Intl.DateTimeFormat("en-NG", {
         hour: "2-digit",
@@ -64,19 +64,6 @@ export function GameHUD({
           </span>
         </Link>
 
-        <div className="game-hud-location">
-          <span className="game-hud-location-icon">
-            <MapPin className="h-4 w-4 shrink-0" />
-          </span>
-          <span className="game-hud-item-copy min-w-0">
-            <small>Current area</small>
-            <strong className="truncate">{location}</strong>
-            <span className="game-hud-location-meta">
-              <span>Osogbo · WAT</span> {dateLabel} · {clockLabel}
-            </span>
-          </span>
-        </div>
-
         <Link
           to="/wallet"
           className="game-hud-balance"
@@ -93,7 +80,7 @@ export function GameHUD({
           to="/notifications"
           className="game-hud-notifications"
           aria-label={`Notifications, ${unread} unread`}
-          title={`Notifications${unread > 0 ? ` · ${unread} unread` : ""}`}
+          title={unread > 0 ? `Notifications (${unread} unread)` : "Notifications"}
         >
           <Bell className="h-4.5 w-4.5" />
           {unread > 0 && (
@@ -101,11 +88,22 @@ export function GameHUD({
           )}
         </Link>
       </div>
-      <div className="hud-live-clock">
-        <span>OSOGBO · WAT</span>
-        <time>
-          {dateLabel} · {clockLabel}
-        </time>
+      <div className="game-hud-context-row" role="group" aria-label="Current location and time">
+        <div className="game-hud-location">
+          <span className="game-hud-location-icon">
+            <MapPin className="h-4 w-4 shrink-0" />
+          </span>
+          <span className="game-hud-item-copy min-w-0">
+            <small>Current area</small>
+            <strong className="truncate">{location}</strong>
+          </span>
+        </div>
+        <div className="hud-live-clock">
+          <span>OSOGBO WAT</span>
+          <time>
+            {dateLabel} / {clockLabel}
+          </time>
+        </div>
       </div>
     </header>
   );

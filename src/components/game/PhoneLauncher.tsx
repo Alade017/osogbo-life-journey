@@ -74,11 +74,13 @@ export function PhoneLauncher({
   compact = false,
   trigger,
   shortcutEditor,
+  onOpenChange,
 }: {
   className?: string;
   compact?: boolean;
   trigger?: ReactNode;
   shortcutEditor?: ReactNode;
+  onOpenChange?: (open: boolean) => void;
 }) {
   const [activeApp, setActiveApp] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -108,6 +110,7 @@ export function PhoneLauncher({
       open={dialogOpen}
       onOpenChange={(open) => {
         setDialogOpen(open);
+        onOpenChange?.(open);
         if (!open) {
           setActiveApp(null);
           setMessagePlayerId(undefined);

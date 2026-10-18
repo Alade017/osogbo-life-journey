@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { createPortal } from "react-dom";
 import { BadgeCheck, MapPin, X } from "lucide-react";
 import { formatMapNaira } from "@/components/map/map-ui-utils";
 import { MapApiError, requestMapLandmark } from "@/lib/map-api";
@@ -19,6 +20,7 @@ export function LandmarkSheet({
   onRunPlaceAction,
   actionPending,
   actionResult,
+  locationName,
 }: {
   landmark: {
     id: string;
@@ -38,6 +40,7 @@ export function LandmarkSheet({
   onRunPlaceAction: (actionId: string) => void;
   actionPending: boolean;
   actionResult?: PlaceActionResult | null;
+  locationName: string;
 }) {
   const detailsQuery = useQuery({
     queryKey: ["mapLandmarkDetails", landmark.id],
@@ -54,7 +57,9 @@ export function LandmarkSheet({
       : undefined;
   const canAct = !!detailsQuery.data && !offline && !pending;
 
-  return (
+  if (typeof document === "undefined") return null;
+
+  return createPortal(
     <section
       className="map-sheet map-landmark-sheet"
       role="dialog"
@@ -74,6 +79,9 @@ export function LandmarkSheet({
         </button>
       </header>
       <p>{detailsQuery.data?.landmark.description ?? description}</p>
+      <p className="map-location-line">
+        <MapPin size={15} aria-hidden="true" /> Located in {locationName}
+      </p>
       {restricted && (
         <p className="map-age-badge">
           <BadgeCheck size={15} /> 18+
@@ -164,6 +172,7 @@ export function LandmarkSheet({
           </p>
         )}
       </footer>
-    </section>
+    </section>,
+    document.body,
   );
 }
