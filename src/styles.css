@@ -10438,3 +10438,259 @@
     will-change: auto;
   }
 }
+/* Phone refresh: keep these final rules after the historical shell styles. */
+.city-game.navigation-redesign {
+  background: #fff;
+  color: #17212b;
+  padding-bottom: calc(92px + env(safe-area-inset-bottom));
+}
+.city-game.navigation-redesign
+  :is(.city-game-frame, .city-game-content, .city-game-main, .game-home) {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  margin-inline: 0;
+}
+.city-game.navigation-redesign .game-home {
+  --foreground: #17212b;
+  --muted-foreground: #526170;
+  --color-text: #17212b;
+  --color-text-secondary: #526170;
+  --card: #fff;
+  --background: #fff;
+  color: var(--foreground);
+  background: #fff;
+}
+.city-game.navigation-redesign nav.game-floating-nav {
+  position: fixed;
+  inset: auto 80px calc(12px + env(safe-area-inset-bottom)) 12px;
+  z-index: 70;
+  display: grid;
+  width: auto;
+  height: 64px;
+  min-height: 64px;
+  grid-template-columns: repeat(3, minmax(44px, 1fr));
+  align-items: center;
+  padding: 9px;
+  gap: 4px;
+  transform: none;
+  border: 1px solid #d5dde5;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 2px 6px #17212b0d;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.city-game.navigation-redesign nav.game-floating-nav .mobile-nav-link {
+  display: grid;
+  place-items: center;
+  justify-self: center;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  color: #526170;
+  background: transparent;
+  transform: none;
+}
+.city-game.navigation-redesign nav.game-floating-nav .mobile-nav-active {
+  color: #fff;
+  background: #2449a6;
+}
+.city-game.navigation-redesign nav.game-floating-nav .mobile-nav-link svg {
+  color: inherit;
+  transform: none;
+}
+.city-game.navigation-redesign nav.game-floating-nav .mobile-nav-link span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.city-game.navigation-redesign .game-phone-fab {
+  right: 16px;
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  z-index: 75;
+}
+.game-phone-fab-trigger {
+  width: 48px;
+  height: 48px;
+  box-shadow: 0 2px 6px #17212b14;
+}
+.game-floating-nav a:focus-visible,
+.game-phone-fab-trigger:focus-visible {
+  outline: 2px solid #2449a6;
+  outline-offset: 3px;
+}
+.phone-messenger {
+  --foreground: #17212b;
+  --muted-foreground: #526170;
+  --background: #f3f6fa;
+  --brand-porcelain: #f3f6fa;
+  --card: #fff;
+  --border: #d5dde5;
+  --primary: #2449a6;
+  --primary-foreground: #fff;
+  --success: #2449a6;
+  color: var(--foreground);
+}
+.phone-messenger[data-message-theme="ink"] {
+  color-scheme: dark;
+  --foreground: #f1f5fb;
+  --muted-foreground: #b6c5d6;
+  --background: #111923;
+  --brand-porcelain: #111923;
+  --card: #1d2938;
+  --border: #46576b;
+  --primary: #b3c8ff;
+  --primary-foreground: #14213e;
+  --success: #b3c8ff;
+}
+.phone-messenger
+  :is(
+    .phone-chat-panel,
+    .phone-message-bubble,
+    .phone-conversation,
+    .phone-contact-row,
+    .phone-chat-input,
+    .phone-inbox-search input,
+    .phone-player-search-input
+  ) {
+  color: var(--foreground);
+}
+.phone-messenger .phone-message-history {
+  background: var(--background);
+}
+.phone-messenger :is(.phone-status-page, .phone-theme-page) {
+  color: var(--foreground);
+}
+.phone-messenger .phone-thread-header {
+  color: #fff;
+  background: #2449a6;
+}
+.phone-messenger .phone-thread-header :is(.phone-thread-back, .phone-thread-search-toggle) {
+  width: 44px;
+  height: 44px;
+  color: #fff;
+}
+.phone-messenger .phone-conversation-status > span {
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+.phone-messenger .phone-inbox-filters button {
+  min-height: 44px;
+}
+.phone-messenger .phone-conversation {
+  height: 76px;
+  min-height: 76px;
+  overflow: hidden;
+}
+.phone-messenger .phone-chat-composer {
+  grid-template-columns: repeat(3, 44px) minmax(0, 1fr) 44px;
+  gap: 0;
+  margin: 6px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  box-shadow: none;
+  background: var(--card);
+}
+.phone-messenger .phone-chat-composer .phone-chat-input {
+  grid-column: 4;
+  grid-row: 2;
+  min-width: 0;
+  width: 100%;
+  padding: 12px 4px;
+  border: 0;
+  background: transparent;
+  font-size: 16px;
+}
+.phone-chat-composer .phone-chat-input-actions {
+  display: contents;
+}
+.phone-messenger .phone-chat-utility {
+  width: 44px;
+  height: 44px;
+  grid-row: 2;
+}
+.phone-chat-utility:nth-child(1) {
+  grid-column: 1;
+}
+.phone-chat-utility:nth-child(2) {
+  grid-column: 2;
+}
+.phone-chat-utility:nth-child(3) {
+  grid-column: 3;
+}
+.phone-chat-composer .phone-chat-send {
+  grid-column: 5;
+  grid-row: 2;
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+.phone-chat-composer .message-character-count {
+  display: none;
+}
+.phone-chat-composer .message-composer-reply {
+  grid-row: 1;
+}
+.phone-thread-search-toggle {
+  min-width: 44px;
+  min-height: 44px;
+}
+.phone-star-filter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  flex: none;
+  color: var(--foreground);
+  background: var(--card);
+  font-size: 12px;
+}
+.phone-messenger .message-actions {
+  flex-wrap: wrap;
+}
+.message-actions button[aria-pressed="true"] {
+  color: var(--primary);
+}
+.phone-messenger .message-window-spacer {
+  flex: none;
+  width: 1px;
+  padding: 0;
+  margin: -4px 0;
+  list-style: none;
+}
+.phone-messenger .phone-message-bubble {
+  flex: none;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  content-visibility: visible;
+}
+.phone-messenger .voice-note-player {
+  min-width: 0;
+  width: min(230px, 100%);
+  grid-template-columns: 44px minmax(24px, 1fr) auto 44px;
+}
+.phone-dialog.phone-dialog {
+  box-shadow: 0 3px 12px #17212b24;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .phone-dialog *,
+  .game-floating-nav *,
+  .game-phone-fab * {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+.reduce-motion :is(.phone-dialog *, .game-floating-nav *, .game-phone-fab *) {
+  animation: none !important;
+  transition: none !important;
+}

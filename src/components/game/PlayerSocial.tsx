@@ -9,6 +9,7 @@ import {
   Mic,
   CircleDashed,
   BellOff,
+  Check,
   CheckCheck,
   Palette,
   Pin,
@@ -25,6 +26,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { useMessageWindow } from "@/hooks/use-message-window";
 import { Avatar } from "@/components/game/Avatar";
 import type { Appearance } from "@/components/game/Avatar";
 import { FormattedMessage, MessageFormattingToolbar } from "@/components/game/MessageFormatting";
@@ -74,6 +76,7 @@ type ReportTarget = { id: string; name: string; messageId?: string };
 type ActiveChat = { conversationId: string; characterId: string; name: string };
 type InboxConversation = SocialPlayer & {
   id: string;
+  lastActivity?: string;
   preview?: string;
   unreadCount?: number;
   pinnedAt?: string | null;
@@ -108,7 +111,8 @@ function PlayerAvatar({ player }: { player: Pick<SocialPlayer, "appearance" | "g
   );
 }
 
-function formatConversationTime(value: string) {
+function formatConversationTime(value?: string) {
+  if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
   const today = new Date();
@@ -142,7 +146,8 @@ function VirtualConversationList({
   return (
     <div
       className="phone-conversation-list phone-conversation-list-virtual"
-      role="list"
+      role="region"
+      aria-label="Conversations"
       onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
     >
       <div
@@ -156,7 +161,6 @@ function VirtualConversationList({
           {visible.map((conversation) => (
             <button
               type="button"
-              role="listitem"
               key={conversation.id}
               className="phone-conversation"
               onClick={() => onOpen(conversation)}
@@ -238,7 +242,7 @@ function PlayerRow({
   );
 }
 
-function MessageList({
+export function MessageList({
   messages,
   ownCharacterId,
   onReport,
@@ -251,10 +255,40 @@ function MessageList({
   onReply: (message: SocialMessage) => void;
   phoneMode?: boolean;
 }) {
-  const listRef = useRef<HTMLOListElement>(null);
+  const [starred, setStarred] = useState<string[]>([]);
+  const [starredOnly, setStarredOnly] = useState(false);
+  const starKey = "osun-message-stars:" + (ownCharacterId ?? "guest");
+  useEffect(() => {
+    try {
+      const saved: unknown = JSON.parse(localStorage.getItem(starKey) ?? "[]");
+      setStarred(
+        Array.isArray(saved) ? saved.filter((id): id is string => typeof id === "string") : [],
+      );
+    } catch {
+      setStarred([]);
+    }
+  }, [starKey]);
+  const toggleStar = (id: string) => {
+    const next = starred.includes(id) ? starred.filter((value) => value !== id) : [...starred, id];
+    setStarred(next);
+    try {
+      localStorage.setItem(starKey, JSON.stringify(next));
+    } catch {
+      /* Session stars remain available. */
+    }
+  };
+  const filteredMessages = starredOnly
+    ? messages.filter((message) => starred.includes(message.id))
+    : messages;
+  const windowed = useMessageWindow(
+    filteredMessages.map((message) => message.id),
+    phoneMode,
+  );
+  const listRef = windowed.ref;
+  const visibleMessages = filteredMessages.slice(windowed.first, windowed.last);
   useEffect(() => {
     if (phoneMode && listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
-  }, [messages, phoneMode]);
+  }, [messages, phoneMode, listRef]);
   if (!messages.length)
     return (
       <p
@@ -268,80 +302,118 @@ function MessageList({
       </p>
     );
   return (
-    <ol
-      ref={listRef}
-      aria-label="Message history"
-      className={
-        phoneMode
-          ? "phone-message-history"
-          : "grid max-h-72 gap-2 overflow-y-auto rounded-xl border border-border bg-background p-3"
-      }
-    >
-      {messages.map((message) => (
-        <li
-          key={message.id}
-          className={`${phoneMode ? "phone-message-bubble" : "rounded-lg bg-card px-3 py-2 text-sm"} ${message.sender_character_id === ownCharacterId ? "is-own" : "is-other"}`}
+    <>
+      {phoneMode && (
+        <button
+          type="button"
+          className="phone-star-filter"
+          aria-pressed={starredOnly}
+          onClick={() => setStarredOnly((value) => !value)}
         >
-          {!phoneMode && (
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <strong>
-                {message.sender_character_id === ownCharacterId ? "You" : message.sender_name}
-              </strong>
-            </div>
-          )}
-          {message.reply && (
-            <blockquote className="message-reply-quote">
-              <strong>{message.reply.senderName}</strong>
-              {message.reply.messageType === "voice" ? (
-                <span>
-                  <Mic aria-hidden="true" /> Voice note ·{" "}
-                  {Math.max(1, Math.round((message.reply.voiceDurationMs ?? 0) / 1000))}s
-                </span>
-              ) : (
-                <span>{message.reply.body.slice(0, 100)}</span>
-              )}
-            </blockquote>
-          )}
-          {message.message_type === "voice" && message.voice_duration_ms ? (
-            <VoiceNotePlayer messageId={message.id} durationMs={message.voice_duration_ms} />
-          ) : (
-            <p className="whitespace-pre-wrap break-words">
-              <FormattedMessage body={message.body} />
-            </p>
-          )}
-          <time
-            className={
-              phoneMode
-                ? "phone-message-time"
-                : "mt-1 block text-right text-[11px] text-muted-foreground"
-            }
+          <Star size={16} aria-hidden="true" />{" "}
+          {starredOnly ? "Show all messages" : "Starred messages on this device"}
+        </button>
+      )}
+      <ol
+        ref={listRef}
+        aria-label="Message history"
+        className={
+          phoneMode
+            ? "phone-message-history"
+            : "grid max-h-72 gap-2 overflow-y-auto rounded-xl border border-border bg-background p-3"
+        }
+      >
+        {windowed.before > 0 && (
+          <li
+            aria-hidden="true"
+            className="message-window-spacer"
+            style={{ height: windowed.before }}
+          />
+        )}
+        {starredOnly && !visibleMessages.length && (
+          <li className="phone-chat-empty">No starred messages in this chat.</li>
+        )}
+        {visibleMessages.map((message) => (
+          <li
+            key={message.id}
+            data-message-id={message.id}
+            className={`${phoneMode ? "phone-message-bubble" : "rounded-lg bg-card px-3 py-2 text-sm"} ${message.sender_character_id === ownCharacterId ? "is-own" : "is-other"}`}
           >
-            {new Intl.DateTimeFormat("en-NG", {
-              hour: "2-digit",
-              minute: "2-digit",
-              timeZone: "Africa/Lagos",
-            }).format(new Date(message.created_at))}
-            {phoneMode && message.sender_character_id === ownCharacterId && (
-              <CheckCheck className="phone-message-ticks" aria-label="Message sent" />
+            {!phoneMode && (
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <strong>
+                  {message.sender_character_id === ownCharacterId ? "You" : message.sender_name}
+                </strong>
+              </div>
             )}
-          </time>
-          <span className="message-actions">
-            <button type="button" onClick={() => onReply(message)}>
-              <Reply aria-hidden="true" /> Reply
-            </button>
-            {message.sender_character_id !== ownCharacterId && (
-              <button type="button" onClick={() => onReport(message)}>
-                Report
+            {message.reply && (
+              <blockquote className="message-reply-quote">
+                <strong>{message.reply.senderName}</strong>
+                {message.reply.messageType === "voice" ? (
+                  <span>
+                    <Mic aria-hidden="true" /> Voice note ·{" "}
+                    {Math.max(1, Math.round((message.reply.voiceDurationMs ?? 0) / 1000))}s
+                  </span>
+                ) : (
+                  <span>{message.reply.body.slice(0, 100)}</span>
+                )}
+              </blockquote>
+            )}
+            {message.message_type === "voice" && message.voice_duration_ms ? (
+              <VoiceNotePlayer messageId={message.id} durationMs={message.voice_duration_ms} />
+            ) : (
+              <p className="whitespace-pre-wrap break-words">
+                <FormattedMessage body={message.body} />
+              </p>
+            )}
+            <time
+              className={
+                phoneMode
+                  ? "phone-message-time"
+                  : "mt-1 block text-right text-[11px] text-muted-foreground"
+              }
+            >
+              {new Intl.DateTimeFormat("en-NG", {
+                hour: "2-digit",
+                minute: "2-digit",
+                timeZone: "Africa/Lagos",
+              }).format(new Date(message.created_at))}
+              {phoneMode && message.sender_character_id === ownCharacterId && (
+                <Check className="phone-message-ticks" aria-label="Message sent" />
+              )}
+            </time>
+            <span className="message-actions">
+              <button
+                type="button"
+                aria-pressed={starred.includes(message.id)}
+                onClick={() => toggleStar(message.id)}
+              >
+                <Star aria-hidden="true" /> {starred.includes(message.id) ? "Unstar" : "Star"}
               </button>
-            )}
-          </span>
-        </li>
-      ))}
-    </ol>
+              <button type="button" onClick={() => onReply(message)}>
+                <Reply aria-hidden="true" /> Reply
+              </button>
+              {message.sender_character_id !== ownCharacterId && (
+                <button type="button" onClick={() => onReport(message)}>
+                  Report
+                </button>
+              )}
+            </span>
+          </li>
+        ))}
+        {windowed.after > 0 && (
+          <li
+            aria-hidden="true"
+            className="message-window-spacer"
+            style={{ height: windowed.after }}
+          />
+        )}
+      </ol>
+    </>
   );
 }
 
-function ChatComposer({
+export function ChatComposer({
   label,
   disabled,
   onSend,
@@ -501,11 +573,14 @@ export function PlayerSocial({
   const [activeChat, setActiveChat] = useState<ActiveChat | null>(null);
   const [statusBody, setStatusBody] = useState("");
   const [statusTheme, setStatusTheme] = useState<StatusTheme>("leaf");
-  const [messageTheme, setMessageTheme] = useState(() =>
-    typeof window === "undefined"
-      ? "porcelain"
-      : (localStorage.getItem("osogbo-message-theme") ?? "porcelain"),
-  );
+  const [messageTheme, setMessageTheme] = useState("porcelain");
+  useEffect(() => {
+    try {
+      setMessageTheme(localStorage.getItem("osogbo-message-theme") ?? "porcelain");
+    } catch {
+      /* Default theme. */
+    }
+  }, []);
   const [threadMenu, setThreadMenu] = useState<InboxConversation | null>(null);
   const [replyTarget, setReplyTarget] = useState<SocialMessage | null>(null);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -1597,7 +1672,11 @@ export function PlayerSocial({
                 aria-pressed={messageTheme === choice.id}
                 onClick={() => {
                   setMessageTheme(choice.id);
-                  localStorage.setItem("osogbo-message-theme", choice.id);
+                  try {
+                    localStorage.setItem("osogbo-message-theme", choice.id);
+                  } catch {
+                    /* Session theme remains available. */
+                  }
                 }}
               >
                 <span className={`message-theme-swatch theme-${choice.id}`} />

@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { PlayerSocial } from "@/components/game/PlayerSocial";
+import { PlayerSocial, MessageList, ChatComposer } from "@/components/game/PlayerSocial";
 
 const mocks = vi.hoisted(() => ({
   getPlayerSocialOverview: vi.fn(),
@@ -171,5 +171,82 @@ describe("real-player social panel", () => {
       }),
     );
     expect(screen.getByRole("button", { name: "Back to chats" })).toBeInTheDocument();
+  });
+});
+
+describe("phone message interactions", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe() {}
+        disconnect() {}
+        unobserve() {}
+      },
+    );
+  });
+  const messages = Array.from({ length: 120 }, (_, index) => ({
+    id: "message-" + index,
+    sender_character_id: "me",
+    sender_name: "Me",
+    channel: "private" as const,
+    location_id: null,
+    conversation_id: "thread",
+    body: "Message " + index,
+    message_type: "text" as const,
+    voice_duration_ms: null,
+    reply_to_message_id: null,
+    reply: null,
+    created_at: "2026-10-18T10:00:00Z",
+  }));
+  it("windows long histories and reaches older and newer messages", () => {
+    const { container } = render(
+      <MessageList
+        messages={messages}
+        ownCharacterId="me"
+        phoneMode
+        onReply={() => {}}
+        onReport={() => {}}
+      />,
+    );
+    expect(container.querySelectorAll("[data-message-id]").length).toBeLessThan(40);
+    const history = screen.getByRole("list", { name: "Message history" });
+    fireEvent.scroll(history, { target: { scrollTop: 17500 } });
+    expect(screen.getByText("Message 119")).toBeInTheDocument();
+    fireEvent.scroll(history, { target: { scrollTop: 0 } });
+    expect(screen.getByText("Message 0")).toBeInTheDocument();
+  });
+  it("persists individual stars and filters the chat", () => {
+    render(
+      <MessageList
+        messages={messages.slice(0, 2)}
+        ownCharacterId="me"
+        phoneMode
+        onReply={() => {}}
+        onReport={() => {}}
+      />,
+    );
+    fireEvent.click(screen.getAllByRole("button", { name: "Star" })[0]!);
+    expect(JSON.parse(localStorage.getItem("osun-message-stars:me")!)).toEqual(["message-0"]);
+    fireEvent.click(screen.getByRole("button", { name: "Starred messages on this device" }));
+    expect(screen.getByText("Message 0")).toBeInTheDocument();
+    expect(screen.queryByText("Message 1")).not.toBeInTheDocument();
+  });
+  it("keeps the draft after a send failure", async () => {
+    render(
+      <ChatComposer
+        label="Message Ayo"
+        phoneMode
+        onSend={async () => {
+          throw new Error("offline");
+        }}
+      />,
+    );
+    const input = screen.getByLabelText("Message Ayo");
+    fireEvent.change(input, { target: { value: "Keep my draft" } });
+    fireEvent.submit(input.closest("form")!);
+    await waitFor(() => expect(input).not.toBeDisabled());
+    expect(input).toHaveValue("Keep my draft");
   });
 });
