@@ -1,54 +1,23 @@
-import {
-  Component,
-  memo,
-  Suspense,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type MutableRefObject,
-  type ReactNode,
-  type PointerEvent as ReactPointerEvent,
-} from "react";
-import type * as React from "react";
+import { Component, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Canvas } from "@react-three/fiber";
-import { Html, useGLTF, useProgress } from "@react-three/drei";
+import { Html, OrbitControls, useGLTF, useProgress } from "@react-three/drei";
 import { clone } from "three/addons/utils/SkeletonUtils.js";
-import {
-  BusFront,
-  Cloud,
-  HeartPulse,
-  Landmark,
-  Megaphone,
-  MapPin,
-  School,
-  ShoppingBasket,
-  Trophy,
-  Utensils,
-} from "lucide-react";
-import { Camera } from "@/components/3d/Camera";
-import { Lights } from "@/components/3d/Lights";
-import { Model } from "@/components/3d/Model";
 import townData from "@/data/osogbo-town.json";
-import { getSceneColor } from "@/lib/scene-colors";
 import { DRACO_PATH } from "@/types/models";
-import {
-  expandTownGridLayout,
-  mapTownGridToScene,
-  isTownTap,
-  type TownCellKind,
-  type TownGridLayout,
-} from "@/lib/town-grid";
-import type { MapDistrict, MapLandmark } from "@/components/map/OsogboMap.svg";
-import { layoutCityLabels } from "@/lib/city-label-layout";
-import { Color, InstancedMesh, Object3D, type ColorRepresentation } from "three";
-import { useThree } from "@react-three/fiber";
 import "./map-canvas.css";
 
-export type MapZoomLevel = 1 | 2 | 3;
-export type MapFilter = MapLandmark["category"] | "jobs" | "all";
+export type MapFilter =
+  | "market"
+  | "transport"
+  | "school"
+  | "health"
+  | "worship"
+  | "junction"
+  | "sport"
+  | "food"
+  | "services"
+  | "jobs"
+  | "all";
 export type MapSearchTarget = string | { id: string; kind?: "district" | "landmark" };
 export type MapPlayerLocation = {
   x: number;
@@ -66,12 +35,15 @@ export type MapBillboardMarker = {
   imageUrl?: string | null;
   count: number;
 };
+
+/** Display-only property input. Ownership, rent, and status remain server/game-state owned. */
 export type MapProperty = {
   id: string;
   type: "compound" | "flat" | "shophouse";
-  tier: number;
+  tier: 1 | 2 | 3;
   status: "owned" | "rent_due" | "overdue" | "vacant";
   position: [number, number, number];
+  rotation?: number;
   ownerName?: string;
 };
 
@@ -85,149 +57,8 @@ export interface MapCanvasProps {
   jobLandmarkIds?: string[];
   billboardMarkers?: MapBillboardMarker[];
   onSelectBillboard?: (campaignId: string) => void;
-  properties?: MapProperty[];
-}
-
-const gridLayout = townData.grid;
-const grid = expandTownGridLayout(
-  gridLayout as TownGridLayout,
-  townData.meta.legend as Record<string, TownCellKind>,
-);
-const sceneCells = mapTownGridToScene(grid);
-const cellByPlace = new Map(
-  grid.cells.filter((cell) => cell.placeId).map((cell) => [cell.placeId!, cell]),
-);
-const rawLandmarks = townData.landmarks as Array<
-  MapLandmark & {
-    districtId: string;
-    locationSlug: string;
-    grid: { x: number; z: number };
-    model: string;
-    min_age?: number;
-  }
->;
-const districts = townData.districts.map((district) => ({
-  ...district,
-  landmarks: rawLandmarks.filter((landmark) => landmark.districtId === district.id),
-})) as unknown as MapDistrict[];
-const landmarks = rawLandmarks as (MapLandmark & {
-  districtId: string;
-  locationSlug: string;
-  grid: { x: number; z: number };
-  model: string;
-  min_age?: number;
-})[];
-const scenePointForGrid = (x: number, z: number) => ({
-  x: (x - (grid.columns - 1) / 2) * grid.cellSize,
-  z: (z - (grid.rows - 1) / 2) * grid.cellSize,
-});
-
-const icons = {
-  market: ShoppingBasket,
-  transport: BusFront,
-  school: School,
-  health: HeartPulse,
-  worship: Cloud,
-  junction: MapPin,
-  sport: Trophy,
-  food: Utensils,
-  services: Landmark,
-} satisfies Record<MapLandmark["category"], typeof Landmark>;
-
-const labelFor = (value: string) =>
-  value.length ? value[0]!.toUpperCase() + value.slice(1) : value;
-
-// A failed optional model must not make the whole playable map disappear.
-class MapModelBoundary extends Component<
-  { children: ReactNode; name: string; fallback?: ReactNode },
-  { failed: boolean }
-> {
-  override state = { failed: false };
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-  override componentDidCatch(error: Error) {
-    console.warn(`Map model unavailable: ${this.props.name}`, error);
-  }
-  override render() {
-    return this.state.failed
-      ? (this.props.fallback ?? (
-          <mesh position={[0, 0.55, 0]}>
-            <boxGeometry args={[0.9, 1.1, 0.9]} />
-            <meshStandardMaterial color={getSceneColor("--scene-building")} />
-          </mesh>
-        ))
-      : this.props.children;
-  }
-}
-
-function TownInstances({
-  cells,
-  kind,
-  color,
-  height,
-}: {
-  cells: typeof sceneCells;
-  kind: "grass" | "road" | "water" | "plot";
-  color: ColorRepresentation;
-  height: number;
-}) {
-  const mesh = useRef<InstancedMesh>(null);
-  const invalidate = useThree((state) => state.invalidate);
-  const positions = useMemo(() => cells.filter((cell) => cell.kind === kind), [cells, kind]);
-  useEffect(() => {
-    if (!mesh.current) return;
-    const matrix = new Object3D();
-    positions.forEach((cell, index) => {
-      matrix.position.set(cell.x, cell.y + height / 2 - 0.08, cell.z);
-      matrix.scale.set(grid.cellSize, height, grid.cellSize);
-      matrix.updateMatrix();
-      mesh.current!.setMatrixAt(index, matrix.matrix);
-    });
-    mesh.current.instanceMatrix.needsUpdate = true;
-    invalidate();
-  }, [height, invalidate, positions]);
-  if (!positions.length) return null;
-  return (
-    <instancedMesh ref={mesh} args={[undefined, undefined, positions.length]} frustumCulled={false}>
-      <boxGeometry args={[1, 1, 1]} />
-      <meshStandardMaterial color={color} roughness={1} />
-    </instancedMesh>
-  );
-}
-
-const TownBaseFallback = memo(function TownBaseFallback() {
-  const colors = useMemo(
-    () => ({
-      grass: getSceneColor("--scene-hill"),
-      road: getSceneColor("--scene-road"),
-      water: getSceneColor("--scene-sky"),
-      plot: getSceneColor("--scene-wood"),
-    }),
-    [],
-  );
-  return (
-    <group>
-      <mesh position={[0, -0.2, 0]}>
-        <boxGeometry args={[grid.columns * grid.cellSize, 0.2, grid.rows * grid.cellSize]} />
-        <meshStandardMaterial color={colors.grass} roughness={1} />
-      </mesh>
-      <TownInstances cells={sceneCells} kind="grass" color={colors.grass} height={0.24} />
-      <TownInstances cells={sceneCells} kind="road" color={colors.road} height={0.28} />
-      <TownInstances cells={sceneCells} kind="water" color={colors.water} height={0.22} />
-      <TownInstances cells={sceneCells} kind="plot" color={colors.plot} height={0.3} />
-      <TownPropInstances kind="tree" />
-      <TownPropInstances kind="car" />
-    </group>
-  );
-});
-
-function TownBase() {
-  return (
-    <MapModelBoundary name="town.glb" fallback={<TownBaseFallback />}>
-      <Model modelPath="/models/town.glb" />
-    </MapModelBoundary>
-  );
+  /** Pass undefined while the existing property source is loading. */
+  properties?: readonly MapProperty[];
 }
 
 const HOUSE_MODELS: Record<MapProperty["type"], string> = {
@@ -235,430 +66,196 @@ const HOUSE_MODELS: Record<MapProperty["type"], string> = {
   flat: "/models/flat.glb",
   shophouse: "/models/shophouse.glb",
 };
-const PROPERTY_STATUS_LABEL: Record<MapProperty["status"], string> = {
+
+const propertyStatusText: Record<MapProperty["status"], string> = {
   owned: "Owned",
   rent_due: "Rent due",
   overdue: "Rent overdue",
   vacant: "Vacant",
 };
 
-function HouseAsset({ type, tier }: Pick<MapProperty, "type" | "tier">) {
-  const { scene } = useGLTF(HOUSE_MODELS[type], DRACO_PATH);
-  const object = useMemo(() => clone(scene), [scene]);
-  useLayoutEffect(() => {
-    object.traverse((child) => {
-      if (!child.name.startsWith("Accessory_Tier")) return;
-      const match = child.name.match(/^Accessory_Tier(\d+)/);
-      if (match) child.visible = Number(match[1]) <= tier;
-    });
-  }, [object, tier]);
-  return <primitive object={object} dispose={null} />;
+const filterCategories: Partial<Record<MapFilter, readonly string[]>> = {
+  jobs: ["services", "food", "market", "transport"],
+};
+
+type AssetBoundaryProps = {
+  children: ReactNode;
+  fallback: ReactNode;
+  resetKey: string;
+};
+
+/** Keeps an unavailable optional GLB local to its own map object. */
+class AssetBoundary extends Component<AssetBoundaryProps, { failed: boolean }> {
+  override state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  override componentDidUpdate(previousProps: AssetBoundaryProps) {
+    if (previousProps.resetKey !== this.props.resetKey && this.state.failed) {
+      this.setState({ failed: false });
+    }
+  }
+
+  override render() {
+    return this.state.failed ? this.props.fallback : this.props.children;
+  }
 }
 
-function House({ property }: { property: MapProperty }) {
-  const badge =
-    property.status === "owned" && property.ownerName
-      ? property.ownerName
-      : PROPERTY_STATUS_LABEL[property.status];
+function Terrain() {
   return (
-    <group position={property.position}>
-      <MapModelBoundary key={HOUSE_MODELS[property.type]} name={HOUSE_MODELS[property.type]}>
-        <HouseAsset type={property.type} tier={property.tier} />
-      </MapModelBoundary>
-      <Html position={[0, 2.2, 0]} center distanceFactor={12}>
-        <span className={`town-house-badge is-${property.status}`}>{badge}</span>
-      </Html>
+    <group>
+      <mesh position={[0, -0.16, 0]} receiveShadow>
+        <boxGeometry args={[32, 0.3, 24]} />
+        <meshStandardMaterial color="#8bbf76" roughness={1} />
+      </mesh>
+      <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <planeGeometry args={[5.2, 24]} />
+        <meshStandardMaterial color="#d2b78f" roughness={1} />
+      </mesh>
+      <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, Math.PI / 2]}>
+        <planeGeometry args={[5.2, 32]} />
+        <meshStandardMaterial color="#d2b78f" roughness={1} />
+      </mesh>
     </group>
   );
 }
 
-function PropertyHouses({ properties }: { properties: MapProperty[] }) {
+function GltfObject({ path, tier }: { path: string; tier?: MapProperty["tier"] }) {
+  const { scene } = useGLTF(path, DRACO_PATH, true);
+  const object = useMemo(() => {
+    const instance = clone(scene);
+    instance.traverse((child) => {
+      const accessory = /^Accessory_Tier(\d+)_/.exec(child.name);
+      if (accessory && tier !== undefined) child.visible = Number(accessory[1]) <= tier;
+      if ("isMesh" in child && child.isMesh) {
+        child.castShadow = false;
+        child.receiveShadow = false;
+      }
+    });
+    return instance;
+  }, [scene, tier]);
+
+  // The clone shares cached GLTF geometry/materials, so R3F must not dispose them per house.
+  return <primitive object={object} dispose={null} />;
+}
+
+/** Avoids requesting an absent optional export through GLTFLoader. */
+function OptionalGltf({
+  path,
+  fallback,
+  loadingFallback = fallback,
+  tier,
+}: {
+  path: string;
+  fallback: ReactNode;
+  loadingFallback?: ReactNode;
+  tier?: MapProperty["tier"];
+}) {
+  const [available, setAvailable] = useState(false);
+
+  useEffect(() => {
+    let current = true;
+    void fetch(path, { method: "HEAD" })
+      .then((response) => {
+        if (current) setAvailable(response.ok);
+      })
+      .catch(() => {
+        if (current) setAvailable(false);
+      });
+    return () => {
+      current = false;
+    };
+  }, [path]);
+
+  if (!available) return fallback;
   return (
-    <>
-      {properties.map((property) => (
-        <House key={property.id} property={property} />
-      ))}
-    </>
+    <AssetBoundary resetKey={path} fallback={fallback}>
+      <Suspense fallback={loadingFallback}>
+        <GltfObject path={path} tier={tier} />
+      </Suspense>
+    </AssetBoundary>
+  );
+}
+
+function TownBase() {
+  return <OptionalGltf path="/models/town.glb" fallback={null} loadingFallback={<MapLoading />} />;
+}
+
+function HousePlaceholder({ property }: { property: MapProperty }) {
+  return (
+    <group position={property.position} rotation-y={property.rotation ?? 0}>
+      <mesh position={[0, 0.55, 0]}>
+        <boxGeometry args={[1.4, 1.1, 1.2]} />
+        <meshStandardMaterial color="#b8784f" roughness={0.9} />
+      </mesh>
+      <mesh position={[0, 1.22, 0]} rotation-y={Math.PI / 4}>
+        <coneGeometry args={[1.15, 0.65, 4]} />
+        <meshStandardMaterial color="#6b4738" roughness={1} />
+      </mesh>
+    </group>
+  );
+}
+
+export function houseBadgeText(property: MapProperty) {
+  if (property.status === "owned" && property.ownerName) return property.ownerName;
+  return propertyStatusText[property.status];
+}
+
+function House({ property }: { property: MapProperty }) {
+  const modelPath = HOUSE_MODELS[property.type];
+  const placeholder = (
+    <HousePlaceholder property={{ ...property, position: [0, 0, 0], rotation: 0 }} />
+  );
+  return (
+    <group position={property.position} rotation-y={property.rotation ?? 0}>
+      <OptionalGltf path={modelPath} tier={property.tier} fallback={placeholder} />
+      <Html position={[0, 2.25, 0]} center distanceFactor={10} zIndexRange={[4, 0]}>
+        <span className={`town-house-badge is-${property.status}`}>{houseBadgeText(property)}</span>
+      </Html>
+    </group>
   );
 }
 
 function MapLoading() {
-  const { progress } = useProgress();
+  const { active, progress } = useProgress();
   return (
-    <Html center>
-      <div className="town-map-loading" role="status">
-        Loading town… {Math.round(progress)}%
-      </div>
+    <Html center zIndexRange={[6, 0]}>
+      <p className="town-map-loading" aria-live="polite">
+        {active ? `Loading town ${Math.round(progress)}%` : "Loading town"}
+      </p>
     </Html>
   );
 }
 
-function TownPropInstances({ kind }: { kind: "tree" | "car" }) {
-  const first = useRef<InstancedMesh>(null);
-  const second = useRef<InstancedMesh>(null);
-  const invalidate = useThree((state) => state.invalidate);
-  const positions = useMemo(
-    () =>
-      (kind === "tree" ? (townData.grid.treeCells ?? []) : (townData.grid.carCells ?? [])).map(
-        ([x, z]) => mapTownGridToScene({ ...grid, cells: [{ x: x!, z: z!, kind: "grass" }] })[0]!,
-      ),
-    [kind],
-  );
-  useLayoutEffect(() => {
-    const placeInstances = (
-      mesh: React.RefObject<InstancedMesh | null>,
-      offsetY: number,
-      scale: [number, number, number],
-    ) => {
-      if (!mesh.current) return;
-      const transform = new Object3D();
-      positions.forEach((point, index) => {
-        transform.position.set(point.x, offsetY, point.z);
-        transform.scale.set(...scale);
-        transform.updateMatrix();
-        mesh.current!.setMatrixAt(index, transform.matrix);
-        if (kind === "car")
-          mesh.current!.setColorAt(
-            index,
-            new Color(
-              index % 2 ? getSceneColor("--scene-accent") : getSceneColor("--scene-wood-line"),
-            ),
-          );
-      });
-      mesh.current.instanceMatrix.needsUpdate = true;
-      if (mesh.current.instanceColor) mesh.current.instanceColor.needsUpdate = true;
-    };
-    if (kind === "tree") {
-      placeInstances(first, 0.38, [0.2, 0.75, 0.2]);
-      placeInstances(second, 1.15, [1.15, 1.5, 1.15]);
-    } else {
-      placeInstances(first, 0.16, [1.1, 0.3, 0.58]);
-      placeInstances(second, 0.36, [0.56, 0.28, 0.5]);
-    }
-    invalidate();
-  }, [invalidate, kind, positions]);
-  if (!positions.length) return null;
-  return kind === "tree" ? (
+function TownScene({ properties }: { properties: readonly MapProperty[] | undefined }) {
+  return (
     <>
-      <instancedMesh
-        ref={first}
-        args={[undefined, undefined, positions.length]}
-        frustumCulled={false}
-      >
-        <cylinderGeometry args={[0.1, 0.14, 1, 5]} />
-        <meshStandardMaterial color={getSceneColor("--scene-wood")} />
-      </instancedMesh>
-      <instancedMesh
-        ref={second}
-        args={[undefined, undefined, positions.length]}
-        frustumCulled={false}
-      >
-        <coneGeometry args={[0.5, 1, 5]} />
-        <meshStandardMaterial color={getSceneColor("--scene-hill-front")} />
-      </instancedMesh>
-    </>
-  ) : (
-    <>
-      <instancedMesh
-        ref={first}
-        args={[undefined, undefined, positions.length]}
-        frustumCulled={false}
-      >
-        <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial color="white" roughness={0.8} />
-      </instancedMesh>
-      <instancedMesh
-        ref={second}
-        args={[undefined, undefined, positions.length]}
-        frustumCulled={false}
-      >
-        <boxGeometry args={[1, 1, 1]} />
-        <meshStandardMaterial color="white" roughness={0.8} />
-      </instancedMesh>
-    </>
-  );
-}
-
-function PlaceModels() {
-  return (
-    <group>
-      {landmarks.map((place) => {
-        const cell = cellByPlace.get(place.id);
-        if (!cell) return null;
-        const point = mapTownGridToScene({ ...grid, cells: [cell] })[0]!;
-        return (
-          <group key={place.id} position={[point.x, 0.02, point.z]} scale={1.45}>
-            <MapModelBoundary name={place.label}>
-              <Model modelPath={place.model} />
-            </MapModelBoundary>
-          </group>
-        );
-      })}
-    </group>
-  );
-}
-
-const filterCategories: Record<string, string[]> = {
-  jobs: [],
-  food: ["food", "market"],
-  health: ["health"],
-  services: ["services"],
-  worship: ["worship"],
-  transport: ["transport"],
-  sport: ["sport"],
-};
-
-// Keep this component identity stable so filter/HUD updates preserve focused DOM.
-function IconAnchor({
-  place,
-  zoom,
-  filter,
-  searchTarget,
-  jobLandmarkIds,
-  billboards,
-  onSelectLandmark,
-  onSelectBillboard,
-  tapAllowed,
-}: Omit<React.ComponentProps<typeof PlaceOverlays>, "onSelectDistrict"> & {
-  place: (typeof landmarks)[number];
-}) {
-  const cell = cellByPlace.get(place.id)!;
-  const point = mapTownGridToScene({ ...grid, cells: [cell] })[0]!;
-  const Icon = icons[place.category];
-  const matches =
-    filter === "all" ||
-    (filter === "jobs"
-      ? jobLandmarkIds.includes(place.id)
-      : filterCategories[filter]?.includes(place.category));
-  const isTarget =
-    typeof searchTarget === "string" ? searchTarget === place.id : searchTarget?.id === place.id;
-  return (
-    <group key={place.id}>
-      <Html
-        position={[point.x, 3.1, point.z]}
-        center
-        distanceFactor={zoom * 0.5}
-        zIndexRange={[20, 0]}
-      >
-        <button
-          className={`town-place-bubble${isTarget ? " is-search-target" : ""}`}
-          type="button"
-          aria-label={`${labelFor(place.label)}${place.min_age ? ", 18 plus" : ""}`}
-          style={{ opacity: matches ? 1 : 0.35 }}
-          onPointerDown={(event) => event.stopPropagation()}
-          onClick={(event) => {
-            event.stopPropagation();
-            if (event.detail === 0 || tapAllowed.current) onSelectLandmark(place.id);
-          }}
-        >
-          <Icon size={18} aria-hidden="true" />
-        </button>
-      </Html>
-      {zoom > 13 && (
-        <Html
-          position={[point.x, 2.35, point.z]}
-          center
-          distanceFactor={zoom * 0.5}
-          zIndexRange={[15, 0]}
-        >
-          <button
-            className="town-place-label"
-            type="button"
-            style={{ opacity: matches ? 1 : 0.35 }}
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={(event) => {
-              event.stopPropagation();
-              if (event.detail === 0 || tapAllowed.current) onSelectLandmark(place.id);
-            }}
-          >
-            {labelFor(place.label)}
-          </button>
-        </Html>
-      )}
-      {billboards
-        .filter((marker) => marker.landmarkId === place.id)
-        .map((marker) => (
-          <Html
-            key={marker.campaignId}
-            position={[point.x, 1.75, point.z + 0.9]}
-            center
-            distanceFactor={zoom * 0.5}
-            zIndexRange={[10, 0]}
-          >
-            <button
-              type="button"
-              className="town-billboard"
-              aria-label={`Billboard for ${marker.advertiserName}${marker.count > 1 ? `, ${marker.count} active campaigns` : ""}`}
-              onPointerDown={(event) => event.stopPropagation()}
-              onClick={(event) => {
-                event.stopPropagation();
-                if (event.detail === 0 || tapAllowed.current)
-                  onSelectBillboard?.(marker.campaignId);
-              }}
-            >
-              {marker.imageUrl ? (
-                <img src={marker.imageUrl} alt="" loading="lazy" />
-              ) : (
-                <Megaphone size={14} />
-              )}{" "}
-              {marker.title || marker.advertiserName}
-              {marker.count > 1 ? ` +${marker.count - 1}` : ""}
-            </button>
-          </Html>
-        ))}
-    </group>
-  );
-}
-
-function PlaceOverlays({
-  zoom,
-  filter,
-  searchTarget,
-  jobLandmarkIds,
-  billboards,
-  onSelectLandmark,
-  onSelectDistrict,
-  onSelectBillboard,
-  tapAllowed,
-}: {
-  zoom: number;
-  filter: MapFilter;
-  searchTarget: MapSearchTarget | null;
-  jobLandmarkIds: string[];
-  billboards: MapBillboardMarker[];
-  onSelectLandmark: (id: string) => void;
-  onSelectDistrict: (id: string) => void;
-  onSelectBillboard?: (id: string) => void;
-  tapAllowed: MutableRefObject<boolean>;
-}) {
-  const districtAnchors = useMemo(
-    () =>
-      districts.map((district) => {
-        const area = (
-          district as MapDistrict & {
-            gridArea: { x: number; z: number; width: number; depth: number };
-          }
-        ).gridArea;
-        const center = scenePointForGrid(
-          area.x + (area.width - 1) / 2,
-          area.z + (area.depth - 1) / 2,
-        );
-        const point = { ...center, y: 0 };
-        return { district, point };
-      }),
-    [],
-  );
-  const labelPlacements = layoutCityLabels(
-    districtAnchors.map(({ district }) => ({
-      id: district.id,
-      text: district.name,
-      anchor: {
-        x:
-          Number(
-            (
-              district as MapDistrict & {
-                gridArea: { x: number; z: number; width: number; depth: number };
-              }
-            ).gridArea.x,
-          ) *
-            72 +
-          25,
-        y:
-          Number(
-            (district as MapDistrict & { gridArea: { z: number; depth: number } }).gridArea.z,
-          ) *
-            68 +
-          20,
-      },
-      priority: 4,
-      width: 145,
-      height: 34,
-    })),
-    [],
-    { width: 1100, height: 760 },
-  );
-  const visibleLabelIds = new Set(labelPlacements.map((item) => item.id));
-  return (
-    <group>
-      {districtAnchors.map(({ district, point }) => {
-        if (!visibleLabelIds.has(district.id)) return null;
-        return (
-          <Html
-            key={district.id}
-            position={[point.x, 0.3, point.z]}
-            center
-            distanceFactor={zoom * 0.48}
-            zIndexRange={[5, 0]}
-          >
-            <button
-              className="town-district-label"
-              type="button"
-              aria-label={`${district.name} district, ${district.traffic} traffic`}
-              onClick={(event) => {
-                event.stopPropagation();
-                if (event.detail === 0 || tapAllowed.current) {
-                  window.dispatchEvent(
-                    new CustomEvent("osogbo:map-focus", {
-                      detail: { x: point.x, z: point.z },
-                    }),
-                  );
-                  onSelectDistrict(district.id);
-                }
-              }}
-            >
-              {district.name}
-              <small>{labelFor(district.traffic)} traffic</small>
-            </button>
-          </Html>
-        );
-      })}
-      {landmarks.map((place) => (
-        <IconAnchor
-          key={place.id}
-          place={place}
-          zoom={zoom}
-          filter={filter}
-          searchTarget={searchTarget}
-          jobLandmarkIds={jobLandmarkIds}
-          billboards={billboards}
-          onSelectLandmark={onSelectLandmark}
-          {...(onSelectBillboard ? { onSelectBillboard } : {})}
-          tapAllowed={tapAllowed}
-        />
+      <color attach="background" args={["#dce7dc"]} />
+      <ambientLight intensity={1.3} />
+      <directionalLight position={[8, 13, 7]} intensity={1.6} />
+      <Terrain />
+      <TownBase />
+      {properties?.map((property) => (
+        <House key={property.id} property={property} />
       ))}
-    </group>
-  );
-}
-
-function IsometricTown({
-  zoom,
-  properties,
-  ...props
-}: Omit<React.ComponentProps<typeof PlaceOverlays>, "zoom"> & {
-  zoom: number;
-  properties: MapProperty[];
-}) {
-  return (
-    <Canvas
-      orthographic
-      dpr={[1, 2]}
-      shadows={false}
-      frameloop="demand"
-      gl={{ antialias: false, alpha: false, powerPreference: "low-power" }}
-      fallback={<p role="alert">3D requires WebGL. Your browser could not start it.</p>}
-      camera={{ position: [16, 18, 16], zoom, near: 0.1, far: 100 }}
-      style={{ width: "100%", height: "100%" }}
-    >
-      <color attach="background" args={[getSceneColor("--scene-sky")]} />
-      <Camera zoom={zoom} mapControls />
-      <Lights />
-      <Suspense fallback={<MapLoading />}>
-        <TownBase />
-        <PlaceModels />
-        <PropertyHouses properties={properties} />
-        <PlaceOverlays zoom={zoom} {...props} />
-      </Suspense>
-    </Canvas>
+      {properties === undefined ? <MapLoading /> : null}
+      <OrbitControls
+        makeDefault
+        enableDamping={false}
+        minDistance={10}
+        maxDistance={28}
+        minPolarAngle={Math.PI / 4.4}
+        maxPolarAngle={Math.PI / 2.15}
+        minAzimuthAngle={-Math.PI / 3}
+        maxAzimuthAngle={Math.PI / 3}
+        target={[0, 0, 0]}
+        enablePan
+        panSpeed={0.65}
+        zoomSpeed={0.65}
+      />
+    </>
   );
 }
 
@@ -666,67 +263,27 @@ export function MapCanvas({
   onSelectDistrict,
   onSelectLandmark,
   activeFilter = "all",
-  searchTarget = null,
-  playerLocation: _playerLocation = null,
-  eventChips: _eventChips = [],
+  searchTarget,
+  playerLocation: _playerLocation,
+  eventChips: _eventChips,
   jobLandmarkIds = [],
   billboardMarkers = [],
   onSelectBillboard,
-  properties = [],
+  properties,
 }: MapCanvasProps) {
-  const rootRef = useRef<HTMLDivElement>(null);
-  const pointerStart = useRef<{ x: number; y: number; time: number } | null>(null);
-  const tapAllowed = useRef(false);
-  const [zoom, setZoom] = useState(18);
-  const callbacks = useRef({ onSelectDistrict, onSelectLandmark, onSelectBillboard });
-  callbacks.current = { onSelectDistrict, onSelectLandmark, onSelectBillboard };
-
-  useEffect(() => {
-    const element = rootRef.current;
-    if (!element) return;
-    const observer = new ResizeObserver(([entry]) => {
-      if (!entry) return;
-      const fit = Math.min(entry.contentRect.width / 30, entry.contentRect.height / 23);
-      const min = Math.max(8, Math.min(20, fit));
-      setZoom((current) =>
-        current === 18
-          ? Math.min(54, Math.max(min, fit * 1.08))
-          : Math.min(54, Math.max(min, current)),
-      );
-    });
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
-
   useEffect(() => {
     if (!searchTarget) return;
     const id = typeof searchTarget === "string" ? searchTarget : searchTarget.id;
-    const found = landmarks.find((place) => place.id === id);
-    if (found) {
-      const cell = cellByPlace.get(found.id)!;
-      const point = mapTownGridToScene({ ...grid, cells: [cell] })[0]!;
-      window.dispatchEvent(
-        new CustomEvent("osogbo:map-focus", { detail: { x: point.x, z: point.z } }),
-      );
-      callbacks.current.onSelectLandmark(id);
+    if (townData.landmarks.some((landmark) => landmark.id === id)) {
+      onSelectLandmark(id);
       return;
     }
-    const district = districts.find((item) => item.id === id);
-    if (district) {
-      const area = (
-        district as MapDistrict & {
-          gridArea: { x: number; z: number; width: number; depth: number };
-        }
-      ).gridArea;
-      const point = scenePointForGrid(area.x + (area.width - 1) / 2, area.z + (area.depth - 1) / 2);
-      window.dispatchEvent(new CustomEvent("osogbo:map-focus", { detail: point }));
-      callbacks.current.onSelectDistrict(id);
-    }
-  }, [searchTarget]);
+    if (townData.districts.some((district) => district.id === id)) onSelectDistrict(id);
+  }, [onSelectDistrict, onSelectLandmark, searchTarget]);
 
   const availablePlaces = useMemo(
     () =>
-      landmarks.filter(
+      townData.landmarks.filter(
         (place) =>
           activeFilter === "all" ||
           (activeFilter === "jobs"
@@ -735,68 +292,22 @@ export function MapCanvas({
       ),
     [activeFilter, jobLandmarkIds],
   );
-  const onPointerDown = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
-    pointerStart.current = { x: event.clientX, y: event.clientY, time: Date.now() };
-    tapAllowed.current = false;
-  }, []);
-  const onPointerUp = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
-    if (pointerStart.current)
-      tapAllowed.current = isTownTap(pointerStart.current, {
-        x: event.clientX,
-        y: event.clientY,
-        time: Date.now(),
-      });
-    pointerStart.current = null;
-  }, []);
-  const onPointerMove = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
-    if (
-      pointerStart.current &&
-      Math.hypot(event.clientX - pointerStart.current.x, event.clientY - pointerStart.current.y) >=
-        6
-    )
-      tapAllowed.current = false;
-  }, []);
-  const onKeyDown = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (event.key !== "+" && event.key !== "=" && event.key !== "-") return;
-    event.preventDefault();
-    window.dispatchEvent(
-      new CustomEvent("osogbo:map-zoom", {
-        detail: { direction: event.key === "-" ? -1 : 1 },
-      }),
-    );
-  }, []);
 
   return (
-    <div
-      ref={rootRef}
-      className="map-canvas town-map-canvas"
-      role="region"
-      aria-label="Interactive isometric town map. Drag to pan, use the wheel or pinch to zoom."
-      tabIndex={0}
-      onKeyDown={onKeyDown}
-      onDoubleClick={() => window.dispatchEvent(new Event("osogbo:map-overview"))}
-      onPointerDownCapture={onPointerDown}
-      onPointerMoveCapture={onPointerMove}
-      onPointerUpCapture={onPointerUp}
-      onPointerCancel={onPointerUp}
-    >
-      <IsometricTown
-        zoom={zoom}
-        filter={activeFilter}
-        searchTarget={null}
-        jobLandmarkIds={jobLandmarkIds}
-        billboards={billboardMarkers}
-        onSelectLandmark={(id) => callbacks.current.onSelectLandmark(id)}
-        onSelectDistrict={(id) => callbacks.current.onSelectDistrict(id)}
-        {...(onSelectBillboard
-          ? { onSelectBillboard: (id: string) => callbacks.current.onSelectBillboard?.(id) }
-          : {})}
-        tapAllowed={tapAllowed}
-        properties={properties}
-      />
-      <p className="town-map-gesture-hint">
-        Drag to move · Wheel, pinch or right-drag to zoom · Double-click for overview
-      </p>
+    <section className="map-canvas town-map-canvas" aria-label="Interactive isometric town map">
+      <Canvas
+        dpr={[1, 2]}
+        shadows={false}
+        gl={{ antialias: false, alpha: false, powerPreference: "low-power" }}
+        camera={{ position: [15, 15, 17], fov: 42, near: 0.1, far: 100 }}
+        fallback={
+          <p className="town-map-webgl-error" role="alert">
+            3D requires WebGL. Your browser could not start it.
+          </p>
+        }
+      >
+        <TownScene properties={properties} />
+      </Canvas>
       <ul className="town-map-accessible-list" aria-label="Places on the map">
         {availablePlaces.map((place) => (
           <li key={place.id}>
@@ -813,6 +324,15 @@ export function MapCanvas({
           </li>
         ))}
       </ul>
-    </div>
+      <ul className="town-map-accessible-list" aria-label="Districts on the map">
+        {townData.districts.map((district) => (
+          <li key={district.id}>
+            <button type="button" onClick={() => onSelectDistrict(district.id)}>
+              {district.name} district
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }

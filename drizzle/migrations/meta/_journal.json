@@ -414,6 +414,13 @@
       "when": 1791940000021,
       "tag": "0057_reconcile_housing_accessories_and_rent_relief",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1791940000022,
+      "tag": "0058_consolidate_property_housing_authority",
+      "breakpoints": true
     }
   ]
 }

@@ -44,8 +44,11 @@ import { Route as ApiHousingDeferRouteImport } from './routes/api/housing/defer'
 import { Route as ApiHousingEligibleRouteImport } from './routes/api/housing/eligible'
 import { Route as ApiHousingHomeRouteImport } from './routes/api/housing/home'
 import { Route as ApiHousingItemRouteImport } from './routes/api/housing/item'
+import { Route as ApiHousingPayRentRouteImport } from './routes/api/housing/pay-rent'
+import { Route as ApiHousingPropertiesRouteImport } from './routes/api/housing/properties'
 import { Route as ApiHousingRentRouteImport } from './routes/api/housing/rent'
 import { Route as ApiHousingRentReliefRouteImport } from './routes/api/housing/rent-relief'
+import { Route as ApiHousingResolveOverdueRouteImport } from './routes/api/housing/resolve-overdue'
 import { Route as ApiMapActionRouteImport } from './routes/api/map/action'
 import { Route as ApiMapTownTravelRouteImport } from './routes/api/map/town-travel'
 import { Route as ApiMapTravelRouteImport } from './routes/api/map/travel'
@@ -247,6 +250,16 @@ const ApiHousingItemRoute = ApiHousingItemRouteImport.update({
   path: '/api/housing/item',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHousingPayRentRoute = ApiHousingPayRentRouteImport.update({
+  id: '/api/housing/pay-rent',
+  path: '/api/housing/pay-rent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHousingPropertiesRoute = ApiHousingPropertiesRouteImport.update({
+  id: '/api/housing/properties',
+  path: '/api/housing/properties',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHousingRentRoute = ApiHousingRentRouteImport.update({
   id: '/api/housing/rent',
   path: '/api/housing/rent',
@@ -257,6 +270,12 @@ const ApiHousingRentReliefRoute = ApiHousingRentReliefRouteImport.update({
   path: '/api/housing/rent-relief',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHousingResolveOverdueRoute =
+  ApiHousingResolveOverdueRouteImport.update({
+    id: '/api/housing/resolve-overdue',
+    path: '/api/housing/resolve-overdue',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiMapActionRoute = ApiMapActionRouteImport.update({
   id: '/api/map/action',
   path: '/api/map/action',
@@ -388,8 +407,11 @@ export interface FileRoutesByFullPath {
   '/api/housing/eligible': typeof ApiHousingEligibleRoute
   '/api/housing/home': typeof ApiHousingHomeRoute
   '/api/housing/item': typeof ApiHousingItemRoute
+  '/api/housing/pay-rent': typeof ApiHousingPayRentRoute
+  '/api/housing/properties': typeof ApiHousingPropertiesRoute
   '/api/housing/rent': typeof ApiHousingRentRoute
   '/api/housing/rent-relief': typeof ApiHousingRentReliefRoute
+  '/api/housing/resolve-overdue': typeof ApiHousingResolveOverdueRoute
   '/api/map/action': typeof ApiMapActionRoute
   '/api/map/town-travel': typeof ApiMapTownTravelRoute
   '/api/map/travel': typeof ApiMapTravelRoute
@@ -444,8 +466,11 @@ export interface FileRoutesByTo {
   '/api/housing/eligible': typeof ApiHousingEligibleRoute
   '/api/housing/home': typeof ApiHousingHomeRoute
   '/api/housing/item': typeof ApiHousingItemRoute
+  '/api/housing/pay-rent': typeof ApiHousingPayRentRoute
+  '/api/housing/properties': typeof ApiHousingPropertiesRoute
   '/api/housing/rent': typeof ApiHousingRentRoute
   '/api/housing/rent-relief': typeof ApiHousingRentReliefRoute
+  '/api/housing/resolve-overdue': typeof ApiHousingResolveOverdueRoute
   '/api/map/action': typeof ApiMapActionRoute
   '/api/map/town-travel': typeof ApiMapTownTravelRoute
   '/api/map/travel': typeof ApiMapTravelRoute
@@ -503,8 +528,11 @@ export interface FileRoutesById {
   '/api/housing/eligible': typeof ApiHousingEligibleRoute
   '/api/housing/home': typeof ApiHousingHomeRoute
   '/api/housing/item': typeof ApiHousingItemRoute
+  '/api/housing/pay-rent': typeof ApiHousingPayRentRoute
+  '/api/housing/properties': typeof ApiHousingPropertiesRoute
   '/api/housing/rent': typeof ApiHousingRentRoute
   '/api/housing/rent-relief': typeof ApiHousingRentReliefRoute
+  '/api/housing/resolve-overdue': typeof ApiHousingResolveOverdueRoute
   '/api/map/action': typeof ApiMapActionRoute
   '/api/map/town-travel': typeof ApiMapTownTravelRoute
   '/api/map/travel': typeof ApiMapTravelRoute
@@ -561,8 +589,11 @@ export interface FileRouteTypes {
     | '/api/housing/eligible'
     | '/api/housing/home'
     | '/api/housing/item'
+    | '/api/housing/pay-rent'
+    | '/api/housing/properties'
     | '/api/housing/rent'
     | '/api/housing/rent-relief'
+    | '/api/housing/resolve-overdue'
     | '/api/map/action'
     | '/api/map/town-travel'
     | '/api/map/travel'
@@ -617,8 +648,11 @@ export interface FileRouteTypes {
     | '/api/housing/eligible'
     | '/api/housing/home'
     | '/api/housing/item'
+    | '/api/housing/pay-rent'
+    | '/api/housing/properties'
     | '/api/housing/rent'
     | '/api/housing/rent-relief'
+    | '/api/housing/resolve-overdue'
     | '/api/map/action'
     | '/api/map/town-travel'
     | '/api/map/travel'
@@ -675,8 +709,11 @@ export interface FileRouteTypes {
     | '/api/housing/eligible'
     | '/api/housing/home'
     | '/api/housing/item'
+    | '/api/housing/pay-rent'
+    | '/api/housing/properties'
     | '/api/housing/rent'
     | '/api/housing/rent-relief'
+    | '/api/housing/resolve-overdue'
     | '/api/map/action'
     | '/api/map/town-travel'
     | '/api/map/travel'
@@ -716,8 +753,11 @@ export interface RootRouteChildren {
   ApiHousingEligibleRoute: typeof ApiHousingEligibleRoute
   ApiHousingHomeRoute: typeof ApiHousingHomeRoute
   ApiHousingItemRoute: typeof ApiHousingItemRoute
+  ApiHousingPayRentRoute: typeof ApiHousingPayRentRoute
+  ApiHousingPropertiesRoute: typeof ApiHousingPropertiesRoute
   ApiHousingRentRoute: typeof ApiHousingRentRoute
   ApiHousingRentReliefRoute: typeof ApiHousingRentReliefRoute
+  ApiHousingResolveOverdueRoute: typeof ApiHousingResolveOverdueRoute
   ApiMapActionRoute: typeof ApiMapActionRoute
   ApiMapTownTravelRoute: typeof ApiMapTownTravelRoute
   ApiMapTravelRoute: typeof ApiMapTravelRoute
@@ -985,6 +1025,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHousingItemRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/housing/pay-rent': {
+      id: '/api/housing/pay-rent'
+      path: '/api/housing/pay-rent'
+      fullPath: '/api/housing/pay-rent'
+      preLoaderRoute: typeof ApiHousingPayRentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/housing/properties': {
+      id: '/api/housing/properties'
+      path: '/api/housing/properties'
+      fullPath: '/api/housing/properties'
+      preLoaderRoute: typeof ApiHousingPropertiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/housing/rent': {
       id: '/api/housing/rent'
       path: '/api/housing/rent'
@@ -997,6 +1051,13 @@ declare module '@tanstack/react-router' {
       path: '/api/housing/rent-relief'
       fullPath: '/api/housing/rent-relief'
       preLoaderRoute: typeof ApiHousingRentReliefRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/housing/resolve-overdue': {
+      id: '/api/housing/resolve-overdue'
+      path: '/api/housing/resolve-overdue'
+      fullPath: '/api/housing/resolve-overdue'
+      preLoaderRoute: typeof ApiHousingResolveOverdueRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/map/action': {
@@ -1209,8 +1270,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHousingEligibleRoute: ApiHousingEligibleRoute,
   ApiHousingHomeRoute: ApiHousingHomeRoute,
   ApiHousingItemRoute: ApiHousingItemRoute,
+  ApiHousingPayRentRoute: ApiHousingPayRentRoute,
+  ApiHousingPropertiesRoute: ApiHousingPropertiesRoute,
   ApiHousingRentRoute: ApiHousingRentRoute,
   ApiHousingRentReliefRoute: ApiHousingRentReliefRoute,
+  ApiHousingResolveOverdueRoute: ApiHousingResolveOverdueRoute,
   ApiMapActionRoute: ApiMapActionRoute,
   ApiMapTownTravelRoute: ApiMapTownTravelRoute,
   ApiMapTravelRoute: ApiMapTravelRoute,

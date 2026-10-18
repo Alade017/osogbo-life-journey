@@ -12,4 +12,10 @@ The `/map` route is a React Three Fiber isometric town scene. Its compact hand-a
 
 The map currently uses low-poly GLBs from Kenney's City Kit (Commercial) and City Kit (Suburban) packs. The packs are CC0 and their `License.txt` files remain in their source folders under `city/`. Only the model paths referenced by the town JSON are loaded when the map opens. GLBs follow the pack's glTF 2.0, Y-up, meter-scale contract; no original game or brand assets are included.
 
+## Town map Blender export contract
+
+The R3F town map also accepts these Blender-exported glTF 2.0 binary files directly under this folder: `town.glb`, `compound.glb`, `flat.glb`, and `shophouse.glb`. Export with transforms applied, Y-up, meter units, and compressed Draco or meshopt geometry. `town.glb` should contain only the shared terrain, roads, public greenery, and other non-property scenery; the map places each property model separately from game state. Keep texture dimensions small and reuse materials to limit mobile draw calls.
+
+For tiered property variants, name optional nodes `Accessory_Tier2_Generator` and `Accessory_Tier3_<Name>` (for example, `Accessory_Tier3_WaterTank`). The map shows an accessory only when the supplied property tier is high enough. The `compound`, `flat`, and `shophouse` files should have a ground-level origin and no gameplay data: owner and rent-state labels come only from the map input.
+
 Production home entry still uses its established route and checks. All connected player fixtures currently share one development body; saved appearance/equipment records are preserved but full Blender visual mapping awaits actual modular assets.

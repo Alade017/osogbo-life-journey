@@ -271,6 +271,108 @@ describe("housing onboarding database actions", () => {
     expect(ended.rows[0]?.status).toBe("ended");
   });
 
+  it("lists every canonical house type and rents exactly one property through the unified model", async () => {
+    await db.query("update public.wallets set balance=10000 where user_id=$1", [userId]);
+    const listings = await db.query<{
+      result: { propertyId: string; houseTypeId: string; available: boolean }[];
+    }>("select public.housing_property_listings($1) as result", [userId]);
+    expect(listings.rows[0]?.result).toHaveLength(6);
+    const sharedRoom = listings.rows[0]?.result.find(
+      (listing) => listing.houseTypeId === "shared-room",
+    );
+    expect(sharedRoom?.available).toBe(true);
+
+    const rented = await db.query<{
+      result: { propertyId: string; status: string; accessoryBand: string };
+    }>("select public.housing_rent_property($1,$2,$3) as result", [
+      userId,
+      sharedRoom!.propertyId,
+      "1f10c784-9835-4b03-aee2-d631ce868001",
+    ]);
+    expect(rented.rows[0]?.result).toMatchObject({
+      propertyId: sharedRoom!.propertyId,
+      status: "current",
+      accessoryBand: "basic",
+    });
+    await expect(
+      db.query("select public.housing_rent_property($1,$2,$3)", [
+        userId,
+        listings.rows[0]?.result.find((listing) => listing.houseTypeId === "single-room")!
+          .propertyId,
+        "1f10c784-9835-4b03-aee2-d631ce868002",
+      ]),
+    ).rejects.toThrow(/ALREADY_RENTING/);
+  });
+
+  it("pays the active cycle and records the next weekly due date server-side", async () => {
+    await db.query("update public.wallets set balance=20000 where user_id=$1", [userId]);
+    const listing = await db.query<{ result: { propertyId: string }[] }>(
+      "select public.housing_property_listings($1) as result",
+      [userId],
+    );
+    await db.query("select public.housing_rent_property($1,$2,$3)", [
+      userId,
+      listing.rows[0]!.result[0]!.propertyId,
+      "1f10c784-9835-4b03-aee2-d631ce868003",
+    ]);
+    await db.query(
+      "update public.property_rent_cycles set due_at=now()-interval '1 minute', grace_ends_at=now()+interval '3 days', rescue_ends_at=now()+interval '4 days' where character_id=(select id from public.characters where user_id=$1) and status='current'",
+      [userId],
+    );
+    const paid = await db.query<{
+      result: { status: string; weeklyRentMinor: number; walletBalance: number };
+    }>("select public.pay_property_rent($1,$2) as result", [
+      userId,
+      "1f10c784-9835-4b03-aee2-d631ce868004",
+    ]);
+    expect(paid.rows[0]?.result.status).toBe("current");
+    expect(paid.rows[0]?.result.weeklyRentMinor).toBeGreaterThan(0);
+    const cycles = await db.query<{ current: number; paid: number }>(
+      "select count(*) filter (where status='current')::int as current,count(*) filter (where status='paid')::int as paid from public.property_rent_cycles where character_id=(select id from public.characters where user_id=$1)",
+      [userId],
+    );
+    expect(cycles.rows[0]).toEqual({ current: 1, paid: 1 });
+  });
+
+  it("offers a four-instalment rescue loan after grace and revokes an ignored rescue", async () => {
+    await db.query("update public.wallets set balance=20000 where user_id=$1", [userId]);
+    const listing = await db.query<{ result: { propertyId: string }[] }>(
+      "select public.housing_property_listings($1) as result",
+      [userId],
+    );
+    await db.query("select public.housing_rent_property($1,$2,$3)", [
+      userId,
+      listing.rows[0]!.result[0]!.propertyId,
+      "1f10c784-9835-4b03-aee2-d631ce868005",
+    ]);
+    await db.query(
+      "update public.property_rent_cycles set status='rescue',due_at=now()-interval '4 days',grace_ends_at=now()-interval '1 day',rescue_ends_at=now()+interval '1 day' where character_id=(select id from public.characters where user_id=$1) and status='current'",
+      [userId],
+    );
+    const loan = await db.query<{
+      result: { option: string; status: string; instalmentsTotal: number };
+    }>("select public.resolve_property_overdue($1,'loan',$2) as result", [
+      userId,
+      "1f10c784-9835-4b03-aee2-d631ce868006",
+    ]);
+    expect(loan.rows[0]?.result).toMatchObject({
+      option: "loan",
+      status: "paid",
+      instalmentsTotal: 4,
+    });
+
+    await db.query(
+      "update public.property_rent_cycles set status='rescue',rescue_ends_at=now()-interval '1 minute' where character_id=(select id from public.characters where user_id=$1) and status='paid'",
+      [userId],
+    );
+    await db.query("select public._advance_property_rent_cycles()");
+    const active = await db.query<{ count: number }>(
+      "select count(*)::int as count from public.player_properties where character_id=(select id from public.characters where user_id=$1) and is_active",
+      [userId],
+    );
+    expect(active.rows[0]?.count).toBe(0);
+  });
+
   it("keeps canonical tables read-only to players and server RPCs callable by service_role", async () => {
     const grants = await db.query<{
       can_read: boolean;

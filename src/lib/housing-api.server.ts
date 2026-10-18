@@ -1,8 +1,12 @@
 type HousingApiDependencies = {
   authenticate: (request: Request) => Promise<string | null>;
+  properties: (userId: string) => Promise<unknown>;
   eligible: (userId: string) => Promise<unknown>;
   choose: (userId: string, houseTypeId: string, key: string) => Promise<unknown>;
   rent: (userId: string, houseTypeId: string, key: string) => Promise<unknown>;
+  rentProperty: (userId: string, propertyId: string, key: string) => Promise<unknown>;
+  payRent: (userId: string, key: string) => Promise<unknown>;
+  resolveOverdue: (userId: string, option: "loan" | "job", key: string) => Promise<unknown>;
   defer: (userId: string) => Promise<unknown>;
   home: (userId: string) => Promise<unknown>;
   mutateItem: (userId: string, payload: Record<string, unknown>) => Promise<unknown>;
@@ -14,6 +18,7 @@ const statusByCode: Record<string, number> = {
   INVALID_IDEMPOTENCY_KEY: 400,
   NO_CHARACTER: 404,
   UNKNOWN_HOUSE: 404,
+  UNKNOWN_PROPERTY: 404,
   ALREADY_RENTING: 409,
   HOUSE_INELIGIBLE: 409,
   INSUFFICIENT_FUNDS: 409,
@@ -26,6 +31,8 @@ const statusByCode: Record<string, number> = {
   ITEM_NOT_WEARABLE: 409,
   UNKNOWN_ITEM: 404,
   SLOT_MISMATCH: 409,
+  NO_RENT_DUE: 409,
+  OVERDUE_OPTION_UNAVAILABLE: 409,
 };
 
 const reasonByCode: Record<string, string> = {
@@ -36,6 +43,8 @@ const reasonByCode: Record<string, string> = {
   IDEMPOTENCY_CONFLICT: "This rent request key was already used for a different home.",
   ALREADY_RENTING: "You already have an active rental.",
   HOUSE_INELIGIBLE: "You do not meet the requirements for this home.",
+  NO_RENT_DUE: "There is no active rent payment due for this home.",
+  OVERDUE_OPTION_UNAVAILABLE: "This overdue option is no longer available.",
 };
 
 function errorCode(error: unknown) {
@@ -50,6 +59,13 @@ function json(body: unknown, status = 200) {
 
 function validBody(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function uuid(value: string | null) {
+  return (
+    !!value &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+  );
 }
 
 export function createHousingApiHandlers(deps: HousingApiDependencies) {
@@ -67,6 +83,7 @@ export function createHousingApiHandlers(deps: HousingApiDependencies) {
     }
   }
   return {
+    getProperties: (request: Request) => withUser(request, deps.properties),
     getEligible: (request: Request) => withUser(request, deps.eligible),
     postChoose: (request: Request) =>
       withUser(request, async (userId) => {
@@ -80,11 +97,33 @@ export function createHousingApiHandlers(deps: HousingApiDependencies) {
     postRent: (request: Request) =>
       withUser(request, async (userId) => {
         const body: unknown = await request.json().catch(() => null);
-        if (!validBody(body) || typeof body["house_type_id"] !== "string")
+        if (
+          !validBody(body) ||
+          (typeof body["house_type_id"] !== "string" && typeof body["property_id"] !== "string")
+        )
           throw new Error("INVALID_REQUEST");
         const key = request.headers.get("Idempotency-Key")?.trim();
         if (!key || key.length < 16 || key.length > 128) throw new Error("INVALID_IDEMPOTENCY_KEY");
+        if (typeof body["property_id"] === "string") {
+          if (!uuid(key)) throw new Error("INVALID_IDEMPOTENCY_KEY");
+          return deps.rentProperty(userId, body["property_id"], key);
+        }
         return deps.rent(userId, body["house_type_id"] as string, key);
+      }),
+    postPayRent: (request: Request) =>
+      withUser(request, async (userId) => {
+        const key = request.headers.get("Idempotency-Key")?.trim();
+        if (!uuid(key)) throw new Error("INVALID_IDEMPOTENCY_KEY");
+        return deps.payRent(userId, key);
+      }),
+    postResolveOverdue: (request: Request) =>
+      withUser(request, async (userId) => {
+        const body: unknown = await request.json().catch(() => null);
+        if (!validBody(body) || (body["option"] !== "loan" && body["option"] !== "job"))
+          throw new Error("INVALID_REQUEST");
+        const key = request.headers.get("Idempotency-Key")?.trim();
+        if (!uuid(key)) throw new Error("INVALID_IDEMPOTENCY_KEY");
+        return deps.resolveOverdue(userId, body["option"], key);
       }),
     postDefer: (request: Request) => withUser(request, deps.defer),
     getHome: (request: Request) => withUser(request, deps.home),
@@ -115,6 +154,13 @@ async function productionHandlers() {
       const { data, error } = await supabaseAdmin.auth.getUser(auth.slice(7).trim());
       return error ? null : (data.user?.id ?? null);
     },
+    properties: async (userId) => {
+      const { data, error } = await supabaseAdmin.rpc("housing_property_listings", {
+        p_user_id: userId,
+      });
+      if (error) throw new Error(error.message);
+      return data;
+    },
     eligible: async (userId) => {
       const { data, error } = await supabaseAdmin.rpc("housing_eligible_houses", {
         p_user_id: userId,
@@ -141,6 +187,32 @@ async function productionHandlers() {
       if (data && typeof data === "object" && "ok" in data && data["ok"] === false) {
         throw new Error(String("code" in data ? data["code"] : "HOUSE_INELIGIBLE"));
       }
+      return data;
+    },
+    rentProperty: async (userId, propertyId, key) => {
+      const { data, error } = await supabaseAdmin.rpc("housing_rent_property", {
+        p_user_id: userId,
+        p_property_id: propertyId,
+        p_request_id: key,
+      });
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    payRent: async (userId, key) => {
+      const { data, error } = await supabaseAdmin.rpc("pay_property_rent", {
+        p_user_id: userId,
+        p_request_id: key,
+      });
+      if (error) throw new Error(error.message);
+      return data;
+    },
+    resolveOverdue: async (userId, option, key) => {
+      const { data, error } = await supabaseAdmin.rpc("resolve_property_overdue", {
+        p_user_id: userId,
+        p_option: option,
+        p_request_id: key,
+      });
+      if (error) throw new Error(error.message);
       return data;
     },
     defer: async (userId) => {
@@ -190,9 +262,12 @@ async function productionHandlers() {
 
 export async function handleHousingRequest(
   name:
+    | "properties"
     | "eligible"
     | "choose"
     | "rent"
+    | "pay-rent"
+    | "resolve-overdue"
     | "defer"
     | "home"
     | "item"
@@ -203,9 +278,12 @@ export async function handleHousingRequest(
   request: Request,
 ) {
   const handlers = await productionHandlers();
+  if (name === "properties") return handlers.getProperties(request);
   if (name === "eligible") return handlers.getEligible(request);
   if (name === "choose") return handlers.postChoose(request);
   if (name === "rent") return handlers.postRent(request);
+  if (name === "pay-rent") return handlers.postPayRent(request);
+  if (name === "resolve-overdue") return handlers.postResolveOverdue(request);
   if (name === "defer") return handlers.postDefer(request);
   if (name === "home") return handlers.getHome(request);
   return handlers.postItem(request, name === "item" ? undefined : name);
