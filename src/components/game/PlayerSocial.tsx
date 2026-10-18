@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import {
   ArrowLeft,
+  Camera,
   ChevronRight,
   MessageCircle,
   Mic,
@@ -12,10 +13,12 @@ import {
   Palette,
   Pin,
   Plus,
+  Paperclip,
   Reply,
   Search,
   Send,
   ShieldBan,
+  Smile,
   Star,
   UserPlus,
   Users,
@@ -77,6 +80,7 @@ type InboxConversation = SocialPlayer & {
   mutedUntil?: string | null;
   starredAt?: string | null;
 };
+type InboxFilter = "all" | "unread" | "groups";
 
 const REPORT_OPTIONS: Array<{ value: SocialReportCategory; label: string }> = [
   { value: "spam", label: "Spam" },
@@ -101,6 +105,94 @@ function PlayerAvatar({ player }: { player: Pick<SocialPlayer, "appearance" | "g
         size={38}
       />
     </span>
+  );
+}
+
+function formatConversationTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const today = new Date();
+  const sameDay = date.toDateString() === today.toDateString();
+  return new Intl.DateTimeFormat("en-NG", {
+    ...(sameDay ? { hour: "2-digit", minute: "2-digit" } : { day: "numeric", month: "short" }),
+    timeZone: "Africa/Lagos",
+  }).format(date);
+}
+
+/** Fixed-height windowing keeps a large inbox inexpensive on low-end phones. */
+function VirtualConversationList({
+  conversations,
+  onOpen,
+  onMenu,
+  onLongPress,
+  onCancelLongPress,
+}: {
+  conversations: InboxConversation[];
+  onOpen: (conversation: InboxConversation) => void;
+  onMenu: (conversation: InboxConversation) => void;
+  onLongPress: (conversation: InboxConversation) => void;
+  onCancelLongPress: () => void;
+}) {
+  const [scrollTop, setScrollTop] = useState(0);
+  const rowHeight = 76;
+  const viewportHeight = 380;
+  const start = Math.max(0, Math.floor(scrollTop / rowHeight) - 4);
+  const end = Math.min(conversations.length, start + Math.ceil(viewportHeight / rowHeight) + 8);
+  const visible = conversations.slice(start, end);
+  return (
+    <div
+      className="phone-conversation-list phone-conversation-list-virtual"
+      role="list"
+      onScroll={(event) => setScrollTop(event.currentTarget.scrollTop)}
+    >
+      <div
+        className="phone-conversation-list-spacer"
+        style={{ height: conversations.length * rowHeight }}
+      >
+        <div
+          className="phone-conversation-list-window"
+          style={{ transform: `translateY(${start * rowHeight}px)` }}
+        >
+          {visible.map((conversation) => (
+            <button
+              type="button"
+              role="listitem"
+              key={conversation.id}
+              className="phone-conversation"
+              onClick={() => onOpen(conversation)}
+              onContextMenu={(event) => {
+                event.preventDefault();
+                onMenu(conversation);
+              }}
+              onPointerDown={(event) => {
+                if (event.pointerType !== "mouse") onLongPress(conversation);
+              }}
+              onPointerUp={onCancelLongPress}
+              onPointerCancel={onCancelLongPress}
+              onPointerMove={onCancelLongPress}
+            >
+              <PlayerAvatar player={conversation} />
+              <span className="phone-conversation-copy">
+                <strong>
+                  {conversation.player_name}
+                  {conversation.starredAt && <Star size={12} aria-label="Starred chat" />}
+                </strong>
+                <small>{conversation.preview || "Private conversation"}</small>
+              </span>
+              <span className="phone-conversation-status">
+                <time>{formatConversationTime(conversation.lastActivity)}</time>
+                {conversation.mutedUntil && <BellOff size={13} aria-label="Muted chat" />}
+                {(conversation.unreadCount ?? 0) > 0 && (
+                  <span aria-label={`${conversation.unreadCount} unread messages`}>
+                    {(conversation.unreadCount ?? 0) > 99 ? "99+" : conversation.unreadCount}
+                  </span>
+                )}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -229,6 +321,9 @@ function MessageList({
               minute: "2-digit",
               timeZone: "Africa/Lagos",
             }).format(new Date(message.created_at))}
+            {phoneMode && message.sender_character_id === ownCharacterId && (
+              <CheckCheck className="phone-message-ticks" aria-label="Message sent" />
+            )}
           </time>
           <span className="message-actions">
             <button type="button" onClick={() => onReply(message)}>
@@ -299,12 +394,14 @@ function ChatComposer({
           </button>
         </div>
       )}
-      <MessageFormattingToolbar
-        textareaRef={textareaRef}
-        value={body}
-        onChange={setBody}
-        disabled={disabled || sending}
-      />
+      {!phoneMode && (
+        <MessageFormattingToolbar
+          textareaRef={textareaRef}
+          value={body}
+          onChange={setBody}
+          disabled={disabled || sending}
+        />
+      )}
       <label className="sr-only" htmlFor={label.replaceAll(" ", "-")}>
         {label}
       </label>
@@ -313,7 +410,7 @@ function ChatComposer({
         id={label.replaceAll(" ", "-")}
         value={body}
         maxLength={1000}
-        rows={2}
+        rows={phoneMode ? 1 : 2}
         disabled={disabled || sending}
         onChange={(event) => setBody(event.target.value)}
         placeholder={label}
@@ -327,15 +424,47 @@ function ChatComposer({
         {body.length}/1000
       </span>
       {phoneMode ? (
-        <Button
-          className="phone-chat-send"
-          size="icon"
-          type="submit"
-          aria-label="Send message"
-          disabled={disabled || sending || !body.trim()}
-        >
-          <Send size={17} />
-        </Button>
+        <div className="phone-chat-input-actions">
+          <button
+            type="button"
+            className="phone-chat-utility"
+            aria-label="Add emoji"
+            disabled={disabled || sending}
+            onClick={() => {
+              setBody((value) => `${value}${value ? " " : ""}🙂`);
+              textareaRef.current?.focus();
+            }}
+          >
+            <Smile size={18} />
+          </button>
+          <button
+            type="button"
+            className="phone-chat-utility"
+            aria-label="Attach file"
+            disabled
+            title="Attachments are coming soon"
+          >
+            <Paperclip size={18} />
+          </button>
+          <button
+            type="button"
+            className="phone-chat-utility"
+            aria-label="Open camera"
+            disabled
+            title="Camera messages are coming soon"
+          >
+            <Camera size={18} />
+          </button>
+          <Button
+            className="phone-chat-send"
+            size="icon"
+            type="submit"
+            aria-label="Send message"
+            disabled={disabled || sending || !body.trim()}
+          >
+            <Send size={17} />
+          </Button>
+        </div>
       ) : (
         <div className="flex items-center justify-between gap-2">
           <span />
@@ -362,6 +491,9 @@ export function PlayerSocial({
   const [phoneMessageMode] = useState<"private" | "area">("private");
   const [query, setQuery] = useState("");
   const [conversationSearch, setConversationSearch] = useState("");
+  const [inboxFilter, setInboxFilter] = useState<InboxFilter>("all");
+  const [inChatSearchOpen, setInChatSearchOpen] = useState(false);
+  const [inChatSearch, setInChatSearch] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [reportTarget, setReportTarget] = useState<ReportTarget | null>(null);
   const [reportCategory, setReportCategory] = useState<SocialReportCategory>("harassment");
@@ -452,6 +584,14 @@ export function PlayerSocial({
     () => visibleConversations.filter((conversation) => !conversation.pinnedAt),
     [visibleConversations],
   );
+  const filteredConversations = useMemo(() => {
+    if (inboxFilter === "unread")
+      return [...pinnedConversations, ...regularConversations].filter(
+        (conversation) => (conversation.unreadCount ?? 0) > 0,
+      );
+    if (inboxFilter === "groups") return [];
+    return [...pinnedConversations, ...regularConversations];
+  }, [inboxFilter, pinnedConversations, regularConversations]);
   const searchQuery = useQuery({
     queryKey: ["playerSocialSearch", submittedQuery],
     queryFn: () => searchPlayerProfiles(submittedQuery),
@@ -482,6 +622,11 @@ export function PlayerSocial({
   });
   const areaMessages = useMemo(() => areaMessagesQuery.data ?? [], [areaMessagesQuery.data]);
   const directMessages = useMemo(() => directMessagesQuery.data ?? [], [directMessagesQuery.data]);
+  const displayedDirectMessages = useMemo(() => {
+    const filter = inChatSearch.trim().toLocaleLowerCase();
+    if (!filter) return directMessages;
+    return directMessages.filter((message) => message.body.toLocaleLowerCase().includes(filter));
+  }, [directMessages, inChatSearch]);
   const lastMessageIds = useRef<{ area: string | null; direct: string | null }>({
     area: null,
     direct: null,
@@ -1112,14 +1257,39 @@ export function PlayerSocial({
                     <strong>{activeChat.name}</strong>
                     <small>Private chat</small>
                   </div>
+                  <button
+                    type="button"
+                    className="phone-thread-search-toggle"
+                    aria-label={inChatSearchOpen ? "Close message search" : "Search messages"}
+                    aria-pressed={inChatSearchOpen}
+                    onClick={() => {
+                      setInChatSearchOpen((open) => !open);
+                      if (inChatSearchOpen) setInChatSearch("");
+                    }}
+                  >
+                    <Search size={17} />
+                  </button>
                 </header>
+                {inChatSearchOpen && (
+                  <label className="phone-thread-search">
+                    <Search size={15} aria-hidden="true" />
+                    <span className="sr-only">Search messages in this chat</span>
+                    <input
+                      autoFocus
+                      type="search"
+                      value={inChatSearch}
+                      onChange={(event) => setInChatSearch(event.target.value)}
+                      placeholder="Search messages"
+                    />
+                  </label>
+                )}
                 {directMessagesQuery.error ? (
                   <p className="text-sm text-destructive" role="alert">
                     {directMessagesQuery.error.message}
                   </p>
                 ) : (
                   <MessageList
-                    messages={directMessages}
+                    messages={displayedDirectMessages}
                     ownCharacterId={character?.id}
                     phoneMode
                     onReply={setReplyTarget}
@@ -1180,61 +1350,38 @@ export function PlayerSocial({
                     placeholder="Search chats"
                   />
                 </label>
+                <div className="phone-inbox-filters" role="group" aria-label="Chat filters">
+                  {(["all", "unread", "groups"] as const).map((filter) => (
+                    <button
+                      type="button"
+                      key={filter}
+                      className={inboxFilter === filter ? "is-active" : undefined}
+                      aria-pressed={inboxFilter === filter}
+                      onClick={() => setInboxFilter(filter)}
+                    >
+                      {filter === "all" ? "All" : filter === "unread" ? "Unread" : "Groups"}
+                    </button>
+                  ))}
+                </div>
                 {overviewQuery.isPending ? (
                   <p className="text-sm text-muted-foreground">Loading your chats…</p>
                 ) : overviewQuery.error ? (
                   <p className="text-sm text-destructive" role="alert">
                     {overviewQuery.error.message}
                   </p>
-                ) : visibleConversations.length ? (
-                  <div className="phone-conversation-list">
-                    {pinnedConversations.length > 0 && (
-                      <p className="phone-conversation-section">
-                        <Pin size={13} aria-hidden="true" /> Pinned
-                      </p>
-                    )}
-                    {[...pinnedConversations, ...regularConversations].map((conversation) => (
-                      <button
-                        type="button"
-                        key={conversation.id}
-                        className="phone-conversation"
-                        onClick={() => openConversation(conversation)}
-                        onContextMenu={(event) => {
-                          event.preventDefault();
-                          setThreadMenu(conversation);
-                        }}
-                        onPointerDown={(event) => {
-                          if (event.pointerType !== "mouse") beginLongPress(conversation);
-                        }}
-                        onPointerUp={cancelLongPress}
-                        onPointerCancel={cancelLongPress}
-                        onPointerMove={cancelLongPress}
-                      >
-                        <PlayerAvatar player={conversation} />
-                        <span className="phone-conversation-copy">
-                          <strong>
-                            {conversation.player_name}
-                            {conversation.starredAt && <Star size={12} aria-label="Starred chat" />}
-                          </strong>
-                          <small>{conversation.preview || "Private conversation"}</small>
-                        </span>
-                        <span className="phone-conversation-status">
-                          {conversation.mutedUntil && <BellOff size={13} aria-label="Muted chat" />}
-                          {(conversation.unreadCount ?? 0) > 0 && (
-                            <span aria-label={`${conversation.unreadCount} unread messages`}>
-                              {(conversation.unreadCount ?? 0) > 99
-                                ? "99+"
-                                : conversation.unreadCount}
-                            </span>
-                          )}
-                          <ChevronRight size={17} aria-hidden="true" />
-                        </span>
-                      </button>
-                    ))}
-                  </div>
+                ) : filteredConversations.length ? (
+                  <VirtualConversationList
+                    conversations={filteredConversations}
+                    onOpen={openConversation}
+                    onMenu={setThreadMenu}
+                    onLongPress={beginLongPress}
+                    onCancelLongPress={cancelLongPress}
+                  />
                 ) : (
-                  <p className="rounded-xl bg-background p-4 text-sm text-muted-foreground">
-                    No private chats yet. Start one from a friend’s profile in Social.
+                  <p className="phone-inbox-state">
+                    {inboxFilter === "groups"
+                      ? "Group chats will appear here when groups are available."
+                      : "No matching chats yet. Start one from a friend's profile in Social."}
                   </p>
                 )}
               </section>

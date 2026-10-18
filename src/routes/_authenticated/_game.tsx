@@ -214,6 +214,7 @@ function GameLayout() {
         className={cn(
           "game-shell city-game navigation-redesign card-refresh min-h-screen pb-20 md:pb-0",
           profile?.reduced_motion && "reduce-motion",
+          phoneOpen && "phone-open",
         )}
       >
         <WorldEnvironment />
@@ -258,7 +259,6 @@ function GameLayout() {
               ))}
             </nav>
             <div className="mt-auto grid gap-2">
-              <PhoneLauncher compact className="game-side-phone" onOpenChange={setPhoneOpen} />
               <Link
                 to="/settings"
                 className="game-side-link"
@@ -280,19 +280,11 @@ function GameLayout() {
         </div>
 
         <nav
-          className="game-mobile-nav game-curved-dock"
+          className="game-mobile-nav game-floating-nav"
           aria-label="Game navigation"
           aria-hidden={phoneOpen || undefined}
           inert={phoneOpen || undefined}
         >
-          <svg
-            className="game-dock-surface"
-            viewBox="0 0 500 90"
-            preserveAspectRatio="none"
-            aria-hidden="true"
-          >
-            <path d="M44 20H195C212 20 210 62 250 62S288 20 305 20H456C481 20 500 34 500 55S481 90 456 90H44C19 90 0 76 0 55S19 20 44 20Z" />
-          </svg>
           <Link
             to="/home"
             search={{ visit: undefined }}
@@ -310,7 +302,6 @@ function GameLayout() {
             <Map className="h-4.75 w-4.75" />
             <span>City</span>
           </Link>
-          <PhoneLauncher compact className="mobile-nav-phone" onOpenChange={setPhoneOpen} />
           <Link
             to="/jobs"
             activeProps={{ className: "mobile-nav-active" }}
@@ -320,6 +311,9 @@ function GameLayout() {
             <span>Jobs</span>
           </Link>
         </nav>
+        <div className="game-phone-fab">
+          <PhoneLauncher compact className="game-phone-fab-trigger" onOpenChange={setPhoneOpen} />
+        </div>
         <HousingChooser
           open={housingOpen}
           pending={housingPending || (housingRequested && housingSource === "profile")}
