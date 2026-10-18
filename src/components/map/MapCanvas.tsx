@@ -12,7 +12,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import type * as React from "react";
-import { Html } from "@react-three/drei";
+import { SceneHtml as Html } from "@/components/3d/SceneHtml";
 import {
   BusFront,
   Cloud,
@@ -323,6 +323,108 @@ const filterCategories: Record<string, string[]> = {
   sport: ["sport"],
 };
 
+// Keep this component identity stable so filter/HUD updates preserve focused DOM.
+function IconAnchor({
+  place,
+  zoom,
+  filter,
+  searchTarget,
+  jobLandmarkIds,
+  billboards,
+  onSelectLandmark,
+  onSelectBillboard,
+  tapAllowed,
+}: Omit<React.ComponentProps<typeof PlaceOverlays>, "onSelectDistrict"> & {
+  place: (typeof landmarks)[number];
+}) {
+  const cell = cellByPlace.get(place.id)!;
+  const point = mapTownGridToScene({ ...grid, cells: [cell] })[0]!;
+  const Icon = icons[place.category];
+  const matches =
+    filter === "all" ||
+    (filter === "jobs"
+      ? jobLandmarkIds.includes(place.id)
+      : filterCategories[filter]?.includes(place.category));
+  const isTarget =
+    typeof searchTarget === "string" ? searchTarget === place.id : searchTarget?.id === place.id;
+  return (
+    <group key={place.id}>
+      <Html
+        position={[point.x, 3.1, point.z]}
+        center
+        distanceFactor={zoom * 0.5}
+        zIndexRange={[20, 0]}
+      >
+        <button
+          className={`town-place-bubble${isTarget ? " is-search-target" : ""}`}
+          type="button"
+          aria-label={`${labelFor(place.label)}${place.min_age ? ", 18 plus" : ""}`}
+          style={{ opacity: matches ? 1 : 0.35 }}
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={(event) => {
+            event.stopPropagation();
+            if (event.detail === 0 || tapAllowed.current) onSelectLandmark(place.id);
+          }}
+        >
+          <Icon size={18} aria-hidden="true" />
+        </button>
+      </Html>
+      {zoom > 13 && (
+        <Html
+          position={[point.x, 2.35, point.z]}
+          center
+          distanceFactor={zoom * 0.5}
+          zIndexRange={[15, 0]}
+        >
+          <button
+            className="town-place-label"
+            type="button"
+            style={{ opacity: matches ? 1 : 0.35 }}
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              if (event.detail === 0 || tapAllowed.current) onSelectLandmark(place.id);
+            }}
+          >
+            {labelFor(place.label)}
+          </button>
+        </Html>
+      )}
+      {billboards
+        .filter((marker) => marker.landmarkId === place.id)
+        .map((marker) => (
+          <Html
+            key={marker.campaignId}
+            position={[point.x, 1.75, point.z + 0.9]}
+            center
+            distanceFactor={zoom * 0.5}
+            zIndexRange={[10, 0]}
+          >
+            <button
+              type="button"
+              className="town-billboard"
+              aria-label={`Billboard for ${marker.advertiserName}${marker.count > 1 ? `, ${marker.count} active campaigns` : ""}`}
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.stopPropagation();
+                if (event.detail === 0 || tapAllowed.current)
+                  onSelectBillboard?.(marker.campaignId);
+              }}
+            >
+              {marker.imageUrl ? (
+                <img src={marker.imageUrl} alt="" loading="lazy" />
+              ) : (
+                <Megaphone size={14} />
+              )}{" "}
+              {marker.title || marker.advertiserName}
+              {marker.count > 1 ? ` +${marker.count - 1}` : ""}
+            </button>
+          </Html>
+        ))}
+    </group>
+  );
+}
+
 function PlaceOverlays({
   zoom,
   filter,
@@ -344,95 +446,6 @@ function PlaceOverlays({
   onSelectBillboard?: (id: string) => void;
   tapAllowed: MutableRefObject<boolean>;
 }) {
-  const IconAnchor = ({ place }: { place: (typeof landmarks)[number] }) => {
-    const cell = cellByPlace.get(place.id)!;
-    const point = mapTownGridToScene({ ...grid, cells: [cell] })[0]!;
-    const Icon = icons[place.category];
-    const matches =
-      filter === "all" ||
-      (filter === "jobs"
-        ? jobLandmarkIds.includes(place.id)
-        : filterCategories[filter]?.includes(place.category));
-    const isTarget =
-      typeof searchTarget === "string" ? searchTarget === place.id : searchTarget?.id === place.id;
-    return (
-      <group key={place.id}>
-        <Html
-          position={[point.x, 3.1, point.z]}
-          center
-          distanceFactor={zoom * 0.5}
-          zIndexRange={[20, 0]}
-        >
-          <button
-            className={`town-place-bubble${isTarget ? " is-search-target" : ""}`}
-            type="button"
-            aria-label={`${labelFor(place.label)}${place.min_age ? ", 18 plus" : ""}`}
-            style={{ opacity: matches ? 1 : 0.35 }}
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={(event) => {
-              event.stopPropagation();
-              if (event.detail === 0 || tapAllowed.current) onSelectLandmark(place.id);
-            }}
-          >
-            <Icon size={18} aria-hidden="true" />
-          </button>
-        </Html>
-        {zoom > 13 && (
-          <Html
-            position={[point.x, 2.35, point.z]}
-            center
-            distanceFactor={zoom * 0.5}
-            zIndexRange={[15, 0]}
-          >
-            <button
-              className="town-place-label"
-              type="button"
-              style={{ opacity: matches ? 1 : 0.35 }}
-              onPointerDown={(event) => event.stopPropagation()}
-              onClick={(event) => {
-                event.stopPropagation();
-                if (event.detail === 0 || tapAllowed.current) onSelectLandmark(place.id);
-              }}
-            >
-              {labelFor(place.label)}
-            </button>
-          </Html>
-        )}
-        {billboards
-          .filter((marker) => marker.landmarkId === place.id)
-          .map((marker) => (
-            <Html
-              key={marker.campaignId}
-              position={[point.x, 1.75, point.z + 0.9]}
-              center
-              distanceFactor={zoom * 0.5}
-              zIndexRange={[10, 0]}
-            >
-              <button
-                type="button"
-                className="town-billboard"
-                aria-label={`Billboard for ${marker.advertiserName}${marker.count > 1 ? `, ${marker.count} active campaigns` : ""}`}
-                onPointerDown={(event) => event.stopPropagation()}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  if (event.detail === 0 || tapAllowed.current)
-                    onSelectBillboard?.(marker.campaignId);
-                }}
-              >
-                {marker.imageUrl ? (
-                  <img src={marker.imageUrl} alt="" loading="lazy" />
-                ) : (
-                  <Megaphone size={14} />
-                )}{" "}
-                {marker.title || marker.advertiserName}
-                {marker.count > 1 ? ` +${marker.count - 1}` : ""}
-              </button>
-            </Html>
-          ))}
-      </group>
-    );
-  };
-
   const districtAnchors = useMemo(
     () =>
       districts.map((district) => {
@@ -515,7 +528,18 @@ function PlaceOverlays({
         );
       })}
       {landmarks.map((place) => (
-        <IconAnchor key={place.id} place={place} />
+        <IconAnchor
+          key={place.id}
+          place={place}
+          zoom={zoom}
+          filter={filter}
+          searchTarget={searchTarget}
+          jobLandmarkIds={jobLandmarkIds}
+          billboards={billboards}
+          onSelectLandmark={onSelectLandmark}
+          {...(onSelectBillboard ? { onSelectBillboard } : {})}
+          tapAllowed={tapAllowed}
+        />
       ))}
     </group>
   );

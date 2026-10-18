@@ -1,6 +1,7 @@
 import { Component, Suspense, useEffect, useState, type ReactNode } from "react";
 import { Canvas } from "@react-three/fiber";
-import { Html, useGLTF } from "@react-three/drei";
+import { useGLTF } from "@react-three/drei";
+import { SceneHtml as Html } from "./SceneHtml";
 import { Camera } from "./Camera";
 import { Lights } from "./Lights";
 import { DRACO_PATH } from "@/types/models";
