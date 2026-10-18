@@ -24,7 +24,7 @@ export function GameHUD({
         month: "short",
         timeZone: OSOGBO_TIME_ZONE,
       }).format(now)
-    : "ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â";
+    : "--";
   const clockLabel = now
     ? new Intl.DateTimeFormat("en-NG", {
         hour: "2-digit",
