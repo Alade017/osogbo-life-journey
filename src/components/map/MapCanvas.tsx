@@ -229,7 +229,79 @@ function MapLoading() {
   );
 }
 
-function TownScene({ properties }: { properties: readonly MapProperty[] | undefined }) {
+function scenePoint(x: number, z: number): [number, number, number] {
+  return [(x - 6.5) * 2, 0, (z - 4.5) * 2];
+}
+
+function PlaceMarkers({
+  places,
+  onSelectLandmark,
+  onSelectDistrict,
+}: {
+  places: readonly (typeof townData.landmarks)[number][];
+  onSelectLandmark: (id: string) => void;
+  onSelectDistrict: (id: string) => void;
+}) {
+  return (
+    <group>
+      {townData.districts.map((district) => {
+        const area = district.gridArea;
+        const [x, , z] = scenePoint(area.x + (area.width - 1) / 2, area.z + (area.depth - 1) / 2);
+        return (
+          <Html
+            key={district.id}
+            position={[x, 0.45, z]}
+            center
+            distanceFactor={15}
+            zIndexRange={[2, 0]}
+          >
+            <button
+              className="town-district-marker"
+              type="button"
+              onClick={() => onSelectDistrict(district.id)}
+            >
+              {district.name}
+            </button>
+          </Html>
+        );
+      })}
+      {places.map((place) => {
+        const [x, , z] = scenePoint(place.grid.x, place.grid.z);
+        return (
+          <Html
+            key={place.id}
+            position={[x, 2.15, z]}
+            center
+            distanceFactor={12}
+            zIndexRange={[5, 0]}
+          >
+            <button
+              className="town-place-marker"
+              type="button"
+              aria-label={`Open ${place.label}`}
+              onClick={() => onSelectLandmark(place.id)}
+            >
+              <span>{place.label}</span>
+              <small>{place.actions.length} actions</small>
+            </button>
+          </Html>
+        );
+      })}
+    </group>
+  );
+}
+
+function TownScene({
+  properties,
+  places,
+  onSelectLandmark,
+  onSelectDistrict,
+}: {
+  properties: readonly MapProperty[] | undefined;
+  places: readonly (typeof townData.landmarks)[number][];
+  onSelectLandmark: (id: string) => void;
+  onSelectDistrict: (id: string) => void;
+}) {
   return (
     <>
       <color attach="background" args={["#dce7dc"]} />
@@ -237,6 +309,11 @@ function TownScene({ properties }: { properties: readonly MapProperty[] | undefi
       <directionalLight position={[8, 13, 7]} intensity={1.6} />
       <Terrain />
       <TownBase />
+      <PlaceMarkers
+        places={places}
+        onSelectLandmark={onSelectLandmark}
+        onSelectDistrict={onSelectDistrict}
+      />
       {properties?.map((property) => (
         <House key={property.id} property={property} />
       ))}
@@ -306,7 +383,12 @@ export function MapCanvas({
           </p>
         }
       >
-        <TownScene properties={properties} />
+        <TownScene
+          properties={properties}
+          places={availablePlaces}
+          onSelectLandmark={onSelectLandmark}
+          onSelectDistrict={onSelectDistrict}
+        />
       </Canvas>
       <ul className="town-map-accessible-list" aria-label="Places on the map">
         {availablePlaces.map((place) => (

@@ -9110,7 +9110,11 @@
   font-size: 12px;
   font-weight: 750;
   cursor: pointer;
+  touch-action: none;
   list-style: none;
+}
+.game-needs-popover > summary:active {
+  cursor: grabbing;
 }
 .game-needs-popover > summary::-webkit-details-marker,
 .game-needs-item > summary::-webkit-details-marker {
@@ -10511,7 +10515,7 @@
   white-space: nowrap;
 }
 .city-game.navigation-redesign .game-phone-fab {
-  right: 16px;
+  right: 12px;
   bottom: calc(20px + env(safe-area-inset-bottom));
   z-index: 75;
 }
@@ -10693,4 +10697,59 @@
 .reduce-motion :is(.phone-dialog *, .game-floating-nav *, .game-phone-fab *) {
   animation: none !important;
   transition: none !important;
+}
+
+/* Jobs remain readable in every theme; amber is reserved for paid-work actions. */
+.jobs-page {
+  --jobs-navy: #17212b;
+  --jobs-muted: #526170;
+  --jobs-amber: #b76516;
+  color: var(--jobs-navy);
+}
+.jobs-page .jobs-heading h1,
+.jobs-page .jobs-current h2,
+.jobs-page .jobs-listing-heading h2,
+.jobs-page .jobs-card h3,
+.jobs-page .jobs-card .font-bold {
+  color: var(--jobs-navy);
+}
+.jobs-page .jobs-intro,
+.jobs-page .jobs-current-meta,
+.jobs-page .jobs-listing-heading p,
+.jobs-page .jobs-card .text-muted-foreground {
+  color: var(--jobs-muted);
+}
+.jobs-page .jobs-filters input,
+.jobs-page .jobs-filters select {
+  color: var(--jobs-navy);
+  border-color: #b8c5d0;
+  background: #fff;
+}
+.jobs-page .jobs-start-button {
+  color: #fff;
+  background: var(--jobs-amber);
+  border-color: var(--jobs-amber);
+}
+.jobs-page .jobs-start-button:hover:not(:disabled) {
+  background: #925010;
+}
+.jobs-page .jobs-card {
+  border-color: #d5dde5;
+  background: #fff;
+}
+.jobs-page .jobs-card-locked {
+  color: var(--jobs-muted);
+  background: #f7f9fb;
+}
+.jobs-page .jobs-metric-pay {
+  color: #183c78;
+  background: #eaf1ff;
+}
+.jobs-page .jobs-metric-energy {
+  color: #7a3f12;
+  background: #fff1e5;
+}
+.jobs-page .jobs-metric-shift {
+  color: #24556f;
+  background: #eaf7fb;
 }

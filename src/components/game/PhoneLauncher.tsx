@@ -14,6 +14,7 @@ import {
   Building2,
   ChartNoAxesCombined,
   ChevronLeft,
+  GraduationCap,
   House,
   HousePlus,
   MapPinned,
@@ -30,6 +31,8 @@ import {
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
+import { q } from "@/lib/game";
+import { useQuery } from "@tanstack/react-query";
 import { useLiveClock } from "@/hooks/use-live-clock";
 import { OSOGBO_TIME_ZONE } from "@/lib/osogbo-weather";
 import { useEffect, useState, type ReactNode } from "react";
@@ -44,6 +47,13 @@ const PHONE_APPS = [
   { label: "Jobs", to: "/jobs", icon: BriefcaseBusiness, tone: "phone-app-gold", active: true },
   { label: "Bank", to: "/wallet", icon: Landmark, tone: "phone-app-blue", active: true },
   { label: "Market", to: "/market", icon: Store, tone: "phone-app-coral", active: true },
+  {
+    label: "Education",
+    to: "/education",
+    icon: GraduationCap,
+    tone: "phone-app-blue",
+    active: true,
+  },
   { label: "Map", to: "/map", icon: MapPinned, tone: "phone-app-blue", active: true },
   { label: "People", to: "/social", icon: UsersRound, tone: "phone-app-coral", active: true },
   { label: "Inventory", to: "/inventory", icon: Backpack, tone: "phone-app-blue", active: true },
@@ -57,6 +67,13 @@ const PHONE_APPS = [
     active: true,
   },
   { label: "Company", to: "/wallet", icon: Building2, tone: "phone-app-green", active: true },
+  {
+    label: "Businesses",
+    to: "/businesses",
+    icon: Building2,
+    tone: "phone-app-green",
+    active: true,
+  },
   { label: "Billboards", to: null, icon: PanelsTopLeft, tone: "phone-app-gold", active: true },
   { label: "Missions", to: "/missions", icon: Target, tone: "phone-app-gold", active: true },
   {
@@ -85,6 +102,13 @@ export function PhoneLauncher({
   const [activeApp, setActiveApp] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [messagePlayerId, setMessagePlayerId] = useState<string | undefined>();
+  const { data: missions } = useQuery(q.missions());
+  const missionCount = (missions ?? []).filter(
+    (mission) => mission.status === "in_progress" || mission.status === "completed",
+  ).length;
+  const claimableMissionCount = (missions ?? []).filter(
+    (mission) => mission.status === "completed",
+  ).length;
   useEffect(() => {
     const openMessages = (event: Event) => {
       const playerId = (event as CustomEvent<{ playerId?: string }>).detail?.playerId;
@@ -215,6 +239,23 @@ export function PhoneLauncher({
             </div>
           ) : (
             <>
+              {missionCount > 0 && (
+                <DialogClose asChild>
+                  <Link to="/missions" className="phone-mission-summary">
+                    <span className="phone-app-icon phone-app-gold">
+                      <Target className="h-5 w-5" />
+                    </span>
+                    <span>
+                      <strong>Missions</strong>
+                      <small>
+                        {claimableMissionCount
+                          ? `${claimableMissionCount} reward${claimableMissionCount === 1 ? "" : "s"} ready to claim`
+                          : `${missionCount} active mission${missionCount === 1 ? "" : "s"}`}
+                      </small>
+                    </span>
+                  </Link>
+                </DialogClose>
+              )}
               <div className="phone-app-grid">
                 {shortcutEditor && (
                   <button
@@ -245,6 +286,14 @@ export function PhoneLauncher({
                       >
                         <span className={cn("phone-app-icon", app.tone)}>
                           <Icon className="h-5 w-5" />
+                          {app.label === "Missions" && missionCount > 0 ? (
+                            <i
+                              className="phone-app-badge"
+                              aria-label={`${missionCount} active missions`}
+                            >
+                              {missionCount > 9 ? "9+" : missionCount}
+                            </i>
+                          ) : null}
                         </span>
                         <span>{app.label}</span>
                       </button>
