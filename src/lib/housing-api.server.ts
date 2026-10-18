@@ -61,7 +61,7 @@ function validBody(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
-function uuid(value: string | null) {
+function uuid(value: string | null | undefined): value is string {
   return (
     !!value &&
     /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
@@ -147,6 +147,11 @@ export function createHousingApiHandlers(deps: HousingApiDependencies) {
 
 async function productionHandlers() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  // SQL migration 0058 adds these RPCs before generated database types are refreshed.
+  const housingRpc = supabaseAdmin.rpc as unknown as (
+    name: string,
+    args: Record<string, unknown>,
+  ) => Promise<{ data: unknown; error: { message: string } | null }>;
   return createHousingApiHandlers({
     authenticate: async (request) => {
       const auth = request.headers.get("authorization");
@@ -155,7 +160,7 @@ async function productionHandlers() {
       return error ? null : (data.user?.id ?? null);
     },
     properties: async (userId) => {
-      const { data, error } = await supabaseAdmin.rpc("housing_property_listings", {
+      const { data, error } = await housingRpc("housing_property_listings", {
         p_user_id: userId,
       });
       if (error) throw new Error(error.message);
@@ -190,7 +195,7 @@ async function productionHandlers() {
       return data;
     },
     rentProperty: async (userId, propertyId, key) => {
-      const { data, error } = await supabaseAdmin.rpc("housing_rent_property", {
+      const { data, error } = await housingRpc("housing_rent_property", {
         p_user_id: userId,
         p_property_id: propertyId,
         p_request_id: key,
@@ -199,7 +204,7 @@ async function productionHandlers() {
       return data;
     },
     payRent: async (userId, key) => {
-      const { data, error } = await supabaseAdmin.rpc("pay_property_rent", {
+      const { data, error } = await housingRpc("pay_property_rent", {
         p_user_id: userId,
         p_request_id: key,
       });
@@ -207,7 +212,7 @@ async function productionHandlers() {
       return data;
     },
     resolveOverdue: async (userId, option, key) => {
-      const { data, error } = await supabaseAdmin.rpc("resolve_property_overdue", {
+      const { data, error } = await housingRpc("resolve_property_overdue", {
         p_user_id: userId,
         p_option: option,
         p_request_id: key,

@@ -255,6 +255,10 @@ describe("housing onboarding database actions", () => {
       "update public.player_houses set next_rent_due_at=now()-interval '8 days' where player_id=$1",
       [userId],
     );
+    await db.query(
+      "update public.property_rent_cycles set due_at=now()-interval '8 days',grace_ends_at=now()-interval '5 days',rescue_ends_at=now()-interval '4 days' where character_id=(select id from public.characters where user_id=$1) and status='current'",
+      [userId],
+    );
 
     const state = await db.query<{
       result: { house: unknown; placements: unknown[]; inventory: { item_id: string }[] };
@@ -269,6 +273,18 @@ describe("housing onboarding database actions", () => {
       expect.arrayContaining(["starter-bed", "starter-light", "starter-seat"]),
     );
     expect(ended.rows[0]?.status).toBe("ended");
+  });
+
+  it("mirrors a legacy rental into the canonical property and rent cycle without another charge", async () => {
+    await db.query("update public.wallets set balance=10000 where user_id=$1", [userId]);
+    await db.query("select public.housing_rent($1,'shared-room','legacy-canonical-mirror-001')", [
+      userId,
+    ]);
+    const state = await db.query<{ homes: number; cycles: number; charges: number }>(
+      "select (select count(*)::int from public.player_properties p where p.user_id=$1 and p.is_active) as homes,(select count(*)::int from public.property_rent_cycles c join public.player_properties p on p.id=c.player_property_id where p.user_id=$1 and c.status='current') as cycles,(select count(*)::int from public.transactions t where t.user_id=$1 and t.category='housing_rent') as charges",
+      [userId],
+    );
+    expect(state.rows[0]).toEqual({ homes: 1, cycles: 1, charges: 1 });
   });
 
   it("lists every canonical house type and rents exactly one property through the unified model", async () => {
@@ -294,6 +310,14 @@ describe("housing onboarding database actions", () => {
       status: "current",
       accessoryBand: "basic",
     });
+    await expect(
+      db.query("select public.housing_rent_property($1,$2,$3)", [
+        userId,
+        listings.rows[0]?.result.find((listing) => listing.houseTypeId === "single-room")!
+          .propertyId,
+        "1f10c784-9835-4b03-aee2-d631ce868001",
+      ]),
+    ).rejects.toThrow(/IDEMPOTENCY_CONFLICT/);
     await expect(
       db.query("select public.housing_rent_property($1,$2,$3)", [
         userId,
@@ -360,6 +384,11 @@ describe("housing onboarding database actions", () => {
       status: "paid",
       instalmentsTotal: 4,
     });
+    const continued = await db.query<{ current: number; loans: number }>(
+      "select (select count(*)::int from public.property_rent_cycles where character_id=(select id from public.characters where user_id=$1) and status='current') as current,(select count(*)::int from public.property_rent_rescue_loans where character_id=(select id from public.characters where user_id=$1) and status='open') as loans",
+      [userId],
+    );
+    expect(continued.rows[0]).toEqual({ current: 1, loans: 1 });
 
     await db.query(
       "update public.property_rent_cycles set status='rescue',rescue_ends_at=now()-interval '1 minute' where character_id=(select id from public.characters where user_id=$1) and status='paid'",
@@ -371,6 +400,48 @@ describe("housing onboarding database actions", () => {
       [userId],
     );
     expect(active.rows[0]?.count).toBe(0);
+  });
+
+  it("offers a side-hustle only after grace and keeps retries idempotent", async () => {
+    await db.query("update public.wallets set balance=20000 where user_id=$1", [userId]);
+    const listing = await db.query<{ result: { propertyId: string }[] }>(
+      "select public.housing_property_listings($1) as result",
+      [userId],
+    );
+    await db.query("select public.housing_rent_property($1,$2,$3)", [
+      userId,
+      listing.rows[0]!.result[0]!.propertyId,
+      "1f10c784-9835-4b03-aee2-d631ce868007",
+    ]);
+    await db.query(
+      "update public.property_rent_cycles set due_at=now()-interval '1 day',grace_ends_at=now()+interval '2 days',rescue_ends_at=now()+interval '3 days' where character_id=(select id from public.characters where user_id=$1) and status='current'",
+      [userId],
+    );
+    await expect(
+      db.query("select public.resolve_property_overdue($1,'job',$2)", [
+        userId,
+        "1f10c784-9835-4b03-aee2-d631ce868008",
+      ]),
+    ).rejects.toThrow(/OVERDUE_OPTION_UNAVAILABLE/);
+    await db.query(
+      "update public.property_rent_cycles set grace_ends_at=now()-interval '1 minute' where character_id=(select id from public.characters where user_id=$1) and status='current'",
+      [userId],
+    );
+    const first = await db.query<{ result: { option: string; status: string } }>(
+      "select public.resolve_property_overdue($1,'job',$2) as result",
+      [userId, "1f10c784-9835-4b03-aee2-d631ce868008"],
+    );
+    const retry = await db.query<{ result: { option: string; status: string } }>(
+      "select public.resolve_property_overdue($1,'job',$2) as result",
+      [userId, "1f10c784-9835-4b03-aee2-d631ce868008"],
+    );
+    expect(first.rows[0]?.result).toMatchObject({ option: "job", status: "active" });
+    expect(retry.rows[0]?.result).toEqual(first.rows[0]?.result);
+    const hustles = await db.query<{ count: number }>(
+      "select count(*)::int as count from public.player_side_hustles where character_id=(select id from public.characters where user_id=$1)",
+      [userId],
+    );
+    expect(hustles.rows[0]?.count).toBe(1);
   });
 
   it("keeps canonical tables read-only to players and server RPCs callable by service_role", async () => {

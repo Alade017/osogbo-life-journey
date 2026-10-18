@@ -44,6 +44,13 @@ import "./phone.css";
 const PHONE_APPS = [
   { label: "Home", to: "/home", icon: House, tone: "phone-app-green", active: true },
   { label: "Property", to: "/house", icon: HousePlus, tone: "phone-app-green", active: true },
+  {
+    label: "Find homes",
+    to: "/properties",
+    icon: Building2,
+    tone: "phone-app-green",
+    active: true,
+  },
   { label: "Jobs", to: "/jobs", icon: BriefcaseBusiness, tone: "phone-app-gold", active: true },
   { label: "Bank", to: "/wallet", icon: Landmark, tone: "phone-app-blue", active: true },
   { label: "Market", to: "/market", icon: Store, tone: "phone-app-coral", active: true },

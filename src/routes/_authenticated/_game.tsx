@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   Briefcase,
   House,
+  HousePlus,
   Map,
   Package,
   Settings,
@@ -50,6 +51,7 @@ const NAV_GROUPS = [
     label: "DAILY LIFE",
     items: [
       { to: "/house", label: "Property", icon: House },
+      { to: "/properties", label: "Find homes", icon: HousePlus },
       { to: "/jobs", label: "Jobs", icon: Briefcase },
       { to: "/inventory", label: "Inventory", icon: Package },
       { to: "/market", label: "Market", icon: ShoppingBag },
