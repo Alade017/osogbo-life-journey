@@ -203,7 +203,6 @@ function GameLayout() {
         <WorldEnvironment />
         <div className="city-game-frame">
           <div className="city-game-content">
-            {pathname !== "/settings" && <GameNeedsRail />}
             <main className="city-game-main">
               {pathname === "/home" && !visitingFriend ? (
                 <HomeDashboard
@@ -219,6 +218,8 @@ function GameLayout() {
             </main>
           </div>
         </div>
+
+        {pathname !== "/settings" && <GameNeedsRail player={player} />}
 
         <nav
           className="game-mobile-nav game-floating-nav"
