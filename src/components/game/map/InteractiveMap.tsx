@@ -57,7 +57,7 @@ export const InteractiveMap = () => {
         {/* Camera controller */}
         <MapCamera />
         {/* POI pins */}
-        <Suspense fallback={null}>
+        <Suspense fallback={<MapLoading />}>
           {samplePois.map((poi) => (
             <MapPin key={poi.id} poi={poi} />
           ))}
