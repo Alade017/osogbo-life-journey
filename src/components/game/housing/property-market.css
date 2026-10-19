@@ -1,0 +1,113 @@
+.property-market-page {
+  width: min(100%, 1100px);
+  margin: auto;
+  padding: 1rem 1rem calc(6rem + env(safe-area-inset-bottom));
+  color: var(--foreground);
+}
+.property-market-page .map-sheet {
+  position: static;
+  z-index: auto;
+  left: auto;
+  bottom: auto;
+  display: block;
+  width: auto;
+  height: auto;
+  max-height: none;
+  padding: 0;
+  overflow: visible;
+  transform: none;
+}
+.property-market-page .property-market-hero {
+  padding: 1.2rem;
+  border-radius: 1.2rem;
+  margin-bottom: 1.4rem;
+}
+.property-market-hero h1 {
+  font: 700 clamp(1.7rem, 5vw, 2.5rem)/1.1 var(--font-display, inherit);
+  margin: 0.3rem 0;
+}
+.property-market-hero p {
+  max-width: 55ch;
+}
+.property-market-hero nav {
+  display: flex;
+  gap: 0.7rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+.property-market-hero nav a {
+  color: var(--primary);
+  font-weight: 700;
+  text-decoration: underline;
+}
+.property-market-district {
+  margin: 1.4rem 0;
+}
+.property-market-district h2 {
+  font-size: 1.2rem;
+  font-weight: 750;
+  margin-bottom: 0.8rem;
+}
+.property-market-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+  gap: 1rem;
+}
+.property-market-card {
+  overflow: hidden;
+  border-radius: 1rem;
+}
+.property-market-card img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16/10;
+  object-fit: cover;
+}
+.property-market-card-body {
+  padding: 1rem;
+  display: grid;
+  gap: 0.6rem;
+}
+.property-market-card-body h3 {
+  font-size: 1.15rem;
+  font-weight: 750;
+  margin: 0;
+}
+.property-market-card-body p {
+  margin: 0;
+  color: var(--muted-foreground);
+}
+.property-market-card-body dl {
+  display: flex;
+  gap: 1rem;
+  margin: 0;
+}
+.property-market-card-body dt {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+.property-market-card-body dd {
+  font-weight: 700;
+  margin: 0;
+  text-transform: capitalize;
+}
+.property-market-card-body .map-primary-button {
+  width: 100%;
+  min-height: 44px;
+}
+.property-market-card-body .map-primary-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.property-market-message {
+  padding: 1.5rem;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+}
+.property-market-reason {
+  font-size: 0.83rem;
+}
+.property-market-features {
+  font-size: 0.82rem;
+}

@@ -63,10 +63,10 @@ function phoneAppLinkProps(to: string) {
 }
 
 const PHONE_APPS = [
-  { label: "Property", to: "/house", icon: HousePlus, tone: "phone-app-green", active: true },
+  { label: "Property", to: "/property", icon: HousePlus, tone: "phone-app-green", active: true },
   {
     label: "Find homes",
-    to: null,
+    to: "/properties",
     icon: Building2,
     tone: "phone-app-green",
     active: true,
@@ -138,7 +138,6 @@ const COMMUNITY_APPS = new Set<CommunityPhoneApp>([
 ]);
 const COURSE_AND_STALL_APPS = new Set<CourseAndStallApp>(["Courses", "Market Stalls"]);
 const PREVIEW_APPS = new Set<PhoneContentPreviewApp>([
-  "Find homes",
   "Bank",
   "Market",
   "Education",

@@ -1,382 +1,186 @@
-import { useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import * as Dialog from "@radix-ui/react-dialog";
-import { ArrowRight, HousePlus, KeyRound, LoaderCircle, SlidersHorizontal, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { formatNaira, q } from "@/lib/game";
+import { DISTRICTS, loadOwnedHouses, type SaleListing } from "@/lib/property-assets";
 import { pageMeta } from "@/lib/seo";
 import "@/components/map/map-ui.css";
-import "@/components/game/housing/property-listings.css";
+import "@/components/game/housing/property-market.css";
 
 export const Route = createFileRoute("/_authenticated/_game/properties")({
-  head: () => pageMeta("Properties", "Find a place to rent in Osogbo Life."),
+  head: () => pageMeta("Find Homes", "Buy a home in the fictional districts of Osogbo Life."),
   component: PropertiesPage,
 });
 
-type PropertyListing = {
-  propertyId: string;
-  houseTypeId: string;
-  label: string;
-  description: string;
-  weeklyRentMinor: number;
-  depositWeeks: number;
-  priceMinor: number;
-  upfrontTotalMinor: number;
-  slotCount: number;
-  assetKey: string;
-  isCurrentHome: boolean;
-  available: boolean;
-};
-
-type EligibleHouse = {
-  id: string;
-  eligible: boolean;
-  reason: string | null;
-  reason_code: string | null;
-};
-
-type Eligibility = { houses: EligibleHouse[] };
-type Filter = "affordable" | "available" | "current";
-
-async function housingRequest<T>(path: string, init?: RequestInit): Promise<T> {
-  const { data, error } = await supabase.auth.getSession();
-  if (error || !data.session) throw new Error("Sign in again to see properties.");
-  const response = await fetch(path, {
-    ...init,
-    headers: {
-      ...(init?.headers ?? {}),
-      Authorization: `Bearer ${data.session.access_token}`,
-    },
-  });
-  const body: unknown = await response.json().catch(() => null);
-  if (!response.ok) {
-    const reason =
-      body &&
-      typeof body === "object" &&
-      "error" in body &&
-      body.error &&
-      typeof body.error === "object" &&
-      "reason" in body.error &&
-      typeof body.error.reason === "string"
-        ? body.error.reason
-        : "The property service is unavailable. Try again.";
-    throw new Error(reason);
-  }
-  return body as T;
-}
-
-function rentalReason(
-  listing: PropertyListing,
-  balance: number | null,
-  eligibility: Eligibility | undefined,
-  eligibilityLoading: boolean,
-  eligibilityError: boolean,
-) {
-  if (listing.isCurrentHome) return "This is your current home.";
-  if (!listing.available) return "You already have an active rental.";
-  if (balance === null) return "Your wallet is still loading.";
-  if (balance < listing.upfrontTotalMinor)
-    return `You need ${formatNaira(listing.upfrontTotalMinor - balance)} more for move-in.`;
-  if (eligibilityError) return "Eligibility check failed. Retry it before renting.";
-  if (eligibilityLoading || !eligibility) return "Checking your rental eligibility.";
-  const house = eligibility.houses.find((item) => item.id === listing.houseTypeId);
-  if (!house) return "This home's eligibility could not be confirmed.";
-  if (!house.eligible) return house.reason || "You do not meet this home's income requirements.";
-  return null;
-}
-
 function PropertiesPage() {
-  const queryClient = useQueryClient();
+  const client = useQueryClient();
   const { data: character } = useQuery(q.character());
-  const { data: wallet, isPending: walletLoading } = useQuery(q.wallet());
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [filters, setFilters] = useState<Filter[]>([]);
-  const [rentError, setRentError] = useState("");
-  const requestKeys = useRef(new Map<string, string>());
-  const propertiesQuery = useQuery({
-    queryKey: ["housingProperties", character?.id],
-    enabled: !!character?.id,
-    staleTime: 15_000,
+  const { data: wallet, isPending: walletPending } = useQuery(q.wallet());
+  const [purchaseError, setPurchaseError] = useState("");
+  const listingsQuery = useQuery({
+    queryKey: ["saleHomes"],
     queryFn: async () => {
-      const result = await housingRequest<unknown>("/api/housing/properties");
-      if (!Array.isArray(result)) throw new Error("The property list could not be read.");
-      return result as PropertyListing[];
+      const { data, error } = await supabase
+        .from("game_properties")
+        .select(
+          "id,name,description,property_type,house_type_id,purchase_price,image_url,level_required,metadata",
+        )
+        .eq("is_active", true)
+        .not("purchase_price", "is", null)
+        .not("house_type_id", "is", null)
+        .order("purchase_price", { ascending: true });
+      if (error) throw error;
+      return (data ?? []) as SaleListing[];
     },
   });
-  const eligibilityQuery = useQuery({
-    queryKey: ["housingEligibility", character?.id],
+  const ownedQuery = useQuery({
+    queryKey: ["ownedHouses", character?.id],
     enabled: !!character?.id,
-    staleTime: 15_000,
-    queryFn: () => housingRequest<Eligibility>("/api/housing/eligible"),
+    queryFn: () => loadOwnedHouses(character!.id),
   });
-  const listings = propertiesQuery.data ?? [];
-  const balance = walletLoading ? null : Number(wallet?.balance ?? 0);
-  const visible = listings.filter((listing) => {
-    if (filters.includes("affordable") && (balance === null || balance < listing.upfrontTotalMinor))
-      return false;
-    if (filters.includes("available") && !listing.available) return false;
-    if (filters.includes("current") && !listing.isCurrentHome) return false;
-    return true;
-  });
-  const selected = listings.find((listing) => listing.propertyId === selectedId) ?? null;
-  const eligibilityLoading = eligibilityQuery.isPending;
-  const selectedReason = selected
-    ? rentalReason(
-        selected,
-        balance,
-        eligibilityQuery.data,
-        eligibilityLoading,
-        eligibilityQuery.isError,
-      )
-    : null;
-  const rent = useMutation({
-    mutationFn: async (listing: PropertyListing) => {
-      const key = requestKeys.current.get(listing.propertyId) ?? crypto.randomUUID();
-      requestKeys.current.set(listing.propertyId, key);
-      return housingRequest<unknown>("/api/housing/rent", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Idempotency-Key": key },
-        body: JSON.stringify({ property_id: listing.propertyId }),
+  const ownedIds = useMemo(
+    () =>
+      new Set(
+        (ownedQuery.data ?? [])
+          .filter((row) => row.tenure === "owned")
+          .map((row) => row.game_properties?.id),
+      ),
+    [ownedQuery.data],
+  );
+  const balance = walletPending ? null : Number(wallet?.balance ?? 0);
+  const buy = useMutation({
+    mutationFn: async (listing: SaleListing) => {
+      const { error } = await supabase.rpc("acquire_game_property", {
+        p_property_id: listing.id,
+        p_tenure: "owned",
       });
+      if (error) throw error;
     },
-    onSuccess: async (_result, listing) => {
-      requestKeys.current.delete(listing.propertyId);
-      setRentError("");
+    onSuccess: async () => {
+      setPurchaseError("");
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["housingProperties"] }),
-        queryClient.invalidateQueries({ queryKey: ["housingEligibility"] }),
-        queryClient.invalidateQueries({ queryKey: ["housingHome"] }),
-        queryClient.invalidateQueries({ queryKey: ["authoritativeHouseState"] }),
-        queryClient.invalidateQueries({ queryKey: q.wallet().queryKey }),
-        queryClient.invalidateQueries({ queryKey: ["transactions"] }),
+        client.invalidateQueries({ queryKey: ["saleHomes"] }),
+        client.invalidateQueries({ queryKey: ["ownedHouses"] }),
+        client.invalidateQueries({ queryKey: ["canonicalHousingHome"] }),
+        client.invalidateQueries({ queryKey: ["authoritativeHouseState"] }),
+        client.invalidateQueries({ queryKey: ["housingMapProperties"] }),
+        client.invalidateQueries({ queryKey: q.wallet().queryKey }),
+        client.invalidateQueries({ queryKey: ["transactions"] }),
       ]);
-      setSelectedId(null);
-      toast.success("Your rental is confirmed. Your new home is ready.");
+      toast.success("House purchased. It is now your Home.");
     },
     onError: (error: Error) => {
-      setRentError(error.message);
-      void propertiesQuery.refetch();
-      void eligibilityQuery.refetch();
+      setPurchaseError(error.message);
+      void ownedQuery.refetch();
+      void listingsQuery.refetch();
     },
   });
-
-  function toggleFilter(filter: Filter) {
-    setFilters((current) =>
-      current.includes(filter) ? current.filter((value) => value !== filter) : [...current, filter],
-    );
-  }
-
+  const available = (listingsQuery.data ?? []).filter((listing) => !ownedIds.has(listing.id));
   return (
-    <div className="property-listings-page">
-      <header className="property-listings-hero">
-        <p className="map-sheet-eyebrow">FIND YOUR PLACE</p>
-        <h1>Properties</h1>
-        <p>Browse homes across Osogbo. Rent and move-in costs are confirmed by the server.</p>
-        <div className="property-listings-balance">
-          <span>Available cash</span>
-          <strong>{balance === null ? "Loading…" : formatNaira(balance)}</strong>
-        </div>
+    <main className="property-market-page">
+      <header className="property-market-hero map-sheet">
+        <p className="map-sheet-eyebrow">FIND HOMES</p>
+        <h1>Homes for sale</h1>
+        <p>Choose a house in one of the fictional game districts. Prices are in Virtual Naira.</p>
+        <strong>Available cash: {balance === null ? "Loading…" : formatNaira(balance)}</strong>
+        <nav aria-label="Housing navigation">
+          <Link to="/property">My property</Link>
+          <Link to="/rentals">Rent a home</Link>
+        </nav>
       </header>
-
-      <section className="property-listings-filter-panel" aria-label="Filter properties">
-        <div className="property-listings-filter-title">
-          <SlidersHorizontal size={17} aria-hidden="true" />
-          <span>Show me</span>
-        </div>
-        <div className="property-listings-filters">
-          {(
-            [
-              ["affordable", "Affordable now"],
-              ["available", "Available"],
-              ["current", "My current home"],
-            ] as const
-          ).map(([value, label]) => (
-            <button
-              type="button"
-              key={value}
-              className="property-filter-chip"
-              aria-pressed={filters.includes(value)}
-              onClick={() => toggleFilter(value)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {propertiesQuery.isPending ? (
-        <div className="property-listings-message" role="status">
-          <LoaderCircle className="property-listings-spinner" size={20} aria-hidden="true" />
+      {purchaseError && (
+        <p className="map-action-error" role="alert">
+          {purchaseError}
+        </p>
+      )}
+      {listingsQuery.isPending || ownedQuery.isPending ? (
+        <p className="property-market-message" role="status">
           Loading homes…
-        </div>
-      ) : propertiesQuery.isError ? (
-        <div className="property-listings-message" role="alert">
-          <p>{propertiesQuery.error.message}</p>
+        </p>
+      ) : listingsQuery.isError || ownedQuery.isError ? (
+        <div className="property-market-message" role="alert">
+          <p>{listingsQuery.error?.message ?? ownedQuery.error?.message}</p>
           <button
             className="map-primary-button"
-            type="button"
-            onClick={() => void propertiesQuery.refetch()}
+            onClick={() => {
+              void listingsQuery.refetch();
+              void ownedQuery.refetch();
+            }}
           >
             Try again
           </button>
         </div>
-      ) : visible.length ? (
-        <section aria-label="Property listings">
-          <div className="property-listings-count">
-            <span>
-              {visible.length} {visible.length === 1 ? "home" : "homes"}
-            </span>
-            {filters.length > 0 && (
-              <button type="button" onClick={() => setFilters([])}>
-                Clear filters
-              </button>
-            )}
-          </div>
-          <ul className="property-listings-grid">
-            {visible.map((listing) => (
-              <li key={listing.propertyId} className="property-listing-card">
-                <div className="property-listing-icon">
-                  <HousePlus size={24} aria-hidden="true" />
-                </div>
-                <div className="property-listing-copy">
-                  <div className="property-listing-heading">
-                    <h2>{listing.label}</h2>
-                    {listing.isCurrentHome && (
-                      <span className="property-listing-tag">Your home</span>
-                    )}
-                  </div>
-                  <p>{listing.description}</p>
-                  <div className="property-listing-meta">
-                    <span>
-                      {listing.slotCount} furniture {listing.slotCount === 1 ? "slot" : "slots"}
-                    </span>
-                    <span>
-                      {listing.depositWeeks} {listing.depositWeeks === 1 ? "week" : "weeks"} deposit
-                    </span>
-                  </div>
-                </div>
-                <div className="property-listing-bottom">
-                  <div>
-                    <strong>{formatNaira(listing.weeklyRentMinor)}</strong>
-                    <span> / week</span>
-                    <small>{formatNaira(listing.upfrontTotalMinor)} to move in</small>
-                  </div>
-                  <button
-                    type="button"
-                    className="property-listing-open"
-                    onClick={() => {
-                      setRentError("");
-                      setSelectedId(listing.propertyId);
-                    }}
-                    aria-label={`View ${listing.label}`}
-                  >
-                    <ArrowRight size={20} aria-hidden="true" />
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
+      ) : available.length === 0 ? (
+        <p className="property-market-message">No homes are available to buy right now.</p>
       ) : (
-        <div className="property-listings-message">
-          <p>No homes match these filters.</p>
-          <button className="map-primary-button" type="button" onClick={() => setFilters([])}>
-            Show all homes
-          </button>
-        </div>
+        DISTRICTS.map((district) => {
+          const homes = available.filter((listing) => listing.metadata?.district === district);
+          if (!homes.length) return null;
+          return (
+            <section key={district} className="property-market-district" aria-label={district}>
+              <h2>{district}</h2>
+              <div className="property-market-grid">
+                {homes.map((listing) => {
+                  const price = Number(listing.purchase_price ?? 0);
+                  const reason =
+                    balance === null
+                      ? "Loading your wallet…"
+                      : balance < price
+                        ? `Insufficient funds. Need ${formatNaira(price - balance)} more.`
+                        : (character?.level ?? 0) < listing.level_required
+                          ? `Requires level ${listing.level_required}.`
+                          : "";
+                  return (
+                    <article className="property-market-card map-sheet" key={listing.id}>
+                      {listing.image_url && (
+                        <img src={listing.image_url} alt={listing.name} loading="lazy" />
+                      )}
+                      <div className="property-market-card-body">
+                        <p className="map-sheet-eyebrow">{district}</p>
+                        <h3>{listing.name}</h3>
+                        <p>{listing.description}</p>
+                        <dl>
+                          <div>
+                            <dt>Type</dt>
+                            <dd>{listing.property_type.replaceAll("_", " ")}</dd>
+                          </div>
+                          <div>
+                            <dt>Bedrooms</dt>
+                            <dd>{listing.metadata?.bedrooms ?? "—"}</dd>
+                          </div>
+                        </dl>
+                        <p className="property-market-features">
+                          {(listing.metadata?.features ?? []).join(" · ")}
+                        </p>
+                        <strong>{formatNaira(price)}</strong>
+                        {reason && (
+                          <p className="property-market-reason" role="status">
+                            {reason}
+                          </p>
+                        )}
+                        <button
+                          className="map-primary-button"
+                          disabled={!!reason || buy.isPending}
+                          onClick={() => {
+                            setPurchaseError("");
+                            buy.mutate(listing);
+                          }}
+                        >
+                          {buy.isPending && buy.variables?.id === listing.id
+                            ? "Purchasing…"
+                            : "Purchase home"}
+                        </button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </section>
+          );
+        })
       )}
-
-      <Dialog.Root
-        open={!!selected}
-        onOpenChange={(open) => {
-          if (!open && !rent.isPending) setSelectedId(null);
-        }}
-      >
-        <Dialog.Portal>
-          <Dialog.Overlay className="property-detail-backdrop" />
-          {selected && (
-            <Dialog.Content
-              className="map-sheet property-detail-sheet"
-              aria-describedby="property-detail-description"
-            >
-              <div className="map-sheet-grabber-static" aria-hidden="true">
-                <span />
-              </div>
-              <div className="map-sheet-header">
-                <div>
-                  <p className="map-sheet-eyebrow">HOME DETAILS</p>
-                  <Dialog.Title>{selected.label}</Dialog.Title>
-                </div>
-                <Dialog.Close
-                  className="map-icon-button"
-                  disabled={rent.isPending}
-                  aria-label="Close details"
-                >
-                  <X size={19} aria-hidden="true" />
-                </Dialog.Close>
-              </div>
-              <Dialog.Description id="property-detail-description">
-                {selected.description}
-              </Dialog.Description>
-              <div className="property-detail-prices">
-                <div>
-                  <span>Weekly rent</span>
-                  <strong>{formatNaira(selected.weeklyRentMinor)}</strong>
-                </div>
-                <div>
-                  <span>Deposit ({selected.depositWeeks} weeks)</span>
-                  <strong>{formatNaira(selected.weeklyRentMinor * selected.depositWeeks)}</strong>
-                </div>
-                <div className="property-detail-total">
-                  <span>Total to move in</span>
-                  <strong>{formatNaira(selected.upfrontTotalMinor)}</strong>
-                </div>
-              </div>
-              <p className="property-detail-slots">
-                <KeyRound size={16} aria-hidden="true" /> {selected.slotCount} furniture slots
-                included
-              </p>
-              {selectedReason && (
-                <p className="map-age-notice" role="status">
-                  {selectedReason}
-                </p>
-              )}
-              {rentError && (
-                <p className="map-action-error" role="alert">
-                  {rentError}
-                </p>
-              )}
-              {eligibilityQuery.isError && (
-                <button
-                  type="button"
-                  className="property-detail-retry"
-                  onClick={() => void eligibilityQuery.refetch()}
-                >
-                  Retry eligibility check
-                </button>
-              )}
-              <div className="property-detail-actions">
-                {selected.isCurrentHome ? (
-                  <Link className="map-primary-button" to="/house">
-                    Go to my home
-                  </Link>
-                ) : (
-                  <button
-                    className="map-primary-button"
-                    type="button"
-                    disabled={!!selectedReason || rent.isPending}
-                    onClick={() => rent.mutate(selected)}
-                  >
-                    {rent.isPending ? "Confirming rental…" : "Rent this"}
-                  </button>
-                )}
-              </div>
-            </Dialog.Content>
-          )}
-        </Dialog.Portal>
-      </Dialog.Root>
-    </div>
+    </main>
   );
 }

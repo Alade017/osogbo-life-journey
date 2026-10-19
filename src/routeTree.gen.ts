@@ -31,6 +31,8 @@ import { Route as AuthenticatedGameNotificationsRouteImport } from './routes/_au
 import { Route as AuthenticatedGamePartyRouteImport } from './routes/_authenticated/_game/party'
 import { Route as AuthenticatedGameProfileRouteImport } from './routes/_authenticated/_game/profile'
 import { Route as AuthenticatedGamePropertiesRouteImport } from './routes/_authenticated/_game/properties'
+import { Route as AuthenticatedGamePropertyRouteImport } from './routes/_authenticated/_game/property'
+import { Route as AuthenticatedGameRentalsRouteImport } from './routes/_authenticated/_game/rentals'
 import { Route as AuthenticatedGameSettingsRouteImport } from './routes/_authenticated/_game/settings'
 import { Route as AuthenticatedGameSocialRouteImport } from './routes/_authenticated/_game/social'
 import { Route as AuthenticatedGameWalletRouteImport } from './routes/_authenticated/_game/wallet'
@@ -189,6 +191,18 @@ const AuthenticatedGamePropertiesRoute =
   AuthenticatedGamePropertiesRouteImport.update({
     id: '/properties',
     path: '/properties',
+    getParentRoute: () => AuthenticatedGameRoute,
+  } as any)
+const AuthenticatedGamePropertyRoute =
+  AuthenticatedGamePropertyRouteImport.update({
+    id: '/property',
+    path: '/property',
+    getParentRoute: () => AuthenticatedGameRoute,
+  } as any)
+const AuthenticatedGameRentalsRoute =
+  AuthenticatedGameRentalsRouteImport.update({
+    id: '/rentals',
+    path: '/rentals',
     getParentRoute: () => AuthenticatedGameRoute,
   } as any)
 const AuthenticatedGameSettingsRoute =
@@ -432,6 +446,8 @@ export interface FileRoutesByFullPath {
   '/party': typeof AuthenticatedGamePartyRoute
   '/profile': typeof AuthenticatedGameProfileRoute
   '/properties': typeof AuthenticatedGamePropertiesRoute
+  '/property': typeof AuthenticatedGamePropertyRoute
+  '/rentals': typeof AuthenticatedGameRentalsRoute
   '/settings': typeof AuthenticatedGameSettingsRoute
   '/social': typeof AuthenticatedGameSocialRoute
   '/wallet': typeof AuthenticatedGameWalletRoute
@@ -497,6 +513,8 @@ export interface FileRoutesByTo {
   '/party': typeof AuthenticatedGamePartyRoute
   '/profile': typeof AuthenticatedGameProfileRoute
   '/properties': typeof AuthenticatedGamePropertiesRoute
+  '/property': typeof AuthenticatedGamePropertyRoute
+  '/rentals': typeof AuthenticatedGameRentalsRoute
   '/settings': typeof AuthenticatedGameSettingsRoute
   '/social': typeof AuthenticatedGameSocialRoute
   '/wallet': typeof AuthenticatedGameWalletRoute
@@ -565,6 +583,8 @@ export interface FileRoutesById {
   '/_authenticated/_game/party': typeof AuthenticatedGamePartyRoute
   '/_authenticated/_game/profile': typeof AuthenticatedGameProfileRoute
   '/_authenticated/_game/properties': typeof AuthenticatedGamePropertiesRoute
+  '/_authenticated/_game/property': typeof AuthenticatedGamePropertyRoute
+  '/_authenticated/_game/rentals': typeof AuthenticatedGameRentalsRoute
   '/_authenticated/_game/settings': typeof AuthenticatedGameSettingsRoute
   '/_authenticated/_game/social': typeof AuthenticatedGameSocialRoute
   '/_authenticated/_game/wallet': typeof AuthenticatedGameWalletRoute
@@ -632,6 +652,8 @@ export interface FileRouteTypes {
     | '/party'
     | '/profile'
     | '/properties'
+    | '/property'
+    | '/rentals'
     | '/settings'
     | '/social'
     | '/wallet'
@@ -697,6 +719,8 @@ export interface FileRouteTypes {
     | '/party'
     | '/profile'
     | '/properties'
+    | '/property'
+    | '/rentals'
     | '/settings'
     | '/social'
     | '/wallet'
@@ -764,6 +788,8 @@ export interface FileRouteTypes {
     | '/_authenticated/_game/party'
     | '/_authenticated/_game/profile'
     | '/_authenticated/_game/properties'
+    | '/_authenticated/_game/property'
+    | '/_authenticated/_game/rentals'
     | '/_authenticated/_game/settings'
     | '/_authenticated/_game/social'
     | '/_authenticated/_game/wallet'
@@ -1010,6 +1036,20 @@ declare module '@tanstack/react-router' {
       path: '/properties'
       fullPath: '/properties'
       preLoaderRoute: typeof AuthenticatedGamePropertiesRouteImport
+      parentRoute: typeof AuthenticatedGameRoute
+    }
+    '/_authenticated/_game/property': {
+      id: '/_authenticated/_game/property'
+      path: '/property'
+      fullPath: '/property'
+      preLoaderRoute: typeof AuthenticatedGamePropertyRouteImport
+      parentRoute: typeof AuthenticatedGameRoute
+    }
+    '/_authenticated/_game/rentals': {
+      id: '/_authenticated/_game/rentals'
+      path: '/rentals'
+      fullPath: '/rentals'
+      preLoaderRoute: typeof AuthenticatedGameRentalsRouteImport
       parentRoute: typeof AuthenticatedGameRoute
     }
     '/_authenticated/_game/settings': {
@@ -1331,6 +1371,8 @@ interface AuthenticatedGameRouteChildren {
   AuthenticatedGamePartyRoute: typeof AuthenticatedGamePartyRoute
   AuthenticatedGameProfileRoute: typeof AuthenticatedGameProfileRoute
   AuthenticatedGamePropertiesRoute: typeof AuthenticatedGamePropertiesRoute
+  AuthenticatedGamePropertyRoute: typeof AuthenticatedGamePropertyRoute
+  AuthenticatedGameRentalsRoute: typeof AuthenticatedGameRentalsRoute
   AuthenticatedGameSettingsRoute: typeof AuthenticatedGameSettingsRoute
   AuthenticatedGameSocialRoute: typeof AuthenticatedGameSocialRoute
   AuthenticatedGameWalletRoute: typeof AuthenticatedGameWalletRoute
@@ -1352,6 +1394,8 @@ const AuthenticatedGameRouteChildren: AuthenticatedGameRouteChildren = {
   AuthenticatedGamePartyRoute: AuthenticatedGamePartyRoute,
   AuthenticatedGameProfileRoute: AuthenticatedGameProfileRoute,
   AuthenticatedGamePropertiesRoute: AuthenticatedGamePropertiesRoute,
+  AuthenticatedGamePropertyRoute: AuthenticatedGamePropertyRoute,
+  AuthenticatedGameRentalsRoute: AuthenticatedGameRentalsRoute,
   AuthenticatedGameSettingsRoute: AuthenticatedGameSettingsRoute,
   AuthenticatedGameSocialRoute: AuthenticatedGameSocialRoute,
   AuthenticatedGameWalletRoute: AuthenticatedGameWalletRoute,

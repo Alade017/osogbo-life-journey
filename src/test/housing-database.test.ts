@@ -50,6 +50,169 @@ describe("housing onboarding database actions", () => {
     );
   });
 
+  it("buys a house once, persists ownership, and switches the active room", async () => {
+    await db.query("select set_config('test.user_id',$1,false)", [userId]);
+    try {
+      await db.query("update public.wallets set balance=1000000 where user_id=$1", [userId]);
+      const firstListing = await db.query<{ id: string }>(
+        "select id from public.game_properties where slug='housing-shared-room'",
+      );
+      const secondListing = await db.query<{ id: string }>(
+        "select id from public.game_properties where slug='garden-court-flat'",
+      );
+      const firstId = firstListing.rows[0]!.id;
+      const secondId = secondListing.rows[0]!.id;
+      await db.query("select public.acquire_game_property($1,'owned')", [firstId]);
+      const balanceAfterFirst = await db.query<{ balance: number }>(
+        "select balance from public.wallets where user_id=$1",
+        [userId],
+      );
+      await expect(
+        db.query("select public.acquire_game_property($1,'owned')", [firstId]),
+      ).rejects.toThrow("ALREADY_OWNED");
+      const balanceAfterDuplicate = await db.query<{ balance: number }>(
+        "select balance from public.wallets where user_id=$1",
+        [userId],
+      );
+      expect(balanceAfterDuplicate.rows[0]?.balance).toBe(balanceAfterFirst.rows[0]?.balance);
+      await db.query("select public.acquire_game_property($1,'owned')", [secondId]);
+      const assets = await db.query<{ id: string; is_home: boolean; property_id: string }>(
+        "select id,is_home,property_id from public.player_properties where user_id=$1 and is_active and tenure='owned' order by acquired_at,id",
+        [userId],
+      );
+      expect(assets.rows).toHaveLength(2);
+      const selected = assets.rows.find((row) => !row.is_home)!;
+      await db.query("select public.set_active_property_home($1)", [selected.id]);
+      const home = await db.query<{
+        result: { propertyId: string; tenure: string; imageUrl: string };
+      }>("select public.housing_current_home($1) as result", [userId]);
+      expect(home.rows[0]?.result).toMatchObject({ tenure: "owned", propertyId: selected.property_id });
+      expect(home.rows[0]?.result.imageUrl).toMatch(/\.webp$/);
+      const active = await db.query<{ count: number }>(
+        "select count(*)::int as count from public.player_houses where player_id=$1 and status='active'",
+        [userId],
+      );
+      expect(active.rows[0]?.count).toBe(1);
+      const room = await db.query<{ result: { house: { house_type_id: string } } }>(
+        "select public.get_house_state($1) as result",
+        [userId],
+      );
+      expect(room.rows[0]?.result.house).toBeTruthy();
+      await expect(db.query("select public.cancel_player_house($1)", [userId])).rejects.toThrow(
+        "OWNED_HOME_CANNOT_BE_CANCELLED",
+      );
+    } finally {
+      await db.query("select set_config('test.user_id','',false)");
+    }
+  });
+
+  it("shows a purchased Royal Crown home on the map", async () => {
+    await db.query("select set_config('test.user_id',$1,false)", [userId]);
+    try {
+      await db.query("update public.wallets set balance=3000000 where user_id=$1", [userId]);
+      const listing = await db.query<{ id: string }>(
+        "select id from public.game_properties where slug='housing-royal-crown-duplex'",
+      );
+      const propertyId = listing.rows[0]!.id;
+      await db.query("select public.acquire_game_property($1,'owned')", [propertyId]);
+      const markers = await db.query<{
+        result: { propertyId: string; status: string; label: string }[];
+      }>("select public.housing_map_properties($1) as result", [userId]);
+      expect(markers.rows[0]?.result).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ propertyId, status: "owned", label: "Royal Crown Duplex" }),
+        ]),
+      );
+    } finally {
+      await db.query("select set_config('test.user_id','',false)");
+    }
+  });
+
+  it("keeps room furniture when buying the house being rented", async () => {
+    const listing = await db.query<{ id: string }>(
+      "select id from public.game_properties where slug='housing-shared-room'",
+    );
+    const propertyId = listing.rows[0]!.id;
+    await db.query("update public.wallets set balance=500000 where user_id=$1", [userId]);
+    await db.query("select public.housing_rent_property($1,$2,$3)", [
+      userId,
+      propertyId,
+      "812f4de0-1990-45e4-a056-56f32052a19b",
+    ]);
+    await db.query("select public.house_place($1,'starter-bed','bed')", [userId]);
+    await db.query("select set_config('test.user_id',$1,false)", [userId]);
+    try {
+      await db.query("select public.acquire_game_property($1,'owned')", [propertyId]);
+      const room = await db.query<{ result: { placements: { item_id: string }[] } }>(
+        "select public.get_house_state($1) as result",
+        [userId],
+      );
+      expect(room.rows[0]?.result.placements).toEqual(
+        expect.arrayContaining([expect.objectContaining({ item_id: "starter-bed" })]),
+      );
+      const home = await db.query<{ result: { tenure: string; dueAt: string | null } }>(
+        "select public.housing_current_home($1) as result",
+        [userId],
+      );
+      expect(home.rows[0]?.result).toMatchObject({ tenure: "owned", dueAt: null });
+      const openCycles = await db.query<{ count: number }>(
+        "select count(*)::int as count from public.property_rent_cycles where character_id=(select id from public.characters where user_id=$1) and status in ('current','due','grace','rescue')",
+        [userId],
+      );
+      expect(openCycles.rows[0]?.count).toBe(0);
+    } finally {
+      await db.query("select set_config('test.user_id','',false)");
+    }
+  });
+
+  it("repossesses an expired rental without ending a separately owned Home", async () => {
+    const rented = await db.query<{ id: string }>(
+      "select id from public.game_properties where slug='housing-shared-room'",
+    );
+    const owned = await db.query<{ id: string }>(
+      "select id from public.game_properties where slug='garden-court-flat'",
+    );
+    await db.query("update public.wallets set balance=500000 where user_id=$1", [userId]);
+    await db.query("select public.housing_rent_property($1,$2,$3)", [
+      userId,
+      rented.rows[0]!.id,
+      "a122eaca-b47d-4661-b23f-5d0bc658bf41",
+    ]);
+    await db.query("select set_config('test.user_id',$1,false)", [userId]);
+    try {
+      await db.query("select public.acquire_game_property($1,'owned')", [owned.rows[0]!.id]);
+      await db.query(
+        "update public.characters set current_location_id=(select id from public.locations where slug='residential') where user_id=$1",
+        [userId],
+      );
+      await db.query(
+        "update public.property_rent_cycles set status='rescue',rescue_ends_at=now()-interval '1 minute' where character_id=(select id from public.characters where user_id=$1) and status='current'",
+        [userId],
+      );
+      await db.query("select public._advance_property_rent_cycles()");
+      const home = await db.query<{ result: { tenure: string; propertyId: string } }>(
+        "select public.housing_current_home($1) as result",
+        [userId],
+      );
+      expect(home.rows[0]?.result).toMatchObject({
+        tenure: "owned",
+        propertyId: owned.rows[0]!.id,
+      });
+      const room = await db.query<{ result: { house: { status: string } } }>(
+        "select public.get_house_state($1) as result",
+        [userId],
+      );
+      expect(room.rows[0]?.result.house.status).toBe("active");
+      const location = await db.query<{ slug: string }>(
+        "select location.slug from public.characters character join public.locations location on location.id=character.current_location_id where character.user_id=$1",
+        [userId],
+      );
+      expect(location.rows[0]?.slug).toBe("residential");
+    } finally {
+      await db.query("select set_config('test.user_id','',false)");
+    }
+  });
+
   it("computes eligibility from authoritative cash and 20 shifts of job pay", async () => {
     const result = await db.query<{
       result: { monthly_income: number; houses: { id: string; eligible: boolean }[] };
@@ -617,7 +780,7 @@ describe("housing onboarding database actions", () => {
       return result.rows[0]?.markers ?? [];
     };
     const initial = await readMarkers();
-    expect(initial).toHaveLength(6);
+    expect(initial).toHaveLength(7);
     expect(initial.every((marker) => marker.status === "vacant")).toBe(true);
     expect(initial.find((marker) => marker.propertyId === propertyId)).toMatchObject({
       gridX: 1,

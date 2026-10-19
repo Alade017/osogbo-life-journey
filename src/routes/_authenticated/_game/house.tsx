@@ -13,12 +13,11 @@ import type {
 import { HouseRoom3D } from "@/components/game/housing/HouseRoom3D";
 import { HousingReliefPanel } from "@/components/game/housing/HousingReliefPanel";
 import { housingReliefQueryKey } from "@/lib/housing-relief-client";
-import { EmptyState } from "@/components/game/ui";
 import { HouseSceneSkeleton } from "@/components/game/loading-skeletons";
 import { Avatar } from "@/components/game/Avatar";
 import type { Appearance } from "@/game/avatar-appearance";
 import housingData from "@/data/housing.json";
-import { formatNaira, q, rpc, useGameAction } from "@/lib/game";
+import { formatNaira, q } from "@/lib/game";
 import { supabase } from "@/integrations/supabase/client";
 import {
   houseStateQueryKey,
@@ -58,6 +57,8 @@ type CanonicalHome = {
   propertyId: string;
   houseTypeId: string;
   name: string;
+  imageUrl: string | null;
+  district: string | null;
   tenure: string;
   status: string | null;
   dueAt: string | null;
@@ -203,6 +204,8 @@ function normalizeCanonicalHome(value: unknown): CanonicalHome | null {
     propertyId: value["propertyId"],
     houseTypeId: value["houseTypeId"],
     name: value["name"],
+    imageUrl: typeof value["imageUrl"] === "string" ? value["imageUrl"] : null,
+    district: typeof value["district"] === "string" ? value["district"] : null,
     tenure: typeof value["tenure"] === "string" ? value["tenure"] : "rented",
     status: typeof value["status"] === "string" ? value["status"] : null,
     dueAt: typeof value["dueAt"] === "string" ? value["dueAt"] : null,
@@ -624,15 +627,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     character?.appearance && typeof character.appearance === "object" ? character.appearance : {}
   ) as Appearance;
   const isOffline = !online || usingSaved;
-  const { data: listingsData } = useQuery(q.propertyListings());
-  const { data: wallet } = useQuery(q.wallet());
-  const acquire = useGameAction(rpc.acquireProperty, {
-    onSuccess: () => {
-      toast.success("Property secured. Your wallet and housing record are updated.");
-      refreshHouseState();
-    },
-  });
-  const listings = (Array.isArray(listingsData) ? listingsData : []) as PropertyListing[];
   const canonicalHome = canonicalHomeQuery.data;
   const rentStatus = canonicalHome?.status ?? serverState?.house?.status ?? "unknown";
   const rentDueAt = canonicalHome?.dueAt ?? serverState?.house?.next_rent_due_at;
@@ -710,12 +704,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             )}
           </div>
         </section>
-        <PropertyListings
-          listings={listings}
-          walletBalance={wallet?.balance ?? 0}
-          playerLevel={character?.level ?? 1}
-          acquire={acquire}
-        />
       </div>
     );
 
@@ -727,9 +715,8 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           <p className="house-eyebrow">Your home</p>
           <h1>{canonicalHome?.name ?? house.house_type.label}</h1>
           <p className="house-subtitle">
-            {house.house_type.bedrooms} bedroom{house.house_type.bedrooms === 1 ? "" : "s"} · Rent{" "}
-            {formatNaira(canonicalHome?.weeklyRentMinor ?? house.house_type.weekly_rent_minor)} a
-            week
+            {canonicalHome?.district ?? "Residential District"} · {house.house_type.bedrooms}{" "}
+            bedroom{house.house_type.bedrooms === 1 ? "" : "s"}
           </p>
         </div>
         <div className="house-header-actions">
@@ -752,6 +739,9 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           </button>
         </div>
       </header>
+      {canonicalHome?.imageUrl && (
+        <img className="house-cover-image" src={canonicalHome.imageUrl} alt={canonicalHome.name} />
+      )}
       {isOffline && (
         <div className="house-status-banner" role="status">
           <WifiOff size={17} /> Offline. Showing your last saved home.
@@ -769,12 +759,16 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         </div>
         <div>
           <span>Next rent due</span>
-          <strong>{formatRentDate(rentDueAt)}</strong>
+          <strong>
+            {canonicalHome?.tenure === "owned" ? "Owned outright" : formatRentDate(rentDueAt)}
+          </strong>
         </div>
         <div>
           <span>Weekly rent</span>
           <strong>
-            {formatNaira(canonicalHome?.weeklyRentMinor ?? house.house_type.weekly_rent_minor)}
+            {canonicalHome?.tenure === "owned"
+              ? "—"
+              : formatNaira(canonicalHome?.weeklyRentMinor ?? house.house_type.weekly_rent_minor)}
           </strong>
         </div>
       </section>
@@ -896,122 +890,27 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         {inventory.length === 0 && (
           <p className="house-empty-copy">Your home is empty. Visit the shop to get furniture.</p>
         )}
-        {(house.status === "active" || house.status === "overdue") && (
-          <div className="house-tenancy-actions">
-            <p>
-              Ending your tenancy gives no rent or deposit refund. Your furniture stays owned and
-              returns to your inventory.
-            </p>
-            <button
-              type="button"
-              className="house-secondary-button"
-              disabled={cancelTenancy.isPending || isOffline}
-              onClick={() => {
-                if (window.confirm("End this tenancy now? Rent and deposit are not refunded."))
-                  cancelTenancy.mutate();
-              }}
-            >
-              {cancelTenancy.isPending ? "Ending tenancy…" : "Cancel rent"}
-            </button>
-          </div>
-        )}
+        {canonicalHome?.tenure === "rented" &&
+          (house.status === "active" || house.status === "overdue") && (
+            <div className="house-tenancy-actions">
+              <p>
+                Ending your tenancy gives no rent or deposit refund. Your furniture stays owned and
+                returns to your inventory.
+              </p>
+              <button
+                type="button"
+                className="house-secondary-button"
+                disabled={cancelTenancy.isPending || isOffline}
+                onClick={() => {
+                  if (window.confirm("End this tenancy now? Rent and deposit are not refunded."))
+                    cancelTenancy.mutate();
+                }}
+              >
+                {cancelTenancy.isPending ? "Ending tenancy…" : "Cancel rent"}
+              </button>
+            </div>
+          )}
       </section>
-      <PropertyListings
-        listings={listings}
-        walletBalance={wallet?.balance ?? 0}
-        playerLevel={character?.level ?? 1}
-        acquire={acquire}
-      />
     </div>
   );
 }
-
-type PropertyAcquire = {
-  isPending: boolean;
-  mutate: (args: { propertyId: string; tenure: "owned" | "rented" }) => void;
-};
-function PropertyListings({
-  listings,
-  walletBalance,
-  playerLevel,
-  acquire,
-}: {
-  listings: PropertyListing[];
-  walletBalance: number;
-  playerLevel: number;
-  acquire: PropertyAcquire;
-}) {
-  return (
-    <details className="house-property-listings">
-      <summary>Browse property listings</summary>
-      {listings.length ? (
-        <div className="house-property-grid">
-          {listings.map((property) => (
-            <article key={property.id} className="house-property-card">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {property.property_type.replaceAll("_", " ")}
-                </p>
-                <h3>{property.name}</h3>
-                <p>{property.description}</p>
-              </div>
-              {property.rent_price !== null && (
-                <p>
-                  Rent {formatNaira(property.rent_price)} every {property.rent_period_days} days
-                </p>
-              )}
-              {property.purchase_price !== null && (
-                <p>Purchase {formatNaira(property.purchase_price)}</p>
-              )}
-              {property.is_current ? (
-                <span>Current property</span>
-              ) : (
-                <div className="flex gap-2">
-                  {property.rent_price !== null && (
-                    <button
-                      disabled={
-                        acquire.isPending ||
-                        walletBalance < property.rent_price ||
-                        playerLevel < property.level_required
-                      }
-                      onClick={() => acquire.mutate({ propertyId: property.id, tenure: "rented" })}
-                    >
-                      Rent
-                    </button>
-                  )}
-                  {property.purchase_price !== null && (
-                    <button
-                      disabled={
-                        acquire.isPending ||
-                        walletBalance < property.purchase_price ||
-                        playerLevel < property.level_required
-                      }
-                      onClick={() => acquire.mutate({ propertyId: property.id, tenure: "owned" })}
-                    >
-                      Buy
-                    </button>
-                  )}
-                </div>
-              )}
-            </article>
-          ))}
-        </div>
-      ) : (
-        <EmptyState title="No listings available" body="Check back later for homes in the city." />
-      )}
-    </details>
-  );
-}
-
-type PropertyListing = {
-  id: string;
-  name: string;
-  description: string;
-  property_type: string;
-  purchase_price: number | null;
-  rent_price: number | null;
-  rent_period_days: number;
-  level_required: number;
-  active_tenure: string | null;
-  is_current: boolean;
-};
