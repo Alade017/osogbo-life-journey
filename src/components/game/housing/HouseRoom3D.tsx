@@ -124,6 +124,176 @@ function PlaceholderRoom({ width, depth }: { width: number; depth: number }) {
   );
 }
 
+function FurnitureFallback({ artKey, slotType }: { artKey: string | undefined; slotType: string }) {
+  const kind = artKey ?? slotType;
+  if (kind === "bed")
+    return (
+      <group>
+        <mesh position={[0, 0.14, 0]}>
+          <boxGeometry args={[0.95, 0.18, 1.35]} />
+          <meshStandardMaterial color="#8a6048" />
+        </mesh>
+        <mesh position={[0, 0.27, 0]}>
+          <boxGeometry args={[0.88, 0.12, 1.22]} />
+          <meshStandardMaterial color="#e7d9b9" />
+        </mesh>
+        <mesh position={[0, 0.48, -0.66]}>
+          <boxGeometry args={[0.98, 0.62, 0.1]} />
+          <meshStandardMaterial color="#654838" />
+        </mesh>
+        <mesh position={[-0.23, 0.36, -0.4]}>
+          <boxGeometry args={[0.36, 0.07, 0.25]} />
+          <meshStandardMaterial color="#fffaf0" />
+        </mesh>
+        <mesh position={[0.23, 0.36, -0.4]}>
+          <boxGeometry args={[0.36, 0.07, 0.25]} />
+          <meshStandardMaterial color="#fffaf0" />
+        </mesh>
+      </group>
+    );
+  if (["sofa", "sofa-2", "seat"].includes(kind))
+    return (
+      <group>
+        <mesh position={[0, 0.26, 0]}>
+          <boxGeometry args={[1.15, 0.34, 0.54]} />
+          <meshStandardMaterial color="#7b8b70" />
+        </mesh>
+        <mesh position={[0, 0.54, -0.24]}>
+          <boxGeometry args={[1.15, 0.52, 0.14]} />
+          <meshStandardMaterial color="#65785e" />
+        </mesh>
+        <mesh position={[-0.54, 0.43, 0]}>
+          <boxGeometry args={[0.12, 0.44, 0.65]} />
+          <meshStandardMaterial color="#65785e" />
+        </mesh>
+        <mesh position={[0.54, 0.43, 0]}>
+          <boxGeometry args={[0.12, 0.44, 0.65]} />
+          <meshStandardMaterial color="#65785e" />
+        </mesh>
+      </group>
+    );
+  if (kind === "television" || kind === "computer")
+    return (
+      <group>
+        {kind === "computer" && (
+          <mesh position={[0, 0.23, 0]}>
+            <boxGeometry args={[0.9, 0.12, 0.5]} />
+            <meshStandardMaterial color="#8a6048" />
+          </mesh>
+        )}
+        <mesh position={[0, 0.58, -0.08]}>
+          <boxGeometry args={[kind === "computer" ? 0.62 : 0.92, 0.53, 0.08]} />
+          <meshStandardMaterial color="#252c35" />
+        </mesh>
+        <mesh position={[0, 0.58, -0.03]}>
+          <planeGeometry args={[kind === "computer" ? 0.55 : 0.85, 0.45]} />
+          <meshStandardMaterial color="#516f82" />
+        </mesh>
+        <mesh position={[0, 0.28, -0.08]}>
+          <boxGeometry args={[0.08, 0.15, 0.08]} />
+          <meshStandardMaterial color="#454545" />
+        </mesh>
+      </group>
+    );
+  if (kind === "stove")
+    return (
+      <group>
+        <mesh position={[0, 0.32, 0]}>
+          <boxGeometry args={[0.72, 0.64, 0.56]} />
+          <meshStandardMaterial color="#d6d8d6" />
+        </mesh>
+        <mesh position={[0, 0.34, 0.29]}>
+          <boxGeometry args={[0.51, 0.32, 0.02]} />
+          <meshStandardMaterial color="#343c42" />
+        </mesh>
+        {[-0.2, 0.2].map((x) => (
+          <mesh key={x} position={[x, 0.65, -0.08]} rotation={[-Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[0.11, 0.02, 4, 12]} />
+            <meshStandardMaterial color="#262626" />
+          </mesh>
+        ))}
+      </group>
+    );
+  if (kind === "toilet")
+    return (
+      <group>
+        <mesh position={[0, 0.2, 0.1]}>
+          <cylinderGeometry args={[0.26, 0.2, 0.4, 12]} />
+          <meshStandardMaterial color="#f4f3ed" />
+        </mesh>
+        <mesh position={[0, 0.47, -0.18]}>
+          <boxGeometry args={[0.52, 0.45, 0.2]} />
+          <meshStandardMaterial color="#f4f3ed" />
+        </mesh>
+        <mesh position={[0, 0.42, 0.1]} rotation={[-Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[0.21, 0.045, 6, 16]} />
+          <meshStandardMaterial color="#ffffff" />
+        </mesh>
+      </group>
+    );
+  if (kind === "shower")
+    return (
+      <group>
+        <mesh position={[0, 0.03, 0]}>
+          <cylinderGeometry args={[0.38, 0.38, 0.06, 16]} />
+          <meshStandardMaterial color="#dce4e6" />
+        </mesh>
+        <mesh position={[-0.25, 0.62, -0.2]}>
+          <cylinderGeometry args={[0.025, 0.025, 1.2, 8]} />
+          <meshStandardMaterial color="#abb7bc" />
+        </mesh>
+        <mesh position={[-0.1, 1.17, -0.2]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.025, 0.025, 0.34, 8]} />
+          <meshStandardMaterial color="#abb7bc" />
+        </mesh>
+        <mesh position={[0.04, 1.15, -0.2]}>
+          <cylinderGeometry args={[0.15, 0.12, 0.04, 12]} />
+          <meshStandardMaterial color="#abb7bc" />
+        </mesh>
+      </group>
+    );
+  if (kind === "plant")
+    return (
+      <group>
+        <mesh position={[0, 0.18, 0]}>
+          <cylinderGeometry args={[0.24, 0.17, 0.36, 10]} />
+          <meshStandardMaterial color="#b56d4f" />
+        </mesh>
+        <mesh position={[0, 0.62, 0]}>
+          <sphereGeometry args={[0.35, 10, 8]} />
+          <meshStandardMaterial color="#46885a" />
+        </mesh>
+        <mesh position={[-0.16, 0.76, 0.03]}>
+          <sphereGeometry args={[0.2, 8, 6]} />
+          <meshStandardMaterial color="#5ca16a" />
+        </mesh>
+      </group>
+    );
+  if (kind === "light")
+    return (
+      <group>
+        <mesh position={[0, 0.03, 0]}>
+          <cylinderGeometry args={[0.22, 0.22, 0.06, 12]} />
+          <meshStandardMaterial color="#72675e" />
+        </mesh>
+        <mesh position={[0, 0.6, 0]}>
+          <cylinderGeometry args={[0.025, 0.025, 1.15, 8]} />
+          <meshStandardMaterial color="#72675e" />
+        </mesh>
+        <mesh position={[0, 1.24, 0]}>
+          <coneGeometry args={[0.32, 0.4, 12, 1, true]} />
+          <meshStandardMaterial color="#f5dc9f" side={2} />
+        </mesh>
+      </group>
+    );
+  return (
+    <mesh position={[0, 0.28, 0]}>
+      <boxGeometry args={[0.62, 0.56, 0.52]} />
+      <meshStandardMaterial color="#aa704b" roughness={1} />
+    </mesh>
+  );
+}
+
 function SlotObject({
   slot,
   placement,
@@ -162,10 +332,7 @@ function SlotObject({
           <OptionalModel
             path={safeArtKey ? `/models/furniture/${safeArtKey}.glb` : ""}
             fallback={
-              <mesh>
-                <boxGeometry args={[0.58, 0.42, 0.58]} />
-                <meshStandardMaterial color="#aa704b" roughness={1} />
-              </mesh>
+              <FurnitureFallback artKey={safeArtKey ?? undefined} slotType={slot.slot_type} />
             }
           />
         </group>

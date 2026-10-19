@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { CityNeedsDock } from "@/components/game/CityNeedsDock";
 
@@ -23,13 +23,11 @@ vi.mock("@/components/game/GameTimeProvider", () => ({
   }),
 }));
 
-describe("floating character needs", () => {
-  it("starts compact and expands to accessible live need meters", () => {
+describe("character needs", () => {
+  it("shows accessible live need meters directly on the page", () => {
     const { container } = render(<CityNeedsDock />);
-    const details = container.querySelector("details");
-    const summary = container.querySelector("summary");
-    expect(details).not.toHaveAttribute("open");
-    expect(summary).toHaveAttribute("aria-label", "Show character needs including thirst");
+    expect(container.querySelector("details")).toBeNull();
+    expect(screen.getByRole("region", { name: "Character needs including thirst" })).toBeVisible();
     const compactItems = container.querySelectorAll(".city-needs-mini-item");
     expect(compactItems).toHaveLength(6);
     compactItems.forEach((item) => {
@@ -42,7 +40,6 @@ describe("floating character needs", () => {
       expect(label.querySelector("svg")).not.toBeNull();
       expect(label.textContent).toBe("");
     });
-    fireEvent.click(summary!);
     expect(screen.getByRole("meter", { name: "Hunger" })).toHaveAttribute("aria-valuenow", "45");
     expect(screen.getByRole("meter", { name: "Social" })).toHaveAttribute("aria-valuenow", "20");
   });

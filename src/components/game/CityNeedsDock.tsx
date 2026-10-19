@@ -20,8 +20,8 @@ export function CityNeedsDock() {
   const { data: equipment } = useQuery({ ...q.equipment(), enabled: !!character });
 
   return (
-    <details className="city-needs-dock">
-      <summary aria-label="Show character needs including thirst">
+    <section className="city-needs-dock" aria-label="Character needs including thirst">
+      <div className="city-needs-summary">
         <span className="city-needs-avatar">
           {character ? (
             <Avatar
@@ -58,10 +58,7 @@ export function CityNeedsDock() {
             </span>
           )}
         </span>
-        <span className="city-needs-expand" aria-hidden="true">
-          +
-        </span>
-      </summary>
+      </div>
       <div className="city-needs-expanded">
         {NEED_NAMES.map((name) => {
           const Icon = NEED_ICONS[name];
@@ -105,6 +102,6 @@ export function CityNeedsDock() {
           <strong>{character?.thirst == null ? "—" : `${100 - character.thirst}%`}</strong>
         </div>
       </div>
-    </details>
+    </section>
   );
 }

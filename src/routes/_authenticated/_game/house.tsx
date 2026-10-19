@@ -325,6 +325,7 @@ async function authorizedFetch(path: string, init?: RequestInit) {
 export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const queryClient = useQueryClient();
   const { data: character, isLoading: characterLoading } = useQuery(q.character());
+  const { data: wallet } = useQuery(q.wallet());
   const [online, setOnline] = useState(() => typeof navigator === "undefined" || navigator.onLine);
   const [editing, setEditing] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<HouseSlot | null>(null);
@@ -546,8 +547,12 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       void queryClient.invalidateQueries({ queryKey: q.wallet().queryKey });
       void queryClient.invalidateQueries({ queryKey: q.equipment().queryKey });
       setApiError("");
-      setSelectedSlot(null);
-      setSelectedPlacement(null);
+      if (variables.action === "buy") {
+        toast.success("Item bought. Choose an open room slot to place it.");
+      } else {
+        setSelectedSlot(null);
+        setSelectedPlacement(null);
+      }
     },
     onError: (error: Error) => {
       const message = `Your change wasn’t saved. ${error.message.replaceAll("_", " ").toLowerCase()}.`;
@@ -735,7 +740,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
               setSelectedSlot(null);
             }}
           >
-            <Pencil size={16} /> {editing ? "Done" : "Edit room"}
+            <Pencil size={16} /> {editing ? "Done" : "Shop & arrange"}
           </button>
         </div>
       </header>
@@ -827,13 +832,19 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           slots={slots}
           placements={placements}
           editMode={editing}
-          onSelectPlacement={setSelectedPlacement}
-          onSelectSlot={setSelectedSlot}
+          onSelectPlacement={(placement) => {
+            setSelectedSlot(null);
+            setSelectedPlacement(placement);
+          }}
+          onSelectSlot={(slot) => {
+            setSelectedPlacement(null);
+            setSelectedSlot(slot);
+          }}
         />
         <div className="house-room-caption">
           <span>
             {editing
-              ? "Choose an item or an open slot to edit your room."
+              ? "Choose an item or an open slot to arrange your room."
               : "Drag to look around the room."}
           </span>
           <span>
@@ -846,6 +857,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           open
           offline={isOffline}
           pending={actionMutation.isPending}
+          cash={wallet?.balance ?? null}
           inventory={inventory}
           catalog={catalogQuery.data ?? []}
           outfit={outfit}
@@ -867,7 +879,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         <div className="house-summary-heading">
           <h2>Your things</h2>
           <button type="button" className="house-text-button" onClick={() => setEditing(true)}>
-            Edit room and outfit
+            Shop and arrange your room
           </button>
         </div>
         <div className="house-summary-grid">

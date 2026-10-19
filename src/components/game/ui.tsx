@@ -129,10 +129,10 @@ export function GameDataUnavailable({
           Your sign-in is active, but game data couldn't be reached. Check your connection and try
           again. Your saved character won't be changed.
         </p>
-        <details className="mt-4 rounded-lg border border-border bg-muted p-3 text-xs">
-          <summary className="cursor-pointer font-semibold">Technical detail</summary>
+        <div className="mt-4 rounded-lg border border-border bg-muted p-3 text-xs">
+          <p className="font-semibold">Technical detail</p>
           <p className="mt-2 wrap-break-word text-muted-foreground">{error.message}</p>
-        </details>
+        </div>
         <Button className="mt-5" variant="default" disabled={isRetrying} onClick={onRetry}>
           <RefreshCw className={cn("h-4 w-4", isRetrying && "animate-spin")} />
           {isRetrying ? "Checking…" : "Retry connection"}

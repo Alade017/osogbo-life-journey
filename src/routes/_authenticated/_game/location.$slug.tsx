@@ -573,8 +573,8 @@ function LocationPage() {
 
       {loc.planned_features.length > 0 &&
         (isOjaObaMarket ? (
-          <details className="oja-oba-features">
-            <summary>More district features · {loc.planned_features.length}</summary>
+          <section className="oja-oba-features">
+            <h2>More district features · {loc.planned_features.length}</h2>
             <ul>
               {loc.planned_features.map((feature) => (
                 <li key={feature}>
@@ -583,7 +583,7 @@ function LocationPage() {
                 </li>
               ))}
             </ul>
-          </details>
+          </section>
         ) : (
           <div className="game-panel p-5">
             <h2 className="text-lg font-bold">More district features</h2>

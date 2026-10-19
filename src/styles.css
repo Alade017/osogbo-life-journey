@@ -5130,7 +5130,7 @@
   color: var(--brand-royal);
 }
 
-.location-map-keyboard-browse > summary {
+.location-map-keyboard-heading {
   display: inline-flex;
   min-height: 38px;
   align-items: center;
@@ -5140,14 +5140,8 @@
   color: var(--brand-porcelain);
   background: color-mix(in srgb, var(--brand-ink) 94%, transparent);
   box-shadow: var(--elevation-card);
-  cursor: pointer;
   font-size: 12px;
   font-weight: 700;
-  list-style: none;
-}
-
-.location-map-keyboard-browse > summary::-webkit-details-marker {
-  display: none;
 }
 
 .location-map-keyboard-list {
@@ -8706,9 +8700,8 @@
   background: var(--brand-ink);
 }
 
-.oja-oba-market-screen .oja-oba-features summary {
+.oja-oba-market-screen .oja-oba-features h2 {
   padding: 12px 16px;
-  cursor: pointer;
   font-size: 13px;
   font-weight: 700;
 }
@@ -9075,7 +9068,7 @@
   }
 }
 
-/* The player header stays short; needs open as a compact side stack. */
+/* Keep character needs visible in the game page. */
 .game-hud.hud-v2 {
   grid-template-areas: "player location time balance notifications";
   grid-template-columns: minmax(120px, 0.9fr) minmax(120px, 1fr) minmax(160px, 1.2fr) auto 40px;
@@ -9085,69 +9078,37 @@
   grid-column: 1 / -1;
 }
 .game-needs-rail {
-  position: fixed;
-  z-index: 35;
-  top: 48%;
-  right: 12px;
-  transform: translateY(-50%);
-}
-.game-needs-popover {
-  position: relative;
-  color: var(--foreground);
-}
-.game-needs-popover > summary {
-  display: flex;
-  min-width: 76px;
-  min-height: 42px;
-  align-items: center;
-  justify-content: center;
-  gap: 7px;
+  width: min(100%, 1120px);
+  margin: 0 auto 0.75rem;
+  padding: 0.75rem;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: var(--shape-card);
   background: var(--card);
-  box-shadow: var(--elevation-card);
   color: var(--foreground);
-  font-size: 12px;
+}
+.game-needs-heading {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
   font-weight: 750;
-  cursor: pointer;
-  touch-action: none;
-  list-style: none;
 }
-.game-needs-popover > summary:active {
-  cursor: grabbing;
-}
-.game-needs-popover > summary::-webkit-details-marker,
-.game-needs-item > summary::-webkit-details-marker {
-  display: none;
-}
-.game-needs-popover > summary:focus-visible,
-.game-needs-item > summary:focus-visible,
 .game-needs-suggestion a:focus-visible {
   outline: 3px solid var(--ring);
   outline-offset: 2px;
 }
 .game-needs-list {
-  position: absolute;
-  top: 50%;
-  right: calc(100% + 8px);
   display: grid;
-  width: 208px;
-  max-height: min(70vh, 410px);
-  gap: 4px;
-  overflow-y: auto;
-  transform: translateY(-50%);
-  border: 1px solid var(--border);
-  border-radius: var(--shape-card);
-  background: var(--card);
-  padding: 7px;
-  box-shadow: var(--elevation-card);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
 }
 .game-needs-item {
-  position: relative;
   min-width: 0;
+  border: 1px solid var(--border);
   border-radius: 10px;
 }
-.game-needs-item > summary {
+.game-needs-item-heading {
   display: grid;
   min-height: 38px;
   grid-template-columns: 16px minmax(0, 1fr) auto;
@@ -9158,8 +9119,6 @@
   padding: 5px 8px;
   color: var(--foreground);
   font-size: 11px;
-  cursor: pointer;
-  list-style: none;
 }
 .game-needs-name {
   overflow: hidden;
@@ -9194,7 +9153,7 @@
 .game-needs-suggestion {
   display: grid;
   gap: 3px;
-  padding: 5px 8px 7px 31px;
+  padding: 5px 8px 7px;
   color: var(--muted-foreground);
   font-size: 10px;
 }
@@ -9232,23 +9191,13 @@
   }
 }
 @media (max-width: 820px) {
-  .game-needs-rail {
-    top: auto;
-    right: 8px;
-    bottom: calc(94px + env(safe-area-inset-bottom));
-    transform: none;
-  }
   .game-needs-list {
-    top: auto;
-    right: 0;
-    bottom: calc(100% + 8px);
-    width: min(208px, calc(100vw - 24px));
-    max-height: min(48vh, 330px);
-    transform: none;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .game-needs-popover > summary {
-    min-height: 46px;
-    min-width: 78px;
+}
+@media (max-width: 480px) {
+  .game-needs-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 @media (max-width: 420px) {

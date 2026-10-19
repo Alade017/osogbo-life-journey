@@ -20,14 +20,14 @@ export function MissionChips() {
         const current = Math.max(0, Math.min(progress, target));
         const percent = Math.round((current / target) * 100);
         return (
-          <details className="city-mission-chip" key={id}>
-            <summary>
+          <article className="city-mission-chip" key={id}>
+            <div className="city-mission-heading">
               <span className="city-mission-icon">
                 <ListChecks size={16} aria-hidden="true" />
               </span>
               <span className="city-mission-title">{mission.title}</span>
               <span className="city-mission-progress">{percent}%</span>
-            </summary>
+            </div>
             <div className="city-mission-detail">
               <p>{mission.description}</p>
               <span className="city-mission-reward">
@@ -49,7 +49,7 @@ export function MissionChips() {
                 View missions <ArrowUpRight size={14} aria-hidden="true" />
               </Link>
             </div>
-          </details>
+          </article>
         );
       })}
       {activeMissions.length > visibleMissions.length && (

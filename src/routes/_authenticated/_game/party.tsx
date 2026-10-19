@@ -57,7 +57,17 @@ const CLUB_DANCERS = [
 
 function PartyPage() {
   const search = Route.useSearch();
-  const [tab, setTab] = useState<Tab>(search.tab ?? "clubs");
+  return <PartyExperience initialTab={search.tab ?? "clubs"} />;
+}
+
+export function PartyExperience({
+  initialTab = "clubs",
+  compact = false,
+}: {
+  initialTab?: Tab;
+  compact?: boolean;
+}) {
+  const [tab, setTab] = useState<Tab>(initialTab);
   const activities = useQuery({ queryKey: ["partyActivities"], queryFn: listPartyClubActivities });
   const { data: character, isLoading: characterLoading } = useQuery(q.character());
   const { data: wallet } = useQuery(q.wallet());
@@ -91,12 +101,14 @@ function PartyPage() {
   const visitLocation = locations?.find((l) => l.id === visit.data?.location_id);
 
   return (
-    <div className="grid gap-5 pb-28">
-      <PageHeader
-        title="Party"
-        subtitle="Clubs, drinks, dancing and events in town."
-        eyebrow="Nightlife"
-      />
+    <div className={compact ? "grid gap-5 pb-4" : "grid gap-5 pb-28"}>
+      {!compact && (
+        <PageHeader
+          title="Party"
+          subtitle="Clubs, drinks, dancing and events in town."
+          eyebrow="Nightlife"
+        />
+      )}
 
       <section className="game-panel grid gap-2 p-4" aria-label="Your mood">
         <div className="flex items-center justify-between gap-3">

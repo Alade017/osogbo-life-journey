@@ -512,33 +512,16 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
-.house-sheet-backdrop {
-  position: fixed;
-  z-index: var(--game-sheet-layer);
-  inset: 0;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  background: color-mix(in srgb, var(--foreground) 28%, transparent);
-}
 .house-edit-sheet {
-  width: min(100%, 650px);
-  max-height: min(78vh, 720px);
-  overflow: auto;
+  width: 100%;
+  min-width: 0;
+  margin: 1rem 0;
   border: 1px solid var(--border);
-  border-radius: 22px 22px 0 0;
+  border-radius: var(--shape-card, 20px);
   background: var(--card);
-  padding: 0.6rem 1rem max(1rem, env(safe-area-inset-bottom));
+  padding: 1rem;
   box-shadow: var(--elevation-card);
   color: var(--foreground);
-}
-.house-sheet-handle {
-  width: 42px;
-  height: 4px;
-  margin: 0 auto 0.6rem;
-  border-radius: 99px;
-  background: var(--ring);
-  opacity: 0.5;
 }
 .house-sheet-header {
   display: flex;
@@ -607,6 +590,27 @@
   display: block;
   color: var(--muted-foreground);
   text-transform: none;
+}
+.house-shop-row {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) auto;
+}
+.house-shop-image {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--card);
+  object-fit: contain;
+  font-size: 1.8rem;
+}
+.house-shop-description {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.house-shop-description strong {
+  display: block;
 }
 .house-row-action {
   display: flex;
