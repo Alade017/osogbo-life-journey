@@ -86,7 +86,10 @@ describe("housing onboarding database actions", () => {
       const home = await db.query<{
         result: { propertyId: string; tenure: string; imageUrl: string };
       }>("select public.housing_current_home($1) as result", [userId]);
-      expect(home.rows[0]?.result).toMatchObject({ tenure: "owned", propertyId: selected.property_id });
+      expect(home.rows[0]?.result).toMatchObject({
+        tenure: "owned",
+        propertyId: selected.property_id,
+      });
       expect(home.rows[0]?.result.imageUrl).toMatch(/\.webp$/);
       const active = await db.query<{ count: number }>(
         "select count(*)::int as count from public.player_houses where player_id=$1 and status='active'",

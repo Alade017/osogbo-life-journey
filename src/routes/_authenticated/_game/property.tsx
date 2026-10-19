@@ -15,7 +15,8 @@ export const Route = createFileRoute("/_authenticated/_game/property")({
 
 function PropertyPage() {
   const client = useQueryClient();
-  const { data: character } = useQuery(q.character());
+  const characterQuery = useQuery(q.character());
+  const character = characterQuery.data;
   const houses = useQuery({
     queryKey: ["ownedHouses", character?.id],
     enabled: !!character?.id,
@@ -67,8 +68,11 @@ function PropertyPage() {
     },
     onError: (error: Error) => toast.error(error.message),
   });
-  const pending = houses.isPending || stalls.isPending || business.isPending;
-  const error = houses.error ?? stalls.error ?? business.error;
+  const pending =
+    characterQuery.isPending ||
+    business.isPending ||
+    (Boolean(character?.id) && (houses.isPending || stalls.isPending));
+  const error = characterQuery.error ?? houses.error ?? stalls.error ?? business.error;
   const homeRows = (houses.data ?? []).filter(
     (row) => row.tenure === "owned" && row.game_properties?.house_type_id,
   );
@@ -87,24 +91,27 @@ function PropertyPage() {
           <Link to="/properties">Find Homes</Link>
         </nav>
       </header>
-      {pending ? (
-        <p className="property-market-message" role="status">
-          Loading your assets…
-        </p>
-      ) : error ? (
+      {error ? (
         <div className="property-market-message" role="alert">
           <p>{error.message}</p>
           <button
             className="map-primary-button"
             onClick={() => {
-              void houses.refetch();
-              void stalls.refetch();
+              void characterQuery.refetch();
+              if (character?.id) {
+                void houses.refetch();
+                void stalls.refetch();
+              }
               void business.refetch();
             }}
           >
             Try again
           </button>
         </div>
+      ) : pending ? (
+        <p className="property-market-message" role="status">
+          Loading your assets…
+        </p>
       ) : empty ? (
         <div className="property-market-message">
           <p>You do not own any assets yet.</p>

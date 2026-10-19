@@ -1,9 +1,4 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import {
   Backpack,
   Bell,
@@ -47,7 +42,7 @@ import "./phone.css";
 
 // Lazy-loaded app views for performance on mobile and low-end Android
 const PlayerSocial = lazy(() =>
-  import("@/components/game/PlayerSocial").then((m) => ({ default: m.PlayerSocial }))
+  import("@/components/game/PlayerSocial").then((m) => ({ default: m.PlayerSocial })),
 );
 const PhoneMarketApp = lazy(() => import("@/components/game/phone/PhoneMarketApp"));
 const PhoneHousingApp = lazy(() => import("@/components/game/phone/PhoneHousingApp"));
@@ -59,15 +54,15 @@ const PhoneJobsApp = lazy(() => import("@/components/game/phone/PhoneJobsApp"));
 const BusinessInvestmentApp = lazy(() =>
   import("@/components/game/BusinessInvestmentApp").then((m) => ({
     default: m.BusinessInvestmentApp,
-  }))
+  })),
 );
 const BillboardAdApp = lazy(() =>
-  import("@/components/game/BillboardAdApp").then((m) => ({ default: m.BillboardAdApp }))
+  import("@/components/game/BillboardAdApp").then((m) => ({ default: m.BillboardAdApp })),
 );
 const CommunityPhoneApps = lazy(() =>
   import("@/components/game/CommunityPhoneApps").then((m) => ({
     default: m.CommunityPhoneApps,
-  }))
+  })),
 );
 
 type PhoneAppDefinition = {
@@ -151,10 +146,10 @@ export function PhoneLauncher({
   const markRead = useGameAction(rpc.markRead);
 
   const missionCount = (missions ?? []).filter(
-    (mission) => mission.status === "in_progress" || mission.status === "completed"
+    (mission) => mission.status === "in_progress" || mission.status === "completed",
   ).length;
   const claimableMissionCount = (missions ?? []).filter(
-    (mission) => mission.status === "completed"
+    (mission) => mission.status === "completed",
   ).length;
 
   useEffect(() => {
@@ -278,7 +273,10 @@ export function PhoneLauncher({
             {missions && missions.length > 0 ? (
               <div className="space-y-2">
                 {missions.map((m) => (
-                  <div key={m.id} className="p-2.5 rounded-xl border border-border bg-card space-y-1.5">
+                  <div
+                    key={m.id}
+                    className="p-2.5 rounded-xl border border-border bg-card space-y-1.5"
+                  >
                     <div className="flex justify-between items-start">
                       <span className="font-bold text-xs">{m.mission?.title ?? "Town Goal"}</span>
                       <span
@@ -306,7 +304,9 @@ export function PhoneLauncher({
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-muted-foreground py-4 text-center">No active missions right now.</p>
+              <p className="text-xs text-muted-foreground py-4 text-center">
+                No active missions right now.
+              </p>
             )}
           </div>
         </div>
@@ -330,14 +330,23 @@ export function PhoneLauncher({
             {notifications && notifications.length > 0 ? (
               <div className="space-y-2">
                 {notifications.map((n) => (
-                  <div key={n.id} className="p-2 rounded-lg border border-border text-xs space-y-0.5">
-                    <strong className="block font-semibold">{n.kind.replace(/_/g, " ").toUpperCase()}</strong>
-                    <p className="text-muted-foreground">{n.body ?? "Notification update from Osogbo."}</p>
+                  <div
+                    key={n.id}
+                    className="p-2 rounded-lg border border-border text-xs space-y-0.5"
+                  >
+                    <strong className="block font-semibold">
+                      {n.kind.replace(/_/g, " ").toUpperCase()}
+                    </strong>
+                    <p className="text-muted-foreground">
+                      {n.body ?? "Notification update from Osogbo."}
+                    </p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-muted-foreground py-4 text-center">No notifications yet.</p>
+              <p className="text-xs text-muted-foreground py-4 text-center">
+                No notifications yet.
+              </p>
             )}
           </div>
         </div>
@@ -419,10 +428,7 @@ export function PhoneLauncher({
           </div>
 
           {/* Launcher Home Grid: visible when activeApp is null */}
-          <div
-            className="phone-app-grid"
-            style={{ display: activeApp === null ? "grid" : "none" }}
-          >
+          <div className="phone-app-grid" style={{ display: activeApp === null ? "grid" : "none" }}>
             {shortcutEditor && (
               <button
                 type="button"

@@ -10515,21 +10515,39 @@
   white-space: nowrap;
 }
 .city-game.navigation-redesign .game-phone-fab {
+  position: fixed;
   left: 16px;
   right: auto;
   bottom: calc(20px + env(safe-area-inset-bottom));
   z-index: 75;
 }
 .game-phone-fab-trigger {
+  display: grid;
+  place-items: center;
   width: 48px;
   height: 48px;
   min-width: 48px;
   min-height: 48px;
   padding: 0;
-  border: 1px solid #d5dde5;
+  border: 2px solid #2449a6;
   border-radius: 50%;
   background: #fff;
   box-shadow: 0 2px 6px #17212b14;
+}
+.game-phone-fab-trigger .phone-launcher-icon {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  color: #2449a6;
+  background: transparent;
+  box-shadow: none;
+}
+.game-phone-fab-trigger .phone-launcher-icon::before,
+.game-phone-fab-trigger .phone-launcher-icon::after {
+  display: none;
 }
 .game-phone-fab-trigger .phone-compact-label {
   position: absolute;

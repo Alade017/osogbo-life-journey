@@ -16,8 +16,10 @@ export const Route = createFileRoute("/_authenticated/_game/properties")({
 
 function PropertiesPage() {
   const client = useQueryClient();
-  const { data: character } = useQuery(q.character());
-  const { data: wallet, isPending: walletPending } = useQuery(q.wallet());
+  const characterQuery = useQuery(q.character());
+  const walletQuery = useQuery(q.wallet());
+  const character = characterQuery.data;
+  const wallet = walletQuery.data;
   const [purchaseError, setPurchaseError] = useState("");
   const listingsQuery = useQuery({
     queryKey: ["saleHomes"],
@@ -49,7 +51,10 @@ function PropertiesPage() {
       ),
     [ownedQuery.data],
   );
-  const balance = walletPending ? null : Number(wallet?.balance ?? 0);
+  const balance =
+    walletQuery.isPending || walletQuery.isError ? null : Number(wallet?.balance ?? 0);
+  const loadError =
+    characterQuery.error ?? walletQuery.error ?? listingsQuery.error ?? ownedQuery.error;
   const buy = useMutation({
     mutationFn: async (listing: SaleListing) => {
       const { error } = await supabase.rpc("acquire_game_property", {
@@ -95,23 +100,28 @@ function PropertiesPage() {
           {purchaseError}
         </p>
       )}
-      {listingsQuery.isPending || ownedQuery.isPending ? (
-        <p className="property-market-message" role="status">
-          Loading homes…
-        </p>
-      ) : listingsQuery.isError || ownedQuery.isError ? (
+      {loadError ? (
         <div className="property-market-message" role="alert">
-          <p>{listingsQuery.error?.message ?? ownedQuery.error?.message}</p>
+          <p>{loadError.message}</p>
           <button
             className="map-primary-button"
             onClick={() => {
+              void characterQuery.refetch();
+              void walletQuery.refetch();
               void listingsQuery.refetch();
-              void ownedQuery.refetch();
+              if (character?.id) void ownedQuery.refetch();
             }}
           >
             Try again
           </button>
         </div>
+      ) : characterQuery.isPending ||
+        walletQuery.isPending ||
+        listingsQuery.isPending ||
+        (Boolean(character?.id) && ownedQuery.isPending) ? (
+        <p className="property-market-message" role="status">
+          Loading homes…
+        </p>
       ) : available.length === 0 ? (
         <p className="property-market-message">No homes are available to buy right now.</p>
       ) : (
@@ -124,8 +134,9 @@ function PropertiesPage() {
               <div className="property-market-grid">
                 {homes.map((listing) => {
                   const price = Number(listing.purchase_price ?? 0);
-                  const reason =
-                    balance === null
+                  const reason = !character
+                    ? "Create a character first."
+                    : balance === null
                       ? "Loading your wallet…"
                       : balance < price
                         ? `Insufficient funds. Need ${formatNaira(price - balance)} more.`
