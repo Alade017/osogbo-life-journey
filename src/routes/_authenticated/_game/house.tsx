@@ -319,7 +319,7 @@ async function authorizedFetch(path: string, init?: RequestInit) {
   });
 }
 
-function HousePage() {
+export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const queryClient = useQueryClient();
   const { data: character, isLoading: characterLoading } = useQuery(q.character());
   const [online, setOnline] = useState(() => typeof navigator === "undefined" || navigator.onLine);
@@ -678,9 +678,11 @@ function HousePage() {
             <p className="house-eyebrow">Your home</p>
             <h1>Make yourself at home</h1>
           </div>
-          <Link to="/home" search={{ visit: undefined }} className="house-header-link">
-            Back to home
-          </Link>
+          {!homeRoute && (
+            <Link to="/home" search={{ visit: undefined }} className="house-header-link">
+              Back to home
+            </Link>
+          )}
         </header>
         <section className="house-empty-card">
           <div className="house-empty-art">
@@ -731,9 +733,11 @@ function HousePage() {
           </p>
         </div>
         <div className="house-header-actions">
-          <Link to="/home" search={{ visit: undefined }} className="house-header-link">
-            Home
-          </Link>
+          {!homeRoute && (
+            <Link to="/home" search={{ visit: undefined }} className="house-header-link">
+              Home
+            </Link>
+          )}
           <button
             className="house-edit-button"
             type="button"
