@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   BedDouble,
   CookingPot,
@@ -11,7 +11,6 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Avatar } from "@/components/game/Avatar";
-import type { Appearance } from "@/game/avatar-appearance";
 import {
   canPlace,
   DEFAULT_HOUSING_SAVE,
@@ -24,30 +23,8 @@ import {
 } from "@/lib/housing-service";
 import { parseHousingSave } from "@/lib/housing-service";
 import { readLocalHousingSave, writeLocalHousingSave } from "@/lib/save-storage";
-import type { HouseRoomId } from "@/components/game/housing/HouseScene";
 import { ACTION_CATALOG, type LifeActionId, type Needs } from "@/lib/life-simulation";
 import { homeFurnitureAction } from "@/lib/home-furniture-actions";
-
-const HouseScene = import.meta.env.SSR
-  ? (_props: {
-      selectedRoom: HouseRoomId;
-      lightsOn: boolean;
-      onSelectRoom: (room: HouseRoomId) => void;
-      furniture: PlacedFurniture[];
-      avatarRoom: RoomId;
-      appearance: Appearance;
-      gender: string;
-      equipment: readonly { slot: string }[];
-    }) => (
-      <div className="house-scene house-scene-loading" role="status">
-        Preparing your home...
-      </div>
-    )
-  : lazy(() =>
-      import("@/components/game/housing/HouseScene").then((module) => ({
-        default: module.HouseScene,
-      })),
-    );
 
 const ROOM_ICONS = {
   lounge: Sofa,
@@ -71,9 +48,6 @@ type Props = {
   onPurchaseFurniture?: (args: { itemId: string }) => Promise<HousingSave>;
   onFurnitureAction?: (action: LifeActionId) => Promise<string | null>;
   authoritativeNeeds?: Needs;
-  appearance?: Appearance | null;
-  gender?: string;
-  equipment?: readonly { slot: string }[];
 };
 
 function loadSave(key: string): HousingSave {
@@ -93,9 +67,6 @@ export function HomeInterior({
   onPurchaseFurniture,
   onFurnitureAction,
   authoritativeNeeds,
-  appearance,
-  gender = "nonbinary",
-  equipment = [],
 }: Props) {
   const [saved, setSaved] = useState(() => initialSave ?? loadSave(saveKey));
   const onSaveRef = useRef(onSave);
@@ -340,26 +311,6 @@ export function HomeInterior({
               })}
             </nav>
           )}
-          <Suspense
-            fallback={
-              <div className="house-scene house-scene-loading" role="status">
-                Preparing your home...
-              </div>
-            }
-          >
-            <HouseScene
-              selectedRoom={room.id as HouseRoomId}
-              lightsOn
-              furniture={saved.furniture}
-              avatarRoom={room.id}
-              appearance={appearance ?? ({} as Appearance)}
-              gender={gender}
-              equipment={equipment}
-              onSelectRoom={(id) =>
-                inside ? visitRoom(id as RoomId) : save({ ...saved, room: id as RoomId })
-              }
-            />
-          </Suspense>
           {inside && (
             <div className="walkable-room" aria-label={`${room.name} walkable floor`}>
               <div className="walkable-room-head">
