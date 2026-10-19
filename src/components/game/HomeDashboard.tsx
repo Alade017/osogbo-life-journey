@@ -3,11 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Bell, Briefcase, Clock3, MapPin } from "lucide-react";
 import { Avatar } from "@/components/game/Avatar";
+import { NeedsRing } from "@/components/game/NeedsRing";
 import { useGameTime } from "@/components/game/GameTimeProvider";
 import { formatNaira, q } from "@/lib/game";
 import type { PlayerState } from "@/lib/player-state";
 import { ACTION_CATALOG } from "@/lib/life-simulation";
-import { readOsogboWeather, weatherDescription } from "@/lib/osogbo-weather";
 import "@/components/game/home-dashboard-view.css";
 
 export function HomeDashboard({
@@ -58,19 +58,20 @@ export function HomeDashboard({
 
       <footer className="hd-bottom" aria-label="Today's tasks and shortcuts">
         <div className="hd-avatar-group">
-          <Link
-            to="/profile"
-            className="hd-avatar-bubble"
-            aria-label={`${player.name}, view profile`}
-          >
-            <Avatar
-              appearance={player.avatar as object}
-              gender={player.gender}
-              size={52}
-              equipment={player.equipment}
-            />
-          </Link>
-          <WeatherLabel />
+          <NeedsRing>
+            <Link
+              to="/profile"
+              className="hd-avatar-bubble"
+              aria-label={`${player.name}, view profile`}
+            >
+              <Avatar
+                appearance={player.avatar as object}
+                gender={player.gender}
+                size={52}
+                equipment={player.equipment}
+              />
+            </Link>
+          </NeedsRing>
         </div>
 
         <TaskPill />
@@ -82,23 +83,6 @@ export function HomeDashboard({
         </Link>
       </footer>
     </section>
-  );
-}
-
-function WeatherLabel() {
-  const weather = useQuery({
-    queryKey: ["osogboLiveWeather"],
-    queryFn: ({ signal }) => readOsogboWeather(signal),
-    staleTime: 10 * 60_000,
-    refetchInterval: 15 * 60_000,
-    retry: 1,
-  });
-  const current = weather.data;
-  if (!current) return null;
-  return (
-    <span className="hd-bubble-label">
-      {Math.round(current.temperature)}°C · {weatherDescription(current.code)}
-    </span>
   );
 }
 

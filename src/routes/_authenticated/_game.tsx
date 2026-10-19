@@ -6,7 +6,6 @@ import { q, rpc } from "@/lib/game";
 import { GameDataUnavailable, LoadingState } from "@/components/game/ui";
 import { cn } from "@/lib/utils";
 import { HomeDashboard } from "@/components/game/HomeDashboard";
-import { GameNeedsRail } from "@/components/game/GameNeedsRail";
 import { PhoneLauncher } from "@/components/game/PhoneLauncher";
 import { HousingChooser } from "@/components/game/housing/HousingChooser";
 import { HousingRepossessionNotice } from "@/components/game/housing/HousingRepossessionNotice";
@@ -203,7 +202,6 @@ function GameLayout() {
         <WorldEnvironment />
         <div className="city-game-frame">
           <div className="city-game-content">
-            {pathname !== "/settings" && <GameNeedsRail />}
             <main className="city-game-main">
               {pathname === "/home" && !visitingFriend ? (
                 <HomeDashboard
