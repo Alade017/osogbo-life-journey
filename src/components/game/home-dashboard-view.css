@@ -1,0 +1,314 @@
+/* Player home dashboard: full-viewport command view for the /home page.
+   Colours come only from the app's existing tokens (see styles.css :root). */
+
+/* The content area spans the whole viewport instead of the centred column. */
+.city-game-main:has(.home-dashboard) {
+  width: 100%;
+  max-width: none;
+  padding: 0;
+}
+
+.home-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(12px, 1.6vw, 20px);
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 100dvh;
+  padding: clamp(12px, 1.8vw, 24px);
+  color: var(--foreground);
+}
+
+/* Top status pill: area and level, notifications, wallet balance */
+.hd-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  padding: 8px 8px 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--shape-pill);
+  background: var(--card);
+  box-shadow: var(--elevation-card);
+}
+
+.hd-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: var(--primary);
+}
+
+.hd-area-copy {
+  display: grid;
+  min-width: 0;
+}
+
+.hd-area-copy strong {
+  overflow: hidden;
+  font-family: var(--typeface-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--foreground);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hd-area-copy small {
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+
+.hd-status-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.hd-icon-button,
+.hd-balance {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border: 0;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform var(--duration-control) ease,
+    box-shadow var(--duration-control) ease;
+}
+
+.hd-icon-button {
+  position: relative;
+  width: 44px;
+  border-radius: var(--shape-pill);
+  background: var(--color-primary-soft);
+  color: var(--primary);
+}
+
+.hd-notification-dot {
+  position: absolute;
+  top: 2px;
+  right: 0;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: var(--shape-pill);
+  background: var(--destructive);
+  color: var(--primary-foreground);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+
+.hd-balance {
+  padding: 0 18px;
+  border-radius: var(--shape-pill);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-family: var(--typeface-display);
+  font-size: clamp(14px, 1.4vw, 17px);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  box-shadow: var(--elevation-rest);
+}
+
+.hd-icon-button:hover,
+.hd-balance:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--elevation-lift);
+}
+
+.hd-icon-button:focus-visible,
+.hd-balance:focus-visible,
+.hd-task:focus-visible,
+.hd-desk-card:focus-visible,
+.hd-avatar-bubble:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+/* Stage: fills the remaining viewport height between the top and bottom bars */
+.hd-stage {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Bottom row: avatar bubble, task pill and desk card */
+.hd-bottom {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 14px;
+}
+
+.hd-avatar-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.hd-avatar-bubble {
+  display: grid;
+  place-items: center;
+  width: 68px;
+  height: 68px;
+  flex: 0 0 auto;
+  border: 3px solid var(--primary);
+  border-radius: var(--shape-pill);
+  background: var(--card);
+  box-shadow: var(--elevation-lift);
+}
+
+.hd-bubble-label {
+  max-width: 180px;
+  padding: 6px 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--shape-pill);
+  background: var(--card);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--foreground);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hd-task {
+  display: grid;
+  gap: 6px;
+  align-self: end;
+  justify-self: center;
+  box-sizing: border-box;
+  width: min(100%, 520px);
+  padding: 14px 22px;
+  border: 2px solid var(--primary);
+  border-radius: var(--shape-pill);
+  background: var(--card);
+  box-shadow: var(--elevation-card);
+  color: var(--foreground);
+  text-decoration: none;
+}
+
+.hd-task-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--typeface-display);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.hd-task-sub {
+  overflow: hidden;
+  font-size: 13px;
+  color: var(--muted-foreground);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hd-task-bar {
+  position: relative;
+  display: block;
+  height: 8px;
+  overflow: hidden;
+  border-radius: var(--shape-pill);
+  background: var(--muted);
+}
+
+.hd-task-fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--shape-pill);
+  background: var(--primary);
+  transition: width 300ms ease;
+}
+
+.hd-task-fill.is-indeterminate {
+  width: 40%;
+  animation: hd-indeterminate 1.4s ease-in-out infinite;
+}
+
+@keyframes hd-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(260%);
+  }
+}
+
+.hd-desk-card {
+  position: relative;
+  display: grid;
+  align-content: end;
+  gap: 2px;
+  width: clamp(140px, 16vw, 210px);
+  aspect-ratio: 1.05;
+  padding: 16px;
+  border-radius: var(--shape-card);
+  background: var(--brand-ink);
+  color: var(--color-surface);
+  text-decoration: none;
+  box-shadow: var(--shadow-card-hover);
+}
+
+.hd-desk-card > svg {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  color: var(--color-primary-soft);
+}
+
+.hd-desk-title {
+  font-family: var(--typeface-display);
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.hd-desk-card small {
+  font-size: 12px;
+  color: var(--color-text-on-dark-soft);
+}
+
+/* Narrow screens: stack the bottom row so every control stays reachable */
+@media (max-width: 720px) {
+  .hd-status {
+    padding: 8px 8px 8px 14px;
+  }
+
+  .hd-bottom {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .hd-task {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+    width: 100%;
+  }
+
+  .hd-desk-card {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 96px;
+    aspect-ratio: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hd-task-fill.is-indeterminate {
+    width: 100%;
+    animation: none;
+  }
+}

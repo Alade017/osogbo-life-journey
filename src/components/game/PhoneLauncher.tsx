@@ -23,6 +23,7 @@ import {
   MapPinned,
   MessagesSquare,
   Newspaper,
+  PartyPopper,
   PanelsTopLeft,
   Target,
   Trophy,
@@ -53,6 +54,14 @@ import {
 } from "@/components/game/PhoneContentPreview";
 import "./phone.css";
 
+// Some apps open a specific section of their page.
+function phoneAppLinkProps(to: string) {
+  if (to === "/social") return { search: { playerId: undefined } };
+  // Party opens on Events so players can organize a party from the phone.
+  if (to === "/party") return { search: { tab: "events" as const } };
+  return {};
+}
+
 const PHONE_APPS = [
   { label: "Property", to: "/house", icon: HousePlus, tone: "phone-app-green", active: true },
   {
@@ -63,6 +72,7 @@ const PHONE_APPS = [
     active: true,
   },
   { label: "Jobs", to: "/jobs", icon: BriefcaseBusiness, tone: "phone-app-gold", active: true },
+  { label: "Party", to: "/party", icon: PartyPopper, tone: "phone-app-coral", active: true },
   { label: "Bank", to: null, icon: Landmark, tone: "phone-app-blue", active: true },
   { label: "Market", to: null, icon: Store, tone: "phone-app-coral", active: true },
   {
@@ -405,11 +415,7 @@ export function PhoneLauncher({
                   }
                   return app.active && app.to ? (
                     <DialogClose asChild key={app.label}>
-                      <Link
-                        to={app.to}
-                        {...(app.to === "/social" ? { search: { playerId: undefined } } : {})}
-                        className="phone-app"
-                      >
+                      <Link to={app.to} {...phoneAppLinkProps(app.to)} className="phone-app">
                         <span className={cn("phone-app-icon", app.tone)}>
                           <Icon className="h-5 w-5" />
                         </span>

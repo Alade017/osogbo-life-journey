@@ -3,10 +3,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { HomeInterior } from "@/components/game/HomeInterior";
 import { DEFAULT_HOUSING_SAVE } from "@/lib/housing-service";
 
-vi.mock("@/components/game/housing/HouseScene", () => ({
-  HouseScene: () => <div data-testid="house-scene" />,
-}));
-
 describe("walkable home experience", () => {
   beforeEach(() => window.localStorage.clear());
 

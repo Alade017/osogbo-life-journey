@@ -28,6 +28,7 @@ import { Route as AuthenticatedGameMarketRouteImport } from './routes/_authentic
 import { Route as AuthenticatedGameMissionsRouteImport } from './routes/_authenticated/_game/missions'
 import { Route as AuthenticatedGameModelsRouteImport } from './routes/_authenticated/_game/models'
 import { Route as AuthenticatedGameNotificationsRouteImport } from './routes/_authenticated/_game/notifications'
+import { Route as AuthenticatedGamePartyRouteImport } from './routes/_authenticated/_game/party'
 import { Route as AuthenticatedGameProfileRouteImport } from './routes/_authenticated/_game/profile'
 import { Route as AuthenticatedGamePropertiesRouteImport } from './routes/_authenticated/_game/properties'
 import { Route as AuthenticatedGameSettingsRouteImport } from './routes/_authenticated/_game/settings'
@@ -173,6 +174,11 @@ const AuthenticatedGameNotificationsRoute =
     path: '/notifications',
     getParentRoute: () => AuthenticatedGameRoute,
   } as any)
+const AuthenticatedGamePartyRoute = AuthenticatedGamePartyRouteImport.update({
+  id: '/party',
+  path: '/party',
+  getParentRoute: () => AuthenticatedGameRoute,
+} as any)
 const AuthenticatedGameProfileRoute =
   AuthenticatedGameProfileRouteImport.update({
     id: '/profile',
@@ -423,6 +429,7 @@ export interface FileRoutesByFullPath {
   '/missions': typeof AuthenticatedGameMissionsRoute
   '/models': typeof AuthenticatedGameModelsRoute
   '/notifications': typeof AuthenticatedGameNotificationsRoute
+  '/party': typeof AuthenticatedGamePartyRoute
   '/profile': typeof AuthenticatedGameProfileRoute
   '/properties': typeof AuthenticatedGamePropertiesRoute
   '/settings': typeof AuthenticatedGameSettingsRoute
@@ -487,6 +494,7 @@ export interface FileRoutesByTo {
   '/missions': typeof AuthenticatedGameMissionsRoute
   '/models': typeof AuthenticatedGameModelsRoute
   '/notifications': typeof AuthenticatedGameNotificationsRoute
+  '/party': typeof AuthenticatedGamePartyRoute
   '/profile': typeof AuthenticatedGameProfileRoute
   '/properties': typeof AuthenticatedGamePropertiesRoute
   '/settings': typeof AuthenticatedGameSettingsRoute
@@ -554,6 +562,7 @@ export interface FileRoutesById {
   '/_authenticated/_game/missions': typeof AuthenticatedGameMissionsRoute
   '/_authenticated/_game/models': typeof AuthenticatedGameModelsRoute
   '/_authenticated/_game/notifications': typeof AuthenticatedGameNotificationsRoute
+  '/_authenticated/_game/party': typeof AuthenticatedGamePartyRoute
   '/_authenticated/_game/profile': typeof AuthenticatedGameProfileRoute
   '/_authenticated/_game/properties': typeof AuthenticatedGamePropertiesRoute
   '/_authenticated/_game/settings': typeof AuthenticatedGameSettingsRoute
@@ -620,6 +629,7 @@ export interface FileRouteTypes {
     | '/missions'
     | '/models'
     | '/notifications'
+    | '/party'
     | '/profile'
     | '/properties'
     | '/settings'
@@ -684,6 +694,7 @@ export interface FileRouteTypes {
     | '/missions'
     | '/models'
     | '/notifications'
+    | '/party'
     | '/profile'
     | '/properties'
     | '/settings'
@@ -750,6 +761,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_game/missions'
     | '/_authenticated/_game/models'
     | '/_authenticated/_game/notifications'
+    | '/_authenticated/_game/party'
     | '/_authenticated/_game/profile'
     | '/_authenticated/_game/properties'
     | '/_authenticated/_game/settings'
@@ -977,6 +989,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof AuthenticatedGameNotificationsRouteImport
+      parentRoute: typeof AuthenticatedGameRoute
+    }
+    '/_authenticated/_game/party': {
+      id: '/_authenticated/_game/party'
+      path: '/party'
+      fullPath: '/party'
+      preLoaderRoute: typeof AuthenticatedGamePartyRouteImport
       parentRoute: typeof AuthenticatedGameRoute
     }
     '/_authenticated/_game/profile': {
@@ -1309,6 +1328,7 @@ interface AuthenticatedGameRouteChildren {
   AuthenticatedGameMissionsRoute: typeof AuthenticatedGameMissionsRoute
   AuthenticatedGameModelsRoute: typeof AuthenticatedGameModelsRoute
   AuthenticatedGameNotificationsRoute: typeof AuthenticatedGameNotificationsRoute
+  AuthenticatedGamePartyRoute: typeof AuthenticatedGamePartyRoute
   AuthenticatedGameProfileRoute: typeof AuthenticatedGameProfileRoute
   AuthenticatedGamePropertiesRoute: typeof AuthenticatedGamePropertiesRoute
   AuthenticatedGameSettingsRoute: typeof AuthenticatedGameSettingsRoute
@@ -1329,6 +1349,7 @@ const AuthenticatedGameRouteChildren: AuthenticatedGameRouteChildren = {
   AuthenticatedGameMissionsRoute: AuthenticatedGameMissionsRoute,
   AuthenticatedGameModelsRoute: AuthenticatedGameModelsRoute,
   AuthenticatedGameNotificationsRoute: AuthenticatedGameNotificationsRoute,
+  AuthenticatedGamePartyRoute: AuthenticatedGamePartyRoute,
   AuthenticatedGameProfileRoute: AuthenticatedGameProfileRoute,
   AuthenticatedGamePropertiesRoute: AuthenticatedGamePropertiesRoute,
   AuthenticatedGameSettingsRoute: AuthenticatedGameSettingsRoute,

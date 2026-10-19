@@ -1,22 +1,11 @@
 import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import {
-  Briefcase,
-  House,
-  HousePlus,
-  Map,
-  Package,
-  Settings,
-  ShoppingBag,
-  UserRound,
-  Wallet,
-} from "lucide-react";
+import { Briefcase, House, Map } from "lucide-react";
 import { q, rpc } from "@/lib/game";
-import { Logo } from "@/components/game/Logo";
 import { GameDataUnavailable, LoadingState } from "@/components/game/ui";
 import { cn } from "@/lib/utils";
-import { GameHUD } from "@/components/game/GameHUD";
+import { HomeDashboard } from "@/components/game/HomeDashboard";
 import { GameNeedsRail } from "@/components/game/GameNeedsRail";
 import { PhoneLauncher } from "@/components/game/PhoneLauncher";
 import { HousingChooser } from "@/components/game/housing/HousingChooser";
@@ -40,34 +29,13 @@ export const Route = createFileRoute("/_authenticated/_game")({
   component: GameLayout,
 });
 
-const NAV_GROUPS = [
-  {
-    label: "YOUR CITY",
-    items: [
-      { to: "/home", label: "Home", icon: House },
-      { to: "/map", label: "City", icon: Map },
-    ],
-  },
-  {
-    label: "DAILY LIFE",
-    items: [
-      { to: "/house", label: "Property", icon: House },
-      { to: "/properties", label: "Find homes", icon: HousePlus },
-      { to: "/jobs", label: "Jobs", icon: Briefcase },
-      { to: "/inventory", label: "Inventory", icon: Package },
-      { to: "/market", label: "Market", icon: ShoppingBag },
-      { to: "/wallet", label: "Bank", icon: Wallet },
-    ],
-  },
-  {
-    label: "PLAYER",
-    items: [{ to: "/profile", label: "Profile", icon: UserRound }],
-  },
-] as const;
-
 function GameLayout() {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const visitingFriend = useRouterState({
+    select: (state) =>
+      typeof (state.location.search as Record<string, unknown>)["visit"] === "string",
+  });
   const qc = useQueryClient();
   const {
     data: character,
@@ -234,68 +202,20 @@ function GameLayout() {
       >
         <WorldEnvironment />
         <div className="city-game-frame">
-          <aside
-            className="game-desktop-nav game-hover-sidebar"
-            aria-label="Main navigation"
-            aria-hidden={phoneOpen || undefined}
-            inert={phoneOpen || undefined}
-          >
-            <Link
-              to="/home"
-              search={{ visit: undefined }}
-              className="game-side-logo"
-              aria-label="OSUN LIFE home"
-            >
-              <Logo />
-            </Link>
-            <nav className="game-side-navigation" aria-label="City and player pages">
-              {NAV_GROUPS.map((group) => (
-                <div className="game-side-group" key={group.label}>
-                  <p className="game-side-label">{group.label}</p>
-                  <div className="game-side-links">
-                    {group.items.map((item) => {
-                      const Icon = item.icon;
-                      return (
-                        <Link
-                          key={item.to}
-                          to={item.to}
-                          activeProps={{ className: "game-side-link-active" }}
-                          className="game-side-link"
-                          aria-label={item.label}
-                          title={item.label}
-                        >
-                          <Icon className="h-4.5 w-4.5" />
-                          <span>{item.label}</span>
-                        </Link>
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
-            </nav>
-            <div className="mt-auto grid gap-2">
-              <Link
-                to="/settings"
-                className="game-side-link"
-                aria-label="Settings"
-                title="Settings"
-              >
-                <Settings className="h-4.5 w-4.5" />
-                <span>Settings</span>
-              </Link>
-            </div>
-          </aside>
           <div className="city-game-content">
-            {pathname === "/home" && (
-              <GameHUD
-                player={player}
-                location={currentLocation?.name ?? "Osogbo"}
-                unread={unread}
-              />
-            )}
             {pathname !== "/settings" && <GameNeedsRail />}
             <main className="city-game-main">
-              <Outlet />
+              {pathname === "/home" && !visitingFriend ? (
+                <HomeDashboard
+                  player={player}
+                  location={currentLocation?.name ?? "Osogbo"}
+                  unread={unread}
+                >
+                  <Outlet />
+                </HomeDashboard>
+              ) : (
+                <Outlet />
+              )}
             </main>
           </div>
         </div>
