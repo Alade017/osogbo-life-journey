@@ -1,21 +1,6 @@
 /* Player home dashboard: full-viewport command view for the /home page.
    Colours come only from the app's existing tokens (see styles.css :root). */
 
-/* The home route has no sidebar on any device. Navigation there is the
-   bottom bar, which is shown at every width. */
-.city-game:has(.home-dashboard) .game-desktop-nav {
-  display: none !important;
-}
-
-.city-game:has(.home-dashboard) .city-game-frame {
-  display: block !important;
-  grid-template-columns: minmax(0, 1fr) !important;
-}
-
-.city-game:has(.home-dashboard) .game-mobile-nav {
-  display: grid !important;
-}
-
 /* The content area spans the whole viewport instead of the centred column. */
 .city-game-main:has(.home-dashboard) {
   width: 100%;

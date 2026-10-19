@@ -361,7 +361,8 @@
     bottom: 20px;
   }
 }
-@media (max-width: 820px) {
+/* Bottom navigation and phone launcher are used on every device. */
+@media all {
   .city-game.navigation-redesign {
     padding-bottom: calc(84px + env(safe-area-inset-bottom));
   }
@@ -427,4 +428,10 @@
   .game-phone-fab-trigger {
     transition: none !important;
   }
+}
+
+/* No sidebar on any page: the content frame is a single column. */
+.city-game .city-game-frame {
+  display: block !important;
+  grid-template-columns: minmax(0, 1fr) !important;
 }
