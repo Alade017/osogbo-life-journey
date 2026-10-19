@@ -11,6 +11,8 @@ import type {
   HouseSlot,
 } from "@/components/game/housing/HouseRoomScene";
 import { HouseRoom3D } from "@/components/game/housing/HouseRoom3D";
+import { HousingReliefPanel } from "@/components/game/housing/HousingReliefPanel";
+import { housingReliefQueryKey } from "@/lib/housing-relief-client";
 import { EmptyState } from "@/components/game/ui";
 import { HouseSceneSkeleton } from "@/components/game/loading-skeletons";
 import { Avatar } from "@/components/game/Avatar";
@@ -603,6 +605,10 @@ function HousePage() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["canonicalHousingHome"] }),
         queryClient.invalidateQueries({ queryKey: ["authoritativeHouseState"] }),
+        queryClient.invalidateQueries({ queryKey: ["housingMapProperties"] }),
+        ...(character?.id
+          ? [queryClient.invalidateQueries({ queryKey: housingReliefQueryKey(character.id) })]
+          : []),
         queryClient.invalidateQueries({ queryKey: q.wallet().queryKey }),
         queryClient.invalidateQueries({ queryKey: ["transactions"] }),
       ]);
@@ -768,7 +774,7 @@ function HousePage() {
           </strong>
         </div>
       </section>
-      {isOverdue && (
+      {isOverdue && (!canonicalHome || rentStatus === "overdue") && (
         <div className="house-rent-banner">
           <span>
             <strong>Rent is overdue.</strong>{" "}
@@ -791,6 +797,17 @@ function HousePage() {
             </Link>
           )}
         </div>
+      )}
+      {canonicalHome && character?.id && (
+        <HousingReliefPanel
+          characterId={character.id}
+          rentStatus={rentStatus}
+          graceEndsAt={canonicalHome.graceEndsAt}
+          rescueEndsAt={canonicalHome.rescueEndsAt}
+          offline={isOffline}
+          paying={payRent.isPending}
+          onPayRent={() => payRent.mutate()}
+        />
       )}
       {!isOverdue && canonicalHome?.tenure === "rented" && (
         <button

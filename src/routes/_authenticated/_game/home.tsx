@@ -3,7 +3,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { HomeInterior } from "@/components/game/HomeInterior";
 import { LayeredHomeScene } from "@/components/game/housing/LayeredHomeScene";
-import { dashboardGreeting } from "@/lib/dashboard-greeting";
 import { q, rpc } from "@/lib/game";
 import { supabase } from "@/integrations/supabase/client";
 import { type HousingSave } from "@/lib/housing-service";
@@ -588,14 +587,6 @@ function MyCityHome() {
 
   return (
     <div className="game-home home-only-page">
-      <div className="arrival-line">
-        <div>
-          <p className="arrival-kicker">
-            {now ? dashboardGreeting(osogboHour(now)) : "Welcome home"}, {character.name}
-          </p>
-          <h1 className="font-display text-2xl font-bold text-ink sm:text-3xl">Your home</h1>
-        </div>
-      </div>
       {((character as typeof character & { onboarding_step?: string })?.onboarding_step ===
         "housing" ||
         housingHomeQuery.data?.home === null) && (

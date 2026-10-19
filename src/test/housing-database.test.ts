@@ -402,6 +402,115 @@ describe("housing onboarding database actions", () => {
     expect(active.rows[0]?.count).toBe(0);
   });
 
+  it("quotes relief from the server, pays shift earnings, and saves a keep choice only after rent is paid", async () => {
+    await db.query("update public.wallets set balance=20000 where user_id=$1", [userId]);
+    const listing = await db.query<{ result: { propertyId: string }[] }>(
+      "select public.housing_property_listings($1) as result",
+      [userId],
+    );
+    await db.query("select public.housing_rent_property($1,$2,$3)", [
+      userId,
+      listing.rows[0]!.result[0]!.propertyId,
+      "72fa62bd-3d79-43e6-9db1-620208201001",
+    ]);
+    await db.query(
+      "update public.property_rent_cycles set status='rescue',due_at=now()-interval '4 days',grace_ends_at=now()-interval '1 day',rescue_ends_at=now()+interval '1 day' where character_id=(select id from public.characters where user_id=$1) and status='current'",
+      [userId],
+    );
+    const before = await db.query<{
+      result: { loanOffer: { instalmentsTotal: number }; jobOffer: { shiftsTotal: number } };
+    }>("select public.housing_relief_state($1) as result", [userId]);
+    expect(before.rows[0]?.result.loanOffer.instalmentsTotal).toBe(4);
+    expect(before.rows[0]?.result.jobOffer.shiftsTotal).toBe(3);
+    const job = await db.query<{ result: { id: string } }>(
+      "select public.resolve_property_overdue($1,'job',$2) as result",
+      [userId, "72fa62bd-3d79-43e6-9db1-620208201002"],
+    );
+    const jobId = job.rows[0]!.result.id;
+    await expect(
+      db.query("select public.confirm_rent_relief_hustle($1,$2,$3)", [
+        userId,
+        jobId,
+        "72fa62bd-3d79-43e6-9db1-620208201003",
+      ]),
+    ).rejects.toThrow(/RENT_NOT_PAID/);
+    await db.query("update public.wallets set balance=0 where user_id=$1", [userId]);
+    const shift = await db.query<{ result: { earnedMinor: number; shiftsCompleted: number } }>(
+      "select public.complete_rent_relief_shift($1,$2,$3) as result",
+      [userId, jobId, "72fa62bd-3d79-43e6-9db1-620208201004"],
+    );
+    expect(shift.rows[0]?.result).toMatchObject({ shiftsCompleted: 1 });
+    expect(shift.rows[0]?.result.earnedMinor).toBeGreaterThan(0);
+    await db.query("update public.wallets set balance=20000 where user_id=$1", [userId]);
+    await db.query("select public.pay_property_rent($1,$2)", [
+      userId,
+      "72fa62bd-3d79-43e6-9db1-620208201005",
+    ]);
+    const kept = await db.query<{ result: { id: string; keepConfirmedAt: string } }>(
+      "select public.confirm_rent_relief_hustle($1,$2,$3) as result",
+      [userId, jobId, "72fa62bd-3d79-43e6-9db1-620208201006"],
+    );
+    expect(kept.rows[0]?.result.id).toBe(jobId);
+    expect(kept.rows[0]?.result.keepConfirmedAt).toBeTruthy();
+    const after = await db.query<{
+      result: { hustles: { id: string; rentPaid: boolean; keepConfirmedAt: string }[] };
+    }>("select public.housing_relief_state($1) as result", [userId]);
+    expect(after.rows[0]?.result.hustles[0]).toMatchObject({ id: jobId, rentPaid: true });
+    expect(after.rows[0]?.result.hustles[0]?.keepConfirmedAt).toBeTruthy();
+  });
+
+  it("shows repossession until acknowledged and rejects another player's acknowledgment", async () => {
+    const otherUserId = "8f4b82c4-a3b4-41ef-b823-05df2f171a10";
+    await db.query("insert into auth.users(id) values($1)", [otherUserId]);
+    await db.query("insert into public.profiles(id,display_name) values($1,'Other tenant')", [
+      otherUserId,
+    ]);
+    await db.query(
+      "insert into public.characters(user_id,name,gender,age,personality,occupation_preference,onboarding_step) values($1,'Other','male',22,'ambitious','housing-test-job','done')",
+      [otherUserId],
+    );
+    await db.query("update public.wallets set balance=20000 where user_id=$1", [userId]);
+    const listing = await db.query<{ result: { propertyId: string }[] }>(
+      "select public.housing_property_listings($1) as result",
+      [userId],
+    );
+    await db.query("select public.housing_rent_property($1,$2,$3)", [
+      userId,
+      listing.rows[0]!.result[0]!.propertyId,
+      "72fa62bd-3d79-43e6-9db1-620208201007",
+    ]);
+    await db.query(
+      "update public.property_rent_cycles set status='rescue',due_at=now()-interval '5 days',grace_ends_at=now()-interval '2 days',rescue_ends_at=now()-interval '1 day' where character_id=(select id from public.characters where user_id=$1) and status='current'",
+      [userId],
+    );
+    const state = await db.query<{
+      result: { notice: { cycleId: string; houseName: string; repossessedAt: string } };
+    }>("select public.housing_relief_state($1) as result", [userId]);
+    const notice = state.rows[0]!.result.notice;
+    expect(notice.houseName).toBeTruthy();
+    expect(notice.repossessedAt).toBeTruthy();
+    const housing = await db.query<{ active: number; location: string }>(
+      "select (select count(*)::int from public.player_properties where character_id=c.id and is_active) as active,l.slug as location from public.characters c join public.locations l on l.id=c.current_location_id where c.user_id=$1",
+      [userId],
+    );
+    expect(housing.rows[0]).toEqual({ active: 0, location: "city-centre" });
+    await expect(
+      db.query("select public.ack_housing_repossession($1,$2)", [otherUserId, notice.cycleId]),
+    ).rejects.toThrow(/REPOSSESSION_NOTICE_NOT_FOUND/);
+    await db.query("select public.ack_housing_repossession($1,$2)", [userId, notice.cycleId]);
+    const after = await db.query<{ result: { notice: null } }>(
+      "select public.housing_relief_state($1) as result",
+      [userId],
+    );
+    expect(after.rows[0]?.result.notice).toBeNull();
+    const grants = await db.query<{ player_execute: boolean; server_execute: boolean }>(
+      "select has_function_privilege('authenticated','public.housing_relief_state(uuid)','execute') as player_execute,has_function_privilege('service_role','public.housing_relief_state(uuid)','execute') as server_execute",
+    );
+    expect(grants.rows[0]).toEqual({ player_execute: false, server_execute: true });
+    await db.query("delete from public.profiles where id=$1", [otherUserId]);
+    await db.query("delete from auth.users where id=$1", [otherUserId]);
+  });
+
   it("offers a side-hustle only after grace and keeps retries idempotent", async () => {
     await db.query("update public.wallets set balance=20000 where user_id=$1", [userId]);
     const listing = await db.query<{ result: { propertyId: string }[] }>(

@@ -41,6 +41,7 @@ import { Route as ApiHousePlaceRouteImport } from './routes/api/house/place'
 import { Route as ApiHouseRemoveRouteImport } from './routes/api/house/remove'
 import { Route as ApiHouseStateRouteImport } from './routes/api/house/state'
 import { Route as ApiHousingAccessoriesRouteImport } from './routes/api/housing/accessories'
+import { Route as ApiHousingAckRepossessionRouteImport } from './routes/api/housing/ack-repossession'
 import { Route as ApiHousingChooseRouteImport } from './routes/api/housing/choose'
 import { Route as ApiHousingCurrentHomeRouteImport } from './routes/api/housing/current-home'
 import { Route as ApiHousingDeferRouteImport } from './routes/api/housing/defer'
@@ -240,6 +241,12 @@ const ApiHousingAccessoriesRoute = ApiHousingAccessoriesRouteImport.update({
   path: '/api/housing/accessories',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHousingAckRepossessionRoute =
+  ApiHousingAckRepossessionRouteImport.update({
+    id: '/api/housing/ack-repossession',
+    path: '/api/housing/ack-repossession',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiHousingChooseRoute = ApiHousingChooseRouteImport.update({
   id: '/api/housing/choose',
   path: '/api/housing/choose',
@@ -429,6 +436,7 @@ export interface FileRoutesByFullPath {
   '/api/house/remove': typeof ApiHouseRemoveRoute
   '/api/house/state': typeof ApiHouseStateRoute
   '/api/housing/accessories': typeof ApiHousingAccessoriesRoute
+  '/api/housing/ack-repossession': typeof ApiHousingAckRepossessionRoute
   '/api/housing/choose': typeof ApiHousingChooseRoute
   '/api/housing/current-home': typeof ApiHousingCurrentHomeRoute
   '/api/housing/defer': typeof ApiHousingDeferRoute
@@ -492,6 +500,7 @@ export interface FileRoutesByTo {
   '/api/house/remove': typeof ApiHouseRemoveRoute
   '/api/house/state': typeof ApiHouseStateRoute
   '/api/housing/accessories': typeof ApiHousingAccessoriesRoute
+  '/api/housing/ack-repossession': typeof ApiHousingAckRepossessionRoute
   '/api/housing/choose': typeof ApiHousingChooseRoute
   '/api/housing/current-home': typeof ApiHousingCurrentHomeRoute
   '/api/housing/defer': typeof ApiHousingDeferRoute
@@ -558,6 +567,7 @@ export interface FileRoutesById {
   '/api/house/remove': typeof ApiHouseRemoveRoute
   '/api/house/state': typeof ApiHouseStateRoute
   '/api/housing/accessories': typeof ApiHousingAccessoriesRoute
+  '/api/housing/ack-repossession': typeof ApiHousingAckRepossessionRoute
   '/api/housing/choose': typeof ApiHousingChooseRoute
   '/api/housing/current-home': typeof ApiHousingCurrentHomeRoute
   '/api/housing/defer': typeof ApiHousingDeferRoute
@@ -623,6 +633,7 @@ export interface FileRouteTypes {
     | '/api/house/remove'
     | '/api/house/state'
     | '/api/housing/accessories'
+    | '/api/housing/ack-repossession'
     | '/api/housing/choose'
     | '/api/housing/current-home'
     | '/api/housing/defer'
@@ -686,6 +697,7 @@ export interface FileRouteTypes {
     | '/api/house/remove'
     | '/api/house/state'
     | '/api/housing/accessories'
+    | '/api/housing/ack-repossession'
     | '/api/housing/choose'
     | '/api/housing/current-home'
     | '/api/housing/defer'
@@ -751,6 +763,7 @@ export interface FileRouteTypes {
     | '/api/house/remove'
     | '/api/house/state'
     | '/api/housing/accessories'
+    | '/api/housing/ack-repossession'
     | '/api/housing/choose'
     | '/api/housing/current-home'
     | '/api/housing/defer'
@@ -798,6 +811,7 @@ export interface RootRouteChildren {
   ApiHouseRemoveRoute: typeof ApiHouseRemoveRoute
   ApiHouseStateRoute: typeof ApiHouseStateRoute
   ApiHousingAccessoriesRoute: typeof ApiHousingAccessoriesRoute
+  ApiHousingAckRepossessionRoute: typeof ApiHousingAckRepossessionRoute
   ApiHousingChooseRoute: typeof ApiHousingChooseRoute
   ApiHousingCurrentHomeRoute: typeof ApiHousingCurrentHomeRoute
   ApiHousingDeferRoute: typeof ApiHousingDeferRoute
@@ -1054,6 +1068,13 @@ declare module '@tanstack/react-router' {
       path: '/api/housing/accessories'
       fullPath: '/api/housing/accessories'
       preLoaderRoute: typeof ApiHousingAccessoriesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/housing/ack-repossession': {
+      id: '/api/housing/ack-repossession'
+      path: '/api/housing/ack-repossession'
+      fullPath: '/api/housing/ack-repossession'
+      preLoaderRoute: typeof ApiHousingAckRepossessionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/housing/choose': {
@@ -1348,6 +1369,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHouseRemoveRoute: ApiHouseRemoveRoute,
   ApiHouseStateRoute: ApiHouseStateRoute,
   ApiHousingAccessoriesRoute: ApiHousingAccessoriesRoute,
+  ApiHousingAckRepossessionRoute: ApiHousingAckRepossessionRoute,
   ApiHousingChooseRoute: ApiHousingChooseRoute,
   ApiHousingCurrentHomeRoute: ApiHousingCurrentHomeRoute,
   ApiHousingDeferRoute: ApiHousingDeferRoute,

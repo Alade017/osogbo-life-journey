@@ -20,6 +20,7 @@ import { GameHUD } from "@/components/game/GameHUD";
 import { GameNeedsRail } from "@/components/game/GameNeedsRail";
 import { PhoneLauncher } from "@/components/game/PhoneLauncher";
 import { HousingChooser } from "@/components/game/housing/HousingChooser";
+import { HousingRepossessionNotice } from "@/components/game/housing/HousingRepossessionNotice";
 import { GameTimeProvider } from "@/components/game/GameTimeProvider";
 import { WorldEnvironment } from "@/components/game/WorldEnvironment";
 import { gameTimeFromCharacter } from "@/lib/game-time";
@@ -344,6 +345,7 @@ function GameLayout() {
             setHousingOpen(false);
           }}
         />
+        <HousingRepossessionNotice characterId={character.id} />
       </div>
     </GameTimeProvider>
   );

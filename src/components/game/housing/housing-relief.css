@@ -1,0 +1,98 @@
+.housing-relief-panel {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0 0 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card, 18px);
+  background: var(--card);
+  color: var(--foreground);
+  padding: 0.9rem;
+  box-shadow: var(--elevation-card);
+}
+
+.housing-relief-panel h2,
+.housing-repossession-sheet h2 {
+  margin: 0;
+  font: 700 1.15rem/1.25 var(--font-display, inherit);
+}
+
+.housing-relief-panel p,
+.housing-repossession-sheet p {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.housing-relief-panel p:not(.house-eyebrow),
+.housing-repossession-sheet p:not(.house-eyebrow) {
+  color: var(--muted-foreground);
+  font-size: 0.85rem;
+}
+
+.housing-relief-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  align-items: center;
+}
+
+.housing-relief-actions > button,
+.housing-relief-actions > a {
+  min-height: 44px;
+}
+
+.housing-relief-actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.housing-relief-jobs {
+  display: grid;
+  gap: 0.6rem;
+  margin-top: 0.4rem;
+}
+
+.housing-relief-job {
+  display: grid;
+  gap: 0.45rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--background);
+  padding: 0.8rem;
+}
+
+.housing-repossession-backdrop {
+  position: fixed;
+  z-index: var(--game-sheet-layer, 100);
+  inset: 0;
+  background: color-mix(in srgb, var(--foreground) 48%, transparent);
+}
+
+.housing-repossession-sheet {
+  position: fixed;
+  z-index: calc(var(--game-sheet-layer, 100) + 1);
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  gap: 0.8rem;
+  width: min(100%, 520px);
+  max-height: 85dvh;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 22px 22px 0 0;
+  background: var(--card);
+  color: var(--foreground);
+  padding: 0.75rem 1rem max(1rem, env(safe-area-inset-bottom));
+  box-shadow: var(--elevation-card);
+}
+
+@media (max-width: 540px) {
+  .housing-relief-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .housing-relief-actions > button,
+  .housing-relief-actions > a {
+    width: 100%;
+  }
+}
