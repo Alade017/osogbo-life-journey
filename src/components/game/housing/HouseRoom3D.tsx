@@ -134,7 +134,7 @@ function SlotObject({
   onSelectSlot,
 }: {
   slot: HouseSlot;
-  placement?: HousePlacement;
+  placement: HousePlacement | undefined;
   width: number;
   depth: number;
   editMode: boolean;
@@ -153,7 +153,12 @@ function SlotObject({
   return (
     <group position={position}>
       {placement ? (
-        <group onClick={(event) => { event.stopPropagation(); if (editMode) onSelectPlacement(placement); }}>
+        <group
+          onClick={(event) => {
+            event.stopPropagation();
+            if (editMode) onSelectPlacement(placement);
+          }}
+        >
           <OptionalModel
             path={safeArtKey ? `/models/furniture/${safeArtKey}.glb` : ""}
             fallback={
@@ -165,7 +170,12 @@ function SlotObject({
           />
         </group>
       ) : (
-        <mesh onClick={(event) => { event.stopPropagation(); onSelectSlot(slot); }}>
+        <mesh
+          onClick={(event) => {
+            event.stopPropagation();
+            onSelectSlot(slot);
+          }}
+        >
           <boxGeometry args={[0.48, 0.08, 0.48]} />
           <meshStandardMaterial color="#f6b34c" roughness={1} />
         </mesh>
@@ -175,7 +185,7 @@ function SlotObject({
           <button
             type="button"
             className="house-3d-slot-label"
-            onClick={() => placement ? onSelectPlacement(placement) : onSelectSlot(slot)}
+            onClick={() => (placement ? onSelectPlacement(placement) : onSelectSlot(slot))}
           >
             {label}
           </button>
@@ -188,7 +198,11 @@ function SlotObject({
 function LoadingProgress() {
   const { active, progress } = useProgress();
   if (!active) return null;
-  return <div className="house-3d-loading" role="status">Loading room {Math.round(progress)}%</div>;
+  return (
+    <div className="house-3d-loading" role="status">
+      Loading room {Math.round(progress)}%
+    </div>
+  );
 }
 
 export function HouseRoom3D({
@@ -206,9 +220,15 @@ export function HouseRoom3D({
   return (
     <div className="house-3d-scene" aria-label={`${houseTypeId.replaceAll("-", " ")} 3D room`}>
       <Canvas
+        frameloop="demand"
         dpr={[1, 1.5]}
         shadows={false}
-        camera={{ position: [width * 0.75, Math.max(width, depth), depth * 0.85], fov: 42, near: 0.1, far: 80 }}
+        camera={{
+          position: [width * 0.75, Math.max(width, depth), depth * 0.85],
+          fov: 42,
+          near: 0.1,
+          far: 80,
+        }}
         gl={{ antialias: false, powerPreference: "low-power" }}
       >
         <color attach="background" args={["#f2eadc"]} />

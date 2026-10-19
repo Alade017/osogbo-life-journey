@@ -39,9 +39,10 @@ export type MapBillboardMarker = {
 /** Display-only property input. Ownership, rent, and status remain server/game-state owned. */
 export type MapProperty = {
   id: string;
+  label?: string;
   type: "compound" | "flat" | "shophouse";
   tier: 1 | 2 | 3;
-  status: "owned" | "rent_due" | "overdue" | "vacant";
+  status: "owned" | "current" | "rent_due" | "overdue" | "vacant";
   position: [number, number, number];
   rotation?: number;
   ownerName?: string;
@@ -58,7 +59,7 @@ export interface MapCanvasProps {
   billboardMarkers?: MapBillboardMarker[];
   onSelectBillboard?: (campaignId: string) => void;
   /** Pass undefined while the existing property source is loading. */
-  properties?: readonly MapProperty[];
+  properties?: readonly MapProperty[] | undefined;
 }
 
 const HOUSE_MODELS: Record<MapProperty["type"], string> = {
@@ -69,6 +70,7 @@ const HOUSE_MODELS: Record<MapProperty["type"], string> = {
 
 const propertyStatusText: Record<MapProperty["status"], string> = {
   owned: "Owned",
+  current: "Your home",
   rent_due: "Rent due",
   overdue: "Rent overdue",
   vacant: "Vacant",
@@ -122,7 +124,7 @@ function Terrain() {
   );
 }
 
-function GltfObject({ path, tier }: { path: string; tier?: MapProperty["tier"] }) {
+function GltfObject({ path, tier }: { path: string; tier: MapProperty["tier"] | undefined }) {
   const { scene } = useGLTF(path, DRACO_PATH, true);
   const object = useMemo(() => {
     const instance = clone(scene);
@@ -391,6 +393,11 @@ export function MapCanvas({
         />
       </Canvas>
       <ul className="town-map-accessible-list" aria-label="Places on the map">
+        {properties?.map((property) => (
+          <li key={property.id}>
+            {property.label ?? "House"}, {houseBadgeText(property)}
+          </li>
+        ))}
         {availablePlaces.map((place) => (
           <li key={place.id}>
             <button type="button" onClick={() => onSelectLandmark(place.id)}>

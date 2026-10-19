@@ -19,7 +19,7 @@ describe("housing onboarding database actions", () => {
       grant usage on schema auth to authenticated; grant execute on function auth.uid() to authenticated;`);
     const journal = JSON.parse(readFileSync("drizzle/migrations/meta/_journal.json", "utf8"));
     for (const { tag } of journal.entries)
-      await db.exec(readFileSync(`drizzle/migrations/${tag}.sql`, "utf8"));
+      await db.exec(readFileSync(`drizzle/migrations/${tag}.sql`, "utf8").replace(/^\uFEFF/, ""));
     await db.query("insert into auth.users(id) values($1)", [userId]);
   }, 180_000);
 
@@ -459,5 +459,111 @@ describe("housing onboarding database actions", () => {
       can_place: true,
       can_buy: true,
     });
+  });
+
+  it("opens a furniture room for a canonical rental and keeps placement after another read", async () => {
+    const listing = await db.query<{ id: string }>(
+      "select id from public.game_properties where slug='housing-shared-room'",
+    );
+    const propertyId = listing.rows[0]?.id;
+    expect(propertyId).toBeDefined();
+    await db.query("update public.wallets set balance=10000 where user_id=$1", [userId]);
+    await db.query("select public.housing_rent_property($1,$2,$3)", [
+      userId,
+      propertyId,
+      "c1437ab8-54dc-481c-8713-50c87ac52901",
+    ]);
+    const home = await db.query<{ result: { houseTypeId: string; status: string } }>(
+      "select public.housing_current_home($1) as result",
+      [userId],
+    );
+    expect(home.rows[0]?.result).toMatchObject({ houseTypeId: "shared-room", status: "current" });
+    const room = await db.query<{ result: { house: { house_type_id: string } } }>(
+      "select public.get_house_state($1) as result",
+      [userId],
+    );
+    expect(room.rows[0]?.result.house.house_type_id).toBe("shared-room");
+    const placed = await db.query<{ result: { ok: boolean } }>(
+      "select public.house_place($1,'starter-bed','bed') as result",
+      [userId],
+    );
+    expect(placed.rows[0]?.result).toMatchObject({ ok: true });
+    const afterRefresh = await db.query<{
+      result: { placements: { item_id: string; slot: string }[] };
+    }>("select public.get_house_state($1) as result", [userId]);
+    expect(afterRefresh.rows[0]?.result.placements).toEqual(
+      expect.arrayContaining([expect.objectContaining({ item_id: "starter-bed", slot: "bed" })]),
+    );
+  });
+
+  it("reports vacant, current, rent due, and overdue housing markers from server rent state", async () => {
+    const listing = await db.query<{ id: string }>(
+      "select id from public.game_properties where slug='housing-shared-room'",
+    );
+    const propertyId = listing.rows[0]?.id;
+    const readMarkers = async () => {
+      const result = await db.query<{
+        markers: { propertyId: string; status: string; gridX: number; gridZ: number }[];
+      }>("select public.housing_map_properties($1) as markers", [userId]);
+      return result.rows[0]?.markers ?? [];
+    };
+    const initial = await readMarkers();
+    expect(initial).toHaveLength(6);
+    expect(initial.every((marker) => marker.status === "vacant")).toBe(true);
+    expect(initial.find((marker) => marker.propertyId === propertyId)).toMatchObject({
+      gridX: 1,
+      gridZ: 1,
+    });
+
+    await db.query("update public.wallets set balance=10000 where user_id=$1", [userId]);
+    await db.query("select public.housing_rent_property($1,$2,$3)", [
+      userId,
+      propertyId,
+      "7babd5af-4a39-4adb-b885-a9dedfd70701",
+    ]);
+    expect((await readMarkers()).find((marker) => marker.propertyId === propertyId)?.status).toBe(
+      "current",
+    );
+
+    await db.query(
+      "update public.property_rent_cycles set due_at=now()-interval '1 minute', grace_ends_at=now()+interval '1 day', rescue_ends_at=now()+interval '2 days' where character_id=(select id from public.characters where user_id=$1) and status='current'",
+      [userId],
+    );
+    expect((await readMarkers()).find((marker) => marker.propertyId === propertyId)?.status).toBe(
+      "rent_due",
+    );
+
+    await db.query(
+      "update public.property_rent_cycles set grace_ends_at=now()-interval '1 minute', rescue_ends_at=now()+interval '1 day' where character_id=(select id from public.characters where user_id=$1) and status='grace'",
+      [userId],
+    );
+    expect((await readMarkers()).find((marker) => marker.propertyId === propertyId)?.status).toBe(
+      "overdue",
+    );
+
+    await db.query("select public.pay_property_rent($1,$2)", [
+      userId,
+      "c4c75334-3457-4391-b794-133f319d53c9",
+    ]);
+    expect((await readMarkers()).find((marker) => marker.propertyId === propertyId)?.status).toBe(
+      "current",
+    );
+    await db.query(
+      "update public.player_properties set tenure='owned', lease_ends_at=null where property_id=$1 and is_active",
+      [propertyId],
+    );
+    expect((await readMarkers()).find((marker) => marker.propertyId === propertyId)?.status).toBe(
+      "owned",
+    );
+    await db.query("update public.player_properties set is_active=false where property_id=$1", [
+      propertyId,
+    ]);
+    expect((await readMarkers()).find((marker) => marker.propertyId === propertyId)?.status).toBe(
+      "vacant",
+    );
+    const grants = await db.query<{ player_execute: boolean; server_execute: boolean }>(
+      "select has_function_privilege('authenticated','public.housing_map_properties(uuid)','execute') as player_execute, has_function_privilege('service_role','public.housing_map_properties(uuid)','execute') as server_execute",
+    );
+    expect(grants.rows[0]).toEqual({ player_execute: false, server_execute: true });
   });
 });

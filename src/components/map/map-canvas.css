@@ -37,6 +37,15 @@
     sans-serif;
 }
 
+.map-housing-message {
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card, 18px);
+  background: var(--card);
+  color: var(--foreground);
+  padding: 0.55rem 0.75rem;
+  font-size: 0.78rem;
+}
+
 .town-map-webgl-error {
   position: absolute;
   inset: 1rem;

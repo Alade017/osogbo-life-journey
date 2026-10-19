@@ -102,6 +102,84 @@
 .house-room-card {
   padding: 0.65rem;
 }
+.house-rent-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-bottom: 0.8rem;
+}
+.house-rent-summary > div {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card, 18px);
+  background: var(--card);
+  padding: 0.7rem 0.85rem;
+}
+.house-rent-summary span {
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+}
+.house-rent-summary strong {
+  overflow-wrap: anywhere;
+  font-size: 0.88rem;
+}
+.house-rent-early-button {
+  min-height: 44px;
+  margin-bottom: 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--foreground);
+  padding: 0.55rem 1rem;
+  font-weight: 750;
+}
+.house-3d-scene {
+  position: relative;
+  width: 100%;
+  height: clamp(280px, 48vw, 560px);
+  overflow: hidden;
+  border-radius: calc(var(--shape-card, 20px) - 6px);
+  background: #f2eadc;
+  touch-action: none;
+}
+.house-3d-loading {
+  position: absolute;
+  top: 0.7rem;
+  left: 0.7rem;
+  pointer-events: none;
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--foreground);
+  padding: 0.4rem 0.7rem;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+.house-3d-slot-label {
+  max-width: 120px;
+  min-height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--foreground);
+  padding: 0.3rem 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: normal;
+  cursor: pointer;
+}
+.house-3d-slot-label:focus-visible,
+.house-rent-early-button:focus-visible,
+.house-pay-button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.house-pay-button:disabled,
+.house-rent-early-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
 .house-scene {
   position: relative;
   overflow: hidden;
@@ -613,7 +691,23 @@
 }
 @media (max-width: 540px) {
   .house-page {
-    padding: 0.65rem;
+    padding: 0.65rem 0.65rem calc(5.5rem + env(safe-area-inset-bottom));
+  }
+  .house-rent-summary {
+    gap: 0.35rem;
+  }
+  .house-rent-summary > div {
+    padding: 0.55rem;
+  }
+  .house-rent-summary strong {
+    font-size: 0.75rem;
+  }
+  .house-3d-scene {
+    height: min(78vw, 390px);
+    min-height: 260px;
+  }
+  .house-rent-banner {
+    flex-wrap: wrap;
   }
   .house-page-header {
     align-items: flex-start;

@@ -196,8 +196,7 @@ function formatRentDate(value: string | null | undefined) {
 
 function normalizeCanonicalHome(value: unknown): CanonicalHome | null {
   if (!isRecord(value) || typeof value["propertyId"] !== "string") return null;
-  if (typeof value["houseTypeId"] !== "string" || typeof value["name"] !== "string")
-    return null;
+  if (typeof value["houseTypeId"] !== "string" || typeof value["name"] !== "string") return null;
   return {
     propertyId: value["propertyId"],
     houseTypeId: value["houseTypeId"],
@@ -207,8 +206,7 @@ function normalizeCanonicalHome(value: unknown): CanonicalHome | null {
     dueAt: typeof value["dueAt"] === "string" ? value["dueAt"] : null,
     graceEndsAt: typeof value["graceEndsAt"] === "string" ? value["graceEndsAt"] : null,
     rescueEndsAt: typeof value["rescueEndsAt"] === "string" ? value["rescueEndsAt"] : null,
-    weeklyRentMinor:
-      typeof value["weeklyRentMinor"] === "number" ? value["weeklyRentMinor"] : 0,
+    weeklyRentMinor: typeof value["weeklyRentMinor"] === "number" ? value["weeklyRentMinor"] : 0,
     accessoryBand: typeof value["accessoryBand"] === "string" ? value["accessoryBand"] : "basic",
   };
 }
@@ -556,9 +554,13 @@ function HousePage() {
   const cancelTenancy = useMutation({
     mutationFn: async () => {
       if (!playerId) throw new Error("Sign in again to manage your tenancy.");
-      const { data, error } = await supabase.rpc("cancel_player_house", { p_user_id: playerId });
+      const cancelHouse = supabase.rpc as unknown as (
+        name: string,
+        args: Record<string, unknown>,
+      ) => Promise<{ data: unknown; error: { message: string } | null }>;
+      const { data, error } = await cancelHouse("cancel_player_house", { p_user_id: playerId });
       if (error) throw new Error(error.message);
-      if (!data || typeof data !== "object" || Array.isArray(data) || data["ok"] !== true)
+      if (!isRecord(data) || data["ok"] !== true)
         throw new Error("The server did not confirm the tenancy cancellation.");
       return data;
     },
@@ -588,7 +590,8 @@ function HousePage() {
       const result = await response.json().catch(() => null);
       if (!response.ok)
         throw new Error(
-          isRecord(result) && isRecord(result["error"]) &&
+          isRecord(result) &&
+            isRecord(result["error"]) &&
             typeof result["error"]["reason"] === "string"
             ? result["error"]["reason"]
             : "Rent could not be paid. Try again.",
@@ -627,7 +630,7 @@ function HousePage() {
   const canonicalHome = canonicalHomeQuery.data;
   const rentStatus = canonicalHome?.status ?? serverState?.house?.status ?? "unknown";
   const rentDueAt = canonicalHome?.dueAt ?? serverState?.house?.next_rent_due_at;
-  const isOverdue = rentStatus === "rescue" || rentStatus === "overdue";
+  const isOverdue = rentStatus === "grace" || rentStatus === "rescue" || rentStatus === "overdue";
   const rentStatusLabel: Record<string, string> = {
     current: "Current",
     active: "Current",
@@ -685,11 +688,17 @@ function HousePage() {
                 : "Choose a home to get your own room and space for furniture."}
             </p>
             {canonicalHome ? (
-              <button className="house-primary-button" type="button" onClick={() => void stateQuery.refetch()}>
+              <button
+                className="house-primary-button"
+                type="button"
+                onClick={() => void stateQuery.refetch()}
+              >
                 Refresh room
               </button>
             ) : (
-              <Link className="house-primary-button" to="/properties">Find a place</Link>
+              <Link className="house-primary-button" to="/properties">
+                Find a place
+              </Link>
             )}
           </div>
         </section>
@@ -711,7 +720,8 @@ function HousePage() {
           <h1>{canonicalHome?.name ?? house.house_type.label}</h1>
           <p className="house-subtitle">
             {house.house_type.bedrooms} bedroom{house.house_type.bedrooms === 1 ? "" : "s"} · Rent{" "}
-            {formatNaira(canonicalHome?.weeklyRentMinor ?? house.house_type.weekly_rent_minor)} a week
+            {formatNaira(canonicalHome?.weeklyRentMinor ?? house.house_type.weekly_rent_minor)} a
+            week
           </p>
         </div>
         <div className="house-header-actions">
@@ -743,9 +753,20 @@ function HousePage() {
         </div>
       )}
       <section className="house-rent-summary" aria-label="Rent status">
-        <div><span>Status</span><strong>{rentStatusLabel[rentStatus] ?? "Checking"}</strong></div>
-        <div><span>Next rent due</span><strong>{formatRentDate(rentDueAt)}</strong></div>
-        <div><span>Weekly rent</span><strong>{formatNaira(canonicalHome?.weeklyRentMinor ?? house.house_type.weekly_rent_minor)}</strong></div>
+        <div>
+          <span>Status</span>
+          <strong>{rentStatusLabel[rentStatus] ?? "Checking"}</strong>
+        </div>
+        <div>
+          <span>Next rent due</span>
+          <strong>{formatRentDate(rentDueAt)}</strong>
+        </div>
+        <div>
+          <span>Weekly rent</span>
+          <strong>
+            {formatNaira(canonicalHome?.weeklyRentMinor ?? house.house_type.weekly_rent_minor)}
+          </strong>
+        </div>
       </section>
       {isOverdue && (
         <div className="house-rent-banner">
@@ -764,7 +785,11 @@ function HousePage() {
             >
               {payRent.isPending ? "Paying…" : "Pay now"}
             </button>
-          ) : <Link to="/wallet" className="house-pay-button">Pay</Link>}
+          ) : (
+            <Link to="/wallet" className="house-pay-button">
+              Pay
+            </Link>
+          )}
         </div>
       )}
       {!isOverdue && canonicalHome?.tenure === "rented" && (

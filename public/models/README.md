@@ -19,3 +19,11 @@ The R3F town map also accepts these Blender-exported glTF 2.0 binary files direc
 For tiered property variants, name optional nodes `Accessory_Tier2_Generator` and `Accessory_Tier3_<Name>` (for example, `Accessory_Tier3_WaterTank`). The map shows an accessory only when the supplied property tier is high enough. The `compound`, `flat`, and `shophouse` files should have a ground-level origin and no gameplay data: owner and rent-state labels come only from the map input.
 
 Production home entry still uses its established route and checks. All connected player fixtures currently share one development body; saved appearance/equipment records are preserved but full Blender visual mapping awaits actual modular assets.
+
+## House room Blender export contract
+
+The house screen looks for six room files in `rooms/`: `shared-room.glb`, `single-room.glb`, `studio-flat.glb`, `mini-flat.glb`, `bungalow.glb`, and `duplex.glb`. It renders a simple floor and walls for any missing or unreadable room file. Use a centered, floor-level origin, Y-up, meter units, and applied transforms. Keep walls low enough for the elevated orbit camera to see the furniture. Room dimensions in the current viewer range from roughly 4.2 × 3.4 meters for a shared room to 9.6 × 7.2 meters for a duplex.
+
+The server chooses an included accessory band. Name optional room nodes `Accessory_Tier2_<Name>` and `Accessory_Tier3_<Name>`, for example `Accessory_Tier2_Generator`. Tier 1 nodes need no prefix. Avoid placing furniture on the room model's named slots if it will also appear as a player-placed item.
+
+Player-placed furniture looks for `furniture/<art_key>.glb`, where `<art_key>` comes from the server's `content_items` catalogue. Each file should have a centered origin near floor level and fit approximately within a one-meter slot. Missing or unreadable furniture files appear as small boxes; inventory and placement remain server-owned. Prefer compressed meshes, small textures, and shared materials for mobile browsers.

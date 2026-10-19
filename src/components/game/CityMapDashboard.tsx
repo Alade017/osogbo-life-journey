@@ -7,6 +7,7 @@ import {
   type MapFilter,
   type MapSearchTarget,
 } from "@/components/map/MapCanvas";
+import { mapHousingMarkers } from "@/components/map/map-housing-markers";
 import { DistrictSheet } from "@/components/map/DistrictSheet";
 import { LandmarkSheet } from "@/components/map/LandmarkSheet";
 import { MapBillboardCampaignDialog } from "@/components/game/CityBillboards";
@@ -15,6 +16,7 @@ import { MAP_LANDMARK_LOCATION_SLUG } from "@/components/map/map-location-links"
 import { formatMapNaira } from "@/components/map/map-ui-utils";
 import townData from "@/data/osogbo-town.json";
 import { q, rpc } from "@/lib/game";
+import { supabase } from "@/integrations/supabase/client";
 import {
   clearPendingTravelKey,
   getPendingTravelKey,
@@ -70,6 +72,21 @@ export function CityMapDashboard({
   const [selectedTownId, setSelectedTownId] = useState("osogbo");
   const queryClient = useQueryClient();
   const character = useQuery(q.character());
+  const housingMarkers = useQuery({
+    queryKey: ["housingMapProperties", character.data?.id],
+    enabled: !!character.data?.id && !offline,
+    staleTime: 0,
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (error || !data.session) throw new Error("Sign in again to load homes.");
+      const response = await fetch("/api/housing/map-properties", {
+        headers: { Authorization: `Bearer ${data.session.access_token}` },
+      });
+      if (!response.ok) throw new Error("Homes on the map could not be loaded.");
+      return mapHousingMarkers(await response.json());
+    },
+  });
   const rent = useQuery(q.rentStatus());
   const world = useWorldClock();
   const jobCatalog = useQuery({ ...q.jobs(), enabled: filter === "jobs" });
@@ -274,6 +291,11 @@ export function CityMapDashboard({
           Offline. Showing your last saved map.
         </div>
       )}
+      {!offline && housingMarkers.isError && (
+        <div role="status" className="map-housing-message">
+          Homes could not be loaded. The town map is still available.
+        </div>
+      )}
       {mapLevel === "town" && (
         <div className="map-controls">
           <div className="map-category-chips" aria-label="Filter places">
@@ -308,6 +330,9 @@ export function CityMapDashboard({
       )}
       {mapLevel === "town" ? (
         <MapCanvas
+          properties={
+            housingMarkers.isPending && !offline ? undefined : (housingMarkers.data ?? [])
+          }
           onSelectDistrict={onDistrict}
           onSelectLandmark={onLandmark}
           activeFilter={filter}

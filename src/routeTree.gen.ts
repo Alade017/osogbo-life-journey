@@ -16,6 +16,7 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as AuthenticatedGameRouteImport } from './routes/_authenticated/_game'
 import { Route as AuthenticatedCreateCharacterRouteImport } from './routes/_authenticated/create-character'
 import { Route as AuthenticatedEnterRouteImport } from './routes/_authenticated/enter'
+import { Route as ApiNewsRouteImport } from './routes/api/news'
 import { Route as AuthenticatedGameBusinessesRouteImport } from './routes/_authenticated/_game/businesses'
 import { Route as AuthenticatedGameEducationRouteImport } from './routes/_authenticated/_game/education'
 import { Route as AuthenticatedGameHomeRouteImport } from './routes/_authenticated/_game/home'
@@ -46,6 +47,7 @@ import { Route as ApiHousingDeferRouteImport } from './routes/api/housing/defer'
 import { Route as ApiHousingEligibleRouteImport } from './routes/api/housing/eligible'
 import { Route as ApiHousingHomeRouteImport } from './routes/api/housing/home'
 import { Route as ApiHousingItemRouteImport } from './routes/api/housing/item'
+import { Route as ApiHousingMapPropertiesRouteImport } from './routes/api/housing/map-properties'
 import { Route as ApiHousingPayRentRouteImport } from './routes/api/housing/pay-rent'
 import { Route as ApiHousingPropertiesRouteImport } from './routes/api/housing/properties'
 import { Route as ApiHousingRentRouteImport } from './routes/api/housing/rent'
@@ -104,6 +106,11 @@ const AuthenticatedEnterRoute = AuthenticatedEnterRouteImport.update({
   id: '/enter',
   path: '/enter',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const ApiNewsRoute = ApiNewsRouteImport.update({
+  id: '/api/news',
+  path: '/api/news',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedGameBusinessesRoute =
   AuthenticatedGameBusinessesRouteImport.update({
@@ -263,6 +270,11 @@ const ApiHousingItemRoute = ApiHousingItemRouteImport.update({
   path: '/api/housing/item',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHousingMapPropertiesRoute = ApiHousingMapPropertiesRouteImport.update({
+  id: '/api/housing/map-properties',
+  path: '/api/housing/map-properties',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHousingPayRentRoute = ApiHousingPayRentRouteImport.update({
   id: '/api/housing/pay-rent',
   path: '/api/housing/pay-rent',
@@ -392,6 +404,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/create-character': typeof AuthenticatedCreateCharacterRoute
   '/enter': typeof AuthenticatedEnterRoute
+  '/api/news': typeof ApiNewsRoute
   '/businesses': typeof AuthenticatedGameBusinessesRoute
   '/education': typeof AuthenticatedGameEducationRoute
   '/home': typeof AuthenticatedGameHomeRoute
@@ -422,6 +435,7 @@ export interface FileRoutesByFullPath {
   '/api/housing/eligible': typeof ApiHousingEligibleRoute
   '/api/housing/home': typeof ApiHousingHomeRoute
   '/api/housing/item': typeof ApiHousingItemRoute
+  '/api/housing/map-properties': typeof ApiHousingMapPropertiesRoute
   '/api/housing/pay-rent': typeof ApiHousingPayRentRoute
   '/api/housing/properties': typeof ApiHousingPropertiesRoute
   '/api/housing/rent': typeof ApiHousingRentRoute
@@ -453,6 +467,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/create-character': typeof AuthenticatedCreateCharacterRoute
   '/enter': typeof AuthenticatedEnterRoute
+  '/api/news': typeof ApiNewsRoute
   '/businesses': typeof AuthenticatedGameBusinessesRoute
   '/education': typeof AuthenticatedGameEducationRoute
   '/home': typeof AuthenticatedGameHomeRoute
@@ -483,6 +498,7 @@ export interface FileRoutesByTo {
   '/api/housing/eligible': typeof ApiHousingEligibleRoute
   '/api/housing/home': typeof ApiHousingHomeRoute
   '/api/housing/item': typeof ApiHousingItemRoute
+  '/api/housing/map-properties': typeof ApiHousingMapPropertiesRoute
   '/api/housing/pay-rent': typeof ApiHousingPayRentRoute
   '/api/housing/properties': typeof ApiHousingPropertiesRoute
   '/api/housing/rent': typeof ApiHousingRentRoute
@@ -517,6 +533,7 @@ export interface FileRoutesById {
   '/_authenticated/_game': typeof AuthenticatedGameRouteWithChildren
   '/_authenticated/create-character': typeof AuthenticatedCreateCharacterRoute
   '/_authenticated/enter': typeof AuthenticatedEnterRoute
+  '/api/news': typeof ApiNewsRoute
   '/_authenticated/_game/businesses': typeof AuthenticatedGameBusinessesRoute
   '/_authenticated/_game/education': typeof AuthenticatedGameEducationRoute
   '/_authenticated/_game/home': typeof AuthenticatedGameHomeRoute
@@ -547,6 +564,7 @@ export interface FileRoutesById {
   '/api/housing/eligible': typeof ApiHousingEligibleRoute
   '/api/housing/home': typeof ApiHousingHomeRoute
   '/api/housing/item': typeof ApiHousingItemRoute
+  '/api/housing/map-properties': typeof ApiHousingMapPropertiesRoute
   '/api/housing/pay-rent': typeof ApiHousingPayRentRoute
   '/api/housing/properties': typeof ApiHousingPropertiesRoute
   '/api/housing/rent': typeof ApiHousingRentRoute
@@ -580,6 +598,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/create-character'
     | '/enter'
+    | '/api/news'
     | '/businesses'
     | '/education'
     | '/home'
@@ -610,6 +629,7 @@ export interface FileRouteTypes {
     | '/api/housing/eligible'
     | '/api/housing/home'
     | '/api/housing/item'
+    | '/api/housing/map-properties'
     | '/api/housing/pay-rent'
     | '/api/housing/properties'
     | '/api/housing/rent'
@@ -641,6 +661,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/create-character'
     | '/enter'
+    | '/api/news'
     | '/businesses'
     | '/education'
     | '/home'
@@ -671,6 +692,7 @@ export interface FileRouteTypes {
     | '/api/housing/eligible'
     | '/api/housing/home'
     | '/api/housing/item'
+    | '/api/housing/map-properties'
     | '/api/housing/pay-rent'
     | '/api/housing/properties'
     | '/api/housing/rent'
@@ -704,6 +726,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_game'
     | '/_authenticated/create-character'
     | '/_authenticated/enter'
+    | '/api/news'
     | '/_authenticated/_game/businesses'
     | '/_authenticated/_game/education'
     | '/_authenticated/_game/home'
@@ -734,6 +757,7 @@ export interface FileRouteTypes {
     | '/api/housing/eligible'
     | '/api/housing/home'
     | '/api/housing/item'
+    | '/api/housing/map-properties'
     | '/api/housing/pay-rent'
     | '/api/housing/properties'
     | '/api/housing/rent'
@@ -765,6 +789,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
+  ApiNewsRoute: typeof ApiNewsRoute
   ApiHomeEquipRoute: typeof ApiHomeEquipRoute
   ApiHomePlaceRoute: typeof ApiHomePlaceRoute
   ApiHomeRemoveRoute: typeof ApiHomeRemoveRoute
@@ -779,6 +804,7 @@ export interface RootRouteChildren {
   ApiHousingEligibleRoute: typeof ApiHousingEligibleRoute
   ApiHousingHomeRoute: typeof ApiHousingHomeRoute
   ApiHousingItemRoute: typeof ApiHousingItemRoute
+  ApiHousingMapPropertiesRoute: typeof ApiHousingMapPropertiesRoute
   ApiHousingPayRentRoute: typeof ApiHousingPayRentRoute
   ApiHousingPropertiesRoute: typeof ApiHousingPropertiesRoute
   ApiHousingRentRoute: typeof ApiHousingRentRoute
@@ -854,6 +880,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/enter'
       preLoaderRoute: typeof AuthenticatedEnterRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/news': {
+      id: '/api/news'
+      path: '/api/news'
+      fullPath: '/api/news'
+      preLoaderRoute: typeof ApiNewsRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/_game/businesses': {
       id: '/_authenticated/_game/businesses'
@@ -1063,6 +1096,13 @@ declare module '@tanstack/react-router' {
       path: '/api/housing/item'
       fullPath: '/api/housing/item'
       preLoaderRoute: typeof ApiHousingItemRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/housing/map-properties': {
+      id: '/api/housing/map-properties'
+      path: '/api/housing/map-properties'
+      fullPath: '/api/housing/map-properties'
+      preLoaderRoute: typeof ApiHousingMapPropertiesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/housing/pay-rent': {
@@ -1299,6 +1339,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
+  ApiNewsRoute: ApiNewsRoute,
   ApiHomeEquipRoute: ApiHomeEquipRoute,
   ApiHomePlaceRoute: ApiHomePlaceRoute,
   ApiHomeRemoveRoute: ApiHomeRemoveRoute,
@@ -1313,6 +1354,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHousingEligibleRoute: ApiHousingEligibleRoute,
   ApiHousingHomeRoute: ApiHousingHomeRoute,
   ApiHousingItemRoute: ApiHousingItemRoute,
+  ApiHousingMapPropertiesRoute: ApiHousingMapPropertiesRoute,
   ApiHousingPayRentRoute: ApiHousingPayRentRoute,
   ApiHousingPropertiesRoute: ApiHousingPropertiesRoute,
   ApiHousingRentRoute: ApiHousingRentRoute,

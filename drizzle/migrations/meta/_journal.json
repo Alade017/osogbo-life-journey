@@ -442,6 +442,20 @@
       "when": 1792350000002,
       "tag": "0061_external_news_feed",
       "breakpoints": true
+    },
+    {
+      "idx": 63,
+      "version": "7",
+      "when": 1792350000003,
+      "tag": "0062_housing_starter_furniture_catalogue",
+      "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1792350000004,
+      "tag": "0063_housing_town_map_markers",
+      "breakpoints": true
     }
   ]
 }
