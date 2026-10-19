@@ -1,5 +1,6 @@
 import { matchMaker, Server, type ServerOptions } from "colyseus";
 import { NeighborhoodRoom } from "./neighborhood-room.ts";
+import { PartyRoom } from "./party-room.ts";
 
 const redisUrl = process.env["REDIS_URL"]?.trim();
 if (process.env["RAILWAY_ENVIRONMENT_NAME"] && !redisUrl)
@@ -75,6 +76,7 @@ const redisOptions = redisUrl
 const server = new Server({ ...serverOptions, ...redisOptions });
 
 server.define("neighborhood", NeighborhoodRoom).filterBy(["locationId"]);
+server.define("party", PartyRoom).filterBy(["locationId"]);
 
 const port = Number(process.env["PORT"] ?? process.env["MULTIPLAYER_PORT"] ?? 2567);
 const host = process.env["MULTIPLAYER_HOST"] ?? (process.env["PORT"] ? "0.0.0.0" : "127.0.0.1");
