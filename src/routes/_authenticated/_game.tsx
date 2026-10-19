@@ -16,7 +16,7 @@ import { q, rpc } from "@/lib/game";
 import { Logo } from "@/components/game/Logo";
 import { GameDataUnavailable, LoadingState } from "@/components/game/ui";
 import { cn } from "@/lib/utils";
-import { GameHUD } from "@/components/game/GameHUD";
+import { HomeDashboard } from "@/components/game/HomeDashboard";
 import { GameNeedsRail } from "@/components/game/GameNeedsRail";
 import { PhoneLauncher } from "@/components/game/PhoneLauncher";
 import { HousingChooser } from "@/components/game/housing/HousingChooser";
@@ -68,6 +68,10 @@ const NAV_GROUPS = [
 function GameLayout() {
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const visitingFriend = useRouterState({
+    select: (state) =>
+      typeof (state.location.search as Record<string, unknown>)["visit"] === "string",
+  });
   const qc = useQueryClient();
   const {
     data: character,
@@ -286,16 +290,19 @@ function GameLayout() {
             </div>
           </aside>
           <div className="city-game-content">
-            {pathname === "/home" && (
-              <GameHUD
-                player={player}
-                location={currentLocation?.name ?? "Osogbo"}
-                unread={unread}
-              />
-            )}
             {pathname !== "/settings" && <GameNeedsRail />}
             <main className="city-game-main">
-              <Outlet />
+              {pathname === "/home" && !visitingFriend ? (
+                <HomeDashboard
+                  player={player}
+                  location={currentLocation?.name ?? "Osogbo"}
+                  unread={unread}
+                >
+                  <Outlet />
+                </HomeDashboard>
+              ) : (
+                <Outlet />
+              )}
             </main>
           </div>
         </div>

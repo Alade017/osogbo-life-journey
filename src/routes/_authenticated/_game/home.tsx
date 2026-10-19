@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { HomeInterior } from "@/components/game/HomeInterior";
 import { q, rpc } from "@/lib/game";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,15 +15,11 @@ import { LoadingState } from "@/components/game/ui";
 import { HomeSceneSkeleton } from "@/components/game/loading-skeletons";
 import { pageMeta } from "@/lib/seo";
 import { useLiveClock } from "@/hooks/use-live-clock";
-import { useWorldClock } from "@/hooks/use-world-clock";
 import { osogboHour } from "@/lib/osogbo-weather";
-import { isPowerOutageAt } from "@/lib/world-simulation";
 import { toast } from "sonner";
 import { parseHousingSave } from "@/lib/housing-service";
 import { useMutation } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { useGameTime } from "@/components/game/GameTimeProvider";
-import type { LifeActionId } from "@/lib/life-simulation";
 import { homeSceneFromAuthoritativeState, type HomeScenePayload } from "@/lib/home-scene-state";
 import { DashboardFeatureStrip } from "@/components/game/DashboardFeatureStrip";
 
@@ -129,14 +125,6 @@ function FriendHomeVisit({ characterId }: { characterId: string }) {
 
 function MyCityHome() {
   const now = useLiveClock();
-  const world = useWorldClock();
-  const {
-    simulation,
-    ready: simulationReady,
-    busy: simulationBusy,
-    start,
-    complete,
-  } = useGameTime();
   const { data: character } = useQuery(q.character());
   const housingHomeQuery = useQuery({
     queryKey: ["housingHome"],
@@ -152,7 +140,7 @@ function MyCityHome() {
   const [isOnline, setIsOnline] = useState(
     () => typeof navigator === "undefined" || navigator.onLine,
   );
-  const [reloadToken, setReloadToken] = useState(0);
+  const [, setReloadToken] = useState(0);
   const revision = useRef(0);
   const latestLocalSave = useRef<HousingSave | null>(null);
   const pendingSave = useRef<HousingSave | null>(null);
@@ -268,108 +256,6 @@ function MyCityHome() {
       saveTimer.current = window.setTimeout(() => void saveToCloud(), 700);
     },
     [isOnline, saveToCloud],
-  );
-
-  const purchaseUpgrade = useCallback(
-    async ({ roomId, upgradeId }: { roomId: string; upgradeId: string }) => {
-      const result = await rpc.purchaseHomeUpgrade({
-        roomId,
-        upgradeId,
-        expectedRevision: revision.current,
-        requestId: crypto.randomUUID(),
-      });
-      if (!result || typeof result !== "object" || Array.isArray(result))
-        throw new Error("The server returned an invalid upgrade response.");
-      const response = result as {
-        ok?: boolean;
-        conflict?: boolean;
-        payload?: unknown;
-        revision?: number;
-        saved_at?: unknown;
-      };
-      if (response.conflict) {
-        await refetchHomeSave();
-        throw new Error(
-          "Your home changed on another device. The latest save has been loaded; try again.",
-        );
-      }
-      const updated = parseHousingSave(response.payload);
-      if (!response.ok || !updated || !Number.isSafeInteger(response.revision))
-        throw new Error("The server did not confirm the upgrade purchase.");
-      revision.current = response.revision!;
-      queryClient.setQueryData(q.homeSave().queryKey, {
-        payload: response.payload,
-        revision: response.revision,
-        saved_at: response.saved_at ?? new Date().toISOString(),
-      } as unknown as Json);
-      await queryClient.invalidateQueries({ queryKey: q.wallet().queryKey });
-      setSyncStatus("saved");
-      return updated;
-    },
-    [queryClient, refetchHomeSave],
-  );
-
-  const purchaseFurniture = useCallback(
-    async ({ itemId }: { itemId: string }) => {
-      if (!cloudSave || syncStatus !== "saved")
-        throw new Error("Wait for your home to finish saving before buying furniture.");
-      const result = await rpc.purchaseHomeFurniture({
-        itemId,
-        expectedRevision: revision.current,
-        requestId: crypto.randomUUID(),
-      });
-      if (!result || typeof result !== "object" || Array.isArray(result))
-        throw new Error("The server returned an invalid furniture purchase response.");
-      const response = result as {
-        ok?: boolean;
-        conflict?: boolean;
-        payload?: unknown;
-        revision?: number;
-        saved_at?: unknown;
-      };
-      if (response.conflict) {
-        await refetchHomeSave();
-        throw new Error(
-          "Your home changed on another device. The latest save has been loaded; try again.",
-        );
-      }
-      const updated = parseHousingSave(response.payload);
-      if (!response.ok || !updated || !Number.isSafeInteger(response.revision))
-        throw new Error("The server did not confirm the furniture purchase.");
-      revision.current = response.revision!;
-      queryClient.setQueryData(q.homeSave().queryKey, {
-        payload: response.payload,
-        revision: response.revision,
-        saved_at: response.saved_at ?? new Date().toISOString(),
-      } as unknown as Json);
-      await queryClient.invalidateQueries({ queryKey: q.wallet().queryKey });
-      setSyncStatus("saved");
-      return updated;
-    },
-    [cloudSave, queryClient, refetchHomeSave, syncStatus],
-  );
-
-  const performFurnitureAction = useCallback(
-    async (action: LifeActionId) => {
-      if (!cloudSave || syncStatus !== "saved")
-        return "Save your home layout to the cloud before using its furniture.";
-      if (!simulationReady || simulationBusy)
-        return "Your personal simulation is syncing. Try again in a moment.";
-      if (simulation.locationType !== "home") return "Travel home before using furniture.";
-      const requestId = `home-${crypto.randomUUID()}`;
-      const startError = await start(action, requestId);
-      if (startError) return startError;
-      return complete(requestId);
-    },
-    [
-      cloudSave,
-      syncStatus,
-      simulationReady,
-      simulationBusy,
-      simulation.locationType,
-      start,
-      complete,
-    ],
   );
 
   const synchronizedLocalKey = useRef("");
@@ -545,30 +431,6 @@ function MyCityHome() {
                 </button>
               )}
             </section>
-          )}
-          {housingHomeQuery.data?.home && (
-            <details className="game-panel p-3">
-              <summary className="cursor-pointer font-semibold focus-visible:outline-2 focus-visible:outline-[var(--ring)]">
-                Home activities and furniture
-              </summary>
-              <HomeInterior
-                key={`${character.id}:${reloadToken}`}
-                saveKey={storageKey}
-                {...(localIsNewer && localSave
-                  ? { initialSave: localSave.payload }
-                  : cloudSave
-                    ? { initialSave: cloudSave.payload }
-                    : {})}
-                onSave={scheduleSave}
-                onPurchaseUpgrade={purchaseUpgrade}
-                onFurnitureAction={performFurnitureAction}
-                authoritativeNeeds={simulation.needs}
-                {...(cloudSave && syncStatus === "saved"
-                  ? { onPurchaseFurniture: purchaseFurniture }
-                  : {})}
-                powerAvailable={world.data ? !isPowerOutageAt(world.data) : true}
-              />
-            </details>
           )}
         </>
       )}
