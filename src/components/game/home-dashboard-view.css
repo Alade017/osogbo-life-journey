@@ -1,8 +1,22 @@
-/* Player home dashboard: full-viewport command view for the /home page. */
+/* Player home dashboard: full-viewport command view for the /home page.
+   Colours come only from the app's existing tokens (see styles.css :root). */
 
-/* On the home route the content area spans the whole available viewport
-   (beside the sidebar on desktop, full width on mobile) instead of the
-   centred, max-width column used by other pages. */
+/* The home route has no sidebar on any device. Navigation there is the
+   bottom bar, which is shown at every width. */
+.city-game:has(.home-dashboard) .game-desktop-nav {
+  display: none !important;
+}
+
+.city-game:has(.home-dashboard) .city-game-frame {
+  display: block !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.city-game:has(.home-dashboard) .game-mobile-nav {
+  display: grid !important;
+}
+
+/* The content area spans the whole viewport instead of the centred column. */
 .city-game-main:has(.home-dashboard) {
   width: 100%;
   max-width: none;
@@ -20,130 +34,87 @@
   color: var(--foreground);
 }
 
-/* Top status pill */
+/* Top status pill: area and level, notifications, wallet balance */
 .hd-status {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px 16px;
-  padding: 10px 10px 10px 20px;
+  gap: 12px;
+  min-width: 0;
+  padding: 8px 8px 8px 16px;
   border: 1px solid var(--border);
-  border-radius: 28px;
+  border-radius: var(--shape-pill);
   background: var(--card);
   box-shadow: var(--elevation-card);
 }
 
-.hd-status-main {
+.hd-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  color: var(--primary);
+}
+
+.hd-area-copy {
   display: grid;
-  gap: 2px;
   min-width: 0;
 }
 
-.hd-time-row,
-.hd-sub-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 0;
-}
-
-.hd-time-row {
-  font-size: clamp(17px, 1.7vw, 22px);
+.hd-area-copy strong {
+  overflow: hidden;
+  font-family: var(--typeface-display);
+  font-size: 15px;
   font-weight: 700;
   color: var(--foreground);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.hd-sub-row {
-  font-size: 13px;
+.hd-area-copy small {
+  font-size: 12px;
   color: var(--muted-foreground);
-}
-
-.hd-sun {
-  color: var(--sun, #e0a325);
-}
-
-.hd-mood {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 700;
-}
-
-.hd-mood.is-positive {
-  color: #1f9d55;
-}
-
-.hd-mood.is-neutral {
-  color: var(--muted-foreground);
-}
-
-.hd-mood.is-negative {
-  color: var(--destructive);
-}
-
-.hd-separator {
-  color: var(--muted-foreground);
-}
-
-.hd-live-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  background: #1f9d55;
-  box-shadow: 0 0 0 3px rgb(31 157 85 / 0.18);
-}
-
-.hd-sub-row > span.truncate {
-  max-width: 220px;
 }
 
 .hd-status-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-left: auto;
+  gap: 8px;
+  flex: 0 0 auto;
 }
 
 .hd-icon-button,
-.hd-balance,
-.hd-add-button {
+.hd-balance {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 44px;
   border: 0;
-  color: var(--foreground);
   text-decoration: none;
   cursor: pointer;
   transition:
-    transform 160ms ease,
-    background-color 160ms ease;
+    transform var(--duration-control) ease,
+    box-shadow var(--duration-control) ease;
 }
 
 .hd-icon-button {
   position: relative;
   width: 44px;
-  border-radius: 999px;
-  background: var(--muted);
-}
-
-.hd-icon-button[aria-pressed="true"] {
-  background: var(--primary);
-  color: var(--primary-foreground, #fff);
+  border-radius: var(--shape-pill);
+  background: var(--color-primary-soft);
+  color: var(--primary);
 }
 
 .hd-notification-dot {
   position: absolute;
-  top: 4px;
-  right: 2px;
+  top: 2px;
+  right: 0;
   min-width: 18px;
   height: 18px;
   padding: 0 4px;
-  border-radius: 999px;
+  border-radius: var(--shape-pill);
   background: var(--destructive);
-  color: #fff;
+  color: var(--primary-foreground);
   font-size: 11px;
   font-weight: 700;
   line-height: 18px;
@@ -152,32 +123,25 @@
 
 .hd-balance {
   padding: 0 18px;
-  border-radius: 999px;
-  background: var(--muted);
-  font-family: var(--font-display, inherit);
-  font-size: clamp(15px, 1.5vw, 19px);
-  font-weight: 800;
+  border-radius: var(--shape-pill);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-family: var(--typeface-display);
+  font-size: clamp(14px, 1.4vw, 17px);
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-}
-
-.hd-add-button {
-  width: 46px;
-  border-radius: 999px;
-  background: #1f9d55;
-  color: #fff;
-  box-shadow: 0 6px 16px rgb(31 157 85 / 0.3);
+  box-shadow: var(--elevation-rest);
 }
 
 .hd-icon-button:hover,
-.hd-balance:hover,
-.hd-add-button:hover {
+.hd-balance:hover {
   transform: translateY(-1px);
+  box-shadow: var(--elevation-lift);
 }
 
 .hd-icon-button:focus-visible,
 .hd-balance:focus-visible,
-.hd-add-button:focus-visible,
 .hd-task:focus-visible,
 .hd-desk-card:focus-visible,
 .hd-avatar-bubble:focus-visible {
@@ -200,7 +164,6 @@
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: end;
   gap: 14px;
-  padding-bottom: env(safe-area-inset-bottom);
 }
 
 .hd-avatar-group {
@@ -216,24 +179,24 @@
   width: 68px;
   height: 68px;
   flex: 0 0 auto;
-  border: 3px solid #e4574b;
-  border-radius: 999px;
+  border: 3px solid var(--primary);
+  border-radius: var(--shape-pill);
   background: var(--card);
-  box-shadow: 0 6px 18px rgb(20 33 61 / 0.18);
+  box-shadow: var(--elevation-lift);
 }
 
 .hd-bubble-label {
+  max-width: 180px;
   padding: 6px 12px;
-  border-radius: 999px;
-  background: var(--card);
+  overflow: hidden;
   border: 1px solid var(--border);
+  border-radius: var(--shape-pill);
+  background: var(--card);
   font-size: 13px;
   font-weight: 600;
   color: var(--foreground);
-  white-space: nowrap;
-  overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 180px;
+  white-space: nowrap;
 }
 
 .hd-task {
@@ -241,29 +204,30 @@
   gap: 6px;
   align-self: end;
   justify-self: center;
+  box-sizing: border-box;
   width: min(100%, 520px);
   padding: 14px 22px;
-  border: 2px solid #e5b84a;
-  border-radius: 999px;
+  border: 2px solid var(--primary);
+  border-radius: var(--shape-pill);
   background: var(--card);
   box-shadow: var(--elevation-card);
   color: var(--foreground);
   text-decoration: none;
-  box-sizing: border-box;
 }
 
 .hd-task-title {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-weight: 800;
+  font-family: var(--typeface-display);
   font-size: 16px;
+  font-weight: 700;
 }
 
 .hd-task-sub {
+  overflow: hidden;
   font-size: 13px;
   color: var(--muted-foreground);
-  overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -272,16 +236,16 @@
   position: relative;
   display: block;
   height: 8px;
-  border-radius: 999px;
-  background: var(--muted);
   overflow: hidden;
+  border-radius: var(--shape-pill);
+  background: var(--muted);
 }
 
 .hd-task-fill {
   display: block;
   height: 100%;
-  border-radius: 999px;
-  background: #e5b84a;
+  border-radius: var(--shape-pill);
+  background: var(--primary);
   transition: width 300ms ease;
 }
 
@@ -294,57 +258,49 @@
   0% {
     transform: translateX(-100%);
   }
+
   100% {
     transform: translateX(260%);
   }
 }
 
 .hd-desk-card {
+  position: relative;
   display: grid;
   align-content: end;
   gap: 2px;
   width: clamp(140px, 16vw, 210px);
   aspect-ratio: 1.05;
   padding: 16px;
-  border-radius: 22px;
-  background: #3b4150;
-  color: #fff;
+  border-radius: var(--shape-card);
+  background: var(--brand-ink);
+  color: var(--color-surface);
   text-decoration: none;
-  box-shadow: 0 10px 24px rgb(20 33 61 / 0.2);
+  box-shadow: var(--shadow-card-hover);
 }
 
 .hd-desk-card > svg {
   position: absolute;
   top: 16px;
   left: 16px;
-  opacity: 0.85;
-}
-
-.hd-desk-card {
-  position: relative;
+  color: var(--color-primary-soft);
 }
 
 .hd-desk-title {
-  font-family: var(--font-display, inherit);
+  font-family: var(--typeface-display);
   font-size: 18px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .hd-desk-card small {
   font-size: 12px;
-  color: rgb(255 255 255 / 0.75);
+  color: var(--color-text-on-dark-soft);
 }
 
 /* Narrow screens: stack the bottom row so every control stays reachable */
 @media (max-width: 720px) {
   .hd-status {
-    padding: 12px 12px 12px 16px;
-  }
-
-  .hd-status-actions {
-    width: 100%;
-    margin-left: 0;
-    justify-content: flex-end;
+    padding: 8px 8px 8px 14px;
   }
 
   .hd-bottom {
@@ -360,19 +316,14 @@
   .hd-desk-card {
     grid-column: 1 / -1;
     width: 100%;
-    aspect-ratio: auto;
     min-height: 96px;
-  }
-
-  .hd-desk-card > svg {
-    top: 14px;
-    left: 16px;
+    aspect-ratio: auto;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .hd-task-fill.is-indeterminate {
-    animation: none;
     width: 100%;
+    animation: none;
   }
 }
