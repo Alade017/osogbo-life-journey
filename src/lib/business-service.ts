@@ -129,7 +129,7 @@ export async function executeBusinessCommand(command: BusinessCommand) {
       case "claimFixed":
         return supabase.rpc("claim_fixed_term_investment", { p_investment_id: command.id });
       case "cancelFixed":
-        return supabase.rpc("cancel_fixed_term_investment", {
+        return (supabase.rpc as any)("cancel_fixed_term_investment", {
           p_investment_id: command.id,
           p_request_id: command.requestId,
         });

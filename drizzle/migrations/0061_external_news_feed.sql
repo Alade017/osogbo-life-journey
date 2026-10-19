@@ -1,4 +1,4 @@
-﻿-- Cached external headlines for the in-game Nigeria and World news tabs.
+-- Cached external headlines for the in-game Nigeria and World news tabs.
 -- Publisher articles remain at their original URLs; no article body or image is stored.
 create table public.external_news_items (
   id uuid primary key default gen_random_uuid(),

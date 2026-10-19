@@ -1,9 +1,6 @@
 import {
   Dialog,
-  DialogClose,
   DialogContent,
-  DialogDescription,
-  DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
@@ -20,6 +17,7 @@ import {
   GraduationCap,
   HandCoins,
   HousePlus,
+  LoaderCircle,
   MapPinned,
   MessagesSquare,
   Newspaper,
@@ -35,97 +33,80 @@ import {
   SlidersHorizontal,
   UserRound,
   UsersRound,
+  type LucideIcon,
 } from "lucide-react";
-import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
-import { q } from "@/lib/game";
+import { q, rpc, useGameAction } from "@/lib/game";
 import { useQuery } from "@tanstack/react-query";
 import { useLiveClock } from "@/hooks/use-live-clock";
 import { OSOGBO_TIME_ZONE } from "@/lib/osogbo-weather";
-import { useEffect, useState, type ReactNode } from "react";
-import { PlayerSocial } from "@/components/game/PlayerSocial";
-import { BusinessInvestmentApp } from "@/components/game/BusinessInvestmentApp";
-import { BillboardAdApp } from "@/components/game/BillboardAdApp";
-import { CommunityPhoneApps, type CommunityPhoneApp } from "@/components/game/CommunityPhoneApps";
-import { CourseAndStallApps, type CourseAndStallApp } from "@/components/game/CourseAndStallApps";
-import {
-  PhoneContentPreview,
-  type PhoneContentPreviewApp,
-} from "@/components/game/PhoneContentPreview";
+import { useEffect, useRef, useState, lazy, Suspense, type ReactNode } from "react";
+import { type CommunityPhoneApp } from "@/components/game/CommunityPhoneApps";
+import { PhoneComingSoonApp } from "@/components/game/phone/PhoneComingSoonApp";
 import "./phone.css";
 
-// Some apps open a specific section of their page.
-function phoneAppLinkProps(to: string) {
-  if (to === "/social") return { search: { playerId: undefined } };
-  // Party opens on Events so players can organize a party from the phone.
-  if (to === "/party") return { search: { tab: "events" as const } };
-  return {};
-}
+// Lazy-loaded app views for performance on mobile and low-end Android
+const PlayerSocial = lazy(() =>
+  import("@/components/game/PlayerSocial").then((m) => ({ default: m.PlayerSocial }))
+);
+const PhoneMarketApp = lazy(() => import("@/components/game/phone/PhoneMarketApp"));
+const PhoneHousingApp = lazy(() => import("@/components/game/phone/PhoneHousingApp"));
+const PhonePartyApp = lazy(() => import("@/components/game/phone/PhonePartyApp"));
+const PhoneCareerApp = lazy(() => import("@/components/game/phone/PhoneCareerApp"));
+const PhoneMapApp = lazy(() => import("@/components/game/phone/PhoneMapApp"));
+const PhoneBankApp = lazy(() => import("@/components/game/phone/PhoneBankApp"));
+const PhoneJobsApp = lazy(() => import("@/components/game/phone/PhoneJobsApp"));
+const BusinessInvestmentApp = lazy(() =>
+  import("@/components/game/BusinessInvestmentApp").then((m) => ({
+    default: m.BusinessInvestmentApp,
+  }))
+);
+const BillboardAdApp = lazy(() =>
+  import("@/components/game/BillboardAdApp").then((m) => ({ default: m.BillboardAdApp }))
+);
+const CommunityPhoneApps = lazy(() =>
+  import("@/components/game/CommunityPhoneApps").then((m) => ({
+    default: m.CommunityPhoneApps,
+  }))
+);
 
-const PHONE_APPS = [
-  { label: "Property", to: "/property", icon: HousePlus, tone: "phone-app-green", active: true },
-  {
-    label: "Find homes",
-    to: "/properties",
-    icon: Building2,
-    tone: "phone-app-green",
-    active: true,
-  },
-  { label: "Jobs", to: "/jobs", icon: BriefcaseBusiness, tone: "phone-app-gold", active: true },
-  { label: "Party", to: "/party", icon: PartyPopper, tone: "phone-app-coral", active: true },
-  { label: "Bank", to: null, icon: Landmark, tone: "phone-app-blue", active: true },
-  { label: "Market", to: null, icon: Store, tone: "phone-app-coral", active: true },
-  {
-    label: "Education",
-    to: null,
-    icon: GraduationCap,
-    tone: "phone-app-blue",
-    active: true,
-  },
-  { label: "Map", to: null, icon: MapPinned, tone: "phone-app-blue", active: true },
-  { label: "People", to: null, icon: UsersRound, tone: "phone-app-coral", active: true },
-  { label: "Inventory", to: null, icon: Backpack, tone: "phone-app-blue", active: true },
-  { label: "Profile", to: null, icon: UserRound, tone: "phone-app-muted", active: true },
-  { label: "Messages", to: "/social", icon: MessagesSquare, tone: "phone-app-coral", active: true },
-  {
-    label: "Invest",
-    to: "/wallet",
-    icon: ChartNoAxesCombined,
-    tone: "phone-app-gold",
-    active: true,
-  },
-  { label: "Company", to: "/wallet", icon: Building2, tone: "phone-app-green", active: true },
-  {
-    label: "Businesses",
-    to: null,
-    icon: Building2,
-    tone: "phone-app-green",
-    active: true,
-  },
-  { label: "Billboards", to: null, icon: PanelsTopLeft, tone: "phone-app-gold", active: true },
-  { label: "Missions", to: null, icon: Target, tone: "phone-app-gold", active: true },
-  {
-    label: "Notifications",
-    to: null,
-    icon: Bell,
-    tone: "phone-app-gold",
-    active: true,
-  },
-  { label: "Settings", to: null, icon: Settings, tone: "phone-app-muted", active: true },
-  { label: "Calendar", to: null, icon: CalendarDays, tone: "phone-app-blue", active: true },
-  {
-    label: "Food Delivery",
-    to: null,
-    icon: UtensilsCrossed,
-    tone: "phone-app-coral",
-    active: true,
-  },
-  { label: "Okada Rides", to: null, icon: Bike, tone: "phone-app-green", active: true },
-  { label: "Contribution", to: null, icon: HandCoins, tone: "phone-app-gold", active: true },
-  { label: "Leaderboard", to: null, icon: Trophy, tone: "phone-app-gold", active: true },
-  { label: "Town News", to: null, icon: Newspaper, tone: "phone-app-blue", active: true },
-  { label: "Courses", to: null, icon: BookOpen, tone: "phone-app-blue", active: true },
-  { label: "Market Stalls", to: null, icon: Store, tone: "phone-app-green", active: true },
+type PhoneAppDefinition = {
+  label: string;
+  icon: LucideIcon;
+  tone: string;
+};
+
+const PHONE_APPS: readonly PhoneAppDefinition[] = [
+  { label: "Messages", icon: MessagesSquare, tone: "phone-app-coral" },
+  { label: "Market", icon: Store, tone: "phone-app-coral" },
+  { label: "Housing", icon: HousePlus, tone: "phone-app-green" },
+  { label: "Party Life", icon: PartyPopper, tone: "phone-app-coral" },
+  { label: "Career Life", icon: GraduationCap, tone: "phone-app-blue" },
+  { label: "Map", icon: MapPinned, tone: "phone-app-blue" },
+  { label: "Bank", icon: Landmark, tone: "phone-app-blue" },
+  { label: "Jobs", icon: BriefcaseBusiness, tone: "phone-app-gold" },
+  { label: "Property", icon: HousePlus, tone: "phone-app-green" },
+  { label: "Find homes", icon: Building2, tone: "phone-app-green" },
+  { label: "Party", icon: PartyPopper, tone: "phone-app-coral" },
+  { label: "Education", icon: GraduationCap, tone: "phone-app-blue" },
+  { label: "Invest", icon: ChartNoAxesCombined, tone: "phone-app-gold" },
+  { label: "Company", icon: Building2, tone: "phone-app-green" },
+  { label: "Billboards", icon: PanelsTopLeft, tone: "phone-app-gold" },
+  { label: "Missions", icon: Target, tone: "phone-app-gold" },
+  { label: "Notifications", icon: Bell, tone: "phone-app-gold" },
+  { label: "Settings", icon: Settings, tone: "phone-app-muted" },
+  { label: "Calendar", icon: CalendarDays, tone: "phone-app-blue" },
+  { label: "Food Delivery", icon: UtensilsCrossed, tone: "phone-app-coral" },
+  { label: "Okada Rides", icon: Bike, tone: "phone-app-green" },
+  { label: "Contribution", icon: HandCoins, tone: "phone-app-gold" },
+  { label: "Leaderboard", icon: Trophy, tone: "phone-app-gold" },
+  { label: "Town News", icon: Newspaper, tone: "phone-app-blue" },
+  { label: "Courses", icon: BookOpen, tone: "phone-app-blue" },
+  { label: "Market Stalls", icon: Store, tone: "phone-app-green" },
+  { label: "People", icon: UsersRound, tone: "phone-app-coral" },
+  { label: "Inventory", icon: Backpack, tone: "phone-app-blue" },
+  { label: "Profile", icon: UserRound, tone: "phone-app-muted" },
+  { label: "Businesses", icon: Building2, tone: "phone-app-green" },
 ] as const;
 
 const COMMUNITY_APPS = new Set<CommunityPhoneApp>([
@@ -136,20 +117,15 @@ const COMMUNITY_APPS = new Set<CommunityPhoneApp>([
   "Leaderboard",
   "Town News",
 ]);
-const COURSE_AND_STALL_APPS = new Set<CourseAndStallApp>(["Courses", "Market Stalls"]);
-const PREVIEW_APPS = new Set<PhoneContentPreviewApp>([
-  "Bank",
-  "Market",
-  "Education",
-  "Map",
-  "People",
-  "Inventory",
-  "Profile",
-  "Businesses",
-  "Missions",
-  "Notifications",
-  "Settings",
-]);
+
+function PhoneAppLoadingSpinner({ title }: { title: string }) {
+  return (
+    <div className="flex h-full w-full flex-col items-center justify-center p-8 text-center text-muted-foreground">
+      <LoaderCircle className="mb-2 h-7 w-7 animate-spin text-primary" />
+      <p className="text-xs font-semibold">Opening {title}...</p>
+    </div>
+  );
+}
 
 export function PhoneLauncher({
   className,
@@ -165,25 +141,33 @@ export function PhoneLauncher({
   onOpenChange?: (open: boolean) => void;
 }) {
   const [activeApp, setActiveApp] = useState<string | null>(null);
+  const [openedApps, setOpenedApps] = useState<Set<string>>(new Set());
   const [dialogOpen, setDialogOpen] = useState(false);
   const [messagePlayerId, setMessagePlayerId] = useState<string | undefined>();
+
   const { data: missions } = useQuery(q.missions());
+  const claimMission = useGameAction(rpc.claimMission);
+  const { data: notifications } = useQuery(q.notifications());
+  const markRead = useGameAction(rpc.markRead);
+
   const missionCount = (missions ?? []).filter(
-    (mission) => mission.status === "in_progress" || mission.status === "completed",
+    (mission) => mission.status === "in_progress" || mission.status === "completed"
   ).length;
   const claimableMissionCount = (missions ?? []).filter(
-    (mission) => mission.status === "completed",
+    (mission) => mission.status === "completed"
   ).length;
+
   useEffect(() => {
     const openMessages = (event: Event) => {
       const playerId = (event as CustomEvent<{ playerId?: string }>).detail?.playerId;
       setMessagePlayerId(playerId);
-      setActiveApp("Messages");
+      openApp("Messages");
       setDialogOpen(true);
     };
     window.addEventListener("osogbo-open-messages", openMessages);
     return () => window.removeEventListener("osogbo-open-messages", openMessages);
   }, []);
+
   const now = useLiveClock();
   const phoneTime = now
     ? new Intl.DateTimeFormat("en-NG", {
@@ -193,6 +177,200 @@ export function PhoneLauncher({
         timeZone: OSOGBO_TIME_ZONE,
       }).format(now)
     : "--:--";
+
+  const openApp = (appName: string) => {
+    setOpenedApps((prev) => new Set(prev).add(appName));
+    setActiveApp(appName);
+  };
+
+  const returnHome = () => {
+    setActiveApp(null);
+  };
+
+  // Swipe-up gesture detection on home indicator
+  const touchStartY = useRef<number | null>(null);
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartY.current = e.touches[0]?.clientY ?? null;
+  };
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartY.current !== null && e.touches[0]) {
+      const deltaY = touchStartY.current - e.touches[0].clientY;
+      if (deltaY > 25) {
+        returnHome();
+        touchStartY.current = null;
+      }
+    }
+  };
+  const handleTouchEnd = () => {
+    touchStartY.current = null;
+  };
+
+  // Renders the full view for each supported app
+  const renderAppContent = (appName: string) => {
+    if (appName === "Shortcuts") {
+      return (
+        <div className="p-3">
+          {shortcutEditor ?? (
+            <p className="text-xs text-muted-foreground">Configure quick-access shortcuts.</p>
+          )}
+        </div>
+      );
+    }
+
+    if (appName === "Messages") {
+      return (
+        <PlayerSocial
+          initialTab={messagePlayerId ? "players" : "messages"}
+          initialPlayerId={messagePlayerId}
+          phoneMode
+        />
+      );
+    }
+
+    if (appName === "Market" || appName === "Market Stalls") {
+      return <PhoneMarketApp />;
+    }
+
+    if (appName === "Housing" || appName === "Property" || appName === "Find homes") {
+      return <PhoneHousingApp />;
+    }
+
+    if (appName === "Party Life" || appName === "Party") {
+      return <PhonePartyApp />;
+    }
+
+    if (appName === "Career Life" || appName === "Education" || appName === "Courses") {
+      return <PhoneCareerApp />;
+    }
+
+    if (appName === "Map") {
+      return <PhoneMapApp />;
+    }
+
+    if (appName === "Bank") {
+      return <PhoneBankApp />;
+    }
+
+    if (appName === "Jobs") {
+      return <PhoneJobsApp />;
+    }
+
+    if (appName === "Invest" || appName === "Company" || appName === "Businesses") {
+      return <BusinessInvestmentApp mode={appName === "Invest" ? "invest" : "company"} />;
+    }
+
+    if (appName === "Billboards") {
+      return <BillboardAdApp />;
+    }
+
+    if (COMMUNITY_APPS.has(appName as CommunityPhoneApp)) {
+      return <CommunityPhoneApps app={appName as CommunityPhoneApp} />;
+    }
+
+    if (appName === "Missions") {
+      return (
+        <div className="phone-sub-app p-3 space-y-3">
+          <div className="phone-card p-3">
+            <h4 className="font-bold text-sm mb-1">Active Missions in Osogbo</h4>
+            <p className="text-xs text-muted-foreground mb-3">
+              Complete goals around town and collect in-game cash and XP.
+            </p>
+            {missions && missions.length > 0 ? (
+              <div className="space-y-2">
+                {missions.map((m) => (
+                  <div key={m.id} className="p-2.5 rounded-xl border border-border bg-card space-y-1.5">
+                    <div className="flex justify-between items-start">
+                      <span className="font-bold text-xs">{m.mission?.title ?? "Town Goal"}</span>
+                      <span
+                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                          m.status === "completed"
+                            ? "bg-emerald-500/20 text-emerald-600"
+                            : "bg-amber-500/20 text-amber-600"
+                        }`}
+                      >
+                        {m.status === "completed" ? "Completed" : "In Progress"}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">{m.mission?.description}</p>
+                    {m.status === "completed" && (
+                      <button
+                        type="button"
+                        disabled={claimMission.isPending}
+                        onClick={() => claimMission.mutate(m.id)}
+                        className="w-full py-1.5 rounded-lg text-xs font-bold bg-primary text-primary-foreground hover:opacity-90 mt-1"
+                      >
+                        Claim Reward
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground py-4 text-center">No active missions right now.</p>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    if (appName === "Notifications") {
+      return (
+        <div className="phone-sub-app p-3 space-y-3">
+          <div className="phone-card p-3 space-y-2">
+            <div className="flex items-center justify-between border-b border-border/40 pb-2">
+              <h4 className="font-bold text-sm">Town Notifications</h4>
+              <button
+                type="button"
+                onClick={() => markRead.mutate()}
+                className="text-xs font-bold text-primary hover:underline"
+              >
+                Mark all read
+              </button>
+            </div>
+            {notifications && notifications.length > 0 ? (
+              <div className="space-y-2">
+                {notifications.map((n) => (
+                  <div key={n.id} className="p-2 rounded-lg border border-border text-xs space-y-0.5">
+                    <strong className="block font-semibold">{n.kind.replace(/_/g, " ").toUpperCase()}</strong>
+                    <p className="text-muted-foreground">{n.body ?? "Notification update from Osogbo."}</p>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground py-4 text-center">No notifications yet.</p>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    if (appName === "Settings") {
+      return (
+        <div className="phone-sub-app p-3 space-y-3">
+          <div className="phone-card p-3 space-y-3">
+            <h4 className="font-bold text-sm border-b border-border/40 pb-2">Device Preferences</h4>
+            <div className="flex items-center justify-between text-xs py-1">
+              <span>Haptic Feedback</span>
+              <span className="font-bold text-emerald-600">Enabled</span>
+            </div>
+            <div className="flex items-center justify-between text-xs py-1">
+              <span>Network Carrier</span>
+              <span className="font-bold">OSUN WAT 4G</span>
+            </div>
+            <div className="flex items-center justify-between text-xs py-1">
+              <span>Timezone</span>
+              <span className="font-bold">Africa/Lagos (WAT)</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Fallback coming soon for any unbuilt or auxiliary app
+    const appDef = PHONE_APPS.find((a) => a.label === appName);
+    const Icon = appDef?.icon ?? Smartphone;
+    return <PhoneComingSoonApp title={appName} icon={Icon} onHome={returnHome} />;
+  };
 
   return (
     <Dialog
@@ -224,6 +402,7 @@ export function PhoneLauncher({
       <DialogContent className="phone-dialog">
         <DialogTitle className="sr-only">In-game phone</DialogTitle>
         <div className="phone-screen">
+          {/* Status Bar */}
           <div className="phone-status">
             <span className="phone-status-time">{phoneTime}</span>
             <span className="phone-status-brand">OSUN WAT</span>
@@ -238,210 +417,105 @@ export function PhoneLauncher({
               </span>
             </span>
           </div>
-          {activeApp === "Shortcuts" ? (
-            <div className="phone-app-view">
-              <div className="phone-app-toolbar">
+
+          {/* Launcher Home Grid: visible when activeApp is null */}
+          <div
+            className="phone-app-grid"
+            style={{ display: activeApp === null ? "grid" : "none" }}
+          >
+            {shortcutEditor && (
+              <button
+                type="button"
+                className="phone-app"
+                onClick={() => openApp("Shortcuts")}
+                aria-label="Open Shortcuts"
+              >
+                <span className="phone-app-icon phone-app-muted">
+                  <SlidersHorizontal className="h-5 w-5" aria-hidden="true" />
+                </span>
+                <span>Shortcuts</span>
+              </button>
+            )}
+
+            {PHONE_APPS.map((app) => {
+              const Icon = app.icon;
+              const badge =
+                app.label === "Missions" && missionCount > 0
+                  ? missionCount > 9
+                    ? "9+"
+                    : missionCount
+                  : null;
+
+              return (
                 <button
                   type="button"
-                  onClick={() => setActiveApp(null)}
-                  aria-label="Back to phone apps"
+                  className="phone-app"
+                  key={app.label}
+                  onClick={() => openApp(app.label)}
+                  aria-label={`Open ${app.label}`}
                 >
-                  <ChevronLeft size={16} aria-hidden="true" /> <span>Apps</span>
+                  <span className={cn("phone-app-icon", app.tone)}>
+                    <Icon className="h-5 w-5" aria-hidden="true" />
+                    {badge ? (
+                      <i className="phone-app-badge" aria-label={`${badge} active notifications`}>
+                        {badge}
+                      </i>
+                    ) : null}
+                  </span>
+                  <span>{app.label}</span>
                 </button>
-                <strong>Shortcuts</strong>
-                <span aria-hidden="true" />
-              </div>
-              {shortcutEditor}
-            </div>
-          ) : activeApp === "Messages" ? (
-            <div className="phone-app-view">
-              <div className="phone-app-toolbar">
-                <button
-                  type="button"
-                  onClick={() => setActiveApp(null)}
-                  aria-label="Back to phone apps"
-                >
-                  <ChevronLeft size={16} aria-hidden="true" /> <span>Apps</span>
-                </button>
-                <strong>Messages</strong>
-                <span aria-hidden="true" />
-              </div>
-              <PlayerSocial
-                initialTab={messagePlayerId ? "players" : "messages"}
-                initialPlayerId={messagePlayerId}
-                phoneMode
-              />
-            </div>
-          ) : activeApp === "Invest" || activeApp === "Company" ? (
-            <div className="phone-app-view">
-              <div className="phone-app-toolbar">
-                <button
-                  type="button"
-                  onClick={() => setActiveApp(null)}
-                  aria-label="Back to phone apps"
-                >
-                  <ChevronLeft size={16} aria-hidden="true" /> <span>Apps</span>
-                </button>
-                <strong>{activeApp}</strong>
-                <span aria-hidden="true" />
-              </div>
-              <BusinessInvestmentApp mode={activeApp === "Invest" ? "invest" : "company"} />
-            </div>
-          ) : activeApp === "Billboards" ? (
-            <div className="phone-app-view">
-              <div className="phone-app-toolbar">
-                <button
-                  type="button"
-                  onClick={() => setActiveApp(null)}
-                  aria-label="Back to phone apps"
-                >
-                  <ChevronLeft size={16} aria-hidden="true" /> <span>Apps</span>
-                </button>
-                <strong>Billboards</strong>
-                <span aria-hidden="true" />
-              </div>
-              <BillboardAdApp />
-            </div>
-          ) : activeApp && COMMUNITY_APPS.has(activeApp as CommunityPhoneApp) ? (
-            <div className="phone-app-view">
-              <div className="phone-app-toolbar">
-                <button
-                  type="button"
-                  onClick={() => setActiveApp(null)}
-                  aria-label="Back to phone apps"
-                >
-                  <ChevronLeft size={16} aria-hidden="true" /> <span>Apps</span>
-                </button>
-                <strong>{activeApp}</strong>
-                <span aria-hidden="true" />
-              </div>
-              <CommunityPhoneApps app={activeApp as CommunityPhoneApp} />
-            </div>
-          ) : activeApp && COURSE_AND_STALL_APPS.has(activeApp as CourseAndStallApp) ? (
-            <div className="phone-app-view">
-              <div className="phone-app-toolbar">
-                <button
-                  type="button"
-                  onClick={() => setActiveApp(null)}
-                  aria-label="Back to phone apps"
-                >
-                  <ChevronLeft size={16} aria-hidden="true" /> <span>Apps</span>
-                </button>
-                <strong>{activeApp}</strong>
-                <span aria-hidden="true" />
-              </div>
-              <CourseAndStallApps app={activeApp as CourseAndStallApp} />
-            </div>
-          ) : activeApp && PREVIEW_APPS.has(activeApp as PhoneContentPreviewApp) ? (
-            <div className="phone-app-view">
-              <div className="phone-app-toolbar">
-                <button
-                  type="button"
-                  onClick={() => setActiveApp(null)}
-                  aria-label="Back to phone apps"
-                >
-                  <ChevronLeft size={16} aria-hidden="true" /> <span>Apps</span>
-                </button>
-                <strong>{activeApp}</strong>
-                <span aria-hidden="true" />
-              </div>
-              <PhoneContentPreview app={activeApp as PhoneContentPreviewApp} />
-            </div>
-          ) : (
-            <>
-              {missionCount > 0 && (
-                <DialogClose asChild>
-                  <Link to="/missions" className="phone-mission-summary">
-                    <span className="phone-app-icon phone-app-gold">
-                      <Target className="h-5 w-5" />
-                    </span>
-                    <span>
-                      <strong>Missions</strong>
-                      <small>
-                        {claimableMissionCount
-                          ? `${claimableMissionCount} reward${claimableMissionCount === 1 ? "" : "s"} ready to claim`
-                          : `${missionCount} active mission${missionCount === 1 ? "" : "s"}`}
-                      </small>
-                    </span>
-                  </Link>
-                </DialogClose>
-              )}
-              <div className="phone-app-grid">
-                {shortcutEditor && (
+              );
+            })}
+          </div>
+
+          {/* Opened Apps: retain state when navigating back and forth */}
+          {Array.from(openedApps).map((appName) => {
+            const isVisible = activeApp === appName;
+            return (
+              <div
+                key={appName}
+                className="phone-app-view"
+                style={{ display: isVisible ? "flex" : "none" }}
+              >
+                <div className="phone-app-toolbar">
                   <button
                     type="button"
-                    className="phone-app"
-                    onClick={() => setActiveApp("Shortcuts")}
+                    onClick={returnHome}
+                    className="phone-back-button"
+                    aria-label="Back to apps"
                   >
-                    <span className="phone-app-icon phone-app-muted">
-                      <SlidersHorizontal className="h-5 w-5" />
-                    </span>
-                    <span>Shortcuts</span>
+                    <ChevronLeft size={18} aria-hidden="true" />
+                    <span>Apps</span>
                   </button>
-                )}
-                {PHONE_APPS.map((app) => {
-                  const Icon = app.icon;
-                  if (
-                    app.label === "Messages" ||
-                    app.label === "Invest" ||
-                    app.label === "Company" ||
-                    app.label === "Billboards" ||
-                    COMMUNITY_APPS.has(app.label as CommunityPhoneApp) ||
-                    COURSE_AND_STALL_APPS.has(app.label as CourseAndStallApp) ||
-                    PREVIEW_APPS.has(app.label as PhoneContentPreviewApp)
-                  ) {
-                    return (
-                      <button
-                        type="button"
-                        className="phone-app"
-                        key={app.label}
-                        onClick={() => setActiveApp(app.label)}
-                      >
-                        <span className={cn("phone-app-icon", app.tone)}>
-                          <Icon className="h-5 w-5" />
-                          {app.label === "Missions" && missionCount > 0 ? (
-                            <i
-                              className="phone-app-badge"
-                              aria-label={`${missionCount} active missions`}
-                            >
-                              {missionCount > 9 ? "9+" : missionCount}
-                            </i>
-                          ) : null}
-                        </span>
-                        <span>{app.label}</span>
-                      </button>
-                    );
-                  }
-                  return app.active && app.to ? (
-                    <DialogClose asChild key={app.label}>
-                      <Link to={app.to} {...phoneAppLinkProps(app.to)} className="phone-app">
-                        <span className={cn("phone-app-icon", app.tone)}>
-                          <Icon className="h-5 w-5" />
-                        </span>
-                        <span>{app.label}</span>
-                      </Link>
-                    </DialogClose>
-                  ) : (
-                    <div
-                      className="phone-app phone-app-disabled"
-                      key={app.label}
-                      aria-disabled="true"
-                      title="Not available yet"
-                    >
-                      <span className={cn("phone-app-icon", app.tone)}>
-                        <Icon className="h-5 w-5" />
-                      </span>
-                      <span>{app.label}</span>
-                      <small>Later</small>
-                    </div>
-                  );
-                })}
+                  <strong>{appName}</strong>
+                  <div className="w-8" aria-hidden="true" />
+                </div>
+                <div className="phone-app-body">
+                  <Suspense fallback={<PhoneAppLoadingSpinner title={appName} />}>
+                    {renderAppContent(appName)}
+                  </Suspense>
+                </div>
               </div>
-            </>
-          )}
-          <div className="phone-home-indicator" aria-hidden="true" />
+            );
+          })}
+
+          {/* Home indicator bar button with swipe-up support */}
+          <button
+            type="button"
+            className="phone-home-bar-button"
+            onClick={returnHome}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            aria-label="Return to phone apps"
+            title="Home"
+          >
+            <span className="phone-home-indicator" aria-hidden="true" />
+          </button>
         </div>
       </DialogContent>
     </Dialog>
   );
 }
+
+export default PhoneLauncher;

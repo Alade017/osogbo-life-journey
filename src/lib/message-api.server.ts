@@ -85,9 +85,9 @@ export async function handleMessageSendRequest(request: Request) {
         p_channel: input.channel,
         p_body: input.body,
         p_request_id: requestId,
-        p_location_id: input.locationId ?? null,
-        p_conversation_id: input.conversationId ?? null,
-        p_reply_to_message_id: input.replyToMessageId ?? null,
+        ...(input.locationId ? { p_location_id: input.locationId } : {}),
+        ...(input.conversationId ? { p_conversation_id: input.conversationId } : {}),
+        ...(input.replyToMessageId ? { p_reply_to_message_id: input.replyToMessageId } : {}),
       });
       if (error) throw new Error(error.message);
       return data;

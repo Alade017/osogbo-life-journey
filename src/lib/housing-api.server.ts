@@ -255,7 +255,7 @@ async function productionHandlers() {
         p_action: String(payload["action"]),
         p_item_id: String(payload["item_id"]),
         p_idempotency_key: String(payload["idempotency_key"]),
-        p_slot_id: typeof payload["slot_id"] === "string" ? payload["slot_id"] : null,
+        p_slot_id: typeof payload["slot_id"] === "string" ? payload["slot_id"] : "",
         p_x: typeof payload["x"] === "number" ? payload["x"] : 50,
         p_y: typeof payload["y"] === "number" ? payload["y"] : 50,
       });

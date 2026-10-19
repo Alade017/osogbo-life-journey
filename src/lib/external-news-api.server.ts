@@ -1,4 +1,4 @@
-﻿import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 export type ExternalNewsRegion = "nigeria" | "world";
 export type ExternalNewsItem = {
@@ -43,17 +43,17 @@ export function mapGdeltArticles(region: ExternalNewsRegion, payload: unknown) {
   const seen = new Set<string>();
   return articles.flatMap((entry) => {
     const item = entry as Record<string, unknown>;
-    const sourceUrl = safeText(item.url, 2000);
-    const title = safeText(item.title, 300);
+    const sourceUrl = safeText(item["url"], 2000);
+    const title = safeText(item["title"], 300);
     if (!sourceUrl || !title || !/^https?:\/\//.test(sourceUrl) || seen.has(sourceUrl)) return [];
     seen.add(sourceUrl);
     return [{
       region,
       provider: "gdelt",
-      source_name: sourceName(sourceUrl, item.domain),
+      source_name: sourceName(sourceUrl, item["domain"]),
       source_url: sourceUrl,
       title,
-      published_at: parseDate(item.seendate),
+      published_at: parseDate(item["seendate"]),
       expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
     }];
   });

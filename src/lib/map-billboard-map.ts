@@ -4,7 +4,19 @@ import type { Advertisement, GameBillboard, Location } from "@/lib/game";
 import type { Database } from "@/integrations/supabase/types";
 
 export type BillboardCampaign = Advertisement;
-export type PlayerBillboardCampaign = Database["public"]["Tables"]["player_advertisements"]["Row"];
+export type PlayerBillboardCampaign = {
+  id: string;
+  billboard_id: string;
+  advertiser_name: string;
+  title: string;
+  description: string;
+  creative_theme: string;
+  starts_at: string;
+  ends_at: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+};
 
 export type CurrentMapBillboard = {
   landmarkId: string;

@@ -39,7 +39,7 @@ export function parseAdvertisingMarket(value: unknown): AdvertisingMarket {
 }
 
 export async function getAdvertisingMarket() {
-  const { data, error } = await supabase.rpc("get_player_advertising_market");
+  const { data, error } = await (supabase.rpc as any)("get_player_advertising_market");
   if (error) throw new Error(error.message);
   return parseAdvertisingMarket(data);
 }
@@ -55,7 +55,7 @@ export type PurchaseAdInput = {
 };
 
 export async function purchasePlayerAd(input: PurchaseAdInput) {
-  const { data, error } = await supabase.rpc("purchase_player_advertisement", {
+  const { data, error } = await (supabase.rpc as any)("purchase_player_advertisement", {
     p_billboard_id: input.billboardId,
     p_advertiser_name: input.advertiserName,
     p_title: input.title,
@@ -76,7 +76,7 @@ export type UpdateAdInput = Pick<
 > & { advertisementId: string };
 
 export async function updatePlayerAd(input: UpdateAdInput) {
-  const { data, error } = await supabase.rpc("update_player_advertisement", {
+  const { data, error } = await (supabase.rpc as any)("update_player_advertisement", {
     p_advertisement_id: input.advertisementId,
     p_advertiser_name: input.advertiserName,
     p_title: input.title,

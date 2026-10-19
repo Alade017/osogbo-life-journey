@@ -91,7 +91,7 @@ function GameLayout() {
   useEffect(() => {
     if (!character?.id) return;
     const touch = () => {
-      if (!document.hidden && navigator.onLine) void supabase.rpc("touch_player_presence");
+      if (!document.hidden && navigator.onLine) void (supabase.rpc as any)("touch_player_presence");
     };
     touch();
     const timer = window.setInterval(touch, 25000);

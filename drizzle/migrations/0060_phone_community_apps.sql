@@ -1,4 +1,4 @@
-﻿-- Durable backing for Calendar, Food Delivery, Okada, Contributions, Leaderboard,
+-- Durable backing for Calendar, Food Delivery, Okada, Contributions, Leaderboard,
 -- Town News, Courses, and Market Stalls. All debits remain server-authoritative.
 create table public.town_events (id uuid primary key default gen_random_uuid(), slug text not null unique, title text not null check(length(btrim(title)) between 3 and 120), venue text not null check(length(btrim(venue)) between 2 and 120), starts_at timestamptz not null, created_at timestamptz not null default now());
 create table public.player_event_reminders (user_id uuid not null references public.profiles(id) on delete cascade, event_id uuid not null references public.town_events(id) on delete cascade, created_at timestamptz not null default now(), primary key(user_id,event_id));

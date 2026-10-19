@@ -622,12 +622,12 @@ export function PlayerSocial({
     enabled: friendIds.length > 0,
     refetchInterval: 10000,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("player_online_presence")
         .select("character_id,seen_at")
         .in("character_id", friendIds);
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as { character_id: string; seen_at: string }[];
     },
   });
   const isFriendOnline = (id: string) => {

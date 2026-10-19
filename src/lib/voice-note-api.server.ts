@@ -69,7 +69,7 @@ export async function handleVoiceUploadRequest(request: Request) {
         .upload(path, await file.arrayBuffer(), { contentType: file.type, upsert: true });
       if (uploadError) throw new Error("VOICE_UPLOAD_FAILED");
       try {
-        const { data, error } = await supabaseAdmin.rpc("create_voice_message_as_user", {
+        const { data, error } = await (supabaseAdmin.rpc as any)("create_voice_message_as_user", {
           p_user_id: userId,
           p_thread_id: threadId,
           p_path: path,
@@ -93,7 +93,7 @@ export async function handleVoiceDownloadRequest(request: Request, messageId: st
   const userId = await authenticatedUser(request);
   if (!userId) return response({ error: { code: "UNAUTHORIZED" } }, 401);
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin.rpc("get_voice_note_as_user", {
+  const { data, error } = await (supabaseAdmin.rpc as any)("get_voice_note_as_user", {
     p_user_id: userId,
     p_message_id: messageId,
   });
@@ -110,7 +110,7 @@ export async function handleVoiceCleanupRequest(request: Request) {
   if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`)
     return response({ error: { code: "UNAUTHORIZED" } }, 401);
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data, error } = await supabaseAdmin.rpc("list_expired_voice_notes");
+  const { data, error } = await (supabaseAdmin.rpc as any)("list_expired_voice_notes");
   if (error) return response({ error: { code: "VOICE_CLEANUP_FAILED" } }, 500);
   const candidates = Array.isArray(data)
     ? data.filter(
@@ -127,7 +127,7 @@ export async function handleVoiceCleanupRequest(request: Request) {
     .remove(candidates.map((item) => item.path));
   if (removedStorage.error)
     return response({ error: { code: "VOICE_STORAGE_CLEANUP_FAILED" } }, 500);
-  const finalized = await supabaseAdmin.rpc("finalize_expired_voice_notes", {
+  const finalized = await (supabaseAdmin.rpc as any)("finalize_expired_voice_notes", {
     p_message_ids: candidates.map((item) => item.message_id),
   });
   if (finalized.error) return response({ error: { code: "VOICE_CLEANUP_FAILED" } }, 500);

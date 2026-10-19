@@ -51,7 +51,7 @@ function SocialPage() {
     queryKey: ["nearbyNpcEncounters", character?.current_location_id],
     enabled: !!character?.current_location_id,
     queryFn: async () => {
-      const { data, error } = await supabase.rpc("get_nearby_npc_encounters");
+      const { data, error } = await (supabase.rpc as any)("get_nearby_npc_encounters");
       if (error) throw error;
       return Array.isArray(data)
         ? (data as Array<{
@@ -99,12 +99,10 @@ function SocialPage() {
     onSuccess: (result, variables) => {
       toast[result.accepted ? "success" : "message"](result.message);
       if (result.accepted) {
-        void supabase
-          .rpc("publish_npc_encounter", {
-            p_npc_id: variables.npcId,
-            p_action: variables.action,
-          })
-          .then(({ error }) => {
+        void (supabase.rpc as any)("publish_npc_encounter", {
+          p_npc_id: variables.npcId,
+          p_action: variables.action,
+        }).then(({ error }: { error?: unknown }) => {
             if (error) return;
             void qc.invalidateQueries({ queryKey: ["nearbyNpcEncounters"] });
           });

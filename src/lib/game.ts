@@ -80,11 +80,11 @@ export const q = {
       staleTime: 30_000,
       queryFn: async () =>
         unwrap(
-          await supabase
+          await (supabase as any)
             .from("player_advertisements")
             .select("*")
             .order("starts_at", { ascending: false }),
-        ),
+        ) as unknown as import("@/lib/map-billboard-map").PlayerBillboardCampaign[],
     }),
   businessMarket: () =>
     queryOptions({
@@ -421,7 +421,7 @@ export const rpc = {
       await supabase.rpc("save_player_world_position", {
         p_world_x: args.worldX,
         p_world_y: args.worldY,
-        p_building_slug: args.buildingSlug,
+        p_building_slug: args.buildingSlug ?? "",
         p_expected_revision: args.expectedRevision,
         p_request_id: args.requestId,
       }),
@@ -618,8 +618,8 @@ export const rpc = {
         p_action: args.action,
         p_request_id: args.requestId,
         p_amount: args.amount ?? 0,
-        p_target_character_id: args.targetCharacterId ?? null,
-        p_details: args.details ?? null,
+        ...(args.targetCharacterId ? { p_target_character_id: args.targetCharacterId } : {}),
+        ...(args.details ? { p_details: args.details } : {}),
       }),
     ),
   claimMission: async (id: string) =>

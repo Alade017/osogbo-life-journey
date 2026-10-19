@@ -250,9 +250,8 @@ export async function sendSocialMessage(input: {
 export async function getSocialMessages(input: { locationId?: string; conversationId?: string }) {
   const data = unwrap(
     await supabase.rpc("get_social_messages", {
-      p_location_id: input.locationId ?? null,
-      p_conversation_id: input.conversationId ?? null,
-      p_before: null,
+      ...(input.locationId ? { p_location_id: input.locationId } : {}),
+      ...(input.conversationId ? { p_conversation_id: input.conversationId } : {}),
       p_limit: 50,
     }),
   );
@@ -301,7 +300,7 @@ export async function reportPlayer(input: {
       p_target_character_id: input.targetCharacterId,
       p_category: input.category,
       p_details: input.details ?? "",
-      p_message_id: input.messageId ?? null,
+      ...(input.messageId ? { p_message_id: input.messageId } : {}),
     }),
   );
 }

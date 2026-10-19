@@ -59,7 +59,7 @@ export async function handleThreadRequest(
         p_user_id: userId,
         p_thread_id: id,
         p_action: threadAction,
-        p_duration: duration ?? null,
+        ...(duration ? { p_duration: duration } : {}),
       });
       if (error) throw new Error(error.message);
       return data;
