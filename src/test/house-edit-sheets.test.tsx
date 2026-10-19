@@ -15,7 +15,9 @@ function props(): ComponentProps<typeof HouseEditSheets> {
     pending: false,
     cash: 2000,
     inventory: [],
-    catalog: [{ id: "bed", category: "furniture", slot_type: "bed", art_key: "bed", price_minor: 1400 }],
+    catalog: [
+      { id: "bed", category: "furniture", slot_type: "bed", art_key: "bed", price_minor: 1400 },
+    ],
     outfit,
     selectedSlot: null,
     selectedPlacement: null,
@@ -41,7 +43,17 @@ describe("household item panel", () => {
 
   it("places owned furniture into a matching room slot", () => {
     const input = props();
-    input.inventory = [{ id: "owned-bed", item_id: "bed", category: "furniture", slot_type: "bed", art_key: "bed", price_minor: 1400, quantity: 1 }];
+    input.inventory = [
+      {
+        id: "owned-bed",
+        item_id: "bed",
+        category: "furniture",
+        slot_type: "bed",
+        art_key: "bed",
+        price_minor: 1400,
+        quantity: 1,
+      },
+    ];
     input.selectedSlot = slot;
     render(<HouseEditSheets {...input} />);
     fireEvent.click(screen.getByRole("button", { name: /bed Place/i }));

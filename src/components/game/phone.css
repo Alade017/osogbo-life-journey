@@ -31,7 +31,6 @@
     margin: 0 !important;
     border: none !important;
     border-radius: 0 !important;
-    z-index: 100 !important;
   }
 }
 
@@ -271,6 +270,12 @@
   .phone-screen {
     border-radius: 0 !important;
     border: none !important;
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .phone-dialog > button:last-child {
+    top: calc(12px + env(safe-area-inset-top));
   }
 }
 
@@ -1417,19 +1422,6 @@
 }
 
 @media (max-width: 480px) {
-  .phone-dialog.phone-dialog {
-    width: calc(100vw - 16px) !important;
-    max-height: calc(100dvh - 16px);
-    padding: 4px !important;
-    border-radius: 30px !important;
-  }
-
-  .phone-screen {
-    height: calc(100dvh - 26px);
-    padding: 10px;
-    border-radius: 25px;
-  }
-
   .phone-app-grid {
     gap: 12px 5px;
     padding-inline: 2px;
@@ -1861,4 +1853,3 @@
   padding: 32px 16px;
   text-align: center;
 }
-

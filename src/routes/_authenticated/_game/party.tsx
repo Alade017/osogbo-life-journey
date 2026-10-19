@@ -99,6 +99,14 @@ export function PartyExperience({
 
   const score = mood.data?.score ?? PARTY_MOOD_START;
   const visitLocation = locations?.find((l) => l.id === visit.data?.location_id);
+  const partyError = [
+    venues.error,
+    drinks.error,
+    activities.error,
+    mood.error,
+    visit.error,
+    cooldown.error,
+  ].find(Boolean);
 
   return (
     <div className={compact ? "grid gap-5 pb-4" : "grid gap-5 pb-28"}>
@@ -108,6 +116,27 @@ export function PartyExperience({
           subtitle="Clubs, drinks, dancing and events in town."
           eyebrow="Nightlife"
         />
+      )}
+      {partyError && (
+        <div className="game-panel grid gap-2 p-4" role="alert">
+          <p>Party information could not load: {partyError.message}</p>
+          <button
+            type="button"
+            className="min-h-11 justify-self-start rounded-full border border-border px-4 font-semibold"
+            onClick={() => {
+              void Promise.all([
+                venues.refetch(),
+                drinks.refetch(),
+                activities.refetch(),
+                mood.refetch(),
+                visit.refetch(),
+                cooldown.refetch(),
+              ]);
+            }}
+          >
+            Retry
+          </button>
+        </div>
       )}
 
       <section className="game-panel grid gap-2 p-4" aria-label="Your mood">
@@ -469,6 +498,19 @@ function EventsTab({
   const eventCentres = venues.filter((v) => v.venue_kind === "event_center");
 
   if (events.isLoading) return <LoadingState />;
+  if (events.isError)
+    return (
+      <div className="game-panel grid gap-2 p-4" role="alert">
+        <p>Events could not load: {events.error.message}</p>
+        <button
+          type="button"
+          className="min-h-11 justify-self-start rounded-full border border-border px-4 font-semibold"
+          onClick={() => void events.refetch()}
+        >
+          Retry
+        </button>
+      </div>
+    );
 
   return (
     <div className="grid gap-5">

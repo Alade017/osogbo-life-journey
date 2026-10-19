@@ -46,8 +46,10 @@ vi.mock("@/lib/game", () => ({
 
 describe("MissionChips", () => {
   it("keeps the map overlay to one mission and explains the additional missions", () => {
-    render(<MissionChips />);
+    const { container } = render(<MissionChips />);
     expect(screen.getByText("Market errands")).toBeInTheDocument();
+    expect(screen.getByText("Visit the market")).toBeVisible();
+    expect(container.querySelector("details")).toBeNull();
     expect(screen.queryByText("Find a book")).not.toBeInTheDocument();
     expect(screen.getByRole("link", { name: "View 1 other active mission" })).toHaveAttribute(
       "href",
