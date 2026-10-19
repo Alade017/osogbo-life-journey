@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { HomeInterior } from "@/components/game/HomeInterior";
-import { LayeredHomeScene } from "@/components/game/housing/LayeredHomeScene";
 import { q, rpc } from "@/lib/game";
 import { supabase } from "@/integrations/supabase/client";
 import { type HousingSave } from "@/lib/housing-service";
@@ -21,7 +20,6 @@ import { osogboHour } from "@/lib/osogbo-weather";
 import { isPowerOutageAt } from "@/lib/world-simulation";
 import { toast } from "sonner";
 import { parseHousingSave } from "@/lib/housing-service";
-import { normalizeEquippedItems } from "@/lib/equipment-service";
 import { useMutation } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useGameTime } from "@/components/game/GameTimeProvider";
@@ -140,11 +138,6 @@ function MyCityHome() {
     complete,
   } = useGameTime();
   const { data: character } = useQuery(q.character());
-  const { data: equippedItems } = useQuery({ ...q.equipment(), enabled: !!character });
-  const roomEquipment = useMemo(
-    () => normalizeEquippedItems(equippedItems).map(({ slot }) => ({ slot })),
-    [equippedItems],
-  );
   const housingHomeQuery = useQuery({
     queryKey: ["housingHome"],
     enabled: !!character,
@@ -153,132 +146,6 @@ function MyCityHome() {
   });
   const homeQuery = useQuery({ ...q.homeSave(), enabled: !!character });
   const queryClient = useQueryClient();
-  const homeItemRequestKeys = useRef(new Map<string, string>());
-  useEffect(() => {
-    if (!character?.id) return;
-    const channel = supabase
-      .channel(`home-items-${character.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "home_items",
-          filter: `character_id=eq.${character.id}`,
-        },
-        () => {
-          void queryClient.invalidateQueries({ queryKey: ["housingHome"] });
-        },
-      )
-      .subscribe();
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [character?.id, queryClient]);
-  useEffect(() => {
-    if (!character?.id) return;
-    const channel = supabase
-      .channel(`player-equipment-home-${character.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "player_equipment",
-          filter: `character_id=eq.${character.id}`,
-        },
-        () => void queryClient.invalidateQueries({ queryKey: q.equipment().queryKey }),
-      )
-      .subscribe();
-    return () => {
-      void supabase.removeChannel(channel);
-    };
-  }, [character?.id, queryClient]);
-  const homeItemMutation = useMutation({
-    mutationFn: async (args: {
-      action: "place" | "remove" | "equip" | "unequip";
-      itemId: string;
-      slotId?: string;
-      requestKey: string;
-    }) => {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const response = await fetch(`/api/home/${args.action}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Idempotency-Key": args.requestKey,
-          ...(sessionData.session
-            ? { Authorization: `Bearer ${sessionData.session.access_token}` }
-            : {}),
-        },
-        body: JSON.stringify({ item_id: args.itemId, slot_id: args.slotId }),
-      });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body?.error?.code ?? "Home update failed.");
-      return body as {
-        home_items: {
-          id: string;
-          item_id: string;
-          slot_type: string;
-          slot_id: string | null;
-          x: number;
-          y: number;
-          z: number;
-          placed: boolean;
-          equipped: boolean;
-        }[];
-      };
-    },
-    onMutate: async (args) => {
-      await queryClient.cancelQueries({ queryKey: ["housingHome"] });
-      const previous = queryClient.getQueryData<typeof housingHomeQuery.data>(["housingHome"]);
-      queryClient.setQueryData(["housingHome"], (current: typeof housingHomeQuery.data) =>
-        current
-          ? {
-              ...current,
-              home_items: current.home_items.map((item) =>
-                item.item_id === args.itemId
-                  ? {
-                      ...item,
-                      placed:
-                        args.action === "place"
-                          ? true
-                          : args.action === "remove"
-                            ? false
-                            : item.placed,
-                      equipped:
-                        args.action === "equip"
-                          ? true
-                          : args.action === "unequip"
-                            ? false
-                            : item.equipped,
-                      slot_id:
-                        args.action === "place"
-                          ? (args.slotId ?? item.slot_id)
-                          : args.action === "remove"
-                            ? null
-                            : item.slot_id,
-                    }
-                  : item,
-              ),
-            }
-          : current,
-      );
-      return { previous };
-    },
-    onError: (error, _args, context) => {
-      if (context?.previous) queryClient.setQueryData(["housingHome"], context.previous);
-      toast.error(
-        `That home change was not saved: ${error.message.replaceAll("_", " ").toLowerCase()}.`,
-      );
-    },
-    onSuccess: (result, args) => {
-      homeItemRequestKeys.current.delete(`${args.action}:${args.itemId}:${args.slotId ?? ""}`);
-      queryClient.setQueryData(["housingHome"], (current: typeof housingHomeQuery.data) =>
-        current ? { ...current, home_items: result.home_items } : current,
-      );
-    },
-  });
   const [syncStatus, setSyncStatus] = useState<
     "saved" | "saving" | "offline" | "conflict" | "unavailable"
   >("saved");
@@ -628,36 +495,7 @@ function MyCityHome() {
                 Retry loading home
               </button>
             </section>
-          ) : housingHomeQuery.data?.home ? (
-            <LayeredHomeScene
-              house={{
-                label: housingHomeQuery.data.home.house_types.label,
-                asset_key: housingHomeQuery.data.home.house_types.asset_key,
-                slots: housingHomeQuery.data.home.house_types.slots,
-              }}
-              items={housingHomeQuery.data.home_items}
-              appearance={(character.appearance ?? {}) as Record<string, unknown>}
-              gender={character.gender}
-              equipment={[
-                ...(equippedItems ?? []).map((item) => ({ slot: item.slot })),
-                ...housingHomeQuery.data.home_items
-                  .filter((item) => item.equipped)
-                  .map((item) => ({ slot: item.slot_type === "hat" ? "head" : item.slot_type })),
-              ]}
-              onAction={(action, itemId, slot) => {
-                const slotId = slot?.id;
-                const keyId = `${action}:${itemId}:${slotId ?? ""}`;
-                const requestKey = homeItemRequestKeys.current.get(keyId) ?? crypto.randomUUID();
-                homeItemRequestKeys.current.set(keyId, requestKey);
-                homeItemMutation.mutate({
-                  action,
-                  itemId,
-                  requestKey,
-                  ...(slotId ? { slotId } : {}),
-                });
-              }}
-            />
-          ) : (
+          ) : !housingHomeQuery.data?.home ? (
             <section className="game-panel p-5" role="status">
               <h2 className="font-display text-lg font-bold">You do not have a home yet</h2>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -672,7 +510,7 @@ function MyCityHome() {
                 Choose a home
               </button>
             </section>
-          )}
+          ) : null}
           {syncStatus !== "saved" && syncStatus !== "saving" && (
             <section
               className="game-panel flex flex-wrap items-center justify-between gap-3 p-3 text-sm"
@@ -722,9 +560,6 @@ function MyCityHome() {
                     ? { initialSave: cloudSave.payload }
                     : {})}
                 onSave={scheduleSave}
-                appearance={character.appearance as never}
-                gender={character.gender}
-                equipment={roomEquipment}
                 onPurchaseUpgrade={purchaseUpgrade}
                 onFurnitureAction={performFurnitureAction}
                 authoritativeNeeds={simulation.needs}
