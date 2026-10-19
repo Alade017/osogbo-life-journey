@@ -10,7 +10,9 @@ import {
   getActiveClubVisit,
   getDanceCooldown,
   getPartyMood,
+  listPartyClubActivities,
   listPartyDrinks,
+  type PartyClubActivity,
   listPartyEvents,
   listPartyVenues,
   newPartyRequestId,
@@ -27,12 +29,19 @@ import {
   PARTY_MOOD_START,
 } from "@/lib/party-mood";
 
+type Tab = "clubs" | "drinks" | "events";
+const TAB_IDS: readonly Tab[] = ["clubs", "drinks", "events"];
+
 export const Route = createFileRoute("/_authenticated/_game/party")({
   head: () => pageMeta("Party", "Visit clubs, buy drinks, dance and host events."),
+  validateSearch: (search: Record<string, unknown>): { tab?: Tab } => {
+    const tab = search["tab"];
+    return typeof tab === "string" && (TAB_IDS as readonly string[]).includes(tab)
+      ? { tab: tab as Tab }
+      : {};
+  },
   component: PartyPage,
 });
-
-type Tab = "clubs" | "drinks" | "events";
 const TABS: Array<{ id: Tab; label: string }> = [
   { id: "clubs", label: "Clubs" },
   { id: "drinks", label: "Drinks" },
@@ -47,7 +56,9 @@ const CLUB_DANCERS = [
 ];
 
 function PartyPage() {
-  const [tab, setTab] = useState<Tab>("clubs");
+  const search = Route.useSearch();
+  const [tab, setTab] = useState<Tab>(search.tab ?? "clubs");
+  const activities = useQuery({ queryKey: ["partyActivities"], queryFn: listPartyClubActivities });
   const { data: character, isLoading: characterLoading } = useQuery(q.character());
   const { data: wallet } = useQuery(q.wallet());
   const { data: locations } = useQuery(q.locations());
@@ -134,6 +145,7 @@ function PartyPage() {
           visitLocationId={visit.data?.location_id ?? null}
           currentLocationId={character.current_location_id}
           cooldownAt={cooldown.data ?? null}
+          activities={activities.data ?? []}
           isLoading={venues.isLoading}
         />
       )}
@@ -141,6 +153,10 @@ function PartyPage() {
         <DrinksTab
           drinks={drinks.data ?? []}
           inClub={Boolean(visit.data) && visit.data?.location_id === character.current_location_id}
+          atEventCentre={venues.data?.some(
+            (v) =>
+              v.venue_kind === "event_center" && v.location_id === character.current_location_id,
+          )}
           cash={wallet?.balance ?? 0}
           isLoading={drinks.isLoading}
         />
@@ -220,14 +236,17 @@ function ClubsTab({
   visitLocationId,
   currentLocationId,
   cooldownAt,
+  activities,
   isLoading,
 }: {
   venues: Awaited<ReturnType<typeof listPartyVenues>>;
   visitLocationId: string | null;
   currentLocationId: string | null;
   cooldownAt: string | null;
+  activities: PartyClubActivity[];
   isLoading: boolean;
 }) {
+  const joinActivity = useInvalidatingMutation(partyRpc.joinClubActivity, "Enjoy the show!");
   const enter = useInvalidatingMutation(partyRpc.enterClub, "You joined the party.");
   const leave = useInvalidatingMutation(partyRpc.leaveClub, "You left the club.");
   const dance = useInvalidatingMutation(partyRpc.danceWithNpc, "You danced!");
@@ -277,6 +296,36 @@ function ClubsTab({
             )}
             {joined && (
               <>
+                <div className="grid gap-2">
+                  <p className="text-sm font-semibold">Club nights</p>
+                  {activities.map((activity) => (
+                    <div
+                      key={activity.slug}
+                      className="flex items-center justify-between gap-3 rounded-lg border border-border bg-card p-3"
+                    >
+                      <div>
+                        <p className="font-semibold">{activity.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {activity.description} {formatNaira(activity.price)} · mood +
+                          {activity.mood_effect}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="min-h-11 shrink-0 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50"
+                        disabled={joinActivity.isPending}
+                        onClick={() =>
+                          joinActivity.mutate({
+                            activitySlug: activity.slug,
+                            requestId: newPartyRequestId(),
+                          })
+                        }
+                      >
+                        Join
+                      </button>
+                    </div>
+                  ))}
+                </div>
                 <div className="grid gap-2">
                   <p className="text-sm font-semibold">Dance floor</p>
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
@@ -339,31 +388,43 @@ function ClubsTab({
 function DrinksTab({
   drinks,
   inClub,
+  atEventCentre,
   cash,
   isLoading,
 }: {
   drinks: Awaited<ReturnType<typeof listPartyDrinks>>;
   inClub: boolean;
+  atEventCentre: boolean | undefined;
   cash: number;
   isLoading: boolean;
 }) {
   const buy = useInvalidatingMutation(partyRpc.buyDrink, "Drink bought.");
   if (isLoading) return <LoadingState />;
+  const canBuy = inClub || Boolean(atEventCentre);
   return (
     <div className="grid gap-3">
-      {!inClub && <p className="text-sm text-muted-foreground">Join a club to buy drinks.</p>}
+      {!canBuy && (
+        <p className="text-sm text-muted-foreground">
+          Join a club or visit an event center to buy drinks.
+        </p>
+      )}
+      {inClub && (
+        <p className="text-sm text-muted-foreground">
+          Club prices are high. Event centers sell the same drinks for less.
+        </p>
+      )}
       {drinks.map((drink) => (
         <div key={drink.slug} className="game-panel flex items-center justify-between gap-3 p-4">
           <div>
             <p className="font-semibold">{drink.name}</p>
             <p className="text-sm text-muted-foreground">
-              {formatNaira(drink.price)} · mood +{drink.mood_effect}
+              {formatNaira(inClub ? drink.club_price : drink.price)} · mood +{drink.mood_effect}
             </p>
           </div>
           <button
             type="button"
             className="min-h-11 rounded-full bg-primary px-4 font-semibold text-primary-foreground disabled:opacity-50"
-            disabled={!inClub || buy.isPending || cash < drink.price}
+            disabled={!canBuy || buy.isPending || cash < (inClub ? drink.club_price : drink.price)}
             onClick={() => buy.mutate({ drinkSlug: drink.slug, requestId: newPartyRequestId() })}
           >
             Buy
@@ -393,18 +454,16 @@ function EventsTab({
       ),
     [events.data, now],
   );
-  const hostHere = venues.some(
-    (v) => v.venue_kind === "event_center" && v.location_id === locationId,
-  );
+  const eventCentres = venues.filter((v) => v.venue_kind === "event_center");
 
   if (events.isLoading) return <LoadingState />;
 
   return (
     <div className="grid gap-5">
-      {hostHere ? (
-        <HostForm locationId={locationId!} />
+      {eventCentres.length > 0 ? (
+        <HostForm venues={eventCentres} defaultLocationId={locationId} />
       ) : (
-        <p className="text-sm text-muted-foreground">Go to an event center to host a party.</p>
+        <p className="text-sm text-muted-foreground">No event centers are open to host at yet.</p>
       )}
 
       {visibleEvents.length === 0 && (
@@ -456,8 +515,19 @@ function EventsTab({
   );
 }
 
-function HostForm({ locationId }: { locationId: string }) {
+function HostForm({
+  venues,
+  defaultLocationId,
+}: {
+  venues: Awaited<ReturnType<typeof listPartyVenues>>;
+  defaultLocationId: string | null;
+}) {
   const host = useInvalidatingMutation(partyRpc.hostEvent, "Your event is scheduled.");
+  const [locationId, setLocationId] = useState(
+    venues.find((v) => v.location_id === defaultLocationId)?.location_id ??
+      venues[0]?.location_id ??
+      "",
+  );
   const [title, setTitle] = useState("");
   const [startsAt, setStartsAt] = useState("");
   const [requirements, setRequirements] = useState<HostRequirementInput[]>([
@@ -489,6 +559,20 @@ function HostForm({ locationId }: { locationId: string }) {
       }}
     >
       <h2 className="font-display text-lg font-semibold">Host an event</h2>
+      <label className="grid gap-1 text-sm">
+        Event center
+        <select
+          className="min-h-11 rounded-lg border border-border bg-card px-3"
+          value={locationId}
+          onChange={(e) => setLocationId(e.target.value)}
+        >
+          {venues.map((venue) => (
+            <option key={venue.location_id} value={venue.location_id}>
+              {venue.name}
+            </option>
+          ))}
+        </select>
+      </label>
       <label className="grid gap-1 text-sm">
         Title
         <input

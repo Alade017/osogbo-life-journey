@@ -25,6 +25,7 @@ import { useWorldClock } from "@/hooks/use-world-clock";
 import { INITIAL_GAME_TIME } from "@/lib/game-time";
 import { CityEventParticipation } from "@/components/game/CityEventParticipation";
 import { LocationActivities } from "@/components/game/LocationActivities";
+import { PartyVenuePanel } from "@/components/game/PartyVenuePanel";
 import {
   adjustedTripMinutes,
   travelConditionAdjustment,
@@ -364,6 +365,7 @@ function LocationPage() {
         </section>
       )}
       <LocationActivities locationId={loc.id} slug={slug} isHere={isHere} />
+      <PartyVenuePanel locationId={loc.id} />
 
       {isHere && localPlaces.some((place) => ["bank", "atm"].includes(place.category)) && (
         <Link

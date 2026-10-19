@@ -15,8 +15,18 @@ export type PartyDrink = {
   slug: string;
   name: string;
   price: number;
+  club_price: number;
   mood_effect: number;
   icon: string;
+};
+
+export type PartyClubActivity = {
+  slug: string;
+  name: string;
+  kind: "game" | "stage_show";
+  description: string;
+  price: number;
+  mood_effect: number;
 };
 
 export type PartyMood = { character_id: string; score: number };
@@ -103,7 +113,17 @@ export async function listPartyDrinks(): Promise<PartyDrink[]> {
   return unwrap<PartyDrink[]>(
     await db
       .from("party_drinks")
-      .select("slug,name,price,mood_effect,icon")
+      .select("slug,name,price,club_price,mood_effect,icon")
+      .eq("is_active", true)
+      .order("price"),
+  );
+}
+
+export async function listPartyClubActivities(): Promise<PartyClubActivity[]> {
+  return unwrap<PartyClubActivity[]>(
+    await db
+      .from("party_club_activities")
+      .select("slug,name,kind,description,price,mood_effect")
       .eq("is_active", true)
       .order("price"),
   );
@@ -164,6 +184,13 @@ export const partyRpc = {
     unwrap(await db.rpc("enter_club", { p_request_id: requestId })),
   leaveClub: async (requestId: string) =>
     unwrap(await db.rpc("leave_club", { p_request_id: requestId })),
+  joinClubActivity: async (args: { activitySlug: string; requestId: string }) =>
+    unwrap(
+      await db.rpc("join_club_activity", {
+        p_activity_slug: args.activitySlug,
+        p_request_id: args.requestId,
+      }),
+    ),
   buyDrink: async (args: { drinkSlug: string; requestId: string }) =>
     unwrap(
       await db.rpc("buy_drink", { p_drink_slug: args.drinkSlug, p_request_id: args.requestId }),
