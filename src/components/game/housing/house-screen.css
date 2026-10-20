@@ -149,7 +149,7 @@
   height: clamp(280px, 48vw, 560px);
   overflow: hidden;
   border-radius: calc(var(--shape-card, 20px) - 6px);
-  background: #f2eadc;
+  background: #b98c83;
   touch-action: none;
 }
 .house-3d-loading {
@@ -165,16 +165,17 @@
   font-weight: 700;
 }
 .house-3d-slot-label {
-  max-width: 120px;
+  width: 34px;
+  max-width: 34px;
   min-height: 32px;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--card);
   color: var(--foreground);
-  padding: 0.3rem 0.55rem;
-  font-size: 0.7rem;
+  padding: 0.2rem;
+  font-size: 0.9rem;
   font-weight: 700;
-  white-space: normal;
+  white-space: nowrap;
   cursor: pointer;
 }
 .house-3d-slot-label:focus-visible,
@@ -811,4 +812,90 @@
   top: 12px;
   right: 12px;
   z-index: 2;
+}
+.house-page.house-page-fill .house-edit-panel {
+  position: fixed;
+  z-index: 80;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  left: max(12px, env(safe-area-inset-left));
+  width: auto;
+  max-width: 640px;
+  max-height: min(68dvh, 640px);
+  margin: 0 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: 22px;
+  box-shadow: 0 16px 48px rgb(22 32 24 / 28%);
+}
+.house-sheet-handle {
+  display: block;
+  width: 38px;
+  height: 4px;
+  margin: -3px auto 12px;
+  border-radius: 999px;
+  background: var(--border);
+}
+.house-room-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 0 10px;
+  scrollbar-width: none;
+}
+.house-room-tabs button {
+  flex: 0 0 auto;
+  min-height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--background);
+  color: var(--foreground);
+  padding: 0 13px;
+  font-weight: 700;
+}
+.house-room-tabs button[aria-selected="true"] {
+  border-color: var(--primary);
+  background: var(--accent);
+  color: var(--primary);
+}
+.house-carousel-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.house-carousel-controls button {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--background);
+  color: var(--foreground);
+}
+.house-carousel-controls button:disabled {
+  opacity: 0.4;
+}
+.house-room-slide {
+  touch-action: pan-y;
+}
+.house-owned-badge {
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--primary);
+  padding: 0.35rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+@media (max-width: 540px) {
+  .house-page.house-page-fill .house-edit-panel {
+    right: 0;
+    bottom: 0;
+    left: 0;
+    max-height: min(65dvh, 620px);
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+    border-radius: 22px 22px 0 0;
+  }
 }
