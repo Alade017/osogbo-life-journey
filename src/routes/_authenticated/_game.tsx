@@ -218,8 +218,6 @@ function GameLayout() {
           </div>
         </div>
 
-        {pathname !== "/settings" && <GameNeedsRail player={player} />}
-
         <nav
           className="game-mobile-nav game-floating-nav"
           aria-label="Game navigation"
