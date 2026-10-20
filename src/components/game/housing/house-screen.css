@@ -782,33 +782,3 @@
   outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
-
-/* Full-screen house: only the 3D room, edge to edge, fitted to the viewport without page scrolling. */
-.house-page.house-page-fill {
-  position: relative;
-  width: 100%;
-  max-width: none;
-  height: 100dvh;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-}
-.house-page.house-page-fill .house-room-card {
-  height: 100%;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-}
-.house-page.house-page-fill .house-3d-scene {
-  height: 100%;
-  min-height: 0;
-  border-radius: 24px;
-}
-.house-page.house-page-fill .house-edit-toggle {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  z-index: 2;
-}
