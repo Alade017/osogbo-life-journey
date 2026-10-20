@@ -1,0 +1,64 @@
+From d26563868543dc2cc20a06ed3791138d51759e54 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Tue, 20 Oct 2026 16:29:30 +0100
+Subject: [PATCH] Remove conflicting phone-dialog rules from styles.css
+
+Three earlier .phone-dialog blocks set width, radius, colour and shadow
+that competed with the centring rules in phone.css. Keep phone.css as
+the single source of truth for the launcher dialog so it fits and
+centres on mobile.
+
+Co-Authored-By: Claude Haiku 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01U77yd19dddVeuADaCupfv9
+---
+ src/styles.css | 20 --------------------
+ 1 file changed, 20 deletions(-)
+
+diff --git a/src/styles.css b/src/styles.css
+index 10c026d..aec60d8 100644
+--- a/src/styles.css
++++ b/src/styles.css
+@@ -1786,13 +1786,6 @@
+   bottom: 5px;
+ }
+ 
+-.phone-dialog {
+-  width: min(92vw, 410px) !important;
+-  border: 1px solid color-mix(in srgb, var(--brand-ink) 18%, transparent);
+-  border-radius: 22px !important;
+-  color: var(--brand-ink);
+-}
+-
+ .phone-screen {
+   padding: 15px;
+   border: 7px solid var(--brand-ink);
+@@ -2363,13 +2356,6 @@
+   box-shadow: var(--elevation-card);
+ }
+ 
+-.phone-dialog {
+-  border-color: var(--border);
+-  border-radius: 14px !important;
+-  color: var(--foreground);
+-  box-shadow: var(--elevation-card);
+-}
+-
+ .phone-screen {
+   border: 1px solid var(--border);
+   border-radius: 10px;
+@@ -7666,12 +7652,6 @@
+   background: var(--brand-ink);
+ }
+ 
+-.phone-dialog {
+-  border-radius: 20px !important;
+-  background: var(--color-surface);
+-  box-shadow: var(--elevation-card);
+-}
+-
+ .phone-screen {
+   border-color: var(--color-surface-dark-border);
+   border-radius: 18px;
+-- 
+2.43.0
+

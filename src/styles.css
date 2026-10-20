@@ -1786,13 +1786,6 @@
   bottom: 5px;
 }
 
-.phone-dialog {
-  width: min(92vw, 410px) !important;
-  border: 1px solid color-mix(in srgb, var(--brand-ink) 18%, transparent);
-  border-radius: 22px !important;
-  color: var(--brand-ink);
-}
-
 .phone-screen {
   padding: 15px;
   border: 7px solid var(--brand-ink);
@@ -2360,13 +2353,6 @@
 .phone-launcher-icon {
   border-color: var(--border);
   background: var(--foreground);
-  box-shadow: var(--elevation-card);
-}
-
-.phone-dialog {
-  border-color: var(--border);
-  border-radius: 14px !important;
-  color: var(--foreground);
   box-shadow: var(--elevation-card);
 }
 
@@ -7664,12 +7650,6 @@
   border-color: var(--color-surface-dark-border);
   color: var(--primary-foreground);
   background: var(--brand-ink);
-}
-
-.phone-dialog {
-  border-radius: 20px !important;
-  background: var(--color-surface);
-  box-shadow: var(--elevation-card);
 }
 
 .phone-screen {
