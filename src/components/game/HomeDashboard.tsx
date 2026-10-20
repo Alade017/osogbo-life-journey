@@ -2,11 +2,8 @@ import type { ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Bell, Briefcase, Clock3, MapPin } from "lucide-react";
-<<<<<<< HEAD
-=======
 import { Avatar } from "@/components/game/Avatar";
 import { NeedsRing } from "@/components/game/NeedsRing";
->>>>>>> 18e6603d998623ebef4d9388eff4db56b9ff1915
 import { useGameTime } from "@/components/game/GameTimeProvider";
 import { formatNaira, q } from "@/lib/game";
 import type { PlayerState } from "@/lib/player-state";
@@ -60,8 +57,6 @@ export function HomeDashboard({
       <div className="hd-stage">{children}</div>
 
       <footer className="hd-bottom" aria-label="Today's tasks and shortcuts">
-<<<<<<< HEAD
-=======
         <div className="hd-avatar-group">
           <NeedsRing>
             <Link
@@ -79,7 +74,6 @@ export function HomeDashboard({
           </NeedsRing>
         </div>
 
->>>>>>> 18e6603d998623ebef4d9388eff4db56b9ff1915
         <TaskPill />
 
         <Link to="/jobs" className="hd-desk-card" aria-label="My desk, jobs and work">
