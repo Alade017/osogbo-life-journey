@@ -714,114 +714,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
 
   const house = serverState.house;
   return (
-    <div className="house-page">
-      <header className="house-page-header">
-        <div>
-          <p className="house-eyebrow">Your home</p>
-          <h1>{canonicalHome?.name ?? house.house_type.label}</h1>
-          <p className="house-subtitle">
-            {canonicalHome?.district ?? "Residential District"} · {house.house_type.bedrooms}{" "}
-            bedroom{house.house_type.bedrooms === 1 ? "" : "s"}
-          </p>
-        </div>
-        <div className="house-header-actions">
-          {!homeRoute && (
-            <Link to="/home" search={{ visit: undefined }} className="house-header-link">
-              Home
-            </Link>
-          )}
-          <button
-            className="house-edit-button"
-            type="button"
-            aria-pressed={editing}
-            onClick={() => {
-              setEditing((value) => !value);
-              setSelectedPlacement(null);
-              setSelectedSlot(null);
-            }}
-          >
-            <Pencil size={16} /> {editing ? "Done" : "Shop & arrange"}
-          </button>
-        </div>
-      </header>
-      {canonicalHome?.imageUrl && (
-        <img className="house-cover-image" src={canonicalHome.imageUrl} alt={canonicalHome.name} />
-      )}
-      {isOffline && (
-        <div className="house-status-banner" role="status">
-          <WifiOff size={17} /> Offline. Showing your last saved home.
-        </div>
-      )}
-      {apiError && (
-        <div className="house-error-banner" role="alert">
-          {apiError}
-        </div>
-      )}
-      <section className="house-rent-summary" aria-label="Rent status">
-        <div>
-          <span>Status</span>
-          <strong>{rentStatusLabel[rentStatus] ?? "Checking"}</strong>
-        </div>
-        <div>
-          <span>Next rent due</span>
-          <strong>
-            {canonicalHome?.tenure === "owned" ? "Owned outright" : formatRentDate(rentDueAt)}
-          </strong>
-        </div>
-        <div>
-          <span>Weekly rent</span>
-          <strong>
-            {canonicalHome?.tenure === "owned"
-              ? "—"
-              : formatNaira(canonicalHome?.weeklyRentMinor ?? house.house_type.weekly_rent_minor)}
-          </strong>
-        </div>
-      </section>
-      {isOverdue && (!canonicalHome || rentStatus === "overdue") && (
-        <div className="house-rent-banner">
-          <span>
-            <strong>Rent is overdue.</strong>{" "}
-            {canonicalHome?.rescueEndsAt
-              ? `Respond by ${formatRentDate(canonicalHome.rescueEndsAt)} to keep your home.`
-              : "Pay now to keep your home."}
-          </span>
-          {canonicalHome ? (
-            <button
-              type="button"
-              className="house-pay-button"
-              disabled={payRent.isPending || isOffline}
-              onClick={() => payRent.mutate()}
-            >
-              {payRent.isPending ? "Paying…" : "Pay now"}
-            </button>
-          ) : (
-            <Link to="/wallet" className="house-pay-button">
-              Pay
-            </Link>
-          )}
-        </div>
-      )}
-      {canonicalHome && character?.id && (
-        <HousingReliefPanel
-          characterId={character.id}
-          rentStatus={rentStatus}
-          graceEndsAt={canonicalHome.graceEndsAt}
-          rescueEndsAt={canonicalHome.rescueEndsAt}
-          offline={isOffline}
-          paying={payRent.isPending}
-          onPayRent={() => payRent.mutate()}
-        />
-      )}
-      {!isOverdue && canonicalHome?.tenure === "rented" && (
-        <button
-          type="button"
-          className="house-rent-early-button"
-          disabled={payRent.isPending || isOffline}
-          onClick={() => payRent.mutate()}
-        >
-          {payRent.isPending ? "Paying rent…" : "Pay next week’s rent"}
-        </button>
-      )}
+    <div className="house-page house-page-fill">
       <section
         className={`house-room-card${house.status === "overdue" ? " room-overdue" : ""}`}
         aria-label={`${house.house_type.label} room`}
@@ -841,17 +734,19 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             setSelectedSlot(slot);
           }}
         />
-        <div className="house-room-caption">
-          <span>
-            {editing
-              ? "Choose an item or an open slot to arrange your room."
-              : "Drag to look around the room."}
-          </span>
-          <span>
-            {placements.length} placed item{placements.length === 1 ? "" : "s"}
-          </span>
-        </div>
       </section>
+      <button
+        className="house-edit-button house-edit-toggle"
+        type="button"
+        aria-pressed={editing}
+        onClick={() => {
+          setEditing((value) => !value);
+          setSelectedPlacement(null);
+          setSelectedSlot(null);
+        }}
+      >
+        <Pencil size={16} /> {editing ? "Done" : "Edit"}
+      </button>
       {editing && (
         <HouseEditSheets
           open
@@ -875,54 +770,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           onBuy={(itemId) => requestAction({ action: "buy", itemId })}
         />
       )}
-      <section className="house-inventory-summary">
-        <div className="house-summary-heading">
-          <h2>Your things</h2>
-          <button type="button" className="house-text-button" onClick={() => setEditing(true)}>
-            Shop and arrange your room
-          </button>
-        </div>
-        <div className="house-summary-grid">
-          <div>
-            <strong>{inventory.filter((item) => item.category === "furniture").length}</strong>
-            <span>Furniture owned</span>
-          </div>
-          <div>
-            <Avatar
-              appearance={appearance}
-              gender={character?.gender ?? "nonbinary"}
-              size={42}
-              equipment={Object.entries(outfit)
-                .filter(([, item]) => !!item)
-                .map(([slot]) => ({ slot }))}
-            />
-            <span>Current outfit</span>
-          </div>
-        </div>
-        {inventory.length === 0 && (
-          <p className="house-empty-copy">Your home is empty. Visit the shop to get furniture.</p>
-        )}
-        {canonicalHome?.tenure === "rented" &&
-          (house.status === "active" || house.status === "overdue") && (
-            <div className="house-tenancy-actions">
-              <p>
-                Ending your tenancy gives no rent or deposit refund. Your furniture stays owned and
-                returns to your inventory.
-              </p>
-              <button
-                type="button"
-                className="house-secondary-button"
-                disabled={cancelTenancy.isPending || isOffline}
-                onClick={() => {
-                  if (window.confirm("End this tenancy now? Rent and deposit are not refunded."))
-                    cancelTenancy.mutate();
-                }}
-              >
-                {cancelTenancy.isPending ? "Ending tenancy…" : "Cancel rent"}
-              </button>
-            </div>
-          )}
-      </section>
     </div>
   );
 }
