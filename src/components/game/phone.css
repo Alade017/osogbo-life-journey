@@ -9,8 +9,6 @@
   transform: none !important;
   animation: none !important;
   z-index: var(--game-dialog-layer) !important;
-
-  /* Size */
   width: min(420px, calc(100vw - 24px)) !important;
   max-width: min(420px, calc(100vw - 24px)) !important;
   height: min(840px, calc(100dvh - 24px)) !important;
