@@ -758,16 +758,33 @@ describe("housing onboarding database actions", () => {
       [userId],
     );
     expect(room.rows[0]?.result.house.house_type_id).toBe("shared-room");
-    const placed = await db.query<{ result: { ok: boolean } }>(
-      "select public.house_place($1,'starter-bed','bed') as result",
+    const defaultRoom = await db.query<{
+      result: { placements: { item_id: string; slot: string }[] };
+    }>("select public.get_house_state($1) as result", [userId]);
+    expect(defaultRoom.rows[0]?.result.placements).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ item_id: "starter-bed", slot: "bed" }),
+        expect.objectContaining({ item_id: "shower", slot: "bathroom-shower" }),
+        expect.objectContaining({ item_id: "toilet", slot: "bathroom" }),
+        expect.objectContaining({ item_id: "stove", slot: "kitchen" }),
+      ]),
+    );
+    await db.query(
+      "update public.house_placements set item_id='computer' where player_house_id=(select id from public.player_houses where player_id=$1 and status='active') and slot='device'",
       [userId],
     );
-    expect(placed.rows[0]?.result).toMatchObject({ ok: true });
+    await db.query(
+      "select public._grant_house_essentials(id) from public.player_houses where player_id=$1 and status='active'",
+      [userId],
+    );
     const afterRefresh = await db.query<{
       result: { placements: { item_id: string; slot: string }[] };
     }>("select public.get_house_state($1) as result", [userId]);
     expect(afterRefresh.rows[0]?.result.placements).toEqual(
-      expect.arrayContaining([expect.objectContaining({ item_id: "starter-bed", slot: "bed" })]),
+      expect.arrayContaining([
+        expect.objectContaining({ item_id: "starter-bed", slot: "bed" }),
+        expect.objectContaining({ item_id: "computer", slot: "device" }),
+      ]),
     );
   });
 

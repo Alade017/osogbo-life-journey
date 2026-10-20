@@ -745,7 +745,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           setSelectedSlot(null);
         }}
       >
-        <Pencil size={16} /> {editing ? "Done" : "Edit"}
+        <Pencil size={16} /> {editing ? "Done" : "Shop & arrange"}
       </button>
       {editing && (
         <HouseEditSheets
