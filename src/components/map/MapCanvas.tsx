@@ -4,7 +4,9 @@ import { Html, OrbitControls, useGLTF, useProgress } from "@react-three/drei";
 import { clone } from "three/addons/utils/SkeletonUtils.js";
 import townData from "@/data/osogbo-town.json";
 import { DRACO_PATH } from "@/types/models";
+import { TownScenery } from "@/components/map/TownScenery";
 import "./map-canvas.css";
+
 
 export type MapFilter =
   | "market"
@@ -107,20 +109,10 @@ class AssetBoundary extends Component<AssetBoundaryProps, { failed: boolean }> {
 
 function Terrain() {
   return (
-    <group>
-      <mesh position={[0, -0.16, 0]} receiveShadow>
-        <boxGeometry args={[32, 0.3, 24]} />
-        <meshStandardMaterial color="#8bbf76" roughness={1} />
-      </mesh>
-      <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[5.2, 24]} />
-        <meshStandardMaterial color="#d2b78f" roughness={1} />
-      </mesh>
-      <mesh position={[0, 0.02, 0]} rotation={[-Math.PI / 2, 0, Math.PI / 2]}>
-        <planeGeometry args={[5.2, 32]} />
-        <meshStandardMaterial color="#d2b78f" roughness={1} />
-      </mesh>
-    </group>
+    <mesh position={[0, -0.16, 0]} receiveShadow>
+      <boxGeometry args={[32, 0.3, 24]} />
+      <meshStandardMaterial color="#8bbf76" roughness={1} />
+    </mesh>
   );
 }
 
@@ -313,6 +305,7 @@ function TownScene({
       <directionalLight position={[8, 13, 7]} intensity={1.6} />
       <Terrain />
       <TownBase />
+      <TownScenery/>
       <PlaceMarkers
         places={places}
         onSelectLandmark={onSelectLandmark}
