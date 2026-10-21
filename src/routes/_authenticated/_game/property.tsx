@@ -88,6 +88,7 @@ export function PropertyPage() {
         <p>Your saved houses, stalls, businesses and shares.</p>
         <nav aria-label="Housing navigation">
           <Link to="/house">Home</Link>
+          <Link to="/rentals">Rent homes</Link>
           <Link to="/properties">Find Homes</Link>
         </nav>
       </header>

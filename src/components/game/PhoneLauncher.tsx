@@ -3,7 +3,6 @@ import {
   Backpack,
   Bell,
   Bike,
-  BookOpen,
   BriefcaseBusiness,
   Building2,
   CalendarDays,
@@ -27,7 +26,6 @@ import {
   Smartphone,
   SlidersHorizontal,
   UserRound,
-  UsersRound,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -54,6 +52,9 @@ const PropertiesPage = lazy(() =>
 );
 const PropertyPage = lazy(() =>
   import("@/routes/_authenticated/_game/property").then((m) => ({ default: m.PropertyPage })),
+);
+const RentalsPage = lazy(() =>
+  import("@/routes/_authenticated/_game/rentals").then((m) => ({ default: m.RentalsPage })),
 );
 const JobsPage = lazy(() =>
   import("@/routes/_authenticated/_game/jobs").then((m) => ({ default: m.JobsPage })),
@@ -93,7 +94,7 @@ type PhoneAppDefinition = {
 const PHONE_APPS: readonly PhoneAppDefinition[] = [
   { label: "Map", icon: MapPinned, tone: "phone-app-blue" },
   { label: "Messages", icon: MessagesSquare, tone: "phone-app-coral" },
-  { label: "Housing", icon: HousePlus, tone: "phone-app-green" },
+  { label: "Rent homes", icon: HousePlus, tone: "phone-app-green" },
   { label: "Jobs", icon: BriefcaseBusiness, tone: "phone-app-gold" },
   { label: "Bank", icon: Landmark, tone: "phone-app-blue" },
   { label: "Missions", icon: Target, tone: "phone-app-gold" },
@@ -102,12 +103,9 @@ const PHONE_APPS: readonly PhoneAppDefinition[] = [
   { label: "Property", icon: HousePlus, tone: "phone-app-green" },
   { label: "Find homes", icon: Building2, tone: "phone-app-green" },
   { label: "Market", icon: Store, tone: "phone-app-coral" },
-  { label: "People", icon: UsersRound, tone: "phone-app-coral" },
   { label: "Notifications", icon: Bell, tone: "phone-app-gold" },
   { label: "Settings", icon: Settings, tone: "phone-app-muted" },
   { label: "Education", icon: GraduationCap, tone: "phone-app-blue" },
-  { label: "Career Life", icon: GraduationCap, tone: "phone-app-blue" },
-  { label: "Courses", icon: BookOpen, tone: "phone-app-blue" },
   { label: "Party", icon: PartyPopper, tone: "phone-app-coral" },
   { label: "Food Delivery", icon: UtensilsCrossed, tone: "phone-app-coral" },
   { label: "Okada Rides", icon: Bike, tone: "phone-app-green" },
@@ -115,9 +113,7 @@ const PHONE_APPS: readonly PhoneAppDefinition[] = [
   { label: "Town News", icon: Newspaper, tone: "phone-app-blue" },
   { label: "Leaderboard", icon: Trophy, tone: "phone-app-gold" },
   { label: "Contribution", icon: HandCoins, tone: "phone-app-gold" },
-  { label: "Market Stalls", icon: Store, tone: "phone-app-green" },
   { label: "Businesses", icon: Building2, tone: "phone-app-green" },
-  { label: "Company", icon: Building2, tone: "phone-app-green" },
   { label: "Invest", icon: ChartNoAxesCombined, tone: "phone-app-gold" },
   { label: "Billboards", icon: PanelsTopLeft, tone: "phone-app-gold" },
 ] as const;
@@ -132,7 +128,8 @@ const COMMUNITY_APPS = new Set<CommunityPhoneApp>([
 ]);
 
 const APP_ROUTES: Record<string, string> = {
-  Housing: "/house",
+  Housing: "/rentals",
+  "Rent homes": "/rentals",
   Property: "/property",
   "Find homes": "/properties",
   Jobs: "/jobs",
@@ -301,17 +298,7 @@ export function PhoneLauncher({
 
     if (appName === "Find homes") return <PropertiesPage />;
     if (appName === "Property") return <PropertyPage />;
-    if (appName === "Housing") {
-      return (
-        <div className="phone-route-app">
-          <div className="phone-housing-links">
-            <a href="/house">Open my home</a>
-            <a href="/properties">Find homes</a>
-          </div>
-          <PropertyPage />
-        </div>
-      );
-    }
+    if (appName === "Rent homes" || appName === "Housing") return <RentalsPage />;
 
     if (appName === "Party Life" || appName === "Party") {
       return <PhonePartyApp />;

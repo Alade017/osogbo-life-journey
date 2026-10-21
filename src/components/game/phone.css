@@ -20,6 +20,7 @@
   background: var(--brand-ink, #0b0f19);
   box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.5);
   border: 2px solid color-mix(in srgb, var(--brand-cream) 20%, transparent);
+
   z-index: var(--game-dialog-layer) !important;
 }
 
@@ -497,7 +498,7 @@
   width: 100%;
   min-width: 0;
 }
-.phone-app-body :is(.property-market-page, .game-page) {
+.phone-app-body :is(.property-market-page, .property-listings-page, .game-page) {
   width: 100%;
   max-width: none;
   min-height: 0;
@@ -533,14 +534,12 @@
   background: var(--card);
   color: var(--foreground);
 }
-.phone-housing-links,
 .phone-app-recovery > div {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
   padding: 0.75rem;
 }
-.phone-housing-links a,
 .phone-app-recovery :is(a, button) {
   display: inline-flex;
   min-height: 44px;
