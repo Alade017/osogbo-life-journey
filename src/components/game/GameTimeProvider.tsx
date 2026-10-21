@@ -40,7 +40,7 @@ type ContextValue = {
     requestId: string,
     options?: { furniture?: readonly string[]; targetLocationId?: string },
   ) => Promise<string | null>;
-  complete: (requestId: string) => Promise<string | null>;
+  complete: (requestId: string, action?: LifeActionId) => Promise<string | null>;
   interrupt: (requestId?: string) => Promise<string | null>;
 };
 const GameTimeContext = createContext<ContextValue | null>(null);
@@ -262,10 +262,10 @@ export function GameTimeProvider({
     return error;
   }, [start]);
   const complete = useCallback(
-    (requestId: string) => {
-      const action = liveState.current.currentAction?.actionId;
-      if (!action) return Promise.resolve("There is no active activity.");
-      return send("complete", { action, requestId });
+    (requestId: string, action?: LifeActionId) => {
+      const activeAction = action ?? liveState.current.currentAction?.actionId;
+      if (!activeAction) return Promise.resolve("There is no active activity.");
+      return send("complete", { action: activeAction, requestId });
     },
     [send],
   );

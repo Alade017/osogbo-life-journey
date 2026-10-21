@@ -11,6 +11,9 @@ import type {
   HouseSlot,
 } from "@/components/game/housing/HouseRoomScene";
 import { HouseRoom3D } from "@/components/game/housing/HouseRoom3D";
+import { useGameTime } from "@/components/game/GameTimeProvider";
+import { homeFurnitureAction, homeFurnitureNeed } from "@/lib/home-furniture-actions";
+import { ACTION_CATALOG } from "@/lib/life-simulation";
 import { HousingReliefPanel } from "@/components/game/housing/HousingReliefPanel";
 import { housingReliefQueryKey } from "@/lib/housing-relief-client";
 import { HouseSceneSkeleton } from "@/components/game/loading-skeletons";
@@ -324,12 +327,15 @@ async function authorizedFetch(path: string, init?: RequestInit) {
 
 export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const queryClient = useQueryClient();
+  const gameTime = useGameTime();
   const { data: character, isLoading: characterLoading } = useQuery(q.character());
   const { data: wallet } = useQuery(q.wallet());
   const [online, setOnline] = useState(() => typeof navigator === "undefined" || navigator.onLine);
   const [editing, setEditing] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<HouseSlot | null>(null);
   const [selectedPlacement, setSelectedPlacement] = useState<HousePlacement | null>(null);
+  const [usingPlacementId, setUsingPlacementId] = useState<string | null>(null);
+  const [activityError, setActivityError] = useState("");
   const [apiError, setApiError] = useState("");
   const [playerId, setPlayerId] = useState<string | null>(null);
   const buyRequestKeys = useRef(new Map<string, string>());
@@ -650,6 +656,33 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     if (isOffline || actionMutation.isPending) return;
     actionMutation.mutate(args);
   };
+  const interactWithPlacement = async (placement: HousePlacement) => {
+    const action = homeFurnitureAction(placement.item_id);
+    if (!action || usingPlacementId || isOffline || !gameTime.ready || gameTime.busy) return;
+    setUsingPlacementId(placement.id);
+    setActivityError("");
+    try {
+      const active = gameTime.simulation.currentAction;
+      if (active && active.actionId !== action) {
+        throw new Error("Finish your current activity before using another accessory.");
+      }
+      const requestId = active?.requestId ?? crypto.randomUUID();
+      if (!active) {
+        const startError = await gameTime.start(action, requestId);
+        if (startError) throw new Error(startError);
+      }
+      const completeError = await gameTime.complete(requestId, action);
+      if (completeError) throw new Error(completeError);
+      toast.success(ACTION_CATALOG[action].outcome);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "That activity could not be completed.";
+      setActivityError(message);
+      toast.error(message);
+    } finally {
+      setUsingPlacementId(null);
+    }
+  };
   if (characterLoading || (stateQuery.isLoading && !snapshot))
     return (
       <div className="house-page">
@@ -726,6 +759,10 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           placements={placements}
           editMode={editing}
           onSelectPlacement={(placement) => {
+            if (!editing) {
+              void interactWithPlacement(placement);
+              return;
+            }
             setSelectedSlot(null);
             setSelectedPlacement(placement);
           }}
@@ -735,6 +772,46 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           }}
         />
       </section>
+      {!editing && (
+        <section className="house-needs-actions" aria-label="Use home accessories">
+          <h2>Use your home</h2>
+          <p>Tap a placed accessory to care for your character.</p>
+          <div className="house-needs-action-list">
+            {placements
+              .filter((placement) => homeFurnitureAction(placement.item_id))
+              .map((placement) => {
+                const action = homeFurnitureAction(placement.item_id)!;
+                const need = homeFurnitureNeed(placement.item_id);
+                return (
+                  <button
+                    key={placement.id}
+                    type="button"
+                    className="house-needs-action"
+                    disabled={isOffline || !gameTime.ready || gameTime.busy || !!usingPlacementId}
+                    onClick={() => void interactWithPlacement(placement)}
+                  >
+                    <strong>
+                      {usingPlacementId === placement.id ? "Using..." : ACTION_CATALOG[action].name}
+                    </strong>
+                    <span>
+                      {need ? `${need} · ` : ""}
+                      {placement.item_id.replaceAll("-", " ")}
+                    </span>
+                  </button>
+                );
+              })}
+          </div>
+          {!placements.some((placement) => homeFurnitureAction(placement.item_id)) && (
+            <p>
+              Place an owned bed, seat, stove, shower, toilet, television, or plant to unlock home
+              activities.
+            </p>
+          )}
+          {!gameTime.ready && !isOffline && <p role="status">Connecting character needs...</p>}
+          {isOffline && <p role="status">Reconnect to use your accessories.</p>}
+          {activityError && <p role="alert">{activityError}</p>}
+        </section>
+      )}
       <button
         className="house-edit-button house-edit-toggle"
         type="button"

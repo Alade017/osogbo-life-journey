@@ -257,6 +257,17 @@
 }
 
 @media (max-width: 640px) {
+  .phone-dialog.phone-dialog {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: none !important;
+    padding: 0 !important;
+    border: 0;
+    border-radius: 0 !important;
+  }
+
   .phone-screen {
     border-radius: 0 !important;
     border: none !important;
@@ -307,7 +318,6 @@
   font-size: 12px;
   line-height: 1.45;
 }
-
 
 .phone-app-grid {
   min-height: 0;
@@ -479,6 +489,78 @@
   background: var(--brand-porcelain, var(--background));
   -webkit-overflow-scrolling: touch;
 }
+.phone-app-body > * {
+  min-width: 0;
+}
+.phone-route-app {
+  width: 100%;
+  min-width: 0;
+}
+.phone-app-body :is(.property-market-page, .game-page) {
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+  margin: 0;
+  padding: 0.75rem;
+}
+.phone-app-body :is(.profile-page, .inventory-page) {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  padding: 0.75rem;
+}
+.phone-app-body :is(.profile-hero, .profile-columns, .profile-glance) {
+  grid-template-columns: minmax(0, 1fr);
+}
+.phone-town-composer {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.75rem;
+}
+.phone-town-composer label {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.phone-town-composer :is(input, textarea, select) {
+  width: 100%;
+  min-width: 0;
+  padding: 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  background: var(--card);
+  color: var(--foreground);
+}
+.phone-housing-links,
+.phone-app-recovery > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem;
+}
+.phone-housing-links a,
+.phone-app-recovery :is(a, button) {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--primary);
+  border-radius: 0.75rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  padding: 0.55rem 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.phone-app-recovery {
+  padding: 1.25rem;
+  color: var(--foreground);
+}
+.phone-app-recovery p {
+  margin: 0.5rem 0;
+  color: var(--muted-foreground);
+}
 
 .phone-app-toolbar button {
   min-width: 54px;
@@ -580,7 +662,9 @@
   flex: none;
   border-radius: 999px;
   background: color-mix(in srgb, var(--color-text-on-dark-soft) 80%, white);
-  transition: transform 120ms ease, background 120ms ease;
+  transition:
+    transform 120ms ease,
+    background 120ms ease;
 }
 
 .phone-home-bar-button:hover .phone-home-indicator,

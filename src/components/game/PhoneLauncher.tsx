@@ -35,7 +35,7 @@ import { q, rpc, useGameAction } from "@/lib/game";
 import { useQuery } from "@tanstack/react-query";
 import { useLiveClock } from "@/hooks/use-live-clock";
 import { OSOGBO_TIME_ZONE } from "@/lib/osogbo-weather";
-import { useEffect, useRef, useState, lazy, Suspense, type ReactNode } from "react";
+import { Component, useEffect, useRef, useState, lazy, Suspense, type ReactNode } from "react";
 import { type CommunityPhoneApp } from "@/components/game/CommunityPhoneApps";
 import { PhoneComingSoonApp } from "@/components/game/phone/PhoneComingSoonApp";
 import "./phone.css";
@@ -45,12 +45,27 @@ const PlayerSocial = lazy(() =>
   import("@/components/game/PlayerSocial").then((m) => ({ default: m.PlayerSocial })),
 );
 const PhoneMarketApp = lazy(() => import("@/components/game/phone/PhoneMarketApp"));
-const PhoneHousingApp = lazy(() => import("@/components/game/phone/PhoneHousingApp"));
 const PhonePartyApp = lazy(() => import("@/components/game/phone/PhonePartyApp"));
-const PhoneCareerApp = lazy(() => import("@/components/game/phone/PhoneCareerApp"));
 const PhoneMapApp = lazy(() => import("@/components/game/phone/PhoneMapApp"));
 const PhoneBankApp = lazy(() => import("@/components/game/phone/PhoneBankApp"));
-const PhoneJobsApp = lazy(() => import("@/components/game/phone/PhoneJobsApp"));
+const PropertiesPage = lazy(() =>
+  import("@/routes/_authenticated/_game/properties").then((m) => ({ default: m.PropertiesPage })),
+);
+const PropertyPage = lazy(() =>
+  import("@/routes/_authenticated/_game/property").then((m) => ({ default: m.PropertyPage })),
+);
+const JobsPage = lazy(() =>
+  import("@/routes/_authenticated/_game/jobs").then((m) => ({ default: m.JobsPage })),
+);
+const EducationPage = lazy(() =>
+  import("@/routes/_authenticated/_game/education").then((m) => ({ default: m.EducationPage })),
+);
+const ProfilePage = lazy(() =>
+  import("@/routes/_authenticated/_game/profile").then((m) => ({ default: m.ProfilePage })),
+);
+const InventoryPage = lazy(() =>
+  import("@/routes/_authenticated/_game/inventory").then((m) => ({ default: m.InventoryPage })),
+);
 const BusinessInvestmentApp = lazy(() =>
   import("@/components/game/BusinessInvestmentApp").then((m) => ({
     default: m.BusinessInvestmentApp,
@@ -75,7 +90,6 @@ const PHONE_APPS: readonly PhoneAppDefinition[] = [
   { label: "Messages", icon: MessagesSquare, tone: "phone-app-coral" },
   { label: "Market", icon: Store, tone: "phone-app-coral" },
   { label: "Housing", icon: HousePlus, tone: "phone-app-green" },
-  { label: "Party Life", icon: PartyPopper, tone: "phone-app-coral" },
   { label: "Career Life", icon: GraduationCap, tone: "phone-app-blue" },
   { label: "Map", icon: MapPinned, tone: "phone-app-blue" },
   { label: "Bank", icon: Landmark, tone: "phone-app-blue" },
@@ -113,6 +127,52 @@ const COMMUNITY_APPS = new Set<CommunityPhoneApp>([
   "Town News",
 ]);
 
+const APP_ROUTES: Record<string, string> = {
+  Housing: "/house",
+  Property: "/property",
+  "Find homes": "/properties",
+  Jobs: "/jobs",
+  "Career Life": "/education",
+  Education: "/education",
+  Courses: "/education",
+  Map: "/map",
+  Bank: "/wallet",
+  Market: "/market",
+  "Market Stalls": "/market",
+  Party: "/party",
+  "Party Life": "/party",
+  Profile: "/profile",
+  Inventory: "/inventory",
+  People: "/social",
+  Missions: "/missions",
+};
+
+class PhoneAppBoundary extends Component<
+  { appName: string; onHome: () => void; children: ReactNode },
+  { failed: boolean }
+> {
+  override state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  override render() {
+    if (!this.state.failed) return this.props.children;
+    const route = APP_ROUTES[this.props.appName];
+    return (
+      <div className="phone-app-recovery" role="alert">
+        <strong>{this.props.appName} could not open here.</strong>
+        <p>Return to the launcher or open the full game screen.</p>
+        <div>
+          <button type="button" onClick={this.props.onHome}>
+            Back to apps
+          </button>
+          {route && <a href={route}>Open full screen</a>}
+        </div>
+      </div>
+    );
+  }
+}
+
 function PhoneAppLoadingSpinner({ title }: { title: string }) {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center p-8 text-center text-muted-foreground">
@@ -136,11 +196,15 @@ export function PhoneLauncher({
   onOpenChange?: (open: boolean) => void;
 }) {
   const [activeApp, setActiveApp] = useState<string | null>(null);
-  const [openedApps, setOpenedApps] = useState<Set<string>>(new Set());
   const [dialogOpen, setDialogOpen] = useState(false);
   const [messagePlayerId, setMessagePlayerId] = useState<string | undefined>();
 
-  const { data: missions } = useQuery(q.missions());
+  const {
+    data: missions,
+    isLoading: missionsLoading,
+    isError: missionsError,
+    refetch: refetchMissions,
+  } = useQuery(q.missions());
   const claimMission = useGameAction(rpc.claimMission);
   const { data: notifications } = useQuery(q.notifications());
   const markRead = useGameAction(rpc.markRead);
@@ -174,7 +238,6 @@ export function PhoneLauncher({
     : "--:--";
 
   const openApp = (appName: string) => {
-    setOpenedApps((prev) => new Set(prev).add(appName));
     setActiveApp(appName);
   };
 
@@ -222,21 +285,34 @@ export function PhoneLauncher({
       );
     }
 
+    if (appName === "People") return <PlayerSocial initialTab="players" phoneMode />;
+    if (appName === "Profile") return <ProfilePage />;
+    if (appName === "Inventory") return <InventoryPage />;
+
     if (appName === "Market" || appName === "Market Stalls") {
       return <PhoneMarketApp />;
     }
 
-    if (appName === "Housing" || appName === "Property" || appName === "Find homes") {
-      return <PhoneHousingApp />;
+    if (appName === "Find homes") return <PropertiesPage />;
+    if (appName === "Property") return <PropertyPage />;
+    if (appName === "Housing") {
+      return (
+        <div className="phone-route-app">
+          <div className="phone-housing-links">
+            <a href="/house">Open my home</a>
+            <a href="/properties">Find homes</a>
+          </div>
+          <PropertyPage />
+        </div>
+      );
     }
 
     if (appName === "Party Life" || appName === "Party") {
       return <PhonePartyApp />;
     }
 
-    if (appName === "Career Life" || appName === "Education" || appName === "Courses") {
-      return <PhoneCareerApp />;
-    }
+    if (appName === "Career Life" || appName === "Education" || appName === "Courses")
+      return <EducationPage />;
 
     if (appName === "Map") {
       return <PhoneMapApp />;
@@ -246,9 +322,7 @@ export function PhoneLauncher({
       return <PhoneBankApp />;
     }
 
-    if (appName === "Jobs") {
-      return <PhoneJobsApp />;
-    }
+    if (appName === "Jobs") return <JobsPage />;
 
     if (appName === "Invest" || appName === "Company" || appName === "Businesses") {
       return <BusinessInvestmentApp mode={appName === "Invest" ? "invest" : "company"} />;
@@ -270,7 +344,22 @@ export function PhoneLauncher({
             <p className="text-xs text-muted-foreground mb-3">
               Complete goals around town and collect in-game cash and XP.
             </p>
-            {missions && missions.length > 0 ? (
+            {missionsLoading ? (
+              <p className="text-xs text-muted-foreground py-4 text-center" role="status">
+                Loading missions...
+              </p>
+            ) : missionsError ? (
+              <div role="alert" className="text-xs text-muted-foreground py-4 text-center">
+                <p>Could not load missions.</p>
+                <button
+                  type="button"
+                  className="mt-2 font-bold text-primary"
+                  onClick={() => void refetchMissions()}
+                >
+                  Try again
+                </button>
+              </div>
+            ) : missions && missions.length > 0 ? (
               <div className="space-y-2">
                 {missions.map((m) => (
                   <div
@@ -286,7 +375,11 @@ export function PhoneLauncher({
                             : "bg-amber-500/20 text-amber-600"
                         }`}
                       >
-                        {m.status === "completed" ? "Completed" : "In Progress"}
+                        {m.status === "completed"
+                          ? "Ready to claim"
+                          : m.status === "claimed"
+                            ? "Claimed"
+                            : "In progress"}
                       </span>
                     </div>
                     <p className="text-[11px] text-muted-foreground">{m.mission?.description}</p>
@@ -475,35 +568,48 @@ export function PhoneLauncher({
           </div>
 
           {/* Opened Apps: retain state when navigating back and forth */}
-          {Array.from(openedApps).map((appName) => {
-            const isVisible = activeApp === appName;
-            return (
-              <div
-                key={appName}
-                className="phone-app-view"
-                style={{ display: isVisible ? "flex" : "none" }}
-              >
-                <div className="phone-app-toolbar">
-                  <button
-                    type="button"
-                    onClick={returnHome}
-                    className="phone-back-button"
-                    aria-label="Back to apps"
+          {activeApp &&
+            (() => {
+              const appName = activeApp;
+              return (
+                <div key={appName} className="phone-app-view">
+                  <div className="phone-app-toolbar">
+                    <button
+                      type="button"
+                      onClick={returnHome}
+                      className="phone-back-button"
+                      aria-label="Back to apps"
+                    >
+                      <ChevronLeft size={18} aria-hidden="true" />
+                      <span>Apps</span>
+                    </button>
+                    <strong>{appName}</strong>
+                    <div className="w-8" aria-hidden="true" />
+                  </div>
+                  <div
+                    className="phone-app-body"
+                    onClickCapture={(event) => {
+                      const anchor =
+                        event.target instanceof Element ? event.target.closest("a[href]") : null;
+                      if (
+                        anchor instanceof HTMLAnchorElement &&
+                        anchor.origin === window.location.origin
+                      ) {
+                        setDialogOpen(false);
+                        setActiveApp(null);
+                        onOpenChange?.(false);
+                      }
+                    }}
                   >
-                    <ChevronLeft size={18} aria-hidden="true" />
-                    <span>Apps</span>
-                  </button>
-                  <strong>{appName}</strong>
-                  <div className="w-8" aria-hidden="true" />
+                    <PhoneAppBoundary key={appName} appName={appName} onHome={returnHome}>
+                      <Suspense fallback={<PhoneAppLoadingSpinner title={appName} />}>
+                        {renderAppContent(appName)}
+                      </Suspense>
+                    </PhoneAppBoundary>
+                  </div>
                 </div>
-                <div className="phone-app-body">
-                  <Suspense fallback={<PhoneAppLoadingSpinner title={appName} />}>
-                    {renderAppContent(appName)}
-                  </Suspense>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })()}
 
           {/* Home indicator bar button with swipe-up support */}
           <button

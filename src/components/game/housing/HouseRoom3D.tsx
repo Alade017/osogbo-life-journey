@@ -326,7 +326,7 @@ function SlotObject({
         <group
           onClick={(event) => {
             event.stopPropagation();
-            if (editMode) onSelectPlacement(placement);
+            onSelectPlacement(placement);
           }}
         >
           <OptionalModel

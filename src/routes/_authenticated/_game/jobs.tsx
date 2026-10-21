@@ -41,7 +41,7 @@ function fmt(ms: number) {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
-function JobsPage() {
+export function JobsPage() {
   const { data: worldTime } = useWorldClock();
   const now = useNow();
   const [search, setSearch] = useState("");

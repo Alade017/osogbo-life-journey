@@ -13,7 +13,7 @@ export const Route = createFileRoute("/_authenticated/_game/property")({
   component: PropertyPage,
 });
 
-function PropertyPage() {
+export function PropertyPage() {
   const client = useQueryClient();
   const characterQuery = useQuery(q.character());
   const character = characterQuery.data;

@@ -812,3 +812,53 @@
   right: 12px;
   z-index: 2;
 }
+.house-needs-actions {
+  position: absolute;
+  right: 0.75rem;
+  bottom: calc(5.5rem + env(safe-area-inset-bottom));
+  left: 0.75rem;
+  z-index: 2;
+  max-width: 36rem;
+  max-height: min(30dvh, 14rem);
+  margin-inline: auto;
+  padding: 0.75rem;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow: var(--elevation-card);
+}
+.house-needs-actions h2 {
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+.house-needs-actions p {
+  font-size: 0.7rem;
+}
+.house-needs-action-list {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  overflow-x: auto;
+}
+.house-needs-action {
+  display: grid;
+  flex: 0 0 auto;
+  min-width: 8rem;
+  min-height: 2.75rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--background);
+  text-align: left;
+}
+.house-needs-action strong {
+  font-size: 0.75rem;
+}
+.house-needs-action span {
+  font-size: 0.65rem;
+}
+.house-needs-action:disabled {
+  opacity: 0.55;
+}

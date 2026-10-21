@@ -10349,10 +10349,23 @@
 }
 .city-game.navigation-redesign .game-phone-fab {
   position: fixed;
-  left: 16px;
-  right: auto;
+  left: auto;
+  right: 16px;
   bottom: calc(20px + env(safe-area-inset-bottom));
   z-index: 75;
+}
+@media (max-width: 820px) {
+  .city-game.navigation-redesign nav.game-mobile-nav.game-floating-nav {
+    inset: auto 80px calc(12px + env(safe-area-inset-bottom)) 12px;
+    width: auto;
+    max-width: none;
+  }
+  .city-game.navigation-redesign .game-phone-fab {
+    pointer-events: auto;
+  }
+  .game-phone-fab-trigger {
+    touch-action: manipulation;
+  }
 }
 .game-phone-fab-trigger {
   display: grid;

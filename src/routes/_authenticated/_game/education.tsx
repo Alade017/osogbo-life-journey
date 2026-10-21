@@ -12,7 +12,7 @@ export const Route = createFileRoute("/_authenticated/_game/education")({
   component: EducationPage,
 });
 
-function EducationPage() {
+export function EducationPage() {
   const { data: character } = useQuery(q.character());
   const { data: wallet } = useQuery(q.wallet());
   const { data: locations } = useQuery(q.locations());

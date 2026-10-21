@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_authenticated/_game/properties")({
   component: PropertiesPage,
 });
 
-function PropertiesPage() {
+export function PropertiesPage() {
   const client = useQueryClient();
   const characterQuery = useQuery(q.character());
   const walletQuery = useQuery(q.wallet());

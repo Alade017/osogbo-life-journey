@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Bell,
@@ -24,29 +25,6 @@ const meals = [
   { name: "Suya wrap", shop: "Sabo Grill", price: 1500, eta: "18–25 min" },
 ];
 const riders = ["Oja-ọba Market", "Freedom Park", "Oke-Fia Bus Stop", "Osun Mall"];
-const ranks = [
-  ["1", "Ayo Adekunle", "4,820"],
-  ["2", "Tomi Ojo", "4,540"],
-  ["3", "Sola Bamidele", "4,180"],
-  ["4", "Kemi Alabi", "3,960"],
-] as const;
-const stories = [
-  {
-    tag: "Community",
-    title: "Park clean-up this Saturday",
-    body: "Bring gloves and meet at Freedom Park by 8:00.",
-  },
-  {
-    tag: "Market",
-    title: "New fabric stalls open at Oja-ọba",
-    body: "Local makers are showing new Ankara and adire pieces.",
-  },
-  {
-    tag: "Sports",
-    title: "Five-a-side sign-up is open",
-    body: "Create a team or join a neighbourhood side for Sunday.",
-  },
-];
 
 type ExternalNewsItem = {
   id: string;
@@ -56,11 +34,15 @@ type ExternalNewsItem = {
   publishedAt: string | null;
 };
 
-function useExternalNews(region: "nigeria" | "world") {
+type TownRank = { rank: number; name: string; score: number };
+type TownPost = { id: string; category: string; title: string; body: string; created_at: string };
+
+function useExternalNews(region: "nigeria" | "world", enabled: boolean) {
   const [items, setItems] = useState<ExternalNewsItem[]>([]);
   const [state, setState] = useState<"loading" | "ready" | "unavailable">("loading");
 
   useEffect(() => {
+    if (!enabled) return;
     let live = true;
     async function load() {
       setState("loading");
@@ -84,7 +66,7 @@ function useExternalNews(region: "nigeria" | "world") {
     return () => {
       live = false;
     };
-  }, [region]);
+  }, [region, enabled]);
 
   return { items, state };
 }
@@ -94,14 +76,59 @@ function AppCard({ children }: { children: ReactNode }) {
 }
 
 export function CommunityPhoneApps({ app }: { app: CommunityPhoneApp }) {
+  const queryClient = useQueryClient();
   const [basket, setBasket] = useState<string[]>([]);
   const [destination, setDestination] = useState(riders[0]);
   const [rideRequested, setRideRequested] = useState(false);
   const [contribution, setContribution] = useState(500);
   const [contributed, setContributed] = useState(false);
-  const [reactionCount, setReactionCount] = useState(12);
   const [newsRegion, setNewsRegion] = useState<"nigeria" | "world">("nigeria");
-  const externalNews = useExternalNews(newsRegion);
+  const externalNews = useExternalNews(newsRegion, app === "Town News");
+  const [postTitle, setPostTitle] = useState("");
+  const [postBody, setPostBody] = useState("");
+  const [postCategory, setPostCategory] = useState("Community");
+  const [showComposer, setShowComposer] = useState(false);
+  const leaderboard = useQuery({
+    queryKey: ["phoneTownLeaderboard"],
+    enabled: app === "Leaderboard",
+    queryFn: async () => {
+      // The generated database types do not yet include migration 0060.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase.rpc as any)("get_town_leaderboard");
+      if (error) throw error;
+      return (Array.isArray(data) ? data : []) as TownRank[];
+    },
+  });
+  const townPosts = useQuery({
+    queryKey: ["phoneTownNewsPosts"],
+    enabled: app === "Town News",
+    queryFn: async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase.from as any)("town_news_posts")
+        .select("id,category,title,body,created_at")
+        .order("created_at", { ascending: false })
+        .limit(30);
+      if (error) throw error;
+      return (data ?? []) as TownPost[];
+    },
+  });
+  const createPost = useMutation({
+    mutationFn: async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase.rpc as any)("create_town_news_post", {
+        p_category: postCategory,
+        p_title: postTitle.trim(),
+        p_body: postBody.trim(),
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setPostTitle("");
+      setPostBody("");
+      setShowComposer(false);
+      void queryClient.invalidateQueries({ queryKey: ["phoneTownNewsPosts"] });
+    },
+  });
   const foodTotal = useMemo(
     () =>
       meals.filter((meal) => basket.includes(meal.name)).reduce((sum, meal) => sum + meal.price, 0),
@@ -283,24 +310,30 @@ export function CommunityPhoneApps({ app }: { app: CommunityPhoneApp }) {
             <small>This week · community activity</small>
           </span>
         </header>
-        <div className="phone-local-tabs">
-          <button type="button" aria-pressed="true">
-            Community
-          </button>
-          <button type="button">Work</button>
-          <button type="button">Homes</button>
-        </div>
         <ol className="phone-local-ranks">
-          {ranks.map(([rank, name, score]) => (
-            <li key={rank}>
-              <b>{rank}</b>
-              <span>
-                <strong>{name}</strong>
-                <small>{score} points</small>
-              </span>
-              <Trophy aria-hidden="true" />
+          {leaderboard.isLoading ? (
+            <li role="status">Loading town rankings...</li>
+          ) : leaderboard.isError ? (
+            <li role="alert">
+              Rankings are unavailable.{" "}
+              <button type="button" onClick={() => void leaderboard.refetch()}>
+                Try again
+              </button>
             </li>
-          ))}
+          ) : leaderboard.data?.length ? (
+            leaderboard.data.map(({ rank, name, score }) => (
+              <li key={rank}>
+                <b>{rank}</b>
+                <span>
+                  <strong>{name}</strong>
+                  <small>{score.toLocaleString("en-NG")} level and XP points</small>
+                </span>
+                <Trophy aria-hidden="true" />
+              </li>
+            ))
+          ) : (
+            <li>No ranked players yet.</li>
+          )}
         </ol>
       </div>
     );
@@ -315,50 +348,134 @@ export function CommunityPhoneApps({ app }: { app: CommunityPhoneApp }) {
         </span>
       </header>
       <div className="phone-local-tabs" role="tablist" aria-label="News source">
-        <button type="button" role="tab" aria-selected={newsRegion === "nigeria"} onClick={() => setNewsRegion("nigeria")}>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={newsRegion === "nigeria"}
+          onClick={() => setNewsRegion("nigeria")}
+        >
           Nigeria
         </button>
-        <button type="button" role="tab" aria-selected={newsRegion === "world"} onClick={() => setNewsRegion("world")}>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={newsRegion === "world"}
+          onClick={() => setNewsRegion("world")}
+        >
           World
         </button>
       </div>
       <div className="phone-local-list">
         {externalNews.state === "loading" ? (
-          <AppCard><small>Updating {newsRegion === "nigeria" ? "Nigeria" : "world"} headlines…</small></AppCard>
-        ) : externalNews.state === "ready" && externalNews.items.length ? externalNews.items.map((story) => (
-          <AppCard key={story.id}>
-            <div>
-              <small>{story.sourceName}{story.publishedAt ? ` · ${new Date(story.publishedAt).toLocaleDateString("en-NG")}` : ""}</small>
-              <strong>{story.title}</strong>
-            </div>
-            <a href={story.sourceUrl} target="_blank" rel="noreferrer">Read</a>
+          <AppCard>
+            <small>Updating {newsRegion === "nigeria" ? "Nigeria" : "world"} headlines…</small>
           </AppCard>
-        )) : (
-          <AppCard><small>Live headlines are temporarily unavailable. Town updates are still available below.</small></AppCard>
+        ) : externalNews.state === "ready" && externalNews.items.length ? (
+          externalNews.items.map((story) => (
+            <AppCard key={story.id}>
+              <div>
+                <small>
+                  {story.sourceName}
+                  {story.publishedAt
+                    ? ` · ${new Date(story.publishedAt).toLocaleDateString("en-NG")}`
+                    : ""}
+                </small>
+                <strong>{story.title}</strong>
+              </div>
+              <a href={story.sourceUrl} target="_blank" rel="noreferrer">
+                Read
+              </a>
+            </AppCard>
+          ))
+        ) : (
+          <AppCard>
+            <small>
+              Live headlines are temporarily unavailable. Town updates are still available below.
+            </small>
+          </AppCard>
         )}
-        {stories.map((story, index) => (
-          <AppCard key={story.title}>
-            <div>
-              <small>{story.tag}</small>
-              <strong>{story.title}</strong>
-              <p>{story.body}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => index === 0 && setReactionCount((count) => count + 1)}
-            >
-              ♥ {index === 0 ? reactionCount : 8 + index}
-            </button>
+        {townPosts.isLoading ? (
+          <AppCard>
+            <small>Loading town posts...</small>
           </AppCard>
-        ))}
+        ) : townPosts.isError ? (
+          <AppCard>
+            <small role="alert">
+              Town posts are unavailable.{" "}
+              <button type="button" onClick={() => void townPosts.refetch()}>
+                Try again
+              </button>
+            </small>
+          </AppCard>
+        ) : townPosts.data?.length ? (
+          townPosts.data.map((post) => (
+            <AppCard key={post.id}>
+              <div>
+                <small>
+                  {post.category} · {new Date(post.created_at).toLocaleDateString("en-NG")}
+                </small>
+                <strong>{post.title}</strong>
+                <p>{post.body}</p>
+              </div>
+            </AppCard>
+          ))
+        ) : (
+          <AppCard>
+            <small>No town posts yet. Share the first update.</small>
+          </AppCard>
+        )}
       </div>
       <button
         type="button"
         className="phone-local-action"
-        onClick={() => window.alert("Post composer is available in this local preview.")}
+        onClick={() => setShowComposer((value) => !value)}
       >
-        Share a town update
+        {showComposer ? "Close composer" : "Share a town update"}
       </button>
+      {showComposer && (
+        <form
+          className="phone-town-composer"
+          onSubmit={(event) => {
+            event.preventDefault();
+            createPost.mutate();
+          }}
+        >
+          <label>
+            Category
+            <select value={postCategory} onChange={(event) => setPostCategory(event.target.value)}>
+              <option>Community</option>
+              <option>Market</option>
+              <option>Sports</option>
+              <option>General</option>
+            </select>
+          </label>
+          <label>
+            Title
+            <input
+              required
+              minLength={3}
+              maxLength={120}
+              value={postTitle}
+              onChange={(event) => setPostTitle(event.target.value)}
+            />
+          </label>
+          <label>
+            Update
+            <textarea
+              required
+              minLength={3}
+              maxLength={1000}
+              rows={4}
+              value={postBody}
+              onChange={(event) => setPostBody(event.target.value)}
+            />
+          </label>
+          {createPost.isError && <p role="alert">{createPost.error.message}</p>}
+          <button type="submit" className="phone-local-action" disabled={createPost.isPending}>
+            {createPost.isPending ? "Posting..." : "Post update"}
+          </button>
+        </form>
+      )}
     </div>
   );
 }
