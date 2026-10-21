@@ -180,9 +180,11 @@ function OptionalGltf({
     </AssetBoundary>
   );
 }
-
+// switch to true once public/models/town.glb is exported from Blender.
+const TOWN_BASE_MODEL_ENABLED=false;
 function TownBase() {
-  return <OptionalGltf path="/models/town.glb" fallback={null} loadingFallback={<MapLoading />} />;
+  if(!TOWN_BASE_MODEL_ENABLED) return null;
+  return <OptionalGltf path="/models/town.glb" fallback={null} loadingFallback={<MapLoading/>} />;
 }
 
 function HousePlaceholder({ property }: { property: MapProperty }) {

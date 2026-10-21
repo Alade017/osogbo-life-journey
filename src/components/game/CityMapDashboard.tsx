@@ -330,9 +330,7 @@ export function CityMapDashboard({
       )}
       {mapLevel === "town" ? (
         <MapCanvas
-          properties={
-            housingMarkers.isPending && !offline ? undefined : (housingMarkers.data ?? [])
-          }
+          properties={housingMarkers.data ?? []}
           onSelectDistrict={onDistrict}
           onSelectLandmark={onLandmark}
           activeFilter={filter}

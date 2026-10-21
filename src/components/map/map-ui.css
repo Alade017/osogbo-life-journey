@@ -540,6 +540,23 @@
 .place-action-option small {
   color: var(--muted-foreground);
 }
+
+.map-sheet-list li > .place-action-option{
+  width:100%;
+  min-width: 0;
+  justify-content: flex-start;
+  background: var(--card);
+  color: var(--foreground);
+}
+
+.map-sheet-list li> .place-action-option span{
+  color:var(--foreground);
+}
+
+.map-sheet-list li > .place-action-option small{
+  color:var(--muted-foreground);
+}
+
 .place-action-confirm {
   display: grid;
   gap: 0.35rem;

@@ -19,8 +19,8 @@ export function mountSceneOverlay(target: HTMLElement) {
       // Disposing another root during a React commit can race its own DOM removal.
       queueMicrotask(() => {
         root.unmount();
-        const parent = element.parentNode;
-        if (parent) parent.removeChild(element);
+        // remove() never throws, even if a blur handler already moved the node.
+       element.remove()
       });
     },
   };
