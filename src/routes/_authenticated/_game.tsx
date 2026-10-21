@@ -6,6 +6,7 @@ import { q, rpc } from "@/lib/game";
 import { GameDataUnavailable, LoadingState } from "@/components/game/ui";
 import { cn } from "@/lib/utils";
 import { HomeDashboard } from "@/components/game/HomeDashboard";
+import { GameNeedsRail } from "@/components/game/GameNeedsRail";
 import { PhoneLauncher } from "@/components/game/PhoneLauncher";
 import { HousingChooser } from "@/components/game/housing/HousingChooser";
 import { HousingRepossessionNotice } from "@/components/game/housing/HousingRepossessionNotice";
@@ -217,6 +218,8 @@ function GameLayout() {
             </main>
           </div>
         </div>
+
+        {pathname !== "/settings" && <GameNeedsRail player={player} />}
 
         <nav
           className="game-mobile-nav game-floating-nav"

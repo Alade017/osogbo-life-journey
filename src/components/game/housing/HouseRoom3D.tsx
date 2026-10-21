@@ -96,28 +96,40 @@ function OptionalModel({
 function PlaceholderRoom({ width, depth }: { width: number; depth: number }) {
   return (
     <group>
-      <mesh position={[0, -0.09, 0]}>
-        <boxGeometry args={[width, 0.18, depth]} />
-        <meshStandardMaterial color="#d5b995" roughness={1} />
+      <mesh position={[0, -0.23, 0]}>
+        <boxGeometry args={[width + 0.7, 0.22, depth + 0.7]} />
+        <meshStandardMaterial color="#58684b" roughness={1} />
+      </mesh>
+      <mesh position={[0, -0.08, 0]}>
+        <boxGeometry args={[width, 0.16, depth]} />
+        <meshStandardMaterial color="#d5c8af" roughness={1} />
+      </mesh>
+      <mesh position={[-width * 0.26, 0.01, depth * 0.17]}>
+        <boxGeometry args={[width * 0.44, 0.015, depth * 0.43]} />
+        <meshStandardMaterial color="#5c4a3f" roughness={1} />
+      </mesh>
+      <mesh position={[width * 0.25, 0.015, depth * 0.17]}>
+        <boxGeometry args={[width * 0.43, 0.016, depth * 0.43]} />
+        <meshStandardMaterial color="#c7c9be" roughness={1} />
       </mesh>
       <mesh position={[-width / 2, 0.66, 0]}>
         <boxGeometry args={[0.12, 1.32, depth]} />
-        <meshStandardMaterial color="#efe3ce" roughness={1} />
+        <meshStandardMaterial color="#006d59" roughness={1} />
       </mesh>
       <mesh position={[0, 0.66, -depth / 2]}>
         <boxGeometry args={[width, 1.32, 0.12]} />
-        <meshStandardMaterial color="#e8d5b7" roughness={1} />
+        <meshStandardMaterial color="#08765f" roughness={1} />
       </mesh>
       {width >= 6 && (
-        <mesh position={[width * 0.15, 0.4, -depth * 0.12]}>
-          <boxGeometry args={[0.1, 0.8, depth * 0.35]} />
-          <meshStandardMaterial color="#eadac0" roughness={1} />
+        <mesh position={[width * 0.15, 0.37, -depth * 0.04]}>
+          <boxGeometry args={[0.1, 0.74, depth * 0.55]} />
+          <meshStandardMaterial color="#00806a" roughness={1} />
         </mesh>
       )}
       {width >= 8 && (
         <mesh position={[-width * 0.16, 0.4, depth * 0.18]}>
           <boxGeometry args={[width * 0.28, 0.8, 0.1]} />
-          <meshStandardMaterial color="#eadac0" roughness={1} />
+          <meshStandardMaterial color="#00806a" roughness={1} />
         </mesh>
       )}
     </group>
@@ -352,9 +364,11 @@ function SlotObject({
           <button
             type="button"
             className="house-3d-slot-label"
+            aria-label={label}
+            title={label}
             onClick={() => (placement ? onSelectPlacement(placement) : onSelectSlot(slot))}
           >
-            {label}
+            {placement ? "•••" : "+"}
           </button>
         </Html>
       )}
@@ -398,7 +412,7 @@ export function HouseRoom3D({
         }}
         gl={{ antialias: false, powerPreference: "low-power" }}
       >
-        <color attach="background" args={["#f2eadc"]} />
+        <color attach="background" args={["#b98c83"]} />
         <ambientLight intensity={1.2} />
         <directionalLight intensity={1.5} position={[5, 9, 6]} />
         <OptionalModel

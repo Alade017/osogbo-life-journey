@@ -31,14 +31,61 @@ function props(): ComponentProps<typeof HouseEditSheets> {
 }
 
 describe("household item panel", () => {
-  it("shows the shop inline and sends a purchase request", () => {
+  it("opens the room shop and sends a purchase request", () => {
     const input = props();
     render(<HouseEditSheets {...input} />);
-    expect(screen.getByRole("region", { name: "Shop and arrange your home" })).toBeVisible();
-    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.getByRole("dialog", { name: "Shop and arrange your home" })).toBeVisible();
+    fireEvent.click(screen.getByRole("tab", { name: "Bedroom" }));
     expect(screen.getByText("₦1400 · bed")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Buy" }));
     expect(input.onBuy).toHaveBeenCalledWith("bed");
+  });
+
+  it("switches between room accessories with carousel controls", () => {
+    const input = props();
+    input.catalog.push({
+      id: "shower",
+      category: "furniture",
+      slot_type: "bathroom",
+      art_key: "shower",
+      price_minor: 1100,
+    });
+    render(<HouseEditSheets {...input} />);
+    expect(screen.getByRole("tabpanel", { name: "Bathroom accessories" })).toHaveTextContent(
+      "shower",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Next room" }));
+    expect(
+      screen.getByRole("tabpanel", { name: "Sitting room accessories" }),
+    ).not.toHaveTextContent("shower");
+  });
+
+  it("moves to the next room on a horizontal swipe", () => {
+    render(<HouseEditSheets {...props()} />);
+    const panel = screen.getByRole("tabpanel", { name: "Bathroom accessories" });
+    fireEvent.touchStart(panel, { touches: [{ clientX: 220 }] });
+    fireEvent.touchEnd(panel, { changedTouches: [{ clientX: 80 }] });
+    expect(screen.getByRole("tabpanel", { name: "Sitting room accessories" })).toBeVisible();
+  });
+
+  it("shows included accessories in their room", () => {
+    const input = props();
+    input.inventory = [
+      {
+        id: "owned-shower",
+        item_id: "shower",
+        category: "furniture",
+        slot_type: "bathroom",
+        art_key: "shower",
+        price_minor: 0,
+        quantity: 1,
+      },
+    ];
+    render(<HouseEditSheets {...input} />);
+    expect(screen.getByRole("tabpanel", { name: "Bathroom accessories" })).toHaveTextContent(
+      "shower",
+    );
+    expect(screen.getByText("Owned")).toBeVisible();
   });
 
   it("places owned furniture into a matching room slot", () => {
@@ -65,6 +112,7 @@ describe("household item panel", () => {
     const input = props();
     input.cash = 100;
     render(<HouseEditSheets {...input} />);
+    fireEvent.click(screen.getByRole("tab", { name: "Bedroom" }));
     expect(screen.getByText("Insufficient funds")).toBeVisible();
     expect(screen.getByRole("button", { name: "Buy" })).toBeDisabled();
   });

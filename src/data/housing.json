@@ -91,6 +91,13 @@
         "id": "table",
         "z": 3,
         "x": 41
+      },
+      {
+        "y": 38,
+        "slot_type": "bathroom",
+        "id": "bathroom-shower",
+        "z": 2,
+        "x": 76
       }
     ],
     "walkable_area": {
@@ -194,6 +201,13 @@
         "id": "table",
         "z": 3,
         "x": 41
+      },
+      {
+        "y": 38,
+        "slot_type": "bathroom",
+        "id": "bathroom-shower",
+        "z": 2,
+        "x": 76
       }
     ],
     "walkable_area": {
@@ -297,6 +311,13 @@
         "id": "table",
         "z": 3,
         "x": 41
+      },
+      {
+        "y": 38,
+        "slot_type": "bathroom",
+        "id": "bathroom-shower",
+        "z": 2,
+        "x": 76
       }
     ],
     "walkable_area": {
@@ -400,6 +421,13 @@
         "id": "table",
         "z": 3,
         "x": 41
+      },
+      {
+        "y": 38,
+        "slot_type": "bathroom",
+        "id": "bathroom-shower",
+        "z": 2,
+        "x": 76
       }
     ],
     "walkable_area": {
@@ -503,6 +531,13 @@
         "id": "table",
         "z": 3,
         "x": 41
+      },
+      {
+        "y": 38,
+        "slot_type": "bathroom",
+        "id": "bathroom-shower",
+        "z": 2,
+        "x": 76
       }
     ],
     "walkable_area": {
@@ -619,6 +654,13 @@
         "id": "table",
         "z": 3,
         "x": 41
+      },
+      {
+        "y": 38,
+        "slot_type": "bathroom",
+        "id": "bathroom-shower",
+        "z": 2,
+        "x": 76
       }
     ],
     "walkable_area": {
