@@ -477,6 +477,13 @@
       "when": 1792350000007,
       "tag": "0066_house_essential_fixtures",
       "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1792350000008,
+      "tag": "0067_starter_seat_activity_key",
+      "breakpoints": true
     }
   ]
 }
