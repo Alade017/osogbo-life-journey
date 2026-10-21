@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { q, rpc } from "@/lib/game";
@@ -17,7 +17,8 @@ export const Route = createFileRoute("/_authenticated/_game/settings")({
   component: SettingsPage,
 });
 
-function SettingsPage() {
+export function SettingsPage() {
+  const fieldId = useId();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { data: profile } = useQuery(q.profile());
@@ -140,7 +141,7 @@ function SettingsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-5">
+    <div className="game-settings-page mx-auto w-full max-w-2xl space-y-5">
       <PageHeader eyebrow="MAKE IT YOURS" title="Settings" />
       <section className="game-panel space-y-4 p-5">
         <h2 className="text-xl font-bold">Account</h2>
@@ -152,14 +153,14 @@ function SettingsPage() {
         </p>
         {!isGuest && email.endsWith("@example.com") && (
           <div className="space-y-2 rounded-lg border border-border bg-muted/50 p-4">
-            <Label htmlFor="backup-email">Add a backup email (optional)</Label>
+            <Label htmlFor={`${fieldId}-backup-email`}>Add a backup email (optional)</Label>
             <p className="text-xs text-muted-foreground">
               Verify it to enable password recovery by email. Your username remains your sign-in
               name.
             </p>
             <div className="flex flex-wrap gap-2">
               <Input
-                id="backup-email"
+                id={`${fieldId}-backup-email`}
                 type="email"
                 autoComplete="email"
                 className="min-w-0 flex-1 bg-card"
@@ -179,9 +180,9 @@ function SettingsPage() {
               save available when you sign in on another device.
             </p>
             <div className="space-y-1.5">
-              <Label htmlFor="save-email">Email for account recovery</Label>
+              <Label htmlFor={`${fieldId}-save-email`}>Email for account recovery</Label>
               <Input
-                id="save-email"
+                id={`${fieldId}-save-email`}
                 type="email"
                 autoComplete="email"
                 value={recoveryEmail}
@@ -189,9 +190,9 @@ function SettingsPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="save-password">New password</Label>
+              <Label htmlFor={`${fieldId}-save-password`}>New password</Label>
               <Input
-                id="save-password"
+                id={`${fieldId}-save-password`}
                 type="password"
                 autoComplete="new-password"
                 minLength={8}
@@ -205,10 +206,10 @@ function SettingsPage() {
           </div>
         )}
         <div className="space-y-1.5">
-          <Label htmlFor="dn">Display name</Label>
+          <Label htmlFor={`${fieldId}-dn`}>Display name</Label>
           <div className="flex gap-2">
             <Input
-              id="dn"
+              id={`${fieldId}-dn`}
               maxLength={40}
               value={name}
               onChange={(e) => setName(e.target.value)}

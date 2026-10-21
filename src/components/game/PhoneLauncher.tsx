@@ -32,10 +32,8 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { q, rpc, useGameAction } from "@/lib/game";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 import { playGameSound } from "@/lib/game-audio";
-import { WorldAudioSettings } from "@/components/game/WorldAudioSettings";
 import { useLiveClock } from "@/hooks/use-live-clock";
 import { OSOGBO_TIME_ZONE } from "@/lib/osogbo-weather";
 import { Component, useEffect, useRef, useState, lazy, Suspense, type ReactNode } from "react";
@@ -68,6 +66,9 @@ const ProfilePage = lazy(() =>
 );
 const InventoryPage = lazy(() =>
   import("@/routes/_authenticated/_game/inventory").then((m) => ({ default: m.InventoryPage })),
+);
+const SettingsPage = lazy(() =>
+  import("@/routes/_authenticated/_game/settings").then((m) => ({ default: m.SettingsPage })),
 );
 const BusinessInvestmentApp = lazy(() =>
   import("@/components/game/BusinessInvestmentApp").then((m) => ({
@@ -198,7 +199,6 @@ export function PhoneLauncher({
   shortcutEditor?: ReactNode;
   onOpenChange?: (open: boolean) => void;
 }) {
-  const queryClient = useQueryClient();
   const [activeApp, setActiveApp] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [messagePlayerId, setMessagePlayerId] = useState<string | undefined>();
@@ -211,9 +211,6 @@ export function PhoneLauncher({
   } = useQuery(q.missions());
   const claimMission = useGameAction(rpc.claimMission);
   const { data: notifications } = useQuery(q.notifications());
-  const profileQuery = useQuery(q.profile());
-  const profile = profileQuery.data;
-  const [audioPreferenceError, setAudioPreferenceError] = useState("");
   const markRead = useGameAction(rpc.markRead);
 
   const missionCount = (missions ?? []).filter(
@@ -252,23 +249,6 @@ export function PhoneLauncher({
   const returnHome = () => {
     playGameSound("ui");
     setActiveApp(null);
-  };
-
-  const savePhoneAudioEnabled = async (enabled: boolean): Promise<boolean> => {
-    if (!profile) return false;
-    setAudioPreferenceError("");
-    const { data, error } = await supabase
-      .from("profiles")
-      .update({ sound_enabled: enabled })
-      .eq("id", profile.id)
-      .select()
-      .single();
-    if (error) {
-      setAudioPreferenceError("Could not save your audio preference. Try again.");
-      return false;
-    }
-    queryClient.setQueryData(q.profile().queryKey, data);
-    return true;
   };
 
   // Swipe-up gesture detection on home indicator
@@ -472,37 +452,7 @@ export function PhoneLauncher({
       );
     }
 
-    if (appName === "Settings") {
-      return (
-        <div className="phone-sub-app p-3 space-y-3">
-          <div className="phone-card p-3 space-y-3">
-            <h4 className="font-bold text-sm border-b border-border/40 pb-2">Sound & music</h4>
-            {profile ? (
-              <WorldAudioSettings
-                enabled={profile.sound_enabled}
-                onEnabledChange={savePhoneAudioEnabled}
-              />
-            ) : profileQuery.isError ? (
-              <div role="alert" className="text-xs">
-                Could not load audio preferences.
-                <button type="button" onClick={() => void profileQuery.refetch()}>
-                  Try again
-                </button>
-              </div>
-            ) : (
-              <p role="status" className="text-xs">
-                Loading audio preferences...
-              </p>
-            )}
-            {audioPreferenceError && (
-              <p role="alert" className="text-xs">
-                {audioPreferenceError}
-              </p>
-            )}
-          </div>
-        </div>
-      );
-    }
+    if (appName === "Settings") return <SettingsPage />;
 
     // Fallback coming soon for any unbuilt or auxiliary app
     const appDef = PHONE_APPS.find((a) => a.label === appName);

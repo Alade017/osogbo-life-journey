@@ -41,7 +41,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
     if (mode === "signup") {
       const cleanUsername = username.trim();
       if (!/^[a-zA-Z0-9_]{3,24}$/.test(cleanUsername)) {
-        toast.error("Username must be 3â€“24 characters using letters, numbers or underscores.");
+        toast.error("Username must be 3-24 characters using letters, numbers or underscores.");
         return;
       }
     }
@@ -153,14 +153,6 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
               </li>
             </ul>
           </div>
-          <a
-            href="https://commons.wikimedia.org/wiki/File:Osogbo.jpg"
-            target="_blank"
-            rel="noreferrer"
-            className="hidden text-[11px] text-white/75 underline underline-offset-2 lg:block"
-          >
-            Photo: El-Shaddaites Â· CC BY-SA 4.0
-          </a>
         </section>
 
         <section className="auth-form-panel flex items-center justify-center px-4 py-8 sm:px-8 lg:my-6 lg:rounded-l-2xl lg:px-10">
@@ -197,7 +189,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
                     disabled={busy}
                     aria-busy={busy}
                   >
-                    {busy ? "Sendingâ€¦" : "Send reset link"}
+                    {busy ? "Sending¦" : "Send reset link"}
                   </Button>
                 </form>
                 <button
@@ -350,14 +342,6 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
                     </p>
                   </>
                 )}
-                <a
-                  href="https://commons.wikimedia.org/wiki/File:Osogbo.jpg"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-6 block text-center text-[10px] text-muted-foreground underline underline-offset-2 lg:hidden"
-                >
-                  Photo: El-Shaddaites Â· CC BY-SA 4.0
-                </a>
               </>
             )}
           </div>
