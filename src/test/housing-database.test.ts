@@ -109,6 +109,153 @@ describe("housing onboarding database actions", () => {
     }
   });
 
+  it("enters the selected home through travel, uses placed furniture, and leaves safely", async () => {
+    await db.query("select set_config('test.user_id',$1,false)", [userId]);
+    try {
+      await db.query("update public.wallets set balance=1000000 where user_id=$1", [userId]);
+      const listing = await db.query<{ id: string; location_id: string }>(
+        "select id,location_id from public.game_properties where slug='housing-shared-room'",
+      );
+      await db.query("select public.acquire_game_property($1,'owned')", [listing.rows[0]!.id]);
+      const owned = await db.query<{ id: string }>(
+        "select id from public.player_properties where user_id=$1 and is_home",
+        [userId],
+      );
+      const selectedHomeId = owned.rows[0]!.id;
+      await db.query("update public.characters set energy=20 where user_id=$1", [userId]);
+      const session = "81111111-1111-4111-8111-111111111112";
+      let revision = 0;
+      const command = async (kind: string, action?: string, request?: string) => {
+        const result = await db.query<{
+          state: { revision: number; needs: Record<string, number>; action: string | null };
+        }>("select public.personal_simulation_command($1,$2,$3,$4,$5) as state", [
+          session,
+          revision,
+          kind,
+          action ?? null,
+          request ?? null,
+        ]);
+        revision = result.rows[0]!.state.revision;
+        return result.rows[0]!.state;
+      };
+      await command("open");
+      await expect(command("start", "sleep", "outside-bed")).rejects.toThrow(/Travel home/);
+      const entered = await db.query<{
+        result: { playerPropertyId: string; locationId: string; trip: unknown };
+      }>("select public.enter_player_home() as result");
+      expect(entered.rows[0]!.result).toMatchObject({
+        playerPropertyId: selectedHomeId,
+        locationId: listing.rows[0]!.location_id,
+      });
+      const location = await db.query<{
+        current_location_id: string;
+        inside_home_property_id: string;
+      }>(
+        "select current_location_id,inside_home_property_id from public.characters where user_id=$1",
+        [userId],
+      );
+      expect(location.rows[0]).toMatchObject({
+        current_location_id: listing.rows[0]!.location_id,
+        inside_home_property_id: selectedHomeId,
+      });
+      const again = await db.query<{ result: { trip: unknown } }>(
+        "select public.enter_player_home() as result",
+      );
+      expect(again.rows[0]!.result.trip).toBeNull();
+      const before = await command("open");
+      await command("start", "sleep", "home-bed");
+      await expect(command("complete", "sleep", "wrong-request")).rejects.toThrow();
+      const after = await command("complete", "sleep", "home-bed");
+      expect(after.needs["energy"]).toBeGreaterThan(before.needs["energy"]!);
+      const duplicate = await command("complete", "sleep", "home-bed");
+      expect(duplicate.needs["energy"]).toBe(after.needs["energy"]);
+      await expect(command("start", "sleep", "cooldown-bed")).rejects.toThrow(/cooling down/);
+      for (const [action, request] of [
+        ["cook", "home-stove"],
+        ["shower", "home-shower"],
+        ["toilet", "home-toilet"],
+        ["watch_tv", "home-tv"],
+        ["relax_sofa", "home-seat"],
+      ]) {
+        await command("start", action, request);
+        await command("complete", action, request);
+      }
+      const left = await db.query<{ result: { locationId: string } }>(
+        "select public.leave_player_home() as result",
+      );
+      expect(left.rows[0]!.result.locationId).toBe(listing.rows[0]!.location_id);
+      await expect(command("start", "cook", "outside-stove")).rejects.toThrow(/Travel home/);
+      await db.query("select public.enter_player_home()");
+      await db.query(
+        "update public.characters set current_location_id=(select id from public.locations where slug='city-centre') where user_id=$1",
+        [userId],
+      );
+      const afterTravel = await db.query<{ inside_home_property_id: string | null }>(
+        "select inside_home_property_id from public.characters where user_id=$1",
+        [userId],
+      );
+      expect(afterTravel.rows[0]!.inside_home_property_id).toBeNull();
+      await expect(command("start", "cook", "after-travel")).rejects.toThrow(/Travel home/);
+    } finally {
+      await db.query("select set_config('test.user_id','',false)");
+    }
+  });
+
+  it("rejects furniture from another player's room and direct home-presence writes", async () => {
+    const guestId = "82222222-2222-4222-8222-222222222222";
+    await db.query("select set_config('test.user_id',$1,false)", [userId]);
+    try {
+      const listing = await db.query<{ id: string }>(
+        "select id from public.game_properties where slug='housing-shared-room'",
+      );
+      await db.query(
+        `insert into public.player_properties(user_id,character_id,property_id,tenure)
+         select $1,id,$2,'owned' from public.characters where user_id=$1`,
+        [userId, listing.rows[0]!.id],
+      );
+      await db.query("insert into auth.users(id) values($1)", [guestId]);
+      await db.query("insert into public.profiles(id,display_name) values($1,'Guest')", [guestId]);
+      await db.query(
+        "insert into public.characters(user_id,name,gender,age,personality) values($1,'Guest','female',22,'ambitious')",
+        [guestId],
+      );
+      await db.query(
+        `insert into public.player_properties(user_id,character_id,property_id,tenure)
+         select $1,id,$2,'owned' from public.characters where user_id=$1`,
+        [guestId, listing.rows[0]!.id],
+      );
+      await db.query(
+        `delete from public.house_placements where item_id='starter-bed' and player_house_id in
+          (select id from public.player_houses where player_id=$1)`,
+        [guestId],
+      );
+      await db.query("select set_config('test.user_id',$1,false)", [guestId]);
+      await db.query("select public.enter_player_home()");
+      const session = "82222222-2222-4222-8222-222222222223";
+      const opened = await db.query<{ state: { revision: number } }>(
+        "select public.personal_simulation_command($1,0,'open') as state",
+        [session],
+      );
+      await expect(
+        db.query("select public.personal_simulation_command($1,$2,'start','sleep','other-bed')", [
+          session,
+          opened.rows[0]!.state.revision,
+        ]),
+      ).rejects.toThrow(/Place a bed/);
+      await db.exec("set role authenticated");
+      await expect(
+        db.query("update public.characters set inside_home_property_id=null where user_id=$1", [
+          guestId,
+        ]),
+      ).rejects.toThrow(/permission/);
+    } finally {
+      await db.exec("reset role");
+      await db.query("select set_config('test.user_id','',false)");
+      await db.query("delete from public.profiles where id=$1", [guestId]);
+      await db.query("delete from auth.users where id=$1", [guestId]);
+    }
+  });
+
   it("shows a purchased Royal Crown home on the map", async () => {
     await db.query("select set_config('test.user_id',$1,false)", [userId]);
     try {

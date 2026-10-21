@@ -484,6 +484,13 @@
       "when": 1792350000008,
       "tag": "0067_starter_seat_activity_key",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1792350000009,
+      "tag": "0068_authoritative_home_presence",
+      "breakpoints": true
     }
   ]
 }

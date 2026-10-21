@@ -70,6 +70,13 @@
   color: var(--primary-foreground);
   cursor: pointer;
 }
+.house-presence-actions {
+  margin: 0.7rem 0 1rem;
+}
+.house-presence-actions .house-primary-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
 .house-status-banner,
 .house-rent-banner,
 .house-error-banner {

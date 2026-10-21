@@ -522,6 +522,7 @@ export type Database = {
           health: number;
           hunger: number;
           id: string;
+          inside_home_property_id: string | null;
           intelligence: number;
           is_adult: boolean | null;
           level: number;
@@ -566,6 +567,7 @@ export type Database = {
           health?: number;
           hunger?: number;
           id?: string;
+          inside_home_property_id?: string | null;
           intelligence?: number;
           is_adult?: never;
           level?: number;
@@ -609,6 +611,7 @@ export type Database = {
           health?: number;
           hunger?: number;
           id?: string;
+          inside_home_property_id?: string | null;
           intelligence?: number;
           is_adult?: never;
           level?: number;
@@ -4271,6 +4274,8 @@ export type Database = {
       get_friend_home_for_visit: { Args: { p_target_character_id: string }; Returns: Json };
       get_friend_status_posts: { Args: Record<PropertyKey, never>; Returns: Json };
       get_house_state: { Args: { p_player_id: string }; Returns: Json };
+      enter_player_home: { Args: Record<PropertyKey, never>; Returns: Json };
+      leave_player_home: { Args: Record<PropertyKey, never>; Returns: Json };
       get_or_create_player_conversation: { Args: { p_target_character_id: string }; Returns: Json };
       get_player_profile: { Args: { p_character_id: string }; Returns: Json };
       get_player_social_overview: { Args: Record<PropertyKey, never>; Returns: Json };

@@ -58,6 +58,7 @@ type HouseState = {
 type HouseStateSnapshot = { state: HouseState; source: "server" | "saved" };
 type CanonicalHome = {
   propertyId: string;
+  playerPropertyId: string;
   houseTypeId: string;
   name: string;
   imageUrl: string | null;
@@ -201,10 +202,16 @@ function formatRentDate(value: string | null | undefined) {
 }
 
 function normalizeCanonicalHome(value: unknown): CanonicalHome | null {
-  if (!isRecord(value) || typeof value["propertyId"] !== "string") return null;
+  if (
+    !isRecord(value) ||
+    typeof value["propertyId"] !== "string" ||
+    typeof value["playerPropertyId"] !== "string"
+  )
+    return null;
   if (typeof value["houseTypeId"] !== "string" || typeof value["name"] !== "string") return null;
   return {
     propertyId: value["propertyId"],
+    playerPropertyId: value["playerPropertyId"],
     houseTypeId: value["houseTypeId"],
     name: value["name"],
     imageUrl: typeof value["imageUrl"] === "string" ? value["imageUrl"] : null,
@@ -631,6 +638,28 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const homePresence = useMutation({
+    mutationFn: async (command: "enter_player_home" | "leave_player_home") => {
+      const { data, error } = await supabase.rpc(command);
+      if (error) throw new Error(error.message);
+      if (!isRecord(data) || typeof data["locationId"] !== "string")
+        throw new Error("The server did not confirm your location. Try again.");
+      return data;
+    },
+    onSuccess: async (_data, command) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: q.character().queryKey }),
+        queryClient.invalidateQueries({ queryKey: q.wallet().queryKey }),
+      ]);
+      setActivityError("");
+      toast.success(command === "enter_player_home" ? "You're home." : "You went outside.");
+    },
+    onError: (error: Error) => {
+      setActivityError(error.message);
+      toast.error(error.message);
+    },
+  });
+
   const placements = serverState?.placements ?? [];
   const inventory = serverState?.inventory ?? [];
   const outfit = serverState?.outfit ?? EMPTY_OUTFIT;
@@ -639,6 +668,8 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   ) as Appearance;
   const isOffline = !online || usingSaved;
   const canonicalHome = canonicalHomeQuery.data;
+  const isInsideHome =
+    !!canonicalHome && character?.inside_home_property_id === canonicalHome.playerPropertyId;
   const rentStatus = canonicalHome?.status ?? serverState?.house?.status ?? "unknown";
   const rentDueAt = canonicalHome?.dueAt ?? serverState?.house?.next_rent_due_at;
   const isOverdue = rentStatus === "grace" || rentStatus === "rescue" || rentStatus === "overdue";
@@ -659,6 +690,10 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const interactWithPlacement = async (placement: HousePlacement) => {
     const action = homeFurnitureAction(placement.item_id);
     if (!action || usingPlacementId || isOffline || !gameTime.ready || gameTime.busy) return;
+    if (!isInsideHome) {
+      setActivityError("Enter your home before using its accessories.");
+      return;
+    }
     setUsingPlacementId(placement.id);
     setActivityError("");
     try {
@@ -775,7 +810,29 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       {!editing && (
         <section className="house-needs-actions" aria-label="Use home accessories">
           <h2>Use your home</h2>
-          <p>Tap a placed accessory to care for your character.</p>
+          <p>
+            {isInsideHome
+              ? "Tap a placed accessory to care for your character."
+              : "Enter your home to use its accessories."}
+          </p>
+          {canonicalHome && (
+            <div className="house-presence-actions">
+              <button
+                type="button"
+                className="house-primary-button"
+                disabled={isOffline || homePresence.isPending}
+                onClick={() =>
+                  homePresence.mutate(isInsideHome ? "leave_player_home" : "enter_player_home")
+                }
+              >
+                {homePresence.isPending
+                  ? "Updating location..."
+                  : isInsideHome
+                    ? "Go outside"
+                    : "Travel home"}
+              </button>
+            </div>
+          )}
           <div className="house-needs-action-list">
             {placements
               .filter((placement) => homeFurnitureAction(placement.item_id))
@@ -787,7 +844,13 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
                     key={placement.id}
                     type="button"
                     className="house-needs-action"
-                    disabled={isOffline || !gameTime.ready || gameTime.busy || !!usingPlacementId}
+                    disabled={
+                      isOffline ||
+                      !isInsideHome ||
+                      !gameTime.ready ||
+                      gameTime.busy ||
+                      !!usingPlacementId
+                    }
                     onClick={() => void interactWithPlacement(placement)}
                   >
                     <strong>
