@@ -1,12 +1,14 @@
 /* A consistent device shell for the launcher and every app opened inside it. */
-/* Launcher dialog: one rule for centering and look, at every width. */
+/* Launcher dialog: centred in the viewport at every width. */
 .phone-dialog.phone-dialog {
-  /* Centering, without transform */
   position: fixed !important;
-  inset: 0 !important;
-  margin: auto !important;
+  top: 50% !important;
+  left: 50% !important;
+  right: auto !important;
+  bottom: auto !important;
+  margin: 0 !important;
+  transform: translate(-50%, -50%) !important;
   translate: none !important;
-  transform: none !important;
   animation: none !important;
   z-index: var(--game-dialog-layer) !important;
   width: min(420px, calc(100vw - 24px)) !important;
@@ -14,7 +16,6 @@
   height: min(840px, calc(100dvh - 24px)) !important;
   max-height: calc(100dvh - 24px) !important;
 
-  /* Look (carried over from the old block) */
   gap: 0;
   overflow: hidden;
   padding: 8px !important;

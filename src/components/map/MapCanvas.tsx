@@ -181,7 +181,7 @@ function OptionalGltf({
   );
 }
 // switch to true once public/models/town.glb is exported from Blender.
-const TOWN_BASE_MODEL_ENABLED=false;
+const TOWN_BASE_MODEL_ENABLED=true;
 function TownBase() {
   if(!TOWN_BASE_MODEL_ENABLED) return null;
   return <OptionalGltf path="/models/town.glb" fallback={null} loadingFallback={<MapLoading/>} />;
