@@ -17,7 +17,7 @@ type AudioGraph = {
 };
 
 const STORAGE_KEY = "osogbo-world-audio-v1";
-const DEFAULT_LEVELS: AudioLevels = { master: 0.55, music: 0.2, effects: 0.45 };
+const DEFAULT_LEVELS: AudioLevels = { master: 0.75, music: 0.4, effects: 0.65 };
 let graph: AudioGraph | null = null;
 let automaticAudioAllowed = false;
 let sessionCleanup: (() => void) | null = null;
@@ -495,7 +495,7 @@ export function playGameSound(name: SoundName) {
           return;
         const source = current.context.createBufferSource();
         const trim = current.context.createGain();
-        trim.gain.value = 0.25;
+        trim.gain.value = 0.65;
         source.buffer = decoded;
         source.connect(trim);
         trim.connect(current.effects);
@@ -551,7 +551,7 @@ function playSynthesizedSound(name: SoundName, current: AudioGraph) {
     oscillator.type = name === "message" ? "triangle" : "sine";
     oscillator.frequency.setValueAtTime(frequency, start);
     envelope.gain.setValueAtTime(0.0001, start);
-    envelope.gain.exponentialRampToValueAtTime(0.18 * 0.08, start + 0.012);
+    envelope.gain.exponentialRampToValueAtTime(0.08, start + 0.012);
     envelope.gain.exponentialRampToValueAtTime(0.0001, start + 0.12);
     oscillator.connect(envelope);
     envelope.connect(current.effects);

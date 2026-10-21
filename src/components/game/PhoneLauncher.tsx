@@ -32,7 +32,10 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { q, rpc, useGameAction } from "@/lib/game";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { playGameSound } from "@/lib/game-audio";
+import { WorldAudioSettings } from "@/components/game/WorldAudioSettings";
 import { useLiveClock } from "@/hooks/use-live-clock";
 import { OSOGBO_TIME_ZONE } from "@/lib/osogbo-weather";
 import { Component, useEffect, useRef, useState, lazy, Suspense, type ReactNode } from "react";
@@ -87,35 +90,35 @@ type PhoneAppDefinition = {
 };
 
 const PHONE_APPS: readonly PhoneAppDefinition[] = [
-  { label: "Messages", icon: MessagesSquare, tone: "phone-app-coral" },
-  { label: "Market", icon: Store, tone: "phone-app-coral" },
-  { label: "Housing", icon: HousePlus, tone: "phone-app-green" },
-  { label: "Career Life", icon: GraduationCap, tone: "phone-app-blue" },
   { label: "Map", icon: MapPinned, tone: "phone-app-blue" },
-  { label: "Bank", icon: Landmark, tone: "phone-app-blue" },
+  { label: "Messages", icon: MessagesSquare, tone: "phone-app-coral" },
+  { label: "Housing", icon: HousePlus, tone: "phone-app-green" },
   { label: "Jobs", icon: BriefcaseBusiness, tone: "phone-app-gold" },
-  { label: "Property", icon: HousePlus, tone: "phone-app-green" },
-  { label: "Find homes", icon: Building2, tone: "phone-app-green" },
-  { label: "Party", icon: PartyPopper, tone: "phone-app-coral" },
-  { label: "Education", icon: GraduationCap, tone: "phone-app-blue" },
-  { label: "Invest", icon: ChartNoAxesCombined, tone: "phone-app-gold" },
-  { label: "Company", icon: Building2, tone: "phone-app-green" },
-  { label: "Billboards", icon: PanelsTopLeft, tone: "phone-app-gold" },
+  { label: "Bank", icon: Landmark, tone: "phone-app-blue" },
   { label: "Missions", icon: Target, tone: "phone-app-gold" },
-  { label: "Notifications", icon: Bell, tone: "phone-app-gold" },
-  { label: "Settings", icon: Settings, tone: "phone-app-muted" },
-  { label: "Calendar", icon: CalendarDays, tone: "phone-app-blue" },
-  { label: "Food Delivery", icon: UtensilsCrossed, tone: "phone-app-coral" },
-  { label: "Okada Rides", icon: Bike, tone: "phone-app-green" },
-  { label: "Contribution", icon: HandCoins, tone: "phone-app-gold" },
-  { label: "Leaderboard", icon: Trophy, tone: "phone-app-gold" },
-  { label: "Town News", icon: Newspaper, tone: "phone-app-blue" },
-  { label: "Courses", icon: BookOpen, tone: "phone-app-blue" },
-  { label: "Market Stalls", icon: Store, tone: "phone-app-green" },
-  { label: "People", icon: UsersRound, tone: "phone-app-coral" },
   { label: "Inventory", icon: Backpack, tone: "phone-app-blue" },
   { label: "Profile", icon: UserRound, tone: "phone-app-muted" },
+  { label: "Property", icon: HousePlus, tone: "phone-app-green" },
+  { label: "Find homes", icon: Building2, tone: "phone-app-green" },
+  { label: "Market", icon: Store, tone: "phone-app-coral" },
+  { label: "People", icon: UsersRound, tone: "phone-app-coral" },
+  { label: "Notifications", icon: Bell, tone: "phone-app-gold" },
+  { label: "Settings", icon: Settings, tone: "phone-app-muted" },
+  { label: "Education", icon: GraduationCap, tone: "phone-app-blue" },
+  { label: "Career Life", icon: GraduationCap, tone: "phone-app-blue" },
+  { label: "Courses", icon: BookOpen, tone: "phone-app-blue" },
+  { label: "Party", icon: PartyPopper, tone: "phone-app-coral" },
+  { label: "Food Delivery", icon: UtensilsCrossed, tone: "phone-app-coral" },
+  { label: "Okada Rides", icon: Bike, tone: "phone-app-green" },
+  { label: "Calendar", icon: CalendarDays, tone: "phone-app-blue" },
+  { label: "Town News", icon: Newspaper, tone: "phone-app-blue" },
+  { label: "Leaderboard", icon: Trophy, tone: "phone-app-gold" },
+  { label: "Contribution", icon: HandCoins, tone: "phone-app-gold" },
+  { label: "Market Stalls", icon: Store, tone: "phone-app-green" },
   { label: "Businesses", icon: Building2, tone: "phone-app-green" },
+  { label: "Company", icon: Building2, tone: "phone-app-green" },
+  { label: "Invest", icon: ChartNoAxesCombined, tone: "phone-app-gold" },
+  { label: "Billboards", icon: PanelsTopLeft, tone: "phone-app-gold" },
 ] as const;
 
 const COMMUNITY_APPS = new Set<CommunityPhoneApp>([
@@ -195,6 +198,7 @@ export function PhoneLauncher({
   shortcutEditor?: ReactNode;
   onOpenChange?: (open: boolean) => void;
 }) {
+  const queryClient = useQueryClient();
   const [activeApp, setActiveApp] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [messagePlayerId, setMessagePlayerId] = useState<string | undefined>();
@@ -207,6 +211,9 @@ export function PhoneLauncher({
   } = useQuery(q.missions());
   const claimMission = useGameAction(rpc.claimMission);
   const { data: notifications } = useQuery(q.notifications());
+  const profileQuery = useQuery(q.profile());
+  const profile = profileQuery.data;
+  const [audioPreferenceError, setAudioPreferenceError] = useState("");
   const markRead = useGameAction(rpc.markRead);
 
   const missionCount = (missions ?? []).filter(
@@ -238,11 +245,30 @@ export function PhoneLauncher({
     : "--:--";
 
   const openApp = (appName: string) => {
+    playGameSound("ui");
     setActiveApp(appName);
   };
 
   const returnHome = () => {
+    playGameSound("ui");
     setActiveApp(null);
+  };
+
+  const savePhoneAudioEnabled = async (enabled: boolean): Promise<boolean> => {
+    if (!profile) return false;
+    setAudioPreferenceError("");
+    const { data, error } = await supabase
+      .from("profiles")
+      .update({ sound_enabled: enabled })
+      .eq("id", profile.id)
+      .select()
+      .single();
+    if (error) {
+      setAudioPreferenceError("Could not save your audio preference. Try again.");
+      return false;
+    }
+    queryClient.setQueryData(q.profile().queryKey, data);
+    return true;
   };
 
   // Swipe-up gesture detection on home indicator
@@ -450,19 +476,29 @@ export function PhoneLauncher({
       return (
         <div className="phone-sub-app p-3 space-y-3">
           <div className="phone-card p-3 space-y-3">
-            <h4 className="font-bold text-sm border-b border-border/40 pb-2">Device Preferences</h4>
-            <div className="flex items-center justify-between text-xs py-1">
-              <span>Haptic Feedback</span>
-              <span className="font-bold text-emerald-600">Enabled</span>
-            </div>
-            <div className="flex items-center justify-between text-xs py-1">
-              <span>Network Carrier</span>
-              <span className="font-bold">OSUN WAT 4G</span>
-            </div>
-            <div className="flex items-center justify-between text-xs py-1">
-              <span>Timezone</span>
-              <span className="font-bold">Africa/Lagos (WAT)</span>
-            </div>
+            <h4 className="font-bold text-sm border-b border-border/40 pb-2">Sound & music</h4>
+            {profile ? (
+              <WorldAudioSettings
+                enabled={profile.sound_enabled}
+                onEnabledChange={savePhoneAudioEnabled}
+              />
+            ) : profileQuery.isError ? (
+              <div role="alert" className="text-xs">
+                Could not load audio preferences.
+                <button type="button" onClick={() => void profileQuery.refetch()}>
+                  Try again
+                </button>
+              </div>
+            ) : (
+              <p role="status" className="text-xs">
+                Loading audio preferences...
+              </p>
+            )}
+            {audioPreferenceError && (
+              <p role="alert" className="text-xs">
+                {audioPreferenceError}
+              </p>
+            )}
           </div>
         </div>
       );

@@ -50,10 +50,10 @@ function SettingsPage() {
     reduced_motion?: boolean;
     sound_enabled?: boolean;
   }) {
-    if (!profile) return;
+    if (!profile) return false;
     if (patch.display_name !== undefined && !patch.display_name.trim()) {
       toast.error("Enter a display name before saving.");
-      return;
+      return false;
     }
     const { data, error } = await supabase
       .from("profiles")
@@ -66,13 +66,14 @@ function SettingsPage() {
       .single();
     if (error) {
       toast.error(error.message);
-      return;
+      return false;
     }
     qc.setQueryData(["profile"], data);
     await qc.invalidateQueries({ queryKey: q.profile().queryKey });
     toast.success(
       patch.display_name !== undefined ? "Display name updated." : "Preferences saved.",
     );
+    return true;
   }
 
   async function signOut() {
@@ -241,7 +242,7 @@ function SettingsPage() {
           {profile && (
             <WorldAudioSettings
               enabled={profile.sound_enabled}
-              onEnabledChange={(sound_enabled) => void update({ sound_enabled })}
+              onEnabledChange={(sound_enabled) => update({ sound_enabled })}
             />
           )}
         </div>
