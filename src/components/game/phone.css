@@ -1,25 +1,26 @@
-/* A consistent device shell for the launcher and every app opened inside it. */
-/* Launcher dialog: centred in the viewport at every width. */
 .phone-dialog.phone-dialog {
   position: fixed !important;
-  inset: 0 !important;
-  margin: auto !important;
-  transform: none !important;
+
+  /* Explicit viewport centering */
+  inset: 50% auto auto 50% !important;
+  margin: 0 !important;
+  transform: translate(-50%, -50%) !important;
   translate: none !important;
-  animation: none !important;
-  z-index: var(--game-dialog-layer) !important;
+
   width: min(420px, calc(100vw - 24px)) !important;
   max-width: min(420px, calc(100vw - 24px)) !important;
+
   height: min(840px, calc(100dvh - 24px)) !important;
   max-height: calc(100dvh - 24px) !important;
 
-  gap: 0;
+  box-sizing: border-box;
   overflow: hidden;
   padding: 8px !important;
-  border: 2px solid color-mix(in srgb, var(--brand-cream) 20%, transparent);
   border-radius: 24px !important;
   background: var(--brand-ink, #0b0f19);
-  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7);
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.5);
+  border: 2px solid color-mix(in srgb, var(--brand-cream) 20%, transparent);
+  z-index: var(--game-dialog-layer) !important;
 }
 
 /* Full-height phone apps keep native scrolling while hiding visual scrollbars. */
