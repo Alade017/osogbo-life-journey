@@ -75,7 +75,7 @@ function rentalReason(
   eligibilityError: boolean,
 ) {
   if (listing.isCurrentHome) return "This is your current home.";
-  if (!listing.available) return "You already have an active rental.";
+  if (!listing.available) return "You already have an active property.";
   if (balance === null) return "Your wallet is still loading.";
   if (balance < listing.upfrontTotalMinor)
     return `You need ${formatNaira(listing.upfrontTotalMinor - balance)} more for move-in.`;
