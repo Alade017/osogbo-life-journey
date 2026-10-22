@@ -491,6 +491,13 @@
       "when": 1792350000009,
       "tag": "0068_authoritative_home_presence",
       "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "7",
+      "when": 1792350000010,
+      "tag": "0069_separate_audio_preferences",
+      "breakpoints": true
     }
   ]
 }

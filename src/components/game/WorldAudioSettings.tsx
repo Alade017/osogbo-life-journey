@@ -11,15 +11,24 @@ import {
 
 // The audio graph has independent music and effects channels.
 export function WorldAudioSettings({
-  enabled,
-  onEnabledChange,
+  musicEnabled,
+  effectsEnabled,
+  onChannelChange,
 }: {
-  enabled: boolean;
-  onEnabledChange: (enabled: boolean) => Promise<boolean | void> | boolean | void;
+  musicEnabled: boolean;
+  effectsEnabled: boolean;
+  onChannelChange: (
+    channel: "music" | "effects",
+    enabled: boolean,
+  ) => Promise<boolean | void> | boolean | void;
 }) {
   const [levels, setLevels] = useState(() => {
     const saved = readGameAudioLevels();
-    return enabled ? saved : { ...saved, music: 0, effects: 0 };
+    return {
+      ...saved,
+      music: musicEnabled ? saved.music || 0.4 : 0,
+      effects: effectsEnabled ? saved.effects || 0.65 : 0,
+    };
   });
   const [unavailable, setUnavailable] = useState(false);
   const [saveError, setSaveError] = useState(false);
@@ -29,8 +38,12 @@ export function WorldAudioSettings({
   // controls truthful without resetting a change currently being saved.
   useEffect(() => {
     const saved = readGameAudioLevels();
-    setLevels(enabled ? saved : { ...saved, music: 0, effects: 0 });
-  }, [enabled]);
+    setLevels({
+      ...saved,
+      music: musicEnabled ? saved.music || 0.4 : 0,
+      effects: effectsEnabled ? saved.effects || 0.65 : 0,
+    });
+  }, [musicEnabled, effectsEnabled]);
 
   async function toggle(channel: "music" | "effects", checked: boolean) {
     if (changing) return;
@@ -48,7 +61,7 @@ export function WorldAudioSettings({
       setLevels(next);
       if (!next.music && !next.effects) await disableGameAudio();
       if (checked && channel === "effects") playGameSound("ui");
-      const saved = await onEnabledChange(next.music > 0 || next.effects > 0);
+      const saved = await onChannelChange(channel, checked);
       if (saved === false) {
         setGameAudioLevels(levels);
         setLevels(levels);
@@ -90,41 +103,20 @@ export function WorldAudioSettings({
       <div className="rounded-xl border border-border p-3">
         <div className="flex min-h-12 items-center justify-between gap-4">
           <span>
-            <span className="block font-semibold">Sound effects</span>
-            <span className="text-xs text-muted-foreground">
-              Notifications, messages and game actions
-            </span>
-          </span>
-          <Switch
-            aria-label="Sound effects"
-            checked={levels.effects > 0}
-            disabled={changing}
-            onCheckedChange={(value) => void toggle("effects", value)}
-          />
-        </div>
-        {levels.effects > 0 && (
-          <button
-            type="button"
-            className="mt-2 text-xs font-semibold text-primary underline"
-            disabled={changing}
-            onClick={() => void preview("effects")}
-          >
-            Play sound sample
-          </button>
-        )}
-      </div>
-      <div className="rounded-xl border border-border p-3">
-        <div className="flex min-h-12 items-center justify-between gap-4">
-          <span>
             <span className="block font-semibold">Music</span>
             <span className="text-xs text-muted-foreground">Background music during gameplay</span>
           </span>
-          <Switch
-            aria-label="Music"
-            checked={levels.music > 0}
-            disabled={changing}
-            onCheckedChange={(value) => void toggle("music", value)}
-          />
+          <div className="flex shrink-0 items-center gap-2">
+            <span className="min-w-6 text-xs text-muted-foreground" aria-hidden="true">
+              {levels.music > 0 ? "On" : "Off"}
+            </span>
+            <Switch
+              aria-label="Music"
+              checked={levels.music > 0}
+              disabled={changing}
+              onCheckedChange={(value) => void toggle("music", value)}
+            />
+          </div>
         </div>
         {levels.music > 0 && (
           <button
@@ -134,6 +126,37 @@ export function WorldAudioSettings({
             onClick={() => void preview("music")}
           >
             Play music
+          </button>
+        )}
+      </div>
+      <div className="rounded-xl border border-border p-3">
+        <div className="flex min-h-12 items-center justify-between gap-4">
+          <span>
+            <span className="block font-semibold">Sound Effects</span>
+            <span className="text-xs text-muted-foreground">
+              Notifications, messages and game actions
+            </span>
+          </span>
+          <div className="flex shrink-0 items-center gap-2">
+            <span className="min-w-6 text-xs text-muted-foreground" aria-hidden="true">
+              {levels.effects > 0 ? "On" : "Off"}
+            </span>
+            <Switch
+              aria-label="Sound effects"
+              checked={levels.effects > 0}
+              disabled={changing}
+              onCheckedChange={(value) => void toggle("effects", value)}
+            />
+          </div>
+        </div>
+        {levels.effects > 0 && (
+          <button
+            type="button"
+            className="mt-2 text-xs font-semibold text-primary underline"
+            disabled={changing}
+            onClick={() => void preview("effects")}
+          >
+            Play sound sample
           </button>
         )}
       </div>

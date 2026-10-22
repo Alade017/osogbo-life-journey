@@ -50,6 +50,8 @@ export function SettingsPage() {
     display_name?: string;
     reduced_motion?: boolean;
     sound_enabled?: boolean;
+    music_enabled?: boolean;
+    effects_enabled?: boolean;
   }) {
     if (!profile) return false;
     if (patch.display_name !== undefined && !patch.display_name.trim()) {
@@ -242,8 +244,22 @@ export function SettingsPage() {
           <h3 className="font-semibold">Sound & music</h3>
           {profile && (
             <WorldAudioSettings
-              enabled={profile.sound_enabled}
-              onEnabledChange={(sound_enabled) => update({ sound_enabled })}
+              musicEnabled={profile.music_enabled ?? profile.sound_enabled}
+              effectsEnabled={profile.effects_enabled ?? profile.sound_enabled}
+              onChannelChange={(channel, enabled) => {
+                const musicEnabled =
+                  channel === "music" ? enabled : (profile.music_enabled ?? profile.sound_enabled);
+                const effectsEnabled =
+                  channel === "effects"
+                    ? enabled
+                    : (profile.effects_enabled ?? profile.sound_enabled);
+                return update({
+                  ...(channel === "music"
+                    ? { music_enabled: enabled }
+                    : { effects_enabled: enabled }),
+                  sound_enabled: musicEnabled || effectsEnabled,
+                });
+              }}
             />
           )}
         </div>

@@ -19,6 +19,8 @@ import { normalizeEquippedItems } from "@/lib/equipment-service";
 import {
   configureGameMusic,
   disableGameAudio,
+  readGameAudioLevels,
+  setGameAudioLevels,
   startGameAudioSession,
   playGameSound,
 } from "@/lib/game-audio";
@@ -68,12 +70,20 @@ function GameLayout() {
     };
   }, [character?.id]);
   useEffect(() => {
-    if (character?.id && profile?.sound_enabled) {
+    const musicEnabled = profile?.music_enabled ?? profile?.sound_enabled ?? false;
+    const effectsEnabled = profile?.effects_enabled ?? profile?.sound_enabled ?? false;
+    const saved = readGameAudioLevels();
+    setGameAudioLevels({
+      ...saved,
+      music: musicEnabled ? saved.music || 0.4 : 0,
+      effects: effectsEnabled ? saved.effects || 0.65 : 0,
+    });
+    if (character?.id && (musicEnabled || effectsEnabled)) {
       startGameAudioSession();
       return;
     }
     void disableGameAudio();
-  }, [character?.id, profile?.sound_enabled]);
+  }, [character?.id, profile?.music_enabled, profile?.effects_enabled, profile?.sound_enabled]);
   useEffect(() => {
     if (!character?.id || !character.current_location_id) return;
     const channel = supabase.channel(`people-area:${character.current_location_id}`, {

@@ -3446,7 +3446,9 @@ export type Database = {
           created_at: string;
           dashboard_pins: NonNullable<Json>;
           display_name: string | null;
+          effects_enabled: boolean;
           id: string;
+          music_enabled: boolean;
           reduced_motion: boolean;
           sound_enabled: boolean;
           updated_at: string;
@@ -3457,7 +3459,9 @@ export type Database = {
           created_at?: string;
           dashboard_pins?: NonNullable<Json>;
           display_name?: string | null;
+          effects_enabled?: boolean;
           id: string;
+          music_enabled?: boolean;
           reduced_motion?: boolean;
           sound_enabled?: boolean;
           updated_at?: string;
@@ -3467,7 +3471,9 @@ export type Database = {
           created_at?: string;
           dashboard_pins?: NonNullable<Json>;
           display_name?: string | null;
+          effects_enabled?: boolean;
           id?: string;
+          music_enabled?: boolean;
           reduced_motion?: boolean;
           sound_enabled?: boolean;
           updated_at?: string;
