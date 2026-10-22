@@ -8,11 +8,31 @@ import { purchaseTotal, shopIsOpen } from "@/lib/economy-service";
 import { useWorldClock } from "@/hooks/use-world-clock";
 
 const GOODS_CATEGORIES = [
-  { id: "fabrics", label: "Adire & Ankara Fabrics", desc: "Authentic Osogbo tie-dye and tailored wear" },
-  { id: "groceries", label: "Fresh Market Produce", desc: "Yam, peppers, plantain, palm oil and fruits" },
-  { id: "phones", label: "Phone Care & Accessories", desc: "Chargers, screen guards, earphones, casing" },
-  { id: "hospitality", label: "Street Food & Cold Drinks", desc: "Puff-puff, roasted plantain, suya, soft drinks" },
-  { id: "crafts", label: "Handcrafted Beads & Art", desc: "Osogbo sacred grove inspired wooden carvings and beads" },
+  {
+    id: "fabrics",
+    label: "Adire & Ankara Fabrics",
+    desc: "Authentic Osogbo tie-dye and tailored wear",
+  },
+  {
+    id: "groceries",
+    label: "Fresh Market Produce",
+    desc: "Yam, peppers, plantain, palm oil and fruits",
+  },
+  {
+    id: "phones",
+    label: "Phone Care & Accessories",
+    desc: "Chargers, screen guards, earphones, casing",
+  },
+  {
+    id: "hospitality",
+    label: "Street Food & Cold Drinks",
+    desc: "Puff-puff, roasted plantain, suya, soft drinks",
+  },
+  {
+    id: "crafts",
+    label: "Handcrafted Beads & Art",
+    desc: "Osogbo sacred grove inspired wooden carvings and beads",
+  },
 ];
 
 const THEMES = [
@@ -20,13 +40,6 @@ const THEMES = [
   { id: "gold", label: "Osun Gold", color: "#854d0e", border: "#eab308" },
   { id: "green", label: "Grove Green", color: "#14532d", border: "#22c55e" },
   { id: "terracotta", label: "Warm Terracotta", color: "#7c2d12", border: "#f97316" },
-];
-
-const NPC_STALLS = [
-  { name: "Aunty Bisi Fabrics", goods: "Hand-dyed Adire & Guinea Brocade", status: "Open", visitors: 42, location: "Oja-Oba Market" },
-  { name: "Sabo Fruit Corner", goods: "Fresh Pineapples, Oranges & Pawpaw", status: "Open", visitors: 28, location: "Sabo Market" },
-  { name: "Tunde Phone Care", goods: "Screen protectors, batteries & cords", status: "Busy", visitors: 65, location: "Station Road" },
-  { name: "Iya Mufu Delights", goods: "Hot amala, gbegiri, ewedu & bush meat", status: "Open", visitors: 89, location: "Oke-Fia Junction" },
 ];
 
 export function PhoneMarketApp() {
@@ -45,18 +58,39 @@ export function PhoneMarketApp() {
     queryKey: ["playerStall", character?.id],
     enabled: !!character?.id,
     queryFn: async () => {
+      // Migration 0060 is not in the generated client types yet.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase as any)
         .from("player_stalls")
         .select("id,name,goods,is_open")
         .eq("character_id", character!.id)
         .maybeSingle();
       if (error && error.code !== "PGRST116") throw error;
-      return (data as { id: string; name: string; goods: string; is_open: boolean } | null);
+      return data as { id: string; name: string; goods: string; is_open: boolean } | null;
+    },
+  });
+  const npcStalls = useQuery({
+    queryKey: ["npcMarketStalls"],
+    queryFn: async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase as any)
+        .from("npc_market_stalls")
+        .select("id,name,goods,status,visitor_count");
+      if (error) throw error;
+      return (data ?? []) as {
+        id: string;
+        name: string;
+        goods: string;
+        status: string;
+        visitor_count: number;
+      }[];
     },
   });
 
   const [stallName, setStallName] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState(GOODS_CATEGORIES[0]?.label ?? "General Goods");
+  const [selectedCategory, setSelectedCategory] = useState(
+    GOODS_CATEGORIES[0]?.label ?? "General Goods",
+  );
   const [selectedTheme, setSelectedTheme] = useState("indigo");
   const [stallOpen, setStallOpen] = useState(false);
   const [formInitialized, setFormInitialized] = useState(false);
@@ -72,32 +106,18 @@ export function PhoneMarketApp() {
   const saveStallMutation = useMutation({
     mutationFn: async () => {
       if (!character?.id) throw new Error("Character not loaded");
-      const { data: sessionData } = await supabase.auth.getSession();
-      const userId = sessionData.session?.user.id;
-      if (!userId) throw new Error("Please log in to manage your stall.");
       const name = stallName.trim() || `${character.name}'s Oja-Oba Stall`;
-
-      const { data, error } = await (supabase as any)
-        .from("player_stalls")
-        .upsert(
-          {
-            user_id: userId,
-            character_id: character.id,
-            name,
-            goods: selectedCategory,
-            is_open: stallOpen,
-            updated_at: new Date().toISOString(),
-          },
-          { onConflict: "character_id" }
-        )
-        .select()
-        .single();
-
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase.rpc as any)("save_player_stall", {
+        p_name: name,
+        p_goods: selectedCategory,
+        p_is_open: stallOpen,
+      });
       if (error) throw error;
       return data;
     },
     onSuccess: () => {
-      toast.success(stallOpen ? "Stall is now OPEN at Oja-Oba Market!" : "Stall customisation saved.");
+      toast.success(stallOpen ? "Stall is now open at Oja-Oba Market." : "Stall details saved.");
       void queryClient.invalidateQueries({ queryKey: ["playerStall"] });
     },
     onError: (err) => {
@@ -120,9 +140,14 @@ export function PhoneMarketApp() {
         (offer) =>
           !!offer.shop &&
           (!currentLocation || offer.shop.location_id === currentLocation.id) &&
-          shopIsOpen(offer.shop.is_open, offer.shop.opening_hour, offer.shop.closing_hour, worldTime?.hour ?? 12)
+          shopIsOpen(
+            offer.shop.is_open,
+            offer.shop.opening_hour,
+            offer.shop.closing_hour,
+            worldTime?.hour ?? 12,
+          ),
       ) ?? [],
-    [shopItems, currentLocation, worldTime?.hour]
+    [shopItems, currentLocation, worldTime?.hour],
   );
 
   return (
@@ -135,7 +160,7 @@ export function PhoneMarketApp() {
             onClick={() => setTab("stalls")}
           >
             <Store className="h-4 w-4" aria-hidden="true" />
-            <span>Stall Rental & Builder</span>
+            <span>My Stall</span>
           </button>
           <button
             type="button"
@@ -160,12 +185,14 @@ export function PhoneMarketApp() {
                   </span>
                   <div>
                     <h3 className="font-bold text-sm">Your Oja-Oba Market Stall</h3>
-                    <p className="text-xs text-muted-foreground">Rent and customize your market presence</p>
+                    <p className="text-xs text-muted-foreground">Manage your town stall</p>
                   </div>
                 </div>
                 <span
                   className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                    stallOpen ? "bg-emerald-500/20 text-emerald-600" : "bg-muted text-muted-foreground"
+                    stallOpen
+                      ? "bg-emerald-500/20 text-emerald-600"
+                      : "bg-muted text-muted-foreground"
                   }`}
                 >
                   {stallOpen ? "● Open" : "○ Closed"}
@@ -183,7 +210,7 @@ export function PhoneMarketApp() {
               >
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold tracking-wider uppercase opacity-80">
-                    Oja-Oba Stall #48
+                    Oja-Oba Stall
                   </span>
                   <span className="text-xs flex items-center gap-1 opacity-90">
                     <TrendingUp className="h-3 w-3" />
@@ -195,8 +222,8 @@ export function PhoneMarketApp() {
                 </h4>
                 <p className="text-xs opacity-90 mt-0.5">{selectedCategory}</p>
                 <div className="mt-3 pt-2 border-t border-white/20 flex justify-between text-xs font-medium">
-                  <span>Weekly Rental Fee: ₦2,500</span>
-                  <span>Estimated Traffic: {stallOpen ? "45-70 daily" : "0"}</span>
+                  <span>Saved town stall</span>
+                  <span>{stallOpen ? "Open to visitors" : "Closed"}</span>
                 </div>
               </div>
 
@@ -230,7 +257,10 @@ export function PhoneMarketApp() {
                 </div>
 
                 <div>
-                  <label className="text-xs font-bold block mb-1">Stall Canopy Theme</label>
+                  <label className="text-xs font-bold block mb-1">Canopy colour preview</label>
+                  <p className="text-[11px] text-muted-foreground mb-2">
+                    Preview on this phone; your stall name, goods and open status are saved.
+                  </p>
                   <div className="grid grid-cols-4 gap-2">
                     {THEMES.map((theme) => (
                       <button
@@ -238,7 +268,9 @@ export function PhoneMarketApp() {
                         key={theme.id}
                         onClick={() => setSelectedTheme(theme.id)}
                         className={`py-2 px-1 rounded-lg text-xs font-bold border transition-all text-center ${
-                          selectedTheme === theme.id ? "ring-2 ring-primary border-primary" : "border-border"
+                          selectedTheme === theme.id
+                            ? "ring-2 ring-primary border-primary"
+                            : "border-border"
                         }`}
                         style={{ backgroundColor: `${theme.color}25` }}
                       >
@@ -251,7 +283,9 @@ export function PhoneMarketApp() {
                 <div className="flex items-center justify-between pt-1">
                   <div>
                     <span className="text-xs font-bold block">Open for Customers</span>
-                    <span className="text-[11px] text-muted-foreground">Allow town NPCs and players to trade</span>
+                    <span className="text-[11px] text-muted-foreground">
+                      Show your stall as open in town
+                    </span>
                   </div>
                   <button
                     type="button"
@@ -273,7 +307,7 @@ export function PhoneMarketApp() {
                   className="w-full py-2.5 rounded-xl font-bold text-sm bg-primary text-primary-foreground hover:opacity-90 transition-all flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
                 >
                   <Check className="h-4 w-4" />
-                  {saveStallMutation.isPending ? "Saving Stall..." : "Confirm & Save Stall"}
+                  {saveStallMutation.isPending ? "Saving stall..." : "Save stall details"}
                 </button>
               </div>
             </div>
@@ -284,8 +318,27 @@ export function PhoneMarketApp() {
                 Active Oja-Oba Market Vendors
               </h4>
               <div className="space-y-2">
-                {NPC_STALLS.map((npc) => (
-                  <div key={npc.name} className="phone-card flex items-center justify-between gap-3 p-3">
+                {npcStalls.isLoading && <p role="status">Loading market vendors...</p>}
+                {npcStalls.isError && (
+                  <p role="alert">
+                    Market vendors are unavailable.{" "}
+                    <button
+                      type="button"
+                      className="text-primary underline"
+                      onClick={() => void npcStalls.refetch()}
+                    >
+                      Try again
+                    </button>
+                  </p>
+                )}
+                {!npcStalls.isLoading && !npcStalls.isError && !npcStalls.data?.length && (
+                  <p className="text-xs text-muted-foreground">No town vendors are listed yet.</p>
+                )}
+                {npcStalls.data?.map((npc) => (
+                  <div
+                    key={npc.id}
+                    className="phone-card flex items-center justify-between gap-3 p-3"
+                  >
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <strong className="text-sm font-bold truncate">{npc.name}</strong>
@@ -295,16 +348,9 @@ export function PhoneMarketApp() {
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5 truncate">{npc.goods}</p>
                       <small className="text-[11px] text-primary block mt-1">
-                        {npc.location} · {npc.visitors} shoppers today
+                        {npc.visitor_count} visits
                       </small>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => toast.info(`Visiting ${npc.name} at ${npc.location}`)}
-                      className="text-xs font-bold px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-accent flex-none"
-                    >
-                      Visit
-                    </button>
                   </div>
                 ))}
               </div>
@@ -314,7 +360,8 @@ export function PhoneMarketApp() {
           <div className="space-y-4 p-3">
             <div className="flex items-center justify-between text-xs px-1">
               <span className="font-semibold text-muted-foreground">
-                Wallet Cash: <strong className="text-foreground">{formatNaira(wallet?.balance)}</strong>
+                Wallet Cash:{" "}
+                <strong className="text-foreground">{formatNaira(wallet?.balance)}</strong>
               </span>
               <span>{currentLocation?.name ?? "Osogbo District"}</span>
             </div>
@@ -407,9 +454,14 @@ export function PhoneMarketApp() {
                   {inventory
                     .filter((entry) => entry.item?.sellable)
                     .map((entry) => (
-                      <div key={entry.id} className="phone-card flex items-center justify-between p-2.5">
+                      <div
+                        key={entry.id}
+                        className="phone-card flex items-center justify-between p-2.5"
+                      >
                         <div className="min-w-0">
-                          <span className="font-bold text-xs block truncate">{entry.item?.name}</span>
+                          <span className="font-bold text-xs block truncate">
+                            {entry.item?.name}
+                          </span>
                           <span className="text-[11px] text-muted-foreground">
                             {entry.quantity} in bag · {formatNaira(entry.item?.sell_price ?? 0)}
                           </span>
@@ -420,7 +472,11 @@ export function PhoneMarketApp() {
                           onClick={() => {
                             const firstShop = currentShops[0]?.shop_id;
                             if (firstShop) {
-                              sell.mutate({ shopId: firstShop, inventoryId: entry.id, quantity: 1 });
+                              sell.mutate({
+                                shopId: firstShop,
+                                inventoryId: entry.id,
+                                quantity: 1,
+                              });
                             } else {
                               toast.info("Visit a local market shop to sell your items.");
                             }

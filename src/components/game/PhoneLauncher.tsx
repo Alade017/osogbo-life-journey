@@ -93,6 +93,7 @@ const CommunityPhoneApps = lazy(() =>
     default: m.CommunityPhoneApps,
   })),
 );
+const PhoneCommunityServices = lazy(() => import("@/components/game/phone/PhoneCommunityServices"));
 
 type PhoneAppDefinition = {
   label: string;
@@ -127,34 +128,25 @@ const PHONE_APPS: readonly PhoneAppDefinition[] = [
   { label: "Billboards", icon: PanelsTopLeft, tone: "phone-app-gold" },
 ] as const;
 
-const COMMUNITY_APPS = new Set<CommunityPhoneApp>([
-  "Calendar",
-  "Food Delivery",
-  "Okada Rides",
-  "Contribution",
-  "Leaderboard",
-  "Town News",
-]);
+const COMMUNITY_APPS = new Set<CommunityPhoneApp>(["Leaderboard", "Town News"]);
 
-const APP_ROUTES: Record<string, string> = {
-  Housing: "/rentals",
-  "Rent homes": "/rentals",
-  Property: "/property",
-  "Find homes": "/properties",
-  Jobs: "/jobs",
-  "Career Life": "/education",
-  Education: "/education",
-  Courses: "/education",
-  Map: "/map",
-  Bank: "/wallet",
-  Market: "/market",
-  "Market Stalls": "/market",
-  Party: "/party",
-  "Party Life": "/party",
-  Profile: "/profile",
-  Inventory: "/inventory",
-  People: "/social",
-  Missions: "/missions",
+const PHONE_APP_PATHS: Record<string, string> = {
+  "/rentals": "Rent homes",
+  "/property": "Property",
+  "/properties": "Find homes",
+  "/jobs": "Jobs",
+  "/education": "Education",
+  "/map": "Map",
+  "/wallet": "Bank",
+  "/market": "Market",
+  "/party": "Party",
+  "/profile": "Profile",
+  "/inventory": "Inventory",
+  "/social": "Messages",
+  "/missions": "Missions",
+  "/notifications": "Notifications",
+  "/settings": "Settings",
+  "/businesses": "Businesses",
 };
 
 class PhoneAppBoundary extends Component<
@@ -167,16 +159,14 @@ class PhoneAppBoundary extends Component<
   }
   override render() {
     if (!this.state.failed) return this.props.children;
-    const route = APP_ROUTES[this.props.appName];
     return (
       <div className="phone-app-recovery" role="alert">
         <strong>{this.props.appName} could not open here.</strong>
-        <p>Return to the launcher or open the full game screen.</p>
+        <p>Return to the launcher and try opening the app again.</p>
         <div>
           <button type="button" onClick={this.props.onHome}>
             Back to apps
           </button>
-          {route && <a href={route}>Open full screen</a>}
         </div>
       </div>
     );
@@ -275,7 +265,7 @@ export function PhoneLauncher({
     touchStartY.current = null;
   };
 
-  // Renders the full view for each supported app
+  // Render each supported app within the phone dialog.
   const renderAppContent = (appName: string) => {
     if (appName === "Shortcuts") {
       return (
@@ -314,7 +304,7 @@ export function PhoneLauncher({
     }
 
     if (appName === "Career Life" || appName === "Education" || appName === "Courses")
-      return <EducationPage />;
+      return <EducationPage phoneMode />;
 
     if (appName === "Map") {
       return <PhoneMapApp />;
@@ -336,6 +326,15 @@ export function PhoneLauncher({
 
     if (COMMUNITY_APPS.has(appName as CommunityPhoneApp)) {
       return <CommunityPhoneApps app={appName as CommunityPhoneApp} />;
+    }
+
+    if (
+      appName === "Calendar" ||
+      appName === "Food Delivery" ||
+      appName === "Okada Rides" ||
+      appName === "Contribution"
+    ) {
+      return <PhoneCommunityServices app={appName} />;
     }
 
     if (appName === "Missions") {
@@ -585,6 +584,13 @@ export function PhoneLauncher({
                           anchor instanceof HTMLAnchorElement &&
                           anchor.origin === window.location.origin
                         ) {
+                          const nextApp = PHONE_APP_PATHS[anchor.pathname];
+                          if (nextApp) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            openApp(nextApp);
+                            return;
+                          }
                           setDialogOpen(false);
                           setActiveApp(null);
                           onOpenChange?.(false);
