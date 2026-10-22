@@ -40,6 +40,7 @@ import { Route as ApiHomeEquipRouteImport } from './routes/api/home/equip'
 import { Route as ApiHomePlaceRouteImport } from './routes/api/home/place'
 import { Route as ApiHomeRemoveRouteImport } from './routes/api/home/remove'
 import { Route as ApiHomeUnequipRouteImport } from './routes/api/home/unequip'
+import { Route as ApiHouseMoveRouteImport } from './routes/api/house/move'
 import { Route as ApiHousePlaceRouteImport } from './routes/api/house/place'
 import { Route as ApiHouseRemoveRouteImport } from './routes/api/house/remove'
 import { Route as ApiHouseStateRouteImport } from './routes/api/house/state'
@@ -239,6 +240,11 @@ const ApiHomeRemoveRoute = ApiHomeRemoveRouteImport.update({
 const ApiHomeUnequipRoute = ApiHomeUnequipRouteImport.update({
   id: '/api/home/unequip',
   path: '/api/home/unequip',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHouseMoveRoute = ApiHouseMoveRouteImport.update({
+  id: '/api/house/move',
+  path: '/api/house/move',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiHousePlaceRoute = ApiHousePlaceRouteImport.update({
@@ -455,6 +461,7 @@ export interface FileRoutesByFullPath {
   '/api/home/place': typeof ApiHomePlaceRoute
   '/api/home/remove': typeof ApiHomeRemoveRoute
   '/api/home/unequip': typeof ApiHomeUnequipRoute
+  '/api/house/move': typeof ApiHouseMoveRoute
   '/api/house/place': typeof ApiHousePlaceRoute
   '/api/house/remove': typeof ApiHouseRemoveRoute
   '/api/house/state': typeof ApiHouseStateRoute
@@ -522,6 +529,7 @@ export interface FileRoutesByTo {
   '/api/home/place': typeof ApiHomePlaceRoute
   '/api/home/remove': typeof ApiHomeRemoveRoute
   '/api/home/unequip': typeof ApiHomeUnequipRoute
+  '/api/house/move': typeof ApiHouseMoveRoute
   '/api/house/place': typeof ApiHousePlaceRoute
   '/api/house/remove': typeof ApiHouseRemoveRoute
   '/api/house/state': typeof ApiHouseStateRoute
@@ -592,6 +600,7 @@ export interface FileRoutesById {
   '/api/home/place': typeof ApiHomePlaceRoute
   '/api/home/remove': typeof ApiHomeRemoveRoute
   '/api/home/unequip': typeof ApiHomeUnequipRoute
+  '/api/house/move': typeof ApiHouseMoveRoute
   '/api/house/place': typeof ApiHousePlaceRoute
   '/api/house/remove': typeof ApiHouseRemoveRoute
   '/api/house/state': typeof ApiHouseStateRoute
@@ -661,6 +670,7 @@ export interface FileRouteTypes {
     | '/api/home/place'
     | '/api/home/remove'
     | '/api/home/unequip'
+    | '/api/house/move'
     | '/api/house/place'
     | '/api/house/remove'
     | '/api/house/state'
@@ -728,6 +738,7 @@ export interface FileRouteTypes {
     | '/api/home/place'
     | '/api/home/remove'
     | '/api/home/unequip'
+    | '/api/house/move'
     | '/api/house/place'
     | '/api/house/remove'
     | '/api/house/state'
@@ -797,6 +808,7 @@ export interface FileRouteTypes {
     | '/api/home/place'
     | '/api/home/remove'
     | '/api/home/unequip'
+    | '/api/house/move'
     | '/api/house/place'
     | '/api/house/remove'
     | '/api/house/state'
@@ -845,6 +857,7 @@ export interface RootRouteChildren {
   ApiHomePlaceRoute: typeof ApiHomePlaceRoute
   ApiHomeRemoveRoute: typeof ApiHomeRemoveRoute
   ApiHomeUnequipRoute: typeof ApiHomeUnequipRoute
+  ApiHouseMoveRoute: typeof ApiHouseMoveRoute
   ApiHousePlaceRoute: typeof ApiHousePlaceRoute
   ApiHouseRemoveRoute: typeof ApiHouseRemoveRoute
   ApiHouseStateRoute: typeof ApiHouseStateRoute
@@ -1099,6 +1112,13 @@ declare module '@tanstack/react-router' {
       path: '/api/home/unequip'
       fullPath: '/api/home/unequip'
       preLoaderRoute: typeof ApiHomeUnequipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/house/move': {
+      id: '/api/house/move'
+      path: '/api/house/move'
+      fullPath: '/api/house/move'
+      preLoaderRoute: typeof ApiHouseMoveRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/house/place': {
@@ -1430,6 +1450,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHomePlaceRoute: ApiHomePlaceRoute,
   ApiHomeRemoveRoute: ApiHomeRemoveRoute,
   ApiHomeUnequipRoute: ApiHomeUnequipRoute,
+  ApiHouseMoveRoute: ApiHouseMoveRoute,
   ApiHousePlaceRoute: ApiHousePlaceRoute,
   ApiHouseRemoveRoute: ApiHouseRemoveRoute,
   ApiHouseStateRoute: ApiHouseStateRoute,

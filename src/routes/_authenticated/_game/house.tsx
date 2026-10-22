@@ -341,6 +341,9 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const [editing, setEditing] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<HouseSlot | null>(null);
   const [selectedPlacement, setSelectedPlacement] = useState<HousePlacement | null>(null);
+  const [previewMove, setPreviewMove] = useState<{ placementId: string; toSlot: string } | null>(
+    null,
+  );
   const [usingPlacementId, setUsingPlacementId] = useState<string | null>(null);
   const [activityError, setActivityError] = useState("");
   const [apiError, setApiError] = useState("");
@@ -493,13 +496,18 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       action,
       itemId,
       slot,
+      fromSlot,
+      toSlot,
     }: {
-      action: "place" | "remove" | "equip" | "unequip" | "buy";
+      action: "place" | "move" | "remove" | "equip" | "unequip" | "buy";
       itemId?: string;
       slot?: string;
+      fromSlot?: string;
+      toSlot?: string;
     }) => {
       const paths = {
         place: "/api/house/place",
+        move: "/api/house/move",
         remove: "/api/house/remove",
         equip: "/api/outfit/equip",
         unequip: "/api/outfit/unequip",
@@ -515,9 +523,11 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         body: JSON.stringify(
           action === "remove" || action === "unequip"
             ? { slot }
-            : action === "place"
-              ? { itemId, slot }
-              : { itemId },
+            : action === "move"
+              ? { fromSlot, toSlot }
+              : action === "place"
+                ? { itemId, slot }
+                : { itemId },
         ),
       });
       const result = await response.json().catch(() => null);
@@ -538,6 +548,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       return nextState;
     },
     onSuccess: (state, variables) => {
+      setPreviewMove(null);
       if (variables.action === "buy" && variables.itemId) {
         const storageKey = `${CACHE_PREFIX}buy-request:${character?.id ?? "anonymous"}:${variables.itemId}`;
         buyRequestKeys.current.delete(storageKey);
@@ -562,12 +573,15 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       setApiError("");
       if (variables.action === "buy") {
         toast.success("Item bought. Choose an open room slot to place it.");
+      } else if (variables.action === "move") {
+        toast.success("Accessory moved.");
       } else {
         setSelectedSlot(null);
         setSelectedPlacement(null);
       }
     },
     onError: (error: Error) => {
+      setPreviewMove(null);
       const message = `Your change wasn’t saved. ${error.message.replaceAll("_", " ").toLowerCase()}.`;
       setApiError(message);
       toast.error(message);
@@ -661,6 +675,13 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   });
 
   const placements = serverState?.placements ?? [];
+  const scenePlacements = previewMove
+    ? placements.map((placement) =>
+        placement.id === previewMove.placementId
+          ? { ...placement, slot: previewMove.toSlot }
+          : placement,
+      )
+    : placements;
   const inventory = serverState?.inventory ?? [];
   const outfit = serverState?.outfit ?? EMPTY_OUTFIT;
   const appearance = (
@@ -709,6 +730,17 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const requestAction = (args: Parameters<typeof actionMutation.mutate>[0]) => {
     if (isOffline || actionMutation.isPending) return;
     actionMutation.mutate(args);
+  };
+  const requestMove = (placement: HousePlacement, destination: HouseSlot) => {
+    if (isOffline || actionMutation.isPending || !editing || activeSleep) return;
+    if (placement.slot === destination.id || placement.slot_type !== destination.slot_type) return;
+    if (placements.some((item) => item.slot === destination.id)) return;
+    setPreviewMove({ placementId: placement.id, toSlot: destination.id });
+    actionMutation.mutate({
+      action: "move",
+      fromSlot: placement.slot,
+      toSlot: destination.id,
+    });
   };
   const interactWithPlacement = async (placement: HousePlacement) => {
     const action = homeFurnitureAction(placement.item_id);
@@ -818,8 +850,10 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           houseTypeId={house.house_type_id}
           accessoryBand={canonicalHome?.accessoryBand ?? "basic"}
           slots={slots}
-          placements={placements}
+          placements={scenePlacements}
           editMode={editing}
+          moveEnabled={editing && !isOffline && !actionMutation.isPending && !activeSleep}
+          onMove={requestMove}
           onSelectPlacement={(placement) => {
             if (activeSleep) return;
             if (!editing) {
@@ -972,6 +1006,8 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           outfit={outfit}
           selectedSlot={selectedSlot}
           selectedPlacement={selectedPlacement}
+          slots={slots}
+          placements={placements}
           onClose={() => {
             setEditing(false);
             setSelectedSlot(null);
@@ -979,6 +1015,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           }}
           onPlace={(itemId, slot) => requestAction({ action: "place", itemId, slot: slot.id })}
           onRemove={(placement) => requestAction({ action: "remove", slot: placement.slot })}
+          onMove={requestMove}
           onEquip={(itemId) => requestAction({ action: "equip", itemId })}
           onUnequip={(slot) => requestAction({ action: "unequip", slot })}
           onBuy={(itemId) => requestAction({ action: "buy", itemId })}

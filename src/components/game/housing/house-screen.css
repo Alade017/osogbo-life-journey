@@ -297,6 +297,28 @@
   font-size: 0.76rem;
   font-weight: 700;
 }
+.house-3d-arrange-hint {
+  position: absolute;
+  right: 0.7rem;
+  bottom: 0.7rem;
+  left: 0.7rem;
+  z-index: 1;
+  width: fit-content;
+  max-width: calc(100% - 1.4rem);
+  padding: 0.42rem 0.7rem;
+  border-radius: 999px;
+  color: var(--foreground);
+  background: var(--card);
+  box-shadow: var(--elevation-card);
+  font-size: 0.74rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+.house-move-options {
+  display: grid;
+  gap: 0.45rem;
+  margin-block: 0.8rem;
+}
 .house-3d-slot-label {
   width: 34px;
   max-width: 34px;

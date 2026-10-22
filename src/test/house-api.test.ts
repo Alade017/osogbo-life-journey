@@ -17,6 +17,7 @@ function setup(
     authenticate,
     state: async () => ({ house: null, placements: [], outfit: {}, inventory: [] }),
     place: calls.place,
+    move: async () => ({ ok: true }),
     remove: async () => ({ ok: true }),
     equip: async () => ({ ok: true }),
     unequip: async () => ({ ok: true }),
@@ -74,6 +75,7 @@ describe("house API handlers", () => {
         throw new Error("Could not find the function public.get_house_state in the schema cache");
       },
       place: async () => ({}),
+      move: async () => ({}),
       remove: async () => ({}),
       equip: async () => ({}),
       unequip: async () => ({}),

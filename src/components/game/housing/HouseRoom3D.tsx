@@ -1,7 +1,7 @@
-import { Component, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Component, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Canvas, type ThreeEvent } from "@react-three/fiber";
 import { Html, OrbitControls, useGLTF, useProgress } from "@react-three/drei";
-import type { Group } from "three";
+import { Plane, Vector3, type Group } from "three";
 import type { HousePlacement, HouseSlot } from "./HouseRoomScene";
 
 const DRACO_PATH = "/models/draco/";
@@ -21,9 +21,25 @@ type Props = {
   slots: HouseSlot[];
   placements: HousePlacement[];
   editMode: boolean;
+  moveEnabled: boolean;
   onSelectPlacement: (placement: HousePlacement) => void;
   onSelectSlot: (slot: HouseSlot) => void;
+  onMove: (placement: HousePlacement, slot: HouseSlot) => void;
 };
+
+type DragPreview = { placementId: string; x: number; z: number; targetSlotId: string | null };
+type DragPointer = {
+  placement: HousePlacement;
+  pointerId: number;
+  x: number;
+  y: number;
+  moved: boolean;
+};
+const FLOOR_PLANE = new Plane(new Vector3(0, 1, 0), -0.2);
+
+function slotPosition(slot: HouseSlot, width: number, depth: number): [number, number, number] {
+  return [(slot.x / 100 - 0.5) * (width - 0.8), 0.2, (0.5 - slot.y / 100) * (depth - 0.8)];
+}
 
 class ModelBoundary extends Component<
   { children: ReactNode; fallback: ReactNode; resetKey: string },
@@ -312,33 +328,56 @@ function SlotObject({
   width,
   depth,
   editMode,
+  moveEnabled,
+  dragPreview,
+  activeSlotType,
   onSelectPlacement,
   onSelectSlot,
+  onDragStart,
+  onDragMove,
+  onDragEnd,
+  onDragCancel,
+  suppressClick,
 }: {
   slot: HouseSlot;
   placement: HousePlacement | undefined;
   width: number;
   depth: number;
   editMode: boolean;
+  moveEnabled: boolean;
+  dragPreview: DragPreview | null;
+  activeSlotType: string | null;
   onSelectPlacement: Props["onSelectPlacement"];
   onSelectSlot: Props["onSelectSlot"];
+  onDragStart: (placement: HousePlacement, event: ThreeEvent<PointerEvent>) => void;
+  onDragMove: (event: ThreeEvent<PointerEvent>) => void;
+  onDragEnd: (event: ThreeEvent<PointerEvent>) => void;
+  onDragCancel: (event: ThreeEvent<PointerEvent>) => void;
+  suppressClick: (placement: HousePlacement) => boolean;
 }) {
-  const position: [number, number, number] = [
-    (slot.x / 100 - 0.5) * (width - 0.8),
-    0.2,
-    (0.5 - slot.y / 100) * (depth - 0.8),
-  ];
+  const position = slotPosition(slot, width, depth);
+  const moving = placement && dragPreview?.placementId === placement.id;
+  const displayPosition: [number, number, number] = moving
+    ? [dragPreview.x, 0.2, dragPreview.z]
+    : position;
   if (!placement && !editMode) return null;
   const label = placement?.item_id.replaceAll("-", " ") ?? `Place in ${slot.slot_type} slot`;
   const artKey = placement?.art_key;
   const safeArtKey = artKey && /^[a-z0-9-]+$/i.test(artKey) ? artKey : null;
   return (
-    <group position={position}>
+    <group position={displayPosition}>
       {placement ? (
         <group
+          onPointerDown={(event) => {
+            if (editMode && moveEnabled && event.button === 0 && event.isPrimary)
+              onDragStart(placement, event);
+          }}
+          onPointerMove={onDragMove}
+          onPointerUp={onDragEnd}
+          onPointerCancel={onDragCancel}
           onClick={(event) => {
             event.stopPropagation();
-            onSelectPlacement(placement);
+            if (!suppressClick(placement)) onSelectPlacement(placement);
           }}
         >
           <OptionalModel
@@ -356,7 +395,16 @@ function SlotObject({
           }}
         >
           <boxGeometry args={[0.48, 0.08, 0.48]} />
-          <meshStandardMaterial color="#f6b34c" roughness={1} />
+          <meshStandardMaterial
+            color={
+              dragPreview?.targetSlotId === slot.id
+                ? "#44c78b"
+                : activeSlotType === slot.slot_type
+                  ? "#59b9dc"
+                  : "#f6b34c"
+            }
+            roughness={1}
+          />
         </mesh>
       )}
       {editMode && (
@@ -392,11 +440,100 @@ export function HouseRoom3D({
   slots,
   placements,
   editMode,
+  moveEnabled,
   onSelectPlacement,
   onSelectSlot,
+  onMove,
 }: Props) {
   const [width, depth] = ROOM_SIZE[houseTypeId] ?? ROOM_SIZE["shared-room"]!;
   const bySlot = useMemo(() => new Map(placements.map((item) => [item.slot, item])), [placements]);
+  const [dragPreview, setDragPreview] = useState<DragPreview | null>(null);
+  const dragPointer = useRef<DragPointer | null>(null);
+  const suppressClickId = useRef<string | null>(null);
+  const dragTarget = (placement: HousePlacement, x: number, z: number) => {
+    const radius = Math.max(0.62, Math.min(width, depth) * 0.16);
+    return (
+      slots
+        .filter((slot) => slot.slot_type === placement.slot_type && !bySlot.has(slot.id))
+        .map((slot) => {
+          const [sx, , sz] = slotPosition(slot, width, depth);
+          return { slot, distance: Math.hypot(sx - x, sz - z) };
+        })
+        .filter((candidate) => candidate.distance <= radius)
+        .sort((a, b) => a.distance - b.distance)[0]?.slot ?? null
+    );
+  };
+  const floorPoint = (event: ThreeEvent<PointerEvent>) =>
+    event.ray.intersectPlane(FLOOR_PLANE, new Vector3());
+  const onDragStart = (placement: HousePlacement, event: ThreeEvent<PointerEvent>) => {
+    event.stopPropagation();
+    const target = event.target as
+      (EventTarget & { setPointerCapture?: (id: number) => void }) | null;
+    target?.setPointerCapture?.(event.pointerId);
+    dragPointer.current = {
+      placement,
+      pointerId: event.pointerId,
+      x: event.clientX,
+      y: event.clientY,
+      moved: false,
+    };
+    const original = slots.find((slot) => slot.id === placement.slot);
+    if (original) {
+      const [x, , z] = slotPosition(original, width, depth);
+      setDragPreview({ placementId: placement.id, x, z, targetSlotId: null });
+    }
+  };
+  const onDragMove = (event: ThreeEvent<PointerEvent>) => {
+    const pointer = dragPointer.current;
+    if (!pointer || pointer.pointerId !== event.pointerId) return;
+    event.stopPropagation();
+    if (Math.hypot(event.clientX - pointer.x, event.clientY - pointer.y) < 6 && !pointer.moved)
+      return;
+    pointer.moved = true;
+    const point = floorPoint(event);
+    if (!point) return;
+    const x = Math.max(-width / 2, Math.min(width / 2, point.x));
+    const z = Math.max(-depth / 2, Math.min(depth / 2, point.z));
+    setDragPreview({
+      placementId: pointer.placement.id,
+      x,
+      z,
+      targetSlotId: dragTarget(pointer.placement, point.x, point.z)?.id ?? null,
+    });
+  };
+  const onDragEnd = (event: ThreeEvent<PointerEvent>) => {
+    const pointer = dragPointer.current;
+    if (!pointer || pointer.pointerId !== event.pointerId) return;
+    event.stopPropagation();
+    const target = event.target as
+      (EventTarget & { releasePointerCapture?: (id: number) => void }) | null;
+    target?.releasePointerCapture?.(event.pointerId);
+    dragPointer.current = null;
+    setDragPreview(null);
+    if (!pointer.moved) return;
+    suppressClickId.current = pointer.placement.id;
+    window.setTimeout(() => {
+      if (suppressClickId.current === pointer.placement.id) suppressClickId.current = null;
+    }, 0);
+    const point = floorPoint(event);
+    const destination = point && dragTarget(pointer.placement, point.x, point.z);
+    if (destination) onMove(pointer.placement, destination);
+  };
+  const onDragCancel = (event: ThreeEvent<PointerEvent>) => {
+    if (dragPointer.current?.pointerId !== event.pointerId) return;
+    dragPointer.current = null;
+    setDragPreview(null);
+  };
+  const suppressClick = (placement: HousePlacement) => {
+    if (suppressClickId.current !== placement.id) return false;
+    suppressClickId.current = null;
+    return true;
+  };
+  useEffect(() => {
+    if (editMode && moveEnabled) return;
+    dragPointer.current = null;
+    setDragPreview(null);
+  }, [editMode, moveEnabled]);
   const modelPath = `/models/rooms/${/^[a-z0-9-]+$/i.test(houseTypeId) ? houseTypeId : "shared-room"}.glb`;
   return (
     <div className="house-3d-scene" aria-label={`${houseTypeId.replaceAll("-", " ")} 3D room`}>
@@ -428,11 +565,25 @@ export function HouseRoom3D({
             width={width}
             depth={depth}
             editMode={editMode}
+            moveEnabled={moveEnabled}
+            dragPreview={dragPreview}
+            activeSlotType={
+              dragPreview
+                ? (placements.find((item) => item.id === dragPreview.placementId)?.slot_type ??
+                  null)
+                : null
+            }
             onSelectPlacement={onSelectPlacement}
             onSelectSlot={onSelectSlot}
+            onDragStart={onDragStart}
+            onDragMove={onDragMove}
+            onDragEnd={onDragEnd}
+            onDragCancel={onDragCancel}
+            suppressClick={suppressClick}
           />
         ))}
         <OrbitControls
+          enabled={!dragPreview}
           enablePan={false}
           enableDamping={false}
           minDistance={Math.max(width, depth) * 0.75}
@@ -443,6 +594,17 @@ export function HouseRoom3D({
         />
       </Canvas>
       <LoadingProgress />
+      {editMode && (
+        <div className="house-3d-arrange-hint" role="status">
+          {dragPreview
+            ? dragPreview.targetSlotId
+              ? `Release to move to ${dragPreview.targetSlotId.replaceAll("-", " ")}`
+              : "Move over a blue spot, or release to cancel"
+            : moveEnabled
+              ? "Drag an accessory to a blue spot"
+              : "Finish saving before moving another accessory"}
+        </div>
+      )}
     </div>
   );
 }

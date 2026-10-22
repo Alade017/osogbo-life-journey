@@ -19,11 +19,14 @@ type Props = {
   inventory: HouseInventoryItem[];
   catalog: CatalogItem[];
   outfit: HouseOutfit;
+  slots: HouseSlot[];
+  placements: HousePlacement[];
   selectedSlot: HouseSlot | null;
   selectedPlacement: HousePlacement | null;
   onClose: () => void;
   onPlace: (itemId: string, slot: HouseSlot) => void;
   onRemove: (placement: HousePlacement) => void;
+  onMove: (placement: HousePlacement, slot: HouseSlot) => void;
   onEquip: (itemId: string) => void;
   onUnequip: (slot: keyof HouseOutfit) => void;
   onBuy: (itemId: string) => void;
@@ -66,11 +69,14 @@ export function HouseEditSheets({
   inventory,
   catalog,
   outfit,
+  slots,
+  placements,
   selectedSlot,
   selectedPlacement,
   onClose,
   onPlace,
   onRemove,
+  onMove,
   onEquip,
   onUnequip,
   onBuy,
@@ -106,6 +112,14 @@ export function HouseEditSheets({
   const ownedForSlot = selectedSlot
     ? inventory.filter(
         (item) => item.category === "furniture" && item.slot_type === selectedSlot.slot_type,
+      )
+    : [];
+  const moveTargets = selectedPlacement
+    ? slots.filter(
+        (slot) =>
+          slot.slot_type === selectedPlacement.slot_type &&
+          slot.id !== selectedPlacement.slot &&
+          !placements.some((placement) => placement.slot === slot.id),
       )
     : [];
   const ownedOutfit = inventory.filter(
@@ -210,6 +224,26 @@ export function HouseEditSheets({
       {selectedPlacement ? (
         <div className="house-sheet-content">
           <p className="text-sm text-muted-foreground">This item is placed in your room.</p>
+          {moveTargets.length > 0 && (
+            <div className="house-move-options">
+              <h3 className="house-list-title">Move to another spot</h3>
+              <p className="house-empty-copy">
+                Drag the item in the room, or choose an open spot here.
+              </p>
+              {moveTargets.map((slot) => (
+                <button
+                  key={slot.id}
+                  type="button"
+                  className="house-inventory-row"
+                  disabled={offline || pending}
+                  onClick={() => onMove(selectedPlacement, slot)}
+                >
+                  <span>{slot.id.replaceAll("-", " ")}</span>
+                  <span className="house-row-action">Move</span>
+                </button>
+              ))}
+            </div>
+          )}
           {confirmRemove ? (
             <>
               <p className="text-sm">Remove it from this slot? It will return to your inventory.</p>
