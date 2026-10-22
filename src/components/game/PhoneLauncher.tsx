@@ -1,4 +1,12 @@
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogClose,
+  DialogOverlay,
+  DialogPortal,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import {
   Backpack,
   Bell,
@@ -26,6 +34,7 @@ import {
   Smartphone,
   SlidersHorizontal,
   UserRound,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -474,131 +483,143 @@ export function PhoneLauncher({
           </button>
         )}
       </DialogTrigger>
-      <DialogContent className="phone-dialog">
-        <DialogTitle className="sr-only">In-game phone</DialogTitle>
-        <div className="phone-screen">
-          {/* Status Bar */}
-          <div className="phone-status">
-            <span className="phone-status-time">{phoneTime}</span>
-            <span className="phone-status-brand">OSUN WAT</span>
-            <span className="phone-status-indicators" aria-label="Game phone status">
-              <span className="phone-signal" aria-hidden="true">
-                <i />
-                <i />
-                <i />
-              </span>
-              <span className="phone-battery" aria-hidden="true">
-                <i />
-              </span>
-            </span>
-          </div>
-
-          {/* Launcher Home Grid: visible when activeApp is null */}
-          <div className="phone-app-grid" style={{ display: activeApp === null ? "grid" : "none" }}>
-            {shortcutEditor && (
-              <button
-                type="button"
-                className="phone-app"
-                onClick={() => openApp("Shortcuts")}
-                aria-label="Open Shortcuts"
-              >
-                <span className="phone-app-icon phone-app-muted">
-                  <SlidersHorizontal className="h-5 w-5" aria-hidden="true" />
+      <DialogPortal>
+        <DialogOverlay />
+        <DialogPrimitive.Content
+          className="phone-dialog"
+          style={{ zIndex: "var(--game-dialog-layer)" }}
+        >
+          <DialogTitle className="sr-only">In-game phone</DialogTitle>
+          <div className="phone-screen">
+            {/* Status Bar */}
+            <div className="phone-status">
+              <span className="phone-status-time">{phoneTime}</span>
+              <span className="phone-status-brand">OSUN WAT</span>
+              <span className="phone-status-indicators" aria-label="Game phone status">
+                <span className="phone-signal" aria-hidden="true">
+                  <i />
+                  <i />
+                  <i />
                 </span>
-                <span>Shortcuts</span>
-              </button>
-            )}
+                <span className="phone-battery" aria-hidden="true">
+                  <i />
+                </span>
+              </span>
+            </div>
 
-            {PHONE_APPS.map((app) => {
-              const Icon = app.icon;
-              const badge =
-                app.label === "Missions" && missionCount > 0
-                  ? missionCount > 9
-                    ? "9+"
-                    : missionCount
-                  : null;
-
-              return (
+            {/* Launcher Home Grid: visible when activeApp is null */}
+            <div
+              className="phone-app-grid"
+              style={{ display: activeApp === null ? "grid" : "none" }}
+            >
+              {shortcutEditor && (
                 <button
                   type="button"
                   className="phone-app"
-                  key={app.label}
-                  onClick={() => openApp(app.label)}
-                  aria-label={`Open ${app.label}`}
+                  onClick={() => openApp("Shortcuts")}
+                  aria-label="Open Shortcuts"
                 >
-                  <span className={cn("phone-app-icon", app.tone)}>
-                    <Icon className="h-5 w-5" aria-hidden="true" />
-                    {badge ? (
-                      <i className="phone-app-badge" aria-label={`${badge} active notifications`}>
-                        {badge}
-                      </i>
-                    ) : null}
+                  <span className="phone-app-icon phone-app-muted">
+                    <SlidersHorizontal className="h-5 w-5" aria-hidden="true" />
                   </span>
-                  <span>{app.label}</span>
+                  <span>Shortcuts</span>
                 </button>
-              );
-            })}
-          </div>
+              )}
 
-          {/* Opened Apps: retain state when navigating back and forth */}
-          {activeApp &&
-            (() => {
-              const appName = activeApp;
-              return (
-                <div key={appName} className="phone-app-view">
-                  <div className="phone-app-toolbar">
-                    <button
-                      type="button"
-                      onClick={returnHome}
-                      className="phone-back-button"
-                      aria-label="Back to apps"
-                    >
-                      <ChevronLeft size={18} aria-hidden="true" />
-                      <span>Apps</span>
-                    </button>
-                    <strong>{appName}</strong>
-                    <div className="w-8" aria-hidden="true" />
-                  </div>
-                  <div
-                    className="phone-app-body"
-                    onClickCapture={(event) => {
-                      const anchor =
-                        event.target instanceof Element ? event.target.closest("a[href]") : null;
-                      if (
-                        anchor instanceof HTMLAnchorElement &&
-                        anchor.origin === window.location.origin
-                      ) {
-                        setDialogOpen(false);
-                        setActiveApp(null);
-                        onOpenChange?.(false);
-                      }
-                    }}
+              {PHONE_APPS.map((app) => {
+                const Icon = app.icon;
+                const badge =
+                  app.label === "Missions" && missionCount > 0
+                    ? missionCount > 9
+                      ? "9+"
+                      : missionCount
+                    : null;
+
+                return (
+                  <button
+                    type="button"
+                    className="phone-app"
+                    key={app.label}
+                    onClick={() => openApp(app.label)}
+                    aria-label={`Open ${app.label}`}
                   >
-                    <PhoneAppBoundary key={appName} appName={appName} onHome={returnHome}>
-                      <Suspense fallback={<PhoneAppLoadingSpinner title={appName} />}>
-                        {renderAppContent(appName)}
-                      </Suspense>
-                    </PhoneAppBoundary>
-                  </div>
-                </div>
-              );
-            })()}
+                    <span className={cn("phone-app-icon", app.tone)}>
+                      <Icon className="h-5 w-5" aria-hidden="true" />
+                      {badge ? (
+                        <i className="phone-app-badge" aria-label={`${badge} active notifications`}>
+                          {badge}
+                        </i>
+                      ) : null}
+                    </span>
+                    <span>{app.label}</span>
+                  </button>
+                );
+              })}
+            </div>
 
-          {/* Home indicator bar button with swipe-up support */}
-          <button
-            type="button"
-            className="phone-home-bar-button"
-            onClick={returnHome}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-            aria-label="Return to phone apps"
-            title="Home"
-          >
-            <span className="phone-home-indicator" aria-hidden="true" />
-          </button>
-        </div>
-      </DialogContent>
+            {/* Opened Apps: retain state when navigating back and forth */}
+            {activeApp &&
+              (() => {
+                const appName = activeApp;
+                return (
+                  <div key={appName} className="phone-app-view">
+                    <div className="phone-app-toolbar">
+                      <button
+                        type="button"
+                        onClick={returnHome}
+                        className="phone-back-button"
+                        aria-label="Back to apps"
+                      >
+                        <ChevronLeft size={18} aria-hidden="true" />
+                        <span>Apps</span>
+                      </button>
+                      <strong>{appName}</strong>
+                      <div className="w-8" aria-hidden="true" />
+                    </div>
+                    <div
+                      className="phone-app-body"
+                      onClickCapture={(event) => {
+                        const anchor =
+                          event.target instanceof Element ? event.target.closest("a[href]") : null;
+                        if (
+                          anchor instanceof HTMLAnchorElement &&
+                          anchor.origin === window.location.origin
+                        ) {
+                          setDialogOpen(false);
+                          setActiveApp(null);
+                          onOpenChange?.(false);
+                        }
+                      }}
+                    >
+                      <PhoneAppBoundary key={appName} appName={appName} onHome={returnHome}>
+                        <Suspense fallback={<PhoneAppLoadingSpinner title={appName} />}>
+                          {renderAppContent(appName)}
+                        </Suspense>
+                      </PhoneAppBoundary>
+                    </div>
+                  </div>
+                );
+              })()}
+
+            {/* Home indicator bar button with swipe-up support */}
+            <button
+              type="button"
+              className="phone-home-bar-button"
+              onClick={returnHome}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              aria-label="Return to phone apps"
+              title="Home"
+            >
+              <span className="phone-home-indicator" aria-hidden="true" />
+            </button>
+          </div>
+          <DialogClose type="button" aria-label="Close in-game phone">
+            <X size={18} aria-hidden="true" />
+          </DialogClose>
+        </DialogPrimitive.Content>
+      </DialogPortal>
     </Dialog>
   );
 }
