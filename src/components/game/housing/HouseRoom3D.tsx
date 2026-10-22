@@ -314,6 +314,51 @@ function FurnitureFallback({ artKey, slotType }: { artKey: string | undefined; s
         </mesh>
       </group>
     );
+  if (kind === "wardrobe")
+    return (
+      <group>
+        <mesh position={[0, 0.7, 0]}>
+          <boxGeometry args={[0.92, 1.4, 0.48]} />
+          <meshStandardMaterial color="#79533c" />
+        </mesh>
+        {[-0.2, 0.2].map((x) => (
+          <mesh key={x} position={[x, 0.72, 0.25]}>
+            <boxGeometry args={[0.035, 0.13, 0.025]} />
+            <meshStandardMaterial color="#d0b77e" />
+          </mesh>
+        ))}
+      </group>
+    );
+  if (kind === "coffee-table")
+    return (
+      <group>
+        <mesh position={[0, 0.43, 0]}>
+          <boxGeometry args={[1.05, 0.1, 0.65]} />
+          <meshStandardMaterial color="#9b6a43" />
+        </mesh>
+        {[-0.42, 0.42].flatMap((x) =>
+          [-0.23, 0.23].map((z) => (
+            <mesh key={`${x}-${z}`} position={[x, 0.22, z]}>
+              <boxGeometry args={[0.08, 0.4, 0.08]} />
+              <meshStandardMaterial color="#6b4935" />
+            </mesh>
+          )),
+        )}
+      </group>
+    );
+  if (kind === "wall-art")
+    return (
+      <group>
+        <mesh position={[0, 0.7, 0]}>
+          <boxGeometry args={[0.76, 0.62, 0.045]} />
+          <meshStandardMaterial color="#69442f" />
+        </mesh>
+        <mesh position={[0, 0.7, 0.03]}>
+          <planeGeometry args={[0.65, 0.5]} />
+          <meshStandardMaterial color="#dda568" />
+        </mesh>
+      </group>
+    );
   return (
     <mesh position={[0, 0.28, 0]}>
       <boxGeometry args={[0.62, 0.56, 0.52]} />

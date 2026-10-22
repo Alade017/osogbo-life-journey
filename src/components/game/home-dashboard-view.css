@@ -1,27 +1,32 @@
-/* Player home dashboard: full-viewport command view for the /home page.
-   Colours come only from the app's existing tokens (see styles.css :root). */
-
-/* The content area spans the whole viewport instead of the centred column. */
+/* Home status sits over the room so the house remains the full Home screen. */
 .city-game-main:has(.home-dashboard) {
   width: 100%;
   max-width: none;
   padding: 0;
 }
 
-.home-dashboard {
-  display: flex;
-  flex-direction: column;
-  gap: clamp(12px, 1.6vw, 20px);
+.home-dashboard,
+.hd-stage {
+  position: relative;
   box-sizing: border-box;
   width: 100%;
-  min-height: 100dvh;
-  padding: clamp(12px, 1.8vw, 24px);
+  height: 100dvh;
+  min-height: 0;
+}
+
+.home-dashboard {
+  overflow: hidden;
   color: var(--foreground);
 }
 
-/* Top status pill: area and level, notifications, wallet balance */
 .hd-status {
+  position: absolute;
+  z-index: 5;
+  top: max(12px, env(safe-area-inset-top));
+  left: max(12px, env(safe-area-inset-left));
   display: flex;
+  width: min(560px, calc(100% - 24px));
+  box-sizing: border-box;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -45,7 +50,6 @@
   display: grid;
   min-width: 0;
 }
-
 .hd-area-copy strong {
   overflow: hidden;
   font-family: var(--typeface-display);
@@ -55,12 +59,10 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
 .hd-area-copy small {
   font-size: 12px;
   color: var(--muted-foreground);
 }
-
 .hd-status-actions {
   display: flex;
   align-items: center;
@@ -81,7 +83,6 @@
     transform var(--duration-control) ease,
     box-shadow var(--duration-control) ease;
 }
-
 .hd-icon-button {
   position: relative;
   width: 44px;
@@ -89,7 +90,6 @@
   background: var(--color-primary-soft);
   color: var(--primary);
 }
-
 .hd-notification-dot {
   position: absolute;
   top: 2px;
@@ -105,7 +105,6 @@
   line-height: 18px;
   text-align: center;
 }
-
 .hd-balance {
   padding: 0 18px;
   border-radius: var(--shape-pill);
@@ -118,163 +117,24 @@
   white-space: nowrap;
   box-shadow: var(--elevation-rest);
 }
-
 .hd-icon-button:hover,
 .hd-balance:hover {
   transform: translateY(-1px);
   box-shadow: var(--elevation-lift);
 }
-
 .hd-icon-button:focus-visible,
-.hd-balance:focus-visible,
-.hd-task:focus-visible,
-.hd-desk-card:focus-visible {
+.hd-balance:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 3px;
 }
 
-/* Stage: fills the remaining viewport height between the top and bottom bars */
-.hd-stage {
-  display: grid;
-  align-content: start;
-  gap: 18px;
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-/* Bottom row: task pill and desk card */
-.hd-bottom {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
-  gap: 14px;
-}
-
-.hd-task {
-  display: grid;
-  gap: 6px;
-  align-self: end;
-  justify-self: center;
-  box-sizing: border-box;
-  width: min(100%, 520px);
-  padding: 14px 22px;
-  border: 2px solid var(--primary);
-  border-radius: var(--shape-pill);
-  background: var(--card);
-  box-shadow: var(--elevation-card);
-  color: var(--foreground);
-  text-decoration: none;
-}
-
-.hd-task-title {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-family: var(--typeface-display);
-  font-size: 16px;
-  font-weight: 700;
-}
-
-.hd-task-sub {
-  overflow: hidden;
-  font-size: 13px;
-  color: var(--muted-foreground);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.hd-task-bar {
-  position: relative;
-  display: block;
-  height: 8px;
-  overflow: hidden;
-  border-radius: var(--shape-pill);
-  background: var(--muted);
-}
-
-.hd-task-fill {
-  display: block;
-  height: 100%;
-  border-radius: var(--shape-pill);
-  background: var(--primary);
-  transition: width 300ms ease;
-}
-
-.hd-task-fill.is-indeterminate {
-  width: 40%;
-  animation: hd-indeterminate 1.4s ease-in-out infinite;
-}
-
-@keyframes hd-indeterminate {
-  0% {
-    transform: translateX(-100%);
-  }
-
-  100% {
-    transform: translateX(260%);
-  }
-}
-
-.hd-desk-card {
-  position: relative;
-  display: grid;
-  align-content: end;
-  gap: 2px;
-  width: clamp(140px, 16vw, 210px);
-  aspect-ratio: 1.05;
-  padding: 16px;
-  border-radius: var(--shape-card);
-  background: var(--brand-ink);
-  color: var(--color-surface);
-  text-decoration: none;
-  box-shadow: var(--shadow-card-hover);
-}
-
-.hd-desk-card > svg {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  color: var(--color-primary-soft);
-}
-
-.hd-desk-title {
-  font-family: var(--typeface-display);
-  font-size: 18px;
-  font-weight: 700;
-}
-
-.hd-desk-card small {
-  font-size: 12px;
-  color: var(--color-text-on-dark-soft);
-}
-
-/* Narrow screens: stack the bottom row so every control stays reachable */
 @media (max-width: 720px) {
   .hd-status {
-    padding: 8px 8px 8px 14px;
+    right: max(12px, env(safe-area-inset-right));
+    width: auto;
+    padding-left: 14px;
   }
-
-  .hd-bottom {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .hd-task {
-    grid-column: 1 / -1;
-    justify-self: stretch;
-    width: 100%;
-  }
-
-  .hd-desk-card {
-    grid-column: 1 / -1;
-    width: 100%;
-    min-height: 96px;
-    aspect-ratio: auto;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .hd-task-fill.is-indeterminate {
-    width: 100%;
-    animation: none;
+  .home-dashboard .house-page.house-page-fill .house-edit-toggle {
+    top: calc(max(12px, env(safe-area-inset-top)) + 72px);
   }
 }

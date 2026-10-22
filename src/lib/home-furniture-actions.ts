@@ -11,6 +11,12 @@ export const HOME_FURNITURE_ACTIONS = {
   computer: "study_computer",
   television: "watch_tv",
   plant: "tend_plant",
+  "quilted-bed": "sleep",
+  "lounge-sofa": "relax_sofa",
+  "two-burner-cooker": "cook",
+  "rain-shower": "shower",
+  "study-computer": "study_computer",
+  "potted-fern": "tend_plant",
 } as const satisfies Record<string, LifeActionId>;
 
 export type HomeFurnitureId = keyof typeof HOME_FURNITURE_ACTIONS;
@@ -31,6 +37,11 @@ export const HOME_FURNITURE_NEEDS: Partial<Record<HomeFurnitureId, string>> = {
   toilet: "Bladder",
   television: "Fun",
   plant: "Fun",
+  "quilted-bed": "Energy",
+  "lounge-sofa": "Fun",
+  "two-burner-cooker": "Hunger",
+  "rain-shower": "Hygiene",
+  "potted-fern": "Fun",
 };
 
 export function homeFurnitureNeed(itemId: string): string | null {

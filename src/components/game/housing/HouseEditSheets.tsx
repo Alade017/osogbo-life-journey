@@ -1,5 +1,5 @@
 import { useEffect, useState, type TouchEvent } from "react";
-import { Check, ChevronLeft, ChevronRight, Shirt, Sofa, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Package, Shirt, Sofa, X } from "lucide-react";
 import { formatNaira } from "@/lib/game";
 import type { HouseInventoryItem, HouseOutfit, HousePlacement, HouseSlot } from "./HouseRoomScene";
 
@@ -41,23 +41,33 @@ const rooms = [
   { id: "bedroom", label: "Bedroom", slots: ["bed", "storage", "light"] },
 ] as const;
 
-function ItemImage({ id }: { id: string }) {
-  if (id === "plant")
+function ItemImage({ item }: { item: CatalogItem }) {
+  const [failed, setFailed] = useState(false);
+  const imageId = {
+    bed: "starter-bed",
+    sofa: "starter-seat",
+    seat: "starter-seat",
+    light: "starter-light",
+    stove: "stove",
+    shower: "shower",
+    toilet: "toilet",
+    television: "television",
+    computer: "computer",
+  }[item.art_key];
+  if (!imageId || failed)
     return (
       <span className="house-shop-image" aria-hidden="true">
-        🪴
+        {item.art_key === "plant" ? "🪴" : <Package size={25} />}
       </span>
     );
-  const imageId =
-    id === "bed"
-      ? "starter-bed"
-      : id.startsWith("sofa")
-        ? "starter-seat"
-        : id === "light"
-          ? "starter-light"
-          : id;
   return (
-    <img className="house-shop-image" src={`/assets/items/${imageId}.webp`} alt="" loading="lazy" />
+    <img
+      className="house-shop-image"
+      src={`/assets/items/${imageId}.webp`}
+      alt=""
+      loading="lazy"
+      onError={() => setFailed(true)}
+    />
   );
 }
 
@@ -95,6 +105,7 @@ export function HouseEditSheets({
       item.category === "furniture" &&
       item.price_minor > 0 &&
       !ownedIds.has(item.id) &&
+      slots.some((slot) => slot.slot_type === item.slot_type) &&
       (!selectedSlot || item.slot_type === selectedSlot.slot_type),
   );
   const roomItems = selectedSlot
@@ -140,7 +151,7 @@ export function HouseEditSheets({
         return (
           <div className="house-inventory-row house-shop-row" key={item.id}>
             {item.category === "furniture" ? (
-              <ItemImage id={item.id} />
+              <ItemImage item={item} />
             ) : (
               <span className="house-shop-image" aria-hidden="true">
                 👕
@@ -372,7 +383,7 @@ export function HouseEditSheets({
           >
             {ownedRoomItems.map((item) => (
               <div className="house-inventory-row house-shop-row" key={item.id}>
-                <ItemImage id={item.item_id} />
+                <ItemImage item={{ ...item, id: item.item_id }} />
                 <span className="house-shop-description">
                   <strong>{itemName(item.item_id)}</strong>
                   <small>{item.slot_type} accessory</small>
