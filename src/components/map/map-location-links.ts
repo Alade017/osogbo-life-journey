@@ -18,4 +18,13 @@ export const MAP_LANDMARK_LOCATION_SLUG: Record<string, string | null> = {
   "transit-park": "transit-park",
   "sports-ground": "sports-ground",
   "osun-mall": "osun-mall",
+  "riverside-food-court": "riverside-food-court",
+  "sunrise-health-post": "sunrise-health-post",
+  "harvest-tech-hub": "harvest-tech-hub",
+  "old-town-library": "old-town-library",
+  "lagoon-hotel": "lagoon-hotel",
+  "cinema-star": "cinema-star",
+  "fuel-and-go": "fuel-and-go",
+  "youth-arts-centre": "youth-arts-centre",
+  "post-office": "post-office",
 };

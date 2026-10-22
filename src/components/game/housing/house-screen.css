@@ -115,7 +115,133 @@
   box-shadow: var(--elevation-card);
 }
 .house-room-card {
+  position: relative;
   padding: 0.65rem;
+}
+.house-room-card.is-sleeping::after {
+  position: absolute;
+  inset: 0.65rem;
+  border-radius: calc(var(--shape-card, 20px) - 6px);
+  background: linear-gradient(
+    180deg,
+    rgba(25, 43, 73, 0.2),
+    transparent 48%,
+    rgba(27, 34, 54, 0.28)
+  );
+  content: "";
+  pointer-events: none;
+}
+.house-sleep-overlay {
+  position: absolute;
+  z-index: 2;
+  inset: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  pointer-events: none;
+}
+.house-sleep-status,
+.house-sleep-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  pointer-events: none;
+}
+.house-sleep-status {
+  align-self: flex-start;
+  max-width: 100%;
+  padding: 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--foreground);
+  background: var(--card);
+  box-shadow: var(--elevation-card);
+}
+.house-sleep-symbol {
+  display: grid;
+  width: 2.7rem;
+  height: 2.7rem;
+  flex: none;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 12%, var(--card));
+}
+.house-sleep-status strong,
+.house-sleep-status small {
+  display: block;
+}
+.house-sleep-status strong {
+  font-size: 0.9rem;
+}
+.house-sleep-status small {
+  color: var(--muted-foreground);
+  font-size: 0.7rem;
+}
+.house-sleep-status button,
+.house-sleep-footer button {
+  min-height: 44px;
+  border-radius: 999px;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 750;
+  pointer-events: auto;
+}
+.house-sleep-status button {
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  background: var(--background);
+}
+.house-sleep-footer {
+  justify-content: flex-end;
+}
+.house-sleep-footer progress {
+  width: min(140px, 30vw);
+  height: 0.55rem;
+  overflow: hidden;
+  border: 0;
+  border-radius: 999px;
+  color: var(--primary);
+  background: var(--card);
+}
+.house-sleep-footer progress::-webkit-progress-bar {
+  background: var(--card);
+}
+.house-sleep-footer progress::-webkit-progress-value {
+  background: var(--primary);
+}
+.house-sleep-footer button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--primary);
+  color: var(--primary-foreground);
+  background: var(--primary);
+  box-shadow: var(--elevation-card);
+}
+.house-sleep-overlay button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.house-sleep-overlay button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+@media (max-width: 480px) {
+  .house-sleep-overlay {
+    inset: 0.9rem;
+  }
+  .house-sleep-status {
+    gap: 0.4rem;
+  }
+  .house-sleep-status small {
+    max-width: 16ch;
+    line-height: 1.15;
+  }
+  .house-sleep-footer progress {
+    width: min(100px, 25vw);
+  }
 }
 .house-rent-summary {
   display: grid;

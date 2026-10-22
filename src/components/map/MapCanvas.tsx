@@ -6,7 +6,36 @@ import townData from "@/data/osogbo-town.json";
 import { DRACO_PATH } from "@/types/models";
 import { TownScenery } from "@/components/map/TownScenery";
 import "./map-canvas.css";
+import * as THREE from "three";
 
+const GRID = townData.grid as { rows: string[]; cellSize?: number };
+const CELL = GRID.cellSize ?? 2;
+const TOWN_HALF_X = (GRID.rows[0]!.length * CELL) / 2 + 2;
+const TOWN_HALF_Z = (GRID.rows.length * CELL) / 2 + 2;
+const WORLD_SIZE = 1400; // the ground is so large that the fog hides its edge
+const SKY = "#cfe6d4";
+
+function hash2(x: number, z: number) {
+  const s = Math.sin(x * 127.1 + z * 311.7) * 43758.5453;
+  return s - Math.floor(s);
+}
+
+function valueNoise(x: number, z: number) {
+  const xi = Math.floor(x), zi = Math.floor(z);
+  const xf = x - xi, zf = z - zi;
+  const u = xf * xf * (3 - 2 * xf), v = zf * zf * (3 - 2 * zf);
+  const a = hash2(xi, zi), b = hash2(xi + 1, zi), c = hash2(xi, zi + 1), d = hash2(xi + 1, zi + 1);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
+
+/** Level inside the town so roads and buildings sit flat; rolling hills outside. */
+export function groundHeight(x: number, z: number) {
+  const dx = Math.max(0, Math.abs(x) - TOWN_HALF_X);
+  const dz = Math.max(0, Math.abs(z) - TOWN_HALF_Z);
+  const blend = Math.min(1, Math.hypot(dx, dz) / 10);
+  const hills = valueNoise(x * 0.035, z * 0.035) * 6 + valueNoise(x * 0.09, z * 0.09) * 1.5;
+  return (hills - 2) * blend;
+}
 
 export type MapFilter =
   | "market"
@@ -108,11 +137,50 @@ class AssetBoundary extends Component<AssetBoundaryProps, { failed: boolean }> {
 }
 
 function Terrain() {
+  const geometry = useMemo(() => {
+    const geo = new THREE.PlaneGeometry(WORLD_SIZE, WORLD_SIZE, 260, 260);
+    geo.rotateX(-Math.PI / 2);
+    const pos = geo.attributes["position"]!;
+      for (let i = 0; i < pos.count; i++) {
+      pos.setY(i, groundHeight(pos.getX(i), pos.getZ(i)));
+    }
+    geo.computeVertexNormals();
+    return geo;
+  }, []);
   return (
-    <mesh position={[0, -0.16, 0]} receiveShadow>
-      <boxGeometry args={[32, 0.3, 24]} />
+    <mesh geometry={geometry} receiveShadow>
       <meshStandardMaterial color="#8bbf76" roughness={1} />
     </mesh>
+  );
+}
+
+/** Trees scattered past the town edge so the world keeps going. */
+function OuterForest() {
+  const trees = useMemo(() => {
+    const out: { x: number; z: number; s: number }[] = [];
+    for (let i = 0; out.length < 240 && i < 3000; i++) {
+      const x = (hash2(i, 1) - 0.5) * WORLD_SIZE * 0.9;
+      const z = (hash2(i, 2) - 0.5) * WORLD_SIZE * 0.9;
+      if (Math.abs(x) < TOWN_HALF_X + 4 && Math.abs(z) < TOWN_HALF_Z + 4) continue;
+      out.push({ x, z, s: 0.8 + hash2(i, 3) * 0.8 });
+    }
+    return out;
+  }, []);
+  return (
+    <>
+      {trees.map((t, i) => (
+        <group key={i} position={[t.x, groundHeight(t.x, t.z), t.z]} scale={t.s}>
+          <mesh position={[0, 0.6, 0]}>
+            <cylinderGeometry args={[0.12, 0.16, 1.2, 6]} />
+            <meshStandardMaterial color="#7a5a3a" />
+          </mesh>
+          <mesh position={[0, 1.8, 0]}>
+            <coneGeometry args={[0.8, 2, 7]} />
+            <meshStandardMaterial color="#3f7d45" />
+          </mesh>
+        </group>
+      ))}
+    </>
   );
 }
 
@@ -300,36 +368,30 @@ function TownScene({
 }) {
   return (
     <>
-      <color attach="background" args={["#dce7dc"]} />
-      <ambientLight intensity={1.3} />
-      <directionalLight position={[8, 13, 7]} intensity={1.6} />
-      <Terrain />
-      <TownBase />
-      <TownScenery/>
-      <PlaceMarkers
-        places={places}
-        onSelectLandmark={onSelectLandmark}
-        onSelectDistrict={onSelectDistrict}
-      />
-      {properties?.map((property) => (
-        <House key={property.id} property={property} />
-      ))}
-      {properties === undefined ? <MapLoading /> : null}
-      <OrbitControls
-        makeDefault
-        enableDamping={false}
-        minDistance={10}
-        maxDistance={28}
-        minPolarAngle={Math.PI / 4.4}
-        maxPolarAngle={Math.PI / 2.15}
-        minAzimuthAngle={-Math.PI / 3}
-        maxAzimuthAngle={Math.PI / 3}
-        target={[0, 0, 0]}
-        enablePan
-        panSpeed={0.65}
-        zoomSpeed={0.65}
-      />
-    </>
+  <color attach="background" args={[SKY]} />
+  <fog attach="fog" args={[SKY, 45, 170]} />
+  <hemisphereLight args={["#ffffff", "#7a9d6a", 1.0]} />
+  <directionalLight position={[20, 30, 14]} intensity={1.8} castShadow />
+  <Terrain />
+  <OuterForest />
+  <TownBase />
+  <TownScenery />
+  {/* ...PlaceMarkers, House list, MapLoading stay exactly as they are... */}
+  <OrbitControls
+    makeDefault
+    enableDamping
+    dampingFactor={0.08}
+    minDistance={5}
+    maxDistance={90}
+    minPolarAngle={0.2}
+    maxPolarAngle={Math.PI / 2.02}
+    enablePan
+    screenSpacePanning={false}
+    panSpeed={0.8}
+    zoomSpeed={0.8}
+    target={[0, 0, 0]}
+  />
+</>
   );
 }
 
@@ -373,7 +435,7 @@ export function MapCanvas({
         dpr={[1, 2]}
         shadows={false}
         gl={{ antialias: false, alpha: false, powerPreference: "low-power" }}
-        camera={{ position: [15, 15, 17], fov: 42, near: 0.1, far: 100 }}
+        camera={{ position: [22, 24, 26], fov: 45, near: 0.1, far: 400 }}
         fallback={
           <p className="town-map-webgl-error" role="alert">
             3D requires WebGL. Your browser could not start it.

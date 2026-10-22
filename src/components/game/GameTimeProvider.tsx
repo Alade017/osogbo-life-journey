@@ -29,6 +29,7 @@ type ContextValue = {
   syncError: string | null;
   busy: boolean;
   ready: boolean;
+  sleepElapsedSeconds: number | null;
   reconnect: () => void;
   pause: () => void;
   resume: () => void;
@@ -82,6 +83,7 @@ export function GameTimeProvider({
   const [syncError, setSyncError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
+  const [sleepElapsedSeconds, setSleepElapsedSeconds] = useState<number | null>(null);
   const session = useRef<string>("");
   const revision = useRef(0);
   const inFlight = useRef(false);
@@ -92,6 +94,7 @@ export function GameTimeProvider({
   const applySnapshot = useCallback(
     (s: SimulationSnapshot) => {
       revision.current = s.revision;
+      setSleepElapsedSeconds(s.sleep_elapsed_seconds ?? null);
       setSimulation((current) => ({
         ...current,
         needs: s.needs,
@@ -279,6 +282,7 @@ export function GameTimeProvider({
       syncError,
       busy,
       ready,
+      sleepElapsedSeconds,
       reconnect,
       pause,
       resume,
@@ -294,6 +298,7 @@ export function GameTimeProvider({
       syncError,
       busy,
       ready,
+      sleepElapsedSeconds,
       reconnect,
       pause,
       resume,

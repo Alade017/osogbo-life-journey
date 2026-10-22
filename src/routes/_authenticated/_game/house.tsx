@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { House, Pencil, WifiOff } from "lucide-react";
+import { House, Moon, Pencil, Sunrise, WifiOff } from "lucide-react";
 import { HouseEditSheets } from "@/components/game/housing/HouseEditSheets";
 import type {
   HouseInventoryItem,
@@ -682,6 +682,29 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     overdue: "Overdue",
     owned: "Owned",
   };
+  const activeSleep =
+    gameTime.simulation.currentAction?.actionId === "sleep"
+      ? gameTime.simulation.currentAction
+      : null;
+  const sleepProgress = Math.min(
+    100,
+    Math.round(((gameTime.sleepElapsedSeconds ?? 0) / 120) * 100),
+  );
+  const sleepRemaining = Math.max(0, Math.ceil(120 - (gameTime.sleepElapsedSeconds ?? 0)));
+
+  const finishSleep = async (cancel: boolean) => {
+    if (!activeSleep || isOffline || !gameTime.ready || gameTime.busy) return;
+    setActivityError("");
+    const error = cancel
+      ? await gameTime.interrupt(activeSleep.requestId)
+      : await gameTime.complete(activeSleep.requestId, "sleep");
+    if (error) {
+      setActivityError(error);
+      toast.error(error);
+      return;
+    }
+    toast.success(cancel ? "Sleep cancelled." : "You woke up. Your energy is up to date.");
+  };
 
   const requestAction = (args: Parameters<typeof actionMutation.mutate>[0]) => {
     if (isOffline || actionMutation.isPending) return;
@@ -701,11 +724,15 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       if (active && active.actionId !== action) {
         throw new Error("Finish your current activity before using another accessory.");
       }
+      if (action === "sleep" && gameTime.sleepElapsedSeconds === null) {
+        throw new Error("The latest home sleep update is needed before you can rest.");
+      }
       const requestId = active?.requestId ?? crypto.randomUUID();
       if (!active) {
         const startError = await gameTime.start(action, requestId);
         if (startError) throw new Error(startError);
       }
+      if (action === "sleep") return;
       const completeError = await gameTime.complete(requestId, action);
       if (completeError) throw new Error(completeError);
       toast.success(ACTION_CATALOG[action].outcome);
@@ -784,7 +811,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   return (
     <div className="house-page house-page-fill">
       <section
-        className={`house-room-card${house.status === "overdue" ? " room-overdue" : ""}`}
+        className={`house-room-card${house.status === "overdue" ? " room-overdue" : ""}${activeSleep ? " is-sleeping" : ""}`}
         aria-label={`${house.house_type.label} room`}
       >
         <HouseRoom3D
@@ -794,6 +821,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           placements={placements}
           editMode={editing}
           onSelectPlacement={(placement) => {
+            if (activeSleep) return;
             if (!editing) {
               void interactWithPlacement(placement);
               return;
@@ -806,21 +834,57 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             setSelectedSlot(slot);
           }}
         />
+        {activeSleep && (
+          <div className="house-sleep-overlay" role="region" aria-label="Sleep controls">
+            <div className="house-sleep-status">
+              <span className="house-sleep-symbol">
+                <Moon size={21} aria-hidden="true" />
+              </span>
+              <span>
+                <strong>Asleep</strong>
+                <small>
+                  {sleepProgress}% rested · {sleepRemaining}s to full rest
+                </small>
+              </span>
+              <button
+                type="button"
+                disabled={isOffline || !gameTime.ready || gameTime.busy}
+                onClick={() => void finishSleep(true)}
+              >
+                Cancel
+              </button>
+            </div>
+            <div className="house-sleep-footer">
+              <progress value={sleepProgress} max="100" aria-label="Sleep progress">
+                {sleepProgress}%
+              </progress>
+              <button
+                type="button"
+                disabled={isOffline || !gameTime.ready || gameTime.busy}
+                onClick={() => void finishSleep(false)}
+              >
+                <Sunrise size={18} aria-hidden="true" /> Wake up
+              </button>
+            </div>
+          </div>
+        )}
       </section>
       {!editing && (
         <section className="house-needs-actions" aria-label="Use home accessories">
           <h2>Use your home</h2>
           <p>
-            {isInsideHome
-              ? "Tap a placed accessory to care for your character."
-              : "Enter your home to use its accessories."}
+            {activeSleep
+              ? "Your character is sleeping. Wake up or cancel sleep to use another accessory."
+              : isInsideHome
+                ? "Tap a placed accessory to care for your character."
+                : "Enter your home to use its accessories."}
           </p>
           {canonicalHome && (
             <div className="house-presence-actions">
               <button
                 type="button"
                 className="house-primary-button"
-                disabled={isOffline || homePresence.isPending}
+                disabled={isOffline || homePresence.isPending || !!activeSleep}
                 onClick={() =>
                   homePresence.mutate(isInsideHome ? "leave_player_home" : "enter_player_home")
                 }
@@ -828,7 +892,9 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
                 {homePresence.isPending
                   ? "Updating location..."
                   : isInsideHome
-                    ? "Go outside"
+                    ? activeSleep
+                      ? "Wake up to go outside"
+                      : "Go outside"
                     : "Travel home"}
               </button>
             </div>
@@ -849,6 +915,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
                       !isInsideHome ||
                       !gameTime.ready ||
                       gameTime.busy ||
+                      !!activeSleep ||
                       !!usingPlacementId
                     }
                     onClick={() => void interactWithPlacement(placement)}
@@ -872,6 +939,12 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           )}
           {!gameTime.ready && !isOffline && <p role="status">Connecting character needs...</p>}
           {isOffline && <p role="status">Reconnect to use your accessories.</p>}
+          {gameTime.ready &&
+            gameTime.sleepElapsedSeconds === null &&
+            !activeSleep &&
+            placements.some((placement) => homeFurnitureAction(placement.item_id) === "sleep") && (
+              <p role="status">The home sleep update is needed before the bed can be used.</p>
+            )}
           {activityError && <p role="alert">{activityError}</p>}
         </section>
       )}
@@ -879,6 +952,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         className="house-edit-button house-edit-toggle"
         type="button"
         aria-pressed={editing}
+        disabled={!!activeSleep}
         onClick={() => {
           setEditing((value) => !value);
           setSelectedPlacement(null);

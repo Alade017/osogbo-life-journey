@@ -12,6 +12,7 @@ export type SimulationSnapshot = {
   speed: 0.5 | 1 | 2;
   action: LifeActionId | null;
   request_id: string | null;
+  sleep_elapsed_seconds?: number;
   skills: Record<string, number>;
   queued_actions: LifeActionId[];
 };
@@ -50,6 +51,10 @@ export function parseSimulationSnapshot(value: unknown): SimulationSnapshot {
     (s.action !== null &&
       (!Object.hasOwn(ACTION_CATALOG, s.action) || typeof s.request_id !== "string")) ||
     (s.action === null && s.request_id !== null) ||
+    (s.sleep_elapsed_seconds !== undefined &&
+      (!Number.isFinite(s.sleep_elapsed_seconds) ||
+        s.sleep_elapsed_seconds < 0 ||
+        s.sleep_elapsed_seconds > 120)) ||
     !s.skills ||
     typeof s.skills !== "object" ||
     Array.isArray(s.skills) ||

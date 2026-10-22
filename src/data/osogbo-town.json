@@ -3,8 +3,17 @@
     "version": 1,
     "source": "Fictional game layout with broad Osogbo-inspired town character; not geographic data.",
     "reviewed": false,
-    "grid": { "columns": 14, "rows": 10, "cellSize": 2 },
-    "legend": { "g": "grass", "r": "road", "w": "water", "p": "plot" }
+    "grid": {
+      "columns": 24,
+      "rows": 18,
+      "cellSize": 2
+    },
+    "legend": {
+      "g": "grass",
+      "r": "road",
+      "w": "water",
+      "p": "plot"
+    }
   },
   "districts": [
     {
@@ -14,14 +23,37 @@
       "traffic": "high",
       "description": "A lively fictional trading quarter with public services and neighborhood shops.",
       "shape": [
-        [40, 40],
-        [340, 30],
-        [390, 180],
-        [330, 310],
-        [50, 300],
-        [20, 170]
+        [
+          40,
+          40
+        ],
+        [
+          340,
+          30
+        ],
+        [
+          390,
+          180
+        ],
+        [
+          330,
+          310
+        ],
+        [
+          50,
+          300
+        ],
+        [
+          20,
+          170
+        ]
       ],
-      "gridArea": { "x": 0, "z": 0, "width": 4, "depth": 4 }
+      "gridArea": {
+        "x": 0,
+        "z": 0,
+        "width": 4,
+        "depth": 4
+      }
     },
     {
       "id": "civic-quarter",
@@ -30,14 +62,37 @@
       "traffic": "medium",
       "description": "A fictional civic area for public help desks, community safety and everyday errands.",
       "shape": [
-        [390, 35],
-        [720, 40],
-        [760, 190],
-        [690, 320],
-        [390, 300],
-        [350, 175]
+        [
+          390,
+          35
+        ],
+        [
+          720,
+          40
+        ],
+        [
+          760,
+          190
+        ],
+        [
+          690,
+          320
+        ],
+        [
+          390,
+          300
+        ],
+        [
+          350,
+          175
+        ]
       ],
-      "gridArea": { "x": 5, "z": 0, "width": 4, "depth": 4 }
+      "gridArea": {
+        "x": 5,
+        "z": 0,
+        "width": 4,
+        "depth": 4
+      }
     },
     {
       "id": "commerce-quarter",
@@ -46,14 +101,37 @@
       "traffic": "medium",
       "description": "A fictional business district with small services and neighborhood meeting places.",
       "shape": [
-        [770, 35],
-        [1140, 55],
-        [1170, 195],
-        [1080, 320],
-        [720, 315],
-        [750, 185]
+        [
+          770,
+          35
+        ],
+        [
+          1140,
+          55
+        ],
+        [
+          1170,
+          195
+        ],
+        [
+          1080,
+          320
+        ],
+        [
+          720,
+          315
+        ],
+        [
+          750,
+          185
+        ]
       ],
-      "gridArea": { "x": 10, "z": 0, "width": 4, "depth": 4 }
+      "gridArea": {
+        "x": 10,
+        "z": 0,
+        "width": 4,
+        "depth": 4
+      }
     },
     {
       "id": "central-crossing",
@@ -62,14 +140,37 @@
       "traffic": "high",
       "description": "A fictional junction where the town's main roads and shared activities meet.",
       "shape": [
-        [35, 335],
-        [350, 325],
-        [390, 465],
-        [340, 615],
-        [30, 610],
-        [15, 475]
+        [
+          35,
+          335
+        ],
+        [
+          350,
+          325
+        ],
+        [
+          390,
+          465
+        ],
+        [
+          340,
+          615
+        ],
+        [
+          30,
+          610
+        ],
+        [
+          15,
+          475
+        ]
       ],
-      "gridArea": { "x": 0, "z": 5, "width": 4, "depth": 4 }
+      "gridArea": {
+        "x": 0,
+        "z": 5,
+        "width": 4,
+        "depth": 4
+      }
     },
     {
       "id": "garden-quarter",
@@ -78,14 +179,37 @@
       "traffic": "low",
       "description": "A fictional green neighborhood with room to relax, exercise and meet friends.",
       "shape": [
-        [390, 335],
-        [700, 330],
-        [750, 475],
-        [700, 620],
-        [390, 610],
-        [350, 475]
+        [
+          390,
+          335
+        ],
+        [
+          700,
+          330
+        ],
+        [
+          750,
+          475
+        ],
+        [
+          700,
+          620
+        ],
+        [
+          390,
+          610
+        ],
+        [
+          350,
+          475
+        ]
       ],
-      "gridArea": { "x": 5, "z": 5, "width": 4, "depth": 4 }
+      "gridArea": {
+        "x": 5,
+        "z": 5,
+        "width": 4,
+        "depth": 4
+      }
     },
     {
       "id": "learning-quarter",
@@ -94,14 +218,37 @@
       "traffic": "medium",
       "description": "A fictional learning and community area for study, care and skill-building.",
       "shape": [
-        [760, 330],
-        [1150, 340],
-        [1175, 480],
-        [1090, 620],
-        [720, 615],
-        [750, 475]
+        [
+          760,
+          330
+        ],
+        [
+          1150,
+          340
+        ],
+        [
+          1175,
+          480
+        ],
+        [
+          1090,
+          620
+        ],
+        [
+          720,
+          615
+        ],
+        [
+          750,
+          475
+        ]
       ],
-      "gridArea": { "x": 10, "z": 5, "width": 4, "depth": 4 }
+      "gridArea": {
+        "x": 10,
+        "z": 5,
+        "width": 4,
+        "depth": 4
+      }
     },
     {
       "id": "transit-quarter",
@@ -110,12 +257,29 @@
       "traffic": "medium",
       "description": "A fictional transit and shopping edge with convenient routes around town.",
       "shape": [
-        [55, 635],
-        [560, 630],
-        [610, 765],
-        [65, 765]
+        [
+          55,
+          635
+        ],
+        [
+          560,
+          630
+        ],
+        [
+          610,
+          765
+        ],
+        [
+          65,
+          765
+        ]
       ],
-      "gridArea": { "x": 1, "z": 9, "width": 5, "depth": 1 }
+      "gridArea": {
+        "x": 1,
+        "z": 9,
+        "width": 5,
+        "depth": 1
+      }
     },
     {
       "id": "open-fields",
@@ -124,71 +288,584 @@
       "traffic": "low",
       "description": "A fictional open edge of town with community sports and quieter roads.",
       "shape": [
-        [640, 635],
-        [1140, 630],
-        [1135, 765],
-        [590, 765]
+        [
+          640,
+          635
+        ],
+        [
+          1140,
+          630
+        ],
+        [
+          1135,
+          765
+        ],
+        [
+          590,
+          765
+        ]
       ],
-      "gridArea": { "x": 8, "z": 9, "width": 5, "depth": 1 }
+      "gridArea": {
+        "x": 8,
+        "z": 9,
+        "width": 5,
+        "depth": 1
+      }
+    },
+    {
+      "id": "river-quarter",
+      "name": "River quarter",
+      "theme": "leisure",
+      "traffic": "medium",
+      "description": "A fictional riverside quarter with food, care and learning spots.",
+      "shape": [
+        [
+          560,
+          0
+        ],
+        [
+          760,
+          0
+        ],
+        [
+          960,
+          0
+        ],
+        [
+          960,
+          320
+        ],
+        [
+          760,
+          320
+        ],
+        [
+          560,
+          320
+        ]
+      ],
+      "gridArea": {
+        "x": 14,
+        "z": 0,
+        "width": 10,
+        "depth": 8
+      }
+    },
+    {
+      "id": "south-quarter",
+      "name": "South quarter",
+      "theme": "residential",
+      "traffic": "medium",
+      "description": "A fictional southern quarter with services and worship spaces.",
+      "shape": [
+        [
+          0,
+          400
+        ],
+        [
+          280,
+          400
+        ],
+        [
+          560,
+          400
+        ],
+        [
+          560,
+          720
+        ],
+        [
+          280,
+          720
+        ],
+        [
+          0,
+          720
+        ]
+      ],
+      "gridArea": {
+        "x": 0,
+        "z": 10,
+        "width": 14,
+        "depth": 8
+      }
+    },
+    {
+      "id": "east-gate",
+      "name": "East gate",
+      "theme": "transport",
+      "traffic": "high",
+      "description": "A fictional gateway with travel, entertainment and work spots.",
+      "shape": [
+        [
+          560,
+          400
+        ],
+        [
+          760,
+          400
+        ],
+        [
+          960,
+          400
+        ],
+        [
+          960,
+          720
+        ],
+        [
+          760,
+          720
+        ],
+        [
+          560,
+          720
+        ]
+      ],
+      "gridArea": {
+        "x": 14,
+        "z": 10,
+        "width": 10,
+        "depth": 8
+      }
+    },
+    {
+      "id": "river-quarter",
+      "name": "River quarter",
+      "theme": "leisure",
+      "traffic": "medium",
+      "description": "A fictional riverside quarter with food, care and learning spots.",
+      "shape": [
+        [
+          560,
+          0
+        ],
+        [
+          760,
+          0
+        ],
+        [
+          960,
+          0
+        ],
+        [
+          960,
+          320
+        ],
+        [
+          760,
+          320
+        ],
+        [
+          560,
+          320
+        ]
+      ],
+      "gridArea": {
+        "x": 14,
+        "z": 0,
+        "width": 10,
+        "depth": 8
+      }
+    },
+    {
+      "id": "south-quarter",
+      "name": "South quarter",
+      "theme": "residential",
+      "traffic": "medium",
+      "description": "A fictional southern quarter with services and worship spaces.",
+      "shape": [
+        [
+          0,
+          400
+        ],
+        [
+          280,
+          400
+        ],
+        [
+          560,
+          400
+        ],
+        [
+          560,
+          720
+        ],
+        [
+          280,
+          720
+        ],
+        [
+          0,
+          720
+        ]
+      ],
+      "gridArea": {
+        "x": 0,
+        "z": 10,
+        "width": 14,
+        "depth": 8
+      }
+    },
+    {
+      "id": "east-gate",
+      "name": "East gate",
+      "theme": "transport",
+      "traffic": "high",
+      "description": "A fictional gateway with travel, entertainment and work spots.",
+      "shape": [
+        [
+          560,
+          400
+        ],
+        [
+          760,
+          400
+        ],
+        [
+          960,
+          400
+        ],
+        [
+          960,
+          720
+        ],
+        [
+          760,
+          720
+        ],
+        [
+          560,
+          720
+        ]
+      ],
+      "gridArea": {
+        "x": 14,
+        "z": 10,
+        "width": 10,
+        "depth": 8
+      }
     }
   ],
   "grid": {
     "cellSize": 2,
     "rows": [
-      "ggggggrggggggg",
-      "ggggggrggggggg",
-      "ggggggrggggggg",
-      "ggggggrggggggg",
-      "rrrrrrrrrrrrrr",
-      "ggggggrggggggg",
-      "ggggggrggggggg",
-      "ggggggrggggggg",
-      "rrrrrrrrrrrrrr",
-      "ggggggrggggggg"
+      "ggggggrgggggrgggggrggggg",
+      "ggggggrgggggrgggggrggggg",
+      "ggggggrgggggrgggggrggggg",
+      "ggggggrgggggrgggggrggggg",
+      "rrrrrrrrrrrrrrrrrrrrrrrr",
+      "ggggggrgggggrgggggrggggg",
+      "ggggggrgggggrgggggrggggg",
+      "ggggggrgggggrgggggrggggg",
+      "rrrrrrrrrrrrrrrrrrrrrrrr",
+      "ggggggrgggggrgggggrggggg",
+      "ggggggrgggggrgggggrggggg",
+      "ggggggrgggggrgggggrggggg",
+      "rrrrrrrrrrrrrrrrrrrrrrrr",
+      "ggggggrgggggrgggggrggggg",
+      "ggggggrgggggrgggggrggggg",
+      "ggggggrgggggrgggggrggggg",
+      "rrrrrrrrrrrrrrrrrrrrrrrr",
+      "ggggggrgggggrgggggrggggg"
     ],
     "waterCells": [
-      [0, 7],
-      [1, 7],
-      [12, 1],
-      [13, 1]
+      [
+        0,
+        7
+      ],
+      [
+        1,
+        7
+      ],
+      [
+        12,
+        1
+      ],
+      [
+        13,
+        1
+      ]
     ],
     "plotCells": [
-      [1, 1],
-      [3, 2],
-      [7, 1],
-      [11, 2],
-      [2, 6],
-      [6, 7],
-      [10, 6],
-      [3, 8]
+      [
+        1,
+        1
+      ],
+      [
+        3,
+        2
+      ],
+      [
+        7,
+        1
+      ],
+      [
+        11,
+        2
+      ],
+      [
+        2,
+        6
+      ],
+      [
+        6,
+        7
+      ],
+      [
+        10,
+        6
+      ],
+      [
+        3,
+        8
+      ]
     ],
     "buildings": [
-      { "placeId": "town-market", "x": 2, "z": 2, "buildingType": "market" },
-      { "placeId": "civic-court", "x": 5, "z": 2, "buildingType": "civic" },
-      { "placeId": "community-police", "x": 8, "z": 2, "buildingType": "public-service" },
-      { "placeId": "cedar-bank", "x": 11, "z": 2, "buildingType": "bank" },
-      { "placeId": "meridian-bank", "x": 12, "z": 6, "buildingType": "bank" },
-      { "placeId": "lantern-club", "x": 9, "z": 7, "buildingType": "club" },
-      { "placeId": "community-clinic", "x": 4, "z": 7, "buildingType": "clinic" },
-      { "placeId": "transit-park", "x": 2, "z": 9, "buildingType": "transit" },
-      { "placeId": "sports-ground", "x": 7, "z": 9, "buildingType": "sport" },
-      { "placeId": "osun-mall", "x": 10, "z": 5, "buildingType": "market" }
+      {
+        "placeId": "town-market",
+        "x": 2,
+        "z": 2,
+        "buildingType": "market"
+      },
+      {
+        "placeId": "civic-court",
+        "x": 5,
+        "z": 2,
+        "buildingType": "civic"
+      },
+      {
+        "placeId": "community-police",
+        "x": 8,
+        "z": 2,
+        "buildingType": "public-service"
+      },
+      {
+        "placeId": "cedar-bank",
+        "x": 11,
+        "z": 2,
+        "buildingType": "bank"
+      },
+      {
+        "placeId": "meridian-bank",
+        "x": 12,
+        "z": 6,
+        "buildingType": "bank"
+      },
+      {
+        "placeId": "lantern-club",
+        "x": 9,
+        "z": 7,
+        "buildingType": "club"
+      },
+      {
+        "placeId": "community-clinic",
+        "x": 4,
+        "z": 7,
+        "buildingType": "clinic"
+      },
+      {
+        "placeId": "transit-park",
+        "x": 2,
+        "z": 9,
+        "buildingType": "transit"
+      },
+      {
+        "placeId": "sports-ground",
+        "x": 7,
+        "z": 9,
+        "buildingType": "sport"
+      },
+      {
+        "placeId": "osun-mall",
+        "x": 10,
+        "z": 5,
+        "buildingType": "market"
+      },
+      {
+        "placeId": "riverside-food-court",
+        "x": 15,
+        "z": 1,
+        "buildingType": "food"
+      },
+      {
+        "placeId": "sunrise-health-post",
+        "x": 21,
+        "z": 1,
+        "buildingType": "health"
+      },
+      {
+        "placeId": "harvest-tech-hub",
+        "x": 15,
+        "z": 6,
+        "buildingType": "services"
+      },
+      {
+        "placeId": "old-town-library",
+        "x": 21,
+        "z": 6,
+        "buildingType": "school"
+      },
+      {
+        "placeId": "garden-chapel",
+        "x": 2,
+        "z": 11,
+        "buildingType": "worship"
+      },
+      {
+        "placeId": "fish-market",
+        "x": 9,
+        "z": 11,
+        "buildingType": "market"
+      },
+      {
+        "placeId": "lagoon-hotel",
+        "x": 21,
+        "z": 11,
+        "buildingType": "services"
+      },
+      {
+        "placeId": "cinema-star",
+        "x": 15,
+        "z": 10,
+        "buildingType": "sport"
+      },
+      {
+        "placeId": "fuel-and-go",
+        "x": 15,
+        "z": 14,
+        "buildingType": "transport"
+      },
+      {
+        "placeId": "youth-arts-centre",
+        "x": 21,
+        "z": 14,
+        "buildingType": "school"
+      },
+      {
+        "placeId": "post-office",
+        "x": 4,
+        "z": 14,
+        "buildingType": "services"
+      },
+      {
+        "placeId": "mosque-square",
+        "x": 10,
+        "z": 15,
+        "buildingType": "worship"
+      },
+      {
+        "placeId": "riverside-food-court",
+        "x": 15,
+        "z": 1,
+        "buildingType": "food"
+      },
+      {
+        "placeId": "sunrise-health-post",
+        "x": 21,
+        "z": 1,
+        "buildingType": "health"
+      },
+      {
+        "placeId": "harvest-tech-hub",
+        "x": 15,
+        "z": 6,
+        "buildingType": "services"
+      },
+      {
+        "placeId": "old-town-library",
+        "x": 21,
+        "z": 6,
+        "buildingType": "school"
+      },
+      {
+        "placeId": "fish-market",
+        "x": 9,
+        "z": 11,
+        "buildingType": "market"
+      },
+      {
+        "placeId": "lagoon-hotel",
+        "x": 21,
+        "z": 11,
+        "buildingType": "services"
+      },
+      {
+        "placeId": "cinema-star",
+        "x": 15,
+        "z": 10,
+        "buildingType": "sport"
+      },
+      {
+        "placeId": "fuel-and-go",
+        "x": 15,
+        "z": 14,
+        "buildingType": "transport"
+      },
+      {
+        "placeId": "youth-arts-centre",
+        "x": 21,
+        "z": 14,
+        "buildingType": "school"
+      },
+      {
+        "placeId": "post-office",
+        "x": 4,
+        "z": 14,
+        "buildingType": "services"
+      }
     ],
     "treeCells": [
-      [0, 0],
-      [5, 1],
-      [9, 0],
-      [13, 3],
-      [0, 6],
-      [5, 6],
-      [11, 7],
-      [13, 9],
-      [3, 9],
-      [8, 0]
+      [
+        0,
+        0
+      ],
+      [
+        5,
+        1
+      ],
+      [
+        9,
+        0
+      ],
+      [
+        13,
+        3
+      ],
+      [
+        0,
+        6
+      ],
+      [
+        5,
+        6
+      ],
+      [
+        11,
+        7
+      ],
+      [
+        13,
+        9
+      ],
+      [
+        3,
+        9
+      ],
+      [
+        8,
+        0
+      ]
     ],
     "carCells": [
-      [4, 4],
-      [10, 4]
+      [
+        4,
+        4
+      ],
+      [
+        10,
+        4
+      ]
     ]
   },
   "landmarks": [
@@ -201,7 +878,10 @@
       "x": 185,
       "y": 145,
       "verify": false,
-      "grid": { "x": 2, "z": 2 },
+      "grid": {
+        "x": 2,
+        "z": 2
+      },
       "buildingType": "market",
       "model": "/models/city/suburban/Models/GLB%20format/building-type-a.glb",
       "actions": [
@@ -210,10 +890,16 @@
           "label": "Browse market stalls",
           "description": "Explore fictional stalls and community vendors.",
           "time_cost_minutes": 12,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 2,
           "requirement": "Travel here first",
-          "open_hours": { "start": 6, "end": 21 },
+          "open_hours": {
+            "start": 6,
+            "end": 21
+          },
           "cooldown_game_minutes": 60,
           "verify": false
         },
@@ -222,10 +908,16 @@
           "label": "Ask about market work",
           "description": "Learn about fictional market jobs.",
           "time_cost_minutes": 8,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 1,
           "requirement": "Travel here first",
-          "open_hours": { "start": 7, "end": 18 },
+          "open_hours": {
+            "start": 7,
+            "end": 18
+          },
           "verify": false
         },
         {
@@ -233,10 +925,16 @@
           "label": "Meet other visitors",
           "description": "Spend time with people around the market.",
           "time_cost_minutes": 15,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 3,
           "requirement": "Travel here first",
-          "open_hours": { "start": 6, "end": 21 },
+          "open_hours": {
+            "start": 6,
+            "end": 21
+          },
           "verify": false
         },
         {
@@ -244,10 +942,16 @@
           "label": "Help tidy a shared aisle",
           "description": "Take part in a small community activity.",
           "time_cost_minutes": 20,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 2,
           "requirement": "Travel here first",
-          "open_hours": { "start": 7, "end": 18 },
+          "open_hours": {
+            "start": 7,
+            "end": 18
+          },
           "verify": false
         }
       ]
@@ -262,7 +966,10 @@
       "y": 145,
       "verify": false,
       "min_age": 0,
-      "grid": { "x": 5, "z": 2 },
+      "grid": {
+        "x": 5,
+        "z": 2
+      },
       "buildingType": "civic",
       "model": "/models/city/commercial/Models/GLB%20format/building-a.glb",
       "actions": [
@@ -271,10 +978,16 @@
           "label": "Speak with a public clerk",
           "description": "Ask where to find general in-game public service information.",
           "time_cost_minutes": 10,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 0,
           "requirement": "Travel here first",
-          "open_hours": { "start": 8, "end": 17 },
+          "open_hours": {
+            "start": 8,
+            "end": 17
+          },
           "verify": false
         },
         {
@@ -282,10 +995,16 @@
           "label": "Review the visitor guide",
           "description": "Read a fictional guide to public counters and forms.",
           "time_cost_minutes": 12,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 1,
           "requirement": "Travel here first",
-          "open_hours": { "start": 8, "end": 17 },
+          "open_hours": {
+            "start": 8,
+            "end": 17
+          },
           "verify": false
         },
         {
@@ -293,10 +1012,16 @@
           "label": "Help organize public files",
           "description": "Take a short fictional records support activity.",
           "time_cost_minutes": 25,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 1,
           "requirement": "Travel here first",
-          "open_hours": { "start": 9, "end": 16 },
+          "open_hours": {
+            "start": 9,
+            "end": 16
+          },
           "verify": false
         },
         {
@@ -304,10 +1029,16 @@
           "label": "Check the civic career board",
           "description": "Browse fictional public service job opportunities.",
           "time_cost_minutes": 8,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 1,
           "requirement": "Travel here first",
-          "open_hours": { "start": 8, "end": 17 },
+          "open_hours": {
+            "start": 8,
+            "end": 17
+          },
           "verify": false
         }
       ]
@@ -321,7 +1052,10 @@
       "x": 670,
       "y": 145,
       "verify": false,
-      "grid": { "x": 8, "z": 2 },
+      "grid": {
+        "x": 8,
+        "z": 2
+      },
       "buildingType": "public-service",
       "model": "/models/city/commercial/Models/GLB%20format/building-c.glb",
       "actions": [
@@ -330,10 +1064,16 @@
           "label": "Read the safety guide",
           "description": "Review general safety tips prepared for this fictional game town.",
           "time_cost_minutes": 8,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 0,
           "requirement": "Travel here first",
-          "open_hours": { "start": 0, "end": 24 },
+          "open_hours": {
+            "start": 0,
+            "end": 24
+          },
           "verify": false
         },
         {
@@ -341,10 +1081,16 @@
           "label": "Ask for directions",
           "description": "Get help finding a public destination in the game.",
           "time_cost_minutes": 5,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 1,
           "requirement": "Travel here first",
-          "open_hours": { "start": 0, "end": 24 },
+          "open_hours": {
+            "start": 0,
+            "end": 24
+          },
           "verify": false
         },
         {
@@ -352,10 +1098,16 @@
           "label": "Join a community meeting",
           "description": "Meet fictional neighbors for a safety discussion.",
           "time_cost_minutes": 20,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 2,
           "requirement": "Travel here first",
-          "open_hours": { "start": 10, "end": 18 },
+          "open_hours": {
+            "start": 10,
+            "end": 18
+          },
           "verify": false
         },
         {
@@ -363,10 +1115,16 @@
           "label": "Ask about public service careers",
           "description": "Browse fictional public service career paths.",
           "time_cost_minutes": 8,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 1,
           "requirement": "Travel here first",
-          "open_hours": { "start": 8, "end": 17 },
+          "open_hours": {
+            "start": 8,
+            "end": 17
+          },
           "verify": false
         }
       ]
@@ -380,7 +1138,10 @@
       "x": 930,
       "y": 145,
       "verify": false,
-      "grid": { "x": 11, "z": 2 },
+      "grid": {
+        "x": 11,
+        "z": 2
+      },
       "buildingType": "bank",
       "model": "/models/city/commercial/Models/GLB%20format/building-d.glb",
       "actions": [
@@ -389,10 +1150,16 @@
           "label": "Ask about account options",
           "description": "Learn about fictional account types.",
           "time_cost_minutes": 8,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 0,
           "requirement": "Travel here first",
-          "open_hours": { "start": 8, "end": 16 },
+          "open_hours": {
+            "start": 8,
+            "end": 16
+          },
           "verify": false
         },
         {
@@ -400,10 +1167,16 @@
           "label": "Review a budgeting guide",
           "description": "Read a short personal budgeting guide.",
           "time_cost_minutes": 12,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 1,
           "requirement": "Travel here first",
-          "open_hours": { "start": 8, "end": 16 },
+          "open_hours": {
+            "start": 8,
+            "end": 16
+          },
           "verify": false
         },
         {
@@ -411,10 +1184,16 @@
           "label": "Check finance jobs",
           "description": "Browse fictional entry-level finance jobs.",
           "time_cost_minutes": 8,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 1,
           "requirement": "Travel here first",
-          "open_hours": { "start": 8, "end": 16 },
+          "open_hours": {
+            "start": 8,
+            "end": 16
+          },
           "verify": false
         },
         {
@@ -422,10 +1201,16 @@
           "label": "Take a place in the service queue",
           "description": "Wait your turn at a fictional banking counter.",
           "time_cost_minutes": 15,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 0,
           "requirement": "Travel here first",
-          "open_hours": { "start": 8, "end": 16 },
+          "open_hours": {
+            "start": 8,
+            "end": 16
+          },
           "verify": false
         }
       ]
@@ -439,7 +1224,10 @@
       "x": 1010,
       "y": 490,
       "verify": false,
-      "grid": { "x": 12, "z": 6 },
+      "grid": {
+        "x": 12,
+        "z": 6
+      },
       "buildingType": "bank",
       "model": "/models/city/commercial/Models/GLB%20format/building-e.glb",
       "actions": [
@@ -448,10 +1236,16 @@
           "label": "Ask about account options",
           "description": "Learn about fictional account types.",
           "time_cost_minutes": 8,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 0,
           "requirement": "Travel here first",
-          "open_hours": { "start": 8, "end": 16 },
+          "open_hours": {
+            "start": 8,
+            "end": 16
+          },
           "verify": false
         },
         {
@@ -459,10 +1253,16 @@
           "label": "Review a budgeting guide",
           "description": "Read a short personal budgeting guide.",
           "time_cost_minutes": 12,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 1,
           "requirement": "Travel here first",
-          "open_hours": { "start": 8, "end": 16 },
+          "open_hours": {
+            "start": 8,
+            "end": 16
+          },
           "verify": false
         },
         {
@@ -470,10 +1270,16 @@
           "label": "Check finance jobs",
           "description": "Browse fictional entry-level finance jobs.",
           "time_cost_minutes": 8,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 1,
           "requirement": "Travel here first",
-          "open_hours": { "start": 8, "end": 16 },
+          "open_hours": {
+            "start": 8,
+            "end": 16
+          },
           "verify": false
         },
         {
@@ -481,10 +1287,16 @@
           "label": "Take a place in the service queue",
           "description": "Wait your turn at a fictional banking counter.",
           "time_cost_minutes": 15,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 0,
           "requirement": "Travel here first",
-          "open_hours": { "start": 8, "end": 16 },
+          "open_hours": {
+            "start": 8,
+            "end": 16
+          },
           "verify": false
         }
       ]
@@ -499,7 +1311,10 @@
       "y": 520,
       "verify": false,
       "min_age": 18,
-      "grid": { "x": 9, "z": 7 },
+      "grid": {
+        "x": 9,
+        "z": 7
+      },
       "buildingType": "club",
       "model": "/models/city/suburban/Models/GLB%20format/building-type-c.glb",
       "actions": [
@@ -508,10 +1323,16 @@
           "label": "Join a social hour",
           "description": "Spend time with other adult players in this fictional venue.",
           "time_cost_minutes": 30,
-          "money_minor": { "min": 500, "max": 500 },
+          "money_minor": {
+            "min": 500,
+            "max": 500
+          },
           "mood_effect": 3,
           "requirement": "Travel here first",
-          "open_hours": { "start": 18, "end": 3 },
+          "open_hours": {
+            "start": 18,
+            "end": 3
+          },
           "verify": false
         },
         {
@@ -519,10 +1340,16 @@
           "label": "Dance to the music",
           "description": "Join an evening dance activity.",
           "time_cost_minutes": 25,
-          "money_minor": { "min": 300, "max": 300 },
+          "money_minor": {
+            "min": 300,
+            "max": 300
+          },
           "mood_effect": 4,
           "requirement": "Travel here first",
-          "open_hours": { "start": 18, "end": 3 },
+          "open_hours": {
+            "start": 18,
+            "end": 3
+          },
           "verify": false
         },
         {
@@ -530,10 +1357,16 @@
           "label": "Order a refreshment",
           "description": "Buy a fictional non-alcoholic refreshment.",
           "time_cost_minutes": 10,
-          "money_minor": { "min": 250, "max": 250 },
+          "money_minor": {
+            "min": 250,
+            "max": 250
+          },
           "mood_effect": 2,
           "requirement": "Travel here first",
-          "open_hours": { "start": 18, "end": 3 },
+          "open_hours": {
+            "start": 18,
+            "end": 3
+          },
           "verify": false
         },
         {
@@ -541,10 +1374,16 @@
           "label": "Check the event board",
           "description": "See what's happening at the club tonight.",
           "time_cost_minutes": 5,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 1,
           "requirement": "Travel here first",
-          "open_hours": { "start": 18, "end": 3 },
+          "open_hours": {
+            "start": 18,
+            "end": 3
+          },
           "verify": false
         }
       ]
@@ -558,7 +1397,10 @@
       "x": 350,
       "y": 500,
       "verify": false,
-      "grid": { "x": 4, "z": 7 },
+      "grid": {
+        "x": 4,
+        "z": 7
+      },
       "buildingType": "clinic",
       "model": "/models/city/commercial/Models/GLB%20format/building-f.glb",
       "actions": [
@@ -567,10 +1409,16 @@
           "label": "Ask for clinic information",
           "description": "Find general information about this fictional clinic.",
           "time_cost_minutes": 8,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 0,
           "requirement": "Travel here first",
-          "open_hours": { "start": 7, "end": 20 },
+          "open_hours": {
+            "start": 7,
+            "end": 20
+          },
           "verify": false
         },
         {
@@ -578,10 +1426,16 @@
           "label": "Attend a wellness session",
           "description": "Take part in a general wellness activity in the game.",
           "time_cost_minutes": 20,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 2,
           "requirement": "Travel here first",
-          "open_hours": { "start": 8, "end": 17 },
+          "open_hours": {
+            "start": 8,
+            "end": 17
+          },
           "verify": false
         },
         {
@@ -589,10 +1443,16 @@
           "label": "Check care jobs",
           "description": "Browse fictional clinic support jobs.",
           "time_cost_minutes": 8,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 1,
           "requirement": "Travel here first",
-          "open_hours": { "start": 8, "end": 17 },
+          "open_hours": {
+            "start": 8,
+            "end": 17
+          },
           "verify": false
         },
         {
@@ -600,10 +1460,16 @@
           "label": "Rest in the waiting area",
           "description": "Take a quiet break before your next trip.",
           "time_cost_minutes": 12,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 1,
           "requirement": "Travel here first",
-          "open_hours": { "start": 7, "end": 20 },
+          "open_hours": {
+            "start": 7,
+            "end": 20
+          },
           "verify": false
         }
       ]
@@ -617,7 +1483,10 @@
       "x": 180,
       "y": 690,
       "verify": false,
-      "grid": { "x": 2, "z": 9 },
+      "grid": {
+        "x": 2,
+        "z": 9
+      },
       "buildingType": "transit",
       "model": "/models/city/commercial/Models/GLB%20format/building-b.glb",
       "actions": [
@@ -626,10 +1495,16 @@
           "label": "Read the route board",
           "description": "Check fictional local travel guidance.",
           "time_cost_minutes": 5,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 0,
           "requirement": "Travel here first",
-          "open_hours": { "start": 5, "end": 23 },
+          "open_hours": {
+            "start": 5,
+            "end": 23
+          },
           "verify": false
         },
         {
@@ -637,10 +1512,16 @@
           "label": "Ask a travel helper",
           "description": "Get directions to another public game location.",
           "time_cost_minutes": 5,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 1,
           "requirement": "Travel here first",
-          "open_hours": { "start": 5, "end": 23 },
+          "open_hours": {
+            "start": 5,
+            "end": 23
+          },
           "verify": false
         },
         {
@@ -648,10 +1529,16 @@
           "label": "Meet other travelers",
           "description": "Chat with people waiting at the park.",
           "time_cost_minutes": 10,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 2,
           "requirement": "Travel here first",
-          "open_hours": { "start": 5, "end": 23 },
+          "open_hours": {
+            "start": 5,
+            "end": 23
+          },
           "verify": false
         },
         {
@@ -659,10 +1546,16 @@
           "label": "Visit the help point",
           "description": "Find assistance for navigating the fictional town.",
           "time_cost_minutes": 5,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 0,
           "requirement": "Travel here first",
-          "open_hours": { "start": 5, "end": 23 },
+          "open_hours": {
+            "start": 5,
+            "end": 23
+          },
           "verify": false
         }
       ]
@@ -676,7 +1569,10 @@
       "x": 850,
       "y": 365,
       "verify": true,
-      "grid": { "x": 10, "z": 5 },
+      "grid": {
+        "x": 10,
+        "z": 5
+      },
       "buildingType": "market",
       "model": "/models/city/commercial/Models/GLB%20format/building-j.glb",
       "actions": [
@@ -685,10 +1581,16 @@
           "label": "Shop bulk offers",
           "description": "Buy larger packs at server-set wholesale prices.",
           "time_cost_minutes": 20,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 1,
           "requirement": "Travel here first",
-          "open_hours": { "start": 8, "end": 21 },
+          "open_hours": {
+            "start": 8,
+            "end": 21
+          },
           "verify": true
         },
         {
@@ -696,10 +1598,16 @@
           "label": "Check supermarket careers",
           "description": "Browse stock, retail and customer service career opportunities.",
           "time_cost_minutes": 8,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 1,
           "requirement": "Travel here first",
-          "open_hours": { "start": 8, "end": 20 },
+          "open_hours": {
+            "start": 8,
+            "end": 20
+          },
           "verify": true
         }
       ]
@@ -713,7 +1621,10 @@
       "x": 600,
       "y": 690,
       "verify": false,
-      "grid": { "x": 7, "z": 9 },
+      "grid": {
+        "x": 7,
+        "z": 9
+      },
       "buildingType": "sport",
       "model": "/models/city/suburban/Models/GLB%20format/building-type-g.glb",
       "actions": [
@@ -722,10 +1633,16 @@
           "label": "Join open training",
           "description": "Take part in a fictional community fitness session.",
           "time_cost_minutes": 30,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 3,
           "requirement": "Travel here first",
-          "open_hours": { "start": 6, "end": 21 },
+          "open_hours": {
+            "start": 6,
+            "end": 21
+          },
           "verify": false
         },
         {
@@ -733,10 +1650,16 @@
           "label": "Watch a friendly game",
           "description": "Enjoy a community match at the ground.",
           "time_cost_minutes": 45,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 3,
           "requirement": "Travel here first",
-          "open_hours": { "start": 8, "end": 20 },
+          "open_hours": {
+            "start": 8,
+            "end": 20
+          },
           "verify": false
         },
         {
@@ -744,10 +1667,16 @@
           "label": "Help set up the field",
           "description": "Volunteer during a community sports event.",
           "time_cost_minutes": 20,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 2,
           "requirement": "Travel here first",
-          "open_hours": { "start": 6, "end": 18 },
+          "open_hours": {
+            "start": 6,
+            "end": 18
+          },
           "verify": false
         },
         {
@@ -755,10 +1684,808 @@
           "label": "Check the events board",
           "description": "See upcoming fictional sports activities.",
           "time_cost_minutes": 5,
-          "money_minor": { "min": 0, "max": 0 },
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
           "mood_effect": 1,
           "requirement": "Travel here first",
-          "open_hours": { "start": 6, "end": 21 },
+          "open_hours": {
+            "start": 6,
+            "end": 21
+          },
+          "verify": false
+        }
+      ]
+    },
+    {
+      "id": "riverside-food-court",
+      "label": "Riverside Food Court",
+      "category": "food",
+      "districtId": "river-quarter",
+      "locationSlug": "riverside-food-court",
+      "x": 1638,
+      "y": 70,
+      "verify": false,
+      "grid": {
+        "x": 15,
+        "z": 1
+      },
+      "buildingType": "food",
+      "model": "/models/city/commercial/Models/GLB%20format/building-b.glb",
+      "actions": [
+        {
+          "id": "riverside-food-court-visit",
+          "label": "Look around",
+          "description": "Spend time at Riverside Food Court.",
+          "time_cost_minutes": 10,
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
+          "mood_effect": 1,
+          "requirement": "Travel here first",
+          "open_hours": {
+            "start": 7,
+            "end": 21
+          },
+          "cooldown_game_minutes": 60,
+          "verify": false
+        }
+      ]
+    },
+    {
+      "id": "sunrise-health-post",
+      "label": "Sunrise Health Post",
+      "category": "health",
+      "districtId": "river-quarter",
+      "locationSlug": "sunrise-health-post",
+      "x": 2308,
+      "y": 70,
+      "verify": false,
+      "grid": {
+        "x": 21,
+        "z": 1
+      },
+      "buildingType": "health",
+      "model": "/models/city/commercial/Models/GLB%20format/building-c.glb",
+      "actions": [
+        {
+          "id": "sunrise-health-post-visit",
+          "label": "Look around",
+          "description": "Spend time at Sunrise Health Post.",
+          "time_cost_minutes": 10,
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
+          "mood_effect": 1,
+          "requirement": "Travel here first",
+          "open_hours": {
+            "start": 7,
+            "end": 21
+          },
+          "cooldown_game_minutes": 60,
+          "verify": false
+        }
+      ]
+    },
+    {
+      "id": "harvest-tech-hub",
+      "label": "Harvest Tech Hub",
+      "category": "services",
+      "districtId": "river-quarter",
+      "locationSlug": "harvest-tech-hub",
+      "x": 1638,
+      "y": 445,
+      "verify": false,
+      "grid": {
+        "x": 15,
+        "z": 6
+      },
+      "buildingType": "services",
+      "model": "/models/city/commercial/Models/GLB%20format/building-d.glb",
+      "actions": [
+        {
+          "id": "harvest-tech-hub-visit",
+          "label": "Look around",
+          "description": "Spend time at Harvest Tech Hub.",
+          "time_cost_minutes": 10,
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
+          "mood_effect": 1,
+          "requirement": "Travel here first",
+          "open_hours": {
+            "start": 7,
+            "end": 21
+          },
+          "cooldown_game_minutes": 60,
+          "verify": false
+        }
+      ]
+    },
+    {
+      "id": "old-town-library",
+      "label": "Old Town Library",
+      "category": "school",
+      "districtId": "river-quarter",
+      "locationSlug": "old-town-library",
+      "x": 2308,
+      "y": 445,
+      "verify": false,
+      "grid": {
+        "x": 21,
+        "z": 6
+      },
+      "buildingType": "school",
+      "model": "/models/city/suburban/Models/GLB%20format/building-type-b.glb",
+      "actions": [
+        {
+          "id": "old-town-library-visit",
+          "label": "Look around",
+          "description": "Spend time at Old Town Library.",
+          "time_cost_minutes": 10,
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
+          "mood_effect": 1,
+          "requirement": "Travel here first",
+          "open_hours": {
+            "start": 7,
+            "end": 21
+          },
+          "cooldown_game_minutes": 60,
+          "verify": false
+        }
+      ]
+    },
+    {
+      "id": "garden-chapel",
+      "label": "Garden Chapel",
+      "category": "worship",
+      "districtId": "south-quarter",
+      "locationSlug": "garden-chapel",
+      "x": 185,
+      "y": 820,
+      "verify": false,
+      "grid": {
+        "x": 2,
+        "z": 11
+      },
+      "buildingType": "worship",
+      "model": "/models/city/suburban/Models/GLB%20format/building-type-c.glb",
+      "actions": [
+        {
+          "id": "garden-chapel-visit",
+          "label": "Look around",
+          "description": "Spend time at Garden Chapel.",
+          "time_cost_minutes": 10,
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
+          "mood_effect": 1,
+          "requirement": "Travel here first",
+          "open_hours": {
+            "start": 7,
+            "end": 21
+          },
+          "cooldown_game_minutes": 60,
+          "verify": false
+        }
+      ]
+    },
+    {
+      "id": "fish-market",
+      "label": "Fish Market",
+      "category": "market",
+      "districtId": "south-quarter",
+      "locationSlug": "fish-market",
+      "x": 967,
+      "y": 820,
+      "verify": false,
+      "grid": {
+        "x": 9,
+        "z": 11
+      },
+      "buildingType": "market",
+      "model": "/models/city/commercial/Models/GLB%20format/building-e.glb",
+      "actions": [
+        {
+          "id": "fish-market-visit",
+          "label": "Look around",
+          "description": "Spend time at Fish Market.",
+          "time_cost_minutes": 10,
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
+          "mood_effect": 1,
+          "requirement": "Travel here first",
+          "open_hours": {
+            "start": 7,
+            "end": 21
+          },
+          "cooldown_game_minutes": 60,
+          "verify": false
+        }
+      ]
+    },
+    {
+      "id": "lagoon-hotel",
+      "label": "Lagoon Hotel",
+      "category": "services",
+      "districtId": "east-gate",
+      "locationSlug": "lagoon-hotel",
+      "x": 2308,
+      "y": 820,
+      "verify": false,
+      "grid": {
+        "x": 21,
+        "z": 11
+      },
+      "buildingType": "services",
+      "model": "/models/city/commercial/Models/GLB%20format/building-f.glb",
+      "actions": [
+        {
+          "id": "lagoon-hotel-visit",
+          "label": "Look around",
+          "description": "Spend time at Lagoon Hotel.",
+          "time_cost_minutes": 10,
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
+          "mood_effect": 1,
+          "requirement": "Travel here first",
+          "open_hours": {
+            "start": 7,
+            "end": 21
+          },
+          "cooldown_game_minutes": 60,
+          "verify": false
+        }
+      ]
+    },
+    {
+      "id": "cinema-star",
+      "label": "Cinema Star",
+      "category": "sport",
+      "districtId": "east-gate",
+      "locationSlug": "cinema-star",
+      "x": 1638,
+      "y": 745,
+      "verify": false,
+      "grid": {
+        "x": 15,
+        "z": 10
+      },
+      "buildingType": "sport",
+      "model": "/models/city/commercial/Models/GLB%20format/building-g.glb",
+      "actions": [
+        {
+          "id": "cinema-star-visit",
+          "label": "Look around",
+          "description": "Spend time at Cinema Star.",
+          "time_cost_minutes": 10,
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
+          "mood_effect": 1,
+          "requirement": "Travel here first",
+          "open_hours": {
+            "start": 7,
+            "end": 21
+          },
+          "cooldown_game_minutes": 60,
+          "verify": false
+        }
+      ]
+    },
+    {
+      "id": "fuel-and-go",
+      "label": "Fuel and Go Station",
+      "category": "transport",
+      "districtId": "east-gate",
+      "locationSlug": "fuel-and-go",
+      "x": 1638,
+      "y": 1045,
+      "verify": false,
+      "grid": {
+        "x": 15,
+        "z": 14
+      },
+      "buildingType": "transport",
+      "model": "/models/city/commercial/Models/GLB%20format/building-h.glb",
+      "actions": [
+        {
+          "id": "fuel-and-go-visit",
+          "label": "Look around",
+          "description": "Spend time at Fuel and Go Station.",
+          "time_cost_minutes": 10,
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
+          "mood_effect": 1,
+          "requirement": "Travel here first",
+          "open_hours": {
+            "start": 7,
+            "end": 21
+          },
+          "cooldown_game_minutes": 60,
+          "verify": false
+        }
+      ]
+    },
+    {
+      "id": "youth-arts-centre",
+      "label": "Youth Arts Centre",
+      "category": "school",
+      "districtId": "east-gate",
+      "locationSlug": "youth-arts-centre",
+      "x": 2308,
+      "y": 1045,
+      "verify": false,
+      "grid": {
+        "x": 21,
+        "z": 14
+      },
+      "buildingType": "school",
+      "model": "/models/city/suburban/Models/GLB%20format/building-type-d.glb",
+      "actions": [
+        {
+          "id": "youth-arts-centre-visit",
+          "label": "Look around",
+          "description": "Spend time at Youth Arts Centre.",
+          "time_cost_minutes": 10,
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
+          "mood_effect": 1,
+          "requirement": "Travel here first",
+          "open_hours": {
+            "start": 7,
+            "end": 21
+          },
+          "cooldown_game_minutes": 60,
+          "verify": false
+        }
+      ]
+    },
+    {
+      "id": "post-office",
+      "label": "Post Office",
+      "category": "services",
+      "districtId": "south-quarter",
+      "locationSlug": "post-office",
+      "x": 409,
+      "y": 1045,
+      "verify": false,
+      "grid": {
+        "x": 4,
+        "z": 14
+      },
+      "buildingType": "services",
+      "model": "/models/city/suburban/Models/GLB%20format/building-type-a.glb",
+      "actions": [
+        {
+          "id": "post-office-visit",
+          "label": "Look around",
+          "description": "Spend time at Post Office.",
+          "time_cost_minutes": 10,
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
+          "mood_effect": 1,
+          "requirement": "Travel here first",
+          "open_hours": {
+            "start": 7,
+            "end": 21
+          },
+          "cooldown_game_minutes": 60,
+          "verify": false
+        }
+      ]
+    },
+    {
+      "id": "mosque-square",
+      "label": "Mosque Square",
+      "category": "worship",
+      "districtId": "south-quarter",
+      "locationSlug": "mosque-square",
+      "x": 1079,
+      "y": 1120,
+      "verify": false,
+      "grid": {
+        "x": 10,
+        "z": 15
+      },
+      "buildingType": "worship",
+      "model": "/models/city/commercial/Models/GLB%20format/building-i.glb",
+      "actions": [
+        {
+          "id": "mosque-square-visit",
+          "label": "Look around",
+          "description": "Spend time at Mosque Square.",
+          "time_cost_minutes": 10,
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
+          "mood_effect": 1,
+          "requirement": "Travel here first",
+          "open_hours": {
+            "start": 7,
+            "end": 21
+          },
+          "cooldown_game_minutes": 60,
+          "verify": false
+        }
+      ]
+    },
+    {
+      "id": "riverside-food-court",
+      "label": "Riverside Food Court",
+      "category": "food",
+      "districtId": "river-quarter",
+      "locationSlug": "riverside-food-court",
+      "x": 1638,
+      "y": 70,
+      "verify": false,
+      "grid": {
+        "x": 15,
+        "z": 1
+      },
+      "buildingType": "food",
+      "model": "/models/city/commercial/Models/GLB%20format/building-b.glb",
+      "actions": [
+        {
+          "id": "riverside-food-court-visit",
+          "label": "Look around",
+          "description": "Spend time at Riverside Food Court.",
+          "time_cost_minutes": 10,
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
+          "mood_effect": 1,
+          "requirement": "Travel here first",
+          "open_hours": {
+            "start": 7,
+            "end": 21
+          },
+          "cooldown_game_minutes": 60,
+          "verify": false
+        }
+      ]
+    },
+    {
+      "id": "sunrise-health-post",
+      "label": "Sunrise Health Post",
+      "category": "health",
+      "districtId": "river-quarter",
+      "locationSlug": "sunrise-health-post",
+      "x": 2308,
+      "y": 70,
+      "verify": false,
+      "grid": {
+        "x": 21,
+        "z": 1
+      },
+      "buildingType": "health",
+      "model": "/models/city/commercial/Models/GLB%20format/building-c.glb",
+      "actions": [
+        {
+          "id": "sunrise-health-post-visit",
+          "label": "Look around",
+          "description": "Spend time at Sunrise Health Post.",
+          "time_cost_minutes": 10,
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
+          "mood_effect": 1,
+          "requirement": "Travel here first",
+          "open_hours": {
+            "start": 7,
+            "end": 21
+          },
+          "cooldown_game_minutes": 60,
+          "verify": false
+        }
+      ]
+    },
+    {
+      "id": "harvest-tech-hub",
+      "label": "Harvest Tech Hub",
+      "category": "services",
+      "districtId": "river-quarter",
+      "locationSlug": "harvest-tech-hub",
+      "x": 1638,
+      "y": 445,
+      "verify": false,
+      "grid": {
+        "x": 15,
+        "z": 6
+      },
+      "buildingType": "services",
+      "model": "/models/city/commercial/Models/GLB%20format/building-d.glb",
+      "actions": [
+        {
+          "id": "harvest-tech-hub-visit",
+          "label": "Look around",
+          "description": "Spend time at Harvest Tech Hub.",
+          "time_cost_minutes": 10,
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
+          "mood_effect": 1,
+          "requirement": "Travel here first",
+          "open_hours": {
+            "start": 7,
+            "end": 21
+          },
+          "cooldown_game_minutes": 60,
+          "verify": false
+        }
+      ]
+    },
+    {
+      "id": "old-town-library",
+      "label": "Old Town Library",
+      "category": "school",
+      "districtId": "river-quarter",
+      "locationSlug": "old-town-library",
+      "x": 2308,
+      "y": 445,
+      "verify": false,
+      "grid": {
+        "x": 21,
+        "z": 6
+      },
+      "buildingType": "school",
+      "model": "/models/city/suburban/Models/GLB%20format/building-type-b.glb",
+      "actions": [
+        {
+          "id": "old-town-library-visit",
+          "label": "Look around",
+          "description": "Spend time at Old Town Library.",
+          "time_cost_minutes": 10,
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
+          "mood_effect": 1,
+          "requirement": "Travel here first",
+          "open_hours": {
+            "start": 7,
+            "end": 21
+          },
+          "cooldown_game_minutes": 60,
+          "verify": false
+        }
+      ]
+    },
+    {
+      "id": "fish-market",
+      "label": "Fish Market",
+      "category": "market",
+      "districtId": "south-quarter",
+      "locationSlug": "fish-market",
+      "x": 967,
+      "y": 820,
+      "verify": false,
+      "grid": {
+        "x": 9,
+        "z": 11
+      },
+      "buildingType": "market",
+      "model": "/models/city/commercial/Models/GLB%20format/building-e.glb",
+      "actions": [
+        {
+          "id": "fish-market-visit",
+          "label": "Look around",
+          "description": "Spend time at Fish Market.",
+          "time_cost_minutes": 10,
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
+          "mood_effect": 1,
+          "requirement": "Travel here first",
+          "open_hours": {
+            "start": 7,
+            "end": 21
+          },
+          "cooldown_game_minutes": 60,
+          "verify": false
+        }
+      ]
+    },
+    {
+      "id": "lagoon-hotel",
+      "label": "Lagoon Hotel",
+      "category": "services",
+      "districtId": "east-gate",
+      "locationSlug": "lagoon-hotel",
+      "x": 2308,
+      "y": 820,
+      "verify": false,
+      "grid": {
+        "x": 21,
+        "z": 11
+      },
+      "buildingType": "services",
+      "model": "/models/city/commercial/Models/GLB%20format/building-f.glb",
+      "actions": [
+        {
+          "id": "lagoon-hotel-visit",
+          "label": "Look around",
+          "description": "Spend time at Lagoon Hotel.",
+          "time_cost_minutes": 10,
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
+          "mood_effect": 1,
+          "requirement": "Travel here first",
+          "open_hours": {
+            "start": 7,
+            "end": 21
+          },
+          "cooldown_game_minutes": 60,
+          "verify": false
+        }
+      ]
+    },
+    {
+      "id": "cinema-star",
+      "label": "Cinema Star",
+      "category": "sport",
+      "districtId": "east-gate",
+      "locationSlug": "cinema-star",
+      "x": 1638,
+      "y": 745,
+      "verify": false,
+      "grid": {
+        "x": 15,
+        "z": 10
+      },
+      "buildingType": "sport",
+      "model": "/models/city/commercial/Models/GLB%20format/building-g.glb",
+      "actions": [
+        {
+          "id": "cinema-star-visit",
+          "label": "Look around",
+          "description": "Spend time at Cinema Star.",
+          "time_cost_minutes": 10,
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
+          "mood_effect": 1,
+          "requirement": "Travel here first",
+          "open_hours": {
+            "start": 7,
+            "end": 21
+          },
+          "cooldown_game_minutes": 60,
+          "verify": false
+        }
+      ]
+    },
+    {
+      "id": "fuel-and-go",
+      "label": "Fuel and Go Station",
+      "category": "transport",
+      "districtId": "east-gate",
+      "locationSlug": "fuel-and-go",
+      "x": 1638,
+      "y": 1045,
+      "verify": false,
+      "grid": {
+        "x": 15,
+        "z": 14
+      },
+      "buildingType": "transport",
+      "model": "/models/city/commercial/Models/GLB%20format/building-h.glb",
+      "actions": [
+        {
+          "id": "fuel-and-go-visit",
+          "label": "Look around",
+          "description": "Spend time at Fuel and Go Station.",
+          "time_cost_minutes": 10,
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
+          "mood_effect": 1,
+          "requirement": "Travel here first",
+          "open_hours": {
+            "start": 7,
+            "end": 21
+          },
+          "cooldown_game_minutes": 60,
+          "verify": false
+        }
+      ]
+    },
+    {
+      "id": "youth-arts-centre",
+      "label": "Youth Arts Centre",
+      "category": "school",
+      "districtId": "east-gate",
+      "locationSlug": "youth-arts-centre",
+      "x": 2308,
+      "y": 1045,
+      "verify": false,
+      "grid": {
+        "x": 21,
+        "z": 14
+      },
+      "buildingType": "school",
+      "model": "/models/city/suburban/Models/GLB%20format/building-type-d.glb",
+      "actions": [
+        {
+          "id": "youth-arts-centre-visit",
+          "label": "Look around",
+          "description": "Spend time at Youth Arts Centre.",
+          "time_cost_minutes": 10,
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
+          "mood_effect": 1,
+          "requirement": "Travel here first",
+          "open_hours": {
+            "start": 7,
+            "end": 21
+          },
+          "cooldown_game_minutes": 60,
+          "verify": false
+        }
+      ]
+    },
+    {
+      "id": "post-office",
+      "label": "Post Office",
+      "category": "services",
+      "districtId": "south-quarter",
+      "locationSlug": "post-office",
+      "x": 409,
+      "y": 1045,
+      "verify": false,
+      "grid": {
+        "x": 4,
+        "z": 14
+      },
+      "buildingType": "services",
+      "model": "/models/city/suburban/Models/GLB%20format/building-type-a.glb",
+      "actions": [
+        {
+          "id": "post-office-visit",
+          "label": "Look around",
+          "description": "Spend time at Post Office.",
+          "time_cost_minutes": 10,
+          "money_minor": {
+            "min": 0,
+            "max": 0
+          },
+          "mood_effect": 1,
+          "requirement": "Travel here first",
+          "open_hours": {
+            "start": 7,
+            "end": 21
+          },
+          "cooldown_game_minutes": 60,
           "verify": false
         }
       ]
