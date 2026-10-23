@@ -125,6 +125,13 @@ export function LandmarkSheet({
               <p>No activities are listed here yet.</p>
             )}
           </section>
+          {["cedar-bank", "meridian-bank", "osun-mall"].includes(landmark.id) && (
+            <section className="map-career-entry">
+              <h3>Career opportunities</h3>
+              <p>Build a long-term career here, complete work steps and earn promotions.</p>
+              <a className="map-primary-button" href="/career">Explore career tracks</a>
+            </section>
+          )}
           <section>
             <h3>Available jobs</h3>
             {detailsQuery.data?.jobs.length ? (
