@@ -23,6 +23,7 @@ import { Route as AuthenticatedGameHomeRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedGameHouseRouteImport } from './routes/_authenticated/_game/house'
 import { Route as AuthenticatedGameInventoryRouteImport } from './routes/_authenticated/_game/inventory'
 import { Route as AuthenticatedGameJobsRouteImport } from './routes/_authenticated/_game/jobs'
+import { Route as AuthenticatedGameCareerRouteImport } from './routes/_authenticated/_game/career'
 import { Route as AuthenticatedGameMapRouteImport } from './routes/_authenticated/_game/map'
 import { Route as AuthenticatedGameMarketRouteImport } from './routes/_authenticated/_game/market'
 import { Route as AuthenticatedGameMissionsRouteImport } from './routes/_authenticated/_game/missions'
@@ -149,6 +150,11 @@ const AuthenticatedGameInventoryRoute =
 const AuthenticatedGameJobsRoute = AuthenticatedGameJobsRouteImport.update({
   id: '/jobs',
   path: '/jobs',
+  getParentRoute: () => AuthenticatedGameRoute,
+} as any)
+const AuthenticatedGameCareerRoute = AuthenticatedGameCareerRouteImport.update({
+  id: '/career',
+  path: '/career',
   getParentRoute: () => AuthenticatedGameRoute,
 } as any)
 const AuthenticatedGameMapRoute = AuthenticatedGameMapRouteImport.update({
@@ -450,6 +456,7 @@ export interface FileRoutesByFullPath {
   '/house': typeof AuthenticatedGameHouseRoute
   '/inventory': typeof AuthenticatedGameInventoryRoute
   '/jobs': typeof AuthenticatedGameJobsRoute
+  '/career': typeof AuthenticatedGameCareerRoute
   '/map': typeof AuthenticatedGameMapRoute
   '/market': typeof AuthenticatedGameMarketRoute
   '/missions': typeof AuthenticatedGameMissionsRoute
@@ -591,6 +598,7 @@ export interface FileRoutesById {
   '/_authenticated/_game/house': typeof AuthenticatedGameHouseRoute
   '/_authenticated/_game/inventory': typeof AuthenticatedGameInventoryRoute
   '/_authenticated/_game/jobs': typeof AuthenticatedGameJobsRoute
+  '/_authenticated/_game/career': typeof AuthenticatedGameCareerRoute
   '/_authenticated/_game/map': typeof AuthenticatedGameMapRoute
   '/_authenticated/_game/market': typeof AuthenticatedGameMarketRoute
   '/_authenticated/_game/missions': typeof AuthenticatedGameMissionsRoute
@@ -662,6 +670,7 @@ export interface FileRouteTypes {
     | '/house'
     | '/inventory'
     | '/jobs'
+    | '/career'
     | '/map'
     | '/market'
     | '/missions'
@@ -1001,7 +1010,14 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGameInventoryRouteImport
       parentRoute: typeof AuthenticatedGameRoute
     }
-    '/_authenticated/_game/jobs': {
+    '/_authenticated/_game/career': {
+    id: '/_authenticated/_game/career'
+    path: '/career'
+    fullPath: '/career'
+    preLoaderRoute: typeof AuthenticatedGameCareerRouteImport
+    parentRoute: typeof AuthenticatedGameRoute
+  }
+  '/_authenticated/_game/jobs': {
       id: '/_authenticated/_game/jobs'
       path: '/jobs'
       fullPath: '/jobs'
@@ -1403,6 +1419,7 @@ interface AuthenticatedGameRouteChildren {
   AuthenticatedGameHouseRoute: typeof AuthenticatedGameHouseRoute
   AuthenticatedGameInventoryRoute: typeof AuthenticatedGameInventoryRoute
   AuthenticatedGameJobsRoute: typeof AuthenticatedGameJobsRoute
+  AuthenticatedGameCareerRoute: typeof AuthenticatedGameCareerRoute
   AuthenticatedGameMapRoute: typeof AuthenticatedGameMapRoute
   AuthenticatedGameMarketRoute: typeof AuthenticatedGameMarketRoute
   AuthenticatedGameMissionsRoute: typeof AuthenticatedGameMissionsRoute
@@ -1426,6 +1443,7 @@ const AuthenticatedGameRouteChildren: AuthenticatedGameRouteChildren = {
   AuthenticatedGameHouseRoute: AuthenticatedGameHouseRoute,
   AuthenticatedGameInventoryRoute: AuthenticatedGameInventoryRoute,
   AuthenticatedGameJobsRoute: AuthenticatedGameJobsRoute,
+  AuthenticatedGameCareerRoute: AuthenticatedGameCareerRoute,
   AuthenticatedGameMapRoute: AuthenticatedGameMapRoute,
   AuthenticatedGameMarketRoute: AuthenticatedGameMarketRoute,
   AuthenticatedGameMissionsRoute: AuthenticatedGameMissionsRoute,
