@@ -14,26 +14,32 @@ create table if not exists public.career_tracks (
 insert into public.career_tracks(slug,name,venue_slug,location_id,description,mood_delta,is_active)
 select seed.slug,seed.name,seed.venue_slug,l.id,seed.description,seed.mood_delta,(l.id is not null)
 from (values
-  ('banking','Banking & Finance','cedar-bank','Serve customers, process routine requests and build toward branch leadership.',2),
-  ('retail','Retail & Mall Operations','osun-mall','Help customers, maintain displays and progress toward store supervision.',3)
-) as seed(slug,name,venue_slug,description,mood_delta)
-left join public.locations l on l.slug=seed.venue_slug
+  ('banking','Banking & Finance','cedar-bank','city-centre','Serve customers, process routine requests and build toward branch leadership.',2),
+  ('retail','Retail & Mall Operations','osun-mall','business-district','Help customers, maintain displays and progress toward store supervision.',3)
+) as seed(slug,name,venue_slug,location_slug,description,mood_delta)
+left join public.locations l on l.slug=seed.location_slug
 on conflict(slug) do update set name=excluded.name,venue_slug=excluded.venue_slug,
   location_id=excluded.location_id,description=excluded.description,mood_delta=excluded.mood_delta,
   is_active=excluded.is_active;
 
--- Meridian Bank is an alternate banking venue; both banks use the same career track.
+-- A venue is a map landmark inside an existing district location.
 create table if not exists public.career_track_venues (
   track_slug text not null references public.career_tracks(slug) on delete cascade,
+  venue_slug text not null,
+  venue_name text not null,
   location_id uuid not null references public.locations(id) on delete cascade,
-  primary key(track_slug,location_id)
+  primary key(track_slug,venue_slug),
+  unique(track_slug,location_id,venue_slug)
 );
-insert into public.career_track_venues(track_slug,location_id)
-select 'banking',id from public.locations where slug in ('cedar-bank','meridian-bank')
-on conflict do nothing;
-insert into public.career_track_venues(track_slug,location_id)
-select 'retail',id from public.locations where slug='osun-mall'
-on conflict do nothing;
+insert into public.career_track_venues(track_slug,venue_slug,venue_name,location_id)
+select 'banking','cedar-bank','Cedar Bank',id from public.locations where slug='city-centre'
+on conflict(track_slug,venue_slug) do update set venue_name=excluded.venue_name,location_id=excluded.location_id;
+insert into public.career_track_venues(track_slug,venue_slug,venue_name,location_id)
+select 'banking','meridian-bank','Meridian Bank',id from public.locations where slug='business-district'
+on conflict(track_slug,venue_slug) do update set venue_name=excluded.venue_name,location_id=excluded.location_id;
+insert into public.career_track_venues(track_slug,venue_slug,venue_name,location_id)
+select 'retail','osun-mall','Osun Mall',id from public.locations where slug='business-district'
+on conflict(track_slug,venue_slug) do update set venue_name=excluded.venue_name,location_id=excluded.location_id;
 
 create table if not exists public.career_ranks (
   track_slug text not null references public.career_tracks(slug) on delete cascade,
