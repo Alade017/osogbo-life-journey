@@ -169,6 +169,16 @@ export function JobsPage() {
         </div>
       </header>
 
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card p-3">
+        <div>
+          <p className="font-semibold">Build a long-term career</p>
+          <p className="text-sm text-muted-foreground">Apply at a bank or Osun Mall and unlock promotions.</p>
+        </div>
+        <Button asChild variant="outline" className="min-h-11">
+          <Link to="/career">Explore careers</Link>
+        </Button>
+      </div>
+
       {currentJob && (
         <Dialog open={workSessionOpen} onOpenChange={setWorkSessionOpen}>
           <DialogContent>
