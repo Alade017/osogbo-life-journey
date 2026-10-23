@@ -130,7 +130,7 @@ begin
   if uid is null or cid is null then raise exception 'Sign in and create a character first'; end if;
   if p_request_id is null then raise exception 'Request ID is required'; end if;
   perform pg_advisory_xact_lock(hashtextextended(cid::text||p_request_id::text,0));
-  select result into result from public.career_action_requests where character_id=cid and request_id=p_request_id;
+  select car.result into result from public.career_action_requests car where car.character_id=cid and car.request_id=p_request_id;
   if found then return result; end if;
   select * into c from public.characters where id=cid and user_id=uid for update;
   if not found then raise exception 'Character not found'; end if;
@@ -158,7 +158,7 @@ begin
   if uid is null or cid is null then raise exception 'Sign in and create a character first'; end if;
   if p_request_id is null then raise exception 'Request ID is required'; end if;
   perform pg_advisory_xact_lock(hashtextextended(cid::text||p_request_id::text,0));
-  select result into result from public.career_action_requests where character_id=cid and request_id=p_request_id;
+  select car.result into result from public.career_action_requests car where car.character_id=cid and car.request_id=p_request_id;
   if found then return result; end if;
   select * into c from public.characters where id=cid and user_id=uid for update;
   if not found then raise exception 'Character not found'; end if;
@@ -190,7 +190,7 @@ begin
   if uid is null or cid is null then raise exception 'Sign in and create a character first'; end if;
   if p_request_id is null or p_session_id is null then raise exception 'Session and request IDs are required'; end if;
   perform pg_advisory_xact_lock(hashtextextended(cid::text||p_request_id::text,0));
-  select result into result from public.career_action_requests where character_id=cid and request_id=p_request_id;
+  select car.result into result from public.career_action_requests car where car.character_id=cid and car.request_id=p_request_id;
   if found then return result; end if;
   select * into c from public.characters where id=cid and user_id=uid for update;
   if not found then raise exception 'Character not found'; end if;
@@ -208,9 +208,7 @@ begin
     if not found then raise exception 'Career pay configuration is missing'; end if;
     paid:=r.shift_pay;
     perform public._credit(cid,paid,'job','Completed career shift: '||r.title);
-    update public.characters set happiness=greatest(0,least(100,happiness+
-      (select mood_delta from public.career_tracks where slug=app.track_slug)))
-      where id=cid returning happiness into mood_after;
+    mood_after:=public.apply_party_mood(cid,uid,(select mood_delta from public.career_tracks where slug=app.track_slug));
     update public.career_applications set completed_shifts=completed_shifts+1,
       performance_points=performance_points+1,last_shift_completed_at=now(),updated_at=now()
       where id=app.id;
@@ -233,7 +231,7 @@ begin
   if uid is null or cid is null then raise exception 'Sign in and create a character first'; end if;
   if p_request_id is null then raise exception 'Request ID is required'; end if;
   perform pg_advisory_xact_lock(hashtextextended(cid::text||p_request_id::text,0));
-  select result into result from public.career_action_requests where character_id=cid and request_id=p_request_id;
+  select car.result into result from public.career_action_requests car where car.character_id=cid and car.request_id=p_request_id;
   if found then return result; end if;
   select * into app from public.career_applications where character_id=cid and status='active' for update;
   if not found then raise exception 'You do not have an active career'; end if;
