@@ -5,7 +5,7 @@ export type CareerTrack = {
   mood_delta: number; is_active: boolean;
 };
 export type CareerRank = { track_slug: string; level: number; title: string; shift_pay: number; promotion_shifts: number };
-export type CareerVenue = { track_slug: string; location_id: string; locations: { name: string; slug: string } | null };
+export type CareerVenue = { track_slug: string; venue_slug: string; venue_name: string; location_id: string; locations: { name: string; slug: string } | null };
 export type CareerApplication = {
   id: string; track_slug: string; status: "active" | "completed" | "resigned";
   career_level: number; completed_shifts: number; performance_points: number; last_shift_completed_at: string | null;
@@ -30,7 +30,7 @@ export async function listCareerRanks(): Promise<CareerRank[]> {
   return unwrap(await db.from("career_ranks").select("track_slug,level,title,shift_pay,promotion_shifts").order("level"));
 }
 export async function listCareerVenues(): Promise<CareerVenue[]> {
-  return unwrap(await db.from("career_track_venues").select("track_slug,location_id,locations(name,slug)"));
+  return unwrap(await db.from("career_track_venues").select("track_slug,venue_slug,venue_name,location_id,locations(name,slug)"));
 }
 export async function getMyCareer(): Promise<CareerApplication | null> {
   const rows = unwrap<CareerApplication[]>(await db.from("career_applications")
