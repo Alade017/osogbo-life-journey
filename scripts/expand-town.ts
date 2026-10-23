@@ -75,6 +75,10 @@ const DISTRICT_TYPE_FOR: Record<string, string> = {
     "south-quarter": "civic",
     "east-gate": "transport",
 };
+const MAP_CATEGORY_FOR: Record<string, string> = {
+    "fish-market": "commercial",
+    "post-office": "government",
+};
 
 const sql = (s: string): string => "'" + s.replaceAll("'", "''") + "'";
 
@@ -164,7 +168,7 @@ lines.push(
             `${sql("A fictional public venue for in-game activities. It is not a real business.")},`,
             `${sql(DISTRICT_TYPE_FOR[districtId]!)},${x * 5},${z * 5},'green',array['activities'],${70 + i},`,
             `${sql(TYPE_FOR[cat])},null,null,'landmark',true,0,'{"origin":"fictional","map_role":"public_game_venue"}'::jsonb,`,
-            `'virtual_game',0,1,${(x / COLS).toFixed(2)},${(z / ROWS).toFixed(2)},${sql(DISTRICT_TYPE_FOR[districtId]!)},`,
+            `'virtual_game',0,1,${(x / COLS).toFixed(2)},${(z / ROWS).toFixed(2)},${sql(MAP_CATEGORY_FOR[pid] ?? DISTRICT_TYPE_FOR[districtId]!)},`,
             `array[]::text[],array[]::text[],array['explore','social'])`,
         ].join(""),
     ).join(",\n"),
