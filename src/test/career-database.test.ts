@@ -11,6 +11,7 @@ async function asUser(id: string) {
   await db.query("select set_config('test.user_id',$1,false)", [id]);
 }
 async function call(sql: string, args: unknown[] = []) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const result = await db.query<{ result: any }>(`select ${sql} as result`, args);
   return result.rows[0]!.result;
 }
