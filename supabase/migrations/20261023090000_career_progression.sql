@@ -11,6 +11,19 @@ create table if not exists public.career_tracks (
   created_at timestamptz not null default now()
 );
 
+-- Ensure the map's existing career anchor landmarks have database-backed details.
+insert into public.game_places(slug,location_id,name,category,description,origin,disclosure,sort_order)
+select seed.slug,l.id,seed.name,seed.category,seed.description,'fictional',null,seed.sort_order
+from (values
+  ('cedar-bank','city-centre','Cedar Bank','bank','A fictional bank offering entry-level finance and customer-service careers.',40),
+  ('meridian-bank','business-district','Meridian Bank','bank','A fictional commercial bank with customer-service and branch operations careers.',41),
+  ('osun-mall','business-district','Osun Mall','shopping-mall','A fictional shopping mall with retail and store-operations careers.',42)
+) as seed(slug,location_slug,name,category,description,sort_order)
+join public.locations l on l.slug=seed.location_slug
+on conflict(slug) do update set location_id=excluded.location_id,name=excluded.name,
+  category=excluded.category,description=excluded.description,origin='fictional',disclosure=null,
+  sort_order=excluded.sort_order;
+
 insert into public.career_tracks(slug,name,venue_slug,location_id,description,mood_delta,is_active)
 select seed.slug,seed.name,seed.venue_slug,l.id,seed.description,seed.mood_delta,(l.id is not null)
 from (values
