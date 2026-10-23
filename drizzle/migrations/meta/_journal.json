@@ -526,6 +526,20 @@
       "when": 1792350000014,
       "tag": "0073_database_map_actions",
       "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1792350000015,
+      "tag": "0074_welcome_grant_50000",
+      "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1792350000016,
+      "tag": "0075_remove_orphaned_player_data",
+      "breakpoints": true
     }
   ]
 }

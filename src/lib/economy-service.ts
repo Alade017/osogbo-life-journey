@@ -7,7 +7,7 @@ export type MoneySummary = {
 /** Fictional in-game NGN assumptions aligned with the seeded item, property, and job catalogs. */
 export const ECONOMY_ASSUMPTIONS = Object.freeze({
   currency: "NGN game value",
-  starterCash: 0,
+  starterCash: 50000,
   weeklyStarterRent: 450,
   basicFood: 1200,
   localTransportFare: 100,

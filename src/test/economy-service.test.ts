@@ -44,7 +44,7 @@ describe("economy service", () => {
   });
 
   it("keeps a starter rental, food, fare, and recovery shift affordable", () => {
-    expect(ECONOMY_ASSUMPTIONS.starterCash).toBe(0);
+    expect(ECONOMY_ASSUMPTIONS.starterCash).toBe(50000);
     expect(ECONOMY_ASSUMPTIONS.weeklyStarterRent).toBeLessThan(ECONOMY_ASSUMPTIONS.entryShiftPay);
     expect(recoveryBudget(1)).toEqual({ income: 3500, essentials: 1750, remaining: 1750 });
     expect(recoveryBudget(2).remaining).toBeGreaterThanOrEqual(
