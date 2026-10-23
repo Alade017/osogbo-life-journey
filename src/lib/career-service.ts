@@ -15,6 +15,7 @@ export type CareerSession = {
   steps_required: number; steps_completed: number; reward: number;
 };
 const db = supabase as unknown as {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   from: (table: string) => any;
   rpc: (name: string, args?: Record<string, unknown>) => Promise<{ data: unknown; error: { message: string } | null }>;
 };
