@@ -49,13 +49,15 @@ export function LandmarkSheet({
     retry: false,
   });
   const restricted =
-    (detailsQuery.error instanceof MapApiError && detailsQuery.error.code === "AGE_RESTRICTED") ||
-    (detailsQuery.data?.landmark.min_age ?? 0) >= 18;
+    detailsQuery.error instanceof MapApiError && detailsQuery.error.code === "AGE_RESTRICTED";
   const detailError =
     detailsQuery.error instanceof MapApiError && detailsQuery.error.code !== "AGE_RESTRICTED"
       ? detailsQuery.error.code
       : undefined;
   const canAct = !!detailsQuery.data && !offline && !pending;
+  const isHere =
+    !!detailsQuery.data &&
+    detailsQuery.data.landmark.player_location_id === detailsQuery.data.landmark.location_id;
 
   if (typeof document === "undefined") return null;
 
@@ -82,7 +84,8 @@ export function LandmarkSheet({
       <p className="map-location-line">
         <MapPin size={15} aria-hidden="true" /> Located in {locationName}
       </p>
-      {restricted && (
+      {isHere && <p className="map-here-note">You are here</p>}
+      {(restricted || (detailsQuery.data?.landmark.min_age ?? 0) >= 18) && (
         <p className="map-age-badge">
           <BadgeCheck size={15} /> 18+
         </p>
@@ -100,14 +103,15 @@ export function LandmarkSheet({
       ) : (
         <>
           <PlaceActionMenu
-            actions={landmark.actions ?? []}
+            actions={detailsQuery.data?.actions ?? []}
             offline={offline}
             pending={actionPending}
+            isHere={isHere}
             result={actionResult}
             onRun={onRunPlaceAction}
           />
           <section>
-            <h3>Activities</h3>
+            <h3>Other activities</h3>
             {detailsQuery.data?.activities.length ? (
               <ul className="map-sheet-list">
                 {detailsQuery.data.activities.map((activity) => (
@@ -154,17 +158,20 @@ export function LandmarkSheet({
       <footer className="map-sheet-actions">
         <button
           className="map-primary-button"
-          disabled={!canAct || restricted}
+          disabled={!canAct || restricted || isHere}
+          aria-disabled={isHere || undefined}
           onClick={() => onTravel(landmark.id)}
         >
           <MapPin size={17} />
           {offline
             ? "Reconnect to travel"
-            : restricted
-              ? "This place is for players 18 and over."
-              : pending
-                ? "Requesting route…"
-                : "Travel here"}
+            : isHere
+              ? "You are here"
+              : restricted
+                ? "This place is for players 18 and over."
+                : pending
+                  ? "Requesting route…"
+                  : "Travel here"}
         </button>
         {travelResult && (
           <p role="status">

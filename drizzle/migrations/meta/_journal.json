@@ -519,6 +519,13 @@
       "when": 1792350000013,
       "tag": "0072_more_house_accessories",
       "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1792350000014,
+      "tag": "0073_database_map_actions",
+      "breakpoints": true
     }
   ]
 }

@@ -16,12 +16,14 @@ export function PlaceActionMenu({
   actions,
   offline,
   pending,
+  isHere = true,
   result,
   onRun,
 }: {
   actions: MapPlaceAction[];
   offline: boolean;
   pending: boolean;
+  isHere?: boolean;
   result?: PlaceActionResult | null | undefined;
   onRun: (actionId: string) => void;
 }) {
@@ -29,7 +31,11 @@ export function PlaceActionMenu({
   if (!actions.length) return null;
   return (
     <section className="place-action-menu" aria-label="Activities at this place">
-      <h3>What can I do here?</h3>
+      <div className="place-action-heading">
+        <h3>Things to do here</h3>
+        <small>{actions.length} available</small>
+      </div>
+      {!isHere && <p className="place-action-hint">Travel here to use these activities.</p>}
       <ul className="map-sheet-list">
         {actions.map((action) => {
           const money = action.money_minor;
@@ -41,7 +47,12 @@ export function PlaceActionMenu({
                 : `Costs ${formatMapNaira(money.min)}–${formatMapNaira(money.max)}`;
           return (
             <li key={action.id}>
-              <button className="place-action-option" onClick={() => setSelected(action)}>
+              <button
+                type="button"
+                className="place-action-option"
+                aria-pressed={selected?.id === action.id}
+                onClick={() => setSelected(action)}
+              >
                 <span>
                   {action.label}
                   {action.verify && <small> · Proposed activity</small>}
@@ -81,9 +92,21 @@ export function PlaceActionMenu({
             <small>Repeat cooldown: {selected.cooldown_game_minutes} game minutes</small>
           )}
           <div className="place-action-buttons">
-            <button onClick={() => setSelected(null)}>Cancel</button>
-            <button disabled={offline || pending} onClick={() => onRun(selected.id)}>
-              {offline ? "Reconnect to continue" : pending ? "Working…" : "Confirm activity"}
+            <button type="button" onClick={() => setSelected(null)}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              disabled={offline || pending || !isHere}
+              onClick={() => onRun(selected.id)}
+            >
+              {offline
+                ? "Reconnect to continue"
+                : !isHere
+                  ? "Travel here first"
+                  : pending
+                    ? "Working…"
+                    : "Do activity"}
             </button>
           </div>
         </div>

@@ -59,6 +59,7 @@ import { Route as ApiHousingRentRouteImport } from './routes/api/housing/rent'
 import { Route as ApiHousingRentReliefRouteImport } from './routes/api/housing/rent-relief'
 import { Route as ApiHousingResolveOverdueRouteImport } from './routes/api/housing/resolve-overdue'
 import { Route as ApiMapActionRouteImport } from './routes/api/map/action'
+import { Route as ApiMapLandmarksRouteImport } from './routes/api/map/landmarks'
 import { Route as ApiMapTownTravelRouteImport } from './routes/api/map/town-travel'
 import { Route as ApiMapTravelRouteImport } from './routes/api/map/travel'
 import { Route as ApiMessagesSendRouteImport } from './routes/api/messages/send'
@@ -339,6 +340,11 @@ const ApiMapActionRoute = ApiMapActionRouteImport.update({
   path: '/api/map/action',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMapLandmarksRoute = ApiMapLandmarksRouteImport.update({
+  id: '/api/map/landmarks',
+  path: '/api/map/landmarks',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMapTownTravelRoute = ApiMapTownTravelRouteImport.update({
   id: '/api/map/town-travel',
   path: '/api/map/town-travel',
@@ -480,6 +486,7 @@ export interface FileRoutesByFullPath {
   '/api/housing/rent-relief': typeof ApiHousingRentReliefRoute
   '/api/housing/resolve-overdue': typeof ApiHousingResolveOverdueRoute
   '/api/map/action': typeof ApiMapActionRoute
+  '/api/map/landmarks': typeof ApiMapLandmarksRoute
   '/api/map/town-travel': typeof ApiMapTownTravelRoute
   '/api/map/travel': typeof ApiMapTravelRoute
   '/api/messages/send': typeof ApiMessagesSendRoute
@@ -548,6 +555,7 @@ export interface FileRoutesByTo {
   '/api/housing/rent-relief': typeof ApiHousingRentReliefRoute
   '/api/housing/resolve-overdue': typeof ApiHousingResolveOverdueRoute
   '/api/map/action': typeof ApiMapActionRoute
+  '/api/map/landmarks': typeof ApiMapLandmarksRoute
   '/api/map/town-travel': typeof ApiMapTownTravelRoute
   '/api/map/travel': typeof ApiMapTravelRoute
   '/api/messages/send': typeof ApiMessagesSendRoute
@@ -619,6 +627,7 @@ export interface FileRoutesById {
   '/api/housing/rent-relief': typeof ApiHousingRentReliefRoute
   '/api/housing/resolve-overdue': typeof ApiHousingResolveOverdueRoute
   '/api/map/action': typeof ApiMapActionRoute
+  '/api/map/landmarks': typeof ApiMapLandmarksRoute
   '/api/map/town-travel': typeof ApiMapTownTravelRoute
   '/api/map/travel': typeof ApiMapTravelRoute
   '/api/messages/send': typeof ApiMessagesSendRoute
@@ -689,6 +698,7 @@ export interface FileRouteTypes {
     | '/api/housing/rent-relief'
     | '/api/housing/resolve-overdue'
     | '/api/map/action'
+    | '/api/map/landmarks'
     | '/api/map/town-travel'
     | '/api/map/travel'
     | '/api/messages/send'
@@ -757,6 +767,7 @@ export interface FileRouteTypes {
     | '/api/housing/rent-relief'
     | '/api/housing/resolve-overdue'
     | '/api/map/action'
+    | '/api/map/landmarks'
     | '/api/map/town-travel'
     | '/api/map/travel'
     | '/api/messages/send'
@@ -827,6 +838,7 @@ export interface FileRouteTypes {
     | '/api/housing/rent-relief'
     | '/api/housing/resolve-overdue'
     | '/api/map/action'
+    | '/api/map/landmarks'
     | '/api/map/town-travel'
     | '/api/map/travel'
     | '/api/messages/send'
@@ -876,6 +888,7 @@ export interface RootRouteChildren {
   ApiHousingRentReliefRoute: typeof ApiHousingRentReliefRoute
   ApiHousingResolveOverdueRoute: typeof ApiHousingResolveOverdueRoute
   ApiMapActionRoute: typeof ApiMapActionRoute
+  ApiMapLandmarksRoute: typeof ApiMapLandmarksRoute
   ApiMapTownTravelRoute: typeof ApiMapTownTravelRoute
   ApiMapTravelRoute: typeof ApiMapTravelRoute
   ApiMessagesSendRoute: typeof ApiMessagesSendRoute
@@ -1247,6 +1260,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMapActionRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/map/landmarks': {
+      id: '/api/map/landmarks'
+      path: '/api/map/landmarks'
+      fullPath: '/api/map/landmarks'
+      preLoaderRoute: typeof ApiMapLandmarksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/map/town-travel': {
       id: '/api/map/town-travel'
       path: '/api/map/town-travel'
@@ -1469,6 +1489,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHousingRentReliefRoute: ApiHousingRentReliefRoute,
   ApiHousingResolveOverdueRoute: ApiHousingResolveOverdueRoute,
   ApiMapActionRoute: ApiMapActionRoute,
+  ApiMapLandmarksRoute: ApiMapLandmarksRoute,
   ApiMapTownTravelRoute: ApiMapTownTravelRoute,
   ApiMapTravelRoute: ApiMapTravelRoute,
   ApiMessagesSendRoute: ApiMessagesSendRoute,

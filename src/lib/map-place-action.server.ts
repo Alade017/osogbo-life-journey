@@ -4,7 +4,7 @@ import type { MapPlaceAction } from "@/components/map/OsogboMap.svg";
 
 type Dependencies = {
   authenticate: (request: Request) => Promise<string | null>;
-  verifyAccess?: (userId: string, landmarkId: string) => Promise<void>;
+  verifyAccess?: (userId: string, landmarkId: string, actionId: string) => Promise<void>;
   perform: (
     userId: string,
     landmarkId: string,
@@ -44,8 +44,13 @@ export function createMapPlaceActionHandler(dependencies: Dependencies) {
     if (typeof landmarkId !== "string" || typeof actionId !== "string") {
       return Response.json({ error: { code: "INVALID_REQUEST" } }, { status: 400 });
     }
-    const found = findMapPlaceAction(landmarkId, actionId);
-    if (!found) return Response.json({ error: { code: "UNKNOWN_ACTION" } }, { status: 404 });
+    if (
+      !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(landmarkId) ||
+      !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(actionId)
+    )
+      return Response.json({ error: { code: "UNKNOWN_ACTION" } }, { status: 404 });
+    if (!dependencies.verifyAccess && !findMapPlaceAction(landmarkId, actionId))
+      return Response.json({ error: { code: "UNKNOWN_ACTION" } }, { status: 404 });
     const requestId = request.headers.get("Idempotency-Key")?.trim();
     if (
       !requestId ||
@@ -54,13 +59,13 @@ export function createMapPlaceActionHandler(dependencies: Dependencies) {
       return Response.json({ error: { code: "INVALID_IDEMPOTENCY_KEY" } }, { status: 400 });
     }
     try {
-      await dependencies.verifyAccess?.(userId, landmarkId);
+      await dependencies.verifyAccess?.(userId, landmarkId, actionId);
       const result = await dependencies.perform(
         userId,
         landmarkId,
         actionId,
         requestId,
-        found.action,
+        findMapPlaceAction(landmarkId, actionId)?.action ?? ({ id: actionId } as MapPlaceAction),
       );
       return Response.json(result, { headers: { "Cache-Control": "no-store" } });
     } catch (error) {
@@ -76,6 +81,7 @@ export function createMapPlaceActionHandler(dependencies: Dependencies) {
         NO_CHARACTER: 404,
         NO_WALLET: 409,
         UNKNOWN_LANDMARK: 404,
+        UNKNOWN_ACTION: 404,
         IDEMPOTENCY_CONFLICT: 409,
       };
       return Response.json({ error: { code } }, { status: known[code] ?? 500 });
@@ -92,7 +98,7 @@ export async function handleMapPlaceActionRequest(request: Request) {
       const { data, error } = await supabaseAdmin.auth.getUser(authorization.slice(7).trim());
       return error ? null : (data.user?.id ?? null);
     },
-    verifyAccess: async (userId, landmarkId) => {
+    verifyAccess: async (userId, landmarkId, actionId) => {
       const { data, error } = await supabaseAdmin.rpc("map_get_landmark_details", {
         p_user_id: userId,
         p_landmark_id: landmarkId,
@@ -108,14 +114,18 @@ export async function handleMapPlaceActionRequest(request: Request) {
         throw new Error(error.message);
       }
       if (!data) throw new Error("UNKNOWN_LANDMARK");
+      const details = data as { actions?: Array<{ id?: string }> };
+      if (!details.actions?.some((action) => action.id === actionId))
+        throw new Error("UNKNOWN_ACTION");
     },
-    perform: async (userId, landmarkId, actionId, requestId, action) => {
+    perform: async (userId, landmarkId, actionId, requestId) => {
       const { data, error } = await supabaseAdmin.rpc("perform_map_place_action", {
         p_user_id: userId,
         p_landmark_id: landmarkId,
         p_action_id: actionId,
         p_request_id: requestId,
-        p_action_definition: action,
+        // Kept for the existing RPC signature; the RPC loads rules from the database.
+        p_action_definition: {},
       });
       if (error) throw new Error(error.message);
       return data;

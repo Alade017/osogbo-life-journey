@@ -156,3 +156,39 @@ export async function handleMapTravelRequest(request: Request) {
 export async function handleMapLandmarkRequest(request: Request, id: string) {
   return (await createProductionHandlers()).getLandmark(request, id);
 }
+
+export async function handleMapLandmarksRequest(request: Request) {
+  const authorization = request.headers.get("authorization");
+  if (!authorization?.startsWith("Bearer "))
+    return response({ error: { code: "UNAUTHORIZED" } }, 401);
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data: user, error: authError } = await supabaseAdmin.auth.getUser(
+    authorization.slice(7).trim(),
+  );
+  if (authError || !user.user) return response({ error: { code: "UNAUTHORIZED" } }, 401);
+  const { data, error } = await supabaseAdmin
+    .from("map_landmarks")
+    .select("id, location_id")
+    .eq("is_available", true);
+  if (error) return response({ error: { code: "INTERNAL_ERROR" } }, 500);
+  const locationIds = [
+    ...new Set(
+      (data ?? [])
+        .map((landmark) => landmark.location_id)
+        .filter((id): id is string => typeof id === "string"),
+    ),
+  ];
+  if (!locationIds.length) return response({ landmarkIds: [] });
+  const { data: activeLocations, error: locationError } = await supabaseAdmin
+    .from("locations")
+    .select("id")
+    .in("id", locationIds)
+    .eq("is_active", true);
+  if (locationError) return response({ error: { code: "INTERNAL_ERROR" } }, 500);
+  const activeIds = new Set((activeLocations ?? []).map((location) => location.id));
+  return response({
+    landmarkIds: (data ?? [])
+      .filter((landmark) => !!landmark.location_id && activeIds.has(landmark.location_id))
+      .map((landmark) => landmark.id),
+  });
+}

@@ -21,10 +21,16 @@ function hash2(x: number, z: number) {
 }
 
 function valueNoise(x: number, z: number) {
-  const xi = Math.floor(x), zi = Math.floor(z);
-  const xf = x - xi, zf = z - zi;
-  const u = xf * xf * (3 - 2 * xf), v = zf * zf * (3 - 2 * zf);
-  const a = hash2(xi, zi), b = hash2(xi + 1, zi), c = hash2(xi, zi + 1), d = hash2(xi + 1, zi + 1);
+  const xi = Math.floor(x),
+    zi = Math.floor(z);
+  const xf = x - xi,
+    zf = z - zi;
+  const u = xf * xf * (3 - 2 * xf),
+    v = zf * zf * (3 - 2 * zf);
+  const a = hash2(xi, zi),
+    b = hash2(xi + 1, zi),
+    c = hash2(xi, zi + 1),
+    d = hash2(xi + 1, zi + 1);
   return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
 }
 
@@ -89,6 +95,7 @@ export interface MapCanvasProps {
   jobLandmarkIds?: string[];
   billboardMarkers?: MapBillboardMarker[];
   onSelectBillboard?: (campaignId: string) => void;
+  availableLandmarkIds?: readonly string[];
   /** Pass undefined while the existing property source is loading. */
   properties?: readonly MapProperty[] | undefined;
 }
@@ -141,7 +148,7 @@ function Terrain() {
     const geo = new THREE.PlaneGeometry(WORLD_SIZE, WORLD_SIZE, 260, 260);
     geo.rotateX(-Math.PI / 2);
     const pos = geo.attributes["position"]!;
-      for (let i = 0; i < pos.count; i++) {
+    for (let i = 0; i < pos.count; i++) {
       pos.setY(i, groundHeight(pos.getX(i), pos.getZ(i)));
     }
     geo.computeVertexNormals();
@@ -241,10 +248,10 @@ function OptionalGltf({
   );
 }
 // switch to true once public/models/town.glb is exported from Blender.
-const TOWN_BASE_MODEL_ENABLED=true;
+const TOWN_BASE_MODEL_ENABLED = true;
 function TownBase() {
-  if(!TOWN_BASE_MODEL_ENABLED) return null;
-  return <OptionalGltf path="/models/town.glb" fallback={null} loadingFallback={<MapLoading/>} />;
+  if (!TOWN_BASE_MODEL_ENABLED) return null;
+  return <OptionalGltf path="/models/town.glb" fallback={null} loadingFallback={<MapLoading />} />;
 }
 
 function HousePlaceholder({ property }: { property: MapProperty }) {
@@ -346,7 +353,7 @@ function PlaceMarkers({
               onClick={() => onSelectLandmark(place.id)}
             >
               <span>{place.label}</span>
-              <small>{place.actions.length} actions</small>
+              <small>{place.category}</small>
             </button>
           </Html>
         );
@@ -358,40 +365,60 @@ function PlaceMarkers({
 function TownScene({
   properties,
   places,
+  playerLocation,
   onSelectLandmark,
   onSelectDistrict,
 }: {
   properties: readonly MapProperty[] | undefined;
   places: readonly (typeof townData.landmarks)[number][];
+  playerLocation: MapPlayerLocation | null | undefined;
   onSelectLandmark: (id: string) => void;
   onSelectDistrict: (id: string) => void;
 }) {
+  const markerPoint = playerLocation ? scenePoint(playerLocation.x, playerLocation.y) : null;
   return (
     <>
-  <color attach="background" args={[SKY]} />
-  <fog attach="fog" args={[SKY, 45, 170]} />
-  <hemisphereLight args={["#ffffff", "#7a9d6a", 1.0]} />
-  <directionalLight position={[20, 30, 14]} intensity={1.8} castShadow />
-  <Terrain />
-  <OuterForest />
-  <TownBase />
-  <TownScenery />
-  {/* ...PlaceMarkers, House list, MapLoading stay exactly as they are... */}
-  <OrbitControls
-    makeDefault
-    enableDamping
-    dampingFactor={0.08}
-    minDistance={5}
-    maxDistance={90}
-    minPolarAngle={0.2}
-    maxPolarAngle={Math.PI / 2.02}
-    enablePan
-    screenSpacePanning={false}
-    panSpeed={0.8}
-    zoomSpeed={0.8}
-    target={[0, 0, 0]}
-  />
-</>
+      <color attach="background" args={[SKY]} />
+      <fog attach="fog" args={[SKY, 45, 170]} />
+      <hemisphereLight args={["#ffffff", "#7a9d6a", 1.0]} />
+      <directionalLight position={[20, 30, 14]} intensity={1.8} castShadow />
+      <Terrain />
+      <OuterForest />
+      <TownBase />
+      <TownScenery />
+      <PlaceMarkers
+        places={places}
+        onSelectLandmark={onSelectLandmark}
+        onSelectDistrict={onSelectDistrict}
+      />
+      {properties?.map((property) => (
+        <House key={property.id} property={property} />
+      ))}
+      {playerLocation && markerPoint && (
+        <Html
+          position={[markerPoint[0], 2.85, markerPoint[2]]}
+          center
+          distanceFactor={12}
+          zIndexRange={[7, 0]}
+        >
+          <span className="town-player-marker">{playerLocation.label ?? "You are here"}</span>
+        </Html>
+      )}
+      <OrbitControls
+        makeDefault
+        enableDamping
+        dampingFactor={0.08}
+        minDistance={5}
+        maxDistance={90}
+        minPolarAngle={0.2}
+        maxPolarAngle={Math.PI / 2.02}
+        enablePan
+        screenSpacePanning={false}
+        panSpeed={0.8}
+        zoomSpeed={0.8}
+        target={[0, 0, 0]}
+      />
+    </>
   );
 }
 
@@ -400,10 +427,11 @@ export function MapCanvas({
   onSelectLandmark,
   activeFilter = "all",
   searchTarget,
-  playerLocation: _playerLocation,
+  playerLocation,
   eventChips: _eventChips,
   jobLandmarkIds = [],
   billboardMarkers = [],
+  availableLandmarkIds,
   onSelectBillboard,
   properties,
 }: MapCanvasProps) {
@@ -421,12 +449,13 @@ export function MapCanvas({
     () =>
       townData.landmarks.filter(
         (place) =>
-          activeFilter === "all" ||
-          (activeFilter === "jobs"
-            ? jobLandmarkIds.includes(place.id)
-            : (filterCategories[activeFilter] ?? [activeFilter]).includes(place.category)),
+          (availableLandmarkIds === undefined || availableLandmarkIds.includes(place.id)) &&
+          (activeFilter === "all" ||
+            (activeFilter === "jobs"
+              ? jobLandmarkIds.includes(place.id)
+              : (filterCategories[activeFilter] ?? [activeFilter]).includes(place.category))),
       ),
-    [activeFilter, jobLandmarkIds],
+    [activeFilter, availableLandmarkIds, jobLandmarkIds],
   );
 
   return (
@@ -445,6 +474,7 @@ export function MapCanvas({
         <TownScene
           properties={properties}
           places={availablePlaces}
+          playerLocation={playerLocation}
           onSelectLandmark={onSelectLandmark}
           onSelectDistrict={onSelectDistrict}
         />

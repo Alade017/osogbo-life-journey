@@ -86,7 +86,7 @@ export function EducationPage({ phoneMode = false }: { phoneMode?: boolean }) {
         </div>
       )}
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-1">
         {courses.map((course) => {
           const isComplete = completed?.some((entry) => entry.course_id === course.id) ?? false;
           const canAfford = (wallet?.balance ?? 0) >= course.tuition;
