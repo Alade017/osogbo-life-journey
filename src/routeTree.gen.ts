@@ -526,6 +526,7 @@ export interface FileRoutesByTo {
   '/house': typeof AuthenticatedGameHouseRoute
   '/inventory': typeof AuthenticatedGameInventoryRoute
   '/jobs': typeof AuthenticatedGameJobsRoute
+  '/career': typeof AuthenticatedGameCareerRoute
   '/map': typeof AuthenticatedGameMapRoute
   '/market': typeof AuthenticatedGameMarketRoute
   '/missions': typeof AuthenticatedGameMissionsRoute
@@ -740,6 +741,7 @@ export interface FileRouteTypes {
     | '/house'
     | '/inventory'
     | '/jobs'
+    | '/career'
     | '/map'
     | '/market'
     | '/missions'
