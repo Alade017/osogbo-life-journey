@@ -232,7 +232,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
                       />
                       {mode === "signup" && (
                         <p className="text-xs text-muted-foreground">
-                          3â€“24 letters, numbers or underscores. Email can be added later in
+                          3-24 letters, numbers or underscores. Email can be added later in
                           Settings.
                         </p>
                       )}
@@ -293,7 +293,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
                     aria-busy={busy}
                   >
                     {busy
-                      ? "Please waitâ€¦"
+                      ? "Please wait"
                       : resettingPassword
                         ? "Update password"
                         : mode === "signup"
