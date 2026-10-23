@@ -21,6 +21,8 @@ import { JOB_CATEGORIES, JOB_CATEGORY_LABELS, resolveJobCategory } from "@/lib/j
 import { checkJobEligibility, filterJobListings } from "@/lib/job-board-service";
 import { formatGameTime } from "@/lib/game-time";
 import { useWorldClock } from "@/hooks/use-world-clock";
+import { CareerPanel } from "@/components/game/CareerPanel";
+import { isCareerJob } from "@/lib/career-rules";
 
 export const Route = createFileRoute("/_authenticated/_game/jobs")({
   head: () => pageMeta("Jobs", "Take a job in Osogbo and work shifts to earn in-game Naira."),
@@ -88,7 +90,9 @@ export function JobsPage() {
         .filter(Boolean)
         .join(" "),
     }));
-    return filterJobListings(searchableJobs, search, category);
+    return filterJobListings(searchableJobs, search, category).filter(
+      (job) => !isCareerJob(job.slug),
+    );
   }, [jobs, locations, places, search, category]);
 
   if (jobsError) {
@@ -106,7 +110,9 @@ export function JobsPage() {
   }
   if (isLoading || !c || !jobs) return <CardListSkeleton label="Loading jobs" cards={4} />;
   const current = myJobs?.find((j) => j.is_current);
-  const currentJob = jobs.find((j) => j.id === current?.job_id);
+  const selectedJob = jobs.find((j) => j.id === current?.job_id);
+  const currentJob = selectedJob && !isCareerJob(selectedJob.slug) ? selectedJob : undefined;
+  const hasActiveCareer = !!selectedJob && isCareerJob(selectedJob.slug);
   const careerSkill = currentJob
     ? playerSkills?.find((skill) => skill.skill_slug === currentJob.skill_reward_slug)
     : undefined;
@@ -168,6 +174,8 @@ export function JobsPage() {
             "City Centre"}
         </div>
       </header>
+
+      <CareerPanel />
 
       {currentJob && (
         <Dialog open={workSessionOpen} onOpenChange={setWorkSessionOpen}>
@@ -432,7 +440,8 @@ export function JobsPage() {
                 </dl>
                 <p className="mt-2 text-xs text-muted-foreground">
                   +{j.xp_reward} XP · +{j.skill_reward_xp}{" "}
-                  {j.skill_reward_slug.replaceAll("_", " ")} XP per shift · {j.shift_start_hour}:00–
+                  {j.skill_reward_slug.replaceAll("_", " ")} XP per shift · {j.shift_start_hour}
+                  :00–
                   {j.shift_end_hour}:00
                 </p>
                 <div className="mt-3 rounded-lg border border-border bg-muted/60 p-3 text-xs">
@@ -458,14 +467,16 @@ export function JobsPage() {
                     <Button
                       variant={locked ? "plain" : "ink"}
                       className="mt-4"
-                      disabled={locked || select.isPending}
+                      disabled={locked || select.isPending || hasActiveCareer}
                       onClick={() => select.mutate(j.id)}
                     >
-                      {locked
-                        ? (eligibility.reasons[0] ?? "Requirements not met")
-                        : currentJob
-                          ? "Switch to this job"
-                          : "Take this job"}
+                      {hasActiveCareer
+                        ? "Leave current career first"
+                        : locked
+                          ? (eligibility.reasons[0] ?? "Requirements not met")
+                          : currentJob
+                            ? "Switch to this job"
+                            : "Take this job"}
                     </Button>
                   ))}
               </div>

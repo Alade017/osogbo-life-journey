@@ -540,6 +540,13 @@
       "when": 1792350000016,
       "tag": "0075_remove_orphaned_player_data",
       "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1792350000017,
+      "tag": "0076_career_progression",
+      "breakpoints": true
     }
   ]
 }

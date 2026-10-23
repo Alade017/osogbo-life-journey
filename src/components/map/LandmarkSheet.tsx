@@ -4,6 +4,7 @@ import { BadgeCheck, MapPin, X } from "lucide-react";
 import { formatMapNaira } from "@/components/map/map-ui-utils";
 import { MapApiError, requestMapLandmark } from "@/lib/map-api";
 import { careerShiftPay } from "@/lib/economy-service";
+import { isCareerJob } from "@/lib/career-rules";
 import { PlaceActionMenu, type PlaceActionResult } from "@/components/map/PlaceActionMenu";
 import type { MapPlaceAction } from "@/components/map/OsogboMap.svg";
 
@@ -134,8 +135,14 @@ export function LandmarkSheet({
                     <span>
                       {job.name}
                       <small>
-                        {formatMapNaira(careerShiftPay(job.salary, 1))}–
-                        {formatMapNaira(careerShiftPay(job.salary, 3))} per shift
+                        {isCareerJob(job.slug) ? (
+                          <>Career path · three ranks · see Jobs for pay</>
+                        ) : (
+                          <>
+                            {formatMapNaira(careerShiftPay(job.salary, 1))}–
+                            {formatMapNaira(careerShiftPay(job.salary, 3))} per shift
+                          </>
+                        )}
                       </small>
                     </span>
                     <button disabled={!canAct} onClick={() => onApply(job.id)}>
