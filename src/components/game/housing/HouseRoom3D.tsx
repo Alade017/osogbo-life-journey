@@ -594,7 +594,7 @@ export function HouseRoom3D({
         }}
         gl={{ antialias: false, powerPreference: "low-power" }}
       >
-        <color attach="background" args={["#b98c83"]} />
+        <color attach="background" args={["#d7e8e5"]} />
         <ambientLight intensity={1.2} />
         <directionalLight intensity={1.5} position={[5, 9, 6]} />
         <OptionalModel

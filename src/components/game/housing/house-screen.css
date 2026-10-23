@@ -282,7 +282,7 @@
   height: clamp(280px, 48vw, 560px);
   overflow: hidden;
   border-radius: calc(var(--shape-card, 20px) - 6px);
-  background: #b98c83;
+  background: #d7e8e5;
   touch-action: none;
 }
 .house-3d-loading {

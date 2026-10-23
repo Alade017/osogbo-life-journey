@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { BedDouble, House, KeyRound, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatNaira, q } from "@/lib/game";
 import { DISTRICTS, loadOwnedHouses, type SaleListing } from "@/lib/property-assets";
@@ -27,7 +28,7 @@ export function PropertiesPage() {
       const { data, error } = await supabase
         .from("game_properties")
         .select(
-          "id,name,description,property_type,house_type_id,purchase_price,image_url,level_required,metadata",
+          "id,slug,name,description,property_type,house_type_id,purchase_price,rent_price,image_url,level_required,metadata",
         )
         .eq("is_active", true)
         .not("purchase_price", "is", null)
@@ -78,9 +79,29 @@ export function PropertiesPage() {
       ]);
       toast.success("House purchased. It is now your Home.");
     },
-    onError: (error: Error) => {
-      setPurchaseError(error.message);
-      void ownedQuery.refetch();
+    onError: async (error: Error, listing) => {
+      const refreshed = await ownedQuery.refetch();
+      if (
+        refreshed.data?.some(
+          (row) => row.tenure === "owned" && row.game_properties?.id === listing.id,
+        )
+      ) {
+        setPurchaseError("");
+        await Promise.all([
+          client.invalidateQueries({ queryKey: ["canonicalHousingHome"] }),
+          client.invalidateQueries({ queryKey: ["authoritativeHouseState"] }),
+          client.invalidateQueries({ queryKey: q.wallet().queryKey }),
+        ]);
+        toast.success("House purchased. It is now your Home.");
+        return;
+      }
+      setPurchaseError(
+        error.message === "ALREADY_OWNED"
+          ? "You already own this home. Open My property to set it as Home."
+          : /internal error/i.test(error.message)
+            ? "The property service could not complete this purchase. Please try again."
+            : error.message,
+      );
       void listingsQuery.refetch();
     },
   });
@@ -88,14 +109,23 @@ export function PropertiesPage() {
   return (
     <main className="property-market-page">
       <header className="property-market-hero map-sheet">
-        <p className="map-sheet-eyebrow">FIND HOMES</p>
-        <h1>Homes for sale</h1>
-        <p>Choose a house in one of the fictional game districts. Prices are in Virtual Naira.</p>
-        <strong>Available cash: {balance === null ? "Loading…" : formatNaira(balance)}</strong>
-        <nav aria-label="Housing navigation">
-          <Link to="/property">My property</Link>
-          <Link to="/rentals">Rent a home</Link>
-        </nav>
+        <div className="property-market-hero-copy">
+          <p className="map-sheet-eyebrow">FIND HOMES</p>
+          <h1>Find your place in Osogbo</h1>
+          <p>
+            Explore homes by district. Buy a house or choose a weekly rental with Virtual Naira.
+          </p>
+        </div>
+        <div className="property-market-hero-actions">
+          <div className="property-market-balance">
+            <span>Available cash</span>
+            <strong>{balance === null ? "Loading…" : formatNaira(balance)}</strong>
+          </div>
+          <nav aria-label="Housing navigation">
+            <Link to="/property">My property</Link>
+            <Link to="/rentals">Browse rentals</Link>
+          </nav>
+        </div>
       </header>
       {purchaseError && (
         <p className="map-action-error" role="alert">
@@ -136,6 +166,9 @@ export function PropertiesPage() {
               <div className="property-market-grid">
                 {homes.map((listing) => {
                   const price = Number(listing.purchase_price ?? 0);
+                  const rentable =
+                    listing.rent_price != null &&
+                    listing.slug === `housing-${listing.house_type_id}`;
                   const reason = !character
                     ? "Create a character first."
                     : balance === null
@@ -147,44 +180,69 @@ export function PropertiesPage() {
                           : "";
                   return (
                     <article className="property-market-card map-sheet" key={listing.id}>
-                      {listing.image_url && (
-                        <img src={listing.image_url} alt={listing.name} loading="lazy" />
-                      )}
                       <div className="property-market-card-body">
-                        <p className="map-sheet-eyebrow">{district}</p>
+                        <div className="property-market-card-top">
+                          <span className="property-market-house-icon">
+                            <House size={22} aria-hidden="true" />
+                          </span>
+                          <span className="property-market-card-district">
+                            <MapPin size={14} aria-hidden="true" />
+                            {district}
+                          </span>
+                        </div>
                         <h3>{listing.name}</h3>
                         <p>{listing.description}</p>
-                        <dl>
-                          <div>
-                            <dt>Type</dt>
-                            <dd>{listing.property_type.replaceAll("_", " ")}</dd>
-                          </div>
-                          <div>
-                            <dt>Bedrooms</dt>
-                            <dd>{listing.metadata?.bedrooms ?? "—"}</dd>
-                          </div>
-                        </dl>
-                        <p className="property-market-features">
-                          {(listing.metadata?.features ?? []).join(" · ")}
-                        </p>
-                        <strong>{formatNaira(price)}</strong>
+                        <div className="property-market-facts">
+                          <span>{listing.property_type.replaceAll("_", " ")}</span>
+                          <span>
+                            <BedDouble size={15} aria-hidden="true" />
+                            {listing.metadata?.bedrooms ?? "—"} bed
+                          </span>
+                        </div>
+                        {(listing.metadata?.features?.length ?? 0) > 0 && (
+                          <ul className="property-market-features">
+                            {listing.metadata!.features!.map((feature) => (
+                              <li key={feature}>{feature}</li>
+                            ))}
+                          </ul>
+                        )}
+                        <div className="property-market-price">
+                          <span>Purchase price</span>
+                          <strong>{formatNaira(price)}</strong>
+                          {rentable && (
+                            <small>
+                              or rent from {formatNaira(Number(listing.rent_price))} / week
+                            </small>
+                          )}
+                        </div>
                         {reason && (
                           <p className="property-market-reason" role="status">
                             {reason}
                           </p>
                         )}
-                        <button
-                          className="map-primary-button"
-                          disabled={!!reason || buy.isPending}
-                          onClick={() => {
-                            setPurchaseError("");
-                            buy.mutate(listing);
-                          }}
-                        >
-                          {buy.isPending && buy.variables?.id === listing.id
-                            ? "Purchasing…"
-                            : "Purchase home"}
-                        </button>
+                        <div className="property-market-card-actions">
+                          <button
+                            className="map-primary-button"
+                            disabled={!!reason || buy.isPending}
+                            onClick={() => {
+                              setPurchaseError("");
+                              buy.mutate(listing);
+                            }}
+                          >
+                            {buy.isPending && buy.variables?.id === listing.id
+                              ? "Purchasing…"
+                              : "Buy home"}
+                          </button>
+                          {rentable && (
+                            <Link
+                              className="property-market-rent-button"
+                              to="/rentals"
+                              hash={listing.id}
+                            >
+                              <KeyRound size={16} aria-hidden="true" /> Rent instead
+                            </Link>
+                          )}
+                        </div>
                       </div>
                     </article>
                   );

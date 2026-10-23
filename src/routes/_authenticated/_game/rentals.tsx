@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -94,6 +94,10 @@ export function RentalsPage() {
   const character = characterQuery.data;
   const wallet = walletQuery.data;
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  useEffect(() => {
+    const requestedHome = window.location.hash.slice(1);
+    if (requestedHome) setSelectedId(requestedHome);
+  }, []);
   const [filters, setFilters] = useState<Filter[]>([]);
   const [rentError, setRentError] = useState("");
   const requestKeys = useRef(new Map<string, string>());
