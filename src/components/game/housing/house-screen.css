@@ -285,6 +285,29 @@
   background: #d7e8e5;
   touch-action: none;
 }
+.house-playcanvas-scene > canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+.house-playcanvas-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+.house-renderer-unavailable {
+  overflow: auto;
+  padding: 1rem;
+}
+.house-renderer-unavailable button {
+  min-height: 44px;
+  margin: 0.25rem;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card, 20px);
+  background: var(--card);
+  color: var(--foreground);
+}
 .house-3d-loading {
   position: absolute;
   top: 0.7rem;

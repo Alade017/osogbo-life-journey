@@ -10,7 +10,7 @@ import type {
   HousePlacement,
   HouseSlot,
 } from "@/components/game/housing/HouseRoomScene";
-import { HouseRoom3D } from "@/components/game/housing/HouseRoom3D";
+import { HouseRoomRenderer } from "@/components/game/housing/HouseRoomRenderer";
 import { useGameTime } from "@/components/game/GameTimeProvider";
 import { homeFurnitureAction, homeFurnitureNeed } from "@/lib/home-furniture-actions";
 import { ACTION_CATALOG } from "@/lib/life-simulation";
@@ -846,7 +846,8 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         className={`house-room-card${house.status === "overdue" ? " room-overdue" : ""}${activeSleep ? " is-sleeping" : ""}`}
         aria-label={`${house.house_type.label} room`}
       >
-        <HouseRoom3D
+        <HouseRoomRenderer
+          inputBlocked={!!selectedSlot || !!selectedPlacement || !!activeSleep}
           houseTypeId={house.house_type_id}
           accessoryBand={canonicalHome?.accessoryBand ?? "basic"}
           slots={slots}

@@ -19,7 +19,7 @@ function props(): ComponentProps<typeof HouseEditSheets> {
       { id: "bed", category: "furniture", slot_type: "bed", art_key: "bed", price_minor: 1400 },
     ],
     outfit,
-    slots: [],
+    slots: [slot],
     placements: [],
     selectedSlot: null,
     selectedPlacement: null,
@@ -46,6 +46,7 @@ describe("household item panel", () => {
 
   it("switches between room accessories with carousel controls", () => {
     const input = props();
+    input.slots.push({ id: "bathroom-1", slot_type: "bathroom", x: 50, y: 50 });
     input.catalog.push({
       id: "shower",
       category: "furniture",

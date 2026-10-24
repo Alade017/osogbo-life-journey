@@ -19,13 +19,14 @@ describe("business and investment RPCs", () => {
     db = new PGlite({ extensions: { pg_trgm } });
     await db.exec(`create role anon; create role authenticated; create role service_role;
       create schema auth; create schema extensions; create schema realtime;
-      create table auth.users(id uuid primary key); create table realtime.messages(id bigint generated always as identity);
+      create table auth.users(id uuid primary key, is_anonymous boolean not null default false); create table realtime.messages(id bigint generated always as identity);
       create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('test.user_id',true),'')::uuid $$;
       create function realtime.topic() returns text language sql stable as $$ select ''::text $$;
       create function realtime.broadcast_changes(text,text,text,text,text,anyelement,anyelement) returns void language plpgsql as $$ begin return; end $$;
       grant usage on schema auth to authenticated; grant execute on function auth.uid() to authenticated;`);
     for (const file of readdirSync("drizzle/migrations")
-      .filter((name) => name.endsWith(".sql"))
+      // Match the career harness; preserve the hosted-only cleanup's live-count guard.
+      .filter((name) => name.endsWith(".sql") && name !== "0075_remove_orphaned_player_data.sql")
       .sort()) {
       try {
         await db.exec(readFileSync(`drizzle/migrations/${file}`, "utf8"));

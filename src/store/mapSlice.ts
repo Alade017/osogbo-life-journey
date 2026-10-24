@@ -1,48 +1,27 @@
-// src/store/mapSlice.ts
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { RootState } from "./store"; // Adjust import path if your store file is elsewhere
-
-/**
- * Point of Interest (POI) definition for the Osogbo map.
- */
+/** View state for the optional map preview. Authoritative travel uses map-api. */
 export interface POI {
   id: string;
   name: string;
   category: string;
-  /**
-   * 3D world position: [x, y, z]
-   */
   position: [number, number, number];
   description: string;
 }
-
-interface MapState {
+export interface MapState {
   selectedPoi: POI | null;
   hoveredPoiId: string | null;
 }
-
-const initialState: MapState = {
-  selectedPoi: null,
-  hoveredPoiId: null,
-};
-
-export const mapSlice = createSlice({
-  name: "map",
-  initialState,
-  reducers: {
-    setSelectedPoi(state, action: PayloadAction<POI | null>) {
-      state.selectedPoi = action.payload;
-    },
-    setHoveredPoiId(state, action: PayloadAction<string | null>) {
-      state.hoveredPoiId = action.payload;
-    },
-  },
+export const initialMapState: MapState = { selectedPoi: null, hoveredPoiId: null };
+export const setSelectedPoi = (payload: POI | null) => ({ type: "map/select" as const, payload });
+export const setHoveredPoiId = (payload: string | null) => ({
+  type: "map/hover" as const,
+  payload,
 });
-
-export const { setSelectedPoi, setHoveredPoiId } = mapSlice.actions;
-
-// Selectors for convenient access
-export const selectSelectedPoi = (state: RootState) => state.map.selectedPoi;
-export const selectHoveredPoiId = (state: RootState) => state.map.hoveredPoiId;
-
-export default mapSlice.reducer;
+type MapAction = ReturnType<typeof setSelectedPoi> | ReturnType<typeof setHoveredPoiId>;
+export default function mapReducer(state: MapState, action: MapAction): MapState {
+  switch (action.type) {
+    case "map/select":
+      return { ...state, selectedPoi: action.payload };
+    case "map/hover":
+      return { ...state, hoveredPoiId: action.payload };
+  }
+}

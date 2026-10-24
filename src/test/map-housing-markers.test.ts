@@ -22,9 +22,30 @@ describe("housing map marker input", () => {
         type: "compound",
         tier: 2,
         status: "rent_due",
-        position: [-11, 0, -7],
+        position: [-21, 0, -15],
       },
     ]);
+  });
+
+  it("accepts the expanded town edge and rejects coordinates beyond it", () => {
+    const marker = {
+      propertyId: "edge-home",
+      label: "Room",
+      model: "flat",
+      gridX: 23,
+      gridZ: 17,
+      tier: 1,
+      status: "current",
+    };
+    expect(mapHousingMarkers([marker])).toEqual([
+      expect.objectContaining({ id: "edge-home", position: [23, 0, 17] }),
+    ]);
+    expect(
+      mapHousingMarkers([
+        { ...marker, gridX: 24 },
+        { ...marker, gridZ: 18 },
+      ]),
+    ).toEqual([]);
   });
 
   it("drops invalid rows instead of inventing a property status", () => {

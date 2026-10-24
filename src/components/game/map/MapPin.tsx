@@ -1,21 +1,20 @@
 // src/components/game/map/MapPin.tsx
 import { useRef, useEffect, FC } from "react";
-import { useFrame, MeshProps } from "@react-three/fiber";
+import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
-import { useDispatch, useSelector } from "react-redux";
-import { POI, setSelectedPoi, setHoveredPoiId, selectSelectedPoi, selectHoveredPoiId } from "../../store/mapSlice";
-import { RootState } from "../../store/store"; // Adjust if your store entry point differs
+import type { Group } from "three";
+import type { POI } from "@/store/mapSlice";
 
 interface MapPinProps {
   poi: POI;
+  selectedPoi?: POI | null;
+  hoveredPoiId?: string | null;
+  onSelect?: (poi: POI) => void;
+  onHover?: (id: string | null) => void;
 }
 
-export const MapPin: FC<MapPinProps> = ({ poi }) => {
-  const dispatch = useDispatch();
-  const selectedPoi = useSelector(selectSelectedPoi);
-  const hoveredPoiId = useSelector(selectHoveredPoiId);
-
-  const groupRef = useRef<THREE.Group>(null);
+export const MapPin: FC<MapPinProps> = ({ poi, selectedPoi, hoveredPoiId, onSelect, onHover }) => {
+  const groupRef = useRef<Group>(null);
 
   // Animation parameters
   const baseY = poi.position[1];
@@ -35,17 +34,17 @@ export const MapPin: FC<MapPinProps> = ({ poi }) => {
 
   // Pointer events (cursor handling)
   const handlePointerOver = () => {
-    dispatch(setHoveredPoiId(poi.id));
+    onHover?.(poi.id);
     document.body.style.cursor = "pointer";
   };
 
   const handlePointerOut = () => {
-    dispatch(setHoveredPoiId(null));
+    onHover?.(null);
     document.body.style.cursor = "default";
   };
 
   const handleClick = () => {
-    dispatch(setSelectedPoi(poi));
+    onSelect?.(poi);
   };
 
   // Cleanup cursor on unmount
