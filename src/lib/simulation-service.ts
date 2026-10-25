@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { parseCityEventJoin } from "@/lib/city-event-service";
 import { type GameTime } from "@/lib/game-time";
 import { NEED_NAMES, type LifeActionId, type Needs, ACTION_CATALOG } from "@/lib/life-simulation";
 
@@ -101,5 +102,5 @@ export async function readWorldClock(): Promise<GameTime> {
 export async function joinCityEvent(id: string) {
   const { data, error } = await supabase.rpc("join_city_event", { p_event: id });
   if (error) throw new Error(error.message);
-  return data as { joined: boolean; duplicate: boolean };
+  return parseCityEventJoin(data);
 }

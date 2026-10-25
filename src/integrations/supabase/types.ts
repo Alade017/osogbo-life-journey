@@ -3,6 +3,126 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type Database = {
   public: {
     Tables: {
+      city_event_catalog: {
+        Row: {
+          id: string;
+          title: string;
+          description: string;
+          landmark_id: string;
+          weekday: number;
+          start_hour: number;
+          end_hour: number;
+          outdoors: boolean;
+          enabled: boolean;
+        };
+        Insert: {
+          id: string;
+          title: string;
+          description: string;
+          landmark_id: string;
+          weekday: number;
+          start_hour: number;
+          end_hour: number;
+          outdoors: boolean;
+          enabled?: boolean;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          description?: string;
+          landmark_id?: string;
+          weekday?: number;
+          start_hour?: number;
+          end_hour?: number;
+          outdoors?: boolean;
+          enabled?: boolean;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: "city_event_catalog_landmark_id_fkey";
+            columns: ["landmark_id"];
+            isOneToOne: false;
+            referencedRelation: "map_landmarks";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      city_event_occurrences: {
+        Row: {
+          id: string;
+          event_id: string;
+          week_start: string;
+          starts_at: string;
+          ends_at: string;
+          world_day: number;
+          title: string;
+          description: string;
+          location_id: string;
+          landmark_id: string;
+          district_id: string;
+          outdoors: boolean;
+        };
+        Insert: {
+          id?: string;
+          event_id: string;
+          week_start: string;
+          starts_at: string;
+          ends_at: string;
+          world_day: number;
+          title: string;
+          description: string;
+          location_id: string;
+          landmark_id: string;
+          district_id: string;
+          outdoors: boolean;
+        };
+        Update: {
+          id?: string;
+          event_id?: string;
+          week_start?: string;
+          starts_at?: string;
+          ends_at?: string;
+          world_day?: number;
+          title?: string;
+          description?: string;
+          location_id?: string;
+          landmark_id?: string;
+          district_id?: string;
+          outdoors?: boolean;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: "city_event_occurrences_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "city_event_catalog";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "city_event_occurrences_location_id_fkey";
+            columns: ["location_id"];
+            isOneToOne: false;
+            referencedRelation: "locations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "city_event_occurrences_landmark_id_fkey";
+            columns: ["landmark_id"];
+            isOneToOne: false;
+            referencedRelation: "map_landmarks";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "city_event_occurrences_district_id_fkey";
+            columns: ["district_id"];
+            isOneToOne: false;
+            referencedRelation: "map_districts";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       daily_task_catalog: {
         Row: {
           task_key: string;
@@ -4316,6 +4436,8 @@ export type Database = {
       claim_mission: { Args: { p_player_mission_id: string }; Returns: Json };
       claim_daily_task: { Args: { p_task_key: string; p_date: string }; Returns: Json };
       get_daily_tasks: { Args: Record<PropertyKey, never>; Returns: Json };
+      get_city_events: { Args: Record<PropertyKey, never>; Returns: Json };
+      join_city_event_occurrence: { Args: { p_occurrence_id: string }; Returns: Json };
       claim_player_company_earnings: { Args: { p_company_id: string }; Returns: Json };
       complete_education_course: { Args: { p_course_slug: string }; Returns: Json };
       complete_education_course_for_user: {

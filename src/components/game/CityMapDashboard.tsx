@@ -28,8 +28,8 @@ import {
   requestAvailableMapLandmarks,
 } from "@/lib/map-api";
 import type { PlaceActionResult } from "@/components/map/PlaceActionMenu";
-import { useWorldClock } from "@/hooks/use-world-clock";
-import { activeCityEvents } from "@/lib/world-simulation";
+import { useCityEvents } from "@/hooks/use-city-events";
+import { cityEventsForDistrict } from "@/lib/city-event-service";
 import { getCurrentMapBillboards, type CurrentMapBillboard } from "@/lib/map-billboard-map";
 import type { MapDistrict, MapLandmark } from "@/components/map/OsogboMap.svg";
 import "@/components/map/map-ui.css";
@@ -89,7 +89,7 @@ export function CityMapDashboard({
     },
   });
   const rent = useQuery(q.rentStatus());
-  const world = useWorldClock();
+  const cityEvents = useCityEvents();
   const jobCatalog = useQuery({ ...q.jobs(), enabled: filter === "jobs" });
   const locations = useQuery(q.locations());
   const availableLandmarks = useQuery({
@@ -143,9 +143,9 @@ export function CityMapDashboard({
     imageUrl: entry.advertisement.creative_image_url,
     count: entry.count,
   }));
-  const activeEvents = world.data
-    ? activeCityEvents(world.data).filter((e) => e.locationSlug === selectedDistrict?.id)
-    : [];
+  const activeEvents = cityEvents.isError
+    ? []
+    : cityEventsForDistrict(cityEvents.data?.events ?? [], selectedDistrict?.id);
   const travel = useMutation({
     mutationFn: ({ landmarkId, idempotencyKey }: { landmarkId: string; idempotencyKey: string }) =>
       requestMapTravel(landmarkId, idempotencyKey),
@@ -398,7 +398,7 @@ export function CityMapDashboard({
           }}
           event={
             activeEvents[0]
-              ? { label: activeEvents[0].title, endHour: activeEvents[0].endHour }
+              ? { label: activeEvents[0].title, endsAt: activeEvents[0].endsAt }
               : null
           }
           onClose={() => setSelectedDistrict(null)}
