@@ -1,9 +1,16 @@
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogClose,
+  DialogOverlay,
+  DialogPortal,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import {
   Backpack,
   Bell,
   Bike,
-  BookOpen,
   BriefcaseBusiness,
   Building2,
   CalendarDays,
@@ -27,15 +34,16 @@ import {
   Smartphone,
   SlidersHorizontal,
   UserRound,
-  UsersRound,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { q, rpc, useGameAction } from "@/lib/game";
 import { useQuery } from "@tanstack/react-query";
+import { playGameSound } from "@/lib/game-audio";
 import { useLiveClock } from "@/hooks/use-live-clock";
 import { OSOGBO_TIME_ZONE } from "@/lib/osogbo-weather";
-import { useEffect, useRef, useState, lazy, Suspense, type ReactNode } from "react";
+import { Component, useEffect, useRef, useState, lazy, Suspense, type ReactNode } from "react";
 import { type CommunityPhoneApp } from "@/components/game/CommunityPhoneApps";
 import { PhoneComingSoonApp } from "@/components/game/phone/PhoneComingSoonApp";
 import "./phone.css";
@@ -45,12 +53,33 @@ const PlayerSocial = lazy(() =>
   import("@/components/game/PlayerSocial").then((m) => ({ default: m.PlayerSocial })),
 );
 const PhoneMarketApp = lazy(() => import("@/components/game/phone/PhoneMarketApp"));
-const PhoneHousingApp = lazy(() => import("@/components/game/phone/PhoneHousingApp"));
 const PhonePartyApp = lazy(() => import("@/components/game/phone/PhonePartyApp"));
-const PhoneCareerApp = lazy(() => import("@/components/game/phone/PhoneCareerApp"));
 const PhoneMapApp = lazy(() => import("@/components/game/phone/PhoneMapApp"));
 const PhoneBankApp = lazy(() => import("@/components/game/phone/PhoneBankApp"));
-const PhoneJobsApp = lazy(() => import("@/components/game/phone/PhoneJobsApp"));
+const PropertiesPage = lazy(() =>
+  import("@/routes/_authenticated/_game/properties").then((m) => ({ default: m.PropertiesPage })),
+);
+const PropertyPage = lazy(() =>
+  import("@/routes/_authenticated/_game/property").then((m) => ({ default: m.PropertyPage })),
+);
+const RentalsPage = lazy(() =>
+  import("@/routes/_authenticated/_game/rentals").then((m) => ({ default: m.RentalsPage })),
+);
+const JobsPage = lazy(() =>
+  import("@/routes/_authenticated/_game/jobs").then((m) => ({ default: m.JobsPage })),
+);
+const EducationPage = lazy(() =>
+  import("@/routes/_authenticated/_game/education").then((m) => ({ default: m.EducationPage })),
+);
+const ProfilePage = lazy(() =>
+  import("@/routes/_authenticated/_game/profile").then((m) => ({ default: m.ProfilePage })),
+);
+const InventoryPage = lazy(() =>
+  import("@/routes/_authenticated/_game/inventory").then((m) => ({ default: m.InventoryPage })),
+);
+const SettingsPage = lazy(() =>
+  import("@/routes/_authenticated/_game/settings").then((m) => ({ default: m.SettingsPage })),
+);
 const BusinessInvestmentApp = lazy(() =>
   import("@/components/game/BusinessInvestmentApp").then((m) => ({
     default: m.BusinessInvestmentApp,
@@ -64,6 +93,7 @@ const CommunityPhoneApps = lazy(() =>
     default: m.CommunityPhoneApps,
   })),
 );
+const PhoneCommunityServices = lazy(() => import("@/components/game/phone/PhoneCommunityServices"));
 
 type PhoneAppDefinition = {
   label: string;
@@ -72,46 +102,76 @@ type PhoneAppDefinition = {
 };
 
 const PHONE_APPS: readonly PhoneAppDefinition[] = [
-  { label: "Messages", icon: MessagesSquare, tone: "phone-app-coral" },
-  { label: "Market", icon: Store, tone: "phone-app-coral" },
-  { label: "Housing", icon: HousePlus, tone: "phone-app-green" },
-  { label: "Party Life", icon: PartyPopper, tone: "phone-app-coral" },
-  { label: "Career Life", icon: GraduationCap, tone: "phone-app-blue" },
   { label: "Map", icon: MapPinned, tone: "phone-app-blue" },
-  { label: "Bank", icon: Landmark, tone: "phone-app-blue" },
+  { label: "Messages", icon: MessagesSquare, tone: "phone-app-coral" },
+  { label: "Rent homes", icon: HousePlus, tone: "phone-app-green" },
   { label: "Jobs", icon: BriefcaseBusiness, tone: "phone-app-gold" },
-  { label: "Property", icon: HousePlus, tone: "phone-app-green" },
-  { label: "Find homes", icon: Building2, tone: "phone-app-green" },
-  { label: "Party", icon: PartyPopper, tone: "phone-app-coral" },
-  { label: "Education", icon: GraduationCap, tone: "phone-app-blue" },
-  { label: "Invest", icon: ChartNoAxesCombined, tone: "phone-app-gold" },
-  { label: "Company", icon: Building2, tone: "phone-app-green" },
-  { label: "Billboards", icon: PanelsTopLeft, tone: "phone-app-gold" },
+  { label: "Bank", icon: Landmark, tone: "phone-app-blue" },
   { label: "Missions", icon: Target, tone: "phone-app-gold" },
-  { label: "Notifications", icon: Bell, tone: "phone-app-gold" },
-  { label: "Settings", icon: Settings, tone: "phone-app-muted" },
-  { label: "Calendar", icon: CalendarDays, tone: "phone-app-blue" },
-  { label: "Food Delivery", icon: UtensilsCrossed, tone: "phone-app-coral" },
-  { label: "Okada Rides", icon: Bike, tone: "phone-app-green" },
-  { label: "Contribution", icon: HandCoins, tone: "phone-app-gold" },
-  { label: "Leaderboard", icon: Trophy, tone: "phone-app-gold" },
-  { label: "Town News", icon: Newspaper, tone: "phone-app-blue" },
-  { label: "Courses", icon: BookOpen, tone: "phone-app-blue" },
-  { label: "Market Stalls", icon: Store, tone: "phone-app-green" },
-  { label: "People", icon: UsersRound, tone: "phone-app-coral" },
   { label: "Inventory", icon: Backpack, tone: "phone-app-blue" },
   { label: "Profile", icon: UserRound, tone: "phone-app-muted" },
+  { label: "Property", icon: HousePlus, tone: "phone-app-green" },
+  { label: "Find homes", icon: Building2, tone: "phone-app-green" },
+  { label: "Market", icon: Store, tone: "phone-app-coral" },
+  { label: "Notifications", icon: Bell, tone: "phone-app-gold" },
+  { label: "Settings", icon: Settings, tone: "phone-app-muted" },
+  { label: "Education", icon: GraduationCap, tone: "phone-app-blue" },
+  { label: "Party", icon: PartyPopper, tone: "phone-app-coral" },
+  { label: "Food Delivery", icon: UtensilsCrossed, tone: "phone-app-coral" },
+  { label: "Okada Rides", icon: Bike, tone: "phone-app-green" },
+  { label: "Calendar", icon: CalendarDays, tone: "phone-app-blue" },
+  { label: "Town News", icon: Newspaper, tone: "phone-app-blue" },
+  { label: "Leaderboard", icon: Trophy, tone: "phone-app-gold" },
+  { label: "Contribution", icon: HandCoins, tone: "phone-app-gold" },
   { label: "Businesses", icon: Building2, tone: "phone-app-green" },
+  { label: "Invest", icon: ChartNoAxesCombined, tone: "phone-app-gold" },
+  { label: "Billboards", icon: PanelsTopLeft, tone: "phone-app-gold" },
 ] as const;
 
-const COMMUNITY_APPS = new Set<CommunityPhoneApp>([
-  "Calendar",
-  "Food Delivery",
-  "Okada Rides",
-  "Contribution",
-  "Leaderboard",
-  "Town News",
-]);
+const COMMUNITY_APPS = new Set<CommunityPhoneApp>(["Leaderboard", "Town News"]);
+
+const PHONE_APP_PATHS: Record<string, string> = {
+  "/rentals": "Rent homes",
+  "/property": "Property",
+  "/properties": "Find homes",
+  "/jobs": "Jobs",
+  "/education": "Education",
+  "/map": "Map",
+  "/wallet": "Bank",
+  "/market": "Market",
+  "/party": "Party",
+  "/profile": "Profile",
+  "/inventory": "Inventory",
+  "/social": "Messages",
+  "/missions": "Missions",
+  "/notifications": "Notifications",
+  "/settings": "Settings",
+  "/businesses": "Businesses",
+};
+
+class PhoneAppBoundary extends Component<
+  { appName: string; onHome: () => void; children: ReactNode },
+  { failed: boolean }
+> {
+  override state = { failed: false };
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  override render() {
+    if (!this.state.failed) return this.props.children;
+    return (
+      <div className="phone-app-recovery" role="alert">
+        <strong>{this.props.appName} could not open here.</strong>
+        <p>Return to the launcher and try opening the app again.</p>
+        <div>
+          <button type="button" onClick={this.props.onHome}>
+            Back to apps
+          </button>
+        </div>
+      </div>
+    );
+  }
+}
 
 function PhoneAppLoadingSpinner({ title }: { title: string }) {
   return (
@@ -136,11 +196,15 @@ export function PhoneLauncher({
   onOpenChange?: (open: boolean) => void;
 }) {
   const [activeApp, setActiveApp] = useState<string | null>(null);
-  const [openedApps, setOpenedApps] = useState<Set<string>>(new Set());
   const [dialogOpen, setDialogOpen] = useState(false);
   const [messagePlayerId, setMessagePlayerId] = useState<string | undefined>();
 
-  const { data: missions } = useQuery(q.missions());
+  const {
+    data: missions,
+    isLoading: missionsLoading,
+    isError: missionsError,
+    refetch: refetchMissions,
+  } = useQuery(q.missions());
   const claimMission = useGameAction(rpc.claimMission);
   const { data: notifications } = useQuery(q.notifications());
   const markRead = useGameAction(rpc.markRead);
@@ -174,11 +238,12 @@ export function PhoneLauncher({
     : "--:--";
 
   const openApp = (appName: string) => {
-    setOpenedApps((prev) => new Set(prev).add(appName));
+    playGameSound("ui");
     setActiveApp(appName);
   };
 
   const returnHome = () => {
+    playGameSound("ui");
     setActiveApp(null);
   };
 
@@ -200,7 +265,7 @@ export function PhoneLauncher({
     touchStartY.current = null;
   };
 
-  // Renders the full view for each supported app
+  // Render each supported app within the phone dialog.
   const renderAppContent = (appName: string) => {
     if (appName === "Shortcuts") {
       return (
@@ -222,21 +287,24 @@ export function PhoneLauncher({
       );
     }
 
+    if (appName === "People") return <PlayerSocial initialTab="players" phoneMode />;
+    if (appName === "Profile") return <ProfilePage />;
+    if (appName === "Inventory") return <InventoryPage />;
+
     if (appName === "Market" || appName === "Market Stalls") {
       return <PhoneMarketApp />;
     }
 
-    if (appName === "Housing" || appName === "Property" || appName === "Find homes") {
-      return <PhoneHousingApp />;
-    }
+    if (appName === "Find homes") return <PropertiesPage />;
+    if (appName === "Property") return <PropertyPage />;
+    if (appName === "Rent homes" || appName === "Housing") return <RentalsPage />;
 
     if (appName === "Party Life" || appName === "Party") {
       return <PhonePartyApp />;
     }
 
-    if (appName === "Career Life" || appName === "Education" || appName === "Courses") {
-      return <PhoneCareerApp />;
-    }
+    if (appName === "Career Life" || appName === "Education" || appName === "Courses")
+      return <EducationPage phoneMode />;
 
     if (appName === "Map") {
       return <PhoneMapApp />;
@@ -246,9 +314,7 @@ export function PhoneLauncher({
       return <PhoneBankApp />;
     }
 
-    if (appName === "Jobs") {
-      return <PhoneJobsApp />;
-    }
+    if (appName === "Jobs") return <JobsPage />;
 
     if (appName === "Invest" || appName === "Company" || appName === "Businesses") {
       return <BusinessInvestmentApp mode={appName === "Invest" ? "invest" : "company"} />;
@@ -262,6 +328,15 @@ export function PhoneLauncher({
       return <CommunityPhoneApps app={appName as CommunityPhoneApp} />;
     }
 
+    if (
+      appName === "Calendar" ||
+      appName === "Food Delivery" ||
+      appName === "Okada Rides" ||
+      appName === "Contribution"
+    ) {
+      return <PhoneCommunityServices app={appName} />;
+    }
+
     if (appName === "Missions") {
       return (
         <div className="phone-sub-app p-3 space-y-3">
@@ -270,7 +345,22 @@ export function PhoneLauncher({
             <p className="text-xs text-muted-foreground mb-3">
               Complete goals around town and collect in-game cash and XP.
             </p>
-            {missions && missions.length > 0 ? (
+            {missionsLoading ? (
+              <p className="text-xs text-muted-foreground py-4 text-center" role="status">
+                Loading missions...
+              </p>
+            ) : missionsError ? (
+              <div role="alert" className="text-xs text-muted-foreground py-4 text-center">
+                <p>Could not load missions.</p>
+                <button
+                  type="button"
+                  className="mt-2 font-bold text-primary"
+                  onClick={() => void refetchMissions()}
+                >
+                  Try again
+                </button>
+              </div>
+            ) : missions && missions.length > 0 ? (
               <div className="space-y-2">
                 {missions.map((m) => (
                   <div
@@ -286,7 +376,11 @@ export function PhoneLauncher({
                             : "bg-amber-500/20 text-amber-600"
                         }`}
                       >
-                        {m.status === "completed" ? "Completed" : "In Progress"}
+                        {m.status === "completed"
+                          ? "Ready to claim"
+                          : m.status === "claimed"
+                            ? "Claimed"
+                            : "In progress"}
                       </span>
                     </div>
                     <p className="text-[11px] text-muted-foreground">{m.mission?.description}</p>
@@ -353,27 +447,7 @@ export function PhoneLauncher({
       );
     }
 
-    if (appName === "Settings") {
-      return (
-        <div className="phone-sub-app p-3 space-y-3">
-          <div className="phone-card p-3 space-y-3">
-            <h4 className="font-bold text-sm border-b border-border/40 pb-2">Device Preferences</h4>
-            <div className="flex items-center justify-between text-xs py-1">
-              <span>Haptic Feedback</span>
-              <span className="font-bold text-emerald-600">Enabled</span>
-            </div>
-            <div className="flex items-center justify-between text-xs py-1">
-              <span>Network Carrier</span>
-              <span className="font-bold">OSUN WAT 4G</span>
-            </div>
-            <div className="flex items-center justify-between text-xs py-1">
-              <span>Timezone</span>
-              <span className="font-bold">Africa/Lagos (WAT)</span>
-            </div>
-          </div>
-        </div>
-      );
-    }
+    if (appName === "Settings") return <SettingsPage />;
 
     // Fallback coming soon for any unbuilt or auxiliary app
     const appDef = PHONE_APPS.find((a) => a.label === appName);
@@ -408,118 +482,150 @@ export function PhoneLauncher({
           </button>
         )}
       </DialogTrigger>
-      <DialogContent className="phone-dialog">
-        <DialogTitle className="sr-only">In-game phone</DialogTitle>
-        <div className="phone-screen">
-          {/* Status Bar */}
-          <div className="phone-status">
-            <span className="phone-status-time">{phoneTime}</span>
-            <span className="phone-status-brand">OSUN WAT</span>
-            <span className="phone-status-indicators" aria-label="Game phone status">
-              <span className="phone-signal" aria-hidden="true">
-                <i />
-                <i />
-                <i />
-              </span>
-              <span className="phone-battery" aria-hidden="true">
-                <i />
-              </span>
-            </span>
-          </div>
-
-          {/* Launcher Home Grid: visible when activeApp is null */}
-          <div className="phone-app-grid" style={{ display: activeApp === null ? "grid" : "none" }}>
-            {shortcutEditor && (
-              <button
-                type="button"
-                className="phone-app"
-                onClick={() => openApp("Shortcuts")}
-                aria-label="Open Shortcuts"
-              >
-                <span className="phone-app-icon phone-app-muted">
-                  <SlidersHorizontal className="h-5 w-5" aria-hidden="true" />
+      <DialogPortal>
+        <DialogOverlay />
+        <DialogPrimitive.Content
+          className="phone-dialog"
+          style={{ zIndex: "var(--game-dialog-layer)" }}
+        >
+          <DialogTitle className="sr-only">In-game phone</DialogTitle>
+          <div className="phone-screen">
+            {/* Status Bar */}
+            <div className="phone-status">
+              <span className="phone-status-time">{phoneTime}</span>
+              <span className="phone-status-brand">OSUN WAT</span>
+              <span className="phone-status-indicators" aria-label="Game phone status">
+                <span className="phone-signal" aria-hidden="true">
+                  <i />
+                  <i />
+                  <i />
                 </span>
-                <span>Shortcuts</span>
-              </button>
-            )}
+                <span className="phone-battery" aria-hidden="true">
+                  <i />
+                </span>
+              </span>
+            </div>
 
-            {PHONE_APPS.map((app) => {
-              const Icon = app.icon;
-              const badge =
-                app.label === "Missions" && missionCount > 0
-                  ? missionCount > 9
-                    ? "9+"
-                    : missionCount
-                  : null;
-
-              return (
+            {/* Launcher Home Grid: visible when activeApp is null */}
+            <div
+              className="phone-app-grid"
+              style={{ display: activeApp === null ? "grid" : "none" }}
+            >
+              {shortcutEditor && (
                 <button
                   type="button"
                   className="phone-app"
-                  key={app.label}
-                  onClick={() => openApp(app.label)}
-                  aria-label={`Open ${app.label}`}
+                  onClick={() => openApp("Shortcuts")}
+                  aria-label="Open Shortcuts"
                 >
-                  <span className={cn("phone-app-icon", app.tone)}>
-                    <Icon className="h-5 w-5" aria-hidden="true" />
-                    {badge ? (
-                      <i className="phone-app-badge" aria-label={`${badge} active notifications`}>
-                        {badge}
-                      </i>
-                    ) : null}
+                  <span className="phone-app-icon phone-app-muted">
+                    <SlidersHorizontal className="h-5 w-5" aria-hidden="true" />
                   </span>
-                  <span>{app.label}</span>
+                  <span>Shortcuts</span>
                 </button>
-              );
-            })}
-          </div>
+              )}
 
-          {/* Opened Apps: retain state when navigating back and forth */}
-          {Array.from(openedApps).map((appName) => {
-            const isVisible = activeApp === appName;
-            return (
-              <div
-                key={appName}
-                className="phone-app-view"
-                style={{ display: isVisible ? "flex" : "none" }}
-              >
-                <div className="phone-app-toolbar">
+              {PHONE_APPS.map((app) => {
+                const Icon = app.icon;
+                const badge =
+                  app.label === "Missions" && missionCount > 0
+                    ? missionCount > 9
+                      ? "9+"
+                      : missionCount
+                    : null;
+
+                return (
                   <button
                     type="button"
-                    onClick={returnHome}
-                    className="phone-back-button"
-                    aria-label="Back to apps"
+                    className="phone-app"
+                    key={app.label}
+                    onClick={() => openApp(app.label)}
+                    aria-label={`Open ${app.label}`}
                   >
-                    <ChevronLeft size={18} aria-hidden="true" />
-                    <span>Apps</span>
+                    <span className={cn("phone-app-icon", app.tone)}>
+                      <Icon className="h-5 w-5" aria-hidden="true" />
+                      {badge ? (
+                        <i className="phone-app-badge" aria-label={`${badge} active notifications`}>
+                          {badge}
+                        </i>
+                      ) : null}
+                    </span>
+                    <span>{app.label}</span>
                   </button>
-                  <strong>{appName}</strong>
-                  <div className="w-8" aria-hidden="true" />
-                </div>
-                <div className="phone-app-body">
-                  <Suspense fallback={<PhoneAppLoadingSpinner title={appName} />}>
-                    {renderAppContent(appName)}
-                  </Suspense>
-                </div>
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
 
-          {/* Home indicator bar button with swipe-up support */}
-          <button
-            type="button"
-            className="phone-home-bar-button"
-            onClick={returnHome}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-            aria-label="Return to phone apps"
-            title="Home"
-          >
-            <span className="phone-home-indicator" aria-hidden="true" />
-          </button>
-        </div>
-      </DialogContent>
+            {/* Opened Apps: retain state when navigating back and forth */}
+            {activeApp &&
+              (() => {
+                const appName = activeApp;
+                return (
+                  <div key={appName} className="phone-app-view">
+                    <div className="phone-app-toolbar">
+                      <button
+                        type="button"
+                        onClick={returnHome}
+                        className="phone-back-button"
+                        aria-label="Back to apps"
+                      >
+                        <ChevronLeft size={18} aria-hidden="true" />
+                        <span>Apps</span>
+                      </button>
+                      <strong>{appName}</strong>
+                      <div className="w-8" aria-hidden="true" />
+                    </div>
+                    <div
+                      className="phone-app-body"
+                      onClickCapture={(event) => {
+                        const anchor =
+                          event.target instanceof Element ? event.target.closest("a[href]") : null;
+                        if (
+                          anchor instanceof HTMLAnchorElement &&
+                          anchor.origin === window.location.origin
+                        ) {
+                          const nextApp = PHONE_APP_PATHS[anchor.pathname];
+                          if (nextApp) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            openApp(nextApp);
+                            return;
+                          }
+                          setDialogOpen(false);
+                          setActiveApp(null);
+                          onOpenChange?.(false);
+                        }
+                      }}
+                    >
+                      <PhoneAppBoundary key={appName} appName={appName} onHome={returnHome}>
+                        <Suspense fallback={<PhoneAppLoadingSpinner title={appName} />}>
+                          {renderAppContent(appName)}
+                        </Suspense>
+                      </PhoneAppBoundary>
+                    </div>
+                  </div>
+                );
+              })()}
+
+            {/* Home indicator bar button with swipe-up support */}
+            <button
+              type="button"
+              className="phone-home-bar-button"
+              onClick={returnHome}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              aria-label="Return to phone apps"
+              title="Home"
+            >
+              <span className="phone-home-indicator" aria-hidden="true" />
+            </button>
+          </div>
+          <DialogClose type="button" aria-label="Close in-game phone">
+            <X size={18} aria-hidden="true" />
+          </DialogClose>
+        </DialogPrimitive.Content>
+      </DialogPortal>
     </Dialog>
   );
 }

@@ -70,6 +70,13 @@
   color: var(--primary-foreground);
   cursor: pointer;
 }
+.house-presence-actions {
+  margin: 0.7rem 0 1rem;
+}
+.house-presence-actions .house-primary-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
 .house-status-banner,
 .house-rent-banner,
 .house-error-banner {
@@ -108,7 +115,133 @@
   box-shadow: var(--elevation-card);
 }
 .house-room-card {
+  position: relative;
   padding: 0.65rem;
+}
+.house-room-card.is-sleeping::after {
+  position: absolute;
+  inset: 0.65rem;
+  border-radius: calc(var(--shape-card, 20px) - 6px);
+  background: linear-gradient(
+    180deg,
+    rgba(25, 43, 73, 0.2),
+    transparent 48%,
+    rgba(27, 34, 54, 0.28)
+  );
+  content: "";
+  pointer-events: none;
+}
+.house-sleep-overlay {
+  position: absolute;
+  z-index: 2;
+  inset: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  pointer-events: none;
+}
+.house-sleep-status,
+.house-sleep-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  pointer-events: none;
+}
+.house-sleep-status {
+  align-self: flex-start;
+  max-width: 100%;
+  padding: 0.4rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--foreground);
+  background: var(--card);
+  box-shadow: var(--elevation-card);
+}
+.house-sleep-symbol {
+  display: grid;
+  width: 2.7rem;
+  height: 2.7rem;
+  flex: none;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 12%, var(--card));
+}
+.house-sleep-status strong,
+.house-sleep-status small {
+  display: block;
+}
+.house-sleep-status strong {
+  font-size: 0.9rem;
+}
+.house-sleep-status small {
+  color: var(--muted-foreground);
+  font-size: 0.7rem;
+}
+.house-sleep-status button,
+.house-sleep-footer button {
+  min-height: 44px;
+  border-radius: 999px;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 750;
+  pointer-events: auto;
+}
+.house-sleep-status button {
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  background: var(--background);
+}
+.house-sleep-footer {
+  justify-content: flex-end;
+}
+.house-sleep-footer progress {
+  width: min(140px, 30vw);
+  height: 0.55rem;
+  overflow: hidden;
+  border: 0;
+  border-radius: 999px;
+  color: var(--primary);
+  background: var(--card);
+}
+.house-sleep-footer progress::-webkit-progress-bar {
+  background: var(--card);
+}
+.house-sleep-footer progress::-webkit-progress-value {
+  background: var(--primary);
+}
+.house-sleep-footer button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border: 1px solid var(--primary);
+  color: var(--primary-foreground);
+  background: var(--primary);
+  box-shadow: var(--elevation-card);
+}
+.house-sleep-overlay button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.house-sleep-overlay button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+@media (max-width: 480px) {
+  .house-sleep-overlay {
+    inset: 0.9rem;
+  }
+  .house-sleep-status {
+    gap: 0.4rem;
+  }
+  .house-sleep-status small {
+    max-width: 16ch;
+    line-height: 1.15;
+  }
+  .house-sleep-footer progress {
+    width: min(100px, 25vw);
+  }
 }
 .house-rent-summary {
   display: grid;
@@ -149,8 +282,31 @@
   height: clamp(280px, 48vw, 560px);
   overflow: hidden;
   border-radius: calc(var(--shape-card, 20px) - 6px);
-  background: #f2eadc;
+  background: #d7e8e5;
   touch-action: none;
+}
+.house-playcanvas-scene > canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+.house-playcanvas-label {
+  position: absolute;
+  transform: translate(-50%, -50%);
+}
+.house-renderer-unavailable {
+  overflow: auto;
+  padding: 1rem;
+}
+.house-renderer-unavailable button {
+  min-height: 44px;
+  margin: 0.25rem;
+  padding: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card, 20px);
+  background: var(--card);
+  color: var(--foreground);
 }
 .house-3d-loading {
   position: absolute;
@@ -164,17 +320,40 @@
   font-size: 0.76rem;
   font-weight: 700;
 }
+.house-3d-arrange-hint {
+  position: absolute;
+  right: 0.7rem;
+  bottom: 0.7rem;
+  left: 0.7rem;
+  z-index: 1;
+  width: fit-content;
+  max-width: calc(100% - 1.4rem);
+  padding: 0.42rem 0.7rem;
+  border-radius: 999px;
+  color: var(--foreground);
+  background: var(--card);
+  box-shadow: var(--elevation-card);
+  font-size: 0.74rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+.house-move-options {
+  display: grid;
+  gap: 0.45rem;
+  margin-block: 0.8rem;
+}
 .house-3d-slot-label {
-  max-width: 120px;
+  width: 34px;
+  max-width: 34px;
   min-height: 32px;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--card);
   color: var(--foreground);
-  padding: 0.3rem 0.55rem;
-  font-size: 0.7rem;
+  padding: 0.2rem;
+  font-size: 0.9rem;
   font-weight: 700;
-  white-space: normal;
+  white-space: nowrap;
   cursor: pointer;
 }
 .house-3d-slot-label:focus-visible,
@@ -781,4 +960,120 @@
 .house-secondary-button:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
+}
+
+/* Full-screen house: only the 3D room, edge to edge, fitted to the viewport without page scrolling. */
+.house-page.house-page-fill {
+  position: relative;
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.house-page.house-page-fill .house-room-card {
+  height: 100%;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.house-page.house-page-fill .house-3d-scene {
+  height: 100%;
+  min-height: 0;
+  border-radius: 24px;
+}
+.house-page.house-page-fill .house-edit-toggle {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 2;
+}
+.house-page.house-page-fill .house-edit-panel {
+  position: fixed;
+  z-index: 80;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  left: max(12px, env(safe-area-inset-left));
+  width: auto;
+  max-width: 640px;
+  max-height: min(68dvh, 640px);
+  margin: 0 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-radius: 22px;
+  box-shadow: 0 16px 48px rgb(22 32 24 / 28%);
+}
+.house-sheet-handle {
+  display: block;
+  width: 38px;
+  height: 4px;
+  margin: -3px auto 12px;
+  border-radius: 999px;
+  background: var(--border);
+}
+.house-room-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 0 10px;
+  scrollbar-width: none;
+}
+.house-room-tabs button {
+  flex: 0 0 auto;
+  min-height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--background);
+  color: var(--foreground);
+  padding: 0 13px;
+  font-weight: 700;
+}
+.house-room-tabs button[aria-selected="true"] {
+  border-color: var(--primary);
+  background: var(--accent);
+  color: var(--primary);
+}
+.house-carousel-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.house-carousel-controls button {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--background);
+  color: var(--foreground);
+}
+.house-carousel-controls button:disabled {
+  opacity: 0.4;
+}
+.house-room-slide {
+  touch-action: pan-y;
+}
+.house-owned-badge {
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--primary);
+  padding: 0.35rem 0.55rem;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+@media (max-width: 540px) {
+  .house-page.house-page-fill .house-edit-panel {
+    right: 0;
+    bottom: 0;
+    left: 0;
+    max-height: min(65dvh, 620px);
+    padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+    border-radius: 22px 22px 0 0;
+  }
 }

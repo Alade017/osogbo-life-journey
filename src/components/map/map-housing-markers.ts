@@ -1,4 +1,12 @@
 import type { MapProperty } from "./MapCanvas";
+import town from "@/data/osogbo-town.json";
+import { mapTownGridToScene } from "@/lib/town-grid";
+
+const grid = {
+  columns: town.grid.rows[0]!.length,
+  rows: town.grid.rows.length,
+  cellSize: town.grid.cellSize,
+};
 
 const models = new Set<MapProperty["type"]>(["compound", "flat", "shophouse"]);
 const statuses = new Set<MapProperty["status"]>([
@@ -26,7 +34,8 @@ export function mapHousingMarkers(value: unknown): MapProperty[] {
       return [];
     const x = row["gridX"] as number;
     const z = row["gridZ"] as number;
-    if (x < 0 || x > 13 || z < 0 || z > 9) return [];
+    if (x < 0 || x >= grid.columns || z < 0 || z >= grid.rows) return [];
+    const point = mapTownGridToScene({ ...grid, cells: [{ x, z, kind: "plot" }] })[0]!;
     return [
       {
         id: row["propertyId"],
@@ -34,7 +43,7 @@ export function mapHousingMarkers(value: unknown): MapProperty[] {
         type: row["model"] as MapProperty["type"],
         status: row["status"] as MapProperty["status"],
         tier: row["tier"] as MapProperty["tier"],
-        position: [(x - 6.5) * 2, 0, (z - 4.5) * 2] as [number, number, number],
+        position: [point.x, 0, point.z] as [number, number, number],
       },
     ];
   });

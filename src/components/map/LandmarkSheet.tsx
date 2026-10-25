@@ -1,9 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { createPortal } from "react-dom";
 import { BadgeCheck, MapPin, X } from "lucide-react";
-import { formatMapNaira } from "@/components/map/map-ui-utils";
+import { formatMapNaira, formatMapEventEnd } from "@/components/map/map-ui-utils";
 import { MapApiError, requestMapLandmark } from "@/lib/map-api";
 import { careerShiftPay } from "@/lib/economy-service";
+import { isCareerJob } from "@/lib/career-rules";
 import { PlaceActionMenu, type PlaceActionResult } from "@/components/map/PlaceActionMenu";
 import type { MapPlaceAction } from "@/components/map/OsogboMap.svg";
 
@@ -21,6 +22,7 @@ export function LandmarkSheet({
   actionPending,
   actionResult,
   locationName,
+  event,
 }: {
   landmark: {
     id: string;
@@ -41,6 +43,7 @@ export function LandmarkSheet({
   actionPending: boolean;
   actionResult?: PlaceActionResult | null;
   locationName: string;
+  event?: { label: string; endsAt: string } | null;
 }) {
   const detailsQuery = useQuery({
     queryKey: ["mapLandmarkDetails", landmark.id],
@@ -49,13 +52,15 @@ export function LandmarkSheet({
     retry: false,
   });
   const restricted =
-    (detailsQuery.error instanceof MapApiError && detailsQuery.error.code === "AGE_RESTRICTED") ||
-    (detailsQuery.data?.landmark.min_age ?? 0) >= 18;
+    detailsQuery.error instanceof MapApiError && detailsQuery.error.code === "AGE_RESTRICTED";
   const detailError =
     detailsQuery.error instanceof MapApiError && detailsQuery.error.code !== "AGE_RESTRICTED"
       ? detailsQuery.error.code
       : undefined;
   const canAct = !!detailsQuery.data && !offline && !pending;
+  const isHere =
+    !!detailsQuery.data &&
+    detailsQuery.data.landmark.player_location_id === detailsQuery.data.landmark.location_id;
 
   if (typeof document === "undefined") return null;
 
@@ -79,10 +84,16 @@ export function LandmarkSheet({
         </button>
       </header>
       <p>{detailsQuery.data?.landmark.description ?? description}</p>
+      {event && (
+        <p className="map-here-note">
+          {event.label} · Until {formatMapEventEnd(event.endsAt)}
+        </p>
+      )}
       <p className="map-location-line">
         <MapPin size={15} aria-hidden="true" /> Located in {locationName}
       </p>
-      {restricted && (
+      {isHere && <p className="map-here-note">You are here</p>}
+      {(restricted || (detailsQuery.data?.landmark.min_age ?? 0) >= 18) && (
         <p className="map-age-badge">
           <BadgeCheck size={15} /> 18+
         </p>
@@ -100,14 +111,15 @@ export function LandmarkSheet({
       ) : (
         <>
           <PlaceActionMenu
-            actions={landmark.actions ?? []}
+            actions={detailsQuery.data?.actions ?? []}
             offline={offline}
             pending={actionPending}
+            isHere={isHere}
             result={actionResult}
             onRun={onRunPlaceAction}
           />
           <section>
-            <h3>Activities</h3>
+            <h3>Other activities</h3>
             {detailsQuery.data?.activities.length ? (
               <ul className="map-sheet-list">
                 {detailsQuery.data.activities.map((activity) => (
@@ -130,8 +142,14 @@ export function LandmarkSheet({
                     <span>
                       {job.name}
                       <small>
-                        {formatMapNaira(careerShiftPay(job.salary, 1))}–
-                        {formatMapNaira(careerShiftPay(job.salary, 3))} per shift
+                        {isCareerJob(job.slug) ? (
+                          <>Career path · three ranks · see Jobs for pay</>
+                        ) : (
+                          <>
+                            {formatMapNaira(careerShiftPay(job.salary, 1))}–
+                            {formatMapNaira(careerShiftPay(job.salary, 3))} per shift
+                          </>
+                        )}
                       </small>
                     </span>
                     <button disabled={!canAct} onClick={() => onApply(job.id)}>
@@ -154,17 +172,20 @@ export function LandmarkSheet({
       <footer className="map-sheet-actions">
         <button
           className="map-primary-button"
-          disabled={!canAct || restricted}
+          disabled={!canAct || restricted || isHere}
+          aria-disabled={isHere || undefined}
           onClick={() => onTravel(landmark.id)}
         >
           <MapPin size={17} />
           {offline
             ? "Reconnect to travel"
-            : restricted
-              ? "This place is for players 18 and over."
-              : pending
-                ? "Requesting route…"
-                : "Travel here"}
+            : isHere
+              ? "You are here"
+              : restricted
+                ? "This place is for players 18 and over."
+                : pending
+                  ? "Requesting route…"
+                  : "Travel here"}
         </button>
         {travelResult && (
           <p role="status">

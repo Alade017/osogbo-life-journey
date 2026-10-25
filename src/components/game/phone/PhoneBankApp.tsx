@@ -1,6 +1,14 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Landmark, ArrowDownLeft, ArrowUpRight, Wallet, History, Check, DollarSign } from "lucide-react";
+import {
+  Landmark,
+  ArrowDownLeft,
+  ArrowUpRight,
+  Wallet,
+  History,
+  Check,
+  DollarSign,
+} from "lucide-react";
 import { toast } from "sonner";
 import { formatNaira, q, rpc, useGameAction } from "@/lib/game";
 import { amountError } from "@/lib/economy-service";
@@ -113,11 +121,15 @@ export function PhoneBankApp() {
               <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/10 text-xs">
                 <div>
                   <span className="opacity-70 block text-[11px]">Bank Savings</span>
-                  <strong className="text-sm font-bold text-emerald-400">{formatNaira(bankBalance)}</strong>
+                  <strong className="text-sm font-bold text-emerald-400">
+                    {formatNaira(bankBalance)}
+                  </strong>
                 </div>
                 <div>
                   <span className="opacity-70 block text-[11px]">Pocket Cash</span>
-                  <strong className="text-sm font-bold text-amber-300">{formatNaira(cashBalance)}</strong>
+                  <strong className="text-sm font-bold text-amber-300">
+                    {formatNaira(cashBalance)}
+                  </strong>
                 </div>
               </div>
             </div>
@@ -132,7 +144,9 @@ export function PhoneBankApp() {
                 <span className="flex items-center gap-1.5 font-bold text-xs text-primary">
                   <ArrowDownLeft className="h-4 w-4" /> Deposit Cash
                 </span>
-                <p className="text-[11px] text-muted-foreground">Save cash safely in your bank account</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Save cash safely in your bank account
+                </p>
               </button>
 
               <button
@@ -143,14 +157,18 @@ export function PhoneBankApp() {
                 <span className="flex items-center gap-1.5 font-bold text-xs text-primary">
                   <ArrowUpRight className="h-4 w-4" /> Withdraw Cash
                 </span>
-                <p className="text-[11px] text-muted-foreground">Get pocket money for market shopping</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Get pocket money for market shopping
+                </p>
               </button>
             </div>
 
             {/* Recent Mini Statement */}
             <div className="phone-card p-3 space-y-2">
               <div className="flex items-center justify-between">
-                <h4 className="font-bold text-xs uppercase tracking-wider text-muted-foreground">Recent Transactions</h4>
+                <h4 className="font-bold text-xs uppercase tracking-wider text-muted-foreground">
+                  Recent Transactions
+                </h4>
                 <button
                   type="button"
                   onClick={() => setTab("history")}
@@ -163,21 +181,33 @@ export function PhoneBankApp() {
               {txs && txs.length > 0 ? (
                 <div className="space-y-2">
                   {txs.slice(0, 4).map((tx) => (
-                    <div key={tx.id} className="flex items-center justify-between text-xs py-1 border-b border-border/30 last:border-0">
+                    <div
+                      key={tx.id}
+                      className="flex items-center justify-between text-xs py-1 border-b border-border/30 last:border-0"
+                    >
                       <div>
-                        <span className="font-semibold block truncate max-w-[180px]">{tx.description || tx.type}</span>
+                        <span className="font-semibold block truncate max-w-[180px]">
+                          {tx.description || tx.kind}
+                        </span>
                         <small className="text-[10px] text-muted-foreground">
-                          {new Date(tx.created_at).toLocaleDateString("en-NG", { hour: "2-digit", minute: "2-digit" })}
+                          {new Date(tx.created_at).toLocaleDateString("en-NG", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </small>
                       </div>
-                      <span className={`font-bold ${tx.amount > 0 ? "text-emerald-600" : "text-foreground"}`}>
+                      <span
+                        className={`font-bold ${tx.amount > 0 ? "text-emerald-600" : "text-foreground"}`}
+                      >
                         {tx.amount > 0 ? `+${formatNaira(tx.amount)}` : formatNaira(tx.amount)}
                       </span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-xs text-muted-foreground py-2 text-center">No transactions recorded yet.</p>
+                <p className="text-xs text-muted-foreground py-2 text-center">
+                  No transactions recorded yet.
+                </p>
               )}
             </div>
           </div>
@@ -187,7 +217,8 @@ export function PhoneBankApp() {
               <div>
                 <h4 className="font-bold text-sm">Deposit Cash to Bank</h4>
                 <p className="text-xs text-muted-foreground">
-                  Pocket Cash Available: <strong className="text-foreground">{formatNaira(cashBalance)}</strong>
+                  Pocket Cash Available:{" "}
+                  <strong className="text-foreground">{formatNaira(cashBalance)}</strong>
                 </p>
               </div>
 
@@ -233,7 +264,9 @@ export function PhoneBankApp() {
                 onClick={handleDeposit}
                 className="w-full py-2.5 rounded-xl font-bold text-sm bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-40 transition-all mt-2"
               >
-                {deposit.isPending ? "Depositing..." : `Deposit ${amount ? formatNaira(numAmount) : "Funds"}`}
+                {deposit.isPending
+                  ? "Depositing..."
+                  : `Deposit ${amount ? formatNaira(numAmount) : "Funds"}`}
               </button>
             </div>
           </div>
@@ -243,7 +276,8 @@ export function PhoneBankApp() {
               <div>
                 <h4 className="font-bold text-sm">Withdraw Cash to Pocket</h4>
                 <p className="text-xs text-muted-foreground">
-                  Bank Savings Available: <strong className="text-foreground">{formatNaira(bankBalance)}</strong>
+                  Bank Savings Available:{" "}
+                  <strong className="text-foreground">{formatNaira(bankBalance)}</strong>
                 </p>
               </div>
 
@@ -289,7 +323,9 @@ export function PhoneBankApp() {
                 onClick={handleWithdraw}
                 className="w-full py-2.5 rounded-xl font-bold text-sm bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-40 transition-all mt-2"
               >
-                {withdraw.isPending ? "Withdrawing..." : `Withdraw ${amount ? formatNaira(numAmount) : "Funds"}`}
+                {withdraw.isPending
+                  ? "Withdrawing..."
+                  : `Withdraw ${amount ? formatNaira(numAmount) : "Funds"}`}
               </button>
             </div>
           </div>
@@ -301,9 +337,14 @@ export function PhoneBankApp() {
             {txs && txs.length > 0 ? (
               <div className="space-y-2">
                 {txs.map((tx) => (
-                  <div key={tx.id} className="phone-card flex items-center justify-between p-3 gap-3">
+                  <div
+                    key={tx.id}
+                    className="phone-card flex items-center justify-between p-3 gap-3"
+                  >
                     <div className="min-w-0">
-                      <strong className="text-xs font-bold block truncate">{tx.description || tx.type}</strong>
+                      <strong className="text-xs font-bold block truncate">
+                        {tx.description || tx.kind}
+                      </strong>
                       <span className="text-[10px] text-muted-foreground">
                         {new Date(tx.created_at).toLocaleString("en-NG", {
                           dateStyle: "medium",

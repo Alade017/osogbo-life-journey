@@ -6,8 +6,43 @@ import townData from "@/data/osogbo-town.json";
 import osunPlaces from "@/data/osun-public-places.json";
 import { MapCanvas } from "@/components/map/MapCanvas";
 import { findMapPlaceAction } from "@/lib/map-place-action.server";
+const eventState = vi.hoisted(() => ({
+  events: [] as import("@/lib/city-event-service").CityEventOccurrence[],
+}));
+vi.mock("@/hooks/use-city-events", () => ({
+  useCityEvents: () => ({ data: { events: eventState.events }, isError: false }),
+}));
+
+vi.mock("@/lib/map-api", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/map-api")>()),
+  requestAvailableMapLandmarks: vi.fn(async () => townData.landmarks.map((place) => place.id)),
+}));
+vi.mock("@/lib/game", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/game")>()),
+  q: Object.fromEntries(
+    [
+      "character",
+      "rentStatus",
+      "jobs",
+      "locations",
+      "billboards",
+      "advertisements",
+      "playerAdvertisements",
+    ].map((name) => [
+      name,
+      () => ({
+        queryKey: [name],
+        queryFn: async () => (name === "character" || name === "rentStatus" ? null : []),
+      }),
+    ]),
+  ),
+}));
+vi.mock("@/hooks/use-world-clock", () => ({ useWorldClock: () => ({ data: null }) }));
+
+const clients: QueryClient[] = [];
 
 beforeEach(() => {
+  eventState.events = [];
   class TestResizeObserver {
     constructor(private readonly callback: ResizeObserverCallback) {}
     observe() {
@@ -21,10 +56,18 @@ beforeEach(() => {
   }
   vi.stubGlobal("ResizeObserver", TestResizeObserver);
 });
-afterEach(() => vi.unstubAllGlobals());
+afterEach(() => {
+  vi.unstubAllGlobals();
+  clients.splice(0).forEach((client) => client.clear());
+});
 
 function renderDashboard() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  clients.push(queryClient);
+  queryClient.setQueryData(
+    ["mapAvailableLandmarks"],
+    townData.landmarks.map((place) => place.id),
+  );
   return render(
     <QueryClientProvider client={queryClient}>
       <CityMapDashboard />
@@ -33,7 +76,28 @@ function renderDashboard() {
 }
 
 describe("isometric town map", () => {
-  it("renders the 3D canvas and a keyboard-accessible list when WebGL is unavailable", () => {
+  it("matches a selected venue with its server event landmark ID", async () => {
+    eventState.events = [
+      {
+        occurrenceId: "market-week",
+        id: "market-day",
+        title: "Town Market Day",
+        description: "Meet neighbours.",
+        locationSlug: "town-market",
+        locationName: "Town Market",
+        landmarkId: "town-market",
+        districtId: "market-quarter",
+        startsAt: "2026-10-28T08:00:00Z",
+        endsAt: "2026-10-28T15:00:00Z",
+        status: "active",
+        joined: false,
+      },
+    ];
+    renderDashboard();
+    fireEvent.click(screen.getByRole("button", { name: /Town market,/i }));
+    expect(await screen.findByText(/Town Market Day · Until/)).toBeVisible();
+  });
+  it("renders the 3D canvas and a keyboard-accessible list when WebGL is unavailable", async () => {
     const { container } = renderDashboard();
     expect(
       screen.getByRole("region", { name: /Interactive isometric town map/i }),
@@ -42,16 +106,18 @@ describe("isometric town map", () => {
       screen.getByText("3D requires WebGL. Your browser could not start it."),
     ).toBeInTheDocument();
     expect(screen.getByRole("list", { name: "Places on the map" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Civic court, services/i })).toBeInTheDocument();
+    expect(
+      await screen.findByRole("button", { name: /Civic court, services/i }),
+    ).toBeInTheDocument();
     expect(screen.queryByRole("img", { name: /osogbo map/i })).not.toBeInTheDocument();
     expect(container.querySelector(".town-map-zoom-controls")).not.toBeInTheDocument();
   });
 
   it("defines a compact hand-authored grid and fictional public venues with action definitions", () => {
-    expect(townData.meta.grid).toEqual({ columns: 14, rows: 10, cellSize: 2 });
-    expect(townData.grid.rows).toHaveLength(10);
-    expect(townData.grid.rows.every((row) => row.length === 14)).toBe(true);
-    expect(townData.districts).toHaveLength(8);
+    expect(townData.meta.grid).toEqual({ columns: 24, rows: 18, cellSize: 2 });
+    expect(townData.grid.rows).toHaveLength(18);
+    expect(townData.grid.rows.every((row) => row.length === 24)).toBe(true);
+    expect(townData.districts).toHaveLength(11);
     expect(townData.landmarks.map((place) => place.label)).toEqual(
       expect.arrayContaining([
         "Civic court",
@@ -61,8 +127,17 @@ describe("isometric town map", () => {
         "Lantern Club",
       ]),
     );
-    expect(townData.landmarks.every((place) => place.actions.length >= 2)).toBe(true);
-    expect(townData.landmarks.some((place) => place.category === "worship")).toBe(false);
+    // Expanded venues intentionally have one server-defined activity each.
+    for (const place of townData.landmarks) {
+      expect(place.actions.length).toBeGreaterThan(0);
+      expect(new Set(place.actions.map((action) => action.id)).size).toBe(place.actions.length);
+      for (const action of place.actions) {
+        expect(findMapPlaceAction(place.id, action.id)).not.toBeNull();
+      }
+    }
+    expect(
+      townData.landmarks.filter((place) => place.category === "worship").map((place) => place.id),
+    ).toEqual(["garden-chapel", "mosque-square"]);
     expect(JSON.stringify(townData).toLowerCase()).not.toMatch(/sacred|grove|osun-osogbo/);
     expect(townData.landmarks.find((place) => place.id === "lantern-club")?.min_age).toBe(18);
   });

@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Check, Shirt, Sofa, X } from "lucide-react";
+import { useEffect, useState, type TouchEvent } from "react";
+import { Check, ChevronLeft, ChevronRight, Package, Shirt, Sofa, X } from "lucide-react";
 import { formatNaira } from "@/lib/game";
 import type { HouseInventoryItem, HouseOutfit, HousePlacement, HouseSlot } from "./HouseRoomScene";
 
@@ -19,11 +19,14 @@ type Props = {
   inventory: HouseInventoryItem[];
   catalog: CatalogItem[];
   outfit: HouseOutfit;
+  slots: HouseSlot[];
+  placements: HousePlacement[];
   selectedSlot: HouseSlot | null;
   selectedPlacement: HousePlacement | null;
   onClose: () => void;
   onPlace: (itemId: string, slot: HouseSlot) => void;
   onRemove: (placement: HousePlacement) => void;
+  onMove: (placement: HousePlacement, slot: HouseSlot) => void;
   onEquip: (itemId: string) => void;
   onUnequip: (slot: keyof HouseOutfit) => void;
   onBuy: (itemId: string) => void;
@@ -31,24 +34,40 @@ type Props = {
 
 const outfitSlots: Array<keyof HouseOutfit> = ["head", "top", "bottom", "shoes", "accessory"];
 const itemName = (id: string) => id.replaceAll("-", " ");
+const rooms = [
+  { id: "bathroom", label: "Bathroom", slots: ["bathroom"] },
+  { id: "sitting", label: "Sitting room", slots: ["seat", "device", "table", "decor", "plant"] },
+  { id: "kitchen", label: "Kitchen", slots: ["kitchen"] },
+  { id: "bedroom", label: "Bedroom", slots: ["bed", "storage", "light"] },
+] as const;
 
-function ItemImage({ id }: { id: string }) {
-  if (id === "plant")
+function ItemImage({ item }: { item: CatalogItem }) {
+  const [failed, setFailed] = useState(false);
+  const imageId = {
+    bed: "starter-bed",
+    sofa: "starter-seat",
+    seat: "starter-seat",
+    light: "starter-light",
+    stove: "stove",
+    shower: "shower",
+    toilet: "toilet",
+    television: "television",
+    computer: "computer",
+  }[item.art_key];
+  if (!imageId || failed)
     return (
       <span className="house-shop-image" aria-hidden="true">
-        🪴
+        {item.art_key === "plant" ? "🪴" : <Package size={25} />}
       </span>
     );
-  const imageId =
-    id === "bed"
-      ? "starter-bed"
-      : id.startsWith("sofa")
-        ? "starter-seat"
-        : id === "light"
-          ? "starter-light"
-          : id;
   return (
-    <img className="house-shop-image" src={`/assets/items/${imageId}.webp`} alt="" loading="lazy" />
+    <img
+      className="house-shop-image"
+      src={`/assets/items/${imageId}.webp`}
+      alt=""
+      loading="lazy"
+      onError={() => setFailed(true)}
+    />
   );
 }
 
@@ -60,17 +79,22 @@ export function HouseEditSheets({
   inventory,
   catalog,
   outfit,
+  slots,
+  placements,
   selectedSlot,
   selectedPlacement,
   onClose,
   onPlace,
   onRemove,
+  onMove,
   onEquip,
   onUnequip,
   onBuy,
 }: Props) {
   const [tab, setTab] = useState<"room" | "avatar">("room");
   const [equipmentSlot, setEquipmentSlot] = useState<keyof HouseOutfit>("top");
+  const [roomIndex, setRoomIndex] = useState(0);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
   useEffect(() => setConfirmRemove(false), [selectedPlacement?.id, selectedSlot?.id]);
   if (!open) return null;
@@ -81,11 +105,32 @@ export function HouseEditSheets({
       item.category === "furniture" &&
       item.price_minor > 0 &&
       !ownedIds.has(item.id) &&
+      slots.some((slot) => slot.slot_type === item.slot_type) &&
       (!selectedSlot || item.slot_type === selectedSlot.slot_type),
   );
+  const roomItems = selectedSlot
+    ? availableFurniture
+    : availableFurniture.filter((item) =>
+        (rooms[roomIndex]?.slots as readonly string[]).includes(item.slot_type),
+      );
+  const ownedRoomItems = selectedSlot
+    ? []
+    : inventory.filter(
+        (item) =>
+          item.category === "furniture" &&
+          (rooms[roomIndex]?.slots as readonly string[]).includes(item.slot_type),
+      );
   const ownedForSlot = selectedSlot
     ? inventory.filter(
         (item) => item.category === "furniture" && item.slot_type === selectedSlot.slot_type,
+      )
+    : [];
+  const moveTargets = selectedPlacement
+    ? slots.filter(
+        (slot) =>
+          slot.slot_type === selectedPlacement.slot_type &&
+          slot.id !== selectedPlacement.slot &&
+          !placements.some((placement) => placement.slot === slot.id),
       )
     : [];
   const ownedOutfit = inventory.filter(
@@ -106,7 +151,7 @@ export function HouseEditSheets({
         return (
           <div className="house-inventory-row house-shop-row" key={item.id}>
             {item.category === "furniture" ? (
-              <ItemImage id={item.id} />
+              <ItemImage item={item} />
             ) : (
               <span className="house-shop-image" aria-hidden="true">
                 👕
@@ -135,7 +180,13 @@ export function HouseEditSheets({
     );
 
   return (
-    <section className="house-edit-sheet house-edit-panel" aria-label="Shop and arrange your home">
+    <section
+      className="house-edit-sheet house-edit-panel"
+      role="dialog"
+      aria-modal="false"
+      aria-label="Shop and arrange your home"
+    >
+      <span className="house-sheet-handle" aria-hidden="true" />
       <header className="house-sheet-header">
         <div>
           <p className="house-sheet-eyebrow">Your home</p>
@@ -184,6 +235,26 @@ export function HouseEditSheets({
       {selectedPlacement ? (
         <div className="house-sheet-content">
           <p className="text-sm text-muted-foreground">This item is placed in your room.</p>
+          {moveTargets.length > 0 && (
+            <div className="house-move-options">
+              <h3 className="house-list-title">Move to another spot</h3>
+              <p className="house-empty-copy">
+                Drag the item in the room, or choose an open spot here.
+              </p>
+              {moveTargets.map((slot) => (
+                <button
+                  key={slot.id}
+                  type="button"
+                  className="house-inventory-row"
+                  disabled={offline || pending}
+                  onClick={() => onMove(selectedPlacement, slot)}
+                >
+                  <span>{slot.id.replaceAll("-", " ")}</span>
+                  <span className="house-row-action">Move</span>
+                </button>
+              ))}
+            </div>
+          )}
           {confirmRemove ? (
             <>
               <p className="text-sm">Remove it from this slot? It will return to your inventory.</p>
@@ -248,8 +319,80 @@ export function HouseEditSheets({
               your inventory.
             </p>
           )}
-          <h3 className="house-list-title">Household item shop</h3>
-          {shopRows(availableFurniture)}
+          {!selectedSlot && (
+            <div className="house-room-carousel" aria-label="Household rooms">
+              <div className="house-room-tabs" role="tablist" aria-label="Choose a room">
+                {rooms.map((room, index) => (
+                  <button
+                    key={room.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={roomIndex === index}
+                    onClick={() => setRoomIndex(index)}
+                  >
+                    {room.label}
+                  </button>
+                ))}
+              </div>
+              <div className="house-carousel-controls">
+                <button
+                  type="button"
+                  aria-label="Previous room"
+                  disabled={roomIndex === 0}
+                  onClick={() => setRoomIndex((index) => Math.max(0, index - 1))}
+                >
+                  <ChevronLeft size={18} />
+                </button>
+                <h3 className="house-list-title">{rooms[roomIndex]?.label} accessories</h3>
+                <button
+                  type="button"
+                  aria-label="Next room"
+                  disabled={roomIndex === rooms.length - 1}
+                  onClick={() => setRoomIndex((index) => Math.min(rooms.length - 1, index + 1))}
+                >
+                  <ChevronRight size={18} />
+                </button>
+              </div>
+            </div>
+          )}
+          {selectedSlot && <h3 className="house-list-title">Items for this slot</h3>}
+          <div
+            className="house-room-slide"
+            role="tabpanel"
+            aria-label={
+              selectedSlot
+                ? `${selectedSlot.slot_type} items`
+                : `${rooms[roomIndex]?.label} accessories`
+            }
+            onTouchStart={(event: TouchEvent<HTMLDivElement>) =>
+              setTouchStart(event.touches[0]?.clientX ?? null)
+            }
+            onTouchEnd={(event: TouchEvent<HTMLDivElement>) => {
+              const end = event.changedTouches[0]?.clientX;
+              if (
+                touchStart !== null &&
+                end !== undefined &&
+                Math.abs(end - touchStart) > 55 &&
+                !selectedSlot
+              )
+                setRoomIndex((index) =>
+                  Math.max(0, Math.min(rooms.length - 1, index + (end < touchStart ? 1 : -1))),
+                );
+              setTouchStart(null);
+            }}
+          >
+            {ownedRoomItems.map((item) => (
+              <div className="house-inventory-row house-shop-row" key={item.id}>
+                <ItemImage item={{ ...item, id: item.item_id }} />
+                <span className="house-shop-description">
+                  <strong>{itemName(item.item_id)}</strong>
+                  <small>{item.slot_type} accessory</small>
+                </span>
+                <span className="house-owned-badge">Owned</span>
+              </div>
+            ))}
+            {(roomItems.length > 0 || ownedRoomItems.length === 0) && shopRows(roomItems)}
+          </div>
           {!selectedSlot && (
             <p className="house-empty-copy">
               {inventory.filter((item) => item.category === "furniture").length} household items

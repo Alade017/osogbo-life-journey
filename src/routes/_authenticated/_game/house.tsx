@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { House, Pencil, WifiOff } from "lucide-react";
+import { House, Moon, Pencil, Sunrise, WifiOff } from "lucide-react";
 import { HouseEditSheets } from "@/components/game/housing/HouseEditSheets";
 import type {
   HouseInventoryItem,
@@ -10,9 +10,13 @@ import type {
   HousePlacement,
   HouseSlot,
 } from "@/components/game/housing/HouseRoomScene";
-import { HouseRoom3D } from "@/components/game/housing/HouseRoom3D";
+import { HouseRoomRenderer } from "@/components/game/housing/HouseRoomRenderer";
+import { useGameTime } from "@/components/game/GameTimeProvider";
+import { homeFurnitureAction, homeFurnitureNeed } from "@/lib/home-furniture-actions";
+import { ACTION_CATALOG } from "@/lib/life-simulation";
 import { HousingReliefPanel } from "@/components/game/housing/HousingReliefPanel";
 import { housingReliefQueryKey } from "@/lib/housing-relief-client";
+import { canonicalHomeOptions } from "@/lib/living-cost-service";
 import { HouseSceneSkeleton } from "@/components/game/loading-skeletons";
 import { Avatar } from "@/components/game/Avatar";
 import type { Appearance } from "@/game/avatar-appearance";
@@ -55,6 +59,7 @@ type HouseState = {
 type HouseStateSnapshot = { state: HouseState; source: "server" | "saved" };
 type CanonicalHome = {
   propertyId: string;
+  playerPropertyId: string;
   houseTypeId: string;
   name: string;
   imageUrl: string | null;
@@ -198,10 +203,16 @@ function formatRentDate(value: string | null | undefined) {
 }
 
 function normalizeCanonicalHome(value: unknown): CanonicalHome | null {
-  if (!isRecord(value) || typeof value["propertyId"] !== "string") return null;
+  if (
+    !isRecord(value) ||
+    typeof value["propertyId"] !== "string" ||
+    typeof value["playerPropertyId"] !== "string"
+  )
+    return null;
   if (typeof value["houseTypeId"] !== "string" || typeof value["name"] !== "string") return null;
   return {
     propertyId: value["propertyId"],
+    playerPropertyId: value["playerPropertyId"],
     houseTypeId: value["houseTypeId"],
     name: value["name"],
     imageUrl: typeof value["imageUrl"] === "string" ? value["imageUrl"] : null,
@@ -324,12 +335,18 @@ async function authorizedFetch(path: string, init?: RequestInit) {
 
 export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const queryClient = useQueryClient();
+  const gameTime = useGameTime();
   const { data: character, isLoading: characterLoading } = useQuery(q.character());
   const { data: wallet } = useQuery(q.wallet());
   const [online, setOnline] = useState(() => typeof navigator === "undefined" || navigator.onLine);
   const [editing, setEditing] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<HouseSlot | null>(null);
   const [selectedPlacement, setSelectedPlacement] = useState<HousePlacement | null>(null);
+  const [previewMove, setPreviewMove] = useState<{ placementId: string; toSlot: string } | null>(
+    null,
+  );
+  const [usingPlacementId, setUsingPlacementId] = useState<string | null>(null);
+  const [activityError, setActivityError] = useState("");
   const [apiError, setApiError] = useState("");
   const [playerId, setPlayerId] = useState<string | null>(null);
   const buyRequestKeys = useRef(new Map<string, string>());
@@ -429,14 +446,9 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const serverState = snapshot?.state;
   const usingSaved = snapshot?.source === "saved";
   const canonicalHomeQuery = useQuery({
-    queryKey: ["canonicalHousingHome", character?.id],
+    ...canonicalHomeOptions(character?.id),
     enabled: !!character?.id && online,
-    staleTime: 15_000,
-    queryFn: async () => {
-      const response = await authorizedFetch("/api/housing/current-home");
-      if (!response.ok) throw new Error("HOME_UNAVAILABLE");
-      return normalizeCanonicalHome(await response.json().catch(() => null));
-    },
+    select: normalizeCanonicalHome,
   });
 
   useEffect(() => {
@@ -480,13 +492,18 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       action,
       itemId,
       slot,
+      fromSlot,
+      toSlot,
     }: {
-      action: "place" | "remove" | "equip" | "unequip" | "buy";
+      action: "place" | "move" | "remove" | "equip" | "unequip" | "buy";
       itemId?: string;
       slot?: string;
+      fromSlot?: string;
+      toSlot?: string;
     }) => {
       const paths = {
         place: "/api/house/place",
+        move: "/api/house/move",
         remove: "/api/house/remove",
         equip: "/api/outfit/equip",
         unequip: "/api/outfit/unequip",
@@ -502,9 +519,11 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         body: JSON.stringify(
           action === "remove" || action === "unequip"
             ? { slot }
-            : action === "place"
-              ? { itemId, slot }
-              : { itemId },
+            : action === "move"
+              ? { fromSlot, toSlot }
+              : action === "place"
+                ? { itemId, slot }
+                : { itemId },
         ),
       });
       const result = await response.json().catch(() => null);
@@ -525,6 +544,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       return nextState;
     },
     onSuccess: (state, variables) => {
+      setPreviewMove(null);
       if (variables.action === "buy" && variables.itemId) {
         const storageKey = `${CACHE_PREFIX}buy-request:${character?.id ?? "anonymous"}:${variables.itemId}`;
         buyRequestKeys.current.delete(storageKey);
@@ -549,12 +569,15 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       setApiError("");
       if (variables.action === "buy") {
         toast.success("Item bought. Choose an open room slot to place it.");
+      } else if (variables.action === "move") {
+        toast.success("Accessory moved.");
       } else {
         setSelectedSlot(null);
         setSelectedPlacement(null);
       }
     },
     onError: (error: Error) => {
+      setPreviewMove(null);
       const message = `Your change wasn’t saved. ${error.message.replaceAll("_", " ").toLowerCase()}.`;
       setApiError(message);
       toast.error(message);
@@ -625,7 +648,36 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const homePresence = useMutation({
+    mutationFn: async (command: "enter_player_home" | "leave_player_home") => {
+      const { data, error } = await supabase.rpc(command);
+      if (error) throw new Error(error.message);
+      if (!isRecord(data) || typeof data["locationId"] !== "string")
+        throw new Error("The server did not confirm your location. Try again.");
+      return data;
+    },
+    onSuccess: async (_data, command) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: q.character().queryKey }),
+        queryClient.invalidateQueries({ queryKey: q.wallet().queryKey }),
+      ]);
+      setActivityError("");
+      toast.success(command === "enter_player_home" ? "You're home." : "You went outside.");
+    },
+    onError: (error: Error) => {
+      setActivityError(error.message);
+      toast.error(error.message);
+    },
+  });
+
   const placements = serverState?.placements ?? [];
+  const scenePlacements = previewMove
+    ? placements.map((placement) =>
+        placement.id === previewMove.placementId
+          ? { ...placement, slot: previewMove.toSlot }
+          : placement,
+      )
+    : placements;
   const inventory = serverState?.inventory ?? [];
   const outfit = serverState?.outfit ?? EMPTY_OUTFIT;
   const appearance = (
@@ -633,6 +685,8 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   ) as Appearance;
   const isOffline = !online || usingSaved;
   const canonicalHome = canonicalHomeQuery.data;
+  const isInsideHome =
+    !!canonicalHome && character?.inside_home_property_id === canonicalHome.playerPropertyId;
   const rentStatus = canonicalHome?.status ?? serverState?.house?.status ?? "unknown";
   const rentDueAt = canonicalHome?.dueAt ?? serverState?.house?.next_rent_due_at;
   const isOverdue = rentStatus === "grace" || rentStatus === "rescue" || rentStatus === "overdue";
@@ -645,10 +699,79 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     overdue: "Overdue",
     owned: "Owned",
   };
+  const activeSleep =
+    gameTime.simulation.currentAction?.actionId === "sleep"
+      ? gameTime.simulation.currentAction
+      : null;
+  const sleepProgress = Math.min(
+    100,
+    Math.round(((gameTime.sleepElapsedSeconds ?? 0) / 120) * 100),
+  );
+  const sleepRemaining = Math.max(0, Math.ceil(120 - (gameTime.sleepElapsedSeconds ?? 0)));
+
+  const finishSleep = async (cancel: boolean) => {
+    if (!activeSleep || isOffline || !gameTime.ready || gameTime.busy) return;
+    setActivityError("");
+    const error = cancel
+      ? await gameTime.interrupt(activeSleep.requestId)
+      : await gameTime.complete(activeSleep.requestId, "sleep");
+    if (error) {
+      setActivityError(error);
+      toast.error(error);
+      return;
+    }
+    toast.success(cancel ? "Sleep cancelled." : "You woke up. Your energy is up to date.");
+  };
 
   const requestAction = (args: Parameters<typeof actionMutation.mutate>[0]) => {
     if (isOffline || actionMutation.isPending) return;
     actionMutation.mutate(args);
+  };
+  const requestMove = (placement: HousePlacement, destination: HouseSlot) => {
+    if (isOffline || actionMutation.isPending || !editing || activeSleep) return;
+    if (placement.slot === destination.id || placement.slot_type !== destination.slot_type) return;
+    if (placements.some((item) => item.slot === destination.id)) return;
+    setPreviewMove({ placementId: placement.id, toSlot: destination.id });
+    actionMutation.mutate({
+      action: "move",
+      fromSlot: placement.slot,
+      toSlot: destination.id,
+    });
+  };
+  const interactWithPlacement = async (placement: HousePlacement) => {
+    const action = homeFurnitureAction(placement.item_id);
+    if (!action || usingPlacementId || isOffline || !gameTime.ready || gameTime.busy) return;
+    if (!isInsideHome) {
+      setActivityError("Enter your home before using its accessories.");
+      return;
+    }
+    setUsingPlacementId(placement.id);
+    setActivityError("");
+    try {
+      const active = gameTime.simulation.currentAction;
+      if (active && active.actionId !== action) {
+        throw new Error("Finish your current activity before using another accessory.");
+      }
+      if (action === "sleep" && gameTime.sleepElapsedSeconds === null) {
+        throw new Error("The latest home sleep update is needed before you can rest.");
+      }
+      const requestId = active?.requestId ?? crypto.randomUUID();
+      if (!active) {
+        const startError = await gameTime.start(action, requestId);
+        if (startError) throw new Error(startError);
+      }
+      if (action === "sleep") return;
+      const completeError = await gameTime.complete(requestId, action);
+      if (completeError) throw new Error(completeError);
+      toast.success(ACTION_CATALOG[action].outcome);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "That activity could not be completed.";
+      setActivityError(message);
+      toast.error(message);
+    } finally {
+      setUsingPlacementId(null);
+    }
   };
   if (characterLoading || (stateQuery.isLoading && !snapshot))
     return (
@@ -714,125 +837,26 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
 
   const house = serverState.house;
   return (
-    <div className="house-page">
-      <header className="house-page-header">
-        <div>
-          <p className="house-eyebrow">Your home</p>
-          <h1>{canonicalHome?.name ?? house.house_type.label}</h1>
-          <p className="house-subtitle">
-            {canonicalHome?.district ?? "Residential District"} · {house.house_type.bedrooms}{" "}
-            bedroom{house.house_type.bedrooms === 1 ? "" : "s"}
-          </p>
-        </div>
-        <div className="house-header-actions">
-          {!homeRoute && (
-            <Link to="/home" search={{ visit: undefined }} className="house-header-link">
-              Home
-            </Link>
-          )}
-          <button
-            className="house-edit-button"
-            type="button"
-            aria-pressed={editing}
-            onClick={() => {
-              setEditing((value) => !value);
-              setSelectedPlacement(null);
-              setSelectedSlot(null);
-            }}
-          >
-            <Pencil size={16} /> {editing ? "Done" : "Shop & arrange"}
-          </button>
-        </div>
-      </header>
-      {canonicalHome?.imageUrl && (
-        <img className="house-cover-image" src={canonicalHome.imageUrl} alt={canonicalHome.name} />
-      )}
-      {isOffline && (
-        <div className="house-status-banner" role="status">
-          <WifiOff size={17} /> Offline. Showing your last saved home.
-        </div>
-      )}
-      {apiError && (
-        <div className="house-error-banner" role="alert">
-          {apiError}
-        </div>
-      )}
-      <section className="house-rent-summary" aria-label="Rent status">
-        <div>
-          <span>Status</span>
-          <strong>{rentStatusLabel[rentStatus] ?? "Checking"}</strong>
-        </div>
-        <div>
-          <span>Next rent due</span>
-          <strong>
-            {canonicalHome?.tenure === "owned" ? "Owned outright" : formatRentDate(rentDueAt)}
-          </strong>
-        </div>
-        <div>
-          <span>Weekly rent</span>
-          <strong>
-            {canonicalHome?.tenure === "owned"
-              ? "—"
-              : formatNaira(canonicalHome?.weeklyRentMinor ?? house.house_type.weekly_rent_minor)}
-          </strong>
-        </div>
-      </section>
-      {isOverdue && (!canonicalHome || rentStatus === "overdue") && (
-        <div className="house-rent-banner">
-          <span>
-            <strong>Rent is overdue.</strong>{" "}
-            {canonicalHome?.rescueEndsAt
-              ? `Respond by ${formatRentDate(canonicalHome.rescueEndsAt)} to keep your home.`
-              : "Pay now to keep your home."}
-          </span>
-          {canonicalHome ? (
-            <button
-              type="button"
-              className="house-pay-button"
-              disabled={payRent.isPending || isOffline}
-              onClick={() => payRent.mutate()}
-            >
-              {payRent.isPending ? "Paying…" : "Pay now"}
-            </button>
-          ) : (
-            <Link to="/wallet" className="house-pay-button">
-              Pay
-            </Link>
-          )}
-        </div>
-      )}
-      {canonicalHome && character?.id && (
-        <HousingReliefPanel
-          characterId={character.id}
-          rentStatus={rentStatus}
-          graceEndsAt={canonicalHome.graceEndsAt}
-          rescueEndsAt={canonicalHome.rescueEndsAt}
-          offline={isOffline}
-          paying={payRent.isPending}
-          onPayRent={() => payRent.mutate()}
-        />
-      )}
-      {!isOverdue && canonicalHome?.tenure === "rented" && (
-        <button
-          type="button"
-          className="house-rent-early-button"
-          disabled={payRent.isPending || isOffline}
-          onClick={() => payRent.mutate()}
-        >
-          {payRent.isPending ? "Paying rent…" : "Pay next week’s rent"}
-        </button>
-      )}
+    <div className="house-page house-page-fill">
       <section
-        className={`house-room-card${house.status === "overdue" ? " room-overdue" : ""}`}
+        className={`house-room-card${house.status === "overdue" ? " room-overdue" : ""}${activeSleep ? " is-sleeping" : ""}`}
         aria-label={`${house.house_type.label} room`}
       >
-        <HouseRoom3D
+        <HouseRoomRenderer
+          inputBlocked={!!selectedSlot || !!selectedPlacement || !!activeSleep}
           houseTypeId={house.house_type_id}
           accessoryBand={canonicalHome?.accessoryBand ?? "basic"}
           slots={slots}
-          placements={placements}
+          placements={scenePlacements}
           editMode={editing}
+          moveEnabled={editing && !isOffline && !actionMutation.isPending && !activeSleep}
+          onMove={requestMove}
           onSelectPlacement={(placement) => {
+            if (activeSleep) return;
+            if (!editing) {
+              void interactWithPlacement(placement);
+              return;
+            }
             setSelectedSlot(null);
             setSelectedPlacement(placement);
           }}
@@ -841,17 +865,133 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             setSelectedSlot(slot);
           }}
         />
-        <div className="house-room-caption">
-          <span>
-            {editing
-              ? "Choose an item or an open slot to arrange your room."
-              : "Drag to look around the room."}
-          </span>
-          <span>
-            {placements.length} placed item{placements.length === 1 ? "" : "s"}
-          </span>
-        </div>
+        {activeSleep && (
+          <div className="house-sleep-overlay" role="region" aria-label="Sleep controls">
+            <div className="house-sleep-status">
+              <span className="house-sleep-symbol">
+                <Moon size={21} aria-hidden="true" />
+              </span>
+              <span>
+                <strong>Asleep</strong>
+                <small>
+                  {sleepProgress}% rested · {sleepRemaining}s to full rest
+                </small>
+              </span>
+              <button
+                type="button"
+                disabled={isOffline || !gameTime.ready || gameTime.busy}
+                onClick={() => void finishSleep(true)}
+              >
+                Cancel
+              </button>
+            </div>
+            <div className="house-sleep-footer">
+              <progress value={sleepProgress} max="100" aria-label="Sleep progress">
+                {sleepProgress}%
+              </progress>
+              <button
+                type="button"
+                disabled={isOffline || !gameTime.ready || gameTime.busy}
+                onClick={() => void finishSleep(false)}
+              >
+                <Sunrise size={18} aria-hidden="true" /> Wake up
+              </button>
+            </div>
+          </div>
+        )}
       </section>
+      {!editing && (
+        <section className="house-needs-actions" aria-label="Use home accessories">
+          <h2>Use your home</h2>
+          <p>
+            {activeSleep
+              ? "Your character is sleeping. Wake up or cancel sleep to use another accessory."
+              : isInsideHome
+                ? "Tap a placed accessory to care for your character."
+                : "Enter your home to use its accessories."}
+          </p>
+          {canonicalHome && (
+            <div className="house-presence-actions">
+              <button
+                type="button"
+                className="house-primary-button"
+                disabled={isOffline || homePresence.isPending || !!activeSleep}
+                onClick={() =>
+                  homePresence.mutate(isInsideHome ? "leave_player_home" : "enter_player_home")
+                }
+              >
+                {homePresence.isPending
+                  ? "Updating location..."
+                  : isInsideHome
+                    ? activeSleep
+                      ? "Wake up to go outside"
+                      : "Go outside"
+                    : "Travel home"}
+              </button>
+            </div>
+          )}
+          <div className="house-needs-action-list">
+            {placements
+              .filter((placement) => homeFurnitureAction(placement.item_id))
+              .map((placement) => {
+                const action = homeFurnitureAction(placement.item_id)!;
+                const need = homeFurnitureNeed(placement.item_id);
+                return (
+                  <button
+                    key={placement.id}
+                    type="button"
+                    className="house-needs-action"
+                    disabled={
+                      isOffline ||
+                      !isInsideHome ||
+                      !gameTime.ready ||
+                      gameTime.busy ||
+                      !!activeSleep ||
+                      !!usingPlacementId
+                    }
+                    onClick={() => void interactWithPlacement(placement)}
+                  >
+                    <strong>
+                      {usingPlacementId === placement.id ? "Using..." : ACTION_CATALOG[action].name}
+                    </strong>
+                    <span>
+                      {need ? `${need} · ` : ""}
+                      {placement.item_id.replaceAll("-", " ")}
+                    </span>
+                  </button>
+                );
+              })}
+          </div>
+          {!placements.some((placement) => homeFurnitureAction(placement.item_id)) && (
+            <p>
+              Place an owned bed, seat, stove, shower, toilet, television, or plant to unlock home
+              activities.
+            </p>
+          )}
+          {!gameTime.ready && !isOffline && <p role="status">Connecting character needs...</p>}
+          {isOffline && <p role="status">Reconnect to use your accessories.</p>}
+          {gameTime.ready &&
+            gameTime.sleepElapsedSeconds === null &&
+            !activeSleep &&
+            placements.some((placement) => homeFurnitureAction(placement.item_id) === "sleep") && (
+              <p role="status">The home sleep update is needed before the bed can be used.</p>
+            )}
+          {activityError && <p role="alert">{activityError}</p>}
+        </section>
+      )}
+      <button
+        className="house-edit-button house-edit-toggle"
+        type="button"
+        aria-pressed={editing}
+        disabled={!!activeSleep}
+        onClick={() => {
+          setEditing((value) => !value);
+          setSelectedPlacement(null);
+          setSelectedSlot(null);
+        }}
+      >
+        <Pencil size={16} /> {editing ? "Done" : "Shop & arrange"}
+      </button>
       {editing && (
         <HouseEditSheets
           open
@@ -863,6 +1003,8 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           outfit={outfit}
           selectedSlot={selectedSlot}
           selectedPlacement={selectedPlacement}
+          slots={slots}
+          placements={placements}
           onClose={() => {
             setEditing(false);
             setSelectedSlot(null);
@@ -870,59 +1012,12 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           }}
           onPlace={(itemId, slot) => requestAction({ action: "place", itemId, slot: slot.id })}
           onRemove={(placement) => requestAction({ action: "remove", slot: placement.slot })}
+          onMove={requestMove}
           onEquip={(itemId) => requestAction({ action: "equip", itemId })}
           onUnequip={(slot) => requestAction({ action: "unequip", slot })}
           onBuy={(itemId) => requestAction({ action: "buy", itemId })}
         />
       )}
-      <section className="house-inventory-summary">
-        <div className="house-summary-heading">
-          <h2>Your things</h2>
-          <button type="button" className="house-text-button" onClick={() => setEditing(true)}>
-            Shop and arrange your room
-          </button>
-        </div>
-        <div className="house-summary-grid">
-          <div>
-            <strong>{inventory.filter((item) => item.category === "furniture").length}</strong>
-            <span>Furniture owned</span>
-          </div>
-          <div>
-            <Avatar
-              appearance={appearance}
-              gender={character?.gender ?? "nonbinary"}
-              size={42}
-              equipment={Object.entries(outfit)
-                .filter(([, item]) => !!item)
-                .map(([slot]) => ({ slot }))}
-            />
-            <span>Current outfit</span>
-          </div>
-        </div>
-        {inventory.length === 0 && (
-          <p className="house-empty-copy">Your home is empty. Visit the shop to get furniture.</p>
-        )}
-        {canonicalHome?.tenure === "rented" &&
-          (house.status === "active" || house.status === "overdue") && (
-            <div className="house-tenancy-actions">
-              <p>
-                Ending your tenancy gives no rent or deposit refund. Your furniture stays owned and
-                returns to your inventory.
-              </p>
-              <button
-                type="button"
-                className="house-secondary-button"
-                disabled={cancelTenancy.isPending || isOffline}
-                onClick={() => {
-                  if (window.confirm("End this tenancy now? Rent and deposit are not refunded."))
-                    cancelTenancy.mutate();
-                }}
-              >
-                {cancelTenancy.isPending ? "Ending tenancy…" : "Cancel rent"}
-              </button>
-            </div>
-          )}
-      </section>
     </div>
   );
 }

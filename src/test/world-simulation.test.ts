@@ -1,11 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { INITIAL_GAME_TIME } from "@/lib/game-time";
 import {
-  activeCityEvents,
   adjustedTripMinutes,
   dayPhaseAt,
   isPowerOutageAt,
-  nextCityEvent,
   trafficAt,
   travelConditionAdjustment,
   weatherForDay,
@@ -37,17 +35,6 @@ describe("deterministic Osogbo world conditions", () => {
     });
     expect(adjustedTripMinutes(10, "car", rush)).toBe(14);
     expect(adjustedTripMinutes(10, "walking", { ...rush, day: 14, hour: 11 })).toBe(10);
-  });
-
-  it("activates events only in their configured window and returns a next event", () => {
-    const marketDay = { ...INITIAL_GAME_TIME, weekday: 2, hour: 9 };
-    expect(activeCityEvents(marketDay).map((event) => event.id)).toContain("market-day");
-    expect(activeCityEvents({ ...marketDay, hour: 16 })).toEqual([]);
-    expect(nextCityEvent({ ...marketDay, hour: 10 })?.id).toBe("riverlight-gathering");
-    const rainyEvening = { ...INITIAL_GAME_TIME, day: 15, weekday: 4, hour: 18 };
-    expect(activeCityEvents(rainyEvening).map((event) => event.id)).toEqual([
-      "riverlight-gathering",
-    ]);
   });
 
   it("runs short power outages on a fixed in-game schedule", () => {

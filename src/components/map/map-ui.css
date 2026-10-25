@@ -521,6 +521,26 @@
   border-radius: calc(var(--shape-card) * 0.7);
   background: var(--background);
 }
+.place-action-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.place-action-heading small,
+.place-action-hint {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+}
+.map-here-note {
+  align-self: flex-start;
+  padding: 0.35rem 0.7rem;
+  border-radius: var(--shape-pill);
+  background: var(--color-primary-soft);
+  color: var(--primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
 .place-action-option {
   display: flex;
   width: 100%;
@@ -540,6 +560,26 @@
 .place-action-option small {
   color: var(--muted-foreground);
 }
+.place-action-option[aria-pressed="true"] {
+  outline: 2px solid var(--primary);
+}
+
+.map-sheet-list li > .place-action-option {
+  width: 100%;
+  min-width: 0;
+  justify-content: flex-start;
+  background: var(--card);
+  color: var(--foreground);
+}
+
+.map-sheet-list li > .place-action-option span {
+  color: var(--foreground);
+}
+
+.map-sheet-list li > .place-action-option small {
+  color: var(--muted-foreground);
+}
+
 .place-action-confirm {
   display: grid;
   gap: 0.35rem;

@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Activity, Job } from "@/lib/game";
 import type { PlaceActionResult } from "@/components/map/PlaceActionMenu";
+import type { MapPlaceAction } from "@/components/map/OsogboMap.svg";
 
 export type MapTravelResponse = {
   travel_id: string;
@@ -28,13 +29,33 @@ export type MapLandmarkDetails = {
     id: string;
     district_id: string;
     location_id: string;
+    player_location_id: string | null;
     min_age: number;
     name: string;
     description: string;
   };
   activities: Activity[];
   jobs: Job[];
+  actions: MapPlaceAction[];
 };
+
+export async function requestAvailableMapLandmarks(): Promise<string[]> {
+  const { data, error } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  if (error || !token) throw new MapApiError("Sign in to view the map.", "UNAUTHORIZED");
+  const response = await fetch("/api/map/landmarks", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const result = (await response.json().catch(() => null)) as {
+    landmarkIds?: string[];
+    error?: { code?: string };
+  } | null;
+  if (!response.ok || !Array.isArray(result?.landmarkIds)) {
+    const code = result?.error?.code ?? "INTERNAL_ERROR";
+    throw new MapApiError(code, code);
+  }
+  return result.landmarkIds;
+}
 
 export class MapApiError extends Error {
   constructor(

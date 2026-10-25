@@ -2,11 +2,13 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type SaleListing = {
   id: string;
+  slug: string;
   name: string;
   description: string;
   property_type: string;
   house_type_id: string | null;
   purchase_price: number | null;
+  rent_price: number | null;
   image_url: string | null;
   level_required: number;
   metadata: { district?: string; bedrooms?: number; features?: string[] } | null;
@@ -26,7 +28,7 @@ export async function loadOwnedHouses(characterId: string) {
   const { data, error } = await supabase
     .from("player_properties")
     .select(
-      "id,tenure,is_active,is_home,game_properties(id,name,description,property_type,house_type_id,image_url,metadata)",
+      "id,tenure,is_active,is_home,game_properties(id,slug,name,description,property_type,house_type_id,image_url,metadata)",
     )
     .eq("is_active", true)
     .eq("character_id", characterId)
@@ -36,6 +38,16 @@ export async function loadOwnedHouses(characterId: string) {
     id: string;
     tenure: "owned" | "rented";
     is_home: boolean;
-    game_properties: SaleListing | null;
+    game_properties: Pick<
+      SaleListing,
+      | "id"
+      | "slug"
+      | "name"
+      | "description"
+      | "property_type"
+      | "house_type_id"
+      | "image_url"
+      | "metadata"
+    > | null;
   }>;
 }

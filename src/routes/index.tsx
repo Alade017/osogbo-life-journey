@@ -25,6 +25,8 @@ import {
   enableGameAudio,
   getMusicState,
   getServerMusicState,
+  readGameAudioLevels,
+  setGameAudioLevels,
   subscribeMusic,
 } from "@/lib/game-audio";
 import { formatNaira, q } from "@/lib/game";
@@ -101,6 +103,7 @@ async function readSessionState(): Promise<SessionState> {
 function LandingAudio({ identity }: { identity: string }) {
   const music = useSyncExternalStore(subscribeMusic, getMusicState, getServerMusicState);
   const [changing, setChanging] = useState(false);
+  const musicEnabled = music.soundEnabled && readGameAudioLevels().music > 0;
 
   useEffect(() => {
     configureGameMusic(identity);
@@ -112,8 +115,12 @@ function LandingAudio({ identity }: { identity: string }) {
 
   async function toggleAudio() {
     setChanging(true);
-    if (music.soundEnabled) await disableGameAudio();
-    else await enableGameAudio();
+    const current = readGameAudioLevels();
+    if (musicEnabled) {
+      setGameAudioLevels({ ...current, music: 0 });
+    } else if (!(await enableGameAudio({ ...current, music: current.music || 0.4 }))) {
+      setGameAudioLevels(current);
+    }
     setChanging(false);
   }
 
@@ -122,16 +129,16 @@ function LandingAudio({ identity }: { identity: string }) {
       type="button"
       className="landing-v2-audio"
       role="switch"
-      aria-checked={music.soundEnabled}
-      aria-label={music.soundEnabled ? "Turn town music off" : "Turn town music on"}
+      aria-checked={musicEnabled}
+      aria-label={musicEnabled ? "Turn town music off" : "Turn town music on"}
       disabled={changing}
       onClick={() => void toggleAudio()}
     >
       <span className="landing-v2-audio-active">
-        {music.soundEnabled ? <Music2 aria-hidden="true" /> : <Headphones aria-hidden="true" />}
+        {musicEnabled ? <Music2 aria-hidden="true" /> : <Headphones aria-hidden="true" />}
         Town music
       </span>
-      <span>{music.soundEnabled ? "Mute" : "Play"}</span>
+      <span>{musicEnabled ? "Mute" : "Play"}</span>
     </button>
   );
 }

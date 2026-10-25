@@ -73,7 +73,7 @@ describe("shared HUD database acceptance", () => {
     db = new PGlite({ extensions: { pg_trgm } });
     await db.exec(`create role anon; create role authenticated; create role service_role;
       create schema auth; create schema extensions; create schema realtime;
-      create table auth.users(id uuid primary key);
+      create table auth.users(id uuid primary key, is_anonymous boolean not null default false);
       create table realtime.messages(id bigint generated always as identity);
       create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('test.user_id',true),'')::uuid $$;
       create function realtime.topic() returns text language sql stable as $$ select ''::text $$;
@@ -81,7 +81,8 @@ describe("shared HUD database acceptance", () => {
       grant usage on schema auth to authenticated;
       grant execute on function auth.uid() to authenticated;`);
     for (const file of readdirSync("drizzle/migrations")
-      .filter((f) => f.endsWith(".sql"))
+      // 0075 requires the exact hosted cleanup dataset and makes no schema changes.
+      .filter((f) => f.endsWith(".sql") && f !== "0075_remove_orphaned_player_data.sql")
       .sort()) {
       try {
         await db.exec(readFileSync(`drizzle/migrations/${file}`, "utf8"));
@@ -98,14 +99,14 @@ describe("shared HUD database acceptance", () => {
     await db?.close();
   });
 
-  it("applies the full migration chain and catches up personal game time after reconnect", async () => {
+  it("applies the full migration chain without offline needs catch-up", async () => {
     const before = await command("open");
     await db.exec("update public.character_simulations set heartbeat_at=now()-interval '2 days'");
     const after = await command("open");
     const totalMinutes = (time: typeof before.game_time) =>
       time.day * 1440 + time.hour * 60 + time.minute;
-    expect(totalMinutes(after.game_time) - totalMinutes(before.game_time)).toBe(2 * 24 * 60);
-    expect(after.needs["hunger"]!).toBeLessThan(before.needs["hunger"]!);
+    expect(totalMinutes(after.game_time) - totalMinutes(before.game_time)).toBe(0);
+    expect(after.needs["hunger"]).toBe(before.needs["hunger"]);
     const clock = await db.query<{ time: { hour: number } }>("select public.world_clock() as time");
     expect(clock.rows[0]!.time.hour).toBeGreaterThanOrEqual(0);
   });
@@ -357,9 +358,18 @@ describe("shared HUD database acceptance", () => {
       "select payload from public.character_home_saves where character_id=public._my_character_id()",
     );
     try {
-      await db.exec(
-        "update public.characters set current_location_id=(select id from public.locations where slug='residential')",
+      await db.query(
+        `insert into public.player_properties(user_id,character_id,property_id,tenure)
+         select $1, public._my_character_id(),id,'owned' from public.game_properties
+         where slug='housing-shared-room'`,
+        [uid],
       );
+      await db.query("select public.enter_player_home()");
+      await db.exec(`insert into public.house_placements(player_house_id,item_id,slot)
+        select room.id,item.id,'test-'||item.id from public.player_houses room
+        join public.content_items item on item.id in ('computer','plant')
+        where room.player_id='${uid}' and room.status='active'
+        on conflict(player_house_id,slot) do nothing`);
       let latest = await command("open");
       for (const [itemId, action, room] of furnitureActions) {
         const payload = {
@@ -408,6 +418,8 @@ describe("shared HUD database acceptance", () => {
         "update public.character_home_saves set payload=$1::jsonb where character_id=public._my_character_id()",
         [JSON.stringify(noFurniture)],
       );
+      await db.exec(`delete from public.house_placements where item_id='stove'
+        and player_house_id in (select id from public.player_houses where player_id='${uid}')`);
       await expect(command("start", "cook", "furniture-invalid-missing")).rejects.toThrow(/stove/);
 
       const stove = {
@@ -420,6 +432,7 @@ describe("shared HUD database acceptance", () => {
         "update public.character_home_saves set payload=$1::jsonb where character_id=public._my_character_id()",
         [JSON.stringify(stove)],
       );
+      await expect(command("start", "cook", "furniture-legacy-only")).rejects.toThrow(/stove/);
       await db.exec(
         "update public.characters set current_location_id=(select id from public.locations where slug='city-centre')",
       );
@@ -427,6 +440,8 @@ describe("shared HUD database acceptance", () => {
         /Travel home/,
       );
     } finally {
+      await db.query("delete from public.player_houses where player_id=$1", [uid]);
+      await db.query("delete from public.player_properties where user_id=$1", [uid]);
       await db.query(
         "delete from public.simulation_action_receipts where character_id=public._my_character_id() and request_id like 'furniture-%'",
       );

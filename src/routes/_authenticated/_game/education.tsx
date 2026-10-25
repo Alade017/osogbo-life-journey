@@ -1,24 +1,51 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookOpen, GraduationCap, Lock, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Chip, LoadingState, PageHeader } from "@/components/game/ui";
 import { formatNaira, q, rpc, useGameAction } from "@/lib/game";
 import { pageMeta } from "@/lib/seo";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/_game/education")({
   head: () => pageMeta("Education", "Study at Osun Tech Hub and State Polytechnic."),
   component: EducationPage,
 });
 
-function EducationPage() {
+export function EducationPage({ phoneMode = false }: { phoneMode?: boolean }) {
+  const queryClient = useQueryClient();
   const { data: character } = useQuery(q.character());
   const { data: wallet } = useQuery(q.wallet());
   const { data: locations } = useQuery(q.locations());
   const { data: visits } = useQuery(q.visits());
   const { data: courses, isLoading } = useQuery(q.educationCourses());
   const { data: completed } = useQuery(q.myCourses());
+  const plans = useQuery({
+    queryKey: ["phoneCoursePlans", character?.id],
+    enabled: phoneMode && !!character?.id,
+    queryFn: async () => {
+      // Migration 0060 is not yet in the generated Supabase types.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase.from as any)("player_course_plans").select(
+        "course_id",
+      );
+      if (error) throw error;
+      return (data ?? []) as { course_id: string }[];
+    },
+  });
+  const savePlan = useMutation({
+    mutationFn: async (slug: string) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase.rpc as any)("plan_phone_course", { p_course_slug: slug });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["phoneCoursePlans", character?.id] });
+      toast.success("Course added to your plan.");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
   const studentDistrict = locations?.find((location) => location.slug === "student-district");
   const hasVisited = visits?.some((visit) => visit.location_id === studentDistrict?.id) ?? false;
   const complete = useGameAction(rpc.completeEducationCourse, {
@@ -59,7 +86,7 @@ function EducationPage() {
         </div>
       )}
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-1">
         {courses.map((course) => {
           const isComplete = completed?.some((entry) => entry.course_id === course.id) ?? false;
           const canAfford = (wallet?.balance ?? 0) >= course.tuition;
@@ -128,6 +155,27 @@ function EducationPage() {
                   "Enroll & complete course"
                 )}
               </Button>
+              {phoneMode && !isComplete && (
+                <Button
+                  className="mt-2"
+                  variant="plain"
+                  disabled={
+                    plans.isLoading ||
+                    plans.isError ||
+                    savePlan.isPending ||
+                    plans.data?.some((entry) => entry.course_id === course.id)
+                  }
+                  onClick={() => savePlan.mutate(course.slug)}
+                >
+                  {plans.isError
+                    ? "Course plans unavailable"
+                    : plans.data?.some((entry) => entry.course_id === course.id)
+                      ? "In your plan"
+                      : savePlan.isPending
+                        ? "Saving…"
+                        : "Save to course plan"}
+                </Button>
+              )}
             </article>
           );
         })}

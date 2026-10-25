@@ -5,15 +5,11 @@ import { Link } from "@tanstack/react-router";
 import { useWorldClock } from "@/hooks/use-world-clock";
 import { INITIAL_GAME_TIME } from "@/lib/game-time";
 import { formatGameTime } from "@/lib/game-time";
-import {
-  activeCityEvents,
-  dayPhaseAt,
-  isPowerOutageAt,
-  nextCityEvent,
-  weatherForDay,
-} from "@/lib/world-simulation";
+import { dayPhaseAt, isPowerOutageAt, weatherForDay } from "@/lib/world-simulation";
 import { toast } from "sonner";
 import { useGameAudioEvents } from "@/hooks/use-game-audio-events";
+import { useCityEvents } from "@/hooks/use-city-events";
+import { cityEventTransitions, type CityEventOccurrence } from "@/lib/city-event-service";
 
 export function WorldEnvironment() {
   useGameAudioEvents();
@@ -21,28 +17,49 @@ export function WorldEnvironment() {
   const time = world.data ?? INITIAL_GAME_TIME;
   const phase = dayPhaseAt(time);
   const weather = weatherForDay(time.day);
-  const events = activeCityEvents(time, weather);
-  const upcoming = nextCityEvent(time);
+  const eventQuery = useCityEvents();
+  const events = eventQuery.isError
+    ? []
+    : (eventQuery.data?.events.filter((e) => e.status === "active") ?? []);
+  const upcoming = eventQuery.isError
+    ? undefined
+    : eventQuery.data?.events.find((e) => e.status === "upcoming");
   const outage = isPowerOutageAt(time);
-  const lastAnnouncement = useRef("");
+  const lastOutage = useRef<boolean | null>(null);
+  const previousEvents = useRef<CityEventOccurrence[] | null>(null);
 
   useEffect(() => {
     if (!world.data) return;
-    const key = `${time.day}:${events.map((event) => event.id).join(",")}:${outage}`;
-    if (lastAnnouncement.current && key !== lastAnnouncement.current) {
-      for (const event of events)
-        toast.message(`${event.title} is happening now in ${event.locationName}.`);
+    if (lastOutage.current !== null && outage !== lastOutage.current) {
       if (outage)
         toast.message(
           "A short power outage is affecting household lighting and powered appliances.",
         );
-      if (!outage && lastAnnouncement.current.endsWith(":true"))
-        toast.success("Power has returned to your home.");
-      const previousEvents = lastAnnouncement.current.split(":")[1] ?? "";
-      if (previousEvents && !events.length) toast.message("The city event has ended.");
+      if (!outage) toast.success("Power has returned to your home.");
     }
-    lastAnnouncement.current = key;
-  }, [events, outage, time.day, world.data]);
+    lastOutage.current = outage;
+  }, [outage, world.data]);
+
+  useEffect(() => {
+    if (!eventQuery.data || eventQuery.isError) return;
+    const next = eventQuery.data.events;
+    if (previousEvents.current) {
+      const changes = cityEventTransitions(previousEvents.current, next);
+      for (const event of changes.started)
+        toast.message(`${event.title} is happening now in ${event.locationName}.`);
+      for (const event of changes.ended) {
+        const status = next.find((e) => e.occurrenceId === event.occurrenceId)?.status;
+        toast.message(
+          status === "cancelled"
+            ? `${event.title} was cancelled due to heavy rain.`
+            : status === "unavailable"
+              ? `${event.title}'s venue is unavailable.`
+              : `${event.title} has ended.`,
+        );
+      }
+    }
+    previousEvents.current = next;
+  }, [eventQuery.data, eventQuery.isError]);
 
   if (!world.data)
     return (
@@ -76,7 +93,7 @@ export function WorldEnvironment() {
           className="world-event world-event-upcoming"
           to="/location/$slug"
           params={{ slug: events[0]!.locationSlug }}
-          title={events[0]!.participationRule}
+          title={`Travel to ${events[0]!.locationName}, then join the event.`}
         >
           <CalendarDays size={15} /> {events[0]!.title} · View event →
         </Link>
@@ -88,7 +105,15 @@ export function WorldEnvironment() {
         >
           <CalendarDays size={15} /> Next: {upcoming.title} · {upcoming.locationName}
         </Link>
-      ) : null}
+      ) : (
+        <span role="status">
+          {eventQuery.isError
+            ? "City events unavailable"
+            : eventQuery.isPending
+              ? "Loading city events…"
+              : "No upcoming city events"}
+        </span>
+      )}
     </div>
   );
 }

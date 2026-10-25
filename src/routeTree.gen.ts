@@ -40,6 +40,7 @@ import { Route as ApiHomeEquipRouteImport } from './routes/api/home/equip'
 import { Route as ApiHomePlaceRouteImport } from './routes/api/home/place'
 import { Route as ApiHomeRemoveRouteImport } from './routes/api/home/remove'
 import { Route as ApiHomeUnequipRouteImport } from './routes/api/home/unequip'
+import { Route as ApiHouseMoveRouteImport } from './routes/api/house/move'
 import { Route as ApiHousePlaceRouteImport } from './routes/api/house/place'
 import { Route as ApiHouseRemoveRouteImport } from './routes/api/house/remove'
 import { Route as ApiHouseStateRouteImport } from './routes/api/house/state'
@@ -58,6 +59,7 @@ import { Route as ApiHousingRentRouteImport } from './routes/api/housing/rent'
 import { Route as ApiHousingRentReliefRouteImport } from './routes/api/housing/rent-relief'
 import { Route as ApiHousingResolveOverdueRouteImport } from './routes/api/housing/resolve-overdue'
 import { Route as ApiMapActionRouteImport } from './routes/api/map/action'
+import { Route as ApiMapLandmarksRouteImport } from './routes/api/map/landmarks'
 import { Route as ApiMapTownTravelRouteImport } from './routes/api/map/town-travel'
 import { Route as ApiMapTravelRouteImport } from './routes/api/map/travel'
 import { Route as ApiMessagesSendRouteImport } from './routes/api/messages/send'
@@ -241,6 +243,11 @@ const ApiHomeUnequipRoute = ApiHomeUnequipRouteImport.update({
   path: '/api/home/unequip',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHouseMoveRoute = ApiHouseMoveRouteImport.update({
+  id: '/api/house/move',
+  path: '/api/house/move',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHousePlaceRoute = ApiHousePlaceRouteImport.update({
   id: '/api/house/place',
   path: '/api/house/place',
@@ -331,6 +338,11 @@ const ApiHousingResolveOverdueRoute =
 const ApiMapActionRoute = ApiMapActionRouteImport.update({
   id: '/api/map/action',
   path: '/api/map/action',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMapLandmarksRoute = ApiMapLandmarksRouteImport.update({
+  id: '/api/map/landmarks',
+  path: '/api/map/landmarks',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiMapTownTravelRoute = ApiMapTownTravelRouteImport.update({
@@ -455,6 +467,7 @@ export interface FileRoutesByFullPath {
   '/api/home/place': typeof ApiHomePlaceRoute
   '/api/home/remove': typeof ApiHomeRemoveRoute
   '/api/home/unequip': typeof ApiHomeUnequipRoute
+  '/api/house/move': typeof ApiHouseMoveRoute
   '/api/house/place': typeof ApiHousePlaceRoute
   '/api/house/remove': typeof ApiHouseRemoveRoute
   '/api/house/state': typeof ApiHouseStateRoute
@@ -473,6 +486,7 @@ export interface FileRoutesByFullPath {
   '/api/housing/rent-relief': typeof ApiHousingRentReliefRoute
   '/api/housing/resolve-overdue': typeof ApiHousingResolveOverdueRoute
   '/api/map/action': typeof ApiMapActionRoute
+  '/api/map/landmarks': typeof ApiMapLandmarksRoute
   '/api/map/town-travel': typeof ApiMapTownTravelRoute
   '/api/map/travel': typeof ApiMapTravelRoute
   '/api/messages/send': typeof ApiMessagesSendRoute
@@ -522,6 +536,7 @@ export interface FileRoutesByTo {
   '/api/home/place': typeof ApiHomePlaceRoute
   '/api/home/remove': typeof ApiHomeRemoveRoute
   '/api/home/unequip': typeof ApiHomeUnequipRoute
+  '/api/house/move': typeof ApiHouseMoveRoute
   '/api/house/place': typeof ApiHousePlaceRoute
   '/api/house/remove': typeof ApiHouseRemoveRoute
   '/api/house/state': typeof ApiHouseStateRoute
@@ -540,6 +555,7 @@ export interface FileRoutesByTo {
   '/api/housing/rent-relief': typeof ApiHousingRentReliefRoute
   '/api/housing/resolve-overdue': typeof ApiHousingResolveOverdueRoute
   '/api/map/action': typeof ApiMapActionRoute
+  '/api/map/landmarks': typeof ApiMapLandmarksRoute
   '/api/map/town-travel': typeof ApiMapTownTravelRoute
   '/api/map/travel': typeof ApiMapTravelRoute
   '/api/messages/send': typeof ApiMessagesSendRoute
@@ -592,6 +608,7 @@ export interface FileRoutesById {
   '/api/home/place': typeof ApiHomePlaceRoute
   '/api/home/remove': typeof ApiHomeRemoveRoute
   '/api/home/unequip': typeof ApiHomeUnequipRoute
+  '/api/house/move': typeof ApiHouseMoveRoute
   '/api/house/place': typeof ApiHousePlaceRoute
   '/api/house/remove': typeof ApiHouseRemoveRoute
   '/api/house/state': typeof ApiHouseStateRoute
@@ -610,6 +627,7 @@ export interface FileRoutesById {
   '/api/housing/rent-relief': typeof ApiHousingRentReliefRoute
   '/api/housing/resolve-overdue': typeof ApiHousingResolveOverdueRoute
   '/api/map/action': typeof ApiMapActionRoute
+  '/api/map/landmarks': typeof ApiMapLandmarksRoute
   '/api/map/town-travel': typeof ApiMapTownTravelRoute
   '/api/map/travel': typeof ApiMapTravelRoute
   '/api/messages/send': typeof ApiMessagesSendRoute
@@ -661,6 +679,7 @@ export interface FileRouteTypes {
     | '/api/home/place'
     | '/api/home/remove'
     | '/api/home/unequip'
+    | '/api/house/move'
     | '/api/house/place'
     | '/api/house/remove'
     | '/api/house/state'
@@ -679,6 +698,7 @@ export interface FileRouteTypes {
     | '/api/housing/rent-relief'
     | '/api/housing/resolve-overdue'
     | '/api/map/action'
+    | '/api/map/landmarks'
     | '/api/map/town-travel'
     | '/api/map/travel'
     | '/api/messages/send'
@@ -728,6 +748,7 @@ export interface FileRouteTypes {
     | '/api/home/place'
     | '/api/home/remove'
     | '/api/home/unequip'
+    | '/api/house/move'
     | '/api/house/place'
     | '/api/house/remove'
     | '/api/house/state'
@@ -746,6 +767,7 @@ export interface FileRouteTypes {
     | '/api/housing/rent-relief'
     | '/api/housing/resolve-overdue'
     | '/api/map/action'
+    | '/api/map/landmarks'
     | '/api/map/town-travel'
     | '/api/map/travel'
     | '/api/messages/send'
@@ -797,6 +819,7 @@ export interface FileRouteTypes {
     | '/api/home/place'
     | '/api/home/remove'
     | '/api/home/unequip'
+    | '/api/house/move'
     | '/api/house/place'
     | '/api/house/remove'
     | '/api/house/state'
@@ -815,6 +838,7 @@ export interface FileRouteTypes {
     | '/api/housing/rent-relief'
     | '/api/housing/resolve-overdue'
     | '/api/map/action'
+    | '/api/map/landmarks'
     | '/api/map/town-travel'
     | '/api/map/travel'
     | '/api/messages/send'
@@ -845,6 +869,7 @@ export interface RootRouteChildren {
   ApiHomePlaceRoute: typeof ApiHomePlaceRoute
   ApiHomeRemoveRoute: typeof ApiHomeRemoveRoute
   ApiHomeUnequipRoute: typeof ApiHomeUnequipRoute
+  ApiHouseMoveRoute: typeof ApiHouseMoveRoute
   ApiHousePlaceRoute: typeof ApiHousePlaceRoute
   ApiHouseRemoveRoute: typeof ApiHouseRemoveRoute
   ApiHouseStateRoute: typeof ApiHouseStateRoute
@@ -863,6 +888,7 @@ export interface RootRouteChildren {
   ApiHousingRentReliefRoute: typeof ApiHousingRentReliefRoute
   ApiHousingResolveOverdueRoute: typeof ApiHousingResolveOverdueRoute
   ApiMapActionRoute: typeof ApiMapActionRoute
+  ApiMapLandmarksRoute: typeof ApiMapLandmarksRoute
   ApiMapTownTravelRoute: typeof ApiMapTownTravelRoute
   ApiMapTravelRoute: typeof ApiMapTravelRoute
   ApiMessagesSendRoute: typeof ApiMessagesSendRoute
@@ -1101,6 +1127,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHomeUnequipRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/house/move': {
+      id: '/api/house/move'
+      path: '/api/house/move'
+      fullPath: '/api/house/move'
+      preLoaderRoute: typeof ApiHouseMoveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/house/place': {
       id: '/api/house/place'
       path: '/api/house/place'
@@ -1225,6 +1258,13 @@ declare module '@tanstack/react-router' {
       path: '/api/map/action'
       fullPath: '/api/map/action'
       preLoaderRoute: typeof ApiMapActionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/map/landmarks': {
+      id: '/api/map/landmarks'
+      path: '/api/map/landmarks'
+      fullPath: '/api/map/landmarks'
+      preLoaderRoute: typeof ApiMapLandmarksRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/map/town-travel': {
@@ -1430,6 +1470,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHomePlaceRoute: ApiHomePlaceRoute,
   ApiHomeRemoveRoute: ApiHomeRemoveRoute,
   ApiHomeUnequipRoute: ApiHomeUnequipRoute,
+  ApiHouseMoveRoute: ApiHouseMoveRoute,
   ApiHousePlaceRoute: ApiHousePlaceRoute,
   ApiHouseRemoveRoute: ApiHouseRemoveRoute,
   ApiHouseStateRoute: ApiHouseStateRoute,
@@ -1448,6 +1489,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHousingRentReliefRoute: ApiHousingRentReliefRoute,
   ApiHousingResolveOverdueRoute: ApiHousingResolveOverdueRoute,
   ApiMapActionRoute: ApiMapActionRoute,
+  ApiMapLandmarksRoute: ApiMapLandmarksRoute,
   ApiMapTownTravelRoute: ApiMapTownTravelRoute,
   ApiMapTravelRoute: ApiMapTravelRoute,
   ApiMessagesSendRoute: ApiMessagesSendRoute,

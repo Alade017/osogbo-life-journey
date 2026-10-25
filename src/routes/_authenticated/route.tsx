@@ -16,6 +16,8 @@ export const Route = createFileRoute("/_authenticated")({
 function AuthenticatedShell() {
   const navigate = useNavigate();
   useEffect(() => {
+    const inactivityLimitMs = 15 * 60 * 1000;
+    let lastActivityAt = Date.now();
     let timeout = 0;
     let ended = false;
     const signOutForInactivity = async () => {
@@ -24,17 +26,41 @@ function AuthenticatedShell() {
       await supabase.auth.signOut();
       await navigate({ to: "/login", replace: true });
     };
-    const refresh = () => {
+    const checkInactivity = () => {
+      if (ended) return;
       window.clearTimeout(timeout);
-      timeout = window.setTimeout(() => void signOutForInactivity(), 30 * 60 * 1000);
+      const remaining = inactivityLimitMs - (Date.now() - lastActivityAt);
+      if (remaining <= 0) {
+        void signOutForInactivity();
+        return;
+      }
+      timeout = window.setTimeout(checkInactivity, remaining);
+    };
+    const recordActivity = () => {
+      if (ended) return;
+      if (Date.now() - lastActivityAt >= inactivityLimitMs) {
+        void signOutForInactivity();
+        return;
+      }
+      lastActivityAt = Date.now();
+      checkInactivity();
+    };
+    const checkWhenVisible = () => {
+      if (!document.hidden) checkInactivity();
     };
     const events: Array<keyof WindowEventMap> = ["pointerdown", "keydown", "touchstart", "wheel"];
-    events.forEach((event) => window.addEventListener(event, refresh, { passive: true }));
-    refresh();
+    events.forEach((event) => window.addEventListener(event, recordActivity, { passive: true }));
+    window.addEventListener("focus", checkInactivity);
+    window.addEventListener("pageshow", checkInactivity);
+    document.addEventListener("visibilitychange", checkWhenVisible);
+    checkInactivity();
     return () => {
       ended = true;
       window.clearTimeout(timeout);
-      events.forEach((event) => window.removeEventListener(event, refresh));
+      events.forEach((event) => window.removeEventListener(event, recordActivity));
+      window.removeEventListener("focus", checkInactivity);
+      window.removeEventListener("pageshow", checkInactivity);
+      document.removeEventListener("visibilitychange", checkWhenVisible);
     };
   }, [navigate]);
   return <Outlet />;

@@ -1,5 +1,76 @@
 # Milestone 9 release QA
 
+## Approved map stabilization — 2026-10-23–24 (Africa/Lagos)
+
+Scope: Phase 1 of `docs/osogbo-life-improvement-plan.md`, approved by the owner's “proceed”; followed by Phase 2 planning only. Earlier QA entries below remain historical.
+
+### Completed changes
+
+- Removed identical duplicate town records (three districts, ten landmarks and ten building records); retained the expanded 24×18 layout, 11 unique districts and all 22 unique venues.
+- Corrected housing-marker bounds/origin to match town scenery through the existing shared grid projection. Server rent/status/ownership values and action rules remain unchanged.
+- Repaired the unused map preview's compile/hook failures without installing Redux: local view reducer/controlled props, supported camera transition, numeric Three tone mapping, loader import and Group type. This preview is not wired into `/map`.
+- Replaced stale phone demo tests with server-backed service/reaction assertions, isolated dashboard queries and cleared query clients, supplied compatible housing slots, and corrected the map activity button expectation. No timeout increases or gameplay changes.
+- Aligned four local PGlite auth stubs with `auth.users.is_anonymous`. As in the existing career harness, these empty-schema tests omit exactly 0075's data-only, hosted-count-guarded cleanup. No published SQL was changed or applied to a hosted database. This is not validation of that operational cleanup or the hosted migration ledger.
+- Excluded only upstream Draco JavaScript bundles from ESLint after debug output confirmed ESLint was processing those vendored files. Upstream files/licenses were not reformatted.
+
+### Verification record
+
+| Check | Recorded outcome |
+| --- | --- |
+| `npm.cmd run typecheck` | Initial check failed with the same 31 Phase 0 diagnostics; both subsequent checks, including final source, passed (exit 0). |
+| `npx.cmd vitest run src/test/town-data-integrity.test.ts --maxWorkers=1` before duplicate repair | Failed 1/1: 14 district records but only 11 unique IDs. |
+| `npx.cmd vitest run src/test/map-housing-markers.test.ts --maxWorkers=1` before projection repair | Failed 2 / passed 1: old origin and discarded expanded-edge cell. |
+| First full `npx.cmd vitest run --maxWorkers=1 --reporter=verbose` | 113 files: 6 failed / 107 passed; 486 tests: 3 failed / 430 passed / 53 skipped. Four suite setup failures at missing auth.users.is_anonymous; stale map activity label and the deliberately failing pre-fix marker regression also present. Source was still being repaired during this diagnostic run; it is not a final snapshot. |
+| Intermediate 10-suite acceptance | 35 passed / 1 failed; dashboard async availability assertion expired under concurrent load. Queries/cache were then isolated rather than extending timeouts. |
+| Focused final UI acceptance (`npx.cmd vitest run src/test/city-map-dashboard.test.tsx src/test/community-phone-apps.test.tsx src/test/map-housing-markers.test.ts src/test/town-data-integrity.test.ts src/test/map-camera.test.tsx src/test/home-interior.test.tsx src/test/house-edit-sheets.test.tsx src/test/place-action-menu.test.tsx --maxWorkers=1 --reporter=verbose`) | All 30 tests in 8 files passed, none skipped (84.62s). Three CJS deprecation warning remains. |
+| Four local DB suites (`npx.cmd vitest run src/test/housing-database.test.ts src/test/shared-hud-database.test.ts src/test/business-database.test.ts src/test/business-investment-database.test.ts --maxWorkers=1 --reporter=verbose`) | All 53 tests in 4 files passed, none skipped (69.25s), after fixing the Auth stub and excluding only operational cleanup 0075. The intermediate rerun correctly rejected that cleanup's unmatched live counts before this harness correction. |
+| `npm.cmd run lint` | Final completed run: **330 errors / 12 warnings**, 310 auto-fixable. Existing errors in unedited source/scripts/Edge Function/public site remain; no global --fix or unrelated reformat was performed. Initial lint was interrupted without results; debug rerun identified vendored decoder processing. |
+| Scoped `npx.cmd eslint` | All edited TS/TSX files plus eslint.config.js passed with 0 diagnostics; exact file list below is the scoped target set, excluding JSON and Markdown. |
+| `npm.cmd run build` | Initial restricted build failed in nitro:externals with EPERM readlink C:\\Users\\user. Permitted retry passed. Final build after marker repair also passed (client, SSR and Nitro). Existing >1,000 kB client-chunk warning and plugin timing notices remain. Largest client JS is 1,828,078 bytes raw; no device load/performance claim follows from a build. |
+| `npm.cmd run build:public` | Passed; 17 modules, entry JS 228.29 kB raw / 71.03 kB gzip. No public-site code changed. |
+| `node scripts/map-runtime-browser-check.mjs 375` | Restricted run exited without completing DevTools Runtime.enable (unsettled top-level await). Permitted retry exited 1 with undefined lifecycle result and captured errors/warnings/failures all empty. **No browser pass**: absence of captured errors does not establish successful navigation/rendering. Game Vite server was on port 3002; build/optimizer reloads occurred during this attempt. Temporary fixture was removed, local Vite server stopped. |
+| Historical neighborhood smoke | `scripts/neighborhood-browser-smoke.mjs` is absent. Current map lifecycle checker does not replace movement/collision/two-player acceptance. |
+| `git diff --check` | Passed at review; final status recorded below. |
+
+**Final full regression:** `npx.cmd vitest run --maxWorkers=1 --reporter=verbose` passed, exit 0: **486 tests across 113 files, no failures or skipped tests**, 543.50s. This fresh run uses the final source and replaces the diagnostic full run above as current regression evidence. Together with final typecheck, changed-file lint and both builds, it establishes local source readiness subject to the unresolved repository lint and browser/device gates.
+
+### Exact changed files
+
+Added documentation/tests:
+
+- `docs/osogbo-life-improvement-plan.md` (Phase 0 document retained; approval status updated)
+- `docs/map-issues-inventory.md`
+- `docs/playcanvas-home-slice-plan.md` (Phase 2 planning only)
+- `src/test/map-camera.test.tsx`
+- `src/test/town-data-integrity.test.ts`
+
+Modified:
+
+- `docs/release-qa.md`
+- `eslint.config.js`
+- `src/components/game/GameUIOverlay.tsx`
+- `src/components/game/map/InteractiveMap.tsx`
+- `src/components/game/map/MapCamera.tsx`
+- `src/components/game/map/MapPin.tsx`
+- `src/components/map/map-housing-markers.ts`
+- `src/data/osogbo-town.json` (duplicate removal only; original JSON formatting preserved)
+- `src/store/mapSlice.ts`
+- `src/test/business-database.test.ts`
+- `src/test/business-investment-database.test.ts`
+- `src/test/city-map-dashboard.test.tsx`
+- `src/test/community-phone-apps.test.tsx`
+- `src/test/house-edit-sheets.test.tsx`
+- `src/test/housing-database.test.ts`
+- `src/test/map-housing-markers.test.ts`
+- `src/test/place-action-menu.test.tsx`
+- `src/test/shared-hud-database.test.ts`
+
+### Remaining gates and data impact
+
+Repository-wide lint is not green. Automated WebGL lifecycle, responsive layout/overflow, authenticated two-client behavior, hosted RLS/RPCs and real-device performance remain unverified. The current map has no caller of joinNeighborhood; party presence is a separate integration. Local Drizzle fixture map seeds still cover ten places, while the newer Supabase expanded-town migration is a separate source; these local tests do not establish the hosted expanded-venue state. Do not claim all 22 venues are live merely because source data exists.
+
+Migrations added/applied: **None**. No dependency install, PlayCanvas implementation, auth/RLS/RPC edit, production data operation, branch creation, commit, push, PR, merge, history rewrite or deployment. PlayCanvas benchmark/renderer work and gameplay Phases 3–8 remain gated. Owner decisions and the Phase 2 asset/performance proposal are recorded in `docs/playcanvas-home-slice-plan.md`. Work stopped after writing that plan; no PlayCanvas or later gameplay implementation followed.
+
 ## Milestone 10 local implementation verification — 2026-10-13
 
 - The approved business/investment extension is included in the user's `c404ba70` commit. Its reusable finance UI is available through `/businesses` and Wallet, with phone integration retained. The earlier commit was preserved; no history was rewritten.
@@ -131,3 +202,27 @@ Milestone 9 is **in progress**, not complete. Production deployment readiness an
 - Real mobile/desktop browser, screen-reader, contrast, and keyboard QA require a browser and staging account; they are not represented by a successful build.
 - Live RLS, migration application, HTTPS, map-provider quotas, and cross-device persistence require staging/deployment verification.
 - The current map and 3D house chunks are large when those screens are opened. They are deferred from the initial landing bundle; collect route-level load traces on target devices before choosing further optimization.
+
+## 2026-10-25: optional home-renderer benchmark continuation
+
+Validation: 501 tests passed across 115 files (zero skipped); typecheck, scoped lint, game build, public build and `git diff --check` passed. Global lint remains at 330 errors and 12 warnings in existing source.
+
+R3F remains the default. The isolated PlayCanvas fixture passed at 375px and 1024px with mouse/touch commands, blocked gestures, actual GLB instantiation, and zero remaining input listeners/observers after disposal. These software-browser fixtures do not establish phone performance or authenticated housing behavior. Measurements, exact benchmark files, limitations and validation status are recorded in [playcanvas-home-benchmark.md](playcanvas-home-benchmark.md). No migrations or deployment were performed.
+
+## 2026-10-25: approved Phase 3.1 daily tasks
+
+Added three server-verified daily objectives to Missions: meal, study and socialize, each worth 5 XP once per account/task/Lagos day. Claim records and rewards are atomic; client state never awards XP. Existing missions and activity rules are retained. The dated migration is local only and requires the existing game baseline; the Drizzle runner does not apply it. No hosted migration, production data write or deployment occurred.
+
+Focused checks: 22 tests across five files passed; final service rerun: 5 passed. Typecheck, scoped lint, game/public builds and the isolated 375px browser fixture passed. Final full suite: **521 tests across 118 files passed, zero skipped**, exit 0 (364.15 seconds). Fresh repository-wide lint remains at 330 errors and 12 warnings in existing source. Exact file manifest, migration prerequisites, commands/evidence and security/concurrency limits are in [phase-3-daily-tasks-implementation.md](phase-3-daily-tasks-implementation.md). Existing benchmark changes remain preserved; R3F remains the default.
+
+## 2026-10-25: approved Phase 3.2 weekly events
+
+Reconciled the existing three weekly events with stored server occurrences, fictional public venues, persistent attendance and validated server snapshots across the existing HUD, location page and map details. The legacy join RPC remains available; the updated UI pins an occurrence to reject delayed requests for another week. No rewards, prices, fees, mood or reputation effects were added.
+
+Validation: 50 focused tests across seven files passed; typecheck, scoped lint, game/public builds and the isolated 375px browser fixture passed. Global lint remains at 330 errors / 12 warnings. Full suite: **541 tests across 121 files passed, zero skipped**, exit 0. The new dated migration is local only and requires the expanded-town location migration and existing game baseline. Hosted application, authenticated browser gameplay and independent-connection race checks remain unverified. Exact files, migration prerequisites and evidence: [phase-3-weekly-events-implementation.md](phase-3-weekly-events-implementation.md).
+
+## 2026-10-25: approved Phase 3.3 daily check-in streak
+
+Added automatic visible/online game-session check-in with server-computed consecutive Lagos days and a default 5 XP/day reward, capped at 5 with no multiplier or money. Account/day receipts, streak state and XP are atomic and replay-safe. Character recreation does not erase daily claims. Read-only snapshots never award rewards. Existing auth, daily tasks, events and renderer defaults remain preserved.
+
+Focused checks: 20 tests across three files passed. Typecheck, scoped lint, game/public builds, `git diff --check` and the 375px synthetic browser fixture passed. Global lint reports 329 errors / 12 warnings in existing source. Full suite: **561 tests across 124 files passed, zero skipped**, exit 0 (455.98 seconds). The new dated migration is local only; hosted application, authenticated gameplay and independent-session race checks remain unverified. Exact files and evidence: [phase-3-login-streak-implementation.md](phase-3-login-streak-implementation.md).

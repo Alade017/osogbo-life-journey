@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -12,7 +12,7 @@ import "@/components/game/housing/property-listings.css";
 
 export const Route = createFileRoute("/_authenticated/_game/rentals")({
   head: () => pageMeta("Rent a home", "Find a place to rent in Osogbo Life."),
-  component: PropertiesPage,
+  component: RentalsPage,
 });
 
 type PropertyListing = {
@@ -75,7 +75,7 @@ function rentalReason(
   eligibilityError: boolean,
 ) {
   if (listing.isCurrentHome) return "This is your current home.";
-  if (!listing.available) return "You already have an active rental.";
+  if (!listing.available) return "You already have an active property.";
   if (balance === null) return "Your wallet is still loading.";
   if (balance < listing.upfrontTotalMinor)
     return `You need ${formatNaira(listing.upfrontTotalMinor - balance)} more for move-in.`;
@@ -87,11 +87,17 @@ function rentalReason(
   return null;
 }
 
-function PropertiesPage() {
+export function RentalsPage() {
   const queryClient = useQueryClient();
-  const { data: character } = useQuery(q.character());
-  const { data: wallet, isPending: walletLoading } = useQuery(q.wallet());
+  const characterQuery = useQuery(q.character());
+  const walletQuery = useQuery(q.wallet());
+  const character = characterQuery.data;
+  const wallet = walletQuery.data;
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  useEffect(() => {
+    const requestedHome = window.location.hash.slice(1);
+    if (requestedHome) setSelectedId(requestedHome);
+  }, []);
   const [filters, setFilters] = useState<Filter[]>([]);
   const [rentError, setRentError] = useState("");
   const requestKeys = useRef(new Map<string, string>());
@@ -112,7 +118,9 @@ function PropertiesPage() {
     queryFn: () => housingRequest<Eligibility>("/api/housing/eligible"),
   });
   const listings = propertiesQuery.data ?? [];
-  const balance = walletLoading ? null : Number(wallet?.balance ?? 0);
+  const balance =
+    walletQuery.isPending || walletQuery.isError ? null : Number(wallet?.balance ?? 0);
+  const loadError = characterQuery.error ?? walletQuery.error ?? propertiesQuery.error;
   const visible = listings.filter((listing) => {
     if (filters.includes("affordable") && (balance === null || balance < listing.upfrontTotalMinor))
       return false;
@@ -148,7 +156,11 @@ function PropertiesPage() {
         queryClient.invalidateQueries({ queryKey: ["housingProperties"] }),
         queryClient.invalidateQueries({ queryKey: ["housingEligibility"] }),
         queryClient.invalidateQueries({ queryKey: ["housingHome"] }),
+        queryClient.invalidateQueries({ queryKey: ["canonicalHousingHome"] }),
         queryClient.invalidateQueries({ queryKey: ["authoritativeHouseState"] }),
+        queryClient.invalidateQueries({ queryKey: ["ownedHouses"] }),
+        queryClient.invalidateQueries({ queryKey: ["housingMapProperties"] }),
+        queryClient.invalidateQueries({ queryKey: q.character().queryKey }),
         queryClient.invalidateQueries({ queryKey: q.wallet().queryKey }),
         queryClient.invalidateQueries({ queryKey: ["transactions"] }),
       ]);
@@ -178,6 +190,11 @@ function PropertiesPage() {
           <span>Available cash</span>
           <strong>{balance === null ? "Loading…" : formatNaira(balance)}</strong>
         </div>
+        <nav className="property-listings-nav" aria-label="Housing navigation">
+          <Link to="/house">My home</Link>
+          <Link to="/property">My property</Link>
+          <Link to="/properties">Find homes for sale</Link>
+        </nav>
       </header>
 
       <section className="property-listings-filter-panel" aria-label="Filter properties">
@@ -206,21 +223,34 @@ function PropertiesPage() {
         </div>
       </section>
 
-      {propertiesQuery.isPending ? (
+      {loadError ? (
+        <div className="property-listings-message" role="alert">
+          <p>{loadError.message}</p>
+          <button
+            className="map-primary-button"
+            type="button"
+            onClick={() => {
+              void characterQuery.refetch();
+              void walletQuery.refetch();
+              if (character?.id) void propertiesQuery.refetch();
+            }}
+          >
+            Try again
+          </button>
+        </div>
+      ) : characterQuery.isPending ||
+        walletQuery.isPending ||
+        (character && propertiesQuery.isPending) ? (
         <div className="property-listings-message" role="status">
           <LoaderCircle className="property-listings-spinner" size={20} aria-hidden="true" />
           Loading homes…
         </div>
-      ) : propertiesQuery.isError ? (
-        <div className="property-listings-message" role="alert">
-          <p>{propertiesQuery.error.message}</p>
-          <button
-            className="map-primary-button"
-            type="button"
-            onClick={() => void propertiesQuery.refetch()}
-          >
-            Try again
-          </button>
+      ) : !character ? (
+        <div className="property-listings-message">
+          <p>Create a character to see rental homes.</p>
+          <Link className="map-primary-button" to="/create-character">
+            Create character
+          </Link>
         </div>
       ) : visible.length ? (
         <section aria-label="Property listings">

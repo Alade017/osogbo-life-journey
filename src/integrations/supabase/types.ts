@@ -3,6 +3,269 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type Database = {
   public: {
     Tables: {
+      login_streak_settings: {
+        Row: { singleton: boolean; reward_xp: number };
+        Insert: { singleton?: boolean; reward_xp?: number };
+        Update: { singleton?: boolean; reward_xp?: number };
+        ComputedFields: never;
+        Relationships: [];
+      };
+      login_streak_state: {
+        Row: { user_id: string; last_check_in: string; streak: number };
+        Insert: { user_id: string; last_check_in: string; streak: number };
+        Update: { user_id?: string; last_check_in?: string; streak?: number };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: "login_streak_state_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      login_streak_claims: {
+        Row: {
+          user_id: string;
+          lagos_date: string;
+          streak: number;
+          reward_xp: number;
+          character_id: string | null;
+          claimed_at: string;
+        };
+        Insert: {
+          user_id: string;
+          lagos_date: string;
+          streak: number;
+          reward_xp: number;
+          character_id?: string | null;
+          claimed_at: string;
+        };
+        Update: {
+          user_id?: string;
+          lagos_date?: string;
+          streak?: number;
+          reward_xp?: number;
+          character_id?: string | null;
+          claimed_at?: string;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: "login_streak_claims_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "login_streak_claims_character_id_fkey";
+            columns: ["character_id"];
+            isOneToOne: false;
+            referencedRelation: "characters";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      city_event_catalog: {
+        Row: {
+          id: string;
+          title: string;
+          description: string;
+          landmark_id: string;
+          weekday: number;
+          start_hour: number;
+          end_hour: number;
+          outdoors: boolean;
+          enabled: boolean;
+        };
+        Insert: {
+          id: string;
+          title: string;
+          description: string;
+          landmark_id: string;
+          weekday: number;
+          start_hour: number;
+          end_hour: number;
+          outdoors: boolean;
+          enabled?: boolean;
+        };
+        Update: {
+          id?: string;
+          title?: string;
+          description?: string;
+          landmark_id?: string;
+          weekday?: number;
+          start_hour?: number;
+          end_hour?: number;
+          outdoors?: boolean;
+          enabled?: boolean;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: "city_event_catalog_landmark_id_fkey";
+            columns: ["landmark_id"];
+            isOneToOne: false;
+            referencedRelation: "map_landmarks";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      city_event_occurrences: {
+        Row: {
+          id: string;
+          event_id: string;
+          week_start: string;
+          starts_at: string;
+          ends_at: string;
+          world_day: number;
+          title: string;
+          description: string;
+          location_id: string;
+          landmark_id: string;
+          district_id: string;
+          outdoors: boolean;
+        };
+        Insert: {
+          id?: string;
+          event_id: string;
+          week_start: string;
+          starts_at: string;
+          ends_at: string;
+          world_day: number;
+          title: string;
+          description: string;
+          location_id: string;
+          landmark_id: string;
+          district_id: string;
+          outdoors: boolean;
+        };
+        Update: {
+          id?: string;
+          event_id?: string;
+          week_start?: string;
+          starts_at?: string;
+          ends_at?: string;
+          world_day?: number;
+          title?: string;
+          description?: string;
+          location_id?: string;
+          landmark_id?: string;
+          district_id?: string;
+          outdoors?: boolean;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: "city_event_occurrences_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "city_event_catalog";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "city_event_occurrences_location_id_fkey";
+            columns: ["location_id"];
+            isOneToOne: false;
+            referencedRelation: "locations";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "city_event_occurrences_landmark_id_fkey";
+            columns: ["landmark_id"];
+            isOneToOne: false;
+            referencedRelation: "map_landmarks";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "city_event_occurrences_district_id_fkey";
+            columns: ["district_id"];
+            isOneToOne: false;
+            referencedRelation: "map_districts";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      daily_task_catalog: {
+        Row: {
+          task_key: string;
+          action_id: string;
+          title: string;
+          reward_xp: number;
+          sort_order: number;
+          enabled: boolean;
+        };
+        Insert: {
+          task_key: string;
+          action_id: string;
+          title: string;
+          reward_xp?: number;
+          sort_order: number;
+          enabled?: boolean;
+        };
+        Update: {
+          task_key?: string;
+          action_id?: string;
+          title?: string;
+          reward_xp?: number;
+          sort_order?: number;
+          enabled?: boolean;
+        };
+        ComputedFields: never;
+        Relationships: [];
+      };
+      daily_task_claims: {
+        Row: {
+          user_id: string;
+          lagos_date: string;
+          task_key: string;
+          character_id: string | null;
+          reward_xp: number;
+          claimed_at: string;
+        };
+        Insert: {
+          user_id: string;
+          lagos_date: string;
+          task_key: string;
+          character_id?: string | null;
+          reward_xp: number;
+          claimed_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          lagos_date?: string;
+          task_key?: string;
+          character_id?: string | null;
+          reward_xp?: number;
+          claimed_at?: string;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: "daily_task_claims_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "daily_task_claims_character_id_fkey";
+            columns: ["character_id"];
+            isOneToOne: false;
+            referencedRelation: "characters";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "daily_task_claims_task_key_fkey";
+            columns: ["task_key"];
+            isOneToOne: false;
+            referencedRelation: "daily_task_catalog";
+            referencedColumns: ["task_key"];
+          },
+        ];
+      };
       activities: {
         Row: {
           category: string;
@@ -522,6 +785,7 @@ export type Database = {
           health: number;
           hunger: number;
           id: string;
+          inside_home_property_id: string | null;
           intelligence: number;
           is_adult: boolean | null;
           level: number;
@@ -566,6 +830,7 @@ export type Database = {
           health?: number;
           hunger?: number;
           id?: string;
+          inside_home_property_id?: string | null;
           intelligence?: number;
           is_adult?: never;
           level?: number;
@@ -609,6 +874,7 @@ export type Database = {
           health?: number;
           hunger?: number;
           id?: string;
+          inside_home_property_id?: string | null;
           intelligence?: number;
           is_adult?: never;
           level?: number;
@@ -3443,7 +3709,9 @@ export type Database = {
           created_at: string;
           dashboard_pins: NonNullable<Json>;
           display_name: string | null;
+          effects_enabled: boolean;
           id: string;
+          music_enabled: boolean;
           reduced_motion: boolean;
           sound_enabled: boolean;
           updated_at: string;
@@ -3454,7 +3722,9 @@ export type Database = {
           created_at?: string;
           dashboard_pins?: NonNullable<Json>;
           display_name?: string | null;
+          effects_enabled?: boolean;
           id: string;
+          music_enabled?: boolean;
           reduced_motion?: boolean;
           sound_enabled?: boolean;
           updated_at?: string;
@@ -3464,7 +3734,9 @@ export type Database = {
           created_at?: string;
           dashboard_pins?: NonNullable<Json>;
           display_name?: string | null;
+          effects_enabled?: boolean;
           id?: string;
+          music_enabled?: boolean;
           reduced_motion?: boolean;
           sound_enabled?: boolean;
           updated_at?: string;
@@ -4227,6 +4499,13 @@ export type Database = {
       };
       claim_fixed_term_investment: { Args: { p_investment_id: string }; Returns: Json };
       claim_mission: { Args: { p_player_mission_id: string }; Returns: Json };
+      claim_daily_task: { Args: { p_task_key: string; p_date: string }; Returns: Json };
+      get_daily_tasks: { Args: Record<PropertyKey, never>; Returns: Json };
+      get_login_streak: { Args: Record<PropertyKey, never>; Returns: Json };
+      touch_player_presence: { Args: Record<PropertyKey, never>; Returns: undefined };
+      check_in_login: { Args: { p_date: string }; Returns: Json };
+      get_city_events: { Args: Record<PropertyKey, never>; Returns: Json };
+      join_city_event_occurrence: { Args: { p_occurrence_id: string }; Returns: Json };
       claim_player_company_earnings: { Args: { p_company_id: string }; Returns: Json };
       complete_education_course: { Args: { p_course_slug: string }; Returns: Json };
       complete_education_course_for_user: {
@@ -4271,6 +4550,8 @@ export type Database = {
       get_friend_home_for_visit: { Args: { p_target_character_id: string }; Returns: Json };
       get_friend_status_posts: { Args: Record<PropertyKey, never>; Returns: Json };
       get_house_state: { Args: { p_player_id: string }; Returns: Json };
+      enter_player_home: { Args: Record<PropertyKey, never>; Returns: Json };
+      leave_player_home: { Args: Record<PropertyKey, never>; Returns: Json };
       get_or_create_player_conversation: { Args: { p_target_character_id: string }; Returns: Json };
       get_player_profile: { Args: { p_character_id: string }; Returns: Json };
       get_player_social_overview: { Args: Record<PropertyKey, never>; Returns: Json };

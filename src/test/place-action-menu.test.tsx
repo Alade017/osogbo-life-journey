@@ -11,7 +11,7 @@ describe("place action menu", () => {
     fireEvent.click(screen.getByRole("button", { name: /Buy food/ }));
     expect(screen.getAllByText(/Costs ₦250–₦450/)).toHaveLength(2);
     expect(screen.getAllByText(/20 game minutes/)).toHaveLength(2);
-    fireEvent.click(screen.getByRole("button", { name: "Confirm activity" }));
+    fireEvent.click(screen.getByRole("button", { name: "Do activity" }));
     expect(onRun).toHaveBeenCalledWith(action.id);
   });
 

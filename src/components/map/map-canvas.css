@@ -74,6 +74,21 @@
   border-color: var(--destructive, #b42318);
 }
 
+.town-player-marker {
+  display: inline-block;
+  padding: 0.42rem 0.7rem;
+  border: 2px solid var(--card);
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: var(--elevation-card);
+  font:
+    750 0.72rem/1.1 system-ui,
+    sans-serif;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 .town-place-marker,
 .town-district-marker {
   border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);

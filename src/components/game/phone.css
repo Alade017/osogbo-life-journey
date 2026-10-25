@@ -1,38 +1,28 @@
-/* A consistent device shell for the launcher and every app opened inside it. */
 .phone-dialog.phone-dialog {
-  width: min(420px, 100vw) !important;
-  max-width: 420px !important;
-  height: min(840px, calc(100dvh - 20px)) !important;
-  max-height: calc(100dvh - 20px) !important;
-  gap: 0;
+  position: fixed !important;
+  inset: 0 !important;
+  display: flex;
+  flex-direction: column;
+  margin: auto !important;
+  transform: none !important;
+  translate: none !important;
+
+  width: min(420px, calc(100vw - 24px)) !important;
+  max-width: min(420px, calc(100vw - 24px)) !important;
+
+  height: min(840px, calc(100vh - 24px)) !important;
+  height: min(840px, calc(100dvh - 24px)) !important;
+  max-height: calc(100dvh - 24px) !important;
+
+  box-sizing: border-box;
   overflow: hidden;
   padding: 8px !important;
-  border: 2px solid color-mix(in srgb, var(--brand-cream) 20%, transparent);
   border-radius: 24px !important;
   background: var(--brand-ink, #0b0f19);
-  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7);
-}
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.5);
+  border: 2px solid color-mix(in srgb, var(--brand-cream) 20%, transparent);
 
-/* Mobile: keep the phone centred in the viewport, above the bottom navigation.
-   Tailwind's Radix dialog classes position with the `translate` property, so it
-   must be reset explicitly; `transform` alone leaves the offset in place. */
-@media (max-width: 640px) {
-  .phone-dialog.phone-dialog {
-    position: fixed !important;
-    inset: auto !important;
-    top: 50% !important;
-    left: 50% !important;
-    right: auto !important;
-    bottom: auto !important;
-    translate: none !important;
-    transform: translate(-50%, -50%) !important;
-    width: min(420px, calc(100vw - 24px)) !important;
-    max-width: min(420px, calc(100vw - 24px)) !important;
-    height: min(840px, calc(100dvh - 24px)) !important;
-    max-height: calc(100dvh - 24px) !important;
-    margin: 0 !important;
-    z-index: var(--game-dialog-layer) !important;
-  }
+  z-index: var(--game-dialog-layer) !important;
 }
 
 /* Full-height phone apps keep native scrolling while hiding visual scrollbars. */
@@ -267,10 +257,27 @@
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
+.phone-dialog .phone-screen {
+  height: 100%;
+  min-height: 0;
+}
+
 @media (max-width: 640px) {
-  .phone-screen {
-    border-radius: 0 !important;
-    border: none !important;
+  .phone-dialog.phone-dialog {
+    width: calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right)) !important;
+    max-width: calc(
+      100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right)
+    ) !important;
+    height: calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
+    max-height: calc(
+      100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom)
+    ) !important;
+    padding: 4px !important;
+    border-radius: 20px !important;
+  }
+
+  .phone-dialog .phone-screen {
+    border-radius: 16px !important;
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
   }
@@ -318,7 +325,6 @@
   font-size: 12px;
   line-height: 1.45;
 }
-
 
 .phone-app-grid {
   min-height: 0;
@@ -490,6 +496,263 @@
   background: var(--brand-porcelain, var(--background));
   -webkit-overflow-scrolling: touch;
 }
+.phone-app-body > * {
+  min-width: 0;
+}
+.phone-route-app {
+  width: 100%;
+  min-width: 0;
+}
+.phone-app-body :is(.property-market-page, .property-listings-page, .game-page) {
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+  margin: 0;
+  padding: 0.75rem;
+}
+.phone-app-body :is(.profile-page, .inventory-page) {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  padding: 0.75rem;
+}
+.phone-app-body :is(.profile-hero, .profile-columns, .profile-glance) {
+  grid-template-columns: minmax(0, 1fr);
+}
+.phone-app-body .game-page-header {
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.9rem;
+}
+.phone-app-body .game-page-header h1 {
+  font-size: 1.25rem;
+  line-height: 1.2;
+}
+.phone-app-body .game-page-header .game-page-eyebrow {
+  font-size: 0.65rem;
+}
+.phone-app-body .game-panel {
+  min-width: 0;
+}
+.phone-town-composer {
+  display: grid;
+  gap: 0.7rem;
+  padding: 0.75rem;
+}
+.phone-town-composer label {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.phone-town-composer :is(input, textarea, select) {
+  width: 100%;
+  min-width: 0;
+  padding: 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  background: var(--card);
+  color: var(--foreground);
+}
+.phone-app-recovery > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.75rem;
+}
+.phone-app-recovery :is(a, button) {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--primary);
+  border-radius: 0.75rem;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  padding: 0.55rem 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.phone-app-recovery {
+  padding: 1.25rem;
+  color: var(--foreground);
+}
+.phone-app-recovery p {
+  margin: 0.5rem 0;
+  color: var(--muted-foreground);
+}
+
+.phone-service-screen {
+  display: grid;
+  align-content: start;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 1rem;
+  color: var(--foreground);
+}
+
+.phone-service-screen > header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.phone-service-screen > header p,
+.phone-service-card p,
+.phone-service-card small {
+  margin: 0.15rem 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+}
+
+.phone-service-card,
+.phone-service-checkout {
+  display: grid;
+  gap: 0.5rem;
+  min-width: 0;
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  background: var(--card);
+}
+
+.phone-service-card h3,
+.phone-service-subheading {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 750;
+}
+
+.phone-service-card time {
+  color: var(--muted-foreground);
+  font-size: 0.7rem;
+}
+
+.phone-service-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.phone-service-row small {
+  display: block;
+}
+
+.phone-service-field,
+.phone-service-row label {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.phone-service-screen :is(input, select) {
+  min-height: 42px;
+  min-width: 0;
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  color: var(--foreground);
+  background: var(--background);
+}
+
+.phone-service-row input {
+  width: 4.5rem;
+}
+
+.phone-service-screen button {
+  min-height: 42px;
+  padding: 0.5rem 0.8rem;
+  border-radius: 0.65rem;
+  color: var(--primary-foreground);
+  background: var(--primary);
+  font-size: 0.78rem;
+  font-weight: 750;
+}
+
+.phone-service-screen button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.phone-service-screen button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.phone-service-state {
+  padding: 1rem;
+  border: 1px dashed var(--border);
+  border-radius: 0.8rem;
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+}
+
+.phone-service-checkout span {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.82rem;
+}
+
+.phone-town-social {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid var(--border);
+}
+
+.phone-town-social > button {
+  justify-self: start;
+  min-height: 36px;
+  padding: 0.4rem 0.7rem;
+  border-radius: 0.55rem;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 10%, var(--card));
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.phone-town-social > button[aria-pressed="true"] {
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+.phone-town-social form {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.phone-town-social input {
+  min-width: 0;
+  min-height: 38px;
+  flex: 1;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: 0.55rem;
+  background: var(--background);
+}
+
+.phone-town-social form button {
+  min-height: 38px;
+  padding: 0.4rem 0.7rem;
+  border-radius: 0.55rem;
+  color: var(--primary-foreground);
+  background: var(--primary);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.phone-town-social .phone-town-comment {
+  margin: 0;
+  padding: 0.5rem;
+  border-radius: 0.55rem;
+  background: var(--muted);
+  overflow-wrap: anywhere;
+}
 
 .phone-app-toolbar button {
   min-width: 54px;
@@ -591,7 +854,9 @@
   flex: none;
   border-radius: 999px;
   background: color-mix(in srgb, var(--color-text-on-dark-soft) 80%, white);
-  transition: transform 120ms ease, background 120ms ease;
+  transition:
+    transform 120ms ease,
+    background 120ms ease;
 }
 
 .phone-home-bar-button:hover .phone-home-indicator,
@@ -1853,4 +2118,116 @@
   justify-content: center;
   padding: 32px 16px;
   text-align: center;
+}
+
+.phone-screen .jobs-card-grid,
+.phone-screen .inventory-grid,
+.phone-screen .inventory-equipment-grid {
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 12px;
+}
+
+.phone-map-sub-app {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.phone-map-container {
+  flex: 1 1 55%;
+  min-height: 0;
+  position: relative;
+}
+
+.phone-map-info {
+  display: grid;
+  flex: 0 0 42%;
+  gap: 10px;
+  overflow-y: auto;
+  padding: 12px;
+  border-top: 1px solid var(--border);
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.phone-map-info h3 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--foreground);
+}
+
+.phone-map-card {
+  display: grid;
+  gap: 2px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--foreground);
+}
+
+.phone-map-card strong {
+  font-size: 0.72rem;
+}
+
+.phone-map-card small,
+.phone-map-list small {
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+}
+
+.phone-map-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0;
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.phone-map-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.phone-map-list li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 0.85rem;
+}
+
+.phone-map-list li > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.phone-app-body .game-settings-page {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+  margin: 0;
+  padding: 0.75rem;
+}
+.phone-app-body .game-settings-page .game-panel {
+  min-width: 0;
+  padding: 1rem;
+}
+.phone-app-body .game-settings-page input {
+  min-width: 0;
 }

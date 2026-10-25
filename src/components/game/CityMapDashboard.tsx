@@ -25,10 +25,11 @@ import {
   getPendingMapActionKey,
   clearPendingMapActionKey,
   type MapTravelResponse,
+  requestAvailableMapLandmarks,
 } from "@/lib/map-api";
 import type { PlaceActionResult } from "@/components/map/PlaceActionMenu";
-import { useWorldClock } from "@/hooks/use-world-clock";
-import { activeCityEvents } from "@/lib/world-simulation";
+import { useCityEvents } from "@/hooks/use-city-events";
+import { cityEventsForDistrict } from "@/lib/city-event-service";
 import { getCurrentMapBillboards, type CurrentMapBillboard } from "@/lib/map-billboard-map";
 import type { MapDistrict, MapLandmark } from "@/components/map/OsogboMap.svg";
 import "@/components/map/map-ui.css";
@@ -88,9 +89,25 @@ export function CityMapDashboard({
     },
   });
   const rent = useQuery(q.rentStatus());
-  const world = useWorldClock();
+  const cityEvents = useCityEvents();
   const jobCatalog = useQuery({ ...q.jobs(), enabled: filter === "jobs" });
   const locations = useQuery(q.locations());
+  const availableLandmarks = useQuery({
+    queryKey: ["mapAvailableLandmarks"],
+    queryFn: requestAvailableMapLandmarks,
+    staleTime: 60_000,
+    enabled: !offline,
+  });
+  const currentLocation = locations.data?.find(
+    (row) => row.id === character.data?.current_location_id,
+  );
+  const currentMapPlace = currentLocation
+    ? townData.landmarks.find(
+        (place) =>
+          MAP_LANDMARK_LOCATION_SLUG[place.id] === currentLocation.slug &&
+          availableLandmarks.data?.includes(place.id),
+      )
+    : null;
   const billboards = useQuery(q.billboards());
   const advertisements = useQuery(q.advertisements());
   const playerAdvertisements = useQuery(q.playerAdvertisements());
@@ -126,9 +143,14 @@ export function CityMapDashboard({
     imageUrl: entry.advertisement.creative_image_url,
     count: entry.count,
   }));
-  const activeEvents = world.data
-    ? activeCityEvents(world.data).filter((e) => e.locationSlug === selectedDistrict?.id)
-    : [];
+  const activeEvents = cityEvents.isError
+    ? []
+    : cityEventsForDistrict(cityEvents.data?.events ?? [], selectedDistrict?.id);
+  const landmarkEvent = cityEvents.isError
+    ? undefined
+    : cityEvents.data?.events.find(
+        (event) => event.status === "active" && event.landmarkId === selectedLandmark?.id,
+      );
   const travel = useMutation({
     mutationFn: ({ landmarkId, idempotencyKey }: { landmarkId: string; idempotencyKey: string }) =>
       requestMapTravel(landmarkId, idempotencyKey),
@@ -140,6 +162,7 @@ export function CityMapDashboard({
         queryClient.invalidateQueries({ queryKey: ["character"] }),
         queryClient.invalidateQueries({ queryKey: ["wallet"] }),
         queryClient.invalidateQueries({ queryKey: ["worldClock"] }),
+        queryClient.invalidateQueries({ queryKey: ["mapLandmarkDetails", variables.landmarkId] }),
       ]);
       window.dispatchEvent(new Event("osogbo:server-state-changed"));
     },
@@ -172,6 +195,7 @@ export function CityMapDashboard({
         queryClient.invalidateQueries({ queryKey: ["character"] }),
         queryClient.invalidateQueries({ queryKey: ["wallet"] }),
         queryClient.invalidateQueries({ queryKey: ["worldClock"] }),
+        queryClient.invalidateQueries({ queryKey: ["mapLandmarkDetails", variables.landmarkId] }),
       ]);
       window.dispatchEvent(new Event("osogbo:server-state-changed"));
     },
@@ -196,6 +220,7 @@ export function CityMapDashboard({
     }
   };
   const onLandmark = (id: string) => {
+    if (!availableLandmarks.data?.includes(id)) return;
     const found = landmarks.find((item) => item.id === id);
     if (found) {
       setSelectedDistrict(null);
@@ -211,7 +236,9 @@ export function CityMapDashboard({
     return (
       [
         ...districts.map((d) => ({ id: d.id, kind: "district" as const, label: d.name })),
-        ...landmarks.map((l) => ({ id: l.id, kind: "landmark" as const, label: l.label })),
+        ...landmarks
+          .filter((l) => availableLandmarks.data?.includes(l.id))
+          .map((l) => ({ id: l.id, kind: "landmark" as const, label: l.label })),
       ]
         .map((item) => ({
           ...item,
@@ -227,7 +254,7 @@ export function CityMapDashboard({
         .filter((x) => x.score < 3)
         .sort((a, b) => a.score - b.score)[0] ?? null
     );
-  }, [search]);
+  }, [availableLandmarks.data, search]);
   const locationsWithJobs = new Set(
     (jobCatalog.data ?? []).flatMap((job) => (job.location_id ? [job.location_id] : [])),
   );
@@ -296,6 +323,11 @@ export function CityMapDashboard({
           Homes could not be loaded. The town map is still available.
         </div>
       )}
+      {!offline && availableLandmarks.isError && (
+        <div role="alert" className="map-housing-message">
+          Places could not be loaded. Reconnect to browse the town.
+        </div>
+      )}
       {mapLevel === "town" && (
         <div className="map-controls">
           <div className="map-category-chips" aria-label="Filter places">
@@ -330,9 +362,13 @@ export function CityMapDashboard({
       )}
       {mapLevel === "town" ? (
         <MapCanvas
-          properties={
-            housingMarkers.isPending && !offline ? undefined : (housingMarkers.data ?? [])
+          playerLocation={
+            currentMapPlace
+              ? { x: currentMapPlace.grid.x, y: currentMapPlace.grid.z, label: "You are here" }
+              : null
           }
+          properties={housingMarkers.data ?? []}
+          availableLandmarkIds={availableLandmarks.data ?? []}
           onSelectDistrict={onDistrict}
           onSelectLandmark={onLandmark}
           activeFilter={filter}
@@ -359,10 +395,15 @@ export function CityMapDashboard({
       />
       {mapLevel === "town" && selectedDistrict && (
         <DistrictSheet
-          district={selectedDistrict}
+          district={{
+            ...selectedDistrict,
+            landmarks: selectedDistrict.landmarks.filter((landmark) =>
+              availableLandmarks.data?.includes(landmark.id),
+            ),
+          }}
           event={
             activeEvents[0]
-              ? { label: activeEvents[0].title, endHour: activeEvents[0].endHour }
+              ? { label: activeEvents[0].title, endsAt: activeEvents[0].endsAt }
               : null
           }
           onClose={() => setSelectedDistrict(null)}
@@ -371,7 +412,11 @@ export function CityMapDashboard({
       )}
       {mapLevel === "town" && selectedLandmark && (
         <LandmarkSheet
+          key={selectedLandmark.id}
           landmark={selectedLandmark}
+          event={
+            landmarkEvent ? { label: landmarkEvent.title, endsAt: landmarkEvent.endsAt } : null
+          }
           description={
             selectedLandmark.category === "worship"
               ? "This map marker is informational and is not an in-game destination."

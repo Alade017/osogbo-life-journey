@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { parseCityEventJoin } from "@/lib/city-event-service";
 import { type GameTime } from "@/lib/game-time";
 import { NEED_NAMES, type LifeActionId, type Needs, ACTION_CATALOG } from "@/lib/life-simulation";
 
@@ -12,6 +13,7 @@ export type SimulationSnapshot = {
   speed: 0.5 | 1 | 2;
   action: LifeActionId | null;
   request_id: string | null;
+  sleep_elapsed_seconds?: number;
   skills: Record<string, number>;
   queued_actions: LifeActionId[];
 };
@@ -50,6 +52,10 @@ export function parseSimulationSnapshot(value: unknown): SimulationSnapshot {
     (s.action !== null &&
       (!Object.hasOwn(ACTION_CATALOG, s.action) || typeof s.request_id !== "string")) ||
     (s.action === null && s.request_id !== null) ||
+    (s.sleep_elapsed_seconds !== undefined &&
+      (!Number.isFinite(s.sleep_elapsed_seconds) ||
+        s.sleep_elapsed_seconds < 0 ||
+        s.sleep_elapsed_seconds > 120)) ||
     !s.skills ||
     typeof s.skills !== "object" ||
     Array.isArray(s.skills) ||
@@ -96,5 +102,5 @@ export async function readWorldClock(): Promise<GameTime> {
 export async function joinCityEvent(id: string) {
   const { data, error } = await supabase.rpc("join_city_event", { p_event: id });
   if (error) throw new Error(error.message);
-  return data as { joined: boolean; duplicate: boolean };
+  return parseCityEventJoin(data);
 }

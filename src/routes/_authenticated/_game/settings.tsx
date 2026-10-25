@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { q, rpc } from "@/lib/game";
@@ -17,7 +17,8 @@ export const Route = createFileRoute("/_authenticated/_game/settings")({
   component: SettingsPage,
 });
 
-function SettingsPage() {
+export function SettingsPage() {
+  const fieldId = useId();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { data: profile } = useQuery(q.profile());
@@ -49,11 +50,13 @@ function SettingsPage() {
     display_name?: string;
     reduced_motion?: boolean;
     sound_enabled?: boolean;
+    music_enabled?: boolean;
+    effects_enabled?: boolean;
   }) {
-    if (!profile) return;
+    if (!profile) return false;
     if (patch.display_name !== undefined && !patch.display_name.trim()) {
       toast.error("Enter a display name before saving.");
-      return;
+      return false;
     }
     const { data, error } = await supabase
       .from("profiles")
@@ -66,13 +69,14 @@ function SettingsPage() {
       .single();
     if (error) {
       toast.error(error.message);
-      return;
+      return false;
     }
     qc.setQueryData(["profile"], data);
     await qc.invalidateQueries({ queryKey: q.profile().queryKey });
     toast.success(
       patch.display_name !== undefined ? "Display name updated." : "Preferences saved.",
     );
+    return true;
   }
 
   async function signOut() {
@@ -139,8 +143,42 @@ function SettingsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-5">
+    <div className="game-settings-page mx-auto w-full max-w-2xl space-y-5">
       <PageHeader eyebrow="MAKE IT YOURS" title="Settings" />
+      <section className="game-panel space-y-3 p-5" aria-labelledby="audio-settings-heading">
+        <div>
+          <h2 id="audio-settings-heading" className="text-xl font-bold">
+            Audio
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            Set background music and game sound effects separately.
+          </p>
+        </div>
+        {profile ? (
+          <WorldAudioSettings
+            musicEnabled={profile.music_enabled ?? profile.sound_enabled}
+            effectsEnabled={profile.effects_enabled ?? profile.sound_enabled}
+            onChannelChange={(channel, enabled) => {
+              const musicEnabled =
+                channel === "music" ? enabled : (profile.music_enabled ?? profile.sound_enabled);
+              const effectsEnabled =
+                channel === "effects"
+                  ? enabled
+                  : (profile.effects_enabled ?? profile.sound_enabled);
+              return update({
+                ...(channel === "music"
+                  ? { music_enabled: enabled }
+                  : { effects_enabled: enabled }),
+                sound_enabled: musicEnabled || effectsEnabled,
+              });
+            }}
+          />
+        ) : (
+          <p role="status" className="text-sm text-muted-foreground">
+            Loading audio settings…
+          </p>
+        )}
+      </section>
       <section className="game-panel space-y-4 p-5">
         <h2 className="text-xl font-bold">Account</h2>
         <p className="text-sm text-muted-foreground">
@@ -151,14 +189,14 @@ function SettingsPage() {
         </p>
         {!isGuest && email.endsWith("@example.com") && (
           <div className="space-y-2 rounded-lg border border-border bg-muted/50 p-4">
-            <Label htmlFor="backup-email">Add a backup email (optional)</Label>
+            <Label htmlFor={`${fieldId}-backup-email`}>Add a backup email (optional)</Label>
             <p className="text-xs text-muted-foreground">
               Verify it to enable password recovery by email. Your username remains your sign-in
               name.
             </p>
             <div className="flex flex-wrap gap-2">
               <Input
-                id="backup-email"
+                id={`${fieldId}-backup-email`}
                 type="email"
                 autoComplete="email"
                 className="min-w-0 flex-1 bg-card"
@@ -178,9 +216,9 @@ function SettingsPage() {
               save available when you sign in on another device.
             </p>
             <div className="space-y-1.5">
-              <Label htmlFor="save-email">Email for account recovery</Label>
+              <Label htmlFor={`${fieldId}-save-email`}>Email for account recovery</Label>
               <Input
-                id="save-email"
+                id={`${fieldId}-save-email`}
                 type="email"
                 autoComplete="email"
                 value={recoveryEmail}
@@ -188,9 +226,9 @@ function SettingsPage() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="save-password">New password</Label>
+              <Label htmlFor={`${fieldId}-save-password`}>New password</Label>
               <Input
-                id="save-password"
+                id={`${fieldId}-save-password`}
                 type="password"
                 autoComplete="new-password"
                 minLength={8}
@@ -204,10 +242,10 @@ function SettingsPage() {
           </div>
         )}
         <div className="space-y-1.5">
-          <Label htmlFor="dn">Display name</Label>
+          <Label htmlFor={`${fieldId}-dn`}>Display name</Label>
           <div className="flex gap-2">
             <Input
-              id="dn"
+              id={`${fieldId}-dn`}
               maxLength={40}
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -236,15 +274,6 @@ function SettingsPage() {
             onCheckedChange={(v) => update({ reduced_motion: v })}
           />
         </label>
-        <div className="space-y-3 border-t border-border pt-4">
-          <h3 className="font-semibold">Sound & music</h3>
-          {profile && (
-            <WorldAudioSettings
-              enabled={profile.sound_enabled}
-              onEnabledChange={(sound_enabled) => void update({ sound_enabled })}
-            />
-          )}
-        </div>
       </section>
       <section className="game-panel space-y-4 p-5">
         <h2 className="text-xl font-bold">Home privacy</h2>

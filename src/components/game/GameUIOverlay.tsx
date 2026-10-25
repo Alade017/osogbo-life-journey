@@ -1,19 +1,18 @@
 // src/components/game/GameUIOverlay.tsx
 import { FC } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { selectSelectedPoi, setSelectedPoi, POI } from "../../store/mapSlice";
+import type { POI } from "@/store/mapSlice";
 
 /**
  * Full‑screen UI overlay that sits above the 3D map canvas.
  * It contains a top header (game title) and a bottom drawer that shows details
  * for the currently selected POI.
  */
-export const GameUIOverlay: FC = () => {
-  const dispatch = useDispatch();
-  const selectedPoi = useSelector(selectSelectedPoi);
-
+export const GameUIOverlay: FC<{ selectedPoi?: POI | null; onClose?: () => void }> = ({
+  selectedPoi = null,
+  onClose,
+}) => {
   const handleClose = () => {
-    dispatch(setSelectedPoi(null));
+    onClose?.();
   };
 
   const handleStartMission = () => {

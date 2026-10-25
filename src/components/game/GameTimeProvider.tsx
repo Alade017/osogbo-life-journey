@@ -29,6 +29,7 @@ type ContextValue = {
   syncError: string | null;
   busy: boolean;
   ready: boolean;
+  sleepElapsedSeconds: number | null;
   reconnect: () => void;
   pause: () => void;
   resume: () => void;
@@ -40,7 +41,7 @@ type ContextValue = {
     requestId: string,
     options?: { furniture?: readonly string[]; targetLocationId?: string },
   ) => Promise<string | null>;
-  complete: (requestId: string) => Promise<string | null>;
+  complete: (requestId: string, action?: LifeActionId) => Promise<string | null>;
   interrupt: (requestId?: string) => Promise<string | null>;
 };
 const GameTimeContext = createContext<ContextValue | null>(null);
@@ -82,6 +83,7 @@ export function GameTimeProvider({
   const [syncError, setSyncError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
+  const [sleepElapsedSeconds, setSleepElapsedSeconds] = useState<number | null>(null);
   const session = useRef<string>("");
   const revision = useRef(0);
   const inFlight = useRef(false);
@@ -92,6 +94,7 @@ export function GameTimeProvider({
   const applySnapshot = useCallback(
     (s: SimulationSnapshot) => {
       revision.current = s.revision;
+      setSleepElapsedSeconds(s.sleep_elapsed_seconds ?? null);
       setSimulation((current) => ({
         ...current,
         needs: s.needs,
@@ -158,6 +161,9 @@ export function GameTimeProvider({
           command,
           ...extra,
         });
+        if (command === "complete") {
+          void qc.invalidateQueries({ queryKey: ["dailyTasks", character.user_id] });
+        }
         if (mounted.current) {
           applySnapshot(result);
           setReady(true);
@@ -176,7 +182,7 @@ export function GameTimeProvider({
         if (mounted.current) setBusy(false);
       }
     },
-    [applySnapshot],
+    [applySnapshot, qc, character.user_id],
   );
 
   useEffect(() => {
@@ -262,10 +268,10 @@ export function GameTimeProvider({
     return error;
   }, [start]);
   const complete = useCallback(
-    (requestId: string) => {
-      const action = liveState.current.currentAction?.actionId;
-      if (!action) return Promise.resolve("There is no active activity.");
-      return send("complete", { action, requestId });
+    (requestId: string, action?: LifeActionId) => {
+      const activeAction = action ?? liveState.current.currentAction?.actionId;
+      if (!activeAction) return Promise.resolve("There is no active activity.");
+      return send("complete", { action: activeAction, requestId });
     },
     [send],
   );
@@ -279,6 +285,7 @@ export function GameTimeProvider({
       syncError,
       busy,
       ready,
+      sleepElapsedSeconds,
       reconnect,
       pause,
       resume,
@@ -294,6 +301,7 @@ export function GameTimeProvider({
       syncError,
       busy,
       ready,
+      sleepElapsedSeconds,
       reconnect,
       pause,
       resume,

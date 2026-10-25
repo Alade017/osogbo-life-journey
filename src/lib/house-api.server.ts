@@ -2,6 +2,7 @@ type HouseApiDependencies = {
   authenticate: (request: Request) => Promise<string | null>;
   state: (playerId: string) => Promise<unknown>;
   place: (playerId: string, itemId: string, slot: string) => Promise<unknown>;
+  move: (playerId: string, fromSlot: string, toSlot: string) => Promise<unknown>;
   remove: (playerId: string, slot: string) => Promise<unknown>;
   equip: (playerId: string, itemId: string) => Promise<unknown>;
   unequip: (playerId: string, slot: string) => Promise<unknown>;
@@ -87,6 +88,13 @@ export function createHouseApiHandlers(deps: HouseApiDependencies) {
           throw new Error("INVALID_REQUEST");
         return deps.place(playerId, value["itemId"], value["slot"]);
       }),
+    postMove: (request: Request) =>
+      run(request, async (playerId) => {
+        const value = await body(request);
+        if (typeof value["fromSlot"] !== "string" || typeof value["toSlot"] !== "string")
+          throw new Error("INVALID_REQUEST");
+        return deps.move(playerId, value["fromSlot"], value["toSlot"]);
+      }),
     postRemove: (request: Request) =>
       run(request, async (playerId) => {
         const value = await body(request);
@@ -133,6 +141,12 @@ async function productionHandlers() {
     state: (playerId) => rpc("get_house_state", { p_player_id: playerId }),
     place: (playerId, itemId, slot) =>
       rpc("house_place", { p_player_id: playerId, p_item_id: itemId, p_slot: slot }),
+    move: (playerId, fromSlot, toSlot) =>
+      rpc("house_move", {
+        p_player_id: playerId,
+        p_from_slot: fromSlot,
+        p_to_slot: toSlot,
+      }),
     remove: (playerId, slot) => rpc("house_remove", { p_player_id: playerId, p_slot: slot }),
     equip: (playerId, itemId) => rpc("outfit_equip", { p_player_id: playerId, p_item_id: itemId }),
     unequip: (playerId, slot) => rpc("outfit_unequip", { p_player_id: playerId, p_slot: slot }),
@@ -146,12 +160,13 @@ async function productionHandlers() {
 }
 
 export async function handleHouseRequest(
-  name: "state" | "place" | "remove" | "equip" | "unequip" | "buy",
+  name: "state" | "place" | "move" | "remove" | "equip" | "unequip" | "buy",
   request: Request,
 ) {
   const handlers = await productionHandlers();
   if (name === "state") return handlers.getState(request);
   if (name === "place") return handlers.postPlace(request);
+  if (name === "move") return handlers.postMove(request);
   if (name === "remove") return handlers.postRemove(request);
   if (name === "equip") return handlers.postEquip(request);
   if (name === "unequip") return handlers.postUnequip(request);
