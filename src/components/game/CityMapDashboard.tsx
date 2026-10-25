@@ -146,6 +146,11 @@ export function CityMapDashboard({
   const activeEvents = cityEvents.isError
     ? []
     : cityEventsForDistrict(cityEvents.data?.events ?? [], selectedDistrict?.id);
+  const landmarkEvent = cityEvents.isError
+    ? undefined
+    : cityEvents.data?.events.find(
+        (event) => event.status === "active" && event.landmarkId === selectedLandmark?.id,
+      );
   const travel = useMutation({
     mutationFn: ({ landmarkId, idempotencyKey }: { landmarkId: string; idempotencyKey: string }) =>
       requestMapTravel(landmarkId, idempotencyKey),
@@ -409,6 +414,9 @@ export function CityMapDashboard({
         <LandmarkSheet
           key={selectedLandmark.id}
           landmark={selectedLandmark}
+          event={
+            landmarkEvent ? { label: landmarkEvent.title, endsAt: landmarkEvent.endsAt } : null
+          }
           description={
             selectedLandmark.category === "worship"
               ? "This map marker is informational and is not an in-game destination."

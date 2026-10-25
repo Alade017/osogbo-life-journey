@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, onlineManager } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CityEventParticipation } from "@/components/game/CityEventParticipation";
 import { WorldEnvironment } from "@/components/game/WorldEnvironment";
@@ -47,18 +47,24 @@ const data: CityEventSnapshot = {
   ],
 };
 let client: QueryClient;
+const clients: QueryClient[] = [];
 function setup(element = <CityEventParticipation slug="town-market" isHere />) {
   client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
+  clients.push(client);
   return render(<QueryClientProvider client={client}>{element}</QueryClientProvider>);
 }
 beforeEach(() => {
+  onlineManager.setOnline(true);
   vi.clearAllMocks();
   read.mockResolvedValue(structuredClone(data));
   Object.defineProperty(navigator, "onLine", { configurable: true, value: true });
 });
-afterEach(() => client?.clear());
+afterEach(() => {
+  clients.splice(0).forEach((queryClient) => queryClient.clear());
+  onlineManager.setOnline(true);
+});
 describe("server-driven event displays", () => {
   it("restores joined attendance from the server after remount", async () => {
     read.mockResolvedValue({ ...data, events: [{ ...data.events[0]!, joined: true }] });
@@ -107,7 +113,7 @@ describe("server-driven event displays", () => {
           events: [{ ...data.events[0]!, status }],
         });
       });
-      expect(screen.queryByRole("button", { name: "Join event" })).toBeNull();
+      await waitFor(() => expect(screen.queryByRole("button", { name: "Join event" })).toBeNull());
       expect(screen.getByRole("heading", { name: "Town Market Day" })).toBeVisible();
     }
     view.unmount();
@@ -119,22 +125,27 @@ describe("server-driven event displays", () => {
     fireEvent(window, new Event("offline"));
     expect(button).toBeDisabled();
     expect(join).not.toHaveBeenCalled();
-    view.unmount();
-    setup(<CityEventParticipation slug="town-market" isHere={false} />);
+    view.rerender(
+      <QueryClientProvider client={client}>
+        <CityEventParticipation slug="town-market" isHere={false} />
+      </QueryClientProvider>,
+    );
     expect(await screen.findByText("Travel here, then join the event.")).toBeVisible();
   });
   it("links server venues and announces each transition only once across refreshes", async () => {
     read.mockResolvedValue({ ...data, events: [] });
     setup(<WorldEnvironment />);
     await screen.findByText("No upcoming city events");
+    read.mockResolvedValue(data);
     await act(async () => {
-      client.setQueryData(["cityEvents", "account", "character"], data);
+      await client.invalidateQueries({ queryKey: ["cityEvents", "account", "character"] });
     });
-    expect(screen.getByRole("link", { name: /Town Market Day/ })).toHaveAttribute(
+    expect(await screen.findByRole("link", { name: /Town Market Day/ })).toHaveAttribute(
       "href",
       "/location/town-market",
     );
-    expect(toast).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(toast).toHaveBeenCalledTimes(1));
+    read.mockResolvedValue({ ...data, events: [] });
     await act(async () => {
       client.setQueryData(["cityEvents", "account", "character"], structuredClone(data));
     });
@@ -142,7 +153,7 @@ describe("server-driven event displays", () => {
     await act(async () => {
       client.setQueryData(["cityEvents", "account", "character"], { ...data, events: [] });
     });
-    expect(toast).toHaveBeenCalledTimes(2);
+    await waitFor(() => expect(toast).toHaveBeenCalledTimes(2));
     expect(toast).toHaveBeenLastCalledWith("Town Market Day has ended.");
   });
 });

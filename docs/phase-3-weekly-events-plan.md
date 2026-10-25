@@ -1,6 +1,6 @@
 # Phase 3.2 weekly-event reconciliation
 
-Date: 2026-10-25, Africa/Lagos. Status: architecture proposal after the owner's “proceed”. Implementation requires approval of this plan under root `AGENTS.md`; Phase 3.1 approval did not include later slices.
+Date: 2026-10-25, Africa/Lagos. Status: architecture proposal after the owner's “proceed”. The owner subsequently approved this plan, authorizing Phase 3.2 only. See `phase-3-weekly-events-implementation.md` for implementation details and evidence; the pre-implementation proposal below is retained.
 
 ## Verified baseline and gaps
 

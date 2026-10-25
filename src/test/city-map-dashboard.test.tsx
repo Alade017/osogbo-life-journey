@@ -6,6 +6,12 @@ import townData from "@/data/osogbo-town.json";
 import osunPlaces from "@/data/osun-public-places.json";
 import { MapCanvas } from "@/components/map/MapCanvas";
 import { findMapPlaceAction } from "@/lib/map-place-action.server";
+const eventState = vi.hoisted(() => ({
+  events: [] as import("@/lib/city-event-service").CityEventOccurrence[],
+}));
+vi.mock("@/hooks/use-city-events", () => ({
+  useCityEvents: () => ({ data: { events: eventState.events }, isError: false }),
+}));
 
 vi.mock("@/lib/map-api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/map-api")>()),
@@ -36,6 +42,7 @@ vi.mock("@/hooks/use-world-clock", () => ({ useWorldClock: () => ({ data: null }
 const clients: QueryClient[] = [];
 
 beforeEach(() => {
+  eventState.events = [];
   class TestResizeObserver {
     constructor(private readonly callback: ResizeObserverCallback) {}
     observe() {
@@ -69,6 +76,27 @@ function renderDashboard() {
 }
 
 describe("isometric town map", () => {
+  it("matches a selected venue with its server event landmark ID", async () => {
+    eventState.events = [
+      {
+        occurrenceId: "market-week",
+        id: "market-day",
+        title: "Town Market Day",
+        description: "Meet neighbours.",
+        locationSlug: "town-market",
+        locationName: "Town Market",
+        landmarkId: "town-market",
+        districtId: "market-quarter",
+        startsAt: "2026-10-28T08:00:00Z",
+        endsAt: "2026-10-28T15:00:00Z",
+        status: "active",
+        joined: false,
+      },
+    ];
+    renderDashboard();
+    fireEvent.click(screen.getByRole("button", { name: /Town market,/i }));
+    expect(await screen.findByText(/Town Market Day · Until/)).toBeVisible();
+  });
   it("renders the 3D canvas and a keyboard-accessible list when WebGL is unavailable", async () => {
     const { container } = renderDashboard();
     expect(

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createPortal } from "react-dom";
 import { BadgeCheck, MapPin, X } from "lucide-react";
-import { formatMapNaira } from "@/components/map/map-ui-utils";
+import { formatMapNaira, formatMapEventEnd } from "@/components/map/map-ui-utils";
 import { MapApiError, requestMapLandmark } from "@/lib/map-api";
 import { careerShiftPay } from "@/lib/economy-service";
 import { isCareerJob } from "@/lib/career-rules";
@@ -22,6 +22,7 @@ export function LandmarkSheet({
   actionPending,
   actionResult,
   locationName,
+  event,
 }: {
   landmark: {
     id: string;
@@ -42,6 +43,7 @@ export function LandmarkSheet({
   actionPending: boolean;
   actionResult?: PlaceActionResult | null;
   locationName: string;
+  event?: { label: string; endsAt: string } | null;
 }) {
   const detailsQuery = useQuery({
     queryKey: ["mapLandmarkDetails", landmark.id],
@@ -82,6 +84,11 @@ export function LandmarkSheet({
         </button>
       </header>
       <p>{detailsQuery.data?.landmark.description ?? description}</p>
+      {event && (
+        <p className="map-here-note">
+          {event.label} · Until {formatMapEventEnd(event.endsAt)}
+        </p>
+      )}
       <p className="map-location-line">
         <MapPin size={15} aria-hidden="true" /> Located in {locationName}
       </p>

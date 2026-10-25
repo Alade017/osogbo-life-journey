@@ -100,6 +100,7 @@ begin
   if cid is null then raise exception 'Create a character first'; end if;
   stamp:=clock_timestamp();
   perform public._ensure_city_event_occurrences(stamp);
+  stamp:=clock_timestamp(); -- Materialization may have waited for another transaction.
   select coalesce(jsonb_agg(jsonb_build_object(
     'occurrenceId',o.id,'id',o.event_id,'title',o.title,'description',o.description,
     'locationSlug',l.slug,'locationName',l.name,'landmarkId',o.landmark_id,'districtId',o.district_id,
@@ -133,6 +134,7 @@ begin
   if not found then raise exception 'Character not found'; end if;
   stamp:=clock_timestamp(); -- Capture only after any character-lock wait.
   perform public._ensure_city_event_occurrences(stamp);
+  stamp:=clock_timestamp(); -- Also revalidate after any occurrence-materialization wait.
   if not exists(select 1 from public.city_event_catalog where id=p_event and enabled) then
     raise exception 'Unknown city event';
   end if;
