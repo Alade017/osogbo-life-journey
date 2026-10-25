@@ -3,6 +3,71 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type Database = {
   public: {
     Tables: {
+      login_streak_settings: {
+        Row: { singleton: boolean; reward_xp: number };
+        Insert: { singleton?: boolean; reward_xp?: number };
+        Update: { singleton?: boolean; reward_xp?: number };
+        ComputedFields: never;
+        Relationships: [];
+      };
+      login_streak_state: {
+        Row: { user_id: string; last_check_in: string; streak: number };
+        Insert: { user_id: string; last_check_in: string; streak: number };
+        Update: { user_id?: string; last_check_in?: string; streak?: number };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: "login_streak_state_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: true;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      login_streak_claims: {
+        Row: {
+          user_id: string;
+          lagos_date: string;
+          streak: number;
+          reward_xp: number;
+          character_id: string | null;
+          claimed_at: string;
+        };
+        Insert: {
+          user_id: string;
+          lagos_date: string;
+          streak: number;
+          reward_xp: number;
+          character_id?: string | null;
+          claimed_at: string;
+        };
+        Update: {
+          user_id?: string;
+          lagos_date?: string;
+          streak?: number;
+          reward_xp?: number;
+          character_id?: string | null;
+          claimed_at?: string;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: "login_streak_claims_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "login_streak_claims_character_id_fkey";
+            columns: ["character_id"];
+            isOneToOne: false;
+            referencedRelation: "characters";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       city_event_catalog: {
         Row: {
           id: string;
@@ -4436,6 +4501,9 @@ export type Database = {
       claim_mission: { Args: { p_player_mission_id: string }; Returns: Json };
       claim_daily_task: { Args: { p_task_key: string; p_date: string }; Returns: Json };
       get_daily_tasks: { Args: Record<PropertyKey, never>; Returns: Json };
+      get_login_streak: { Args: Record<PropertyKey, never>; Returns: Json };
+      touch_player_presence: { Args: Record<PropertyKey, never>; Returns: undefined };
+      check_in_login: { Args: { p_date: string }; Returns: Json };
       get_city_events: { Args: Record<PropertyKey, never>; Returns: Json };
       join_city_event_occurrence: { Args: { p_occurrence_id: string }; Returns: Json };
       claim_player_company_earnings: { Args: { p_company_id: string }; Returns: Json };

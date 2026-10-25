@@ -12,6 +12,7 @@ import { HousingChooser } from "@/components/game/housing/HousingChooser";
 import { HousingRepossessionNotice } from "@/components/game/housing/HousingRepossessionNotice";
 import { GameTimeProvider } from "@/components/game/GameTimeProvider";
 import { WorldEnvironment } from "@/components/game/WorldEnvironment";
+import { LoginStreakProvider } from "@/components/game/LoginStreakProvider";
 import { gameTimeFromCharacter } from "@/lib/game-time";
 import { supabase } from "@/integrations/supabase/client";
 import { playerStateFromRows } from "@/lib/player-state";
@@ -101,7 +102,7 @@ function GameLayout() {
   useEffect(() => {
     if (!character?.id) return;
     const touch = () => {
-      if (!document.hidden && navigator.onLine) void (supabase.rpc as any)("touch_player_presence");
+      if (!document.hidden && navigator.onLine) void supabase.rpc("touch_player_presence");
     };
     touch();
     const timer = window.setInterval(touch, 25000);
@@ -203,81 +204,83 @@ function GameLayout() {
       locationId={character.current_location_id}
       locationType={simulationLocationType(currentLocation?.type)}
     >
-      <div
-        className={cn(
-          "game-shell city-game navigation-redesign card-refresh min-h-screen pb-20 md:pb-0",
-          profile?.reduced_motion && "reduce-motion",
-          phoneOpen && "phone-open",
-        )}
-      >
-        <WorldEnvironment />
-        <div className="city-game-frame">
-          <div className="city-game-content">
-            <main className="city-game-main">
-              {pathname === "/home" && !visitingFriend ? (
-                <HomeDashboard
-                  player={player}
-                  location={currentLocation?.name ?? "Osogbo"}
-                  unread={unread}
-                >
-                  <Outlet />
-                </HomeDashboard>
-              ) : (
-                <Outlet />
-              )}
-            </main>
-          </div>
-        </div>
-
-        {pathname !== "/settings" && <GameNeedsRail player={player} />}
-
-        <nav
-          className="game-mobile-nav game-floating-nav"
-          aria-label="Game navigation"
-          aria-hidden={phoneOpen || undefined}
-          inert={phoneOpen || undefined}
+      <LoginStreakProvider userId={character.user_id} characterId={character.id}>
+        <div
+          className={cn(
+            "game-shell city-game navigation-redesign card-refresh min-h-screen pb-20 md:pb-0",
+            profile?.reduced_motion && "reduce-motion",
+            phoneOpen && "phone-open",
+          )}
         >
-          <Link
-            to="/home"
-            search={{ visit: undefined }}
-            activeProps={{ className: "mobile-nav-active" }}
-            className="mobile-nav-link"
+          <WorldEnvironment />
+          <div className="city-game-frame">
+            <div className="city-game-content">
+              <main className="city-game-main">
+                {pathname === "/home" && !visitingFriend ? (
+                  <HomeDashboard
+                    player={player}
+                    location={currentLocation?.name ?? "Osogbo"}
+                    unread={unread}
+                  >
+                    <Outlet />
+                  </HomeDashboard>
+                ) : (
+                  <Outlet />
+                )}
+              </main>
+            </div>
+          </div>
+
+          {pathname !== "/settings" && <GameNeedsRail player={player} />}
+
+          <nav
+            className="game-mobile-nav game-floating-nav"
+            aria-label="Game navigation"
+            aria-hidden={phoneOpen || undefined}
+            inert={phoneOpen || undefined}
           >
-            <House className="h-4.75 w-4.75" />
-            <span>Home</span>
-          </Link>
-          <Link
-            to="/map"
-            activeProps={{ className: "mobile-nav-active" }}
-            className="mobile-nav-link"
-          >
-            <Map className="h-4.75 w-4.75" />
-            <span>City</span>
-          </Link>
-          <Link
-            to="/jobs"
-            activeProps={{ className: "mobile-nav-active" }}
-            className="mobile-nav-link"
-          >
-            <Briefcase className="h-4.75 w-4.75" />
-            <span>Jobs</span>
-          </Link>
-        </nav>
-        <div className="game-phone-fab">
-          <PhoneLauncher compact className="game-phone-fab-trigger" onOpenChange={setPhoneOpen} />
+            <Link
+              to="/home"
+              search={{ visit: undefined }}
+              activeProps={{ className: "mobile-nav-active" }}
+              className="mobile-nav-link"
+            >
+              <House className="h-4.75 w-4.75" />
+              <span>Home</span>
+            </Link>
+            <Link
+              to="/map"
+              activeProps={{ className: "mobile-nav-active" }}
+              className="mobile-nav-link"
+            >
+              <Map className="h-4.75 w-4.75" />
+              <span>City</span>
+            </Link>
+            <Link
+              to="/jobs"
+              activeProps={{ className: "mobile-nav-active" }}
+              className="mobile-nav-link"
+            >
+              <Briefcase className="h-4.75 w-4.75" />
+              <span>Jobs</span>
+            </Link>
+          </nav>
+          <div className="game-phone-fab">
+            <PhoneLauncher compact className="game-phone-fab-trigger" onOpenChange={setPhoneOpen} />
+          </div>
+          <HousingChooser
+            open={housingOpen}
+            pending={housingPending || (housingRequested && housingSource === "profile")}
+            allowSkip={housingPending}
+            onClose={() => {
+              housingHandledThisSession.current = true;
+              setHousingRequested(false);
+              setHousingOpen(false);
+            }}
+          />
+          <HousingRepossessionNotice characterId={character.id} />
         </div>
-        <HousingChooser
-          open={housingOpen}
-          pending={housingPending || (housingRequested && housingSource === "profile")}
-          allowSkip={housingPending}
-          onClose={() => {
-            housingHandledThisSession.current = true;
-            setHousingRequested(false);
-            setHousingOpen(false);
-          }}
-        />
-        <HousingRepossessionNotice characterId={character.id} />
-      </div>
+      </LoginStreakProvider>
     </GameTimeProvider>
   );
 }
