@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { Bell, MapPin } from "lucide-react";
 import { formatNaira } from "@/lib/game";
 import type { PlayerState } from "@/lib/player-state";
+import { LivingCostsSummary } from "@/components/game/LivingCostsSummary";
 import "@/components/game/home-dashboard-view.css";
 
 export function HomeDashboard({
@@ -30,6 +31,7 @@ export function HomeDashboard({
           </div>
 
           <div className="hd-status-actions">
+            <LivingCostsSummary key={player.id} characterId={player.id} userId={player.profileId} />
             <Link
               to="/notifications"
               className="hd-icon-button"

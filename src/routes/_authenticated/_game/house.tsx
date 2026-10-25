@@ -16,6 +16,7 @@ import { homeFurnitureAction, homeFurnitureNeed } from "@/lib/home-furniture-act
 import { ACTION_CATALOG } from "@/lib/life-simulation";
 import { HousingReliefPanel } from "@/components/game/housing/HousingReliefPanel";
 import { housingReliefQueryKey } from "@/lib/housing-relief-client";
+import { canonicalHomeOptions } from "@/lib/living-cost-service";
 import { HouseSceneSkeleton } from "@/components/game/loading-skeletons";
 import { Avatar } from "@/components/game/Avatar";
 import type { Appearance } from "@/game/avatar-appearance";
@@ -445,14 +446,9 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const serverState = snapshot?.state;
   const usingSaved = snapshot?.source === "saved";
   const canonicalHomeQuery = useQuery({
-    queryKey: ["canonicalHousingHome", character?.id],
+    ...canonicalHomeOptions(character?.id),
     enabled: !!character?.id && online,
-    staleTime: 15_000,
-    queryFn: async () => {
-      const response = await authorizedFetch("/api/housing/current-home");
-      if (!response.ok) throw new Error("HOME_UNAVAILABLE");
-      return normalizeCanonicalHome(await response.json().catch(() => null));
-    },
+    select: normalizeCanonicalHome,
   });
 
   useEffect(() => {

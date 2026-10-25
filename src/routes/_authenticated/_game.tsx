@@ -211,6 +211,7 @@ function GameLayout() {
             profile?.reduced_motion && "reduce-motion",
             phoneOpen && "phone-open",
           )}
+          
         >
           <WorldEnvironment />
           <div className="city-game-frame">
