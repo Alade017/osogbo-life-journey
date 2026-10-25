@@ -161,6 +161,9 @@ export function GameTimeProvider({
           command,
           ...extra,
         });
+        if (command === "complete") {
+          void qc.invalidateQueries({ queryKey: ["dailyTasks", character.user_id] });
+        }
         if (mounted.current) {
           applySnapshot(result);
           setReady(true);
@@ -179,7 +182,7 @@ export function GameTimeProvider({
         if (mounted.current) setBusy(false);
       }
     },
-    [applySnapshot],
+    [applySnapshot, qc, character.user_id],
   );
 
   useEffect(() => {

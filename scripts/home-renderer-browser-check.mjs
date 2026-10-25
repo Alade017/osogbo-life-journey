@@ -13,7 +13,7 @@ const fixture = `home-renderer-benchmark-${process.pid}.html`;
 let origin;
 let bundle;
 const pause = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-const html = `<!doctype html><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0}#room{width:100%;height:520px;position:relative}canvas{width:100%;height:100%;display:block;touch-action:none}#overlay{display:none;position:absolute;width:80px;height:80px;background:#fff;z-index:10}</style><div id="room"><canvas aria-label="Benchmark room"></canvas><div id="overlay">Room controls</div></div><script type="module">
+const html = `<!doctype html><link rel="icon" href="data:,"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0}#room{width:100%;height:520px;position:relative}canvas{width:100%;height:100%;display:block;touch-action:none}#overlay{display:none;position:absolute;width:80px;height:80px;background:#fff;z-index:10}</style><div id="room"><canvas aria-label="Benchmark room"></canvas><div id="overlay">Room controls</div></div><script type="module">
 window.homeBenchmark={stage:'loading'};
 const started=performance.now();
 try {
@@ -42,6 +42,7 @@ const responseStatuses = new Map();
 let browserDiagnostics = "";
 let tearingDown = false;
 const canceledDuringTeardown = [];
+const completedHeadProbes = [];
 let sequence = 0;
 const call = (method, params = {}) =>
   new Promise((resolve, reject) => {
@@ -256,7 +257,14 @@ try {
         status: responseStatuses.get(message.params.requestId),
         phase: tearingDown ? "teardown" : "active",
       };
-      if (tearingDown && failure.error === "net::ERR_ABORTED") canceledDuringTeardown.push(failure);
+      if (
+        failure.method === "HEAD" &&
+        failure.canceled &&
+        (failure.status === 200 || failure.status === 404)
+      )
+        completedHeadProbes.push(failure);
+      else if (tearingDown && failure.error === "net::ERR_ABORTED")
+        canceledDuringTeardown.push(failure);
       else failures.push(failure);
       requests.delete(message.params.requestId);
     }
@@ -386,6 +394,7 @@ try {
       errors,
       failures,
       canceledDuringTeardown,
+      completedHeadProbes,
     }),
   );
 } catch (error) {

@@ -3,6 +3,84 @@ export type Json = string | number | boolean | null | { [key: string]: Json | un
 export type Database = {
   public: {
     Tables: {
+      daily_task_catalog: {
+        Row: {
+          task_key: string;
+          action_id: string;
+          title: string;
+          reward_xp: number;
+          sort_order: number;
+          enabled: boolean;
+        };
+        Insert: {
+          task_key: string;
+          action_id: string;
+          title: string;
+          reward_xp?: number;
+          sort_order: number;
+          enabled?: boolean;
+        };
+        Update: {
+          task_key?: string;
+          action_id?: string;
+          title?: string;
+          reward_xp?: number;
+          sort_order?: number;
+          enabled?: boolean;
+        };
+        ComputedFields: never;
+        Relationships: [];
+      };
+      daily_task_claims: {
+        Row: {
+          user_id: string;
+          lagos_date: string;
+          task_key: string;
+          character_id: string | null;
+          reward_xp: number;
+          claimed_at: string;
+        };
+        Insert: {
+          user_id: string;
+          lagos_date: string;
+          task_key: string;
+          character_id?: string | null;
+          reward_xp: number;
+          claimed_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          lagos_date?: string;
+          task_key?: string;
+          character_id?: string | null;
+          reward_xp?: number;
+          claimed_at?: string;
+        };
+        ComputedFields: never;
+        Relationships: [
+          {
+            foreignKeyName: "daily_task_claims_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "daily_task_claims_character_id_fkey";
+            columns: ["character_id"];
+            isOneToOne: false;
+            referencedRelation: "characters";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "daily_task_claims_task_key_fkey";
+            columns: ["task_key"];
+            isOneToOne: false;
+            referencedRelation: "daily_task_catalog";
+            referencedColumns: ["task_key"];
+          },
+        ];
+      };
       activities: {
         Row: {
           category: string;
@@ -4236,6 +4314,8 @@ export type Database = {
       };
       claim_fixed_term_investment: { Args: { p_investment_id: string }; Returns: Json };
       claim_mission: { Args: { p_player_mission_id: string }; Returns: Json };
+      claim_daily_task: { Args: { p_task_key: string; p_date: string }; Returns: Json };
+      get_daily_tasks: { Args: Record<PropertyKey, never>; Returns: Json };
       claim_player_company_earnings: { Args: { p_company_id: string }; Returns: Json };
       complete_education_course: { Args: { p_course_slug: string }; Returns: Json };
       complete_education_course_for_user: {

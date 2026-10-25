@@ -202,3 +202,15 @@ Milestone 9 is **in progress**, not complete. Production deployment readiness an
 - Real mobile/desktop browser, screen-reader, contrast, and keyboard QA require a browser and staging account; they are not represented by a successful build.
 - Live RLS, migration application, HTTPS, map-provider quotas, and cross-device persistence require staging/deployment verification.
 - The current map and 3D house chunks are large when those screens are opened. They are deferred from the initial landing bundle; collect route-level load traces on target devices before choosing further optimization.
+
+## 2026-10-25: optional home-renderer benchmark continuation
+
+Validation: 501 tests passed across 115 files (zero skipped); typecheck, scoped lint, game build, public build and `git diff --check` passed. Global lint remains at 330 errors and 12 warnings in existing source.
+
+R3F remains the default. The isolated PlayCanvas fixture passed at 375px and 1024px with mouse/touch commands, blocked gestures, actual GLB instantiation, and zero remaining input listeners/observers after disposal. These software-browser fixtures do not establish phone performance or authenticated housing behavior. Measurements, exact benchmark files, limitations and validation status are recorded in [playcanvas-home-benchmark.md](playcanvas-home-benchmark.md). No migrations or deployment were performed.
+
+## 2026-10-25: approved Phase 3.1 daily tasks
+
+Added three server-verified daily objectives to Missions: meal, study and socialize, each worth 5 XP once per account/task/Lagos day. Claim records and rewards are atomic; client state never awards XP. Existing missions and activity rules are retained. The dated migration is local only and requires the existing game baseline; the Drizzle runner does not apply it. No hosted migration, production data write or deployment occurred.
+
+Focused checks: 22 tests across five files passed; final service rerun: 5 passed. Typecheck, scoped lint, game/public builds and the isolated 375px browser fixture passed. Final full suite: **521 tests across 118 files passed, zero skipped**, exit 0 (364.15 seconds). Fresh repository-wide lint remains at 330 errors and 12 warnings in existing source. Exact file manifest, migration prerequisites, commands/evidence and security/concurrency limits are in [phase-3-daily-tasks-implementation.md](phase-3-daily-tasks-implementation.md). Existing benchmark changes remain preserved; R3F remains the default.

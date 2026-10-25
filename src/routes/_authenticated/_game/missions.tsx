@@ -6,6 +6,7 @@ import { q, rpc, formatNaira, useGameAction } from "@/lib/game";
 import { pageMeta } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
 import { Chip, LoadingState, PageHeader, StatBar } from "@/components/game/ui";
+import { DailyTasks } from "@/components/game/DailyTasks";
 
 export const Route = createFileRoute("/_authenticated/_game/missions")({
   head: () => pageMeta("Missions", "Complete missions in Osogbo to earn rewards and XP."),
@@ -13,6 +14,7 @@ export const Route = createFileRoute("/_authenticated/_game/missions")({
 });
 
 function MissionsPage() {
+  const { user } = Route.useRouteContext();
   const { data: missions, isLoading } = useQuery(q.missions());
   const claim = useGameAction(rpc.claimMission, {
     onSuccess: (r) =>
@@ -30,6 +32,8 @@ function MissionsPage() {
         title="Missions"
         subtitle={`${sorted.filter((m) => m.status === "claimed").length}/${sorted.length} completed`}
       />
+      <DailyTasks userId={user.id} />
+      <h2 className="mb-4 text-2xl font-bold">Lifetime missions</h2>
       <div className="grid gap-4 md:grid-cols-2">
         {sorted.map((pm) => {
           const m = pm.mission!;
