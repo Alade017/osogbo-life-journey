@@ -2,7 +2,7 @@
 import { PGlite } from "@electric-sql/pglite";
 import { pg_trgm } from "@electric-sql/pglite/contrib/pg_trgm";
 import { readFileSync, readdirSync } from "node:fs";
-import { beforeAll, afterAll, describe, expect, it } from "vitest";
+import { beforeAll, afterAll, beforeEach, afterEach, describe, expect, it } from "vitest";
 
 const alice = "11111111-1111-4111-8111-111111111111";
 const bob = "22222222-2222-4222-8222-222222222222";
@@ -201,5 +201,189 @@ describe("career database transitions", () => {
     } finally {
       await db.exec("reset role");
     }
+  });
+
+  describe("promotion acceptance with isolated fixture state", () => {
+    async function thresholds(rank: number, shifts: number, skill: number) {
+      await db.query(
+        "update character_jobs set career_level=$2,times_performed=$3 where character_id=$1 and is_current",
+        [aliceCharacter, rank, shifts],
+      );
+      await db.query(
+        `insert into player_skills(user_id,character_id,skill_slug,level) select $1,$2,j.skill_reward_slug,$3 from character_jobs cj join jobs j on j.id=cj.job_id where cj.character_id=$2 and cj.is_current on conflict(character_id,skill_slug) do update set level=excluded.level`,
+        [alice, aliceCharacter, skill],
+      );
+    }
+    beforeEach(async () => {
+      await db.exec(`reset role;select set_config('test.user_id','${alice}',false);`);
+      await db.query("delete from career_shifts where character_id=$1", [aliceCharacter]);
+      await db.query("delete from transactions where character_id=$1", [aliceCharacter]);
+      await db.query("update wallets set balance=0 where character_id=$1", [aliceCharacter]);
+      await db.query(
+        "update characters set energy=100,game_time_hour=10,current_location_id=(select id from locations where slug='cedar-bank') where id=$1",
+        [aliceCharacter],
+      );
+      if (
+        (
+          await db.query("select id from character_jobs where character_id=$1 and is_current", [
+            aliceCharacter,
+          ])
+        ).rows.length
+      )
+        await act("public.leave_career()");
+      await act("public.select_job((select id from jobs where slug='career_cedar_banking'))");
+      await db.query("update character_jobs set last_performed_at=null where character_id=$1", [
+        aliceCharacter,
+      ]);
+      await thresholds(1, 0, 0);
+    });
+    afterEach(async () => {
+      await db.exec("reset role");
+    });
+    it.each([
+      [1, 4, 1],
+      [1, 5, 0],
+      [2, 14, 3],
+      [2, 15, 2],
+    ])("rejects rank %i with %i shifts and skill %i", async (rank, shifts, skill) => {
+      await thresholds(rank, shifts, skill);
+      await expect(act("public.promote_career()")).rejects.toThrow("Promotion needs");
+    });
+    it("advances one rank per request, persists titles/pay, and does not mint money", async () => {
+      await thresholds(1, 15, 3);
+      expect(await act("public.promote_career()")).toMatchObject({
+        career_level: 2,
+        title: "Customer Service Officer",
+        salary: 5000,
+      });
+      expect(
+        (
+          await db.query(
+            "select career_level from character_jobs where character_id=$1 and is_current",
+            [aliceCharacter],
+          )
+        ).rows,
+      ).toEqual([{ career_level: 2 }]);
+      expect(await act("public.promote_career()")).toMatchObject({
+        career_level: 3,
+        title: "Branch Supervisor",
+        salary: 7000,
+      });
+      await expect(act("public.promote_career()")).rejects.toThrow("highest rank");
+      expect(
+        (
+          await db.query("select balance::int balance from wallets where character_id=$1", [
+            aliceCharacter,
+          ])
+        ).rows,
+      ).toEqual([{ balance: 0 }]);
+      expect(
+        (await db.query("select * from transactions where character_id=$1", [aliceCharacter])).rows,
+      ).toHaveLength(0);
+    });
+    it("blocks qualified active work and allows promotion after cancelling without shift credit", async () => {
+      await thresholds(1, 5, 1);
+      const shift = await act<{ id: string }>("public.start_career_shift()");
+      await expect(act("public.promote_career()")).rejects.toThrow("active shift");
+      await act("public.cancel_career_shift($1)", [shift.id]);
+      expect(
+        (
+          await db.query(
+            "select times_performed from character_jobs where character_id=$1 and is_current",
+            [aliceCharacter],
+          )
+        ).rows,
+      ).toEqual([{ times_performed: 5 }]);
+      expect(await act("public.promote_career()")).toMatchObject({ career_level: 2 });
+    });
+    it.each([
+      ["career_cedar_banking", 2, 5000],
+      ["career_cedar_banking", 3, 7000],
+      ["career_osun_mall_retail", 2, 4500],
+      ["career_osun_mall_retail", 3, 6500],
+    ])("pays the promoted %s rank %i salary once", async (slug, rank, pay) => {
+      await db.query(
+        "update characters set current_location_id=(select location_id from jobs where slug=$2) where id=$1",
+        [aliceCharacter, slug],
+      );
+      if (slug !== "career_cedar_banking") await act("public.leave_career()");
+      await act("public.select_job((select id from jobs where slug=$1))", [slug]);
+      await thresholds(1, 15, 3);
+      await act("public.promote_career()");
+      if (rank === 3) await act("public.promote_career()");
+      const shift = await act<{ id: string }>("public.start_career_shift()");
+      expect(
+        (await db.query("select rank_level from career_shifts where id=$1", [shift.id])).rows,
+      ).toEqual([{ rank_level: rank }]);
+      for (let step = 1; step <= 3; step++) {
+        await db.query(
+          "update career_shifts set next_step_at=now()-interval '1 second' where id=$1",
+          [shift.id],
+        );
+        await act("public.complete_career_step($1,$2)", [shift.id, step]);
+      }
+      await db.query(
+        "update career_shifts set next_step_at=now()-interval '1 second' where id=$1",
+        [shift.id],
+      );
+      expect(await act("public.claim_career_shift($1)", [shift.id])).toMatchObject({
+        earned: pay,
+        duplicate: false,
+      });
+      expect(await act("public.claim_career_shift($1)", [shift.id])).toMatchObject({
+        earned: pay,
+        duplicate: true,
+      });
+      expect(
+        (
+          await db.query("select balance::int balance from wallets where character_id=$1", [
+            aliceCharacter,
+          ])
+        ).rows,
+      ).toEqual([{ balance: pay }]);
+      expect(
+        (
+          await db.query(
+            "select * from transactions where character_id=$1 and category='career_shift'",
+            [aliceCharacter],
+          )
+        ).rows,
+      ).toHaveLength(1);
+      expect(
+        (
+          await db.query(
+            "select times_performed from character_jobs where character_id=$1 and is_current",
+            [aliceCharacter],
+          )
+        ).rows,
+      ).toEqual([{ times_performed: 16 }]);
+    });
+    it("rejects unauthenticated promotion and cannot target another character", async () => {
+      await thresholds(1, 5, 1);
+      await db.exec("select set_config('test.user_id','',false)");
+      await expect(act("public.promote_career()")).rejects.toThrow("Sign in");
+      await db.exec(`select set_config('test.user_id','${bob}',false)`);
+      await expect(act("public.promote_career()")).rejects.toThrow("No active career");
+      expect(
+        (
+          await db.query(
+            "select career_level from character_jobs where character_id=$1 and is_current",
+            [aliceCharacter],
+          )
+        ).rows,
+      ).toEqual([{ career_level: 1 }]);
+    });
+    it("exposes no browser write path to rank or skill and restricts employment reads", async () => {
+      await db.exec("set role authenticated");
+      await expect(db.exec("update character_jobs set career_level=3")).rejects.toThrow(
+        "permission",
+      );
+      await expect(db.exec("update player_skills set level=100")).rejects.toThrow("permission");
+      await db.exec(`select set_config('test.user_id','${bob}',false)`);
+      expect(
+        (await db.query("select * from character_jobs where character_id=$1", [aliceCharacter]))
+          .rows,
+      ).toHaveLength(0);
+    });
   });
 });

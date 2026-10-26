@@ -165,11 +165,16 @@ export function CareerPanel() {
               <Button
                 variant="plain"
                 className="mt-2"
-                disabled={!promotionReady || pending}
+                disabled={!promotionReady || pending || !!activeShift}
                 onClick={() => promote.mutate(undefined)}
               >
                 {promote.isPending ? "Promoting…" : "Claim promotion"}
               </Button>
+              {activeShift && (
+                <p className="mt-2 text-muted-foreground">
+                  Finish or cancel your active shift before promotion.
+                </p>
+              )}
             </div>
           )}
           {activeShift ? (

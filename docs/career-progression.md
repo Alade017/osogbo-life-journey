@@ -35,4 +35,6 @@ git diff --check
 
 ## Limits
 
+Phase 4.2 aligns the promotion button with the server's active-shift restriction and adds acceptance coverage for existing rank progression and promoted pay, without changing balance or RPCs. See [phase-4-career-progression-implementation.md](phase-4-career-progression-implementation.md) for current local results and release limits.
+
 Career steps are server-ordered, timed button interactions. There are no separate Phaser task animations or physical mini-game proofs. A player at the right venue can request each step after its timer; this is the current game interaction model. The browser's shift history lists the 30 newest shifts. Party Life mood integration is active only in databases where `apply_party_mood` has been installed; character happiness updates in all databases. A signed-in 375px browser run and production Supabase schema verification remain release checks.

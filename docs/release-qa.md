@@ -198,6 +198,10 @@ Milestone 9 is **in progress**, not complete. Production deployment readiness an
 
 ## Known limits to close before public release
 
+- Phase 4.2's career promotion guard and acceptance use the existing server rules. Authenticated promotion, concurrent promotion/shift operations and real-phone behavior remain staging checks. See [phase-4-career-progression-implementation.md](phase-4-career-progression-implementation.md).
+
+Phase 4.2 local checks (2026-10-26): 27 focused tests, typecheck, scoped lint, both builds and the 375px fixture passed. Full run: 632 passed / one failed / three skipped; the renderer expectation remains unresolved, and the map-travel setup timed out before its three cases ran. Those three passed unchanged in isolation. Global lint remains 335 errors / 12 warnings. No migration or hosted change was introduced.
+
 - Phase 4.1 party rewards require local migration `20261026162243_party_host_reputation.sql` plus the October 19 party prerequisites. It has not been applied to a hosted database. Independent-connection race/lock-wait checks and authenticated multi-player attendance remain unverified. See [phase-4-party-rewards-implementation.md](phase-4-party-rewards-implementation.md).
 
 - Phase 3.4's Home living-cost dialog has an isolated 375px fixture; live authenticated prices, ownership and complete room/phone interactions still need staging verification. See [phase-3-living-costs-implementation.md](phase-3-living-costs-implementation.md) for the existing housing GET's rent-cycle side effect and the independent renderer-test mismatch.

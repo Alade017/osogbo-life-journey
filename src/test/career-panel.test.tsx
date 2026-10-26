@@ -11,6 +11,7 @@ let employment: {
   times_performed: number;
 }[] = [];
 let shifts: unknown[] = [];
+let skillLevel = 0;
 
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children }: { children: React.ReactNode }) => <a href="/jobs">{children}</a>,
@@ -62,7 +63,7 @@ vi.mock("@tanstack/react-query", () => ({
       case "locations":
         return { data: [{ id: "cedar", slug: "cedar-bank", name: "Cedar Bank" }] };
       case "playerSkills":
-        return { data: [] };
+        return { data: [{ skill_slug: "financial_literacy", level: skillLevel }] };
       case "careerCatalog":
         return {
           data: {
@@ -84,6 +85,24 @@ vi.mock("@tanstack/react-query", () => ({
                 required_skill_level: 0,
                 steps: ["Prepare the branch", "Help a customer", "File the shift report"],
               },
+              {
+                path_slug: "banking",
+                level: 2,
+                title: "Customer Service Officer",
+                salary: 5000,
+                required_shifts: 5,
+                required_skill_level: 1,
+                steps: ["Review", "Resolve", "Report"],
+              },
+              {
+                path_slug: "banking",
+                level: 3,
+                title: "Branch Supervisor",
+                salary: 7000,
+                required_shifts: 15,
+                required_skill_level: 3,
+                steps: ["Plan", "Support", "Report"],
+              },
             ],
           },
         };
@@ -99,6 +118,7 @@ describe("career panel", () => {
   beforeEach(() => {
     employment = [];
     shifts = [];
+    skillLevel = 0;
     mutate.mockClear();
   });
   it("shows a bank career listing and applies through the existing job action", () => {
@@ -129,5 +149,38 @@ describe("career panel", () => {
     expect(screen.getByText(/Shift in progress/)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Complete step 2" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: /claim pay/i })).toBeNull();
+  });
+  it("blocks otherwise eligible promotion during an active shift", () => {
+    employment = [{ is_current: true, job_id: "job", career_level: 1, times_performed: 5 }];
+    skillLevel = 1;
+    shifts = [
+      { id: "shift", status: "active", step_count: 0, next_step_at: new Date(0).toISOString() },
+    ];
+    render(<CareerPanel />);
+    const button = screen.getByRole("button", { name: "Claim promotion" });
+    expect(button).toBeDisabled();
+    fireEvent.click(button);
+    expect(mutate).not.toHaveBeenCalled();
+    expect(
+      screen.getByText("Finish or cancel your active shift before promotion."),
+    ).toBeInTheDocument();
+  });
+  it("enables the existing promotion request for a qualified idle employee", () => {
+    employment = [{ is_current: true, job_id: "job", career_level: 1, times_performed: 5 }];
+    skillLevel = 1;
+    render(<CareerPanel />);
+    const button = screen.getByRole("button", { name: "Claim promotion" });
+    expect(button).toBeEnabled();
+    fireEvent.click(button);
+    expect(mutate).toHaveBeenCalledWith(undefined);
+  });
+  it("does not offer a promotion before both thresholds or beyond rank three", () => {
+    employment = [{ is_current: true, job_id: "job", career_level: 1, times_performed: 5 }];
+    const view = render(<CareerPanel />);
+    expect(screen.getByRole("button", { name: "Claim promotion" })).toBeDisabled();
+    employment = [{ is_current: true, job_id: "job", career_level: 3, times_performed: 20 }];
+    skillLevel = 3;
+    view.rerender(<CareerPanel />);
+    expect(screen.queryByRole("button", { name: "Claim promotion" })).not.toBeInTheDocument();
   });
 });
