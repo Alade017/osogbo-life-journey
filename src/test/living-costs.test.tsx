@@ -1,9 +1,8 @@
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, onlineManager } from "@tanstack/react-query";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 const { readHome, readFood } = vi.hoisted(() => ({ readHome: vi.fn(), readFood: vi.fn() }));
-vi.mock("@/tanstack/react-router", () => ({}));
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children, to, onClick }: { children: ReactNode; to: string; onClick: () => void }) => (
     <a href={to} onClick={onClick}>
@@ -34,16 +33,24 @@ afterEach(() => {
   client?.clear();
   vi.clearAllMocks();
   Object.defineProperty(navigator, "onLine", { configurable: true, value: true });
+  onlineManager.setOnline(true);
 });
-function setup() {
+function setup(characterId = "c", userId = "u") {
   client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
   return render(
     <QueryClientProvider client={client}>
-      <LivingCostsSummary characterId="c" userId="u" />
+      <LivingCostsSummary characterId={characterId} userId={userId} />
     </QueryClientProvider>,
   );
 }
 describe("home cost panel", () => {
+  it("waits for the account and character before refreshing", async () => {
+    setup("", "");
+    fireEvent.click(screen.getByRole("button", { name: "Living costs" }));
+    await waitFor(() => expect(screen.getByRole("dialog")).toBeInTheDocument());
+    expect(readHome).not.toHaveBeenCalled();
+    expect(readFood).not.toHaveBeenCalled();
+  });
   it("loads only on open, labels units, and restores keyboard focus", async () => {
     readHome.mockResolvedValue({
       propertyId: "p",
@@ -85,5 +92,32 @@ describe("home cost panel", () => {
     expect(await screen.findByText("Offline. Housing unavailable.")).toBeInTheDocument();
     expect(readHome).not.toHaveBeenCalled();
     expect(readFood).not.toHaveBeenCalled();
+  });
+  it("labels cached prices offline and keeps the owned home distinct from rent", async () => {
+    readHome.mockResolvedValue({ propertyId: "p", tenure: "owned" });
+    readFood.mockResolvedValue(1800);
+    setup();
+    fireEvent.click(screen.getByRole("button", { name: "Living costs" }));
+    expect(await screen.findByText("Owned home · no weekly rent")).toBeInTheDocument();
+    expect(await screen.findByText("Menu items from ₦1,800 each.")).toBeInTheDocument();
+    Object.defineProperty(navigator, "onLine", { configurable: true, value: false });
+    fireEvent(window, new Event("offline"));
+    expect(await screen.findAllByText(/Previously loaded/)).toHaveLength(2);
+    expect(screen.queryByText(/Due date/)).not.toBeInTheDocument();
+  });
+  it("does not reuse another account's catalog or another character's housing", async () => {
+    readHome.mockResolvedValue(null);
+    readFood.mockResolvedValue(null);
+    setup();
+    client.setQueryData(["canonicalHousingHome", "other-character"], {
+      propertyId: "private",
+      tenure: "rented",
+      weeklyRentMinor: 9999,
+    });
+    client.setQueryData(["livingCostsFood", "other-user"], 8888);
+    fireEvent.click(screen.getByRole("button", { name: "Living costs" }));
+    expect(await screen.findByText("No current home.")).toBeInTheDocument();
+    expect(await screen.findByText("No menu items available.")).toBeInTheDocument();
+    expect(screen.queryByText(/9,999|8,888/)).not.toBeInTheDocument();
   });
 });

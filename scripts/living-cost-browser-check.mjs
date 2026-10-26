@@ -196,6 +196,7 @@ try {
   });
   await call("Runtime.enable");
   await call("Network.enable");
+  await call("Emulation.setFocusEmulationEnabled", { enabled: true });
   await call("Emulation.setDeviceMetricsOverride", {
     width: 375,
     height: 812,

@@ -6,6 +6,7 @@ import { q, formatNaira } from "@/lib/game";
 import { pageMeta } from "@/lib/seo";
 import { joinPartyRoom, type PartyDanceEvent, type PartyPresence } from "@/lib/multiplayer-service";
 import { EmptyState, LoadingState, PageHeader } from "@/components/game/ui";
+import { PartyHostResults } from "@/components/game/PartyHostResults";
 import {
   getActiveClubVisit,
   getDanceCooldown,
@@ -203,11 +204,14 @@ export function PartyExperience({
         />
       )}
       {tab === "events" && (
-        <EventsTab
-          locationId={character.current_location_id}
-          characterId={characterId}
-          venues={venues.data ?? []}
-        />
+        <div className="grid gap-5">
+          <PartyHostResults key={character.user_id} userId={character.user_id} />
+          <EventsTab
+            locationId={character.current_location_id}
+            characterId={characterId}
+            venues={venues.data ?? []}
+          />
+        </div>
       )}
     </div>
   );
@@ -487,7 +491,16 @@ function EventsTab({
 }) {
   const events = useQuery({ queryKey: ["partyEvents"], queryFn: listPartyEvents });
   const respond = useInvalidatingMutation(partyRpc.respondToEvent, "Thanks for joining the event!");
-  const [now] = useState(() => new Date());
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const update = () => setNow(new Date());
+    const timer = window.setInterval(update, 15_000);
+    window.addEventListener("focus", update);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", update);
+    };
+  }, []);
   const visibleEvents = useMemo(
     () =>
       (events.data ?? []).filter(

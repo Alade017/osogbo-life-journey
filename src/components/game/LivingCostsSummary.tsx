@@ -68,12 +68,12 @@ export function LivingCostsSummary({
   const refreshHousing = housing.refetch;
   const refreshFood = food.refetch;
   useEffect(() => {
-    if (open && online) {
+    if (open && online && characterId && userId) {
       void refreshHousing();
       void refreshFood();
     }
     // Refresh when the panel opens, including when its observers were previously disabled.
-  }, [open, online, refreshHousing, refreshFood]);
+  }, [open, online, characterId, userId, refreshHousing, refreshFood]);
   const home = housing.data;
   const date = (value: string) =>
     new Date(value).toLocaleString("en-NG", {

@@ -41,6 +41,7 @@ describe("living cost boundaries", () => {
     { ...home, weeklyRentMinor: NaN },
     { ...home, weeklyRentMinor: 1.5 },
     { ...home, tenure: "other" },
+    { ...home, tenure: ["rented"], weeklyRentMinor: undefined },
     { ...home, dueAt: "bad" },
   ])("rejects malformed housing instead of inventing zero: %j", (input) => {
     expect(() => parseHousingCost(input)).toThrow();

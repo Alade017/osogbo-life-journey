@@ -1,6 +1,6 @@
 # Phase 3.4: living-cost display
 
-Date: 2026-10-25, Africa/Lagos. Status: proposed; implementation awaits approval. Baseline: `408c2541` (`implemented login streak`), clean working tree before this document.
+Date: 2026-10-25, Africa/Lagos. Status: approved by the owner and implemented locally; see `phase-3-living-costs-implementation.md` for validation and limits. The proposal below is retained. Baseline: `408c2541` (`implemented login streak`), clean working tree before this document.
 
 ## Verified findings
 

@@ -27,7 +27,7 @@ export function parseHousingCost(value: unknown) {
   if (
     !record(value) ||
     typeof value["propertyId"] !== "string" ||
-    !["owned", "rented"].includes(String(value["tenure"]))
+    (value["tenure"] !== "owned" && value["tenure"] !== "rented")
   )
     throw new Error("Housing unavailable");
   const dates = {} as Record<"dueAt" | "graceEndsAt" | "rescueEndsAt", string | null>;

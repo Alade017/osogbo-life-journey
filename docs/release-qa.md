@@ -198,6 +198,12 @@ Milestone 9 is **in progress**, not complete. Production deployment readiness an
 
 ## Known limits to close before public release
 
+- Phase 4.1 party rewards require local migration `20261026162243_party_host_reputation.sql` plus the October 19 party prerequisites. It has not been applied to a hosted database. Independent-connection race/lock-wait checks and authenticated multi-player attendance remain unverified. See [phase-4-party-rewards-implementation.md](phase-4-party-rewards-implementation.md).
+
+- Phase 3.4's Home living-cost dialog has an isolated 375px fixture; live authenticated prices, ownership and complete room/phone interactions still need staging verification. See [phase-3-living-costs-implementation.md](phase-3-living-costs-implementation.md) for the existing housing GET's rent-cycle side effect and the independent renderer-test mismatch.
+
+Phase 3.4 local checks (2026-10-26): 27 focused cost tests, typecheck, scoped lint, game/public builds and the 375px fixture passed. Full-run snapshot: 587 passed / 2 failed; the cost-test isolation failure was subsequently corrected and passed in the focused rerun, while the renderer-default expectation remains unresolved. See the implementation report for the exact validation boundary.
+
 - The core gameplay loop has unit/component coverage but no automated authenticated end-to-end test against a seeded Supabase project.
 - Real mobile/desktop browser, screen-reader, contrast, and keyboard QA require a browser and staging account; they are not represented by a successful build.
 - Live RLS, migration application, HTTPS, map-provider quotas, and cross-device persistence require staging/deployment verification.
