@@ -198,6 +198,10 @@ Milestone 9 is **in progress**, not complete. Production deployment readiness an
 
 ## Known limits to close before public release
 
+- Phase 4.3's stall income migration `20261027104102_stall_passive_income.sql` is local only. Registered-owner/RLS, accounting and retry checks passed locally, but hosted prerequisites, independent-connection save/claim/deletion races and authenticated Market/device behavior remain unverified. See [phase-4-stall-income-implementation.md](phase-4-stall-income-implementation.md).
+
+Phase 4.3 local checks (2026-10-27): 42 focused tests, final 16-test SQL rerun, typecheck, scoped lint, both builds, `git diff --check` and the 375px fixture passed. Full run: 670 passed / one failed, zero skipped; only the existing R3F/PlayCanvas default expectation failed. Global lint remains 335 errors / 12 warnings. The approved income policy is ₦10/server hour open, ₦100/account/Lagos earning day, retaining seven earning dates. No hosted migration or deployment occurred.
+
 - Phase 4.2's career promotion guard and acceptance use the existing server rules. Authenticated promotion, concurrent promotion/shift operations and real-phone behavior remain staging checks. See [phase-4-career-progression-implementation.md](phase-4-career-progression-implementation.md).
 
 Phase 4.2 local checks (2026-10-26): 27 focused tests, typecheck, scoped lint, both builds and the 375px fixture passed. Full run: 632 passed / one failed / three skipped; the renderer expectation remains unresolved, and the map-travel setup timed out before its three cases ran. Those three passed unchanged in isolation. Global lint remains 335 errors / 12 warnings. No migration or hosted change was introduced.

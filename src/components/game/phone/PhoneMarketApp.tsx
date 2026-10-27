@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatNaira, q, rpc, useGameAction } from "@/lib/game";
 import { purchaseTotal, shopIsOpen } from "@/lib/economy-service";
 import { useWorldClock } from "@/hooks/use-world-clock";
+import { StallIncomePanel } from "@/components/game/StallIncomePanel";
+import { stallIncomeKey } from "@/lib/stall-income-service";
 
 const GOODS_CATEGORIES = [
   {
@@ -119,6 +121,9 @@ export function PhoneMarketApp() {
     onSuccess: () => {
       toast.success(stallOpen ? "Stall is now open at Oja-Oba Market." : "Stall details saved.");
       void queryClient.invalidateQueries({ queryKey: ["playerStall"] });
+      void queryClient.invalidateQueries({ queryKey: ["ownedStalls"] });
+      if (character?.user_id)
+        void queryClient.invalidateQueries({ queryKey: stallIncomeKey(character.user_id) });
     },
     onError: (err) => {
       toast.error(err instanceof Error ? err.message : "Failed to update stall");
@@ -312,6 +317,9 @@ export function PhoneMarketApp() {
               </div>
             </div>
 
+            {character?.user_id && (
+              <StallIncomePanel key={character.user_id} userId={character.user_id} />
+            )}
             {/* Popular NPC Market Stalls */}
             <div>
               <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 px-1">

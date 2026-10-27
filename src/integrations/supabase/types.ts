@@ -4503,6 +4503,8 @@ export type Database = {
       get_daily_tasks: { Args: Record<PropertyKey, never>; Returns: Json };
       get_login_streak: { Args: Record<PropertyKey, never>; Returns: Json };
       get_party_host_results: { Args: Record<PropertyKey, never>; Returns: Json };
+      get_stall_income: { Args: Record<PropertyKey, never>; Returns: Json };
+      claim_stall_income: { Args: { p_request_id: string }; Returns: Json };
       claim_party_host_reward: { Args: { p_event_id: string; p_date: string }; Returns: Json };
       touch_player_presence: { Args: Record<PropertyKey, never>; Returns: undefined };
       check_in_login: { Args: { p_date: string }; Returns: Json };
