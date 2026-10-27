@@ -785,9 +785,13 @@ export function PlayerSocial({
       void qc.invalidateQueries({ queryKey: ["socialThreadSummaries"] });
     });
     const reconnect = () => {
-      void flushThreadActionQueue((message) =>
-        toast.error(message === "PIN_LIMIT_REACHED" ? "You can pin up to three chats." : message),
-      ).then(() => qc.invalidateQueries({ queryKey: ["socialThreadSummaries"] }));
+      void flushThreadActionQueue(
+        (message) =>
+          toast.error(message === "PIN_LIMIT_REACHED" ? "You can pin up to three chats." : message),
+        accountQuery.data,
+      )
+        .then(() => qc.invalidateQueries({ queryKey: ["socialThreadSummaries"] }))
+        .catch(() => undefined); // A signed-out or switched session must not replay old intent.
     };
     window.addEventListener("online", reconnect);
     if (navigator.onLine) reconnect();
@@ -916,7 +920,7 @@ export function PlayerSocial({
       threadId: string;
       command: ThreadCommand;
       duration?: MuteDuration;
-    }) => runThreadAction(threadId, command, duration),
+    }) => runThreadAction(threadId, command, duration, accountQuery.data),
     onMutate: async ({ threadId, command }) => {
       await qc.cancelQueries({ queryKey: ["socialThreadSummaries"] });
       const previous = qc.getQueryData<ThreadSummary[]>(["socialThreadSummaries"]);

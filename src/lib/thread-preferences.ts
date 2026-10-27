@@ -28,6 +28,37 @@ type QueuedThreadAction = {
 };
 
 const QUEUE_KEY = "osun-life-thread-actions-v1";
+const queueKey = (accountId: string) => `osun-life-thread-actions-v2:${accountId}`;
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const commands = new Set(["pin", "unpin", "mute", "unmute", "read", "star", "unstar"]);
+const durations = new Set(["8h", "1w", "always"]);
+const flushes = new Map<string, Promise<{ sent: number; remaining: number }>>();
+
+function validAction(item: unknown): item is QueuedThreadAction {
+  if (!item || typeof item !== "object" || Array.isArray(item)) return false;
+  const row = item as Record<string, unknown>;
+  return (
+    typeof row["id"] === "string" &&
+    uuidPattern.test(row["id"]) &&
+    typeof row["threadId"] === "string" &&
+    uuidPattern.test(row["threadId"]) &&
+    typeof row["command"] === "string" &&
+    commands.has(row["command"]) &&
+    (row["command"] === "mute"
+      ? typeof row["duration"] === "string" && durations.has(row["duration"])
+      : row["duration"] === undefined)
+  );
+}
+
+async function actionSession(expectedAccountId?: string) {
+  const { data } = await supabase.auth.getSession();
+  const session = data.session;
+  if (!session?.access_token || !session.user?.id)
+    throw new Error(expectedAccountId ? "CHAT_ACCOUNT_CHANGED" : "Sign in to manage chats.");
+  if (expectedAccountId && session.user.id !== expectedAccountId)
+    throw new Error("CHAT_ACCOUNT_CHANGED");
+  return { accountId: session.user.id, token: session.access_token };
+}
 
 function record(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value))
@@ -75,34 +106,30 @@ export async function getThreadSummaries(): Promise<ThreadSummary[]> {
   return value.map(parseSummary);
 }
 
-function readQueue(): QueuedThreadAction[] {
+function readQueue(accountId: string): QueuedThreadAction[] {
   try {
-    const value: unknown = JSON.parse(localStorage.getItem(QUEUE_KEY) ?? "[]");
-    return Array.isArray(value)
-      ? value.filter(
-          (item): item is QueuedThreadAction =>
-            !!item &&
-            typeof item === "object" &&
-            typeof (item as QueuedThreadAction).id === "string" &&
-            typeof (item as QueuedThreadAction).threadId === "string",
-        )
-      : [];
+    localStorage.removeItem(QUEUE_KEY); // Ownerless legacy intent cannot safely be replayed.
+    const value: unknown = JSON.parse(localStorage.getItem(queueKey(accountId)) ?? "[]");
+    const actions = Array.isArray(value) ? value.filter(validAction) : [];
+    writeQueue(accountId, actions);
+    return actions;
   } catch {
     return [];
   }
 }
 
-function writeQueue(value: QueuedThreadAction[]) {
-  localStorage.setItem(QUEUE_KEY, JSON.stringify(value));
+function writeQueue(accountId: string, value: QueuedThreadAction[]) {
+  localStorage.setItem(queueKey(accountId), JSON.stringify(value));
 }
 
-async function sendThreadAction(action: QueuedThreadAction) {
+async function sendThreadAction(action: QueuedThreadAction, accountId: string) {
+  const { token } = await actionSession(accountId);
   const method = ["unpin", "unmute", "unstar"].includes(action.command) ? "DELETE" : "POST";
   const endpoint = action.command.replace(/^un/, "");
   const response = await fetch(`/api/threads/${action.threadId}/${endpoint}`, {
     method,
     headers: {
-      Authorization: `Bearer ${await accessToken()}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
       "Idempotency-Key": action.id,
     },
@@ -117,36 +144,64 @@ export async function runThreadAction(
   threadId: string,
   command: ThreadCommand,
   duration?: MuteDuration,
+  expectedAccountId?: string,
 ) {
+  const { accountId } = await actionSession(expectedAccountId);
   const action = { id: crypto.randomUUID(), threadId, command, ...(duration ? { duration } : {}) };
+  if (!validAction(action)) throw new Error("INVALID_THREAD_ACTION");
   if (typeof navigator !== "undefined" && !navigator.onLine) {
-    writeQueue([...readQueue(), action]);
+    writeQueue(accountId, [...readQueue(accountId), action]);
     return { queued: true };
   }
   try {
-    return await sendThreadAction(action);
+    return await sendThreadAction(action, accountId);
   } catch (error) {
     if (error instanceof TypeError) {
-      writeQueue([...readQueue(), action]);
+      await actionSession(accountId);
+      writeQueue(accountId, [...readQueue(accountId), action]);
       return { queued: true };
     }
     throw error;
   }
 }
 
-export async function flushThreadActionQueue(onRejected?: (message: string) => void) {
-  const pending = readQueue();
-  const remaining: QueuedThreadAction[] = [];
-  for (const action of pending) {
-    try {
-      await sendThreadAction(action);
-    } catch (error) {
-      if (error instanceof TypeError) remaining.push(action);
-      else onRejected?.(error instanceof Error ? error.message : "THREAD_ACTION_FAILED");
+export async function flushThreadActionQueue(
+  onRejected?: (message: string) => void,
+  expectedAccountId?: string,
+) {
+  const { accountId } = await actionSession(expectedAccountId);
+  const existing = flushes.get(accountId);
+  if (existing) return existing;
+  const flush = async () => {
+    let sent = 0;
+    for (const action of readQueue(accountId)) {
+      try {
+        await actionSession(accountId);
+      } catch {
+        break;
+      }
+      try {
+        await sendThreadAction(action, accountId);
+        sent++;
+      } catch (error) {
+        if (
+          error instanceof TypeError ||
+          (error instanceof Error && error.message === "CHAT_ACCOUNT_CHANGED")
+        )
+          break;
+        onRejected?.(error instanceof Error ? error.message : "THREAD_ACTION_FAILED");
+      }
+      // Re-read to retain actions enqueued while the network request was pending.
+      writeQueue(
+        accountId,
+        readQueue(accountId).filter((entry) => entry.id !== action.id),
+      );
     }
-  }
-  writeQueue(remaining);
-  return { sent: pending.length - remaining.length, remaining: remaining.length };
+    return { sent, remaining: readQueue(accountId).length };
+  };
+  const pending = flush().finally(() => flushes.delete(accountId));
+  flushes.set(accountId, pending);
+  return pending;
 }
 
 /** One body-free Realtime channel per account, throttled to two updates per thread per second. */

@@ -1,4 +1,35 @@
 export const MESSAGE_CHARACTER_LIMIT = 1_000;
+export const MESSAGE_PAYLOAD_BYTE_LIMIT = 16 * 1024;
+
+async function readPayload(request: Request): Promise<unknown> {
+  const declared = Number(request.headers.get("content-length"));
+  if (declared > MESSAGE_PAYLOAD_BYTE_LIMIT) throw new Error("PAYLOAD_TOO_LARGE");
+  const reader = request.body?.getReader();
+  if (!reader) throw new Error("INVALID_REQUEST");
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > MESSAGE_PAYLOAD_BYTE_LIMIT) {
+        void reader.cancel().catch(() => undefined);
+        throw new Error("PAYLOAD_TOO_LARGE");
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  const bytes = new Uint8Array(size);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  return JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+}
 
 type MessageInput = {
   channel: "area" | "private";
@@ -25,11 +56,14 @@ export function createMessageSendHandler(dependencies: Dependencies) {
     if (!userId) return failure("UNAUTHORIZED", 401);
     let value: unknown;
     try {
-      value = await request.json();
-    } catch {
+      value = await readPayload(request);
+    } catch (error) {
+      if (error instanceof Error && error.message === "PAYLOAD_TOO_LARGE")
+        return failure("PAYLOAD_TOO_LARGE", 413);
       return failure("INVALID_REQUEST", 400);
     }
-    if (!value || typeof value !== "object") return failure("INVALID_REQUEST", 400);
+    if (!value || typeof value !== "object" || Array.isArray(value))
+      return failure("INVALID_REQUEST", 400);
     const body = "body" in value && typeof value.body === "string" ? value.body.trim() : "";
     const channel = "channel" in value ? value.channel : null;
     const locationId = "locationId" in value ? value.locationId : undefined;
@@ -39,8 +73,10 @@ export function createMessageSendHandler(dependencies: Dependencies) {
       return failure("MESSAGE_LENGTH_INVALID", 400);
     if (channel !== "area" && channel !== "private") return failure("INVALID_CHANNEL", 400);
     if (
-      (locationId !== undefined && typeof locationId !== "string") ||
-      (conversationId !== undefined && typeof conversationId !== "string") ||
+      (locationId !== undefined &&
+        (typeof locationId !== "string" || !uuidPattern.test(locationId))) ||
+      (conversationId !== undefined &&
+        (typeof conversationId !== "string" || !uuidPattern.test(conversationId))) ||
       (replyToMessageId !== undefined &&
         (typeof replyToMessageId !== "string" || !uuidPattern.test(replyToMessageId))) ||
       (channel === "area" && (!locationId || conversationId)) ||

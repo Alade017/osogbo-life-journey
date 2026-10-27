@@ -249,4 +249,33 @@ describe("phone message interactions", () => {
     await waitFor(() => expect(input).not.toBeDisabled());
     expect(input).toHaveValue("Keep my draft");
   });
+  it("sends the selected quote id and clears the reply only after confirmation", async () => {
+    let confirm!: () => void;
+    const send = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          confirm = resolve;
+        }),
+    );
+    const cancel = vi.fn();
+    render(
+      <ChatComposer
+        label="Message Ayo"
+        phoneMode
+        onSend={send}
+        replyTo={messages[0]!}
+        onCancelReply={cancel}
+      />,
+    );
+    const input = screen.getByLabelText("Message Ayo");
+    expect(screen.getByText("Reply to Me")).toBeInTheDocument();
+    fireEvent.change(input, { target: { value: "Quoted response" } });
+    fireEvent.submit(input.closest("form")!);
+    expect(send).toHaveBeenCalledWith("Quoted response", "message-0");
+    expect(cancel).not.toHaveBeenCalled();
+    expect(input).toBeDisabled();
+    confirm();
+    await waitFor(() => expect(input).toHaveValue(""));
+    expect(cancel).toHaveBeenCalledOnce();
+  });
 });
