@@ -8,6 +8,7 @@ import { purchaseTotal, shopIsOpen } from "@/lib/economy-service";
 import { useWorldClock } from "@/hooks/use-world-clock";
 import { StallIncomePanel } from "@/components/game/StallIncomePanel";
 import { stallIncomeKey } from "@/lib/stall-income-service";
+import { PublicStallDirectory } from "./PublicStallDirectory";
 
 const GOODS_CATEGORIES = [
   {
@@ -46,7 +47,7 @@ const THEMES = [
 
 export function PhoneMarketApp() {
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<"stalls" | "shops">("stalls");
+  const [tab, setTab] = useState<"stalls" | "shops" | "players">("stalls");
   const { data: character } = useQuery(q.character());
   const { data: wallet } = useQuery(q.wallet());
   const { data: inventory } = useQuery(q.inventory());
@@ -122,6 +123,7 @@ export function PhoneMarketApp() {
       toast.success(stallOpen ? "Stall is now open at Oja-Oba Market." : "Stall details saved.");
       void queryClient.invalidateQueries({ queryKey: ["playerStall"] });
       void queryClient.invalidateQueries({ queryKey: ["ownedStalls"] });
+      void queryClient.invalidateQueries({ queryKey: ["publicPlayerStalls"] });
       if (character?.user_id)
         void queryClient.invalidateQueries({ queryKey: stallIncomeKey(character.user_id) });
     },
@@ -175,11 +177,27 @@ export function PhoneMarketApp() {
             <ShoppingBag className="h-4 w-4" aria-hidden="true" />
             <span>City Shops</span>
           </button>
+          <button
+            type="button"
+            className={tab === "players" ? "is-active" : ""}
+            onClick={() => setTab("players")}
+          >
+            <Store className="h-4 w-4" aria-hidden="true" />
+            <span>Player stalls</span>
+          </button>
         </div>
       </div>
 
       <div className="phone-sub-content">
-        {tab === "stalls" ? (
+        {tab === "players" ? (
+          character?.user_id ? (
+            <PublicStallDirectory key={character.user_id} accountId={character.user_id} />
+          ) : (
+            <p role="status" className="p-3">
+              Sign in and load your character to browse player stalls.
+            </p>
+          )
+        ) : tab === "stalls" ? (
           <div className="space-y-4 p-3">
             {/* Player's Stall Builder Card */}
             <div className="phone-card">

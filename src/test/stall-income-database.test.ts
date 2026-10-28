@@ -45,6 +45,9 @@ beforeAll(async () => {
   await db.exec(
     readFileSync("supabase/migrations/20261027104102_stall_passive_income.sql", "utf8"),
   );
+  await db.exec(
+    readFileSync("supabase/migrations/20261028143246_public_player_stall_discovery.sql", "utf8"),
+  );
   await db.exec(`create table test_stall_clock(stamp timestamptz);insert into test_stall_clock values('2026-10-27T12:00:00Z');
     create function public.test_stall_now() returns timestamptz language sql volatile as $$select stamp from public.test_stall_clock$$;
     update stall_income_policy set activated_at='2026-10-27T00:00:00Z';`);
