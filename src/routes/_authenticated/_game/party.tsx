@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { q, formatNaira } from "@/lib/game";
+import { HostPartyInvitations, PartyInvitations } from "@/components/game/PartyInvitations";
 import { pageMeta } from "@/lib/seo";
 import { joinPartyRoom, type PartyDanceEvent, type PartyPresence } from "@/lib/multiplayer-service";
 import { EmptyState, LoadingState, PageHeader } from "@/components/game/ui";
@@ -30,8 +31,8 @@ import {
   PARTY_MOOD_START,
 } from "@/lib/party-mood";
 
-type Tab = "clubs" | "drinks" | "events";
-const TAB_IDS: readonly Tab[] = ["clubs", "drinks", "events"];
+type Tab = "clubs" | "drinks" | "events" | "invitations";
+const TAB_IDS: readonly Tab[] = ["clubs", "drinks", "events", "invitations"];
 
 export const Route = createFileRoute("/_authenticated/_game/party")({
   head: () => pageMeta("Party", "Visit clubs, buy drinks, dance and host events."),
@@ -47,6 +48,7 @@ const TABS: Array<{ id: Tab; label: string }> = [
   { id: "clubs", label: "Clubs" },
   { id: "drinks", label: "Drinks" },
   { id: "events", label: "Events" },
+  { id: "invitations", label: "Invitations" },
 ];
 
 // Fictional party NPC dancers at each club (server validates the slug format only).
@@ -170,7 +172,7 @@ export function PartyExperience({
             role="tab"
             aria-selected={tab === item.id}
             onClick={() => setTab(item.id)}
-            className={`min-h-11 rounded-full px-4 text-sm font-semibold ${
+            className={`min-h-11 rounded-full px-3 text-sm font-semibold ${
               tab === item.id
                 ? "bg-primary text-primary-foreground"
                 : "bg-card text-foreground border border-border"
@@ -207,11 +209,15 @@ export function PartyExperience({
         <div className="grid gap-5">
           <PartyHostResults key={character.user_id} userId={character.user_id} />
           <EventsTab
+            accountId={character.user_id}
             locationId={character.current_location_id}
             characterId={characterId}
             venues={venues.data ?? []}
           />
         </div>
+      )}
+      {tab === "invitations" && (
+        <PartyInvitations key={character.user_id} accountId={character.user_id} />
       )}
     </div>
   );
@@ -481,10 +487,12 @@ function DrinksTab({
 }
 
 function EventsTab({
+  accountId,
   locationId,
   characterId,
   venues,
 }: {
+  accountId: string;
   locationId: string | null;
   characterId: string | null;
   venues: Awaited<ReturnType<typeof listPartyVenues>>;
@@ -549,6 +557,9 @@ function EventsTab({
                   : `Starts ${new Date(event.starts_at).toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" })}`}
               </span>
             </div>
+            {event.host_character_id === characterId && (
+              <HostPartyInvitations accountId={accountId} eventId={event.id} />
+            )}
             {event.requirements.map((req) => {
               const remaining = requirementRemaining(req);
               const mine = event.host_character_id === characterId;
