@@ -1,8 +1,10 @@
+import { useMissionClaim } from "@/hooks/use-mission-claim";
+import { useMissions } from "@/hooks/use-missions";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { CheckCircle2, Gift } from "lucide-react";
-import { q, rpc, formatNaira, useGameAction } from "@/lib/game";
+import { formatNaira } from "@/lib/game";
 import { pageMeta } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
 import { Chip, LoadingState, PageHeader, StatBar } from "@/components/game/ui";
@@ -16,11 +18,9 @@ export const Route = createFileRoute("/_authenticated/_game/missions")({
 
 function MissionsPage() {
   const { user } = Route.useRouteContext();
-  const { data: missions, isLoading } = useQuery(q.missions());
-  const claim = useGameAction(rpc.claimMission, {
-    onSuccess: (r) =>
-      toast.success(`Reward claimed: ${formatNaira(r.money)}${r.xp ? ` · +${r.xp} XP` : ""}`),
-  });
+  const { data: missions, isLoading, isError, refetch, userId, characterId } = useMissions();
+  const claim = useMissionClaim(userId, characterId);
+  if (isError) return <div role="alert">Could not load missions. <Button onClick={() => void refetch()}>Try again</Button></div>;
   if (isLoading) return <LoadingState />;
   const sorted = [...(missions ?? [])].sort(
     (a, b) => (a.mission?.sort_order ?? 0) - (b.mission?.sort_order ?? 0),

@@ -1,10 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMissions } from "@/hooks/use-missions";
 import { ArrowUpRight, Gift, ListChecks } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { formatNaira, q } from "@/lib/game";
+import { formatNaira } from "@/lib/game";
 
 export function MissionChips() {
-  const { data: missions } = useQuery(q.missions());
+  const { data: missions } = useMissions();
   const activeMissions = (missions ?? []).filter(
     (playerMission) => playerMission.status === "in_progress" && playerMission.mission,
   );

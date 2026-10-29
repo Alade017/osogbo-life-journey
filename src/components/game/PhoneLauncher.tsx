@@ -1,3 +1,5 @@
+import { useMissionClaim } from "@/hooks/use-mission-claim";
+import { useMissions } from "@/hooks/use-missions";
 import {
   Dialog,
   DialogClose,
@@ -201,11 +203,12 @@ export function PhoneLauncher({
 
   const {
     data: missions,
+    userId, characterId,
     isLoading: missionsLoading,
     isError: missionsError,
     refetch: refetchMissions,
-  } = useQuery(q.missions());
-  const claimMission = useGameAction(rpc.claimMission);
+  } = useMissions();
+  const claimMission = useMissionClaim(userId, characterId);
   const { data: notifications } = useQuery(q.notifications());
   const markRead = useGameAction(rpc.markRead);
 

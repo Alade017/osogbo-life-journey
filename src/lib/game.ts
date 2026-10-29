@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database, Json } from "@/integrations/supabase/types";
 import { normalizeCityLocation } from "@/lib/location-service";
 import { progressionFromExperience, XP_PER_LEVEL } from "@/lib/progression-service";
+import { getMissions } from "@/lib/mission-service";
 
 export type Character = Database["public"]["Tables"]["characters"]["Row"];
 export type Job = Database["public"]["Tables"]["jobs"]["Row"];
@@ -371,11 +372,12 @@ export const q = {
             .order("slot"),
         ),
     }),
-  missions: () =>
+  missions: (userId = "", characterId = "") =>
     queryOptions({
-      queryKey: ["missions"],
-      queryFn: async () =>
-        unwrap(await supabase.from("player_missions").select("*, mission:missions(*)")),
+      queryKey: ["missions", userId, characterId],
+      enabled: !!userId && !!characterId,
+      queryFn: () => getMissions(userId, characterId),
+      retry: false,
     }),
   notifications: () =>
     queryOptions({

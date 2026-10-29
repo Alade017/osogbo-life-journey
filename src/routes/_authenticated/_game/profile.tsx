@@ -1,3 +1,4 @@
+import { useMissions } from "@/hooks/use-missions";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Award, BriefcaseBusiness, House, MapPin, Settings2, Shirt, Users } from "lucide-react";
@@ -20,7 +21,7 @@ export function ProfilePage() {
   const { data: jobs } = useQuery(q.jobs());
   const { data: locations } = useQuery(q.locations());
   const { data: equipment } = useQuery(q.equipment());
-  const { data: missions } = useQuery(q.missions());
+  const { data: missions } = useMissions();
 
   if (characterQuery.isError)
     return (

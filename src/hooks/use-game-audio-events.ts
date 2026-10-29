@@ -6,7 +6,7 @@ import { playGameSound } from "@/lib/game-audio";
 /** Observe server character updates; never infer rewards from optimistic UI. */
 export function useGameAudioEvents() {
   const { data: character } = useQuery(q.character());
-  const { data: missions } = useQuery({ ...q.missions(), enabled: !!character });
+  const { data: missions } = useQuery({ ...q.missions(character?.user_id, character?.id), enabled: !!character });
   const previous = useRef<{
     id: string;
     level: number;
