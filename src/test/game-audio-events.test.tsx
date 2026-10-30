@@ -1,6 +1,7 @@
 import { renderHook } from "@testing-library/react";
 import { beforeEach, expect, it, vi } from "vitest";
 import { useGameAudioEvents } from "../hooks/use-game-audio-events";
+vi.mock("@/hooks/use-missions", () => ({ useMissions: () => ({ data: state.missions }) }));
 const state = vi.hoisted(() => ({
   character: { id: "a", level: 1, xp: 10, health: 50, energy: 40 },
   missions: [{ id: "m1", status: "active" }],

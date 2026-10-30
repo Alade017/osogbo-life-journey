@@ -2,11 +2,12 @@ import { useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { q } from "@/lib/game";
 import { playGameSound } from "@/lib/game-audio";
+import { useMissions } from "@/hooks/use-missions";
 
 /** Observe server character updates; never infer rewards from optimistic UI. */
 export function useGameAudioEvents() {
   const { data: character } = useQuery(q.character());
-  const { data: missions } = useQuery({ ...q.missions(character?.user_id, character?.id), enabled: !!character });
+  const { data: missions } = useMissions();
   const previous = useRef<{
     id: string;
     level: number;

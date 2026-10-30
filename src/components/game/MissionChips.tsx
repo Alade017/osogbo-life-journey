@@ -2,12 +2,16 @@ import { useMissions } from "@/hooks/use-missions";
 import { ArrowUpRight, Gift, ListChecks } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { formatNaira } from "@/lib/game";
+import { orderedMissions } from "@/lib/mission-service";
 
 export function MissionChips() {
-  const { data: missions } = useMissions();
-  const activeMissions = (missions ?? []).filter(
-    (playerMission) => playerMission.status === "in_progress" && playerMission.mission,
-  );
+  const { data: missions, isError, isPending } = useMissions();
+  const activeMissions = orderedMissions(missions ?? [])
+    .filter((playerMission) => playerMission.status !== "claimed")
+    .sort((a, b) => Number(b.status === "completed") - Number(a.status === "completed"));
+
+  if (!missions && isError) return <Link to="/missions">Open Missions to retry loading goals</Link>;
+  if (!missions && isPending) return <p role="status">Loading goals…</p>;
 
   if (!activeMissions.length) return null;
   const visibleMissions = activeMissions.slice(0, 1);
@@ -30,6 +34,9 @@ export function MissionChips() {
             </div>
             <div className="city-mission-detail">
               <p>{mission.description}</p>
+              {missions?.find((m) => m.id === id)?.status === "completed" && (
+                <p>Ready to claim in Missions</p>
+              )}
               <span className="city-mission-reward">
                 <Gift size={14} aria-hidden="true" />
                 {formatNaira(mission.reward_money)}

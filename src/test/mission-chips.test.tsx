@@ -2,8 +2,8 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { MissionChips } from "@/components/game/MissionChips";
 
-vi.mock("@tanstack/react-query", () => ({
-  useQuery: () => ({
+vi.mock("@/hooks/use-missions", () => ({
+  useMissions: () => ({
     data: [
       {
         id: "m1",

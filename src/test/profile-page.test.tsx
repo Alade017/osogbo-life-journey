@@ -28,6 +28,7 @@ const character = {
 };
 
 vi.mock("@tanstack/react-router", () => ({
+  useRouteContext: () => ({ user: { id: "user-1" } }),
   createFileRoute: () => (options: unknown) => options,
   Link: ({ children }: { children: React.ReactNode }) => <a href="#test">{children}</a>,
 }));

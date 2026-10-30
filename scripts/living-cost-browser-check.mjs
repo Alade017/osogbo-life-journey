@@ -60,6 +60,8 @@ try {
     logLevel: "error",
     resolve: {
       alias: [
+        // Keep this fixture focused on living costs; goals have their own browser check.
+        { find: "@/components/game/ActiveGoalSummary", replacement: "\0cost-goals-stub" },
         { find: "@/integrations/supabase/client", replacement: "\0living-cost-fixture-rpc" },
         { find: "@", replacement: resolve("src") },
       ],
@@ -73,6 +75,7 @@ try {
           if (source === "@/integrations/supabase/client") return "\0living-cost-fixture-rpc";
         },
         load(id) {
+          if (id === "\0cost-goals-stub") return "export const ActiveGoalSummary=()=>null;";
           if (id === "\0living-cost-fixture-rpc") return mock;
         },
       },

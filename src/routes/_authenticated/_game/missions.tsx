@@ -1,8 +1,6 @@
 import { useMissionClaim } from "@/hooks/use-mission-claim";
 import { useMissions } from "@/hooks/use-missions";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { CheckCircle2, Gift } from "lucide-react";
 import { formatNaira } from "@/lib/game";
 import { pageMeta } from "@/lib/seo";
@@ -20,7 +18,12 @@ function MissionsPage() {
   const { user } = Route.useRouteContext();
   const { data: missions, isLoading, isError, refetch, userId, characterId } = useMissions();
   const claim = useMissionClaim(userId, characterId);
-  if (isError) return <div role="alert">Could not load missions. <Button onClick={() => void refetch()}>Try again</Button></div>;
+  if (isError)
+    return (
+      <div role="alert">
+        Could not load missions. <Button onClick={() => void refetch()}>Try again</Button>
+      </div>
+    );
   if (isLoading) return <LoadingState />;
   const sorted = [...(missions ?? [])].sort(
     (a, b) => (a.mission?.sort_order ?? 0) - (b.mission?.sort_order ?? 0),

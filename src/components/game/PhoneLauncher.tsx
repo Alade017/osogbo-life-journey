@@ -203,7 +203,8 @@ export function PhoneLauncher({
 
   const {
     data: missions,
-    userId, characterId,
+    userId,
+    characterId,
     isLoading: missionsLoading,
     isError: missionsError,
     refetch: refetchMissions,
