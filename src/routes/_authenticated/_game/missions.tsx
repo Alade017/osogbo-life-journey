@@ -3,6 +3,7 @@ import { useMissions } from "@/hooks/use-missions";
 import { createFileRoute } from "@tanstack/react-router";
 import { CheckCircle2, Gift } from "lucide-react";
 import { formatNaira } from "@/lib/game";
+import { orderedMissions } from "@/lib/mission-service";
 import { pageMeta } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
 import { Chip, LoadingState, PageHeader, StatBar } from "@/components/game/ui";
@@ -18,16 +19,8 @@ function MissionsPage() {
   const { user } = Route.useRouteContext();
   const { data: missions, isLoading, isError, refetch, userId, characterId } = useMissions();
   const claim = useMissionClaim(userId, characterId);
-  if (isError)
-    return (
-      <div role="alert">
-        Could not load missions. <Button onClick={() => void refetch()}>Try again</Button>
-      </div>
-    );
   if (isLoading) return <LoadingState />;
-  const sorted = [...(missions ?? [])].sort(
-    (a, b) => (a.mission?.sort_order ?? 0) - (b.mission?.sort_order ?? 0),
-  );
+  const sorted = orderedMissions(missions ?? []);
 
   return (
     <div>
@@ -39,6 +32,12 @@ function MissionsPage() {
       <DailyTasks userId={user.id} />
       <LoginStreakSummary />
       <h2 className="mb-4 text-2xl font-bold">Lifetime missions</h2>
+      {isError && (
+        <div role="alert">
+          Could not refresh lifetime missions.{" "}
+          <Button onClick={() => void refetch()}>Try again</Button>
+        </div>
+      )}
       <div className="grid gap-4 md:grid-cols-2">
         {sorted.map((pm) => {
           const m = pm.mission!;

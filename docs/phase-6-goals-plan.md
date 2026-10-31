@@ -1,6 +1,6 @@
 # Phase 6 — existing goals integration
 
-Date: 2026-10-29 (Africa/Lagos). Status: proposed; implementation awaits approval under root AGENTS.md.
+Date: 2026-10-29 (Africa/Lagos). Status: owner approved; implemented locally, with final validation recorded in `phase-6-goals-implementation.md`.
 
 ## Audit and scope
 
@@ -59,4 +59,4 @@ Only this plan was added in this turn. No migration or application code changed;
 
 Baseline: branch `main`, HEAD `b9c19df3` (owner's party-invitations commit), no staged changes. Preserved the two existing verification-note edits in `docs/phase-5-party-invitations-implementation.md` and `docs/release-qa.md`. No branch, commit, push, PR, merge, deployment or hosted database action performed.
 
-Approve this scoped mission-reuse milestone before implementation. Root `AGENTS.md` requires: “For new features, present the architecture and game-loop plan first and wait for explicit approval before editing files.” Later lifestyle achievements, multi-stall ownership and Phase 7 map schedules remain deferred.
+The owner approved this scoped mission-reuse milestone after reviewing the plan. Later lifestyle achievements, multi-stall ownership and Phase 7 map schedules remain deferred.
