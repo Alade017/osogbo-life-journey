@@ -18,6 +18,7 @@ import {
   CalendarDays,
   ChartNoAxesCombined,
   ChevronLeft,
+  House,
   GraduationCap,
   HandCoins,
   HousePlus,
@@ -45,9 +46,21 @@ import { useQuery } from "@tanstack/react-query";
 import { playGameSound } from "@/lib/game-audio";
 import { useLiveClock } from "@/hooks/use-live-clock";
 import { OSOGBO_TIME_ZONE } from "@/lib/osogbo-weather";
-import { Component, useEffect, useRef, useState, lazy, Suspense, type ReactNode } from "react";
+import {
+  Component,
+  useCallback,
+  useEffect,
+  useReducer,
+  useRef,
+  useState,
+  lazy,
+  Suspense,
+  type ReactNode,
+} from "react";
 import { type CommunityPhoneApp } from "@/components/game/CommunityPhoneApps";
 import { PhoneComingSoonApp } from "@/components/game/phone/PhoneComingSoonApp";
+import { FriendHomeVisit } from "@/components/game/housing/FriendHomeVisit";
+import { handlePhoneLinkClick, reducePhoneNavigation } from "@/components/game/phone-navigation";
 import "./phone.css";
 
 // Lazy-loaded app views for performance on mobile and low-end Android
@@ -82,6 +95,9 @@ const InventoryPage = lazy(() =>
 const SettingsPage = lazy(() =>
   import("@/routes/_authenticated/_game/settings").then((m) => ({ default: m.SettingsPage })),
 );
+const HousePage = lazy(() =>
+  import("@/routes/_authenticated/_game/house").then((m) => ({ default: m.HousePage })),
+);
 const BusinessInvestmentApp = lazy(() =>
   import("@/components/game/BusinessInvestmentApp").then((m) => ({
     default: m.BusinessInvestmentApp,
@@ -104,6 +120,7 @@ type PhoneAppDefinition = {
 };
 
 const PHONE_APPS: readonly PhoneAppDefinition[] = [
+  { label: "Home", icon: House, tone: "phone-app-green" },
   { label: "Map", icon: MapPinned, tone: "phone-app-blue" },
   { label: "Messages", icon: MessagesSquare, tone: "phone-app-coral" },
   { label: "Rent homes", icon: HousePlus, tone: "phone-app-green" },
@@ -131,25 +148,6 @@ const PHONE_APPS: readonly PhoneAppDefinition[] = [
 ] as const;
 
 const COMMUNITY_APPS = new Set<CommunityPhoneApp>(["Leaderboard", "Town News"]);
-
-const PHONE_APP_PATHS: Record<string, string> = {
-  "/rentals": "Rent homes",
-  "/property": "Property",
-  "/properties": "Find homes",
-  "/jobs": "Jobs",
-  "/education": "Education",
-  "/map": "Map",
-  "/wallet": "Bank",
-  "/market": "Market",
-  "/party": "Party",
-  "/profile": "Profile",
-  "/inventory": "Inventory",
-  "/social": "Messages",
-  "/missions": "Missions",
-  "/notifications": "Notifications",
-  "/settings": "Settings",
-  "/businesses": "Businesses",
-};
 
 class PhoneAppBoundary extends Component<
   { appName: string; onHome: () => void; children: ReactNode },
@@ -189,17 +187,41 @@ export function PhoneLauncher({
   compact = false,
   trigger,
   shortcutEditor,
+  open,
   onOpenChange,
 }: {
   className?: string;
   compact?: boolean;
   trigger?: ReactNode;
   shortcutEditor?: ReactNode;
+  open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
-  const [activeApp, setActiveApp] = useState<string | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [navigation, dispatchNavigation] = useReducer(reducePhoneNavigation, {
+    app: null,
+    history: [],
+  });
+  const [internalOpen, setInternalOpen] = useState(false);
   const [messagePlayerId, setMessagePlayerId] = useState<string | undefined>();
+  const dialogOpen = open ?? internalOpen;
+
+  const setPhoneOpen = useCallback(
+    (next: boolean) => {
+      if (open === undefined) setInternalOpen(next);
+      onOpenChange?.(next);
+      if (!next) {
+        dispatchNavigation({ type: "close" });
+        setMessagePlayerId(undefined);
+      }
+    },
+    [onOpenChange, open],
+  );
+  useEffect(() => {
+    if (!dialogOpen) {
+      dispatchNavigation({ type: "close" });
+      setMessagePlayerId(undefined);
+    }
+  }, [dialogOpen]);
 
   const {
     data: missions,
@@ -220,16 +242,25 @@ export function PhoneLauncher({
     (mission) => mission.status === "completed",
   ).length;
 
+  const openApp = useCallback((appName: string, search?: string) => {
+    playGameSound("ui");
+    dispatchNavigation({
+      type: "open",
+      app: appName,
+      ...(search ? { search } : {}),
+    });
+  }, []);
+
   useEffect(() => {
     const openMessages = (event: Event) => {
       const playerId = (event as CustomEvent<{ playerId?: string }>).detail?.playerId;
       setMessagePlayerId(playerId);
       openApp("Messages");
-      setDialogOpen(true);
+      setPhoneOpen(true);
     };
     window.addEventListener("osogbo-open-messages", openMessages);
     return () => window.removeEventListener("osogbo-open-messages", openMessages);
-  }, []);
+  }, [openApp, setPhoneOpen]);
 
   const now = useLiveClock();
   const phoneTime = now
@@ -241,14 +272,14 @@ export function PhoneLauncher({
       }).format(now)
     : "--:--";
 
-  const openApp = (appName: string) => {
+  const goBack = () => {
     playGameSound("ui");
-    setActiveApp(appName);
+    dispatchNavigation({ type: "back" });
   };
 
   const returnHome = () => {
     playGameSound("ui");
-    setActiveApp(null);
+    dispatchNavigation({ type: "home" });
   };
 
   // Swipe-up gesture detection on home indicator
@@ -271,6 +302,15 @@ export function PhoneLauncher({
 
   // Render each supported app within the phone dialog.
   const renderAppContent = (appName: string) => {
+    if (appName === "Home") {
+      const visitId = new URLSearchParams(navigation.search ?? "").get("visit");
+      return visitId ? (
+        <FriendHomeVisit characterId={visitId} onLeave={() => openApp("Messages")} />
+      ) : (
+        <HousePage homeRoute />
+      );
+    }
+
     if (appName === "Shortcuts") {
       return (
         <div className="p-3">
@@ -460,22 +500,11 @@ export function PhoneLauncher({
   };
 
   return (
-    <Dialog
-      open={dialogOpen}
-      onOpenChange={(open) => {
-        setDialogOpen(open);
-        onOpenChange?.(open);
-        if (!open) {
-          setActiveApp(null);
-          setMessagePlayerId(undefined);
-        }
-      }}
-    >
+    <Dialog open={dialogOpen} onOpenChange={setPhoneOpen}>
       <DialogTrigger asChild>
         {trigger ?? (
           <button
             type="button"
-            onClick={() => setDialogOpen(true)}
             className={cn("phone-launcher", compact && "phone-launcher-compact", className)}
             aria-label="Open in-game phone"
           >
@@ -510,10 +539,10 @@ export function PhoneLauncher({
               </span>
             </div>
 
-            {/* Launcher Home Grid: visible when activeApp is null */}
+            {/* Launcher Home Grid: visible when no app is active */}
             <div
               className="phone-app-grid"
-              style={{ display: activeApp === null ? "grid" : "none" }}
+              style={{ display: navigation.app === null ? "grid" : "none" }}
             >
               {shortcutEditor && (
                 <button
@@ -561,45 +590,27 @@ export function PhoneLauncher({
             </div>
 
             {/* Opened Apps: retain state when navigating back and forth */}
-            {activeApp &&
+            {navigation.app &&
               (() => {
-                const appName = activeApp;
+                const appName = navigation.app;
                 return (
                   <div key={appName} className="phone-app-view">
                     <div className="phone-app-toolbar">
                       <button
                         type="button"
-                        onClick={returnHome}
+                        onClick={goBack}
                         className="phone-back-button"
-                        aria-label="Back to apps"
+                        aria-label={navigation.history.length ? "Go back" : "Back to apps"}
                       >
                         <ChevronLeft size={18} aria-hidden="true" />
-                        <span>Apps</span>
+                        <span>{navigation.history.length ? "Back" : "Apps"}</span>
                       </button>
                       <strong>{appName}</strong>
                       <div className="w-8" aria-hidden="true" />
                     </div>
                     <div
                       className="phone-app-body"
-                      onClickCapture={(event) => {
-                        const anchor =
-                          event.target instanceof Element ? event.target.closest("a[href]") : null;
-                        if (
-                          anchor instanceof HTMLAnchorElement &&
-                          anchor.origin === window.location.origin
-                        ) {
-                          const nextApp = PHONE_APP_PATHS[anchor.pathname];
-                          if (nextApp) {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            openApp(nextApp);
-                            return;
-                          }
-                          setDialogOpen(false);
-                          setActiveApp(null);
-                          onOpenChange?.(false);
-                        }
-                      }}
+                      onClickCapture={(event) => handlePhoneLinkClick(event, openApp)}
                     >
                       <PhoneAppBoundary key={appName} appName={appName} onHome={returnHome}>
                         <Suspense fallback={<PhoneAppLoadingSpinner title={appName} />}>

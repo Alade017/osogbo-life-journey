@@ -6,7 +6,13 @@ import { LoadingState } from "@/components/game/ui";
 import { q } from "@/lib/game";
 import { parseHousingSave } from "@/lib/housing-service";
 
-export function FriendHomeVisit({ characterId }: { characterId: string }) {
+export function FriendHomeVisit({
+  characterId,
+  onLeave,
+}: {
+  characterId: string;
+  onLeave?: () => void;
+}) {
   const navigate = useNavigate();
   const visitQuery = useQuery(q.friendHomeVisit(characterId));
   const data =
@@ -45,7 +51,9 @@ export function FriendHomeVisit({ characterId }: { characterId: string }) {
             initialSave={payload}
             readOnly
             visitorName={typeof data?.player_name === "string" ? data.player_name : "your friend"}
-            onLeave={() => void navigate({ to: "/social", search: { playerId: undefined } })}
+            onLeave={
+              onLeave ?? (() => void navigate({ to: "/social", search: { playerId: undefined } }))
+            }
           />
         </>
       )}

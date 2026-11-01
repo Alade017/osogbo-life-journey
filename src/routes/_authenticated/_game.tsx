@@ -1,13 +1,13 @@
-import { createFileRoute, Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { Briefcase, House, Map } from "lucide-react";
 import { q, rpc } from "@/lib/game";
 import { GameDataUnavailable, LoadingState } from "@/components/game/ui";
 import { cn } from "@/lib/utils";
 import { HomeDashboard } from "@/components/game/HomeDashboard";
 import { GameNeedsRail } from "@/components/game/GameNeedsRail";
 import { PhoneLauncher } from "@/components/game/PhoneLauncher";
+import { GameMobileNav } from "@/components/game/GameMobileNav";
 import { HousingChooser } from "@/components/game/housing/HousingChooser";
 import { HousingRepossessionNotice } from "@/components/game/housing/HousingRepossessionNotice";
 import { GameTimeProvider } from "@/components/game/GameTimeProvider";
@@ -211,7 +211,6 @@ function GameLayout() {
             profile?.reduced_motion && "reduce-motion",
             phoneOpen && "phone-open",
           )}
-          
         >
           <WorldEnvironment />
           <div className="city-game-frame">
@@ -234,40 +233,14 @@ function GameLayout() {
 
           {pathname !== "/settings" && <GameNeedsRail player={player} />}
 
-          <nav
-            className="game-mobile-nav game-floating-nav"
-            aria-label="Game navigation"
-            aria-hidden={phoneOpen || undefined}
-            inert={phoneOpen || undefined}
-          >
-            <Link
-              to="/home"
-              search={{ visit: undefined }}
-              activeProps={{ className: "mobile-nav-active" }}
-              className="mobile-nav-link"
-            >
-              <House className="h-4.75 w-4.75" />
-              <span>Home</span>
-            </Link>
-            <Link
-              to="/map"
-              activeProps={{ className: "mobile-nav-active" }}
-              className="mobile-nav-link"
-            >
-              <Map className="h-4.75 w-4.75" />
-              <span>City</span>
-            </Link>
-            <Link
-              to="/jobs"
-              activeProps={{ className: "mobile-nav-active" }}
-              className="mobile-nav-link"
-            >
-              <Briefcase className="h-4.75 w-4.75" />
-              <span>Jobs</span>
-            </Link>
-          </nav>
+          <GameMobileNav hidden={phoneOpen} onNavigate={() => setPhoneOpen(false)} />
           <div className="game-phone-fab">
-            <PhoneLauncher compact className="game-phone-fab-trigger" onOpenChange={setPhoneOpen} />
+            <PhoneLauncher
+              compact
+              className="game-phone-fab-trigger"
+              open={phoneOpen}
+              onOpenChange={setPhoneOpen}
+            />
           </div>
           <HousingChooser
             open={housingOpen}
