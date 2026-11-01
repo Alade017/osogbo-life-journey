@@ -7,6 +7,7 @@ const audio = vi.hoisted(() => ({
   save: vi.fn(),
   disable: vi.fn(),
   play: vi.fn(),
+  resume: vi.fn(),
 }));
 vi.mock("@/lib/game-audio", () => ({
   readGameAudioLevels: () => ({ master: 0.55, music: 0.2, effects: 0.45 }),
@@ -14,6 +15,7 @@ vi.mock("@/lib/game-audio", () => ({
   enableGameAudio: audio.enable,
   playGameSound: audio.play,
   disableGameAudio: audio.disable,
+  resumeGameMusic: audio.resume,
 }));
 beforeEach(() => {
   vi.clearAllMocks();
@@ -51,6 +53,26 @@ it("reports unavailable audio without claiming the preference saved", async () =
   fireEvent.click(screen.getByRole("switch", { name: "Sound effects" }));
   expect(await screen.findByRole("status")).toHaveTextContent("unavailable");
   expect(changed).not.toHaveBeenCalled();
+  expect(audio.save).toHaveBeenCalledWith({ master: 0.55, music: 0, effects: 0 });
+});
+
+it("lets the player recover a silent master volume", () => {
+  render(<WorldAudioSettings musicEnabled effectsEnabled onChannelChange={() => {}} />);
+  fireEvent.change(screen.getByRole("slider", { name: "Audio volume" }), {
+    target: { value: "0" },
+  });
+  expect(screen.getByText(/Volume is muted/)).toBeInTheDocument();
+  fireEvent.change(screen.getByRole("slider", { name: "Audio volume" }), {
+    target: { value: "75" },
+  });
+  expect(audio.save).toHaveBeenLastCalledWith({ master: 0.75, music: 0.2, effects: 0.45 });
+});
+
+it("reports failed music preview without leaving an unhandled rejection", async () => {
+  audio.resume.mockRejectedValueOnce(new Error("Playback blocked"));
+  render(<WorldAudioSettings musicEnabled effectsEnabled onChannelChange={() => {}} />);
+  fireEvent.click(screen.getByRole("button", { name: "Play music" }));
+  expect(await screen.findByRole("status")).toHaveTextContent("unavailable");
 });
 
 it("turns both channels off without resuming audio", async () => {

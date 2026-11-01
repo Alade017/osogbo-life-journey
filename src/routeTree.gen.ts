@@ -71,9 +71,12 @@ import { Route as AuthenticatedGameLocationSlugRouteImport } from './routes/_aut
 import { Route as ApiAuthUsernameLoginRouteImport } from './routes/api/auth/username/login'
 import { Route as ApiAuthUsernameRegisterRouteImport } from './routes/api/auth/username/register'
 import { Route as ApiMapLandmarkIdRouteImport } from './routes/api/map/landmark.$id'
+import { Route as ApiMessagesMediaIndexRouteImport } from './routes/api/messages/media/index'
+import { Route as ApiMessagesMediaIdRouteImport } from './routes/api/messages/media/$id'
 import { Route as ApiMessagesVoiceIndexRouteImport } from './routes/api/messages/voice/index'
 import { Route as ApiMessagesVoiceIdRouteImport } from './routes/api/messages/voice/$id'
 import { Route as ApiMessagesVoiceCleanupRouteImport } from './routes/api/messages/voice/cleanup'
+import { Route as ApiSocialProfileIdRouteImport } from './routes/api/social/profile/$id'
 import { Route as ApiThreadsIdMuteRouteImport } from './routes/api/threads/$id/mute'
 import { Route as ApiThreadsIdPinRouteImport } from './routes/api/threads/$id/pin'
 import { Route as ApiThreadsIdReadRouteImport } from './routes/api/threads/$id/read'
@@ -401,6 +404,16 @@ const ApiMapLandmarkIdRoute = ApiMapLandmarkIdRouteImport.update({
   path: '/api/map/landmark/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMessagesMediaIndexRoute = ApiMessagesMediaIndexRouteImport.update({
+  id: '/api/messages/media/',
+  path: '/api/messages/media/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMessagesMediaIdRoute = ApiMessagesMediaIdRouteImport.update({
+  id: '/api/messages/media/$id',
+  path: '/api/messages/media/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMessagesVoiceIndexRoute = ApiMessagesVoiceIndexRouteImport.update({
   id: '/api/messages/voice/',
   path: '/api/messages/voice/',
@@ -414,6 +427,11 @@ const ApiMessagesVoiceIdRoute = ApiMessagesVoiceIdRouteImport.update({
 const ApiMessagesVoiceCleanupRoute = ApiMessagesVoiceCleanupRouteImport.update({
   id: '/api/messages/voice/cleanup',
   path: '/api/messages/voice/cleanup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSocialProfileIdRoute = ApiSocialProfileIdRouteImport.update({
+  id: '/api/social/profile/$id',
+  path: '/api/social/profile/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiThreadsIdMuteRoute = ApiThreadsIdMuteRouteImport.update({
@@ -498,12 +516,15 @@ export interface FileRoutesByFullPath {
   '/api/auth/username/login': typeof ApiAuthUsernameLoginRoute
   '/api/auth/username/register': typeof ApiAuthUsernameRegisterRoute
   '/api/map/landmark/$id': typeof ApiMapLandmarkIdRoute
+  '/api/messages/media/$id': typeof ApiMessagesMediaIdRoute
   '/api/messages/voice/$id': typeof ApiMessagesVoiceIdRoute
   '/api/messages/voice/cleanup': typeof ApiMessagesVoiceCleanupRoute
+  '/api/social/profile/$id': typeof ApiSocialProfileIdRoute
   '/api/threads/$id/mute': typeof ApiThreadsIdMuteRoute
   '/api/threads/$id/pin': typeof ApiThreadsIdPinRoute
   '/api/threads/$id/read': typeof ApiThreadsIdReadRoute
   '/api/threads/$id/star': typeof ApiThreadsIdStarRoute
+  '/api/messages/media/': typeof ApiMessagesMediaIndexRoute
   '/api/messages/voice/': typeof ApiMessagesVoiceIndexRoute
 }
 export interface FileRoutesByTo {
@@ -567,12 +588,15 @@ export interface FileRoutesByTo {
   '/api/auth/username/login': typeof ApiAuthUsernameLoginRoute
   '/api/auth/username/register': typeof ApiAuthUsernameRegisterRoute
   '/api/map/landmark/$id': typeof ApiMapLandmarkIdRoute
+  '/api/messages/media/$id': typeof ApiMessagesMediaIdRoute
   '/api/messages/voice/$id': typeof ApiMessagesVoiceIdRoute
   '/api/messages/voice/cleanup': typeof ApiMessagesVoiceCleanupRoute
+  '/api/social/profile/$id': typeof ApiSocialProfileIdRoute
   '/api/threads/$id/mute': typeof ApiThreadsIdMuteRoute
   '/api/threads/$id/pin': typeof ApiThreadsIdPinRoute
   '/api/threads/$id/read': typeof ApiThreadsIdReadRoute
   '/api/threads/$id/star': typeof ApiThreadsIdStarRoute
+  '/api/messages/media': typeof ApiMessagesMediaIndexRoute
   '/api/messages/voice': typeof ApiMessagesVoiceIndexRoute
 }
 export interface FileRoutesById {
@@ -639,12 +663,15 @@ export interface FileRoutesById {
   '/api/auth/username/login': typeof ApiAuthUsernameLoginRoute
   '/api/auth/username/register': typeof ApiAuthUsernameRegisterRoute
   '/api/map/landmark/$id': typeof ApiMapLandmarkIdRoute
+  '/api/messages/media/$id': typeof ApiMessagesMediaIdRoute
   '/api/messages/voice/$id': typeof ApiMessagesVoiceIdRoute
   '/api/messages/voice/cleanup': typeof ApiMessagesVoiceCleanupRoute
+  '/api/social/profile/$id': typeof ApiSocialProfileIdRoute
   '/api/threads/$id/mute': typeof ApiThreadsIdMuteRoute
   '/api/threads/$id/pin': typeof ApiThreadsIdPinRoute
   '/api/threads/$id/read': typeof ApiThreadsIdReadRoute
   '/api/threads/$id/star': typeof ApiThreadsIdStarRoute
+  '/api/messages/media/': typeof ApiMessagesMediaIndexRoute
   '/api/messages/voice/': typeof ApiMessagesVoiceIndexRoute
 }
 export interface FileRouteTypes {
@@ -710,12 +737,15 @@ export interface FileRouteTypes {
     | '/api/auth/username/login'
     | '/api/auth/username/register'
     | '/api/map/landmark/$id'
+    | '/api/messages/media/$id'
     | '/api/messages/voice/$id'
     | '/api/messages/voice/cleanup'
+    | '/api/social/profile/$id'
     | '/api/threads/$id/mute'
     | '/api/threads/$id/pin'
     | '/api/threads/$id/read'
     | '/api/threads/$id/star'
+    | '/api/messages/media/'
     | '/api/messages/voice/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -779,12 +809,15 @@ export interface FileRouteTypes {
     | '/api/auth/username/login'
     | '/api/auth/username/register'
     | '/api/map/landmark/$id'
+    | '/api/messages/media/$id'
     | '/api/messages/voice/$id'
     | '/api/messages/voice/cleanup'
+    | '/api/social/profile/$id'
     | '/api/threads/$id/mute'
     | '/api/threads/$id/pin'
     | '/api/threads/$id/read'
     | '/api/threads/$id/star'
+    | '/api/messages/media'
     | '/api/messages/voice'
   id:
     | '__root__'
@@ -850,12 +883,15 @@ export interface FileRouteTypes {
     | '/api/auth/username/login'
     | '/api/auth/username/register'
     | '/api/map/landmark/$id'
+    | '/api/messages/media/$id'
     | '/api/messages/voice/$id'
     | '/api/messages/voice/cleanup'
+    | '/api/social/profile/$id'
     | '/api/threads/$id/mute'
     | '/api/threads/$id/pin'
     | '/api/threads/$id/read'
     | '/api/threads/$id/star'
+    | '/api/messages/media/'
     | '/api/messages/voice/'
   fileRoutesById: FileRoutesById
 }
@@ -899,12 +935,15 @@ export interface RootRouteChildren {
   ApiAuthUsernameLoginRoute: typeof ApiAuthUsernameLoginRoute
   ApiAuthUsernameRegisterRoute: typeof ApiAuthUsernameRegisterRoute
   ApiMapLandmarkIdRoute: typeof ApiMapLandmarkIdRoute
+  ApiMessagesMediaIdRoute: typeof ApiMessagesMediaIdRoute
   ApiMessagesVoiceIdRoute: typeof ApiMessagesVoiceIdRoute
   ApiMessagesVoiceCleanupRoute: typeof ApiMessagesVoiceCleanupRoute
+  ApiSocialProfileIdRoute: typeof ApiSocialProfileIdRoute
   ApiThreadsIdMuteRoute: typeof ApiThreadsIdMuteRoute
   ApiThreadsIdPinRoute: typeof ApiThreadsIdPinRoute
   ApiThreadsIdReadRoute: typeof ApiThreadsIdReadRoute
   ApiThreadsIdStarRoute: typeof ApiThreadsIdStarRoute
+  ApiMessagesMediaIndexRoute: typeof ApiMessagesMediaIndexRoute
   ApiMessagesVoiceIndexRoute: typeof ApiMessagesVoiceIndexRoute
 }
 
@@ -1344,6 +1383,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMapLandmarkIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/messages/media/': {
+      id: '/api/messages/media/'
+      path: '/api/messages/media'
+      fullPath: '/api/messages/media/'
+      preLoaderRoute: typeof ApiMessagesMediaIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/messages/media/$id': {
+      id: '/api/messages/media/$id'
+      path: '/api/messages/media/$id'
+      fullPath: '/api/messages/media/$id'
+      preLoaderRoute: typeof ApiMessagesMediaIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/messages/voice/': {
       id: '/api/messages/voice/'
       path: '/api/messages/voice'
@@ -1363,6 +1416,13 @@ declare module '@tanstack/react-router' {
       path: '/api/messages/voice/cleanup'
       fullPath: '/api/messages/voice/cleanup'
       preLoaderRoute: typeof ApiMessagesVoiceCleanupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/social/profile/$id': {
+      id: '/api/social/profile/$id'
+      path: '/api/social/profile/$id'
+      fullPath: '/api/social/profile/$id'
+      preLoaderRoute: typeof ApiSocialProfileIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/threads/$id/mute': {
@@ -1500,12 +1560,15 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthUsernameLoginRoute: ApiAuthUsernameLoginRoute,
   ApiAuthUsernameRegisterRoute: ApiAuthUsernameRegisterRoute,
   ApiMapLandmarkIdRoute: ApiMapLandmarkIdRoute,
+  ApiMessagesMediaIdRoute: ApiMessagesMediaIdRoute,
   ApiMessagesVoiceIdRoute: ApiMessagesVoiceIdRoute,
   ApiMessagesVoiceCleanupRoute: ApiMessagesVoiceCleanupRoute,
+  ApiSocialProfileIdRoute: ApiSocialProfileIdRoute,
   ApiThreadsIdMuteRoute: ApiThreadsIdMuteRoute,
   ApiThreadsIdPinRoute: ApiThreadsIdPinRoute,
   ApiThreadsIdReadRoute: ApiThreadsIdReadRoute,
   ApiThreadsIdStarRoute: ApiThreadsIdStarRoute,
+  ApiMessagesMediaIndexRoute: ApiMessagesMediaIndexRoute,
   ApiMessagesVoiceIndexRoute: ApiMessagesVoiceIndexRoute,
 }
 export const routeTree = rootRouteImport

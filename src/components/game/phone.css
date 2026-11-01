@@ -2231,3 +2231,319 @@
 .phone-app-body .game-settings-page input {
   min-width: 0;
 }
+
+/* Messaging gestures and voice playback share the existing phone palette. */
+.phone-message-bubble {
+  touch-action: pan-y;
+  cursor: pointer;
+  border-radius: 18px 18px 18px 6px;
+  padding: 10px 12px 7px;
+}
+.phone-message-bubble:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+.phone-message-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.message-action-dialog {
+  z-index: calc(var(--game-dialog-layer, 100) + 10);
+  width: min(92vw, 360px);
+  border-radius: 24px;
+}
+.message-action-menu {
+  display: grid;
+  gap: 6px;
+}
+.message-action-menu button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 48px;
+  border-radius: 12px;
+  padding: 10px 14px;
+  text-align: left;
+  background: var(--secondary);
+}
+.message-action-menu svg {
+  width: 18px;
+  height: 18px;
+}
+.phone-conversation {
+  border-radius: 16px;
+  margin-block: 0;
+  border: 1px solid transparent;
+}
+.phone-conversation:hover,
+.phone-conversation:focus-visible {
+  border-color: var(--border);
+  background: color-mix(in srgb, var(--primary) 6%, var(--card));
+}
+.phone-thread-header {
+  padding-block: 12px;
+  box-shadow: 0 2px 12px color-mix(in srgb, var(--foreground) 5%, transparent);
+}
+.voice-note-player {
+  display: grid;
+  width: min(280px, 67vw);
+  min-width: 0;
+  grid-template-columns: 44px minmax(0, 1fr) 44px 32px;
+  gap: 5px;
+  padding-block: 5px;
+}
+.voice-note-player .voice-play-toggle {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 0;
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+.voice-track {
+  position: relative;
+  display: grid;
+  min-width: 0;
+}
+.voice-playback-wave {
+  display: flex;
+  height: 32px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2px;
+}
+.voice-playback-wave i {
+  flex: 1;
+  min-width: 1px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--muted-foreground) 35%, transparent);
+}
+.voice-playback-wave i.is-played {
+  background: var(--primary);
+}
+.voice-track input {
+  position: absolute;
+  top: -6px;
+  left: 0;
+  height: 44px;
+  opacity: 0;
+  cursor: pointer;
+}
+.voice-track:focus-within {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+.voice-playback-times {
+  display: flex;
+  justify-content: space-between;
+}
+.voice-note-avatar {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 12%, var(--card));
+}
+.voice-note-avatar svg {
+  width: 18px;
+  height: 18px;
+}
+.voice-note-player > button[aria-label^="Playback speed"] {
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.phone-messenger .phone-chat-composer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  margin: 8px 10px 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--card);
+  box-shadow: 0 3px 16px color-mix(in srgb, var(--foreground) 5%, transparent);
+}
+.phone-messenger .phone-chat-composer .phone-chat-input {
+  grid-column: 1;
+  grid-row: auto;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 10px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+}
+.phone-messenger .phone-chat-composer .phone-chat-input-actions {
+  display: flex;
+  position: relative;
+  grid-column: 1;
+  align-items: center;
+  grid-row: auto;
+  gap: 4px;
+  width: 100%;
+  padding: 0;
+}
+.phone-messenger .phone-chat-composer .phone-chat-send {
+  margin-inline-start: auto;
+}
+.phone-chat-composer .voice-note-recorder {
+  display: contents;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+.phone-chat-composer .voice-recording-strip,
+.phone-chat-composer .voice-note-hint,
+.phone-chat-composer .voice-retry,
+.chat-media-error {
+  position: absolute;
+  inset-inline: 0;
+  bottom: 52px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: var(--elevation-card);
+  z-index: 2;
+}
+.chat-avatar-button {
+  flex: none;
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 50%;
+}
+.chat-avatar-button > span {
+  border-radius: 50%;
+}
+.phone-messenger .phone-conversation {
+  height: 76px;
+  min-height: 76px;
+  padding: 8px 10px;
+  border-radius: 16px;
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+}
+.phone-conversation-open {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 52px;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+.phone-conversation-copy strong {
+  font-size: 14px;
+  letter-spacing: -0.015em;
+}
+.phone-conversation-copy small {
+  max-width: 100%;
+  font-size: 12px;
+}
+.phone-messenger .phone-inbox-search {
+  margin: 10px 14px;
+  border-radius: 16px;
+  padding: 10px 14px;
+}
+.chat-media-dialog,
+.chat-profile-card {
+  width: min(92vw, 420px);
+  max-height: 86dvh;
+  overflow-y: auto;
+  border-radius: 24px;
+}
+.chat-media-preview {
+  width: 100%;
+  max-height: 45dvh;
+  object-fit: contain;
+  border-radius: 16px;
+  background: var(--muted);
+}
+.chat-primary-button,
+.chat-secondary-button {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 14px;
+  padding: 10px 14px;
+  font-weight: 700;
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+.chat-secondary-button {
+  color: var(--foreground);
+  background: var(--secondary);
+}
+.chat-attachment {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 64px;
+  max-width: 100%;
+  text-align: left;
+}
+.chat-attachment > span {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+.chat-attachment strong {
+  overflow-wrap: anywhere;
+}
+.chat-attachment small {
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+.chat-attachment > svg {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  color: var(--primary);
+}
+.chat-profile-cover {
+  display: grid;
+  place-items: center;
+  min-height: 140px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--secondary);
+  color: var(--muted-foreground);
+}
+.chat-profile-cover img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+}
+.chat-profile-identity {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.chat-profile-identity strong {
+  font-size: 20px;
+}
+.chat-profile-identity p {
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+.chat-cover-editor {
+  display: grid;
+  gap: 10px;
+}
+.chat-cover-editor input {
+  width: 100%;
+  padding-block: 10px;
+}

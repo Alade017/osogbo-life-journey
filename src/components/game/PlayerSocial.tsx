@@ -1,9 +1,17 @@
-import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import {
   ArrowLeft,
-  Camera,
   ChevronRight,
   MessageCircle,
   Mic,
@@ -14,14 +22,12 @@ import {
   Palette,
   Pin,
   Plus,
-  Paperclip,
   Reply,
   Search,
   Send,
   ShieldBan,
   Smile,
   Star,
-  UserPlus,
   Users,
   X,
 } from "lucide-react";
@@ -32,6 +38,9 @@ import type { Appearance } from "@/components/game/Avatar";
 import { FormattedMessage, MessageFormattingToolbar } from "@/components/game/MessageFormatting";
 import { VoiceNotePlayer, VoiceNoteRecorder } from "@/components/game/VoiceNotes";
 import { Button } from "@/components/ui/button";
+import { MessageBubble } from "@/components/game/MessageBubble";
+import { ComposerMedia, AttachmentMessage, PlayerSocialCard } from "@/components/game/ChatMedia";
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { q } from "@/lib/game";
 import { supabase } from "@/integrations/supabase/client";
 import { playGameSound } from "@/lib/game-audio";
@@ -93,8 +102,14 @@ const REPORT_OPTIONS: Array<{ value: SocialReportCategory; label: string }> = [
   { value: "other", label: "Other" },
 ];
 
-function PlayerAvatar({ player }: { player: Pick<SocialPlayer, "appearance" | "gender"> }) {
-  return (
+const ProfileOpenContext = createContext<((id: string) => void) | null>(null);
+function PlayerAvatar({
+  player,
+}: {
+  player: Pick<SocialPlayer, "appearance" | "gender"> & { character_id?: string };
+}) {
+  const openProfile = useContext(ProfileOpenContext);
+  const portrait = (
     <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl bg-leaf/10">
       <Avatar
         appearance={
@@ -108,6 +123,18 @@ function PlayerAvatar({ player }: { player: Pick<SocialPlayer, "appearance" | "g
         size={38}
       />
     </span>
+  );
+  return openProfile && player.character_id ? (
+    <button
+      type="button"
+      className="chat-avatar-button"
+      aria-label="View player profile"
+      onClick={() => openProfile(player.character_id!)}
+    >
+      {portrait}
+    </button>
+  ) : (
+    portrait
   );
 }
 
@@ -159,40 +186,41 @@ function VirtualConversationList({
           style={{ transform: `translateY(${start * rowHeight}px)` }}
         >
           {visible.map((conversation) => (
-            <button
-              type="button"
-              key={conversation.id}
-              className="phone-conversation"
-              onClick={() => onOpen(conversation)}
-              onContextMenu={(event) => {
-                event.preventDefault();
-                onMenu(conversation);
-              }}
-              onPointerDown={(event) => {
-                if (event.pointerType !== "mouse") onLongPress(conversation);
-              }}
-              onPointerUp={onCancelLongPress}
-              onPointerCancel={onCancelLongPress}
-              onPointerMove={onCancelLongPress}
-            >
+            <div key={conversation.id} className="phone-conversation">
               <PlayerAvatar player={conversation} />
-              <span className="phone-conversation-copy">
-                <strong>
-                  {conversation.player_name}
-                  {conversation.starredAt && <Star size={12} aria-label="Starred chat" />}
-                </strong>
-                <small>{conversation.preview || "Private conversation"}</small>
-              </span>
-              <span className="phone-conversation-status">
-                <time>{formatConversationTime(conversation.lastActivity)}</time>
-                {conversation.mutedUntil && <BellOff size={13} aria-label="Muted chat" />}
-                {(conversation.unreadCount ?? 0) > 0 && (
-                  <span aria-label={`${conversation.unreadCount} unread messages`}>
-                    {(conversation.unreadCount ?? 0) > 99 ? "99+" : conversation.unreadCount}
-                  </span>
-                )}
-              </span>
-            </button>
+              <button
+                type="button"
+                className="phone-conversation-open"
+                onClick={() => onOpen(conversation)}
+                onContextMenu={(event) => {
+                  event.preventDefault();
+                  onMenu(conversation);
+                }}
+                onPointerDown={(event) => {
+                  if (event.pointerType !== "mouse") onLongPress(conversation);
+                }}
+                onPointerUp={onCancelLongPress}
+                onPointerCancel={onCancelLongPress}
+                onPointerMove={onCancelLongPress}
+              >
+                <span className="phone-conversation-copy">
+                  <strong>
+                    {conversation.player_name}
+                    {conversation.starredAt && <Star size={12} aria-label="Starred chat" />}
+                  </strong>
+                  <small>{conversation.preview || "Private conversation"}</small>
+                </span>
+                <span className="phone-conversation-status">
+                  <time>{formatConversationTime(conversation.lastActivity)}</time>
+                  {conversation.mutedUntil && <BellOff size={13} aria-label="Muted chat" />}
+                  {(conversation.unreadCount ?? 0) > 0 && (
+                    <span aria-label={`${conversation.unreadCount} unread messages`}>
+                      {(conversation.unreadCount ?? 0) > 99 ? "99+" : conversation.unreadCount}
+                    </span>
+                  )}
+                </span>
+              </button>
+            </div>
           ))}
         </div>
       </div>
@@ -257,8 +285,10 @@ export function MessageList({
 }) {
   const [starred, setStarred] = useState<string[]>([]);
   const [starredOnly, setStarredOnly] = useState(false);
+  const [actionMessage, setActionMessage] = useState<SocialMessage | null>(null);
   const starKey = "osun-message-stars:" + (ownCharacterId ?? "guest");
   useEffect(() => {
+    setActionMessage(null);
     try {
       const saved: unknown = JSON.parse(localStorage.getItem(starKey) ?? "[]");
       setStarred(
@@ -334,9 +364,13 @@ export function MessageList({
           <li className="phone-chat-empty">No starred messages in this chat.</li>
         )}
         {visibleMessages.map((message) => (
-          <li
+          <MessageBubble
             key={message.id}
-            data-message-id={message.id}
+            messageId={message.id}
+            label={`Message from ${message.sender_character_id === ownCharacterId ? "you" : message.sender_name}. Open message actions`}
+            onActions={() => setActionMessage(message)}
+            onReply={() => onReply(message)}
+            onStar={() => toggleStar(message.id)}
             className={`${phoneMode ? "phone-message-bubble" : "rounded-lg bg-card px-3 py-2 text-sm"} ${message.sender_character_id === ownCharacterId ? "is-own" : "is-other"}`}
           >
             {!phoneMode && (
@@ -359,7 +393,13 @@ export function MessageList({
                 )}
               </blockquote>
             )}
-            {message.message_type === "voice" && message.voice_duration_ms ? (
+            {message.attachment ? (
+              <AttachmentMessage
+                messageId={message.id}
+                attachment={message.attachment}
+                ownerId={ownCharacterId}
+              />
+            ) : message.message_type === "voice" && message.voice_duration_ms ? (
               <VoiceNotePlayer messageId={message.id} durationMs={message.voice_duration_ms} />
             ) : (
               <p className="whitespace-pre-wrap break-words">
@@ -373,6 +413,7 @@ export function MessageList({
                   : "mt-1 block text-right text-[11px] text-muted-foreground"
               }
             >
+              {starred.includes(message.id) && <Star size={12} aria-label="Starred message" />}
               {new Intl.DateTimeFormat("en-NG", {
                 hour: "2-digit",
                 minute: "2-digit",
@@ -382,24 +423,7 @@ export function MessageList({
                 <Check className="phone-message-ticks" aria-label="Message sent" />
               )}
             </time>
-            <span className="message-actions">
-              <button
-                type="button"
-                aria-pressed={starred.includes(message.id)}
-                onClick={() => toggleStar(message.id)}
-              >
-                <Star aria-hidden="true" /> {starred.includes(message.id) ? "Unstar" : "Star"}
-              </button>
-              <button type="button" onClick={() => onReply(message)}>
-                <Reply aria-hidden="true" /> Reply
-              </button>
-              {message.sender_character_id !== ownCharacterId && (
-                <button type="button" onClick={() => onReport(message)}>
-                  Report
-                </button>
-              )}
-            </span>
-          </li>
+          </MessageBubble>
         ))}
         {windowed.after > 0 && (
           <li
@@ -409,6 +433,58 @@ export function MessageList({
           />
         )}
       </ol>
+      <Dialog
+        open={!!actionMessage}
+        onOpenChange={(open) => {
+          if (!open) setActionMessage(null);
+        }}
+      >
+        <DialogContent
+          className="message-action-dialog"
+          style={{ zIndex: "calc(var(--game-dialog-layer, 100) + 10)" }}
+        >
+          <DialogTitle>Message actions</DialogTitle>
+          <DialogDescription>
+            Swipe right to reply. Double-tap or double-click to star. Stars are saved on this
+            device.
+          </DialogDescription>
+          {actionMessage && (
+            <div className="message-action-menu">
+              <button
+                type="button"
+                onClick={() => {
+                  onReply(actionMessage);
+                  setActionMessage(null);
+                }}
+              >
+                <Reply aria-hidden="true" />
+                Reply
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  toggleStar(actionMessage.id);
+                  setActionMessage(null);
+                }}
+              >
+                <Star aria-hidden="true" />
+                {starred.includes(actionMessage.id) ? "Unstar" : "Star"}
+              </button>
+              {actionMessage.sender_character_id !== ownCharacterId && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onReport(actionMessage);
+                    setActionMessage(null);
+                  }}
+                >
+                  Report message…
+                </button>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
@@ -420,6 +496,8 @@ export function ChatComposer({
   replyTo,
   onCancelReply,
   phoneMode = false,
+  recorder,
+  mediaControls,
 }: {
   label: string;
   disabled?: boolean;
@@ -427,6 +505,8 @@ export function ChatComposer({
   replyTo?: SocialMessage | null;
   onCancelReply?: () => void;
   phoneMode?: boolean;
+  recorder?: ReactNode;
+  mediaControls?: ReactNode;
 }) {
   const [body, setBody] = useState("");
   const [sending, setSending] = useState(false);
@@ -509,24 +589,8 @@ export function ChatComposer({
           >
             <Smile size={18} />
           </button>
-          <button
-            type="button"
-            className="phone-chat-utility"
-            aria-label="Attach file"
-            disabled
-            title="Attachments are coming soon"
-          >
-            <Paperclip size={18} />
-          </button>
-          <button
-            type="button"
-            className="phone-chat-utility"
-            aria-label="Open camera"
-            disabled
-            title="Camera messages are coming soon"
-          >
-            <Camera size={18} />
-          </button>
+          {mediaControls}
+          {recorder}
           <Button
             className="phone-chat-send"
             size="icon"
@@ -559,6 +623,7 @@ export function PlayerSocial({
   phoneMode?: boolean;
 }) {
   const qc = useQueryClient();
+  const [profileCharacterId, setProfileCharacterId] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>(initialTab);
   const [phoneMessageMode] = useState<"private" | "area">("private");
   const [query, setQuery] = useState("");
@@ -1001,252 +1066,193 @@ export function PlayerSocial({
   };
 
   return (
-    <section
-      className={phoneMode ? "phone-messenger" : "game-panel space-y-4 p-4 sm:p-5"}
-      data-message-theme={phoneMode ? messageTheme : undefined}
-      aria-labelledby={phoneMode ? undefined : "player-social-title"}
-      aria-label={phoneMode ? "Phone messages" : undefined}
-    >
-      {!phoneMode && (
-        <header className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-primary">
-              <Users size={15} /> REAL PLAYERS
-            </p>
-            <h2 id="player-social-title" className="font-display text-xl font-semibold">
-              Meet players
-            </h2>
-            <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-              Search public character profiles, make friends, and chat with players around the city.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2" role="tablist" aria-label="Player social sections">
-            {(
-              [
-                ["players", "Find players"],
-                ["messages", "Messages"],
-                ["friends", "Friends & safety"],
-              ] as const
-            ).map(([value, label]) => (
-              <Button
-                key={value}
-                type="button"
-                size="sm"
-                variant={tab === value ? "default" : "outline"}
-                role="tab"
-                aria-selected={tab === value}
-                onClick={() => setTab(value)}
-              >
-                {label}
-                {value === "friends" && !!overview?.incoming.length && (
-                  <span className="ml-1 rounded-full bg-card px-1.5 text-xs text-foreground">
-                    {overview.incoming.length}
-                  </span>
-                )}
-              </Button>
-            ))}
-          </div>
-        </header>
-      )}
-
-      {tab === "players" && (
-        <div className={phoneMode ? "phone-new-chat-panel" : "grid gap-4"}>
-          {phoneMode && (
-            <div className="phone-new-chat-heading">
-              <button
-                type="button"
-                className="phone-icon-button"
-                aria-label="Back to chats"
-                onClick={() => setTab("messages")}
-              >
-                <ArrowLeft size={18} />
-              </button>
-              <div>
-                <h3 className="font-display font-semibold">New message</h3>
-                <p className="text-xs text-muted-foreground">Choose a friend or find a player.</p>
-              </div>
+    <ProfileOpenContext.Provider value={setProfileCharacterId}>
+      <section
+        className={phoneMode ? "phone-messenger" : "game-panel space-y-4 p-4 sm:p-5"}
+        data-message-theme={phoneMode ? messageTheme : undefined}
+        aria-labelledby={phoneMode ? undefined : "player-social-title"}
+        aria-label={phoneMode ? "Phone messages" : undefined}
+      >
+        {!phoneMode && (
+          <header className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="mb-1 flex items-center gap-2 text-xs font-bold uppercase tracking-[0.12em] text-primary">
+                <Users size={15} /> REAL PLAYERS
+              </p>
+              <h2 id="player-social-title" className="font-display text-xl font-semibold">
+                Meet players
+              </h2>
+              <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+                Search public character profiles, make friends, and chat with players around the
+                city.
+              </p>
             </div>
-          )}
-          <form
-            onSubmit={submitSearch}
-            className={phoneMode ? "phone-player-search" : "flex flex-wrap gap-2"}
-          >
-            <label className="sr-only" htmlFor="player-search">
-              Search player names
-            </label>
-            {phoneMode && <Search size={17} aria-hidden="true" />}
-            <input
-              id="player-search"
-              value={query}
-              maxLength={24}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search player names"
-              className={
-                phoneMode
-                  ? "phone-player-search-input"
-                  : "min-h-10 min-w-0 flex-1 rounded-xl border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              }
-            />
-            {phoneMode ? (
-              <button type="submit" className="phone-search-submit" aria-label="Search players">
-                <Search size={16} />
-              </button>
-            ) : (
-              <Button type="submit" disabled={searchQuery.isFetching}>
-                <Search size={16} /> Search
-              </Button>
-            )}
-          </form>
-          {phoneMode && (
-            <section className="phone-contact-section" aria-label="Friends you can message">
-              <h4>Friends</h4>
-              {overview?.friends.length ? (
-                <div className="phone-contact-list">
-                  {overview.friends.map((friend) => (
-                    <button
-                      type="button"
-                      className="phone-contact-row"
-                      key={friend.character_id}
-                      onClick={() => openChatMutation.mutate(friend.character_id)}
-                      disabled={openChatMutation.isPending}
-                    >
-                      <PlayerAvatar player={friend} />
-                      <span className="phone-contact-copy">
-                        <strong>{friend.player_name}</strong>
-                        <small>
-                          {isFriendOnline(friend.character_id) ? "Online" : "Offline"}. Start a
-                          private chat.
-                        </small>
-                      </span>
-                      <ChevronRight size={17} aria-hidden="true" />
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <p className="phone-contact-empty">
-                  Friends you can message will appear here. Meet players in People first.
-                </p>
-              )}
-            </section>
-          )}
-          {initialPlayerId && initialProfileQuery.isPending && (
-            <p className="text-sm text-muted-foreground" role="status">
-              Loading player profile…
-            </p>
-          )}
-          {initialProfileQuery.error && (
-            <p className="text-sm text-destructive" role="alert">
-              {initialProfileQuery.error.message}
-            </p>
-          )}
-          {initialProfileQuery.data &&
-            !searchQuery.data?.some((item) => item.character_id === initialPlayerId) && (
-              <div className="grid gap-2">
-                <PlayerRow
-                  player={initialProfileQuery.data}
-                  action={
-                    initialProfileQuery.data.relationship === "none"
-                      ? {
-                          label: "Add friend",
-                          run: () =>
-                            actionMutation.mutate({
-                              kind: "send",
-                              id: initialProfileQuery.data!.character_id,
-                            }),
-                          disabled: actionMutation.isPending,
-                        }
-                      : initialProfileQuery.data.relationship === "request_received" &&
-                          initialProfileQuery.data.request_id
-                        ? {
-                            label: "Accept request",
-                            run: () =>
-                              actionMutation.mutate({
-                                kind: "accept",
-                                id: initialProfileQuery.data!.request_id!,
-                              }),
-                            disabled: actionMutation.isPending,
-                          }
-                        : initialProfileQuery.data.relationship === "friends"
-                          ? {
-                              label: "Message",
-                              run: () =>
-                                openChatMutation.mutate(initialProfileQuery.data!.character_id),
-                              disabled: openChatMutation.isPending,
-                            }
-                          : { label: "Request sent", run: () => {}, disabled: true }
-                  }
-                  secondaryAction={{
-                    label: "Block",
-                    run: () =>
-                      actionMutation.mutate({
-                        kind: "block",
-                        id: initialProfileQuery.data!.character_id,
-                      }),
-                    disabled: actionMutation.isPending,
-                  }}
-                />
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    className="text-xs text-muted-foreground underline underline-offset-2"
-                    onClick={() =>
-                      setReportTarget({
-                        id: initialProfileQuery.data!.character_id,
-                        name: initialProfileQuery.data!.player_name,
-                      })
-                    }
-                  >
-                    Report player
-                  </button>
+            <div
+              className="flex flex-wrap gap-2"
+              role="tablist"
+              aria-label="Player social sections"
+            >
+              {(
+                [
+                  ["players", "Find players"],
+                  ["messages", "Messages"],
+                  ["friends", "Friends & safety"],
+                ] as const
+              ).map(([value, label]) => (
+                <Button
+                  key={value}
+                  type="button"
+                  size="sm"
+                  variant={tab === value ? "default" : "outline"}
+                  role="tab"
+                  aria-selected={tab === value}
+                  onClick={() => setTab(value)}
+                >
+                  {label}
+                  {value === "friends" && !!overview?.incoming.length && (
+                    <span className="ml-1 rounded-full bg-card px-1.5 text-xs text-foreground">
+                      {overview.incoming.length}
+                    </span>
+                  )}
+                </Button>
+              ))}
+            </div>
+          </header>
+        )}
+
+        {tab === "players" && (
+          <div className={phoneMode ? "phone-new-chat-panel" : "grid gap-4"}>
+            {phoneMode && (
+              <div className="phone-new-chat-heading">
+                <button
+                  type="button"
+                  className="phone-icon-button"
+                  aria-label="Back to chats"
+                  onClick={() => setTab("messages")}
+                >
+                  <ArrowLeft size={18} />
+                </button>
+                <div>
+                  <h3 className="font-display font-semibold">New message</h3>
+                  <p className="text-xs text-muted-foreground">Choose a friend or find a player.</p>
                 </div>
               </div>
             )}
-          {searchQuery.error && (
-            <p className="text-sm text-destructive" role="alert">
-              {searchQuery.error.message}
-            </p>
-          )}
-          {submittedQuery && searchQuery.data?.length === 0 && (
-            <p className="rounded-xl bg-background p-4 text-sm text-muted-foreground">
-              No searchable players matched “{submittedQuery}”.
-            </p>
-          )}
-          {!!searchQuery.data?.length && (
-            <div className="grid gap-2" aria-label="Player search results">
-              {searchQuery.data.map((profile) => (
-                <div key={profile.character_id} className="grid gap-2">
+            <form
+              onSubmit={submitSearch}
+              className={phoneMode ? "phone-player-search" : "flex flex-wrap gap-2"}
+            >
+              <label className="sr-only" htmlFor="player-search">
+                Search player names
+              </label>
+              {phoneMode && <Search size={17} aria-hidden="true" />}
+              <input
+                id="player-search"
+                value={query}
+                maxLength={24}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search player names"
+                className={
+                  phoneMode
+                    ? "phone-player-search-input"
+                    : "min-h-10 min-w-0 flex-1 rounded-xl border border-border bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                }
+              />
+              {phoneMode ? (
+                <button type="submit" className="phone-search-submit" aria-label="Search players">
+                  <Search size={16} />
+                </button>
+              ) : (
+                <Button type="submit" disabled={searchQuery.isFetching}>
+                  <Search size={16} /> Search
+                </Button>
+              )}
+            </form>
+            {phoneMode && (
+              <section className="phone-contact-section" aria-label="Friends you can message">
+                <h4>Friends</h4>
+                {overview?.friends.length ? (
+                  <div className="phone-contact-list">
+                    {overview.friends.map((friend) => (
+                      <button
+                        type="button"
+                        className="phone-contact-row"
+                        key={friend.character_id}
+                        onClick={() => openChatMutation.mutate(friend.character_id)}
+                        disabled={openChatMutation.isPending}
+                      >
+                        <PlayerAvatar player={friend} />
+                        <span className="phone-contact-copy">
+                          <strong>{friend.player_name}</strong>
+                          <small>
+                            {isFriendOnline(friend.character_id) ? "Online" : "Offline"}. Start a
+                            private chat.
+                          </small>
+                        </span>
+                        <ChevronRight size={17} aria-hidden="true" />
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="phone-contact-empty">
+                    Friends you can message will appear here. Meet players in People first.
+                  </p>
+                )}
+              </section>
+            )}
+            {initialPlayerId && initialProfileQuery.isPending && (
+              <p className="text-sm text-muted-foreground" role="status">
+                Loading player profile…
+              </p>
+            )}
+            {initialProfileQuery.error && (
+              <p className="text-sm text-destructive" role="alert">
+                {initialProfileQuery.error.message}
+              </p>
+            )}
+            {initialProfileQuery.data &&
+              !searchQuery.data?.some((item) => item.character_id === initialPlayerId) && (
+                <div className="grid gap-2">
                   <PlayerRow
-                    player={profile}
-                    status={profile.relationship === "friends" ? "Friend" : undefined}
+                    player={initialProfileQuery.data}
                     action={
-                      profile.relationship === "none"
+                      initialProfileQuery.data.relationship === "none"
                         ? {
                             label: "Add friend",
                             run: () =>
-                              actionMutation.mutate({ kind: "send", id: profile.character_id }),
+                              actionMutation.mutate({
+                                kind: "send",
+                                id: initialProfileQuery.data!.character_id,
+                              }),
                             disabled: actionMutation.isPending,
                           }
-                        : profile.relationship === "request_sent"
-                          ? { label: "Request sent", run: () => {}, disabled: true }
-                          : profile.relationship === "request_received" && profile.request_id
+                        : initialProfileQuery.data.relationship === "request_received" &&
+                            initialProfileQuery.data.request_id
+                          ? {
+                              label: "Accept request",
+                              run: () =>
+                                actionMutation.mutate({
+                                  kind: "accept",
+                                  id: initialProfileQuery.data!.request_id!,
+                                }),
+                              disabled: actionMutation.isPending,
+                            }
+                          : initialProfileQuery.data.relationship === "friends"
                             ? {
-                                label: "Accept request",
-                                run: () =>
-                                  actionMutation.mutate({
-                                    kind: "accept",
-                                    id: profile.request_id!,
-                                  }),
-                                disabled: actionMutation.isPending,
-                              }
-                            : {
                                 label: "Message",
-                                run: () => openChatMutation.mutate(profile.character_id),
+                                run: () =>
+                                  openChatMutation.mutate(initialProfileQuery.data!.character_id),
                                 disabled: openChatMutation.isPending,
                               }
+                            : { label: "Request sent", run: () => {}, disabled: true }
                     }
                     secondaryAction={{
                       label: "Block",
-                      run: () => actionMutation.mutate({ kind: "block", id: profile.character_id }),
+                      run: () =>
+                        actionMutation.mutate({
+                          kind: "block",
+                          id: initialProfileQuery.data!.character_id,
+                        }),
                       disabled: actionMutation.isPending,
                     }}
                   />
@@ -1255,36 +1261,325 @@ export function PlayerSocial({
                       type="button"
                       className="text-xs text-muted-foreground underline underline-offset-2"
                       onClick={() =>
-                        setReportTarget({ id: profile.character_id, name: profile.player_name })
+                        setReportTarget({
+                          id: initialProfileQuery.data!.character_id,
+                          name: initialProfileQuery.data!.player_name,
+                        })
                       }
                     >
                       Report player
                     </button>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+              )}
+            {searchQuery.error && (
+              <p className="text-sm text-destructive" role="alert">
+                {searchQuery.error.message}
+              </p>
+            )}
+            {submittedQuery && searchQuery.data?.length === 0 && (
+              <p className="rounded-xl bg-background p-4 text-sm text-muted-foreground">
+                No searchable players matched “{submittedQuery}”.
+              </p>
+            )}
+            {!!searchQuery.data?.length && (
+              <div className="grid gap-2" aria-label="Player search results">
+                {searchQuery.data.map((profile) => (
+                  <div key={profile.character_id} className="grid gap-2">
+                    <PlayerRow
+                      player={profile}
+                      status={profile.relationship === "friends" ? "Friend" : undefined}
+                      action={
+                        profile.relationship === "none"
+                          ? {
+                              label: "Add friend",
+                              run: () =>
+                                actionMutation.mutate({ kind: "send", id: profile.character_id }),
+                              disabled: actionMutation.isPending,
+                            }
+                          : profile.relationship === "request_sent"
+                            ? { label: "Request sent", run: () => {}, disabled: true }
+                            : profile.relationship === "request_received" && profile.request_id
+                              ? {
+                                  label: "Accept request",
+                                  run: () =>
+                                    actionMutation.mutate({
+                                      kind: "accept",
+                                      id: profile.request_id!,
+                                    }),
+                                  disabled: actionMutation.isPending,
+                                }
+                              : {
+                                  label: "Message",
+                                  run: () => openChatMutation.mutate(profile.character_id),
+                                  disabled: openChatMutation.isPending,
+                                }
+                      }
+                      secondaryAction={{
+                        label: "Block",
+                        run: () =>
+                          actionMutation.mutate({ kind: "block", id: profile.character_id }),
+                        disabled: actionMutation.isPending,
+                      }}
+                    />
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        className="text-xs text-muted-foreground underline underline-offset-2"
+                        onClick={() =>
+                          setReportTarget({ id: profile.character_id, name: profile.player_name })
+                        }
+                      >
+                        Report player
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
 
-      {tab === "messages" &&
-        (phoneMode ? (
-          <div className="phone-message-content">
-            {phoneMessageMode === "area" ? (
-              <section className="phone-chat-panel" aria-label="Area chat">
-                <p className="phone-chat-subtitle">
-                  {locationsQuery.data?.find((location) => location.id === locationId)?.name ??
-                    "Current district"}
-                  . Messages visible to players in this area
-                </p>
+        {tab === "messages" &&
+          (phoneMode ? (
+            <div className="phone-message-content">
+              {phoneMessageMode === "area" ? (
+                <section className="phone-chat-panel" aria-label="Area chat">
+                  <p className="phone-chat-subtitle">
+                    {locationsQuery.data?.find((location) => location.id === locationId)?.name ??
+                      "Current district"}
+                    . Messages visible to players in this area
+                  </p>
+                  {!locationId ? (
+                    <p className="text-sm text-muted-foreground">
+                      Your current area is still loading.
+                    </p>
+                  ) : areaMessagesQuery.error ? (
+                    <p className="text-sm text-destructive" role="alert">
+                      {areaMessagesQuery.error?.message ?? "Area messages could not be loaded."}
+                    </p>
+                  ) : (
+                    <MessageList
+                      messages={areaMessages}
+                      ownCharacterId={character?.id}
+                      onReply={setReplyTarget}
+                      onReport={(message) =>
+                        setReportTarget({
+                          id: message.sender_character_id,
+                          name: message.sender_name,
+                          messageId: message.id,
+                        })
+                      }
+                    />
+                  )}
+                  <ChatComposer
+                    label="Write an area message"
+                    disabled={!locationId || sendMutation.isPending}
+                    onSend={(body, replyId) => runMessage(body, false, replyId)}
+                    replyTo={replyTarget}
+                    onCancelReply={() => setReplyTarget(null)}
+                  />
+                </section>
+              ) : activeChat ? (
+                <section
+                  className="phone-chat-panel"
+                  aria-label={`Private chat with ${activeChat.name}`}
+                >
+                  <header className="phone-thread-header">
+                    <button
+                      type="button"
+                      className="phone-thread-back"
+                      onClick={() => {
+                        setReplyTarget(null);
+                        setActiveChat(null);
+                      }}
+                      aria-label="Back to chats"
+                    >
+                      <ArrowLeft size={18} />
+                    </button>
+                    {activeChatPlayer ? (
+                      <PlayerAvatar player={activeChatPlayer} />
+                    ) : (
+                      <button
+                        type="button"
+                        className="phone-conversation-avatar chat-avatar-button"
+                        aria-label="View player profile"
+                        onClick={() => setProfileCharacterId(activeChat.characterId)}
+                      >
+                        {activeChat.name.slice(0, 1).toUpperCase()}
+                      </button>
+                    )}
+                    <div className="phone-thread-person">
+                      <strong>{activeChat.name}</strong>
+                      <small>Private chat</small>
+                    </div>
+                    <button
+                      type="button"
+                      className="phone-thread-search-toggle"
+                      aria-label={inChatSearchOpen ? "Close message search" : "Search messages"}
+                      aria-pressed={inChatSearchOpen}
+                      onClick={() => {
+                        setInChatSearchOpen((open) => !open);
+                        if (inChatSearchOpen) setInChatSearch("");
+                      }}
+                    >
+                      <Search size={17} />
+                    </button>
+                  </header>
+                  {inChatSearchOpen && (
+                    <label className="phone-thread-search">
+                      <Search size={15} aria-hidden="true" />
+                      <span className="sr-only">Search messages in this chat</span>
+                      <input
+                        autoFocus
+                        type="search"
+                        value={inChatSearch}
+                        onChange={(event) => setInChatSearch(event.target.value)}
+                        placeholder="Search messages"
+                      />
+                    </label>
+                  )}
+                  {directMessagesQuery.error ? (
+                    <p className="text-sm text-destructive" role="alert">
+                      {directMessagesQuery.error.message}
+                    </p>
+                  ) : (
+                    <MessageList
+                      messages={displayedDirectMessages}
+                      ownCharacterId={character?.id}
+                      phoneMode
+                      onReply={setReplyTarget}
+                      onReport={(message) =>
+                        setReportTarget({
+                          id: message.sender_character_id,
+                          name: message.sender_name,
+                          messageId: message.id,
+                        })
+                      }
+                    />
+                  )}
+                  <ChatComposer
+                    label={`Message ${activeChat.name}`}
+                    disabled={sendMutation.isPending}
+                    onSend={(body, replyId) => runMessage(body, true, replyId)}
+                    replyTo={replyTarget}
+                    onCancelReply={() => setReplyTarget(null)}
+                    phoneMode
+                    mediaControls={
+                      <ComposerMedia
+                        key={`${character?.id}:${activeChat.conversationId}`}
+                        threadId={activeChat.conversationId}
+                        disabled={sendMutation.isPending}
+                        onSent={() =>
+                          void qc.invalidateQueries({
+                            queryKey: ["socialMessages", "private", activeChat.conversationId],
+                          })
+                        }
+                      />
+                    }
+                    recorder={
+                      <VoiceNoteRecorder
+                        threadId={activeChat.conversationId}
+                        disabled={sendMutation.isPending}
+                        onSent={() =>
+                          void qc.invalidateQueries({
+                            queryKey: ["socialMessages", "private", activeChat.conversationId],
+                          })
+                        }
+                      />
+                    }
+                  />
+                </section>
+              ) : (
+                <section className="phone-chat-panel" aria-label="Private chats">
+                  <div className="phone-inbox-heading">
+                    <div>
+                      <h3>Messages</h3>
+                      <p>Your people, one conversation away.</p>
+                    </div>
+                    <button
+                      type="button"
+                      className="phone-new-message-button"
+                      onClick={() => {
+                        setQuery("");
+                        setSubmittedQuery("");
+                        setTab("players");
+                      }}
+                      aria-label="New message"
+                    >
+                      <Plus size={19} />
+                    </button>
+                  </div>
+                  <label className="phone-inbox-search">
+                    <Search size={16} aria-hidden="true" />
+                    <span className="sr-only">Search chats</span>
+                    <input
+                      type="search"
+                      value={conversationSearch}
+                      onChange={(event) => setConversationSearch(event.target.value)}
+                      placeholder="Search chats"
+                    />
+                  </label>
+                  <div className="phone-inbox-filters" role="group" aria-label="Chat filters">
+                    {(["all", "unread", "groups"] as const).map((filter) => (
+                      <button
+                        type="button"
+                        key={filter}
+                        className={inboxFilter === filter ? "is-active" : undefined}
+                        aria-pressed={inboxFilter === filter}
+                        onClick={() => setInboxFilter(filter)}
+                      >
+                        {filter === "all" ? "All" : filter === "unread" ? "Unread" : "Groups"}
+                      </button>
+                    ))}
+                  </div>
+                  {overviewQuery.isPending ? (
+                    <p className="text-sm text-muted-foreground">Loading your chats…</p>
+                  ) : overviewQuery.error ? (
+                    <p className="text-sm text-destructive" role="alert">
+                      {overviewQuery.error.message}
+                    </p>
+                  ) : filteredConversations.length ? (
+                    <VirtualConversationList
+                      conversations={filteredConversations}
+                      onOpen={openConversation}
+                      onMenu={setThreadMenu}
+                      onLongPress={beginLongPress}
+                      onCancelLongPress={cancelLongPress}
+                    />
+                  ) : (
+                    <p className="phone-inbox-state">
+                      {inboxFilter === "groups"
+                        ? "Group chats will appear here when groups are available."
+                        : "No matching chats yet. Start one from a friend's profile in Social."}
+                    </p>
+                  )}
+                </section>
+              )}
+            </div>
+          ) : (
+            <div className="grid gap-4 lg:grid-cols-2">
+              <section
+                className="grid content-start gap-3 rounded-2xl border border-border p-3 sm:p-4"
+                aria-labelledby="area-chat-title"
+              >
+                <div>
+                  <h3 id="area-chat-title" className="font-display font-semibold">
+                    Area chat
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    {locationsQuery.data?.find((location) => location.id === locationId)?.name ??
+                      "Current district"}
+                    . Visible to players in this area
+                  </p>
+                </div>
                 {!locationId ? (
                   <p className="text-sm text-muted-foreground">
                     Your current area is still loading.
                   </p>
                 ) : areaMessagesQuery.error ? (
                   <p className="text-sm text-destructive" role="alert">
-                    {areaMessagesQuery.error?.message ?? "Area messages could not be loaded."}
+                    {areaMessagesQuery.error.message}
                   </p>
                 ) : (
                   <MessageList
@@ -1308,700 +1603,517 @@ export function PlayerSocial({
                   onCancelReply={() => setReplyTarget(null)}
                 />
               </section>
-            ) : activeChat ? (
+
               <section
-                className="phone-chat-panel"
-                aria-label={`Private chat with ${activeChat.name}`}
+                className="grid content-start gap-3 rounded-2xl border border-border p-3 sm:p-4"
+                aria-labelledby="private-chat-title"
               >
-                <header className="phone-thread-header">
-                  <button
-                    type="button"
-                    className="phone-thread-back"
-                    onClick={() => {
-                      setReplyTarget(null);
-                      setActiveChat(null);
-                    }}
-                    aria-label="Back to chats"
-                  >
-                    <ArrowLeft size={18} />
-                  </button>
-                  {activeChatPlayer ? (
-                    <PlayerAvatar player={activeChatPlayer} />
-                  ) : (
-                    <span className="phone-conversation-avatar" aria-hidden="true">
-                      {activeChat.name.slice(0, 1).toUpperCase()}
-                    </span>
-                  )}
-                  <div className="phone-thread-person">
-                    <strong>{activeChat.name}</strong>
-                    <small>Private chat</small>
-                  </div>
-                  <button
-                    type="button"
-                    className="phone-thread-search-toggle"
-                    aria-label={inChatSearchOpen ? "Close message search" : "Search messages"}
-                    aria-pressed={inChatSearchOpen}
-                    onClick={() => {
-                      setInChatSearchOpen((open) => !open);
-                      if (inChatSearchOpen) setInChatSearch("");
-                    }}
-                  >
-                    <Search size={17} />
-                  </button>
-                </header>
-                {inChatSearchOpen && (
-                  <label className="phone-thread-search">
-                    <Search size={15} aria-hidden="true" />
-                    <span className="sr-only">Search messages in this chat</span>
-                    <input
-                      autoFocus
-                      type="search"
-                      value={inChatSearch}
-                      onChange={(event) => setInChatSearch(event.target.value)}
-                      placeholder="Search messages"
-                    />
-                  </label>
-                )}
-                {directMessagesQuery.error ? (
-                  <p className="text-sm text-destructive" role="alert">
-                    {directMessagesQuery.error.message}
+                <div>
+                  <h3 id="private-chat-title" className="font-display font-semibold">
+                    {activeChat ? "Private chat with " + activeChat.name : "Private messages"}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    Private chats are available between friends.
                   </p>
-                ) : (
-                  <MessageList
-                    messages={displayedDirectMessages}
-                    ownCharacterId={character?.id}
-                    phoneMode
-                    onReply={setReplyTarget}
-                    onReport={(message) =>
-                      setReportTarget({
-                        id: message.sender_character_id,
-                        name: message.sender_name,
-                        messageId: message.id,
-                      })
-                    }
-                  />
-                )}
-                <ChatComposer
-                  label={`Message ${activeChat.name}`}
-                  disabled={sendMutation.isPending}
-                  onSend={(body, replyId) => runMessage(body, true, replyId)}
-                  replyTo={replyTarget}
-                  onCancelReply={() => setReplyTarget(null)}
-                  phoneMode
-                />
-                <VoiceNoteRecorder
-                  threadId={activeChat.conversationId}
-                  disabled={sendMutation.isPending}
-                  onSent={() =>
-                    void qc.invalidateQueries({
-                      queryKey: ["socialMessages", "private", activeChat.conversationId],
-                    })
-                  }
-                />
-              </section>
-            ) : (
-              <section className="phone-chat-panel" aria-label="Private chats">
-                <div className="phone-inbox-heading">
-                  <div>
-                    <h3>Chats</h3>
-                    <p>Messages with your friends</p>
-                  </div>
-                  <button
-                    type="button"
-                    className="phone-new-message-button"
-                    onClick={() => {
-                      setQuery("");
-                      setSubmittedQuery("");
-                      setTab("players");
-                    }}
-                    aria-label="New message"
-                  >
-                    <Plus size={19} />
-                  </button>
                 </div>
-                <label className="phone-inbox-search">
-                  <Search size={16} aria-hidden="true" />
-                  <span className="sr-only">Search chats</span>
-                  <input
-                    type="search"
-                    value={conversationSearch}
-                    onChange={(event) => setConversationSearch(event.target.value)}
-                    placeholder="Search chats"
-                  />
-                </label>
-                <div className="phone-inbox-filters" role="group" aria-label="Chat filters">
-                  {(["all", "unread", "groups"] as const).map((filter) => (
-                    <button
+                <div className="flex flex-wrap gap-2" aria-label="Friend conversations">
+                  {(overview?.conversations ?? []).map((conversation) => (
+                    <Button
+                      key={conversation.id}
                       type="button"
-                      key={filter}
-                      className={inboxFilter === filter ? "is-active" : undefined}
-                      aria-pressed={inboxFilter === filter}
-                      onClick={() => setInboxFilter(filter)}
+                      size="sm"
+                      variant={
+                        activeChat?.conversationId === conversation.id ? "default" : "outline"
+                      }
+                      onClick={() => {
+                        setReplyTarget(null);
+                        setActiveChat({
+                          conversationId: conversation.id,
+                          characterId: conversation.character_id,
+                          name: conversation.player_name,
+                        });
+                        setTab("messages");
+                      }}
                     >
-                      {filter === "all" ? "All" : filter === "unread" ? "Unread" : "Groups"}
-                    </button>
+                      {conversation.player_name}
+                    </Button>
                   ))}
                 </div>
-                {overviewQuery.isPending ? (
-                  <p className="text-sm text-muted-foreground">Loading your chats…</p>
-                ) : overviewQuery.error ? (
-                  <p className="text-sm text-destructive" role="alert">
-                    {overviewQuery.error.message}
-                  </p>
-                ) : filteredConversations.length ? (
-                  <VirtualConversationList
-                    conversations={filteredConversations}
-                    onOpen={openConversation}
-                    onMenu={setThreadMenu}
-                    onLongPress={beginLongPress}
-                    onCancelLongPress={cancelLongPress}
-                  />
+                {activeChat ? (
+                  <>
+                    {directMessagesQuery.error ? (
+                      <p className="text-sm text-destructive" role="alert">
+                        {directMessagesQuery.error.message}
+                      </p>
+                    ) : (
+                      <MessageList
+                        messages={directMessages}
+                        ownCharacterId={character?.id}
+                        onReply={setReplyTarget}
+                        onReport={(message) =>
+                          setReportTarget({
+                            id: message.sender_character_id,
+                            name: message.sender_name,
+                            messageId: message.id,
+                          })
+                        }
+                      />
+                    )}
+                    <ChatComposer
+                      label={"Message " + activeChat.name}
+                      disabled={sendMutation.isPending}
+                      onSend={(body, replyId) => runMessage(body, true, replyId)}
+                      replyTo={replyTarget}
+                      onCancelReply={() => setReplyTarget(null)}
+                    />
+                  </>
                 ) : (
-                  <p className="phone-inbox-state">
-                    {inboxFilter === "groups"
-                      ? "Group chats will appear here when groups are available."
-                      : "No matching chats yet. Start one from a friend's profile in Social."}
+                  <p className="rounded-xl bg-background p-4 text-sm text-muted-foreground">
+                    Choose a friend to open a private chat.
                   </p>
                 )}
               </section>
-            )}
-          </div>
-        ) : (
-          <div className="grid gap-4 lg:grid-cols-2">
-            <section
-              className="grid content-start gap-3 rounded-2xl border border-border p-3 sm:p-4"
-              aria-labelledby="area-chat-title"
-            >
-              <div>
-                <h3 id="area-chat-title" className="font-display font-semibold">
-                  Area chat
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  {locationsQuery.data?.find((location) => location.id === locationId)?.name ??
-                    "Current district"}
-                  . Visible to players in this area
-                </p>
-              </div>
-              {!locationId ? (
-                <p className="text-sm text-muted-foreground">Your current area is still loading.</p>
-              ) : areaMessagesQuery.error ? (
-                <p className="text-sm text-destructive" role="alert">
-                  {areaMessagesQuery.error.message}
-                </p>
-              ) : (
-                <MessageList
-                  messages={areaMessages}
-                  ownCharacterId={character?.id}
-                  onReply={setReplyTarget}
-                  onReport={(message) =>
-                    setReportTarget({
-                      id: message.sender_character_id,
-                      name: message.sender_name,
-                      messageId: message.id,
-                    })
-                  }
-                />
-              )}
-              <ChatComposer
-                label="Write an area message"
-                disabled={!locationId || sendMutation.isPending}
-                onSend={(body, replyId) => runMessage(body, false, replyId)}
-                replyTo={replyTarget}
-                onCancelReply={() => setReplyTarget(null)}
-              />
-            </section>
+            </div>
+          ))}
 
-            <section
-              className="grid content-start gap-3 rounded-2xl border border-border p-3 sm:p-4"
-              aria-labelledby="private-chat-title"
-            >
+        {phoneMode && tab === "status" && (
+          <section className="phone-status-page scrollbar-hidden" aria-label="Player statuses">
+            <header>
               <div>
-                <h3 id="private-chat-title" className="font-display font-semibold">
-                  {activeChat ? "Private chat with " + activeChat.name : "Private messages"}
-                </h3>
-                <p className="text-xs text-muted-foreground">
-                  Private chats are available between friends.
-                </p>
+                <h3>Status</h3>
+                <p>Share an update with friends for 24 hours.</p>
               </div>
-              <div className="flex flex-wrap gap-2" aria-label="Friend conversations">
-                {(overview?.conversations ?? []).map((conversation) => (
-                  <Button
-                    key={conversation.id}
+              <CircleDashed size={22} />
+            </header>
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                statusMutation.mutate({ body: statusBody.trim(), theme: statusTheme });
+              }}
+            >
+              <label htmlFor="player-status-body">New status</label>
+              <textarea
+                id="player-status-body"
+                maxLength={280}
+                rows={4}
+                value={statusBody}
+                onChange={(event) => setStatusBody(event.target.value)}
+                placeholder="What’s happening in your Osun Life?"
+              />
+              <div className="phone-status-themes" aria-label="Status background">
+                {(["porcelain", "leaf", "ink", "sunset"] as const).map((value) => (
+                  <button
+                    key={value}
                     type="button"
-                    size="sm"
-                    variant={activeChat?.conversationId === conversation.id ? "default" : "outline"}
-                    onClick={() => {
-                      setReplyTarget(null);
-                      setActiveChat({
-                        conversationId: conversation.id,
-                        characterId: conversation.character_id,
-                        name: conversation.player_name,
-                      });
-                      setTab("messages");
-                    }}
-                  >
-                    {conversation.player_name}
-                  </Button>
+                    className={`status-theme-${value}`}
+                    aria-label={`${value} status theme`}
+                    aria-pressed={statusTheme === value}
+                    onClick={() => setStatusTheme(value)}
+                  />
                 ))}
               </div>
-              {activeChat ? (
-                <>
-                  {directMessagesQuery.error ? (
-                    <p className="text-sm text-destructive" role="alert">
-                      {directMessagesQuery.error.message}
-                    </p>
-                  ) : (
-                    <MessageList
-                      messages={directMessages}
-                      ownCharacterId={character?.id}
-                      onReply={setReplyTarget}
-                      onReport={(message) =>
-                        setReportTarget({
-                          id: message.sender_character_id,
-                          name: message.sender_name,
-                          messageId: message.id,
-                        })
-                      }
-                    />
-                  )}
-                  <ChatComposer
-                    label={"Message " + activeChat.name}
-                    disabled={sendMutation.isPending}
-                    onSend={(body, replyId) => runMessage(body, true, replyId)}
-                    replyTo={replyTarget}
-                    onCancelReply={() => setReplyTarget(null)}
-                  />
-                </>
+              <Button type="submit" disabled={!statusBody.trim() || statusMutation.isPending}>
+                {statusMutation.isPending ? "Posting…" : "Post status"}
+              </Button>
+            </form>
+            <div className="phone-status-feed">
+              {statusQuery.isPending ? (
+                <p>Loading statuses…</p>
+              ) : statusQuery.error ? (
+                <p role="alert">{statusQuery.error.message}</p>
+              ) : statusQuery.data?.length ? (
+                statusQuery.data.map((post) => (
+                  <article key={post.id} className={`phone-status-card status-theme-${post.theme}`}>
+                    <div>
+                      <strong>{post.isOwn ? "Your status" : post.playerName}</strong>
+                      <time>
+                        {new Intl.DateTimeFormat("en-NG", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          timeZone: "Africa/Lagos",
+                        }).format(new Date(post.createdAt))}
+                      </time>
+                    </div>
+                    <p>{post.body}</p>
+                    {post.isOwn && (
+                      <button type="button" onClick={() => deleteStatusMutation.mutate(post.id)}>
+                        Delete status
+                      </button>
+                    )}
+                  </article>
+                ))
               ) : (
-                <p className="rounded-xl bg-background p-4 text-sm text-muted-foreground">
-                  Choose a friend to open a private chat.
-                </p>
+                <p className="phone-inbox-state">No active statuses. Post the first update.</p>
               )}
-            </section>
-          </div>
-        ))}
-
-      {phoneMode && tab === "status" && (
-        <section className="phone-status-page scrollbar-hidden" aria-label="Player statuses">
-          <header>
-            <div>
-              <h3>Status</h3>
-              <p>Share an update with friends for 24 hours.</p>
             </div>
-            <CircleDashed size={22} />
-          </header>
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              statusMutation.mutate({ body: statusBody.trim(), theme: statusTheme });
-            }}
-          >
-            <label htmlFor="player-status-body">New status</label>
-            <textarea
-              id="player-status-body"
-              maxLength={280}
-              rows={4}
-              value={statusBody}
-              onChange={(event) => setStatusBody(event.target.value)}
-              placeholder="What’s happening in your Osun Life?"
-            />
-            <div className="phone-status-themes" aria-label="Status background">
-              {(["porcelain", "leaf", "ink", "sunset"] as const).map((value) => (
+          </section>
+        )}
+
+        {phoneMode && tab === "settings" && (
+          <section className="phone-theme-page">
+            {character?.id && (
+              <button
+                type="button"
+                className="chat-secondary-button"
+                onClick={() => setProfileCharacterId(character.id)}
+              >
+                Your profile & background
+              </button>
+            )}
+            <header>
+              <Palette size={22} />
+              <div>
+                <h3>Chat theme</h3>
+                <p>Choose how Messages looks on this device.</p>
+              </div>
+            </header>
+            <div className="phone-theme-options">
+              {[
+                { id: "porcelain", label: "Porcelain" },
+                { id: "leaf", label: "Leaf green" },
+                { id: "ink", label: "Night ink" },
+                { id: "warm", label: "Warm cream" },
+              ].map((choice) => (
                 <button
-                  key={value}
+                  key={choice.id}
                   type="button"
-                  className={`status-theme-${value}`}
-                  aria-label={`${value} status theme`}
-                  aria-pressed={statusTheme === value}
-                  onClick={() => setStatusTheme(value)}
-                />
+                  aria-pressed={messageTheme === choice.id}
+                  onClick={() => {
+                    setMessageTheme(choice.id);
+                    try {
+                      localStorage.setItem("osogbo-message-theme", choice.id);
+                    } catch {
+                      /* Session theme remains available. */
+                    }
+                  }}
+                >
+                  <span className={`message-theme-swatch theme-${choice.id}`} />
+                  <strong>{choice.label}</strong>
+                  {messageTheme === choice.id && <small>Selected</small>}
+                </button>
               ))}
             </div>
-            <Button type="submit" disabled={!statusBody.trim() || statusMutation.isPending}>
-              {statusMutation.isPending ? "Posting…" : "Post status"}
-            </Button>
-          </form>
-          <div className="phone-status-feed">
-            {statusQuery.isPending ? (
-              <p>Loading statuses…</p>
-            ) : statusQuery.error ? (
-              <p role="alert">{statusQuery.error.message}</p>
-            ) : statusQuery.data?.length ? (
-              statusQuery.data.map((post) => (
-                <article key={post.id} className={`phone-status-card status-theme-${post.theme}`}>
-                  <div>
-                    <strong>{post.isOwn ? "Your status" : post.playerName}</strong>
-                    <time>
-                      {new Intl.DateTimeFormat("en-NG", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        timeZone: "Africa/Lagos",
-                      }).format(new Date(post.createdAt))}
-                    </time>
-                  </div>
-                  <p>{post.body}</p>
-                  {post.isOwn && (
-                    <button type="button" onClick={() => deleteStatusMutation.mutate(post.id)}>
-                      Delete status
-                    </button>
-                  )}
-                </article>
-              ))
-            ) : (
-              <p className="phone-inbox-state">No active statuses. Post the first update.</p>
-            )}
-          </div>
-        </section>
-      )}
+          </section>
+        )}
 
-      {phoneMode && tab === "settings" && (
-        <section className="phone-theme-page">
-          <header>
-            <Palette size={22} />
-            <div>
-              <h3>Chat theme</h3>
-              <p>Choose how Messages looks on this device.</p>
-            </div>
-          </header>
-          <div className="phone-theme-options">
-            {[
-              { id: "porcelain", label: "Porcelain" },
-              { id: "leaf", label: "Leaf green" },
-              { id: "ink", label: "Night ink" },
-              { id: "warm", label: "Warm cream" },
-            ].map((choice) => (
-              <button
-                key={choice.id}
-                type="button"
-                aria-pressed={messageTheme === choice.id}
-                onClick={() => {
-                  setMessageTheme(choice.id);
-                  try {
-                    localStorage.setItem("osogbo-message-theme", choice.id);
-                  } catch {
-                    /* Session theme remains available. */
-                  }
-                }}
-              >
-                <span className={`message-theme-swatch theme-${choice.id}`} />
-                <strong>{choice.label}</strong>
-                {messageTheme === choice.id && <small>Selected</small>}
-              </button>
-            ))}
-          </div>
-        </section>
-      )}
+        {phoneMode && !activeChat && (
+          <nav className="phone-message-nav" aria-label="Messages navigation">
+            <button
+              type="button"
+              className={tab === "messages" ? "is-active" : ""}
+              aria-current={tab === "messages" ? "page" : undefined}
+              onClick={() => {
+                setActiveChat(null);
+                setTab("messages");
+              }}
+            >
+              <MessageCircle size={18} aria-hidden="true" />
+              <span>Chats</span>
+            </button>
+            <button
+              type="button"
+              className={tab === "players" ? "is-active" : ""}
+              aria-current={tab === "players" ? "page" : undefined}
+              onClick={() => setTab("players")}
+            >
+              <Users size={18} aria-hidden="true" />
+              <span>People</span>
+            </button>
+            <button
+              type="button"
+              className={tab === "status" ? "is-active" : ""}
+              aria-current={tab === "status" ? "page" : undefined}
+              onClick={() => setTab("status")}
+            >
+              <CircleDashed size={18} aria-hidden="true" />
+              <span>Status</span>
+            </button>
+            <button
+              type="button"
+              className={tab === "settings" ? "is-active" : ""}
+              aria-current={tab === "settings" ? "page" : undefined}
+              onClick={() => setTab("settings")}
+            >
+              <Palette size={18} aria-hidden="true" />
+              <span>Theme</span>
+            </button>
+          </nav>
+        )}
 
-      {phoneMode && !activeChat && (
-        <nav className="phone-message-nav" aria-label="Messages navigation">
-          <button
-            type="button"
-            className={tab === "messages" ? "is-active" : ""}
-            aria-current={tab === "messages" ? "page" : undefined}
-            onClick={() => {
-              setActiveChat(null);
-              setTab("messages");
-            }}
-          >
-            <MessageCircle size={18} aria-hidden="true" />
-            <span>Chats</span>
-          </button>
-          <button
-            type="button"
-            className={tab === "players" ? "is-active" : ""}
-            aria-current={tab === "players" ? "page" : undefined}
-            onClick={() => setTab("players")}
-          >
-            <Users size={18} aria-hidden="true" />
-            <span>People</span>
-          </button>
-          <button
-            type="button"
-            className={tab === "status" ? "is-active" : ""}
-            aria-current={tab === "status" ? "page" : undefined}
-            onClick={() => setTab("status")}
-          >
-            <CircleDashed size={18} aria-hidden="true" />
-            <span>Status</span>
-          </button>
-          <button
-            type="button"
-            className={tab === "settings" ? "is-active" : ""}
-            aria-current={tab === "settings" ? "page" : undefined}
-            onClick={() => setTab("settings")}
-          >
-            <Palette size={18} aria-hidden="true" />
-            <span>Theme</span>
-          </button>
-        </nav>
-      )}
-
-      {tab === "friends" && (
-        <div className="grid gap-5 lg:grid-cols-2">
-          <section className="grid content-start gap-2" aria-labelledby="incoming-requests-title">
-            <h3 id="incoming-requests-title" className="font-display font-semibold">
-              Friend requests
-            </h3>
-            {overviewQuery.isPending ? (
-              <p className="text-sm text-muted-foreground">Loading requests…</p>
-            ) : overviewQuery.error ? (
-              <p className="text-sm text-destructive" role="alert">
-                {overviewQuery.error.message}
-              </p>
-            ) : !overview?.incoming.length ? (
-              <p className="rounded-xl bg-background p-4 text-sm text-muted-foreground">
-                No incoming requests.
-              </p>
-            ) : (
-              overview.incoming.map((request) => (
-                <PlayerRow
-                  key={request.id}
-                  player={request}
-                  action={{
-                    label: "Accept",
-                    run: () => actionMutation.mutate({ kind: "accept", id: request.id }),
-                    disabled: actionMutation.isPending,
-                  }}
-                  secondaryAction={{
-                    label: "Decline",
-                    run: () => actionMutation.mutate({ kind: "reject", id: request.id }),
-                    disabled: actionMutation.isPending,
-                  }}
-                />
-              ))
-            )}
-            {!!overview?.outgoing.length && (
-              <div className="mt-3 grid gap-2">
-                <h4 className="text-sm font-semibold">Sent requests</h4>
-                {overview.outgoing.map((request) => (
+        {tab === "friends" && (
+          <div className="grid gap-5 lg:grid-cols-2">
+            <section className="grid content-start gap-2" aria-labelledby="incoming-requests-title">
+              <h3 id="incoming-requests-title" className="font-display font-semibold">
+                Friend requests
+              </h3>
+              {overviewQuery.isPending ? (
+                <p className="text-sm text-muted-foreground">Loading requests…</p>
+              ) : overviewQuery.error ? (
+                <p className="text-sm text-destructive" role="alert">
+                  {overviewQuery.error.message}
+                </p>
+              ) : !overview?.incoming.length ? (
+                <p className="rounded-xl bg-background p-4 text-sm text-muted-foreground">
+                  No incoming requests.
+                </p>
+              ) : (
+                overview.incoming.map((request) => (
                   <PlayerRow
                     key={request.id}
                     player={request}
-                    status="Awaiting response"
                     action={{
-                      label: "Cancel",
-                      run: () => actionMutation.mutate({ kind: "cancel", id: request.id }),
+                      label: "Accept",
+                      run: () => actionMutation.mutate({ kind: "accept", id: request.id }),
                       disabled: actionMutation.isPending,
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
-          <section className="grid content-start gap-2" aria-labelledby="friends-list-title">
-            <h3 id="friends-list-title" className="font-display font-semibold">
-              Friends
-            </h3>
-            {overview?.friends.length ? (
-              overview.friends.map((friend) => (
-                <div key={friend.character_id} className="grid gap-1">
-                  <PlayerRow
-                    player={friend}
-                    status={isFriendOnline(friend.character_id) ? "Online" : "Offline"}
-                    action={{
-                      label: "Message",
-                      run: () => openChatMutation.mutate(friend.character_id),
-                      disabled: openChatMutation.isPending,
                     }}
                     secondaryAction={{
-                      label: "Remove",
-                      run: () => actionMutation.mutate({ kind: "remove", id: friend.character_id }),
+                      label: "Decline",
+                      run: () => actionMutation.mutate({ kind: "reject", id: request.id }),
                       disabled: actionMutation.isPending,
                     }}
                   />
-                  <Link
-                    className="px-3 text-xs text-primary underline"
-                    to="/home"
-                    search={{ visit: friend.character_id }}
-                  >
-                    Visit saved home
-                  </Link>
-                </div>
-              ))
-            ) : (
-              <p className="rounded-xl bg-background p-4 text-sm text-muted-foreground">
-                Your friends list is empty. Search players to meet someone.
-              </p>
-            )}
-            {!!overview?.blocked.length && (
-              <div className="mt-3 grid gap-2">
-                <h4 className="flex items-center gap-2 text-sm font-semibold">
-                  <ShieldBan size={15} /> Blocked players
-                </h4>
-                {overview.blocked.map((blocked) => (
-                  <div
-                    key={blocked.character_id}
-                    className="flex items-center justify-between gap-2 rounded-xl border border-border bg-background p-3 text-sm"
-                  >
-                    <span>{blocked.player_name}</span>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        actionMutation.mutate({ kind: "unblock", id: blocked.character_id })
-                      }
-                    >
-                      Unblock
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
-        </div>
-      )}
-
-      {phoneMode && threadMenu && (
-        <div
-          className="phone-thread-menu-backdrop"
-          role="presentation"
-          onClick={() => setThreadMenu(null)}
-        >
-          <section
-            className="phone-thread-menu"
-            role="menu"
-            aria-label={`Actions for ${threadMenu.player_name}`}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <strong>{threadMenu.player_name}</strong>
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() =>
-                threadMutation.mutate({
-                  threadId: threadMenu.id,
-                  command: threadMenu.pinnedAt ? "unpin" : "pin",
-                })
-              }
-            >
-              <Pin aria-hidden="true" /> {threadMenu.pinnedAt ? "Unpin chat" : "Pin chat"}
-            </button>
-            <p>Mute</p>
-            <div className="phone-thread-mute-options">
-              {threadMenu.mutedUntil && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    threadMutation.mutate({ threadId: threadMenu.id, command: "unmute" })
-                  }
-                >
-                  Unmute
-                </button>
+                ))
               )}
-              {(["8h", "1w", "always"] as const).map((duration) => (
-                <button
-                  type="button"
-                  key={duration}
-                  onClick={() =>
-                    threadMutation.mutate({ threadId: threadMenu.id, command: "mute", duration })
-                  }
-                >
-                  {duration === "8h" ? "8 hours" : duration === "1w" ? "1 week" : "Always"}
-                </button>
-              ))}
-            </div>
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => threadMutation.mutate({ threadId: threadMenu.id, command: "read" })}
-            >
-              <CheckCheck aria-hidden="true" /> Mark as read
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() =>
-                threadMutation.mutate({
-                  threadId: threadMenu.id,
-                  command: threadMenu.starredAt ? "unstar" : "star",
-                })
-              }
-            >
-              <Star aria-hidden="true" /> {threadMenu.starredAt ? "Unstar thread" : "Star thread"}
-            </button>
-            <button
-              type="button"
-              role="menuitem"
-              onClick={() => {
-                actionMutation.mutate({ kind: "block", id: threadMenu.character_id });
-                setThreadMenu(null);
-              }}
-            >
-              <ShieldBan aria-hidden="true" /> Block player
-            </button>
-          </section>
-        </div>
-      )}
-
-      {reportTarget && (
-        <div
-          className="fixed inset-0 z-[90] grid place-items-center bg-black/40 p-4"
-          role="presentation"
-        >
-          <section
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="report-player-title"
-            className="game-panel w-full max-w-lg space-y-3 p-5 shadow-xl"
-          >
-            <div>
-              <h3 id="report-player-title" className="font-display text-lg font-semibold">
-                Report {reportTarget.name}
+              {!!overview?.outgoing.length && (
+                <div className="mt-3 grid gap-2">
+                  <h4 className="text-sm font-semibold">Sent requests</h4>
+                  {overview.outgoing.map((request) => (
+                    <PlayerRow
+                      key={request.id}
+                      player={request}
+                      status="Awaiting response"
+                      action={{
+                        label: "Cancel",
+                        run: () => actionMutation.mutate({ kind: "cancel", id: request.id }),
+                        disabled: actionMutation.isPending,
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </section>
+            <section className="grid content-start gap-2" aria-labelledby="friends-list-title">
+              <h3 id="friends-list-title" className="font-display font-semibold">
+                Friends
               </h3>
-              <p className="text-sm text-muted-foreground">
-                Reports are private and are visible to the moderation team.
-              </p>
-            </div>
-            <label className="grid gap-1 text-sm font-medium">
-              Reason
-              <select
-                value={reportCategory}
-                onChange={(event) => setReportCategory(event.target.value as SocialReportCategory)}
-                className="min-h-10 rounded-xl border border-border bg-background px-3"
-              >
-                {REPORT_OPTIONS.map((option) => (
-                  <option value={option.value} key={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="grid gap-1 text-sm font-medium">
-              Details (optional)
-              <textarea
-                value={reportDetails}
-                maxLength={1000}
-                rows={3}
-                onChange={(event) => setReportDetails(event.target.value)}
-                className="rounded-xl border border-border bg-background px-3 py-2"
-              />
-            </label>
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setReportTarget(null)}>
-                Cancel
-              </Button>
-              <Button
+              {overview?.friends.length ? (
+                overview.friends.map((friend) => (
+                  <div key={friend.character_id} className="grid gap-1">
+                    <PlayerRow
+                      player={friend}
+                      status={isFriendOnline(friend.character_id) ? "Online" : "Offline"}
+                      action={{
+                        label: "Message",
+                        run: () => openChatMutation.mutate(friend.character_id),
+                        disabled: openChatMutation.isPending,
+                      }}
+                      secondaryAction={{
+                        label: "Remove",
+                        run: () =>
+                          actionMutation.mutate({ kind: "remove", id: friend.character_id }),
+                        disabled: actionMutation.isPending,
+                      }}
+                    />
+                    <Link
+                      className="px-3 text-xs text-primary underline"
+                      to="/home"
+                      search={{ visit: friend.character_id }}
+                    >
+                      Visit saved home
+                    </Link>
+                  </div>
+                ))
+              ) : (
+                <p className="rounded-xl bg-background p-4 text-sm text-muted-foreground">
+                  Your friends list is empty. Search players to meet someone.
+                </p>
+              )}
+              {!!overview?.blocked.length && (
+                <div className="mt-3 grid gap-2">
+                  <h4 className="flex items-center gap-2 text-sm font-semibold">
+                    <ShieldBan size={15} /> Blocked players
+                  </h4>
+                  {overview.blocked.map((blocked) => (
+                    <div
+                      key={blocked.character_id}
+                      className="flex items-center justify-between gap-2 rounded-xl border border-border bg-background p-3 text-sm"
+                    >
+                      <span>{blocked.player_name}</span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          actionMutation.mutate({ kind: "unblock", id: blocked.character_id })
+                        }
+                      >
+                        Unblock
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
+        )}
+
+        {phoneMode && threadMenu && (
+          <div
+            className="phone-thread-menu-backdrop"
+            role="presentation"
+            onClick={() => setThreadMenu(null)}
+          >
+            <section
+              className="phone-thread-menu"
+              role="menu"
+              aria-label={`Actions for ${threadMenu.player_name}`}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <strong>{threadMenu.player_name}</strong>
+              <button
                 type="button"
-                disabled={reportMutation.isPending}
+                role="menuitem"
                 onClick={() =>
-                  reportMutation.mutate({
-                    targetCharacterId: reportTarget.id,
-                    category: reportCategory,
-                    details: reportDetails,
-                    ...(reportTarget.messageId ? { messageId: reportTarget.messageId } : {}),
+                  threadMutation.mutate({
+                    threadId: threadMenu.id,
+                    command: threadMenu.pinnedAt ? "unpin" : "pin",
                   })
                 }
               >
-                Send report
-              </Button>
-            </div>
-          </section>
-        </div>
+                <Pin aria-hidden="true" /> {threadMenu.pinnedAt ? "Unpin chat" : "Pin chat"}
+              </button>
+              <p>Mute</p>
+              <div className="phone-thread-mute-options">
+                {threadMenu.mutedUntil && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      threadMutation.mutate({ threadId: threadMenu.id, command: "unmute" })
+                    }
+                  >
+                    Unmute
+                  </button>
+                )}
+                {(["8h", "1w", "always"] as const).map((duration) => (
+                  <button
+                    type="button"
+                    key={duration}
+                    onClick={() =>
+                      threadMutation.mutate({ threadId: threadMenu.id, command: "mute", duration })
+                    }
+                  >
+                    {duration === "8h" ? "8 hours" : duration === "1w" ? "1 week" : "Always"}
+                  </button>
+                ))}
+              </div>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => threadMutation.mutate({ threadId: threadMenu.id, command: "read" })}
+              >
+                <CheckCheck aria-hidden="true" /> Mark as read
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() =>
+                  threadMutation.mutate({
+                    threadId: threadMenu.id,
+                    command: threadMenu.starredAt ? "unstar" : "star",
+                  })
+                }
+              >
+                <Star aria-hidden="true" /> {threadMenu.starredAt ? "Unstar thread" : "Star thread"}
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  actionMutation.mutate({ kind: "block", id: threadMenu.character_id });
+                  setThreadMenu(null);
+                }}
+              >
+                <ShieldBan aria-hidden="true" /> Block player
+              </button>
+            </section>
+          </div>
+        )}
+
+        {reportTarget && (
+          <div
+            className="fixed inset-0 z-[90] grid place-items-center bg-black/40 p-4"
+            role="presentation"
+          >
+            <section
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="report-player-title"
+              className="game-panel w-full max-w-lg space-y-3 p-5 shadow-xl"
+            >
+              <div>
+                <h3 id="report-player-title" className="font-display text-lg font-semibold">
+                  Report {reportTarget.name}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Reports are private and are visible to the moderation team.
+                </p>
+              </div>
+              <label className="grid gap-1 text-sm font-medium">
+                Reason
+                <select
+                  value={reportCategory}
+                  onChange={(event) =>
+                    setReportCategory(event.target.value as SocialReportCategory)
+                  }
+                  className="min-h-10 rounded-xl border border-border bg-background px-3"
+                >
+                  {REPORT_OPTIONS.map((option) => (
+                    <option value={option.value} key={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="grid gap-1 text-sm font-medium">
+                Details (optional)
+                <textarea
+                  value={reportDetails}
+                  maxLength={1000}
+                  rows={3}
+                  onChange={(event) => setReportDetails(event.target.value)}
+                  className="rounded-xl border border-border bg-background px-3 py-2"
+                />
+              </label>
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setReportTarget(null)}>
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  disabled={reportMutation.isPending}
+                  onClick={() =>
+                    reportMutation.mutate({
+                      targetCharacterId: reportTarget.id,
+                      category: reportCategory,
+                      details: reportDetails,
+                      ...(reportTarget.messageId ? { messageId: reportTarget.messageId } : {}),
+                    })
+                  }
+                >
+                  Send report
+                </Button>
+              </div>
+            </section>
+          </div>
+        )}
+      </section>
+      {profileCharacterId && character?.id && (
+        <PlayerSocialCard
+          key={`${character.id}:${profileCharacterId}`}
+          characterId={profileCharacterId}
+          ownerId={character.id}
+          onClose={() => setProfileCharacterId(null)}
+        />
       )}
-      <p className="flex items-center gap-2 text-xs text-muted-foreground">
-        <UserPlus size={14} /> Public profiles show character details only. Exact location is not
-        shown in search.
-      </p>
-    </section>
+    </ProfileOpenContext.Provider>
   );
 }

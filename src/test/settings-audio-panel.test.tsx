@@ -18,6 +18,8 @@ it("shows a loading state only while the profile query is pending", () => {
   );
 
   expect(screen.getByRole("status")).toHaveTextContent("Loading audio settings");
+  expect(screen.getByRole("switch", { name: "Music" })).toBeInTheDocument();
+  expect(screen.getByRole("switch", { name: "Sound effects" })).toBeInTheDocument();
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 });
 
@@ -36,6 +38,7 @@ it("shows the profile query error and retries instead of leaving a spinner", () 
   );
 
   expect(screen.getByRole("alert")).toHaveTextContent("Profile request failed");
+  expect(screen.getByRole("switch", { name: "Music" })).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Retry" }));
   expect(onRetry).toHaveBeenCalledOnce();
 });

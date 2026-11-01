@@ -8,6 +8,7 @@ import { HomeDashboard } from "@/components/game/HomeDashboard";
 import { GameNeedsRail } from "@/components/game/GameNeedsRail";
 import { PhoneLauncher } from "@/components/game/PhoneLauncher";
 import { GameMobileNav } from "@/components/game/GameMobileNav";
+import { handleGamePageLinkClick } from "@/components/game/phone-navigation";
 import { HousingChooser } from "@/components/game/housing/HousingChooser";
 import { HousingRepossessionNotice } from "@/components/game/housing/HousingRepossessionNotice";
 import { GameTimeProvider } from "@/components/game/GameTimeProvider";
@@ -73,6 +74,7 @@ function GameLayout() {
     };
   }, [character?.id]);
   useEffect(() => {
+    if (!profile) return;
     const musicEnabled = profile?.music_enabled ?? profile?.sound_enabled ?? false;
     const effectsEnabled = profile?.effects_enabled ?? profile?.sound_enabled ?? false;
     const saved = readGameAudioLevels();
@@ -86,7 +88,7 @@ function GameLayout() {
       return;
     }
     void disableGameAudio();
-  }, [character?.id, profile?.music_enabled, profile?.effects_enabled, profile?.sound_enabled]);
+  }, [character?.id, profile]);
   useEffect(() => {
     if (!character?.id || !character.current_location_id) return;
     const channel = supabase.channel(`people-area:${character.current_location_id}`, {
@@ -208,6 +210,7 @@ function GameLayout() {
     >
       <LoginStreakProvider userId={character.user_id} characterId={character.id}>
         <div
+          onClickCapture={handleGamePageLinkClick}
           className={cn(
             "game-shell city-game navigation-redesign card-refresh dashboard-ui-refresh min-h-screen pb-20 md:pb-0",
             profile?.reduced_motion && "reduce-motion",

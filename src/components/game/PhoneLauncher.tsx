@@ -252,6 +252,17 @@ export function PhoneLauncher({
   }, []);
 
   useEffect(() => {
+    const openRequestedApp = (event: Event) => {
+      const detail = (event as CustomEvent<{ app?: string; search?: string }>).detail;
+      if (!detail?.app) return;
+      setPhoneOpen(true);
+      openApp(detail.app, detail.search);
+    };
+    window.addEventListener("osogbo-open-phone-app", openRequestedApp);
+    return () => window.removeEventListener("osogbo-open-phone-app", openRequestedApp);
+  }, [openApp, setPhoneOpen]);
+
+  useEffect(() => {
     const openMessages = (event: Event) => {
       const playerId = (event as CustomEvent<{ playerId?: string }>).detail?.playerId;
       setMessagePlayerId(playerId);

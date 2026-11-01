@@ -227,11 +227,29 @@ describe("phone message interactions", () => {
         onReport={() => {}}
       />,
     );
-    fireEvent.click(screen.getAllByRole("button", { name: "Star" })[0]!);
+    fireEvent.doubleClick(screen.getByText("Message 0"));
     expect(JSON.parse(localStorage.getItem("osun-message-stars:me")!)).toEqual(["message-0"]);
     fireEvent.click(screen.getByRole("button", { name: "Starred messages on this device" }));
     expect(screen.getByText("Message 0")).toBeInTheDocument();
     expect(screen.queryByText("Message 1")).not.toBeInTheDocument();
+  });
+  it("offers actions on keyboard activation without inline action text", async () => {
+    const report = vi.fn();
+    render(
+      <MessageList
+        messages={[{ ...messages[0]!, sender_character_id: "friend", sender_name: "Ayo" }]}
+        ownCharacterId="me"
+        phoneMode
+        onReply={() => {}}
+        onReport={report}
+      />,
+    );
+    expect(screen.queryByRole("button", { name: "Reply" })).not.toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole("listitem"), { key: "Enter" });
+    expect(await screen.findByRole("dialog", { name: "Message actions" })).toBeInTheDocument();
+    expect(report).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Report message…" }));
+    expect(report).toHaveBeenCalledOnce();
   });
   it("keeps the draft after a send failure", async () => {
     render(

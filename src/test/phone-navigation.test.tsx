@@ -2,12 +2,38 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import {
   handlePhoneLinkClick,
+  handleGamePageLinkClick,
   phoneAppForPath,
   reducePhoneNavigation,
   type PhoneNavigationState,
 } from "@/components/game/phone-navigation";
 
 describe("phone navigation controller", () => {
+  it("opens page links in the phone while leaving bottom navigation and auth links alone", () => {
+    const listener = vi.fn();
+    window.addEventListener("osogbo-open-phone-app", listener);
+    render(
+      <div onClickCapture={handleGamePageLinkClick} onClick={(event) => event.preventDefault()}>
+        <a href="/settings">Page settings</a>
+        <nav aria-label="Game navigation">
+          <a href="/jobs">Bottom jobs</a>
+        </nav>
+        <a href="/login">Log in</a>
+      </div>,
+    );
+    try {
+      fireEvent.click(screen.getByRole("link", { name: "Page settings" }));
+      expect(listener).toHaveBeenCalledOnce();
+      expect((listener.mock.calls[0]![0] as CustomEvent).detail).toEqual({ app: "Settings" });
+      listener.mockClear();
+      fireEvent.click(screen.getByRole("link", { name: "Bottom jobs" }));
+      fireEvent.click(screen.getByRole("link", { name: "Log in" }));
+      fireEvent.click(screen.getByRole("link", { name: "Page settings" }), { ctrlKey: true });
+      expect(listener).not.toHaveBeenCalled();
+    } finally {
+      window.removeEventListener("osogbo-open-phone-app", listener);
+    }
+  });
   it("maps in-phone routes to apps and keeps the selected app as its title", () => {
     expect(phoneAppForPath("/home")).toBe("Home");
     expect(phoneAppForPath("/house")).toBe("Home");

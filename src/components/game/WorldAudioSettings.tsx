@@ -36,14 +36,9 @@ export function WorldAudioSettings({
 }: {
   musicEnabled: boolean;
   effectsEnabled: boolean;
-  onChannelChange: (
-    channel: Channel,
-    enabled: boolean,
-  ) => Promise<boolean | void> | boolean | void;
+  onChannelChange: (channel: Channel, enabled: boolean) => Promise<boolean | void> | boolean | void;
 }) {
-  const [levels, setLevels] = useState<Levels>(() =>
-    levelsFromProps(musicEnabled, effectsEnabled),
-  );
+  const [levels, setLevels] = useState<Levels>(() => levelsFromProps(musicEnabled, effectsEnabled));
   const [unavailable, setUnavailable] = useState(false);
   const [saveError, setSaveError] = useState(false);
   const [changing, setChanging] = useState(false);
@@ -69,6 +64,7 @@ export function WorldAudioSettings({
     try {
       // Starting audio needs a user gesture; if the browser refuses, nothing changes.
       if (on && !(await enableGameAudio(next))) {
+        setGameAudioLevels(previous);
         setUnavailable(true);
         return;
       }
@@ -105,6 +101,8 @@ export function WorldAudioSettings({
       setUnavailable(false);
       if (channel === "effects") playGameSound("ui");
       else await resumeGameMusic(true);
+    } catch {
+      setUnavailable(true);
     } finally {
       busy.current = false;
       setChanging(false);
@@ -113,6 +111,28 @@ export function WorldAudioSettings({
 
   return (
     <div className="grid grid-cols-1 gap-3">
+      <label className="space-y-2 rounded-xl border border-border p-3">
+        <span className="block font-semibold">Volume</span>
+        <input
+          type="range"
+          aria-label="Audio volume"
+          min="0"
+          max="100"
+          value={Math.round(levels.master * 100)}
+          disabled={changing}
+          className="min-h-11 w-full"
+          onChange={(event) => {
+            const next = { ...levels, master: Number(event.target.value) / 100 };
+            setLevels(next);
+            setGameAudioLevels(next);
+          }}
+        />
+        {levels.master === 0 && (
+          <span className="block text-sm text-muted-foreground">
+            Volume is muted. Raise it to hear music and sound effects.
+          </span>
+        )}
+      </label>
       <div className="rounded-xl border border-border p-3">
         <div className="flex min-h-12 items-center justify-between gap-4">
           <span>

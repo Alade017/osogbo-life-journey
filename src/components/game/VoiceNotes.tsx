@@ -5,7 +5,7 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
 } from "react";
-import { Mic, Pause, Play, RotateCcw } from "lucide-react";
+import { Mic, Pause, Play, RotateCcw, LoaderCircle } from "lucide-react";
 import { toast } from "sonner";
 import {
   initialVoiceRecorderState,
@@ -270,17 +270,22 @@ export function VoiceNotePlayer({
   const [playing, setPlaying] = useState(false);
   const [current, setCurrent] = useState(0);
   const [speed, setSpeed] = useState(1);
+  const [duration, setDuration] = useState(durationMs / 1000);
+  const [ready, setReady] = useState(false);
+  const pending = useRef(false);
 
   const toggle = async () => {
     const element = audio.current;
-    if (!element) return;
+    if (!element || pending.current) return;
     if (playing) {
       element.pause();
       return;
     }
     setLoading(true);
+    pending.current = true;
     try {
       if (!element.src) element.src = await getVoiceNoteUrl(messageId);
+      if (audio.current !== element) return;
       if (activeAudio && activeAudio !== element) activeAudio.pause();
       activeAudio = element;
       element.playbackRate = speed;
@@ -289,18 +294,22 @@ export function VoiceNotePlayer({
       toast.error("Voice note could not be played.");
     } finally {
       setLoading(false);
+      pending.current = false;
     }
   };
 
-  useEffect(
-    () => () => {
-      if (activeAudio === audio.current) activeAudio = null;
-      audio.current?.pause();
-    },
-    [],
-  );
+  useEffect(() => {
+    const element = audio.current;
+    return () => {
+      if (activeAudio === element) activeAudio = null;
+      element?.pause();
+    };
+  }, []);
 
-  const seconds = Math.max(1, Math.round(durationMs / 1000));
+  const seconds =
+    Number.isFinite(duration) && duration > 0 ? duration : Math.max(1, durationMs / 1000);
+  const clock = (value: number) =>
+    `${Math.floor(value / 60)}:${String(Math.floor(value % 60)).padStart(2, "0")}`;
   return (
     <span className="voice-note-player">
       <audio
@@ -309,29 +318,60 @@ export function VoiceNotePlayer({
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}
         onEnded={() => setPlaying(false)}
+        onLoadedMetadata={(event) => {
+          setDuration(event.currentTarget.duration);
+          setReady(true);
+        }}
+        onError={() => {
+          setPlaying(false);
+          toast.error("Voice note could not be loaded. Try again.");
+        }}
         onTimeUpdate={(event) => setCurrent(event.currentTarget.currentTime)}
       />
       <button
         type="button"
         onClick={() => void toggle()}
         aria-label={playing ? "Pause voice note" : "Play voice note"}
+        disabled={loading}
+        className="voice-play-toggle"
       >
-        {playing ? <Pause aria-hidden="true" /> : <Play aria-hidden="true" />}
+        {loading ? (
+          <LoaderCircle className="animate-spin" aria-hidden="true" />
+        ) : playing ? (
+          <Pause aria-hidden="true" />
+        ) : (
+          <Play aria-hidden="true" />
+        )}
       </button>
-      <input
-        type="range"
-        min="0"
-        max={seconds}
-        step="0.1"
-        value={Math.min(current, seconds)}
-        aria-label="Voice note position"
-        onChange={(event) => {
-          const value = Number(event.target.value);
-          setCurrent(value);
-          if (audio.current) audio.current.currentTime = value;
-        }}
-      />
-      <small>{loading ? "Loading" : `${Math.floor(current)} / ${seconds}s`}</small>
+      <span className="voice-track">
+        <span className="voice-playback-wave" aria-hidden="true">
+          {Array.from({ length: 32 }, (_, index) => (
+            <i
+              key={index}
+              className={index / 32 < current / seconds ? "is-played" : undefined}
+              style={{ height: `${7 + ((index * 13 + 7) % 23)}px` }}
+            />
+          ))}
+        </span>
+        <input
+          type="range"
+          min="0"
+          max={seconds}
+          step="0.1"
+          value={Math.min(current, seconds)}
+          aria-label="Voice note position"
+          disabled={!ready || loading}
+          onChange={(event) => {
+            const value = Number(event.target.value);
+            setCurrent(value);
+            if (audio.current?.readyState) audio.current.currentTime = value;
+          }}
+        />
+        <span className="voice-playback-times">
+          <small>{loading ? "Loading…" : clock(current)}</small>
+          <small>{clock(seconds)}</small>
+        </span>
+      </span>
       <button
         type="button"
         aria-label={`Playback speed ${speed} times`}
@@ -343,6 +383,9 @@ export function VoiceNotePlayer({
       >
         {speed}×
       </button>
+      <span className="voice-note-avatar" aria-hidden="true">
+        <Mic />
+      </span>
     </span>
   );
 }

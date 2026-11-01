@@ -120,7 +120,7 @@ export function RentalsPage() {
   const listings = propertiesQuery.data ?? [];
   const balance =
     walletQuery.isPending || walletQuery.isError ? null : Number(wallet?.balance ?? 0);
-  const loadError = characterQuery.error ?? walletQuery.error ?? propertiesQuery.error;
+  const loadError = characterQuery.error ?? propertiesQuery.error;
   const visible = listings.filter((listing) => {
     if (filters.includes("affordable") && (balance === null || balance < listing.upfrontTotalMinor))
       return false;
@@ -188,7 +188,13 @@ export function RentalsPage() {
         <p>Browse homes across Osogbo. Rent and move-in costs are confirmed by the server.</p>
         <div className="property-listings-balance">
           <span>Available cash</span>
-          <strong>{balance === null ? "Loading…" : formatNaira(balance)}</strong>
+          <strong>
+            {walletQuery.isError
+              ? "Unavailable"
+              : balance === null
+                ? "Loading…"
+                : formatNaira(balance)}
+          </strong>
         </div>
         <nav className="property-listings-nav" aria-label="Housing navigation">
           <Link to="/house">My home</Link>
@@ -196,6 +202,19 @@ export function RentalsPage() {
           <Link to="/properties">Find homes for sale</Link>
         </nav>
       </header>
+
+      {walletQuery.isError && (
+        <div className="property-listings-message" role="alert">
+          <p>Your wallet could not be loaded. You can browse homes; retry before renting.</p>
+          <button
+            type="button"
+            className="map-primary-button"
+            onClick={() => void walletQuery.refetch()}
+          >
+            Retry wallet
+          </button>
+        </div>
+      )}
 
       <section className="property-listings-filter-panel" aria-label="Filter properties">
         <div className="property-listings-filter-title">
@@ -238,9 +257,7 @@ export function RentalsPage() {
             Try again
           </button>
         </div>
-      ) : characterQuery.isPending ||
-        walletQuery.isPending ||
-        (character && propertiesQuery.isPending) ? (
+      ) : characterQuery.isPending || (character && propertiesQuery.isPending) ? (
         <div className="property-listings-message" role="status">
           <LoaderCircle className="property-listings-spinner" size={20} aria-hidden="true" />
           Loading homes…
@@ -311,9 +328,20 @@ export function RentalsPage() {
         </section>
       ) : (
         <div className="property-listings-message">
-          <p>No homes match these filters.</p>
-          <button className="map-primary-button" type="button" onClick={() => setFilters([])}>
-            Show all homes
+          <p>
+            {listings.length
+              ? "No homes match these filters."
+              : "Rental homes are unavailable right now. Refresh the catalogue to try again."}
+          </p>
+          <button
+            className="map-primary-button"
+            type="button"
+            onClick={() => {
+              setFilters([]);
+              void propertiesQuery.refetch();
+            }}
+          >
+            {listings.length ? "Show all homes" : "Refresh homes"}
           </button>
         </div>
       )}

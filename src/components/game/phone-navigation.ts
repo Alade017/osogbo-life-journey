@@ -91,6 +91,34 @@ export function handlePhoneLinkClick(
   openApp(app, anchor.search || undefined);
 }
 
+/** Game content links open phone apps; the bottom navigation owns full-page travel. */
+export function handleGamePageLinkClick(event: MouseEvent<HTMLDivElement>): void {
+  const anchor = event.target instanceof Element ? event.target.closest("a[href]") : null;
+  if (
+    !(anchor instanceof HTMLAnchorElement) ||
+    anchor.closest('[aria-label="Game navigation"], .phone-dialog') ||
+    anchor.origin !== window.location.origin ||
+    anchor.hasAttribute("download") ||
+    (anchor.target && anchor.target !== "_self") ||
+    event.defaultPrevented ||
+    event.button !== 0 ||
+    event.metaKey ||
+    event.ctrlKey ||
+    event.shiftKey ||
+    event.altKey
+  )
+    return;
+  const app = phoneAppForPath(anchor.pathname);
+  if (!app) return;
+  event.preventDefault();
+  event.stopPropagation();
+  window.dispatchEvent(
+    new CustomEvent("osogbo-open-phone-app", {
+      detail: { app, search: anchor.search || undefined },
+    }),
+  );
+}
+
 function phoneRouteTitle(pathname: string): string {
   const route = pathname.split("/").filter(Boolean)[0] ?? "Phone";
   return route.charAt(0).toUpperCase() + route.slice(1).replace(/-/g, " ");

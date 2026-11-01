@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
+import type { MessageAttachment } from "@/lib/social-media";
 
 export type PlayerProfile = {
   character_id: string;
@@ -24,6 +25,7 @@ export type SocialOverview = {
 };
 
 export type SocialMessage = {
+  attachment?: MessageAttachment | undefined;
   id: string;
   sender_character_id: string;
   sender_name: string;
@@ -248,17 +250,40 @@ export async function sendSocialMessage(input: {
 }
 
 export async function getSocialMessages(input: { locationId?: string; conversationId?: string }) {
-  const data = unwrap(
-    await supabase.rpc("get_social_messages", {
-      ...(input.locationId ? { p_location_id: input.locationId } : {}),
-      ...(input.conversationId ? { p_conversation_id: input.conversationId } : {}),
-      p_limit: 50,
-    }),
-  );
+  const args = {
+    ...(input.locationId ? { p_location_id: input.locationId } : {}),
+    ...(input.conversationId ? { p_conversation_id: input.conversationId } : {}),
+    p_limit: 50,
+  };
+  const call = supabase.rpc as unknown as (
+    name: string,
+    args: Record<string, Json>,
+  ) => Promise<{ data: Json | null; error: { message: string; code?: string } | null }>;
+  let response = await call("get_social_messages_with_media", args);
+  // Preserve existing chat history while the new local migration awaits deployment.
+  if (response.error && ["PGRST202", "42883"].includes(response.error.code ?? ""))
+    response = await call("get_social_messages", args);
+  const data = unwrap(response);
   if (!Array.isArray(data)) throw new Error("Invalid chat history response.");
   return data.map((value) => {
     const row = object(value, "Invalid chat message response.");
+    let attachment: MessageAttachment | undefined;
+    if (row["attachment"]) {
+      const entry = object(row["attachment"], "Invalid attachment response.");
+      const filename = string(entry["filename"], "filename"),
+        mimeType = string(entry["mimeType"], "mimeType"),
+        size = entry["size"];
+      if (
+        !["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(mimeType) ||
+        typeof size !== "number" ||
+        size < 1 ||
+        size > 10485760
+      )
+        throw new Error("Invalid attachment response.");
+      attachment = { filename, mimeType, size };
+    }
     return {
+      attachment,
       id: string(row["id"], "id"),
       sender_character_id: string(row["sender_character_id"], "sender_character_id"),
       sender_name: string(row["sender_name"], "sender_name"),
