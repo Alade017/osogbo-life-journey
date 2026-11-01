@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { PageHeader } from "@/components/game/ui";
-import { WorldAudioSettings } from "@/components/game/WorldAudioSettings";
+import { SettingsAudioPanel } from "@/components/game/SettingsAudioPanel";
 
 export const Route = createFileRoute("/_authenticated/_game/settings")({
   head: () => pageMeta("Settings", "Manage your OSUN LIFE account and preferences."),
@@ -21,7 +21,14 @@ export function SettingsPage() {
   const fieldId = useId();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const { data: profile } = useQuery(q.profile());
+  const {
+    data: profile,
+    isPending: profilePending,
+    isError: profileError,
+    error: profileLoadError,
+    isFetching: profileFetching,
+    refetch: refetchProfile,
+  } = useQuery(q.profile());
   const homeVisitPolicy = useQuery(q.homeVisitPolicy());
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -145,40 +152,30 @@ export function SettingsPage() {
   return (
     <div className="game-settings-page mx-auto w-full max-w-2xl space-y-5">
       <PageHeader eyebrow="MAKE IT YOURS" title="Settings" />
-      <section className="game-panel space-y-3 p-5" aria-labelledby="audio-settings-heading">
-        <div>
-          <h2 id="audio-settings-heading" className="text-xl font-bold">
-            Audio
-          </h2>
-          <p className="text-sm text-muted-foreground">
-            Set background music and game sound effects separately.
-          </p>
-        </div>
-        {profile ? (
-          <WorldAudioSettings
-            musicEnabled={profile.music_enabled ?? profile.sound_enabled}
-            effectsEnabled={profile.effects_enabled ?? profile.sound_enabled}
-            onChannelChange={(channel, enabled) => {
-              const musicEnabled =
-                channel === "music" ? enabled : (profile.music_enabled ?? profile.sound_enabled);
-              const effectsEnabled =
-                channel === "effects"
-                  ? enabled
-                  : (profile.effects_enabled ?? profile.sound_enabled);
-              return update({
-                ...(channel === "music"
-                  ? { music_enabled: enabled }
-                  : { effects_enabled: enabled }),
-                sound_enabled: musicEnabled || effectsEnabled,
-              });
-            }}
-          />
-        ) : (
-          <p role="status" className="text-sm text-muted-foreground">
-            Loading audio settings…
-          </p>
-        )}
-      </section>
+      <SettingsAudioPanel
+        profile={profile}
+        isPending={profilePending}
+        isError={profileError}
+        error={profileLoadError}
+        isFetching={profileFetching}
+        onRetry={() => void refetchProfile()}
+        onChannelChange={async (channel, enabled) => {
+          const musicEnabled =
+            channel === "music" ? enabled : (profile?.music_enabled ?? profile?.sound_enabled);
+          const effectsEnabled =
+            channel === "effects" ? enabled : (profile?.effects_enabled ?? profile?.sound_enabled);
+          if (musicEnabled === undefined || effectsEnabled === undefined) {
+            toast.error(
+              "Audio preferences cannot be saved because the account profile is missing.",
+            );
+            return false;
+          }
+          return await update({
+            ...(channel === "music" ? { music_enabled: enabled } : { effects_enabled: enabled }),
+            sound_enabled: musicEnabled || effectsEnabled,
+          });
+        }}
+      />
       <section className="game-panel space-y-4 p-5">
         <h2 className="text-xl font-bold">Account</h2>
         <p className="text-sm text-muted-foreground">
