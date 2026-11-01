@@ -1,0 +1,294 @@
+.city-game.dashboard-ui-refresh .game-screen-restyle {
+  --screen-shadow: 0 16px 42px color-mix(in srgb, var(--brand-ink) 8%, transparent);
+  --screen-shadow-soft: 0 7px 22px color-mix(in srgb, var(--brand-ink) 6%, transparent);
+  color: var(--color-text);
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle > :not(.game-home):not(.house-page) {
+  max-width: 1160px;
+  margin-inline: auto;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(.game-page-header, .arrival-line) {
+  align-items: center;
+  gap: 14px 22px;
+  margin-bottom: 24px;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .game-page-header h1,
+.city-game.dashboard-ui-refresh .game-screen-restyle .arrival-line h1 {
+  color: var(--brand-ink);
+  font-size: clamp(1.8rem, 3.2vw, 2.65rem);
+  line-height: 1.12;
+  letter-spacing: -0.05em;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(.game-page-eyebrow, .arrival-kicker) {
+  margin-bottom: 7px;
+  color: var(--brand-royal);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .game-page-header p:not(.game-page-eyebrow) {
+  max-width: 62ch;
+  line-height: 1.65;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(.game-panel, .profile-glance-card) {
+  border: 1px solid color-mix(in srgb, var(--brand-royal) 10%, var(--border));
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--brand-cream) 94%, transparent);
+  box-shadow: var(--screen-shadow-soft);
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .game-panel:hover {
+  box-shadow: var(--screen-shadow);
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .game-panel :is(h2, h3, h4) {
+  color: var(--brand-ink);
+  letter-spacing: -0.025em;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(input, select, textarea) {
+  min-height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--color-text);
+  background: var(--brand-porcelain);
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle textarea {
+  min-height: 90px;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(input, select, textarea):focus-visible {
+  border-color: var(--brand-royal);
+  outline: 3px solid color-mix(in srgb, var(--brand-royal) 17%, transparent);
+  outline-offset: 1px;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(button, a)[class*="rounded-lg"] {
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    border-color 150ms ease;
+}
+
+.city-game.dashboard-ui-refresh
+  .game-screen-restyle
+  :is(button, a)[class*="rounded-lg"]:hover:not(:disabled) {
+  box-shadow: 0 5px 15px color-mix(in srgb, var(--brand-ink) 9%, transparent);
+}
+
+.city-game.dashboard-ui-refresh
+  .game-screen-restyle
+  :is(.profile-hero, .profile-story, .profile-milestones) {
+  border-radius: 24px;
+  box-shadow: var(--screen-shadow-soft);
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .profile-glance-card {
+  padding: clamp(16px, 2.2vw, 22px);
+}
+
+.city-game.dashboard-ui-refresh
+  .game-screen-restyle
+  :is(.game-settings-page, .wallet-page, .inventory-page) {
+  display: grid;
+  gap: 18px;
+  align-content: start;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .game-settings-page > .game-page-header {
+  margin-bottom: 0;
+}
+
+.city-game.dashboard-ui-refresh
+  .game-screen-restyle
+  :is(.game-settings-page, .profile-page)
+  .game-panel {
+  padding: clamp(17px, 2.2vw, 24px);
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .game-panel :is(.border-border, .border-edge) {
+  border-color: color-mix(in srgb, var(--brand-royal) 11%, var(--border));
+}
+
+.city-game.dashboard-ui-refresh
+  .game-screen-restyle
+  .game-panel
+  :is(.bg-muted, .bg-muted\/40, .bg-muted\/50, .bg-muted\/60) {
+  background: color-mix(in srgb, var(--brand-porcelain) 82%, var(--brand-cream));
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(.house-page, .game-home) .game-panel,
+.city-game.dashboard-ui-refresh .game-screen-restyle .house-page :is(.game-panel, .house-panel) {
+  box-shadow: var(--screen-shadow-soft);
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle [role="alert"],
+.city-game.dashboard-ui-refresh .game-screen-restyle [role="status"] {
+  border-radius: 16px;
+}
+
+.phone-dialog.phone-ui-refresh {
+  padding: 7px !important;
+  border: 1px solid color-mix(in srgb, var(--brand-royal) 24%, var(--brand-cream)) !important;
+  border-radius: 30px !important;
+  background: linear-gradient(
+    145deg,
+    var(--brand-ink),
+    color-mix(in srgb, var(--brand-ink) 85%, var(--brand-royal))
+  );
+  box-shadow: 0 30px 90px color-mix(in srgb, var(--brand-ink) 48%, transparent);
+}
+
+.phone-ui-refresh .phone-screen {
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--brand-royal) 12%, var(--border));
+  border-radius: 24px;
+  background:
+    radial-gradient(
+      ellipse at 90% 0%,
+      color-mix(in srgb, var(--chart-4) 25%, transparent),
+      transparent 18rem
+    ),
+    var(--brand-porcelain);
+}
+
+.phone-ui-refresh .phone-status {
+  min-height: 34px;
+  padding: 8px 15px 4px;
+  color: var(--brand-ink);
+  background: transparent;
+}
+
+.phone-ui-refresh .phone-status-brand {
+  font-weight: 850;
+  letter-spacing: 0.15em;
+}
+
+.phone-ui-refresh .phone-app-grid {
+  gap: 8px;
+  padding: 18px 14px 22px;
+  background: transparent;
+}
+
+.phone-ui-refresh .phone-app {
+  min-height: 92px;
+  gap: 7px;
+  border: 1px solid transparent;
+  border-radius: 18px;
+  color: var(--brand-ink);
+  font-weight: 650;
+  transition:
+    transform 150ms ease,
+    background-color 150ms ease,
+    border-color 150ms ease;
+}
+
+.phone-ui-refresh .phone-app:hover,
+.phone-ui-refresh .phone-app:focus-visible {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--brand-royal) 12%, var(--border));
+  background: color-mix(in srgb, var(--brand-cream) 88%, transparent);
+}
+
+.phone-ui-refresh .phone-app-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 17px;
+  box-shadow: 0 7px 16px color-mix(in srgb, var(--brand-ink) 12%, transparent);
+}
+
+.phone-ui-refresh .phone-app-view {
+  background: var(--brand-porcelain);
+}
+
+.phone-ui-refresh .phone-app-toolbar {
+  min-height: 58px;
+  padding-inline: 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--brand-royal) 12%, var(--border));
+  background: color-mix(in srgb, var(--brand-cream) 95%, transparent);
+}
+
+.phone-ui-refresh .phone-app-toolbar strong {
+  color: var(--brand-ink);
+  font-size: 0.95rem;
+  letter-spacing: -0.02em;
+}
+
+.phone-ui-refresh .phone-back-button {
+  min-height: 40px;
+  border-radius: 13px;
+  color: var(--brand-royal);
+}
+
+.phone-ui-refresh .phone-app-body {
+  background: transparent;
+}
+
+.phone-ui-refresh .phone-app-body .game-page-header {
+  padding: 4px 2px 0;
+}
+
+.phone-ui-refresh .phone-app-body .game-panel {
+  border-color: color-mix(in srgb, var(--brand-royal) 11%, var(--border));
+  border-radius: 18px;
+  background: var(--brand-cream);
+  box-shadow: 0 7px 20px color-mix(in srgb, var(--brand-ink) 6%, transparent);
+}
+
+.phone-ui-refresh .phone-app-body :is(input, select, textarea) {
+  border-radius: 12px;
+  border-color: var(--border);
+  background: var(--brand-porcelain);
+}
+
+.phone-ui-refresh .phone-home-bar-button {
+  height: 28px;
+  background: transparent;
+}
+
+.phone-ui-refresh .phone-home-indicator {
+  width: 112px;
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--brand-ink) 70%, transparent);
+}
+
+@media (max-width: 720px) {
+  .city-game.dashboard-ui-refresh .game-screen-restyle {
+    padding-inline: 12px;
+  }
+
+  .city-game.dashboard-ui-refresh .game-screen-restyle :is(.game-page-header, .arrival-line) {
+    align-items: flex-start;
+    flex-direction: column;
+    margin-bottom: 18px;
+  }
+
+  .city-game.dashboard-ui-refresh .game-screen-restyle .game-panel {
+    border-radius: 18px;
+  }
+
+  .phone-dialog.phone-ui-refresh {
+    padding: 5px !important;
+    border-radius: 24px !important;
+  }
+
+  .phone-ui-refresh .phone-screen {
+    border-radius: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .phone-ui-refresh *,
+  .city-game.dashboard-ui-refresh .game-screen-restyle * {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}

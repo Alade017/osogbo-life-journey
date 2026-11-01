@@ -1,0 +1,464 @@
+.city-game.dashboard-ui-refresh {
+  --dash-shadow: 0 18px 48px color-mix(in srgb, var(--brand-ink) 9%, transparent);
+  --dash-shadow-soft: 0 8px 26px color-mix(in srgb, var(--brand-ink) 7%, transparent);
+  background:
+    radial-gradient(
+      ellipse at 86% 4%,
+      color-mix(in srgb, var(--chart-4) 25%, transparent),
+      transparent 34rem
+    ),
+    var(--brand-porcelain);
+}
+
+.city-game.dashboard-ui-refresh .city-game-main {
+  color: var(--color-text);
+}
+
+.city-game.dashboard-ui-refresh .jobs-page {
+  display: grid;
+  gap: 20px;
+  max-width: 1180px;
+  padding: clamp(4px, 1.3vw, 18px) 0 40px;
+  color: var(--color-text);
+}
+
+.dashboard-ui-refresh .jobs-heading {
+  position: relative;
+  isolation: isolate;
+  min-height: 170px;
+  align-items: center;
+  margin: 0;
+  padding: clamp(22px, 4vw, 42px);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--brand-royal) 12%, var(--border));
+  border-radius: 30px;
+  background:
+    radial-gradient(
+      circle at 88% 18%,
+      color-mix(in srgb, var(--chart-4) 42%, transparent) 0 7rem,
+      transparent 7.1rem
+    ),
+    linear-gradient(
+      120deg,
+      var(--brand-cream),
+      color-mix(in srgb, var(--brand-porcelain) 74%, var(--brand-cream))
+    );
+  box-shadow: var(--dash-shadow);
+}
+
+.dashboard-ui-refresh .jobs-heading::after {
+  position: absolute;
+  z-index: -1;
+  right: -42px;
+  bottom: -132px;
+  width: 290px;
+  height: 290px;
+  border: 1px solid color-mix(in srgb, var(--brand-royal) 14%, transparent);
+  border-radius: 50%;
+  content: "";
+}
+
+.dashboard-ui-refresh .jobs-heading h1 {
+  font-size: clamp(2rem, 4.4vw, 3.35rem);
+  letter-spacing: -0.055em;
+}
+
+.dashboard-ui-refresh .jobs-eyebrow {
+  color: var(--brand-royal);
+}
+
+.dashboard-ui-refresh .jobs-intro {
+  max-width: 44ch;
+  line-height: 1.65;
+}
+
+.dashboard-ui-refresh .jobs-location {
+  min-height: 44px;
+  padding: 10px 15px;
+  border-color: color-mix(in srgb, var(--brand-royal) 12%, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--brand-cream) 88%, transparent);
+  box-shadow: var(--dash-shadow-soft);
+  backdrop-filter: blur(12px);
+}
+
+.dashboard-ui-refresh .jobs-page > .game-panel,
+.dashboard-ui-refresh .jobs-page .jobs-card {
+  border-color: color-mix(in srgb, var(--brand-royal) 11%, var(--border));
+  border-radius: 22px;
+  box-shadow: var(--dash-shadow-soft);
+}
+
+.dashboard-ui-refresh .jobs-page .jobs-current {
+  border-left: 4px solid var(--chart-4);
+  background: linear-gradient(
+    110deg,
+    color-mix(in srgb, var(--brand-royal) 5%, var(--brand-cream)),
+    var(--brand-cream)
+  );
+}
+
+.dashboard-ui-refresh .jobs-current h2 {
+  font-size: clamp(1.55rem, 3vw, 2rem);
+}
+
+.dashboard-ui-refresh .jobs-page .jobs-current > div:last-child {
+  border-color: color-mix(in srgb, var(--brand-royal) 12%, var(--border));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--brand-porcelain) 76%, var(--brand-cream));
+}
+
+.dashboard-ui-refresh .jobs-page .jobs-filters {
+  margin: 0;
+  padding: clamp(16px, 2.4vw, 24px);
+  border-radius: 22px;
+  box-shadow: var(--dash-shadow-soft);
+}
+
+.dashboard-ui-refresh .jobs-filters input,
+.dashboard-ui-refresh .jobs-filters select {
+  min-height: 46px;
+  border-width: 1px;
+  border-radius: 13px;
+  border-color: var(--border);
+  background: var(--background);
+}
+
+.dashboard-ui-refresh .jobs-listing {
+  display: grid;
+  gap: 16px;
+}
+
+.dashboard-ui-refresh .jobs-listing-heading {
+  align-items: end;
+}
+
+.dashboard-ui-refresh .jobs-listing-heading h2 {
+  font-size: clamp(1.25rem, 2.4vw, 1.7rem);
+  letter-spacing: -0.035em;
+}
+
+.dashboard-ui-refresh .jobs-card-grid {
+  gap: 16px;
+}
+
+.dashboard-ui-refresh .jobs-card {
+  gap: 4px;
+  padding: clamp(17px, 2vw, 23px);
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.dashboard-ui-refresh .jobs-card:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--brand-royal) 32%, var(--border));
+  box-shadow: var(--dash-shadow);
+}
+
+.dashboard-ui-refresh .jobs-card-locked:hover {
+  transform: none;
+}
+
+.dashboard-ui-refresh .jobs-metrics > div {
+  min-height: 64px;
+  border: 1px solid color-mix(in srgb, currentColor 9%, transparent);
+  border-radius: 14px;
+}
+
+.city-game.dashboard-ui-refresh:has(.home-dashboard) {
+  background: var(--brand-porcelain);
+}
+
+.dashboard-ui-refresh .hd-status {
+  width: min(620px, calc(100% - 32px));
+  padding: 10px 10px 10px 18px;
+  border-color: color-mix(in srgb, var(--brand-royal) 14%, var(--border));
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--brand-cream) 92%, transparent);
+  box-shadow: var(--dash-shadow);
+  backdrop-filter: blur(16px);
+}
+
+.dashboard-ui-refresh .hd-area {
+  gap: 12px;
+}
+
+.dashboard-ui-refresh .hd-area > svg {
+  display: grid;
+  box-sizing: content-box;
+  width: 18px;
+  height: 18px;
+  padding: 10px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--brand-royal) 9%, var(--brand-cream));
+}
+
+.dashboard-ui-refresh .hd-area-copy strong {
+  font-size: 15px;
+  letter-spacing: -0.02em;
+}
+
+.dashboard-ui-refresh .hd-balance {
+  min-height: 44px;
+  padding-inline: 16px;
+  border-radius: 15px;
+  box-shadow: none;
+}
+
+.dashboard-ui-refresh .hd-icon-button {
+  border-radius: 15px;
+}
+
+.dashboard-ui-refresh .home-active-goal {
+  margin: 16px 16px calc(110px + env(safe-area-inset-bottom));
+  padding: clamp(16px, 2.4vw, 24px);
+  border-color: color-mix(in srgb, var(--brand-royal) 12%, var(--border));
+  border-radius: 24px;
+  background:
+    radial-gradient(
+      circle at 95% 10%,
+      color-mix(in srgb, var(--chart-4) 20%, transparent),
+      transparent 13rem
+    ),
+    var(--brand-cream);
+  box-shadow: var(--dash-shadow);
+}
+
+.dashboard-ui-refresh .home-active-goal > div:first-child {
+  align-items: center;
+}
+
+.dashboard-ui-refresh .home-active-goal > div:first-child strong {
+  font-size: clamp(1rem, 2.2vw, 1.3rem);
+  letter-spacing: -0.025em;
+}
+
+.dashboard-ui-refresh .home-active-goal [role="meter"] {
+  height: 10px;
+  border: 1px solid color-mix(in srgb, var(--brand-royal) 10%, var(--border));
+  background: color-mix(in srgb, var(--brand-royal) 7%, var(--brand-cream));
+}
+
+.dashboard-ui-refresh .home-active-goal [role="meter"] > div {
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--brand-royal), var(--success));
+}
+
+.city-game.dashboard-ui-refresh:has(.city-map-dashboard.is-world-map) {
+  background: var(--brand-porcelain);
+}
+
+.dashboard-ui-refresh .map-experience {
+  gap: 12px;
+  padding: 12px;
+  background:
+    radial-gradient(
+      ellipse at 50% 0%,
+      color-mix(in srgb, var(--chart-4) 15%, transparent),
+      transparent 35rem
+    ),
+    var(--brand-porcelain);
+}
+
+.dashboard-ui-refresh .map-topbar {
+  min-height: 54px;
+  padding: 8px 12px 8px 18px;
+  border: 1px solid color-mix(in srgb, var(--brand-royal) 12%, var(--border));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--brand-cream) 94%, transparent);
+  box-shadow: var(--dash-shadow-soft);
+  backdrop-filter: blur(14px);
+}
+
+.dashboard-ui-refresh .map-topbar-status {
+  gap: clamp(12px, 2.6vw, 28px);
+}
+
+.dashboard-ui-refresh .map-topbar-status span {
+  gap: 7px;
+}
+
+.dashboard-ui-refresh .map-topbar-status strong {
+  font-size: 0.8rem;
+}
+
+.dashboard-ui-refresh .map-level-toggle {
+  min-height: 40px;
+  padding-inline: 14px;
+  border: 1px solid color-mix(in srgb, var(--brand-royal) 14%, var(--border));
+  border-radius: 13px;
+  background: var(--brand-porcelain);
+  box-shadow: none;
+}
+
+.dashboard-ui-refresh .map-controls {
+  left: 20px;
+  right: 20px;
+  gap: 10px;
+}
+
+.dashboard-ui-refresh .map-category-chips,
+.dashboard-ui-refresh .map-search {
+  gap: 5px;
+  padding: 5px;
+  border: 1px solid color-mix(in srgb, var(--brand-royal) 10%, var(--border));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--brand-cream) 96%, transparent);
+  box-shadow: var(--dash-shadow-soft);
+  backdrop-filter: blur(14px);
+}
+
+.dashboard-ui-refresh .map-category-chips button,
+.dashboard-ui-refresh .map-search button {
+  min-height: 38px;
+  padding-inline: 12px;
+  border-radius: 12px;
+  font-weight: 650;
+}
+
+.dashboard-ui-refresh .map-category-chips button[aria-pressed="true"],
+.dashboard-ui-refresh .map-search button {
+  color: var(--primary-foreground);
+  background: var(--brand-royal);
+}
+
+.dashboard-ui-refresh .map-search input {
+  min-height: 38px;
+  border-color: transparent;
+  border-radius: 12px;
+  background: var(--brand-porcelain);
+}
+
+.dashboard-ui-refresh .map-experience .map-canvas {
+  border: 1px solid color-mix(in srgb, var(--brand-royal) 10%, var(--border));
+  border-radius: 24px;
+  box-shadow: var(--dash-shadow-soft);
+}
+
+.dashboard-ui-refresh .map-offline-banner,
+.dashboard-ui-refresh .map-housing-message {
+  border: 1px solid color-mix(in srgb, var(--brand-royal) 12%, var(--border));
+  border-radius: 14px;
+  box-shadow: var(--dash-shadow-soft);
+}
+
+@media (max-width: 720px) {
+  .city-game.dashboard-ui-refresh .jobs-page {
+    gap: 14px;
+    padding: 0 2px 28px;
+  }
+
+  .dashboard-ui-refresh .jobs-heading {
+    min-height: unset;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 16px;
+    padding: 22px;
+    border-radius: 23px;
+  }
+
+  .dashboard-ui-refresh .jobs-heading::after {
+    right: -120px;
+    bottom: -170px;
+  }
+
+  .dashboard-ui-refresh .jobs-heading h1 {
+    max-width: 13ch;
+  }
+
+  .dashboard-ui-refresh .jobs-current {
+    padding: 18px;
+  }
+
+  .dashboard-ui-refresh .jobs-page .jobs-current > div:last-child {
+    align-items: flex-start;
+  }
+
+  .city-game.dashboard-ui-refresh:has(.home-dashboard) .hd-status {
+    left: max(10px, env(safe-area-inset-left));
+    width: calc(100% - 20px);
+    padding: 8px;
+    border-radius: 18px;
+  }
+
+  .dashboard-ui-refresh .home-active-goal {
+    margin: 12px 10px calc(100px + env(safe-area-inset-bottom));
+    border-radius: 20px;
+  }
+
+  .dashboard-ui-refresh .map-experience {
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .dashboard-ui-refresh .map-topbar {
+    min-height: 50px;
+    padding: 7px 8px 7px 12px;
+    border-radius: 15px;
+  }
+
+  .dashboard-ui-refresh .map-topbar-status {
+    gap: 10px;
+  }
+
+  .dashboard-ui-refresh .map-topbar-status span {
+    gap: 4px;
+  }
+
+  .dashboard-ui-refresh .map-topbar-status small {
+    display: none;
+  }
+
+  .dashboard-ui-refresh .map-level-toggle {
+    min-height: 38px;
+    padding-inline: 10px;
+    font-size: 0.72rem;
+  }
+
+  .dashboard-ui-refresh .map-controls {
+    top: 54px;
+    left: 8px;
+    right: 8px;
+    align-items: stretch;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .dashboard-ui-refresh .map-experience:has(.map-offline-banner) .map-controls {
+    top: 88px;
+  }
+
+  .dashboard-ui-refresh .map-category-chips {
+    max-width: 100%;
+    border-radius: 14px;
+  }
+
+  .dashboard-ui-refresh .map-category-chips button {
+    min-height: 34px;
+    padding-inline: 10px;
+    font-size: 0.73rem;
+  }
+
+  .dashboard-ui-refresh .map-search {
+    width: min(100%, 340px);
+    align-self: flex-end;
+  }
+
+  .dashboard-ui-refresh .map-search input {
+    width: auto;
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-ui-refresh .jobs-card {
+    transition: none;
+  }
+
+  .dashboard-ui-refresh .jobs-card:hover {
+    transform: none;
+  }
+}

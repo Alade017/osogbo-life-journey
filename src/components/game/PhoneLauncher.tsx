@@ -518,7 +518,7 @@ export function PhoneLauncher({
       <DialogPortal>
         <DialogOverlay />
         <DialogPrimitive.Content
-          className="phone-dialog"
+          className="phone-dialog phone-ui-refresh"
           style={{ zIndex: "var(--game-dialog-layer)" }}
         >
           <DialogTitle className="sr-only">In-game phone</DialogTitle>

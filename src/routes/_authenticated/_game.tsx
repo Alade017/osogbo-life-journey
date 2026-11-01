@@ -27,6 +27,8 @@ import {
 } from "@/lib/game-audio";
 import "@/components/game/game-navigation.css";
 import "@/components/game/game-cards.css";
+import "@/components/game/dashboard-ui-refresh.css";
+import "@/components/game/remaining-game-ui.css";
 
 export const Route = createFileRoute("/_authenticated/_game")({
   component: GameLayout,
@@ -207,7 +209,7 @@ function GameLayout() {
       <LoginStreakProvider userId={character.user_id} characterId={character.id}>
         <div
           className={cn(
-            "game-shell city-game navigation-redesign card-refresh min-h-screen pb-20 md:pb-0",
+            "game-shell city-game navigation-redesign card-refresh dashboard-ui-refresh min-h-screen pb-20 md:pb-0",
             profile?.reduced_motion && "reduce-motion",
             phoneOpen && "phone-open",
           )}
@@ -215,7 +217,14 @@ function GameLayout() {
           <WorldEnvironment />
           <div className="city-game-frame">
             <div className="city-game-content">
-              <main className="city-game-main">
+              <main
+                className={cn(
+                  "city-game-main",
+                  pathname !== "/home" && pathname !== "/map" && pathname !== "/jobs"
+                    ? "game-screen-restyle"
+                    : undefined,
+                )}
+              >
                 {pathname === "/home" && !visitingFriend ? (
                   <HomeDashboard
                     player={player}

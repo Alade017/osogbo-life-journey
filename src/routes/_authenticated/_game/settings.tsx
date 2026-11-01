@@ -176,7 +176,7 @@ export function SettingsPage() {
           });
         }}
       />
-      <section className="game-panel space-y-4 p-5">
+                      <section className="game-panel space-y-4 p-5">
         <h2 className="text-xl font-bold">Account</h2>
         <p className="text-sm text-muted-foreground">
           {isGuest ? "Legacy guest save on this device" : "Account"}{" "}
