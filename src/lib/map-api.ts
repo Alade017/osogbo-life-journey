@@ -1,3 +1,4 @@
+import { parseMapSchedule, type MapSchedule } from "@/lib/map-schedule";
 import { supabase } from "@/integrations/supabase/client";
 import type { Activity, Job } from "@/lib/game";
 import type { PlaceActionResult } from "@/components/map/PlaceActionMenu";
@@ -25,6 +26,7 @@ export type TownTravelResponse = {
 };
 
 export type MapLandmarkDetails = {
+  schedule?: MapSchedule | undefined;
   landmark: {
     id: string;
     district_id: string;
@@ -136,10 +138,12 @@ export function clearPendingTownTravelKey(townId: string, requestId: string) {
   }
 }
 
-export async function requestMapLandmark(landmarkId: string) {
+export async function requestMapLandmark(landmarkId: string, accountId: string) {
   const { data, error } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
+  const session = data.session;
+  const token = session?.access_token;
   if (error || !token) throw new MapApiError("Sign in to view this place.", "UNAUTHORIZED");
+  if (session.user.id !== accountId) throw new MapApiError("Account changed", "UNAUTHORIZED");
   const response = await fetch(`/api/map/landmark/${encodeURIComponent(landmarkId)}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -150,17 +154,38 @@ export async function requestMapLandmark(landmarkId: string) {
       result && "error" in result ? (result.error?.code ?? "INTERNAL_ERROR") : "INTERNAL_ERROR";
     throw new MapApiError(code, code);
   }
-  return result as MapLandmarkDetails;
+  const current = await supabase.auth.getSession();
+  if (current.error || current.data.session?.user.id !== session.user.id)
+    throw new MapApiError("Account changed", "UNAUTHORIZED");
+  if (
+    !result ||
+    !("landmark" in result) ||
+    result.landmark?.id !== landmarkId ||
+    !Array.isArray(result.actions) ||
+    !Array.isArray(result.activities) ||
+    !Array.isArray(result.jobs)
+  )
+    throw new MapApiError("Invalid place details", "INVALID_RESPONSE");
+  return {
+    ...result,
+    schedule: parseMapSchedule(
+      result.schedule,
+      result.actions.map((a) => a.id),
+    ),
+  };
 }
 
 export async function requestMapPlaceAction(
   landmarkId: string,
   actionId: string,
   requestId: string,
+  accountId: string,
 ) {
   const { data, error } = await supabase.auth.getSession();
-  const token = data.session?.access_token;
+  const session = data.session;
+  const token = session?.access_token;
   if (error || !token) throw new MapApiError("Sign in to do this activity.", "UNAUTHORIZED");
+  if (session.user.id !== accountId) throw new MapApiError("Account changed", "UNAUTHORIZED");
   const response = await fetch("/api/map/action", {
     method: "POST",
     headers: {
@@ -177,6 +202,9 @@ export async function requestMapPlaceAction(
       result && "error" in result ? (result.error?.code ?? "INTERNAL_ERROR") : "INTERNAL_ERROR";
     throw new MapApiError(code, code);
   }
+  const current = await supabase.auth.getSession();
+  if (current.error || current.data.session?.user.id !== accountId)
+    throw new MapApiError("Account changed", "UNAUTHORIZED");
   return result as PlaceActionResult;
 }
 
@@ -207,14 +235,19 @@ export function clearPendingTravelKey(idempotencyKey: string) {
   }
 }
 
-export function getPendingMapActionKey(landmarkId: string, actionId: string) {
+export function getPendingMapActionKey(
+  accountId: string,
+  characterId: string,
+  landmarkId: string,
+  actionId: string,
+) {
   const storageKey = "osogbo-map-action-requests-v1";
   try {
     const stored = JSON.parse(window.localStorage.getItem(storageKey) ?? "{}") as Record<
       string,
       unknown
     >;
-    const key = `${landmarkId}:${actionId}`;
+    const key = `${accountId}:${characterId}:${landmarkId}:${actionId}`;
     if (typeof stored[key] === "string") return stored[key] as string;
     const requestId = crypto.randomUUID();
     stored[key] = requestId;
@@ -225,14 +258,20 @@ export function getPendingMapActionKey(landmarkId: string, actionId: string) {
   }
 }
 
-export function clearPendingMapActionKey(landmarkId: string, actionId: string, requestId: string) {
+export function clearPendingMapActionKey(
+  accountId: string,
+  characterId: string,
+  landmarkId: string,
+  actionId: string,
+  requestId: string,
+) {
   const storageKey = "osogbo-map-action-requests-v1";
   try {
     const stored = JSON.parse(window.localStorage.getItem(storageKey) ?? "{}") as Record<
       string,
       unknown
     >;
-    const key = `${landmarkId}:${actionId}`;
+    const key = `${accountId}:${characterId}:${landmarkId}:${actionId}`;
     if (stored[key] === requestId) {
       delete stored[key];
       window.localStorage.setItem(storageKey, JSON.stringify(stored));

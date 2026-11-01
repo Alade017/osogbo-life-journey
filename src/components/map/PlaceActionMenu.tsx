@@ -1,3 +1,4 @@
+import { mapActivityHours, type MapSchedule } from "@/lib/map-schedule";
 import { useState } from "react";
 import { Check, Clock3, Coins, Heart } from "lucide-react";
 import type { MapPlaceAction } from "@/components/map/OsogboMap.svg";
@@ -13,6 +14,9 @@ export type PlaceActionResult = {
 };
 
 export function PlaceActionMenu({
+  schedule,
+  refreshingSchedule,
+  onRefreshSchedule,
   actions,
   offline,
   pending,
@@ -20,6 +24,9 @@ export function PlaceActionMenu({
   result,
   onRun,
 }: {
+  schedule?: MapSchedule | undefined;
+  refreshingSchedule: boolean;
+  onRefreshSchedule: () => void;
   actions: MapPlaceAction[];
   offline: boolean;
   pending: boolean;
@@ -27,17 +34,42 @@ export function PlaceActionMenu({
   result?: PlaceActionResult | null | undefined;
   onRun: (actionId: string) => void;
 }) {
-  const [selected, setSelected] = useState<MapPlaceAction | null>(null);
+  const [selectedId, setSelected] = useState<string | null>(null);
+  const selected = actions.find((a) => a.id === selectedId);
+  const selectedSchedule = schedule?.actions.find((a) => a.id === selectedId);
   if (!actions.length) return null;
   return (
     <section className="place-action-menu" aria-label="Activities at this place">
       <div className="place-action-heading">
         <h3>Things to do here</h3>
-        <small>{actions.length} available</small>
+        <small>{actions.length} activities</small>
       </div>
+      {schedule ? (
+        <p className="place-action-schedule" role="status">
+          Shared Lagos time · Day {schedule.clock.day} ·{" "}
+          {String(schedule.clock.hour).padStart(2, "0")}:
+          {String(schedule.clock.minute).padStart(2, "0")}
+        </p>
+      ) : (
+        <div className="place-action-schedule" role="status">
+          <span>Activity hours are unverified. Refresh before starting one.</span>
+          <button
+            type="button"
+            disabled={offline || refreshingSchedule}
+            onClick={onRefreshSchedule}
+          >
+            {offline
+              ? "Reconnect to refresh"
+              : refreshingSchedule
+                ? "Refreshing…"
+                : "Refresh hours"}
+          </button>
+        </div>
+      )}
       {!isHere && <p className="place-action-hint">Travel here to use these activities.</p>}
       <ul className="map-sheet-list">
         {actions.map((action) => {
+          const hours = schedule?.actions.find((a) => a.id === action.id);
           const money = action.money_minor;
           const text =
             money.min === 0 && money.max === 0
@@ -51,12 +83,20 @@ export function PlaceActionMenu({
                 type="button"
                 className="place-action-option"
                 aria-pressed={selected?.id === action.id}
-                onClick={() => setSelected(action)}
+                onClick={() => setSelected(action.id)}
               >
                 <span>
                   {action.label}
                   {action.verify && <small> · Proposed activity</small>}
                 </span>
+                <small>
+                  {hours ? mapActivityHours(hours.start, hours.end) : "Hours unverified"} ·{" "}
+                  {hours?.open === true
+                    ? "Within hours"
+                    : hours?.open === false
+                      ? "Outside hours"
+                      : "Schedule unverified"}
+                </small>
                 <small>
                   {text} · {action.time_cost_minutes} game minutes
                 </small>
@@ -97,7 +137,7 @@ export function PlaceActionMenu({
             </button>
             <button
               type="button"
-              disabled={offline || pending || !isHere}
+              disabled={offline || pending || !isHere || selectedSchedule?.open !== true}
               onClick={() => onRun(selected.id)}
             >
               {offline
@@ -106,7 +146,11 @@ export function PlaceActionMenu({
                   ? "Travel here first"
                   : pending
                     ? "Working…"
-                    : "Do activity"}
+                    : selectedSchedule?.open === false
+                      ? "Outside activity hours"
+                      : selectedSchedule?.open !== true
+                        ? "Verify schedule first"
+                        : "Do activity"}
             </button>
           </div>
         </div>

@@ -10,6 +10,8 @@ import type { MapPlaceAction } from "@/components/map/OsogboMap.svg";
 
 export function LandmarkSheet({
   landmark,
+  accountId,
+  characterId,
   description,
   offline,
   onClose,
@@ -24,6 +26,8 @@ export function LandmarkSheet({
   locationName,
   event,
 }: {
+  accountId?: string | undefined;
+  characterId?: string | undefined;
   landmark: {
     id: string;
     label: string;
@@ -46,20 +50,36 @@ export function LandmarkSheet({
   event?: { label: string; endsAt: string } | null;
 }) {
   const detailsQuery = useQuery({
-    queryKey: ["mapLandmarkDetails", landmark.id],
-    queryFn: () => requestMapLandmark(landmark.id),
-    staleTime: 5 * 60_000,
+    queryKey: ["mapLandmarkDetails", landmark.id, accountId, characterId],
+    queryFn: () => {
+      if (!accountId) throw new Error("Player account is not ready.");
+      return requestMapLandmark(landmark.id, accountId);
+    },
+    enabled: !!accountId && !offline,
+    staleTime: 15_000,
+    refetchInterval: 15_000,
+    refetchIntervalInBackground: false,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
     retry: false,
   });
+  const scheduleIsFresh =
+    !!detailsQuery.data?.schedule &&
+    !offline &&
+    !detailsQuery.isFetching &&
+    Date.now() - detailsQuery.dataUpdatedAt <= 30_000;
+  const schedule = scheduleIsFresh ? detailsQuery.data?.schedule : undefined;
   const restricted =
     detailsQuery.error instanceof MapApiError && detailsQuery.error.code === "AGE_RESTRICTED";
   const detailError =
     detailsQuery.error instanceof MapApiError && detailsQuery.error.code !== "AGE_RESTRICTED"
       ? detailsQuery.error.code
       : undefined;
-  const canAct = !!detailsQuery.data && !offline && !pending;
+  const canAct = !!detailsQuery.data && !offline && !pending && !detailsQuery.isFetching;
   const isHere =
     !!detailsQuery.data &&
+    !offline &&
+    !detailsQuery.isFetching &&
     detailsQuery.data.landmark.player_location_id === detailsQuery.data.landmark.location_id;
 
   if (typeof document === "undefined") return null;
@@ -98,19 +118,41 @@ export function LandmarkSheet({
           <BadgeCheck size={15} /> 18+
         </p>
       )}
-      {detailsQuery.isPending ? (
+      {!accountId ? (
+        <p role="status">Loading player details…</p>
+      ) : offline && detailsQuery.isPending ? (
+        <p role="status">Reconnect to load place details and activity hours.</p>
+      ) : detailsQuery.isPending ? (
         <p role="status">Loading place details…</p>
       ) : restricted ? (
         <p className="map-age-notice">This place is for players 18 and over.</p>
       ) : detailError ? (
-        <p role="alert" className="map-action-error">
-          {detailError === "UNKNOWN_LANDMARK"
-            ? "This place is no longer available."
-            : "Place details could not be loaded. Reconnect and try again."}
-        </p>
+        <div role="alert" className="map-action-error">
+          <p>
+            {detailError === "UNKNOWN_LANDMARK"
+              ? "This place is no longer available."
+              : "Place details could not be loaded. Reconnect and try again."}
+          </p>
+          {detailError !== "UNKNOWN_LANDMARK" && (
+            <button
+              type="button"
+              disabled={offline || detailsQuery.isFetching}
+              onClick={() => void detailsQuery.refetch()}
+            >
+              {offline
+                ? "Reconnect to retry"
+                : detailsQuery.isFetching
+                  ? "Refreshing…"
+                  : "Retry place details"}
+            </button>
+          )}
+        </div>
       ) : (
         <>
           <PlaceActionMenu
+            schedule={schedule}
+            refreshingSchedule={detailsQuery.isFetching}
+            onRefreshSchedule={() => void detailsQuery.refetch()}
             actions={detailsQuery.data?.actions ?? []}
             offline={offline}
             pending={actionPending}

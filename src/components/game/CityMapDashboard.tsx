@@ -182,15 +182,25 @@ export function CityMapDashboard({
       landmarkId,
       actionId,
       requestId,
+      accountId,
+      characterId,
     }: {
       landmarkId: string;
       actionId: string;
       requestId: string;
-    }) => requestMapPlaceAction(landmarkId, actionId, requestId),
+      accountId: string;
+      characterId: string;
+    }) => requestMapPlaceAction(landmarkId, actionId, requestId, accountId),
     onSuccess: async (result, variables) => {
       setPlaceActionResult(result);
       setActionError("");
-      clearPendingMapActionKey(variables.landmarkId, variables.actionId, variables.requestId);
+      clearPendingMapActionKey(
+        variables.accountId,
+        variables.characterId,
+        variables.landmarkId,
+        variables.actionId,
+        variables.requestId,
+      );
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["character"] }),
         queryClient.invalidateQueries({ queryKey: ["wallet"] }),
@@ -199,7 +209,7 @@ export function CityMapDashboard({
       ]);
       window.dispatchEvent(new Event("osogbo:server-state-changed"));
     },
-    onError: (error) => {
+    onError: (error, variables) => {
       const messages: Record<string, string> = {
         NOT_AT_PLACE: "Travel here before starting this activity.",
         PLACE_CLOSED: "This place is closed right now.",
@@ -210,6 +220,11 @@ export function CityMapDashboard({
       setActionError(
         messages[error.message] ?? "The activity could not be completed. Please retry.",
       );
+      if (error.message === "PLACE_CLOSED") {
+        void queryClient.invalidateQueries({
+          queryKey: ["mapLandmarkDetails", variables.landmarkId],
+        });
+      }
     },
   });
   const onDistrict = (id: string) => {
@@ -413,6 +428,8 @@ export function CityMapDashboard({
       {mapLevel === "town" && selectedLandmark && (
         <LandmarkSheet
           key={selectedLandmark.id}
+          accountId={character.data?.user_id ?? undefined}
+          characterId={character.data?.id ?? undefined}
           landmark={selectedLandmark}
           event={
             landmarkEvent ? { label: landmarkEvent.title, endsAt: landmarkEvent.endsAt } : null
@@ -434,8 +451,25 @@ export function CityMapDashboard({
           pending={travel.isPending || apply.isPending}
           error={actionError}
           onRunPlaceAction={(actionId) => {
-            const requestId = getPendingMapActionKey(selectedLandmark.id, actionId);
-            runPlaceAction.mutate({ landmarkId: selectedLandmark.id, actionId, requestId });
+            const accountId = character.data?.user_id;
+            const characterId = character.data?.id;
+            if (!accountId || !characterId) {
+              setActionError("Player details are not ready. Reopen this place and try again.");
+              return;
+            }
+            const requestId = getPendingMapActionKey(
+              accountId,
+              characterId,
+              selectedLandmark.id,
+              actionId,
+            );
+            runPlaceAction.mutate({
+              accountId,
+              characterId,
+              landmarkId: selectedLandmark.id,
+              actionId,
+              requestId,
+            });
           }}
           actionPending={runPlaceAction.isPending}
           actionResult={placeActionResult}

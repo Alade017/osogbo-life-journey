@@ -34,11 +34,16 @@ Claim failures never optimistically award money or XP. The database remains the 
 - SQL coverage: career/legacy earnings, actual career claim replay, exact existing rewards once, insufficient progress, outsider/missing-character/signed-out rejection, private reads/direct-write denial, XP-failure rollback, no-reward backfill and single completion notification.
 - Client coverage: stable priority/order, correct target/reward/currency, bounded meter, completed/empty states, cached errors/offline, initial loading/failure, account filtering and mid-request switching, duplicate clicks, lost-response recovery, offline no-queue and late-unmount success suppression.
 - The isolated 375px browser fixture passed with no horizontal overflow: progress, ready reward, cached error, offline state, Missions navigation, living costs and placeholder-room input. Real HomeDashboard/goal hooks/service/styles use synthetic account/database responses. The screenshot was visually inspected. This does not establish actual 3D rendering or authenticated hosted gameplay.
-- Final typecheck, lint, builds, browser rerun and full-suite outcomes are recorded below when complete.
+- Typecheck passed. Scoped component/hook/service/test/script lint passed; `game.ts` retains its existing `no-explicit-any` error. Repository-wide lint reports **335 errors and 12 warnings**, matching the prior baseline after correcting the new lines' line endings.
+- Game and public production builds passed. Nitro required an unsandboxed retry after `EPERM` reading the user-profile path. Public JS remains 228.29 kB (71.03 kB gzip). These builds/typecheck predate the owner's subsequent `c16f6030` settings commit; the full suite below runs on that commit.
+- Final goals and living-cost browser fixtures both passed at 375px with no horizontal overflow. The final goal screenshot was visually inspected, including currency rendering. `git diff --check` passed.
+- Full suite: **778 passed / 1 failed across 145 files, zero skipped**, exit 1 (581.73 seconds). The sole failure remains `src/test/house-room-renderer.test.tsx:49`: it expects R3F while the application defaults to PlayCanvas. No additional failures occurred. The full run includes the owner's `c16f6030` settings commit.
 
 Focused command:
 
 `npx.cmd vitest run src/test/mission-progress-database.test.ts src/test/mission-goals.test.tsx src/test/mission-chips.test.tsx src/test/profile-page.test.tsx src/test/game-audio-events.test.tsx src/test/career-database.test.ts src/test/daily-task-database.test.ts src/test/login-streak-database.test.ts src/test/game-route-surfaces.test.ts --maxWorkers=1`
+
+Other checks: `npm.cmd run typecheck`, `npm.cmd run lint`, `npm.cmd run build`, `npm.cmd run build:public`, `node scripts/mission-goals-browser-check.mjs`, `node scripts/living-cost-browser-check.mjs`, `npx.cmd vitest run --maxWorkers=1 --reporter=verbose`, and `git diff --check`. Scoped ESLint covers the changed mission components/hooks/service, associated tests, both browser scripts and existing affected profile/audio consumers; the legacy `game.ts` error is reported separately above.
 
 Evidence logs: `.smoke/goals-{before,database,client,focused,typecheck,lint,global-lint,game-build,public-build,browser,full-tests}.log`. Browser command: `node scripts/mission-goals-browser-check.mjs`; screenshot `.smoke/mission-goals-375.png`.
 
@@ -50,6 +55,6 @@ Verify the target migration ledger includes the mission baseline through 0039 an
 
 Authenticated hosted RPC/RLS checks, independent-connection claim/payment contention and physical-phone checks remain release validation. PGlite serializes one connection, so local duplicate/rollback checks are not proof of cross-connection concurrency. No live deployment-state claim is made.
 
-New lifestyle achievement rewards, compound ownership targets, multi-stall ownership and Phase 7 map schedules remain deferred. Existing one-stall-per-account rules and existing economy rewards are unchanged.
+New lifestyle achievement rewards, compound ownership targets, multi-stall ownership and Phase 7 work beyond the approved 7.1a shared-clock map schedule slice remain deferred. Existing one-stall-per-account rules and existing economy rewards are unchanged.
 
 Guidance reviewed: [Supabase database functions](https://supabase.com/docs/guides/database/functions) and the repository's Supabase/Postgres skills. The web tool could not read the changelog Markdown endpoint; no changelog verification is claimed.

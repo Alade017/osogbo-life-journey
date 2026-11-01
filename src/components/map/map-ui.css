@@ -532,6 +532,31 @@
   color: var(--muted-foreground);
   font-size: 0.8rem;
 }
+.place-action-schedule {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+}
+.place-action-schedule button,
+.map-action-error button {
+  min-height: 44px;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--ring);
+  border-radius: calc(var(--shape-card) * 0.5);
+  background: var(--background);
+  color: var(--foreground);
+  cursor: pointer;
+}
+.place-action-schedule button:disabled,
+.map-action-error button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
 .map-here-note {
   align-self: flex-start;
   padding: 0.35rem 0.7rem;
