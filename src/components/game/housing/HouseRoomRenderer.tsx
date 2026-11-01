@@ -1,15 +1,8 @@
 import { Component, Suspense, lazy, type ReactNode } from "react";
-import {
-  homeRendererChoice,
-  type HomeRenderer,
-  type HouseRoomRendererProps,
-} from "./house-room-contract";
+import type { HouseRoomRendererProps } from "./house-room-contract";
 
 const R3FRoom = lazy(() =>
   import("./HouseRoom3D").then((module) => ({ default: module.HouseRoom3D })),
-);
-const PlayCanvasRoom = lazy(() =>
-  import("./HouseRoomPlayCanvas").then((module) => ({ default: module.HouseRoomPlayCanvas })),
 );
 
 class RendererBoundary extends Component<
@@ -29,7 +22,7 @@ class RendererBoundary extends Component<
   }
 }
 
-function RoomControls(props: HouseRoomRendererProps) {
+function RoomControls(props: HouseRoomRendererProps & { inputBlocked: boolean }) {
   return (
     <div
       className="house-3d-scene house-renderer-unavailable"
@@ -38,7 +31,12 @@ function RoomControls(props: HouseRoomRendererProps) {
     >
       <p role="status">Your 3D room is unavailable. You can still select your items here.</p>
       {props.placements.map((placement) => (
-        <button key={placement.id} type="button" onClick={() => props.onSelectPlacement(placement)}>
+        <button
+          key={placement.id}
+          type="button"
+          disabled={props.inputBlocked}
+          onClick={() => props.onSelectPlacement(placement)}
+        >
           {placement.item_id.replaceAll("-", " ")}
         </button>
       ))}
@@ -46,7 +44,12 @@ function RoomControls(props: HouseRoomRendererProps) {
         props.slots
           .filter((slot) => !props.placements.some((placement) => placement.slot === slot.id))
           .map((slot) => (
-            <button key={slot.id} type="button" onClick={() => props.onSelectSlot(slot)}>
+            <button
+              key={slot.id}
+              type="button"
+              disabled={props.inputBlocked}
+              onClick={() => props.onSelectSlot(slot)}
+            >
               Place in {slot.slot_type} slot
             </button>
           ))}
@@ -55,16 +58,9 @@ function RoomControls(props: HouseRoomRendererProps) {
 }
 
 export function HouseRoomRenderer({
-  renderer,
   inputBlocked = false,
   ...props
-}: HouseRoomRendererProps & { renderer?: HomeRenderer; inputBlocked?: boolean }) {
-  const selected = renderer ?? homeRendererChoice(import.meta.env["VITE_HOME_RENDERER"]);
-  const fallback = (
-    <RendererBoundary resetKey={`r3f:${props.houseTypeId}`} fallback={<RoomControls {...props} />}>
-      <R3FRoom {...props} />
-    </RendererBoundary>
-  );
+}: HouseRoomRendererProps & { inputBlocked?: boolean }) {
   return (
     <Suspense
       fallback={
@@ -73,13 +69,12 @@ export function HouseRoomRenderer({
         </div>
       }
     >
-      {selected === "playcanvas" ? (
-        <RendererBoundary resetKey={`playcanvas:${props.houseTypeId}`} fallback={fallback}>
-          <PlayCanvasRoom {...props} inputBlocked={inputBlocked} />
-        </RendererBoundary>
-      ) : (
-        fallback
-      )}
+      <RendererBoundary
+        resetKey={`r3f:${props.houseTypeId}`}
+        fallback={<RoomControls {...props} inputBlocked={inputBlocked} />}
+      >
+        <R3FRoom {...props} inputBlocked={inputBlocked} />
+      </RendererBoundary>
     </Suspense>
   );
 }

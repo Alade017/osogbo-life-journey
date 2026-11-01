@@ -1,27 +1,27 @@
-# Optional PlayCanvas home benchmark
+# Historical PlayCanvas home benchmark
 
-Date: 2026-10-25, Africa/Lagos. The owner authorized this isolated benchmark by saying “continue” after the home-slice plan. R3F remains the default. This is a prototype, with no recommendation to adopt PlayCanvas as the default.
+Date: 2026-10-25, Africa/Lagos. **Superseded:** PlayCanvas has since been removed from the application. This record preserves the isolated benchmark evidence and is not an installation or usage guide.
 
 ## Completed
 
-The home route uses a renderer boundary with an explicit `VITE_HOME_RENDERER=playcanvas` opt-in, lazy browser initialization, R3F fallback, and accessible controls if both graphics renderers fail. The existing route owns placements and mutations. The adapter emits selection/move callbacks and does not persist state. Pending actions and overlays cancel gestures. PlayCanvas 2.23.3 is pinned; its MIT license is included under `public/licenses/`.
+The historical home route used a renderer boundary with an explicit `VITE_HOME_RENDERER=playcanvas` opt-in, lazy browser initialization, R3F fallback, and accessible controls if both graphics renderers failed. The route owned placements and mutations. The adapter emitted selection/move callbacks and did not persist state. PlayCanvas 2.23.3 was pinned and its license included.
 
-For local opt-in, set `VITE_HOME_RENDERER=playcanvas` before starting Vite. Remove that variable to use the default. The checked-in `.env.example` documents the flag; the actual `.env` was not changed by this work.
+The flag, adapter, runtime, license, dependency, and PlayCanvas-specific harness have been removed. The home now renders only through the R3F/Three.js room.
 
 ## Browser evidence
 
 Commands: `node scripts/home-renderer-browser-check.mjs 375` and the same command with `1024`. Both passed in local headless Chrome using software rendering, DPR 2 and touch emulation. These are isolated built fixtures, without authentication or a Supabase connection.
 
-| Observation | 375px | 1024px |
-| --- | ---: | ---: |
-| Loaded GLB instances | 1 | 1 |
-| Selection callbacks | 1 | 1 |
-| Move callbacks | 2 | 2 |
-| Input listeners / observers after disposal | 0 / 0 | 0 / 0 |
-| Page errors / unexpected network failures | 0 / 0 | 0 / 0 |
-| Observed initialization, ms | 1033.2 | 745.2 |
-| Observed readiness, ms | 3844.2 | 1833.8 |
-| p95 frame interval, ms | 79.0 | 189.2 |
+| Observation                                |  375px | 1024px |
+| ------------------------------------------ | -----: | -----: |
+| Loaded GLB instances                       |      1 |      1 |
+| Selection callbacks                        |      1 |      1 |
+| Move callbacks                             |      2 |      2 |
+| Input listeners / observers after disposal |  0 / 0 |  0 / 0 |
+| Page errors / unexpected network failures  |  0 / 0 |  0 / 0 |
+| Observed initialization, ms                | 1033.2 |  745.2 |
+| Observed readiness, ms                     | 3844.2 | 1833.8 |
+| p95 frame interval, ms                     |   79.0 |  189.2 |
 
 Both fixtures verified mouse selection, mouse drag, touch drag, cancellation by a second touch, overlay/pending-state cancellation, no canonical placement mutation, no viewport overflow, and idempotent disposal. Screenshots and raw logs are local `.smoke/` artifacts. The fixture contains the original `development-room.glb` plus a procedural bed and empty slot.
 
@@ -54,3 +54,9 @@ Focused tests previously passed: 15 tests across 2 files. `npx.cmd vitest run --
 Generic boxes still represent some furniture. Pinch zoom, Draco-compressed assets, complete visual parity, budget Android performance/memory, authenticated home-route integration, and hosted RPC/RLS behavior remain unverified. Neither measured software-rendering interval meets the proposed mobile frame budget; these runs cannot approve adoption.
 
 No migrations, RPC/auth changes, production data operations, deployment, branch creation, commits, pushes, PRs, merges, or history rewrites were performed by this continuation. Default adoption and gameplay phases 3–8 remain deferred pending their respective approval gates.
+
+## Superseding R3F-only migration — 2026-11-01
+
+The owner approved removal of PlayCanvas and use of the existing R3F/Three.js room as the sole renderer. The migration removes the flag, dependency, license, runtime adapter, React wrapper, generic PlayCanvas input adapter, and its standalone harness. `HouseRoomRenderer` now always lazy-loads `HouseRoom3D`; the route still owns canonical state and authoritative mutations. R3F receives the existing input-blocked state, preventing canvas interactions while selection/sleep overlays are active. Its accessible selection controls remain the fallback if the 3D renderer fails.
+
+Historical PlayCanvas measurements above are not an R3F comparison and make no claim that the resulting R3F renderer meets mobile performance budgets. Current migration verification is recorded in `docs/release-qa.md`.

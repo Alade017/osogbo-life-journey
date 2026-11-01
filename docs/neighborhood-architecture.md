@@ -90,6 +90,12 @@ Migration 0029 adds authoritative furniture purchases. Server-owned catalog pric
 
 The expandable district registry creates stable category-themed neighborhood templates from the existing `OSOGBO_WORLD_NODES` data and the two legacy location slugs. Phaser and Colyseus consume the same definitions for landmarks and collision. Olaiya and Oja-Oba keep their authored layouts; unknown slugs retain the Olaiya fallback. This does not claim every district has custom art or has been verified with two live players.
 
+### Milestone 8 local verification (2026-11-01)
+
+The housing and expandable-world capabilities above were already present, so the closeout added regression coverage rather than duplicating their schema or RPCs. The home-visit database fixture now verifies the default-private state, sanitized needs and exterior checkpoint, denial when either friend blocks the other, permission revocation, and the existing owner-save RLS boundary. Existing UI tests verify guest room browsing without save/mutation controls; generated-area and authoritative-movement tests verify the shared area registry and collision footprints.
+
+Focused verification: **92 tests passed across eight files** (`shared-hud-database`, `housing-database`, `home-interior`, `house-edit-sheets`, `home-furniture-actions`, `neighborhood-model`, `city-world`, and `authoritative-movement`). These are local tests, not hosted migration verification, authenticated two-account multiplayer, or physical-device checks. Migrations 0027–0029 remain subject to the target database's migration ledger and deliberate staging validation.
+
 ## Art rules
 
 Original procedural vector textures: 32 x 44 character canvas, 16 x 12 foot collision body, 32-pixel ground grid. Earthy cream walls, forest roofs, muted ochre shop roofs and slate work roofs; two-pixel outlines, consistent upper-left light, lower-right shadow. Building artwork and invisible rectangular footprints are separate. Actors sort by foot Y, building artwork by its front edge. Labels remain above scenery. These are first-pass modular assets, not imported reference artwork.

@@ -744,7 +744,7 @@ describe("shared HUD database acceptance", () => {
       room: "lounge",
       x: 1,
       y: 1,
-      exterior: null,
+      exterior: { lat: 7.78, lng: 4.56 },
       furniture: [],
       storage: [],
       upgrades: [],
@@ -756,6 +756,11 @@ describe("shared HUD database acceptance", () => {
       [JSON.stringify(layout)],
     );
     expect(saved.rows[0]!.result.revision).toBe(1);
+    await db.exec(`select set_config('test.user_id','${secondUser}',false)`);
+    await expect(
+      db.query("select public.get_friend_home_for_visit($1)", [ownerId]),
+    ).rejects.toThrow(/not open/);
+    await db.exec(`select set_config('test.user_id','${uid}',false)`);
     await db.query("select public.set_my_home_visit_access(true)");
     await db.exec(`select set_config('test.user_id','${secondUser}',false)`);
     const policyRows = await db.query(
@@ -774,6 +779,29 @@ describe("shared HUD database acceptance", () => {
       exterior: null,
       needs: { energy: 70, fun: 50, hygiene: 70, bladder: 30, hunger: 60, skill: 0 },
     });
+    expect(visit.rows[0]!.result.payload["needs"]).not.toEqual(layout.needs);
+    await db.query(
+      "insert into public.player_blocks(blocker_character_id,blocked_character_id) values($1,$2)",
+      [friendId, ownerId],
+    );
+    await expect(
+      db.query("select public.get_friend_home_for_visit($1)", [ownerId]),
+    ).rejects.toThrow(/not open/);
+    await db.query(
+      "delete from public.player_blocks where blocker_character_id=$1 and blocked_character_id=$2",
+      [friendId, ownerId],
+    );
+    await db.query(
+      "insert into public.player_blocks(blocker_character_id,blocked_character_id) values($1,$2)",
+      [ownerId, friendId],
+    );
+    await expect(
+      db.query("select public.get_friend_home_for_visit($1)", [ownerId]),
+    ).rejects.toThrow(/not open/);
+    await db.query(
+      "delete from public.player_blocks where blocker_character_id=$1 and blocked_character_id=$2",
+      [ownerId, friendId],
+    );
     const outsiderUser = "77777777-7777-4777-8777-777777777777";
     await db.exec(`insert into auth.users values('${outsiderUser}'); insert into public.profiles(id) values('${outsiderUser}');
       insert into public.characters(user_id,name,gender,age,personality,energy,hunger,happiness,social)

@@ -355,6 +355,7 @@ function SlotObject({
   depth,
   editMode,
   moveEnabled,
+  inputBlocked,
   dragPreview,
   activeSlotType,
   onSelectPlacement,
@@ -371,6 +372,7 @@ function SlotObject({
   depth: number;
   editMode: boolean;
   moveEnabled: boolean;
+  inputBlocked: boolean;
   dragPreview: DragPreview | null;
   activeSlotType: string | null;
   onSelectPlacement: Props["onSelectPlacement"];
@@ -395,7 +397,7 @@ function SlotObject({
       {placement ? (
         <group
           onPointerDown={(event) => {
-            if (editMode && moveEnabled && event.button === 0 && event.isPrimary)
+            if (!inputBlocked && editMode && moveEnabled && event.button === 0 && event.isPrimary)
               onDragStart(placement, event);
           }}
           onPointerMove={onDragMove}
@@ -403,7 +405,7 @@ function SlotObject({
           onPointerCancel={onDragCancel}
           onClick={(event) => {
             event.stopPropagation();
-            if (!suppressClick(placement)) onSelectPlacement(placement);
+            if (!inputBlocked && !suppressClick(placement)) onSelectPlacement(placement);
           }}
         >
           <OptionalModel
@@ -417,7 +419,7 @@ function SlotObject({
         <mesh
           onClick={(event) => {
             event.stopPropagation();
-            onSelectSlot(slot);
+            if (!inputBlocked) onSelectSlot(slot);
           }}
         >
           <boxGeometry args={[0.48, 0.08, 0.48]} />
@@ -440,6 +442,7 @@ function SlotObject({
             className="house-3d-slot-label"
             aria-label={label}
             title={label}
+            disabled={inputBlocked}
             onClick={() => (placement ? onSelectPlacement(placement) : onSelectSlot(slot))}
           >
             {placement ? "•••" : "+"}
@@ -461,6 +464,7 @@ function LoadingProgress() {
 }
 
 export function HouseRoom3D({
+  inputBlocked = false,
   houseTypeId,
   accessoryBand,
   slots,
@@ -470,7 +474,7 @@ export function HouseRoom3D({
   onSelectPlacement,
   onSelectSlot,
   onMove,
-}: Props) {
+}: Props & { inputBlocked?: boolean }) {
   const [width, depth] = ROOM_SIZE[houseTypeId] ?? ROOM_SIZE["shared-room"]!;
   const bySlot = useMemo(() => new Map(placements.map((item) => [item.slot, item])), [placements]);
   const [dragPreview, setDragPreview] = useState<DragPreview | null>(null);
@@ -559,7 +563,7 @@ export function HouseRoom3D({
     if (editMode && moveEnabled) return;
     dragPointer.current = null;
     setDragPreview(null);
-  }, [editMode, moveEnabled]);
+  }, [editMode, inputBlocked, moveEnabled]);
   const modelPath = `/models/rooms/${/^[a-z0-9-]+$/i.test(houseTypeId) ? houseTypeId : "shared-room"}.glb`;
   return (
     <div className="house-3d-scene" aria-label={`${houseTypeId.replaceAll("-", " ")} 3D room`}>
@@ -592,6 +596,7 @@ export function HouseRoom3D({
             depth={depth}
             editMode={editMode}
             moveEnabled={moveEnabled}
+            inputBlocked={inputBlocked}
             dragPreview={dragPreview}
             activeSlotType={
               dragPreview
@@ -609,7 +614,7 @@ export function HouseRoom3D({
           />
         ))}
         <OrbitControls
-          enabled={!dragPreview}
+          enabled={!inputBlocked && !dragPreview}
           enablePan={false}
           enableDamping={false}
           minDistance={Math.max(width, depth) * 0.75}

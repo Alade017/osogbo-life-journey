@@ -1,10 +1,5 @@
 import type { HousePlacement, HouseSlot } from "./HouseRoomScene";
 
-export type HomeRenderer = "r3f" | "playcanvas";
-export function homeRendererChoice(value: unknown): HomeRenderer {
-  return value === "r3f" ? "r3f" : "playcanvas";
-}
-
 export type HouseRoomRendererProps = {
   houseTypeId: string;
   accessoryBand: string;
