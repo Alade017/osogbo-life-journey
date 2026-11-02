@@ -1,0 +1,304 @@
+.neighborhood-page {
+  display: grid;
+  gap: 1.25rem;
+  width: min(100%, 1120px);
+  margin: 0 auto;
+  padding: clamp(1rem, 3vw, 2rem);
+}
+
+.neighborhood-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.neighborhood-header h1 {
+  margin: 0;
+  color: var(--brand-ink);
+  font-family: var(--typeface-display);
+  font-size: clamp(1.7rem, 4vw, 2.45rem);
+  letter-spacing: -0.035em;
+}
+
+.neighborhood-header p {
+  margin: 0.35rem 0 0;
+  color: var(--color-text-secondary);
+}
+
+.neighborhood-header .neighborhood-eyebrow {
+  margin: 0 0 0.4rem;
+  color: var(--brand-royal-deep);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.neighborhood-map-link,
+.map-neighborhood-link {
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--brand-royal-deep) 25%, var(--border));
+  border-radius: var(--shape-button);
+  padding: 0.55rem 0.85rem;
+  background: var(--color-surface);
+  color: var(--brand-royal-deep);
+  font-size: 0.86rem;
+  font-weight: 750;
+  text-decoration: none;
+  box-shadow: var(--elevation-rest);
+}
+
+.neighborhood-map-link:hover,
+.map-neighborhood-link:hover {
+  background: var(--color-primary-soft);
+}
+
+.neighborhood-world-card,
+.neighborhood-message {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--shape-card) + 0.25rem);
+  background: var(--card);
+  box-shadow: var(--elevation-card);
+}
+
+.neighborhood-world-status {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.7rem 1rem;
+  color: var(--color-text-secondary);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.neighborhood-world-status > span {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--brand-slate);
+}
+
+.neighborhood-world-status > span.is-connected {
+  background: var(--success);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--success) 16%, transparent);
+}
+
+.neighborhood-stage {
+  position: relative;
+  min-height: 440px;
+  overflow: hidden;
+  border-block: 1px solid var(--border);
+  background: radial-gradient(ellipse at 48% 48%, rgb(230 229 196 / 30%), transparent 58%), #9cae79;
+  isolation: isolate;
+}
+
+.playable-neighborhood-canvas {
+  width: 100%;
+  height: min(64vh, 640px);
+  min-height: 440px;
+  touch-action: none;
+}
+
+.playable-neighborhood-canvas canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  outline: none;
+}
+
+.neighborhood-renderer-error {
+  position: absolute;
+  z-index: 4;
+  inset: auto 1rem 1rem;
+  margin: 0;
+  border-radius: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #fff3f0;
+  color: var(--destructive);
+  font-size: 0.82rem;
+}
+
+.neighborhood-zoom-controls {
+  position: absolute;
+  z-index: 3;
+  top: 0.85rem;
+  right: 0.85rem;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.neighborhood-zoom-controls button {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid rgb(20 33 61 / 18%);
+  border-radius: 0.75rem;
+  background: rgb(255 255 255 / 92%);
+  color: var(--brand-ink);
+  box-shadow: var(--elevation-card);
+}
+
+.neighborhood-interaction {
+  position: absolute;
+  z-index: 3;
+  top: 0.85rem;
+  left: 50%;
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 0.5rem;
+  transform: translateX(-50%);
+  border: 1px solid rgb(255 255 255 / 42%);
+  border-radius: var(--shape-pill);
+  padding: 0.5rem 0.9rem;
+  background: var(--brand-ink);
+  color: white;
+  font-size: 0.84rem;
+  font-weight: 750;
+  box-shadow: 0 5px 16px rgb(20 33 61 / 25%);
+}
+
+.neighborhood-interaction kbd {
+  display: grid;
+  min-width: 1.5rem;
+  height: 1.5rem;
+  place-items: center;
+  border: 1px solid rgb(255 255 255 / 30%);
+  border-radius: 0.45rem;
+  background: rgb(255 255 255 / 12%);
+  font-size: 0.7rem;
+}
+
+.neighborhood-controls-row {
+  display: flex;
+  min-height: 112px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 1rem;
+}
+
+.neighborhood-control-copy {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.neighborhood-control-copy strong {
+  color: var(--brand-ink);
+  font-size: 0.92rem;
+}
+
+.neighborhood-control-copy span {
+  color: var(--color-text-secondary);
+  font-size: 0.78rem;
+}
+
+.neighborhood-controls-row .player-movement-controls {
+  position: static;
+  z-index: auto;
+  flex-direction: row;
+  gap: 0.75rem;
+}
+
+.neighborhood-controls-row .player-follow-toggle {
+  max-width: 120px;
+}
+
+.neighborhood-error {
+  margin: 0;
+  border-top: 1px solid color-mix(in srgb, var(--destructive) 20%, var(--border));
+  padding: 0.75rem 1rem;
+  color: var(--destructive);
+  font-size: 0.84rem;
+}
+
+.neighborhood-message {
+  display: grid;
+  justify-items: start;
+  gap: 0.65rem;
+  padding: clamp(1.25rem, 4vw, 2rem);
+  color: var(--brand-ink);
+}
+
+.neighborhood-message span {
+  color: var(--color-text-secondary);
+}
+
+.neighborhood-message a {
+  color: var(--brand-royal-deep);
+  font-weight: 750;
+}
+
+@media (max-width: 680px) {
+  .neighborhood-page {
+    gap: 0.85rem;
+    padding: 0.85rem 0.7rem calc(var(--game-dock-height) + env(safe-area-inset-bottom) + 1rem);
+  }
+
+  .neighborhood-header {
+    align-items: flex-start;
+  }
+
+  .neighborhood-header > div > p:last-child {
+    max-width: 22rem;
+    font-size: 0.84rem;
+  }
+
+  .neighborhood-header .neighborhood-map-link {
+    flex-shrink: 0;
+    min-height: 38px;
+    padding-inline: 0.65rem;
+  }
+
+  .neighborhood-stage,
+  .playable-neighborhood-canvas {
+    min-height: 62vh;
+  }
+
+  .neighborhood-controls-row {
+    min-height: auto;
+    align-items: flex-start;
+    padding: 0.7rem;
+  }
+
+  .neighborhood-control-copy span {
+    max-width: 9rem;
+    line-height: 1.4;
+  }
+
+  .neighborhood-controls-row .player-movement-controls {
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .neighborhood-controls-row .player-dpad {
+    grid-template-columns: repeat(3, 42px);
+    grid-template-rows: repeat(2, 42px);
+  }
+
+  .neighborhood-controls-row .player-follow-toggle {
+    min-height: 36px;
+    max-width: none;
+    padding-inline: 0.55rem;
+    font-size: 0.68rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .neighborhood-page *,
+  .neighborhood-page *::before,
+  .neighborhood-page *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

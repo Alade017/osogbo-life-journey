@@ -104,8 +104,14 @@ begin
       select 'event-'||id::text as id,occurred_at as at,event as kind,job_name as label,
         null::bigint as amount,career_level as level from public.player_career_events where character_id=cid and user_id=uid
       union all
-      select 'pay-'||id::text,created_at,'payment',description,amount,null::integer
-        from public.transactions where character_id=cid and user_id=uid and kind='income' and category in ('job','career_shift')
+      select 'pay-'||t.id::text,t.created_at,'payment',
+        coalesce(j.name || ' · ' || r.title,t.description),t.amount,null::integer
+        from public.transactions t
+        left join public.career_shifts s on s.transaction_id=t.id and s.character_id=cid
+        left join public.character_jobs cj on cj.id=s.character_job_id
+        left join public.jobs j on j.id=cj.job_id
+        left join public.career_ranks r on r.path_slug=s.path_slug and r.level=s.rank_level
+        where t.character_id=cid and t.user_id=uid and t.kind='income' and t.category in ('job','career_shift')
     ) records order by at desc,id desc limit 21 offset p_offset
   ) page),'[]'::jsonb);
 end $$;

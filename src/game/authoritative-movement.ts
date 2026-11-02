@@ -2,6 +2,7 @@ import type { MovementIntent, NetworkPlayerSnapshot } from "./multiplayer-state.
 import {
   NEIGHBORHOOD_OBJECTS,
   toScene,
+  type NeighborhoodObstacle,
   type NeighborhoodObject,
   type WorldPoint,
 } from "./neighborhood-model.ts";
@@ -13,6 +14,7 @@ export function canOccupyNeighborhoodPoint(
   point: WorldPoint,
   origin: WorldPoint,
   objects: readonly NeighborhoodObject[] = NEIGHBORHOOD_OBJECTS,
+  obstacles: readonly NeighborhoodObstacle[] = [],
 ) {
   const scenePoint = toScene(point, origin);
   const body = {
@@ -21,13 +23,28 @@ export function canOccupyNeighborhoodPoint(
     top: scenePoint.y + 8,
     bottom: scenePoint.y + 20,
   };
-  return objects.every((object) => {
+  const canOccupyObjects = objects.every((object) => {
     if (object.kind === "npc") return true;
     const solid = {
       left: object.x - 57,
       right: object.x + 57,
       top: object.y - 62,
       bottom: object.y - 4,
+    };
+    return (
+      body.right <= solid.left ||
+      body.left >= solid.right ||
+      body.bottom <= solid.top ||
+      body.top >= solid.bottom
+    );
+  });
+  if (!canOccupyObjects) return false;
+  return obstacles.every((obstacle) => {
+    const solid = {
+      left: obstacle.x - obstacle.width / 2,
+      right: obstacle.x + obstacle.width / 2,
+      top: obstacle.y - obstacle.height / 2,
+      bottom: obstacle.y + obstacle.height / 2,
     };
     return (
       body.right <= solid.left ||
@@ -63,6 +80,7 @@ export function stepAuthoritativePosition(
   deltaSeconds: number,
   origin: WorldPoint = { x: 7, y: 6 },
   objects: readonly NeighborhoodObject[] = NEIGHBORHOOD_OBJECTS,
+  obstacles: readonly NeighborhoodObstacle[] = [],
 ) {
   if (!Number.isFinite(deltaSeconds) || deltaSeconds <= 0) return { x: player.x, y: player.y };
   const magnitude = Math.hypot(intent.x, intent.y);
@@ -78,11 +96,11 @@ export function stepAuthoritativePosition(
       Math.min(PLAYER_WORLD_BOUNDS.maxY, player.y + intent.y * distance),
     ),
   };
-  if (canOccupyNeighborhoodPoint(next, origin, objects)) return next;
+  if (canOccupyNeighborhoodPoint(next, origin, objects, obstacles)) return next;
   const horizontal = { ...next, y: player.y };
-  if (canOccupyNeighborhoodPoint(horizontal, origin, objects)) return horizontal;
+  if (canOccupyNeighborhoodPoint(horizontal, origin, objects, obstacles)) return horizontal;
   const vertical = { x: player.x, y: next.y };
-  return canOccupyNeighborhoodPoint(vertical, origin, objects)
+  return canOccupyNeighborhoodPoint(vertical, origin, objects, obstacles)
     ? vertical
     : { x: player.x, y: player.y };
 }

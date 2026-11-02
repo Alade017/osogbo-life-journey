@@ -57,4 +57,31 @@ describe("authoritative neighborhood movement", () => {
     expect(canOccupyNeighborhoodPoint(insideFootprint, origin, districtObjects)).toBe(false);
     expect(canOccupyNeighborhoodPoint(insideFootprint, origin, cityObjects)).toBe(true);
   });
+
+  it("blocks authored Olaiya compounds and street furniture while keeping the crossing walkable", () => {
+    const area = neighborhoodAreaForSlug("city-centre");
+    const compound = area.obstacles?.find((obstacle) => obstacle.kind === "compound");
+    const bench = area.obstacles?.find((obstacle) => obstacle.kind === "bench");
+    expect(compound).toBeDefined();
+    expect(bench).toBeDefined();
+    expect(
+      canOccupyNeighborhoodPoint(toWorld(compound!, origin), origin, area.objects, area.obstacles),
+    ).toBe(false);
+    expect(
+      canOccupyNeighborhoodPoint(toWorld(bench!, origin), origin, area.objects, area.obstacles),
+    ).toBe(false);
+    expect(canOccupyNeighborhoodPoint({ x: 7, y: 6 }, origin, area.objects, area.obstacles)).toBe(
+      true,
+    );
+    expect(
+      stepAuthoritativePosition(
+        toWorld(compound!, origin),
+        { x: 1, y: 0 },
+        0.05,
+        origin,
+        area.objects,
+        area.obstacles,
+      ),
+    ).toEqual(toWorld(compound!, origin));
+  });
 });

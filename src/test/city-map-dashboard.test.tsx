@@ -1,4 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { within } from "@testing-library/dom";
+import type { ReactNode } from "react";
+import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CityMapDashboard } from "@/components/game/CityMapDashboard";
@@ -6,6 +9,23 @@ import townData from "@/data/osogbo-town.json";
 import osunPlaces from "@/data/osun-public-places.json";
 import { MapCanvas } from "@/components/map/MapCanvas";
 import { findMapPlaceAction } from "@/lib/map-place-action.server";
+vi.mock("@tanstack/react-router", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@tanstack/react-router")>();
+  return {
+    ...actual,
+    Link: ({ to, children, ...props }: { to: string; children: ReactNode; className?: string }) => (
+      <a href={to} {...props}>
+        {children}
+      </a>
+    ),
+  };
+});
+vi.mock("@/components/map/PhaserMapSurface", () => ({
+  PhaserMapSurface: ({ onUnavailable }: { onUnavailable: () => void }) => {
+    useEffect(() => onUnavailable(), [onUnavailable]);
+    return null;
+  },
+}));
 const eventState = vi.hoisted(() => ({
   events: [] as import("@/lib/city-event-service").CityEventOccurrence[],
 }));
@@ -66,7 +86,7 @@ function renderDashboard() {
   clients.push(queryClient);
   queryClient.setQueryData(
     ["mapAvailableLandmarks"],
-    townData.landmarks.map((place) => place.id),
+    [...townData.landmarks.map((place) => place.id), "olaiya-junction"],
   );
   return render(
     <QueryClientProvider client={queryClient}>
@@ -94,23 +114,27 @@ describe("isometric town map", () => {
       },
     ];
     renderDashboard();
-    fireEvent.click(screen.getByRole("button", { name: /Town market,/i }));
+    fireEvent.click(
+      within(screen.getByRole("list", { name: "Places on the map" })).getByRole("button", {
+        name: /Town market,/i,
+      }),
+    );
     expect(await screen.findByText(/Town Market Day · Until/)).toBeVisible();
   });
-  it("renders the 3D canvas and a keyboard-accessible list when WebGL is unavailable", async () => {
+  it("renders the Phaser overview fallback and a keyboard-accessible list", async () => {
     const { container } = renderDashboard();
     expect(
       screen.getByRole("region", { name: /Interactive isometric town map/i }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByText("3D requires WebGL. Your browser could not start it."),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: "Illustrated town map fallback" })).toBeInTheDocument();
     expect(screen.getByRole("list", { name: "Places on the map" })).toBeInTheDocument();
     expect(
-      await screen.findByRole("button", { name: /Civic court, services/i }),
+      within(screen.getByRole("list", { name: "Places on the map" })).getByRole("button", {
+        name: /Civic court, services/i,
+      }),
     ).toBeInTheDocument();
-    expect(screen.queryByRole("img", { name: /osogbo map/i })).not.toBeInTheDocument();
-    expect(container.querySelector(".town-map-zoom-controls")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Travel to Olaiya" })).toBeInTheDocument();
+    expect(container.querySelector(".town-map-phaser-host")).not.toBeInTheDocument();
   });
 
   it("defines a compact hand-authored grid and fictional public venues with action definitions", () => {
@@ -138,6 +162,7 @@ describe("isometric town map", () => {
     expect(
       townData.landmarks.filter((place) => place.category === "worship").map((place) => place.id),
     ).toEqual(["garden-chapel", "mosque-square"]);
+    expect(JSON.stringify(townData)).not.toMatch(/\/models\/city\//);
     expect(JSON.stringify(townData).toLowerCase()).not.toMatch(/sacred|grove|osun-osogbo/);
     expect(townData.landmarks.find((place) => place.id === "lantern-club")?.min_age).toBe(18);
   });
@@ -160,8 +185,16 @@ describe("isometric town map", () => {
         onSelectBillboard={onSelectBillboard}
       />,
     );
-    fireEvent.click(screen.getByRole("button", { name: /Civic court, services/i }));
-    fireEvent.click(screen.getByRole("button", { name: "Billboard for Cedar Goods" }));
+    fireEvent.click(
+      within(screen.getByRole("list", { name: "Places on the map" })).getByRole("button", {
+        name: /Civic court, services/i,
+      }),
+    );
+    fireEvent.click(
+      within(screen.getByRole("list", { name: "Places on the map" })).getByRole("button", {
+        name: "Billboard for Cedar Goods",
+      }),
+    );
     expect(onSelectLandmark).toHaveBeenCalledWith("civic-court");
     expect(onSelectBillboard).toHaveBeenCalledWith("campaign-1");
   });

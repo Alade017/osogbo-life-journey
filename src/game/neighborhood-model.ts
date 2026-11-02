@@ -8,10 +8,27 @@ export type NeighborhoodObject = {
   x: number;
   y: number;
 };
+export type NeighborhoodObstacle = {
+  id: string;
+  kind: "compound" | "shop" | "kiosk" | "tree" | "streetlight" | "bench" | "bin" | "sign";
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+export type NeighborhoodRoad = {
+  id: string;
+  axis: "horizontal" | "vertical";
+  offset: number;
+  width: number;
+  type: "arterial" | "street" | "lane";
+};
 export type NeighborhoodArea = {
   slug: string;
   name: string;
   objects: readonly NeighborhoodObject[];
+  obstacles?: readonly NeighborhoodObstacle[];
+  roads?: readonly NeighborhoodRoad[];
   style: {
     ground: number;
     grid: number;
@@ -25,9 +42,51 @@ export type NeighborhoodArea = {
 };
 export const WORLD_SCALE = 160;
 export const NEIGHBORHOOD_SIZE = { width: 640, height: 560 };
+export const NEIGHBORHOOD_SCENE_BOUNDS = {
+  left: -800,
+  top: -660,
+  width: 2240,
+  height: 1920,
+} as const;
+const CITY_CENTRE_ROADS: readonly NeighborhoodRoad[] = [
+  { id: "olaiya-arterial-north-south", axis: "vertical", offset: 320, width: 84, type: "arterial" },
+  { id: "olaiya-arterial-east-west", axis: "horizontal", offset: 300, width: 80, type: "arterial" },
+  { id: "west-residential-street", axis: "vertical", offset: -410, width: 58, type: "street" },
+  { id: "east-market-street", axis: "vertical", offset: 850, width: 62, type: "street" },
+  { id: "north-compound-lane", axis: "horizontal", offset: -280, width: 54, type: "lane" },
+  { id: "south-compound-lane", axis: "horizontal", offset: 730, width: 58, type: "street" },
+];
+const CITY_CENTRE_OBSTACLES: readonly NeighborhoodObstacle[] = [
+  { id: "compound-west-north", kind: "compound", x: -615, y: -470, width: 150, height: 92 },
+  { id: "compound-west-centre", kind: "compound", x: -180, y: -470, width: 150, height: 92 },
+  { id: "compound-east-north", kind: "compound", x: 510, y: -470, width: 150, height: 92 },
+  { id: "compound-far-east-north", kind: "compound", x: 1130, y: -470, width: 150, height: 92 },
+  { id: "compound-west-south", kind: "compound", x: -615, y: 465, width: 150, height: 92 },
+  { id: "compound-west-far-south", kind: "compound", x: -180, y: 465, width: 150, height: 92 },
+  { id: "compound-east-south", kind: "compound", x: 760, y: 465, width: 150, height: 92 },
+  { id: "compound-east-far-south", kind: "compound", x: 1190, y: 465, width: 150, height: 92 },
+  { id: "corner-kiosk-west", kind: "kiosk", x: -170, y: 190, width: 70, height: 54 },
+  { id: "corner-kiosk-east", kind: "kiosk", x: 670, y: 385, width: 70, height: 54 },
+  { id: "tree-west-north", kind: "tree", x: -730, y: -170, width: 42, height: 42 },
+  { id: "tree-west-south", kind: "tree", x: -690, y: 805, width: 42, height: 42 },
+  { id: "tree-east-north", kind: "tree", x: 1240, y: -180, width: 42, height: 42 },
+  { id: "tree-east-south", kind: "tree", x: 1260, y: 850, width: 42, height: 42 },
+  { id: "tree-market-north", kind: "tree", x: 635, y: -420, width: 42, height: 42 },
+  { id: "streetlight-crossing-west", kind: "streetlight", x: 245, y: 215, width: 20, height: 20 },
+  { id: "streetlight-crossing-east", kind: "streetlight", x: 395, y: 390, width: 20, height: 20 },
+  { id: "streetlight-market-row", kind: "streetlight", x: 895, y: 275, width: 20, height: 20 },
+  { id: "streetlight-south-row", kind: "streetlight", x: 90, y: 755, width: 20, height: 20 },
+  { id: "bench-market-row", kind: "bench", x: 560, y: 325, width: 56, height: 24 },
+  { id: "bench-neighbourhood-square", kind: "bench", x: 30, y: 555, width: 56, height: 24 },
+  { id: "bin-market-row", kind: "bin", x: 625, y: 320, width: 22, height: 22 },
+  { id: "bin-crossing", kind: "bin", x: 80, y: 345, width: 22, height: 22 },
+  { id: "olaiya-wayfinding", kind: "sign", x: 275, y: 230, width: 28, height: 24 },
+];
 export const CITY_CENTRE_AREA: NeighborhoodArea = {
   slug: "city-centre",
   name: "Olaiya",
+  roads: CITY_CENTRE_ROADS,
+  obstacles: CITY_CENTRE_OBSTACLES,
   objects: [
     { id: "home", name: "Your home", kind: "home", x: 170, y: 210 },
     { id: "market", name: "Neighbourhood market", kind: "market", x: 470, y: 210 },

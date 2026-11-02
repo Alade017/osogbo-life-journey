@@ -256,6 +256,7 @@ export class NeighborhoodRoom extends Room {
         delta,
         this.areaOrigin,
         this.area.objects,
+        this.area.obstacles,
       );
       player.x = next.x;
       player.y = next.y;

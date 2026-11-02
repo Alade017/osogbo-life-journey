@@ -100,7 +100,7 @@ export async function handleRentReliefRequest(request: Request) {
       return response(data);
     }
     if (action === "keep") {
-      const rpc = supabaseAdmin.rpc as unknown as (
+      const rpc = supabaseAdmin.rpc.bind(supabaseAdmin) as unknown as (
         name: string,
         args: Record<string, unknown>,
       ) => Promise<{ data: unknown; error: { message: string } | null }>;
@@ -130,7 +130,7 @@ export async function handleRentReliefStateRequest(request: Request) {
   if (!userId) return response({ error: { code: "UNAUTHORIZED" } }, 401);
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const rpc = supabaseAdmin.rpc as unknown as (
+    const rpc = supabaseAdmin.rpc.bind(supabaseAdmin) as unknown as (
       name: string,
       args: Record<string, unknown>,
     ) => Promise<{ data: unknown; error: { message: string } | null }>;
@@ -151,7 +151,7 @@ export async function handleRepossessionAcknowledgment(request: Request) {
     return response({ error: { code: "INVALID_REQUEST" } }, 400);
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const rpc = supabaseAdmin.rpc as unknown as (
+    const rpc = supabaseAdmin.rpc.bind(supabaseAdmin) as unknown as (
       name: string,
       args: Record<string, unknown>,
     ) => Promise<{ data: unknown; error: { message: string } | null }>;

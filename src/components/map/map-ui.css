@@ -61,6 +61,24 @@
   font-weight: 700;
   cursor: pointer;
 }
+.map-neighborhood-link {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--primary) 36%, var(--ring));
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  background: var(--color-primary-soft);
+  color: var(--brand-royal-deep);
+  font-size: 0.78rem;
+  font-weight: 750;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.map-neighborhood-link:hover {
+  background: color-mix(in srgb, var(--primary) 12%, var(--card));
+}
 .osun-state-overview {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(230px, 300px);
@@ -665,6 +683,11 @@
   .map-level-toggle {
     flex: 0 0 auto;
     padding-inline: 0.55rem;
+  }
+  .map-neighborhood-link {
+    flex: 0 0 auto;
+    padding-inline: 0.45rem;
+    font-size: 0.7rem;
   }
   .map-controls {
     top: 48px;

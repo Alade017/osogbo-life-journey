@@ -202,3 +202,28 @@ it("retains past employment and shows empty records honestly", async () => {
   expect(summary.employments[0]).toMatchObject({ current: false, shifts: 4 });
   expect(await value("public.get_career_life_history(0)")).toEqual([]);
 });
+
+it("labels career payments with the workplace and rank held during that shift", async () => {
+  const employment = (
+    await query<{ id: string }>(
+      "insert into character_jobs(user_id,character_id,job_id) values($1,$2,$3) returning id",
+      [alice, char, job],
+    )
+  )[0]!.id;
+  const payment = (
+    await query<{ id: string }>(
+      "insert into transactions(user_id,character_id,wallet_id,amount,kind,category,description) select $1,$2,id,3500,'income','career_shift','Career shift internal-id' from wallets where character_id=$2 returning id",
+      [alice, char],
+    )
+  )[0]!.id;
+  await db.query(
+    `insert into career_shifts(user_id,character_id,character_job_id,location_id,path_slug,rank_level,step_count,status,completed_at,paid_amount,transaction_id)
+    select $1,$2,$3,location_id,'banking',1,3,'completed',now(),3500,$4 from jobs where id=$5`,
+    [alice, char, employment, payment, job],
+  );
+  const rows = await value<{ kind: string; label: string }[]>("public.get_career_life_history(0)");
+  const pay = rows.find((row) => row.kind === "payment");
+  expect(pay?.label).toContain("Banking Assistant");
+  expect(pay?.label).toContain("Cedar Bank");
+  expect(pay?.label).not.toContain("internal-id");
+});

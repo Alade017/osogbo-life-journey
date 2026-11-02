@@ -8,6 +8,7 @@ export const MAP_LANDMARK_LOCATION_SLUG: Record<string, string | null> = {
   "osogbo-township-stadium": "stadium",
   "aleku-wodo-road-network": "residential",
   "oke-fia-flyover": "oke-fia",
+  "olaiya-junction": "city-centre",
   "town-market": "town-market",
   "civic-court": "civic-court",
   "community-police": "community-police",

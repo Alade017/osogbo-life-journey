@@ -18,6 +18,19 @@ describe("neighborhood coordinates and interaction", () => {
     expect(market.marketStalls).toHaveLength(3);
     expect(neighborhoodAreaForSlug("unmapped-district")).toBe(olaiya);
   });
+  it("defines connected Olaiya roads and collision obstacles for the playable scene", () => {
+    const area = neighborhoodAreaForSlug("city-centre");
+    expect(area.roads?.filter((road) => road.type === "arterial")).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ axis: "vertical", offset: 320 }),
+        expect.objectContaining({ axis: "horizontal", offset: 300 }),
+      ]),
+    );
+    expect(area.roads?.some((road) => road.id === "west-residential-street")).toBe(true);
+    expect(area.obstacles?.some((obstacle) => obstacle.kind === "compound")).toBe(true);
+    expect(area.obstacles?.some((obstacle) => obstacle.kind === "streetlight")).toBe(true);
+    expect(area.obstacles?.some((obstacle) => obstacle.kind === "bench")).toBe(true);
+  });
   it("provides a deterministic playable template for every registered city district", () => {
     for (const node of Object.values(OSOGBO_WORLD_NODES)) {
       const area = neighborhoodAreaForSlug(node.slug);

@@ -76,6 +76,10 @@ export function createHousingApiHandlers(deps: HousingApiDependencies) {
       return json(await run(userId));
     } catch (error) {
       const code = errorCode(error);
+      console.error("[housing-api] request failed", {
+        code,
+        message: error instanceof Error ? error.message : String(error),
+      });
       return json(
         { error: { code, reason: reasonByCode[code] ?? code.replaceAll("_", " ").toLowerCase() } },
         statusByCode[code] ?? 500,
@@ -148,7 +152,7 @@ export function createHousingApiHandlers(deps: HousingApiDependencies) {
 async function productionHandlers() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   // SQL migration 0058 adds these RPCs before generated database types are refreshed.
-  const housingRpc = supabaseAdmin.rpc as unknown as (
+  const housingRpc = supabaseAdmin.rpc.bind(supabaseAdmin) as unknown as (
     name: string,
     args: Record<string, unknown>,
   ) => Promise<{ data: unknown; error: { message: string } | null }>;

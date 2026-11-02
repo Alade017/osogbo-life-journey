@@ -9,7 +9,7 @@ export async function getHousingCurrentHome(request: Request) {
   );
   if (authError || !user.user)
     return Response.json({ error: { code: "UNAUTHORIZED" } }, { status: 401 });
-  const housingRpc = supabaseAdmin.rpc as unknown as (
+  const housingRpc = supabaseAdmin.rpc.bind(supabaseAdmin) as unknown as (
     name: string,
     args: Record<string, unknown>,
   ) => Promise<{ data: unknown; error: { message: string } | null }>;

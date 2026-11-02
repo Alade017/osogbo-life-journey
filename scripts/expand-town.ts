@@ -14,8 +14,8 @@ type Category =
     | "sport"
     | "transport";
 
-// [id, label, category, districtId, x, z, model]
-type Place = [string, string, Category, string, number, number, string];
+// [id, label, category, districtId, x, z]
+type Place = [string, string, Category, string, number, number];
 
 // [id, name, theme, traffic, description, x0, z0, x1, z1] (inclusive grid cells)
 type District = [string, string, string, string, string, number, number, number, number];
@@ -35,22 +35,20 @@ const MIGRATION = "supabase/migrations/20261022000000_expanded_town_places.sql";
 const COLS = 24;
 const ROWS = 18;
 const CELL = 2;
-const COMM = "/models/city/commercial/Models/GLB%20format/";
-const SUB = "/models/city/suburban/Models/GLB%20format/";
 const ROAD_ROWS = new Set < number > ([4, 8, 12, 16]);
 const ROAD_COLS = new Set < number > ([6, 12, 18]);
 
 const PLACES: Place[] = [
-    ["riverside-food-court", "Riverside Food Court", "food", "river-quarter", 15, 1, COMM + "building-b.glb"],
-    ["sunrise-health-post", "Sunrise Health Post", "health", "river-quarter", 21, 1, COMM + "building-c.glb"],
-    ["harvest-tech-hub", "Harvest Tech Hub", "services", "river-quarter", 15, 6, COMM + "building-d.glb"],
-    ["old-town-library", "Old Town Library", "school", "river-quarter", 21, 6, SUB + "building-type-b.glb"],
-    ["fish-market", "Fish Market", "market", "south-quarter", 9, 11, COMM + "building-e.glb"],
-    ["lagoon-hotel", "Lagoon Hotel", "services", "east-gate", 21, 11, COMM + "building-f.glb"],
-    ["cinema-star", "Cinema Star", "sport", "east-gate", 15, 10, COMM + "building-g.glb"],
-    ["fuel-and-go", "Fuel and Go Station", "transport", "east-gate", 15, 14, COMM + "building-h.glb"],
-    ["youth-arts-centre", "Youth Arts Centre", "school", "east-gate", 21, 14, SUB + "building-type-d.glb"],
-    ["post-office", "Post Office", "services", "south-quarter", 4, 14, SUB + "building-type-a.glb"],
+    ["riverside-food-court", "Riverside Food Court", "food", "river-quarter", 15, 1],
+    ["sunrise-health-post", "Sunrise Health Post", "health", "river-quarter", 21, 1],
+    ["harvest-tech-hub", "Harvest Tech Hub", "services", "river-quarter", 15, 6],
+    ["old-town-library", "Old Town Library", "school", "river-quarter", 21, 6],
+    ["fish-market", "Fish Market", "market", "south-quarter", 9, 11],
+    ["lagoon-hotel", "Lagoon Hotel", "services", "east-gate", 21, 11],
+    ["cinema-star", "Cinema Star", "sport", "east-gate", 15, 10],
+    ["fuel-and-go", "Fuel and Go Station", "transport", "east-gate", 15, 14],
+    ["youth-arts-centre", "Youth Arts Centre", "school", "east-gate", 21, 14],
+    ["post-office", "Post Office", "services", "south-quarter", 4, 14],
 ];
 
 const DISTRICTS: District[] = [
@@ -113,7 +111,7 @@ for (const [id, name, theme, traffic, description, x0, z0, x1, z1] of DISTRICTS)
 }
 
 // 3. Places: landmark + grid building + a generic visit action.
-for (const [pid, label, cat, districtId, x, z, model] of PLACES) {
+for (const [pid, label, cat, districtId, x, z] of PLACES) {
     town.grid.buildings.push({ placeId: pid, x, z, buildingType: cat });
     town.landmarks.push({
         id: pid,
@@ -127,7 +125,6 @@ for (const [pid, label, cat, districtId, x, z, model] of PLACES) {
         verify: false,
         grid: { x, z },
         buildingType: cat,
-        model,
         actions: [
             {
                 id: `${pid}-visit`,

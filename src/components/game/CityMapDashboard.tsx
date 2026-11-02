@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CloudOff, Compass, MapPinned, Smile } from "lucide-react";
 import {
@@ -68,6 +69,7 @@ export function CityMapDashboard({
   const [actionError, setActionError] = useState("");
   const [placeActionResult, setPlaceActionResult] = useState<PlaceActionResult | null>(null);
   const [selectedBillboard, setSelectedBillboard] = useState<CurrentMapBillboard | null>(null);
+  const [cityTravelRequest, setCityTravelRequest] = useState(false);
   const [billboardNow, setBillboardNow] = useState(() => Date.now());
   const [mapLevel, setMapLevel] = useState<"town" | "state">("town");
   const [selectedTownId, setSelectedTownId] = useState("osogbo");
@@ -156,6 +158,7 @@ export function CityMapDashboard({
       requestMapTravel(landmarkId, idempotencyKey),
     onSuccess: async (result, variables) => {
       setTravelInfo(result);
+      setCityTravelRequest(false);
       clearPendingTravelKey(variables.idempotencyKey);
       setActionError("");
       await Promise.all([
@@ -166,7 +169,10 @@ export function CityMapDashboard({
       ]);
       window.dispatchEvent(new Event("osogbo:server-state-changed"));
     },
-    onError: (e) => setActionError(e.message),
+    onError: (e) => {
+      setCityTravelRequest(false);
+      setActionError(e.message);
+    },
   });
   const apply = useMutation({
     mutationFn: (id: string) => rpc.selectJob(id),
@@ -284,6 +290,13 @@ export function CityMapDashboard({
     if (!searchMatches) return;
     setSearchTarget({ id: searchMatches.id, kind: searchMatches.kind });
   };
+  const travelToOlaiya = () => {
+    setCityTravelRequest(true);
+    travel.mutate({
+      landmarkId: "olaiya-junction",
+      idempotencyKey: getPendingTravelKey("olaiya-junction"),
+    });
+  };
   const rentRecord = rent.data as { next_due_at?: string; due_at?: string } | null;
   const due = nextRentDueAt ?? rentRecord?.next_due_at ?? rentRecord?.due_at;
   const displayedMood =
@@ -326,11 +339,35 @@ export function CityMapDashboard({
           <MapPinned size={16} />
           {mapLevel === "town" ? "Explore Osun" : "Osogbo map"}
         </button>
+        {mapLevel === "town" && currentLocation?.slug === "city-centre" && (
+          <Link className="map-neighborhood-link" to="/neighborhood">
+            Walk Olaiya
+          </Link>
+        )}
+        {mapLevel === "town" &&
+          currentLocation?.slug !== "city-centre" &&
+          availableLandmarks.data?.includes("olaiya-junction") && (
+            <button
+              className="map-neighborhood-link"
+              type="button"
+              disabled={offline || travel.isPending}
+              onClick={travelToOlaiya}
+            >
+              {travel.isPending && cityTravelRequest ? "Travelling..." : "Travel to Olaiya"}
+            </button>
+          )}
       </header>
       {offline && (
         <div role="status" className="map-offline-banner">
           <CloudOff size={16} />
           Offline. Showing your last saved map.
+        </div>
+      )}
+      {travelInfo?.landmark_id === "olaiya-junction" && (
+        <div role="status" className="map-housing-message">
+          {travelInfo.status === "completed"
+            ? "You have arrived at Olaiya. Walk the neighbourhood when ready."
+            : "Your server-authoritative trip to Olaiya is underway."}
         </div>
       )}
       {!offline && housingMarkers.isError && (

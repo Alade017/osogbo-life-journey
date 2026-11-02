@@ -90,73 +90,183 @@ function OptionalModel({
   );
 }
 
-function PlaceholderRoom({ width, depth }: { width: number; depth: number }) {
+function OsogboRoomPrototype({ width, depth }: { width: number; depth: number }) {
+  const floorTileCountX = Math.max(4, Math.floor(width / 0.9));
+  const floorTileCountZ = Math.max(4, Math.floor(depth / 0.9));
   return (
     <group>
       <mesh position={[0, -0.23, 0]}>
         <boxGeometry args={[width + 0.7, 0.22, depth + 0.7]} />
-        <meshStandardMaterial color="#58684b" roughness={1} />
+        <meshStandardMaterial color="#766044" roughness={1} />
       </mesh>
       <mesh position={[0, -0.08, 0]}>
         <boxGeometry args={[width, 0.16, depth]} />
-        <meshStandardMaterial color="#d5c8af" roughness={1} />
+        <meshStandardMaterial color="#d9c6a6" roughness={1} />
       </mesh>
-      <mesh position={[-width * 0.26, 0.01, depth * 0.17]}>
-        <boxGeometry args={[width * 0.44, 0.015, depth * 0.43]} />
-        <meshStandardMaterial color="#5c4a3f" roughness={1} />
+      {Array.from({ length: floorTileCountX - 1 }, (_, index) => {
+        const x = -width / 2 + (width * (index + 1)) / floorTileCountX;
+        return (
+          <mesh key={`floor-x-${index}`} position={[x, 0.006, 0]}>
+            <boxGeometry args={[0.018, 0.012, depth - 0.06]} />
+            <meshStandardMaterial color="#c8b18d" roughness={1} />
+          </mesh>
+        );
+      })}
+      {Array.from({ length: floorTileCountZ - 1 }, (_, index) => {
+        const z = -depth / 2 + (depth * (index + 1)) / floorTileCountZ;
+        return (
+          <mesh key={`floor-z-${index}`} position={[0, 0.006, z]}>
+            <boxGeometry args={[width - 0.06, 0.012, 0.018]} />
+            <meshStandardMaterial color="#c8b18d" roughness={1} />
+          </mesh>
+        );
+      })}
+      <mesh position={[0, 0.018, depth * 0.18]}>
+        <boxGeometry args={[width * 0.45, 0.025, depth * 0.4]} />
+        <meshStandardMaterial color="#263d66" roughness={1} />
       </mesh>
-      <mesh position={[width * 0.25, 0.015, depth * 0.17]}>
-        <boxGeometry args={[width * 0.43, 0.016, depth * 0.43]} />
-        <meshStandardMaterial color="#c7c9be" roughness={1} />
+      <mesh position={[0, 0.034, depth * 0.18]}>
+        <boxGeometry args={[width * 0.4, 0.012, depth * 0.35]} />
+        <meshStandardMaterial color="#bd8b45" roughness={1} />
       </mesh>
+      {[-1, 1].map((side) => (
+        <mesh
+          key={`textile-diamond-${side}`}
+          position={[side * width * 0.105, 0.045, depth * 0.18]}
+          rotation={[0, Math.PI / 4, 0]}
+        >
+          <boxGeometry args={[0.28, 0.014, 0.28]} />
+          <meshStandardMaterial color="#263d66" roughness={1} />
+        </mesh>
+      ))}
       <mesh position={[-width / 2, 0.66, 0]}>
-        <boxGeometry args={[0.12, 1.32, depth]} />
-        <meshStandardMaterial color="#006d59" roughness={1} />
+        <boxGeometry args={[0.16, 1.32, depth]} />
+        <meshStandardMaterial color="#9b5638" roughness={1} />
+      </mesh>
+      <mesh position={[-width / 2 + 0.09, 0.22, 0]}>
+        <boxGeometry args={[0.025, 0.09, depth - 0.12]} />
+        <meshStandardMaterial color="#d6aa59" roughness={1} />
       </mesh>
       <mesh position={[0, 0.66, -depth / 2]}>
-        <boxGeometry args={[width, 1.32, 0.12]} />
-        <meshStandardMaterial color="#08765f" roughness={1} />
+        <boxGeometry args={[width, 1.32, 0.16]} />
+        <meshStandardMaterial color="#ead9bd" roughness={1} />
       </mesh>
-      {width >= 6 && (
-        <mesh position={[width * 0.15, 0.37, -depth * 0.04]}>
-          <boxGeometry args={[0.1, 0.74, depth * 0.55]} />
-          <meshStandardMaterial color="#00806a" roughness={1} />
-        </mesh>
+      <mesh position={[0, 0.17, -depth / 2 + 0.09]}>
+        <boxGeometry args={[width, 0.18, 0.035]} />
+        <meshStandardMaterial color="#47715c" roughness={1} />
+      </mesh>
+      <mesh position={[0, 0.27, -depth / 2 + 0.11]}>
+        <boxGeometry args={[width, 0.025, 0.035]} />
+        <meshStandardMaterial color="#d5a656" roughness={1} />
+      </mesh>
+      {width >= 5 && (
+        <group position={[-width * 0.2, 0.82, -depth / 2 + 0.105]}>
+          <mesh>
+            <boxGeometry args={[1.3, 0.82, 0.08]} />
+            <meshStandardMaterial color="#74503a" roughness={1} />
+          </mesh>
+          <mesh position={[0, 0, 0.05]}>
+            <boxGeometry args={[1.16, 0.68, 0.035]} />
+            <meshStandardMaterial color="#83b9b1" roughness={1} />
+          </mesh>
+          {[-0.38, 0, 0.38].map((x) => (
+            <mesh key={`window-bar-${x}`} position={[x, 0, 0.08]}>
+              <boxGeometry args={[0.035, 0.68, 0.025]} />
+              <meshStandardMaterial color="#f0d7a4" roughness={1} />
+            </mesh>
+          ))}
+          <mesh position={[0, 0, 0.08]}>
+            <boxGeometry args={[1.16, 0.035, 0.025]} />
+            <meshStandardMaterial color="#f0d7a4" roughness={1} />
+          </mesh>
+        </group>
+      )}
+      {width >= 5 && (
+        <group position={[width * 0.27, 0.82, -depth / 2 + 0.11]}>
+          <mesh>
+            <boxGeometry args={[0.68, 0.78, 0.06]} />
+            <meshStandardMaterial color="#875b3d" roughness={1} />
+          </mesh>
+          <mesh position={[0, 0, 0.04]}>
+            <boxGeometry args={[0.56, 0.66, 0.025]} />
+            <meshStandardMaterial color="#263d66" roughness={1} />
+          </mesh>
+          {[-0.2, 0, 0.2].map((y) => (
+            <mesh key={`wall-motif-${y}`} position={[0, y, 0.06]} rotation={[0, 0, Math.PI / 4]}>
+              <boxGeometry args={[0.1, 0.1, 0.018]} />
+              <meshStandardMaterial color="#d9aa5c" roughness={1} />
+            </mesh>
+          ))}
+        </group>
       )}
       {width >= 8 && (
-        <mesh position={[-width * 0.16, 0.4, depth * 0.18]}>
-          <boxGeometry args={[width * 0.28, 0.8, 0.1]} />
-          <meshStandardMaterial color="#00806a" roughness={1} />
-        </mesh>
+        <group position={[width * 0.12, 0.93, -depth / 2 + 0.1]}>
+          {[-0.2, 0, 0.2].map((x) => (
+            <mesh key={`vent-${x}`} position={[x, 0, 0]}>
+              <boxGeometry args={[0.12, 0.13, 0.035]} />
+              <meshStandardMaterial color="#b88b5d" roughness={1} />
+            </mesh>
+          ))}
+        </group>
+      )}
+      {width >= 6 && (
+        <group position={[width * 0.15, 0.37, -depth * 0.04]}>
+          <mesh>
+            <boxGeometry args={[0.12, 0.74, depth * 0.55]} />
+            <meshStandardMaterial color="#76533b" roughness={1} />
+          </mesh>
+          <mesh position={[0.07, 0, 0]}>
+            <boxGeometry args={[0.025, 0.62, depth * 0.48]} />
+            <meshStandardMaterial color="#d6aa59" roughness={1} />
+          </mesh>
+        </group>
       )}
     </group>
   );
 }
 
 function FurnitureFallback({ artKey, slotType }: { artKey: string | undefined; slotType: string }) {
-  const kind = artKey ?? slotType;
+  const rawKind = artKey ?? slotType;
+  const kind =
+    rawKind === "starter-bed"
+      ? "bed"
+      : rawKind === "starter-seat"
+        ? "sofa"
+        : rawKind === "starter-light"
+          ? "light"
+          : rawKind;
   if (kind === "bed")
     return (
       <group>
         <mesh position={[0, 0.14, 0]}>
           <boxGeometry args={[0.95, 0.18, 1.35]} />
-          <meshStandardMaterial color="#8a6048" />
+          <meshStandardMaterial color="#81543a" roughness={0.9} />
         </mesh>
         <mesh position={[0, 0.27, 0]}>
           <boxGeometry args={[0.88, 0.12, 1.22]} />
-          <meshStandardMaterial color="#e7d9b9" />
+          <meshStandardMaterial color="#f0e5cf" roughness={1} />
         </mesh>
         <mesh position={[0, 0.48, -0.66]}>
           <boxGeometry args={[0.98, 0.62, 0.1]} />
-          <meshStandardMaterial color="#654838" />
+          <meshStandardMaterial color="#60432f" roughness={0.9} />
         </mesh>
+        <mesh position={[0, 0.35, 0.43]}>
+          <boxGeometry args={[0.87, 0.035, 0.27]} />
+          <meshStandardMaterial color="#263d66" roughness={1} />
+        </mesh>
+        {[-0.23, 0.23].map((x) => (
+          <mesh key={`bed-textile-${x}`} position={[x, 0.38, 0.43]}>
+            <boxGeometry args={[0.07, 0.04, 0.29]} />
+            <meshStandardMaterial color="#d8ac5e" roughness={1} />
+          </mesh>
+        ))}
         <mesh position={[-0.23, 0.36, -0.4]}>
           <boxGeometry args={[0.36, 0.07, 0.25]} />
-          <meshStandardMaterial color="#fffaf0" />
+          <meshStandardMaterial color="#fffaf0" roughness={1} />
         </mesh>
         <mesh position={[0.23, 0.36, -0.4]}>
           <boxGeometry args={[0.36, 0.07, 0.25]} />
-          <meshStandardMaterial color="#fffaf0" />
+          <meshStandardMaterial color="#fffaf0" roughness={1} />
         </mesh>
       </group>
     );
@@ -165,20 +275,26 @@ function FurnitureFallback({ artKey, slotType }: { artKey: string | undefined; s
       <group>
         <mesh position={[0, 0.26, 0]}>
           <boxGeometry args={[1.15, 0.34, 0.54]} />
-          <meshStandardMaterial color="#7b8b70" />
+          <meshStandardMaterial color="#315d58" roughness={1} />
         </mesh>
         <mesh position={[0, 0.54, -0.24]}>
           <boxGeometry args={[1.15, 0.52, 0.14]} />
-          <meshStandardMaterial color="#65785e" />
+          <meshStandardMaterial color="#244943" roughness={1} />
         </mesh>
         <mesh position={[-0.54, 0.43, 0]}>
           <boxGeometry args={[0.12, 0.44, 0.65]} />
-          <meshStandardMaterial color="#65785e" />
+          <meshStandardMaterial color="#244943" roughness={1} />
         </mesh>
         <mesh position={[0.54, 0.43, 0]}>
           <boxGeometry args={[0.12, 0.44, 0.65]} />
-          <meshStandardMaterial color="#65785e" />
+          <meshStandardMaterial color="#244943" roughness={1} />
         </mesh>
+        {[-0.3, 0, 0.3].map((x, index) => (
+          <mesh key={`sofa-cushion-${x}`} position={[x, 0.53, -0.13]}>
+            <boxGeometry args={[0.23, 0.24, 0.09]} />
+            <meshStandardMaterial color={index === 1 ? "#d29a4d" : "#b85f3e"} roughness={1} />
+          </mesh>
+        ))}
       </group>
     );
   if (kind === "television" || kind === "computer")
@@ -209,16 +325,59 @@ function FurnitureFallback({ artKey, slotType }: { artKey: string | undefined; s
       <group>
         <mesh position={[0, 0.32, 0]}>
           <boxGeometry args={[0.72, 0.64, 0.56]} />
-          <meshStandardMaterial color="#d6d8d6" />
+          <meshStandardMaterial color="#c7b9a2" roughness={0.8} />
         </mesh>
         <mesh position={[0, 0.34, 0.29]}>
           <boxGeometry args={[0.51, 0.32, 0.02]} />
-          <meshStandardMaterial color="#343c42" />
+          <meshStandardMaterial color="#4b4037" roughness={0.8} />
         </mesh>
         {[-0.2, 0.2].map((x) => (
           <mesh key={x} position={[x, 0.65, -0.08]} rotation={[-Math.PI / 2, 0, 0]}>
             <torusGeometry args={[0.11, 0.02, 4, 12]} />
-            <meshStandardMaterial color="#262626" />
+            <meshStandardMaterial color="#403a34" roughness={0.8} />
+          </mesh>
+        ))}
+        <group position={[0, 0.72, -0.08]}>
+          <mesh position={[0, 0.15, 0]}>
+            <cylinderGeometry args={[0.21, 0.17, 0.3, 12]} />
+            <meshStandardMaterial color="#8b4e35" roughness={0.8} />
+          </mesh>
+          <mesh position={[0, 0.32, 0]}>
+            <cylinderGeometry args={[0.22, 0.22, 0.045, 12]} />
+            <meshStandardMaterial color="#68402f" roughness={0.8} />
+          </mesh>
+          <mesh position={[0, 0.36, 0]}>
+            <sphereGeometry args={[0.055, 8, 6]} />
+            <meshStandardMaterial color="#bd9150" roughness={0.8} />
+          </mesh>
+          {[-1, 1].map((side) => (
+            <mesh key={`pot-handle-${side}`} position={[side * 0.22, 0.22, 0]}>
+              <torusGeometry args={[0.055, 0.018, 5, 10]} />
+              <meshStandardMaterial color="#68402f" roughness={0.8} />
+            </mesh>
+          ))}
+        </group>
+      </group>
+    );
+  if (kind === "pot" || kind === "cooking-pot")
+    return (
+      <group>
+        <mesh position={[0, 0.22, 0]}>
+          <cylinderGeometry args={[0.29, 0.22, 0.4, 12]} />
+          <meshStandardMaterial color="#8b4e35" roughness={0.85} />
+        </mesh>
+        <mesh position={[0, 0.43, 0]}>
+          <cylinderGeometry args={[0.3, 0.3, 0.05, 12]} />
+          <meshStandardMaterial color="#68402f" roughness={0.85} />
+        </mesh>
+        <mesh position={[0, 0.48, 0]}>
+          <sphereGeometry args={[0.055, 8, 6]} />
+          <meshStandardMaterial color="#bd9150" roughness={0.8} />
+        </mesh>
+        {[-1, 1].map((side) => (
+          <mesh key={`pot-handle-${side}`} position={[side * 0.29, 0.27, 0]}>
+            <torusGeometry args={[0.07, 0.02, 5, 10]} />
+            <meshStandardMaterial color="#68402f" roughness={0.85} />
           </mesh>
         ))}
       </group>
@@ -300,12 +459,26 @@ function FurnitureFallback({ artKey, slotType }: { artKey: string | undefined; s
       <group>
         <mesh position={[0, 0.7, 0]}>
           <boxGeometry args={[0.92, 1.4, 0.48]} />
-          <meshStandardMaterial color="#79533c" />
+          <meshStandardMaterial color="#78503a" roughness={0.85} />
+        </mesh>
+        <mesh position={[0, 0.69, 0.25]}>
+          <boxGeometry args={[0.78, 1.17, 0.025]} />
+          <meshStandardMaterial color="#8c6042" roughness={0.85} />
+        </mesh>
+        {[-0.2, 0.2].map((x) => (
+          <mesh key={`wardrobe-inlay-${x}`} position={[x, 0.69, 0.27]}>
+            <boxGeometry args={[0.035, 1.02, 0.015]} />
+            <meshStandardMaterial color="#c59a57" roughness={0.8} />
+          </mesh>
+        ))}
+        <mesh position={[0, 0.2, 0.27]}>
+          <boxGeometry args={[0.82, 0.035, 0.02]} />
+          <meshStandardMaterial color="#263d66" roughness={1} />
         </mesh>
         {[-0.2, 0.2].map((x) => (
           <mesh key={x} position={[x, 0.72, 0.25]}>
             <boxGeometry args={[0.035, 0.13, 0.025]} />
-            <meshStandardMaterial color="#d0b77e" />
+            <meshStandardMaterial color="#dfbd79" metalness={0.25} roughness={0.55} />
           </mesh>
         ))}
       </group>
@@ -332,11 +505,25 @@ function FurnitureFallback({ artKey, slotType }: { artKey: string | undefined; s
       <group>
         <mesh position={[0, 0.7, 0]}>
           <boxGeometry args={[0.76, 0.62, 0.045]} />
-          <meshStandardMaterial color="#69442f" />
+          <meshStandardMaterial color="#6e4935" roughness={0.85} />
         </mesh>
         <mesh position={[0, 0.7, 0.03]}>
           <planeGeometry args={[0.65, 0.5]} />
-          <meshStandardMaterial color="#dda568" />
+          <meshStandardMaterial color="#263d66" roughness={1} />
+        </mesh>
+        {[-1, 1].map((side) => (
+          <mesh
+            key={`wall-art-motif-${side}`}
+            position={[side * 0.14, 0.7, 0.045]}
+            rotation={[0, 0, Math.PI / 4]}
+          >
+            <boxGeometry args={[0.12, 0.12, 0.02]} />
+            <meshStandardMaterial color="#d5a656" roughness={1} />
+          </mesh>
+        ))}
+        <mesh position={[0, 0.7, 0.05]}>
+          <boxGeometry args={[0.035, 0.35, 0.02]} />
+          <meshStandardMaterial color="#b85f3e" roughness={1} />
         </mesh>
       </group>
     );
@@ -585,7 +772,7 @@ export function HouseRoom3D({
         <OptionalModel
           path={modelPath}
           tier={ACCESSORY_TIER[accessoryBand] ?? 1}
-          fallback={<PlaceholderRoom width={width} depth={depth} />}
+          fallback={<OsogboRoomPrototype width={width} depth={depth} />}
         />
         {slots.map((slot) => (
           <SlotObject

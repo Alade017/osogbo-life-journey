@@ -8,15 +8,7 @@ The 3D character API accepts semantic animations (`idle`, `walk`, `sit`, `work`,
 
 The `/models` development route previews a character inside an interior scene. It does not provide a city map or grant access to private homes.
 
-The `/map` route is a React Three Fiber isometric town scene. Its compact hand-authored layout is in `src/data/osogbo-town.json`; the coordinates are fictional game layout values, not geographic data. Repeated ground cells, roadside trees and cars use instanced meshes. Public venue names are fictional, generic and have no address or real-building association. Sacred and religious sites, real business names, real residence details and actual building footprints are excluded from the active scene. Venue actions still pass through the existing authenticated API and server RPC. The Lantern Club age restriction is stored in `map_landmarks.min_age` and checked by the server.
-
-The map currently uses low-poly GLBs from Kenney's City Kit (Commercial) and City Kit (Suburban) packs. The packs are CC0 and their `License.txt` files remain in their source folders under `city/`. Only the model paths referenced by the town JSON are loaded when the map opens. GLBs follow the pack's glTF 2.0, Y-up, meter-scale contract; no original game or brand assets are included.
-
-## Town map Blender export contract
-
-The R3F town map also accepts these Blender-exported glTF 2.0 binary files directly under this folder: `town.glb`, `compound.glb`, `flat.glb`, and `shophouse.glb`. Export with transforms applied, Y-up, meter units, and compressed Draco or meshopt geometry. `town.glb` should contain only the shared terrain, roads, public greenery, and other non-property scenery; the map places each property model separately from game state. Keep texture dimensions small and reuse materials to limit mobile draw calls.
-
-For tiered property variants, name optional nodes `Accessory_Tier2_Generator` and `Accessory_Tier3_<Name>` (for example, `Accessory_Tier3_WaterTank`). The map shows an accessory only when the supplied property tier is high enough. The `compound`, `flat`, and `shophouse` files should have a ground-level origin and no gameplay data: owner and rent-state labels come only from the map input.
+The `/map` route is a React dashboard with a Phaser-rendered city overview. The authenticated `/neighborhood` route hosts the playable Olaiya neighbourhood; React manages controls and interactions, while Colyseus remains authoritative for player movement and collision. The authored town directory in `src/data/osogbo-town.json` contains fictional layout coordinates, not geographic data. Public venue names are fictional and generic; venue actions still pass through the existing authenticated API and server RPC.
 
 Production home entry still uses its established route and checks. All connected player fixtures currently share one development body; saved appearance/equipment records are preserved but full Blender visual mapping awaits actual modular assets.
 

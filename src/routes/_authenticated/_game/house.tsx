@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -334,6 +334,7 @@ async function authorizedFetch(path: string, init?: RequestInit) {
 }
 
 export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const gameTime = useGameTime();
   const { data: character, isLoading: characterLoading } = useQuery(q.character());
@@ -663,6 +664,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       ]);
       setActivityError("");
       toast.success(command === "enter_player_home" ? "You're home." : "You went outside.");
+      if (command === "leave_player_home") await navigate({ to: "/neighborhood" });
     },
     onError: (error: Error) => {
       setActivityError(error.message);

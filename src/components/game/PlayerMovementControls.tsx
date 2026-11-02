@@ -20,12 +20,14 @@ const KEYS: Record<string, MovementDirection> = {
 export function PlayerMovementControls({
   onDirectionChange,
   onFollowChange,
+  initialFollowing = false,
 }: {
   onDirectionChange: (directions: ReadonlySet<MovementDirection>) => void;
   onFollowChange: (enabled: boolean) => void;
+  initialFollowing?: boolean;
 }) {
   const held = useRef(new Set<MovementDirection>());
-  const [following, setFollowing] = useState(false);
+  const [following, setFollowing] = useState(initialFollowing);
   const update = useCallback(
     (direction: MovementDirection, active: boolean) => {
       if (active) held.current.add(direction);
