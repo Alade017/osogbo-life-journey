@@ -1,0 +1,330 @@
+.career-learning-app {
+  min-width: 0;
+  color: var(--foreground);
+}
+.learning-hero {
+  position: relative;
+  overflow: hidden;
+  padding: 28px 22px;
+  border-radius: 24px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  margin-bottom: 18px;
+}
+.learning-hero h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.8rem, 5vw, 2.7rem);
+  line-height: 1.12;
+  margin: 12px 0;
+  letter-spacing: -0.04em;
+}
+.learning-hero p {
+  max-width: 34rem;
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+.learning-kicker {
+  display: block;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  line-height: 1.6;
+}
+.learning-hero-role {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid currentColor;
+  font-size: 0.85rem;
+}
+.learning-hero-icon {
+  position: absolute;
+  right: 22px;
+  top: 22px;
+  opacity: 0.25;
+}
+.learning-tabs {
+  display: flex;
+  gap: 5px;
+  padding: 5px;
+  margin: 16px 0;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--muted);
+  overflow-x: auto;
+}
+.learning-tabs button {
+  display: flex;
+  flex: 1;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 8px 10px;
+  border-radius: 11px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.learning-tabs button[aria-current] {
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow: 0 2px 6px #0000000d;
+}
+.learning-tabs button:focus-visible,
+.learning-save:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.learning-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 18px 0;
+}
+.learning-stats > div {
+  min-width: 0;
+  padding: 14px 10px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+.learning-stats dt {
+  font-size: 0.65rem;
+  color: var(--muted-foreground);
+}
+.learning-stats dd {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-wrap: anywhere;
+  font-size: clamp(0.95rem, 3vw, 1.35rem);
+  font-weight: 800;
+  margin-top: 4px;
+}
+.learning-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+}
+.learning-search input {
+  min-width: 0;
+  width: 100%;
+  padding: 15px 0;
+  outline: none;
+  background: transparent;
+  font-size: 0.85rem;
+}
+.learning-search:focus-within {
+  outline: 2px solid var(--primary);
+}
+.learning-notice {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px;
+  margin: 14px 0;
+  background: var(--muted);
+  border-radius: 16px;
+  font-size: 0.8rem;
+}
+.learning-notice > div {
+  flex: 1;
+  min-width: 180px;
+}
+.learning-notice p {
+  margin: 4px 0;
+}
+.learning-notice a {
+  display: inline-block;
+  font-weight: 800;
+  margin-top: 8px;
+  text-decoration: underline;
+}
+.learning-balance {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 0.8rem;
+  margin: 18px 0;
+  color: var(--muted-foreground);
+}
+.learning-balance strong {
+  color: var(--foreground);
+}
+.learning-course-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 14px;
+}
+.learning-card {
+  min-width: 0;
+  padding: 20px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  margin-bottom: 14px;
+}
+.learning-card h2,
+.learning-card h3,
+.learning-records > h2,
+.learning-empty h2 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.15rem;
+  overflow-wrap: anywhere;
+}
+.learning-card p {
+  font-size: 0.85rem;
+  color: var(--muted-foreground);
+  line-height: 1.6;
+  margin-top: 8px;
+}
+.learning-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.learning-course {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+}
+.learning-course > p {
+  flex: 1;
+  margin: 0;
+}
+.learning-course-icon {
+  display: inline-flex;
+  padding: 12px;
+  border-radius: 15px;
+  background: var(--muted);
+  color: var(--primary);
+}
+.learning-save {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+}
+.learning-save[aria-pressed="true"] {
+  color: var(--primary);
+  background: var(--muted);
+}
+.learning-save:disabled {
+  opacity: 0.45;
+}
+.learning-badge {
+  display: inline-block;
+  align-self: flex-start;
+  padding: 5px 9px;
+  border-radius: 8px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  background: var(--muted);
+}
+.learning-rewards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--primary);
+}
+.learning-course-cost {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  gap: 8px;
+}
+.learning-course-cost span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+.learning-empty {
+  text-align: center;
+  padding: 32px 20px;
+  border: 1px dashed var(--border);
+  border-radius: 20px;
+}
+.learning-empty > svg {
+  margin: 0 auto 12px;
+  color: var(--primary);
+}
+.learning-empty p,
+.learning-caption {
+  font-size: 0.75rem;
+  line-height: 1.6;
+  color: var(--muted-foreground);
+  margin: 12px 0;
+}
+.learning-records {
+  margin-top: 24px;
+}
+.learning-records > h2 {
+  margin-bottom: 14px;
+}
+.career-timeline {
+  padding: 0;
+  list-style: none;
+}
+.career-timeline li {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+  padding: 16px 0;
+  font-size: 0.8rem;
+}
+.career-timeline li > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.career-timeline strong {
+  white-space: nowrap;
+}
+.career-timeline time {
+  font-size: 0.68rem;
+  color: var(--muted-foreground);
+}
+.learning-pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 0;
+  font-size: 0.75rem;
+}
+@media (max-width: 440px) {
+  .learning-hero {
+    padding: 24px 18px;
+  }
+  .learning-tabs button {
+    flex-direction: column;
+    gap: 3px;
+    padding: 8px;
+  }
+  .learning-card {
+    padding: 16px;
+  }
+}

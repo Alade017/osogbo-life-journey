@@ -124,7 +124,7 @@ const PHONE_APPS: readonly PhoneAppDefinition[] = [
   { label: "Map", icon: MapPinned, tone: "phone-app-blue" },
   { label: "Messages", icon: MessagesSquare, tone: "phone-app-coral" },
   { label: "Rent homes", icon: HousePlus, tone: "phone-app-green" },
-  { label: "Jobs", icon: BriefcaseBusiness, tone: "phone-app-gold" },
+  { label: "Career Life", icon: BriefcaseBusiness, tone: "phone-app-gold" },
   { label: "Bank", icon: Landmark, tone: "phone-app-blue" },
   { label: "Missions", icon: Target, tone: "phone-app-gold" },
   { label: "Inventory", icon: Backpack, tone: "phone-app-blue" },
@@ -358,8 +358,7 @@ export function PhoneLauncher({
       return <PhonePartyApp />;
     }
 
-    if (appName === "Career Life" || appName === "Education" || appName === "Courses")
-      return <EducationPage phoneMode />;
+    if (appName === "Education" || appName === "Courses") return <EducationPage phoneMode />;
 
     if (appName === "Map") {
       return <PhoneMapApp />;
@@ -369,7 +368,7 @@ export function PhoneLauncher({
       return <PhoneBankApp />;
     }
 
-    if (appName === "Jobs") return <JobsPage />;
+    if (appName === "Career Life" || appName === "Jobs") return <JobsPage />;
 
     if (appName === "Invest" || appName === "Company" || appName === "Businesses") {
       return <BusinessInvestmentApp mode={appName === "Invest" ? "invest" : "company"} />;

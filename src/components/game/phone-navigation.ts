@@ -19,7 +19,7 @@ export const PHONE_APP_ROUTES: Readonly<Record<string, string>> = {
   "/rentals": "Rent homes",
   "/property": "Property",
   "/properties": "Find homes",
-  "/jobs": "Jobs",
+  "/jobs": "Career Life",
   "/education": "Education",
   "/map": "Map",
   "/wallet": "Bank",

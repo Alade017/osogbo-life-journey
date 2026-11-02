@@ -35,7 +35,7 @@ export function GameMobileNav({ hidden, onNavigate }: { hidden: boolean; onNavig
         onClick={onNavigate}
       >
         <Briefcase className="h-4.75 w-4.75" />
-        <span>Jobs</span>
+        <span>Career Life</span>
       </Link>
     </nav>
   );

@@ -22,10 +22,12 @@ import { checkJobEligibility, filterJobListings } from "@/lib/job-board-service"
 import { formatGameTime } from "@/lib/game-time";
 import { useWorldClock } from "@/hooks/use-world-clock";
 import { CareerPanel } from "@/components/game/CareerPanel";
+import { CareerLifeApp } from "@/components/game/CareerLifeApp";
 import { isCareerJob } from "@/lib/career-rules";
 
 export const Route = createFileRoute("/_authenticated/_game/jobs")({
-  head: () => pageMeta("Jobs", "Take a job in Osogbo and work shifts to earn in-game Naira."),
+  head: () =>
+    pageMeta("Career Life", "Your jobs, work history, earnings, and education in Osogbo."),
   component: JobsPage,
 });
 
@@ -44,6 +46,10 @@ function fmt(ms: number) {
 }
 
 export function JobsPage() {
+  return <CareerLifeApp opportunities={<JobBoardPage />} />;
+}
+
+function JobBoardPage() {
   const { data: worldTime } = useWorldClock();
   const now = useNow();
   const [search, setSearch] = useState("");
@@ -175,7 +181,7 @@ export function JobsPage() {
         </div>
       </header>
 
-      <CareerPanel />
+      <CareerPanel mode="opportunities" />
 
       {currentJob && (
         <Dialog open={workSessionOpen} onOpenChange={setWorkSessionOpen}>

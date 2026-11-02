@@ -37,7 +37,7 @@ describe("phone navigation controller", () => {
   it("maps in-phone routes to apps and keeps the selected app as its title", () => {
     expect(phoneAppForPath("/home")).toBe("Home");
     expect(phoneAppForPath("/house")).toBe("Home");
-    expect(phoneAppForPath("/jobs")).toBe("Jobs");
+    expect(phoneAppForPath("/jobs")).toBe("Career Life");
     expect(phoneAppForPath("/location/market-square")).toBe("Map");
     expect(phoneAppForPath("/not-an-app")).toBeUndefined();
 
@@ -78,7 +78,7 @@ describe("phone navigation controller", () => {
     );
 
     fireEvent.click(screen.getByRole("link", { name: "Jobs" }));
-    expect(openApp).toHaveBeenCalledWith("Jobs", undefined);
+    expect(openApp).toHaveBeenCalledWith("Career Life", undefined);
     expect(window.location.pathname).toBe("/");
     expect(
       screen.getByText("Current phone app remains mounted unless a phone route is selected."),

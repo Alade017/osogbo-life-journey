@@ -17,7 +17,7 @@ import {
   startCareerShift,
 } from "@/lib/career-service";
 
-export function CareerPanel() {
+export function CareerPanel({ mode = "all" }: { mode?: "all" | "current" | "opportunities" }) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
@@ -117,18 +117,26 @@ export function CareerPanel() {
     leave.isPending;
 
   return (
-    <section className="game-panel mb-5 space-y-4 p-4" aria-labelledby="career-title">
+    <section
+      className="game-panel mb-5 space-y-4 p-4"
+      aria-label={mode === "current" ? "Current career" : "Career paths"}
+    >
       <div>
         <p className="jobs-eyebrow">BUILD YOUR FUTURE</p>
         <h2 id="career-title" className="font-display text-xl font-bold">
-          Career paths
+          {mode === "current" ? "Your career progression" : "Career paths"}
         </h2>
         <p className="text-sm text-muted-foreground">
           Apply at a workplace, complete three steps per shift, then claim your pay.
         </p>
       </div>
 
-      {activeCareer && currentEmployment && rank && (
+      {mode === "current" && !activeCareer && (
+        <p className="text-sm text-muted-foreground">
+          Choose a career path in Opportunities to start working toward promotions.
+        </p>
+      )}
+      {mode !== "opportunities" && activeCareer && currentEmployment && rank && (
         <div className="rounded-xl border border-border bg-muted/40 p-4 space-y-3">
           <div className="flex flex-wrap items-start justify-between gap-2">
             <div>
@@ -258,82 +266,86 @@ export function CareerPanel() {
         </div>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {careerJobs.map((job) => {
-          const pathSlug = job.slug.includes("retail") ? "retail" : "banking";
-          const path = catalog.data.paths.find((item) => item.slug === pathSlug);
-          const entry = catalog.data.ranks.find(
-            (item) => item.path_slug === pathSlug && item.level === 1,
-          );
-          const location = locations?.find((item) => item.id === job.location_id);
-          const here = character.current_location_id === job.location_id;
-          const alreadyEmployed = !!activeCareer && activeCareer.id !== job.id;
-          return (
-            <article
-              key={job.id}
-              className="min-w-0 space-y-2 rounded-xl border border-border bg-card p-3"
-            >
-              <p className="flex items-center gap-1 text-xs font-bold text-muted-foreground">
-                <MapPin size={13} /> {location?.name ?? "Workplace"}
-              </p>
-              <h3 className="flex items-center gap-2 font-display font-bold">
-                <BriefcaseBusiness size={17} /> {path?.name ?? job.name}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {path?.description ?? job.description}
-              </p>
-              <p className="text-sm">
-                <strong>{entry?.title}</strong> · {formatNaira(entry?.salary)}/shift · 3 ranks
-              </p>
-              {activeCareer?.id === job.id ? (
-                <p className="text-sm font-bold">Your current workplace</p>
-              ) : !here && location ? (
-                <Button asChild variant="plain" className="w-full">
-                  <Link to="/location/$slug" params={{ slug: location.slug }}>
-                    Travel here to apply
-                  </Link>
-                </Button>
-              ) : (
-                <Button
-                  className="w-full"
-                  disabled={pending || alreadyEmployed || character.level < job.required_level}
-                  onClick={() => apply.mutate(job.id)}
-                >
-                  {alreadyEmployed
-                    ? "Leave current career first"
-                    : character.level < job.required_level
-                      ? `Requires level ${job.required_level}`
-                      : apply.isPending
-                        ? "Applying…"
-                        : "Apply for career"}
-                </Button>
-              )}
-            </article>
-          );
-        })}
-      </div>
-      <section className="text-sm">
-        <h3 className="font-semibold">Shift history</h3>
-        {history.data.filter((shift) => shift.status === "completed").length === 0 ? (
-          <p className="mt-2 text-muted-foreground">No completed career shifts yet.</p>
-        ) : (
-          <ul className="mt-2 space-y-1">
-            {history.data
-              .filter((shift) => shift.status === "completed")
-              .map((shift) => (
-                <li
-                  key={shift.id}
-                  className="flex justify-between gap-2 border-b border-border py-1"
-                >
-                  <span>
-                    {shift.path_slug} · Level {shift.rank_level}
-                  </span>
-                  <strong>{formatNaira(shift.paid_amount)}</strong>
-                </li>
-              ))}
-          </ul>
-        )}
-      </section>
+      {mode !== "current" && (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {careerJobs.map((job) => {
+            const pathSlug = job.slug.includes("retail") ? "retail" : "banking";
+            const path = catalog.data.paths.find((item) => item.slug === pathSlug);
+            const entry = catalog.data.ranks.find(
+              (item) => item.path_slug === pathSlug && item.level === 1,
+            );
+            const location = locations?.find((item) => item.id === job.location_id);
+            const here = character.current_location_id === job.location_id;
+            const alreadyEmployed = !!activeCareer && activeCareer.id !== job.id;
+            return (
+              <article
+                key={job.id}
+                className="min-w-0 space-y-2 rounded-xl border border-border bg-card p-3"
+              >
+                <p className="flex items-center gap-1 text-xs font-bold text-muted-foreground">
+                  <MapPin size={13} /> {location?.name ?? "Workplace"}
+                </p>
+                <h3 className="flex items-center gap-2 font-display font-bold">
+                  <BriefcaseBusiness size={17} /> {path?.name ?? job.name}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {path?.description ?? job.description}
+                </p>
+                <p className="text-sm">
+                  <strong>{entry?.title}</strong> · {formatNaira(entry?.salary)}/shift · 3 ranks
+                </p>
+                {activeCareer?.id === job.id ? (
+                  <p className="text-sm font-bold">Your current workplace</p>
+                ) : !here && location ? (
+                  <Button asChild variant="plain" className="w-full">
+                    <Link to="/location/$slug" params={{ slug: location.slug }}>
+                      Travel here to apply
+                    </Link>
+                  </Button>
+                ) : (
+                  <Button
+                    className="w-full"
+                    disabled={pending || alreadyEmployed || character.level < job.required_level}
+                    onClick={() => apply.mutate(job.id)}
+                  >
+                    {alreadyEmployed
+                      ? "Leave current career first"
+                      : character.level < job.required_level
+                        ? `Requires level ${job.required_level}`
+                        : apply.isPending
+                          ? "Applying…"
+                          : "Apply for career"}
+                  </Button>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      )}
+      {mode === "all" && (
+        <section className="text-sm">
+          <h3 className="font-semibold">Shift history</h3>
+          {history.data.filter((shift) => shift.status === "completed").length === 0 ? (
+            <p className="mt-2 text-muted-foreground">No completed career shifts yet.</p>
+          ) : (
+            <ul className="mt-2 space-y-1">
+              {history.data
+                .filter((shift) => shift.status === "completed")
+                .map((shift) => (
+                  <li
+                    key={shift.id}
+                    className="flex justify-between gap-2 border-b border-border py-1"
+                  >
+                    <span>
+                      {shift.path_slug} · Level {shift.rank_level}
+                    </span>
+                    <strong>{formatNaira(shift.paid_amount)}</strong>
+                  </li>
+                ))}
+            </ul>
+          )}
+        </section>
+      )}
     </section>
   );
 }
