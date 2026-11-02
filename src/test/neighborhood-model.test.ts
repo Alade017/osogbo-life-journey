@@ -8,6 +8,7 @@ import {
   toWorld,
   validCheckpoint,
 } from "@/game/neighborhood-model";
+import { canOccupyNeighborhoodPoint } from "@/game/authoritative-movement";
 describe("neighborhood coordinates and interaction", () => {
   it("selects distinct shared street layouts for Olaiya and Oja-Oba", () => {
     const olaiya = neighborhoodAreaForSlug("city-centre");
@@ -22,10 +23,20 @@ describe("neighborhood coordinates and interaction", () => {
     const area = neighborhoodAreaForSlug("city-centre");
     expect(area.roads?.filter((road) => road.type === "arterial")).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ axis: "vertical", offset: 320 }),
-        expect.objectContaining({ axis: "horizontal", offset: 300 }),
+        expect.objectContaining({ axis: "vertical", offset: 500 }),
+        expect.objectContaining({ axis: "horizontal", offset: 500 }),
       ]),
     );
+    expect(area.roads?.find((road) => road.id === "home-access-lane")).toMatchObject({
+      axis: "horizontal",
+      start: 320,
+      end: 500,
+    });
+    expect(area.paths?.[0]).toMatchObject({
+      id: "home-to-street-path",
+      from: { x: 320, y: 300 },
+      to: { x: 320, y: 340 },
+    });
     expect(area.roads?.some((road) => road.id === "west-residential-street")).toBe(true);
     expect(area.obstacles?.some((obstacle) => obstacle.kind === "compound")).toBe(true);
     expect(area.obstacles?.some((obstacle) => obstacle.kind === "streetlight")).toBe(true);
@@ -60,9 +71,20 @@ describe("neighborhood coordinates and interaction", () => {
     expect(toWorld(toScene(checkpoint, origin), origin)).toEqual(checkpoint);
   });
   it("only offers interaction within reach and picks the closest target", () => {
-    expect(nearestInteraction({ x: 320, y: 300 })).toBeNull();
+    const area = neighborhoodAreaForSlug("city-centre");
+    expect(nearestInteraction({ x: 320, y: 300 }, area.objects)?.kind).toBe("home");
+    expect(
+      canOccupyNeighborhoodPoint({ x: 7, y: 6 }, { x: 7, y: 6 }, area.objects, area.obstacles),
+    ).toBe(true);
+    expect(
+      canOccupyNeighborhoodPoint(
+        toWorld({ x: 320, y: 260 }, { x: 7, y: 6 }),
+        { x: 7, y: 6 },
+        area.objects,
+        area.obstacles,
+      ),
+    ).toBe(false);
     expect(nearestInteraction({ x: 190, y: 420 })?.kind).toBe("npc");
-    expect(nearestInteraction({ x: 170, y: 220 })?.kind).toBe("home");
   });
   it("rejects corrupt and out-of-city checkpoints", () => {
     expect(validCheckpoint({ x: 7, y: 6 })).toBe(true);

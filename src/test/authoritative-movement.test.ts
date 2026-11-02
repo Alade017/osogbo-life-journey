@@ -33,7 +33,7 @@ describe("authoritative neighborhood movement", () => {
   });
 
   it("blocks building footprints on the server movement model", () => {
-    const blocked = { x: 6.06, y: 5.2 };
+    const blocked = toWorld({ x: 320, y: 260 }, origin);
     expect(canOccupyNeighborhoodPoint(blocked, origin)).toBe(false);
     expect(canOccupyNeighborhoodPoint({ x: 7, y: 6 }, origin)).toBe(true);
     const moved = stepAuthoritativePosition(blocked, { x: -1, y: 0 }, 0.05, origin);

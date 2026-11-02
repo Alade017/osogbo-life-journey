@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { HouseRoomRenderer } from "@/components/game/housing/HouseRoomRenderer";
 import type { HouseRoomRendererProps } from "@/components/game/housing/house-room-contract";
@@ -66,5 +66,38 @@ describe("R3F home renderer boundary", () => {
     );
     expect(screen.getByRole("button", { name: "sofa" })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Place in bed slot" })).toBeDisabled();
+  });
+
+  it("offers only compatible free slots when a selected placement is being moved", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    scene.fail = true;
+    const input = props();
+    input.editMode = true;
+    input.moveEnabled = true;
+    const placement = {
+      id: "sofa-1",
+      item_id: "sofa",
+      slot: "lounge-sofa",
+      slot_type: "sofa",
+      art_key: "sofa",
+      category: "furniture",
+    };
+    const destination = { id: "lounge-sofa-2", slot_type: "sofa", x: 65, y: 50 };
+    render(
+      <HouseRoomRenderer
+        {...input}
+        movingPlacement={placement}
+        placements={[placement]}
+        slots={[
+          { id: "lounge-sofa", slot_type: "sofa", x: 35, y: 50 },
+          destination,
+          { id: "bed-1", slot_type: "bed", x: 25, y: 30 },
+        ]}
+      />,
+    );
+    const moveButton = await screen.findByRole("button", { name: "Move to sofa slot" });
+    expect(screen.queryByRole("button", { name: "Move to bed slot" })).not.toBeInTheDocument();
+    fireEvent.click(moveButton);
+    expect(input.onMove).toHaveBeenCalledWith(placement, destination);
   });
 });

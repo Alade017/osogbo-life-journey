@@ -25,6 +25,7 @@ type Props = {
   selectedPlacement: HousePlacement | null;
   onClose: () => void;
   onPlace: (itemId: string, slot: HouseSlot) => void;
+  onSelectSlot: (slot: HouseSlot) => void;
   onRemove: (placement: HousePlacement) => void;
   onMove: (placement: HousePlacement, slot: HouseSlot) => void;
   onEquip: (itemId: string) => void;
@@ -85,6 +86,7 @@ export function HouseEditSheets({
   selectedPlacement,
   onClose,
   onPlace,
+  onSelectSlot,
   onRemove,
   onMove,
   onEquip,
@@ -94,6 +96,7 @@ export function HouseEditSheets({
   const [tab, setTab] = useState<"room" | "avatar">("room");
   const [equipmentSlot, setEquipmentSlot] = useState<keyof HouseOutfit>("top");
   const [roomIndex, setRoomIndex] = useState(0);
+  const [filterText, setFilterText] = useState("");
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
   useEffect(() => setConfirmRemove(false), [selectedPlacement?.id, selectedSlot?.id]);
@@ -108,22 +111,26 @@ export function HouseEditSheets({
       slots.some((slot) => slot.slot_type === item.slot_type) &&
       (!selectedSlot || item.slot_type === selectedSlot.slot_type),
   );
+  const matchesFilter = (item: { id: string; slot_type: string }) => {
+    const query = filterText.trim().toLowerCase();
+    return !query || `${itemName(item.id)} ${item.slot_type}`.toLowerCase().includes(query);
+  };
   const roomItems = selectedSlot
-    ? availableFurniture
+    ? availableFurniture.filter(matchesFilter)
     : availableFurniture.filter((item) =>
         (rooms[roomIndex]?.slots as readonly string[]).includes(item.slot_type),
-      );
+      ).filter(matchesFilter);
   const ownedRoomItems = selectedSlot
     ? []
     : inventory.filter(
         (item) =>
           item.category === "furniture" &&
           (rooms[roomIndex]?.slots as readonly string[]).includes(item.slot_type),
-      );
+        ).filter((item) => matchesFilter({ id: item.item_id, slot_type: item.slot_type }));
   const ownedForSlot = selectedSlot
     ? inventory.filter(
         (item) => item.category === "furniture" && item.slot_type === selectedSlot.slot_type,
-      )
+        ).filter((item) => matchesFilter({ id: item.item_id, slot_type: item.slot_type }))
     : [];
   const moveTargets = selectedPlacement
     ? slots.filter(
@@ -146,10 +153,11 @@ export function HouseEditSheets({
 
   const shopRows = (items: CatalogItem[]) =>
     items.length ? (
-      items.map((item) => {
+      <div className="house-catalog-grid">
+        {items.map((item) => {
         const cannotAfford = cash !== null && cash < item.price_minor;
         return (
-          <div className="house-inventory-row house-shop-row" key={item.id}>
+          <article className="house-catalog-card" key={item.id}>
             {item.category === "furniture" ? (
               <ItemImage item={item} />
             ) : (
@@ -159,22 +167,22 @@ export function HouseEditSheets({
             )}
             <span className="house-shop-description">
               <strong>{itemName(item.id)}</strong>
-              <small>
-                {formatNaira(item.price_minor)} · {item.slot_type}
-              </small>
-              {cannotAfford && <small>Insufficient funds</small>}
+              <small>{item.slot_type}</small>
+              <small className="house-catalog-price">{formatNaira(item.price_minor)}</small>
+              {cannotAfford && <small className="house-catalog-unaffordable">Insufficient funds</small>}
             </span>
             <button
               type="button"
-              className="house-row-action"
+              className="house-catalog-action"
               disabled={offline || pending || cannotAfford}
               onClick={() => onBuy(item.id)}
             >
               Buy
             </button>
-          </div>
+          </article>
         );
-      })
+        })}
+      </div>
     ) : (
       <p className="house-empty-copy">No more items are available here.</p>
     );
@@ -293,20 +301,25 @@ export function HouseEditSheets({
             <>
               <h3 className="house-list-title">Your items for this slot</h3>
               {ownedForSlot.length ? (
-                ownedForSlot.map((item) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className="house-inventory-row"
-                    disabled={offline || pending}
-                    onClick={() => onPlace(item.item_id, selectedSlot)}
-                  >
-                    <span>{itemName(item.item_id)}</span>
-                    <span className="house-row-action">
-                      Place <Check size={15} />
-                    </span>
-                  </button>
-                ))
+                <div className="house-catalog-grid">
+                  {ownedForSlot.map((item) => (
+                    <article className="house-catalog-card" key={item.id}>
+                      <ItemImage item={{ ...item, id: item.item_id }} />
+                      <span className="house-shop-description">
+                        <strong>{itemName(item.item_id)}</strong>
+                        <small className="house-owned-badge">Owned · ready to place</small>
+                      </span>
+                      <button
+                        type="button"
+                        className="house-catalog-action"
+                        disabled={offline || pending}
+                        onClick={() => onPlace(item.item_id, selectedSlot)}
+                      >
+                        Place <Check size={15} />
+                      </button>
+                    </article>
+                  ))}
+                </div>
               ) : (
                 <p className="house-empty-copy">
                   You do not own an item for this slot yet. Choose one below.
@@ -334,6 +347,15 @@ export function HouseEditSheets({
                   </button>
                 ))}
               </div>
+              <label className="house-catalog-search">
+                <span>Filter household items</span>
+                <input
+                  type="search"
+                  value={filterText}
+                  onChange={(event) => setFilterText(event.target.value)}
+                  placeholder="Search furniture"
+                />
+              </label>
               <div className="house-carousel-controls">
                 <button
                   type="button"
@@ -382,14 +404,39 @@ export function HouseEditSheets({
             }}
           >
             {ownedRoomItems.map((item) => (
-              <div className="house-inventory-row house-shop-row" key={item.id}>
+              <article className="house-catalog-card" key={item.id}>
                 <ItemImage item={{ ...item, id: item.item_id }} />
                 <span className="house-shop-description">
                   <strong>{itemName(item.item_id)}</strong>
-                  <small>{item.slot_type} accessory</small>
+                  <small>
+                    {item.slot_type} ·{" "}
+                    {placements.filter((placement) => placement.item_id === item.item_id).length}{" "}
+                    placed
+                  </small>
+                  <small className="house-owned-badge">Owned</small>
                 </span>
-                <span className="house-owned-badge">Owned</span>
-              </div>
+                {slots.some(
+                  (slot) =>
+                    slot.slot_type === item.slot_type &&
+                    !placements.some((placement) => placement.slot === slot.id),
+                ) && (
+                  <button
+                    type="button"
+                    className="house-catalog-action"
+                    disabled={offline || pending}
+                    onClick={() => {
+                      const freeSlot = slots.find(
+                        (slot) =>
+                          slot.slot_type === item.slot_type &&
+                          !placements.some((placement) => placement.slot === slot.id),
+                      );
+                      if (freeSlot) onSelectSlot(freeSlot);
+                    }}
+                  >
+                    Choose slot
+                  </button>
+                )}
+              </article>
             ))}
             {(roomItems.length > 0 || ownedRoomItems.length === 0) && shopRows(roomItems)}
           </div>

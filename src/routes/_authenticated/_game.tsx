@@ -243,7 +243,7 @@ function GameLayout() {
             </div>
           </div>
 
-          {pathname !== "/settings" && <GameNeedsRail player={player} />}
+          <GameNeedsRail player={player} />
 
           <GameMobileNav hidden={phoneOpen} onNavigate={() => setPhoneOpen(false)} />
           <div className="game-phone-fab">

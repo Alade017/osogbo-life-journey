@@ -22,6 +22,14 @@ export type NeighborhoodRoad = {
   offset: number;
   width: number;
   type: "arterial" | "street" | "lane";
+  start?: number;
+  end?: number;
+};
+export type NeighborhoodPath = {
+  id: string;
+  from: WorldPoint;
+  to: WorldPoint;
+  width: number;
 };
 export type NeighborhoodArea = {
   slug: string;
@@ -29,6 +37,7 @@ export type NeighborhoodArea = {
   objects: readonly NeighborhoodObject[];
   obstacles?: readonly NeighborhoodObstacle[];
   roads?: readonly NeighborhoodRoad[];
+  paths?: readonly NeighborhoodPath[];
   style: {
     ground: number;
     grid: number;
@@ -49,8 +58,17 @@ export const NEIGHBORHOOD_SCENE_BOUNDS = {
   height: 1920,
 } as const;
 const CITY_CENTRE_ROADS: readonly NeighborhoodRoad[] = [
-  { id: "olaiya-arterial-north-south", axis: "vertical", offset: 320, width: 84, type: "arterial" },
-  { id: "olaiya-arterial-east-west", axis: "horizontal", offset: 300, width: 80, type: "arterial" },
+  { id: "olaiya-arterial-north-south", axis: "vertical", offset: 500, width: 84, type: "arterial" },
+  { id: "olaiya-arterial-east-west", axis: "horizontal", offset: 500, width: 80, type: "arterial" },
+  {
+    id: "home-access-lane",
+    axis: "horizontal",
+    offset: 340,
+    width: 44,
+    type: "lane",
+    start: 320,
+    end: 500,
+  },
   { id: "west-residential-street", axis: "vertical", offset: -410, width: 58, type: "street" },
   { id: "east-market-street", axis: "vertical", offset: 850, width: 62, type: "street" },
   { id: "north-compound-lane", axis: "horizontal", offset: -280, width: 54, type: "lane" },
@@ -61,10 +79,10 @@ const CITY_CENTRE_OBSTACLES: readonly NeighborhoodObstacle[] = [
   { id: "compound-west-centre", kind: "compound", x: -180, y: -470, width: 150, height: 92 },
   { id: "compound-east-north", kind: "compound", x: 510, y: -470, width: 150, height: 92 },
   { id: "compound-far-east-north", kind: "compound", x: 1130, y: -470, width: 150, height: 92 },
-  { id: "compound-west-south", kind: "compound", x: -615, y: 465, width: 150, height: 92 },
-  { id: "compound-west-far-south", kind: "compound", x: -180, y: 465, width: 150, height: 92 },
-  { id: "compound-east-south", kind: "compound", x: 760, y: 465, width: 150, height: 92 },
-  { id: "compound-east-far-south", kind: "compound", x: 1190, y: 465, width: 150, height: 92 },
+  { id: "compound-west-south", kind: "compound", x: -615, y: 800, width: 150, height: 92 },
+  { id: "compound-west-far-south", kind: "compound", x: -180, y: 800, width: 150, height: 92 },
+  { id: "compound-east-south", kind: "compound", x: 760, y: 800, width: 150, height: 92 },
+  { id: "compound-east-far-south", kind: "compound", x: 1190, y: 800, width: 150, height: 92 },
   { id: "corner-kiosk-west", kind: "kiosk", x: -170, y: 190, width: 70, height: 54 },
   { id: "corner-kiosk-east", kind: "kiosk", x: 670, y: 385, width: 70, height: 54 },
   { id: "tree-west-north", kind: "tree", x: -730, y: -170, width: 42, height: 42 },
@@ -72,25 +90,28 @@ const CITY_CENTRE_OBSTACLES: readonly NeighborhoodObstacle[] = [
   { id: "tree-east-north", kind: "tree", x: 1240, y: -180, width: 42, height: 42 },
   { id: "tree-east-south", kind: "tree", x: 1260, y: 850, width: 42, height: 42 },
   { id: "tree-market-north", kind: "tree", x: 635, y: -420, width: 42, height: 42 },
-  { id: "streetlight-crossing-west", kind: "streetlight", x: 245, y: 215, width: 20, height: 20 },
-  { id: "streetlight-crossing-east", kind: "streetlight", x: 395, y: 390, width: 20, height: 20 },
+  { id: "streetlight-crossing-west", kind: "streetlight", x: 430, y: 430, width: 20, height: 20 },
+  { id: "streetlight-crossing-east", kind: "streetlight", x: 570, y: 570, width: 20, height: 20 },
   { id: "streetlight-market-row", kind: "streetlight", x: 895, y: 275, width: 20, height: 20 },
   { id: "streetlight-south-row", kind: "streetlight", x: 90, y: 755, width: 20, height: 20 },
-  { id: "bench-market-row", kind: "bench", x: 560, y: 325, width: 56, height: 24 },
+  { id: "bench-market-row", kind: "bench", x: 620, y: 300, width: 56, height: 24 },
   { id: "bench-neighbourhood-square", kind: "bench", x: 30, y: 555, width: 56, height: 24 },
-  { id: "bin-market-row", kind: "bin", x: 625, y: 320, width: 22, height: 22 },
+  { id: "bin-market-row", kind: "bin", x: 670, y: 300, width: 22, height: 22 },
   { id: "bin-crossing", kind: "bin", x: 80, y: 345, width: 22, height: 22 },
-  { id: "olaiya-wayfinding", kind: "sign", x: 275, y: 230, width: 28, height: 24 },
+  { id: "olaiya-wayfinding", kind: "sign", x: 455, y: 430, width: 28, height: 24 },
 ];
 export const CITY_CENTRE_AREA: NeighborhoodArea = {
   slug: "city-centre",
   name: "Olaiya",
   roads: CITY_CENTRE_ROADS,
+  paths: [
+    { id: "home-to-street-path", from: { x: 320, y: 300 }, to: { x: 320, y: 340 }, width: 12 },
+  ],
   obstacles: CITY_CENTRE_OBSTACLES,
   objects: [
-    { id: "home", name: "Your home", kind: "home", x: 170, y: 210 },
-    { id: "market", name: "Neighbourhood market", kind: "market", x: 470, y: 210 },
-    { id: "work", name: "Work & opportunities", kind: "work", x: 470, y: 420 },
+    { id: "home", name: "Your home", kind: "home", x: 320, y: 300 },
+    { id: "market", name: "Neighbourhood market", kind: "market", x: 700, y: 300 },
+    { id: "work", name: "Work & opportunities", kind: "work", x: 750, y: 680 },
     { id: "npc", name: "Bisi · neighbour", kind: "npc", x: 200, y: 420 },
   ],
   style: {
@@ -108,6 +129,33 @@ export const CITY_CENTRE_AREA: NeighborhoodArea = {
 export const OJA_OBA_AREA: NeighborhoodArea = {
   slug: "oja-oba",
   name: "Oja-Oba Market",
+  roads: [
+    { id: "market-spine", axis: "vertical", offset: 270, width: 92, type: "street" },
+    { id: "market-crossing", axis: "horizontal", offset: 236, width: 92, type: "arterial" },
+    {
+      id: "loading-access",
+      axis: "horizontal",
+      offset: 480,
+      width: 42,
+      type: "lane",
+      start: 270,
+      end: 540,
+    },
+  ],
+  paths: [
+    { id: "courtyard-approach", from: { x: 515, y: 165 }, to: { x: 515, y: 236 }, width: 14 },
+    { id: "stalls-approach", from: { x: 145, y: 165 }, to: { x: 145, y: 236 }, width: 14 },
+    { id: "loading-yard-approach", from: { x: 500, y: 420 }, to: { x: 500, y: 480 }, width: 14 },
+  ],
+  obstacles: [
+    { id: "produce-stall-west", kind: "kiosk", x: 65, y: 65, width: 38, height: 28 },
+    { id: "produce-stall-centre", kind: "kiosk", x: 115, y: 65, width: 38, height: 28 },
+    { id: "produce-stall-east", kind: "kiosk", x: 165, y: 65, width: 38, height: 28 },
+    { id: "market-shade-tree", kind: "tree", x: 50, y: 350, width: 36, height: 36 },
+    { id: "trader-bench", kind: "bench", x: 90, y: 390, width: 48, height: 20 },
+    { id: "market-waste-point", kind: "bin", x: 375, y: 325, width: 22, height: 22 },
+    { id: "market-crossing-light", kind: "streetlight", x: 205, y: 300, width: 18, height: 18 },
+  ],
   objects: [
     { id: "home", name: "Market-side courtyard", kind: "home", x: 515, y: 165 },
     { id: "market", name: "Oja-Oba stalls", kind: "market", x: 145, y: 165 },
@@ -124,9 +172,9 @@ export const OJA_OBA_AREA: NeighborhoodArea = {
     horizontalRoad: { y: 236, height: 92 },
   },
   marketStalls: [
-    { x: 218, y: 178 },
-    { x: 254, y: 178 },
-    { x: 290, y: 178 },
+    { x: 65, y: 65 },
+    { x: 115, y: 65 },
+    { x: 165, y: 65 },
   ],
 };
 
@@ -308,6 +356,12 @@ export function toWorld(point: WorldPoint, origin: WorldPoint): WorldPoint {
     y: Math.round((origin.y + (point.y - 300) / WORLD_SCALE) * 10000) / 10000,
   };
 }
+/** Existing authoritative movement window expressed in the area's scene coordinates. */
+export function neighborhoodSceneBounds(origin: WorldPoint) {
+  const corner = toScene({ x: 0, y: 0 }, origin);
+  return { left: corner.x, top: corner.y, width: 14 * WORLD_SCALE, height: 12 * WORLD_SCALE };
+}
+
 export function nearestInteraction(
   point: WorldPoint,
   objects: readonly NeighborhoodObject[] = NEIGHBORHOOD_OBJECTS,

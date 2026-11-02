@@ -5,6 +5,7 @@ export type HouseRoomRendererProps = {
   accessoryBand: string;
   slots: HouseSlot[];
   placements: HousePlacement[];
+  movingPlacement?: HousePlacement | null;
   editMode: boolean;
   moveEnabled: boolean;
   onSelectPlacement: (placement: HousePlacement) => void;

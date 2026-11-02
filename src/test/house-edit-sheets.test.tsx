@@ -25,6 +25,7 @@ function props(): ComponentProps<typeof HouseEditSheets> {
     selectedPlacement: null,
     onClose: vi.fn(),
     onPlace: vi.fn(),
+    onSelectSlot: vi.fn(),
     onRemove: vi.fn(),
     onMove: vi.fn(),
     onEquip: vi.fn(),
@@ -39,7 +40,7 @@ describe("household item panel", () => {
     render(<HouseEditSheets {...input} />);
     expect(screen.getByRole("dialog", { name: "Shop and arrange your home" })).toBeVisible();
     fireEvent.click(screen.getByRole("tab", { name: "Bedroom" }));
-    expect(screen.getByText("₦1400 · bed")).toBeVisible();
+    expect(screen.getByText("₦1400")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Buy" }));
     expect(input.onBuy).toHaveBeenCalledWith("bed");
   });
@@ -119,5 +120,34 @@ describe("household item panel", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Bedroom" }));
     expect(screen.getByText("Insufficient funds")).toBeVisible();
     expect(screen.getByRole("button", { name: "Buy" })).toBeDisabled();
+  });
+
+  it("filters the room catalog and offers a compatible slot for owned furniture", () => {
+    const input = props();
+    input.catalog.push({
+      id: "shower",
+      category: "furniture",
+      slot_type: "bathroom",
+      art_key: "shower",
+      price_minor: 1100,
+    });
+    input.inventory = [
+      {
+        id: "owned-bed",
+        item_id: "bed",
+        category: "furniture",
+        slot_type: "bed",
+        art_key: "bed",
+        price_minor: 1400,
+        quantity: 1,
+      },
+    ];
+    render(<HouseEditSheets {...input} />);
+    expect(screen.getByRole("tabpanel", { name: "Bathroom accessories" })).toHaveTextContent(
+      "shower",
+    );
+    fireEvent.click(screen.getByRole("tab", { name: "Bedroom" }));
+    fireEvent.click(screen.getByRole("button", { name: "Choose slot" }));
+    expect(input.onSelectSlot).toHaveBeenCalledWith(slot);
   });
 });

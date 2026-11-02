@@ -1,5 +1,9 @@
 import type { MovementIntent, NetworkPlayerSnapshot } from "./multiplayer-state.ts";
 import {
+  neighborhoodBuildingFootprint,
+  neighborhoodObstacleFootprint,
+} from "./neighborhood-geometry.ts";
+import {
   NEIGHBORHOOD_OBJECTS,
   toScene,
   type NeighborhoodObstacle,
@@ -25,11 +29,11 @@ export function canOccupyNeighborhoodPoint(
   };
   const canOccupyObjects = objects.every((object) => {
     if (object.kind === "npc") return true;
+    const footprint = neighborhoodBuildingFootprint(object);
     const solid = {
-      left: object.x - 57,
-      right: object.x + 57,
-      top: object.y - 62,
-      bottom: object.y - 4,
+      ...footprint,
+      right: footprint.left + footprint.width,
+      bottom: footprint.top + footprint.height,
     };
     return (
       body.right <= solid.left ||
@@ -40,11 +44,11 @@ export function canOccupyNeighborhoodPoint(
   });
   if (!canOccupyObjects) return false;
   return obstacles.every((obstacle) => {
+    const footprint = neighborhoodObstacleFootprint(obstacle);
     const solid = {
-      left: obstacle.x - obstacle.width / 2,
-      right: obstacle.x + obstacle.width / 2,
-      top: obstacle.y - obstacle.height / 2,
-      bottom: obstacle.y + obstacle.height / 2,
+      ...footprint,
+      right: footprint.left + footprint.width,
+      bottom: footprint.top + footprint.height,
     };
     return (
       body.right <= solid.left ||

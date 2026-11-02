@@ -14,14 +14,11 @@ export type PhoneNavigationAction =
 
 /** Internal game routes represented by apps in the phone. */
 export const PHONE_APP_ROUTES: Readonly<Record<string, string>> = {
-  "/home": "Home",
-  "/house": "Home",
   "/rentals": "Rent homes",
   "/property": "Property",
   "/properties": "Find homes",
   "/jobs": "Career Life",
   "/education": "Education",
-  "/map": "Map",
   "/wallet": "Bank",
   "/market": "Market",
   "/party": "Party",
@@ -36,7 +33,27 @@ export const PHONE_APP_ROUTES: Readonly<Record<string, string>> = {
 
 export function phoneAppForPath(pathname: string): string | undefined {
   const path = pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
-  return PHONE_APP_ROUTES[path] ?? (/^\/location\/[^/]+$/.test(path) ? "Map" : undefined);
+  return PHONE_APP_ROUTES[path];
+}
+
+/** World renderers must never mount inside a phone app, including friend homes. */
+export function isFullPageWorldPath(pathname: string): boolean {
+  const path = pathname.replace(/\/+$/, "") || "/";
+  return (
+    ["/map", "/neighborhood", "/house", "/home"].includes(path) || /^\/location\/[^/]+$/.test(path)
+  );
+}
+
+export function fullPageWorldApp(app: string): string | undefined {
+  return (
+    {
+      Home: "/home",
+      House: "/house",
+      Map: "/map",
+      Neighborhood: "/neighborhood",
+      Neighbourhood: "/neighborhood",
+    } as Record<string, string>
+  )[app];
 }
 
 export function reducePhoneNavigation(
@@ -81,9 +98,29 @@ export function reducePhoneNavigation(
 export function handlePhoneLinkClick(
   event: MouseEvent<HTMLDivElement>,
   openApp: (app: string, search?: string) => void,
+  openWorld?: (href: string) => void,
 ): void {
   const anchor = event.target instanceof Element ? event.target.closest("a[href]") : null;
   if (!(anchor instanceof HTMLAnchorElement) || anchor.origin !== window.location.origin) return;
+  if (
+    event.defaultPrevented ||
+    event.button !== 0 ||
+    event.metaKey ||
+    event.ctrlKey ||
+    event.shiftKey ||
+    event.altKey ||
+    anchor.hasAttribute("download") ||
+    (anchor.target && anchor.target !== "_self")
+  )
+    return;
+  if (isFullPageWorldPath(anchor.pathname)) {
+    if (openWorld) {
+      event.preventDefault();
+      event.stopPropagation();
+      openWorld(anchor.pathname + anchor.search + anchor.hash);
+    }
+    return;
+  }
 
   event.preventDefault();
   event.stopPropagation();

@@ -2,6 +2,8 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import {
   handlePhoneLinkClick,
+  isFullPageWorldPath,
+  fullPageWorldApp,
   handleGamePageLinkClick,
   phoneAppForPath,
   reducePhoneNavigation,
@@ -35,10 +37,10 @@ describe("phone navigation controller", () => {
     }
   });
   it("maps in-phone routes to apps and keeps the selected app as its title", () => {
-    expect(phoneAppForPath("/home")).toBe("Home");
-    expect(phoneAppForPath("/house")).toBe("Home");
+    expect(phoneAppForPath("/home")).toBeUndefined();
+    expect(phoneAppForPath("/house")).toBeUndefined();
     expect(phoneAppForPath("/jobs")).toBe("Career Life");
-    expect(phoneAppForPath("/location/market-square")).toBe("Map");
+    expect(phoneAppForPath("/location/market-square")).toBeUndefined();
     expect(phoneAppForPath("/not-an-app")).toBeUndefined();
 
     const state = reducePhoneNavigation({ app: null, history: [] }, { type: "open", app: "Jobs" });
@@ -87,15 +89,17 @@ describe("phone navigation controller", () => {
 
   it("preserves query parameters when routing a link inside the phone", () => {
     const openApp = vi.fn();
+    const openWorld = vi.fn();
     render(
-      <div onClickCapture={(event) => handlePhoneLinkClick(event, openApp)}>
+      <div onClickCapture={(event) => handlePhoneLinkClick(event, openApp, openWorld)}>
         <a href="/home?visit=friend-1">Visit saved home</a>
       </div>,
     );
 
     fireEvent.click(screen.getByRole("link", { name: "Visit saved home" }));
 
-    expect(openApp).toHaveBeenCalledWith("Home", "?visit=friend-1");
+    expect(openWorld).toHaveBeenCalledWith("/home?visit=friend-1");
+    expect(openApp).not.toHaveBeenCalled();
     expect(window.location.pathname).toBe("/");
   });
 
@@ -112,4 +116,15 @@ describe("phone navigation controller", () => {
     expect(window.location.pathname).toBe("/");
     expect(screen.getByRole("link", { name: "Unmapped" })).toBeInTheDocument();
   });
+});
+
+it("reserves all world paths and launcher aliases for full-page rendering", () => {
+  for (const path of ["/home", "/house/", "/map", "/neighborhood", "/location/cedar-bank"]) {
+    expect(isFullPageWorldPath(path)).toBe(true);
+    expect(phoneAppForPath(path)).toBeUndefined();
+  }
+  expect(fullPageWorldApp("Home")).toBe("/home");
+  expect(fullPageWorldApp("Map")).toBe("/map");
+  expect(fullPageWorldApp("Neighborhood")).toBe("/neighborhood");
+  expect(fullPageWorldApp("Messages")).toBeUndefined();
 });

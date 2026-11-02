@@ -17,6 +17,7 @@ import { MAP_LANDMARK_LOCATION_SLUG } from "@/components/map/map-location-links"
 import { formatMapNaira } from "@/components/map/map-ui-utils";
 import townData from "@/data/osogbo-town.json";
 import { q, rpc } from "@/lib/game";
+import { isPlayableDistrict } from "@/game/playable-district";
 import { supabase } from "@/integrations/supabase/client";
 import {
   clearPendingTravelKey,
@@ -339,9 +340,14 @@ export function CityMapDashboard({
           <MapPinned size={16} />
           {mapLevel === "town" ? "Explore Osun" : "Osogbo map"}
         </button>
-        {mapLevel === "town" && currentLocation?.slug === "city-centre" && (
+        {mapLevel === "town" && isPlayableDistrict(currentLocation?.slug) && (
           <Link className="map-neighborhood-link" to="/neighborhood">
-            Walk Olaiya
+            {currentLocation?.slug === "oja-oba" ? "Walk Oja-Oba Market" : "Walk Olaiya"}
+          </Link>
+        )}
+        {mapLevel === "town" && currentLocation?.slug !== "oja-oba" && (
+          <Link className="map-neighborhood-link" to="/location/$slug" params={{ slug: "oja-oba" }}>
+            Visit Oja-Oba Market
           </Link>
         )}
         {mapLevel === "town" &&

@@ -6,6 +6,7 @@ import { ArrowLeft, Briefcase, GraduationCap, MapPin, Store, Utensils } from "lu
 import { formatNaira, q, rpc, useGameAction } from "@/lib/game";
 import { CityBillboards } from "@/components/game/CityBillboards";
 import { pageMeta } from "@/lib/seo";
+import { isPlayableDistrict } from "@/game/playable-district";
 import { Button } from "@/components/ui/button";
 import { Chip, ComingSoon, EmptyState, LoadingState } from "@/components/game/ui";
 import { LOCATION_TONE_BG } from "@/lib/location-theme";
@@ -347,6 +348,13 @@ function LocationPage() {
         </p>
       </div>
 
+      {isHere && isPlayableDistrict(loc.slug) && (
+        <Button asChild variant="plain">
+          <Link to="/neighborhood">
+            Walk {loc.slug === "oja-oba" ? "Oja-Oba Market" : "Olaiya"}
+          </Link>
+        </Button>
+      )}
       {isHere && <CityBillboards locationId={loc.id} />}
       <CityEventParticipation slug={slug} isHere={isHere} />
       {isHere && (

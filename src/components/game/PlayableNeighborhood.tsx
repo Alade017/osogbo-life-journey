@@ -9,13 +9,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { canonicalHomeOptions } from "@/lib/living-cost-service";
 import type { NetworkPlayerSnapshot } from "@/game/multiplayer-state";
 import { neighborhoodAreaForSlug, nearestInteraction, toScene } from "@/game/neighborhood-model";
+import { isPlayableDistrict, playableDistrictForLocation } from "@/game/playable-district";
 import type { NeighborhoodPlayerView, PhaserNeighborhoodHandle } from "@/game/phaser-neighborhood";
 import type { MovementDirection } from "@/lib/player-movement";
 import "@/components/game/neighborhood.css";
 
 type ConnectionState = "loading" | "connecting" | "connected" | "unavailable" | "wrong-area";
-
-const CITY_CENTRE_ORIGIN = { x: 7, y: 6 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -44,9 +43,13 @@ function useNeighborhoodConnection(locationId: string | undefined, slug: string 
   const [players, setPlayers] = useState<NeighborhoodPlayerView[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [connectionError, setConnectionError] = useState("");
+  const [roomLocationId, setRoomLocationId] = useState<string | null>(null);
   const roomRef = useRef<NeighborhoodRoom | null>(null);
 
   useEffect(() => {
+    setPlayers([]);
+    setSessionId(null);
+    setRoomLocationId(null);
     if (!locationId || !slug) {
       setConnectionState("unavailable");
       setConnectionError(
@@ -54,7 +57,7 @@ function useNeighborhoodConnection(locationId: string | undefined, slug: string 
       );
       return;
     }
-    if (slug !== "city-centre") {
+    if (!isPlayableDistrict(slug)) {
       setConnectionState("wrong-area");
       setPlayers([]);
       setSessionId(null);
@@ -80,7 +83,10 @@ function useNeighborhoodConnection(locationId: string | undefined, slug: string 
         joinedRoom = room;
         roomRef.current = room;
         setSessionId(room.sessionId);
-        const publish = () => setPlayers(playerViewsFromRoom(room));
+        setRoomLocationId(locationId);
+        const publish = () => {
+          if (active) setPlayers(playerViewsFromRoom(room));
+        };
         publish();
         room.onStateChange(publish);
         room.onLeave((code) => {
@@ -114,7 +120,15 @@ function useNeighborhoodConnection(locationId: string | undefined, slug: string 
     };
   }, [locationId, slug]);
 
-  return { connectionState, connectionError, players, sessionId, roomRef };
+  const sameLocation = roomLocationId === locationId;
+  return {
+    connectionState:
+      !sameLocation && connectionState === "connected" ? ("connecting" as const) : connectionState,
+    connectionError,
+    players: sameLocation ? players : [],
+    sessionId: sameLocation ? sessionId : null,
+    roomRef,
+  };
 }
 
 function directionIntent(directions: ReadonlySet<MovementDirection>) {
@@ -133,11 +147,13 @@ function PhaserNeighborhoodSurface({
   players,
   selfSessionId,
   homeTypeId,
+  district,
   onScene,
 }: {
   players: readonly NeighborhoodPlayerView[];
   selfSessionId: string;
   homeTypeId: string | null;
+  district: NonNullable<ReturnType<typeof playableDistrictForLocation>>;
   onScene: (scene: PhaserNeighborhoodHandle | null) => void;
 }) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -146,7 +162,8 @@ function PhaserNeighborhoodSurface({
   const playersRef = useRef(players);
   const [rendererError, setRendererError] = useState("");
   playersRef.current = players;
-  const area = neighborhoodAreaForSlug("city-centre");
+  const area = district.area;
+  const origin = district.origin;
 
   useEffect(() => {
     const host = hostRef.current;
@@ -158,6 +175,7 @@ function PhaserNeighborhoodSurface({
         const game = createPhaserNeighborhood({
           host,
           area,
+          areaOrigin: origin,
           selfSessionId,
           homeTypeId,
           playersRef,
@@ -194,7 +212,7 @@ function PhaserNeighborhoodSurface({
       gameRef.current = null;
       host.replaceChildren();
     };
-  }, [area, homeTypeId, onScene, selfSessionId]);
+  }, [area, origin, homeTypeId, onScene, selfSessionId]);
 
   useEffect(() => {
     sceneRef.current?.setPlayers(players);
@@ -223,11 +241,12 @@ export function PlayableNeighborhood() {
   const currentLocation = locationsQuery.data?.find(
     (location) => location.id === characterQuery.data?.current_location_id,
   );
+  const district = useMemo(() => playableDistrictForLocation(currentLocation), [currentLocation]);
   const homeQuery = useQuery({
     ...canonicalHomeOptions(characterQuery.data?.id),
     enabled: !!characterQuery.data?.id && currentLocation?.slug === "city-centre",
   });
-  const homeTypeId = homeTypeFromRecord(homeQuery.data);
+  const homeTypeId = district?.personalHome ? homeTypeFromRecord(homeQuery.data) : null;
   const { connectionState, connectionError, players, sessionId, roomRef } =
     useNeighborhoodConnection(currentLocation?.id, currentLocation?.slug);
   const [directions, setDirections] = useState<ReadonlySet<MovementDirection>>(() => new Set());
@@ -236,16 +255,18 @@ export function PlayableNeighborhood() {
   const directionsRef = useRef(directions);
   directionsRef.current = directions;
   const lastIntentRef = useRef("0:0");
-  const area = neighborhoodAreaForSlug("city-centre");
+  const area = district?.area ?? neighborhoodAreaForSlug("city-centre");
   const player = players.find((candidate) => candidate.sessionId === sessionId);
   const nearbyObject = useMemo(() => {
-    if (!player) return null;
-    const point = toScene({ x: player.x, y: player.y }, CITY_CENTRE_ORIGIN);
+    if (!player || !district) return null;
+    const point = toScene({ x: player.x, y: player.y }, district.origin);
     return nearestInteraction(point, area.objects);
-  }, [area.objects, player]);
+  }, [area.objects, player, district]);
 
   const enterHome = useMutation({
     mutationFn: async () => {
+      if (!district?.personalHome || !homeTypeId)
+        throw new Error("Your home entrance is available in Olaiya.");
       const { data, error } = await supabase.rpc("enter_player_home");
       if (error) throw new Error(error.message);
       if (!isRecord(data) || typeof data["locationId"] !== "string")
@@ -261,6 +282,12 @@ export function PlayableNeighborhood() {
   });
   const activateHome = enterHome.mutate;
   const enteringHome = enterHome.isPending;
+
+  useEffect(() => {
+    setDirections(new Set());
+    lastIntentRef.current = "0:0";
+    setZoom(0.65);
+  }, [currentLocation?.id]);
 
   useEffect(() => {
     if (connectionState !== "connected") return;
@@ -324,8 +351,12 @@ export function PlayableNeighborhood() {
       <header className="neighborhood-header">
         <div>
           <p className="neighborhood-eyebrow">Osogbo Life · Playable world</p>
-          <h1>Olaiya neighbourhood</h1>
-          <p>Walk the crossing, residential compounds and local shopfronts.</p>
+          <h1>{district ? `${area.name} neighbourhood` : "Explore the neighbourhoods"}</h1>
+          <p>
+            {district?.area.slug === "oja-oba"
+              ? "Explore market lanes, covered stalls and the loading yard."
+              : "Walk the crossing, residential compounds and local shopfronts."}
+          </p>
         </div>
         <Link className="neighborhood-map-link" to="/map">
           <Map size={17} aria-hidden="true" /> City map
@@ -334,9 +365,10 @@ export function PlayableNeighborhood() {
 
       {connectionState === "wrong-area" ? (
         <div className="neighborhood-message" role="status">
-          <strong>Olaiya is not your current location.</strong>
+          <strong>This district is not available for walking yet.</strong>
           <span>
-            Use your home&apos;s outside exit to arrive in Olaiya, or travel to Central Crossing.
+            Use the city map to travel to Olaiya or Oja-Oba Market. Your confirmed arrival selects
+            the neighbourhood.
           </span>
           <Link to="/map">Open the city map</Link>
           <Link to="/house">Go to your home entrance</Link>
@@ -357,13 +389,16 @@ export function PlayableNeighborhood() {
             </p>
           )}
           {connectionState === "connected" &&
-            (homeQuery.isLoading ? (
+            (district?.personalHome && homeQuery.isLoading ? (
               <p className="neighborhood-loading">Checking the home entrance...</p>
             ) : (
-              sessionId && (
+              sessionId &&
+              district && (
                 <>
                   <div className="neighborhood-stage">
                     <PhaserNeighborhoodSurface
+                      key={`${currentLocation?.id}:${sessionId}`}
+                      district={district}
                       players={players}
                       selfSessionId={sessionId}
                       homeTypeId={homeTypeId}
@@ -402,7 +437,7 @@ export function PlayableNeighborhood() {
                       {enterHome.error.message}
                     </p>
                   )}
-                  {homeQuery.isError && (
+                  {district.personalHome && homeQuery.isError && (
                     <p className="neighborhood-error" role="alert">
                       Your home information could not be loaded. Movement is available, but home
                       entry is temporarily disabled.

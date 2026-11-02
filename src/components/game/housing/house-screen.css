@@ -781,6 +781,73 @@
 .house-shop-description strong {
   display: block;
 }
+.house-catalog-search {
+  display: grid;
+  gap: 0.35rem;
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.house-catalog-search input {
+  min-height: 42px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--background);
+  color: var(--foreground);
+  padding: 0.55rem 0.75rem;
+}
+.house-catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 0.65rem;
+}
+.house-catalog-card {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  align-items: center;
+  gap: 0.5rem 0.7rem;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--background);
+  padding: 0.55rem;
+}
+.house-catalog-card > .house-shop-image {
+  grid-row: span 2;
+}
+.house-catalog-card > .house-shop-description {
+  grid-column: 2;
+}
+.house-catalog-card > .house-catalog-action {
+  grid-column: 2;
+  justify-self: start;
+}
+.house-catalog-price {
+  color: var(--primary);
+  font-weight: 800;
+}
+.house-catalog-unaffordable {
+  color: var(--destructive);
+  font-weight: 700;
+}
+.house-catalog-action {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--primary);
+  padding: 0.35rem 0.8rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.house-catalog-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
 .house-row-action {
   display: flex;
   min-width: 54px;
@@ -1059,6 +1126,63 @@
 }
 .house-room-slide {
   touch-action: pan-y;
+}
+.house-need-action-card {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 205px), 1fr));
+  align-items: start;
+  gap: 0.55rem;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--background);
+  padding: 0.65rem;
+}
+.house-needs-action-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 255px), 1fr));
+  gap: 0.65rem;
+}
+.house-needs-action {
+  display: grid;
+  width: 100%;
+  min-height: 48px;
+  gap: 0.15rem;
+  justify-items: start;
+  border: 1px solid var(--border);
+  border-radius: 11px;
+  background: var(--card);
+  color: var(--foreground);
+  padding: 0.55rem 0.7rem;
+  text-align: left;
+  cursor: pointer;
+}
+.house-needs-action span {
+  color: var(--muted-foreground);
+  font-size: 0.76rem;
+}
+.house-needs-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+.house-need-action-heading {
+  display: grid;
+  gap: 0.2rem;
+  align-content: center;
+  min-height: 42px;
+}
+.house-need-action-heading span,
+.house-need-unavailable {
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+}
+.house-need-unavailable {
+  margin: 0;
+  align-self: center;
+}
+.house-need-action-card .house-needs-action {
+  min-height: 44px;
+  margin: 0;
 }
 .house-owned-badge {
   border-radius: 999px;

@@ -13,7 +13,7 @@ import type {
 import { HouseRoomRenderer } from "@/components/game/housing/HouseRoomRenderer";
 import { useGameTime } from "@/components/game/GameTimeProvider";
 import { homeFurnitureAction, homeFurnitureNeed } from "@/lib/home-furniture-actions";
-import { ACTION_CATALOG } from "@/lib/life-simulation";
+import { ACTION_CATALOG, NEED_NAMES, NEED_RULES, statusForNeed } from "@/lib/life-simulation";
 import { HousingReliefPanel } from "@/components/game/housing/HousingReliefPanel";
 import { housingReliefQueryKey } from "@/lib/housing-relief-client";
 import { canonicalHomeOptions } from "@/lib/living-cost-service";
@@ -845,11 +845,12 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         aria-label={`${house.house_type.label} room`}
       >
         <HouseRoomRenderer
-          inputBlocked={!!selectedSlot || !!selectedPlacement || !!activeSleep}
+          inputBlocked={!!selectedSlot || !!activeSleep}
           houseTypeId={house.house_type_id}
           accessoryBand={canonicalHome?.accessoryBand ?? "basic"}
           slots={slots}
           placements={scenePlacements}
+          movingPlacement={selectedPlacement}
           editMode={editing}
           moveEnabled={editing && !isOffline && !actionMutation.isPending && !activeSleep}
           onMove={requestMove}
@@ -863,6 +864,11 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             setSelectedPlacement(placement);
           }}
           onSelectSlot={(slot) => {
+            if (selectedPlacement) {
+              requestMove(selectedPlacement, slot);
+              setSelectedPlacement(null);
+              return;
+            }
             setSelectedPlacement(null);
             setSelectedSlot(slot);
           }}
@@ -933,43 +939,62 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             </div>
           )}
           <div className="house-needs-action-list">
-            {placements
-              .filter((placement) => homeFurnitureAction(placement.item_id))
-              .map((placement) => {
-                const action = homeFurnitureAction(placement.item_id)!;
-                const need = homeFurnitureNeed(placement.item_id);
-                return (
-                  <button
-                    key={placement.id}
-                    type="button"
-                    className="house-needs-action"
-                    disabled={
-                      isOffline ||
-                      !isInsideHome ||
-                      !gameTime.ready ||
-                      gameTime.busy ||
-                      !!activeSleep ||
-                      !!usingPlacementId
-                    }
-                    onClick={() => void interactWithPlacement(placement)}
-                  >
-                    <strong>
-                      {usingPlacementId === placement.id ? "Using..." : ACTION_CATALOG[action].name}
-                    </strong>
-                    <span>
-                      {need ? `${need} · ` : ""}
-                      {placement.item_id.replaceAll("-", " ")}
-                    </span>
-                  </button>
-                );
-              })}
+            {NEED_NAMES.map((needName) => {
+              const label = NEED_RULES[needName].label;
+              const value = Math.round(gameTime.simulation.needs[needName]);
+              const status = statusForNeed(needName, value);
+              const matching = placements.filter(
+                (placement) =>
+                  homeFurnitureNeed(placement.item_id)?.toLowerCase() === label.toLowerCase() &&
+                  homeFurnitureAction(placement.item_id),
+              );
+              return (
+                <section className={`house-need-action-card is-${status}`} key={needName}>
+                  <div className="house-need-action-heading">
+                    <strong>{label}</strong>
+                    <span>{value}% · {status === "healthy" ? "Doing well" : status === "warning" ? "Needs attention" : "Needs care soon"}</span>
+                  </div>
+                  {matching.length ? (
+                    matching.map((placement) => {
+                      const action = homeFurnitureAction(placement.item_id)!;
+                      return (
+                        <button
+                          key={placement.id}
+                          type="button"
+                          className="house-needs-action"
+                          disabled={
+                            isOffline ||
+                            !isInsideHome ||
+                            !gameTime.ready ||
+                            gameTime.busy ||
+                            !!activeSleep ||
+                            !!usingPlacementId
+                          }
+                          onClick={() => void interactWithPlacement(placement)}
+                        >
+                          <strong>
+                            {usingPlacementId === placement.id
+                              ? "Using..."
+                              : ACTION_CATALOG[action].name}
+                          </strong>
+                          <span>{placement.item_id.replaceAll("-", " ")}</span>
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <p className="house-need-unavailable">
+                      {needName === "social"
+                        ? "No social furniture action is available at home."
+                        : "No matching furniture is placed here."}
+                    </p>
+                  )}
+                  {matching.length > 0 && !isInsideHome && (
+                    <p className="house-need-unavailable">Travel home to use this item.</p>
+                  )}
+                </section>
+              );
+            })}
           </div>
-          {!placements.some((placement) => homeFurnitureAction(placement.item_id)) && (
-            <p>
-              Place an owned bed, seat, stove, shower, toilet, television, or plant to unlock home
-              activities.
-            </p>
-          )}
           {!gameTime.ready && !isOffline && <p role="status">Connecting character needs...</p>}
           {isOffline && <p role="status">Reconnect to use your accessories.</p>}
           {gameTime.ready &&
@@ -1007,6 +1032,10 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           selectedPlacement={selectedPlacement}
           slots={slots}
           placements={placements}
+          onSelectSlot={(slot) => {
+            setSelectedPlacement(null);
+            setSelectedSlot(slot);
+          }}
           onClose={() => {
             setEditing(false);
             setSelectedSlot(null);

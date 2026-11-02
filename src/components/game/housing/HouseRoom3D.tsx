@@ -606,7 +606,11 @@ function SlotObject({
         <mesh
           onClick={(event) => {
             event.stopPropagation();
-            if (!inputBlocked) onSelectSlot(slot);
+            if (
+              !inputBlocked &&
+              (activeSlotType === null || activeSlotType === slot.slot_type)
+            )
+              onSelectSlot(slot);
           }}
         >
           <boxGeometry args={[0.48, 0.08, 0.48]} />
@@ -629,7 +633,11 @@ function SlotObject({
             className="house-3d-slot-label"
             aria-label={label}
             title={label}
-            disabled={inputBlocked}
+            disabled={
+              inputBlocked ||
+              (!!activeSlotType && activeSlotType !== slot.slot_type) ||
+              (!!placement && !!activeSlotType)
+            }
             onClick={() => (placement ? onSelectPlacement(placement) : onSelectSlot(slot))}
           >
             {placement ? "•••" : "+"}
@@ -656,6 +664,7 @@ export function HouseRoom3D({
   accessoryBand,
   slots,
   placements,
+  movingPlacement = null,
   editMode,
   moveEnabled,
   onSelectPlacement,
@@ -789,7 +798,7 @@ export function HouseRoom3D({
               dragPreview
                 ? (placements.find((item) => item.id === dragPreview.placementId)?.slot_type ??
                   null)
-                : null
+                : (movingPlacement?.slot_type ?? null)
             }
             onSelectPlacement={onSelectPlacement}
             onSelectSlot={onSelectSlot}

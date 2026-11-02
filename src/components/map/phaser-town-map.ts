@@ -1,4 +1,5 @@
 import * as Phaser from "phaser";
+import { isQuickMapTap } from "@/lib/map-gesture";
 import townData from "@/data/osogbo-town.json";
 import {
   projectTownCell,
@@ -44,6 +45,9 @@ class PhaserTownMapScene extends Phaser.Scene implements PhaserMapSceneHandle {
   private readonly callbacksRef: CreateOptions["callbacksRef"];
   private readonly onReady: () => void;
   private mapLayer!: Phaser.GameObjects.Container;
+  private playerLayer!: Phaser.GameObjects.Container;
+  private markerKey = "";
+  private draggedPointers = new Set<number>();
   private lastDragPoint: { x: number; y: number } | null = null;
 
   constructor(options: CreateOptions) {
@@ -57,6 +61,9 @@ class PhaserTownMapScene extends Phaser.Scene implements PhaserMapSceneHandle {
     this.cameras.main.setBounds(0, 0, TOWN_MAP_WIDTH, TOWN_MAP_HEIGHT);
     this.cameras.main.centerOn(TOWN_MAP_WIDTH / 2, TOWN_MAP_HEIGHT / 2);
     this.mapLayer = this.add.container(0, 0);
+    this.drawTerrain();
+    this.mapLayer = this.add.container(0, 0);
+    this.playerLayer = this.add.container(0, 0);
     this.drawMap(this.dataRef.current);
     this.input.on(
       "wheel",
@@ -65,10 +72,13 @@ class PhaserTownMapScene extends Phaser.Scene implements PhaserMapSceneHandle {
       },
     );
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      this.draggedPointers.delete(pointer.id);
       this.lastDragPoint = { x: pointer.x, y: pointer.y };
     });
     this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
       if (!pointer.isDown || !this.lastDragPoint) return;
+      if (Math.hypot(pointer.x - pointer.downX, pointer.y - pointer.downY) >= 6)
+        this.draggedPointers.add(pointer.id);
       const dx = pointer.x - this.lastDragPoint.x;
       const dy = pointer.y - this.lastDragPoint.y;
       if (Math.abs(dx) + Math.abs(dy) > 1) {
@@ -83,9 +93,7 @@ class PhaserTownMapScene extends Phaser.Scene implements PhaserMapSceneHandle {
     this.onReady();
   }
 
-  drawMap(data: PhaserMapData) {
-    if (!this.mapLayer) return;
-    this.mapLayer.removeAll(true);
+  private drawTerrain() {
     const graphics = this.add.graphics();
     this.mapLayer.add(graphics);
     graphics.fillStyle(0xdce7dc, 1);
@@ -134,7 +142,17 @@ class PhaserTownMapScene extends Phaser.Scene implements PhaserMapSceneHandle {
       graphics.fillStyle(0xb78a63, 1);
       graphics.fillRect(point.x - 7, point.y - 5, 14, 11);
     });
+  }
 
+  drawMap(data: PhaserMapData) {
+    if (!this.mapLayer || !this.playerLayer) return;
+    this.drawPlayer(data);
+    const key = JSON.stringify([data.places, data.properties, data.billboardMarkers]);
+    if (key === this.markerKey) return;
+    this.markerKey = key;
+    this.mapLayer.removeAll(true);
+    const graphics = this.add.graphics();
+    this.mapLayer.add(graphics);
     data.properties?.forEach((property) => {
       const point = projectTownCell(property.position[0] / 2 + 6.5, property.position[2] / 2 + 4.5);
       graphics.fillStyle(property.status === "overdue" ? 0xb42318 : 0x76513a, 1);
@@ -169,14 +187,27 @@ class PhaserTownMapScene extends Phaser.Scene implements PhaserMapSceneHandle {
         );
       }
     });
+  }
 
+  private drawPlayer(data: PhaserMapData) {
+    this.playerLayer.removeAll(true);
+    const graphics = this.add.graphics();
+    this.playerLayer.add(graphics);
     if (data.playerLocation) {
       const point = projectTownCell(data.playerLocation.x, data.playerLocation.y);
       graphics.lineStyle(4, 0xffffff, 1);
       graphics.fillStyle(0x2858a2, 1);
       graphics.fillCircle(point.x, point.y - 18, 12);
       graphics.strokeCircle(point.x, point.y - 18, 12);
-      this.addText(point.x, point.y + 4, data.playerLocation.label ?? "You are here", 11, 0x173b6f);
+      this.addText(
+        point.x,
+        point.y + 4,
+        data.playerLocation.label ?? "You are here",
+        11,
+        0x173b6f,
+        0.5,
+        this.playerLayer,
+      );
     }
   }
 
@@ -189,7 +220,15 @@ class PhaserTownMapScene extends Phaser.Scene implements PhaserMapSceneHandle {
     this.cameras.main.centerOn(TOWN_MAP_WIDTH / 2, TOWN_MAP_HEIGHT / 2);
   }
 
-  private addText(x: number, y: number, text: string, size: number, color: number, origin = 0.5) {
+  private addText(
+    x: number,
+    y: number,
+    text: string,
+    size: number,
+    color: number,
+    origin = 0.5,
+    layer = this.mapLayer,
+  ) {
     const label = this.add
       .text(x, y, text, {
         color: `#${color.toString(16).padStart(6, "0")}`,
@@ -200,14 +239,23 @@ class PhaserTownMapScene extends Phaser.Scene implements PhaserMapSceneHandle {
         strokeThickness: 3,
       })
       .setOrigin(origin, 0.5);
-    this.mapLayer.add(label);
+    layer.add(label);
   }
 
   private addZone(x: number, y: number, width: number, height: number, activate: () => void) {
     const zone = this.add
       .zone(x, y, width, height)
       .setInteractive({ useHandCursor: true })
-      .on("pointerup", activate);
+      .on("pointerup", (pointer: Phaser.Input.Pointer) => {
+        if (
+          !this.draggedPointers.has(pointer.id) &&
+          isQuickMapTap(
+            { x: pointer.downX, y: pointer.downY, at: pointer.downTime },
+            { x: pointer.x, y: pointer.y, at: pointer.upTime },
+          )
+        )
+          activate();
+      });
     this.mapLayer.add(zone);
   }
 }

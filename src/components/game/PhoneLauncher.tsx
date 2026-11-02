@@ -59,8 +59,13 @@ import {
 } from "react";
 import { type CommunityPhoneApp } from "@/components/game/CommunityPhoneApps";
 import { PhoneComingSoonApp } from "@/components/game/phone/PhoneComingSoonApp";
-import { FriendHomeVisit } from "@/components/game/housing/FriendHomeVisit";
-import { handlePhoneLinkClick, reducePhoneNavigation } from "@/components/game/phone-navigation";
+import { useLocation, useNavigate } from "@tanstack/react-router";
+import {
+  fullPageWorldApp,
+  isFullPageWorldPath,
+  handlePhoneLinkClick,
+  reducePhoneNavigation,
+} from "@/components/game/phone-navigation";
 import "./phone.css";
 
 // Lazy-loaded app views for performance on mobile and low-end Android
@@ -69,7 +74,6 @@ const PlayerSocial = lazy(() =>
 );
 const PhoneMarketApp = lazy(() => import("@/components/game/phone/PhoneMarketApp"));
 const PhonePartyApp = lazy(() => import("@/components/game/phone/PhonePartyApp"));
-const PhoneMapApp = lazy(() => import("@/components/game/phone/PhoneMapApp"));
 const PhoneBankApp = lazy(() => import("@/components/game/phone/PhoneBankApp"));
 const PropertiesPage = lazy(() =>
   import("@/routes/_authenticated/_game/properties").then((m) => ({ default: m.PropertiesPage })),
@@ -94,9 +98,6 @@ const InventoryPage = lazy(() =>
 );
 const SettingsPage = lazy(() =>
   import("@/routes/_authenticated/_game/settings").then((m) => ({ default: m.SettingsPage })),
-);
-const HousePage = lazy(() =>
-  import("@/routes/_authenticated/_game/house").then((m) => ({ default: m.HousePage })),
 );
 const BusinessInvestmentApp = lazy(() =>
   import("@/components/game/BusinessInvestmentApp").then((m) => ({
@@ -201,6 +202,9 @@ export function PhoneLauncher({
     app: null,
     history: [],
   });
+  const navigate = useNavigate();
+  const href = useLocation({ select: (location) => location.href });
+  const previousHref = useRef(href);
   const [internalOpen, setInternalOpen] = useState(false);
   const [messagePlayerId, setMessagePlayerId] = useState<string | undefined>();
   const dialogOpen = open ?? internalOpen;
@@ -242,20 +246,42 @@ export function PhoneLauncher({
     (mission) => mission.status === "completed",
   ).length;
 
-  const openApp = useCallback((appName: string, search?: string) => {
-    playGameSound("ui");
-    dispatchNavigation({
-      type: "open",
-      app: appName,
-      ...(search ? { search } : {}),
-    });
-  }, []);
+  const openWorld = useCallback(
+    (href: string) => {
+      setPhoneOpen(false);
+      void navigate({ href });
+    },
+    [navigate, setPhoneOpen],
+  );
+
+  useEffect(() => {
+    if (href === previousHref.current) return;
+    previousHref.current = href;
+    if (isFullPageWorldPath(href.split(/[?#]/)[0]!)) setPhoneOpen(false);
+  }, [href, setPhoneOpen]);
+
+  const openApp = useCallback(
+    (appName: string, search?: string) => {
+      playGameSound("ui");
+      const worldPath = fullPageWorldApp(appName);
+      if (worldPath) {
+        openWorld(worldPath + (search ?? ""));
+        return;
+      }
+      dispatchNavigation({
+        type: "open",
+        app: appName,
+        ...(search ? { search } : {}),
+      });
+    },
+    [openWorld],
+  );
 
   useEffect(() => {
     const openRequestedApp = (event: Event) => {
       const detail = (event as CustomEvent<{ app?: string; search?: string }>).detail;
       if (!detail?.app) return;
-      setPhoneOpen(true);
+      if (!fullPageWorldApp(detail.app)) setPhoneOpen(true);
       openApp(detail.app, detail.search);
     };
     window.addEventListener("osogbo-open-phone-app", openRequestedApp);
@@ -313,14 +339,7 @@ export function PhoneLauncher({
 
   // Render each supported app within the phone dialog.
   const renderAppContent = (appName: string) => {
-    if (appName === "Home") {
-      const visitId = new URLSearchParams(navigation.search ?? "").get("visit");
-      return visitId ? (
-        <FriendHomeVisit characterId={visitId} onLeave={() => openApp("Messages")} />
-      ) : (
-        <HousePage homeRoute />
-      );
-    }
+    if (fullPageWorldApp(appName)) return null;
 
     if (appName === "Shortcuts") {
       return (
@@ -359,10 +378,6 @@ export function PhoneLauncher({
     }
 
     if (appName === "Education" || appName === "Courses") return <EducationPage phoneMode />;
-
-    if (appName === "Map") {
-      return <PhoneMapApp />;
-    }
 
     if (appName === "Bank") {
       return <PhoneBankApp />;
@@ -620,7 +635,7 @@ export function PhoneLauncher({
                     </div>
                     <div
                       className="phone-app-body"
-                      onClickCapture={(event) => handlePhoneLinkClick(event, openApp)}
+                      onClickCapture={(event) => handlePhoneLinkClick(event, openApp, openWorld)}
                     >
                       <PhoneAppBoundary key={appName} appName={appName} onHome={returnHome}>
                         <Suspense fallback={<PhoneAppLoadingSpinner title={appName} />}>

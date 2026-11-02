@@ -42,15 +42,25 @@ function RoomControls(props: HouseRoomRendererProps & { inputBlocked: boolean })
       ))}
       {props.editMode &&
         props.slots
-          .filter((slot) => !props.placements.some((placement) => placement.slot === slot.id))
+          .filter(
+            (slot) =>
+              !props.placements.some((placement) => placement.slot === slot.id) &&
+              (!props.movingPlacement ||
+                (slot.slot_type === props.movingPlacement.slot_type &&
+                  slot.id !== props.movingPlacement.slot)),
+          )
           .map((slot) => (
             <button
               key={slot.id}
               type="button"
-              disabled={props.inputBlocked}
-              onClick={() => props.onSelectSlot(slot)}
+              disabled={props.inputBlocked || !props.moveEnabled}
+              onClick={() =>
+                props.movingPlacement
+                  ? props.onMove(props.movingPlacement, slot)
+                  : props.onSelectSlot(slot)
+              }
             >
-              Place in {slot.slot_type} slot
+              {props.movingPlacement ? "Move to" : "Place in"} {slot.slot_type} slot
             </button>
           ))}
     </div>

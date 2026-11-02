@@ -1,22 +1,27 @@
 import * as Phaser from "phaser";
+import { cityEntranceForLocation } from "@/lib/city-world";
+import {
+  projectNeighborhood as project,
+  neighborhoodDepth,
+  neighborhoodBuildingFootprint,
+  NEIGHBORHOOD_TILE_SIZE as TILE_SIZE,
+} from "@/game/neighborhood-geometry";
 import type { AvatarAnimationState, AvatarEquipment, AvatarFacing } from "@/components/game/Avatar";
 import type { Appearance } from "@/game/avatar-appearance";
 import { AVATAR_DIRECTIONS, avatarAnimationKey } from "@/game/character-animation";
 import { ensureAvatarTexture } from "@/game/character-texture";
 import {
-  NEIGHBORHOOD_SCENE_BOUNDS,
+  neighborhoodSceneBounds,
   type NeighborhoodArea,
   type NeighborhoodObject,
   type NeighborhoodObstacle,
+  type NeighborhoodPath,
   type NeighborhoodRoad,
   toScene,
+  neighborhoodAreaOrigin,
+  type WorldPoint,
 } from "@/game/neighborhood-model";
 
-const CITY_CENTRE_ORIGIN = { x: 7, y: 6 };
-const TILE_SIZE = 80;
-const ISO_SCALE_X = 0.45;
-const ISO_SCALE_Y = 0.22;
-const ISO_ORIGIN = { x: 1180, y: 920 };
 const DEFAULT_PLAYER_TEXTURE = "neighborhood-player-fallback";
 
 export type NeighborhoodPlayerView = {
@@ -39,6 +44,7 @@ export type PhaserNeighborhoodHandle = {
 
 type SceneOptions = {
   area: NeighborhoodArea;
+  areaOrigin: WorldPoint;
   bounds: { x: number; y: number; width: number; height: number };
   selfSessionId: string;
   homeTypeId: string | null;
@@ -54,13 +60,6 @@ type PlayerSprite = {
   lastX: number;
   lastY: number;
 };
-
-function project(x: number, y: number): ScreenPoint {
-  return {
-    x: ISO_ORIGIN.x + (x - y) * ISO_SCALE_X,
-    y: ISO_ORIGIN.y + (x + y) * ISO_SCALE_Y,
-  };
-}
 
 function projectedRect(x: number, y: number, width: number, height: number) {
   return [
@@ -121,8 +120,8 @@ function equipmentFromJson(value: string): AvatarEquipment[] {
   }
 }
 
-function areaBounds(area: NeighborhoodArea) {
-  const { left, top, width, height } = NEIGHBORHOOD_SCENE_BOUNDS;
+function areaBounds(origin: WorldPoint) {
+  const { left, top, width, height } = neighborhoodSceneBounds(origin);
   const corners = [
     project(left, top),
     project(left + width, top),
@@ -145,6 +144,7 @@ function areaBounds(area: NeighborhoodArea) {
 
 class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhoodHandle {
   private readonly area: NeighborhoodArea;
+  private readonly areaOrigin: WorldPoint;
   private readonly bounds: SceneOptions["bounds"];
   private readonly selfSessionId: SceneOptions["selfSessionId"];
   private readonly homeTypeId: SceneOptions["homeTypeId"];
@@ -157,6 +157,7 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
   constructor(options: SceneOptions) {
     super({ key: "olaiya-playable-neighborhood" });
     this.area = options.area;
+    this.areaOrigin = options.areaOrigin;
     this.bounds = options.bounds;
     this.selfSessionId = options.selfSessionId;
     this.homeTypeId = options.homeTypeId;
@@ -220,7 +221,7 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
   }
 
   private updatePlayer(player: NeighborhoodPlayerView) {
-    const point = toScene({ x: player.x, y: player.y }, CITY_CENTRE_ORIGIN);
+    const point = toScene({ x: player.x, y: player.y }, this.areaOrigin);
     const screen = project(point.x, point.y);
     let record = this.playerSprites.get(player.sessionId);
     if (!record) {
@@ -228,7 +229,7 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
         .sprite(screen.x, screen.y, DEFAULT_PLAYER_TEXTURE)
         .setOrigin(0.5, 0.94)
         .setScale(0.9)
-        .setDepth((point.x + point.y) * 0.25 + 1);
+        .setDepth(neighborhoodDepth(point.x, point.y, 1));
       record = { sprite, textureKey: null, lastX: point.x, lastY: point.y };
       this.playerSprites.set(player.sessionId, record);
       if (this.followEnabled && player.sessionId === this.selfSessionId)
@@ -238,7 +239,7 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
     const moving = Math.hypot(point.x - record.lastX, point.y - record.lastY) > 0.002;
     record.lastX = point.x;
     record.lastY = point.y;
-    record.sprite.setPosition(screen.x, screen.y).setDepth((point.x + point.y) * 0.25 + 1);
+    record.sprite.setPosition(screen.x, screen.y).setDepth(neighborhoodDepth(point.x, point.y, 1));
     const facing = this.facingFor(player.facing);
     record.sprite.setFlipX(facing === "west");
 
@@ -288,10 +289,13 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
 
   private drawGroundAndRoads() {
     const graphics = this.add.graphics().setDepth(-100_000);
-    const { left, top, width, height } = NEIGHBORHOOD_SCENE_BOUNDS;
+    const { left, top, width, height } = neighborhoodSceneBounds(this.areaOrigin);
     const right = left + width;
     const bottom = top + height;
-    const groundColors = [0x9cae79, 0xa5b681, 0x98aa75, 0xaab987];
+    const groundColors =
+      this.area.slug === "oja-oba"
+        ? [0xbda777, 0xc5b084, 0xc0aa7c, 0xc9b58b]
+        : [0x9cae79, 0xa5b681, 0x98aa75, 0xaab987];
 
     for (let x = left; x < right; x += TILE_SIZE) {
       for (let y = top; y < bottom; y += TILE_SIZE) {
@@ -330,7 +334,15 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
       },
     ];
     for (const road of roads) this.drawRoad(graphics, road, left, top, right, bottom);
+    for (const path of this.area.paths ?? []) this.drawPath(graphics, path);
     this.drawCrosswalk(graphics, this.area.roads ?? [], left, top, right, bottom);
+  }
+
+  private drawPath(graphics: Phaser.GameObjects.Graphics, path: NeighborhoodPath) {
+    const start = project(path.from.x, path.from.y);
+    const end = project(path.to.x, path.to.y);
+    graphics.lineStyle(path.width + 4, 0x766f59, 0.72).lineBetween(start.x, start.y, end.x, end.y);
+    graphics.lineStyle(path.width, 0xd7c9a6, 1).lineBetween(start.x, start.y, end.x, end.y);
   }
 
   private drawRoad(
@@ -342,8 +354,9 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
     bottom: number,
   ) {
     const vertical = road.axis === "vertical";
-    const start = vertical ? top : left;
-    const end = vertical ? bottom : right;
+    const start = Math.max(vertical ? top : left, road.start ?? (vertical ? top : left));
+    const end = Math.min(vertical ? bottom : right, road.end ?? (vertical ? bottom : right));
+    if (end <= start) return;
     const sidewalkWidth = road.type === "arterial" ? 16 : 12;
     for (const side of [-1, 1]) {
       const sidewalkOffset = road.offset + side * (road.width / 2 + sidewalkWidth / 2);
@@ -426,11 +439,27 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
         object.kind === "home"
           ? this.homeTypeId
             ? `YOUR ${this.homeTypeId.replaceAll("-", " ").toUpperCase()}`
-            : "OLAIYA COMPOUND"
+            : this.area.slug === "oja-oba"
+              ? "MARKET COURTYARD"
+              : "OLAIYA COMPOUND"
           : object.kind === "market"
-            ? "NEIGHBOURHOOD SHOP"
-            : "WORK & SERVICES";
-      this.drawBuilding(object.x, object.y - 35, kind, label, object.name, 114, 62, 47);
+            ? this.area.slug === "oja-oba"
+              ? "OJA-OBA STALLS"
+              : "NEIGHBOURHOOD SHOP"
+            : this.area.slug === "oja-oba"
+              ? "LOADING YARD"
+              : "WORK & SERVICES";
+      const footprint = neighborhoodBuildingFootprint(object);
+      this.drawBuilding(
+        object.x,
+        footprint.top + footprint.height / 2,
+        kind,
+        label,
+        this.area.slug === "oja-oba" ? "" : object.name,
+        footprint.width,
+        footprint.height,
+        47,
+      );
     }
     for (const obstacle of this.area.obstacles ?? []) {
       if (obstacle.kind !== "compound" && obstacle.kind !== "shop" && obstacle.kind !== "kiosk")
@@ -441,8 +470,12 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
         obstacle.x,
         obstacle.y,
         obstacle.kind,
-        label,
-        obstacle.id.replaceAll("-", " "),
+        this.area.slug === "oja-oba" && obstacle.kind === "kiosk"
+          ? obstacle.id.endsWith("centre")
+            ? "PRODUCE ROW"
+            : ""
+          : label,
+        this.area.slug === "oja-oba" ? "" : obstacle.id.replaceAll("-", " "),
         obstacle.width,
         obstacle.height,
         obstacle.kind === "kiosk" ? 28 : 38,
@@ -460,7 +493,9 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
     depth: number,
     wallHeight: number,
   ) {
-    const container = this.add.container(project(x, y).x, project(x, y).y).setDepth((x + y) * 0.25);
+    const container = this.add
+      .container(project(x, y).x, project(x, y).y)
+      .setDepth(neighborhoodDepth(x, y + depth / 2));
     const graphics = this.add.graphics();
     const localProject = (dx: number, dy: number, lift = 0) => {
       const point = project(x + dx, y + dy);
@@ -474,10 +509,23 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
       localProject(-width / 2, depth / 2),
     ];
     const roof = corners.map((point) => ({ x: point.x, y: point.y - wallHeight }));
+    // Ground-contact shadow stays separate from the solid footprint.
+    fillPolygon(
+      graphics,
+      corners.map((point) => ({ x: point.x + 9, y: point.y + 7 })),
+      0x334135,
+      0.2,
+    );
     fillPolygon(graphics, [corners[1]!, corners[2]!, roof[2]!, roof[1]!], 0x9c6a48);
     fillPolygon(graphics, [corners[2]!, corners[3]!, roof[3]!, roof[2]!], 0xb47c55);
     const roofColor = kind === "compound" ? 0xa94e35 : kind === "kiosk" ? 0x3c755d : 0x355d78;
     fillPolygon(graphics, roof, roofColor);
+    // Restrained metal-roof seams share the same projection as the building.
+    for (let rib = -width / 2 + 12; rib < width / 2; rib += 12) {
+      const from = localProject(rib, -depth / 2, wallHeight);
+      const to = localProject(rib, depth / 2, wallHeight);
+      graphics.lineStyle(1, 0xffffff, 0.14).lineBetween(from.x, from.y, to.x, to.y);
+    }
     graphics.lineStyle(2, 0x533e32, 0.88);
     graphics.strokePoints(
       roof.map(({ x: pointX, y: pointY }) => new Phaser.Geom.Point(pointX, pointY)),
@@ -526,6 +574,8 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
       })
       .setOrigin(0.5, 1);
     container.add([title, detail]);
+    title.setVisible(Boolean(sign));
+    detail.setVisible(Boolean(name));
   }
 
   private drawObstacles() {
@@ -535,7 +585,7 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
       const anchor = project(obstacle.x, obstacle.y);
       const container = this.add
         .container(anchor.x, anchor.y)
-        .setDepth((obstacle.x + obstacle.y) * 0.25);
+        .setDepth(neighborhoodDepth(obstacle.x, obstacle.y));
       const graphics = this.add.graphics();
       if (obstacle.kind === "tree") {
         graphics.fillStyle(0x3f4b34, 0.22).fillEllipse(0, 0, 34, 12);
@@ -571,7 +621,7 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
 
   private drawNeighbour(object: NeighborhoodObject) {
     const screen = project(object.x, object.y);
-    const graphics = this.add.graphics().setDepth((object.x + object.y) * 0.25 + 2);
+    const graphics = this.add.graphics().setDepth(neighborhoodDepth(object.x, object.y, 2));
     graphics.fillStyle(0x324033, 0.2).fillEllipse(screen.x, screen.y, 25, 9);
     graphics.fillStyle(0xd6a87c, 1).fillCircle(screen.x, screen.y - 25, 8);
     graphics.fillStyle(0x2f7156, 1).fillRoundedRect(screen.x - 8, screen.y - 17, 16, 23, 5);
@@ -587,27 +637,32 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
         strokeThickness: 3,
       })
       .setOrigin(0.5)
-      .setDepth((object.x + object.y) * 0.25 + 3);
+      .setDepth(neighborhoodDepth(object.x, object.y, 3));
   }
 }
 
 export function createPhaserNeighborhood(options: {
   host: HTMLElement;
   area: NeighborhoodArea;
+  areaOrigin?: WorldPoint;
   selfSessionId: string;
   homeTypeId: string | null;
   playersRef: { current: readonly NeighborhoodPlayerView[] };
   onReady: () => void;
   onScene: (scene: PhaserNeighborhoodHandle) => void;
 }) {
-  const bounds = areaBounds(options.area);
-  const scene = new PhaserNeighborhoodScene({ ...options, bounds });
+  const areaOrigin =
+    options.areaOrigin ?? neighborhoodAreaOrigin(cityEntranceForLocation(options.area.slug));
+  const bounds = areaBounds(areaOrigin);
+  const scene = new PhaserNeighborhoodScene({ ...options, bounds, areaOrigin });
   return new Phaser.Game({
     type: Phaser.CANVAS,
     parent: options.host,
     width: options.host.clientWidth || 900,
     height: options.host.clientHeight || 600,
-    backgroundColor: "#9cae79",
+    // Phaser can reuse a Canvas previously styled by the overview's FIT scaler.
+    canvasStyle: "display:block;width:100%;height:100%;margin:0;",
+    backgroundColor: options.area.slug === "oja-oba" ? "#c5b084" : "#9cae79",
     render: { antialias: true, pixelArt: false, roundPixels: false },
     scale: {
       mode: Phaser.Scale.RESIZE,
