@@ -4415,6 +4415,21 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      collect_home_food_delivery: { Args: { p_order_id: string }; Returns: Json };
+      get_food_delivery_history: { Args: Record<PropertyKey, never>; Returns: Json };
+      process_home_food_deliveries: { Args: Record<PropertyKey, never>; Returns: Json };
+      request_food_delivery: {
+        Args: { p_items: Json; p_request_id: string; p_vendor_id: string };
+        Returns: Json;
+      };
+      request_okada_ride: {
+        Args: { p_destination: string; p_request_id: string };
+        Returns: Json;
+      };
+      respond_to_home_food_delivery: {
+        Args: { p_choice: string; p_order_id: string };
+        Returns: Json;
+      };
       _advance_character_game_time: { Args: { p_char: string; p_minutes: number }; Returns: Json };
       _advance_property_rent_cycles: { Args: Record<PropertyKey, never>; Returns: number };
       _assert_map_destination_age: {

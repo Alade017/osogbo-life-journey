@@ -24,7 +24,7 @@ const props = () => ({
 it("shows real cooking terms and changes meal preference without changing the activity", () => {
   const p = props();
   render(<HomeAccessoryPanel {...p} />);
-  expect(screen.getByRole("dialog")).toHaveAccessibleName("Your cooker");
+  expect(screen.getByRole("region", { name: "Your cooker action" })).toBeVisible();
   expect(screen.getByText(`${ACTION_CATALOG.cook.durationMinutes} game min`)).toBeInTheDocument();
   expect(screen.getByText(`+${ACTION_CATALOG.cook.needs.hunger} Hunger`)).toBeInTheDocument();
   fireEvent.click(screen.getByRole("radio", { name: "Indomie & egg" }));
@@ -55,7 +55,9 @@ it("labels a shower action explicitly and confirms the synced needs update", asy
       placement={{ ...placement, id: "shower", item_id: "rain-shower" }}
     />,
   );
+  expect(screen.getByRole("region", { name: "Shower action" })).toBeVisible();
   const actionButton = screen.getByRole("button", { name: "Take a shower" });
+  expect(screen.queryByRole("button", { name: "Go outside" })).not.toBeInTheDocument();
   fireEvent.click(actionButton);
   expect(p.onUse).toHaveBeenCalledOnce();
   expect(await screen.findByRole("button", { name: "Done — needs updated" })).toBeDisabled();
@@ -74,6 +76,6 @@ it("presents non-cooking tasks without invented meal options", () => {
   expect(screen.queryByRole("radiogroup")).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: ACTION_CATALOG.sleep.name })).toBeInTheDocument();
   expect(screen.getByRole("alert")).toHaveTextContent("Reconnect first");
-  fireEvent.click(screen.getByRole("button", { name: "Close" }));
+  fireEvent.click(screen.getByRole("button", { name: "Close accessory" }));
   expect(p.onClose).toHaveBeenCalledOnce();
 });

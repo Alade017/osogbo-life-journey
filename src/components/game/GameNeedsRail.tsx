@@ -28,6 +28,11 @@ export function GameNeedsRail({ player }: { player: PlayerState }) {
       aria-label={`${player.name}'s needs dashboard${criticalCount ? `, ${criticalCount} critical` : ""}`}
       data-critical-count={criticalCount}
     >
+      {criticalCount > 0 && (
+        <span className="game-needs-summary" role="status" aria-live="polite">
+          {criticalCount} critical
+        </span>
+      )}
       <div className="game-needs-list">
         {NEED_NAMES.map((name) => {
           const Icon = NEED_ICONS[name];
@@ -58,7 +63,12 @@ export function GameNeedsRail({ player }: { player: PlayerState }) {
         })}
       </div>
       {detailNeed && detailValue !== null && (
-        <p className="game-needs-detail" role="status" aria-live="polite">
+        <p
+          className="game-needs-detail"
+          role="status"
+          aria-live="polite"
+          aria-label={`${NEED_RULES[detailNeed].label} need status`}
+        >
           <strong>{NEED_RULES[detailNeed].label}</strong>
           <span>
             {detailValue}% · {statusForNeed(detailNeed, detailValue)}

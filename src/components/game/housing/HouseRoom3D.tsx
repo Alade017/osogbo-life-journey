@@ -11,6 +11,7 @@ import { Canvas, type ThreeEvent } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import { Plane, Vector3 } from "three";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
+import type { FoodDelivery } from "@/lib/food-delivery-service";
 import { homeFurnitureAction } from "@/lib/home-furniture-actions";
 import type { HousePlacement, HouseSlot } from "./HouseRoomScene";
 import {
@@ -689,6 +690,114 @@ function RoomCharacter({
   );
 }
 
+function FoodCourier({
+  delivery,
+  width,
+  depth,
+}: {
+  delivery: FoodDelivery;
+  width: number;
+  depth: number;
+}) {
+  const overlayPortal = useContext(RoomOverlayContext);
+  const doorX = width * 0.22;
+  const doorZ = -depth / 2 + 0.2;
+  const targetX = delivery.deliveryChoice === "inside" ? width * 0.13 : doorX;
+  const targetZ = delivery.deliveryChoice === "inside" ? -depth / 2 + 1.35 : doorZ;
+  const [position, setPosition] = useState<[number, number, number]>([doorX, 0.06, doorZ]);
+  const approaching = delivery.deliveryState === "approaching";
+  const walkingInside = approaching && delivery.deliveryChoice === "inside";
+
+  useEffect(() => {
+    const doorPosition: [number, number, number] = [doorX, 0.06, doorZ];
+    const targetPosition: [number, number, number] = [targetX, 0.06, targetZ];
+    if (!approaching) {
+      setPosition(doorPosition);
+      return;
+    }
+
+    const from = [...doorPosition] as [number, number, number];
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setPosition(targetPosition);
+      return;
+    }
+
+    const startedAt = performance.now();
+    let frame = 0;
+    const animate = (now: number) => {
+      const progress = Math.min(1, (now - startedAt) / 1800);
+      setPosition([
+        from[0] + (targetPosition[0] - from[0]) * progress,
+        from[1] + (targetPosition[1] - from[1]) * progress,
+        from[2] + (targetPosition[2] - from[2]) * progress,
+      ]);
+      if (progress < 1) frame = window.requestAnimationFrame(animate);
+    };
+    frame = window.requestAnimationFrame(animate);
+    return () => window.cancelAnimationFrame(frame);
+  }, [approaching, doorX, doorZ, targetX, targetZ]);
+
+  return (
+    <>
+      <WorldCharacter
+        name="Food courier"
+        gender="male"
+        position={position}
+        animation={approaching ? (walkingInside ? "walk" : "idle") : "talk"}
+        facing="south"
+      />
+      <group position={position}>
+        <mesh castShadow receiveShadow position={[0.2, 0.98, -0.02]}>
+          <boxGeometry args={[0.38, 0.52, 0.22]} />
+          <WorldMaterial tone="clay" />
+        </mesh>
+      </group>
+      {delivery.deliveryState === "awaiting_response" && (
+        <Html
+          portal={overlayPortal}
+          zIndexRange={[8, 0]}
+          center
+          position={[position[0], position[1] + 2.15, position[2]]}
+          style={{ pointerEvents: "none" }}
+        >
+          <span className="house-courier-knock">Knock knock</span>
+        </Html>
+      )}
+    </>
+  );
+}
+
+function FoodPackage({
+  delivery,
+  position,
+}: {
+  delivery: FoodDelivery;
+  position: [number, number, number];
+}) {
+  const overlayPortal = useContext(RoomOverlayContext);
+  return (
+    <group position={position}>
+      <mesh castShadow receiveShadow position={[0, 0.22, 0]}>
+        <boxGeometry args={[0.5, 0.38, 0.42]} />
+        <WorldMaterial tone="clay" />
+      </mesh>
+      <mesh position={[0, 0.42, 0]}>
+        <boxGeometry args={[0.52, 0.035, 0.44]} />
+        <WorldMaterial tone="timber" />
+      </mesh>
+      <Html
+        portal={overlayPortal}
+        zIndexRange={[8, 0]}
+        center
+        position={[0, 0.68, 0]}
+        style={{ pointerEvents: "none" }}
+      >
+        <span className="house-food-package-label">{delivery.vendorName}</span>
+      </Html>
+    </group>
+  );
+}
+
 function SlotObject({
   slot,
   placement,
@@ -815,6 +924,7 @@ export function HouseRoom3D({
   activityLabel = null,
   slots,
   placements,
+  foodDeliveries = [],
   movingPlacement = null,
   editMode,
   moveEnabled,
@@ -944,6 +1054,30 @@ export function HouseRoom3D({
             position={[0, 0.06, depth * 0.18]}
             bedPosition={bedPosition}
           />
+          {foodDeliveries
+            .filter(
+              (delivery) =>
+                delivery.deliveryState === "awaiting_response" ||
+                delivery.deliveryState === "approaching",
+            )
+            .slice(0, 1)
+            .map((delivery) => (
+              <FoodCourier key={delivery.id} delivery={delivery} width={width} depth={depth} />
+            ))}
+          {foodDeliveries
+            .filter((delivery) => delivery.deliveryState === "package_waiting")
+            .slice(0, 4)
+            .map((delivery, index) => (
+              <FoodPackage
+                key={delivery.id}
+                delivery={delivery}
+                position={[
+                  width * 0.22 + index * 0.56,
+                  0.06,
+                  -depth / 2 + 0.72 + (index % 2) * 0.46,
+                ]}
+              />
+            ))}
           {slots
             .filter((slot) => !bySlot.has(slot.id))
             .map((slot) => (

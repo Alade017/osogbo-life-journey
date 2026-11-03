@@ -1622,29 +1622,62 @@
   font-size: 0.8rem;
 }
 
-.home-accessory-dialog {
+.home-accessory-panel {
+  position: fixed;
+  z-index: 76;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: calc(var(--game-dock-height, 64px) + env(safe-area-inset-bottom) + 72px);
+  display: grid;
   width: min(590px, calc(100vw - 24px));
-  max-width: 590px;
-  max-height: min(82dvh, 740px);
+  max-width: min(390px, calc(100vw - 28px));
+  max-height: min(38dvh, 330px);
+  gap: 12px;
   overflow-y: auto;
-  padding: 25px;
-  border-radius: 26px;
-  background: var(--card);
+  border: 1px solid rgb(255 255 255 / 90%);
+  border-radius: 22px;
+  padding: 16px;
+  background: rgb(255 255 255 / 96%);
   color: var(--foreground);
-  gap: 18px;
+  box-shadow: 0 12px 34px rgb(24 39 61 / 20%);
+  backdrop-filter: blur(14px);
+  animation: house-accessory-rise 180ms ease-out both;
 }
 .home-accessory-heading {
   display: flex;
   align-items: center;
-  gap: 13px;
-  padding-right: 25px;
+  gap: 10px;
 }
 .home-accessory-heading h2 {
+  margin: 0;
+  font-size: 0.96rem;
+  font-weight: 800;
   text-transform: capitalize;
   line-height: 1.3;
 }
+.home-accessory-heading > div {
+  min-width: 0;
+  flex: 1;
+}
 .home-accessory-heading p {
-  margin: 5px 0 0;
+  margin: 3px 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.76rem;
+}
+.home-accessory-close {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--card);
+  color: var(--foreground);
+  cursor: pointer;
+}
+.home-accessory-close:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }
 .home-accessory-icon,
 .home-meal-symbol {
@@ -1730,6 +1763,9 @@
   color: var(--destructive);
 }
 .home-task-start {
+  position: sticky;
+  z-index: 1;
+  bottom: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1795,9 +1831,15 @@
   }
 }
 @media (max-width: 420px) {
-  .home-accessory-dialog {
-    padding: 18px 14px calc(16px + env(safe-area-inset-bottom));
-    gap: 11px;
+  .home-accessory-panel {
+    right: 12px;
+    bottom: calc(var(--game-dock-height, 64px) + env(safe-area-inset-bottom) + 72px);
+    left: 12px;
+    width: auto;
+    max-width: none;
+    max-height: min(38dvh, 290px);
+    padding: 12px;
+    gap: 9px;
   }
   .home-meal-card {
     gap: 5px;
@@ -1871,6 +1913,37 @@
   padding: 5px;
   border-radius: 24px;
 }
+@media (max-width: 640px) {
+  .home-dashboard .house-needs-actions[data-accessory-selected="true"],
+  .home-scene .house-needs-actions[data-accessory-selected="true"] {
+    position: fixed;
+    z-index: 76;
+    top: calc(max(12px, env(safe-area-inset-top)) + 58px);
+    right: 12px;
+    bottom: auto;
+    left: auto;
+    width: max-content;
+    max-width: calc(100vw - 24px);
+    padding: 0;
+    background: transparent;
+  }
+
+  .home-dashboard .house-needs-actions[data-accessory-selected="true"] .house-presence-actions,
+  .home-scene .house-needs-actions[data-accessory-selected="true"] .house-presence-actions {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+  }
+
+  .home-dashboard .house-needs-actions[data-accessory-selected="true"] .house-primary-button,
+  .home-scene .house-needs-actions[data-accessory-selected="true"] .house-primary-button {
+    width: auto;
+    min-height: 38px;
+    padding-inline: 12px;
+    font-size: 0.75rem;
+  }
+}
 .home-scene .house-needs-actions > h2,
 .home-scene .house-needs-actions > p:not([role]) {
   display: none;
@@ -1887,27 +1960,14 @@
   margin: 6px;
 }
 
-/* Accessory actions open from the bottom; the scene keeps no floating task text. */
-.home-accessory-dialog {
-  top: auto;
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-  max-height: 78dvh;
-  border-radius: 26px 26px 0 0;
-  padding-bottom: calc(22px + env(safe-area-inset-bottom));
-}
-.home-accessory-dialog[data-state="open"] {
-  animation: house-accessory-rise 180ms ease-out both;
-}
 @keyframes house-accessory-rise {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(24px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    transform: translateY(0);
   }
 }
 .house-page {
@@ -1931,14 +1991,8 @@
   border: 0;
   box-shadow: none;
 }
-@media (max-width: 640px) {
-  .home-accessory-dialog {
-    width: 100%;
-    max-width: 100%;
-  }
-}
 @media (prefers-reduced-motion: reduce) {
-  .home-accessory-dialog[data-state="open"] {
+  .home-accessory-panel {
     animation: none;
   }
   .home-task-spinner {
@@ -1981,9 +2035,67 @@
   color: var(--foreground);
 }
 
-.home-accessory-dialog {
+.home-accessory-panel {
   translate: none;
 }
+
+/* Keep the house and its controls inside one full-viewport home scene. */
+.home-scene .home-dashboard,
+.home-scene .hd-stage,
+.home-scene .house-page-fill,
+.home-scene .house-page-fill .house-room-card {
+  height: calc(100dvh - 32px);
+  min-height: calc(100dvh - 32px);
+}
+
+.home-scene .house-page-fill {
+  padding: 0;
+  overflow: hidden;
+}
+
+.home-scene .house-page-fill .house-room-card {
+  padding: 0;
+}
+
+.home-scene .house-needs-actions {
+  position: fixed;
+  z-index: 76;
+  top: auto;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: calc(var(--game-dock-height, 64px) + env(safe-area-inset-bottom) + 12px);
+  left: auto;
+  width: max-content;
+  max-width: min(250px, calc(100vw - 28px));
+  max-height: none;
+  padding: 4px;
+  overflow: visible;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.home-scene .house-needs-actions .house-presence-actions {
+  margin: 0;
+  padding: 4px;
+  border: 1px solid rgb(255 255 255 / 90%);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 82%);
+  box-shadow: 0 6px 18px rgb(22 32 24 / 16%);
+}
+
+.home-scene .house-needs-actions .house-primary-button {
+  width: auto;
+  min-height: 40px;
+  padding: 8px 14px;
+}
+
+@media (max-width: 640px) {
+  .home-scene .house-needs-actions {
+    right: 12px;
+    bottom: calc(var(--game-dock-height, 64px) + env(safe-area-inset-bottom) + 10px);
+  }
+}
+
 @media (min-width: 1024px) {
   .house-page.house-page-fill.is-editing .house-room-card {
     width: calc(100% - 392px);
@@ -2038,4 +2150,114 @@
   min-width: 0;
   width: 100%;
   box-sizing: border-box;
+}
+
+.house-delivery-overlay {
+  position: absolute;
+  z-index: 5;
+  top: 3.6rem;
+  left: clamp(0.8rem, 2vw, 1.4rem);
+  display: grid;
+  width: min(340px, calc(100% - 1.6rem));
+  max-height: min(45%, 320px);
+  gap: 0.55rem;
+  overflow: auto;
+  pointer-events: auto;
+}
+
+.house-delivery-card {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--card) 94%, transparent);
+  box-shadow: var(--elevation-card);
+  backdrop-filter: blur(12px);
+}
+
+.house-delivery-card p {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.76rem;
+}
+
+.house-delivery-card > strong {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.house-delivery-card[role="alert"] button,
+.house-delivery-collect {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: 1px solid var(--primary);
+  border-radius: 0.75rem;
+  padding: 0.45rem 0.65rem;
+  color: var(--primary-foreground);
+  background: var(--primary);
+  font-size: 0.76rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.house-delivery-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.house-delivery-actions button {
+  min-height: 40px;
+  flex: 1 1 120px;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  padding: 0.45rem 0.65rem;
+  color: var(--foreground);
+  background: var(--background);
+  font-size: 0.76rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.house-delivery-actions button:first-child {
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+.house-delivery-actions button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.house-food-package-label,
+.house-courier-knock {
+  display: block;
+  max-width: 160px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.22rem 0.55rem;
+  color: var(--foreground);
+  background: var(--card);
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  box-shadow: var(--elevation-card);
+}
+
+@media (max-width: 520px) {
+  .house-delivery-overlay {
+    top: 3.2rem;
+    left: 0.6rem;
+    width: min(300px, calc(100% - 1.2rem));
+    max-height: 38%;
+  }
 }

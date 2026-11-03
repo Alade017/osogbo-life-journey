@@ -21,6 +21,24 @@
   gap: 4px;
 }
 
+.game-needs-summary {
+  display: inline-flex;
+  min-height: 22px;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  margin: 0 2px 0 3px;
+  border: 1px solid rgb(203 78 66 / 24%);
+  border-radius: 999px;
+  background: #fff1ef;
+  color: #a9362d;
+  padding: 0 7px;
+  font-size: 10px;
+  font-weight: 750;
+  line-height: 1;
+  white-space: nowrap;
+}
+
 .game-needs-item {
   position: relative;
   display: grid;

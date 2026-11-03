@@ -1,25 +1,28 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type CSSProperties, type FormEvent } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
 import { Check, Eye, EyeOff, ShieldCheck } from "lucide-react";
-import cityPhoto from "@/assets/osogbo-city.jpg";
 import { toast } from "sonner";
+import cityPhoto from "@/assets/osogbo-city.jpg";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Logo } from "./Logo";
 import { primeGameAudioForLogin, disableGameAudio } from "@/lib/game-audio";
+import "./auth-switch.css";
 
-export function AuthCard({ mode }: { mode: "login" | "signup" }) {
+type Mode = "login" | "signup";
+
+export function AuthCard({ mode: initialMode }: { mode: Mode }) {
   const navigate = useNavigate();
+  const [mode, setMode] = useState<Mode>(initialMode);
+  const [direction, setDirection] = useState<1 | -1>(1);
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [busy, setBusy] = useState(false);
-  const [sent, setSent] = useState(false);
   const [recoverySent, setRecoverySent] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
 
@@ -35,6 +38,16 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
     });
     return () => data.subscription.unsubscribe();
   }, [mode]);
+
+  function switchMode(next: Mode) {
+    if (next === mode || busy || resettingPassword) return;
+    setDirection(next === "signup" ? 1 : -1);
+    setMode(next);
+    setRecoverySent(false);
+    setPassword("");
+    setConfirmPassword("");
+    window.history.replaceState({}, "", next === "signup" ? "/signup" : "/login");
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -94,7 +107,6 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
           const { error } = await supabase.auth.setSession(result);
           if (error) throw error;
         }
-        // The entry page checks the saved character before opening the game.
         navigate({ to: "/enter" });
       }
     } catch (err) {
@@ -120,6 +132,10 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
     }
   }
 
+  const paneStyle = { "--dir": direction } as CSSProperties;
+  const showSwitch = !resettingPassword && !recoverySent;
+  const formKey = `${mode}-${recoverySent ? "recover" : resettingPassword ? "reset" : "form"}`;
+
   return (
     <div className="auth-screen relative isolate min-h-screen overflow-hidden bg-ink">
       <img
@@ -133,7 +149,7 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
           <Link to="/" className="auth-story-brand" aria-label="OSUN LIFE home">
             <Logo small /> <span>OSUN LIFE</span>
           </Link>
-          <div className="max-w-lg">
+          <div key={mode} className="auth-pane max-w-lg" style={paneStyle}>
             <p className="auth-story-kicker">Your next chapter starts here</p>
             <h1 className="auth-story-title">
               {mode === "signup" ? "Make a life in Osogbo." : "Good to have you back."}
@@ -163,187 +179,233 @@ export function AuthCard({ mode }: { mode: "login" | "signup" }) {
             <p className="auth-form-eyebrow">
               <ShieldCheck size={14} aria-hidden="true" /> Secure player access
             </p>
-            {recoverySent ? (
-              <div>
-                <h2 className="text-2xl font-bold">Reset your password</h2>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  Enter your account email and weâ€™ll send a secure reset link.
-                </p>
-                <form onSubmit={submit} className="mt-6 space-y-4">
-                  <div className="space-y-1.5">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="h-11 border bg-card"
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    variant="default"
-                    size="lg"
-                    className="auth-submit-button w-full"
-                    disabled={busy}
-                    aria-busy={busy}
-                  >
-                    {busy ? "Sending¦" : "Send reset link"}
-                  </Button>
-                </form>
+
+            {showSwitch && (
+              <div
+                className="auth-switch"
+                role="tablist"
+                aria-label="Log in or sign up"
+                style={{ "--pos": mode === "login" ? 0 : 1 } as CSSProperties}
+              >
+                <span className="auth-switch-thumb" aria-hidden="true" />
                 <button
                   type="button"
-                  onClick={() => setRecoverySent(false)}
-                  className="mt-5 w-full text-center text-sm font-bold text-primary underline"
+                  role="tab"
+                  aria-selected={mode === "login"}
+                  className="auth-switch-option"
+                  onClick={() => switchMode("login")}
+                  disabled={busy}
                 >
-                  Back to log in
+                  Log in
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={mode === "signup"}
+                  className="auth-switch-option"
+                  onClick={() => switchMode("signup")}
+                  disabled={busy}
+                >
+                  Sign up
                 </button>
               </div>
-            ) : (
-              <>
-                <h2 className="text-3xl font-bold">
-                  {resettingPassword
-                    ? "Choose a new password"
-                    : mode === "signup"
-                      ? "Create your account"
-                      : "Welcome back"}
-                </h2>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {resettingPassword
-                    ? "Use at least 8 characters for your new password."
-                    : mode === "signup"
-                      ? "Start your new life in Osogbo."
-                      : "Log in to continue your life in the city."}
-                </p>
-                <form onSubmit={submit} className="mt-6 space-y-4">
-                  {!resettingPassword && (
+            )}
+
+            <div key={formKey} className="auth-pane" style={paneStyle}>
+              {recoverySent ? (
+                <>
+                  <h2 className="text-2xl font-bold">Reset your password</h2>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Enter your account email and we’ll send a secure reset link.
+                  </p>
+                  <form onSubmit={submit} className="mt-6 space-y-4">
                     <div className="space-y-1.5">
-                      <Label htmlFor="username">
-                        {mode === "signup" ? "Username" : "Username or email"}
-                      </Label>
+                      <Label htmlFor="email">Email</Label>
                       <Input
-                        id="username"
-                        autoComplete="username"
+                        id="email"
+                        type="email"
                         required
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                         className="h-11 border bg-card"
                       />
-                      {mode === "signup" && (
-                        <p className="text-xs text-muted-foreground">
-                          3-24 letters, numbers or underscores. Email can be added later in
-                          Settings.
-                        </p>
-                      )}
-                    </div>
-                  )}
-                  <div className="space-y-1.5">
-                    <Label htmlFor="password">Password</Label>
-                    <div className="relative">
-                      <Input
-                        id="password"
-                        type={showPassword ? "text" : "password"}
-                        required
-                        minLength={8}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="h-11 border bg-card pr-12"
-                        autoComplete={
-                          mode === "signup" || resettingPassword
-                            ? "new-password"
-                            : "current-password"
-                        }
-                      />
-                      <button
-                        type="button"
-                        className="absolute inset-y-0 right-0 flex min-w-11 items-center justify-center text-muted-foreground focus-visible:outline-2 focus-visible:outline-[var(--ring)]"
-                        onClick={() => setShowPassword((value) => !value)}
-                        aria-label={showPassword ? "Hide password" : "Show password"}
-                        aria-pressed={showPassword}
-                      >
-                        {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
-                      </button>
-                    </div>
-                    {(mode === "signup" || resettingPassword) && (
-                      <p className="text-xs text-muted-foreground">At least 8 characters.</p>
-                    )}
-                  </div>
-                  {resettingPassword && (
-                    <div className="space-y-1.5">
-                      <Label htmlFor="confirm-password">Confirm password</Label>
-                      <Input
-                        id="confirm-password"
-                        type={showPassword ? "text" : "password"}
-                        required
-                        minLength={8}
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        className="h-11 border bg-card"
-                        autoComplete="new-password"
-                      />
-                    </div>
-                  )}
-                  <Button
-                    type="submit"
-                    variant="default"
-                    size="lg"
-                    className="auth-submit-button w-full"
-                    disabled={busy}
-                    aria-busy={busy}
-                  >
-                    {busy
-                      ? "Please wait"
-                      : resettingPassword
-                        ? "Update password"
-                        : mode === "signup"
-                          ? "Create account"
-                          : "Log in"}
-                  </Button>
-                </form>
-                {!resettingPassword && mode === "login" && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => setRecoverySent(true)}
-                      className="mt-4 text-sm font-semibold text-primary underline underline-offset-2"
-                    >
-                      Forgot password?
-                    </button>
-                    <div className="my-5 flex items-center gap-3 text-xs font-semibold text-muted-foreground">
-                      <span className="h-px flex-1 bg-border" /> OR{" "}
-                      <span className="h-px flex-1 bg-border" />
                     </div>
                     <Button
-                      variant="plain"
+                      type="submit"
+                      variant="default"
                       size="lg"
                       className="auth-submit-button w-full"
-                      onClick={google}
                       disabled={busy}
                       aria-busy={busy}
                     >
-                      Continue with Google
+                      {busy ? "Sending…" : "Send reset link"}
                     </Button>
-                    <p className="mt-6 text-center text-sm">
-                      New to Osogbo?{" "}
-                      <Link to="/signup" className="font-bold text-primary underline">
-                        Create an account
-                      </Link>
-                    </p>
-                  </>
-                )}
-                {!resettingPassword && mode === "signup" && (
-                  <>
+                  </form>
+                  <button
+                    type="button"
+                    onClick={() => setRecoverySent(false)}
+                    className="auth-text-link mt-5 w-full text-center"
+                  >
+                    Back to log in
+                  </button>
+                </>
+              ) : (
+                <>
+                  <h2 className="text-3xl font-bold">
+                    {resettingPassword
+                      ? "Choose a new password"
+                      : mode === "signup"
+                        ? "Create your account"
+                        : "Welcome back"}
+                  </h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {resettingPassword
+                      ? "Use at least 8 characters for your new password."
+                      : mode === "signup"
+                        ? "Start your new life in Osogbo."
+                        : "Log in to continue your life in the city."}
+                  </p>
+
+                  <form onSubmit={submit} className="mt-6 space-y-4">
+                    {!resettingPassword && (
+                      <div className="space-y-1.5">
+                        <Label htmlFor="username">
+                          {mode === "signup" ? "Username" : "Username or email"}
+                        </Label>
+                        <Input
+                          id="username"
+                          autoComplete="username"
+                          required
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          className="h-11 border bg-card"
+                        />
+                        {mode === "signup" && (
+                          <p className="text-xs text-muted-foreground">
+                            3-24 letters, numbers or underscores. Email can be added later in
+                            Settings.
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor="password">Password</Label>
+                      <div className="relative">
+                        <Input
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          required
+                          minLength={8}
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="h-11 border bg-card pr-12"
+                          autoComplete={
+                            mode === "signup" || resettingPassword
+                              ? "new-password"
+                              : "current-password"
+                          }
+                        />
+                        <button
+                          type="button"
+                          className="absolute inset-y-0 right-0 flex min-w-11 items-center justify-center text-muted-foreground focus-visible:outline-2 focus-visible:outline-[var(--ring)]"
+                          onClick={() => setShowPassword((value) => !value)}
+                          aria-label={showPassword ? "Hide password" : "Show password"}
+                          aria-pressed={showPassword}
+                        >
+                          {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+                        </button>
+                      </div>
+                      {(mode === "signup" || resettingPassword) && (
+                        <p className="text-xs text-muted-foreground">At least 8 characters.</p>
+                      )}
+                    </div>
+
+                    {resettingPassword && (
+                      <div className="space-y-1.5">
+                        <Label htmlFor="confirm-password">Confirm password</Label>
+                        <Input
+                          id="confirm-password"
+                          type={showPassword ? "text" : "password"}
+                          required
+                          minLength={8}
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          className="h-11 border bg-card"
+                          autoComplete="new-password"
+                        />
+                      </div>
+                    )}
+
+                    <Button
+                      type="submit"
+                      variant="default"
+                      size="lg"
+                      className="auth-submit-button w-full"
+                      disabled={busy}
+                      aria-busy={busy}
+                    >
+                      {busy
+                        ? "Please wait…"
+                        : resettingPassword
+                          ? "Update password"
+                          : mode === "signup"
+                            ? "Create account"
+                            : "Log in"}
+                    </Button>
+                  </form>
+
+                  {!resettingPassword && mode === "login" && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setRecoverySent(true)}
+                        className="auth-text-link mt-4"
+                      >
+                        Forgot password?
+                      </button>
+                      <div className="my-5 flex items-center gap-3 text-xs font-semibold text-muted-foreground">
+                        <span className="h-px flex-1 bg-border" /> OR{" "}
+                        <span className="h-px flex-1 bg-border" />
+                      </div>
+                      <Button
+                        variant="plain"
+                        size="lg"
+                        className="auth-submit-button w-full"
+                        onClick={google}
+                        disabled={busy}
+                        aria-busy={busy}
+                      >
+                        Continue with Google
+                      </Button>
+                      <p className="mt-6 text-center text-sm">
+                        New to Osogbo?{" "}
+                        <button
+                          type="button"
+                          className="auth-text-link"
+                          onClick={() => switchMode("signup")}
+                        >
+                          Create an account
+                        </button>
+                      </p>
+                    </>
+                  )}
+
+                  {!resettingPassword && mode === "signup" && (
                     <p className="mt-6 text-center text-sm">
                       Already playing?{" "}
-                      <Link to="/login" className="font-bold text-primary underline">
+                      <button
+                        type="button"
+                        className="auth-text-link"
+                        onClick={() => switchMode("login")}
+                      >
                         Log in
-                      </Link>
+                      </button>
                     </p>
-                  </>
-                )}
-              </>
-            )}
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </section>
       </div>

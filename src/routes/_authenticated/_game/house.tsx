@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { House, Moon, Sunrise, WifiOff } from "lucide-react";
 import { HouseEditSheets } from "@/components/game/housing/HouseEditSheets";
+import { HomeFoodDeliveryPanel } from "@/components/game/housing/HomeFoodDeliveryPanel";
 import type {
   HouseInventoryItem,
   HouseOutfit,
@@ -14,6 +15,7 @@ import { HomeAccessoryPanel } from "@/components/game/housing/HomeAccessoryPanel
 import { HouseRoomRenderer } from "@/components/game/housing/HouseRoomRenderer";
 import { useGameTime } from "@/components/game/GameTimeProvider";
 import { homeFurnitureAction } from "@/lib/home-furniture-actions";
+import { foodDeliveryService } from "@/lib/food-delivery-service";
 import { ACTION_CATALOG } from "@/lib/life-simulation";
 import { HousingReliefPanel } from "@/components/game/housing/HousingReliefPanel";
 import { housingReliefQueryKey } from "@/lib/housing-relief-client";
@@ -704,6 +706,41 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const canonicalHome = canonicalHomeQuery.data;
   const isInsideHome =
     !!canonicalHome && character?.inside_home_property_id === canonicalHome.playerPropertyId;
+  const deliveryQueryKey = [
+    "homeFoodDeliveries",
+    character?.id,
+    canonicalHome?.playerPropertyId,
+  ] as const;
+  const deliveries = useQuery({
+    queryKey: deliveryQueryKey,
+    queryFn: foodDeliveryService.processAtHome,
+    enabled: isInsideHome && !isOffline && !!character?.id,
+    refetchInterval: isInsideHome && !isOffline ? 4_000 : false,
+    refetchOnWindowFocus: true,
+  });
+  const deliveryResponse = useMutation({
+    mutationFn: ({ orderId, choice }: { orderId: string; choice: "inside" | "outside" }) =>
+      foodDeliveryService.respond(orderId, choice),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: deliveryQueryKey }),
+        queryClient.invalidateQueries({ queryKey: ["phoneService", "food_delivery_history"] }),
+      ]);
+      toast.success("The courier is handing over your order.");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  const packageCollection = useMutation({
+    mutationFn: foodDeliveryService.collect,
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: deliveryQueryKey }),
+        queryClient.invalidateQueries({ queryKey: ["phoneService", "food_delivery_history"] }),
+      ]);
+      toast.success("Food package collected.");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
   const rentStatus = canonicalHome?.status ?? serverState?.house?.status ?? "unknown";
   const rentDueAt = canonicalHome?.dueAt ?? serverState?.house?.next_rent_due_at;
   const isOverdue = rentStatus === "grace" || rentStatus === "rescue" || rentStatus === "overdue";
@@ -894,6 +931,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           activityLabel={currentActivity ? ACTION_CATALOG[currentActivity.actionId].name : null}
           slots={slots}
           placements={scenePlacements}
+          foodDeliveries={deliveries.data ?? []}
           movingPlacement={editing ? selectedPlacement : null}
           editMode={editing}
           moveEnabled={editing && !isOffline && !actionMutation.isPending && !activeSleep}
@@ -919,6 +957,17 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             setSelectedSlot(slot);
           }}
         />
+        {isInsideHome && (
+          <HomeFoodDeliveryPanel
+            deliveries={deliveries.data ?? []}
+            error={deliveries.isError}
+            responsePending={deliveryResponse.isPending}
+            collectionPending={packageCollection.isPending}
+            onRetry={() => void deliveries.refetch()}
+            onRespond={(orderId, choice) => deliveryResponse.mutate({ orderId, choice })}
+            onCollect={(orderId) => packageCollection.mutate(orderId)}
+          />
+        )}
         {activeSleep && (
           <div className="house-sleep-overlay" role="region" aria-label="Sleep controls">
             <div className="house-sleep-status">
@@ -955,7 +1004,11 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         )}
       </section>
       {!editing && (
-        <section className="house-needs-actions" aria-label="Use home accessories">
+        <section
+          className="house-needs-actions"
+          aria-label="Home controls"
+          data-accessory-selected={!!selectedPlacement && !!selectedAction}
+        >
           <h2>{selectedPlacement && selectedAction ? "Accessory" : "Home"}</h2>
           <p>
             {activeSleep

@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { GameNeedsRail } from "@/components/game/GameNeedsRail";
 import type { PlayerState } from "@/lib/player-state";
@@ -26,6 +26,7 @@ describe("persistent player needs dashboard", () => {
     ).toBeVisible();
     expect(container.querySelectorAll(".game-needs-item")).toHaveLength(6);
     expect(container.querySelectorAll(".game-needs-icon-ring")).toHaveLength(6);
+    expect(container.querySelector(".game-needs-summary")).toHaveTextContent("1 critical");
     expect(container.querySelector("a")).toBeNull();
     expect(container.querySelectorAll("button")).toHaveLength(6);
     expect(screen.getByRole("button", { name: "Hunger: 20 percent, warning" })).toBeInTheDocument();
@@ -40,9 +41,10 @@ describe("persistent player needs dashboard", () => {
   it("reveals the tapped need's exact level and status", () => {
     render(<GameNeedsRail player={player} />);
     const socialNeed = screen.getByRole("button", { name: "Social: 10 percent, critical" });
-    socialNeed.click();
+    fireEvent.click(socialNeed);
     expect(socialNeed).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("status")).toHaveTextContent("Social");
-    expect(screen.getByRole("status")).toHaveTextContent("10% · critical");
+    const detail = screen.getByRole("status", { name: "Social need status" });
+    expect(detail).toHaveTextContent("Social");
+    expect(detail).toHaveTextContent("10% · critical");
   });
 });

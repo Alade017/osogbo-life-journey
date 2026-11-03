@@ -639,6 +639,26 @@
   display: block;
 }
 
+.phone-order-card > p {
+  color: var(--muted-foreground);
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.phone-order-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.phone-order-heading time,
+.phone-order-heading > span {
+  color: var(--muted-foreground);
+  font-size: 0.7rem;
+  text-align: right;
+}
+
 .phone-service-field,
 .phone-service-row label {
   display: grid;

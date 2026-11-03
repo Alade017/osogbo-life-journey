@@ -38,7 +38,7 @@ function renderWithQuery(ui: React.ReactElement) {
 }
 beforeEach(() => {
   db.rows = { wallets: [{ balance: 10000 }] };
-  db.rpc.mockReset().mockResolvedValue({ data: null, error: null });
+  db.rpc.mockReset().mockResolvedValue({ data: [], error: null });
 });
 afterEach(() => clients.splice(0).forEach((client) => client.clear()));
 
@@ -70,7 +70,7 @@ it("requests a ride and displays the returned server ride history", async () => 
         id: "ride-1",
         destination: "Town market",
         fare_minor: 300,
-        status: "requested",
+        status: "assigned",
         created_at: "2026-10-23T10:00:00Z",
       },
     ];
@@ -81,11 +81,43 @@ it("requests a ride and displays the returned server ride history", async () => 
     target: { value: "Town market" },
   });
   fireEvent.click(screen.getByRole("button", { name: "Request ride" }));
-  expect(await screen.findByText("requested")).toBeInTheDocument();
+  expect(await screen.findByText("Driver assigned")).toBeInTheDocument();
   expect(db.rpc).toHaveBeenCalledWith("request_okada_ride", {
     p_destination: "Town market",
     p_request_id: expect.any(String),
   });
+});
+
+it("shows the approved food vendor, order items, and delivery status", async () => {
+  db.rows["food_vendors"] = [{ id: "kitchen-1", name: "Town kitchen" }];
+  db.rows["food_menu_items"] = [
+    { id: "meal-1", name: "Rice", price_minor: 500, vendor_id: "kitchen-1" },
+  ];
+  db.rpc.mockImplementation(async (name: string) => {
+    if (name === "get_food_delivery_history") {
+      return {
+        data: [
+          {
+            id: "order-1",
+            totalMinor: 1000,
+            status: "preparing",
+            deliveryState: "pending",
+            deliveryChoice: null,
+            createdAt: "2026-10-23T10:00:00Z",
+            vendorName: "Town kitchen",
+            items: [{ name: "Rice", quantity: 2 }],
+          },
+        ],
+        error: null,
+      };
+    }
+    return { data: null, error: null };
+  });
+  renderWithQuery(<PhoneCommunityServices app="Food Delivery" />);
+  await screen.findByText("Preparing");
+  expect(screen.getAllByText("Town kitchen")).toHaveLength(2);
+  expect(screen.getByText("2 × Rice")).toBeInTheDocument();
+  expect(screen.getByText("Preparing")).toBeInTheDocument();
 });
 
 it("keeps contribution amounts subject to the loaded cash balance", async () => {

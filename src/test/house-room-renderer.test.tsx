@@ -22,6 +22,7 @@ vi.mock("@/components/game/housing/HouseRoom3D", () => ({
         data-animation-state={props.animationState}
         data-activity-request-id={props.activityRequestId}
         data-activity-label={props.activityLabel}
+        data-food-deliveries={props.foodDeliveries?.length ?? 0}
       >
         R3F room: {props.houseTypeId}
       </div>
@@ -111,6 +112,28 @@ describe("R3F home renderer boundary", () => {
     expect(room).toHaveAttribute("data-animation-state", "work");
     expect(room).toHaveAttribute("data-activity-request-id", "sleep-request");
     expect(room).toHaveAttribute("data-activity-label", "Cooking");
+  });
+
+  it("forwards the owner's active food deliveries to the room renderer", async () => {
+    render(
+      <HouseRoomRenderer
+        {...props()}
+        foodDeliveries={[
+          {
+            id: "order-1",
+            status: "preparing",
+            deliveryState: "awaiting_response",
+            deliveryChoice: null,
+            totalMinor: 1200,
+            createdAt: "2026-10-23T10:00:00Z",
+            vendorName: "Iya Mufu Kitchen",
+            items: [{ name: "Amala and ewedu", quantity: 1 }],
+          },
+        ]}
+      />,
+    );
+    const room = await screen.findByText("R3F room: single-room");
+    expect(room).toHaveAttribute("data-food-deliveries", "1");
   });
 
   it("provides accessible room controls if the R3F renderer fails", async () => {

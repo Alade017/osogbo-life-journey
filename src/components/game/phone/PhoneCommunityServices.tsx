@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { foodDeliveryService, type FoodDelivery } from "@/lib/food-delivery-service";
 import { formatNaira, q } from "@/lib/game";
 
 type ServiceApp = "Calendar" | "Food Delivery" | "Okada Rides" | "Contribution";
@@ -16,13 +17,28 @@ type Ride = {
   status: string;
   created_at: string;
 };
-type Order = { id: string; total_minor: number; status: string; created_at: string };
 type Contribution = { id: string; fund_id: string; amount_minor: number };
 
 // Migration 0060 is not yet represented in the generated Supabase types.
 // Keep the temporary cast at the database boundary instead of spreading it through UI code.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const phoneDb = supabase as any;
+
+function foodDeliveryStatusLabel(delivery: FoodDelivery) {
+  if (delivery.deliveryState === "awaiting_response") return "Courier at your door";
+  if (delivery.deliveryState === "approaching") return "Courier bringing your order";
+  if (delivery.deliveryState === "package_waiting") return "Package ready to collect";
+  if (delivery.deliveryState === "collected") return "Collected";
+  if (delivery.deliveryState === "cancelled" || delivery.status === "cancelled") return "Cancelled";
+  return "Preparing";
+}
+
+function rideStatusLabel(status: string) {
+  if (status === "assigned") return "Driver assigned";
+  if (status === "completed") return "Completed";
+  if (status === "cancelled") return "Cancelled";
+  return "Searching for a rider";
+}
 
 function usePhoneRows<T>(table: string, columns: string, orderBy?: string, ascending = false) {
   return useQuery({
@@ -135,11 +151,11 @@ function FoodApp() {
   const client = useQueryClient();
   const vendors = usePhoneRows<Vendor>("food_vendors", "id,name");
   const menu = usePhoneRows<MenuItem>("food_menu_items", "id,name,price_minor,vendor_id");
-  const orders = usePhoneRows<Order>(
-    "food_orders",
-    "id,total_minor,status,created_at",
-    "created_at",
-  );
+  const orders = useQuery({
+    queryKey: ["phoneService", "food_delivery_history"],
+    queryFn: foodDeliveryService.getHistory,
+    refetchInterval: 15_000,
+  });
   const walletQuery = useQuery(q.wallet());
   const wallet = walletQuery.data;
   const [vendorId, setVendorId] = useState("");
@@ -163,10 +179,10 @@ function FoodApp() {
     },
     onSuccess: () => {
       setBasket({});
-      void client.invalidateQueries({ queryKey: ["phoneService", "food_orders"] });
+      void client.invalidateQueries({ queryKey: ["phoneService", "food_delivery_history"] });
       void client.invalidateQueries({ queryKey: q.wallet().queryKey });
       void client.invalidateQueries({ queryKey: q.transactions().queryKey });
-      toast.success("Food order placed.");
+      toast.success("Order approved. The kitchen is preparing it.");
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -259,11 +275,16 @@ function FoodApp() {
         retry={() => void orders.refetch()}
       />
       {orders.data?.slice(0, 5).map((item) => (
-        <article className="phone-service-card phone-service-row" key={item.id}>
-          <span>{new Date(item.created_at).toLocaleDateString("en-NG")}</span>
-          <strong>
-            {formatNaira(item.total_minor)} · {item.status}
-          </strong>
+        <article className="phone-service-card phone-order-card" key={item.id}>
+          <div className="phone-order-heading">
+            <strong>{item.vendorName}</strong>
+            <time>{new Date(item.createdAt).toLocaleDateString("en-NG")}</time>
+          </div>
+          <p>{item.items.map((line) => `${line.quantity} × ${line.name}`).join(" · ")}</p>
+          <div className="phone-order-heading">
+            <strong>{formatNaira(item.totalMinor)}</strong>
+            <span>{foodDeliveryStatusLabel(item)}</span>
+          </div>
         </article>
       ))}
     </div>
@@ -298,7 +319,7 @@ function RidesApp() {
       void client.invalidateQueries({ queryKey: ["phoneService", "okada_ride_requests"] });
       void client.invalidateQueries({ queryKey: q.wallet().queryKey });
       void client.invalidateQueries({ queryKey: q.transactions().queryKey });
-      toast.success("Ride requested.");
+      toast.success("An okada rider has been assigned.");
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -360,7 +381,7 @@ function RidesApp() {
             {ride.destination}
             <small>{new Date(ride.created_at).toLocaleDateString("en-NG")}</small>
           </span>
-          <strong>{ride.status}</strong>
+          <strong>{rideStatusLabel(ride.status)}</strong>
         </article>
       ))}
     </div>

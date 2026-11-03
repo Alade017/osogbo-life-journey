@@ -1,6 +1,7 @@
 import type { HousePlacement, HouseSlot } from "./HouseRoomScene";
 import type { AvatarAnimationState, AvatarEquipment } from "@/components/game/Avatar";
 import type { Appearance } from "@/game/avatar-appearance";
+import type { FoodDelivery } from "@/lib/food-delivery-service";
 
 export type HouseRoomRendererProps = {
   houseTypeId: string;
@@ -15,6 +16,7 @@ export type HouseRoomRendererProps = {
   activityRequestId?: string | null;
   activityLabel?: string | null;
   movingPlacement?: HousePlacement | null;
+  foodDeliveries?: FoodDelivery[];
   editMode: boolean;
   moveEnabled: boolean;
   onSelectPlacement: (placement: HousePlacement) => void;

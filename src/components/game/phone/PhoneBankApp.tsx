@@ -12,6 +12,7 @@ import {
 import { toast } from "sonner";
 import { formatNaira, q, rpc, useGameAction } from "@/lib/game";
 import { amountError } from "@/lib/economy-service";
+import { formatSignedAmount, directionTextClass } from "@/lib/transaction-direction";
 import { TransactionListSkeleton } from "@/components/game/loading-skeletons";
 
 export function PhoneBankApp() {
@@ -199,14 +200,8 @@ export function PhoneBankApp() {
                           })}
                         </small>
                       </div>
-                      <span
-                        className={`font-bold ${
-                          tx.amount > 0
-                            ? "text-emerald-600 dark:text-emerald-400"
-                            : "text-red-600 dark:text-red-400"
-                        }`}
-                      >
-                        {tx.amount > 0 ? `+${formatNaira(tx.amount)}` : formatNaira(tx.amount)}
+                      <span className={`font-bold ${directionTextClass(tx)}`}>
+                        {formatSignedAmount(tx, formatNaira)}
                       </span>
                     </div>
                   ))}
@@ -361,14 +356,8 @@ export function PhoneBankApp() {
                         })}
                       </span>
                     </div>
-                    <span
-                      className={`text-xs font-bold flex-none ${
-                        tx.amount > 0
-                          ? "text-emerald-600 dark:text-emerald-400"
-                          : "text-red-600 dark:text-red-400"
-                      }`}
-                    >
-                      {tx.amount > 0 ? `+${formatNaira(tx.amount)}` : formatNaira(tx.amount)}
+                    <span className={`text-xs font-bold flex-none ${directionTextClass(tx)}`}>
+                      {formatSignedAmount(tx, formatNaira)}
                     </span>
                   </div>
                 ))}
