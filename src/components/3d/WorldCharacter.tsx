@@ -32,7 +32,7 @@ export function WorldCharacter({
   facing?: string;
   animation?: AvatarAnimationState;
   name?: string;
-  taskPose?: "sit" | "wash" | "cook" | "collect";
+  taskPose?: "sit" | "wash" | "cook" | "collect" | undefined;
 }) {
   const safe = normalizeAvatarAppearance(appearance, gender);
   const h = WORLD_SCALE.character * ([0.92, 1, 1.06][safe.stature] ?? 1);
@@ -73,9 +73,6 @@ export function WorldCharacter({
       const side = index % 2 ? 1 : -1;
       part.rotation.x = reduced
         ? 0
-        : taskPose === "wash" ? -1.5 + Math.sin(phase) * .25 * side
-        : taskPose === "collect" ? -.9 + Math.sin(phase) * .15
-        : taskPose === "cook" ? -.7 + Math.sin(phase) * .25 * side
         : taskPose === "wash" ? -1.5 + Math.sin(phase) * .25 * side
         : taskPose === "collect" ? -.9 + Math.sin(phase) * .15
         : taskPose === "cook" ? -.7 + Math.sin(phase) * .25 * side
