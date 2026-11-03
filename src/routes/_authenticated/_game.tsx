@@ -213,6 +213,7 @@ function GameLayout() {
           onClickCapture={handleGamePageLinkClick}
           className={cn(
             "game-shell city-game navigation-redesign card-refresh dashboard-ui-refresh min-h-screen pb-20 md:pb-0",
+            pathname === "/house" && "home-scene",
             profile?.reduced_motion && "reduce-motion",
             phoneOpen && "phone-open",
           )}

@@ -1157,9 +1157,37 @@
   text-align: left;
   cursor: pointer;
 }
+.house-needs-action.house-selected-action {
+  min-height: 62px;
+  padding: 0.8rem 0.9rem;
+  border-color: var(--primary);
+  background: var(--accent);
+}
 .house-needs-action span {
   color: var(--muted-foreground);
   font-size: 0.76rem;
+}
+.house-selected-accessory-panel {
+  display: grid;
+  gap: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--background);
+  padding: 0.9rem;
+}
+.house-selected-accessory-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+.house-selected-accessory-header h3 {
+  margin: 0.2rem 0 0;
+  font-size: 1.05rem;
+}
+.house-selected-accessory-actions {
+  display: grid;
+  gap: 0.65rem;
 }
 .house-needs-action:disabled {
   cursor: not-allowed;
@@ -1192,6 +1220,200 @@
   font-size: 0.72rem;
   font-weight: 800;
 }
+
+.home-scene .city-game-main {
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  background: linear-gradient(180deg, #9bb9d8 0%, #d7dce0 48%, #f4cba7 100%);
+}
+.home-scene .house-page-fill {
+  height: calc(100dvh - var(--game-dock-height, 64px) - 36px);
+  min-height: min(420px, calc(100dvh - var(--game-dock-height, 64px) - 36px));
+  padding: 0;
+  overflow: hidden;
+}
+.home-scene .house-page-fill .house-room-card {
+  height: 100%;
+  min-height: 0;
+}
+.home-scene .house-page-fill .house-3d-scene {
+  height: 100%;
+  min-height: 0;
+  border-radius: 0;
+}
+.house-home-badge {
+  position: absolute;
+  z-index: 3;
+  top: 14px;
+  left: 14px;
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid rgb(255 255 255 / 75%);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 94%);
+  color: #233447;
+  padding: 0.45rem 0.9rem;
+  box-shadow: 0 5px 18px rgb(22 32 24 / 12%);
+  font-size: 0.86rem;
+  font-weight: 750;
+  animation: home-hud-in 220ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+.house-room-card.is-sleeping .house-home-badge {
+  display: none;
+}
+.home-scene .house-page-fill .house-edit-toggle {
+  top: 14px;
+  right: 14px;
+  min-height: 44px;
+  min-width: 88px;
+  border: 1px solid rgb(255 255 255 / 82%);
+  border-radius: 999px;
+  background: linear-gradient(135deg, #fff 0%, #eaf3ff 100%);
+  color: #155e9b;
+  font-size: 0.8rem;
+  font-weight: 850;
+  letter-spacing: 0.035em;
+  box-shadow:
+    0 8px 22px rgb(22 32 24 / 15%),
+    inset 0 1px 0 rgb(255 255 255 / 90%);
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease;
+}
+.home-scene .house-page-fill .house-edit-toggle:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgb(22 32 24 / 16%);
+}
+.home-scene .house-needs-actions {
+  position: fixed;
+  z-index: 75;
+  right: 14px;
+  bottom: calc(var(--game-dock-height, 64px) + env(safe-area-inset-bottom) + 12px);
+  box-sizing: border-box;
+  width: min(320px, calc((100vw - 42px) / 2));
+  max-height: min(38dvh, 300px);
+  margin: 0;
+  overflow-y: auto;
+  border: 1px solid rgb(255 255 255 / 85%);
+  border-radius: 24px;
+  background: rgb(255 255 255 / 95%);
+  padding: 0.9rem;
+  box-shadow: 0 10px 32px rgb(24 39 61 / 18%);
+  backdrop-filter: blur(14px);
+  animation: home-hud-in 240ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+.home-scene .house-needs-actions h2 {
+  margin: 0;
+  font-size: 0.98rem;
+}
+.home-scene .house-needs-actions > p {
+  margin: 0.3rem 0 0.6rem;
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+.home-scene .house-needs-actions .house-presence-actions {
+  margin: 0.45rem 0 0;
+}
+.home-scene .house-needs-actions .house-primary-button {
+  min-height: 42px;
+  width: 100%;
+  border-radius: 999px;
+  background: #fff;
+  color: #2471bd;
+  border-color: #e2e8ef;
+}
+.home-scene .house-selected-accessory-panel {
+  gap: 0.55rem;
+  border-radius: 16px;
+  padding: 0.65rem;
+}
+.home-scene .house-selected-accessory-header h3 {
+  font-size: 0.9rem;
+  text-transform: capitalize;
+}
+.home-scene .house-selected-accessory-header .house-owned-badge {
+  flex: 0 0 auto;
+  font-size: 0.66rem;
+}
+.home-scene .house-needs-action.house-selected-action {
+  min-height: 54px;
+  border: 0;
+  border-radius: 13px;
+  background: #e7f5ef;
+  color: #16784c;
+  padding: 0.65rem 0.75rem;
+  transition:
+    transform 140ms ease,
+    background-color 140ms ease,
+    box-shadow 140ms ease;
+}
+.home-scene .house-needs-action.house-selected-action:hover:not(:disabled) {
+  transform: translateY(-1px);
+  background: #daf0e5;
+  box-shadow: 0 4px 12px rgb(22 120 76 / 10%);
+}
+.home-scene .house-needs-action.house-selected-action span {
+  font-size: 0.7rem;
+}
+.house-accessory-hint {
+  margin: 0.5rem 0 0 !important;
+  border-radius: 14px;
+  background: #f4f7fa;
+  padding: 0.65rem;
+}
+@media (max-width: 540px) {
+  .home-scene .house-page-fill {
+    height: calc(100dvh - var(--game-dock-height, 64px) - 36px);
+    min-height: min(400px, calc(100dvh - var(--game-dock-height, 64px) - 36px));
+  }
+  .home-scene .house-needs-actions {
+    right: 12px;
+    bottom: calc(var(--game-dock-height, 64px) + env(safe-area-inset-bottom) + 152px);
+    width: min(300px, calc(100vw - 24px));
+    max-height: 28dvh;
+    padding: 0.75rem;
+  }
+  .home-scene .house-page-fill .house-edit-toggle {
+    top: 10px;
+    right: 10px;
+  }
+  .house-home-badge {
+    top: 10px;
+    left: 10px;
+    min-height: 40px;
+    max-width: calc(100vw - 180px);
+    overflow: hidden;
+    padding-inline: 0.7rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@keyframes home-hud-in {
+  from {
+    transform: translateY(8px) scale(0.985);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .house-home-badge,
+  .home-scene .house-needs-actions,
+  .home-scene .house-page-fill .house-edit-toggle,
+  .home-scene .house-needs-action.house-selected-action {
+    animation: none;
+    transition: none;
+  }
+}
 @media (max-width: 540px) {
   .house-page.house-page-fill .house-room-card {
     height: min(70dvh, 640px);
@@ -1209,4 +1431,611 @@
     padding-bottom: calc(1rem + env(safe-area-inset-bottom));
     border-radius: 22px 22px 0 0;
   }
+}
+
+/* Full-screen home scene polish. Keep this after legacy house-page breakpoints. */
+.home-scene .house-page-fill .house-room-card {
+  position: relative;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.home-scene .house-home-badge {
+  animation: house-float-in 260ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+
+.home-scene .house-edit-toggle,
+.home-scene .house-needs-actions,
+.city-game.navigation-redesign.home-scene .game-needs-rail {
+  animation: house-float-in 280ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+
+.home-scene .house-edit-toggle,
+.home-scene .house-needs-actions .house-primary-button,
+.home-scene .house-needs-action {
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease,
+    border-color 150ms ease;
+}
+
+.home-scene .house-edit-toggle {
+  min-height: 40px;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.78rem;
+}
+
+.home-scene .house-needs-actions {
+  margin: 0;
+  border-color: rgb(255 255 255 / 84%);
+  background: rgb(255 255 255 / 96%);
+  color: #233447;
+}
+
+.home-scene .house-needs-actions .house-primary-button {
+  min-height: 38px;
+  padding: 0.45rem 0.75rem;
+  font-size: 0.77rem;
+  font-weight: 750;
+}
+
+.home-scene .house-needs-actions .house-primary-button:not(:disabled):hover,
+.home-scene .house-needs-action:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 12px rgb(22 39 61 / 10%);
+}
+
+.home-scene .house-needs-action:focus-visible,
+.home-scene .house-primary-button:focus-visible,
+.home-scene .house-edit-toggle:focus-visible {
+  outline: 3px solid #78b98e;
+  outline-offset: 3px;
+}
+
+.home-scene .game-needs-rail {
+  border-color: rgb(255 255 255 / 84%);
+  background: rgb(255 255 255 / 96%);
+}
+
+.home-scene .game-needs-item {
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease;
+}
+
+.home-scene .game-needs-item:hover {
+  transform: translateY(-1px);
+  border-color: #cbd9ce;
+}
+
+@keyframes house-float-in {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 540px) {
+  .home-scene .house-page-fill .house-room-card {
+    height: 100%;
+    min-height: 0;
+  }
+
+  .home-scene .house-page-fill {
+    height: calc(100dvh - var(--game-dock-height, 64px) - 36px);
+    min-height: 0;
+  }
+
+  .home-scene .house-needs-actions {
+    right: 12px;
+    bottom: calc(var(--game-dock-height, 64px) + env(safe-area-inset-bottom) + 150px);
+    left: auto;
+    width: min(300px, calc(100vw - 24px));
+    max-height: min(28dvh, 250px);
+    margin: 0;
+    padding: 0.7rem;
+  }
+
+  .home-scene .house-needs-actions > p {
+    font-size: 0.72rem;
+  }
+
+  .home-scene .game-needs-rail {
+    right: 12px;
+    bottom: calc(var(--game-dock-height, 64px) + env(safe-area-inset-bottom) + 10px);
+    left: 12px;
+    width: auto;
+    padding: 0.55rem;
+    border-radius: 18px;
+  }
+
+  .home-scene .game-needs-header {
+    margin-bottom: 0.35rem;
+  }
+
+  .city-game.navigation-redesign.home-scene .game-needs-list {
+    gap: 4px;
+  }
+
+  .home-scene .game-needs-item-heading {
+    grid-template-columns: 12px minmax(0, 1fr) auto;
+    gap: 2px 3px;
+    min-height: 28px;
+    padding: 3px 4px 2px;
+    font-size: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-scene .house-home-badge,
+  .home-scene .house-edit-toggle,
+  .home-scene .house-needs-actions,
+  .home-scene .game-needs-rail,
+  .home-scene .house-edit-toggle *,
+  .home-scene .house-needs-actions *,
+  .home-scene .game-needs-rail * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+.house-room-character {
+  display: grid;
+  justify-items: center;
+  transform: translateY(-50%);
+  pointer-events: none;
+  filter: drop-shadow(0 3px 4px rgb(22 32 24 / 22%));
+}
+
+.house-room-character svg {
+  display: block;
+  overflow: visible;
+}
+
+.house-room-character-activity {
+  max-width: 140px;
+  margin-top: -3px;
+  border: 1px solid rgb(255 255 255 / 90%);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 94%);
+  color: #233447;
+  padding: 3px 8px;
+  font-size: 10px;
+  font-weight: 750;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.house-room-character-fallback {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+}
+
+.home-accessory-dialog {
+  width: min(590px, calc(100vw - 24px));
+  max-width: 590px;
+  max-height: min(82dvh, 740px);
+  overflow-y: auto;
+  padding: 25px;
+  border-radius: 26px;
+  background: var(--card);
+  color: var(--foreground);
+  gap: 18px;
+}
+.home-accessory-heading {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding-right: 25px;
+}
+.home-accessory-heading h2 {
+  text-transform: capitalize;
+  line-height: 1.3;
+}
+.home-accessory-heading p {
+  margin: 5px 0 0;
+}
+.home-accessory-icon,
+.home-meal-symbol {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 18px;
+  background: var(--muted);
+  color: var(--foreground);
+  flex: 0 0 auto;
+}
+.home-accessory-facts,
+.home-task-benefits {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.home-accessory-facts span,
+.home-task-benefits span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: var(--muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+.home-task-benefits span {
+  background: color-mix(in srgb, var(--success) 12%, var(--card));
+  color: var(--foreground);
+}
+.home-meal-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.home-meal-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--card);
+  color: var(--foreground);
+  text-align: left;
+  cursor: pointer;
+}
+.home-meal-card.is-selected {
+  border-color: var(--success);
+  box-shadow: inset 0 0 0 1px var(--success);
+}
+.home-meal-card:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.home-meal-card:has(input:focus-visible) {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.home-meal-card small,
+.home-meal-note {
+  color: var(--muted-foreground);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.home-meal-symbol {
+  font-size: 26px;
+}
+.home-meal-note,
+.home-task-notice {
+  margin: 0;
+}
+.home-task-notice {
+  font-size: 13px;
+  color: var(--muted-foreground);
+}
+.home-task-notice[role="alert"] {
+  color: var(--destructive);
+}
+.home-task-start {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 46px;
+  border: 0;
+  border-radius: 999px;
+  padding: 11px 16px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-weight: 750;
+  cursor: pointer;
+  transition:
+    transform 150ms ease,
+    filter 150ms ease,
+    background-color 150ms ease;
+}
+.home-task-start:not(:disabled):hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+.home-task-start:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 3px;
+}
+.home-task-start.is-confirmed {
+  background: var(--success);
+  color: var(--primary-foreground);
+}
+.home-task-start:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.home-task-start.is-confirmed:disabled {
+  opacity: 1;
+}
+.home-task-button-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.home-task-spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: home-task-spin 700ms linear infinite;
+}
+.home-task-confirmation {
+  margin: 0;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--success) 12%, var(--card));
+  color: var(--foreground);
+  padding: 9px 12px;
+  font-size: 13px;
+}
+@keyframes home-task-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@media (max-width: 420px) {
+  .home-accessory-dialog {
+    padding: 18px 14px calc(16px + env(safe-area-inset-bottom));
+    gap: 11px;
+  }
+  .home-meal-card {
+    gap: 5px;
+    padding: 10px;
+  }
+  .home-meal-card small,
+  .home-meal-note {
+    display: none;
+  }
+  .home-task-benefits {
+    gap: 5px;
+  }
+  .home-task-benefits span,
+  .home-accessory-facts span {
+    padding: 4px 7px;
+    font-size: 11px;
+  }
+}
+
+.home-scene .game-needs-rail {
+  right: auto;
+  bottom: calc(var(--game-dock-height, 64px) + env(safe-area-inset-bottom) + 12px);
+  left: 14px;
+  width: max-content;
+  max-width: calc(100vw - 28px);
+  padding: 5px;
+  border-radius: 999px;
+}
+
+.home-scene .game-needs-list {
+  display: flex;
+  grid-template-columns: none;
+  gap: 4px;
+}
+
+.city-game.navigation-redesign.home-scene .game-needs-item {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  padding: 0;
+}
+
+.city-game.navigation-redesign.home-scene .game-needs-icon-ring {
+  width: 28px;
+  height: 28px;
+}
+
+.city-game.navigation-redesign.home-scene .game-needs-icon-core {
+  width: 22px;
+  height: 22px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .house-room-character,
+  .house-room-character * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* World controls remain compact so the house stays visible. */
+.home-scene .house-needs-actions {
+  width: max-content;
+  max-width: min(300px, calc(100vw - 28px));
+  right: 14px;
+  bottom: calc(var(--game-dock-height, 64px) + env(safe-area-inset-bottom) + 14px);
+  left: auto;
+  padding: 5px;
+  border-radius: 24px;
+}
+.home-scene .house-needs-actions > h2,
+.home-scene .house-needs-actions > p:not([role]) {
+  display: none;
+}
+.home-scene .house-needs-actions .house-presence-actions {
+  margin: 0;
+  padding: 4px;
+  border: 1px solid rgb(255 255 255 / 90%);
+  border-radius: 999px;
+  background: rgb(255 255 255 / 76%);
+}
+.home-scene .house-needs-actions > p[role] {
+  max-width: 260px;
+  margin: 6px;
+}
+
+/* Accessory actions open from the bottom; the scene keeps no floating task text. */
+.home-accessory-dialog {
+  top: auto;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  max-height: 78dvh;
+  border-radius: 26px 26px 0 0;
+  padding-bottom: calc(22px + env(safe-area-inset-bottom));
+}
+.home-accessory-dialog[data-state="open"] {
+  animation: house-accessory-rise 180ms ease-out both;
+}
+@keyframes house-accessory-rise {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+.house-page {
+  --house-control-surface: #fff;
+}
+.house-page.house-page-fill .house-edit-toggle,
+.home-scene .house-page-fill .house-edit-toggle,
+.house-presence-actions .house-primary-button,
+.home-scene .house-needs-actions .house-primary-button {
+  background: var(--house-control-surface);
+  color: var(--brand-ink, var(--foreground));
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  min-height: 42px;
+  padding: 9px 16px;
+  box-shadow: var(--elevation-rest);
+  letter-spacing: 0;
+}
+.home-scene .house-needs-actions {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+@media (max-width: 640px) {
+  .home-accessory-dialog {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-accessory-dialog[data-state="open"] {
+    animation: none;
+  }
+  .home-task-spinner {
+    animation: none;
+  }
+  .home-task-start {
+    transition: none;
+  }
+}
+
+.house-keyboard-accessories {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.house-keyboard-accessories:focus-within {
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 8px;
+  left: 12px;
+  bottom: 12px;
+  clip-path: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  border-radius: 14px;
+  background: var(--house-control-surface);
+  z-index: 10;
+}
+.house-keyboard-accessories button {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 10px;
+  background: var(--house-control-surface);
+  color: var(--foreground);
+}
+
+.home-accessory-dialog {
+  translate: none;
+}
+@media (min-width: 1024px) {
+  .house-page.house-page-fill.is-editing .house-room-card {
+    width: calc(100% - 392px);
+  }
+  .house-page.house-page-fill.is-editing .house-edit-panel {
+    width: 360px;
+    max-width: 360px;
+    left: auto;
+    right: 14px;
+    top: 76px;
+    bottom: calc(var(--game-dock-height, 64px) + 12px);
+    max-height: none;
+    margin: 0;
+    background: var(--house-control-surface);
+  }
+}
+@media (max-width: 1023px) {
+  .house-page.house-page-fill.is-editing .house-room-card {
+    height: max(300px, calc(56dvh - var(--game-dock-height, 64px) - 48px));
+    min-height: 0;
+  }
+  .house-page.house-page-fill.is-editing .house-edit-panel {
+    max-height: 40dvh;
+    bottom: calc(var(--game-dock-height, 64px) + env(safe-area-inset-bottom) + 10px);
+    background: var(--house-control-surface);
+  }
+}
+
+.house-edit-panel {
+  overflow-x: hidden;
+  min-width: 0;
+}
+.house-sheet-content {
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+}
+.house-sheet-content > * {
+  min-width: 0;
+  max-width: 100%;
+}
+.house-sheet-header > div {
+  min-width: 0;
+}
+.house-sheet-header .house-icon-button {
+  flex-shrink: 0;
+}
+.house-sheet-tabs {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.house-catalog-search input {
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }

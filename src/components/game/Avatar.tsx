@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 import {
+  BODY_BUILDS,
+  BODY_HEIGHTS,
   HAIR_COLORS,
   normalizeAvatarAppearance,
   OUTFITS,
@@ -9,6 +11,8 @@ import {
   type Appearance,
 } from "@/game/avatar-appearance";
 export {
+  BODY_BUILDS,
+  BODY_HEIGHTS,
   HAIR_COLORS,
   HAIR_STYLES,
   HAIR_STYLES_BY_GENDER,
@@ -23,10 +27,13 @@ export type { Appearance } from "@/game/avatar-appearance";
 
 export type AvatarEquipment = { slot: string };
 export type AvatarFacing = "north" | "east" | "south" | "west";
-export type AvatarAnimationState = "idle" | "walk" | "turn" | "talk" | "work";
+export type AvatarAnimationState = "idle" | "walk" | "turn" | "talk" | "work" | "sleep";
 
 export const AVATAR_VIEWBOX = { width: 64, height: 80 } as const;
-const EDGE = "var(--brand-ink)";
+// AvatarArtwork is also serialized into a standalone SVG image for Phaser. CSS
+// custom properties from the app document are unavailable in that image context.
+const EDGE = "#263238";
+const EQUIPMENT_ACCENT = "#d4ae5c";
 function poseFor(state: AvatarAnimationState, frame: number) {
   const index = Number.isFinite(frame) ? Math.abs(Math.floor(frame)) : 0;
   const walk = [-1, 1, 1, -1][index % 4]!;
@@ -35,6 +42,7 @@ function poseFor(state: AvatarAnimationState, frame: number) {
   if (state === "work") return { bob: index % 2 ? -1 : 0, arm: work * 34, leg: 0, lean: work * 2 };
   if (state === "talk") return { bob: 0, arm: index % 2 ? -18 : -30, leg: 0, lean: 0 };
   if (state === "turn") return { bob: 0, arm: index % 2 ? 8 : -8, leg: 0, lean: 0 };
+  if (state === "sleep") return { bob: 0, arm: 0, leg: 0, lean: 0 };
   return { bob: index % 2 ? -1 : 0, arm: 0, leg: 0, lean: 0 };
 }
 
@@ -69,6 +77,14 @@ export function AvatarArtwork({
   const pants = TROUSERS[safe.bottoms]!;
   const shoes = SHOE_COLORS[safe.shoes]!;
   const hair = safe.hair;
+  const bodyWidth = [0.9, 1, 1.07, 1.14][safe.build] ?? 1;
+  const bodyHeight = [0.92, 1, 1.06][safe.stature] ?? 1;
+  const heightOffset = safe.stature === 2 ? 3.5 : 0;
+  const bodyTransform = `translate(0 ${heightOffset}) translate(32 75) scale(${bodyWidth} ${bodyHeight}) translate(-32 -75)`;
+  const sleepTransform =
+    animationState === "sleep"
+      ? "translate(32 40) rotate(90) scale(.72) translate(-32 -40)"
+      : undefined;
   const isFemale = gender === "female";
   const isMale = gender === "male";
   const worn = new Set(equipment.map((item) => item.slot));
@@ -92,226 +108,246 @@ export function AvatarArtwork({
       data-avatar-facing={facing}
       shapeRendering="geometricPrecision"
     >
-      <ellipse cx="32" cy="74" rx="17" ry="4" fill="var(--brand-ink)" opacity=".2" />
-      <g transform={directionTransform}>
-        <g transform={`translate(0 ${pose.bob}) rotate(${pose.lean} 32 48)`}>
-          {/* Legs pivot independently to make the walk and generic work cycles legible. */}
-          <g transform={`rotate(${pose.leg} 27 60)`}>
-            <path
-              d="M22 54h10v14q0 3-3 3h-5q-2 0-2-3z"
-              fill={pants}
-              stroke={EDGE}
-              strokeWidth="1.7"
-            />
-            <path
-              d="M22 68h11v5q0 2-3 2H20q-2 0-1-3z"
-              fill={shoes}
-              stroke={EDGE}
-              strokeWidth="1.7"
-            />
-          </g>
-          <g transform={`rotate(${-pose.leg} 38 60)`}>
-            <path
-              d="M33 54h10v14q0 3-3 3h-5q-2 0-2-3z"
-              fill={pants}
-              stroke={EDGE}
-              strokeWidth="1.7"
-            />
-            <path
-              d="M33 68h11v5q0 2-3 2H31q-2 0-1-3z"
-              fill={shoes}
-              stroke={EDGE}
-              strokeWidth="1.7"
-            />
-          </g>
-          {/* Rounded limbs and a shaped tunic keep the toy-brick silhouette soft at small sizes. */}
-          <g transform={`rotate(${leftArm} 18 44)`}>
-            <path
-              d="M17 39q-4 0-5 5l-2 10q-1 4 3 5t5-4l3-10q1-5-4-6z"
-              fill={shirt}
-              stroke={EDGE}
-              strokeWidth="1.8"
-            />
-            <circle cx="13" cy="58" r="3.2" fill={skin} stroke={EDGE} strokeWidth="1.4" />
-          </g>
-          <g transform={`rotate(${rightArm} 46 44)`}>
-            <path
-              d="M47 39q4 0 5 5l2 10q1 4-3 5t-5-4l-3-10q-1-5 4-6z"
-              fill={shirt}
-              stroke={EDGE}
-              strokeWidth="1.8"
-            />
-            <circle cx="51" cy="58" r="3.2" fill={skin} stroke={EDGE} strokeWidth="1.4" />
-          </g>
-          <path
-            d="M24 34h16q5 0 7 5l3 14q1 4-4 5H18q-5-1-4-5l3-14q2-5 7-5z"
-            fill={shirt}
-            stroke={EDGE}
-            strokeWidth="2"
-          />
-          <path d="M29 31h6v5h-6z" fill={skin} stroke={EDGE} strokeWidth="1.4" />
-          {worn.has("bottom") && (
-            <path
-              data-equipment-slot="bottom"
-              d="M24 58v9"
-              stroke="var(--chart-4)"
-              strokeWidth="2.5"
-            />
-          )}
-          {worn.has("top") && (
-            <g data-equipment-slot="top" pointerEvents="none">
-              <path d="M20 39h5v14h-5z" fill="var(--chart-4)" opacity=".9" />
-              <circle cx="22.5" cy="42" r=".8" fill={EDGE} />
-              <circle cx="22.5" cy="46" r=".8" fill={EDGE} />
-            </g>
-          )}
-          {worn.has("shoes") && (
-            <path
-              data-equipment-slot="shoes"
-              d="M21 72h5m11 0h5"
-              stroke="var(--chart-4)"
-              strokeWidth="1.5"
-            />
-          )}
-          {/* Back view shows hair and outfit details without a front-facing expression. */}
-          <path
-            d="M21 20q-1-14 11-14t11 14v8q-2 8-11 8t-11-8z"
-            fill={skin}
-            stroke={EDGE}
-            strokeWidth="2"
-          />
-          {hair === 1 && (
-            <path
-              d="M18 20q0-18 14-18t14 18q-5-5-14-5t-14 5z"
-              fill={hairColor}
-              stroke={EDGE}
-              strokeWidth="2"
-            />
-          )}
-          {hair === 2 && (
-            <g fill="none" stroke={hairColor} strokeWidth="3.5" strokeLinecap="round">
-              <path d="M22 11q-4 8 0 19l3 5M29 7q-2 12 2 25l2 5M38 8q4 10 0 25l-2 4" />
-            </g>
-          )}
-          {hair === 3 && null}
-          {hair === 4 && (
-            <g fill={hairColor} stroke={EDGE} strokeWidth="1.3">
-              <circle cx="23" cy="9" r="4" />
-              <circle cx="32" cy="5" r="4" />
-              <circle cx="41" cy="9" r="4" />
-            </g>
-          )}
-          {hair === 5 && (
-            <g fill={hairColor} stroke={EDGE} strokeWidth="1.3">
-              <path d="M20 13q-3 1-2 13t4 1q1-10 0-14z" />
-              <path d="M27 8q-3 1-2 22t4 1q1-17 0-22z" />
-              <path d="M38 8q3 1 2 22t-4 1q-1-17 0-22z" />
-              <path d="M44 13q3 1 2 13t-4 1q-1-10 0-14z" />
-            </g>
-          )}
-          {hair === 0 && isFemale && (
-            <g fill={hairColor} stroke={EDGE} strokeWidth="1.8">
-              <path d="M20 18q2-12 12-12t12 12q-5-5-12-5t-12 5z" />
-              <circle cx="45" cy="15" r="5" />
-            </g>
-          )}
-          {hair === 0 && isMale && (
-            <path
-              d="M20 18q2-12 12-12t12 12l-4-4q-8 3-16 0z"
-              fill={hairColor}
-              stroke={EDGE}
-              strokeWidth="2"
-            />
-          )}
-          {hair === 0 && !isFemale && !isMale && (
-            <path
-              d="M20 18q2-12 12-12t12 12q-4-4-12-4t-12 4z"
-              fill={hairColor}
-              stroke={EDGE}
-              strokeWidth="2"
-            />
-          )}
-          {facing !== "north" && (
-            <g>
+      <ellipse cx="32" cy="74" rx="17" ry="4" fill={EDGE} opacity=".2" />
+      <g transform={sleepTransform}>
+        <g transform={directionTransform}>
+          <g transform={bodyTransform}>
+            <g transform={`translate(0 ${pose.bob}) rotate(${pose.lean} 32 48)`}>
+              {/* Legs pivot independently to make the walk and generic work cycles legible. */}
+              <g transform={`rotate(${pose.leg} 27 60)`}>
+                <path
+                  d="M22 54h10v14q0 3-3 3h-5q-2 0-2-3z"
+                  fill={pants}
+                  stroke={EDGE}
+                  strokeWidth="1.7"
+                />
+                <path
+                  d="M22 68h11v5q0 2-3 2H20q-2 0-1-3z"
+                  fill={shoes}
+                  stroke={EDGE}
+                  strokeWidth="1.7"
+                />
+              </g>
+              <g transform={`rotate(${-pose.leg} 38 60)`}>
+                <path
+                  d="M33 54h10v14q0 3-3 3h-5q-2 0-2-3z"
+                  fill={pants}
+                  stroke={EDGE}
+                  strokeWidth="1.7"
+                />
+                <path
+                  d="M33 68h11v5q0 2-3 2H31q-2 0-1-3z"
+                  fill={shoes}
+                  stroke={EDGE}
+                  strokeWidth="1.7"
+                />
+              </g>
+              {/* Rounded limbs and a shaped tunic keep the toy-brick silhouette soft at small sizes. */}
+              <g transform={`rotate(${leftArm} 18 44)`}>
+                <path
+                  d="M17 39q-4 0-5 5l-2 10q-1 4 3 5t5-4l3-10q1-5-4-6z"
+                  fill={shirt}
+                  stroke={EDGE}
+                  strokeWidth="1.8"
+                />
+                <circle cx="13" cy="58" r="3.2" fill={skin} stroke={EDGE} strokeWidth="1.4" />
+              </g>
+              <g transform={`rotate(${rightArm} 46 44)`}>
+                <path
+                  d="M47 39q4 0 5 5l2 10q1 4-3 5t-5-4l-3-10q-1-5 4-6z"
+                  fill={shirt}
+                  stroke={EDGE}
+                  strokeWidth="1.8"
+                />
+                <circle cx="51" cy="58" r="3.2" fill={skin} stroke={EDGE} strokeWidth="1.4" />
+              </g>
               <path
-                d={sideFacing ? "M37 20q3 1 3 4" : "M26 21q2-2 4 0"}
-                fill="none"
+                d="M24 34h16q5 0 7 5l3 14q1 4-4 5H18q-5-1-4-5l3-14q2-5 7-5z"
+                fill={shirt}
                 stroke={EDGE}
-                strokeWidth="1.6"
-                strokeLinecap="round"
+                strokeWidth="2"
               />
-              {!sideFacing && (
-                <path
-                  d="M34 21q2-2 4 0"
+              {safe.build >= 2 && !worn.has("top") && (
+                <g
                   fill="none"
                   stroke={EDGE}
-                  strokeWidth="1.6"
                   strokeLinecap="round"
-                />
+                  opacity={safe.build === 3 ? 0.68 : 0.48}
+                >
+                  <path d="M25 42q7 3 14 0M32 44v11M27 48h4m2 0h4M27 52h4m2 0h4" />
+                  <path d="M19 43q3 2 5 5m21-5q-3 2-5 5" />
+                </g>
               )}
-              {animationState === "talk" ? (
-                <ellipse
-                  cx={sideFacing ? 39 : 32}
-                  cy="28"
-                  rx="2.3"
-                  ry={animationFrame % 2 ? 2.5 : 1.2}
-                  fill={EDGE}
-                />
-              ) : (
+              <path d="M29 31h6v5h-6z" fill={skin} stroke={EDGE} strokeWidth="1.4" />
+              {worn.has("bottom") && (
                 <path
-                  d={sideFacing ? "M36 29q2 2 4 0" : "M27 29q5 4 10 0"}
-                  fill="none"
-                  stroke={EDGE}
-                  strokeWidth="1.4"
-                  strokeLinecap="round"
+                  data-equipment-slot="bottom"
+                  d="M24 58v9"
+                  stroke={EQUIPMENT_ACCENT}
+                  strokeWidth="2.5"
                 />
               )}
+              {worn.has("top") && (
+                <g data-equipment-slot="top" pointerEvents="none">
+                  <path d="M20 39h5v14h-5z" fill={EQUIPMENT_ACCENT} opacity=".9" />
+                  <circle cx="22.5" cy="42" r=".8" fill={EDGE} />
+                  <circle cx="22.5" cy="46" r=".8" fill={EDGE} />
+                </g>
+              )}
+              {worn.has("shoes") && (
+                <path
+                  data-equipment-slot="shoes"
+                  d="M21 72h5m11 0h5"
+                  stroke={EQUIPMENT_ACCENT}
+                  strokeWidth="1.5"
+                />
+              )}
+              {/* Back view shows hair and outfit details without a front-facing expression. */}
+              <path
+                d="M21 20q-1-14 11-14t11 14v8q-2 8-11 8t-11-8z"
+                fill={skin}
+                stroke={EDGE}
+                strokeWidth="2"
+              />
+              {hair === 1 && (
+                <path
+                  d="M18 20q0-18 14-18t14 18q-5-5-14-5t-14 5z"
+                  fill={hairColor}
+                  stroke={EDGE}
+                  strokeWidth="2"
+                />
+              )}
+              {hair === 2 && (
+                <g fill="none" stroke={hairColor} strokeWidth="3.5" strokeLinecap="round">
+                  <path d="M22 11q-4 8 0 19l3 5M29 7q-2 12 2 25l2 5M38 8q4 10 0 25l-2 4" />
+                </g>
+              )}
+              {hair === 3 && null}
+              {hair === 4 && (
+                <g fill={hairColor} stroke={EDGE} strokeWidth="1.3">
+                  <circle cx="23" cy="9" r="4" />
+                  <circle cx="32" cy="5" r="4" />
+                  <circle cx="41" cy="9" r="4" />
+                </g>
+              )}
+              {hair === 5 && (
+                <g fill={hairColor} stroke={EDGE} strokeWidth="1.3">
+                  <path d="M20 13q-3 1-2 13t4 1q1-10 0-14z" />
+                  <path d="M27 8q-3 1-2 22t4 1q1-17 0-22z" />
+                  <path d="M38 8q3 1 2 22t-4 1q-1-17 0-22z" />
+                  <path d="M44 13q3 1 2 13t-4 1q-1-10 0-14z" />
+                </g>
+              )}
+              {hair === 0 && isFemale && (
+                <g fill={hairColor} stroke={EDGE} strokeWidth="1.8">
+                  <path d="M20 18q2-12 12-12t12 12q-5-5-12-5t-12 5z" />
+                  <circle cx="45" cy="15" r="5" />
+                </g>
+              )}
+              {hair === 0 && isMale && (
+                <path
+                  d="M20 18q2-12 12-12t12 12l-4-4q-8 3-16 0z"
+                  fill={hairColor}
+                  stroke={EDGE}
+                  strokeWidth="2"
+                />
+              )}
+              {hair === 0 && !isFemale && !isMale && (
+                <path
+                  d="M20 18q2-12 12-12t12 12q-4-4-12-4t-12 4z"
+                  fill={hairColor}
+                  stroke={EDGE}
+                  strokeWidth="2"
+                />
+              )}
+              {facing !== "north" && (
+                <g>
+                  <path
+                    d={sideFacing ? "M37 20q3 1 3 4" : "M26 21q2-2 4 0"}
+                    fill="none"
+                    stroke={EDGE}
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                  />
+                  {!sideFacing && (
+                    <path
+                      d="M34 21q2-2 4 0"
+                      fill="none"
+                      stroke={EDGE}
+                      strokeWidth="1.6"
+                      strokeLinecap="round"
+                    />
+                  )}
+                  {animationState === "talk" ? (
+                    <ellipse
+                      cx={sideFacing ? 39 : 32}
+                      cy="28"
+                      rx="2.3"
+                      ry={animationFrame % 2 ? 2.5 : 1.2}
+                      fill={EDGE}
+                    />
+                  ) : (
+                    <path
+                      d={sideFacing ? "M36 29q2 2 4 0" : "M27 29q5 4 10 0"}
+                      fill="none"
+                      stroke={EDGE}
+                      strokeWidth="1.4"
+                      strokeLinecap="round"
+                    />
+                  )}
+                </g>
+              )}
+              {safe.headwear === 1 && (
+                <path
+                  d="M17 16q4-13 15-13t15 13q-8-4-15-2t-15 2z"
+                  fill={shirt}
+                  stroke={EDGE}
+                  strokeWidth="2"
+                />
+              )}
+              {safe.headwear === 2 && (
+                <path
+                  d="m21 10 3-6h17l3 8q-11-4-23-2z"
+                  fill={shirt}
+                  stroke={EDGE}
+                  strokeWidth="2"
+                />
+              )}
+              {safe.headwear === 3 && (
+                <path
+                  d="M20 14q1-12 12-12t12 12H20zm18-1h10v3H38z"
+                  fill={shirt}
+                  stroke={EDGE}
+                  strokeWidth="2"
+                />
+              )}
+              {worn.has("head") && (
+                <path
+                  data-equipment-slot="head"
+                  d="M19 14q2-10 13-10t13 10q-13-4-26 0z"
+                  fill={EQUIPMENT_ACCENT}
+                  stroke={EDGE}
+                  strokeWidth="1.8"
+                />
+              )}
+              {worn.has("accessory") && (
+                <g data-equipment-slot="accessory" stroke={EDGE} strokeWidth="1.5">
+                  <path d="m10 39 5-3 4 4-4 15-6-2z" fill={EQUIPMENT_ACCENT} />
+                  <path d="m12 40 4 2" stroke={EQUIPMENT_ACCENT} />
+                </g>
+              )}
+              <rect
+                x="27"
+                y="1.5"
+                width="10"
+                height="4"
+                rx="1.8"
+                fill={skin}
+                stroke={EDGE}
+                strokeWidth="1.5"
+              />
             </g>
-          )}
-          {safe.headwear === 1 && (
-            <path
-              d="M17 16q4-13 15-13t15 13q-8-4-15-2t-15 2z"
-              fill={shirt}
-              stroke={EDGE}
-              strokeWidth="2"
-            />
-          )}
-          {safe.headwear === 2 && (
-            <path d="m21 10 3-6h17l3 8q-11-4-23-2z" fill={shirt} stroke={EDGE} strokeWidth="2" />
-          )}
-          {safe.headwear === 3 && (
-            <path
-              d="M20 14q1-12 12-12t12 12H20zm18-1h10v3H38z"
-              fill={shirt}
-              stroke={EDGE}
-              strokeWidth="2"
-            />
-          )}
-          {worn.has("head") && (
-            <path
-              data-equipment-slot="head"
-              d="M19 14q2-10 13-10t13 10q-13-4-26 0z"
-              fill="var(--chart-4)"
-              stroke={EDGE}
-              strokeWidth="1.8"
-            />
-          )}
-          {worn.has("accessory") && (
-            <g data-equipment-slot="accessory" stroke={EDGE} strokeWidth="1.5">
-              <path d="m10 39 5-3 4 4-4 15-6-2z" fill="var(--chart-4)" />
-              <path d="m12 40 4 2" stroke="var(--chart-4)" />
-            </g>
-          )}
-          <rect
-            x="27"
-            y="1.5"
-            width="10"
-            height="4"
-            rx="1.8"
-            fill={skin}
-            stroke={EDGE}
-            strokeWidth="1.5"
-          />
+          </g>
         </g>
       </g>
     </svg>

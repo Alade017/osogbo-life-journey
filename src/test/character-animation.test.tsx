@@ -5,10 +5,16 @@ import {
   AVATAR_ANIMATION_CLIPS,
   AVATAR_DIRECTIONS,
   AVATAR_SPRITE_FRAME_COUNT,
+  avatarAnimationForActivity,
   avatarClipFrameRange,
   facingFromMovement,
 } from "@/game/character-animation";
-import { createAvatarAtlasMarkup, avatarTextureKey } from "@/game/character-texture";
+import {
+  AVATAR_FRAME_HEIGHT,
+  AVATAR_FRAME_WIDTH,
+  createAvatarAtlasMarkup,
+  avatarTextureKey,
+} from "@/game/character-texture";
 
 describe("cached avatar artwork and animation clips", () => {
   it("keeps every saved appearance palette index and falls back on invalid data", () => {
@@ -20,6 +26,8 @@ describe("cached avatar artwork and animation clips", () => {
       bottoms: 5,
       shoes: 3,
       headwear: 3,
+      stature: 2,
+      build: 3,
     };
     expect(normalizeAvatarAppearance(fullAppearance, "male")).toEqual(fullAppearance);
     expect(normalizeAvatarAppearance({ skin: -1, hair: 88, outfit: 9 }, "female")).toEqual({
@@ -30,6 +38,8 @@ describe("cached avatar artwork and animation clips", () => {
       bottoms: 0,
       shoes: 0,
       headwear: 0,
+      stature: 1,
+      build: 1,
     });
     expect(normalizeAvatarAppearance(undefined)).toEqual({
       skin: 1,
@@ -39,6 +49,8 @@ describe("cached avatar artwork and animation clips", () => {
       bottoms: 0,
       shoes: 0,
       headwear: 0,
+      stature: 1,
+      build: 1,
     });
   });
 
@@ -75,6 +87,19 @@ describe("cached avatar artwork and animation clips", () => {
     expect(facingFromMovement(0, 0, "north")).toBe("north");
   });
 
+  it("maps confirmed activity kinds onto the closest supported avatar clips", () => {
+    expect(avatarAnimationForActivity("walking")).toBe("walk");
+    expect(avatarAnimationForActivity("socializing")).toBe("talk");
+    for (const activity of ["eating", "cooking", "studying", "exercising"] as const) {
+      expect(avatarAnimationForActivity(activity)).toBe("work");
+    }
+    expect(avatarAnimationForActivity("sleeping")).toBe("sleep");
+    for (const activity of ["showering", "using_toilet", "watching"] as const) {
+      expect(avatarAnimationForActivity(activity)).toBe("idle");
+    }
+    expect(avatarAnimationForActivity(null)).toBe("idle");
+  });
+
   it("builds one pre-renderable sheet containing every pose without per-frame React updates", () => {
     const markup = createAvatarAtlasMarkup(
       { skin: 4, hair: 2, hairColor: 1, outfit: 2, bottoms: 3, shoes: 1, headwear: 2 },
@@ -84,7 +109,12 @@ describe("cached avatar artwork and animation clips", () => {
     for (const { state } of AVATAR_ANIMATION_CLIPS) {
       expect(markup).toContain(`data-avatar-state="${state}"`);
     }
-    expect(markup).toContain(`height="${60 * AVATAR_SPRITE_FRAME_COUNT}"`);
+    expect(markup).toContain(`width="${AVATAR_FRAME_WIDTH}"`);
+    expect(markup).toContain(`height="${AVATAR_FRAME_HEIGHT * AVATAR_SPRITE_FRAME_COUNT}"`);
+    expect(markup).toContain(
+      `viewBox="0 0 ${AVATAR_FRAME_WIDTH} ${AVATAR_FRAME_HEIGHT * AVATAR_SPRITE_FRAME_COUNT}"`,
+    );
+    expect(markup).not.toContain("var(--");
   });
 
   it("reuses the same cache key for a look and isolates changed saved options", () => {

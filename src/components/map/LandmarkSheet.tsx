@@ -94,7 +94,7 @@ export function LandmarkSheet({
       <div className="map-sheet-grabber-static">
         <span />
       </div>
-      <header className="map-sheet-header">
+      <header className="map-sheet-header map-landmark-header">
         <div>
           <p className="map-sheet-eyebrow">{landmark.category}</p>
           <h2 id="map-landmark-title">{landmark.label}</h2>
@@ -103,21 +103,29 @@ export function LandmarkSheet({
           <X size={18} />
         </button>
       </header>
-      <p>{detailsQuery.data?.landmark.description ?? description}</p>
+      <p className="map-landmark-description">
+        {detailsQuery.data?.landmark.description ?? description}
+      </p>
       {event && (
-        <p className="map-here-note">
+        <p className="map-here-note map-landmark-event">
           {event.label} · Until {formatMapEventEnd(event.endsAt)}
         </p>
       )}
-      <p className="map-location-line">
-        <MapPin size={15} aria-hidden="true" /> Located in {locationName}
-      </p>
-      {isHere && <p className="map-here-note">You are here</p>}
-      {(restricted || (detailsQuery.data?.landmark.min_age ?? 0) >= 18) && (
-        <p className="map-age-badge">
-          <BadgeCheck size={15} /> 18+
-        </p>
-      )}
+      <div className="map-landmark-meta" aria-label="Location details">
+        <span className="map-landmark-chip map-landmark-place">
+          <MapPin size={14} aria-hidden="true" /> {locationName}
+        </span>
+        {isHere ? (
+          <span className="map-landmark-chip is-current">You are here</span>
+        ) : (
+          <span className="map-landmark-chip">Open to visit</span>
+        )}
+        {(restricted || (detailsQuery.data?.landmark.min_age ?? 0) >= 18) && (
+          <span className="map-landmark-chip map-landmark-age">
+            <BadgeCheck size={14} /> 18+
+          </span>
+        )}
+      </div>
       {!accountId ? (
         <p role="status">Loading player details…</p>
       ) : offline && detailsQuery.isPending ? (
@@ -160,7 +168,7 @@ export function LandmarkSheet({
             result={actionResult}
             onRun={onRunPlaceAction}
           />
-          <section>
+          <section className="map-landmark-section map-landmark-activities">
             <h3>Other activities</h3>
             {detailsQuery.data?.activities.length ? (
               <ul className="map-sheet-list">
@@ -175,7 +183,7 @@ export function LandmarkSheet({
               <p>No activities are listed here yet.</p>
             )}
           </section>
-          <section>
+          <section className="map-landmark-section map-landmark-jobs">
             <h3>Available jobs</h3>
             {detailsQuery.data?.jobs.length ? (
               <ul className="map-sheet-list">
@@ -211,7 +219,7 @@ export function LandmarkSheet({
           {error}
         </p>
       )}
-      <footer className="map-sheet-actions">
+      <footer className="map-sheet-actions map-landmark-footer">
         <button
           className="map-primary-button"
           disabled={!canAct || restricted || isHere}
@@ -230,7 +238,7 @@ export function LandmarkSheet({
                   : "Travel here"}
         </button>
         {travelResult && (
-          <p role="status">
+          <p role="status" className="map-travel-confirmation">
             Travel started: {travelResult.travel_minutes} min · {formatMapNaira(travelResult.fare)}
           </p>
         )}

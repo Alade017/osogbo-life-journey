@@ -1534,6 +1534,8 @@ export type Database = {
           placed_at: string;
           player_house_id: string;
           slot: string;
+          x: number;
+          y: number;
         };
         ComputedFields: never;
         Insert: {
@@ -1542,6 +1544,8 @@ export type Database = {
           placed_at?: string;
           player_house_id: string;
           slot: string;
+          x?: number;
+          y?: number;
         };
         Update: {
           id?: string;
@@ -1549,6 +1553,8 @@ export type Database = {
           placed_at?: string;
           player_house_id?: string;
           slot?: string;
+          x?: number;
+          y?: number;
         };
         Relationships: [
           {
@@ -4600,6 +4606,10 @@ export type Database = {
       };
       house_place: {
         Args: { p_item_id: string; p_player_id: string; p_slot: string };
+        Returns: Json;
+      };
+      house_move_to_position: {
+        Args: { p_player_id: string; p_from_slot: string; p_x: number; p_y: number };
         Returns: Json;
       };
       house_remove: { Args: { p_player_id: string; p_slot: string }; Returns: Json };

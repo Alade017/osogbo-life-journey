@@ -1,4 +1,5 @@
 import type { AvatarAnimationState, AvatarFacing } from "@/components/game/Avatar";
+import type { ActivityAnimation } from "@/lib/life-simulation";
 
 export const AVATAR_DIRECTIONS = [
   "south",
@@ -11,6 +12,7 @@ export const AVATAR_ANIMATION_CLIPS = [
   { state: "turn", frames: 4, frameRate: 12, repeat: 0 },
   { state: "talk", frames: 2, frameRate: 3, repeat: -1 },
   { state: "work", frames: 4, frameRate: 6, repeat: -1 },
+  { state: "sleep", frames: 2, frameRate: 1, repeat: -1 },
 ] as const satisfies readonly {
   state: AvatarAnimationState;
   frames: number;
@@ -57,6 +59,30 @@ export function facingFromMovement(x: number, y: number, current: AvatarFacing):
   if (!Number.isFinite(x) || !Number.isFinite(y) || (!x && !y)) return current;
   if (Math.abs(x) > Math.abs(y)) return x < 0 ? "west" : "east";
   return y < 0 ? "north" : "south";
+}
+
+/** Translate server-confirmed simulation activity into the closest authored avatar clip. */
+export function avatarAnimationForActivity(
+  activity: ActivityAnimation | null | undefined,
+): AvatarAnimationState {
+  switch (activity) {
+    case "walking":
+      return "walk";
+    case "sleeping":
+      return "sleep";
+    case "socializing":
+      return "talk";
+    case "eating":
+    case "cooking":
+    case "studying":
+    case "exercising":
+      return "work";
+    case "showering":
+    case "using_toilet":
+    case "watching":
+    default:
+      return "idle";
+  }
 }
 
 export function parseSavedAppearance(value: string | unknown) {

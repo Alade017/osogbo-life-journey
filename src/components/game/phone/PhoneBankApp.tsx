@@ -12,12 +12,13 @@ import {
 import { toast } from "sonner";
 import { formatNaira, q, rpc, useGameAction } from "@/lib/game";
 import { amountError } from "@/lib/economy-service";
+import { TransactionListSkeleton } from "@/components/game/loading-skeletons";
 
 export function PhoneBankApp() {
   const [tab, setTab] = useState<"overview" | "deposit" | "withdraw" | "history">("overview");
   const [amount, setAmount] = useState("");
   const { data: wallet, isLoading } = useQuery(q.wallet());
-  const { data: txs } = useQuery(q.transactions());
+  const { data: txs, isLoading: transactionsLoading } = useQuery(q.transactions());
 
   const deposit = useGameAction(rpc.depositCash, {
     onSuccess: () => {
@@ -178,7 +179,9 @@ export function PhoneBankApp() {
                 </button>
               </div>
 
-              {txs && txs.length > 0 ? (
+              {transactionsLoading ? (
+                <TransactionListSkeleton rows={2} label="Loading recent transactions" />
+              ) : txs && txs.length > 0 ? (
                 <div className="space-y-2">
                   {txs.slice(0, 4).map((tx) => (
                     <div
@@ -197,7 +200,11 @@ export function PhoneBankApp() {
                         </small>
                       </div>
                       <span
-                        className={`font-bold ${tx.amount > 0 ? "text-emerald-600" : "text-foreground"}`}
+                        className={`font-bold ${
+                          tx.amount > 0
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : "text-red-600 dark:text-red-400"
+                        }`}
                       >
                         {tx.amount > 0 ? `+${formatNaira(tx.amount)}` : formatNaira(tx.amount)}
                       </span>
@@ -334,7 +341,9 @@ export function PhoneBankApp() {
             <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground px-1">
               Account Transaction History
             </h4>
-            {txs && txs.length > 0 ? (
+            {transactionsLoading ? (
+              <TransactionListSkeleton label="Loading account transaction history" />
+            ) : txs && txs.length > 0 ? (
               <div className="space-y-2">
                 {txs.map((tx) => (
                   <div
@@ -354,7 +363,9 @@ export function PhoneBankApp() {
                     </div>
                     <span
                       className={`text-xs font-bold flex-none ${
-                        tx.amount > 0 ? "text-emerald-600" : "text-foreground"
+                        tx.amount > 0
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "text-red-600 dark:text-red-400"
                       }`}
                     >
                       {tx.amount > 0 ? `+${formatNaira(tx.amount)}` : formatNaira(tx.amount)}

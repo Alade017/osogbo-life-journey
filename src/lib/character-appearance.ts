@@ -1,6 +1,8 @@
 import {
   HAIR_COLORS,
   HAIR_STYLES_BY_GENDER,
+  BODY_BUILDS,
+  BODY_HEIGHTS,
   HEADWEAR,
   OUTFITS,
   SHOE_COLORS,
@@ -19,6 +21,8 @@ export const DEFAULT_CHARACTER_APPEARANCE: CharacterAppearance = {
   bottoms: 0,
   shoes: 0,
   headwear: 0,
+  stature: 1,
+  build: 1,
 };
 
 export function appearanceForGender(
@@ -50,5 +54,7 @@ export function randomizeCharacterAppearance(
     bottoms: chooseIndex(TROUSERS.length, random),
     shoes: chooseIndex(SHOE_COLORS.length, random),
     headwear: chooseIndex(HEADWEAR.length, random),
+    stature: chooseIndex(BODY_HEIGHTS.length, random),
+    build: chooseIndex(BODY_BUILDS.length, random),
   };
 }

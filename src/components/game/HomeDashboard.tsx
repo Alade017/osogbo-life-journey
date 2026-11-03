@@ -4,7 +4,6 @@ import { Bell, MapPin } from "lucide-react";
 import { formatNaira } from "@/lib/game";
 import type { PlayerState } from "@/lib/player-state";
 import { LivingCostsSummary } from "@/components/game/LivingCostsSummary";
-import { ActiveGoalSummary } from "@/components/game/ActiveGoalSummary";
 import "@/components/game/home-dashboard-view.css";
 
 export function HomeDashboard({
@@ -54,7 +53,6 @@ export function HomeDashboard({
           </div>
         </header>
       </div>
-      <ActiveGoalSummary key={`${player.profileId}:${player.id}`} />
     </section>
   );
 }

@@ -1,4 +1,5 @@
-import { Activity, Droplets, Smile, Sparkles, Utensils, Users, Zap } from "lucide-react";
+import { useState } from "react";
+import { Droplets, Smile, Sparkles, Utensils, Users, Zap } from "lucide-react";
 import { useGameTime } from "@/components/game/GameTimeProvider";
 import { NEED_NAMES, NEED_RULES, statusForNeed } from "@/lib/life-simulation";
 import type { PlayerState } from "@/lib/player-state";
@@ -15,44 +16,55 @@ const NEED_ICONS = {
 
 export function GameNeedsRail({ player }: { player: PlayerState }) {
   const { simulation } = useGameTime();
+  const [detailNeed, setDetailNeed] = useState<(typeof NEED_NAMES)[number] | null>(null);
+  const criticalCount = NEED_NAMES.filter(
+    (name) => statusForNeed(name, Math.round(simulation.needs[name])) === "critical",
+  ).length;
+  const detailValue = detailNeed ? Math.round(simulation.needs[detailNeed]) : null;
 
   return (
-    <aside className="game-needs-rail" aria-label={`${player.name}'s needs dashboard`}>
-      <header className="game-needs-header">
-        <h2>
-          <Activity size={17} aria-hidden="true" />
-          <span>{player.name}'s needs</span>
-        </h2>
-      </header>
+    <aside
+      className="game-needs-rail"
+      aria-label={`${player.name}'s needs dashboard${criticalCount ? `, ${criticalCount} critical` : ""}`}
+      data-critical-count={criticalCount}
+    >
       <div className="game-needs-list">
         {NEED_NAMES.map((name) => {
           const Icon = NEED_ICONS[name];
           const value = Math.round(simulation.needs[name]);
           const status = statusForNeed(name, value);
           return (
-            <section className={`game-needs-item is-${status}`} key={name}>
-              <div
-                className="game-needs-item-heading"
-                aria-label={`${NEED_RULES[name].label}: ${value} percent, ${status}`}
+            <button
+              type="button"
+              className={`game-needs-item is-${status}${detailNeed === name ? " is-active" : ""}`}
+              key={name}
+              aria-label={`${NEED_RULES[name].label}: ${value} percent, ${status}`}
+              aria-pressed={detailNeed === name}
+              title={`${NEED_RULES[name].label}: ${value}% · Tap for details`}
+              onClick={() => setDetailNeed((current) => (current === name ? null : name))}
+            >
+              <span
+                className="game-needs-icon-ring"
+                style={{
+                  background: `conic-gradient(var(--need-tone) ${value}%, #e8ece8 0)`,
+                }}
               >
-                <Icon size={15} aria-hidden="true" />
-                <span className="game-needs-name">{NEED_RULES[name].label}</span>
-                <strong>{value}%</strong>
-                <span className="game-needs-track" aria-hidden="true">
-                  <i style={{ width: `${value}%` }} />
+                <span className="game-needs-icon-core">
+                  <Icon size={15} aria-hidden="true" />
                 </span>
-              </div>
-              <p className="game-needs-status">
-                {status === "healthy"
-                  ? "Doing well"
-                  : status === "warning"
-                    ? "Needs attention"
-                    : "Needs care soon"}
-              </p>
-            </section>
+              </span>
+            </button>
           );
         })}
       </div>
+      {detailNeed && detailValue !== null && (
+        <p className="game-needs-detail" role="status" aria-live="polite">
+          <strong>{NEED_RULES[detailNeed].label}</strong>
+          <span>
+            {detailValue}% · {statusForNeed(detailNeed, detailValue)}
+          </span>
+        </p>
+      )}
     </aside>
   );
 }

@@ -19,13 +19,30 @@ const player = {
 } as unknown as PlayerState;
 
 describe("persistent player needs dashboard", () => {
-  it("shows all six needs immediately without navigation links or a toggle", () => {
+  it("shows six compact, keyboard-operable needs with an at-a-glance critical state", () => {
     const { container } = render(<GameNeedsRail player={player} />);
-    expect(screen.getByRole("complementary", { name: "Ayo's needs dashboard" })).toBeVisible();
+    expect(
+      screen.getByRole("complementary", { name: "Ayo's needs dashboard, 1 critical" }),
+    ).toBeVisible();
     expect(container.querySelectorAll(".game-needs-item")).toHaveLength(6);
+    expect(container.querySelectorAll(".game-needs-icon-ring")).toHaveLength(6);
     expect(container.querySelector("a")).toBeNull();
-    expect(container.querySelector("button")).toBeNull();
-    expect(screen.getByText("20%")).toBeVisible();
-    expect(screen.getByText("Needs care soon")).toBeVisible();
+    expect(container.querySelectorAll("button")).toHaveLength(6);
+    expect(screen.getByRole("button", { name: "Hunger: 20 percent, warning" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Social: 10 percent, critical" })).toHaveClass(
+      "is-critical",
+    );
+    expect(screen.getByTitle("Hunger: 20% · Tap for details")).toBeInTheDocument();
+    expect(screen.queryByText("Hunger")).not.toBeInTheDocument();
+    expect(screen.queryByText("20%")).not.toBeInTheDocument();
+  });
+
+  it("reveals the tapped need's exact level and status", () => {
+    render(<GameNeedsRail player={player} />);
+    const socialNeed = screen.getByRole("button", { name: "Social: 10 percent, critical" });
+    socialNeed.click();
+    expect(socialNeed).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("status")).toHaveTextContent("Social");
+    expect(screen.getByRole("status")).toHaveTextContent("10% · critical");
   });
 });

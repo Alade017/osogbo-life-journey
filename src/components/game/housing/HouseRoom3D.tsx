@@ -1,18 +1,42 @@
-import { Component, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import { Canvas, type ThreeEvent } from "@react-three/fiber";
-import { Html, OrbitControls, useGLTF, useProgress } from "@react-three/drei";
-import { Plane, Vector3, type Group } from "three";
+import { Html } from "@react-three/drei";
+import { Plane, Vector3 } from "three";
+import { WorldCharacter } from "@/components/3d/WorldCharacter";
+import { homeFurnitureAction } from "@/lib/home-furniture-actions";
 import type { HousePlacement, HouseSlot } from "./HouseRoomScene";
 import {
   HOUSE_ROOM_SIZE as ROOM_SIZE,
-  HOUSE_ACCESSORY_TIER as ACCESSORY_TIER,
+  housePartitionSegments,
+  interpolateRoomPosition,
+  roomCoordinatesToPercent,
+  roomPercentToPosition,
   houseSlotPosition as slotPosition,
+  houseWallSegments,
   type HouseRoomRendererProps as Props,
 } from "./house-room-contract";
 
-const DRACO_PATH = "/models/draco/";
+import {
+  WorldCamera,
+  WorldInstances,
+  WorldLighting,
+  WorldMaterial,
+  type WorldInstance,
+} from "@/components/3d/WorldScene";
+import { WORLD_SCALE } from "@/components/3d/world-theme";
 
-type DragPreview = { placementId: string; x: number; z: number; targetSlotId: string | null };
+// Keep drei's independent HTML roots outside React's canvas DOM children.
+const RoomOverlayContext = createContext<RefObject<HTMLElement>>({ current: null! });
+
+type DragPreview = { placementId: string; x: number; z: number };
 type DragPointer = {
   placement: HousePlacement;
   pointerId: number;
@@ -22,205 +46,189 @@ type DragPointer = {
 };
 const FLOOR_PLANE = new Plane(new Vector3(0, 1, 0), -0.2);
 
-class ModelBoundary extends Component<
-  { children: ReactNode; fallback: ReactNode; resetKey: string },
-  { failed: boolean }
-> {
-  override state = { failed: false };
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-  override componentDidUpdate(previous: Readonly<{ resetKey: string }>) {
-    if (previous.resetKey !== this.props.resetKey && this.state.failed)
-      this.setState({ failed: false });
-  }
-  override render() {
-    return this.state.failed ? this.props.fallback : this.props.children;
-  }
+function hasRoomPosition(
+  placement: HousePlacement,
+): placement is HousePlacement & { x: number; y: number } {
+  return Number.isFinite(placement.x) && Number.isFinite(placement.y);
 }
 
-function LoadedModel({ path, tier }: { path: string; tier: number }) {
-  const { scene } = useGLTF(path, DRACO_PATH, true);
-  const instance = useMemo(() => {
-    const copy = scene.clone(true);
-    copy.traverse((object) => {
-      const accessory = /^Accessory_Tier(\d+)_/.exec(object.name);
-      if (accessory) object.visible = Number(accessory[1]) <= tier;
-    });
-    return copy;
-  }, [scene, tier]);
-  return <primitive object={instance as Group} dispose={null} />;
-}
+type FloorTone =
+  "tileLight" | "tileShade" | "tileBath" | "tileBathShade" | "tileDark" | "tileDarkShade";
 
-function OptionalModel({
-  path,
-  tier = 1,
-  fallback,
+function RoomFloor({
+  houseTypeId,
+  width,
+  depth,
 }: {
-  path: string;
-  tier?: number;
-  fallback: ReactNode;
+  houseTypeId: string;
+  width: number;
+  depth: number;
 }) {
-  const [available, setAvailable] = useState(false);
-  useEffect(() => {
-    if (!path) {
-      setAvailable(false);
-      return;
-    }
-    let mounted = true;
-    setAvailable(false);
-    void fetch(path, { method: "HEAD" })
-      .then((response) => {
-        if (mounted) setAvailable(response.ok);
-      })
-      .catch(() => {
-        if (mounted) setAvailable(false);
-      });
-    return () => {
-      mounted = false;
+  const groups = useMemo(() => {
+    const tiles: Record<FloorTone, WorldInstance[]> = {
+      tileLight: [],
+      tileShade: [],
+      tileBath: [],
+      tileBathShade: [],
+      tileDark: [],
+      tileDarkShade: [],
     };
-  }, [path]);
-  if (!path || !available) return fallback;
+    const tileSize = 0.78;
+    const hasPrivateRooms = ["studio-flat", "mini-flat", "bungalow", "duplex"].includes(
+      houseTypeId,
+    );
+    const hasBathroomZone = houseTypeId === "bungalow" || houseTypeId === "duplex";
+    let row = 0;
+    for (let z0 = -depth / 2; z0 < depth / 2; z0 += tileSize, row += 1) {
+      const tileDepth = Math.min(tileSize, depth / 2 - z0);
+      let column = 0;
+      for (let x0 = -width / 2; x0 < width / 2; x0 += tileSize, column += 1) {
+        const tileWidth = Math.min(tileSize, width / 2 - x0);
+        const x = x0 + tileWidth / 2;
+        const z = z0 + tileDepth / 2;
+        const alternate = (row + column) % 2 === 0;
+        const tone: FloorTone =
+          hasBathroomZone && x < -width * 0.28 && z < -depth * 0.12
+            ? alternate
+              ? "tileBath"
+              : "tileBathShade"
+            : hasPrivateRooms && x > width * 0.02 && z < -depth * 0.12
+              ? alternate
+                ? "tileDark"
+                : "tileDarkShade"
+              : alternate
+                ? "tileLight"
+                : "tileShade";
+        tiles[tone].push({
+          position: [x, 0.02, z],
+          scale: [tileWidth, 0.035, tileDepth],
+        });
+      }
+    }
+    return tiles;
+  }, [depth, houseTypeId, width]);
+
   return (
-    <ModelBoundary resetKey={path} fallback={fallback}>
-      <Suspense fallback={fallback}>
-        <LoadedModel path={path} tier={tier} />
-      </Suspense>
-    </ModelBoundary>
+    <>
+      {(Object.entries(groups) as [FloorTone, WorldInstance[]][]).map(([tone, items]) => (
+        <WorldInstances key={tone} items={items} tone={tone} />
+      ))}
+    </>
   );
 }
 
-function OsogboRoomPrototype({ width, depth }: { width: number; depth: number }) {
-  const floorTileCountX = Math.max(4, Math.floor(width / 0.9));
-  const floorTileCountZ = Math.max(4, Math.floor(depth / 0.9));
+function OsogboRoomPrototype({
+  houseTypeId,
+  width,
+  depth,
+  editMode,
+}: {
+  houseTypeId: string;
+  width: number;
+  depth: number;
+  editMode: boolean;
+}) {
+  const height = WORLD_SCALE.door * 1.15;
+  const doorwayWidth = 1.12;
+  const doorHeight = WORLD_SCALE.door * 1.1;
+  const rearDoorCenter = width * 0.22;
   return (
     <group>
-      <mesh position={[0, -0.23, 0]}>
-        <boxGeometry args={[width + 0.7, 0.22, depth + 0.7]} />
-        <meshStandardMaterial color="#766044" roughness={1} />
+      <mesh receiveShadow position={[0, -0.26, 0]}>
+        <cylinderGeometry
+          args={[Math.max(width, depth) * 0.8, Math.max(width, depth) * 0.8, 0.15, 48]}
+        />
+        <WorldMaterial tone="foliage" />
       </mesh>
-      <mesh position={[0, -0.08, 0]}>
-        <boxGeometry args={[width, 0.16, depth]} />
-        <meshStandardMaterial color="#d9c6a6" roughness={1} />
+      <mesh castShadow receiveShadow position={[0, -0.1, 0]}>
+        <boxGeometry args={[width, 0.2, depth]} />
+        <WorldMaterial tone="ground" />
       </mesh>
-      {Array.from({ length: floorTileCountX - 1 }, (_, index) => {
-        const x = -width / 2 + (width * (index + 1)) / floorTileCountX;
-        return (
-          <mesh key={`floor-x-${index}`} position={[x, 0.006, 0]}>
-            <boxGeometry args={[0.018, 0.012, depth - 0.06]} />
-            <meshStandardMaterial color="#c8b18d" roughness={1} />
-          </mesh>
-        );
-      })}
-      {Array.from({ length: floorTileCountZ - 1 }, (_, index) => {
-        const z = -depth / 2 + (depth * (index + 1)) / floorTileCountZ;
-        return (
-          <mesh key={`floor-z-${index}`} position={[0, 0.006, z]}>
-            <boxGeometry args={[width - 0.06, 0.012, 0.018]} />
-            <meshStandardMaterial color="#c8b18d" roughness={1} />
-          </mesh>
-        );
-      })}
-      <mesh position={[0, 0.018, depth * 0.18]}>
-        <boxGeometry args={[width * 0.45, 0.025, depth * 0.4]} />
-        <meshStandardMaterial color="#263d66" roughness={1} />
-      </mesh>
-      <mesh position={[0, 0.034, depth * 0.18]}>
-        <boxGeometry args={[width * 0.4, 0.012, depth * 0.35]} />
-        <meshStandardMaterial color="#bd8b45" roughness={1} />
-      </mesh>
-      {[-1, 1].map((side) => (
+      <group name="house-cutaway-walls" scale={[1, editMode ? 0.28 : 1, 1]}>
+        {houseWallSegments(width, depth, height, doorwayWidth).map((segment) => (
+          <group key={segment.id}>
+            <mesh castShadow receiveShadow position={segment.position}>
+              <boxGeometry args={segment.size} />
+              <WorldMaterial tone="partition" />
+            </mesh>
+            <mesh
+              castShadow
+              receiveShadow
+              position={[
+                segment.position[0],
+                segment.position[1] + segment.size[1] / 2,
+                segment.position[2],
+              ]}
+            >
+              <boxGeometry args={[segment.size[0] + 0.05, 0.065, segment.size[2] + 0.05]} />
+              <WorldMaterial tone="trim" />
+            </mesh>
+          </group>
+        ))}
         <mesh
-          key={`textile-diamond-${side}`}
-          position={[side * width * 0.105, 0.045, depth * 0.18]}
-          rotation={[0, Math.PI / 4, 0]}
+          castShadow
+          receiveShadow
+          position={[rearDoorCenter, doorHeight / 2, -depth / 2 + 0.06]}
         >
-          <boxGeometry args={[0.28, 0.014, 0.28]} />
-          <meshStandardMaterial color="#263d66" roughness={1} />
+          <boxGeometry args={[doorwayWidth * 0.92, doorHeight, 0.075]} />
+          <WorldMaterial tone="door" />
         </mesh>
-      ))}
-      <mesh position={[-width / 2, 0.66, 0]}>
-        <boxGeometry args={[0.16, 1.32, depth]} />
-        <meshStandardMaterial color="#9b5638" roughness={1} />
-      </mesh>
-      <mesh position={[-width / 2 + 0.09, 0.22, 0]}>
-        <boxGeometry args={[0.025, 0.09, depth - 0.12]} />
-        <meshStandardMaterial color="#d6aa59" roughness={1} />
-      </mesh>
-      <mesh position={[0, 0.66, -depth / 2]}>
-        <boxGeometry args={[width, 1.32, 0.16]} />
-        <meshStandardMaterial color="#ead9bd" roughness={1} />
-      </mesh>
-      <mesh position={[0, 0.17, -depth / 2 + 0.09]}>
-        <boxGeometry args={[width, 0.18, 0.035]} />
-        <meshStandardMaterial color="#47715c" roughness={1} />
-      </mesh>
-      <mesh position={[0, 0.27, -depth / 2 + 0.11]}>
-        <boxGeometry args={[width, 0.025, 0.035]} />
-        <meshStandardMaterial color="#d5a656" roughness={1} />
-      </mesh>
-      {width >= 5 && (
-        <group position={[-width * 0.2, 0.82, -depth / 2 + 0.105]}>
-          <mesh>
-            <boxGeometry args={[1.3, 0.82, 0.08]} />
-            <meshStandardMaterial color="#74503a" roughness={1} />
+        <mesh
+          castShadow
+          receiveShadow
+          position={[rearDoorCenter, doorHeight / 2, -depth / 2 + 0.105]}
+        >
+          <boxGeometry args={[doorwayWidth * 0.68, doorHeight * 0.78, 0.025]} />
+          <WorldMaterial tone="timber" />
+        </mesh>
+        <mesh
+          castShadow
+          position={[rearDoorCenter + doorwayWidth * 0.29, doorHeight * 0.52, -depth / 2 + 0.13]}
+        >
+          <sphereGeometry args={[0.045, 8, 6]} />
+          <WorldMaterial tone="trim" />
+        </mesh>
+        <group position={[-width * 0.28, height * 0.57, -depth / 2 + 0.12]}>
+          <mesh castShadow receiveShadow>
+            <boxGeometry args={[1.62, 0.94, 0.12]} />
+            <WorldMaterial tone="trim" />
           </mesh>
-          <mesh position={[0, 0, 0.05]}>
-            <boxGeometry args={[1.16, 0.68, 0.035]} />
-            <meshStandardMaterial color="#83b9b1" roughness={1} />
+          <mesh position={[0, 0, 0.075]}>
+            <boxGeometry args={[1.46, 0.76, 0.035]} />
+            <WorldMaterial tone="window" />
           </mesh>
-          {[-0.38, 0, 0.38].map((x) => (
-            <mesh key={`window-bar-${x}`} position={[x, 0, 0.08]}>
-              <boxGeometry args={[0.035, 0.68, 0.025]} />
-              <meshStandardMaterial color="#f0d7a4" roughness={1} />
+          {[-0.22, 0, 0.22].map((y) => (
+            <mesh key={y} position={[0, y, 0.1]}>
+              <boxGeometry args={[1.47, 0.045, 0.035]} />
+              <WorldMaterial tone="trim" />
             </mesh>
           ))}
-          <mesh position={[0, 0, 0.08]}>
-            <boxGeometry args={[1.16, 0.035, 0.025]} />
-            <meshStandardMaterial color="#f0d7a4" roughness={1} />
+          <mesh position={[0, 0, 0.105]}>
+            <boxGeometry args={[0.055, 0.76, 0.035]} />
+            <WorldMaterial tone="trim" />
           </mesh>
         </group>
-      )}
-      {width >= 5 && (
-        <group position={[width * 0.27, 0.82, -depth / 2 + 0.11]}>
-          <mesh>
-            <boxGeometry args={[0.68, 0.78, 0.06]} />
-            <meshStandardMaterial color="#875b3d" roughness={1} />
-          </mesh>
-          <mesh position={[0, 0, 0.04]}>
-            <boxGeometry args={[0.56, 0.66, 0.025]} />
-            <meshStandardMaterial color="#263d66" roughness={1} />
-          </mesh>
-          {[-0.2, 0, 0.2].map((y) => (
-            <mesh key={`wall-motif-${y}`} position={[0, y, 0.06]} rotation={[0, 0, Math.PI / 4]}>
-              <boxGeometry args={[0.1, 0.1, 0.018]} />
-              <meshStandardMaterial color="#d9aa5c" roughness={1} />
+        {housePartitionSegments(houseTypeId, width, depth).map((segment) => (
+          <group key={segment.id}>
+            <mesh castShadow receiveShadow position={segment.position}>
+              <boxGeometry args={segment.size} />
+              <WorldMaterial tone="partition" />
             </mesh>
-          ))}
-        </group>
-      )}
-      {width >= 8 && (
-        <group position={[width * 0.12, 0.93, -depth / 2 + 0.1]}>
-          {[-0.2, 0, 0.2].map((x) => (
-            <mesh key={`vent-${x}`} position={[x, 0, 0]}>
-              <boxGeometry args={[0.12, 0.13, 0.035]} />
-              <meshStandardMaterial color="#b88b5d" roughness={1} />
+            <mesh
+              castShadow
+              receiveShadow
+              position={[
+                segment.position[0],
+                segment.position[1] + segment.size[1] / 2,
+                segment.position[2],
+              ]}
+            >
+              <boxGeometry args={[segment.size[0] + 0.04, 0.055, segment.size[2] + 0.04]} />
+              <WorldMaterial tone="trim" />
             </mesh>
-          ))}
-        </group>
-      )}
-      {width >= 6 && (
-        <group position={[width * 0.15, 0.37, -depth * 0.04]}>
-          <mesh>
-            <boxGeometry args={[0.12, 0.74, depth * 0.55]} />
-            <meshStandardMaterial color="#76533b" roughness={1} />
-          </mesh>
-          <mesh position={[0.07, 0, 0]}>
-            <boxGeometry args={[0.025, 0.62, depth * 0.48]} />
-            <meshStandardMaterial color="#d6aa59" roughness={1} />
-          </mesh>
-        </group>
-      )}
+          </group>
+        ))}
+      </group>
     </group>
   );
 }
@@ -237,62 +245,62 @@ function FurnitureFallback({ artKey, slotType }: { artKey: string | undefined; s
           : rawKind;
   if (kind === "bed")
     return (
-      <group>
-        <mesh position={[0, 0.14, 0]}>
+      <group scale={[1.2, 1, 1.45]}>
+        <mesh castShadow receiveShadow position={[0, 0.14, 0]}>
           <boxGeometry args={[0.95, 0.18, 1.35]} />
-          <meshStandardMaterial color="#81543a" roughness={0.9} />
+          <WorldMaterial tone="timber" />
         </mesh>
-        <mesh position={[0, 0.27, 0]}>
+        <mesh castShadow receiveShadow position={[0, 0.27, 0]}>
           <boxGeometry args={[0.88, 0.12, 1.22]} />
-          <meshStandardMaterial color="#f0e5cf" roughness={1} />
+          <WorldMaterial tone="linen" />
         </mesh>
-        <mesh position={[0, 0.48, -0.66]}>
+        <mesh castShadow receiveShadow position={[0, 0.48, -0.66]}>
           <boxGeometry args={[0.98, 0.62, 0.1]} />
-          <meshStandardMaterial color="#60432f" roughness={0.9} />
+          <WorldMaterial tone="timber" />
         </mesh>
-        <mesh position={[0, 0.35, 0.43]}>
+        <mesh castShadow receiveShadow position={[0, 0.35, 0.43]}>
           <boxGeometry args={[0.87, 0.035, 0.27]} />
-          <meshStandardMaterial color="#263d66" roughness={1} />
+          <WorldMaterial tone="timber" />
         </mesh>
         {[-0.23, 0.23].map((x) => (
-          <mesh key={`bed-textile-${x}`} position={[x, 0.38, 0.43]}>
+          <mesh castShadow receiveShadow key={`bed-textile-${x}`} position={[x, 0.38, 0.43]}>
             <boxGeometry args={[0.07, 0.04, 0.29]} />
-            <meshStandardMaterial color="#d8ac5e" roughness={1} />
+            <WorldMaterial tone="clay" />
           </mesh>
         ))}
-        <mesh position={[-0.23, 0.36, -0.4]}>
+        <mesh castShadow receiveShadow position={[-0.23, 0.36, -0.4]}>
           <boxGeometry args={[0.36, 0.07, 0.25]} />
-          <meshStandardMaterial color="#fffaf0" roughness={1} />
+          <WorldMaterial tone="linen" />
         </mesh>
-        <mesh position={[0.23, 0.36, -0.4]}>
+        <mesh castShadow receiveShadow position={[0.23, 0.36, -0.4]}>
           <boxGeometry args={[0.36, 0.07, 0.25]} />
-          <meshStandardMaterial color="#fffaf0" roughness={1} />
+          <WorldMaterial tone="linen" />
         </mesh>
       </group>
     );
   if (["sofa", "sofa-2", "seat"].includes(kind))
     return (
       <group>
-        <mesh position={[0, 0.26, 0]}>
+        <mesh castShadow receiveShadow position={[0, 0.26, 0]}>
           <boxGeometry args={[1.15, 0.34, 0.54]} />
-          <meshStandardMaterial color="#315d58" roughness={1} />
+          <WorldMaterial tone="timber" />
         </mesh>
-        <mesh position={[0, 0.54, -0.24]}>
+        <mesh castShadow receiveShadow position={[0, 0.54, -0.24]}>
           <boxGeometry args={[1.15, 0.52, 0.14]} />
-          <meshStandardMaterial color="#244943" roughness={1} />
+          <WorldMaterial tone="timber" />
         </mesh>
-        <mesh position={[-0.54, 0.43, 0]}>
+        <mesh castShadow receiveShadow position={[-0.54, 0.43, 0]}>
           <boxGeometry args={[0.12, 0.44, 0.65]} />
-          <meshStandardMaterial color="#244943" roughness={1} />
+          <WorldMaterial tone="timber" />
         </mesh>
-        <mesh position={[0.54, 0.43, 0]}>
+        <mesh castShadow receiveShadow position={[0.54, 0.43, 0]}>
           <boxGeometry args={[0.12, 0.44, 0.65]} />
-          <meshStandardMaterial color="#244943" roughness={1} />
+          <WorldMaterial tone="timber" />
         </mesh>
         {[-0.3, 0, 0.3].map((x, index) => (
-          <mesh key={`sofa-cushion-${x}`} position={[x, 0.53, -0.13]}>
+          <mesh castShadow receiveShadow key={`sofa-cushion-${x}`} position={[x, 0.53, -0.13]}>
             <boxGeometry args={[0.23, 0.24, 0.09]} />
-            <meshStandardMaterial color={index === 1 ? "#d29a4d" : "#b85f3e"} roughness={1} />
+            <WorldMaterial tone={index === 1 ? "wall" : "clay"} />
           </mesh>
         ))}
       </group>
@@ -301,59 +309,70 @@ function FurnitureFallback({ artKey, slotType }: { artKey: string | undefined; s
     return (
       <group>
         {kind === "computer" && (
-          <mesh position={[0, 0.23, 0]}>
+          <mesh castShadow receiveShadow position={[0, 0.23, 0]}>
             <boxGeometry args={[0.9, 0.12, 0.5]} />
-            <meshStandardMaterial color="#8a6048" />
+            <WorldMaterial tone="timber" />
           </mesh>
         )}
-        <mesh position={[0, 0.58, -0.08]}>
+        <mesh castShadow receiveShadow position={[0, 0.58, -0.08]}>
           <boxGeometry args={[kind === "computer" ? 0.62 : 0.92, 0.53, 0.08]} />
-          <meshStandardMaterial color="#252c35" />
+          <WorldMaterial tone="timber" />
         </mesh>
-        <mesh position={[0, 0.58, -0.03]}>
+        <mesh castShadow receiveShadow position={[0, 0.58, -0.03]}>
           <planeGeometry args={[kind === "computer" ? 0.55 : 0.85, 0.45]} />
-          <meshStandardMaterial color="#516f82" />
+          <WorldMaterial tone="slate" />
         </mesh>
-        <mesh position={[0, 0.28, -0.08]}>
+        <mesh castShadow receiveShadow position={[0, 0.28, -0.08]}>
           <boxGeometry args={[0.08, 0.15, 0.08]} />
-          <meshStandardMaterial color="#454545" />
+          <WorldMaterial tone="timber" />
         </mesh>
       </group>
     );
   if (kind === "stove")
     return (
       <group>
-        <mesh position={[0, 0.32, 0]}>
+        <mesh castShadow receiveShadow position={[0, 0.32, 0]}>
           <boxGeometry args={[0.72, 0.64, 0.56]} />
-          <meshStandardMaterial color="#c7b9a2" roughness={0.8} />
+          <WorldMaterial tone="wall" />
         </mesh>
-        <mesh position={[0, 0.34, 0.29]}>
+        <mesh castShadow receiveShadow position={[0, 0.34, 0.29]}>
           <boxGeometry args={[0.51, 0.32, 0.02]} />
-          <meshStandardMaterial color="#4b4037" roughness={0.8} />
+          <WorldMaterial tone="timber" />
         </mesh>
         {[-0.2, 0.2].map((x) => (
-          <mesh key={x} position={[x, 0.65, -0.08]} rotation={[-Math.PI / 2, 0, 0]}>
+          <mesh
+            castShadow
+            receiveShadow
+            key={x}
+            position={[x, 0.65, -0.08]}
+            rotation={[-Math.PI / 2, 0, 0]}
+          >
             <torusGeometry args={[0.11, 0.02, 4, 12]} />
-            <meshStandardMaterial color="#403a34" roughness={0.8} />
+            <WorldMaterial tone="timber" />
           </mesh>
         ))}
         <group position={[0, 0.72, -0.08]}>
-          <mesh position={[0, 0.15, 0]}>
+          <mesh castShadow receiveShadow position={[0, 0.15, 0]}>
             <cylinderGeometry args={[0.21, 0.17, 0.3, 12]} />
-            <meshStandardMaterial color="#8b4e35" roughness={0.8} />
+            <WorldMaterial tone="timber" />
           </mesh>
-          <mesh position={[0, 0.32, 0]}>
+          <mesh castShadow receiveShadow position={[0, 0.32, 0]}>
             <cylinderGeometry args={[0.22, 0.22, 0.045, 12]} />
-            <meshStandardMaterial color="#68402f" roughness={0.8} />
+            <WorldMaterial tone="timber" />
           </mesh>
-          <mesh position={[0, 0.36, 0]}>
+          <mesh castShadow receiveShadow position={[0, 0.36, 0]}>
             <sphereGeometry args={[0.055, 8, 6]} />
-            <meshStandardMaterial color="#bd9150" roughness={0.8} />
+            <WorldMaterial tone="clay" />
           </mesh>
           {[-1, 1].map((side) => (
-            <mesh key={`pot-handle-${side}`} position={[side * 0.22, 0.22, 0]}>
+            <mesh
+              castShadow
+              receiveShadow
+              key={`pot-handle-${side}`}
+              position={[side * 0.22, 0.22, 0]}
+            >
               <torusGeometry args={[0.055, 0.018, 5, 10]} />
-              <meshStandardMaterial color="#68402f" roughness={0.8} />
+              <WorldMaterial tone="timber" />
             </mesh>
           ))}
         </group>
@@ -362,22 +381,27 @@ function FurnitureFallback({ artKey, slotType }: { artKey: string | undefined; s
   if (kind === "pot" || kind === "cooking-pot")
     return (
       <group>
-        <mesh position={[0, 0.22, 0]}>
+        <mesh castShadow receiveShadow position={[0, 0.22, 0]}>
           <cylinderGeometry args={[0.29, 0.22, 0.4, 12]} />
-          <meshStandardMaterial color="#8b4e35" roughness={0.85} />
+          <WorldMaterial tone="timber" />
         </mesh>
-        <mesh position={[0, 0.43, 0]}>
+        <mesh castShadow receiveShadow position={[0, 0.43, 0]}>
           <cylinderGeometry args={[0.3, 0.3, 0.05, 12]} />
-          <meshStandardMaterial color="#68402f" roughness={0.85} />
+          <WorldMaterial tone="timber" />
         </mesh>
-        <mesh position={[0, 0.48, 0]}>
+        <mesh castShadow receiveShadow position={[0, 0.48, 0]}>
           <sphereGeometry args={[0.055, 8, 6]} />
-          <meshStandardMaterial color="#bd9150" roughness={0.8} />
+          <WorldMaterial tone="clay" />
         </mesh>
         {[-1, 1].map((side) => (
-          <mesh key={`pot-handle-${side}`} position={[side * 0.29, 0.27, 0]}>
+          <mesh
+            castShadow
+            receiveShadow
+            key={`pot-handle-${side}`}
+            position={[side * 0.29, 0.27, 0]}
+          >
             <torusGeometry args={[0.07, 0.02, 5, 10]} />
-            <meshStandardMaterial color="#68402f" roughness={0.85} />
+            <WorldMaterial tone="timber" />
           </mesh>
         ))}
       </group>
@@ -385,100 +409,100 @@ function FurnitureFallback({ artKey, slotType }: { artKey: string | undefined; s
   if (kind === "toilet")
     return (
       <group>
-        <mesh position={[0, 0.2, 0.1]}>
+        <mesh castShadow receiveShadow position={[0, 0.2, 0.1]}>
           <cylinderGeometry args={[0.26, 0.2, 0.4, 12]} />
-          <meshStandardMaterial color="#f4f3ed" />
+          <WorldMaterial tone="linen" />
         </mesh>
-        <mesh position={[0, 0.47, -0.18]}>
+        <mesh castShadow receiveShadow position={[0, 0.47, -0.18]}>
           <boxGeometry args={[0.52, 0.45, 0.2]} />
-          <meshStandardMaterial color="#f4f3ed" />
+          <WorldMaterial tone="linen" />
         </mesh>
-        <mesh position={[0, 0.42, 0.1]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh castShadow receiveShadow position={[0, 0.42, 0.1]} rotation={[-Math.PI / 2, 0, 0]}>
           <torusGeometry args={[0.21, 0.045, 6, 16]} />
-          <meshStandardMaterial color="#ffffff" />
+          <WorldMaterial tone="linen" />
         </mesh>
       </group>
     );
   if (kind === "shower")
     return (
       <group>
-        <mesh position={[0, 0.03, 0]}>
+        <mesh castShadow receiveShadow position={[0, 0.03, 0]}>
           <cylinderGeometry args={[0.38, 0.38, 0.06, 16]} />
-          <meshStandardMaterial color="#dce4e6" />
+          <WorldMaterial tone="linen" />
         </mesh>
-        <mesh position={[-0.25, 0.62, -0.2]}>
+        <mesh castShadow receiveShadow position={[-0.25, 0.62, -0.2]}>
           <cylinderGeometry args={[0.025, 0.025, 1.2, 8]} />
-          <meshStandardMaterial color="#abb7bc" />
+          <WorldMaterial tone="wall" />
         </mesh>
-        <mesh position={[-0.1, 1.17, -0.2]} rotation={[0, 0, Math.PI / 2]}>
+        <mesh castShadow receiveShadow position={[-0.1, 1.17, -0.2]} rotation={[0, 0, Math.PI / 2]}>
           <cylinderGeometry args={[0.025, 0.025, 0.34, 8]} />
-          <meshStandardMaterial color="#abb7bc" />
+          <WorldMaterial tone="wall" />
         </mesh>
-        <mesh position={[0.04, 1.15, -0.2]}>
+        <mesh castShadow receiveShadow position={[0.04, 1.15, -0.2]}>
           <cylinderGeometry args={[0.15, 0.12, 0.04, 12]} />
-          <meshStandardMaterial color="#abb7bc" />
+          <WorldMaterial tone="wall" />
         </mesh>
       </group>
     );
   if (kind === "plant")
     return (
       <group>
-        <mesh position={[0, 0.18, 0]}>
+        <mesh castShadow receiveShadow position={[0, 0.18, 0]}>
           <cylinderGeometry args={[0.24, 0.17, 0.36, 10]} />
-          <meshStandardMaterial color="#b56d4f" />
+          <WorldMaterial tone="clay" />
         </mesh>
-        <mesh position={[0, 0.62, 0]}>
+        <mesh castShadow receiveShadow position={[0, 0.62, 0]}>
           <sphereGeometry args={[0.35, 10, 8]} />
-          <meshStandardMaterial color="#46885a" />
+          <WorldMaterial tone="timber" />
         </mesh>
-        <mesh position={[-0.16, 0.76, 0.03]}>
+        <mesh castShadow receiveShadow position={[-0.16, 0.76, 0.03]}>
           <sphereGeometry args={[0.2, 8, 6]} />
-          <meshStandardMaterial color="#5ca16a" />
+          <WorldMaterial tone="slate" />
         </mesh>
       </group>
     );
   if (kind === "light")
     return (
       <group>
-        <mesh position={[0, 0.03, 0]}>
+        <mesh castShadow receiveShadow position={[0, 0.03, 0]}>
           <cylinderGeometry args={[0.22, 0.22, 0.06, 12]} />
-          <meshStandardMaterial color="#72675e" />
+          <WorldMaterial tone="timber" />
         </mesh>
-        <mesh position={[0, 0.6, 0]}>
+        <mesh castShadow receiveShadow position={[0, 0.6, 0]}>
           <cylinderGeometry args={[0.025, 0.025, 1.15, 8]} />
-          <meshStandardMaterial color="#72675e" />
+          <WorldMaterial tone="timber" />
         </mesh>
-        <mesh position={[0, 1.24, 0]}>
+        <mesh castShadow receiveShadow position={[0, 1.24, 0]}>
           <coneGeometry args={[0.32, 0.4, 12, 1, true]} />
-          <meshStandardMaterial color="#f5dc9f" side={2} />
+          <WorldMaterial tone="ground" />
         </mesh>
       </group>
     );
   if (kind === "wardrobe")
     return (
       <group>
-        <mesh position={[0, 0.7, 0]}>
+        <mesh castShadow receiveShadow position={[0, 0.7, 0]}>
           <boxGeometry args={[0.92, 1.4, 0.48]} />
-          <meshStandardMaterial color="#78503a" roughness={0.85} />
+          <WorldMaterial tone="timber" />
         </mesh>
-        <mesh position={[0, 0.69, 0.25]}>
+        <mesh castShadow receiveShadow position={[0, 0.69, 0.25]}>
           <boxGeometry args={[0.78, 1.17, 0.025]} />
-          <meshStandardMaterial color="#8c6042" roughness={0.85} />
+          <WorldMaterial tone="timber" />
         </mesh>
         {[-0.2, 0.2].map((x) => (
-          <mesh key={`wardrobe-inlay-${x}`} position={[x, 0.69, 0.27]}>
+          <mesh castShadow receiveShadow key={`wardrobe-inlay-${x}`} position={[x, 0.69, 0.27]}>
             <boxGeometry args={[0.035, 1.02, 0.015]} />
-            <meshStandardMaterial color="#c59a57" roughness={0.8} />
+            <WorldMaterial tone="clay" />
           </mesh>
         ))}
-        <mesh position={[0, 0.2, 0.27]}>
+        <mesh castShadow receiveShadow position={[0, 0.2, 0.27]}>
           <boxGeometry args={[0.82, 0.035, 0.02]} />
-          <meshStandardMaterial color="#263d66" roughness={1} />
+          <WorldMaterial tone="timber" />
         </mesh>
         {[-0.2, 0.2].map((x) => (
-          <mesh key={x} position={[x, 0.72, 0.25]}>
+          <mesh castShadow receiveShadow key={x} position={[x, 0.72, 0.25]}>
             <boxGeometry args={[0.035, 0.13, 0.025]} />
-            <meshStandardMaterial color="#dfbd79" metalness={0.25} roughness={0.55} />
+            <WorldMaterial tone="wall" />
           </mesh>
         ))}
       </group>
@@ -486,15 +510,15 @@ function FurnitureFallback({ artKey, slotType }: { artKey: string | undefined; s
   if (kind === "coffee-table")
     return (
       <group>
-        <mesh position={[0, 0.43, 0]}>
+        <mesh castShadow receiveShadow position={[0, 0.43, 0]}>
           <boxGeometry args={[1.05, 0.1, 0.65]} />
-          <meshStandardMaterial color="#9b6a43" />
+          <WorldMaterial tone="timber" />
         </mesh>
         {[-0.42, 0.42].flatMap((x) =>
           [-0.23, 0.23].map((z) => (
-            <mesh key={`${x}-${z}`} position={[x, 0.22, z]}>
+            <mesh castShadow receiveShadow key={`${x}-${z}`} position={[x, 0.22, z]}>
               <boxGeometry args={[0.08, 0.4, 0.08]} />
-              <meshStandardMaterial color="#6b4935" />
+              <WorldMaterial tone="timber" />
             </mesh>
           )),
         )}
@@ -503,35 +527,165 @@ function FurnitureFallback({ artKey, slotType }: { artKey: string | undefined; s
   if (kind === "wall-art")
     return (
       <group>
-        <mesh position={[0, 0.7, 0]}>
+        <mesh castShadow receiveShadow position={[0, 0.7, 0]}>
           <boxGeometry args={[0.76, 0.62, 0.045]} />
-          <meshStandardMaterial color="#6e4935" roughness={0.85} />
+          <WorldMaterial tone="timber" />
         </mesh>
-        <mesh position={[0, 0.7, 0.03]}>
+        <mesh castShadow receiveShadow position={[0, 0.7, 0.03]}>
           <planeGeometry args={[0.65, 0.5]} />
-          <meshStandardMaterial color="#263d66" roughness={1} />
+          <WorldMaterial tone="timber" />
         </mesh>
         {[-1, 1].map((side) => (
           <mesh
+            castShadow
+            receiveShadow
             key={`wall-art-motif-${side}`}
             position={[side * 0.14, 0.7, 0.045]}
             rotation={[0, 0, Math.PI / 4]}
           >
             <boxGeometry args={[0.12, 0.12, 0.02]} />
-            <meshStandardMaterial color="#d5a656" roughness={1} />
+            <WorldMaterial tone="clay" />
           </mesh>
         ))}
-        <mesh position={[0, 0.7, 0.05]}>
+        <mesh castShadow receiveShadow position={[0, 0.7, 0.05]}>
           <boxGeometry args={[0.035, 0.35, 0.02]} />
-          <meshStandardMaterial color="#b85f3e" roughness={1} />
+          <WorldMaterial tone="clay" />
         </mesh>
       </group>
     );
   return (
-    <mesh position={[0, 0.28, 0]}>
+    <mesh castShadow receiveShadow position={[0, 0.28, 0]}>
       <boxGeometry args={[0.62, 0.56, 0.52]} />
-      <meshStandardMaterial color="#aa704b" roughness={1} />
+      <WorldMaterial tone="clay" />
     </mesh>
+  );
+}
+
+function RoomCharacter({
+  name,
+  appearance,
+  gender,
+  equipment,
+  animationState,
+  activityRequestId,
+  activityLabel,
+  position,
+  bedPosition,
+}: {
+  name: string;
+  appearance: NonNullable<Props["appearance"]>;
+  gender: string;
+  equipment: NonNullable<Props["equipment"]>;
+  animationState: NonNullable<Props["animationState"]>;
+  activityRequestId: Props["activityRequestId"];
+  activityLabel: string | null;
+  position: [number, number, number];
+  bedPosition: [number, number, number] | null;
+}) {
+  const overlayPortal = useContext(RoomOverlayContext);
+  const [displayPosition, setDisplayPosition] = useState(position);
+  const [walkingToBed, setWalkingToBed] = useState(false);
+  const wasSleeping = useRef(false);
+  const [reducedMotion, setReducedMotion] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
+  const visibleAnimation = walkingToBed ? "walk" : animationState;
+  const [startX, startY, startZ] = position;
+  const hasBedPosition = bedPosition !== null;
+  const targetX = bedPosition?.[0] ?? 0;
+  const targetY = bedPosition?.[1] ?? 0;
+  const targetZ = bedPosition?.[2] ?? 0;
+  const walkingFacing: "west" | "east" | "north" | "south" = bedPosition
+    ? Math.abs(bedPosition[0] - position[0]) > Math.abs(bedPosition[2] - position[2])
+      ? bedPosition[0] < position[0]
+        ? "west"
+        : "east"
+      : bedPosition[2] < position[2]
+        ? "north"
+        : "south"
+    : "south";
+
+  useEffect(() => {
+    const start: [number, number, number] = [startX, startY, startZ];
+    const target: [number, number, number] = [targetX, targetY, targetZ];
+    if (animationState !== "sleep" || !hasBedPosition) {
+      setWalkingToBed(false);
+      setDisplayPosition(wasSleeping.current && hasBedPosition ? target : start);
+      wasSleeping.current = false;
+      return;
+    }
+
+    const startPosition = wasSleeping.current ? target : start;
+    wasSleeping.current = true;
+    if (reducedMotion) {
+      setWalkingToBed(false);
+      setDisplayPosition(target);
+      return;
+    }
+
+    const startedAt = performance.now();
+    const duration = 950;
+    let frameId = 0;
+    setDisplayPosition(startPosition);
+    setWalkingToBed(true);
+
+    const walk = (now: number) => {
+      const progress = Math.min(1, (now - startedAt) / duration);
+      setDisplayPosition(interpolateRoomPosition(startPosition, target, progress));
+      if (progress < 1) {
+        frameId = window.requestAnimationFrame(walk);
+      } else {
+        setWalkingToBed(false);
+      }
+    };
+
+    frameId = window.requestAnimationFrame(walk);
+    return () => window.cancelAnimationFrame(frameId);
+  }, [
+    activityRequestId,
+    animationState,
+    hasBedPosition,
+    reducedMotion,
+    startX,
+    startY,
+    startZ,
+    targetX,
+    targetY,
+    targetZ,
+  ]);
+
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = (event: MediaQueryListEvent) => setReducedMotion(event.matches);
+    media.addEventListener?.("change", update);
+    return () => media.removeEventListener?.("change", update);
+  }, []);
+
+  return (
+    <>
+      <WorldCharacter
+        name={name}
+        appearance={appearance}
+        gender={gender}
+        equipment={equipment}
+        position={displayPosition}
+        animation={visibleAnimation}
+        facing={walkingToBed ? walkingFacing : "south"}
+      />
+      {activityLabel && (
+        <Html
+          portal={overlayPortal}
+          zIndexRange={[8, 0]}
+          center
+          position={[displayPosition[0], displayPosition[1] + 2.1, displayPosition[2]]}
+          style={{ pointerEvents: "none" }}
+        >
+          <span className="house-room-character-activity">{activityLabel}</span>
+        </Html>
+      )}
+    </>
   );
 }
 
@@ -570,7 +724,11 @@ function SlotObject({
   onDragCancel: (event: ThreeEvent<PointerEvent>) => void;
   suppressClick: (placement: HousePlacement) => boolean;
 }) {
-  const position = slotPosition(slot, width, depth);
+  const overlayPortal = useContext(RoomOverlayContext);
+  const position =
+    placement && hasRoomPosition(placement)
+      ? roomPercentToPosition(placement.x, placement.y, width, depth)
+      : slotPosition(slot, width, depth);
   const moving = placement && dragPreview?.placementId === placement.id;
   const displayPosition: [number, number, number] = moving
     ? [dragPreview.x, 0.2, dragPreview.z]
@@ -580,7 +738,10 @@ function SlotObject({
   const artKey = placement?.art_key;
   const safeArtKey = artKey && /^[a-z0-9-]+$/i.test(artKey) ? artKey : null;
   return (
-    <group position={displayPosition}>
+    <group
+      name={placement ? `accessory:${placement.id}` : `slot:${slot.id}`}
+      position={displayPosition}
+    >
       {placement ? (
         <group
           onPointerDown={(event) => {
@@ -595,39 +756,33 @@ function SlotObject({
             if (!inputBlocked && !suppressClick(placement)) onSelectPlacement(placement);
           }}
         >
-          <OptionalModel
-            path={safeArtKey ? `/models/furniture/${safeArtKey}.glb` : ""}
-            fallback={
-              <FurnitureFallback artKey={safeArtKey ?? undefined} slotType={slot.slot_type} />
-            }
-          />
+          <group scale={WORLD_SCALE.furniture}>
+            <FurnitureFallback artKey={safeArtKey ?? undefined} slotType={slot.slot_type} />
+          </group>
         </group>
       ) : (
         <mesh
+          castShadow
+          receiveShadow
           onClick={(event) => {
             event.stopPropagation();
-            if (
-              !inputBlocked &&
-              (activeSlotType === null || activeSlotType === slot.slot_type)
-            )
+            if (!inputBlocked && (activeSlotType === null || activeSlotType === slot.slot_type))
               onSelectSlot(slot);
           }}
         >
           <boxGeometry args={[0.48, 0.08, 0.48]} />
-          <meshStandardMaterial
-            color={
-              dragPreview?.targetSlotId === slot.id
-                ? "#44c78b"
-                : activeSlotType === slot.slot_type
-                  ? "#59b9dc"
-                  : "#f6b34c"
-            }
-            roughness={1}
-          />
+          <WorldMaterial tone={activeSlotType === slot.slot_type ? "slate" : "clay"} />
         </mesh>
       )}
-      {editMode && (
-        <Html center position={[0, 0.46, 0]} distanceFactor={10}>
+      {editMode && !placement && (
+        <Html
+          portal={overlayPortal}
+          zIndexRange={[8, 0]}
+          style={{ pointerEvents: "auto" }}
+          center
+          position={[0, 0.46, 0]}
+          distanceFactor={10}
+        >
           <button
             type="button"
             className="house-3d-slot-label"
@@ -648,20 +803,16 @@ function SlotObject({
   );
 }
 
-function LoadingProgress() {
-  const { active, progress } = useProgress();
-  if (!active) return null;
-  return (
-    <div className="house-3d-loading" role="status">
-      Loading room {Math.round(progress)}%
-    </div>
-  );
-}
-
 export function HouseRoom3D({
   inputBlocked = false,
   houseTypeId,
-  accessoryBand,
+  characterName = "Your character",
+  appearance = {},
+  gender = "nonbinary",
+  equipment = [],
+  animationState = "idle",
+  activityRequestId = null,
+  activityLabel = null,
   slots,
   placements,
   movingPlacement = null,
@@ -670,25 +821,25 @@ export function HouseRoom3D({
   onSelectPlacement,
   onSelectSlot,
   onMove,
+  onMovePosition,
 }: Props & { inputBlocked?: boolean }) {
   const [width, depth] = ROOM_SIZE[houseTypeId] ?? ROOM_SIZE["shared-room"]!;
   const bySlot = useMemo(() => new Map(placements.map((item) => [item.slot, item])), [placements]);
+  const bedPlacement = placements.find((placement) => placement.slot_type === "bed");
+  const bedSlot = slots.find((slot) => slot.id === bedPlacement?.slot);
+  const bedSlotPosition =
+    bedPlacement && hasRoomPosition(bedPlacement)
+      ? roomPercentToPosition(bedPlacement.x, bedPlacement.y, width, depth)
+      : bedSlot
+        ? slotPosition(bedSlot, width, depth)
+        : null;
+  const bedPosition: [number, number, number] | null = bedSlotPosition
+    ? [bedSlotPosition[0], 0.06, bedSlotPosition[2]]
+    : null;
   const [dragPreview, setDragPreview] = useState<DragPreview | null>(null);
   const dragPointer = useRef<DragPointer | null>(null);
+  const overlayHost = useRef<HTMLDivElement>(null!);
   const suppressClickId = useRef<string | null>(null);
-  const dragTarget = (placement: HousePlacement, x: number, z: number) => {
-    const radius = Math.max(0.62, Math.min(width, depth) * 0.16);
-    return (
-      slots
-        .filter((slot) => slot.slot_type === placement.slot_type && !bySlot.has(slot.id))
-        .map((slot) => {
-          const [sx, , sz] = slotPosition(slot, width, depth);
-          return { slot, distance: Math.hypot(sx - x, sz - z) };
-        })
-        .filter((candidate) => candidate.distance <= radius)
-        .sort((a, b) => a.distance - b.distance)[0]?.slot ?? null
-    );
-  };
   const floorPoint = (event: ThreeEvent<PointerEvent>) =>
     event.ray.intersectPlane(FLOOR_PLANE, new Vector3());
   const onDragStart = (placement: HousePlacement, event: ThreeEvent<PointerEvent>) => {
@@ -705,8 +856,10 @@ export function HouseRoom3D({
     };
     const original = slots.find((slot) => slot.id === placement.slot);
     if (original) {
-      const [x, , z] = slotPosition(original, width, depth);
-      setDragPreview({ placementId: placement.id, x, z, targetSlotId: null });
+      const position = hasRoomPosition(placement)
+        ? roomPercentToPosition(placement.x, placement.y, width, depth)
+        : slotPosition(original, width, depth);
+      setDragPreview({ placementId: placement.id, x: position[0], z: position[2] });
     }
   };
   const onDragMove = (event: ThreeEvent<PointerEvent>) => {
@@ -718,14 +871,9 @@ export function HouseRoom3D({
     pointer.moved = true;
     const point = floorPoint(event);
     if (!point) return;
-    const x = Math.max(-width / 2, Math.min(width / 2, point.x));
-    const z = Math.max(-depth / 2, Math.min(depth / 2, point.z));
-    setDragPreview({
-      placementId: pointer.placement.id,
-      x,
-      z,
-      targetSlotId: dragTarget(pointer.placement, point.x, point.z)?.id ?? null,
-    });
+    const x = Math.max(-width / 2 + 0.4, Math.min(width / 2 - 0.4, point.x));
+    const z = Math.max(-depth / 2 + 0.4, Math.min(depth / 2 - 0.4, point.z));
+    setDragPreview({ placementId: pointer.placement.id, x, z });
   };
   const onDragEnd = (event: ThreeEvent<PointerEvent>) => {
     const pointer = dragPointer.current;
@@ -742,8 +890,10 @@ export function HouseRoom3D({
       if (suppressClickId.current === pointer.placement.id) suppressClickId.current = null;
     }, 0);
     const point = floorPoint(event);
-    const destination = point && dragTarget(pointer.placement, point.x, point.z);
-    if (destination) onMove(pointer.placement, destination);
+    if (point) {
+      const [x, y] = roomCoordinatesToPercent(point.x, point.z, width, depth);
+      onMovePosition(pointer.placement, x, y);
+    }
   };
   const onDragCancel = (event: ThreeEvent<PointerEvent>) => {
     if (dragPointer.current?.pointerId !== event.pointerId) return;
@@ -760,75 +910,143 @@ export function HouseRoom3D({
     dragPointer.current = null;
     setDragPreview(null);
   }, [editMode, inputBlocked, moveEnabled]);
-  const modelPath = `/models/rooms/${/^[a-z0-9-]+$/i.test(houseTypeId) ? houseTypeId : "shared-room"}.glb`;
   return (
     <div className="house-3d-scene" aria-label={`${houseTypeId.replaceAll("-", " ")} 3D room`}>
-      <Canvas
-        frameloop="demand"
-        dpr={[1, 1.5]}
-        shadows={false}
-        camera={{
-          position: [width * 0.75, Math.max(width, depth), depth * 0.85],
-          fov: 42,
-          near: 0.1,
-          far: 80,
-        }}
-        gl={{ antialias: false, powerPreference: "low-power" }}
-      >
-        <color attach="background" args={["#d7e8e5"]} />
-        <ambientLight intensity={1.2} />
-        <directionalLight intensity={1.5} position={[5, 9, 6]} />
-        <OptionalModel
-          path={modelPath}
-          tier={ACCESSORY_TIER[accessoryBand] ?? 1}
-          fallback={<OsogboRoomPrototype width={width} depth={depth} />}
-        />
-        {slots.map((slot) => (
-          <SlotObject
-            key={slot.id}
-            slot={slot}
-            placement={bySlot.get(slot.id)}
+      <RoomOverlayContext.Provider value={overlayHost}>
+        <Canvas
+          frameloop="demand"
+          dpr={[1, 1.5]}
+          shadows
+          camera={{
+            position: [0, 4, 12],
+            fov: 42,
+            near: 0.1,
+            far: 80,
+          }}
+          gl={{ antialias: false, powerPreference: "low-power" }}
+        >
+          <WorldLighting size={Math.max(width, depth) * 1.5} />
+          <OsogboRoomPrototype
+            houseTypeId={houseTypeId}
             width={width}
             depth={depth}
             editMode={editMode}
-            moveEnabled={moveEnabled}
-            inputBlocked={inputBlocked}
-            dragPreview={dragPreview}
-            activeSlotType={
-              dragPreview
-                ? (placements.find((item) => item.id === dragPreview.placementId)?.slot_type ??
-                  null)
-                : (movingPlacement?.slot_type ?? null)
-            }
-            onSelectPlacement={onSelectPlacement}
-            onSelectSlot={onSelectSlot}
-            onDragStart={onDragStart}
-            onDragMove={onDragMove}
-            onDragEnd={onDragEnd}
-            onDragCancel={onDragCancel}
-            suppressClick={suppressClick}
           />
-        ))}
-        <OrbitControls
-          enabled={!inputBlocked && !dragPreview}
-          enablePan={false}
-          enableDamping={false}
-          minDistance={Math.max(width, depth) * 0.75}
-          maxDistance={Math.max(width, depth) * 2.5}
-          minPolarAngle={0.35}
-          maxPolarAngle={1.3}
-          target={[0, 0, 0]}
-        />
-      </Canvas>
-      <LoadingProgress />
+          <RoomFloor houseTypeId={houseTypeId} width={width} depth={depth} />
+          <RoomCharacter
+            name={characterName}
+            appearance={appearance}
+            gender={gender}
+            equipment={equipment}
+            animationState={animationState}
+            activityRequestId={activityRequestId}
+            activityLabel={activityLabel}
+            position={[0, 0.06, depth * 0.18]}
+            bedPosition={bedPosition}
+          />
+          {slots
+            .filter((slot) => !bySlot.has(slot.id))
+            .map((slot) => (
+              <SlotObject
+                key={slot.id}
+                slot={slot}
+                placement={undefined}
+                width={width}
+                depth={depth}
+                editMode={editMode}
+                moveEnabled={moveEnabled}
+                inputBlocked={inputBlocked}
+                dragPreview={dragPreview}
+                activeSlotType={
+                  dragPreview
+                    ? (placements.find((item) => item.id === dragPreview.placementId)?.slot_type ??
+                      null)
+                    : (movingPlacement?.slot_type ?? null)
+                }
+                onSelectPlacement={onSelectPlacement}
+                onSelectSlot={onSelectSlot}
+                onDragStart={onDragStart}
+                onDragMove={onDragMove}
+                onDragEnd={onDragEnd}
+                onDragCancel={onDragCancel}
+                suppressClick={suppressClick}
+              />
+            ))}
+          {placements.map((placement) => {
+            const savedSlot = slots.find((slot) => slot.id === placement.slot);
+            const fallbackPosition = hasRoomPosition(placement)
+              ? { x: placement.x, y: placement.y }
+              : { x: 50, y: 50 };
+            const slot =
+              savedSlot ??
+              ({
+                id: placement.slot,
+                slot_type: placement.slot_type,
+                ...fallbackPosition,
+              } satisfies HouseSlot);
+            return (
+              <SlotObject
+                key={placement.id}
+                slot={slot}
+                placement={placement}
+                width={width}
+                depth={depth}
+                editMode={editMode}
+                moveEnabled={moveEnabled}
+                inputBlocked={inputBlocked}
+                dragPreview={dragPreview}
+                activeSlotType={
+                  dragPreview
+                    ? (placements.find((item) => item.id === dragPreview.placementId)?.slot_type ??
+                      null)
+                    : (movingPlacement?.slot_type ?? null)
+                }
+                onSelectPlacement={onSelectPlacement}
+                onSelectSlot={onSelectSlot}
+                onDragStart={onDragStart}
+                onDragMove={onDragMove}
+                onDragEnd={onDragEnd}
+                onDragCancel={onDragCancel}
+                suppressClick={suppressClick}
+              />
+            );
+          })}
+          <WorldCamera
+            width={width}
+            depth={depth}
+            stage
+            polarAngle={editMode ? Math.PI / 5 : Math.PI / 4}
+            target={editMode ? [0, 0.25, 0] : [0, WORLD_SCALE.door * 0.65, 0]}
+            enabled={!inputBlocked && !dragPreview}
+          />
+        </Canvas>
+      </RoomOverlayContext.Provider>
+      <div
+        ref={overlayHost}
+        style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 2 }}
+      />
+      {!editMode && (
+        <div className="house-keyboard-accessories" role="group" aria-label="Home accessories">
+          {placements
+            .filter((item) => homeFurnitureAction(item.item_id))
+            .map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                disabled={inputBlocked}
+                onClick={() => onSelectPlacement(item)}
+              >
+                Use {item.item_id.replaceAll("-", " ")}
+              </button>
+            ))}
+        </div>
+      )}
       {editMode && (
         <div className="house-3d-arrange-hint" role="status">
           {dragPreview
-            ? dragPreview.targetSlotId
-              ? `Release to move to ${dragPreview.targetSlotId.replaceAll("-", " ")}`
-              : "Move over a blue spot, or release to cancel"
+            ? "Release to place"
             : moveEnabled
-              ? "Drag an accessory to a blue spot"
+              ? "Drag accessories anywhere on the floor"
               : "Finish saving before moving another accessory"}
         </div>
       )}

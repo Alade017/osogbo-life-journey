@@ -34,6 +34,32 @@ export function CardListSkeleton({
   );
 }
 
+export function TransactionListSkeleton({
+  rows = 3,
+  label = "Loading transactions",
+}: {
+  rows?: number;
+  label?: string;
+}) {
+  return (
+    <div className="game-loading-list" role="status" aria-label={label}>
+      <span className="sr-only">{label}</span>
+      <div className="grid gap-2">
+        {Array.from({ length: rows }, (_, index) => (
+          <div className="game-loading-card" key={index}>
+            <Skeleton className="h-9 w-9 shrink-0 rounded-lg" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <Skeleton className="h-4 w-2/5" duration="1.6s" />
+              <Skeleton className="h-3 w-3/5" duration="2.1s" />
+            </div>
+            <Skeleton className="h-4 w-20" duration="1.8s" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** A compact approximation of Home's header, shortcuts, and room scene. */
 export function HomeSceneSkeleton() {
   return (

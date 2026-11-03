@@ -1,7 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react";
 import townData from "@/data/osogbo-town.json";
-import { PhaserMapSurface } from "@/components/map/PhaserMapSurface";
+import { WORLD_PALETTE } from "@/components/3d/world-theme";
 import { TownMapFallback } from "@/components/map/TownMapFallback";
+
+const R3FTownSurface = lazy(() =>
+  import("./R3FTownSurface").then((module) => ({ default: module.R3FTownSurface })),
+);
 
 export type MapFilter =
   | "market"
@@ -119,7 +123,11 @@ export function MapCanvas({
   const handleUnavailable = useCallback(() => setRendererState("fallback"), []);
 
   return (
-    <section className="map-canvas town-map-canvas" aria-label="Interactive isometric town map">
+    <section
+      className="map-canvas town-map-canvas"
+      style={{ background: WORLD_PALETTE.ground }}
+      aria-label="Interactive isometric town map"
+    >
       {rendererState !== "ready" && (
         <TownMapFallback
           places={availablePlaces}
@@ -131,17 +139,19 @@ export function MapCanvas({
           onSelectBillboard={onSelectBillboard}
         />
       )}
-      <PhaserMapSurface
-        places={availablePlaces}
-        properties={properties}
-        playerLocation={playerLocation}
-        billboardMarkers={billboardMarkers}
-        onSelectLandmark={onSelectLandmark}
-        onSelectDistrict={onSelectDistrict}
-        onSelectBillboard={onSelectBillboard}
-        onReady={handleReady}
-        onUnavailable={handleUnavailable}
-      />
+      <Suspense fallback={null}>
+        <R3FTownSurface
+          places={availablePlaces}
+          properties={properties}
+          playerLocation={playerLocation}
+          billboardMarkers={billboardMarkers}
+          onSelectLandmark={onSelectLandmark}
+          onSelectDistrict={onSelectDistrict}
+          onSelectBillboard={onSelectBillboard}
+          onReady={handleReady}
+          onUnavailable={handleUnavailable}
+        />
+      </Suspense>
       {rendererState === "loading" && (
         <p className="town-map-renderer-status" role="status">
           Starting the interactive town map…

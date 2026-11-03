@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   homeFurnitureAction,
   homeFurnitureNeed,
+  homeFurnitureTaskList,
   HOME_FURNITURE_ACTIONS,
 } from "@/lib/home-furniture-actions";
 
@@ -31,5 +32,10 @@ describe("home furniture action mapping", () => {
   it("reports furniture without a need mapping as unavailable for need actions", () => {
     expect(homeFurnitureNeed("unknown-item")).toBeNull();
     expect(homeFurnitureNeed("computer")).toBeNull();
+  });
+
+  it("returns the actionable task list for a selected accessory", () => {
+    expect(homeFurnitureTaskList("stove")).toEqual([{ action: "cook", need: "Hunger" }]);
+    expect(homeFurnitureTaskList("computer")).toEqual([]);
   });
 });

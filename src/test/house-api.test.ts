@@ -9,6 +9,11 @@ function setup(
     place: vi.fn(async (_playerId: string, _itemId: string, _slot: string): Promise<unknown> => ({
       ok: true,
     })),
+    move: vi.fn(
+      async (_playerId: string, _fromSlot: string, _x: number, _y: number): Promise<unknown> => ({
+        ok: true,
+      }),
+    ),
     buy: vi.fn(async (_playerId: string, _itemId: string, _key: string): Promise<unknown> => ({
       ok: true,
     })),
@@ -17,7 +22,7 @@ function setup(
     authenticate,
     state: async () => ({ house: null, placements: [], outfit: {}, inventory: [] }),
     place: calls.place,
-    move: async () => ({ ok: true }),
+    move: calls.move,
     remove: async () => ({ ok: true }),
     equip: async () => ({ ok: true }),
     unequip: async () => ({ ok: true }),
@@ -52,6 +57,32 @@ describe("house API handlers", () => {
 
     expect(response.status).toBe(200);
     expect(calls.buy).toHaveBeenCalledWith("player-1", "chair", "repeat-shop-key-0001");
+  });
+
+  it("persists a furniture drop at validated normalized room coordinates", async () => {
+    const { handlers, calls } = setup();
+    const response = await handlers.postMove(
+      new Request("https://game.test/api/house/move", {
+        method: "POST",
+        body: JSON.stringify({ fromSlot: "bed", x: 38.5, y: 62 }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(calls.move).toHaveBeenCalledWith("player-1", "bed", 38.5, 62);
+  });
+
+  it("rejects out-of-room furniture coordinates before reaching the database", async () => {
+    const { handlers, calls } = setup();
+    const response = await handlers.postMove(
+      new Request("https://game.test/api/house/move", {
+        method: "POST",
+        body: JSON.stringify({ fromSlot: "bed", x: 1000, y: 50 }),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(calls.move).not.toHaveBeenCalled();
   });
 
   it("maps server ownership failures to a forbidden response", async () => {

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Home, Map, Minus, Plus } from "lucide-react";
@@ -7,12 +7,18 @@ import { joinNeighborhood, type NeighborhoodRoom } from "@/lib/multiplayer-servi
 import { q } from "@/lib/game";
 import { supabase } from "@/integrations/supabase/client";
 import { canonicalHomeOptions } from "@/lib/living-cost-service";
+import { useGameTime } from "@/components/game/GameTimeProvider";
 import type { NetworkPlayerSnapshot } from "@/game/multiplayer-state";
+import { avatarAnimationForActivity } from "@/game/character-animation";
 import { neighborhoodAreaForSlug, nearestInteraction, toScene } from "@/game/neighborhood-model";
 import { isPlayableDistrict, playableDistrictForLocation } from "@/game/playable-district";
 import type { NeighborhoodPlayerView, PhaserNeighborhoodHandle } from "@/game/phaser-neighborhood";
 import type { MovementDirection } from "@/lib/player-movement";
 import "@/components/game/neighborhood.css";
+
+const R3FNeighborhoodSurface = lazy(() =>
+  import("./R3FNeighborhoodSurface").then((module) => ({ default: module.R3FNeighborhoodSurface })),
+);
 
 type ConnectionState = "loading" | "connecting" | "connected" | "unavailable" | "wrong-area";
 
@@ -20,7 +26,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
-function playerViewsFromRoom(room: NeighborhoodRoom): NeighborhoodPlayerView[] {
+function playerViewsFromRoom(room: NeighborhoodRoom): NeighborhoodPlayerView[] | null {
+  // joinOrCreate may resolve before the first authoritative state message.
+  if (!room.state?.players || typeof room.state.players.forEach !== "function") return null;
   const players: NeighborhoodPlayerView[] = [];
   room.state.players.forEach((player: NetworkPlayerSnapshot, sessionId: string) => {
     players.push({
@@ -85,9 +93,12 @@ function useNeighborhoodConnection(locationId: string | undefined, slug: string 
         setSessionId(room.sessionId);
         setRoomLocationId(locationId);
         const publish = () => {
-          if (active) setPlayers(playerViewsFromRoom(room));
+          if (!active) return;
+          const snapshot = playerViewsFromRoom(room);
+          if (!snapshot) return;
+          setPlayers(snapshot);
+          setConnectionState("connected");
         };
-        publish();
         room.onStateChange(publish);
         room.onLeave((code) => {
           if (!active) return;
@@ -97,7 +108,7 @@ function useNeighborhoodConnection(locationId: string | undefined, slug: string 
             `The neighborhood connection closed (${code}). Reconnect to continue.`,
           );
         });
-        setConnectionState("connected");
+        publish();
       })
       .catch((error: unknown) => {
         if (!active) return;
@@ -143,96 +154,10 @@ function homeTypeFromRecord(value: unknown) {
   return value["houseTypeId"];
 }
 
-function PhaserNeighborhoodSurface({
-  players,
-  selfSessionId,
-  homeTypeId,
-  district,
-  onScene,
-}: {
-  players: readonly NeighborhoodPlayerView[];
-  selfSessionId: string;
-  homeTypeId: string | null;
-  district: NonNullable<ReturnType<typeof playableDistrictForLocation>>;
-  onScene: (scene: PhaserNeighborhoodHandle | null) => void;
-}) {
-  const hostRef = useRef<HTMLDivElement>(null);
-  const gameRef = useRef<import("phaser").Game | null>(null);
-  const sceneRef = useRef<PhaserNeighborhoodHandle | null>(null);
-  const playersRef = useRef(players);
-  const [rendererError, setRendererError] = useState("");
-  playersRef.current = players;
-  const area = district.area;
-  const origin = district.origin;
-
-  useEffect(() => {
-    const host = hostRef.current;
-    if (!host) return;
-    let active = true;
-    void import("@/game/phaser-neighborhood")
-      .then(({ createPhaserNeighborhood }) => {
-        if (!active) return;
-        const game = createPhaserNeighborhood({
-          host,
-          area,
-          areaOrigin: origin,
-          selfSessionId,
-          homeTypeId,
-          playersRef,
-          onReady: () => undefined,
-          onScene: (scene) => {
-            if (!active) return;
-            sceneRef.current = scene;
-            onScene(scene);
-            scene.setPlayers(playersRef.current);
-          },
-        });
-        if (!active) {
-          game.destroy(true);
-          return;
-        }
-        gameRef.current = game;
-      })
-      .catch((error: unknown) => {
-        if (active) {
-          setRendererError(
-            error instanceof Error
-              ? error.message
-              : "The playable neighborhood renderer could not start.",
-          );
-          console.error("The playable neighborhood renderer could not start.", error);
-        }
-      });
-
-    return () => {
-      active = false;
-      onScene(null);
-      sceneRef.current = null;
-      gameRef.current?.destroy(true);
-      gameRef.current = null;
-      host.replaceChildren();
-    };
-  }, [area, origin, homeTypeId, onScene, selfSessionId]);
-
-  useEffect(() => {
-    sceneRef.current?.setPlayers(players);
-  }, [players]);
-
-  return (
-    <>
-      <div className="playable-neighborhood-canvas" ref={hostRef} aria-hidden="true" />
-      {rendererError && (
-        <p className="neighborhood-renderer-error" role="alert">
-          The neighborhood could not be drawn: {rendererError}
-        </p>
-      )}
-    </>
-  );
-}
-
 export function PlayableNeighborhood() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { simulation } = useGameTime();
   const characterQuery = useQuery(q.character());
   const locationsQuery = useQuery({
     ...q.locations(),
@@ -257,6 +182,18 @@ export function PlayableNeighborhood() {
   const lastIntentRef = useRef("0:0");
   const area = district?.area ?? neighborhoodAreaForSlug("city-centre");
   const player = players.find((candidate) => candidate.sessionId === sessionId);
+  const actionAnimation = simulation.currentAction
+    ? avatarAnimationForActivity(simulation.currentAction.animation)
+    : undefined;
+  const scenePlayers = useMemo(
+    () =>
+      players.map((candidate) =>
+        candidate.sessionId === sessionId && actionAnimation
+          ? { ...candidate, actionAnimation }
+          : candidate,
+      ),
+    [actionAnimation, players, sessionId],
+  );
   const nearbyObject = useMemo(() => {
     if (!player || !district) return null;
     const point = toScene({ x: player.x, y: player.y }, district.origin);
@@ -396,14 +333,16 @@ export function PlayableNeighborhood() {
               district && (
                 <>
                   <div className="neighborhood-stage">
-                    <PhaserNeighborhoodSurface
-                      key={`${currentLocation?.id}:${sessionId}`}
-                      district={district}
-                      players={players}
-                      selfSessionId={sessionId}
-                      homeTypeId={homeTypeId}
-                      onScene={handleScene}
-                    />
+                    <Suspense fallback={<p role="status">Loading neighbourhood?</p>}>
+                      <R3FNeighborhoodSurface
+                        key={`${currentLocation?.id}:${sessionId}`}
+                        district={district}
+                        players={scenePlayers}
+                        selfSessionId={sessionId}
+                        homeTypeId={homeTypeId}
+                        onScene={handleScene}
+                      />
+                    </Suspense>
                     <div
                       className="neighborhood-zoom-controls"
                       aria-label="Neighborhood camera controls"

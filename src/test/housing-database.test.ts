@@ -23,6 +23,12 @@ describe("housing onboarding database actions", () => {
       (entry: { tag: string }) => entry.tag !== "0075_remove_orphaned_player_data",
     ))
       await db.exec(readFileSync(`drizzle/migrations/${tag}.sql`, "utf8").replace(/^\uFEFF/, ""));
+    await db.exec(
+      readFileSync(
+        "supabase/migrations/20261102223137_freeform_house_furniture_placement.sql",
+        "utf8",
+      ),
+    );
     await db.query("insert into auth.users(id) values($1)", [userId]);
   }, 180_000);
 
@@ -475,6 +481,63 @@ describe("housing onboarding database actions", () => {
       [userId],
     );
     expect(item.rows[0]?.placed).toBe(false);
+  });
+
+  it("saves free furniture positions and makes the original room slot reusable", async () => {
+    const starterSlots = await db.query<{ id: string; x: number; y: number }>(
+      "select slot->>'id' as id,(slot->>'x')::int as x,(slot->>'y')::int as y from public.house_types house,jsonb_array_elements(house.slots) slot where house.id='single-room' and slot->>'id' in ('seat','light')",
+    );
+    expect(starterSlots.rows).toEqual(
+      expect.arrayContaining([
+        { id: "seat", x: 76, y: 68 },
+        { id: "light", x: 52, y: 24 },
+      ]),
+    );
+    await db.query("update public.wallets set balance=1000000 where user_id=$1", [userId]);
+    await db.query("select public.housing_rent($1,'single-room','house-free-position-0001')", [
+      userId,
+    ]);
+
+    const first = await db.query<{
+      result: {
+        ok: boolean;
+        state: {
+          placements: Array<{
+            item_id: string;
+            slot: string;
+            x: number;
+            y: number;
+          }>;
+        };
+      };
+    }>("select public.house_move_to_position($1,'bed',42,58) as result", [userId]);
+    const bed = first.rows[0]?.result.state.placements.find(
+      (placement) => placement.item_id === "starter-bed",
+    );
+    expect(first.rows[0]?.result.ok).toBe(true);
+    expect(bed).toMatchObject({ x: 42, y: 58 });
+    expect(bed?.slot).toMatch(/^free:/);
+
+    await db.query(
+      "insert into public.content_items(id,category,slot_type,art_key,price_minor) values('second-test-bed','furniture','bed','bed',0)",
+    );
+    await db.query(
+      "insert into public.player_items(player_id,item_id,source,is_stackable,quantity) values($1,'second-test-bed','gift',false,1)",
+      [userId],
+    );
+    const replacement = await db.query<{
+      result: { ok: boolean; state: { placements: Array<{ item_id: string; slot: string }> } };
+    }>("select public.house_place($1,'second-test-bed','bed') as result", [userId]);
+    expect(replacement.rows[0]?.result.ok).toBe(true);
+    expect(
+      replacement.rows[0]?.result.state.placements.some((placement) => placement.slot === "bed"),
+    ).toBe(true);
+
+    const invalid = await db.query<{ result: { ok: boolean; code: string } }>(
+      "select public.house_move_to_position($1,'free:' || (select id::text from public.house_placements where item_id='starter-bed' limit 1),100,50) as result",
+      [userId],
+    );
+    expect(invalid.rows[0]?.result).toMatchObject({ ok: false, code: "INVALID_POSITION" });
   });
 
   it("rejects placing furniture the player does not own and records the rejection", async () => {

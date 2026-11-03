@@ -81,8 +81,14 @@ afterEach(() => {
   clients.splice(0).forEach((client) => client.clear());
 });
 
-function renderDashboard() {
+function renderDashboard(currentSlug?: string) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  if (currentSlug) {
+    queryClient.setQueryDefaults(["character"], { staleTime: Infinity });
+    queryClient.setQueryDefaults(["locations"], { staleTime: Infinity });
+    queryClient.setQueryData(["character"], { current_location_id: "confirmed-location" });
+    queryClient.setQueryData(["locations"], [{ id: "confirmed-location", slug: currentSlug }]);
+  }
   clients.push(queryClient);
   queryClient.setQueryData(
     ["mapAvailableLandmarks"],
@@ -96,6 +102,22 @@ function renderDashboard() {
 }
 
 describe("isometric town map", () => {
+  it("offers the market walking route only after confirmed arrival", () => {
+    renderDashboard("oja-oba");
+    expect(screen.getByRole("link", { name: "Walk Oja-Oba Market" })).toHaveAttribute(
+      "href",
+      "/neighborhood",
+    );
+    expect(screen.queryByRole("link", { name: "Walk Olaiya" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Visit Oja-Oba Market" })).not.toBeInTheDocument();
+  });
+
+  it("offers travel rather than walking when another district is confirmed", () => {
+    renderDashboard("student-district");
+    expect(screen.getByRole("link", { name: "Visit Oja-Oba Market" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Walk Oja-Oba Market" })).not.toBeInTheDocument();
+  });
+
   it("matches a selected venue with its server event landmark ID", async () => {
     eventState.events = [
       {

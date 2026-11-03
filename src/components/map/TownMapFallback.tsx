@@ -1,3 +1,4 @@
+import { WORLD_PALETTE } from "@/components/3d/world-theme";
 import townData from "@/data/osogbo-town.json";
 import {
   pointsAttribute,
@@ -21,10 +22,10 @@ type Props = {
 };
 
 const cellColors: Record<string, string> = {
-  g: "#9bc58a",
-  r: "#c8b99d",
-  w: "#78b9d1",
-  p: "#d7c8a9",
+  g: WORLD_PALETTE.ground,
+  r: WORLD_PALETTE.road,
+  w: WORLD_PALETTE.slate,
+  p: WORLD_PALETTE.wall,
 };
 
 export function TownMapFallback({
@@ -40,9 +41,7 @@ export function TownMapFallback({
   const billboardByLandmark = new Map(
     billboardMarkers.map((billboard) => [billboard.landmarkId, billboard]),
   );
-  const playerPoint = playerLocation
-    ? projectTownCell(playerLocation.x, playerLocation.y)
-    : null;
+  const playerPoint = playerLocation ? projectTownCell(playerLocation.x, playerLocation.y) : null;
 
   return (
     <svg
@@ -52,16 +51,13 @@ export function TownMapFallback({
       aria-label="Illustrated town map fallback"
       preserveAspectRatio="xMidYMid meet"
     >
-      <rect width="1200" height="800" fill="#dce7dc" />
+      <rect width="1200" height="800" fill={WORLD_PALETTE.ground} />
       {townData.grid.rows.map((row, z) =>
         [...row].map((cell, x) => (
           <polygon
             key={`tile-${x}-${z}`}
             points={pointsAttribute(townDiamondPoints(x, z))}
             fill={cellColors[cell] ?? cellColors["g"]!}
-            stroke="#688768"
-            strokeOpacity="0.22"
-            strokeWidth="1"
           />
         )),
       )}
@@ -100,11 +96,8 @@ export function TownMapFallback({
           >
             <polygon
               points={pointsAttribute(points)}
-              fill="#fff"
+              fill={WORLD_PALETTE.linen}
               fillOpacity="0.08"
-              stroke="#456b4e"
-              strokeOpacity="0.65"
-              strokeWidth="2"
             />
             <text x={center.x} y={center.y} textAnchor="middle">
               {district.name}
@@ -118,15 +111,16 @@ export function TownMapFallback({
           <path
             key={`building-${building.x}-${building.z}`}
             d={`M${point.x - 8} ${point.y - 7} l8 -5 8 5 v10 h-16z`}
-            fill="#946449"
-            stroke="#62452f"
-            strokeWidth="1"
+            fill={WORLD_PALETTE.clay}
             aria-hidden="true"
           />
         );
       })}
       {properties?.map((property) => {
-        const point = projectTownCell(property.position[0] / 2 + 6.5, property.position[2] / 2 + 4.5);
+        const point = projectTownCell(
+          property.position[0] / 2 + 6.5,
+          property.position[2] / 2 + 4.5,
+        );
         return (
           <g key={property.id} className="town-map-svg-home">
             <circle cx={point.x} cy={point.y} r="9" />

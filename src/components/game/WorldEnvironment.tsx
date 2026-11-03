@@ -8,11 +8,13 @@ import { formatGameTime } from "@/lib/game-time";
 import { dayPhaseAt, isPowerOutageAt, weatherForDay } from "@/lib/world-simulation";
 import { toast } from "sonner";
 import { useGameAudioEvents } from "@/hooks/use-game-audio-events";
+import { useGameScreenAlerts } from "@/hooks/use-game-screen-alerts";
 import { useCityEvents } from "@/hooks/use-city-events";
 import { cityEventTransitions, type CityEventOccurrence } from "@/lib/city-event-service";
 
 export function WorldEnvironment() {
   useGameAudioEvents();
+  useGameScreenAlerts();
   const world = useWorldClock();
   const time = world.data ?? INITIAL_GAME_TIME;
   const phase = dayPhaseAt(time);

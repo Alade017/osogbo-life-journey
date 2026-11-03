@@ -100,10 +100,32 @@
 }
 
 .playable-neighborhood-canvas {
+  position: relative;
   width: 100%;
   height: min(64vh, 640px);
   min-height: 440px;
   touch-action: none;
+}
+
+.world-label-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+}
+.world-place-label {
+  display: block;
+  max-width: 210px;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow: var(--elevation-rest);
+  font: 700 11px/1.25 var(--typeface-body, system-ui);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .playable-neighborhood-canvas canvas {

@@ -34,6 +34,7 @@ export type NeighborhoodPlayerView = {
   x: number;
   y: number;
   facing: string;
+  actionAnimation?: AvatarAnimationState;
 };
 
 export type PhaserNeighborhoodHandle = {
@@ -57,6 +58,7 @@ type ScreenPoint = { x: number; y: number };
 type PlayerSprite = {
   sprite: Phaser.GameObjects.Sprite;
   textureKey: string | null;
+  animationState: AvatarAnimationState;
   lastX: number;
   lastY: number;
 };
@@ -230,7 +232,13 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
         .setOrigin(0.5, 0.94)
         .setScale(0.9)
         .setDepth(neighborhoodDepth(point.x, point.y, 1));
-      record = { sprite, textureKey: null, lastX: point.x, lastY: point.y };
+      record = {
+        sprite,
+        textureKey: null,
+        animationState: "idle",
+        lastX: point.x,
+        lastY: point.y,
+      };
       this.playerSprites.set(player.sessionId, record);
       if (this.followEnabled && player.sessionId === this.selfSessionId)
         this.cameras.main.startFollow(sprite, true, 0.12, 0.12);
@@ -242,6 +250,7 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
     record.sprite.setPosition(screen.x, screen.y).setDepth(neighborhoodDepth(point.x, point.y, 1));
     const facing = this.facingFor(player.facing);
     record.sprite.setFlipX(facing === "west");
+    record.animationState = moving ? "walk" : (player.actionAnimation ?? "idle");
 
     const appearance = appearanceFromJson(player.appearance);
     const equipment = equipmentFromJson(player.equipment);
@@ -255,10 +264,10 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
         const current = this.playerSprites.get(player.sessionId);
         if (!registered || current !== record || current.textureKey !== textureKey) return;
         current.sprite.setTexture(registered);
-        this.playAvatarAnimation(current.sprite, registered, facing, moving);
+        this.playAvatarAnimation(current.sprite, registered, facing, current.animationState);
       });
     } else if (record.sprite.texture.key !== DEFAULT_PLAYER_TEXTURE) {
-      this.playAvatarAnimation(record.sprite, record.sprite.texture.key, facing, moving);
+      this.playAvatarAnimation(record.sprite, record.sprite.texture.key, facing, record.animationState);
     }
   }
 
@@ -270,7 +279,7 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
     sprite: Phaser.GameObjects.Sprite,
     textureKey: string,
     facing: AvatarFacing,
-    moving: boolean,
+    state: AvatarAnimationState,
   ) {
     const animationFacing = facing === "west" ? "east" : facing;
     const direction = AVATAR_DIRECTIONS.includes(
@@ -280,7 +289,7 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
       : "south";
     const animation = avatarAnimationKey(
       textureKey,
-      (moving ? "walk" : "idle") satisfies AvatarAnimationState,
+      state,
       direction,
     );
     if (this.anims.exists(animation) && sprite.anims.currentAnim?.key !== animation)

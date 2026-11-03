@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -10,6 +11,7 @@ const state = vi.hoisted(() => ({
   rpc: vi.fn(),
   scene: vi.fn(),
   homeReads: 0,
+  currentAction: null as { animation: string } | null,
 }));
 vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => vi.fn(),
@@ -44,19 +46,31 @@ vi.mock("@/lib/living-cost-service", () => ({
 }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc: state.rpc } }));
 vi.mock("@/lib/multiplayer-service", () => ({ joinNeighborhood: state.join }));
+vi.mock("@/components/game/GameTimeProvider", () => ({
+  useGameTime: () => ({ simulation: { currentAction: state.currentAction } }),
+}));
 vi.mock("@/components/game/PlayerMovementControls", () => ({
   PlayerMovementControls: () => <div>Movement controls</div>,
 }));
-vi.mock("@/game/phaser-neighborhood", () => ({
-  createPhaserNeighborhood: (options: {
-    area: { slug: string };
-    areaOrigin: { x: number; y: number };
+vi.mock("@/components/game/R3FNeighborhoodSurface", () => ({
+  R3FNeighborhoodSurface: (props: {
+    district: { area: { slug: string }; origin: { x: number; y: number } };
     homeTypeId: string | null;
-    onScene: (handle: PhaserNeighborhoodHandle) => void;
+    players: readonly unknown[];
+    onScene: (handle: PhaserNeighborhoodHandle | null) => void;
   }) => {
-    state.scene(options);
-    options.onScene({ setPlayers: vi.fn(), setFollow: vi.fn(), setZoom: vi.fn() });
-    return { destroy: vi.fn() };
+    state.scene({
+      area: props.district.area,
+      areaOrigin: props.district.origin,
+      homeTypeId: props.homeTypeId,
+      playersRef: { current: props.players },
+    });
+    const { onScene } = props;
+    useEffect(() => {
+      onScene({ setPlayers: vi.fn(), setFollow: vi.fn(), setZoom: vi.fn() });
+      return () => onScene(null);
+    }, [onScene]);
+    return <div>R3F neighbourhood</div>;
   },
 }));
 
@@ -92,6 +106,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   state.location = "city";
   state.homeReads = 0;
+  state.currentAction = null;
   client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
@@ -118,6 +133,7 @@ it("loads Oja-Oba's confirmed room and correct origin without fetching or exposi
   state.location = "market";
   show();
   await screen.findByText("Movement controls");
+  await screen.findByText("R3F neighbourhood");
   expect(state.join).toHaveBeenCalledWith("market");
   expect(screen.getByRole("heading", { name: "Oja-Oba Market neighbourhood" })).toBeInTheDocument();
   expect(state.scene.mock.lastCall?.[0]).toMatchObject({
@@ -157,6 +173,38 @@ it("does not join unsupported locations", async () => {
   expect(state.scene).not.toHaveBeenCalled();
 });
 
+it("waits for the initial authoritative room state before publishing players", async () => {
+  state.location = "market";
+  const pending = room("market");
+  const initialPlayers = pending.state.players;
+  Object.defineProperty(pending, "state", { value: {}, configurable: true });
+  state.join.mockResolvedValue(pending);
+  show();
+  await waitFor(() => expect(pending.listeners.publish).toBeDefined());
+  expect(screen.queryByText("Movement controls")).not.toBeInTheDocument();
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  Object.defineProperty(pending, "state", {
+    value: { players: initialPlayers },
+    configurable: true,
+  });
+  act(() => pending.listeners.publish?.());
+  await screen.findByText("Movement controls");
+  await screen.findByText("R3F neighbourhood");
+});
+
+it("adds only the confirmed local activity animation to the scene player snapshot", async () => {
+  state.location = "market";
+  state.currentAction = { animation: "socializing" };
+  show();
+  await screen.findByText("Movement controls");
+  await screen.findByText("R3F neighbourhood");
+
+  const players = state.scene.mock.lastCall?.[0].playersRef.current;
+  expect(players).toEqual([
+    expect.objectContaining({ sessionId: "market", actionAnimation: "talk" }),
+  ]);
+});
+
 it("disposes a room whose join completes after navigation to another district", async () => {
   let finish: ((value: ReturnType<typeof room>) => void) | undefined;
   state.join.mockImplementation((id: string) =>
@@ -170,6 +218,7 @@ it("disposes a room whose join completes after navigation to another district", 
   await waitFor(() => expect(state.join).toHaveBeenCalledWith("city"));
   await changeLocation("market");
   await screen.findByText("Movement controls");
+  await screen.findByText("R3F neighbourhood");
   const late = room("city");
   await act(async () => {
     finish!(late);

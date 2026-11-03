@@ -7,6 +7,8 @@ export type HousePlacement = {
   id: string;
   item_id: string;
   slot: string;
+  x?: number;
+  y?: number;
   art_key: string;
   category: string;
   slot_type: string;

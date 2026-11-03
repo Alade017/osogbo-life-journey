@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { RefreshCw } from "lucide-react";
+import { LoaderCircle, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -105,8 +105,9 @@ export function EmptyState({ title, body }: { title: string; body: string }) {
 export function LoadingState() {
   return (
     <div className="game-inline-loading" role="status" aria-label="Loading">
-      <Skeleton className="h-8 w-8 rounded-full" duration="1.35s" />
-      <span className="sr-only">Loading</span>
+      <LoaderCircle className="game-loading-mark h-8 w-8" aria-hidden="true" />
+      <Skeleton className="h-1.5 w-24 rounded-full" duration="1.35s" aria-hidden="true" />
+      <span className="game-loading-caption">Loading your game</span>
     </div>
   );
 }

@@ -30,6 +30,12 @@ function RoomControls(props: HouseRoomRendererProps & { inputBlocked: boolean })
       aria-label="Room controls"
     >
       <p role="status">Your 3D room is unavailable. You can still select your items here.</p>
+      {props.characterName && (
+        <p className="house-room-character-fallback">
+          {props.characterName}
+          {props.activityLabel ? ` · ${props.activityLabel}` : ""}
+        </p>
+      )}
       {props.placements.map((placement) => (
         <button
           key={placement.id}

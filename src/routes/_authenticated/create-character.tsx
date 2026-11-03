@@ -6,6 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { q } from "@/lib/game";
 import {
   Avatar,
+  BODY_BUILDS,
+  BODY_HEIGHTS,
   HAIR_COLORS,
   HAIR_STYLES_BY_GENDER,
   HEADWEAR,
@@ -267,6 +269,18 @@ function CreateCharacter() {
               swatches
               value={ap.skin}
               onChange={(skin) => setAp({ ...ap, skin })}
+            />
+            <Picker
+              label="Height"
+              options={BODY_HEIGHTS}
+              value={ap.stature}
+              onChange={(stature) => setAp({ ...ap, stature })}
+            />
+            <Picker
+              label="Build"
+              options={BODY_BUILDS}
+              value={ap.build}
+              onChange={(build) => setAp({ ...ap, build })}
             />
             <Picker
               label="Hair style"

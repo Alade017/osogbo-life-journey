@@ -11,6 +11,8 @@ export const OUTFITS = ["#2f9e5b", "#e8b422", "#d0623a", "#3b5bb5", "#9b3f8f", "
 export const TROUSERS = ["#27334a", "#20242c", "#614b3b", "#738095", "#3b5bb5", "#547250"];
 export const SHOE_COLORS = ["#22242a", "#5b3526", "#eee5d5", "#b34535"];
 export const HEADWEAR = ["None", "Gele", "Fila", "Cap"];
+export const BODY_HEIGHTS = ["Short", "Average", "Tall"];
+export const BODY_BUILDS = ["Lean", "Average", "Athletic", "Muscular"];
 
 export type Appearance = {
   skin?: number;
@@ -20,6 +22,8 @@ export type Appearance = {
   bottoms?: number;
   shoes?: number;
   headwear?: number;
+  stature?: number;
+  build?: number;
 };
 
 const DEFAULT_APPEARANCE: Required<Appearance> = {
@@ -30,6 +34,8 @@ const DEFAULT_APPEARANCE: Required<Appearance> = {
   bottoms: 0,
   shoes: 0,
   headwear: 0,
+  stature: 1,
+  build: 1,
 };
 const SAFE_HAIR = HAIR_STYLES_BY_GENDER["nonbinary"]!;
 
@@ -51,5 +57,7 @@ export function normalizeAvatarAppearance(
     bottoms: validIndex(appearance?.bottoms, TROUSERS, DEFAULT_APPEARANCE.bottoms),
     shoes: validIndex(appearance?.shoes, SHOE_COLORS, DEFAULT_APPEARANCE.shoes),
     headwear: validIndex(appearance?.headwear, HEADWEAR, DEFAULT_APPEARANCE.headwear),
+    stature: validIndex(appearance?.stature, BODY_HEIGHTS, DEFAULT_APPEARANCE.stature),
+    build: validIndex(appearance?.build, BODY_BUILDS, DEFAULT_APPEARANCE.build),
   };
 }

@@ -1,3 +1,5 @@
+import { homeFurnitureAction } from "@/lib/home-furniture-actions";
+import { ACTION_CATALOG } from "@/lib/life-simulation";
 import { useEffect, useState, type TouchEvent } from "react";
 import { Check, ChevronLeft, ChevronRight, Package, Shirt, Sofa, X } from "lucide-react";
 import { formatNaira } from "@/lib/game";
@@ -117,20 +119,24 @@ export function HouseEditSheets({
   };
   const roomItems = selectedSlot
     ? availableFurniture.filter(matchesFilter)
-    : availableFurniture.filter((item) =>
-        (rooms[roomIndex]?.slots as readonly string[]).includes(item.slot_type),
-      ).filter(matchesFilter);
+    : availableFurniture
+        .filter((item) => (rooms[roomIndex]?.slots as readonly string[]).includes(item.slot_type))
+        .filter(matchesFilter);
   const ownedRoomItems = selectedSlot
     ? []
-    : inventory.filter(
-        (item) =>
-          item.category === "furniture" &&
-          (rooms[roomIndex]?.slots as readonly string[]).includes(item.slot_type),
-        ).filter((item) => matchesFilter({ id: item.item_id, slot_type: item.slot_type }));
+    : inventory
+        .filter(
+          (item) =>
+            item.category === "furniture" &&
+            (rooms[roomIndex]?.slots as readonly string[]).includes(item.slot_type),
+        )
+        .filter((item) => matchesFilter({ id: item.item_id, slot_type: item.slot_type }));
   const ownedForSlot = selectedSlot
-    ? inventory.filter(
-        (item) => item.category === "furniture" && item.slot_type === selectedSlot.slot_type,
-        ).filter((item) => matchesFilter({ id: item.item_id, slot_type: item.slot_type }))
+    ? inventory
+        .filter(
+          (item) => item.category === "furniture" && item.slot_type === selectedSlot.slot_type,
+        )
+        .filter((item) => matchesFilter({ id: item.item_id, slot_type: item.slot_type }))
     : [];
   const moveTargets = selectedPlacement
     ? slots.filter(
@@ -155,32 +161,38 @@ export function HouseEditSheets({
     items.length ? (
       <div className="house-catalog-grid">
         {items.map((item) => {
-        const cannotAfford = cash !== null && cash < item.price_minor;
-        return (
-          <article className="house-catalog-card" key={item.id}>
-            {item.category === "furniture" ? (
-              <ItemImage item={item} />
-            ) : (
-              <span className="house-shop-image" aria-hidden="true">
-                👕
+          const activity = homeFurnitureAction(item.id);
+          const cannotAfford = cash !== null && cash < item.price_minor;
+          return (
+            <article className="house-catalog-card" key={item.id}>
+              {item.category === "furniture" ? (
+                <ItemImage item={item} />
+              ) : (
+                <span className="house-shop-image" aria-hidden="true">
+                  👕
+                </span>
+              )}
+              <span className="house-shop-description">
+                <strong>{itemName(item.id)}</strong>
+                <small>{item.slot_type}</small>
+                {activity && (
+                  <small className="house-item-task">{ACTION_CATALOG[activity].name}</small>
+                )}
+                <small className="house-catalog-price">{formatNaira(item.price_minor)}</small>
+                {cannotAfford && (
+                  <small className="house-catalog-unaffordable">Insufficient funds</small>
+                )}
               </span>
-            )}
-            <span className="house-shop-description">
-              <strong>{itemName(item.id)}</strong>
-              <small>{item.slot_type}</small>
-              <small className="house-catalog-price">{formatNaira(item.price_minor)}</small>
-              {cannotAfford && <small className="house-catalog-unaffordable">Insufficient funds</small>}
-            </span>
-            <button
-              type="button"
-              className="house-catalog-action"
-              disabled={offline || pending || cannotAfford}
-              onClick={() => onBuy(item.id)}
-            >
-              Buy
-            </button>
-          </article>
-        );
+              <button
+                type="button"
+                className="house-catalog-action"
+                disabled={offline || pending || cannotAfford}
+                onClick={() => onBuy(item.id)}
+              >
+                Buy
+              </button>
+            </article>
+          );
         })}
       </div>
     ) : (
@@ -247,7 +259,7 @@ export function HouseEditSheets({
             <div className="house-move-options">
               <h3 className="house-list-title">Move to another spot</h3>
               <p className="house-empty-copy">
-                Drag the item in the room, or choose an open spot here.
+                Drag the item anywhere on the floor, or choose an open spot here.
               </p>
               {moveTargets.map((slot) => (
                 <button
@@ -328,8 +340,7 @@ export function HouseEditSheets({
             </>
           ) : (
             <p className="text-sm text-muted-foreground">
-              Buy a household item, then tap an open room slot to place it. Purchased items stay in
-              your inventory.
+              Choose a slot, then drag furniture anywhere in the room.
             </p>
           )}
           {!selectedSlot && (
@@ -443,7 +454,7 @@ export function HouseEditSheets({
           {!selectedSlot && (
             <p className="house-empty-copy">
               {inventory.filter((item) => item.category === "furniture").length} household items
-              owned. Tap a room slot to place one.
+              owned. Place one, then drag it anywhere.
             </p>
           )}
         </div>

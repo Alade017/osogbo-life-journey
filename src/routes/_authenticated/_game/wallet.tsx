@@ -7,6 +7,7 @@ import { q, rpc, formatNaira, useGameAction } from "@/lib/game";
 import { amountError, moneySummary, transactionTitle } from "@/lib/economy-service";
 import { pageMeta } from "@/lib/seo";
 import { EmptyState, LoadingState, PageHeader } from "@/components/game/ui";
+import { TransactionListSkeleton } from "@/components/game/loading-skeletons";
 
 export const Route = createFileRoute("/_authenticated/_game/wallet")({
   head: () => pageMeta("Wallet", "Manage your in-game cash and bank balance."),
@@ -16,7 +17,7 @@ export const Route = createFileRoute("/_authenticated/_game/wallet")({
 function WalletPage() {
   const [amount, setAmount] = useState("");
   const { data: wallet, isLoading } = useQuery(q.wallet());
-  const { data: txs } = useQuery(q.transactions());
+  const { data: txs, isLoading: transactionsLoading } = useQuery(q.transactions());
   const { data: character } = useQuery(q.character());
   const { data: places } = useQuery(q.places());
   const { data: locations } = useQuery(q.locations());
@@ -158,7 +159,9 @@ function WalletPage() {
         <h2 id="transactions-heading" className="mb-3 text-2xl font-bold">
           Recent transactions
         </h2>
-        {!txs?.length ? (
+        {transactionsLoading ? (
+          <TransactionListSkeleton label="Loading recent transactions" />
+        ) : !txs?.length ? (
           <EmptyState
             title="No transactions"
             body="Earn or spend money in the city to see activity here."
@@ -193,7 +196,11 @@ function WalletPage() {
                   </div>
                   <div className="text-right">
                     <p
-                      className={`font-display font-bold ${income ? "text-primary" : "text-clay"}`}
+                      className={`font-display font-bold ${
+                        income
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "text-red-600 dark:text-red-400"
+                      }`}
                     >
                       {income ? "+" : "−"}
                       {formatNaira(Math.abs(Number(transaction.amount)))}

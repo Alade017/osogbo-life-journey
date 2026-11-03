@@ -49,3 +49,13 @@ export function homeFurnitureNeed(itemId: string): string | null {
     ? (HOME_FURNITURE_NEEDS[itemId as HomeFurnitureId] ?? null)
     : null;
 }
+
+export function homeFurnitureTaskList(
+  itemId: string,
+): Array<{ action: LifeActionId; need: string }> {
+  const need = homeFurnitureNeed(itemId);
+  const action = homeFurnitureAction(itemId);
+
+  if (!need || !action) return [];
+  return [{ action, need }];
+}

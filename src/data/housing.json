@@ -158,14 +158,14 @@
         "slot_type": "light",
         "id": "light",
         "z": 1,
-        "x": 57
+        "x": 52
       },
       {
-        "y": 71,
+        "y": 68,
         "slot_type": "seat",
         "id": "seat",
         "z": 3,
-        "x": 55
+        "x": 76
       },
       {
         "y": 53,

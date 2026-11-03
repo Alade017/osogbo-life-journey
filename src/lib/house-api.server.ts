@@ -2,7 +2,7 @@ type HouseApiDependencies = {
   authenticate: (request: Request) => Promise<string | null>;
   state: (playerId: string) => Promise<unknown>;
   place: (playerId: string, itemId: string, slot: string) => Promise<unknown>;
-  move: (playerId: string, fromSlot: string, toSlot: string) => Promise<unknown>;
+  move: (playerId: string, fromSlot: string, x: number, y: number) => Promise<unknown>;
   remove: (playerId: string, slot: string) => Promise<unknown>;
   equip: (playerId: string, itemId: string) => Promise<unknown>;
   unequip: (playerId: string, slot: string) => Promise<unknown>;
@@ -23,6 +23,7 @@ const statusByCode: Record<string, number> = {
   EMPTY_SLOT: 404,
   NOT_EQUIPPABLE: 409,
   INVALID_SLOT: 400,
+  INVALID_POSITION: 400,
   INSUFFICIENT_FUNDS: 409,
   IDEMPOTENCY_CONFLICT: 409,
   HOUSE_SETUP_REQUIRED: 503,
@@ -91,9 +92,19 @@ export function createHouseApiHandlers(deps: HouseApiDependencies) {
     postMove: (request: Request) =>
       run(request, async (playerId) => {
         const value = await body(request);
-        if (typeof value["fromSlot"] !== "string" || typeof value["toSlot"] !== "string")
+        if (
+          typeof value["fromSlot"] !== "string" ||
+          typeof value["x"] !== "number" ||
+          typeof value["y"] !== "number" ||
+          !Number.isFinite(value["x"]) ||
+          !Number.isFinite(value["y"]) ||
+          value["x"] < 4 ||
+          value["x"] > 96 ||
+          value["y"] < 4 ||
+          value["y"] > 96
+        )
           throw new Error("INVALID_REQUEST");
-        return deps.move(playerId, value["fromSlot"], value["toSlot"]);
+        return deps.move(playerId, value["fromSlot"], value["x"], value["y"]);
       }),
     postRemove: (request: Request) =>
       run(request, async (playerId) => {
@@ -141,11 +152,12 @@ async function productionHandlers() {
     state: (playerId) => rpc("get_house_state", { p_player_id: playerId }),
     place: (playerId, itemId, slot) =>
       rpc("house_place", { p_player_id: playerId, p_item_id: itemId, p_slot: slot }),
-    move: (playerId, fromSlot, toSlot) =>
-      rpc("house_move", {
+    move: (playerId, fromSlot, x, y) =>
+      rpc("house_move_to_position", {
         p_player_id: playerId,
         p_from_slot: fromSlot,
-        p_to_slot: toSlot,
+        p_x: x,
+        p_y: y,
       }),
     remove: (playerId, slot) => rpc("house_remove", { p_player_id: playerId, p_slot: slot }),
     equip: (playerId, itemId) => rpc("outfit_equip", { p_player_id: playerId, p_item_id: itemId }),

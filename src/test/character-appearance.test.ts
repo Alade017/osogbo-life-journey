@@ -24,6 +24,8 @@ describe("character appearance customization", () => {
       bottoms: 0,
       shoes: 0,
       headwear: 0,
+      stature: 1,
+      build: 1,
     });
   });
 
@@ -40,6 +42,8 @@ describe("character appearance customization", () => {
       expect(appearance.bottoms).toBeLessThan(TROUSERS.length);
       expect(appearance.shoes).toBeLessThan(SHOE_COLORS.length);
       expect(appearance.headwear).toBeLessThan(HEADWEAR.length);
+      expect(appearance.stature).toBeLessThan(3);
+      expect(appearance.build).toBeLessThan(4);
     },
   );
 
