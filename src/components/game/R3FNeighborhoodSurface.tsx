@@ -27,7 +27,7 @@ import {
   WorldInstances,
   type WorldInstance,
 } from "../3d/WorldScene";
-import { WORLD_SCALE } from "../3d/world-theme";
+import { WORLD_CAMERA, WORLD_SCALE } from "../3d/world-theme";
 
 class NeighborhoodBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   override state = { failed: false };
@@ -51,16 +51,21 @@ export function R3FNeighborhoodSurface({
   selfSessionId,
   district,
   onScene,
+  zoom,
+  onZoomChange,
 }: {
   players: readonly NeighborhoodPlayerView[];
   selfSessionId: string;
   homeTypeId: string | null;
   district: NonNullable<ReturnType<typeof playableDistrictForLocation>>;
+  zoom: number;
+  onZoomChange: (zoom: number) => void;
   onScene: (scene: PhaserNeighborhoodHandle | null) => void;
 }) {
   const overlayHost = useRef<HTMLDivElement>(null!);
-  const [zoom, setZoom] = useState(1);
   const [follow, setFollow] = useState(true);
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
   const area = district.area;
   const bounds = neighborhoodSceneBounds(district.origin);
   const unit = WORLD_SCALE.neighborhoodUnit;
@@ -78,11 +83,14 @@ export function R3FNeighborhoodSurface({
     // Preserve the host's camera interface; network state stays React-owned.
     onScene({
       setPlayers: () => undefined,
-      setZoom: (factor) => setZoom((current) => Math.max(0.8, Math.min(1.35, current * factor))),
+      setZoom: (factor) =>
+        onZoomChange(
+          Math.max(WORLD_CAMERA.minZoom, Math.min(WORLD_CAMERA.maxZoom, zoomRef.current * factor)),
+        ),
       setFollow,
     });
     return () => onScene(null);
-  }, [onScene]);
+  }, [onScene, onZoomChange]);
   const roads = useMemo(
     (): WorldInstance[] =>
       (area.roads ?? []).map((road) => {
@@ -122,7 +130,13 @@ export function R3FNeighborhoodSurface({
           dpr={[1, 1.5]}
           gl={{ antialias: false, powerPreference: "low-power" }}
         >
-          <WorldCamera width={17} depth={14} target={target} zoom={zoom} />
+          <WorldCamera
+            width={17}
+            depth={14}
+            target={target}
+            zoom={zoom}
+            onZoomChange={onZoomChange}
+          />
           <WorldLighting size={Math.max(bounds.width, bounds.height) * unit} />
           <mesh position={[0, -0.12, 0]} receiveShadow>
             <boxGeometry args={[bounds.width * unit, 0.2, bounds.height * unit]} />

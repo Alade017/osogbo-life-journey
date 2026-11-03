@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows, OrbitControls } from "@react-three/drei";
-import { Object3D, type InstancedMesh, type PerspectiveCamera } from "three";
+import { Object3D, Vector3, type InstancedMesh, type PerspectiveCamera } from "three";
 import type { OrbitControls as Controls } from "three-stdlib";
 import {
   WORLD_CAMERA,
@@ -56,6 +56,7 @@ export function WorldCamera({
   target,
   zoom = 1,
   polarAngle,
+  onZoomChange,
 }: {
   width: number;
   depth: number;
@@ -64,6 +65,7 @@ export function WorldCamera({
   target?: [number, number, number];
   zoom?: number;
   polarAngle?: number;
+  onZoomChange?: (zoom: number) => void;
 }) {
   const { camera, size, invalidate } = useThree();
   const controls = useRef<Controls>(null);
@@ -74,13 +76,30 @@ export function WorldCamera({
   const polar = polarAngle ?? (stage ? Math.PI / 4 : WORLD_CAMERA.polar);
   const azimuth = WORLD_CAMERA.azimuth;
   const [x, y, z] = target ?? [0, stage ? WORLD_SCALE.door * 0.65 : 0, 0];
+  const framing = useRef<{ distance: number; polar: number; zoom: number } | null>(null);
+  const offset = useMemo(() => new Vector3(), []);
   useLayoutEffect(() => {
-    const d = distance / Math.max(0.8, Math.min(1.35, zoom));
-    camera.position.set(
-      x + Math.sin(azimuth) * Math.sin(polar) * d,
-      y + Math.cos(polar) * d,
-      z + Math.cos(azimuth) * Math.sin(polar) * d,
-    );
+    const previous = framing.current;
+    const orbit = controls.current;
+    const d = distance / Math.max(WORLD_CAMERA.minZoom, Math.min(WORLD_CAMERA.maxZoom, zoom));
+    if (!previous || previous.distance !== distance || previous.polar !== polar || !orbit) {
+      offset
+        .set(
+          Math.sin(azimuth) * Math.sin(polar),
+          Math.cos(polar),
+          Math.cos(azimuth) * Math.sin(polar),
+        )
+        .multiplyScalar(d);
+    } else {
+      // Follow by translating the existing orbit, preserving touch/wheel framing.
+      offset.copy(camera.position).sub(orbit.target);
+      if (previous.zoom !== zoom) offset.setLength(d);
+    }
+    camera.position.copy(offset);
+    camera.position.x += x;
+    camera.position.y += y;
+    camera.position.z += z;
+    framing.current = { distance, polar, zoom };
     camera.lookAt(x, y, z);
     const perspective = camera as PerspectiveCamera;
     perspective.fov = WORLD_CAMERA.fov;
@@ -89,17 +108,25 @@ export function WorldCamera({
     controls.current?.target.set(x, y, z);
     controls.current?.update();
     invalidate();
-  }, [camera, distance, azimuth, polar, x, y, z, zoom, invalidate]);
+  }, [camera, distance, azimuth, polar, x, y, z, zoom, invalidate, offset]);
   return (
     <OrbitControls
       ref={controls}
-      target={[x, y, z]}
       enabled={enabled}
       enablePan={false}
       enableDamping={false}
       enableRotate={!stage}
-      minDistance={distance / 1.35}
-      maxDistance={distance / 0.8}
+      onEnd={() => {
+        if (!controls.current || !onZoomChange) return;
+        onZoomChange(
+          Math.max(
+            WORLD_CAMERA.minZoom,
+            Math.min(WORLD_CAMERA.maxZoom, distance / controls.current.getDistance()),
+          ),
+        );
+      }}
+      minDistance={distance / WORLD_CAMERA.maxZoom}
+      maxDistance={distance / WORLD_CAMERA.minZoom}
       minPolarAngle={polar - (stage ? 0 : 0.08)}
       maxPolarAngle={polar + (stage ? 0 : 0.08)}
       minAzimuthAngle={azimuth - (stage ? 0 : 0.14)}

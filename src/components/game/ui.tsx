@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
-import { LoaderCircle, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
 
 export function PageHeader({
   title,
@@ -105,9 +106,7 @@ export function EmptyState({ title, body }: { title: string; body: string }) {
 export function LoadingState() {
   return (
     <div className="game-inline-loading" role="status" aria-label="Loading">
-      <LoaderCircle className="game-loading-mark h-8 w-8" aria-hidden="true" />
-      <Skeleton className="h-1.5 w-24 rounded-full" duration="1.35s" aria-hidden="true" />
-      <span className="game-loading-caption">Loading your game</span>
+      <WorldLoadingIndicator title="Loading your game" detail="Preparing your world…" />
     </div>
   );
 }

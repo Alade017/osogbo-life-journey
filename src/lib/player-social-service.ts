@@ -249,69 +249,89 @@ export async function sendSocialMessage(input: {
   return result;
 }
 
-export async function getSocialMessages(input: { locationId?: string; conversationId?: string }) {
+export async function getSocialMessages(input: {
+  locationId?: string;
+  conversationId?: string;
+  before?: string | null;
+  beforeId?: string | null;
+  limit?: number;
+}) {
   const args = {
     ...(input.locationId ? { p_location_id: input.locationId } : {}),
     ...(input.conversationId ? { p_conversation_id: input.conversationId } : {}),
-    p_limit: 50,
+    p_before: input.before ?? null,
+    p_limit: input.limit ?? 50,
+    p_before_id: input.beforeId ?? null,
   };
-  const call = supabase.rpc as unknown as (
-    name: string,
-    args: Record<string, Json>,
-  ) => Promise<{ data: Json | null; error: { message: string; code?: string } | null }>;
-  let response = await call("get_social_messages_with_media", args);
-  // Preserve existing chat history while the new local migration awaits deployment.
-  if (response.error && ["PGRST202", "42883"].includes(response.error.code ?? ""))
-    response = await call("get_social_messages", args);
+  const legacyArgs = {
+    ...(input.locationId ? { p_location_id: input.locationId } : {}),
+    ...(input.conversationId ? { p_conversation_id: input.conversationId } : {}),
+    p_before: input.before ?? null,
+    p_limit: input.limit ?? 50,
+  };
+  let response = await supabase.rpc("get_social_messages_with_media_v2", args);
+  // Keep history readable while deployments roll out the cursor-aware RPCs.
+  if (response.error && ["PGRST202", "42883"].includes(response.error.code ?? "")) {
+    response = await supabase.rpc("get_social_messages_with_media", legacyArgs);
+    if (response.error && ["PGRST202", "42883"].includes(response.error.code ?? ""))
+      response = await supabase.rpc("get_social_messages", legacyArgs);
+  }
   const data = unwrap(response);
   if (!Array.isArray(data)) throw new Error("Invalid chat history response.");
-  return data.map((value) => {
-    const row = object(value, "Invalid chat message response.");
-    let attachment: MessageAttachment | undefined;
-    if (row["attachment"]) {
-      const entry = object(row["attachment"], "Invalid attachment response.");
-      const filename = string(entry["filename"], "filename"),
-        mimeType = string(entry["mimeType"], "mimeType"),
-        size = entry["size"];
-      if (
-        !["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(mimeType) ||
-        typeof size !== "number" ||
-        size < 1 ||
-        size > 10485760
-      )
-        throw new Error("Invalid attachment response.");
-      attachment = { filename, mimeType, size };
-    }
-    return {
-      attachment,
-      id: string(row["id"], "id"),
-      sender_character_id: string(row["sender_character_id"], "sender_character_id"),
-      sender_name: string(row["sender_name"], "sender_name"),
-      channel: string(row["channel"], "channel") as SocialMessage["channel"],
-      location_id: typeof row["location_id"] === "string" ? row["location_id"] : null,
-      conversation_id: typeof row["conversation_id"] === "string" ? row["conversation_id"] : null,
-      body: string(row["body"], "body"),
-      message_type: row["message_type"] === "voice" ? "voice" : "text",
-      voice_duration_ms:
-        typeof row["voice_duration_ms"] === "number" ? row["voice_duration_ms"] : null,
-      reply_to_message_id:
-        typeof row["reply_to_message_id"] === "string" ? row["reply_to_message_id"] : null,
-      reply:
-        typeof row["reply_to_message_id"] === "string"
-          ? {
-              messageType: row["reply_message_type"] === "voice" ? "voice" : "text",
-              body: typeof row["reply_body"] === "string" ? row["reply_body"] : "",
-              voiceDurationMs:
-                typeof row["reply_voice_duration_ms"] === "number"
-                  ? row["reply_voice_duration_ms"]
-                  : null,
-              senderName:
-                typeof row["reply_sender_name"] === "string" ? row["reply_sender_name"] : "Player",
-            }
-          : null,
-      created_at: string(row["created_at"], "created_at"),
-    } satisfies SocialMessage;
-  });
+  return data
+    .map((value) => {
+      const row = object(value, "Invalid chat message response.");
+      let attachment: MessageAttachment | undefined;
+      if (row["attachment"]) {
+        const entry = object(row["attachment"], "Invalid attachment response.");
+        const filename = string(entry["filename"], "filename"),
+          mimeType = string(entry["mimeType"], "mimeType"),
+          size = entry["size"];
+        if (
+          !["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(mimeType) ||
+          typeof size !== "number" ||
+          size < 1 ||
+          size > 10485760
+        )
+          throw new Error("Invalid attachment response.");
+        attachment = { filename, mimeType, size };
+      }
+      return {
+        attachment,
+        id: string(row["id"], "id"),
+        sender_character_id: string(row["sender_character_id"], "sender_character_id"),
+        sender_name: string(row["sender_name"], "sender_name"),
+        channel: string(row["channel"], "channel") as SocialMessage["channel"],
+        location_id: typeof row["location_id"] === "string" ? row["location_id"] : null,
+        conversation_id: typeof row["conversation_id"] === "string" ? row["conversation_id"] : null,
+        body: string(row["body"], "body"),
+        message_type: row["message_type"] === "voice" ? "voice" : "text",
+        voice_duration_ms:
+          typeof row["voice_duration_ms"] === "number" ? row["voice_duration_ms"] : null,
+        reply_to_message_id:
+          typeof row["reply_to_message_id"] === "string" ? row["reply_to_message_id"] : null,
+        reply:
+          typeof row["reply_to_message_id"] === "string"
+            ? {
+                messageType: row["reply_message_type"] === "voice" ? "voice" : "text",
+                body: typeof row["reply_body"] === "string" ? row["reply_body"] : "",
+                voiceDurationMs:
+                  typeof row["reply_voice_duration_ms"] === "number"
+                    ? row["reply_voice_duration_ms"]
+                    : null,
+                senderName:
+                  typeof row["reply_sender_name"] === "string"
+                    ? row["reply_sender_name"]
+                    : "Player",
+              }
+            : null,
+        created_at: string(row["created_at"], "created_at"),
+      } satisfies SocialMessage;
+    })
+    .sort(
+      (left, right) =>
+        left.created_at.localeCompare(right.created_at) || left.id.localeCompare(right.id),
+    );
 }
 
 export async function reportPlayer(input: {

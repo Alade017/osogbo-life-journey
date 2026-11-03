@@ -31,8 +31,8 @@ type MediaResult = Record<string, unknown> & {
   coverPath?: string | null;
   status?: unknown;
 };
-const value = async (sql: string, args: unknown[] = []) =>
-  (await run<{ result: MediaResult }>(`select ${sql} as result`, args)).rows[0]!.result;
+const value = async <T = MediaResult>(sql: string, args: unknown[] = []): Promise<T> =>
+  (await run<{ result: T }>(`select ${sql} as result`, args)).rows[0]!.result;
 beforeAll(async () => {
   db = new PGlite({ extensions: { pg_trgm } });
   await db.exec(`create role anon;create role authenticated;create role service_role;
@@ -59,6 +59,9 @@ beforeAll(async () => {
       "supabase/migrations/20261101222456_messaging_media_and_profile_covers.sql",
       "utf8",
     ),
+  );
+  await db.exec(
+    readFileSync("supabase/migrations/20261103110815_tie_safe_social_history.sql", "utf8"),
   );
   chars = [];
   for (const [index, user] of users.entries()) {
@@ -230,6 +233,62 @@ it("limits fresh upload reservations while allowing an existing retry", async ()
       [users[0], "a".repeat(64)],
     ),
   ).rejects.toThrow("MEDIA_RATE_LIMIT");
+});
+it("paginates messages with the same timestamp without skipping boundary rows", async () => {
+  const timestamp = "2026-11-03T10:00:00.000Z";
+  for (let index = 1; index <= 4; index++) {
+    const id = `00000000-0000-4000-8000-${String(index).padStart(12, "0")}`;
+    await db.query(
+      `insert into social_messages(
+        id,sender_character_id,channel,conversation_id,request_id,body,created_at
+      ) values($1,$2,'private',$3,gen_random_uuid(),$4,$5)`,
+      [id, chars[0], thread, `Message ${index}`, timestamp],
+    );
+  }
+
+  const newestPage = await value<{ id: string; created_at: string }[]>(
+    "public.get_social_messages_with_media_v2(null,$1,null,2,null)",
+    [thread],
+  );
+  const olderPage = await value<{ id: string }[]>(
+    "public.get_social_messages_with_media_v2(null,$1,$2,2,$3)",
+    [thread, newestPage[0]!.created_at, newestPage[0]!.id],
+  );
+
+  expect([...olderPage, ...newestPage].map((message) => message.id)).toEqual([
+    "00000000-0000-4000-8000-000000000001",
+    "00000000-0000-4000-8000-000000000002",
+    "00000000-0000-4000-8000-000000000003",
+    "00000000-0000-4000-8000-000000000004",
+  ]);
+});
+it("rejects incomplete history cursors and unrelated readers", async () => {
+  await expect(
+    value("public.get_social_messages_v2(null,$1,now(),2,null)", [thread]),
+  ).rejects.toThrow("Invalid message history cursor");
+  await db.query("select set_config('test.user_id',$1,false)", [users[2]]);
+  await expect(
+    value("public.get_social_messages_v2(null,$1,null,2,null)", [thread]),
+  ).rejects.toThrow("Conversation not found");
+  await expect(
+    value("public.get_social_messages_with_media_v2(null,$1,null,2,null)", [thread]),
+  ).rejects.toThrow("UNKNOWN_THREAD");
+});
+it("denies anonymous history execution and rechecks reciprocal blocks", async () => {
+  await db.query(
+    "insert into player_blocks(blocker_character_id,blocked_character_id) values($1,$2)",
+    [chars[1], chars[0]],
+  );
+  await expect(
+    value("public.get_social_messages_with_media_v2(null,$1,null,2,null)", [thread]),
+  ).rejects.toThrow("UNKNOWN_THREAD");
+  await db.exec("set local role anon");
+  await expect(
+    value("public.get_social_messages_v2(null,$1,null,2,null)", [thread]),
+  ).rejects.toThrow("permission denied");
+  await expect(
+    value("public.get_social_messages_with_media_v2(null,$1,null,2,null)", [thread]),
+  ).rejects.toThrow("permission denied");
 });
 it("denies browser metadata writes and storage reads despite a broad existing policy", async () => {
   await db.exec(

@@ -50,19 +50,17 @@
 .town-map-renderer-status {
   position: absolute;
   z-index: 3;
-  top: 0.75rem;
-  left: 50%;
-  transform: translateX(-50%);
-  max-width: calc(100vw - 2rem);
+  inset: auto 0.75rem 0.75rem;
+  display: flex;
+  justify-content: center;
+  max-width: none;
   margin: 0;
-  padding: 0.6rem 0.8rem;
+  padding: 0.7rem;
   border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
   border-radius: 0.65rem;
   color: var(--foreground);
   background: color-mix(in srgb, var(--card) 95%, transparent);
-  font:
-    600 0.8rem/1.2 system-ui,
-    sans-serif;
+  pointer-events: none;
 }
 
 .town-map-zoom-controls {
@@ -85,7 +83,9 @@
   color: var(--foreground);
   background: color-mix(in srgb, var(--card) 96%, transparent);
   box-shadow: 0 1px 3px rgb(23 33 43 / 12%);
-  font: 700 1.15rem/1 system-ui, sans-serif;
+  font:
+    700 1.15rem/1 system-ui,
+    sans-serif;
 }
 
 .town-map-zoom-controls button:focus-visible {
@@ -108,7 +108,9 @@
 
 .town-map-svg-district text {
   fill: #35513a;
-  font: 700 12px/1 system-ui, sans-serif;
+  font:
+    700 12px/1 system-ui,
+    sans-serif;
   pointer-events: none;
 }
 
@@ -120,7 +122,9 @@
 
 .town-map-svg-place text {
   fill: #25382a;
-  font: 700 11px/1 system-ui, sans-serif;
+  font:
+    700 11px/1 system-ui,
+    sans-serif;
   paint-order: stroke;
   stroke: #f7f8f2;
   stroke-width: 4px;
@@ -136,7 +140,9 @@
 
 .town-map-svg-home text {
   fill: #304030;
-  font: 600 10px/1 system-ui, sans-serif;
+  font:
+    600 10px/1 system-ui,
+    sans-serif;
   paint-order: stroke;
   stroke: #f7f8f2;
   stroke-width: 4px;
@@ -151,7 +157,9 @@
 
 .town-map-svg-billboard text {
   fill: white;
-  font: 700 9px/1 system-ui, sans-serif;
+  font:
+    700 9px/1 system-ui,
+    sans-serif;
   pointer-events: none;
 }
 
@@ -163,7 +171,9 @@
 
 .town-map-svg-player text {
   fill: white;
-  font: 700 12px/1 system-ui, sans-serif;
+  font:
+    700 12px/1 system-ui,
+    sans-serif;
 }
 
 .map-housing-message {

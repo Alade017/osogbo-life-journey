@@ -1119,10 +1119,9 @@
   top: 0;
   z-index: 30;
   display: grid;
-  grid-template-columns: minmax(150px, 1.15fr) minmax(105px, 0.85fr) auto minmax(
-      120px,
-      0.85fr
-    ) auto 42px;
+  grid-template-columns:
+    minmax(150px, 1.15fr) minmax(105px, 0.85fr) auto minmax(120px, 0.85fr)
+    auto 42px;
   align-items: center;
   gap: clamp(10px, 1.55vw, 24px);
   min-height: 70px;
@@ -2086,10 +2085,9 @@
   }
 
   .game-hud {
-    grid-template-columns: minmax(145px, 1.1fr) minmax(92px, 0.8fr) auto minmax(
-        100px,
-        0.8fr
-      ) 74px 40px;
+    grid-template-columns:
+      minmax(145px, 1.1fr) minmax(92px, 0.8fr) auto minmax(100px, 0.8fr)
+      74px 40px;
     gap: 11px;
   }
 
@@ -2504,10 +2502,9 @@
 }
 
 .game-hud {
-  grid-template-columns: minmax(145px, 1.2fr) minmax(105px, 0.8fr) auto minmax(
-      115px,
-      0.9fr
-    ) auto 40px;
+  grid-template-columns:
+    minmax(145px, 1.2fr) minmax(105px, 0.8fr) auto minmax(115px, 0.9fr)
+    auto 40px;
   min-height: 68px;
   border-bottom-color: var(--border);
   background: color-mix(in srgb, var(--color-surface) 96%, transparent);
@@ -5215,6 +5212,81 @@
   transition: width 100ms linear;
 }
 
+.world-loading-indicator {
+  display: grid;
+  width: min(100%, 22rem);
+  justify-items: center;
+  gap: 0.55rem;
+  color: var(--foreground);
+  text-align: center;
+}
+
+.world-loading-indicator strong {
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.world-loading-indicator > span {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+}
+
+.world-loading-indicator .travel-progress-track {
+  width: min(100%, 15rem);
+}
+
+.world-loading-icon {
+  width: 1.65rem;
+  height: 1.65rem;
+  color: var(--primary);
+  animation: world-loading-spin 1s linear infinite;
+}
+
+.travel-progress-track.is-indeterminate > span {
+  width: 35%;
+  animation: world-loading-progress 1.25s ease-in-out infinite;
+}
+
+.neighborhood-world-card {
+  position: relative;
+}
+
+.neighborhood-loading-overlay {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: color-mix(in srgb, var(--card) 80%, transparent);
+  backdrop-filter: blur(4px);
+}
+
+@keyframes world-loading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes world-loading-progress {
+  from {
+    transform: translateX(-120%);
+  }
+  to {
+    transform: translateX(320%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .world-loading-icon,
+  .travel-progress-track.is-indeterminate > span {
+    animation: none;
+  }
+  .travel-progress-track.is-indeterminate > span {
+    width: 60%;
+  }
+}
+
 .location-map-neighborhood-filter {
   display: inline-flex;
   align-items: center;
@@ -5790,10 +5862,9 @@
 .game-hud {
   position: sticky;
   top: 8px;
-  grid-template-columns: 150px minmax(175px, 1.15fr) minmax(125px, 0.9fr) auto minmax(
-      135px,
-      0.85fr
-    ) auto 42px;
+  grid-template-columns:
+    150px minmax(175px, 1.15fr) minmax(125px, 0.9fr) auto minmax(135px, 0.85fr)
+    auto 42px;
   gap: 12px;
   min-height: 78px;
   margin: 10px clamp(12px, 1.8vw, 26px) 0;
@@ -7849,10 +7920,9 @@
 }
 
 .game-hud.hud-v2 {
-  grid-template-columns: minmax(125px, 0.95fr) minmax(120px, 1fr) minmax(125px, 1fr) minmax(
-      175px,
-      1.25fr
-    ) auto 44px;
+  grid-template-columns:
+    minmax(125px, 0.95fr) minmax(120px, 1fr) minmax(125px, 1fr) minmax(175px, 1.25fr)
+    auto 44px;
   grid-template-areas: "player xp location time balance notifications" "needs needs needs needs needs needs" "live live sync sync sync sync";
   gap: 8px 14px;
   padding: 9px clamp(14px, 2vw, 28px);
@@ -10267,10 +10337,9 @@
 }
 
 .hud-v2 .game-hud-top-row {
-  grid-template-columns: minmax(108px, 0.8fr) minmax(145px, 1.1fr) minmax(132px, 0.95fr) minmax(
-      96px,
-      0.65fr
-    ) 36px;
+  grid-template-columns:
+    minmax(108px, 0.8fr) minmax(145px, 1.1fr) minmax(132px, 0.95fr) minmax(96px, 0.65fr)
+    36px;
   grid-template-areas: "player location summary wallet notifications";
   gap: 8px;
   padding: 7px 9px;

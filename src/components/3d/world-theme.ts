@@ -33,4 +33,11 @@ export const WORLD_PALETTE = {
 } as const;
 export type WorldTone = keyof typeof WORLD_PALETTE;
 export const WORLD_MATERIAL = { roughness: 1, metalness: 0, flatShading: true } as const;
-export const WORLD_CAMERA = { fov: 42, azimuth: Math.PI / 4, polar: Math.PI / 3.4 } as const;
+export const WORLD_CAMERA = {
+  fov: 42,
+  azimuth: Math.PI / 4,
+  polar: Math.PI / 3.4,
+  defaultZoom: 1,
+  minZoom: 0.8,
+  maxZoom: 1.35,
+} as const;

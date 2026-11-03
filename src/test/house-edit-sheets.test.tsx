@@ -108,7 +108,7 @@ describe("household item panel", () => {
     ];
     input.selectedSlot = slot;
     render(<HouseEditSheets {...input} />);
-    fireEvent.click(screen.getByRole("button", { name: /bed Place/i }));
+    fireEvent.click(screen.getByRole("button", { name: "Place bed" }));
     expect(input.onPlace).toHaveBeenCalledWith("bed", slot);
     expect(screen.queryByRole("button", { name: "Buy" })).toBeNull();
   });
@@ -124,6 +124,7 @@ describe("household item panel", () => {
 
   it("filters the room catalog and offers a compatible slot for owned furniture", () => {
     const input = props();
+    input.slots.push({ id: "bathroom-1", slot_type: "bathroom", x: 50, y: 50 });
     input.catalog.push({
       id: "shower",
       category: "furniture",

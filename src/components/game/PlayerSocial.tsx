@@ -2,13 +2,14 @@ import {
   createContext,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type FormEvent,
   type ReactNode,
 } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import {
   ArrowLeft,
@@ -39,6 +40,7 @@ import { FormattedMessage, MessageFormattingToolbar } from "@/components/game/Me
 import { VoiceNotePlayer, VoiceNoteRecorder } from "@/components/game/VoiceNotes";
 import { Button } from "@/components/ui/button";
 import { MessageBubble } from "@/components/game/MessageBubble";
+import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
 import { ComposerMedia, AttachmentMessage, PlayerSocialCard } from "@/components/game/ChatMedia";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { q } from "@/lib/game";
@@ -92,7 +94,18 @@ type InboxConversation = SocialPlayer & {
   mutedUntil?: string | null;
   starredAt?: string | null;
 };
-type InboxFilter = "all" | "unread" | "groups";
+type InboxFilter = "all" | "unread";
+
+function flattenMessagePages(pages: SocialMessage[][] | undefined) {
+  const messages = new Map<string, SocialMessage>();
+  for (const page of [...(pages ?? [])].reverse()) {
+    for (const message of page) messages.set(message.id, message);
+  }
+  return [...messages.values()].sort(
+    (left, right) =>
+      left.created_at.localeCompare(right.created_at) || left.id.localeCompare(right.id),
+  );
+}
 
 const REPORT_OPTIONS: Array<{ value: SocialReportCategory; label: string }> = [
   { value: "spam", label: "Spam" },
@@ -276,12 +289,22 @@ export function MessageList({
   onReport,
   onReply,
   phoneMode = false,
+  loading = false,
+  error = null,
+  hasOlder = false,
+  loadingOlder = false,
+  onLoadOlder,
 }: {
   messages: SocialMessage[];
   ownCharacterId?: string | undefined;
   onReport: (message: SocialMessage) => void;
   onReply: (message: SocialMessage) => void;
   phoneMode?: boolean;
+  loading?: boolean;
+  error?: Error | null;
+  hasOlder?: boolean;
+  loadingOlder?: boolean;
+  onLoadOlder?: () => void;
 }) {
   const [starred, setStarred] = useState<string[]>([]);
   const [starredOnly, setStarredOnly] = useState(false);
@@ -316,20 +339,43 @@ export function MessageList({
   );
   const listRef = windowed.ref;
   const visibleMessages = filteredMessages.slice(windowed.first, windowed.last);
-  useEffect(() => {
-    if (phoneMode && listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
+  const scrollAnchor = useRef<{ height: number; top: number } | null>(null);
+  const wasAtBottom = useRef(true);
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    if (!list) return;
+    const anchor = scrollAnchor.current;
+    if (anchor) {
+      list.scrollTop = anchor.top + (list.scrollHeight - anchor.height);
+      scrollAnchor.current = null;
+    } else if (phoneMode && wasAtBottom.current) {
+      list.scrollTop = list.scrollHeight;
+    }
   }, [messages, phoneMode, listRef]);
+  if (loading && !messages.length)
+    return (
+      <div className="flex justify-center py-5">
+        <WorldLoadingIndicator title="Loading conversation" detail="Fetching recent messages…" />
+      </div>
+    );
   if (!messages.length)
     return (
-      <p
-        className={
-          phoneMode
-            ? "phone-chat-empty"
-            : "rounded-xl bg-background p-4 text-sm text-muted-foreground"
-        }
-      >
-        No messages yet. Say hello.
-      </p>
+      <>
+        {error && (
+          <p className="text-sm text-destructive" role="alert">
+            {error.message}
+          </p>
+        )}
+        <p
+          className={
+            phoneMode
+              ? "phone-chat-empty"
+              : "rounded-xl bg-background p-4 text-sm text-muted-foreground"
+          }
+        >
+          No messages yet. Say hello.
+        </p>
+      </>
     );
   return (
     <>
@@ -344,9 +390,35 @@ export function MessageList({
           {starredOnly ? "Show all messages" : "Starred messages on this device"}
         </button>
       )}
+      {error && (
+        <p className="text-sm text-destructive" role="alert">
+          {error.message}
+        </p>
+      )}
+      {!starredOnly && hasOlder && onLoadOlder && (
+        <div className="flex justify-center py-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={loadingOlder}
+            onClick={() => {
+              const list = listRef.current;
+              if (list) scrollAnchor.current = { height: list.scrollHeight, top: list.scrollTop };
+              onLoadOlder();
+            }}
+          >
+            {loadingOlder ? "Loading earlier messages…" : "Load earlier messages"}
+          </Button>
+        </div>
+      )}
       <ol
         ref={listRef}
         aria-label="Message history"
+        onScroll={(event) => {
+          const list = event.currentTarget;
+          wasAtBottom.current = list.scrollHeight - list.scrollTop - list.clientHeight < 80;
+        }}
         className={
           phoneMode
             ? "phone-message-history"
@@ -700,7 +772,7 @@ export function PlayerSocial({
     return !!seenAt && Date.now() - new Date(seenAt).getTime() < 60000;
   };
   const inboxConversations = useMemo<InboxConversation[]>(() => {
-    if (threadQuery.data?.length) return threadQuery.data;
+    if (threadQuery.data) return threadQuery.data;
     return (overview?.conversations ?? []).map((conversation) => ({
       ...conversation,
       preview: "Private conversation",
@@ -729,7 +801,6 @@ export function PlayerSocial({
       return [...pinnedConversations, ...regularConversations].filter(
         (conversation) => (conversation.unreadCount ?? 0) > 0,
       );
-    if (inboxFilter === "groups") return [];
     return [...pinnedConversations, ...regularConversations];
   }, [inboxFilter, pinnedConversations, regularConversations]);
   const searchQuery = useQuery({
@@ -750,18 +821,44 @@ export function PlayerSocial({
     (initialProfileQuery.data?.character_id === activeChat?.characterId
       ? initialProfileQuery.data
       : undefined);
-  const areaMessagesQuery = useQuery({
+  const areaMessagesQuery = useInfiniteQuery({
     queryKey: ["socialMessages", "area", locationId],
-    queryFn: () => getSocialMessages({ locationId: locationId! }),
+    initialPageParam: null as { createdAt: string; id: string } | null,
+    queryFn: ({ pageParam }) =>
+      getSocialMessages({
+        locationId: locationId!,
+        before: pageParam?.createdAt ?? null,
+        beforeId: pageParam?.id ?? null,
+      }),
+    getNextPageParam: (lastPage) =>
+      lastPage.length === 50 && lastPage[0]
+        ? { createdAt: lastPage[0].created_at, id: lastPage[0].id }
+        : undefined,
     enabled: tab === "messages" && !phoneMode && !!locationId,
   });
-  const directMessagesQuery = useQuery({
+  const directMessagesQuery = useInfiniteQuery({
     queryKey: ["socialMessages", "private", activeChat?.conversationId],
-    queryFn: () => getSocialMessages({ conversationId: activeChat!.conversationId }),
+    initialPageParam: null as { createdAt: string; id: string } | null,
+    queryFn: ({ pageParam }) =>
+      getSocialMessages({
+        conversationId: activeChat!.conversationId,
+        before: pageParam?.createdAt ?? null,
+        beforeId: pageParam?.id ?? null,
+      }),
+    getNextPageParam: (lastPage) =>
+      lastPage.length === 50 && lastPage[0]
+        ? { createdAt: lastPage[0].created_at, id: lastPage[0].id }
+        : undefined,
     enabled: tab === "messages" && !!activeChat?.conversationId,
   });
-  const areaMessages = useMemo(() => areaMessagesQuery.data ?? [], [areaMessagesQuery.data]);
-  const directMessages = useMemo(() => directMessagesQuery.data ?? [], [directMessagesQuery.data]);
+  const areaMessages = useMemo(
+    () => flattenMessagePages(areaMessagesQuery.data?.pages),
+    [areaMessagesQuery.data],
+  );
+  const directMessages = useMemo(
+    () => flattenMessagePages(directMessagesQuery.data?.pages),
+    [directMessagesQuery.data],
+  );
   const displayedDirectMessages = useMemo(() => {
     const filter = inChatSearch.trim().toLocaleLowerCase();
     if (!filter) return directMessages;
@@ -889,6 +986,7 @@ export function PlayerSocial({
   const refreshSocial = () =>
     Promise.all([
       qc.invalidateQueries({ queryKey: ["playerSocialOverview"] }),
+      qc.invalidateQueries({ queryKey: ["socialThreadSummaries"] }),
       qc.invalidateQueries({ queryKey: ["playerSocialSearch"] }),
       qc.invalidateQueries({ queryKey: ["playerProfile"] }),
     ]);
@@ -914,8 +1012,18 @@ export function PlayerSocial({
           return unblockPlayer(action.id);
       }
     },
-    onSuccess: async () => {
+    onSuccess: async (_result, action) => {
       await refreshSocial();
+      if (
+        (action.kind === "remove" || action.kind === "block") &&
+        activeChat?.characterId === action.id
+      ) {
+        setActiveChat(null);
+        setReplyTarget(null);
+        void qc.invalidateQueries({
+          queryKey: ["socialMessages", "private", activeChat.conversationId],
+        });
+      }
       toast.success("Your player social list is up to date.");
     },
     onError: (error: Error) => {
@@ -957,12 +1065,16 @@ export function PlayerSocial({
   });
   const sendMutation = useMutation({
     mutationFn: sendSocialMessage,
-    onSuccess: (_result, variables) => {
+    onSuccess: async (_result, variables) => {
       const key =
         variables.channel === "area"
           ? ["socialMessages", "area", variables.locationId]
           : ["socialMessages", "private", variables.conversationId];
-      void qc.invalidateQueries({ queryKey: key });
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: key }),
+        qc.invalidateQueries({ queryKey: ["playerSocialOverview"] }),
+        qc.invalidateQueries({ queryKey: ["socialThreadSummaries"] }),
+      ]);
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -1354,7 +1466,7 @@ export function PlayerSocial({
                     <p className="text-sm text-muted-foreground">
                       Your current area is still loading.
                     </p>
-                  ) : areaMessagesQuery.error ? (
+                  ) : areaMessagesQuery.isError && !areaMessagesQuery.data ? (
                     <p className="text-sm text-destructive" role="alert">
                       {areaMessagesQuery.error?.message ?? "Area messages could not be loaded."}
                     </p>
@@ -1362,6 +1474,11 @@ export function PlayerSocial({
                     <MessageList
                       messages={areaMessages}
                       ownCharacterId={character?.id}
+                      loading={areaMessagesQuery.isPending}
+                      error={areaMessagesQuery.error}
+                      hasOlder={!!areaMessagesQuery.hasNextPage}
+                      loadingOlder={areaMessagesQuery.isFetchingNextPage}
+                      onLoadOlder={() => void areaMessagesQuery.fetchNextPage()}
                       onReply={setReplyTarget}
                       onReport={(message) =>
                         setReportTarget({
@@ -1439,7 +1556,7 @@ export function PlayerSocial({
                       />
                     </label>
                   )}
-                  {directMessagesQuery.error ? (
+                  {directMessagesQuery.isError && !directMessagesQuery.data ? (
                     <p className="text-sm text-destructive" role="alert">
                       {directMessagesQuery.error.message}
                     </p>
@@ -1448,6 +1565,11 @@ export function PlayerSocial({
                       messages={displayedDirectMessages}
                       ownCharacterId={character?.id}
                       phoneMode
+                      loading={directMessagesQuery.isPending}
+                      error={directMessagesQuery.error}
+                      hasOlder={!!directMessagesQuery.hasNextPage}
+                      loadingOlder={directMessagesQuery.isFetchingNextPage}
+                      onLoadOlder={() => void directMessagesQuery.fetchNextPage()}
                       onReply={setReplyTarget}
                       onReport={(message) =>
                         setReportTarget({
@@ -1471,9 +1593,13 @@ export function PlayerSocial({
                         threadId={activeChat.conversationId}
                         disabled={sendMutation.isPending}
                         onSent={() =>
-                          void qc.invalidateQueries({
-                            queryKey: ["socialMessages", "private", activeChat.conversationId],
-                          })
+                          void Promise.all([
+                            qc.invalidateQueries({
+                              queryKey: ["socialMessages", "private", activeChat.conversationId],
+                            }),
+                            qc.invalidateQueries({ queryKey: ["socialThreadSummaries"] }),
+                            qc.invalidateQueries({ queryKey: ["playerSocialOverview"] }),
+                          ])
                         }
                       />
                     }
@@ -1482,9 +1608,13 @@ export function PlayerSocial({
                         threadId={activeChat.conversationId}
                         disabled={sendMutation.isPending}
                         onSent={() =>
-                          void qc.invalidateQueries({
-                            queryKey: ["socialMessages", "private", activeChat.conversationId],
-                          })
+                          void Promise.all([
+                            qc.invalidateQueries({
+                              queryKey: ["socialMessages", "private", activeChat.conversationId],
+                            }),
+                            qc.invalidateQueries({ queryKey: ["socialThreadSummaries"] }),
+                            qc.invalidateQueries({ queryKey: ["playerSocialOverview"] }),
+                          ])
                         }
                       />
                     }
@@ -1521,7 +1651,7 @@ export function PlayerSocial({
                     />
                   </label>
                   <div className="phone-inbox-filters" role="group" aria-label="Chat filters">
-                    {(["all", "unread", "groups"] as const).map((filter) => (
+                    {(["all", "unread"] as const).map((filter) => (
                       <button
                         type="button"
                         key={filter}
@@ -1529,10 +1659,15 @@ export function PlayerSocial({
                         aria-pressed={inboxFilter === filter}
                         onClick={() => setInboxFilter(filter)}
                       >
-                        {filter === "all" ? "All" : filter === "unread" ? "Unread" : "Groups"}
+                        {filter === "all" ? "All" : "Unread"}
                       </button>
                     ))}
                   </div>
+                  {threadQuery.error && !!overview?.conversations.length && (
+                    <p className="text-xs text-destructive" role="alert">
+                      Chat details could not load. Showing conversations with limited details.
+                    </p>
+                  )}
                   {overviewQuery.isPending ? (
                     <p className="text-sm text-muted-foreground">Loading your chats…</p>
                   ) : overviewQuery.error ? (
@@ -1549,9 +1684,7 @@ export function PlayerSocial({
                     />
                   ) : (
                     <p className="phone-inbox-state">
-                      {inboxFilter === "groups"
-                        ? "Group chats will appear here when groups are available."
-                        : "No matching chats yet. Start one from a friend's profile in Social."}
+                      No matching chats yet. Start one from a friend’s profile in Social.
                     </p>
                   )}
                 </section>
@@ -1577,7 +1710,7 @@ export function PlayerSocial({
                   <p className="text-sm text-muted-foreground">
                     Your current area is still loading.
                   </p>
-                ) : areaMessagesQuery.error ? (
+                ) : areaMessagesQuery.isError && !areaMessagesQuery.data ? (
                   <p className="text-sm text-destructive" role="alert">
                     {areaMessagesQuery.error.message}
                   </p>
@@ -1585,6 +1718,11 @@ export function PlayerSocial({
                   <MessageList
                     messages={areaMessages}
                     ownCharacterId={character?.id}
+                    loading={areaMessagesQuery.isPending}
+                    error={areaMessagesQuery.error}
+                    hasOlder={!!areaMessagesQuery.hasNextPage}
+                    loadingOlder={areaMessagesQuery.isFetchingNextPage}
+                    onLoadOlder={() => void areaMessagesQuery.fetchNextPage()}
                     onReply={setReplyTarget}
                     onReport={(message) =>
                       setReportTarget({
@@ -1641,7 +1779,7 @@ export function PlayerSocial({
                 </div>
                 {activeChat ? (
                   <>
-                    {directMessagesQuery.error ? (
+                    {directMessagesQuery.isError && !directMessagesQuery.data ? (
                       <p className="text-sm text-destructive" role="alert">
                         {directMessagesQuery.error.message}
                       </p>
@@ -1649,6 +1787,11 @@ export function PlayerSocial({
                       <MessageList
                         messages={directMessages}
                         ownCharacterId={character?.id}
+                        loading={directMessagesQuery.isPending}
+                        error={directMessagesQuery.error}
+                        hasOlder={!!directMessagesQuery.hasNextPage}
+                        loadingOlder={directMessagesQuery.isFetchingNextPage}
+                        onLoadOlder={() => void directMessagesQuery.fetchNextPage()}
                         onReply={setReplyTarget}
                         onReport={(message) =>
                           setReportTarget({

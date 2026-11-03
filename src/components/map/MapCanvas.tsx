@@ -2,6 +2,7 @@ import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react
 import townData from "@/data/osogbo-town.json";
 import { WORLD_PALETTE } from "@/components/3d/world-theme";
 import { TownMapFallback } from "@/components/map/TownMapFallback";
+import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
 
 const R3FTownSurface = lazy(() =>
   import("./R3FTownSurface").then((module) => ({ default: module.R3FTownSurface })),
@@ -153,9 +154,12 @@ export function MapCanvas({
         />
       </Suspense>
       {rendererState === "loading" && (
-        <p className="town-map-renderer-status" role="status">
-          Starting the interactive town map…
-        </p>
+        <div className="town-map-renderer-status">
+          <WorldLoadingIndicator
+            title="Opening the map"
+            detail="Starting the interactive town map…"
+          />
+        </div>
       )}
       {rendererState === "fallback" && (
         <p className="town-map-renderer-status" role="status">

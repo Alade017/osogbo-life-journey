@@ -4599,10 +4599,39 @@ export type Database = {
       get_property_map_pins: { Args: { p_limit?: number; p_location_id: string }; Returns: Json };
       get_social_messages: {
         Args: {
-          p_before?: string;
-          p_conversation_id?: string;
+          p_before?: string | null;
+          p_conversation_id?: string | null;
           p_limit?: number;
-          p_location_id?: string;
+          p_location_id?: string | null;
+        };
+        Returns: Json;
+      };
+      get_social_messages_with_media: {
+        Args: {
+          p_before?: string | null;
+          p_conversation_id?: string | null;
+          p_limit?: number;
+          p_location_id?: string | null;
+        };
+        Returns: Json;
+      };
+      get_social_messages_v2: {
+        Args: {
+          p_before?: string | null;
+          p_before_id?: string | null;
+          p_conversation_id?: string | null;
+          p_limit?: number;
+          p_location_id?: string | null;
+        };
+        Returns: Json;
+      };
+      get_social_messages_with_media_v2: {
+        Args: {
+          p_before?: string | null;
+          p_before_id?: string | null;
+          p_conversation_id?: string | null;
+          p_limit?: number;
+          p_location_id?: string | null;
         };
         Returns: Json;
       };

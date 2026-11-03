@@ -325,6 +325,7 @@ export function HouseEditSheets({
                         type="button"
                         className="house-catalog-action"
                         disabled={offline || pending}
+                        aria-label={`Place ${itemName(item.item_id)}`}
                         onClick={() => onPlace(item.item_id, selectedSlot)}
                       >
                         Place <Check size={15} />

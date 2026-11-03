@@ -9,6 +9,7 @@ import {
   travelAnimationDurationMs,
   type TravelMode,
 } from "@/lib/transport-service";
+import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
 
 function formatDistance(meters: number) {
   return meters >= 1000 ? `${(meters / 1000).toFixed(1)} km` : `${Math.round(meters)} m`;
@@ -71,21 +72,12 @@ export function TravelPanel({
 
   if (state.status === "traveling" || isPending) {
     return (
-      <div className="travel-state-message" role="status" aria-live="polite">
-        <strong>Travelling to {state.destinationName}…</strong>
-        <span>
-          {TRAVEL_MODE_DETAILS[state.mode].label} journey · {state.estimatedMinutes} game minutes
-        </span>
-        <div
-          className="travel-progress-track"
-          role="progressbar"
-          aria-label={`Journey to ${state.destinationName}`}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={progress}
-        >
-          <span style={{ width: `${progress}%` }} />
-        </div>
+      <div className="travel-state-message">
+        <WorldLoadingIndicator
+          title={`Travelling to ${state.destinationName}…`}
+          detail={`${TRAVEL_MODE_DETAILS[state.mode].label} journey · ${state.estimatedMinutes} game minutes`}
+          progress={progress}
+        />
       </div>
     );
   }

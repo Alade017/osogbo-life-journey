@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { PlayerSocial, MessageList, ChatComposer } from "@/components/game/PlayerSocial";
+import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
 
 const mocks = vi.hoisted(() => ({
   getPlayerSocialOverview: vi.fn(),
@@ -96,16 +97,27 @@ describe("real-player social panel", () => {
   });
 
   it("filters the phone inbox by player name", async () => {
+    const conversations = [
+      { id: "conversation-ayo", character_id: "character-ayo", player_name: "Ayo" },
+      { id: "conversation-bola", character_id: "character-bola", player_name: "Bola" },
+    ];
     mocks.getPlayerSocialOverview.mockImplementation(async () => ({
       friends: [],
       incoming: [],
       outgoing: [],
       blocked: [],
-      conversations: [
-        { id: "conversation-ayo", character_id: "character-ayo", player_name: "Ayo" },
-        { id: "conversation-bola", character_id: "character-bola", player_name: "Bola" },
-      ],
+      conversations,
     }));
+    mocks.getThreadSummaries.mockResolvedValue(
+      conversations.map((conversation) => ({
+        ...conversation,
+        preview: "Latest message",
+        unreadCount: 0,
+        pinnedAt: null,
+        mutedUntil: null,
+        starredAt: null,
+      })),
+    );
 
     renderSocial({ initialTab: "messages", phoneMode: true });
     expect(
@@ -146,20 +158,41 @@ describe("real-player social panel", () => {
   });
 
   it("shows private conversations in phone mode and sends through the existing service", async () => {
+    const conversation = {
+      id: "conversation-ayo",
+      character_id: "character-ayo",
+      player_name: "Ayo",
+    };
     mocks.getPlayerSocialOverview.mockResolvedValue({
       friends: [],
       incoming: [],
       outgoing: [],
       blocked: [],
-      conversations: [
-        { id: "conversation-ayo", character_id: "character-ayo", player_name: "Ayo" },
-      ],
+      conversations: [conversation],
     });
+    mocks.getThreadSummaries.mockResolvedValue([
+      {
+        ...conversation,
+        preview: "Latest message",
+        unreadCount: 0,
+        pinnedAt: null,
+        mutedUntil: null,
+        starredAt: null,
+      },
+    ]);
     renderSocial({ initialTab: "messages", phoneMode: true });
 
     expect(await screen.findByRole("button", { name: /Ayo/ })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Ayo/ }));
     const composer = await screen.findByLabelText("Message Ayo");
+    await waitFor(() =>
+      expect(mocks.getSocialMessages).toHaveBeenCalledWith({
+        conversationId: "conversation-ayo",
+        before: null,
+        beforeId: null,
+      }),
+    );
+    expect(screen.queryByRole("button", { name: "Groups" })).not.toBeInTheDocument();
     fireEvent.change(composer, { target: { value: "See you at the market" } });
     fireEvent.submit(composer.closest("form")!);
 
@@ -185,6 +218,17 @@ describe("phone message interactions", () => {
         unobserve() {}
       },
     );
+  });
+
+  describe("shared loading feedback", () => {
+    it("announces loading and exposes determinate progress when available", () => {
+      const { rerender } = render(<WorldLoadingIndicator title="Opening the map" />);
+      expect(screen.getByRole("status")).toHaveTextContent("Opening the map");
+      expect(screen.getByRole("progressbar")).not.toHaveAttribute("aria-valuenow");
+
+      rerender(<WorldLoadingIndicator title="Travelling" progress={63} />);
+      expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "63");
+    });
   });
   const messages = Array.from({ length: 120 }, (_, index) => ({
     id: "message-" + index,
@@ -232,6 +276,49 @@ describe("phone message interactions", () => {
     fireEvent.click(screen.getByRole("button", { name: "Starred messages on this device" }));
     expect(screen.getByText("Message 0")).toBeInTheDocument();
     expect(screen.queryByText("Message 1")).not.toBeInTheDocument();
+  });
+  it("shows loading feedback and preserves the visible scroll position when prepending history", () => {
+    const onLoadOlder = vi.fn();
+    const { rerender } = render(
+      <MessageList
+        messages={[]}
+        ownCharacterId="me"
+        loading
+        onLoadOlder={onLoadOlder}
+        onReply={() => {}}
+        onReport={() => {}}
+      />,
+    );
+    expect(screen.getByRole("status")).toHaveTextContent("Loading conversation");
+
+    rerender(
+      <MessageList
+        messages={messages.slice(2, 4)}
+        ownCharacterId="me"
+        hasOlder
+        onLoadOlder={onLoadOlder}
+        onReply={() => {}}
+        onReport={() => {}}
+      />,
+    );
+    const history = screen.getByRole("list", { name: "Message history" });
+    Object.defineProperty(history, "scrollHeight", { configurable: true, value: 200 });
+    history.scrollTop = 40;
+    fireEvent.click(screen.getByRole("button", { name: "Load earlier messages" }));
+    expect(onLoadOlder).toHaveBeenCalledOnce();
+
+    Object.defineProperty(history, "scrollHeight", { configurable: true, value: 300 });
+    rerender(
+      <MessageList
+        messages={messages.slice(0, 4)}
+        ownCharacterId="me"
+        hasOlder
+        onLoadOlder={onLoadOlder}
+        onReply={() => {}}
+        onReport={() => {}}
+      />,
+    );
+    expect(history.scrollTop).toBe(140);
   });
   it("offers actions on keyboard activation without inline action text", async () => {
     const report = vi.fn();

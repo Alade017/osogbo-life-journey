@@ -3,6 +3,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Home, Map, Minus, Plus } from "lucide-react";
 import { PlayerMovementControls } from "@/components/game/PlayerMovementControls";
+import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
 import { joinNeighborhood, type NeighborhoodRoom } from "@/lib/multiplayer-service";
 import { q } from "@/lib/game";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +15,7 @@ import { neighborhoodAreaForSlug, nearestInteraction, toScene } from "@/game/nei
 import { isPlayableDistrict, playableDistrictForLocation } from "@/game/playable-district";
 import type { NeighborhoodPlayerView, PhaserNeighborhoodHandle } from "@/game/phaser-neighborhood";
 import type { MovementDirection } from "@/lib/player-movement";
+import { WORLD_CAMERA } from "@/components/3d/world-theme";
 import "@/components/game/neighborhood.css";
 
 const R3FNeighborhoodSurface = lazy(() =>
@@ -176,7 +178,7 @@ export function PlayableNeighborhood() {
     useNeighborhoodConnection(currentLocation?.id, currentLocation?.slug);
   const [directions, setDirections] = useState<ReadonlySet<MovementDirection>>(() => new Set());
   const [scene, setScene] = useState<PhaserNeighborhoodHandle | null>(null);
-  const [zoom, setZoom] = useState(0.65);
+  const [zoom, setZoom] = useState<number>(WORLD_CAMERA.defaultZoom);
   const directionsRef = useRef(directions);
   directionsRef.current = directions;
   const lastIntentRef = useRef("0:0");
@@ -223,7 +225,7 @@ export function PlayableNeighborhood() {
   useEffect(() => {
     setDirections(new Set());
     lastIntentRef.current = "0:0";
-    setZoom(0.65);
+    setZoom(WORLD_CAMERA.defaultZoom);
   }, [currentLocation?.id]);
 
   useEffect(() => {
@@ -261,14 +263,18 @@ export function PlayableNeighborhood() {
 
   const handleScene = useCallback((next: PhaserNeighborhoodHandle | null) => setScene(next), []);
   const changeZoom = (factor: number) => {
-    scene?.setZoom(factor);
-    setZoom((current) => Math.min(0.9, Math.max(0.42, current * factor)));
+    setZoom((current) =>
+      Math.min(WORLD_CAMERA.maxZoom, Math.max(WORLD_CAMERA.minZoom, current * factor)),
+    );
   };
 
   if (characterQuery.isLoading || locationsQuery.isLoading)
     return (
       <section className="neighborhood-page" aria-label="Playable neighborhood">
-        <p role="status">Loading your saved character and location...</p>
+        <WorldLoadingIndicator
+          title="Opening the neighbourhood"
+          detail="Loading your saved character and location…"
+        />
       </section>
     );
   if (characterQuery.isError || locationsQuery.isError)
@@ -325,6 +331,14 @@ export function PlayableNeighborhood() {
               {connectionError}
             </p>
           )}
+          {(connectionState === "connecting" || connectionState === "loading") && (
+            <div className="neighborhood-loading-overlay">
+              <WorldLoadingIndicator
+                title="Entering the neighbourhood"
+                detail="Connecting to the authoritative world…"
+              />
+            </div>
+          )}
           {connectionState === "connected" &&
             (district?.personalHome && homeQuery.isLoading ? (
               <p className="neighborhood-loading">Checking the home entrance...</p>
@@ -333,13 +347,24 @@ export function PlayableNeighborhood() {
               district && (
                 <>
                   <div className="neighborhood-stage">
-                    <Suspense fallback={<p role="status">Loading neighbourhood?</p>}>
+                    <Suspense
+                      fallback={
+                        <div className="neighborhood-loading-overlay">
+                          <WorldLoadingIndicator
+                            title="Loading the neighbourhood"
+                            detail="Preparing the world scene…"
+                          />
+                        </div>
+                      }
+                    >
                       <R3FNeighborhoodSurface
                         key={`${currentLocation?.id}:${sessionId}`}
                         district={district}
                         players={scenePlayers}
                         selfSessionId={sessionId}
                         homeTypeId={homeTypeId}
+                        zoom={zoom}
+                        onZoomChange={setZoom}
                         onScene={handleScene}
                       />
                     </Suspense>
@@ -347,12 +372,18 @@ export function PlayableNeighborhood() {
                       className="neighborhood-zoom-controls"
                       aria-label="Neighborhood camera controls"
                     >
-                      <button type="button" aria-label="Zoom in" onClick={() => changeZoom(1.12)}>
+                      <button
+                        type="button"
+                        aria-label="Zoom in"
+                        disabled={zoom >= WORLD_CAMERA.maxZoom}
+                        onClick={() => changeZoom(1.12)}
+                      >
                         <Plus size={16} aria-hidden="true" />
                       </button>
                       <button
                         type="button"
                         aria-label="Zoom out"
+                        disabled={zoom <= WORLD_CAMERA.minZoom}
                         onClick={() => changeZoom(1 / 1.12)}
                       >
                         <Minus size={16} aria-hidden="true" />

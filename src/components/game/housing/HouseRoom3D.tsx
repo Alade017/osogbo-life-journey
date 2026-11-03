@@ -7,6 +7,8 @@ import {
   useState,
   type RefObject,
 } from "react";
+import { useThree } from "@react-three/fiber";
+import * as THREE from "three";
 import { Canvas, type ThreeEvent } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import { Plane, Vector3 } from "three";
@@ -912,6 +914,25 @@ function SlotObject({
   );
 }
 
+function FitCamera({ width, depth }: { width: number; depth: number }) {
+  const { camera, size } = useThree();
+  useEffect(() => {
+    const cam = camera as THREE.PerspectiveCamera;
+    cam.aspect = size.width / size.height;
+    cam.updateProjectionMatrix();
+
+    const vFov = THREE.MathUtils.degToRad(cam.fov);
+    const hFov = 2 * Math.atan(Math.tan(vFov / 2) * cam.aspect);
+    const halfExtent = (Math.max(width, depth) / 2) * 1.3;
+    const distance = halfExtent / Math.tan(Math.min(vFov, hFov) / 2);
+
+    const dir = new THREE.Vector3(0, 4, 12).normalize();
+    cam.position.copy(dir.multiplyScalar(distance));
+    cam.lookAt(0, 0, 0);
+  }, [size.width, size.height, width, depth, camera]);
+  return null;
+}
+
 export function HouseRoom3D({
   inputBlocked = false,
   houseTypeId,
@@ -1036,6 +1057,7 @@ export function HouseRoom3D({
           gl={{ antialias: false, powerPreference: "low-power" }}
         >
           <WorldLighting size={Math.max(width, depth) * 1.5} />
+<FitCamera width={width} depth={depth} />
           <OsogboRoomPrototype
             houseTypeId={houseTypeId}
             width={width}

@@ -22,7 +22,6 @@ import {
   GraduationCap,
   HandCoins,
   HousePlus,
-  LoaderCircle,
   MapPinned,
   MessagesSquare,
   Newspaper,
@@ -41,6 +40,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
 import { q, rpc, useGameAction } from "@/lib/game";
 import { useQuery } from "@tanstack/react-query";
 import { playGameSound } from "@/lib/game-audio";
@@ -176,9 +176,8 @@ class PhoneAppBoundary extends Component<
 
 function PhoneAppLoadingSpinner({ title }: { title: string }) {
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center p-8 text-center text-muted-foreground">
-      <LoaderCircle className="mb-2 h-7 w-7 animate-spin text-primary" />
-      <p className="text-xs font-semibold">Opening {title}...</p>
+    <div className="flex h-full w-full items-center justify-center p-8 text-center">
+      <WorldLoadingIndicator title={`Opening ${title}…`} detail="Getting things ready…" />
     </div>
   );
 }
