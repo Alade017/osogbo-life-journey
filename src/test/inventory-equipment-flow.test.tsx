@@ -6,6 +6,11 @@ vi.mock("@/components/3d/CharacterPreview", () => ({
   CharacterPreview: ({ label }: { label: string }) => <div role="img" aria-label={label} />,
 }));
 
+// The 3D preview needs WebGL and ResizeObserver, which jsdom does not provide.
+vi.mock("@/components/3d/CharacterPreview", () => ({
+  CharacterPreview: ({ label }: { label: string }) => <div role="img" aria-label={label} />,
+}));
+
 const mocks = vi.hoisted(() => ({
   mutate: vi.fn(),
   ownedShirt: {
@@ -58,10 +63,10 @@ describe("inventory equipment selection", () => {
       value: vi.fn(),
     });
     render(<InventoryPage />);
-    fireEvent.click(screen.getAllByRole("button", { name: "Choose from bag" })[1]!);
+    fireEvent.click(screen.getAllByRole("button", { name: "Choose" })[1]!);
     expect(screen.getByRole("status")).toHaveTextContent(/Choose an item for the top slot/i);
     fireEvent.click(screen.getByRole("button", { name: /Basic Outfit/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Equip (top)" }));
+    fireEvent.click(screen.getByRole("button", { name: "Wear (top)" }));
     expect(mocks.mutate).toHaveBeenCalledWith({ id: "owned-shirt", slot: "top" });
   });
 });
