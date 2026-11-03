@@ -13,6 +13,19 @@ import {
 import type { AvatarAnimationState, AvatarEquipment } from "@/components/game/Avatar";
 import { WorldMaterial } from "./WorldScene";
 import { WORLD_SCALE } from "./world-theme";
+import { WORN_ITEM_MODELS } from "./world-item-models";
+
+export type TaskPose = "sit" | "wash" | "cook" | "collect" | "stretch";
+
+type ArmPose = (phase: number, side: number) => number;
+
+export const ARM_POSES: Partial<Record<TaskPose, ArmPose>> = {
+  sit: (p) => -0.2 + Math.sin(p * 0.5) * 0.05,
+  wash: (p, s) => -1.5 + Math.sin(p) * 0.25 * s,
+  collect: (p) => -0.9 + Math.sin(p) * 0.15,
+  cook: (p, s) => -0.7 + Math.sin(p) * 0.25 * s,
+  stretch: (p) => -2.2 + Math.sin(p * 0.5) * 0.3,
+};
 
 /** The same saved appearance contract is used by portraits and both world scenes. */
 export function WorldCharacter({
@@ -32,7 +45,7 @@ export function WorldCharacter({
   facing?: string;
   animation?: AvatarAnimationState;
   name?: string;
-  taskPose?: "sit" | "wash" | "cook" | "collect" | undefined;
+  taskPose?: TaskPose | undefined;
 }) {
   const safe = normalizeAvatarAppearance(appearance, gender);
   const h = WORLD_SCALE.character * ([0.92, 1, 1.06][safe.stature] ?? 1);
@@ -71,18 +84,18 @@ export function WorldCharacter({
     const phase = clock.elapsedTime * (moving ? 8 : 4);
     arms.current.children.forEach((part, index) => {
       const side = index % 2 ? 1 : -1;
+      const pose = taskPose ? ARM_POSES[taskPose] : undefined;
       part.rotation.x = reduced
         ? 0
-        : taskPose === "wash" ? -1.5 + Math.sin(phase) * .25 * side
-        : taskPose === "collect" ? -.9 + Math.sin(phase) * .15
-        : taskPose === "cook" ? -.7 + Math.sin(phase) * .25 * side
-        : moving
-          ? Math.sin(phase) * 0.5 * side
-          : animation === "work"
-            ? -0.65 + Math.sin(phase) * 0.25
-            : animation === "talk"
-              ? -0.45 + Math.sin(phase) * 0.15
-              : 0;
+        : pose
+          ? pose(phase, side)
+          : moving
+            ? Math.sin(phase) * 0.5 * side
+            : animation === "work"
+              ? -0.65 + Math.sin(phase) * 0.25
+              : animation === "talk"
+                ? -0.45 + Math.sin(phase) * 0.15
+                : 0;
     });
     legs.current.children.forEach((part, index) => {
       part.rotation.x = taskPose === "sit" ? -Math.PI / 2 : !reduced && moving ? Math.sin(phase) * 0.4 * (index % 2 ? 1 : -1) : 0;
@@ -94,6 +107,12 @@ export function WorldCharacter({
     ({ north: Math.PI, east: Math.PI / 2, south: 0, west: -Math.PI / 2 } as Record<string, number>)[
       facing
     ] ?? 0;
+  const wornAccessory = equipment.find((item) => item.slot === "accessory") as
+    | { item?: { slug?: string } | null }
+    | undefined;
+  const AccessoryModel = wornAccessory?.item?.slug
+    ? WORN_ITEM_MODELS[wornAccessory.item.slug]
+    : undefined;
   return (
     <group name={`character:${name}`} position={position} rotation={[0, yaw, 0]}>
       <group
@@ -170,12 +189,14 @@ export function WorldCharacter({
             </group>
           ))}
         </group>
-        {equipment.some((item) => item.slot === "accessory") && (
+        {AccessoryModel ? (
+          <AccessoryModel h={h} />
+        ) : equipment.some((item) => item.slot === "accessory") ? (
           <mesh position={[h * 0.22, h * 0.48, 0]} castShadow>
             <boxGeometry args={[h * 0.12, h * 0.16, h * 0.14]} />
             <WorldMaterial tone="timber" />
           </mesh>
-        )}
+        ) : null}
       </group>
     </group>
   );

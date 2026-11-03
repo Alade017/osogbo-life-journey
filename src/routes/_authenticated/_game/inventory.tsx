@@ -1,19 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import {
-  Backpack,
-  Check,
-  GlassWater,
-  Package,
-  Shirt,
-  Smartphone,
-  type LucideIcon,
-} from "lucide-react";
+import { Backpack, GlassWater, Package, Shirt, Smartphone, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { q, rpc, useGameAction } from "@/lib/game";
 import { pageMeta } from "@/lib/seo";
-import { Chip, EmptyState, PageHeader } from "@/components/game/ui";
+import { EmptyState } from "@/components/game/ui";
 import { CardListSkeleton } from "@/components/game/loading-skeletons";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,11 +26,12 @@ import {
   normalizeEquippedItems,
 } from "@/lib/equipment-service";
 import { getItemArt } from "@/lib/item-art";
-import { Avatar } from "@/components/game/Avatar";
+import type { Appearance } from "@/game/avatar-appearance";
+import { CharacterPreview } from "@/components/3d/CharacterPreview";
 import "@/components/game/profile-inventory.css";
 
 export const Route = createFileRoute("/_authenticated/_game/inventory")({
-  head: () => pageMeta("Inventory", "Items your character carries around Osogbo."),
+  head: () => pageMeta("Wardrobe", "Items your character carries around Osogbo."),
   component: InventoryPage,
 });
 
@@ -87,11 +80,11 @@ export function InventoryPage() {
     },
   );
 
-  if (isLoading) return <CardListSkeleton label="Loading inventory" cards={4} />;
+  if (isLoading) return <CardListSkeleton label="Loading wardrobe" cards={4} />;
   if (isError)
     return (
-      <section className="game-panel p-5" role="alert">
-        <h1 className="text-lg font-bold text-ink">Unable to load inventory</h1>
+      <section className="pi-panel" role="alert">
+        <h1 className="text-lg font-bold text-ink">Unable to load your wardrobe</h1>
         <p className="mt-1 text-sm text-muted-foreground">{error.message}</p>
         <Button
           className="mt-4"
@@ -132,107 +125,118 @@ export function InventoryPage() {
       : "This item cannot be equipped.";
   const categoryFilters: (InventoryCategory | "all")[] = ["all", ...INVENTORY_CATEGORIES];
   const normalizedEquipment = normalizeEquippedItems(equipment);
-  const previewEquipment = selectedSlot
-    ? [...normalizedEquipment.filter((item) => item.slot !== selectedSlot), { slot: selectedSlot }]
-    : normalizedEquipment;
+  const wornNow = normalizedEquipment.map((entry) => ({ slot: entry.slot, item: entry.item }));
+  // Trying an item on: the stage shows the selected item in its slot, so 3D models appear live.
+  const previewEquipment =
+    selectedSlot && selectedItem
+      ? [
+          ...wornNow.filter((entry) => entry.slot !== selectedSlot),
+          { slot: selectedSlot, item: selectedItem.item },
+        ]
+      : wornNow;
+  const canTryOn = !!selectedSlot && !equipError;
 
   return (
     <div className="pi-page pi-inventory">
-      <PageHeader
-        eyebrow="Your collection"
-        title="Inventory"
-        subtitle={`${inventory.length} item types · ${countInventoryUnits(inventory)} items in your bag`}
-      />
+      <header className="pi-masthead">
+        <p className="pi-eyebrow">Your collection</p>
+        <h1>Wardrobe</h1>
+        <p className="pi-sub">
+          {inventory.length} item types · {countInventoryUnits(inventory)} items in your bag
+        </p>
+      </header>
 
-      <section className="pi-look game-panel" aria-label="Your look">
-        <div className="pi-look-avatar">
-          <Avatar
-            appearance={(character?.appearance as object) ?? {}}
-            gender={character?.gender ?? "nonbinary"}
-            size={104}
-            equipment={previewEquipment}
-          />
-        </div>
-        <div>
-          <p className="pi-kicker">Your look</p>
-          {equipmentLoading ? (
-            <p className="pi-note" role="status">
-              Loading equipment…
-            </p>
-          ) : equipmentError ? (
-            <div className="pi-slot-actions">
-              <p className="pi-note">Equipment couldn't be loaded.</p>
-              <Button
-                size="sm"
-                variant="outline"
-                disabled={isRefetchingEquipment}
-                onClick={() => void refetchEquipment()}
-              >
-                {isRefetchingEquipment ? "Retrying…" : "Retry"}
-              </Button>
-            </div>
-          ) : (
-            <ul className="pi-slot-grid">
-              {EQUIPMENT_SLOTS.map((slot) => {
-                const equipped = equipment?.find((item) => item.slot === slot);
-                const equippedArt = getItemArt(equipped?.item?.slug);
-                return (
-                  <li
-                    key={slot}
-                    className={`pi-slot ${equipped ? "is-equipped" : ""} ${requestedSlot === slot ? "is-selected" : ""}`}
-                  >
-                    <span className="pi-slot-name">{slot}</span>
-                    <strong>{equipped?.item?.name ?? "Empty"}</strong>
-                    {equippedArt ? (
-                      <img src={equippedArt} alt="" loading="lazy" width={40} height={40} />
-                    ) : equipped ? (
-                      <Check size={16} aria-hidden="true" />
-                    ) : (
-                      <Shirt size={16} aria-hidden="true" />
-                    )}
-                    <div className="pi-slot-actions">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        aria-pressed={requestedSlot === slot}
-                        onClick={() => {
-                          setRequestedSlot(slot);
-                          setActiveCategory("all");
-                          setSelectedId(null);
-                          window.requestAnimationFrame(() =>
-                            document.getElementById("inventory-items")?.scrollIntoView({
-                              behavior: "smooth",
-                              block: "start",
-                            }),
-                          );
-                        }}
-                      >
-                        {equipped ? "Change" : "Choose"}
-                      </Button>
-                      {equipped && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={unequipItem.isPending}
-                          onClick={() => unequipItem.mutate(slot)}
-                        >
-                          Unequip
-                        </Button>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
+      <section className="pi-stage" aria-label="Your character">
+        <CharacterPreview
+          appearance={(character?.appearance ?? {}) as unknown as Appearance}
+          gender={character?.gender ?? "nonbinary"}
+          equipment={previewEquipment}
+          label="Your character, dressed for the wardrobe"
+        />
+        <div className="pi-stage-foot">
+          <div>
+            <strong>{selectedItem?.item?.name ?? "Your look"}</strong>
+            <span>
+              {selectedItem && canTryOn
+                ? "Previewing on your character"
+                : "Choose an item to try it on"}
+            </span>
+          </div>
         </div>
       </section>
+
+      {equipmentLoading ? (
+        <p className="pi-note" role="status">
+          Loading equipment…
+        </p>
+      ) : equipmentError ? (
+        <div className="pi-slot-actions">
+          <p className="pi-note">Equipment couldn't be loaded.</p>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={isRefetchingEquipment}
+            onClick={() => void refetchEquipment()}
+          >
+            {isRefetchingEquipment ? "Retrying…" : "Retry"}
+          </Button>
+        </div>
+      ) : (
+        <ul className="pi-slots" aria-label="Equipment slots">
+          {EQUIPMENT_SLOTS.map((slot) => {
+            const equipped = equipment?.find((entry) => entry.slot === slot);
+            return (
+              <li
+                key={slot}
+                className={`pi-slot ${requestedSlot === slot ? "is-selected" : ""}`}
+              >
+                <span className="pi-slot-name">{slot}</span>
+                {equipped ? (
+                  <strong className="pi-slot-item">{equipped.item?.name ?? "Equipped"}</strong>
+                ) : (
+                  <span className="pi-slot-empty">Nothing on</span>
+                )}
+                <div className="pi-slot-actions">
+                  <button
+                    type="button"
+                    className="pi-chip-btn pi-chip-btn-primary"
+                    aria-pressed={requestedSlot === slot}
+                    onClick={() => {
+                      setRequestedSlot(slot);
+                      setActiveCategory("all");
+                      setSelectedId(null);
+                      window.requestAnimationFrame(() =>
+                        document.getElementById("inventory-items")?.scrollIntoView({
+                          behavior: "smooth",
+                          block: "start",
+                        }),
+                      );
+                    }}
+                  >
+                    {equipped ? "Change" : "Choose"}
+                  </button>
+                  {equipped && (
+                    <button
+                      type="button"
+                      className="pi-chip-btn"
+                      disabled={unequipItem.isPending}
+                      onClick={() => unequipItem.mutate(slot)}
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
 
       {!items?.length ? (
         <EmptyState title="Empty backpack" body="You don't own any items yet." />
       ) : (
         <>
-          <div className="pi-filters" role="group" aria-label="Filter inventory by category">
+          <div className="pi-filters" role="group" aria-label="Filter bag by category">
             {categoryFilters.map((category) => (
               <button
                 key={category}
@@ -261,8 +265,8 @@ export function InventoryPage() {
             </p>
           )}
 
-          <div className="pi-layout">
-            <div className="pi-grid" id="inventory-items">
+          <div className="pi-bag-layout">
+            <div className="pi-bag" id="inventory-items">
               {compatibleItems.map((item) => {
                 const Icon = ICONS[item.item?.icon ?? ""] ?? Package;
                 const artwork = getItemArt(item.item?.slug);
@@ -270,39 +274,34 @@ export function InventoryPage() {
                   <button
                     key={item.id}
                     type="button"
-                    className="game-panel pi-card"
+                    className="pi-tile"
                     aria-pressed={selectedId === item.id}
                     onClick={() => setSelectedId(item.id)}
                   >
-                    <span className="pi-card-art" aria-hidden="true">
+                    <span className="pi-tile-art" aria-hidden="true">
                       {artwork ? (
-                        <img src={artwork} alt="" loading="lazy" width={72} height={72} />
+                        <img src={artwork} alt="" loading="lazy" width={64} height={64} />
                       ) : (
-                        <Icon className="h-7 w-7" />
+                        <Icon size={26} />
                       )}
                     </span>
                     <strong>{item.item?.name}</strong>
-                    <small>{INVENTORY_CATEGORY_LABELS[normalizeInventoryCategory(item.item)]}</small>
-                    <Chip>×{item.quantity}</Chip>
+                    <small>
+                      {INVENTORY_CATEGORY_LABELS[normalizeInventoryCategory(item.item)]} · ×
+                      {item.quantity}
+                    </small>
                   </button>
                 );
               })}
             </div>
 
-            <aside className="pi-detail game-panel" aria-live="polite">
+            <aside className="pi-detail" aria-live="polite">
               {selectedItem ? (
                 <>
-                  <div className="pi-detail-stage" aria-hidden="true">
-                    {getItemArt(selectedItem.item?.slug) ? (
-                      <img src={getItemArt(selectedItem.item?.slug)!} alt="" />
-                    ) : (
-                      <Package size={62} />
-                    )}
-                  </div>
-                  <p className="pi-kicker">Item details</p>
+                  <p className="pi-eyebrow">Item details</p>
                   <h2>{selectedItem.item?.name}</h2>
-                  <p className="pi-note">{selectedItem.item?.description}</p>
-                  <dl>
+                  <p className="pi-sub">{selectedItem.item?.description}</p>
+                  <dl className="pi-detail-facts">
                     <div>
                       <dt>Category</dt>
                       <dd>
@@ -342,7 +341,7 @@ export function InventoryPage() {
                             equipItem.mutate({ id: selectedItem.id, slot: selectedSlot })
                           }
                         >
-                          {equipItem.isPending ? "Equipping…" : `Equip (${selectedSlot})`}
+                          {equipItem.isPending ? "Putting on…" : `Wear (${selectedSlot})`}
                         </Button>
                       )}
                       <Button
@@ -366,7 +365,7 @@ export function InventoryPage() {
                   )}
                 </>
               ) : (
-                <p className="pi-note">Select an item to see its details.</p>
+                <p className="pi-note">Select an item to try it on and see its details.</p>
               )}
             </aside>
           </div>
