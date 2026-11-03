@@ -156,6 +156,7 @@ export function MapCanvas({
       {rendererState === "loading" && (
         <div className="town-map-renderer-status">
           <WorldLoadingIndicator
+            presentation="screen"
             title="Opening the map"
             detail="Starting the interactive town map…"
           />

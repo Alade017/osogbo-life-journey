@@ -1834,12 +1834,12 @@
   max-height: min(38dvh, 330px);
   gap: 12px;
   overflow-y: auto;
-  border: 1px solid rgb(255 255 255 / 90%);
+  border: 1px solid var(--border);
   border-radius: 22px;
   padding: 16px;
-  background: rgb(255 255 255 / 96%);
-  color: var(--foreground);
-  box-shadow: 0 12px 34px rgb(24 39 61 / 20%);
+  background: var(--popover);
+  color: var(--popover-foreground);
+  box-shadow: var(--elevation-card);
   backdrop-filter: blur(14px);
   animation: house-accessory-rise 180ms ease-out both;
 }
@@ -2521,3 +2521,149 @@
     max-height: 38%;
   }
 }
+
+/* Scene actions float over the room, sharing the Shop control's white surface. */
+.house-page.house-page-fill .house-scene-controls {
+  position: absolute;
+  z-index: 6;
+  top: 14px;
+  right: max(14px, env(safe-area-inset-right));
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 78px);
+  animation: house-scene-controls-in 220ms ease-out both;
+}
+
+.house-page.house-page-fill .house-scene-controls :is(.house-edit-toggle, .house-scene-exit) {
+  position: static;
+  display: inline-flex;
+  min-height: 44px;
+  min-width: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--house-control-surface, var(--popover));
+  color: var(--brand-ink);
+  box-shadow: var(--elevation-card);
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: 0;
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.house-scene-exit span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.house-scene-exit svg { flex-shrink: 0; }
+
+.house-page.house-page-fill .house-scene-controls button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: var(--elevation-lift);
+}
+
+.house-page.house-page-fill .house-scene-controls button:active:not(:disabled) { transform: scale(0.96); }
+.house-page.house-page-fill .house-scene-controls button:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+.house-scene-controls button:disabled { cursor: default; opacity: 0.6; }
+.house-scene-control-spinner { animation: home-task-spin 800ms linear infinite; }
+
+.house-scene-notices {
+  position: absolute;
+  z-index: 6;
+  top: 70px;
+  right: 14px;
+  max-width: min(300px, calc(100% - 28px));
+  pointer-events: none;
+}
+
+.house-scene-notices p {
+  margin: 0 0 6px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--popover-foreground);
+  background: var(--popover);
+  box-shadow: var(--elevation-card);
+  font-size: 12px;
+}
+
+@keyframes house-scene-controls-in {
+  from { opacity: 0; translate: 0 6px; }
+  to { opacity: 1; translate: 0 0; }
+}
+
+@media (max-width: 520px) {
+  .house-page-fill .house-home-badge { width: 42px; min-width: 42px; padding: 10px; box-sizing: border-box; }
+  .house-page-fill .house-home-badge span { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .house-page.house-page-fill .house-scene-controls,
+  .house-scene-control-spinner { animation: none; }
+  .house-page.house-page-fill .house-scene-controls button { transition: none; }
+}
+
+.reduce-motion .house-page.house-page-fill .house-scene-controls,
+.reduce-motion .house-scene-control-spinner { animation: none; }
+.reduce-motion .house-page.house-page-fill .house-scene-controls button { transition: none; }
+
+/* A single viewport-sized world, with interface controls layered over it. */
+.city-game.navigation-redesign:has(.house-page-fill) {
+  height: 100dvh;
+  min-height: 100dvh;
+  padding-bottom: 0 !important;
+  overflow: hidden;
+}
+
+.city-game.navigation-redesign :is(.home-dashboard, .hd-stage, .house-page.house-page-fill) {
+  height: 100dvh;
+  min-height: 100dvh;
+  margin: 0;
+}
+
+.city-game.navigation-redesign .house-page.house-page-fill {
+  padding: 0;
+  overflow: hidden;
+}
+
+.city-game.navigation-redesign .house-page.house-page-fill:not(.is-editing) .house-room-card,
+.city-game.navigation-redesign .house-page.house-page-fill.is-editing .house-room-card {
+  height: 100dvh;
+  min-height: 0;
+}
+
+.city-game.navigation-redesign .house-page.house-page-fill .house-3d-scene {
+  height: 100%;
+  min-height: 0;
+  border-radius: 0;
+}
+
+.house-page.house-page-fill .house-scene-controls,
+.house-page.house-page-fill .house-home-badge {
+  top: var(--house-scene-controls-top, max(14px, env(safe-area-inset-top)));
+}
+
+@media (max-width: 1023px) {
+  .city-game.navigation-redesign .house-page.house-page-fill.is-editing .house-room-card {
+    height: calc(60dvh - var(--game-dock-space, 92px));
+  }
+}
+
+.home-task-options { display: grid; grid-template-columns: repeat(auto-fit,minmax(140px,1fr)); gap: .5rem; margin: .75rem 0; }
+.home-task-options button { display:flex; align-items:center; justify-content:space-between; gap:.5rem; padding:.75rem; border:1px solid var(--border); border-radius:1rem; background:var(--card); color:var(--foreground); text-align:left; }
+.home-task-options button[aria-pressed="true"] { border-color:var(--primary); background:var(--muted); }
+.home-task-options small { opacity:.7; white-space:nowrap; }
+.house-task-progress { position:absolute; z-index:30; bottom:calc(var(--game-dock-clearance,80px) + 1rem); left:50%; transform:translateX(-50%); width:min(380px,calc(100% - 2rem)); border-radius:1.25rem; padding:1rem; background:var(--card); color:var(--foreground); box-shadow:0 8px 24px #0002; display:grid; grid-template-columns:1fr auto; gap:.6rem; }
+.house-task-progress strong,.house-task-progress span {display:block;}
+.house-task-progress span {font-size:.8rem;opacity:.75;margin-top:.25rem;}
+.house-task-progress progress {grid-column:1; width:100%;accent-color:var(--primary);}
+.house-task-progress button {grid-column:2;grid-row:1 / span 2;align-self:center;padding:.6rem .85rem;border-radius:1rem;background:var(--muted);color:var(--foreground);}

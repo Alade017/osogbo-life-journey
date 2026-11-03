@@ -1,10 +1,19 @@
 import { Link } from "@tanstack/react-router";
 import { Briefcase, House, Map } from "lucide-react";
+import type { ReactNode } from "react";
 
-export function GameMobileNav({ hidden, onNavigate }: { hidden: boolean; onNavigate: () => void }) {
+export function GameMobileNav({
+  hidden = false,
+  onNavigate,
+  children,
+}: {
+  hidden?: boolean;
+  onNavigate: () => void;
+  children?: ReactNode;
+}) {
   return (
     <nav
-      className="game-mobile-nav game-floating-nav"
+      className="game-mobile-nav game-floating-nav game-persistent-dock"
       aria-label="Game navigation"
       aria-hidden={hidden || undefined}
       inert={hidden || undefined}
@@ -37,6 +46,7 @@ export function GameMobileNav({ hidden, onNavigate }: { hidden: boolean; onNavig
         <Briefcase className="h-4.75 w-4.75" />
         <span>Career Life</span>
       </Link>
+      {children}
     </nav>
   );
 }

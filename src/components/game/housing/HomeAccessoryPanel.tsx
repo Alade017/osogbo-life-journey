@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Check, Clock3, CookingPot, Sparkles, X } from "lucide-react";
-import { homeFurnitureAction } from "@/lib/home-furniture-actions";
-import { ACTION_CATALOG, NEED_RULES, type NeedName } from "@/lib/life-simulation";
+import { homeFurnitureActions, homeTaskSeconds } from "@/lib/home-furniture-actions";
+import { ACTION_CATALOG, NEED_RULES, type LifeActionId, type NeedName } from "@/lib/life-simulation";
 import type { HousePlacement } from "./HouseRoomScene";
 
 // Meal preference is presentation only: all choices use the existing validated cook action.
@@ -29,11 +29,16 @@ export function HomeAccessoryPanel({
   pending: boolean;
   error: string;
   onClose: () => void;
-  onUse: () => Promise<boolean>;
+  onUse: (action: LifeActionId) => Promise<boolean>;
 }) {
   const [meal, setMeal] = useState<string>(MEALS[0].id);
   const [confirmed, setConfirmed] = useState(false);
-  const actionId = homeFurnitureAction(placement.item_id);
+  const [submitting, setSubmitting] = useState(false);
+  const inFlight = useRef(false);
+  const working = pending || submitting;
+  const choices = homeFurnitureActions(placement.item_id);
+  const [chosenAction, setChosenAction] = useState<LifeActionId | null>(null);
+  const actionId = chosenAction ?? choices[0];
   if (!actionId) return null;
   const action = ACTION_CATALOG[actionId];
   const cooking = actionId === "cook";
@@ -47,8 +52,16 @@ export function HomeAccessoryPanel({
         ? "Bed"
         : placement.item_id.replaceAll("-", " ");
   const runAccessory = async () => {
+    if (inFlight.current || pending || disabledReason) return;
+    inFlight.current = true;
+    setSubmitting(true);
     setConfirmed(false);
-    if (await onUse()) setConfirmed(true);
+    try {
+      if (await onUse(actionId)) setConfirmed(true);
+    } finally {
+      inFlight.current = false;
+      setSubmitting(false);
+    }
   };
   return (
     <section className="home-accessory-panel" role="region" aria-label={`${accessoryLabel} action`}>
@@ -69,10 +82,14 @@ export function HomeAccessoryPanel({
           <X size={17} aria-hidden="true" />
         </button>
       </header>
-      <div className="home-accessory-facts">
+      <div className="home-task-options" role="group" aria-label="Accessory tasks">
+ {choices.map(id => <button key={id} type="button" aria-pressed={actionId === id} disabled={working}
+ onClick={() => {setChosenAction(id); setConfirmed(false);}}>{ACTION_CATALOG[id].name}<small>{homeTaskSeconds(id)}s</small></button>)}
+ </div>
+ <div className="home-accessory-facts">
         <span>
           <Clock3 size={14} />
-          {action.durationMinutes} game min
+          {homeTaskSeconds(actionId)}s � {action.durationMinutes} game min
         </span>
         <span>
           {action.cost === 0
@@ -98,8 +115,11 @@ export function HomeAccessoryPanel({
                 value={item.id}
                 aria-label={item.name}
                 checked={meal === item.id}
-                disabled={pending}
-                onChange={() => setMeal(item.id)}
+                disabled={working}
+                onChange={() => {
+                  setMeal(item.id);
+                  setConfirmed(false);
+                }}
               />
               <span className="home-meal-symbol" aria-hidden="true">
                 {item.symbol}
@@ -138,12 +158,12 @@ export function HomeAccessoryPanel({
       )}
       <button
         type="button"
-        className={`home-task-start${pending ? " is-pending" : ""}${confirmed ? " is-confirmed" : ""}`}
-        disabled={!!disabledReason || pending || confirmed}
-        aria-busy={pending}
+        className={`home-task-start${working ? " is-pending" : ""}`}
+        disabled={!!disabledReason || working}
+        aria-busy={working}
         onClick={() => void runAccessory()}
       >
-        {pending ? (
+        {working ? (
           <span className="home-task-button-label">
             <span className="home-task-spinner" aria-hidden="true" />
             Starting {actionLabel.toLowerCase()}…
@@ -151,7 +171,7 @@ export function HomeAccessoryPanel({
         ) : confirmed ? (
           <span className="home-task-button-label">
             <Check size={17} aria-hidden="true" />
-            Done — needs updated
+            {actionLabel} again
           </span>
         ) : (
           actionLabel

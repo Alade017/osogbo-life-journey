@@ -74,6 +74,7 @@ export function TravelPanel({
     return (
       <div className="travel-state-message">
         <WorldLoadingIndicator
+          presentation="screen"
           title={`Travelling to ${state.destinationName}…`}
           detail={`${TRAVEL_MODE_DETAILS[state.mode].label} journey · ${state.estimatedMinutes} game minutes`}
           progress={progress}

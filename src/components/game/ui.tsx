@@ -106,7 +106,11 @@ export function EmptyState({ title, body }: { title: string; body: string }) {
 export function LoadingState() {
   return (
     <div className="game-inline-loading" role="status" aria-label="Loading">
-      <WorldLoadingIndicator title="Loading your game" detail="Preparing your world…" />
+      <WorldLoadingIndicator
+        presentation="screen"
+        title="Loading your game"
+        detail="Preparing your world…"
+      />
     </div>
   );
 }

@@ -7,6 +7,8 @@ import { cn } from "@/lib/utils";
 import { HomeDashboard } from "@/components/game/HomeDashboard";
 import { GameNeedsRail } from "@/components/game/GameNeedsRail";
 import { PhoneLauncher } from "@/components/game/PhoneLauncher";
+import { Smartphone } from "lucide-react";
+import { useGameViewport } from "@/hooks/use-game-viewport";
 import { GameMobileNav } from "@/components/game/GameMobileNav";
 import { handleGamePageLinkClick } from "@/components/game/phone-navigation";
 import { HousingChooser } from "@/components/game/housing/HousingChooser";
@@ -30,12 +32,14 @@ import "@/components/game/game-navigation.css";
 import "@/components/game/game-cards.css";
 import "@/components/game/dashboard-ui-refresh.css";
 import "@/components/game/remaining-game-ui.css";
+import "@/components/game/game-dock.css";
 
 export const Route = createFileRoute("/_authenticated/_game")({
   component: GameLayout,
 });
 
 function GameLayout() {
+  useGameViewport();
   const navigate = useNavigate();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const visitingFriend = useRouterState({
@@ -246,15 +250,28 @@ function GameLayout() {
 
           <GameNeedsRail player={player} />
 
-          <GameMobileNav hidden={phoneOpen} onNavigate={() => setPhoneOpen(false)} />
-          <div className="game-phone-fab">
+          <GameMobileNav hidden={phoneOpen} onNavigate={() => setPhoneOpen(false)}>
             <PhoneLauncher
               compact
-              className="game-phone-fab-trigger"
+              className="game-dock-phone"
               open={phoneOpen}
               onOpenChange={setPhoneOpen}
+              dock={
+                <GameMobileNav onNavigate={() => setPhoneOpen(false)}>
+                  <button
+                    type="button"
+                    className="game-dock-phone is-open"
+                    aria-label="Close phone"
+                    aria-expanded="true"
+                    onClick={() => setPhoneOpen(false)}
+                  >
+                    <Smartphone size={20} aria-hidden="true" />
+                    <span>Phone</span>
+                  </button>
+                </GameMobileNav>
+              }
             />
-          </div>
+          </GameMobileNav>
           <HousingChooser
             open={housingOpen}
             pending={housingPending || (housingRequested && housingSource === "profile")}

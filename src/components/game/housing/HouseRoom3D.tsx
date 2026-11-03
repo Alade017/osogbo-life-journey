@@ -7,8 +7,6 @@ import {
   useState,
   type RefObject,
 } from "react";
-import { useThree } from "@react-three/fiber";
-import * as THREE from "three";
 import { Canvas, type ThreeEvent } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import { Plane, Vector3 } from "three";
@@ -770,15 +768,17 @@ function FoodCourier({
 }
 
 function FoodPackage({
+  onCollect,
   delivery,
   position,
 }: {
   delivery: FoodDelivery;
+  onCollect?: ((id: string) => void) | undefined;
   position: [number, number, number];
 }) {
   const overlayPortal = useContext(RoomOverlayContext);
   return (
-    <group position={position}>
+    <group position={position} onClick={event => {event.stopPropagation(); if(event.delta <= 4) onCollect?.(delivery.id);}}>
       <mesh castShadow receiveShadow position={[0, 0.22, 0]}>
         <boxGeometry args={[0.5, 0.38, 0.42]} />
         <WorldMaterial tone="clay" />
@@ -864,7 +864,8 @@ function SlotObject({
           onPointerCancel={onDragCancel}
           onClick={(event) => {
             event.stopPropagation();
-            if (!inputBlocked && !suppressClick(placement)) onSelectPlacement(placement);
+            if (event.delta <= 4 && !inputBlocked && !suppressClick(placement))
+              onSelectPlacement(placement);
           }}
         >
           <group scale={WORLD_SCALE.furniture}>
@@ -914,25 +915,6 @@ function SlotObject({
   );
 }
 
-function FitCamera({ width, depth }: { width: number; depth: number }) {
-  const { camera, size } = useThree();
-  useEffect(() => {
-    const cam = camera as THREE.PerspectiveCamera;
-    cam.aspect = size.width / size.height;
-    cam.updateProjectionMatrix();
-
-    const vFov = THREE.MathUtils.degToRad(cam.fov);
-    const hFov = 2 * Math.atan(Math.tan(vFov / 2) * cam.aspect);
-    const halfExtent = (Math.max(width, depth) / 2) * 1.3;
-    const distance = halfExtent / Math.tan(Math.min(vFov, hFov) / 2);
-
-    const dir = new THREE.Vector3(0, 4, 12).normalize();
-    cam.position.copy(dir.multiplyScalar(distance));
-    cam.lookAt(0, 0, 0);
-  }, [size.width, size.height, width, depth, camera]);
-  return null;
-}
-
 export function HouseRoom3D({
   inputBlocked = false,
   houseTypeId,
@@ -941,6 +923,7 @@ export function HouseRoom3D({
   gender = "nonbinary",
   equipment = [],
   animationState = "idle",
+  actorPosition, actorFacing = "south", taskPose, onWalk, onCollectPackage,
   activityRequestId = null,
   activityLabel = null,
   slots,
@@ -1057,7 +1040,7 @@ export function HouseRoom3D({
           gl={{ antialias: false, powerPreference: "low-power" }}
         >
           <WorldLighting size={Math.max(width, depth) * 1.5} />
-<FitCamera width={width} depth={depth} />
+
           <OsogboRoomPrototype
             houseTypeId={houseTypeId}
             width={width}
@@ -1065,7 +1048,13 @@ export function HouseRoom3D({
             editMode={editMode}
           />
           <RoomFloor houseTypeId={houseTypeId} width={width} depth={depth} />
-          <RoomCharacter
+          {!editMode && !inputBlocked && onWalk && <mesh rotation={[-Math.PI/2,0,0]} position={[0,.035,0]}
+            onClick={event => {event.stopPropagation(); if(event.delta <= 4) onWalk([event.point.x,.06,event.point.z]);}}>
+            <planeGeometry args={[width-.6,depth-.6]} /><meshBasicMaterial transparent opacity={0} depthWrite={false} />
+          </mesh>}
+          {actorPosition ? <WorldCharacter name={characterName} appearance={appearance} gender={gender}
+            equipment={equipment} position={actorPosition} facing={actorFacing} animation={animationState}
+            {...(taskPose ? {taskPose} : {})} /> : <RoomCharacter
             name={characterName}
             appearance={appearance}
             gender={gender}
@@ -1075,7 +1064,7 @@ export function HouseRoom3D({
             activityLabel={activityLabel}
             position={[0, 0.06, depth * 0.18]}
             bedPosition={bedPosition}
-          />
+          />}}
           {foodDeliveries
             .filter(
               (delivery) =>
@@ -1093,6 +1082,7 @@ export function HouseRoom3D({
               <FoodPackage
                 key={delivery.id}
                 delivery={delivery}
+                onCollect={!inputBlocked && !editMode ? onCollectPackage : undefined}
                 position={[
                   width * 0.22 + index * 0.56,
                   0.06,
@@ -1171,6 +1161,8 @@ export function HouseRoom3D({
             width={width}
             depth={depth}
             stage
+            horizontalOrbit={!editMode}
+            verticalOrbit={!editMode}
             polarAngle={editMode ? Math.PI / 5 : Math.PI / 4}
             target={editMode ? [0, 0.25, 0] : [0, WORLD_SCALE.door * 0.65, 0]}
             enabled={!inputBlocked && !dragPreview}

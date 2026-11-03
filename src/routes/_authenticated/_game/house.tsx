@@ -1,8 +1,11 @@
+import { useHouseMovement } from "@/hooks/use-house-movement";
+import { findRoomPath, placementPoint, packagePoint, roomObstacles, type RoomPoint } from "@/game/house-navigation";
+import { HOUSE_ROOM_SIZE } from "@/components/game/housing/house-room-contract";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { House, Moon, Sunrise, WifiOff } from "lucide-react";
+import { House, Moon, Sunrise, WifiOff, DoorOpen, LoaderCircle } from "lucide-react";
 import { HouseEditSheets } from "@/components/game/housing/HouseEditSheets";
 import { HomeFoodDeliveryPanel } from "@/components/game/housing/HomeFoodDeliveryPanel";
 import type {
@@ -14,9 +17,9 @@ import type {
 import { HomeAccessoryPanel } from "@/components/game/housing/HomeAccessoryPanel";
 import { HouseRoomRenderer } from "@/components/game/housing/HouseRoomRenderer";
 import { useGameTime } from "@/components/game/GameTimeProvider";
-import { homeFurnitureAction } from "@/lib/home-furniture-actions";
+import { homeFurnitureAction, homeFurnitureActions } from "@/lib/home-furniture-actions";
 import { foodDeliveryService } from "@/lib/food-delivery-service";
-import { ACTION_CATALOG } from "@/lib/life-simulation";
+import { ACTION_CATALOG, type LifeActionId } from "@/lib/life-simulation";
 import { HousingReliefPanel } from "@/components/game/housing/HousingReliefPanel";
 import { housingReliefQueryKey } from "@/lib/housing-relief-client";
 import { canonicalHomeOptions } from "@/lib/living-cost-service";
@@ -697,6 +700,26 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           : placement,
       )
     : placements;
+  const [roomWidth, roomDepth] = HOUSE_ROOM_SIZE[serverState?.house?.house_type_id ?? "shared-room"] ?? HOUSE_ROOM_SIZE["shared-room"]!;
+  const movement = useHouseMovement(serverState?.house?.id ?? "none", [0,.06,roomDepth*.18]);
+  const [walkingTask, setWalkingTask] = useState<string | null>(null);
+  const interactionVersion = useRef(0);
+  const interactionLock = useRef(false);
+  const [startingTask, setStartingTask] = useState(false);
+  const [cancellingTask, setCancellingTask] = useState(false);
+  const autoCompleting = useRef<string | null>(null);
+  const [clockNow, setClockNow] = useState(Date.now());
+  const obstacles = roomObstacles(serverState?.house?.house_type_id ?? "shared-room",roomWidth,roomDepth,placements,slots);
+  const walkTo = (point:RoomPoint, interact=false) => {
+    const path = findRoomPath(movement.positionRef.current, point, roomWidth,roomDepth,obstacles,interact);
+    if (!path) {setActivityError("There is no clear path. Move furniture to leave a walkway.");return Promise.resolve(false);}
+    return movement.walk(path);
+  };
+  useEffect(() => {
+    const stop = () => {if(document.hidden || !navigator.onLine) {interactionVersion.current++;setWalkingTask(null);}};
+    document.addEventListener("visibilitychange",stop);window.addEventListener("offline",stop);
+    return () => {interactionVersion.current++;document.removeEventListener("visibilitychange",stop);window.removeEventListener("offline",stop);};
+  }, []);
   const inventory = serverState?.inventory ?? [];
   const outfit = serverState?.outfit ?? EMPTY_OUTFIT;
   const appearance = (
@@ -798,43 +821,68 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       y,
     });
   };
-  const interactWithPlacement = async (placement: HousePlacement) => {
-    const action = homeFurnitureAction(placement.item_id);
-    if (!action || usingPlacementId || isOffline || !gameTime.ready || gameTime.busy) return false;
-    if (!isInsideHome) {
-      setActivityError("Enter your home before using its accessories.");
-      return false;
-    }
-    setUsingPlacementId(placement.id);
-    setActivityError("");
+  const interactWithPlacement = async (placement: HousePlacement, choice?:LifeActionId) => {
+    const action = choice ?? homeFurnitureAction(placement.item_id);
+    if (!action || !homeFurnitureActions(placement.item_id).includes(action) || interactionLock.current || isOffline || !gameTime.ready || gameTime.busy || editing) return false;
+    if (!isInsideHome) {setActivityError("Enter your home before using its accessories.");return false;}
+    if (gameTime.simulation.currentAction) {setActivityError("Finish or cancel your current activity first.");return false;}
+    if (gameTime.homeTaskTiming === null) {setActivityError("The home tasks database update is required before using accessories.");return false;}
+    interactionLock.current=true;
+    const version=++interactionVersion.current;
+    setUsingPlacementId(placement.id);setActivityError("");setSelectedPlacement(null);
+    setWalkingTask(ACTION_CATALOG[action].name);
     try {
-      const active = gameTime.simulation.currentAction;
-      if (active && active.actionId !== action) {
-        throw new Error("Finish your current activity before using another accessory.");
-      }
-      if (action === "sleep" && gameTime.sleepElapsedSeconds === null) {
-        throw new Error("The latest home sleep update is needed before you can rest.");
-      }
-      const requestId = active?.requestId ?? crypto.randomUUID();
-      if (!active) {
-        const startError = await gameTime.start(action, requestId);
-        if (startError) throw new Error(startError);
-      }
-      if (action === "sleep") return true;
-      const completeError = await gameTime.complete(requestId, action);
-      if (completeError) throw new Error(completeError);
-      toast.success(ACTION_CATALOG[action].outcome);
+      const arrived=await walkTo(placementPoint(placement,slots,roomWidth,roomDepth),true);
+      if(!arrived || version!==interactionVersion.current) return false;
+      setStartingTask(true);setWalkingTask(null);
+      const error=await gameTime.start(action,crypto.randomUUID());
+      if(error)throw new Error(error);
       return true;
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "That activity could not be completed.";
-      setActivityError(message);
-      toast.error(message);
-      return false;
+    } catch(error) {
+      const message=error instanceof Error?error.message:"That activity could not be started.";
+      setActivityError(message);toast.error(message);return false;
     } finally {
-      setUsingPlacementId(null);
+      interactionLock.current=false;setStartingTask(false);setWalkingTask(null);setUsingPlacementId(null);
     }
   };
+  const collectPackage = async (orderId:string) => {
+    if(interactionLock.current || gameTime.simulation.currentAction || packageCollection.isPending || isOffline || !isInsideHome || editing) return;
+    const waiting=(deliveries.data ?? []).filter(d=>d.deliveryState==="package_waiting").slice(0,4);
+    const index=waiting.findIndex(d=>d.id===orderId);if(index<0)return;
+    interactionLock.current=true;const version=++interactionVersion.current;
+    setWalkingTask("Collect food package");setSelectedPlacement(null);setActivityError("");
+    try {
+      if(await walkTo(packagePoint(index,roomWidth,roomDepth),true) && version===interactionVersion.current) {
+        setStartingTask(true);await packageCollection.mutateAsync(orderId);
+      }
+    } catch(error) {setActivityError(error instanceof Error?error.message:"Collection failed.");}
+    finally {interactionLock.current=false;setWalkingTask(null);setStartingTask(false);}
+  };
+  const timedActivity=gameTime.simulation.currentAction;
+  const taskTiming=gameTime.homeTaskTiming;
+  const taskBusy=!!timedActivity || !!walkingTask || startingTask || cancellingTask;
+  useEffect(()=>{
+    if(!timedActivity || timedActivity.actionId==="sleep")return;
+    const timer=window.setInterval(()=>setClockNow(Date.now()),250);return()=>window.clearInterval(timer);
+  },[timedActivity?.requestId,timedActivity?.actionId]);
+  useEffect(()=>{
+    if(!timedActivity || timedActivity.actionId==="sleep" || !taskTiming || taskTiming.duration<=0 || taskTiming.elapsed<taskTiming.duration ||
+      isOffline || !gameTime.ready || gameTime.busy || gameTime.simulation.paused || cancellingTask || document.hidden || autoCompleting.current===timedActivity.requestId)return;
+    autoCompleting.current=timedActivity.requestId;
+    void gameTime.complete(timedActivity.requestId,timedActivity.actionId).then(error=>{
+      if(error){setActivityError(error);autoCompleting.current=null;}else toast.success(ACTION_CATALOG[timedActivity.actionId].outcome);
+    });
+  },[timedActivity,taskTiming,isOffline,gameTime,cancellingTask]);
+  const cancelTask=async()=>{
+    if(startingTask || gameTime.busy || cancellingTask)return;
+    interactionVersion.current++;movement.cancel();setWalkingTask(null);
+    if(!timedActivity)return;
+    setCancellingTask(true);
+    try {const error=await gameTime.interrupt(timedActivity.requestId);if(error)setActivityError(error);}
+    finally{setCancellingTask(false);}
+  };
+  const displayedElapsed=taskTiming ? Math.min(taskTiming.duration,taskTiming.elapsed +
+    (!isOffline && gameTime.ready && !gameTime.simulation.paused && !document.hidden ? Math.max(0,clockNow-gameTime.simulation.lastUpdatedAt)/1000 : 0)) : 0;
 
   const selectedAction = selectedPlacement ? homeFurnitureAction(selectedPlacement.item_id) : null;
   const avatarEquipment = (["head", "top", "bottom", "shoes", "accessory"] as const).flatMap(
@@ -916,7 +964,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         </div>
         <HouseRoomRenderer
           inputBlocked={
-            !!selectedSlot || !!activeSleep || (!editing && !!selectedPlacement && !!selectedAction)
+            !!selectedSlot || taskBusy || (!editing && !!selectedPlacement && !!selectedAction)
           }
           houseTypeId={house.house_type_id}
           accessoryBand={canonicalHome?.accessoryBand ?? "basic"}
@@ -924,9 +972,12 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           appearance={appearance}
           gender={character?.gender ?? "nonbinary"}
           equipment={avatarEquipment}
-          animationState={
-            currentActivity ? avatarAnimationForActivity(currentActivity.animation) : "idle"
-          }
+          actorPosition={movement.position}
+          actorFacing={movement.facing}
+          {...(currentActivity ? {taskPose: currentActivity.animation === "using_toilet" || currentActivity.animation === "watching" ? "sit" as const : currentActivity.animation === "showering" ? "wash" as const : currentActivity.animation === "cooking" ? "cook" as const : undefined} : {})}
+          onWalk={point=>{if(!editing && !taskBusy && isInsideHome && !isOffline){setActivityError("");void walkTo(point);}}}
+          onCollectPackage={id=>void collectPackage(id)}
+          animationState={movement.walking ? "walk" : currentActivity ? avatarAnimationForActivity(currentActivity.animation) : "idle"}
           activityRequestId={currentActivity?.requestId ?? null}
           activityLabel={currentActivity ? ACTION_CATALOG[currentActivity.actionId].name : null}
           slots={slots}
@@ -934,11 +985,11 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           foodDeliveries={deliveries.data ?? []}
           movingPlacement={editing ? selectedPlacement : null}
           editMode={editing}
-          moveEnabled={editing && !isOffline && !actionMutation.isPending && !activeSleep}
+          moveEnabled={editing && !isOffline && !actionMutation.isPending && !taskBusy}
           onMove={requestMove}
           onMovePosition={requestMoveToPosition}
           onSelectPlacement={(placement) => {
-            if (activeSleep) return;
+            if (taskBusy) return;
             if (!editing) {
               setSelectedSlot(null);
               setSelectedPlacement((current) => (current?.id === placement.id ? null : placement));
@@ -957,6 +1008,77 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             setSelectedSlot(slot);
           }}
         />
+        <div className="house-scene-controls" role="group" aria-label="Home controls">
+          {!editing && canonicalHome && (
+            <button
+              type="button"
+              className="house-scene-exit"
+              disabled={isOffline || homePresence.isPending || taskBusy}
+              aria-busy={homePresence.isPending}
+              onClick={() =>
+                homePresence.mutate(isInsideHome ? "leave_player_home" : "enter_player_home")
+              }
+            >
+              {homePresence.isPending ? (
+                <LoaderCircle
+                  size={16}
+                  className="house-scene-control-spinner"
+                  aria-hidden="true"
+                />
+              ) : (
+                <DoorOpen size={16} aria-hidden="true" />
+              )}
+              <span>
+                {homePresence.isPending
+                  ? "Updating location..."
+                  : isInsideHome
+                    ? activeSleep
+                      ? "Wake up to go outside"
+                      : "Go outside"
+                    : "Travel home"}
+              </span>
+            </button>
+          )}
+          <button
+            className="house-edit-button house-edit-toggle"
+            type="button"
+            aria-label={editing ? "Close shop" : "Shop"}
+            aria-pressed={editing}
+            disabled={taskBusy}
+            onClick={() => {
+              movement.cancel();
+              setEditing((value) => !value);
+              setSelectedPlacement(null);
+              setSelectedSlot(null);
+            }}
+          >
+            {editing ? "Done" : "Shop"}
+          </button>
+        </div>
+        {!editing &&
+          (isOffline ||
+            !gameTime.ready ||
+            activityError ||
+            (gameTime.sleepElapsedSeconds === null &&
+              !activeSleep &&
+              placements.some(
+                (placement) => homeFurnitureAction(placement.item_id) === "sleep",
+              ))) && (
+            <div className="house-scene-notices">
+              {activityError && <p role="alert">{activityError}</p>}
+              {isOffline ? (
+                <p role="status">Reconnect to use your accessories.</p>
+              ) : !gameTime.ready ? (
+                <p role="status">Connecting character needs...</p>
+              ) : gameTime.sleepElapsedSeconds === null &&
+                !activeSleep &&
+                placements.some(
+                  (placement) => homeFurnitureAction(placement.item_id) === "sleep",
+                ) ? (
+                <p role="status">The home sleep update is needed before the bed can be used.</p>
+              ) : null}
+            </div>
+          )}
         {isInsideHome && (
           <HomeFoodDeliveryPanel
             deliveries={deliveries.data ?? []}
@@ -965,9 +1087,15 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             collectionPending={packageCollection.isPending}
             onRetry={() => void deliveries.refetch()}
             onRespond={(orderId, choice) => deliveryResponse.mutate({ orderId, choice })}
-            onCollect={(orderId) => packageCollection.mutate(orderId)}
+            onCollect={(orderId) => void collectPackage(orderId)}
           />
         )}
+        {(movement.walking || walkingTask || startingTask || (timedActivity && !activeSleep)) && <div className="house-task-progress" role="region" aria-label="Current home task">
+          <div><strong>{walkingTask ? "Walking � " + walkingTask : startingTask ? "Connecting�" : timedActivity ? ACTION_CATALOG[timedActivity.actionId].name : "Walking"}</strong>
+          <span role="status">{movement.walking ? "On the way" : taskTiming && timedActivity ? displayedElapsed>=taskTiming.duration ? "Confirming completion�" : Math.ceil(taskTiming.duration-displayedElapsed)+"s remaining" : "Please wait"}</span></div>
+          {timedActivity && taskTiming && <progress max={taskTiming.duration || 1} value={displayedElapsed} aria-label="Task progress" />}
+          <button type="button" disabled={startingTask || gameTime.busy || cancellingTask} onClick={()=>void cancelTask()}>{cancellingTask ? "Cancelling�" : "Cancel"}</button>
+        </div>}
         {activeSleep && (
           <div className="house-sleep-overlay" role="region" aria-label="Sleep controls">
             <div className="house-sleep-status">
@@ -1003,54 +1131,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           </div>
         )}
       </section>
-      {!editing && (
-        <section
-          className="house-needs-actions"
-          aria-label="Home controls"
-          data-accessory-selected={!!selectedPlacement && !!selectedAction}
-        >
-          <h2>{selectedPlacement && selectedAction ? "Accessory" : "Home"}</h2>
-          <p>
-            {activeSleep
-              ? "Resting"
-              : isInsideHome
-                ? selectedPlacement && selectedAction
-                  ? `Use ${ACTION_CATALOG[selectedAction].name.toLowerCase()}`
-                  : "Select an accessory"
-                : "Travel home"}
-          </p>
-          {canonicalHome && (
-            <div className="house-presence-actions">
-              <button
-                type="button"
-                className="house-primary-button"
-                disabled={isOffline || homePresence.isPending || !!activeSleep}
-                onClick={() =>
-                  homePresence.mutate(isInsideHome ? "leave_player_home" : "enter_player_home")
-                }
-              >
-                {homePresence.isPending
-                  ? "Updating location..."
-                  : isInsideHome
-                    ? activeSleep
-                      ? "Wake up to go outside"
-                      : "Go outside"
-                    : "Travel home"}
-              </button>
-            </div>
-          )}
-          {!gameTime.ready && !isOffline && <p role="status">Connecting character needs...</p>}
-          {isOffline && <p role="status">Reconnect to use your accessories.</p>}
-          {gameTime.ready &&
-            gameTime.sleepElapsedSeconds === null &&
-            !activeSleep &&
-            placements.some((placement) => homeFurnitureAction(placement.item_id) === "sleep") && (
-              <p role="status">The home sleep update is needed before the bed can be used.</p>
-            )}
-          {activityError && <p role="alert">{activityError}</p>}
-        </section>
-      )}
-      {!editing && !activeSleep && selectedPlacement && selectedAction && (
+      {!editing && !taskBusy && selectedPlacement && selectedAction && (
         <HomeAccessoryPanel
           key={selectedPlacement.id}
           placement={selectedPlacement}
@@ -1068,23 +1149,10 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           pending={!!usingPlacementId}
           error={activityError}
           onClose={() => setSelectedPlacement(null)}
-          onUse={() => interactWithPlacement(selectedPlacement)}
+          onUse={(action) => interactWithPlacement(selectedPlacement, action)}
         />
       )}
-      <button
-        className="house-edit-button house-edit-toggle"
-        type="button"
-        aria-label={editing ? "Close shop" : "Shop"}
-        aria-pressed={editing}
-        disabled={!!activeSleep}
-        onClick={() => {
-          setEditing((value) => !value);
-          setSelectedPlacement(null);
-          setSelectedSlot(null);
-        }}
-      >
-        {editing ? "Done" : "Shop"}
-      </button>
+
       {editing && (
         <HouseEditSheets
           open

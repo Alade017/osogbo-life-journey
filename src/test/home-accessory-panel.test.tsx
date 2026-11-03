@@ -60,8 +60,41 @@ it("labels a shower action explicitly and confirms the synced needs update", asy
   expect(screen.queryByRole("button", { name: "Go outside" })).not.toBeInTheDocument();
   fireEvent.click(actionButton);
   expect(p.onUse).toHaveBeenCalledOnce();
-  expect(await screen.findByRole("button", { name: "Done — needs updated" })).toBeDisabled();
+  const repeat = await screen.findByRole("button", { name: "Take a shower again" });
+  expect(repeat).toBeEnabled();
   expect(screen.getByRole("status")).toHaveTextContent("Needs updated");
+  fireEvent.click(repeat);
+  expect(p.onUse).toHaveBeenCalledTimes(2);
+});
+
+it("cooks another meal without closing the panel and clears the previous confirmation", async () => {
+  const p = props();
+  render(<HomeAccessoryPanel {...p} />);
+  fireEvent.click(screen.getByRole("button", { name: "Cook Jollof rice" }));
+  expect(await screen.findByRole("button", { name: "Cook Jollof rice again" })).toBeEnabled();
+  fireEvent.click(screen.getByRole("radio", { name: "Indomie & egg" }));
+  expect(screen.queryByText(/Needs updated/)).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Cook Indomie & egg" }));
+  expect(p.onUse).toHaveBeenCalledTimes(2);
+});
+
+it("blocks rapid duplicate requests before the parent reports pending", async () => {
+  let finish!: (ok: boolean) => void;
+  const p = props();
+  p.onUse = vi.fn(
+    () =>
+      new Promise<boolean>((resolve) => {
+        finish = resolve;
+      }),
+  );
+  render(<HomeAccessoryPanel {...p} />);
+  const button = screen.getByRole("button", { name: "Cook Jollof rice" });
+  fireEvent.click(button);
+  fireEvent.click(button);
+  expect(p.onUse).toHaveBeenCalledOnce();
+  expect(button).toBeDisabled();
+  finish(true);
+  expect(await screen.findByRole("button", { name: "Cook Jollof rice again" })).toBeEnabled();
 });
 
 it("presents non-cooking tasks without invented meal options", () => {

@@ -1,0 +1,211 @@
+/* Shared geometry for page content, fixed controls and the phone's portal. */
+:root {
+  --game-navigation-height: 72px;
+  --game-navigation-gap: 10px;
+  --game-dock-space: calc(
+    var(--game-navigation-height) + 2 * var(--game-navigation-gap) + env(safe-area-inset-bottom)
+  );
+}
+
+.city-game.navigation-redesign,
+.phone-dialog-shell {
+  --game-dock-height: var(--game-navigation-height);
+}
+
+.city-game.navigation-redesign {
+  padding-bottom: var(--game-dock-space);
+  scroll-padding-bottom: var(--game-dock-space);
+}
+
+:is(.city-game.navigation-redesign, .phone-dialog-shell)
+  nav.game-mobile-nav.game-floating-nav.game-mobile-nav.game-floating-nav.game-persistent-dock {
+  position: fixed;
+  inset: auto auto
+    calc(var(--game-navigation-gap) + env(safe-area-inset-bottom) + var(--game-keyboard-inset, 0px))
+    50%;
+  z-index: 80;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 4px;
+  width: min(
+    520px,
+    calc(100% - max(12px, env(safe-area-inset-left)) - max(12px, env(safe-area-inset-right)))
+  );
+  max-width: none;
+  height: var(--game-navigation-height);
+  min-height: var(--game-navigation-height);
+  padding: 6px;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: var(--popover);
+  color: var(--popover-foreground);
+  box-shadow: var(--elevation-card);
+  transform: translateX(-50%);
+  opacity: 1;
+  pointer-events: auto;
+}
+
+:is(.city-game.navigation-redesign, .phone-dialog-shell)
+  nav.game-mobile-nav.game-floating-nav.game-persistent-dock
+  :is(.mobile-nav-link, .game-dock-phone) {
+  position: relative;
+  display: grid;
+  grid-template-rows: 24px auto;
+  justify-items: center;
+  align-content: center;
+  justify-self: stretch;
+  gap: 3px;
+  width: 100%;
+  height: 100%;
+  min-width: 44px;
+  min-height: 44px;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 4px 2px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: var(--muted-foreground);
+  box-shadow: none;
+  font: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  transform: none;
+}
+
+:is(.city-game.navigation-redesign, .phone-dialog-shell)
+  nav.game-mobile-nav.game-floating-nav.game-persistent-dock
+  :is(.mobile-nav-link, .game-dock-phone)
+  span {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip: auto;
+  clip-path: none;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 1.2;
+}
+
+:is(.city-game.navigation-redesign, .phone-dialog-shell)
+  nav.game-mobile-nav.game-floating-nav.game-persistent-dock
+  .phone-launcher-icon {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+}
+
+:is(.city-game.navigation-redesign, .phone-dialog-shell)
+  nav.game-mobile-nav.game-floating-nav.game-persistent-dock
+  svg {
+  width: 20px;
+  height: 20px;
+  color: inherit;
+  transform: none;
+}
+
+:is(.city-game.navigation-redesign, .phone-dialog-shell)
+  nav.game-mobile-nav.game-floating-nav.game-persistent-dock
+  :is(.mobile-nav-active, .is-open) {
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+:is(.city-game.navigation-redesign, .phone-dialog-shell)
+  nav.game-mobile-nav.game-floating-nav.game-persistent-dock
+  :is(a, button):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+
+.city-game.navigation-redesign
+  nav.game-mobile-nav.game-floating-nav.game-persistent-dock[aria-hidden="true"] {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Keep a working dock inside the modal focus boundary, below the phone surface. */
+.phone-dialog-shell {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+
+.phone-dialog-shell > .phone-dialog.phone-ui-refresh {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  overflow: hidden;
+  inset: auto auto calc(var(--game-dock-space) + var(--game-keyboard-inset, 0px) + 8px) 50%;
+  width: min(
+    420px,
+    calc(100% - max(20px, env(safe-area-inset-left)) - max(20px, env(safe-area-inset-right)))
+  );
+  height: min(
+    740px,
+    calc(
+      100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) -
+        max(20px, env(safe-area-inset-top))
+    )
+  );
+  min-height: 0;
+  max-height: none;
+  margin: 0;
+  transform: translateX(-50%);
+  pointer-events: auto;
+}
+
+.phone-dialog-shell .phone-screen {
+  height: 100%;
+  min-height: 0;
+}
+
+/* Fixed needs and home controls reserve the same dock boundary on every screen. */
+.city-game.navigation-redesign .game-needs-rail {
+  inset: auto auto calc(var(--game-dock-space) + 8px) max(12px, env(safe-area-inset-left));
+}
+
+.city-game.navigation-redesign.home-scene .game-needs-rail {
+  bottom: calc(var(--game-dock-space) + 8px);
+}
+
+.city-game.navigation-redesign .house-needs-actions {
+  bottom: calc(var(--game-dock-space) + 12px);
+}
+
+.city-game.navigation-redesign .house-page.house-page-fill.is-editing .house-edit-panel {
+  bottom: calc(var(--game-dock-space) + 8px);
+}
+
+.city-game.navigation-redesign .home-accessory-panel {
+  bottom: calc(var(--game-dock-space) + 64px);
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  .phone-dialog-shell > .phone-dialog.phone-ui-refresh {
+    width: min(600px, calc(100% - 32px));
+  }
+}
+
+/* The handset glyph needs no decorative frame inside the navigation button. */
+:is(.city-game.navigation-redesign, .phone-dialog-shell)
+  nav.game-mobile-nav.game-floating-nav.game-persistent-dock .phone-launcher-icon {
+  border: 0;
+  outline: 0;
+  box-shadow: none;
+  border-radius: 0;
+}
+:is(.city-game.navigation-redesign, .phone-dialog-shell)
+  nav.game-mobile-nav.game-floating-nav.game-persistent-dock .phone-launcher-icon::before,
+:is(.city-game.navigation-redesign, .phone-dialog-shell)
+  nav.game-mobile-nav.game-floating-nav.game-persistent-dock .phone-launcher-icon::after { content: none; }

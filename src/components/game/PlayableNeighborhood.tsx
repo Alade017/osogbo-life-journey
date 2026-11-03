@@ -272,6 +272,7 @@ export function PlayableNeighborhood() {
     return (
       <section className="neighborhood-page" aria-label="Playable neighborhood">
         <WorldLoadingIndicator
+          presentation="screen"
           title="Opening the neighbourhood"
           detail="Loading your saved character and location…"
         />
@@ -334,6 +335,7 @@ export function PlayableNeighborhood() {
           {(connectionState === "connecting" || connectionState === "loading") && (
             <div className="neighborhood-loading-overlay">
               <WorldLoadingIndicator
+                presentation="screen"
                 title="Entering the neighbourhood"
                 detail="Connecting to the authoritative world…"
               />
@@ -351,6 +353,7 @@ export function PlayableNeighborhood() {
                       fallback={
                         <div className="neighborhood-loading-overlay">
                           <WorldLoadingIndicator
+                            presentation="screen"
                             title="Loading the neighbourhood"
                             detail="Preparing the world scene…"
                           />

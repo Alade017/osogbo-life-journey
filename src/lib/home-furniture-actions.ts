@@ -1,4 +1,4 @@
-import type { LifeActionId } from "@/lib/life-simulation";
+import { ACTION_CATALOG, type LifeActionId } from "@/lib/life-simulation";
 
 export const HOME_FURNITURE_ACTIONS = {
   "starter-bed": "sleep",
@@ -58,4 +58,16 @@ export function homeFurnitureTaskList(
 
   if (!need || !action) return [];
   return [{ action, need }];
+}
+
+/** Alternatives retain distinct server validated durations and effects. */
+export function homeFurnitureActions(itemId: string): LifeActionId[] {
+ const primary = homeFurnitureAction(itemId); if (!primary) return [];
+ const alternatives: Partial<Record<LifeActionId, LifeActionId[]>> = {
+ sleep: ["nap", "read_bed"], cook: ["eat"], shower: ["wash_hands"], toilet: ["clean_toilet"],
+ study_computer: ["browse_computer"], tend_plant: ["prune_plant"], relax_sofa: ["stretch_sofa"], watch_tv: ["educational_tv"] };
+ return [primary, ...(alternatives[primary] ?? [])];
+}
+export function homeTaskSeconds(action: LifeActionId): number {
+ return action === "sleep" ? 120 : Math.max(3, Math.min(30, Math.ceil(ACTION_CATALOG[action].durationMinutes / 2)));
 }

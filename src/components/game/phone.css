@@ -1,4 +1,4 @@
-.phone-dialog.phone-dialog {
+.phone-dialog.phone-dialog:not(.phone-dock-surface) {
   position: fixed !important;
   inset: 0 !important;
   display: flex;
@@ -263,7 +263,7 @@
 }
 
 @media (max-width: 640px) {
-  .phone-dialog.phone-dialog {
+  .phone-dialog.phone-dialog:not(.phone-dock-surface) {
     width: calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right)) !important;
     max-width: calc(
       100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right)

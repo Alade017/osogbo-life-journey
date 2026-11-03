@@ -23,6 +23,7 @@ export function WorldCharacter({
   facing = "south",
   animation = "idle",
   name = "Resident",
+  taskPose,
 }: {
   appearance?: Appearance;
   gender?: string;
@@ -31,6 +32,7 @@ export function WorldCharacter({
   facing?: string;
   animation?: AvatarAnimationState;
   name?: string;
+  taskPose?: "sit" | "wash" | "cook" | "collect";
 }) {
   const safe = normalizeAvatarAppearance(appearance, gender);
   const h = WORLD_SCALE.character * ([0.92, 1, 1.06][safe.stature] ?? 1);
@@ -54,23 +56,29 @@ export function WorldCharacter({
     last.current = [x, y, z];
     if (moved) walkUntil.current = performance.now() + 350;
     if (reduced) return;
-    const continuous = ["walk", "work", "talk"].includes(animation);
+    const continuous = ["walk", "work", "talk"].includes(animation) || !!taskPose;
     if (!moved && !continuous) return;
     const timer = window.setInterval(() => {
       invalidate();
       if (!continuous && performance.now() > walkUntil.current) window.clearInterval(timer);
     }, 1000 / 15);
     return () => window.clearInterval(timer);
-  }, [x, y, z, animation, reduced, invalidate]);
+  }, [x, y, z, animation, taskPose, reduced, invalidate]);
   useFrame(({ clock }) => {
     if (!arms.current || !legs.current) return;
     const moving =
-      animation !== "sleep" && (animation === "walk" || performance.now() < walkUntil.current);
+      animation !== "sleep" && !taskPose && (animation === "walk" || performance.now() < walkUntil.current);
     const phase = clock.elapsedTime * (moving ? 8 : 4);
     arms.current.children.forEach((part, index) => {
       const side = index % 2 ? 1 : -1;
       part.rotation.x = reduced
         ? 0
+        : taskPose === "wash" ? -1.5 + Math.sin(phase) * .25 * side
+        : taskPose === "collect" ? -.9 + Math.sin(phase) * .15
+        : taskPose === "cook" ? -.7 + Math.sin(phase) * .25 * side
+        : taskPose === "wash" ? -1.5 + Math.sin(phase) * .25 * side
+        : taskPose === "collect" ? -.9 + Math.sin(phase) * .15
+        : taskPose === "cook" ? -.7 + Math.sin(phase) * .25 * side
         : moving
           ? Math.sin(phase) * 0.5 * side
           : animation === "work"
@@ -80,7 +88,7 @@ export function WorldCharacter({
               : 0;
     });
     legs.current.children.forEach((part, index) => {
-      part.rotation.x = !reduced && moving ? Math.sin(phase) * 0.4 * (index % 2 ? 1 : -1) : 0;
+      part.rotation.x = taskPose === "sit" ? -Math.PI / 2 : !reduced && moving ? Math.sin(phase) * 0.4 * (index % 2 ? 1 : -1) : 0;
     });
   });
   const skin = SKIN_TONES[safe.skin]!;
@@ -92,7 +100,7 @@ export function WorldCharacter({
   return (
     <group name={`character:${name}`} position={position} rotation={[0, yaw, 0]}>
       <group
-        position={animation === "sleep" ? [0, 0.5, h * 0.5] : [0, 0, 0]}
+        position={animation === "sleep" ? [0, 0.5, h * 0.5] : taskPose === "sit" ? [0, -h * .24, 0] : [0, 0, 0]}
         rotation={[animation === "sleep" ? -Math.PI / 2 : 0, 0, 0]}
         scale={[build, 1, 1]}
       >

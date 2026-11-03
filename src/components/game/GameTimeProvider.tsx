@@ -30,6 +30,7 @@ type ContextValue = {
   busy: boolean;
   ready: boolean;
   sleepElapsedSeconds: number | null;
+  homeTaskTiming: { elapsed: number; duration: number } | null;
   reconnect: () => void;
   pause: () => void;
   resume: () => void;
@@ -84,6 +85,7 @@ export function GameTimeProvider({
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
   const [sleepElapsedSeconds, setSleepElapsedSeconds] = useState<number | null>(null);
+  const [homeTaskTiming, setHomeTaskTiming] = useState<{elapsed:number;duration:number} | null>(null);
   const session = useRef<string>("");
   const revision = useRef(0);
   const inFlight = useRef(false);
@@ -95,6 +97,7 @@ export function GameTimeProvider({
     (s: SimulationSnapshot) => {
       revision.current = s.revision;
       setSleepElapsedSeconds(s.sleep_elapsed_seconds ?? null);
+      setHomeTaskTiming(s.home_action_elapsed_seconds !== undefined && s.home_action_duration_seconds !== undefined ? {elapsed:s.home_action_elapsed_seconds,duration:s.home_action_duration_seconds} : null);
       setSimulation((current) => ({
         ...current,
         needs: s.needs,
@@ -275,7 +278,7 @@ export function GameTimeProvider({
     },
     [send],
   );
-  const interrupt = useCallback(() => send("interrupt"), [send]);
+  const interrupt = useCallback((requestId?: string) => send("interrupt", requestId ? {requestId} : {}), [send]);
   const reconnect = useCallback(() => {
     void send("open");
   }, [send]);
@@ -286,6 +289,7 @@ export function GameTimeProvider({
       busy,
       ready,
       sleepElapsedSeconds,
+      homeTaskTiming,
       reconnect,
       pause,
       resume,
@@ -302,6 +306,7 @@ export function GameTimeProvider({
       busy,
       ready,
       sleepElapsedSeconds,
+      homeTaskTiming,
       reconnect,
       pause,
       resume,

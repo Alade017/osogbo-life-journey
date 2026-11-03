@@ -1,6 +1,7 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { createHash } from "node:crypto";
 import postgres from "postgres";
+import { auditSupabaseLedger } from "./migration-ledger-audit.mjs";
 
 process.loadEnvFile(".env");
 const url = process.env.DATABASE_URL;
@@ -10,7 +11,29 @@ try {
   if (!url) throw new Error("DATABASE_URL is missing");
   sql = postgres(url, { max: 1, connect_timeout: 15 });
   await sql.begin(async (tx) => {
-    await tx`select pg_advisory_xact_lock(hashtextextended('osogbo-shared-hud-migration',0))`;
+    const apply = process.argv.includes("--apply");
+    if (apply)
+      await tx`select pg_advisory_xact_lock(hashtextextended('osogbo-shared-hud-migration',0))`;
+    else await tx`set transaction read only`;
+    const [supabaseLedger] =
+      await tx`select to_regclass('supabase_migrations.schema_migrations') is not null as present`;
+    const supabaseRows = supabaseLedger.present
+      ? await tx`select version from supabase_migrations.schema_migrations order by version`
+      : [];
+    const supabaseAudit = auditSupabaseLedger(
+      readdirSync("supabase/migrations"),
+      supabaseRows,
+      supabaseLedger.present,
+    );
+    console.log(
+      `Supabase ledger: ${supabaseAudit.applied} applied versions. Pending: ${supabaseAudit.pending.join(", ") || "none"}`,
+    );
+    console.log(`Unknown Supabase versions: ${supabaseAudit.unknown.join(", ") || "none"}`);
+    for (const issue of supabaseAudit.issues) console.error(issue);
+    const supabaseNeedsReview =
+      supabaseAudit.pending.length > 0 ||
+      supabaseAudit.unknown.length > 0 ||
+      supabaseAudit.issues.length > 0;
     const ledger =
       await tx`select hash,created_at from drizzle.__drizzle_migrations order by created_at`;
     const pending = [];
@@ -27,10 +50,17 @@ try {
     )
       throw new Error("Database has unknown migration history; manual review required");
     console.log(
-      `Verified ${ledger.length} applied migrations. Pending: ${pending.map((p) => p.tag).join(", ") || "none"}`,
+      `Drizzle ledger: ${ledger.length} applied migrations. Pending: ${pending.map((p) => p.tag).join(", ") || "none"}`,
     );
     console.log(`Historical checksum differences: ${mismatches.join(", ") || "none"}`);
-    if (!process.argv.includes("--apply")) return;
+    if (!apply) {
+      if (supabaseNeedsReview || pending.length || mismatches.length) process.exitCode = 1;
+      return;
+    }
+    if (supabaseNeedsReview)
+      throw new Error(
+        "Review Supabase migration history first. This script does not apply or reconcile Supabase migrations.",
+      );
     const reviewed =
       process.argv.includes("--accept-advertisement-history") &&
       mismatches.length === 1 &&
@@ -62,7 +92,9 @@ try {
   console.log(
     process.argv.includes("--apply")
       ? "Database transaction committed. Schema reload requested."
-      : "Read-only migration check completed.",
+      : process.exitCode
+        ? "Read-only migration check completed; review the reported differences. No changes made."
+        : "Read-only migration check passed for both ledgers.",
   );
 } catch (error) {
   console.error(

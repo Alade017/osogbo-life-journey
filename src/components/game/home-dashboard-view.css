@@ -170,3 +170,54 @@
   min-height: calc(100dvh - 32px);
   overflow: hidden;
 }
+
+/* Status information has its own row; house controls begin beneath it. */
+.home-dashboard {
+  --house-scene-controls-top: calc(max(12px, env(safe-area-inset-top)) + 76px);
+}
+
+.home-dashboard .hd-status {
+  z-index: 10;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  width: min(680px, calc(100% - max(12px, env(safe-area-inset-left)) - max(12px, env(safe-area-inset-right))));
+  height: 64px;
+  min-width: 0;
+  gap: 8px;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.home-dashboard .hd-status-actions {
+  display: grid;
+  grid-template-columns: 44px 44px minmax(0, 1fr);
+  min-width: 0;
+  gap: 6px;
+}
+
+.home-dashboard .hd-area-copy small { display: block; font-size: 11px; }
+.home-dashboard .hd-area-copy strong { font-size: clamp(12px, 1.4vw, 15px); }
+.home-dashboard .hd-icon-button { min-width: 44px; width: 44px; }
+.home-dashboard .hd-status .hd-balance {
+  min-width: 0;
+  max-width: none;
+  overflow: visible;
+  padding-inline: 10px;
+  font-size: clamp(11px, 1.2vw, 16px);
+  line-height: 1.2;
+}
+
+@media (max-width: 560px) {
+  .home-dashboard { --house-scene-controls-top: calc(max(12px, env(safe-area-inset-top)) + 112px); }
+  .home-dashboard .hd-status {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 36px 44px;
+    height: 100px;
+    gap: 4px;
+    padding: 6px;
+    border-radius: 20px;
+  }
+  .home-dashboard .hd-area { gap: 6px; }
+  .home-dashboard .hd-status-actions { width: 100%; gap: 4px; }
+  .home-dashboard .hd-status .hd-balance { font-size: clamp(11px, 3.2vw, 14px); }
+}

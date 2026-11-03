@@ -35,7 +35,7 @@ import { GameMobileNav } from "@/components/game/GameMobileNav";
 it.each([
   ["Home", "/home"],
   ["City", "/map"],
-  ["Jobs", "/jobs"],
+  ["Career Life", "/jobs"],
 ])("%s keeps its full-page route and closes the phone", (label, route) => {
   const closePhone = vi.fn();
   render(<GameMobileNav hidden={false} onNavigate={closePhone} />);
@@ -45,4 +45,22 @@ it.each([
   fireEvent.click(link);
 
   expect(closePhone).toHaveBeenCalledOnce();
+});
+
+it("keeps the phone launcher in the same navigation landmark", () => {
+  render(
+    <GameMobileNav onNavigate={vi.fn()}>
+      <button>Phone</button>
+    </GameMobileNav>,
+  );
+  expect(screen.getByRole("navigation", { name: "Game navigation" })).toContainElement(
+    screen.getByRole("button", { name: "Phone" }),
+  );
+  expect(screen.getAllByRole("link")).toHaveLength(3);
+});
+
+it("removes the background dock from keyboard navigation while its modal copy is active", () => {
+  const { container } = render(<GameMobileNav hidden onNavigate={vi.fn()} />);
+  expect(container.querySelector("nav")).toHaveAttribute("inert");
+  expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
 });

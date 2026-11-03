@@ -15,6 +15,14 @@ export type MoodName =
   | "socially fulfilled"
   | "embarrassed";
 export type LifeActionId =
+  | "nap"
+  | "read_bed"
+  | "wash_hands"
+  | "clean_toilet"
+  | "browse_computer"
+  | "prune_plant"
+  | "stretch_sofa"
+  | "educational_tv"
   | "eat"
   | "cook"
   | "shower"
@@ -73,6 +81,14 @@ export const NEED_RULES: Record<
 const atHome = (state: SimulationState) =>
   state.locationType === "home" ? null : "You need to be at home for this action.";
 const ACTION_LIST: LifeAction[] = [
+{"id":"nap","name":"Take a nap","durationMinutes":60,"requiredLocation":"home","requiredFurniture":"bed","cost":0,"reward":0,"needs":{"energy":20},"skillXp":0,"animation":"sleeping","outcome":"Take a nap completed."},
+{"id":"read_bed","name":"Read in bed","durationMinutes":30,"requiredLocation":"home","requiredFurniture":"bed","cost":0,"reward":0,"needs":{"fun":5},"skillXp":4,"animation":"studying","outcome":"Read in bed completed.","skill":"learning"},
+{"id":"wash_hands","name":"Wash your hands","durationMinutes":3,"requiredLocation":"home","requiredFurniture":"shower","cost":0,"reward":0,"needs":{"hygiene":12},"skillXp":0,"animation":"showering","outcome":"Wash your hands completed."},
+{"id":"clean_toilet","name":"Clean the toilet","durationMinutes":10,"requiredLocation":"home","requiredFurniture":"toilet","cost":0,"reward":0,"needs":{"hygiene":-3,"fun":2},"skillXp":0,"animation":"showering","outcome":"Clean the toilet completed."},
+{"id":"browse_computer","name":"Browse the web","durationMinutes":15,"requiredLocation":"home","requiredFurniture":"computer","cost":0,"reward":0,"needs":{"fun":12},"skillXp":0,"animation":"studying","outcome":"Browse the web completed."},
+{"id":"prune_plant","name":"Prune the plant","durationMinutes":10,"requiredLocation":"home","requiredFurniture":"plant","cost":0,"reward":0,"needs":{"fun":4},"skillXp":0,"animation":"cooking","outcome":"Prune the plant completed."},
+{"id":"stretch_sofa","name":"Stretch beside the sofa","durationMinutes":10,"requiredLocation":"home","requiredFurniture":"sofa","cost":0,"reward":0,"needs":{"energy":-3,"fun":6},"skillXp":2,"animation":"exercising","outcome":"Stretch beside the sofa completed.","skill":"fitness"},
+{"id":"educational_tv","name":"Watch a documentary","durationMinutes":30,"requiredLocation":"home","requiredFurniture":"television","cost":0,"reward":0,"needs":{"fun":10},"skillXp":5,"animation":"watching","outcome":"Watch a documentary completed.","skill":"learning"},
   {
     id: "eat",
     name: "Eat a meal",

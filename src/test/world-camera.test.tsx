@@ -7,6 +7,7 @@ const state = vi.hoisted(() => ({
   controls: null as unknown,
   end: null as null | (() => void),
   invalidate: vi.fn(),
+  orbitOptions: {} as Record<string, unknown>,
 }));
 vi.mock("@react-three/fiber", () => ({
   useThree: () => ({
@@ -23,9 +24,24 @@ vi.mock("@react-three/drei", async () => {
     OrbitControls: React.forwardRef(function MockControls(props: { onEnd: () => void }, ref) {
       React.useImperativeHandle(ref, () => state.controls);
       state.end = props.onEnd;
+      state.orbitOptions = props;
       return null;
     }),
   };
+});
+it("allows horizontal house swipes while keeping pitch fixed and edit mode steady", () => {
+  const view = render(<WorldCamera width={12} depth={10} stage horizontalOrbit />);
+  expect(state.orbitOptions["enableRotate"]).toBe(true);
+  expect(state.orbitOptions["enablePan"]).toBe(false);
+  expect(state.orbitOptions["minPolarAngle"]).toBe(state.orbitOptions["maxPolarAngle"]);
+  expect(
+    Number(state.orbitOptions["maxAzimuthAngle"]) - Number(state.orbitOptions["minAzimuthAngle"]),
+  ).toBeCloseTo((2 * Math.PI) / 3);
+  view.rerender(
+    <WorldCamera width={12} depth={10} stage horizontalOrbit={false} enabled={false} />,
+  );
+  expect(state.orbitOptions["enableRotate"]).toBe(false);
+  expect(state.orbitOptions["enabled"]).toBe(false);
 });
 beforeEach(() => {
   state.camera = new PerspectiveCamera();

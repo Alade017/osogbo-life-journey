@@ -9919,7 +9919,7 @@
 }
 
 .city-game.navigation-redesign {
-  padding-bottom: calc(104px + env(safe-area-inset-bottom)) !important;
+  padding-bottom: var(--game-dock-space, calc(104px + env(safe-area-inset-bottom))) !important;
 }
 
 .city-game.navigation-redesign:has(.game-home) {
