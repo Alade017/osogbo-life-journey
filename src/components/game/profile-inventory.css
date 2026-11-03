@@ -1,0 +1,551 @@
+/* Profile and wardrobe. Built around the 3D character stage. Responsive rules use container
+   queries so the layout is correct both on the full page and inside the phone dialog. */
+.pi-page {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+    min-width: 0;
+    container-type: inline-size;
+}
+
+.pi-masthead h1 {
+    margin: 0.1rem 0 0;
+    font-size: 1.6rem;
+    font-weight: 850;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    overflow-wrap: anywhere;
+}
+
+.pi-eyebrow {
+    margin: 0;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--primary);
+}
+
+.pi-sub {
+    margin: 0.25rem 0 0;
+    font-size: 0.92rem;
+    color: var(--muted-foreground);
+}
+
+.pi-note {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--muted-foreground);
+}
+
+.pi-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    min-height: 40px;
+    padding: 0.4rem 0.95rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--card, #fff);
+    color: var(--foreground);
+    font-weight: 750;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.pi-pill-primary {
+    background: var(--primary);
+    color: var(--primary-foreground, #fff);
+    border-color: transparent;
+}
+
+/* 3D stage: the character sits on a warm spotlight backdrop. */
+.pi-stage {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-radius: 28px;
+    background: radial-gradient(circle at 50% 30%, #fff8ec 0%, #ecdcc2 55%, #d4bea0 100%);
+    box-shadow: var(--elevation-card, 0 8px 24px rgba(60, 40, 20, 0.12));
+}
+
+.pi-canvas {
+    position: relative;
+    width: 100%;
+    height: 300px;
+}
+
+.pi-canvas canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.pi-stage-foot {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.9rem 1rem 1rem;
+    background: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(6px);
+}
+
+.pi-stage-foot strong {
+    display: block;
+    font-size: 1.1rem;
+    font-weight: 850;
+    overflow-wrap: anywhere;
+}
+
+.pi-stage-foot span {
+    font-size: 0.85rem;
+    color: var(--muted-foreground);
+}
+
+.pi-level {
+    position: absolute;
+    top: 0.85rem;
+    left: 0.85rem;
+    z-index: 1;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    background: var(--foreground);
+    color: var(--background, #fff);
+    font-size: 0.75rem;
+    font-weight: 850;
+    letter-spacing: 0.04em;
+}
+
+.pi-xp {
+    height: 6px;
+    margin: 0 1rem 1rem;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.pi-xp span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--primary);
+}
+
+.pi-xp-label {
+    display: flex;
+    justify-content: space-between;
+    margin: 0 1rem 0.35rem;
+    font-size: 0.75rem;
+    font-weight: 750;
+    color: var(--muted-foreground);
+}
+
+/* Profile */
+.pi-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.6rem;
+}
+
+.pi-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    min-width: 0;
+    padding: 0.85rem;
+    border-radius: 18px;
+    background: var(--card, #fff);
+    border: 1px solid var(--border);
+}
+
+.pi-stat-label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+}
+
+.pi-stat-value {
+    font-size: 1.15rem;
+    font-weight: 850;
+    overflow-wrap: anywhere;
+}
+
+.pi-stat-hint {
+    font-size: 0.8rem;
+    color: var(--muted-foreground);
+}
+
+.pi-segment {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.35rem;
+    padding: 0.3rem;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.pi-segment button {
+    min-height: 40px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--muted-foreground);
+    font-weight: 750;
+}
+
+.pi-segment button[aria-selected="true"] {
+    background: var(--card, #fff);
+    color: var(--foreground);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.pi-panel {
+    padding: 0.25rem 0;
+}
+
+.pi-rows {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pi-rows li {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem 0.25rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.pi-rows li:last-child {
+    border-bottom: 0;
+}
+
+.pi-rows li>span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--muted-foreground);
+}
+
+.pi-rows li>strong {
+    margin: 0;
+    font-weight: 750;
+    text-align: right;
+}
+
+.pi-timeline {
+    display: grid;
+    gap: 0.9rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pi-timeline li {
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+}
+
+.pi-timeline-dot {
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    width: 34px;
+    height: 34px;
+    border-radius: 12px;
+    background: var(--primary);
+    color: var(--primary-foreground, #fff);
+}
+
+.pi-timeline strong {
+    display: block;
+}
+
+.pi-timeline small {
+    color: var(--muted-foreground);
+}
+
+.pi-quick {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.pi-quick a,
+.pi-quick button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    min-height: 76px;
+    padding: 0.6rem 0.4rem;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+    background: var(--card, #fff);
+    color: var(--foreground);
+    font-size: 0.82rem;
+    font-weight: 750;
+    text-decoration: none;
+}
+
+/* Wardrobe */
+.pi-slots {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.pi-slot {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+    padding: 0.7rem;
+    border-radius: 18px;
+    background: var(--card, #fff);
+    border: 1px solid var(--border);
+}
+
+.pi-slot.is-selected {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+}
+
+.pi-slot-name {
+    font-size: 0.68rem;
+    font-weight: 850;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted-foreground);
+}
+
+.pi-slot-item {
+    font-size: 0.95rem;
+    font-weight: 750;
+    overflow-wrap: anywhere;
+}
+
+.pi-slot-empty {
+    font-size: 0.9rem;
+    color: var(--muted-foreground);
+}
+
+.pi-slot-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    margin-top: 0.3rem;
+}
+
+.pi-chip-btn {
+    min-height: 34px;
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--foreground);
+    font-size: 0.8rem;
+    font-weight: 750;
+}
+
+.pi-chip-btn-primary {
+    background: var(--primary);
+    color: var(--primary-foreground, #fff);
+    border-color: transparent;
+}
+
+.pi-filters {
+    display: flex;
+    gap: 0.45rem;
+    overflow-x: auto;
+    padding-bottom: 0.2rem;
+    scrollbar-width: none;
+}
+
+.pi-filters button {
+    flex: 0 0 auto;
+    min-height: 38px;
+    padding: 0.35rem 0.9rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--foreground);
+    font-weight: 750;
+}
+
+.pi-filters button[aria-pressed="true"] {
+    background: var(--foreground);
+    color: var(--background, #fff);
+    border-color: transparent;
+}
+
+.pi-banner {
+    margin: 0;
+    padding: 0.6rem 0.8rem;
+    border-radius: 14px;
+    background: rgba(0, 0, 0, 0.05);
+    font-size: 0.88rem;
+}
+
+.pi-banner button {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font-weight: 750;
+    text-decoration: underline;
+}
+
+.pi-bag {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.6rem;
+}
+
+.pi-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    min-width: 0;
+    padding: 0.6rem 0.5rem 0.7rem;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+    background: var(--card, #fff);
+    color: var(--foreground);
+    text-align: center;
+    cursor: pointer;
+}
+
+.pi-tile[aria-pressed="true"] {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+}
+
+.pi-tile-art {
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: linear-gradient(160deg, #fff8ec, #ecdcc2);
+    overflow: hidden;
+}
+
+.pi-tile-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.pi-tile strong {
+    font-size: 0.82rem;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+}
+
+.pi-tile small {
+    font-size: 0.72rem;
+    color: var(--muted-foreground);
+}
+
+.pi-detail {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 1rem;
+    border-radius: 24px;
+    background: var(--card, #fff);
+    border: 1px solid var(--border);
+}
+
+.pi-detail h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 850;
+}
+
+.pi-detail-facts {
+    display: grid;
+    gap: 0.35rem;
+    margin: 0;
+}
+
+.pi-detail-facts div {
+    display: flex;
+    justify-content: space-between;
+}
+
+.pi-detail-facts dt {
+    color: var(--muted-foreground);
+}
+
+.pi-detail-facts dd {
+    margin: 0;
+    font-weight: 750;
+}
+
+.pi-detail-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.2rem;
+}
+
+/* Wider containers: side-by-side stage and sections. */
+@container (min-width: 620px) {
+    .pi-canvas {
+        height: 380px;
+    }
+
+    .pi-stats {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .pi-hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+        gap: 1rem;
+        align-items: stretch;
+    }
+
+    .pi-slots {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    .pi-bag {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
+
+    .pi-bag-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 340px;
+        gap: 1rem;
+        align-items: start;
+    }
+
+    .pi-quick {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+.pi-side {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    min-width: 0;
+}

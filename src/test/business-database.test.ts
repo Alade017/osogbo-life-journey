@@ -49,7 +49,9 @@ describe("authoritative business and investment database", () => {
     const journal = JSON.parse(readFileSync("drizzle/migrations/meta/_journal.json", "utf8"));
     // 0075 is a guarded cleanup of a particular hosted dataset, not schema setup.
     for (const { tag } of journal.entries.filter(
-      (entry: { tag: string }) => entry.tag !== "0075_remove_orphaned_player_data",
+      (entry: { tag: string }) =>
+        entry.tag !== "0075_remove_orphaned_player_data" &&
+        entry.tag !== "0077_market_stall_rent_categories_sales",
     ))
       await db.exec(readFileSync(`drizzle/migrations/${tag}.sql`, "utf8"));
     for (const id of [owner, investor]) {

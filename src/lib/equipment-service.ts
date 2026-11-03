@@ -11,6 +11,8 @@ export const EQUIPMENT_SLOTS: readonly EquipmentSlot[] = [
 ];
 
 export const EQUIPMENT_REFRESH_EVENT = "osun-life-equipment-refresh";
+/** Items that live in the game's built-in systems and can never be worn or equipped. */
+export const NON_EQUIPPABLE_SLUGS: ReadonlySet<string> = new Set(["phone"]);
 
 /** Tell active renderers to ask their server for fresh equipment. No item data is trusted here. */
 export function announceEquipmentRefresh() {
@@ -34,7 +36,10 @@ export function filterEquippableInventoryForSlot(
   slot: EquipmentSlot,
 ): PlayerInventoryEntry[] {
   return inventory.filter(
-    (entry) => entry.item?.equippable === true && entry.item.equipment_slot === slot,
+    (entry) =>
+      entry.item?.equippable === true &&
+      entry.item.equipment_slot === slot &&
+      !NON_EQUIPPABLE_SLUGS.has(entry.item.slug ?? ""),
   );
 }
 
@@ -43,6 +48,7 @@ export function validateEquipItem(
   requestedSlot: EquipmentSlot,
 ): string | null {
   if (!item) return "Item definition is unavailable.";
+  if (NON_EQUIPPABLE_SLUGS.has(item.slug ?? "")) return "This item cannot be equipped.";
   const category = normalizeInventoryCategory(item);
   if (category === "food" || category === "drinks") return "Consumables cannot be equipped.";
   if (item.equippable !== true) return "This item cannot be equipped.";

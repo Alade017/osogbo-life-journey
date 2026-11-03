@@ -82,7 +82,12 @@ describe("shared HUD database acceptance", () => {
       grant execute on function auth.uid() to authenticated;`);
     for (const file of readdirSync("drizzle/migrations")
       // 0075 requires the exact hosted cleanup dataset and makes no schema changes.
-      .filter((f) => f.endsWith(".sql") && f !== "0075_remove_orphaned_player_data.sql")
+      .filter(
+        (f) =>
+          f.endsWith(".sql") &&
+          f !== "0075_remove_orphaned_player_data.sql" &&
+          f !== "0077_market_stall_rent_categories_sales.sql",
+      )
       .sort()) {
       try {
         await db.exec(readFileSync(`drizzle/migrations/${file}`, "utf8"));

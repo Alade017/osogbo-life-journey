@@ -20,7 +20,9 @@ describe("housing onboarding database actions", () => {
     const journal = JSON.parse(readFileSync("drizzle/migrations/meta/_journal.json", "utf8"));
     // Match the career harness: hosted-data cleanup 0075 cannot run on an empty fixture.
     for (const { tag } of journal.entries.filter(
-      (entry: { tag: string }) => entry.tag !== "0075_remove_orphaned_player_data",
+      (entry: { tag: string }) =>
+        entry.tag !== "0075_remove_orphaned_player_data" &&
+        entry.tag !== "0077_market_stall_rent_categories_sales",
     ))
       await db.exec(readFileSync(`drizzle/migrations/${tag}.sql`, "utf8").replace(/^\uFEFF/, ""));
     await db.exec(

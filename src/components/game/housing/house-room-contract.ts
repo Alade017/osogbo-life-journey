@@ -15,7 +15,7 @@ export type HouseRoomRendererProps = {
   animationState?: AvatarAnimationState;
   actorPosition?: [number, number, number];
   actorFacing?: string;
-  taskPose?: "sit" | "wash" | "cook" | "collect";
+  taskPose?: "sit" | "wash" | "cook" | "collect" | "stretch";
   onWalk?: (point: [number, number, number]) => void;
   onCollectPackage?: (id: string) => void;
   activityRequestId?: string | null;

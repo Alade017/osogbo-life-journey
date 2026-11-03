@@ -26,7 +26,12 @@ describe("business and investment RPCs", () => {
       grant usage on schema auth to authenticated; grant execute on function auth.uid() to authenticated;`);
     for (const file of readdirSync("drizzle/migrations")
       // Match the career harness; preserve the hosted-only cleanup's live-count guard.
-      .filter((name) => name.endsWith(".sql") && name !== "0075_remove_orphaned_player_data.sql")
+      .filter(
+        (name) =>
+          name.endsWith(".sql") &&
+          name !== "0075_remove_orphaned_player_data.sql" &&
+          name !== "0077_market_stall_rent_categories_sales.sql",
+      )
       .sort()) {
       try {
         await db.exec(readFileSync(`drizzle/migrations/${file}`, "utf8"));

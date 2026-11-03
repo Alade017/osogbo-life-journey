@@ -1,21 +1,27 @@
+import { useState } from "react";
 import { useMissions } from "@/hooks/use-missions";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Award, BriefcaseBusiness, House, MapPin, Settings2, Shirt, Users } from "lucide-react";
+import { Award, BriefcaseBusiness, Gauge, House, MapPin, Settings2, Shirt, Smile, Users } from "lucide-react";
 import { q, formatNaira, xpProgress } from "@/lib/game";
 import { pageMeta } from "@/lib/seo";
-import { Avatar } from "@/components/game/Avatar";
-import { Chip, GameDataUnavailable, LoadingState, PageHeader, StatBar } from "@/components/game/ui";
+import { GameDataUnavailable, LoadingState } from "@/components/game/ui";
+import { CharacterPreview } from "@/components/3d/CharacterPreview";
+import type { Appearance } from "@/game/avatar-appearance";
 import { playerStateFromRows } from "@/lib/player-state";
 import { normalizeEquippedItems } from "@/lib/equipment-service";
 import { moodLabel } from "@/lib/profile-service";
+import "@/components/game/profile-inventory.css";
 
 export const Route = createFileRoute("/_authenticated/_game/profile")({
   head: () => pageMeta("Player Profile", "Your OSUN LIFE character, outfit and progress."),
   component: ProfilePage,
 });
 
+type ProfileTab = "life" | "milestones";
+
 export function ProfilePage() {
+  const [tab, setTab] = useState<ProfileTab>("life");
   const characterQuery = useQuery(q.character());
   const walletQuery = useQuery(q.wallet());
   const { data: jobs } = useQuery(q.jobs());
@@ -42,6 +48,7 @@ export function ProfilePage() {
     equipment: normalizeEquippedItems(equipment),
   });
   const xp = xpProgress(player.experience);
+  const xpPercent = xp.needed > 0 ? Math.min(100, Math.round((xp.into / xp.needed) * 100)) : 0;
   const occupation =
     jobs?.find((job) => job.slug === c.occupation_preference)?.name ?? "Exploring options";
   const milestones = (missions ?? [])
@@ -53,110 +60,151 @@ export function ProfilePage() {
   const mood = moodLabel(c.happiness, c.stress);
 
   return (
-    <div className="profile-page">
-      <PageHeader
-        eyebrow="Your journey"
-        title="Player profile"
-        subtitle="Your life, look and progress across Osun."
-      />
-      <section className="profile-hero game-panel" aria-label="Player identity">
-        <div className="profile-portrait-stage">
-          <Avatar
-            appearance={c.appearance as object}
+    <div className="pi-page pi-profile">
+      <header className="pi-masthead">
+        <p className="pi-eyebrow">Your journey</p>
+        <h1>{player.name}</h1>
+        <p className="pi-sub">
+          {occupation} · {player.location?.name ?? "Osogbo"}
+        </p>
+      </header>
+
+      <div className="pi-hero">
+        <section className="pi-stage" aria-label="Your character">
+          <span className="pi-level">LV {player.level}</span>
+          <CharacterPreview
+            appearance={c.appearance as unknown as Appearance}
             gender={c.gender}
-            size={142}
             equipment={player.equipment}
+            label={`${player.name}, level ${player.level}`}
           />
-        </div>
-        <div className="profile-identity">
-          <p className="profile-kicker">Level {player.level} resident</p>
-          <h2>{player.name}</h2>
-          <div className="profile-chip-row">
-            <Chip tone="primary">{mood}</Chip>
-            <Chip>{c.personality}</Chip>
-            <Chip>{occupation}</Chip>
+          <div className="pi-xp-label">
+            <span>{xp.into} XP</span>
+            <span>{xp.toNextLevel} to level {player.level + 1}</span>
           </div>
-          <div className="profile-xp">
-            <StatBar
-              label={`${xp.toNextLevel} XP to level ${player.level + 1}`}
-              value={xp.into}
-              max={xp.needed}
-              tone="primary"
-            />
+          <div className="pi-xp" aria-hidden="true">
+            <span style={{ width: `${xpPercent}%` }} />
           </div>
-          <Link to="/inventory" className="profile-primary-action">
-            <Shirt size={18} aria-hidden="true" /> Edit outfit
-          </Link>
-        </div>
-      </section>
-      <section className="profile-glance" aria-label="Life at a glance">
-        <article className="profile-glance-card game-panel">
-          <span>Wallet</span>
-          <strong>{formatNaira(player.cash)}</strong>
-          <small>Fictional naira</small>
-        </article>
-        <article className="profile-glance-card game-panel">
-          <span>Energy</span>
-          <strong>{player.energy}%</strong>
-          <small>{player.energy < 30 ? "Time to rest" : "Ready for the day"}</small>
-        </article>
-        <article className="profile-glance-card game-panel">
-          <span>Mood</span>
-          <strong>{mood}</strong>
-          <small>{c.happiness}% happiness</small>
-        </article>
-      </section>
-      <div className="profile-columns">
-        <section className="profile-story game-panel" aria-labelledby="profile-life-title">
-          <h3 id="profile-life-title">Your life</h3>
-          <dl>
+          <div className="pi-stage-foot">
             <div>
-              <dt>
-                <BriefcaseBusiness size={16} /> Occupation
-              </dt>
-              <dd>{occupation}</dd>
+              <strong>{player.name}</strong>
+              <span>
+                {mood} · {c.personality}
+              </span>
             </div>
-            <div>
-              <dt>
-                <MapPin size={16} /> Current district
-              </dt>
-              <dd>{player.location?.name ?? "Osogbo"}</dd>
-            </div>
-            <div>
-              <dt>
-                <Award size={16} /> Reputation
-              </dt>
-              <dd>{player.reputation}/100</dd>
-            </div>
-          </dl>
+            <Link to="/inventory" className="pi-pill pi-pill-primary">
+              <Shirt size={16} aria-hidden="true" /> Wardrobe
+            </Link>
+          </div>
         </section>
-        <section
-          className="profile-milestones game-panel"
-          aria-labelledby="profile-milestones-title"
-        >
-          <h3 id="profile-milestones-title">Recent milestones</h3>
-          {milestones.length ? (
-            <ul>
-              {milestones.map((milestone) => (
-                <li key={milestone.id}>
-                  <Award size={17} aria-hidden="true" />
+
+        <div className="pi-side">
+          <section className="pi-stats" aria-label="Life at a glance">
+            <article className="pi-stat">
+              <span className="pi-stat-label">Wallet</span>
+              <strong className="pi-stat-value">{formatNaira(player.cash)}</strong>
+              <small className="pi-stat-hint">Fictional naira</small>
+            </article>
+            <article className="pi-stat">
+              <span className="pi-stat-label">Energy</span>
+              <strong className="pi-stat-value">{player.energy}%</strong>
+              <small className="pi-stat-hint">
+                {player.energy < 30 ? "Time to rest" : "Ready for the day"}
+              </small>
+            </article>
+            <article className="pi-stat">
+              <span className="pi-stat-label">Mood</span>
+              <strong className="pi-stat-value">{mood}</strong>
+              <small className="pi-stat-hint">{c.happiness}% happiness</small>
+            </article>
+            <article className="pi-stat">
+              <span className="pi-stat-label">Reputation</span>
+              <strong className="pi-stat-value">{player.reputation}/100</strong>
+              <small className="pi-stat-hint">Around Osogbo</small>
+            </article>
+          </section>
+
+          <div className="pi-segment" role="tablist" aria-label="Profile sections">
+            {(["life", "milestones"] as const).map((id) => (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                id={`profile-tab-${id}`}
+                aria-selected={tab === id}
+                aria-controls="profile-tabpanel"
+                onClick={() => setTab(id)}
+              >
+                {id === "life" ? "Your life" : "Milestones"}
+              </button>
+            ))}
+          </div>
+
+          <section
+            id="profile-tabpanel"
+            role="tabpanel"
+            aria-labelledby={`profile-tab-${tab}`}
+            className="pi-panel"
+          >
+            {tab === "life" ? (
+              <ul className="pi-rows">
+                <li>
                   <span>
-                    <strong>Mission completed</strong>
-                    <small>
-                      {new Date(milestone.completed_at ?? milestone.claimed_at!).toLocaleDateString(
-                        "en-NG",
-                      )}
-                    </small>
+                    <BriefcaseBusiness size={17} aria-hidden="true" /> Occupation
                   </span>
+                  <strong>{occupation}</strong>
                 </li>
-              ))}
-            </ul>
-          ) : (
-            <p>Complete missions to build your story here.</p>
-          )}
-        </section>
+                <li>
+                  <span>
+                    <MapPin size={17} aria-hidden="true" /> District
+                  </span>
+                  <strong>{player.location?.name ?? "Osogbo"}</strong>
+                </li>
+                <li>
+                  <span>
+                    <Award size={17} aria-hidden="true" /> Reputation
+                  </span>
+                  <strong>{player.reputation}/100</strong>
+                </li>
+                <li>
+                  <span>
+                    <Gauge size={17} aria-hidden="true" /> Energy
+                  </span>
+                  <strong>{player.energy}%</strong>
+                </li>
+                <li>
+                  <span>
+                    <Smile size={17} aria-hidden="true" /> Happiness
+                  </span>
+                  <strong>{c.happiness}%</strong>
+                </li>
+              </ul>
+            ) : milestones.length ? (
+              <ol className="pi-timeline">
+                {milestones.map((milestone) => (
+                  <li key={milestone.id}>
+                    <span className="pi-timeline-dot" aria-hidden="true">
+                      <Award size={17} />
+                    </span>
+                    <span>
+                      <strong>Mission completed</strong>
+                      <small>
+                        {new Date(milestone.completed_at ?? milestone.claimed_at!).toLocaleDateString(
+                          "en-NG",
+                        )}
+                      </small>
+                    </span>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className="pi-note">Complete missions to build your story here.</p>
+            )}
+          </section>
+        </div>
       </div>
-      <nav className="profile-actions" aria-label="Profile actions">
+
+      <nav className="pi-quick" aria-label="Profile actions">
         <button
           type="button"
           onClick={() =>
@@ -165,17 +213,18 @@ export function ProfilePage() {
             )
           }
         >
-          <House size={17} /> Find a place
+          <House size={20} aria-hidden="true" /> Find a place
         </button>
         <Link to="/social" search={{ playerId: undefined }}>
-          <Users size={17} /> Friends
+          <Users size={20} aria-hidden="true" /> Friends
         </Link>
         <Link to="/settings">
-          <Settings2 size={17} /> Settings
+          <Settings2 size={20} aria-hidden="true" /> Settings
         </Link>
       </nav>
+
       {walletQuery.isError && (
-        <p className="profile-data-note">Your wallet is temporarily unavailable.</p>
+        <p className="pi-note">Your wallet is temporarily unavailable.</p>
       )}
     </div>
   );

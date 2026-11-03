@@ -60,7 +60,12 @@ beforeAll(async () => {
     create function realtime.broadcast_changes(text,text,text,text,text,anyelement,anyelement) returns void language plpgsql as $$begin return;end$$;
     grant usage on schema auth to authenticated;grant execute on function auth.uid() to authenticated;`);
   for (const file of readdirSync("drizzle/migrations")
-    .filter((f) => f.endsWith(".sql") && f !== "0075_remove_orphaned_player_data.sql")
+    .filter(
+      (f) =>
+        f.endsWith(".sql") &&
+        f !== "0075_remove_orphaned_player_data.sql" &&
+        f !== "0077_market_stall_rent_categories_sales.sql",
+    )
     .sort())
     await db.exec(readFileSync(`drizzle/migrations/${file}`, "utf8"));
   for (const file of [

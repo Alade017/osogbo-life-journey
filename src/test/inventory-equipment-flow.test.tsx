@@ -1,6 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { InventoryPage } from "@/routes/_authenticated/_game/inventory";
+// The 3D preview needs WebGL and ResizeObserver, which jsdom does not provide.
+vi.mock("@/components/3d/CharacterPreview", () => ({
+  CharacterPreview: ({ label }: { label: string }) => <div role="img" aria-label={label} />,
+}));
 
 const mocks = vi.hoisted(() => ({
   mutate: vi.fn(),

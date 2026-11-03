@@ -1064,7 +1064,7 @@ export function HouseRoom3D({
             activityLabel={activityLabel}
             position={[0, 0.06, depth * 0.18]}
             bedPosition={bedPosition}
-          />}}
+          />}
           {foodDeliveries
             .filter(
               (delivery) =>

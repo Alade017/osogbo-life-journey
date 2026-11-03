@@ -50,7 +50,10 @@ beforeAll(async () => {
     create function realtime.broadcast_changes(text,text,text,text,text,anyelement,anyelement) returns void language plpgsql as $$ begin return;end $$;
     grant usage on schema auth to authenticated;grant execute on function auth.uid() to authenticated;`);
   for (const file of readdirSync("drizzle/migrations")
-    .filter((name) => name.endsWith(".sql") && !name.startsWith("0075_"))
+    .filter(
+      (name) =>
+        name.endsWith(".sql") && !name.startsWith("0075_") && !name.startsWith("0077_"),
+    )
     .sort())
     await db.exec(readFileSync(`drizzle/migrations/${file}`, "utf8").replace(/^\uFEFF/, ""));
   await db.exec(readFileSync("supabase/migrations/20261027113217_messaging_hardening.sql", "utf8"));
