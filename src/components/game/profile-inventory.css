@@ -1,0 +1,395 @@
+/* Profile and inventory layout. Responsive rules use container queries so the same
+   markup lays out correctly in the full page and inside the phone dialog. */
+.pi-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  min-width: 0;
+  container-type: inline-size;
+}
+.pi-kicker {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+.pi-note {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted-foreground);
+}
+.pi-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 44px;
+  padding: 0.5rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--card, #fff);
+  color: var(--foreground);
+  font-weight: 750;
+  text-decoration: none;
+}
+.pi-button-primary {
+  background: var(--primary);
+  color: var(--primary-foreground, #fff);
+  border-color: transparent;
+}
+
+/* Profile */
+.pi-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  align-items: center;
+  padding: 1rem;
+}
+.pi-avatar {
+  display: grid;
+  place-items: center;
+  justify-self: center;
+  padding: 0.5rem;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.04);
+}
+.pi-hero-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.pi-hero h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+.pi-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.pi-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+.pi-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+  padding: 0.8rem;
+}
+.pi-stat span {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+.pi-stat strong {
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+.pi-stat small {
+  color: var(--muted-foreground);
+}
+.pi-tabs {
+  display: flex;
+  gap: 0.4rem;
+}
+.pi-tabs button {
+  flex: 1;
+  min-height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--foreground);
+  font-weight: 750;
+}
+.pi-tabs button[aria-selected="true"] {
+  background: var(--primary);
+  color: var(--primary-foreground, #fff);
+  border-color: transparent;
+}
+.pi-panel {
+  padding: 1rem;
+}
+.pi-facts {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+}
+.pi-facts div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.pi-facts dt {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--muted-foreground);
+}
+.pi-facts dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+}
+.pi-milestones {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pi-milestones li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+.pi-milestones small {
+  display: block;
+  color: var(--muted-foreground);
+}
+.pi-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+.pi-actions a,
+.pi-actions button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-height: 64px;
+  padding: 0.5rem;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--card, #fff);
+  color: var(--foreground);
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+/* Inventory: your look */
+.pi-look {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  padding: 1rem;
+}
+.pi-look-avatar {
+  display: grid;
+  place-items: center;
+  justify-self: center;
+  padding: 0.5rem;
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.04);
+}
+.pi-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pi-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+  padding: 0.6rem;
+  border-radius: 14px;
+  border: 1px dashed var(--border);
+}
+.pi-slot.is-equipped {
+  border-style: solid;
+}
+.pi-slot.is-selected {
+  outline: 2px solid var(--primary);
+}
+.pi-slot-name {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+.pi-slot strong {
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+.pi-slot small {
+  color: var(--muted-foreground);
+}
+.pi-slot-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.3rem;
+}
+
+/* Inventory: bag */
+.pi-filters {
+  display: flex;
+  gap: 0.45rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  scrollbar-width: none;
+}
+.pi-filters button {
+  flex: 0 0 auto;
+  min-height: 40px;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--foreground);
+  font-weight: 700;
+}
+.pi-filters button[aria-pressed="true"] {
+  background: var(--primary);
+  color: var(--primary-foreground, #fff);
+  border-color: transparent;
+}
+.pi-banner {
+  margin: 0;
+  padding: 0.6rem 0.8rem;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.05);
+  font-size: 0.88rem;
+}
+.pi-banner button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+}
+.pi-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+.pi-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+.pi-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  padding: 0.7rem;
+  text-align: center;
+  cursor: pointer;
+}
+.pi-card[aria-pressed="true"] {
+  outline: 2px solid var(--primary);
+}
+.pi-card-art {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+}
+.pi-card-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.pi-card strong {
+  font-size: 0.88rem;
+  overflow-wrap: anywhere;
+}
+.pi-card small {
+  color: var(--muted-foreground);
+}
+.pi-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1rem;
+}
+.pi-detail h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+.pi-detail-stage {
+  display: grid;
+  place-items: center;
+  min-height: 140px;
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.04);
+}
+.pi-detail-stage img {
+  width: 164px;
+  height: 164px;
+  object-fit: contain;
+}
+.pi-detail dl {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+}
+.pi-detail dl div {
+  display: flex;
+  justify-content: space-between;
+}
+.pi-detail dt {
+  color: var(--muted-foreground);
+}
+.pi-detail dd {
+  margin: 0;
+  font-weight: 700;
+}
+.pi-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Wide layouts: applied only when the page itself is wide enough. */
+@container (min-width: 600px) {
+  .pi-hero {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .pi-hero-copy {
+    align-items: flex-start;
+  }
+  .pi-stats {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .pi-look {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+  }
+  .pi-slot-grid {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+  .pi-layout {
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+  .pi-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  }
+}

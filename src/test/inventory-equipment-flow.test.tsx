@@ -54,7 +54,7 @@ describe("inventory equipment selection", () => {
       value: vi.fn(),
     });
     render(<InventoryPage />);
-    fireEvent.click(screen.getAllByRole("button", { name: "Choose from bag" })[1]!);
+    fireEvent.click(screen.getAllByRole("button", { name: "Choose" })[1]!);
     expect(screen.getByRole("status")).toHaveTextContent(/Choose an item for the top slot/i);
     fireEvent.click(screen.getByRole("button", { name: /Basic Outfit/ }));
     fireEvent.click(screen.getByRole("button", { name: "Equip (top)" }));
