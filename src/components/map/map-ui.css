@@ -1,84 +1,305 @@
+/* =========================================================
+   OSUN LIFE map styles
+   Layout: top bar -> controls row -> town canvas.
+   Sheets float above the bottom navigation.
+   ========================================================= */
+
+/* ---------- Page shell ---------- */
 .map-experience {
   position: relative !important;
   display: flex !important;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.6rem;
   min-height: 0;
   height: 100%;
+  padding: 0.6rem 0.75rem 0;
   isolation: isolate;
+  background:
+    radial-gradient(120% 70% at 50% -10%, color-mix(in srgb, var(--primary) 14%, transparent), transparent 60%),
+    var(--background);
 }
+
+.map-experience button:focus-visible,
+.map-experience input:focus-visible,
+.map-experience select:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* ---------- Top bar ---------- */
 .map-topbar {
   z-index: 6;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  min-height: 42px;
-  padding: 0.3rem 0.45rem 0.3rem 0.65rem;
-  border-radius: var(--shape-card);
-  background: var(--card);
-  box-shadow: var(--elevation-card);
+  gap: 0.5rem 0.6rem;
+  min-height: 46px;
+  padding: 0.45rem 0.5rem 0.45rem 0.6rem;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--card) 94%, transparent);
+  box-shadow: 0 10px 26px -18px color-mix(in srgb, var(--foreground) 55%, transparent);
   color: var(--foreground);
   font-size: 0.75rem;
   animation: map-toolbar-enter 220ms ease-out both;
 }
-.map-topbar-status,
-.map-topbar-status span {
-  display: inline-flex;
-  align-items: center;
-}
-.map-topbar-status {
-  min-width: 0;
-  gap: 0.75rem;
-}
-.map-topbar-status span {
-  gap: 0.25rem;
-  white-space: nowrap;
-}
-.map-topbar-status small {
-  color: var(--muted-foreground);
-  font-size: 0.65rem;
-}
-.map-topbar-status strong {
-  font-size: 0.72rem;
-}
+
 .map-topbar svg {
   color: var(--primary);
 }
+
+.map-topbar-status {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.map-topbar-status::-webkit-scrollbar {
+  display: none;
+}
+
+.map-topbar-status span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.6rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 10%, var(--card));
+  white-space: nowrap;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.map-topbar-status small {
+  color: var(--muted-foreground);
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
 .map-level-toggle {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
   min-height: 34px;
   margin-left: auto;
-  padding: 0.35rem 0.7rem;
-  border: 1px solid var(--ring);
+  padding: 0.35rem 0.85rem;
+  border: 0;
   border-radius: 999px;
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--primary);
+  color: var(--primary-foreground);
   font: inherit;
   font-size: 0.8rem;
-  font-weight: 700;
+  font-weight: 750;
   cursor: pointer;
+  box-shadow: 0 8px 18px -12px color-mix(in srgb, var(--primary) 85%, transparent);
+  transition: transform 150ms ease, filter 150ms ease;
 }
+
+.map-level-toggle:hover {
+  filter: brightness(1.06);
+}
+
+.map-level-toggle:active {
+  transform: scale(0.97);
+}
+
 .map-neighborhood-link {
   display: inline-flex;
   min-height: 34px;
   align-items: center;
   justify-content: center;
-  border: 1px solid color-mix(in srgb, var(--primary) 36%, var(--ring));
+  padding: 0.35rem 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--border));
   border-radius: 999px;
-  padding: 0.35rem 0.7rem;
-  background: var(--color-primary-soft);
+  background: color-mix(in srgb, var(--primary) 8%, var(--card));
   color: var(--brand-royal-deep);
   font-size: 0.78rem;
   font-weight: 750;
   text-decoration: none;
   white-space: nowrap;
+  transition: transform 150ms ease, box-shadow 150ms ease;
 }
+
 .map-neighborhood-link:hover {
-  background: color-mix(in srgb, var(--primary) 12%, var(--card));
+  transform: translateY(-2px);
+  box-shadow: 0 10px 18px -14px color-mix(in srgb, var(--foreground) 60%, transparent);
 }
+
+@keyframes map-toolbar-enter {
+  from {
+    transform: translateY(-6px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ---------- Banners ---------- */
+.map-offline-banner {
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid color-mix(in srgb, #d29a2e 35%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, #d29a2e 16%, var(--card));
+  color: var(--foreground);
+  font-size: 0.875rem;
+}
+
+.map-housing-message {
+  margin: 0;
+  padding: 0.6rem 0.85rem;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--primary) 10%, var(--card));
+  font-size: 0.8rem;
+  box-shadow: 0 6px 16px -14px color-mix(in srgb, var(--foreground) 60%, transparent);
+}
+
+/* ---------- Controls row (chips + search), in the page flow ---------- */
+.map-controls {
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.map-category-chips {
+  display: flex;
+  flex: 1 1 280px;
+  min-width: 0;
+  gap: 0.35rem;
+  padding: 0.3rem;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  box-shadow: var(--elevation-card);
+  pointer-events: auto;
+  scrollbar-width: none;
+  height: 50px;
+}
+
+.map-category-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.map-category-chips button {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 0.3rem 0.75rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+.map-category-chips button[aria-pressed="true"] {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.map-category-chips button:active {
+  transform: scale(0.96);
+}
+
+.map-search {
+  display: flex;
+  flex: 0 1 300px;
+  align-items: center;
+  gap: 0.3rem;
+  width: min(300px, 100%);
+  max-width: 100%;
+  padding: 0.25rem 0.25rem 0.25rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  box-shadow: var(--elevation-card);
+  pointer-events: auto;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+  animation: map-toolbar-enter 260ms 40ms ease-out both;
+}
+
+.map-search:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 22%, transparent);
+}
+
+.map-search input {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  padding: 0.3rem 0.4rem;
+  border: 0;
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  font-size: 0.875rem;
+  outline: none;
+}
+
+.map-search button {
+  min-height: 34px;
+  padding: 0.3rem 0.85rem;
+  border: 0;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+/* ---------- Town canvas ---------- */
+.map-experience .map-canvas {
+  position: relative;
+  flex: 1 1 auto;
+  height: auto;
+  min-height: 320px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  border-radius: 26px;
+  background: var(--background);
+  box-shadow: var(--elevation-card);
+}
+
+/* District labels (from DistrictZones). */
+.district-label {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  color: var(--foreground);
+  font: 700 11px/1.2 system-ui, sans-serif;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  box-shadow: 0 6px 14px -10px color-mix(in srgb, var(--foreground) 70%, transparent);
+  pointer-events: none;
+}
+
+.district-label[data-traffic="high"] {
+  border: 1px solid color-mix(in srgb, var(--primary) 50%, transparent);
+}
+
+/* ---------- Osun State overview ---------- */
 .osun-state-overview {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(230px, 300px);
@@ -86,15 +307,17 @@
   min-height: 320px;
   gap: 0.75rem;
 }
+
 .osun-state-board {
   position: relative;
   min-height: 360px;
   overflow: hidden;
   border: 1px solid var(--ring);
-  border-radius: var(--shape-card);
+  border-radius: 26px;
   background: var(--background);
   box-shadow: var(--elevation-card);
 }
+
 .osun-state-board::before {
   content: "";
   position: absolute;
@@ -103,6 +326,7 @@
   border-radius: 42% 58% 55% 45% / 48% 38% 62% 52%;
   background: color-mix(in srgb, var(--accent) 50%, var(--card));
 }
+
 .osun-state-route {
   position: absolute;
   z-index: 1;
@@ -110,16 +334,18 @@
   height: 2px;
   left: 17%;
   top: 48%;
-  background: var(--card);
   border: 1px solid var(--ring);
+  background: var(--card);
   transform: rotate(-17deg);
 }
+
 .osun-state-route-two {
   width: 52%;
   left: 27%;
   top: 44%;
   transform: rotate(54deg);
 }
+
 .osun-town-marker {
   position: absolute;
   z-index: 2;
@@ -137,39 +363,47 @@
   font-weight: 800;
   cursor: pointer;
 }
+
 .osun-town-marker[aria-pressed="true"] {
   outline: 3px solid var(--ring);
   outline-offset: 3px;
 }
+
 .osun-town-panel {
   align-self: stretch;
+  min-height: 0;
   padding: 1rem;
   overflow: auto;
   border: 1px solid var(--ring);
-  border-radius: var(--shape-card);
+  border-radius: 24px;
   background: var(--card);
   box-shadow: var(--elevation-card);
   color: var(--foreground);
 }
+
 .osun-town-panel header {
   display: flex;
   align-items: center;
   gap: 0.7rem;
 }
+
 .osun-town-panel h2,
 .osun-town-panel p {
   margin: 0;
 }
-.osun-town-panel > p {
+
+.osun-town-panel>p {
   margin-top: 0.75rem;
   color: var(--muted-foreground);
   font-size: 0.875rem;
 }
+
 .osun-town-panel header p,
 .osun-town-panel small {
   color: var(--muted-foreground);
   font-size: 0.75rem;
 }
+
 .osun-town-icon {
   display: grid;
   width: 44px;
@@ -179,6 +413,7 @@
   background: var(--accent);
   color: var(--foreground);
 }
+
 .osun-public-place-list {
   display: grid;
   gap: 0.45rem;
@@ -186,6 +421,7 @@
   padding: 0;
   list-style: none;
 }
+
 .osun-public-place-list li {
   display: flex;
   align-items: center;
@@ -193,15 +429,17 @@
   min-height: 44px;
   padding: 0.55rem 0.65rem;
   border: 1px solid var(--ring);
-  border-radius: calc(var(--shape-card) * 0.7);
+  border-radius: 14px;
   background: var(--background);
   color: var(--foreground);
   font-size: 0.875rem;
   font-weight: 650;
 }
+
 .osun-public-place-list svg {
   color: var(--primary);
 }
+
 .osun-open-town {
   width: 100%;
   min-height: 44px;
@@ -214,109 +452,69 @@
   font-weight: 800;
   cursor: pointer;
 }
+
 @media (max-width: 720px) {
-  .map-topbar {
-    overflow-x: auto;
-  }
   .osun-state-overview {
     grid-template-columns: 1fr;
     overflow: auto;
   }
+
   .osun-state-board {
     min-height: 330px;
   }
+
   .osun-town-panel {
     min-height: 230px;
   }
 }
-.map-offline-banner {
-  z-index: 6;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.45rem 0.75rem;
-  border-radius: var(--shape-card);
-  background: var(--accent);
-  color: var(--foreground);
-  font-size: 0.875rem;
-}
-.map-controls {
-  position: absolute;
-  top: 50px;
-  left: 0.75rem;
-  right: 0.75rem;
-  z-index: 6;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 0.75rem;
-  pointer-events: none;
-}
-.map-experience:has(.map-offline-banner) .map-controls {
-  top: 84px;
-}
-.map-category-chips,
-.map-search {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.3rem;
-  border-radius: var(--shape-card);
-  background: var(--card);
-  box-shadow: var(--elevation-card);
-  pointer-events: auto;
-  animation: map-toolbar-enter 260ms 40ms ease-out both;
-}
-.map-category-chips {
-  max-width: 70%;
-  overflow-x: auto;
-}
-.map-category-chips button,
-.map-search button {
-  min-height: 36px;
-  padding: 0.35rem 0.65rem;
-  border: 0;
-  border-radius: calc(var(--shape-card) * 0.65);
-  background: transparent;
-  color: var(--foreground);
-  font: inherit;
-  font-size: 0.8rem;
-  white-space: nowrap;
-  cursor: pointer;
-}
-.map-category-chips button[aria-pressed="true"],
-.map-search button {
-  background: var(--primary);
-  color: var(--foreground);
-}
 
-@keyframes map-toolbar-enter {
-  from {
-    transform: translateY(-6px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-.map-search input {
-  width: clamp(110px, 18vw, 210px);
-  min-height: 36px;
-  padding: 0.35rem 0.6rem;
+/* ---------- Shared icon and traffic helpers ---------- */
+.map-icon-button {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
   border: 1px solid var(--ring);
-  border-radius: calc(var(--shape-card) * 0.65);
+  border-radius: 50%;
   background: var(--background);
   color: var(--foreground);
-  font: inherit;
-  font-size: 0.875rem;
+  cursor: pointer;
 }
-.map-experience .map-canvas {
-  flex: 1 1 auto;
-  height: auto;
-  min-height: 250px;
-  border-radius: var(--shape-card);
+
+.map-location-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--muted-foreground);
+  font-size: 0.85rem;
 }
+
+.map-traffic {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.traffic-bars {
+  display: flex;
+  gap: 3px;
+}
+
+.traffic-bars i {
+  display: block;
+  width: 8px;
+  height: 16px;
+  border: 1px solid var(--primary);
+  border-radius: 2px;
+}
+
+.traffic-low i:first-child,
+.traffic-medium i:nth-child(-n + 2),
+.traffic-high i {
+  background: var(--primary);
+}
+
+/* ---------- Bottom sheet (district, general) ---------- */
 .map-sheet {
   position: fixed;
   z-index: var(--game-sheet-layer);
@@ -332,16 +530,28 @@
   overflow: auto;
   transform: translateX(-50%);
   border: 1px solid var(--ring);
-  border-radius: var(--shape-card);
+  border-radius: 24px;
   background: var(--card);
   box-shadow: var(--elevation-card);
   color: var(--foreground);
   overscroll-behavior: contain;
   touch-action: pan-y;
 }
+
 .map-sheet.is-expanded {
   height: calc(100dvh - var(--game-dock-height) - env(safe-area-inset-bottom) - 1.5rem);
 }
+
+.map-sheet p {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.map-sheet h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
 .map-sheet-grabber,
 .map-sheet-grabber-static {
   align-self: center;
@@ -355,6 +565,7 @@
   touch-action: none;
   cursor: grab;
 }
+
 .map-sheet-grabber span,
 .map-sheet-grabber-static span {
   width: 34px;
@@ -362,79 +573,59 @@
   border-radius: 999px;
   background: var(--ring);
 }
+
 .map-sheet-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
 }
+
 .map-sheet-header h2 {
   margin: 0;
   font-size: 1.25rem;
 }
+
 .map-sheet-eyebrow {
   margin: 0 0 0.2rem;
-  text-transform: capitalize;
   color: var(--primary);
   font-size: 0.8rem;
   font-weight: 700;
+  text-transform: capitalize;
 }
-.map-sheet p {
-  margin: 0;
-  line-height: 1.45;
-}
-.map-location-line {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-  color: var(--muted-foreground);
-  font-size: 0.85rem;
-}
-.map-sheet h3 {
-  margin: 0;
-  font-size: 1rem;
-}
-.map-icon-button {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border: 1px solid var(--ring);
-  border-radius: 50%;
-  background: var(--background);
-  color: var(--foreground);
-  cursor: pointer;
-}
-.map-traffic {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-}
-.traffic-bars {
-  display: flex;
-  gap: 3px;
-}
-.traffic-bars i {
-  display: block;
-  width: 8px;
-  height: 16px;
-  border: 1px solid var(--primary);
-  border-radius: 2px;
-}
-.traffic-low i:first-child,
-.traffic-medium i:nth-child(-n + 2),
-.traffic-high i {
-  background: var(--primary);
-}
+
 .map-event-status,
 .map-age-badge {
   display: flex;
   align-items: center;
   gap: 0.45rem;
   padding: 0.55rem 0.7rem;
-  border-radius: calc(var(--shape-card) * 0.7);
+  border-radius: 14px;
   background: var(--accent);
 }
+
+.map-age-badge {
+  align-self: flex-start;
+  font-weight: 700;
+}
+
+.map-age-notice,
+.map-action-error {
+  padding: 0.6rem;
+  border-radius: 14px;
+  background: var(--accent);
+}
+
+.map-here-note {
+  align-self: flex-start;
+  padding: 0.35rem 0.7rem;
+  border-radius: var(--shape-pill);
+  background: var(--color-primary-soft);
+  color: var(--primary);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
 .map-sheet-list {
   display: grid;
   gap: 0.35rem;
@@ -442,15 +633,17 @@
   padding: 0;
   list-style: none;
 }
+
 .map-sheet-list li {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 0.75rem;
   padding: 0.6rem;
-  border-radius: calc(var(--shape-card) * 0.6);
+  border-radius: 14px;
   background: var(--background);
 }
+
 .map-sheet-list button {
   display: flex;
   justify-content: space-between;
@@ -465,52 +658,55 @@
   text-align: left;
   cursor: pointer;
 }
+
 .map-sheet-list small,
-.map-sheet-list li > small,
-.map-sheet-list li > span small {
+.map-sheet-list li>small,
+.map-sheet-list li>span small {
   display: block;
   color: var(--muted-foreground);
   font-size: 0.8rem;
 }
+
 .map-sheet-list li button span {
   color: var(--primary);
   font-size: 0.8rem;
 }
-.map-sheet-list li > button {
+
+.map-sheet-list li>button {
   width: auto;
   min-width: 70px;
   justify-content: center;
-  border-radius: calc(var(--shape-card) * 0.6);
+  border-radius: 14px;
   background: var(--primary);
   color: var(--primary-foreground);
 }
-.map-age-badge {
-  align-self: flex-start;
-  font-weight: 700;
+
+.map-sheet-list button:disabled,
+.map-primary-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
-.map-age-notice,
-.map-action-error {
-  padding: 0.6rem;
-  border-radius: calc(var(--shape-card) * 0.6);
-  background: var(--accent);
-}
+
 .map-sheet-actions {
   display: grid;
   gap: 0.5rem;
 }
+
 .map-sheet-actions label {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
+
 .map-sheet-actions select {
   min-height: 44px;
   padding: 0.45rem;
   border: 1px solid var(--ring);
-  border-radius: calc(var(--shape-card) * 0.6);
+  border-radius: 14px;
   background: var(--background);
   color: var(--foreground);
 }
+
 .map-primary-button {
   display: flex;
   justify-content: center;
@@ -519,37 +715,37 @@
   min-height: 48px;
   padding: 0.65rem 1rem;
   border: 0;
-  border-radius: calc(var(--shape-card) * 0.7);
+  border-radius: 16px;
   background: var(--primary);
   color: var(--primary-foreground);
   font: inherit;
   font-weight: 700;
   cursor: pointer;
 }
-.map-primary-button:disabled,
-.map-sheet-list button:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
+
+/* ---------- Place actions ---------- */
 .place-action-menu {
   display: grid;
   gap: 0.45rem;
   padding: 0.7rem;
   border: 1px solid var(--ring);
-  border-radius: calc(var(--shape-card) * 0.7);
+  border-radius: 16px;
   background: var(--background);
 }
+
 .place-action-heading {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 0.75rem;
 }
+
 .place-action-heading small,
 .place-action-hint {
   color: var(--muted-foreground);
   font-size: 0.8rem;
 }
+
 .place-action-schedule {
   display: flex;
   flex-wrap: wrap;
@@ -560,30 +756,24 @@
   color: var(--muted-foreground);
   font-size: 0.8rem;
 }
+
 .place-action-schedule button,
 .map-action-error button {
   min-height: 44px;
   padding: 0.45rem 0.7rem;
   border: 1px solid var(--ring);
-  border-radius: calc(var(--shape-card) * 0.5);
+  border-radius: 12px;
   background: var(--background);
   color: var(--foreground);
   cursor: pointer;
 }
+
 .place-action-schedule button:disabled,
 .map-action-error button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
-.map-here-note {
-  align-self: flex-start;
-  padding: 0.35rem 0.7rem;
-  border-radius: var(--shape-pill);
-  background: var(--color-primary-soft);
-  color: var(--primary);
-  font-size: 0.8rem;
-  font-weight: 700;
-}
+
 .place-action-option {
   display: flex;
   width: 100%;
@@ -594,156 +784,78 @@
   gap: 0.2rem;
   padding: 0.4rem 0.6rem;
   border: 0;
-  border-radius: calc(var(--shape-card) * 0.5);
+  border-radius: 12px;
   background: var(--card);
   color: var(--foreground);
   text-align: left;
   cursor: pointer;
 }
+
 .place-action-option small {
   color: var(--muted-foreground);
 }
+
 .place-action-option[aria-pressed="true"] {
   outline: 2px solid var(--primary);
 }
 
-.map-sheet-list li > .place-action-option {
-  width: 100%;
-  min-width: 0;
+.map-sheet-list li>.place-action-option {
   justify-content: flex-start;
-  background: var(--card);
-  color: var(--foreground);
-}
-
-.map-sheet-list li > .place-action-option span {
-  color: var(--foreground);
-}
-
-.map-sheet-list li > .place-action-option small {
-  color: var(--muted-foreground);
+  min-width: 0;
 }
 
 .place-action-confirm {
   display: grid;
   gap: 0.35rem;
   padding: 0.7rem;
-  border-radius: calc(var(--shape-card) * 0.55);
+  border-radius: 14px;
   background: var(--card);
 }
+
 .place-action-confirm p {
   display: flex;
   align-items: center;
   gap: 0.35rem;
   margin: 0;
 }
+
 .place-action-buttons {
   display: flex;
   gap: 0.5rem;
 }
+
 .place-action-buttons button {
   min-height: 44px;
   padding: 0.5rem 0.8rem;
   border: 1px solid var(--ring);
-  border-radius: calc(var(--shape-card) * 0.5);
+  border-radius: 12px;
   background: var(--background);
   color: var(--foreground);
   cursor: pointer;
 }
+
 .place-action-buttons button:last-child {
   background: var(--primary);
   color: var(--primary-foreground);
 }
+
 .place-action-buttons button:disabled {
   opacity: 0.55;
   cursor: not-allowed;
 }
+
 .place-action-result {
   display: flex;
   align-items: center;
   gap: 0.4rem;
 }
-.map-experience button:focus-visible,
-.map-experience input:focus-visible,
-.map-experience select:focus-visible {
-  outline: 3px solid var(--ring);
-  outline-offset: 2px;
-}
-@media (max-width: 640px) {
-  .map-topbar {
-    flex-wrap: nowrap;
-    gap: 0.35rem;
-  }
-  .map-topbar-status {
-    gap: 0.45rem;
-    overflow: hidden;
-  }
-  .map-topbar-status small {
-    display: none;
-  }
-  .map-level-toggle {
-    flex: 0 0 auto;
-    padding-inline: 0.55rem;
-  }
-  .map-neighborhood-link {
-    flex: 0 0 auto;
-    padding-inline: 0.45rem;
-    font-size: 0.7rem;
-  }
-  .map-controls {
-    top: 48px;
-    left: 0.4rem;
-    right: 0.4rem;
-    align-items: flex-start;
-    flex-direction: column;
-  }
-  .map-experience:has(.map-offline-banner) .map-controls {
-    top: 84px;
-  }
-  .map-category-chips {
-    max-width: 100%;
-    width: 100%;
-  }
-  .map-search {
-    width: 100%;
-  }
-  .map-search input {
-    flex: 1;
-    width: auto;
-  }
-  .map-experience .map-canvas {
-    min-height: 220px;
-  }
-  .map-sheet {
-    width: calc(100% - 0.75rem);
-    left: 0.375rem;
-    transform: none;
-    bottom: 0.375rem;
-    height: 54%;
-    max-height: calc(100% - 7rem);
-    padding-inline: 0.8rem;
-  }
-  .map-sheet.is-expanded {
-    height: calc(100% - 6rem);
-  }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .map-topbar,
-  .map-category-chips,
-  .map-search {
-    animation: none;
-  }
-}
-
-/* Place details are a focused, map-friendly bottom sheet rather than a second page. */
+/* ---------- Landmark sheet (place details) ---------- */
 .map-sheet.map-landmark-sheet {
   box-sizing: border-box;
   width: min(520px, calc(100% - 1.5rem));
   height: auto;
-  max-height: min(
-    76dvh,
-    calc(100dvh - var(--game-dock-height) - env(safe-area-inset-bottom) - 1.5rem)
-  );
+  max-height: min(76dvh, calc(100dvh - var(--game-dock-height) - env(safe-area-inset-bottom) - 1.5rem));
   gap: 0.65rem;
   padding: 0.35rem 1rem calc(0.9rem + env(safe-area-inset-bottom));
   border-color: #e7ece8;
@@ -780,9 +892,7 @@
   flex: 0 0 36px;
   border-color: #e7ece8;
   background: #f7f9f7;
-  transition:
-    transform 160ms ease,
-    background-color 160ms ease;
+  transition: transform 160ms ease, background-color 160ms ease;
 }
 
 .map-landmark-header .map-icon-button:hover {
@@ -862,12 +972,12 @@
   font-size: 0.72rem;
 }
 
-.map-landmark-sheet .place-action-menu > .map-sheet-list {
+.map-landmark-sheet .place-action-menu>.map-sheet-list {
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
   gap: 0.4rem;
 }
 
-.map-landmark-sheet .place-action-menu > .map-sheet-list li {
+.map-landmark-sheet .place-action-menu>.map-sheet-list li {
   min-width: 0;
   border: 1px solid #e8eee9;
   border-radius: 14px;
@@ -885,7 +995,7 @@
   background: #f0f8f2;
 }
 
-.map-landmark-sheet .place-action-option > span {
+.map-landmark-sheet .place-action-option>span {
   font-size: 0.77rem;
   font-weight: 750;
 }
@@ -917,7 +1027,7 @@
   font-size: 0.66rem;
 }
 
-.map-landmark-section .map-sheet-list li > button {
+.map-landmark-section .map-sheet-list li>button {
   min-height: 32px;
   min-width: 64px;
   border-radius: 999px;
@@ -945,10 +1055,7 @@
   color: #fff;
   font-size: 0.9rem;
   box-shadow: 0 5px 14px rgb(33 131 79 / 18%);
-  transition:
-    transform 160ms ease,
-    background-color 160ms ease,
-    box-shadow 160ms ease;
+  transition: transform 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
 }
 
 .map-landmark-footer .map-primary-button:not(:disabled):hover {
@@ -989,27 +1096,6 @@
   }
 }
 
-@media (max-width: 640px) {
-  .map-sheet.map-landmark-sheet {
-    left: 0.375rem;
-    bottom: calc(var(--game-dock-height) + env(safe-area-inset-bottom) + 0.375rem);
-    width: calc(100% - 0.75rem);
-    max-height: min(
-      70dvh,
-      calc(100dvh - var(--game-dock-height) - env(safe-area-inset-bottom) - 1rem)
-    );
-    padding-inline: 0.8rem;
-    border-radius: 22px;
-    transform: none;
-    animation-name: landmark-sheet-mobile-enter;
-  }
-
-  .map-landmark-footer {
-    margin-inline: -0.8rem;
-    padding-inline: 0.8rem;
-  }
-}
-
 @keyframes landmark-sheet-mobile-enter {
   from {
     transform: translateY(14px);
@@ -1022,11 +1108,195 @@
   }
 }
 
+/* ---------- Mobile ---------- */
+@media (max-width: 640px) {
+  .map-experience {
+    padding: 0.4rem 0.4rem 0;
+  }
+
+  .map-topbar {
+    flex-wrap: nowrap;
+    gap: 0.35rem;
+    padding-inline: 0.45rem;
+  }
+
+  .map-topbar-status small {
+    display: none;
+  }
+
+  .map-level-toggle {
+    flex: 0 0 auto;
+    padding-inline: 0.6rem;
+  }
+
+  .map-neighborhood-link {
+    flex: 0 0 auto;
+    padding-inline: 0.45rem;
+    font-size: 0.7rem;
+  }
+
+  .map-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .map-category-chips,
+  .map-search {
+    flex: none;
+    width: 100%;
+  }
+
+  .map-experience .map-canvas {
+    min-height: 240px;
+    border-radius: 22px;
+  }
+
+  .map-sheet {
+    width: calc(100% - 0.75rem);
+    left: 0.375rem;
+    transform: none;
+    bottom: 0.375rem;
+    height: 54%;
+    max-height: calc(100% - 7rem);
+    padding-inline: 0.8rem;
+  }
+
+  .map-sheet.is-expanded {
+    height: calc(100% - 6rem);
+  }
+
+  .map-sheet.map-landmark-sheet {
+    left: 0.375rem;
+    bottom: calc(var(--game-dock-height) + env(safe-area-inset-bottom) + 0.375rem);
+    width: calc(100% - 0.75rem);
+    max-height: min(70dvh, calc(100dvh - var(--game-dock-height) - env(safe-area-inset-bottom) - 1rem));
+    padding-inline: 0.8rem;
+    border-radius: 22px;
+    transform: none;
+    animation-name: landmark-sheet-mobile-enter;
+  }
+
+  .map-landmark-footer {
+    margin-inline: -0.8rem;
+    padding-inline: 0.8rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+
+  .map-topbar,
+  .map-search,
   .map-sheet.map-landmark-sheet,
   .map-landmark-header .map-icon-button,
-  .map-landmark-footer .map-primary-button {
+  .map-landmark-footer .map-primary-button,
+  .map-category-chips button,
+  .map-level-toggle,
+  .map-neighborhood-link {
     animation: none;
     transition: none;
+  }
+}
+
+/* ===== Final layout guard: overrides dashboard-ui-refresh.css and map-canvas.css for the map ===== */
+
+/* Controls: one compact row under the top bar, never stretched. */
+.dashboard-ui-refresh .map-experience .map-controls,
+.map-experience .map-controls {
+  position: relative;
+  top: auto;
+  left: auto;
+  right: auto;
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  align-content: center;
+  gap: 8px;
+  height: auto;
+  max-height: none;
+  padding: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+/* Category chips: a fixed-height pill that scrolls sideways if it runs out of room. */
+.dashboard-ui-refresh .map-experience .map-category-chips,
+.map-experience .map-category-chips {
+  flex: 1 1 260px;
+  align-self: center;
+  width: auto;
+  height: 46px;
+  min-height: 0;
+  max-height: 46px;
+  max-width: none;
+  align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px;
+  border-radius: 999px;
+  scrollbar-width: none;
+}
+
+.dashboard-ui-refresh .map-experience .map-category-chips button,
+.map-experience .map-category-chips button {
+  flex: 0 0 auto;
+  align-self: center;
+  height: 36px;
+  min-height: 36px;
+  padding-inline: 12px;
+  border-radius: 999px;
+}
+
+/* Search: a compact pill beside the chips. */
+.dashboard-ui-refresh .map-experience .map-search,
+.map-experience .map-search {
+  flex: 0 1 300px;
+  align-self: center;
+  width: min(300px, 100%);
+  max-width: 100%;
+  height: 46px;
+  padding: 4px 4px 4px 12px;
+  border-radius: 999px;
+}
+
+.dashboard-ui-refresh .map-experience .map-search input,
+.map-experience .map-search input {
+  min-height: 36px;
+  height: 36px;
+  border: 0;
+  background: transparent;
+}
+
+.dashboard-ui-refresh .map-experience .map-search button,
+.map-experience .map-search button {
+  height: 36px;
+  min-height: 36px;
+  border-radius: 999px;
+}
+
+/* Town canvas: fills the remaining space under the controls. */
+.dashboard-ui-refresh .map-experience .map-canvas,
+.map-experience .map-canvas {
+  flex: 1 1 0;
+  height: auto;
+  min-height: 320px;
+  border-radius: 26px;
+}
+
+@media (max-width: 640px) {
+
+  .dashboard-ui-refresh .map-experience .map-controls,
+  .map-experience .map-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .dashboard-ui-refresh .map-experience .map-category-chips,
+  .map-experience .map-category-chips,
+  .dashboard-ui-refresh .map-experience .map-search,
+  .map-experience .map-search {
+    flex: none;
+    width: 100%;
   }
 }

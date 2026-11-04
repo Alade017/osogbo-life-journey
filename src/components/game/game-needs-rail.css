@@ -180,6 +180,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .game-needs-rail *,
   .game-needs-rail *::before,
   .game-needs-rail *::after {
@@ -187,5 +188,64 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* Needs rail: same card surface and radius as the restyled bottom bar. */
+.city-game.navigation-redesign .game-needs-rail {
+  right: 14px;
+  bottom: calc(92px + env(safe-area-inset-bottom));
+  padding: 5px;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  border-radius: 26px;
+  background: color-mix(in srgb, var(--card) 94%, transparent);
+  color: var(--foreground);
+  box-shadow:
+    0 10px 28px -12px color-mix(in srgb, var(--foreground) 40%, transparent),
+    var(--elevation-card);
+}
+
+.city-game.navigation-redesign .game-needs-item {
+  width: 36px;
+  height: 36px;
+  flex-basis: 36px;
+  border-radius: 50%;
+}
+
+.city-game.navigation-redesign .game-needs-item:hover,
+.city-game.navigation-redesign .game-needs-item.is-active {
+  border-color: color-mix(in srgb, var(--primary) 35%, transparent);
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+}
+
+.city-game.navigation-redesign .game-needs-icon-core {
+  background: var(--card);
+  color: var(--foreground);
+}
+
+.city-game.navigation-redesign .game-needs-detail {
+  border-top-color: var(--border);
+  color: var(--foreground);
+}
+
+.city-game.navigation-redesign .game-needs-detail span {
+  color: var(--muted-foreground);
+}
+
+.city-game.navigation-redesign.home-scene .game-needs-rail {
+  right: auto;
+  left: 14px;
+}
+
+@media (max-width: 360px) {
+  .city-game.navigation-redesign .game-needs-rail {
+    right: 10px;
+    bottom: calc(92px + env(safe-area-inset-bottom));
+  }
+
+  .city-game.navigation-redesign .game-needs-item {
+    width: 32px;
+    height: 32px;
+    flex-basis: 32px;
   }
 }

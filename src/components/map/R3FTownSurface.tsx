@@ -1,3 +1,4 @@
+import { DistrictZones } from "./DistrictZones";
 import { Component, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Canvas, type ThreeEvent } from "@react-three/fiber";
 import town from "@/data/osogbo-town.json";
@@ -14,6 +15,8 @@ import {
   type WorldInstance,
 } from "../3d/WorldScene";
 import { WORLD_SCALE, WORLD_PALETTE } from "../3d/world-theme";
+import { MapLighting } from "./MapLighting";
+import { PlaceBadge } from "./map-badge";
 
 type Props = PhaserMapData &
   PhaserMapCallbacks & { onReady: () => void; onUnavailable: () => void };
@@ -94,7 +97,7 @@ export function R3FTownSurface(props: Props) {
         >
           <Ready onReady={props.onReady} />
           <WorldCamera width={24 * cell} depth={18 * cell} />
-          <WorldLighting size={24 * cell} />
+          <MapLighting size={24 * cell} />
           <mesh position={[0, -0.12, 0]} receiveShadow>
             <boxGeometry args={[24 * cell, 0.2, 18 * cell]} />
             <WorldMaterial tone="ground" />
@@ -123,38 +126,37 @@ export function R3FTownSurface(props: Props) {
               depth={cell * 0.65}
             />
           ))}
-          {town.districts.map((district) => {
-            const a = district.gridArea;
-            const p = point(a.x + a.width / 2 - 0.5, a.z + a.depth / 2 - 0.5);
+        <DistrictZones
+  districts={town.districts}
+  point={point}
+  cell={cell}
+  onSelect={(id, event) => select(event, () => props.onSelectDistrict(id))}
+/>
+          {props.places.map((place) => {
+            const [x, , z] = point(place.grid.x, place.grid.z);
             return (
-              <mesh
-                key={district.id}
-                position={[p[0], 0.005, p[2]]}
-                rotation={[-Math.PI / 2, 0, 0]}
-                onClick={(event) => select(event, () => props.onSelectDistrict(district.id))}
+              <group
+                key={place.id}
+                name={`landmark:${place.id}`}
+                onPointerOver={(event) => {
+                  event.stopPropagation();
+                  setHovered(place.label);
+                }}
+                onPointerOut={() => setHovered(null)}
+                onClick={(event) => select(event, () => props.onSelectLandmark(place.id))}
               >
-                <planeGeometry args={[a.width * cell, a.depth * cell]} />
-                <WorldMaterial tone="ground" />
-              </mesh>
+                <WorldHouse
+                  position={point(place.grid.x, place.grid.z)}
+                  shop={place.category === "market" || place.category === "food"}
+                />
+                <PlaceBadge
+                  position={[x, 1.8, z]}
+                  label={place.label}
+                  category={place.category}
+                />
+              </group>
             );
           })}
-          {props.places.map((place) => (
-            <group
-              key={place.id}
-              name={`landmark:${place.id}`}
-              onPointerOver={(event) => {
-                event.stopPropagation();
-                setHovered(place.label);
-              }}
-              onPointerOut={() => setHovered(null)}
-              onClick={(event) => select(event, () => props.onSelectLandmark(place.id))}
-            >
-              <WorldHouse
-                position={point(place.grid.x, place.grid.z)}
-                shop={place.category === "market" || place.category === "food"}
-              />
-            </group>
-          ))}
           {props.properties?.map((property) => (
             <WorldHouse
               key={property.id}

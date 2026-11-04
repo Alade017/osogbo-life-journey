@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CloudOff, Compass, MapPinned, Smile } from "lucide-react";
+import { CalendarDays, CloudOff, MapPinned, Smile, Compass, Lock } from "lucide-react";
 import {
   MapCanvas,
   type MapBillboardMarker,
@@ -16,7 +16,7 @@ import { OsunStateOverview } from "@/components/map/OsunStateOverview";
 import { MAP_LANDMARK_LOCATION_SLUG } from "@/components/map/map-location-links";
 import { formatMapNaira } from "@/components/map/map-ui-utils";
 import townData from "@/data/osogbo-town.json";
-import { q, rpc } from "@/lib/game";
+import { q, rpc, xpProgress } from "@/lib/game";
 import { isPlayableDistrict } from "@/game/playable-district";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -35,6 +35,10 @@ import { cityEventsForDistrict } from "@/lib/city-event-service";
 import { getCurrentMapBillboards, type CurrentMapBillboard } from "@/lib/map-billboard-map";
 import type { MapDistrict, MapLandmark } from "@/components/map/OsogboMap.svg";
 import "@/components/map/map-ui.css";
+import "@/components/map/map-hud.css";
+import { Avatar } from "@/components/game/Avatar";
+import type { Appearance } from "@/game/avatar-appearance";
+import { MapTicker } from "@/components/map/MapTicker";
 
 const categories: { id: MapFilter; label: string }[] = [
   { id: "jobs", label: "Jobs" },
@@ -300,6 +304,10 @@ export function CityMapDashboard({
   };
   const rentRecord = rent.data as { next_due_at?: string; due_at?: string } | null;
   const due = nextRentDueAt ?? rentRecord?.next_due_at ?? rentRecord?.due_at;
+  const availableIds = availableLandmarks.data;
+  const lockedPlaces = availableIds
+    ? townLandmarks.filter((place) => !availableIds.includes(place.id))
+    : [];
   const displayedMood =
     mood ??
     (character.data?.happiness != null
@@ -309,17 +317,18 @@ export function CityMapDashboard({
           ? "Content"
           : "Low"
       : "Settled");
+  
   return (
     <section className="city-map-dashboard is-world-map map-experience" aria-label="Osun Life map">
-      <header className="map-topbar">
-        <div className="map-topbar-status" aria-label="Map status">
-          <span>
+      
+      <header className="map-hud">
+        <div className="map-hud-status" aria-label="Map status">
+          <span className="map-hud-chip">
             <Smile size={15} aria-hidden="true" />
-            <small>Mood</small>
             <strong>{displayedMood}</strong>
           </span>
-          <span>
-            <Compass size={15} aria-hidden="true" />
+          <span className="map-hud-chip">
+            <CalendarDays size={15} aria-hidden="true" />
             <small>Rent</small>
             <strong>
               {due
@@ -332,37 +341,53 @@ export function CityMapDashboard({
             </strong>
           </span>
         </div>
-        <button
-          className="map-level-toggle"
-          type="button"
-          onClick={() => setMapLevel((level) => (level === "town" ? "state" : "town"))}
-        >
-          <MapPinned size={16} />
-          {mapLevel === "town" ? "Explore Osun" : "Osogbo map"}
-        </button>
-        {mapLevel === "town" && isPlayableDistrict(currentLocation?.slug) && (
-          <Link className="map-neighborhood-link" to="/neighborhood">
-            {currentLocation?.slug === "oja-oba" ? "Walk Oja-Oba Market" : "Walk Olaiya"}
-          </Link>
-        )}
-        {mapLevel === "town" && currentLocation?.slug !== "oja-oba" && (
-          <Link className="map-neighborhood-link" to="/location/$slug" params={{ slug: "oja-oba" }}>
-            Visit Oja-Oba Market
-          </Link>
-        )}
-        {mapLevel === "town" &&
-          currentLocation?.slug !== "city-centre" &&
-          availableLandmarks.data?.includes("olaiya-junction") && (
-            <button
-              className="map-neighborhood-link"
-              type="button"
-              disabled={offline || travel.isPending}
-              onClick={travelToOlaiya}
-            >
-              {travel.isPending && cityTravelRequest ? "Travelling..." : "Travel to Olaiya"}
-            </button>
+        <div className="map-hud-actions">
+          <button
+            className="map-level-toggle"
+            type="button"
+            onClick={() => setMapLevel((level) => (level === "town" ? "state" : "town"))}
+          >
+            <MapPinned size={16} />
+            {mapLevel === "town" && lockedPlaces.length > 0 && (
+        <div className="map-locked-strip" aria-label="Places coming soon">
+          {lockedPlaces.map((place) => (
+            <span key={place.id} className="map-locked-chip">
+              <Lock size={12} aria-hidden="true" /> {place.label} · Coming soon
+            </span>
+          ))}
+        </div>
+      )}
+            {mapLevel === "town" ? "Explore Osun" : "Osogbo map"}
+          </button>
+          {mapLevel === "town" && isPlayableDistrict(currentLocation?.slug) && (
+            <Link className="map-neighborhood-link" to="/neighborhood">
+              {currentLocation?.slug === "oja-oba" ? "Walk Oja-Oba Market" : "Walk Olaiya"}
+            </Link>
           )}
+          {mapLevel === "town" && currentLocation?.slug !== "oja-oba" && (
+            <Link
+              className="map-neighborhood-link"
+              to="/location/$slug"
+              params={{ slug: "oja-oba" }}
+            >
+              Visit Oja-Oba Market
+            </Link>
+          )}
+          {mapLevel === "town" &&
+            currentLocation?.slug !== "city-centre" &&
+            availableLandmarks.data?.includes("olaiya-junction") && (
+              <button
+                className="map-neighborhood-link"
+                type="button"
+                disabled={offline || travel.isPending}
+                onClick={travelToOlaiya}
+              >
+                {travel.isPending && cityTravelRequest ? "Travelling..." : "Travel to Olaiya"}
+              </button>
+            )}
+        </div>
       </header>
+      <MapTicker />
       {offline && (
         <div role="status" className="map-offline-banner">
           <CloudOff size={16} />
@@ -446,6 +471,23 @@ export function CityMapDashboard({
           onSelectTown={setSelectedTownId}
           onOpenOsogbo={() => setMapLevel("town")}
         />
+      )}
+            {mapLevel === "town" && character.data && (
+        <div className="map-player-dock" aria-label="Your character">
+          <span className="map-player-avatar" aria-hidden="true">
+            <Avatar
+              appearance={(character.data.appearance ?? {}) as unknown as Appearance}
+              gender={character.data.gender}
+              size={52}
+            />
+          </span>
+          <span className="map-player-progress">
+            <strong>LV {character.data.level}</strong>
+            <span className="map-player-bar" aria-hidden="true">
+              <span style={{ width: `${xpProgress(character.data.xp).pct}%` }} />
+            </span>
+          </span>
+        </div>
       )}
       <MapBillboardCampaignDialog
         campaign={selectedBillboard}

@@ -31,7 +31,7 @@ import {
 import { formatNaira, q } from "@/lib/game";
 import { normalizeEquippedItems } from "@/lib/equipment-service";
 import type { Appearance } from "@/game/avatar-appearance";
-import osogboCityImage from "@/assets/osogbo-city.jpg";
+import { LandingBackdrop } from "@/components/game/LandingBackdrop";
 import "@/components/game/landing.css";
 
 // The 3D character loads after the photo and headline are painted, so WebGL never blocks the first view.
@@ -237,12 +237,7 @@ function Landing() {
       </header>
 
       <section className="cin-hero" aria-labelledby="landing-title">
-        <img
-          className="cin-photo"
-          src={osogboCityImage}
-          alt="Panoramic view of Osogbo, the real world inspiration for OSUN LIFE"
-          fetchPriority="high"
-        />
+        <LandingBackdrop />
         <div className="cin-shade" aria-hidden="true" />
 
         <div className="cin-grid">
@@ -331,11 +326,7 @@ function Landing() {
                       I already have an account
                     </Link>
                   ) : (
-                    <button
-                      type="button"
-                      className="cin-secondary"
-                      onClick={() => void signOut()}
-                    >
+                    <button type="button" className="cin-secondary" onClick={() => void signOut()}>
                       Sign out
                     </button>
                   )}
@@ -361,8 +352,6 @@ function Landing() {
             </Suspense>
           </div>
         </div>
-
-        <span className="cin-photo-credit">Photo: El-Shaddaites · CC BY-SA 4.0</span>
       </section>
 
       <section className="cin-loop-wrap" aria-labelledby="loop-title">

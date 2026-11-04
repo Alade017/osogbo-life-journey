@@ -1,0 +1,280 @@
+/* Lagos-style top HUD: status chips, one action row, and round emoji place badges. */
+.map-hud {
+    z-index: 6;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.45rem;
+    border-radius: 22px;
+    background: color-mix(in srgb, var(--card) 92%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: var(--elevation-card);
+    color: var(--foreground);
+    font-size: 0.78rem;
+    animation: map-toolbar-enter 220ms ease-out both;
+}
+
+.map-hud-status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.map-hud-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 30px;
+    padding: 0.25rem 0.7rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--primary) 14%, transparent);
+    white-space: nowrap;
+}
+
+.map-hud-chip svg {
+    color: var(--primary);
+}
+
+.map-hud-chip small {
+    color: var(--muted-foreground);
+    font-size: 0.68rem;
+}
+
+.map-hud-chip strong {
+    font-weight: 750;
+}
+
+.map-hud-actions {
+    display: flex;
+    gap: 0.4rem;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+}
+
+.map-hud-actions::-webkit-scrollbar {
+    display: none;
+}
+
+.map-hud .map-level-toggle {
+    flex: 0 0 auto;
+    margin-left: 0;
+    min-height: 34px;
+    border-color: transparent;
+    background: var(--foreground);
+    color: var(--background);
+}
+
+.map-hud .map-level-toggle svg {
+    color: inherit;
+}
+
+.map-hud .map-neighborhood-link {
+    flex: 0 0 auto;
+    min-height: 34px;
+}
+
+/* Round emoji badges above each place, in the 3D town */
+.map-place-badge {
+    position: relative;
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow:
+        0 0 0 3px var(--badge-tone, #64748b),
+        0 4px 10px rgba(0, 0, 0, 0.28);
+    font-size: 18px;
+    line-height: 1;
+    user-select: none;
+}
+
+.map-place-badge::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: -7px;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #fff;
+}
+
+/* Filter row: the chips and search sit in the page flow, under the status bar. */
+.map-experience .map-controls,
+.map-experience:has(.map-offline-banner) .map-controls {
+    position: relative;
+    top: auto;
+    left: auto;
+    right: auto;
+    z-index: 6;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.4rem;
+}
+
+.map-experience .map-category-chips {
+    max-width: none;
+}
+
+.map-experience .map-search {
+    width: 100%;
+}
+
+.map-experience .map-search input {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 0;
+}
+
+/* Live ticker: scrolling city event headlines. */
+.map-ticker {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 30px;
+    padding: 0.2rem 0.4rem 0.2rem 0.3rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--foreground) 88%, transparent);
+    color: var(--background);
+    font-size: 0.75rem;
+    overflow: hidden;
+    box-shadow: var(--elevation-card);
+}
+
+.map-ticker-label {
+    flex: 0 0 auto;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    background: var(--primary);
+    color: var(--foreground);
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.map-ticker-viewport {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+.map-ticker-track {
+    display: inline-flex;
+    white-space: nowrap;
+    animation: map-ticker-scroll 18s linear infinite;
+}
+
+.map-ticker-track>span {
+    padding-right: 2rem;
+}
+
+@keyframes map-ticker-scroll {
+    from {
+        transform: translateX(0);
+    }
+
+    to {
+        transform: translateX(-50%);
+    }
+}
+
+/* Locked places: shown as dashed "coming soon" chips. */
+.map-locked-strip {
+    display: flex;
+    gap: 0.35rem;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.map-locked-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    flex: 0 0 auto;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    border: 1px dashed color-mix(in srgb, var(--foreground) 35%, transparent);
+    background: color-mix(in srgb, var(--card) 85%, transparent);
+    color: var(--muted-foreground);
+    font-size: 0.72rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+/* Player corner: avatar and level progress, bottom left of the map. */
+.map-player-dock {
+    position: absolute;
+    left: 0.6rem;
+    bottom: 0.6rem;
+    z-index: 6;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.7rem 0.35rem 0.35rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--card) 92%, transparent);
+    box-shadow: var(--elevation-card);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.map-player-avatar {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: radial-gradient(circle, #fff8ec, #ecdcc2);
+    border: 2px solid var(--primary);
+}
+
+.map-player-progress {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 88px;
+    font-size: 0.75rem;
+}
+
+.map-player-bar {
+    height: 6px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--foreground) 12%, transparent);
+    overflow: hidden;
+}
+
+.map-player-bar>span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: var(--primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .map-ticker-track {
+        animation: none;
+    }
+}
+
+.district-label {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--card) 88%, transparent);
+    color: var(--foreground);
+    font: 600 11px/1.2 system-ui, sans-serif;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    box-shadow: var(--elevation-card);
+    pointer-events: none;
+}
+
+.district-label[data-traffic="high"] {
+    border: 1px solid color-mix(in srgb, var(--primary) 45%, transparent);
+}
