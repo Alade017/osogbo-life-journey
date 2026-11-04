@@ -197,27 +197,117 @@ export function WorldInstances({
     </instancedMesh>
   );
 }
-
 export function WorldRoads({ items }: { items: readonly WorldInstance[] }) {
   return <WorldInstances items={items} tone="road" />;
 }
-export function WorldTrees({ positions }: { positions: readonly [number, number][] }) {
-  const h = WORLD_SCALE.character;
+export function WorldSidewalks({
+  sidewalks,
+  curbs,
+}: {
+  sidewalks: readonly WorldInstance[];
+  curbs: readonly WorldInstance[];
+}) {
+  return (
+    <>
+      <WorldInstances items={sidewalks} tone="concrete" />
+      <WorldInstances items={curbs} tone="slate" />
+    </>
+  );
+}
+export function WorldStreetLights({
+  positions,
+  size,
+}: {
+  positions: readonly [number, number][];
+  size: number;
+}) {
+  const poleHeight = size * 1.35;
+
+  return (
+    <>
+      {/* Vertical poles */}
+      <WorldInstances
+        tone="metal"
+        items={positions.map(([x, z]) => ({
+          position: [x, poleHeight / 2, z],
+          scale: [size * 0.035, poleHeight, size * 0.035],
+        }))}
+      />
+
+      {/* Horizontal arms */}
+      <WorldInstances
+        tone="metal"
+        items={positions.map(([x, z]) => ({
+          position: [x + size * 0.18, poleHeight * 0.91, z],
+          scale: [size * 0.36, size * 0.035, size * 0.035],
+        }))}
+      />
+
+      {/* Lamp heads */}
+      <WorldInstances
+        tone="linen"
+        shape="sphere"
+        items={positions.map(([x, z]) => ({
+          position: [x + size * 0.34, poleHeight * 0.88, z],
+          scale: [size * 0.12, size * 0.09, size * 0.12],
+        }))}
+      />
+    </>
+  );
+}
+export function WorldWasteBins({
+  positions,
+  size,
+}: {
+  positions: readonly [number, number][];
+  size: number;
+}) {
   return (
     <>
       <WorldInstances
-        tone="timber"
+        tone="foliage"
         items={positions.map(([x, z]) => ({
-          position: [x, h * 0.47, z],
-          scale: [h * 0.15, h * 0.94, h * 0.15],
+          position: [x, size * 0.24, z],
+          scale: [size * 0.32, size * 0.48, size * 0.32],
         }))}
       />
       <WorldInstances
+        tone="slate"
+        items={positions.map(([x, z]) => ({
+          position: [x, size * 0.5, z],
+          scale: [size * 0.38, size * 0.07, size * 0.38],
+        }))}
+      />
+    </>
+  );
+}
+export type WorldTree = {
+  position: [number, number];
+  height: number;
+  canopyScale: number;
+};
+
+export function WorldTrees({ positions }: { positions: readonly WorldTree[] }) {
+  const h = WORLD_SCALE.character;
+
+  return (
+    <>
+      {/* Tree trunks */}
+      <WorldInstances
+        tone="timber"
+        items={positions.map((tree) => ({
+          position: [tree.position[0], h * tree.height * 0.47, tree.position[1]],
+          scale: [h * 0.15, h * tree.height * 0.94, h * 0.15],
+        }))}
+      />
+
+      {/* Tree canopies */}
+      <WorldInstances
         tone="foliage"
         shape="sphere"
-        items={positions.map(([x, z]) => ({
-          position: [x, h * 1.18, z],
-          scale: [h * 1.06, h * 1.18, h * 1.06],
+        items={positions.map((tree) => ({
+          position: [tree.position[0], h * tree.height * 1.18, tree.position[1]],
+          scale: [h * tree.canopyScale, h * tree.canopyScale * 1.12, h * tree.canopyScale],
         }))}
       />
     </>
@@ -281,6 +371,7 @@ export function WorldPeople({
     </>
   );
 }
+
 export function WorldHouse({
   position,
   width = WORLD_SCALE.door * 1.43,
@@ -288,6 +379,7 @@ export function WorldHouse({
   shop = false,
   detailed = false,
   rotation = 0,
+  variant = "residential",
 }: {
   position: [number, number, number];
   width?: number;
@@ -295,45 +387,190 @@ export function WorldHouse({
   shop?: boolean;
   detailed?: boolean;
   rotation?: number;
+  variant?: string;
 }) {
   const height = WORLD_SCALE.door * 1.4;
+
+  const isMarket = variant === "market" || variant === "food";
+  const isBank = variant === "bank";
+  const isCivic = variant === "civic" || variant === "public-service";
+  const isHealth = variant === "health" || variant === "clinic";
+  const isSchool = variant === "school";
+  const isWorship = variant === "worship";
+  const isTransit = variant === "transit" || variant === "transport";
+  const isSport = variant === "sport";
+  const isClub = variant === "club";
+  const isServices = variant === "services";
+
+  const roofTone = isMarket ? "accent" : isWorship ? "clay" : isBank || isCivic ? "slate" : "roof";
+
+  const accentTone = isHealth
+    ? "foliage"
+    : isSchool
+      ? "sign"
+      : isWorship
+        ? "linen"
+        : isTransit
+          ? "accent"
+          : "concrete";
+
+  const windowCount = isBank || isCivic || isSchool ? 3 : 2;
+  const windowPositions = Array.from(
+    { length: windowCount },
+    (_, index) => ((index - (windowCount - 1) / 2) * width) / (windowCount + 1),
+  );
+
   return (
     <group position={position} rotation={[0, rotation, 0]}>
-      <mesh position={[0, height / 2, 0]} castShadow receiveShadow>
+      {/* Foundation */}
+      <mesh position={[0, 0.09, 0]} receiveShadow castShadow>
+        <boxGeometry args={[width + 0.16, 0.18, depth + 0.16]} />
+        <WorldMaterial tone="concrete" />
+      </mesh>
+
+      {/* Main structure */}
+      <mesh position={[0, height / 2 + 0.18, 0]} castShadow receiveShadow>
         <boxGeometry args={[width, height, depth]} />
-        <WorldMaterial />
+        <WorldMaterial tone="wall" />
       </mesh>
-      <mesh position={[0, height + 0.12, 0]} castShadow>
-        <boxGeometry args={[width + 0.2, 0.24, depth + 0.2]} />
-        <WorldMaterial tone={shop ? "slate" : "clay"} />
+
+      {/* Main roof */}
+      <mesh position={[0, height + 0.31, 0]} castShadow receiveShadow>
+        <boxGeometry args={[width + 0.32, 0.24, depth + 0.32]} />
+        <WorldMaterial tone={roofTone} />
       </mesh>
-      <mesh position={[0, WORLD_SCALE.door / 2, depth / 2 + 0.015]}>
-        <boxGeometry args={[shop ? width * 0.65 : 0.85, WORLD_SCALE.door, 0.04]} />
+
+      {/* Roof edge */}
+      <mesh position={[0, height + 0.45, 0]}>
+        <boxGeometry args={[width + 0.18, 0.07, depth + 0.18]} />
+        <WorldMaterial tone="concrete" />
+      </mesh>
+
+      {/* Front entrance */}
+      <mesh position={[0, WORLD_SCALE.door / 2 + 0.18, depth / 2 + 0.04]}>
+        <boxGeometry args={[isMarket ? width * 0.48 : width * 0.3, WORLD_SCALE.door, 0.08]} />
         <WorldMaterial tone="timber" />
       </mesh>
-      {detailed && (
-        <>
-          <WorldInstances
-            tone="linen"
-            items={[-1, 1].map((side) => ({
-              position: [side * width * 0.32, height * 0.64, depth / 2 + 0.04],
-              scale: [width * 0.21, 0.75, 0.06],
-            }))}
-          />
-          <WorldInstances
-            tone="slate"
-            items={[-1, 1].map((side) => ({
-              position: [side * width * 0.32, height * 0.64, depth / 2 + 0.08],
-              scale: [width * 0.17, 0.61, 0.025],
-            }))}
-          />
-          {shop && (
-            <mesh position={[0, height * 0.84, depth / 2 + 0.3]} castShadow>
-              <boxGeometry args={[width * 1.06, 0.15, 0.75]} />
-              <WorldMaterial tone="foliage" />
+
+      {/* Detailed windows */}
+      {detailed &&
+        windowPositions.map((x, index) => (
+          <group key={`window-${index}`} position={[x, height * 0.65 + 0.18, depth / 2 + 0.045]}>
+            <mesh>
+              <boxGeometry args={[width * 0.2, height * 0.29, 0.08]} />
+              <WorldMaterial tone="windowFrame" />
             </mesh>
-          )}
+
+            <mesh position={[0, 0, 0.045]}>
+              <boxGeometry args={[width * 0.16, height * 0.25, 0.025]} />
+              <WorldMaterial tone="glass" />
+            </mesh>
+
+            <mesh position={[0, 0, 0.065]}>
+              <boxGeometry args={[0.035, height * 0.25, 0.025]} />
+              <WorldMaterial tone="metal" />
+            </mesh>
+          </group>
+        ))}
+
+      {/* MARKET AND FOOD BUILDINGS */}
+      {isMarket && (
+        <>
+          <mesh position={[0, height * 0.84, depth / 2 + 0.32]} castShadow>
+            <boxGeometry args={[width * 1.12, 0.17, 0.72]} />
+            <WorldMaterial tone="accent" />
+          </mesh>
+
+          {[-1, 1].map((side) => (
+            <mesh
+              key={`market-support-${side}`}
+              position={[side * width * 0.43, height * 0.65, depth / 2 + 0.28]}
+            >
+              <boxGeometry args={[0.07, height * 0.36, 0.07]} />
+              <WorldMaterial tone="metal" />
+            </mesh>
+          ))}
         </>
+      )}
+
+      {/* BANK AND CIVIC BUILDINGS */}
+      {(isBank || isCivic) &&
+        [-1, 1].map((side) => (
+          <mesh
+            key={`column-${side}`}
+            position={[side * width * 0.4, height * 0.45 + 0.18, depth / 2 + 0.08]}
+            castShadow
+          >
+            <boxGeometry args={[0.16, height * 0.85, 0.18]} />
+            <WorldMaterial tone="linen" />
+          </mesh>
+        ))}
+
+      {/* HEALTH BUILDINGS */}
+      {isHealth && (
+        <mesh position={[0, height * 0.96, depth / 2 + 0.04]}>
+          <boxGeometry args={[width * 0.55, 0.13, 0.08]} />
+          <WorldMaterial tone="foliage" />
+        </mesh>
+      )}
+
+      {/* SCHOOL AND LIBRARY BUILDINGS */}
+      {(isSchool || isClub || isServices) && (
+        <mesh position={[0, height + 0.55, 0]}>
+          <boxGeometry args={[width * 0.72, 0.12, depth * 0.72]} />
+          <WorldMaterial tone={accentTone} />
+        </mesh>
+      )}
+
+      {/* WORSHIP BUILDINGS */}
+      {isWorship && (
+        <>
+          <mesh position={[width * 0.3, height + 0.72, 0]}>
+            <boxGeometry args={[0.22, 0.85, 0.22]} />
+            <WorldMaterial tone="linen" />
+          </mesh>
+
+          <mesh position={[width * 0.3, height + 1.2, 0]} rotation={[0, Math.PI / 4, 0]}>
+            <coneGeometry args={[0.2, 0.38, 4]} />
+            <WorldMaterial tone="roof" />
+          </mesh>
+        </>
+      )}
+
+      {/* TRANSPORT BUILDINGS */}
+      {isTransit && (
+        <>
+          <mesh position={[0, height * 0.88, depth / 2 + 0.48]}>
+            <boxGeometry args={[width * 1.15, 0.12, 0.9]} />
+            <WorldMaterial tone="accent" />
+          </mesh>
+
+          {[-1, 1].map((side) => (
+            <mesh
+              key={`transit-pillar-${side}`}
+              position={[side * width * 0.42, height * 0.55, depth / 2 + 0.48]}
+            >
+              <boxGeometry args={[0.09, height * 0.65, 0.09]} />
+              <WorldMaterial tone="metal" />
+            </mesh>
+          ))}
+        </>
+      )}
+
+      {/* SPORTS AND RECREATION BUILDINGS */}
+      {isSport && (
+        <mesh position={[0, height + 0.55, 0]}>
+          <boxGeometry args={[width * 0.55, 0.15, depth * 0.55]} />
+          <WorldMaterial tone="foliage" />
+        </mesh>
+      )}
+
+      {/* SHOPFRONT / BUILDING STEP */}
+      {detailed && (
+        <mesh position={[0, 0.13, depth / 2 + 0.2]} receiveShadow>
+          <boxGeometry args={[width * 0.55, 0.16, 0.38]} />
+          <WorldMaterial tone="concrete" />
+        </mesh>
       )}
     </group>
   );

@@ -549,3 +549,20 @@
   gap: 0.6rem;
   min-width: 0;
 }
+
+.item-preview-3d {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 0.9;
+  min-height: 180px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--primary) 12%, var(--card)), var(--background));
+}
+
+.item-preview-3d canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}

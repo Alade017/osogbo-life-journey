@@ -1,5 +1,6 @@
 /** Presentation units only. Never use these to change simulation coordinates. */
 const CHARACTER_HEIGHT = 1.7;
+
 export const WORLD_SCALE = {
   character: CHARACTER_HEIGHT,
   door: CHARACTER_HEIGHT * (2.1 / 1.7),
@@ -9,21 +10,41 @@ export const WORLD_SCALE = {
   furniture: CHARACTER_HEIGHT / 1.7,
 } as const;
 
+/**
+ * Shared visual palette for the city overview and playable neighborhood.
+ * Keep these values presentation-only. Do not use them for game logic.
+ */
 export const WORLD_PALETTE = {
-  // Eight shared outdoor tones.
-  ground: "#e5d6bc",
+  // Outdoor environment
+  ground: "#d9c9ad",
   wall: "#d4bea0",
   clay: "#b77f68",
   foliage: "#89977c",
   timber: "#82705d",
-  road: "#99978e",
+  road: "#777872",
   slate: "#71848b",
   linen: "#f1e9d9",
-  // Additional interior tones retained at the owner's explicit request.
+
+  // Building and architectural details
+  concrete: "#b9b3a7",
+  roof: "#74685e",
+  roofLight: "#918174",
+  accent: "#c47c45",
+  sign: "#e7c77f",
+  metal: "#626b6b",
+  glass: "#9bc8d8",
+  windowFrame: "#e7dfce",
+  door: "#70401f",
+
+  // Street details
+  roadMarking: "#eee6d5",
+  sidewalk: "#c5b9a5",
+  path: "#b8a58a",
+  drainage: "#555b59",
+
+  // Interior tones retained for existing interior scenes
   partition: "#087f74",
   trim: "#e5e3d8",
-  window: "#9bc8d8",
-  door: "#70401f",
   tileLight: "#d8d6cd",
   tileShade: "#c8c6bd",
   tileBath: "#adb8b9",
@@ -31,8 +52,15 @@ export const WORLD_PALETTE = {
   tileDark: "#292b30",
   tileDarkShade: "#202226",
 } as const;
+
 export type WorldTone = keyof typeof WORLD_PALETTE;
-export const WORLD_MATERIAL = { roughness: 1, metalness: 0, flatShading: true } as const;
+
+export const WORLD_MATERIAL = {
+  roughness: 1,
+  metalness: 0,
+  flatShading: true,
+} as const;
+
 export const WORLD_CAMERA = {
   fov: 42,
   azimuth: Math.PI / 4,

@@ -13,8 +13,7 @@ import {
 import type { AvatarAnimationState, AvatarEquipment } from "@/components/game/Avatar";
 import { WorldMaterial } from "./WorldScene";
 import { WORLD_SCALE } from "./world-theme";
-import { WORN_ITEM_MODELS } from "./world-item-models";
-
+import { WORN_BOTTOMS, WORN_CLOTHING, WORN_ITEM_MODELS, WORN_SHOES } from "./world-item-models";
 export type TaskPose = "sit" | "wash" | "cook" | "collect" | "stretch";
 
 type ArmPose = (phase: number, side: number) => number;
@@ -119,6 +118,15 @@ export function WorldCharacter({
   const AccessoryModel = wornAccessory?.item?.slug
     ? WORN_ITEM_MODELS[wornAccessory.item.slug]
     : undefined;
+  const wornTop = equipment.find((item) => item.slot === "top") as
+    { item?: { slug?: string | null } | null } | undefined;
+  const TopModel = wornTop?.item?.slug ? WORN_CLOTHING[wornTop.item.slug] : undefined;
+  const wornBottom = equipment.find((item) => item.slot === "bottom") as
+    { item?: { slug?: string | null } | null } | undefined;
+  const BottomModel = wornBottom?.item?.slug ? WORN_BOTTOMS[wornBottom.item.slug] : undefined;
+  const wornShoes = equipment.find((item) => item.slot === "shoes") as
+    { item?: { slug?: string | null } | null } | undefined;
+  const ShoesModel = wornShoes?.item?.slug ? WORN_SHOES[wornShoes.item.slug] : undefined;
   return (
     <group name={`character:${name}`} position={position} rotation={[0, yaw, 0]}>
       <group
@@ -135,6 +143,9 @@ export function WorldCharacter({
         <mesh position={[0, h * 0.57, 0]} castShadow receiveShadow>
           <boxGeometry args={[h * 0.28, h * 0.36, h * 0.17]} />
           <WorldMaterial color={OUTFITS[safe.outfit]!} />
+          {TopModel ? <TopModel h={h} /> : null}
+          {BottomModel ? <BottomModel h={h} /> : null}
+          {ShoesModel ? <ShoesModel h={h} /> : null}
         </mesh>
         <mesh position={[0, h * 0.79, 0]} castShadow>
           <cylinderGeometry args={[h * 0.055, h * 0.06, h * 0.08, 8]} />

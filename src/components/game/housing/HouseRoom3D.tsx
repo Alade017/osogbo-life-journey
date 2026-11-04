@@ -196,7 +196,7 @@ function OsogboRoomPrototype({
           </mesh>
           <mesh position={[0, 0, 0.075]}>
             <boxGeometry args={[1.46, 0.76, 0.035]} />
-            <WorldMaterial tone="window" />
+            <WorldMaterial tone="glass" />
           </mesh>
           {[-0.22, 0, 0.22].map((y) => (
             <mesh key={y} position={[0, y, 0.1]}>

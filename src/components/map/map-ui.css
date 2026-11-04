@@ -281,24 +281,6 @@
   box-shadow: var(--elevation-card);
 }
 
-/* District labels (from DistrictZones). */
-.district-label {
-  display: inline-block;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--card) 92%, transparent);
-  color: var(--foreground);
-  font: 700 11px/1.2 system-ui, sans-serif;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
-  box-shadow: 0 6px 14px -10px color-mix(in srgb, var(--foreground) 70%, transparent);
-  pointer-events: none;
-}
-
-.district-label[data-traffic="high"] {
-  border: 1px solid color-mix(in srgb, var(--primary) 50%, transparent);
-}
-
 /* ---------- Osun State overview ---------- */
 .osun-state-overview {
   display: grid;

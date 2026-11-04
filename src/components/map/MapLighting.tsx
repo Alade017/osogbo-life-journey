@@ -40,10 +40,7 @@ export function MapLighting({ size = 30 }: { size?: number }) {
   const minute = clock?.minute ?? 0;
   const { arc, day } = daylightFor(hour, minute);
 
-  const background = useMemo(
-    () => NIGHT_BACKGROUND.clone().lerp(DAY_BACKGROUND, day),
-    [day],
-  );
+  const background = useMemo(() => NIGHT_BACKGROUND.clone().lerp(DAY_BACKGROUND, day), [day]);
   const ambientColor = useMemo(() => NIGHT_AMBIENT.clone().lerp(DAY_AMBIENT, day), [day]);
   const sunPosition: [number, number, number] = [
     -Math.cos(arc) * size * 0.9,
@@ -63,7 +60,7 @@ export function MapLighting({ size = 30 }: { size?: number }) {
       <directionalLight
         position={sunPosition}
         color={ambientColor}
-        intensity={0.5 + 1.3 * day}
+        intensity={0.1 + 1.3 * day}
         castShadow
         shadow-mapSize={[1024, 1024]}
         shadow-bias={-0.001}

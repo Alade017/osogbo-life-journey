@@ -28,6 +28,9 @@ import {
 import { getItemArt } from "@/lib/item-art";
 import type { Appearance } from "@/game/avatar-appearance";
 import { CharacterPreview } from "@/components/3d/CharacterPreview";
+import { ItemPreview3D, hasItemModel } from "@/components/3d/ItemPreview3D";
+import { ItemThumbnailQueue } from "@/components/3d/ItemThumbnailQueue";
+import { useItemThumbnail } from "@/components/3d/item-thumbnails";
 import "@/components/game/profile-inventory.css";
 
 export const Route = createFileRoute("/_authenticated/_game/inventory")({
@@ -41,6 +44,16 @@ const ICONS: Record<string, LucideIcon> = {
   shirt: Shirt,
   "glass-water": GlassWater,
 };
+
+function InventoryTileArt({ slug, Icon }: { slug: string | null | undefined; Icon: LucideIcon }) {
+  const thumbnail = useItemThumbnail(slug);
+  const artwork = thumbnail ?? getItemArt(slug);
+  return artwork ? (
+    <img src={artwork} alt="" loading="lazy" width={64} height={64} />
+  ) : (
+    <Icon size={26} />
+  );
+}
 
 export function InventoryPage() {
   const { data: items, isLoading, isError, error, refetch, isRefetching } = useQuery(q.inventory());
@@ -138,6 +151,9 @@ export function InventoryPage() {
 
   return (
     <div className="pi-page pi-inventory">
+      <ItemThumbnailQueue
+        slugs={(items ?? []).map((entry) => entry.item?.slug ?? "").filter(Boolean)}
+      />
       <header className="pi-masthead">
         <p className="pi-eyebrow">Your collection</p>
         <h1>Wardrobe</h1>
@@ -186,10 +202,7 @@ export function InventoryPage() {
           {EQUIPMENT_SLOTS.map((slot) => {
             const equipped = equipment?.find((entry) => entry.slot === slot);
             return (
-              <li
-                key={slot}
-                className={`pi-slot ${requestedSlot === slot ? "is-selected" : ""}`}
-              >
+              <li key={slot} className={`pi-slot ${requestedSlot === slot ? "is-selected" : ""}`}>
                 <span className="pi-slot-name">{slot}</span>
                 {equipped ? (
                   <strong className="pi-slot-item">{equipped.item?.name ?? "Equipped"}</strong>
@@ -269,7 +282,6 @@ export function InventoryPage() {
             <div className="pi-bag" id="inventory-items">
               {compatibleItems.map((item) => {
                 const Icon = ICONS[item.item?.icon ?? ""] ?? Package;
-                const artwork = getItemArt(item.item?.slug);
                 return (
                   <button
                     key={item.id}
@@ -279,11 +291,7 @@ export function InventoryPage() {
                     onClick={() => setSelectedId(item.id)}
                   >
                     <span className="pi-tile-art" aria-hidden="true">
-                      {artwork ? (
-                        <img src={artwork} alt="" loading="lazy" width={64} height={64} />
-                      ) : (
-                        <Icon size={26} />
-                      )}
+                      <InventoryTileArt slug={item.item?.slug} Icon={Icon} />
                     </span>
                     <strong>{item.item?.name}</strong>
                     <small>
@@ -298,6 +306,13 @@ export function InventoryPage() {
             <aside className="pi-detail" aria-live="polite">
               {selectedItem ? (
                 <>
+                  {hasItemModel(selectedItem.item?.slug) && (
+                    <ItemPreview3D
+                      key={selectedItem.item?.slug}
+                      slug={selectedItem.item?.slug ?? ""}
+                      label={selectedItem.item?.name ?? "Item"}
+                    />
+                  )}
                   <p className="pi-eyebrow">Item details</p>
                   <h2>{selectedItem.item?.name}</h2>
                   <p className="pi-sub">{selectedItem.item?.description}</p>

@@ -24,6 +24,7 @@ import {
   WorldPeople,
   WorldRoads,
   WorldTrees,
+  type WorldTree,
   WorldInstances,
   type WorldInstance,
 } from "../3d/WorldScene";
@@ -115,11 +116,19 @@ export function R3FNeighborhoodSurface({
   const selfPoint = self && toScene(self, district.origin);
   const target: [number, number, number] =
     follow && selfPoint ? point(selfPoint.x, selfPoint.y) : [0, 0, 0];
-  const trees = (area.obstacles ?? [])
+  const trees: WorldTree[] = (area.obstacles ?? [])
     .filter((o) => o.kind === "tree")
-    .map((o) => {
+    .map((o, index) => {
       const p = point(o.x, o.y);
-      return [p[0], p[2]] as [number, number];
+
+      // Deterministic variation based on tree index.
+      const variation = (index * 17) % 30;
+
+      return {
+        position: [p[0], p[2]],
+        height: 0.85 + variation / 100,
+        canopyScale: 0.85 + ((index * 13) % 35) / 100,
+      };
     });
   return (
     <NeighborhoodBoundary>
@@ -179,6 +188,7 @@ export function R3FNeighborhoodSurface({
             );
           })}
           <WorldTrees positions={trees} />
+
           {area.obstacles
             ?.filter((o) => ["compound", "shop", "kiosk"].includes(o.kind))
             .map((o) => (

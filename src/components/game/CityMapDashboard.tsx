@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarDays, CloudOff, MapPinned, Smile, Compass, Lock } from "lucide-react";
+import { CalendarDays, CloudOff, MapPinned, Smile, Compass, Lock, X } from "lucide-react";
 import {
   MapCanvas,
   type MapBillboardMarker,
@@ -78,6 +78,7 @@ export function CityMapDashboard({
   const [billboardNow, setBillboardNow] = useState(() => Date.now());
   const [mapLevel, setMapLevel] = useState<"town" | "state">("town");
   const [selectedTownId, setSelectedTownId] = useState("osogbo");
+  const [soonOpen, setSoonOpen] = useState(false);
   const queryClient = useQueryClient();
   const character = useQuery(q.character());
   const housingMarkers = useQuery({
@@ -317,10 +318,9 @@ export function CityMapDashboard({
           ? "Content"
           : "Low"
       : "Settled");
-  
+
   return (
     <section className="city-map-dashboard is-world-map map-experience" aria-label="Osun Life map">
-      
       <header className="map-hud">
         <div className="map-hud-status" aria-label="Map status">
           <span className="map-hud-chip">
@@ -340,6 +340,18 @@ export function CityMapDashboard({
                 : "Not scheduled"}
             </strong>
           </span>
+          {mapLevel === "town" && lockedPlaces.length > 0 && (
+            <button
+              type="button"
+              className="map-soon-button"
+              aria-expanded={soonOpen}
+              onClick={() => setSoonOpen(true)}
+            >
+              <Lock size={13} aria-hidden="true" />
+              <strong>{lockedPlaces.length}</strong>
+              <small>coming soon</small>
+            </button>
+          )}
         </div>
         <div className="map-hud-actions">
           <button
@@ -348,15 +360,6 @@ export function CityMapDashboard({
             onClick={() => setMapLevel((level) => (level === "town" ? "state" : "town"))}
           >
             <MapPinned size={16} />
-            {mapLevel === "town" && lockedPlaces.length > 0 && (
-        <div className="map-locked-strip" aria-label="Places coming soon">
-          {lockedPlaces.map((place) => (
-            <span key={place.id} className="map-locked-chip">
-              <Lock size={12} aria-hidden="true" /> {place.label} · Coming soon
-            </span>
-          ))}
-        </div>
-      )}
             {mapLevel === "town" ? "Explore Osun" : "Osogbo map"}
           </button>
           {mapLevel === "town" && isPlayableDistrict(currentLocation?.slug) && (
@@ -392,6 +395,35 @@ export function CityMapDashboard({
         <div role="status" className="map-offline-banner">
           <CloudOff size={16} />
           Offline. Showing your last saved map.
+        </div>
+      )}
+      {soonOpen && (
+        <div className="map-sheet map-soon-sheet" role="dialog" aria-label="Places coming soon">
+          <header className="map-sheet-header">
+            <div>
+              <p className="map-sheet-eyebrow">Coming to Osun</p>
+              <h2>{lockedPlaces.length} places in progress</h2>
+            </div>
+            <button
+              type="button"
+              className="map-icon-button"
+              aria-label="Close"
+              onClick={() => setSoonOpen(false)}
+            >
+              <X size={18} aria-hidden="true" />
+            </button>
+          </header>
+          <ul className="map-soon-list">
+            {lockedPlaces.map((place) => (
+              <li key={place.id}>
+                <span className="map-soon-icon">
+                  <Lock size={14} aria-hidden="true" />
+                </span>
+                <span>{place.label}</span>
+                <small>Coming soon</small>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
       {travelInfo?.landmark_id === "olaiya-junction" && (
@@ -472,7 +504,7 @@ export function CityMapDashboard({
           onOpenOsogbo={() => setMapLevel("town")}
         />
       )}
-            {mapLevel === "town" && character.data && (
+      {mapLevel === "town" && character.data && (
         <div className="map-player-dock" aria-label="Your character">
           <span className="map-player-avatar" aria-hidden="true">
             <Avatar

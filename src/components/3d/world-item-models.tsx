@@ -29,3 +29,67 @@ export function BackpackModel({ h }: ItemModelProps) {
 export const WORN_ITEM_MODELS: Partial<Record<string, ComponentType<ItemModelProps>>> = {
   backpack: BackpackModel,
 };
+/** A fitted top worn over the torso. Positions are absolute within the character's body group. */
+export function ShirtWorn({
+  h,
+  color = "#f2efe6",
+  accent = "#2f6f4e",
+}: ItemModelProps & { color?: string; accent?: string }) {
+  return (
+    <group>
+      <mesh position={[0, h * 0.57, 0]} castShadow>
+        <boxGeometry args={[h * 0.3, h * 0.38, h * 0.19]} />
+        <WorldMaterial color={color} />
+      </mesh>
+      <mesh position={[0, h * 0.74, h * 0.1]}>
+        <boxGeometry args={[h * 0.14, h * 0.03, h * 0.03]} />
+        <WorldMaterial color={accent} />
+      </mesh>
+    </group>
+  );
+}
+
+/** Worn tops by slug. Keys must match inventory_items.slug. */
+export const WORN_CLOTHING: Partial<Record<string, ComponentType<ItemModelProps>>> = {
+  shirt: ShirtWorn,
+};
+/** Trousers worn over the legs. Positions are estimates from the base legs and should be checked in the preview. */
+export function TrousersWorn({ h, color = "#3b4a5c" }: ItemModelProps & { color?: string }) {
+  return (
+    <group>
+      <mesh position={[0, h * 0.2, 0]} castShadow>
+        <boxGeometry args={[h * 0.3, h * 0.42, h * 0.18]} />
+        <WorldMaterial color={color} />
+      </mesh>
+      {[-1, 1].map((side) => (
+        <mesh key={side} position={[side * h * 0.075, h * 0.1, 0]} castShadow>
+          <boxGeometry args={[h * 0.13, h * 0.22, h * 0.15]} />
+          <WorldMaterial color={color} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+/** Shoes at the base of each leg. */
+export function ShoesWorn({ h, color = "#2a2a2a" }: ItemModelProps & { color?: string }) {
+  return (
+    <group>
+      {[-1, 1].map((side) => (
+        <mesh key={side} position={[side * h * 0.075, h * 0.03, h * 0.03]} castShadow>
+          <boxGeometry args={[h * 0.12, h * 0.07, h * 0.2]} />
+          <WorldMaterial color={color} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+/** Worn bottoms and shoes by slug. Replace the placeholder keys with the real inventory_items.slug values. */
+export const WORN_BOTTOMS: Partial<Record<string, ComponentType<ItemModelProps>>> = {
+  // "your_trousers_slug": TrousersWorn,
+};
+
+export const WORN_SHOES: Partial<Record<string, ComponentType<ItemModelProps>>> = {
+  // "your_shoes_slug": ShoesWorn,
+};
