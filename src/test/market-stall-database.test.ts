@@ -94,9 +94,10 @@ describe("market stall rental, categories and sales", () => {
   it("charges the first week once, enforces rental gating and validates categories", async () => {
     expect(
       (
-        await db.query("select stall_category,is_open from player_stalls where user_id=$1", [
-          seller,
-        ])
+        await db.query<{ stall_category: string; is_open: boolean }>(
+          "select stall_category,is_open from player_stalls where user_id=$1",
+          [seller],
+        )
       ).rows[0],
     ).toEqual({ stall_category: "fabrics", is_open: false });
     const first = await call<{ duplicate: boolean; weeklyRentMinor: number }>(
@@ -104,18 +105,18 @@ describe("market stall rental, categories and sales", () => {
       [requestId(1)],
     );
     expect(first).toMatchObject({ duplicate: false, weeklyRentMinor: 2000 });
+    expect(await call("public.rent_market_stall($1::uuid)", [requestId(1)])).toMatchObject({
+      duplicate: true,
+      weeklyRentMinor: 2000,
+    });
     expect(
-      await call("public.rent_market_stall($1::uuid)", [requestId(1)]),
-    ).toMatchObject({ duplicate: true, weeklyRentMinor: 2000 });
-    expect(
-      (await db.query<{ balance: number }>("select balance from wallets where user_id=$1", [seller]))
-        .rows[0]?.balance,
+      (
+        await db.query<{ balance: number }>("select balance from wallets where user_id=$1", [
+          seller,
+        ])
+      ).rows[0]?.balance,
     ).toBe(8000);
-    await deny(
-      "select public.rent_market_stall($1::uuid)",
-      [requestId(2)],
-      "ALREADY_RENTING",
-    );
+    await deny("select public.rent_market_stall($1::uuid)", [requestId(2)], "ALREADY_RENTING");
     await asUser(noLease);
     await deny(
       "select public.save_player_stall('Unrented','Crafts',true)",
@@ -182,11 +183,15 @@ describe("market stall rental, categories and sales", () => {
         .rows[0]?.balance,
     ).toBe(7200);
     expect(
-      (await db.query("select balance from wallets where user_id=$1", [seller])).rows[0]?.balance,
+      (
+        await db.query<{ balance: number }>("select balance from wallets where user_id=$1", [
+          seller,
+        ])
+      ).rows[0]?.balance,
     ).toBe(10800);
     expect(
       (
-        await db.query(
+        await db.query<{ quantity: number }>(
           "select quantity from player_inventory where user_id=$1 and item_id=$2",
           [buyer, meatPie.rows[0]!.id],
         )
@@ -194,7 +199,7 @@ describe("market stall rental, categories and sales", () => {
     ).toBe(2);
     expect(
       (
-        await db.query(
+        await db.query<{ count: number }>(
           "select count(*)::int as count from transactions where category in ('player_stall_purchase','player_stall_sale')",
         )
       ).rows[0]?.count,
@@ -218,35 +223,49 @@ describe("market stall rental, categories and sales", () => {
     await call("public._advance_property_rent_cycles()");
     expect(
       (
-        await db.query("select is_open from player_stalls where user_id=$1", [seller])
+        await db.query<{ is_open: boolean }>("select is_open from player_stalls where user_id=$1", [
+          seller,
+        ])
       ).rows[0]?.is_open,
     ).toBe(false);
     expect(
-      (await db.query("select is_open from stall_income_state where user_id=$1", [seller])).rows[0]
-        ?.is_open,
+      (
+        await db.query<{ is_open: boolean }>(
+          "select is_open from stall_income_state where user_id=$1",
+          [seller],
+        )
+      ).rows[0]?.is_open,
     ).toBe(false);
     const paid = await call<{ status: string; weeklyRentMinor: number }>(
       "public.pay_market_stall_rent($1::uuid)",
       [requestId(7)],
     );
     expect(paid).toMatchObject({ status: "current", weeklyRentMinor: 2000 });
+    expect(await call("public.pay_market_stall_rent($1::uuid)", [requestId(7)])).toMatchObject({
+      duplicate: true,
+      status: "current",
+      weeklyRentMinor: 2000,
+    });
     expect(
-      await call("public.pay_market_stall_rent($1::uuid)", [requestId(7)]),
-    ).toMatchObject({ duplicate: true, status: "current", weeklyRentMinor: 2000 });
-    expect(
-      (await db.query("select balance from wallets where user_id=$1", [seller])).rows[0]
-        ?.balance,
+      (
+        await db.query<{ balance: number }>("select balance from wallets where user_id=$1", [
+          seller,
+        ])
+      ).rows[0]?.balance,
     ).toBe(6000);
     expect(
-      (await db.query("select is_open from player_stalls where user_id=$1", [seller])).rows[0]
-        ?.is_open,
+      (
+        await db.query<{ is_open: boolean }>("select is_open from player_stalls where user_id=$1", [
+          seller,
+        ])
+      ).rows[0]?.is_open,
     ).toBe(false);
   });
 
   it("repossesses a stall after the rescue deadline and requires a new rental", async () => {
     await call("public.rent_market_stall($1::uuid)", [requestId(9)]);
     await call("public.save_player_stall('Ade Fabric Corner','fabrics',true)");
-    await db.query(
+    await db.query<{ is_active: boolean; status: string }>(
       `update property_rent_cycles set due_at=now()-interval '5 days',
         grace_ends_at=now()-interval '2 days',rescue_ends_at=now()-interval '1 second'
         where character_id=(select id from characters where user_id=$1) and status='current'`,
@@ -265,8 +284,11 @@ describe("market stall rental, categories and sales", () => {
       ).rows[0],
     ).toEqual({ is_active: false, status: "repossessed" });
     expect(
-      (await db.query("select is_open from player_stalls where user_id=$1", [seller])).rows[0]
-        ?.is_open,
+      (
+        await db.query<{ is_open: boolean }>("select is_open from player_stalls where user_id=$1", [
+          seller,
+        ])
+      ).rows[0]?.is_open,
     ).toBe(false);
     await deny(
       "select public.save_player_stall('Ade Fabric Corner','fabrics',true)",
@@ -290,9 +312,7 @@ describe("market stall rental, categories and sales", () => {
       "INVALID_STALL_CATEGORY",
     );
     await db.exec("set role authenticated");
-    expect(
-      (await db.query("select id from player_stalls")).rows,
-    ).toEqual([]);
+    expect((await db.query<{ id: string }>("select id from player_stalls")).rows).toEqual([]);
     await db.exec("reset role");
   });
 });

@@ -25,7 +25,9 @@ it("shows real cooking terms and changes meal preference without changing the ac
   const p = props();
   render(<HomeAccessoryPanel {...p} />);
   expect(screen.getByRole("region", { name: "Your cooker action" })).toBeVisible();
-  expect(screen.getByText(`${ACTION_CATALOG.cook.durationMinutes} game min`)).toBeInTheDocument();
+  expect(
+    screen.getByText(`18s � ${ACTION_CATALOG.cook.durationMinutes} game min`),
+  ).toBeInTheDocument();
   expect(screen.getByText(`+${ACTION_CATALOG.cook.needs.hunger} Hunger`)).toBeInTheDocument();
   fireEvent.click(screen.getByRole("radio", { name: "Indomie & egg" }));
   expect(screen.getByRole("radio", { name: "Indomie & egg" })).toBeChecked();
@@ -111,4 +113,14 @@ it("presents non-cooking tasks without invented meal options", () => {
   expect(screen.getByRole("alert")).toHaveTextContent("Reconnect first");
   fireEvent.click(screen.getByRole("button", { name: "Close accessory" }));
   expect(p.onClose).toHaveBeenCalledOnce();
+});
+
+it("shows alternative task durations and passes the chosen action to the task runner", () => {
+  const p = props();
+  render(<HomeAccessoryPanel {...p} placement={{ ...placement, item_id: "rain-shower" }} />);
+  fireEvent.click(screen.getByRole("button", { name: /Wash your hands 3s/ }));
+  expect(screen.getByText("3s � 3 game min")).toBeInTheDocument();
+  expect(screen.getByText("+12 Hygiene")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Wash your hands" }));
+  expect(p.onUse).toHaveBeenCalledWith("wash_hands");
 });

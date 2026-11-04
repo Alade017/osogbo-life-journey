@@ -68,7 +68,14 @@ function unwrap<T>(res: { data: T; error: { message: string } | null }): T {
   return res.data;
 }
 
+
 export const q = {
+  accountSummary: () =>
+    queryOptions({
+      queryKey: ["accountSummary"],
+      retry: false,
+      queryFn: async () => unwrap(await supabase.rpc("my_account_summary")) as Json,
+    }),
   advertisingMarket: () =>
     queryOptions({
       queryKey: ["advertisingMarket"],
@@ -457,6 +464,21 @@ export const rpc = {
     unwrap(
       await supabase.rpc("set_my_home_visit_access", { p_allow_friends: allowFriends }),
     ) as Json,
+   
+    updateMySettings: async (patch: {
+      displayName?: string | undefined;
+      musicEnabled?: boolean | undefined;
+      effectsEnabled?: boolean | undefined;
+      reducedMotion?: boolean | undefined;
+    }) =>
+      unwrap(
+        await supabase.rpc("update_my_settings", {
+          ...(patch.displayName !== undefined ? { p_display_name: patch.displayName } : {}),
+          ...(patch.musicEnabled !== undefined ? { p_music_enabled: patch.musicEnabled } : {}),
+          ...(patch.effectsEnabled !== undefined ? { p_effects_enabled: patch.effectsEnabled } : {}),
+          ...(patch.reducedMotion !== undefined ? { p_reduced_motion: patch.reducedMotion } : {}),
+        }),
+      ) as Json,
   purchaseHomeUpgrade: async (args: {
     roomId: string;
     upgradeId: string;

@@ -75,3 +75,12 @@ it("reports gesture zoom and preserves the orbit direction when buttons change z
   expect(camera.position.length()).toBeCloseTo(distance / 1.35);
   expect(camera.position.clone().normalize().distanceTo(direction)).toBeLessThan(0.000001);
 });
+it("allows bounded vertical house swipes without going below the floor or overhead", () => {
+  render(<WorldCamera width={12} depth={10} stage horizontalOrbit verticalOrbit />);
+  expect(state.orbitOptions["enableRotate"]).toBe(true);
+  expect(Number(state.orbitOptions["minPolarAngle"])).toBeGreaterThan(0);
+  expect(Number(state.orbitOptions["maxPolarAngle"])).toBeLessThan(Math.PI / 2);
+  expect(Number(state.orbitOptions["maxPolarAngle"])).toBeGreaterThan(
+    Number(state.orbitOptions["minPolarAngle"]),
+  );
+});

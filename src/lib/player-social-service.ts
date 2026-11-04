@@ -256,17 +256,19 @@ export async function getSocialMessages(input: {
   beforeId?: string | null;
   limit?: number;
 }) {
+  const before = input.before ?? undefined;
+  const beforeId = input.beforeId ?? undefined;
   const args = {
     ...(input.locationId ? { p_location_id: input.locationId } : {}),
     ...(input.conversationId ? { p_conversation_id: input.conversationId } : {}),
-    p_before: input.before ?? null,
+    ...(before !== undefined ? { p_before: before } : {}),
     p_limit: input.limit ?? 50,
-    p_before_id: input.beforeId ?? null,
+    ...(beforeId !== undefined ? { p_before_id: beforeId } : {}),
   };
   const legacyArgs = {
     ...(input.locationId ? { p_location_id: input.locationId } : {}),
     ...(input.conversationId ? { p_conversation_id: input.conversationId } : {}),
-    p_before: input.before ?? null,
+    ...(before !== undefined ? { p_before: before } : {}),
     p_limit: input.limit ?? 50,
   };
   let response = await supabase.rpc("get_social_messages_with_media_v2", args);

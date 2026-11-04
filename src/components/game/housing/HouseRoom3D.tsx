@@ -778,7 +778,13 @@ function FoodPackage({
 }) {
   const overlayPortal = useContext(RoomOverlayContext);
   return (
-    <group position={position} onClick={event => {event.stopPropagation(); if(event.delta <= 4) onCollect?.(delivery.id);}}>
+    <group
+      position={position}
+      onClick={(event) => {
+        event.stopPropagation();
+        if (event.delta <= 4) onCollect?.(delivery.id);
+      }}
+    >
       <mesh castShadow receiveShadow position={[0, 0.22, 0]}>
         <boxGeometry args={[0.5, 0.38, 0.42]} />
         <WorldMaterial tone="clay" />
@@ -923,7 +929,11 @@ export function HouseRoom3D({
   gender = "nonbinary",
   equipment = [],
   animationState = "idle",
-  actorPosition, actorFacing = "south", taskPose, onWalk, onCollectPackage,
+  actorPosition,
+  actorFacing = "south",
+  taskPose,
+  onWalk,
+  onCollectPackage,
   activityRequestId = null,
   activityLabel = null,
   slots,
@@ -1048,23 +1058,43 @@ export function HouseRoom3D({
             editMode={editMode}
           />
           <RoomFloor houseTypeId={houseTypeId} width={width} depth={depth} />
-          {!editMode && !inputBlocked && onWalk && <mesh rotation={[-Math.PI/2,0,0]} position={[0,.035,0]}
-            onClick={event => {event.stopPropagation(); if(event.delta <= 4) onWalk([event.point.x,.06,event.point.z]);}}>
-            <planeGeometry args={[width-.6,depth-.6]} /><meshBasicMaterial transparent opacity={0} depthWrite={false} />
-          </mesh>}
-          {actorPosition ? <WorldCharacter name={characterName} appearance={appearance} gender={gender}
-            equipment={equipment} position={actorPosition} facing={actorFacing} animation={animationState}
-            {...(taskPose ? {taskPose} : {})} /> : <RoomCharacter
-            name={characterName}
-            appearance={appearance}
-            gender={gender}
-            equipment={equipment}
-            animationState={animationState}
-            activityRequestId={activityRequestId}
-            activityLabel={activityLabel}
-            position={[0, 0.06, depth * 0.18]}
-            bedPosition={bedPosition}
-          />}
+          {!editMode && !inputBlocked && onWalk && (
+            <mesh
+              rotation={[-Math.PI / 2, 0, 0]}
+              position={[0, 0.035, 0]}
+              onClick={(event) => {
+                event.stopPropagation();
+                if (event.delta <= 4) onWalk([event.point.x, 0.06, event.point.z]);
+              }}
+            >
+              <planeGeometry args={[width - 0.6, depth - 0.6]} />
+              <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+            </mesh>
+          )}
+          {actorPosition ? (
+            <WorldCharacter
+              name={characterName}
+              appearance={appearance}
+              gender={gender}
+              equipment={equipment}
+              position={actorPosition}
+              facing={actorFacing}
+              animation={animationState}
+              {...(taskPose ? { taskPose } : {})}
+            />
+          ) : (
+            <RoomCharacter
+              name={characterName}
+              appearance={appearance}
+              gender={gender}
+              equipment={equipment}
+              animationState={animationState}
+              activityRequestId={activityRequestId}
+              activityLabel={activityLabel}
+              position={[0, 0.06, depth * 0.18]}
+              bedPosition={bedPosition}
+            />
+          )}
           {foodDeliveries
             .filter(
               (delivery) =>

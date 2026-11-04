@@ -110,7 +110,6 @@ describe("sendSocialMessage", () => {
     await expect(getSocialMessages({ conversationId: "thread-1" })).resolves.toEqual([]);
     expect(rpc).toHaveBeenNthCalledWith(2, "get_social_messages_with_media", {
       p_conversation_id: "thread-1",
-      p_before: null,
       p_limit: 50,
     });
   });

@@ -53,8 +53,8 @@ export function HousingRepossessionNotice({ characterId }: { characterId: string
           <Dialog.Title>Your tenancy has ended</Dialog.Title>
           <Dialog.Description>
             The rent rescue period for {notice.houseName} ended without payment or a completed
-            resolution. The server revoked access to the home and moved your character to the city
-            centre streets. Your owned items remain in your inventory.
+            resolution. The server ended the tenancy and returned your character to the city centre.
+            Your owned items remain in your inventory.
           </Dialog.Description>
           <div className="housing-relief-actions">
             <button

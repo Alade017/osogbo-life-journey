@@ -80,7 +80,9 @@ export function WorldCharacter({
   useFrame(({ clock }) => {
     if (!arms.current || !legs.current) return;
     const moving =
-      animation !== "sleep" && !taskPose && (animation === "walk" || performance.now() < walkUntil.current);
+      animation !== "sleep" &&
+      !taskPose &&
+      (animation === "walk" || performance.now() < walkUntil.current);
     const phase = clock.elapsedTime * (moving ? 8 : 4);
     arms.current.children.forEach((part, index) => {
       const side = index % 2 ? 1 : -1;
@@ -98,7 +100,12 @@ export function WorldCharacter({
                 : 0;
     });
     legs.current.children.forEach((part, index) => {
-      part.rotation.x = taskPose === "sit" ? -Math.PI / 2 : !reduced && moving ? Math.sin(phase) * 0.4 * (index % 2 ? 1 : -1) : 0;
+      part.rotation.x =
+        taskPose === "sit"
+          ? -Math.PI / 2
+          : !reduced && moving
+            ? Math.sin(phase) * 0.4 * (index % 2 ? 1 : -1)
+            : 0;
     });
   });
   const skin = SKIN_TONES[safe.skin]!;
@@ -108,15 +115,20 @@ export function WorldCharacter({
       facing
     ] ?? 0;
   const wornAccessory = equipment.find((item) => item.slot === "accessory") as
-    | { item?: { slug?: string } | null }
-    | undefined;
+    { item?: { slug?: string } | null } | undefined;
   const AccessoryModel = wornAccessory?.item?.slug
     ? WORN_ITEM_MODELS[wornAccessory.item.slug]
     : undefined;
   return (
     <group name={`character:${name}`} position={position} rotation={[0, yaw, 0]}>
       <group
-        position={animation === "sleep" ? [0, 0.5, h * 0.5] : taskPose === "sit" ? [0, -h * .24, 0] : [0, 0, 0]}
+        position={
+          animation === "sleep"
+            ? [0, 0.5, h * 0.5]
+            : taskPose === "sit"
+              ? [0, -h * 0.24, 0]
+              : [0, 0, 0]
+        }
         rotation={[animation === "sleep" ? -Math.PI / 2 : 0, 0, 0]}
         scale={[build, 1, 1]}
       >

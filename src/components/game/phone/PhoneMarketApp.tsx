@@ -9,34 +9,17 @@ import { useWorldClock } from "@/hooks/use-world-clock";
 import { StallIncomePanel } from "@/components/game/StallIncomePanel";
 import { stallIncomeKey } from "@/lib/stall-income-service";
 import { PublicStallDirectory } from "./PublicStallDirectory";
-
-const GOODS_CATEGORIES = [
-  {
-    id: "fabrics",
-    label: "Adire & Ankara Fabrics",
-    desc: "Authentic Osogbo tie-dye and tailored wear",
-  },
-  {
-    id: "groceries",
-    label: "Fresh Market Produce",
-    desc: "Yam, peppers, plantain, palm oil and fruits",
-  },
-  {
-    id: "phones",
-    label: "Phone Care & Accessories",
-    desc: "Chargers, screen guards, earphones, casing",
-  },
-  {
-    id: "hospitality",
-    label: "Street Food & Cold Drinks",
-    desc: "Puff-puff, roasted plantain, suya, soft drinks",
-  },
-  {
-    id: "crafts",
-    label: "Handcrafted Beads & Art",
-    desc: "Osogbo sacred grove inspired wooden carvings and beads",
-  },
-];
+import {
+  getMarketStallRentStatus,
+  getMyPlayerStall,
+  getMyStallStock,
+  manageMyStallStock,
+  payMarketStallRent,
+  rentMarketStall,
+  saveMyPlayerStall,
+  STALL_CATEGORY_OPTIONS,
+  type StallCategory,
+} from "@/lib/market-stall-service";
 
 const THEMES = [
   { id: "indigo", label: "Adire Indigo", color: "#1e3a8a", border: "#3b82f6" },
@@ -56,21 +39,23 @@ export function PhoneMarketApp() {
   const { data: worldTime } = useWorldClock();
   const [quantities, setQuantities] = useState<Record<string, number>>({});
 
-  // Player stall query
   const stallQuery = useQuery({
     queryKey: ["playerStall", character?.id],
     enabled: !!character?.id,
-    queryFn: async () => {
-      // Migration 0060 is not in the generated client types yet.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
-        .from("player_stalls")
-        .select("id,name,goods,is_open")
-        .eq("character_id", character!.id)
-        .maybeSingle();
-      if (error && error.code !== "PGRST116") throw error;
-      return data as { id: string; name: string; goods: string; is_open: boolean } | null;
-    },
+    queryFn: () => getMyPlayerStall(character!.id),
+  });
+  const rentQuery = useQuery({
+    queryKey: ["marketStallRent", character?.id],
+    enabled: !!character?.id,
+    queryFn: getMarketStallRentStatus,
+    retry: false,
+  });
+  const activeLease = rentQuery.data?.status === "current";
+  const stockQuery = useQuery({
+    queryKey: ["myStallStock", character?.id],
+    enabled: !!character?.id && activeLease,
+    queryFn: getMyStallStock,
+    retry: false,
   });
   const npcStalls = useQuery({
     queryKey: ["npcMarketStalls"],
@@ -91,8 +76,8 @@ export function PhoneMarketApp() {
   });
 
   const [stallName, setStallName] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState(
-    GOODS_CATEGORIES[0]?.label ?? "General Goods",
+  const [selectedCategory, setSelectedCategory] = useState<StallCategory>(
+    STALL_CATEGORY_OPTIONS[0]?.id ?? "fabrics",
   );
   const [selectedTheme, setSelectedTheme] = useState("indigo");
   const [stallOpen, setStallOpen] = useState(false);
@@ -100,36 +85,72 @@ export function PhoneMarketApp() {
 
   if (stallQuery.data && !formInitialized) {
     setStallName(stallQuery.data.name);
-    setSelectedCategory(stallQuery.data.goods);
+    setSelectedCategory(
+      STALL_CATEGORY_OPTIONS.find((option) => option.id === stallQuery.data?.stall_category)?.id ??
+        "fabrics",
+    );
     setStallOpen(stallQuery.data.is_open);
     setFormInitialized(true);
   }
 
-  // Save/rent stall mutation
+  const invalidateStallState = async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["playerStall", character?.id] }),
+      queryClient.invalidateQueries({ queryKey: ["marketStallRent", character?.id] }),
+      queryClient.invalidateQueries({ queryKey: ["myStallStock", character?.id] }),
+      queryClient.invalidateQueries({ queryKey: ["ownedStalls", character?.id] }),
+      queryClient.invalidateQueries({ queryKey: ["publicPlayerStalls"] }),
+      queryClient.invalidateQueries({ queryKey: q.wallet().queryKey }),
+      queryClient.invalidateQueries({ queryKey: q.inventory().queryKey }),
+      queryClient.invalidateQueries({ queryKey: ["transactions"] }),
+    ]);
+    if (character?.user_id)
+      await queryClient.invalidateQueries({ queryKey: stallIncomeKey(character.user_id) });
+  };
+  const rentMutation = useMutation({
+    mutationFn: () => rentMarketStall(),
+    onSuccess: async () => {
+      await invalidateStallState();
+      toast.success("You rented an Oja-Oba stall for one week.");
+    },
+    onError: (error: Error) => toast.error(error.message.replaceAll("_", " ")),
+  });
+  const payRentMutation = useMutation({
+    mutationFn: () => payMarketStallRent(),
+    onSuccess: async () => {
+      await invalidateStallState();
+      toast.success("Your Oja-Oba stall rent is current. Reopen it when you are ready.");
+    },
+    onError: (error: Error) => toast.error(error.message.replaceAll("_", " ")),
+  });
   const saveStallMutation = useMutation({
     mutationFn: async () => {
       if (!character?.id) throw new Error("Character not loaded");
       const name = stallName.trim() || `${character.name}'s Oja-Oba Stall`;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.rpc as any)("save_player_stall", {
-        p_name: name,
-        p_goods: selectedCategory,
-        p_is_open: stallOpen,
+      return saveMyPlayerStall({
+        name,
+        category: selectedCategory,
+        isOpen: stallOpen,
       });
-      if (error) throw error;
-      return data;
     },
-    onSuccess: () => {
+    onSuccess: async () => {
+      await invalidateStallState();
       toast.success(stallOpen ? "Stall is now open at Oja-Oba Market." : "Stall details saved.");
-      void queryClient.invalidateQueries({ queryKey: ["playerStall"] });
-      void queryClient.invalidateQueries({ queryKey: ["ownedStalls"] });
-      void queryClient.invalidateQueries({ queryKey: ["publicPlayerStalls"] });
-      if (character?.user_id)
-        void queryClient.invalidateQueries({ queryKey: stallIncomeKey(character.user_id) });
     },
     onError: (err) => {
       toast.error(err instanceof Error ? err.message : "Failed to update stall");
     },
+  });
+  const stockMutation = useMutation({
+    mutationFn: manageMyStallStock,
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["myStallStock", character?.id] }),
+        queryClient.invalidateQueries({ queryKey: q.inventory().queryKey }),
+      ]);
+      toast.success("Stall stock updated.");
+    },
+    onError: (error: Error) => toast.error(error.message.replaceAll("_", " ")),
   });
 
   // Shop purchase and sell
@@ -199,6 +220,75 @@ export function PhoneMarketApp() {
           )
         ) : tab === "stalls" ? (
           <div className="space-y-4 p-3">
+            <section className="phone-card space-y-3 p-3" aria-label="Market stall rent">
+              <div>
+                <h3 className="text-sm font-bold">Oja-Oba Stall Lease</h3>
+                <p className="text-xs text-muted-foreground">
+                  Rent is paid weekly. An overdue stall closes until rent is current and you reopen
+                  it.
+                </p>
+              </div>
+              {rentQuery.isPending && <p role="status">Checking your stall lease…</p>}
+              {rentQuery.isError && (
+                <div role="alert" className="space-y-2">
+                  <p>{rentQuery.error.message}</p>
+                  <button
+                    type="button"
+                    className="text-xs underline"
+                    onClick={() => void rentQuery.refetch()}
+                  >
+                    Try again
+                  </button>
+                </div>
+              )}
+              {rentQuery.data === null && !rentQuery.isPending && !rentQuery.isError && (
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-xs font-semibold">First week: {formatNaira(2000)}</p>
+                  <button
+                    type="button"
+                    className="rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground disabled:opacity-50"
+                    disabled={rentMutation.isPending || !character}
+                    onClick={() => rentMutation.mutate()}
+                  >
+                    {rentMutation.isPending ? "Renting…" : "Rent a stall"}
+                  </button>
+                </div>
+              )}
+              {rentQuery.data && (
+                <div className="space-y-2">
+                  <p className="text-xs">
+                    <strong>{formatNaira(rentQuery.data.weeklyRentMinor)} per week</strong>
+                    {" · "}
+                    <span className="capitalize">{rentQuery.data.status}</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Due{" "}
+                    {new Intl.DateTimeFormat("en-NG", {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                      timeZone: "Africa/Lagos",
+                    }).format(new Date(rentQuery.data.dueAt))}
+                    {" (Lagos)"}
+                  </p>
+                  {rentQuery.data.status !== "current" && (
+                    <div className="space-y-2">
+                      <p role="status" className="text-xs">
+                        Your stall is closed while rent is overdue. Pay now or use the rent relief
+                        options on Property.
+                      </p>
+                      <button
+                        type="button"
+                        className="rounded-lg bg-primary px-3 py-2 text-xs font-bold text-primary-foreground disabled:opacity-50"
+                        disabled={payRentMutation.isPending}
+                        onClick={() => payRentMutation.mutate()}
+                      >
+                        {payRentMutation.isPending ? "Paying…" : "Pay overdue rent"}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </section>
             {/* Player's Stall Builder Card */}
             <div className="phone-card">
               <div className="flex items-center justify-between gap-2 border-b border-border/40 pb-2">
@@ -268,11 +358,17 @@ export function PhoneMarketApp() {
                   <label className="text-xs font-bold block mb-1">Goods or Service Category</label>
                   <select
                     value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    disabled={!activeLease}
+                    onChange={(e) => {
+                      const category = STALL_CATEGORY_OPTIONS.find(
+                        (option) => option.id === e.target.value,
+                      );
+                      if (category) setSelectedCategory(category.id);
+                    }}
                     className="w-full text-sm px-3 py-2 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary outline-none"
                   >
-                    {GOODS_CATEGORIES.map((cat) => (
-                      <option key={cat.id} value={cat.label}>
+                    {STALL_CATEGORY_OPTIONS.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
                         {cat.label} ({cat.desc})
                       </option>
                     ))}
@@ -312,6 +408,7 @@ export function PhoneMarketApp() {
                   </div>
                   <button
                     type="button"
+                    disabled={!activeLease}
                     onClick={() => setStallOpen((prev) => !prev)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                       stallOpen
@@ -325,18 +422,215 @@ export function PhoneMarketApp() {
 
                 <button
                   type="button"
-                  disabled={saveStallMutation.isPending}
+                  disabled={!activeLease || saveStallMutation.isPending}
                   onClick={() => saveStallMutation.mutate()}
                   className="w-full py-2.5 rounded-xl font-bold text-sm bg-primary text-primary-foreground hover:opacity-90 transition-all flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
                 >
                   <Check className="h-4 w-4" />
                   {saveStallMutation.isPending ? "Saving stall..." : "Save stall details"}
                 </button>
+                {!activeLease && (
+                  <p role="status" className="text-xs text-muted-foreground">
+                    Rent a current stall before saving or opening your stall.
+                  </p>
+                )}
               </div>
             </div>
 
             {character?.user_id && (
               <StallIncomePanel key={character.user_id} userId={character.user_id} />
+            )}
+            {activeLease && (
+              <section className="phone-card space-y-3 p-3" aria-label="My stall stock">
+                <div>
+                  <h3 className="text-sm font-bold">Manage stock</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Stock comes from your inventory. Prices must stay between the shop buy price and
+                    five times that reference price.
+                  </p>
+                </div>
+                {stockQuery.isPending && <p role="status">Loading your stock…</p>}
+                {stockQuery.isError && (
+                  <div role="alert">
+                    <p>Your stall stock could not be loaded.</p>
+                    <button
+                      type="button"
+                      className="text-xs underline"
+                      onClick={() => void stockQuery.refetch()}
+                    >
+                      Try again
+                    </button>
+                  </div>
+                )}
+                {stockQuery.data?.map((item) => {
+                  const quantity = quantities[`${item.id}:stock`] ?? item.quantity;
+                  const price = quantities[`${item.id}:price`] ?? item.priceMinor;
+                  return (
+                    <div
+                      className="flex min-w-0 flex-wrap items-center justify-between gap-2 border-t pt-2"
+                      key={item.id}
+                    >
+                      <div className="min-w-0">
+                        <strong className="block text-xs">{item.name}</strong>
+                        <span className="text-[11px] text-muted-foreground">
+                          {item.quantity} listed · {formatNaira(item.priceMinor)}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <input
+                          aria-label={`Listed quantity for ${item.name}`}
+                          type="number"
+                          min={0}
+                          max={999}
+                          value={quantity}
+                          onChange={(event) =>
+                            setQuantities((current) => ({
+                              ...current,
+                              [`${item.id}:stock`]: Math.max(
+                                0,
+                                Math.min(999, Number(event.target.value)),
+                              ),
+                            }))
+                          }
+                          className="w-14 rounded border bg-background px-2 py-1 text-xs"
+                        />
+                        <input
+                          aria-label={`Listed price for ${item.name}`}
+                          type="number"
+                          min={item.referenceBuyPrice}
+                          max={item.referenceBuyPrice * 5}
+                          value={price}
+                          onChange={(event) =>
+                            setQuantities((current) => ({
+                              ...current,
+                              [`${item.id}:price`]: Math.max(
+                                item.referenceBuyPrice,
+                                Math.min(item.referenceBuyPrice * 5, Number(event.target.value)),
+                              ),
+                            }))
+                          }
+                          className="w-20 rounded border bg-background px-2 py-1 text-xs"
+                        />
+                        <button
+                          type="button"
+                          className="rounded border px-2 py-1 text-[11px]"
+                          disabled={stockMutation.isPending}
+                          onClick={() =>
+                            stockMutation.mutate({
+                              action: "set_price",
+                              itemId: item.id,
+                              priceMinor: price,
+                            })
+                          }
+                        >
+                          Save price
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded border px-2 py-1 text-[11px]"
+                          disabled={stockMutation.isPending}
+                          onClick={() =>
+                            stockMutation.mutate({
+                              action: "set_quantity",
+                              itemId: item.id,
+                              quantity,
+                            })
+                          }
+                        >
+                          Set quantity
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded border px-2 py-1 text-[11px]"
+                          disabled={stockMutation.isPending}
+                          onClick={() =>
+                            stockMutation.mutate({ action: "remove", itemId: item.id })
+                          }
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+                {inventory
+                  ?.filter((entry) => entry.item?.sellable && entry.item.buy_price > 0)
+                  .map((entry) => {
+                    const quantity = quantities[entry.item_id] ?? 1;
+                    const price = quantities[`${entry.item_id}:price`] ?? entry.item.buy_price * 2;
+                    return (
+                      <div
+                        className="flex min-w-0 flex-wrap items-center justify-between gap-2 border-t pt-2"
+                        key={entry.id}
+                      >
+                        <div className="min-w-0">
+                          <strong className="block text-xs">{entry.item.name}</strong>
+                          <span className="text-[11px] text-muted-foreground">
+                            {entry.quantity} in bag · reference {formatNaira(entry.item.buy_price)}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <input
+                            aria-label={`Quantity to stock for ${entry.item.name}`}
+                            type="number"
+                            min={1}
+                            max={entry.quantity}
+                            value={quantity}
+                            onChange={(event) =>
+                              setQuantities((current) => ({
+                                ...current,
+                                [entry.item_id]: Math.max(
+                                  1,
+                                  Math.min(entry.quantity, Number(event.target.value)),
+                                ),
+                              }))
+                            }
+                            className="w-14 rounded border bg-background px-2 py-1 text-xs"
+                          />
+                          <input
+                            aria-label={`Price for ${entry.item.name}`}
+                            type="number"
+                            min={entry.item.buy_price}
+                            max={entry.item.buy_price * 5}
+                            value={price}
+                            onChange={(event) =>
+                              setQuantities((current) => ({
+                                ...current,
+                                [`${entry.item_id}:price`]: Math.max(
+                                  entry.item.buy_price,
+                                  Math.min(entry.item.buy_price * 5, Number(event.target.value)),
+                                ),
+                              }))
+                            }
+                            className="w-20 rounded border bg-background px-2 py-1 text-xs"
+                          />
+                          <button
+                            type="button"
+                            className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground disabled:opacity-50"
+                            disabled={stockMutation.isPending || quantity > entry.quantity}
+                            onClick={() =>
+                              stockMutation.mutate({
+                                action: "add",
+                                itemId: entry.item_id,
+                                quantity,
+                                priceMinor: price,
+                              })
+                            }
+                          >
+                            Stock
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                {!inventory?.some((entry) => entry.item?.sellable && entry.item.buy_price > 0) &&
+                  !stockQuery.data?.length &&
+                  !stockQuery.isPending && (
+                    <p role="status" className="text-xs text-muted-foreground">
+                      Carry sellable items to add them to your stall.
+                    </p>
+                  )}
+              </section>
             )}
             {/* Popular NPC Market Stalls */}
             <div>

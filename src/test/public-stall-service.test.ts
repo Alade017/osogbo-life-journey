@@ -4,7 +4,13 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc, auth: { getS
 import { getPublicStalls } from "@/lib/public-stall-service";
 const owner = "11111111-1111-4111-8111-111111111111";
 const id = "22222222-2222-4222-8222-222222222222";
-const row = { id, ownerName: "Bisi", name: "Bisi's beads", goods: "Handmade beads" };
+const row = {
+  id,
+  ownerName: "Bisi",
+  name: "Bisi's beads",
+  goods: "Handmade beads",
+  category: "crafts",
+};
 beforeEach(() => {
   rpc.mockReset().mockResolvedValue({ data: { items: [row], nextCursor: null } });
   getSession.mockReset().mockResolvedValue({ data: { session: { user: { id: owner } } } });

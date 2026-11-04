@@ -1,7 +1,12 @@
 import { useRef, useState } from "react";
 import { Check, Clock3, CookingPot, Sparkles, X } from "lucide-react";
 import { homeFurnitureActions, homeTaskSeconds } from "@/lib/home-furniture-actions";
-import { ACTION_CATALOG, NEED_RULES, type LifeActionId, type NeedName } from "@/lib/life-simulation";
+import {
+  ACTION_CATALOG,
+  NEED_RULES,
+  type LifeActionId,
+  type NeedName,
+} from "@/lib/life-simulation";
 import type { HousePlacement } from "./HouseRoomScene";
 
 // Meal preference is presentation only: all choices use the existing validated cook action.
@@ -83,10 +88,23 @@ export function HomeAccessoryPanel({
         </button>
       </header>
       <div className="home-task-options" role="group" aria-label="Accessory tasks">
- {choices.map(id => <button key={id} type="button" aria-pressed={actionId === id} disabled={working}
- onClick={() => {setChosenAction(id); setConfirmed(false);}}>{ACTION_CATALOG[id].name}<small>{homeTaskSeconds(id)}s</small></button>)}
- </div>
- <div className="home-accessory-facts">
+        {choices.map((id) => (
+          <button
+            key={id}
+            type="button"
+            aria-pressed={actionId === id}
+            disabled={working}
+            onClick={() => {
+              setChosenAction(id);
+              setConfirmed(false);
+            }}
+          >
+            {ACTION_CATALOG[id].name}
+            <small>{homeTaskSeconds(id)}s</small>
+          </button>
+        ))}
+      </div>
+      <div className="home-accessory-facts">
         <span>
           <Clock3 size={14} />
           {homeTaskSeconds(actionId)}s � {action.durationMinutes} game min

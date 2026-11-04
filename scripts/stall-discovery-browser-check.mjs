@@ -26,22 +26,25 @@ function call(method, params = {}) {
     socket.send(JSON.stringify({ id, method, params }));
   });
 }
-const mock = String.raw`window.directoryCalls=[];window.directoryFailure=false;window.directoryEmpty=false;
+const mock = String.raw`window.directoryCalls=[];window.directoryFailure=false;window.directoryEmpty=false;window.purchaseCalls=[];
 const owner='11111111-1111-4111-8111-111111111111';
-const rows=Array.from({length:25},(_,i)=>({id:(i+1).toString(16).padStart(8,'0')+'-2222-4222-8222-222222222222',ownerName:'Owner '+(i+1),name:i===0?'L'.repeat(64):'Sign '+(i+1),goods:i===0?'G'.repeat(200):'Crafts'}));
-export const supabase={auth:{getSession:async()=>({data:{session:{user:{id:owner}}}})},from:()=>({select:()=>({data:[],eq:()=>({maybeSingle:async()=>({data:null})})})}),rpc:async(name,args)=>{window.directoryCalls.push({name,args});if(name==='get_public_player_stalls'){if(window.directoryFailure)return {error:{code:'PGRST202'}};const available=window.directoryEmpty?[]:rows.filter(r=>!args.p_after||r.id>args.p_after);const items=available.slice(0,args.p_limit);return {data:{items,nextCursor:available.length>args.p_limit?items.at(-1).id:null}};}if(name==='get_stall_income')return {data:{serverTime:'2026-10-28T12:00:00Z',asOf:'2026-10-28T12:00:00Z',date:'2026-10-28',ratePerHour:10,dailyCap:100,retainedDates:7,policyVersion:1,hasStall:false,enrolled:false,isOpen:false,claimable:0,todayEarned:0,todayPaid:0,lastReceipt:null}};throw Error('Unexpected RPC '+name);}};`;
+const rows=Array.from({length:25},(_,i)=>({id:(i+1).toString(16).padStart(8,'0')+'-2222-4222-8222-222222222222',ownerName:'Owner '+(i+1),name:i===0?'L'.repeat(64):'Sign '+(i+1),goods:i===0?'G'.repeat(200):'Crafts',category:'crafts'}));
+const stock=[{id:'aaaaaaaa-2222-4222-8222-222222222222',itemId:'bbbbbbbb-2222-4222-8222-222222222222',name:'Beaded bracelet',description:'Handmade',priceMinor:500,quantity:3}];
+export const supabase={auth:{getSession:async()=>({data:{session:{user:{id:owner}}}})},from:()=>({select:()=>({data:[],eq:()=>({maybeSingle:async()=>({data:null})})})}),rpc:async(name,args)=>{window.directoryCalls.push({name,args});if(name==='get_public_player_stalls'){if(window.directoryFailure)return {error:{code:'PGRST202'}};const available=window.directoryEmpty?[]:rows.filter(r=>(!args.p_after||r.id>args.p_after)&&(!args.p_category||r.category===args.p_category));const items=available.slice(0,args.p_limit);return {data:{items,nextCursor:available.length>args.p_limit?items.at(-1).id:null}};}if(name==='get_public_stall_stock')return {data:stock};if(name==='purchase_player_stall_item'){window.purchaseCalls.push(args);return {data:{stallItemId:args.p_stall_item_id,itemId:stock[0].itemId,itemName:stock[0].name,quantity:args.p_quantity,totalMinor:500*args.p_quantity,buyerBalance:9500,sellerBalance:10500,remainingStock:3-args.p_quantity,duplicate:false}};}if(name==='my_market_stall_rent_status')return {data:{}};if(name==='get_stall_income')return {data:{serverTime:'2026-10-28T12:00:00Z',asOf:'2026-10-28T12:00:00Z',date:'2026-10-28',ratePerHour:10,dailyCap:100,retainedDates:7,policyVersion:1,hasStall:false,enrolled:false,isOpen:false,claimable:0,todayEarned:0,todayPaid:0,lastReceipt:null}};throw Error('Unexpected RPC '+name);}};`;
 const html = String.raw`<!doctype html><html><head><link rel="icon" href="data:,"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head><body><div id="root" class="phone-app-view" style="height:100dvh;max-width:375px;box-sizing:border-box;display:flex;flex-direction:column"></div><script type="module">
 import React from 'react';import {createRoot} from 'react-dom/client';import {QueryClient,QueryClientProvider} from '@tanstack/react-query';import {PhoneMarketApp} from '/src/components/game/phone/PhoneMarketApp.tsx';import '/src/components/game/phone.css';import '/src/styles.css';
 const client=new QueryClient({defaultOptions:{queries:{retry:false},mutations:{retry:false}}});createRoot(document.querySelector('#root')).render(React.createElement(QueryClientProvider,{client},React.createElement(PhoneMarketApp)));
-const pause=ms=>new Promise(r=>setTimeout(r,ms));const wait=async(p)=>{for(let i=0;i<100;i++){if(p())return;await pause(30);}throw Error('State did not settle');};const overflow=()=>document.documentElement.scrollWidth>innerWidth;const button=text=>[...document.querySelectorAll('button')].find(b=>b.textContent.trim()===text);const listing=()=>document.querySelector('[aria-label="Open player stalls"]');
+const pause=ms=>new Promise(r=>setTimeout(r,ms));const wait=async(p)=>{for(let i=0;i<100;i++){if(p())return;await pause(30);}throw Error('State did not settle');};const overflow=()=>document.documentElement.scrollWidth>innerWidth;const button=text=>[...document.querySelectorAll('button')].find(b=>b.textContent.trim()===text);const listing=()=>document.querySelector('[aria-label="Open player stalls"]');const encode=value=>btoa([...new TextEncoder().encode(JSON.stringify(value))].map(byte=>String.fromCharCode(byte)).join(''));
 try{
-await wait(()=>button('Save stall details'));if(window.directoryCalls.some(c=>c.name==='get_public_player_stalls'))throw Error('Inactive directory fetched');button('Player stalls').click();await wait(()=>listing()?.children.length===20);if(overflow())throw Error('Long text overflow');if([...document.querySelectorAll('section[aria-label="Player stall directory"] button')].some(b=>/save|claim|buy|open|close/i.test(b.textContent)))throw Error('Visitor owner action');
+await wait(()=>button('Rent a stall'));if(window.directoryCalls.some(c=>c.name==='get_public_player_stalls'))throw Error('Inactive directory fetched');button('Player stalls').click();await wait(()=>listing()?.children.length===20);if(overflow())throw Error('Long text overflow');if([...document.querySelectorAll('section[aria-label="Player stall directory"] button')].some(b=>/save|claim|buy|open|close/i.test(b.textContent)))throw Error('Visitor owner action');
+button('Adire & Ankara Fabrics').click();await wait(()=>window.directoryCalls.some(c=>c.name==='get_public_player_stalls'&&c.args.p_category==='fabrics'));button('All').click();await wait(()=>listing()?.children.length===20);
+button('View stock').click();await wait(()=>document.body.textContent.includes('Beaded bracelet'));button('Buy').click();await wait(()=>window.purchaseCalls.length===1);if(window.purchaseCalls[0].p_quantity!==1)throw Error('Wrong purchase quantity');
 button('Load more stalls').click();await wait(()=>listing().children.length===25);
 Object.defineProperty(navigator,'onLine',{configurable:true,value:false});window.dispatchEvent(new Event('offline'));await wait(()=>button('Refresh stalls').disabled);if(!document.body.textContent.includes('cached listings'))throw Error('Offline cache missing');
 Object.defineProperty(navigator,'onLine',{configurable:true,value:true});window.dispatchEvent(new Event('online'));await wait(()=>!button('Refresh stalls').disabled);window.directoryFailure=true;button('Refresh stalls').click();await wait(()=>document.querySelector('[role="alert"]'));button('City Shops').click();await wait(()=>document.body.textContent.includes('No shops currently open'));window.directoryFailure=false;button('Player stalls').click();await wait(()=>listing()?.children.length);await wait(()=>!button('Refresh stalls').disabled);window.directoryEmpty=true;button('Refresh stalls').click();await wait(()=>document.body.textContent.includes('No other player stalls are open'));
-window.directoryEmpty=false;button('Refresh stalls').click();await wait(()=>listing()?.children.length===20);if(overflow())throw Error('Directory overflow');if(window.directoryCalls.some(c=>!['get_stall_income','get_public_player_stalls'].includes(c.name)))throw Error('Directory mutation');
-document.body.dataset.result=btoa(JSON.stringify({status:'passed',viewport:innerWidth,overflow:overflow(),states:['lazy-tab','public-projection','pagination','offline-cache','error','shops-still-usable','empty','refresh','long-sign'],fixtureOnly:true}));
-}catch(error){document.body.dataset.result=btoa(JSON.stringify({status:'failed',message:String(error),text:document.body.textContent.slice(-1400)}));}
+window.directoryEmpty=false;button('Refresh stalls').click();await wait(()=>listing()?.children.length===20);if(overflow())throw Error('Directory overflow');if(window.directoryCalls.some(c=>!['get_stall_income','get_public_player_stalls','my_market_stall_rent_status','get_public_stall_stock','purchase_player_stall_item'].includes(c.name)))throw Error('Unexpected mutation');
+document.body.dataset.result=encode({status:'passed',viewport:innerWidth,overflow:overflow(),states:['stall-rent-entry','category-filter','public-stock','purchase','pagination','offline-cache','error','shops-still-usable','empty','refresh','long-sign'],fixtureOnly:true});
+}catch(error){document.body.dataset.result=encode({status:'failed',message:String(error),text:document.body.textContent.slice(-1400)});}
 </script></body></html>`;
 const game = String.raw`export const q={character:()=>({queryKey:['character'],queryFn:async()=>({id:'fixture-character',user_id:'11111111-1111-4111-8111-111111111111',name:'Ade'})}),wallet:()=>({queryKey:['wallet'],queryFn:async()=>({balance:100})}),inventory:()=>({queryKey:['inventory'],queryFn:async()=>[]}),shopItems:()=>({queryKey:['shopItems'],queryFn:async()=>[]}),locations:()=>({queryKey:['locations'],queryFn:async()=>[]})};export const rpc={purchaseShopItem:()=>{},sellInventoryItem:()=>{}};export const useGameAction=()=>({mutate:()=>{throw Error('Unexpected purchase');},isPending:false});export const formatNaira=n=>'NGN '+(n??0);`;
 try {
@@ -187,7 +190,13 @@ try {
       message.error ? item.reject(new Error(message.error.message)) : item.done(message.result);
     }
     if (message.method === "Runtime.exceptionThrown")
-      errors.push(message.params.exceptionDetails.text);
+      errors.push(
+        JSON.stringify({
+          text: message.params.exceptionDetails.text,
+          description: message.params.exceptionDetails.exception?.description,
+          line: message.params.exceptionDetails.lineNumber,
+        }),
+      );
     if (
       message.method === "Network.requestWillBeSent" &&
       /^https?:/.test(message.params.request.url) &&
@@ -215,7 +224,16 @@ try {
     if (encoded) break;
     await pause(100);
   }
-  if (!encoded) throw new Error(`Browser did not finish fixture: ${diagnostics}`);
+  if (!encoded) {
+    const state = await call("Runtime.evaluate", {
+      expression:
+        "JSON.stringify({body:document.body?.innerText,html:document.body?.innerHTML?.slice(0,2000)})",
+      returnByValue: true,
+    });
+    throw new Error(
+      `Browser did not finish fixture: ${diagnostics}; runtime errors: ${errors.join(" | ")}; page: ${state.result?.value}`,
+    );
+  }
   const shot = await call("Page.captureScreenshot", { format: "png" });
   await writeFile(screenshot, Buffer.from(shot.data, "base64"));
   const report = JSON.parse(Buffer.from(encoded, "base64").toString());

@@ -22,6 +22,7 @@ vi.mock("@/hooks/use-world-clock", () => ({
 vi.mock("@/hooks/use-game-audio-events", () => ({ useGameAudioEvents: () => {} }));
 vi.mock("@/components/game/LiveOsogboWeather", () => ({ LiveOsogboWeather: () => null }));
 vi.mock("sonner", () => ({ toast: { message: toast, success: toast } }));
+vi.mock("@/hooks/use-game-screen-alerts", () => ({ useGameScreenAlerts: () => {} }));
 vi.mock("@tanstack/react-router", () => ({
   Link: ({ children, params }: React.PropsWithChildren<{ params: { slug: string } }>) => (
     <a href={`/location/${params.slug}`}>{children}</a>

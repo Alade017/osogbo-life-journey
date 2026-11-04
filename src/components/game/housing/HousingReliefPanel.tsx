@@ -14,6 +14,7 @@ type Props = {
   rentStatus: string;
   graceEndsAt: string | null;
   rescueEndsAt: string | null;
+  assetLabel?: string;
   offline: boolean;
   paying: boolean;
   onPayRent: () => void;
@@ -36,6 +37,7 @@ export function HousingReliefPanel({
   rentStatus,
   graceEndsAt,
   rescueEndsAt,
+  assetLabel = "home",
   offline,
   paying,
   onPayRent,
@@ -69,8 +71,13 @@ export function HousingReliefPanel({
         queryClient.invalidateQueries({ queryKey: ["canonicalHousingHome"] }),
         queryClient.invalidateQueries({ queryKey: ["authoritativeHouseState"] }),
         queryClient.invalidateQueries({ queryKey: ["housingMapProperties"] }),
+        queryClient.invalidateQueries({ queryKey: ["marketStallRent", characterId] }),
+        queryClient.invalidateQueries({ queryKey: ["ownedStalls", characterId] }),
+        queryClient.invalidateQueries({ queryKey: ["myStallStock", characterId] }),
+        queryClient.invalidateQueries({ queryKey: ["publicPlayerStalls"] }),
         queryClient.invalidateQueries({ queryKey: q.wallet().queryKey }),
         queryClient.invalidateQueries({ queryKey: ["transactions"] }),
+        queryClient.invalidateQueries({ queryKey: ["stallIncome"] }),
       ]);
       toast.success(
         variables.kind === "loan"
@@ -96,14 +103,16 @@ export function HousingReliefPanel({
     <section className="housing-relief-panel" aria-label="Rent relief">
       {(inGrace || inRescue) && (
         <>
-          <p className="house-eyebrow">Keep your home</p>
+          <p className="house-eyebrow">Keep your {assetLabel}</p>
           <h2>
             {inGrace ? "Rent is in its grace period" : "Choose how to clear your overdue rent"}
           </h2>
           <p>
             {inGrace
               ? `Pay by ${dateLabel(graceEndsAt)}. If it remains unpaid, a rescue loan or a rent relief job becomes available.`
-              : `Respond by ${dateLabel(rescueEndsAt)}. If you do not respond, the server ends the tenancy and moves your character to the streets.`}
+              : assetLabel === "home"
+                ? `Respond by ${dateLabel(rescueEndsAt)}. If you do not respond, the server ends the tenancy and moves your character to the streets.`
+                : `Respond by ${dateLabel(rescueEndsAt)}. If you do not respond, the server ends the tenancy and repossesses your ${assetLabel}.`}
           </p>
           <div className="housing-relief-actions">
             <button

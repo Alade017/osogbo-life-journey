@@ -58,7 +58,9 @@ export function parseSimulationSnapshot(value: unknown): SimulationSnapshot {
       (!Number.isFinite(s.sleep_elapsed_seconds) ||
         s.sleep_elapsed_seconds < 0 ||
         s.sleep_elapsed_seconds > 120)) ||
-    [s.home_action_elapsed_seconds, s.home_action_duration_seconds].some(value => value !== undefined && (!Number.isFinite(value) || value < 0 || value > 30)) ||
+    [s.home_action_elapsed_seconds, s.home_action_duration_seconds].some(
+      (value) => value !== undefined && (!Number.isFinite(value) || value < 0 || value > 30),
+    ) ||
     !s.skills ||
     typeof s.skills !== "object" ||
     Array.isArray(s.skills) ||

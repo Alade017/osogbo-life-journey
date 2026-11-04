@@ -31,3 +31,19 @@ describe("simulation response validation", () => {
     expect(() => parseSimulationSnapshot({ ...snapshot, skills: { fitness: -10 } })).toThrow();
   });
 });
+
+it("validates connected home task timers and accepts new accessory actions", () => {
+  expect(
+    parseSimulationSnapshot({
+      ...snapshot,
+      action: "wash_hands",
+      request_id: "task",
+      home_action_elapsed_seconds: 1,
+      home_action_duration_seconds: 3,
+    }).action,
+  ).toBe("wash_hands");
+  for (const value of [-1, 31, NaN])
+    expect(() =>
+      parseSimulationSnapshot({ ...snapshot, home_action_elapsed_seconds: value }),
+    ).toThrow();
+});

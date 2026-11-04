@@ -1,5 +1,11 @@
 import { useHouseMovement } from "@/hooks/use-house-movement";
-import { findRoomPath, placementPoint, packagePoint, roomObstacles, type RoomPoint } from "@/game/house-navigation";
+import {
+  findRoomPath,
+  placementPoint,
+  packagePoint,
+  roomObstacles,
+  type RoomPoint,
+} from "@/game/house-navigation";
 import { HOUSE_ROOM_SIZE } from "@/components/game/housing/house-room-contract";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -700,25 +706,56 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           : placement,
       )
     : placements;
-  const [roomWidth, roomDepth] = HOUSE_ROOM_SIZE[serverState?.house?.house_type_id ?? "shared-room"] ?? HOUSE_ROOM_SIZE["shared-room"]!;
-  const movement = useHouseMovement(serverState?.house?.id ?? "none", [0,.06,roomDepth*.18]);
+  const [roomWidth, roomDepth] =
+    HOUSE_ROOM_SIZE[serverState?.house?.house_type_id ?? "shared-room"] ??
+    HOUSE_ROOM_SIZE["shared-room"]!;
+  const movement = useHouseMovement(serverState?.house?.id ?? "none", [0, 0.06, roomDepth * 0.18]);
   const [walkingTask, setWalkingTask] = useState<string | null>(null);
   const interactionVersion = useRef(0);
   const interactionLock = useRef(false);
   const [startingTask, setStartingTask] = useState(false);
+  const [collectingPackage, setCollectingPackage] = useState(false);
   const [cancellingTask, setCancellingTask] = useState(false);
   const autoCompleting = useRef<string | null>(null);
   const [clockNow, setClockNow] = useState(Date.now());
-  const obstacles = roomObstacles(serverState?.house?.house_type_id ?? "shared-room",roomWidth,roomDepth,placements,slots);
-  const walkTo = (point:RoomPoint, interact=false) => {
-    const path = findRoomPath(movement.positionRef.current, point, roomWidth,roomDepth,obstacles,interact);
-    if (!path) {setActivityError("There is no clear path. Move furniture to leave a walkway.");return Promise.resolve(false);}
+  const obstacles = roomObstacles(
+    serverState?.house?.house_type_id ?? "shared-room",
+    roomWidth,
+    roomDepth,
+    placements,
+    slots,
+  );
+  const walkTo = (point: RoomPoint, interact = false) => {
+    const path = findRoomPath(
+      movement.positionRef.current,
+      point,
+      roomWidth,
+      roomDepth,
+      obstacles,
+      interact,
+    );
+    if (!path) {
+      setActivityError("There is no clear path. Move furniture to leave a walkway.");
+      return Promise.resolve(false);
+    }
     return movement.walk(path);
   };
   useEffect(() => {
-    const stop = () => {if(document.hidden || !navigator.onLine) {interactionVersion.current++;setWalkingTask(null);}};
-    document.addEventListener("visibilitychange",stop);window.addEventListener("offline",stop);
-    return () => {interactionVersion.current++;document.removeEventListener("visibilitychange",stop);window.removeEventListener("offline",stop);};
+    const stop = () => {
+      if (document.hidden || !navigator.onLine) {
+        interactionVersion.current++;
+        setWalkingTask(null);
+      }
+    };
+    document.addEventListener("visibilitychange", stop);
+    window.addEventListener("offline", stop);
+    return () => {
+      // This ref is a cancellation generation, not a DOM ref to capture at setup.
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      interactionVersion.current++;
+      document.removeEventListener("visibilitychange", stop);
+      window.removeEventListener("offline", stop);
+    };
   }, []);
   const inventory = serverState?.inventory ?? [];
   const outfit = serverState?.outfit ?? EMPTY_OUTFIT;
@@ -821,74 +858,202 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       y,
     });
   };
-  const interactWithPlacement = async (placement: HousePlacement, choice?:LifeActionId) => {
+  const interactWithPlacement = async (placement: HousePlacement, choice?: LifeActionId) => {
     const action = choice ?? homeFurnitureAction(placement.item_id);
-    if (!action || !homeFurnitureActions(placement.item_id).includes(action) || interactionLock.current || isOffline || !gameTime.ready || gameTime.busy || editing) return false;
-    if (!isInsideHome) {setActivityError("Enter your home before using its accessories.");return false;}
-    if (gameTime.simulation.currentAction) {setActivityError("Finish or cancel your current activity first.");return false;}
-    if (gameTime.homeTaskTiming === null) {setActivityError("The home tasks database update is required before using accessories.");return false;}
-    interactionLock.current=true;
-    const version=++interactionVersion.current;
-    setUsingPlacementId(placement.id);setActivityError("");setSelectedPlacement(null);
+    if (
+      !action ||
+      !homeFurnitureActions(placement.item_id).includes(action) ||
+      interactionLock.current ||
+      isOffline ||
+      !gameTime.ready ||
+      gameTime.busy ||
+      editing
+    )
+      return false;
+    if (!isInsideHome) {
+      setActivityError("Enter your home before using its accessories.");
+      return false;
+    }
+    if (gameTime.simulation.currentAction) {
+      setActivityError("Finish or cancel your current activity first.");
+      return false;
+    }
+    if (gameTime.homeTaskTiming === null) {
+      setActivityError("The home tasks database update is required before using accessories.");
+      return false;
+    }
+    interactionLock.current = true;
+    const version = ++interactionVersion.current;
+    setUsingPlacementId(placement.id);
+    setActivityError("");
+    setSelectedPlacement(null);
     setWalkingTask(ACTION_CATALOG[action].name);
     try {
-      const arrived=await walkTo(placementPoint(placement,slots,roomWidth,roomDepth),true);
-      if(!arrived || version!==interactionVersion.current) return false;
-      setStartingTask(true);setWalkingTask(null);
-      const error=await gameTime.start(action,crypto.randomUUID());
-      if(error)throw new Error(error);
+      const arrived = await walkTo(placementPoint(placement, slots, roomWidth, roomDepth), true);
+      if (!arrived || version !== interactionVersion.current) return false;
+      setStartingTask(true);
+      setWalkingTask(null);
+      const error = await gameTime.start(action, crypto.randomUUID());
+      if (error) throw new Error(error);
       return true;
-    } catch(error) {
-      const message=error instanceof Error?error.message:"That activity could not be started.";
-      setActivityError(message);toast.error(message);return false;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "That activity could not be started.";
+      setActivityError(message);
+      toast.error(message);
+      return false;
     } finally {
-      interactionLock.current=false;setStartingTask(false);setWalkingTask(null);setUsingPlacementId(null);
+      interactionLock.current = false;
+      setStartingTask(false);
+      setWalkingTask(null);
+      setUsingPlacementId(null);
     }
   };
-  const collectPackage = async (orderId:string) => {
-    if(interactionLock.current || gameTime.simulation.currentAction || packageCollection.isPending || isOffline || !isInsideHome || editing) return;
-    const waiting=(deliveries.data ?? []).filter(d=>d.deliveryState==="package_waiting").slice(0,4);
-    const index=waiting.findIndex(d=>d.id===orderId);if(index<0)return;
-    interactionLock.current=true;const version=++interactionVersion.current;
-    setWalkingTask("Collect food package");setSelectedPlacement(null);setActivityError("");
+  const collectPackage = async (orderId: string) => {
+    if (
+      interactionLock.current ||
+      gameTime.simulation.currentAction ||
+      packageCollection.isPending ||
+      isOffline ||
+      !isInsideHome ||
+      editing
+    )
+      return;
+    const waiting = (deliveries.data ?? [])
+      .filter((d) => d.deliveryState === "package_waiting")
+      .slice(0, 4);
+    const index = waiting.findIndex((d) => d.id === orderId);
+    if (index < 0) return;
+    interactionLock.current = true;
+    const version = ++interactionVersion.current;
+    setWalkingTask("Collect food package");
+    setSelectedPlacement(null);
+    setActivityError("");
     try {
-      if(await walkTo(packagePoint(index,roomWidth,roomDepth),true) && version===interactionVersion.current) {
-        setStartingTask(true);await packageCollection.mutateAsync(orderId);
+      if (
+        (await walkTo(packagePoint(index, roomWidth, roomDepth), true)) &&
+        version === interactionVersion.current
+      ) {
+        setCollectingPackage(true);
+        await new Promise<void>((resolve) => window.setTimeout(resolve, 800));
+        if (version !== interactionVersion.current) return;
+        setCollectingPackage(false);
+        setStartingTask(true);
+        await packageCollection.mutateAsync(orderId);
       }
-    } catch(error) {setActivityError(error instanceof Error?error.message:"Collection failed.");}
-    finally {interactionLock.current=false;setWalkingTask(null);setStartingTask(false);}
+    } catch (error) {
+      setActivityError(error instanceof Error ? error.message : "Collection failed.");
+    } finally {
+      interactionLock.current = false;
+      setWalkingTask(null);
+      setStartingTask(false);
+      setCollectingPackage(false);
+    }
   };
-  const timedActivity=gameTime.simulation.currentAction;
-  const taskTiming=gameTime.homeTaskTiming;
-  const taskBusy=!!timedActivity || !!walkingTask || startingTask || cancellingTask;
-  useEffect(()=>{
-    if(!timedActivity || timedActivity.actionId==="sleep")return;
-    const timer=window.setInterval(()=>setClockNow(Date.now()),250);return()=>window.clearInterval(timer);
-  },[timedActivity?.requestId,timedActivity?.actionId]);
-  useEffect(()=>{
-    if(!timedActivity || timedActivity.actionId==="sleep" || !taskTiming || taskTiming.duration<=0 || taskTiming.elapsed<taskTiming.duration ||
-      isOffline || !gameTime.ready || gameTime.busy || gameTime.simulation.paused || cancellingTask || document.hidden || autoCompleting.current===timedActivity.requestId)return;
-    autoCompleting.current=timedActivity.requestId;
-    void gameTime.complete(timedActivity.requestId,timedActivity.actionId).then(error=>{
-      if(error){setActivityError(error);autoCompleting.current=null;}else toast.success(ACTION_CATALOG[timedActivity.actionId].outcome);
+  const timedActivity = gameTime.simulation.currentAction;
+  const timedActionId = timedActivity?.actionId;
+  const timedRequestId = timedActivity?.requestId;
+  const taskTiming = gameTime.homeTaskTiming;
+  const taskBusy = !!timedActivity || !!walkingTask || startingTask || cancellingTask;
+  useEffect(() => {
+    if (!timedActionId || timedActionId === "sleep") return;
+    const timer = window.setInterval(() => setClockNow(Date.now()), 250);
+    return () => window.clearInterval(timer);
+  }, [timedRequestId, timedActionId]);
+  useEffect(() => {
+    if (
+      !timedActivity ||
+      timedActivity.actionId === "sleep" ||
+      !taskTiming ||
+      taskTiming.duration <= 0 ||
+      taskTiming.elapsed < taskTiming.duration ||
+      isOffline ||
+      !gameTime.ready ||
+      gameTime.busy ||
+      gameTime.simulation.paused ||
+      cancellingTask ||
+      document.hidden ||
+      autoCompleting.current === timedActivity.requestId
+    )
+      return;
+    autoCompleting.current = timedActivity.requestId;
+    void gameTime.complete(timedActivity.requestId, timedActivity.actionId).then((error) => {
+      if (error) {
+        setActivityError(error);
+        autoCompleting.current = null;
+      } else toast.success(ACTION_CATALOG[timedActivity.actionId].outcome);
     });
-  },[timedActivity,taskTiming,isOffline,gameTime,cancellingTask]);
-  const cancelTask=async()=>{
-    if(startingTask || gameTime.busy || cancellingTask)return;
-    interactionVersion.current++;movement.cancel();setWalkingTask(null);
-    if(!timedActivity)return;
+  }, [timedActivity, taskTiming, isOffline, gameTime, cancellingTask]);
+  const cancelTask = async () => {
+    if (startingTask || gameTime.busy || cancellingTask) return;
+    interactionVersion.current++;
+    movement.cancel();
+    setWalkingTask(null);
+    setCollectingPackage(false);
+    if (!timedActivity) return;
     setCancellingTask(true);
-    try {const error=await gameTime.interrupt(timedActivity.requestId);if(error)setActivityError(error);}
-    finally{setCancellingTask(false);}
+    try {
+      const error = await gameTime.interrupt(timedActivity.requestId);
+      if (error) setActivityError(error);
+    } finally {
+      setCancellingTask(false);
+    }
   };
-  const displayedElapsed=taskTiming ? Math.min(taskTiming.duration,taskTiming.elapsed +
-    (!isOffline && gameTime.ready && !gameTime.simulation.paused && !document.hidden ? Math.max(0,clockNow-gameTime.simulation.lastUpdatedAt)/1000 : 0)) : 0;
+  const displayedElapsed = taskTiming
+    ? Math.min(
+        taskTiming.duration,
+        taskTiming.elapsed +
+          (!isOffline && gameTime.ready && !gameTime.simulation.paused && !document.hidden
+            ? Math.max(0, clockNow - gameTime.simulation.lastUpdatedAt) / 1000
+            : 0),
+      )
+    : 0;
 
   const selectedAction = selectedPlacement ? homeFurnitureAction(selectedPlacement.item_id) : null;
   const avatarEquipment = (["head", "top", "bottom", "shoes", "accessory"] as const).flatMap(
     (slot) => (outfit[slot] ? [{ slot }] : []),
   );
   const currentActivity = gameTime.simulation.currentAction;
+  const activityFurniture = currentActivity
+    ? ACTION_CATALOG[currentActivity.actionId].requiredFurniture
+    : undefined;
+  const activePlacement = placements.find((p) => p.art_key === activityFurniture);
+  const taskPoint = activePlacement
+    ? placementPoint(activePlacement, slots, roomWidth, roomDepth)
+    : null;
+  const seated =
+    !!currentActivity &&
+    ["toilet", "relax_sofa", "study_computer", "browse_computer"].includes(
+      currentActivity.actionId,
+    );
+  const performingPosition: RoomPoint =
+    taskPoint && currentActivity?.animation === "sleeping"
+      ? [taskPoint[0], 0.45, taskPoint[2]]
+      : taskPoint && seated
+        ? [taskPoint[0], 0.28, taskPoint[2] + 0.25]
+        : movement.position;
+  const taskFacing =
+    taskPoint && !seated
+      ? Math.abs(taskPoint[0] - movement.position[0]) >
+        Math.abs(taskPoint[2] - movement.position[2])
+        ? taskPoint[0] > movement.position[0]
+          ? "east"
+          : "west"
+        : taskPoint[2] > movement.position[2]
+          ? "south"
+          : "north"
+      : "south";
+  const taskPose = collectingPackage
+    ? ("collect" as const)
+    : currentActivity
+      ? seated
+        ? ("sit" as const)
+        : currentActivity.animation === "showering"
+          ? ("wash" as const)
+          : currentActivity.animation === "cooking"
+            ? ("cook" as const)
+            : undefined
+      : undefined;
   if (characterLoading || (stateQuery.isLoading && !snapshot))
     return (
       <div className="house-page">
@@ -972,12 +1137,23 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           appearance={appearance}
           gender={character?.gender ?? "nonbinary"}
           equipment={avatarEquipment}
-          actorPosition={movement.position}
-          actorFacing={movement.facing}
-          {...(currentActivity ? {taskPose: currentActivity.animation === "using_toilet" || currentActivity.animation === "watching" ? "sit" as const : currentActivity.animation === "showering" ? "wash" as const : currentActivity.animation === "cooking" ? "cook" as const : undefined} : {})}
-          onWalk={point=>{if(!editing && !taskBusy && isInsideHome && !isOffline){setActivityError("");void walkTo(point);}}}
-          onCollectPackage={id=>void collectPackage(id)}
-          animationState={movement.walking ? "walk" : currentActivity ? avatarAnimationForActivity(currentActivity.animation) : "idle"}
+          actorPosition={performingPosition}
+          actorFacing={currentActivity ? taskFacing : movement.facing}
+          {...(taskPose ? { taskPose } : {})}
+          onWalk={(point) => {
+            if (!editing && !taskBusy && isInsideHome && !isOffline) {
+              setActivityError("");
+              void walkTo(point);
+            }
+          }}
+          onCollectPackage={(id) => void collectPackage(id)}
+          animationState={
+            movement.walking
+              ? "walk"
+              : currentActivity
+                ? avatarAnimationForActivity(currentActivity.animation)
+                : "idle"
+          }
           activityRequestId={currentActivity?.requestId ?? null}
           activityLabel={currentActivity ? ACTION_CATALOG[currentActivity.actionId].name : null}
           slots={slots}
@@ -1090,12 +1266,46 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             onCollect={(orderId) => void collectPackage(orderId)}
           />
         )}
-        {(movement.walking || walkingTask || startingTask || (timedActivity && !activeSleep)) && <div className="house-task-progress" role="region" aria-label="Current home task">
-          <div><strong>{walkingTask ? "Walking � " + walkingTask : startingTask ? "Connecting�" : timedActivity ? ACTION_CATALOG[timedActivity.actionId].name : "Walking"}</strong>
-          <span role="status">{movement.walking ? "On the way" : taskTiming && timedActivity ? displayedElapsed>=taskTiming.duration ? "Confirming completion�" : Math.ceil(taskTiming.duration-displayedElapsed)+"s remaining" : "Please wait"}</span></div>
-          {timedActivity && taskTiming && <progress max={taskTiming.duration || 1} value={displayedElapsed} aria-label="Task progress" />}
-          <button type="button" disabled={startingTask || gameTime.busy || cancellingTask} onClick={()=>void cancelTask()}>{cancellingTask ? "Cancelling�" : "Cancel"}</button>
-        </div>}
+        {(movement.walking || walkingTask || startingTask || (timedActivity && !activeSleep)) && (
+          <div className="house-task-progress" role="region" aria-label="Current home task">
+            <div>
+              <strong>
+                {collectingPackage
+                  ? "Collecting package"
+                  : walkingTask
+                    ? "Walking � " + walkingTask
+                    : startingTask
+                      ? "Connecting�"
+                      : timedActivity
+                        ? ACTION_CATALOG[timedActivity.actionId].name
+                        : "Walking"}
+              </strong>
+              <span role="status">
+                {movement.walking
+                  ? "On the way"
+                  : taskTiming && timedActivity
+                    ? displayedElapsed >= taskTiming.duration
+                      ? "Confirming completion�"
+                      : Math.ceil(taskTiming.duration - displayedElapsed) + "s remaining"
+                    : "Please wait"}
+              </span>
+            </div>
+            {timedActivity && taskTiming && (
+              <progress
+                max={taskTiming.duration || 1}
+                value={displayedElapsed}
+                aria-label="Task progress"
+              />
+            )}
+            <button
+              type="button"
+              disabled={startingTask || gameTime.busy || cancellingTask}
+              onClick={() => void cancelTask()}
+            >
+              {cancellingTask ? "Cancelling�" : "Cancel"}
+            </button>
+          </div>
+        )}
         {activeSleep && (
           <div className="house-sleep-overlay" role="region" aria-label="Sleep controls">
             <div className="house-sleep-status">

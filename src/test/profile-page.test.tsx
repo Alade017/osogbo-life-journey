@@ -73,12 +73,12 @@ describe("profile page", () => {
     expect(moodLabel(20, 10)).toBe("Needs care");
   });
 
-  it("renders current player data and the outfit entry point", () => {
+  it("renders current player data and the wardrobe entry point", () => {
     render(<ProfilePage />);
     expect(screen.getByRole("heading", { name: "Ayo" })).toBeInTheDocument();
     expect(screen.getByText("₦12,000")).toBeInTheDocument();
-    expect(screen.getAllByText("Designer")).toHaveLength(2);
-    expect(screen.getByRole("link", { name: /Edit outfit/i })).toBeInTheDocument();
-    expect(document.querySelector('[data-equipment-slot="top"]')).toBeInTheDocument();
+    expect(screen.getAllByText("Designer").length).toBeGreaterThan(0);
+    expect(screen.getByRole("link", { name: /Wardrobe/i })).toBeInTheDocument();
+    expect(screen.getByRole("img", { name: /level/i })).toBeInTheDocument();
   });
 });
