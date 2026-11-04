@@ -108,7 +108,8 @@ describe("market stall rental, categories and sales", () => {
       await call("public.rent_market_stall($1::uuid)", [requestId(1)]),
     ).toMatchObject({ duplicate: true, weeklyRentMinor: 2000 });
     expect(
-      (await db.query("select balance from wallets where user_id=$1", [seller])).rows[0]?.balance,
+      (await db.query<{ balance: number }>("select balance from wallets where user_id=$1", [seller]))
+        .rows[0]?.balance,
     ).toBe(8000);
     await deny(
       "select public.rent_market_stall($1::uuid)",
@@ -177,7 +178,8 @@ describe("market stall rental, categories and sales", () => {
       ]),
     ).toMatchObject({ duplicate: true, totalMinor: 2800 });
     expect(
-      (await db.query("select balance from wallets where user_id=$1", [buyer])).rows[0]?.balance,
+      (await db.query<{ balance: number }>("select balance from wallets where user_id=$1", [buyer]))
+        .rows[0]?.balance,
     ).toBe(7200);
     expect(
       (await db.query("select balance from wallets where user_id=$1", [seller])).rows[0]?.balance,
