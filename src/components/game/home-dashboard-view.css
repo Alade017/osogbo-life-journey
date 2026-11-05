@@ -1,30 +1,4 @@
-/* Home status sits over the room so the house remains the full Home screen. */
-.living-costs-dialog {
-  width: calc(100% - 24px);
-  max-height: calc(100dvh - 32px);
-  overflow-y: auto;
-  border-radius: var(--shape-card);
-}
-
-@media (max-width: 400px) {
-  .hd-area-copy small {
-    display: none;
-  }
-
-  .hd-status-actions {
-    gap: 4px;
-  }
-  .hd-status .hd-balance {
-    padding-inline: 8px;
-    max-width: 112px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .hd-status .hd-area {
-    gap: 4px;
-  }
-}
-
+/* Home screen: keep the room full-screen and layer player controls above it. */
 .city-game-main:has(.home-dashboard) {
   width: 100%;
   max-width: none;
@@ -32,7 +6,7 @@
 }
 
 .home-dashboard,
-.hd-stage {
+.home-dashboard .hd-stage {
   position: relative;
   box-sizing: border-box;
   width: 100%;
@@ -41,30 +15,46 @@
 }
 
 .home-dashboard {
+  --house-scene-controls-top: calc(max(12px, env(safe-area-inset-top)) + 76px);
   overflow: hidden;
   color: var(--foreground);
+  isolation: isolate;
 }
 
-.hd-status {
+.home-dashboard .hd-stage {
+  overflow: hidden;
+}
+
+/* Player status HUD */
+.home-dashboard .hd-status {
   position: absolute;
-  z-index: 5;
+  z-index: 20;
   top: max(12px, env(safe-area-inset-top));
   left: max(12px, env(safe-area-inset-left));
-  display: flex;
-  width: min(560px, calc(100% - 24px));
-  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
+  width: min(
+    680px,
+    calc(
+      100% - max(12px, env(safe-area-inset-left)) -
+        max(12px, env(safe-area-inset-right))
+    )
+  );
   min-width: 0;
-  padding: 8px 8px 8px 16px;
+  height: 64px;
+  padding: 8px;
+  box-sizing: border-box;
   border: 1px solid var(--border);
   border-radius: var(--shape-pill);
-  background: var(--card);
+  background: color-mix(in srgb, var(--card) 94%, transparent);
   box-shadow: var(--elevation-card);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
-.hd-area {
+.home-dashboard .hd-area {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -72,54 +62,71 @@
   color: var(--primary);
 }
 
-.hd-area-copy {
-  display: grid;
-  min-width: 0;
-}
-.hd-area-copy strong {
-  overflow: hidden;
-  font-family: var(--typeface-display);
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--foreground);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.hd-area-copy small {
-  font-size: 12px;
-  color: var(--muted-foreground);
-}
-.hd-status-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.home-dashboard .hd-area > svg {
   flex: 0 0 auto;
 }
 
-.hd-icon-button,
-.hd-balance {
+.home-dashboard .hd-area-copy {
+  display: grid;
+  min-width: 0;
+}
+
+.home-dashboard .hd-area-copy strong {
+  overflow: hidden;
+  color: var(--foreground);
+  font-family: var(--typeface-display);
+  font-size: clamp(12px, 1.4vw, 15px);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.home-dashboard .hd-area-copy small {
+  color: var(--muted-foreground);
+  font-size: 11px;
+  line-height: 1.3;
+}
+
+.home-dashboard .hd-status-actions {
+  display: grid;
+  grid-template-columns: 44px 44px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.home-dashboard .hd-icon-button,
+.home-dashboard .hd-balance {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 44px;
+  box-sizing: border-box;
   border: 0;
   text-decoration: none;
   cursor: pointer;
   transition:
     transform var(--duration-control) ease,
-    box-shadow var(--duration-control) ease;
+    box-shadow var(--duration-control) ease,
+    background-color var(--duration-control) ease;
 }
-.hd-icon-button {
+
+.home-dashboard .hd-icon-button {
   position: relative;
   width: 44px;
+  min-width: 44px;
   border-radius: var(--shape-pill);
   background: var(--color-primary-soft);
   color: var(--primary);
 }
-.hd-notification-dot {
+
+.home-dashboard .hd-notification-dot {
   position: absolute;
   top: 2px;
   right: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 18px;
   height: 18px;
   padding: 0 4px;
@@ -128,87 +135,63 @@
   color: var(--primary-foreground);
   font-size: 11px;
   font-weight: 700;
-  line-height: 18px;
+  line-height: 1;
   text-align: center;
 }
-.hd-balance {
-  padding: 0 18px;
+
+.home-dashboard .hd-balance {
+  min-width: 0;
+  max-width: 100%;
+  padding-inline: 12px;
+  overflow: hidden;
   border-radius: var(--shape-pill);
   background: var(--primary);
   color: var(--primary-foreground);
   font-family: var(--typeface-display);
-  font-size: clamp(14px, 1.4vw, 17px);
+  font-size: clamp(11px, 1.2vw, 16px);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
   white-space: nowrap;
   box-shadow: var(--elevation-rest);
 }
-.hd-icon-button:hover,
-.hd-balance:hover {
+
+.home-dashboard .hd-icon-button:hover,
+.home-dashboard .hd-balance:hover {
   transform: translateY(-1px);
   box-shadow: var(--elevation-lift);
 }
-.hd-icon-button:focus-visible,
-.hd-balance:focus-visible {
+
+.home-dashboard .hd-icon-button:focus-visible,
+.home-dashboard .hd-balance:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 3px;
 }
 
+/* Dialog sizing */
+.living-costs-dialog {
+  width: min(560px, calc(100% - 24px));
+  max-width: calc(100% - 24px);
+  max-height: calc(100dvh - 32px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  border-radius: var(--shape-card);
+  overscroll-behavior: contain;
+}
+
+/* Tablet and smaller desktop layouts */
 @media (max-width: 720px) {
-  .hd-status {
-    right: max(12px, env(safe-area-inset-right));
-    width: auto;
-    padding-left: 14px;
-  }
   .home-dashboard .house-page.house-page-fill .house-edit-toggle {
     top: calc(max(12px, env(safe-area-inset-top)) + 72px);
   }
 }
 
-.home-dashboard {
-  height: calc(100dvh - 32px);
-  min-height: calc(100dvh - 32px);
-  overflow: hidden;
-}
-
-/* Status information has its own row; house controls begin beneath it. */
-.home-dashboard {
-  --house-scene-controls-top: calc(max(12px, env(safe-area-inset-top)) + 76px);
-}
-
-.home-dashboard .hd-status {
-  z-index: 10;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  width: min(680px, calc(100% - max(12px, env(safe-area-inset-left)) - max(12px, env(safe-area-inset-right))));
-  height: 64px;
-  min-width: 0;
-  gap: 8px;
-  padding: 8px;
-  box-sizing: border-box;
-}
-
-.home-dashboard .hd-status-actions {
-  display: grid;
-  grid-template-columns: 44px 44px minmax(0, 1fr);
-  min-width: 0;
-  gap: 6px;
-}
-
-.home-dashboard .hd-area-copy small { display: block; font-size: 11px; }
-.home-dashboard .hd-area-copy strong { font-size: clamp(12px, 1.4vw, 15px); }
-.home-dashboard .hd-icon-button { min-width: 44px; width: 44px; }
-.home-dashboard .hd-status .hd-balance {
-  min-width: 0;
-  max-width: none;
-  overflow: visible;
-  padding-inline: 10px;
-  font-size: clamp(11px, 1.2vw, 16px);
-  line-height: 1.2;
-}
-
+/* Compact two-row mobile HUD */
 @media (max-width: 560px) {
-  .home-dashboard { --house-scene-controls-top: calc(max(12px, env(safe-area-inset-top)) + 112px); }
+  .home-dashboard {
+    --house-scene-controls-top: calc(max(12px, env(safe-area-inset-top)) + 112px);
+  }
+
   .home-dashboard .hd-status {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: 36px 44px;
@@ -217,7 +200,65 @@
     padding: 6px;
     border-radius: 20px;
   }
-  .home-dashboard .hd-area { gap: 6px; }
-  .home-dashboard .hd-status-actions { width: 100%; gap: 4px; }
-  .home-dashboard .hd-status .hd-balance { font-size: clamp(11px, 3.2vw, 14px); }
+
+  .home-dashboard .hd-area {
+    gap: 6px;
+  }
+
+  .home-dashboard .hd-status-actions {
+    width: 100%;
+    grid-template-columns: 44px 44px minmax(0, 1fr);
+    gap: 4px;
+  }
+
+  .home-dashboard .hd-balance {
+    padding-inline: 8px;
+    font-size: clamp(11px, 3.2vw, 14px);
+  }
+
+  .home-dashboard .house-page.house-page-fill .house-edit-toggle {
+    top: calc(max(12px, env(safe-area-inset-top)) + 108px);
+  }
+}
+
+/* Very narrow phones */
+@media (max-width: 400px) {
+  .home-dashboard .hd-area-copy small {
+    display: none;
+  }
+
+  .home-dashboard .hd-area {
+    gap: 4px;
+  }
+
+  .home-dashboard .hd-status {
+    gap: 3px;
+  }
+
+  .home-dashboard .hd-status-actions {
+    gap: 4px;
+  }
+
+  .home-dashboard .hd-balance {
+    padding-inline: 8px;
+    font-size: 11px;
+  }
+
+  .living-costs-dialog {
+    width: calc(100% - 16px);
+    max-width: calc(100% - 16px);
+    max-height: calc(100dvh - 24px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-dashboard .hd-icon-button,
+  .home-dashboard .hd-balance {
+    transition: none;
+  }
+
+  .home-dashboard .hd-icon-button:hover,
+  .home-dashboard .hd-balance:hover {
+    transform: none;
+  }
 }
