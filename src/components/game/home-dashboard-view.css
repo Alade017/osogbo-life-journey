@@ -89,6 +89,7 @@
 
 .home-dashboard .hd-status-actions {
   display: grid;
+  /* JSX order: Living Costs, Notifications, Wallet. */
   grid-template-columns: 44px 44px minmax(0, 1fr);
   align-items: center;
   gap: 6px;
@@ -179,10 +180,10 @@
   overscroll-behavior: contain;
 }
 
-/* Tablet and smaller desktop layouts */
+/* Keep house controls below the HUD using the shared responsive offset. */
 @media (max-width: 720px) {
   .home-dashboard .house-page.house-page-fill .house-edit-toggle {
-    top: calc(max(12px, env(safe-area-inset-top)) + 72px);
+    top: var(--house-scene-controls-top);
   }
 }
 
@@ -214,10 +215,6 @@
   .home-dashboard .hd-balance {
     padding-inline: 8px;
     font-size: clamp(11px, 3.2vw, 14px);
-  }
-
-  .home-dashboard .house-page.house-page-fill .house-edit-toggle {
-    top: calc(max(12px, env(safe-area-inset-top)) + 108px);
   }
 }
 
