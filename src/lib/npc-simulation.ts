@@ -18,7 +18,12 @@ export type NpcDefinition = {
     activity: string;
   }[];
 };
-export type NpcActivity = { destinationSlug: string; label: string; available: boolean };
+export type NpcActivity = {
+  destinationSlug: string;
+  destination: "work" | "home" | "market" | "park";
+  label: string;
+  available: boolean;
+};
 export type Relationship = {
   friendship: number;
   romance: number;
@@ -169,6 +174,7 @@ export function npcActivityAt(
   const destinationSlug = locationBySlug(destination) ? destination : npc.homeSlug;
   return {
     destinationSlug,
+    destination: weatherFallback ? "home" : (routine?.destination ?? "home"),
     label: weatherFallback
       ? "staying indoors during the rain"
       : (routine?.activity ?? "taking a quiet break"),
