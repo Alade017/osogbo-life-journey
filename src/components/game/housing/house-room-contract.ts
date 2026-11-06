@@ -120,6 +120,20 @@ export function isHouseGridCellOccupied(
   });
 }
 
+/** The centre of the first grid cell no item occupies, or null when the floor is full. */
+export function firstFreeHouseGridCell(
+  others: readonly { id: string; x?: number; y?: number }[],
+): { x: number; y: number } | null {
+  for (let row = 0; row < HOUSE_GRID_SIZE; row++) {
+    for (let col = 0; col < HOUSE_GRID_SIZE; col++) {
+      const x = GRID_MIN + GRID_CELL * (col + 0.5);
+      const y = GRID_MIN + GRID_CELL * (row + 0.5);
+      if (!isHouseGridCellOccupied(x, y, others)) return { x, y };
+    }
+  }
+  return null;
+}
+
 /**
  * The slot a placement is drawn in. Moved furniture carries a free position
  * ("free:<id>") that matches no room slot, so it is drawn from its own coordinates

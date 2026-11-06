@@ -10,6 +10,7 @@ import {
   HOUSE_GRID_STEP,
   HOUSE_ROOM_SIZE,
   draftStartFor,
+  firstFreeHouseGridCell,
   isHouseGridCellOccupied,
   snapToHouseGrid,
   type DraftMove,
@@ -21,6 +22,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { House, Moon, Sunrise, WifiOff, DoorOpen, LoaderCircle } from "lucide-react";
 import { HouseEditSheets } from "@/components/game/housing/HouseEditSheets";
+import { HouseCatalogue } from "@/components/game/housing/HouseCatalogue";
 import { HomeFoodDeliveryPanel } from "@/components/game/housing/HomeFoodDeliveryPanel";
 import type {
   HouseInventoryItem,
@@ -366,7 +368,11 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const { data: wallet } = useQuery(q.wallet());
   const [online, setOnline] = useState(() => typeof navigator === "undefined" || navigator.onLine);
   const [editing, setEditing] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState<HouseSlot | null>(null);
+  // Catalogue: open panel, and an owned item waiting to appear so it can be moved.
+  const [catalogueOpen, setCatalogueOpen] = useState(false);
+  const [pendingPlace, setPendingPlace] = useState<{ itemId: string; knownIds: string[] } | null>(
+    null,
+  );
   const [selectedPlacement, setSelectedPlacement] = useState<HousePlacement | null>(null);
   // Placement mode: the item being moved, shown at its draft grid cell until placed or cancelled.
   const [draftMove, setDraftMove] = useState<DraftMove | null>(null);
@@ -560,7 +566,9 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
               : action === "rotate"
                 ? { fromSlot, rotation }
                 : action === "place"
-                  ? { itemId, slot }
+                  ? x !== undefined && y !== undefined
+                    ? { itemId, x, y }
+                    : { itemId, slot }
                   : { itemId },
         ),
       });
@@ -617,7 +625,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       } else if (variables.action === "rotate") {
         toast.success("Accessory turned.");
       } else {
-        setSelectedSlot(null);
         setSelectedPlacement(null);
       }
     },
@@ -858,9 +865,20 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     if (isOffline || actionMutation.isPending || !editing || activeSleep) return;
     const start = draftStartFor(placement, slots);
     if (!start) return;
-    setSelectedSlot(null);
     setDraftMove({ placementId: placement.id, ...start });
   };
+  useEffect(() => {
+    if (!pendingPlace) return;
+    const placed = scenePlacements.find(
+      (item) =>
+        item.item_id === pendingPlace.itemId &&
+        !pendingPlace.knownIds.includes(item.id) &&
+        item.slot.startsWith("free:"),
+    );
+    if (!placed) return;
+    setDraftMove({ placementId: placed.id, x: placed.x ?? 50, y: placed.y ?? 50 });
+    setPendingPlace(null);
+  }, [pendingPlace, scenePlacements]);
   const cancelMove = () => setDraftMove(null);
   const placeMove = () => {
     if (!draftMove || !draftPlacement || draftOccupied) return;
@@ -1173,9 +1191,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           <span>{house.house_type.label}</span>
         </div>
         <HouseRoomRenderer
-          inputBlocked={
-            !!selectedSlot || taskBusy || (!editing && !!selectedPlacement && !!selectedAction)
-          }
+          inputBlocked={taskBusy || (!editing && !!selectedPlacement && !!selectedAction)}
           houseTypeId={house.house_type_id}
           accessoryBand={canonicalHome?.accessoryBand ?? "basic"}
           characterName={character?.name ?? "Your character"}
@@ -1216,18 +1232,12 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           onSelectPlacement={(placement) => {
             if (taskBusy) return;
             if (!editing) {
-              setSelectedSlot(null);
               setSelectedPlacement((current) => (current?.id === placement.id ? null : placement));
               return;
             }
-            setSelectedSlot(null);
             setSelectedPlacement(placement);
           }}
-          onSelectSlot={(slot) => {
-            if (draftMove) return;
-            setSelectedPlacement(null);
-            setSelectedSlot(slot);
-          }}
+          onSelectSlot={() => undefined}
         />
         <div className="house-scene-controls" role="group" aria-label="Home controls">
           {!editing && canonicalHome && (
@@ -1270,7 +1280,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
               movement.cancel();
               setEditing((value) => !value);
               setSelectedPlacement(null);
-              setSelectedSlot(null);
             }}
           >
             {editing ? "Done" : "Shop"}
@@ -1409,33 +1418,38 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       )}
 
       {editing && (
-        <HouseEditSheets
-          open={!draftMove}
+        <HouseCatalogue
+          open={catalogueOpen}
           offline={isOffline}
           pending={actionMutation.isPending}
           cash={wallet?.balance ?? null}
           inventory={inventory}
           catalog={catalogQuery.data ?? []}
-          singleRoom={singleRoom}
-          onRotate={requestRotate}
-          selectedSlot={selectedSlot}
+          placements={scenePlacements}
+          onOpen={() => setCatalogueOpen(true)}
+          onClose={() => setCatalogueOpen(false)}
+          onBuy={(itemId) => requestAction({ action: "buy", itemId })}
+          onPlaceOwned={(itemId) => {
+            const cell = firstFreeHouseGridCell(scenePlacements);
+            if (!cell) {
+              toast.error("There is no free spot in your home.");
+              return;
+            }
+            setPendingPlace({ itemId, knownIds: scenePlacements.map((item) => item.id) });
+            requestAction({ action: "place", itemId, x: cell.x, y: cell.y });
+          }}
+        />
+      )}
+      {editing && selectedPlacement && !draftMove && (
+        <HouseEditSheets
+          offline={isOffline}
+          pending={actionMutation.isPending}
           selectedPlacement={selectedPlacement}
-          slots={slots}
-          placements={placements}
-          onSelectSlot={(slot) => {
-            setSelectedPlacement(null);
-            setSelectedSlot(slot);
-          }}
-          onClose={() => {
-            setEditing(false);
-            setDraftMove(null);
-            setSelectedSlot(null);
-            setSelectedPlacement(null);
-          }}
-          onPlace={(itemId, slot) => requestAction({ action: "place", itemId, slot: slot.id })}
+          singleRoom={singleRoom}
+          onDeselect={() => setSelectedPlacement(null)}
+          onRotate={requestRotate}
           onRemove={(placement) => requestAction({ action: "remove", slot: placement.slot })}
           onStartMove={startMove}
-          onBuy={(itemId) => requestAction({ action: "buy", itemId })}
         />
       )}
       {editing && draftPlacement && (

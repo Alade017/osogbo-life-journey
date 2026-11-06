@@ -2,6 +2,7 @@ type HouseApiDependencies = {
   authenticate: (request: Request) => Promise<string | null>;
   state: (playerId: string) => Promise<unknown>;
   place: (playerId: string, itemId: string, slot: string) => Promise<unknown>;
+  placeAt: (playerId: string, itemId: string, x: number, y: number) => Promise<unknown>;
   move: (playerId: string, fromSlot: string, x: number, y: number) => Promise<unknown>;
   rotate: (playerId: string, fromSlot: string, rotation: number) => Promise<unknown>;
   remove: (playerId: string, slot: string) => Promise<unknown>;
@@ -86,8 +87,15 @@ export function createHouseApiHandlers(deps: HouseApiDependencies) {
     postPlace: (request: Request) =>
       run(request, async (playerId) => {
         const value = await body(request);
-        if (typeof value["itemId"] !== "string" || typeof value["slot"] !== "string")
-          throw new Error("INVALID_REQUEST");
+        if (typeof value["itemId"] !== "string") throw new Error("INVALID_REQUEST");
+        // Free placement: an item goes to a grid position, with no room slot.
+        if (typeof value["x"] === "number" && typeof value["y"] === "number") {
+          const { x, y } = { x: value["x"], y: value["y"] };
+          if (!Number.isFinite(x) || !Number.isFinite(y) || x < 4 || x > 96 || y < 4 || y > 96)
+            throw new Error("INVALID_REQUEST");
+          return deps.placeAt(playerId, value["itemId"], x, y);
+        }
+        if (typeof value["slot"] !== "string") throw new Error("INVALID_REQUEST");
         return deps.place(playerId, value["itemId"], value["slot"]);
       }),
     postMove: (request: Request) =>
@@ -166,6 +174,8 @@ async function productionHandlers() {
     state: (playerId) => rpc("get_house_state", { p_player_id: playerId }),
     place: (playerId, itemId, slot) =>
       rpc("house_place", { p_player_id: playerId, p_item_id: itemId, p_slot: slot }),
+    placeAt: (playerId, itemId, x, y) =>
+      rpc("house_place_free", { p_player_id: playerId, p_item_id: itemId, p_x: x, p_y: y }),
     move: (playerId, fromSlot, x, y) =>
       rpc("house_move_to_position", {
         p_player_id: playerId,

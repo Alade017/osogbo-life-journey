@@ -9,6 +9,11 @@ function setup(
     place: vi.fn(async (_playerId: string, _itemId: string, _slot: string): Promise<unknown> => ({
       ok: true,
     })),
+    placeAt: vi.fn(
+      async (_playerId: string, _itemId: string, _x: number, _y: number): Promise<unknown> => ({
+        ok: true,
+      }),
+    ),
     move: vi.fn(
       async (_playerId: string, _fromSlot: string, _x: number, _y: number): Promise<unknown> => ({
         ok: true,
@@ -27,6 +32,7 @@ function setup(
     authenticate,
     state: async () => ({ house: null, placements: [], outfit: {}, inventory: [] }),
     place: calls.place,
+    placeAt: calls.placeAt,
     move: calls.move,
     rotate: calls.rotate,
     remove: async () => ({ ok: true }),
@@ -63,6 +69,33 @@ describe("house API handlers", () => {
 
     expect(response.status).toBe(200);
     expect(calls.buy).toHaveBeenCalledWith("player-1", "chair", "repeat-shop-key-0001");
+  });
+
+  it("places furniture at a free grid position when coordinates are sent", async () => {
+    const { handlers, calls } = setup();
+    const response = await handlers.postPlace(
+      new Request("https://game.test/api/house/place", {
+        method: "POST",
+        body: JSON.stringify({ itemId: "free-sofa", x: 38.5, y: 62 }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(calls.placeAt).toHaveBeenCalledWith("player-1", "free-sofa", 38.5, 62);
+    expect(calls.place).not.toHaveBeenCalled();
+  });
+
+  it("rejects free placements outside the room before reaching the database", async () => {
+    const { handlers, calls } = setup();
+    const response = await handlers.postPlace(
+      new Request("https://game.test/api/house/place", {
+        method: "POST",
+        body: JSON.stringify({ itemId: "free-sofa", x: 1000, y: 50 }),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(calls.placeAt).not.toHaveBeenCalled();
   });
 
   it("persists a furniture drop at validated normalized room coordinates", async () => {
@@ -138,6 +171,7 @@ describe("house API handlers", () => {
         throw new Error("Could not find the function public.get_house_state in the schema cache");
       },
       place: async () => ({}),
+      placeAt: async () => ({}),
       move: async () => ({}),
       rotate: async () => ({}),
       remove: async () => ({}),
