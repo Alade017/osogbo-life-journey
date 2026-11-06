@@ -561,6 +561,13 @@
       "when": 1792350001018,
       "tag": "0078_housing_switch_refund",
       "breakpoints": true
+    },
+    {
+      "idx": 80,
+      "version": "7",
+      "when": 1792351001018,
+      "tag": "0079_free_house_placement",
+      "breakpoints": true
     }
   ]
 }

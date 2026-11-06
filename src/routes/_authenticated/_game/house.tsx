@@ -6,13 +6,23 @@ import {
   roomObstacles,
   type RoomPoint,
 } from "@/game/house-navigation";
-import { HOUSE_ROOM_SIZE } from "@/components/game/housing/house-room-contract";
+import {
+  HOUSE_GRID_STEP,
+  HOUSE_ROOM_SIZE,
+  draftStartFor,
+  firstFreeHouseGridCell,
+  isHouseGridCellOccupied,
+  snapToHouseGrid,
+  type DraftMove,
+} from "@/components/game/housing/house-room-contract";
+import { HousePlacementBar } from "@/components/game/housing/HousePlacementBar";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { House, Moon, Sunrise, WifiOff, DoorOpen, LoaderCircle } from "lucide-react";
 import { HouseEditSheets } from "@/components/game/housing/HouseEditSheets";
+import { HouseCatalogue } from "@/components/game/housing/HouseCatalogue";
 import { HomeFoodDeliveryPanel } from "@/components/game/housing/HomeFoodDeliveryPanel";
 import type {
   HouseInventoryItem,
@@ -358,8 +368,14 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const { data: wallet } = useQuery(q.wallet());
   const [online, setOnline] = useState(() => typeof navigator === "undefined" || navigator.onLine);
   const [editing, setEditing] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState<HouseSlot | null>(null);
+  // Catalogue: open panel, and an owned item waiting to appear so it can be moved.
+  const [catalogueOpen, setCatalogueOpen] = useState(false);
+  const [pendingPlace, setPendingPlace] = useState<{ itemId: string; knownIds: string[] } | null>(
+    null,
+  );
   const [selectedPlacement, setSelectedPlacement] = useState<HousePlacement | null>(null);
+  // Placement mode: the item being moved, shown at its draft grid cell until placed or cancelled.
+  const [draftMove, setDraftMove] = useState<DraftMove | null>(null);
   const [previewMove, setPreviewMove] = useState<{
     placementId: string;
     x: number;
@@ -550,7 +566,9 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
               : action === "rotate"
                 ? { fromSlot, rotation }
                 : action === "place"
-                  ? { itemId, slot }
+                  ? x !== undefined && y !== undefined
+                    ? { itemId, x, y }
+                    : { itemId, slot }
                   : { itemId },
         ),
       });
@@ -607,7 +625,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       } else if (variables.action === "rotate") {
         toast.success("Accessory turned.");
       } else {
-        setSelectedSlot(null);
         setSelectedPlacement(null);
       }
     },
@@ -822,12 +839,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     if (isOffline || actionMutation.isPending) return;
     actionMutation.mutate(args);
   };
-  const requestMove = (placement: HousePlacement, destination: HouseSlot) => {
-    if (isOffline || actionMutation.isPending || !editing || activeSleep) return;
-    if (placement.slot === destination.id || placement.slot_type !== destination.slot_type) return;
-    if (placements.some((item) => item.slot === destination.id)) return;
-    requestMoveToPosition(placement, destination.x, destination.y);
-  };
   const requestRotate = (placement: HousePlacement, rotation: number) => {
     if (isOffline || actionMutation.isPending || !editing || activeSleep) return;
     actionMutation.mutate({ action: "rotate", fromSlot: placement.slot, rotation });
@@ -843,6 +854,73 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       y,
     });
   };
+  // Placement mode: pick up an item, move it on the grid, then Place or Cancel.
+  const draftPlacement = draftMove
+    ? (scenePlacements.find((item) => item.id === draftMove.placementId) ?? null)
+    : null;
+  const draftOccupied = draftMove
+    ? isHouseGridCellOccupied(draftMove.x, draftMove.y, scenePlacements, draftMove.placementId)
+    : false;
+  const startMove = (placement: HousePlacement) => {
+    if (isOffline || actionMutation.isPending || !editing || activeSleep) return;
+    const start = draftStartFor(placement, slots);
+    if (!start) return;
+    setDraftMove({ placementId: placement.id, ...start });
+  };
+  useEffect(() => {
+    if (!pendingPlace) return;
+    const placed = scenePlacements.find(
+      (item) =>
+        item.item_id === pendingPlace.itemId &&
+        !pendingPlace.knownIds.includes(item.id) &&
+        item.slot.startsWith("free:"),
+    );
+    if (!placed) return;
+    setDraftMove({ placementId: placed.id, x: placed.x ?? 50, y: placed.y ?? 50 });
+    setPendingPlace(null);
+  }, [pendingPlace, scenePlacements]);
+  const cancelMove = () => setDraftMove(null);
+  const placeMove = () => {
+    if (!draftMove || !draftPlacement || draftOccupied) return;
+    requestMoveToPosition(draftPlacement, draftMove.x, draftMove.y);
+    setDraftMove(null);
+    setSelectedPlacement(null);
+  };
+  const turnDraft = () => {
+    if (draftPlacement) {
+      requestRotate(draftPlacement, ((draftPlacement.rotation_deg ?? 0) + 45) % 360);
+    }
+  };
+  const nudgeDraft = (dx: number, dy: number) =>
+    setDraftMove((current) => {
+      if (!current) return current;
+      const [x, y] = snapToHouseGrid(
+        current.x + dx * HOUSE_GRID_STEP,
+        current.y + dy * HOUSE_GRID_STEP,
+      );
+      return { ...current, x, y };
+    });
+  useEffect(() => {
+    if (!draftMove) return;
+    const onKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) return;
+      if (event.key === "ArrowLeft") nudgeDraft(-1, 0);
+      else if (event.key === "ArrowRight") nudgeDraft(1, 0);
+      else if (event.key === "ArrowUp") nudgeDraft(0, -1);
+      else if (event.key === "ArrowDown") nudgeDraft(0, 1);
+      else if (event.key === "r" || event.key === "R") turnDraft();
+      else if (event.key === "Enter") placeMove();
+      else if (event.key === "Escape") cancelMove();
+      else return;
+      event.preventDefault();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // The handlers read the current draft through these values.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [draftMove, draftPlacement, draftOccupied]);
+
   const interactWithPlacement = async (placement: HousePlacement, choice?: LifeActionId) => {
     const action = choice ?? homeFurnitureAction(placement.item_id);
     if (
@@ -1113,9 +1191,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           <span>{house.house_type.label}</span>
         </div>
         <HouseRoomRenderer
-          inputBlocked={
-            !!selectedSlot || taskBusy || (!editing && !!selectedPlacement && !!selectedAction)
-          }
+          inputBlocked={taskBusy || (!editing && !!selectedPlacement && !!selectedAction)}
           houseTypeId={house.house_type_id}
           accessoryBand={canonicalHome?.accessoryBand ?? "basic"}
           characterName={character?.name ?? "Your character"}
@@ -1144,30 +1220,24 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           slots={slots}
           placements={scenePlacements}
           foodDeliveries={deliveries.data ?? []}
-          movingPlacement={editing ? selectedPlacement : null}
+          movingPlacement={null}
+          draftMove={draftMove}
+          onDraftMove={(x, y) =>
+            setDraftMove((current) => (current ? { ...current, x, y } : current))
+          }
           editMode={editing}
           moveEnabled={editing && !isOffline && !actionMutation.isPending && !taskBusy}
-          onMove={requestMove}
+          onMove={() => {}}
           onMovePosition={requestMoveToPosition}
           onSelectPlacement={(placement) => {
             if (taskBusy) return;
             if (!editing) {
-              setSelectedSlot(null);
               setSelectedPlacement((current) => (current?.id === placement.id ? null : placement));
               return;
             }
-            setSelectedSlot(null);
             setSelectedPlacement(placement);
           }}
-          onSelectSlot={(slot) => {
-            if (selectedPlacement) {
-              requestMove(selectedPlacement, slot);
-              setSelectedPlacement(null);
-              return;
-            }
-            setSelectedPlacement(null);
-            setSelectedSlot(slot);
-          }}
+          onSelectSlot={() => undefined}
         />
         <div className="house-scene-controls" role="group" aria-label="Home controls">
           {!editing && canonicalHome && (
@@ -1210,7 +1280,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
               movement.cancel();
               setEditing((value) => !value);
               setSelectedPlacement(null);
-              setSelectedSlot(null);
             }}
           >
             {editing ? "Done" : "Shop"}
@@ -1349,32 +1418,48 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       )}
 
       {editing && (
-        <HouseEditSheets
-          open
+        <HouseCatalogue
+          open={catalogueOpen}
           offline={isOffline}
           pending={actionMutation.isPending}
           cash={wallet?.balance ?? null}
           inventory={inventory}
           catalog={catalogQuery.data ?? []}
-          singleRoom={singleRoom}
-          onRotate={requestRotate}
-          selectedSlot={selectedSlot}
-          selectedPlacement={selectedPlacement}
-          slots={slots}
-          placements={placements}
-          onSelectSlot={(slot) => {
-            setSelectedPlacement(null);
-            setSelectedSlot(slot);
-          }}
-          onClose={() => {
-            setEditing(false);
-            setSelectedSlot(null);
-            setSelectedPlacement(null);
-          }}
-          onPlace={(itemId, slot) => requestAction({ action: "place", itemId, slot: slot.id })}
-          onRemove={(placement) => requestAction({ action: "remove", slot: placement.slot })}
-          onMove={requestMove}
+          placements={scenePlacements}
+          onOpen={() => setCatalogueOpen(true)}
+          onClose={() => setCatalogueOpen(false)}
           onBuy={(itemId) => requestAction({ action: "buy", itemId })}
+          onPlaceOwned={(itemId) => {
+            const cell = firstFreeHouseGridCell(scenePlacements);
+            if (!cell) {
+              toast.error("There is no free spot in your home.");
+              return;
+            }
+            setPendingPlace({ itemId, knownIds: scenePlacements.map((item) => item.id) });
+            requestAction({ action: "place", itemId, x: cell.x, y: cell.y });
+          }}
+        />
+      )}
+      {editing && selectedPlacement && !draftMove && (
+        <HouseEditSheets
+          offline={isOffline}
+          pending={actionMutation.isPending}
+          selectedPlacement={selectedPlacement}
+          singleRoom={singleRoom}
+          onDeselect={() => setSelectedPlacement(null)}
+          onRotate={requestRotate}
+          onRemove={(placement) => requestAction({ action: "remove", slot: placement.slot })}
+          onStartMove={startMove}
+        />
+      )}
+      {editing && draftPlacement && (
+        <HousePlacementBar
+          itemName={draftPlacement.item_id.replaceAll("-", " ")}
+          occupied={draftOccupied}
+          disabled={isOffline || actionMutation.isPending}
+          onRotate={turnDraft}
+          onCancel={cancelMove}
+          onPlace={placeMove}
         />
       )}
     </div>

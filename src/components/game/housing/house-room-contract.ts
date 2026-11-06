@@ -28,6 +28,10 @@ export type HouseRoomRendererProps = {
   onSelectSlot: (slot: HouseSlot) => void;
   onMove: (placement: HousePlacement, slot: HouseSlot) => void;
   onMovePosition: (placement: HousePlacement, x: number, y: number) => void;
+  /** Placement mode: the item being moved, shown at its draft spot until placed. */
+  draftMove?: DraftMove | null;
+  /** Placement mode: called when the draft item is dragged to a new grid cell. */
+  onDraftMove?: (x: number, y: number) => void;
 };
 
 export const HOUSE_ROOM_SIZE: Record<string, readonly [number, number]> = {
@@ -65,11 +69,28 @@ export function interpolateRoomPosition(
   ];
 }
 
+/** An item being moved in placement mode, not saved until the player places it. */
+export type DraftMove = { placementId: string; x: number; y: number };
+
+/** Where a placement starts when it is picked up: its saved spot, or its fixed slot. */
+export function draftStartFor(
+  placement: HousePlacement,
+  slots: HouseSlot[],
+): { x: number; y: number } | null {
+  if (Number.isFinite(placement.x) && Number.isFinite(placement.y)) {
+    return { x: placement.x as number, y: placement.y as number };
+  }
+  const slot = slots.find((item) => item.id === placement.slot);
+  return slot ? { x: slot.x, y: slot.y } : null;
+}
+
 /** Furniture snaps to an 8 × 8 grid over the floor. One item per cell; no overlaps. */
 export const HOUSE_GRID_SIZE = 8;
 const GRID_MIN = 4;
 const GRID_MAX = 96;
 const GRID_CELL = (GRID_MAX - GRID_MIN) / HOUSE_GRID_SIZE;
+/** One grid step in room percent (the width of one cell). */
+export const HOUSE_GRID_STEP = GRID_CELL;
 
 export function gridCellOf(x: number, y: number): { col: number; row: number } {
   const clamp = (value: number) =>
@@ -97,6 +118,20 @@ export function isHouseGridCellOccupied(
     const cell = gridCellOf(other.x as number, other.y as number);
     return cell.col === target.col && cell.row === target.row;
   });
+}
+
+/** The centre of the first grid cell no item occupies, or null when the floor is full. */
+export function firstFreeHouseGridCell(
+  others: readonly { id: string; x?: number; y?: number }[],
+): { x: number; y: number } | null {
+  for (let row = 0; row < HOUSE_GRID_SIZE; row++) {
+    for (let col = 0; col < HOUSE_GRID_SIZE; col++) {
+      const x = GRID_MIN + GRID_CELL * (col + 0.5);
+      const y = GRID_MIN + GRID_CELL * (row + 0.5);
+      if (!isHouseGridCellOccupied(x, y, others)) return { x, y };
+    }
+  }
+  return null;
 }
 
 /**
