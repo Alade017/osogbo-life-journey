@@ -313,3 +313,25 @@
     bottom: 0.55rem;
   }
 }
+
+
+.town-map-svg-event {
+  cursor: pointer;
+}
+
+.town-map-svg-event circle {
+  fill: #c35c3d;
+  stroke: #fff;
+  stroke-width: 3px;
+}
+
+.town-map-svg-event text {
+  fill: #fff;
+  font: 800 12px/1 system-ui, sans-serif;
+  pointer-events: none;
+}
+
+.town-map-svg-event:focus-visible {
+  outline: none;
+  filter: drop-shadow(0 0 4px #fff);
+}

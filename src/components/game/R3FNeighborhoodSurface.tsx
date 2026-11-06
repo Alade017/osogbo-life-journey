@@ -18,6 +18,7 @@ import {
   neighborhoodSceneBounds,
   toScene,
   type NeighborhoodNpcView,
+  type NeighborhoodObject,
 } from "@/game/neighborhood-model";
 import { neighborhoodBuildingFootprint } from "@/game/neighborhood-geometry";
 import {
@@ -56,12 +57,16 @@ export function R3FNeighborhoodSurface({
   selfSessionId,
   district,
   npcs,
+  interactionTargets,
+  onSelectTarget,
   onScene,
   zoom,
   onZoomChange,
 }: {
   players: readonly NeighborhoodPlayerView[];
   npcs: readonly NeighborhoodNpcView[];
+  interactionTargets: readonly NeighborhoodObject[];
+  onSelectTarget: (targetId: string) => void;
   selfSessionId: string;
   homeTypeId: string | null;
   district: NonNullable<ReturnType<typeof playableDistrictForLocation>>;
@@ -285,6 +290,34 @@ export function R3FNeighborhoodSurface({
             positions={npcs.map((npc) => [point(npc.x, npc.y)[0], point(npc.x, npc.y)[2]])}
             activities={npcs.map(() => "walking")}
           />
+          {interactionTargets.map((target) => {
+            const p = point(target.x, target.y);
+            const footprint =
+              target.kind === "npc" ? null : neighborhoodBuildingFootprint(target);
+            return (
+              <mesh
+                key={target.id}
+                position={[p[0], 1.3, p[2]]}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onSelectTarget(target.id);
+                }}
+              >
+                {target.kind === "npc" ? (
+                  <cylinderGeometry args={[0.58, 0.58, 2.6, 12]} />
+                ) : (
+                  <boxGeometry
+                    args={[
+                      footprint!.width * unit,
+                      2.6,
+                      footprint!.height * unit,
+                    ]}
+                  />
+                )}
+                <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+              </mesh>
+            );
+          })}
           {npcs.map((npc) => {
             const p = point(npc.x, npc.y);
             return (

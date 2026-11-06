@@ -64,6 +64,7 @@ export interface MapCanvasProps {
   /** Pass undefined while the existing property source is loading. */
   properties?: readonly MapProperty[] | undefined;
   onSelectProperty?: (property: MapProperty) => void;
+  onSelectEvent?: (landmarkId: string) => void;
 }
 
 const propertyStatusText: Record<MapProperty["status"], string> = {
@@ -96,6 +97,7 @@ export function MapCanvas({
   onSelectBillboard,
   properties,
   onSelectProperty,
+  onSelectEvent,
 }: MapCanvasProps) {
   const [rendererState, setRendererState] = useState<"loading" | "ready" | "fallback">("loading");
 
@@ -141,6 +143,8 @@ export function MapCanvas({
           onSelectDistrict={onSelectDistrict}
           onSelectBillboard={onSelectBillboard}
           onSelectProperty={onSelectProperty}
+          eventChips={_eventChips}
+          onSelectEvent={onSelectEvent}
         />
       )}
       <Suspense fallback={null}>
@@ -153,6 +157,8 @@ export function MapCanvas({
           onSelectDistrict={onSelectDistrict}
           onSelectBillboard={onSelectBillboard}
           onSelectProperty={onSelectProperty}
+          eventChips={_eventChips}
+          onSelectEvent={onSelectEvent}
           onReady={handleReady}
           onUnavailable={handleUnavailable}
         />
@@ -187,6 +193,13 @@ export function MapCanvas({
           <li key={place.id}>
             <button type="button" onClick={() => onSelectLandmark(place.id)}>
               {place.label}, {place.category}
+            </button>
+          </li>
+        ))}
+        {_eventChips.map((event) => (
+          <li key={event.id}>
+            <button type="button" onClick={() => onSelectEvent?.(event.id)}>
+              Live event: {event.label}
             </button>
           </li>
         ))}

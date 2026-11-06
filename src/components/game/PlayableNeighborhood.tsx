@@ -482,6 +482,15 @@ export function PlayableNeighborhood() {
       setActivePanel("business");
     }
   };
+  const selectWorldTarget = (targetId: string) => {
+    const target = interactionTargets.find((candidate) => candidate.id === targetId);
+    if (!target) return;
+    if (nearbyObject?.id !== targetId) {
+      toast.message(`Move closer to ${target.name} before interacting.`);
+      return;
+    }
+    openInteraction();
+  };
   const closeInteraction = (open: boolean) => {
     if (open) return;
     setActivePanel(null);
@@ -611,6 +620,8 @@ export function PlayableNeighborhood() {
                         zoom={zoom}
                         onZoomChange={setZoom}
                         onScene={handleScene}
+                        interactionTargets={interactionTargets}
+                        onSelectTarget={selectWorldTarget}
                       />
                     </Suspense>
                     <div
@@ -670,6 +681,40 @@ export function PlayableNeighborhood() {
                       </button>
                     )}
                   </div>
+                  {activeNpcs.length > 0 && (
+                    <section className="neighborhood-people" aria-label="People in this neighbourhood">
+                      <div className="neighborhood-people-heading">
+                        <strong>People around here</strong>
+                        <span>NPCs follow their own daily routines</span>
+                      </div>
+                      <div className="neighborhood-people-list">
+                        {activeNpcs.map((npc) => {
+                          const isNearby = nearbyObject?.id === npc.id;
+                          return (
+                            <button
+                              key={npc.id}
+                              type="button"
+                              className="neighborhood-person"
+                              onClick={() => selectWorldTarget(npc.id)}
+                              aria-label={
+                                isNearby
+                                  ? `Talk with ${npc.name}, ${npc.activity}`
+                                  : `${npc.name}, ${npc.activity}. Move closer to interact`
+                              }
+                            >
+                              <span className="neighborhood-person-copy">
+                                <strong>{npc.name}</strong>
+                                <span>{npc.role} · {npc.activity}</span>
+                              </span>
+                              <span className="neighborhood-person-action">
+                                {isNearby ? "Talk" : "Move closer"}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  )}
                   {enterHome.isError && (
                     <p className="neighborhood-error" role="alert">
                       {enterHome.error.message}

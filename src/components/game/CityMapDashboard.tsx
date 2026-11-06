@@ -7,6 +7,7 @@ import {
   type MapBillboardMarker,
   type MapFilter,
   type MapSearchTarget,
+  type MapEventChip,
 } from "@/components/map/MapCanvas";
 import { mapHousingMarkers } from "@/components/map/map-housing-markers";
 import { DistrictSheet } from "@/components/map/DistrictSheet";
@@ -208,6 +209,15 @@ export function CityMapDashboard({
   const activeEvents = cityEvents.isError
     ? []
     : cityEventsForDistrict(cityEvents.data?.events ?? [], selectedDistrict?.id);
+  const eventChips: MapEventChip[] = (cityEvents.data?.events ?? [])
+    .filter((event) => event.status === "active")
+    .flatMap((event) => {
+      const landmark = townData.landmarks.find((place) => place.id === event.landmarkId);
+      return landmark
+        ? [{ id: event.landmarkId, label: event.title, x: landmark.grid.x, y: landmark.grid.z }]
+        : [];
+    })
+    .filter((event, index, events) => events.findIndex((item) => item.id === event.id) === index);
   const landmarkEvent = cityEvents.isError
     ? undefined
     : cityEvents.data?.events.find(
@@ -567,6 +577,21 @@ export function CityMapDashboard({
               : null
           }
           properties={housingMarkers.data ?? []}
+          eventChips={eventChips}
+          onSelectEvent={(landmarkId) => {
+            const event = (cityEvents.data?.events ?? []).find(
+              (item) => item.status === "active" && item.landmarkId === landmarkId,
+            );
+            const found = landmarks.find((item) => item.id === landmarkId) ?? getQuickTravelLandmark(landmarkId);
+            if (!event || !found) return;
+            setSelectedDistrict(null);
+            setSelectedLandmark(found);
+            setLandmarkDetailsOpen(true);
+            setArrivalConfirmed(false);
+            setTravelError(null);
+            setActionError("");
+            setPlaceActionResult(null);
+          }}
           availableLandmarkIds={availableLandmarks.data ?? []}
           onSelectDistrict={onDistrict}
           onSelectLandmark={onLandmark}
