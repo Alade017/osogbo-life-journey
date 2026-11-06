@@ -28,11 +28,13 @@ describe("NPC routine and social simulation", () => {
     const atNight = npcActivityAt(adeola, { ...INITIAL_GAME_TIME, hour: 2 }, lookup);
     expect(atWork).toMatchObject({
       destinationSlug: "aiyegbaju-market",
+      destination: "work",
       label: "selling produce",
       available: true,
     });
     expect(atNight).toMatchObject({
       destinationSlug: "residential",
+      destination: "home",
       label: "sleeping",
       available: false,
     });
@@ -60,6 +62,7 @@ describe("NPC routine and social simulation", () => {
     const rainyPark = npcActivityAt(tunde, { ...INITIAL_GAME_TIME, hour: 18 }, lookup, "rainy");
     expect(rainyPark).toMatchObject({
       destinationSlug: "residential",
+      destination: "home",
       label: "staying indoors during the rain",
     });
   });

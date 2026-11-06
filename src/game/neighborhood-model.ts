@@ -6,8 +6,14 @@ export type NeighborhoodNpcView = {
   name: string;
   role: string;
   activity: string;
+  available: boolean;
+  isPaused: boolean;
+  activityKind: "walking" | "working" | "shopping" | "socializing" | "resting" | "sleeping";
   x: number;
   y: number;
+  targetX: number;
+  targetY: number;
+  isMoving: boolean;
 };
 export type NeighborhoodObject = {
   id: string;
