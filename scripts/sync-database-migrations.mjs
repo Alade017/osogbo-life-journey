@@ -1,9 +1,9 @@
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { createHash } from "node:crypto";
 import postgres from "postgres";
 import { auditSupabaseLedger } from "./migration-ledger-audit.mjs";
 
-process.loadEnvFile(".env");
+if (existsSync(".env")) process.loadEnvFile(".env");
 const url = process.env.DATABASE_URL;
 const journal = JSON.parse(readFileSync("drizzle/migrations/meta/_journal.json", "utf8"));
 let sql;

@@ -19,6 +19,8 @@
     "test:watch": "vitest",
     "start": "node --env-file-if-exists=.env .output/server/index.mjs",
     "typecheck": "tsc --noEmit",
+    "db:check": "node scripts/sync-database-migrations.mjs",
+    "db:apply": "node scripts/sync-database-migrations.mjs --apply",
     "db:migrate:hud": "node scripts/apply-shared-hud-migration.mjs",
     "verify:map:live": "node scripts/verify-live-map.mjs"
   },
