@@ -65,6 +65,40 @@ export function interpolateRoomPosition(
   ];
 }
 
+/** Furniture snaps to an 8 × 8 grid over the floor. One item per cell; no overlaps. */
+export const HOUSE_GRID_SIZE = 8;
+const GRID_MIN = 4;
+const GRID_MAX = 96;
+const GRID_CELL = (GRID_MAX - GRID_MIN) / HOUSE_GRID_SIZE;
+
+export function gridCellOf(x: number, y: number): { col: number; row: number } {
+  const clamp = (value: number) =>
+    Math.max(0, Math.min(HOUSE_GRID_SIZE - 1, Math.floor((value - GRID_MIN) / GRID_CELL)));
+  return { col: clamp(x), row: clamp(y) };
+}
+
+/** Snaps a room percentage to the centre of its grid cell. */
+export function snapToHouseGrid(x: number, y: number): [number, number] {
+  const { col, row } = gridCellOf(x, y);
+  return [GRID_MIN + GRID_CELL * (col + 0.5), GRID_MIN + GRID_CELL * (row + 0.5)];
+}
+
+/** True when another placement already occupies the grid cell at (x, y). */
+export function isHouseGridCellOccupied(
+  x: number,
+  y: number,
+  others: readonly { id: string; x?: number; y?: number }[],
+  ignoreId?: string,
+): boolean {
+  const target = gridCellOf(x, y);
+  return others.some((other) => {
+    if (other.id === ignoreId || !Number.isFinite(other.x) || !Number.isFinite(other.y))
+      return false;
+    const cell = gridCellOf(other.x as number, other.y as number);
+    return cell.col === target.col && cell.row === target.row;
+  });
+}
+
 /**
  * The slot a placement is drawn in. Moved furniture carries a free position
  * ("free:<id>") that matches no room slot, so it is drawn from its own coordinates

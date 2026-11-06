@@ -19,8 +19,10 @@ import {
   housePartitionSegments,
   interpolateRoomPosition,
   roomCoordinatesToPercent,
+  isHouseGridCellOccupied,
   renderSlotForPlacement,
   roomPercentToPosition,
+  snapToHouseGrid,
   houseSlotPosition as slotPosition,
   houseWallSegments,
   type HouseRoomRendererProps as Props,
@@ -1217,8 +1219,9 @@ export function HouseRoom3D({
     pointer.moved = true;
     const point = floorPoint(event);
     if (!point) return;
-    const x = Math.max(-width / 2 + 0.4, Math.min(width / 2 - 0.4, point.x));
-    const z = Math.max(-depth / 2 + 0.4, Math.min(depth / 2 - 0.4, point.z));
+    const [percentX, percentY] = roomCoordinatesToPercent(point.x, point.z, width, depth);
+    const [snapX, snapY] = snapToHouseGrid(percentX, percentY);
+    const [x, , z] = roomPercentToPosition(snapX, snapY, width, depth);
     setDragPreview({ placementId: pointer.placement.id, x, z });
   };
   const onDragEnd = (event: ThreeEvent<PointerEvent>) => {
@@ -1237,7 +1240,10 @@ export function HouseRoom3D({
     }, 0);
     const point = floorPoint(event);
     if (point) {
-      const [x, y] = roomCoordinatesToPercent(point.x, point.z, width, depth);
+      const [percentX, percentY] = roomCoordinatesToPercent(point.x, point.z, width, depth);
+      const [x, y] = snapToHouseGrid(percentX, percentY);
+      // One item per grid cell: a drop onto an occupied cell leaves the item where it was.
+      if (isHouseGridCellOccupied(x, y, placements, pointer.placement.id)) return;
       onMovePosition(pointer.placement, x, y);
     }
   };

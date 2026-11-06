@@ -35,3 +35,31 @@ describe("moved house placements", () => {
     expect(renderSlotForPlacement(placement({ slot: "free:p1" }), slots)).toBeUndefined();
   });
 });
+
+import {
+  HOUSE_GRID_SIZE,
+  gridCellOf,
+  isHouseGridCellOccupied,
+  snapToHouseGrid,
+} from "@/components/game/housing/house-room-contract";
+
+describe("house grid", () => {
+  it("uses an 8 × 8 grid", () => {
+    expect(HOUSE_GRID_SIZE).toBe(8);
+    expect(gridCellOf(4, 4)).toEqual({ col: 0, row: 0 });
+    expect(gridCellOf(96, 96)).toEqual({ col: 7, row: 7 });
+  });
+
+  it("snaps any point to the centre of its cell", () => {
+    const [x, y] = snapToHouseGrid(50, 50);
+    expect(gridCellOf(x, y)).toEqual(gridCellOf(50, 50));
+    expect(snapToHouseGrid(50, 50)).toEqual(snapToHouseGrid(x, y));
+  });
+
+  it("reports a cell as occupied only when another item is in it", () => {
+    const others = [{ id: "a", x: 50, y: 50 }];
+    expect(isHouseGridCellOccupied(51, 51, others)).toBe(true);
+    expect(isHouseGridCellOccupied(10, 10, others)).toBe(false);
+    expect(isHouseGridCellOccupied(50, 50, others, "a")).toBe(false);
+  });
+});
