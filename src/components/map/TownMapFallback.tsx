@@ -20,6 +20,8 @@ type Props = {
   onSelectDistrict: (id: string) => void;
   onSelectBillboard: ((campaignId: string) => void) | undefined;
   onSelectProperty?: (property: MapProperty) => void;
+  eventChips: readonly { id: string; label: string; x: number; y: number }[];
+  onSelectEvent?: (landmarkId: string) => void;
 };
 
 const cellColors: Record<string, string> = {
@@ -38,6 +40,8 @@ export function TownMapFallback({
   onSelectDistrict,
   onSelectBillboard,
   onSelectProperty,
+  eventChips,
+  onSelectEvent,
 }: Props) {
   const placeByLandmark = new Map(places.map((place) => [place.id, place]));
   const billboardByLandmark = new Map(
@@ -167,6 +171,28 @@ export function TownMapFallback({
             <text x={point.x} y={point.y + 13} textAnchor="middle">
               {place.label}
             </text>
+          </g>
+        );
+      })}
+      {eventChips.map((event) => {
+        const point = projectTownCell(event.x, event.y);
+        return (
+          <g
+            key={event.id}
+            className="town-map-svg-event"
+            role="button"
+            tabIndex={0}
+            aria-label={"Open live event: " + event.label}
+            onClick={() => onSelectEvent?.(event.id)}
+            onKeyDown={(keyEvent) => {
+              if (keyEvent.key === "Enter" || keyEvent.key === " ") {
+                keyEvent.preventDefault();
+                onSelectEvent?.(event.id);
+              }
+            }}
+          >
+            <circle cx={point.x + 20} cy={point.y - 30} r="11" />
+            <text x={point.x + 20} y={point.y - 26} textAnchor="middle">!</text>
           </g>
         );
       })}
