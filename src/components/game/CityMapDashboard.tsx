@@ -40,12 +40,16 @@ import type { Appearance } from "@/game/avatar-appearance";
 import { MapTicker } from "@/components/map/MapTicker";
 
 const categories: { id: MapFilter; label: string }[] = [
+  { id: "all", label: "All" },
   { id: "jobs", label: "Jobs" },
   { id: "food", label: "Food" },
+  { id: "market", label: "Markets" },
   { id: "health", label: "Health" },
+  { id: "school", label: "Schools" },
   { id: "services", label: "Services" },
   { id: "worship", label: "Worship" },
   { id: "transport", label: "Transport" },
+  { id: "junction", label: "Junctions" },
   { id: "sport", label: "Sport" },
 ];
 const townLandmarks = townData.landmarks as (MapLandmark & { districtId: string })[];
@@ -530,7 +534,7 @@ export function CityMapDashboard({
               <button
                 key={c.id}
                 aria-pressed={filter === c.id}
-                onClick={() => setFilter(filter === c.id ? "all" : c.id)}
+                onClick={() => setFilter(c.id === "all" ? "all" : filter === c.id ? "all" : c.id)}
               >
                 {c.label}
               </button>
@@ -574,6 +578,13 @@ export function CityMapDashboard({
             setSelectedBillboard(
               activeMapBillboards.find(({ advertisement }) => advertisement.id === campaignId) ??
                 null,
+            );
+          }}
+          onSelectProperty={(property) => {
+            window.dispatchEvent(
+              new CustomEvent("osogbo-open-phone-app", {
+                detail: { app: property.status === "vacant" ? "Find homes" : "Property" },
+              }),
             );
           }}
         />

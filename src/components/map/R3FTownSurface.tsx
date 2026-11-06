@@ -32,7 +32,11 @@ import { MapLighting } from "./MapLighting";
 import { PlaceBadge } from "./map-badge";
 
 type Props = PhaserMapData &
-  PhaserMapCallbacks & { onReady: () => void; onUnavailable: () => void };
+  PhaserMapCallbacks & {
+    onSelectProperty?: (property: import("@/components/map/MapCanvas").MapProperty) => void;
+    onReady: () => void;
+    onUnavailable: () => void;
+  };
 const cell = WORLD_SCALE.townCell;
 const point = (x: number, z: number): [number, number, number] => [
   (x - 11.5) * cell,
@@ -888,11 +892,21 @@ export function R3FTownSurface(props: Props) {
             );
           })}
           {props.properties?.map((property) => (
-            <WorldHouse
+            <group
               key={property.id}
-              position={point(property.position[0] / 2 + 6.5, property.position[2] / 2 + 4.5)}
-              rotation={property.rotation ?? 0}
-            />
+              name={"property:" + property.id}
+              onPointerOver={(event) => {
+                event.stopPropagation();
+                setHovered((property.label ?? "Home") + " · " + property.status.replace("_", " "));
+              }}
+              onPointerOut={() => setHovered(null)}
+              onClick={(event) => select(event, () => props.onSelectProperty?.(property))}
+            >
+              <WorldHouse
+                position={point(property.position[0] / 2 + 6.5, property.position[2] / 2 + 4.5)}
+                rotation={property.rotation ?? 0}
+              />
+            </group>
           ))}
           {props.billboardMarkers.map((marker) => {
             const place = props.places.find((p) => p.id === marker.landmarkId);

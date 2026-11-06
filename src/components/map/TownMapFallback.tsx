@@ -19,6 +19,7 @@ type Props = {
   onSelectLandmark: (id: string) => void;
   onSelectDistrict: (id: string) => void;
   onSelectBillboard: ((campaignId: string) => void) | undefined;
+  onSelectProperty?: (property: MapProperty) => void;
 };
 
 const cellColors: Record<string, string> = {
@@ -36,6 +37,7 @@ export function TownMapFallback({
   onSelectLandmark,
   onSelectDistrict,
   onSelectBillboard,
+  onSelectProperty,
 }: Props) {
   const placeByLandmark = new Map(places.map((place) => [place.id, place]));
   const billboardByLandmark = new Map(
@@ -122,7 +124,20 @@ export function TownMapFallback({
           property.position[2] / 2 + 4.5,
         );
         return (
-          <g key={property.id} className="town-map-svg-home">
+          <g
+            key={property.id}
+            className="town-map-svg-home"
+            role="button"
+            tabIndex={0}
+            aria-label={"Open " + (property.label ?? "home") + ": " + property.status.replace("_", " ")}
+            onClick={() => onSelectProperty?.(property)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onSelectProperty?.(property);
+              }
+            }}
+          >
             <circle cx={point.x} cy={point.y} r="9" />
             <text x={point.x + 12} y={point.y + 4}>
               {property.label ?? "Home"}
