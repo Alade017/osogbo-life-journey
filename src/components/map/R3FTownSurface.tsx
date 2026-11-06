@@ -34,6 +34,8 @@ import { PlaceBadge } from "./map-badge";
 type Props = PhaserMapData &
   PhaserMapCallbacks & {
     onSelectProperty?: (property: import("@/components/map/MapCanvas").MapProperty) => void;
+    eventChips: readonly { id: string; label: string; x: number; y: number }[];
+    onSelectEvent?: (landmarkId: string) => void;
     onReady: () => void;
     onUnavailable: () => void;
   };
@@ -888,6 +890,26 @@ export function R3FTownSurface(props: Props) {
                   label={place.label}
                   category={place.category}
                 />
+              </group>
+            );
+          })}
+          {props.eventChips.map((event) => {
+            const p = point(event.x, event.y);
+            return (
+              <group
+                key={event.id}
+                name={"event:" + event.id}
+                onPointerOver={(pointer) => {
+                  pointer.stopPropagation();
+                  setHovered("Live event · " + event.label);
+                }}
+                onPointerOut={() => setHovered(null)}
+                onClick={(pointer) => select(pointer, () => props.onSelectEvent?.(event.id))}
+              >
+                <mesh position={[p[0], 2.5, p[2]]} castShadow>
+                  <sphereGeometry args={[0.24, 12, 12]} />
+                  <WorldMaterial tone="clay" />
+                </mesh>
               </group>
             );
           })}
