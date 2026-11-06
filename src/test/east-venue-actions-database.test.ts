@@ -5,6 +5,7 @@ import { beforeAll, describe, expect, it } from "vitest";
 import townData from "@/data/osogbo-town.json";
 
 const migration = "supabase/migrations/20261106120000_east_venue_actions.sql";
+const tasksMigration = "supabase/migrations/20261106120200_east_venue_tasks.sql";
 const venueIds = [
   "east-transit-terminal",
   "eastside-produce-coop",
@@ -36,6 +37,7 @@ describe("east venue action seed migration", () => {
     const sql = readFileSync(migration, "utf8");
     await db.exec(sql);
     await db.exec(sql); // a second run must be a no-op
+    await db.exec(readFileSync(tasksMigration, "utf8"));
   });
 
   it("seeds exactly one active action per east venue", async () => {
