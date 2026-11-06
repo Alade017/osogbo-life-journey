@@ -1,4 +1,4 @@
--- Venue-appropriate tasks replace the placeholder activities from 20261106120000.
+supa-- Venue-appropriate tasks replace the placeholder activities from 20261106120000.
 -- Definitions mirror src/data/osogbo-town.json. Earns are negative money values.
 -- Removes the old placeholder rows so only the new task remains active.
 delete from public.map_landmark_actions
