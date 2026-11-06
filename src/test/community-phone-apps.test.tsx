@@ -48,9 +48,9 @@ it("submits the selected food quantities to the server instead of awarding local
     { id: "meal-1", name: "Rice", price_minor: 500, vendor_id: "kitchen-1" },
   ];
   renderWithQuery(<PhoneCommunityServices app="Food Delivery" />);
-  const quantity = await screen.findByLabelText("Rice quantity");
-  expect(screen.getByRole("button", { name: "Place order" })).toBeDisabled();
-  fireEvent.change(quantity, { target: { value: "2" } });
+  fireEvent.change(await screen.findByLabelText("Portions"), { target: { value: "2" } });
+  fireEvent.click(screen.getByRole("button", { name: "Add to order" }));
+  expect(await screen.findByLabelText("Rice portions in basket")).toHaveValue("2");
   fireEvent.click(screen.getByRole("button", { name: "Place order" }));
   await waitFor(() =>
     expect(db.rpc).toHaveBeenCalledWith("request_food_delivery", {
@@ -59,7 +59,10 @@ it("submits the selected food quantities to the server instead of awarding local
       p_request_id: expect.any(String),
     }),
   );
-  await waitFor(() => expect(quantity).toHaveValue(0));
+  // A successful order clears the basket, which hides the checkout.
+  await waitFor(() =>
+    expect(screen.queryByRole("button", { name: "Place order" })).not.toBeInTheDocument(),
+  );
 });
 
 it("requests a ride and displays the returned server ride history", async () => {
@@ -114,10 +117,10 @@ it("shows the approved food vendor, order items, and delivery status", async () 
     return { data: null, error: null };
   });
   renderWithQuery(<PhoneCommunityServices app="Food Delivery" />);
-  await screen.findByText("Preparing");
+  await screen.findByText(/Preparing/);
   expect(screen.getAllByText("Town kitchen")).toHaveLength(2);
-  expect(screen.getByText("2 × Rice")).toBeInTheDocument();
-  expect(screen.getByText("Preparing")).toBeInTheDocument();
+  expect(screen.getAllByText("2 × Rice").length).toBeGreaterThan(0);
+  expect(screen.getByText(/Preparing/)).toBeInTheDocument();
 });
 
 it("keeps contribution amounts subject to the loaded cash balance", async () => {

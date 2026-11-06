@@ -140,6 +140,7 @@ export const ITEM_MODELS: Partial<Record<string, ComponentType>> = {
   zobo: ZoboGlass,
   water_bottle: WaterBottle,
   water_nature: () => <WaterBottle liquid="#d8f0ff" cap="#2e8b57" />,
+  backpack: () => <BackpackModel h={1} />,
   basic_outfit: Shirt,
   sokoto: () => <TrousersWorn h={1} />,
   slippers: () => <ShoesWorn h={1} />,

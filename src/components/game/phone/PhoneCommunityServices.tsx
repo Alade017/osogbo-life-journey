@@ -146,6 +146,7 @@ function DeliveryRecords() {
   });
   const rows = records.data ?? [];
   const stateLabels: Record<string, string> = {
+    pending: "Preparing",
     awaiting_response: "At your door",
     approaching: "On the way",
     package_waiting: "Waiting for you",
@@ -190,7 +191,7 @@ function DeliveryRecords() {
               </small>
             </div>
             <div>
-              <span>{row.items.map((item) => `${item.quantity}× ${item.name}`).join(", ")}</span>
+              <span>{row.items.map((item) => `${item.quantity} × ${item.name}`).join(", ")}</span>
               <small>
                 {row.deliveryChoice === "inside"
                   ? "Brought inside"
