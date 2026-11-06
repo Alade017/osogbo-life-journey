@@ -15,12 +15,40 @@ const NEED_ICONS = {
 };
 
 export function GameNeedsRail({ player }: { player: PlayerState }) {
-  const { simulation } = useGameTime();
+  const { simulation, start, busy, ready } = useGameTime();
   const [detailNeed, setDetailNeed] = useState<(typeof NEED_NAMES)[number] | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
   const criticalCount = NEED_NAMES.filter(
     (name) => statusForNeed(name, Math.round(simulation.needs[name])) === "critical",
   ).length;
   const detailValue = detailNeed ? Math.round(simulation.needs[detailNeed]) : null;
+  const needAction = detailNeed
+    ? {
+        hunger: { label: "Eat a meal", action: "eat" as const },
+        energy: { label: "Go home and rest", app: "Home" },
+        hygiene: { label: "Go home and shower", app: "Home" },
+        bladder: { label: "Go home and use the toilet", app: "Home" },
+        fun: { label: "Find something fun", app: "Party" },
+        social: { label: "Open your messages", app: "Messages" },
+      }[detailNeed]
+    : null;
+
+  const handleNeedAction = async () => {
+    if (!needAction || !detailNeed) return;
+    setActionMessage(null);
+    if ("action" in needAction) {
+      if (!ready || busy || simulation.currentAction) {
+        setActionMessage("Finish your current activity and wait for the simulation to be ready.");
+        return;
+      }
+      const error = await start(needAction.action, "needs-" + needAction.action + "-" + crypto.randomUUID());
+      setActionMessage(error ?? (needAction.label + " started."));
+      return;
+    }
+    window.dispatchEvent(
+      new CustomEvent("osogbo-open-phone-app", { detail: { app: needAction.app } }),
+    );
+  };
 
   return (
     <aside
@@ -46,7 +74,10 @@ export function GameNeedsRail({ player }: { player: PlayerState }) {
               aria-label={`${NEED_RULES[name].label}: ${value} percent, ${status}`}
               aria-pressed={detailNeed === name}
               title={`${NEED_RULES[name].label}: ${value}% · Tap for details`}
-              onClick={() => setDetailNeed((current) => (current === name ? null : name))}
+              onClick={() => {
+                setActionMessage(null);
+                setDetailNeed((current) => (current === name ? null : name));
+              }}
             >
               <span
                 className="game-needs-icon-ring"
@@ -63,7 +94,7 @@ export function GameNeedsRail({ player }: { player: PlayerState }) {
         })}
       </div>
       {detailNeed && detailValue !== null && (
-        <p
+        <div
           className="game-needs-detail"
           role="status"
           aria-live="polite"
@@ -73,7 +104,20 @@ export function GameNeedsRail({ player }: { player: PlayerState }) {
           <span>
             {detailValue}% · {statusForNeed(detailNeed, detailValue)}
           </span>
-        </p>
+          <button
+            type="button"
+            className="game-needs-action"
+            onClick={() => void handleNeedAction()}
+            disabled={!!needAction && "action" in needAction && (busy || !ready || !!simulation.currentAction)}
+          >
+            {needAction?.label ?? "Choose an action"}
+          </button>
+          {actionMessage && (
+            <span className="game-needs-action-message" role="status">
+              {actionMessage}
+            </span>
+          )}
+        </div>
       )}
     </aside>
   );
