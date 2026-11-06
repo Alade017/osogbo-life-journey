@@ -554,6 +554,13 @@
       "when": 1792350000018,
       "tag": "0077_market_stall_rent_categories_sales",
       "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1792350001018,
+      "tag": "0078_housing_switch_refund",
+      "breakpoints": true
     }
   ]
 }

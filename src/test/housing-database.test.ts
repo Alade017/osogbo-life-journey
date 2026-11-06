@@ -699,14 +699,23 @@ describe("housing onboarding database actions", () => {
         "1f10c784-9835-4b03-aee2-d631ce868001",
       ]),
     ).rejects.toThrow(/IDEMPOTENCY_CONFLICT/);
-    await expect(
-      db.query("select public.housing_rent_property($1,$2,$3)", [
+    // Renting a different home now moves the player out of the current one and refunds its deposit.
+    await db.query("update public.wallets set balance=500000 where user_id=$1", [userId]);
+    const moved = await db.query<{ result: { propertyId: string; status: string } }>(
+      "select public.housing_rent_property($1,$2,$3) as result",
+      [
         userId,
         listings.rows[0]?.result.find((listing) => listing.houseTypeId === "single-room")!
           .propertyId,
         "1f10c784-9835-4b03-aee2-d631ce868002",
-      ]),
-    ).rejects.toThrow(/ALREADY_RENTING/);
+      ],
+    );
+    expect(moved.rows[0]?.result).toMatchObject({ status: "current" });
+    const active = await db.query<{ count: number }>(
+      "select count(*)::int as count from public.player_properties p join public.characters c on c.id=p.character_id where c.user_id=$1 and p.is_active",
+      [userId],
+    );
+    expect(active.rows[0]?.count).toBe(1);
   });
 
   it("pays the active cycle and records the next weekly due date server-side", async () => {
@@ -1072,5 +1081,195 @@ describe("housing onboarding database actions", () => {
       "select has_function_privilege('authenticated','public.housing_map_properties(uuid)','execute') as player_execute, has_function_privilege('service_role','public.housing_map_properties(uuid)','execute') as server_execute",
     );
     expect(grants.rows[0]).toEqual({ player_execute: false, server_execute: true });
+  });
+  describe("switching homes", () => {
+    const listingId = async (slug: string) =>
+      (
+        await db.query<{ id: string }>("select id from public.game_properties where slug=$1", [
+          slug,
+        ])
+      ).rows[0]!.id;
+    const houseCosts = async (id: string) =>
+      (
+        await db.query<{ upfront: string; deposit: string }>(
+          "select (weekly_rent_minor*(deposit_weeks+1))::text as upfront, (weekly_rent_minor*deposit_weeks)::text as deposit from public.house_types where id=$1",
+          [id],
+        )
+      ).rows[0]!;
+    const balance = async () =>
+      Number(
+        (
+          await db.query<{ balance: string }>(
+            "select balance::text from public.wallets where user_id=$1",
+            [userId],
+          )
+        ).rows[0]!.balance,
+      );
+    const activeHomes = async () =>
+      (
+        await db.query<{ slug: string }>(
+          "select listing.slug from public.player_properties p join public.game_properties listing on listing.id=p.property_id join public.characters c on c.id=p.character_id where c.user_id=$1 and p.is_active",
+          [userId],
+        )
+      ).rows.map((row) => row.slug);
+
+    it("ends the current rental, refunds its deposit, and moves into the new home", async () => {
+      await db.query("update public.wallets set balance=500000 where user_id=$1", [userId]);
+      const shared = await houseCosts("shared-room");
+      const bungalow = await houseCosts("bungalow");
+      await db.query("select public.housing_rent_property($1,$2,$3)", [
+        userId,
+        await listingId("housing-shared-room"),
+        "9a000000-0000-4000-8000-000000000001",
+      ]);
+      expect(await balance()).toBe(500000 - Number(shared.upfront));
+
+      await db.query("select public.housing_rent_property($1,$2,$3)", [
+        userId,
+        await listingId("housing-bungalow"),
+        "9a000000-0000-4000-8000-000000000002",
+      ]);
+
+      expect(await balance()).toBe(
+        500000 - Number(shared.upfront) + Number(shared.deposit) - Number(bungalow.upfront),
+      );
+      expect(await activeHomes()).toEqual(["housing-bungalow"]);
+      const refunds = await db.query<{ amount: string; category: string; kind: string }>(
+        "select t.amount::text, t.category, t.kind from public.transactions t join public.characters c on c.id=t.character_id where c.user_id=$1 and t.category='housing_deposit_refund'",
+        [userId],
+      );
+      expect(refunds.rows).toEqual([
+        { amount: shared.deposit, category: "housing_deposit_refund", kind: "income" },
+      ]);
+    });
+
+    it("rolls back the refund when the new home cannot be afforded", async () => {
+      await db.query(
+        "update public.wallets set balance=(select weekly_rent_minor*(deposit_weeks+1) from public.house_types where id='shared-room') where user_id=$1",
+        [userId],
+      );
+      await db.query("select public.housing_rent_property($1,$2,$3)", [
+        userId,
+        await listingId("housing-shared-room"),
+        "9a000000-0000-4000-8000-000000000011",
+      ]);
+      const before = await balance();
+
+      await expect(
+        db.query("select public.housing_rent_property($1,$2,$3)", [
+          userId,
+          await listingId("housing-bungalow"),
+          "9a000000-0000-4000-8000-000000000012",
+        ]),
+      ).rejects.toThrow();
+
+      expect(await balance()).toBe(before);
+      expect(await activeHomes()).toEqual(["housing-shared-room"]);
+    });
+
+    it("blocks the switch while rent is overdue so the debt cannot be waived", async () => {
+      await db.query("update public.wallets set balance=500000 where user_id=$1", [userId]);
+      await db.query("select public.housing_rent_property($1,$2,$3)", [
+        userId,
+        await listingId("housing-shared-room"),
+        "9a000000-0000-4000-8000-000000000021",
+      ]);
+      await db.query(
+        "update public.property_rent_cycles set status='grace' where status='current' and character_id=(select id from public.characters where user_id=$1)",
+        [userId],
+      );
+
+      await expect(
+        db.query("select public.housing_rent_property($1,$2,$3)", [
+          userId,
+          await listingId("housing-bungalow"),
+          "9a000000-0000-4000-8000-000000000022",
+        ]),
+      ).rejects.toThrow(/PAY_OVERDUE_RENT_FIRST/);
+      expect(await activeHomes()).toEqual(["housing-shared-room"]);
+    });
+
+    it("never moves a player out of an owned home when renting elsewhere", async () => {
+      await db.query("update public.wallets set balance=5000000 where user_id=$1", [userId]);
+      await db.query("select set_config('test.user_id',$1,false)", [userId]);
+      try {
+        await db.query("select public.acquire_game_property($1,'owned')", [
+          await listingId("garden-court-flat"),
+        ]);
+      } finally {
+        await db.query("select set_config('test.user_id','',false)");
+      }
+
+      await expect(
+        db.query("select public.housing_rent_property($1,$2,$3)", [
+          userId,
+          await listingId("housing-shared-room"),
+          "9a000000-0000-4000-8000-000000000031",
+        ]),
+      ).rejects.toThrow(/ALREADY_RENTING/);
+      expect(await activeHomes()).toEqual(["garden-court-flat"]);
+    });
+
+    it("buying a different home ends the rental, refunds the deposit, and owned homes skip rent", async () => {
+      await db.query("update public.wallets set balance=5000000 where user_id=$1", [userId]);
+      const shared = await houseCosts("shared-room");
+      await db.query("select public.housing_rent_property($1,$2,$3)", [
+        userId,
+        await listingId("housing-shared-room"),
+        "9a000000-0000-4000-8000-000000000041",
+      ]);
+      const beforeBuy = await balance();
+
+      await db.query("select set_config('test.user_id',$1,false)", [userId]);
+      try {
+        await db.query("select public.acquire_game_property($1,'owned')", [
+          await listingId("garden-court-flat"),
+        ]);
+      } finally {
+        await db.query("select set_config('test.user_id','',false)");
+      }
+
+      const price = Number(
+        (
+          await db.query<{ purchase_price: string }>(
+            "select purchase_price::text from public.game_properties where slug='garden-court-flat'",
+          )
+        ).rows[0]!.purchase_price,
+      );
+      expect(await balance()).toBe(beforeBuy + Number(shared.deposit) - price);
+      expect(await activeHomes()).toEqual(["garden-court-flat"]);
+
+      // Owned homes have no rent cycle, so the weekly job never charges or repossesses them.
+      await db.query("select public._advance_property_rent_cycles()");
+      const ownedCycles = await db.query<{ count: number }>(
+        "select count(*)::int as count from public.property_rent_cycles c join public.player_properties p on p.id=c.player_property_id where p.is_active and p.tenure='owned'",
+      );
+      expect(ownedCycles.rows[0]?.count).toBe(0);
+      expect(await activeHomes()).toEqual(["garden-court-flat"]);
+    });
+
+    it("refunds once when a switch request is retried with the same key", async () => {
+      await db.query("update public.wallets set balance=500000 where user_id=$1", [userId]);
+      await db.query("select public.housing_rent_property($1,$2,$3)", [
+        userId,
+        await listingId("housing-shared-room"),
+        "9a000000-0000-4000-8000-000000000051",
+      ]);
+      const bungalowKey = "9a000000-0000-4000-8000-000000000052";
+      await db.query("select public.housing_rent_property($1,$2,$3)", [
+        userId,
+        await listingId("housing-bungalow"),
+        bungalowKey,
+      ]);
+      const afterFirst = await balance();
+
+      const retry = await db.query<{ result: { status: string } }>(
+        "select public.housing_rent_property($1,$2,$3) as result",
+        [userId, await listingId("housing-bungalow"), bungalowKey],
+      );
+      expect(retry.rows[0]?.result).toMatchObject({ status: "current" });
+      expect(await balance()).toBe(afterFirst);
+      expect(await activeHomes()).toEqual(["housing-bungalow"]);
+    });
   });
 });
