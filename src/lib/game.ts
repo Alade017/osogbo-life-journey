@@ -42,6 +42,13 @@ export type MapLocationBounds = {
 export type GamePlace = Database["public"]["Tables"]["game_places"]["Row"];
 export type GameBillboard = Database["public"]["Tables"]["game_billboards"]["Row"];
 export type Advertisement = Database["public"]["Tables"]["advertisements"]["Row"];
+export type BankAccount = {
+  id: string;
+  account_number: string;
+  branch_location_id: string;
+  branch_name: string;
+  opened_at: string;
+};
 
 export { XP_PER_LEVEL };
 export const ENERGY_REGEN_SECONDS = 120;
@@ -68,6 +75,23 @@ function unwrap<T>(res: { data: T; error: { message: string } | null }): T {
   return res.data;
 }
 
+function parseBankAccount(value: Json): BankAccount | null {
+  if (value === null) return null;
+  if (typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("The bank account response is invalid.");
+  }
+  const { id, account_number, branch_location_id, branch_name, opened_at } = value;
+  if (
+    typeof id !== "string" ||
+    typeof account_number !== "string" ||
+    typeof branch_location_id !== "string" ||
+    typeof branch_name !== "string" ||
+    typeof opened_at !== "string"
+  ) {
+    throw new Error("The bank account response is incomplete.");
+  }
+  return { id, account_number, branch_location_id, branch_name, opened_at };
+}
 
 export const q = {
   accountSummary: () =>
@@ -161,6 +185,11 @@ export const q = {
     queryOptions({
       queryKey: ["wallet"],
       queryFn: async () => unwrap(await supabase.from("wallets").select("*").maybeSingle()),
+    }),
+  bankAccount: () =>
+    queryOptions({
+      queryKey: ["bankAccount"],
+      queryFn: async () => parseBankAccount(unwrap(await supabase.rpc("my_bank_account"))),
     }),
   rentStatus: () =>
     queryOptions({
@@ -464,7 +493,7 @@ export const rpc = {
     unwrap(
       await supabase.rpc("set_my_home_visit_access", { p_allow_friends: allowFriends }),
     ) as Json,
-   
+
     updateMySettings: async (patch: {
       displayName?: string | undefined;
       musicEnabled?: boolean | undefined;
@@ -605,9 +634,14 @@ export const rpc = {
   saveDashboardPins: async (pins: string[]) =>
     unwrap(await supabase.rpc("save_dashboard_pins", { p_pins: pins })) as Json,
   depositCash: async (amount: number) =>
-    unwrap(await supabase.rpc("deposit_cash", { p_amount: amount })),
+    unwrap(await supabase.rpc("bank_deposit_cash", { p_amount: amount })),
   withdrawCash: async (amount: number) =>
-    unwrap(await supabase.rpc("withdraw_cash", { p_amount: amount })),
+    unwrap(await supabase.rpc("bank_withdraw_cash", { p_amount: amount })),
+  openBankAccount: async () => {
+    const account = parseBankAccount(unwrap(await supabase.rpc("open_bank_account")));
+    if (!account) throw new Error("The bank account was not returned after opening.");
+    return account;
+  },
   purchaseShopItem: async (args: { shopItemId: string; quantity: number; requestId: string }) =>
     unwrap(
       await supabase.rpc("purchase_shop_item", {

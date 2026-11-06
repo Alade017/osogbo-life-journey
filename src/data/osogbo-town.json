@@ -414,6 +414,30 @@
         "x": 10,
         "z": 15,
         "buildingType": "worship"
+      },
+      {
+        "placeId": "east-transit-terminal",
+        "x": 17,
+        "z": 3,
+        "buildingType": "transport"
+      },
+      {
+        "placeId": "eastside-produce-coop",
+        "x": 19,
+        "z": 5,
+        "buildingType": "market"
+      },
+      {
+        "placeId": "adire-makers-yard",
+        "x": 17,
+        "z": 9,
+        "buildingType": "services"
+      },
+      {
+        "placeId": "neighborhood-play-park",
+        "x": 17,
+        "z": 13,
+        "buildingType": "sport"
       }
     ],
     "treeCells": [
@@ -1672,6 +1696,70 @@
           "verify": false
         }
       ]
+    },
+    {
+      "id": "east-transit-terminal",
+      "label": "East Transit Terminal",
+      "category": "transport",
+      "districtId": "river-quarter",
+      "locationSlug": "east-transit-terminal",
+      "x": 908,
+      "y": 322,
+      "verify": false,
+      "grid": {
+        "x": 17,
+        "z": 3
+      },
+      "buildingType": "transport",
+      "actions": []
+    },
+    {
+      "id": "eastside-produce-coop",
+      "label": "Eastside Produce Co-op",
+      "category": "food",
+      "districtId": "river-quarter",
+      "locationSlug": "eastside-produce-coop",
+      "x": 908,
+      "y": 370,
+      "verify": false,
+      "grid": {
+        "x": 19,
+        "z": 5
+      },
+      "buildingType": "market",
+      "actions": []
+    },
+    {
+      "id": "adire-makers-yard",
+      "label": "Adire Makers' Yard",
+      "category": "school",
+      "districtId": "east-gate",
+      "locationSlug": "adire-makers-yard",
+      "x": 776,
+      "y": 394,
+      "verify": false,
+      "grid": {
+        "x": 17,
+        "z": 9
+      },
+      "buildingType": "services",
+      "actions": []
+    },
+    {
+      "id": "neighborhood-play-park",
+      "label": "Neighbourhood Play Park",
+      "category": "sport",
+      "districtId": "east-gate",
+      "locationSlug": "neighborhood-play-park",
+      "x": 688,
+      "y": 442,
+      "verify": false,
+      "grid": {
+        "x": 17,
+        "z": 13
+      },
+      "buildingType": "sport",
+      "actions": []
     }
   ]
 }

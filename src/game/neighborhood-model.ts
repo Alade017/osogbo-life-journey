@@ -1,6 +1,14 @@
 import { OSOGBO_WORLD_NODES, type WorldMapCategory } from "../lib/city-world.ts";
 
 export type WorldPoint = { x: number; y: number };
+export type NeighborhoodNpcView = {
+  id: string;
+  name: string;
+  role: string;
+  activity: string;
+  x: number;
+  y: number;
+};
 export type NeighborhoodObject = {
   id: string;
   name: string;
@@ -10,7 +18,9 @@ export type NeighborhoodObject = {
 };
 export type NeighborhoodObstacle = {
   id: string;
-  kind: "compound" | "shop" | "kiosk" | "tree" | "streetlight" | "bench" | "bin" | "sign";
+  kind:
+    "compound" | "shop" | "kiosk" | "tree" | "streetlight" | "bench" | "bin" | "sign" | "landmark";
+  label?: string;
   x: number;
   y: number;
   width: number;
@@ -299,17 +309,155 @@ function generatedNeighborhoodArea(
   name: string,
   category: WorldMapCategory,
 ): NeighborhoodArea {
-  const variant = [...slug].reduce((value, char) => (value * 31 + char.charCodeAt(0)) >>> 0, 7) % 4;
+  const seed = [...slug].reduce((value, char) => (value * 31 + char.charCodeAt(0)) >>> 0, 7);
+  const variant = seed % AREA_ANCHOR_SETS.length;
   const anchors = AREA_ANCHOR_SETS[variant]!;
   const [home, market, work, npc] = anchors;
+  const verticalMain = 270 + ((seed >>> 3) % 81);
+  const horizontalMain = 250 + ((seed >>> 11) % 101);
+  const westStreet = 70 + ((seed >>> 17) % 101);
+  const eastStreet = 470 + ((seed >>> 23) % 101);
+  const northLane = 70 + ((seed >>> 7) % 71);
+  const southStreet = 460 + ((seed >>> 13) % 91);
+  const outerShopX = 70 + ((seed >>> 19) % 81);
+  const outerShopY = 70 + ((seed >>> 9) % 71);
+  const furnitureX = seed % 2 === 0 ? 80 : 520;
+  const furnitureY = seed % 3 === 0 ? 100 : 500;
+  const pedestrianY = horizontalMain + (seed % 2 === 0 ? 62 : -62);
+  const npcNames = [`Neighbour in ${name}`, `Shopper in ${name}`, `Street vendor in ${name}`];
   return {
     slug,
     name,
+    roads: [
+      {
+        id: "district-arterial-north-south",
+        axis: "vertical",
+        offset: verticalMain,
+        width: 76 + (seed % 25),
+        type: "arterial",
+      },
+      {
+        id: "district-arterial-east-west",
+        axis: "horizontal",
+        offset: horizontalMain,
+        width: 76 + ((seed >>> 5) % 25),
+        type: "arterial",
+      },
+      {
+        id: "district-west-street",
+        axis: "vertical",
+        offset: westStreet,
+        width: 48,
+        type: "street",
+      },
+      {
+        id: "district-east-street",
+        axis: "vertical",
+        offset: eastStreet,
+        width: 54,
+        type: "street",
+      },
+      { id: "district-north-lane", axis: "horizontal", offset: northLane, width: 42, type: "lane" },
+      {
+        id: "district-south-street",
+        axis: "horizontal",
+        offset: southStreet,
+        width: 52,
+        type: "street",
+      },
+    ],
+    paths: [
+      {
+        id: "district-home-access",
+        from: { x: home.x, y: home.y + 38 },
+        to: { x: home.x, y: southStreet },
+        width: 12,
+      },
+      {
+        id: "district-market-approach",
+        from: { x: market.x, y: northLane },
+        to: { x: market.x, y: market.y - 36 },
+        width: 12,
+      },
+    ],
     objects: [
       { id: "home", name: `${name} homes`, kind: "home", ...home },
       { id: "market", name: `${name} shops`, kind: "market", ...market },
       { id: "work", name: `${name} opportunities`, kind: "work", ...work },
-      { id: "npc", name: `Neighbour in ${name}`, kind: "npc", ...npc },
+      { id: "npc", name: npcNames[0]!, kind: "npc", ...npc },
+      {
+        id: "pedestrian-market",
+        name: npcNames[1]!,
+        kind: "npc",
+        x: verticalMain + (seed % 2 === 0 ? 96 : -96),
+        y: pedestrianY,
+      },
+      {
+        id: "pedestrian-crossing",
+        name: npcNames[2]!,
+        kind: "npc",
+        x: verticalMain + (seed % 2 === 0 ? -96 : 96),
+        y: pedestrianY + 110,
+      },
+    ],
+    obstacles: [
+      {
+        id: "district-corner-shop",
+        kind: seed % 2 === 0 ? "shop" : "kiosk",
+        x: outerShopX,
+        y: northLane + 160,
+        width: seed % 2 === 0 ? 92 : 66,
+        height: seed % 2 === 0 ? 58 : 46,
+      },
+      {
+        id: "district-community-compound",
+        kind: "compound",
+        x: 560,
+        y: 510,
+        width: 138,
+        height: 82,
+      },
+      {
+        id: "district-landmark",
+        kind: "landmark",
+        label: name.toUpperCase(),
+        x: 60,
+        y: 500,
+        width: 58,
+        height: 38,
+      },
+      {
+        id: "district-shade-tree",
+        kind: "tree",
+        x: 60,
+        y: 150,
+        width: 38,
+        height: 38,
+      },
+      {
+        id: "district-streetlight",
+        kind: "streetlight",
+        x: furnitureX,
+        y: furnitureY,
+        width: 20,
+        height: 20,
+      },
+      {
+        id: "district-bench",
+        kind: "bench",
+        x: furnitureX - 56,
+        y: furnitureY + 45,
+        width: 52,
+        height: 22,
+      },
+      {
+        id: "district-bin",
+        kind: "bin",
+        x: furnitureX + 52,
+        y: furnitureY + 42,
+        width: 20,
+        height: 20,
+      },
     ],
     style: AREA_STYLE_BY_CATEGORY[category],
   };

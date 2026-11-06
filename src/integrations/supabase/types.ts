@@ -165,6 +165,45 @@ export type Database = {
           },
         ]
       }
+      bank_accounts: {
+        Row: {
+          account_number: string
+          branch_location_id: string
+          character_id: string
+          id: string
+          opened_at: string
+        }
+        Insert: {
+          account_number: string
+          branch_location_id: string
+          character_id: string
+          id?: string
+          opened_at?: string
+        }
+        Update: {
+          account_number?: string
+          branch_location_id?: string
+          character_id?: string
+          id?: string
+          opened_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_accounts_branch_location_id_fkey"
+            columns: ["branch_location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_accounts_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: true
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_catalog: {
         Row: {
           active: boolean
@@ -6566,6 +6605,8 @@ export type Database = {
         Returns: Json
       }
       delete_player_status: { Args: { p_status_id: string }; Returns: Json }
+      bank_deposit_cash: { Args: { p_amount: number }; Returns: Json }
+      bank_withdraw_cash: { Args: { p_amount: number }; Returns: Json }
       deposit_cash: { Args: { p_amount: number }; Returns: Json }
       discard_inventory_item: {
         Args: { p_inventory_id: string; p_quantity?: number }
@@ -6796,10 +6837,12 @@ export type Database = {
       }
       mark_notifications_read: { Args: { p_id?: string }; Returns: undefined }
       my_account_summary: { Args: never; Returns: Json }
+      my_bank_account: { Args: never; Returns: Json }
       my_game_property_listings: { Args: never; Returns: Json }
       my_home_save: { Args: never; Returns: Json }
       my_home_visit_policy: { Args: never; Returns: Json }
       my_property_rent_status: { Args: never; Returns: Json }
+      open_bank_account: { Args: never; Returns: Json }
       offer_player_company_shares: {
         Args: { p_company_id: string; p_shares: number }
         Returns: Json

@@ -34,6 +34,8 @@ import {
 } from "@/components/3d/WorldScene";
 import { WORLD_SCALE } from "@/components/3d/world-theme";
 
+type WaitingCourier = { delivery: FoodDelivery; index: number };
+
 // Keep drei's independent HTML roots outside React's canvas DOM children.
 const RoomOverlayContext = createContext<RefObject<HTMLElement>>({ current: null! });
 
@@ -234,7 +236,88 @@ function OsogboRoomPrototype({
   );
 }
 
-function FurnitureFallback({ artKey, slotType }: { artKey: string | undefined; slotType: string }) {
+/** Walk-in shower: tiled wall, raised tray, glass screen, chrome riser and rain head. Spray shows on hover. */
+function ShowerUnit({ hovered }: { hovered: boolean }) {
+  return (
+    <group>
+      {/* Tiled back wall */}
+      <mesh castShadow receiveShadow position={[0, 1.05, -0.36]}>
+        <boxGeometry args={[0.9, 2.1, 0.04]} />
+        <WorldMaterial tone="linen" />
+      </mesh>
+      {/* Raised tray */}
+      <mesh castShadow receiveShadow position={[0, 0.05, 0]}>
+        <boxGeometry args={[0.9, 0.1, 0.72]} />
+        <WorldMaterial tone="linen" />
+      </mesh>
+      {/* Drain */}
+      <mesh position={[0, 0.102, 0.05]}>
+        <cylinderGeometry args={[0.06, 0.06, 0.012, 14]} />
+        <meshStandardMaterial color="#c9ccd1" metalness={0.8} roughness={0.25} />
+      </mesh>
+      {/* Glass side screen and frame */}
+      <mesh position={[0.44, 1.05, 0]}>
+        <boxGeometry args={[0.03, 2.0, 0.72]} />
+        <meshPhysicalMaterial color="#bfe6f2" transparent opacity={0.3} roughness={0.05} />
+      </mesh>
+      <mesh position={[0.44, 2.07, 0]}>
+        <boxGeometry args={[0.04, 0.04, 0.72]} />
+        <WorldMaterial tone="trim" />
+      </mesh>
+      {/* Glass sliding door on the open side */}
+      <mesh position={[0.22, 0.95, 0.34]}>
+        <boxGeometry args={[0.42, 1.7, 0.02]} />
+        <meshPhysicalMaterial color="#bfe6f2" transparent opacity={0.3} roughness={0.05} />
+      </mesh>
+      {/* Wall riser, arm and rain head */}
+      <mesh castShadow position={[-0.3, 1.05, -0.32]}>
+        <cylinderGeometry args={[0.018, 0.018, 1.7, 10]} />
+        <meshStandardMaterial color="#c9ccd1" metalness={0.8} roughness={0.25} />
+      </mesh>
+      <mesh castShadow position={[-0.3, 1.95, -0.2]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.014, 0.014, 0.28, 10]} />
+        <meshStandardMaterial color="#c9ccd1" metalness={0.8} roughness={0.25} />
+      </mesh>
+      <mesh castShadow position={[-0.3, 1.9, -0.08]}>
+        <cylinderGeometry args={[0.07, 0.05, 0.03, 20]} />
+        <meshStandardMaterial color="#c9ccd1" metalness={0.8} roughness={0.25} />
+      </mesh>
+      {/* Wall valve */}
+      <mesh castShadow position={[-0.3, 1.0, -0.31]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[0.03, 0.03, 0.04, 12]} />
+        <meshStandardMaterial color="#c9ccd1" metalness={0.8} roughness={0.25} />
+      </mesh>
+      <mesh castShadow position={[-0.3, 1.0, -0.34]}>
+        <boxGeometry args={[0.08, 0.02, 0.02]} />
+        <meshStandardMaterial color="#c9ccd1" metalness={0.8} roughness={0.25} />
+      </mesh>
+      {/* Spray streaks, only while hovered */}
+      {hovered &&
+        [0, 1, 2, 3, 4, 5].map((i) => {
+          const angle = (i / 6) * Math.PI * 2;
+          return (
+            <mesh
+              key={`spray-${i}`}
+              position={[-0.3 + Math.cos(angle) * 0.05, 1.5, -0.08 + Math.sin(angle) * 0.05]}
+            >
+              <cylinderGeometry args={[0.006, 0.004, 0.7, 6]} />
+              <meshPhysicalMaterial color="#8fd3ff" transparent opacity={0.6} />
+            </mesh>
+          );
+        })}
+    </group>
+  );
+}
+
+export function FurnitureFallback({
+  artKey,
+  slotType,
+  hovered = false,
+}: {
+  artKey: string | undefined;
+  slotType: string;
+  hovered?: boolean;
+}) {
   const rawKind = artKey ?? slotType;
   const kind =
     rawKind === "starter-bed"
@@ -424,27 +507,7 @@ function FurnitureFallback({ artKey, slotType }: { artKey: string | undefined; s
         </mesh>
       </group>
     );
-  if (kind === "shower")
-    return (
-      <group>
-        <mesh castShadow receiveShadow position={[0, 0.03, 0]}>
-          <cylinderGeometry args={[0.38, 0.38, 0.06, 16]} />
-          <WorldMaterial tone="linen" />
-        </mesh>
-        <mesh castShadow receiveShadow position={[-0.25, 0.62, -0.2]}>
-          <cylinderGeometry args={[0.025, 0.025, 1.2, 8]} />
-          <WorldMaterial tone="wall" />
-        </mesh>
-        <mesh castShadow receiveShadow position={[-0.1, 1.17, -0.2]} rotation={[0, 0, Math.PI / 2]}>
-          <cylinderGeometry args={[0.025, 0.025, 0.34, 8]} />
-          <WorldMaterial tone="wall" />
-        </mesh>
-        <mesh castShadow receiveShadow position={[0.04, 1.15, -0.2]}>
-          <cylinderGeometry args={[0.15, 0.12, 0.04, 12]} />
-          <WorldMaterial tone="wall" />
-        </mesh>
-      </group>
-    );
+  if (kind === "shower") return <ShowerUnit hovered={hovered} />;
   if (kind === "plant")
     return (
       <group>
@@ -690,52 +753,119 @@ function RoomCharacter({
   );
 }
 
+/** Walks the courier out of the room after the player has collected the package. */
+function DepartingCourier({
+  startX,
+  startZ,
+  exitX,
+  exitZ,
+  onGone,
+}: {
+  startX: number;
+  startZ: number;
+  exitX: number;
+  exitZ: number;
+  onGone: () => void;
+}) {
+  const [position, setPosition] = useState<[number, number, number]>([startX, 0.06, startZ]);
+  const goneRef = useRef(onGone);
+  goneRef.current = onGone;
+
+  useEffect(() => {
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const duration = reduced ? 0 : 2400;
+    const startedAt = performance.now();
+    let frame = 0;
+    const step = (now: number) => {
+      const progress = duration === 0 ? 1 : Math.min(1, (now - startedAt) / duration);
+      setPosition([
+        startX + (exitX - startX) * progress,
+        0.06,
+        startZ + (exitZ - startZ) * progress,
+      ]);
+      if (progress < 1) frame = window.requestAnimationFrame(step);
+      else goneRef.current();
+    };
+    frame = window.requestAnimationFrame(step);
+    return () => window.cancelAnimationFrame(frame);
+  }, [startX, startZ, exitX, exitZ]);
+
+  return (
+    <WorldCharacter
+      name="Food courier"
+      gender="male"
+      appearance={COURIER_LOOK}
+      position={position}
+      animation="walk"
+      facing="north"
+    />
+  );
+}
+
+const COURIER_LOOK = { outfit: 1, bottoms: 1, shoes: 0 } as const;
+
 function FoodCourier({
   delivery,
   width,
   depth,
+  index,
+  onCollect,
 }: {
   delivery: FoodDelivery;
   width: number;
   depth: number;
+  index: number;
+  onCollect?: ((id: string) => void) | undefined;
 }) {
   const overlayPortal = useContext(RoomOverlayContext);
   const doorX = width * 0.22;
   const doorZ = -depth / 2 + 0.2;
-  const targetX = delivery.deliveryChoice === "inside" ? width * 0.13 : doorX;
-  const targetZ = delivery.deliveryChoice === "inside" ? -depth / 2 + 1.35 : doorZ;
-  const [position, setPosition] = useState<[number, number, number]>([doorX, 0.06, doorZ]);
+  const inside = delivery.deliveryChoice === "inside";
+  // Where the courier stands once he has arrived (one spot per waiting package).
+  const standX = (inside ? width * 0.13 : doorX) + index * 0.5;
+  const standZ = inside ? -depth / 2 + 1.35 : doorZ;
+  const knocking = delivery.deliveryState === "awaiting_response";
   const approaching = delivery.deliveryState === "approaching";
-  const walkingInside = approaching && delivery.deliveryChoice === "inside";
+  const waiting = delivery.deliveryState === "package_waiting";
+  const [position, setPosition] = useState<[number, number, number]>(
+    approaching ? [doorX, 0.06, doorZ] : [standX, 0.06, standZ],
+  );
 
   useEffect(() => {
-    const doorPosition: [number, number, number] = [doorX, 0.06, doorZ];
-    const targetPosition: [number, number, number] = [targetX, 0.06, targetZ];
     if (!approaching) {
-      setPosition(doorPosition);
+      setPosition([standX, 0.06, standZ]);
       return;
     }
-
-    const from = [...doorPosition] as [number, number, number];
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setPosition(targetPosition);
+      setPosition([standX, 0.06, standZ]);
       return;
     }
-
     const startedAt = performance.now();
     let frame = 0;
     const animate = (now: number) => {
       const progress = Math.min(1, (now - startedAt) / 1800);
-      setPosition([
-        from[0] + (targetPosition[0] - from[0]) * progress,
-        from[1] + (targetPosition[1] - from[1]) * progress,
-        from[2] + (targetPosition[2] - from[2]) * progress,
-      ]);
+      setPosition([doorX + (standX - doorX) * progress, 0.06, doorZ + (standZ - doorZ) * progress]);
       if (progress < 1) frame = window.requestAnimationFrame(animate);
     };
+    setPosition([doorX, 0.06, doorZ]);
     frame = window.requestAnimationFrame(animate);
     return () => window.cancelAnimationFrame(frame);
-  }, [approaching, doorX, doorZ, targetX, targetZ]);
+  }, [approaching, doorX, doorZ, standX, standZ]);
+
+  // Behind the door: only the knock is shown. No face, no body, no package.
+  if (knocking) {
+    return (
+      <Html
+        portal={overlayPortal}
+        zIndexRange={[8, 0]}
+        center
+        position={[doorX, 1.7, doorZ]}
+        style={{ pointerEvents: "none" }}
+      >
+        <span className="house-courier-knock">Knock knock</span>
+      </Html>
+    );
+  }
 
   return (
     <>
@@ -743,27 +873,109 @@ function FoodCourier({
         name="Food courier"
         gender="male"
         position={position}
-        animation={approaching ? (walkingInside ? "walk" : "idle") : "talk"}
+        appearance={COURIER_LOOK}
+        animation={approaching && inside ? "walk" : waiting ? "talk" : "idle"}
         facing="south"
       />
-      <group position={position}>
-        <mesh castShadow receiveShadow position={[0.2, 0.98, -0.02]}>
-          <boxGeometry args={[0.38, 0.52, 0.22]} />
-          <WorldMaterial tone="clay" />
-        </mesh>
-      </group>
-      {delivery.deliveryState === "awaiting_response" && (
+      {/* Package held in the courier's hand (offset is an estimate, tune if needed) */}
+      <FoodPackage
+        delivery={delivery}
+        position={[position[0] + 0.2, 0.9, position[2] + 0.2]}
+        onCollect={waiting ? onCollect : undefined}
+      />
+      {waiting && onCollect && (
         <Html
           portal={overlayPortal}
           zIndexRange={[8, 0]}
           center
-          position={[position[0], position[1] + 2.15, position[2]]}
+          position={[position[0] + 0.2, 1.25, position[2] + 0.2]}
           style={{ pointerEvents: "none" }}
         >
-          <span className="house-courier-knock">Knock knock</span>
+          <span className="house-food-package-label">Tap package to collect</span>
         </Html>
       )}
     </>
+  );
+}
+
+const VENDOR_BAG_COLOURS = ["#e4572e", "#2f7d4f", "#1f5fa8", "#f2a541", "#7b3f9e"] as const;
+const NON_FOOD_WORDS =
+  /\b(plate|spoon|fork|knife|cup|bowl|utensil|phone|charger|shoe|slipper|shirt|cloth|fabric|soap|detergent|tissue|towel|lamp|bulb|tool|bag)\b/i;
+
+/** Picks a stable colour for each vendor, so the same vendor always uses the same nylon. */
+function vendorColour(name: string) {
+  let hash = 0;
+  for (const char of name) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  return VENDOR_BAG_COLOURS[hash % VENDOR_BAG_COLOURS.length]!;
+}
+
+/** A delivery is food only if none of its items is a utensil or accessory. */
+function isFoodDelivery(items: FoodDelivery["items"]) {
+  return items.every((item) => !NON_FOOD_WORDS.test(item.name));
+}
+
+/** Food: a vendor-coloured nylon bag, tied at the neck, with food trays inside. */
+function FoodNylon({ colour }: { colour: string }) {
+  return (
+    <group>
+      <mesh position={[0, 0.2, 0]} scale={[1, 1.1, 0.55]} castShadow>
+        <sphereGeometry args={[0.26, 24, 16]} />
+        <meshPhysicalMaterial
+          color={colour}
+          transparent
+          opacity={0.82}
+          roughness={0.25}
+          clearcoat={0.5}
+        />
+      </mesh>
+      {/* Printed vendor band on the front */}
+      <mesh position={[0, 0.2, 0.146]}>
+        <boxGeometry args={[0.36, 0.1, 0.01]} />
+        <meshStandardMaterial color="#fbfaf6" roughness={0.5} />
+      </mesh>
+      {/* Tied neck and handle */}
+      <mesh position={[0, 0.44, 0]}>
+        <cylinderGeometry args={[0.05, 0.07, 0.06, 12]} />
+        <meshStandardMaterial color={colour} roughness={0.3} />
+      </mesh>
+      <mesh position={[0, 0.5, 0]}>
+        <torusGeometry args={[0.1, 0.012, 8, 20, Math.PI]} />
+        <meshStandardMaterial color={colour} roughness={0.3} />
+      </mesh>
+      {/* Food trays with foil lids, inside the bag */}
+      <mesh position={[-0.05, 0.14, 0]} castShadow>
+        <boxGeometry args={[0.2, 0.07, 0.15]} />
+        <meshStandardMaterial color="#e9e5d8" roughness={0.7} />
+      </mesh>
+      <mesh position={[-0.05, 0.185, 0]}>
+        <boxGeometry args={[0.18, 0.012, 0.13]} />
+        <meshStandardMaterial color="#c9ccd1" metalness={0.6} roughness={0.35} />
+      </mesh>
+      <mesh position={[0.08, 0.15, 0.03]} rotation={[0, 0.3, 0]} castShadow>
+        <boxGeometry args={[0.16, 0.07, 0.13]} />
+        <meshStandardMaterial color="#e9e5d8" roughness={0.7} />
+      </mesh>
+    </group>
+  );
+}
+
+/** Non-food: a plain kraft parcel with a taped cross, no nylon and no trays. */
+function NonFoodParcel() {
+  return (
+    <group>
+      <mesh castShadow receiveShadow position={[0, 0.13, 0]}>
+        <boxGeometry args={[0.42, 0.22, 0.34]} />
+        <meshStandardMaterial color="#a9825a" roughness={0.9} />
+      </mesh>
+      <mesh position={[0, 0.245, 0]}>
+        <boxGeometry args={[0.07, 0.006, 0.35]} />
+        <meshStandardMaterial color="#e2cf9a" roughness={0.6} />
+      </mesh>
+      <mesh position={[0, 0.245, 0]}>
+        <boxGeometry args={[0.43, 0.006, 0.07]} />
+        <meshStandardMaterial color="#e2cf9a" roughness={0.6} />
+      </mesh>
+    </group>
   );
 }
 
@@ -776,7 +988,7 @@ function FoodPackage({
   onCollect?: ((id: string) => void) | undefined;
   position: [number, number, number];
 }) {
-  const overlayPortal = useContext(RoomOverlayContext);
+  const food = isFoodDelivery(delivery.items);
   return (
     <group
       position={position}
@@ -785,23 +997,7 @@ function FoodPackage({
         if (event.delta <= 4) onCollect?.(delivery.id);
       }}
     >
-      <mesh castShadow receiveShadow position={[0, 0.22, 0]}>
-        <boxGeometry args={[0.5, 0.38, 0.42]} />
-        <WorldMaterial tone="clay" />
-      </mesh>
-      <mesh position={[0, 0.42, 0]}>
-        <boxGeometry args={[0.52, 0.035, 0.44]} />
-        <WorldMaterial tone="timber" />
-      </mesh>
-      <Html
-        portal={overlayPortal}
-        zIndexRange={[8, 0]}
-        center
-        position={[0, 0.68, 0]}
-        style={{ pointerEvents: "none" }}
-      >
-        <span className="house-food-package-label">{delivery.vendorName}</span>
-      </Html>
+      {food ? <FoodNylon colour={vendorColour(delivery.vendorName)} /> : <NonFoodParcel />}
     </group>
   );
 }
@@ -842,6 +1038,7 @@ function SlotObject({
   suppressClick: (placement: HousePlacement) => boolean;
 }) {
   const overlayPortal = useContext(RoomOverlayContext);
+  const [hovered, setHovered] = useState(false);
   const position =
     placement && hasRoomPosition(placement)
       ? roomPercentToPosition(placement.x, placement.y, width, depth)
@@ -851,9 +1048,20 @@ function SlotObject({
     ? [dragPreview.x, 0.2, dragPreview.z]
     : position;
   if (!placement && !editMode) return null;
-  const label = placement?.item_id.replaceAll("-", " ") ?? `Place in ${slot.slot_type} slot`;
   const artKey = placement?.art_key;
   const safeArtKey = artKey && /^[a-z0-9-]+$/i.test(artKey) ? artKey : null;
+  const showHint = hovered && !editMode && !inputBlocked && !!placement;
+  const hoverProps = {
+    onPointerOver: (event: ThreeEvent<PointerEvent>) => {
+      event.stopPropagation();
+      setHovered(true);
+      document.body.style.cursor = "pointer";
+    },
+    onPointerOut: () => {
+      setHovered(false);
+      document.body.style.cursor = "";
+    },
+  };
   return (
     <group
       name={placement ? `accessory:${placement.id}` : `slot:${slot.id}`}
@@ -868,20 +1076,46 @@ function SlotObject({
           onPointerMove={onDragMove}
           onPointerUp={onDragEnd}
           onPointerCancel={onDragCancel}
+          {...hoverProps}
           onClick={(event) => {
             event.stopPropagation();
             if (event.delta <= 4 && !inputBlocked && !suppressClick(placement))
               onSelectPlacement(placement);
           }}
         >
-          <group scale={WORLD_SCALE.furniture}>
-            <FurnitureFallback artKey={safeArtKey ?? undefined} slotType={slot.slot_type} />
+          <group
+            rotation={[0, (-(placement.rotation_deg ?? 0) * Math.PI) / 180, 0]}
+            scale={WORLD_SCALE.furniture}
+          >
+            <FurnitureFallback
+              artKey={safeArtKey ?? undefined}
+              slotType={slot.slot_type}
+              hovered={hovered && !editMode}
+            />
           </group>
+          {editMode && hovered && (
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
+              <ringGeometry args={[0.36, 0.42, 48]} />
+              <meshBasicMaterial color="#f2c14e" transparent opacity={0.9} depthWrite={false} />
+            </mesh>
+          )}
+          {showHint && (
+            <Html
+              portal={overlayPortal}
+              zIndexRange={[8, 0]}
+              center
+              position={[0, 0.9, 0]}
+              style={{ pointerEvents: "none" }}
+            >
+              <span className="house-food-package-label">Tap to use</span>
+            </Html>
+          )}
         </group>
       ) : (
         <mesh
           castShadow
           receiveShadow
+          {...hoverProps}
           onClick={(event) => {
             event.stopPropagation();
             if (!inputBlocked && (activeSlotType === null || activeSlotType === slot.slot_type))
@@ -889,33 +1123,19 @@ function SlotObject({
           }}
         >
           <boxGeometry args={[0.48, 0.08, 0.48]} />
-          <WorldMaterial tone={activeSlotType === slot.slot_type ? "slate" : "clay"} />
+          <WorldMaterial tone={activeSlotType === slot.slot_type || hovered ? "slate" : "clay"} />
         </mesh>
       )}
       {editMode && !placement && (
-        <Html
-          portal={overlayPortal}
-          zIndexRange={[8, 0]}
-          style={{ pointerEvents: "auto" }}
-          center
-          position={[0, 0.46, 0]}
-          distanceFactor={10}
-        >
-          <button
-            type="button"
-            className="house-3d-slot-label"
-            aria-label={label}
-            title={label}
-            disabled={
-              inputBlocked ||
-              (!!activeSlotType && activeSlotType !== slot.slot_type) ||
-              (!!placement && !!activeSlotType)
-            }
-            onClick={() => (placement ? onSelectPlacement(placement) : onSelectSlot(slot))}
-          >
-            {placement ? "•••" : "+"}
-          </button>
-        </Html>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.045, 0]}>
+          <ringGeometry args={[0.14, 0.18, 36]} />
+          <meshBasicMaterial
+            color={hovered ? "#f2c14e" : "#ffffff"}
+            transparent
+            opacity={hovered ? 0.95 : 0.6}
+            depthWrite={false}
+          />
+        </mesh>
       )}
     </group>
   );
@@ -1034,6 +1254,22 @@ export function HouseRoom3D({
     dragPointer.current = null;
     setDragPreview(null);
   }, [editMode, inputBlocked, moveEnabled]);
+  const [departing, setDeparting] = useState<WaitingCourier[]>([]);
+  const waitingCouriers: WaitingCourier[] = foodDeliveries
+    .filter((delivery) => delivery.deliveryState === "package_waiting")
+    .slice(0, 4)
+    .map((delivery, index) => ({ delivery, index }));
+  const previousWaiting = useRef<WaitingCourier[]>([]);
+  useEffect(() => {
+    const stillWaiting = new Set(waitingCouriers.map((item) => item.delivery.id));
+    const left = previousWaiting.current.filter((item) => !stillWaiting.has(item.delivery.id));
+    if (left.length)
+      setDeparting((current) => [
+        ...current,
+        ...left.filter((item) => !current.some((c) => c.delivery.id === item.delivery.id)),
+      ]);
+    previousWaiting.current = waitingCouriers;
+  });
   return (
     <div className="house-3d-scene" aria-label={`${houseTypeId.replaceAll("-", " ")} 3D room`}>
       <RoomOverlayContext.Provider value={overlayHost}>
@@ -1103,23 +1339,75 @@ export function HouseRoom3D({
             )
             .slice(0, 1)
             .map((delivery) => (
-              <FoodCourier key={delivery.id} delivery={delivery} width={width} depth={depth} />
+              <FoodCourier
+                key={delivery.id}
+                delivery={delivery}
+                width={width}
+                depth={depth}
+                index={0}
+                onCollect={!inputBlocked && !editMode ? onCollectPackage : undefined}
+              />
             ))}
           {foodDeliveries
             .filter((delivery) => delivery.deliveryState === "package_waiting")
             .slice(0, 4)
             .map((delivery, index) => (
-              <FoodPackage
+              <FoodCourier
                 key={delivery.id}
                 delivery={delivery}
+                width={width}
+                depth={depth}
+                index={index}
                 onCollect={!inputBlocked && !editMode ? onCollectPackage : undefined}
-                position={[
-                  width * 0.22 + index * 0.56,
-                  0.06,
-                  -depth / 2 + 0.72 + (index % 2) * 0.46,
-                ]}
               />
             ))}
+          {departing.map(({ delivery, index }) => {
+            const inside = delivery.deliveryChoice === "inside";
+            return (
+              <DepartingCourier
+                key={`leaving-${delivery.id}`}
+                startX={(inside ? width * 0.13 : width * 0.22) + index * 0.5}
+                startZ={inside ? -depth / 2 + 1.35 : -depth / 2 + 0.2}
+                exitX={width * 0.22}
+                exitZ={-depth / 2 - 2.5}
+                onGone={() =>
+                  setDeparting((current) => current.filter((c) => c.delivery.id !== delivery.id))
+                }
+              />
+            );
+          })}
+          {/* Placed furniture: reconstructed, compare with your original if anything is off */}
+          {placements.map((placement) => {
+            const slot = slots.find((item) => item.id === placement.slot);
+            if (!slot) return null;
+            return (
+              <SlotObject
+                key={placement.id}
+                slot={slot}
+                placement={placement}
+                width={width}
+                depth={depth}
+                editMode={editMode}
+                moveEnabled={moveEnabled}
+                inputBlocked={inputBlocked}
+                dragPreview={dragPreview}
+                activeSlotType={
+                  dragPreview
+                    ? (placements.find((item) => item.id === dragPreview.placementId)?.slot_type ??
+                      null)
+                    : (movingPlacement?.slot_type ?? null)
+                }
+                onSelectPlacement={onSelectPlacement}
+                onSelectSlot={onSelectSlot}
+                onDragStart={onDragStart}
+                onDragMove={onDragMove}
+                onDragEnd={onDragEnd}
+                onDragCancel={onDragCancel}
+                suppressClick={suppressClick}
+              />
+            );
+          })}
+          {/* Empty slots (edit mode shows the "+" placeholders) */}
           {slots
             .filter((slot) => !bySlot.has(slot.id))
             .map((slot) => (
@@ -1148,45 +1436,6 @@ export function HouseRoom3D({
                 suppressClick={suppressClick}
               />
             ))}
-          {placements.map((placement) => {
-            const savedSlot = slots.find((slot) => slot.id === placement.slot);
-            const fallbackPosition = hasRoomPosition(placement)
-              ? { x: placement.x, y: placement.y }
-              : { x: 50, y: 50 };
-            const slot =
-              savedSlot ??
-              ({
-                id: placement.slot,
-                slot_type: placement.slot_type,
-                ...fallbackPosition,
-              } satisfies HouseSlot);
-            return (
-              <SlotObject
-                key={placement.id}
-                slot={slot}
-                placement={placement}
-                width={width}
-                depth={depth}
-                editMode={editMode}
-                moveEnabled={moveEnabled}
-                inputBlocked={inputBlocked}
-                dragPreview={dragPreview}
-                activeSlotType={
-                  dragPreview
-                    ? (placements.find((item) => item.id === dragPreview.placementId)?.slot_type ??
-                      null)
-                    : (movingPlacement?.slot_type ?? null)
-                }
-                onSelectPlacement={onSelectPlacement}
-                onSelectSlot={onSelectSlot}
-                onDragStart={onDragStart}
-                onDragMove={onDragMove}
-                onDragEnd={onDragEnd}
-                onDragCancel={onDragCancel}
-                suppressClick={suppressClick}
-              />
-            );
-          })}
           <WorldCamera
             width={width}
             depth={depth}

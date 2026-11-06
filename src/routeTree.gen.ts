@@ -44,6 +44,7 @@ import { Route as ApiHomeUnequipRouteImport } from './routes/api/home/unequip'
 import { Route as ApiHouseMoveRouteImport } from './routes/api/house/move'
 import { Route as ApiHousePlaceRouteImport } from './routes/api/house/place'
 import { Route as ApiHouseRemoveRouteImport } from './routes/api/house/remove'
+import { Route as ApiHouseRotateRouteImport } from './routes/api/house/rotate'
 import { Route as ApiHouseStateRouteImport } from './routes/api/house/state'
 import { Route as ApiHousingAccessoriesRouteImport } from './routes/api/housing/accessories'
 import { Route as ApiHousingAckRepossessionRouteImport } from './routes/api/housing/ack-repossession'
@@ -68,6 +69,7 @@ import { Route as ApiOutfitEquipRouteImport } from './routes/api/outfit/equip'
 import { Route as ApiOutfitUnequipRouteImport } from './routes/api/outfit/unequip'
 import { Route as ApiShopBuyRouteImport } from './routes/api/shop/buy'
 import { Route as ApiThreadsIndexRouteImport } from './routes/api/threads/index'
+import { Route as AuthenticatedGameBankSlugRouteImport } from './routes/_authenticated/_game/bank.$slug'
 import { Route as AuthenticatedGameLocationSlugRouteImport } from './routes/_authenticated/_game/location.$slug'
 import { Route as ApiAuthUsernameLoginRouteImport } from './routes/api/auth/username/login'
 import { Route as ApiAuthUsernameRegisterRouteImport } from './routes/api/auth/username/register'
@@ -268,6 +270,11 @@ const ApiHouseRemoveRoute = ApiHouseRemoveRouteImport.update({
   path: '/api/house/remove',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHouseRotateRoute = ApiHouseRotateRouteImport.update({
+  id: '/api/house/rotate',
+  path: '/api/house/rotate',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHouseStateRoute = ApiHouseStateRouteImport.update({
   id: '/api/house/state',
   path: '/api/house/state',
@@ -390,6 +397,12 @@ const ApiThreadsIndexRoute = ApiThreadsIndexRouteImport.update({
   path: '/api/threads/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedGameBankSlugRoute =
+  AuthenticatedGameBankSlugRouteImport.update({
+    id: '/bank/$slug',
+    path: '/bank/$slug',
+    getParentRoute: () => AuthenticatedGameRoute,
+  } as any)
 const AuthenticatedGameLocationSlugRoute =
   AuthenticatedGameLocationSlugRouteImport.update({
     id: '/location/$slug',
@@ -496,6 +509,7 @@ export interface FileRoutesByFullPath {
   '/api/house/move': typeof ApiHouseMoveRoute
   '/api/house/place': typeof ApiHousePlaceRoute
   '/api/house/remove': typeof ApiHouseRemoveRoute
+  '/api/house/rotate': typeof ApiHouseRotateRoute
   '/api/house/state': typeof ApiHouseStateRoute
   '/api/housing/accessories': typeof ApiHousingAccessoriesRoute
   '/api/housing/ack-repossession': typeof ApiHousingAckRepossessionRoute
@@ -520,6 +534,7 @@ export interface FileRoutesByFullPath {
   '/api/outfit/unequip': typeof ApiOutfitUnequipRoute
   '/api/shop/buy': typeof ApiShopBuyRoute
   '/api/threads/': typeof ApiThreadsIndexRoute
+  '/bank/$slug': typeof AuthenticatedGameBankSlugRoute
   '/location/$slug': typeof AuthenticatedGameLocationSlugRoute
   '/api/auth/username/login': typeof ApiAuthUsernameLoginRoute
   '/api/auth/username/register': typeof ApiAuthUsernameRegisterRoute
@@ -569,6 +584,7 @@ export interface FileRoutesByTo {
   '/api/house/move': typeof ApiHouseMoveRoute
   '/api/house/place': typeof ApiHousePlaceRoute
   '/api/house/remove': typeof ApiHouseRemoveRoute
+  '/api/house/rotate': typeof ApiHouseRotateRoute
   '/api/house/state': typeof ApiHouseStateRoute
   '/api/housing/accessories': typeof ApiHousingAccessoriesRoute
   '/api/housing/ack-repossession': typeof ApiHousingAckRepossessionRoute
@@ -593,6 +609,7 @@ export interface FileRoutesByTo {
   '/api/outfit/unequip': typeof ApiOutfitUnequipRoute
   '/api/shop/buy': typeof ApiShopBuyRoute
   '/api/threads': typeof ApiThreadsIndexRoute
+  '/bank/$slug': typeof AuthenticatedGameBankSlugRoute
   '/location/$slug': typeof AuthenticatedGameLocationSlugRoute
   '/api/auth/username/login': typeof ApiAuthUsernameLoginRoute
   '/api/auth/username/register': typeof ApiAuthUsernameRegisterRoute
@@ -645,6 +662,7 @@ export interface FileRoutesById {
   '/api/house/move': typeof ApiHouseMoveRoute
   '/api/house/place': typeof ApiHousePlaceRoute
   '/api/house/remove': typeof ApiHouseRemoveRoute
+  '/api/house/rotate': typeof ApiHouseRotateRoute
   '/api/house/state': typeof ApiHouseStateRoute
   '/api/housing/accessories': typeof ApiHousingAccessoriesRoute
   '/api/housing/ack-repossession': typeof ApiHousingAckRepossessionRoute
@@ -669,6 +687,7 @@ export interface FileRoutesById {
   '/api/outfit/unequip': typeof ApiOutfitUnequipRoute
   '/api/shop/buy': typeof ApiShopBuyRoute
   '/api/threads/': typeof ApiThreadsIndexRoute
+  '/_authenticated/_game/bank/$slug': typeof AuthenticatedGameBankSlugRoute
   '/_authenticated/_game/location/$slug': typeof AuthenticatedGameLocationSlugRoute
   '/api/auth/username/login': typeof ApiAuthUsernameLoginRoute
   '/api/auth/username/register': typeof ApiAuthUsernameRegisterRoute
@@ -720,6 +739,7 @@ export interface FileRouteTypes {
     | '/api/house/move'
     | '/api/house/place'
     | '/api/house/remove'
+    | '/api/house/rotate'
     | '/api/house/state'
     | '/api/housing/accessories'
     | '/api/housing/ack-repossession'
@@ -744,6 +764,7 @@ export interface FileRouteTypes {
     | '/api/outfit/unequip'
     | '/api/shop/buy'
     | '/api/threads/'
+    | '/bank/$slug'
     | '/location/$slug'
     | '/api/auth/username/login'
     | '/api/auth/username/register'
@@ -793,6 +814,7 @@ export interface FileRouteTypes {
     | '/api/house/move'
     | '/api/house/place'
     | '/api/house/remove'
+    | '/api/house/rotate'
     | '/api/house/state'
     | '/api/housing/accessories'
     | '/api/housing/ack-repossession'
@@ -817,6 +839,7 @@ export interface FileRouteTypes {
     | '/api/outfit/unequip'
     | '/api/shop/buy'
     | '/api/threads'
+    | '/bank/$slug'
     | '/location/$slug'
     | '/api/auth/username/login'
     | '/api/auth/username/register'
@@ -868,6 +891,7 @@ export interface FileRouteTypes {
     | '/api/house/move'
     | '/api/house/place'
     | '/api/house/remove'
+    | '/api/house/rotate'
     | '/api/house/state'
     | '/api/housing/accessories'
     | '/api/housing/ack-repossession'
@@ -892,6 +916,7 @@ export interface FileRouteTypes {
     | '/api/outfit/unequip'
     | '/api/shop/buy'
     | '/api/threads/'
+    | '/_authenticated/_game/bank/$slug'
     | '/_authenticated/_game/location/$slug'
     | '/api/auth/username/login'
     | '/api/auth/username/register'
@@ -921,6 +946,7 @@ export interface RootRouteChildren {
   ApiHouseMoveRoute: typeof ApiHouseMoveRoute
   ApiHousePlaceRoute: typeof ApiHousePlaceRoute
   ApiHouseRemoveRoute: typeof ApiHouseRemoveRoute
+  ApiHouseRotateRoute: typeof ApiHouseRotateRoute
   ApiHouseStateRoute: typeof ApiHouseStateRoute
   ApiHousingAccessoriesRoute: typeof ApiHousingAccessoriesRoute
   ApiHousingAckRepossessionRoute: typeof ApiHousingAckRepossessionRoute
@@ -1207,6 +1233,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHouseRemoveRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/house/rotate': {
+      id: '/api/house/rotate'
+      path: '/api/house/rotate'
+      fullPath: '/api/house/rotate'
+      preLoaderRoute: typeof ApiHouseRotateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/house/state': {
       id: '/api/house/state'
       path: '/api/house/state'
@@ -1375,6 +1408,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiThreadsIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/_game/bank/$slug': {
+      id: '/_authenticated/_game/bank/$slug'
+      path: '/bank/$slug'
+      fullPath: '/bank/$slug'
+      preLoaderRoute: typeof AuthenticatedGameBankSlugRouteImport
+      parentRoute: typeof AuthenticatedGameRoute
+    }
     '/_authenticated/_game/location/$slug': {
       id: '/_authenticated/_game/location/$slug'
       path: '/location/$slug'
@@ -1497,6 +1537,7 @@ interface AuthenticatedGameRouteChildren {
   AuthenticatedGameSettingsRoute: typeof AuthenticatedGameSettingsRoute
   AuthenticatedGameSocialRoute: typeof AuthenticatedGameSocialRoute
   AuthenticatedGameWalletRoute: typeof AuthenticatedGameWalletRoute
+  AuthenticatedGameBankSlugRoute: typeof AuthenticatedGameBankSlugRoute
   AuthenticatedGameLocationSlugRoute: typeof AuthenticatedGameLocationSlugRoute
 }
 
@@ -1521,6 +1562,7 @@ const AuthenticatedGameRouteChildren: AuthenticatedGameRouteChildren = {
   AuthenticatedGameSettingsRoute: AuthenticatedGameSettingsRoute,
   AuthenticatedGameSocialRoute: AuthenticatedGameSocialRoute,
   AuthenticatedGameWalletRoute: AuthenticatedGameWalletRoute,
+  AuthenticatedGameBankSlugRoute: AuthenticatedGameBankSlugRoute,
   AuthenticatedGameLocationSlugRoute: AuthenticatedGameLocationSlugRoute,
 }
 
@@ -1555,6 +1597,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHouseMoveRoute: ApiHouseMoveRoute,
   ApiHousePlaceRoute: ApiHousePlaceRoute,
   ApiHouseRemoveRoute: ApiHouseRemoveRoute,
+  ApiHouseRotateRoute: ApiHouseRotateRoute,
   ApiHouseStateRoute: ApiHouseStateRoute,
   ApiHousingAccessoriesRoute: ApiHousingAccessoriesRoute,
   ApiHousingAckRepossessionRoute: ApiHousingAckRepossessionRoute,

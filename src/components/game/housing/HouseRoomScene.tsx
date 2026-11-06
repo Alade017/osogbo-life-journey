@@ -9,6 +9,7 @@ export type HousePlacement = {
   slot: string;
   x?: number;
   y?: number;
+  rotation_deg?: number;
   art_key: string;
   category: string;
   slot_type: string;

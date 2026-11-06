@@ -28,4 +28,11 @@ export const MAP_LANDMARK_LOCATION_SLUG: Record<string, string | null> = {
   "fuel-and-go": "fuel-and-go",
   "youth-arts-centre": "youth-arts-centre",
   "post-office": "post-office",
+  "garden-chapel": "garden-chapel",
+  "fish-market": "fish-market",
+  "mosque-square": "mosque-square",
+  "east-transit-terminal": "east-transit-terminal",
+  "eastside-produce-coop": "eastside-produce-coop",
+  "adire-makers-yard": "adire-makers-yard",
+  "neighborhood-play-park": "neighborhood-play-park",
 };

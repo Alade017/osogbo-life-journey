@@ -29,6 +29,8 @@ describe("App routing", () => {
       "/social",
       "/inventory",
       "/market",
+      "/bank/cedar-bank",
+      "/bank/meridian-bank",
       "/wallet",
       "/businesses",
       "/profile",

@@ -36,6 +36,7 @@
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
+
 .scrollbar-hidden::-webkit-scrollbar,
 .phone-app-view::-webkit-scrollbar,
 .phone-app-view *::-webkit-scrollbar,
@@ -47,17 +48,20 @@
   width: 0;
   height: 0;
 }
+
 .phone-app-view {
   min-height: 0;
   flex: 1;
   color: #0a0a0a;
   background: var(--brand-porcelain, var(--background));
 }
+
 .phone-app-view .phone-app-toolbar {
   color: #0a0a0a;
   background: var(--card);
   border-bottom-color: var(--border);
 }
+
 .phone-status-page,
 .phone-theme-page {
   display: flex;
@@ -70,25 +74,29 @@
   color: #0a0a0a;
   background: var(--brand-porcelain, var(--background));
 }
-.phone-status-page > header,
-.phone-theme-page > header {
+
+.phone-status-page>header,
+.phone-theme-page>header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
 }
+
 .phone-status-page h3,
 .phone-theme-page h3 {
   margin: 0;
   font-size: 1.25rem;
   font-weight: 800;
 }
+
 .phone-status-page header p,
 .phone-theme-page header p {
   margin: 0.15rem 0 0;
   color: var(--muted-foreground);
   font-size: 0.75rem;
 }
+
 .phone-status-page form {
   display: grid;
   gap: 0.55rem;
@@ -97,10 +105,12 @@
   border-radius: 1rem;
   background: var(--card);
 }
+
 .phone-status-page form label {
   font-size: 0.75rem;
   font-weight: 800;
 }
+
 .phone-status-page textarea {
   min-height: 88px;
   resize: vertical;
@@ -110,25 +120,30 @@
   color: #0a0a0a;
   background: var(--background);
 }
+
 .phone-status-themes {
   display: flex;
   gap: 0.55rem;
 }
+
 .phone-status-themes button {
   width: 44px;
   height: 44px;
   border: 2px solid transparent;
   border-radius: 50%;
 }
+
 .phone-status-themes button[aria-pressed="true"] {
   border-color: var(--ring);
   outline: 2px solid var(--card);
   outline-offset: -4px;
 }
+
 .phone-status-feed {
   display: grid;
   gap: 0.65rem;
 }
+
 .phone-status-card {
   display: grid;
   gap: 1rem;
@@ -137,44 +152,53 @@
   border: 1px solid var(--border);
   border-radius: 1rem;
 }
-.phone-status-card > div {
+
+.phone-status-card>div {
   display: flex;
   justify-content: space-between;
   gap: 0.5rem;
   font-size: 0.72rem;
 }
+
 .phone-status-card p {
   margin: 0;
   font-size: 1rem;
   font-weight: 700;
   line-height: 1.4;
 }
+
 .phone-status-card button {
   justify-self: start;
   min-height: 44px;
   text-decoration: underline;
   font-size: 0.72rem;
 }
+
 .status-theme-porcelain {
   color: #0a0a0a;
   background: var(--brand-porcelain, var(--background));
 }
+
 .status-theme-leaf {
   color: var(--primary-foreground);
   background: var(--primary);
 }
+
 .status-theme-ink {
   color: var(--brand-cream);
   background: var(--brand-ink);
 }
+
 .status-theme-sunset {
   color: #0a0a0a;
   background: var(--accent);
 }
+
 .phone-theme-options {
   display: grid;
   gap: 0.6rem;
 }
+
 .phone-theme-options button {
   display: grid;
   grid-template-columns: 44px 1fr auto;
@@ -187,46 +211,57 @@
   background: var(--card);
   text-align: left;
 }
+
 .phone-theme-options button[aria-pressed="true"] {
   border-color: var(--ring);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--ring) 20%, transparent);
 }
+
 .phone-theme-options small {
   color: var(--primary);
 }
+
 .message-theme-swatch {
   width: 38px;
   height: 38px;
   border-radius: 50%;
   border: 1px solid var(--border);
 }
+
 .theme-porcelain {
   background: var(--brand-porcelain, var(--background));
 }
+
 .theme-leaf {
   background: var(--primary);
 }
+
 .theme-ink {
   background: var(--brand-ink);
 }
+
 .theme-warm {
   background: var(--accent);
 }
+
 .phone-messenger[data-message-theme="leaf"] .phone-message-history {
   background: color-mix(in srgb, var(--primary) 9%, var(--brand-porcelain, var(--background)));
 }
+
 .phone-messenger[data-message-theme="ink"] .phone-message-history {
   background: var(--brand-ink);
 }
+
 .phone-messenger[data-message-theme="warm"] .phone-message-history {
   background: color-mix(in srgb, var(--accent) 18%, var(--brand-porcelain, var(--background)));
 }
+
 .phone-message-nav button {
   min-width: 0;
   flex: 1;
 }
 
-.phone-dialog > button:last-child {
+.phone-dialog>button:last-child {
   z-index: 3;
   top: 12px;
   right: 12px;
@@ -265,13 +300,9 @@
 @media (max-width: 640px) {
   .phone-dialog.phone-dialog:not(.phone-dock-surface) {
     width: calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right)) !important;
-    max-width: calc(
-      100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right)
-    ) !important;
+    max-width: calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right)) !important;
     height: calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
-    max-height: calc(
-      100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom)
-    ) !important;
+    max-height: calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
     padding: 4px !important;
     border-radius: 20px !important;
   }
@@ -282,7 +313,7 @@
     padding-bottom: env(safe-area-inset-bottom);
   }
 
-  .phone-dialog > button:last-child {
+  .phone-dialog>button:last-child {
     top: calc(12px + env(safe-area-inset-top));
   }
 }
@@ -461,7 +492,7 @@
   background: var(--card);
 }
 
-.phone-app-toolbar > strong {
+.phone-app-toolbar>strong {
   font-size: 14px;
   font-weight: 800;
 }
@@ -496,13 +527,16 @@
   background: var(--brand-porcelain, var(--background));
   -webkit-overflow-scrolling: touch;
 }
-.phone-app-body > * {
+
+.phone-app-body>* {
   min-width: 0;
 }
+
 .phone-route-app {
   width: 100%;
   min-width: 0;
 }
+
 .phone-app-body :is(.property-market-page, .property-listings-page, .game-page) {
   width: 100%;
   max-width: none;
@@ -510,41 +544,50 @@
   margin: 0;
   padding: 0.75rem;
 }
+
 .phone-app-body :is(.profile-page, .inventory-page) {
   width: 100%;
   max-width: none;
   min-width: 0;
   padding: 0.75rem;
 }
+
 .phone-app-body :is(.profile-hero, .profile-columns, .profile-glance) {
   grid-template-columns: minmax(0, 1fr);
 }
+
 .phone-app-body .game-page-header {
   align-items: flex-start;
   gap: 0.5rem;
   margin-bottom: 0.9rem;
 }
+
 .phone-app-body .game-page-header h1 {
   font-size: 1.25rem;
   line-height: 1.2;
 }
+
 .phone-app-body .game-page-header .game-page-eyebrow {
   font-size: 0.65rem;
 }
+
 .phone-app-body .game-panel {
   min-width: 0;
 }
+
 .phone-town-composer {
   display: grid;
   gap: 0.7rem;
   padding: 0.75rem;
 }
+
 .phone-town-composer label {
   display: grid;
   gap: 0.3rem;
   font-size: 0.75rem;
   font-weight: 700;
 }
+
 .phone-town-composer :is(input, textarea, select) {
   width: 100%;
   min-width: 0;
@@ -554,12 +597,14 @@
   background: var(--card);
   color: var(--foreground);
 }
-.phone-app-recovery > div {
+
+.phone-app-recovery>div {
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
   padding: 0.75rem;
 }
+
 .phone-app-recovery :is(a, button) {
   display: inline-flex;
   min-height: 44px;
@@ -573,10 +618,12 @@
   font-weight: 700;
   text-decoration: none;
 }
+
 .phone-app-recovery {
   padding: 1.25rem;
   color: var(--foreground);
 }
+
 .phone-app-recovery p {
   margin: 0.5rem 0;
   color: var(--muted-foreground);
@@ -591,13 +638,13 @@
   color: var(--foreground);
 }
 
-.phone-service-screen > header h2 {
+.phone-service-screen>header h2 {
   margin: 0;
   font-size: 1.2rem;
   font-weight: 800;
 }
 
-.phone-service-screen > header p,
+.phone-service-screen>header p,
 .phone-service-card p,
 .phone-service-card small {
   margin: 0.15rem 0 0;
@@ -639,7 +686,7 @@
   display: block;
 }
 
-.phone-order-card > p {
+.phone-order-card>p {
   color: var(--muted-foreground);
   font-size: 0.76rem;
   line-height: 1.4;
@@ -653,7 +700,7 @@
 }
 
 .phone-order-heading time,
-.phone-order-heading > span {
+.phone-order-heading>span {
   color: var(--muted-foreground);
   font-size: 0.7rem;
   text-align: right;
@@ -725,7 +772,7 @@
   border-top: 1px solid var(--border);
 }
 
-.phone-town-social > button {
+.phone-town-social>button {
   justify-self: start;
   min-height: 36px;
   padding: 0.4rem 0.7rem;
@@ -736,7 +783,7 @@
   font-weight: 700;
 }
 
-.phone-town-social > button[aria-pressed="true"] {
+.phone-town-social>button[aria-pressed="true"] {
   color: var(--primary-foreground);
   background: var(--primary);
 }
@@ -787,7 +834,7 @@
   background: var(--muted);
 }
 
-.phone-app-view > :not(.phone-app-toolbar) {
+.phone-app-view> :not(.phone-app-toolbar) {
   min-height: 0;
   flex: 1;
 }
@@ -1055,7 +1102,7 @@
   color: var(--muted-foreground);
 }
 
-.phone-conversation-status > span {
+.phone-conversation-status>span {
   display: grid;
   min-width: 21px;
   min-height: 21px;
@@ -1087,12 +1134,12 @@
   box-shadow: var(--elevation-card);
 }
 
-.phone-thread-menu > strong,
-.phone-thread-menu > p {
+.phone-thread-menu>strong,
+.phone-thread-menu>p {
   padding: 5px 10px;
 }
 
-.phone-thread-menu > p {
+.phone-thread-menu>p {
   margin: 0;
   color: var(--muted-foreground);
   font-size: 11px;
@@ -1100,7 +1147,7 @@
   text-transform: uppercase;
 }
 
-.phone-thread-menu > button {
+.phone-thread-menu>button {
   display: flex;
   min-height: 44px;
   align-items: center;
@@ -1115,8 +1162,8 @@
   text-align: left;
 }
 
-.phone-thread-menu > button:hover,
-.phone-thread-menu > button:focus-visible {
+.phone-thread-menu>button:hover,
+.phone-thread-menu>button:focus-visible {
   background: var(--secondary);
 }
 
@@ -1147,7 +1194,7 @@
   font-size: 11px;
 }
 
-.phone-conversation > svg {
+.phone-conversation>svg {
   flex: none;
   color: var(--muted-foreground);
 }
@@ -1220,11 +1267,9 @@
   padding: 14px 10px;
   border: 0;
   background:
-    radial-gradient(
-      ellipse at 18% 28%,
+    radial-gradient(ellipse at 18% 28%,
       color-mix(in srgb, var(--success) 5%, transparent),
-      transparent 42%
-    ),
+      transparent 42%),
     var(--brand-porcelain, var(--background));
 }
 
@@ -1269,14 +1314,14 @@
   font-size: 0.78rem;
 }
 
-.message-reply-quote > span,
-.message-reply-quote > strong {
+.message-reply-quote>span,
+.message-reply-quote>strong {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.message-reply-quote > span {
+.message-reply-quote>span {
   display: flex;
   align-items: center;
   gap: 0.25rem;
@@ -1325,7 +1370,7 @@
   color: var(--foreground);
 }
 
-.message-composer-reply > span {
+.message-composer-reply>span {
   min-width: 0;
   display: grid;
 }
@@ -1409,9 +1454,11 @@
 .formatted-message strong {
   font-weight: 800;
 }
+
 .formatted-message em {
   font-style: italic;
 }
+
 .formatted-message del {
   text-decoration-thickness: 1.5px;
 }
@@ -1701,6 +1748,7 @@
     opacity: 0.65;
     transform: translateY(5px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1723,6 +1771,7 @@
   .phone-app-view {
     animation: none;
   }
+
   .phone-app-icon {
     transition: none;
   }
@@ -1783,13 +1832,15 @@
   color: var(--foreground);
   background: var(--background);
 }
-.phone-local-app > header,
+
+.phone-local-app>header,
 .phone-local-card {
   display: flex;
   align-items: center;
   gap: 0.65rem;
 }
-.phone-local-app > header > svg {
+
+.phone-local-app>header>svg {
   width: 2.5rem;
   height: 2.5rem;
   flex: 0 0 2.5rem;
@@ -1798,25 +1849,30 @@
   color: var(--primary);
   background: var(--secondary);
 }
+
 .phone-local-app header span,
-.phone-local-card > div,
+.phone-local-card>div,
 .phone-local-ranks span {
   display: grid;
   min-width: 0;
   gap: 0.16rem;
 }
+
 .phone-local-app strong {
   font-size: 0.9rem;
 }
+
 .phone-local-app small,
 .phone-local-note {
   color: var(--muted-foreground);
   font-size: 0.72rem;
 }
+
 .phone-local-list {
   display: grid;
   gap: 0.55rem;
 }
+
 .phone-local-card {
   min-height: 4.6rem;
   justify-content: space-between;
@@ -1825,26 +1881,31 @@
   border-radius: 0.85rem;
   background: var(--card);
 }
+
 .phone-local-card time,
-.phone-local-card > b {
+.phone-local-card>b {
   color: var(--primary);
   font-size: 0.76rem;
   font-weight: 800;
 }
-.phone-local-card > svg {
+
+.phone-local-card>svg {
   width: 1rem;
   color: var(--muted-foreground);
 }
+
 .phone-local-card b {
   color: var(--primary);
   font-size: 0.78rem;
 }
+
 .phone-local-card p {
   margin: 0.15rem 0 0;
   color: var(--muted-foreground);
   font-size: 0.75rem;
   line-height: 1.4;
 }
+
 .phone-local-card button,
 .phone-local-card a,
 .phone-local-tabs button {
@@ -1860,14 +1921,17 @@
   font-weight: 800;
   text-decoration: none;
 }
+
 .phone-local-card button[aria-pressed="true"] {
   color: var(--primary-foreground);
   background: var(--primary);
 }
+
 .phone-local-tabs button[aria-selected="true"] {
   color: var(--primary-foreground);
   background: var(--primary);
 }
+
 .phone-local-action {
   display: inline-flex;
   min-height: 44px;
@@ -1883,10 +1947,12 @@
   font-size: 0.82rem;
   font-weight: 800;
 }
+
 .phone-local-action:disabled {
   opacity: 0.52;
 }
-.phone-local-app > footer {
+
+.phone-local-app>footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -1895,7 +1961,8 @@
   color: var(--muted-foreground);
   font-size: 0.72rem;
 }
-.phone-local-app > footer button {
+
+.phone-local-app>footer button {
   min-height: 40px;
   border: 0;
   border-radius: 0.7rem;
@@ -1904,6 +1971,7 @@
   font: inherit;
   font-weight: 800;
 }
+
 .phone-local-field {
   display: grid;
   gap: 0.35rem;
@@ -1911,6 +1979,7 @@
   font-size: 0.75rem;
   font-weight: 800;
 }
+
 .phone-local-field :is(input, select) {
   min-height: 44px;
   padding: 0 0.65rem;
@@ -1920,20 +1989,24 @@
   background: var(--card);
   font: inherit;
 }
+
 .phone-local-card progress {
   width: 100%;
   height: 0.45rem;
   accent-color: var(--primary);
 }
+
 .phone-local-tabs {
   display: flex;
   gap: 0.4rem;
   overflow-x: auto;
 }
+
 .phone-local-tabs button[aria-pressed="true"] {
   color: var(--primary-foreground);
   background: var(--primary);
 }
+
 .phone-local-ranks {
   display: grid;
   gap: 0.45rem;
@@ -1941,6 +2014,7 @@
   margin: 0;
   list-style: none;
 }
+
 .phone-local-ranks li {
   display: flex;
   min-height: 3.7rem;
@@ -1951,7 +2025,8 @@
   border-radius: 0.8rem;
   background: var(--card);
 }
-.phone-local-ranks li > b {
+
+.phone-local-ranks li>b {
   display: grid;
   width: 1.75rem;
   height: 1.75rem;
@@ -1962,11 +2037,13 @@
   background: var(--secondary);
   font-size: 0.75rem;
 }
-.phone-local-ranks li > svg {
+
+.phone-local-ranks li>svg {
   margin-left: auto;
   width: 1rem;
   color: #b7791f;
 }
+
 .phone-stall-builder {
   display: grid;
   gap: 0.65rem;
@@ -1975,13 +2052,16 @@
   border-radius: 0.9rem;
   background: color-mix(in srgb, var(--secondary) 42%, var(--card));
 }
-.phone-stall-builder > strong {
+
+.phone-stall-builder>strong {
   color: var(--foreground);
 }
+
 @media (max-width: 360px) {
   .phone-local-app {
     padding: 0.7rem;
   }
+
   .phone-local-card {
     padding: 0.6rem;
   }
@@ -2065,6 +2145,7 @@
   cursor: pointer;
   transition: opacity 120ms ease;
 }
+
 .phone-btn-primary:hover {
   opacity: 0.9;
 }
@@ -2232,11 +2313,12 @@
   font-size: 0.85rem;
 }
 
-.phone-map-list li > span {
+.phone-map-list li>span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
 .phone-app-body .game-settings-page {
   width: 100%;
   max-width: none;
@@ -2244,10 +2326,12 @@
   margin: 0;
   padding: 0.75rem;
 }
+
 .phone-app-body .game-settings-page .game-panel {
   min-width: 0;
   padding: 1rem;
 }
+
 .phone-app-body .game-settings-page input {
   min-width: 0;
 }
@@ -2259,24 +2343,29 @@
   border-radius: 18px 18px 18px 6px;
   padding: 10px 12px 7px;
 }
+
 .phone-message-bubble:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 3px;
 }
+
 .phone-message-time {
   display: inline-flex;
   align-items: center;
   gap: 5px;
 }
+
 .message-action-dialog {
   z-index: calc(var(--game-dialog-layer, 100) + 10);
   width: min(92vw, 360px);
   border-radius: 24px;
 }
+
 .message-action-menu {
   display: grid;
   gap: 6px;
 }
+
 .message-action-menu button {
   display: flex;
   align-items: center;
@@ -2287,24 +2376,29 @@
   text-align: left;
   background: var(--secondary);
 }
+
 .message-action-menu svg {
   width: 18px;
   height: 18px;
 }
+
 .phone-conversation {
   border-radius: 16px;
   margin-block: 0;
   border: 1px solid transparent;
 }
+
 .phone-conversation:hover,
 .phone-conversation:focus-visible {
   border-color: var(--border);
   background: color-mix(in srgb, var(--primary) 6%, var(--card));
 }
+
 .phone-thread-header {
   padding-block: 12px;
   box-shadow: 0 2px 12px color-mix(in srgb, var(--foreground) 5%, transparent);
 }
+
 .voice-note-player {
   display: grid;
   width: min(280px, 67vw);
@@ -2313,6 +2407,7 @@
   gap: 5px;
   padding-block: 5px;
 }
+
 .voice-note-player .voice-play-toggle {
   width: 44px;
   height: 44px;
@@ -2321,11 +2416,13 @@
   color: var(--primary-foreground);
   background: var(--primary);
 }
+
 .voice-track {
   position: relative;
   display: grid;
   min-width: 0;
 }
+
 .voice-playback-wave {
   display: flex;
   height: 32px;
@@ -2333,15 +2430,18 @@
   justify-content: space-between;
   gap: 2px;
 }
+
 .voice-playback-wave i {
   flex: 1;
   min-width: 1px;
   border-radius: 6px;
   background: color-mix(in srgb, var(--muted-foreground) 35%, transparent);
 }
+
 .voice-playback-wave i.is-played {
   background: var(--primary);
 }
+
 .voice-track input {
   position: absolute;
   top: -6px;
@@ -2350,15 +2450,18 @@
   opacity: 0;
   cursor: pointer;
 }
+
 .voice-track:focus-within {
   outline: 2px solid var(--primary);
   outline-offset: 3px;
   border-radius: 6px;
 }
+
 .voice-playback-times {
   display: flex;
   justify-content: space-between;
 }
+
 .voice-note-avatar {
   display: grid;
   place-items: center;
@@ -2368,11 +2471,13 @@
   color: var(--primary);
   background: color-mix(in srgb, var(--primary) 12%, var(--card));
 }
+
 .voice-note-avatar svg {
   width: 18px;
   height: 18px;
 }
-.voice-note-player > button[aria-label^="Playback speed"] {
+
+.voice-note-player>button[aria-label^="Playback speed"] {
   min-width: 44px;
   min-height: 44px;
   border: 0;
@@ -2392,6 +2497,7 @@
   background: var(--card);
   box-shadow: 0 3px 16px color-mix(in srgb, var(--foreground) 5%, transparent);
 }
+
 .phone-messenger .phone-chat-composer .phone-chat-input {
   grid-column: 1;
   grid-row: auto;
@@ -2402,6 +2508,7 @@
   border-radius: 12px;
   background: transparent;
 }
+
 .phone-messenger .phone-chat-composer .phone-chat-input-actions {
   display: flex;
   position: relative;
@@ -2412,15 +2519,18 @@
   width: 100%;
   padding: 0;
 }
+
 .phone-messenger .phone-chat-composer .phone-chat-send {
   margin-inline-start: auto;
 }
+
 .phone-chat-composer .voice-note-recorder {
   display: contents;
   margin: 0;
   padding: 0;
   border: 0;
 }
+
 .phone-chat-composer .voice-recording-strip,
 .phone-chat-composer .voice-note-hint,
 .phone-chat-composer .voice-retry,
@@ -2435,6 +2545,7 @@
   box-shadow: var(--elevation-card);
   z-index: 2;
 }
+
 .chat-avatar-button {
   flex: none;
   display: grid;
@@ -2443,9 +2554,11 @@
   min-height: 44px;
   border-radius: 50%;
 }
-.chat-avatar-button > span {
+
+.chat-avatar-button>span {
   border-radius: 50%;
 }
+
 .phone-messenger .phone-conversation {
   height: 76px;
   min-height: 76px;
@@ -2454,6 +2567,7 @@
   border: 0;
   border-bottom: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
 }
+
 .phone-conversation-open {
   display: flex;
   flex: 1;
@@ -2463,19 +2577,23 @@
   gap: 10px;
   text-align: left;
 }
+
 .phone-conversation-copy strong {
   font-size: 14px;
   letter-spacing: -0.015em;
 }
+
 .phone-conversation-copy small {
   max-width: 100%;
   font-size: 12px;
 }
+
 .phone-messenger .phone-inbox-search {
   margin: 10px 14px;
   border-radius: 16px;
   padding: 10px 14px;
 }
+
 .chat-media-dialog,
 .chat-profile-card {
   width: min(92vw, 420px);
@@ -2483,6 +2601,7 @@
   overflow-y: auto;
   border-radius: 24px;
 }
+
 .chat-media-preview {
   width: 100%;
   max-height: 45dvh;
@@ -2490,6 +2609,7 @@
   border-radius: 16px;
   background: var(--muted);
 }
+
 .chat-primary-button,
 .chat-secondary-button {
   display: flex;
@@ -2503,10 +2623,12 @@
   color: var(--primary-foreground);
   background: var(--primary);
 }
+
 .chat-secondary-button {
   color: var(--foreground);
   background: var(--secondary);
 }
+
 .chat-attachment {
   display: flex;
   align-items: center;
@@ -2515,24 +2637,29 @@
   max-width: 100%;
   text-align: left;
 }
-.chat-attachment > span {
+
+.chat-attachment>span {
   display: grid;
   min-width: 0;
   gap: 4px;
 }
+
 .chat-attachment strong {
   overflow-wrap: anywhere;
 }
+
 .chat-attachment small {
   font-size: 11px;
   color: var(--muted-foreground);
 }
-.chat-attachment > svg {
+
+.chat-attachment>svg {
   flex: none;
   width: 28px;
   height: 28px;
   color: var(--primary);
 }
+
 .chat-profile-cover {
   display: grid;
   place-items: center;
@@ -2542,28 +2669,195 @@
   background: var(--secondary);
   color: var(--muted-foreground);
 }
+
 .chat-profile-cover img {
   width: 100%;
   height: 160px;
   object-fit: cover;
 }
+
 .chat-profile-identity {
   display: flex;
   gap: 14px;
   align-items: center;
 }
+
 .chat-profile-identity strong {
   font-size: 20px;
 }
+
 .chat-profile-identity p {
   font-size: 12px;
   color: var(--muted-foreground);
 }
+
 .chat-cover-editor {
   display: grid;
   gap: 10px;
 }
+
 .chat-cover-editor input {
   width: 100%;
   padding-block: 10px;
+}
+
+.phone-delivery-records {
+  display: grid;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.phone-record-list {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.phone-record-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.2rem 0.75rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  background: var(--card);
+}
+
+.phone-record-row>div {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.phone-record-row>div>strong {
+  color: var(--foreground);
+  font-size: 0.86rem;
+  overflow-wrap: anywhere;
+}
+
+.phone-record-row>div>span,
+.phone-record-row>div>small {
+  color: var(--muted-foreground);
+  font-size: 0.74rem;
+  overflow-wrap: anywhere;
+}
+
+.phone-record-row>strong {
+  color: var(--foreground);
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+/* Food delivery app */
+.phone-service-screen .food-app {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.phone-service-screen .food-hero {
+  padding: 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: linear-gradient(135deg,
+      color-mix(in srgb, var(--primary) 18%, var(--card)),
+      var(--card));
+}
+
+.phone-service-screen .food-hero h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.phone-service-screen .food-hero p {
+  margin: 0.2rem 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+}
+
+.phone-service-screen .food-card {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  background: var(--card);
+}
+
+.phone-service-screen .food-add-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 5.5rem;
+  align-items: end;
+  gap: 0.5rem;
+}
+
+.phone-service-screen .food-qty {
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Hide number spinners so the portions field is type-only */
+.phone-service-screen .food-qty::-webkit-outer-spin-button,
+.phone-service-screen .food-qty::-webkit-inner-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.phone-service-screen .food-qty[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.phone-service-screen .food-basket {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.phone-service-screen .food-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 4.5rem auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  background: var(--background);
+}
+
+.phone-service-screen .food-line .food-qty {
+  min-height: 36px;
+  padding: 0.3rem 0.4rem;
+}
+
+.phone-service-screen .food-remove {
+  min-height: 36px;
+  padding: 0.3rem 0.6rem;
+  color: var(--destructive);
+  background: color-mix(in srgb, var(--destructive) 12%, transparent);
+}
+
+.phone-service-screen .food-warning {
+  margin: 0;
+  color: var(--destructive);
+  font-size: 0.75rem;
+}
+
+.phone-service-screen .food-checkout {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  padding: 0.85rem;
+  border-top: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: 0 -6px 18px color-mix(in srgb, var(--foreground) 6%, transparent);
 }

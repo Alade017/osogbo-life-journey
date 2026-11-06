@@ -1,11 +1,13 @@
 import { Room, type AuthContext, type Client } from "colyseus";
 import { NeighborhoodState, NetworkPlayer } from "../src/game/multiplayer-state.ts";
 import {
+  canRestoreNeighborhoodCheckpoint,
   movementFacing,
   parseMovementIntent,
   stepAuthoritativePosition,
 } from "../src/game/authoritative-movement.ts";
 import { cityEntranceForRecord } from "../src/lib/city-world.ts";
+import { isPlayableLocationRecord } from "../src/game/playable-district.ts";
 import {
   neighborhoodAreaForSlug,
   neighborhoodAreaOrigin,
@@ -23,7 +25,13 @@ type CharacterRow = {
   world_y: number | null;
   current_location_id: string | null;
 };
-type LocationRow = { id: string; slug: string; map_x: number; map_y: number };
+type LocationRow = {
+  id: string;
+  slug: string;
+  map_x: number;
+  map_y: number;
+  is_active: boolean;
+};
 
 type AuthenticatedPlayer = {
   userId: string;
@@ -87,8 +95,9 @@ async function readCharacter(accessToken: string, locationId: string) {
   if (!character || character.current_location_id !== locationId)
     throw new Error("Your character is not saved in this neighborhood.");
   const locationQuery = new URLSearchParams({
-    select: "id,slug,map_x,map_y",
+    select: "id,slug,map_x,map_y,is_active",
     id: `eq.${locationId}`,
+    is_active: "eq.true",
     limit: "1",
   });
   const locationResponse = await fetch(`${url}/rest/v1/locations?${locationQuery}`, {
@@ -98,7 +107,9 @@ async function readCharacter(accessToken: string, locationId: string) {
   if (!locationResponse.ok) throw new Error("The neighborhood could not be loaded.");
   const locationRows = (await locationResponse.json()) as LocationRow[];
   const location = locationRows[0];
-  if (!location) throw new Error("The neighborhood could not be loaded.");
+  if (!isPlayableLocationRecord(location) || location.id !== locationId)
+    throw new Error("This destination is not available for walking.");
+  const area = neighborhoodAreaForSlug(location.slug);
   const equipmentQuery = new URLSearchParams({
     select: "slot",
     character_id: `eq.${character.id}`,
@@ -115,7 +126,7 @@ async function readCharacter(accessToken: string, locationId: string) {
     accessToken,
     character,
     equipment,
-    area: neighborhoodAreaForSlug(location.slug),
+    area,
     areaOrigin: neighborhoodAreaOrigin(entrance),
   } satisfies AuthenticatedPlayer;
 }
@@ -123,6 +134,7 @@ async function readCharacter(accessToken: string, locationId: string) {
 function playerSnapshot(
   character: CharacterRow,
   areaOrigin: WorldPoint,
+  area: NeighborhoodArea,
   equipment = EMPTY_EQUIPMENT,
 ): NetworkPlayerSnapshot {
   let appearance = EMPTY_APPEARANCE;
@@ -131,14 +143,23 @@ function playerSnapshot(
   } catch {
     appearance = EMPTY_APPEARANCE;
   }
+  const savedPoint =
+    typeof character.world_x === "number" && typeof character.world_y === "number"
+      ? { x: character.world_x, y: character.world_y }
+      : null;
+  const spawn =
+    savedPoint &&
+    canRestoreNeighborhoodCheckpoint(savedPoint, areaOrigin, area.objects, area.obstacles)
+      ? savedPoint
+      : areaOrigin;
   return {
     characterId: character.id,
     name: String(character.name ?? "Neighbour").slice(0, 24),
     gender: String(character.gender ?? "nonbinary").slice(0, 16),
     appearance,
     equipment,
-    x: Number.isFinite(character.world_x) ? (character.world_x as number) : areaOrigin.x,
-    y: Number.isFinite(character.world_y) ? (character.world_y as number) : areaOrigin.y,
+    x: spawn.x,
+    y: spawn.y,
     facing: "south",
   };
 }
@@ -211,7 +232,7 @@ export class NeighborhoodRoom extends Room {
     this.areaOrigin = auth.areaOrigin;
     this.area = auth.area;
     const player = new NetworkPlayer(
-      playerSnapshot(auth.character, auth.areaOrigin, auth.equipment),
+      playerSnapshot(auth.character, auth.areaOrigin, auth.area, auth.equipment),
     );
     this.state.players.set(client.sessionId, player);
     this.credentials.set(client.sessionId, {

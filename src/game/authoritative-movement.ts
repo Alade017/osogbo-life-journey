@@ -6,6 +6,7 @@ import {
 import {
   NEIGHBORHOOD_OBJECTS,
   toScene,
+  validCheckpoint,
   type NeighborhoodObstacle,
   type NeighborhoodObject,
   type WorldPoint,
@@ -57,6 +58,15 @@ export function canOccupyNeighborhoodPoint(
       body.top >= solid.bottom
     );
   });
+}
+
+export function canRestoreNeighborhoodCheckpoint(
+  point: WorldPoint,
+  origin: WorldPoint,
+  objects: readonly NeighborhoodObject[] = NEIGHBORHOOD_OBJECTS,
+  obstacles: readonly NeighborhoodObstacle[] = [],
+) {
+  return validCheckpoint(point) && canOccupyNeighborhoodPoint(point, origin, objects, obstacles);
 }
 
 export function parseMovementIntent(value: unknown): MovementIntent | null {

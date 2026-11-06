@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { ContactShadows, OrbitControls } from "@react-three/drei";
+import { ContactShadows, OrbitControls, Text } from "@react-three/drei";
 import { Object3D, Vector3, type InstancedMesh, type PerspectiveCamera } from "three";
 import type { OrbitControls as Controls } from "three-stdlib";
 import {
@@ -200,6 +200,158 @@ export function WorldInstances({
 export function WorldRoads({ items }: { items: readonly WorldInstance[] }) {
   return <WorldInstances items={items} tone="road" />;
 }
+export function WorldRoadMarkings({ items }: { items: readonly WorldInstance[] }) {
+  return <WorldInstances items={items} tone="linen" />;
+}
+export function WorldPedestrianCrossings({ items }: { items: readonly WorldInstance[] }) {
+  return <WorldInstances items={items} tone="linen" />;
+}
+export function WorldTrafficLights({
+  positions,
+  size,
+}: {
+  positions: readonly [number, number][];
+  size: number;
+}) {
+  const poleHeight = size * 1.15;
+
+  return (
+    <>
+      {positions.map(([x, z], index) => (
+        <group key={`traffic-light-${index}`} position={[x, 0, z]}>
+          {/* Vertical pole */}
+          <mesh position={[0, poleHeight / 2, 0]} castShadow>
+            <boxGeometry args={[size * 0.045, poleHeight, size * 0.045]} />
+            <WorldMaterial tone="metal" />
+          </mesh>
+
+          {/* Signal housing */}
+          <mesh position={[0, poleHeight * 0.85, 0]} castShadow>
+            <boxGeometry args={[size * 0.19, size * 0.42, size * 0.13]} />
+            <WorldMaterial tone="slate" />
+          </mesh>
+
+          {/* Red signal */}
+          <mesh position={[0, poleHeight * 0.96, size * 0.071]}>
+            <sphereGeometry args={[size * 0.045, 8, 8]} />
+            <WorldMaterial tone="clay" />
+          </mesh>
+
+          {/* Amber signal */}
+          <mesh position={[0, poleHeight * 0.85, size * 0.071]}>
+            <sphereGeometry args={[size * 0.045, 8, 8]} />
+            <WorldMaterial tone="linen" />
+          </mesh>
+
+          {/* Green signal */}
+          <mesh position={[0, poleHeight * 0.74, size * 0.071]}>
+            <sphereGeometry args={[size * 0.045, 8, 8]} />
+            <WorldMaterial tone="foliage" />
+          </mesh>
+        </group>
+      ))}
+    </>
+  );
+}
+export function WorldCars({
+  positions,
+  size,
+}: {
+  positions: readonly [number, number][];
+  size: number;
+}) {
+  const bodyColors = ["#c94b36", "#e3b542", "#276b9a", "#43845c"];
+
+  const length = size * 0.82;
+  const width = size * 0.42;
+  const bodyHeight = size * 0.18;
+  const wheelRadius = size * 0.095;
+
+  return (
+    <>
+      {positions.map(([x, z], index) => {
+        const bodyColor = bodyColors[index % bodyColors.length] ?? "#c94b36";
+
+        return (
+          <group key={`car-${index}`} position={[x, 0, z]}>
+            {/* Main vehicle body */}
+            <mesh position={[0, size * 0.2, 0]} castShadow receiveShadow>
+              <boxGeometry args={[length, bodyHeight, width]} />
+              <WorldMaterial tone="concrete" color={bodyColor} />
+            </mesh>
+
+            {/* Raised cabin */}
+            <mesh position={[-size * 0.015, size * 0.39, 0]} castShadow>
+              <boxGeometry args={[length * 0.48, size * 0.22, width * 0.76]} />
+              <WorldMaterial tone="linen" />
+            </mesh>
+
+            {/* Side windows */}
+            {[-1, 1].map((side) => (
+              <mesh key={`window-${side}`} position={[0, size * 0.4, side * width * 0.39]}>
+                <boxGeometry args={[length * 0.35, size * 0.12, size * 0.012]} />
+                <WorldMaterial tone="glass" />
+              </mesh>
+            ))}
+
+            {/* Front windscreen */}
+            <mesh position={[length * 0.245, size * 0.4, 0]}>
+              <boxGeometry args={[size * 0.012, size * 0.13, width * 0.62]} />
+              <WorldMaterial tone="glass" />
+            </mesh>
+
+            {/* Rear windscreen */}
+            <mesh position={[-length * 0.245, size * 0.4, 0]}>
+              <boxGeometry args={[size * 0.012, size * 0.12, width * 0.62]} />
+              <WorldMaterial tone="glass" />
+            </mesh>
+
+            {/* Four wheels */}
+            {[-1, 1].flatMap((sideX) =>
+              [-1, 1].map((sideZ) => (
+                <mesh
+                  key={`wheel-${sideX}-${sideZ}`}
+                  position={[
+                    sideX * length * 0.29,
+                    wheelRadius + size * 0.035,
+                    sideZ * width * 0.51,
+                  ]}
+                  rotation={[Math.PI / 2, 0, 0]}
+                  castShadow
+                >
+                  <cylinderGeometry args={[wheelRadius, wheelRadius, size * 0.07, 10]} />
+                  <WorldMaterial tone="slate" />
+                </mesh>
+              )),
+            )}
+
+            {/* Front headlights — vehicle faces +X */}
+            {[-1, 1].map((side) => (
+              <mesh
+                key={`headlight-${side}`}
+                position={[length * 0.49, size * 0.22, side * width * 0.3]}
+              >
+                <boxGeometry args={[size * 0.025, size * 0.055, size * 0.075]} />
+                <WorldMaterial tone="linen" />
+              </mesh>
+            ))}
+
+            {/* Rear lights */}
+            {[-1, 1].map((side) => (
+              <mesh
+                key={`taillight-${side}`}
+                position={[-length * 0.49, size * 0.22, side * width * 0.3]}
+              >
+                <boxGeometry args={[size * 0.025, size * 0.055, size * 0.075]} />
+                <WorldMaterial tone="clay" />
+              </mesh>
+            ))}
+          </group>
+        );
+      })}
+    </>
+  );
+}
 export function WorldSidewalks({
   sidewalks,
   curbs,
@@ -278,6 +430,453 @@ export function WorldWasteBins({
           scale: [size * 0.38, size * 0.07, size * 0.38],
         }))}
       />
+    </>
+  );
+}
+export function WorldBusStops({
+  positions,
+  size,
+}: {
+  positions: readonly [number, number][];
+  size: number;
+}) {
+  const roofHeight = size * 0.95;
+  const shelterWidth = size * 1.15;
+  const shelterDepth = size * 0.65;
+
+  return (
+    <>
+      {positions.map(([x, z], index) => (
+        <group key={`bus-stop-${index}`} position={[x, 0, z]}>
+          {/* Shelter roof */}
+          <mesh position={[0, roofHeight, 0]} castShadow>
+            <boxGeometry args={[shelterWidth, size * 0.12, shelterDepth]} />
+            <WorldMaterial tone="accent" />
+          </mesh>
+
+          {/* Four support pillars */}
+          {[-1, 1].flatMap((sideX) =>
+            [-1, 1].map((sideZ) => (
+              <mesh
+                key={`pillar-${sideX}-${sideZ}`}
+                position={[
+                  sideX * shelterWidth * 0.43,
+                  roofHeight * 0.48,
+                  sideZ * shelterDepth * 0.4,
+                ]}
+                castShadow
+              >
+                <boxGeometry args={[size * 0.055, roofHeight * 0.96, size * 0.055]} />
+                <WorldMaterial tone="metal" />
+              </mesh>
+            )),
+          )}
+
+          {/* Rear shelter panel */}
+          <mesh position={[0, roofHeight * 0.48, -shelterDepth * 0.4]}>
+            <boxGeometry args={[shelterWidth * 0.82, roofHeight * 0.85, size * 0.045]} />
+            <WorldMaterial tone="concrete" />
+          </mesh>
+
+          {/* Passenger bench */}
+          <mesh position={[0, size * 0.29, -shelterDepth * 0.2]}>
+            <boxGeometry args={[shelterWidth * 0.62, size * 0.07, size * 0.2]} />
+            <WorldMaterial tone="timber" />
+          </mesh>
+
+          {/* Bus stop sign pole */}
+          <mesh position={[shelterWidth * 0.58, roofHeight * 0.5, shelterDepth * 0.15]}>
+            <boxGeometry args={[size * 0.035, roofHeight, size * 0.035]} />
+            <WorldMaterial tone="metal" />
+          </mesh>
+
+          {/* Bus stop sign */}
+          <mesh position={[shelterWidth * 0.58, roofHeight * 0.88, shelterDepth * 0.15]}>
+            <boxGeometry args={[size * 0.3, size * 0.24, size * 0.07]} />
+            <WorldMaterial tone="sign" />
+          </mesh>
+        </group>
+      ))}
+    </>
+  );
+}
+type RoadSign = {
+  position: [number, number];
+  destination: string;
+  direction: "left" | "right";
+};
+
+export function WorldRoadSigns({
+  positions,
+  size,
+}: {
+  positions: readonly RoadSign[];
+  size: number;
+}) {
+  const poleHeight = size * 1.15;
+  const boardWidth = size * 1.05;
+  const boardHeight = size * 0.28;
+
+  return (
+    <>
+      {positions.map((sign, index) => {
+        const arrowRotation = sign.direction === "right" ? -Math.PI / 2 : Math.PI / 2;
+
+        return (
+          <group key={`road-sign-${index}`} position={[sign.position[0], 0, sign.position[1]]}>
+            {/* Metal support pole */}
+            <mesh position={[0, poleHeight / 2, 0]} castShadow>
+              <boxGeometry args={[size * 0.045, poleHeight, size * 0.045]} />
+              <WorldMaterial tone="metal" />
+            </mesh>
+
+            {/* Directional sign panel */}
+            <mesh position={[0, poleHeight * 0.78, 0]} castShadow>
+              <boxGeometry args={[boardWidth, boardHeight, size * 0.075]} />
+              <WorldMaterial tone="foliage" />
+            </mesh>
+
+            {/* Destination label */}
+            <Text
+              position={[-size * 0.13, poleHeight * 0.78, size * 0.041]}
+              fontSize={size * 0.105}
+              color="#ffffff"
+              anchorX="center"
+              anchorY="middle"
+              maxWidth={size * 0.62}
+              textAlign="center"
+            >
+              {sign.destination}
+            </Text>
+
+            {/* Arrow shaft */}
+            <mesh position={[size * 0.38, poleHeight * 0.78, size * 0.045]}>
+              <boxGeometry args={[size * 0.16, size * 0.035, size * 0.025]} />
+              <meshBasicMaterial color="#ffffff" />
+            </mesh>
+
+            {/* Arrow head */}
+            <mesh
+              position={[size * 0.46, poleHeight * 0.78, size * 0.045]}
+              rotation={[0, 0, arrowRotation]}
+            >
+              <coneGeometry args={[size * 0.085, size * 0.13, 3]} />
+              <meshBasicMaterial color="#ffffff" />
+            </mesh>
+          </group>
+        );
+      })}
+    </>
+  );
+}
+export function WorldRoadsideShops({
+  positions,
+  size,
+}: {
+  positions: readonly [number, number][];
+  size: number;
+}) {
+  const shopWidth = size * 0.85;
+  const shopDepth = size * 0.75;
+  const wallHeight = size * 0.65;
+
+  return (
+    <>
+      {positions.map(([x, z], index) => (
+        <group key={`roadside-shop-${index}`} position={[x, 0, z]}>
+          {/* Shop floor */}
+          <mesh position={[0, size * 0.025, 0]} receiveShadow>
+            <boxGeometry args={[shopWidth, size * 0.05, shopDepth]} />
+            <WorldMaterial tone="concrete" />
+          </mesh>
+
+          {/* Left wall */}
+          <mesh position={[-shopWidth * 0.46, wallHeight / 2, 0]} castShadow>
+            <boxGeometry args={[size * 0.07, wallHeight, shopDepth]} />
+            <WorldMaterial tone="clay" />
+          </mesh>
+
+          {/* Right wall */}
+          <mesh position={[shopWidth * 0.46, wallHeight / 2, 0]} castShadow>
+            <boxGeometry args={[size * 0.07, wallHeight, shopDepth]} />
+            <WorldMaterial tone="clay" />
+          </mesh>
+
+          {/* Back wall */}
+          <mesh position={[0, wallHeight / 2, -shopDepth * 0.46]} castShadow>
+            <boxGeometry args={[shopWidth, wallHeight, size * 0.07]} />
+            <WorldMaterial tone="clay" />
+          </mesh>
+
+          {/* Roof */}
+          <mesh position={[0, wallHeight + size * 0.07, 0]} castShadow>
+            <boxGeometry args={[shopWidth * 1.12, size * 0.14, shopDepth * 1.12]} />
+            <WorldMaterial tone="accent" />
+          </mesh>
+
+          {/* Front counter */}
+          <mesh position={[0, size * 0.24, shopDepth * 0.43]} castShadow>
+            <boxGeometry args={[shopWidth * 0.72, size * 0.42, size * 0.12]} />
+            <WorldMaterial tone="timber" />
+          </mesh>
+
+          {/* Shop signboard */}
+          <mesh position={[0, wallHeight * 0.88, shopDepth * 0.49]}>
+            <boxGeometry args={[shopWidth * 0.78, size * 0.17, size * 0.055]} />
+            <WorldMaterial tone="sign" />
+          </mesh>
+
+          <Text
+            position={[0, wallHeight * 0.88, shopDepth * 0.49 + size * 0.03]}
+            fontSize={size * 0.105}
+            color="#ffffff"
+            anchorX="center"
+            anchorY="middle"
+          >
+            SHOP
+          </Text>
+
+          {/* Product crates */}
+          {[-1, 1].map((side) => (
+            <mesh
+              key={`crate-${side}`}
+              position={[side * shopWidth * 0.42, size * 0.12, shopDepth * 0.72]}
+              castShadow
+            >
+              <boxGeometry args={[size * 0.2, size * 0.24, size * 0.2]} />
+              <WorldMaterial tone="timber" />
+            </mesh>
+          ))}
+        </group>
+      ))}
+    </>
+  );
+}
+export function WorldMotorcycles({
+  positions,
+  size,
+}: {
+  positions: readonly [number, number][];
+  size: number;
+}) {
+  const colors = ["#c94b36", "#276b9a", "#43845c"];
+
+  return (
+    <>
+      {positions.map(([x, z], index) => {
+        const color = colors[index % colors.length] ?? "#c94b36";
+
+        return (
+          <group key={`motorcycle-${index}`} position={[x, 0, z]} rotation={[0, Math.PI / 2, 0]}>
+            {/* Front wheel */}
+            <mesh position={[0, size * 0.12, size * 0.3]} rotation={[Math.PI / 2, 0, 0]}>
+              <torusGeometry args={[size * 0.12, size * 0.035, 8, 16]} />
+              <WorldMaterial tone="slate" />
+            </mesh>
+
+            {/* Rear wheel */}
+            <mesh position={[0, size * 0.12, -size * 0.3]} rotation={[Math.PI / 2, 0, 0]}>
+              <torusGeometry args={[size * 0.12, size * 0.035, 8, 16]} />
+              <WorldMaterial tone="slate" />
+            </mesh>
+
+            {/* Main motorcycle body */}
+            <mesh position={[0, size * 0.3, 0]} castShadow>
+              <boxGeometry args={[size * 0.15, size * 0.18, size * 0.48]} />
+              <WorldMaterial tone="accent" color={color} />
+            </mesh>
+
+            {/* Fuel tank */}
+            <mesh position={[0, size * 0.43, size * 0.04]} castShadow>
+              <boxGeometry args={[size * 0.19, size * 0.15, size * 0.23]} />
+              <WorldMaterial tone="metal" color={color} />
+            </mesh>
+
+            {/* Seat */}
+            <mesh position={[0, size * 0.51, -size * 0.16]}>
+              <boxGeometry args={[size * 0.17, size * 0.055, size * 0.25]} />
+              <WorldMaterial tone="slate" />
+            </mesh>
+
+            {/* Handlebar */}
+            <mesh position={[0, size * 0.57, size * 0.29]}>
+              <boxGeometry args={[size * 0.38, size * 0.035, size * 0.045]} />
+              <WorldMaterial tone="metal" />
+            </mesh>
+
+            {/* Headlight */}
+            <mesh position={[0, size * 0.43, size * 0.3]}>
+              <sphereGeometry args={[size * 0.065, 10, 10]} />
+              <WorldMaterial tone="linen" />
+            </mesh>
+
+            {/* Exhaust */}
+            <mesh position={[size * 0.12, size * 0.19, -size * 0.2]}>
+              <cylinderGeometry args={[size * 0.025, size * 0.025, size * 0.3, 8]} />
+              <WorldMaterial tone="metal" />
+            </mesh>
+          </group>
+        );
+      })}
+    </>
+  );
+}
+export function WorldTricycles({
+  positions,
+  size,
+}: {
+  positions: readonly [number, number][];
+  size: number;
+}) {
+  const colors = ["#e3b542", "#43845c", "#d97732"];
+
+  const wheelRadius = size * 0.13;
+
+  return (
+    <>
+      {positions.map(([x, z], index) => {
+        const bodyColor = colors[index % colors.length] ?? "#e3b542";
+
+        return (
+          <group key={`tricycle-${index}`} position={[x, 0, z]} rotation={[0, Math.PI / 2, 0]}>
+            {/* Front wheel */}
+            <mesh
+              position={[0, wheelRadius, size * 0.38]}
+              rotation={[0, Math.PI / 2, 0]}
+              castShadow
+            >
+              <torusGeometry args={[wheelRadius, size * 0.035, 8, 16]} />
+              <WorldMaterial tone="slate" />
+            </mesh>
+
+            {/* Rear left wheel */}
+            <mesh
+              position={[-size * 0.25, wheelRadius, -size * 0.28]}
+              rotation={[0, Math.PI / 2, 0]}
+              castShadow
+            >
+              <torusGeometry args={[wheelRadius, size * 0.035, 8, 16]} />
+              <WorldMaterial tone="slate" />
+            </mesh>
+
+            {/* Rear right wheel */}
+            <mesh
+              position={[size * 0.25, wheelRadius, -size * 0.28]}
+              rotation={[0, Math.PI / 2, 0]}
+              castShadow
+            >
+              <torusGeometry args={[wheelRadius, size * 0.035, 8, 16]} />
+              <WorldMaterial tone="slate" />
+            </mesh>
+
+            {/* Lower body */}
+            <mesh position={[0, size * 0.28, -size * 0.02]} castShadow>
+              <boxGeometry args={[size * 0.65, size * 0.28, size * 0.62]} />
+              <WorldMaterial tone="accent" color={bodyColor} />
+            </mesh>
+
+            {/* Passenger cabin */}
+            <mesh position={[0, size * 0.57, -size * 0.08]} castShadow>
+              <boxGeometry args={[size * 0.58, size * 0.38, size * 0.4]} />
+              <WorldMaterial tone="accent" color={bodyColor} />
+            </mesh>
+
+            {/* Front windshield */}
+            <mesh position={[0, size * 0.59, size * 0.14]}>
+              <boxGeometry args={[size * 0.46, size * 0.27, size * 0.025]} />
+              <WorldMaterial tone="linen" color="#b9d9e8" />
+            </mesh>
+
+            {/* Roof canopy */}
+            <mesh position={[0, size * 0.79, -size * 0.07]} castShadow>
+              <boxGeometry args={[size * 0.72, size * 0.08, size * 0.56]} />
+              <WorldMaterial tone="timber" color={bodyColor} />
+            </mesh>
+
+            {/* Driver seat */}
+            <mesh position={[0, size * 0.43, size * 0.19]}>
+              <boxGeometry args={[size * 0.28, size * 0.08, size * 0.2]} />
+              <WorldMaterial tone="slate" />
+            </mesh>
+
+            {/* Headlight */}
+            <mesh position={[0, size * 0.38, size * 0.3]}>
+              <sphereGeometry args={[size * 0.055, 8, 8]} />
+              <WorldMaterial tone="linen" />
+            </mesh>
+          </group>
+        );
+      })}
+    </>
+  );
+}
+export function WorldStreetVendors({
+  positions,
+  size,
+}: {
+  positions: readonly [number, number][];
+  size: number;
+}) {
+  const canopyColors = ["#c94b36", "#e3b542", "#43845c"];
+
+  return (
+    <>
+      {positions.map(([x, z], index) => {
+        const canopyColor = canopyColors[index % canopyColors.length] ?? "#c94b36";
+
+        return (
+          <group key={`street-vendor-${index}`} position={[x, 0, z]}>
+            {/* Stall table */}
+            <mesh position={[0, size * 0.3, 0]} castShadow>
+              <boxGeometry args={[size * 0.75, size * 0.12, size * 0.48]} />
+              <WorldMaterial tone="timber" />
+            </mesh>
+
+            {/* Table support legs */}
+            {[-1, 1].flatMap((sideX) =>
+              [-1, 1].map((sideZ) => (
+                <mesh
+                  key={`leg-${sideX}-${sideZ}`}
+                  position={[sideX * size * 0.3, size * 0.14, sideZ * size * 0.17]}
+                >
+                  <boxGeometry args={[size * 0.045, size * 0.28, size * 0.045]} />
+                  <WorldMaterial tone="timber" />
+                </mesh>
+              )),
+            )}
+
+            {/* Umbrella canopy */}
+            <mesh position={[0, size * 1.05, 0]} castShadow>
+              <cylinderGeometry args={[size * 0.58, size * 0.58, size * 0.09, 8]} />
+              <WorldMaterial tone="accent" color={canopyColor} />
+            </mesh>
+
+            {/* Umbrella centre pole */}
+            <mesh position={[0, size * 0.68, 0]}>
+              <cylinderGeometry args={[size * 0.025, size * 0.025, size * 0.75, 8]} />
+              <WorldMaterial tone="metal" />
+            </mesh>
+
+            {/* Produce display */}
+            {[-1, 0, 1].map((side, itemIndex) => (
+              <mesh
+                key={`produce-${itemIndex}`}
+                position={[side * size * 0.2, size * 0.43, 0]}
+                castShadow
+              >
+                <sphereGeometry args={[size * 0.095, 8, 8]} />
+                <WorldMaterial tone={itemIndex === 1 ? "clay" : "foliage"} />
+              </mesh>
+            ))}
+
+            {/* Storage crate */}
+            <mesh position={[size * 0.48, size * 0.13, -size * 0.12]}>
+              <boxGeometry args={[size * 0.22, size * 0.26, size * 0.22]} />
+              <WorldMaterial tone="timber" />
+            </mesh>
+          </group>
+        );
+      })}
     </>
   );
 }

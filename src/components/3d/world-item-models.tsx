@@ -51,7 +51,7 @@ export function ShirtWorn({
 
 /** Worn tops by slug. Keys must match inventory_items.slug. */
 export const WORN_CLOTHING: Partial<Record<string, ComponentType<ItemModelProps>>> = {
-  shirt: ShirtWorn,
+  basic_outfit: ShirtWorn,
 };
 /** Trousers worn over the legs. Positions are estimates from the base legs and should be checked in the preview. */
 export function TrousersWorn({ h, color = "#3b4a5c" }: ItemModelProps & { color?: string }) {
@@ -85,11 +85,10 @@ export function ShoesWorn({ h, color = "#2a2a2a" }: ItemModelProps & { color?: s
   );
 }
 
-/** Worn bottoms and shoes by slug. Replace the placeholder keys with the real inventory_items.slug values. */
 export const WORN_BOTTOMS: Partial<Record<string, ComponentType<ItemModelProps>>> = {
-  // "your_trousers_slug": TrousersWorn,
+  sokoto: TrousersWorn,
 };
 
 export const WORN_SHOES: Partial<Record<string, ComponentType<ItemModelProps>>> = {
-  // "your_shoes_slug": ShoesWorn,
+  slippers: ShoesWorn,
 };

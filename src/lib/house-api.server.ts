@@ -3,6 +3,7 @@ type HouseApiDependencies = {
   state: (playerId: string) => Promise<unknown>;
   place: (playerId: string, itemId: string, slot: string) => Promise<unknown>;
   move: (playerId: string, fromSlot: string, x: number, y: number) => Promise<unknown>;
+  rotate: (playerId: string, fromSlot: string, rotation: number) => Promise<unknown>;
   remove: (playerId: string, slot: string) => Promise<unknown>;
   equip: (playerId: string, itemId: string) => Promise<unknown>;
   unequip: (playerId: string, slot: string) => Promise<unknown>;
@@ -106,6 +107,19 @@ export function createHouseApiHandlers(deps: HouseApiDependencies) {
           throw new Error("INVALID_REQUEST");
         return deps.move(playerId, value["fromSlot"], value["x"], value["y"]);
       }),
+      postRotate: (request: Request) =>
+        run(request, async (playerId) => {
+          const value = await body(request);
+          if (
+            typeof value["fromSlot"] !== "string" ||
+            typeof value["rotation"] !== "number" ||
+            !Number.isFinite(value["rotation"]) ||
+            value["rotation"] < 0 ||
+            value["rotation"] >= 360
+          )
+            throw new Error("INVALID_REQUEST");
+          return deps.rotate(playerId, value["fromSlot"], value["rotation"]);
+        }),
     postRemove: (request: Request) =>
       run(request, async (playerId) => {
         const value = await body(request);
@@ -159,6 +173,12 @@ async function productionHandlers() {
         p_x: x,
         p_y: y,
       }),
+      rotate: (playerId, fromSlot, rotation) =>
+        rpc("house_rotate_placement", {
+          p_player_id: playerId,
+          p_from_slot: fromSlot,
+          p_rotation: rotation,
+        }),
     remove: (playerId, slot) => rpc("house_remove", { p_player_id: playerId, p_slot: slot }),
     equip: (playerId, itemId) => rpc("outfit_equip", { p_player_id: playerId, p_item_id: itemId }),
     unequip: (playerId, slot) => rpc("outfit_unequip", { p_player_id: playerId, p_slot: slot }),
@@ -172,7 +192,7 @@ async function productionHandlers() {
 }
 
 export async function handleHouseRequest(
-  name: "state" | "place" | "move" | "remove" | "equip" | "unequip" | "buy",
+  name: "state" | "place" | "move" | "remove" | "equip" | "unequip" | "buy" | "rotate",
   request: Request,
 ) {
   const handlers = await productionHandlers();
@@ -182,5 +202,6 @@ export async function handleHouseRequest(
   if (name === "remove") return handlers.postRemove(request);
   if (name === "equip") return handlers.postEquip(request);
   if (name === "unequip") return handlers.postUnequip(request);
+  if (name === "rotate") return handlers.postRotate(request);
   return handlers.postBuy(request);
 }

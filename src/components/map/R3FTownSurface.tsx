@@ -5,10 +5,20 @@ import town from "@/data/osogbo-town.json";
 import type { PhaserMapData, PhaserMapCallbacks } from "./PhaserMapSurface";
 import {
   WorldCamera,
+  WorldCars,
+  WorldBusStops,
+  WorldRoadSigns,
+  WorldRoadsideShops,
+  WorldMotorcycles,
+  WorldTricycles,
+  WorldStreetVendors,
   WorldHouse,
   WorldMaterial,
   WorldPeople,
   WorldRoads,
+  WorldRoadMarkings,
+  WorldPedestrianCrossings,
+  WorldTrafficLights,
   WorldStreetLights,
   WorldWasteBins,
   WorldSidewalks,
@@ -140,10 +150,361 @@ export function R3FTownSurface(props: Props) {
       ),
     [],
   );
+  const roadMarkings = useMemo<WorldInstance[]>(() => {
+    const result: WorldInstance[] = [];
+    const rows = town.grid.rows;
+
+    rows.forEach((row, z) => {
+      Array.from(row).forEach((tile, x) => {
+        if (tile !== "r") return;
+
+        // Avoid placing markings beneath parked cars.
+        const occupiedByCar = town.grid.carCells.some(([carX, carZ]) => carX === x && carZ === z);
+
+        if (occupiedByCar) return;
+
+        const left = rows[z]?.[x - 1] === "r";
+        const right = rows[z]?.[x + 1] === "r";
+        const up = rows[z - 1]?.[x] === "r";
+        const down = rows[z + 1]?.[x] === "r";
+
+        const horizontal = left && right;
+        const vertical = up && down;
+
+        // Skip intersections, corners and road endpoints.
+        if (horizontal === vertical) return;
+
+        // Create a repeating dashed pattern.
+        if ((x + z) % 3 !== 0) return;
+
+        const p = point(x, z);
+
+        result.push({
+          position: [p[0], 0.067, p[2]],
+          scale: horizontal
+            ? [cell * 0.38, 0.012, cell * 0.035]
+            : [cell * 0.035, 0.012, cell * 0.38],
+        });
+      });
+    });
+
+    return result;
+  }, []);
+  const pedestrianCrossings = useMemo<WorldInstance[]>(() => {
+    const result: WorldInstance[] = [];
+    const rows = town.grid.rows;
+
+    rows.forEach((row, z) => {
+      Array.from(row).forEach((tile, x) => {
+        if (tile !== "r") return;
+
+        const left = rows[z]?.[x - 1] === "r";
+        const right = rows[z]?.[x + 1] === "r";
+        const up = rows[z - 1]?.[x] === "r";
+        const down = rows[z + 1]?.[x] === "r";
+
+        // Only target intersections where roads connect in both axes.
+        const isIntersection = (left || right) && (up || down);
+
+        if (!isIntersection) return;
+
+        // Avoid placing multiple crossings in adjacent intersection tiles.
+        if ((x + z) % 4 !== 0) return;
+
+        const horizontalRoad = left || right;
+        const p = point(x, z);
+
+        // Six narrow white stripes across the road.
+        for (let stripe = 0; stripe < 6; stripe++) {
+          const offset = (stripe - 2.5) * cell * 0.13;
+
+          result.push({
+            position: horizontalRoad ? [p[0] + offset, 0.075, p[2]] : [p[0], 0.075, p[2] + offset],
+            scale: horizontalRoad
+              ? [cell * 0.075, 0.012, cell * 0.42]
+              : [cell * 0.42, 0.012, cell * 0.075],
+          });
+        }
+      });
+    });
+
+    return result;
+  }, []);
+  const cars = useMemo<[number, number][]>(() => {
+    return town.grid.carCells.flatMap(([x, z]) => {
+      if (x === undefined || z === undefined) return [];
+
+      const position = point(x, z);
+
+      return [[position[0], position[2]] as [number, number]];
+    });
+  }, []);
+  const trafficLights = useMemo<[number, number][]>(() => {
+    const result: [number, number][] = [];
+    const rows = town.grid.rows;
+
+    rows.forEach((row, z) => {
+      Array.from(row).forEach((tile, x) => {
+        if (tile !== "r") return;
+
+        const left = rows[z]?.[x - 1] === "r";
+        const right = rows[z]?.[x + 1] === "r";
+        const up = rows[z - 1]?.[x] === "r";
+        const down = rows[z + 1]?.[x] === "r";
+
+        const horizontal = left || right;
+        const vertical = up || down;
+
+        // Only place traffic lights at connected intersections.
+        if (!horizontal || !vertical) return;
+
+        // Keep traffic lights relatively sparse.
+        if ((x + z) % 5 !== 0) return;
+
+        // Avoid placing them directly beneath parked cars.
+        const occupiedByCar = town.grid.carCells.some(([carX, carZ]) => carX === x && carZ === z);
+
+        if (occupiedByCar) return;
+
+        const p = point(x, z);
+
+        // Position the signal near the corner of the intersection.
+        result.push([p[0] + cell * 0.38, p[2] + cell * 0.38]);
+      });
+    });
+
+    return result;
+  }, []);
+  const busStops = useMemo<[number, number][]>(() => {
+    const result: [number, number][] = [];
+    const rows = town.grid.rows;
+
+    rows.forEach((row, z) => {
+      Array.from(row).forEach((tile, x) => {
+        if (tile !== "r") return;
+
+        // Bus stops should sit beside roads, not on them.
+        const neighbors = [
+          { x, z: z - 1 },
+          { x, z: z + 1 },
+          { x: x - 1, z },
+          { x: x + 1, z },
+        ];
+
+        const available = neighbors.find(({ x: nx, z: nz }) => {
+          const neighborTile = rows[nz]?.[nx];
+          if (neighborTile !== "g") return false;
+
+          // Keep stops away from intersections and car positions.
+          const adjacentRoads = [
+            rows[nz - 1]?.[nx],
+            rows[nz + 1]?.[nx],
+            rows[nz]?.[nx - 1],
+            rows[nz]?.[nx + 1],
+          ].filter((value) => value === "r").length;
+
+          if (adjacentRoads !== 1) return false;
+
+          const occupiedByCar = town.grid.carCells.some(
+            ([carX, carZ]) => carX === nx && carZ === nz,
+          );
+
+          return !occupiedByCar;
+        });
+
+        if (!available) return;
+
+        const p = point(available.x, available.z);
+        result.push([p[0], p[2]]);
+      });
+    });
+
+    // Keep only two stops, spaced apart.
+    return result.filter((_, index) => index % 4 === 0).slice(0, 2);
+  }, []);
+  const roadSigns = useMemo(() => {
+    const candidates: [number, number][] = [];
+    const rows = town.grid.rows;
+
+    rows.forEach((row, z) => {
+      Array.from(row).forEach((tile, x) => {
+        if (tile !== "r") return;
+
+        const neighbors = [
+          { x, z: z - 1 },
+          { x, z: z + 1 },
+          { x: x - 1, z },
+          { x: x + 1, z },
+        ];
+
+        const available = neighbors.find(({ x: nx, z: nz }) => {
+          if (rows[nz]?.[nx] !== "g") return false;
+
+          const roadCount = [
+            rows[nz - 1]?.[nx],
+            rows[nz + 1]?.[nx],
+            rows[nz]?.[nx - 1],
+            rows[nz]?.[nx + 1],
+          ].filter((value) => value === "r").length;
+
+          if (roadCount !== 1) return false;
+
+          return !town.grid.carCells.some(([carX, carZ]) => carX === nx && carZ === nz);
+        });
+
+        if (!available) return;
+
+        const p = point(available.x, available.z);
+
+        const nearBusStop = busStops.some(
+          ([busX, busZ]) => Math.hypot(p[0] - busX, p[2] - busZ) < cell * 2,
+        );
+
+        if (!nearBusStop) {
+          candidates.push([p[0], p[2]]);
+        }
+      });
+    });
+
+    const destinations = [
+      { destination: "Osun Mall", direction: "right" as const },
+      { destination: "Cedar Bank", direction: "left" as const },
+      { destination: "Meridian Bank", direction: "right" as const },
+    ];
+
+    return candidates
+      .filter((_, index) => index % 6 === 0)
+      .slice(0, 3)
+      .map(([x, z], index) => ({
+        position: [x, z] as [number, number],
+        ...destinations[index]!,
+      }));
+  }, [busStops]);
+  const roadsideShops = useMemo<[number, number][]>(() => {
+    const candidates: [number, number][] = [];
+    const rows = town.grid.rows;
+
+    rows.forEach((row, z) => {
+      Array.from(row).forEach((tile, x) => {
+        if (tile !== "r") return;
+
+        // Place shops north of the road so their entrances face the road.
+        const shopX = x;
+        const shopZ = z - 1;
+
+        if (rows[shopZ]?.[shopX] !== "g") return;
+
+        const roadCount = [
+          rows[shopZ - 1]?.[shopX],
+          rows[shopZ + 1]?.[shopX],
+          rows[shopZ]?.[shopX - 1],
+          rows[shopZ]?.[shopX + 1],
+        ].filter((value) => value === "r").length;
+
+        if (roadCount !== 1) return;
+
+        const occupiedByCar = town.grid.carCells.some(
+          ([carX, carZ]) => carX === shopX && carZ === shopZ,
+        );
+
+        if (occupiedByCar) return;
+
+        const p = point(shopX, shopZ);
+
+        const nearBusStop = busStops.some(
+          ([busX, busZ]) => Math.hypot(p[0] - busX, p[2] - busZ) < cell * 2,
+        );
+
+        const nearRoadSign = roadSigns.some(
+          (sign) => Math.hypot(p[0] - sign.position[0], p[2] - sign.position[1]) < cell * 2,
+        );
+
+        if (nearBusStop || nearRoadSign) return;
+
+        candidates.push([p[0], p[2]]);
+      });
+    });
+
+    // Keep shops separated so their structures do not overlap.
+    const selected: [number, number][] = [];
+
+    for (const candidate of candidates) {
+      const tooClose = selected.some(
+        ([x, z]) => Math.hypot(candidate[0] - x, candidate[1] - z) < cell * 2,
+      );
+
+      if (!tooClose) selected.push(candidate);
+
+      if (selected.length === 2) break;
+    }
+
+    return selected;
+  }, [busStops, roadSigns]);
+  const motorcycles = useMemo<[number, number][]>(() => {
+    return roadsideShops.map(([x, z]) => [x + cell * 0.72, z + cell * 0.1]);
+  }, [roadsideShops]);
+  const tricycles = useMemo<[number, number][]>(() => {
+    return roadsideShops.map(([x, z]) => [x - cell * 0.9, z + cell * 0.15]);
+  }, [roadsideShops]);
+  const streetVendors = useMemo<[number, number][]>(() => {
+    const candidates: [number, number][] = [];
+    const rows = town.grid.rows;
+
+    rows.forEach((row, z) => {
+      Array.from(row).forEach((tile, x) => {
+        if (tile !== "r") return;
+
+        const neighbors = [
+          { x, z: z - 1 },
+          { x, z: z + 1 },
+          { x: x - 1, z },
+          { x: x + 1, z },
+        ];
+
+        for (const { x: nx, z: nz } of neighbors) {
+          if (rows[nz]?.[nx] !== "g") continue;
+
+          const p = point(nx, nz);
+
+          const tooClose = (locations: readonly [number, number][], distance: number) =>
+            locations.some(
+              ([otherX, otherZ]) => Math.hypot(p[0] - otherX, p[2] - otherZ) < cell * distance,
+            );
+
+          if (tooClose(busStops, 2)) continue;
+          if (tooClose(roadsideShops, 1.8)) continue;
+          if (tooClose(motorcycles, 1.5)) continue;
+          if (tooClose(tricycles, 1.5)) continue;
+          if (
+            roadSigns.some(
+              (sign) => Math.hypot(p[0] - sign.position[0], p[2] - sign.position[1]) < cell * 1.5,
+            )
+          )
+            continue;
+
+          candidates.push([p[0], p[2]]);
+          break;
+        }
+      });
+    });
+
+    const selected: [number, number][] = [];
+
+    for (const candidate of candidates) {
+      const tooClose = selected.some(
+        ([x, z]) => Math.hypot(candidate[0] - x, candidate[1] - z) < cell * 2,
+      );
+
+      if (!tooClose) selected.push(candidate);
+
+      if (selected.length === 2) break;
+    }
+
+    return selected;
+  }, [busStops, roadsideShops, motorcycles, tricycles, roadSigns]);
   const { sidewalks, curbs } = useMemo(() => {
     const occupied = new Set<string>();
 
-    // Reserve building footprints.
     town.grid.buildings.forEach((building) => {
       occupied.add(`${building.x},${building.z}`);
       occupied.add(`${building.x + 1},${building.z}`);
@@ -151,7 +512,6 @@ export function R3FTownSurface(props: Props) {
       occupied.add(`${building.x + 1},${building.z + 1}`);
     });
 
-    // Reserve water and plots.
     [...town.grid.waterCells, ...town.grid.plotCells].forEach(([x, z]) => {
       occupied.add(`${x},${z}`);
     });
@@ -163,33 +523,34 @@ export function R3FTownSurface(props: Props) {
     const curbWidth = cell * 0.09;
 
     const directions = [
-      { dx: 0, dz: -1, side: "north" },
-      { dx: 0, dz: 1, side: "south" },
-      { dx: -1, dz: 0, side: "west" },
-      { dx: 1, dz: 0, side: "east" },
+      { dx: 0, dz: -1 },
+      { dx: 0, dz: 1 },
+      { dx: -1, dz: 0 },
+      { dx: 1, dz: 0 },
     ] as const;
 
     town.grid.rows.forEach((row, z) => {
       Array.from(row).forEach((tile, x) => {
         if (tile !== "r") return;
 
-        const center = point(x + 0.5, z + 0.5);
+        // Important: align with the existing road geometry.
+        const center = point(x, z);
 
-        directions.forEach(({ dx, dz, side }) => {
+        const greenNeighbors = new Set<string>();
+
+        directions.forEach(({ dx, dz }) => {
           const neighborX = x + dx;
           const neighborZ = z + dz;
-
           const neighborRow = town.grid.rows[neighborZ];
 
-          // Only build sidewalks beside green ground tiles.
           if (!neighborRow || neighborRow[neighborX] !== "g") return;
-
           if (occupied.has(`${neighborX},${neighborZ}`)) return;
 
-          const horizontal = side === "north" || side === "south";
+          greenNeighbors.add(`${dx},${dz}`);
+
+          const horizontal = dx === 0;
 
           const sidewalkX = center[0] + dx * (cell / 2 + sidewalkWidth / 2);
-
           const sidewalkZ = center[2] + dz * (cell / 2 + sidewalkWidth / 2);
 
           sidewalkItems.push({
@@ -197,12 +558,38 @@ export function R3FTownSurface(props: Props) {
             scale: horizontal ? [cell, 0.05, sidewalkWidth] : [sidewalkWidth, 0.05, cell],
           });
 
-          // Raised curb sits directly on the road boundary.
           curbItems.push({
             position: [center[0] + dx * (cell / 2), 0.105, center[2] + dz * (cell / 2)],
             scale: horizontal ? [cell, 0.09, curbWidth] : [curbWidth, 0.09, cell],
           });
         });
+
+        // Fill outer sidewalk corners where both adjoining
+        // pedestrian edges and the diagonal ground tile exist.
+        for (const dx of [-1, 1] as const) {
+          for (const dz of [-1, 1] as const) {
+            const hasHorizontalEdge = greenNeighbors.has(`0,${dz}`);
+            const hasVerticalEdge = greenNeighbors.has(`${dx},0`);
+
+            if (!hasHorizontalEdge || !hasVerticalEdge) continue;
+
+            const diagonalX = x + dx;
+            const diagonalZ = z + dz;
+            const diagonalRow = town.grid.rows[diagonalZ];
+
+            if (!diagonalRow || diagonalRow[diagonalX] !== "g") continue;
+            if (occupied.has(`${diagonalX},${diagonalZ}`)) continue;
+
+            sidewalkItems.push({
+              position: [
+                center[0] + dx * (cell / 2 + sidewalkWidth / 2),
+                0.035,
+                center[2] + dz * (cell / 2 + sidewalkWidth / 2),
+              ],
+              scale: [sidewalkWidth, 0.05, sidewalkWidth],
+            });
+          }
+        }
       });
     });
 
@@ -211,6 +598,7 @@ export function R3FTownSurface(props: Props) {
       curbs: curbItems,
     };
   }, []);
+
   const trees = useMemo<WorldTree[]>(() => {
     const occupied = new Set<string>();
 
@@ -418,14 +806,25 @@ export function R3FTownSurface(props: Props) {
           fallback={<span>WebGL is unavailable. Use the accessible map controls.</span>}
         >
           <Ready onReady={props.onReady} />
-          <WorldCamera width={16 * cell} depth={12 * cell} zoom={1.3} />
+          <WorldCamera width={24 * cell} depth={18 * cell} zoom={1.3} />
           <MapLighting size={24 * cell} />
           <mesh position={[0, -0.12, 0]} receiveShadow>
             <boxGeometry args={[24 * cell, 0.2, 18 * cell]} />
             <WorldMaterial tone="ground" />
           </mesh>
+
           <WorldRoads items={roads} />
+          <WorldRoadMarkings items={roadMarkings} />
+          <WorldPedestrianCrossings items={pedestrianCrossings} />
+          <WorldTrafficLights positions={trafficLights} size={cell} />
+          <WorldCars positions={cars} size={cell} />
           <WorldSidewalks sidewalks={sidewalks} curbs={curbs} />
+          <WorldBusStops positions={busStops} size={cell} />
+          <WorldRoadSigns positions={roadSigns} size={cell} />
+          <WorldRoadsideShops positions={roadsideShops} size={cell} />
+          <WorldMotorcycles positions={motorcycles} size={cell} />
+          <WorldTricycles positions={tricycles} size={cell} />
+          <WorldStreetVendors positions={streetVendors} size={cell} />
           <WorldStreetLights positions={streetLights} size={cell} />
           <WorldWasteBins positions={wasteBins} size={cell} />
           <WorldInstances

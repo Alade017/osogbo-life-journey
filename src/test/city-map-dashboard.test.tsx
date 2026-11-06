@@ -13,6 +13,7 @@ vi.mock("@tanstack/react-router", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@tanstack/react-router")>();
   return {
     ...actual,
+    useNavigate: () => testState.navigate,
     Link: ({ to, children, ...props }: { to: string; children: ReactNode; className?: string }) => (
       <a href={to} {...props}>
         {children}
@@ -20,6 +21,13 @@ vi.mock("@tanstack/react-router", async (importOriginal) => {
     ),
   };
 });
+const testState = vi.hoisted(() => ({
+  navigate: vi.fn(),
+  travelToLocation: vi.fn(),
+  character: null as Record<string, unknown> | null,
+  locations: [] as Record<string, unknown>[],
+  wallet: null as Record<string, unknown> | null,
+}));
 vi.mock("@/components/map/PhaserMapSurface", () => ({
   PhaserMapSurface: ({ onUnavailable }: { onUnavailable: () => void }) => {
     useEffect(() => onUnavailable(), [onUnavailable]);
@@ -35,16 +43,26 @@ vi.mock("@/hooks/use-city-events", () => ({
 
 vi.mock("@/lib/map-api", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/map-api")>()),
-  requestAvailableMapLandmarks: vi.fn(async () => townData.landmarks.map((place) => place.id)),
+  requestAvailableMapLandmarks: vi.fn(async () => [
+    ...townData.landmarks.map((place) => place.id),
+    "olaiya-junction",
+    "oja-oba-market",
+  ]),
+  requestMapLandmark: vi.fn(async () => ({ landmark: { min_age: 0 } })),
 }));
 vi.mock("@/lib/game", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/game")>()),
+  rpc: {
+    ...(await importOriginal<typeof import("@/lib/game")>()).rpc,
+    travelToLocation: testState.travelToLocation,
+  },
   q: Object.fromEntries(
     [
       "character",
       "rentStatus",
       "jobs",
       "locations",
+      "wallet",
       "billboards",
       "advertisements",
       "playerAdvertisements",
@@ -52,7 +70,12 @@ vi.mock("@/lib/game", async (importOriginal) => ({
       name,
       () => ({
         queryKey: [name],
-        queryFn: async () => (name === "character" || name === "rentStatus" ? null : []),
+        queryFn: async () => {
+          if (name === "character") return testState.character;
+          if (name === "locations") return testState.locations;
+          if (name === "wallet") return testState.wallet;
+          return name === "rentStatus" ? null : [];
+        },
       }),
     ]),
   ),
@@ -63,6 +86,11 @@ const clients: QueryClient[] = [];
 
 beforeEach(() => {
   eventState.events = [];
+  testState.navigate.mockReset();
+  testState.travelToLocation.mockReset();
+  testState.character = null;
+  testState.locations = [];
+  testState.wallet = null;
   class TestResizeObserver {
     constructor(private readonly callback: ResizeObserverCallback) {}
     observe() {
@@ -84,15 +112,53 @@ afterEach(() => {
 function renderDashboard(currentSlug?: string) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   if (currentSlug) {
+    testState.character = {
+      id: "test-character",
+      user_id: "test-account",
+      current_location_id: "confirmed-location",
+      level: 5,
+    };
+    testState.locations = [
+      { id: "confirmed-location", slug: currentSlug, name: "Current location" },
+      {
+        id: "destination-city-centre",
+        slug: "city-centre",
+        name: "City Centre",
+        travel_fare: 100,
+        travel_minutes: 10,
+        level_required: 1,
+        metadata: { available_transport_modes: ["walking", "danfo"] },
+      },
+      {
+        id: "destination-oja-oba",
+        slug: "oja-oba",
+        name: "Oja-Oba Market",
+        travel_fare: 100,
+        travel_minutes: 10,
+        level_required: 1,
+        metadata: { available_transport_modes: ["walking", "danfo"] },
+      },
+      {
+        id: "destination-cedar-bank",
+        slug: "cedar-bank",
+        name: "Cedar Bank",
+        travel_fare: 100,
+        travel_minutes: 10,
+        level_required: 1,
+        metadata: { available_transport_modes: ["walking", "danfo"] },
+      },
+    ];
+    testState.wallet = { balance: 10000 };
     queryClient.setQueryDefaults(["character"], { staleTime: Infinity });
     queryClient.setQueryDefaults(["locations"], { staleTime: Infinity });
-    queryClient.setQueryData(["character"], { current_location_id: "confirmed-location" });
-    queryClient.setQueryData(["locations"], [{ id: "confirmed-location", slug: currentSlug }]);
+    queryClient.setQueryData(["character"], testState.character);
+    queryClient.setQueryData(["locations"], testState.locations);
+    queryClient.setQueryData(["wallet"], testState.wallet);
   }
   clients.push(queryClient);
   queryClient.setQueryData(
     ["mapAvailableLandmarks"],
-    [...townData.landmarks.map((place) => place.id), "olaiya-junction"],
+    [...townData.landmarks.map((place) => place.id), "olaiya-junction", "oja-oba-market"],
   );
   return render(
     <QueryClientProvider client={queryClient}>
@@ -112,11 +178,12 @@ describe("isometric town map", () => {
     expect(screen.queryByRole("link", { name: "Visit Oja-Oba Market" })).not.toBeInTheDocument();
   });
 
-  it("offers travel rather than walking when another district is confirmed", () => {
+  it("offers the transport selector rather than walking when another district is confirmed", async () => {
     renderDashboard("student-district");
-    expect(screen.getByRole("link", { name: "Visit Oja-Oba Market" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Visit Oja-Oba Market" }));
+    expect(await screen.findByRole("dialog")).toBeVisible();
     expect(screen.queryByRole("link", { name: "Walk Oja-Oba Market" })).not.toBeInTheDocument();
-  });
+  }, 15_000);
 
   it("matches a selected venue with its server event landmark ID", async () => {
     eventState.events = [
@@ -141,8 +208,72 @@ describe("isometric town map", () => {
         name: /Town market,/i,
       }),
     );
+    fireEvent.click(await screen.findByRole("button", { name: "Place details and activities" }));
     expect(await screen.findByText(/Town Market Day · Until/)).toBeVisible();
   });
+
+  it("opens the transport selector on landmark selection and cancellation does not travel", async () => {
+    renderDashboard("residential");
+    fireEvent.click(screen.getByRole("button", { name: "Travel to Olaiya" }));
+    expect(await screen.findByRole("dialog")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(testState.travelToLocation).not.toHaveBeenCalled();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  }, 15_000);
+
+  it("sends one RPC with the selected mode and navigates only after saved location refresh", async () => {
+    renderDashboard("residential");
+    testState.travelToLocation.mockImplementation(
+      async ({ locationId }: { locationId: string; mode: string }) => {
+        testState.character = {
+          ...testState.character,
+          current_location_id: locationId,
+        };
+        return { location: "city-centre" };
+      },
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Travel to Olaiya" }));
+    await screen.findByText("Destination access confirmed.");
+    fireEvent.click(screen.getByRole("radio", { name: /Danfo/ }));
+    const confirmButton = screen.getByRole("button", { name: "Confirm and travel" });
+    fireEvent.click(confirmButton);
+    fireEvent.click(confirmButton);
+
+    await vi.waitFor(() => {
+      expect(testState.travelToLocation).toHaveBeenCalledTimes(1);
+      expect(testState.navigate).toHaveBeenCalledWith({ to: "/neighborhood" });
+    });
+    expect(testState.travelToLocation).toHaveBeenCalledWith({
+      locationId: "destination-city-centre",
+      mode: "danfo",
+    });
+  }, 15_000);
+
+  it("keeps the player on the map after failed travel", async () => {
+    renderDashboard("residential");
+    testState.travelToLocation.mockRejectedValueOnce(new Error("INSUFFICIENT_FUNDS"));
+    fireEvent.click(screen.getByRole("button", { name: "Travel to Olaiya" }));
+    await screen.findByText("Destination access confirmed.");
+    fireEvent.click(screen.getByRole("radio", { name: /Danfo/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm and travel" }));
+
+    await vi.waitFor(() => expect(testState.travelToLocation).toHaveBeenCalledTimes(1));
+    expect(await screen.findByRole("alert")).toHaveTextContent("INSUFFICIENT_FUNDS");
+    expect(testState.navigate).not.toHaveBeenCalled();
+    expect(testState.character?.["current_location_id"]).toBe("confirmed-location");
+  }, 15_000);
+
+  it("does not enable travel to a destination without a playable neighborhood", async () => {
+    renderDashboard("residential");
+    fireEvent.click(
+      within(screen.getByRole("list", { name: "Places on the map" })).getByRole("button", {
+        name: /Cedar Bank,/i,
+      }),
+    );
+    expect(await screen.findByText(/does not have a playable neighborhood/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Confirm and travel" })).toBeDisabled();
+    expect(testState.travelToLocation).not.toHaveBeenCalled();
+  }, 15_000);
   it("renders the Phaser overview fallback and a keyboard-accessible list", async () => {
     const { container } = renderDashboard();
     expect(

@@ -4,9 +4,13 @@ import { describe, expect, it, vi } from "vitest";
 import { HouseEditSheets } from "@/components/game/housing/HouseEditSheets";
 
 vi.mock("@/lib/game", () => ({ formatNaira: (amount: number) => `₦${amount}` }));
+vi.mock("@/components/game/housing/CatalogThumbnail", () => ({
+  CatalogThumbnailQueue: () => null,
+  requestCatalogThumb: () => {},
+  useCatalogThumb: () => null,
+}));
 
 const slot = { id: "bed-1", slot_type: "bed", x: 25, y: 40 };
-const outfit = { head: null, top: null, bottom: null, shoes: null, accessory: null };
 
 function props(): ComponentProps<typeof HouseEditSheets> {
   return {
@@ -18,19 +22,18 @@ function props(): ComponentProps<typeof HouseEditSheets> {
     catalog: [
       { id: "bed", category: "furniture", slot_type: "bed", art_key: "bed", price_minor: 1400 },
     ],
-    outfit,
     slots: [slot],
     placements: [],
     selectedSlot: null,
     selectedPlacement: null,
+    singleRoom: true,
     onClose: vi.fn(),
     onPlace: vi.fn(),
     onSelectSlot: vi.fn(),
     onRemove: vi.fn(),
     onMove: vi.fn(),
-    onEquip: vi.fn(),
-    onUnequip: vi.fn(),
     onBuy: vi.fn(),
+    onRotate: vi.fn(),
   };
 }
 
@@ -150,5 +153,64 @@ describe("household item panel", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Bedroom" }));
     fireEvent.click(screen.getByRole("button", { name: "Choose slot" }));
     expect(input.onSelectSlot).toHaveBeenCalledWith(slot);
+  });
+
+  it("keeps avatar equipment out of the furniture catalogue", () => {
+    const input = props();
+    input.catalog.push({
+      id: "blue-shirt",
+      category: "outfit",
+      slot_type: "top",
+      art_key: "blue-shirt",
+      price_minor: 900,
+    });
+    input.inventory.push({
+      id: "owned-shirt",
+      item_id: "blue-shirt",
+      category: "outfit",
+      slot_type: "top",
+      art_key: "blue-shirt",
+      price_minor: 900,
+      quantity: 1,
+    });
+    render(<HouseEditSheets {...input} />);
+    expect(screen.queryByRole("tab", { name: "Avatar" })).not.toBeInTheDocument();
+    expect(screen.queryByText("blue shirt")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Equip" })).not.toBeInTheDocument();
+  });
+
+  it("saves a selected accessory angle through the rotation callback", () => {
+    const input = props();
+    input.selectedPlacement = {
+      id: "bed-placement",
+      item_id: "bed",
+      slot: slot.id,
+      slot_type: "bed",
+      category: "furniture",
+      art_key: "bed",
+      rotation_deg: 15,
+    };
+    render(<HouseEditSheets {...input} />);
+    const slider = screen.getByRole("slider", { name: "Turn angle" });
+    expect(slider).toHaveAttribute("aria-valuetext", "15 degrees");
+    fireEvent.change(slider, { target: { value: "120" } });
+    fireEvent.pointerUp(slider);
+    expect(input.onRotate).toHaveBeenCalledWith(input.selectedPlacement, 120);
+  });
+
+  it("turns a selected accessory by 45 degrees", () => {
+    const input = props();
+    input.selectedPlacement = {
+      id: "bed-placement",
+      item_id: "bed",
+      slot: slot.id,
+      slot_type: "bed",
+      category: "furniture",
+      art_key: "bed",
+      rotation_deg: 315,
+    };
+    render(<HouseEditSheets {...input} />);
+    fireEvent.click(screen.getByRole("button", { name: "Turn bed 45 degrees" }));
+    expect(input.onRotate).toHaveBeenCalledWith(input.selectedPlacement, 0);
   });
 });

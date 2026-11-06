@@ -119,7 +119,15 @@ describe("phone navigation controller", () => {
 });
 
 it("reserves all world paths and launcher aliases for full-page rendering", () => {
-  for (const path of ["/home", "/house/", "/map", "/neighborhood", "/location/cedar-bank"]) {
+  for (const path of [
+    "/home",
+    "/house/",
+    "/map",
+    "/neighborhood",
+    "/location/cedar-bank",
+    "/bank/cedar-bank",
+    "/bank/meridian-bank",
+  ]) {
     expect(isFullPageWorldPath(path)).toBe(true);
     expect(phoneAppForPath(path)).toBeUndefined();
   }

@@ -199,6 +199,36 @@
   font-size: 0.7rem;
 }
 
+.neighborhood-action-card {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: var(--shape-button);
+  padding: 0.65rem 0.9rem;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 0.88rem;
+  font-weight: 750;
+  text-align: left;
+}
+
+.neighborhood-action-card:hover:not(:disabled) {
+  background: var(--color-primary-soft);
+}
+
+.neighborhood-action-card:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.neighborhood-action-card:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
 .neighborhood-controls-row {
   display: flex;
   min-height: 112px;
@@ -235,11 +265,19 @@
 }
 
 .neighborhood-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
   margin: 0;
   border-top: 1px solid color-mix(in srgb, var(--destructive) 20%, var(--border));
   padding: 0.75rem 1rem;
   color: var(--destructive);
   font-size: 0.84rem;
+}
+
+.neighborhood-error p {
+  margin: 0;
 }
 
 .neighborhood-message {

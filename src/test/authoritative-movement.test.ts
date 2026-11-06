@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  canRestoreNeighborhoodCheckpoint,
   canOccupyNeighborhoodPoint,
   parseMovementIntent,
   PLAYER_SPEED,
@@ -30,6 +31,21 @@ describe("authoritative neighborhood movement", () => {
   it("keeps movement within world bounds", () => {
     expect(stepAuthoritativePosition({ x: 13.99, y: 6 }, { x: 1, y: 0 }, 0.1, origin).x).toBe(14);
     expect(stepAuthoritativePosition({ x: 0, y: 6 }, { x: -1, y: 0 }, 0.1, origin).x).toBe(0);
+  });
+
+  it("restores only in-bounds, navigable saved checkpoints", () => {
+    const area = neighborhoodAreaForSlug("student-district");
+    const building = area.objects.find((object) => object.kind === "market")!;
+    const blocked = toWorld({ x: building.x, y: building.y - 35 }, origin);
+    expect(
+      canRestoreNeighborhoodCheckpoint({ x: 5, y: 9 }, origin, area.objects, area.obstacles),
+    ).toBe(true);
+    expect(canRestoreNeighborhoodCheckpoint(blocked, origin, area.objects, area.obstacles)).toBe(
+      false,
+    );
+    expect(
+      canRestoreNeighborhoodCheckpoint({ x: 15, y: 9 }, origin, area.objects, area.obstacles),
+    ).toBe(false);
   });
 
   it("blocks building footprints on the server movement model", () => {

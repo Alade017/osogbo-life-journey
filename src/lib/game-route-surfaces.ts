@@ -10,7 +10,9 @@ export function normalisePath(pathname: string): string {
 
 export function surfaceForPath(pathname: string): RouteSurface {
   const path = normalisePath(pathname);
-  return (FULL_SCREEN_ROUTES as readonly string[]).includes(path) ? "full" : "phone";
+  return (FULL_SCREEN_ROUTES as readonly string[]).includes(path) || /^\/bank\/[^/]+$/.test(path)
+    ? "full"
+    : "phone";
 }
 
 /** "/location/cedar-bank" -> "Location", "/create-character" -> "Create character". */

@@ -1,6 +1,6 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useReducer, useRef } from "react";
+import { useEffect, useMemo, useReducer, useRef } from "react";
 import { toast } from "sonner";
 import { ArrowLeft, Briefcase, GraduationCap, MapPin, Store, Utensils } from "lucide-react";
 import { formatNaira, q, rpc, useGameAction } from "@/lib/game";
@@ -27,11 +27,13 @@ import { INITIAL_GAME_TIME } from "@/lib/game-time";
 import { CityEventParticipation } from "@/components/game/CityEventParticipation";
 import { LocationActivities } from "@/components/game/LocationActivities";
 import { PartyVenuePanel } from "@/components/game/PartyVenuePanel";
+import { LocationVenueScene } from "@/components/game/LocationVenueScene";
 import {
   adjustedTripMinutes,
   travelConditionAdjustment,
   weatherForDay,
 } from "@/lib/world-simulation";
+import { hasAuthoritativeLocationArrival } from "@/lib/location-venue-designs";
 
 export const Route = createFileRoute("/_authenticated/_game/location/$slug")({
   head: () => pageMeta("District", "Visit a district of Osogbo."),
@@ -39,6 +41,7 @@ export const Route = createFileRoute("/_authenticated/_game/location/$slug")({
 });
 
 function LocationPage() {
+  const navigate = useNavigate();
   const { data: worldTime } = useWorldClock();
   const gameTime = worldTime ?? INITIAL_GAME_TIME;
   const weather = weatherForDay(gameTime.day);
@@ -65,7 +68,7 @@ function LocationPage() {
   });
   const loc = locations?.find((l) => l.slug === slug);
   const isOjaObaMarket = loc?.slug === "oja-oba";
-  const availableModes = loc ? getAvailableTravelModes(loc.metadata) : [];
+  const availableModes = useMemo(() => (loc ? getAvailableTravelModes(loc.metadata) : []), [loc]);
   const origin = locations?.find((location) => location.id === character?.current_location_id);
   const savedPlayerCoordinates =
     character &&
@@ -118,7 +121,7 @@ function LocationPage() {
   const conditions = travelConditionAdjustment(travelState.mode, gameTime, weather);
   const travelMessage = [routeMessage, conditions.explanation].filter(Boolean).join(" ") || null;
   const visit = visits?.find((v) => v.location_id === loc?.id);
-  const isHere = character?.current_location_id === loc?.id;
+  const isHere = hasAuthoritativeLocationArrival(character?.current_location_id, loc?.id);
   const meetsLevelRequirement = !!character && !!loc && character.level >= loc.level_required;
   const localPlaces = places?.filter((place) => place.location_id === loc?.id) ?? [];
   const localJobs = jobs?.filter((job) => job.location_id === loc?.id && job.is_available) ?? [];
@@ -151,6 +154,9 @@ function LocationPage() {
           ? `Arrived in ${r.location} · ${r.mode} · −${formatNaira(r.fare)} · +10 XP`
           : `Arrived in ${r.location} · ${r.mode} · −${formatNaira(r.fare)}`,
       );
+      if (loc?.type === "bank") {
+        void navigate({ to: "/bank/$slug", params: { slug: loc.slug } });
+      }
     },
     onError: (error) => dispatchTravel({ type: "fail", message: error.message }),
   });
@@ -176,6 +182,31 @@ function LocationPage() {
     },
     [],
   );
+
+  useEffect(() => {
+    if (!loc || !character || loc.type !== "bank" || isHere || travelState.status !== "idle")
+      return;
+    const mode = availableModes.includes("danfo") ? "danfo" : availableModes[0];
+    if (!mode) return;
+    const estimate = estimateTrip(mode, loc.travel_fare, loc.travel_minutes);
+    dispatchTravel({
+      type: "select_destination",
+      originId: character?.current_location_id ?? null,
+      destinationId: loc.id,
+      destinationName: loc.name,
+      fare: estimate.fare,
+      estimatedMinutes: adjustedTripMinutes(estimate.minutes, mode, gameTime),
+      mode,
+    });
+  }, [
+    availableModes,
+    character,
+    character?.current_location_id,
+    gameTime,
+    isHere,
+    loc,
+    travelState.status,
+  ]);
 
   function selectDestination() {
     if (!loc) return;
@@ -305,7 +336,7 @@ function LocationPage() {
             >
               Choose destination
             </Button>
-          ) : (
+          ) : loc.type !== "bank" ? (
             <Button
               variant="plain"
               onClick={() => visitAction.mutate(loc.id)}
@@ -313,7 +344,7 @@ function LocationPage() {
             >
               <MapPin /> {visitAction.isPending ? "Checking in…" : "Spend time here"}
             </Button>
-          )}
+          ) : null}
           {isHere && loc.slug === "student-district" && (
             <Link
               to="/education"
@@ -348,10 +379,17 @@ function LocationPage() {
         </p>
       </div>
 
+      {isHere && <LocationVenueScene key={loc.id} slug={loc.slug} locationName={loc.name} />}
+
       {isHere && isPlayableDistrict(loc.slug) && (
         <Button asChild variant="plain">
           <Link to="/neighborhood">
-            Walk {loc.slug === "oja-oba" ? "Oja-Oba Market" : "Olaiya"}
+            Walk{" "}
+            {loc.slug === "city-centre"
+              ? "Olaiya"
+              : loc.slug === "oja-oba"
+                ? "Oja-Oba Market"
+                : loc.name}
           </Link>
         </Button>
       )}
@@ -372,16 +410,27 @@ function LocationPage() {
           </Button>
         </section>
       )}
-      <LocationActivities locationId={loc.id} slug={slug} isHere={isHere} />
+      {loc.type !== "bank" && (
+        <LocationActivities locationId={loc.id} slug={slug} isHere={isHere} />
+      )}
       <PartyVenuePanel locationId={loc.id} />
 
       {isHere && localPlaces.some((place) => ["bank", "atm"].includes(place.category)) && (
-        <Link
-          to="/wallet"
-          className="inline-flex rounded-lg border-2 border-edge bg-primary px-4 py-2 font-bold text-primary-foreground"
-        >
-          Open bank services
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            to="/bank/$slug"
+            params={{ slug }}
+            className="inline-flex rounded-lg border-2 border-edge bg-primary px-4 py-2 font-bold text-primary-foreground"
+          >
+            Enter bank lobby
+          </Link>
+          <Link
+            to="/wallet"
+            className="inline-flex rounded-lg border-2 border-edge bg-card px-4 py-2 font-bold"
+          >
+            Wallet overview
+          </Link>
+        </div>
       )}
       {isHere &&
         localPlaces.some((place) =>

@@ -35,12 +35,16 @@ export function Scene({
   animated = false,
   mapControls = false,
   onError,
+  fallback,
+  loadingFallback,
 }: {
   children: ReactNode;
   zoom?: number;
   animated?: boolean;
   mapControls?: boolean;
   onError?: (error: Error) => void;
+  fallback?: ReactNode;
+  loadingFallback?: ReactNode;
 }) {
   const [visible, setVisible] = useState(true);
   const sceneSky = getSceneColor("--scene-sky");
@@ -57,7 +61,9 @@ export function Scene({
         shadows={false}
         dpr={[1, 1.25]}
         frameloop={visible ? (animated ? "always" : "demand") : "never"}
-        fallback={<p role="alert">3D requires WebGL. Your browser could not start it.</p>}
+        fallback={
+          fallback ?? <p role="alert">3D requires WebGL. Your browser could not start it.</p>
+        }
         gl={{ antialias: false, alpha: false, powerPreference: "low-power" }}
         style={{ width: "100%", height: "100%" }}
       >
@@ -66,9 +72,11 @@ export function Scene({
         <Lights />
         <Suspense
           fallback={
-            <Html center>
-              <p role="status">Loading 3D assets…</p>
-            </Html>
+            loadingFallback ?? (
+              <Html center>
+                <p role="status">Loading 3D assets…</p>
+              </Html>
+            )
           }
         >
           {children}

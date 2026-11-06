@@ -15,9 +15,8 @@ export function LandmarkSheet({
   description,
   offline,
   onClose,
-  onTravel,
+  onBackToTransport,
   onApply,
-  travelResult,
   pending,
   error,
   onRunPlaceAction,
@@ -38,9 +37,8 @@ export function LandmarkSheet({
   description: string;
   offline: boolean;
   onClose: () => void;
-  onTravel: (landmarkId: string) => void;
+  onBackToTransport: () => void;
   onApply: (jobId: string) => void;
-  travelResult?: { fare: number; travel_minutes: number; landmark_id: string } | null;
   pending: boolean;
   error?: string;
   onRunPlaceAction: (actionId: string) => void;
@@ -220,28 +218,10 @@ export function LandmarkSheet({
         </p>
       )}
       <footer className="map-sheet-actions map-landmark-footer">
-        <button
-          className="map-primary-button"
-          disabled={!canAct || restricted || isHere}
-          aria-disabled={isHere || undefined}
-          onClick={() => onTravel(landmark.id)}
-        >
-          <MapPin size={17} />
-          {offline
-            ? "Reconnect to travel"
-            : isHere
-              ? "You are here"
-              : restricted
-                ? "This place is for players 18 and over."
-                : pending
-                  ? "Requesting route…"
-                  : "Travel here"}
+        <button className="map-primary-button" type="button" onClick={onBackToTransport}>
+          <MapPin size={17} aria-hidden="true" />
+          Back to transport options
         </button>
-        {travelResult && (
-          <p role="status" className="map-travel-confirmation">
-            Travel started: {travelResult.travel_minutes} min · {formatMapNaira(travelResult.fare)}
-          </p>
-        )}
       </footer>
     </section>,
     document.body,

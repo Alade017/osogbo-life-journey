@@ -40,7 +40,7 @@ export type CityRoadEdge = {
 };
 
 export const CITY_WORLD_VERSION = 1;
-export const CITY_WORLD_BOUNDS = { minX: 0, maxX: 14, minY: 0, maxY: 12 } as const;
+export const CITY_WORLD_BOUNDS = { minX: 0, maxX: 20, minY: 0, maxY: 16 } as const;
 
 /** Immutable blueprint registry. Coordinates are normalized for scalable rendering. */
 export const OSOGBO_WORLD_NODES = {
@@ -178,7 +178,16 @@ export const OSOGBO_WORLD_NODES = {
     category: "residential",
     anchor: { x: 0.93, y: 0.44 },
     world: { x: 13.02, y: 5.28 },
-    neighbors: ["cultural-district", "oke-baale", "isale-osun", "stadium", "airport-terminal"],
+    neighbors: [
+      "cultural-district",
+      "oke-baale",
+      "isale-osun",
+      "stadium",
+      "airport-terminal",
+      "riverside-food-court",
+      "harvest-tech-hub",
+      "east-transit-terminal",
+    ],
     jobContracts: [],
     entryLoops: ["social", "explore"],
   },
@@ -188,7 +197,7 @@ export const OSOGBO_WORLD_NODES = {
     category: "water_nature",
     anchor: { x: 0.92, y: 0.66 },
     world: { x: 13, y: 11 },
-    neighbors: ["airport-terminal", "stadium"],
+    neighbors: ["airport-terminal", "stadium", "harvest-tech-hub", "neighborhood-play-park"],
     jobContracts: ["farm_assistant"],
     entryLoops: ["work", "explore", "social"],
   },
@@ -211,6 +220,120 @@ export const OSOGBO_WORLD_NODES = {
     neighbors: ["old-garage", "stadium", "rural-outskirts"],
     jobContracts: [],
     entryLoops: ["work"],
+  },
+  "riverside-food-court": {
+    slug: "riverside-food-court",
+    name: "Riverside Food Court",
+    category: "commercial",
+    anchor: { x: 0.8, y: 0.125 },
+    world: { x: 16, y: 2 },
+    neighbors: [
+      "atiku",
+      "sunrise-health-post",
+      "harvest-tech-hub",
+      "east-transit-terminal",
+      "eastside-produce-coop",
+    ],
+    jobContracts: [],
+    entryLoops: ["shop", "social"],
+  },
+  "sunrise-health-post": {
+    slug: "sunrise-health-post",
+    name: "Sunrise Health Post",
+    category: "health",
+    anchor: { x: 1, y: 0.125 },
+    world: { x: 20, y: 2 },
+    neighbors: ["riverside-food-court", "old-town-library", "eastside-produce-coop"],
+    jobContracts: [],
+    entryLoops: ["recover", "work"],
+  },
+  "harvest-tech-hub": {
+    slug: "harvest-tech-hub",
+    name: "Harvest Tech Hub",
+    category: "education",
+    anchor: { x: 0.8, y: 0.4375 },
+    world: { x: 16, y: 7 },
+    neighbors: [
+      "atiku",
+      "rural-outskirts",
+      "riverside-food-court",
+      "old-town-library",
+      "east-transit-terminal",
+      "adire-makers-yard",
+    ],
+    jobContracts: [],
+    entryLoops: ["study", "work", "social"],
+  },
+  "old-town-library": {
+    slug: "old-town-library",
+    name: "Old Town Library",
+    category: "education",
+    anchor: { x: 1, y: 0.4375 },
+    world: { x: 20, y: 7 },
+    neighbors: [
+      "sunrise-health-post",
+      "harvest-tech-hub",
+      "adire-makers-yard",
+      "neighborhood-play-park",
+    ],
+    jobContracts: [],
+    entryLoops: ["study", "social"],
+  },
+  "east-transit-terminal": {
+    slug: "east-transit-terminal",
+    name: "East Transit Terminal",
+    category: "transport",
+    anchor: { x: 0.87, y: 0.22 },
+    world: { x: 18, y: 4 },
+    neighbors: [
+      "riverside-food-court",
+      "sunrise-health-post",
+      "harvest-tech-hub",
+      "atiku",
+      "eastside-produce-coop",
+    ],
+    jobContracts: [],
+    entryLoops: ["travel", "work", "social"],
+  },
+  "eastside-produce-coop": {
+    slug: "eastside-produce-coop",
+    name: "Eastside Produce Co-op",
+    category: "commercial",
+    anchor: { x: 0.96, y: 0.36 },
+    world: { x: 19, y: 8 },
+    neighbors: [
+      "east-transit-terminal",
+      "riverside-food-court",
+      "sunrise-health-post",
+      "adire-makers-yard",
+    ],
+    jobContracts: [],
+    entryLoops: ["shop", "work", "social"],
+  },
+  "adire-makers-yard": {
+    slug: "adire-makers-yard",
+    name: "Adire Makers' Yard",
+    category: "education",
+    anchor: { x: 0.87, y: 0.72 },
+    world: { x: 18, y: 12 },
+    neighbors: [
+      "eastside-produce-coop",
+      "harvest-tech-hub",
+      "old-town-library",
+      "neighborhood-play-park",
+    ],
+    jobContracts: [],
+    entryLoops: ["study", "work", "social"],
+  },
+  "neighborhood-play-park": {
+    slug: "neighborhood-play-park",
+    name: "Neighbourhood Play Park",
+    category: "recreation",
+    anchor: { x: 0.96, y: 0.9 },
+    world: { x: 20, y: 15 },
+    neighbors: ["adire-makers-yard", "old-town-library", "rural-outskirts", "airport-terminal"],
+    jobContracts: [],
+    entryLoops: ["explore", "social"],
   },
 } as const satisfies Readonly<Record<string, WorldBlueprintNode>>;
 
@@ -287,6 +410,22 @@ export const CITY_DISTRICTS: CityWorldDistrict[] = [
     radius: { x: 1.6, y: 1.2 },
     detail: "Quieter roads, open courtyards and small local farms.",
   },
+  {
+    id: "east-corridor",
+    name: "East Corridor",
+    tone: "commercial",
+    center: { x: 18, y: 4.5 },
+    radius: { x: 2.5, y: 3.5 },
+    detail: "Food, care and learning spaces along the city's eastern edge.",
+  },
+  {
+    id: "east-commons",
+    name: "East Commons",
+    tone: "residential",
+    center: { x: 18.5, y: 13.5 },
+    radius: { x: 2, y: 2.2 },
+    detail: "A neighbourhood park and maker spaces on the eastern route.",
+  },
 ];
 
 export const WORLD_LOCATION_NODES: Record<
@@ -321,6 +460,46 @@ export const WORLD_LOCATION_NODES: Record<
     districtId: "outskirts",
     position: { x: 13, y: 11 },
     entrance: { x: 12, y: 11 },
+  },
+  "riverside-food-court": {
+    districtId: "east-corridor",
+    position: { x: 16, y: 2 },
+    entrance: { x: 16, y: 3 },
+  },
+  "sunrise-health-post": {
+    districtId: "east-corridor",
+    position: { x: 20, y: 2 },
+    entrance: { x: 19, y: 2 },
+  },
+  "harvest-tech-hub": {
+    districtId: "east-corridor",
+    position: { x: 16, y: 7 },
+    entrance: { x: 16, y: 8 },
+  },
+  "old-town-library": {
+    districtId: "east-corridor",
+    position: { x: 20, y: 7 },
+    entrance: { x: 19, y: 7 },
+  },
+  "east-transit-terminal": {
+    districtId: "east-corridor",
+    position: { x: 18, y: 4 },
+    entrance: { x: 18, y: 5 },
+  },
+  "eastside-produce-coop": {
+    districtId: "east-corridor",
+    position: { x: 19, y: 8 },
+    entrance: { x: 18, y: 8 },
+  },
+  "adire-makers-yard": {
+    districtId: "east-commons",
+    position: { x: 18, y: 12 },
+    entrance: { x: 17, y: 12 },
+  },
+  "neighborhood-play-park": {
+    districtId: "east-commons",
+    position: { x: 20, y: 15 },
+    entrance: { x: 19, y: 15 },
   },
 };
 
@@ -435,8 +614,14 @@ export function cityPositionForRecord(location: {
     };
   }
   return {
-    x: Math.round(Math.max(0, Math.min(14, location.map_x * 0.14)) * 100) / 100,
-    y: Math.round(Math.max(0, Math.min(12, location.map_y * 0.12)) * 100) / 100,
+    x:
+      Math.round(
+        Math.max(0, Math.min(100, location.map_x)) * (CITY_WORLD_BOUNDS.maxX / 100) * 100,
+      ) / 100,
+    y:
+      Math.round(
+        Math.max(0, Math.min(100, location.map_y)) * (CITY_WORLD_BOUNDS.maxY / 100) * 100,
+      ) / 100,
   };
 }
 

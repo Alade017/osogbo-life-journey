@@ -1,5 +1,7 @@
 import type { ComponentType } from "react";
 import { Vector2 } from "three";
+import { BackpackModel, ShoesWorn, TrousersWorn } from "./world-item-models";
+import { FOOD_MODELS } from "./food-models";
 
 const pbr = (color: string, roughness = 0.7) => (
   <meshStandardMaterial color={color} roughness={roughness} />
@@ -133,9 +135,12 @@ function Shirt({ color = "#f2efe6", accent = "#2f6f4e" }: { color?: string; acce
 }
 
 export const ITEM_MODELS: Partial<Record<string, ComponentType>> = {
+  ...FOOD_MODELS,
   jollof_rice: JollofPlate,
   zobo: ZoboGlass,
   water_bottle: WaterBottle,
   water_nature: () => <WaterBottle liquid="#d8f0ff" cap="#2e8b57" />,
-  shirt: Shirt,
+  basic_outfit: Shirt,
+  sokoto: () => <TrousersWorn h={1} />,
+  slippers: () => <ShoesWorn h={1} />,
 };

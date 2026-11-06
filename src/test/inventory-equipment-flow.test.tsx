@@ -10,6 +10,14 @@ vi.mock("@/components/3d/CharacterPreview", () => ({
 vi.mock("@/components/3d/CharacterPreview", () => ({
   CharacterPreview: ({ label }: { label: string }) => <div role="img" aria-label={label} />,
 }));
+vi.mock("@/components/3d/ItemThumbnailQueue", () => ({
+  ItemThumbnailQueue: () => null,
+}));
+
+vi.mock("@/components/3d/ItemPreview3D", () => ({
+  ItemPreview3D: () => null,
+  hasItemModel: () => false,
+}));
 
 const mocks = vi.hoisted(() => ({
   mutate: vi.fn(),

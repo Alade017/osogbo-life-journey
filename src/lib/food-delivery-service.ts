@@ -24,6 +24,14 @@ const deliverySchema = z.object({
   items: z.array(foodItemSchema),
 });
 
+const historyRowSchema = deliverySchema.extend({
+  deliveryChoice: z.enum(["inside", "outside"]).nullish(),
+});
+
+export type FoodDeliveryRecord = Omit<FoodDelivery, "deliveryChoice"> & {
+  deliveryChoice?: "inside" | "outside" | null | undefined;
+};
+
 const deliveryResponseSchema = z.object({
   orderId: z.string(),
   deliveryState: z.enum(["approaching", "collected"]),
@@ -34,10 +42,10 @@ const deliveryResponseSchema = z.object({
 
 export type FoodDelivery = z.infer<typeof deliverySchema>;
 
-async function getFoodDeliveryHistory(): Promise<FoodDelivery[]> {
+async function getFoodDeliveryHistory(): Promise<FoodDeliveryRecord[]> {
   const { data, error } = await supabase.rpc("get_food_delivery_history");
   if (error) throw error;
-  return z.array(deliverySchema).parse(data);
+  return z.array(historyRowSchema).parse(data);
 }
 
 async function processHomeFoodDeliveries(): Promise<FoodDelivery[]> {

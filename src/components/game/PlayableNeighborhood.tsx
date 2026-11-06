@@ -1,28 +1,68 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Home, Map, Minus, Plus } from "lucide-react";
+import {
+  BriefcaseBusiness,
+  DoorOpen,
+  Home,
+  Landmark,
+  Map,
+  MessageCircle,
+  Minus,
+  Plus,
+  Store,
+} from "lucide-react";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { PlayerMovementControls } from "@/components/game/PlayerMovementControls";
+import { PhoneBankApp } from "@/components/game/phone/PhoneBankApp";
+import { LocationVenueScene } from "@/components/game/LocationVenueScene";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
 import { joinNeighborhood, type NeighborhoodRoom } from "@/lib/multiplayer-service";
-import { q } from "@/lib/game";
+import { q, rpc, useGameAction } from "@/lib/game";
 import { supabase } from "@/integrations/supabase/client";
 import { canonicalHomeOptions } from "@/lib/living-cost-service";
 import { useGameTime } from "@/components/game/GameTimeProvider";
 import type { NetworkPlayerSnapshot } from "@/game/multiplayer-state";
 import { avatarAnimationForActivity } from "@/game/character-animation";
-import { neighborhoodAreaForSlug, nearestInteraction, toScene } from "@/game/neighborhood-model";
+import {
+  neighborhoodAreaForSlug,
+  nearestInteraction,
+  toScene,
+  type NeighborhoodNpcView,
+} from "@/game/neighborhood-model";
 import { isPlayableDistrict, playableDistrictForLocation } from "@/game/playable-district";
 import type { NeighborhoodPlayerView, PhaserNeighborhoodHandle } from "@/game/phaser-neighborhood";
 import type { MovementDirection } from "@/lib/player-movement";
+import { NPC_CATALOG, npcActivityAt, type SocialAction } from "@/lib/npc-simulation";
+import { hasLocationVenueDesign } from "@/lib/location-venue-designs";
+import { JobsPage } from "@/routes/_authenticated/_game/jobs";
+import { MarketPage } from "@/routes/_authenticated/_game/market";
 import { WORLD_CAMERA } from "@/components/3d/world-theme";
 import "@/components/game/neighborhood.css";
 
 const R3FNeighborhoodSurface = lazy(() =>
   import("./R3FNeighborhoodSurface").then((module) => ({ default: module.R3FNeighborhoodSurface })),
 );
+const BUSINESS_PLACE_CATEGORIES = new Set([
+  "market",
+  "supermarket",
+  "food-market",
+  "electronics",
+  "phone-store",
+  "clothing",
+]);
 
 type ConnectionState = "loading" | "connecting" | "connected" | "unavailable" | "wrong-area";
+type InteractionPanel = "business" | "work" | "npc";
+type BusinessView = "actions" | "interior" | "shops" | "bank";
+const NEIGHBORHOOD_JOIN_TIMEOUT_MS = 15_000;
+const NEIGHBORHOOD_STATE_TIMEOUT_MS = 10_000;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -48,7 +88,12 @@ function playerViewsFromRoom(room: NeighborhoodRoom): NeighborhoodPlayerView[] |
   return players;
 }
 
-function useNeighborhoodConnection(locationId: string | undefined, slug: string | undefined) {
+function useNeighborhoodConnection(
+  locationId: string | undefined,
+  slug: string | undefined,
+  locationIsPlayable: boolean,
+  attempt: number,
+) {
   const [connectionState, setConnectionState] = useState<ConnectionState>("loading");
   const [players, setPlayers] = useState<NeighborhoodPlayerView[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -67,7 +112,7 @@ function useNeighborhoodConnection(locationId: string | undefined, slug: string 
       );
       return;
     }
-    if (!isPlayableDistrict(slug)) {
+    if (!locationIsPlayable || !isPlayableDistrict(slug)) {
       setConnectionState("wrong-area");
       setPlayers([]);
       setSessionId(null);
@@ -76,13 +121,25 @@ function useNeighborhoodConnection(locationId: string | undefined, slug: string 
     }
 
     let active = true;
+    let joinTimedOut = false;
+    let roomEnded = false;
     let joinedRoom: NeighborhoodRoom | null = null;
+    let joinTimeout = 0;
+    let stateTimeout = 0;
     setConnectionState("connecting");
     setConnectionError("");
 
+    joinTimeout = window.setTimeout(() => {
+      if (!active) return;
+      joinTimedOut = true;
+      setConnectionState("unavailable");
+      setConnectionError("The neighborhood is taking too long to connect. Please try again.");
+    }, NEIGHBORHOOD_JOIN_TIMEOUT_MS);
+
     void joinNeighborhood(locationId)
       .then((room) => {
-        if (!active) {
+        window.clearTimeout(joinTimeout);
+        if (!active || joinTimedOut) {
           void room
             .leave()
             .catch((error: unknown) =>
@@ -97,23 +154,56 @@ function useNeighborhoodConnection(locationId: string | undefined, slug: string 
         const publish = () => {
           if (!active) return;
           const snapshot = playerViewsFromRoom(room);
-          if (!snapshot) return;
+          if (!snapshot || roomEnded) return false;
+          window.clearTimeout(stateTimeout);
           setPlayers(snapshot);
           setConnectionState("connected");
+          return true;
         };
         room.onStateChange(publish);
         room.onLeave((code) => {
-          if (!active) return;
+          if (!active || roomEnded) return;
+          roomEnded = true;
+          window.clearTimeout(stateTimeout);
           roomRef.current = null;
+          joinedRoom = null;
+          setPlayers([]);
           setConnectionState("unavailable");
           setConnectionError(
             `The neighborhood connection closed (${code}). Reconnect to continue.`,
           );
         });
-        publish();
+        if (!publish()) {
+          stateTimeout = window.setTimeout(() => {
+            if (!active || roomEnded) return;
+            roomEnded = true;
+            roomRef.current = null;
+            joinedRoom = null;
+            setConnectionState("unavailable");
+            setConnectionError(
+              "The neighborhood connected but its world state did not finish loading. Please try again.",
+            );
+            void room
+              .leave()
+              .catch((error: unknown) =>
+                console.error("Could not close the neighborhood room.", error),
+              );
+          }, NEIGHBORHOOD_STATE_TIMEOUT_MS);
+        }
       })
       .catch((error: unknown) => {
-        if (!active) return;
+        if (!active || joinTimedOut) return;
+        window.clearTimeout(joinTimeout);
+        const failedRoom = joinedRoom;
+        joinedRoom = null;
+        roomRef.current = null;
+        if (failedRoom) {
+          void failedRoom
+            .leave()
+            .catch((leaveError: unknown) =>
+              console.error("Could not close the neighborhood room.", leaveError),
+            );
+        }
         setConnectionState("unavailable");
         setConnectionError(
           error instanceof Error ? error.message : "The neighborhood could not be connected.",
@@ -122,6 +212,8 @@ function useNeighborhoodConnection(locationId: string | undefined, slug: string 
 
     return () => {
       active = false;
+      window.clearTimeout(joinTimeout);
+      window.clearTimeout(stateTimeout);
       roomRef.current = null;
       if (joinedRoom) {
         void joinedRoom
@@ -131,7 +223,7 @@ function useNeighborhoodConnection(locationId: string | undefined, slug: string 
           );
       }
     };
-  }, [locationId, slug]);
+  }, [attempt, locationId, locationIsPlayable, slug]);
 
   const sameLocation = roomLocationId === locationId;
   return {
@@ -160,6 +252,7 @@ export function PlayableNeighborhood() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { simulation } = useGameTime();
+  const [connectionAttempt, setConnectionAttempt] = useState(0);
   const characterQuery = useQuery(q.character());
   const locationsQuery = useQuery({
     ...q.locations(),
@@ -169,20 +262,34 @@ export function PlayableNeighborhood() {
     (location) => location.id === characterQuery.data?.current_location_id,
   );
   const district = useMemo(() => playableDistrictForLocation(currentLocation), [currentLocation]);
+  const area = district?.area ?? neighborhoodAreaForSlug("city-centre");
   const homeQuery = useQuery({
     ...canonicalHomeOptions(characterQuery.data?.id),
     enabled: !!characterQuery.data?.id && currentLocation?.slug === "city-centre",
   });
   const homeTypeId = district?.personalHome ? homeTypeFromRecord(homeQuery.data) : null;
+  const npcQuery = useQuery({ ...q.npcs(), enabled: !!currentLocation?.id });
+  const placesQuery = useQuery({ ...q.places(), enabled: !!currentLocation?.id });
+  const shopItemsQuery = useQuery({ ...q.shopItems(), enabled: !!currentLocation?.id });
+  const jobsQuery = useQuery({ ...q.jobs(), enabled: !!currentLocation?.id });
   const { connectionState, connectionError, players, sessionId, roomRef } =
-    useNeighborhoodConnection(currentLocation?.id, currentLocation?.slug);
+    useNeighborhoodConnection(
+      currentLocation?.id,
+      currentLocation?.slug,
+      district !== null,
+      connectionAttempt,
+    );
   const [directions, setDirections] = useState<ReadonlySet<MovementDirection>>(() => new Set());
   const [scene, setScene] = useState<PhaserNeighborhoodHandle | null>(null);
   const [zoom, setZoom] = useState<number>(WORLD_CAMERA.defaultZoom);
   const directionsRef = useRef(directions);
   directionsRef.current = directions;
   const lastIntentRef = useRef("0:0");
-  const area = district?.area ?? neighborhoodAreaForSlug("city-centre");
+  const [activePanel, setActivePanel] = useState<InteractionPanel | null>(null);
+  const [businessView, setBusinessView] = useState<BusinessView>("actions");
+  const [workView, setWorkView] = useState<"actions" | "interior">("actions");
+  const [selectedNpcId, setSelectedNpcId] = useState<string | null>(null);
+  const [npcDialogue, setNpcDialogue] = useState<string | null>(null);
   const player = players.find((candidate) => candidate.sessionId === sessionId);
   const actionAnimation = simulation.currentAction
     ? avatarAnimationForActivity(simulation.currentAction.animation)
@@ -196,11 +303,93 @@ export function PlayableNeighborhood() {
       ),
     [actionAnimation, players, sessionId],
   );
+  const activeNpcs = useMemo((): NeighborhoodNpcView[] => {
+    if (!currentLocation || !npcQuery.data || !locationsQuery.data) return [];
+    const savedNpcIds = new Set(npcQuery.data.map((npc) => npc.id));
+    const slots = area.objects.filter((object) => object.kind === "npc");
+    const scheduled = NPC_CATALOG.flatMap((npc) => {
+      if (!savedNpcIds.has(npc.id)) return [];
+      const activity = npcActivityAt(
+        npc,
+        simulation.gameTime,
+        (slug) => locationsQuery.data?.find((location) => location.slug === slug)?.id ?? null,
+      );
+      return activity.available && activity.destinationSlug === currentLocation.slug
+        ? [{ npc, activity }]
+        : [];
+    }).slice(0, slots.length);
+    return scheduled.map(({ npc, activity }, index) => {
+      const slot = slots[index]!;
+      return {
+        id: npc.id,
+        name: npc.name,
+        role: npc.role,
+        activity: activity.label,
+        x: slot.x,
+        y: slot.y,
+      };
+    });
+  }, [area.objects, currentLocation, locationsQuery.data, npcQuery.data, simulation.gameTime]);
+  const localPlaces =
+    placesQuery.data?.filter((place) => place.location_id === currentLocation?.id) ?? [];
+  const hasShopOffers =
+    shopItemsQuery.data?.some((offer) => offer.shop?.location_id === currentLocation?.id) ?? false;
+  const hasBankServices =
+    currentLocation?.type === "bank" ||
+    localPlaces.some((place) => place.category === "bank" || place.category === "atm");
+  const hasCareerServices =
+    jobsQuery.data?.some(
+      (job) => job.is_available && job.location_id === currentLocation?.id,
+    ) ?? false;
+  const hasVenueInterior = currentLocation ? hasLocationVenueDesign(currentLocation.slug) : false;
+  const hasLocalBusinesses = localPlaces.some((place) =>
+    BUSINESS_PLACE_CATEGORIES.has(place.category),
+  );
+  const interactionTargets = useMemo(() => {
+    const buildings = area.objects.filter((object) => {
+      if (object.kind === "home") return !!district?.personalHome && !!homeTypeId;
+      if (object.kind === "market")
+        return hasShopOffers || hasLocalBusinesses || hasBankServices || hasVenueInterior;
+      if (object.kind === "work") return hasCareerServices;
+      return false;
+    });
+    const npcTargets = activeNpcs.map(
+      (npc): (typeof area.objects)[number] => ({
+        id: npc.id,
+        name: npc.name,
+        kind: "npc",
+        x: npc.x,
+        y: npc.y,
+      }),
+    );
+    return [...buildings, ...npcTargets];
+  }, [
+    activeNpcs,
+    area.objects,
+    district?.personalHome,
+    hasBankServices,
+    hasCareerServices,
+    hasLocalBusinesses,
+    hasShopOffers,
+    hasVenueInterior,
+    homeTypeId,
+  ]);
   const nearbyObject = useMemo(() => {
     if (!player || !district) return null;
     const point = toScene({ x: player.x, y: player.y }, district.origin);
-    return nearestInteraction(point, area.objects);
-  }, [area.objects, player, district]);
+    return nearestInteraction(point, interactionTargets);
+  }, [interactionTargets, player, district]);
+  const nearbyNpc =
+    nearbyObject?.kind === "npc"
+      ? activeNpcs.find((npc) => npc.id === nearbyObject.id) ?? null
+      : null;
+  const selectedNpc = activeNpcs.find((npc) => npc.id === selectedNpcId) ?? nearbyNpc;
+  const npcInteraction = useGameAction(rpc.interactWithNpc, {
+    onSuccess: (result) => {
+      setNpcDialogue(result.message);
+      toast[result.accepted ? "success" : "message"](result.message);
+    },
+  });
 
   const enterHome = useMutation({
     mutationFn: async () => {
@@ -226,14 +415,24 @@ export function PlayableNeighborhood() {
     setDirections(new Set());
     lastIntentRef.current = "0:0";
     setZoom(WORLD_CAMERA.defaultZoom);
+    setActivePanel(null);
+    setBusinessView("actions");
+    setWorkView("actions");
+    setSelectedNpcId(null);
+    setNpcDialogue(null);
   }, [currentLocation?.id]);
 
   useEffect(() => {
     if (connectionState !== "connected") return;
+    if (activePanel) {
+      setDirections(new Set());
+      roomRef.current?.send("move", { x: 0, y: 0 });
+      lastIntentRef.current = "0:0";
+    }
     const interval = window.setInterval(() => {
       const room = roomRef.current;
       if (!room) return;
-      const intent = directionIntent(directionsRef.current);
+      const intent = activePanel ? { x: 0, y: 0 } : directionIntent(directionsRef.current);
       const next = `${intent.x}:${intent.y}`;
       if (next !== lastIntentRef.current || intent.x !== 0 || intent.y !== 0) {
         room.send("move", intent);
@@ -241,10 +440,10 @@ export function PlayableNeighborhood() {
       }
     }, 100);
     return () => window.clearInterval(interval);
-  }, [connectionState, roomRef]);
+  }, [activePanel, connectionState, roomRef]);
 
   useEffect(() => {
-    if (connectionState !== "connected" || nearbyObject?.kind !== "home" || !homeTypeId) return;
+    if (connectionState !== "connected" || !nearbyObject || activePanel) return;
     const activate = (event: KeyboardEvent) => {
       const target = event.target;
       if (
@@ -255,13 +454,51 @@ export function PlayableNeighborhood() {
       )
         return;
       event.preventDefault();
-      activateHome();
+      if (nearbyObject.kind === "home") {
+        activateHome();
+      } else if (nearbyObject.kind === "npc") {
+        setSelectedNpcId(nearbyObject.id);
+        setNpcDialogue(null);
+        setActivePanel("npc");
+      } else if (nearbyObject.kind === "work") {
+        setWorkView("actions");
+        setActivePanel("work");
+      } else {
+        setBusinessView("actions");
+        setActivePanel("business");
+      }
     };
     window.addEventListener("keydown", activate);
     return () => window.removeEventListener("keydown", activate);
-  }, [activateHome, connectionState, enteringHome, homeTypeId, nearbyObject?.kind]);
+  }, [activateHome, activePanel, connectionState, enteringHome, nearbyObject]);
 
   const handleScene = useCallback((next: PhaserNeighborhoodHandle | null) => setScene(next), []);
+  const openInteraction = () => {
+    if (!nearbyObject) return;
+    if (nearbyObject.kind === "home") {
+      enterHome.mutate();
+    } else if (nearbyObject.kind === "npc") {
+      setSelectedNpcId(nearbyObject.id);
+      setNpcDialogue(null);
+      setActivePanel("npc");
+    } else if (nearbyObject.kind === "work") {
+      setWorkView("actions");
+      setActivePanel("work");
+    } else {
+      setBusinessView("actions");
+      setActivePanel("business");
+    }
+  };
+  const closeInteraction = (open: boolean) => {
+    if (open) return;
+    setActivePanel(null);
+    setSelectedNpcId(null);
+  };
+  const npcActions: readonly { action: SocialAction; label: string }[] = [
+    { action: "greet", label: "Say hello" },
+    { action: "work", label: "Ask about work" },
+    { action: "interests", label: "Talk about interests" },
+  ];
   const changeZoom = (factor: number) => {
     setZoom((current) =>
       Math.min(WORLD_CAMERA.maxZoom, Math.max(WORLD_CAMERA.minZoom, current * factor)),
@@ -299,7 +536,11 @@ export function PlayableNeighborhood() {
           <p>
             {district?.area.slug === "oja-oba"
               ? "Explore market lanes, covered stalls and the loading yard."
-              : "Walk the crossing, residential compounds and local shopfronts."}
+              : district?.area.slug === "city-centre"
+                ? "Walk the crossing, residential compounds and local shopfronts."
+                : district
+                  ? `Explore the streets, local businesses and landmarks of ${area.name}.`
+                  : "Travel to an eligible destination to explore its neighborhood."}
           </p>
         </div>
         <Link className="neighborhood-map-link" to="/map">
@@ -309,10 +550,10 @@ export function PlayableNeighborhood() {
 
       {connectionState === "wrong-area" ? (
         <div className="neighborhood-message" role="status">
-          <strong>This district is not available for walking yet.</strong>
+          <strong>This destination is not available for walking yet.</strong>
           <span>
-            Use the city map to travel to Olaiya or Oja-Oba Market. Your confirmed arrival selects
-            the neighbourhood.
+            This location does not have a supported neighborhood layout. Choose an eligible
+            destination from the city map.
           </span>
           <Link to="/map">Open the city map</Link>
           <Link to="/house">Go to your home entrance</Link>
@@ -328,9 +569,16 @@ export function PlayableNeighborhood() {
                 : "Connecting to the authoritative world..."}
           </div>
           {connectionState === "unavailable" && (
-            <p className="neighborhood-error" role="alert">
-              {connectionError}
-            </p>
+            <div className="neighborhood-error">
+              <p role="alert">{connectionError}</p>
+              <button
+                type="button"
+                className="neighborhood-map-link"
+                onClick={() => setConnectionAttempt((attempt) => attempt + 1)}
+              >
+                Retry connection
+              </button>
+            </div>
           )}
           {(connectionState === "connecting" || connectionState === "loading") && (
             <div className="neighborhood-loading-overlay">
@@ -364,6 +612,7 @@ export function PlayableNeighborhood() {
                         key={`${currentLocation?.id}:${sessionId}`}
                         district={district}
                         players={scenePlayers}
+                        npcs={activeNpcs}
                         selfSessionId={sessionId}
                         homeTypeId={homeTypeId}
                         zoom={zoom}
@@ -392,15 +641,38 @@ export function PlayableNeighborhood() {
                         <Minus size={16} aria-hidden="true" />
                       </button>
                     </div>
-                    {nearbyObject?.kind === "home" && homeTypeId && (
+                    {nearbyObject && (
                       <button
                         type="button"
                         className="neighborhood-interaction"
-                        disabled={enterHome.isPending}
-                        onClick={() => enterHome.mutate()}
+                        disabled={nearbyObject.kind === "home" && enteringHome}
+                        onClick={openInteraction}
+                        aria-label={
+                          nearbyObject.kind === "npc"
+                            ? `Talk with ${nearbyNpc?.name ?? nearbyObject.name}`
+                            : nearbyObject.kind === "home"
+                              ? "Enter your home"
+                              : `Interact with ${currentLocation?.name ?? nearbyObject.name}`
+                        }
                       >
-                        <Home size={17} aria-hidden="true" />
-                        {enterHome.isPending ? "Opening your home..." : "Enter your home"}
+                        {nearbyObject.kind === "home" ? (
+                          <Home size={17} aria-hidden="true" />
+                        ) : nearbyObject.kind === "market" ? (
+                          <Store size={17} aria-hidden="true" />
+                        ) : nearbyObject.kind === "work" ? (
+                          <BriefcaseBusiness size={17} aria-hidden="true" />
+                        ) : (
+                          <MessageCircle size={17} aria-hidden="true" />
+                        )}
+                        {nearbyObject.kind === "home"
+                          ? enteringHome
+                            ? "Opening your home..."
+                            : "Enter your home"
+                          : nearbyObject.kind === "npc"
+                            ? `Talk with ${nearbyNpc?.name ?? nearbyObject.name}`
+                            : nearbyObject.kind === "work"
+                              ? `Work at ${currentLocation?.name ?? nearbyObject.name}`
+                              : `Explore ${currentLocation?.name ?? nearbyObject.name}`}
                         <kbd>E</kbd>
                       </button>
                     )}
@@ -416,6 +688,196 @@ export function PlayableNeighborhood() {
                       entry is temporarily disabled.
                     </p>
                   )}
+                  {(npcQuery.isError ||
+                    placesQuery.isError ||
+                    shopItemsQuery.isError ||
+                    jobsQuery.isError) && (
+                    <p className="neighborhood-error" role="alert">
+                      Some nearby interactions could not be loaded.{" "}
+                      {npcQuery.error?.message ??
+                        placesQuery.error?.message ??
+                        shopItemsQuery.error?.message ??
+                        jobsQuery.error?.message}
+                    </p>
+                  )}
+                  {(npcQuery.isLoading ||
+                    placesQuery.isLoading ||
+                    shopItemsQuery.isLoading ||
+                    jobsQuery.isLoading) && (
+                    <p className="neighborhood-loading" role="status">
+                      Checking for supported nearby interactions...
+                    </p>
+                  )}
+                  <Dialog open={activePanel !== null} onOpenChange={closeInteraction}>
+                    <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
+                      <DialogTitle>
+                        {activePanel === "npc"
+                          ? (selectedNpc?.name ?? "Neighbour")
+                          : (currentLocation?.name ?? "Nearby services")}
+                      </DialogTitle>
+                      <DialogDescription>
+                        {activePanel === "npc"
+                          ? selectedNpc
+                            ? `${selectedNpc.role} · ${selectedNpc.activity}`
+                            : "This neighbour is no longer available here."
+                          : "Choose a service supported by this location. Close this panel to return to the same spot."}
+                      </DialogDescription>
+                      {activePanel === "business" && (
+                        <>
+                          {businessView === "actions" && (
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              {hasVenueInterior && (
+                                <button
+                                  type="button"
+                                  className="neighborhood-action-card"
+                                  onClick={() => setBusinessView("interior")}
+                                >
+                                  <DoorOpen size={18} aria-hidden="true" />
+                                  Explore venue interior
+                                </button>
+                              )}
+                              {hasShopOffers && (
+                                <button
+                                  type="button"
+                                  className="neighborhood-action-card"
+                                  onClick={() => setBusinessView("shops")}
+                                >
+                                  <Store size={18} aria-hidden="true" />
+                                  Browse local shop offers
+                                </button>
+                              )}
+                              {hasBankServices && (
+                                <button
+                                  type="button"
+                                  className="neighborhood-action-card"
+                                  onClick={() => setBusinessView("bank")}
+                                >
+                                  <Landmark size={18} aria-hidden="true" />
+                                  Access bank services
+                                </button>
+                              )}
+                              {!hasShopOffers && hasLocalBusinesses && (
+                                <p className="text-sm text-muted-foreground">
+                                  This location has shops, but no purchasable offers are available
+                                  in the existing shop catalog.
+                                </p>
+                              )}
+                            </div>
+                          )}
+                          {businessView === "interior" && currentLocation && (
+                            <>
+                              <button
+                                type="button"
+                                className="neighborhood-map-link w-fit"
+                                onClick={() => setBusinessView("actions")}
+                              >
+                                Exit to the neighborhood
+                              </button>
+                              <LocationVenueScene
+                                slug={currentLocation.slug}
+                                locationName={currentLocation.name}
+                              />
+                            </>
+                          )}
+                          {businessView === "shops" && (
+                            <>
+                              <button
+                                type="button"
+                                className="neighborhood-map-link w-fit"
+                                onClick={() => setBusinessView("actions")}
+                              >
+                                Back to building actions
+                              </button>
+                              <MarketPage />
+                            </>
+                          )}
+                          {businessView === "bank" && (
+                            <>
+                              <button
+                                type="button"
+                                className="neighborhood-map-link w-fit"
+                                onClick={() => setBusinessView("actions")}
+                              >
+                                Back to building actions
+                              </button>
+                              <PhoneBankApp />
+                            </>
+                          )}
+                        </>
+                      )}
+                      {activePanel === "work" && (
+                        <>
+                          {workView === "actions" ? (
+                            <>
+                              {hasVenueInterior && (
+                                <button
+                                  type="button"
+                                  className="neighborhood-action-card mb-4"
+                                  onClick={() => setWorkView("interior")}
+                                >
+                                  <DoorOpen size={18} aria-hidden="true" />
+                                  Explore workplace interior
+                                </button>
+                              )}
+                              <JobsPage />
+                            </>
+                          ) : currentLocation ? (
+                            <>
+                              <button
+                                type="button"
+                                className="neighborhood-map-link w-fit"
+                                onClick={() => setWorkView("actions")}
+                              >
+                                Exit to the neighborhood
+                              </button>
+                              <LocationVenueScene
+                                slug={currentLocation.slug}
+                                locationName={currentLocation.name}
+                              />
+                            </>
+                          ) : null}
+                        </>
+                      )}
+                      {activePanel === "npc" && selectedNpc && (
+                        <div className="space-y-3">
+                          <p className="text-sm text-muted-foreground">
+                            {selectedNpc.name} is {selectedNpc.activity}. Conversations are checked
+                            by the game server for this location and time.
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {npcActions.map(({ action, label }) => (
+                              <button
+                                key={action}
+                                type="button"
+                                className="neighborhood-action-card"
+                                disabled={npcInteraction.isPending}
+                                onClick={() =>
+                                  npcInteraction.mutate({
+                                    npcId: selectedNpc.id,
+                                    action,
+                                    requestId: crypto.randomUUID(),
+                                  })
+                                }
+                              >
+                                <MessageCircle size={17} aria-hidden="true" />
+                                {npcInteraction.isPending ? "Speaking..." : label}
+                              </button>
+                            ))}
+                          </div>
+                          {npcDialogue && (
+                            <p className="rounded-lg bg-muted/50 p-3 text-sm" aria-live="polite">
+                              {npcDialogue}
+                            </p>
+                          )}
+                          {npcInteraction.error && (
+                            <p className="text-sm text-destructive" role="alert">
+                              {npcInteraction.error.message}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </DialogContent>
+                  </Dialog>
                   <div className="neighborhood-controls-row">
                     <div className="neighborhood-control-copy">
                       <strong>Explore at your pace</strong>

@@ -14,6 +14,11 @@ function setup(
         ok: true,
       }),
     ),
+    rotate: vi.fn(
+      async (_playerId: string, _fromSlot: string, _rotation: number): Promise<unknown> => ({
+        ok: true,
+      }),
+    ),
     buy: vi.fn(async (_playerId: string, _itemId: string, _key: string): Promise<unknown> => ({
       ok: true,
     })),
@@ -23,6 +28,7 @@ function setup(
     state: async () => ({ house: null, placements: [], outfit: {}, inventory: [] }),
     place: calls.place,
     move: calls.move,
+    rotate: calls.rotate,
     remove: async () => ({ ok: true }),
     equip: async () => ({ ok: true }),
     unequip: async () => ({ ok: true }),
@@ -85,6 +91,32 @@ describe("house API handlers", () => {
     expect(calls.move).not.toHaveBeenCalled();
   });
 
+  it("persists a validated accessory rotation", async () => {
+    const { handlers, calls } = setup();
+    const response = await handlers.postRotate(
+      new Request("https://game.test/api/house/rotate", {
+        method: "POST",
+        body: JSON.stringify({ fromSlot: "bed", rotation: 135 }),
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(calls.rotate).toHaveBeenCalledWith("player-1", "bed", 135);
+  });
+
+  it("rejects accessory rotations outside the supported range", async () => {
+    const { handlers, calls } = setup();
+    const response = await handlers.postRotate(
+      new Request("https://game.test/api/house/rotate", {
+        method: "POST",
+        body: JSON.stringify({ fromSlot: "bed", rotation: 360 }),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(calls.rotate).not.toHaveBeenCalled();
+  });
+
   it("maps server ownership failures to a forbidden response", async () => {
     const { handlers, calls } = setup();
     calls.place.mockResolvedValue({ ok: false, code: "NOT_OWNED" });
@@ -107,6 +139,7 @@ describe("house API handlers", () => {
       },
       place: async () => ({}),
       move: async () => ({}),
+      rotate: async () => ({}),
       remove: async () => ({}),
       equip: async () => ({}),
       unequip: async () => ({}),

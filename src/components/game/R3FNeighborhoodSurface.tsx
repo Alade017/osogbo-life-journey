@@ -14,7 +14,11 @@ import { worldAppearance, worldEquipment } from "@/game/world-character-view";
 import { Canvas } from "@react-three/fiber";
 import type { NeighborhoodPlayerView, PhaserNeighborhoodHandle } from "@/game/phaser-neighborhood";
 import type { playableDistrictForLocation } from "@/game/playable-district";
-import { neighborhoodSceneBounds, toScene } from "@/game/neighborhood-model";
+import {
+  neighborhoodSceneBounds,
+  toScene,
+  type NeighborhoodNpcView,
+} from "@/game/neighborhood-model";
 import { neighborhoodBuildingFootprint } from "@/game/neighborhood-geometry";
 import {
   WorldCamera,
@@ -51,11 +55,13 @@ export function R3FNeighborhoodSurface({
   players,
   selfSessionId,
   district,
+  npcs,
   onScene,
   zoom,
   onZoomChange,
 }: {
   players: readonly NeighborhoodPlayerView[];
+  npcs: readonly NeighborhoodNpcView[];
   selfSessionId: string;
   homeTypeId: string | null;
   district: NonNullable<ReturnType<typeof playableDistrictForLocation>>;
@@ -149,7 +155,10 @@ export function R3FNeighborhoodSurface({
           <WorldLighting size={Math.max(bounds.width, bounds.height) * unit} />
           <mesh position={[0, -0.12, 0]} receiveShadow>
             <boxGeometry args={[bounds.width * unit, 0.2, bounds.height * unit]} />
-            <WorldMaterial tone="ground" />
+            <WorldMaterial
+              tone="ground"
+              color={`#${area.style.ground.toString(16).padStart(6, "0")}`}
+            />
           </mesh>
           <WorldRoads items={roads} />
           <WorldInstances
@@ -212,6 +221,23 @@ export function R3FNeighborhoodSurface({
                 depth: o.height * unit,
               }))}
           />
+          {area.obstacles
+            ?.filter((obstacle) => obstacle.kind === "landmark" && obstacle.label)
+            .map((landmark) => {
+              const p = point(landmark.x, landmark.y);
+              return (
+                <Html
+                  key={landmark.id}
+                  portal={overlayHost}
+                  center
+                  position={[p[0], 2.4, p[2]]}
+                  distanceFactor={18}
+                  style={{ pointerEvents: "none" }}
+                >
+                  <span className="world-place-label">{landmark.label}</span>
+                </Html>
+              );
+            })}
           {area.objects
             .filter((o) => o.kind !== "npc")
             .map((o) => {
@@ -256,10 +282,24 @@ export function R3FNeighborhoodSurface({
             );
           })}
           <WorldPeople
-            positions={area.objects
-              .filter((o) => o.kind === "npc")
-              .map((o) => [point(o.x, o.y)[0], point(o.x, o.y)[2]] as [number, number])}
+            positions={npcs.map((npc) => [point(npc.x, npc.y)[0], point(npc.x, npc.y)[2]])}
+            activities={npcs.map(() => "walking")}
           />
+          {npcs.map((npc) => {
+            const p = point(npc.x, npc.y);
+            return (
+              <Html
+                key={npc.id}
+                portal={overlayHost}
+                center
+                position={[p[0], 2.4, p[2]]}
+                distanceFactor={18}
+                style={{ pointerEvents: "none" }}
+              >
+                <span className="world-place-label">{npc.name}</span>
+              </Html>
+            );
+          })}
         </Canvas>
         <div ref={overlayHost} className="world-label-layer" />
       </div>

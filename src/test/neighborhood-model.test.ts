@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { OSOGBO_WORLD_NODES } from "@/lib/city-world";
+import {
+  OSOGBO_WORLD_NODES,
+  WORLD_LOCATION_NODES,
+  cityEntranceForLocation,
+} from "@/lib/city-world";
 import {
   neighborhoodAreaForSlug,
+  neighborhoodAreaOrigin,
   neighborhoodOrigin,
   nearestInteraction,
   toScene,
@@ -9,6 +14,11 @@ import {
   validCheckpoint,
 } from "@/game/neighborhood-model";
 import { canOccupyNeighborhoodPoint } from "@/game/authoritative-movement";
+import { isPlayableDistrict, isPlayableLocationRecord } from "@/game/playable-district";
+import {
+  checkNeighborhoodEntrances,
+  neighborhoodRoadComponents,
+} from "@/game/neighborhood-navigation";
 describe("neighborhood coordinates and interaction", () => {
   it("selects distinct shared street layouts for Olaiya and Oja-Oba", () => {
     const olaiya = neighborhoodAreaForSlug("city-centre");
@@ -51,12 +61,94 @@ describe("neighborhood coordinates and interaction", () => {
         "oja-oba": "Oja-Oba Market",
       };
       expect(area.name).toBe(displayNameOverrides[node.slug] ?? node.name);
-      expect(area.objects.map((object) => object.id)).toEqual(["home", "market", "work", "npc"]);
-      expect(new Set(area.objects.map((object) => `${object.x}:${object.y}`)).size).toBe(4);
+      expect(area.objects.slice(0, 3).map((object) => object.id)).toEqual([
+        "home",
+        "market",
+        "work",
+      ]);
+      expect(new Set(area.objects.map((object) => `${object.x}:${object.y}`)).size).toBe(
+        area.objects.length,
+      );
+      if (node.slug !== "city-centre" && node.slug !== "oja-oba") {
+        expect(area.objects.filter((object) => object.kind === "npc")).toHaveLength(3);
+        expect(area.roads).toHaveLength(6);
+        expect(area.paths).toHaveLength(2);
+        expect(area.obstacles?.map((obstacle) => obstacle.kind)).toEqual(
+          expect.arrayContaining([
+            "compound",
+            expect.stringMatching(/shop|kiosk/),
+            "landmark",
+            "tree",
+            "bench",
+            "streetlight",
+          ]),
+        );
+      }
     }
     expect(neighborhoodAreaForSlug("residential").name).toBe("Residential District");
     expect(neighborhoodAreaForSlug("business-district").name).toBe("Business District");
   });
+  it("only admits stable slugs with both a city-world blueprint and a mapped entrance", () => {
+    for (const slug of Object.keys(OSOGBO_WORLD_NODES)) {
+      expect(isPlayableDistrict(slug)).toBe(Object.hasOwn(WORLD_LOCATION_NODES, slug));
+    }
+    for (const slug of ["", "osogbo-central-mosque", "unknown", "bad slug", "residential"]) {
+      expect(isPlayableDistrict(slug)).toBe(false);
+    }
+    expect(
+      isPlayableLocationRecord({
+        id: "destination-id",
+        slug: "student-district",
+        map_x: 50,
+        map_y: 25,
+        is_active: true,
+      }),
+    ).toBe(true);
+    expect(
+      isPlayableLocationRecord({
+        id: "destination-id",
+        slug: "student-district",
+        map_x: 50,
+        map_y: 25,
+        is_active: false,
+      }),
+    ).toBe(false);
+    expect(
+      isPlayableLocationRecord({
+        id: "landmark-id",
+        slug: "osogbo-central-mosque",
+        map_x: 50,
+        map_y: 25,
+        is_active: true,
+      }),
+    ).toBe(false);
+  });
+  it("generates stable, materially different roads, storefronts, pedestrians, landmarks and collisions", () => {
+    const campus = neighborhoodAreaForSlug("student-district");
+    const foodCourt = neighborhoodAreaForSlug("riverside-food-court");
+    expect(neighborhoodAreaForSlug("student-district")).toEqual(campus);
+    expect(campus.roads).not.toEqual(foodCourt.roads);
+    expect(campus.objects.filter((object) => object.kind === "npc")).not.toEqual(
+      foodCourt.objects.filter((object) => object.kind === "npc"),
+    );
+    expect(campus.obstacles).not.toEqual(foodCourt.obstacles);
+    expect(
+      canOccupyNeighborhoodPoint({ x: 5, y: 9 }, { x: 5, y: 9 }, campus.objects, campus.obstacles),
+    ).toBe(true);
+  });
+  it("keeps every generated playable entrance clear and the road network connected", () => {
+    for (const slug of Object.keys(OSOGBO_WORLD_NODES).filter(isPlayableDistrict)) {
+      if (slug === "city-centre" || slug === "oja-oba") continue;
+      const area = neighborhoodAreaForSlug(slug);
+      const origin = neighborhoodAreaOrigin(cityEntranceForLocation(slug));
+      const report = checkNeighborhoodEntrances(area, { x: 320, y: 300 }, origin);
+      expect(report.spawnClear, `${slug} should have a navigable entrance spawn`).toBe(true);
+      expect(report.unreachable, `${slug} should keep its destinations reachable`).toEqual([]);
+      expect(neighborhoodRoadComponents(area, origin), `${slug} roads should connect`).toHaveLength(
+        1,
+      );
+    }
+  }, 20_000);
   it("keeps distant legacy checkpoints visible without replacing their coordinates", () => {
     const point = { x: 3, y: 8 };
     const scene = toScene(point, neighborhoodOrigin({ x: 7, y: 6 }, point));

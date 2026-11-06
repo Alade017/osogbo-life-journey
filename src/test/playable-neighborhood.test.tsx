@@ -12,6 +12,12 @@ const state = vi.hoisted(() => ({
   scene: vi.fn(),
   homeReads: 0,
   currentAction: null as { animation: string } | null,
+  gameTime: { minute: 0, hour: 8, day: 1, weekday: 0 },
+  npcRows: [] as Array<{ id: string }>,
+  placeRows: [] as Array<{ location_id: string; category: string }>,
+  shopRows: [] as Array<{ shop: { location_id: string } }>,
+  jobRows: [] as Array<{ is_available: boolean; location_id: string }>,
+  position: null as { x: number; y: number } | null,
 }));
 vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => vi.fn(),
@@ -19,22 +25,64 @@ vi.mock("@tanstack/react-router", () => ({
     <a href={to}>{children}</a>
   ),
 }));
-vi.mock("@/lib/game", () => ({
-  q: {
-    character: () => ({
-      queryKey: ["character"],
-      queryFn: async () => ({ id: "player", current_location_id: state.location }),
-    }),
-    locations: () => ({
-      queryKey: ["locations"],
-      queryFn: async () => [
-        { id: "city", slug: "city-centre", map_x: 0, map_y: 0 },
-        { id: "market", slug: "oja-oba", map_x: 0, map_y: 0 },
-        { id: "school", slug: "student-district", map_x: 0, map_y: 0 },
-      ],
-    }),
-  },
-}));
+vi.mock("@/lib/game", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/game")>();
+  return {
+    ...actual,
+    q: {
+      ...actual.q,
+      character: () => ({
+        queryKey: ["character"],
+        queryFn: async () => ({ id: "player", current_location_id: state.location }),
+      }),
+      locations: () => ({
+        queryKey: ["locations"],
+        queryFn: async () => [
+          {
+            id: "city",
+            name: "Olaiya",
+            slug: "city-centre",
+            type: "residential",
+            map_x: 0,
+            map_y: 0,
+            is_active: true,
+          },
+          {
+            id: "market",
+            name: "Oja-Oba Market",
+            slug: "oja-oba",
+            type: "market",
+            map_x: 0,
+            map_y: 0,
+            is_active: true,
+          },
+          {
+            id: "school",
+            name: "Student District",
+            slug: "student-district",
+            type: "education",
+            map_x: 0,
+            map_y: 0,
+            is_active: true,
+          },
+          {
+            id: "landmark",
+            name: "Osogbo Central Mosque",
+            slug: "osogbo-central-mosque",
+            type: "landmark",
+            map_x: 0,
+            map_y: 0,
+            is_active: true,
+          },
+        ],
+      }),
+      npcs: () => ({ queryKey: ["npcs"], queryFn: async () => state.npcRows }),
+      places: () => ({ queryKey: ["places"], queryFn: async () => state.placeRows }),
+      shopItems: () => ({ queryKey: ["shopItems"], queryFn: async () => state.shopRows }),
+      jobs: () => ({ queryKey: ["jobs"], queryFn: async () => state.jobRows }),
+    },
+  };
+});
 vi.mock("@/lib/living-cost-service", () => ({
   canonicalHomeOptions: () => ({
     queryKey: ["canonicalHome"],
@@ -47,7 +95,21 @@ vi.mock("@/lib/living-cost-service", () => ({
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc: state.rpc } }));
 vi.mock("@/lib/multiplayer-service", () => ({ joinNeighborhood: state.join }));
 vi.mock("@/components/game/GameTimeProvider", () => ({
-  useGameTime: () => ({ simulation: { currentAction: state.currentAction } }),
+  useGameTime: () => ({
+    simulation: { currentAction: state.currentAction, gameTime: state.gameTime },
+  }),
+}));
+vi.mock("@/routes/_authenticated/_game/jobs", () => ({
+  JobsPage: () => <div>Workplace opportunities</div>,
+}));
+vi.mock("@/components/game/phone/PhoneBankApp", () => ({
+  PhoneBankApp: () => <div>Bank services</div>,
+}));
+vi.mock("@/components/game/LocationVenueScene", () => ({
+  LocationVenueScene: () => <div>Venue interior</div>,
+}));
+vi.mock("@/routes/_authenticated/_game/market", () => ({
+  MarketPage: () => <div>Market offers</div>,
 }));
 vi.mock("@/components/game/PlayerMovementControls", () => ({
   PlayerMovementControls: () => <div>Movement controls</div>,
@@ -57,12 +119,14 @@ vi.mock("@/components/game/R3FNeighborhoodSurface", () => ({
     district: { area: { slug: string }; origin: { x: number; y: number } };
     homeTypeId: string | null;
     players: readonly unknown[];
+    npcs: readonly unknown[];
     onScene: (handle: PhaserNeighborhoodHandle | null) => void;
   }) => {
     state.scene({
       area: props.district.area,
       areaOrigin: props.district.origin,
       homeTypeId: props.homeTypeId,
+      npcs: props.npcs,
       playersRef: { current: props.players },
     });
     const { onScene } = props;
@@ -83,8 +147,8 @@ function room(location: string) {
     gender: "female",
     appearance: "{}",
     equipment: "[]",
-    x: market ? 4.21875 : 7,
-    y: market ? 4.15625 : 6,
+    x: state.position?.x ?? (market ? 4.21875 : 7),
+    y: state.position?.y ?? (market ? 4.15625 : 6),
     facing: "south",
   };
   return {
@@ -106,6 +170,13 @@ beforeEach(() => {
   vi.clearAllMocks();
   state.location = "city";
   state.homeReads = 0;
+  state.gameTime = { minute: 0, hour: 8, day: 1, weekday: 0 };
+  state.npcRows = [];
+  state.placeRows = [];
+  state.shopRows = [];
+  state.jobRows = [];
+  state.position = null;
+  state.rpc.mockResolvedValue({ data: null, error: null });
   state.currentAction = null;
   client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -115,6 +186,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup();
   client.clear();
+  vi.useRealTimers();
 });
 const show = () =>
   render(
@@ -122,6 +194,28 @@ const show = () =>
       <PlayableNeighborhood />
     </QueryClientProvider>,
   );
+function primeLocationQueries() {
+  client.setQueryDefaults(["character"], { staleTime: Infinity });
+  client.setQueryData(["character"], {
+    id: "player",
+    current_location_id: state.location,
+  });
+  client.setQueryData(
+    ["locations"],
+    [
+      { id: "city", slug: "city-centre", map_x: 0, map_y: 0, is_active: true },
+      { id: "market", slug: "oja-oba", map_x: 0, map_y: 0, is_active: true },
+      { id: "school", slug: "student-district", map_x: 0, map_y: 0, is_active: true },
+      {
+        id: "landmark",
+        slug: "osogbo-central-mosque",
+        map_x: 0,
+        map_y: 0,
+        is_active: true,
+      },
+    ],
+  );
+}
 async function changeLocation(location: string) {
   state.location = location;
   await act(async () => {
@@ -146,6 +240,58 @@ it("loads Oja-Oba's confirmed room and correct origin without fetching or exposi
   expect(state.rpc).not.toHaveBeenCalled();
 });
 
+it("offers shop interactions only when real local shop offers are configured", async () => {
+  state.location = "market";
+  state.position = { x: 1.90625, y: 4.15625 };
+  state.shopRows = [{ shop: { location_id: "market" } }];
+  show();
+  await screen.findByRole("button", { name: /Interact with Oja-Oba Market/i });
+  await act(async () => {
+    screen.getByRole("button", { name: /Interact with Oja-Oba Market/i }).click();
+  });
+  await screen.findByRole("button", { name: "Browse local shop offers" });
+  screen.getByRole("button", { name: "Browse local shop offers" }).click();
+  await screen.findByText("Market offers");
+});
+
+it("does not offer fake business interactions for decorative buildings", async () => {
+  state.location = "market";
+  state.position = { x: 1.90625, y: 4.15625 };
+  show();
+  await screen.findByText("R3F neighbourhood");
+  expect(
+    screen.queryByRole("button", { name: /Interact with Oja-Oba Market/i }),
+  ).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /Browse local shop offers/i })).not.toBeInTheDocument();
+});
+
+it("places and talks to a scheduled NPC through the server-authoritative interaction RPC", async () => {
+  state.location = "market";
+  state.position = { x: 1.96875, y: 5.75 };
+  state.gameTime = { minute: 0, hour: 17, day: 1, weekday: 0 };
+  state.npcRows = [{ id: "npc-adeola" }];
+  state.rpc.mockResolvedValue({
+    data: { event_id: "event-1", accepted: true, message: "You greet Adeola.", duplicate: false },
+    error: null,
+  });
+  show();
+  await screen.findByRole("button", { name: /Talk with Adeola Akinyemi/i });
+  expect(state.scene.mock.lastCall?.[0].npcs).toEqual([
+    expect.objectContaining({ id: "npc-adeola", name: "Adeola Akinyemi" }),
+  ]);
+  await act(async () => {
+    screen.getByRole("button", { name: /Talk with Adeola Akinyemi/i }).click();
+  });
+  await act(async () => {
+    screen.getByRole("button", { name: "Say hello" }).click();
+  });
+  await screen.findByText("You greet Adeola.");
+  expect(state.rpc).toHaveBeenCalledWith(
+    "interact_with_npc",
+    expect.objectContaining({ p_npc_id: "npc-adeola", p_action: "greet" }),
+  );
+});
+
 it("leaves the old room and ignores its late state events when changing districts", async () => {
   const old = room("city");
   state.join.mockImplementation(async (id: string) => (id === "city" ? old : room(id)));
@@ -166,11 +312,20 @@ it("leaves the old room and ignores its late state events when changing district
 });
 
 it("does not join unsupported locations", async () => {
-  state.location = "school";
+  state.location = "landmark";
   show();
-  await screen.findByText("This district is not available for walking yet.");
+  await screen.findByText("This destination is not available for walking yet.");
   expect(state.join).not.toHaveBeenCalled();
   expect(state.scene).not.toHaveBeenCalled();
+});
+
+it("joins a mapped city-world blueprint beyond the two authored districts", async () => {
+  state.location = "school";
+  show();
+  await screen.findByText("Movement controls");
+  expect(state.join).toHaveBeenCalledWith("school");
+  expect(state.scene.mock.lastCall?.[0].area.slug).toBe("student-district");
+  expect(state.scene.mock.lastCall?.[0].area.roads.length).toBeGreaterThan(2);
 });
 
 it("waits for the initial authoritative room state before publishing players", async () => {
@@ -225,4 +380,46 @@ it("disposes a room whose join completes after navigation to another district", 
   });
   expect(late.leave).toHaveBeenCalledOnce();
   expect(state.scene.mock.lastCall?.[0]).toMatchObject({ area: { slug: "oja-oba" } });
+});
+
+it("reports a bounded timeout when joining never resolves", async () => {
+  vi.useFakeTimers();
+  primeLocationQueries();
+  state.join.mockReturnValue(new Promise(() => {}));
+  show();
+  await act(async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+  expect(state.join).toHaveBeenCalledWith("city");
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(15_000);
+  });
+  expect(screen.getByRole("alert")).toHaveTextContent(/taking too long to connect/i);
+  act(() => screen.getByRole("button", { name: "Retry connection" }).click());
+  expect(state.join).toHaveBeenCalledTimes(2);
+});
+
+it("closes a room that never publishes its initial authoritative state", async () => {
+  vi.useFakeTimers();
+  const pending = room("market");
+  Object.defineProperty(pending, "state", { value: {}, configurable: true });
+  state.location = "market";
+  primeLocationQueries();
+  state.join.mockResolvedValue(pending);
+  show();
+  await act(async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+  expect(pending.listeners.publish).toBeDefined();
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(10_000);
+  });
+  expect(screen.getByRole("alert")).toHaveTextContent(/world state did not finish loading/i);
+  expect(pending.leave).toHaveBeenCalledOnce();
 });

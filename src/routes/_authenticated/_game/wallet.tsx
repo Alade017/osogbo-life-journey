@@ -19,16 +19,23 @@ function WalletPage() {
   const { data: wallet, isLoading } = useQuery(q.wallet());
   const { data: txs, isLoading: transactionsLoading } = useQuery(q.transactions());
   const { data: character } = useQuery(q.character());
+  const {
+    data: bankAccount,
+    isLoading: bankAccountLoading,
+    isError: bankAccountError,
+  } = useQuery(q.bankAccount());
   const { data: places } = useQuery(q.places());
   const { data: locations } = useQuery(q.locations());
   const currentLocation = locations?.find(
     (location) => location.id === character?.current_location_id,
   );
   const bankAvailable =
-    places?.some(
+    currentLocation?.type === "bank" ||
+    (places?.some(
       (place) =>
         place.location_id === currentLocation?.id && ["bank", "atm"].includes(place.category),
-    ) ?? false;
+    ) ??
+      false);
   const funds = moneySummary(wallet?.balance, wallet?.bank_balance);
   const deposit = useGameAction(rpc.depositCash, {
     onSuccess: () => toast.success("Cash deposited into your bank."),
@@ -88,7 +95,11 @@ function WalletPage() {
             Bank services
           </h2>
         </div>
-        {bankAvailable ? (
+        {bankAvailable && bankAccountError ? (
+          <p role="alert" className="text-sm text-destructive">
+            Bank account status could not be loaded. Reconnect and try again.
+          </p>
+        ) : bankAvailable && bankAccount ? (
           <>
             <label className="block text-sm font-semibold" htmlFor="transfer-amount">
               Transfer amount
@@ -128,6 +139,28 @@ function WalletPage() {
             </div>
             <p className="text-xs text-muted-foreground">Each transfer takes 3 minutes in game.</p>
           </>
+        ) : bankAvailable && bankAccountLoading ? (
+          <p role="status" className="text-sm text-muted-foreground">
+            Checking your bank account…
+          </p>
+        ) : bankAvailable ? (
+          <p className="text-sm text-muted-foreground">
+            Open a bank account with a teller before transferring money.{" "}
+            {currentLocation?.type === "bank" ? (
+              <Link
+                className="font-semibold text-primary underline"
+                to="/bank/$slug"
+                params={{ slug: currentLocation.slug }}
+              >
+                Meet a teller
+              </Link>
+            ) : (
+              <Link className="font-semibold text-primary underline" to="/map">
+                Find a bank branch
+              </Link>
+            )}
+            .
+          </p>
         ) : (
           <p className="text-sm text-muted-foreground">
             Visit a bank or ATM to transfer between cash and your bank balance.{" "}

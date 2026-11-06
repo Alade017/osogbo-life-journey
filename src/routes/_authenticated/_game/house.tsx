@@ -481,6 +481,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     );
   }, [playerId, refreshHouseState, serverState?.house?.id]);
   const houseTypeId = serverState?.house?.house_type_id;
+  const singleRoom = (serverState?.house?.house_type.bedrooms ?? 1) <= 1;
   const roomLayout = houseTypes.find((entry) => entry.id === houseTypeId);
   const slots = useMemo(() => {
     const local = roomLayout?.home_slots ?? [];
@@ -515,17 +516,20 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       fromSlot,
       x,
       y,
+      rotation,
     }: {
-      action: "place" | "move" | "remove" | "equip" | "unequip" | "buy";
+      action: "place" | "move" | "remove" | "equip" | "unequip" | "buy" | "rotate";
       itemId?: string;
       slot?: string;
       fromSlot?: string;
       x?: number;
       y?: number;
+      rotation?: number;
     }) => {
       const paths = {
         place: "/api/house/place",
         move: "/api/house/move",
+        rotate: "/api/house/rotate",
         remove: "/api/house/remove",
         equip: "/api/outfit/equip",
         unequip: "/api/outfit/unequip",
@@ -543,9 +547,11 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             ? { slot }
             : action === "move"
               ? { fromSlot, x, y }
-              : action === "place"
-                ? { itemId, slot }
-                : { itemId },
+              : action === "rotate"
+                ? { fromSlot, rotation }
+                : action === "place"
+                  ? { itemId, slot }
+                  : { itemId },
         ),
       });
       const result = await response.json().catch(() => null);
@@ -567,7 +573,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     },
     onSuccess: (state, variables) => {
       setPreviewMove(null);
-      if (variables.action === "move") {
+      if (variables.action === "move" || variables.action === "rotate") {
         setSelectedPlacement((current) =>
           current ? (state.placements.find((item) => item.id === current.id) ?? null) : current,
         );
@@ -598,6 +604,8 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         toast.success("Item bought.");
       } else if (variables.action === "move") {
         toast.success("Accessory moved.");
+      } else if (variables.action === "rotate") {
+        toast.success("Accessory turned.");
       } else {
         setSelectedSlot(null);
         setSelectedPlacement(null);
@@ -610,33 +618,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       toast.error(message);
       refreshHouseState();
     },
-  });
-  const cancelTenancy = useMutation({
-    mutationFn: async () => {
-      if (!playerId) throw new Error("Sign in again to manage your tenancy.");
-      const cancelHouse = supabase.rpc as unknown as (
-        name: string,
-        args: Record<string, unknown>,
-      ) => Promise<{ data: unknown; error: { message: string } | null }>;
-      const { data, error } = await cancelHouse("cancel_player_house", { p_user_id: playerId });
-      if (error) throw new Error(error.message);
-      if (!isRecord(data) || data["ok"] !== true)
-        throw new Error("The server did not confirm the tenancy cancellation.");
-      return data;
-    },
-    onSuccess: async () => {
-      toast.success(
-        "Your tenancy has ended. Your furniture remains in your inventory; rent and deposit are not refunded.",
-      );
-      refreshHouseState();
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["authoritativeHouseState"] }),
-        queryClient.invalidateQueries({ queryKey: ["rentStatus"] }),
-        queryClient.invalidateQueries({ queryKey: ["homeSave"] }),
-        queryClient.invalidateQueries({ queryKey: ["canonicalHousingHome"] }),
-      ]);
-    },
-    onError: (error: Error) => toast.error(error.message),
   });
   const payRentKey = useRef<string | null>(null);
   const payRent = useMutation({
@@ -846,6 +827,10 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     if (placement.slot === destination.id || placement.slot_type !== destination.slot_type) return;
     if (placements.some((item) => item.slot === destination.id)) return;
     requestMoveToPosition(placement, destination.x, destination.y);
+  };
+  const requestRotate = (placement: HousePlacement, rotation: number) => {
+    if (isOffline || actionMutation.isPending || !editing || activeSleep) return;
+    actionMutation.mutate({ action: "rotate", fromSlot: placement.slot, rotation });
   };
   const requestMoveToPosition = (placement: HousePlacement, x: number, y: number) => {
     if (isOffline || actionMutation.isPending || !editing || activeSleep) return;
@@ -1371,7 +1356,8 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           cash={wallet?.balance ?? null}
           inventory={inventory}
           catalog={catalogQuery.data ?? []}
-          outfit={outfit}
+          singleRoom={singleRoom}
+          onRotate={requestRotate}
           selectedSlot={selectedSlot}
           selectedPlacement={selectedPlacement}
           slots={slots}
@@ -1388,8 +1374,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           onPlace={(itemId, slot) => requestAction({ action: "place", itemId, slot: slot.id })}
           onRemove={(placement) => requestAction({ action: "remove", slot: placement.slot })}
           onMove={requestMove}
-          onEquip={(itemId) => requestAction({ action: "equip", itemId })}
-          onUnequip={(slot) => requestAction({ action: "unequip", slot })}
           onBuy={(itemId) => requestAction({ action: "buy", itemId })}
         />
       )}

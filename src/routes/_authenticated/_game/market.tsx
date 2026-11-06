@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_authenticated/_game/market")({
   component: MarketPage,
 });
 
-function MarketPage() {
+export function MarketPage() {
   const { data: worldTime } = useWorldClock();
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const { data: character, isLoading: characterLoading } = useQuery(q.character());

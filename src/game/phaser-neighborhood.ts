@@ -267,7 +267,12 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
         this.playAvatarAnimation(current.sprite, registered, facing, current.animationState);
       });
     } else if (record.sprite.texture.key !== DEFAULT_PLAYER_TEXTURE) {
-      this.playAvatarAnimation(record.sprite, record.sprite.texture.key, facing, record.animationState);
+      this.playAvatarAnimation(
+        record.sprite,
+        record.sprite.texture.key,
+        facing,
+        record.animationState,
+      );
     }
   }
 
@@ -287,11 +292,7 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
     )
       ? animationFacing
       : "south";
-    const animation = avatarAnimationKey(
-      textureKey,
-      state,
-      direction,
-    );
+    const animation = avatarAnimationKey(textureKey, state, direction);
     if (this.anims.exists(animation) && sprite.anims.currentAnim?.key !== animation)
       sprite.play(animation);
   }
@@ -304,7 +305,14 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
     const groundColors =
       this.area.slug === "oja-oba"
         ? [0xbda777, 0xc5b084, 0xc0aa7c, 0xc9b58b]
-        : [0x9cae79, 0xa5b681, 0x98aa75, 0xaab987];
+        : this.area.slug === "city-centre"
+          ? [0x9cae79, 0xa5b681, 0x98aa75, 0xaab987]
+          : [
+              this.area.style.ground,
+              this.area.style.paving,
+              this.area.style.ground,
+              this.area.style.grid,
+            ];
 
     for (let x = left; x < right; x += TILE_SIZE) {
       for (let y = top; y < bottom; y += TILE_SIZE) {
@@ -625,6 +633,20 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
         graphics.fillStyle(0x355948, 1).fillCircle(0, -27, 3);
       }
       container.add(graphics);
+      if (obstacle.kind === "landmark" && obstacle.label) {
+        container.add(
+          this.add
+            .text(0, -48, obstacle.label, {
+              color: "#263c31",
+              fontFamily: "system-ui, sans-serif",
+              fontSize: "9px",
+              fontStyle: "700",
+              stroke: "#f7eacf",
+              strokeThickness: 3,
+            })
+            .setOrigin(0.5, 1),
+        );
+      }
     }
   }
 

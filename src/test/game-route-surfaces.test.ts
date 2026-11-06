@@ -6,10 +6,12 @@ describe("game route surfaces", () => {
     expect(surfaceForPath("/home")).toBe("full");
     expect(surfaceForPath("/map/")).toBe("full");
     expect(surfaceForPath("/jobs")).toBe("full");
+    expect(surfaceForPath("/bank/cedar-bank")).toBe("full");
+    expect(surfaceForPath("/bank/meridian-bank")).toBe("full");
   });
 
   it("sends every other game route to the phone", () => {
-    for (const path of ["/wallet", "/social", "/location/cedar-bank", "/settings"]) {
+    for (const path of ["/wallet", "/social", "/location/cedar-bank", "/bank", "/settings"]) {
       expect(surfaceForPath(path)).toBe("phone");
     }
   });

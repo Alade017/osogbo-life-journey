@@ -1,9 +1,11 @@
 import { homeFurnitureAction } from "@/lib/home-furniture-actions";
 import { ACTION_CATALOG } from "@/lib/life-simulation";
 import { useEffect, useState, type TouchEvent } from "react";
-import { Check, ChevronLeft, ChevronRight, Package, Shirt, Sofa, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Package, RotateCw, Shirt, X } from "lucide-react";
 import { formatNaira } from "@/lib/game";
-import type { HouseInventoryItem, HouseOutfit, HousePlacement, HouseSlot } from "./HouseRoomScene";
+import type { HouseInventoryItem, HousePlacement, HouseSlot } from "./HouseRoomScene";
+import { CatalogThumbnailQueue, requestCatalogThumb, useCatalogThumb } from "./CatalogThumbnail";
+import { hasItemModel } from "@/components/3d/ItemPreview3D";
 
 type CatalogItem = {
   id: string;
@@ -20,7 +22,6 @@ type Props = {
   cash: number | null;
   inventory: HouseInventoryItem[];
   catalog: CatalogItem[];
-  outfit: HouseOutfit;
   slots: HouseSlot[];
   placements: HousePlacement[];
   selectedSlot: HouseSlot | null;
@@ -30,12 +31,11 @@ type Props = {
   onSelectSlot: (slot: HouseSlot) => void;
   onRemove: (placement: HousePlacement) => void;
   onMove: (placement: HousePlacement, slot: HouseSlot) => void;
-  onEquip: (itemId: string) => void;
-  onUnequip: (slot: keyof HouseOutfit) => void;
   onBuy: (itemId: string) => void;
+  singleRoom: boolean;
+  onRotate: (placement: HousePlacement, rotation: number) => void;
 };
 
-const outfitSlots: Array<keyof HouseOutfit> = ["head", "top", "bottom", "shoes", "accessory"];
 const itemName = (id: string) => id.replaceAll("-", " ");
 const rooms = [
   { id: "bathroom", label: "Bathroom", slots: ["bathroom"] },
@@ -45,33 +45,26 @@ const rooms = [
 ] as const;
 
 function ItemImage({ item }: { item: CatalogItem }) {
-  const [failed, setFailed] = useState(false);
-  const imageId = {
-    bed: "starter-bed",
-    sofa: "starter-seat",
-    seat: "starter-seat",
-    light: "starter-light",
-    stove: "stove",
-    shower: "shower",
-    toilet: "toilet",
-    television: "television",
-    computer: "computer",
-  }[item.art_key];
-  if (!imageId || failed)
+  const key =
+    item.category === "furniture"
+      ? item.art_key
+        ? `furniture:${item.art_key}`
+        : null
+      : hasItemModel(item.id)
+        ? `item:${item.id}`
+        : null;
+  const thumb = useCatalogThumb(key);
+  useEffect(() => {
+    if (key) requestCatalogThumb(key);
+  }, [key]);
+
+  if (!thumb)
     return (
       <span className="house-shop-image" aria-hidden="true">
-        {item.art_key === "plant" ? "🪴" : <Package size={25} />}
+        {item.category === "furniture" ? <Package size={25} /> : <Shirt size={25} />}
       </span>
     );
-  return (
-    <img
-      className="house-shop-image"
-      src={`/assets/items/${imageId}.webp`}
-      alt=""
-      loading="lazy"
-      onError={() => setFailed(true)}
-    />
-  );
+  return <img className="house-shop-image" src={thumb} alt="" />;
 }
 
 export function HouseEditSheets({
@@ -81,7 +74,6 @@ export function HouseEditSheets({
   cash,
   inventory,
   catalog,
-  outfit,
   slots,
   placements,
   selectedSlot,
@@ -91,18 +83,24 @@ export function HouseEditSheets({
   onSelectSlot,
   onRemove,
   onMove,
-  onEquip,
-  onUnequip,
   onBuy,
+  singleRoom,
+  onRotate,
 }: Props) {
-  const [tab, setTab] = useState<"room" | "avatar">("room");
-  const [equipmentSlot, setEquipmentSlot] = useState<keyof HouseOutfit>("top");
   const [roomIndex, setRoomIndex] = useState(0);
   const [filterText, setFilterText] = useState("");
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [confirmRemove, setConfirmRemove] = useState(false);
   useEffect(() => setConfirmRemove(false), [selectedPlacement?.id, selectedSlot?.id]);
+  const [turnDraft, setTurnDraft] = useState<number | null>(null);
+  useEffect(() => setTurnDraft(null), [selectedPlacement?.id, selectedPlacement?.rotation_deg]);
   if (!open) return null;
+  const currentTurn = Math.round(selectedPlacement?.rotation_deg ?? 0);
+  const commitTurn = () => {
+    if (!selectedPlacement || turnDraft === null || pending) return;
+    const next = Math.round(turnDraft);
+    if (next !== currentTurn) onRotate(selectedPlacement, next);
+  };
 
   const ownedIds = new Set(inventory.map((item) => item.item_id));
   const availableFurniture = catalog.filter(
@@ -146,17 +144,6 @@ export function HouseEditSheets({
           !placements.some((placement) => placement.slot === slot.id),
       )
     : [];
-  const ownedOutfit = inventory.filter(
-    (item) => item.category !== "furniture" && item.slot_type === equipmentSlot,
-  );
-  const availableOutfit = catalog.filter(
-    (item) =>
-      item.category !== "furniture" &&
-      item.slot_type === equipmentSlot &&
-      item.price_minor > 0 &&
-      !ownedIds.has(item.id),
-  );
-
   const shopRows = (items: CatalogItem[]) =>
     items.length ? (
       <div className="house-catalog-grid">
@@ -165,13 +152,7 @@ export function HouseEditSheets({
           const cannotAfford = cash !== null && cash < item.price_minor;
           return (
             <article className="house-catalog-card" key={item.id}>
-              {item.category === "furniture" ? (
-                <ItemImage item={item} />
-              ) : (
-                <span className="house-shop-image" aria-hidden="true">
-                  👕
-                </span>
-              )}
+              <ItemImage item={item} />
               <span className="house-shop-description">
                 <strong>{itemName(item.id)}</strong>
                 <small>{item.slot_type}</small>
@@ -206,6 +187,7 @@ export function HouseEditSheets({
       aria-modal="false"
       aria-label="Shop and arrange your home"
     >
+      <CatalogThumbnailQueue />
       <span className="house-sheet-handle" aria-hidden="true" />
       <header className="house-sheet-header">
         <div>
@@ -227,26 +209,6 @@ export function HouseEditSheets({
           <X size={19} />
         </button>
       </header>
-      {!selectedSlot && !selectedPlacement && (
-        <div className="house-sheet-tabs" role="tablist" aria-label="Item category">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "room"}
-            onClick={() => setTab("room")}
-          >
-            <Sofa size={16} /> Household items
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "avatar"}
-            onClick={() => setTab("avatar")}
-          >
-            <Shirt size={16} /> Avatar
-          </button>
-        </div>
-      )}
       {offline && (
         <p className="house-offline-note" role="status">
           Offline. Reconnect to save changes.
@@ -255,26 +217,57 @@ export function HouseEditSheets({
       {selectedPlacement ? (
         <div className="house-sheet-content">
           <p className="text-sm text-muted-foreground">This item is placed in your room.</p>
-          {moveTargets.length > 0 && (
-            <div className="house-move-options">
-              <h3 className="house-list-title">Move to another spot</h3>
-              <p className="house-empty-copy">
-                Drag the item anywhere on the floor, or choose an open spot here.
-              </p>
-              {moveTargets.map((slot) => (
-                <button
-                  key={slot.id}
-                  type="button"
-                  className="house-inventory-row"
-                  disabled={offline || pending}
-                  onClick={() => onMove(selectedPlacement, slot)}
-                >
-                  <span>{slot.id.replaceAll("-", " ")}</span>
-                  <span className="house-row-action">Move</span>
-                </button>
-              ))}
-            </div>
+          {singleRoom ? (
+            <p className="house-empty-copy">Drag it anywhere on the floor to move it.</p>
+          ) : (
+            moveTargets.length > 0 && (
+              <div className="house-move-options">
+                <h3 className="house-list-title">Move to another spot</h3>
+                {moveTargets.map((slot) => (
+                  <button
+                    key={slot.id}
+                    type="button"
+                    className="house-inventory-row"
+                    disabled={offline || pending}
+                    onClick={() => onMove(selectedPlacement, slot)}
+                  >
+                    <span>{slot.id.replaceAll("-", " ")}</span>
+                    <span className="house-row-action">Move</span>
+                  </button>
+                ))}
+              </div>
+            )
           )}
+          <div className="house-turn-control">
+            <h3 className="house-list-title">Turn</h3>
+            <div className="house-turn-row">
+              <input
+                type="range"
+                min={0}
+                max={359}
+                step={1}
+                aria-label="Turn angle"
+                aria-valuetext={`${turnDraft ?? currentTurn} degrees`}
+                value={turnDraft ?? currentTurn}
+                disabled={offline || pending}
+                onChange={(event) => setTurnDraft(Number(event.target.value))}
+                onPointerUp={commitTurn}
+                onKeyUp={commitTurn}
+                onBlur={commitTurn}
+              />
+              <output className="house-turn-angle">{turnDraft ?? currentTurn}°</output>
+            </div>
+            <button
+              type="button"
+              className="house-action-secondary"
+              disabled={offline || pending}
+              aria-label={`Turn ${itemName(selectedPlacement.item_id)} 45 degrees`}
+              onClick={() => onRotate(selectedPlacement, (currentTurn + 45) % 360)}
+            >
+              <RotateCw size={16} aria-hidden="true" />
+              Turn 45°
+            </button>
+          </div>
           {confirmRemove ? (
             <>
               <p className="text-sm">Remove it from this slot? It will return to your inventory.</p>
@@ -307,7 +300,7 @@ export function HouseEditSheets({
             </button>
           )}
         </div>
-      ) : selectedSlot || tab === "room" ? (
+      ) : (
         <div className="house-sheet-content">
           {selectedSlot ? (
             <>
@@ -457,53 +450,6 @@ export function HouseEditSheets({
               {inventory.filter((item) => item.category === "furniture").length} household items
               owned. Place one, then drag it anywhere.
             </p>
-          )}
-        </div>
-      ) : (
-        <div className="house-sheet-content">
-          <div className="house-equipment-slots">
-            {outfitSlots.map((slot) => (
-              <button
-                key={slot}
-                type="button"
-                className="house-equipment-slot"
-                aria-pressed={equipmentSlot === slot}
-                onClick={() => setEquipmentSlot(slot)}
-              >
-                <span>{slot}</span>
-                <strong>{outfit[slot] ? itemName(outfit[slot]) : "Empty"}</strong>
-              </button>
-            ))}
-          </div>
-          <h3 className="house-list-title">Owned {equipmentSlot} items</h3>
-          {ownedOutfit.map((item) => (
-            <div className="house-inventory-row" key={item.id}>
-              <span>{itemName(item.item_id)}</span>
-              <button
-                type="button"
-                className="house-row-action"
-                disabled={offline || pending || outfit[equipmentSlot] === item.item_id}
-                onClick={() => onEquip(item.item_id)}
-              >
-                {outfit[equipmentSlot] === item.item_id ? "Equipped" : "Equip"}
-              </button>
-            </div>
-          ))}
-          {outfit[equipmentSlot] && (
-            <button
-              type="button"
-              className="house-action-secondary"
-              disabled={offline || pending}
-              onClick={() => onUnequip(equipmentSlot)}
-            >
-              Unequip {equipmentSlot}
-            </button>
-          )}
-          {!!availableOutfit.length && (
-            <>
-              <h3 className="house-list-title">Available to buy</h3>
-              {shopRows(availableOutfit)}
-            </>
           )}
         </div>
       )}

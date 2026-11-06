@@ -36,11 +36,13 @@ export function phoneAppForPath(pathname: string): string | undefined {
   return PHONE_APP_ROUTES[path];
 }
 
-/** World renderers must never mount inside a phone app, including friend homes. */
+/** Full-page 3D scenes must never mount inside a phone app, including friend homes. */
 export function isFullPageWorldPath(pathname: string): boolean {
   const path = pathname.replace(/\/+$/, "") || "/";
   return (
-    ["/map", "/neighborhood", "/house", "/home"].includes(path) || /^\/location\/[^/]+$/.test(path)
+    ["/map", "/neighborhood", "/house", "/home"].includes(path) ||
+    /^\/bank\/[^/]+$/.test(path) ||
+    /^\/location\/[^/]+$/.test(path)
   );
 }
 

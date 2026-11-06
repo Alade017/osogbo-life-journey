@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import {
   Landmark,
   ArrowDownLeft,
   ArrowUpRight,
   Wallet,
   History,
-  Check,
-  DollarSign,
+  Wifi,
+  WifiOff,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatNaira, q, rpc, useGameAction } from "@/lib/game";
@@ -15,19 +16,86 @@ import { amountError } from "@/lib/economy-service";
 import { formatSignedAmount, directionTextClass } from "@/lib/transaction-direction";
 import { TransactionListSkeleton } from "@/components/game/loading-skeletons";
 
+type NetworkConnection = EventTarget & {
+  effectiveType?: string;
+  saveData?: boolean;
+};
+
+function readNetworkStatus() {
+  if (typeof navigator === "undefined") return { online: true, limited: false };
+  const connection = (navigator as Navigator & { connection?: NetworkConnection }).connection;
+  return {
+    online: navigator.onLine,
+    limited:
+      connection?.saveData === true ||
+      connection?.effectiveType === "slow-2g" ||
+      connection?.effectiveType === "2g",
+  };
+}
+
 export function PhoneBankApp() {
   const [tab, setTab] = useState<"overview" | "deposit" | "withdraw" | "history">("overview");
   const [amount, setAmount] = useState("");
-  const { data: wallet, isLoading } = useQuery(q.wallet());
-  const { data: txs, isLoading: transactionsLoading } = useQuery(q.transactions());
+  const [network, setNetwork] = useState(readNetworkStatus);
+  const [transferNeedsRefresh, setTransferNeedsRefresh] = useState(false);
+  const [transferNotice, setTransferNotice] = useState<{
+    kind: "success" | "error" | "info";
+    message: string;
+  } | null>(null);
+  const wallet = useQuery(q.wallet());
+  const txs = useQuery(q.transactions());
+  const { data: character, isLoading: characterLoading } = useQuery(q.character());
+  const bankAccountQuery = useQuery({ ...q.bankAccount(), enabled: network.online });
+  const { data: places, isLoading: placesLoading } = useQuery(q.places());
+  const { data: locations, isLoading: locationsLoading } = useQuery(q.locations());
+  const { data: walletData } = wallet;
+  const { data: transactions, isLoading: transactionsLoading } = txs;
+  const currentLocation = locations?.find(
+    (location) => location.id === character?.current_location_id,
+  );
+  const bankAvailable =
+    currentLocation?.type === "bank" ||
+    (places?.some(
+      (place) =>
+        place.location_id === currentLocation?.id && ["bank", "atm"].includes(place.category),
+    ) ??
+      false);
+  const bankStatusLoading =
+    characterLoading ||
+    placesLoading ||
+    locationsLoading ||
+    (network.online && bankAccountQuery.isLoading);
+  const bankAccount = bankAccountQuery.data;
+
+  useEffect(() => {
+    const connection = (navigator as Navigator & { connection?: NetworkConnection }).connection;
+    const update = () => setNetwork(readNetworkStatus());
+    window.addEventListener("online", update);
+    window.addEventListener("offline", update);
+    connection?.addEventListener("change", update);
+    update();
+    return () => {
+      window.removeEventListener("online", update);
+      window.removeEventListener("offline", update);
+      connection?.removeEventListener("change", update);
+    };
+  }, []);
 
   const deposit = useGameAction(rpc.depositCash, {
     onSuccess: () => {
       toast.success("Cash successfully deposited to your Osun Bank account.");
       setAmount("");
       setTab("overview");
+      setTransferNeedsRefresh(false);
+      setTransferNotice({ kind: "success", message: "Deposit confirmed by the game server." });
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "Deposit failed"),
+    onError: (err) => {
+      setTransferNeedsRefresh(true);
+      setTransferNotice({
+        kind: "error",
+        message: `${err.message} Refresh your account and transaction history before starting another transfer. No automatic retry was made.`,
+      });
+    },
   });
 
   const withdraw = useGameAction(rpc.withdrawCash, {
@@ -35,35 +103,181 @@ export function PhoneBankApp() {
       toast.success("Cash successfully withdrawn to your wallet.");
       setAmount("");
       setTab("overview");
+      setTransferNeedsRefresh(false);
+      setTransferNotice({ kind: "success", message: "Withdrawal confirmed by the game server." });
     },
-    onError: (err) => toast.error(err instanceof Error ? err.message : "Withdrawal failed"),
+    onError: (err) => {
+      setTransferNeedsRefresh(true);
+      setTransferNotice({
+        kind: "error",
+        message: `${err.message} Refresh your account and transaction history before starting another transfer. No automatic retry was made.`,
+      });
+    },
   });
 
   const numAmount = Number(amount);
-  const cashBalance = wallet?.balance ?? 0;
-  const bankBalance = wallet?.bank_balance ?? 0;
+  const cashBalance = walletData?.balance ?? 0;
+  const bankBalance = walletData?.bank_balance ?? 0;
   const totalNetWorth = cashBalance + bankBalance;
 
   const handleDeposit = () => {
+    if (
+      !network.online ||
+      !bankAvailable ||
+      !bankAccount ||
+      deposit.isPending ||
+      withdraw.isPending ||
+      transferNeedsRefresh
+    )
+      return;
     const err = amountError(numAmount, cashBalance);
     if (err) {
+      setTransferNotice({ kind: "error", message: err });
       toast.error(err);
       return;
     }
+    setTransferNotice(null);
     deposit.mutate(numAmount);
   };
 
   const handleWithdraw = () => {
+    if (
+      !network.online ||
+      !bankAvailable ||
+      !bankAccount ||
+      deposit.isPending ||
+      withdraw.isPending ||
+      transferNeedsRefresh
+    )
+      return;
     const err = amountError(numAmount, bankBalance);
     if (err) {
+      setTransferNotice({ kind: "error", message: err });
       toast.error(err);
       return;
     }
+    setTransferNotice(null);
     withdraw.mutate(numAmount);
   };
 
+  const refreshAfterTransferError = async () => {
+    if (!network.online || deposit.isPending || withdraw.isPending) return;
+    const [walletResult, transactionsResult] = await Promise.all([wallet.refetch(), txs.refetch()]);
+    if (walletResult.isError || transactionsResult.isError) {
+      setTransferNotice({
+        kind: "error",
+        message: "Account refresh failed. Reconnect and refresh before making another transfer.",
+      });
+      return;
+    }
+    setAmount("");
+    setTab("history");
+    setTransferNeedsRefresh(false);
+    setTransferNotice({
+      kind: "info",
+      message: "Account and history refreshed. Review the latest transaction before continuing.",
+    });
+  };
+
+  const transferPending = deposit.isPending || withdraw.isPending;
+
   return (
     <div className="phone-sub-app" role="region" aria-label="Bank and Finances">
+      <div className="space-y-2 border-b border-border bg-card px-3 py-2" aria-live="polite">
+        {wallet.isLoading && (
+          <p className="text-sm text-muted-foreground" role="status">
+            Loading account balances…
+          </p>
+        )}
+        {wallet.isError && !walletData && (
+          <p className="text-sm font-semibold text-destructive" role="alert">
+            Account balances could not be loaded. Reconnect and try refreshing the bank app.
+          </p>
+        )}
+        {!bankStatusLoading && !bankAvailable && (
+          <p className="text-sm font-semibold text-muted-foreground" role="status">
+            You need to be at a bank or ATM to transfer funds. Account history remains available.{" "}
+            <Link to="/map" className="text-primary underline">
+              Find a bank on the map
+            </Link>
+            .
+          </p>
+        )}
+        {bankAccountQuery.isError && (
+          <p className="text-sm font-semibold text-destructive" role="alert">
+            Bank account status could not be loaded. Reconnect and refresh before transferring.
+          </p>
+        )}
+        {!bankStatusLoading &&
+          network.online &&
+          bankAvailable &&
+          !bankAccount &&
+          !bankAccountQuery.isError && (
+            <p className="text-sm font-semibold text-muted-foreground" role="status">
+              Open a bank account with a teller before transferring money.{" "}
+              {currentLocation?.type === "bank" ? (
+                <Link
+                  to="/bank/$slug"
+                  params={{ slug: currentLocation.slug }}
+                  className="text-primary underline"
+                >
+                  Meet a teller
+                </Link>
+              ) : (
+                <Link to="/map" className="text-primary underline">
+                  Find a bank branch
+                </Link>
+              )}
+              .
+            </p>
+          )}
+        {!network.online ? (
+          <p
+            className="flex items-center gap-2 text-sm font-semibold text-destructive"
+            role="status"
+          >
+            <WifiOff className="h-4 w-4" aria-hidden="true" />
+            Offline. Cached account data remains visible; bank transfers are disabled.
+          </p>
+        ) : network.limited ? (
+          <p className="flex items-center gap-2 text-sm font-semibold text-amber-700" role="status">
+            <Wifi className="h-4 w-4" aria-hidden="true" />
+            Low network detected. Transfers are server-confirmed; avoid resubmitting while they
+            process.
+          </p>
+        ) : null}
+        {transferPending && (
+          <p className="text-sm font-semibold" role="status">
+            Transfer pending server confirmation. Keep this page open; do not submit it again.
+          </p>
+        )}
+        {transferNotice && (
+          <p
+            className={`text-sm font-semibold ${
+              transferNotice.kind === "error"
+                ? "text-destructive"
+                : transferNotice.kind === "success"
+                  ? "text-emerald-700"
+                  : "text-muted-foreground"
+            }`}
+            role={transferNotice.kind === "error" ? "alert" : "status"}
+          >
+            {transferNotice.message}
+          </p>
+        )}
+        {transferNeedsRefresh && (
+          <button
+            type="button"
+            onClick={() => void refreshAfterTransferError()}
+            disabled={!network.online || wallet.isFetching || txs.isFetching}
+            className="rounded-md border border-border bg-background px-3 py-1.5 text-xs font-bold disabled:opacity-50"
+          >
+            {wallet.isFetching || txs.isFetching
+              ? "Refreshing account…"
+              : "Refresh account and transaction history"}
+          </button>
+        )}
+      </div>
       <div className="phone-sub-header">
         <div className="phone-segmented-tabs">
           <button
@@ -111,11 +325,18 @@ export function PhoneBankApp() {
         {tab === "overview" ? (
           <div className="space-y-4 p-3">
             {/* Wealth Summary Card */}
-            <div className="phone-card p-4 bg-gradient-to-br from-blue-900/40 to-slate-900/60 border-blue-500/30 text-white space-y-3">
+            <div className="phone-card p-4 bg-linear-to-br from-blue-900/40 to-slate-900/60 border-blue-500/30 text-white space-y-3">
               <div className="flex items-center justify-between text-xs opacity-80">
-                <span>First Bank of Osun</span>
-                <span className="font-semibold uppercase tracking-wider">Account Active</span>
+                <span>{bankAccount?.branch_name ?? "Osun Bank"}</span>
+                <span className="font-semibold uppercase tracking-wider">
+                  {bankAccount ? "Account Active" : "Account Not Open"}
+                </span>
               </div>
+              {bankAccount && (
+                <p className="font-mono text-xs text-blue-200">
+                  Account number: {bankAccount.account_number}
+                </p>
+              )}
               <div>
                 <span className="text-xs text-blue-200">Total Net Worth</span>
                 <h3 className="text-2xl font-black">{formatNaira(totalNetWorth)}</h3>
@@ -182,15 +403,15 @@ export function PhoneBankApp() {
 
               {transactionsLoading ? (
                 <TransactionListSkeleton rows={2} label="Loading recent transactions" />
-              ) : txs && txs.length > 0 ? (
+              ) : transactions && transactions.length > 0 ? (
                 <div className="space-y-2">
-                  {txs.slice(0, 4).map((tx) => (
+                  {transactions.slice(0, 4).map((tx) => (
                     <div
                       key={tx.id}
                       className="flex items-center justify-between text-xs py-1 border-b border-border/30 last:border-0"
                     >
                       <div>
-                        <span className="font-semibold block truncate max-w-[180px]">
+                        <span className="font-semibold block truncate max-w-45">
                           {tx.description || tx.kind}
                         </span>
                         <small className="text-[10px] text-muted-foreground">
@@ -262,7 +483,16 @@ export function PhoneBankApp() {
 
               <button
                 type="button"
-                disabled={numAmount <= 0 || numAmount > cashBalance || deposit.isPending}
+                disabled={
+                  numAmount <= 0 ||
+                  numAmount > cashBalance ||
+                  !network.online ||
+                  !bankAvailable ||
+                  !bankAccount ||
+                  bankStatusLoading ||
+                  transferPending ||
+                  transferNeedsRefresh
+                }
                 onClick={handleDeposit}
                 className="w-full py-2.5 rounded-xl font-bold text-sm bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-40 transition-all mt-2"
               >
@@ -321,7 +551,16 @@ export function PhoneBankApp() {
 
               <button
                 type="button"
-                disabled={numAmount <= 0 || numAmount > bankBalance || withdraw.isPending}
+                disabled={
+                  numAmount <= 0 ||
+                  numAmount > bankBalance ||
+                  !network.online ||
+                  !bankAvailable ||
+                  !bankAccount ||
+                  bankStatusLoading ||
+                  transferPending ||
+                  transferNeedsRefresh
+                }
                 onClick={handleWithdraw}
                 className="w-full py-2.5 rounded-xl font-bold text-sm bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-40 transition-all mt-2"
               >
@@ -338,9 +577,9 @@ export function PhoneBankApp() {
             </h4>
             {transactionsLoading ? (
               <TransactionListSkeleton label="Loading account transaction history" />
-            ) : txs && txs.length > 0 ? (
+            ) : transactions && transactions.length > 0 ? (
               <div className="space-y-2">
-                {txs.map((tx) => (
+                {transactions.map((tx) => (
                   <div
                     key={tx.id}
                     className="phone-card flex items-center justify-between p-3 gap-3"
