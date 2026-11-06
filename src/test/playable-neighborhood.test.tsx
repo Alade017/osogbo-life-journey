@@ -120,6 +120,8 @@ vi.mock("@/components/game/R3FNeighborhoodSurface", () => ({
     homeTypeId: string | null;
     players: readonly unknown[];
     npcs: readonly unknown[];
+    interactionTargets: readonly { id: string }[];
+    onSelectTarget: (targetId: string) => void;
     onScene: (handle: PhaserNeighborhoodHandle | null) => void;
   }) => {
     state.scene({
@@ -127,6 +129,8 @@ vi.mock("@/components/game/R3FNeighborhoodSurface", () => ({
       areaOrigin: props.district.origin,
       homeTypeId: props.homeTypeId,
       npcs: props.npcs,
+      interactionTargets: props.interactionTargets,
+      onSelectTarget: props.onSelectTarget,
       playersRef: { current: props.players },
     });
     const { onScene } = props;
@@ -292,6 +296,34 @@ it("places and talks to a scheduled NPC through the server-authoritative interac
     "interact_with_npc",
     expect.objectContaining({ p_npc_id: "npc-adeola", p_action: "greet" }),
   );
+});
+
+it("opens an NPC conversation from a 3D target only when the player is within interaction range", async () => {
+  state.location = "market";
+  state.position = { x: 1.96875, y: 5.75 };
+  state.gameTime = { minute: 0, hour: 17, day: 1, weekday: 0 };
+  state.npcRows = [{ id: "npc-adeola" }];
+  show();
+  await screen.findByText("R3F neighbourhood");
+  const sceneProps = state.scene.mock.lastCall?.[0];
+  expect(sceneProps?.interactionTargets).toEqual([
+    expect.objectContaining({ id: "npc-adeola", kind: "npc" }),
+  ]);
+  await act(async () => sceneProps?.onSelectTarget("npc-adeola"));
+  await screen.findByRole("button", { name: "Say hello" });
+});
+
+it("does not allow a distant NPC target to bypass the proximity gate", async () => {
+  state.location = "market";
+  state.position = { x: 7, y: 6 };
+  state.gameTime = { minute: 0, hour: 17, day: 1, weekday: 0 };
+  state.npcRows = [{ id: "npc-adeola" }];
+  show();
+  await screen.findByText("R3F neighbourhood");
+  const sceneProps = state.scene.mock.lastCall?.[0];
+  await act(async () => sceneProps?.onSelectTarget("npc-adeola"));
+  expect(screen.queryByRole("button", { name: "Say hello" })).not.toBeInTheDocument();
+  expect(state.rpc).not.toHaveBeenCalled();
 });
 
 it("leaves the old room and ignores its late state events when changing districts", async () => {

@@ -7,6 +7,7 @@ import {
   type MapBillboardMarker,
   type MapFilter,
   type MapSearchTarget,
+  type MapEventChip,
 } from "@/components/map/MapCanvas";
 import { mapHousingMarkers } from "@/components/map/map-housing-markers";
 import { DistrictSheet } from "@/components/map/DistrictSheet";
@@ -40,12 +41,16 @@ import type { Appearance } from "@/game/avatar-appearance";
 import { MapTicker } from "@/components/map/MapTicker";
 
 const categories: { id: MapFilter; label: string }[] = [
+  { id: "all", label: "All" },
   { id: "jobs", label: "Jobs" },
   { id: "food", label: "Food" },
+  { id: "market", label: "Markets" },
   { id: "health", label: "Health" },
+  { id: "school", label: "Schools" },
   { id: "services", label: "Services" },
   { id: "worship", label: "Worship" },
   { id: "transport", label: "Transport" },
+  { id: "junction", label: "Junctions" },
   { id: "sport", label: "Sport" },
 ];
 const townLandmarks = townData.landmarks as (MapLandmark & { districtId: string })[];
@@ -204,6 +209,15 @@ export function CityMapDashboard({
   const activeEvents = cityEvents.isError
     ? []
     : cityEventsForDistrict(cityEvents.data?.events ?? [], selectedDistrict?.id);
+  const eventChips: MapEventChip[] = (cityEvents.data?.events ?? [])
+    .filter((event) => event.status === "active")
+    .flatMap((event) => {
+      const landmark = townData.landmarks.find((place) => place.id === event.landmarkId);
+      return landmark
+        ? [{ id: event.landmarkId, label: event.title, x: landmark.grid.x, y: landmark.grid.z }]
+        : [];
+    })
+    .filter((event, index, events) => events.findIndex((item) => item.id === event.id) === index);
   const landmarkEvent = cityEvents.isError
     ? undefined
     : cityEvents.data?.events.find(
@@ -530,7 +544,7 @@ export function CityMapDashboard({
               <button
                 key={c.id}
                 aria-pressed={filter === c.id}
-                onClick={() => setFilter(filter === c.id ? "all" : c.id)}
+                onClick={() => setFilter(c.id === "all" ? "all" : filter === c.id ? "all" : c.id)}
               >
                 {c.label}
               </button>
@@ -563,6 +577,21 @@ export function CityMapDashboard({
               : null
           }
           properties={housingMarkers.data ?? []}
+          eventChips={eventChips}
+          onSelectEvent={(landmarkId) => {
+            const event = (cityEvents.data?.events ?? []).find(
+              (item) => item.status === "active" && item.landmarkId === landmarkId,
+            );
+            const found = landmarks.find((item) => item.id === landmarkId) ?? getQuickTravelLandmark(landmarkId);
+            if (!event || !found) return;
+            setSelectedDistrict(null);
+            setSelectedLandmark(found);
+            setLandmarkDetailsOpen(true);
+            setArrivalConfirmed(false);
+            setTravelError(null);
+            setActionError("");
+            setPlaceActionResult(null);
+          }}
           availableLandmarkIds={availableLandmarks.data ?? []}
           onSelectDistrict={onDistrict}
           onSelectLandmark={onLandmark}
@@ -574,6 +603,13 @@ export function CityMapDashboard({
             setSelectedBillboard(
               activeMapBillboards.find(({ advertisement }) => advertisement.id === campaignId) ??
                 null,
+            );
+          }}
+          onSelectProperty={(property) => {
+            window.dispatchEvent(
+              new CustomEvent("osogbo-open-phone-app", {
+                detail: { app: property.status === "vacant" ? "Find homes" : "Property" },
+              }),
             );
           }}
         />

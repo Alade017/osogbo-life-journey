@@ -285,6 +285,7 @@ export function PlayableNeighborhood() {
   const [workView, setWorkView] = useState<"actions" | "interior">("actions");
   const [selectedNpcId, setSelectedNpcId] = useState<string | null>(null);
   const [npcDialogue, setNpcDialogue] = useState<string | null>(null);
+  const [npcPositionOverrides, setNpcPositionOverrides] = useState<Record<string, { x: number; y: number }>>({});
   const player = players.find((candidate) => candidate.sessionId === sessionId);
   const actionAnimation = simulation.currentAction
     ? avatarAnimationForActivity(simulation.currentAction.animation)
@@ -298,6 +299,7 @@ export function PlayableNeighborhood() {
       ),
     [actionAnimation, players, sessionId],
   );
+  useEffect(() => setNpcPositionOverrides({}), [currentLocation?.id]);
   const activeNpcs = useMemo((): NeighborhoodNpcView[] => {
     if (!currentLocation || !npcQuery.data || !locationsQuery.data) return [];
     const savedNpcIds = new Set(npcQuery.data.map((npc) => npc.id));
@@ -309,22 +311,53 @@ export function PlayableNeighborhood() {
         simulation.gameTime,
         (slug) => locationsQuery.data?.find((location) => location.slug === slug)?.id ?? null,
       );
-      return activity.available && activity.destinationSlug === currentLocation.slug
+      return activity.destinationSlug === currentLocation.slug
         ? [{ npc, activity }]
         : [];
     }).slice(0, slots.length);
     return scheduled.map(({ npc, activity }, index) => {
       const slot = slots[index]!;
+      const destinationObject =
+        activity.destination === "home"
+          ? area.objects.find((object) => object.kind === "home")
+          : activity.destination === "work"
+            ? area.objects.find((object) => object.kind === "work")
+            : activity.destination === "market"
+              ? area.objects.find((object) => object.kind === "market")
+              : area.obstacles?.find((obstacle) => obstacle.kind === "bench") ??
+                area.objects.find((object) => object.kind === "market");
+      const spread = (index - (scheduled.length - 1) / 2) * 34;
+      const targetX = (destinationObject?.x ?? slot.x) + spread;
+      const targetY = (destinationObject?.y ?? slot.y) + (index % 2 === 0 ? 34 : -34);
+      const current = npcPositionOverrides[npc.id] ?? { x: slot.x, y: slot.y };
+      const isMoving = !simulation.paused && Math.hypot(targetX - current.x, targetY - current.y) > 2;
+      const activityKind = isMoving
+        ? "walking"
+        : activity.destination === "work"
+          ? "working"
+          : activity.destination === "market"
+            ? "shopping"
+            : activity.destination === "park"
+              ? "socializing"
+              : activity.label.toLowerCase().includes("sleep")
+                ? "sleeping"
+                : "resting";
       return {
         id: npc.id,
         name: npc.name,
         role: npc.role,
         activity: activity.label,
-        x: slot.x,
-        y: slot.y,
+        available: activity.available,
+        isPaused: simulation.paused,
+        activityKind,
+        x: current.x,
+        y: current.y,
+        targetX,
+        targetY,
+        isMoving,
       };
     });
-  }, [area.objects, currentLocation, locationsQuery.data, npcQuery.data, simulation.gameTime]);
+  }, [area.objects, area.obstacles, currentLocation, locationsQuery.data, npcPositionOverrides, npcQuery.data, simulation.gameTime]);
   const localPlaces =
     placesQuery.data?.filter((place) => place.location_id === currentLocation?.id) ?? [];
   const hasShopOffers =
@@ -347,7 +380,7 @@ export function PlayableNeighborhood() {
       if (object.kind === "work") return hasCareerServices;
       return false;
     });
-    const npcTargets = activeNpcs.map((npc): (typeof area.objects)[number] => ({
+    const npcTargets = activeNpcs.filter((npc) => npc.available && !npc.isMoving).map((npc): (typeof area.objects)[number] => ({
       id: npc.id,
       name: npc.name,
       kind: "npc",
@@ -482,6 +515,15 @@ export function PlayableNeighborhood() {
       setActivePanel("business");
     }
   };
+  const selectWorldTarget = (targetId: string) => {
+    const target = interactionTargets.find((candidate) => candidate.id === targetId);
+    if (!target) return;
+    if (nearbyObject?.id !== targetId) {
+      toast.message(`Move closer to ${target.name} before interacting.`);
+      return;
+    }
+    openInteraction();
+  };
   const closeInteraction = (open: boolean) => {
     if (open) return;
     setActivePanel(null);
@@ -611,6 +653,9 @@ export function PlayableNeighborhood() {
                         zoom={zoom}
                         onZoomChange={setZoom}
                         onScene={handleScene}
+                        interactionTargets={interactionTargets}
+                        onSelectTarget={selectWorldTarget}
+                        onNpcArrive={(id, x, y) => setNpcPositionOverrides((current) => ({ ...current, [id]: { x, y } }))}
                       />
                     </Suspense>
                     <div
@@ -670,6 +715,41 @@ export function PlayableNeighborhood() {
                       </button>
                     )}
                   </div>
+                  {activeNpcs.length > 0 && (
+                    <section className="neighborhood-people" aria-label="People in this neighbourhood">
+                      <div className="neighborhood-people-heading">
+                        <strong>People around here</strong>
+                        <span>NPCs follow their own daily routines</span>
+                      </div>
+                      <div className="neighborhood-people-list">
+                        {activeNpcs.map((npc) => {
+                          const isNearby = nearbyObject?.id === npc.id;
+                          return (
+                            <button
+                              key={npc.id}
+                              type="button"
+                              className="neighborhood-person"
+                              onClick={() => selectWorldTarget(npc.id)}
+                              disabled={npc.isMoving || !npc.available}
+                              aria-label={
+                                isNearby
+                                  ? `Talk with ${npc.name}, ${npc.activity}`
+                                  : `${npc.name}, ${npc.activity}. Move closer to interact`
+                              }
+                            >
+                              <span className="neighborhood-person-copy">
+                                <strong>{npc.name}</strong>
+                                <span>{npc.role} · {npc.activity}</span>
+                              </span>
+                              <span className="neighborhood-person-action">
+                                {npc.isMoving ? "On the move" : !npc.available ? "Resting" : isNearby ? "Talk" : "Move closer"}
+                              </span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  )}
                   {enterHome.isError && (
                     <p className="neighborhood-error" role="alert">
                       {enterHome.error.message}

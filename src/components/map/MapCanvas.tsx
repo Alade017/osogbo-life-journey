@@ -63,6 +63,8 @@ export interface MapCanvasProps {
   availableLandmarkIds?: readonly string[];
   /** Pass undefined while the existing property source is loading. */
   properties?: readonly MapProperty[] | undefined;
+  onSelectProperty?: (property: MapProperty) => void;
+  onSelectEvent?: (landmarkId: string) => void;
 }
 
 const propertyStatusText: Record<MapProperty["status"], string> = {
@@ -94,6 +96,8 @@ export function MapCanvas({
   availableLandmarkIds,
   onSelectBillboard,
   properties,
+  onSelectProperty,
+  onSelectEvent,
 }: MapCanvasProps) {
   const [rendererState, setRendererState] = useState<"loading" | "ready" | "fallback">("loading");
 
@@ -138,6 +142,9 @@ export function MapCanvas({
           onSelectLandmark={onSelectLandmark}
           onSelectDistrict={onSelectDistrict}
           onSelectBillboard={onSelectBillboard}
+          onSelectProperty={onSelectProperty}
+          eventChips={_eventChips}
+          onSelectEvent={onSelectEvent}
         />
       )}
       <Suspense fallback={null}>
@@ -149,6 +156,9 @@ export function MapCanvas({
           onSelectLandmark={onSelectLandmark}
           onSelectDistrict={onSelectDistrict}
           onSelectBillboard={onSelectBillboard}
+          onSelectProperty={onSelectProperty}
+          eventChips={_eventChips}
+          onSelectEvent={onSelectEvent}
           onReady={handleReady}
           onUnavailable={handleUnavailable}
         />
@@ -170,13 +180,26 @@ export function MapCanvas({
       <ul className="town-map-accessible-list" aria-label="Places on the map">
         {properties?.map((property) => (
           <li key={property.id}>
-            {property.label ?? "House"}, {houseBadgeText(property)}
+            <button
+              type="button"
+              onClick={() => onSelectProperty?.(property)}
+              aria-label={"Open " + (property.label ?? "house") + ": " + houseBadgeText(property)}
+            >
+              {property.label ?? "House"}, {houseBadgeText(property)} · View property
+            </button>
           </li>
         ))}
         {availablePlaces.map((place) => (
           <li key={place.id}>
             <button type="button" onClick={() => onSelectLandmark(place.id)}>
               {place.label}, {place.category}
+            </button>
+          </li>
+        ))}
+        {_eventChips.map((event) => (
+          <li key={event.id}>
+            <button type="button" onClick={() => onSelectEvent?.(event.id)}>
+              Live event: {event.label}
             </button>
           </li>
         ))}
