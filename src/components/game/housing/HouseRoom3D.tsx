@@ -1169,6 +1169,8 @@ export function HouseRoom3D({
   onSelectSlot,
   onMove,
   onMovePosition,
+  draftMove = null,
+  onDraftMove,
 }: Props & { inputBlocked?: boolean }) {
   const [width, depth] = ROOM_SIZE[houseTypeId] ?? ROOM_SIZE["shared-room"]!;
   const bySlot = useMemo(() => new Map(placements.map((item) => [item.slot, item])), [placements]);
@@ -1184,6 +1186,14 @@ export function HouseRoom3D({
     ? [bedSlotPosition[0], 0.06, bedSlotPosition[2]]
     : null;
   const [dragPreview, setDragPreview] = useState<DragPreview | null>(null);
+  // In placement mode the draft item shows at its draft spot; a live drag overrides it.
+  const draftPreview: DragPreview | null = draftMove
+    ? (() => {
+        const [x, , z] = roomPercentToPosition(draftMove.x, draftMove.y, width, depth);
+        return { placementId: draftMove.placementId, x, z };
+      })()
+    : null;
+  const activePreview = dragPreview ?? draftPreview;
   const dragPointer = useRef<DragPointer | null>(null);
   const overlayHost = useRef<HTMLDivElement>(null!);
   const suppressClickId = useRef<string | null>(null);
@@ -1213,6 +1223,7 @@ export function HouseRoom3D({
   const onDragMove = (event: ThreeEvent<PointerEvent>) => {
     const pointer = dragPointer.current;
     if (!pointer || pointer.pointerId !== event.pointerId) return;
+    if (draftMove && pointer.placement.id !== draftMove.placementId) return;
     event.stopPropagation();
     if (Math.hypot(event.clientX - pointer.x, event.clientY - pointer.y) < 6 && !pointer.moved)
       return;
@@ -1244,6 +1255,10 @@ export function HouseRoom3D({
       const [x, y] = snapToHouseGrid(percentX, percentY);
       // One item per grid cell: a drop onto an occupied cell leaves the item where it was.
       if (isHouseGridCellOccupied(x, y, placements, pointer.placement.id)) return;
+      if (draftMove) {
+        if (draftMove.placementId === pointer.placement.id) onDraftMove?.(x, y);
+        return;
+      }
       onMovePosition(pointer.placement, x, y);
     }
   };
@@ -1402,11 +1417,11 @@ export function HouseRoom3D({
                 editMode={editMode}
                 moveEnabled={moveEnabled}
                 inputBlocked={inputBlocked}
-                dragPreview={dragPreview}
+                dragPreview={activePreview}
                 activeSlotType={
-                  dragPreview
-                    ? (placements.find((item) => item.id === dragPreview.placementId)?.slot_type ??
-                      null)
+                  activePreview
+                    ? (placements.find((item) => item.id === activePreview.placementId)
+                        ?.slot_type ?? null)
                     : (movingPlacement?.slot_type ?? null)
                 }
                 onSelectPlacement={onSelectPlacement}
@@ -1432,11 +1447,11 @@ export function HouseRoom3D({
                 editMode={editMode}
                 moveEnabled={moveEnabled}
                 inputBlocked={inputBlocked}
-                dragPreview={dragPreview}
+                dragPreview={activePreview}
                 activeSlotType={
-                  dragPreview
-                    ? (placements.find((item) => item.id === dragPreview.placementId)?.slot_type ??
-                      null)
+                  activePreview
+                    ? (placements.find((item) => item.id === activePreview.placementId)
+                        ?.slot_type ?? null)
                     : (movingPlacement?.slot_type ?? null)
                 }
                 onSelectPlacement={onSelectPlacement}
@@ -1456,7 +1471,7 @@ export function HouseRoom3D({
             verticalOrbit={!editMode}
             polarAngle={editMode ? Math.PI / 5 : Math.PI / 4}
             target={editMode ? [0, 0.25, 0] : [0, WORLD_SCALE.door * 0.65, 0]}
-            enabled={!inputBlocked && !dragPreview}
+            enabled={!inputBlocked && !activePreview}
           />
         </Canvas>
       </RoomOverlayContext.Provider>
@@ -1483,10 +1498,12 @@ export function HouseRoom3D({
       {editMode && (
         <div className="house-3d-arrange-hint" role="status">
           {dragPreview
-            ? "Release to place"
-            : moveEnabled
-              ? "Drag accessories anywhere on the floor"
-              : "Finish saving before moving another accessory"}
+            ? "Release to set the spot"
+            : draftMove
+              ? "Drag the item to a grid cell, then press Place"
+              : moveEnabled
+                ? "Drag accessories anywhere on the floor"
+                : "Finish saving before moving another accessory"}
         </div>
       )}
     </div>

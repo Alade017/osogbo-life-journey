@@ -31,7 +31,7 @@ function props(): ComponentProps<typeof HouseEditSheets> {
     onPlace: vi.fn(),
     onSelectSlot: vi.fn(),
     onRemove: vi.fn(),
-    onMove: vi.fn(),
+    onStartMove: vi.fn(),
     onBuy: vi.fn(),
     onRotate: vi.fn(),
   };

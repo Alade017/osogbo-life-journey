@@ -30,7 +30,8 @@ type Props = {
   onPlace: (itemId: string, slot: HouseSlot) => void;
   onSelectSlot: (slot: HouseSlot) => void;
   onRemove: (placement: HousePlacement) => void;
-  onMove: (placement: HousePlacement, slot: HouseSlot) => void;
+  /** Starts placement mode for a placed item; the bar then handles Move, Turn, Cancel and Place. */
+  onStartMove: (placement: HousePlacement) => void;
   onBuy: (itemId: string) => void;
   singleRoom: boolean;
   onRotate: (placement: HousePlacement, rotation: number) => void;
@@ -82,7 +83,7 @@ export function HouseEditSheets({
   onPlace,
   onSelectSlot,
   onRemove,
-  onMove,
+  onStartMove,
   onBuy,
   singleRoom,
   onRotate,
@@ -135,14 +136,6 @@ export function HouseEditSheets({
           (item) => item.category === "furniture" && item.slot_type === selectedSlot.slot_type,
         )
         .filter((item) => matchesFilter({ id: item.item_id, slot_type: item.slot_type }))
-    : [];
-  const moveTargets = selectedPlacement
-    ? slots.filter(
-        (slot) =>
-          slot.slot_type === selectedPlacement.slot_type &&
-          slot.id !== selectedPlacement.slot &&
-          !placements.some((placement) => placement.slot === slot.id),
-      )
     : [];
   const shopRows = (items: CatalogItem[]) =>
     items.length ? (
@@ -217,27 +210,20 @@ export function HouseEditSheets({
       {selectedPlacement ? (
         <div className="house-sheet-content">
           <p className="text-sm text-muted-foreground">This item is placed in your room.</p>
-          {singleRoom ? (
-            <p className="house-empty-copy">Drag it anywhere on the floor to move it.</p>
-          ) : (
-            moveTargets.length > 0 && (
-              <div className="house-move-options">
-                <h3 className="house-list-title">Move to another spot</h3>
-                {moveTargets.map((slot) => (
-                  <button
-                    key={slot.id}
-                    type="button"
-                    className="house-inventory-row"
-                    disabled={offline || pending}
-                    onClick={() => onMove(selectedPlacement, slot)}
-                  >
-                    <span>{slot.id.replaceAll("-", " ")}</span>
-                    <span className="house-row-action">Move</span>
-                  </button>
-                ))}
-              </div>
-            )
-          )}
+          <div className="house-move-options">
+            <h3 className="house-list-title">Move</h3>
+            <button
+              type="button"
+              className="house-inventory-row"
+              disabled={offline || pending}
+              onClick={() => onStartMove(selectedPlacement)}
+            >
+              <span>
+                {singleRoom ? "Drag it or pick a new spot" : "Pick a new spot on the floor"}
+              </span>
+              <span className="house-row-action">Move</span>
+            </button>
+          </div>
           <div className="house-turn-control">
             <h3 className="house-list-title">Turn</h3>
             <div className="house-turn-row">

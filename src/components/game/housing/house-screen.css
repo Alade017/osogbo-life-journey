@@ -2844,3 +2844,66 @@
   background: var(--muted);
   color: var(--foreground);
 }
+
+/* Placement mode: shown while moving a furniture item on the grid. */
+.house-placement-bar {
+  position: absolute;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  width: min(92vw, 620px);
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: var(--card, #ffffff);
+  color: var(--card-foreground, #111827);
+  border: 1px solid var(--border, #e5e7eb);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+.house-placement-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.house-placement-copy strong {
+  text-transform: capitalize;
+}
+.house-placement-copy span {
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+.house-placement-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.house-placement-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border, #e5e7eb);
+  background: transparent;
+  font-weight: 600;
+  cursor: pointer;
+}
+.house-placement-actions button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.house-placement-actions .house-placement-place {
+  background: #15803d;
+  border-color: #15803d;
+  color: #ffffff;
+}
+@media (max-width: 520px) {
+  .house-placement-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

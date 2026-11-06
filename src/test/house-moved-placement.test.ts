@@ -63,3 +63,22 @@ describe("house grid", () => {
     expect(isHouseGridCellOccupied(50, 50, others, "a")).toBe(false);
   });
 });
+
+import { draftStartFor } from "@/components/game/housing/house-room-contract";
+
+describe("placement mode start", () => {
+  it("starts from the saved spot when the item was moved", () => {
+    expect(draftStartFor(placement({ slot: "free:p1", x: 62.5, y: 18 }), slots)).toEqual({
+      x: 62.5,
+      y: 18,
+    });
+  });
+
+  it("starts from the fixed slot when the item was never moved", () => {
+    expect(draftStartFor(placement({}), slots)).toEqual({ x: 30, y: 40 });
+  });
+
+  it("cannot start when the item has no spot at all", () => {
+    expect(draftStartFor(placement({ slot: "missing" }), slots)).toBeNull();
+  });
+});
