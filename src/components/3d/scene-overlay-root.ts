@@ -20,7 +20,7 @@ export function mountSceneOverlay(target: HTMLElement) {
       queueMicrotask(() => {
         root.unmount();
         // remove() never throws, even if a blur handler already moved the node.
-       element.remove()
+        element.remove();
       });
     },
   };

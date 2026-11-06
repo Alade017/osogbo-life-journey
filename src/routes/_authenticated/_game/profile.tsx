@@ -2,7 +2,17 @@ import { useState } from "react";
 import { useMissions } from "@/hooks/use-missions";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Award, BriefcaseBusiness, Gauge, House, MapPin, Settings2, Shirt, Smile, Users } from "lucide-react";
+import {
+  Award,
+  BriefcaseBusiness,
+  Gauge,
+  House,
+  MapPin,
+  Settings2,
+  Shirt,
+  Smile,
+  Users,
+} from "lucide-react";
 import { q, formatNaira, xpProgress } from "@/lib/game";
 import { pageMeta } from "@/lib/seo";
 import { GameDataUnavailable, LoadingState } from "@/components/game/ui";
@@ -80,7 +90,9 @@ export function ProfilePage() {
           />
           <div className="pi-xp-label">
             <span>{xp.into} XP</span>
-            <span>{xp.toNextLevel} to level {player.level + 1}</span>
+            <span>
+              {xp.toNextLevel} to level {player.level + 1}
+            </span>
           </div>
           <div className="pi-xp" aria-hidden="true">
             <span style={{ width: `${xpPercent}%` }} />
@@ -189,9 +201,9 @@ export function ProfilePage() {
                     <span>
                       <strong>Mission completed</strong>
                       <small>
-                        {new Date(milestone.completed_at ?? milestone.claimed_at!).toLocaleDateString(
-                          "en-NG",
-                        )}
+                        {new Date(
+                          milestone.completed_at ?? milestone.claimed_at!,
+                        ).toLocaleDateString("en-NG")}
                       </small>
                     </span>
                   </li>
@@ -223,9 +235,7 @@ export function ProfilePage() {
         </Link>
       </nav>
 
-      {walletQuery.isError && (
-        <p className="pi-note">Your wallet is temporarily unavailable.</p>
-      )}
+      {walletQuery.isError && <p className="pi-note">Your wallet is temporarily unavailable.</p>}
     </div>
   );
 }

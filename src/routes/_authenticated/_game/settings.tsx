@@ -379,13 +379,7 @@ function SavedPill({ show }: { show: boolean }) {
   );
 }
 
-function AudioControls({
-  profile,
-  onSave,
-}: {
-  profile: Profile;
-  onSave: (patch: Patch) => void;
-}) {
+function AudioControls({ profile, onSave }: { profile: Profile; onSave: (patch: Patch) => void }) {
   const [levels, setLevels] = useState(() => readGameAudioLevels());
   const [blocked, setBlocked] = useState(false);
 
@@ -677,8 +671,8 @@ function SessionSection({ isGuest }: { isGuest: boolean }) {
             <AlertDialogHeader>
               <AlertDialogTitle>Sign out of a guest save?</AlertDialogTitle>
               <AlertDialogDescription>
-                This save is attached to this temporary sign-in. Without an email and password,
-                you may not be able to get back to it.
+                This save is attached to this temporary sign-in. Without an email and password, you
+                may not be able to get back to it.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

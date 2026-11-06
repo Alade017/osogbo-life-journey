@@ -759,7 +759,7 @@ export function PlayerSocial({
     enabled: friendIds.length > 0,
     refetchInterval: 10000,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("player_online_presence")
         .select("character_id,seen_at")
         .in("character_id", friendIds);

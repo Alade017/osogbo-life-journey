@@ -13,12 +13,7 @@ import {
   Store,
 } from "lucide-react";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { PlayerMovementControls } from "@/components/game/PlayerMovementControls";
 import { PhoneBankApp } from "@/components/game/phone/PhoneBankApp";
 import { LocationVenueScene } from "@/components/game/LocationVenueScene";
@@ -338,9 +333,8 @@ export function PlayableNeighborhood() {
     currentLocation?.type === "bank" ||
     localPlaces.some((place) => place.category === "bank" || place.category === "atm");
   const hasCareerServices =
-    jobsQuery.data?.some(
-      (job) => job.is_available && job.location_id === currentLocation?.id,
-    ) ?? false;
+    jobsQuery.data?.some((job) => job.is_available && job.location_id === currentLocation?.id) ??
+    false;
   const hasVenueInterior = currentLocation ? hasLocationVenueDesign(currentLocation.slug) : false;
   const hasLocalBusinesses = localPlaces.some((place) =>
     BUSINESS_PLACE_CATEGORIES.has(place.category),
@@ -353,18 +347,17 @@ export function PlayableNeighborhood() {
       if (object.kind === "work") return hasCareerServices;
       return false;
     });
-    const npcTargets = activeNpcs.map(
-      (npc): (typeof area.objects)[number] => ({
-        id: npc.id,
-        name: npc.name,
-        kind: "npc",
-        x: npc.x,
-        y: npc.y,
-      }),
-    );
+    const npcTargets = activeNpcs.map((npc): (typeof area.objects)[number] => ({
+      id: npc.id,
+      name: npc.name,
+      kind: "npc",
+      x: npc.x,
+      y: npc.y,
+    }));
     return [...buildings, ...npcTargets];
   }, [
     activeNpcs,
+    area,
     area.objects,
     district?.personalHome,
     hasBankServices,
@@ -381,7 +374,7 @@ export function PlayableNeighborhood() {
   }, [interactionTargets, player, district]);
   const nearbyNpc =
     nearbyObject?.kind === "npc"
-      ? activeNpcs.find((npc) => npc.id === nearbyObject.id) ?? null
+      ? (activeNpcs.find((npc) => npc.id === nearbyObject.id) ?? null)
       : null;
   const selectedNpc = activeNpcs.find((npc) => npc.id === selectedNpcId) ?? nearbyNpc;
   const npcInteraction = useGameAction(rpc.interactWithNpc, {

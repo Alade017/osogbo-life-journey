@@ -30,7 +30,9 @@ describe("east venue action seed migration", () => {
         constraint map_landmark_actions_id_matches check (definition->>'id' = id)
       );
     `);
-    await db.exec(`insert into public.map_landmarks (id) values ${venueIds.map((id) => `('${id}')`).join(",")};`);
+    await db.exec(
+      `insert into public.map_landmarks (id) values ${venueIds.map((id) => `('${id}')`).join(",")};`,
+    );
     const sql = readFileSync(migration, "utf8");
     await db.exec(sql);
     await db.exec(sql); // a second run must be a no-op
@@ -41,7 +43,11 @@ describe("east venue action seed migration", () => {
       `select landmark_id, count(*)::int as count from public.map_landmark_actions
        where is_active group by landmark_id order by landmark_id`,
     );
-    expect(result.rows).toEqual(venueIds.map((id) => ({ landmark_id: id, count: 1 })).sort((a, b) => a.landmark_id.localeCompare(b.landmark_id)));
+    expect(result.rows).toEqual(
+      venueIds
+        .map((id) => ({ landmark_id: id, count: 1 }))
+        .sort((a, b) => a.landmark_id.localeCompare(b.landmark_id)),
+    );
   });
 
   it("stores the same definitions as the client catalogue", async () => {

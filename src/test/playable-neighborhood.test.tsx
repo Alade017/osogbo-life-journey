@@ -262,7 +262,9 @@ it("does not offer fake business interactions for decorative buildings", async (
   expect(
     screen.queryByRole("button", { name: /Interact with Oja-Oba Market/i }),
   ).not.toBeInTheDocument();
-  expect(screen.queryByRole("button", { name: /Browse local shop offers/i })).not.toBeInTheDocument();
+  expect(
+    screen.queryByRole("button", { name: /Browse local shop offers/i }),
+  ).not.toBeInTheDocument();
 });
 
 it("places and talks to a scheduled NPC through the server-authoritative interaction RPC", async () => {

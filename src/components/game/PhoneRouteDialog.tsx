@@ -45,7 +45,12 @@ export function PhoneRouteDialog({
 
           <div className="phone-app-view" style={{ display: "flex" }}>
             <div className="phone-app-toolbar">
-              <button type="button" onClick={onClose} className="phone-back-button" aria-label="Close and return">
+              <button
+                type="button"
+                onClick={onClose}
+                className="phone-back-button"
+                aria-label="Close and return"
+              >
                 <ChevronLeft size={18} aria-hidden="true" />
                 <span>Close</span>
               </button>
@@ -55,7 +60,12 @@ export function PhoneRouteDialog({
             <div className="phone-app-body">{children}</div>
           </div>
 
-          <button type="button" className="phone-home-bar-button" onClick={onClose} aria-label="Close phone">
+          <button
+            type="button"
+            className="phone-home-bar-button"
+            onClick={onClose}
+            aria-label="Close phone"
+          >
             <span className="phone-home-indicator" aria-hidden="true" />
           </button>
         </div>

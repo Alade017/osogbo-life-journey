@@ -332,6 +332,11 @@ export function GameTimeProvider({
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
+/** Like useGameTime, but returns null outside a GameTimeProvider instead of throwing. */
+export function useOptionalGameTime(): ContextValue | null {
+  return useContext(GameTimeContext);
+}
+
 export function useGameTime() {
   const value = useContext(GameTimeContext);
   if (!value) throw new Error("useGameTime must be used inside GameTimeProvider.");

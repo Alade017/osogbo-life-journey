@@ -81,8 +81,7 @@ export function CommunityPhoneApps({ app }: { app: CommunityPhoneApp }) {
     enabled: app === "Leaderboard",
     queryFn: async () => {
       // The generated database types do not yet include migration 0060.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.rpc as any)("get_town_leaderboard");
+      const { data, error } = await supabase.rpc("get_town_leaderboard");
       if (error) throw error;
       return (Array.isArray(data) ? data : []) as TownRank[];
     },
@@ -91,8 +90,8 @@ export function CommunityPhoneApps({ app }: { app: CommunityPhoneApp }) {
     queryKey: ["phoneTownNewsPosts"],
     enabled: app === "Town News",
     queryFn: async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.from as any)("town_news_posts")
+      const { data, error } = await supabase
+        .from("town_news_posts")
         .select("id,category,title,body,created_at")
         .order("created_at", { ascending: false })
         .limit(30);
@@ -104,10 +103,7 @@ export function CommunityPhoneApps({ app }: { app: CommunityPhoneApp }) {
     queryKey: ["phoneTownNewsReactions"],
     enabled: app === "Town News",
     queryFn: async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.from as any)("town_news_reactions").select(
-        "post_id,user_id",
-      );
+      const { data, error } = await supabase.from("town_news_reactions").select("post_id,user_id");
       if (error) throw error;
       return (data ?? []) as TownReaction[];
     },
@@ -116,8 +112,8 @@ export function CommunityPhoneApps({ app }: { app: CommunityPhoneApp }) {
     queryKey: ["phoneTownNewsComments"],
     enabled: app === "Town News",
     queryFn: async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.from as any)("town_news_comments")
+      const { data, error } = await supabase
+        .from("town_news_comments")
         .select("id,post_id,body,created_at")
         .order("created_at", { ascending: true });
       if (error) throw error;
@@ -126,8 +122,7 @@ export function CommunityPhoneApps({ app }: { app: CommunityPhoneApp }) {
   });
   const toggleReaction = useMutation({
     mutationFn: async ({ postId, reacted }: { postId: string; reacted: boolean }) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase.rpc as any)("toggle_town_news_reaction", {
+      const { error } = await supabase.rpc("toggle_town_news_reaction", {
         p_post_id: postId,
         p_reacted: reacted,
       });
@@ -138,10 +133,9 @@ export function CommunityPhoneApps({ app }: { app: CommunityPhoneApp }) {
   });
   const addComment = useMutation({
     mutationFn: async (postId: string) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase.rpc as any)("create_town_news_comment", {
+      const { error } = await supabase.rpc("create_town_news_comment", {
         p_post_id: postId,
-        p_body: commentDrafts[postId]?.trim(),
+        p_body: (commentDrafts[postId] ?? "").trim(),
       });
       if (error) throw error;
     },
@@ -153,8 +147,7 @@ export function CommunityPhoneApps({ app }: { app: CommunityPhoneApp }) {
   });
   const createPost = useMutation({
     mutationFn: async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { error } = await (supabase.rpc as any)("create_town_news_post", {
+      const { error } = await supabase.rpc("create_town_news_post", {
         p_category: postCategory,
         p_title: postTitle.trim(),
         p_body: postBody.trim(),

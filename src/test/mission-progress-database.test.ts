@@ -20,8 +20,7 @@ beforeAll(async () => {
       grant execute on function auth.uid() to authenticated;`);
   for (const file of readdirSync("drizzle/migrations")
     .filter(
-      (name) =>
-        name.endsWith(".sql") && !name.startsWith("0075_") && !name.startsWith("0077_"),
+      (name) => name.endsWith(".sql") && !name.startsWith("0075_") && !name.startsWith("0077_"),
     )
     .sort()) {
     try {

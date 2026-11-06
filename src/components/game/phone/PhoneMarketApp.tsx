@@ -60,8 +60,7 @@ export function PhoneMarketApp() {
   const npcStalls = useQuery({
     queryKey: ["npcMarketStalls"],
     queryFn: async () => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("npc_market_stalls")
         .select("id,name,goods,status,visitor_count");
       if (error) throw error;

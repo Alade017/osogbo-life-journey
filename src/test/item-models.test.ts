@@ -10,7 +10,16 @@ import {
 
 describe("3D item registries", () => {
   it("shows a 3D model in the bag for every catalogue item that has one", () => {
-    for (const slug of ["jollof_rice", "zobo", "water_bottle", "water_nature", "basic_outfit", "backpack", "sokoto", "slippers"]) {
+    for (const slug of [
+      "jollof_rice",
+      "zobo",
+      "water_bottle",
+      "water_nature",
+      "basic_outfit",
+      "backpack",
+      "sokoto",
+      "slippers",
+    ]) {
       expect(hasItemModel(slug), slug).toBe(true);
     }
   });

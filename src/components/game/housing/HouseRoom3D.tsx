@@ -1255,10 +1255,14 @@ export function HouseRoom3D({
     setDragPreview(null);
   }, [editMode, inputBlocked, moveEnabled]);
   const [departing, setDeparting] = useState<WaitingCourier[]>([]);
-  const waitingCouriers: WaitingCourier[] = foodDeliveries
-    .filter((delivery) => delivery.deliveryState === "package_waiting")
-    .slice(0, 4)
-    .map((delivery, index) => ({ delivery, index }));
+  const waitingCouriers = useMemo<WaitingCourier[]>(
+    () =>
+      foodDeliveries
+        .filter((delivery) => delivery.deliveryState === "package_waiting")
+        .slice(0, 4)
+        .map((delivery, index) => ({ delivery, index })),
+    [foodDeliveries],
+  );
   const previousWaiting = useRef<WaitingCourier[]>([]);
   useEffect(() => {
     const stillWaiting = new Set(waitingCouriers.map((item) => item.delivery.id));
@@ -1269,7 +1273,7 @@ export function HouseRoom3D({
         ...left.filter((item) => !current.some((c) => c.delivery.id === item.delivery.id)),
       ]);
     previousWaiting.current = waitingCouriers;
-  });
+  }, [waitingCouriers]);
   return (
     <div className="house-3d-scene" aria-label={`${houseTypeId.replaceAll("-", " ")} 3D room`}>
       <RoomOverlayContext.Provider value={overlayHost}>

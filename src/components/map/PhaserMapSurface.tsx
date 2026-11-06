@@ -131,12 +131,7 @@ export function PhaserMapSurface({
     <div className="town-map-phaser-layer">
       <div className="town-map-phaser-host" ref={hostRef} aria-hidden="true" />
       <div className="town-map-zoom-controls" aria-label="Map controls">
-        <button
-          type="button"
-          aria-label="Zoom in"
-          onClick={() => changeZoom(1.2)}
-          title="Zoom in"
-        >
+        <button type="button" aria-label="Zoom in" onClick={() => changeZoom(1.2)} title="Zoom in">
           +
         </button>
         <button
@@ -147,7 +142,12 @@ export function PhaserMapSurface({
         >
           −
         </button>
-        <button type="button" aria-label="Reset map view" onClick={resetView} title="Reset map view">
+        <button
+          type="button"
+          aria-label="Reset map view"
+          onClick={resetView}
+          title="Reset map view"
+        >
           ⌂
         </button>
       </div>

@@ -112,7 +112,7 @@ export const q = {
       staleTime: 30_000,
       queryFn: async () =>
         unwrap(
-          await (supabase as any)
+          await supabase
             .from("player_advertisements")
             .select("*")
             .order("starts_at", { ascending: false }),
@@ -494,20 +494,20 @@ export const rpc = {
       await supabase.rpc("set_my_home_visit_access", { p_allow_friends: allowFriends }),
     ) as Json,
 
-    updateMySettings: async (patch: {
-      displayName?: string | undefined;
-      musicEnabled?: boolean | undefined;
-      effectsEnabled?: boolean | undefined;
-      reducedMotion?: boolean | undefined;
-    }) =>
-      unwrap(
-        await supabase.rpc("update_my_settings", {
-          ...(patch.displayName !== undefined ? { p_display_name: patch.displayName } : {}),
-          ...(patch.musicEnabled !== undefined ? { p_music_enabled: patch.musicEnabled } : {}),
-          ...(patch.effectsEnabled !== undefined ? { p_effects_enabled: patch.effectsEnabled } : {}),
-          ...(patch.reducedMotion !== undefined ? { p_reduced_motion: patch.reducedMotion } : {}),
-        }),
-      ) as Json,
+  updateMySettings: async (patch: {
+    displayName?: string | undefined;
+    musicEnabled?: boolean | undefined;
+    effectsEnabled?: boolean | undefined;
+    reducedMotion?: boolean | undefined;
+  }) =>
+    unwrap(
+      await supabase.rpc("update_my_settings", {
+        ...(patch.displayName !== undefined ? { p_display_name: patch.displayName } : {}),
+        ...(patch.musicEnabled !== undefined ? { p_music_enabled: patch.musicEnabled } : {}),
+        ...(patch.effectsEnabled !== undefined ? { p_effects_enabled: patch.effectsEnabled } : {}),
+        ...(patch.reducedMotion !== undefined ? { p_reduced_motion: patch.reducedMotion } : {}),
+      }),
+    ) as Json,
   purchaseHomeUpgrade: async (args: {
     roomId: string;
     upgradeId: string;

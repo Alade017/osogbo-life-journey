@@ -2,7 +2,7 @@ import { useEffect, useMemo } from "react";
 import { useThree } from "@react-three/fiber";
 import { ContactShadows } from "@react-three/drei";
 import { Color } from "three";
-import { useGameTime } from "@/components/game/GameTimeProvider";
+import { useOptionalGameTime } from "@/components/game/GameTimeProvider";
 import { WORLD_PALETTE } from "../3d/world-theme";
 
 const DAY_BACKGROUND = new Color(WORLD_PALETTE.ground);
@@ -24,12 +24,9 @@ export function daylightFor(hour: number, minute = 0) {
 
 /** Reads the game clock when available, so the map still renders in isolated tests. */
 function useOptionalGameClock(): { hour: number; minute: number } | null {
-  try {
-    const { simulation } = useGameTime();
-    return { hour: simulation.gameTime.hour, minute: simulation.gameTime.minute };
-  } catch {
-    return null;
-  }
+  const game = useOptionalGameTime();
+  if (!game) return null;
+  return { hour: game.simulation.gameTime.hour, minute: game.simulation.gameTime.minute };
 }
 
 /** Day and night lighting for the 3D town map. Replaces WorldLighting on the map. */

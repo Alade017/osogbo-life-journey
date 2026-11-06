@@ -19,11 +19,6 @@ type Ride = {
 };
 type Contribution = { id: string; fund_id: string; amount_minor: number };
 
-// Migration 0060 is not yet represented in the generated Supabase types.
-// Keep the temporary cast at the database boundary instead of spreading it through UI code.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const phoneDb = supabase as any;
-
 function rideStatusLabel(status: string) {
   if (status === "assigned") return "Driver assigned";
   if (status === "completed") return "Completed";
@@ -31,11 +26,26 @@ function rideStatusLabel(status: string) {
   return "Searching for a rider";
 }
 
-function usePhoneRows<T>(table: string, columns: string, orderBy?: string, ascending = false) {
+type PhoneRowTable =
+  | "food_vendors"
+  | "food_menu_items"
+  | "community_funds"
+  | "community_contributions"
+  | "player_event_reminders"
+  | "town_events"
+  | "town_service_prices"
+  | "okada_ride_requests";
+
+function usePhoneRows<T>(
+  table: PhoneRowTable,
+  columns: string,
+  orderBy?: string,
+  ascending = false,
+) {
   return useQuery({
     queryKey: ["phoneService", table],
     queryFn: async (): Promise<T[]> => {
-      let request = phoneDb.from(table).select(columns);
+      let request = supabase.from(table).select(columns);
       if (orderBy) request = request.order(orderBy, { ascending });
       const { data, error } = await request;
       if (error) throw error;
@@ -85,7 +95,7 @@ function CalendarApp() {
   const reminders = usePhoneRows<{ event_id: string }>("player_event_reminders", "event_id");
   const save = useMutation({
     mutationFn: async ({ eventId, enabled }: { eventId: string; enabled: boolean }) => {
-      const { error } = await phoneDb.rpc("save_phone_event_reminder", {
+      const { error } = await supabase.rpc("save_phone_event_reminder", {
         p_event_id: eventId,
         p_enabled: enabled,
       });
@@ -276,7 +286,7 @@ function FoodApp() {
 
   const order = useMutation({
     mutationFn: async () => {
-      const { error } = await phoneDb.rpc("request_food_delivery", {
+      const { error } = await supabase.rpc("request_food_delivery", {
         p_vendor_id: selectedVendorId,
         p_items: basketLines.map((item) => ({
           menu_item_id: item.id,
@@ -455,7 +465,7 @@ function RidesApp() {
   const fare = price.data?.find((item) => item.service === "okada_ride")?.amount_minor;
   const request = useMutation({
     mutationFn: async () => {
-      const { error } = await phoneDb.rpc("request_okada_ride", {
+      const { error } = await supabase.rpc("request_okada_ride", {
         p_destination: destination.trim(),
         p_request_id: crypto.randomUUID(),
       });
@@ -547,7 +557,7 @@ function ContributionApp() {
   const [amount, setAmount] = useState(500);
   const contribute = useMutation({
     mutationFn: async (fundId: string) => {
-      const { error } = await phoneDb.rpc("contribute_to_community_fund", {
+      const { error } = await supabase.rpc("contribute_to_community_fund", {
         p_fund_id: fundId,
         p_amount_minor: amount,
         p_request_id: crypto.randomUUID(),

@@ -23,7 +23,10 @@ const migrations = tags.map((tag) => {
 function compatibleSql(tag, source) {
   if (tag === "0049_phone_market_and_careers") {
     return source
-      .replace("create table public.player_status_posts", "create table if not exists public.player_status_posts")
+      .replace(
+        "create table public.player_status_posts",
+        "create table if not exists public.player_status_posts",
+      )
       .replace(
         "create index player_status_posts_active_idx",
         "create index if not exists player_status_posts_active_idx",
@@ -35,13 +38,22 @@ function compatibleSql(tag, source) {
   }
   if (tag === "0053_voice_notes") {
     return source
-      .replaceAll("alter table public.social_messages add column ", "alter table public.social_messages add column if not exists ")
-      .replace("create index social_messages_reply", "create index if not exists social_messages_reply")
+      .replaceAll(
+        "alter table public.social_messages add column ",
+        "alter table public.social_messages add column if not exists ",
+      )
+      .replace(
+        "create index social_messages_reply",
+        "create index if not exists social_messages_reply",
+      )
       .replace(
         "alter table public.social_messages add constraint social_message_voice_shape",
         "alter table public.social_messages drop constraint if exists social_message_voice_shape;\nalter table public.social_messages add constraint social_message_voice_shape",
       )
-      .replace("create table public.social_message_stars", "create table if not exists public.social_message_stars")
+      .replace(
+        "create table public.social_message_stars",
+        "create table if not exists public.social_message_stars",
+      )
       .replace(
         "create policy social_message_stars_owner_read on public.social_message_stars",
         "drop policy if exists social_message_stars_owner_read on public.social_message_stars;\ncreate policy social_message_stars_owner_read on public.social_message_stars",

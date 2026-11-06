@@ -102,17 +102,22 @@ function MeatPie() {
 
 /** Fried plantain: golden slices on a plate. */
 function FriedPlantain() {
-    const slices: [number, number][] = [[-0.25, 0.1], [0.05, -0.12], [0.3, 0.18]];
-    return (
-      <group>
-        {plate(0.8)}
-        {slices.map(([x, z], i) => (
-          <mesh key={i} position={[x, 0.12, z]} rotation={[0.2, i, 0]} castShadow>
-            <cylinderGeometry args={[0.2, 0.2, 0.1, 20]} />
-            {mat("#e0b13a", 0.6)}
-          </mesh>
-        ))}
-      </group>);
+  const slices: [number, number][] = [
+    [-0.25, 0.1],
+    [0.05, -0.12],
+    [0.3, 0.18],
+  ];
+  return (
+    <group>
+      {plate(0.8)}
+      {slices.map(([x, z], i) => (
+        <mesh key={i} position={[x, 0.12, z]} rotation={[0.2, i, 0]} castShadow>
+          <cylinderGeometry args={[0.2, 0.2, 0.1, 20]} />
+          {mat("#e0b13a", 0.6)}
+        </mesh>
+      ))}
+    </group>
+  );
 }
 
 /** Bread: a soft loaf. */
