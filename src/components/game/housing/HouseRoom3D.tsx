@@ -19,6 +19,7 @@ import {
   housePartitionSegments,
   interpolateRoomPosition,
   roomCoordinatesToPercent,
+  renderSlotForPlacement,
   roomPercentToPosition,
   houseSlotPosition as slotPosition,
   houseWallSegments,
@@ -1199,10 +1200,11 @@ export function HouseRoom3D({
       moved: false,
     };
     const original = slots.find((slot) => slot.id === placement.slot);
-    if (original) {
-      const position = hasRoomPosition(placement)
-        ? roomPercentToPosition(placement.x, placement.y, width, depth)
-        : slotPosition(original, width, depth);
+    if (original || hasRoomPosition(placement)) {
+      const position =
+        hasRoomPosition(placement) || !original
+          ? roomPercentToPosition(placement.x ?? 50, placement.y ?? 50, width, depth)
+          : slotPosition(original, width, depth);
       setDragPreview({ placementId: placement.id, x: position[0], z: position[2] });
     }
   };
@@ -1382,7 +1384,7 @@ export function HouseRoom3D({
           })}
           {/* Placed furniture: reconstructed, compare with your original if anything is off */}
           {placements.map((placement) => {
-            const slot = slots.find((item) => item.id === placement.slot);
+            const slot = renderSlotForPlacement(placement, slots);
             if (!slot) return null;
             return (
               <SlotObject

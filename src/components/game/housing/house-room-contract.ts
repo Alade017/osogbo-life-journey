@@ -65,6 +65,26 @@ export function interpolateRoomPosition(
   ];
 }
 
+/**
+ * The slot a placement is drawn in. Moved furniture carries a free position
+ * ("free:<id>") that matches no room slot, so it is drawn from its own coordinates
+ * instead of being hidden.
+ */
+export function renderSlotForPlacement(
+  placement: HousePlacement,
+  slots: HouseSlot[],
+): HouseSlot | undefined {
+  const fixed = slots.find((slot) => slot.id === placement.slot);
+  if (fixed) return fixed;
+  if (!Number.isFinite(placement.x) || !Number.isFinite(placement.y)) return undefined;
+  return {
+    id: placement.slot,
+    slot_type: placement.slot_type,
+    x: placement.x as number,
+    y: placement.y as number,
+  };
+}
+
 export function roomCoordinatesToPercent(
   x: number,
   z: number,
