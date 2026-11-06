@@ -17,8 +17,7 @@ export const GameUIOverlay: FC<{ selectedPoi?: POI | null; onClose?: () => void 
 
   const handleStartMission = () => {
     if (selectedPoi) {
-      // Replace with real mission start logic – for now we just log.
-      console.log("Start mission for POI", selectedPoi.id);
+      // TODO: wire to the real mission start once this prototype overlay is used.
     }
   };
 
