@@ -311,7 +311,7 @@ export function PlayableNeighborhood() {
         simulation.gameTime,
         (slug) => locationsQuery.data?.find((location) => location.slug === slug)?.id ?? null,
       );
-      return activity.available && activity.destinationSlug === currentLocation.slug
+      return activity.destinationSlug === currentLocation.slug
         ? [{ npc, activity }]
         : [];
     }).slice(0, slots.length);
@@ -330,7 +330,7 @@ export function PlayableNeighborhood() {
       const targetX = (destinationObject?.x ?? slot.x) + spread;
       const targetY = (destinationObject?.y ?? slot.y) + (index % 2 === 0 ? 34 : -34);
       const current = npcPositionOverrides[npc.id] ?? { x: slot.x, y: slot.y };
-      const isMoving = Math.hypot(targetX - current.x, targetY - current.y) > 10;
+      const isMoving = !simulation.paused && Math.hypot(targetX - current.x, targetY - current.y) > 2;
       const activityKind = isMoving
         ? "walking"
         : activity.destination === "work"
@@ -347,6 +347,8 @@ export function PlayableNeighborhood() {
         name: npc.name,
         role: npc.role,
         activity: activity.label,
+        available: activity.available,
+        isPaused: simulation.paused,
         activityKind,
         x: current.x,
         y: current.y,
@@ -378,7 +380,7 @@ export function PlayableNeighborhood() {
       if (object.kind === "work") return hasCareerServices;
       return false;
     });
-    const npcTargets = activeNpcs.filter((npc) => !npc.isMoving).map((npc): (typeof area.objects)[number] => ({
+    const npcTargets = activeNpcs.filter((npc) => npc.available && !npc.isMoving).map((npc): (typeof area.objects)[number] => ({
       id: npc.id,
       name: npc.name,
       kind: "npc",
@@ -728,7 +730,7 @@ export function PlayableNeighborhood() {
                               type="button"
                               className="neighborhood-person"
                               onClick={() => selectWorldTarget(npc.id)}
-                              disabled={npc.isMoving}
+                              disabled={npc.isMoving || !npc.available}
                               aria-label={
                                 isNearby
                                   ? `Talk with ${npc.name}, ${npc.activity}`
@@ -740,7 +742,7 @@ export function PlayableNeighborhood() {
                                 <span>{npc.role} · {npc.activity}</span>
                               </span>
                               <span className="neighborhood-person-action">
-                                {npc.isMoving ? "On the move" : isNearby ? "Talk" : "Move closer"}
+                                {npc.isMoving ? "On the move" : !npc.available ? "Resting" : isNearby ? "Talk" : "Move closer"}
                               </span>
                             </button>
                           );

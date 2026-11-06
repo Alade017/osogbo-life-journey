@@ -71,7 +71,7 @@ function NeighborhoodNpcActor({
   const leftLeg = useRef<Group>(null);
   const rightLeg = useRef<Group>(null);
   const { invalidate } = useThree();
-  const animated = npc.isMoving || ["working", "shopping", "socializing"].includes(npc.activityKind);
+  const animated = !npc.isPaused && (npc.isMoving || ["working", "shopping", "socializing"].includes(npc.activityKind));
   const targetKey = `${target[0].toFixed(3)}:${target[2].toFixed(3)}`;
   const arrivedTarget = useRef<string | null>(null);
 
@@ -83,7 +83,7 @@ function NeighborhoodNpcActor({
 
   useFrame((state, delta) => {
     const actor = group.current;
-    if (!actor) return;
+    if (!actor || npc.isPaused) return;
     const dx = target[0] - actor.position.x;
     const dz = target[2] - actor.position.z;
     const distance = Math.hypot(dx, dz);
