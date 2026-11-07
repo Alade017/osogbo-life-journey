@@ -190,3 +190,43 @@
     padding: 32px 32px 32px 28px;
   }
 }
+
+.sunlife-district-spotlight {
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card);
+  color: var(--foreground);
+}
+
+.sunlife-spotlight-title {
+  margin: 0 0 4px;
+  font-size: 1.125rem;
+  font-weight: 800;
+}
+
+.sunlife-spotlight-desc {
+  margin: 0 0 12px;
+  color: var(--muted-foreground);
+  font-size: 0.9375rem;
+}
+
+.sunlife-spotlight-landmarks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sunlife-spotlight-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}

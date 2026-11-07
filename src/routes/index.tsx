@@ -1,29 +1,29 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, LogOut, MapPin, WalletCards } from "lucide-react";
+import { ArrowRight, CheckCircle2, LogOut, MapPin, WalletCards } from "lucide-react";
 import { EntryTownPreview } from "@/components/game/EntryTownPreview";
 import { Logo } from "@/components/game/Logo";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { formatNaira, q } from "@/lib/game";
 import { entryAction, type EntrySession } from "@/lib/entry-action";
+import { districtSpotlight } from "@/lib/district-spotlight";
 import "@/components/game/home-entry.css";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "SunLife — Virtual World Game in Osogbo, Nigeria" },
+      { title: "OSUN LIFE — A Nigerian life simulation game" },
       {
         name: "description",
         content:
-          "Step into SunLife, a vibrant 3D low-poly virtual world in Osogbo, Nigeria. Customize your character, find work, furnish your home, and explore a living city.",
+          "Create your character, find work, make a home, and build a life across a fictional Osun-inspired world.",
       },
-      { property: "og:title", content: "SunLife — Virtual World Game in Osogbo, Nigeria" },
+      { property: "og:title", content: "OSUN LIFE — A Nigerian life simulation game" },
       {
         property: "og:description",
-        content:
-          "Start your story or return to your virtual life in SunLife (Osogbo, Nigeria).",
+        content: "Start a new story or return to your saved life in OSUN LIFE.",
       },
       { name: "robots", content: "index, follow" },
     ],
@@ -48,12 +48,6 @@ function EntryPage() {
   const queryClient = useQueryClient();
   const [sessionState, setSessionState] = useState<SessionState>("checking");
   const [signingOut, setSigningOut] = useState(false);
-  const [activeDistrictId, setActiveDistrictId] = useState<string>("market-quarter");
-
-  // Interactive in-hero character customization state
-  const [previewGender, setPreviewGender] = useState<"female" | "male">("female");
-  const [previewSkinIndex, setPreviewSkinIndex] = useState<number>(1);
-  const [previewOutfitIndex, setPreviewOutfitIndex] = useState<number>(0);
 
   useEffect(() => {
     let active = true;
@@ -72,13 +66,13 @@ function EntryPage() {
   const signedIn = sessionState === "signed-in";
   const characterQuery = useQuery({ ...q.character(), enabled: signedIn, staleTime: 30_000 });
   const character = characterQuery.data;
-
   const walletQuery = useQuery({ ...q.wallet(), enabled: !!character, staleTime: 30_000 });
   const locationsQuery = useQuery({ ...q.locations(), enabled: !!character, staleTime: 300_000 });
   const location = locationsQuery.data?.find(
     (place) => place.id === character?.current_location_id,
   );
   const action = entryAction(sessionState, Boolean(character));
+  const currentDistrict = districtSpotlight(location?.slug);
 
   async function signOut() {
     setSigningOut(true);
@@ -175,87 +169,24 @@ function EntryPage() {
           </Button>
           <small className="entry-note">Free to play. All naira amounts are fictional.</small>
         </div>
+      </section>
 
-        {/* Active District Spotlight Card */}
-        <aside className="sunlife-district-spotlight">
-          <div>
-            <h3 className="sunlife-spotlight-title">{currentDistrict.name}</h3>
-            <p className="sunlife-spotlight-desc">{currentDistrict.description}</p>
-            <div className="sunlife-spotlight-landmarks">
-              {currentDistrict.landmarks.map((landmark) => (
-                <span key={landmark} className="sunlife-spotlight-chip">
-                  <CheckCircle2 size={13} aria-hidden="true" />
-                  <span>{landmark}</span>
-                </span>
-              ))}
-            </div>
+      {currentDistrict && (
+        <aside className="sunlife-district-spotlight" aria-labelledby="district-title">
+          <h2 id="district-title" className="sunlife-spotlight-title">
+            {currentDistrict.name}
+          </h2>
+          <p className="sunlife-spotlight-desc">{currentDistrict.description}</p>
+          <div className="sunlife-spotlight-landmarks">
+            {currentDistrict.landmarks.map((landmark) => (
+              <span key={landmark} className="sunlife-spotlight-chip">
+                <CheckCircle2 size={13} aria-hidden="true" />
+                <span>{landmark}</span>
+              </span>
+            ))}
           </div>
         </aside>
-      </section>
-
-      {/* 6. FAQ Accordion */}
-      <section id="faq" className="sunlife-faq-section" aria-labelledby="faq-main-title">
-        <div className="sunlife-section-center">
-          <span className="sunlife-section-eyebrow">
-            <ShieldCheck size={14} aria-hidden="true" /> FAQ
-          </span>
-          <h2 id="faq-main-title" className="sunlife-section-heading">
-            Frequently Asked Questions
-          </h2>
-          <p className="sunlife-section-desc">
-            Learn more about SunLife gameplay, economy, and device accessibility.
-          </p>
-        </div>
-
-        <div className="sunlife-faq-stack">
-          {FAQ_ENTRIES.map((faq, idx) => (
-            <details key={faq.question} className="sunlife-faq-card" open={idx === 0}>
-              <summary className="sunlife-faq-summary">
-                <span>{faq.question}</span>
-                <span className="sunlife-faq-chevron" aria-hidden="true">
-                  <ChevronDown size={16} />
-                </span>
-              </summary>
-              <p className="sunlife-faq-content">{faq.answer}</p>
-            </details>
-          ))}
-        </div>
-      </section>
-
-      {/* 7. Footer */}
-      <footer className="sunlife-footer">
-        <div className="sunlife-footer-top">
-          <Link to="/" aria-label="SunLife Home" className="sunlife-brand-link">
-            <span className="sunlife-brand-text">
-              Sun<span>Life</span>
-            </span>
-          </Link>
-
-          <p className="sunlife-footer-copy">
-            A stylized 3D low-poly virtual world game set in Osogbo, Nigeria. Designed with craft,
-            vibrancy, and community.
-          </p>
-
-          <ul className="sunlife-footer-links" aria-label="Footer links">
-            {NAV_LINKS.map((link) => (
-              <li key={link.label}>
-                <a href={link.href}>{link.label}</a>
-              </li>
-            ))}
-            <li>
-              <Link to="/signup">Create Citizen</Link>
-            </li>
-            <li>
-              <Link to="/login">Sign In</Link>
-            </li>
-          </ul>
-        </div>
-
-        <div className="sunlife-footer-bottom">
-          <span>All virtual currency (₦ Naira) is simulated with zero real-world monetary value.</span>
-          <span>© {new Date().getFullYear()} SunLife Virtual World. All rights reserved.</span>
-        </div>
-      </footer>
+      )}
     </main>
   );
 }
