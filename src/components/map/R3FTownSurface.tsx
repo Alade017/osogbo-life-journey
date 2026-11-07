@@ -31,6 +31,10 @@ import { WORLD_SCALE, WORLD_PALETTE } from "../3d/world-theme";
 import { MapLighting } from "./MapLighting";
 import { PlaceBadge } from "./map-badge";
 import { getLandmarkBuildingVariant } from "./landmark-building-variant";
+import { CompoundPlot3D } from "./CompoundPlot3D";
+import { MapPin3D } from "./MapPin3D";
+import { SelectionRing3D } from "./SelectionRing3D";
+import { useMapCameraFocus } from "./use-map-camera-focus";
 
 type Props = PhaserMapData &
   PhaserMapCallbacks & {
@@ -39,13 +43,22 @@ type Props = PhaserMapData &
     onSelectEvent?: (landmarkId: string) => void;
     onReady: () => void;
     onUnavailable: () => void;
+    searchTarget?: import("@/components/map/MapCanvas").MapSearchTarget | null;
   };
+
+const gridCols = town.grid.rows[0]?.length ?? 24;
+const gridRows = town.grid.rows.length ?? 18;
 const cell = WORLD_SCALE.townCell;
 const point = (x: number, z: number): [number, number, number] => [
-  (x - 11.5) * cell,
+  (x - (gridCols - 1) / 2) * cell,
   0,
-  (z - 8.5) * cell,
+  (z - (gridRows - 1) / 2) * cell,
 ];
+
+function CameraFocusController({ targetPosition }: { targetPosition: [number, number, number] | null }) {
+  useMapCameraFocus(targetPosition, Boolean(targetPosition));
+  return null;
+}
 class SurfaceBoundary extends Component<
   { children: ReactNode; onUnavailable: () => void },
   { failed: boolean }
@@ -146,6 +159,34 @@ function calculateBadgePositions(
 export function R3FTownSurface(props: Props) {
   const [hovered, setHovered] = useState<string | null>(null);
   const gesture = useRef({ x: 0, y: 0, moved: false });
+  const [selectedTarget, setSelectedTarget] = useState<{
+    id: string;
+    position: [number, number, number];
+    type: "landmark" | "property" | "district" | "event";
+  } | null>(null);
+  const [hoveredTargetId, setHoveredTargetId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!props.searchTarget) return;
+    const targetId = typeof props.searchTarget === "string" ? props.searchTarget : props.searchTarget.id;
+    const landmark = props.places.find((p) => p.id === targetId);
+    if (landmark) {
+      const [x, , z] = point(landmark.grid.x, landmark.grid.z);
+      setSelectedTarget({ id: landmark.id, position: [x, 0, z], type: "landmark" });
+      return;
+    }
+    const property = props.properties?.find((p) => p.id === targetId);
+    if (property) {
+      setSelectedTarget({ id: property.id, position: property.position, type: "property" });
+      return;
+    }
+    const district = town.districts.find((d) => d.id === targetId);
+    if (district) {
+      const area = district.gridArea;
+      const [x, , z] = point(area.x + area.width / 2, area.z + area.depth / 2);
+      setSelectedTarget({ id: district.id, position: [x, 0, z], type: "district" });
+    }
+  }, [props.searchTarget, props.places, props.properties]);
   const roads = useMemo(
     () =>
       town.grid.rows.flatMap((row, z) =>
@@ -807,16 +848,17 @@ export function R3FTownSurface(props: Props) {
       >
         <Canvas
           shadows
-          frameloop="demand"
+          frameloop="always"
           dpr={[1, 1.5]}
           gl={{ antialias: false, powerPreference: "low-power" }}
           fallback={<span>WebGL is unavailable. Use the accessible map controls.</span>}
         >
           <Ready onReady={props.onReady} />
-          <WorldCamera width={24 * cell} depth={18 * cell} zoom={1.3} />
-          <MapLighting size={24 * cell} />
+          <CameraFocusController targetPosition={selectedTarget?.position ?? null} />
+          <WorldCamera width={gridCols * cell} depth={gridRows * cell} zoom={1.3} />
+          <MapLighting size={gridCols * cell} />
           <mesh position={[0, -0.12, 0]} receiveShadow>
-            <boxGeometry args={[24 * cell, 0.2, 18 * cell]} />
+            <boxGeometry args={[gridCols * cell, 0.2, gridRows * cell]} />
             <WorldMaterial tone="ground" />
           </mesh>
 
@@ -863,33 +905,58 @@ export function R3FTownSurface(props: Props) {
             districts={town.districts}
             point={point}
             cell={cell}
-            onSelect={(id, event) => select(event, () => props.onSelectDistrict(id))}
+            onSelect={(id, event) =>
+              select(event, () => {
+                const district = town.districts.find((d) => d.id === id);
+                if (district) {
+                  const area = district.gridArea;
+                  const [x, , z] = point(area.x + area.width / 2, area.z + area.depth / 2);
+                  setSelectedTarget({ id, position: [x, 0, z], type: "district" });
+                }
+                props.onSelectDistrict(id);
+              })
+            }
           />
+          {selectedTarget && (
+            <SelectionRing3D
+              position={selectedTarget.position}
+              color={selectedTarget.type === "property" ? "#10b981" : "#38bdf8"}
+              radius={cell * 0.75}
+            />
+          )}
           {props.places.map((place) => {
             const badgePosition = badgePositions.get(place.id);
-
             const [x, , z] = point(place.grid.x, place.grid.z);
 
             if (!badgePosition) return null;
+            const isSelected = selectedTarget?.id === place.id;
 
             return (
-              <group
-                key={place.id}
-                name={`landmark:${place.id}`}
-                onPointerOver={(event) => {
-                  event.stopPropagation();
-                  setHovered(place.label);
-                }}
-                onPointerOut={() => setHovered(null)}
-                onClick={(event) => select(event, () => props.onSelectLandmark(place.id))}
-              >
-                {/* Building stays at its original grid coordinate */}
-
-                {/* Only the floating badge receives the adjusted position */}
-                <PlaceBadge
+              <group key={place.id} name={`landmark:${place.id}`}>
+                <MapPin3D
                   position={badgePosition}
                   label={place.label}
                   category={place.category}
+                  isSelected={isSelected}
+                  isHovered={hoveredTargetId === place.id}
+                  onClick={() =>
+                    select({} as any, () => {
+                      setSelectedTarget({
+                        id: place.id,
+                        position: [x, 0, z],
+                        type: "landmark",
+                      });
+                      props.onSelectLandmark(place.id);
+                    })
+                  }
+                  onPointerOver={() => {
+                    setHoveredTargetId(place.id);
+                    setHovered(place.label);
+                  }}
+                  onPointerOut={() => {
+                    setHoveredTargetId(null);
+                    setHovered(null);
+                  }}
                 />
               </group>
             );
@@ -915,21 +982,32 @@ export function R3FTownSurface(props: Props) {
             );
           })}
           {props.properties?.map((property) => (
-            <group
+            <CompoundPlot3D
               key={property.id}
-              name={"property:" + property.id}
+              property={property}
+              cellSize={cell}
+              isSelected={selectedTarget?.id === property.id}
+              isHovered={hoveredTargetId === property.id}
+              onClick={(event) =>
+                select(event, () => {
+                  setSelectedTarget({
+                    id: property.id,
+                    position: property.position,
+                    type: "property",
+                  });
+                  props.onSelectProperty?.(property);
+                })
+              }
               onPointerOver={(event) => {
                 event.stopPropagation();
+                setHoveredTargetId(property.id);
                 setHovered((property.label ?? "Home") + " · " + property.status.replace("_", " "));
               }}
-              onPointerOut={() => setHovered(null)}
-              onClick={(event) => select(event, () => props.onSelectProperty?.(property))}
-            >
-              <WorldHouse
-                position={point(property.position[0] / 2 + 6.5, property.position[2] / 2 + 4.5)}
-                rotation={property.rotation ?? 0}
-              />
-            </group>
+              onPointerOut={() => {
+                setHoveredTargetId(null);
+                setHovered(null);
+              }}
+            />
           ))}
           {props.billboardMarkers.map((marker) => {
             const place = props.places.find((p) => p.id === marker.landmarkId);

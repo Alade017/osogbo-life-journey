@@ -3,6 +3,7 @@ import townData from "@/data/osogbo-town.json";
 import {
   pointsAttribute,
   projectTownCell,
+  scenePositionToGridCell,
   townDiamondPoints,
 } from "@/components/map/town-map-geometry";
 import type {
@@ -123,10 +124,8 @@ export function TownMapFallback({
         );
       })}
       {properties?.map((property) => {
-        const point = projectTownCell(
-          property.position[0] / 2 + 6.5,
-          property.position[2] / 2 + 4.5,
-        );
+        const cellCoord = scenePositionToGridCell(property.position);
+        const point = projectTownCell(cellCoord.col, cellCoord.row);
         return (
           <g
             key={property.id}
