@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Check, Clock3, CookingPot, Sparkles, X } from "lucide-react";
 import { homeFurnitureActions, homeTaskSeconds } from "@/lib/home-furniture-actions";
+import { formatNaira } from "@/lib/game";
 import {
   ACTION_CATALOG,
   NEED_RULES,
@@ -8,18 +9,7 @@ import {
   type NeedName,
 } from "@/lib/life-simulation";
 import type { HousePlacement } from "./HouseRoomScene";
-
-// Meal preference is presentation only: all choices use the existing validated cook action.
-const MEALS = [
-  { id: "jollof", name: "Jollof rice", symbol: "🍚", description: "A familiar home favourite." },
-  { id: "noodles", name: "Indomie & egg", symbol: "🍜", description: "A warm bowl with egg." },
-  {
-    id: "plantain",
-    name: "Plantain & beans",
-    symbol: "🍌",
-    description: "A comforting homemade plate.",
-  },
-] as const;
+import { DEFAULT_MEAL_ID, MEALS, MEAL_TIERS } from "@/lib/cooking-menu";
 
 export function HomeAccessoryPanel({
   placement,
@@ -36,7 +26,7 @@ export function HomeAccessoryPanel({
   onClose: () => void;
   onUse: (action: LifeActionId) => Promise<boolean>;
 }) {
-  const [meal, setMeal] = useState<string>(MEALS[0].id);
+  const [meal, setMeal] = useState<string>(DEFAULT_MEAL_ID);
   const [confirmed, setConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const inFlight = useRef(false);
@@ -107,7 +97,7 @@ export function HomeAccessoryPanel({
       <div className="home-accessory-facts">
         <span>
           <Clock3 size={14} />
-          {homeTaskSeconds(actionId)}s � {action.durationMinutes} game min
+          {homeTaskSeconds(actionId)}s
         </span>
         <span>
           {action.cost === 0
@@ -120,31 +110,53 @@ export function HomeAccessoryPanel({
         </span>
       </div>
       {cooking && (
-        <div className="home-meal-grid" role="radiogroup" aria-label="Meal preference">
-          {MEALS.map((item) => (
-            <label
-              key={item.id}
-              className={`home-meal-card${meal === item.id ? " is-selected" : ""}`}
-            >
-              <input
-                className="sr-only"
-                type="radio"
-                name="home-meal-preference"
-                value={item.id}
-                aria-label={item.name}
-                checked={meal === item.id}
-                disabled={working}
-                onChange={() => {
-                  setMeal(item.id);
-                  setConfirmed(false);
-                }}
-              />
-              <span className="home-meal-symbol" aria-hidden="true">
-                {item.symbol}
-              </span>
-              <strong>{item.name}</strong>
-              <small>{item.description}</small>
-            </label>
+        <div className="home-meal-groups" role="radiogroup" aria-label="Meal preference">
+          {MEAL_TIERS.map((tier) => (
+            <section key={tier.id} className="home-meal-group">
+              <h3 className="home-meal-tier">{tier.label}</h3>
+              <div className="home-meal-grid">
+                {MEALS.filter((item) => item.tier === tier.id).map((item) => (
+                  <label
+                    key={item.id}
+                    className={`home-meal-card${meal === item.id ? " is-selected" : ""}`}
+                  >
+                    <input
+                      className="sr-only"
+                      type="radio"
+                      name="home-meal-preference"
+                      value={item.id}
+                      aria-label={item.name}
+                      checked={meal === item.id}
+                      disabled={working}
+                      onChange={() => {
+                        setMeal(item.id);
+                        setConfirmed(false);
+                      }}
+                    />
+                    <span className="home-meal-top">
+                      <span className="home-meal-symbol" aria-hidden="true">
+                        {item.symbol}
+                      </span>
+                      <span className="home-meal-time">
+                        <Clock3 size={12} aria-hidden="true" />
+                        {homeTaskSeconds(actionId)}s
+                      </span>
+                    </span>
+                    <span className="home-meal-price">
+                      {action.cost > 0 ? formatNaira(action.cost) : "Free"}
+                    </span>
+                    <strong>{item.name}</strong>
+                    <span className="home-meal-chips" aria-hidden="true">
+                      {Object.entries(action.needs)
+                        .filter(([, value]) => (value ?? 0) > 0)
+                        .map(([need]) => (
+                          <span key={need}>+{NEED_RULES[need as NeedName].label}</span>
+                        ))}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       )}
