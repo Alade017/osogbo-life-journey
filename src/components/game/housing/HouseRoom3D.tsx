@@ -9,7 +9,7 @@ import {
 } from "react";
 import { Canvas, type ThreeEvent } from "@react-three/fiber";
 import { Html, RoundedBox } from "@react-three/drei";
-import { Plane, Vector3 } from "three";
+import { DoubleSide, Plane, Vector3 } from "three";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
 import type { FoodDelivery } from "@/lib/food-delivery-service";
 import { homeFurnitureAction } from "@/lib/home-furniture-actions";
@@ -622,17 +622,21 @@ export function FurnitureFallback({
   if (kind === "light")
     return (
       <group>
-        <mesh castShadow receiveShadow position={[0, 0.03, 0]}>
-          <cylinderGeometry args={[0.22, 0.22, 0.06, 12]} />
-          <WorldMaterial tone="timber" />
+        <mesh castShadow receiveShadow position={[0, 0.04, 0]}>
+          <cylinderGeometry args={[0.22, 0.24, 0.08, 20]} />
+          <meshStandardMaterial color={FURNITURE_COLOURS.mediaWood} roughness={0.7} />
         </mesh>
-        <mesh castShadow receiveShadow position={[0, 0.6, 0]}>
-          <cylinderGeometry args={[0.025, 0.025, 1.15, 8]} />
-          <WorldMaterial tone="timber" />
+        <mesh castShadow receiveShadow position={[0, 0.62, 0]}>
+          <cylinderGeometry args={[0.03, 0.03, 1.1, 10]} />
+          <meshStandardMaterial color={FURNITURE_COLOURS.mediaWood} roughness={0.7} />
         </mesh>
-        <mesh castShadow receiveShadow position={[0, 1.24, 0]}>
-          <coneGeometry args={[0.32, 0.4, 12, 1, true]} />
-          <WorldMaterial tone="ground" />
+        <mesh castShadow receiveShadow position={[0, 1.2, 0]}>
+          <cylinderGeometry args={[0.2, 0.3, 0.42, 20, 1, true]} />
+          <meshStandardMaterial
+            color={FURNITURE_COLOURS.bedLinen}
+            roughness={0.95}
+            side={DoubleSide}
+          />
         </mesh>
       </group>
     );
