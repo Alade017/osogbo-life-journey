@@ -603,6 +603,13 @@
       "when": 1792783001018,
       "tag": "0084_other_homes_room_layout",
       "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "7",
+      "when": 1792869401018,
+      "tag": "0085_house_floors",
+      "breakpoints": true
     }
   ]
 }
