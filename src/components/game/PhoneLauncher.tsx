@@ -75,9 +75,6 @@ const PlayerSocial = lazy(() =>
 const PhoneMarketApp = lazy(() => import("@/components/game/phone/PhoneMarketApp"));
 const PhonePartyApp = lazy(() => import("@/components/game/phone/PhonePartyApp"));
 const PhoneBankApp = lazy(() => import("@/components/game/phone/PhoneBankApp"));
-const PropertiesPage = lazy(() =>
-  import("@/routes/_authenticated/_game/properties").then((m) => ({ default: m.PropertiesPage })),
-);
 const PropertyPage = lazy(() =>
   import("@/routes/_authenticated/_game/property").then((m) => ({ default: m.PropertyPage })),
 );
@@ -126,14 +123,13 @@ const PHONE_APPS: readonly PhoneAppDefinition[] = [
   { label: "Home", icon: House, tone: "phone-app-green" },
   { label: "Map", icon: MapPinned, tone: "phone-app-blue" },
   { label: "Messages", icon: MessagesSquare, tone: "phone-app-coral" },
-  { label: "Rent homes", icon: HousePlus, tone: "phone-app-green" },
   { label: "Career Life", icon: BriefcaseBusiness, tone: "phone-app-gold" },
   { label: "Bank", icon: Landmark, tone: "phone-app-blue" },
   { label: "Missions", icon: Target, tone: "phone-app-gold" },
   { label: "Inventory", icon: Backpack, tone: "phone-app-blue" },
   { label: "Profile", icon: UserRound, tone: "phone-app-muted" },
   { label: "Property", icon: HousePlus, tone: "phone-app-green" },
-  { label: "Find homes", icon: Building2, tone: "phone-app-green" },
+  { label: "Real Estate", icon: Building2, tone: "phone-app-green" },
   { label: "Market", icon: Store, tone: "phone-app-coral" },
   { label: "Notifications", icon: Bell, tone: "phone-app-gold" },
   { label: "Settings", icon: Settings, tone: "phone-app-muted" },
@@ -376,9 +372,8 @@ export function PhoneLauncher({
       return <PhoneMarketApp />;
     }
 
-    if (appName === "Find homes") return <PropertiesPage />;
     if (appName === "Property") return <PropertyPage />;
-    if (appName === "Real Estate" || appName === "Rent homes" || appName === "Housing")
+    if (appName === "Real Estate" || appName === "Find homes" || appName === "Housing")
       return <RealEstatePage />;
 
     if (appName === "Party Life" || appName === "Party") {

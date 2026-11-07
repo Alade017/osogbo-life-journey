@@ -87,7 +87,7 @@ export function RealEstatePage() {
       })),
     [ownedQuery.data],
   );
-  const rentListings = rentQuery.data ?? [];
+  const rentListings = useMemo(() => rentQuery.data ?? [], [rentQuery.data]);
   const tiers = useMemo(
     () => buildTiers(rentListings, saleQuery.data ?? []),
     [rentListings, saleQuery.data],
@@ -196,7 +196,7 @@ export function RealEstatePage() {
         <p className="property-listings-empty">No homes are available right now.</p>
       )}
 
-      <div className="property-listings-grid">
+      <div className="property-listings-grid real-estate-grid">
         {tiers.map((tier) => {
           const status = statusFor(context, tier);
           const rent = rentChoice(context, tier);

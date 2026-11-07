@@ -542,3 +542,8 @@
   background: var(--background);
   color: var(--foreground);
 }
+
+/* Real Estate sits inside the phone frame, so its tiers stack in one column. */
+.property-listings-grid.real-estate-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
