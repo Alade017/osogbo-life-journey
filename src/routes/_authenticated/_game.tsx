@@ -250,7 +250,8 @@ function GameLayout() {
 
           <GameNeedsRail player={player} />
 
-          <GameMobileNav hidden={phoneOpen} onNavigate={() => setPhoneOpen(false)}>
+          <div className="game-dock-bar">
+            <GameMobileNav hidden={phoneOpen} onNavigate={() => setPhoneOpen(false)} />
             <PhoneLauncher
               compact
               className="game-dock-phone"
@@ -271,7 +272,7 @@ function GameLayout() {
                 </GameMobileNav>
               }
             />
-          </GameMobileNav>
+          </div>
           <HousingChooser
             open={housingOpen}
             pending={housingPending || (housingRequested && housingSource === "profile")}

@@ -214,3 +214,72 @@
   .phone-launcher-icon::after {
   content: none;
 }
+
+/* Bottom bar: the three links and the Phone button sit side by side, aligned on one row. */
+.game-dock-bar {
+  position: fixed;
+  left: 50%;
+  bottom: calc(
+    var(--game-navigation-gap) + env(safe-area-inset-bottom) + var(--game-keyboard-inset, 0px)
+  );
+  z-index: 80;
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  width: min(
+    520px,
+    calc(100% - max(12px, env(safe-area-inset-left)) - max(12px, env(safe-area-inset-right)))
+  );
+  transform: translateX(-50%);
+}
+
+.game-dock-bar
+  > nav.game-mobile-nav.game-floating-nav.game-persistent-dock.game-persistent-dock.game-persistent-dock {
+  position: relative;
+  inset: auto;
+  top: auto;
+  left: auto;
+  bottom: auto;
+  z-index: auto;
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  height: var(--game-navigation-height);
+  min-height: var(--game-navigation-height);
+  margin: 0;
+  transform: none;
+}
+
+.game-dock-bar > .game-dock-phone.game-dock-phone.game-dock-phone {
+  position: relative;
+  inset: auto;
+  flex: 0 0 64px;
+  display: grid;
+  grid-template-rows: 18px auto;
+  justify-items: center;
+  align-content: center;
+  gap: 2px;
+  width: 64px;
+  height: var(--game-navigation-height);
+  min-height: var(--game-navigation-height);
+  margin: 0;
+  padding: 2px;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--popover);
+  color: var(--muted-foreground);
+  box-shadow: var(--elevation-card);
+  font: inherit;
+  cursor: pointer;
+  transform: none;
+}
+
+.game-dock-bar > .game-dock-phone span {
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.1;
+}
