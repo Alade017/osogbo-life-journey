@@ -11,6 +11,8 @@ export type HouseRoomRendererProps = {
   activeFloor?: 0 | 1;
   /** Tapping the stairs climbs or descends. */
   onUseStairs?: () => void;
+  /** The entrance door is swung open. */
+  doorOpen?: boolean;
   accessoryBand: string;
   slots: HouseSlot[];
   placements: HousePlacement[];
@@ -190,6 +192,15 @@ export type HouseWallSegment = {
   position: [number, number, number];
   size: [number, number, number];
 };
+
+/** Point just inside the entrance door, where the character stands to go out or comes in. */
+export function houseDoorThreshold(
+  houseTypeId: string,
+  width: number,
+  depth: number,
+): [number, number, number] {
+  return [houseRearDoorCenter(houseTypeId, width), 0.06, -depth / 2 + 0.6];
+}
 
 /** Centre of the entrance door on the back wall. In four-room homes it opens into the sitting room. */
 export function houseRearDoorCenter(houseTypeId: string, width: number): number {

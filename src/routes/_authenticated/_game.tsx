@@ -14,6 +14,7 @@ import { handleGamePageLinkClick } from "@/components/game/phone-navigation";
 import { HousingChooser } from "@/components/game/housing/HousingChooser";
 import { HousingRepossessionNotice } from "@/components/game/housing/HousingRepossessionNotice";
 import { GameTimeProvider } from "@/components/game/GameTimeProvider";
+import { OutsideTransition } from "@/components/game/OutsideTransition";
 import { WorldEnvironment } from "@/components/game/WorldEnvironment";
 import { LoginStreakProvider } from "@/components/game/LoginStreakProvider";
 import { gameTimeFromCharacter } from "@/lib/game-time";
@@ -224,6 +225,7 @@ function GameLayout() {
           )}
         >
           <WorldEnvironment />
+          <OutsideTransition />
           <div className="city-game-frame">
             <div className="city-game-content">
               <main
