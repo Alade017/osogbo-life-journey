@@ -35,12 +35,12 @@ export type HouseRoomRendererProps = {
 };
 
 export const HOUSE_ROOM_SIZE: Record<string, readonly [number, number]> = {
-  "shared-room": [5.4, 4.4],
-  "single-room": [6.2, 4.8],
-  "studio-flat": [7.8, 5.8],
-  "mini-flat": [9, 6.8],
-  bungalow: [10.5, 7.8],
-  duplex: [12, 8.8],
+  "shared-room": [5.9, 4.8],
+  "single-room": [6.8, 5.3],
+  "studio-flat": [8.6, 6.4],
+  "mini-flat": [9.9, 7.5],
+  bungalow: [11.5, 8.6],
+  duplex: [13.2, 9.7],
 };
 export const HOUSE_ACCESSORY_TIER: Record<string, number> = {
   basic: 1,
@@ -260,10 +260,11 @@ export function housePartitionSegments(
   depth: number,
 ): HouseWallSegment[] {
   if (!["studio-flat", "mini-flat", "bungalow", "duplex"].includes(houseTypeId)) return [];
-  const partitionHeight = 1.15;
-  const partitionThickness = 0.12;
+  // Taller than the furniture, so it reads clearly from the camera, and centred front to back.
+  const partitionHeight = 1.6;
+  const partitionThickness = 0.14;
   const doorwayWidth = 1.25;
-  const dividerZ = -depth * 0.12;
+  const dividerZ = 0;
   const doorwayCenter = width * 0.05;
   const leftEnd = doorwayCenter - doorwayWidth / 2;
   const rightStart = doorwayCenter + doorwayWidth / 2;

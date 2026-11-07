@@ -13,7 +13,7 @@ describe("house navigation", () => {
             Math.abs(point[2] - wall.position[2]) < wall.size[2] / 2 + 0.19,
         ).toBe(false);
       }
-    expect(path.some((p) => Math.abs(p[0] - 0.45) < 0.5 && Math.abs(p[2] + 0.816) < 0.3)).toBe(
+    expect(path.some((p) => Math.abs(p[0] - 0.45) < 0.5 && Math.abs(p[2]) < 0.3)).toBe(
       true,
     );
   });
