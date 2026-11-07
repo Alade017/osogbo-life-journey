@@ -7,6 +7,10 @@ export type HouseRoomRendererProps = {
   houseTypeId: string;
   /** Room light switch. Off dims the room; omitted means on. */
   lightOn?: boolean;
+  /** Floor being viewed: 0 ground, 1 upstairs (duplex only). */
+  activeFloor?: 0 | 1;
+  /** Tapping the stairs climbs or descends. */
+  onUseStairs?: () => void;
   accessoryBand: string;
   slots: HouseSlot[];
   placements: HousePlacement[];
@@ -313,4 +317,67 @@ export function housePartitionSegments(
   if (!FOUR_ROOM_HOME_TYPES.includes(houseTypeId)) return [];
   // Taller than the furniture, so it reads clearly from the camera.
   return studioPartitionSegments(width, depth, 1.6);
+}
+
+/** Stairs in a two-storey home. The same footprint serves both floors, against the left wall. */
+export type HouseStairs = {
+  x0: number;
+  x1: number;
+  z0: number;
+  z1: number;
+  /** Ground-floor point just outside the front of the stairs. */
+  bottom: [number, number];
+  /** Upstairs point just outside the back of the stairs. */
+  top: [number, number];
+};
+
+export function houseStairs(houseTypeId: string, width: number, depth: number): HouseStairs | null {
+  if (houseTypeId !== "duplex") return null;
+  const x0 = -width / 2 + 0.1;
+  const x1 = -width / 2 + 1.1;
+  const z0 = -depth * 0.45;
+  const z1 = -depth * 0.1;
+  const cx = (x0 + x1) / 2;
+  return { x0, x1, z0, z1, bottom: [cx, z1 + 0.35], top: [cx, z0 - 0.35] };
+}
+
+/**
+ * Upstairs walls for a duplex: a lounge with a mini gym (left, with the stairs), a living room
+ * (back-right) and a bedroom (front-right). Each has an empty doorway.
+ */
+export function upstairsPartitionSegments(width: number, depth: number): HouseWallSegment[] {
+  const height = 1.6;
+  const thickness = 0.14;
+  const doorway = 1.1;
+  const alongX = (id: string, z: number, x0: number, x1: number): HouseWallSegment => ({
+    id,
+    position: [(x0 + x1) / 2, height / 2, z],
+    size: [x1 - x0, height, thickness],
+  });
+  const alongZ = (id: string, x: number, z0: number, z1: number): HouseWallSegment => ({
+    id,
+    position: [x, height / 2, (z0 + z1) / 2],
+    size: [thickness, height, z1 - z0],
+  });
+  const livingDoorZ = -depth * 0.25;
+  const bedroomDoorX = width * 0.25;
+  return [
+    // Lounge and living room, with a doorway at z = livingDoorZ.
+    alongZ("upstairs-lounge-living-back", 0, -depth / 2, livingDoorZ - doorway / 2),
+    alongZ("upstairs-lounge-living-front", 0, livingDoorZ + doorway / 2, depth / 2),
+    // Living room and bedroom, with a doorway at x = bedroomDoorX.
+    alongX("upstairs-living-bedroom-left", 0, 0, bedroomDoorX - doorway / 2),
+    alongX("upstairs-living-bedroom-right", 0, bedroomDoorX + doorway / 2, width / 2),
+  ];
+}
+
+/** Partition segments for the floor being viewed. Single-storey layouts have one floor. */
+export function housePartitionSegmentsForFloor(
+  houseTypeId: string,
+  width: number,
+  depth: number,
+  floor: 0 | 1,
+): HouseWallSegment[] {
+  if (floor === 1) return houseTypeId === "duplex" ? upstairsPartitionSegments(width, depth) : [];
+  return housePartitionSegments(houseTypeId, width, depth);
 }

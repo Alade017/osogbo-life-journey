@@ -11,6 +11,7 @@ import {
   HOUSE_ROOM_SIZE,
   draftStartFor,
   firstFreeHouseGridCell,
+  houseStairs,
   isHouseGridCellOccupied,
   snapToHouseGrid,
   type DraftMove,
@@ -733,13 +734,28 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const [cancellingTask, setCancellingTask] = useState(false);
   const autoCompleting = useRef<string | null>(null);
   const [clockNow, setClockNow] = useState(Date.now());
+  const [activeFloor, setActiveFloor] = useState<0 | 1>(0);
+  const floorPlacements = scenePlacements.filter((item) => (item.floor ?? 0) === activeFloor);
   const obstacles = roomObstacles(
     serverState?.house?.house_type_id ?? "shared-room",
     roomWidth,
     roomDepth,
-    placements,
+    placements.filter((item) => (item.floor ?? 0) === activeFloor),
     slots,
+    activeFloor,
   );
+  const stairs = houseStairs(serverState?.house?.house_type_id ?? "", roomWidth, roomDepth);
+  /** Walk to the stairs, climb them, then switch to the other floor at the far end. */
+  const climbStairs = async () => {
+    if (!stairs || editing || taskBusy || isOffline || !isInsideHome) return;
+    const up = activeFloor === 0;
+    const from = up ? stairs.bottom : stairs.top;
+    const to = up ? stairs.top : stairs.bottom;
+    setActivityError("");
+    if (!(await walkTo([from[0], 0.06, from[1]]))) return;
+    if (!(await walkTo([to[0], 0.06, to[1]]))) return;
+    setActiveFloor(up ? 1 : 0);
+  };
   const walkTo = (point: RoomPoint, interact = false) => {
     const path = findRoomPath(
       movement.positionRef.current,
@@ -1291,7 +1307,9 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           activityRequestId={currentActivity?.requestId ?? null}
           activityLabel={currentActivity ? ACTION_CATALOG[currentActivity.actionId].name : null}
           slots={slots}
-          placements={scenePlacements}
+          placements={floorPlacements}
+          activeFloor={activeFloor}
+          {...(stairs ? { onUseStairs: () => void climbStairs() } : {})}
           foodDeliveries={deliveries.data ?? []}
           movingPlacement={null}
           draftMove={draftMove}

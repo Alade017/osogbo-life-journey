@@ -16,7 +16,8 @@ import { homeFurnitureAction } from "@/lib/home-furniture-actions";
 import type { HousePlacement, HouseSlot } from "./HouseRoomScene";
 import {
   HOUSE_ROOM_SIZE as ROOM_SIZE,
-  housePartitionSegments,
+  housePartitionSegmentsForFloor,
+  houseStairs,
   interpolateRoomPosition,
   roomCoordinatesToPercent,
   isHouseGridCellOccupied,
@@ -123,15 +124,57 @@ function RoomFloor({
   );
 }
 
+function HouseStairsModel({
+  stairs,
+  onUse,
+}: {
+  stairs: NonNullable<ReturnType<typeof houseStairs>>;
+  onUse: (() => void) | undefined;
+}) {
+  const steps = 8;
+  const stepDepth = (stairs.z1 - stairs.z0) / steps;
+  return (
+    <group
+      onClick={(event) => {
+        event.stopPropagation();
+        if (event.delta <= 4) onUse?.();
+      }}
+    >
+      {Array.from({ length: steps }, (_, index) => {
+        const height = (index + 1) * 0.18;
+        return (
+          <mesh
+            key={`stair-step-${index}`}
+            castShadow
+            receiveShadow
+            position={[
+              (stairs.x0 + stairs.x1) / 2,
+              height / 2,
+              stairs.z1 - stepDepth * (index + 0.5),
+            ]}
+          >
+            <boxGeometry args={[stairs.x1 - stairs.x0, height, stepDepth]} />
+            <meshStandardMaterial color={FURNITURE_COLOURS.mediaWood} roughness={0.7} />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
 function OsogboRoomPrototype({
   houseTypeId,
   width,
   depth,
   editMode,
+  activeFloor = 0,
+  onUseStairs,
 }: {
   houseTypeId: string;
   width: number;
   depth: number;
+  activeFloor?: 0 | 1;
+  onUseStairs: (() => void) | undefined;
   editMode: boolean;
 }) {
   const height = WORLD_SCALE.door * 1.15;
@@ -215,7 +258,10 @@ function OsogboRoomPrototype({
             <WorldMaterial tone="trim" />
           </mesh>
         </group>
-        {housePartitionSegments(houseTypeId, width, depth).map((segment) => (
+        {houseStairs(houseTypeId, width, depth) && (
+          <HouseStairsModel stairs={houseStairs(houseTypeId, width, depth)!} onUse={onUseStairs} />
+        )}
+        {housePartitionSegmentsForFloor(houseTypeId, width, depth, activeFloor).map((segment) => (
           <group key={segment.id}>
             <mesh castShadow receiveShadow position={segment.position}>
               <boxGeometry args={segment.size} />
@@ -1459,6 +1505,8 @@ function SlotObject({
 export function HouseRoom3D({
   inputBlocked = false,
   lightOn = true,
+  activeFloor = 0,
+  onUseStairs,
   houseTypeId,
   characterName = "Your character",
   appearance = {},
@@ -1632,6 +1680,8 @@ export function HouseRoom3D({
             width={width}
             depth={depth}
             editMode={editMode}
+            activeFloor={activeFloor}
+            onUseStairs={onUseStairs}
           />
           <RoomFloor houseTypeId={houseTypeId} width={width} depth={depth} />
           {!editMode && !inputBlocked && onWalk && (

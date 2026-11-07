@@ -10,6 +10,8 @@ export type HousePlacement = {
   x?: number;
   y?: number;
   rotation_deg?: number;
+  /** 0 is the ground floor, 1 is upstairs (duplex only). Missing means ground. */
+  floor?: number;
   art_key: string;
   category: string;
   slot_type: string;
