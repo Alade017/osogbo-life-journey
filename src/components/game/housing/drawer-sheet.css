@@ -1,13 +1,12 @@
 /* Drawer sheet: stored clothes, caps and footwear. Colours come from the app's shared tokens. */
+/* Sits in the room's right-hand column, clear of the top controls, the needs panel and the bottom bar. */
 .drawer-sheet {
   position: fixed;
   z-index: 80;
+  top: calc(max(12px, env(safe-area-inset-top)) + 150px);
   right: max(12px, env(safe-area-inset-right));
-  bottom: max(12px, env(safe-area-inset-bottom));
-  left: max(12px, env(safe-area-inset-left));
-  max-width: 640px;
-  max-height: min(68dvh, 640px);
-  margin: 0 auto;
+  bottom: calc(96px + env(safe-area-inset-bottom));
+  width: min(340px, calc(100vw - 24px));
   overflow-y: auto;
   overscroll-behavior: contain;
   border: 1px solid var(--border);
@@ -97,4 +96,15 @@
   margin: 0.6rem 0 0;
   color: var(--destructive, #b42318);
   font-size: 0.9rem;
+}
+
+/* Phones: the needs panel spans the left, so the sheet moves above it and takes the full width. */
+@media (max-width: 640px) {
+  .drawer-sheet {
+    top: calc(max(12px, env(safe-area-inset-top)) + 150px);
+    right: 12px;
+    left: 12px;
+    width: auto;
+    bottom: calc(190px + env(safe-area-inset-bottom));
+  }
 }
