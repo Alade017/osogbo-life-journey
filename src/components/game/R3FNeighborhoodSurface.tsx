@@ -24,16 +24,33 @@ import {
 import { neighborhoodBuildingFootprint } from "@/game/neighborhood-geometry";
 import {
   WorldCamera,
+  WorldCars,
   WorldHouse,
   WorldLighting,
   WorldMaterial,
+  WorldPedestrianCrossings,
+  WorldPeople,
+  WorldRoadMarkings,
   WorldRoads,
+  WorldSidewalks,
+  WorldStreetLights,
+  WorldStreetVendors,
   WorldTrees,
   type WorldTree,
   WorldInstances,
   type WorldInstance,
 } from "../3d/WorldScene";
 import { WORLD_CAMERA, WORLD_SCALE } from "../3d/world-theme";
+import {
+  carSpots,
+  pedestrianCrossings,
+  pedestrianSpots,
+  roadMarkings,
+  sidewalksAndCurbs,
+  streetLightSpots,
+  vendorSpots,
+  type DressingRect,
+} from "@/game/neighborhood-dressing";
 
 class NeighborhoodBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   override state = { failed: false };
@@ -239,6 +256,47 @@ export function R3FNeighborhoodSurface({
       }),
     [area, bounds.left, bounds.top, bounds.width, bounds.height, point, unit],
   );
+  // Street dressing comes from the area's own roads, objects and stalls.
+  const dressing = useMemo(() => {
+    const kerbs = sidewalksAndCurbs(area, bounds);
+    return {
+      markings: roadMarkings(area, bounds),
+      sidewalks: kerbs.sidewalks,
+      curbs: kerbs.curbs,
+      crossings: pedestrianCrossings(area),
+      lights: streetLightSpots(area, bounds),
+      cars: carSpots(area, bounds),
+      people: pedestrianSpots(area, bounds),
+      vendors: vendorSpots(area),
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [area, bounds.left, bounds.top, bounds.width, bounds.height]);
+  const street = useMemo(() => {
+    const flat = (rects: readonly DressingRect[], y: number, height: number): WorldInstance[] =>
+      rects.map((rect) => {
+        const p = point(rect.x, rect.y);
+        return {
+          position: [p[0], y, p[2]],
+          scale: [rect.width * unit, height, rect.depth * unit],
+        };
+      });
+    const onGround = (spots: readonly { x: number; y: number }[]): [number, number][] =>
+      spots.map((spot) => {
+        const p = point(spot.x, spot.y);
+        return [p[0], p[2]];
+      });
+    return {
+      markings: flat(dressing.markings, 0.07, 0.03),
+      crossings: flat(dressing.crossings, 0.07, 0.03),
+      sidewalks: flat(dressing.sidewalks, 0.05, 0.1),
+      curbs: flat(dressing.curbs, 0.09, 0.14),
+      lights: onGround(dressing.lights),
+      cars: onGround(dressing.cars),
+      people: onGround(dressing.people),
+      vendors: onGround(dressing.vendors),
+    };
+  }, [dressing, point, unit]);
+  const streetSize = WORLD_SCALE.townCell;
   const self = players.find((player) => player.sessionId === selfSessionId);
   const selfPoint = self && toScene(self, district.origin);
   const target: [number, number, number] =
@@ -282,21 +340,13 @@ export function R3FNeighborhoodSurface({
             />
           </mesh>
           <WorldRoads items={roads} />
-          <WorldInstances
-            tone="wall"
-            items={roads.flatMap((road) => {
-              const [w, , d] = road.scale!;
-              const vertical = d > w;
-              return [-1, 1].map((side) => ({
-                position: [
-                  road.position[0] + (vertical ? side * (w / 2 + 0.3) : 0),
-                  0.085,
-                  road.position[2] + (vertical ? 0 : side * (d / 2 + 0.3)),
-                ] as [number, number, number],
-                scale: [vertical ? 0.6 : w, 0.1, vertical ? d : 0.6] as [number, number, number],
-              }));
-            })}
-          />
+          <WorldRoadMarkings items={street.markings} />
+          <WorldPedestrianCrossings items={street.crossings} />
+          <WorldSidewalks sidewalks={street.sidewalks} curbs={street.curbs} />
+          <WorldStreetLights positions={street.lights} size={streetSize} />
+          <WorldCars positions={street.cars} size={streetSize} />
+          <WorldStreetVendors positions={street.vendors} size={streetSize} />
+          <WorldPeople positions={street.people} />
           {area.paths?.map((path) => {
             const p = point((path.from.x + path.to.x) / 2, (path.from.y + path.to.y) / 2);
             return (
