@@ -651,7 +651,14 @@ export function PhoneLauncher({
   );
 
   return (
-    <Dialog open={dialogOpen} onOpenChange={setPhoneOpen}>
+    <Dialog
+      open={dialogOpen}
+      onOpenChange={(next) => {
+        // Opening from the Phone button always starts on the app grid; apps opened by an event still open directly.
+        if (next) dispatchNavigation({ type: "home" });
+        setPhoneOpen(next);
+      }}
+    >
       <DialogTrigger asChild>
         {trigger ?? (
           <button
