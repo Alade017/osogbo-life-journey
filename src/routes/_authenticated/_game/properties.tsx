@@ -123,7 +123,7 @@ export function PropertiesPage() {
           </div>
           <nav aria-label="Housing navigation">
             <Link to="/property">My property</Link>
-            <Link to="/real-estate">Real Estate</Link>
+            <Link to="/rentals">Browse rentals</Link>
           </nav>
         </div>
       </header>
@@ -236,7 +236,7 @@ export function PropertiesPage() {
                           {rentable && (
                             <Link
                               className="property-market-rent-button"
-                              to="/real-estate"
+                              to="/rentals"
                               hash={listing.id}
                             >
                               <KeyRound size={16} aria-hidden="true" /> Rent instead

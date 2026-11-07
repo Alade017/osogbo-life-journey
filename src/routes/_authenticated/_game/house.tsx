@@ -20,7 +20,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { House, Sunrise, WifiOff, DoorOpen, LoaderCircle } from "lucide-react";
+import { House, Moon, Sunrise, WifiOff, DoorOpen, LoaderCircle } from "lucide-react";
 import { HouseEditSheets } from "@/components/game/housing/HouseEditSheets";
 import { HouseCatalogue } from "@/components/game/housing/HouseCatalogue";
 import { HomeFoodDeliveryPanel } from "@/components/game/housing/HomeFoodDeliveryPanel";
@@ -54,9 +54,6 @@ import {
 } from "@/lib/house-state-sync";
 import { pageMeta } from "@/lib/seo";
 import "@/components/game/housing/house-screen.css";
-
-/** Seconds of sleep for a full rest. */
-const SLEEP_FULL_REST_SECONDS = 120;
 
 export const Route = createFileRoute("/_authenticated/_game/house")({
   head: () => pageMeta("Your home", "Visit your home, place furniture, and choose an outfit."),
@@ -818,6 +815,11 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     gameTime.simulation.currentAction?.actionId === "sleep"
       ? gameTime.simulation.currentAction
       : null;
+  const sleepProgress = Math.min(
+    100,
+    Math.round(((gameTime.sleepElapsedSeconds ?? 0) / 120) * 100),
+  );
+  const sleepRemaining = Math.max(0, Math.ceil(120 - (gameTime.sleepElapsedSeconds ?? 0)));
 
   const finishSleep = async (cancel: boolean) => {
     if (!activeSleep || isOffline || !gameTime.ready || gameTime.busy) return;
@@ -1017,8 +1019,8 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const taskTiming = gameTime.homeTaskTiming;
   const taskBusy = !!timedActivity || !!walkingTask || startingTask || cancellingTask;
   useEffect(() => {
-    if (!timedActionId) return;
-    const timer = window.setInterval(() => setClockNow(Date.now()), 100);
+    if (!timedActionId || timedActionId === "sleep") return;
+    const timer = window.setInterval(() => setClockNow(Date.now()), 250);
     return () => window.clearInterval(timer);
   }, [timedRequestId, timedActionId]);
   useEffect(() => {
@@ -1060,19 +1062,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       setCancellingTask(false);
     }
   };
-  const liveSleepElapsed = (() => {
-    const base = gameTime.sleepElapsedSeconds ?? 0;
-    const running = !isOffline && gameTime.ready && !gameTime.simulation.paused && !document.hidden;
-    return Math.min(
-      SLEEP_FULL_REST_SECONDS,
-      base + (running ? Math.max(0, clockNow - gameTime.simulation.lastUpdatedAt) / 1000 : 0),
-    );
-  })();
-  const sleepProgress = Math.min(
-    100,
-    Math.round((liveSleepElapsed / SLEEP_FULL_REST_SECONDS) * 100),
-  );
-  const sleepRemaining = Math.max(0, Math.ceil(SLEEP_FULL_REST_SECONDS - liveSleepElapsed));
   const displayedElapsed = taskTiming
     ? Math.min(
         taskTiming.duration,
@@ -1197,6 +1186,10 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         className={`house-room-card${house.status === "overdue" ? " room-overdue" : ""}${activeSleep ? " is-sleeping" : ""}`}
         aria-label={`${house.house_type.label} room`}
       >
+        <div className="house-home-badge">
+          <House size={16} aria-hidden="true" />
+          <span>{house.house_type.label}</span>
+        </div>
         <HouseRoomRenderer
           inputBlocked={taskBusy || (!editing && !!selectedPlacement && !!selectedAction)}
           houseTypeId={house.house_type_id}
@@ -1328,11 +1321,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           />
         )}
         {(movement.walking || walkingTask || startingTask || (timedActivity && !activeSleep)) && (
-          <div
-            className="house-sleep-pill house-task-pill"
-            role="region"
-            aria-label="Current home task"
-          >
+          <div className="house-task-progress" role="region" aria-label="Current home task">
             <div>
               <strong>
                 {collectingPackage
@@ -1345,22 +1334,21 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
                         ? ACTION_CATALOG[timedActivity.actionId].name
                         : "Walking"}
               </strong>
-              {!(timedActivity && taskTiming) && (
-                <span role="status">
-                  {movement.walking
-                    ? "On the way"
-                    : taskTiming && timedActivity
-                      ? displayedElapsed >= taskTiming.duration
-                        ? "Confirming completion�"
-                        : Math.ceil(taskTiming.duration - displayedElapsed) + "s remaining"
-                      : "Please wait"}
-                </span>
-              )}
+              <span role="status">
+                {movement.walking
+                  ? "On the way"
+                  : taskTiming && timedActivity
+                    ? displayedElapsed >= taskTiming.duration
+                      ? "Confirming completion�"
+                      : Math.ceil(taskTiming.duration - displayedElapsed) + "s remaining"
+                    : "Please wait"}
+              </span>
             </div>
             {timedActivity && taskTiming && (
-              <ProgressRing
-                percent={(displayedElapsed / (taskTiming.duration || 1)) * 100}
-                label={`${Math.max(0, Math.ceil(taskTiming.duration - displayedElapsed))}s`}
+              <progress
+                max={taskTiming.duration || 1}
+                value={displayedElapsed}
+                aria-label="Task progress"
               />
             )}
             <button
@@ -1373,26 +1361,37 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           </div>
         )}
         {activeSleep && (
-          <div className="house-sleep-pill" role="region" aria-label="Sleep controls">
-            <ProgressRing percent={sleepProgress} label={`${sleepRemaining}s`} />
-            <span role="status">
-              <strong>Asleep</strong>
-            </span>
-            <button
-              type="button"
-              disabled={isOffline || !gameTime.ready || gameTime.busy}
-              onClick={() => void finishSleep(false)}
-            >
-              Wake up
-            </button>
-            <button
-              type="button"
-              aria-label="Cancel sleep"
-              disabled={isOffline || !gameTime.ready || gameTime.busy}
-              onClick={() => void finishSleep(true)}
-            >
-              ✕
-            </button>
+          <div className="house-sleep-overlay" role="region" aria-label="Sleep controls">
+            <div className="house-sleep-status">
+              <span className="house-sleep-symbol">
+                <Moon size={21} aria-hidden="true" />
+              </span>
+              <span>
+                <strong>Asleep</strong>
+                <small>
+                  {sleepProgress}% rested · {sleepRemaining}s to full rest
+                </small>
+              </span>
+              <button
+                type="button"
+                disabled={isOffline || !gameTime.ready || gameTime.busy}
+                onClick={() => void finishSleep(true)}
+              >
+                Cancel
+              </button>
+            </div>
+            <div className="house-sleep-footer">
+              <progress value={sleepProgress} max="100" aria-label="Sleep progress">
+                {sleepProgress}%
+              </progress>
+              <button
+                type="button"
+                disabled={isOffline || !gameTime.ready || gameTime.busy}
+                onClick={() => void finishSleep(false)}
+              >
+                <Sunrise size={18} aria-hidden="true" /> Wake up
+              </button>
+            </div>
           </div>
         )}
       </section>
@@ -1464,32 +1463,5 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         />
       )}
     </div>
-  );
-}
-
-/** Circular progress with the seconds left shown in the middle. */
-function ProgressRing({ percent, label }: { percent: number; label: string }) {
-  const radius = 12;
-  const circumference = 2 * Math.PI * radius;
-  const value = Math.max(0, Math.min(100, percent));
-  return (
-    <span
-      className="house-ring"
-      role="img"
-      aria-label={`${Math.round(value)}% done, ${label} left`}
-    >
-      <svg viewBox="0 0 32 32" aria-hidden="true">
-        <circle className="house-ring-track" cx="16" cy="16" r={radius} />
-        <circle
-          className="house-ring-value"
-          cx="16"
-          cy="16"
-          r={radius}
-          strokeDasharray={circumference}
-          strokeDashoffset={circumference * (1 - value / 100)}
-        />
-      </svg>
-      <span className="house-ring-label">{label}</span>
-    </span>
   );
 }

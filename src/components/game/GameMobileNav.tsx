@@ -13,7 +13,7 @@ export function GameMobileNav({
 }) {
   return (
     <nav
-      className="gbb-nav"
+      className="game-mobile-nav game-floating-nav game-persistent-dock"
       aria-label="Game navigation"
       aria-hidden={hidden || undefined}
       inert={hidden || undefined}
@@ -21,8 +21,8 @@ export function GameMobileNav({
       <Link
         to="/home"
         search={{ visit: undefined }}
-        activeProps={{ className: "gbb-active" }}
-        className="gbb-link"
+        activeProps={{ className: "mobile-nav-active" }}
+        className="mobile-nav-link"
         onClick={onNavigate}
       >
         <House className="h-4.75 w-4.75" />
@@ -30,8 +30,8 @@ export function GameMobileNav({
       </Link>
       <Link
         to="/map"
-        activeProps={{ className: "gbb-active" }}
-        className="gbb-link"
+        activeProps={{ className: "mobile-nav-active" }}
+        className="mobile-nav-link"
         onClick={onNavigate}
       >
         <Map className="h-4.75 w-4.75" />
@@ -39,8 +39,8 @@ export function GameMobileNav({
       </Link>
       <Link
         to="/jobs"
-        activeProps={{ className: "gbb-active" }}
-        className="gbb-link"
+        activeProps={{ className: "mobile-nav-active" }}
+        className="mobile-nav-link"
         onClick={onNavigate}
       >
         <Briefcase className="h-4.75 w-4.75" />

@@ -33,7 +33,6 @@ import "@/components/game/game-cards.css";
 import "@/components/game/dashboard-ui-refresh.css";
 import "@/components/game/remaining-game-ui.css";
 import "@/components/game/game-dock.css";
-import "@/components/game/game-bottom-bar.css";
 
 export const Route = createFileRoute("/_authenticated/_game")({
   component: GameLayout,
@@ -251,20 +250,28 @@ function GameLayout() {
 
           <GameNeedsRail player={player} />
 
-          <div className={phoneOpen ? "gbb is-open" : "gbb"}>
-            <GameMobileNav hidden={phoneOpen} onNavigate={() => setPhoneOpen(false)} />
+          <GameMobileNav hidden={phoneOpen} onNavigate={() => setPhoneOpen(false)}>
             <PhoneLauncher
               compact
-              className="gbb-phone"
+              className="game-dock-phone"
               open={phoneOpen}
               onOpenChange={setPhoneOpen}
               dock={
-                <div className="gbb">
-                  <GameMobileNav onNavigate={() => setPhoneOpen(false)} />
-                </div>
+                <GameMobileNav onNavigate={() => setPhoneOpen(false)}>
+                  <button
+                    type="button"
+                    className="game-dock-phone is-open"
+                    aria-label="Close phone"
+                    aria-expanded="true"
+                    onClick={() => setPhoneOpen(false)}
+                  >
+                    <Smartphone size={20} aria-hidden="true" />
+                    <span>Phone</span>
+                  </button>
+                </GameMobileNav>
               }
             />
-          </div>
+          </GameMobileNav>
           <HousingChooser
             open={housingOpen}
             pending={housingPending || (housingRequested && housingSource === "profile")}

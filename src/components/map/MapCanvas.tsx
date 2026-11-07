@@ -168,7 +168,7 @@ export function MapCanvas({
           <WorldLoadingIndicator
             presentation="screen"
             title="Opening the map"
-            detail="Loading the town…"
+            detail="Starting the interactive town map…"
           />
         </div>
       )}
