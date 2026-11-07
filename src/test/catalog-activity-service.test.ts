@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { parseCatalogActivityResult, performCatalogActivity } from "@/lib/catalog-activity-service";
+import {
+  isExpectedActivityRejection,
+  parseCatalogActivityResult,
+  performCatalogActivity,
+} from "@/lib/catalog-activity-service";
 
 const { rpc } = vi.hoisted(() => ({ rpc: vi.fn() }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: { rpc } }));
@@ -75,6 +79,16 @@ describe("catalog activity service", () => {
       p_activity_slug: args.activitySlug,
       p_request_id: args.requestId,
     });
+  });
+
+
+  it("distinguishes expected activity-rule rejections from session failures", () => {
+    expect(isExpectedActivityRejection("This activity is cooling down. Try again in 30 seconds.")).toBe(true);
+    expect(isExpectedActivityRejection("Travel to the activity location first")).toBe(true);
+    expect(isExpectedActivityRejection("Requires Level 5.")).toBe(true);
+    expect(isExpectedActivityRejection("Resume your personal simulation first")).toBe(true);
+    expect(isExpectedActivityRejection("Simulation changed on another device. Reconnect before continuing.")).toBe(false);
+    expect(isExpectedActivityRejection("Failed to fetch")).toBe(false);
   });
 
   it("preserves server-side rejection without fabricating a completion", async () => {
