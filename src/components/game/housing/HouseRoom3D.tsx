@@ -194,7 +194,14 @@ function OsogboRoomPrototype({
         <WorldMaterial tone="ground" />
       </mesh>
       <group name="house-cutaway-walls" scale={[1, editMode ? 0.28 : 1, 1]}>
-        {houseWallSegments(width, depth, height, doorwayWidth, rearDoorCenter).map((segment) => (
+        {houseWallSegments(
+          width,
+          depth,
+          height,
+          doorwayWidth,
+          rearDoorCenter,
+          FOUR_ROOM_HOME_TYPES.includes(houseTypeId),
+        ).map((segment) => (
           <group key={segment.id}>
             <mesh castShadow receiveShadow position={segment.position}>
               <boxGeometry args={segment.size} />

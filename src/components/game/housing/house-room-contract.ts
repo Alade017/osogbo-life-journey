@@ -202,9 +202,10 @@ export function houseWallSegments(
   wallHeight: number,
   doorwayWidth: number,
   rearDoorCenter: number = width * 0.22,
+  closedFront = false,
 ): HouseWallSegment[] {
-  const wallThickness = 0.16;
-  const frontWallHeight = wallHeight * 0.48;
+  const wallThickness = 0.22;
+  const frontWallHeight = closedFront ? wallHeight : wallHeight * 0.48;
   const doorHeight = wallHeight * 0.82;
   const rearDoorLeft = rearDoorCenter - doorwayWidth / 2;
   const rearDoorRight = rearDoorCenter + doorwayWidth / 2;
@@ -216,6 +217,26 @@ export function houseWallSegments(
   const frontSideWidth = Math.max(0, (width - frontOpeningWidth) / 2);
   const rearY = wallHeight / 2;
   const frontY = frontWallHeight / 2;
+  const front: HouseWallSegment[] = closedFront
+    ? [
+        {
+          id: "front-wall",
+          position: [0, frontY, depth / 2],
+          size: [width, frontWallHeight, wallThickness],
+        },
+      ]
+    : [
+        {
+          id: "front-left-cutaway",
+          position: [-(frontOpeningWidth + frontSideWidth) / 2, frontY, depth / 2],
+          size: [frontSideWidth, frontWallHeight, wallThickness],
+        },
+        {
+          id: "front-right-cutaway",
+          position: [(frontOpeningWidth + frontSideWidth) / 2, frontY, depth / 2],
+          size: [frontSideWidth, frontWallHeight, wallThickness],
+        },
+      ];
   return [
     {
       id: "rear-left",
@@ -252,16 +273,7 @@ export function houseWallSegments(
       position: [width / 2, frontY, sideBackDepth / 2],
       size: [wallThickness, frontWallHeight, sideFrontDepth],
     },
-    {
-      id: "front-left-cutaway",
-      position: [-(frontOpeningWidth + frontSideWidth) / 2, frontY, depth / 2],
-      size: [frontSideWidth, frontWallHeight, wallThickness],
-    },
-    {
-      id: "front-right-cutaway",
-      position: [(frontOpeningWidth + frontSideWidth) / 2, frontY, depth / 2],
-      size: [frontSideWidth, frontWallHeight, wallThickness],
-    },
+    ...front,
   ];
 }
 
@@ -271,7 +283,7 @@ export function houseWallSegments(
  * bathroom (front-right). Walls are centred on the room, so the origin is the middle.
  */
 function studioPartitionSegments(width: number, depth: number, height: number): HouseWallSegment[] {
-  const thickness = 0.14;
+  const thickness = 0.22;
   const doorway = 1.1;
   const alongX = (id: string, z: number, x0: number, x1: number): HouseWallSegment => ({
     id,
@@ -316,7 +328,7 @@ export function housePartitionSegments(
 ): HouseWallSegment[] {
   if (!FOUR_ROOM_HOME_TYPES.includes(houseTypeId)) return [];
   // Taller than the furniture, so it reads clearly from the camera.
-  return studioPartitionSegments(width, depth, 1.6);
+  return studioPartitionSegments(width, depth, 1.9);
 }
 
 /** Stairs in a two-storey home. The same footprint serves both floors, against the left wall. */
@@ -346,8 +358,8 @@ export function houseStairs(houseTypeId: string, width: number, depth: number): 
  * (back-right) and a bedroom (front-right). Each has an empty doorway.
  */
 export function upstairsPartitionSegments(width: number, depth: number): HouseWallSegment[] {
-  const height = 1.6;
-  const thickness = 0.14;
+  const height = 1.9;
+  const thickness = 0.22;
   const doorway = 1.1;
   const alongX = (id: string, z: number, x0: number, x1: number): HouseWallSegment => ({
     id,
