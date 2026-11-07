@@ -995,13 +995,23 @@ export function WorldHouse({
   const isCivic = variant === "civic" || variant === "public-service";
   const isHealth = variant === "health" || variant === "clinic";
   const isSchool = variant === "school";
-  const isWorship = variant === "worship";
+  const isChurch = variant === "church";
+  const isMosque = variant === "mosque";
+  const isWorship = variant === "worship" || isChurch || isMosque;
   const isTransit = variant === "transit" || variant === "transport";
   const isSport = variant === "sport";
   const isClub = variant === "club";
   const isServices = variant === "services";
 
-  const roofTone = isMarket ? "accent" : isWorship ? "clay" : isBank || isCivic ? "slate" : "roof";
+  const roofTone = isMarket
+    ? "accent"
+    : isMosque
+      ? "slate"
+      : isWorship
+        ? "clay"
+        : isBank || isCivic
+          ? "slate"
+          : "roof";
 
   const accentTone = isHealth
     ? "foliage"
@@ -1122,13 +1132,73 @@ export function WorldHouse({
       )}
 
       {/* WORSHIP BUILDINGS */}
-      {isWorship && (
+      {isChurch && (
+        <>
+          {/* Pitched roof and compact bell tower distinguish the chapel silhouette. */}
+          <mesh
+            position={[-width * 0.2, height + 0.48, 0]}
+            rotation={[0, 0, -0.42]}
+            castShadow
+          >
+            <boxGeometry args={[width * 0.58, 0.16, depth + 0.24]} />
+            <WorldMaterial tone="clay" />
+          </mesh>
+          <mesh
+            position={[width * 0.2, height + 0.48, 0]}
+            rotation={[0, 0, 0.42]}
+            castShadow
+          >
+            <boxGeometry args={[width * 0.58, 0.16, depth + 0.24]} />
+            <WorldMaterial tone="clay" />
+          </mesh>
+          <mesh position={[-width * 0.34, height + 0.42, 0]} castShadow>
+            <boxGeometry args={[width * 0.2, height * 0.42, depth * 0.22]} />
+            <WorldMaterial tone="linen" />
+          </mesh>
+          {/* Simple cross above the bell tower. */}
+          <mesh position={[-width * 0.34, height + 0.82, depth * 0.02]}>
+            <boxGeometry args={[0.07, 0.34, 0.07]} />
+            <WorldMaterial tone="roof" />
+          </mesh>
+          <mesh position={[-width * 0.34, height + 0.83, depth * 0.02]}>
+            <boxGeometry args={[0.24, 0.07, 0.07]} />
+            <WorldMaterial tone="roof" />
+          </mesh>
+        </>
+      )}
+
+      {isMosque && (
+        <>
+          {/* A low dome and slender minaret create a distinct mosque profile. */}
+          <mesh
+            position={[0, height + 0.48, 0]}
+            scale={[width * 0.24, height * 0.15, width * 0.24]}
+            castShadow
+          >
+            <sphereGeometry args={[1, 12, 10]} />
+            <WorldMaterial tone="roofLight" />
+          </mesh>
+          <mesh position={[width * 0.36, height * 0.58, 0]} castShadow>
+            <cylinderGeometry args={[0.07, 0.09, height * 1.08, 8]} />
+            <WorldMaterial tone="linen" />
+          </mesh>
+          <mesh position={[width * 0.36, height * 1.16, 0]} castShadow>
+            <coneGeometry args={[0.13, 0.3, 8]} />
+            <WorldMaterial tone="roof" />
+          </mesh>
+          <mesh position={[width * 0.36, height * 1.34, 0]}>
+            <sphereGeometry args={[0.055, 8, 8]} />
+            <WorldMaterial tone="sign" />
+          </mesh>
+        </>
+      )}
+
+      {variant === "worship" && (
         <>
           <mesh position={[width * 0.3, height + 0.72, 0]}>
             <boxGeometry args={[0.22, 0.85, 0.22]} />
             <WorldMaterial tone="linen" />
           </mesh>
-
           <mesh position={[width * 0.3, height + 1.2, 0]} rotation={[0, Math.PI / 4, 0]}>
             <coneGeometry args={[0.2, 0.38, 4]} />
             <WorldMaterial tone="roof" />

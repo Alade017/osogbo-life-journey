@@ -11,7 +11,8 @@ import { Html } from "@react-three/drei";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
 import { WorldStreetFurniture } from "@/components/3d/WorldStreetFurniture";
 import { worldAppearance, worldEquipment } from "@/game/world-character-view";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import type { Group } from "three";
 import type { NeighborhoodPlayerView, PhaserNeighborhoodHandle } from "@/game/phaser-neighborhood";
 import type { playableDistrictForLocation } from "@/game/playable-district";
 import {
@@ -26,7 +27,6 @@ import {
   WorldHouse,
   WorldLighting,
   WorldMaterial,
-  WorldPeople,
   WorldRoads,
   WorldTrees,
   type WorldTree,
@@ -52,6 +52,116 @@ class NeighborhoodBoundary extends Component<{ children: ReactNode }, { failed: 
   }
 }
 
+function NeighborhoodNpcActor({
+  npc,
+  start,
+  target,
+  onSelect,
+  onArrive,
+}: {
+  npc: NeighborhoodNpcView;
+  start: [number, number, number];
+  target: [number, number, number];
+  onSelect: () => void;
+  onArrive: () => void;
+}) {
+  const group = useRef<Group>(null);
+  const leftArm = useRef<Group>(null);
+  const rightArm = useRef<Group>(null);
+  const leftLeg = useRef<Group>(null);
+  const rightLeg = useRef<Group>(null);
+  const { invalidate } = useThree();
+  const animated = !npc.isPaused && (npc.isMoving || ["working", "shopping", "socializing"].includes(npc.activityKind));
+  const targetKey = `${target[0].toFixed(3)}:${target[2].toFixed(3)}`;
+  const arrivedTarget = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!animated) return;
+    const timer = window.setInterval(invalidate, 1000 / 15);
+    return () => window.clearInterval(timer);
+  }, [animated, invalidate]);
+
+  useFrame((state, delta) => {
+    const actor = group.current;
+    if (!actor || npc.isPaused) return;
+    const dx = target[0] - actor.position.x;
+    const dz = target[2] - actor.position.z;
+    const distance = Math.hypot(dx, dz);
+    const walking = distance > 0.035;
+    if (walking) {
+      const step = 1 - Math.exp(-Math.min(delta, 0.1) * 2.8);
+      actor.position.x += dx * step;
+      actor.position.z += dz * step;
+      actor.rotation.y = Math.atan2(dx, dz);
+    } else {
+      actor.position.x = target[0];
+      actor.position.z = target[2];
+      if (arrivedTarget.current !== targetKey) {
+        arrivedTarget.current = targetKey;
+        onArrive();
+      }
+    }
+    const phase = state.clock.elapsedTime * (walking ? 7 : 2.2);
+    const swing = walking ? Math.sin(phase) * 0.42 : 0;
+    const workMotion = npc.activityKind === "working" ? Math.sin(phase) * 0.16 : 0;
+    const socialMotion = npc.activityKind === "socializing" ? Math.sin(phase) * 0.1 : 0;
+    if (leftArm.current) leftArm.current.rotation.x = swing + workMotion + socialMotion;
+    if (rightArm.current) rightArm.current.rotation.x = -swing + workMotion;
+    if (leftLeg.current) leftLeg.current.rotation.x = -swing * 0.8;
+    if (rightLeg.current) rightLeg.current.rotation.x = swing * 0.8;
+  });
+
+  return (
+    <group ref={group} position={start}>
+      <mesh position={[0, 0.9, 0]} castShadow>
+        <capsuleGeometry args={[0.24, 0.52, 4, 8]} />
+        <WorldMaterial tone="slate" />
+      </mesh>
+      <mesh position={[0, 1.55, 0]} castShadow>
+        <sphereGeometry args={[0.22, 12, 10]} />
+        <WorldMaterial tone="clay" />
+      </mesh>
+      <group ref={leftArm} position={[-0.29, 1.08, 0]}>
+        <mesh position={[0, -0.19, 0]} castShadow>
+          <boxGeometry args={[0.12, 0.42, 0.13]} />
+          <WorldMaterial tone="clay" />
+        </mesh>
+      </group>
+      <group ref={rightArm} position={[0.29, 1.08, 0]}>
+        <mesh position={[0, -0.19, 0]} castShadow>
+          <boxGeometry args={[0.12, 0.42, 0.13]} />
+          <WorldMaterial tone="clay" />
+        </mesh>
+      </group>
+      <group ref={leftLeg} position={[-0.12, 0.48, 0]}>
+        <mesh position={[0, -0.19, 0]} castShadow>
+          <boxGeometry args={[0.14, 0.42, 0.16]} />
+          <WorldMaterial tone="timber" />
+        </mesh>
+      </group>
+      <group ref={rightLeg} position={[0.12, 0.48, 0]}>
+        <mesh position={[0, -0.19, 0]} castShadow>
+          <boxGeometry args={[0.14, 0.42, 0.16]} />
+          <WorldMaterial tone="timber" />
+        </mesh>
+      </group>
+      <mesh
+        position={[0, 0.92, 0]}
+        onClick={(event) => {
+          event.stopPropagation();
+          onSelect();
+        }}
+      >
+        <cylinderGeometry args={[0.42, 0.42, 1.9, 10]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
+      <Html center position={[0, 2.05, 0]} distanceFactor={18} style={{ pointerEvents: "none" }}>
+        <span className="world-place-label">{npc.name}</span>
+      </Html>
+    </group>
+  );
+}
+
 export function R3FNeighborhoodSurface({
   players,
   selfSessionId,
@@ -59,6 +169,7 @@ export function R3FNeighborhoodSurface({
   npcs,
   interactionTargets,
   onSelectTarget,
+  onNpcArrive,
   onScene,
   zoom,
   onZoomChange,
@@ -67,6 +178,7 @@ export function R3FNeighborhoodSurface({
   npcs: readonly NeighborhoodNpcView[];
   interactionTargets: readonly NeighborhoodObject[];
   onSelectTarget: (targetId: string) => void;
+  onNpcArrive: (npcId: string, x: number, y: number) => void;
   selfSessionId: string;
   homeTypeId: string | null;
   district: NonNullable<ReturnType<typeof playableDistrictForLocation>>;
@@ -286,11 +398,17 @@ export function R3FNeighborhoodSurface({
               />
             );
           })}
-          <WorldPeople
-            positions={npcs.map((npc) => [point(npc.x, npc.y)[0], point(npc.x, npc.y)[2]])}
-            activities={npcs.map(() => "walking")}
-          />
-          {interactionTargets.map((target) => {
+          {npcs.map((npc) => (
+            <NeighborhoodNpcActor
+              key={npc.id}
+              npc={npc}
+              start={point(npc.x, npc.y)}
+              target={point(npc.targetX, npc.targetY)}
+              onSelect={() => onSelectTarget(npc.id)}
+              onArrive={() => onNpcArrive(npc.id, npc.targetX, npc.targetY)}
+            />
+          ))}
+          {interactionTargets.filter((target) => target.kind !== "npc").map((target) => {
             const p = point(target.x, target.y);
             const footprint =
               target.kind === "npc" ? null : neighborhoodBuildingFootprint(target);
@@ -316,21 +434,6 @@ export function R3FNeighborhoodSurface({
                 )}
                 <meshBasicMaterial transparent opacity={0} depthWrite={false} />
               </mesh>
-            );
-          })}
-          {npcs.map((npc) => {
-            const p = point(npc.x, npc.y);
-            return (
-              <Html
-                key={npc.id}
-                portal={overlayHost}
-                center
-                position={[p[0], 2.4, p[2]]}
-                distanceFactor={18}
-                style={{ pointerEvents: "none" }}
-              >
-                <span className="world-place-label">{npc.name}</span>
-              </Html>
             );
           })}
         </Canvas>

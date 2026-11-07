@@ -371,7 +371,7 @@
         "placeId": "garden-chapel",
         "x": 2,
         "z": 11,
-        "buildingType": "worship"
+        "buildingType": "church"
       },
       {
         "placeId": "fish-market",
@@ -413,7 +413,7 @@
         "placeId": "mosque-square",
         "x": 10,
         "z": 15,
-        "buildingType": "worship"
+        "buildingType": "mosque"
       },
       {
         "placeId": "east-transit-terminal",
@@ -1430,7 +1430,7 @@
         "x": 2,
         "z": 11
       },
-      "buildingType": "worship",
+      "buildingType": "church",
       "actions": [
         {
           "id": "garden-chapel-visit",
@@ -1675,7 +1675,7 @@
         "x": 10,
         "z": 15
       },
-      "buildingType": "worship",
+      "buildingType": "mosque",
       "actions": [
         {
           "id": "mosque-square-visit",
