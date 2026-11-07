@@ -256,20 +256,7 @@ function GameLayout() {
               className="game-dock-phone"
               open={phoneOpen}
               onOpenChange={setPhoneOpen}
-              dock={
-                <GameMobileNav onNavigate={() => setPhoneOpen(false)}>
-                  <button
-                    type="button"
-                    className="game-dock-phone is-open"
-                    aria-label="Close phone"
-                    aria-expanded="true"
-                    onClick={() => setPhoneOpen(false)}
-                  >
-                    <Smartphone size={20} aria-hidden="true" />
-                    <span>Phone</span>
-                  </button>
-                </GameMobileNav>
-              }
+              dock={<GameMobileNav onNavigate={() => setPhoneOpen(false)} />}
             />
             <GameMobileNav hidden={phoneOpen} onNavigate={() => setPhoneOpen(false)} />
           </div>
