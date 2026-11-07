@@ -1,0 +1,106 @@
+========== ACTIVITY SEED / UPDATE REFERENCES ==========
+
+  supabase\migrations\202610170012_fictional_town_map_venues.sql:70:) as seed(slug,district_id)
+  supabase\migrations\202610170012_fictional_town_map_venues.sql:71:join public.locations location on location.slug=seed.slug
+  supabase\migrations\202610170012_fictional_town_map_venues.sql:72:on conflict (location_id) do update set district_id=excluded.district_id;
+  supabase\migrations\202610170012_fictional_town_map_venues.sql:73:
+> supabase\migrations\202610170012_fictional_town_map_venues.sql:74:insert into public.activities (slug,name,category,description,location_id,duration_minutes,energy_delta,is_available,metadata)
+  supabase\migrations\202610170012_fictional_town_map_venues.sql:75:select seed.slug,seed.name,seed.category,seed.description,location.id,seed.duration,seed.energy,true,
+  supabase\migrations\202610170012_fictional_town_map_venues.sql:76:  '{"origin":"fictional","server_action":"map_place_action"}'::jsonb
+  supabase\migrations\202610170012_fictional_town_map_venues.sql:77:from (values
+  supabase\migrations\202610170012_fictional_town_map_venues.sql:78:  ('town-market-browse','Browse the market stalls','exploration','Explore fictional stalls and neighborhood vendors.','town-market',12,-2),
+  supabase\migrations\202610170012_fictional_town_map_venues.sql:79:  ('civic-court-guide','Review the civic visitor guide','study','Read general in-game information about public counters and forms. This is not legal advice.','civic-court',12,-1),
+  supabase\migrations\202610170012_fictional_town_map_venues.sql:80:  ('police-safety-guide','Read the community safety guide','study','Review general safety tips for the fictional game town.','community-police',8,0),
+  supabase\migrations\202610170012_fictional_town_map_venues.sql:81:  ('cedar-bank-budgeting','Review a budgeting guide','study','Learn about basic budgeting in this fictional game venue.','cedar-bank',12,0),
+  supabase\migrations\202610170012_fictional_town_map_venues.sql:82:  ('meridian-bank-budgeting','Review a budgeting guide','study','Learn about basic budgeting in this fictional game venue.','meridian-bank',12,0),
+  supabase\migrations\202610170012_fictional_town_map_venues.sql:83:  ('lantern-club-social','Join a social hour','social','Meet adult players during an evening social activity.','lantern-club',30,-4),
+  supabase\migrations\202610170012_fictional_town_map_venues.sql:84:  ('community-clinic-wellness','Attend a wellness session','other','Join a general wellness activity in the fictional game.','community-clinic',20,-3),
+  supabase\migrations\202610170012_fictional_town_map_venues.sql:85:  ('transit-park-routes','Read the route board','exploration','Review fictional local travel information.','transit-park',5,0),
+  supabase\migrations\202610170012_fictional_town_map_venues.sql:86:  ('sports-ground-training','Join open training','exercise','Take part in a fictional community fitness session.','sports-ground',30,-8)
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:185:  location_id = excluded.location_id,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:186:  place_id = excluded.place_id,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:187:  is_available = excluded.is_available;
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:188:
+> drizzle\migrations\0012_milestone5_phase1_seed.sql:189:insert into public.activities (
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:190:  slug,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:191:  name,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:192:  category,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:193:  description,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:194:  location_id,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:195:  duration_minutes,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:196:  energy_delta,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:197:  hunger_delta,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:198:  thirst_delta,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:199:  xp_reward,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:200:  requirements,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:201:  rewards,
+  drizzle\migrations\0046_fictional_town_map_venues.sql:70:) as seed(slug,district_id)
+  drizzle\migrations\0046_fictional_town_map_venues.sql:71:join public.locations location on location.slug=seed.slug
+  drizzle\migrations\0046_fictional_town_map_venues.sql:72:on conflict (location_id) do update set district_id=excluded.district_id;
+  drizzle\migrations\0046_fictional_town_map_venues.sql:73:
+> drizzle\migrations\0046_fictional_town_map_venues.sql:74:insert into public.activities (slug,name,category,description,location_id,duration_minutes,energy_delta,is_available,metadata)
+  drizzle\migrations\0046_fictional_town_map_venues.sql:75:select seed.slug,seed.name,seed.category,seed.description,location.id,seed.duration,seed.energy,true,
+  drizzle\migrations\0046_fictional_town_map_venues.sql:76:  '{"origin":"fictional","server_action":"map_place_action"}'::jsonb
+  drizzle\migrations\0046_fictional_town_map_venues.sql:77:from (values
+  drizzle\migrations\0046_fictional_town_map_venues.sql:78:  ('town-market-browse','Browse the market stalls','exploration','Explore fictional stalls and neighborhood vendors.','town-market',12,-2),
+  drizzle\migrations\0046_fictional_town_map_venues.sql:79:  ('civic-court-guide','Review the civic visitor guide','study','Read general in-game information about public counters and forms. This is not legal advice.','civic-court',12,-1),
+  drizzle\migrations\0046_fictional_town_map_venues.sql:80:  ('police-safety-guide','Read the community safety guide','study','Review general safety tips for the fictional game town.','community-police',8,0),
+  drizzle\migrations\0046_fictional_town_map_venues.sql:81:  ('cedar-bank-budgeting','Review a budgeting guide','study','Learn about basic budgeting in this fictional game venue.','cedar-bank',12,0),
+  drizzle\migrations\0046_fictional_town_map_venues.sql:82:  ('meridian-bank-budgeting','Review a budgeting guide','study','Learn about basic budgeting in this fictional game venue.','meridian-bank',12,0),
+  drizzle\migrations\0046_fictional_town_map_venues.sql:83:  ('lantern-club-social','Join a social hour','social','Meet adult players during an evening social activity.','lantern-club',30,-4),
+  drizzle\migrations\0046_fictional_town_map_venues.sql:84:  ('community-clinic-wellness','Attend a wellness session','other','Join a general wellness activity in the fictional game.','community-clinic',20,-3),
+  drizzle\migrations\0046_fictional_town_map_venues.sql:85:  ('transit-park-routes','Read the route board','exploration','Review fictional local travel information.','transit-park',5,0),
+  drizzle\migrations\0046_fictional_town_map_venues.sql:86:  ('sports-ground-training','Join open training','exercise','Take part in a fictional community fitness session.','sports-ground',30,-8)
+
+
+
+========== PACKAGE SCRIPTS ==========
+
+
+dev               : vite dev
+dev:public        : vite --config vite.public.config.ts
+multiplayer:dev   : node --env-file-if-exists=.env --experimental-strip-types multiplayer/server.ts
+multiplayer:start : node --experimental-strip-types multiplayer/server.ts
+build:public      : vite build --config vite.public.config.ts
+build             : vite build
+build:dev         : vite build --mode development
+preview           : node --env-file-if-exists=.env .output/server/index.mjs
+lint              : eslint .
+format            : prettier --write .
+test              : vitest run
+test:watch        : vitest
+start             : node --env-file-if-exists=.env .output/server/index.mjs
+typecheck         : tsc --noEmit
+db:check          : node scripts/sync-database-migrations.mjs
+db:apply          : node scripts/sync-database-migrations.mjs --apply
+db:migrate:hud    : node scripts/apply-shared-hud-migration.mjs
+verify:map:live   : node scripts/verify-live-map.mjs
+
+
+
+
+========== DRIZZLE CONFIGURATION ==========
+FILE: C:\Users\user\Desktop\Osogbo-life-journey\osogbo-life-journey\drizzle.config.ts
+import { existsSync } from "node:fs";
+import type { Config } from "drizzle-kit";
+
+if (existsSync(".env")) process.loadEnvFile(".env");
+
+export default {
+  schema: "./drizzle/schema.ts",
+  out: "./drizzle/migrations",
+  connectionString: process.env["DATABASE_URL"] ?? "",
+} satisfies Config;
+
+FILE: C:\Users\user\Desktop\Osogbo-life-journey\osogbo-life-journey\.smoke\nigerian-audio-main\drizzle.config.ts
+import { existsSync } from "node:fs";
+import type { Config } from "drizzle-kit";
+
+if (existsSync(".env")) process.loadEnvFile(".env");
+
+export default {
+  schema: "./drizzle/schema.ts",
+  out: "./drizzle/migrations",
+  connectionString: process.env["DATABASE_URL"] ?? "",
+} satisfies Config;
+
