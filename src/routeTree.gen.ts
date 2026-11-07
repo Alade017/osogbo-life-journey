@@ -37,6 +37,10 @@ import { Route as AuthenticatedGameRealEstateRouteImport } from './routes/_authe
 import { Route as AuthenticatedGameSettingsRouteImport } from './routes/_authenticated/_game/settings'
 import { Route as AuthenticatedGameSocialRouteImport } from './routes/_authenticated/_game/social'
 import { Route as AuthenticatedGameWalletRouteImport } from './routes/_authenticated/_game/wallet'
+import { Route as ApiDrawerEquipRouteImport } from './routes/api/drawer/equip'
+import { Route as ApiDrawerRetrieveRouteImport } from './routes/api/drawer/retrieve'
+import { Route as ApiDrawerStateRouteImport } from './routes/api/drawer/state'
+import { Route as ApiDrawerStoreRouteImport } from './routes/api/drawer/store'
 import { Route as ApiHomeEquipRouteImport } from './routes/api/home/equip'
 import { Route as ApiHomePlaceRouteImport } from './routes/api/home/place'
 import { Route as ApiHomeRemoveRouteImport } from './routes/api/home/remove'
@@ -234,6 +238,26 @@ const AuthenticatedGameWalletRoute = AuthenticatedGameWalletRouteImport.update({
   id: '/wallet',
   path: '/wallet',
   getParentRoute: () => AuthenticatedGameRoute,
+} as any)
+const ApiDrawerEquipRoute = ApiDrawerEquipRouteImport.update({
+  id: '/api/drawer/equip',
+  path: '/api/drawer/equip',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDrawerRetrieveRoute = ApiDrawerRetrieveRouteImport.update({
+  id: '/api/drawer/retrieve',
+  path: '/api/drawer/retrieve',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDrawerStateRoute = ApiDrawerStateRouteImport.update({
+  id: '/api/drawer/state',
+  path: '/api/drawer/state',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDrawerStoreRoute = ApiDrawerStoreRouteImport.update({
+  id: '/api/drawer/store',
+  path: '/api/drawer/store',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiHomeEquipRoute = ApiHomeEquipRouteImport.update({
   id: '/api/home/equip',
@@ -502,6 +526,10 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedGameSettingsRoute
   '/social': typeof AuthenticatedGameSocialRoute
   '/wallet': typeof AuthenticatedGameWalletRoute
+  '/api/drawer/equip': typeof ApiDrawerEquipRoute
+  '/api/drawer/retrieve': typeof ApiDrawerRetrieveRoute
+  '/api/drawer/state': typeof ApiDrawerStateRoute
+  '/api/drawer/store': typeof ApiDrawerStoreRoute
   '/api/home/equip': typeof ApiHomeEquipRoute
   '/api/home/place': typeof ApiHomePlaceRoute
   '/api/home/remove': typeof ApiHomeRemoveRoute
@@ -577,6 +605,10 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedGameSettingsRoute
   '/social': typeof AuthenticatedGameSocialRoute
   '/wallet': typeof AuthenticatedGameWalletRoute
+  '/api/drawer/equip': typeof ApiDrawerEquipRoute
+  '/api/drawer/retrieve': typeof ApiDrawerRetrieveRoute
+  '/api/drawer/state': typeof ApiDrawerStateRoute
+  '/api/drawer/store': typeof ApiDrawerStoreRoute
   '/api/home/equip': typeof ApiHomeEquipRoute
   '/api/home/place': typeof ApiHomePlaceRoute
   '/api/home/remove': typeof ApiHomeRemoveRoute
@@ -655,6 +687,10 @@ export interface FileRoutesById {
   '/_authenticated/_game/settings': typeof AuthenticatedGameSettingsRoute
   '/_authenticated/_game/social': typeof AuthenticatedGameSocialRoute
   '/_authenticated/_game/wallet': typeof AuthenticatedGameWalletRoute
+  '/api/drawer/equip': typeof ApiDrawerEquipRoute
+  '/api/drawer/retrieve': typeof ApiDrawerRetrieveRoute
+  '/api/drawer/state': typeof ApiDrawerStateRoute
+  '/api/drawer/store': typeof ApiDrawerStoreRoute
   '/api/home/equip': typeof ApiHomeEquipRoute
   '/api/home/place': typeof ApiHomePlaceRoute
   '/api/home/remove': typeof ApiHomeRemoveRoute
@@ -732,6 +768,10 @@ export interface FileRouteTypes {
     | '/settings'
     | '/social'
     | '/wallet'
+    | '/api/drawer/equip'
+    | '/api/drawer/retrieve'
+    | '/api/drawer/state'
+    | '/api/drawer/store'
     | '/api/home/equip'
     | '/api/home/place'
     | '/api/home/remove'
@@ -807,6 +847,10 @@ export interface FileRouteTypes {
     | '/settings'
     | '/social'
     | '/wallet'
+    | '/api/drawer/equip'
+    | '/api/drawer/retrieve'
+    | '/api/drawer/state'
+    | '/api/drawer/store'
     | '/api/home/equip'
     | '/api/home/place'
     | '/api/home/remove'
@@ -884,6 +928,10 @@ export interface FileRouteTypes {
     | '/_authenticated/_game/settings'
     | '/_authenticated/_game/social'
     | '/_authenticated/_game/wallet'
+    | '/api/drawer/equip'
+    | '/api/drawer/retrieve'
+    | '/api/drawer/state'
+    | '/api/drawer/store'
     | '/api/home/equip'
     | '/api/home/place'
     | '/api/home/remove'
@@ -939,6 +987,10 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   ApiNewsRoute: typeof ApiNewsRoute
+  ApiDrawerEquipRoute: typeof ApiDrawerEquipRoute
+  ApiDrawerRetrieveRoute: typeof ApiDrawerRetrieveRoute
+  ApiDrawerStateRoute: typeof ApiDrawerStateRoute
+  ApiDrawerStoreRoute: typeof ApiDrawerStoreRoute
   ApiHomeEquipRoute: typeof ApiHomeEquipRoute
   ApiHomePlaceRoute: typeof ApiHomePlaceRoute
   ApiHomeRemoveRoute: typeof ApiHomeRemoveRoute
@@ -1183,6 +1235,34 @@ declare module '@tanstack/react-router' {
       fullPath: '/wallet'
       preLoaderRoute: typeof AuthenticatedGameWalletRouteImport
       parentRoute: typeof AuthenticatedGameRoute
+    }
+    '/api/drawer/equip': {
+      id: '/api/drawer/equip'
+      path: '/api/drawer/equip'
+      fullPath: '/api/drawer/equip'
+      preLoaderRoute: typeof ApiDrawerEquipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/drawer/retrieve': {
+      id: '/api/drawer/retrieve'
+      path: '/api/drawer/retrieve'
+      fullPath: '/api/drawer/retrieve'
+      preLoaderRoute: typeof ApiDrawerRetrieveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/drawer/state': {
+      id: '/api/drawer/state'
+      path: '/api/drawer/state'
+      fullPath: '/api/drawer/state'
+      preLoaderRoute: typeof ApiDrawerStateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/drawer/store': {
+      id: '/api/drawer/store'
+      path: '/api/drawer/store'
+      fullPath: '/api/drawer/store'
+      preLoaderRoute: typeof ApiDrawerStoreRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/home/equip': {
       id: '/api/home/equip'
@@ -1590,6 +1670,10 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   ApiNewsRoute: ApiNewsRoute,
+  ApiDrawerEquipRoute: ApiDrawerEquipRoute,
+  ApiDrawerRetrieveRoute: ApiDrawerRetrieveRoute,
+  ApiDrawerStateRoute: ApiDrawerStateRoute,
+  ApiDrawerStoreRoute: ApiDrawerStoreRoute,
   ApiHomeEquipRoute: ApiHomeEquipRoute,
   ApiHomePlaceRoute: ApiHomePlaceRoute,
   ApiHomeRemoveRoute: ApiHomeRemoveRoute,

@@ -31,6 +31,8 @@ import type {
   HouseSlot,
 } from "@/components/game/housing/HouseRoomScene";
 import { HomeAccessoryPanel } from "@/components/game/housing/HomeAccessoryPanel";
+import { DrawerSheet } from "@/components/game/housing/DrawerSheet";
+import { drawerAction, fetchDrawerState, storableRows } from "@/lib/drawer";
 import { HouseRoomRenderer } from "@/components/game/housing/HouseRoomRenderer";
 import { useGameTime } from "@/components/game/GameTimeProvider";
 import { homeFurnitureAction, homeFurnitureActions } from "@/lib/home-furniture-actions";
@@ -106,6 +108,8 @@ type CatalogItem = {
   price_minor: number;
   is_active: boolean;
 };
+/** Art key of the drawer furniture: tapping it opens the drawer instead of an accessory panel. */
+const DRAWER_ART_KEY = "drawer";
 const EMPTY_OUTFIT: HouseOutfit = {
   head: null,
   top: null,
@@ -764,6 +768,37 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     character?.appearance && typeof character.appearance === "object" ? character.appearance : {}
   ) as Appearance;
   const isOffline = !online || usingSaved;
+  const drawerQuery = useQuery({
+    queryKey: ["house-drawer", character?.id ?? "anonymous"],
+    queryFn: fetchDrawerState,
+    enabled: !!character?.id,
+  });
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerError, setDrawerError] = useState<string | null>(null);
+  const drawerMutation = useMutation({
+    mutationFn: ({
+      action,
+      body,
+    }: {
+      action: "store" | "retrieve" | "equip";
+      body: Record<string, string>;
+    }) => drawerAction(action, body),
+    onSuccess: (result) => {
+      setDrawerError(null);
+      if (character?.id) {
+        queryClient.setQueryData(["house-drawer", character.id], result.drawer);
+        const nextState = normalizeHouseState(result.house);
+        if (nextState) {
+          updateHouseStateStore(queryClient, character.id, { state: nextState, source: "server" });
+        }
+      }
+      void queryClient.invalidateQueries({ queryKey: q.equipment().queryKey });
+    },
+    onError: (error: Error) => setDrawerError(error.message),
+  });
+  const wornItemIds = new Set(
+    Object.values(outfit).filter((itemId): itemId is string => typeof itemId === "string"),
+  );
   const canonicalHome = canonicalHomeQuery.data;
   const isInsideHome =
     !!canonicalHome && character?.inside_home_property_id === canonicalHome.playerPropertyId;
@@ -1238,6 +1273,12 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           onMovePosition={requestMoveToPosition}
           onSelectPlacement={(placement) => {
             if (taskBusy) return;
+            if (!editing && placement.art_key === DRAWER_ART_KEY) {
+              setSelectedPlacement(null);
+              setDrawerError(null);
+              setDrawerOpen(true);
+              return;
+            }
             if (!editing) {
               setSelectedPlacement((current) => (current?.id === placement.id ? null : placement));
               return;
@@ -1396,6 +1437,23 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           </div>
         )}
       </section>
+      {!editing && drawerOpen && (
+        <DrawerSheet
+          drawer={drawerQuery.data ?? null}
+          storable={storableRows(inventory, wornItemIds)}
+          offline={isOffline}
+          pending={drawerMutation.isPending}
+          error={drawerError}
+          onStore={(inventoryId) =>
+            drawerMutation.mutate({ action: "store", body: { inventoryId } })
+          }
+          onRetrieve={(drawerId) =>
+            drawerMutation.mutate({ action: "retrieve", body: { drawerId } })
+          }
+          onEquip={(drawerId) => drawerMutation.mutate({ action: "equip", body: { drawerId } })}
+          onClose={() => setDrawerOpen(false)}
+        />
+      )}
       {!editing && !taskBusy && selectedPlacement && selectedAction && (
         <HomeAccessoryPanel
           key={selectedPlacement.id}

@@ -731,6 +731,43 @@ export function FurnitureFallback({
         )}
       </group>
     );
+  if (kind === "drawer")
+    return (
+      <group>
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[0.9, 0.82, 0.44]}
+          radius={0.04}
+          smoothness={4}
+          position={[0, 0.41, 0]}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.mediaWood} roughness={0.7} />
+        </RoundedBox>
+        {[0.66, 0.42, 0.18].map((y) => (
+          <group key={`drawer-front-${y}`}>
+            <RoundedBox
+              castShadow
+              receiveShadow
+              args={[0.8, 0.2, 0.03]}
+              radius={0.02}
+              smoothness={4}
+              position={[0, y, 0.235]}
+            >
+              <meshStandardMaterial color={FURNITURE_COLOURS.wardrobeDoor} roughness={0.6} />
+            </RoundedBox>
+            <mesh castShadow receiveShadow position={[0, y, 0.262]}>
+              <sphereGeometry args={[0.025, 10, 8]} />
+              <meshStandardMaterial
+                color={FURNITURE_COLOURS.brass}
+                metalness={0.6}
+                roughness={0.35}
+              />
+            </mesh>
+          </group>
+        ))}
+      </group>
+    );
   if (kind === "wall-art")
     return (
       <group>

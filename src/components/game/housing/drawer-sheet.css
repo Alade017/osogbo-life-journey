@@ -1,0 +1,100 @@
+/* Drawer sheet: stored clothes, caps and footwear. Colours come from the app's shared tokens. */
+.drawer-sheet {
+  position: fixed;
+  z-index: 80;
+  right: max(12px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  left: max(12px, env(safe-area-inset-left));
+  max-width: 640px;
+  max-height: min(68dvh, 640px);
+  margin: 0 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: var(--card);
+  padding: 1rem;
+  box-shadow: var(--elevation-card);
+  color: var(--foreground);
+}
+
+.drawer-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.drawer-sheet-head small {
+  display: block;
+  color: var(--muted-foreground);
+}
+
+.drawer-sheet-head button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.drawer-sheet h3 {
+  margin: 0.9rem 0 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--muted-foreground);
+}
+
+.drawer-sheet-list {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.drawer-sheet-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 0.5rem 0.6rem;
+}
+
+.drawer-sheet-actions {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.drawer-sheet button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.drawer-sheet-list button {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  padding: 0.3rem 0.7rem;
+  color: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.drawer-sheet-empty {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.9rem;
+}
+
+.drawer-sheet-error {
+  margin: 0.6rem 0 0;
+  color: var(--destructive, #b42318);
+  font-size: 0.9rem;
+}

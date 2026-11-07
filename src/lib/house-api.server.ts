@@ -11,8 +11,13 @@ type HouseApiDependencies = {
   buy: (playerId: string, itemId: string, idempotencyKey: string) => Promise<unknown>;
 };
 
-const statusByCode: Record<string, number> = {
+export const statusByCode: Record<string, number> = {
   UNAUTHORIZED: 401,
+  NOT_IN_DRAWER: 404,
+  NOT_WEARABLE: 409,
+  ITEM_WORN: 409,
+  DRAWER_FULL: 409,
+  ALREADY_OWNED: 409,
   INVALID_REQUEST: 400,
   INVALID_IDEMPOTENCY_KEY: 400,
   UNKNOWN_ITEM: 404,
@@ -34,7 +39,7 @@ const statusByCode: Record<string, number> = {
 
 const knownCodes = new Set(Object.keys(statusByCode));
 
-function safeServerErrorCode(message: string) {
+export function safeServerErrorCode(message: string) {
   const explicit = message.match(/\b[A-Z][A-Z0-9_]{2,}\b/)?.[0];
   if (explicit && knownCodes.has(explicit)) return explicit;
   if (/schema cache|function .* does not exist|relation .* does not exist/i.test(message))
@@ -42,15 +47,15 @@ function safeServerErrorCode(message: string) {
   return "HOUSE_SERVICE_UNAVAILABLE";
 }
 
-function json(body: unknown, status = 200) {
+export function json(body: unknown, status = 200) {
   return Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+export function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
-function resultCode(value: unknown) {
+export function resultCode(value: unknown) {
   if (isRecord(value) && value["ok"] === false && typeof value["code"] === "string") {
     return value["code"];
   }
