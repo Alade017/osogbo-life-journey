@@ -30,6 +30,7 @@ import {
 import { WORLD_SCALE, WORLD_PALETTE } from "../3d/world-theme";
 import { MapLighting } from "./MapLighting";
 import { PlaceBadge } from "./map-badge";
+import { getLandmarkBuildingVariant } from "./landmark-building-variant";
 
 type Props = PhaserMapData &
   PhaserMapCallbacks & {
@@ -854,7 +855,7 @@ export function R3FTownSurface(props: Props) {
               position={point(building.x + 0.5, building.z + 0.5)}
               width={cell * 0.65}
               depth={cell * 0.65}
-              variant={building.buildingType}
+              variant={getLandmarkBuildingVariant(building.buildingType)}
               detailed
             />
           ))}
