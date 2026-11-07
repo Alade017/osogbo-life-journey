@@ -136,7 +136,7 @@ describe("club opening-hours SQL", () => {
     expect(await visitCount()).toBe(0);
     expect(
       (
-        await db.query(
+        await db.query<{ count: number }>(
           "select count(*)::int count from public.economy_request_results where operation='party_enter_club'",
         )
       ).rows[0]!.count,
