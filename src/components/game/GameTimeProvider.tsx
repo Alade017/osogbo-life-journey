@@ -23,7 +23,11 @@ import {
   type SimulationCommand,
   type SimulationSnapshot,
 } from "@/lib/simulation-service";
-import { performCatalogActivity, type CatalogActivityResult } from "@/lib/catalog-activity-service";
+import {
+  isExpectedActivityRejection,
+  performCatalogActivity,
+  type CatalogActivityResult,
+} from "@/lib/catalog-activity-service";
 
 type ContextValue = {
   simulation: SimulationState;
@@ -316,7 +320,14 @@ export function GameTimeProvider({
         return result;
       } catch (error) {
         const message = error instanceof Error ? error.message : "Could not complete this activity.";
-        if (mounted.current) { setSyncError(message); setReady(false); }
+        if (mounted.current) {
+          if (isExpectedActivityRejection(message)) {
+            setSyncError(null);
+          } else {
+            setSyncError(message);
+            setReady(false);
+          }
+        }
         throw error;
       } finally {
         inFlight.current = false;
