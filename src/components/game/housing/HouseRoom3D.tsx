@@ -8,7 +8,7 @@ import {
   type RefObject,
 } from "react";
 import { Canvas, type ThreeEvent } from "@react-three/fiber";
-import { Html } from "@react-three/drei";
+import { Html, RoundedBox } from "@react-three/drei";
 import { Plane, Vector3 } from "three";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
 import type { FoodDelivery } from "@/lib/food-delivery-service";
@@ -312,6 +312,16 @@ function ShowerUnit({ hovered }: { hovered: boolean }) {
   );
 }
 
+/** Furniture palette, matched to the reference: cream upholstery, warm timber, dark screen. */
+const FURNITURE_COLOURS = {
+  sofaFrame: "#e2d3ae",
+  sofaCushion: "#f1e7cf",
+  mediaWood: "#8a5a36",
+  mediaCubby: "#2a1d14",
+  screenBezel: "#5b6068",
+  screen: "#2d3138",
+} as const;
+
 export function FurnitureFallback({
   artKey,
   slotType,
@@ -368,50 +378,103 @@ export function FurnitureFallback({
   if (["sofa", "sofa-2", "seat"].includes(kind))
     return (
       <group>
-        <mesh castShadow receiveShadow position={[0, 0.26, 0]}>
-          <boxGeometry args={[1.15, 0.34, 0.54]} />
-          <WorldMaterial tone="timber" />
-        </mesh>
-        <mesh castShadow receiveShadow position={[0, 0.54, -0.24]}>
-          <boxGeometry args={[1.15, 0.52, 0.14]} />
-          <WorldMaterial tone="timber" />
-        </mesh>
-        <mesh castShadow receiveShadow position={[-0.54, 0.43, 0]}>
-          <boxGeometry args={[0.12, 0.44, 0.65]} />
-          <WorldMaterial tone="timber" />
-        </mesh>
-        <mesh castShadow receiveShadow position={[0.54, 0.43, 0]}>
-          <boxGeometry args={[0.12, 0.44, 0.65]} />
-          <WorldMaterial tone="timber" />
-        </mesh>
-        {[-0.3, 0, 0.3].map((x, index) => (
-          <mesh castShadow receiveShadow key={`sofa-cushion-${x}`} position={[x, 0.53, -0.13]}>
-            <boxGeometry args={[0.23, 0.24, 0.09]} />
-            <WorldMaterial tone={index === 1 ? "wall" : "clay"} />
-          </mesh>
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[1.2, 0.3, 0.62]}
+          radius={0.09}
+          smoothness={4}
+          position={[0, 0.2, 0]}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.sofaFrame} roughness={0.85} />
+        </RoundedBox>
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[1.2, 0.5, 0.18]}
+          radius={0.08}
+          smoothness={4}
+          position={[0, 0.5, -0.24]}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.sofaFrame} roughness={0.85} />
+        </RoundedBox>
+        {[-0.6, 0.6].map((x) => (
+          <RoundedBox
+            castShadow
+            receiveShadow
+            key={`sofa-arm-${x}`}
+            args={[0.18, 0.38, 0.62]}
+            radius={0.08}
+            smoothness={4}
+            position={[x, 0.42, 0]}
+          >
+            <meshStandardMaterial color={FURNITURE_COLOURS.sofaFrame} roughness={0.85} />
+          </RoundedBox>
+        ))}
+        {[-0.3, 0.3].map((x) => (
+          <RoundedBox
+            castShadow
+            receiveShadow
+            key={`sofa-seat-${x}`}
+            args={[0.56, 0.12, 0.44]}
+            radius={0.05}
+            smoothness={4}
+            position={[x, 0.4, 0.06]}
+          >
+            <meshStandardMaterial color={FURNITURE_COLOURS.sofaCushion} roughness={0.9} />
+          </RoundedBox>
+        ))}
+        {[-0.3, 0.3].map((x) => (
+          <RoundedBox
+            castShadow
+            receiveShadow
+            key={`sofa-back-${x}`}
+            args={[0.56, 0.36, 0.14]}
+            radius={0.06}
+            smoothness={4}
+            position={[x, 0.58, -0.17]}
+          >
+            <meshStandardMaterial color={FURNITURE_COLOURS.sofaCushion} roughness={0.9} />
+          </RoundedBox>
         ))}
       </group>
     );
   if (kind === "television" || kind === "computer")
     return (
       <group>
-        {kind === "computer" && (
-          <mesh castShadow receiveShadow position={[0, 0.23, 0]}>
-            <boxGeometry args={[0.9, 0.12, 0.5]} />
-            <WorldMaterial tone="timber" />
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[kind === "computer" ? 0.9 : 1.0, 0.26, 0.36]}
+          radius={0.04}
+          smoothness={4}
+          position={[0, 0.16, 0]}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.mediaWood} roughness={0.7} />
+        </RoundedBox>
+        {[-0.3, 0, 0.3].map((x) => (
+          <mesh key={`tv-cubby-${x}`} position={[x, 0.16, 0.181]}>
+            <boxGeometry args={[0.2, 0.14, 0.01]} />
+            <meshStandardMaterial color={FURNITURE_COLOURS.mediaCubby} />
           </mesh>
-        )}
-        <mesh castShadow receiveShadow position={[0, 0.58, -0.08]}>
-          <boxGeometry args={[kind === "computer" ? 0.62 : 0.92, 0.53, 0.08]} />
-          <WorldMaterial tone="timber" />
-        </mesh>
-        <mesh castShadow receiveShadow position={[0, 0.58, -0.03]}>
-          <planeGeometry args={[kind === "computer" ? 0.55 : 0.85, 0.45]} />
-          <WorldMaterial tone="slate" />
-        </mesh>
-        <mesh castShadow receiveShadow position={[0, 0.28, -0.08]}>
-          <boxGeometry args={[0.08, 0.15, 0.08]} />
-          <WorldMaterial tone="timber" />
+        ))}
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[kind === "computer" ? 0.62 : 0.9, 0.52, 0.06]}
+          radius={0.03}
+          smoothness={4}
+          position={[0, 0.56, -0.08]}
+        >
+          <meshStandardMaterial
+            color={FURNITURE_COLOURS.screenBezel}
+            roughness={0.4}
+            metalness={0.2}
+          />
+        </RoundedBox>
+        <mesh position={[0, 0.56, -0.04]}>
+          <planeGeometry args={[kind === "computer" ? 0.56 : 0.82, 0.46]} />
+          <meshStandardMaterial color={FURNITURE_COLOURS.screen} roughness={0.2} metalness={0.3} />
         </mesh>
       </group>
     );
