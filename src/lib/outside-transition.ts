@@ -33,6 +33,11 @@ export function completeTransitionStep(label?: string) {
   });
 }
 
+/** The transition currently running, read outside React (for cleanup when a page unmounts). */
+export function currentTransitionKind(): TransitionKind | null {
+  return state.kind;
+}
+
 export function endTransition() {
   emit(IDLE);
 }

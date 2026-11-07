@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import {
   beginTransition,
   completeTransitionStep,
+  currentTransitionKind,
   endTransition,
   useOutsideTransition,
 } from "@/lib/outside-transition";
@@ -555,27 +556,45 @@ export function PlayableNeighborhood() {
     return () => window.clearInterval(interval);
   }, [activePanel, connectionState, roomRef, player]);
 
-  /** Leaving the house: report the neighbourhood's real loads, then close the transition. */
+  /**
+   * Leaving the house: report real loads, then close the veil once the neighbourhood has
+   * settled, whether it connected or failed, so the page is never hidden behind it.
+   */
   useEffect(() => {
     if (transition.kind !== "leaving") return;
-    if (
-      !leavingStepsRef.current.data &&
-      currentLocation &&
-      npcQuery.isSuccess &&
-      placesQuery.isSuccess
-    ) {
-      leavingStepsRef.current.data = true;
-      completeTransitionStep("Drawing the streets");
+    const steps = leavingStepsRef.current;
+    if (!steps.data && currentLocation && npcQuery.isFetched && placesQuery.isFetched) {
+      steps.data = true;
+      completeTransitionStep("Connecting to the streets");
     }
-    if (!leavingStepsRef.current.scene && scene) {
-      leavingStepsRef.current.scene = true;
+    if (!steps.scene && connectionState === "connected" && scene) {
+      steps.scene = true;
       completeTransitionStep("Ready");
     }
-    if (transition.done >= transition.total) {
+    const settled =
+      connectionState === "unavailable" ||
+      connectionState === "wrong-area" ||
+      (connectionState === "connected" && scene !== null);
+    if (settled) {
       endTransition();
       leavingStepsRef.current = { data: false, scene: false };
     }
-  }, [transition, currentLocation, npcQuery.isSuccess, placesQuery.isSuccess, scene]);
+  }, [
+    transition,
+    currentLocation,
+    connectionState,
+    npcQuery.isFetched,
+    placesQuery.isFetched,
+    scene,
+  ]);
+
+  // If the player leaves this page mid-transition, never leave the veil behind.
+  useEffect(
+    () => () => {
+      if (currentTransitionKind() === "leaving") endTransition();
+    },
+    [],
+  );
 
   useEffect(() => {
     if (connectionState !== "connected" || !nearbyObject || activePanel) return;

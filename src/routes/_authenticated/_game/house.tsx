@@ -780,15 +780,11 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       roomWidth,
       roomDepth,
     );
-    beginTransition("leaving", "Walking to the door", 5);
-    if (!(await walkTo([doorX, doorY, doorZ]))) {
-      endTransition();
-      return;
-    }
-    completeTransitionStep("Opening the door");
+    // The walk and the door swing play in the room first, so they stay visible.
+    if (!(await walkTo([doorX, doorY, doorZ]))) return;
     setDoorOpen(true);
     await new Promise<void>((resolve) => window.setTimeout(resolve, DOOR_SWING_MS));
-    completeTransitionStep("Confirming your move");
+    beginTransition("leaving", "Confirming your move", 3);
     try {
       await homePresence.mutateAsync("leave_player_home");
     } catch {
