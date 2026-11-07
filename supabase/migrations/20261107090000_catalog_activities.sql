@@ -45,7 +45,7 @@ language plpgsql stable security definer set search_path = public as $$
 declare
   requirements jsonb;
   entry jsonb;
-  skill_slug text;
+  v_skill_slug text;
   item_slug text;
   minimum_level integer;
   minimum_experience integer;
@@ -126,7 +126,7 @@ begin
          or coalesce(entry->>'slug', '') !~ '^[a-z0-9]+([_-][a-z0-9]+)*$' then
         return array['This activity has an invalid skill requirement.'];
       end if;
-      skill_slug := entry->>'slug';
+      v_skill_slug := entry->>'slug';
       minimum_level := 0;
       minimum_experience := 0;
       if entry ? 'minimum_level' then
@@ -147,11 +147,11 @@ begin
       end if;
       select ps.level, ps.experience into skill_level, skill_experience
       from public.player_skills ps
-      where ps.character_id = p_character_id and ps.skill_slug = skill_slug;
+      where ps.character_id = p_character_id and ps.skill_slug = v_skill_slug;
       if coalesce(skill_level, 0) < minimum_level
          or coalesce(skill_experience, 0) < minimum_experience then
         return array[format('Requires %s skill level %s and %s experience.',
-          replace(skill_slug, '_', ' '), minimum_level, minimum_experience)];
+          replace(v_skill_slug, '_', ' '), minimum_level, minimum_experience)];
       end if;
     end loop;
   end if;
@@ -233,6 +233,12 @@ declare
   elapsed_minutes integer;
   last_completed_at timestamptz;
   remaining_seconds integer;
+  elapsed_hunger_rate numeric := 0.035;
+  elapsed_energy_rate numeric := 0.025;
+  elapsed_hygiene_rate numeric := 0.018;
+  elapsed_bladder_rate numeric := 0.03;
+  elapsed_fun_rate numeric := 0.02;
+  elapsed_social_rate numeric := 0.012;
 begin
   if uid is null or cid is null or p_session is null then
     raise exception 'Sign in and create a character first';
@@ -339,12 +345,15 @@ begin
     end if;
   end if;
 
-  next_energy := greatest(0, least(100, c.energy + a.energy_delta));
-  next_hunger := greatest(0, least(100, c.hunger + a.hunger_delta));
-  next_thirst := greatest(0, least(100, c.thirst + a.thirst_delta));
-  update public.characters set energy = next_energy, hunger = next_hunger, thirst = next_thirst
-  where id = cid;
+  if c.personality = 'easygoing' then elapsed_fun_rate := 0.016; end if;
+  if c.personality = 'social' then elapsed_social_rate := 0.0108; end if;
+  if c.personality = 'studious' and exists (
+    select 1 from public.locations where id = c.current_location_id and type in ('residential', 'home')
+  ) then elapsed_hygiene_rate := 0.0162; end if;
 
+  next_energy := greatest(0, least(100, round(c.energy - elapsed_energy_rate * a.duration_minutes + a.energy_delta)::integer));
+  next_hunger := greatest(0, least(100, round(c.hunger - elapsed_hunger_rate * a.duration_minutes + a.hunger_delta)::integer));
+  next_thirst := greatest(0, least(100, c.thirst + a.thirst_delta));
   needs := s.needs;
   if jsonb_typeof(needs) is distinct from 'object'
      or not (needs ? 'energy') or not (needs ? 'hunger') then
@@ -352,6 +361,14 @@ begin
   end if;
   needs := jsonb_set(needs, '{energy}', to_jsonb(next_energy), true);
   needs := jsonb_set(needs, '{hunger}', to_jsonb(100 - next_hunger), true);
+  needs := jsonb_set(needs, '{hygiene}', to_jsonb(greatest(0, least(100,
+    (needs->>'hygiene')::numeric - elapsed_hygiene_rate * a.duration_minutes))), true);
+  needs := jsonb_set(needs, '{bladder}', to_jsonb(greatest(0, least(100,
+    (needs->>'bladder')::numeric - elapsed_bladder_rate * a.duration_minutes))), true);
+  needs := jsonb_set(needs, '{fun}', to_jsonb(greatest(0, least(100,
+    (needs->>'fun')::numeric - elapsed_fun_rate * a.duration_minutes))), true);
+  needs := jsonb_set(needs, '{social}', to_jsonb(greatest(0, least(100,
+    (needs->>'social')::numeric - elapsed_social_rate * a.duration_minutes))), true);
 
   total_minutes := (s.personal_time->>'hour')::integer * 60
     + (s.personal_time->>'minute')::integer + a.duration_minutes;
@@ -363,6 +380,14 @@ begin
     'weekday', mod((s.personal_time->>'weekday')::integer + elapsed_minutes, 7)
   );
 
+  update public.characters set
+    energy = next_energy,
+    hunger = next_hunger,
+    thirst = next_thirst,
+    happiness = round((needs->>'fun')::numeric),
+    social = round((needs->>'social')::numeric)
+  where id = cid;
+
   update public.character_simulations set
     revision = revision + 1,
     heartbeat_at = clock_timestamp(),
@@ -370,8 +395,8 @@ begin
     needs = needs,
     character_snapshot = jsonb_build_object(
       'energy', next_energy, 'hunger', 100 - next_hunger,
-      'fun', coalesce((needs->>'fun')::numeric, c.happiness),
-      'social', coalesce((needs->>'social')::numeric, c.social)
+      'fun', (needs->>'fun')::numeric,
+      'social', (needs->>'social')::numeric
     )
   where character_id = cid
   returning * into s;
