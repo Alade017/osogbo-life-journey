@@ -408,3 +408,31 @@
 .game-dock-bar > .game-dock-phone {
   z-index: 1;
 }
+
+/* Bottom bar, final layout: the links fill the bar; Phone sits in a fixed 64px column on the left, outside the links. */
+.game-dock-bar {
+  display: block !important;
+  height: var(--game-navigation-height);
+  padding-left: 72px !important;
+  box-sizing: border-box !important;
+}
+
+.game-dock-bar > nav.game-floating-nav {
+  width: 100% !important;
+  height: var(--game-navigation-height) !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.game-dock-bar > .game-dock-phone {
+  position: absolute !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  width: 64px !important;
+  height: var(--game-navigation-height) !important;
+  min-height: var(--game-navigation-height) !important;
+  flex: none !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
