@@ -117,6 +117,9 @@ const PhoneCommunityServices = lazy(() => import("@/components/game/phone/PhoneC
 const ActivityCatalogueApp = lazy(() =>
   import("@/components/game/ActivityCatalogueApp").then((m) => ({ default: m.ActivityCatalogueApp })),
 );
+const ActivityCatalogueApp = lazy(() =>
+  import("@/components/game/ActivityCatalogueApp").then((m) => ({ default: m.ActivityCatalogueApp })),
+);
 
 type PhoneAppDefinition = {
   label: string;

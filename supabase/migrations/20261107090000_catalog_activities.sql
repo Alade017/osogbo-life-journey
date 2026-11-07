@@ -223,7 +223,7 @@ declare
   completion public.activity_completions%rowtype;
   source jsonb;
   source_time jsonb;
-  needs jsonb;
+  next_needs jsonb;
   next_time jsonb;
   requirement_errors text[];
   next_energy integer;
@@ -354,21 +354,21 @@ begin
   next_energy := greatest(0, least(100, round(c.energy - elapsed_energy_rate * a.duration_minutes + a.energy_delta)::integer));
   next_hunger := greatest(0, least(100, round(c.hunger - elapsed_hunger_rate * a.duration_minutes + a.hunger_delta)::integer));
   next_thirst := greatest(0, least(100, c.thirst + a.thirst_delta));
-  needs := s.needs;
-  if jsonb_typeof(needs) is distinct from 'object'
-     or not (needs ? 'energy') or not (needs ? 'hunger') then
+  next_needs := s.needs;
+  if jsonb_typeof(next_needs) is distinct from 'object'
+     or not (next_needs ? 'energy') or not (next_needs ? 'hunger') then
     raise exception 'Personal simulation needs are not ready. Reconnect and retry.';
   end if;
-  needs := jsonb_set(needs, '{energy}', to_jsonb(next_energy), true);
-  needs := jsonb_set(needs, '{hunger}', to_jsonb(100 - next_hunger), true);
-  needs := jsonb_set(needs, '{hygiene}', to_jsonb(greatest(0, least(100,
-    (needs->>'hygiene')::numeric - elapsed_hygiene_rate * a.duration_minutes))), true);
-  needs := jsonb_set(needs, '{bladder}', to_jsonb(greatest(0, least(100,
-    (needs->>'bladder')::numeric - elapsed_bladder_rate * a.duration_minutes))), true);
-  needs := jsonb_set(needs, '{fun}', to_jsonb(greatest(0, least(100,
-    (needs->>'fun')::numeric - elapsed_fun_rate * a.duration_minutes))), true);
-  needs := jsonb_set(needs, '{social}', to_jsonb(greatest(0, least(100,
-    (needs->>'social')::numeric - elapsed_social_rate * a.duration_minutes))), true);
+  needs := jsonb_set(next_needs, '{energy}', to_jsonb(next_energy), true);
+  needs := jsonb_set(next_needs, '{hunger}', to_jsonb(100 - next_hunger), true);
+  needs := jsonb_set(next_needs, '{hygiene}', to_jsonb(greatest(0, least(100,
+    (next_needs->>'hygiene')::numeric - elapsed_hygiene_rate * a.duration_minutes))), true);
+  needs := jsonb_set(next_needs, '{bladder}', to_jsonb(greatest(0, least(100,
+    (next_needs->>'bladder')::numeric - elapsed_bladder_rate * a.duration_minutes))), true);
+  needs := jsonb_set(next_needs, '{fun}', to_jsonb(greatest(0, least(100,
+    (next_needs->>'fun')::numeric - elapsed_fun_rate * a.duration_minutes))), true);
+  needs := jsonb_set(next_needs, '{social}', to_jsonb(greatest(0, least(100,
+    (next_needs->>'social')::numeric - elapsed_social_rate * a.duration_minutes))), true);
 
   total_minutes := (s.personal_time->>'hour')::integer * 60
     + (s.personal_time->>'minute')::integer + a.duration_minutes;
@@ -384,19 +384,19 @@ begin
     energy = next_energy,
     hunger = next_hunger,
     thirst = next_thirst,
-    happiness = round((needs->>'fun')::numeric),
-    social = round((needs->>'social')::numeric)
+    happiness = round((next_needs->>'fun')::numeric),
+    social = round((next_needs->>'social')::numeric)
   where id = cid;
 
   update public.character_simulations set
     revision = revision + 1,
     heartbeat_at = clock_timestamp(),
     personal_time = next_time,
-    needs = needs,
+    needs = next_needs,
     character_snapshot = jsonb_build_object(
       'energy', next_energy, 'hunger', 100 - next_hunger,
-      'fun', (needs->>'fun')::numeric,
-      'social', (needs->>'social')::numeric
+      'fun', (next_needs->>'fun')::numeric,
+      'social', (next_needs->>'social')::numeric
     )
   where character_id = cid
   returning * into s;
