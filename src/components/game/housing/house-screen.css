@@ -3065,19 +3065,49 @@
   }
 }
 
-/* Sleep uses the same bottom task card as other home tasks; its two buttons stack beside the progress bar. */
-.house-task-actions {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  align-self: center;
+/* Sleep status: a small pill under the location header, top-left, above the room controls. */
+.house-sleep-pill {
+  position: fixed;
+  top: calc(max(12px, env(safe-area-inset-top)) + 50px);
+  left: max(12px, env(safe-area-inset-left));
+  z-index: 25;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  box-sizing: border-box;
+  padding: 0 4px 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow: var(--elevation-card);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
-.house-task-actions button {
-  padding: 0.6rem 0.85rem;
-  border-radius: 1rem;
-  background: var(--muted);
+.house-sleep-pill button {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--background);
   color: var(--foreground);
+  font: inherit;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.house-sleep-pill button[aria-label="Cancel sleep"] {
+  width: 22px;
+  padding: 0;
+  justify-content: center;
+}
+
+.house-sleep-pill button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

@@ -20,7 +20,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { House, Sunrise, WifiOff, DoorOpen, LoaderCircle } from "lucide-react";
+import { House, Moon, Sunrise, WifiOff, DoorOpen, LoaderCircle } from "lucide-react";
 import { HouseEditSheets } from "@/components/game/housing/HouseEditSheets";
 import { HouseCatalogue } from "@/components/game/housing/HouseCatalogue";
 import { HomeFoodDeliveryPanel } from "@/components/game/housing/HomeFoodDeliveryPanel";
@@ -1361,36 +1361,24 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           </div>
         )}
         {activeSleep && (
-          <div
-            className="house-task-progress house-sleep-card"
-            role="region"
-            aria-label="Sleep controls"
-          >
-            <div>
-              <strong>Asleep</strong>
-              <span role="status">
-                {sleepProgress}% rested · {sleepRemaining}s to full rest
-              </span>
-            </div>
-            <progress value={sleepProgress} max="100" aria-label="Sleep progress">
-              {sleepProgress}%
-            </progress>
-            <div className="house-task-actions">
-              <button
-                type="button"
-                disabled={isOffline || !gameTime.ready || gameTime.busy}
-                onClick={() => void finishSleep(false)}
-              >
-                <Sunrise size={18} aria-hidden="true" /> Wake up
-              </button>
-              <button
-                type="button"
-                disabled={isOffline || !gameTime.ready || gameTime.busy}
-                onClick={() => void finishSleep(true)}
-              >
-                Cancel
-              </button>
-            </div>
+          <div className="house-sleep-pill" role="region" aria-label="Sleep controls">
+            <Moon size={15} aria-hidden="true" />
+            <span role="status">Asleep · {sleepProgress}%</span>
+            <button
+              type="button"
+              disabled={isOffline || !gameTime.ready || gameTime.busy}
+              onClick={() => void finishSleep(false)}
+            >
+              Wake up
+            </button>
+            <button
+              type="button"
+              aria-label="Cancel sleep"
+              disabled={isOffline || !gameTime.ready || gameTime.busy}
+              onClick={() => void finishSleep(true)}
+            >
+              ✕
+            </button>
           </div>
         )}
       </section>
