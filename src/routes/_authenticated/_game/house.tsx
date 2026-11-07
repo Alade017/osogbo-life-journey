@@ -20,7 +20,16 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { House, Sunrise, WifiOff, DoorOpen, LoaderCircle } from "lucide-react";
+import {
+  House,
+  Sunrise,
+  WifiOff,
+  DoorOpen,
+  LoaderCircle,
+  Lightbulb,
+  LightbulbOff,
+} from "lucide-react";
+import { fetchHouseLight, setHouseLight } from "@/lib/house-light";
 import { HouseEditSheets } from "@/components/game/housing/HouseEditSheets";
 import { HouseCatalogue } from "@/components/game/housing/HouseCatalogue";
 import { HomeFoodDeliveryPanel } from "@/components/game/housing/HomeFoodDeliveryPanel";
@@ -56,6 +65,7 @@ import {
 } from "@/lib/house-state-sync";
 import { pageMeta } from "@/lib/seo";
 import "@/components/game/housing/house-screen.css";
+import "@/components/game/housing/house-light-switch.css";
 
 /** Seconds of sleep for a full rest. */
 const SLEEP_FULL_REST_SECONDS = 120;
@@ -796,6 +806,26 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     },
     onError: (error: Error) => setDrawerError(error.message),
   });
+  const lightQuery = useQuery({
+    queryKey: ["house-light", character?.id ?? "anonymous"],
+    queryFn: fetchHouseLight,
+    enabled: !!character?.id,
+  });
+  const lightOn = lightQuery.data ?? true;
+  const lightMutation = useMutation({
+    mutationFn: (on: boolean) => setHouseLight(on),
+    onMutate: async (on: boolean) => {
+      const key = ["house-light", character?.id ?? "anonymous"];
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<boolean>(key);
+      queryClient.setQueryData(key, on);
+      return { previous };
+    },
+    onError: (error: Error, _on, context) => {
+      queryClient.setQueryData(["house-light", character?.id ?? "anonymous"], context?.previous);
+      toast.error(error.message);
+    },
+  });
   const wornItemIds = new Set(
     Object.values(outfit).filter((itemId): itemId is string => typeof itemId === "string"),
   );
@@ -1235,6 +1265,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         <HouseRoomRenderer
           inputBlocked={taskBusy || (!editing && !!selectedPlacement && !!selectedAction)}
           houseTypeId={house.house_type_id}
+          lightOn={lightOn}
           accessoryBand={canonicalHome?.accessoryBand ?? "basic"}
           characterName={character?.name ?? "Your character"}
           appearance={appearance}
@@ -1437,6 +1468,23 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           </div>
         )}
       </section>
+      {!editing && (
+        <button
+          type="button"
+          className="house-light-switch"
+          aria-pressed={lightOn}
+          aria-label={lightOn ? "Turn the room light off" : "Turn the room light on"}
+          disabled={isOffline || !character?.id || lightMutation.isPending}
+          onClick={() => lightMutation.mutate(!lightOn)}
+        >
+          {lightOn ? (
+            <Lightbulb size={18} aria-hidden="true" />
+          ) : (
+            <LightbulbOff size={18} aria-hidden="true" />
+          )}
+          <span>{lightOn ? "Light on" : "Light off"}</span>
+        </button>
+      )}
       {!editing && drawerOpen && (
         <DrawerSheet
           drawer={drawerQuery.data ?? null}

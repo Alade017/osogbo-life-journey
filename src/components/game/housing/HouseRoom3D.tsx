@@ -1323,6 +1323,7 @@ function SlotObject({
 
 export function HouseRoom3D({
   inputBlocked = false,
+  lightOn = true,
   houseTypeId,
   characterName = "Your character",
   appearance = {},
@@ -1489,7 +1490,7 @@ export function HouseRoom3D({
           }}
           gl={{ antialias: false, powerPreference: "low-power" }}
         >
-          <WorldLighting size={Math.max(width, depth) * 1.5} />
+          <WorldLighting size={Math.max(width, depth) * 1.5} dimmed={!lightOn} />
 
           <OsogboRoomPrototype
             houseTypeId={houseTypeId}

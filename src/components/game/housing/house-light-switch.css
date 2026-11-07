@@ -1,0 +1,30 @@
+/* Room light switch: a pill above the needs panel on the left, matching the scene controls. */
+.house-light-switch {
+  position: fixed;
+  z-index: 79;
+  left: 12px;
+  bottom: calc(136px + env(safe-area-inset-bottom));
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  padding: 0.4rem 0.9rem;
+  color: var(--foreground);
+  box-shadow: var(--elevation-card);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.house-light-switch[aria-pressed="true"] {
+  border-color: var(--primary, #0b4fa3);
+  color: var(--primary, #0b4fa3);
+}
+
+.house-light-switch:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

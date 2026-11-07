@@ -5,6 +5,8 @@ import type { FoodDelivery } from "@/lib/food-delivery-service";
 
 export type HouseRoomRendererProps = {
   houseTypeId: string;
+  /** Room light switch. Off dims the room; omitted means on. */
+  lightOn?: boolean;
   accessoryBand: string;
   slots: HouseSlot[];
   placements: HousePlacement[];
