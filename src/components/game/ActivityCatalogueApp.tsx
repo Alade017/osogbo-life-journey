@@ -106,12 +106,12 @@ function unsupportedRewardMetadata(value: Activity["rewards"]): boolean {
     if (key === "skillXp" && reward !== null && typeof reward === "object" && !Array.isArray(reward)) {
       const config = reward as Record<string, unknown>;
       return (
-        typeof config.slug !== "string" ||
-        !/^[a-z0-9]+([_-][a-z0-9]+)*$/.test(config.slug) ||
-        typeof config.xp !== "number" ||
-        !Number.isInteger(config.xp) ||
-        config.xp < 0 ||
-        config.xp > 10000
+        typeof config["slug"] !== "string" ||
+        !/^[a-z0-9]+([_-][a-z0-9]+)*$/.test(config["slug"]) ||
+        typeof config["xp"] !== "number" ||
+        !Number.isInteger(config["xp"]) ||
+        config["xp"] < 0 ||
+        config["xp"] > 10000
       );
     }
 
@@ -124,7 +124,7 @@ function configuredSocialReward(value: Activity["rewards"]): number | null {
     return null;
   }
 
-  const reward = (value as Record<string, unknown>).social;
+  const reward = (value as Record<string, unknown>)["social"];
   return typeof reward === "number" &&
     Number.isInteger(reward) &&
     reward >= -100 &&
@@ -138,21 +138,21 @@ function configuredSkillReward(value: Activity["rewards"]) {
     return null;
   }
 
-  const config = (value as Record<string, unknown>).skillXp;
+  const config = (value as Record<string, unknown>)["skillXp"];
   if (config === null || typeof config !== "object" || Array.isArray(config)) {
     return null;
   }
 
   const reward = config as Record<string, unknown>;
   return (
-    typeof reward.slug === "string" &&
-    /^[a-z0-9]+([_-][a-z0-9]+)*$/.test(reward.slug) &&
-    typeof reward.xp === "number" &&
-    Number.isInteger(reward.xp) &&
-    reward.xp > 0 &&
-    reward.xp <= 10000
+    typeof reward["slug"] === "string" &&
+    /^[a-z0-9]+([_-][a-z0-9]+)*$/.test(reward["slug"]) &&
+    typeof reward["xp"] === "number" &&
+    Number.isInteger(reward["xp"]) &&
+    reward["xp"] > 0 &&
+    reward["xp"] <= 10000
   )
-    ? { slug: reward.slug, xp: reward.xp }
+    ? { slug: reward["slug"], xp: reward["xp"] }
     : null;
 }
 
@@ -212,7 +212,7 @@ export function ActivityCatalogueApp() {
       metadata !== null &&
       typeof metadata === "object" &&
       !Array.isArray(metadata) &&
-      metadata.server_action === "map_place_action";
+      metadata["server_action"] === "map_place_action";
     const matchesLocation =
       locationFilter === "all" ||
       (locationFilter === "any"
