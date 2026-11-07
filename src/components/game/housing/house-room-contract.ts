@@ -187,16 +187,21 @@ export type HouseWallSegment = {
   size: [number, number, number];
 };
 
+/** Centre of the entrance door on the back wall. The studio's entrance opens into the sitting room. */
+export function houseRearDoorCenter(houseTypeId: string, width: number): number {
+  return houseTypeId === "studio-flat" ? -width * 0.25 : width * 0.22;
+}
+
 export function houseWallSegments(
   width: number,
   depth: number,
   wallHeight: number,
   doorwayWidth: number,
+  rearDoorCenter: number = width * 0.22,
 ): HouseWallSegment[] {
   const wallThickness = 0.16;
   const frontWallHeight = wallHeight * 0.48;
   const doorHeight = wallHeight * 0.82;
-  const rearDoorCenter = width * 0.22;
   const rearDoorLeft = rearDoorCenter - doorwayWidth / 2;
   const rearDoorRight = rearDoorCenter + doorwayWidth / 2;
   const rearLeftWidth = width / 2 + rearDoorLeft;
@@ -256,6 +261,42 @@ export function houseWallSegments(
   ];
 }
 
+/**
+ * Studio layout, four rooms with an empty doorway into each:
+ * sitting room (back-left), bedroom (front-left), kitchen and dining (back-right),
+ * bathroom (front-right). Walls are centred on the room, so the origin is the middle.
+ */
+function studioPartitionSegments(width: number, depth: number, height: number): HouseWallSegment[] {
+  const thickness = 0.14;
+  const doorway = 1.1;
+  const alongX = (id: string, z: number, x0: number, x1: number): HouseWallSegment => ({
+    id,
+    position: [(x0 + x1) / 2, height / 2, z],
+    size: [x1 - x0, height, thickness],
+  });
+  const alongZ = (id: string, x: number, z0: number, z1: number): HouseWallSegment => ({
+    id,
+    position: [x, height / 2, (z0 + z1) / 2],
+    size: [thickness, height, z1 - z0],
+  });
+  const sittingDoorX = -width * 0.25;
+  const bathDoorZ = depth * 0.25;
+  const kitchenDoorZ = -depth * 0.25;
+  return [
+    // Sitting room and bedroom, with a doorway at x = sittingDoorX.
+    alongX("sitting-bedroom-left", 0, -width / 2, sittingDoorX - doorway / 2),
+    alongX("sitting-bedroom-right", 0, sittingDoorX + doorway / 2, 0),
+    // Sitting room and kitchen, with a doorway at z = kitchenDoorZ.
+    alongZ("sitting-kitchen-back", 0, -depth / 2, kitchenDoorZ - doorway / 2),
+    alongZ("sitting-kitchen-front", 0, kitchenDoorZ + doorway / 2, 0),
+    // Kitchen and bathroom, a solid wall.
+    alongX("kitchen-bath", 0, 0, width / 2),
+    // Bedroom and bathroom, with a doorway at z = bathDoorZ.
+    alongZ("bedroom-bath-back", 0, 0, bathDoorZ - doorway / 2),
+    alongZ("bedroom-bath-front", 0, bathDoorZ + doorway / 2, depth / 2),
+  ];
+}
+
 export function housePartitionSegments(
   houseTypeId: string,
   width: number,
@@ -263,9 +304,11 @@ export function housePartitionSegments(
 ): HouseWallSegment[] {
   if (!["studio-flat", "mini-flat", "bungalow", "duplex"].includes(houseTypeId)) return [];
   // Taller than the furniture, so it reads clearly from the camera, and centred front to back.
+  // Taller than the furniture, so it reads clearly from the camera.
   const partitionHeight = 1.6;
   const partitionThickness = 0.14;
   const doorwayWidth = 1.25;
+  if (houseTypeId === "studio-flat") return studioPartitionSegments(width, depth, partitionHeight);
   const dividerZ = 0;
   const doorwayCenter = width * 0.05;
   const leftEnd = doorwayCenter - doorwayWidth / 2;

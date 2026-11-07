@@ -25,6 +25,7 @@ import {
   snapToHouseGrid,
   houseSlotPosition as slotPosition,
   houseWallSegments,
+  houseRearDoorCenter,
   type HouseRoomRendererProps as Props,
 } from "./house-room-contract";
 
@@ -137,7 +138,7 @@ function OsogboRoomPrototype({
   const height = WORLD_SCALE.door * 1.15;
   const doorwayWidth = 1.12;
   const doorHeight = WORLD_SCALE.door * 1.1;
-  const rearDoorCenter = width * 0.22;
+  const rearDoorCenter = houseRearDoorCenter(houseTypeId, width);
   return (
     <group>
       <mesh receiveShadow position={[0, -0.26, 0]}>
@@ -151,7 +152,7 @@ function OsogboRoomPrototype({
         <WorldMaterial tone="ground" />
       </mesh>
       <group name="house-cutaway-walls" scale={[1, editMode ? 0.28 : 1, 1]}>
-        {houseWallSegments(width, depth, height, doorwayWidth).map((segment) => (
+        {houseWallSegments(width, depth, height, doorwayWidth, rearDoorCenter).map((segment) => (
           <group key={segment.id}>
             <mesh castShadow receiveShadow position={segment.position}>
               <boxGeometry args={segment.size} />

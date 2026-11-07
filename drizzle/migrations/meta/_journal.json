@@ -589,6 +589,13 @@
       "when": 1792610201018,
       "tag": "0082_kitchen_dining_catalogue",
       "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1792696601018,
+      "tag": "0083_studio_room_layout",
+      "breakpoints": true
     }
   ]
 }
