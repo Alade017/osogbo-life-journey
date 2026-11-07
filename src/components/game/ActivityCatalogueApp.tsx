@@ -112,6 +112,8 @@ export function ActivityCatalogueApp() {
         qc.invalidateQueries({ queryKey: q.character().queryKey }),
         qc.invalidateQueries({ queryKey: q.playerSkills().queryKey }),
         qc.invalidateQueries({ queryKey: q.inventory().queryKey }),
+        qc.invalidateQueries({ queryKey: q.notifications().queryKey }),
+        qc.invalidateQueries({ queryKey: q.missions(character?.user_id ?? "", character?.id ?? "").queryKey }),
         qc.invalidateQueries({ queryKey: q.activityCompletions().queryKey }),
       ]);
       toast.success(result.duplicate ? `${result.activity.name} was already completed.` : `${result.activity.name} completed · +${result.activity.xp_reward} XP`);
