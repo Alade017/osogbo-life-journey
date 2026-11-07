@@ -25,6 +25,8 @@ create table public.activity_completions (
 
 create index activity_completions_character_recent_idx
   on public.activity_completions(character_id, completed_at desc);
+create index activity_completions_owner_recent_idx
+  on public.activity_completions(user_id, completed_at desc);
 create index activity_completions_cooldown_idx
   on public.activity_completions(character_id, activity_id, completed_at desc);
 
@@ -385,12 +387,15 @@ begin
   activity_elapsed_minutes := a.duration_minutes + heartbeat_minutes + server_minutes;
   next_thirst := greatest(0, least(100, c.thirst + a.thirst_delta));
   next_needs := s.needs;
-  if jsonb_typeof(next_needs) is distinct from 'object'
-     or not (next_needs ? 'energy') or not (next_needs ? 'hunger')
-     or not (next_needs ? 'hygiene') or not (next_needs ? 'bladder')
-     or not (next_needs ? 'fun') or not (next_needs ? 'social') then
+  if jsonb_typeof(next_needs) is distinct from 'object' then
     raise exception 'Personal simulation needs are not ready. Reconnect and retry.';
   end if;
+  foreach need_key in array array['energy', 'hunger', 'hygiene', 'bladder', 'fun', 'social'] loop
+    if jsonb_typeof(next_needs->need_key) is distinct from 'number'
+       or (next_needs->>need_key)::numeric not between 0 and 100 then
+      raise exception 'Personal simulation needs are not ready. Reconnect and retry.';
+    end if;
+  end loop;
 
   -- Reconcile character stats changed by other server systems before applying this activity.
   foreach need_key in array array['energy', 'hunger', 'fun', 'social'] loop
