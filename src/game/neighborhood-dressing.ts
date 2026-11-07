@@ -4,6 +4,7 @@ import type {
   NeighborhoodRoad,
   WorldPoint,
 } from "./neighborhood-model.ts";
+import { neighborhoodBuildingFootprint } from "./neighborhood-geometry.ts";
 
 /** A flat rectangle in neighbourhood units. Centre is (x, y); depth runs along y. */
 export type DressingRect = { x: number; y: number; width: number; depth: number };
@@ -29,14 +30,31 @@ export function roadExtent(road: NeighborhoodRoad, bounds: DressingBounds) {
   return { start: road.start ?? min, end: road.end ?? max, vertical };
 }
 
-function insideObstacle(
-  x: number,
-  y: number,
-  obstacles: readonly NeighborhoodObstacle[],
-  pad: number,
-) {
-  return obstacles.some(
-    (o) => Math.abs(x - o.x) < o.width / 2 + pad && Math.abs(y - o.y) < o.height / 2 + pad,
+type Box = { x: number; y: number; width: number; height: number };
+
+/** Everything street dressing must stay clear of: obstacles, and the main building footprints. */
+function occupiedBoxes(area: NeighborhoodArea): Box[] {
+  const obstacles: Box[] = (area.obstacles ?? [])
+    .filter((o) => o.kind !== "tree" && o.kind !== "streetlight")
+    .map((o) => ({ x: o.x, y: o.y, width: o.width, height: o.height }));
+  const buildings: Box[] = area.objects
+    .filter((o) => o.kind !== "npc")
+    .map((o) => {
+      const footprint = neighborhoodBuildingFootprint(o);
+      return {
+        x: footprint.left + footprint.width / 2,
+        y: footprint.top + footprint.height / 2,
+        width: footprint.width,
+        height: footprint.height,
+      };
+    });
+  return [...obstacles, ...buildings];
+}
+
+function insideObstacle(x: number, y: number, boxes: readonly Box[], pad: number) {
+  return boxes.some(
+    (box) =>
+      Math.abs(x - box.x) < box.width / 2 + pad && Math.abs(y - box.y) < box.height / 2 + pad,
   );
 }
 
@@ -67,17 +85,23 @@ export function sidewalksAndCurbs(
 ): { sidewalks: DressingRect[]; curbs: DressingRect[] } {
   const sidewalks: DressingRect[] = [];
   const curbs: DressingRect[] = [];
-  const obstacles = (area.obstacles ?? []).filter((o) => o.kind !== "tree");
+  const boxes = occupiedBoxes(area);
   for (const road of area.roads ?? []) {
     const { start, end, vertical } = roadExtent(road, bounds);
     const offsetAcross = road.width / 2 + SIDEWALK_WIDTH / 2;
     for (const side of [-1, 1]) {
       for (let along = start; along < end; along += SEGMENT_LENGTH) {
-        const mid = Math.min(end, along + SEGMENT_LENGTH) - SEGMENT_LENGTH / 2;
-        const x = vertical ? road.offset + side * offsetAcross : mid;
-        const y = vertical ? mid : road.offset + side * offsetAcross;
-        if (insideObstacle(x, y, obstacles, 10)) continue;
-        const span = Math.min(end, along + SEGMENT_LENGTH) - along;
+        const segmentEnd = Math.min(end, along + SEGMENT_LENGTH);
+        const span = segmentEnd - along;
+        const mid = (along + segmentEnd) / 2;
+        const across = road.offset + side * offsetAcross;
+        // Check both ends and the middle, so a segment cannot run into a building.
+        const blocked = [along, mid, segmentEnd].some((at) =>
+          insideObstacle(vertical ? across : at, vertical ? at : across, boxes, 10),
+        );
+        if (blocked) continue;
+        const x = vertical ? across : mid;
+        const y = vertical ? mid : across;
         sidewalks.push({
           x,
           y,
@@ -115,6 +139,7 @@ export function pedestrianCrossings(area: NeighborhoodArea): DressingRect[] {
 /** Street lights set back from the kerb along every street, away from existing lamp posts. */
 export function streetLightSpots(area: NeighborhoodArea, bounds: DressingBounds): WorldPoint[] {
   const lamps = (area.obstacles ?? []).filter((o) => o.kind === "streetlight");
+  const boxes = occupiedBoxes(area);
   const spots: WorldPoint[] = [];
   for (const road of area.roads ?? []) {
     const { start, end, vertical } = roadExtent(road, bounds);
@@ -124,6 +149,7 @@ export function streetLightSpots(area: NeighborhoodArea, bounds: DressingBounds)
         const x = vertical ? road.offset + side * across : along;
         const y = vertical ? along : road.offset + side * across;
         if (lamps.some((lamp) => Math.hypot(lamp.x - x, lamp.y - y) < 40)) continue;
+        if (insideObstacle(x, y, boxes, 6)) continue;
         spots.push({ x, y });
       }
   }
