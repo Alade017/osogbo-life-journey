@@ -384,7 +384,7 @@ begin
     select 1 from public.locations where id = c.current_location_id and type in ('residential', 'home')
   ) then elapsed_hygiene_rate := 0.0162; end if;
 
-  activity_elapsed_minutes := a.duration_minutes + heartbeat_minutes + server_minutes;
+  activity_elapsed_minutes := a.duration_minutes + heartbeat_minutes;
   next_thirst := greatest(0, least(100, c.thirst + a.thirst_delta));
   next_needs := s.needs;
   if jsonb_typeof(next_needs) is distinct from 'object' then
@@ -409,9 +409,9 @@ begin
   next_needs := jsonb_set(next_needs, '{hunger}', to_jsonb(greatest(0, least(100,
     (next_needs->>'hunger')::numeric - elapsed_hunger_rate * activity_elapsed_minutes - a.hunger_delta))), true);
   next_needs := jsonb_set(next_needs, '{hygiene}', to_jsonb(greatest(0, least(100,
-    (next_needs->>'hygiene')::numeric - elapsed_hygiene_rate * activity_elapsed_minutes))), true);
+    (next_needs->>'hygiene')::numeric - elapsed_hygiene_rate * (activity_elapsed_minutes + server_minutes)))), true);
   next_needs := jsonb_set(next_needs, '{bladder}', to_jsonb(greatest(0, least(100,
-    (next_needs->>'bladder')::numeric - elapsed_bladder_rate * activity_elapsed_minutes))), true);
+    (next_needs->>'bladder')::numeric - elapsed_bladder_rate * (activity_elapsed_minutes + server_minutes)))), true);
   next_needs := jsonb_set(next_needs, '{fun}', to_jsonb(greatest(0, least(100,
     (next_needs->>'fun')::numeric - elapsed_fun_rate * activity_elapsed_minutes))), true);
   next_needs := jsonb_set(next_needs, '{social}', to_jsonb(greatest(0, least(100,
@@ -460,7 +460,7 @@ begin
   end if;
 
   total_minutes := (s.personal_time->>'hour')::integer * 60
-    + (s.personal_time->>'minute')::integer + activity_elapsed_minutes;
+    + (s.personal_time->>'minute')::integer + activity_elapsed_minutes + server_minutes;
   elapsed_minutes := total_minutes / 1440;
   next_time := jsonb_build_object(
     'minute', mod(total_minutes, 60),
@@ -489,8 +489,8 @@ begin
     character_snapshot = jsonb_build_object(
       'energy', next_energy,
       'hunger', 100 - next_hunger,
-      'fun', (next_needs->>'fun')::numeric,
-      'social', (next_needs->>'social')::numeric
+      'fun', round((next_needs->>'fun')::numeric),
+      'social', round((next_needs->>'social')::numeric)
     )
   where character_id = cid
   returning * into s;
