@@ -108,11 +108,11 @@ export function ActivityCatalogueApp() {
       const result = await performCatalogActivity(activity.slug, requestId);
       pendingRequestIds.current.delete(activity.slug);
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: q.activities().queryKey }),
-        queryClient.invalidateQueries({ queryKey: q.character().queryKey }),
-        queryClient.invalidateQueries({ queryKey: q.playerSkills().queryKey }),
-        queryClient.invalidateQueries({ queryKey: q.inventory().queryKey }),
-        queryClient.invalidateQueries({ queryKey: q.activityCompletions().queryKey }),
+        qc.invalidateQueries({ queryKey: q.activities().queryKey }),
+        qc.invalidateQueries({ queryKey: q.character().queryKey }),
+        qc.invalidateQueries({ queryKey: q.playerSkills().queryKey }),
+        qc.invalidateQueries({ queryKey: q.inventory().queryKey }),
+        qc.invalidateQueries({ queryKey: q.activityCompletions().queryKey }),
       ]);
       toast.success(result.duplicate ? `${result.activity.name} was already completed.` : `${result.activity.name} completed · +${result.activity.xp_reward} XP`);
     } catch (error) {
