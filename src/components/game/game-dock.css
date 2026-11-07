@@ -483,3 +483,11 @@
 .game-dock-bar > nav.game-floating-nav {
   width: calc(100% - 72px) !important;
 }
+
+/* Final width for the nav: stops short of the Phone column. Higher specificity than the older full-width rules. */
+.game-dock-bar
+  > nav.game-mobile-nav.game-floating-nav.game-persistent-dock.game-persistent-dock.game-persistent-dock.game-persistent-dock {
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+}
