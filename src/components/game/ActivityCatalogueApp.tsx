@@ -247,13 +247,34 @@ export function ActivityCatalogueApp() {
     }
 
     setSubmitting(activity.slug);
+    const storageKey = `osogbo-life:pending-catalog-activity:${character?.id ?? "unknown"}:${activity.slug}`;
+    let storedRequestId: string | null = null;
+    try {
+      storedRequestId = sessionStorage.getItem(storageKey);
+    } catch {
+      // Storage may be unavailable in restricted browsing contexts; keep an in-memory fallback.
+    }
     const requestId =
-      pendingRequestIds.current.get(activity.slug) ?? crypto.randomUUID();
+      pendingRequestIds.current.get(activity.slug) ??
+      storedRequestId ??
+      crypto.randomUUID();
     pendingRequestIds.current.set(activity.slug, requestId);
+    try {
+      sessionStorage.setItem(storageKey, requestId);
+    } catch {
+      // The in-memory request ID still protects retries while this app remains mounted.
+    }
 
     try {
       const result = await performCatalogActivity(activity.slug, requestId);
       pendingRequestIds.current.delete(activity.slug);
+      try {
+        if (sessionStorage.getItem(storageKey) === requestId) {
+          sessionStorage.removeItem(storageKey);
+        }
+      } catch {
+        // No persistent key was available to clear.
+      }
 
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: q.activities().queryKey }),
