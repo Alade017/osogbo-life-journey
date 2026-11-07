@@ -374,3 +374,37 @@
   justify-self: stretch !important;
   border-radius: 14px !important;
 }
+
+/* Bottom bar layout, final: the links share the bar as equal flex items; Phone keeps its fixed width beside them. */
+.game-dock-bar > nav.game-floating-nav {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  gap: 4px !important;
+  padding: 4px !important;
+  overflow: hidden !important;
+}
+
+.game-dock-bar > nav.game-floating-nav > .mobile-nav-link {
+  flex: 1 1 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 2px !important;
+  position: relative !important;
+  left: auto !important;
+  transform: none !important;
+  border-radius: 14px !important;
+}
+
+.game-dock-bar > .game-dock-phone {
+  z-index: 1;
+}
