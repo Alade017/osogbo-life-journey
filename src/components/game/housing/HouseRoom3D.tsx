@@ -1482,9 +1482,8 @@ function SlotObject({
           }}
         >
           <boxGeometry args={[0.48, 0.08, 0.48]} />
-          <WorldMaterial
-            tone={activeSlotType === slot.slot_type || hovered ? "slate" : "concrete"}
-          />
+          {/* Invisible click target: the empty slot is still tappable in accessory mode, but no pad is drawn. */}
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         </mesh>
       )}
       {editMode && !placement && (
