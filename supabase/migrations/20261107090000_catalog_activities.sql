@@ -436,86 +436,13 @@ begin
   if a.rewards ? 'skillXp' and jsonb_typeof(a.rewards->'skillXp') = 'object' then
     if a.rewards->'skillXp' - array['slug', 'xp'] <> '{}'::jsonb
        or jsonb_typeof(a.rewards->'skillXp'->'slug') is distinct from 'string'
-       or coalesce(a.rewards->'skillXp'->>'slug', '') !~ '^[a-z0-9]+([_-][a-z0-9]+)*
-    + (s.personal_time->>'minute')::integer + activity_elapsed_minutes;
-  elapsed_minutes := total_minutes / 1440;
-  next_time := jsonb_build_object(
-    'minute', mod(total_minutes, 60),
-    'hour', mod(total_minutes / 60, 24),
-    'day', (s.personal_time->>'day')::integer + elapsed_minutes,
-    'weekday', mod((s.personal_time->>'weekday')::integer + elapsed_minutes, 7)
-  );
-
-  update public.characters set
-    energy = next_energy,
-    hunger = next_hunger,
-    thirst = next_thirst,
-    happiness = round((next_needs->>'fun')::numeric),
-    social = round((next_needs->>'social')::numeric)
-  where id = cid;
-
-  update public.character_simulations set
-    revision = revision + 1,
-    heartbeat_at = clock_timestamp(),
-    minute_remainder = next_remainder,
-    personal_time = next_time,
-    character_time = source_time,
-    needs = next_needs,
-    character_snapshot = jsonb_build_object(
-      'energy', next_energy, 'hunger', 100 - next_hunger,
-      'fun', (next_needs->>'fun')::numeric,
-      'social', (next_needs->>'social')::numeric
-    )
-  where character_id = cid
-  returning * into s;
-
-  if a.xp_reward > 0 then
-    perform public._grant_xp(cid, a.xp_reward);
-    perform public._recalc_missions(cid);
-  end if;
-
-  insert into public.activity_completions(
-    user_id, character_id, activity_id, activity_slug, activity_name, category,
-    duration_minutes, cooldown_minutes, xp_reward, energy_delta, hunger_delta,
-    thirst_delta, configured_rewards, request_id
-  ) values (
-    uid, cid, a.id, a.slug, a.name, a.category, a.duration_minutes, a.cooldown_minutes,
-    a.xp_reward, a.energy_delta, a.hunger_delta, a.thirst_delta, a.rewards, p_request_id
-  ) returning * into completion;
-
-  return jsonb_build_object(
-    'snapshot', jsonb_build_object(
-      'revision', s.revision, 'needs', s.needs, 'game_time', s.personal_time,
-      'paused', s.paused, 'speed', s.speed, 'action', null, 'request_id', null,
-      'sleep_elapsed_seconds', s.sleep_elapsed_seconds,
-      'home_action_elapsed_seconds', s.home_action_elapsed_seconds,
-      'home_action_duration_seconds', s.home_action_duration_seconds,
-      'skills', s.skills, 'queued_actions', s.queued_actions
-    ),
-    'activity', jsonb_build_object(
-      'id', completion.id, 'slug', completion.activity_slug, 'name', completion.activity_name,
-      'category', completion.category, 'duration_minutes', completion.duration_minutes,
-      'cooldown_minutes', completion.cooldown_minutes, 'xp_reward', completion.xp_reward,
-      'energy_delta', completion.energy_delta, 'hunger_delta', completion.hunger_delta,
-      'thirst_delta', completion.thirst_delta, 'configured_rewards', completion.configured_rewards,
-      'completed_at', completion.completed_at,
-      'cooldown_ends_at', case when completion.cooldown_minutes > 0
-        then completion.completed_at + make_interval(mins => completion.cooldown_minutes) else null end
-    ),
-    'duplicate', false
-  );
-end;
-$$;
-
-revoke all on function public.perform_catalog_activity(uuid, bigint, text, uuid) from public, anon;
-grant execute on function public.perform_catalog_activity(uuid, bigint, text, uuid) to authenticated;
-notify pgrst, 'reload schema';
-
+       or coalesce(a.rewards->'skillXp'->>'slug', '') !~ '^[a-z0-9]+([_-][a-z0-9]+)*$'
        or jsonb_typeof(a.rewards->'skillXp'->'xp') is distinct from 'number'
        or (a.rewards->'skillXp'->>'xp')::numeric <> trunc((a.rewards->'skillXp'->>'xp')::numeric)
        or (a.rewards->'skillXp'->>'xp')::numeric not between 0 and 10000 then
       raise exception 'This activity has invalid skill reward configuration';
     end if;
+
     reward_skill_slug := a.rewards->'skillXp'->>'slug';
     reward_skill_xp := (a.rewards->'skillXp'->>'xp')::integer;
     if reward_skill_xp > 0 then
@@ -523,9 +450,10 @@ notify pgrst, 'reload schema';
       from public.player_skills
       where character_id = cid and skill_slug = reward_skill_slug
       for update;
+
       next_skill_xp := least(100000000, coalesce(current_skill_xp, 0) + reward_skill_xp);
       insert into public.player_skills(user_id, character_id, skill_slug, level, experience)
-      values(uid, cid, reward_skill_slug, least(100, next_skill_xp / 100), next_skill_xp)
+      values (uid, cid, reward_skill_slug, least(100, next_skill_xp / 100), next_skill_xp)
       on conflict (character_id, skill_slug) do update
         set experience = excluded.experience, level = excluded.level;
     end if;
@@ -554,9 +482,13 @@ notify pgrst, 'reload schema';
     heartbeat_at = clock_timestamp(),
     minute_remainder = next_remainder,
     personal_time = next_time,
+    -- Keep the same baseline semantics as personal_simulation_command:
+    -- character_time records the last reconciled character clock, not the projected clock.
+    character_time = source_time,
     needs = next_needs,
     character_snapshot = jsonb_build_object(
-      'energy', next_energy, 'hunger', 100 - next_hunger,
+      'energy', next_energy,
+      'hunger', 100 - next_hunger,
       'fun', (next_needs->>'fun')::numeric,
       'social', (next_needs->>'social')::numeric
     )
@@ -579,22 +511,37 @@ notify pgrst, 'reload schema';
 
   return jsonb_build_object(
     'snapshot', jsonb_build_object(
-      'revision', s.revision, 'needs', s.needs, 'game_time', s.personal_time,
-      'paused', s.paused, 'speed', s.speed, 'action', null, 'request_id', null,
+      'revision', s.revision,
+      'needs', s.needs,
+      'game_time', s.personal_time,
+      'paused', s.paused,
+      'speed', s.speed,
+      'action', null,
+      'request_id', null,
       'sleep_elapsed_seconds', s.sleep_elapsed_seconds,
       'home_action_elapsed_seconds', s.home_action_elapsed_seconds,
       'home_action_duration_seconds', s.home_action_duration_seconds,
-      'skills', s.skills, 'queued_actions', s.queued_actions
+      'skills', s.skills,
+      'queued_actions', s.queued_actions
     ),
     'activity', jsonb_build_object(
-      'id', completion.id, 'slug', completion.activity_slug, 'name', completion.activity_name,
-      'category', completion.category, 'duration_minutes', completion.duration_minutes,
-      'cooldown_minutes', completion.cooldown_minutes, 'xp_reward', completion.xp_reward,
-      'energy_delta', completion.energy_delta, 'hunger_delta', completion.hunger_delta,
-      'thirst_delta', completion.thirst_delta, 'configured_rewards', completion.configured_rewards,
+      'id', completion.id,
+      'slug', completion.activity_slug,
+      'name', completion.activity_name,
+      'category', completion.category,
+      'duration_minutes', completion.duration_minutes,
+      'cooldown_minutes', completion.cooldown_minutes,
+      'xp_reward', completion.xp_reward,
+      'energy_delta', completion.energy_delta,
+      'hunger_delta', completion.hunger_delta,
+      'thirst_delta', completion.thirst_delta,
+      'configured_rewards', completion.configured_rewards,
       'completed_at', completion.completed_at,
-      'cooldown_ends_at', case when completion.cooldown_minutes > 0
-        then completion.completed_at + make_interval(mins => completion.cooldown_minutes) else null end
+      'cooldown_ends_at', case
+        when completion.cooldown_minutes > 0
+          then completion.completed_at + make_interval(mins => completion.cooldown_minutes)
+        else null
+      end
     ),
     'duplicate', false
   );
