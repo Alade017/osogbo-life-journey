@@ -230,6 +230,19 @@ export const q = {
           await supabase.from("activities").select("*").eq("is_available", true).order("name"),
         ),
     }),
+  activityCompletions: () =>
+    queryOptions({
+      queryKey: ["activityCompletions"],
+      staleTime: 15_000,
+      queryFn: async () =>
+        unwrap(
+          await supabase
+            .from("activity_completions")
+            .select("*")
+            .order("completed_at", { ascending: false })
+            .limit(30),
+        ),
+    }),
   places: () =>
     queryOptions({
       queryKey: ["places"],

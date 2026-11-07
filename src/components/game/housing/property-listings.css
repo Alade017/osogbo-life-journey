@@ -382,3 +382,168 @@
     transform: rotate(360deg);
   }
 }
+
+/* Real Estate tiers: one card per house, with status, prices and Rent / Buy actions. */
+.property-listings-card {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.9rem;
+  border: 1px solid var(--ring);
+  border-radius: var(--shape-card);
+  background: var(--card);
+  box-shadow: var(--elevation-card);
+  color: var(--foreground);
+  min-width: 0;
+}
+
+.property-listings-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.property-listings-card h2 {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.property-listings-card > p {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--muted-foreground);
+}
+
+.property-listings-card dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.2rem 0.6rem;
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+.property-listings-card dt {
+  color: var(--muted-foreground);
+}
+
+.property-listings-card dd {
+  margin: 0;
+  font-weight: 700;
+  text-align: right;
+}
+
+.property-listings-card small {
+  font-size: 0.74rem;
+  color: var(--muted-foreground);
+}
+
+.property-listings-status {
+  flex-shrink: 0;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--ring);
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.property-listings-status[data-status="owned"] {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.property-listings-status[data-status="rented"] {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.property-listings-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+}
+
+.property-listings-actions button {
+  min-height: 44px;
+  border: 1px solid var(--primary);
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.property-listings-actions button:disabled {
+  border-color: var(--ring);
+  background: var(--muted);
+  color: var(--muted-foreground);
+  cursor: not-allowed;
+}
+
+.property-listings-error {
+  margin: 0;
+  padding: 0.75rem;
+  border-radius: var(--shape-card);
+  background: var(--destructive);
+  color: var(--destructive-foreground);
+  font-size: 0.85rem;
+}
+
+.property-listings-empty {
+  margin: 0;
+  padding: 0.75rem;
+  color: var(--muted-foreground);
+  font-size: 0.85rem;
+}
+
+.property-listings-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--game-dialog-layer, 100) + 9);
+  background: rgb(0 0 0 / 0.5);
+}
+
+.property-listings-dialog {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  z-index: calc(var(--game-dialog-layer, 100) + 10);
+  display: grid;
+  gap: 0.75rem;
+  width: min(92vw, 380px);
+  transform: translate(-50%, -50%);
+  padding: 1.1rem;
+  border: 1px solid var(--ring);
+  border-radius: var(--shape-card);
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow: var(--elevation-card);
+}
+
+.property-listings-dialog h2,
+.property-listings-dialog [data-slot="dialog-title"] {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.property-listings-dialog p {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.property-listings-dialog .property-listings-actions button:first-child {
+  border-color: var(--ring);
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* Real Estate sits inside the phone frame, so its tiers stack in one column. */
+.property-listings-grid.real-estate-grid {
+  grid-template-columns: minmax(0, 1fr);
+}

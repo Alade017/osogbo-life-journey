@@ -1,0 +1,129 @@
+﻿
+supabase\migrations\20261025092415_daily_life_tasks.sql:29:  on public.simulation_action_receipts(character_id, action_id, completed_at);
+supabase\migrations\20261025092415_daily_life_tasks.sql:51:  before insert on public.simulation_action_receipts
+supabase\migrations\20261025092415_daily_life_tasks.sql:79:      select 1 from public.simulation_action_receipts r
+supabase\migrations\20261025092415_daily_life_tasks.sql:119:    if not exists(select 1 from public.simulation_action_receipts r
+supabase\migrations\20261103175006_home_task_interactions.sql:2:alter table public.character_simulations
+supabase\migrations\20261103175006_home_task_interactions.sql:12:  s public.character_simulations%rowtype; source jsonb; source_time jsonb; n 
+jsonb; k text; server_minutes int:=0;
+supabase\migrations\20261103175006_home_task_interactions.sql:25:  insert into 
+public.character_simulations(character_id,user_id,personal_time,needs,character_snapshot,character_time)
+supabase\migrations\20261103175006_home_task_interactions.sql:28:  select * into s from public.character_simulations where character_id=cid for 
+update;
+supabase\migrations\20261103175006_home_task_interactions.sql:75:    if exists(select 1 from public.simulation_action_receipts where 
+character_id=cid and request_id=p_request) then
+supabase\migrations\20261103175006_home_task_interactions.sql:76:      if not exists(select 1 from public.simulation_action_receipts where 
+character_id=cid and request_id=p_request and action_id=p_action) then raise exception 'Request belongs to a different activity'; end if;
+supabase\migrations\20261103175006_home_task_interactions.sql:121:            into remaining_seconds from public.simulation_action_receipts
+supabase\migrations\20261103175006_home_task_interactions.sql:154:        insert into 
+public.simulation_action_receipts(character_id,request_id,action_id) values(cid,p_request,p_action);
+supabase\migrations\20261103175006_home_task_interactions.sql:178:  update public.character_simulations set 
+revision=s.revision+1,session_id=s.session_id,heartbeat_at=now(),
+drizzle\migrations\0010_job_requirements.sql:3:create table if not exists public.player_skills (
+drizzle\migrations\0010_job_requirements.sql:14:create index if not exists player_skills_owner_idx on public.player_skills(user_id, 
+character_id);
+drizzle\migrations\0010_job_requirements.sql:15:create trigger t_player_skills before update on public.player_skills
+drizzle\migrations\0010_job_requirements.sql:17:alter table public.player_skills enable row level security;
+drizzle\migrations\0010_job_requirements.sql:18:revoke all on public.player_skills from public, anon, authenticated;
+drizzle\migrations\0010_job_requirements.sql:19:grant select on public.player_skills to authenticated;
+drizzle\migrations\0010_job_requirements.sql:20:grant all on public.player_skills to service_role;
+drizzle\migrations\0010_job_requirements.sql:21:drop policy if exists "own player skills" on public.player_skills;
+drizzle\migrations\0010_job_requirements.sql:22:create policy "own player skills" on public.player_skills
+drizzle\migrations\0010_job_requirements.sql:124:      select coalesce((select ps.level from public.player_skills ps
+drizzle\migrations\0010_job_requirements.sql:126:        coalesce((select ps.experience from public.player_skills ps
+drizzle\migrations\0017_milestone8_career_recurring_economy.sql:164:  select experience into prior_xp from public.player_skills
+drizzle\migrations\0017_milestone8_career_recurring_economy.sql:167:  insert into public.player_skills(user_id, character_id, skill_slug, level, 
+experience)
+drizzle\migrations\0017_milestone8_career_recurring_economy.sql:193:  select coalesce((select ps.level from public.player_skills ps
+drizzle\migrations\0024_shared_hud_simulation.sql:16:create table public.character_simulations (
+drizzle\migrations\0024_shared_hud_simulation.sql:35:create table public.simulation_action_receipts (
+drizzle\migrations\0024_shared_hud_simulation.sql:49:alter table public.character_simulations enable row level security;
+drizzle\migrations\0024_shared_hud_simulation.sql:50:alter table public.simulation_action_receipts enable row level security;
+drizzle\migrations\0024_shared_hud_simulation.sql:52:create policy "Own simulation" on public.character_simulations for select to authenticated 
+using(user_id=auth.uid());
+drizzle\migrations\0024_shared_hud_simulation.sql:53:create policy "Own activity receipts" on public.simulation_action_receipts for select to 
+authenticated using(character_id=public._my_character_id());
+drizzle\migrations\0024_shared_hud_simulation.sql:55:revoke all on 
+public.character_simulations,public.simulation_action_receipts,public.city_event_participation from public,anon,authenticated;
+drizzle\migrations\0024_shared_hud_simulation.sql:56:grant select on 
+public.character_simulations,public.simulation_action_receipts,public.city_event_participation to authenticated;
+drizzle\migrations\0024_shared_hud_simulation.sql:57:grant all on 
+public.character_simulations,public.simulation_action_receipts,public.city_event_participation to service_role;
+drizzle\migrations\0024_shared_hud_simulation.sql:65:  s public.character_simulations%rowtype; source jsonb; source_time jsonb; n jsonb; k text; 
+server_minutes int:=0;
+drizzle\migrations\0024_shared_hud_simulation.sql:77:  insert into 
+public.character_simulations(character_id,user_id,personal_time,needs,character_snapshot,character_time)
+drizzle\migrations\0024_shared_hud_simulation.sql:80:  select * into s from public.character_simulations where character_id=cid for update;
+drizzle\migrations\0024_shared_hud_simulation.sql:115:    if exists(select 1 from public.simulation_action_receipts where character_id=cid and 
+request_id=p_request) then
+drizzle\migrations\0024_shared_hud_simulation.sql:116:      if not exists(select 1 from public.simulation_action_receipts where character_id=cid 
+and request_id=p_request and action_id=p_action) then raise exception 'Request belongs to a different activity'; end if;
+drizzle\migrations\0024_shared_hud_simulation.sql:152:        insert into public.simulation_action_receipts(character_id,request_id,action_id) 
+values(cid,p_request,p_action);
+drizzle\migrations\0024_shared_hud_simulation.sql:174:  update public.character_simulations set 
+revision=s.revision+1,session_id=s.session_id,heartbeat_at=now(),
+drizzle\migrations\0031_server_validated_home_actions.sql:8:  s public.character_simulations%rowtype; source jsonb; source_time jsonb; n jsonb; 
+k text; server_minutes int:=0;
+drizzle\migrations\0031_server_validated_home_actions.sql:20:  insert into 
+public.character_simulations(character_id,user_id,personal_time,needs,character_snapshot,character_time)
+drizzle\migrations\0031_server_validated_home_actions.sql:23:  select * into s from public.character_simulations where character_id=cid for 
+update;
+drizzle\migrations\0031_server_validated_home_actions.sql:58:    if exists(select 1 from public.simulation_action_receipts where 
+character_id=cid and request_id=p_request) then
+drizzle\migrations\0031_server_validated_home_actions.sql:59:      if not exists(select 1 from public.simulation_action_receipts where 
+character_id=cid and request_id=p_request and action_id=p_action) then raise exception 'Request belongs to a different activity'; end if;
+drizzle\migrations\0031_server_validated_home_actions.sql:90:            into remaining_seconds from public.simulation_action_receipts
+drizzle\migrations\0031_server_validated_home_actions.sql:112:        insert into 
+public.simulation_action_receipts(character_id,request_id,action_id) values(cid,p_request,p_action);
+drizzle\migrations\0031_server_validated_home_actions.sql:134:  update public.character_simulations set 
+revision=s.revision+1,session_id=s.session_id,heartbeat_at=now(),
+drizzle\migrations\0066_house_essential_fixtures.sql:81:  s public.character_simulations%rowtype; source jsonb; source_time jsonb; n jsonb; k 
+text; server_minutes int:=0;
+drizzle\migrations\0066_house_essential_fixtures.sql:93:  insert into 
+public.character_simulations(character_id,user_id,personal_time,needs,character_snapshot,character_time)
+drizzle\migrations\0066_house_essential_fixtures.sql:96:  select * into s from public.character_simulations where character_id=cid for update;
+drizzle\migrations\0066_house_essential_fixtures.sql:131:    if exists(select 1 from public.simulation_action_receipts where character_id=cid 
+and request_id=p_request) then
+drizzle\migrations\0066_house_essential_fixtures.sql:132:      if not exists(select 1 from public.simulation_action_receipts where 
+character_id=cid and request_id=p_request and action_id=p_action) then raise exception 'Request belongs to a different activity'; end if;
+drizzle\migrations\0066_house_essential_fixtures.sql:171:            into remaining_seconds from public.simulation_action_receipts
+drizzle\migrations\0066_house_essential_fixtures.sql:193:        insert into 
+public.simulation_action_receipts(character_id,request_id,action_id) values(cid,p_request,p_action);
+drizzle\migrations\0066_house_essential_fixtures.sql:215:  update public.character_simulations set 
+revision=s.revision+1,session_id=s.session_id,heartbeat_at=now(),
+drizzle\migrations\0068_authoritative_home_presence.sql:75:  s public.character_simulations%rowtype; source jsonb; source_time jsonb; n jsonb; k 
+text; server_minutes int:=0;
+drizzle\migrations\0068_authoritative_home_presence.sql:87:  insert into 
+public.character_simulations(character_id,user_id,personal_time,needs,character_snapshot,character_time)
+drizzle\migrations\0068_authoritative_home_presence.sql:90:  select * into s from public.character_simulations where character_id=cid for update;
+drizzle\migrations\0068_authoritative_home_presence.sql:125:    if exists(select 1 from public.simulation_action_receipts where character_id=cid 
+and request_id=p_request) then
+drizzle\migrations\0068_authoritative_home_presence.sql:126:      if not exists(select 1 from public.simulation_action_receipts where 
+character_id=cid and request_id=p_request and action_id=p_action) then raise exception 'Request belongs to a different activity'; end if;
+drizzle\migrations\0068_authoritative_home_presence.sql:162:            into remaining_seconds from public.simulation_action_receipts
+drizzle\migrations\0068_authoritative_home_presence.sql:184:        insert into 
+public.simulation_action_receipts(character_id,request_id,action_id) values(cid,p_request,p_action);
+drizzle\migrations\0068_authoritative_home_presence.sql:206:  update public.character_simulations set 
+revision=s.revision+1,session_id=s.session_id,heartbeat_at=now(),
+drizzle\migrations\0070_timed_home_sleep.sql:2:alter table public.character_simulations
+drizzle\migrations\0070_timed_home_sleep.sql:9:    where conname='character_simulations_sleep_elapsed_range'
+drizzle\migrations\0070_timed_home_sleep.sql:10:      and conrelid='public.character_simulations'::regclass
+drizzle\migrations\0070_timed_home_sleep.sql:12:    alter table public.character_simulations
+drizzle\migrations\0070_timed_home_sleep.sql:13:      add constraint character_simulations_sleep_elapsed_range
+drizzle\migrations\0070_timed_home_sleep.sql:23:  s public.character_simulations%rowtype; source jsonb; source_time jsonb; n jsonb; k text; 
+server_minutes int:=0;
+drizzle\migrations\0070_timed_home_sleep.sql:35:  insert into 
+public.character_simulations(character_id,user_id,personal_time,needs,character_snapshot,character_time)
+drizzle\migrations\0070_timed_home_sleep.sql:38:  select * into s from public.character_simulations where character_id=cid for update;
+drizzle\migrations\0070_timed_home_sleep.sql:80:    if exists(select 1 from public.simulation_action_receipts where character_id=cid and 
+request_id=p_request) then
+drizzle\migrations\0070_timed_home_sleep.sql:81:      if not exists(select 1 from public.simulation_action_receipts where character_id=cid and 
+request_id=p_request and action_id=p_action) then raise exception 'Request belongs to a different activity'; end if;
+drizzle\migrations\0070_timed_home_sleep.sql:117:            into remaining_seconds from public.simulation_action_receipts
+drizzle\migrations\0070_timed_home_sleep.sql:145:        insert into public.simulation_action_receipts(character_id,request_id,action_id) 
+values(cid,p_request,p_action);
+drizzle\migrations\0070_timed_home_sleep.sql:167:  update public.character_simulations set 
+revision=s.revision+1,session_id=s.session_id,heartbeat_at=now(),
+drizzle\migrations\0076_career_progression.sql:280:  select coalesce((select ps.level from public.player_skills ps where ps.character_id=cid
+
+

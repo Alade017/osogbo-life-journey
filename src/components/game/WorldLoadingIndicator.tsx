@@ -1,4 +1,3 @@
-import { LoaderCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import "./world-loading.css";
@@ -22,7 +21,6 @@ export function WorldLoadingIndicator({
   const value = isDeterminate ? Math.max(0, Math.min(100, progress)) : undefined;
   const indicator = (
     <div className="world-loading-indicator" role="status" aria-live="polite">
-      <LoaderCircle className="world-loading-icon" aria-hidden="true" />
       <strong>{title}</strong>
       {detail && <span>{detail}</span>}
       <div

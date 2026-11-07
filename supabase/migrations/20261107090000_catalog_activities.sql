@@ -354,9 +354,9 @@ begin
   next_energy := greatest(0, least(100, round(c.energy - elapsed_energy_rate * a.duration_minutes + a.energy_delta)::integer));
   next_hunger := greatest(0, least(100, round(c.hunger - elapsed_hunger_rate * a.duration_minutes + a.hunger_delta)::integer));
   next_thirst := greatest(0, least(100, c.thirst + a.thirst_delta));
-  next_needs := s.needs;
+  next_next_needs := s.needs;
   if jsonb_typeof(next_needs) is distinct from 'object'
-     or not (next_needs ? 'energy') or not (next_needs ? 'hunger') then
+     or not (next_next_needs ? 'energy') or not (next_next_needs ? 'hunger') then
     raise exception 'Personal simulation needs are not ready. Reconnect and retry.';
   end if;
   needs := jsonb_set(next_needs, '{energy}', to_jsonb(next_energy), true);

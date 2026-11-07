@@ -1,0 +1,283 @@
+
+  drizzle\migrations\0007_player_state_inventory.sql:2:-- Safe to apply after the existing project schema; 2.8's clock columns are ensured here too.
+  drizzle\migrations\0007_player_state_inventory.sql:3:alter table public.characters
+> drizzle\migrations\0007_player_state_inventory.sql:4:  add column if not exists thirst integer not null default 20,
+  drizzle\migrations\0007_player_state_inventory.sql:5:  add column if not exists wanted_level integer not null default 0,
+  drizzle\migrations\0007_player_state_inventory.sql:6:  add column if not exists game_time_minute smallint not null default 0,
+  drizzle\migrations\0007_player_state_inventory.sql:7:  add column if not exists game_time_hour smallint not null default 8,
+  drizzle\migrations\0007_player_state_inventory.sql:8:  add column if not exists game_day integer not null default 1,
+  drizzle\migrations\0007_player_state_inventory.sql:9:  add column if not exists game_weekday smallint not null default 0;
+  drizzle\migrations\0007_player_state_inventory.sql:10:
+> drizzle\migrations\0007_player_state_inventory.sql:11:alter table public.characters drop constraint if exists characters_thirst_range;
+> drizzle\migrations\0007_player_state_inventory.sql:12:alter table public.characters add constraint characters_thirst_range check (thirst between 0 and 100);
+  drizzle\migrations\0007_player_state_inventory.sql:13:alter table public.characters drop constraint if exists characters_wanted_level_range;
+  drizzle\migrations\0007_player_state_inventory.sql:14:alter table public.characters add constraint characters_wanted_level_range check (wanted_level between 0 and 5);
+  drizzle\migrations\0007_player_state_inventory.sql:15:alter table public.characters drop constraint if exists characters_health_range;
+  drizzle\migrations\0007_player_state_inventory.sql:16:alter table public.characters add constraint characters_health_range check (health between 0 and 100);
+  drizzle\migrations\0007_player_state_inventory.sql:17:alter table public.characters drop constraint if exists characters_energy_range;
+  drizzle\migrations\0007_player_state_inventory.sql:18:alter table public.characters add constraint characters_energy_range check (energy between 0 and 100);
+  drizzle\migrations\0007_player_state_inventory.sql:19:alter table public.characters drop constraint if exists characters_hunger_range;
+  drizzle\migrations\0007_player_state_inventory.sql:20:alter table public.characters add constraint characters_hunger_range check (hunger between 0 and 100);
+  drizzle\migrations\0007_player_state_inventory.sql:54:update public.inventory_items set
+  drizzle\migrations\0007_player_state_inventory.sql:55:  stackable = true, max_stack = 10, usable = true,
+> drizzle\migrations\0007_player_state_inventory.sql:56:  effects = '{"stat_changes":{"thirst":-35},"time_minutes":1}'::jsonb
+  drizzle\migrations\0007_player_state_inventory.sql:57:where slug = 'water_bottle';
+  drizzle\migrations\0007_player_state_inventory.sql:58:update public.inventory_items set
+  drizzle\migrations\0007_player_state_inventory.sql:59:  equippable = true, equipment_slot = 'top', stackable = false, max_stack = 1
+  drizzle\migrations\0007_player_state_inventory.sql:60:where slug = 'basic_outfit';
+  drizzle\migrations\0007_player_state_inventory.sql:61:update public.inventory_items set
+  drizzle\migrations\0007_player_state_inventory.sql:62:  equippable = true, equipment_slot = 'accessory', stackable = false, max_stack = 1
+  drizzle\migrations\0007_player_state_inventory.sql:63:where slug = 'backpack';
+  drizzle\migrations\0007_player_state_inventory.sql:64:
+  drizzle\migrations\0007_player_state_inventory.sql:131:  next_energy integer;
+  drizzle\migrations\0007_player_state_inventory.sql:132:  next_hunger integer;
+> drizzle\migrations\0007_player_state_inventory.sql:133:  next_thirst integer;
+  drizzle\migrations\0007_player_state_inventory.sql:134:  time_cost integer;
+  drizzle\migrations\0007_player_state_inventory.sql:135:  new_time jsonb;
+  drizzle\migrations\0007_player_state_inventory.sql:136:begin
+  drizzle\migrations\0007_player_state_inventory.sql:137:  if auth.uid() is null or cid is null then raise exception 'No character'; end if;
+  drizzle\migrations\0007_player_state_inventory.sql:138:  select * into player from public.characters where id = cid and user_id = auth.uid() for update;
+  drizzle\migrations\0007_player_state_inventory.sql:139:  select * into inv from public.player_inventory where id = p_inventory_id and character_id = cid and user_id = auth.uid() for update;
+  drizzle\migrations\0007_player_state_inventory.sql:140:  if not found or inv.quantity < 1 then raise exception 'You do not own this item'; end if;
+  drizzle\migrations\0007_player_state_inventory.sql:141:  select * into item from public.inventory_items where id = inv.item_id;
+  drizzle\migrations\0007_player_state_inventory.sql:145:  if time_cost < 1 or time_cost > 60 then raise exception 'Invalid item time cost'; end if;
+  drizzle\migrations\0007_player_state_inventory.sql:146:  next_health := player.health; next_energy := player.energy;
+> drizzle\migrations\0007_player_state_inventory.sql:147:  next_hunger := player.hunger; next_thirst := player.thirst;
+  drizzle\migrations\0007_player_state_inventory.sql:148:  for stat_key, stat_delta in select key, value::text::integer from jsonb_each(item.effects -> 'stat_changes') loop
+  drizzle\migrations\0007_player_state_inventory.sql:149:    if stat_delta < -100 or stat_delta > 100 then raise exception 'Invalid item effect'; end if;
+  drizzle\migrations\0007_player_state_inventory.sql:150:    case stat_key
+  drizzle\migrations\0007_player_state_inventory.sql:151:      when 'health' then next_health := greatest(0, least(100, next_health + stat_delta));
+  drizzle\migrations\0007_player_state_inventory.sql:152:      when 'energy' then next_energy := greatest(0, least(100, next_energy + stat_delta));
+  drizzle\migrations\0007_player_state_inventory.sql:153:      when 'hunger' then next_hunger := greatest(0, least(100, next_hunger + stat_delta));
+> drizzle\migrations\0007_player_state_inventory.sql:154:      when 'thirst' then next_thirst := greatest(0, least(100, next_thirst + stat_delta));
+  drizzle\migrations\0007_player_state_inventory.sql:155:      else raise exception 'Invalid item effect stat';
+  drizzle\migrations\0007_player_state_inventory.sql:156:    end case;
+  drizzle\migrations\0007_player_state_inventory.sql:157:  end loop;
+  drizzle\migrations\0007_player_state_inventory.sql:158:  update public.characters set health = next_health, energy = next_energy,
+> drizzle\migrations\0007_player_state_inventory.sql:159:    hunger = next_hunger, thirst = next_thirst where id = cid;
+  drizzle\migrations\0007_player_state_inventory.sql:160:  if inv.quantity = 1 then delete from public.player_inventory where id = inv.id;
+  drizzle\migrations\0007_player_state_inventory.sql:161:  else update public.player_inventory set quantity = quantity - 1 where id = inv.id; end if;
+  drizzle\migrations\0007_player_state_inventory.sql:162:  new_time := public._advance_character_game_time(cid, time_cost);
+  drizzle\migrations\0007_player_state_inventory.sql:163:  return jsonb_build_object('item', item.name, 'category', item.category, 'time_minutes', time_cost,
+> drizzle\migrations\0007_player_state_inventory.sql:164:    'health', next_health, 'energy', next_energy, 'hunger', next_hunger, 'thirst', next_thirst, 'game_time', new_time);
+  drizzle\migrations\0007_player_state_inventory.sql:165:end $$;
+  drizzle\migrations\0007_player_state_inventory.sql:166:
+  drizzle\migrations\0007_player_state_inventory.sql:167:create or replace function public.discard_inventory_item(p_inventory_id uuid, p_quantity integer default 1)
+  drizzle\migrations\0007_player_state_inventory.sql:168:returns jsonb language plpgsql security definer set search_path = public as $$
+  drizzle\migrations\0007_player_state_inventory.sql:169:declare cid uuid := public._my_character_id(); inv public.player_inventory%rowtype; item_name text;
+  drizzle\migrations\0007_player_state_inventory.sql:170:begin
+  drizzle\migrations\0007_player_state_inventory.sql:171:  if auth.uid() is null or cid is null then raise exception 'No character'; end if;
+  drizzle\migrations\0007_player_state_inventory.sql:172:  if p_quantity is null or p_quantity < 1 then raise exception 'Choose a valid quantity'; end if;
+  drizzle\migrations\0009_job_activity_model.sql:6:  add column if not exists duration_minutes integer not null default 30,
+  drizzle\migrations\0009_job_activity_model.sql:7:  add column if not exists hunger_cost integer not null default 5,
+> drizzle\migrations\0009_job_activity_model.sql:8:  add column if not exists thirst_cost integer not null default 0,
+  drizzle\migrations\0009_job_activity_model.sql:9:  add column if not exists reputation_reward integer not null default 0,
+  drizzle\migrations\0009_job_activity_model.sql:10:  add column if not exists requirements jsonb not null default '{}'::jsonb,
+  drizzle\migrations\0009_job_activity_model.sql:11:  add column if not exists metadata jsonb not null default '{}'::jsonb;
+  drizzle\migrations\0009_job_activity_model.sql:12:
+  drizzle\migrations\0009_job_activity_model.sql:13:update public.jobs
+  drizzle\migrations\0009_job_activity_model.sql:14:set category = case
+  drizzle\migrations\0009_job_activity_model.sql:15:  when slug like '%developer%' or slug like '%computer%' or slug like '%tech%' then 'technology'
+  drizzle\migrations\0009_job_activity_model.sql:16:  when slug like '%graphic%' or slug like '%photograph%' then 'design'
+  drizzle\migrations\0009_job_activity_model.sql:39:alter table public.jobs drop constraint if exists jobs_needs_cost_valid;
+  drizzle\migrations\0009_job_activity_model.sql:40:alter table public.jobs add constraint jobs_needs_cost_valid check (
+> drizzle\migrations\0009_job_activity_model.sql:41:  hunger_cost between 0 and 100 and thirst_cost between 0 and 100
+  drizzle\migrations\0009_job_activity_model.sql:42:);
+  drizzle\migrations\0009_job_activity_model.sql:43:alter table public.jobs drop constraint if exists jobs_reputation_reward_valid;
+  drizzle\migrations\0009_job_activity_model.sql:44:alter table public.jobs add constraint jobs_reputation_reward_valid check (reputation_reward between 0 and 100);
+  drizzle\migrations\0009_job_activity_model.sql:45:alter table public.jobs drop constraint if exists jobs_requirements_object;
+  drizzle\migrations\0009_job_activity_model.sql:46:alter table public.jobs add constraint jobs_requirements_object check (jsonb_typeof(requirements) = 'object');
+  drizzle\migrations\0009_job_activity_model.sql:47:alter table public.jobs drop constraint if exists jobs_metadata_object;
+  drizzle\migrations\0009_job_activity_model.sql:48:alter table public.jobs add constraint jobs_metadata_object check (jsonb_typeof(metadata) = 'object');
+  drizzle\migrations\0009_job_activity_model.sql:49:create index if not exists jobs_available_category_sort_idx
+  drizzle\migrations\0009_job_activity_model.sql:60:  energy_delta integer not null default 0 check (energy_delta between -100 and 100),
+  drizzle\migrations\0009_job_activity_model.sql:61:  hunger_delta integer not null default 0 check (hunger_delta between -100 and 100),
+> drizzle\migrations\0009_job_activity_model.sql:62:  thirst_delta integer not null default 0 check (thirst_delta between -100 and 100),
+  drizzle\migrations\0009_job_activity_model.sql:63:  xp_reward integer not null default 0 check (xp_reward >= 0),
+  drizzle\migrations\0009_job_activity_model.sql:64:  requirements jsonb not null default '{}'::jsonb check (jsonb_typeof(requirements) = 'object'),
+  drizzle\migrations\0009_job_activity_model.sql:65:  rewards jsonb not null default '{}'::jsonb check (jsonb_typeof(rewards) = 'object'),
+  drizzle\migrations\0009_job_activity_model.sql:66:  cooldown_minutes integer not null default 0 check (cooldown_minutes >= 0),
+  drizzle\migrations\0009_job_activity_model.sql:67:  is_available boolean not null default true,
+  drizzle\migrations\0009_job_activity_model.sql:68:  metadata jsonb not null default '{}'::jsonb check (jsonb_typeof(metadata) = 'object'),
+  drizzle\migrations\0009_job_activity_model.sql:69:  created_at timestamptz not null default now(),
+  drizzle\migrations\0009_job_activity_model.sql:70:  updated_at timestamptz not null default now(),
+  drizzle\migrations\0011_job_time_needs.sql:42:    energy = e - j.energy_cost,
+  drizzle\migrations\0011_job_time_needs.sql:43:    hunger = least(100, hunger + j.hunger_cost),
+> drizzle\migrations\0011_job_time_needs.sql:44:    thirst = least(100, thirst + j.thirst_cost),
+  drizzle\migrations\0011_job_time_needs.sql:45:    stress = least(100, stress + 6),
+  drizzle\migrations\0011_job_time_needs.sql:46:    happiness = greatest(0, happiness - 1),
+  drizzle\migrations\0011_job_time_needs.sql:47:    career = least(100, career + 1),
+  drizzle\migrations\0011_job_time_needs.sql:48:    intelligence = case when j.stat_bonus = 'intelligence' then least(100, intelligence + 1) else intelligence end,
+  drizzle\migrations\0011_job_time_needs.sql:49:    social = case when j.stat_bonus = 'social' then least(100, social + 1) else social end,
+  drizzle\migrations\0011_job_time_needs.sql:50:    reputation = case when j.stat_bonus = 'reputation' then least(100, reputation + 1) else reputation end,
+  drizzle\migrations\0011_job_time_needs.sql:51:    health = case when j.energy_cost >= 30 then greatest(0, health - 1) else health end
+  drizzle\migrations\0011_job_time_needs.sql:52:  where id = cid;
+  drizzle\migrations\0011_job_time_needs.sql:76:    'energy_spent', j.energy_cost,
+  drizzle\migrations\0011_job_time_needs.sql:77:    'hunger_gained', j.hunger_cost,
+> drizzle\migrations\0011_job_time_needs.sql:78:    'thirst_gained', j.thirst_cost,
+  drizzle\migrations\0011_job_time_needs.sql:79:    'duration_minutes', j.duration_minutes,
+  drizzle\migrations\0011_job_time_needs.sql:80:    'game_time', game_time,
+  drizzle\migrations\0011_job_time_needs.sql:81:    'level', lvl
+  drizzle\migrations\0011_job_time_needs.sql:82:  );
+  drizzle\migrations\0011_job_time_needs.sql:83:end $$;
+  drizzle\migrations\0011_job_time_needs.sql:84:
+  drizzle\migrations\0011_job_time_needs.sql:85:revoke execute on function public.perform_job() from public, anon;
+  drizzle\migrations\0011_job_time_needs.sql:86:grant execute on function public.perform_job() to authenticated;
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:17:  duration_minutes,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:18:  hunger_cost,
+> drizzle\migrations\0012_milestone5_phase1_seed.sql:19:  thirst_cost,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:20:  reputation_reward,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:21:  requirements,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:22:  metadata,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:23:  location_id,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:24:  place_id,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:25:  is_available
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:26:)
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:27:values
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:179:  duration_minutes = excluded.duration_minutes,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:180:  hunger_cost = excluded.hunger_cost,
+> drizzle\migrations\0012_milestone5_phase1_seed.sql:181:  thirst_cost = excluded.thirst_cost,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:182:  reputation_reward = excluded.reputation_reward,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:183:  requirements = excluded.requirements,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:184:  metadata = excluded.metadata,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:185:  location_id = excluded.location_id,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:186:  place_id = excluded.place_id,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:187:  is_available = excluded.is_available;
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:188:
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:189:insert into public.activities (
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:196:  energy_delta,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:197:  hunger_delta,
+> drizzle\migrations\0012_milestone5_phase1_seed.sql:198:  thirst_delta,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:199:  xp_reward,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:200:  requirements,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:201:  rewards,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:202:  cooldown_minutes,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:203:  is_available,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:204:  metadata
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:205:)
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:206:values
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:316:  energy_delta = excluded.energy_delta,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:317:  hunger_delta = excluded.hunger_delta,
+> drizzle\migrations\0012_milestone5_phase1_seed.sql:318:  thirst_delta = excluded.thirst_delta,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:319:  xp_reward = excluded.xp_reward,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:320:  requirements = excluded.requirements,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:321:  rewards = excluded.rewards,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:322:  cooldown_minutes = excluded.cooldown_minutes,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:323:  is_available = excluded.is_available,
+  drizzle\migrations\0012_milestone5_phase1_seed.sql:324:  metadata = excluded.metadata;
+  drizzle\migrations\0016_transport_mode_travel.sql:79:    stress = least(100, stress + case when trip_minutes >= 10 then 2 else 1 end),
+  drizzle\migrations\0016_transport_mode_travel.sql:80:    hunger = least(100, hunger + ceil(trip_minutes::numeric / 20)::integer),
+> drizzle\migrations\0016_transport_mode_travel.sql:81:    thirst = least(100, thirst + ceil(trip_minutes::numeric / 15)::integer)
+  drizzle\migrations\0016_transport_mode_travel.sql:82:    where id = cid;
+  drizzle\migrations\0016_transport_mode_travel.sql:83:  insert into public.location_visits(user_id, character_id, location_id)
+  drizzle\migrations\0016_transport_mode_travel.sql:84:    values (auth.uid(), cid, destination.id)
+  drizzle\migrations\0016_transport_mode_travel.sql:85:    on conflict (character_id, location_id) do update
+  drizzle\migrations\0016_transport_mode_travel.sql:86:      set visit_count = location_visits.visit_count + 1, last_visited_at = now();
+  drizzle\migrations\0016_transport_mode_travel.sql:87:  if first_visit then
+  drizzle\migrations\0016_transport_mode_travel.sql:88:    perform public._grant_xp(cid, 10);
+  drizzle\migrations\0016_transport_mode_travel.sql:89:    perform public._notify(cid, 'Discovered ' || destination.name, '+10 XP for exploring a new district.', 'explore');
+  drizzle\migrations\0020_milestone11_world_conditions.sql:121:    stress = least(100, stress + case when trip_minutes >= 10 then 2 else 1 end),
+  drizzle\migrations\0020_milestone11_world_conditions.sql:122:    hunger = least(100, hunger + ceil(trip_minutes::numeric / 20)::integer),
+> drizzle\migrations\0020_milestone11_world_conditions.sql:123:    thirst = least(100, thirst + ceil(trip_minutes::numeric / 15)::integer)
+  drizzle\migrations\0020_milestone11_world_conditions.sql:124:    where id = cid;
+  drizzle\migrations\0020_milestone11_world_conditions.sql:125:  insert into public.location_visits(user_id, character_id, location_id)
+  drizzle\migrations\0020_milestone11_world_conditions.sql:126:    values (auth.uid(), cid, destination.id)
+  drizzle\migrations\0020_milestone11_world_conditions.sql:127:    on conflict (character_id, location_id) do update
+  drizzle\migrations\0020_milestone11_world_conditions.sql:128:      set visit_count = location_visits.visit_count + 1, last_visited_at = now();
+  drizzle\migrations\0020_milestone11_world_conditions.sql:129:  if first_visit then
+  drizzle\migrations\0020_milestone11_world_conditions.sql:130:    perform public._grant_xp(cid, 10);
+  drizzle\migrations\0020_milestone11_world_conditions.sql:131:    perform public._notify(cid, 'Discovered ' || destination.name, '+10 XP for exploring a new district.', 'explore');
+  drizzle\migrations\0021_fictional_city_world.sql:124:    energy = energy - energy_cost,
+  drizzle\migrations\0021_fictional_city_world.sql:125:    hunger = least(100, hunger + ceil(walk_minutes::numeric / 35)::integer),
+> drizzle\migrations\0021_fictional_city_world.sql:126:    thirst = least(100, thirst + ceil(walk_minutes::numeric / 25)::integer),
+  drizzle\migrations\0021_fictional_city_world.sql:127:    game_time_hour = new_game_hour,
+  drizzle\migrations\0021_fictional_city_world.sql:128:    game_time_minute = new_game_minute,
+  drizzle\migrations\0021_fictional_city_world.sql:129:    game_day = new_game_day,
+  drizzle\migrations\0021_fictional_city_world.sql:130:    game_weekday = new_game_weekday
+  drizzle\migrations\0021_fictional_city_world.sql:131:  where id = cid;
+  drizzle\migrations\0021_fictional_city_world.sql:132:
+  drizzle\migrations\0021_fictional_city_world.sql:133:  result := jsonb_build_object(
+  drizzle\migrations\0021_fictional_city_world.sql:134:    'world_x', p_world_x, 'world_y', p_world_y, 'building_slug', p_building_slug,
+  drizzle\migrations\0023_restore_travel_to_location_rpc.sql:125:    stress = least(100, stress + case when trip_minutes >= 10 then 2 else 1 end),
+  drizzle\migrations\0023_restore_travel_to_location_rpc.sql:126:    hunger = least(100, hunger + ceil(trip_minutes::numeric / 20)::integer),
+> drizzle\migrations\0023_restore_travel_to_location_rpc.sql:127:    thirst = least(100, thirst + ceil(trip_minutes::numeric / 15)::integer)
+  drizzle\migrations\0023_restore_travel_to_location_rpc.sql:128:    where id = cid;
+  drizzle\migrations\0023_restore_travel_to_location_rpc.sql:129:  insert into public.location_visits(user_id, character_id, location_id)
+  drizzle\migrations\0023_restore_travel_to_location_rpc.sql:130:    values (auth.uid(), cid, destination.id)
+  drizzle\migrations\0023_restore_travel_to_location_rpc.sql:131:    on conflict (character_id, location_id) do update
+  drizzle\migrations\0023_restore_travel_to_location_rpc.sql:132:      set visit_count = location_visits.visit_count + 1, last_visited_at = now();
+  drizzle\migrations\0023_restore_travel_to_location_rpc.sql:133:  if first_visit then
+  drizzle\migrations\0023_restore_travel_to_location_rpc.sql:134:    perform public._grant_xp(cid, 10);
+  drizzle\migrations\0023_restore_travel_to_location_rpc.sql:135:    perform public._notify(cid, 'Discovered ' || destination.name, '+10 XP for exploring a new district.', 'explore');
+  drizzle\migrations\0026_milestone7_purchasable_upgrade.sql:1:-- Milestone 7: add a durable, useful inventory upgrade through existing shop RPCs.
+> drizzle\migrations\0026_milestone7_purchasable_upgrade.sql:2:-- The premium flask restores more thirst than the starter water bottle. It uses
+  drizzle\migrations\0026_milestone7_purchasable_upgrade.sql:3:-- the existing catalog, purchase idempotency, inventory ownership, and item-use rules.
+  drizzle\migrations\0026_milestone7_purchasable_upgrade.sql:4:
+  drizzle\migrations\0026_milestone7_purchasable_upgrade.sql:5:insert into public.inventory_items (
+  drizzle\migrations\0026_milestone7_purchasable_upgrade.sql:6:  slug, name, description, category, icon, value, stackable, max_stack,
+  drizzle\migrations\0026_milestone7_purchasable_upgrade.sql:7:  usable, equippable, equipment_slot, effects, buy_price, sell_price, sellable
+  drizzle\migrations\0026_milestone7_purchasable_upgrade.sql:8:)
+  drizzle\migrations\0026_milestone7_purchasable_upgrade.sql:9:values (
+  drizzle\migrations\0026_milestone7_purchasable_upgrade.sql:10:  'insulated_flask',
+  drizzle\migrations\0026_milestone7_purchasable_upgrade.sql:19:  false,
+  drizzle\migrations\0026_milestone7_purchasable_upgrade.sql:20:  null,
+> drizzle\migrations\0026_milestone7_purchasable_upgrade.sql:21:  '{"stat_changes":{"thirst":-70},"time_minutes":1}'::jsonb,
+  drizzle\migrations\0026_milestone7_purchasable_upgrade.sql:22:  1500,
+  drizzle\migrations\0026_milestone7_purchasable_upgrade.sql:23:  750,
+  drizzle\migrations\0026_milestone7_purchasable_upgrade.sql:24:  true
+  drizzle\migrations\0026_milestone7_purchasable_upgrade.sql:25:)
+  drizzle\migrations\0026_milestone7_purchasable_upgrade.sql:26:on conflict (slug) do update set
+  drizzle\migrations\0026_milestone7_purchasable_upgrade.sql:27:  name = excluded.name,
+  drizzle\migrations\0026_milestone7_purchasable_upgrade.sql:28:  description = excluded.description,
+  drizzle\migrations\0026_milestone7_purchasable_upgrade.sql:29:  category = excluded.category,
+  drizzle\migrations\0046_fictional_town_map_venues.sql:91:
+  drizzle\migrations\0046_fictional_town_map_venues.sql:92:insert into public.jobs
+> drizzle\migrations\0046_fictional_town_map_venues.sql:93:  
+(slug,name,description,salary,energy_cost,required_level,cooldown_minutes,xp_reward,stat_bonus,icon,sort_order,category,duration_minutes,hunger_cost,thirst_cost,location_id,is_available)
+  drizzle\migrations\0046_fictional_town_map_venues.sql:94:select seed.slug,seed.name,seed.description,seed.salary,16,1,30,10,'career',seed.icon,seed.sort_order,seed.category,180,5,0,location.id,true
+  drizzle\migrations\0046_fictional_town_map_venues.sql:95:from (values
+  drizzle\migrations\0046_fictional_town_map_venues.sql:96:  ('town_market_assistant','Market Stall Assistant','Help fictional vendors organize stock and assist visitors.',3000,'store',201,'retail','town-market'),
+  drizzle\migrations\0046_fictional_town_map_venues.sql:97:  ('civic_information_assistant','Civic Information Assistant','Help visitors find public information desks in the game town.',3800,'briefcase',202,'services','civic-court'),
+  drizzle\migrations\0046_fictional_town_map_venues.sql:98:  ('community_safety_guide','Community Safety Guide','Share general game-town safety information at a public help desk.',3600,'shield-check',203,'security','community-police'),
+  drizzle\migrations\0046_fictional_town_map_venues.sql:99:  ('cedar_bank_teller','Cedar Bank Teller','Assist visitors at a fictional banking information counter.',4000,'banknote',204,'services','cedar-bank'),
+  drizzle\migrations\0046_fictional_town_map_venues.sql:100:  ('meridian_bank_teller','Meridian Bank Teller','Assist visitors at a fictional banking information counter.',4000,'banknote',205,'services','meridian-bank'),
+  drizzle\migrations\0046_fictional_town_map_venues.sql:101:  ('clinic_support_assistant','Clinic Support Assistant','Help visitors navigate the fictional clinic and its public desk.',4200,'heart-pulse',206,'healthcare','community-clinic'),
+  drizzle\migrations\0049_phone_market_and_careers.sql:211:insert into public.jobs
+  drizzle\migrations\0049_phone_market_and_careers.sql:212: (slug,name,description,salary,energy_cost,required_level,cooldown_minutes,xp_reward,stat_bonus,icon,
+> drizzle\migrations\0049_phone_market_and_careers.sql:213:  sort_order,category,duration_minutes,hunger_cost,thirst_cost,location_id,is_available,income_band,
+  drizzle\migrations\0049_phone_market_and_careers.sql:214:  requirements,skill_reward_slug,skill_reward_xp,shift_start_hour,shift_end_hour)
+  drizzle\migrations\0049_phone_market_and_careers.sql:215:select seed.slug,seed.name,seed.description,seed.salary,seed.energy,seed.level,45,18,'career',seed.icon,
+  drizzle\migrations\0049_phone_market_and_careers.sql:216: seed.ordering,seed.category,240,7,4,l.id,true,seed.band,seed.requirements::jsonb,seed.skill,24,8,17
+  drizzle\migrations\0049_phone_market_and_careers.sql:217:from (values
+  drizzle\migrations\0049_phone_market_and_careers.sql:218: ('osun_mall_stock_associate','Wholesale Stock Associate','Manage bulk stock and prepare customer orders.',5200,18,1,'package-open',230,'retail','low','{}','customer_service'),
+  drizzle\migrations\0049_phone_market_and_careers.sql:219: ('junior_software_support','Junior Software Support','Help a fictional city office resolve everyday computer 
+issues.',7600,20,3,'laptop',231,'technology','medium','{"skills":{"digital_literacy":1}}','digital_literacy'),
+  drizzle\migrations\0049_phone_market_and_careers.sql:220: ('community_health_assistant','Community Health Assistant','Support visitors and records at the fictional community 
+clinic.',7200,22,3,'heart-pulse',232,'healthcare','medium','{"skills":{"healthcare":1}}','healthcare'),
+  drizzle\migrations\0049_phone_market_and_careers.sql:221: ('finance_operations_assistant','Finance Operations Assistant','Process fictional account records at a city finance 
+desk.',8200,20,4,'landmark',233,'services','medium','{"skills":{"financial_literacy":2}}','financial_literacy'),
+  drizzle\migrations\0076_career_progression.sql:39:insert into public.jobs
+  drizzle\migrations\0076_career_progression.sql:40: (slug,name,description,salary,energy_cost,required_level,cooldown_minutes,xp_reward,stat_bonus,icon,
+> drizzle\migrations\0076_career_progression.sql:41:  sort_order,category,duration_minutes,hunger_cost,thirst_cost,location_id,is_available,
+  drizzle\migrations\0076_career_progression.sql:42:  skill_reward_slug,skill_reward_xp,shift_start_hour,shift_end_hour,career_path_slug)
+  drizzle\migrations\0076_career_progression.sql:43:select seed.job_slug,seed.job_name,seed.description,seed.salary,16,1,30,18,'career',seed.icon,
+  drizzle\migrations\0076_career_progression.sql:44: seed.sort_order,seed.category,90,5,3,l.id,true,seed.skill,12,8,17,seed.path_slug
+  drizzle\migrations\0076_career_progression.sql:45:from (values
+  drizzle\migrations\0076_career_progression.sql:46: ('career_cedar_banking','Cedar Bank · Banking & Finance','Build a banking career at Cedar Bank.',3500,'banknote',240,'services','financial_literacy','banking','cedar-bank'),
+  drizzle\migrations\0076_career_progression.sql:47: ('career_meridian_banking','Meridian Bank · Banking & Finance','Build a banking career at Meridian Bank.',3500,'banknote',241,'services','financial_literacy','banking','meridian-bank'),
+  drizzle\migrations\0076_career_progression.sql:48: ('career_osun_mall_retail','Osun Mall · Retail Operations','Build a retail career at Osun Mall.',3000,'store',242,'retail','customer_service','retail','osun-mall')
+  drizzle\migrations\0076_career_progression.sql:49:) seed(job_slug,job_name,description,salary,icon,sort_order,category,skill,path_slug,location_slug)
+  drizzle\migrations\0076_career_progression.sql:248:  update public.character_jobs set times_performed=times_performed+1,last_performed_at=now() where id=employment.id;
+  drizzle\migrations\0076_career_progression.sql:249:  update public.characters set happiness=least(100,happiness+path.mood_reward),
+> drizzle\migrations\0076_career_progression.sql:250:    hunger=least(100,hunger+job.hunger_cost),thirst=least(100,thirst+job.thirst_cost),
+  drizzle\migrations\0076_career_progression.sql:251:    career=least(100,career+1) where id=cid;
+  drizzle\migrations\0076_career_progression.sql:252:  if to_regprocedure('public.apply_party_mood(uuid,uuid,integer)') is not null then
+  drizzle\migrations\0076_career_progression.sql:253:    perform public.apply_party_mood(cid,auth.uid(),path.mood_reward);
+  drizzle\migrations\0076_career_progression.sql:254:  end if;
+  drizzle\migrations\0076_career_progression.sql:255:  new_level:=public._grant_xp(cid,job.xp_reward);
+  drizzle\migrations\0076_career_progression.sql:256:  perform public._advance_character_game_time(cid,job.duration_minutes);
+  drizzle\migrations\0076_career_progression.sql:257:  perform public._recalc_missions(cid);
+  drizzle\migrations\0076_career_progression.sql:258:  return jsonb_build_object('id',shift.id,'earned',rank.salary,'xp',job.xp_reward,
+
+
+

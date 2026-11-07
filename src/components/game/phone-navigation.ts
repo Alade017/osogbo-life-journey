@@ -14,7 +14,7 @@ export type PhoneNavigationAction =
 
 /** Internal game routes represented by apps in the phone. */
 export const PHONE_APP_ROUTES: Readonly<Record<string, string>> = {
-  "/rentals": "Rent homes",
+  "/real-estate": "Real Estate",
   "/property": "Property",
   "/properties": "Find homes",
   "/jobs": "Career Life",

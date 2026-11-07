@@ -85,6 +85,63 @@ export type Database = {
           },
         ]
       }
+      activity_completions: {
+        Row: {
+          activity_id: string
+          activity_name: string
+          activity_slug: string
+          category: string
+          character_id: string
+          completed_at: string
+          configured_rewards: Json
+          cooldown_minutes: number
+          duration_minutes: number
+          energy_delta: number
+          hunger_delta: number
+          id: string
+          request_id: string
+          thirst_delta: number
+          user_id: string
+          xp_reward: number
+        }
+        Insert: {
+          activity_id: string
+          activity_name: string
+          activity_slug: string
+          category: string
+          character_id: string
+          completed_at?: string
+          configured_rewards?: Json
+          cooldown_minutes: number
+          duration_minutes: number
+          energy_delta: number
+          hunger_delta: number
+          id?: string
+          request_id: string
+          thirst_delta: number
+          user_id: string
+          xp_reward: number
+        }
+        Update: {
+          activity_id?: string
+          activity_name?: string
+          activity_slug?: string
+          category?: string
+          character_id?: string
+          completed_at?: string
+          configured_rewards?: Json
+          cooldown_minutes?: number
+          duration_minutes?: number
+          energy_delta?: number
+          hunger_delta?: number
+          id?: string
+          request_id?: string
+          thirst_delta?: number
+          user_id?: string
+          xp_reward?: number
+        }
+        Relationships: []
+      }
       advertisement_admins: {
         Row: {
           created_at: string
@@ -6870,7 +6927,16 @@ export type Database = {
         Args: { p_request_id: string; p_user_id: string }
         Returns: Json
       }
-      perform_catalog_activity: {\n        Args: {\n          p_activity_slug: string\n          p_request_id: string\n          p_revision: number\n          p_session: string\n        }\n        Returns: Json\n      }\n      perform_job: { Args: { p_request_id: string }; Returns: Json }
+      perform_catalog_activity: {
+        Args: {
+          p_activity_slug: string
+          p_request_id: string
+          p_revision: number
+          p_session: string
+        }
+        Returns: Json
+      }
+      perform_job: { Args: { p_request_id: string }; Returns: Json }
       perform_location_activity: {
         Args: {
           p_action: string

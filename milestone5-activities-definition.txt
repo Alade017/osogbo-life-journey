@@ -1,0 +1,96 @@
+
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:7:update public.party_drinks set club_price = case slug
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:8:  when 'zobo' then 1200
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:9:  when 'chapman' then 3500
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:10:  when 'star-beer' then 2200
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:11:  else price * 3 end
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:12:where club_price is null;
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:13:alter table public.party_drinks alter column club_price set not null;
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:14:
+> supabase\migrations\20261019110000_party_clubs_and_activities.sql:15:create table if not exists public.party_club_activities (
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:16:  slug text primary key,
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:17:  name text not null,
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:18:  kind text not null check (kind in ('game','stage_show')),
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:19:  description text not null,
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:20:  price bigint not null check (price > 0),
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:21:  mood_effect integer not null check (mood_effect between 1 and 20),
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:22:  is_active boolean not null default true
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:23:);
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:24:
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:25:insert into public.party_club_activities(slug,name,kind,description,price,mood_effect) values
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:26:  ('dance-off','Dance-off challenge','game','Take on the club crowd in a friendly dance-off.',1500,12),
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:27:  ('pool-table','Pool table','game','A relaxed game of pool with a stranger at the next table.',800,6),
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:28:  ('stage-show','Stage show','stage_show','A choreographed show by the club''s performers. Fictional entertainment, not explicit.',4000,15)
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:29:on conflict (slug) do update set name=excluded.name,kind=excluded.kind,description=excluded.description,
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:30:  price=excluded.price,mood_effect=excluded.mood_effect,is_active=true;
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:31:
+> supabase\migrations\20261019110000_party_clubs_and_activities.sql:32:alter table public.party_club_activities enable row level security;
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:33:drop policy if exists party_club_activities_read on public.party_club_activities;
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:34:create policy party_club_activities_read on public.party_club_activities for select to authenticated using (is_active);
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:35:
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:36:create or replace function public.buy_drink(p_drink_slug text,p_request_id uuid)
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:37:returns jsonb language plpgsql security definer set search_path=public as $$
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:38:declare uid uuid:=auth.uid(); cid uuid:=public._my_character_id(); c public.characters%rowtype;
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:39:  d public.party_drinks%rowtype; w public.wallets%rowtype; v public.club_visits%rowtype;
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:40:  venue public.party_venues%rowtype; price bigint; cash_after bigint; mood integer; result jsonb;
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:41:begin
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:42:  if uid is null or cid is null then raise exception 'Sign in and create a character first'; end if;
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:43:  if p_request_id is null then raise exception 'Request ID is required'; end if;
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:44:  perform pg_advisory_xact_lock(hashtextextended(cid::text||p_request_id::text,0));
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:45:  select er.result into result from public.economy_request_results er
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:46:    where er.character_id=cid and er.request_id=p_request_id and er.operation='party_buy_drink';
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:47:  if found then return result; end if;
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:48:  select * into c from public.characters where id=cid and user_id=uid for update;
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:49:  if not found then raise exception 'Character not found'; end if;
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:50:  select * into venue from public.party_venues where location_id=c.current_location_id and is_active;
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:51:  if not found then raise exception 'Drinks are sold at clubs and event centers'; end if;
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:52:  if venue.venue_kind='club' then
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:53:    v:=public._party_active_visit(cid);
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:54:    if v.id is null or v.location_id<>c.current_location_id then raise exception 'Join the club to buy a drink'; end if;
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:55:  end if;
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:56:  select * into d from public.party_drinks where slug=p_drink_slug and is_active;
+  supabase\migrations\20261019110000_party_clubs_and_activities.sql:57:  if not found then raise exception 'This drink is not on the menu'; end if;
+  drizzle\migrations\0009_job_activity_model.sql:44:alter table public.jobs add constraint jobs_reputation_reward_valid check (reputation_reward between 0 and 100);
+  drizzle\migrations\0009_job_activity_model.sql:45:alter table public.jobs drop constraint if exists jobs_requirements_object;
+  drizzle\migrations\0009_job_activity_model.sql:46:alter table public.jobs add constraint jobs_requirements_object check (jsonb_typeof(requirements) = 'object');
+  drizzle\migrations\0009_job_activity_model.sql:47:alter table public.jobs drop constraint if exists jobs_metadata_object;
+  drizzle\migrations\0009_job_activity_model.sql:48:alter table public.jobs add constraint jobs_metadata_object check (jsonb_typeof(metadata) = 'object');
+  drizzle\migrations\0009_job_activity_model.sql:49:create index if not exists jobs_available_category_sort_idx
+  drizzle\migrations\0009_job_activity_model.sql:50:  on public.jobs(category, sort_order, name) where is_available;
+  drizzle\migrations\0009_job_activity_model.sql:51:
+> drizzle\migrations\0009_job_activity_model.sql:52:create table if not exists public.activities (
+  drizzle\migrations\0009_job_activity_model.sql:53:  id uuid primary key default gen_random_uuid(),
+  drizzle\migrations\0009_job_activity_model.sql:54:  slug text not null unique,
+  drizzle\migrations\0009_job_activity_model.sql:55:  name text not null,
+  drizzle\migrations\0009_job_activity_model.sql:56:  category text not null,
+  drizzle\migrations\0009_job_activity_model.sql:57:  description text not null,
+  drizzle\migrations\0009_job_activity_model.sql:58:  location_id uuid references public.locations(id) on delete set null,
+  drizzle\migrations\0009_job_activity_model.sql:59:  duration_minutes integer not null check (duration_minutes between 1 and 1440),
+  drizzle\migrations\0009_job_activity_model.sql:60:  energy_delta integer not null default 0 check (energy_delta between -100 and 100),
+  drizzle\migrations\0009_job_activity_model.sql:61:  hunger_delta integer not null default 0 check (hunger_delta between -100 and 100),
+  drizzle\migrations\0009_job_activity_model.sql:62:  thirst_delta integer not null default 0 check (thirst_delta between -100 and 100),
+  drizzle\migrations\0009_job_activity_model.sql:63:  xp_reward integer not null default 0 check (xp_reward >= 0),
+  drizzle\migrations\0009_job_activity_model.sql:64:  requirements jsonb not null default '{}'::jsonb check (jsonb_typeof(requirements) = 'object'),
+  drizzle\migrations\0009_job_activity_model.sql:65:  rewards jsonb not null default '{}'::jsonb check (jsonb_typeof(rewards) = 'object'),
+  drizzle\migrations\0009_job_activity_model.sql:66:  cooldown_minutes integer not null default 0 check (cooldown_minutes >= 0),
+  drizzle\migrations\0009_job_activity_model.sql:67:  is_available boolean not null default true,
+  drizzle\migrations\0009_job_activity_model.sql:68:  metadata jsonb not null default '{}'::jsonb check (jsonb_typeof(metadata) = 'object'),
+  drizzle\migrations\0009_job_activity_model.sql:69:  created_at timestamptz not null default now(),
+  drizzle\migrations\0009_job_activity_model.sql:70:  updated_at timestamptz not null default now(),
+  drizzle\migrations\0009_job_activity_model.sql:71:  check (category in ('rest', 'study', 'exercise', 'social', 'exploration', 'food', 'culture', 'event', 'other'))
+  drizzle\migrations\0009_job_activity_model.sql:72:);
+  drizzle\migrations\0009_job_activity_model.sql:73:create index if not exists activities_available_category_idx
+> drizzle\migrations\0009_job_activity_model.sql:74:  on public.activities(category, name) where is_available;
+  drizzle\migrations\0009_job_activity_model.sql:75:create index if not exists activities_available_location_idx
+> drizzle\migrations\0009_job_activity_model.sql:76:  on public.activities(location_id, category) where is_available;
+> drizzle\migrations\0009_job_activity_model.sql:77:create trigger t_activities before update on public.activities
+  drizzle\migrations\0009_job_activity_model.sql:78:  for each row execute function public.touch_updated_at();
+> drizzle\migrations\0009_job_activity_model.sql:79:alter table public.activities enable row level security;
+> drizzle\migrations\0009_job_activity_model.sql:80:grant select on public.activities to authenticated;
+> drizzle\migrations\0009_job_activity_model.sql:81:grant all on public.activities to service_role;
+> drizzle\migrations\0009_job_activity_model.sql:82:drop policy if exists "available activities readable" on public.activities;
+> drizzle\migrations\0009_job_activity_model.sql:83:create policy "available activities readable" on public.activities
+  drizzle\migrations\0009_job_activity_model.sql:84:  for select to authenticated using (is_available);
+
+
+
