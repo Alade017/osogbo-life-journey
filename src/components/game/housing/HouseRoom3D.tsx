@@ -1375,7 +1375,6 @@ function SlotObject({
   if (!placement && !editMode) return null;
   const artKey = placement?.art_key;
   const safeArtKey = artKey && /^[a-z0-9-]+$/i.test(artKey) ? artKey : null;
-  const showHint = hovered && !editMode && !inputBlocked && !!placement;
   const hoverProps = {
     onPointerOver: (event: ThreeEvent<PointerEvent>) => {
       event.stopPropagation();
@@ -1423,17 +1422,6 @@ function SlotObject({
               <ringGeometry args={[0.36, 0.42, 48]} />
               <meshBasicMaterial color="#f2c14e" transparent opacity={0.9} depthWrite={false} />
             </mesh>
-          )}
-          {showHint && (
-            <Html
-              portal={overlayPortal}
-              zIndexRange={[8, 0]}
-              center
-              position={[0, 0.9, 0]}
-              style={{ pointerEvents: "none" }}
-            >
-              <span className="house-food-package-label">Tap to use</span>
-            </Html>
           )}
         </group>
       ) : (
