@@ -3068,7 +3068,7 @@
 /* Sleep status: a small pill under the location header, top-left, above the room controls. */
 .house-sleep-pill {
   position: absolute;
-  top: 14px;
+  top: 62px;
   left: 14px;
   z-index: 3;
   display: inline-flex;
