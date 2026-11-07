@@ -38,10 +38,10 @@ function unsupportedRewardMetadata(value: Activity["rewards"]) {
   if (value === null || typeof value !== "object" || Array.isArray(value)) return false;
   return Object.entries(value).some(([key, reward]) => {
     if (["energy", "hunger", "thirst"].includes(key)) return false;
-    if (key === "social" && typeof reward === "number" && Number.isInteger(reward)) return false;
+    if (key === "social" && typeof reward === "number" && Number.isInteger(reward) && reward >= -100 && reward <= 100) return false;
     if (key === "skillXp" && reward !== null && typeof reward === "object" && !Array.isArray(reward)) {
       const config = reward as Record<string, unknown>;
-      return typeof config.slug !== "string" || typeof config.xp !== "number" || !Number.isInteger(config.xp);
+      return typeof config.slug !== "string" || !/^[a-z0-9]+([_-][a-z0-9]+)*$/.test(config.slug) || typeof config.xp !== "number" || !Number.isInteger(config.xp) || config.xp < 0 || config.xp > 10000;
     }
     return true;
   });
@@ -51,7 +51,7 @@ function configuredSkillReward(value: Activity["rewards"]) {
   const config = (value as Record<string, unknown>).skillXp;
   if (config === null || typeof config !== "object" || Array.isArray(config)) return null;
   const reward = config as Record<string, unknown>;
-  return typeof reward.slug === "string" && typeof reward.xp === "number" && Number.isInteger(reward.xp) && reward.xp > 0
+  return typeof reward.slug === "string" && /^[a-z0-9]+([_-][a-z0-9]+)*$/.test(reward.slug) && typeof reward.xp === "number" && Number.isInteger(reward.xp) && reward.xp > 0 && reward.xp <= 10000
     ? { slug: reward.slug, xp: reward.xp } : null;
 }
 export function ActivityCatalogueApp() {
@@ -64,6 +64,7 @@ export function ActivityCatalogueApp() {
   const { data: inventory } = useQuery(q.inventory());
   const { data: history } = useQuery(q.activityCompletions());
   const [category, setCategory] = useState("all");
+  const [locationFilter, setLocationFilter] = useState("all");
   const [submitting, setSubmitting] = useState<string | null>(null);
   const location = locations?.find((row) => row.id === character?.current_location_id);
   const itemSlugs = useMemo(() => (inventory ?? []).flatMap((row) => {
@@ -80,7 +81,9 @@ export function ActivityCatalogueApp() {
   const catalogue = (activities ?? []).filter((activity) => {
     const metadata = activity.metadata;
     const mapAction = metadata !== null && typeof metadata === "object" && !Array.isArray(metadata) && metadata.server_action === "map_place_action";
-    return !mapAction && (category === "all" || activity.category === category);
+    const matchesLocation = locationFilter === "all" ||
+      (locationFilter === "any" ? activity.location_id === null : activity.location_id === locationFilter);
+    return !mapAction && matchesLocation && (category === "all" || activity.category === category);
   });
   const cooldownFor = (activity: Activity) => {
     const latest = (history ?? []).find((row) => row.activity_id === activity.id);
@@ -105,6 +108,9 @@ export function ActivityCatalogueApp() {
       toast.error(error instanceof Error ? error.message : "Could not complete this activity.");
     } finally { setSubmitting(null); }
   };
+  const filterableLocations = (locations ?? []).filter((row) =>
+    (activities ?? []).some((activity) => activity.location_id === row.id),
+  );
   return (
     <div className="phone-theme-page" aria-label="Activity catalogue">
       <header className="flex items-start justify-between gap-3">
@@ -112,6 +118,13 @@ export function ActivityCatalogueApp() {
           <p className="text-xs text-muted-foreground">Discover activities around town. The server checks eligibility and awards progression.</p></div>
         <span className="shrink-0 rounded-full bg-muted px-2 py-1 text-xs">Day {simulation.gameTime.day} · {String(simulation.gameTime.hour).padStart(2,"0")}:{String(simulation.gameTime.minute).padStart(2,"0")}</span>
       </header>
+      <label className="grid gap-1 text-xs font-medium">Location
+        <select value={locationFilter} onChange={(event) => setLocationFilter(event.target.value)} className="rounded-lg border bg-card px-3 py-2 text-sm">
+          <option value="all">All locations</option>
+          <option value="any">Anywhere</option>
+          {filterableLocations.map((row) => <option key={row.id} value={row.id}>{row.name}</option>)}
+        </select>
+      </label>
       <div className="flex flex-wrap gap-2" aria-label="Filter activities by category">
         <button type="button" onClick={() => setCategory("all")} aria-pressed={category === "all"} className={cn("rounded-full border px-3 py-1.5 text-xs", category === "all" && "border-primary bg-primary text-primary-foreground")}>All</button>
         {ACTIVITY_CATEGORIES.map((value) => <button type="button" key={value} onClick={() => setCategory(value)} aria-pressed={category === value}
