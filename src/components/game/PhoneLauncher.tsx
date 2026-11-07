@@ -81,8 +81,10 @@ const PropertiesPage = lazy(() =>
 const PropertyPage = lazy(() =>
   import("@/routes/_authenticated/_game/property").then((m) => ({ default: m.PropertyPage })),
 );
-const RentalsPage = lazy(() =>
-  import("@/routes/_authenticated/_game/rentals").then((m) => ({ default: m.RentalsPage })),
+const RealEstatePage = lazy(() =>
+  import("@/routes/_authenticated/_game/real-estate").then((m) => ({
+    default: m.RealEstatePage,
+  })),
 );
 const JobsPage = lazy(() =>
   import("@/routes/_authenticated/_game/jobs").then((m) => ({ default: m.JobsPage })),
@@ -376,7 +378,8 @@ export function PhoneLauncher({
 
     if (appName === "Find homes") return <PropertiesPage />;
     if (appName === "Property") return <PropertyPage />;
-    if (appName === "Rent homes" || appName === "Housing") return <RentalsPage />;
+    if (appName === "Real Estate" || appName === "Rent homes" || appName === "Housing")
+      return <RealEstatePage />;
 
     if (appName === "Party Life" || appName === "Party") {
       return <PhonePartyApp />;
