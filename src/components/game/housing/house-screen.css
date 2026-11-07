@@ -2770,7 +2770,7 @@
 
 .house-page.house-page-fill .house-scene-controls,
 .house-page.house-page-fill .house-home-badge {
-  top: var(--house-scene-controls-top, max(14px, env(safe-area-inset-top)));
+  top: max(12px, env(safe-area-inset-top));
 }
 
 @media (max-width: 1023px) {
