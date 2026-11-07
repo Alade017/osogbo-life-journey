@@ -295,20 +295,33 @@
   height: 100%;
 }
 
-/* Active tab: Nigerian green with a gold edge and soft glow, so the current place reads at a glance. */
-.game-dock-bar
-  > nav.game-mobile-nav.game-persistent-dock.game-persistent-dock.game-persistent-dock
-  .mobile-nav-link.mobile-nav-active.mobile-nav-active {
-  color: #ffffff;
-  background: linear-gradient(135deg, #008751 0%, #00a862 100%);
-  box-shadow:
-    0 0 0 1px #ffb81c inset,
-    0 0 14px 2px rgb(255 184 28 / 45%);
-}
-
 /* Needs panel: anchored to the bottom-left corner, just above the bar. */
 .city-game .game-needs-rail.game-needs-rail.game-needs-rail.game-needs-rail {
   right: auto;
   left: 12px;
   bottom: calc(72px + env(safe-area-inset-bottom));
+}
+
+/* Phone button beside the links: draw the icon in the accent colour on the bar's light surface. */
+.game-dock-bar > .game-dock-phone .phone-launcher-icon {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--primary);
+}
+
+.game-dock-bar > .game-dock-phone .phone-launcher-icon::before,
+.game-dock-bar > .game-dock-phone .phone-launcher-icon::after {
+  display: none;
+}
+
+.game-dock-bar > .game-dock-phone svg {
+  width: 20px;
+  height: 20px;
+  color: var(--primary);
 }
