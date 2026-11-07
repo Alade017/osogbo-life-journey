@@ -6870,7 +6870,7 @@ export type Database = {
         Args: { p_request_id: string; p_user_id: string }
         Returns: Json
       }
-      perform_job: { Args: { p_request_id: string }; Returns: Json }
+      perform_catalog_activity: {\n        Args: {\n          p_activity_slug: string\n          p_request_id: string\n          p_revision: number\n          p_session: string\n        }\n        Returns: Json\n      }\n      perform_job: { Args: { p_request_id: string }; Returns: Json }
       perform_location_activity: {
         Args: {
           p_action: string

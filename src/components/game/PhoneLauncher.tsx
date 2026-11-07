@@ -382,7 +382,7 @@ export function PhoneLauncher({
       return <PhonePartyApp />;
     }
 
-    if (appName === "Education" || appName === "Courses") return <EducationPage phoneMode />;
+    if (appName === "Education" || appName === "Courses") return <EducationPage phoneMode />;\n    if (appName === "Activities") return <ActivityCatalogueApp />;
 
     if (appName === "Bank") {
       return <PhoneBankApp />;
