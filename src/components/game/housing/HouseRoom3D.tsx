@@ -26,6 +26,7 @@ import {
   houseSlotPosition as slotPosition,
   houseWallSegments,
   houseRearDoorCenter,
+  FOUR_ROOM_HOME_TYPES,
   type HouseRoomRendererProps as Props,
 } from "./house-room-contract";
 
@@ -81,10 +82,7 @@ function RoomFloor({
       tileDarkShade: [],
     };
     const tileSize = 0.78;
-    const hasPrivateRooms = ["studio-flat", "mini-flat", "bungalow", "duplex"].includes(
-      houseTypeId,
-    );
-    const hasBathroomZone = houseTypeId === "bungalow" || houseTypeId === "duplex";
+    const hasPrivateRooms = FOUR_ROOM_HOME_TYPES.includes(houseTypeId);
     let row = 0;
     for (let z0 = -depth / 2; z0 < depth / 2; z0 += tileSize, row += 1) {
       const tileDepth = Math.min(tileSize, depth / 2 - z0);
@@ -94,12 +92,13 @@ function RoomFloor({
         const x = x0 + tileWidth / 2;
         const z = z0 + tileDepth / 2;
         const alternate = (row + column) % 2 === 0;
+        // Four-room homes: kitchen and dining back-right, bathroom front-right.
         const tone: FloorTone =
-          hasBathroomZone && x < -width * 0.28 && z < -depth * 0.12
+          hasPrivateRooms && x > 0 && z > 0
             ? alternate
               ? "tileBath"
               : "tileBathShade"
-            : hasPrivateRooms && x > width * 0.02 && z < -depth * 0.12
+            : hasPrivateRooms && x > 0 && z < 0
               ? alternate
                 ? "tileDark"
                 : "tileDarkShade"
@@ -195,7 +194,8 @@ function OsogboRoomPrototype({
           <sphereGeometry args={[0.045, 8, 6]} />
           <WorldMaterial tone="trim" />
         </mesh>
-        <group position={[-width * 0.28, height * 0.57, -depth / 2 + 0.12]}>
+        {/* The window sits opposite the entrance door on the back wall, so they never overlap. */}
+        <group position={[-rearDoorCenter, height * 0.57, -depth / 2 + 0.12]}>
           <mesh castShadow receiveShadow>
             <boxGeometry args={[1.62, 0.94, 0.12]} />
             <WorldMaterial tone="trim" />

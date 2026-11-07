@@ -187,9 +187,9 @@ export type HouseWallSegment = {
   size: [number, number, number];
 };
 
-/** Centre of the entrance door on the back wall. The studio's entrance opens into the sitting room. */
+/** Centre of the entrance door on the back wall. In four-room homes it opens into the sitting room. */
 export function houseRearDoorCenter(houseTypeId: string, width: number): number {
-  return houseTypeId === "studio-flat" ? -width * 0.25 : width * 0.22;
+  return FOUR_ROOM_HOME_TYPES.includes(houseTypeId) ? -width * 0.25 : width * 0.22;
 }
 
 export function houseWallSegments(
@@ -297,75 +297,20 @@ function studioPartitionSegments(width: number, depth: number, height: number): 
   ];
 }
 
+/** Home types that have the four-room plan: sitting room, bedroom, kitchen and dining, bathroom. */
+export const FOUR_ROOM_HOME_TYPES: readonly string[] = [
+  "studio-flat",
+  "mini-flat",
+  "bungalow",
+  "duplex",
+];
+
 export function housePartitionSegments(
   houseTypeId: string,
   width: number,
   depth: number,
 ): HouseWallSegment[] {
-  if (!["studio-flat", "mini-flat", "bungalow", "duplex"].includes(houseTypeId)) return [];
-  // Taller than the furniture, so it reads clearly from the camera, and centred front to back.
+  if (!FOUR_ROOM_HOME_TYPES.includes(houseTypeId)) return [];
   // Taller than the furniture, so it reads clearly from the camera.
-  const partitionHeight = 1.6;
-  const partitionThickness = 0.14;
-  const doorwayWidth = 1.25;
-  if (houseTypeId === "studio-flat") return studioPartitionSegments(width, depth, partitionHeight);
-  const dividerZ = 0;
-  const doorwayCenter = width * 0.05;
-  const leftEnd = doorwayCenter - doorwayWidth / 2;
-  const rightStart = doorwayCenter + doorwayWidth / 2;
-  const segments: HouseWallSegment[] = [
-    {
-      id: "room-divider-left",
-      position: [(-width / 2 + leftEnd) / 2, partitionHeight / 2, dividerZ],
-      size: [width / 2 + leftEnd, partitionHeight, partitionThickness],
-    },
-    {
-      id: "room-divider-right",
-      position: [(rightStart + width / 2) / 2, partitionHeight / 2, dividerZ],
-      size: [width / 2 - rightStart, partitionHeight, partitionThickness],
-    },
-  ];
-  if (houseTypeId === "studio-flat" || houseTypeId === "mini-flat") {
-    // Bathroom enclosure on the front-right: a wall from the centre divider to the front wall,
-    // with an empty doorway gap.
-    const bathWallX = width * 0.22;
-    const bathDoorWidth = 1.0;
-    const bathDoorCenterZ = depth * 0.25;
-    const bathDoorStart = bathDoorCenterZ - bathDoorWidth / 2;
-    const bathDoorEnd = bathDoorCenterZ + bathDoorWidth / 2;
-    segments.push(
-      {
-        id: "bath-wall-inner",
-        position: [bathWallX, partitionHeight / 2, (dividerZ + bathDoorStart) / 2],
-        size: [partitionThickness, partitionHeight, bathDoorStart - dividerZ],
-      },
-      {
-        id: "bath-wall-outer",
-        position: [bathWallX, partitionHeight / 2, (bathDoorEnd + depth / 2) / 2],
-        size: [partitionThickness, partitionHeight, depth / 2 - bathDoorEnd],
-      },
-    );
-  }
-  if (houseTypeId === "bungalow" || houseTypeId === "duplex") {
-    const bathDividerX = -width * 0.28;
-    const bathDoorWidth = 0.9;
-    const bathDoorCenterZ = -depth * 0.31;
-    const bathStartZ = -depth / 2;
-    const bathEndZ = dividerZ;
-    const bathDoorStart = bathDoorCenterZ - bathDoorWidth / 2;
-    const bathDoorEnd = bathDoorCenterZ + bathDoorWidth / 2;
-    segments.push(
-      {
-        id: "bath-divider-back",
-        position: [bathDividerX, partitionHeight / 2, (bathStartZ + bathDoorStart) / 2],
-        size: [partitionThickness, partitionHeight, bathDoorStart - bathStartZ],
-      },
-      {
-        id: "bath-divider-front",
-        position: [bathDividerX, partitionHeight / 2, (bathDoorEnd + bathEndZ) / 2],
-        size: [partitionThickness, partitionHeight, bathEndZ - bathDoorEnd],
-      },
-    );
-  }
-  return segments;
+  return studioPartitionSegments(width, depth, 1.6);
 }
