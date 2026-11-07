@@ -67,6 +67,7 @@ import {
 import { pageMeta } from "@/lib/seo";
 import "@/components/game/housing/house-screen.css";
 import "@/components/game/housing/house-light-switch.css";
+import "@/components/game/housing/house-floor-label.css";
 
 /** Seconds of sleep for a full rest. */
 const SLEEP_FULL_REST_SECONDS = 120;
@@ -550,6 +551,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       fromSlot,
       x,
       y,
+      floor,
       rotation,
     }: {
       action: "place" | "move" | "remove" | "equip" | "unequip" | "buy" | "rotate";
@@ -558,6 +560,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       fromSlot?: string;
       x?: number;
       y?: number;
+      floor?: number;
       rotation?: number;
     }) => {
       const paths = {
@@ -585,7 +588,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
                 ? { fromSlot, rotation }
                 : action === "place"
                   ? x !== undefined && y !== undefined
-                    ? { itemId, x, y }
+                    ? { itemId, x, y, floor: floor ?? 0 }
                     : { itemId, slot }
                   : { itemId },
         ),
@@ -1503,6 +1506,11 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           )}
         </button>
       )}
+      {!editing && stairs && (
+        <span className="house-floor-label" role="status" aria-live="polite">
+          {activeFloor === 0 ? "Ground floor" : "Upstairs"}
+        </span>
+      )}
       {!editing && drawerOpen && (
         <DrawerSheet
           drawer={drawerQuery.data ?? null}
@@ -1555,13 +1563,13 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           onClose={() => setCatalogueOpen(false)}
           onBuy={(itemId) => requestAction({ action: "buy", itemId })}
           onPlaceOwned={(itemId) => {
-            const cell = firstFreeHouseGridCell(scenePlacements);
+            const cell = firstFreeHouseGridCell(floorPlacements);
             if (!cell) {
               toast.error("There is no free spot in your home.");
               return;
             }
             setPendingPlace({ itemId, knownIds: scenePlacements.map((item) => item.id) });
-            requestAction({ action: "place", itemId, x: cell.x, y: cell.y });
+            requestAction({ action: "place", itemId, x: cell.x, y: cell.y, floor: activeFloor });
           }}
         />
       )}

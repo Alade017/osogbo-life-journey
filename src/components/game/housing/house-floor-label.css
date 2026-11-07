@@ -1,0 +1,15 @@
+/* Floor label for two-storey homes: a small pill under the top-right controls. */
+.house-floor-label {
+  position: fixed;
+  z-index: 79;
+  top: calc(max(12px, env(safe-area-inset-top)) + 52px);
+  right: max(14px, env(safe-area-inset-right));
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  padding: 0.3rem 0.75rem;
+  color: var(--foreground);
+  font-size: 0.8rem;
+  font-weight: 600;
+  pointer-events: none;
+}
