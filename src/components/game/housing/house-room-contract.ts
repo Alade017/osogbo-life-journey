@@ -282,6 +282,27 @@ export function housePartitionSegments(
       size: [width / 2 - rightStart, partitionHeight, partitionThickness],
     },
   ];
+  if (houseTypeId === "studio-flat" || houseTypeId === "mini-flat") {
+    // Bathroom enclosure on the front-right: a wall from the centre divider to the front wall,
+    // with an empty doorway gap.
+    const bathWallX = width * 0.22;
+    const bathDoorWidth = 1.0;
+    const bathDoorCenterZ = depth * 0.25;
+    const bathDoorStart = bathDoorCenterZ - bathDoorWidth / 2;
+    const bathDoorEnd = bathDoorCenterZ + bathDoorWidth / 2;
+    segments.push(
+      {
+        id: "bath-wall-inner",
+        position: [bathWallX, partitionHeight / 2, (dividerZ + bathDoorStart) / 2],
+        size: [partitionThickness, partitionHeight, bathDoorStart - dividerZ],
+      },
+      {
+        id: "bath-wall-outer",
+        position: [bathWallX, partitionHeight / 2, (bathDoorEnd + depth / 2) / 2],
+        size: [partitionThickness, partitionHeight, depth / 2 - bathDoorEnd],
+      },
+    );
+  }
   if (houseTypeId === "bungalow" || houseTypeId === "duplex") {
     const bathDividerX = -width * 0.28;
     const bathDoorWidth = 0.9;

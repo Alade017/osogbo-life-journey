@@ -82,7 +82,7 @@ describe("R3F home renderer boundary", () => {
 
   it("adds a pass-through partition only to larger home layouts", () => {
     expect(housePartitionSegments("single-room", 8, 6)).toHaveLength(0);
-    expect(housePartitionSegments("studio-flat", 8, 6)).toHaveLength(2);
+    expect(housePartitionSegments("studio-flat", 8, 6)).toHaveLength(4);
     expect(housePartitionSegments("bungalow", 10, 8)).toHaveLength(4);
     expect(housePartitionSegments("duplex", 12, 9)).toHaveLength(4);
     expect(housePartitionSegments("bungalow", 10, 8).every((part) => part.size[1] < 2)).toBe(true);
