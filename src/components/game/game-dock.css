@@ -478,3 +478,8 @@
   gap: 2px !important;
   padding: 4px 2px !important;
 }
+
+/* The nav stops short of the Phone column, so Phone sits beside the pill instead of over it. */
+.game-dock-bar > nav.game-floating-nav {
+  width: calc(100% - 72px) !important;
+}
