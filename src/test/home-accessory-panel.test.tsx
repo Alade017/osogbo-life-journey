@@ -29,9 +29,9 @@ it("shows real cooking terms and changes meal preference without changing the ac
     screen.getByText(`18s � ${ACTION_CATALOG.cook.durationMinutes} game min`),
   ).toBeInTheDocument();
   expect(screen.getByText(`+${ACTION_CATALOG.cook.needs.hunger} Hunger`)).toBeInTheDocument();
-  fireEvent.click(screen.getByRole("radio", { name: "Indomie & egg" }));
-  expect(screen.getByRole("radio", { name: "Indomie & egg" })).toBeChecked();
-  fireEvent.click(screen.getByRole("button", { name: "Cook Indomie & egg" }));
+  fireEvent.click(screen.getByRole("radio", { name: "Akara & ogi" }));
+  expect(screen.getByRole("radio", { name: "Akara & ogi" })).toBeChecked();
+  fireEvent.click(screen.getByRole("button", { name: "Cook Akara & ogi" }));
   expect(p.onUse).toHaveBeenCalledOnce();
   expect(screen.getByText(`+${ACTION_CATALOG.cook.needs.hunger} Hunger`)).toBeInTheDocument();
 });
@@ -74,9 +74,9 @@ it("cooks another meal without closing the panel and clears the previous confirm
   render(<HomeAccessoryPanel {...p} />);
   fireEvent.click(screen.getByRole("button", { name: "Cook Jollof rice" }));
   expect(await screen.findByRole("button", { name: "Cook Jollof rice again" })).toBeEnabled();
-  fireEvent.click(screen.getByRole("radio", { name: "Indomie & egg" }));
+  fireEvent.click(screen.getByRole("radio", { name: "Akara & ogi" }));
   expect(screen.queryByText(/Needs updated/)).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "Cook Indomie & egg" }));
+  fireEvent.click(screen.getByRole("button", { name: "Cook Akara & ogi" }));
   expect(p.onUse).toHaveBeenCalledTimes(2);
 });
 

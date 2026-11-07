@@ -3190,3 +3190,43 @@
   text-transform: uppercase;
   color: var(--muted-foreground);
 }
+
+/* Meal cards follow the Gas Cooker sheet: time badge, price, name and effect chips. */
+.home-meal-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.home-meal-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.home-meal-price {
+  color: var(--success);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.home-meal-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.home-meal-chips span {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #fff3d6;
+  color: #8a5a00;
+  font-size: 11px;
+  font-weight: 750;
+}
