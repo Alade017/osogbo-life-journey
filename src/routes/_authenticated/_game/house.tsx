@@ -20,7 +20,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { House, Moon, Sunrise, WifiOff, DoorOpen, LoaderCircle } from "lucide-react";
+import { House, Sunrise, WifiOff, DoorOpen, LoaderCircle } from "lucide-react";
 import { HouseEditSheets } from "@/components/game/housing/HouseEditSheets";
 import { HouseCatalogue } from "@/components/game/housing/HouseCatalogue";
 import { HomeFoodDeliveryPanel } from "@/components/game/housing/HomeFoodDeliveryPanel";
@@ -1349,10 +1349,9 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
               </span>
             </div>
             {timedActivity && taskTiming && (
-              <progress
-                max={taskTiming.duration || 1}
-                value={displayedElapsed}
-                aria-label="Task progress"
+              <ProgressRing
+                percent={(displayedElapsed / (taskTiming.duration || 1)) * 100}
+                label={`${Math.max(0, Math.ceil(taskTiming.duration - displayedElapsed))}s`}
               />
             )}
             <button
@@ -1366,8 +1365,10 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         )}
         {activeSleep && (
           <div className="house-sleep-pill" role="region" aria-label="Sleep controls">
-            <Moon size={15} aria-hidden="true" />
-            <span role="status">Asleep · {sleepProgress}%</span>
+            <ProgressRing percent={sleepProgress} label={`${sleepRemaining}s`} />
+            <span role="status">
+              <strong>Asleep</strong>
+            </span>
             <button
               type="button"
               disabled={isOffline || !gameTime.ready || gameTime.busy}
@@ -1454,5 +1455,32 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         />
       )}
     </div>
+  );
+}
+
+/** Circular progress with the seconds left shown in the middle. */
+function ProgressRing({ percent, label }: { percent: number; label: string }) {
+  const radius = 12;
+  const circumference = 2 * Math.PI * radius;
+  const value = Math.max(0, Math.min(100, percent));
+  return (
+    <span
+      className="house-ring"
+      role="img"
+      aria-label={`${Math.round(value)}% done, ${label} left`}
+    >
+      <svg viewBox="0 0 32 32" aria-hidden="true">
+        <circle className="house-ring-track" cx="16" cy="16" r={radius} />
+        <circle
+          className="house-ring-value"
+          cx="16"
+          cy="16"
+          r={radius}
+          strokeDasharray={circumference}
+          strokeDashoffset={circumference * (1 - value / 100)}
+        />
+      </svg>
+      <span className="house-ring-label">{label}</span>
+    </span>
   );
 }

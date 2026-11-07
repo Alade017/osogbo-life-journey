@@ -3068,23 +3068,68 @@
 /* Sleep status: a small pill under the location header, top-left, above the room controls. */
 .house-sleep-pill {
   position: fixed;
-  top: calc(max(12px, env(safe-area-inset-top)) + 50px);
+  top: calc(max(12px, env(safe-area-inset-top)) + 86px);
   left: max(12px, env(safe-area-inset-left));
   z-index: 25;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 28px;
+  gap: 8px;
+  height: 40px;
   box-sizing: border-box;
-  padding: 0 4px 0 10px;
+  padding: 0 5px 0 5px;
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--card);
   color: var(--foreground);
   box-shadow: var(--elevation-card);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   white-space: nowrap;
+}
+
+/* Keep the room's Studio flat and badge chips below the pill while it is showing. */
+.house-page:has(.house-sleep-pill) .house-scene-controls,
+.house-page:has(.house-sleep-pill) .house-home-badge {
+  top: calc(var(--house-scene-controls-top, 88px) + 40px) !important;
+}
+
+.house-ring {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex: none;
+}
+
+.house-ring svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.house-ring circle {
+  fill: none;
+  stroke-width: 3;
+}
+
+.house-ring-track {
+  stroke: var(--muted);
+}
+
+.house-ring-value {
+  stroke: var(--primary);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.6s linear;
+}
+
+.house-ring-label {
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
 }
 
 .house-sleep-pill button {
@@ -3130,11 +3175,4 @@
   font-weight: 600;
   opacity: 0.75;
   margin: 0;
-}
-
-.house-task-pill progress {
-  width: 48px;
-  height: 6px;
-  flex: none;
-  accent-color: var(--primary);
 }
