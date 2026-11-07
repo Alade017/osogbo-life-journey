@@ -3064,3 +3064,20 @@
     max-height: 70vh;
   }
 }
+
+/* Sleep uses the same bottom task card as other home tasks; its two buttons stack beside the progress bar. */
+.house-task-actions {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  align-self: center;
+}
+
+.house-task-actions button {
+  padding: 0.6rem 0.85rem;
+  border-radius: 1rem;
+  background: var(--muted);
+  color: var(--foreground);
+}
