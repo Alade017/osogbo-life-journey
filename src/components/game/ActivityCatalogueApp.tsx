@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ACTIVITY_CATEGORIES, parseJobActivityRequirements } from "@/lib/job-activity-model";
 import { q, type Activity } from "@/lib/game";
@@ -66,6 +66,7 @@ export function ActivityCatalogueApp() {
   const [category, setCategory] = useState("all");
   const [locationFilter, setLocationFilter] = useState("all");
   const [submitting, setSubmitting] = useState<string | null>(null);
+  const pendingRequestIds = useRef(new Map<string, string>());
   const location = locations?.find((row) => row.id === character?.current_location_id);
   const itemSlugs = useMemo(() => (inventory ?? []).flatMap((row) => {
     const item = (row as { item?: { slug?: string } | null }).item;
@@ -94,8 +95,11 @@ export function ActivityCatalogueApp() {
   const complete = async (activity: Activity) => {
     if (!ready || busy || submitting) return;
     setSubmitting(activity.slug);
+    const requestId = pendingRequestIds.current.get(activity.slug) ?? crypto.randomUUID();
+    pendingRequestIds.current.set(activity.slug, requestId);
     try {
-      const result = await performCatalogActivity(activity.slug, crypto.randomUUID());
+      const result = await performCatalogActivity(activity.slug, requestId);
+      pendingRequestIds.current.delete(activity.slug);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: q.activities().queryKey }),
         queryClient.invalidateQueries({ queryKey: q.character().queryKey }),
