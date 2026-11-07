@@ -250,7 +250,7 @@ function GameLayout() {
 
           <GameNeedsRail player={player} />
 
-          <div className="game-dock-bar">
+          <div className={phoneOpen ? "game-dock-bar is-phone-open" : "game-dock-bar"}>
             <PhoneLauncher
               compact
               className="game-dock-phone"

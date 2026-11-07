@@ -350,3 +350,27 @@
   margin: 0 !important;
   flex: 0 0 64px !important;
 }
+
+/* Phone open: keep the bar's Phone button above the overlay so tapping it closes the phone. */
+.game-dock-bar.is-phone-open {
+  z-index: calc(var(--game-dialog-layer, 140) + 20) !important;
+}
+
+/* The three links fill the bar, one equal column each. */
+.game-dock-bar > nav.game-floating-nav {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  justify-content: stretch !important;
+  align-items: stretch !important;
+  gap: 4px !important;
+}
+
+.game-dock-bar > nav.game-floating-nav .mobile-nav-link {
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  justify-self: stretch !important;
+  border-radius: 14px !important;
+}
