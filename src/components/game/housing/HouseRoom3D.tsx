@@ -7,9 +7,9 @@ import {
   useState,
   type RefObject,
 } from "react";
-import { Canvas, type ThreeEvent } from "@react-three/fiber";
+import { Canvas, useFrame, type ThreeEvent } from "@react-three/fiber";
 import { Html, RoundedBox } from "@react-three/drei";
-import { DoubleSide, Plane, Vector3 } from "three";
+import { DoubleSide, Plane, Vector3, type Group } from "three";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
 import type { FoodDelivery } from "@/lib/food-delivery-service";
 import { homeFurnitureAction } from "@/lib/home-furniture-actions";
@@ -162,6 +162,40 @@ function HouseStairsModel({
   );
 }
 
+/** Radians the entrance door swings open, outward through the back wall. */
+const DOOR_OPEN_ANGLE = Math.PI * 0.46;
+
+/** Entrance door panel. It hinges on the left edge of the doorway and swings out when open. */
+function HouseDoorPanel({
+  hingeX,
+  z,
+  width,
+  height,
+  open,
+}: {
+  hingeX: number;
+  z: number;
+  width: number;
+  height: number;
+  open: boolean;
+}) {
+  const pivot = useRef<Group>(null);
+  const angle = useRef(0);
+  useFrame((_, delta) => {
+    const target = open ? DOOR_OPEN_ANGLE : 0;
+    angle.current += (target - angle.current) * Math.min(1, delta * 6);
+    if (pivot.current) pivot.current.rotation.y = angle.current;
+  });
+  return (
+    <group ref={pivot} position={[hingeX, 0, z]}>
+      <mesh castShadow receiveShadow position={[width / 2, height / 2, 0]}>
+        <boxGeometry args={[width, height, 0.07]} />
+        <WorldMaterial tone="timber" />
+      </mesh>
+    </group>
+  );
+}
+
 function OsogboRoomPrototype({
   houseTypeId,
   width,
@@ -169,6 +203,7 @@ function OsogboRoomPrototype({
   editMode,
   activeFloor = 0,
   onUseStairs,
+  doorOpen = false,
 }: {
   houseTypeId: string;
   width: number;
@@ -176,6 +211,7 @@ function OsogboRoomPrototype({
   activeFloor?: 0 | 1;
   onUseStairs: (() => void) | undefined;
   editMode: boolean;
+  doorOpen?: boolean;
 }) {
   const height = WORLD_SCALE.door * 1.15;
   const doorwayWidth = 1.12;
@@ -194,7 +230,14 @@ function OsogboRoomPrototype({
         <WorldMaterial tone="ground" />
       </mesh>
       <group name="house-cutaway-walls" scale={[1, editMode ? 0.28 : 1, 1]}>
-        {houseWallSegments(width, depth, height, doorwayWidth, rearDoorCenter).map((segment) => (
+        {houseWallSegments(
+          width,
+          depth,
+          height,
+          doorwayWidth,
+          rearDoorCenter,
+          FOUR_ROOM_HOME_TYPES.includes(houseTypeId),
+        ).map((segment) => (
           <group key={segment.id}>
             <mesh castShadow receiveShadow position={segment.position}>
               <boxGeometry args={segment.size} />
@@ -282,6 +325,13 @@ function OsogboRoomPrototype({
           </group>
         ))}
       </group>
+      <HouseDoorPanel
+        hingeX={rearDoorCenter - doorwayWidth / 2}
+        z={-depth / 2}
+        width={doorwayWidth}
+        height={height * 0.82}
+        open={doorOpen}
+      />
     </group>
   );
 }
@@ -1482,9 +1532,8 @@ function SlotObject({
           }}
         >
           <boxGeometry args={[0.48, 0.08, 0.48]} />
-          <WorldMaterial
-            tone={activeSlotType === slot.slot_type || hovered ? "slate" : "concrete"}
-          />
+          {/* Invisible click target: the empty slot is still tappable in accessory mode, but no pad is drawn. */}
+          <meshBasicMaterial transparent opacity={0} depthWrite={false} />
         </mesh>
       )}
       {editMode && !placement && (
@@ -1505,6 +1554,7 @@ function SlotObject({
 export function HouseRoom3D({
   inputBlocked = false,
   lightOn = true,
+  doorOpen = false,
   activeFloor = 0,
   onUseStairs,
   houseTypeId,
@@ -1682,6 +1732,7 @@ export function HouseRoom3D({
             editMode={editMode}
             activeFloor={activeFloor}
             onUseStairs={onUseStairs}
+            doorOpen={doorOpen}
           />
           <RoomFloor houseTypeId={houseTypeId} width={width} depth={depth} />
           {!editMode && !inputBlocked && onWalk && (

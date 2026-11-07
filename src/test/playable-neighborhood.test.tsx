@@ -230,7 +230,7 @@ async function changeLocation(location: string) {
 it("loads Oja-Oba's confirmed room and correct origin without fetching or exposing a personal home", async () => {
   state.location = "market";
   show();
-  await screen.findByText("Movement controls");
+  await screen.findByText(/Tap or click the ground to walk/);
   await screen.findByText("R3F neighbourhood");
   expect(state.join).toHaveBeenCalledWith("market");
   expect(screen.getByRole("heading", { name: "Oja-Oba Market neighbourhood" })).toBeInTheDocument();
@@ -356,7 +356,7 @@ it("does not join unsupported locations", async () => {
 it("joins a mapped city-world blueprint beyond the two authored districts", async () => {
   state.location = "school";
   show();
-  await screen.findByText("Movement controls");
+  await screen.findByText(/Tap or click the ground to walk/);
   expect(state.join).toHaveBeenCalledWith("school");
   expect(state.scene.mock.lastCall?.[0].area.slug).toBe("student-district");
   expect(state.scene.mock.lastCall?.[0].area.roads.length).toBeGreaterThan(2);
@@ -370,14 +370,14 @@ it("waits for the initial authoritative room state before publishing players", a
   state.join.mockResolvedValue(pending);
   show();
   await waitFor(() => expect(pending.listeners.publish).toBeDefined());
-  expect(screen.queryByText("Movement controls")).not.toBeInTheDocument();
+  expect(screen.queryByText(/Tap or click the ground to walk/)).not.toBeInTheDocument();
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   Object.defineProperty(pending, "state", {
     value: { players: initialPlayers },
     configurable: true,
   });
   act(() => pending.listeners.publish?.());
-  await screen.findByText("Movement controls");
+  await screen.findByText(/Tap or click the ground to walk/);
   await screen.findByText("R3F neighbourhood");
 });
 
@@ -385,7 +385,7 @@ it("adds only the confirmed local activity animation to the scene player snapsho
   state.location = "market";
   state.currentAction = { animation: "socializing" };
   show();
-  await screen.findByText("Movement controls");
+  await screen.findByText(/Tap or click the ground to walk/);
   await screen.findByText("R3F neighbourhood");
 
   const players = state.scene.mock.lastCall?.[0].playersRef.current;
@@ -406,7 +406,7 @@ it("disposes a room whose join completes after navigation to another district", 
   show();
   await waitFor(() => expect(state.join).toHaveBeenCalledWith("city"));
   await changeLocation("market");
-  await screen.findByText("Movement controls");
+  await screen.findByText(/Tap or click the ground to walk/);
   await screen.findByText("R3F neighbourhood");
   const late = room("city");
   await act(async () => {

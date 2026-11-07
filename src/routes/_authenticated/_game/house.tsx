@@ -11,6 +11,7 @@ import {
   HOUSE_ROOM_SIZE,
   draftStartFor,
   firstFreeHouseGridCell,
+  houseDoorThreshold,
   houseStairs,
   isHouseGridCellOccupied,
   snapToHouseGrid,
@@ -45,7 +46,16 @@ import { DrawerSheet } from "@/components/game/housing/DrawerSheet";
 import { drawerAction, fetchDrawerState, storableRows } from "@/lib/drawer";
 import { HouseRoomRenderer } from "@/components/game/housing/HouseRoomRenderer";
 import { useGameTime } from "@/components/game/GameTimeProvider";
+import {
+  beginTransition,
+  completeTransitionStep,
+  endTransition,
+  useOutsideTransition,
+} from "@/lib/outside-transition";
 import { homeFurnitureAction, homeFurnitureActions } from "@/lib/home-furniture-actions";
+
+/** Length of the door swing, matching the door animation in the room. */
+const DOOR_SWING_MS = 650;
 import { foodDeliveryService } from "@/lib/food-delivery-service";
 import { ACTION_CATALOG, type LifeActionId } from "@/lib/life-simulation";
 import { HousingReliefPanel } from "@/components/game/housing/HousingReliefPanel";
@@ -709,7 +719,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       ]);
       setActivityError("");
       toast.success(command === "enter_player_home" ? "You're home." : "You went outside.");
-      if (command === "leave_player_home") await navigate({ to: "/neighborhood" });
     },
     onError: (error: Error) => {
       setActivityError(error.message);
@@ -759,6 +768,61 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     if (!(await walkTo([to[0], 0.06, to[1]]))) return;
     setActiveFloor(up ? 1 : 0);
   };
+  const [doorOpen, setDoorOpen] = useState(false);
+  const outside = useOutsideTransition();
+  const enteringRan = useRef(false);
+  /** Walk to the door, open it, confirm the move with the server, then go to the neighbourhood. */
+  const goOutside = async () => {
+    if (editing || taskBusy || isOffline || !serverState?.house) return;
+    setActivityError("");
+    const [doorX, doorY, doorZ] = houseDoorThreshold(
+      serverState.house.house_type_id,
+      roomWidth,
+      roomDepth,
+    );
+    beginTransition("leaving", "Walking to the door", 5);
+    if (!(await walkTo([doorX, doorY, doorZ]))) {
+      endTransition();
+      return;
+    }
+    completeTransitionStep("Opening the door");
+    setDoorOpen(true);
+    await new Promise<void>((resolve) => window.setTimeout(resolve, DOOR_SWING_MS));
+    completeTransitionStep("Confirming your move");
+    try {
+      await homePresence.mutateAsync("leave_player_home");
+    } catch {
+      setDoorOpen(false);
+      endTransition();
+      return;
+    }
+    completeTransitionStep("Loading the neighbourhood");
+    await navigate({ to: "/neighborhood" });
+  };
+  /** Arriving from the neighbourhood: the door opens and the character walks in. */
+  useEffect(() => {
+    if (outside.kind !== "entering" || !serverState?.house || enteringRan.current) return;
+    enteringRan.current = true;
+    const [doorX, doorY, doorZ] = houseDoorThreshold(
+      serverState.house.house_type_id,
+      roomWidth,
+      roomDepth,
+    );
+    const start: RoomPoint = [0, 0.06, roomDepth * 0.18];
+    completeTransitionStep("Opening the door");
+    movement.place([doorX, doorY, doorZ]);
+    setDoorOpen(true);
+    void (async () => {
+      await new Promise<void>((resolve) => window.setTimeout(resolve, DOOR_SWING_MS));
+      completeTransitionStep("Walking in");
+      await movement.walk([start]);
+      setDoorOpen(false);
+      endTransition();
+      enteringRan.current = false;
+    })();
+    // The room is ready once its house data is loaded; the sequence runs once per arrival.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [outside.kind, serverState?.house?.id]);
   const walkTo = (point: RoomPoint, interact = false) => {
     const path = findRoomPath(
       movement.positionRef.current,
@@ -1293,6 +1357,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           actorPosition={performingPosition}
           actorFacing={currentActivity ? taskFacing : movement.facing}
           {...(taskPose ? { taskPose } : {})}
+          doorOpen={doorOpen}
           onWalk={(point) => {
             if (!editing && !taskBusy && isInsideHome && !isOffline) {
               setActivityError("");
@@ -1347,7 +1412,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
               disabled={isOffline || homePresence.isPending || taskBusy}
               aria-busy={homePresence.isPending}
               onClick={() =>
-                homePresence.mutate(isInsideHome ? "leave_player_home" : "enter_player_home")
+                isInsideHome ? void goOutside() : homePresence.mutate("enter_player_home")
               }
             >
               {homePresence.isPending ? (
