@@ -9,15 +9,148 @@ import {
 } from "@/lib/life-simulation";
 import type { HousePlacement } from "./HouseRoomScene";
 
-// Meal preference is presentation only: all choices use the existing validated cook action.
+// Meal preference is presentation only: every dish uses the existing validated cook action.
+// Raw ingredients are not listed; they are not dishes.
+type Tier = "street" | "home" | "prestige" | "party";
+const MEAL_TIERS: { id: Tier; label: string }[] = [
+  { id: "street", label: "Street food & quick meals" },
+  { id: "home", label: "Home-cooked staples" },
+  { id: "prestige", label: "Prestige & gourmet" },
+  { id: "party", label: "Party food" },
+];
 const MEALS = [
-  { id: "jollof", name: "Jollof rice", symbol: "🍚", description: "A familiar home favourite." },
-  { id: "noodles", name: "Indomie & egg", symbol: "🍜", description: "A warm bowl with egg." },
   {
-    id: "plantain",
-    name: "Plantain & beans",
+    id: "agege-bread-eggs",
+    tier: "street",
+    name: "Agege bread & eggs",
+    symbol: "🍞",
+    description: "Cheap, filling breakfast.",
+  },
+  {
+    id: "indomie",
+    tier: "street",
+    name: "Indomie & egg",
+    symbol: "🍜",
+    description: "Fast noodles, add egg or veg.",
+  },
+  {
+    id: "gari-groundnut",
+    tier: "street",
+    name: "Gari & groundnuts",
+    symbol: "🥜",
+    description: "Soaked gari with sugar and peanuts.",
+  },
+  {
+    id: "roasted-plantain",
+    tier: "street",
+    name: "Roasted plantain",
     symbol: "🍌",
-    description: "A comforting homemade plate.",
+    description: "Boli with peanuts, street-side.",
+  },
+  {
+    id: "gala-lacasera",
+    tier: "street",
+    name: "Gala & Lacasera",
+    symbol: "🥖",
+    description: "Commuter snack combo.",
+  },
+  {
+    id: "jollof",
+    tier: "home",
+    name: "Jollof rice",
+    symbol: "🍚",
+    description: "The home favourite.",
+  },
+  {
+    id: "fried-rice-dodo",
+    tier: "home",
+    name: "Fried rice & dodo",
+    symbol: "🍛",
+    description: "Rice with sweet fried plantain.",
+  },
+  {
+    id: "yam-fries-pepper",
+    tier: "home",
+    name: "Yam fries & pepper sauce",
+    symbol: "🍟",
+    description: "Quick evening plate.",
+  },
+  {
+    id: "amala-gbegiri",
+    tier: "home",
+    name: "Amala, gbegiri & ewedu",
+    symbol: "🥣",
+    description: "Swallow with bean soup and greens.",
+  },
+  {
+    id: "akara-ogi",
+    tier: "home",
+    name: "Akara & ogi",
+    symbol: "🧆",
+    description: "Bean cakes with corn pap.",
+  },
+  {
+    id: "pounded-yam-egusi",
+    tier: "prestige",
+    name: "Pounded yam & egusi",
+    symbol: "🍲",
+    description: "Rich melon soup with assorted meat.",
+  },
+  {
+    id: "efo-riro",
+    tier: "prestige",
+    name: "Efo riro",
+    symbol: "🥬",
+    description: "Rich vegetable soup with dried fish.",
+  },
+  {
+    id: "suya-platter",
+    tier: "prestige",
+    name: "Suya platter",
+    symbol: "🍢",
+    description: "Spiced grilled beef with yaji.",
+  },
+  {
+    id: "isiewu",
+    tier: "prestige",
+    name: "Isiewu",
+    symbol: "🐐",
+    description: "Spiced goat head in a wooden bowl.",
+  },
+  {
+    id: "nkwobi",
+    tier: "prestige",
+    name: "Nkwobi",
+    symbol: "🥘",
+    description: "Spiced cow foot in palm-oil sauce.",
+  },
+  {
+    id: "party-jollof",
+    tier: "party",
+    name: "Party jollof",
+    symbol: "🔥",
+    description: "Smoky, cooked over firewood.",
+  },
+  {
+    id: "moin-moin",
+    tier: "party",
+    name: "Moin moin",
+    symbol: "🫔",
+    description: "Steamed bean pudding with egg or fish.",
+  },
+  {
+    id: "small-chops",
+    tier: "party",
+    name: "Small chops platter",
+    symbol: "🥟",
+    description: "Puff puff, samosas, spring rolls, gizzard.",
+  },
+  {
+    id: "chin-chin",
+    tier: "party",
+    name: "Chin chin",
+    symbol: "🍪",
+    description: "Crunchy fried snack for festive days.",
   },
 ] as const;
 
@@ -36,7 +169,7 @@ export function HomeAccessoryPanel({
   onClose: () => void;
   onUse: (action: LifeActionId) => Promise<boolean>;
 }) {
-  const [meal, setMeal] = useState<string>(MEALS[0].id);
+  const [meal, setMeal] = useState<string>("jollof");
   const [confirmed, setConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const inFlight = useRef(false);
@@ -120,31 +253,38 @@ export function HomeAccessoryPanel({
         </span>
       </div>
       {cooking && (
-        <div className="home-meal-grid" role="radiogroup" aria-label="Meal preference">
-          {MEALS.map((item) => (
-            <label
-              key={item.id}
-              className={`home-meal-card${meal === item.id ? " is-selected" : ""}`}
-            >
-              <input
-                className="sr-only"
-                type="radio"
-                name="home-meal-preference"
-                value={item.id}
-                aria-label={item.name}
-                checked={meal === item.id}
-                disabled={working}
-                onChange={() => {
-                  setMeal(item.id);
-                  setConfirmed(false);
-                }}
-              />
-              <span className="home-meal-symbol" aria-hidden="true">
-                {item.symbol}
-              </span>
-              <strong>{item.name}</strong>
-              <small>{item.description}</small>
-            </label>
+        <div className="home-meal-groups" role="radiogroup" aria-label="Meal preference">
+          {MEAL_TIERS.map((tier) => (
+            <section key={tier.id} className="home-meal-group">
+              <h3 className="home-meal-tier">{tier.label}</h3>
+              <div className="home-meal-grid">
+                {MEALS.filter((item) => item.tier === tier.id).map((item) => (
+                  <label
+                    key={item.id}
+                    className={`home-meal-card${meal === item.id ? " is-selected" : ""}`}
+                  >
+                    <input
+                      className="sr-only"
+                      type="radio"
+                      name="home-meal-preference"
+                      value={item.id}
+                      aria-label={item.name}
+                      checked={meal === item.id}
+                      disabled={working}
+                      onChange={() => {
+                        setMeal(item.id);
+                        setConfirmed(false);
+                      }}
+                    />
+                    <span className="home-meal-symbol" aria-hidden="true">
+                      {item.symbol}
+                    </span>
+                    <strong>{item.name}</strong>
+                    <small>{item.description}</small>
+                  </label>
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       )}
