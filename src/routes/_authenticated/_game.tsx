@@ -251,6 +251,7 @@ function GameLayout() {
           <GameNeedsRail player={player} />
 
           <div className={phoneOpen ? "game-dock-bar is-phone-open" : "game-dock-bar"}>
+            <GameMobileNav hidden={phoneOpen} onNavigate={() => setPhoneOpen(false)} />
             <PhoneLauncher
               compact
               className="game-dock-phone"
@@ -258,7 +259,6 @@ function GameLayout() {
               onOpenChange={setPhoneOpen}
               dock={<GameMobileNav onNavigate={() => setPhoneOpen(false)} />}
             />
-            <GameMobileNav hidden={phoneOpen} onNavigate={() => setPhoneOpen(false)} />
           </div>
           <HousingChooser
             open={housingOpen}

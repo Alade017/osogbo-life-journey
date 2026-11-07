@@ -436,3 +436,45 @@
   margin: 0 !important;
   box-sizing: border-box !important;
 }
+
+/* Bottom bar, final: the links fill the left part of the bar; Phone sits on the right in a matching 64px pill. */
+.game-dock-bar {
+  display: block !important;
+  height: var(--game-navigation-height);
+  padding-left: 0 !important;
+  padding-right: 72px !important;
+  box-sizing: border-box !important;
+}
+
+.game-dock-bar > nav.game-floating-nav {
+  width: 100% !important;
+  height: var(--game-navigation-height) !important;
+  margin: 0 !important;
+  border-radius: 18px !important;
+  box-sizing: border-box !important;
+}
+
+.game-dock-bar > .game-dock-phone {
+  position: absolute !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  right: 0 !important;
+  left: auto !important;
+  width: 64px !important;
+  height: var(--game-navigation-height) !important;
+  min-height: var(--game-navigation-height) !important;
+  flex: none !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 18px !important;
+  background: var(--popover) !important;
+  box-shadow: var(--elevation-card) !important;
+  color: var(--primary) !important;
+  display: grid !important;
+  grid-template-rows: 18px auto !important;
+  justify-items: center !important;
+  align-content: center !important;
+  gap: 2px !important;
+  padding: 4px 2px !important;
+}
