@@ -27,6 +27,14 @@ export type CatalogActivityResult = {
   duplicate: boolean;
 };
 
+
+const EXPECTED_ACTIVITY_REJECTION =
+  /^(?:This activity|Travel to |Requires |Resume your personal simulation|Finish or interrupt|That home activity|Request ID belongs|Invalid activity request)/i;
+
+export function isExpectedActivityRejection(message: string): boolean {
+  return EXPECTED_ACTIVITY_REJECTION.test(message.trim());
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
