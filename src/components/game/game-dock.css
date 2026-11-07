@@ -1,7 +1,7 @@
 /* Shared geometry for page content, fixed controls and the phone's portal. */
 :root {
-  --game-navigation-height: 72px;
-  --game-navigation-gap: 10px;
+  --game-navigation-height: 56px;
+  --game-navigation-gap: 8px;
   --game-dock-space: calc(
     var(--game-navigation-height) + 2 * var(--game-navigation-gap) + env(safe-area-inset-bottom)
   );
@@ -35,10 +35,10 @@
   max-width: none;
   height: var(--game-navigation-height);
   min-height: var(--game-navigation-height);
-  padding: 6px;
+  padding: 4px;
   box-sizing: border-box;
   border: 1px solid var(--border);
-  border-radius: 22px;
+  border-radius: 18px;
   background: var(--popover);
   color: var(--popover-foreground);
   box-shadow: var(--elevation-card);
@@ -52,20 +52,20 @@
   :is(.mobile-nav-link, .game-dock-phone) {
   position: relative;
   display: grid;
-  grid-template-rows: 24px auto;
+  grid-template-rows: 18px auto;
   justify-items: center;
   align-content: center;
   justify-self: stretch;
-  gap: 3px;
+  gap: 2px;
   width: 100%;
   height: 100%;
   min-width: 44px;
-  min-height: 44px;
+  min-height: 40px;
   box-sizing: border-box;
   margin: 0;
-  padding: 4px 2px;
+  padding: 2px 2px;
   border: 0;
-  border-radius: 16px;
+  border-radius: 14px;
   background: transparent;
   color: var(--muted-foreground);
   box-shadow: none;
@@ -87,9 +87,9 @@
   clip: auto;
   clip-path: none;
   white-space: nowrap;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 650;
-  line-height: 1.2;
+  line-height: 1.1;
 }
 
 :is(.city-game.navigation-redesign, .phone-dialog-shell)
@@ -97,8 +97,8 @@
   .phone-launcher-icon {
   display: grid;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: 18px;
+  height: 18px;
   padding: 0;
   background: transparent;
   color: inherit;
@@ -107,8 +107,8 @@
 :is(.city-game.navigation-redesign, .phone-dialog-shell)
   nav.game-mobile-nav.game-floating-nav.game-persistent-dock
   svg {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   color: inherit;
   transform: none;
 }
@@ -199,13 +199,18 @@
 
 /* The handset glyph needs no decorative frame inside the navigation button. */
 :is(.city-game.navigation-redesign, .phone-dialog-shell)
-  nav.game-mobile-nav.game-floating-nav.game-persistent-dock .phone-launcher-icon {
+  nav.game-mobile-nav.game-floating-nav.game-persistent-dock
+  .phone-launcher-icon {
   border: 0;
   outline: 0;
   box-shadow: none;
   border-radius: 0;
 }
 :is(.city-game.navigation-redesign, .phone-dialog-shell)
-  nav.game-mobile-nav.game-floating-nav.game-persistent-dock .phone-launcher-icon::before,
+  nav.game-mobile-nav.game-floating-nav.game-persistent-dock
+  .phone-launcher-icon::before,
 :is(.city-game.navigation-redesign, .phone-dialog-shell)
-  nav.game-mobile-nav.game-floating-nav.game-persistent-dock .phone-launcher-icon::after { content: none; }
+  nav.game-mobile-nav.game-floating-nav.game-persistent-dock
+  .phone-launcher-icon::after {
+  content: none;
+}
