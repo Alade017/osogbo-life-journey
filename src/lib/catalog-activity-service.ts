@@ -40,43 +40,43 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export function parseCatalogActivityResult(value: unknown): CatalogActivityResult {
-  if (!isRecord(value) || !isRecord(value.activity)) {
+  if (!isRecord(value) || !isRecord(value["activity"])) {
     throw new Error("The server returned an invalid activity completion.");
   }
 
-  const activity = value.activity;
+  const activity = value["activity"];
   if (
-    typeof activity.id !== "string" ||
-    typeof activity.slug !== "string" ||
-    typeof activity.name !== "string" ||
-    typeof activity.category !== "string" ||
-    !Number.isInteger(activity.duration_minutes) ||
-    Number(activity.duration_minutes) < 1 ||
-    Number(activity.duration_minutes) > 1440 ||
-    !Number.isInteger(activity.cooldown_minutes) ||
-    Number(activity.cooldown_minutes) < 0 ||
-    !Number.isInteger(activity.xp_reward) ||
-    Number(activity.xp_reward) < 0 ||
-    !Number.isInteger(activity.energy_delta) ||
-    Number(activity.energy_delta) < -100 ||
-    Number(activity.energy_delta) > 100 ||
-    !Number.isInteger(activity.hunger_delta) ||
-    Number(activity.hunger_delta) < -100 ||
-    Number(activity.hunger_delta) > 100 ||
-    !Number.isInteger(activity.thirst_delta) ||
-    Number(activity.thirst_delta) < -100 ||
-    Number(activity.thirst_delta) > 100 ||
-    typeof activity.completed_at !== "string" ||
-    (activity.cooldown_ends_at !== null && typeof activity.cooldown_ends_at !== "string") ||
-    typeof value.duplicate !== "boolean"
+    typeof activity["id"] !== "string" ||
+    typeof activity["slug"] !== "string" ||
+    typeof activity["name"] !== "string" ||
+    typeof activity["category"] !== "string" ||
+    !Number.isInteger(activity["duration_minutes"]) ||
+    Number(activity["duration_minutes"]) < 1 ||
+    Number(activity["duration_minutes"]) > 1440 ||
+    !Number.isInteger(activity["cooldown_minutes"]) ||
+    Number(activity["cooldown_minutes"]) < 0 ||
+    !Number.isInteger(activity["xp_reward"]) ||
+    Number(activity["xp_reward"]) < 0 ||
+    !Number.isInteger(activity["energy_delta"]) ||
+    Number(activity["energy_delta"]) < -100 ||
+    Number(activity["energy_delta"]) > 100 ||
+    !Number.isInteger(activity["hunger_delta"]) ||
+    Number(activity["hunger_delta"]) < -100 ||
+    Number(activity["hunger_delta"]) > 100 ||
+    !Number.isInteger(activity["thirst_delta"]) ||
+    Number(activity["thirst_delta"]) < -100 ||
+    Number(activity["thirst_delta"]) > 100 ||
+    typeof activity["completed_at"] !== "string" ||
+    (activity["cooldown_ends_at"] !== null && typeof activity["cooldown_ends_at"] !== "string") ||
+    typeof value["duplicate"] !== "boolean"
   ) {
     throw new Error("The server returned incomplete activity completion data.");
   }
 
   return {
-    snapshot: parseSimulationSnapshot(value.snapshot),
+    snapshot: parseSimulationSnapshot(value["snapshot"]),
     activity: activity as unknown as CatalogActivityCompletion,
-    duplicate: value.duplicate,
+    duplicate: value["duplicate"],
   };
 }
 
@@ -98,7 +98,7 @@ export async function performCatalogActivity(args: {
   }
 
   const result = parseCatalogActivityResult(data);
-  if (result.activity.slug !== args.activitySlug) {
+  if (result.activity["slug"] !== args.activitySlug) {
     throw new Error("The server completed a different catalogue activity than requested.");
   }
 
