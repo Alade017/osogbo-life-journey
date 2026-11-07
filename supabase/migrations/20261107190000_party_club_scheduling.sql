@@ -18,6 +18,8 @@ alter table public.party_venues
   check (
     (
       venue_kind = 'club'
+      and opening_hour is not null
+      and closing_hour is not null
       and opening_hour between 0 and 23
       and closing_hour between 0 and 23
       and opening_hour <> closing_hour
