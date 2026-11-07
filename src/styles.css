@@ -5242,9 +5242,10 @@
   animation: world-loading-spin 1s linear infinite;
 }
 
+/* Unknown progress: fill once to 85% and hold, rather than looping forever. */
 .travel-progress-track.is-indeterminate > span {
-  width: 35%;
-  animation: world-loading-progress 1.25s ease-in-out infinite;
+  width: 0;
+  animation: world-loading-fill 6s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
 }
 
 .neighborhood-world-card {
@@ -5268,12 +5269,12 @@
   }
 }
 
-@keyframes world-loading-progress {
+@keyframes world-loading-fill {
   from {
-    transform: translateX(-120%);
+    width: 0;
   }
   to {
-    transform: translateX(320%);
+    width: 85%;
   }
 }
 

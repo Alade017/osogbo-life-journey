@@ -97,7 +97,7 @@ export function HomeAccessoryPanel({
       <div className="home-accessory-facts">
         <span>
           <Clock3 size={14} />
-          {homeTaskSeconds(actionId)}s � {action.durationMinutes} game min
+          {homeTaskSeconds(actionId)}s
         </span>
         <span>
           {action.cost === 0
@@ -139,7 +139,7 @@ export function HomeAccessoryPanel({
                       </span>
                       <span className="home-meal-time">
                         <Clock3 size={12} aria-hidden="true" />
-                        {action.durationMinutes}m
+                        {homeTaskSeconds(actionId)}s
                       </span>
                     </span>
                     <span className="home-meal-price">

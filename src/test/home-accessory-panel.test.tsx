@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, expect, it, vi } from "vitest";
 import { HomeAccessoryPanel } from "@/components/game/housing/HomeAccessoryPanel";
 import { ACTION_CATALOG } from "@/lib/life-simulation";
+import { homeTaskSeconds } from "@/lib/home-furniture-actions";
 
 afterEach(cleanup);
 const placement = {
@@ -25,9 +26,7 @@ it("shows real cooking terms and changes meal preference without changing the ac
   const p = props();
   render(<HomeAccessoryPanel {...p} />);
   expect(screen.getByRole("region", { name: "Your cooker action" })).toBeVisible();
-  expect(
-    screen.getByText(`18s � ${ACTION_CATALOG.cook.durationMinutes} game min`),
-  ).toBeInTheDocument();
+  expect(screen.getAllByText(`${homeTaskSeconds("cook")}s`).length).toBeGreaterThan(0);
   expect(screen.getByText(`+${ACTION_CATALOG.cook.needs.hunger} Hunger`)).toBeInTheDocument();
   fireEvent.click(screen.getByRole("radio", { name: "Akara & ogi" }));
   expect(screen.getByRole("radio", { name: "Akara & ogi" })).toBeChecked();
@@ -119,7 +118,7 @@ it("shows alternative task durations and passes the chosen action to the task ru
   const p = props();
   render(<HomeAccessoryPanel {...p} placement={{ ...placement, item_id: "rain-shower" }} />);
   fireEvent.click(screen.getByRole("button", { name: /Wash your hands 3s/ }));
-  expect(screen.getByText("3s � 3 game min")).toBeInTheDocument();
+  expect(screen.getAllByText("3s").length).toBeGreaterThan(0);
   expect(screen.getByText("+12 Hygiene")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Wash your hands" }));
   expect(p.onUse).toHaveBeenCalledWith("wash_hands");
