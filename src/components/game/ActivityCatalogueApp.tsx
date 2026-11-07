@@ -86,8 +86,9 @@ export function ActivityCatalogueApp() {
       (locationFilter === "any" ? activity.location_id === null : activity.location_id === locationFilter);
     return !mapAction && matchesLocation && (category === "all" || activity.category === category);
   });
+  const playerHistory = (history ?? []).filter((row) => row.character_id === character?.id);
   const cooldownFor = (activity: Activity) => {
-    const latest = (history ?? []).find((row) => row.activity_id === activity.id);
+    const latest = playerHistory.find((row) => row.activity_id === activity.id);
     if (!latest || latest.cooldown_minutes <= 0) return null;
     const ends = new Date(latest.completed_at).getTime() + latest.cooldown_minutes * 60_000;
     return ends > Date.now() ? ends : null;
@@ -164,7 +165,7 @@ export function ActivityCatalogueApp() {
       })}</div>}
       <section className="space-y-2" aria-label="Recent activity history">
         <h3 className="text-sm font-semibold">Recent activity</h3>
-        {history?.length ? <div className="space-y-2">{history.slice(0,8).map((entry) =>
+        {playerHistory.length ? <div className="space-y-2">{playerHistory.slice(0,8).map((entry) =>
           <div key={entry.id} className="flex items-center justify-between gap-3 rounded-lg border bg-card p-2.5 text-xs">
             <span className="min-w-0"><strong className="block truncate">{entry.activity_name}</strong><span className="text-muted-foreground">{new Date(entry.completed_at).toLocaleString()}</span></span>
             <span className="shrink-0">+{entry.xp_reward} XP</span>
