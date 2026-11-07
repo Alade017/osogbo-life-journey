@@ -46,6 +46,12 @@ function unsupportedRewardMetadata(value: Activity["rewards"]) {
     return true;
   });
 }
+function configuredSocialReward(value: Activity["rewards"]) {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return null;
+  const reward = (value as Record<string, unknown>).social;
+  return typeof reward === "number" && Number.isInteger(reward) && reward >= -100 && reward <= 100
+    ? reward : null;
+}
 function configuredSkillReward(value: Activity["rewards"]) {
   if (value === null || typeof value !== "object" || Array.isArray(value)) return null;
   const config = (value as Record<string, unknown>).skillXp;
@@ -144,6 +150,7 @@ export function ActivityCatalogueApp() {
         const cooldown = cooldownFor(activity);
         const reason = blocked ?? (cooldown ? "Cooling down" : null);
         const skillReward = configuredSkillReward(activity.rewards);
+        const socialReward = configuredSocialReward(activity.rewards);
         const locationName = activity.location_id ? locations?.find((row) => row.id === activity.location_id)?.name ?? "Required location" : "Anywhere";
         return <article key={activity.id} className="rounded-xl border bg-card p-3 text-card-foreground">
           <div className="flex items-start justify-between gap-3"><div className="min-w-0">
@@ -153,7 +160,7 @@ export function ActivityCatalogueApp() {
           <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <span>📍 {locationName}</span><span>⚡ {activity.energy_delta > 0 ? "+" : ""}{activity.energy_delta} energy</span>
             <span>🍲 {activity.hunger_delta > 0 ? "+" : ""}{activity.hunger_delta} hunger</span><span>💧 {activity.thirst_delta > 0 ? "+" : ""}{activity.thirst_delta} thirst</span>
-            <span>⭐ +{activity.xp_reward} XP</span>{skillReward && <span>+{skillReward.xp} {skillReward.slug} skill XP</span>}
+            <span>⭐ +{activity.xp_reward} XP</span>{socialReward !== null && <span>{socialReward > 0 ? "+" : ""}{socialReward} social</span>}{skillReward && <span>+{skillReward.xp} {skillReward.slug} skill XP</span>}
             {activity.cooldown_minutes > 0 && <span>Cooldown {activity.cooldown_minutes} min</span>}
           </div>
           {unsupportedRewardMetadata(activity.rewards) && <p className="mt-2 text-[11px] text-muted-foreground">Some configured reward metadata has no defined effect yet; it is not awarded.</p>}
