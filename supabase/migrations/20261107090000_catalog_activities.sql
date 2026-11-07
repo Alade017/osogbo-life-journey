@@ -370,14 +370,14 @@ begin
     raise exception 'Personal simulation needs are not ready. Reconnect and retry.';
   end if;
   next_needs := jsonb_set(next_needs, '{energy}', to_jsonb(next_energy), true);
-  needs := jsonb_set(next_needs, '{hunger}', to_jsonb(100 - next_hunger), true);
-  needs := jsonb_set(next_needs, '{hygiene}', to_jsonb(greatest(0, least(100,
+  next_needs := jsonb_set(next_needs, '{hunger}', to_jsonb(100 - next_hunger), true);
+  next_needs := jsonb_set(next_needs, '{hygiene}', to_jsonb(greatest(0, least(100,
     (next_needs->>'hygiene')::numeric - elapsed_hygiene_rate * activity_elapsed_minutes))), true);
-  needs := jsonb_set(next_needs, '{bladder}', to_jsonb(greatest(0, least(100,
+  next_needs := jsonb_set(next_needs, '{bladder}', to_jsonb(greatest(0, least(100,
     (next_needs->>'bladder')::numeric - elapsed_bladder_rate * activity_elapsed_minutes))), true);
-  needs := jsonb_set(next_needs, '{fun}', to_jsonb(greatest(0, least(100,
+  next_needs := jsonb_set(next_needs, '{fun}', to_jsonb(greatest(0, least(100,
     (next_needs->>'fun')::numeric - elapsed_fun_rate * activity_elapsed_minutes))), true);
-  needs := jsonb_set(next_needs, '{social}', to_jsonb(greatest(0, least(100,
+  next_needs := jsonb_set(next_needs, '{social}', to_jsonb(greatest(0, least(100,
     (next_needs->>'social')::numeric - elapsed_social_rate * activity_elapsed_minutes))), true);
 
   total_minutes := (s.personal_time->>'hour')::integer * 60
