@@ -1339,15 +1339,17 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
                         ? ACTION_CATALOG[timedActivity.actionId].name
                         : "Walking"}
               </strong>
-              <span role="status">
-                {movement.walking
-                  ? "On the way"
-                  : taskTiming && timedActivity
-                    ? displayedElapsed >= taskTiming.duration
-                      ? "Confirming completion�"
-                      : Math.ceil(taskTiming.duration - displayedElapsed) + "s remaining"
-                    : "Please wait"}
-              </span>
+              {!(timedActivity && taskTiming) && (
+                <span role="status">
+                  {movement.walking
+                    ? "On the way"
+                    : taskTiming && timedActivity
+                      ? displayedElapsed >= taskTiming.duration
+                        ? "Confirming completion�"
+                        : Math.ceil(taskTiming.duration - displayedElapsed) + "s remaining"
+                      : "Please wait"}
+                </span>
+              )}
             </div>
             {timedActivity && taskTiming && (
               <ProgressRing
