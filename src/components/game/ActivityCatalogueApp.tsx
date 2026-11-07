@@ -250,7 +250,7 @@ export function ActivityCatalogueApp() {
     const storageKey = `osogbo-life:pending-catalog-activity:${character?.id ?? "unknown"}:${activity.slug}`;
     let storedRequestId: string | null = null;
     try {
-      storedRequestId = sessionStorage.getItem(storageKey);
+      storedRequestId = localStorage.getItem(storageKey);
     } catch {
       // Storage may be unavailable in restricted browsing contexts; keep an in-memory fallback.
     }
@@ -260,7 +260,7 @@ export function ActivityCatalogueApp() {
       crypto.randomUUID();
     pendingRequestIds.current.set(activity.slug, requestId);
     try {
-      sessionStorage.setItem(storageKey, requestId);
+      localStorage.setItem(storageKey, requestId);
     } catch {
       // The in-memory request ID still protects retries while this app remains mounted.
     }
@@ -269,8 +269,8 @@ export function ActivityCatalogueApp() {
       const result = await performCatalogActivity(activity.slug, requestId);
       pendingRequestIds.current.delete(activity.slug);
       try {
-        if (sessionStorage.getItem(storageKey) === requestId) {
-          sessionStorage.removeItem(storageKey);
+        if (localStorage.getItem(storageKey) === requestId) {
+          localStorage.removeItem(storageKey);
         }
       } catch {
         // No persistent key was available to clear.
