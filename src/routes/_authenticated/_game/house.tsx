@@ -1471,18 +1471,18 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       {!editing && (
         <button
           type="button"
-          className="house-light-switch"
+          className="house-icon-button house-light-switch"
           aria-pressed={lightOn}
           aria-label={lightOn ? "Turn the room light off" : "Turn the room light on"}
+          title={lightOn ? "Light on" : "Light off"}
           disabled={isOffline || !character?.id || lightMutation.isPending}
           onClick={() => lightMutation.mutate(!lightOn)}
         >
           {lightOn ? (
-            <Lightbulb size={18} aria-hidden="true" />
+            <Lightbulb size={20} aria-hidden="true" />
           ) : (
-            <LightbulbOff size={18} aria-hidden="true" />
+            <LightbulbOff size={20} aria-hidden="true" />
           )}
-          <span>{lightOn ? "Light on" : "Light off"}</span>
         </button>
       )}
       {!editing && drawerOpen && (

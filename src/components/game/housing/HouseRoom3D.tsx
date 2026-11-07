@@ -322,7 +322,7 @@ const FURNITURE_COLOURS = {
   screen: "#2d3138",
   bedLinen: "#f6efe0",
   bedPillow: "#fbf6ea",
-  blanket: "#c9825b",
+  blanket: "#89977c",
   wardrobeDoor: "#9b6a42",
   brass: "#d8b56a",
 } as const;
@@ -1303,7 +1303,9 @@ function SlotObject({
           }}
         >
           <boxGeometry args={[0.48, 0.08, 0.48]} />
-          <WorldMaterial tone={activeSlotType === slot.slot_type || hovered ? "slate" : "clay"} />
+          <WorldMaterial
+            tone={activeSlotType === slot.slot_type || hovered ? "slate" : "concrete"}
+          />
         </mesh>
       )}
       {editMode && !placement && (
