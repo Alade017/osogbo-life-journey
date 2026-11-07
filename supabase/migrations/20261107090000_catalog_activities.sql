@@ -243,6 +243,7 @@ declare
   reward_social integer := 0;
   reward_skill_slug text;
   reward_skill_xp integer := 0;
+  need_key text;
   current_skill_xp integer;
   next_skill_xp integer;
   elapsed_hunger_rate numeric := 0.035;
@@ -392,9 +393,9 @@ begin
   end if;
 
   -- Reconcile character stats changed by other server systems before applying this activity.
-  foreach item_slug in array array['energy', 'hunger', 'fun', 'social'] loop
-    if source->item_slug is distinct from s.character_snapshot->item_slug then
-      next_needs := jsonb_set(next_needs, array[item_slug], source->item_slug, true);
+  foreach need_key in array array['energy', 'hunger', 'fun', 'social'] loop
+    if source->need_key is distinct from s.character_snapshot->need_key then
+      next_needs := jsonb_set(next_needs, array[need_key], source->need_key, true);
     end if;
   end loop;
 
