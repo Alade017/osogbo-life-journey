@@ -13,9 +13,7 @@ describe("house navigation", () => {
             Math.abs(point[2] - wall.position[2]) < wall.size[2] / 2 + 0.19,
         ).toBe(false);
       }
-    expect(path.some((p) => Math.abs(p[0] - 0.45) < 0.5 && Math.abs(p[2] + 0.816) < 0.3)).toBe(
-      true,
-    );
+    expect(path.some((p) => Math.abs(p[0] + 2.25) < 0.6 && Math.abs(p[2]) < 0.3)).toBe(true);
   });
   it("stops next to furniture rather than walking into it", () => {
     const obstacle = { x: 1, z: 1, w: 1.4, d: 2 };

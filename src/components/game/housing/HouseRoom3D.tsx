@@ -16,7 +16,8 @@ import { homeFurnitureAction } from "@/lib/home-furniture-actions";
 import type { HousePlacement, HouseSlot } from "./HouseRoomScene";
 import {
   HOUSE_ROOM_SIZE as ROOM_SIZE,
-  housePartitionSegments,
+  housePartitionSegmentsForFloor,
+  houseStairs,
   interpolateRoomPosition,
   roomCoordinatesToPercent,
   isHouseGridCellOccupied,
@@ -25,6 +26,8 @@ import {
   snapToHouseGrid,
   houseSlotPosition as slotPosition,
   houseWallSegments,
+  houseRearDoorCenter,
+  FOUR_ROOM_HOME_TYPES,
   type HouseRoomRendererProps as Props,
 } from "./house-room-contract";
 
@@ -80,10 +83,7 @@ function RoomFloor({
       tileDarkShade: [],
     };
     const tileSize = 0.78;
-    const hasPrivateRooms = ["studio-flat", "mini-flat", "bungalow", "duplex"].includes(
-      houseTypeId,
-    );
-    const hasBathroomZone = houseTypeId === "bungalow" || houseTypeId === "duplex";
+    const hasPrivateRooms = FOUR_ROOM_HOME_TYPES.includes(houseTypeId);
     let row = 0;
     for (let z0 = -depth / 2; z0 < depth / 2; z0 += tileSize, row += 1) {
       const tileDepth = Math.min(tileSize, depth / 2 - z0);
@@ -93,12 +93,13 @@ function RoomFloor({
         const x = x0 + tileWidth / 2;
         const z = z0 + tileDepth / 2;
         const alternate = (row + column) % 2 === 0;
+        // Four-room homes: kitchen and dining back-right, bathroom front-right.
         const tone: FloorTone =
-          hasBathroomZone && x < -width * 0.28 && z < -depth * 0.12
+          hasPrivateRooms && x > 0 && z > 0
             ? alternate
               ? "tileBath"
               : "tileBathShade"
-            : hasPrivateRooms && x > width * 0.02 && z < -depth * 0.12
+            : hasPrivateRooms && x > 0 && z < 0
               ? alternate
                 ? "tileDark"
                 : "tileDarkShade"
@@ -123,21 +124,63 @@ function RoomFloor({
   );
 }
 
+function HouseStairsModel({
+  stairs,
+  onUse,
+}: {
+  stairs: NonNullable<ReturnType<typeof houseStairs>>;
+  onUse: (() => void) | undefined;
+}) {
+  const steps = 8;
+  const stepDepth = (stairs.z1 - stairs.z0) / steps;
+  return (
+    <group
+      onClick={(event) => {
+        event.stopPropagation();
+        if (event.delta <= 4) onUse?.();
+      }}
+    >
+      {Array.from({ length: steps }, (_, index) => {
+        const height = (index + 1) * 0.18;
+        return (
+          <mesh
+            key={`stair-step-${index}`}
+            castShadow
+            receiveShadow
+            position={[
+              (stairs.x0 + stairs.x1) / 2,
+              height / 2,
+              stairs.z1 - stepDepth * (index + 0.5),
+            ]}
+          >
+            <boxGeometry args={[stairs.x1 - stairs.x0, height, stepDepth]} />
+            <meshStandardMaterial color={FURNITURE_COLOURS.mediaWood} roughness={0.7} />
+          </mesh>
+        );
+      })}
+    </group>
+  );
+}
+
 function OsogboRoomPrototype({
   houseTypeId,
   width,
   depth,
   editMode,
+  activeFloor = 0,
+  onUseStairs,
 }: {
   houseTypeId: string;
   width: number;
   depth: number;
+  activeFloor?: 0 | 1;
+  onUseStairs: (() => void) | undefined;
   editMode: boolean;
 }) {
   const height = WORLD_SCALE.door * 1.15;
   const doorwayWidth = 1.12;
   const doorHeight = WORLD_SCALE.door * 1.1;
-  const rearDoorCenter = width * 0.22;
+  const rearDoorCenter = houseRearDoorCenter(houseTypeId, width);
   return (
     <group>
       <mesh receiveShadow position={[0, -0.26, 0]}>
@@ -151,7 +194,7 @@ function OsogboRoomPrototype({
         <WorldMaterial tone="ground" />
       </mesh>
       <group name="house-cutaway-walls" scale={[1, editMode ? 0.28 : 1, 1]}>
-        {houseWallSegments(width, depth, height, doorwayWidth).map((segment) => (
+        {houseWallSegments(width, depth, height, doorwayWidth, rearDoorCenter).map((segment) => (
           <group key={segment.id}>
             <mesh castShadow receiveShadow position={segment.position}>
               <boxGeometry args={segment.size} />
@@ -194,7 +237,8 @@ function OsogboRoomPrototype({
           <sphereGeometry args={[0.045, 8, 6]} />
           <WorldMaterial tone="trim" />
         </mesh>
-        <group position={[-width * 0.28, height * 0.57, -depth / 2 + 0.12]}>
+        {/* The window sits opposite the entrance door on the back wall, so they never overlap. */}
+        <group position={[-rearDoorCenter, height * 0.57, -depth / 2 + 0.12]}>
           <mesh castShadow receiveShadow>
             <boxGeometry args={[1.62, 0.94, 0.12]} />
             <WorldMaterial tone="trim" />
@@ -214,7 +258,10 @@ function OsogboRoomPrototype({
             <WorldMaterial tone="trim" />
           </mesh>
         </group>
-        {housePartitionSegments(houseTypeId, width, depth).map((segment) => (
+        {houseStairs(houseTypeId, width, depth) && (
+          <HouseStairsModel stairs={houseStairs(houseTypeId, width, depth)!} onUse={onUseStairs} />
+        )}
+        {housePartitionSegmentsForFloor(houseTypeId, width, depth, activeFloor).map((segment) => (
           <group key={segment.id}>
             <mesh castShadow receiveShadow position={segment.position}>
               <boxGeometry args={segment.size} />
@@ -322,7 +369,7 @@ const FURNITURE_COLOURS = {
   screen: "#2d3138",
   bedLinen: "#f6efe0",
   bedPillow: "#fbf6ea",
-  blanket: "#c9825b",
+  blanket: "#89977c",
   wardrobeDoor: "#9b6a42",
   brass: "#d8b56a",
 } as const;
@@ -729,6 +776,187 @@ export function FurnitureFallback({
             </mesh>
           )),
         )}
+      </group>
+    );
+  if (kind === "drawer")
+    return (
+      <group>
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[0.9, 0.82, 0.44]}
+          radius={0.04}
+          smoothness={4}
+          position={[0, 0.41, 0]}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.mediaWood} roughness={0.7} />
+        </RoundedBox>
+        {[0.66, 0.42, 0.18].map((y) => (
+          <group key={`drawer-front-${y}`}>
+            <RoundedBox
+              castShadow
+              receiveShadow
+              args={[0.8, 0.2, 0.03]}
+              radius={0.02}
+              smoothness={4}
+              position={[0, y, 0.235]}
+            >
+              <meshStandardMaterial color={FURNITURE_COLOURS.wardrobeDoor} roughness={0.6} />
+            </RoundedBox>
+            <mesh castShadow receiveShadow position={[0, y, 0.262]}>
+              <sphereGeometry args={[0.025, 10, 8]} />
+              <meshStandardMaterial
+                color={FURNITURE_COLOURS.brass}
+                metalness={0.6}
+                roughness={0.35}
+              />
+            </mesh>
+          </group>
+        ))}
+      </group>
+    );
+  if (kind === "dining-table")
+    return (
+      <group>
+        <mesh castShadow receiveShadow position={[0, 0.025, 0]}>
+          <cylinderGeometry args={[0.34, 0.36, 0.05, 20]} />
+          <meshStandardMaterial color={FURNITURE_COLOURS.mediaWood} roughness={0.7} />
+        </mesh>
+        <mesh castShadow receiveShadow position={[0, 0.38, 0]}>
+          <cylinderGeometry args={[0.07, 0.08, 0.7, 12]} />
+          <meshStandardMaterial color={FURNITURE_COLOURS.mediaWood} roughness={0.7} />
+        </mesh>
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[1.0, 0.06, 1.0]}
+          radius={0.03}
+          smoothness={4}
+          position={[0, 0.76, 0]}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.mediaWood} roughness={0.7} />
+        </RoundedBox>
+      </group>
+    );
+  if (kind === "dining-chair")
+    return (
+      <group>
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[0.42, 0.06, 0.42]}
+          radius={0.025}
+          smoothness={4}
+          position={[0, 0.46, 0]}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.mediaWood} roughness={0.7} />
+        </RoundedBox>
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[0.42, 0.44, 0.06]}
+          radius={0.025}
+          smoothness={4}
+          position={[0, 0.74, -0.18]}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.mediaWood} roughness={0.7} />
+        </RoundedBox>
+        {[-0.17, 0.17].flatMap((x) =>
+          [-0.17, 0.17].map((z) => (
+            <mesh castShadow receiveShadow key={`chair-leg-${x}-${z}`} position={[x, 0.22, z]}>
+              <cylinderGeometry args={[0.025, 0.025, 0.44, 8]} />
+              <meshStandardMaterial color={FURNITURE_COLOURS.mediaWood} roughness={0.7} />
+            </mesh>
+          )),
+        )}
+      </group>
+    );
+  if (kind === "fridge")
+    return (
+      <group>
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[0.62, 1.6, 0.6]}
+          radius={0.04}
+          smoothness={4}
+          position={[0, 0.8, 0]}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.bedLinen} roughness={0.4} />
+        </RoundedBox>
+        <mesh position={[0, 1.16, 0.302]}>
+          <boxGeometry args={[0.6, 0.012, 0.01]} />
+          <meshStandardMaterial color={FURNITURE_COLOURS.screenBezel} />
+        </mesh>
+        {[0.95, 1.3].map((y) => (
+          <mesh key={`fridge-handle-${y}`} castShadow position={[0.24, y, 0.33]}>
+            <boxGeometry args={[0.03, 0.22, 0.03]} />
+            <meshStandardMaterial
+              color={FURNITURE_COLOURS.screenBezel}
+              metalness={0.6}
+              roughness={0.35}
+            />
+          </mesh>
+        ))}
+      </group>
+    );
+  if (kind === "microwave")
+    return (
+      <group>
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[0.5, 0.3, 0.36]}
+          radius={0.03}
+          smoothness={4}
+          position={[0, 0.15, 0]}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.bedLinen} roughness={0.5} />
+        </RoundedBox>
+        <mesh position={[-0.06, 0.15, 0.185]}>
+          <boxGeometry args={[0.32, 0.2, 0.01]} />
+          <meshStandardMaterial color={FURNITURE_COLOURS.screen} roughness={0.2} metalness={0.3} />
+        </mesh>
+      </group>
+    );
+  if (kind === "deep-freezer")
+    return (
+      <group>
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[0.9, 0.85, 0.56]}
+          radius={0.04}
+          smoothness={4}
+          position={[0, 0.425, 0]}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.bedLinen} roughness={0.4} />
+        </RoundedBox>
+        <mesh position={[0, 0.85, 0.283]}>
+          <boxGeometry args={[0.86, 0.01, 0.01]} />
+          <meshStandardMaterial color={FURNITURE_COLOURS.screenBezel} />
+        </mesh>
+        <mesh castShadow position={[0, 0.7, 0.31]}>
+          <boxGeometry args={[0.4, 0.04, 0.03]} />
+          <meshStandardMaterial
+            color={FURNITURE_COLOURS.screenBezel}
+            metalness={0.6}
+            roughness={0.35}
+          />
+        </mesh>
+      </group>
+    );
+  if (kind === "plate-hanger")
+    return (
+      <group>
+        <mesh castShadow receiveShadow position={[0, 0.7, 0.02]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.22, 0.22, 0.03, 24]} />
+          <meshStandardMaterial color={FURNITURE_COLOURS.bedPillow} roughness={0.5} />
+        </mesh>
+        <mesh castShadow position={[0, 0.7, 0.05]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.13, 0.13, 0.02, 24]} />
+          <meshStandardMaterial color={FURNITURE_COLOURS.blanket} roughness={0.5} />
+        </mesh>
       </group>
     );
   if (kind === "wall-art")
@@ -1193,7 +1421,6 @@ function SlotObject({
   if (!placement && !editMode) return null;
   const artKey = placement?.art_key;
   const safeArtKey = artKey && /^[a-z0-9-]+$/i.test(artKey) ? artKey : null;
-  const showHint = hovered && !editMode && !inputBlocked && !!placement;
   const hoverProps = {
     onPointerOver: (event: ThreeEvent<PointerEvent>) => {
       event.stopPropagation();
@@ -1242,17 +1469,6 @@ function SlotObject({
               <meshBasicMaterial color="#f2c14e" transparent opacity={0.9} depthWrite={false} />
             </mesh>
           )}
-          {showHint && (
-            <Html
-              portal={overlayPortal}
-              zIndexRange={[8, 0]}
-              center
-              position={[0, 0.9, 0]}
-              style={{ pointerEvents: "none" }}
-            >
-              <span className="house-food-package-label">Tap to use</span>
-            </Html>
-          )}
         </group>
       ) : (
         <mesh
@@ -1266,7 +1482,9 @@ function SlotObject({
           }}
         >
           <boxGeometry args={[0.48, 0.08, 0.48]} />
-          <WorldMaterial tone={activeSlotType === slot.slot_type || hovered ? "slate" : "clay"} />
+          <WorldMaterial
+            tone={activeSlotType === slot.slot_type || hovered ? "slate" : "concrete"}
+          />
         </mesh>
       )}
       {editMode && !placement && (
@@ -1286,6 +1504,9 @@ function SlotObject({
 
 export function HouseRoom3D({
   inputBlocked = false,
+  lightOn = true,
+  activeFloor = 0,
+  onUseStairs,
   houseTypeId,
   characterName = "Your character",
   appearance = {},
@@ -1452,13 +1673,15 @@ export function HouseRoom3D({
           }}
           gl={{ antialias: false, powerPreference: "low-power" }}
         >
-          <WorldLighting size={Math.max(width, depth) * 1.5} />
+          <WorldLighting size={Math.max(width, depth) * 1.5} dimmed={!lightOn} />
 
           <OsogboRoomPrototype
             houseTypeId={houseTypeId}
             width={width}
             depth={depth}
             editMode={editMode}
+            activeFloor={activeFloor}
+            onUseStairs={onUseStairs}
           />
           <RoomFloor houseTypeId={houseTypeId} width={width} depth={depth} />
           {!editMode && !inputBlocked && onWalk && (

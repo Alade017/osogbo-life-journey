@@ -81,7 +81,7 @@ describe("house API handlers", () => {
     );
 
     expect(response.status).toBe(200);
-    expect(calls.placeAt).toHaveBeenCalledWith("player-1", "free-sofa", 38.5, 62);
+    expect(calls.placeAt).toHaveBeenCalledWith("player-1", "free-sofa", 38.5, 62, 0);
     expect(calls.place).not.toHaveBeenCalled();
   });
 

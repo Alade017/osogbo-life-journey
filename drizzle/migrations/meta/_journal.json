@@ -568,6 +568,48 @@
       "when": 1792351001018,
       "tag": "0079_free_house_placement",
       "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "7",
+      "when": 1792437401018,
+      "tag": "0080_player_drawer",
+      "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1792523801018,
+      "tag": "0081_house_light",
+      "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1792610201018,
+      "tag": "0082_kitchen_dining_catalogue",
+      "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1792696601018,
+      "tag": "0083_studio_room_layout",
+      "breakpoints": true
+    },
+    {
+      "idx": 85,
+      "version": "7",
+      "when": 1792783001018,
+      "tag": "0084_other_homes_room_layout",
+      "breakpoints": true
+    },
+    {
+      "idx": 86,
+      "version": "7",
+      "when": 1792869401018,
+      "tag": "0085_house_floors",
+      "breakpoints": true
     }
   ]
 }

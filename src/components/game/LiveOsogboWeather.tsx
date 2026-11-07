@@ -27,11 +27,8 @@ export function LiveOsogboWeather() {
   return (
     <span className="world-condition" aria-label="Osogbo live weather">
       {current ? (
-        <a
-          href="https://open-meteo.com/"
-          target="_blank"
-          rel="noopener noreferrer"
-          title={`Open-Meteo current model conditions for Osogbo. Updated ${updated} WAT${stale ? ". Update delayed" : ""}.`}
+        <span
+          title={`Current model conditions for Osogbo. Updated ${updated} WAT${stale ? ". Update delayed" : ""}.`}
           className="inline-flex flex-wrap items-center gap-1.5"
         >
           <Icon size={15} aria-hidden="true" />
@@ -40,7 +37,7 @@ export function LiveOsogboWeather() {
             · {current.isDay ? "Day" : "Night"} · {updated} WAT{stale ? " · Update delayed" : ""} ·
             Open-Meteo
           </small>
-        </a>
+        </span>
       ) : (
         <span role="status">
           {weather.isError ? "Osogbo weather unavailable" : "Loading Osogbo weather…"}
