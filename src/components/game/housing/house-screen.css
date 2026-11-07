@@ -3111,3 +3111,30 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Home tasks (walking, eating and the rest) use the same pill as sleep: name, status and a small progress bar. */
+.house-task-pill > div {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.house-task-pill strong {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.house-task-pill > div > span {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.75;
+  margin: 0;
+}
+
+.house-task-pill progress {
+  width: 48px;
+  height: 6px;
+  flex: none;
+  accent-color: var(--primary);
+}

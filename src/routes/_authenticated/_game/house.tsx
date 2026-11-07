@@ -1321,7 +1321,11 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           />
         )}
         {(movement.walking || walkingTask || startingTask || (timedActivity && !activeSleep)) && (
-          <div className="house-task-progress" role="region" aria-label="Current home task">
+          <div
+            className="house-sleep-pill house-task-pill"
+            role="region"
+            aria-label="Current home task"
+          >
             <div>
               <strong>
                 {collectingPackage
