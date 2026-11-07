@@ -815,11 +815,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     gameTime.simulation.currentAction?.actionId === "sleep"
       ? gameTime.simulation.currentAction
       : null;
-  const sleepProgress = Math.min(
-    100,
-    Math.round(((gameTime.sleepElapsedSeconds ?? 0) / 120) * 100),
-  );
-  const sleepRemaining = Math.max(0, Math.ceil(120 - (gameTime.sleepElapsedSeconds ?? 0)));
 
   const finishSleep = async (cancel: boolean) => {
     if (!activeSleep || isOffline || !gameTime.ready || gameTime.busy) return;
@@ -1019,8 +1014,8 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const taskTiming = gameTime.homeTaskTiming;
   const taskBusy = !!timedActivity || !!walkingTask || startingTask || cancellingTask;
   useEffect(() => {
-    if (!timedActionId || timedActionId === "sleep") return;
-    const timer = window.setInterval(() => setClockNow(Date.now()), 250);
+    if (!timedActionId) return;
+    const timer = window.setInterval(() => setClockNow(Date.now()), 100);
     return () => window.clearInterval(timer);
   }, [timedRequestId, timedActionId]);
   useEffect(() => {
@@ -1062,6 +1057,16 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       setCancellingTask(false);
     }
   };
+  const liveSleepElapsed = (() => {
+    const base = gameTime.sleepElapsedSeconds ?? 0;
+    const running = !isOffline && gameTime.ready && !gameTime.simulation.paused && !document.hidden;
+    return Math.min(
+      120,
+      base + (running ? Math.max(0, clockNow - gameTime.simulation.lastUpdatedAt) / 1000 : 0),
+    );
+  })();
+  const sleepProgress = Math.min(100, Math.round((liveSleepElapsed / 120) * 100));
+  const sleepRemaining = Math.max(0, Math.ceil(120 - liveSleepElapsed));
   const displayedElapsed = taskTiming
     ? Math.min(
         taskTiming.duration,
@@ -1186,10 +1191,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         className={`house-room-card${house.status === "overdue" ? " room-overdue" : ""}${activeSleep ? " is-sleeping" : ""}`}
         aria-label={`${house.house_type.label} room`}
       >
-        <div className="house-home-badge">
-          <House size={16} aria-hidden="true" />
-          <span>{house.house_type.label}</span>
-        </div>
         <HouseRoomRenderer
           inputBlocked={taskBusy || (!editing && !!selectedPlacement && !!selectedAction)}
           houseTypeId={house.house_type_id}
