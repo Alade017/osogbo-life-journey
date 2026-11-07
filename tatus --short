@@ -1,0 +1,170 @@
+warning: in the working copy of 'src/routes/index.tsx', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/src/routes/index.tsx b/src/routes/index.tsx[m
+[1mindex 65426ebe..4a0dc540 100644[m
+[1m--- a/src/routes/index.tsx[m
+[1m+++ b/src/routes/index.tsx[m
+[36m@@ -4,12 +4,19 @@[m [mimport { useQuery, useQueryClient } from "@tanstack/react-query";[m
+ import {[m
+   ArrowRight,[m
+   BriefcaseBusiness,[m
+[32m+[m[32m  Building2,[m
+[32m+[m[32m  CheckCircle2,[m
+[32m+[m[32m  ChevronDown,[m
+[32m+[m[32m  Compass,[m
+   Headphones,[m
+   House,[m
+   LogOut,[m
+   MapPin,[m
+   Music2,[m
+[32m+[m[32m  Palette,[m
+[32m+[m[32m  ShieldCheck,[m
+   Sparkles,[m
+[32m+[m[32m  Store,[m
+   UsersRound,[m
+   VolumeX,[m
+   WalletCards,[m
+[36m@@ -30,11 +37,15 @@[m [mimport {[m
+ } from "@/lib/game-audio";[m
+ import { formatNaira, q } from "@/lib/game";[m
+ import { normalizeEquippedItems } from "@/lib/equipment-service";[m
+[31m-import type { Appearance } from "@/game/avatar-appearance";[m
+[32m+[m[32mimport {[m
+[32m+[m[32m  OUTFITS,[m
+[32m+[m[32m  SKIN_TONES,[m
+[32m+[m[32m  type Appearance,[m
+[32m+[m[32m} from "@/game/avatar-appearance";[m
+ import { LandingBackdrop } from "@/components/game/LandingBackdrop";[m
+ import "@/components/game/landing.css";[m
+ [m
+[31m-// The 3D character loads after the photo and headline are painted, so WebGL never blocks the first view.[m
+[32m+[m[32m// 3D character preview loads non-blockingly so initial UI displays instantly.[m
+ const CharacterPreview = lazy(() =>[m
+   import("@/components/3d/CharacterPreview").then((module) => ({[m
+     default: module.CharacterPreview,[m
+[36m@@ -44,21 +55,23 @@[m [mconst CharacterPreview = lazy(() =>[m
+ export const Route = createFileRoute("/")({[m
+   head: () => ({[m
+     meta: [[m
+[31m-      { title: "OSUN LIFE — A Nigerian life simulation game" },[m
+[32m+[m[32m      { title: "SunLife — Virtual World Game in Osogbo, Nigeria" },[m
+       {[m
+         name: "description",[m
+         content:[m
+[31m-          "Create your character, find work, make a home, and build a life across a fictional Osun-inspired world.",[m
+[32m+[m[32m          "Step into SunLife, a vibrant 3D low-poly virtual world in Osogbo, Nigeria. Customize your character, find work, furnish your home, and explore a living city.",[m
+       },[m
+[31m-      { property: "og:title", content: "OSUN LIFE — A Nigerian life simulation game" },[m
+[32m+[m[32m      { property: "og:title", content: "SunLife — Virtual World Game in Osogbo, Nigeria" },[m
+       {[m
+         property: "og:description",[m
+[31m-        content: "Start a new story or return to your saved life in OSUN LIFE.",[m
+[32m+[m[32m        content:[m
+[32m+[m[32m          "Start your story or return to your virtual life in SunLife (Osogbo, Nigeria).",[m
+       },[m
+[31m-      { name: "twitter:title", content: "OSUN LIFE — A Nigerian life simulation game" },[m
+[32m+[m[32m      { name: "twitter:title", content: "SunLife — Virtual World Game in Osogbo, Nigeria" },[m
+       {[m
+         name: "twitter:description",[m
+[31m-        content: "Find work, make a home, meet people, and shape your virtual life.",[m
+[32m+[m[32m        content:[m
+[32m+[m[32m          "Work shifts, own 3D homes, customize your avatar, and meet players in SunLife.",[m
+       },[m
+       { name: "robots", content: "index, follow" },[m
+     ],[m
+[36m@@ -108,13 +121,197 @@[m [masync function readSessionState(): Promise<SessionState> {[m
+   }[m
+ }[m
+ [m
+[31m-const LIFE_LOOP = [[m
+[31m-  { title: "Create", body: "Shape your look in 3D and name your story." },[m
+[31m-  { title: "Settle in", body: "Pick a home and a district that suits you." },[m
+[31m-  { title: "Work", body: "Take jobs and grow your income." },[m
+[31m-  { title: "Build", body: "Furnish your home and make it yours." },[m
+[31m-  { title: "Connect", body: "Meet people and build real friendships." },[m
+[31m-];[m
+[32m+[m[32m/* ==========================================================================[m
+[32m+[m[32m   CONFIG-DRIVEN CONTENT (ZERO HARDCODING)[m
+[32m+[m[32m   ========================================================================== */[m
+[32m+[m
+[32m+[m[32minterface NavLinkItem {[m
+[32m+[m[32m  label: string;[m
+[32m+[m[32m  href: string;[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mconst NAV_LINKS: readonly NavLinkItem[] = [[m
+[32m+[m[32m  { label: "Features", href: "#features" },[m
+[32m+[m[32m  { label: "Properties", href: "#properties" },[m
+[32m+[m[32m  { label: "Town Map", href: "#town-map" },[m
+[32m+[m[32m  { label: "FAQ", href: "#faq" },[m
+[32m+[m[32m] as const;[m
+[32m+[m
+[32m+[m[32minterface CoreFeatureItem {[m
+[32m+[m[32m  number: string;[m
+[32m+[m[32m  title: string;[m
+[32m+[m[32m  tagline: string;[m
+[32m+[m[32m  description: string;[m
+[32m+[m[32m  icon: typeof BriefcaseBusiness;[m
+[32m+[m[32m  highlights: readonly string[];[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mconst CORE_FEATURES: readonly CoreFeatureItem[] = [[m
+[32m+[m[32m  {[m
+[32m+[m[32m    number: "01",[m
+[32m+[m[32m    title: "Living Economy & Shifts",[m
+[32m+[m[32m    tagline: "Virtual Career",[m
+[32m+[m[32m    description:[m
+[32m+[m[32m      "Clock in at bustling markets, public clinics, or transit hubs. Earn server-verified in-game Naira (₦) at your own pace.",[m
+[32m+[m[32m    icon: BriefcaseBusiness,[m
+[32m+[m[32m    highlights: ["Daily shift wages", "Skill level progression", "Virtual banking at Cedar Bank"],[m
+[32m+[m[32m  },[m
+[32m+[m[32m  {[m
+[32m+[m[32m    number: "02",[m
+[32m+[m[32m    title: "Stylized 3D Homes & Decor",[m
+[32m+[m[32m    tagline: "Modular Living",[m
+[32m+[m[32m    description:[m
+[32m+[m[32m      "Claim your corner in town. Upgrade from starter rooms to private bungalows and furnish every room in real-time 3D.",[m
+[32m+[m[32m    icon: House,[m
+[32m+[m[32m    highlights: ["Interactive room customizer", "50+ furniture and decor items", "Invite visiting players"],[m
+[32m+[m[32m  },[m
+[32m+[m[32m  {[m
+[32m+[m[32m    number: "03",[m
+[32m+[m[32m    title: "Real-Time Social Town",[m
+[32m+[m[32m    tagline: "Persistent World",[m
+[32m+[m[32m    description:[m
+[32m+[m[32m      "Walk the virtual streets of Osogbo, bump into other players, join public gatherings, and send town messages.",[m
+[32m+[m[32m    icon: UsersRound,[m
+[32m+[m[32m    highlights: ["Shared town hangouts", "Direct & local chat", "Persistent cloud save sync"],[m
+[32m+[m[32m  },[m
+[32m+[m[32m] as const;[m
+[32m+[m
+[32m+[m[32minterface LowPolyProperty {[m
+[32m+[m[32m  id: string;[m
+[32m+[m[32m  title: string;[m
+[32m+[m[32m  image: string;[m
+[32m+[m[32m  tier: string;[m
+[32m+[m[32m  priceTag: string;[m
+[32m+[m[32m  specs: string;[m
+[32m+[m[32m  description: string;[m
+[32m+[m[32m  perks: readonly string[];[m
+[32m+[m[32m}[m
+[32m+[m
+[32m+[m[32mconst LOW_POLY_PROPERTIES: readonly LowPolyProperty[] = [[m
+[32m+[m[32m  {[m
+[32m+[m[32m    id: "mini-flat",[m
+[32m+[m[32m    title: "Self-Contained Mini-Flat",[m
+[32m+[m[32m    image: "/assets/homes/mini-flat.webp",[m
+[32m+[m[32m    tier: "Starter Living",[m
+[32m+[m[32m    priceTag: "₦4,200 / week",[m
+[32m+[m[32m    specs: "1 Bed · 1 Bath · Private Kitchenette",[m
+[32m+[m[32m    description:[m
+[32m+[m[32m      "A cozy, self-contained 3D low-poly apartment ideal for young professionals starting out in town.",[m
+[32m+[m[32m    perks: ["Independent kitchenette", "Dedicated furniture slots", "Low overhead rent"],[m
+[32m+[m[32m  },[m
+[32m+[m[32m  {[m
+[32m+[m[32m    id: "bungalow",[m
+[32m+[m[32m    title: "Suburban Bungalow Compound",[m
+[32m+[m[32m    image: "/assets/homes/bungalow.webp",[m
+[32m+[m[32m    tier: "Established Compound",[m
+[32m+[m[32m    priceTag: "₦12,500 / week",[m
+[32m+[m[32m    specs: "2 Beds · 2 Baths · Gated Yard",[m
+[32m+[m[32m 
