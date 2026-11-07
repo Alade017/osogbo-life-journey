@@ -577,16 +577,16 @@ export function FurnitureFallback({
   if (kind === "plant")
     return (
       <group>
-        <mesh castShadow receiveShadow position={[0, 0.18, 0]}>
-          <cylinderGeometry args={[0.24, 0.17, 0.36, 10]} />
+        <mesh castShadow receiveShadow position={[0, 0.08, 0]}>
+          <cylinderGeometry args={[0.11, 0.085, 0.16, 10]} />
           <WorldMaterial tone="clay" />
         </mesh>
-        <mesh castShadow receiveShadow position={[0, 0.62, 0]}>
-          <sphereGeometry args={[0.35, 10, 8]} />
+        <mesh castShadow receiveShadow position={[0, 0.22, 0]}>
+          <sphereGeometry args={[0.16, 10, 8]} />
           <WorldMaterial tone="timber" />
         </mesh>
-        <mesh castShadow receiveShadow position={[-0.16, 0.76, 0.03]}>
-          <sphereGeometry args={[0.2, 8, 6]} />
+        <mesh castShadow receiveShadow position={[-0.07, 0.31, 0.015]}>
+          <sphereGeometry args={[0.09, 8, 6]} />
           <WorldMaterial tone="slate" />
         </mesh>
       </group>
