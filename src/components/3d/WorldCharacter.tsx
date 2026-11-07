@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import type { Group } from "three";
+import { RoundedBox } from "@react-three/drei";
 import {
   normalizeAvatarAppearance,
   SKIN_TONES,
@@ -140,75 +141,102 @@ export function WorldCharacter({
         rotation={[animation === "sleep" ? -Math.PI / 2 : 0, 0, 0]}
         scale={[build, 1, 1]}
       >
-        <mesh position={[0, h * 0.57, 0]} castShadow receiveShadow>
-          <boxGeometry args={[h * 0.28, h * 0.36, h * 0.17]} />
+        {/* Low-poly humanoid, head about a third of the total height. Rounded shapes match the furniture. */}
+        <RoundedBox
+          args={[h * 0.27, h * 0.3, h * 0.15]}
+          radius={h * 0.05}
+          smoothness={3}
+          position={[0, h * 0.52, 0]}
+          castShadow
+          receiveShadow
+        >
           <WorldMaterial color={OUTFITS[safe.outfit]!} />
           {TopModel ? <TopModel h={h} /> : null}
           {BottomModel ? <BottomModel h={h} /> : null}
           {ShoesModel ? <ShoesModel h={h} /> : null}
-        </mesh>
-        <mesh position={[0, h * 0.79, 0]} castShadow>
-          <cylinderGeometry args={[h * 0.055, h * 0.06, h * 0.08, 8]} />
+        </RoundedBox>
+        <mesh position={[0, h * 0.68, 0]} castShadow>
+          <cylinderGeometry args={[h * 0.06, h * 0.07, h * 0.04, 8]} />
           <WorldMaterial color={skin} />
         </mesh>
-        <mesh position={[0, h * 0.9, 0]} castShadow>
-          <sphereGeometry args={[h * 0.12, 12, 8]} />
+        <mesh position={[0, h * 0.84, 0]} castShadow>
+          <sphereGeometry args={[h * 0.165, 8, 6]} />
           <WorldMaterial color={skin} />
         </mesh>
         {[-1, 1].map((side) => (
-          <mesh key={side} position={[side * h * 0.045, h * 0.91, h * 0.108]}>
-            <sphereGeometry args={[h * 0.012, 6, 4]} />
+          <mesh key={side} position={[side * h * 0.06, h * 0.86, h * 0.15]}>
+            <sphereGeometry args={[h * 0.016, 6, 4]} />
             <WorldMaterial tone="timber" />
           </mesh>
         ))}
         {safe.hair !== 3 && (
           <mesh
-            position={[0, h * 0.98, -h * 0.01]}
-            scale={[1, safe.hair === 1 ? 1 : 0.45, 1]}
+            position={[0, h * 0.93, -h * 0.01]}
+            scale={[1, safe.hair === 1 ? 1 : 0.5, 1]}
             castShadow
           >
-            <sphereGeometry args={[h * 0.125, 10, 6]} />
+            <sphereGeometry args={[h * 0.175, 8, 6]} />
             <WorldMaterial color={hair} />
           </mesh>
         )}
         {(safe.hair === 2 || safe.hair === 5) &&
           [-1, 1].map((side) => (
-            <mesh key={side} position={[side * h * 0.1, h * 0.85, -h * 0.03]} castShadow>
+            <mesh key={side} position={[side * h * 0.13, h * 0.8, -h * 0.03]} castShadow>
               <boxGeometry args={[h * 0.05, h * 0.22, h * 0.08]} />
               <WorldMaterial color={hair} />
             </mesh>
           ))}
         {(safe.headwear > 0 || equipment.some((item) => item.slot === "head")) && (
-          <mesh position={[0, h * 1.015, 0]} castShadow>
-            <cylinderGeometry args={[h * 0.11, h * 0.14, h * 0.08, 10]} />
+          <mesh position={[0, h * 1.0, 0]} castShadow>
+            <cylinderGeometry args={[h * 0.15, h * 0.17, h * 0.08, 8]} />
             <WorldMaterial color={OUTFITS[safe.outfit]!} />
           </mesh>
         )}
         <group ref={arms}>
           {[-1, 1].map((side) => (
-            <group key={side} position={[side * h * 0.19, h * 0.71, 0]}>
-              <mesh position={[0, -h * 0.13, 0]} castShadow>
-                <boxGeometry args={[h * 0.085, h * 0.26, h * 0.1]} />
+            <group key={side} position={[side * h * 0.19, h * 0.64, 0]}>
+              <RoundedBox
+                args={[h * 0.1, h * 0.26, h * 0.11]}
+                radius={h * 0.035}
+                smoothness={3}
+                position={[0, -h * 0.13, 0]}
+                castShadow
+              >
                 <WorldMaterial color={OUTFITS[safe.outfit]!} />
-              </mesh>
-              <mesh position={[0, -h * 0.31, 0]} castShadow>
-                <boxGeometry args={[h * 0.075, h * 0.13, h * 0.085]} />
+              </RoundedBox>
+              <RoundedBox
+                args={[h * 0.09, h * 0.14, h * 0.1]}
+                radius={h * 0.03}
+                smoothness={3}
+                position={[0, -h * 0.32, 0]}
+                castShadow
+              >
                 <WorldMaterial color={skin} />
-              </mesh>
+              </RoundedBox>
             </group>
           ))}
         </group>
         <group ref={legs}>
           {[-1, 1].map((side) => (
-            <group key={side} position={[side * h * 0.075, h * 0.4, 0]}>
-              <mesh position={[0, -h * 0.17, 0]} castShadow>
-                <boxGeometry args={[h * 0.115, h * 0.34, h * 0.14]} />
+            <group key={side} position={[side * h * 0.08, h * 0.37, 0]}>
+              <RoundedBox
+                args={[h * 0.11, h * 0.34, h * 0.13]}
+                radius={h * 0.035}
+                smoothness={3}
+                position={[0, -h * 0.17, 0]}
+                castShadow
+              >
                 <WorldMaterial color={TROUSERS[safe.bottoms]!} />
-              </mesh>
-              <mesh position={[0, -h * 0.37, h * 0.035]} castShadow>
-                <boxGeometry args={[h * 0.12, h * 0.06, h * 0.2]} />
+              </RoundedBox>
+              <RoundedBox
+                args={[h * 0.12, h * 0.06, h * 0.2]}
+                radius={h * 0.025}
+                smoothness={2}
+                position={[0, -h * 0.36, h * 0.035]}
+                castShadow
+              >
                 <WorldMaterial color={SHOE_COLORS[safe.shoes]!} />
-              </mesh>
+              </RoundedBox>
             </group>
           ))}
         </group>
