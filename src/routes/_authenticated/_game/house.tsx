@@ -55,6 +55,9 @@ import {
 import { pageMeta } from "@/lib/seo";
 import "@/components/game/housing/house-screen.css";
 
+/** Seconds of sleep for a full rest. */
+const SLEEP_FULL_REST_SECONDS = 120;
+
 export const Route = createFileRoute("/_authenticated/_game/house")({
   head: () => pageMeta("Your home", "Visit your home, place furniture, and choose an outfit."),
   component: HousePage,
@@ -1061,12 +1064,15 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     const base = gameTime.sleepElapsedSeconds ?? 0;
     const running = !isOffline && gameTime.ready && !gameTime.simulation.paused && !document.hidden;
     return Math.min(
-      120,
+      SLEEP_FULL_REST_SECONDS,
       base + (running ? Math.max(0, clockNow - gameTime.simulation.lastUpdatedAt) / 1000 : 0),
     );
   })();
-  const sleepProgress = Math.min(100, Math.round((liveSleepElapsed / 120) * 100));
-  const sleepRemaining = Math.max(0, Math.ceil(120 - liveSleepElapsed));
+  const sleepProgress = Math.min(
+    100,
+    Math.round((liveSleepElapsed / SLEEP_FULL_REST_SECONDS) * 100),
+  );
+  const sleepRemaining = Math.max(0, Math.ceil(SLEEP_FULL_REST_SECONDS - liveSleepElapsed));
   const displayedElapsed = taskTiming
     ? Math.min(
         taskTiming.duration,

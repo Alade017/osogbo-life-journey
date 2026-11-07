@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Check, Clock3, CookingPot, Sparkles, X } from "lucide-react";
 import { homeFurnitureActions, homeTaskSeconds } from "@/lib/home-furniture-actions";
+import { formatNaira } from "@/lib/game";
 import {
   ACTION_CATALOG,
   NEED_RULES,
@@ -8,39 +9,7 @@ import {
   type NeedName,
 } from "@/lib/life-simulation";
 import type { HousePlacement } from "./HouseRoomScene";
-
-// Meal preference is presentation only: every dish uses the existing validated cook action.
-// Raw ingredients are not listed; they are not dishes.
-type Tier = "street" | "home" | "prestige" | "party";
-const MEAL_TIERS: { id: Tier; label: string }[] = [
-  { id: "street", label: "Street food & quick meals" },
-  { id: "home", label: "Home-cooked staples" },
-  { id: "prestige", label: "Prestige & gourmet" },
-  { id: "party", label: "Party food" },
-];
-const MEALS = [
-  { id: "bread-tea", tier: "street", name: "Bread & tea", symbol: "🍞" },
-  { id: "ojojo", tier: "street", name: "Ojojo", symbol: "🍌" },
-  { id: "kokoro", tier: "street", name: "Kokoro", symbol: "🍠" },
-  { id: "boiled-plantain-egg", tier: "street", name: "Boiled plantain & egg", symbol: "🍳" },
-  { id: "fried-dodo", tier: "street", name: "Fried dodo", symbol: "🍌" },
-  { id: "jollof", tier: "home", name: "Jollof rice", symbol: "🍚" },
-  { id: "ewa-agoyin", tier: "home", name: "Ewa agoyin", symbol: "🫘" },
-  { id: "eba-ewedu", tier: "home", name: "Eba & ewedu", symbol: "🥬" },
-  { id: "amala-gbegiri", tier: "home", name: "Amala & gbegiri", symbol: "🥣" },
-  { id: "yam-porridge", tier: "home", name: "Yam porridge", symbol: "🍲" },
-  { id: "ofada-ayamase", tier: "home", name: "Ofada rice & ayamase", symbol: "🍛" },
-  { id: "pounded-yam-egusi", tier: "prestige", name: "Pounded yam & egusi", symbol: "🍲" },
-  { id: "efo-riro", tier: "prestige", name: "Efo riro", symbol: "🥬" },
-  { id: "ikokore", tier: "prestige", name: "Ikokore", symbol: "🐟" },
-  { id: "suya-platter", tier: "prestige", name: "Suya platter", symbol: "🍢" },
-  { id: "isi-ewu", tier: "prestige", name: "Isi ewu", symbol: "🐐" },
-  { id: "party-jollof", tier: "party", name: "Party jollof", symbol: "🔥" },
-  { id: "moin-moin", tier: "party", name: "Moin moin", symbol: "🫔" },
-  { id: "akara-ogi", tier: "party", name: "Akara & ogi", symbol: "🧆" },
-  { id: "small-chops", tier: "party", name: "Small chops platter", symbol: "🥟" },
-  { id: "chin-chin", tier: "party", name: "Chin chin", symbol: "🍪" },
-] as const;
+import { DEFAULT_MEAL_ID, MEALS, MEAL_TIERS } from "@/lib/cooking-menu";
 
 export function HomeAccessoryPanel({
   placement,
@@ -57,7 +26,7 @@ export function HomeAccessoryPanel({
   onClose: () => void;
   onUse: (action: LifeActionId) => Promise<boolean>;
 }) {
-  const [meal, setMeal] = useState<string>("jollof");
+  const [meal, setMeal] = useState<string>(DEFAULT_MEAL_ID);
   const [confirmed, setConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const inFlight = useRef(false);
@@ -173,7 +142,9 @@ export function HomeAccessoryPanel({
                         {action.durationMinutes}m
                       </span>
                     </span>
-                    <span className="home-meal-price">Free</span>
+                    <span className="home-meal-price">
+                      {action.cost > 0 ? formatNaira(action.cost) : "Free"}
+                    </span>
                     <strong>{item.name}</strong>
                     <span className="home-meal-chips" aria-hidden="true">
                       {Object.entries(action.needs)
