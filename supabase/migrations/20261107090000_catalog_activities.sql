@@ -236,6 +236,8 @@ declare
   prior_cooldown integer;
   elapsed numeric := 0;
   server_minutes integer := 0;
+  heartbeat_minutes integer := 0;
+  projected_hour integer;
   next_remainder numeric := 0;
   activity_elapsed_minutes integer := 0;
   reward_social integer := 0;
@@ -325,6 +327,23 @@ begin
     raise exception 'Your simulation needs to reconnect before starting an activity';
   end if;
 
+  server_minutes := greatest(0,
+    c.game_day * 1440 + c.game_time_hour * 60 + c.game_time_minute
+    - ((s.character_time->>'day')::integer * 1440
+      + (s.character_time->>'hour')::integer * 60
+      + (s.character_time->>'minute')::integer)
+  );
+  elapsed := greatest(0, extract(epoch from clock_timestamp() - s.heartbeat_at));
+  next_remainder := s.minute_remainder + elapsed * s.speed / 60;
+  heartbeat_minutes := floor(next_remainder)::integer;
+  next_remainder := next_remainder - heartbeat_minutes;
+  projected_hour := mod(
+    ((s.personal_time->>'hour')::integer * 60
+      + (s.personal_time->>'minute')::integer
+      + server_minutes + heartbeat_minutes) / 60,
+    24
+  );
+
   select * into a from public.activities
   where slug = p_activity_slug and is_available
     and coalesce(metadata->>'server_action', '') <> 'map_place_action'
@@ -336,7 +355,7 @@ begin
   end if;
 
   requirement_errors := public._activity_requirement_errors(
-    cid, a.id, (s.personal_time->>'hour')::integer
+    cid, a.id, projected_hour
   );
   if cardinality(requirement_errors) > 0 then
     raise exception '%', requirement_errors[1];
@@ -362,20 +381,27 @@ begin
     select 1 from public.locations where id = c.current_location_id and type in ('residential', 'home')
   ) then elapsed_hygiene_rate := 0.0162; end if;
 
-  elapsed := greatest(0, extract(epoch from clock_timestamp() - s.heartbeat_at)) * s.speed / 60 + s.minute_remainder;
-  server_minutes := floor(elapsed)::integer;
-  next_remainder := elapsed - server_minutes;
-  activity_elapsed_minutes := a.duration_minutes + server_minutes;
-  next_energy := greatest(0, least(100, round(c.energy - elapsed_energy_rate * activity_elapsed_minutes + a.energy_delta)::integer));
-  next_hunger := greatest(0, least(100, round(c.hunger - elapsed_hunger_rate * activity_elapsed_minutes + a.hunger_delta)::integer));
+  activity_elapsed_minutes := a.duration_minutes + heartbeat_minutes + server_minutes;
   next_thirst := greatest(0, least(100, c.thirst + a.thirst_delta));
   next_needs := s.needs;
   if jsonb_typeof(next_needs) is distinct from 'object'
-     or not (next_needs ? 'energy') or not (next_needs ? 'hunger') then
+     or not (next_needs ? 'energy') or not (next_needs ? 'hunger')
+     or not (next_needs ? 'hygiene') or not (next_needs ? 'bladder')
+     or not (next_needs ? 'fun') or not (next_needs ? 'social') then
     raise exception 'Personal simulation needs are not ready. Reconnect and retry.';
   end if;
-  next_needs := jsonb_set(next_needs, '{energy}', to_jsonb(next_energy), true);
-  next_needs := jsonb_set(next_needs, '{hunger}', to_jsonb(100 - next_hunger), true);
+
+  -- Reconcile character stats changed by other server systems before applying this activity.
+  foreach item_slug in array array['energy', 'hunger', 'fun', 'social'] loop
+    if source->item_slug is distinct from s.character_snapshot->item_slug then
+      next_needs := jsonb_set(next_needs, array[item_slug], source->item_slug, true);
+    end if;
+  end loop;
+
+  next_needs := jsonb_set(next_needs, '{energy}', to_jsonb(greatest(0, least(100,
+    (next_needs->>'energy')::numeric - elapsed_energy_rate * activity_elapsed_minutes + a.energy_delta))), true);
+  next_needs := jsonb_set(next_needs, '{hunger}', to_jsonb(greatest(0, least(100,
+    (next_needs->>'hunger')::numeric - elapsed_hunger_rate * activity_elapsed_minutes - a.hunger_delta))), true);
   next_needs := jsonb_set(next_needs, '{hygiene}', to_jsonb(greatest(0, least(100,
     (next_needs->>'hygiene')::numeric - elapsed_hygiene_rate * activity_elapsed_minutes))), true);
   next_needs := jsonb_set(next_needs, '{bladder}', to_jsonb(greatest(0, least(100,
@@ -384,6 +410,9 @@ begin
     (next_needs->>'fun')::numeric - elapsed_fun_rate * activity_elapsed_minutes))), true);
   next_needs := jsonb_set(next_needs, '{social}', to_jsonb(greatest(0, least(100,
     (next_needs->>'social')::numeric - elapsed_social_rate * activity_elapsed_minutes))), true);
+
+  next_energy := greatest(0, least(100, round((next_needs->>'energy')::numeric)::integer));
+  next_hunger := greatest(0, least(100, 100 - round((next_needs->>'hunger')::numeric)::integer));
 
   if a.rewards ? 'social' then
     if jsonb_typeof(a.rewards->'social') is distinct from 'number'
@@ -424,6 +453,7 @@ begin
     heartbeat_at = clock_timestamp(),
     minute_remainder = next_remainder,
     personal_time = next_time,
+    character_time = source_time,
     needs = next_needs,
     character_snapshot = jsonb_build_object(
       'energy', next_energy, 'hunger', 100 - next_hunger,
