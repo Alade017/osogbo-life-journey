@@ -582,6 +582,13 @@
       "when": 1792523801018,
       "tag": "0081_house_light",
       "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1792610201018,
+      "tag": "0082_kitchen_dining_catalogue",
+      "breakpoints": true
     }
   ]
 }

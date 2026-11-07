@@ -768,6 +768,150 @@ export function FurnitureFallback({
         ))}
       </group>
     );
+  if (kind === "dining-table")
+    return (
+      <group>
+        <mesh castShadow receiveShadow position={[0, 0.025, 0]}>
+          <cylinderGeometry args={[0.34, 0.36, 0.05, 20]} />
+          <meshStandardMaterial color={FURNITURE_COLOURS.mediaWood} roughness={0.7} />
+        </mesh>
+        <mesh castShadow receiveShadow position={[0, 0.38, 0]}>
+          <cylinderGeometry args={[0.07, 0.08, 0.7, 12]} />
+          <meshStandardMaterial color={FURNITURE_COLOURS.mediaWood} roughness={0.7} />
+        </mesh>
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[1.0, 0.06, 1.0]}
+          radius={0.03}
+          smoothness={4}
+          position={[0, 0.76, 0]}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.mediaWood} roughness={0.7} />
+        </RoundedBox>
+      </group>
+    );
+  if (kind === "dining-chair")
+    return (
+      <group>
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[0.42, 0.06, 0.42]}
+          radius={0.025}
+          smoothness={4}
+          position={[0, 0.46, 0]}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.mediaWood} roughness={0.7} />
+        </RoundedBox>
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[0.42, 0.44, 0.06]}
+          radius={0.025}
+          smoothness={4}
+          position={[0, 0.74, -0.18]}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.mediaWood} roughness={0.7} />
+        </RoundedBox>
+        {[-0.17, 0.17].flatMap((x) =>
+          [-0.17, 0.17].map((z) => (
+            <mesh castShadow receiveShadow key={`chair-leg-${x}-${z}`} position={[x, 0.22, z]}>
+              <cylinderGeometry args={[0.025, 0.025, 0.44, 8]} />
+              <meshStandardMaterial color={FURNITURE_COLOURS.mediaWood} roughness={0.7} />
+            </mesh>
+          )),
+        )}
+      </group>
+    );
+  if (kind === "fridge")
+    return (
+      <group>
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[0.62, 1.6, 0.6]}
+          radius={0.04}
+          smoothness={4}
+          position={[0, 0.8, 0]}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.bedLinen} roughness={0.4} />
+        </RoundedBox>
+        <mesh position={[0, 1.16, 0.302]}>
+          <boxGeometry args={[0.6, 0.012, 0.01]} />
+          <meshStandardMaterial color={FURNITURE_COLOURS.screenBezel} />
+        </mesh>
+        {[0.95, 1.3].map((y) => (
+          <mesh key={`fridge-handle-${y}`} castShadow position={[0.24, y, 0.33]}>
+            <boxGeometry args={[0.03, 0.22, 0.03]} />
+            <meshStandardMaterial
+              color={FURNITURE_COLOURS.screenBezel}
+              metalness={0.6}
+              roughness={0.35}
+            />
+          </mesh>
+        ))}
+      </group>
+    );
+  if (kind === "microwave")
+    return (
+      <group>
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[0.5, 0.3, 0.36]}
+          radius={0.03}
+          smoothness={4}
+          position={[0, 0.15, 0]}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.bedLinen} roughness={0.5} />
+        </RoundedBox>
+        <mesh position={[-0.06, 0.15, 0.185]}>
+          <boxGeometry args={[0.32, 0.2, 0.01]} />
+          <meshStandardMaterial color={FURNITURE_COLOURS.screen} roughness={0.2} metalness={0.3} />
+        </mesh>
+      </group>
+    );
+  if (kind === "deep-freezer")
+    return (
+      <group>
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[0.9, 0.85, 0.56]}
+          radius={0.04}
+          smoothness={4}
+          position={[0, 0.425, 0]}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.bedLinen} roughness={0.4} />
+        </RoundedBox>
+        <mesh position={[0, 0.85, 0.283]}>
+          <boxGeometry args={[0.86, 0.01, 0.01]} />
+          <meshStandardMaterial color={FURNITURE_COLOURS.screenBezel} />
+        </mesh>
+        <mesh castShadow position={[0, 0.7, 0.31]}>
+          <boxGeometry args={[0.4, 0.04, 0.03]} />
+          <meshStandardMaterial
+            color={FURNITURE_COLOURS.screenBezel}
+            metalness={0.6}
+            roughness={0.35}
+          />
+        </mesh>
+      </group>
+    );
+  if (kind === "plate-hanger")
+    return (
+      <group>
+        <mesh castShadow receiveShadow position={[0, 0.7, 0.02]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.22, 0.22, 0.03, 24]} />
+          <meshStandardMaterial color={FURNITURE_COLOURS.bedPillow} roughness={0.5} />
+        </mesh>
+        <mesh castShadow position={[0, 0.7, 0.05]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.13, 0.13, 0.02, 24]} />
+          <meshStandardMaterial color={FURNITURE_COLOURS.blanket} roughness={0.5} />
+        </mesh>
+      </group>
+    );
   if (kind === "wall-art")
     return (
       <group>
