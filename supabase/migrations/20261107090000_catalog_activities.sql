@@ -72,7 +72,7 @@ begin
     return array['This activity contains unsupported requirement settings.'];
   end if;
 
-  if requirements ? 'type' and requirements->>'type' <> 'none' then
+  if requirements ? 'type' and requirements->>'type' is distinct from 'none' then
     return array['This activity contains an unsupported requirement type.'];
   end if;
 
@@ -180,8 +180,8 @@ begin
   if requirements ? 'available_hours' then
     if jsonb_typeof(requirements->'available_hours') <> 'object'
        or requirements->'available_hours' - array['start', 'end'] <> '{}'::jsonb
-       or jsonb_typeof(requirements->'available_hours'->'start') <> 'number'
-       or jsonb_typeof(requirements->'available_hours'->'end') <> 'number' then
+       or jsonb_typeof(requirements->'available_hours'->'start') is distinct from 'number'
+       or jsonb_typeof(requirements->'available_hours'->'end') is distinct from 'number' then
       return array['This activity has invalid availability hours.'];
     end if;
     if (requirements->'available_hours'->>'start')::numeric <> trunc((requirements->'available_hours'->>'start')::numeric)
@@ -233,6 +233,11 @@ declare
   elapsed_minutes integer;
   last_completed_at timestamptz;
   remaining_seconds integer;
+  prior_cooldown integer;
+  elapsed numeric := 0;
+  server_minutes integer := 0;
+  next_remainder numeric := 0;
+  activity_elapsed_minutes integer := 0;
   elapsed_hunger_rate numeric := 0.035;
   elapsed_energy_rate numeric := 0.025;
   elapsed_hygiene_rate numeric := 0.018;
@@ -267,7 +272,7 @@ begin
     return jsonb_build_object(
       'snapshot', jsonb_build_object(
         'revision', s.revision, 'needs', s.needs, 'game_time', s.personal_time,
-        'paused', s.paused, 'speed', s.speed, 'action', null, 'request_id', null,
+        'paused', s.paused, 'speed', s.speed, 'action', s.active_action, 'request_id', s.active_request,
         'sleep_elapsed_seconds', s.sleep_elapsed_seconds,
         'home_action_elapsed_seconds', s.home_action_elapsed_seconds,
         'home_action_duration_seconds', s.home_action_duration_seconds,
@@ -333,13 +338,14 @@ begin
   end if;
 
   if a.cooldown_minutes > 0 then
-    select max(completed_at) into last_completed_at
+    select completed_at, cooldown_minutes into last_completed_at, prior_cooldown
     from public.activity_completions
-    where character_id = cid and activity_id = a.id;
-    if last_completed_at is not null
-       and last_completed_at + make_interval(mins => a.cooldown_minutes) > clock_timestamp() then
+    where character_id = cid and activity_id = a.id
+    order by completed_at desc limit 1;
+    if last_completed_at is not null and prior_cooldown > 0
+       and last_completed_at + make_interval(mins => prior_cooldown) > clock_timestamp() then
       remaining_seconds := ceil(extract(epoch from (
-        last_completed_at + make_interval(mins => a.cooldown_minutes) - clock_timestamp()
+        last_completed_at + make_interval(mins => prior_cooldown) - clock_timestamp()
       )))::integer;
       raise exception 'This activity is cooling down. Try again in % seconds.', remaining_seconds;
     end if;
@@ -351,27 +357,31 @@ begin
     select 1 from public.locations where id = c.current_location_id and type in ('residential', 'home')
   ) then elapsed_hygiene_rate := 0.0162; end if;
 
-  next_energy := greatest(0, least(100, round(c.energy - elapsed_energy_rate * a.duration_minutes + a.energy_delta)::integer));
-  next_hunger := greatest(0, least(100, round(c.hunger - elapsed_hunger_rate * a.duration_minutes + a.hunger_delta)::integer));
+  elapsed := greatest(0, extract(epoch from clock_timestamp() - s.heartbeat_at)) * s.speed / 60 + s.minute_remainder;
+  server_minutes := floor(elapsed)::integer;
+  next_remainder := elapsed - server_minutes;
+  activity_elapsed_minutes := a.duration_minutes + server_minutes;
+  next_energy := greatest(0, least(100, round(c.energy - elapsed_energy_rate * activity_elapsed_minutes + a.energy_delta)::integer));
+  next_hunger := greatest(0, least(100, round(c.hunger - elapsed_hunger_rate * activity_elapsed_minutes + a.hunger_delta)::integer));
   next_thirst := greatest(0, least(100, c.thirst + a.thirst_delta));
-  next_next_needs := s.needs;
+  next_needs := s.needs;
   if jsonb_typeof(next_needs) is distinct from 'object'
-     or not (next_next_needs ? 'energy') or not (next_next_needs ? 'hunger') then
+     or not (next_needs ? 'energy') or not (next_needs ? 'hunger') then
     raise exception 'Personal simulation needs are not ready. Reconnect and retry.';
   end if;
-  needs := jsonb_set(next_needs, '{energy}', to_jsonb(next_energy), true);
+  next_needs := jsonb_set(next_needs, '{energy}', to_jsonb(next_energy), true);
   needs := jsonb_set(next_needs, '{hunger}', to_jsonb(100 - next_hunger), true);
   needs := jsonb_set(next_needs, '{hygiene}', to_jsonb(greatest(0, least(100,
-    (next_needs->>'hygiene')::numeric - elapsed_hygiene_rate * a.duration_minutes))), true);
+    (next_needs->>'hygiene')::numeric - elapsed_hygiene_rate * activity_elapsed_minutes))), true);
   needs := jsonb_set(next_needs, '{bladder}', to_jsonb(greatest(0, least(100,
-    (next_needs->>'bladder')::numeric - elapsed_bladder_rate * a.duration_minutes))), true);
+    (next_needs->>'bladder')::numeric - elapsed_bladder_rate * activity_elapsed_minutes))), true);
   needs := jsonb_set(next_needs, '{fun}', to_jsonb(greatest(0, least(100,
-    (next_needs->>'fun')::numeric - elapsed_fun_rate * a.duration_minutes))), true);
+    (next_needs->>'fun')::numeric - elapsed_fun_rate * activity_elapsed_minutes))), true);
   needs := jsonb_set(next_needs, '{social}', to_jsonb(greatest(0, least(100,
-    (next_needs->>'social')::numeric - elapsed_social_rate * a.duration_minutes))), true);
+    (next_needs->>'social')::numeric - elapsed_social_rate * activity_elapsed_minutes))), true);
 
   total_minutes := (s.personal_time->>'hour')::integer * 60
-    + (s.personal_time->>'minute')::integer + a.duration_minutes;
+    + (s.personal_time->>'minute')::integer + activity_elapsed_minutes;
   elapsed_minutes := total_minutes / 1440;
   next_time := jsonb_build_object(
     'minute', mod(total_minutes, 60),
@@ -391,6 +401,7 @@ begin
   update public.character_simulations set
     revision = revision + 1,
     heartbeat_at = clock_timestamp(),
+    minute_remainder = next_remainder,
     personal_time = next_time,
     needs = next_needs,
     character_snapshot = jsonb_build_object(

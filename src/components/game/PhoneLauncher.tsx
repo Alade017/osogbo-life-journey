@@ -17,7 +17,6 @@ import {
   Building2,
   CalendarDays,
   ChartNoAxesCombined,
-  ClipboardList,
   ChevronLeft,
   House,
   GraduationCap,
@@ -113,9 +112,6 @@ const CommunityPhoneApps = lazy(() =>
   })),
 );
 const PhoneCommunityServices = lazy(() => import("@/components/game/phone/PhoneCommunityServices"));
-const ActivityCatalogueApp = lazy(() =>
-  import("@/components/game/ActivityCatalogueApp").then((m) => ({ default: m.ActivityCatalogueApp })),
-);
 
 type PhoneAppDefinition = {
   label: string;
@@ -138,7 +134,6 @@ const PHONE_APPS: readonly PhoneAppDefinition[] = [
   { label: "Notifications", icon: Bell, tone: "phone-app-gold" },
   { label: "Settings", icon: Settings, tone: "phone-app-muted" },
   { label: "Education", icon: GraduationCap, tone: "phone-app-blue" },
-  { label: "Activities", icon: ClipboardList, tone: "phone-app-green" },
   { label: "Party", icon: PartyPopper, tone: "phone-app-coral" },
   { label: "Food Delivery", icon: UtensilsCrossed, tone: "phone-app-coral" },
   { label: "Okada Rides", icon: Bike, tone: "phone-app-green" },
@@ -386,7 +381,6 @@ export function PhoneLauncher({
     }
 
     if (appName === "Education" || appName === "Courses") return <EducationPage phoneMode />;
-    if (appName === "Activities") return <ActivityCatalogueApp />;
 
     if (appName === "Bank") {
       return <PhoneBankApp />;
