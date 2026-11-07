@@ -142,7 +142,7 @@ export function MapCanvas({
           onSelectLandmark={onSelectLandmark}
           onSelectDistrict={onSelectDistrict}
           onSelectBillboard={onSelectBillboard}
-          onSelectProperty={onSelectProperty}
+          {...(onSelectProperty ? { onSelectProperty } : {})}
           eventChips={_eventChips}
           onSelectEvent={onSelectEvent}
         />
@@ -156,7 +156,7 @@ export function MapCanvas({
           onSelectLandmark={onSelectLandmark}
           onSelectDistrict={onSelectDistrict}
           onSelectBillboard={onSelectBillboard}
-          onSelectProperty={onSelectProperty}
+          {...(onSelectProperty ? { onSelectProperty } : {})}
           eventChips={_eventChips}
           onSelectEvent={onSelectEvent}
           onReady={handleReady}
