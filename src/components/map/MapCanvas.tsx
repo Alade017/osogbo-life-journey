@@ -144,7 +144,7 @@ export function MapCanvas({
           onSelectBillboard={onSelectBillboard}
           {...(onSelectProperty ? { onSelectProperty } : {})}
           eventChips={_eventChips}
-          onSelectEvent={onSelectEvent}
+          {...(onSelectEvent ? { onSelectEvent } : {})}
         />
       )}
       <Suspense fallback={null}>
@@ -158,7 +158,7 @@ export function MapCanvas({
           onSelectBillboard={onSelectBillboard}
           {...(onSelectProperty ? { onSelectProperty } : {})}
           eventChips={_eventChips}
-          onSelectEvent={onSelectEvent}
+          {...(onSelectEvent ? { onSelectEvent } : {})}
           onReady={handleReady}
           onUnavailable={handleUnavailable}
         />
