@@ -1,9 +1,31 @@
 import { describe, expect, it, vi } from "vitest";
-import { createMapPlaceActionHandler, findMapPlaceAction } from "@/lib/map-place-action.server";
+import {
+  createMapPlaceActionHandler,
+  findMapPlaceAction,
+  handleMapPlaceActionRequest,
+} from "@/lib/map-place-action.server";
 
 const requestId = "123e4567-e89b-42d3-a456-426614174000";
 
 describe("map place actions", () => {
+  it("rejects map-screen action requests that do not carry Colyseus authorization", async () => {
+    const response = await handleMapPlaceActionRequest(
+      new Request("http://local/api/map/action", {
+        method: "POST",
+        headers: {
+          Authorization: "Bearer test-token",
+          "Content-Type": "application/json",
+          "Idempotency-Key": requestId,
+        },
+        body: JSON.stringify({ landmarkId: "cedar-bank", actionId: "cedar-budgeting" }),
+      }),
+    );
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({
+      error: { code: "NEIGHBORHOOD_AUTHORIZATION_REQUIRED" },
+    });
+  });
+
   it("checks age access on the server before running a gated place action", async () => {
     const perform = vi.fn();
     const handler = createMapPlaceActionHandler({
