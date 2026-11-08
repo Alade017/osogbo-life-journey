@@ -10,6 +10,7 @@ import {
   vendorSpots,
 } from "@/game/neighborhood-dressing";
 import { CITY_CENTRE_AREA, NEIGHBORHOOD_SCENE_BOUNDS } from "@/game/neighborhood-model";
+import { neighborhoodBuildingFootprint } from "@/game/neighborhood-geometry";
 
 const bounds = NEIGHBORHOOD_SCENE_BOUNDS;
 
@@ -57,7 +58,7 @@ describe("neighbourhood street dressing", () => {
   });
 
   it("keeps crosswalk rectangles clear of complete obstacle footprints", () => {
-    for (const crossing of pedestrianCrossings(CITY_CENTRE_AREA))
+    for (const crossing of pedestrianCrossings(CITY_CENTRE_AREA)) {
       for (const obstacle of CITY_CENTRE_AREA.obstacles ?? []) {
         const overlaps =
           Math.abs(crossing.x - obstacle.x) <
@@ -66,6 +67,16 @@ describe("neighbourhood street dressing", () => {
             (crossing.depth + obstacle.height) / 2 + 2;
         expect(overlaps).toBe(false);
       }
+      for (const object of CITY_CENTRE_AREA.objects.filter((item) => item.kind !== "npc")) {
+        const footprint = neighborhoodBuildingFootprint(object);
+        const overlaps =
+          Math.abs(crossing.x - (footprint.left + footprint.width / 2)) <
+            (crossing.width + footprint.width) / 2 + 2 &&
+          Math.abs(crossing.y - (footprint.top + footprint.height / 2)) <
+            (crossing.depth + footprint.height) / 2 + 2;
+        expect(overlaps).toBe(false);
+      }
+    }
   });
 
   it("does not create crossings where road extents do not meet", () => {
