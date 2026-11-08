@@ -44,6 +44,8 @@ beforeAll(async () => {
       (file) =>
         file.endsWith(".sql") &&
         !file.startsWith("0075_") &&
+        !file.startsWith("0083_") &&
+        !file.startsWith("0084_") &&
         file !== "0077_market_stall_rent_categories_sales.sql",
     )
     .sort();
