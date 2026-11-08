@@ -26,6 +26,7 @@ const acceptedActionErrors = new Set([
   "INSUFFICIENT_FUNDS",
   "REQUIREMENT_NOT_MET",
   "COOLDOWN",
+  "NEIGHBORHOOD_AUTHORIZATION_REQUIRED",
 ]);
 
 async function body(response) {
