@@ -26,6 +26,7 @@ const interactionRequests = new WeakMap<
   Map<string, PendingInteractionAuthorization>
 >();
 const authorizationListeners = new WeakSet<NeighborhoodRoom>();
+const disconnectedNeighborhoodRooms = new WeakSet<NeighborhoodRoom>();
 
 function installInteractionAuthorizationListeners(room: NeighborhoodRoom) {
   if (authorizationListeners.has(room)) return;
@@ -60,6 +61,7 @@ function installInteractionAuthorizationListeners(room: NeighborhoodRoom) {
     request.reject(new Error(payload.code || "INTERACTION_AUTH_FAILED"));
   });
   room.onLeave(() => {
+    disconnectedNeighborhoodRooms.add(room);
     for (const request of pending.values()) {
       clearTimeout(request.timeout);
       request.reject(new Error("NEIGHBORHOOD_DISCONNECTED"));
@@ -73,6 +75,9 @@ export function requestNeighborhoodInteractionAuthorization(
   input: { requestId: string; landmarkId: string; actionId: string },
 ): Promise<InteractionAuthorizationResponse> {
   installInteractionAuthorizationListeners(room);
+  if (disconnectedNeighborhoodRooms.has(room)) {
+    return Promise.reject(new Error("NEIGHBORHOOD_DISCONNECTED"));
+  }
   const pending = interactionRequests.get(room);
   if (!pending) return Promise.reject(new Error("INTERACTION_AUTH_UNAVAILABLE"));
   if (pending.has(input.requestId)) return Promise.reject(new Error("INTERACTION_REQUEST_PENDING"));
