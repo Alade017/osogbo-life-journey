@@ -43,3 +43,5 @@ export function PlaceBadge({
     </Html>
   );
 }
+
+export { MapPin3D } from "./MapPin3D";

@@ -12,7 +12,7 @@
   gap: 0.6rem;
   min-height: 0;
   height: 100%;
-  padding: 0.6rem 0.75rem 0;
+  padding: 0 !important;
   isolation: isolate;
   background:
     radial-gradient(
@@ -288,10 +288,10 @@
   height: auto;
   min-height: 320px;
   overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
-  border-radius: 26px;
+  border: none !important;
+  border-radius: 0 !important;
   background: var(--background);
-  box-shadow: var(--elevation-card);
+  box-shadow: none !important;
 }
 
 /* ---------- Osun State overview ---------- */
