@@ -134,12 +134,29 @@ export function pedestrianCrossings(area: NeighborhoodArea): DressingRect[] {
   const seen = new Set<string>();
   for (const v of verticals)
     for (const h of horizontals) {
+      const verticalStart = v.start;
+      const verticalEnd = v.end;
+      const horizontalStart = h.start;
+      const horizontalEnd = h.end;
+      if (
+        (verticalStart !== undefined && h.offset < verticalStart) ||
+        (verticalEnd !== undefined && h.offset > verticalEnd) ||
+        (horizontalStart !== undefined && v.offset < horizontalStart) ||
+        (horizontalEnd !== undefined && v.offset > horizontalEnd)
+      ) continue;
       const approach = h.width / 2 + 14;
+      const width = v.width * 0.9;
+      const depth = 14;
       for (const y of [h.offset - approach, h.offset + approach]) {
         const key = `${v.offset}:${y}`;
-        if (seen.has(key) || insideObstacle(v.offset, y, boxes, 9)) continue;
+        const overlapsObstacle = boxes.some(
+          (box) =>
+            Math.abs(v.offset - box.x) < (width + box.width) / 2 + 2 &&
+            Math.abs(y - box.y) < (depth + box.height) / 2 + 2,
+        );
+        if (seen.has(key) || overlapsObstacle) continue;
         seen.add(key);
-        rects.push({ x: v.offset, y, width: v.width * 0.9, depth: 14 });
+        rects.push({ x: v.offset, y, width, depth });
       }
     }
   return rects;
