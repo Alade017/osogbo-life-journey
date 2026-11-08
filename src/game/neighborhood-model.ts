@@ -47,10 +47,21 @@ export type NeighborhoodPath = {
   to: WorldPoint;
   width: number;
 };
+/**
+ * Server-owned landmark identity and position inside the generated neighborhood scene.
+ * Action definitions are deliberately not stored here; they remain database-owned.
+ */
+export type NeighborhoodInteractionPoint = {
+  id: string;
+  x: number;
+  y: number;
+  radius: number;
+};
 export type NeighborhoodArea = {
   slug: string;
   name: string;
   objects: readonly NeighborhoodObject[];
+  interactionPoints?: readonly NeighborhoodInteractionPoint[];
   obstacles?: readonly NeighborhoodObstacle[];
   roads?: readonly NeighborhoodRoad[];
   paths?: readonly NeighborhoodPath[];
@@ -465,6 +476,9 @@ function generatedNeighborhoodArea(
         height: 20,
       },
     ],
+    // The generated location slug is also the stable map_landmarks ID in the
+    // reviewed town catalog. Anchor it to the scene's actual business frontage.
+    interactionPoints: [{ id: slug, x: market.x, y: market.y, radius: 65 }],
     style: AREA_STYLE_BY_CATEGORY[category],
   };
 }
@@ -550,6 +564,29 @@ export function toWorld(point: WorldPoint, origin: WorldPoint): WorldPoint {
 export function neighborhoodSceneBounds(origin: WorldPoint) {
   const corner = toScene({ x: 0, y: 0 }, origin);
   return { left: corner.x, top: corner.y, width: 14 * WORLD_SCALE, height: 12 * WORLD_SCALE };
+}
+
+/**
+ * Resolves a database landmark ID against server-owned scene coordinates.
+ * Callers provide only the player's authoritative world position and area origin;
+ * client-supplied target coordinates are never accepted.
+ */
+export function nearbyInteractionPoint(
+  playerWorldPoint: WorldPoint,
+  origin: WorldPoint,
+  area: NeighborhoodArea,
+): NeighborhoodInteractionPoint | null {
+  const playerScenePoint = toScene(playerWorldPoint, origin);
+  let nearest: NeighborhoodInteractionPoint | null = null;
+  let nearestDistance = Number.POSITIVE_INFINITY;
+  for (const target of area.interactionPoints ?? []) {
+    const distance = Math.hypot(playerScenePoint.x - target.x, playerScenePoint.y - target.y);
+    if (distance <= target.radius && distance < nearestDistance) {
+      nearest = target;
+      nearestDistance = distance;
+    }
+  }
+  return nearest;
 }
 
 export function nearestInteraction(
