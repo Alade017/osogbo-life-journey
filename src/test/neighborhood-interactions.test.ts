@@ -99,3 +99,26 @@ describe("available neighborhood interaction targets", () => {
     ).toEqual(["home", "market", "work", "npc"]);
   });
 });
+
+
+describe("neighborhood interaction points", () => {
+  it("uses the scheduled destination for a moving NPC", () => {
+    expect(
+      neighborhoodInteractionPoint(objects[3]!, [
+        { id: "npc", x: 40, y: 40, targetX: 90, targetY: 120, isMoving: true },
+      ]),
+    ).toEqual({ x: 90, y: 120 });
+  });
+
+  it("uses the current position for a stationary NPC", () => {
+    expect(
+      neighborhoodInteractionPoint(objects[3]!, [
+        { id: "npc", x: 55, y: 65, targetX: 90, targetY: 120, isMoving: false },
+      ]),
+    ).toEqual({ x: 55, y: 65 });
+  });
+
+  it("keeps building interaction points on their authored coordinates", () => {
+    expect(neighborhoodInteractionPoint(objects[1]!, [])).toEqual({ x: 20, y: 20 });
+  });
+});
