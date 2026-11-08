@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { availableNeighborhoodTargets } from "@/game/neighborhood-interactions";
+import {
+  availableNeighborhoodTargets,
+  venueEntranceKindForCategory,
+} from "@/game/neighborhood-interactions";
 import type { NeighborhoodObject } from "@/game/neighborhood-model";
 
 const objects: NeighborhoodObject[] = [
@@ -14,9 +17,25 @@ const unavailable = {
   hasShopOffers: false,
   hasLocalBusinesses: false,
   hasBankServices: false,
-  hasVenueInterior: false,
+  venueEntranceKind: null,
   hasCareerServices: false,
 };
+
+describe("venue entrance category mapping", () => {
+  it("routes commercial venues to market entrances", () => {
+    expect(venueEntranceKindForCategory("commercial")).toBe("market");
+  });
+
+  it.each(["work_industrial", "education", "health", "transport", "government", "recreation", "water_nature"])(
+    "routes %s venues to workplace/service entrances",
+    (category) => expect(venueEntranceKindForCategory(category)).toBe("work"),
+  );
+
+  it.each(["residential", "unknown", null, undefined])(
+    "does not infer a venue entrance for %s",
+    (category) => expect(venueEntranceKindForCategory(category)).toBeNull(),
+  );
+});
 
 describe("available neighborhood interaction targets", () => {
   it("hides unavailable building entrances while preserving NPC targets", () => {
@@ -37,18 +56,29 @@ describe("available neighborhood interaction targets", () => {
   });
 
   it("maps shop, business and bank services to the market entrance", () => {
-    const cases = ["hasShopOffers", "hasLocalBusinesses", "hasBankServices"] as const;
-    for (const capability of cases) {
+    for (const capability of ["hasShopOffers", "hasLocalBusinesses", "hasBankServices"] as const) {
       expect(
         availableNeighborhoodTargets(objects, { ...unavailable, [capability]: true }).map(({ id }) => id),
       ).toEqual(["market", "npc"]);
     }
   });
 
-  it("maps a designed venue interior to the market entrance only", () => {
+  it("routes commercial venue interiors to market entrances only", () => {
     expect(
-      availableNeighborhoodTargets(objects, { ...unavailable, hasVenueInterior: true }).map(({ id }) => id),
+      availableNeighborhoodTargets(objects, {
+        ...unavailable,
+        venueEntranceKind: "market",
+      }).map(({ id }) => id),
     ).toEqual(["market", "npc"]);
+  });
+
+  it("routes non-commercial venue interiors to workplace/service entrances only", () => {
+    expect(
+      availableNeighborhoodTargets(objects, {
+        ...unavailable,
+        venueEntranceKind: "work",
+      }).map(({ id }) => id),
+    ).toEqual(["work", "npc"]);
   });
 
   it("maps career services to the workplace entrance", () => {
