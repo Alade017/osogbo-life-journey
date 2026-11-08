@@ -108,6 +108,17 @@ describe("neighbourhood street dressing", () => {
     }
   });
 
+  it("keeps generated streetlights clear of pedestrian crossing approaches", () => {
+    const crossings = pedestrianCrossings(CITY_CENTRE_AREA);
+    for (const light of streetLightSpots(CITY_CENTRE_AREA, bounds))
+      for (const crossing of crossings) {
+        const overlaps =
+          Math.abs(light.x - crossing.x) < crossing.width / 2 + 6 &&
+          Math.abs(light.y - crossing.y) < crossing.depth / 2 + 6;
+        expect(overlaps).toBe(false);
+      }
+  });
+
   it("keeps crosswalk rectangles clear of complete obstacle footprints", () => {
     for (const crossing of pedestrianCrossings(CITY_CENTRE_AREA)) {
       for (const obstacle of CITY_CENTRE_AREA.obstacles ?? []) {
