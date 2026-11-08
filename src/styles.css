@@ -3458,27 +3458,59 @@
   position: absolute;
   inset: 0;
   z-index: 2;
-  display: grid;
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow: auto;
+  padding: clamp(12px, 3vw, 28px);
+  color: var(--foreground);
   background: var(--background);
 }
 
-.osogbo-map-fallback .osogbo-map-svg {
-  grid-area: 1 / 1;
+.osogbo-map-fallback section {
+  width: min(900px, 100%);
+  margin-inline: auto;
+}
+
+.osogbo-map-fallback section h2 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-weight: 750;
+}
+
+.osogbo-map-fallback section ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.osogbo-map-fallback section button {
   width: 100%;
-  height: 100%;
+  min-height: 44px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card);
+  color: var(--foreground);
+  background: var(--card);
+  text-align: left;
+  cursor: pointer;
+}
+
+.osogbo-map-fallback section button:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
 }
 
 .osogbo-map-fallback-notice {
-  align-self: end;
-  justify-self: center;
-  z-index: 3;
+  align-self: center;
   display: flex;
-  width: min(620px, calc(100% - 24px));
+  width: min(900px, 100%);
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin: 12px;
   padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: var(--shape-card);
