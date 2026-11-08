@@ -1104,7 +1104,7 @@ export function WorldHouse({
         windowPositions.map((x, index) => (
           <group key={`security-grille-${index}`} position={[x, height * 0.65 + 0.18, depth / 2 + 0.105]}>
             {[-1, 0, 1].map((bar) => (
-              <mesh key={`grille-bar-${bar}`}>
+              <mesh key={`grille-bar-${bar}`} position={[bar * 0.045, 0, 0]}>
                 <boxGeometry args={[0.025, height * 0.3, 0.025]} />
                 <WorldMaterial tone="metal" />
               </mesh>
