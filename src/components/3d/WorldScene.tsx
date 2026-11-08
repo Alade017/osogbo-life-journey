@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows, OrbitControls, Text } from "@react-three/drei";
-import { Object3D, Vector3, type InstancedMesh, type PerspectiveCamera } from "three";
+import { Object3D, Vector3, type InstancedMesh, type PerspectiveCamera, type Texture } from "three";
 import type { OrbitControls as Controls } from "three-stdlib";
 import {
   WORLD_CAMERA,
@@ -11,8 +11,22 @@ import {
   type WorldTone,
 } from "./world-theme";
 
-export function WorldMaterial({ tone = "wall", color }: { tone?: WorldTone; color?: string }) {
-  return <meshStandardMaterial {...WORLD_MATERIAL} color={color ?? WORLD_PALETTE[tone]} />;
+export function WorldMaterial({
+  tone = "wall",
+  color,
+  map,
+}: {
+  tone?: WorldTone;
+  color?: string;
+  map?: Texture | null;
+}) {
+  return (
+    <meshStandardMaterial
+      {...WORLD_MATERIAL}
+      color={color ?? WORLD_PALETTE[tone]}
+      map={map ?? null}
+    />
+  );
 }
 
 export function WorldLighting({ size = 30, dimmed = false }: { size?: number; dimmed?: boolean }) {
