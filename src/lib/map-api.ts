@@ -175,39 +175,6 @@ export async function requestMapLandmark(landmarkId: string, accountId: string) 
   };
 }
 
-export async function requestMapPlaceAction(
-  landmarkId: string,
-  actionId: string,
-  requestId: string,
-  accountId: string,
-) {
-  const { data, error } = await supabase.auth.getSession();
-  const session = data.session;
-  const token = session?.access_token;
-  if (error || !token) throw new MapApiError("Sign in to do this activity.", "UNAUTHORIZED");
-  if (session.user.id !== accountId) throw new MapApiError("Account changed", "UNAUTHORIZED");
-  const response = await fetch("/api/map/action", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      "Idempotency-Key": requestId,
-    },
-    body: JSON.stringify({ landmarkId, actionId }),
-  });
-  const result = (await response.json().catch(() => null)) as
-    PlaceActionResult | { error?: { code?: string } } | null;
-  if (!response.ok) {
-    const code =
-      result && "error" in result ? (result.error?.code ?? "INTERNAL_ERROR") : "INTERNAL_ERROR";
-    throw new MapApiError(code, code);
-  }
-  const current = await supabase.auth.getSession();
-  if (current.error || current.data.session?.user.id !== accountId)
-    throw new MapApiError("Account changed", "UNAUTHORIZED");
-  return result as PlaceActionResult;
-}
-
 export function getPendingTravelKey(landmarkId: string) {
   const storageKey = "osogbo-map-travel-request-v1";
   try {
