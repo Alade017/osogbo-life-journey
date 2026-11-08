@@ -563,9 +563,13 @@ export function R3FNeighborhoodSurface({
           {interactionTargets
             .filter((target) => target.kind !== "npc")
             .map((target) => {
-              const p = point(target.x, target.y);
-              const footprint =
-                target.kind === "npc" ? null : neighborhoodBuildingFootprint(target);
+              // Match the invisible interaction volume to the same footprint
+              // used by WorldHouse, including its forward depth offset.
+              const footprint = neighborhoodBuildingFootprint(target);
+              const p = point(
+                footprint.left + footprint.width / 2,
+                footprint.top + footprint.height / 2,
+              );
               return (
                 <mesh
                   key={target.id}
@@ -575,11 +579,7 @@ export function R3FNeighborhoodSurface({
                     onSelectTarget(target.id);
                   }}
                 >
-                  {target.kind === "npc" ? (
-                    <cylinderGeometry args={[0.58, 0.58, 2.6, 12]} />
-                  ) : (
-                    <boxGeometry args={[footprint!.width * unit, 2.6, footprint!.height * unit]} />
-                  )}
+                  <boxGeometry args={[footprint.width * unit, 2.6, footprint.height * unit]} />
                   <meshBasicMaterial transparent opacity={0} depthWrite={false} />
                 </mesh>
               );
