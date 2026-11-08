@@ -7,7 +7,7 @@ import {
   useState,
   type RefObject,
 } from "react";
-import { Canvas, useFrame, type ThreeEvent } from "@react-three/fiber";
+import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { Html, RoundedBox } from "@react-three/drei";
 import { DoubleSide, Plane, Vector3, type Group } from "three";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
@@ -181,10 +181,15 @@ function HouseDoorPanel({
 }) {
   const pivot = useRef<Group>(null);
   const angle = useRef(0);
-  useFrame((_, delta) => {
+  const { invalidate } = useThree();
+  // The room renders on demand, so the swing must request frames until it settles.
+  useEffect(() => invalidate(), [open, invalidate]);
+  useFrame((state, delta) => {
     const target = open ? DOOR_OPEN_ANGLE : 0;
-    angle.current += (target - angle.current) * Math.min(1, delta * 6);
+    const remaining = target - angle.current;
+    angle.current += remaining * Math.min(1, delta * 6);
     if (pivot.current) pivot.current.rotation.y = angle.current;
+    if (Math.abs(remaining) > 0.001) state.invalidate();
   });
   return (
     <group ref={pivot} position={[hingeX, 0, z]}>

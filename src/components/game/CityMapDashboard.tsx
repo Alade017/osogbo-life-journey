@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { requestDepartureFromHome } from "@/lib/home-departure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarDays, CloudOff, MapPinned, Smile, Compass, Lock, X } from "lucide-react";
 import {
@@ -335,6 +336,14 @@ export function CityMapDashboard({
     if (travelSubmitLock.current || !selectedDestination || travel.isPending) return;
     travelSubmitLock.current = true;
     setTravelError(null);
+    if (character.data?.inside_home_property_id) {
+      // Leaving a house plays the door first; the house screen runs the trip alongside it.
+      requestDepartureFromHome({ locationId: selectedDestination.id, mode });
+      void navigate({ to: "/house" }).finally(() => {
+        travelSubmitLock.current = false;
+      });
+      return;
+    }
     travel.mutate({ locationId: selectedDestination.id, mode });
   };
   const closeTravelSelector = () => {
