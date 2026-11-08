@@ -58,10 +58,11 @@ describe("landmark building variants", () => {
     const leftRotation = getPitchedRoofPanelRotation("left");
     const rightRotation = getPitchedRoofPanelRotation("right");
     const halfPanelWidth = 0.31;
-    const leftRidgeHeight = -0.2 * Math.sin(leftRotation) + halfPanelWidth * Math.sin(leftRotation);
-    const leftEaveHeight = -0.2 * Math.sin(leftRotation) - halfPanelWidth * Math.sin(leftRotation);
-    const rightRidgeHeight = 0.2 * Math.sin(rightRotation) - halfPanelWidth * Math.sin(rightRotation);
-    const rightEaveHeight = 0.2 * Math.sin(rightRotation) + halfPanelWidth * Math.sin(rightRotation);
+    // Each panel rotates around its own centre; the inner edge is the ridge.
+    const leftRidgeHeight = halfPanelWidth * Math.sin(leftRotation);
+    const leftEaveHeight = -halfPanelWidth * Math.sin(leftRotation);
+    const rightRidgeHeight = -halfPanelWidth * Math.sin(rightRotation);
+    const rightEaveHeight = halfPanelWidth * Math.sin(rightRotation);
 
     expect(leftRotation).toBeGreaterThan(0);
     expect(rightRotation).toBeLessThan(0);
