@@ -264,9 +264,8 @@ export function R3FTownSurface(props: Props) {
 
         if (!isIntersection) return;
 
-        // Avoid placing multiple crossings in adjacent intersection tiles.
-        if ((x + z) % 4 !== 0) return;
-
+        // Mark every connected junction so pedestrian crossings form a consistent
+        // city-wide network instead of appearing only at a sparse subset.
         const horizontalRoad = left || right;
         const p = point(x, z);
 
