@@ -3,7 +3,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows, OrbitControls, Text } from "@react-three/drei";
 import { Object3D, Vector3, type InstancedMesh, type PerspectiveCamera, type Texture } from "three";
 import type { OrbitControls as Controls } from "three-stdlib";
-import { getDistrictArchitecture, getPitchedRoofPanelRotation } from "../../game/district-architecture";
+import { getDistrictArchitecture, getPitchedRoofPanel } from "../../game/district-architecture";
 import {
   WORLD_CAMERA,
   WORLD_MATERIAL,
@@ -1195,19 +1195,19 @@ export function WorldHouse({
       {architecture.roof === "pitched" && (
         <>
           <mesh
-            position={[-width * 0.2, height + 0.43, 0]}
-            rotation={[0, 0, getPitchedRoofPanelRotation("left")]}
+            position={[getPitchedRoofPanel("left", width).positionX, height + 0.43, 0]}
+            rotation={[0, 0, getPitchedRoofPanel("left", width).rotation]}
             castShadow
           >
-            <boxGeometry args={[width * 0.62, 0.13, depth + 0.38]} />
+            <boxGeometry args={[getPitchedRoofPanel("left", width).width, 0.13, depth + 0.38]} />
             <WorldMaterial tone={architecture.accent} />
           </mesh>
           <mesh
-            position={[width * 0.2, height + 0.43, 0]}
-            rotation={[0, 0, getPitchedRoofPanelRotation("right")]}
+            position={[getPitchedRoofPanel("right", width).positionX, height + 0.43, 0]}
+            rotation={[0, 0, getPitchedRoofPanel("right", width).rotation]}
             castShadow
           >
-            <boxGeometry args={[width * 0.62, 0.13, depth + 0.38]} />
+            <boxGeometry args={[getPitchedRoofPanel("right", width).width, 0.13, depth + 0.38]} />
             <WorldMaterial tone={architecture.accent} />
           </mesh>
         </>
