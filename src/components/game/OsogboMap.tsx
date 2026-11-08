@@ -14,7 +14,7 @@ import { MapControls } from "@/components/game/MapControls";
 import { PlayerMarker } from "@/components/game/PlayerMarker";
 import { PlayerMovementControls } from "@/components/game/PlayerMovementControls";
 import { NearbyLocationPrompt } from "@/components/game/NearbyLocationPrompt";
-import { OsogboMapSvg } from "@/components/map/OsogboMap.svg";
+import legacyMapData from "@/data/osogbo-map.json";
 import { MapSceneSkeleton } from "@/components/game/loading-skeletons";
 import { useNearbyLocations } from "@/hooks/use-nearby-locations";
 import {
@@ -324,19 +324,39 @@ export function OsogboMap({ onMapReady, onSelectDistrict, onSelectLandmark }: Os
         data-map-center={`${OSOGBO_CENTER[1]},${OSOGBO_CENTER[0]}`}
       />
       {surface === "fallback" && (
-        <div className="osogbo-map-fallback">
-          <OsogboMapSvg
-            labelsVisible
-            showLandmarks
-            onDistrictSelect={(district) => onSelectDistrict?.(district.id)}
-            onLandmarkSelect={(landmark) => onSelectLandmark?.(landmark.id)}
-          />
+        <div className="osogbo-map-fallback" aria-label="Accessible Osogbo places">
           <div className="osogbo-map-fallback-notice" role="status" aria-live="polite">
-            <span>Street map unavailable on this connection. Showing the simplified map.</span>
+            <span>Street map unavailable on this connection. Use the place directory below.</span>
             <button type="button" onClick={retryMap}>
               Retry street map
             </button>
           </div>
+          <section aria-labelledby="osogbo-fallback-districts">
+            <h2 id="osogbo-fallback-districts">Districts</h2>
+            <ul>
+              {legacyMapData.districts.map((district) => (
+                <li key={district.id}>
+                  <button type="button" onClick={() => onSelectDistrict?.(district.id)}>
+                    {district.name}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+          <section aria-labelledby="osogbo-fallback-landmarks">
+            <h2 id="osogbo-fallback-landmarks">Landmarks</h2>
+            <ul>
+              {legacyMapData.districts.flatMap((district) =>
+                district.landmarks.map((landmark) => (
+                  <li key={landmark.id}>
+                    <button type="button" onClick={() => onSelectLandmark?.(landmark.id)}>
+                      {landmark.label} · {district.name}
+                    </button>
+                  </li>
+                )),
+              )}
+            </ul>
+          </section>
         </div>
       )}
       {mapInstance && <LocationMarker map={mapInstance} />}
