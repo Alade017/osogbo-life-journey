@@ -453,7 +453,7 @@ export function PlayableNeighborhood() {
     onMutate: () => beginTransition("entering", "Heading to your door", 3),
     mutationFn: async () => {
       if (!district?.personalHome || !homeTypeId)
-        throw new Error("Your home entrance is available in Olaiya.");
+        throw new Error("Your personal home is not available from this neighborhood.");
       const { data, error } = await supabase.rpc("enter_player_home");
       if (error) throw new Error(error.message);
       if (!isRecord(data) || typeof data["locationId"] !== "string")
@@ -728,13 +728,9 @@ export function PlayableNeighborhood() {
           <p className="neighborhood-eyebrow">Osogbo Life · Playable world</p>
           <h1>{district ? `${area.name} neighbourhood` : "Explore the neighbourhoods"}</h1>
           <p>
-            {district?.area.slug === "oja-oba"
-              ? "Explore market lanes, covered stalls and the loading yard."
-              : district?.area.slug === "city-centre"
-                ? "Walk the crossing, residential compounds and local shopfronts."
-                : district
-                  ? `Explore the streets, local businesses and landmarks of ${area.name}.`
-                  : "Travel to an eligible destination to explore its neighborhood."}
+            {district
+              ? `Explore the streets, local businesses and landmarks of ${area.name}.`
+              : "Travel to an eligible destination to explore its neighborhood."}
           </p>
         </div>
         <Link className="neighborhood-map-link" to="/map">
