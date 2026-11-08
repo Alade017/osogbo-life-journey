@@ -1099,8 +1099,22 @@ export function PlayableNeighborhood() {
                           {landmarkDetailsQuery.isPending ? (
                             <p role="status">Loading available activities...</p>
                           ) : landmarkDetailsQuery.isError ? (
-                            <p role="alert" className="text-sm text-destructive">
-                              {landmarkDetailsQuery.error.message}
+                            <div className="space-y-2" role="alert">
+                              <p className="text-sm text-destructive">
+                                {landmarkDetailsQuery.error.message}
+                              </p>
+                              <button
+                                type="button"
+                                className="neighborhood-action-card"
+                                disabled={connectionState !== "connected" || landmarkDetailsQuery.isFetching}
+                                onClick={() => void landmarkDetailsQuery.refetch()}
+                              >
+                                {landmarkDetailsQuery.isFetching ? "Retrying…" : "Retry loading activities"}
+                              </button>
+                            </div>
+                          ) : (landmarkDetailsQuery.data?.actions?.length ?? 0) === 0 ? (
+                            <p role="status" className="text-sm text-muted-foreground">
+                              There are no activities available at this landmark right now.
                             </p>
                           ) : (
                             <PlaceActionMenu
