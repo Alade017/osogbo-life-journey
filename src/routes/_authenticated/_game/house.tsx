@@ -67,7 +67,11 @@ import type { Appearance } from "@/game/avatar-appearance";
 import housingData from "@/data/housing.json";
 import { avatarAnimationForActivity } from "@/game/character-animation";
 import { formatNaira, q, rpc } from "@/lib/game";
-import { takeDepartureFromHome, type HomeDeparture } from "@/lib/home-departure";
+import {
+  runHomeDepartureAfterWalk,
+  takeDepartureFromHomeWhenReady,
+  type HomeDeparture,
+} from "@/lib/home-departure";
 import { supabase } from "@/integrations/supabase/client";
 import {
   houseStateQueryKey,
@@ -822,24 +826,38 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   }, [outside.kind, serverState?.house?.id]);
   /** A trip started from inside: the door opens and the walk out runs while the travel request is sent. */
   const leaveForTrip = async (departure: HomeDeparture) => {
-    if (editing || taskBusy || isOffline || !serverState?.house) return;
+    if (
+      editing ||
+      taskBusy ||
+      isOffline ||
+      !serverState?.house ||
+      !isInsideHome ||
+      !gameTime.ready ||
+      gameTime.busy
+    )
+      return;
     setActivityError("");
     const [doorX, doorY, doorZ] = houseDoorThreshold(
       serverState.house.house_type_id,
       roomWidth,
       roomDepth,
     );
-    const travelling = rpc.travelToLocation(departure);
-    travelling.catch(() => undefined);
-    if (!(await walkTo([doorX, doorY, doorZ]))) return;
-    setDoorOpen(true);
-    await new Promise<void>((resolve) => window.setTimeout(resolve, DOOR_SWING_MS));
-    beginTransition("leaving", "Heading out for your trip", 3);
+    let transitionStarted = false;
     try {
-      await travelling;
+      const departed = await runHomeDepartureAfterWalk(
+        () => walkTo([doorX, doorY, doorZ]),
+        async () => {
+          setDoorOpen(true);
+          await new Promise<void>((resolve) => window.setTimeout(resolve, DOOR_SWING_MS));
+          beginTransition("leaving", "Heading out for your trip", 3);
+          transitionStarted = true;
+          await rpc.travelToLocation(departure);
+        },
+      );
+      if (!departed) return;
     } catch (error) {
       setDoorOpen(false);
-      endTransition();
+      if (transitionStarted) endTransition();
       setActivityError(error instanceof Error ? error.message : "Travel could not be completed.");
       return;
     }
@@ -947,14 +965,28 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const departureRan = useRef(false);
   /** A map trip started from inside the house runs here, once, when the house is ready. */
   useEffect(() => {
-    if (!serverState?.house || !isInsideHome || departureRan.current) return;
-    const departure = takeDepartureFromHome();
+    if (departureRan.current) return;
+    const departure = takeDepartureFromHomeWhenReady({
+      houseAvailable: !!serverState?.house,
+      isInsideHome,
+      editing,
+      busy: taskBusy || !gameTime.ready || gameTime.busy,
+      offline: isOffline,
+    });
     if (!departure) return;
     departureRan.current = true;
     void leaveForTrip(departure);
     // The trip runs once per arrival in the house; the handler reads current room state.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [serverState?.house?.id, isInsideHome]);
+  }, [
+    serverState?.house?.id,
+    isInsideHome,
+    editing,
+    taskBusy,
+    gameTime.ready,
+    gameTime.busy,
+    isOffline,
+  ]);
   const deliveryQueryKey = [
     "homeFoodDeliveries",
     character?.id,
