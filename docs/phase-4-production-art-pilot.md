@@ -7,7 +7,7 @@ The active playable neighborhood is rendered by the existing React Three Fiber /
 - The active R3F scene constructs buildings with reusable `WorldHouse` geometry. Confirmed world categories select architecture families (market, civic, health, education, transit, recreation and services), while home entrances retain the residential profile.
 - The Phaser Graphics implementation retains its own semantic profiles for compound, shop, kiosk, market and work families; it must not be described as the active playable renderer.
 - Roofs, wall planes, eaves, roof seams, doors, windows, profile-enabled security grilles, awnings and verandas are derived from each building's existing width/depth footprint and a typed style profile.
-- Environment props are constructed procedurally in the R3F scene from existing world components and data-driven neighborhood dressing. The Phaser prototype also retains typed shape profiles for trees, streetlights, benches, bins and signs.
+- Environment props are constructed procedurally in the R3F scene from existing world components and data-driven neighborhood dressing. Arterial intersections derive traffic-signal positions from road geometry; vehicle positions retain lane direction so cars face along horizontal and vertical streets. The Phaser prototype also retains typed shape profiles for trees, streetlights, benches, bins and signs.
 - Dimensions are derived from each world's existing obstacle/building dimensions; no new per-location placement coordinates or collision dimensions are introduced.
 - Unknown obstacle kinds are skipped rather than silently rendered as an unrelated generic prop.
 
