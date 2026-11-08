@@ -11,10 +11,9 @@ import type { Appearance } from "@/game/avatar-appearance";
 import { AVATAR_DIRECTIONS, avatarAnimationKey } from "@/game/character-animation";
 import { ensureAvatarTexture } from "@/game/character-texture";
 import {
-  NEIGHBORHOOD_ART_ASSETS,
-  NEIGHBORHOOD_BUILDING_ART,
-  NEIGHBORHOOD_PROP_ART,
-  neighborhoodPropArtKind,
+  NEIGHBORHOOD_BUILDING_PROFILES,
+  NEIGHBORHOOD_PROP_PROFILES,
+  neighborhoodPropKind,
 } from "@/game/neighborhood-art";
 import {
   neighborhoodSceneBounds,
@@ -172,12 +171,6 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
     this.playersRef = options.playersRef;
     this.onReady = options.onReady;
     this.onScene = options.onScene;
-  }
-
-  preload() {
-    for (const asset of NEIGHBORHOOD_ART_ASSETS) {
-      this.load.svg(asset.key, asset.path, { width: asset.width, height: asset.height });
-    }
   }
 
   create() {
@@ -487,7 +480,6 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
         this.area.slug === "oja-oba" ? "" : object.name,
         footprint.width,
         footprint.height,
-        47,
       );
     }
     for (const obstacle of this.area.obstacles ?? []) {
@@ -507,7 +499,6 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
         this.area.slug === "oja-oba" ? "" : obstacle.id.replaceAll("-", " "),
         obstacle.width,
         obstacle.height,
-        obstacle.kind === "kiosk" ? 28 : 38,
       );
     }
   }
@@ -520,81 +511,122 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
     name: string,
     width: number,
     depth: number,
-    wallHeight: number,
   ) {
+    const profile = NEIGHBORHOOD_BUILDING_PROFILES[kind];
+    const anchor = project(x, y);
     const container = this.add
-      .container(project(x, y).x, project(x, y).y)
+      .container(anchor.x, anchor.y)
       .setDepth(neighborhoodDepth(x, y + depth / 2));
     const graphics = this.add.graphics();
     const localProject = (dx: number, dy: number, lift = 0) => {
       const point = project(x + dx, y + dy);
-      const anchor = project(x, y);
       return { x: point.x - anchor.x, y: point.y - anchor.y - lift };
     };
+    const wallHeight = Math.max(16, Math.min(width, depth) * profile.wallHeightRatio);
+    const overhang = Math.min(width, depth) * profile.roofOverhangRatio;
     const corners = [
       localProject(-width / 2, -depth / 2),
       localProject(width / 2, -depth / 2),
       localProject(width / 2, depth / 2),
       localProject(-width / 2, depth / 2),
     ];
-    const roof = corners.map((point) => ({ x: point.x, y: point.y - wallHeight }));
-    // Ground-contact shadow stays separate from the solid footprint.
+    const roof = [
+      localProject(-width / 2 - overhang, -depth / 2 - overhang, wallHeight),
+      localProject(width / 2 + overhang, -depth / 2 - overhang, wallHeight),
+      localProject(width / 2 + overhang, depth / 2 + overhang, wallHeight),
+      localProject(-width / 2 - overhang, depth / 2 + overhang, wallHeight),
+    ];
+
     fillPolygon(
       graphics,
-      corners.map((point) => ({ x: point.x + 9, y: point.y + 7 })),
+      corners.map((point) => ({ x: point.x + overhang * 0.35, y: point.y + overhang * 0.25 })),
       0x334135,
       0.2,
     );
-    fillPolygon(graphics, [corners[1]!, corners[2]!, roof[2]!, roof[1]!], 0x9c6a48);
-    fillPolygon(graphics, [corners[2]!, corners[3]!, roof[3]!, roof[2]!], 0xb47c55);
-    const roofColor = kind === "compound" ? 0xa94e35 : kind === "kiosk" ? 0x3c755d : 0x355d78;
-    fillPolygon(graphics, roof, roofColor);
-    // Restrained metal-roof seams share the same projection as the building.
-    for (let rib = -width / 2 + 12; rib < width / 2; rib += 12) {
-      const from = localProject(rib, -depth / 2, wallHeight);
-      const to = localProject(rib, depth / 2, wallHeight);
-      graphics.lineStyle(1, 0xffffff, 0.14).lineBetween(from.x, from.y, to.x, to.y);
+    fillPolygon(graphics, [corners[1]!, corners[2]!, { ...roof[2]! }, { ...roof[1]! }], profile.wallColors[1]);
+    fillPolygon(graphics, [corners[2]!, corners[3]!, { ...roof[3]! }, { ...roof[2]! }], profile.wallColors[0]);
+
+    const ribSpacing = Math.max(5, Math.min(width, depth) * profile.roofRibSpacingRatio);
+    for (let rib = -width / 2; rib <= width / 2; rib += ribSpacing) {
+      const from = localProject(rib, -depth / 2 - overhang, wallHeight);
+      const to = localProject(rib, depth / 2 + overhang, wallHeight);
+      graphics.lineStyle(1, profile.trimColor, 0.2).lineBetween(from.x, from.y, to.x, to.y);
     }
-    graphics.lineStyle(2, 0x533e32, 0.88);
+    fillPolygon(graphics, roof, profile.roofColor);
+    graphics.lineStyle(2, 0x533e32, 0.86);
     graphics.strokePoints(
       roof.map(({ x: pointX, y: pointY }) => new Phaser.Geom.Point(pointX, pointY)),
       true,
     );
 
-    const frontCenter = localProject(0, depth / 2);
-    graphics.fillStyle(kind === "compound" ? 0x29496c : 0x5b412f, 1);
-    graphics.fillRoundedRect(frontCenter.x - 6, frontCenter.y - 28, 12, 27, 2);
-    if (kind !== "kiosk") {
-      graphics.fillStyle(0x9ac4bf, 1);
-      graphics.fillRect(frontCenter.x - width * 0.29, frontCenter.y - wallHeight + 10, 13, 11);
-      graphics.fillRect(frontCenter.x + width * 0.17, frontCenter.y - wallHeight + 10, 13, 11);
-      graphics.lineStyle(2, 0xe1c38a, 1);
-      graphics.lineBetween(
-        frontCenter.x - width * 0.29,
-        frontCenter.y - wallHeight + 15,
-        frontCenter.x - width * 0.29 + 13,
-        frontCenter.y - wallHeight + 15,
+    const frontage = localProject(0, depth / 2);
+    const doorWidth = Math.max(5, Math.min(width * 0.15, depth * 0.34));
+    const doorHeight = wallHeight * 0.66;
+    graphics.fillStyle(profile.doorColor, 1);
+    graphics.fillRoundedRect(
+      frontage.x - doorWidth / 2,
+      frontage.y - doorHeight,
+      doorWidth,
+      doorHeight,
+      Math.max(1, doorWidth * 0.12),
+    );
+    graphics.fillStyle(profile.trimColor, 0.8);
+    graphics.fillRect(frontage.x + doorWidth * 0.18, frontage.y - doorHeight * 0.52, 2, 2);
+
+    const windowWidth = Math.max(5, Math.min(width * 0.13, depth * 0.3));
+    const windowHeight = Math.max(5, wallHeight * 0.23);
+    const windowSpacing = width / (profile.windowCount + 1);
+    for (let index = 0; index < profile.windowCount; index += 1) {
+      const offset = (index - (profile.windowCount - 1) / 2) * windowSpacing;
+      const windowX = frontage.x + offset * 0.48;
+      const windowY = frontage.y - wallHeight * 0.67;
+      graphics.fillStyle(profile.trimColor, 1);
+      graphics.fillRect(
+        windowX - windowWidth / 2 - 2,
+        windowY - windowHeight / 2 - 2,
+        windowWidth + 4,
+        windowHeight + 4,
       );
-    }
-    if (kind === "shop" || kind === "kiosk") {
-      const awningY = frontCenter.y - wallHeight + 31;
-      graphics.fillStyle(0xe4c26c, 1).fillRect(-width * 0.34, awningY, width * 0.68, 8);
-      graphics.fillStyle(0x315e4b, 1).fillRect(-width * 0.29, awningY + 8, width * 0.58, 12);
-    }
-    const buildingArt = NEIGHBORHOOD_BUILDING_ART[kind];
-    if (this.textures.exists(buildingArt.key)) {
-      graphics.destroy();
-      container.add(
-        this.add
-          .image(0, 0, buildingArt.key)
-          .setOrigin(buildingArt.originX, buildingArt.originY)
-          .setScale(buildingArt.scale),
+      graphics.fillStyle(profile.windowColor, 1);
+      graphics.fillRect(
+        windowX - windowWidth / 2,
+        windowY - windowHeight / 2,
+        windowWidth,
+        windowHeight,
       );
+      graphics.lineStyle(1, profile.trimColor, 0.9);
+      graphics.lineBetween(windowX, windowY - windowHeight / 2, windowX, windowY + windowHeight / 2);
+      graphics.lineBetween(windowX - windowWidth / 2, windowY, windowX + windowWidth / 2, windowY);
+    }
+
+    if (profile.frontage === "awning" && profile.awningColor !== undefined) {
+      const awningY = frontage.y - wallHeight * 0.43;
+      const awningWidth = width * 0.7;
+      graphics.fillStyle(profile.awningColor, 1);
+      graphics.fillRect(frontage.x - awningWidth / 2, awningY, awningWidth, Math.max(4, depth * 0.08));
+      graphics.fillStyle(profile.trimColor, 0.92);
+      graphics.fillRect(frontage.x - awningWidth / 2, awningY + Math.max(4, depth * 0.08), awningWidth, 2);
+    } else if (profile.frontage === "veranda") {
+      const verandaWidth = width * 0.72;
+      const verandaY = frontage.y - wallHeight * 0.38;
+      graphics.fillStyle(profile.trimColor, 1);
+      graphics.fillRect(frontage.x - verandaWidth / 2, verandaY, verandaWidth, Math.max(3, depth * 0.06));
+      for (const side of [-1, 1]) {
+        graphics.fillRect(
+          frontage.x + side * verandaWidth * 0.42 - 1.5,
+          verandaY,
+          3,
+          wallHeight * 0.34,
+        );
+      }
     } else {
-      container.add(graphics);
+      graphics.lineStyle(2, profile.trimColor, 0.8);
+      graphics.lineBetween(frontage.x - doorWidth * 0.85, frontage.y, frontage.x + doorWidth * 0.85, frontage.y);
     }
+
+    container.add(graphics);
     const title = this.add
-      .text(0, -wallHeight - 22, sign, {
+      .text(0, -wallHeight - overhang - 18, sign, {
         color: "#fff8e9",
         backgroundColor: "#34473a",
         fontFamily: "system-ui, sans-serif",
@@ -604,7 +636,7 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
       })
       .setOrigin(0.5, 1);
     const detail = this.add
-      .text(0, -wallHeight - 5, name, {
+      .text(0, -wallHeight - overhang - 2, name, {
         color: "#263c31",
         fontFamily: "system-ui, sans-serif",
         fontSize: "9px",
@@ -622,54 +654,109 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
     for (const obstacle of this.area.obstacles ?? []) {
       if (obstacle.kind === "compound" || obstacle.kind === "shop" || obstacle.kind === "kiosk")
         continue;
+      const profileKind = neighborhoodPropKind(obstacle.kind);
+      if (!profileKind) continue;
+      const profile = NEIGHBORHOOD_PROP_PROFILES[profileKind];
       const anchor = project(obstacle.x, obstacle.y);
       const container = this.add
         .container(anchor.x, anchor.y)
         .setDepth(neighborhoodDepth(obstacle.x, obstacle.y));
       const graphics = this.add.graphics();
-      const propKind = neighborhoodPropArtKind(obstacle.kind);
-      const propArt = propKind ? NEIGHBORHOOD_PROP_ART[propKind] : null;
-      if (propArt && this.textures.exists(propArt.key)) {
-        container.add(
-          this.add
-            .image(0, 0, propArt.key)
-            .setOrigin(propArt.originX, propArt.originY)
-            .setScale(propArt.scale),
+      const width = Math.max(8, obstacle.width * profile.widthRatio);
+      const height = Math.max(10, obstacle.height * profile.heightRatio);
+      const [baseColor, detailColor, highlightColor, accentColor] = profile.colors;
+
+      graphics.fillStyle(0x334135, 0.16).fillEllipse(0, 0, width * 0.82, Math.max(3, height * 0.09));
+      if (profile.shape === "canopy") {
+        const trunkWidth = width * 0.13;
+        const trunkHeight = height * 0.48;
+        graphics.fillStyle(baseColor!, 1).fillRoundedRect(
+          -trunkWidth / 2,
+          -trunkHeight * 0.08,
+          trunkWidth,
+          trunkHeight,
+          trunkWidth * 0.2,
         );
-        graphics.destroy();
-      } else if (obstacle.kind === "tree") {
-        graphics.fillStyle(0x3f4b34, 0.22).fillEllipse(0, 0, 34, 12);
-        graphics.fillStyle(0x795b3b, 1).fillRect(-4, -26, 8, 27);
-        graphics.fillStyle(0x426e48, 1).fillCircle(0, -35, 18);
-        graphics.fillStyle(0x668d50, 1).fillCircle(-9, -42, 13);
-        graphics.fillStyle(0x7d9954, 1).fillCircle(9, -43, 12);
-        graphics.fillStyle(0x9ba45d, 0.85).fillCircle(1, -51, 8);
-      } else if (obstacle.kind === "streetlight") {
-        graphics.fillStyle(0x35413a, 0.2).fillEllipse(0, 0, 20, 8);
-        graphics.fillStyle(0x46534a, 1).fillRect(-2, -34, 4, 35);
-        graphics.fillStyle(0x35413a, 1).fillRect(-2, -35, 17, 3);
-        graphics.fillStyle(0xffdf8a, 0.28).fillCircle(14, -32, 11);
-        graphics.fillStyle(0xf8d77f, 1).fillCircle(14, -32, 4);
-      } else if (obstacle.kind === "bench") {
-        graphics.fillStyle(0x66513a, 1).fillRoundedRect(-21, -16, 42, 7, 2);
-        graphics.fillStyle(0x876846, 1).fillRoundedRect(-21, -8, 42, 6, 2);
-        graphics.fillStyle(0x3e4a3e, 1).fillRect(-16, -3, 4, 11);
-        graphics.fillStyle(0x3e4a3e, 1).fillRect(12, -3, 4, 11);
-      } else if (obstacle.kind === "bin") {
-        graphics.fillStyle(0x3c6b59, 1).fillRoundedRect(-8, -20, 16, 22, 3);
-        graphics.fillStyle(0x253e36, 1).fillRect(-10, -21, 20, 4);
-        graphics.fillStyle(0x9cba94, 1).fillRect(-5, -14, 10, 2);
+        graphics.fillStyle(detailColor!, 1).fillCircle(0, -height * 0.66, width * 0.31);
+        graphics.fillStyle(highlightColor!, 1).fillCircle(-width * 0.2, -height * 0.7, width * 0.22);
+        graphics.fillStyle(accentColor!, 0.9).fillCircle(width * 0.2, -height * 0.72, width * 0.2);
+      } else if (profile.shape === "lamp") {
+        const poleWidth = Math.max(2, width * 0.1);
+        const poleHeight = height * 0.82;
+        graphics.fillStyle(baseColor!, 1).fillRect(-poleWidth / 2, -poleHeight, poleWidth, poleHeight);
+        graphics.fillStyle(detailColor!, 1).fillRect(-poleWidth / 2, -poleHeight, width * 0.42, poleWidth * 1.1);
+        graphics.fillStyle(highlightColor!, 0.24).fillCircle(width * 0.32, -poleHeight, width * 0.2);
+        graphics.fillStyle(highlightColor!, 1).fillCircle(width * 0.32, -poleHeight, Math.max(2, poleWidth * 1.1));
+      } else if (profile.shape === "bench") {
+        const seatHeight = height * 0.18;
+        graphics.fillStyle(baseColor!, 1).fillRoundedRect(
+          -width / 2,
+          -height * 0.48,
+          width,
+          seatHeight,
+          Math.max(1, seatHeight * 0.2),
+        );
+        graphics.fillStyle(detailColor!, 1).fillRoundedRect(
+          -width / 2,
+          -height * 0.68,
+          width,
+          seatHeight * 0.72,
+          Math.max(1, seatHeight * 0.2),
+        );
+        graphics.fillStyle(highlightColor!, 1);
+        for (const side of [-1, 1]) {
+          graphics.fillRect(side * width * 0.34, -height * 0.3, Math.max(2, width * 0.06), height * 0.28);
+        }
+      } else if (profile.shape === "bin") {
+        graphics.fillStyle(baseColor!, 1).fillRoundedRect(
+          -width * 0.34,
+          -height * 0.78,
+          width * 0.68,
+          height * 0.72,
+          Math.max(2, width * 0.08),
+        );
+        graphics.fillStyle(detailColor!, 1).fillRoundedRect(
+          -width * 0.42,
+          -height * 0.84,
+          width * 0.84,
+          height * 0.1,
+          Math.max(1, width * 0.04),
+        );
+        graphics.fillStyle(highlightColor!, 0.9).fillRect(
+          -width * 0.18,
+          -height * 0.58,
+          width * 0.36,
+          Math.max(2, height * 0.05),
+        );
       } else {
-        graphics.fillStyle(0x76513a, 1).fillRect(-2, -25, 4, 27);
-        graphics.fillStyle(0xe8c878, 1).fillRoundedRect(-17, -34, 34, 15, 3);
-        graphics.lineStyle(1, 0x785936, 1).strokeRoundedRect(-17, -34, 34, 15, 3);
-        graphics.fillStyle(0x355948, 1).fillCircle(0, -27, 3);
+        const postWidth = Math.max(2, width * 0.07);
+        graphics.fillStyle(baseColor!, 1).fillRect(-postWidth / 2, -height * 0.55, postWidth, height * 0.55);
+        graphics.fillStyle(detailColor!, 1).fillRoundedRect(
+          -width / 2,
+          -height * 0.92,
+          width,
+          height * 0.34,
+          Math.max(2, width * 0.06),
+        );
+        graphics.fillStyle(highlightColor!, 1).fillRoundedRect(
+          -width * 0.42,
+          -height * 0.86,
+          width * 0.84,
+          height * 0.22,
+          Math.max(1, width * 0.04),
+        );
+        graphics.fillStyle(accentColor ?? 0xf2e4c8, 1).fillRect(
+          -width * 0.25,
+          -height * 0.77,
+          width * 0.5,
+          Math.max(2, height * 0.04),
+        );
       }
-      if (graphics.active) container.add(graphics);
-      if (obstacle.kind === "landmark" && obstacle.label) {
+      container.add(graphics);
+      if ((obstacle.kind === "landmark" || obstacle.kind === "sign") && obstacle.label) {
         container.add(
           this.add
-            .text(0, -48, obstacle.label, {
+            .text(0, -height - 5, obstacle.label, {
               color: "#263c31",
               fontFamily: "system-ui, sans-serif",
               fontSize: "9px",
