@@ -34,6 +34,7 @@ import {
   WorldRoads,
   WorldSidewalks,
   WorldStreetLights,
+  WorldTrafficLights,
   WorldStreetVendors,
   WorldTrees,
   type WorldTree,
@@ -50,6 +51,7 @@ import {
   roadMarkings,
   sidewalksAndCurbs,
   streetLightSpots,
+  trafficLightSpots,
   vendorSpots,
   type DressingRect,
 } from "@/game/neighborhood-dressing";
@@ -289,6 +291,7 @@ export function R3FNeighborhoodSurface({
       curbs: kerbs.curbs,
       crossings: pedestrianCrossings(area),
       lights: streetLightSpots(area, bounds),
+      trafficLights: trafficLightSpots(area),
       cars: carSpots(area, bounds),
       people: pedestrianSpots(area, bounds),
       vendors: vendorSpots(area),
@@ -315,6 +318,7 @@ export function R3FNeighborhoodSurface({
       sidewalks: flat(dressing.sidewalks, 0.05, 0.1),
       curbs: flat(dressing.curbs, 0.09, 0.14),
       lights: onGround(dressing.lights),
+      trafficLights: onGround(dressing.trafficLights),
       cars: onGround(dressing.cars),
       people: onGround(dressing.people),
       vendors: onGround(dressing.vendors),
@@ -374,6 +378,7 @@ export function R3FNeighborhoodSurface({
           <WorldPedestrianCrossings items={street.crossings} />
           <WorldSidewalks sidewalks={street.sidewalks} curbs={street.curbs} />
           <WorldStreetLights positions={street.lights} size={streetSize} />
+          <WorldTrafficLights positions={street.trafficLights} size={streetSize} />
           <WorldCars positions={street.cars} size={streetSize} />
           <WorldStreetVendors positions={street.vendors} size={streetSize} />
           <WorldPeople positions={street.people} />
