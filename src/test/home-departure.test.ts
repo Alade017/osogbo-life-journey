@@ -31,11 +31,17 @@ const blockedReadinessCases: Array<[string, Partial<HomeDepartureReadiness>]> = 
 ];
 
 describe("home departure handoff", () => {
-  it.each(blockedReadinessCases)("does not consume a queued request while %s", (_label, blocked) => {
-    const departure = requestDepartureFromHome({ locationId: "destination-1", mode: "walking" });
-    expect(takeDepartureFromHomeWhenReady({ ...ready, ...blocked })).toBeNull();
-    expect(peekPendingDepartureFromHome()).toBe(departure);
-  });
+  it.each(blockedReadinessCases)(
+    "does not consume a queued request while %s",
+    (_label, blocked) => {
+      const departure = requestDepartureFromHome({
+        locationId: "destination-1",
+        mode: "walking",
+      });
+      expect(takeDepartureFromHomeWhenReady({ ...ready, ...blocked })).toBeNull();
+      expect(peekPendingDepartureFromHome()).toBe(departure);
+    },
+  );
 
   it("clears only the exact request that failed navigation", () => {
     const older = requestDepartureFromHome({ locationId: "older", mode: "walking" });

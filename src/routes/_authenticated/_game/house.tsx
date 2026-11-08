@@ -824,7 +824,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     // The room is ready once its house data is loaded; the sequence runs once per arrival.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [outside.kind, serverState?.house?.id]);
-  /** A trip started from inside: the door opens and the walk out runs while the travel request is sent. */
+  /** A trip started from inside: finish the walk and door sequence before requesting server travel. */
   const leaveForTrip = async (departure: HomeDeparture) => {
     if (
       editing ||
