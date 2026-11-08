@@ -1100,6 +1100,18 @@ export function WorldHouse({
           </group>
         ))}
 
+      {detailed && architecture.windowGrilles &&
+        windowPositions.map((x, index) => (
+          <group key={`security-grille-${index}`} position={[x, height * 0.65 + 0.18, depth / 2 + 0.105]}>
+            {[-1, 0, 1].map((bar) => (
+              <mesh key={`grille-bar-${bar}`}>
+                <boxGeometry args={[0.025, height * 0.3, 0.025]} />
+                <WorldMaterial tone="metal" />
+              </mesh>
+            ))}
+          </group>
+        ))}
+
       {/* MARKET AND FOOD BUILDINGS */}
       {isMarket && (
         <>
