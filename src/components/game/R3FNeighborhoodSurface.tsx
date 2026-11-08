@@ -119,6 +119,7 @@ function NeighborhoodNpcActor({
     (npc.isMoving || ["working", "shopping", "socializing"].includes(npc.activityKind));
   const targetKey = `${target[0].toFixed(3)}:${target[2].toFixed(3)}`;
   const arrivedTarget = useRef<string | null>(null);
+  const pauseSnapshotSaved = useRef(false);
 
   // R3F receives a newly allocated start tuple on every parent render.
   // Only apply it when the actual spawn/confirmed position changes; otherwise
@@ -133,9 +134,15 @@ function NeighborhoodNpcActor({
   // Pausing the simulation freezes the rendered actor where it actually is.
   // Persist that point so interactions and resume logic use the same position.
   useEffect(() => {
-    if (!npc.isPaused) return;
+    if (!npc.isPaused) {
+      pauseSnapshotSaved.current = false;
+      return;
+    }
+    if (pauseSnapshotSaved.current) return;
     const actor = group.current;
-    if (actor) onPause(actor.position.x, actor.position.z);
+    if (!actor) return;
+    pauseSnapshotSaved.current = true;
+    onPause(actor.position.x, actor.position.z);
   }, [npc.isPaused, onPause]);
 
   useEffect(() => {
