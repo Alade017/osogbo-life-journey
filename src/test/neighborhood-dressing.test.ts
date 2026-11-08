@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   carSpots,
   pedestrianCrossings,
+  pedestrianCrossingStripes,
   pedestrianSpots,
   roadMarkings,
   sidewalksAndCurbs,
@@ -93,6 +94,24 @@ describe("neighbourhood street dressing", () => {
             (crossing.depth + marking.depth) / 2;
         expect(overlaps).toBe(false);
       }
+  });
+
+  it("renders each pedestrian crossing as evenly spaced zebra stripes", () => {
+    const crossings = pedestrianCrossings(CITY_CENTRE_AREA);
+    const stripes = pedestrianCrossingStripes(crossings);
+    expect(stripes).toHaveLength(crossings.length * 4);
+    for (const crossing of crossings) {
+      const matching = stripes.filter((stripe) =>
+        Math.abs(stripe.x - crossing.x) <= crossing.width / 2 &&
+        Math.abs(stripe.y - crossing.y) <= crossing.depth / 2,
+      );
+      expect(matching).toHaveLength(4);
+      if (crossing.width >= crossing.depth) {
+        expect(matching.every((stripe) => stripe.width === crossing.width)).toBe(true);
+      } else {
+        expect(matching.every((stripe) => stripe.depth === crossing.depth)).toBe(true);
+      }
+    }
   });
 
   it("leaves unobstructed pedestrian openings through sidewalks and kerbs", () => {
