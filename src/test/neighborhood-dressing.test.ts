@@ -56,6 +56,33 @@ describe("neighbourhood street dressing", () => {
         );
   });
 
+  it("keeps crosswalk rectangles clear of complete obstacle footprints", () => {
+    for (const crossing of pedestrianCrossings(CITY_CENTRE_AREA))
+      for (const obstacle of CITY_CENTRE_AREA.obstacles ?? []) {
+        const overlaps =
+          Math.abs(crossing.x - obstacle.x) <
+            (crossing.width + obstacle.width) / 2 + 2 &&
+          Math.abs(crossing.y - obstacle.y) <
+            (crossing.depth + obstacle.height) / 2 + 2;
+        expect(overlaps).toBe(false);
+      }
+  });
+
+  it("does not create crossings where road extents do not meet", () => {
+    const vertical = CITY_CENTRE_AREA.roads?.find((road) => road.axis === "vertical");
+    const horizontal = CITY_CENTRE_AREA.roads?.find((road) => road.axis === "horizontal");
+    expect(vertical).toBeDefined();
+    expect(horizontal).toBeDefined();
+    const separatedArea = {
+      ...CITY_CENTRE_AREA,
+      roads: [
+        { ...vertical!, start: 1000, end: 1100 },
+        { ...horizontal!, start: -500, end: -400 },
+      ],
+    };
+    expect(pedestrianCrossings(separatedArea)).toEqual([]);
+  });
+
   it("derives deterministic traffic signals at clear arterial junctions", () => {
     const signals = trafficLightSpots(CITY_CENTRE_AREA);
     expect(signals.length).toBeGreaterThan(0);
