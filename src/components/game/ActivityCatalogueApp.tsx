@@ -6,6 +6,13 @@ import { q, type Activity } from "@/lib/game";
 import { ACTIVITY_CATEGORIES, parseJobActivityRequirements } from "@/lib/job-activity-model";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const CATEGORY_LABELS: Record<string, string> = {
   rest: "Rest",
@@ -76,9 +83,7 @@ function requirementStatus(activity: Activity, context: EligibilityContext): str
     }
   }
 
-  const missingItem = (requirements.items ?? []).find(
-    (slug) => !context.itemSlugs.includes(slug),
-  );
+  const missingItem = (requirements.items ?? []).find((slug) => !context.itemSlugs.includes(slug));
 
   return missingItem ? `Requires ${missingItem.replace(/[-_]/g, " ")}` : null;
 }
@@ -103,7 +108,12 @@ function unsupportedRewardMetadata(value: Activity["rewards"]): boolean {
       return false;
     }
 
-    if (key === "skillXp" && reward !== null && typeof reward === "object" && !Array.isArray(reward)) {
+    if (
+      key === "skillXp" &&
+      reward !== null &&
+      typeof reward === "object" &&
+      !Array.isArray(reward)
+    ) {
       const config = reward as Record<string, unknown>;
       return (
         typeof config["slug"] !== "string" ||
@@ -125,10 +135,7 @@ function configuredSocialReward(value: Activity["rewards"]): number | null {
   }
 
   const reward = (value as Record<string, unknown>)["social"];
-  return typeof reward === "number" &&
-    Number.isInteger(reward) &&
-    reward >= -100 &&
-    reward <= 100
+  return typeof reward === "number" && Number.isInteger(reward) && reward >= -100 && reward <= 100
     ? reward
     : null;
 }
@@ -144,14 +151,12 @@ function configuredSkillReward(value: Activity["rewards"]) {
   }
 
   const reward = config as Record<string, unknown>;
-  return (
-    typeof reward["slug"] === "string" &&
+  return typeof reward["slug"] === "string" &&
     /^[a-z0-9]+([_-][a-z0-9]+)*$/.test(reward["slug"]) &&
     typeof reward["xp"] === "number" &&
     Number.isInteger(reward["xp"]) &&
     reward["xp"] > 0 &&
     reward["xp"] <= 10000
-  )
     ? { slug: reward["slug"], xp: reward["xp"] }
     : null;
 }
@@ -220,15 +225,11 @@ export function ActivityCatalogueApp() {
         : activity.location_id === locationFilter);
 
     return (
-      !isMapAction &&
-      matchesLocation &&
-      (category === "all" || activity.category === category)
+      !isMapAction && matchesLocation && (category === "all" || activity.category === category)
     );
   });
 
-  const playerHistory = (history ?? []).filter(
-    (row) => row.character_id === character?.id,
-  );
+  const playerHistory = (history ?? []).filter((row) => row.character_id === character?.id);
 
   const cooldownFor = (activity: Activity) => {
     const latest = playerHistory.find((row) => row.activity_id === activity.id);
@@ -236,8 +237,7 @@ export function ActivityCatalogueApp() {
       return null;
     }
 
-    const endsAt =
-      new Date(latest.completed_at).getTime() + latest.cooldown_minutes * 60_000;
+    const endsAt = new Date(latest.completed_at).getTime() + latest.cooldown_minutes * 60_000;
     return endsAt > Date.now() ? endsAt : null;
   };
 
@@ -255,9 +255,7 @@ export function ActivityCatalogueApp() {
       // Storage may be unavailable in restricted browsing contexts; keep an in-memory fallback.
     }
     const requestId =
-      pendingRequestIds.current.get(activity.slug) ??
-      storedRequestId ??
-      crypto.randomUUID();
+      pendingRequestIds.current.get(activity.slug) ?? storedRequestId ?? crypto.randomUUID();
     pendingRequestIds.current.set(activity.slug, requestId);
     try {
       localStorage.setItem(storageKey, requestId);
@@ -296,9 +294,7 @@ export function ActivityCatalogueApp() {
           : `${result.activity.name} completed · +${result.activity.xp_reward} XP`,
       );
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Could not complete this activity.",
-      );
+      toast.error(error instanceof Error ? error.message : "Could not complete this activity.");
     } finally {
       setSubmitting(null);
     }
@@ -314,33 +310,39 @@ export function ActivityCatalogueApp() {
         <div>
           <h2 className="text-base font-bold">Activity catalogue</h2>
           <p className="text-xs text-muted-foreground">
-            Discover activities around town. The server checks eligibility and awards
-            progression.
+            Discover activities around town. The server checks eligibility and awards progression.
           </p>
         </div>
         <span className="shrink-0 rounded-full bg-muted px-2 py-1 text-xs">
-          Day {simulation.gameTime.day} ·{" "}
-          {String(simulation.gameTime.hour).padStart(2, "0")}:
+          Day {simulation.gameTime.day} · {String(simulation.gameTime.hour).padStart(2, "0")}:
           {String(simulation.gameTime.minute).padStart(2, "0")}
         </span>
       </header>
 
-      <label className="grid gap-1 text-xs font-medium">
-        Location
-        <select
-          value={locationFilter}
-          onChange={(event) => setLocationFilter(event.target.value)}
-          className="rounded-lg border bg-card px-3 py-2 text-sm"
-        >
-          <option value="all">All locations</option>
-          <option value="any">Anywhere</option>
-          {filterableLocations.map((row) => (
-            <option key={row.id} value={row.id}>
-              {row.name}
-            </option>
-          ))}
-        </select>
-      </label>
+      <div className="activity-location-field">
+        <span id="activity-location-label">Location</span>
+        <Select value={locationFilter} onValueChange={setLocationFilter}>
+          <SelectTrigger
+            className="activity-location-trigger"
+            aria-labelledby="activity-location-label"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent
+            position="popper"
+            className="activity-location-content"
+            style={{ zIndex: 150 }}
+          >
+            <SelectItem value="all">All locations</SelectItem>
+            <SelectItem value="any">Anywhere</SelectItem>
+            {filterableLocations.map((row) => (
+              <SelectItem key={row.id} value={row.id}>
+                {row.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
 
       <div className="flex flex-wrap gap-2" aria-label="Filter activities by category">
         <button
@@ -372,8 +374,8 @@ export function ActivityCatalogueApp() {
 
       {!ready && (
         <p role="status" className="rounded-xl border p-3 text-sm text-muted-foreground">
-          Reconnecting your personal simulation. Activities unlock when the server
-          confirms your session.
+          Reconnecting your personal simulation. Activities unlock when the server confirms your
+          session.
         </p>
       )}
 
@@ -384,12 +386,7 @@ export function ActivityCatalogueApp() {
       ) : isError ? (
         <div role="alert" className="rounded-xl border p-4 text-sm">
           <p>Activities could not be loaded.</p>
-          <Button
-            className="mt-3"
-            size="sm"
-            variant="outline"
-            onClick={() => void refetch()}
-          >
+          <Button className="mt-3" size="sm" variant="outline" onClick={() => void refetch()}>
             Try again
           </Button>
         </div>
@@ -406,8 +403,8 @@ export function ActivityCatalogueApp() {
             const skillReward = configuredSkillReward(activity.rewards);
             const socialReward = configuredSocialReward(activity.rewards);
             const locationName = activity.location_id
-              ? locations?.find((row) => row.id === activity.location_id)?.name ??
-                "Required location"
+              ? (locations?.find((row) => row.id === activity.location_id)?.name ??
+                "Required location")
               : "Anywhere";
 
             return (
@@ -423,9 +420,7 @@ export function ActivityCatalogueApp() {
                         {CATEGORY_LABELS[activity.category] ?? activity.category}
                       </span>
                     </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {activity.description}
-                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">{activity.description}</p>
                   </div>
                   <span className="shrink-0 text-xs tabular-nums">
                     {activity.duration_minutes} min
@@ -465,14 +460,11 @@ export function ActivityCatalogueApp() {
 
                 {unsupportedRewardMetadata(activity.rewards) && (
                   <p className="mt-2 text-[11px] text-muted-foreground">
-                    Some configured reward metadata has no defined effect yet; it is not
-                    awarded.
+                    Some configured reward metadata has no defined effect yet; it is not awarded.
                   </p>
                 )}
 
-                {disabledReason && (
-                  <p className="mt-2 text-xs text-amber-700">{disabledReason}</p>
-                )}
+                {disabledReason && <p className="mt-2 text-xs text-amber-700">{disabledReason}</p>}
 
                 <Button
                   className="mt-3 w-full"
@@ -482,7 +474,7 @@ export function ActivityCatalogueApp() {
                 >
                   {submitting === activity.slug
                     ? "Completing…"
-                    : disabledReason ?? "Complete activity"}
+                    : (disabledReason ?? "Complete activity")}
                 </Button>
               </article>
             );

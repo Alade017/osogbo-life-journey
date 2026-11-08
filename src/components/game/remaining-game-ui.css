@@ -482,95 +482,6 @@
   font-weight: 750;
 }
 
-/* Messages: clean, roomy layout in the palette (not the Settings look). */
-.phone-ui-refresh .phone-app-body .phone-inbox-heading {
-  padding: 12px 16px 4px;
-}
-
-/* The toolbar already names the app, so the large heading is hidden to show more chats. */
-.phone-ui-refresh .phone-app-body .phone-inbox-heading h3 {
-  display: none;
-}
-
-.phone-ui-refresh .phone-app-body .phone-inbox-heading h3 {
-  color: var(--brand-ink);
-  font-size: 1.3rem;
-  font-weight: 850;
-}
-
-.phone-ui-refresh .phone-app-body .phone-inbox-heading p {
-  color: var(--brand-slate);
-  font-size: 13px;
-}
-
-/* Header layout: the subtitle sits on the first row; the search bar and the new-message
-   button share the second row and are centred on the same line. Only layout changes. */
-.phone-ui-refresh .phone-app-body .phone-chat-panel {
-  display: grid;
-  flex: 1;
-  min-height: 0;
-  grid-template-columns: minmax(0, 1fr) 44px;
-  grid-template-rows: auto auto auto minmax(0, 1fr);
-  column-gap: 10px;
-  align-items: center;
-  padding: 12px 16px 0;
-}
-
-.phone-ui-refresh .phone-app-body .phone-chat-panel > * {
-  grid-column: 1 / -1;
-}
-
-.phone-ui-refresh .phone-app-body .phone-inbox-heading {
-  display: contents;
-}
-
-.phone-ui-refresh .phone-app-body .phone-inbox-heading > div {
-  grid-column: 1 / -1;
-  padding: 0 0 10px;
-}
-
-.phone-ui-refresh .phone-app-body .phone-inbox-heading p {
-  margin: 0;
-}
-
-.phone-ui-refresh .phone-app-body .phone-new-message-button {
-  grid-column: 2;
-  grid-row: 2;
-}
-
-.phone-ui-refresh .phone-app-body .phone-inbox-search {
-  grid-column: 1;
-  grid-row: 2;
-  height: 40px;
-  min-height: 40px;
-  margin: 0;
-  padding: 0 12px;
-  border: 1px solid color-mix(in srgb, var(--brand-mist) 90%, transparent);
-  border-radius: 14px;
-  background: #ffffff;
-}
-
-.phone-ui-refresh .phone-app-body .phone-inbox-search input {
-  height: 100%;
-  min-height: 0;
-  padding: 0 0 0 8px;
-  border: 0;
-  background: transparent;
-  color: var(--brand-ink);
-  font-size: 14px;
-}
-
-.phone-ui-refresh .phone-app-body .phone-chat-panel > .phone-inbox-filters {
-  margin-top: 10px;
-}
-
-.phone-ui-refresh .phone-app-body .phone-conversation-list {
-  grid-row: 4;
-  min-height: 0;
-  gap: 0;
-  padding: 4px 16px 16px;
-}
-
 /* Each chat row is 64px tall with 8px between rows, matching the list's 72px row height. */
 .phone-ui-refresh .phone-app-body .phone-conversation {
   box-sizing: border-box;
@@ -699,6 +610,80 @@
   color: var(--brand-slate);
 }
 
+/* Messages header: one flowing column. The subtitle, then the search bar and new-message
+   button on one row, then the filters, then the chat list, which takes the remaining height. */
+.phone-ui-refresh .phone-app-body .phone-chat-panel {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 16px 0;
+}
+
+.phone-ui-refresh .phone-app-body .phone-inbox-heading {
+  flex: none;
+}
+
+.phone-ui-refresh .phone-app-body .phone-inbox-heading > div {
+  padding: 0;
+}
+
+.phone-ui-refresh .phone-app-body .phone-inbox-heading p {
+  margin: 0;
+}
+
+.phone-ui-refresh .phone-app-body .phone-inbox-controls {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+}
+
+.phone-ui-refresh .phone-app-body .phone-new-message-button {
+  flex: none;
+}
+
+.phone-ui-refresh .phone-app-body .phone-inbox-search {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  min-height: 40px;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--brand-mist) 90%, transparent);
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.phone-ui-refresh .phone-app-body .phone-inbox-search input {
+  flex: 1;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--brand-ink);
+  font-size: 14px;
+}
+
+.phone-ui-refresh .phone-app-body .phone-inbox-filters {
+  display: flex;
+  flex: none;
+  gap: 8px;
+}
+
+.phone-ui-refresh .phone-app-body .phone-conversation-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  gap: 0;
+  padding: 4px 16px 16px;
+}
 /* Palette accents for the other apps: royal primary actions and eyebrows, ink headings. */
 .phone-ui-refresh .phone-app-body .phone-btn-primary {
   color: #fff;
@@ -711,4 +696,57 @@
 
 .phone-ui-refresh .phone-app-body .game-page-header h1 {
   color: var(--brand-ink);
+}
+
+/* Activities: location dropdown in the palette. The list opens in a portal above the phone. */
+.phone-ui-refresh .phone-app-body .activity-location-field {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--brand-ink);
+}
+
+.phone-ui-refresh .phone-app-body .activity-location-trigger {
+  height: 48px;
+  padding: 0 14px;
+  border: 1px solid color-mix(in srgb, var(--brand-mist) 90%, transparent);
+  border-radius: 14px;
+  background: #ffffff;
+  color: var(--brand-ink);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.activity-location-trigger:focus-visible {
+  outline: 2px solid var(--brand-royal);
+  outline-offset: 2px;
+}
+
+.activity-location-content {
+  max-height: 60vh;
+  padding: 6px;
+  border: 1px solid color-mix(in srgb, var(--brand-mist) 90%, transparent);
+  border-radius: 16px;
+  background: #ffffff;
+  color: var(--brand-ink);
+  box-shadow: 0 16px 40px color-mix(in srgb, var(--brand-ink) 18%, transparent);
+}
+
+.activity-location-content [role="option"] {
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.activity-location-content [role="option"][data-highlighted] {
+  background: color-mix(in srgb, var(--brand-royal) 10%, #ffffff);
+  color: var(--brand-royal);
+}
+
+.activity-location-content [role="option"][data-state="checked"] {
+  color: var(--brand-royal);
+  font-weight: 800;
 }
