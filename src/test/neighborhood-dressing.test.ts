@@ -62,6 +62,12 @@ describe("neighbourhood street dressing", () => {
         );
   });
 
+  it("places pedestrian crossings across both intersecting road directions", () => {
+    const crossings = pedestrianCrossings(CITY_CENTRE_AREA);
+    expect(crossings.some((crossing) => crossing.width > crossing.depth)).toBe(true);
+    expect(crossings.some((crossing) => crossing.depth > crossing.width)).toBe(true);
+  });
+
   it("keeps crosswalk rectangles clear of complete obstacle footprints", () => {
     for (const crossing of pedestrianCrossings(CITY_CENTRE_AREA)) {
       for (const obstacle of CITY_CENTRE_AREA.obstacles ?? []) {
