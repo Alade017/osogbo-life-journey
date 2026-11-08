@@ -46,6 +46,52 @@ describe("every active location has a playable area", () => {
     expect(target!.y).not.toBe(area.objects.find((object) => object.kind === "market")!.y);
   });
 
+  it("maps every legacy playable landmark to its owning location area", () => {
+    const expected: Array<{ slug: string; ids: string[]; category: string }> = [
+      {
+        slug: "government-area",
+        ids: ["ataoja-police-station", "ataoja-palace"],
+        category: "government",
+      },
+      {
+        slug: "oke-baale",
+        ids: ["oke-baale-local-government-hq"],
+        category: "recreation",
+      },
+      {
+        slug: "student-district",
+        ids: ["osogbo-school-of-art"],
+        category: "education",
+      },
+      {
+        slug: "stadium",
+        ids: ["osogbo-township-stadium"],
+        category: "recreation",
+      },
+      {
+        slug: "residential",
+        ids: ["aleku-wodo-road-network"],
+        category: "residential",
+      },
+      {
+        slug: "oke-fia",
+        ids: ["oke-fia-flyover"],
+        category: "residential",
+      },
+    ];
+
+    for (const entry of expected) {
+      const area = neighborhoodAreaForLocation({
+        slug: entry.slug,
+        name: entry.slug,
+        map_category: entry.category,
+      });
+      for (const id of entry.ids) {
+        expect(area.interactionPoints?.some((point) => point.id === id)).toBe(true);
+      }
+    }
+  });
+
   it("registers database-added Youth Arts Centre without inventing its action definitions", () => {
     const area = neighborhoodAreaForLocation({
       slug: "youth-arts-centre",
