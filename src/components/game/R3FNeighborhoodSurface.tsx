@@ -317,13 +317,17 @@ export function R3FNeighborhoodSurface({
       const p = point(spot.x, spot.y);
       return [p[0], p[2], spot.rotation] as [number, number, number];
     });
+    const trafficLightPositions = dressing.trafficLights.map((spot) => {
+      const p = point(spot.x, spot.y);
+      return [p[0], p[2], spot.rotation] as [number, number, number];
+    });
     return {
       markings: flat(dressing.markings, 0.07, 0.03),
       crossings: flat(dressing.crossings, 0.07, 0.03),
       sidewalks: flat(dressing.sidewalks, 0.05, 0.1),
       curbs: flat(dressing.curbs, 0.09, 0.14),
       lights: onGround(dressing.lights),
-      trafficLights: onGround(dressing.trafficLights),
+      trafficLights: trafficLightPositions,
       cars: vehiclePositions,
       people: onGround(dressing.people),
       vendors: onGround(dressing.vendors),
