@@ -13,7 +13,7 @@ type Dependencies = {
     actionId: string,
     isAdult: boolean,
   ) => Promise<void>;
-  perform: (userId: string, landmarkId: string, actionId: string, requestId: string) => Promise<unknown>;
+  perform: (userId: string, landmarkId: string, actionId: string, requestId: string, characterId: string) => Promise<unknown>;
   logAgeCheck: (userId: string, landmarkId: string) => Promise<void>;
   secret: () => string | undefined;
 };
@@ -79,7 +79,7 @@ export function createNeighborhoodPlaceActionHandler(dependencies: Dependencies)
         claims.locationId,
       );
       await dependencies.verifyLandmarkAction(userId, landmarkId, actionId, character.isAdult);
-      const result = await dependencies.perform(userId, landmarkId, actionId, requestId);
+      const result = await dependencies.perform(userId, landmarkId, actionId, requestId, claims.characterId);
       return json(result);
     } catch (error) {
       const message = error instanceof Error ? error.message : "INTERNAL_ERROR";
@@ -173,13 +173,13 @@ export async function handleNeighborhoodPlaceActionRequest(request: Request) {
       if (actionError) throw new Error("INTERNAL_ERROR");
       if (!action) throw new Error("UNKNOWN_ACTION");
     },
-    perform: async (userId, landmarkId, actionId, requestId) => {
+    perform: async (userId, landmarkId, actionId, requestId, characterId) => {
       const { data, error } = await supabaseAdmin.rpc("perform_map_place_action", {
         p_user_id: userId,
         p_landmark_id: landmarkId,
         p_action_id: actionId,
         p_request_id: requestId,
-        p_action_definition: {},
+        p_action_definition: { expected_character_id: characterId },
       });
       if (error) throw new Error(error.message);
       return data;
