@@ -963,30 +963,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const isInsideHome =
     !!canonicalHome && character?.inside_home_property_id === canonicalHome.playerPropertyId;
   const departureRan = useRef(false);
-  /** A map trip started from inside the house runs here, once, when the house is ready. */
-  useEffect(() => {
-    if (departureRan.current) return;
-    const departure = takeDepartureFromHomeWhenReady({
-      houseAvailable: !!serverState?.house,
-      isInsideHome,
-      editing,
-      busy: taskBusy || !gameTime.ready || gameTime.busy,
-      offline: isOffline,
-    });
-    if (!departure) return;
-    departureRan.current = true;
-    void leaveForTrip(departure);
-    // The trip runs once per arrival in the house; the handler reads current room state.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    serverState?.house?.id,
-    isInsideHome,
-    editing,
-    taskBusy,
-    gameTime.ready,
-    gameTime.busy,
-    isOffline,
-  ]);
   const deliveryQueryKey = [
     "homeFoodDeliveries",
     character?.id,
@@ -1236,6 +1212,30 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const timedRequestId = timedActivity?.requestId;
   const taskTiming = gameTime.homeTaskTiming;
   const taskBusy = !!timedActivity || !!walkingTask || startingTask || cancellingTask;
+  /** A map trip started from inside the house runs here, once, when the house is ready. */
+  useEffect(() => {
+    if (departureRan.current) return;
+    const departure = takeDepartureFromHomeWhenReady({
+      houseAvailable: !!serverState?.house,
+      isInsideHome,
+      editing,
+      busy: taskBusy || !gameTime.ready || gameTime.busy,
+      offline: isOffline,
+    });
+    if (!departure) return;
+    departureRan.current = true;
+    void leaveForTrip(departure);
+    // The trip runs once per arrival in the house; the handler reads current room state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    serverState?.house?.id,
+    isInsideHome,
+    editing,
+    taskBusy,
+    gameTime.ready,
+    gameTime.busy,
+    isOffline,
+  ]);
   useEffect(() => {
     if (!timedActionId) return;
     const timer = window.setInterval(() => setClockNow(Date.now()), 100);

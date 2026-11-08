@@ -9,7 +9,11 @@ import townData from "@/data/osogbo-town.json";
 import osunPlaces from "@/data/osun-public-places.json";
 import { MapCanvas } from "@/components/map/MapCanvas";
 import { findMapPlaceAction } from "@/lib/map-place-action.server";
-import { clearPendingDepartureFromHome, takeDepartureFromHome } from "@/lib/home-departure";
+import {
+  clearPendingDepartureFromHome,
+  peekPendingDepartureFromHome,
+  takeDepartureFromHome,
+} from "@/lib/home-departure";
 vi.mock("@tanstack/react-router", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@tanstack/react-router")>();
   return {
@@ -281,7 +285,7 @@ describe("isometric town map", () => {
     await vi.waitFor(() =>
       expect(testState.navigate).toHaveBeenCalledWith({ to: "/house" }),
     );
-    await vi.waitFor(() => expect(takeDepartureFromHome()).toBeNull());
+    await vi.waitFor(() => expect(peekPendingDepartureFromHome()).toBeNull());
     expect(testState.travelToLocation).not.toHaveBeenCalled();
   }, 15_000);
 

@@ -3,6 +3,7 @@ import {
   clearPendingDepartureFromHome,
   requestDepartureFromHome,
   runHomeDepartureAfterWalk,
+  peekPendingDepartureFromHome,
   takeDepartureFromHome,
   takeDepartureFromHomeWhenReady,
   type HomeDepartureReadiness,
@@ -21,17 +22,19 @@ afterEach(() => {
   if (pending) clearPendingDepartureFromHome(pending);
 });
 
+const blockedReadinessCases: Array<[string, Partial<HomeDepartureReadiness>]> = [
+  ["house unavailable", { houseAvailable: false }],
+  ["player outside the home", { isInsideHome: false }],
+  ["editing", { editing: true }],
+  ["busy", { busy: true }],
+  ["offline", { offline: true }],
+];
+
 describe("home departure handoff", () => {
-  it.each([
-    ["house unavailable", { houseAvailable: false }],
-    ["player outside the home", { isInsideHome: false }],
-    ["editing", { editing: true }],
-    ["busy", { busy: true }],
-    ["offline", { offline: true }],
-  ])("does not consume a queued request while %s", (_label, blocked) => {
+  it.each(blockedReadinessCases)("does not consume a queued request while %s", (_label, blocked) => {
     const departure = requestDepartureFromHome({ locationId: "destination-1", mode: "walking" });
     expect(takeDepartureFromHomeWhenReady({ ...ready, ...blocked })).toBeNull();
-    expect(takeDepartureFromHome()).toBe(departure);
+    expect(peekPendingDepartureFromHome()).toBe(departure);
   });
 
   it("clears only the exact request that failed navigation", () => {

@@ -16,6 +16,10 @@ export type HomeDepartureReadiness = {
  */
 let pendingDeparture: HomeDeparture | null = null;
 
+export function peekPendingDepartureFromHome(): HomeDeparture | null {
+  return pendingDeparture;
+}
+
 export function requestDepartureFromHome(departure: HomeDeparture): HomeDeparture {
   pendingDeparture = departure;
   return departure;
