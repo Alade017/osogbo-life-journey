@@ -99,12 +99,14 @@ function NeighborhoodNpcActor({
   target,
   onSelect,
   onArrive,
+  onPause,
 }: {
   npc: NeighborhoodNpcView;
   start: [number, number, number];
   target: [number, number, number];
   onSelect: () => void;
   onArrive: () => void;
+  onPause: (x: number, y: number) => void;
 }) {
   const group = useRef<Group>(null);
   const leftArm = useRef<Group>(null);
@@ -127,6 +129,14 @@ function NeighborhoodNpcActor({
     actor.position.set(start[0], start[1], start[2]);
     invalidate();
   }, [start[0], start[1], start[2], invalidate]);
+
+  // Pausing the simulation freezes the rendered actor where it actually is.
+  // Persist that point so interactions and resume logic use the same position.
+  useEffect(() => {
+    if (!npc.isPaused) return;
+    const actor = group.current;
+    if (actor) onPause(actor.position.x, actor.position.z);
+  }, [npc.isPaused, onPause]);
 
   useEffect(() => {
     if (!animated) return;
@@ -532,6 +542,9 @@ export function R3FNeighborhoodSurface({
               target={point(npc.targetX, npc.targetY)}
               onSelect={() => onSelectTarget(npc.id)}
               onArrive={() => onNpcArrive(npc.id, npc.targetX, npc.targetY)}
+              onPause={(x, z) =>
+                onNpcArrive(npc.id, centerX + x / unit, centerZ + z / unit)
+              }
             />
           ))}
           {/* Ground that takes taps and clicks: the character walks to the tapped point. */}
