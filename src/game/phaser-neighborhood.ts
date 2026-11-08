@@ -14,6 +14,7 @@ import {
   NEIGHBORHOOD_BUILDING_PROFILES,
   NEIGHBORHOOD_PROP_PROFILES,
   neighborhoodPropKind,
+  neighborhoodBuildingKind,
 } from "@/game/neighborhood-art";
 import {
   neighborhoodSceneBounds,
@@ -322,7 +323,7 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
         const tileY = Math.floor((y - top) / TILE_SIZE);
         const color = groundColors[(tileX * 7 + tileY * 11) % groundColors.length]!;
         fillPolygon(graphics, projectedRect(x, y, TILE_SIZE, TILE_SIZE), color);
-        graphics.lineStyle(1, 0x71835f, 0.17);
+        graphics.lineStyle(1, this.area.style.grid, 0.42);
         graphics.strokePoints(
           projectedRect(x, y, TILE_SIZE, TILE_SIZE).map(
             ({ x: pointX, y: pointY }) => new Phaser.Geom.Point(pointX, pointY),
@@ -331,7 +332,7 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
         );
         if ((tileX + tileY) % 4 === 0) {
           const point = project(x + 24, y + 46);
-          graphics.fillStyle(0x71835f, 0.32).fillCircle(point.x, point.y, 1.5);
+          graphics.fillStyle(this.area.style.grid, 0.58).fillCircle(point.x, point.y, 1.5);
         }
       }
     }
@@ -360,8 +361,8 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
   private drawPath(graphics: Phaser.GameObjects.Graphics, path: NeighborhoodPath) {
     const start = project(path.from.x, path.from.y);
     const end = project(path.to.x, path.to.y);
-    graphics.lineStyle(path.width + 4, 0x766f59, 0.72).lineBetween(start.x, start.y, end.x, end.y);
-    graphics.lineStyle(path.width, 0xd7c9a6, 1).lineBetween(start.x, start.y, end.x, end.y);
+    graphics.lineStyle(path.width + 4, this.area.style.grid, 0.72).lineBetween(start.x, start.y, end.x, end.y);
+    graphics.lineStyle(path.width, this.area.style.paving, 1).lineBetween(start.x, start.y, end.x, end.y);
   }
 
   private drawRoad(
@@ -382,8 +383,8 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
       const sidewalkRect = vertical
         ? projectedRect(sidewalkOffset - sidewalkWidth / 2, start, sidewalkWidth, end - start)
         : projectedRect(start, sidewalkOffset - sidewalkWidth / 2, end - start, sidewalkWidth);
-      fillPolygon(graphics, sidewalkRect, 0xd7c9a6);
-      graphics.lineStyle(1.5, 0x766f59, 0.56);
+      fillPolygon(graphics, sidewalkRect, this.area.style.paving);
+      graphics.lineStyle(1.5, this.area.style.grid, 0.7);
       const points = sidewalkRect.map(({ x, y }) => new Phaser.Geom.Point(x, y));
       graphics.strokePoints(points, true);
     }
@@ -391,16 +392,16 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
     const roadRect = vertical
       ? projectedRect(road.offset - road.width / 2, start, road.width, end - start)
       : projectedRect(start, road.offset - road.width / 2, end - start, road.width);
-    fillPolygon(graphics, roadRect, road.type === "arterial" ? 0x666d68 : 0x777872);
+    fillPolygon(graphics, roadRect, this.area.style.road);
     const roadPoints = roadRect.map(({ x, y }) => new Phaser.Geom.Point(x, y));
-    graphics.lineStyle(2, 0x424945, 0.82).strokePoints(roadPoints, true);
+    graphics.lineStyle(2, this.area.style.grid, 0.82).strokePoints(roadPoints, true);
 
     for (const side of [-1, 1]) {
       const edgeOffset = road.offset + side * (road.width / 2 - 4);
       const edgeStart = project(vertical ? edgeOffset : start, vertical ? start : edgeOffset);
       const edgeEnd = project(vertical ? edgeOffset : end, vertical ? end : edgeOffset);
       graphics
-        .lineStyle(2, 0xd1c19b, 0.7)
+        .lineStyle(2, this.area.style.paving, 0.9)
         .lineBetween(edgeStart.x, edgeStart.y, edgeEnd.x, edgeEnd.y);
     }
 
@@ -410,7 +411,7 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
         const second = vertical
           ? project(road.offset, position + 40)
           : project(position + 40, road.offset);
-        graphics.lineStyle(3, 0xf0dda0, 0.76).lineBetween(first.x, first.y, second.x, second.y);
+        graphics.lineStyle(3, this.area.style.marking, 0.9).lineBetween(first.x, first.y, second.x, second.y);
       }
     }
   }
@@ -431,7 +432,7 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
       for (const horizontal of horizontals) {
         for (let x = -vertical.width / 2 + 8; x < vertical.width / 2 - 8; x += 16) {
           const points = projectedRect(vertical.offset + x, horizontal.offset - 20, 8, 40);
-          fillPolygon(graphics, points, 0xe7e2ca, 0.75);
+          fillPolygon(graphics, points, this.area.style.marking, 0.85);
         }
       }
     }
@@ -453,7 +454,8 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
         this.drawNeighbour(object);
         continue;
       }
-      const kind = object.kind === "home" ? "compound" : "shop";
+      const kind = neighborhoodBuildingKind(object.kind);
+      if (!kind) continue;
       const sign =
         object.kind === "home" && this.homeTypeId
           ? `YOUR ${this.homeTypeId.replaceAll("-", " ").toUpperCase()}`
@@ -489,7 +491,7 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
   private drawBuilding(
     x: number,
     y: number,
-    kind: "compound" | "shop" | "kiosk",
+    kind: keyof typeof NEIGHBORHOOD_BUILDING_PROFILES,
     sign: string,
     name: string,
     width: number,
