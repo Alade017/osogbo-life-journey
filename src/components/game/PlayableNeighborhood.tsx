@@ -705,22 +705,34 @@ export function PlayableNeighborhood() {
     toast.message(`Walking to ${target.name}`);
     setPendingTargetId(targetId);
     setDirections(new Set());
-    const destination = toWorld({ x: target.x, y: target.y }, district.origin);
+    const interactionPoint = neighborhoodInteractionPoint(target, activeNpcs);
+    const destination = toWorld(interactionPoint, district.origin);
     groundTargetRef.current = destination;
     setGroundTarget(destination);
   };
+  // NPC schedules can change while the player is walking. Keep the destination aligned
+  // with the selected character's latest scheduled stop rather than its old spawn point.
+  useEffect(() => {
+    if (!pendingTargetId || !district) return;
+    const target = interactionTargets.find((candidate) => candidate.id === pendingTargetId);
+    if (!target || target.kind !== "npc") return;
+    const destination = toWorld(neighborhoodInteractionPoint(target, activeNpcs), district.origin);
+    groundTargetRef.current = destination;
+    setGroundTarget(destination);
+  }, [activeNpcs, district, interactionTargets, pendingTargetId]);
   useEffect(() => {
     if (!pendingTargetId || !player || !district) return;
     const target = interactionTargets.find((candidate) => candidate.id === pendingTargetId);
     if (!target) return;
+    const interactionPoint = neighborhoodInteractionPoint(target, activeNpcs);
     const position = toScene({ x: player.x, y: player.y }, district.origin);
-    if (Math.hypot(position.x - target.x, position.y - target.y) >= 65) return;
+    if (Math.hypot(position.x - interactionPoint.x, position.y - interactionPoint.y) >= 65) return;
     setPendingTargetId(null);
     openInteraction(target);
     // Arrival is checked against the requested target itself, not whichever target
     // happens to be nearest when two interaction ranges overlap.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingTargetId, player, district, interactionTargets]);
+  }, [pendingTargetId, player, district, interactionTargets, activeNpcs]);
   useEffect(() => {
     if (!pendingTargetId || interactionTargets.some((target) => target.id === pendingTargetId))
       return;
