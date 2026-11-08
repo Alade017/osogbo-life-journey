@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, LifeBuoy, Send } from "lucide-react";
+import { ChevronDown, MessageCircle, Send } from "lucide-react";
 import { PaletteSelect } from "@/components/ui/palette-select";
 import {
   listMySupportFeedback,
@@ -36,7 +36,7 @@ export function SupportApp({ onHome }: { onHome?: () => void }) {
     <div className="support-app">
       <header className="support-header">
         <span className="support-header-mark" aria-hidden="true">
-          <LifeBuoy size={22} />
+          <MessageCircle size={22} />
         </span>
         <div>
           <h3>Support</h3>
