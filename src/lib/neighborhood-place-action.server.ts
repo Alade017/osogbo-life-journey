@@ -47,7 +47,7 @@ export function createNeighborhoodPlaceActionHandler(dependencies: Dependencies)
       return json({ error: { code: "INVALID_REQUEST" } }, 400);
     }
 
-    let claims;
+    let claims: ReturnType<typeof verifyNeighborhoodInteractionAuthorization>;
     try {
       claims = verifyNeighborhoodInteractionAuthorization(
         interactionToken,
@@ -56,7 +56,13 @@ export function createNeighborhoodPlaceActionHandler(dependencies: Dependencies)
       );
     } catch (error) {
       const code = error instanceof Error ? error.message : "INTERACTION_AUTH_INVALID";
-      return json({ error: { code } }, code === "INTERACTION_AUTH_EXPIRED" ? 409 : 403);
+      const status =
+        code === "INTERACTION_AUTH_NOT_CONFIGURED"
+          ? 503
+          : code === "INTERACTION_AUTH_EXPIRED"
+            ? 409
+            : 403;
+      return json({ error: { code } }, status);
     }
 
     try {

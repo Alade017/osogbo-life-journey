@@ -69,6 +69,25 @@ describe("neighborhood place action endpoint", () => {
     expect(dependencies.perform).not.toHaveBeenCalled();
   });
 
+  it("rejects a token signed for a different request ID", async () => {
+    const mismatched = createNeighborhoodInteractionAuthorization(
+      { ...claims, requestId: "55555555-5555-4555-8555-555555555555" },
+      secret,
+      Date.now(),
+    ).token;
+    const { handler, dependencies } = makeHandler();
+    const response = await handler(makeRequest(mismatched));
+    expect(response.status).toBe(403);
+    expect(dependencies.perform).not.toHaveBeenCalled();
+  });
+
+  it("rejects missing server secret as a configuration failure", async () => {
+    const { handler, dependencies } = makeHandler({ secret: () => undefined });
+    const response = await handler(makeRequest(signedToken()));
+    expect(response.status).toBe(503);
+    expect(dependencies.perform).not.toHaveBeenCalled();
+  });
+
   it("rejects changed character location before action execution", async () => {
     const { handler, dependencies } = makeHandler({
       verifyCharacter: vi.fn(async () => { throw new Error("CHARACTER_LOCATION_CHANGED"); }),
