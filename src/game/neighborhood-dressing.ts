@@ -10,6 +10,7 @@ import { neighborhoodBuildingFootprint } from "./neighborhood-geometry.ts";
 export type DressingRect = { x: number; y: number; width: number; depth: number };
 export type DressingBounds = { left: number; top: number; width: number; height: number };
 export type CarSpot = WorldPoint & { rotation: number };
+export type TrafficLightSpot = WorldPoint & { rotation: number };
 
 const SIDEWALK_WIDTH = 16;
 const CURB_WIDTH = 4;
@@ -195,7 +196,7 @@ export function pedestrianCrossings(area: NeighborhoodArea): DressingRect[] {
 }
 
 /** Signals at declared arterial junctions, positioned clear of road edges and existing props. */
-export function trafficLightSpots(area: NeighborhoodArea): WorldPoint[] {
+export function trafficLightSpots(area: NeighborhoodArea): TrafficLightSpot[] {
   const verticals = (area.roads ?? []).filter(
     (road) => road.axis === "vertical" && road.type !== "lane",
   );
@@ -203,7 +204,7 @@ export function trafficLightSpots(area: NeighborhoodArea): WorldPoint[] {
     (road) => road.axis === "horizontal" && road.type !== "lane",
   );
   const boxes = occupiedBoxes(area);
-  const spots: WorldPoint[] = [];
+  const spots: TrafficLightSpot[] = [];
   const seen = new Set<string>();
   for (const vertical of verticals)
     for (const horizontal of horizontals) {
@@ -226,7 +227,12 @@ export function trafficLightSpots(area: NeighborhoodArea): WorldPoint[] {
           const key = `${x}:${y}`;
           if (seen.has(key) || insideObstacle(x, y, boxes, 8)) continue;
           seen.add(key);
-          spots.push({ x, y });
+          spots.push({
+            x,
+            y,
+            // The signal faces inward toward the approaching junction.
+            rotation: Math.atan2(-sideX, -sideY),
+          });
         }
     }
   return spots;
