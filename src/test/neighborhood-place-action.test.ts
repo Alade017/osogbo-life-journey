@@ -21,7 +21,7 @@ function signedToken() {
 function makeHandler(overrides: Record<string, unknown> = {}) {
   const dependencies = {
     authenticate: vi.fn(async () => claims.userId),
-    verifyCharacter: vi.fn(async () => {}),
+    verifyCharacter: vi.fn(async () => ({ isAdult: true })),
     verifyLandmarkAction: vi.fn(async () => {}),
     perform: vi.fn(async () => ({ action_id: claims.actionId })),
     logAgeCheck: vi.fn(async () => {}),
@@ -56,7 +56,7 @@ describe("neighborhood place action endpoint", () => {
       claims.userId, claims.characterId, claims.locationId,
     );
     expect(dependencies.verifyLandmarkAction).toHaveBeenCalledWith(
-      claims.userId, claims.landmarkId, claims.actionId,
+      claims.userId, claims.landmarkId, claims.actionId, true,
     );
     expect(dependencies.perform).toHaveBeenCalledWith(
       claims.userId, claims.landmarkId, claims.actionId, requestId,
@@ -76,6 +76,19 @@ describe("neighborhood place action endpoint", () => {
     });
     const response = await handler(makeRequest(signedToken()));
     expect(response.status).toBe(409);
+    expect(dependencies.perform).not.toHaveBeenCalled();
+  });
+
+  it("rejects an underage character before checking or executing an adult venue action", async () => {
+    const { handler, dependencies } = makeHandler({
+      verifyCharacter: vi.fn(async () => ({ isAdult: false })),
+      verifyLandmarkAction: vi.fn(async (_userId, _landmarkId, _actionId, isAdult) => {
+        if (!isAdult) throw new Error("AGE_RESTRICTED");
+      }),
+    });
+    const response = await handler(makeRequest(signedToken()));
+    expect(response.status).toBe(403);
+    expect(dependencies.logAgeCheck).toHaveBeenCalledWith(claims.userId, claims.landmarkId);
     expect(dependencies.perform).not.toHaveBeenCalled();
   });
 
