@@ -831,6 +831,7 @@ export function PlayableNeighborhood() {
                         key={`${currentLocation?.id}:${sessionId}`}
                         onGroundTap={tapGround}
                         district={district}
+                        mapCategory={currentLocation?.map_category}
                         players={scenePlayers}
                         npcs={activeNpcs}
                         selfSessionId={sessionId}
