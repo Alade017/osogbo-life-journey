@@ -95,10 +95,13 @@ beforeAll(async () => {
 }, 180_000);
 
 beforeEach(async () => {
-  await db.exec("reset role;delete from public.club_visits;delete from public.economy_request_results;");
-  await db.query("update public.party_venues set opening_hour=18,closing_hour=3 where location_id=$1", [
-    clubId,
-  ]);
+  await db.exec(
+    "reset role;delete from public.club_visits;delete from public.economy_request_results;",
+  );
+  await db.query(
+    "update public.party_venues set opening_hour=18,closing_hour=3 where location_id=$1",
+    [clubId],
+  );
   await db.query("update public.characters set current_location_id=$1 where id=$2", [
     clubId,
     characterId,
@@ -196,9 +199,7 @@ describe("club opening-hours SQL", () => {
       eventCenterId,
       characterId,
     ]);
-    await expect(enter("44444444-aaaa-4aaa-8aaa-aaaaaaaaaaaa")).rejects.toThrow(
-      "Travel to a club",
-    );
+    await expect(enter("44444444-aaaa-4aaa-8aaa-aaaaaaaaaaaa")).rejects.toThrow("Travel to a club");
   });
 
   it("rejects ambiguous schedules and non-null event-centre hours", async () => {
