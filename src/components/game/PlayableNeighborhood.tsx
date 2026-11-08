@@ -678,7 +678,7 @@ export function PlayableNeighborhood() {
   /** Tapping a building or person walks the character to it, then opens the interaction. */
   const selectWorldTarget = (targetId: string) => {
     const target = interactionTargets.find((candidate) => candidate.id === targetId);
-    if (!target) return;
+    if (!target || !district) return;
     if (nearbyObject?.id === targetId) {
       setPendingTargetId(null);
       openInteraction();
@@ -687,7 +687,7 @@ export function PlayableNeighborhood() {
     toast.message(`Walking to ${target.name}`);
     setPendingTargetId(targetId);
     setDirections(new Set());
-    const destination = toWorld({ x: target.x, y: target.y }, district!.origin);
+    const destination = toWorld({ x: target.x, y: target.y }, district.origin);
     groundTargetRef.current = destination;
     setGroundTarget(destination);
   };
