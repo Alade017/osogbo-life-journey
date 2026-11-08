@@ -1010,6 +1010,7 @@ export function WorldHouse({
   const isMarket = variant === "market" || variant === "food";
   const isBank = variant === "bank";
   const isCivic = variant === "civic" || variant === "public-service";
+  const isHealth = variant === "health" || variant === "clinic";
   const isSchool = variant === "school";
   const isChurch = variant === "church";
   const isMosque = variant === "mosque";
