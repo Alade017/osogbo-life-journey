@@ -22,6 +22,7 @@ describe("data-driven Phaser neighborhood art profiles", () => {
       expect(profile.roofOverhangRatio).toBeGreaterThanOrEqual(0);
       expect(profile.roofRibSpacingRatio).toBeGreaterThan(0);
       expect(profile.windowCount).toBeGreaterThan(0);
+      expect(typeof profile.windowGrilles).toBe("boolean");
     }
   });
 
@@ -32,6 +33,9 @@ describe("data-driven Phaser neighborhood art profiles", () => {
     expect(neighborhoodBuildingKind("npc")).toBeNull();
     expect(NEIGHBORHOOD_BUILDING_PROFILES.market).not.toEqual(NEIGHBORHOOD_BUILDING_PROFILES.shop);
     expect(NEIGHBORHOOD_BUILDING_PROFILES.work).not.toEqual(NEIGHBORHOOD_BUILDING_PROFILES.shop);
+    expect(NEIGHBORHOOD_BUILDING_PROFILES.compound.windowGrilles).toBe(true);
+    expect(NEIGHBORHOOD_BUILDING_PROFILES.market.windowGrilles).toBe(true);
+    expect(NEIGHBORHOOD_BUILDING_PROFILES.work.windowGrilles).toBe(false);
   });
 
   it("provides a procedural shape profile for every supported environment prop", () => {
