@@ -32,6 +32,19 @@ describe("neighbourhood street dressing", () => {
     expect(carSpots(CITY_CENTRE_AREA, bounds).length).toBeLessThanOrEqual(12);
   });
 
+  it("distributes pedestrians across multiple streets before applying the scene cap", () => {
+    const spots = pedestrianSpots(CITY_CENTRE_AREA, bounds);
+    const representedRoads = (CITY_CENTRE_AREA.roads ?? []).filter((road) =>
+      spots.some((spot) =>
+        road.axis === "vertical"
+          ? Math.abs(spot.x - road.offset) <= road.width / 2 + 16
+          : Math.abs(spot.y - road.offset) <= road.width / 2 + 16,
+      ),
+    );
+    expect(spots.length).toBeLessThanOrEqual(14);
+    expect(representedRoads.length).toBeGreaterThan(1);
+  });
+
   it("orients traffic in both directions along horizontal and vertical roads", () => {
     const rotations = new Set(carSpots(CITY_CENTRE_AREA, bounds).map((spot) => spot.rotation));
     expect(rotations.has(0)).toBe(true);
