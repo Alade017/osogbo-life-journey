@@ -31,6 +31,7 @@ import {
   Trophy,
   UtensilsCrossed,
   Landmark,
+  LifeBuoy,
   Settings,
   Store,
   Smartphone,
@@ -108,6 +109,9 @@ const ProfilePage = lazy(() =>
 const InventoryPage = lazy(() =>
   import("@/routes/_authenticated/_game/inventory").then((m) => ({ default: m.InventoryPage })),
 );
+const SupportApp = lazy(() =>
+  import("@/components/game/phone/SupportApp").then((m) => ({ default: m.SupportApp })),
+);
 const SettingsPage = lazy(() =>
   import("@/routes/_authenticated/_game/settings").then((m) => ({ default: m.SettingsPage })),
 );
@@ -163,6 +167,7 @@ const PHONE_APPS: readonly PhoneAppDefinition[] = [
   { label: "Property", icon: HousePlus, tone: "phone-app-green" },
   { label: "Real Estate", icon: Building2, tone: "phone-app-green" },
   { label: "Settings", icon: Settings, tone: "phone-app-muted", emphasis: "utility" },
+  { label: "Support", icon: LifeBuoy, tone: "phone-app-blue", emphasis: "utility" },
   { label: "Town News", icon: Newspaper, tone: "phone-app-blue" },
 ] as const;
 
@@ -171,6 +176,7 @@ const COMMUNITY_APPS = new Set<CommunityPhoneApp>(["Leaderboard", "Town News"]);
 /** Apps restyled to the Settings design (cards, sections, rows). Others keep their current look. */
 const SETTINGS_STYLE_APPS = new Set([
   "Profile",
+  "Support",
   "Inventory",
   "Town News",
   "Market",
@@ -544,6 +550,7 @@ export function PhoneLauncher({
     }
 
     if (appName === "Settings") return <SettingsPage />;
+    if (appName === "Support") return <SupportApp onHome={returnHome} />;
 
     // Fallback coming soon for any unbuilt or auxiliary app
     const appDef = PHONE_APPS.find((a) => a.label === appName);

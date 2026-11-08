@@ -3947,6 +3947,42 @@ export type Database = {
           },
         ]
       }
+      support_feedback: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          kind: string
+          message: string
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          kind: string
+          message: string
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          message?: string
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       player_advertisements: {
         Row: {
           advertiser_name: string
@@ -7011,6 +7047,15 @@ export type Database = {
           p_upgrade_id: string
         }
         Returns: Json
+      }
+      submit_support_feedback: {
+        Args: {
+          p_category: string
+          p_kind: string
+          p_message: string
+          p_subject: string
+        }
+        Returns: Database["public"]["Tables"]["support_feedback"]["Row"]
       }
       purchase_player_advertisement: {
         Args: {

@@ -1,4 +1,5 @@
-/* Palette dropdown. Colours come from the brand tokens in styles.css. */
+/* Dropdown styled after the reference design: a white field with a soft shadow, and a white
+   popup with grey row highlights. Colours come from the brand tokens in styles.css. */
 
 button.palette-select-trigger {
   display: flex;
@@ -9,28 +10,25 @@ button.palette-select-trigger {
   min-height: 46px;
   height: auto;
   padding: 0 14px;
-  border: 1px solid var(--brand-mist, #d9dee6);
-  border-radius: 14px;
+  border: 1px solid transparent;
+  border-radius: 10px;
   background: #ffffff;
   color: var(--brand-ink, #14213d);
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: 500;
   text-align: left;
-  box-shadow: 0 1px 2px rgba(20, 33, 61, 0.06);
+  box-shadow: 0 2px 8px rgba(20, 33, 61, 0.1);
   cursor: pointer;
-  transition:
-    border-color 140ms ease,
-    box-shadow 140ms ease;
+  transition: box-shadow 140ms ease;
 }
 
 button.palette-select-trigger:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--brand-royal, #014baa) 45%, var(--brand-mist, #d9dee6));
+  box-shadow: 0 4px 14px rgba(20, 33, 61, 0.14);
 }
 
 button.palette-select-trigger:focus-visible {
   outline: none;
-  border-color: var(--brand-royal, #014baa);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand-royal, #014baa) 22%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand-royal, #014baa) 45%, transparent);
 }
 
 button.palette-select-trigger:disabled {
@@ -48,8 +46,8 @@ button.palette-select-trigger svg {
   flex-shrink: 0;
   width: 18px;
   height: 18px;
-  opacity: 1;
-  color: var(--brand-royal, #014baa);
+  opacity: 0.7;
+  color: var(--brand-ink, #14213d);
 }
 
 .palette-select-content {
@@ -57,11 +55,11 @@ button.palette-select-trigger svg {
   min-width: var(--radix-select-trigger-width);
   max-height: min(340px, 60vh);
   padding: 6px;
-  border: 1px solid var(--brand-mist, #d9dee6);
-  border-radius: 16px;
+  border: 0;
+  border-radius: 10px;
   background: #ffffff;
   color: var(--brand-ink, #14213d);
-  box-shadow: 0 18px 40px -12px rgba(20, 33, 61, 0.28);
+  box-shadow: 0 14px 32px -8px rgba(20, 33, 61, 0.22);
 }
 
 .palette-select-content [data-radix-select-viewport] {
@@ -72,9 +70,10 @@ button.palette-select-trigger svg {
   position: relative;
   display: flex;
   align-items: center;
+  gap: 12px;
   min-height: 42px;
-  padding: 9px 36px 9px 12px;
-  border-radius: 10px;
+  padding: 9px 12px;
+  border-radius: 8px;
   color: var(--brand-ink, #14213d);
   font-size: 0.95rem;
   font-weight: 500;
@@ -85,12 +84,10 @@ button.palette-select-trigger svg {
 }
 
 .palette-select-item[data-highlighted] {
-  background: color-mix(in srgb, var(--brand-royal, #014baa) 10%, transparent);
-  color: var(--brand-royal, #014baa);
+  background: #f3f4f6;
 }
 
 .palette-select-item[data-state="checked"] {
-  color: var(--brand-royal, #014baa);
   font-weight: 700;
 }
 
@@ -99,15 +96,38 @@ button.palette-select-trigger svg {
   cursor: not-allowed;
 }
 
-.palette-select-item > span:first-of-type {
-  position: absolute;
-  right: 12px;
-  display: flex;
-  align-items: center;
+/* The design shows no tick mark, so the Radix item indicator is hidden. */
+.palette-select-item > span:first-child {
+  display: none;
 }
 
-.palette-select-item svg {
-  width: 16px;
-  height: 16px;
-  color: var(--brand-royal, #014baa);
+/* Radix wraps the children in its own text span, so the icon and label row is set on that span. */
+.palette-select-item > span:last-child {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.palette-select-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+}
+
+.palette-select-icon svg,
+.palette-select-icon img {
+  width: 18px;
+  height: 18px;
+}
+
+.palette-select-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

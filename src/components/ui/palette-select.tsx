@@ -17,6 +17,8 @@ const EMPTY_VALUE = "__palette-select-empty__";
 export type PaletteSelectOption = {
   value: string;
   label: React.ReactNode;
+  /** Optional small icon shown before the label in the popup. */
+  icon?: React.ReactNode;
   disabled?: boolean;
 };
 
@@ -69,7 +71,12 @@ export function PaletteSelect({
             disabled={option.disabled ?? false}
             className="palette-select-item"
           >
-            {option.label}
+            {option.icon && (
+              <span className="palette-select-icon" aria-hidden="true">
+                {option.icon}
+              </span>
+            )}
+            <span className="palette-select-label">{option.label}</span>
           </SelectItem>
         ))}
       </SelectContent>
