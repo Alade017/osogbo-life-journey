@@ -6,6 +6,7 @@ import {
   roadMarkings,
   sidewalksAndCurbs,
   streetLightSpots,
+  trafficLightSpots,
   vendorSpots,
 } from "@/game/neighborhood-dressing";
 import { CITY_CENTRE_AREA, NEIGHBORHOOD_SCENE_BOUNDS } from "@/game/neighborhood-model";
@@ -45,6 +46,19 @@ describe("neighbourhood street dressing", () => {
         expect(spot.x > b.left && spot.x < b.right && spot.y > b.top && spot.y < b.bottom).toBe(
           false,
         );
+  });
+
+  it("derives deterministic traffic signals at clear arterial junctions", () => {
+    const signals = trafficLightSpots(CITY_CENTRE_AREA);
+    expect(signals.length).toBeGreaterThan(0);
+    expect(signals).toEqual(trafficLightSpots(CITY_CENTRE_AREA));
+    for (const signal of signals)
+      for (const obstacle of CITY_CENTRE_AREA.obstacles ?? []) {
+        expect(
+          Math.abs(signal.x - obstacle.x) < obstacle.width / 2 + 8 &&
+            Math.abs(signal.y - obstacle.y) < obstacle.height / 2 + 8,
+        ).toBe(false);
+      }
   });
 
   it("is deterministic for the same area", () => {
