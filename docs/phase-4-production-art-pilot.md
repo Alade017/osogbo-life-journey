@@ -5,7 +5,7 @@ This pilot uses the existing Phaser renderer and its projected world coordinates
 ## Rendering approach
 
 - Buildings are constructed from Phaser Graphics geometry using semantic profiles for compound, shop, kiosk, market and work families. World-object kinds select the appropriate reusable family.
-- Roofs, wall planes, eaves, roof seams, doors, windows, grilles, awnings and verandas are derived from each building's existing width/depth footprint and a typed style profile.
+- Roofs, wall planes, eaves, roof seams, doors, windows, profile-enabled security grilles, awnings and verandas are derived from each building's existing width/depth footprint and a typed style profile.
 - Environment props are constructed procedurally from typed shape profiles for trees, streetlights, benches, bins and signs.
 - Dimensions are derived from each world's existing obstacle/building dimensions; no new per-location placement coordinates or collision dimensions are introduced.
 - Unknown obstacle kinds are skipped rather than silently rendered as an unrelated generic prop.
