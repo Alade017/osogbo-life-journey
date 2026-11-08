@@ -418,6 +418,12 @@ export function carSpots(area: NeighborhoodArea, bounds: DressingBounds): CarSpo
 export function pedestrianSpots(area: NeighborhoodArea, bounds: DressingBounds): WorldPoint[] {
   const byRoad: WorldPoint[][] = [];
   const boxes = occupiedBoxes(area);
+  const crossingBoxes: Box[] = pedestrianCrossings(area).map(({ x, y, width, depth }) => ({
+    x,
+    y,
+    width,
+    height: depth,
+  }));
   for (const road of area.roads ?? []) {
     const { start, end, vertical } = roadExtent(road, bounds);
     const across = road.width / 2 + SIDEWALK_WIDTH / 2;
@@ -427,7 +433,11 @@ export function pedestrianSpots(area: NeighborhoodArea, bounds: DressingBounds):
       side = -side;
       const x = vertical ? road.offset + side * across : along;
       const y = vertical ? along : road.offset + side * across;
-      if (insideObstacle(x, y, boxes, 12)) continue;
+      // Keep pedestrian actors on the footpath, not in the crossing stripe area.
+      if (
+        insideObstacle(x, y, boxes, 12) ||
+        insideObstacle(x, y, crossingBoxes, 8)
+      ) continue;
       roadSpots.push({ x, y });
     }
     if (roadSpots.length) byRoad.push(roadSpots);
