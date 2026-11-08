@@ -284,6 +284,14 @@ export function pedestrianSpots(area: NeighborhoodArea, bounds: DressingBounds):
   return spots.slice(0, MAX_PEOPLE);
 }
 
+/** Derive a stable tree silhouette from the footprint supplied by neighborhood data. */
+export function treeVisualProfile(obstacle: Pick<NeighborhoodObstacle, "width" | "height">) {
+  return {
+    height: Math.min(1.25, Math.max(0.75, obstacle.height / 48)),
+    canopyScale: Math.min(1.3, Math.max(0.75, obstacle.width / 48)),
+  };
+}
+
 /** Vendors stand at the market stalls the area declares. */
 export function vendorSpots(area: NeighborhoodArea): WorldPoint[] {
   return [...(area.marketStalls ?? [])];
