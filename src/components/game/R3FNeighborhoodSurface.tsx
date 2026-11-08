@@ -41,11 +41,7 @@ import {
   type WorldInstance,
 } from "../3d/WorldScene";
 import { CHARACTER_MOTION } from "@/components/3d/character-config";
-import {
-  WORLD_CAMERA,
-  WORLD_PALETTE,
-  WORLD_SCALE,
-} from "../3d/world-theme";
+import { WORLD_CAMERA, WORLD_PALETTE, WORLD_SCALE } from "../3d/world-theme";
 import {
   carSpots,
   pedestrianCrossings,
