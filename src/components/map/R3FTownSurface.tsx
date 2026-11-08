@@ -863,7 +863,7 @@ export function R3FTownSurface(props: Props) {
         >
           <Ready onReady={props.onReady} />
           <CameraFocusController targetPosition={selectedTarget?.position ?? null} />
-          <WorldCamera width={gridCols * cell} depth={gridRows * cell} zoom={1.55} />
+          <WorldCamera width={gridCols * cell} depth={gridRows * cell} zoom={1.35} freeExplore />
           <MapLighting size={gridCols * cell} />
           <Terrain3D gridCols={gridCols} gridRows={gridRows} cellSize={cell} />
 
