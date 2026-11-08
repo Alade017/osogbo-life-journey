@@ -33,8 +33,8 @@ export const NEIGHBORHOOD_BUILDING_ART: Readonly<
     width: 192,
     height: 200,
     originX: 0.5,
-    originY: 0.675,
-    scale: 0.68,
+    originY: 0.95,
+    scale: 0.45,
   },
   kiosk: {
     key: "neighborhood-art-kiosk",
@@ -42,7 +42,7 @@ export const NEIGHBORHOOD_BUILDING_ART: Readonly<
     width: 192,
     height: 200,
     originX: 0.5,
-    originY: 0.675,
+    originY: 0.95,
     scale: 0.38,
   },
 };
