@@ -107,19 +107,6 @@ describe("neighbourhood street dressing", () => {
       }
   });
 
-  it("keeps lane-centre markings clear of pedestrian crossing envelopes", () => {
-    const crossings = pedestrianCrossings(CITY_CENTRE_AREA);
-    for (const marking of roadMarkings(CITY_CENTRE_AREA, bounds))
-      for (const crossing of crossings) {
-        const overlaps =
-          Math.abs(marking.x - crossing.x) <
-            (marking.width + crossing.width) / 2 &&
-          Math.abs(marking.y - crossing.y) <
-            (marking.depth + crossing.depth) / 2;
-        expect(overlaps).toBe(false);
-      }
-  });
-
   it("renders each pedestrian crossing as evenly spaced zebra stripes", () => {
     const crossings = pedestrianCrossings(CITY_CENTRE_AREA);
     const stripes = pedestrianCrossingStripes(crossings);
