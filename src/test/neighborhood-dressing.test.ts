@@ -33,6 +33,17 @@ describe("neighbourhood street dressing", () => {
     expect(carSpots(CITY_CENTRE_AREA, bounds).length).toBeLessThanOrEqual(12);
   });
 
+  it("keeps vehicle placements clear of pedestrian crossings", () => {
+    const crossings = pedestrianCrossings(CITY_CENTRE_AREA);
+    for (const car of carSpots(CITY_CENTRE_AREA, bounds))
+      for (const crossing of crossings) {
+        const overlaps =
+          Math.abs(car.x - crossing.x) < crossing.width / 2 + 24 &&
+          Math.abs(car.y - crossing.y) < crossing.depth / 2 + 24;
+        expect(overlaps).toBe(false);
+      }
+  });
+
   it("distributes pedestrians across multiple streets before applying the scene cap", () => {
     const spots = pedestrianSpots(CITY_CENTRE_AREA, bounds);
     const representedRoads = (CITY_CENTRE_AREA.roads ?? []).filter((road) =>
