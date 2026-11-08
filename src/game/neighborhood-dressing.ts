@@ -13,7 +13,7 @@ export type DressingBounds = { left: number; top: number; width: number; height:
 const SIDEWALK_WIDTH = 16;
 const CURB_WIDTH = 4;
 const SEGMENT_LENGTH = 60;
-const LIGHT_SPACING = 150;
+const LIGHT_SPACING = 260;
 const LIGHT_SETBACK = 14;
 const CAR_SPACING = 240;
 const PEOPLE_SPACING = 260;
@@ -144,14 +144,18 @@ export function streetLightSpots(area: NeighborhoodArea, bounds: DressingBounds)
   for (const road of area.roads ?? []) {
     const { start, end, vertical } = roadExtent(road, bounds);
     const across = road.width / 2 + LIGHT_SETBACK;
-    for (const side of [-1, 1])
-      for (let along = start + LIGHT_SPACING / 2; along < end; along += LIGHT_SPACING) {
+    // One side of each street, alternating along it, so lamps do not crowd the view.
+    let side = 1;
+    for (let along = start + LIGHT_SPACING / 2; along < end; along += LIGHT_SPACING) {
+      side = -side;
+      {
         const x = vertical ? road.offset + side * across : along;
         const y = vertical ? along : road.offset + side * across;
         if (lamps.some((lamp) => Math.hypot(lamp.x - x, lamp.y - y) < 40)) continue;
         if (insideObstacle(x, y, boxes, 6)) continue;
         spots.push({ x, y });
       }
+    }
   }
   return spots;
 }
