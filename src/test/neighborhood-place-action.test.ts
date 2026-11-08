@@ -24,6 +24,7 @@ function makeHandler(overrides: Record<string, unknown> = {}) {
     verifyCharacter: vi.fn(async () => {}),
     verifyLandmarkAction: vi.fn(async () => {}),
     perform: vi.fn(async () => ({ action_id: claims.actionId })),
+    logAgeCheck: vi.fn(async () => {}),
     secret: () => secret,
     ...overrides,
   };
@@ -75,6 +76,16 @@ describe("neighborhood place action endpoint", () => {
     });
     const response = await handler(makeRequest(signedToken()));
     expect(response.status).toBe(409);
+    expect(dependencies.perform).not.toHaveBeenCalled();
+  });
+
+  it("records an age restriction without allowing the action to run", async () => {
+    const { handler, dependencies } = makeHandler({
+      verifyLandmarkAction: vi.fn(async () => { throw new Error("AGE_RESTRICTED"); }),
+    });
+    const response = await handler(makeRequest(signedToken()));
+    expect(response.status).toBe(403);
+    expect(dependencies.logAgeCheck).toHaveBeenCalledWith(claims.userId, claims.landmarkId);
     expect(dependencies.perform).not.toHaveBeenCalled();
   });
 

@@ -5,6 +5,7 @@ type Dependencies = {
   verifyCharacter: (userId: string, characterId: string, locationId: string) => Promise<void>;
   verifyLandmarkAction: (userId: string, landmarkId: string, actionId: string) => Promise<void>;
   perform: (userId: string, landmarkId: string, actionId: string, requestId: string) => Promise<unknown>;
+  logAgeCheck: (userId: string, landmarkId: string) => Promise<void>;
   secret: () => string | undefined;
 };
 
@@ -67,6 +68,13 @@ export function createNeighborhoodPlaceActionHandler(dependencies: Dependencies)
     } catch (error) {
       const message = error instanceof Error ? error.message : "INTERNAL_ERROR";
       const code = message.split(/[\s:]/, 1)[0] || "INTERNAL_ERROR";
+      if (code === "AGE_RESTRICTED") {
+        try {
+          await dependencies.logAgeCheck(userId, landmarkId);
+        } catch (auditError) {
+          console.error("Neighborhood age-check audit write failed", auditError);
+        }
+      }
       const statuses: Record<string, number> = {
         AGE_RESTRICTED: 403,
         NOT_AT_PLACE: 409,
@@ -97,6 +105,13 @@ export async function handleNeighborhoodPlaceActionRequest(request: Request) {
       return error ? null : (data.user?.id ?? null);
     },
     secret: () => process.env["MULTIPLAYER_INTERACTION_SECRET"],
+    logAgeCheck: async (userId, landmarkId) => {
+      const { error } = await supabaseAdmin.rpc("map_log_age_check", {
+        p_player_id: userId,
+        p_landmark_id: landmarkId,
+      });
+      if (error) throw new Error(error.message);
+    },
     verifyCharacter: async (userId, characterId, locationId) => {
       const { data, error } = await supabaseAdmin
         .from("characters")

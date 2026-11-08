@@ -482,7 +482,7 @@ function generatedNeighborhoodArea(
     // Resolve real landmark identities from the reviewed catalog. Location slugs and
     // map_landmarks IDs are separate contracts; never manufacture one from the other.
     interactionPoints: townData.landmarks
-      .filter((landmark) => landmark.locationSlug === slug)
+      .filter((landmark) => landmark.locationSlug === slug && landmark.actions.length > 0)
       .map((landmark, index, matches) => ({
         id: landmark.id,
         x: Math.max(48, Math.min(592, market.x + (index - (matches.length - 1) / 2) * 112)),
