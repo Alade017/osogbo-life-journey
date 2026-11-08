@@ -27,3 +27,41 @@ it("gives every district, landmark and building one identity in the expanded tow
     });
   }
 });
+
+
+it("keeps every road tile connected to the town road network", () => {
+  const roads = new Set<string>();
+  town.grid.rows.forEach((row, z) => {
+    [...row].forEach((tile, x) => {
+      if (tile === "r") roads.add(`${x},${z}`);
+    });
+  });
+
+  const firstRoad = roads.values().next().value as string | undefined;
+  expect(firstRoad).toBeDefined();
+  const visited = new Set<string>([firstRoad!]);
+  const queue = [firstRoad!];
+
+  while (queue.length) {
+    const current = queue.shift()!;
+    const [x, z] = current.split(",").map(Number);
+    for (const [dx, dz] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) {
+      const neighbor = `${x + dx},${z + dz}`;
+      if (!roads.has(neighbor) || visited.has(neighbor)) continue;
+      visited.add(neighbor);
+      queue.push(neighbor);
+    }
+  }
+
+  expect(visited.size).toBe(roads.size);
+});
+
+it("keeps district grid bounds inside the authored town grid", () => {
+  for (const district of town.districts) {
+    const { x, z, width, depth } = district.gridArea;
+    expect(x).toBeGreaterThanOrEqual(0);
+    expect(z).toBeGreaterThanOrEqual(0);
+    expect(x + width).toBeLessThanOrEqual(town.grid.rows[0]!.length);
+    expect(z + depth).toBeLessThanOrEqual(town.grid.rows.length);
+  }
+});
