@@ -377,8 +377,7 @@ export function PlayableNeighborhood() {
                 ? "sleeping"
                 : "resting";
       return {
-        id: slot.id,
-        characterId: npc.id,
+        id: npc.id,
         name: npc.name,
         role: npc.role,
         activity: activity.label,
@@ -418,9 +417,22 @@ export function PlayableNeighborhood() {
   const hasLocalBusinesses = localPlaces.some((place) =>
     BUSINESS_PLACE_CATEGORIES.has(place.category),
   );
+  const interactionObjects = useMemo(
+    () => [
+      ...area.objects.filter((object) => object.kind !== "npc"),
+      ...activeNpcs.map((npc) => ({
+        id: npc.id,
+        name: npc.name,
+        kind: "npc" as const,
+        x: npc.x,
+        y: npc.y,
+      })),
+    ],
+    [activeNpcs, area.objects],
+  );
   const interactionTargets = useMemo(
     () =>
-      availableNeighborhoodTargets(area.objects, {
+      availableNeighborhoodTargets(interactionObjects, {
         hasPersonalHome: !!district?.personalHome,
         hasHomeType: !!homeTypeId,
         hasShopOffers,
@@ -430,7 +442,7 @@ export function PlayableNeighborhood() {
         hasCareerServices,
       }),
     [
-      area.objects,
+      interactionObjects,
       district?.personalHome,
       homeTypeId,
       hasShopOffers,
@@ -1112,7 +1124,7 @@ export function PlayableNeighborhood() {
                                 disabled={npcInteraction.isPending}
                                 onClick={() =>
                                   npcInteraction.mutate({
-                                    npcId: selectedNpc.characterId,
+                                    npcId: selectedNpc.id,
                                     action,
                                     requestId: crypto.randomUUID(),
                                   })
