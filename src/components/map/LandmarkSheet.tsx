@@ -5,7 +5,6 @@ import { formatMapNaira, formatMapEventEnd } from "@/components/map/map-ui-utils
 import { MapApiError, requestMapLandmark } from "@/lib/map-api";
 import { careerShiftPay } from "@/lib/economy-service";
 import { isCareerJob } from "@/lib/career-rules";
-import type { MapPlaceAction } from "@/components/map/OsogboMap.svg";
 
 export function LandmarkSheet({
   landmark,
@@ -28,7 +27,6 @@ export function LandmarkSheet({
     label: string;
     category: string;
     verify: boolean;
-    actions?: MapPlaceAction[];
   };
   description: string;
   offline: boolean;
@@ -54,12 +52,6 @@ export function LandmarkSheet({
     refetchOnWindowFocus: true,
     retry: false,
   });
-  const scheduleIsFresh =
-    !!detailsQuery.data?.schedule &&
-    !offline &&
-    !detailsQuery.isFetching &&
-    Date.now() - detailsQuery.dataUpdatedAt <= 30_000;
-  const schedule = scheduleIsFresh ? detailsQuery.data?.schedule : undefined;
   const restricted =
     detailsQuery.error instanceof MapApiError && detailsQuery.error.code === "AGE_RESTRICTED";
   const detailError =
@@ -149,7 +141,7 @@ export function LandmarkSheet({
       ) : (
         <>
           <section className="map-landmark-section" aria-label="Place interactions">
-            <h3>Available actions</h3>
+            <h3>Interact in the neighborhood</h3>
             <p>
               {offline
                 ? "Reconnect to view this place's activities."
