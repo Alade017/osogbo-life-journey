@@ -1051,19 +1051,22 @@ export function PlayableNeighborhood() {
                       entry is temporarily disabled.
                     </p>
                   )}
-                  {(npcQuery.isError ||
+                  {(availableLandmarksQuery.isError ||
+                    npcQuery.isError ||
                     placesQuery.isError ||
                     shopItemsQuery.isError ||
                     jobsQuery.isError) && (
                     <p className="neighborhood-error" role="alert">
                       Some nearby interactions could not be loaded.{" "}
-                      {npcQuery.error?.message ??
+                      {availableLandmarksQuery.error?.message ??
+                        npcQuery.error?.message ??
                         placesQuery.error?.message ??
                         shopItemsQuery.error?.message ??
                         jobsQuery.error?.message}
                     </p>
                   )}
-                  {(npcQuery.isLoading ||
+                  {(availableLandmarksQuery.isLoading ||
+                    npcQuery.isLoading ||
                     placesQuery.isLoading ||
                     shopItemsQuery.isLoading ||
                     jobsQuery.isLoading) && (
