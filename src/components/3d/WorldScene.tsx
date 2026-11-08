@@ -3,7 +3,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows, OrbitControls, Text } from "@react-three/drei";
 import { Object3D, Vector3, type InstancedMesh, type PerspectiveCamera, type Texture } from "three";
 import type { OrbitControls as Controls } from "three-stdlib";
-import { getDistrictArchitecture } from "../../game/district-architecture";
+import { getDistrictArchitecture, getPitchedRoofPanelRotation } from "../../game/district-architecture";
 import {
   WORLD_CAMERA,
   WORLD_MATERIAL,
@@ -1117,37 +1117,10 @@ export function WorldHouse({
         ))}
 
       {/* MARKET AND FOOD BUILDINGS */}
-      {isMarket && (
-        <>
-          <mesh position={[0, height * 0.84, depth / 2 + 0.32]} castShadow>
-            <boxGeometry args={[width * 1.12, 0.17, 0.72]} />
-            <WorldMaterial tone="accent" />
-          </mesh>
-
-          {[-1, 1].map((side) => (
-            <mesh
-              key={`market-support-${side}`}
-              position={[side * width * 0.43, height * 0.65, depth / 2 + 0.28]}
-            >
-              <boxGeometry args={[0.07, height * 0.36, 0.07]} />
-              <WorldMaterial tone="metal" />
-            </mesh>
-          ))}
-        </>
-      )}
+      {/* Market awnings are supplied by the district frontage profile below. */}
 
       {/* BANK AND CIVIC BUILDINGS */}
-      {(isBank || isCivic) &&
-        [-1, 1].map((side) => (
-          <mesh
-            key={`column-${side}`}
-            position={[side * width * 0.4, height * 0.45 + 0.18, depth / 2 + 0.08]}
-            castShadow
-          >
-            <boxGeometry args={[0.16, height * 0.85, 0.18]} />
-            <WorldMaterial tone="linen" />
-          </mesh>
-        ))}
+      {/* Bank and civic portico columns are supplied by the district frontage profile below. */}
 
       {/* HEALTH BUILDINGS */}
       {isHealth && (
@@ -1158,12 +1131,7 @@ export function WorldHouse({
       )}
 
       {/* SCHOOL AND LIBRARY BUILDINGS */}
-      {(isSchool || isClub || isServices) && (
-        <mesh position={[0, height + 0.55, 0]}>
-          <boxGeometry args={[width * 0.72, 0.12, depth * 0.72]} />
-          <WorldMaterial tone={accentTone} />
-        </mesh>
-      )}
+      {/* School, club and service roof details are supplied by their roof profiles below. */}
 
       {/* WORSHIP BUILDINGS */}
       {isChurch && (
@@ -1233,39 +1201,17 @@ export function WorldHouse({
       )}
 
       {/* TRANSPORT BUILDINGS */}
-      {isTransit && (
-        <>
-          <mesh position={[0, height * 0.88, depth / 2 + 0.48]}>
-            <boxGeometry args={[width * 1.15, 0.12, 0.9]} />
-            <WorldMaterial tone="accent" />
-          </mesh>
-
-          {[-1, 1].map((side) => (
-            <mesh
-              key={`transit-pillar-${side}`}
-              position={[side * width * 0.42, height * 0.55, depth / 2 + 0.48]}
-            >
-              <boxGeometry args={[0.09, height * 0.65, 0.09]} />
-              <WorldMaterial tone="metal" />
-            </mesh>
-          ))}
-        </>
-      )}
+      {/* Transit canopies are supplied by the district frontage profile below. */}
 
       {/* SPORTS AND RECREATION BUILDINGS */}
-      {isSport && (
-        <mesh position={[0, height + 0.55, 0]}>
-          <boxGeometry args={[width * 0.55, 0.15, depth * 0.55]} />
-          <WorldMaterial tone="foliage" />
-        </mesh>
-      )}
+      {/* Sports roof details are supplied by the district roof/frontage profiles below. */}
 
       {/* District roof profiles add recognizable local rooflines without changing footprints. */}
       {architecture.roof === "pitched" && (
         <>
           <mesh
             position={[-width * 0.2, height + 0.43, 0]}
-            rotation={[0, 0, -0.34]}
+            rotation={[0, 0, getPitchedRoofPanelRotation("left")]}
             castShadow
           >
             <boxGeometry args={[width * 0.62, 0.13, depth + 0.38]} />
@@ -1273,7 +1219,7 @@ export function WorldHouse({
           </mesh>
           <mesh
             position={[width * 0.2, height + 0.43, 0]}
-            rotation={[0, 0, 0.34]}
+            rotation={[0, 0, getPitchedRoofPanelRotation("right")]}
             castShadow
           >
             <boxGeometry args={[width * 0.62, 0.13, depth + 0.38]} />
