@@ -26,9 +26,22 @@ const ARCHITECTURE: Readonly<Record<string, DistrictArchitecture>> = {
   services: { roof: "parapet", frontage: "recessed", windowGrilles: true, accent: "concrete" },
 };
 
+const VARIANT_ALIASES: Readonly<Record<string, keyof typeof ARCHITECTURE>> = {
+  food: "market",
+  "public-service": "civic",
+  clinic: "health",
+  transport: "transit",
+};
+
 export function getDistrictArchitecture(variant: string | null | undefined): DistrictArchitecture {
   const key = variant?.trim().toLowerCase() ?? "";
-  return ARCHITECTURE[key] ?? ARCHITECTURE.residential!;
+  const canonical = VARIANT_ALIASES[key] ?? key;
+  return ARCHITECTURE[canonical] ?? ARCHITECTURE.residential!;
+}
+
+/** Positive Z rotation raises the right edge; negative raises the left edge. */
+export function getPitchedRoofPanelRotation(side: "left" | "right"): number {
+  return side === "left" ? 0.34 : -0.34;
 }
 
 export const DISTRICT_ARCHITECTURE_VARIANTS = Object.keys(ARCHITECTURE);
