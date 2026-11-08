@@ -40,6 +40,7 @@ import {
   WorldInstances,
   type WorldInstance,
 } from "../3d/WorldScene";
+import { CHARACTER_MOTION } from "@/components/3d/character-config";
 import {
   NEIGHBORHOOD_STREET_SCALE,
   WORLD_CAMERA,
@@ -56,6 +57,24 @@ import {
   vendorSpots,
   type DressingRect,
 } from "@/game/neighborhood-dressing";
+
+/** The nearest other character within range, so heads turn toward someone close by. */
+function nearestCharacter(
+  origin: readonly [number, number, number],
+  others: readonly (readonly [number, number, number])[],
+  range: number,
+): readonly [number, number, number] | null {
+  let best: readonly [number, number, number] | null = null;
+  let bestDistance = range;
+  for (const other of others) {
+    const distance = Math.hypot(other[0] - origin[0], other[2] - origin[2]);
+    if (distance > 0 && distance <= bestDistance) {
+      best = other;
+      bestDistance = distance;
+    }
+  }
+  return best;
+}
 
 class NeighborhoodBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   override state = { failed: false };
@@ -304,6 +323,12 @@ export function R3FNeighborhoodSurface({
     };
   }, [dressing, point, unit]);
   const streetSize = WORLD_SCALE.neighborhoodStreetCell;
+  const lookRange = CHARACTER_MOTION.lookRange * WORLD_SCALE.character;
+  const scenePoints = players.map((player) => {
+    const p = toScene(player, district.origin);
+    return point(p.x, p.y);
+  });
+  const npcPoints = npcs.map((npc) => point(npc.x, npc.y));
   const self = players.find((player) => player.sessionId === selfSessionId);
   const selfPoint = self && toScene(self, district.origin);
   const target: [number, number, number] =
@@ -446,8 +471,10 @@ export function R3FNeighborhoodSurface({
                 </group>
               );
             })}
-          {players.map((player) => {
+          {players.map((player, index) => {
             const p = toScene(player, district.origin);
+            const position = point(p.x, p.y);
+            const others = [...scenePoints.filter((_, other) => other !== index), ...npcPoints];
             return (
               <WorldCharacter
                 key={player.sessionId}
@@ -455,9 +482,10 @@ export function R3FNeighborhoodSurface({
                 appearance={worldAppearance(player.appearance)}
                 gender={player.gender}
                 equipment={worldEquipment(player.equipment)}
-                position={point(p.x, p.y)}
+                position={position}
                 facing={player.facing}
                 animation={player.actionAnimation ?? "idle"}
+                lookAt={nearestCharacter(position, others, lookRange)}
               />
             );
           })}
