@@ -274,7 +274,7 @@ export function WorldCars({
   positions,
   size,
 }: {
-  positions: readonly [number, number][];
+  positions: readonly [number, number, number?][];
   size: number;
 }) {
   const bodyColors = ["#c94b36", "#e3b542", "#276b9a", "#43845c"];
@@ -286,11 +286,11 @@ export function WorldCars({
 
   return (
     <>
-      {positions.map(([x, z], index) => {
+      {positions.map(([x, z, rotation = 0], index) => {
         const bodyColor = bodyColors[index % bodyColors.length] ?? "#c94b36";
 
         return (
-          <group key={`car-${index}`} position={[x, 0, z]}>
+          <group key={`car-${index}`} position={[x, 0, z]} rotation={[0, rotation, 0]}>
             {/* Main vehicle body */}
             <mesh position={[0, size * 0.2, 0]} castShadow receiveShadow>
               <boxGeometry args={[length, bodyHeight, width]} />
