@@ -39,9 +39,19 @@ export function getDistrictArchitecture(variant: string | null | undefined): Dis
   return ARCHITECTURE[canonical] ?? ARCHITECTURE.residential!;
 }
 
-/** Positive Z rotation raises the right edge; negative raises the left edge. */
-export function getPitchedRoofPanelRotation(side: "left" | "right"): number {
-  return side === "left" ? 0.34 : -0.34;
+export type PitchedRoofPanel = {
+  positionX: number;
+  width: number;
+  rotation: number;
+};
+
+/** Returns two matching roof panels whose inner edges meet at the ridge. */
+export function getPitchedRoofPanel(side: "left" | "right", buildingWidth: number): PitchedRoofPanel {
+  return {
+    positionX: side === "left" ? -buildingWidth * 0.25 : buildingWidth * 0.25,
+    width: buildingWidth * 0.5,
+    rotation: side === "left" ? 0.34 : -0.34,
+  };
 }
 
 export const DISTRICT_ARCHITECTURE_VARIANTS = Object.keys(ARCHITECTURE);
