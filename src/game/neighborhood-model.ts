@@ -305,6 +305,13 @@ const LEGACY_AREA_NODES: Readonly<Record<string, { name: string; category: World
  * These entries contain identity only; schedules and action definitions remain database-owned.
  */
 const ADDITIONAL_LANDMARK_ANCHORS: readonly { id: string; locationSlug: string }[] = [
+  { id: "ataoja-police-station", locationSlug: "government-area" },
+  { id: "ataoja-palace", locationSlug: "government-area" },
+  { id: "oke-baale-local-government-hq", locationSlug: "oke-baale" },
+  { id: "osogbo-school-of-art", locationSlug: "student-district" },
+  { id: "osogbo-township-stadium", locationSlug: "stadium" },
+  { id: "aleku-wodo-road-network", locationSlug: "residential" },
+  { id: "oke-fia-flyover", locationSlug: "oke-fia" },
   { id: "youth-arts-centre", locationSlug: "youth-arts-centre" },
 ];
 
