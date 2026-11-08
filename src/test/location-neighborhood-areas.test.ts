@@ -42,7 +42,6 @@ describe("every active location has a playable area", () => {
     expect(target).toMatchObject({
       id: "cedar-bank",
       radius: 60,
-      actionIds: expect.arrayContaining(["cedar-budgeting"]),
     });
     expect(target!.y).not.toBe(area.objects.find((object) => object.kind === "market")!.y);
   });

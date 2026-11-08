@@ -302,7 +302,7 @@ export class NeighborhoodRoom extends Room {
     }
 
     const target = this.area.interactionPoints?.find((point) => point.id === landmarkId);
-    if (!target || !target.actionIds.includes(actionId)) {
+    if (!target) {
       reject("UNKNOWN_ACTION");
       return;
     }

@@ -58,8 +58,7 @@ export type NeighborhoodInteractionPoint = {
   x: number;
   y: number;
   radius: number;
-  /** Action IDs are an allow-list only; action rules remain database-owned. */
-  actionIds: readonly string[];
+
 };
 export type NeighborhoodArea = {
   slug: string;
@@ -490,7 +489,6 @@ function generatedNeighborhoodArea(
         // Put the interaction point on the walkable frontage, outside the building footprint.
         y: market.y < 280 ? market.y + 86 : market.y - 86,
         radius: 60,
-        actionIds: landmark.actions.map((action) => action.id),
       })),
     style: AREA_STYLE_BY_CATEGORY[category],
   };

@@ -90,12 +90,6 @@ export function createMapPlaceActionHandler(dependencies: Dependencies) {
 }
 
 export async function handleMapPlaceActionRequest(request: Request) {
-  if (request.headers.has("X-Neighborhood-Authorization")) {
-    const { handleNeighborhoodPlaceActionRequest } = await import(
-      "@/lib/neighborhood-place-action.server"
-    );
-    return handleNeighborhoodPlaceActionRequest(request);
-  }
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return createMapPlaceActionHandler({
     authenticate: async (incoming) => {
