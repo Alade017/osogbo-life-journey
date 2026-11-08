@@ -585,6 +585,10 @@ export function PlayableNeighborhood() {
   }, [homeBound, nearbyObject]);
 
   useEffect(() => {
+    setNeighborhoodActionResult(null);
+  }, [selectedLandmarkId]);
+
+  useEffect(() => {
     setDirections(new Set());
     lastIntentRef.current = "0:0";
     setZoom(WORLD_CAMERA.defaultZoom);
@@ -1056,14 +1060,38 @@ export function PlayableNeighborhood() {
                     placesQuery.isError ||
                     shopItemsQuery.isError ||
                     jobsQuery.isError) && (
-                    <p className="neighborhood-error" role="alert">
-                      Some nearby interactions could not be loaded.{" "}
-                      {availableLandmarksQuery.error?.message ??
-                        npcQuery.error?.message ??
-                        placesQuery.error?.message ??
-                        shopItemsQuery.error?.message ??
-                        jobsQuery.error?.message}
-                    </p>
+                    <div className="neighborhood-error" role="alert">
+                      <p>
+                        Some nearby interactions could not be loaded.{" "}
+                        {availableLandmarksQuery.error?.message ??
+                          npcQuery.error?.message ??
+                          placesQuery.error?.message ??
+                          shopItemsQuery.error?.message ??
+                          jobsQuery.error?.message}
+                      </p>
+                      <button
+                        type="button"
+                        className="neighborhood-action-card"
+                        disabled={
+                          availableLandmarksQuery.isFetching ||
+                          npcQuery.isFetching ||
+                          placesQuery.isFetching ||
+                          shopItemsQuery.isFetching ||
+                          jobsQuery.isFetching
+                        }
+                        onClick={() =>
+                          void Promise.all([
+                            availableLandmarksQuery.refetch(),
+                            npcQuery.refetch(),
+                            placesQuery.refetch(),
+                            shopItemsQuery.refetch(),
+                            jobsQuery.refetch(),
+                          ])
+                        }
+                      >
+                        Retry loading interactions
+                      </button>
+                    </div>
                   )}
                   {(availableLandmarksQuery.isLoading ||
                     npcQuery.isLoading ||
@@ -1118,6 +1146,7 @@ export function PlayableNeighborhood() {
                             </p>
                           ) : (
                             <PlaceActionMenu
+                              key={selectedLandmarkId}
                               schedule={landmarkDetailsQuery.data?.schedule}
                               refreshingSchedule={landmarkDetailsQuery.isFetching}
                               onRefreshSchedule={() => void landmarkDetailsQuery.refetch()}
