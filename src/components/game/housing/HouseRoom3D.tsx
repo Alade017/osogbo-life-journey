@@ -24,6 +24,8 @@ import {
   renderSlotForPlacement,
   roomPercentToPosition,
   snapToHouseGrid,
+  isWallArtKind,
+  snapToBackWall,
   houseSlotPosition as slotPosition,
   houseWallSegments,
   houseRearDoorCenter,
@@ -432,6 +434,9 @@ const FURNITURE_COLOURS = {
   gymRed: "#b5523b",
   gymMat: "#6f8f63",
   mirrorGlass: "#c9d6e0",
+  mirrorFrame: "#14213d",
+  artRoyal: "#014baa",
+  artGold: "#e7d9b4",
 } as const;
 
 export function FurnitureFallback({
@@ -1045,6 +1050,52 @@ export function FurnitureFallback({
         <mesh castShadow receiveShadow position={[0, 0.72, 0.05]} rotation={[Math.PI / 2, 0, 0]}>
           <cylinderGeometry args={[0.13, 0.13, 0.02, 20]} />
           <meshStandardMaterial color={FURNITURE_COLOURS.blanket} roughness={0.9} />
+        </mesh>
+      </group>
+    );
+  if (kind === "wall-art-canvas")
+    return (
+      <group>
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[0.84, 0.66, 0.04]}
+          radius={0.01}
+          smoothness={4}
+          position={[0, 0.7, 0]}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.bedLinen} roughness={0.95} />
+        </RoundedBox>
+        <mesh castShadow position={[-0.14, 0.74, 0.024]}>
+          <boxGeometry args={[0.36, 0.3, 0.01]} />
+          <meshStandardMaterial color={FURNITURE_COLOURS.artRoyal} roughness={0.8} />
+        </mesh>
+        <mesh castShadow position={[0.2, 0.62, 0.024]}>
+          <boxGeometry args={[0.22, 0.18, 0.01]} />
+          <meshStandardMaterial color={FURNITURE_COLOURS.artGold} roughness={0.8} />
+        </mesh>
+      </group>
+    );
+  if (kind === "wall-art-mirror")
+    return (
+      <group>
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[0.7, 0.9, 0.05]}
+          radius={0.12}
+          smoothness={4}
+          position={[0, 0.7, 0]}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.mirrorFrame} roughness={0.5} />
+        </RoundedBox>
+        <mesh position={[0, 0.7, 0.03]}>
+          <planeGeometry args={[0.58, 0.78]} />
+          <meshStandardMaterial
+            color={FURNITURE_COLOURS.mirrorGlass}
+            roughness={0.15}
+            metalness={0.4}
+          />
         </mesh>
       </group>
     );
@@ -1870,7 +1921,9 @@ export function HouseRoom3D({
     const point = floorPoint(event);
     if (!point) return;
     const [percentX, percentY] = roomCoordinatesToPercent(point.x, point.z, width, depth);
-    const [snapX, snapY] = snapToHouseGrid(percentX, percentY);
+    const [snapX, snapY] = isWallArtKind(pointer.placement.art_key)
+      ? snapToBackWall(percentX)
+      : snapToHouseGrid(percentX, percentY);
     const [x, , z] = roomPercentToPosition(snapX, snapY, width, depth);
     setDragPreview({ placementId: pointer.placement.id, x, z });
   };
@@ -1891,7 +1944,9 @@ export function HouseRoom3D({
     const point = floorPoint(event);
     if (point) {
       const [percentX, percentY] = roomCoordinatesToPercent(point.x, point.z, width, depth);
-      const [x, y] = snapToHouseGrid(percentX, percentY);
+      const [x, y] = isWallArtKind(pointer.placement.art_key)
+        ? snapToBackWall(percentX)
+        : snapToHouseGrid(percentX, percentY);
       // One item per grid cell: a drop onto an occupied cell leaves the item where it was.
       if (isHouseGridCellOccupied(x, y, placements, pointer.placement.id)) return;
       if (draftMove) {

@@ -100,6 +100,31 @@ const GRID_CELL = (GRID_MAX - GRID_MIN) / HOUSE_GRID_SIZE;
 /** One grid step in room percent (the width of one cell). */
 export const HOUSE_GRID_STEP = GRID_CELL;
 
+/** Wall art hangs on the back wall: the last grid row, centred on it. */
+export const HOUSE_BACK_WALL_Y = GRID_MIN + GRID_CELL * (HOUSE_GRID_SIZE - 0.5);
+
+/** True for wall art pieces (art keys start with "wall-art"). */
+export function isWallArtKind(artKey: string | null | undefined): boolean {
+  return typeof artKey === "string" && artKey.startsWith("wall-art");
+}
+
+/** Keeps wall art on the back wall: the x is snapped to a column, the y is fixed. */
+export function snapToBackWall(x: number): [number, number] {
+  const { col } = gridCellOf(x, HOUSE_BACK_WALL_Y);
+  return [GRID_MIN + GRID_CELL * (col + 0.5), HOUSE_BACK_WALL_Y];
+}
+
+/** First free column on the back wall, or null when the wall is full. */
+export function firstFreeBackWallCell(
+  others: readonly { id: string; x?: number; y?: number }[],
+): { x: number; y: number } | null {
+  for (let col = 0; col < HOUSE_GRID_SIZE; col++) {
+    const x = GRID_MIN + GRID_CELL * (col + 0.5);
+    if (!isHouseGridCellOccupied(x, HOUSE_BACK_WALL_Y, others)) return { x, y: HOUSE_BACK_WALL_Y };
+  }
+  return null;
+}
+
 export function gridCellOf(x: number, y: number): { col: number; row: number } {
   const clamp = (value: number) =>
     Math.max(0, Math.min(HOUSE_GRID_SIZE - 1, Math.floor((value - GRID_MIN) / GRID_CELL)));

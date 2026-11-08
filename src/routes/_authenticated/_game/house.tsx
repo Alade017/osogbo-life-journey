@@ -15,6 +15,9 @@ import {
   houseStairs,
   isHouseGridCellOccupied,
   snapToHouseGrid,
+  firstFreeBackWallCell,
+  isWallArtKind,
+  snapToBackWall,
   type DraftMove,
 } from "@/components/game/housing/house-room-contract";
 import { HousePlacementBar } from "@/components/game/housing/HousePlacementBar";
@@ -1080,6 +1083,11 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const nudgeDraft = (dx: number, dy: number) =>
     setDraftMove((current) => {
       if (!current) return current;
+      // Wall art slides along the back wall only.
+      if (isWallArtKind(draftPlacement?.art_key)) {
+        const [wallX, wallY] = snapToBackWall(current.x + dx * HOUSE_GRID_STEP);
+        return { ...current, x: wallX, y: wallY };
+      }
       const [x, y] = snapToHouseGrid(
         current.x + dx * HOUSE_GRID_STEP,
         current.y + dy * HOUSE_GRID_STEP,
@@ -1668,7 +1676,10 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           onClose={() => setCatalogueOpen(false)}
           onBuy={(itemId) => requestAction({ action: "buy", itemId })}
           onPlaceOwned={(itemId) => {
-            const cell = firstFreeHouseGridCell(floorPlacements);
+            const artKey = inventory.find((entry) => entry.item_id === itemId)?.art_key;
+            const cell = isWallArtKind(artKey)
+              ? firstFreeBackWallCell(floorPlacements)
+              : firstFreeHouseGridCell(floorPlacements);
             if (!cell) {
               toast.error("There is no free spot in your home.");
               return;
