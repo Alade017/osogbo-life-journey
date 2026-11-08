@@ -57,7 +57,7 @@ export function RoadsideInfrastructure3D({
         const dx = x2 - x1;
         const dz = z2 - z1;
         const length = Math.hypot(dx, dz);
-        if (length < 0.1) return null;
+        if (length < 0.1 || length > cellSize * 6) return null;
         const angle = Math.atan2(dz, dx);
         return [-0.22, 0.22].map((offset) => (
           <mesh
