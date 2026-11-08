@@ -11,6 +11,12 @@ import type { Appearance } from "@/game/avatar-appearance";
 import { AVATAR_DIRECTIONS, avatarAnimationKey } from "@/game/character-animation";
 import { ensureAvatarTexture } from "@/game/character-texture";
 import {
+  NEIGHBORHOOD_ART_ASSETS,
+  NEIGHBORHOOD_BUILDING_ART,
+  NEIGHBORHOOD_PROP_ART,
+  neighborhoodPropArtKind,
+} from "@/game/neighborhood-art";
+import {
   neighborhoodSceneBounds,
   type NeighborhoodArea,
   type NeighborhoodObject,
@@ -166,6 +172,12 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
     this.playersRef = options.playersRef;
     this.onReady = options.onReady;
     this.onScene = options.onScene;
+  }
+
+  preload() {
+    for (const asset of NEIGHBORHOOD_ART_ASSETS) {
+      this.load.svg(asset.key, asset.path, { width: asset.width, height: asset.height });
+    }
   }
 
   create() {
@@ -569,7 +581,18 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
       graphics.fillStyle(0xe4c26c, 1).fillRect(-width * 0.34, awningY, width * 0.68, 8);
       graphics.fillStyle(0x315e4b, 1).fillRect(-width * 0.29, awningY + 8, width * 0.58, 12);
     }
-    container.add(graphics);
+    const buildingArt = NEIGHBORHOOD_BUILDING_ART[kind];
+    if (this.textures.exists(buildingArt.key)) {
+      graphics.destroy();
+      container.add(
+        this.add
+          .image(0, 0, buildingArt.key)
+          .setOrigin(buildingArt.originX, buildingArt.originY)
+          .setScale(buildingArt.scale),
+      );
+    } else {
+      container.add(graphics);
+    }
     const title = this.add
       .text(0, -wallHeight - 22, sign, {
         color: "#fff8e9",
@@ -604,7 +627,17 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
         .container(anchor.x, anchor.y)
         .setDepth(neighborhoodDepth(obstacle.x, obstacle.y));
       const graphics = this.add.graphics();
-      if (obstacle.kind === "tree") {
+      const propKind = neighborhoodPropArtKind(obstacle.kind);
+      const propArt = propKind ? NEIGHBORHOOD_PROP_ART[propKind] : null;
+      if (propArt && this.textures.exists(propArt.key)) {
+        container.add(
+          this.add
+            .image(0, 0, propArt.key)
+            .setOrigin(propArt.originX, propArt.originY)
+            .setScale(propArt.scale),
+        );
+        graphics.destroy();
+      } else if (obstacle.kind === "tree") {
         graphics.fillStyle(0x3f4b34, 0.22).fillEllipse(0, 0, 34, 12);
         graphics.fillStyle(0x795b3b, 1).fillRect(-4, -26, 8, 27);
         graphics.fillStyle(0x426e48, 1).fillCircle(0, -35, 18);
@@ -632,7 +665,7 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
         graphics.lineStyle(1, 0x785936, 1).strokeRoundedRect(-17, -34, 34, 15, 3);
         graphics.fillStyle(0x355948, 1).fillCircle(0, -27, 3);
       }
-      container.add(graphics);
+      if (graphics.active) container.add(graphics);
       if (obstacle.kind === "landmark" && obstacle.label) {
         container.add(
           this.add
