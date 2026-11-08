@@ -31,3 +31,16 @@ export function townDiamondPoints(
 export function pointsAttribute(points: readonly (readonly [number, number])[]) {
   return points.map(([x, y]) => `${x},${y}`).join(" ");
 }
+
+/** Invert world 3D scene position into grid cell coordinates (no magic numbers). */
+export function scenePositionToGridCell(
+  pos: [number, number, number] | readonly [number, number, number],
+  columns = TOWN_GRID_COLUMNS,
+  rows = TOWN_GRID_ROWS,
+  cellSize = 2,
+): { col: number; row: number } {
+  return {
+    col: pos[0] / cellSize + (columns - 1) / 2,
+    row: pos[2] / cellSize + (rows - 1) / 2,
+  };
+}
