@@ -225,9 +225,12 @@ export function trafficLightSpots(area: NeighborhoodArea): TrafficLightSpot[] {
           const x = vertical.offset + sideX * setback;
           const y = horizontal.offset + sideY * setback;
           const key = `${x}:${y}`;
-          const withinVertical = vertical.start === undefined || (y >= vertical.start && y <= vertical.end!);
+          const withinVertical =
+            (vertical.start === undefined || y >= vertical.start) &&
+            (vertical.end === undefined || y <= vertical.end);
           const withinHorizontal =
-            horizontal.start === undefined || (x >= horizontal.start && x <= horizontal.end!);
+            (horizontal.start === undefined || x >= horizontal.start) &&
+            (horizontal.end === undefined || x <= horizontal.end);
           if (
             seen.has(key) ||
             !withinVertical ||
