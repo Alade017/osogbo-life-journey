@@ -3,6 +3,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows, OrbitControls, Text } from "@react-three/drei";
 import { Object3D, Vector3, type InstancedMesh, type PerspectiveCamera, type Texture } from "three";
 import type { OrbitControls as Controls } from "three-stdlib";
+import { getDistrictArchitecture } from "../../game/district-architecture";
 import {
   WORLD_CAMERA,
   WORLD_MATERIAL,
@@ -1018,6 +1019,7 @@ export function WorldHouse({
   const isSport = variant === "sport";
   const isClub = variant === "club";
   const isServices = variant === "services";
+  const architecture = getDistrictArchitecture(variant);
 
   const roofTone = isMarket
     ? "accent"
@@ -1240,6 +1242,120 @@ export function WorldHouse({
           <boxGeometry args={[width * 0.55, 0.15, depth * 0.55]} />
           <WorldMaterial tone="foliage" />
         </mesh>
+      )}
+
+      {/* District roof profiles add recognizable local rooflines without changing footprints. */}
+      {architecture.roof === "pitched" && (
+        <>
+          <mesh
+            position={[-width * 0.2, height + 0.43, 0]}
+            rotation={[0, 0, -0.34]}
+            castShadow
+          >
+            <boxGeometry args={[width * 0.62, 0.13, depth + 0.38]} />
+            <WorldMaterial tone={architecture.accent} />
+          </mesh>
+          <mesh
+            position={[width * 0.2, height + 0.43, 0]}
+            rotation={[0, 0, 0.34]}
+            castShadow
+          >
+            <boxGeometry args={[width * 0.62, 0.13, depth + 0.38]} />
+            <WorldMaterial tone={architecture.accent} />
+          </mesh>
+        </>
+      )}
+      {architecture.roof === "parapet" && (
+        <>
+          <mesh position={[0, height + 0.53, depth * 0.43]} castShadow>
+            <boxGeometry args={[width + 0.12, 0.2, 0.1]} />
+            <WorldMaterial tone={architecture.accent} />
+          </mesh>
+          <mesh position={[-width * 0.48, height + 0.53, 0]} castShadow>
+            <boxGeometry args={[0.1, 0.2, depth]} />
+            <WorldMaterial tone={architecture.accent} />
+          </mesh>
+          <mesh position={[width * 0.48, height + 0.53, 0]} castShadow>
+            <boxGeometry args={[0.1, 0.2, depth]} />
+            <WorldMaterial tone={architecture.accent} />
+          </mesh>
+        </>
+      )}
+
+      {/* Shaded frontages vary by district: compound veranda, market awning, civic portico or transit canopy. */}
+      {architecture.frontage === "veranda" && (
+        <group position={[0, height * 0.62, depth / 2 + 0.28]}>
+          <mesh castShadow>
+            <boxGeometry args={[width * 0.9, 0.09, 0.62]} />
+            <WorldMaterial tone="roof" />
+          </mesh>
+          {[-1, 1].map((side) => (
+            <mesh key={`veranda-post-${side}`} position={[side * width * 0.38, -height * 0.3, 0.2]}>
+              <boxGeometry args={[0.07, height * 0.6, 0.07]} />
+              <WorldMaterial tone="concrete" />
+            </mesh>
+          ))}
+        </group>
+      )}
+      {architecture.frontage === "awning" && (
+        <group position={[0, height * 0.78, depth / 2 + 0.3]}>
+          <mesh castShadow>
+            <boxGeometry args={[width * 1.12, 0.13, 0.62]} />
+            <WorldMaterial tone={architecture.accent} />
+          </mesh>
+          {[-1, 0, 1].map((segment) => (
+            <mesh key={`awning-panel-${segment}`} position={[segment * width * 0.34, -0.08, 0.02]}>
+              <boxGeometry args={[width * 0.27, 0.035, 0.57]} />
+              <WorldMaterial tone={segment === 0 ? "linen" : architecture.accent} />
+            </mesh>
+          ))}
+          {[-1, 1].map((side) => (
+            <mesh key={`awning-support-${side}`} position={[side * width * 0.44, -height * 0.35, 0.22]}>
+              <boxGeometry args={[0.055, height * 0.7, 0.055]} />
+              <WorldMaterial tone="metal" />
+            </mesh>
+          ))}
+        </group>
+      )}
+      {architecture.frontage === "portico" && (
+        <group position={[0, height * 0.55, depth / 2 + 0.22]}>
+          <mesh castShadow>
+            <boxGeometry args={[width * 0.72, 0.13, 0.58]} />
+            <WorldMaterial tone={architecture.accent} />
+          </mesh>
+          {[-1, 1].map((side) => (
+            <mesh key={`portico-column-${side}`} position={[side * width * 0.29, -height * 0.25, 0.18]} castShadow>
+              <boxGeometry args={[0.13, height * 0.5, 0.13]} />
+              <WorldMaterial tone="linen" />
+            </mesh>
+          ))}
+        </group>
+      )}
+      {architecture.frontage === "canopy" && (
+        <group position={[0, height * 0.78, depth / 2 + 0.34]}>
+          <mesh castShadow>
+            <boxGeometry args={[width * 1.18, 0.11, 0.82]} />
+            <WorldMaterial tone={architecture.accent} />
+          </mesh>
+          {[-1, 0, 1].map((side) => (
+            <mesh key={`canopy-support-${side}`} position={[side * width * 0.42, -height * 0.38, 0.28]}>
+              <boxGeometry args={[0.07, height * 0.76, 0.07]} />
+              <WorldMaterial tone="metal" />
+            </mesh>
+          ))}
+        </group>
+      )}
+      {architecture.frontage === "recessed" && (
+        <>
+          <mesh position={[0, 0.13, depth / 2 + 0.23]} receiveShadow>
+            <boxGeometry args={[width * 0.58, 0.18, 0.48]} />
+            <WorldMaterial tone="concrete" />
+          </mesh>
+          <mesh position={[0, WORLD_SCALE.door * 0.92 + 0.18, depth / 2 + 0.085]}>
+            <boxGeometry args={[width * 0.42, 0.12, 0.12]} />
+            <WorldMaterial tone={architecture.accent} />
+          </mesh>
+        </>
       )}
 
       {/* SHOPFRONT / BUILDING STEP */}
