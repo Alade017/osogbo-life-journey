@@ -305,6 +305,8 @@ export function PlayableNeighborhood() {
   directionsRef.current = directions;
   const lastIntentRef = useRef("0:0");
   const [activePanel, setActivePanel] = useState<InteractionPanel | null>(null);
+  /** A tapped building or person the character is walking to; interaction opens on arrival. */
+  const [pendingTargetId, setPendingTargetId] = useState<string | null>(null);
   const [businessView, setBusinessView] = useState<BusinessView>("actions");
   const [workView, setWorkView] = useState<"actions" | "interior">("actions");
   const [selectedNpcId, setSelectedNpcId] = useState<string | null>(null);
@@ -519,6 +521,7 @@ export function PlayableNeighborhood() {
   /** Tapping or clicking the ground walks the character there. Panels hold them in place. */
   const tapGround = (point: { x: number; y: number }) => {
     if (activePanel) return;
+    setPendingTargetId(null);
     setDirections(new Set());
     setGroundTarget(point);
   };
@@ -643,15 +646,27 @@ export function PlayableNeighborhood() {
       setActivePanel("business");
     }
   };
+  /** Tapping a building or person walks the character to it, then opens the interaction. */
   const selectWorldTarget = (targetId: string) => {
     const target = interactionTargets.find((candidate) => candidate.id === targetId);
     if (!target) return;
-    if (nearbyObject?.id !== targetId) {
-      toast.message(`Move closer to ${target.name} before interacting.`);
+    if (nearbyObject?.id === targetId) {
+      setPendingTargetId(null);
+      openInteraction();
       return;
     }
-    openInteraction();
+    toast.message(`Walking to ${target.name}`);
+    setPendingTargetId(targetId);
+    setDirections(new Set());
+    setGroundTarget({ x: target.x, y: target.y });
   };
+  useEffect(() => {
+    if (!pendingTargetId || nearbyObject?.id !== pendingTargetId) return;
+    setPendingTargetId(null);
+    openInteraction();
+    // openInteraction reads the current nearby object, which this effect already tracks.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingTargetId, nearbyObject]);
   const closeInteraction = (open: boolean) => {
     if (open) return;
     setActivePanel(null);
@@ -781,6 +796,7 @@ export function PlayableNeighborhood() {
                         homeTypeId={homeTypeId}
                         zoom={zoom}
                         onZoomChange={setZoom}
+                        groundTarget={groundTarget}
                         onScene={handleScene}
                         interactionTargets={interactionTargets}
                         onSelectTarget={selectWorldTarget}

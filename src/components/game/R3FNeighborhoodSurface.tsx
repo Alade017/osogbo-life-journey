@@ -40,7 +40,12 @@ import {
   WorldInstances,
   type WorldInstance,
 } from "../3d/WorldScene";
-import { WORLD_CAMERA, WORLD_SCALE } from "../3d/world-theme";
+import {
+  NEIGHBORHOOD_STREET_SCALE,
+  WORLD_CAMERA,
+  WORLD_PALETTE,
+  WORLD_SCALE,
+} from "../3d/world-theme";
 import {
   carSpots,
   pedestrianCrossings,
@@ -193,8 +198,10 @@ export function R3FNeighborhoodSurface({
   zoom,
   onZoomChange,
   onGroundTap,
+  groundTarget,
 }: {
   onGroundTap: (point: { x: number; y: number }) => void;
+  groundTarget: { x: number; y: number } | null;
   players: readonly NeighborhoodPlayerView[];
   npcs: readonly NeighborhoodNpcView[];
   interactionTargets: readonly NeighborhoodObject[];
@@ -296,7 +303,7 @@ export function R3FNeighborhoodSurface({
       vendors: onGround(dressing.vendors),
     };
   }, [dressing, point, unit]);
-  const streetSize = WORLD_SCALE.townCell;
+  const streetSize = WORLD_SCALE.neighborhoodStreetCell;
   const self = players.find((player) => player.sessionId === selfSessionId);
   const selfPoint = self && toScene(self, district.origin);
   const target: [number, number, number] =
@@ -325,8 +332,8 @@ export function R3FNeighborhoodSurface({
           gl={{ antialias: false, powerPreference: "low-power" }}
         >
           <WorldCamera
-            width={17}
-            depth={14}
+            width={17 * NEIGHBORHOOD_STREET_SCALE}
+            depth={14 * NEIGHBORHOOD_STREET_SCALE}
             target={target}
             zoom={zoom}
             onZoomChange={onZoomChange}
@@ -378,6 +385,7 @@ export function R3FNeighborhoodSurface({
                 position={point(o.x, o.y)}
                 width={o.width * unit}
                 depth={o.height * unit}
+                height={WORLD_SCALE.neighborhoodBuildingHeight}
                 shop={o.kind !== "compound"}
               />
             ))}
@@ -423,6 +431,7 @@ export function R3FNeighborhoodSurface({
                     )}
                     width={footprint.width * unit}
                     depth={footprint.height * unit}
+                    height={WORLD_SCALE.neighborhoodBuildingHeight}
                     shop={o.kind !== "home"}
                   />
                   <Html
@@ -477,6 +486,27 @@ export function R3FNeighborhoodSurface({
             <planeGeometry args={[bounds.width * unit, bounds.height * unit]} />
             <meshBasicMaterial transparent opacity={0} depthWrite={false} />
           </mesh>
+          {groundTarget && (
+            <mesh
+              rotation={[-Math.PI / 2, 0, 0]}
+              position={[
+                point(groundTarget.x, groundTarget.y)[0],
+                0.12,
+                point(groundTarget.x, groundTarget.y)[2],
+              ]}
+              raycast={() => null}
+            >
+              <ringGeometry
+                args={[WORLD_SCALE.character * 0.1, WORLD_SCALE.character * 0.14, 24]}
+              />
+              <meshBasicMaterial
+                color={WORLD_PALETTE.sign}
+                transparent
+                opacity={0.9}
+                depthWrite={false}
+              />
+            </mesh>
+          )}
           {interactionTargets
             .filter((target) => target.kind !== "npc")
             .map((target) => {

@@ -975,6 +975,7 @@ export function WorldHouse({
   position,
   width = WORLD_SCALE.door * 1.43,
   depth = WORLD_SCALE.door * 1.24,
+  height = WORLD_SCALE.door * 1.4,
   shop = false,
   detailed = false,
   rotation = 0,
@@ -987,9 +988,8 @@ export function WorldHouse({
   detailed?: boolean;
   rotation?: number;
   variant?: string;
+  height?: number;
 }) {
-  const height = WORLD_SCALE.door * 1.4;
-
   const isMarket = variant === "market" || variant === "food";
   const isBank = variant === "bank";
   const isCivic = variant === "civic" || variant === "public-service";
