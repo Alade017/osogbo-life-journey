@@ -21,6 +21,11 @@ import {
   type DraftMove,
 } from "@/components/game/housing/house-room-contract";
 import { HousePlacementBar } from "@/components/game/housing/HousePlacementBar";
+import {
+  arrangementWarnings,
+  guideFor,
+  houseDoorPercentX,
+} from "@/components/game/housing/house-arrangement-guide";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -1050,6 +1055,18 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const draftOccupied = draftMove
     ? isHouseGridCellOccupied(draftMove.x, draftMove.y, scenePlacements, draftMove.placementId)
     : false;
+  const guide =
+    draftPlacement && draftMove ? guideFor(draftPlacement.slot_type, draftPlacement.art_key) : null;
+  const arrangementNotes =
+    draftPlacement && draftMove
+      ? arrangementWarnings(
+          draftPlacement.slot_type,
+          draftPlacement.art_key,
+          draftMove.x,
+          draftMove.y,
+          houseDoorPercentX(houseTypeId ?? ""),
+        )
+      : [];
   const startMove = (placement: HousePlacement) => {
     if (isOffline || actionMutation.isPending || !editing || activeSleep) return;
     const start = draftStartFor(placement, slots);
@@ -1394,6 +1411,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         aria-label={`${house.house_type.label} room`}
       >
         <HouseRoomRenderer
+          guideZone={guide?.zoneBounds ?? null}
           inputBlocked={taskBusy || (!editing && !!selectedPlacement && !!selectedAction)}
           houseTypeId={house.house_type_id}
           lightOn={lightOn}
@@ -1709,6 +1727,8 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           onRotate={turnDraft}
           onCancel={cancelMove}
           onPlace={placeMove}
+          guideHint={guide?.hint}
+          warnings={arrangementNotes}
         />
       )}
     </div>

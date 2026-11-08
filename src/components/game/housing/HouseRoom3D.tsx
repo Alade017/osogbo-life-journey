@@ -1837,6 +1837,7 @@ export function HouseRoom3D({
   activeFloor = 0,
   onUseStairs,
   houseTypeId,
+  guideZone = null,
   characterName = "Your character",
   appearance = {},
   gender = "nonbinary",
@@ -2018,6 +2019,35 @@ export function HouseRoom3D({
             doorOpen={doorOpen}
           />
           <RoomFloor houseTypeId={houseTypeId} width={width} depth={depth} />
+          {guideZone &&
+            (() => {
+              const [zoneX, , zoneZ] = roomPercentToPosition(
+                (guideZone.x0 + guideZone.x1) / 2,
+                (guideZone.y0 + guideZone.y1) / 2,
+                width,
+                depth,
+              );
+              return (
+                <mesh
+                  rotation={[-Math.PI / 2, 0, 0]}
+                  position={[zoneX, 0.03, zoneZ]}
+                  raycast={() => null}
+                >
+                  <planeGeometry
+                    args={[
+                      ((guideZone.x1 - guideZone.x0) / 100) * (width - 0.8),
+                      ((guideZone.y1 - guideZone.y0) / 100) * (depth - 0.8),
+                    ]}
+                  />
+                  <meshBasicMaterial
+                    color={FURNITURE_COLOURS.artRoyal}
+                    transparent
+                    opacity={0.14}
+                    depthWrite={false}
+                  />
+                </mesh>
+              );
+            })()}
           {!editMode && !inputBlocked && onWalk && (
             <mesh
               rotation={[-Math.PI / 2, 0, 0]}

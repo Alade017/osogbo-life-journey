@@ -2876,6 +2876,15 @@
   font-size: 0.8rem;
   opacity: 0.75;
 }
+.house-placement-copy .house-placement-hint {
+  color: var(--brand-royal);
+  font-weight: 600;
+  opacity: 1;
+}
+.house-placement-copy .house-placement-warning {
+  color: var(--destructive);
+  opacity: 1;
+}
 .house-placement-actions {
   display: flex;
   gap: 8px;

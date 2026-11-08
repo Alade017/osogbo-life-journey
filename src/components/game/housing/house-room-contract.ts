@@ -3,6 +3,9 @@ import type { AvatarAnimationState, AvatarEquipment } from "@/components/game/Av
 import type { Appearance } from "@/game/avatar-appearance";
 import type { FoodDelivery } from "@/lib/food-delivery-service";
 
+/** A rectangle of the room, in room percent (see house-arrangement-guide). */
+export type GuideZoneBounds = { x0: number; x1: number; y0: number; y1: number };
+
 export type HouseRoomRendererProps = {
   houseTypeId: string;
   /** Room light switch. Off dims the room; omitted means on. */
@@ -13,6 +16,8 @@ export type HouseRoomRendererProps = {
   onUseStairs?: () => void;
   /** The entrance door is swung open. */
   doorOpen?: boolean;
+  /** Highlighted area while an item is being placed: the guide's recommended zone. */
+  guideZone?: GuideZoneBounds | null;
   accessoryBand: string;
   slots: HouseSlot[];
   placements: HousePlacement[];
