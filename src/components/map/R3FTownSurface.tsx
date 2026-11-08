@@ -40,6 +40,7 @@ import { Terrain3D } from "./Terrain3D";
 import { MovingTraffic3D } from "./MovingTraffic3D";
 import { MovingPedestrians3D } from "./MovingPedestrians3D";
 import { FunctionalStreetLights3D } from "./FunctionalStreetLights3D";
+import { RoadsideInfrastructure3D } from "./RoadsideInfrastructure3D";
 import { LockedPlaces3D, type LockedPlace } from "./LockedPlaces3D";
 
 type Props = PhaserMapData &
@@ -831,6 +832,69 @@ export function R3FTownSurface(props: Props) {
 
     return result;
   }, [streetLights]);
+  const roadsideInfrastructure = useMemo(() => {
+    const occupied = new Set<string>();
+    town.grid.buildings.forEach((building) => {
+      for (const [dx, dz] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
+        occupied.add(`${building.x + dx},${building.z + dz}`);
+      }
+    });
+    [...town.grid.waterCells, ...town.grid.plotCells].forEach(([x, z]) => {
+      occupied.add(`${x},${z}`);
+    });
+
+    // Follow one continuous horizontal arterial with a restrained line of poles.
+    const horizontalRoads: { x: number; z: number }[] = [];
+    town.grid.rows.forEach((row, z) => {
+      Array.from(row).forEach((tile, x) => {
+        if (tile === "r" && row[x - 1] === "r" && row[x + 1] === "r") {
+          horizontalRoads.push({ x, z });
+        }
+      });
+    });
+    const poles: [number, number][] = [];
+    horizontalRoads.forEach(({ x, z }, index) => {
+      if (index % 5 !== 0) return;
+      const sideZ = index % 2 === 0 ? z - 1 : z + 1;
+      if (town.grid.rows[sideZ]?.[x] !== "g" || occupied.has(`${x},${sideZ}`)) return;
+      const seed = (x * 17 + sideZ * 31) % 100;
+      if (seed <= 38) return;
+      const p = point(x + 0.5, sideZ + 0.5);
+      if (poles.some(([otherX, otherZ]) => Math.hypot(p[0] - otherX, p[2] - otherZ) < cell * 3.5)) return;
+      poles.push([p[0], p[2]]);
+    });
+
+    const drains: { position: [number, number, number]; horizontal: boolean; length: number }[] = [];
+    const directions = [
+      { dx: 0, dz: -1 },
+      { dx: 0, dz: 1 },
+      { dx: -1, dz: 0 },
+      { dx: 1, dz: 0 },
+    ] as const;
+    town.grid.rows.forEach((row, z) => {
+      Array.from(row).forEach((tile, x) => {
+        if (tile !== "r") return;
+        const center = point(x, z);
+        directions.forEach(({ dx, dz }) => {
+          const nx = x + dx;
+          const nz = z + dz;
+          if (town.grid.rows[nz]?.[nx] !== "g" || occupied.has(`${nx},${nz}`)) return;
+          // Drainage sits just beyond the existing sidewalk, keeping the carriageway clear.
+          drains.push({
+            position: [
+              center[0] + dx * (cell / 2 + cell * 0.28),
+              0.025,
+              center[2] + dz * (cell / 2 + cell * 0.28),
+            ],
+            horizontal: dx === 0,
+            length: cell,
+          });
+        });
+      });
+    });
+    return { poles, drains };
+  }, []);
+
   const badgePositions = useMemo(
     () => calculateBadgePositions(props.places, point, cell),
     [props.places],
@@ -880,6 +944,7 @@ export function R3FTownSurface(props: Props) {
           <WorldTricycles positions={tricycles} size={cell} />
           <WorldStreetVendors positions={streetVendors} size={cell} />
           <FunctionalStreetLights3D positions={streetLights} size={cell} isNight={isNight} />
+          <RoadsideInfrastructure3D poles={roadsideInfrastructure.poles} drains={roadsideInfrastructure.drains} cellSize={cell} />
           <WorldWasteBins positions={wasteBins} size={cell} />
           <WorldInstances
             tone="slate"
