@@ -34,6 +34,7 @@ import type { NetworkPlayerSnapshot } from "@/game/multiplayer-state";
 import { avatarAnimationForActivity } from "@/game/character-animation";
 import {
   neighborhoodAreaForSlug,
+  nearbyInteractionPoint,
   nearestInteraction,
   toScene,
   type NeighborhoodNpcView,
@@ -44,6 +45,14 @@ import type { MovementDirection } from "@/lib/player-movement";
 import { NPC_CATALOG, npcActivityAt, type SocialAction } from "@/lib/npc-simulation";
 import { hasLocationVenueDesign } from "@/lib/location-venue-designs";
 import { JobsPage } from "@/routes/_authenticated/_game/jobs";
+import { PlaceActionMenu, type PlaceActionResult } from "@/components/map/PlaceActionMenu";
+import {
+  clearPendingMapActionKey,
+  getPendingMapActionKey,
+  requestMapLandmark,
+  requestNeighborhoodPlaceAction,
+} from "@/lib/map-api";
+import { requestNeighborhoodInteractionAuthorization } from "@/lib/multiplayer-service";
 import { MarketPage } from "@/routes/_authenticated/_game/market";
 import { WORLD_CAMERA } from "@/components/3d/world-theme";
 import "@/components/game/neighborhood.css";
@@ -61,7 +70,7 @@ const BUSINESS_PLACE_CATEGORIES = new Set([
 ]);
 
 type ConnectionState = "loading" | "connecting" | "connected" | "unavailable" | "wrong-area";
-type InteractionPanel = "business" | "work" | "npc";
+type InteractionPanel = "business" | "work" | "npc" | "landmark";
 type BusinessView = "actions" | "interior" | "shops" | "bank";
 const NEIGHBORHOOD_JOIN_TIMEOUT_MS = 15_000;
 const NEIGHBORHOOD_STATE_TIMEOUT_MS = 10_000;
@@ -312,6 +321,9 @@ export function PlayableNeighborhood() {
   const [businessView, setBusinessView] = useState<BusinessView>("actions");
   const [workView, setWorkView] = useState<"actions" | "interior">("actions");
   const [selectedNpcId, setSelectedNpcId] = useState<string | null>(null);
+  const [selectedLandmarkId, setSelectedLandmarkId] = useState<string | null>(null);
+  const [neighborhoodActionResult, setNeighborhoodActionResult] =
+    useState<PlaceActionResult | null>(null);
   const [npcDialogue, setNpcDialogue] = useState<string | null>(null);
   const [npcPositionOverrides, setNpcPositionOverrides] = useState<
     Record<string, { x: number; y: number }>
@@ -448,6 +460,72 @@ export function PlayableNeighborhood() {
     nearbyObject?.kind === "npc"
       ? (activeNpcs.find((npc) => npc.id === nearbyObject.id) ?? null)
       : null;
+  const nearbyLandmark = useMemo(() => {
+    if (!player || !district || !area.interactionPoints?.length) return null;
+    return nearbyInteractionPoint(
+      { x: player.x, y: player.y },
+      district.origin,
+      area,
+    );
+  }, [area, district, player]);
+  const accountId = characterQuery.data?.user_id ?? "";
+  const landmarkDetailsQuery = useQuery({
+    queryKey: ["neighborhoodLandmarkDetails", selectedLandmarkId, accountId],
+    queryFn: () => requestMapLandmark(selectedLandmarkId!, accountId),
+    enabled:
+      activePanel === "landmark" &&
+      !!selectedLandmarkId &&
+      !!accountId &&
+      connectionState === "connected",
+    staleTime: 15_000,
+    refetchOnMount: "always",
+    retry: false,
+  });
+  const neighborhoodActionMutation = useMutation({
+    mutationFn: async ({ landmarkId, actionId }: { landmarkId: string; actionId: string }) => {
+      const room = roomRef.current;
+      const character = characterQuery.data;
+      if (!room || !player || !character?.id || !character.user_id) {
+        throw new Error("Your neighborhood session is not ready.");
+      }
+      const requestId = getPendingMapActionKey(
+        character.user_id,
+        character.id,
+        landmarkId,
+        actionId,
+      );
+      const authorization = await requestNeighborhoodInteractionAuthorization(room, {
+        requestId,
+        landmarkId,
+        actionId,
+      });
+      const result = await requestNeighborhoodPlaceAction(
+        landmarkId,
+        actionId,
+        requestId,
+        authorization.token,
+        character.user_id,
+      );
+      clearPendingMapActionKey(
+        character.user_id,
+        character.id,
+        landmarkId,
+        actionId,
+        requestId,
+      );
+      return result;
+    },
+    onSuccess: async (result) => {
+      setNeighborhoodActionResult(result);
+      toast.success(result.message);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: q.character().queryKey }),
+        queryClient.invalidateQueries({ queryKey: q.wallet().queryKey }),
+      ]);
+      await landmarkDetailsQuery.refetch();
+    },
+    onError: (error: Error) => toast.error(error.message.replaceAll("_", " ")),
+  });
   const selectedNpc = activeNpcs.find((npc) => npc.id === selectedNpcId) ?? nearbyNpc;
   const npcInteraction = useGameAction(rpc.interactWithNpc, {
     onSuccess: (result) => {
@@ -506,6 +584,8 @@ export function PlayableNeighborhood() {
     setBusinessView("actions");
     setWorkView("actions");
     setSelectedNpcId(null);
+    setSelectedLandmarkId(null);
+    setNeighborhoodActionResult(null);
     setNpcDialogue(null);
   }, [currentLocation?.id]);
 
@@ -694,6 +774,7 @@ export function PlayableNeighborhood() {
     if (open) return;
     setActivePanel(null);
     setSelectedNpcId(null);
+    setSelectedLandmarkId(null);
   };
   const npcActions: readonly { action: SocialAction; label: string }[] = [
     { action: "greet", label: "Say hello" },
@@ -967,15 +1048,55 @@ export function PlayableNeighborhood() {
                       <DialogTitle>
                         {activePanel === "npc"
                           ? (selectedNpc?.name ?? "Neighbour")
-                          : (currentLocation?.name ?? "Nearby services")}
+                          : activePanel === "landmark"
+                            ? (landmarkDetailsQuery.data?.landmark.name ??
+                              selectedLandmarkId?.replaceAll("-", " ") ??
+                              "Nearby actions")
+                            : (currentLocation?.name ?? "Nearby services")}
                       </DialogTitle>
                       <DialogDescription>
                         {activePanel === "npc"
                           ? selectedNpc
                             ? `${selectedNpc.role} · ${selectedNpc.activity}`
                             : "This neighbour is no longer available here."
-                          : "Choose a service supported by this location. Close this panel to return to the same spot."}
+                          : activePanel === "landmark"
+                            ? "Choose an activity for this landmark. Colyseus verifies your position before the server executes it."
+                            : "Choose a service supported by this location. Close this panel to return to the same spot."}
                       </DialogDescription>
+                      {activePanel === "landmark" && (
+                        <div className="space-y-3">
+                          {landmarkDetailsQuery.isPending ? (
+                            <p role="status">Loading available activities...</p>
+                          ) : landmarkDetailsQuery.isError ? (
+                            <p role="alert" className="text-sm text-destructive">
+                              {landmarkDetailsQuery.error.message}
+                            </p>
+                          ) : (
+                            <PlaceActionMenu
+                              schedule={landmarkDetailsQuery.data?.schedule}
+                              refreshingSchedule={landmarkDetailsQuery.isFetching}
+                              onRefreshSchedule={() => void landmarkDetailsQuery.refetch()}
+                              actions={landmarkDetailsQuery.data?.actions ?? []}
+                              offline={connectionState !== "connected"}
+                              pending={neighborhoodActionMutation.isPending}
+                              isHere={true}
+                              result={neighborhoodActionResult}
+                              onRun={(actionId) => {
+                                if (!selectedLandmarkId) return;
+                                neighborhoodActionMutation.mutate({
+                                  landmarkId: selectedLandmarkId,
+                                  actionId,
+                                });
+                              }}
+                            />
+                          )}
+                          {neighborhoodActionMutation.isError && (
+                            <p role="alert" className="text-sm text-destructive">
+                              {neighborhoodActionMutation.error.message}
+                            </p>
+                          )}
+                        </div>
+                      )}
                       {activePanel === "business" && (
                         <>
                           {businessView === "actions" && (
