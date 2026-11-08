@@ -110,44 +110,61 @@ export function sidewalksAndCurbs(
   const curbs: DressingRect[] = [];
   const boxes = occupiedBoxes(area);
   const crossings = pedestrianCrossings(area);
-  const crossingBoxes: Box[] = crossings.map(({ x, y, width, depth }) => ({
-    x,
-    y,
-    width,
-    height: depth,
-  }));
   for (const road of area.roads ?? []) {
     const { start, end, vertical } = roadExtent(road, bounds);
     const offsetAcross = road.width / 2 + SIDEWALK_WIDTH / 2;
     for (const side of [-1, 1]) {
+      const across = road.offset + side * offsetAcross;
       for (let along = start; along < end; along += SEGMENT_LENGTH) {
         const segmentEnd = Math.min(end, along + SEGMENT_LENGTH);
-        const span = segmentEnd - along;
-        const mid = (along + segmentEnd) / 2;
-        const across = road.offset + side * offsetAcross;
-        const x = vertical ? across : mid;
-        const y = vertical ? mid : across;
-        const sidewalk: DressingRect = {
-          x,
-          y,
-          width: vertical ? SIDEWALK_WIDTH : span,
-          depth: vertical ? span : SIDEWALK_WIDTH,
-        };
-        // Test complete footprints and leave a clear break where a crossing meets the footpath.
-        if (
-          overlapsObstacle(sidewalk, boxes, 10) ||
-          overlapsObstacle(sidewalk, crossingBoxes, 0)
-        ) continue;
-        sidewalks.push(sidewalk);
-        const kerb = side * (road.width / 2 + CURB_WIDTH / 2);
-        const curb: DressingRect = {
-          x: vertical ? road.offset + kerb : x,
-          y: vertical ? y : road.offset + kerb,
-          width: vertical ? CURB_WIDTH : span,
-          depth: vertical ? span : CURB_WIDTH,
-        };
-        if (!overlapsObstacle(curb, crossingBoxes, 0))
-          curbs.push(curb);
+        const blocked = crossings
+          .filter((crossing) =>
+            vertical
+              ? Math.abs(crossing.x - across) < (crossing.width + SIDEWALK_WIDTH) / 2
+              : Math.abs(crossing.y - across) < (crossing.depth + SIDEWALK_WIDTH) / 2,
+          )
+          .map((crossing) =>
+            vertical
+              ? [crossing.y - crossing.depth / 2, crossing.y + crossing.depth / 2] as const
+              : [crossing.x - crossing.width / 2, crossing.x + crossing.width / 2] as const,
+          )
+          .sort((a, b) => a[0] - b[0]);
+
+        // Subtract only the crossing span; don't remove an entire 60-unit sidewalk section.
+        const clearSegments: [number, number][] = [];
+        let cursor = along;
+        for (const [blockedStart, blockedEnd] of blocked) {
+          const clippedStart = Math.max(along, blockedStart);
+          const clippedEnd = Math.min(segmentEnd, blockedEnd);
+          if (clippedStart > cursor) clearSegments.push([cursor, clippedStart]);
+          cursor = Math.max(cursor, clippedEnd);
+          if (cursor >= segmentEnd) break;
+        }
+        if (cursor < segmentEnd) clearSegments.push([cursor, segmentEnd]);
+
+        for (const [pieceStart, pieceEnd] of clearSegments) {
+          const span = pieceEnd - pieceStart;
+          if (span < 4) continue;
+          const mid = (pieceStart + pieceEnd) / 2;
+          const x = vertical ? across : mid;
+          const y = vertical ? mid : across;
+          const sidewalk: DressingRect = {
+            x,
+            y,
+            width: vertical ? SIDEWALK_WIDTH : span,
+            depth: vertical ? span : SIDEWALK_WIDTH,
+          };
+          if (overlapsObstacle(sidewalk, boxes, 10)) continue;
+          sidewalks.push(sidewalk);
+
+          const kerb = side * (road.width / 2 + CURB_WIDTH / 2);
+          curbs.push({
+            x: vertical ? road.offset + kerb : mid,
+            y: vertical ? mid : road.offset + kerb,
+            width: vertical ? CURB_WIDTH : span,
+            depth: vertical ? span : CURB_WIDTH,
+          });
+        }
       }
     }
   }
