@@ -1010,15 +1010,10 @@ export function WorldHouse({
   const isMarket = variant === "market" || variant === "food";
   const isBank = variant === "bank";
   const isCivic = variant === "civic" || variant === "public-service";
-  const isHealth = variant === "health" || variant === "clinic";
   const isSchool = variant === "school";
   const isChurch = variant === "church";
   const isMosque = variant === "mosque";
   const isWorship = variant === "worship" || isChurch || isMosque;
-  const isTransit = variant === "transit" || variant === "transport";
-  const isSport = variant === "sport";
-  const isClub = variant === "club";
-  const isServices = variant === "services";
   const architecture = getDistrictArchitecture(variant);
 
   const roofTone = isMarket
@@ -1030,16 +1025,6 @@ export function WorldHouse({
         : isBank || isCivic
           ? "slate"
           : "roof";
-
-  const accentTone = isHealth
-    ? "foliage"
-    : isSchool
-      ? "sign"
-      : isWorship
-        ? "linen"
-        : isTransit
-          ? "accent"
-          : "concrete";
 
   const windowCount = isBank || isCivic || isSchool ? 3 : 2;
   const windowPositions = Array.from(
@@ -1321,7 +1306,7 @@ export function WorldHouse({
       )}
 
       {/* SHOPFRONT / BUILDING STEP */}
-      {detailed && (
+      {detailed && architecture.frontage !== "recessed" && (
         <mesh position={[0, 0.13, depth / 2 + 0.2]} receiveShadow>
           <boxGeometry args={[width * 0.55, 0.16, 0.38]} />
           <WorldMaterial tone="concrete" />
