@@ -24,6 +24,7 @@ import { useWorldClock } from "@/hooks/use-world-clock";
 import { CareerPanel } from "@/components/game/CareerPanel";
 import { CareerLifeApp } from "@/components/game/CareerLifeApp";
 import { isCareerJob } from "@/lib/career-rules";
+import { PaletteSelect } from "@/components/ui/palette-select";
 
 export const Route = createFileRoute("/_authenticated/_game/jobs")({
   head: () =>
@@ -329,19 +330,18 @@ function JobBoardPage() {
           </label>
           <label className="grid gap-1 text-sm font-semibold" htmlFor="job-category">
             Category
-            <select
+            <PaletteSelect
               id="job-category"
-              className="w-full rounded-lg border-2 border-edge bg-background px-3 py-2 font-normal"
               value={category}
-              onChange={(event) => setCategory(event.target.value)}
-            >
-              <option value="all">All categories</option>
-              {JOB_CATEGORIES.map((jobCategory) => (
-                <option key={jobCategory} value={jobCategory}>
-                  {JOB_CATEGORY_LABELS[jobCategory]}
-                </option>
-              ))}
-            </select>
+              onValueChange={setCategory}
+              options={[
+                { value: "all", label: "All categories" },
+                ...JOB_CATEGORIES.map((jobCategory) => ({
+                  value: jobCategory,
+                  label: JOB_CATEGORY_LABELS[jobCategory],
+                })),
+              ]}
+            />
           </label>
         </div>
       </section>

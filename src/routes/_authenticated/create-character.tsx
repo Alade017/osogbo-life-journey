@@ -28,6 +28,7 @@ import { Label } from "@/components/ui/label";
 import { Logo } from "@/components/game/Logo";
 import { cn } from "@/lib/utils";
 import { GameDataUnavailable, LoadingState } from "@/components/game/ui";
+import { PaletteSelect } from "@/components/ui/palette-select";
 
 export const Route = createFileRoute("/_authenticated/create-character")({
   head: () => ({
@@ -348,20 +349,16 @@ function CreateCharacter() {
 
             <div className="space-y-1.5">
               <Label htmlFor="occ">Career preference</Label>
-              <select
+              <PaletteSelect
                 id="occ"
                 value={occupation}
-                onChange={(e) => setOccupation(e.target.value)}
-                disabled={jobsLoading || jobsError}
-                className="h-11 w-full rounded-md border border-input bg-card px-3 text-sm disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <option value="">No career preference</option>
-                {jobs?.map((j) => (
-                  <option key={j.id} value={j.slug}>
-                    {j.name}
-                  </option>
-                ))}
-              </select>
+                onValueChange={setOccupation}
+                disabled={Boolean(jobsLoading || jobsError)}
+                options={[
+                  { value: "", label: "No career preference" },
+                  ...(jobs ?? []).map((j) => ({ value: j.slug, label: j.name })),
+                ]}
+              />
               <p className="text-xs text-muted-foreground">
                 {jobsError
                   ? "Job choices could not load. Check the game database setup before creating your character."

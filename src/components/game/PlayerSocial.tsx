@@ -81,6 +81,7 @@ import {
   type ThreadCommand,
   type ThreadSummary,
 } from "@/lib/thread-preferences";
+import { PaletteSelect } from "@/components/ui/palette-select";
 
 type Tab = "players" | "messages" | "friends" | "status" | "settings";
 type ReportTarget = { id: string; name: string; messageId?: string };
@@ -2201,19 +2202,14 @@ export function PlayerSocial({
               </div>
               <label className="grid gap-1 text-sm font-medium">
                 Reason
-                <select
+                <PaletteSelect
                   value={reportCategory}
-                  onChange={(event) =>
-                    setReportCategory(event.target.value as SocialReportCategory)
-                  }
-                  className="min-h-10 rounded-xl border border-border bg-background px-3"
-                >
-                  {REPORT_OPTIONS.map((option) => (
-                    <option value={option.value} key={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                  onValueChange={(next) => setReportCategory(next as SocialReportCategory)}
+                  options={REPORT_OPTIONS.map((option) => ({
+                    value: option.value,
+                    label: option.label,
+                  }))}
+                />
               </label>
               <label className="grid gap-1 text-sm font-medium">
                 Details (optional)

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Newspaper, Trophy } from "lucide-react";
+import { PaletteSelect } from "@/components/ui/palette-select";
 
 export type CommunityPhoneApp =
   "Calendar" | "Food Delivery" | "Okada Rides" | "Contribution" | "Leaderboard" | "Town News";
@@ -359,12 +360,14 @@ export function CommunityPhoneApps({ app }: { app: CommunityPhoneApp }) {
         >
           <label>
             Category
-            <select value={postCategory} onChange={(event) => setPostCategory(event.target.value)}>
-              <option>Community</option>
-              <option>Market</option>
-              <option>Sports</option>
-              <option>General</option>
-            </select>
+            <PaletteSelect
+              value={postCategory}
+              onValueChange={setPostCategory}
+              options={["Community", "Market", "Sports", "General"].map((name) => ({
+                value: name,
+                label: name,
+              }))}
+            />
           </label>
           <label>
             Title
