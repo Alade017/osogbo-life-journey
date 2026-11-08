@@ -227,15 +227,15 @@ export function WorldTrafficLights({
   positions,
   size,
 }: {
-  positions: readonly [number, number][];
+  positions: readonly [number, number, number?][];
   size: number;
 }) {
   const poleHeight = size * 1.15;
 
   return (
     <>
-      {positions.map(([x, z], index) => (
-        <group key={`traffic-light-${index}`} position={[x, 0, z]}>
+      {positions.map(([x, z, rotation = 0], index) => (
+        <group key={`traffic-light-${index}`} position={[x, 0, z]} rotation={[0, rotation, 0]}>
           {/* Vertical pole */}
           <mesh position={[0, poleHeight / 2, 0]} castShadow>
             <boxGeometry args={[size * 0.045, poleHeight, size * 0.045]} />
