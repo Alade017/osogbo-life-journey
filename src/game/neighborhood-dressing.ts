@@ -276,11 +276,13 @@ export function trafficLightSpots(area: NeighborhoodArea): TrafficLightSpot[] {
         (horizontalStart !== undefined && vertical.offset < horizontalStart) ||
         (horizontalEnd !== undefined && vertical.offset > horizontalEnd)
       ) continue;
-      const setback = Math.max(vertical.width, horizontal.width) / 2 + 12;
+      // Put signal poles beyond the footpath edge, not on the zebra crossings.
+      const setbackX = vertical.width / 2 + SIDEWALK_WIDTH + CURB_WIDTH + 12;
+      const setbackY = horizontal.width / 2 + SIDEWALK_WIDTH + CURB_WIDTH + 12;
       for (const sideX of [-1, 1])
         for (const sideY of [-1, 1]) {
-          const x = vertical.offset + sideX * setback;
-          const y = horizontal.offset + sideY * setback;
+          const x = vertical.offset + sideX * setbackX;
+          const y = horizontal.offset + sideY * setbackY;
           const key = `${x}:${y}`;
           const withinVertical =
             (vertical.start === undefined || y >= vertical.start) &&
