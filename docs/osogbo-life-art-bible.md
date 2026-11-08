@@ -10,7 +10,7 @@ A believable contemporary Yoruba/Nigerian town, seen through a fixed, elevated 2
 
 Target: semi-realistic, deliberately simplified environmental detail with believable material variation and proportions. Keep major forms readable on a 375px screen. Use original modular environments, not satellite imagery, map screenshots or a single painted city background. Avoid thick black outlines, oversized toy roofs, plastic surfaces, extreme saturation, photographic cutouts and unrelated asset-pack styles.
 
-The existing procedural Phaser artwork remains a development fallback. It does not define the final semi-realistic quality bar. The current avatar is a separate existing art system; test the first environment slice with that avatar before proposing any character-art conversion.
+The active playable neighborhood uses the existing React Three Fiber / Three.js scene and reusable procedural world components. Its current geometry remains a development foundation, not proof that the final semi-realistic quality bar has been met. The existing avatar is a separate art system; test environment changes with that avatar before proposing any character-art conversion. Do not introduce SVG map renderers or SVG fallbacks.
 
 ## 2. Perspective and measurement
 
