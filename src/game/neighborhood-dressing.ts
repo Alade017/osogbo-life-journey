@@ -34,9 +34,12 @@ type Box = { x: number; y: number; width: number; height: number };
 
 /** Everything street dressing must stay clear of: obstacles, and the main building footprints. */
 function occupiedBoxes(area: NeighborhoodArea): Box[] {
-  const obstacles: Box[] = (area.obstacles ?? [])
-    .filter((o) => o.kind !== "tree" && o.kind !== "streetlight")
-    .map((o) => ({ x: o.x, y: o.y, width: o.width, height: o.height }));
+  const obstacles: Box[] = (area.obstacles ?? []).map((o) => ({
+    x: o.x,
+    y: o.y,
+    width: o.width,
+    height: o.height,
+  }));
   const buildings: Box[] = area.objects
     .filter((o) => o.kind !== "npc")
     .map((o) => {
@@ -61,18 +64,17 @@ function insideObstacle(x: number, y: number, boxes: readonly Box[], pad: number
 /** Centre-line dashes along every street and arterial. */
 export function roadMarkings(area: NeighborhoodArea, bounds: DressingBounds): DressingRect[] {
   const rects: DressingRect[] = [];
+  const boxes = occupiedBoxes(area);
   for (const road of area.roads ?? []) {
     if (road.type === "lane") continue;
     const { start, end, vertical } = roadExtent(road, bounds);
     for (let along = start + MARKING_SPACING / 2; along < end; along += MARKING_SPACING) {
       const x = vertical ? road.offset : along;
       const y = vertical ? along : road.offset;
-      rects.push({
-        x,
-        y,
-        width: vertical ? 4 : MARKING_LENGTH,
-        depth: vertical ? MARKING_LENGTH : 4,
-      });
+      const width = vertical ? 4 : MARKING_LENGTH;
+      const depth = vertical ? MARKING_LENGTH : 4;
+      if (insideObstacle(x, y, boxes, Math.max(width, depth) / 2 + 2)) continue;
+      rects.push({ x, y, width, depth });
     }
   }
   return rects;
@@ -169,10 +171,10 @@ export function carSpots(area: NeighborhoodArea, bounds: DressingBounds): WorldP
     for (const lane of [-1, 1])
       for (let along = start + CAR_SPACING / 2; along < end; along += CAR_SPACING) {
         const across = lane * road.width * 0.22;
-        spots.push({
-          x: vertical ? road.offset + across : along,
-          y: vertical ? along : road.offset + across,
-        });
+        const x = vertical ? road.offset + across : along;
+        const y = vertical ? along : road.offset + across;
+        if (insideObstacle(x, y, occupiedBoxes(area), 28)) continue;
+        spots.push({ x, y });
       }
   }
   return spots.slice(0, MAX_CARS);
@@ -181,16 +183,17 @@ export function carSpots(area: NeighborhoodArea, bounds: DressingBounds): WorldP
 /** Pedestrians on the sidewalks, alternating sides, spaced along each street. */
 export function pedestrianSpots(area: NeighborhoodArea, bounds: DressingBounds): WorldPoint[] {
   const spots: WorldPoint[] = [];
+  const boxes = occupiedBoxes(area);
   for (const road of area.roads ?? []) {
     const { start, end, vertical } = roadExtent(road, bounds);
     const across = road.width / 2 + SIDEWALK_WIDTH / 2;
     let side = 1;
     for (let along = start + PEOPLE_SPACING / 2; along < end; along += PEOPLE_SPACING) {
       side = -side;
-      spots.push({
-        x: vertical ? road.offset + side * across : along,
-        y: vertical ? along : road.offset + side * across,
-      });
+      const x = vertical ? road.offset + side * across : along;
+      const y = vertical ? along : road.offset + side * across;
+      if (insideObstacle(x, y, boxes, 12)) continue;
+      spots.push({ x, y });
     }
   }
   return spots.slice(0, MAX_PEOPLE);
