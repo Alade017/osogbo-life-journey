@@ -10,7 +10,11 @@ import {
   treeVisualProfile,
   vendorSpots,
 } from "@/game/neighborhood-dressing";
-import { CITY_CENTRE_AREA, NEIGHBORHOOD_SCENE_BOUNDS } from "@/game/neighborhood-model";
+import {
+  CITY_CENTRE_AREA,
+  NEIGHBORHOOD_SCENE_BOUNDS,
+  OJA_OBA_AREA,
+} from "@/game/neighborhood-model";
 import { neighborhoodBuildingFootprint } from "@/game/neighborhood-geometry";
 
 const bounds = NEIGHBORHOOD_SCENE_BOUNDS;
@@ -106,6 +110,10 @@ describe("neighbourhood street dressing", () => {
             Math.abs(signal.y - obstacle.y) < obstacle.height / 2 + 8,
         ).toBe(false);
       }
+  });
+
+  it("adds signals where an arterial meets a neighborhood street", () => {
+    expect(trafficLightSpots(OJA_OBA_AREA).length).toBeGreaterThan(0);
   });
 
   it("derives tree size from obstacle footprints and clamps extremes", () => {
