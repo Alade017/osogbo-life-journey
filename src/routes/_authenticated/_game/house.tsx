@@ -1552,71 +1552,88 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           />
         )}
         {(movement.walking || walkingTask || startingTask || (timedActivity && !activeSleep)) && (
-          <div
-            className="house-sleep-pill house-task-pill"
-            role="region"
-            aria-label="Current home task"
-          >
-            <div>
+          <div className="house-task-status" role="status" aria-live="polite">
+            <ProgressRing
+              percent={
+                timedActivity && taskTiming
+                  ? (displayedElapsed / (taskTiming.duration || 1)) * 100
+                  : 0
+              }
+              label={
+                timedActivity && taskTiming
+                  ? `${Math.max(0, Math.ceil(taskTiming.duration - displayedElapsed))}s`
+                  : ""
+              }
+            />
+            <div className="house-task-status-copy">
               <strong>
                 {collectingPackage
                   ? "Collecting package"
                   : walkingTask
-                    ? "Walking � " + walkingTask
+                    ? `Walking · ${walkingTask}`
                     : startingTask
-                      ? "Connecting�"
+                      ? "Connecting…"
                       : timedActivity
                         ? ACTION_CATALOG[timedActivity.actionId].name
                         : "Walking"}
               </strong>
-              {!(timedActivity && taskTiming) && (
-                <span role="status">
-                  {movement.walking
-                    ? "On the way"
-                    : taskTiming && timedActivity
-                      ? displayedElapsed >= taskTiming.duration
-                        ? "Confirming completion�"
-                        : Math.ceil(taskTiming.duration - displayedElapsed) + "s remaining"
-                      : "Please wait"}
-                </span>
-              )}
+              <span>
+                {movement.walking
+                  ? "On the way"
+                  : taskTiming && timedActivity
+                    ? displayedElapsed >= taskTiming.duration
+                      ? "Confirming completion…"
+                      : `${Math.ceil(taskTiming.duration - displayedElapsed)}s remaining`
+                    : "Please wait"}
+              </span>
             </div>
-            {timedActivity && taskTiming && (
-              <ProgressRing
-                percent={(displayedElapsed / (taskTiming.duration || 1)) * 100}
-                label={`${Math.max(0, Math.ceil(taskTiming.duration - displayedElapsed))}s`}
-              />
-            )}
-            <button
-              type="button"
-              disabled={startingTask || gameTime.busy || cancellingTask}
-              onClick={() => void cancelTask()}
-            >
-              {cancellingTask ? "Cancelling�" : "Cancel"}
-            </button>
           </div>
         )}
         {activeSleep && (
-          <div className="house-sleep-pill" role="region" aria-label="Sleep controls">
+          <div className="house-task-status" role="status" aria-live="polite">
             <ProgressRing percent={sleepProgress} label={`${sleepRemaining}s`} />
-            <span role="status">
+            <div className="house-task-status-copy">
               <strong>Asleep</strong>
-            </span>
-            <button
-              type="button"
-              disabled={isOffline || !gameTime.ready || gameTime.busy}
-              onClick={() => void finishSleep(false)}
-            >
-              Wake up
-            </button>
-            <button
-              type="button"
-              aria-label="Cancel sleep"
-              disabled={isOffline || !gameTime.ready || gameTime.busy}
-              onClick={() => void finishSleep(true)}
-            >
-              ✕
-            </button>
+              <span>{`${sleepRemaining}s until you wake`}</span>
+            </div>
+          </div>
+        )}
+        {(movement.walking ||
+          walkingTask ||
+          startingTask ||
+          (timedActivity && !activeSleep) ||
+          activeSleep) && (
+          <div className="house-task-actions" role="group" aria-label="Task controls">
+            {activeSleep && (
+              <button
+                type="button"
+                disabled={isOffline || !gameTime.ready || gameTime.busy}
+                onClick={() => void finishSleep(false)}
+              >
+                Wake up
+              </button>
+            )}
+            {activeSleep && (
+              <button
+                type="button"
+                disabled={isOffline || !gameTime.ready || gameTime.busy}
+                onClick={() => void finishSleep(true)}
+              >
+                Cancel sleep
+              </button>
+            )}
+            {(movement.walking ||
+              walkingTask ||
+              startingTask ||
+              (timedActivity && !activeSleep)) && (
+              <button
+                type="button"
+                disabled={startingTask || gameTime.busy || cancellingTask}
+                onClick={() => void cancelTask()}
+              >
+                {cancellingTask ? "Cancelling…" : "Cancel"}
+              </button>
+            )}
           </div>
         )}
       </section>
