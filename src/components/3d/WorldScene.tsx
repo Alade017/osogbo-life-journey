@@ -1062,16 +1062,20 @@ export function WorldHouse({
       </mesh>
 
       {/* Main roof */}
-      <mesh position={[0, height + 0.31, 0]} castShadow receiveShadow>
-        <boxGeometry args={[width + 0.32, 0.24, depth + 0.32]} />
-        <WorldMaterial tone={roofTone} />
-      </mesh>
+      {architecture.roof !== "pitched" && (
+        <mesh position={[0, height + 0.31, 0]} castShadow receiveShadow>
+          <boxGeometry args={[width + 0.32, 0.24, depth + 0.32]} />
+          <WorldMaterial tone={roofTone} />
+        </mesh>
+      )}
 
       {/* Roof edge */}
-      <mesh position={[0, height + 0.45, 0]}>
-        <boxGeometry args={[width + 0.18, 0.07, depth + 0.18]} />
-        <WorldMaterial tone="concrete" />
-      </mesh>
+      {architecture.roof !== "pitched" && (
+        <mesh position={[0, height + 0.45, 0]}>
+          <boxGeometry args={[width + 0.18, 0.07, depth + 0.18]} />
+          <WorldMaterial tone="concrete" />
+        </mesh>
+      )}
 
       {/* Front entrance */}
       <mesh position={[0, WORLD_SCALE.door / 2 + 0.18, depth / 2 + 0.04]}>
