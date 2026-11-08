@@ -462,7 +462,11 @@ export function PlayableNeighborhood() {
     nearbyObject?.kind === "npc"
       ? (activeNpcs.find((npc) => npc.id === nearbyObject.id) ?? null)
       : null;
-  const selectedNpc = activeNpcs.find((npc) => npc.id === selectedNpcId) ?? nearbyNpc;
+  // Once an NPC is explicitly selected, never substitute a different nearby NPC
+  // if that scheduled character leaves or becomes unavailable.
+  const selectedNpc = selectedNpcId
+    ? (activeNpcs.find((npc) => npc.id === selectedNpcId) ?? null)
+    : nearbyNpc;
   const npcInteraction = useGameAction(rpc.interactWithNpc, {
     onSuccess: (result) => {
       setNpcDialogue(result.message);
