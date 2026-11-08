@@ -63,6 +63,14 @@ function insideObstacle(x: number, y: number, boxes: readonly Box[], pad: number
   );
 }
 
+function overlapsObstacle(rect: DressingRect, boxes: readonly Box[], pad = 0) {
+  return boxes.some(
+    (box) =>
+      Math.abs(rect.x - box.x) < (rect.width + box.width) / 2 + pad &&
+      Math.abs(rect.y - box.y) < (rect.depth + box.height) / 2 + pad,
+  );
+}
+
 /** Centre-line dashes along every street and arterial. */
 export function roadMarkings(area: NeighborhoodArea, bounds: DressingBounds): DressingRect[] {
   const rects: DressingRect[] = [];
@@ -99,19 +107,17 @@ export function sidewalksAndCurbs(
         const span = segmentEnd - along;
         const mid = (along + segmentEnd) / 2;
         const across = road.offset + side * offsetAcross;
-        // Check both ends and the middle, so a segment cannot run into a building.
-        const blocked = [along, mid, segmentEnd].some((at) =>
-          insideObstacle(vertical ? across : at, vertical ? at : across, boxes, 10),
-        );
-        if (blocked) continue;
         const x = vertical ? across : mid;
         const y = vertical ? mid : across;
-        sidewalks.push({
+        const sidewalk: DressingRect = {
           x,
           y,
           width: vertical ? SIDEWALK_WIDTH : span,
           depth: vertical ? span : SIDEWALK_WIDTH,
-        });
+        };
+        // Test the complete sidewalk rectangle, not three sample points.
+        if (overlapsObstacle(sidewalk, boxes, 10)) continue;
+        sidewalks.push(sidewalk);
         const kerb = side * (road.width / 2 + CURB_WIDTH / 2);
         curbs.push({
           x: vertical ? road.offset + kerb : x,
