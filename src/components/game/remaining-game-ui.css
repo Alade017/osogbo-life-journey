@@ -247,11 +247,6 @@
   --app-tone: var(--brand-slate);
 }
 
-.phone-ui-refresh .phone-app .phone-app-icon.phone-app-messages {
-  --app-tone: #25d366;
-  --app-glyph: #ffffff;
-}
-
 .phone-ui-refresh .phone-app:hover .phone-app-icon {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.25),
