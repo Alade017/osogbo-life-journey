@@ -3055,14 +3055,28 @@
   opacity: 0.45;
   cursor: not-allowed;
 }
-@media (max-width: 520px) {
+/* Narrow screens: the catalogue becomes a bottom sheet that leaves the top of the room open. */
+@media (max-width: 900px) {
   .house-catalogue {
     top: auto;
     left: 8px;
     right: 8px;
     width: auto;
-    max-height: 70vh;
+    max-height: min(46dvh, 460px);
   }
+}
+.house-catalogue-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.house-catalogue--minimized {
+  max-height: none;
+  padding-block: 10px;
+  overflow: visible;
+}
+.house-catalogue--minimized > :not(.house-catalogue-header) {
+  display: none;
 }
 
 /* Sleep status: a small pill under the location header, top-left, above the room controls. */
@@ -3229,4 +3243,21 @@
   color: #8a5a00;
   font-size: 11px;
   font-weight: 750;
+}
+
+/* Narrow screens: the catalogue is a bottom sheet, so the room above it stays reachable. */
+@media (max-width: 1023px) {
+  .house-catalogue {
+    top: auto;
+    left: 8px;
+    right: 8px;
+    width: auto;
+    bottom: calc(var(--game-dock-space, 96px) + env(safe-area-inset-bottom) + 8px);
+    max-height: min(44dvh, 420px);
+    z-index: 30;
+  }
+
+  .house-catalogue--minimized {
+    max-height: none;
+  }
 }
