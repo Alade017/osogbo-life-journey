@@ -98,6 +98,7 @@ export function sidewalksAndCurbs(
   const sidewalks: DressingRect[] = [];
   const curbs: DressingRect[] = [];
   const boxes = occupiedBoxes(area);
+  const crossings = pedestrianCrossings(area);
   for (const road of area.roads ?? []) {
     const { start, end, vertical } = roadExtent(road, bounds);
     const offsetAcross = road.width / 2 + SIDEWALK_WIDTH / 2;
@@ -115,16 +116,21 @@ export function sidewalksAndCurbs(
           width: vertical ? SIDEWALK_WIDTH : span,
           depth: vertical ? span : SIDEWALK_WIDTH,
         };
-        // Test the complete sidewalk rectangle, not three sample points.
-        if (overlapsObstacle(sidewalk, boxes, 10)) continue;
+        // Test complete footprints and leave a clear break where a crossing meets the footpath.
+        if (
+          overlapsObstacle(sidewalk, boxes, 10) ||
+          crossings.some((crossing) => overlapsObstacle(sidewalk, [crossing], 0))
+        ) continue;
         sidewalks.push(sidewalk);
         const kerb = side * (road.width / 2 + CURB_WIDTH / 2);
-        curbs.push({
+        const curb: DressingRect = {
           x: vertical ? road.offset + kerb : x,
           y: vertical ? y : road.offset + kerb,
           width: vertical ? CURB_WIDTH : span,
           depth: vertical ? span : CURB_WIDTH,
-        });
+        };
+        if (!crossings.some((crossing) => overlapsObstacle(curb, [crossing], 0)))
+          curbs.push(curb);
       }
     }
   }
