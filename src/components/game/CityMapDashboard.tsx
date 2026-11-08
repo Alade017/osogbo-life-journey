@@ -23,14 +23,8 @@ import { isPlayableDistrict } from "@/game/playable-district";
 import { INITIAL_GAME_TIME, gameTimeFromCharacter } from "@/lib/game-time";
 import { useWorldClock } from "@/hooks/use-world-clock";
 import { supabase } from "@/integrations/supabase/client";
-import {
-  requestMapPlaceAction,
-  getPendingMapActionKey,
-  clearPendingMapActionKey,
-  requestAvailableMapLandmarks,
-} from "@/lib/map-api";
+import { requestAvailableMapLandmarks } from "@/lib/map-api";
 import type { TravelMode } from "@/lib/transport-service";
-import type { PlaceActionResult } from "@/components/map/PlaceActionMenu";
 import { useCityEvents } from "@/hooks/use-city-events";
 import { cityEventsForDistrict } from "@/lib/city-event-service";
 import { getCurrentMapBillboards, type CurrentMapBillboard } from "@/lib/map-billboard-map";
@@ -110,7 +104,6 @@ export function CityMapDashboard({
   const [arrivalConfirmed, setArrivalConfirmed] = useState(false);
   const [refreshingArrival, setRefreshingArrival] = useState(false);
   const [actionError, setActionError] = useState("");
-  const [placeActionResult, setPlaceActionResult] = useState<PlaceActionResult | null>(null);
   const [selectedBillboard, setSelectedBillboard] = useState<CurrentMapBillboard | null>(null);
   const [billboardNow, setBillboardNow] = useState(() => Date.now());
   const [mapLevel, setMapLevel] = useState<"town" | "state">("town");
@@ -281,56 +274,6 @@ export function CityMapDashboard({
       await queryClient.invalidateQueries({ queryKey: ["jobs"] });
     },
     onError: (e) => setActionError(e.message),
-  });
-  const runPlaceAction = useMutation({
-    mutationFn: ({
-      landmarkId,
-      actionId,
-      requestId,
-      accountId,
-      characterId,
-    }: {
-      landmarkId: string;
-      actionId: string;
-      requestId: string;
-      accountId: string;
-      characterId: string;
-    }) => requestMapPlaceAction(landmarkId, actionId, requestId, accountId),
-    onSuccess: async (result, variables) => {
-      setPlaceActionResult(result);
-      setActionError("");
-      clearPendingMapActionKey(
-        variables.accountId,
-        variables.characterId,
-        variables.landmarkId,
-        variables.actionId,
-        variables.requestId,
-      );
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["character"] }),
-        queryClient.invalidateQueries({ queryKey: ["wallet"] }),
-        queryClient.invalidateQueries({ queryKey: ["worldClock"] }),
-        queryClient.invalidateQueries({ queryKey: ["mapLandmarkDetails", variables.landmarkId] }),
-      ]);
-      window.dispatchEvent(new Event("osogbo:server-state-changed"));
-    },
-    onError: (error, variables) => {
-      const messages: Record<string, string> = {
-        NOT_AT_PLACE: "Travel here before starting this activity.",
-        PLACE_CLOSED: "This place is closed right now.",
-        INSUFFICIENT_FUNDS: "You do not have enough money for this activity.",
-        REQUIREMENT_NOT_MET: "Meet this activity's requirement before trying again.",
-        COOLDOWN: "Wait a little before repeating that activity.",
-      };
-      setActionError(
-        messages[error.message] ?? "The activity could not be completed. Please retry.",
-      );
-      if (error.message === "PLACE_CLOSED") {
-        void queryClient.invalidateQueries({
-          queryKey: ["mapLandmarkDetails", variables.landmarkId],
-        });
-      }
-    },
   });
   const confirmTravel = (mode: TravelMode) => {
     if (travelSubmitLock.current || !selectedDestination || travel.isPending) return;
@@ -709,29 +652,6 @@ export function CityMapDashboard({
           onApply={(id) => apply.mutate(id)}
           pending={apply.isPending}
           error={actionError}
-          onRunPlaceAction={(actionId) => {
-            const accountId = character.data?.user_id;
-            const characterId = character.data?.id;
-            if (!accountId || !characterId) {
-              setActionError("Player details are not ready. Reopen this place and try again.");
-              return;
-            }
-            const requestId = getPendingMapActionKey(
-              accountId,
-              characterId,
-              selectedLandmark.id,
-              actionId,
-            );
-            runPlaceAction.mutate({
-              accountId,
-              characterId,
-              landmarkId: selectedLandmark.id,
-              actionId,
-              requestId,
-            });
-          }}
-          actionPending={runPlaceAction.isPending}
-          actionResult={placeActionResult}
         />
       )}
     </section>
