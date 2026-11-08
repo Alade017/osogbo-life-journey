@@ -712,6 +712,15 @@ export function PlayableNeighborhood() {
     // openInteraction reads the current nearby object, which this effect already tracks.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingTargetId, nearbyObject]);
+  useEffect(() => {
+    if (!pendingTargetId || interactionTargets.some((target) => target.id === pendingTargetId))
+      return;
+    // A service or NPC can disappear while the player is walking toward it.
+    // Cancel the stale destination instead of opening an unrelated interaction later.
+    groundTargetRef.current = null;
+    setGroundTarget(null);
+    setPendingTargetId(null);
+  }, [pendingTargetId, interactionTargets]);
   const closeInteraction = (open: boolean) => {
     if (open) return;
     setActivePanel(null);
