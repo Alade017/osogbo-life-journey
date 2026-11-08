@@ -165,16 +165,17 @@ export function pedestrianCrossings(area: NeighborhoodArea): DressingRect[] {
 /** Signals at declared arterial junctions, positioned clear of road edges and existing props. */
 export function trafficLightSpots(area: NeighborhoodArea): WorldPoint[] {
   const verticals = (area.roads ?? []).filter(
-    (road) => road.axis === "vertical" && road.type === "arterial",
+    (road) => road.axis === "vertical" && road.type !== "lane",
   );
   const horizontals = (area.roads ?? []).filter(
-    (road) => road.axis === "horizontal" && road.type === "arterial",
+    (road) => road.axis === "horizontal" && road.type !== "lane",
   );
   const boxes = occupiedBoxes(area);
   const spots: WorldPoint[] = [];
   const seen = new Set<string>();
   for (const vertical of verticals)
     for (const horizontal of horizontals) {
+      if (vertical.type !== "arterial" && horizontal.type !== "arterial") continue;
       const verticalStart = vertical.start;
       const verticalEnd = vertical.end;
       const horizontalStart = horizontal.start;
