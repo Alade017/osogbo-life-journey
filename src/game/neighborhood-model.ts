@@ -1,4 +1,5 @@
 import { OSOGBO_WORLD_NODES, type WorldMapCategory } from "../lib/city-world.ts";
+import townData from "../data/osogbo-town.json";
 
 export type WorldPoint = { x: number; y: number };
 export type NeighborhoodNpcView = {
@@ -52,10 +53,13 @@ export type NeighborhoodPath = {
  * Action definitions are deliberately not stored here; they remain database-owned.
  */
 export type NeighborhoodInteractionPoint = {
+  /** Stable public.map_landmarks.id; never inferred from the location slug. */
   id: string;
   x: number;
   y: number;
   radius: number;
+  /** Action IDs are an allow-list only; action rules remain database-owned. */
+  actionIds: readonly string[];
 };
 export type NeighborhoodArea = {
   slug: string;
@@ -476,9 +480,18 @@ function generatedNeighborhoodArea(
         height: 20,
       },
     ],
-    // The generated location slug is also the stable map_landmarks ID in the
-    // reviewed town catalog. Anchor it to the scene's actual business frontage.
-    interactionPoints: [{ id: slug, x: market.x, y: market.y, radius: 65 }],
+    // Resolve real landmark identities from the reviewed catalog. Location slugs and
+    // map_landmarks IDs are separate contracts; never manufacture one from the other.
+    interactionPoints: townData.landmarks
+      .filter((landmark) => landmark.locationSlug === slug && landmark.actions.length > 0)
+      .map((landmark, index, matches) => ({
+        id: landmark.id,
+        x: Math.max(48, Math.min(592, market.x + (index - (matches.length - 1) / 2) * 112)),
+        // Put the interaction point on the walkable frontage, outside the building footprint.
+        y: market.y < 280 ? market.y + 86 : market.y - 86,
+        radius: 60,
+        actionIds: landmark.actions.map((action) => action.id),
+      })),
     style: AREA_STYLE_BY_CATEGORY[category],
   };
 }
@@ -575,11 +588,13 @@ export function nearbyInteractionPoint(
   playerWorldPoint: WorldPoint,
   origin: WorldPoint,
   area: NeighborhoodArea,
+  landmarkId?: string,
 ): NeighborhoodInteractionPoint | null {
   const playerScenePoint = toScene(playerWorldPoint, origin);
   let nearest: NeighborhoodInteractionPoint | null = null;
   let nearestDistance = Number.POSITIVE_INFINITY;
   for (const target of area.interactionPoints ?? []) {
+    if (landmarkId && target.id !== landmarkId) continue;
     const distance = Math.hypot(playerScenePoint.x - target.x, playerScenePoint.y - target.y);
     if (distance <= target.radius && distance < nearestDistance) {
       nearest = target;

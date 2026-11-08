@@ -39,8 +39,12 @@ describe("every active location has a playable area", () => {
     const area = neighborhoodAreaForLocation(place);
     const target = area.interactionPoints?.find((point) => point.id === place.slug);
     expect(target).toBeDefined();
-    expect(target).toMatchObject({ x: area.objects.find((object) => object.kind === "market")!.x,
-      y: area.objects.find((object) => object.kind === "market")!.y, radius: 65 });
+    expect(target).toMatchObject({
+      id: "cedar-bank",
+      radius: 60,
+      actionIds: expect.arrayContaining(["cedar-budgeting"]),
+    });
+    expect(target!.y).not.toBe(area.objects.find((object) => object.kind === "market")!.y);
   });
 
   it("resolves proximity using the authoritative world position, not a client target position", () => {
@@ -53,7 +57,17 @@ describe("every active location has a playable area", () => {
     const origin = { x: 7, y: 6 };
     const playerAtTarget = toWorld({ x: target.x, y: target.y }, origin);
     expect(nearbyInteractionPoint(playerAtTarget, origin, area)?.id).toBe("cedar-bank");
+    expect(nearbyInteractionPoint(playerAtTarget, origin, area, "wrong-landmark")).toBeNull();
     expect(nearbyInteractionPoint({ x: 0, y: 0 }, origin, area)).toBeNull();
+  });
+
+  it("does not invent a landmark ID for a location absent from the reviewed landmark catalog", () => {
+    const area = neighborhoodAreaForLocation({
+      slug: "government-area",
+      name: "Civic Services District",
+      map_category: "government",
+    });
+    expect(area.interactionPoints).toEqual([]);
   });
 
   it("still refuses rows that are inactive, unstable or without valid coordinates", () => {

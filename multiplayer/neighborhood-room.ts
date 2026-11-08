@@ -12,10 +12,14 @@ import {
   neighborhoodAreaForLocation,
   neighborhoodAreaForSlug,
   neighborhoodAreaOrigin,
+  nearbyInteractionPoint,
   type NeighborhoodArea,
   type WorldPoint,
 } from "../src/game/neighborhood-model.ts";
 import type { MovementIntent, NetworkPlayerSnapshot } from "../src/game/multiplayer-state.ts";
+import {
+  createNeighborhoodInteractionAuthorization,
+} from "./interaction-authorization.ts";
 
 type CharacterRow = {
   id: string;
@@ -174,7 +178,10 @@ export class NeighborhoodRoom extends Room {
   override patchRate = 50;
 
   private readonly movement = new Map<string, InputState>();
-  private readonly credentials = new Map<string, { accessToken: string; locationId: string }>();
+  private readonly credentials = new Map<
+    string,
+    { accessToken: string; locationId: string; userId: string; characterId: string }
+  >();
   private readonly equipmentRefreshAt = new Map<string, number>();
   private areaOrigin: WorldPoint = { x: 7, y: 6 };
   private area = neighborhoodAreaForSlug(undefined);
@@ -192,6 +199,9 @@ export class NeighborhoodRoom extends Room {
       this.movement.set(client.sessionId, { intent, updatedAt: Date.now() });
     });
     this.onMessage("refresh-equipment", (client) => void this.refreshEquipment(client));
+    this.onMessage("authorize-interaction", (client, payload: unknown) =>
+      this.authorizeInteraction(client, payload),
+    );
     this.setSimulationInterval(() => this.stepPlayers(), 50);
   }
 
@@ -241,6 +251,8 @@ export class NeighborhoodRoom extends Room {
     this.credentials.set(client.sessionId, {
       accessToken: auth.accessToken,
       locationId: auth.character.current_location_id!,
+      userId: auth.userId,
+      characterId: auth.character.id,
     });
     this.movement.set(client.sessionId, { intent: { x: 0, y: 0 }, updatedAt: Date.now() });
   }
@@ -250,6 +262,78 @@ export class NeighborhoodRoom extends Room {
     this.movement.delete(client.sessionId);
     this.credentials.delete(client.sessionId);
     this.equipmentRefreshAt.delete(client.sessionId);
+  }
+
+  private authorizeInteraction(client: Client, payload: unknown) {
+    const candidate =
+      payload && typeof payload === "object" && !Array.isArray(payload)
+        ? (payload as Record<string, unknown>)
+        : null;
+    const requestId = candidate?.["requestId"];
+    const landmarkId = candidate?.["landmarkId"];
+    const actionId = candidate?.["actionId"];
+    const reject = (code: string) => client.send("interaction-authorization-error", {
+      requestId: typeof requestId === "string" ? requestId : null,
+      code,
+    });
+    if (
+      typeof requestId !== "string" ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestId) ||
+      typeof landmarkId !== "string" ||
+      !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(landmarkId) ||
+      typeof actionId !== "string" ||
+      !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(actionId)
+    ) {
+      reject("INVALID_REQUEST");
+      return;
+    }
+
+    const credentials = this.credentials.get(client.sessionId);
+    const player = this.state.players.get(client.sessionId);
+    if (!credentials || !player) {
+      reject("UNAUTHORIZED");
+      return;
+    }
+    if (credentials.locationId !== this.metadata?.["locationId"]) {
+      reject("WRONG_LOCATION");
+      return;
+    }
+
+    const target = this.area.interactionPoints?.find((point) => point.id === landmarkId);
+    if (!target || !target.actionIds.includes(actionId)) {
+      reject("UNKNOWN_ACTION");
+      return;
+    }
+    if (!nearbyInteractionPoint(player, this.areaOrigin, this.area, landmarkId)) {
+      reject("NOT_NEAR_LANDMARK");
+      return;
+    }
+
+    const secret = process.env["MULTIPLAYER_INTERACTION_SECRET"];
+    if (!secret || Buffer.byteLength(secret, "utf8") < 32) {
+      reject("INTERACTION_AUTH_NOT_CONFIGURED");
+      return;
+    }
+    try {
+      const authorization = createNeighborhoodInteractionAuthorization({
+        userId: credentials.userId,
+        characterId: credentials.characterId,
+        locationId: credentials.locationId,
+        landmarkId,
+        actionId,
+        requestId,
+        roomSessionId: client.sessionId,
+      }, secret);
+      client.send("interaction-authorization", {
+        requestId,
+        landmarkId,
+        actionId,
+        token: authorization.token,
+        expiresAt: authorization.expiresAt,
+      });
+    } catch {
+      reject("INTERACTION_AUTH_UNAVAILABLE");
+    }
   }
 
   private async refreshEquipment(client: Client) {
