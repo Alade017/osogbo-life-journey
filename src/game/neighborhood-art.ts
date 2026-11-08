@@ -12,6 +12,7 @@ type BuildingProfile = {
   roofOverhangRatio: number;
   roofRibSpacingRatio: number;
   windowCount: number;
+  windowGrilles: boolean;
   frontage: "veranda" | "awning" | "recessed";
 };
 
@@ -35,6 +36,7 @@ export const NEIGHBORHOOD_BUILDING_PROFILES: Readonly<
     roofOverhangRatio: 0.08,
     roofRibSpacingRatio: 0.11,
     windowCount: 2,
+    windowGrilles: true,
     frontage: "veranda",
   },
   shop: {
@@ -48,6 +50,7 @@ export const NEIGHBORHOOD_BUILDING_PROFILES: Readonly<
     roofOverhangRatio: 0.07,
     roofRibSpacingRatio: 0.09,
     windowCount: 2,
+    windowGrilles: true,
     frontage: "awning",
   },
   market: {
@@ -61,6 +64,7 @@ export const NEIGHBORHOOD_BUILDING_PROFILES: Readonly<
     roofOverhangRatio: 0.12,
     roofRibSpacingRatio: 0.075,
     windowCount: 3,
+    windowGrilles: true,
     frontage: "awning",
   },
   work: {
@@ -73,6 +77,7 @@ export const NEIGHBORHOOD_BUILDING_PROFILES: Readonly<
     roofOverhangRatio: 0.055,
     roofRibSpacingRatio: 0.12,
     windowCount: 2,
+    windowGrilles: false,
     frontage: "recessed",
   },
   kiosk: {
@@ -86,6 +91,7 @@ export const NEIGHBORHOOD_BUILDING_PROFILES: Readonly<
     roofOverhangRatio: 0.1,
     roofRibSpacingRatio: 0.08,
     windowCount: 1,
+    windowGrilles: false,
     frontage: "awning",
   },
 };
