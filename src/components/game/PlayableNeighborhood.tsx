@@ -103,6 +103,7 @@ function playerViewsFromRoom(room: NeighborhoodRoom): NeighborhoodPlayerView[] |
 function useNeighborhoodConnection(
   locationId: string | undefined,
   slug: string | undefined,
+  characterId: string | undefined,
   locationIsPlayable: boolean,
   attempt: number,
 ) {
@@ -235,7 +236,7 @@ function useNeighborhoodConnection(
           );
       }
     };
-  }, [attempt, locationId, locationIsPlayable, slug]);
+  }, [attempt, characterId, locationId, locationIsPlayable, slug]);
 
   const sameLocation = roomLocationId === locationId;
   return {
@@ -300,6 +301,7 @@ export function PlayableNeighborhood() {
     useNeighborhoodConnection(
       currentLocation?.id,
       currentLocation?.slug,
+      characterQuery.data?.id,
       district !== null,
       connectionAttempt,
     );
