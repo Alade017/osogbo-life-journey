@@ -247,6 +247,11 @@
   --app-tone: var(--brand-slate);
 }
 
+.phone-ui-refresh .phone-app .phone-app-icon.phone-app-messages {
+  --app-tone: #25d366;
+  --app-glyph: #ffffff;
+}
+
 .phone-ui-refresh .phone-app:hover .phone-app-icon {
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.25),
@@ -287,7 +292,7 @@
 .phone-ui-refresh .phone-app-body .game-panel {
   border-color: color-mix(in srgb, var(--brand-royal) 11%, var(--border));
   border-radius: 18px;
-  background: var(--brand-cream);
+  background: #ffffff;
   box-shadow: 0 7px 20px color-mix(in srgb, var(--brand-ink) 6%, transparent);
 }
 
@@ -347,7 +352,7 @@
 .phone-ui-refresh .phone-app-body--sx {
   --sx-muted: var(--muted-foreground, #7a6a58);
   --sx-line: color-mix(in srgb, var(--border, #e5d6bf) 80%, transparent);
-  --sx-card: var(--card, #fffaf2);
+  --sx-card: #ffffff;
   display: grid;
   gap: 14px;
   padding: 6px 14px 24px;
@@ -387,7 +392,7 @@
   min-height: 44px;
   border: 1px solid var(--sx-line);
   border-radius: 14px;
-  background: var(--card, #fffaf2);
+  background: #ffffff;
 }
 
 .phone-ui-refresh .phone-app-body--sx :is(input, select, textarea):focus-visible {
@@ -398,7 +403,7 @@
 /* Profile, Inventory and Education use their own class systems. These rules bring them to the
    same card, eyebrow and control sizes as Settings, still scoped to the core phone apps. */
 .phone-ui-refresh .phone-app-body--sx {
-  --sx-gold: var(--primary, #c8862a);
+  --sx-gold: var(--brand-royal);
 }
 
 .phone-ui-refresh
@@ -428,7 +433,7 @@
 .phone-ui-refresh .phone-app-body--sx .pi-stat {
   border: 1px solid var(--sx-line);
   border-radius: 18px;
-  background: color-mix(in srgb, var(--sx-card) 60%, var(--brand-cream, #fff8ec));
+  background: #ffffff;
 }
 
 .phone-ui-refresh .phone-app-body--sx .pi-masthead h1,
@@ -498,7 +503,7 @@
   min-height: 48px;
   border: 1px solid color-mix(in srgb, var(--brand-mist) 90%, transparent);
   border-radius: 16px;
-  background: var(--card, #fffaf2);
+  background: #ffffff;
 }
 
 .phone-ui-refresh .phone-app-body .phone-inbox-search input {
@@ -519,13 +524,13 @@
   border: 1px solid color-mix(in srgb, var(--brand-mist) 90%, transparent);
   border-radius: 18px;
   color: var(--brand-ink);
-  background: var(--card, #fffaf2);
+  background: #ffffff;
   contain-intrinsic-size: 88px;
 }
 
 .phone-ui-refresh .phone-app-body .phone-conversation:hover {
   border-color: color-mix(in srgb, var(--brand-royal) 35%, transparent);
-  background: var(--card, #fffaf2);
+  background: #ffffff;
 }
 
 .phone-ui-refresh .phone-app-body .phone-conversation-copy strong,
@@ -546,7 +551,7 @@
   padding: 12px 16px;
   border-bottom: 1px solid color-mix(in srgb, var(--brand-mist) 90%, transparent);
   color: var(--brand-ink);
-  background: var(--brand-cream);
+  background: var(--brand-porcelain);
 }
 
 .phone-ui-refresh .phone-app-body .phone-thread-back {
@@ -567,7 +572,7 @@
   border: 1px solid color-mix(in srgb, var(--brand-mist) 90%, transparent);
   border-radius: 18px 18px 18px 6px;
   color: var(--brand-ink);
-  background: var(--card, #fffaf2);
+  background: #ffffff;
   box-shadow: none;
   font-size: 15px;
   line-height: 1.5;
@@ -593,7 +598,7 @@
   gap: 10px;
   padding: 14px 16px 18px;
   border-top: 1px solid color-mix(in srgb, var(--brand-mist) 90%, transparent);
-  background: var(--brand-cream);
+  background: var(--brand-porcelain);
 }
 
 .phone-ui-refresh .phone-app-body .phone-chat-input {
@@ -602,7 +607,7 @@
   border: 1px solid color-mix(in srgb, var(--brand-mist) 90%, transparent);
   border-radius: 24px;
   color: var(--brand-ink);
-  background: var(--card, #fffaf2);
+  background: #ffffff;
   font-size: 15px;
 }
 

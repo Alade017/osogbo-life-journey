@@ -126,7 +126,7 @@ type PhoneAppDefinition = {
 
 const PHONE_APPS: readonly PhoneAppDefinition[] = [
   { label: "Map", icon: MapPinned, tone: "phone-app-blue" },
-  { label: "Messages", icon: MessagesSquare, tone: "phone-app-coral" },
+  { label: "Messages", icon: MessagesSquare, tone: "phone-app-messages" },
   { label: "Career Life", icon: BriefcaseBusiness, tone: "phone-app-gold" },
   { label: "Bank", icon: Landmark, tone: "phone-app-blue" },
   { label: "Missions", icon: Target, tone: "phone-app-gold" },
