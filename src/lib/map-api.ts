@@ -295,7 +295,7 @@ export async function requestNeighborhoodPlaceAction(
   const accessToken = session?.access_token;
   if (error || !accessToken) throw new MapApiError("Sign in to do this activity.", "UNAUTHORIZED");
   if (session.user.id !== accountId) throw new MapApiError("Account changed", "UNAUTHORIZED");
-  const response = await fetch("/api/neighborhood/action", {
+  const response = await fetch("/api/map/action", {
     method: "POST",
     headers: {
       Authorization: `Bearer ${accessToken}`,
