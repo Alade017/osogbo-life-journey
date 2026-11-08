@@ -132,6 +132,9 @@ export function pedestrianCrossings(area: NeighborhoodArea): DressingRect[] {
   const rects: DressingRect[] = [];
   const boxes = occupiedBoxes(area);
   const seen = new Set<string>();
+  const withinRoadSpan = (road: NeighborhoodRoad, center: number, halfLength: number) =>
+    (road.start === undefined || center - halfLength >= road.start) &&
+    (road.end === undefined || center + halfLength <= road.end);
   const addCrossing = (key: string, rect: DressingRect) => {
     const overlapsObstacle = boxes.some(
       (box) =>
@@ -158,21 +161,33 @@ export function pedestrianCrossings(area: NeighborhoodArea): DressingRect[] {
 
       const verticalApproach = horizontal.width / 2 + 14;
       for (const y of [horizontal.offset - verticalApproach, horizontal.offset + verticalApproach]) {
+        const width = vertical.width * 0.9;
+        const depth = 14;
+        if (
+          !withinRoadSpan(vertical, y, depth / 2) ||
+          !withinRoadSpan(horizontal, vertical.offset, width / 2)
+        ) continue;
         addCrossing(`vertical:${vertical.id}:${horizontal.id}:${y}`, {
           x: vertical.offset,
           y,
-          width: vertical.width * 0.9,
-          depth: 14,
+          width,
+          depth,
         });
       }
 
       const horizontalApproach = vertical.width / 2 + 14;
       for (const x of [vertical.offset - horizontalApproach, vertical.offset + horizontalApproach]) {
+        const width = 14;
+        const depth = horizontal.width * 0.9;
+        if (
+          !withinRoadSpan(vertical, horizontal.offset, depth / 2) ||
+          !withinRoadSpan(horizontal, x, width / 2)
+        ) continue;
         addCrossing(`horizontal:${vertical.id}:${horizontal.id}:${x}`, {
           x,
           y: horizontal.offset,
-          width: 14,
-          depth: horizontal.width * 0.9,
+          width,
+          depth,
         });
       }
     }
