@@ -1,7 +1,6 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react";
 import townData from "@/data/osogbo-town.json";
 import { WORLD_PALETTE } from "@/components/3d/world-theme";
-import { TownMapFallback } from "@/components/map/TownMapFallback";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
 
 const R3FTownSurface = lazy(() =>
@@ -133,20 +132,6 @@ export function MapCanvas({
       style={{ background: WORLD_PALETTE.ground }}
       aria-label="Interactive 3D town map with open camera exploration"
     >
-      {rendererState !== "ready" && (
-        <TownMapFallback
-          places={availablePlaces}
-          properties={properties}
-          playerLocation={playerLocation}
-          billboardMarkers={billboardMarkers}
-          onSelectLandmark={onSelectLandmark}
-          onSelectDistrict={onSelectDistrict}
-          onSelectBillboard={onSelectBillboard}
-          {...(onSelectProperty ? { onSelectProperty } : {})}
-          eventChips={_eventChips}
-          {...(onSelectEvent ? { onSelectEvent } : {})}
-        />
-      )}
       <Suspense fallback={null}>
         <R3FTownSurface
           places={availablePlaces}
@@ -175,7 +160,7 @@ export function MapCanvas({
       )}
       {rendererState === "fallback" && (
         <p className="town-map-renderer-status" role="status">
-          Interactive rendering is unavailable. Showing the accessible town map.
+          Interactive 3D rendering is unavailable. Use the accessible places and districts lists below.
         </p>
       )}
       <ul className="town-map-accessible-list" aria-label="Places on the map">
