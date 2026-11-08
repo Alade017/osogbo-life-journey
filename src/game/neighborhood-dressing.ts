@@ -144,6 +144,43 @@ export function pedestrianCrossings(area: NeighborhoodArea): DressingRect[] {
   return rects;
 }
 
+/** Signals at declared arterial junctions, positioned clear of road edges and existing props. */
+export function trafficLightSpots(area: NeighborhoodArea): WorldPoint[] {
+  const verticals = (area.roads ?? []).filter(
+    (road) => road.axis === "vertical" && road.type === "arterial",
+  );
+  const horizontals = (area.roads ?? []).filter(
+    (road) => road.axis === "horizontal" && road.type === "arterial",
+  );
+  const boxes = occupiedBoxes(area);
+  const spots: WorldPoint[] = [];
+  const seen = new Set<string>();
+  for (const vertical of verticals)
+    for (const horizontal of horizontals) {
+      const verticalStart = vertical.start;
+      const verticalEnd = vertical.end;
+      const horizontalStart = horizontal.start;
+      const horizontalEnd = horizontal.end;
+      if (
+        (verticalStart !== undefined && horizontal.offset < verticalStart) ||
+        (verticalEnd !== undefined && horizontal.offset > verticalEnd) ||
+        (horizontalStart !== undefined && vertical.offset < horizontalStart) ||
+        (horizontalEnd !== undefined && vertical.offset > horizontalEnd)
+      ) continue;
+      const setback = Math.max(vertical.width, horizontal.width) / 2 + 12;
+      for (const sideX of [-1, 1])
+        for (const sideY of [-1, 1]) {
+          const x = vertical.offset + sideX * setback;
+          const y = horizontal.offset + sideY * setback;
+          const key = `${x}:${y}`;
+          if (seen.has(key) || insideObstacle(x, y, boxes, 8)) continue;
+          seen.add(key);
+          spots.push({ x, y });
+        }
+    }
+  return spots;
+}
+
 /** Street lights set back from the kerb along every street, away from existing lamp posts. */
 export function streetLightSpots(area: NeighborhoodArea, bounds: DressingBounds): WorldPoint[] {
   const lamps = (area.obstacles ?? []).filter((o) => o.kind === "streetlight");
