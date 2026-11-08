@@ -90,6 +90,7 @@ async function readCharacter(accessToken: string, locationId: string) {
   const query = new URLSearchParams({
     select: "id,name,gender,appearance,world_x,world_y,current_location_id",
     user_id: `eq.${user.id}`,
+    order: "created_at.desc",
     limit: "1",
   });
   const characterResponse = await fetch(`${url}/rest/v1/characters?${query}`, {
