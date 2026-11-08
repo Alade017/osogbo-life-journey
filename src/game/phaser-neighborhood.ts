@@ -457,7 +457,7 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
       const sign =
         object.kind === "home" && this.homeTypeId
           ? `YOUR ${this.homeTypeId.replaceAll("-", " ").toUpperCase()}`
-          : object.name;
+          : "";
       const footprint = neighborhoodBuildingFootprint(object);
       this.drawBuilding(
         object.x,
@@ -479,7 +479,7 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
         obstacle.y,
         obstacle.kind,
         sign,
-        obstacle.label ?? "",
+        "",
         obstacle.width,
         obstacle.height,
       );
