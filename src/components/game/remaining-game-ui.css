@@ -484,7 +484,12 @@
 
 /* Messages: clean, roomy layout in the palette (not the Settings look). */
 .phone-ui-refresh .phone-app-body .phone-inbox-heading {
-  padding: 22px 20px 10px;
+  padding: 12px 16px 4px;
+}
+
+/* The toolbar already names the app, so the large heading is hidden to show more chats. */
+.phone-ui-refresh .phone-app-body .phone-inbox-heading h3 {
+  display: none;
 }
 
 .phone-ui-refresh .phone-app-body .phone-inbox-heading h3 {
@@ -499,7 +504,7 @@
 }
 
 .phone-ui-refresh .phone-app-body .phone-inbox-search {
-  margin: 10px 16px 14px;
+  margin: 4px 16px 10px;
   min-height: 48px;
   border: 1px solid color-mix(in srgb, var(--brand-mist) 90%, transparent);
   border-radius: 16px;

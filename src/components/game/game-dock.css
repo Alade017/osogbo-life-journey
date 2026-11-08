@@ -170,6 +170,27 @@
   min-height: 0;
 }
 
+/* Larger screens get a larger phone, so app contents are not squeezed. */
+@media (min-width: 900px) and (min-height: 820px) {
+  .phone-dialog-shell > .phone-dialog.phone-ui-refresh {
+    width: min(460px, calc(100% - 40px));
+    height: min(
+      860px,
+      calc(100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - 40px)
+    );
+  }
+}
+
+@media (min-width: 1280px) and (min-height: 960px) {
+  .phone-dialog-shell > .phone-dialog.phone-ui-refresh {
+    width: min(520px, calc(100% - 40px));
+    height: min(
+      940px,
+      calc(100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - 40px)
+    );
+  }
+}
+
 /* Fixed needs and home controls reserve the same dock boundary on every screen. */
 .city-game.navigation-redesign .game-needs-rail {
   inset: auto auto calc(var(--game-dock-space) + 8px) max(12px, env(safe-area-inset-left));
