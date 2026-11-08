@@ -20,12 +20,13 @@ describe("neighborhood interaction authorization client bridge", () => {
   function makeRoom() {
     const listeners = new Map<string, (payload: unknown) => void>();
     const sent: Array<{ type: string; payload: unknown }> = [];
+    const leaveHandlers: Array<() => void> = [];
     const room = {
       onMessage: (type: string, callback: (payload: unknown) => void) => listeners.set(type, callback),
-      onLeave: (_callback: () => void) => {},
+      onLeave: (callback: () => void) => leaveHandlers.push(callback),
       send: (type: string, payload: unknown) => sent.push({ type, payload }),
     };
-    return { room: room as never, listeners, sent };
+    return { room: room as never, listeners, sent, leave: () => leaveHandlers.forEach((handler) => handler()) };
   }
 
   it("accepts only an authorization matching the pending landmark and action", async () => {
@@ -48,6 +49,17 @@ describe("neighborhood interaction authorization client bridge", () => {
       landmarkId: claims.landmarkId,
       actionId: claims.actionId,
     });
+  });
+
+  it("rejects pending authorization immediately when the room disconnects", async () => {
+    const { room, leave } = makeRoom();
+    const pending = requestNeighborhoodInteractionAuthorization(room, {
+      requestId: claims.requestId,
+      landmarkId: claims.landmarkId,
+      actionId: claims.actionId,
+    });
+    leave();
+    await expect(pending).rejects.toThrow("NEIGHBORHOOD_DISCONNECTED");
   });
 
   it("rejects a response for a different landmark or action", async () => {
