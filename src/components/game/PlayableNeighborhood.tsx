@@ -14,10 +14,17 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
-import { PlayerMovementControls } from "@/components/game/PlayerMovementControls";
+import {
+  beginTransition,
+  completeTransitionStep,
+  currentTransitionKind,
+  endTransition,
+  useOutsideTransition,
+} from "@/lib/outside-transition";
 import { PhoneBankApp } from "@/components/game/phone/PhoneBankApp";
 import { LocationVenueScene } from "@/components/game/LocationVenueScene";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
+import { GROUND_ARRIVE_DISTANCE, groundIntent } from "@/game/ground-intent";
 import { joinNeighborhood, type NeighborhoodRoom } from "@/lib/multiplayer-service";
 import { q, rpc, useGameAction } from "@/lib/game";
 import { supabase } from "@/integrations/supabase/client";
@@ -238,6 +245,18 @@ function directionIntent(directions: ReadonlySet<MovementDirection>) {
   };
 }
 
+/** Keyboard keys that walk the character. Taps and clicks on the ground use the same intent. */
+const KEY_DIRECTIONS: Readonly<Record<string, MovementDirection>> = {
+  ArrowUp: "north",
+  KeyW: "north",
+  ArrowDown: "south",
+  KeyS: "south",
+  ArrowLeft: "west",
+  KeyA: "west",
+  ArrowRight: "east",
+  KeyD: "east",
+};
+
 function homeTypeFromRecord(value: unknown) {
   if (!isRecord(value) || typeof value["houseTypeId"] !== "string") return null;
   return value["houseTypeId"];
@@ -275,17 +294,28 @@ export function PlayableNeighborhood() {
       connectionAttempt,
     );
   const [directions, setDirections] = useState<ReadonlySet<MovementDirection>>(() => new Set());
+  const [groundTarget, setGroundTarget] = useState<{ x: number; y: number } | null>(null);
+  const groundTargetRef = useRef(groundTarget);
+  groundTargetRef.current = groundTarget;
+  const transition = useOutsideTransition();
+  const leavingStepsRef = useRef({ data: false, scene: false });
   const [scene, setScene] = useState<PhaserNeighborhoodHandle | null>(null);
   const [zoom, setZoom] = useState<number>(WORLD_CAMERA.defaultZoom);
   const directionsRef = useRef(directions);
   directionsRef.current = directions;
   const lastIntentRef = useRef("0:0");
   const [activePanel, setActivePanel] = useState<InteractionPanel | null>(null);
+  /** A tapped building or person the character is walking to; interaction opens on arrival. */
+  const [pendingTargetId, setPendingTargetId] = useState<string | null>(null);
+  /** Set while the character walks to its home door after Go home. */
+  const [homeBound, setHomeBound] = useState(false);
   const [businessView, setBusinessView] = useState<BusinessView>("actions");
   const [workView, setWorkView] = useState<"actions" | "interior">("actions");
   const [selectedNpcId, setSelectedNpcId] = useState<string | null>(null);
   const [npcDialogue, setNpcDialogue] = useState<string | null>(null);
-  const [npcPositionOverrides, setNpcPositionOverrides] = useState<Record<string, { x: number; y: number }>>({});
+  const [npcPositionOverrides, setNpcPositionOverrides] = useState<
+    Record<string, { x: number; y: number }>
+  >({});
   const player = players.find((candidate) => candidate.sessionId === sessionId);
   const actionAnimation = simulation.currentAction
     ? avatarAnimationForActivity(simulation.currentAction.animation)
@@ -311,9 +341,7 @@ export function PlayableNeighborhood() {
         simulation.gameTime,
         (slug) => locationsQuery.data?.find((location) => location.slug === slug)?.id ?? null,
       );
-      return activity.destinationSlug === currentLocation.slug
-        ? [{ npc, activity }]
-        : [];
+      return activity.destinationSlug === currentLocation.slug ? [{ npc, activity }] : [];
     }).slice(0, slots.length);
     return scheduled.map(({ npc, activity }, index) => {
       const slot = slots[index]!;
@@ -324,13 +352,14 @@ export function PlayableNeighborhood() {
             ? area.objects.find((object) => object.kind === "work")
             : activity.destination === "market"
               ? area.objects.find((object) => object.kind === "market")
-              : area.obstacles?.find((obstacle) => obstacle.kind === "bench") ??
-                area.objects.find((object) => object.kind === "market");
+              : (area.obstacles?.find((obstacle) => obstacle.kind === "bench") ??
+                area.objects.find((object) => object.kind === "market"));
       const spread = (index - (scheduled.length - 1) / 2) * 34;
       const targetX = (destinationObject?.x ?? slot.x) + spread;
       const targetY = (destinationObject?.y ?? slot.y) + (index % 2 === 0 ? 34 : -34);
       const current = npcPositionOverrides[npc.id] ?? { x: slot.x, y: slot.y };
-      const isMoving = !simulation.paused && Math.hypot(targetX - current.x, targetY - current.y) > 2;
+      const isMoving =
+        !simulation.paused && Math.hypot(targetX - current.x, targetY - current.y) > 2;
       const activityKind = isMoving
         ? "walking"
         : activity.destination === "work"
@@ -357,7 +386,15 @@ export function PlayableNeighborhood() {
         isMoving,
       };
     });
-  }, [area.objects, area.obstacles, currentLocation, locationsQuery.data, npcPositionOverrides, npcQuery.data, simulation.gameTime]);
+  }, [
+    area.objects,
+    area.obstacles,
+    currentLocation,
+    locationsQuery.data,
+    npcPositionOverrides,
+    npcQuery.data,
+    simulation.gameTime,
+  ]);
   const localPlaces =
     placesQuery.data?.filter((place) => place.location_id === currentLocation?.id) ?? [];
   const hasShopOffers =
@@ -380,13 +417,15 @@ export function PlayableNeighborhood() {
       if (object.kind === "work") return hasCareerServices;
       return false;
     });
-    const npcTargets = activeNpcs.filter((npc) => npc.available && !npc.isMoving).map((npc): (typeof area.objects)[number] => ({
-      id: npc.id,
-      name: npc.name,
-      kind: "npc",
-      x: npc.x,
-      y: npc.y,
-    }));
+    const npcTargets = activeNpcs
+      .filter((npc) => npc.available && !npc.isMoving)
+      .map((npc): (typeof area.objects)[number] => ({
+        id: npc.id,
+        name: npc.name,
+        kind: "npc",
+        x: npc.x,
+        y: npc.y,
+      }));
     return [...buildings, ...npcTargets];
   }, [
     activeNpcs,
@@ -418,6 +457,7 @@ export function PlayableNeighborhood() {
   });
 
   const enterHome = useMutation({
+    onMutate: () => beginTransition("entering", "Heading to your door", 3),
     mutationFn: async () => {
       if (!district?.personalHome || !homeTypeId)
         throw new Error("Your home entrance is available in Olaiya.");
@@ -430,12 +470,33 @@ export function PlayableNeighborhood() {
     onSuccess: async () => {
       const room = roomRef.current;
       room?.send("move", { x: 0, y: 0 });
+      completeTransitionStep("Going inside");
       await queryClient.invalidateQueries({ queryKey: q.character().queryKey });
       await navigate({ to: "/house" });
     },
+    onError: () => endTransition(),
   });
-  const activateHome = enterHome.mutate;
+  /** Go home walks the character to the home door first; entry starts only on arrival. */
+  const homeObject = area.objects.find((object) => object.kind === "home");
+  const enterHomeNow = enterHome.mutate;
+  const nearHome = nearbyObject?.kind === "home";
+  const activateHome = useCallback(() => {
+    if (nearHome || !homeObject || !district?.personalHome) {
+      enterHomeNow();
+      return;
+    }
+    setDirections(new Set());
+    setGroundTarget({ x: homeObject.x, y: homeObject.y });
+    setHomeBound(true);
+  }, [nearHome, homeObject, district?.personalHome, enterHomeNow]);
   const enteringHome = enterHome.isPending;
+  useEffect(() => {
+    if (!homeBound || nearbyObject?.kind !== "home") return;
+    setHomeBound(false);
+    enterHome.mutate();
+    // enterHome is stable for this render; the effect only reacts to arrival.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [homeBound, nearbyObject]);
 
   useEffect(() => {
     setDirections(new Set());
@@ -448,6 +509,46 @@ export function PlayableNeighborhood() {
     setNpcDialogue(null);
   }, [currentLocation?.id]);
 
+  /** Keyboard walking. Pressing a key cancels a tapped destination. */
+  useEffect(() => {
+    const set = (event: KeyboardEvent, pressed: boolean) => {
+      const direction = KEY_DIRECTIONS[event.code];
+      if (!direction) return;
+      if (pressed) {
+        groundTargetRef.current = null;
+        setGroundTarget(null);
+        setHomeBound(false);
+      }
+      setDirections((current) => {
+        const next = new Set(current);
+        if (pressed) next.add(direction);
+        else next.delete(direction);
+        return next;
+      });
+    };
+    const down = (event: KeyboardEvent) => {
+      if (event.target instanceof HTMLElement && event.target.closest("input, textarea, select"))
+        return;
+      set(event, true);
+    };
+    const up = (event: KeyboardEvent) => set(event, false);
+    window.addEventListener("keydown", down);
+    window.addEventListener("keyup", up);
+    return () => {
+      window.removeEventListener("keydown", down);
+      window.removeEventListener("keyup", up);
+    };
+  }, []);
+
+  /** Tapping or clicking the ground walks the character there. Panels hold them in place. */
+  const tapGround = (point: { x: number; y: number }) => {
+    if (activePanel) return;
+    setPendingTargetId(null);
+    setHomeBound(false);
+    setDirections(new Set());
+    setGroundTarget(point);
+  };
+
   useEffect(() => {
     if (connectionState !== "connected") return;
     if (activePanel) {
@@ -458,7 +559,20 @@ export function PlayableNeighborhood() {
     const interval = window.setInterval(() => {
       const room = roomRef.current;
       if (!room) return;
-      const intent = activePanel ? { x: 0, y: 0 } : directionIntent(directionsRef.current);
+      const position = player ? { x: player.x, y: player.y } : null;
+      const target = groundTargetRef.current;
+      if (
+        target &&
+        position &&
+        Math.hypot(target.x - position.x, target.y - position.y) <= GROUND_ARRIVE_DISTANCE
+      ) {
+        groundTargetRef.current = null;
+        setGroundTarget(null);
+      }
+      const tapped = groundIntent(groundTargetRef.current, position);
+      const intent = activePanel
+        ? { x: 0, y: 0 }
+        : (tapped ?? directionIntent(directionsRef.current));
       const next = `${intent.x}:${intent.y}`;
       if (next !== lastIntentRef.current || intent.x !== 0 || intent.y !== 0) {
         room.send("move", intent);
@@ -466,7 +580,47 @@ export function PlayableNeighborhood() {
       }
     }, 100);
     return () => window.clearInterval(interval);
-  }, [activePanel, connectionState, roomRef]);
+  }, [activePanel, connectionState, roomRef, player]);
+
+  /**
+   * Leaving the house: report real loads, then close the veil once the neighbourhood has
+   * settled, whether it connected or failed, so the page is never hidden behind it.
+   */
+  useEffect(() => {
+    if (transition.kind !== "leaving") return;
+    const steps = leavingStepsRef.current;
+    if (!steps.data && currentLocation && npcQuery.isFetched && placesQuery.isFetched) {
+      steps.data = true;
+      completeTransitionStep("Connecting to the streets");
+    }
+    if (!steps.scene && connectionState === "connected" && scene) {
+      steps.scene = true;
+      completeTransitionStep("Ready");
+    }
+    const settled =
+      connectionState === "unavailable" ||
+      connectionState === "wrong-area" ||
+      (connectionState === "connected" && scene !== null);
+    if (settled) {
+      endTransition();
+      leavingStepsRef.current = { data: false, scene: false };
+    }
+  }, [
+    transition,
+    currentLocation,
+    connectionState,
+    npcQuery.isFetched,
+    placesQuery.isFetched,
+    scene,
+  ]);
+
+  // If the player leaves this page mid-transition, never leave the veil behind.
+  useEffect(
+    () => () => {
+      if (currentTransitionKind() === "leaving") endTransition();
+    },
+    [],
+  );
 
   useEffect(() => {
     if (connectionState !== "connected" || !nearbyObject || activePanel) return;
@@ -515,15 +669,27 @@ export function PlayableNeighborhood() {
       setActivePanel("business");
     }
   };
+  /** Tapping a building or person walks the character to it, then opens the interaction. */
   const selectWorldTarget = (targetId: string) => {
     const target = interactionTargets.find((candidate) => candidate.id === targetId);
     if (!target) return;
-    if (nearbyObject?.id !== targetId) {
-      toast.message(`Move closer to ${target.name} before interacting.`);
+    if (nearbyObject?.id === targetId) {
+      setPendingTargetId(null);
+      openInteraction();
       return;
     }
-    openInteraction();
+    toast.message(`Walking to ${target.name}`);
+    setPendingTargetId(targetId);
+    setDirections(new Set());
+    setGroundTarget({ x: target.x, y: target.y });
   };
+  useEffect(() => {
+    if (!pendingTargetId || nearbyObject?.id !== pendingTargetId) return;
+    setPendingTargetId(null);
+    openInteraction();
+    // openInteraction reads the current nearby object, which this effect already tracks.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingTargetId, nearbyObject]);
   const closeInteraction = (open: boolean) => {
     if (open) return;
     setActivePanel(null);
@@ -645,6 +811,7 @@ export function PlayableNeighborhood() {
                     >
                       <R3FNeighborhoodSurface
                         key={`${currentLocation?.id}:${sessionId}`}
+                        onGroundTap={tapGround}
                         district={district}
                         players={scenePlayers}
                         npcs={activeNpcs}
@@ -652,10 +819,13 @@ export function PlayableNeighborhood() {
                         homeTypeId={homeTypeId}
                         zoom={zoom}
                         onZoomChange={setZoom}
+                        groundTarget={groundTarget}
                         onScene={handleScene}
                         interactionTargets={interactionTargets}
                         onSelectTarget={selectWorldTarget}
-                        onNpcArrive={(id, x, y) => setNpcPositionOverrides((current) => ({ ...current, [id]: { x, y } }))}
+                        onNpcArrive={(id, x, y) =>
+                          setNpcPositionOverrides((current) => ({ ...current, [id]: { x, y } }))
+                        }
                       />
                     </Suspense>
                     <div
@@ -716,7 +886,10 @@ export function PlayableNeighborhood() {
                     )}
                   </div>
                   {activeNpcs.length > 0 && (
-                    <section className="neighborhood-people" aria-label="People in this neighbourhood">
+                    <section
+                      className="neighborhood-people"
+                      aria-label="People in this neighbourhood"
+                    >
                       <div className="neighborhood-people-heading">
                         <strong>People around here</strong>
                         <span>NPCs follow their own daily routines</span>
@@ -739,10 +912,18 @@ export function PlayableNeighborhood() {
                             >
                               <span className="neighborhood-person-copy">
                                 <strong>{npc.name}</strong>
-                                <span>{npc.role} · {npc.activity}</span>
+                                <span>
+                                  {npc.role} · {npc.activity}
+                                </span>
                               </span>
                               <span className="neighborhood-person-action">
-                                {npc.isMoving ? "On the move" : !npc.available ? "Resting" : isNearby ? "Talk" : "Move closer"}
+                                {npc.isMoving
+                                  ? "On the move"
+                                  : !npc.available
+                                    ? "Resting"
+                                    : isNearby
+                                      ? "Talk"
+                                      : "Move closer"}
                               </span>
                             </button>
                           );
@@ -954,13 +1135,19 @@ export function PlayableNeighborhood() {
                   <div className="neighborhood-controls-row">
                     <div className="neighborhood-control-copy">
                       <strong>Explore at your pace</strong>
-                      <span>WASD or arrow keys · touch controls on mobile</span>
+                      <span>Tap or click the ground to walk · arrow keys also work</span>
                     </div>
-                    <PlayerMovementControls
-                      onDirectionChange={setDirections}
-                      onFollowChange={(enabled) => scene?.setFollow(enabled)}
-                      initialFollowing
-                    />
+                    {homeTypeId && (
+                      <button
+                        type="button"
+                        className="neighborhood-go-home"
+                        disabled={enteringHome || homeBound}
+                        aria-busy={enteringHome || homeBound}
+                        onClick={() => activateHome()}
+                      >
+                        {enteringHome || homeBound ? "Going home…" : "Go home"}
+                      </button>
+                    )}
                   </div>
                 </>
               )

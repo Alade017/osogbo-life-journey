@@ -1,12 +1,19 @@
 /** Presentation units only. Never use these to change simulation coordinates. */
 const CHARACTER_HEIGHT = 1.7;
+/**
+ * The playable street is drawn larger than the character so buildings, roads and lamps read at a
+ * believable size next to people. Collision and positions stay in simulation coordinates.
+ */
+export const NEIGHBORHOOD_STREET_SCALE = 1.5;
 
 export const WORLD_SCALE = {
   character: CHARACTER_HEIGHT,
   door: CHARACTER_HEIGHT * (2.1 / 1.7),
   road: CHARACTER_HEIGHT * (3.6 / 1.7),
   townCell: CHARACTER_HEIGHT * (3.6 / 1.7),
-  neighborhoodUnit: CHARACTER_HEIGHT / 68,
+  neighborhoodUnit: (CHARACTER_HEIGHT / 68) * NEIGHBORHOOD_STREET_SCALE,
+  neighborhoodStreetCell: CHARACTER_HEIGHT * (3.6 / 1.7) * NEIGHBORHOOD_STREET_SCALE,
+  neighborhoodBuildingHeight: CHARACTER_HEIGHT * (2.1 / 1.7) * 1.4 * NEIGHBORHOOD_STREET_SCALE,
   furniture: CHARACTER_HEIGHT / 1.7,
 } as const;
 

@@ -80,5 +80,14 @@ export function useHouseMovement(resetKey: string, initial: RoomPoint) {
     },
     [cancel],
   );
-  return { position, positionRef: current, walking, facing, walk, cancel };
+  /** Puts the character at a point without walking, e.g. just inside the door when entering. */
+  const place = useCallback(
+    (point: RoomPoint) => {
+      cancel();
+      current.current = point;
+      setPosition(point);
+    },
+    [cancel],
+  );
+  return { position, positionRef: current, walking, facing, walk, cancel, place };
 }

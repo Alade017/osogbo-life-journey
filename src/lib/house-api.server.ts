@@ -2,7 +2,13 @@ type HouseApiDependencies = {
   authenticate: (request: Request) => Promise<string | null>;
   state: (playerId: string) => Promise<unknown>;
   place: (playerId: string, itemId: string, slot: string) => Promise<unknown>;
-  placeAt: (playerId: string, itemId: string, x: number, y: number) => Promise<unknown>;
+  placeAt: (
+    playerId: string,
+    itemId: string,
+    x: number,
+    y: number,
+    floor: 0 | 1,
+  ) => Promise<unknown>;
   move: (playerId: string, fromSlot: string, x: number, y: number) => Promise<unknown>;
   rotate: (playerId: string, fromSlot: string, rotation: number) => Promise<unknown>;
   remove: (playerId: string, slot: string) => Promise<unknown>;
@@ -11,8 +17,13 @@ type HouseApiDependencies = {
   buy: (playerId: string, itemId: string, idempotencyKey: string) => Promise<unknown>;
 };
 
-const statusByCode: Record<string, number> = {
+export const statusByCode: Record<string, number> = {
   UNAUTHORIZED: 401,
+  NOT_IN_DRAWER: 404,
+  NOT_WEARABLE: 409,
+  ITEM_WORN: 409,
+  DRAWER_FULL: 409,
+  ALREADY_OWNED: 409,
   INVALID_REQUEST: 400,
   INVALID_IDEMPOTENCY_KEY: 400,
   UNKNOWN_ITEM: 404,
@@ -34,7 +45,7 @@ const statusByCode: Record<string, number> = {
 
 const knownCodes = new Set(Object.keys(statusByCode));
 
-function safeServerErrorCode(message: string) {
+export function safeServerErrorCode(message: string) {
   const explicit = message.match(/\b[A-Z][A-Z0-9_]{2,}\b/)?.[0];
   if (explicit && knownCodes.has(explicit)) return explicit;
   if (/schema cache|function .* does not exist|relation .* does not exist/i.test(message))
@@ -42,15 +53,15 @@ function safeServerErrorCode(message: string) {
   return "HOUSE_SERVICE_UNAVAILABLE";
 }
 
-function json(body: unknown, status = 200) {
+export function json(body: unknown, status = 200) {
   return Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+export function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);
 }
 
-function resultCode(value: unknown) {
+export function resultCode(value: unknown) {
   if (isRecord(value) && value["ok"] === false && typeof value["code"] === "string") {
     return value["code"];
   }
@@ -93,7 +104,9 @@ export function createHouseApiHandlers(deps: HouseApiDependencies) {
           const { x, y } = { x: value["x"], y: value["y"] };
           if (!Number.isFinite(x) || !Number.isFinite(y) || x < 4 || x > 96 || y < 4 || y > 96)
             throw new Error("INVALID_REQUEST");
-          return deps.placeAt(playerId, value["itemId"], x, y);
+          // Floor 1 is upstairs (duplex only). Anything else, or no floor, means ground.
+          const floor: 0 | 1 = value["floor"] === 1 ? 1 : 0;
+          return deps.placeAt(playerId, value["itemId"], x, y, floor);
         }
         if (typeof value["slot"] !== "string") throw new Error("INVALID_REQUEST");
         return deps.place(playerId, value["itemId"], value["slot"]);
@@ -174,8 +187,14 @@ async function productionHandlers() {
     state: (playerId) => rpc("get_house_state", { p_player_id: playerId }),
     place: (playerId, itemId, slot) =>
       rpc("house_place", { p_player_id: playerId, p_item_id: itemId, p_slot: slot }),
-    placeAt: (playerId, itemId, x, y) =>
-      rpc("house_place_free", { p_player_id: playerId, p_item_id: itemId, p_x: x, p_y: y }),
+    placeAt: (playerId, itemId, x, y, floor) =>
+      rpc("house_place_free", {
+        p_player_id: playerId,
+        p_item_id: itemId,
+        p_x: x,
+        p_y: y,
+        p_floor: floor,
+      }),
     move: (playerId, fromSlot, x, y) =>
       rpc("house_move_to_position", {
         p_player_id: playerId,

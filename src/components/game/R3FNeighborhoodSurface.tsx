@@ -24,16 +24,57 @@ import {
 import { neighborhoodBuildingFootprint } from "@/game/neighborhood-geometry";
 import {
   WorldCamera,
+  WorldCars,
   WorldHouse,
   WorldLighting,
   WorldMaterial,
+  WorldPedestrianCrossings,
+  WorldPeople,
+  WorldRoadMarkings,
   WorldRoads,
+  WorldSidewalks,
+  WorldStreetLights,
+  WorldStreetVendors,
   WorldTrees,
   type WorldTree,
   WorldInstances,
   type WorldInstance,
 } from "../3d/WorldScene";
-import { WORLD_CAMERA, WORLD_SCALE } from "../3d/world-theme";
+import { CHARACTER_MOTION } from "@/components/3d/character-config";
+import {
+  NEIGHBORHOOD_STREET_SCALE,
+  WORLD_CAMERA,
+  WORLD_PALETTE,
+  WORLD_SCALE,
+} from "../3d/world-theme";
+import {
+  carSpots,
+  pedestrianCrossings,
+  pedestrianSpots,
+  roadMarkings,
+  sidewalksAndCurbs,
+  streetLightSpots,
+  vendorSpots,
+  type DressingRect,
+} from "@/game/neighborhood-dressing";
+
+/** The nearest other character within range, so heads turn toward someone close by. */
+function nearestCharacter(
+  origin: readonly [number, number, number],
+  others: readonly (readonly [number, number, number])[],
+  range: number,
+): readonly [number, number, number] | null {
+  let best: readonly [number, number, number] | null = null;
+  let bestDistance = range;
+  for (const other of others) {
+    const distance = Math.hypot(other[0] - origin[0], other[2] - origin[2]);
+    if (distance > 0 && distance <= bestDistance) {
+      best = other;
+      bestDistance = distance;
+    }
+  }
+  return best;
+}
 
 class NeighborhoodBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   override state = { failed: false };
@@ -71,7 +112,9 @@ function NeighborhoodNpcActor({
   const leftLeg = useRef<Group>(null);
   const rightLeg = useRef<Group>(null);
   const { invalidate } = useThree();
-  const animated = !npc.isPaused && (npc.isMoving || ["working", "shopping", "socializing"].includes(npc.activityKind));
+  const animated =
+    !npc.isPaused &&
+    (npc.isMoving || ["working", "shopping", "socializing"].includes(npc.activityKind));
   const targetKey = `${target[0].toFixed(3)}:${target[2].toFixed(3)}`;
   const arrivedTarget = useRef<string | null>(null);
 
@@ -173,7 +216,11 @@ export function R3FNeighborhoodSurface({
   onScene,
   zoom,
   onZoomChange,
+  onGroundTap,
+  groundTarget,
 }: {
+  onGroundTap: (point: { x: number; y: number }) => void;
+  groundTarget: { x: number; y: number } | null;
   players: readonly NeighborhoodPlayerView[];
   npcs: readonly NeighborhoodNpcView[];
   interactionTargets: readonly NeighborhoodObject[];
@@ -235,6 +282,53 @@ export function R3FNeighborhoodSurface({
       }),
     [area, bounds.left, bounds.top, bounds.width, bounds.height, point, unit],
   );
+  // Street dressing comes from the area's own roads, objects and stalls.
+  const dressing = useMemo(() => {
+    const kerbs = sidewalksAndCurbs(area, bounds);
+    return {
+      markings: roadMarkings(area, bounds),
+      sidewalks: kerbs.sidewalks,
+      curbs: kerbs.curbs,
+      crossings: pedestrianCrossings(area),
+      lights: streetLightSpots(area, bounds),
+      cars: carSpots(area, bounds),
+      people: pedestrianSpots(area, bounds),
+      vendors: vendorSpots(area),
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [area, bounds.left, bounds.top, bounds.width, bounds.height]);
+  const street = useMemo(() => {
+    const flat = (rects: readonly DressingRect[], y: number, height: number): WorldInstance[] =>
+      rects.map((rect) => {
+        const p = point(rect.x, rect.y);
+        return {
+          position: [p[0], y, p[2]],
+          scale: [rect.width * unit, height, rect.depth * unit],
+        };
+      });
+    const onGround = (spots: readonly { x: number; y: number }[]): [number, number][] =>
+      spots.map((spot) => {
+        const p = point(spot.x, spot.y);
+        return [p[0], p[2]];
+      });
+    return {
+      markings: flat(dressing.markings, 0.07, 0.03),
+      crossings: flat(dressing.crossings, 0.07, 0.03),
+      sidewalks: flat(dressing.sidewalks, 0.05, 0.1),
+      curbs: flat(dressing.curbs, 0.09, 0.14),
+      lights: onGround(dressing.lights),
+      cars: onGround(dressing.cars),
+      people: onGround(dressing.people),
+      vendors: onGround(dressing.vendors),
+    };
+  }, [dressing, point, unit]);
+  const streetSize = WORLD_SCALE.neighborhoodStreetCell;
+  const lookRange = CHARACTER_MOTION.lookRange * WORLD_SCALE.character;
+  const scenePoints = players.map((player) => {
+    const p = toScene(player, district.origin);
+    return point(p.x, p.y);
+  });
+  const npcPoints = npcs.map((npc) => point(npc.x, npc.y));
   const self = players.find((player) => player.sessionId === selfSessionId);
   const selfPoint = self && toScene(self, district.origin);
   const target: [number, number, number] =
@@ -263,8 +357,8 @@ export function R3FNeighborhoodSurface({
           gl={{ antialias: false, powerPreference: "low-power" }}
         >
           <WorldCamera
-            width={17}
-            depth={14}
+            width={17 * NEIGHBORHOOD_STREET_SCALE}
+            depth={14 * NEIGHBORHOOD_STREET_SCALE}
             target={target}
             zoom={zoom}
             onZoomChange={onZoomChange}
@@ -278,21 +372,13 @@ export function R3FNeighborhoodSurface({
             />
           </mesh>
           <WorldRoads items={roads} />
-          <WorldInstances
-            tone="wall"
-            items={roads.flatMap((road) => {
-              const [w, , d] = road.scale!;
-              const vertical = d > w;
-              return [-1, 1].map((side) => ({
-                position: [
-                  road.position[0] + (vertical ? side * (w / 2 + 0.3) : 0),
-                  0.085,
-                  road.position[2] + (vertical ? 0 : side * (d / 2 + 0.3)),
-                ] as [number, number, number],
-                scale: [vertical ? 0.6 : w, 0.1, vertical ? d : 0.6] as [number, number, number],
-              }));
-            })}
-          />
+          <WorldRoadMarkings items={street.markings} />
+          <WorldPedestrianCrossings items={street.crossings} />
+          <WorldSidewalks sidewalks={street.sidewalks} curbs={street.curbs} />
+          <WorldStreetLights positions={street.lights} size={streetSize} />
+          <WorldCars positions={street.cars} size={streetSize} />
+          <WorldStreetVendors positions={street.vendors} size={streetSize} />
+          <WorldPeople positions={street.people} />
           {area.paths?.map((path) => {
             const p = point((path.from.x + path.to.x) / 2, (path.from.y + path.to.y) / 2);
             return (
@@ -324,6 +410,7 @@ export function R3FNeighborhoodSurface({
                 position={point(o.x, o.y)}
                 width={o.width * unit}
                 depth={o.height * unit}
+                height={WORLD_SCALE.neighborhoodBuildingHeight}
                 shop={o.kind !== "compound"}
               />
             ))}
@@ -369,6 +456,7 @@ export function R3FNeighborhoodSurface({
                     )}
                     width={footprint.width * unit}
                     depth={footprint.height * unit}
+                    height={WORLD_SCALE.neighborhoodBuildingHeight}
                     shop={o.kind !== "home"}
                   />
                   <Html
@@ -383,8 +471,10 @@ export function R3FNeighborhoodSurface({
                 </group>
               );
             })}
-          {players.map((player) => {
+          {players.map((player, index) => {
             const p = toScene(player, district.origin);
+            const position = point(p.x, p.y);
+            const others = [...scenePoints.filter((_, other) => other !== index), ...npcPoints];
             return (
               <WorldCharacter
                 key={player.sessionId}
@@ -392,9 +482,10 @@ export function R3FNeighborhoodSurface({
                 appearance={worldAppearance(player.appearance)}
                 gender={player.gender}
                 equipment={worldEquipment(player.equipment)}
-                position={point(p.x, p.y)}
+                position={position}
                 facing={player.facing}
                 animation={player.actionAnimation ?? "idle"}
+                lookAt={nearestCharacter(position, others, lookRange)}
               />
             );
           })}
@@ -408,34 +499,66 @@ export function R3FNeighborhoodSurface({
               onArrive={() => onNpcArrive(npc.id, npc.targetX, npc.targetY)}
             />
           ))}
-          {interactionTargets.filter((target) => target.kind !== "npc").map((target) => {
-            const p = point(target.x, target.y);
-            const footprint =
-              target.kind === "npc" ? null : neighborhoodBuildingFootprint(target);
-            return (
-              <mesh
-                key={target.id}
-                position={[p[0], 1.3, p[2]]}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onSelectTarget(target.id);
-                }}
-              >
-                {target.kind === "npc" ? (
-                  <cylinderGeometry args={[0.58, 0.58, 2.6, 12]} />
-                ) : (
-                  <boxGeometry
-                    args={[
-                      footprint!.width * unit,
-                      2.6,
-                      footprint!.height * unit,
-                    ]}
-                  />
-                )}
-                <meshBasicMaterial transparent opacity={0} depthWrite={false} />
-              </mesh>
-            );
-          })}
+          {/* Ground that takes taps and clicks: the character walks to the tapped point. */}
+          <mesh
+            rotation={[-Math.PI / 2, 0, 0]}
+            position={[0, 0.02, 0]}
+            onClick={(event) => {
+              event.stopPropagation();
+              onGroundTap({
+                x: centerX + event.point.x / unit,
+                y: centerZ + event.point.z / unit,
+              });
+            }}
+          >
+            <planeGeometry args={[bounds.width * unit, bounds.height * unit]} />
+            <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+          </mesh>
+          {groundTarget && (
+            <mesh
+              rotation={[-Math.PI / 2, 0, 0]}
+              position={[
+                point(groundTarget.x, groundTarget.y)[0],
+                0.12,
+                point(groundTarget.x, groundTarget.y)[2],
+              ]}
+              raycast={() => null}
+            >
+              <ringGeometry
+                args={[WORLD_SCALE.character * 0.1, WORLD_SCALE.character * 0.14, 24]}
+              />
+              <meshBasicMaterial
+                color={WORLD_PALETTE.sign}
+                transparent
+                opacity={0.9}
+                depthWrite={false}
+              />
+            </mesh>
+          )}
+          {interactionTargets
+            .filter((target) => target.kind !== "npc")
+            .map((target) => {
+              const p = point(target.x, target.y);
+              const footprint =
+                target.kind === "npc" ? null : neighborhoodBuildingFootprint(target);
+              return (
+                <mesh
+                  key={target.id}
+                  position={[p[0], 1.3, p[2]]}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onSelectTarget(target.id);
+                  }}
+                >
+                  {target.kind === "npc" ? (
+                    <cylinderGeometry args={[0.58, 0.58, 2.6, 12]} />
+                  ) : (
+                    <boxGeometry args={[footprint!.width * unit, 2.6, footprint!.height * unit]} />
+                  )}
+                  <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+                </mesh>
+              );
+            })}
         </Canvas>
         <div ref={overlayHost} className="world-label-layer" />
       </div>
