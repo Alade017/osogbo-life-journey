@@ -498,6 +498,10 @@ export function PlayableNeighborhood() {
   }, [homeBound, nearbyObject]);
 
   useEffect(() => {
+    groundTargetRef.current = null;
+    setGroundTarget(null);
+    setPendingTargetId(null);
+    setHomeBound(false);
     setDirections(new Set());
     lastIntentRef.current = "0:0";
     setZoom(WORLD_CAMERA.defaultZoom);
@@ -516,6 +520,7 @@ export function PlayableNeighborhood() {
       if (pressed) {
         groundTargetRef.current = null;
         setGroundTarget(null);
+        setPendingTargetId(null);
         setHomeBound(false);
       }
       setDirections((current) => {
