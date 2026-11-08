@@ -2,7 +2,10 @@ import { OSOGBO_WORLD_NODES, type WorldMapCategory } from "../lib/city-world.ts"
 
 export type WorldPoint = { x: number; y: number };
 export type NeighborhoodNpcView = {
+  /** Stable scene-slot ID used by neighborhood target selection. */
   id: string;
+  /** Persisted NPC ID used by server actions and schedule state. */
+  characterId: string;
   name: string;
   role: string;
   activity: string;
