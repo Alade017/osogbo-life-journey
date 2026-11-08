@@ -202,6 +202,17 @@ export function clearPendingTravelKey(idempotencyKey: string) {
   }
 }
 
+const inMemoryPendingMapActionKeys = new Map<string, string>();
+
+function pendingMapActionStorageKey(
+  accountId: string,
+  characterId: string,
+  landmarkId: string,
+  actionId: string,
+) {
+  return `${accountId}:${characterId}:${landmarkId}:${actionId}`;
+}
+
 export function getPendingMapActionKey(
   accountId: string,
   characterId: string,
@@ -209,19 +220,24 @@ export function getPendingMapActionKey(
   actionId: string,
 ) {
   const storageKey = "osogbo-map-action-requests-v1";
+  const key = pendingMapActionStorageKey(accountId, characterId, landmarkId, actionId);
   try {
     const stored = JSON.parse(window.localStorage.getItem(storageKey) ?? "{}") as Record<
       string,
       unknown
     >;
-    const key = `${accountId}:${characterId}:${landmarkId}:${actionId}`;
     if (typeof stored[key] === "string") return stored[key] as string;
-    const requestId = crypto.randomUUID();
+    const requestId = inMemoryPendingMapActionKeys.get(key) ?? crypto.randomUUID();
+    inMemoryPendingMapActionKeys.set(key, requestId);
     stored[key] = requestId;
     window.localStorage.setItem(storageKey, JSON.stringify(stored));
     return requestId;
   } catch {
-    return crypto.randomUUID();
+    const existing = inMemoryPendingMapActionKeys.get(key);
+    if (existing) return existing;
+    const requestId = crypto.randomUUID();
+    inMemoryPendingMapActionKeys.set(key, requestId);
+    return requestId;
   }
 }
 
@@ -233,21 +249,23 @@ export function clearPendingMapActionKey(
   requestId: string,
 ) {
   const storageKey = "osogbo-map-action-requests-v1";
+  const key = pendingMapActionStorageKey(accountId, characterId, landmarkId, actionId);
+  if (inMemoryPendingMapActionKeys.get(key) === requestId) {
+    inMemoryPendingMapActionKeys.delete(key);
+  }
   try {
     const stored = JSON.parse(window.localStorage.getItem(storageKey) ?? "{}") as Record<
       string,
       unknown
     >;
-    const key = `${accountId}:${characterId}:${landmarkId}:${actionId}`;
     if (stored[key] === requestId) {
       delete stored[key];
       window.localStorage.setItem(storageKey, JSON.stringify(stored));
     }
   } catch {
-    // The server still guarantees idempotency for the key attached to the request.
+    // Keep the server's receipt as the final idempotency guarantee.
   }
 }
-
 
 /** Execute an action from the playable neighborhood after Colyseus authorizes proximity. */
 export async function requestNeighborhoodPlaceAction(
