@@ -6,6 +6,7 @@ import {
   townDiamondPoints,
   TOWN_MAP_HEIGHT,
   TOWN_MAP_WIDTH,
+  TOWN_TILE_COLOURS,
 } from "@/components/map/town-map-geometry";
 import type {
   PhaserMapCallbacks,
@@ -13,12 +14,9 @@ import type {
   PhaserMapSceneHandle,
 } from "@/components/map/PhaserMapSurface";
 
-const tileColors: Record<string, number> = {
-  g: 0x9bc58a,
-  r: 0xc8b99d,
-  w: 0x78b9d1,
-  p: 0xd7c8a9,
-};
+const tileColors: Record<string, number> = Object.fromEntries(
+  Object.entries(TOWN_TILE_COLOURS).map(([cell, hex]) => [cell, Number.parseInt(hex.slice(1), 16)]),
+);
 
 const categoryColors: Record<string, number> = {
   market: 0xd08b36,

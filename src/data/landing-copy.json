@@ -1,0 +1,27 @@
+{
+  "signedOut": {
+    "kicker": "Osogbo awaits",
+    "title": "Make your life your own.",
+    "body": "Create your character, find work, make a home, and build your story."
+  },
+  "howItWorks": [
+    {
+      "title": "Create your character",
+      "body": "Choose how you look and where your story starts."
+    },
+    {
+      "title": "Find work and a home",
+      "body": "Take jobs, rent a place, and grow your home room by room."
+    },
+    {
+      "title": "Build your story",
+      "body": "Meet people, run a business, and make choices that shape the town."
+    }
+  ],
+  "glanceLabels": {
+    "districts": "Districts",
+    "places": "Open places",
+    "jobs": "Jobs",
+    "activities": "Activities"
+  }
+}

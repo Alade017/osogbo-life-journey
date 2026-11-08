@@ -84,8 +84,7 @@
   overflow: hidden;
 }
 
-.entry-scene svg,
-.entry-scene-photo {
+.entry-scene svg {
   display: block;
   width: 100%;
   height: 100%;
@@ -229,4 +228,129 @@
   background: var(--muted);
   font-size: 0.8125rem;
   font-weight: 600;
+}
+
+/* Town preview: labels sit on a white halo so they read over the tiles. */
+.entry-world {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.entry-world-label,
+.entry-world-district {
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  font-family: var(--font-sans);
+  pointer-events: none;
+}
+
+.entry-world-label {
+  fill: var(--brand-ink, #14213d);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.entry-world-district {
+  fill: #35513a;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+/* Landing sections below the preview. */
+.entry-section-title {
+  margin: 0 0 12px;
+  color: var(--brand-ink, #14213d);
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.entry-glance,
+.entry-steps {
+  width: min(100%, 880px);
+  margin: 28px auto 0;
+  padding: 0 16px;
+}
+
+.entry-glance-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+@media (min-width: 720px) {
+  .entry-glance-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.entry-glance-item {
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--brand-royal, #014baa) 14%, transparent);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(20, 33, 61, 0.08);
+}
+
+.entry-glance-item dt {
+  color: var(--brand-slate, #5b6475);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.entry-glance-item dd {
+  margin: 4px 0 0;
+  color: var(--brand-royal, #014baa);
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+
+.entry-steps-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.entry-step {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(20, 33, 61, 0.08);
+}
+
+.entry-step h3 {
+  margin: 0;
+  color: var(--brand-ink, #14213d);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.entry-step p {
+  margin: 4px 0 0;
+  color: var(--brand-slate, #5b6475);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.entry-step-number {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--brand-royal, #014baa);
+  color: #ffffff;
+  font-weight: 800;
 }

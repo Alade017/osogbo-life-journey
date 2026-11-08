@@ -1,107 +1,111 @@
-import town from "@/data/osogbo-town.json";
+import { useMemo } from "react";
+import {
+  cellCentre,
+  previewDistricts,
+  previewLandmarks,
+  previewTiles,
+  previewViewBox,
+  type PreviewCell,
+} from "@/components/game/entry-town-preview";
 
-const featuredIds = new Set([
-  "town-market",
-  "civic-court",
-  "community-clinic",
-  "transit-park",
-  "sports-ground",
-  "cedar-bank",
-]);
+const tiles = previewTiles();
+const districts = previewDistricts();
 
-const districtFill: Record<string, string> = {
-  market: "#dfc998",
-  residential: "#bfcee2",
-  leisure: "#a6c6a4",
-  transport: "#c2cbd3",
-  school: "#ddd5c8",
-  outskirts: "#b8c9ae",
+type Props = {
+  /** Returning player's last location, as a grid cell. Null shows the whole town. */
+  focus?: PreviewCell | null;
+  focusLabel?: string | null;
+  /** Slugs of active locations. Null shows every landmark in the town. */
+  activeSlugs?: ReadonlySet<string> | null;
 };
 
-const featured = town.landmarks.filter((place) => featuredIds.has(place.id));
+/** The town drawn from the same grid, tiles and districts as the city map. */
+export function EntryTownPreview({ focus = null, focusLabel = null, activeSlugs = null }: Props) {
+  const landmarks = useMemo(() => previewLandmarks(activeSlugs), [activeSlugs]);
+  const viewBox = previewViewBox(focus);
+  const focusCentre = focus ? cellCentre(focus) : null;
+  const caption =
+    focus && focusLabel
+      ? `Your last stop: ${focusLabel}.`
+      : "A glimpse of the fictional town you can explore.";
 
-/** A lightweight preview drawn from the same fictional districts and places as the city map. */
-export function EntryTownPreview() {
   return (
     <figure className="entry-world" aria-labelledby="entry-world-caption">
       <svg
-        viewBox="0 0 1200 800"
+        viewBox={viewBox}
         role="img"
         aria-labelledby="entry-world-title"
         preserveAspectRatio="xMidYMid meet"
       >
-        <title id="entry-world-title">Illustrated preview of the playable Osun Life town</title>
-        <rect width="1200" height="800" fill="#d7e3d9" />
-        <path d="M0 712 Q230 640 395 728 T805 715 T1200 670 V800 H0Z" fill="#8eb5bb" />
-        {town.districts.map((district) => {
-          const points = district.shape.map(([x, y]) => `${x},${y}`).join(" ");
+        <title id="entry-world-title">
+          {focus && focusLabel
+            ? `Map of Osogbo around ${focusLabel}`
+            : "Map of the playable Osun Life town"}
+        </title>
+        <rect x="-4000" y="-4000" width="9000" height="9000" fill="#d7e3d9" />
+        {tiles.map((tile) => (
+          <polygon
+            key={tile.key}
+            points={tile.points}
+            fill={tile.fill}
+            stroke="#688768"
+            strokeOpacity={0.22}
+            strokeWidth={1}
+          />
+        ))}
+        {districts.map((district) => (
+          <polygon
+            key={district.id}
+            points={district.corners.map(([x, y]) => `${x},${y}`).join(" ")}
+            fill="#ffffff"
+            fillOpacity={0.08}
+            stroke="#456b4e"
+            strokeOpacity={0.65}
+            strokeWidth={2}
+            strokeLinejoin="round"
+          />
+        ))}
+        {!focus &&
+          districts.map((district) => {
+            const x = district.corners.reduce((sum, [px]) => sum + px, 0) / district.corners.length;
+            const y =
+              district.corners.reduce((sum, [, py]) => sum + py, 0) / district.corners.length;
+            return (
+              <text
+                key={district.id}
+                x={x}
+                y={y}
+                textAnchor="middle"
+                className="entry-world-district"
+              >
+                {district.name}
+              </text>
+            );
+          })}
+        {landmarks.map((place) => {
+          const centre = cellCentre(place.cell);
+          const isLast = !!focus && place.cell.x === focus.x && place.cell.z === focus.z;
           return (
-            <g key={district.id}>
-              <polygon points={points} transform="translate(4 10)" fill="#243f3b" opacity=".24" />
-              <polygon
-                points={points}
-                fill={districtFill[district.theme] ?? "#c9d6c7"}
-                stroke="#25413c"
-                strokeWidth="4"
-                strokeLinejoin="round"
+            <g key={place.id} transform={`translate(${centre.x} ${centre.y})`}>
+              <circle
+                r={isLast ? 11 : 7}
+                fill={isLast ? "#014baa" : "#ffffff"}
+                stroke="#14213d"
+                strokeWidth={2}
               />
-            </g>
-          );
-        })}
-        <g fill="none" strokeLinecap="round" strokeLinejoin="round">
-          <path
-            d="M370 0 Q330 250 370 390 T420 800 M730 0 Q710 250 735 390 T760 800 M0 325 Q330 312 600 325 T1200 328 M0 622 Q300 607 610 620 T1200 628"
-            stroke="#83908b"
-            strokeWidth="42"
-          />
-          <path
-            d="M370 0 Q330 250 370 390 T420 800 M730 0 Q710 250 735 390 T760 800 M0 325 Q330 312 600 325 T1200 328 M0 622 Q300 607 610 620 T1200 628"
-            stroke="#f0eadc"
-            strokeWidth="34"
-          />
-          <path
-            d="M370 0 Q330 250 370 390 T420 800 M730 0 Q710 250 735 390 T760 800 M0 325 Q330 312 600 325 T1200 328 M0 622 Q300 607 610 620 T1200 628"
-            stroke="#b7b9a9"
-            strokeWidth="2"
-            strokeDasharray="12 18"
-          />
-        </g>
-        <g fill="#497452" opacity=".9">
-          <circle cx="74" cy="80" r="18" />
-          <circle cx="290" cy="232" r="22" />
-          <circle cx="930" cy="155" r="26" />
-          <circle cx="1098" cy="505" r="21" />
-          <circle cx="540" cy="512" r="25" />
-          <circle cx="842" cy="700" r="24" />
-        </g>
-        {featured.map((place, index) => {
-          const x = place.x;
-          const y = place.y;
-          const color = ["#d59459", "#e3ba6e", "#d1e1d7", "#d59b7b", "#e0c778", "#b7c9dc"][index];
-          return (
-            <g key={place.id} transform={`translate(${x} ${y})`}>
-              <ellipse cy="46" rx="61" ry="17" fill="#28463d" opacity=".25" />
-              <path d="M-50 -14 0 -38 50 -14 0 10Z" fill={color} stroke="#233b3a" strokeWidth="4" />
-              <path
-                d="M-50 -14 0 10 0 53 -50 29Z"
-                fill="#ba8668"
-                stroke="#233b3a"
-                strokeWidth="4"
-              />
-              <path d="M0 10 50 -14 50 29 0 53Z" fill="#f1e4ca" stroke="#233b3a" strokeWidth="4" />
-              <path d="M18 14 35 7 35 37 18 44Z" fill="#6694a2" />
-              <path d="M-36 8 -18 17 -18 38 -36 29Z" fill="#355d6b" />
-              <circle cx="0" cy="-47" r="6" fill="#f8d478" />
-              <text x="0" y="85" textAnchor="middle" className="entry-world-label">
+              <text y={-16} textAnchor="middle" className="entry-world-label">
                 {place.label}
               </text>
             </g>
           );
         })}
+        {focusCentre && (
+          <g transform={`translate(${focusCentre.x} ${focusCentre.y})`} aria-hidden="true">
+            <circle r={24} fill="none" stroke="#e7d9b4" strokeWidth={4} />
+          </g>
+        )}
       </svg>
-      <figcaption id="entry-world-caption">
-        A glimpse of the fictional town you can explore.
-      </figcaption>
+      <figcaption id="entry-world-caption">{caption}</figcaption>
     </figure>
   );
 }
