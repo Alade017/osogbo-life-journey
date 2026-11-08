@@ -1,4 +1,6 @@
 -- Bind neighborhood-authorized place actions to the exact character in the signed token.
+-- Requires the current Drizzle baseline and Supabase migrations through 20261107185009.
+-- This dated Supabase migration is intentionally not mirrored in the Drizzle journal.
 -- Existing callers that pass {} retain the established map-action behavior.
 create or replace function public.perform_map_place_action(
   p_user_id uuid,
