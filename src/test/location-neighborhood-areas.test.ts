@@ -46,6 +46,15 @@ describe("every active location has a playable area", () => {
     expect(target!.y).not.toBe(area.objects.find((object) => object.kind === "market")!.y);
   });
 
+  it("registers database-added Youth Arts Centre without inventing its action definitions", () => {
+    const area = neighborhoodAreaForLocation({
+      slug: "youth-arts-centre",
+      name: "Youth Arts Centre",
+      map_category: "education",
+    });
+    expect(area.interactionPoints?.map((point) => point.id)).toContain("youth-arts-centre");
+  });
+
   it("registers the legacy Oja-Oba database landmark at its walkable market approach", () => {
     const area = neighborhoodAreaForLocation({
       slug: "oja-oba",
