@@ -982,7 +982,7 @@ export function PlayableNeighborhood() {
                                   onClick={() => setBusinessView("interior")}
                                 >
                                   <DoorOpen size={18} aria-hidden="true" />
-                                  Explore venue interior
+                                  Explore location interior
                                 </button>
                               )}
                               {hasShopOffers && (
@@ -1065,10 +1065,10 @@ export function PlayableNeighborhood() {
                                   onClick={() => setWorkView("interior")}
                                 >
                                   <DoorOpen size={18} aria-hidden="true" />
-                                  Explore workplace interior
+                                  Explore location interior
                                 </button>
                               )}
-                              <JobsPage />
+                              {hasCareerServices && <JobsPage />}
                             </>
                           ) : currentLocation ? (
                             <>
