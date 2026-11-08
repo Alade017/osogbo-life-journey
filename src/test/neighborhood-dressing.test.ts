@@ -193,13 +193,21 @@ describe("neighbourhood street dressing", () => {
     expect(signals.length).toBeGreaterThan(0);
     expect(new Set(signals.map((signal) => signal.rotation)).size).toBeGreaterThan(1);
     expect(signals).toEqual(trafficLightSpots(CITY_CENTRE_AREA));
-    for (const signal of signals)
+    const crossings = pedestrianCrossings(CITY_CENTRE_AREA);
+    for (const signal of signals) {
       for (const obstacle of CITY_CENTRE_AREA.obstacles ?? []) {
         expect(
           Math.abs(signal.x - obstacle.x) < obstacle.width / 2 + 8 &&
             Math.abs(signal.y - obstacle.y) < obstacle.height / 2 + 8,
         ).toBe(false);
       }
+      for (const crossing of crossings) {
+        expect(
+          Math.abs(signal.x - crossing.x) < crossing.width / 2 + 8 &&
+            Math.abs(signal.y - crossing.y) < crossing.depth / 2 + 8,
+        ).toBe(false);
+      }
+    }
   });
 
   it("adds signals where an arterial meets a neighborhood street", () => {
