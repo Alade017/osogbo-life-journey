@@ -191,7 +191,8 @@ export function pedestrianCrossings(area: NeighborhoodArea): DressingRect[] {
 
       const verticalApproach = horizontal.width / 2 + 14;
       for (const y of [horizontal.offset - verticalApproach, horizontal.offset + verticalApproach]) {
-        const width = vertical.width * 0.9;
+        // Extend across both kerbs and footpaths so the crossing actually connects them.
+        const width = vertical.width + 2 * (SIDEWALK_WIDTH + CURB_WIDTH);
         const depth = 14;
         if (
           !withinRoadSpan(vertical, y, depth / 2) ||
@@ -208,7 +209,7 @@ export function pedestrianCrossings(area: NeighborhoodArea): DressingRect[] {
       const horizontalApproach = vertical.width / 2 + 14;
       for (const x of [vertical.offset - horizontalApproach, vertical.offset + horizontalApproach]) {
         const width = 14;
-        const depth = horizontal.width * 0.9;
+        const depth = horizontal.width + 2 * (SIDEWALK_WIDTH + CURB_WIDTH);
         if (
           !withinRoadSpan(vertical, horizontal.offset, depth / 2) ||
           !withinRoadSpan(horizontal, x, width / 2)
