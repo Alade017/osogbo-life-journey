@@ -32,7 +32,10 @@ import { canonicalHomeOptions } from "@/lib/living-cost-service";
 import { useGameTime } from "@/components/game/GameTimeProvider";
 import type { NetworkPlayerSnapshot } from "@/game/multiplayer-state";
 import { avatarAnimationForActivity } from "@/game/character-animation";
-import { availableNeighborhoodTargets } from "@/game/neighborhood-interactions";
+import {
+  availableNeighborhoodTargets,
+  venueEntranceKindForCategory,
+} from "@/game/neighborhood-interactions";
 import {
   neighborhoodAreaForSlug,
   nearestInteraction,
@@ -407,6 +410,9 @@ export function PlayableNeighborhood() {
     jobsQuery.data?.some((job) => job.is_available && job.location_id === currentLocation?.id) ??
     false;
   const hasVenueInterior = currentLocation ? hasLocationVenueDesign(currentLocation.slug) : false;
+  const venueEntranceKind = hasVenueInterior
+    ? venueEntranceKindForCategory(currentLocation?.map_category)
+    : null;
   const hasLocalBusinesses = localPlaces.some((place) =>
     BUSINESS_PLACE_CATEGORIES.has(place.category),
   );
@@ -418,7 +424,7 @@ export function PlayableNeighborhood() {
         hasShopOffers,
         hasLocalBusinesses,
         hasBankServices,
-        hasVenueInterior,
+        venueEntranceKind,
         hasCareerServices,
       }),
     [
@@ -428,7 +434,7 @@ export function PlayableNeighborhood() {
       hasShopOffers,
       hasLocalBusinesses,
       hasBankServices,
-      hasVenueInterior,
+      venueEntranceKind,
       hasCareerServices,
     ],
   );
