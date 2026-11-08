@@ -9,6 +9,8 @@ export type PartyVenue = {
   slug: string;
   map_x: number | null;
   map_y: number | null;
+  opening_hour: number | null;
+  closing_hour: number | null;
 };
 
 export type PartyDrink = {
@@ -83,12 +85,14 @@ const db = supabase as unknown as {
 export async function listPartyVenues(): Promise<PartyVenue[]> {
   const res = await db
     .from("party_venues")
-    .select("location_id,venue_kind,locations(name,slug,map_x,map_y)")
+    .select("location_id,venue_kind,opening_hour,closing_hour,locations(name,slug,map_x,map_y)")
     .eq("is_active", true);
   const rows = unwrap<
     Array<{
       location_id: string;
       venue_kind: PartyVenue["venue_kind"];
+      opening_hour: number | null;
+      closing_hour: number | null;
       locations: {
         name: string;
         slug: string;
@@ -102,6 +106,8 @@ export async function listPartyVenues(): Promise<PartyVenue[]> {
     .map((row) => ({
       location_id: row.location_id,
       venue_kind: row.venue_kind,
+      opening_hour: row.opening_hour,
+      closing_hour: row.closing_hour,
       name: row.locations!.name,
       slug: row.locations!.slug,
       map_x: row.locations!.map_x,
