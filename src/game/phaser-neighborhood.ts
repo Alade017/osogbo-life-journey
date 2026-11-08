@@ -442,7 +442,7 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
       project(right, bottom),
       project(left, bottom),
     ];
-    graphics.lineStyle(2, 0x647451, 0.8).strokePoints(
+    graphics.lineStyle(2, this.area.style.grid, 0.8).strokePoints(
       boundary.map(({ x, y }) => new Phaser.Geom.Point(x, y)),
       true,
     );
