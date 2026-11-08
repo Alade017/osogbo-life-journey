@@ -66,7 +66,10 @@ export function createNeighborhoodPlaceActionHandler(dependencies: Dependencies)
       );
     } catch (error) {
       const code = error instanceof Error ? error.message : "INTERACTION_AUTH_INVALID";
-      return json({ error: { code } }, code === "INTERACTION_AUTH_EXPIRED" ? 409 : 403);
+      const status =
+        code === "INTERACTION_AUTH_EXPIRED" ? 409 :
+        code === "INTERACTION_AUTH_NOT_CONFIGURED" ? 503 : 403;
+      return json({ error: { code } }, status);
     }
 
     try {
@@ -146,7 +149,8 @@ export async function handleNeighborhoodPlaceActionRequest(request: Request) {
         .eq("id", landmarkId)
         .maybeSingle();
       if (landmarkError) throw new Error("INTERNAL_ERROR");
-      if (!landmark || !landmark.is_available) throw new Error("UNKNOWN_LANDMARK");
+      if (!landmark || !landmark.is_available || !landmark.location_id)
+        throw new Error("UNKNOWN_LANDMARK");
 
       const { data: location, error: locationError } = await supabaseAdmin
         .from("locations")
