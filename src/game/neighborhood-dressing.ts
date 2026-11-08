@@ -323,21 +323,37 @@ export function carSpots(area: NeighborhoodArea, bounds: DressingBounds): CarSpo
 
 /** Pedestrians on the sidewalks, alternating sides, spaced along each street. */
 export function pedestrianSpots(area: NeighborhoodArea, bounds: DressingBounds): WorldPoint[] {
-  const spots: WorldPoint[] = [];
+  const byRoad: WorldPoint[][] = [];
   const boxes = occupiedBoxes(area);
   for (const road of area.roads ?? []) {
     const { start, end, vertical } = roadExtent(road, bounds);
     const across = road.width / 2 + SIDEWALK_WIDTH / 2;
+    const roadSpots: WorldPoint[] = [];
     let side = 1;
     for (let along = start + PEOPLE_SPACING / 2; along < end; along += PEOPLE_SPACING) {
       side = -side;
       const x = vertical ? road.offset + side * across : along;
       const y = vertical ? along : road.offset + side * across;
       if (insideObstacle(x, y, boxes, 12)) continue;
-      spots.push({ x, y });
+      roadSpots.push({ x, y });
     }
+    if (roadSpots.length) byRoad.push(roadSpots);
   }
-  return spots.slice(0, MAX_PEOPLE);
+
+  // Give each street a chance to contribute before the scene's pedestrian cap is reached.
+  const spots: WorldPoint[] = [];
+  for (let index = 0; spots.length < MAX_PEOPLE; index += 1) {
+    let added = false;
+    for (const roadSpots of byRoad) {
+      const spot = roadSpots[index];
+      if (!spot) continue;
+      spots.push(spot);
+      added = true;
+      if (spots.length === MAX_PEOPLE) break;
+    }
+    if (!added) break;
+  }
+  return spots;
 }
 
 /** Derive a stable tree silhouette from the footprint supplied by neighborhood data. */
