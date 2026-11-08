@@ -49,6 +49,7 @@ import { PlaceActionMenu, type PlaceActionResult } from "@/components/map/PlaceA
 import {
   clearPendingMapActionKey,
   getPendingMapActionKey,
+  requestAvailableMapLandmarks,
   requestMapLandmark,
   requestNeighborhoodPlaceAction,
 } from "@/lib/map-api";
@@ -460,15 +461,22 @@ export function PlayableNeighborhood() {
     nearbyObject?.kind === "npc"
       ? (activeNpcs.find((npc) => npc.id === nearbyObject.id) ?? null)
       : null;
+  const accountId = characterQuery.data?.user_id ?? "";
+  const availableLandmarksQuery = useQuery({
+    queryKey: ["mapAvailableLandmarks"],
+    queryFn: requestAvailableMapLandmarks,
+    enabled: !!accountId && connectionState === "connected",
+    staleTime: 60_000,
+  });
   const nearbyLandmark = useMemo(() => {
     if (!player || !district || !area.interactionPoints?.length) return null;
-    return nearbyInteractionPoint(
+    const nearby = nearbyInteractionPoint(
       { x: player.x, y: player.y },
       district.origin,
       area,
     );
-  }, [area, district, player]);
-  const accountId = characterQuery.data?.user_id ?? "";
+    return nearby && availableLandmarksQuery.data?.includes(nearby.id) ? nearby : null;
+  }, [area, availableLandmarksQuery.data, district, player]);
   const landmarkDetailsQuery = useQuery({
     queryKey: ["neighborhoodLandmarkDetails", selectedLandmarkId, accountId],
     queryFn: () => requestMapLandmark(selectedLandmarkId!, accountId),
