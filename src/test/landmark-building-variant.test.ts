@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import town from "@/data/osogbo-town.json";
 import { getLandmarkBuildingVariant } from "@/components/map/landmark-building-variant";
+import { DISTRICT_ARCHITECTURE_VARIANTS, getDistrictArchitecture } from "@/game/district-architecture";
 
 const SUPPORTED_VARIANTS = new Set([
   "residential",
@@ -36,7 +37,21 @@ describe("landmark building variants", () => {
     expect(getLandmarkBuildingVariant(mosque?.buildingType)).toBe("mosque");
   });
 
+  it("assigns distinct rooflines, frontages and residential window details", () => {
+    expect(getDistrictArchitecture("residential")).toMatchObject({ roof: "pitched", frontage: "veranda", windowGrilles: true });
+    expect(getDistrictArchitecture("market")).toMatchObject({ roof: "flat", frontage: "awning" });
+    expect(getDistrictArchitecture("bank")).toMatchObject({ roof: "parapet", frontage: "portico" });
+    expect(getDistrictArchitecture("health")).toMatchObject({ frontage: "recessed" });
+    expect(getDistrictArchitecture("transit")).toMatchObject({ frontage: "canopy" });
+    expect(new Set(DISTRICT_ARCHITECTURE_VARIANTS).size).toBe(SUPPORTED_VARIANTS.size);
+    for (const variant of SUPPORTED_VARIANTS) {
+      expect(DISTRICT_ARCHITECTURE_VARIANTS).toContain(variant);
+      expect(getDistrictArchitecture(variant).accent).toBeTruthy();
+    }
+  });
+
   it("provides a safe residential fallback for unknown building types", () => {
+    expect(getDistrictArchitecture("unknown")).toEqual(getDistrictArchitecture("residential"));
     expect(getLandmarkBuildingVariant("future-building-type")).toBe("residential");
     expect(getLandmarkBuildingVariant(undefined)).toBe("residential");
   });
