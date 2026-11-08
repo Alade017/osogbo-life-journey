@@ -118,6 +118,16 @@ function NeighborhoodNpcActor({
   const targetKey = `${target[0].toFixed(3)}:${target[2].toFixed(3)}`;
   const arrivedTarget = useRef<string | null>(null);
 
+  // R3F receives a newly allocated start tuple on every parent render.
+  // Only apply it when the actual spawn/confirmed position changes; otherwise
+  // React reconciliation would reset the actor during its frame-based walk.
+  useEffect(() => {
+    const actor = group.current;
+    if (!actor) return;
+    actor.position.set(start[0], start[1], start[2]);
+    invalidate();
+  }, [start[0], start[1], start[2], invalidate]);
+
   useEffect(() => {
     if (!animated) return;
     const timer = window.setInterval(invalidate, 1000 / 15);
@@ -155,7 +165,7 @@ function NeighborhoodNpcActor({
   });
 
   return (
-    <group ref={group} position={start}>
+    <group ref={group}>
       <mesh position={[0, 0.9, 0]} castShadow>
         <capsuleGeometry args={[0.24, 0.52, 4, 8]} />
         <WorldMaterial tone="slate" />
