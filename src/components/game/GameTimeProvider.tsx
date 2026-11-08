@@ -23,6 +23,11 @@ import {
   type SimulationCommand,
   type SimulationSnapshot,
 } from "@/lib/simulation-service";
+import {
+  isExpectedActivityRejection,
+  performCatalogActivity,
+  type CatalogActivityResult,
+} from "@/lib/catalog-activity-service";
 
 type ContextValue = {
   simulation: SimulationState;
@@ -44,6 +49,7 @@ type ContextValue = {
   ) => Promise<string | null>;
   complete: (requestId: string, action?: LifeActionId) => Promise<string | null>;
   interrupt: (requestId?: string) => Promise<string | null>;
+  performCatalogActivity: (slug: string, requestId: string) => Promise<CatalogActivityResult>;
 };
 const GameTimeContext = createContext<ContextValue | null>(null);
 
@@ -292,6 +298,44 @@ export function GameTimeProvider({
   const reconnect = useCallback(() => {
     void send("open");
   }, [send]);
+  const runCatalogActivity = useCallback(
+    async (activitySlug: string, requestId: string) => {
+      if (inFlight.current) throw new Error("Wait for the current activity to sync.");
+      if (document.hidden || !navigator.onLine) {
+        const message = "Reconnect and return to this tab to continue.";
+        setReady(false);
+        setSyncError(message);
+        throw new Error(message);
+      }
+      if (!session.current) throw new Error("Your personal simulation is still connecting.");
+      inFlight.current = true;
+      setBusy(true);
+      try {
+        const result = await performCatalogActivity({ session: session.current, revision: revision.current, activitySlug, requestId });
+        if (mounted.current) {
+          applySnapshot(result.snapshot);
+          setReady(true);
+          setSyncError(null);
+        }
+        return result;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Could not complete this activity.";
+        if (mounted.current) {
+          if (isExpectedActivityRejection(message)) {
+            setSyncError(null);
+          } else {
+            setSyncError(message);
+            setReady(false);
+          }
+        }
+        throw error;
+      } finally {
+        inFlight.current = false;
+        if (mounted.current) setBusy(false);
+      }
+    },
+    [applySnapshot],
+  );
   const value = useMemo(
     () => ({
       simulation,
@@ -309,6 +353,7 @@ export function GameTimeProvider({
       start,
       complete,
       interrupt,
+      performCatalogActivity: runCatalogActivity,
     }),
     [
       simulation,
@@ -326,6 +371,7 @@ export function GameTimeProvider({
       start,
       complete,
       interrupt,
+      runCatalogActivity,
     ],
   );
   return <GameTimeContext.Provider value={value}>{children}</GameTimeContext.Provider>;

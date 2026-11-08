@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useWorldClock } from "@/hooks/use-world-clock";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -71,6 +72,7 @@ export function PartyExperience({
   compact?: boolean;
 }) {
   const [tab, setTab] = useState<Tab>(initialTab);
+  const worldClock = useWorldClock();
   const activities = useQuery({ queryKey: ["partyActivities"], queryFn: listPartyClubActivities });
   const { data: character, isLoading: characterLoading } = useQuery(q.character());
   const { data: wallet } = useQuery(q.wallet());
@@ -191,6 +193,8 @@ export function PartyExperience({
           cooldownAt={cooldown.data ?? null}
           activities={activities.data ?? []}
           isLoading={venues.isLoading}
+          worldClock={worldClock.data}
+          worldClockUnverified={worldClock.isError || !worldClock.data}
         />
       )}
       {tab === "drinks" && (
@@ -289,6 +293,8 @@ function ClubsTab({
   cooldownAt,
   activities,
   isLoading,
+  worldClock,
+  worldClockUnverified,
 }: {
   venues: Awaited<ReturnType<typeof listPartyVenues>>;
   visitLocationId: string | null;
@@ -296,6 +302,8 @@ function ClubsTab({
   cooldownAt: string | null;
   activities: PartyClubActivity[];
   isLoading: boolean;
+  worldClock: { hour: number; minute: number } | undefined;
+  worldClockUnverified: boolean;
 }) {
   const joinActivity = useInvalidatingMutation(partyRpc.joinClubActivity, "Enjoy the show!");
   const enter = useInvalidatingMutation(partyRpc.enterClub, "You joined the party.");
@@ -324,18 +332,62 @@ function ClubsTab({
       {clubs.map((club) => {
         const here = club.location_id === currentLocationId;
         const joined = club.location_id === visitLocationId;
+        const scheduleConfigured =
+          Number.isInteger(club.opening_hour) &&
+          Number.isInteger(club.closing_hour) &&
+          club.opening_hour !== club.closing_hour;
+        const currentMinute = worldClock ? worldClock.hour * 60 + worldClock.minute : null;
+        const openingMinute = scheduleConfigured ? club.opening_hour! * 60 : null;
+        const closingMinute = scheduleConfigured ? club.closing_hour! * 60 : null;
+        const isOpen =
+          currentMinute !== null &&
+          openingMinute !== null &&
+          closingMinute !== null &&
+          (openingMinute < closingMinute
+            ? currentMinute >= openingMinute && currentMinute < closingMinute
+            : currentMinute >= openingMinute || currentMinute < closingMinute);
+        const scheduleUnverified = worldClockUnverified || !scheduleConfigured;
+        const scheduleLabel = scheduleUnverified
+          ? "Hours unverified"
+          : isOpen
+            ? "Open now"
+            : "Closed";
+        const formatHour = (hour: number) => `${String(hour).padStart(2, "0")}:00`;
         return (
           <article key={club.location_id} className="game-panel grid gap-3 p-4">
             <div className="flex items-center justify-between gap-3">
               <h2 className="font-display text-lg font-semibold">{club.name}</h2>
-              <span className="text-xs text-muted-foreground">18+ · Adults only</span>
+              <div className="flex flex-col items-end gap-1 text-right">
+                <span className="text-xs text-muted-foreground">18+ · Adults only</span>
+                <span
+                  className={`text-xs font-semibold ${scheduleUnverified ? "text-muted-foreground" : isOpen ? "text-emerald-600" : "text-amber-600"}`}
+                  aria-live="polite"
+                >
+                  {scheduleLabel}
+                </span>
+                {scheduleConfigured && (
+                  <span className="text-xs text-muted-foreground">
+                    {formatHour(club.opening_hour!)}–{formatHour(club.closing_hour!)} WAT
+                  </span>
+                )}
+              </div>
             </div>
             {!here && (
               <p className="text-sm text-muted-foreground">
                 Travel to this club to join the party.
               </p>
             )}
-            {here && !joined && (
+            {here && !joined && scheduleUnverified && (
+              <p className="text-sm text-muted-foreground" role="status">
+                Club hours could not be verified. Refresh the Party page before trying to enter.
+              </p>
+            )}
+            {here && !joined && !scheduleUnverified && !isOpen && (
+              <p className="text-sm text-muted-foreground">
+                This club is closed. It opens at {formatHour(club.opening_hour!)} WAT.
+              </p>
+            )}
+            {here && !joined && !scheduleUnverified && isOpen && (
               <button
                 type="button"
                 className="min-h-11 rounded-full bg-primary px-4 font-semibold text-primary-foreground"

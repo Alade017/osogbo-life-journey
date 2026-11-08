@@ -1,0 +1,25 @@
+* [33m1e902001[m[33m ([m[1;31morigin/house-sleep-pill[m[33m)[m Character: named sockets, faded poses, footfall squash, head look-at and ground shadow
+* [33m71d58021[m Scale the playable street against the character and make taps walk to buildings
+* [33m4ae103c2[m Remove unused character GLB and its loader
+* [33m1af8d60f[m Thin neighbourhood street lights to one alternating side at wider spacing
+* [33m3b84489e[m Fix settings load error; remove the map player dock
+* [33md9a21fc4[m Catalogue as a bottom sheet on narrow screens, starting minimised, so the room stays editable
+* [33m8334b9de[m[33m ([m[1;32mhouse-sleep-pill[m[33m)[m Show the walk and door before going outside; never leave the veil over the neighbourhood
+* [33me4df565f[m Fix entry page: restore the single entry page and show the district spotlight from data
+*   [33mfcc0adba[m Merge branch 'house-sleep-pill' of https://github.com/Alade017/osogbo-life-journey into house-sleep-pill
+[32m|[m[33m\[m  
+[32m|[m *   [33mc4fc959a[m Merge branch 'house-sleep-pill' of https://github.com/Alade017/osogbo-life-journey into house-sleep-pill
+[32m|[m [34m|[m[35m\[m  
+[32m|[m * [35m|[m [33ma30f1d3f[m pushed
+* [35m|[m [35m|[m [33m445dde4b[m Keep neighbourhood sidewalks and lamps clear of main buildings
+[35m|[m [35m|[m[35m/[m  
+[35m|[m[35m/[m[35m|[m   
+* [35m|[m [33ma4770513[m Neighbourhood streets: sidewalks, kerbs, markings, crossings, lights, cars, vendors and people
+* [35m|[m [33m89cce78e[m Go outside and go home with real-progress transitions; tap to walk outside
+* [35m|[m [33m7be19645[m Replace landing with a single entry page; close four-room walls
+* [35m|[m [33ma86c2c43[m Hide empty slot pads in accessory mode; keep slot tap target
+[35m|[m[35m/[m  
+[35m|[m * [33m35db6280[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mfeat/phase-7-1b-club-scheduling[m[33m, [m[1;31morigin/feat/phase-7-1b-club-scheduling[m[33m)[m fix(test): type club entry receipt count query
+[35m|[m * [33m48e0f662[m test(party): cover club opening hours in PGlite
+[35m|[m * [33m9eda0a94[m fix(party): require configured club schedule hours
+[35m|[m * [33m209f166a[m feat(party): display shared-clock club status

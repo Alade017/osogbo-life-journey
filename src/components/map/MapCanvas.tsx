@@ -161,6 +161,7 @@ export function MapCanvas({
           {...(onSelectEvent ? { onSelectEvent } : {})}
           onReady={handleReady}
           onUnavailable={handleUnavailable}
+          {...(searchTarget ? { searchTarget } : {})}
         />
       </Suspense>
       {rendererState === "loading" && (
