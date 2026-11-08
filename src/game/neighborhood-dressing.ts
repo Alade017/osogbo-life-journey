@@ -232,8 +232,8 @@ export function carSpots(area: NeighborhoodArea, bounds: DressingBounds): CarSpo
     if (road.type === "lane") continue;
     const { start, end, vertical } = roadExtent(road, bounds);
     const roadSpots: CarSpot[] = [];
-    for (const lane of [-1, 1])
-      for (let along = start + CAR_SPACING / 2; along < end; along += CAR_SPACING) {
+    for (let along = start + CAR_SPACING / 2; along < end; along += CAR_SPACING)
+      for (const lane of [-1, 1]) {
         const across = lane * road.width * 0.22;
         const x = vertical ? road.offset + across : along;
         const y = vertical ? along : road.offset + across;
