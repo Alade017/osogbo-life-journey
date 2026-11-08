@@ -750,3 +750,40 @@
   color: var(--brand-royal);
   font-weight: 800;
 }
+
+/* Messages header, matching the New message screen: a bold title with the new-message button
+   on its right, then a full-width search bar. The subtitle is removed. */
+.phone-ui-refresh .phone-app-body .phone-inbox-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 6px;
+}
+
+.phone-ui-refresh .phone-app-body .phone-inbox-heading h3 {
+  display: block;
+  margin: 0;
+  color: var(--brand-ink);
+  font-size: 1.45rem;
+  font-weight: 850;
+  letter-spacing: -0.02em;
+}
+
+.phone-ui-refresh .phone-app-body .phone-inbox-controls {
+  padding: 4px 16px 8px;
+}
+
+.phone-ui-refresh .phone-app-body .phone-new-message-button {
+  width: 40px;
+  height: 40px;
+  border-color: color-mix(in srgb, var(--brand-royal) 30%, #ffffff);
+  color: var(--brand-royal);
+  background: #ffffff;
+}
+
+.phone-ui-refresh .phone-app-body .phone-inbox-search {
+  height: 44px;
+  min-height: 44px;
+  border-radius: 14px;
+}

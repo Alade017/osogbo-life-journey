@@ -1623,22 +1623,7 @@ export function PlayerSocial({
               ) : (
                 <section className="phone-chat-panel" aria-label="Private chats">
                   <div className="phone-inbox-heading">
-                    <div>
-                      <h3>Messages</h3>
-                      <p>Your people, one conversation away.</p>
-                    </div>
-                  </div>
-                  <div className="phone-inbox-controls">
-                    <label className="phone-inbox-search">
-                      <Search size={16} aria-hidden="true" />
-                      <span className="sr-only">Search chats</span>
-                      <input
-                        type="search"
-                        value={conversationSearch}
-                        onChange={(event) => setConversationSearch(event.target.value)}
-                        placeholder="Search chats"
-                      />
-                    </label>
+                    <h3>Messages</h3>
                     <button
                       type="button"
                       className="phone-new-message-button"
@@ -1651,6 +1636,18 @@ export function PlayerSocial({
                     >
                       <Plus size={19} />
                     </button>
+                  </div>
+                  <div className="phone-inbox-controls">
+                    <label className="phone-inbox-search">
+                      <Search size={16} aria-hidden="true" />
+                      <span className="sr-only">Search chats</span>
+                      <input
+                        type="search"
+                        value={conversationSearch}
+                        onChange={(event) => setConversationSearch(event.target.value)}
+                        placeholder="Search chats"
+                      />
+                    </label>
                   </div>
                   <div className="phone-inbox-filters" role="group" aria-label="Chat filters">
                     {(["all", "unread"] as const).map((filter) => (
