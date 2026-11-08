@@ -88,8 +88,8 @@ describe("shared map activity schedules", () => {
       locationId,
     ]);
     await db.query(
-      `insert into public.characters(id,user_id,current_location_id,is_adult,game_time_hour)
-       values($1,$2,$3,true,0)`,
+      `insert into public.characters(id,user_id,current_location_id,is_adult,game_time_hour,created_at)
+       values($1,$2,$3,true,0,now() + interval '1 second')`,
       [characterId, userId, locationId],
     );
     await db.query(
