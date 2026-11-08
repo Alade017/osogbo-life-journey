@@ -230,8 +230,9 @@ export function R3FTownSurface(props: Props) {
         // Skip intersections, corners and road endpoints.
         if (horizontal === vertical) return;
 
-        // Create a repeating dashed pattern.
-        if ((x + z) % 3 !== 0) return;
+        // Keep the centre marking legible on longer streets without turning
+        // the narrow grid roads into solid painted strips.
+        if ((x + z) % 2 !== 0) return;
 
         const p = point(x, z);
 
