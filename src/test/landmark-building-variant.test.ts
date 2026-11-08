@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import town from "@/data/osogbo-town.json";
 import { getLandmarkBuildingVariant } from "@/components/map/landmark-building-variant";
-import { DISTRICT_ARCHITECTURE_VARIANTS, getDistrictArchitecture } from "@/game/district-architecture";
+import {
+  DISTRICT_ARCHITECTURE_VARIANTS,
+  getDistrictArchitecture,
+  getPitchedRoofPanelRotation,
+} from "@/game/district-architecture";
 
 const SUPPORTED_VARIANTS = new Set([
   "residential",
@@ -48,6 +52,29 @@ describe("landmark building variants", () => {
       expect(DISTRICT_ARCHITECTURE_VARIANTS).toContain(variant);
       expect(getDistrictArchitecture(variant).accent).toBeTruthy();
     }
+  });
+
+  it("orients pitched roof panels upward toward the shared ridge", () => {
+    const leftRotation = getPitchedRoofPanelRotation("left");
+    const rightRotation = getPitchedRoofPanelRotation("right");
+    const halfPanelWidth = 0.31;
+    const leftRidgeHeight = -0.2 * Math.sin(leftRotation) + halfPanelWidth * Math.sin(leftRotation);
+    const leftEaveHeight = -0.2 * Math.sin(leftRotation) - halfPanelWidth * Math.sin(leftRotation);
+    const rightRidgeHeight = 0.2 * Math.sin(rightRotation) - halfPanelWidth * Math.sin(rightRotation);
+    const rightEaveHeight = 0.2 * Math.sin(rightRotation) + halfPanelWidth * Math.sin(rightRotation);
+
+    expect(leftRotation).toBeGreaterThan(0);
+    expect(rightRotation).toBeLessThan(0);
+    expect(leftRidgeHeight).toBeGreaterThan(leftEaveHeight);
+    expect(rightRidgeHeight).toBeGreaterThan(rightEaveHeight);
+    expect(leftRidgeHeight).toBeCloseTo(rightRidgeHeight, 10);
+  });
+
+  it("normalizes legacy building aliases to their matching architecture", () => {
+    expect(getDistrictArchitecture("food")).toEqual(getDistrictArchitecture("market"));
+    expect(getDistrictArchitecture("public-service")).toEqual(getDistrictArchitecture("civic"));
+    expect(getDistrictArchitecture("clinic")).toEqual(getDistrictArchitecture("health"));
+    expect(getDistrictArchitecture("transport")).toEqual(getDistrictArchitecture("transit"));
   });
 
   it("provides a safe residential fallback for unknown building types", () => {
