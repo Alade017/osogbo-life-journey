@@ -486,6 +486,42 @@ export const NEIGHBORHOOD_OBJECTS = CITY_CENTRE_AREA.objects;
 export function neighborhoodAreaForSlug(slug: string | null | undefined): NeighborhoodArea {
   return (slug && NEIGHBORHOOD_AREAS[slug]) || CITY_CENTRE_AREA;
 }
+
+const WORLD_MAP_CATEGORIES: readonly WorldMapCategory[] = [
+  "residential",
+  "commercial",
+  "work_industrial",
+  "education",
+  "health",
+  "transport",
+  "government",
+  "recreation",
+  "water_nature",
+];
+/** Category used when a database row has no recognised map category. */
+const DEFAULT_AREA_CATEGORY: WorldMapCategory = "commercial";
+const locationAreaCache = new Map<string, NeighborhoodArea>();
+
+/**
+ * Every active location gets its own playable area. Hand-built and registry areas are reused;
+ * any other place is generated from its own database name and category, so the client and the
+ * multiplayer server derive the same layout from the same row.
+ */
+export function neighborhoodAreaForLocation(location: {
+  slug: string;
+  name?: string | null;
+  map_category?: string | null;
+}): NeighborhoodArea {
+  const known = NEIGHBORHOOD_AREAS[location.slug];
+  if (known) return known;
+  const cached = locationAreaCache.get(location.slug);
+  if (cached) return cached;
+  const category =
+    WORLD_MAP_CATEGORIES.find((value) => value === location.map_category) ?? DEFAULT_AREA_CATEGORY;
+  const area = generatedNeighborhoodArea(location.slug, location.name ?? location.slug, category);
+  locationAreaCache.set(location.slug, area);
+  return area;
+}
 export function neighborhoodOrigin(entrance: WorldPoint, checkpoint: WorldPoint): WorldPoint {
   // Preserve old checkpoints outside the entrance block rather than snapping them.
   const anchor =

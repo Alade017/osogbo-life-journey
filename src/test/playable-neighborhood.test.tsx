@@ -217,6 +217,7 @@ function primeLocationQueries() {
         map_y: 0,
         is_active: true,
       },
+      { id: "closed", slug: "closed-place", map_x: 0, map_y: 0, is_active: false },
     ],
   );
 }
@@ -345,10 +346,10 @@ it("leaves the old room and ignores its late state events when changing district
   expect(state.scene.mock.calls.length).toBe(latestCount);
 });
 
-it("does not join unsupported locations", async () => {
-  state.location = "landmark";
+it("does not join inactive locations", async () => {
+  state.location = "closed";
   show();
-  await screen.findByText("This destination is not available for walking yet.");
+  await screen.findByText(/not available|could not be resolved/i);
   expect(state.join).not.toHaveBeenCalled();
   expect(state.scene).not.toHaveBeenCalled();
 });
