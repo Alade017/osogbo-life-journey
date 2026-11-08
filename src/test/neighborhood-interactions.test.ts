@@ -42,6 +42,11 @@ describe("available neighborhood interaction targets", () => {
       ).toEqual([expected]);
     }
   });
+  it("keeps workplace entrances available for designed interiors without job listings", () => {
+    expect(
+      availableNeighborhoodTargets(objects, { ...unavailable, hasVenueInterior: true }).map(({ id }) => id),
+    ).toEqual(["market", "work", "npc"]);
+  });
   it("preserves NPCs as interaction targets independently of building services", () => {
     expect(availableNeighborhoodTargets(objects, unavailable).map(({ id }) => id)).toEqual(["npc"]);
   });
