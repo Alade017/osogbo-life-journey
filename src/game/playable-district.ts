@@ -1,28 +1,21 @@
-import {
-  OSOGBO_WORLD_NODES,
-  WORLD_LOCATION_NODES,
-  cityEntranceForRecord,
-} from "../lib/city-world.ts";
-import { neighborhoodAreaForSlug, neighborhoodAreaOrigin } from "./neighborhood-model.ts";
+import { cityEntranceForRecord } from "../lib/city-world.ts";
+import { neighborhoodAreaForLocation, neighborhoodAreaOrigin } from "./neighborhood-model.ts";
 
 const STABLE_LOCATION_SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-/** A stable city-world blueprint and an explicit entrance are both required. */
+/**
+ * Any stable slug can be walked. The active database row is the authority: it supplies the name,
+ * category, entrance and coordinates, so no per-place registration is needed.
+ */
 export function isPlayableDistrict(slug: string | undefined): boolean {
-  if (!slug || !STABLE_LOCATION_SLUG.test(slug)) return false;
-  if (!Object.hasOwn(OSOGBO_WORLD_NODES, slug) || !Object.hasOwn(WORLD_LOCATION_NODES, slug))
-    return false;
-  return OSOGBO_WORLD_NODES[slug as keyof typeof OSOGBO_WORLD_NODES].slug === slug;
+  return !!slug && STABLE_LOCATION_SLUG.test(slug);
 }
-
-/** Retained for existing consumers; entries are derived from blueprint/entrance eligibility. */
-export const PLAYABLE_DISTRICT_SLUGS: readonly string[] = Object.freeze(
-  Object.keys(OSOGBO_WORLD_NODES).filter(isPlayableDistrict),
-);
 
 export type PlayableLocationRecord = {
   id: string;
   slug: string;
+  name?: string | null;
+  map_category?: string | null;
   map_x: number;
   map_y: number;
   is_active: true;
@@ -57,7 +50,16 @@ export function isPlayableLocationRecord(value: unknown): value is PlayableLocat
 }
 
 export function playableDistrictForLocation(
-  location: { slug: string; map_x: number; map_y: number; is_active: boolean } | undefined,
+  location:
+    | {
+        slug: string;
+        name?: string | null;
+        map_category?: string | null;
+        map_x: number;
+        map_y: number;
+        is_active: boolean;
+      }
+    | undefined,
 ) {
   if (
     !location ||
@@ -67,7 +69,7 @@ export function playableDistrictForLocation(
   )
     return null;
   return {
-    area: neighborhoodAreaForSlug(location.slug),
+    area: neighborhoodAreaForLocation(location),
     origin: neighborhoodAreaOrigin(cityEntranceForRecord(location)),
     personalHome: location.slug === "city-centre",
   };

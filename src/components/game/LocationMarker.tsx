@@ -24,6 +24,7 @@ import {
   locationCategoryColour,
   LOCATION_MARKER_GLYPHS,
 } from "@/lib/location-service";
+import { PaletteSelect } from "@/components/ui/palette-select";
 
 const SOURCE_ID = "game-locations";
 const LAYER_ID = "game-location-markers";
@@ -430,22 +431,18 @@ export function LocationMarker({ map }: { map: MapLibreMap }) {
         {neighborhoods.length > 0 && (
           <label className="location-map-neighborhood-filter">
             <span>Neighborhood</span>
-            <select
+            <PaletteSelect
               aria-label="Filter locations by neighborhood"
               value={selectedNeighborhood ?? "all"}
-              onChange={(event) =>
-                setSelectedNeighborhood(
-                  event.currentTarget.value === "all" ? null : event.currentTarget.value,
-                )
-              }
-            >
-              <option value="all">All neighborhoods</option>
-              {neighborhoods.map((neighborhood) => (
-                <option key={neighborhood} value={neighborhood}>
-                  {neighborhood}
-                </option>
-              ))}
-            </select>
+              onValueChange={(next) => setSelectedNeighborhood(next === "all" ? null : next)}
+              options={[
+                { value: "all", label: "All neighborhoods" },
+                ...neighborhoods.map((neighborhood) => ({
+                  value: neighborhood,
+                  label: neighborhood,
+                })),
+              ]}
+            />
           </label>
         )}
         {skippedCount > 0 && <span>{skippedCount} skipped: missing/invalid coordinates</span>}

@@ -15,11 +15,14 @@ import type { AvatarAnimationState, AvatarEquipment } from "@/components/game/Av
 import { WorldMaterial } from "./WorldScene";
 import { WORLD_SCALE } from "./world-theme";
 import {
+  CHARACTER_CLOTH,
   CHARACTER_GROUND,
+  CHARACTER_HAND,
   CHARACTER_MOTION,
   CHARACTER_OUTLINE,
   CHARACTER_SOCKETS,
 } from "./character-config";
+import { adireTexture } from "./cloth-patterns";
 import { WORN_BOTTOMS, WORN_CLOTHING, WORN_ITEM_MODELS, WORN_SHOES } from "./world-item-models";
 export type TaskPose = "sit" | "wash" | "cook" | "collect" | "stretch";
 
@@ -59,7 +62,8 @@ export function WorldCharacter({
   equipment?: readonly AvatarEquipment[];
   position: [number, number, number];
   facing?: string;
-  animation?: AvatarAnimationState;
+  /** "interact" reaches forward with the right hand; the others match the 2D avatar states. */
+  animation?: AvatarAnimationState | "interact";
   name?: string;
   taskPose?: TaskPose | undefined;
   /** World point to turn the head toward, such as a nearby character. */
@@ -90,7 +94,7 @@ export function WorldCharacter({
     last.current = [x, y, z];
     if (moved) walkUntil.current = performance.now() + 350;
     if (reduced) return;
-    const continuous = ["walk", "work", "talk"].includes(animation) || !!taskPose;
+    const continuous = ["walk", "work", "talk", "interact"].includes(animation) || !!taskPose;
     const turning = !!lookKey;
     if (!moved && !continuous && !turning) return;
     const settleUntil = performance.now() + CHARACTER_MOTION.settleSeconds * 1000;
@@ -118,13 +122,17 @@ export function WorldCharacter({
         ? 0
         : pose
           ? pose(phase, side)
-          : moving
-            ? Math.sin(phase) * CHARACTER_MOTION.armSwing * side
-            : animation === "work"
-              ? -0.65 + Math.sin(phase) * 0.25
-              : animation === "talk"
-                ? -0.45 + Math.sin(phase) * 0.15
-                : 0;
+          : animation === "interact"
+            ? side === CHARACTER_HAND.socketSide
+              ? CHARACTER_HAND.reachAngle + Math.sin(phase) * CHARACTER_HAND.reachSway
+              : 0
+            : moving
+              ? Math.sin(phase) * CHARACTER_MOTION.armSwing * side
+              : animation === "work"
+                ? -0.65 + Math.sin(phase) * 0.25
+                : animation === "talk"
+                  ? -0.45 + Math.sin(phase) * 0.15
+                  : 0;
       part.rotation.x = MathUtils.lerp(part.rotation.x, target, k);
     });
     legs.current.children.forEach((part, index) => {
@@ -178,6 +186,8 @@ export function WorldCharacter({
     { item?: { slug?: string | null } | null } | undefined;
   const ShoesModel = wornShoes?.item?.slug ? WORN_SHOES[wornShoes.item.slug] : undefined;
   const N = CHARACTER_SOCKETS.neck;
+  const clothMap = CHARACTER_CLOTH.patternedOutfits.includes(safe.outfit) ? adireTexture() : null;
+  const clothColor = clothMap ? "#ffffff" : OUTFITS[safe.outfit]!;
   return (
     <group name={`character:${name}`} position={position} rotation={[0, yaw, 0]}>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.012, 0]} renderOrder={-1}>
@@ -210,7 +220,7 @@ export function WorldCharacter({
             castShadow
             receiveShadow
           >
-            <WorldMaterial color={OUTFITS[safe.outfit]!} />
+            <WorldMaterial color={clothColor} map={clothMap} />
             <Outlines thickness={h * CHARACTER_OUTLINE.thickness} color={CHARACTER_OUTLINE.color} />
             {TopModel ? <TopModel h={h} /> : null}
             {BottomModel ? <BottomModel h={h} /> : null}
@@ -252,7 +262,7 @@ export function WorldCharacter({
               {(safe.headwear > 0 || equipment.some((item) => item.slot === "head")) && (
                 <mesh castShadow>
                   <cylinderGeometry args={[h * 0.15, h * 0.17, h * 0.08, 8]} />
-                  <WorldMaterial color={OUTFITS[safe.outfit]!} />
+                  <WorldMaterial color={clothColor} map={clothMap} />
                 </mesh>
               )}
             </group>
@@ -267,7 +277,7 @@ export function WorldCharacter({
                   position={[0, -h * 0.13, 0]}
                   castShadow
                 >
-                  <WorldMaterial color={OUTFITS[safe.outfit]!} />
+                  <WorldMaterial color={clothColor} map={clothMap} />
                 </RoundedBox>
                 <RoundedBox
                   args={[h * 0.09, h * 0.14, h * 0.1]}
@@ -278,6 +288,9 @@ export function WorldCharacter({
                 >
                   <WorldMaterial color={skin} />
                 </RoundedBox>
+                {side === CHARACTER_HAND.socketSide && (
+                  <group name="hand_R_socket" position={[0, -h * 0.4, 0]} />
+                )}
               </group>
             ))}
           </group>

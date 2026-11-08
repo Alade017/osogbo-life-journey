@@ -20,6 +20,7 @@ import {
   STALL_CATEGORY_OPTIONS,
   type StallCategory,
 } from "@/lib/market-stall-service";
+import { PaletteSelect } from "@/components/ui/palette-select";
 
 const THEMES = [
   { id: "indigo", label: "Adire Indigo", color: "#1e3a8a", border: "#3b82f6" },
@@ -355,23 +356,18 @@ export function PhoneMarketApp() {
 
                 <div>
                   <label className="text-xs font-bold block mb-1">Goods or Service Category</label>
-                  <select
+                  <PaletteSelect
                     value={selectedCategory}
                     disabled={!activeLease}
-                    onChange={(e) => {
-                      const category = STALL_CATEGORY_OPTIONS.find(
-                        (option) => option.id === e.target.value,
-                      );
+                    onValueChange={(next) => {
+                      const category = STALL_CATEGORY_OPTIONS.find((option) => option.id === next);
                       if (category) setSelectedCategory(category.id);
                     }}
-                    className="w-full text-sm px-3 py-2 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary outline-none"
-                  >
-                    {STALL_CATEGORY_OPTIONS.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.label} ({cat.desc})
-                      </option>
-                    ))}
-                  </select>
+                    options={STALL_CATEGORY_OPTIONS.map((cat) => ({
+                      value: cat.id,
+                      label: `${cat.label} (${cat.desc})`,
+                    }))}
+                  />
                 </div>
 
                 <div>

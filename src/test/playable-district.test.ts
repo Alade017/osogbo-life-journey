@@ -13,10 +13,10 @@ import {
 } from "@/game/neighborhood-navigation";
 import { canOccupyNeighborhoodPoint } from "@/game/authoritative-movement";
 
-it("enables generated districts only when their city blueprint and entrance are registered", () => {
-  expect(isPlayableDistrict("city-centre")).toBe(true);
-  expect(isPlayableDistrict("oja-oba")).toBe(true);
-  expect(isPlayableDistrict("student-district")).toBe(true);
+it("enables any stable slug with an active row and valid coordinates", () => {
+  for (const slug of ["city-centre", "oja-oba", "student-district", "osogbo-central-mosque"]) {
+    expect(isPlayableDistrict(slug)).toBe(true);
+  }
   expect(
     playableDistrictForLocation({
       slug: "student-district",
@@ -25,12 +25,12 @@ it("enables generated districts only when their city blueprint and entrance are 
       is_active: true,
     })?.area.slug,
   ).toBe("student-district");
-  for (const slug of ["missing", "residential", "osogbo-central-mosque", undefined]) {
+  for (const slug of ["", "Bad Slug", "trailing-", "double--dash"]) {
     expect(isPlayableDistrict(slug)).toBe(false);
-    expect(
-      playableDistrictForLocation(slug ? { slug, map_x: 1, map_y: 1, is_active: true } : undefined),
-    ).toBeNull();
+    expect(playableDistrictForLocation({ slug, map_x: 1, map_y: 1, is_active: true })).toBeNull();
   }
+  expect(isPlayableDistrict(undefined)).toBe(false);
+  expect(playableDistrictForLocation(undefined)).toBeNull();
   expect(
     playableDistrictForLocation({
       slug: "student-district",

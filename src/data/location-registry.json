@@ -1,0 +1,293 @@
+{
+  "locations": [
+    {
+      "slug": "adire-makers-yard",
+      "name": "Adire Makers' Yard",
+      "category": "education",
+      "canvas_x": 0.9,
+      "canvas_y": 0.75,
+      "neighbor_slugs": [
+        "eastside-produce-coop",
+        "harvest-tech-hub",
+        "old-town-library",
+        "neighborhood-play-park"
+      ],
+      "is_active": true,
+      "source": "20261105090000_expand_east_map_destinations.sql"
+    },
+    {
+      "slug": "cedar-bank",
+      "name": "Cedar Bank",
+      "category": "commercial",
+      "canvas_x": 0.72,
+      "canvas_y": 0.16,
+      "neighbor_slugs": [
+        "community-police",
+        "meridian-bank"
+      ],
+      "is_active": true,
+      "source": "202610170012_fictional_town_map_venues.sql"
+    },
+    {
+      "slug": "cinema-star",
+      "name": "Cinema Star",
+      "category": "transport",
+      "canvas_x": 0.63,
+      "canvas_y": 0.56,
+      "neighbor_slugs": [],
+      "is_active": true,
+      "source": "20261022000000_expanded_town_places.sql"
+    },
+    {
+      "slug": "civic-court",
+      "name": "Civic Court",
+      "category": "government",
+      "canvas_x": 0.4,
+      "canvas_y": 0.16,
+      "neighbor_slugs": [
+        "town-market",
+        "community-police"
+      ],
+      "is_active": true,
+      "source": "202610170012_fictional_town_map_venues.sql"
+    },
+    {
+      "slug": "community-clinic",
+      "name": "Community Clinic",
+      "category": "health",
+      "canvas_x": 0.28,
+      "canvas_y": 0.72,
+      "neighbor_slugs": [
+        "lantern-club",
+        "transit-park"
+      ],
+      "is_active": true,
+      "source": "202610170012_fictional_town_map_venues.sql"
+    },
+    {
+      "slug": "community-police",
+      "name": "Community Police Station",
+      "category": "government",
+      "canvas_x": 0.52,
+      "canvas_y": 0.16,
+      "neighbor_slugs": [
+        "civic-court",
+        "cedar-bank"
+      ],
+      "is_active": true,
+      "source": "202610170012_fictional_town_map_venues.sql"
+    },
+    {
+      "slug": "east-transit-terminal",
+      "name": "East Transit Terminal",
+      "category": "transport",
+      "canvas_x": 0.9,
+      "canvas_y": 0.25,
+      "neighbor_slugs": [
+        "riverside-food-court",
+        "eastside-produce-coop",
+        "harvest-tech-hub"
+      ],
+      "is_active": true,
+      "source": "20261105090000_expand_east_map_destinations.sql"
+    },
+    {
+      "slug": "eastside-produce-coop",
+      "name": "Eastside Produce Co-op",
+      "category": "commercial",
+      "canvas_x": 0.95,
+      "canvas_y": 0.5,
+      "neighbor_slugs": [
+        "east-transit-terminal",
+        "riverside-food-court",
+        "sunrise-health-post",
+        "adire-makers-yard"
+      ],
+      "is_active": true,
+      "source": "20261105090000_expand_east_map_destinations.sql"
+    },
+    {
+      "slug": "fish-market",
+      "name": "Fish Market",
+      "category": "commercial",
+      "canvas_x": 0.38,
+      "canvas_y": 0.61,
+      "neighbor_slugs": [],
+      "is_active": true,
+      "source": "20261022000000_expanded_town_places.sql"
+    },
+    {
+      "slug": "fuel-and-go",
+      "name": "Fuel and Go Station",
+      "category": "transport",
+      "canvas_x": 0.63,
+      "canvas_y": 0.78,
+      "neighbor_slugs": [],
+      "is_active": true,
+      "source": "20261022000000_expanded_town_places.sql"
+    },
+    {
+      "slug": "harvest-tech-hub",
+      "name": "Harvest Tech Hub",
+      "category": "recreation",
+      "canvas_x": 0.63,
+      "canvas_y": 0.33,
+      "neighbor_slugs": [],
+      "is_active": true,
+      "source": "20261022000000_expanded_town_places.sql"
+    },
+    {
+      "slug": "lagoon-hotel",
+      "name": "Lagoon Hotel",
+      "category": "transport",
+      "canvas_x": 0.88,
+      "canvas_y": 0.61,
+      "neighbor_slugs": [],
+      "is_active": true,
+      "source": "20261022000000_expanded_town_places.sql"
+    },
+    {
+      "slug": "lantern-club",
+      "name": "Lantern Club",
+      "category": "recreation",
+      "canvas_x": 0.68,
+      "canvas_y": 0.72,
+      "neighbor_slugs": [
+        "community-clinic",
+        "sports-ground"
+      ],
+      "is_active": true,
+      "source": "202610170012_fictional_town_map_venues.sql"
+    },
+    {
+      "slug": "meridian-bank",
+      "name": "Meridian Bank",
+      "category": "commercial",
+      "canvas_x": 0.88,
+      "canvas_y": 0.6,
+      "neighbor_slugs": [
+        "cedar-bank",
+        "sports-ground"
+      ],
+      "is_active": true,
+      "source": "202610170012_fictional_town_map_venues.sql"
+    },
+    {
+      "slug": "neighborhood-play-park",
+      "name": "Neighbourhood Play Park",
+      "category": "recreation",
+      "canvas_x": 0.98,
+      "canvas_y": 0.94,
+      "neighbor_slugs": [
+        "adire-makers-yard",
+        "old-town-library",
+        "rural-outskirts",
+        "airport-terminal"
+      ],
+      "is_active": true,
+      "source": "20261105090000_expand_east_map_destinations.sql"
+    },
+    {
+      "slug": "old-town-library",
+      "name": "Old Town Library",
+      "category": "recreation",
+      "canvas_x": 0.88,
+      "canvas_y": 0.33,
+      "neighbor_slugs": [],
+      "is_active": true,
+      "source": "20261022000000_expanded_town_places.sql"
+    },
+    {
+      "slug": "osun-mall",
+      "name": "Osun Mall",
+      "category": "commercial",
+      "canvas_x": 0.78,
+      "canvas_y": 0.42,
+      "neighbor_slugs": [
+        "cedar-bank",
+        "lantern-club"
+      ],
+      "is_active": true,
+      "source": "202610170013_osun_mall_wholesale_and_careers.sql"
+    },
+    {
+      "slug": "post-office",
+      "name": "Post Office",
+      "category": "government",
+      "canvas_x": 0.17,
+      "canvas_y": 0.78,
+      "neighbor_slugs": [],
+      "is_active": true,
+      "source": "20261022000000_expanded_town_places.sql"
+    },
+    {
+      "slug": "riverside-food-court",
+      "name": "Riverside Food Court",
+      "category": "recreation",
+      "canvas_x": 0.63,
+      "canvas_y": 0.06,
+      "neighbor_slugs": [],
+      "is_active": true,
+      "source": "20261022000000_expanded_town_places.sql"
+    },
+    {
+      "slug": "sports-ground",
+      "name": "Community Sports Ground",
+      "category": "recreation",
+      "canvas_x": 0.56,
+      "canvas_y": 0.84,
+      "neighbor_slugs": [
+        "meridian-bank",
+        "lantern-club"
+      ],
+      "is_active": true,
+      "source": "202610170012_fictional_town_map_venues.sql"
+    },
+    {
+      "slug": "sunrise-health-post",
+      "name": "Sunrise Health Post",
+      "category": "recreation",
+      "canvas_x": 0.88,
+      "canvas_y": 0.06,
+      "neighbor_slugs": [],
+      "is_active": true,
+      "source": "20261022000000_expanded_town_places.sql"
+    },
+    {
+      "slug": "town-market",
+      "name": "Town Market",
+      "category": "commercial",
+      "canvas_x": 0.18,
+      "canvas_y": 0.16,
+      "neighbor_slugs": [
+        "civic-court",
+        "transit-park"
+      ],
+      "is_active": true,
+      "source": "202610170012_fictional_town_map_venues.sql"
+    },
+    {
+      "slug": "transit-park",
+      "name": "Transit Park",
+      "category": "transport",
+      "canvas_x": 0.14,
+      "canvas_y": 0.84,
+      "neighbor_slugs": [
+        "town-market",
+        "community-clinic"
+      ],
+      "is_active": true,
+      "source": "202610170012_fictional_town_map_venues.sql"
+    },
+    {
+      "slug": "youth-arts-centre",
+      "name": "Youth Arts Centre",
+      "category": "transport",
+      "canvas_x": 0.88,
+      "canvas_y": 0.78,
+      "neighbor_slugs": [],
+      "is_active": true,
+      "source": "20261022000000_expanded_town_places.sql"
+    }
+  ]
+}

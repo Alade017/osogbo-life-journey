@@ -43,3 +43,23 @@ export const CHARACTER_OUTLINE = {
   thickness: 0.012,
   color: "#2b2118",
 } as const;
+
+export const CHARACTER_CLOTH = {
+  /** Outfit palette indices that are drawn with the Adire resist pattern instead of plain colour. */
+  patternedOutfits: [3] as readonly number[],
+  textureSize: 128,
+  adire: {
+    base: "#2f3f63",
+    motif: "#e9e2d0",
+    /** Motif cells across the texture; each cell holds one resist dot and two diagonal strokes. */
+    cells: 8,
+  },
+} as const;
+
+export const CHARACTER_HAND = {
+  /** Which arm carries the right-hand socket: +1 is the positive-x arm. */
+  socketSide: 1,
+  /** Forward reach for the interact pose, in radians. */
+  reachAngle: -1.1,
+  reachSway: 0.08,
+} as const;

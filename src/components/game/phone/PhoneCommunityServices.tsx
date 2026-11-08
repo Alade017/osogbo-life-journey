@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { foodDeliveryService, type FoodDelivery } from "@/lib/food-delivery-service";
 import { formatNaira, q } from "@/lib/game";
+import { PaletteSelect } from "@/components/ui/palette-select";
 
 type ServiceApp = "Calendar" | "Food Delivery" | "Okada Rides" | "Contribution";
 type TownEvent = { id: string; title: string; venue: string; starts_at: string };
@@ -338,13 +339,11 @@ function FoodApp() {
       {!!vendors.data?.length && (
         <label className="phone-service-field">
           Kitchen
-          <select value={selectedVendorId} onChange={(event) => chooseKitchen(event.target.value)}>
-            {vendors.data.map((vendor) => (
-              <option value={vendor.id} key={vendor.id}>
-                {vendor.name}
-              </option>
-            ))}
-          </select>
+          <PaletteSelect
+            value={selectedVendorId}
+            onValueChange={chooseKitchen}
+            options={vendors.data.map((vendor) => ({ value: vendor.id, label: vendor.name }))}
+          />
         </label>
       )}
 
@@ -352,16 +351,14 @@ function FoodApp() {
         <section className="food-card" aria-label="Add food">
           <label className="phone-service-field">
             Food
-            <select
+            <PaletteSelect
               value={pickedItem?.id ?? ""}
-              onChange={(event) => setPickedId(event.target.value)}
-            >
-              {selectedItems.map((item) => (
-                <option value={item.id} key={item.id}>
-                  {item.name} · {formatNaira(item.price_minor)}
-                </option>
-              ))}
-            </select>
+              onValueChange={setPickedId}
+              options={selectedItems.map((item) => ({
+                value: item.id,
+                label: `${item.name} · ${formatNaira(item.price_minor)}`,
+              }))}
+            />
           </label>
           <div className="food-add-row">
             <label className="food-qty">

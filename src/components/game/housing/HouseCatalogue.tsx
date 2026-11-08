@@ -7,6 +7,7 @@ import {
   Bath,
   BedDouble,
   CookingPot,
+  Dumbbell,
   LayoutGrid,
   Lightbulb,
   Monitor,
@@ -58,6 +59,7 @@ const RAIL = [
   { id: "light", label: "Light", icon: Lightbulb, types: ["light"] },
   { id: "bath", label: "Bath", icon: Bath, types: ["bathroom"] },
   { id: "tech", label: "Tech", icon: Monitor, types: ["device", "table"] },
+  { id: "fitness", label: "Fitness", icon: Dumbbell, types: ["fitness"] },
 ] as const;
 
 function ItemImage({ item }: { item: CatalogItem }) {
