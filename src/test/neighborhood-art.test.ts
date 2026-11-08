@@ -3,6 +3,7 @@ import {
   NEIGHBORHOOD_BUILDING_PROFILES,
   NEIGHBORHOOD_PROP_PROFILES,
   neighborhoodPropKind,
+  neighborhoodBuildingKind,
 } from "@/game/neighborhood-art";
 
 describe("data-driven Phaser neighborhood art profiles", () => {
@@ -11,6 +12,8 @@ describe("data-driven Phaser neighborhood art profiles", () => {
       "compound",
       "shop",
       "kiosk",
+      "market",
+      "work",
     ]);
     for (const profile of Object.values(NEIGHBORHOOD_BUILDING_PROFILES)) {
       expect(profile.wallColors).toHaveLength(2);
@@ -20,6 +23,15 @@ describe("data-driven Phaser neighborhood art profiles", () => {
       expect(profile.roofRibSpacingRatio).toBeGreaterThan(0);
       expect(profile.windowCount).toBeGreaterThan(0);
     }
+  });
+
+  it("maps world object semantics to distinct reusable architectural families", () => {
+    expect(neighborhoodBuildingKind("home")).toBe("compound");
+    expect(neighborhoodBuildingKind("market")).toBe("market");
+    expect(neighborhoodBuildingKind("work")).toBe("work");
+    expect(neighborhoodBuildingKind("npc")).toBeNull();
+    expect(NEIGHBORHOOD_BUILDING_PROFILES.market).not.toEqual(NEIGHBORHOOD_BUILDING_PROFILES.shop);
+    expect(NEIGHBORHOOD_BUILDING_PROFILES.work).not.toEqual(NEIGHBORHOOD_BUILDING_PROFILES.shop);
   });
 
   it("provides a procedural shape profile for every supported environment prop", () => {
