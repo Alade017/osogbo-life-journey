@@ -41,13 +41,20 @@
   margin-right: 0 !important;
 }
 
-.town-map-svg-district-pill {
-  transition: transform 0.15s ease, filter 0.15s ease;
+/* Static map icons and labels (no animation, no movement) */
+.town-map-svg-district-pill,
+.town-map-svg-place,
+.town-map-svg-place *,
+.town-map-svg-district-pill *,
+.district-label,
+.map-landmark,
+.map-landmark-marker,
+.map-landmark-icon,
+.landmark-label {
+  animation: none !important;
+  transition: none !important;
+  transform: none !important;
   user-select: none;
-}
-
-.town-map-svg-district-pill:hover {
-  filter: brightness(1.06) drop-shadow(0 4px 10px rgba(0, 0, 0, 0.18));
 }
 
 .town-map-svg-fallback,
