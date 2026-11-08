@@ -165,6 +165,7 @@ export function streetLightSpots(area: NeighborhoodArea, bounds: DressingBounds)
 /** Cars in the lanes of arterials and streets, alternating direction by lane. */
 export function carSpots(area: NeighborhoodArea, bounds: DressingBounds): WorldPoint[] {
   const spots: WorldPoint[] = [];
+  const boxes = occupiedBoxes(area);
   for (const road of area.roads ?? []) {
     if (road.type === "lane") continue;
     const { start, end, vertical } = roadExtent(road, bounds);
@@ -173,7 +174,7 @@ export function carSpots(area: NeighborhoodArea, bounds: DressingBounds): WorldP
         const across = lane * road.width * 0.22;
         const x = vertical ? road.offset + across : along;
         const y = vertical ? along : road.offset + across;
-        if (insideObstacle(x, y, occupiedBoxes(area), 28)) continue;
+        if (insideObstacle(x, y, boxes, 28)) continue;
         spots.push({ x, y });
       }
   }
