@@ -14,13 +14,15 @@ vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
     from: () => ({
       select: () => ({
-        maybeSingle: async () => ({
-          data: { id: "p1", display_name: "Adeyemi", music_enabled: true },
-          error: null,
+        eq: () => ({
+          maybeSingle: async () => ({
+            data: { id: "p1", display_name: "Adeyemi", music_enabled: true },
+            error: null,
+          }),
         }),
       }),
     }),
-    auth: { getUser: async () => ({ data: { user: null }, error: null }) },
+    auth: { getUser: async () => ({ data: { user: { id: "p1" } }, error: null }) },
     rpc: async () => ({ data: null, error: null }),
   },
 }));
