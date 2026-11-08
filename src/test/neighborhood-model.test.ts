@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  OSOGBO_WORLD_NODES,
-  WORLD_LOCATION_NODES,
-  cityEntranceForLocation,
-} from "@/lib/city-world";
+import { OSOGBO_WORLD_NODES, cityEntranceForLocation } from "@/lib/city-world";
 import {
   neighborhoodAreaForSlug,
   neighborhoodAreaOrigin,
@@ -88,11 +84,11 @@ describe("neighborhood coordinates and interaction", () => {
     expect(neighborhoodAreaForSlug("residential").name).toBe("Residential District");
     expect(neighborhoodAreaForSlug("business-district").name).toBe("Business District");
   });
-  it("only admits stable slugs with both a city-world blueprint and a mapped entrance", () => {
-    for (const slug of Object.keys(OSOGBO_WORLD_NODES)) {
-      expect(isPlayableDistrict(slug)).toBe(Object.hasOwn(WORLD_LOCATION_NODES, slug));
+  it("admits any stable slug with an active row and valid coordinates", () => {
+    for (const slug of ["residential", "osogbo-central-mosque", "student-district"]) {
+      expect(isPlayableDistrict(slug)).toBe(true);
     }
-    for (const slug of ["", "osogbo-central-mosque", "unknown", "bad slug", "residential"]) {
+    for (const slug of ["", "bad slug", "Unknown", "-leading", "double--dash", undefined]) {
       expect(isPlayableDistrict(slug)).toBe(false);
     }
     expect(
@@ -111,15 +107,6 @@ describe("neighborhood coordinates and interaction", () => {
         map_x: 50,
         map_y: 25,
         is_active: false,
-      }),
-    ).toBe(false);
-    expect(
-      isPlayableLocationRecord({
-        id: "landmark-id",
-        slug: "osogbo-central-mosque",
-        map_x: 50,
-        map_y: 25,
-        is_active: true,
       }),
     ).toBe(false);
   });
