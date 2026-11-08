@@ -3,6 +3,7 @@ import {
   createNeighborhoodInteractionAuthorization,
   verifyNeighborhoodInteractionAuthorization,
 } from "../../multiplayer/interaction-authorization.ts";
+import { requestNeighborhoodInteractionAuthorization } from "@/lib/multiplayer-service";
 
 const secret = "test-only-secret-with-at-least-32-bytes";
 const claims = {
@@ -14,6 +15,58 @@ const claims = {
   requestId: "44444444-4444-4444-8444-444444444444",
   roomSessionId: "colyseus-session-123",
 };
+
+describe("neighborhood interaction authorization client bridge", () => {
+  function makeRoom() {
+    const listeners = new Map<string, (payload: unknown) => void>();
+    const sent: Array<{ type: string; payload: unknown }> = [];
+    const room = {
+      onMessage: (type: string, callback: (payload: unknown) => void) => listeners.set(type, callback),
+      onLeave: (_callback: () => void) => {},
+      send: (type: string, payload: unknown) => sent.push({ type, payload }),
+    };
+    return { room: room as never, listeners, sent };
+  }
+
+  it("accepts only an authorization matching the pending landmark and action", async () => {
+    const { room, listeners, sent } = makeRoom();
+    const pending = requestNeighborhoodInteractionAuthorization(room, {
+      requestId: claims.requestId,
+      landmarkId: claims.landmarkId,
+      actionId: claims.actionId,
+    });
+    expect(sent).toHaveLength(1);
+    listeners.get("interaction-authorization")?.({
+      requestId: claims.requestId,
+      landmarkId: claims.landmarkId,
+      actionId: claims.actionId,
+      token: "signed-token",
+      expiresAt: Date.now() + 10_000,
+    });
+    await expect(pending).resolves.toMatchObject({
+      requestId: claims.requestId,
+      landmarkId: claims.landmarkId,
+      actionId: claims.actionId,
+    });
+  });
+
+  it("rejects a response for a different landmark or action", async () => {
+    const { room, listeners } = makeRoom();
+    const pending = requestNeighborhoodInteractionAuthorization(room, {
+      requestId: claims.requestId,
+      landmarkId: claims.landmarkId,
+      actionId: claims.actionId,
+    });
+    listeners.get("interaction-authorization")?.({
+      requestId: claims.requestId,
+      landmarkId: "different-landmark",
+      actionId: claims.actionId,
+      token: "signed-token",
+      expiresAt: Date.now() + 10_000,
+    });
+    await expect(pending).rejects.toThrow("INTERACTION_AUTH_INVALID");
+  });
+});
 
 describe("neighborhood interaction authorization", () => {
   it("signs short-lived request-bound authorization claims", () => {
