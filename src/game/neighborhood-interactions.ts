@@ -26,8 +26,7 @@ export function availableNeighborhoodTargets(
         availability.hasBankServices ||
         availability.hasVenueInterior
       );
-    if (object.kind === "work")
-      return availability.hasCareerServices || availability.hasVenueInterior;
+    if (object.kind === "work") return availability.hasCareerServices;
     return false;
   });
 }
