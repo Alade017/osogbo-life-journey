@@ -41,23 +41,7 @@
   margin-right: 0 !important;
 }
 
-/* Static map icons and labels (no animation, no movement) */
-.town-map-svg-district-pill,
-.town-map-svg-place,
-.town-map-svg-place *,
-.town-map-svg-district-pill *,
-.district-label,
-.map-landmark,
-.map-landmark-marker,
-.map-landmark-icon,
-.landmark-label {
-  animation: none !important;
-  transition: none !important;
-  transform: none !important;
-  user-select: none;
-}
-
-.town-map-svg-fallback,
+/* Phaser surface and host; the active town map uses the R3F surface. */
 .town-map-phaser-layer,
 .town-map-phaser-host,
 .town-map-phaser-host canvas {
@@ -65,11 +49,6 @@
   inset: 0;
   width: 100%;
   height: 100%;
-}
-
-.town-map-svg-fallback {
-  display: block;
-  z-index: 0;
 }
 
 .town-map-phaser-layer {
