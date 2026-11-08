@@ -29,6 +29,27 @@ describe("place action menu", () => {
     expect(onRun).toHaveBeenCalledWith(action.id);
   });
 
+  it("labels the simulation clock as town time rather than Lagos time", () => {
+    const action = mapData.districts[0]!.landmarks[0]!.actions![0]!;
+    render(
+      <PlaceActionMenu
+        schedule={{
+          sampledAt: "2026-11-01T10:00:00.000Z",
+          clock: { day: 305, hour: 11, minute: 0, weekday: 6 },
+          actions: [{ id: action.id, start: 0, end: 24, open: true }],
+        }}
+        refreshingSchedule={false}
+        onRefreshSchedule={() => {}}
+        actions={[action]}
+        offline={false}
+        pending={false}
+        onRun={() => {}}
+      />,
+    );
+    expect(screen.getByText(/Town time · Day 305/)).toBeVisible();
+    expect(screen.queryByText(/Lagos time/)).not.toBeInTheDocument();
+  });
+
   it("disables confirmation offline", () => {
     const action = mapData.districts[0]!.landmarks[0]!.actions![0]!;
     render(
