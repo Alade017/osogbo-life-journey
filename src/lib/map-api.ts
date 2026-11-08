@@ -280,3 +280,40 @@ export function clearPendingMapActionKey(
     // The server still guarantees idempotency for the key attached to the request.
   }
 }
+
+
+/** Execute an action from the playable neighborhood after Colyseus authorizes proximity. */
+export async function requestNeighborhoodPlaceAction(
+  landmarkId: string,
+  actionId: string,
+  requestId: string,
+  authorizationToken: string,
+  accountId: string,
+) {
+  const { data, error } = await supabase.auth.getSession();
+  const session = data.session;
+  const accessToken = session?.access_token;
+  if (error || !accessToken) throw new MapApiError("Sign in to do this activity.", "UNAUTHORIZED");
+  if (session.user.id !== accountId) throw new MapApiError("Account changed", "UNAUTHORIZED");
+  const response = await fetch("/api/neighborhood/action", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+      "Idempotency-Key": requestId,
+      "X-Neighborhood-Authorization": authorizationToken,
+    },
+    body: JSON.stringify({ landmarkId, actionId }),
+  });
+  const result = (await response.json().catch(() => null)) as
+    PlaceActionResult | { error?: { code?: string } } | null;
+  if (!response.ok) {
+    const code =
+      result && "error" in result ? (result.error?.code ?? "INTERNAL_ERROR") : "INTERNAL_ERROR";
+    throw new MapApiError(code, code);
+  }
+  const current = await supabase.auth.getSession();
+  if (current.error || current.data.session?.user.id !== accountId)
+    throw new MapApiError("Account changed", "UNAUTHORIZED");
+  return result as PlaceActionResult;
+}
