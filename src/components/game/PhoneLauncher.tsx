@@ -135,33 +135,35 @@ type PhoneAppDefinition = {
   label: string;
   icon: LucideIcon;
   tone: string;
+  /** important: bright, layered tile. utility: flat, desaturated tile. */
+  emphasis?: "important" | "utility";
 };
 
 const PHONE_APPS: readonly PhoneAppDefinition[] = [
-  { label: "Map", icon: MapPinned, tone: "phone-app-blue" },
-  { label: "Messages", icon: MessagesSquare, tone: "phone-app-green" },
+  { label: "Activities", icon: ClipboardList, tone: "phone-app-green", emphasis: "important" },
+  { label: "Bank", icon: Landmark, tone: "phone-app-blue", emphasis: "important" },
+  { label: "Billboards", icon: PanelsTopLeft, tone: "phone-app-gold" },
+  { label: "Businesses", icon: Building2, tone: "phone-app-green" },
+  { label: "Calendar", icon: CalendarDays, tone: "phone-app-blue", emphasis: "utility" },
   { label: "Career Life", icon: BriefcaseBusiness, tone: "phone-app-gold" },
-  { label: "Bank", icon: Landmark, tone: "phone-app-blue" },
-  { label: "Missions", icon: Target, tone: "phone-app-gold" },
-  { label: "Inventory", icon: Backpack, tone: "phone-app-blue" },
-  { label: "Profile", icon: UserRound, tone: "phone-app-muted" },
+  { label: "Contribution", icon: HandCoins, tone: "phone-app-gold" },
+  { label: "Education", icon: GraduationCap, tone: "phone-app-blue" },
+  { label: "Food Delivery", icon: UtensilsCrossed, tone: "phone-app-coral" },
+  { label: "Inventory", icon: Backpack, tone: "phone-app-blue", emphasis: "utility" },
+  { label: "Invest", icon: ChartNoAxesCombined, tone: "phone-app-gold" },
+  { label: "Leaderboard", icon: Trophy, tone: "phone-app-gold" },
+  { label: "Map", icon: MapPinned, tone: "phone-app-blue", emphasis: "important" },
+  { label: "Market", icon: Store, tone: "phone-app-coral" },
+  { label: "Messages", icon: MessagesSquare, tone: "phone-app-green", emphasis: "important" },
+  { label: "Missions", icon: Target, tone: "phone-app-gold", emphasis: "important" },
+  { label: "Notifications", icon: Bell, tone: "phone-app-gold", emphasis: "utility" },
+  { label: "Okada Rides", icon: Bike, tone: "phone-app-green" },
+  { label: "Party", icon: PartyPopper, tone: "phone-app-coral" },
+  { label: "Profile", icon: UserRound, tone: "phone-app-muted", emphasis: "utility" },
   { label: "Property", icon: HousePlus, tone: "phone-app-green" },
   { label: "Real Estate", icon: Building2, tone: "phone-app-green" },
-  { label: "Market", icon: Store, tone: "phone-app-coral" },
-  { label: "Notifications", icon: Bell, tone: "phone-app-gold" },
-  { label: "Settings", icon: Settings, tone: "phone-app-muted" },
-  { label: "Education", icon: GraduationCap, tone: "phone-app-blue" },
-  { label: "Activities", icon: ClipboardList, tone: "phone-app-green" },
-  { label: "Party", icon: PartyPopper, tone: "phone-app-coral" },
-  { label: "Food Delivery", icon: UtensilsCrossed, tone: "phone-app-coral" },
-  { label: "Okada Rides", icon: Bike, tone: "phone-app-green" },
-  { label: "Calendar", icon: CalendarDays, tone: "phone-app-blue" },
+  { label: "Settings", icon: Settings, tone: "phone-app-muted", emphasis: "utility" },
   { label: "Town News", icon: Newspaper, tone: "phone-app-blue" },
-  { label: "Leaderboard", icon: Trophy, tone: "phone-app-gold" },
-  { label: "Contribution", icon: HandCoins, tone: "phone-app-gold" },
-  { label: "Businesses", icon: Building2, tone: "phone-app-green" },
-  { label: "Invest", icon: ChartNoAxesCombined, tone: "phone-app-gold" },
-  { label: "Billboards", icon: PanelsTopLeft, tone: "phone-app-gold" },
 ] as const;
 
 const COMMUNITY_APPS = new Set<CommunityPhoneApp>(["Leaderboard", "Town News"]);
@@ -605,7 +607,13 @@ export function PhoneLauncher({
                 onClick={() => openApp(app.label)}
                 aria-label={`Open ${app.label}`}
               >
-                <span className={cn("phone-app-icon", app.tone)}>
+                <span
+                  className={cn(
+                    "phone-app-icon",
+                    app.tone,
+                    app.emphasis && `phone-app-${app.emphasis}`,
+                  )}
+                >
                   <Icon className="h-5 w-5" aria-hidden="true" />
                   {badge ? (
                     <i className="phone-app-badge" aria-label={`${badge} active notifications`}>

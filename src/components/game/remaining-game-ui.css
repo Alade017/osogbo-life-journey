@@ -792,3 +792,48 @@
   min-height: 44px;
   border-radius: 14px;
 }
+
+/* Tile emphasis. Important tiles get a bright gradient and a layered 3D bevel to draw the eye.
+   Utility tiles are flat and desaturated so they recede. Declared last so they win the ties. */
+.phone-ui-refresh .phone-app .phone-app-icon.phone-app-important {
+  background: linear-gradient(
+    150deg,
+    color-mix(in srgb, var(--app-tone) 72%, #ffffff) 0%,
+    var(--app-tone) 52%,
+    color-mix(in srgb, var(--app-tone) 74%, var(--brand-ink)) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.16),
+    0 2px 0 color-mix(in srgb, var(--app-tone) 60%, var(--brand-ink)),
+    0 12px 22px color-mix(in srgb, var(--app-tone) 40%, transparent);
+  transform: translateY(0);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.phone-ui-refresh .phone-app:hover .phone-app-icon.phone-app-important {
+  transform: translateY(-3px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.16),
+    0 4px 0 color-mix(in srgb, var(--app-tone) 60%, var(--brand-ink)),
+    0 18px 28px color-mix(in srgb, var(--app-tone) 46%, transparent);
+}
+
+.phone-ui-refresh .phone-app:active .phone-app-icon.phone-app-important {
+  transform: translateY(2px) scale(0.97);
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.2),
+    0 1px 0 color-mix(in srgb, var(--app-tone) 60%, var(--brand-ink));
+}
+
+.phone-ui-refresh .phone-app .phone-app-icon.phone-app-utility,
+.phone-ui-refresh .phone-app:hover .phone-app-icon.phone-app-utility {
+  background: color-mix(in srgb, var(--app-tone) 16%, #ffffff);
+  color: color-mix(in srgb, var(--app-tone) 45%, var(--brand-slate));
+  border-color: var(--brand-mist);
+  box-shadow: none;
+  filter: saturate(0.6);
+}
