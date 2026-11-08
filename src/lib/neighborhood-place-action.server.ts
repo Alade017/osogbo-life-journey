@@ -2,8 +2,17 @@ import { verifyNeighborhoodInteractionAuthorization } from "../../multiplayer/in
 
 type Dependencies = {
   authenticate: (request: Request) => Promise<string | null>;
-  verifyCharacter: (userId: string, characterId: string, locationId: string) => Promise<void>;
-  verifyLandmarkAction: (userId: string, landmarkId: string, actionId: string) => Promise<void>;
+  verifyCharacter: (
+    userId: string,
+    characterId: string,
+    locationId: string,
+  ) => Promise<{ isAdult: boolean }>;
+  verifyLandmarkAction: (
+    userId: string,
+    landmarkId: string,
+    actionId: string,
+    isAdult: boolean,
+  ) => Promise<void>;
   perform: (userId: string, landmarkId: string, actionId: string, requestId: string) => Promise<unknown>;
   logAgeCheck: (userId: string, landmarkId: string) => Promise<void>;
   secret: () => string | undefined;
@@ -61,8 +70,12 @@ export function createNeighborhoodPlaceActionHandler(dependencies: Dependencies)
     }
 
     try {
-      await dependencies.verifyCharacter(userId, claims.characterId, claims.locationId);
-      await dependencies.verifyLandmarkAction(userId, landmarkId, actionId);
+      const character = await dependencies.verifyCharacter(
+        userId,
+        claims.characterId,
+        claims.locationId,
+      );
+      await dependencies.verifyLandmarkAction(userId, landmarkId, actionId, character.isAdult);
       const result = await dependencies.perform(userId, landmarkId, actionId, requestId);
       return json(result);
     } catch (error) {
@@ -115,7 +128,7 @@ export async function handleNeighborhoodPlaceActionRequest(request: Request) {
     verifyCharacter: async (userId, characterId, locationId) => {
       const { data, error } = await supabaseAdmin
         .from("characters")
-        .select("id,current_location_id")
+        .select("id,current_location_id,is_adult")
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
         .limit(1)
@@ -124,18 +137,37 @@ export async function handleNeighborhoodPlaceActionRequest(request: Request) {
       if (!data) throw new Error("NO_CHARACTER");
       if (data.id !== characterId) throw new Error("CHARACTER_CHANGED");
       if (data.current_location_id !== locationId) throw new Error("CHARACTER_LOCATION_CHANGED");
+      return { isAdult: data.is_adult === true };
     },
-    verifyLandmarkAction: async (userId, landmarkId, actionId) => {
-      const { data, error } = await supabaseAdmin.rpc("map_get_landmark_details", {
-        p_user_id: userId,
-        p_landmark_id: landmarkId,
-      });
-      if (error) throw new Error(error.message);
-      if (!data) throw new Error("UNKNOWN_LANDMARK");
-      const details = data as { actions?: Array<{ id?: string }> };
-      if (!details.actions?.some((action) => action.id === actionId)) {
-        throw new Error("UNKNOWN_ACTION");
+    verifyLandmarkAction: async (_userId, landmarkId, actionId, isAdult) => {
+      const { data: landmark, error: landmarkError } = await supabaseAdmin
+        .from("map_landmarks")
+        .select("id,location_id,min_age,is_available")
+        .eq("id", landmarkId)
+        .maybeSingle();
+      if (landmarkError) throw new Error("INTERNAL_ERROR");
+      if (!landmark || !landmark.is_available) throw new Error("UNKNOWN_LANDMARK");
+
+      const { data: location, error: locationError } = await supabaseAdmin
+        .from("locations")
+        .select("id,is_active")
+        .eq("id", landmark.location_id)
+        .maybeSingle();
+      if (locationError) throw new Error("INTERNAL_ERROR");
+      if (!location?.is_active) throw new Error("UNKNOWN_LANDMARK");
+      if (Number(landmark.min_age ?? 0) >= 18 && !isAdult) {
+        throw new Error("AGE_RESTRICTED");
       }
+
+      const { data: action, error: actionError } = await supabaseAdmin
+        .from("map_landmark_actions")
+        .select("id")
+        .eq("landmark_id", landmarkId)
+        .eq("id", actionId)
+        .eq("is_active", true)
+        .maybeSingle();
+      if (actionError) throw new Error("INTERNAL_ERROR");
+      if (!action) throw new Error("UNKNOWN_ACTION");
     },
     perform: async (userId, landmarkId, actionId, requestId) => {
       const { data, error } = await supabaseAdmin.rpc("perform_map_place_action", {
