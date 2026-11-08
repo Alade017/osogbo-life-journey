@@ -1,4 +1,4 @@
-export type NeighborhoodBuildingKind = "compound" | "shop" | "kiosk";
+export type NeighborhoodBuildingKind = "compound" | "shop" | "kiosk" | "market" | "work";
 export type NeighborhoodPropKind = "tree" | "streetlight" | "bench" | "bin" | "sign";
 
 type BuildingProfile = {
@@ -49,6 +49,31 @@ export const NEIGHBORHOOD_BUILDING_PROFILES: Readonly<
     roofRibSpacingRatio: 0.09,
     windowCount: 2,
     frontage: "awning",
+  },
+  market: {
+    wallColors: [0xd9bd8f, 0xc7a777],
+    roofColor: 0x9b593e,
+    trimColor: 0xf0dfbd,
+    doorColor: 0x69452f,
+    windowColor: 0x405b56,
+    awningColor: 0xc98245,
+    wallHeightRatio: 0.54,
+    roofOverhangRatio: 0.12,
+    roofRibSpacingRatio: 0.075,
+    windowCount: 3,
+    frontage: "awning",
+  },
+  work: {
+    wallColors: [0xc4c9c2, 0xaeb8ae],
+    roofColor: 0x596a63,
+    trimColor: 0xe2e5d9,
+    doorColor: 0x4d5c55,
+    windowColor: 0x526c70,
+    wallHeightRatio: 0.62,
+    roofOverhangRatio: 0.055,
+    roofRibSpacingRatio: 0.12,
+    windowCount: 2,
+    frontage: "recessed",
   },
   kiosk: {
     wallColors: [0xd7c7a8, 0xb9aa8c],
@@ -105,4 +130,13 @@ export function neighborhoodPropKind(kind: string): NeighborhoodPropKind | null 
   return kind in NEIGHBORHOOD_PROP_PROFILES
     ? (kind as NeighborhoodPropKind)
     : null;
+}
+
+
+/** Resolve world-object semantics to reusable architectural families. */
+export function neighborhoodBuildingKind(kind: string): NeighborhoodBuildingKind | null {
+  if (kind === "home") return "compound";
+  if (kind === "market") return "market";
+  if (kind === "work") return "work";
+  return null;
 }
