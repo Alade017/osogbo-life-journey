@@ -377,7 +377,8 @@ export function PlayableNeighborhood() {
                 ? "sleeping"
                 : "resting";
       return {
-        id: npc.id,
+        id: slot.id,
+        characterId: npc.id,
         name: npc.name,
         role: npc.role,
         activity: activity.label,
@@ -1111,7 +1112,7 @@ export function PlayableNeighborhood() {
                                 disabled={npcInteraction.isPending}
                                 onClick={() =>
                                   npcInteraction.mutate({
-                                    npcId: selectedNpc.id,
+                                    npcId: selectedNpc.characterId,
                                     action,
                                     requestId: crypto.randomUUID(),
                                   })
