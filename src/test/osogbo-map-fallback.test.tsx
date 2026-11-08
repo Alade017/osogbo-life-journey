@@ -61,7 +61,7 @@ describe("Osogbo street map fallback", () => {
     expect(screen.getByRole("button", { name: "Retry street map" })).toBeInTheDocument();
     expect(container.querySelector("svg")).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: "Central Crossing" }));
+    fireEvent.click(screen.getByRole("button", { name: "Oja Oba" }));
     expect(onSelectDistrict).toHaveBeenCalledOnce();
   });
 
