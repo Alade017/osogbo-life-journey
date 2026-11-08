@@ -161,7 +161,6 @@ const SETTINGS_STYLE_APPS = new Set([
   "Market",
   "Education",
   "Bank",
-  "Messages",
 ]);
 
 class PhoneAppBoundary extends Component<
