@@ -392,3 +392,85 @@
   outline: 2px solid var(--ring);
   outline-offset: 1px;
 }
+
+/* Profile, Inventory and Education use their own class systems. These rules bring them to the
+   same card, eyebrow and control sizes as Settings, still scoped to the core phone apps. */
+.phone-ui-refresh .phone-app-body--sx {
+  --sx-gold: var(--primary, #c8862a);
+}
+
+.phone-ui-refresh
+  .phone-app-body--sx
+  :is(
+    .pi-panel,
+    .learning-card,
+    .learning-notice,
+    .learning-empty,
+    .learning-stats,
+    .learning-balance
+  ) {
+  padding: 18px;
+  border: 1px solid var(--sx-line);
+  border-radius: 24px;
+  background: var(--sx-card);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 10px 30px rgba(60, 40, 20, 0.06);
+}
+
+.phone-ui-refresh .phone-app-body--sx .pi-stage {
+  border: 1px solid var(--sx-line);
+  border-radius: 24px;
+}
+
+.phone-ui-refresh .phone-app-body--sx .pi-stat {
+  border: 1px solid var(--sx-line);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--sx-card) 60%, var(--brand-cream, #fff8ec));
+}
+
+.phone-ui-refresh .phone-app-body--sx .pi-masthead h1,
+.phone-ui-refresh .phone-app-body--sx .learning-hero h1 {
+  font-size: 1.25rem;
+  font-weight: 850;
+  letter-spacing: -0.02em;
+}
+
+.phone-ui-refresh .phone-app-body--sx :is(.pi-eyebrow, .learning-kicker) {
+  color: var(--sx-gold);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.phone-ui-refresh .phone-app-body--sx .learning-hero {
+  padding: 22px 18px;
+  border: 1px solid var(--sx-line);
+  border-radius: 24px;
+  background: var(--sx-card);
+  color: var(--foreground);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 10px 30px rgba(60, 40, 20, 0.06);
+}
+
+.phone-ui-refresh .phone-app-body--sx .learning-hero p {
+  color: var(--sx-muted);
+}
+
+.phone-ui-refresh
+  .phone-app-body--sx
+  :is(
+    .pi-chip-btn,
+    .pi-pill,
+    .pi-slot-actions button,
+    .pi-detail-actions button,
+    .learning-tabs button,
+    .learning-save,
+    .learning-search input
+  ) {
+  min-height: 44px;
+  border-radius: 14px;
+  font-weight: 750;
+}
