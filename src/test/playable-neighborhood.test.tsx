@@ -380,6 +380,27 @@ it("leaves the old room and ignores its late state events when changing district
   expect(state.scene.mock.calls.length).toBe(latestCount);
 });
 
+it("leaves and rejoins the neighborhood when the active character changes", async () => {
+  const previousRoom = room("city");
+  const nextRoom = room("city");
+  state.join.mockImplementationOnce(async () => previousRoom).mockImplementationOnce(async () => nextRoom);
+  show();
+  await screen.findByRole("button", { name: /Enter your home/ });
+  await act(async () => {
+    client.setQueryData(["character"], {
+      id: "player-2",
+      current_location_id: "city",
+    });
+  });
+  await waitFor(() => expect(state.join).toHaveBeenCalledTimes(2));
+  await screen.findByText("R3F neighbourhood");
+  expect(previousRoom.leave).toHaveBeenCalledOnce();
+  expect(state.join).toHaveBeenLastCalledWith("city");
+  const latestCount = state.scene.mock.calls.length;
+  act(() => previousRoom.listeners.publish?.());
+  expect(state.scene.mock.calls.length).toBe(latestCount);
+});
+
 it("does not join inactive locations", async () => {
   state.location = "closed";
   show();
