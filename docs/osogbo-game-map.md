@@ -15,7 +15,7 @@ Apply the ordered SQL migrations through `0023_restore_travel_to_location_rpc.sq
 ## Movement and location interaction
 
 - Drag to pan, scroll or use the controls to zoom, and pinch on touch screens. Reduced-motion settings disable animated traffic and panel transitions.
-- Tapping an open street calculates a route on the local road graph. The avatar follows a short route and the server validates distance, energy, game-time cost, bounds, and expected position revision before persisting it.
+- The authored road tiles are checked by a connectivity test so a disconnected road segment cannot silently enter the town data. Tapping an open street calculates a route on the local road graph. The avatar follows a short route and the server validates distance, energy, game-time cost, bounds, and expected position revision before persisting it.
 - Selecting a different district opens a drawer over the map. Danfo, keke, okada, and car choices call the existing authoritative travel operation through the idempotent `travel_to_city_location` wrapper. The server remains authoritative for fare, simulation time, destination requirements, and wallet changes.
 - Selecting a location in the current district provides its details and the existing location page. Shops, jobs, and social systems remain connected through their existing routes and server actions.
 - Place, job, and NPC counts come from the existing Supabase records; decorative roads, trees, traffic, and district areas are client-side scenery.
