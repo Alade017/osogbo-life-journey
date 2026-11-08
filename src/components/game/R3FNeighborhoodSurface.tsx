@@ -42,6 +42,7 @@ import {
 } from "../3d/WorldScene";
 import { CHARACTER_MOTION } from "@/components/3d/character-config";
 import { WORLD_CAMERA, WORLD_PALETTE, WORLD_SCALE } from "../3d/world-theme";
+import { districtArchitectureVariantForCategory } from "@/game/district-architecture";
 import {
   carSpots,
   pedestrianCrossings,
@@ -204,6 +205,7 @@ export function R3FNeighborhoodSurface({
   players,
   selfSessionId,
   district,
+  mapCategory,
   npcs,
   interactionTargets,
   onSelectTarget,
@@ -224,6 +226,7 @@ export function R3FNeighborhoodSurface({
   selfSessionId: string;
   homeTypeId: string | null;
   district: NonNullable<ReturnType<typeof playableDistrictForLocation>>;
+  mapCategory: string | null | undefined;
   zoom: number;
   onZoomChange: (zoom: number) => void;
   onScene: (scene: PhaserNeighborhoodHandle | null) => void;
@@ -407,6 +410,7 @@ export function R3FNeighborhoodSurface({
                 depth={o.height * unit}
                 height={WORLD_SCALE.neighborhoodBuildingHeight}
                 shop={o.kind !== "compound"}
+                variant={o.kind === "compound" ? "residential" : "market"}
               />
             ))}
           <WorldStreetFurniture
@@ -453,6 +457,13 @@ export function R3FNeighborhoodSurface({
                     depth={footprint.height * unit}
                     height={WORLD_SCALE.neighborhoodBuildingHeight}
                     shop={o.kind !== "home"}
+                    variant={
+                      o.kind === "home"
+                        ? "residential"
+                        : o.kind === "market"
+                          ? "market"
+                          : districtArchitectureVariantForCategory(mapCategory)
+                    }
                   />
                   <Html
                     portal={overlayHost}
