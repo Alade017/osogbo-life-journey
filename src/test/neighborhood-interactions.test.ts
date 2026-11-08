@@ -42,9 +42,12 @@ describe("available neighborhood interaction targets", () => {
       ).toEqual([expected]);
     }
   });
-  it("does not expose NPCs as static building targets", () => {
+  it("preserves NPCs as interaction targets independently of building services", () => {
+    expect(availableNeighborhoodTargets(objects, unavailable).map(({ id }) => id)).toEqual(["npc"]);
+  });
+  it("keeps NPCs alongside available building entrances", () => {
     expect(
       availableNeighborhoodTargets(objects, { ...unavailable, hasShopOffers: true, hasCareerServices: true }).map(({ kind }) => kind),
-    ).toEqual(["market", "work"]);
+    ).toEqual(["market", "work", "npc"]);
   });
 });
