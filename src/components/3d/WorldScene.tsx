@@ -73,6 +73,7 @@ export function WorldCamera({
   onZoomChange,
   horizontalOrbit = false,
   verticalOrbit = false,
+  freeExplore = false,
 }: {
   width: number;
   depth: number;
@@ -84,6 +85,7 @@ export function WorldCamera({
   onZoomChange?: (zoom: number) => void;
   horizontalOrbit?: boolean;
   verticalOrbit?: boolean;
+  freeExplore?: boolean;
 }) {
   const { camera, size, invalidate } = useThree();
   const controls = useRef<Controls>(null);
@@ -131,7 +133,7 @@ export function WorldCamera({
     <OrbitControls
       ref={controls}
       enabled={enabled}
-      enablePan={false}
+      enablePan={freeExplore}
       enableDamping={false}
       enableRotate={!stage || horizontalOrbit || verticalOrbit}
       onEnd={() => {
@@ -145,10 +147,10 @@ export function WorldCamera({
       }}
       minDistance={distance / WORLD_CAMERA.maxZoom}
       maxDistance={distance / WORLD_CAMERA.minZoom}
-      minPolarAngle={verticalOrbit ? Math.max(0.35, polar - 0.35) : polar - (stage ? 0 : 0.08)}
-      maxPolarAngle={verticalOrbit ? Math.min(1.25, polar + 0.35) : polar + (stage ? 0 : 0.08)}
-      minAzimuthAngle={azimuth - (horizontalOrbit ? Math.PI / 3 : stage ? 0 : 0.14)}
-      maxAzimuthAngle={azimuth + (horizontalOrbit ? Math.PI / 3 : stage ? 0 : 0.14)}
+      minPolarAngle={freeExplore ? 0.35 : verticalOrbit ? Math.max(0.35, polar - 0.35) : polar - (stage ? 0 : 0.08)}
+      maxPolarAngle={freeExplore ? 1.25 : verticalOrbit ? Math.min(1.25, polar + 0.35) : polar + (stage ? 0 : 0.08)}
+      minAzimuthAngle={freeExplore ? -Infinity : azimuth - (horizontalOrbit ? Math.PI / 3 : stage ? 0 : 0.14)}
+      maxAzimuthAngle={freeExplore ? Infinity : azimuth + (horizontalOrbit ? Math.PI / 3 : stage ? 0 : 0.14)}
     />
   );
 }

@@ -230,8 +230,9 @@ export function R3FTownSurface(props: Props) {
         // Skip intersections, corners and road endpoints.
         if (horizontal === vertical) return;
 
-        // Create a repeating dashed pattern.
-        if ((x + z) % 3 !== 0) return;
+        // Keep the centre marking legible on longer streets without turning
+        // the narrow grid roads into solid painted strips.
+        if ((x + z) % 2 !== 0) return;
 
         const p = point(x, z);
 
@@ -264,9 +265,8 @@ export function R3FTownSurface(props: Props) {
 
         if (!isIntersection) return;
 
-        // Avoid placing multiple crossings in adjacent intersection tiles.
-        if ((x + z) % 4 !== 0) return;
-
+        // Mark every connected junction so pedestrian crossings form a consistent
+        // city-wide network instead of appearing only at a sparse subset.
         const horizontalRoad = left || right;
         const p = point(x, z);
 
@@ -863,7 +863,7 @@ export function R3FTownSurface(props: Props) {
         >
           <Ready onReady={props.onReady} />
           <CameraFocusController targetPosition={selectedTarget?.position ?? null} />
-          <WorldCamera width={gridCols * cell} depth={gridRows * cell} zoom={1.55} />
+          <WorldCamera width={gridCols * cell} depth={gridRows * cell} zoom={1.35} freeExplore />
           <MapLighting size={gridCols * cell} />
           <Terrain3D gridCols={gridCols} gridRows={gridRows} cellSize={cell} />
 
@@ -1053,6 +1053,25 @@ export function R3FTownSurface(props: Props) {
             }
           />
         </Canvas>
+        <div
+          aria-label="Map camera controls"
+          style={{
+            position: "absolute",
+            right: 12,
+            bottom: 12,
+            pointerEvents: "none",
+            color: WORLD_PALETTE.timber,
+            background: "rgba(241, 233, 217, 0.92)",
+            border: "1px solid rgba(130, 112, 93, 0.28)",
+            padding: "7px 10px",
+            borderRadius: 8,
+            fontSize: 11,
+            lineHeight: 1.45,
+            maxWidth: 230,
+          }}
+        >
+          Drag to rotate · Two-finger drag to pan · Scroll or pinch to zoom
+        </div>
         {hovered && (
           <div
             role="status"
