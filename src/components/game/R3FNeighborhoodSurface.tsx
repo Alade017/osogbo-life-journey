@@ -573,13 +573,19 @@ export function R3FNeighborhoodSurface({
               return (
                 <mesh
                   key={target.id}
-                  position={[p[0], 1.3, p[2]]}
+                  position={[p[0], WORLD_SCALE.neighborhoodBuildingHeight / 2, p[2]]}
                   onClick={(event) => {
                     event.stopPropagation();
                     onSelectTarget(target.id);
                   }}
                 >
-                  <boxGeometry args={[footprint.width * unit, 2.6, footprint.height * unit]} />
+                  <boxGeometry
+                    args={[
+                      footprint.width * unit,
+                      WORLD_SCALE.neighborhoodBuildingHeight,
+                      footprint.height * unit,
+                    ]}
+                  />
                   <meshBasicMaterial transparent opacity={0} depthWrite={false} />
                 </mesh>
               );
