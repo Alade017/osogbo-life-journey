@@ -22,8 +22,15 @@ Railway provides `PORT` and `RAILWAY_PUBLIC_DOMAIN`. The server binds to `0.0.0.
 | `SUPABASE_PUBLISHABLE_KEY`    | Supabase publishable key; never use the service-role key                                  |
 | `MULTIPLAYER_ALLOWED_ORIGINS` | Exact comma-separated website origins, such as `https://your-site.vercel.app`             |
 | `REDIS_URL`                   | Private Railway Redis URL; use the same Redis service reference on every Colyseus service |
+| `MULTIPLAYER_INTERACTION_SECRET` | At least 32 random bytes; shared only with the Vercel server runtime and never exposed to the browser |
 
 Do not set `MULTIPLAYER_PUBLIC_ADDRESS` unless overriding Railway's generated service domain. If set, use the service's hostname without `https://` or `wss://`.
+
+## Neighborhood interaction authorization
+
+Neighborhood landmark actions require a signed, short-lived authorization issued by the Colyseus room after it validates the authenticated player and authoritative scene-space proximity. The Vercel server verifies the signature, current character/location, active database landmark and action, then calls the existing service-role-only `perform_map_place_action` RPC. Action definitions and durable effects remain database-owned.
+
+Generate a secret with a cryptographically secure generator (for example, `openssl rand -base64 48`). Set the resulting value as `MULTIPLAYER_INTERACTION_SECRET` in **both** Railway's Colyseus service and Vercel's server-side environment. The values must match exactly. Never prefix it with `VITE_`, commit the real value, put it in browser storage, or send it to clients. Configure the same variable in local server and local web runtimes when testing locally. Redeploy both services after changing the secret. Rotating it invalidates outstanding authorizations immediately.
 
 ## Multiple Colyseus services
 

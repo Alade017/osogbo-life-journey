@@ -930,6 +930,21 @@ export function PlayableNeighborhood() {
                         <Minus size={16} aria-hidden="true" />
                       </button>
                     </div>
+                    {nearbyLandmark && (
+                      <button
+                        type="button"
+                        className="neighborhood-interaction neighborhood-actions-trigger"
+                        onClick={() => {
+                          setSelectedLandmarkId(nearbyLandmark.id);
+                          setNeighborhoodActionResult(null);
+                          setActivePanel("landmark");
+                        }}
+                        aria-label={`Actions at ${nearbyLandmark.id.replaceAll("-", " ")}`}
+                      >
+                        <Landmark size={17} aria-hidden="true" />
+                        Actions
+                      </button>
+                    )}
                     {nearbyObject && (
                       <button
                         type="button"

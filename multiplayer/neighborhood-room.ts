@@ -185,10 +185,12 @@ export class NeighborhoodRoom extends Room {
   private readonly equipmentRefreshAt = new Map<string, number>();
   private areaOrigin: WorldPoint = { x: 7, y: 6 };
   private area = neighborhoodAreaForSlug(undefined);
+  private locationId = "";
 
   override onCreate(options: { locationId?: unknown }) {
     if (typeof options.locationId !== "string" || !LOCATION_ID_PATTERN.test(options.locationId))
       throw new Error("A valid neighborhood is required.");
+    this.locationId = options.locationId;
     this.setMetadata({ locationId: options.locationId });
     this.onMessage("move", (client, payload: unknown) => {
       const intent = parseMovementIntent(payload);
@@ -294,7 +296,7 @@ export class NeighborhoodRoom extends Room {
       reject("UNAUTHORIZED");
       return;
     }
-    if (credentials.locationId !== this.metadata?.["locationId"]) {
+    if (credentials.locationId !== this.locationId) {
       reject("WRONG_LOCATION");
       return;
     }

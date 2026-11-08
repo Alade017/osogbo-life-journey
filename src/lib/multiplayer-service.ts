@@ -68,7 +68,13 @@ export function requestNeighborhoodInteractionAuthorization(
       reject(new Error("INTERACTION_AUTH_TIMEOUT"));
     }, 8_000);
     pending.set(input.requestId, { resolve, reject, timeout });
-    room.send("authorize-interaction", input);
+    try {
+      room.send("authorize-interaction", input);
+    } catch (error) {
+      clearTimeout(timeout);
+      pending.delete(input.requestId);
+      reject(error instanceof Error ? error : new Error("INTERACTION_AUTH_FAILED"));
+    }
   });
 }
 
