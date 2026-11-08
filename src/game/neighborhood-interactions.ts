@@ -6,9 +6,28 @@ export type NeighborhoodInteractionAvailability = {
   hasShopOffers: boolean;
   hasLocalBusinesses: boolean;
   hasBankServices: boolean;
-  hasVenueInterior: boolean;
+  venueEntranceKind: "market" | "work" | null;
   hasCareerServices: boolean;
 };
+
+/** Route designed venues to the entrance matching their data-backed world category. */
+export function venueEntranceKindForCategory(
+  category: string | null | undefined,
+): "market" | "work" | null {
+  if (category === "commercial") return "market";
+  if (
+    category === "work_industrial" ||
+    category === "education" ||
+    category === "health" ||
+    category === "transport" ||
+    category === "government" ||
+    category === "recreation" ||
+    category === "water_nature"
+  ) {
+    return "work";
+  }
+  return null;
+}
 
 /** Keep actionable entrances aligned with services available at the confirmed location. */
 export function availableNeighborhoodTargets(
@@ -24,9 +43,10 @@ export function availableNeighborhoodTargets(
         availability.hasShopOffers ||
         availability.hasLocalBusinesses ||
         availability.hasBankServices ||
-        availability.hasVenueInterior
+        availability.venueEntranceKind === "market"
       );
-    if (object.kind === "work") return availability.hasCareerServices;
+    if (object.kind === "work")
+      return availability.hasCareerServices || availability.venueEntranceKind === "work";
     return false;
   });
 }
