@@ -1,5 +1,5 @@
 import mapData from "@/data/osogbo-map.json";
-import type { MapDistrict } from "@/components/map/OsogboMap.svg";
+import type { MapDistrict } from "@/components/map/map-types";
 import { isoCellToScreen } from "@/lib/map-projection";
 
 type CellPoint = { col: number; row: number };
