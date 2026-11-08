@@ -4,8 +4,8 @@ import { WORLD_PALETTE } from "@/components/3d/world-theme";
 import { TownMapFallback } from "@/components/map/TownMapFallback";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
 
-const R3FTownSurface = lazy(() =>
-  import("./R3FTownSurface").then((module) => ({ default: module.R3FTownSurface })),
+const PixiTownMapSurface = lazy(() =>
+  import("./PixiTownMapSurface").then((module) => ({ default: module.PixiTownMapSurface })),
 );
 
 export type MapFilter =
@@ -148,21 +148,22 @@ export function MapCanvas({
         />
       )}
       <Suspense fallback={null}>
-        <R3FTownSurface
-          places={availablePlaces}
-          properties={properties}
-          playerLocation={playerLocation}
-          billboardMarkers={billboardMarkers}
-          onSelectLandmark={onSelectLandmark}
-          onSelectDistrict={onSelectDistrict}
-          onSelectBillboard={onSelectBillboard}
-          {...(onSelectProperty ? { onSelectProperty } : {})}
-          eventChips={_eventChips}
-          {...(onSelectEvent ? { onSelectEvent } : {})}
-          onReady={handleReady}
-          onUnavailable={handleUnavailable}
-          {...(searchTarget ? { searchTarget } : {})}
-        />
+        {rendererState !== "fallback" && (
+          <PixiTownMapSurface
+            places={availablePlaces}
+            properties={properties}
+            playerLocation={playerLocation}
+            billboardMarkers={billboardMarkers}
+            onSelectLandmark={onSelectLandmark}
+            onSelectDistrict={onSelectDistrict}
+            onSelectBillboard={onSelectBillboard}
+            {...(onSelectProperty ? { onSelectProperty } : {})}
+            eventChips={_eventChips}
+            {...(onSelectEvent ? { onSelectEvent } : {})}
+            onReady={handleReady}
+            onUnavailable={handleUnavailable}
+          />
+        )}
       </Suspense>
       {rendererState === "loading" && (
         <div className="town-map-renderer-status">
