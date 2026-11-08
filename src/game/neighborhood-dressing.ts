@@ -208,11 +208,12 @@ export function streetLightSpots(area: NeighborhoodArea, bounds: DressingBounds)
 
 /** Cars in the lanes of arterials and streets, alternating direction by lane. */
 export function carSpots(area: NeighborhoodArea, bounds: DressingBounds): CarSpot[] {
-  const spots: CarSpot[] = [];
+  const byRoad: CarSpot[][] = [];
   const boxes = occupiedBoxes(area);
   for (const road of area.roads ?? []) {
     if (road.type === "lane") continue;
     const { start, end, vertical } = roadExtent(road, bounds);
+    const roadSpots: CarSpot[] = [];
     for (const lane of [-1, 1])
       for (let along = start + CAR_SPACING / 2; along < end; along += CAR_SPACING) {
         const across = lane * road.width * 0.22;
@@ -226,10 +227,25 @@ export function carSpots(area: NeighborhoodArea, bounds: DressingBounds): CarSpo
           : lane === -1
             ? 0
             : Math.PI;
-        spots.push({ x, y, rotation });
+        roadSpots.push({ x, y, rotation });
       }
+    if (roadSpots.length) byRoad.push(roadSpots);
   }
-  return spots.slice(0, MAX_CARS);
+
+  // Interleave roads so the visual vehicle cap does not hide every road after the first.
+  const spots: CarSpot[] = [];
+  for (let index = 0; spots.length < MAX_CARS; index += 1) {
+    let added = false;
+    for (const roadSpots of byRoad) {
+      const spot = roadSpots[index];
+      if (!spot) continue;
+      spots.push(spot);
+      added = true;
+      if (spots.length === MAX_CARS) break;
+    }
+    if (!added) break;
+  }
+  return spots;
 }
 
 /** Pedestrians on the sidewalks, alternating sides, spaced along each street. */
