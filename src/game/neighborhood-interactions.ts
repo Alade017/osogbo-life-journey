@@ -1,5 +1,5 @@
 import type { WorldMapCategory } from "../lib/city-world";
-import type { NeighborhoodObject } from "./neighborhood-model";
+import type { NeighborhoodNpcView, NeighborhoodObject } from "./neighborhood-model";
 
 export type NeighborhoodInteractionAvailability = {
   hasPersonalHome: boolean;
@@ -51,4 +51,18 @@ export function availableNeighborhoodTargets(
       return availability.hasCareerServices || availability.venueEntranceKind === "work";
     return false;
   });
+}
+
+
+/** Use an NPC's scheduled destination while they are walking, not their stale spawn point. */
+export function neighborhoodInteractionPoint(
+  target: NeighborhoodObject,
+  npcs: readonly Pick<NeighborhoodNpcView, "id" | "x" | "y" | "targetX" | "targetY" | "isMoving">[],
+): { x: number; y: number } {
+  if (target.kind !== "npc") return { x: target.x, y: target.y };
+  const npc = npcs.find((candidate) => candidate.id === target.id);
+  if (!npc) return { x: target.x, y: target.y };
+  return npc.isMoving
+    ? { x: npc.targetX, y: npc.targetY }
+    : { x: npc.x, y: npc.y };
 }
