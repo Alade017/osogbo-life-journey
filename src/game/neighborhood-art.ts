@@ -25,7 +25,7 @@ export const NEIGHBORHOOD_BUILDING_ART: Readonly<
     height: 200,
     originX: 0.5,
     originY: 0.675,
-    scale: 1,
+    scale: 0.68,
   },
   shop: {
     key: "neighborhood-art-shop",
@@ -34,7 +34,7 @@ export const NEIGHBORHOOD_BUILDING_ART: Readonly<
     height: 200,
     originX: 0.5,
     originY: 0.675,
-    scale: 1,
+    scale: 0.68,
   },
   kiosk: {
     key: "neighborhood-art-kiosk",
@@ -43,7 +43,7 @@ export const NEIGHBORHOOD_BUILDING_ART: Readonly<
     height: 200,
     originX: 0.5,
     originY: 0.675,
-    scale: 1,
+    scale: 0.54,
   },
 };
 
