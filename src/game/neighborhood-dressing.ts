@@ -120,8 +120,12 @@ export function sidewalksAndCurbs(
         const blocked = crossings
           .filter((crossing) =>
             vertical
-              ? Math.abs(crossing.x - across) < (crossing.width + SIDEWALK_WIDTH) / 2
-              : Math.abs(crossing.y - across) < (crossing.depth + SIDEWALK_WIDTH) / 2,
+              ? Math.abs(crossing.x - across) < (crossing.width + SIDEWALK_WIDTH) / 2 &&
+                crossing.y + crossing.depth / 2 > along &&
+                crossing.y - crossing.depth / 2 < segmentEnd
+              : Math.abs(crossing.y - across) < (crossing.depth + SIDEWALK_WIDTH) / 2 &&
+                crossing.x + crossing.width / 2 > along &&
+                crossing.x - crossing.width / 2 < segmentEnd,
           )
           .map((crossing) =>
             vertical
