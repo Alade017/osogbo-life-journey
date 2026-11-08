@@ -33,6 +33,7 @@ import { PlaceBadge } from "./map-badge";
 import { getLandmarkBuildingVariant } from "./landmark-building-variant";
 import { CompoundPlot3D } from "./CompoundPlot3D";
 import { MapPin3D } from "./MapPin3D";
+import { LandmarkItem3D } from "./LandmarkItem3D";
 import { SelectionRing3D } from "./SelectionRing3D";
 import { useMapCameraFocus } from "./use-map-camera-focus";
 import { Terrain3D } from "./Terrain3D";
@@ -943,36 +944,33 @@ export function R3FTownSurface(props: Props) {
             const [x, , z] = point(place.grid.x, place.grid.z);
 
             if (!badgePosition) return null;
-            const isSelected = selectedTarget?.id === place.id;
 
             return (
-              <group key={place.id} name={`landmark:${place.id}`}>
-                <MapPin3D
-                  position={badgePosition}
-                  label={place.label}
-                  category={place.category}
-                  isSelected={isSelected}
-                  isHovered={hoveredTargetId === place.id}
-                  onClick={() =>
-                    select({} as any, () => {
-                      setSelectedTarget({
-                        id: place.id,
-                        position: [x, 0, z],
-                        type: "landmark",
-                      });
-                      props.onSelectLandmark(place.id);
-                    })
-                  }
-                  onPointerOver={() => {
-                    setHoveredTargetId(place.id);
-                    setHovered(place.label);
-                  }}
-                  onPointerOut={() => {
-                    setHoveredTargetId(null);
-                    setHovered(null);
-                  }}
-                />
-              </group>
+              <LandmarkItem3D
+                key={place.id}
+                place={place}
+                position={badgePosition}
+                isSelected={selectedTarget?.id === place.id}
+                isHovered={hoveredTargetId === place.id}
+                onSelectLandmark={(id) =>
+                  select({} as any, () => {
+                    setSelectedTarget({
+                      id,
+                      position: [x, 0, z],
+                      type: "landmark",
+                    });
+                    props.onSelectLandmark(id);
+                  })
+                }
+                onPointerOver={(id, lbl) => {
+                  setHoveredTargetId(id);
+                  setHovered(lbl);
+                }}
+                onPointerOut={() => {
+                  setHoveredTargetId(null);
+                  setHovered(null);
+                }}
+              />
             );
           })}
           {props.eventChips.map((event) => {
