@@ -52,6 +52,7 @@ import {
   sidewalksAndCurbs,
   streetLightSpots,
   trafficLightSpots,
+  treeVisualProfile,
   vendorSpots,
   type DressingRect,
 } from "@/game/neighborhood-dressing";
@@ -341,16 +342,13 @@ export function R3FNeighborhoodSurface({
     follow && selfPoint ? point(selfPoint.x, selfPoint.y) : [0, 0, 0];
   const trees: WorldTree[] = (area.obstacles ?? [])
     .filter((o) => o.kind === "tree")
-    .map((o, index) => {
-      const p = point(o.x, o.y);
-
-      // Deterministic variation based on tree index.
-      const variation = (index * 17) % 30;
+    .map((obstacle) => {
+      const p = point(obstacle.x, obstacle.y);
+      const profile = treeVisualProfile(obstacle);
 
       return {
         position: [p[0], p[2]],
-        height: 0.85 + variation / 100,
-        canopyScale: 0.85 + ((index * 13) % 35) / 100,
+        ...profile,
       };
     });
   return (
@@ -424,7 +422,9 @@ export function R3FNeighborhoodSurface({
             ))}
           <WorldStreetFurniture
             items={(area.obstacles ?? [])
-              .filter((o) => !["tree", "compound", "shop", "kiosk"].includes(o.kind))
+              .filter((o) =>
+                ["streetlight", "bench", "bin", "sign", "landmark"].includes(o.kind),
+              )
               .map((o) => ({
                 kind: o.kind,
                 x: point(o.x, o.y)[0],
@@ -434,7 +434,10 @@ export function R3FNeighborhoodSurface({
               }))}
           />
           {area.obstacles
-            ?.filter((obstacle) => obstacle.kind === "landmark" && obstacle.label)
+            ?.filter(
+              (obstacle) =>
+                ["sign", "landmark"].includes(obstacle.kind) && obstacle.label,
+            )
             .map((landmark) => {
               const p = point(landmark.x, landmark.y);
               return (
