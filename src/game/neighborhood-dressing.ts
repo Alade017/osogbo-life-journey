@@ -9,6 +9,7 @@ import { neighborhoodBuildingFootprint } from "./neighborhood-geometry.ts";
 /** A flat rectangle in neighbourhood units. Centre is (x, y); depth runs along y. */
 export type DressingRect = { x: number; y: number; width: number; depth: number };
 export type DressingBounds = { left: number; top: number; width: number; height: number };
+export type CarSpot = WorldPoint & { rotation: number };
 
 const SIDEWALK_WIDTH = 16;
 const CURB_WIDTH = 4;
@@ -206,8 +207,8 @@ export function streetLightSpots(area: NeighborhoodArea, bounds: DressingBounds)
 }
 
 /** Cars in the lanes of arterials and streets, alternating direction by lane. */
-export function carSpots(area: NeighborhoodArea, bounds: DressingBounds): WorldPoint[] {
-  const spots: WorldPoint[] = [];
+export function carSpots(area: NeighborhoodArea, bounds: DressingBounds): CarSpot[] {
+  const spots: CarSpot[] = [];
   const boxes = occupiedBoxes(area);
   for (const road of area.roads ?? []) {
     if (road.type === "lane") continue;
@@ -218,7 +219,14 @@ export function carSpots(area: NeighborhoodArea, bounds: DressingBounds): WorldP
         const x = vertical ? road.offset + across : along;
         const y = vertical ? along : road.offset + across;
         if (insideObstacle(x, y, boxes, 28)) continue;
-        spots.push({ x, y });
+        const rotation = vertical
+          ? lane === -1
+            ? -Math.PI / 2
+            : Math.PI / 2
+          : lane === -1
+            ? 0
+            : Math.PI;
+        spots.push({ x, y, rotation });
       }
   }
   return spots.slice(0, MAX_CARS);
