@@ -1,4 +1,5 @@
 import type { WorldTone } from "../components/3d/world-theme";
+import type { WorldMapCategory } from "../lib/city-world.ts";
 
 export type BuildingRoofProfile = "pitched" | "flat" | "parapet";
 export type BuildingFrontageProfile = "veranda" | "awning" | "portico" | "canopy" | "recessed" | "plain";
@@ -32,6 +33,26 @@ const VARIANT_ALIASES: Readonly<Record<string, keyof typeof ARCHITECTURE>> = {
   clinic: "health",
   transport: "transit",
 };
+
+const WORLD_CATEGORY_ARCHITECTURE: Readonly<Record<WorldMapCategory, string>> = {
+  residential: "residential",
+  commercial: "market",
+  work_industrial: "services",
+  education: "school",
+  health: "health",
+  transport: "transit",
+  government: "civic",
+  recreation: "sport",
+  water_nature: "services",
+};
+
+/** Resolve a database world category to an existing reusable building profile. */
+export function districtArchitectureVariantForCategory(
+  category: string | null | undefined,
+): string {
+  if (!category || !Object.hasOwn(WORLD_CATEGORY_ARCHITECTURE, category)) return "services";
+  return WORLD_CATEGORY_ARCHITECTURE[category as WorldMapCategory];
+}
 
 export function getDistrictArchitecture(variant: string | null | undefined): DistrictArchitecture {
   const key = variant?.trim().toLowerCase() ?? "";
