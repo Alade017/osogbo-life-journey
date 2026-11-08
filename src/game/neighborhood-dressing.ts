@@ -99,6 +99,12 @@ export function sidewalksAndCurbs(
   const curbs: DressingRect[] = [];
   const boxes = occupiedBoxes(area);
   const crossings = pedestrianCrossings(area);
+  const crossingBoxes: Box[] = crossings.map(({ x, y, width, depth }) => ({
+    x,
+    y,
+    width,
+    height: depth,
+  }));
   for (const road of area.roads ?? []) {
     const { start, end, vertical } = roadExtent(road, bounds);
     const offsetAcross = road.width / 2 + SIDEWALK_WIDTH / 2;
@@ -119,7 +125,7 @@ export function sidewalksAndCurbs(
         // Test complete footprints and leave a clear break where a crossing meets the footpath.
         if (
           overlapsObstacle(sidewalk, boxes, 10) ||
-          crossings.some((crossing) => overlapsObstacle(sidewalk, [crossing], 0))
+          overlapsObstacle(sidewalk, crossingBoxes, 0)
         ) continue;
         sidewalks.push(sidewalk);
         const kerb = side * (road.width / 2 + CURB_WIDTH / 2);
@@ -129,7 +135,7 @@ export function sidewalksAndCurbs(
           width: vertical ? CURB_WIDTH : span,
           depth: vertical ? span : CURB_WIDTH,
         };
-        if (!crossings.some((crossing) => overlapsObstacle(curb, [crossing], 0)))
+        if (!overlapsObstacle(curb, crossingBoxes, 0))
           curbs.push(curb);
       }
     }
