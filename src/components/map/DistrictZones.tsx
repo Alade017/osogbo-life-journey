@@ -22,7 +22,7 @@ export function DistrictZones({
   cell: number;
   onSelect: (id: string, event: ThreeEvent<MouseEvent>) => void;
 }) {
-  const boundarySegments: WorldInstance[] = districts.flatMap((district) => {
+  const boundarySegments: WorldInstance[] = districts.flatMap((district): WorldInstance[] => {
     const area = district.gridArea;
     const [centerX, , centerZ] = point(
       area.x + area.width / 2 - 0.5,
