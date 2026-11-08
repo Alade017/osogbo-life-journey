@@ -32,6 +32,6 @@ Before merge, run locally:
 2. `npx vitest run src/test/neighborhood-art.test.ts src/test/neighborhood-model.test.ts`
 3. `npm run lint -- src/game/neighborhood-art.ts src/game/phaser-neighborhood.ts src/test/neighborhood-art.test.ts` (or the project's equivalent scoped ESLint command)
 4. `npm run build`
-5. Open the authenticated full-page `/neighborhood` in a real browser at 375px and desktop width. Check all seven asset families, asset loading failures/fallback, avatar depth behind/in front of tree and buildings, doorway approach, zoom, room movement, resize and navigation away/back. Inspect browser console and network for SVG load errors.
+5. Open the authenticated full-page `/neighborhood` in a real browser at 375px and desktop width. Check all eight asset families, asset loading failures/fallback, avatar depth behind/in front of tree and buildings, doorway approach, zoom, room movement, resize and navigation away/back. Inspect browser console and network for SVG load errors.
 
 A successful unit test cannot approve the art visually. Confirm asset scale/material readability and collision/entrance alignment in the actual scene before expanding this pilot to the rest of the city.
