@@ -307,17 +307,14 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
     const { left, top, width, height } = neighborhoodSceneBounds(this.areaOrigin);
     const right = left + width;
     const bottom = top + height;
-    const groundColors =
-      this.area.slug === "oja-oba"
-        ? [0xbda777, 0xc5b084, 0xc0aa7c, 0xc9b58b]
-        : this.area.slug === "city-centre"
-          ? [0x9cae79, 0xa5b681, 0x98aa75, 0xaab987]
-          : [
-              this.area.style.ground,
-              this.area.style.paving,
-              this.area.style.ground,
-              this.area.style.grid,
-            ];
+    // Every neighborhood supplies its own palette; the renderer never branches
+    // on a location slug or embeds location-specific ground colors.
+    const groundColors = [
+      this.area.style.ground,
+      this.area.style.paving,
+      this.area.style.ground,
+      this.area.style.grid,
+    ];
 
     for (let x = left; x < right; x += TILE_SIZE) {
       for (let y = top; y < bottom; y += TILE_SIZE) {
@@ -456,47 +453,33 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
         this.drawNeighbour(object);
         continue;
       }
-      const kind = object.kind === "home" ? "compound" : object.kind === "market" ? "shop" : "shop";
-      const label =
-        object.kind === "home"
-          ? this.homeTypeId
-            ? `YOUR ${this.homeTypeId.replaceAll("-", " ").toUpperCase()}`
-            : this.area.slug === "oja-oba"
-              ? "MARKET COURTYARD"
-              : "OLAIYA COMPOUND"
-          : object.kind === "market"
-            ? this.area.slug === "oja-oba"
-              ? "OJA-OBA STALLS"
-              : "NEIGHBOURHOOD SHOP"
-            : this.area.slug === "oja-oba"
-              ? "LOADING YARD"
-              : "WORK & SERVICES";
+      const kind = object.kind === "home" ? "compound" : "shop";
+      const sign =
+        object.kind === "home" && this.homeTypeId
+          ? `YOUR ${this.homeTypeId.replaceAll("-", " ").toUpperCase()}`
+          : object.name;
       const footprint = neighborhoodBuildingFootprint(object);
       this.drawBuilding(
         object.x,
         footprint.top + footprint.height / 2,
         kind,
-        label,
-        this.area.slug === "oja-oba" ? "" : object.name,
+        sign,
+        object.name,
         footprint.width,
         footprint.height,
       );
     }
+
     for (const obstacle of this.area.obstacles ?? []) {
       if (obstacle.kind !== "compound" && obstacle.kind !== "shop" && obstacle.kind !== "kiosk")
         continue;
-      const label =
-        obstacle.kind === "kiosk" ? "KIOSK" : obstacle.kind === "shop" ? "LOCAL SHOP" : "HOME";
+      const sign = obstacle.label ?? obstacle.id.replaceAll("-", " ");
       this.drawBuilding(
         obstacle.x,
         obstacle.y,
         obstacle.kind,
-        this.area.slug === "oja-oba" && obstacle.kind === "kiosk"
-          ? obstacle.id.endsWith("centre")
-            ? "PRODUCE ROW"
-            : ""
-          : label,
-        this.area.slug === "oja-oba" ? "" : obstacle.id.replaceAll("-", " "),
+        sign,
+        obstacle.label ?? "",
         obstacle.width,
         obstacle.height,
       );
@@ -813,7 +796,7 @@ export function createPhaserNeighborhood(options: {
     height: options.host.clientHeight || 600,
     // Phaser can reuse a Canvas previously styled by the overview's FIT scaler.
     canvasStyle: "display:block;width:100%;height:100%;margin:0;",
-    backgroundColor: options.area.slug === "oja-oba" ? "#c5b084" : "#9cae79",
+    backgroundColor: options.area.style.ground,
     render: { antialias: true, pixelArt: false, roundPixels: false },
     scale: {
       mode: Phaser.Scale.RESIZE,
