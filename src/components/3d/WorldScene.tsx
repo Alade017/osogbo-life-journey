@@ -59,6 +59,7 @@ export function WorldCamera({
   onZoomChange,
   horizontalOrbit = false,
   verticalOrbit = false,
+  freeExplore = false,
 }: {
   width: number;
   depth: number;
