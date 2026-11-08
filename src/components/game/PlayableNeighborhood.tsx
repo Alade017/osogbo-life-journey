@@ -25,7 +25,11 @@ import { PhoneBankApp } from "@/components/game/phone/PhoneBankApp";
 import { LocationVenueScene } from "@/components/game/LocationVenueScene";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
 import { GROUND_ARRIVE_DISTANCE, groundIntent } from "@/game/ground-intent";
-import { joinNeighborhood, type NeighborhoodRoom } from "@/lib/multiplayer-service";
+import {
+  joinNeighborhood,
+  requestNeighborhoodInteractionAuthorization,
+  type NeighborhoodRoom,
+} from "@/lib/multiplayer-service";
 import { q, rpc, useGameAction } from "@/lib/game";
 import { supabase } from "@/integrations/supabase/client";
 import { canonicalHomeOptions } from "@/lib/living-cost-service";
@@ -52,7 +56,6 @@ import {
   requestMapLandmark,
   requestNeighborhoodPlaceAction,
 } from "@/lib/map-api";
-import { requestNeighborhoodInteractionAuthorization } from "@/lib/multiplayer-service";
 import { MarketPage } from "@/routes/_authenticated/_game/market";
 import { WORLD_CAMERA } from "@/components/3d/world-theme";
 import "@/components/game/neighborhood.css";
