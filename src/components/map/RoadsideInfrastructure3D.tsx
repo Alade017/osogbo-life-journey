@@ -1,6 +1,10 @@
 import { WorldMaterial } from "@/components/3d/WorldScene";
 
 export type UtilityPolePosition = [number, number];
+export type UtilityWireSpan = {
+  start: UtilityPolePosition;
+  end: UtilityPolePosition;
+};
 export type RoadDrainSegment = {
   position: [number, number, number];
   horizontal: boolean;
@@ -9,14 +13,16 @@ export type RoadDrainSegment = {
 
 /**
  * Lightweight street infrastructure for the town overview: concrete power
- * poles, twin overhead conductors and open roadside storm-water channels.
+ * poles, crossarms, insulators, overhead conductors and roadside drains.
  */
 export function RoadsideInfrastructure3D({
   poles,
+  spans,
   drains,
   cellSize,
 }: {
   poles: UtilityPolePosition[];
+  spans: UtilityWireSpan[];
   drains: RoadDrainSegment[];
   cellSize: number;
 }) {
@@ -50,19 +56,16 @@ export function RoadsideInfrastructure3D({
           </mesh>
         </group>
       ))}
-      {poles.slice(0, -1).map(([x1, z1], index) => {
-        const next = poles[index + 1];
-        if (!next) return null;
-        const [x2, z2] = next;
-        const dx = x2 - x1;
-        const dz = z2 - z1;
+      {spans.map(({ start, end }, index) => {
+        const dx = end[0] - start[0];
+        const dz = end[1] - start[1];
         const length = Math.hypot(dx, dz);
         if (length < 0.1 || length > cellSize * 6) return null;
         const angle = Math.atan2(dz, dx);
         return [-0.22, 0.22].map((offset) => (
           <mesh
             key={`power-span-${index}-${offset}`}
-            position={[(x1 + x2) / 2, 3.48, (z1 + z2) / 2 + offset]}
+            position={[(start[0] + end[0]) / 2, 3.48, (start[1] + end[1]) / 2 + offset]}
             rotation={[0, -angle, 0]}
           >
             <boxGeometry args={[length, 0.018, 0.018]} />
@@ -88,7 +91,6 @@ export function RoadsideInfrastructure3D({
             />
             <meshStandardMaterial color="#263238" roughness={1} />
           </mesh>
-          {/* Short culvert covers at intervals keep the channel readable. */}
           {Array.from({ length: Math.max(1, Math.floor(drain.length / cellSize)) }, (_, cover) => (
             <mesh
               key={cover}
