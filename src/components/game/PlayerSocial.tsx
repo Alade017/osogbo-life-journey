@@ -123,7 +123,7 @@ function PlayerAvatar({
 }) {
   const openProfile = useContext(ProfileOpenContext);
   const portrait = (
-    <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl bg-leaf/10">
+    <span className="phone-avatar-head grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl bg-leaf/10">
       <Avatar
         appearance={
           player.appearance &&
@@ -178,7 +178,7 @@ function VirtualConversationList({
   onCancelLongPress: () => void;
 }) {
   const [scrollTop, setScrollTop] = useState(0);
-  const rowHeight = 76;
+  const rowHeight = 72;
   const viewportHeight = 380;
   const start = Math.max(0, Math.floor(scrollTop / rowHeight) - 4);
   const end = Math.min(conversations.length, start + Math.ceil(viewportHeight / rowHeight) + 8);

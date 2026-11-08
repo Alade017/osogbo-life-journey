@@ -507,7 +507,10 @@
    button share the second row and are centred on the same line. Only layout changes. */
 .phone-ui-refresh .phone-app-body .phone-chat-panel {
   display: grid;
+  flex: 1;
+  min-height: 0;
   grid-template-columns: minmax(0, 1fr) 44px;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
   column-gap: 10px;
   align-items: center;
   padding: 12px 16px 0;
@@ -562,19 +565,43 @@
 }
 
 .phone-ui-refresh .phone-app-body .phone-conversation-list {
-  gap: 10px;
-  padding: 4px 16px 20px;
+  grid-row: 4;
+  min-height: 0;
+  gap: 0;
+  padding: 4px 16px 16px;
 }
 
+/* Each chat row is 64px tall with 8px between rows, matching the list's 72px row height. */
 .phone-ui-refresh .phone-app-body .phone-conversation {
-  min-height: 88px;
-  gap: 14px;
-  padding: 16px;
+  box-sizing: border-box;
+  height: 64px;
+  min-height: 64px;
+  margin-bottom: 8px;
+  gap: 12px;
+  padding: 0 14px;
   border: 1px solid color-mix(in srgb, var(--brand-mist) 90%, transparent);
   border-radius: 18px;
   color: var(--brand-ink);
   background: #ffffff;
-  contain-intrinsic-size: 88px;
+  contain-intrinsic-size: 64px;
+}
+
+/* Profile pictures show the character's head only, inside a round frame. */
+.phone-ui-refresh .phone-app-body .phone-avatar-head {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--brand-royal) 8%, #ffffff);
+}
+
+.phone-ui-refresh .phone-app-body .phone-avatar-head svg {
+  position: absolute;
+  left: -26px;
+  top: -2px;
+  width: 96px;
+  height: 120px;
+  max-width: none;
 }
 
 .phone-ui-refresh .phone-app-body .phone-conversation:hover {
