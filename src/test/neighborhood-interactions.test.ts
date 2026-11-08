@@ -19,40 +19,53 @@ const unavailable = {
 };
 
 describe("available neighborhood interaction targets", () => {
-  it("hides entrances when their domain action is unavailable", () => {
-    expect(availableNeighborhoodTargets(objects, unavailable)).toEqual([]);
-  });
-  it("requires both personal-home context and a home type", () => {
-    expect(availableNeighborhoodTargets(objects, { ...unavailable, hasPersonalHome: true })).toEqual([]);
-    expect(
-      availableNeighborhoodTargets(objects, { ...unavailable, hasPersonalHome: true, hasHomeType: true }).map(({ id }) => id),
-    ).toEqual(["home"]);
-  });
-  it("maps each available service to its corresponding entrance", () => {
-    const cases = [
-      ["hasShopOffers", "market"],
-      ["hasLocalBusinesses", "market"],
-      ["hasBankServices", "market"],
-      ["hasVenueInterior", "market"],
-      ["hasCareerServices", "work"],
-    ] as const;
-    for (const [capability, expected] of cases) {
-      expect(
-        availableNeighborhoodTargets(objects, { ...unavailable, [capability]: true }).map(({ id }) => id),
-      ).toEqual([expected]);
-    }
-  });
-  it("keeps workplace entrances available for designed interiors without job listings", () => {
-    expect(
-      availableNeighborhoodTargets(objects, { ...unavailable, hasVenueInterior: true }).map(({ id }) => id),
-    ).toEqual(["market", "work", "npc"]);
-  });
-  it("preserves NPCs as interaction targets independently of building services", () => {
+  it("hides unavailable building entrances while preserving NPC targets", () => {
     expect(availableNeighborhoodTargets(objects, unavailable).map(({ id }) => id)).toEqual(["npc"]);
   });
-  it("keeps NPCs alongside available building entrances", () => {
+
+  it("requires both personal-home context and a home type", () => {
     expect(
-      availableNeighborhoodTargets(objects, { ...unavailable, hasShopOffers: true, hasCareerServices: true }).map(({ kind }) => kind),
-    ).toEqual(["market", "work", "npc"]);
+      availableNeighborhoodTargets(objects, { ...unavailable, hasPersonalHome: true }).map(({ id }) => id),
+    ).toEqual(["npc"]);
+    expect(
+      availableNeighborhoodTargets(objects, {
+        ...unavailable,
+        hasPersonalHome: true,
+        hasHomeType: true,
+      }).map(({ id }) => id),
+    ).toEqual(["home", "npc"]);
+  });
+
+  it("maps shop, business and bank services to the market entrance", () => {
+    const cases = ["hasShopOffers", "hasLocalBusinesses", "hasBankServices"] as const;
+    for (const capability of cases) {
+      expect(
+        availableNeighborhoodTargets(objects, { ...unavailable, [capability]: true }).map(({ id }) => id),
+      ).toEqual(["market", "npc"]);
+    }
+  });
+
+  it("maps a designed venue interior to the market entrance only", () => {
+    expect(
+      availableNeighborhoodTargets(objects, { ...unavailable, hasVenueInterior: true }).map(({ id }) => id),
+    ).toEqual(["market", "npc"]);
+  });
+
+  it("maps career services to the workplace entrance", () => {
+    expect(
+      availableNeighborhoodTargets(objects, { ...unavailable, hasCareerServices: true }).map(({ id }) => id),
+    ).toEqual(["work", "npc"]);
+  });
+
+  it("keeps NPCs alongside all available building entrances", () => {
+    expect(
+      availableNeighborhoodTargets(objects, {
+        ...unavailable,
+        hasPersonalHome: true,
+        hasHomeType: true,
+        hasShopOffers: true,
+        hasCareerServices: true,
+      }).map(({ id }) => id),
+    ).toEqual(["home", "market", "work", "npc"]);
   });
 });
