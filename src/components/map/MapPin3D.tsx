@@ -1,4 +1,5 @@
 import { useRef, type FC } from "react";
+import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import type { Group } from "three";
 import { placeBadgeFor } from "./map-badge";
@@ -17,8 +18,9 @@ export interface MapPin3DProps {
 }
 
 /**
- * 3D Landmark & POI Pin with high-visibility native emoji rendering.
- * Purely static and non-animated for maximum legibility and stability.
+ * Animated 3D Landmark & POI Pin with high-visibility native emoji rendering.
+ * Uses Drei Html projection to ensure emojis (🛍️, 🍽️, 🏥, 🏛️, 🕌, ⚽, 🚌, 🔒)
+ * render with full native color, sharp clarity, and interactive responsiveness.
  */
 export const MapPin3D: FC<MapPin3DProps> = ({
   position,
@@ -35,6 +37,20 @@ export const MapPin3D: FC<MapPin3DProps> = ({
   const pinGroupRef = useRef<Group>(null);
   const badgeInfo = placeBadgeFor(category);
 
+  // Subtle phase offset so neighboring pins float independently
+  const phaseOffset = (position[0] * 3.7 + position[2] * 2.3) % (Math.PI * 2);
+
+  useFrame(({ clock }) => {
+    if (!pinGroupRef.current) return;
+    const t = clock.getElapsedTime();
+
+    // Fluid sine-wave vertical float
+    const floatSpeed = isSelected ? 3.2 : 2.2;
+    const floatAmp = isSelected ? 0.22 : 0.12;
+    const bob = Math.sin(t * floatSpeed + phaseOffset) * floatAmp;
+    pinGroupRef.current.position.y = position[1] + 1.1 + bob;
+  });
+
   const displayEmoji = isLocked ? "🔒" : badgeInfo.emoji;
   const pinColor = isLocked ? "#d97706" : badgeInfo.tone;
 
@@ -44,19 +60,19 @@ export const MapPin3D: FC<MapPin3DProps> = ({
       position={[position[0], position[1] + 1.1, position[2]]}
       {...(onClick ? { onClick } : {})}
     >
-      {/* 3D Pointer Stem Anchored Down to the Building (Static) */}
+      {/* 3D Pointer Stem Anchored Down to the Building */}
       <mesh position={[0, -0.4, 0]}>
         <cylinderGeometry args={[0.04, 0.015, 0.8, 8]} />
         <meshStandardMaterial color={pinColor} roughness={0.3} metalness={0.5} />
       </mesh>
 
-      {/* 3D Emissive Base Ring (Static) */}
+      {/* 3D Emissive Base Ring */}
       <mesh position={[0, -0.78, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[0.15, 0.28, 16]} />
         <meshBasicMaterial color={pinColor} transparent opacity={0.65} />
       </mesh>
 
-      {/* HTML Projected Pin: Non-animated, high-contrast, perfectly stable */}
+      {/* HTML Projected Pin: Guarantees 100% visible color emojis and crisp labels */}
       <Html
         center
         distanceFactor={18}
@@ -78,14 +94,17 @@ export const MapPin3D: FC<MapPin3DProps> = ({
             flexDirection: "column",
             alignItems: "center",
             cursor: "pointer",
-            transform: "none",
-            transition: "none",
-            animation: "none",
-            filter: isSelected
-              ? `drop-shadow(0 0 14px ${pinColor}) drop-shadow(0 4px 10px rgba(0,0,0,0.8))`
+            transform: isSelected
+              ? "scale(1.28) translateY(-4px)"
               : isHovered
-                ? `drop-shadow(0 0 8px ${pinColor}99) drop-shadow(0 3px 6px rgba(0,0,0,0.6))`
-                : "drop-shadow(0 3px 6px rgba(0,0,0,0.45))",
+                ? "scale(1.18) translateY(-2px)"
+                : "scale(1)",
+            transition: "transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1), filter 180ms ease",
+            filter: isSelected
+              ? `drop-shadow(0 0 16px ${pinColor}) drop-shadow(0 6px 12px rgba(0,0,0,0.8))`
+              : isHovered
+                ? `drop-shadow(0 0 10px ${pinColor}99) drop-shadow(0 4px 8px rgba(0,0,0,0.6))`
+                : "drop-shadow(0 4px 8px rgba(0,0,0,0.45))",
           }}
         >
           {/* Circular Emoji Badge Head */}
@@ -101,8 +120,6 @@ export const MapPin3D: FC<MapPin3DProps> = ({
               justifyContent: "center",
               boxShadow: `0 4px 14px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.4)`,
               position: "relative",
-              transition: "none",
-              animation: "none",
             }}
           >
             {/* Native Full-Color Emoji */}
@@ -111,8 +128,6 @@ export const MapPin3D: FC<MapPin3DProps> = ({
                 fontSize: "24px",
                 lineHeight: 1,
                 filter: "drop-shadow(0 2px 3px rgba(0,0,0,0.5))",
-                transition: "none",
-                animation: "none",
               }}
             >
               {displayEmoji}
@@ -139,7 +154,7 @@ export const MapPin3D: FC<MapPin3DProps> = ({
             )}
           </div>
 
-          {/* High-Contrast Floating Pill Label (Static) */}
+          {/* High-Contrast Floating Pill Label */}
           <div
             style={{
               marginTop: "5px",
@@ -157,8 +172,6 @@ export const MapPin3D: FC<MapPin3DProps> = ({
               display: "flex",
               alignItems: "center",
               gap: "4px",
-              transition: "none",
-              animation: "none",
             }}
           >
             <span>{label}</span>

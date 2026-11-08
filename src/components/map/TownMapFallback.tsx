@@ -54,46 +54,6 @@ interface DistrictLabelLayout {
   icon: string;
 }
 
-/**
- * Individual Landmark Place Marker.
- * Renders as an autonomous, non-animated component without collective grouping wrappers.
- */
-export function LandmarkPlaceFallback({
-  place,
-  onSelect,
-}: {
-  place: (typeof townData.landmarks)[number];
-  onSelect: (id: string) => void;
-}) {
-  const point = projectTownCell(place.grid.x, place.grid.z);
-  return (
-    <g
-      className="town-map-svg-place"
-      role="button"
-      tabIndex={0}
-      aria-label={`Open ${place.label}, ${place.category}`}
-      onClick={() => onSelect(place.id)}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onSelect(place.id);
-        }
-      }}
-      style={{ animation: "none", transition: "none", transform: "none" }}
-    >
-      <circle cx={point.x} cy={point.y - 10} r="13" />
-      <text
-        x={point.x}
-        y={point.y + 13}
-        textAnchor="middle"
-        style={{ animation: "none", transition: "none" }}
-      >
-        {place.label}
-      </text>
-    </g>
-  );
-}
-
 export function TownMapFallback({
   places,
   properties,
@@ -314,14 +274,31 @@ export function TownMapFallback({
         );
       })}
 
-      {/* LAYER 4: INDIVIDUAL LANDMARK COMPONENTS (NO GROUPING) */}
-      {places.map((place) => (
-        <LandmarkPlaceFallback
-          key={place.id}
-          place={place}
-          onSelect={onSelectLandmark}
-        />
-      ))}
+      {/* LAYER 4: PLACES & LANDMARK MARKERS */}
+      {places.map((place) => {
+        const point = projectTownCell(place.grid.x, place.grid.z);
+        return (
+          <g
+            key={place.id}
+            className="town-map-svg-place"
+            role="button"
+            tabIndex={0}
+            aria-label={`Open ${place.label}, ${place.category}`}
+            onClick={() => onSelectLandmark(place.id)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onSelectLandmark(place.id);
+              }
+            }}
+          >
+            <circle cx={point.x} cy={point.y - 10} r="13" />
+            <text x={point.x} y={point.y + 13} textAnchor="middle">
+              {place.label}
+            </text>
+          </g>
+        );
+      })}
 
       {/* LAYER 5: LIVE EVENTS & BILLBOARDS */}
       {eventChips.map((event) => {
@@ -376,7 +353,7 @@ export function TownMapFallback({
         ];
       })}
 
-      {/* LAYER 6: FLOATING UI OVERLAY - COLLISION-FREE DISTRICT LABELS (STATIC & NON-ANIMATED) */}
+      {/* LAYER 6: FLOATING UI OVERLAY - COLLISION-FREE DISTRICT LABELS */}
       <g className="town-map-svg-labels-layer">
         {districtLabels.map((item) => {
           const pillX = item.x - item.width / 2;
@@ -396,7 +373,7 @@ export function TownMapFallback({
                   onSelectDistrict(item.id);
                 }
               }}
-              style={{ cursor: "pointer", animation: "none", transition: "none", transform: "none" }}
+              style={{ cursor: "pointer" }}
             >
               {/* Drop Shadow */}
               <rect
@@ -424,7 +401,6 @@ export function TownMapFallback({
                 y={item.y + 4}
                 fontSize="13"
                 dominantBaseline="central"
-                style={{ animation: "none", transition: "none" }}
               >
                 {item.icon}
               </text>
@@ -436,7 +412,6 @@ export function TownMapFallback({
                 fontWeight="700"
                 fill="#1e293b"
                 dominantBaseline="central"
-                style={{ animation: "none", transition: "none" }}
               >
                 {item.name}
               </text>
