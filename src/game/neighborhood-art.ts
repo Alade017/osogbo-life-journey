@@ -24,8 +24,8 @@ export const NEIGHBORHOOD_BUILDING_ART: Readonly<
     width: 192,
     height: 200,
     originX: 0.5,
-    originY: 0.675,
-    scale: 0.68,
+    originY: 0.95,
+    scale: 0.45,
   },
   shop: {
     key: "neighborhood-art-shop",
@@ -43,7 +43,7 @@ export const NEIGHBORHOOD_BUILDING_ART: Readonly<
     height: 200,
     originX: 0.5,
     originY: 0.675,
-    scale: 0.54,
+    scale: 0.38,
   },
 };
 
@@ -57,7 +57,7 @@ export const NEIGHBORHOOD_PROP_ART: Readonly<
     height: 160,
     originX: 0.5,
     originY: 0.94,
-    scale: 0.55,
+    scale: 0.4,
   },
   streetlight: {
     key: "neighborhood-art-streetlight",
@@ -66,7 +66,7 @@ export const NEIGHBORHOOD_PROP_ART: Readonly<
     height: 176,
     originX: 0.5,
     originY: 0.94,
-    scale: 0.52,
+    scale: 0.35,
   },
   bench: {
     key: "neighborhood-art-bench",
@@ -75,7 +75,7 @@ export const NEIGHBORHOOD_PROP_ART: Readonly<
     height: 80,
     originX: 0.5,
     originY: 0.82,
-    scale: 0.48,
+    scale: 0.36,
   },
   bin: {
     key: "neighborhood-art-bin",
@@ -84,7 +84,7 @@ export const NEIGHBORHOOD_PROP_ART: Readonly<
     height: 88,
     originX: 0.5,
     originY: 0.94,
-    scale: 0.44,
+    scale: 0.36,
   },
   sign: {
     key: "neighborhood-art-sign",
@@ -93,7 +93,7 @@ export const NEIGHBORHOOD_PROP_ART: Readonly<
     height: 112,
     originX: 0.5,
     originY: 0.94,
-    scale: 0.45,
+    scale: 0.36,
   },
 };
 
