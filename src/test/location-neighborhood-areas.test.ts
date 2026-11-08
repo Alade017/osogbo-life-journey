@@ -46,6 +46,20 @@ describe("every active location has a playable area", () => {
     expect(target!.y).not.toBe(area.objects.find((object) => object.kind === "market")!.y);
   });
 
+  it("registers the legacy Oja-Oba database landmark at its walkable market approach", () => {
+    const area = neighborhoodAreaForLocation({
+      slug: "oja-oba",
+      name: "Oja-Oba Market",
+      map_category: "commercial",
+    });
+    expect(area.interactionPoints).toEqual([
+      { id: "oja-oba-market", x: 145, y: 220, radius: 60 },
+    ]);
+    const origin = { x: 7, y: 6 };
+    const playerAtApproach = toWorld({ x: 145, y: 220 }, origin);
+    expect(nearbyInteractionPoint(playerAtApproach, origin, area)?.id).toBe("oja-oba-market");
+  });
+
   it("resolves proximity using the authoritative world position, not a client target position", () => {
     const area = neighborhoodAreaForLocation({
       slug: "cedar-bank",
