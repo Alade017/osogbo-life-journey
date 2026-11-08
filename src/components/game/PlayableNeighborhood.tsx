@@ -32,6 +32,7 @@ import { canonicalHomeOptions } from "@/lib/living-cost-service";
 import { useGameTime } from "@/components/game/GameTimeProvider";
 import type { NetworkPlayerSnapshot } from "@/game/multiplayer-state";
 import { avatarAnimationForActivity } from "@/game/character-animation";
+import { availableNeighborhoodTargets } from "@/game/neighborhood-interactions";
 import {
   neighborhoodAreaForSlug,
   nearestInteraction,
@@ -409,36 +410,28 @@ export function PlayableNeighborhood() {
   const hasLocalBusinesses = localPlaces.some((place) =>
     BUSINESS_PLACE_CATEGORIES.has(place.category),
   );
-  const interactionTargets = useMemo(() => {
-    const buildings = area.objects.filter((object) => {
-      if (object.kind === "home") return !!district?.personalHome && !!homeTypeId;
-      if (object.kind === "market")
-        return hasShopOffers || hasLocalBusinesses || hasBankServices || hasVenueInterior;
-      if (object.kind === "work") return hasCareerServices;
-      return false;
-    });
-    const npcTargets = activeNpcs
-      .filter((npc) => npc.available && !npc.isMoving)
-      .map((npc): (typeof area.objects)[number] => ({
-        id: npc.id,
-        name: npc.name,
-        kind: "npc",
-        x: npc.x,
-        y: npc.y,
-      }));
-    return [...buildings, ...npcTargets];
-  }, [
-    activeNpcs,
-    area,
-    area.objects,
-    district?.personalHome,
-    hasBankServices,
-    hasCareerServices,
-    hasLocalBusinesses,
-    hasShopOffers,
-    hasVenueInterior,
-    homeTypeId,
-  ]);
+  const interactionTargets = useMemo(
+    () =>
+      availableNeighborhoodTargets(area.objects, {
+        hasPersonalHome: !!district?.personalHome,
+        hasHomeType: !!homeTypeId,
+        hasShopOffers,
+        hasLocalBusinesses,
+        hasBankServices,
+        hasVenueInterior,
+        hasCareerServices,
+      }),
+    [
+      area.objects,
+      district?.personalHome,
+      homeTypeId,
+      hasShopOffers,
+      hasLocalBusinesses,
+      hasBankServices,
+      hasVenueInterior,
+      hasCareerServices,
+    ],
+  );
   const nearbyObject = useMemo(() => {
     if (!player || !district) return null;
     const point = toScene({ x: player.x, y: player.y }, district.origin);
