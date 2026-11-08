@@ -49,21 +49,19 @@ describe("Osogbo street map fallback", () => {
     vi.useRealTimers();
   });
 
-  it("shows the playable SVG and notice when WebGL is unavailable", async () => {
+  it("shows the accessible place directory instead of an SVG renderer when WebGL is unavailable", async () => {
     const onSelectDistrict = vi.fn();
     const { container } = render(<OsogboMap onSelectDistrict={onSelectDistrict} />);
 
     expect(
       await screen.findByText(
-        "Street map unavailable on this connection. Showing the simplified map.",
+        "Street map unavailable on this connection. Use the place directory below.",
       ),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Retry street map" })).toBeInTheDocument();
-    expect(container.querySelector(".osogbo-map-svg")).toBeInTheDocument();
+    expect(container.querySelector("svg")).not.toBeInTheDocument();
 
-    const district = container.querySelector<SVGGElement>("[data-district-id]");
-    expect(district).not.toBeNull();
-    fireEvent.click(district!);
+    fireEvent.click(screen.getByRole("button", { name: "Central Crossing" }));
     expect(onSelectDistrict).toHaveBeenCalledOnce();
   });
 
@@ -74,7 +72,7 @@ describe("Osogbo street map fallback", () => {
 
     expect(
       await screen.findByText(
-        "Street map unavailable on this connection. Showing the simplified map.",
+        "Street map unavailable on this connection. Use the place directory below.",
       ),
     ).toBeInTheDocument();
     expect(preflight).toHaveBeenCalledOnce();
@@ -96,7 +94,7 @@ describe("Osogbo street map fallback", () => {
       await vi.advanceTimersByTimeAsync(15_000);
     });
     expect(
-      screen.getByText("Street map unavailable on this connection. Showing the simplified map."),
+      screen.getByText("Street map unavailable on this connection. Use the place directory below."),
     ).toBeInTheDocument();
   });
 });
