@@ -673,18 +673,18 @@ export function PlayableNeighborhood() {
   }, [activateHome, activePanel, connectionState, enteringHome, nearbyObject]);
 
   const handleScene = useCallback((next: PhaserNeighborhoodHandle | null) => setScene(next), []);
-  const openInteraction = () => {
-    if (!nearbyObject) return;
-    if (nearbyObject.kind === "home") {
+  const openInteraction = (target: NeighborhoodObject | null = nearbyObject) => {
+    if (!target) return;
+    if (target.kind === "home") {
       enterHome.mutate();
-    } else if (nearbyObject.kind === "npc") {
-      setSelectedNpcId(nearbyObject.id);
+    } else if (target.kind === "npc") {
+      setSelectedNpcId(target.id);
       setNpcDialogue(null);
       setActivePanel("npc");
-    } else if (nearbyObject.kind === "work") {
+    } else if (target.kind === "work") {
       setWorkView("actions");
       setActivePanel("work");
-    } else {
+    } else if (target.kind === "market") {
       setBusinessView("actions");
       setActivePanel("business");
     }
@@ -695,7 +695,7 @@ export function PlayableNeighborhood() {
     if (!target || !district) return;
     if (nearbyObject?.id === targetId) {
       setPendingTargetId(null);
-      openInteraction();
+      openInteraction(target);
       return;
     }
     toast.message(`Walking to ${target.name}`);
@@ -706,12 +706,17 @@ export function PlayableNeighborhood() {
     setGroundTarget(destination);
   };
   useEffect(() => {
-    if (!pendingTargetId || nearbyObject?.id !== pendingTargetId) return;
+    if (!pendingTargetId || !player || !district) return;
+    const target = interactionTargets.find((candidate) => candidate.id === pendingTargetId);
+    if (!target) return;
+    const position = toScene({ x: player.x, y: player.y }, district.origin);
+    if (Math.hypot(position.x - target.x, position.y - target.y) >= 65) return;
     setPendingTargetId(null);
-    openInteraction();
-    // openInteraction reads the current nearby object, which this effect already tracks.
+    openInteraction(target);
+    // Arrival is checked against the requested target itself, not whichever target
+    // happens to be nearest when two interaction ranges overlap.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingTargetId, nearbyObject]);
+  }, [pendingTargetId, player, district, interactionTargets]);
   useEffect(() => {
     if (!pendingTargetId || interactionTargets.some((target) => target.id === pendingTargetId))
       return;
