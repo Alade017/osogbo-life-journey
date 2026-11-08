@@ -1,37 +1,38 @@
-# Phase 4 — Neighborhood production-art pilot
+# Phase 4 — Procedural neighborhood art pilot
 
-8 November 2026. First bounded production-art slice for the existing Phaser neighborhood renderer. This does not replace the city overview, Three.js house interior, avatar renderer, movement model or server authority.
+This pilot uses the existing Phaser renderer and its projected world coordinates. It adds no external image assets, SVGs, textures or fallback image renderer.
 
-## Scope
+## Rendering approach
 
-The pilot introduces original, lightweight SVG environment assets for the playable neighborhood:
-
-- Residential compound: rendered plaster walls, red-brown roof, barred windows, shaded entrance and a grounded doorway.
-- Commercial shop: muted painted frontage, metal roof, awning, display windows and entrance.
-- Market kiosk: compact stall with shaded counter and simple signboard.
-- Street environment: leafy shade tree, streetlight, bench, refuse bin and wayfinding sign.
-
-Assets live under `public/assets/world/neighborhood/`. The TypeScript manifest in `src/game/neighborhood-art.ts` defines stable keys, dimensions, anchors and display scale. Phaser preloads the manifest and uses the SVGs when available. Existing procedural geometry remains as a fallback if an asset fails to load.
+- Buildings are constructed from Phaser Graphics geometry using data-driven profiles for compound, shop and kiosk families.
+- Roofs, wall planes, eaves, roof seams, doors, windows, grilles, awnings and verandas are derived from each building's existing width/depth footprint and a typed style profile.
+- Environment props are constructed procedurally from typed shape profiles for trees, streetlights, benches, bins and signs.
+- Dimensions are derived from each world's existing obstacle/building dimensions; no new per-location placement coordinates or collision dimensions are introduced.
+- Unknown obstacle kinds are skipped rather than silently rendered as an unrelated generic prop.
 
 ## Preserved contracts
 
 - Existing `projectNeighborhood` projection and scene bounds are unchanged.
-- Existing 114 × 58 building footprint and obstacle collision rectangles are unchanged.
-- SVGs are presentation-only; roof overhangs and shadows do not add collision.
-- Building labels and existing object identities remain in the same renderer containers.
-- Existing player textures, depth calculation, camera, movement, room lifecycle and interaction targets are untouched.
+- Existing building footprints and obstacle collision rectangles are unchanged.
+- Art is presentation-only and does not change movement, collision, player depth, server authority or interactions.
+- Existing labels, object identity, room lifecycle, camera and player rendering remain in place.
+- No Three.js/R3F renderer is introduced into this Phaser scene; Phaser is already the renderer responsible for this playable neighborhood.
 - No phone routing, database, RPC, Colyseus, economy or deployment changes.
 
-## Validation and acceptance
+## Removed
 
-Source-level manifest tests are added in `src/test/neighborhood-art.test.ts`. The repository-connected environment used for this change cannot run the project's local Node commands or open the live game in a browser. No typecheck, Vitest run, lint, production build, desktop/mobile rendering, or live interaction test is claimed.
+All eight SVG assets and the SVG loading manifest have been removed. There is no SVG loading path and no SVG or image fallback renderer. Phaser geometry is the sole building and environment-prop renderer for this pilot.
 
-Before merge, run locally:
+## Validation status
+
+The profile-focused Vitest file has been updated but not executed. Typecheck, lint, production build, desktop/mobile browser rendering and gameplay interaction tests have not been run in this environment. GitHub Actions are intentionally not being manually triggered or rerun.
+
+Before considering merge, execute locally:
 
 1. `npm run typecheck`
 2. `npx vitest run src/test/neighborhood-art.test.ts src/test/neighborhood-model.test.ts`
-3. `npm run lint -- src/game/neighborhood-art.ts src/game/phaser-neighborhood.ts src/test/neighborhood-art.test.ts` (or the project's equivalent scoped ESLint command)
+3. `npm run lint -- src/game/neighborhood-art.ts src/game/phaser-neighborhood.ts src/test/neighborhood-art.test.ts` (or the repository's equivalent scoped lint command)
 4. `npm run build`
-5. Open the authenticated full-page `/neighborhood` in a real browser at 375px and desktop width. Check all eight asset families, asset loading failures/fallback, avatar depth behind/in front of tree and buildings, doorway approach, zoom, room movement, resize and navigation away/back. Inspect browser console and network for SVG load errors.
+5. Test the authenticated full-page `/neighborhood` at desktop and 375px mobile widths. Check all building and prop families, depth sorting, approach to entrances, zoom, movement, resizing, navigation away/back, console errors and network failures.
 
-A successful unit test cannot approve the art visually. Confirm asset scale/material readability and collision/entrance alignment in the actual scene before expanding this pilot to the rest of the city.
+Visual scale and gameplay fit must be inspected in the actual browser before expanding this art pilot or recommending merge.
