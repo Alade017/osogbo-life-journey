@@ -224,6 +224,33 @@ export function pedestrianCrossings(area: NeighborhoodArea): DressingRect[] {
   return rects;
 }
 
+/** Split each crossing envelope into evenly spaced zebra stripes for rendering. */
+export function pedestrianCrossingStripes(crossings: readonly DressingRect[]): DressingRect[] {
+  const stripeCount = 4;
+  return crossings.flatMap((crossing) => {
+    const spansX = crossing.width >= crossing.depth;
+    const travelSpan = spansX ? crossing.depth : crossing.width;
+    const spacing = travelSpan / (stripeCount + 1);
+    const thickness = Math.min(3, spacing * 0.55);
+    return Array.from({ length: stripeCount }, (_, index) => {
+      const offset = -travelSpan / 2 + spacing * (index + 1);
+      return spansX
+        ? {
+            x: crossing.x,
+            y: crossing.y + offset,
+            width: crossing.width,
+            depth: thickness,
+          }
+        : {
+            x: crossing.x + offset,
+            y: crossing.y,
+            width: thickness,
+            depth: crossing.depth,
+          };
+    });
+  });
+}
+
 /** Signals at declared arterial junctions, positioned clear of road edges and existing props. */
 export function trafficLightSpots(area: NeighborhoodArea): TrafficLightSpot[] {
   const verticals = (area.roads ?? []).filter(
