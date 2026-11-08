@@ -225,7 +225,15 @@ export function trafficLightSpots(area: NeighborhoodArea): TrafficLightSpot[] {
           const x = vertical.offset + sideX * setback;
           const y = horizontal.offset + sideY * setback;
           const key = `${x}:${y}`;
-          if (seen.has(key) || insideObstacle(x, y, boxes, 8)) continue;
+          const withinVertical = vertical.start === undefined || (y >= vertical.start && y <= vertical.end!);
+          const withinHorizontal =
+            horizontal.start === undefined || (x >= horizontal.start && x <= horizontal.end!);
+          if (
+            seen.has(key) ||
+            !withinVertical ||
+            !withinHorizontal ||
+            insideObstacle(x, y, boxes, 8)
+          ) continue;
           seen.add(key);
           spots.push({
             x,
