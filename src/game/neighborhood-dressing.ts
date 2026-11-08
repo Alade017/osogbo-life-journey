@@ -127,36 +127,53 @@ export function sidewalksAndCurbs(
 /** Zebra-style crossing blocks on the approach to every street junction. */
 export function pedestrianCrossings(area: NeighborhoodArea): DressingRect[] {
   const roads = area.roads ?? [];
-  const verticals = roads.filter((r) => r.axis === "vertical");
-  const horizontals = roads.filter((r) => r.axis === "horizontal");
+  const verticals = roads.filter((road) => road.axis === "vertical");
+  const horizontals = roads.filter((road) => road.axis === "horizontal");
   const rects: DressingRect[] = [];
   const boxes = occupiedBoxes(area);
   const seen = new Set<string>();
-  for (const v of verticals)
-    for (const h of horizontals) {
-      const verticalStart = v.start;
-      const verticalEnd = v.end;
-      const horizontalStart = h.start;
-      const horizontalEnd = h.end;
+  const addCrossing = (key: string, rect: DressingRect) => {
+    const overlapsObstacle = boxes.some(
+      (box) =>
+        Math.abs(rect.x - box.x) < (rect.width + box.width) / 2 + 2 &&
+        Math.abs(rect.y - box.y) < (rect.depth + box.height) / 2 + 2,
+    );
+    if (seen.has(key) || overlapsObstacle) return;
+    seen.add(key);
+    rects.push(rect);
+  };
+
+  for (const vertical of verticals)
+    for (const horizontal of horizontals) {
+      const verticalStart = vertical.start;
+      const verticalEnd = vertical.end;
+      const horizontalStart = horizontal.start;
+      const horizontalEnd = horizontal.end;
       if (
-        (verticalStart !== undefined && h.offset < verticalStart) ||
-        (verticalEnd !== undefined && h.offset > verticalEnd) ||
-        (horizontalStart !== undefined && v.offset < horizontalStart) ||
-        (horizontalEnd !== undefined && v.offset > horizontalEnd)
+        (verticalStart !== undefined && horizontal.offset < verticalStart) ||
+        (verticalEnd !== undefined && horizontal.offset > verticalEnd) ||
+        (horizontalStart !== undefined && vertical.offset < horizontalStart) ||
+        (horizontalEnd !== undefined && vertical.offset > horizontalEnd)
       ) continue;
-      const approach = h.width / 2 + 14;
-      const width = v.width * 0.9;
-      const depth = 14;
-      for (const y of [h.offset - approach, h.offset + approach]) {
-        const key = `${v.offset}:${y}`;
-        const overlapsObstacle = boxes.some(
-          (box) =>
-            Math.abs(v.offset - box.x) < (width + box.width) / 2 + 2 &&
-            Math.abs(y - box.y) < (depth + box.height) / 2 + 2,
-        );
-        if (seen.has(key) || overlapsObstacle) continue;
-        seen.add(key);
-        rects.push({ x: v.offset, y, width, depth });
+
+      const verticalApproach = horizontal.width / 2 + 14;
+      for (const y of [horizontal.offset - verticalApproach, horizontal.offset + verticalApproach]) {
+        addCrossing(`vertical:${vertical.id}:${horizontal.id}:${y}`, {
+          x: vertical.offset,
+          y,
+          width: vertical.width * 0.9,
+          depth: 14,
+        });
+      }
+
+      const horizontalApproach = vertical.width / 2 + 14;
+      for (const x of [vertical.offset - horizontalApproach, vertical.offset + horizontalApproach]) {
+        addCrossing(`horizontal:${vertical.id}:${horizontal.id}:${x}`, {
+          x,
+          y: horizontal.offset,
+          width: 14,
+          depth: horizontal.width * 0.9,
+        });
       }
     }
   return rects;
