@@ -28,13 +28,18 @@ import {
   type WorldInstance,
 } from "../3d/WorldScene";
 import { WORLD_SCALE, WORLD_PALETTE } from "../3d/world-theme";
-import { MapLighting } from "./MapLighting";
+import { MapLighting, useRealOrGameClock, daylightFor } from "./MapLighting";
 import { PlaceBadge } from "./map-badge";
 import { getLandmarkBuildingVariant } from "./landmark-building-variant";
 import { CompoundPlot3D } from "./CompoundPlot3D";
 import { MapPin3D } from "./MapPin3D";
 import { SelectionRing3D } from "./SelectionRing3D";
 import { useMapCameraFocus } from "./use-map-camera-focus";
+import { Terrain3D } from "./Terrain3D";
+import { MovingTraffic3D } from "./MovingTraffic3D";
+import { MovingPedestrians3D } from "./MovingPedestrians3D";
+import { FunctionalStreetLights3D } from "./FunctionalStreetLights3D";
+import { LockedPlaces3D, type LockedPlace } from "./LockedPlaces3D";
 
 type Props = PhaserMapData &
   PhaserMapCallbacks & {
@@ -159,6 +164,8 @@ function calculateBadgePositions(
 export function R3FTownSurface(props: Props) {
   const [hovered, setHovered] = useState<string | null>(null);
   const gesture = useRef({ x: 0, y: 0, moved: false });
+  const clockTime = useRealOrGameClock();
+  const { isNight } = daylightFor(clockTime.hour, clockTime.minute);
   const [selectedTarget, setSelectedTarget] = useState<{
     id: string;
     position: [number, number, number];
@@ -839,7 +846,7 @@ export function R3FTownSurface(props: Props) {
           gesture.current = { x: event.clientX, y: event.clientY, moved: false };
         }}
         onPointerMoveCapture={(event) => {
-          if (Math.hypot(event.clientX - gesture.current.x, event.clientY - gesture.current.y) > 6)
+          if (Math.hypot(event.clientX - gesture.current.x, event.clientY - gesture.current.y) > 10)
             gesture.current.moved = true;
         }}
         onPointerCancelCapture={() => {
@@ -855,12 +862,9 @@ export function R3FTownSurface(props: Props) {
         >
           <Ready onReady={props.onReady} />
           <CameraFocusController targetPosition={selectedTarget?.position ?? null} />
-          <WorldCamera width={gridCols * cell} depth={gridRows * cell} zoom={1.3} />
+          <WorldCamera width={gridCols * cell} depth={gridRows * cell} zoom={1.55} />
           <MapLighting size={gridCols * cell} />
-          <mesh position={[0, -0.12, 0]} receiveShadow>
-            <boxGeometry args={[gridCols * cell, 0.2, gridRows * cell]} />
-            <WorldMaterial tone="ground" />
-          </mesh>
+          <Terrain3D gridCols={gridCols} gridRows={gridRows} cellSize={cell} />
 
           <WorldRoads items={roads} />
           <WorldRoadMarkings items={roadMarkings} />
@@ -874,7 +878,7 @@ export function R3FTownSurface(props: Props) {
           <WorldMotorcycles positions={motorcycles} size={cell} />
           <WorldTricycles positions={tricycles} size={cell} />
           <WorldStreetVendors positions={streetVendors} size={cell} />
-          <WorldStreetLights positions={streetLights} size={cell} />
+          <FunctionalStreetLights3D positions={streetLights} size={cell} isNight={isNight} />
           <WorldWasteBins positions={wasteBins} size={cell} />
           <WorldInstances
             tone="slate"
@@ -895,12 +899,22 @@ export function R3FTownSurface(props: Props) {
             <WorldHouse
               key={`building-${building.x}-${building.z}`}
               position={point(building.x + 0.5, building.z + 0.5)}
-              width={cell * 0.65}
-              depth={cell * 0.65}
+              width={cell * 1.15}
+              depth={cell * 1.15}
               variant={getLandmarkBuildingVariant(building.buildingType)}
               detailed
             />
           ))}
+          <MovingTraffic3D cellSize={cell} gridCols={gridCols} gridRows={gridRows} />
+          <MovingPedestrians3D cellSize={cell} gridCols={gridCols} gridRows={gridRows} />
+          <LockedPlaces3D
+            cellSize={cell}
+            gridCols={gridCols}
+            gridRows={gridRows}
+            onSelectLocked={(locked) => {
+              setSelectedTarget({ id: locked.id, position: locked.position, type: "landmark" });
+            }}
+          />
           <DistrictZones
             districts={town.districts}
             point={point}
@@ -986,6 +1000,7 @@ export function R3FTownSurface(props: Props) {
               key={property.id}
               property={property}
               cellSize={cell}
+              isNight={isNight}
               isSelected={selectedTarget?.id === property.id}
               isHovered={hoveredTargetId === property.id}
               onClick={(event) =>

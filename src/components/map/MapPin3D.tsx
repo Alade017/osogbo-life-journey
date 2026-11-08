@@ -1,6 +1,6 @@
 import { useRef, type FC } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Billboard, Text } from "@react-three/drei";
+import { Html } from "@react-three/drei";
 import type { Group } from "three";
 import { placeBadgeFor } from "./map-badge";
 
@@ -8,6 +8,8 @@ export interface MapPin3DProps {
   position: [number, number, number];
   label: string;
   category: string;
+  isLocked?: boolean;
+  lockReason?: string;
   isSelected?: boolean;
   isHovered?: boolean;
   onClick?: () => void;
@@ -16,14 +18,16 @@ export interface MapPin3DProps {
 }
 
 /**
- * Animated 3D Landmark Pin floating above points of interest on the map.
- * Replaces static HTML badges with a hardware-accelerated 3D marker
- * featuring idle bobbing, smooth hover elevation, and selection pulses.
+ * Animated 3D Landmark & POI Pin with high-visibility native emoji rendering.
+ * Uses Drei Html projection to ensure emojis (🛍️, 🍽️, 🏥, 🏛️, 🕌, ⚽, 🚌, 🔒)
+ * render with full native color, sharp clarity, and interactive responsiveness.
  */
 export const MapPin3D: FC<MapPin3DProps> = ({
   position,
   label,
   category,
+  isLocked = false,
+  lockReason,
   isSelected = false,
   isHovered = false,
   onClick,
@@ -33,86 +37,150 @@ export const MapPin3D: FC<MapPin3DProps> = ({
   const pinGroupRef = useRef<Group>(null);
   const badgeInfo = placeBadgeFor(category);
 
-  // Subtle hash-based phase offset so landmarks don't all bob in lockstep
+  // Subtle phase offset so neighboring pins float independently
   const phaseOffset = (position[0] * 3.7 + position[2] * 2.3) % (Math.PI * 2);
 
   useFrame(({ clock }) => {
     if (!pinGroupRef.current) return;
     const t = clock.getElapsedTime();
 
-    // Idle sine-wave floating animation
-    const floatSpeed = isSelected ? 3.0 : 2.0;
-    const floatAmplitude = isSelected ? 0.16 : 0.09;
-    const bob = Math.sin(t * floatSpeed + phaseOffset) * floatAmplitude;
-    pinGroupRef.current.position.y = position[1] + bob;
-
-    // Hover / selection scale feedback
-    const baseScale = isSelected ? 1.18 : isHovered ? 1.12 : 1.0;
-    const pulse = isSelected ? Math.sin(t * 5.0) * 0.04 : 0;
-    const targetScale = baseScale + pulse;
-    pinGroupRef.current.scale.lerp(
-      { x: targetScale, y: targetScale, z: targetScale } as any,
-      0.18,
-    );
+    // Fluid sine-wave vertical float
+    const floatSpeed = isSelected ? 3.2 : 2.2;
+    const floatAmp = isSelected ? 0.22 : 0.12;
+    const bob = Math.sin(t * floatSpeed + phaseOffset) * floatAmp;
+    pinGroupRef.current.position.y = position[1] + 1.1 + bob;
   });
+
+  const displayEmoji = isLocked ? "🔒" : badgeInfo.emoji;
+  const pinColor = isLocked ? "#d97706" : badgeInfo.tone;
 
   return (
     <group
       ref={pinGroupRef}
-      position={position}
-      onClick={(e) => {
-        e.stopPropagation();
-        onClick?.();
-      }}
-      onPointerOver={(e) => {
-        e.stopPropagation();
-        onPointerOver?.();
-      }}
-      onPointerOut={() => onPointerOut?.()}
+      position={[position[0], position[1] + 1.1, position[2]]}
+      {...(onClick ? { onClick } : {})}
     >
-      <Billboard follow lockX={false} lockY={false} lockZ={false}>
-        {/* Pin Stem / Pointer Tip */}
-        <mesh position={[0, 0.24, 0]}>
-          <cylinderGeometry args={[0.04, 0.01, 0.42, 8]} />
-          <meshStandardMaterial color={badgeInfo.tone} roughness={0.3} metalness={0.2} />
-        </mesh>
+      {/* 3D Pointer Stem Anchored Down to the Building */}
+      <mesh position={[0, -0.4, 0]}>
+        <cylinderGeometry args={[0.04, 0.015, 0.8, 8]} />
+        <meshStandardMaterial color={pinColor} roughness={0.3} metalness={0.5} />
+      </mesh>
 
-        {/* Pin Head Sphere */}
-        <mesh position={[0, 0.54, 0]} castShadow>
-          <sphereGeometry args={[0.26, 16, 16]} />
-          <meshStandardMaterial color={badgeInfo.tone} roughness={0.25} />
-        </mesh>
+      {/* 3D Emissive Base Ring */}
+      <mesh position={[0, -0.78, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.15, 0.28, 16]} />
+        <meshBasicMaterial color={pinColor} transparent opacity={0.65} />
+      </mesh>
 
-        {/* Inner Badge Disc */}
-        <mesh position={[0, 0.54, 0.12]}>
-          <circleGeometry args={[0.18, 16]} />
-          <meshBasicMaterial color="#0b0f17" />
-        </mesh>
-
-        {/* Category Emoji Glyph */}
-        <Text
-          position={[0, 0.54, 0.14]}
-          fontSize={0.22}
-          anchorX="center"
-          anchorY="middle"
+      {/* HTML Projected Pin: Guarantees 100% visible color emojis and crisp labels */}
+      <Html
+        center
+        distanceFactor={18}
+        zIndexRange={[100, 0]}
+        style={{ pointerEvents: "auto", userSelect: "none" }}
+      >
+        <div
+          role="button"
+          tabIndex={0}
+          aria-label={`${label}${isLocked ? " (Locked)" : ""}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick?.();
+          }}
+          onPointerEnter={() => onPointerOver?.()}
+          onPointerLeave={() => onPointerOut?.()}
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            cursor: "pointer",
+            transform: isSelected
+              ? "scale(1.28) translateY(-4px)"
+              : isHovered
+                ? "scale(1.18) translateY(-2px)"
+                : "scale(1)",
+            transition: "transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1), filter 180ms ease",
+            filter: isSelected
+              ? `drop-shadow(0 0 16px ${pinColor}) drop-shadow(0 6px 12px rgba(0,0,0,0.8))`
+              : isHovered
+                ? `drop-shadow(0 0 10px ${pinColor}99) drop-shadow(0 4px 8px rgba(0,0,0,0.6))`
+                : "drop-shadow(0 4px 8px rgba(0,0,0,0.45))",
+          }}
         >
-          {badgeInfo.emoji}
-        </Text>
+          {/* Circular Emoji Badge Head */}
+          <div
+            style={{
+              width: "44px",
+              height: "44px",
+              borderRadius: "50%",
+              background: `radial-gradient(circle at 35% 30%, ${pinColor}ff, ${pinColor}dd 60%, #0b1120 100%)`,
+              border: `2.5px solid ${isSelected ? "#ffffff" : isLocked ? "#fef08a" : "#ffffffdd"}`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              boxShadow: `0 4px 14px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.4)`,
+              position: "relative",
+            }}
+          >
+            {/* Native Full-Color Emoji */}
+            <span
+              style={{
+                fontSize: "24px",
+                lineHeight: 1,
+                filter: "drop-shadow(0 2px 3px rgba(0,0,0,0.5))",
+              }}
+            >
+              {displayEmoji}
+            </span>
 
-        {/* Floating Label Text */}
-        <Text
-          position={[0, 0.94, 0]}
-          fontSize={0.24}
-          color="#f8fafc"
-          outlineWidth={0.035}
-          outlineColor="#0b0f17"
-          anchorX="center"
-          anchorY="bottom"
-          fontWeight="bold"
-        >
-          {label}
-        </Text>
-      </Billboard>
+            {/* Locked mini badge indicator */}
+            {isLocked && (
+              <span
+                style={{
+                  position: "absolute",
+                  bottom: "-2px",
+                  right: "-2px",
+                  background: "#b91c1c",
+                  color: "#fff",
+                  fontSize: "10px",
+                  fontWeight: "bold",
+                  padding: "1px 4px",
+                  borderRadius: "8px",
+                  border: "1px solid #ffffff",
+                }}
+              >
+                LOCK
+              </span>
+            )}
+          </div>
+
+          {/* High-Contrast Floating Pill Label */}
+          <div
+            style={{
+              marginTop: "5px",
+              background: "rgba(11, 15, 23, 0.88)",
+              backdropFilter: "blur(4px)",
+              color: "#f8fafc",
+              border: `1px solid ${isSelected ? pinColor : "rgba(255,255,255,0.18)"}`,
+              borderRadius: "12px",
+              padding: "2px 8px",
+              fontSize: "12px",
+              fontWeight: 700,
+              letterSpacing: "0.2px",
+              whiteSpace: "nowrap",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.6)",
+              display: "flex",
+              alignItems: "center",
+              gap: "4px",
+            }}
+          >
+            <span>{label}</span>
+            {isLocked && lockReason && (
+              <span style={{ color: "#f59e0b", fontSize: "10px" }}>🔒</span>
+            )}
+          </div>
+        </div>
+      </Html>
     </group>
   );
 };

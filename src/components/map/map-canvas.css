@@ -11,6 +11,9 @@
   min-height: 22rem;
   background: #dce7dc;
   isolation: isolate;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
 }
 
 .town-map-svg-fallback,
