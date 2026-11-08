@@ -1,12 +1,13 @@
 # Phase 4 — Procedural neighborhood art pilot
 
-This pilot uses the existing Phaser renderer and its projected world coordinates. All neighborhood architecture and environment props are drawn with Phaser Graphics; no external image assets or alternate renderer are used.
+The active playable neighborhood is rendered by the existing React Three Fiber / Three.js surface in `R3FNeighborhoodSurface.tsx`. This pilot's Phaser Graphics profiles are a separate procedural-art implementation and are not the active `/neighborhood` renderer. Keep renderer responsibilities explicit; do not add SVG renderers or SVG fallbacks.
 
 ## Rendering approach
 
-- Buildings are constructed from Phaser Graphics geometry using semantic profiles for compound, shop, kiosk, market and work families. World-object kinds select the appropriate reusable family.
+- The active R3F scene constructs buildings with reusable `WorldHouse` geometry. Confirmed world categories select architecture families (market, civic, health, education, transit, recreation and services), while home entrances retain the residential profile.
+- The Phaser Graphics implementation retains its own semantic profiles for compound, shop, kiosk, market and work families; it must not be described as the active playable renderer.
 - Roofs, wall planes, eaves, roof seams, doors, windows, profile-enabled security grilles, awnings and verandas are derived from each building's existing width/depth footprint and a typed style profile.
-- Environment props are constructed procedurally from typed shape profiles for trees, streetlights, benches, bins and signs.
+- Environment props are constructed procedurally in the R3F scene from existing world components and data-driven neighborhood dressing. The Phaser prototype also retains typed shape profiles for trees, streetlights, benches, bins and signs.
 - Dimensions are derived from each world's existing obstacle/building dimensions; no new per-location placement coordinates or collision dimensions are introduced.
 - Unknown obstacle kinds are skipped rather than silently rendered as an unrelated generic prop.
 
@@ -16,12 +17,12 @@ This pilot uses the existing Phaser renderer and its projected world coordinates
 - Existing building footprints and obstacle collision rectangles are unchanged.
 - Art is presentation-only and does not change movement, collision, player depth, server authority or interactions.
 - Existing labels, object identity, room lifecycle, camera and player rendering remain in place.
-- No Three.js/R3F renderer is introduced into this Phaser scene; Phaser is already the renderer responsible for this playable neighborhood.
+- The active playable neighborhood remains on its existing R3F/Three.js renderer. No new rendering dependency is introduced.
 - No phone routing, database, RPC, Colyseus, economy or deployment changes.
 
 ## Renderer constraints
 
-Phaser Graphics is the sole building and environment-prop renderer for this pilot. There is no external asset loader or fallback renderer. Shared geometry is scaled from world-provided footprints, and semantic profiles are reused across areas.
+The active R3F/Three.js scene is the playable renderer. Its building geometry is scaled from world-provided footprints and uses category-driven reusable architecture. The separate Phaser Graphics prototype must not be wired as a fallback. No SVG renderer or fallback is permitted.
 
 ## Validation status
 
