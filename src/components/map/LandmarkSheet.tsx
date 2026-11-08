@@ -5,7 +5,6 @@ import { formatMapNaira, formatMapEventEnd } from "@/components/map/map-ui-utils
 import { MapApiError, requestMapLandmark } from "@/lib/map-api";
 import { careerShiftPay } from "@/lib/economy-service";
 import { isCareerJob } from "@/lib/career-rules";
-import { PlaceActionMenu, type PlaceActionResult } from "@/components/map/PlaceActionMenu";
 import type { MapPlaceAction } from "@/components/map/OsogboMap.svg";
 
 export function LandmarkSheet({
@@ -19,9 +18,6 @@ export function LandmarkSheet({
   onApply,
   pending,
   error,
-  onRunPlaceAction,
-  actionPending,
-  actionResult,
   locationName,
   event,
 }: {
@@ -41,9 +37,6 @@ export function LandmarkSheet({
   onApply: (jobId: string) => void;
   pending: boolean;
   error?: string;
-  onRunPlaceAction: (actionId: string) => void;
-  actionPending: boolean;
-  actionResult?: PlaceActionResult | null;
   locationName: string;
   event?: { label: string; endsAt: string } | null;
 }) {
@@ -155,17 +148,16 @@ export function LandmarkSheet({
         </div>
       ) : (
         <>
-          <PlaceActionMenu
-            schedule={schedule}
-            refreshingSchedule={detailsQuery.isFetching}
-            onRefreshSchedule={() => void detailsQuery.refetch()}
-            actions={detailsQuery.data?.actions ?? []}
-            offline={offline}
-            pending={actionPending}
-            isHere={isHere}
-            result={actionResult}
-            onRun={onRunPlaceAction}
-          />
+          <section className="map-landmark-section" aria-label="Place interactions">
+            <h3>Available actions</h3>
+            <p>
+              {offline
+                ? "Reconnect to view this place's activities."
+                : isHere
+                  ? "Enter the playable environment to interact with this place."
+                  : "Travel here, then enter the playable environment to interact with this place."}
+            </p>
+          </section>
           <section className="map-landmark-section map-landmark-activities">
             <h3>Other activities</h3>
             {detailsQuery.data?.activities.length ? (
