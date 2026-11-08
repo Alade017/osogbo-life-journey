@@ -125,6 +125,40 @@ describe("neighbourhood street dressing", () => {
     }
   });
 
+  it("preserves sidewalk runs immediately before and after each crossing", () => {
+    const crossings = pedestrianCrossings(CITY_CENTRE_AREA);
+    const { sidewalks } = sidewalksAndCurbs(CITY_CENTRE_AREA, bounds);
+    for (const crossing of crossings) {
+      const verticalRoad = CITY_CENTRE_AREA.roads?.find(
+        (road) => road.axis === "vertical" && Math.abs(road.offset - crossing.x) < 1,
+      );
+      const horizontalRoad = CITY_CENTRE_AREA.roads?.find(
+        (road) => road.axis === "horizontal" && Math.abs(road.offset - crossing.y) < 1,
+      );
+      if (verticalRoad && crossing.width > crossing.depth) {
+        for (const side of [-1, 1]) {
+          const x = verticalRoad.offset + side * (verticalRoad.width / 2 + 8);
+          expect(
+            sidewalks.some((segment) => Math.abs(segment.x - x) < 1 && segment.y < crossing.y - crossing.depth / 2),
+          ).toBe(true);
+          expect(
+            sidewalks.some((segment) => Math.abs(segment.x - x) < 1 && segment.y > crossing.y + crossing.depth / 2),
+          ).toBe(true);
+        }
+      } else if (horizontalRoad && crossing.depth > crossing.width) {
+        for (const side of [-1, 1]) {
+          const y = horizontalRoad.offset + side * (horizontalRoad.width / 2 + 8);
+          expect(
+            sidewalks.some((segment) => Math.abs(segment.y - y) < 1 && segment.x < crossing.x - crossing.width / 2),
+          ).toBe(true);
+          expect(
+            sidewalks.some((segment) => Math.abs(segment.y - y) < 1 && segment.x > crossing.x + crossing.width / 2),
+          ).toBe(true);
+        }
+      }
+    }
+  });
+
   it("leaves unobstructed pedestrian openings through sidewalks and kerbs", () => {
     const crossings = pedestrianCrossings(CITY_CENTRE_AREA);
     const { sidewalks, curbs } = sidewalksAndCurbs(CITY_CENTRE_AREA, bounds);
