@@ -26,6 +26,14 @@ describe("neighbourhood street dressing", () => {
     expect(carSpots(CITY_CENTRE_AREA, bounds).length).toBeLessThanOrEqual(12);
   });
 
+  it("orients traffic in both directions along horizontal and vertical roads", () => {
+    const rotations = new Set(carSpots(CITY_CENTRE_AREA, bounds).map((spot) => spot.rotation));
+    expect(rotations.has(0)).toBe(true);
+    expect(rotations.has(Math.PI)).toBe(true);
+    expect(rotations.has(Math.PI / 2)).toBe(true);
+    expect(rotations.has(-Math.PI / 2)).toBe(true);
+  });
+
   it("keeps sidewalks and lamps clear of main building footprints", () => {
     const buildings = CITY_CENTRE_AREA.objects.map((o) => ({
       left: o.x - 57,
