@@ -1053,6 +1053,25 @@ export function R3FTownSurface(props: Props) {
             }
           />
         </Canvas>
+        <div
+          aria-label="Map camera controls"
+          style={{
+            position: "absolute",
+            right: 12,
+            bottom: 12,
+            pointerEvents: "none",
+            color: WORLD_PALETTE.timber,
+            background: "rgba(241, 233, 217, 0.92)",
+            border: "1px solid rgba(130, 112, 93, 0.28)",
+            padding: "7px 10px",
+            borderRadius: 8,
+            fontSize: 11,
+            lineHeight: 1.45,
+            maxWidth: 230,
+          }}
+        >
+          Drag to rotate · Two-finger drag to pan · Scroll or pinch to zoom
+        </div>
         {hovered && (
           <div
             role="status"
