@@ -81,6 +81,20 @@ describe("neighbourhood street dressing", () => {
     expect(crossings.some((crossing) => crossing.depth > crossing.width)).toBe(true);
   });
 
+  it("keeps road markings out of pedestrian crossing footprints", () => {
+    const crossings = pedestrianCrossings(CITY_CENTRE_AREA);
+    const markings = roadMarkings(CITY_CENTRE_AREA, bounds);
+    for (const crossing of crossings)
+      for (const marking of markings) {
+        const overlaps =
+          Math.abs(crossing.x - marking.x) <
+            (crossing.width + marking.width) / 2 &&
+          Math.abs(crossing.y - marking.y) <
+            (crossing.depth + marking.depth) / 2;
+        expect(overlaps).toBe(false);
+      }
+  });
+
   it("leaves unobstructed pedestrian openings through sidewalks and kerbs", () => {
     const crossings = pedestrianCrossings(CITY_CENTRE_AREA);
     const { sidewalks, curbs } = sidewalksAndCurbs(CITY_CENTRE_AREA, bounds);
