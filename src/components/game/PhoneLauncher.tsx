@@ -40,7 +40,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
+import { PhoneAppLoader } from "@/components/game/phone/PhoneAppLoader";
+import { isSlowNetwork } from "@/lib/network-hint";
 import { q, rpc, useGameAction } from "@/lib/game";
 import { useQuery } from "@tanstack/react-query";
 import { playGameSound } from "@/lib/game-audio";
@@ -67,6 +68,18 @@ import {
   reducePhoneNavigation,
 } from "@/components/game/phone-navigation";
 import "./phone.css";
+
+// Start downloading the most-used phone app chunks early, so opening them is faster.
+// Skipped when the visitor asked for less data or is on a slow connection.
+function prefetchPhoneApps() {
+  if (isSlowNetwork()) return;
+  void Promise.allSettled([
+    import("@/components/game/PlayerSocial"),
+    import("@/components/game/phone/PhoneMarketApp"),
+    import("@/components/game/phone/PhonePartyApp"),
+    import("@/components/game/phone/PhoneBankApp"),
+  ]);
+}
 
 // Lazy-loaded app views for performance on mobile and low-end Android
 const PlayerSocial = lazy(() =>
@@ -187,18 +200,6 @@ class PhoneAppBoundary extends Component<
   }
 }
 
-function PhoneAppLoadingSpinner({ title }: { title: string }) {
-  return (
-    <div className="flex h-full w-full items-center justify-center p-8 text-center">
-      <WorldLoadingIndicator
-        presentation="screen"
-        title={`Opening ${title}…`}
-        detail="Getting things ready…"
-      />
-    </div>
-  );
-}
-
 export function PhoneLauncher({
   className,
   compact = false,
@@ -216,6 +217,11 @@ export function PhoneLauncher({
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
+  useEffect(() => {
+    const timer = window.setTimeout(prefetchPhoneApps, 300);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   const [navigation, dispatchNavigation] = useReducer(reducePhoneNavigation, {
     app: null,
     history: [],
@@ -640,7 +646,11 @@ export function PhoneLauncher({
                   onClickCapture={(event) => handlePhoneLinkClick(event, openApp, openWorld)}
                 >
                   <PhoneAppBoundary key={appName} appName={appName} onHome={returnHome}>
-                    <Suspense fallback={<PhoneAppLoadingSpinner title={appName} />}>
+                    <Suspense
+                      fallback={
+                        <PhoneAppLoader title={`Opening ${appName}…`} onHome={returnHome} />
+                      }
+                    >
                       {renderAppContent(appName)}
                     </Suspense>
                   </PhoneAppBoundary>
