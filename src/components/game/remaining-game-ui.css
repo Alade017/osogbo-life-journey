@@ -503,18 +503,62 @@
   font-size: 13px;
 }
 
+/* Header layout: the subtitle sits on the first row; the search bar and the new-message
+   button share the second row and are centred on the same line. Only layout changes. */
+.phone-ui-refresh .phone-app-body .phone-chat-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  column-gap: 10px;
+  align-items: center;
+  padding: 12px 16px 0;
+}
+
+.phone-ui-refresh .phone-app-body .phone-chat-panel > * {
+  grid-column: 1 / -1;
+}
+
+.phone-ui-refresh .phone-app-body .phone-inbox-heading {
+  display: contents;
+}
+
+.phone-ui-refresh .phone-app-body .phone-inbox-heading > div {
+  grid-column: 1 / -1;
+  padding: 0 0 10px;
+}
+
+.phone-ui-refresh .phone-app-body .phone-inbox-heading p {
+  margin: 0;
+}
+
+.phone-ui-refresh .phone-app-body .phone-new-message-button {
+  grid-column: 2;
+  grid-row: 2;
+}
+
 .phone-ui-refresh .phone-app-body .phone-inbox-search {
-  margin: 4px 16px 10px;
-  min-height: 48px;
+  grid-column: 1;
+  grid-row: 2;
+  height: 40px;
+  min-height: 40px;
+  margin: 0;
+  padding: 0 12px;
   border: 1px solid color-mix(in srgb, var(--brand-mist) 90%, transparent);
-  border-radius: 16px;
+  border-radius: 14px;
   background: #ffffff;
 }
 
 .phone-ui-refresh .phone-app-body .phone-inbox-search input {
-  min-height: 46px;
+  height: 100%;
+  min-height: 0;
+  padding: 0 0 0 8px;
+  border: 0;
+  background: transparent;
   color: var(--brand-ink);
-  font-size: 15px;
+  font-size: 14px;
+}
+
+.phone-ui-refresh .phone-app-body .phone-chat-panel > .phone-inbox-filters {
+  margin-top: 10px;
 }
 
 .phone-ui-refresh .phone-app-body .phone-conversation-list {
