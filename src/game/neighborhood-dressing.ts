@@ -75,6 +75,13 @@ function overlapsObstacle(rect: DressingRect, boxes: readonly Box[], pad = 0) {
 export function roadMarkings(area: NeighborhoodArea, bounds: DressingBounds): DressingRect[] {
   const rects: DressingRect[] = [];
   const boxes = occupiedBoxes(area);
+  const crossings = pedestrianCrossings(area);
+  const crossingBoxes: Box[] = crossings.map(({ x, y, width, depth }) => ({
+    x,
+    y,
+    width,
+    height: depth,
+  }));
   for (const road of area.roads ?? []) {
     if (road.type === "lane") continue;
     const { start, end, vertical } = roadExtent(road, bounds);
@@ -83,8 +90,12 @@ export function roadMarkings(area: NeighborhoodArea, bounds: DressingBounds): Dr
       const y = vertical ? along : road.offset;
       const width = vertical ? 4 : MARKING_LENGTH;
       const depth = vertical ? MARKING_LENGTH : 4;
-      if (insideObstacle(x, y, boxes, Math.max(width, depth) / 2 + 2)) continue;
-      rects.push({ x, y, width, depth });
+      const marking = { x, y, width, depth };
+      if (
+        insideObstacle(x, y, boxes, Math.max(width, depth) / 2 + 2) ||
+        overlapsObstacle(marking, crossingBoxes, 0)
+      ) continue;
+      rects.push(marking);
     }
   }
   return rects;
