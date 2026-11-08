@@ -108,6 +108,7 @@ describe("neighbourhood street dressing", () => {
   it("derives deterministic traffic signals at clear arterial junctions", () => {
     const signals = trafficLightSpots(CITY_CENTRE_AREA);
     expect(signals.length).toBeGreaterThan(0);
+    expect(new Set(signals.map((signal) => signal.rotation)).size).toBeGreaterThan(1);
     expect(signals).toEqual(trafficLightSpots(CITY_CENTRE_AREA));
     for (const signal of signals)
       for (const obstacle of CITY_CENTRE_AREA.obstacles ?? []) {
