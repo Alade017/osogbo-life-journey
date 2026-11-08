@@ -17,6 +17,8 @@ type PendingInteractionAuthorization = {
   resolve: (authorization: InteractionAuthorizationResponse) => void;
   reject: (error: Error) => void;
   timeout: ReturnType<typeof setTimeout>;
+  landmarkId: string;
+  actionId: string;
 };
 
 const interactionRequests = new WeakMap<
@@ -35,6 +37,18 @@ function installInteractionAuthorizationListeners(room: NeighborhoodRoom) {
     if (!request) return;
     clearTimeout(request.timeout);
     pending.delete(payload.requestId);
+    if (
+      typeof payload.token !== "string" ||
+      payload.token.length === 0 ||
+      payload.token.length > 4_096 ||
+      payload.landmarkId !== request.landmarkId ||
+      payload.actionId !== request.actionId ||
+      !Number.isFinite(payload.expiresAt) ||
+      payload.expiresAt <= Date.now()
+    ) {
+      request.reject(new Error("INTERACTION_AUTH_INVALID"));
+      return;
+    }
     request.resolve(payload);
   });
   room.onMessage("interaction-authorization-error", (payload: InteractionAuthorizationError) => {
@@ -67,7 +81,13 @@ export function requestNeighborhoodInteractionAuthorization(
       pending.delete(input.requestId);
       reject(new Error("INTERACTION_AUTH_TIMEOUT"));
     }, 8_000);
-    pending.set(input.requestId, { resolve, reject, timeout });
+    pending.set(input.requestId, {
+      resolve,
+      reject,
+      timeout,
+      landmarkId: input.landmarkId,
+      actionId: input.actionId,
+    });
     try {
       room.send("authorize-interaction", input);
     } catch (error) {
