@@ -345,6 +345,12 @@ export function streetLightSpots(area: NeighborhoodArea, bounds: DressingBounds)
 export function carSpots(area: NeighborhoodArea, bounds: DressingBounds): CarSpot[] {
   const byRoad: CarSpot[][] = [];
   const boxes = occupiedBoxes(area);
+  const crossingBoxes: Box[] = pedestrianCrossings(area).map(({ x, y, width, depth }) => ({
+    x,
+    y,
+    width,
+    height: depth,
+  }));
   for (const road of area.roads ?? []) {
     if (road.type === "lane") continue;
     const { start, end, vertical } = roadExtent(road, bounds);
@@ -354,7 +360,11 @@ export function carSpots(area: NeighborhoodArea, bounds: DressingBounds): CarSpo
         const across = lane * road.width * 0.22;
         const x = vertical ? road.offset + across : along;
         const y = vertical ? along : road.offset + across;
-        if (insideObstacle(x, y, boxes, 28)) continue;
+        // Keep parked traffic props out of zebra crossings and their approach space.
+        if (
+          insideObstacle(x, y, boxes, 28) ||
+          insideObstacle(x, y, crossingBoxes, 24)
+        ) continue;
         const rotation = vertical
           ? lane === -1
             ? -Math.PI / 2
