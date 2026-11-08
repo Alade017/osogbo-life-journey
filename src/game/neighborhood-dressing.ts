@@ -129,11 +129,17 @@ export function pedestrianCrossings(area: NeighborhoodArea): DressingRect[] {
   const verticals = roads.filter((r) => r.axis === "vertical");
   const horizontals = roads.filter((r) => r.axis === "horizontal");
   const rects: DressingRect[] = [];
+  const boxes = occupiedBoxes(area);
+  const seen = new Set<string>();
   for (const v of verticals)
     for (const h of horizontals) {
       const approach = h.width / 2 + 14;
-      rects.push({ x: v.offset, y: h.offset - approach, width: v.width * 0.9, depth: 14 });
-      rects.push({ x: v.offset, y: h.offset + approach, width: v.width * 0.9, depth: 14 });
+      for (const y of [h.offset - approach, h.offset + approach]) {
+        const key = `${v.offset}:${y}`;
+        if (seen.has(key) || insideObstacle(v.offset, y, boxes, 9)) continue;
+        seen.add(key);
+        rects.push({ x: v.offset, y, width: v.width * 0.9, depth: 14 });
+      }
     }
   return rects;
 }
