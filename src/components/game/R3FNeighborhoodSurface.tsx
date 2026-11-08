@@ -47,6 +47,7 @@ import { districtArchitectureVariantForCategory } from "@/game/district-architec
 import {
   carSpots,
   pedestrianCrossings,
+  pedestrianCrossingStripes,
   pedestrianSpots,
   roadMarkings,
   sidewalksAndCurbs,
@@ -286,11 +287,13 @@ export function R3FNeighborhoodSurface({
   // Street dressing comes from the area's own roads, objects and stalls.
   const dressing = useMemo(() => {
     const kerbs = sidewalksAndCurbs(area, bounds);
+    const crossings = pedestrianCrossings(area);
     return {
       markings: roadMarkings(area, bounds),
       sidewalks: kerbs.sidewalks,
       curbs: kerbs.curbs,
-      crossings: pedestrianCrossings(area),
+      crossings,
+      crossingStripes: pedestrianCrossingStripes(crossings),
       lights: streetLightSpots(area, bounds),
       trafficLights: trafficLightSpots(area),
       cars: carSpots(area, bounds),
@@ -323,7 +326,7 @@ export function R3FNeighborhoodSurface({
     });
     return {
       markings: flat(dressing.markings, 0.07, 0.03),
-      crossings: flat(dressing.crossings, 0.07, 0.03),
+      crossings: flat(dressing.crossingStripes, 0.07, 0.03),
       sidewalks: flat(dressing.sidewalks, 0.05, 0.1),
       curbs: flat(dressing.curbs, 0.09, 0.14),
       lights: onGround(dressing.lights),
