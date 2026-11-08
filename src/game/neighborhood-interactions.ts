@@ -16,6 +16,7 @@ export function availableNeighborhoodTargets(
   availability: NeighborhoodInteractionAvailability,
 ): NeighborhoodObject[] {
   return objects.filter((object) => {
+    if (object.kind === "npc") return true;
     if (object.kind === "home")
       return availability.hasPersonalHome && availability.hasHomeType;
     if (object.kind === "market")
