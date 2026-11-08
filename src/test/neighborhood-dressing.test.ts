@@ -272,6 +272,27 @@ describe("neighbourhood street dressing", () => {
     });
   });
 
+  it.each([
+    ["city centre", CITY_CENTRE_AREA],
+    ["Oja Oba", OJA_OBA_AREA],
+  ])("produces finite, positive street geometry for %s", (_name, area) => {
+    const rects = [
+      ...roadMarkings(area, bounds),
+      ...pedestrianCrossings(area),
+      ...pedestrianCrossingStripes(pedestrianCrossings(area)),
+      ...sidewalksAndCurbs(area, bounds).sidewalks,
+      ...sidewalksAndCurbs(area, bounds).curbs,
+    ];
+    for (const rect of rects) {
+      expect(Number.isFinite(rect.x)).toBe(true);
+      expect(Number.isFinite(rect.y)).toBe(true);
+      expect(Number.isFinite(rect.width)).toBe(true);
+      expect(Number.isFinite(rect.depth)).toBe(true);
+      expect(rect.width).toBeGreaterThan(0);
+      expect(rect.depth).toBeGreaterThan(0);
+    }
+  });
+
   it("is deterministic for the same area", () => {
     expect(pedestrianSpots(CITY_CENTRE_AREA, bounds)).toEqual(
       pedestrianSpots(CITY_CENTRE_AREA, bounds),
