@@ -90,12 +90,19 @@ export function createMapPlaceActionHandler(dependencies: Dependencies) {
 }
 
 export async function handleMapPlaceActionRequest(request: Request) {
-  if (request.headers.has("X-Neighborhood-Authorization")) {
-    const { handleNeighborhoodPlaceActionRequest } = await import(
-      "@/lib/neighborhood-place-action.server"
+  if (!request.headers.has("X-Neighborhood-Authorization")) {
+    return Response.json(
+      { error: { code: "NEIGHBORHOOD_AUTHORIZATION_REQUIRED" } },
+      { status: 403, headers: { "Cache-Control": "no-store" } },
     );
-    return handleNeighborhoodPlaceActionRequest(request);
   }
+  const { handleNeighborhoodPlaceActionRequest } = await import(
+    "@/lib/neighborhood-place-action.server"
+  );
+  return handleNeighborhoodPlaceActionRequest(request);
+}
+
+async function handleLegacyMapPlaceActionRequest(request: Request) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return createMapPlaceActionHandler({
     authenticate: async (incoming) => {
