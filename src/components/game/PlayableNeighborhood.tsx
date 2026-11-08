@@ -935,6 +935,11 @@ export function PlayableNeighborhood() {
                         type="button"
                         className="neighborhood-interaction neighborhood-actions-trigger"
                         onClick={() => {
+                          setGroundTarget(null);
+                          groundTargetRef.current = null;
+                          setPendingTargetId(null);
+                          setHomeBound(false);
+                          setDirections(new Set());
                           setSelectedLandmarkId(nearbyLandmark.id);
                           setNeighborhoodActionResult(null);
                           setActivePanel("landmark");

@@ -93,7 +93,8 @@ export function verifyNeighborhoodInteractionAuthorization(
   if (parts.length !== 2 || !parts[0] || !parts[1]) {
     throw new Error("INTERACTION_AUTH_INVALID");
   }
-  const [payload, encodedSignature] = parts;
+  const payload = parts[0]!;
+  const encodedSignature = parts[1]!;
   let supplied: Buffer;
   try {
     supplied = Buffer.from(encodedSignature, "base64url");

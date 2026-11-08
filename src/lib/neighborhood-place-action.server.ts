@@ -80,6 +80,7 @@ export function createNeighborhoodPlaceActionHandler(dependencies: Dependencies)
         UNKNOWN_ACTION: 404,
         IDEMPOTENCY_CONFLICT: 409,
         CHARACTER_LOCATION_CHANGED: 409,
+        CHARACTER_CHANGED: 409,
       };
       return json({ error: { code } }, statuses[code] ?? 500);
     }
@@ -100,11 +101,13 @@ export async function handleNeighborhoodPlaceActionRequest(request: Request) {
       const { data, error } = await supabaseAdmin
         .from("characters")
         .select("id,current_location_id")
-        .eq("id", characterId)
         .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1)
         .maybeSingle();
       if (error) throw new Error("INTERNAL_ERROR");
       if (!data) throw new Error("NO_CHARACTER");
+      if (data.id !== characterId) throw new Error("CHARACTER_CHANGED");
       if (data.current_location_id !== locationId) throw new Error("CHARACTER_LOCATION_CHANGED");
     },
     verifyLandmarkAction: async (userId, landmarkId, actionId) => {
