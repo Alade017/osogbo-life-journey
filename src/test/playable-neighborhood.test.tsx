@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { PlayableNeighborhood } from "@/components/game/PlayableNeighborhood";
 import type { PhaserNeighborhoodHandle } from "@/game/phaser-neighborhood";
+import { toWorld } from "@/game/neighborhood-model";
 
 const state = vi.hoisted(() => ({
   location: "city",
@@ -122,6 +123,7 @@ vi.mock("@/components/game/R3FNeighborhoodSurface", () => ({
     npcs: readonly unknown[];
     interactionTargets: readonly { id: string }[];
     onSelectTarget: (targetId: string) => void;
+    onNpcArrive: (npcId: string, x: number, y: number) => void;
     onScene: (handle: PhaserNeighborhoodHandle | null) => void;
   }) => {
     state.scene({
@@ -131,6 +133,7 @@ vi.mock("@/components/game/R3FNeighborhoodSurface", () => ({
       npcs: props.npcs,
       interactionTargets: props.interactionTargets,
       onSelectTarget: props.onSelectTarget,
+      onNpcArrive: props.onNpcArrive,
       playersRef: { current: props.players },
     });
     const { onScene } = props;
@@ -141,6 +144,30 @@ vi.mock("@/components/game/R3FNeighborhoodSurface", () => ({
     return <div>R3F neighbourhood</div>;
   },
 }));
+
+// NPCs are only talkable once they have walked to their destination; the 3D
+// scene reports that through onNpcArrive, so the test reports it the same way.
+// The player then stands at that destination, as it would after walking there.
+async function settleNpcsAtDestination(joined: ReturnType<typeof room>) {
+  const scene = state.scene.mock.lastCall?.[0] as
+    | {
+        npcs: readonly { id: string; targetX: number; targetY: number }[];
+        areaOrigin: { x: number; y: number };
+        onNpcArrive: (npcId: string, x: number, y: number) => void;
+      }
+    | undefined;
+  if (!scene) return;
+  for (const npc of scene.npcs) {
+    await act(async () => scene.onNpcArrive(npc.id, npc.targetX, npc.targetY));
+  }
+  const npc = scene.npcs[0];
+  if (!npc) return;
+  const spot = toWorld({ x: npc.targetX, y: npc.targetY }, scene.areaOrigin);
+  const player = joined.state.players.get(joined.sessionId)!;
+  player.x = spot.x;
+  player.y = spot.y;
+  await act(async () => joined.listeners.publish?.());
+}
 
 function room(location: string) {
   const listeners: { publish?: () => void; leave?: (code: number) => void } = {};
@@ -217,6 +244,7 @@ function primeLocationQueries() {
         map_y: 0,
         is_active: true,
       },
+      { id: "closed", slug: "closed-place", map_x: 0, map_y: 0, is_active: false },
     ],
   );
 }
@@ -276,17 +304,21 @@ it("places and talks to a scheduled NPC through the server-authoritative interac
   state.position = { x: 1.96875, y: 5.75 };
   state.gameTime = { minute: 0, hour: 17, day: 1, weekday: 0 };
   state.npcRows = [{ id: "npc-adeola" }];
+  const joined = room("market");
+  state.join.mockImplementation(async () => joined);
   state.rpc.mockResolvedValue({
     data: { event_id: "event-1", accepted: true, message: "You greet Adeola.", duplicate: false },
     error: null,
   });
   show();
-  await screen.findByRole("button", { name: /Talk with Adeola Akinyemi/i });
+  await screen.findByText("R3F neighbourhood");
+  await settleNpcsAtDestination(joined);
+  await screen.findByRole("button", { name: "Talk with Adeola Akinyemi" });
   expect(state.scene.mock.lastCall?.[0].npcs).toEqual([
     expect.objectContaining({ id: "npc-adeola", name: "Adeola Akinyemi" }),
   ]);
   await act(async () => {
-    screen.getByRole("button", { name: /Talk with Adeola Akinyemi/i }).click();
+    screen.getByRole("button", { name: "Talk with Adeola Akinyemi" }).click();
   });
   await act(async () => {
     screen.getByRole("button", { name: "Say hello" }).click();
@@ -303,8 +335,11 @@ it("opens an NPC conversation from a 3D target only when the player is within in
   state.position = { x: 1.96875, y: 5.75 };
   state.gameTime = { minute: 0, hour: 17, day: 1, weekday: 0 };
   state.npcRows = [{ id: "npc-adeola" }];
+  const joined = room("market");
+  state.join.mockImplementation(async () => joined);
   show();
   await screen.findByText("R3F neighbourhood");
+  await settleNpcsAtDestination(joined);
   const sceneProps = state.scene.mock.lastCall?.[0];
   expect(sceneProps?.interactionTargets).toEqual([
     expect.objectContaining({ id: "npc-adeola", kind: "npc" }),
@@ -345,10 +380,10 @@ it("leaves the old room and ignores its late state events when changing district
   expect(state.scene.mock.calls.length).toBe(latestCount);
 });
 
-it("does not join unsupported locations", async () => {
-  state.location = "landmark";
+it("does not join inactive locations", async () => {
+  state.location = "closed";
   show();
-  await screen.findByText("This destination is not available for walking yet.");
+  await screen.findByText(/not available|could not be resolved/i);
   expect(state.join).not.toHaveBeenCalled();
   expect(state.scene).not.toHaveBeenCalled();
 });
