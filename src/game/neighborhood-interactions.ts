@@ -1,3 +1,4 @@
+import type { WorldMapCategory } from "../lib/city-world";
 import type { NeighborhoodObject } from "./neighborhood-model";
 
 export type NeighborhoodInteractionAvailability = {
@@ -10,23 +11,24 @@ export type NeighborhoodInteractionAvailability = {
   hasCareerServices: boolean;
 };
 
-/** Route designed venues to the entrance matching their data-backed world category. */
+/** Keep category-to-entrance semantics exhaustive as world categories evolve. */
+const VENUE_ENTRANCE_BY_CATEGORY: Record<WorldMapCategory, "market" | "work" | null> = {
+  residential: null,
+  commercial: "market",
+  work_industrial: "work",
+  education: "work",
+  health: "work",
+  transport: "work",
+  government: "work",
+  recreation: "work",
+  water_nature: "work",
+};
+
 export function venueEntranceKindForCategory(
   category: string | null | undefined,
 ): "market" | "work" | null {
-  if (category === "commercial") return "market";
-  if (
-    category === "work_industrial" ||
-    category === "education" ||
-    category === "health" ||
-    category === "transport" ||
-    category === "government" ||
-    category === "recreation" ||
-    category === "water_nature"
-  ) {
-    return "work";
-  }
-  return null;
+  if (!category || !Object.hasOwn(VENUE_ENTRANCE_BY_CATEGORY, category)) return null;
+  return VENUE_ENTRANCE_BY_CATEGORY[category as WorldMapCategory];
 }
 
 /** Keep actionable entrances aligned with services available at the confirmed location. */
