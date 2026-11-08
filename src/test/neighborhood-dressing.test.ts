@@ -44,6 +44,17 @@ describe("neighbourhood street dressing", () => {
       }
   });
 
+  it("keeps pedestrian actors clear of zebra crossing stripes", () => {
+    const crossings = pedestrianCrossings(CITY_CENTRE_AREA);
+    for (const person of pedestrianSpots(CITY_CENTRE_AREA, bounds))
+      for (const crossing of crossings) {
+        const overlaps =
+          Math.abs(person.x - crossing.x) < crossing.width / 2 + 8 &&
+          Math.abs(person.y - crossing.y) < crossing.depth / 2 + 8;
+        expect(overlaps).toBe(false);
+      }
+  });
+
   it("distributes pedestrians across multiple streets before applying the scene cap", () => {
     const spots = pedestrianSpots(CITY_CENTRE_AREA, bounds);
     const representedRoads = (CITY_CENTRE_AREA.roads ?? []).filter((road) =>
