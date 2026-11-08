@@ -7,6 +7,7 @@ import {
   sidewalksAndCurbs,
   streetLightSpots,
   trafficLightSpots,
+  treeVisualProfile,
   vendorSpots,
 } from "@/game/neighborhood-dressing";
 import { CITY_CENTRE_AREA, NEIGHBORHOOD_SCENE_BOUNDS } from "@/game/neighborhood-model";
@@ -105,6 +106,21 @@ describe("neighbourhood street dressing", () => {
             Math.abs(signal.y - obstacle.y) < obstacle.height / 2 + 8,
         ).toBe(false);
       }
+  });
+
+  it("derives tree size from obstacle footprints and clamps extremes", () => {
+    expect(treeVisualProfile({ width: 48, height: 48 })).toEqual({
+      height: 1,
+      canopyScale: 1,
+    });
+    expect(treeVisualProfile({ width: 12, height: 12 })).toEqual({
+      height: 0.75,
+      canopyScale: 0.75,
+    });
+    expect(treeVisualProfile({ width: 120, height: 120 })).toEqual({
+      height: 1.25,
+      canopyScale: 1.3,
+    });
   });
 
   it("is deterministic for the same area", () => {
