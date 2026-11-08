@@ -355,7 +355,7 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
     ];
     for (const road of roads) this.drawRoad(graphics, road, left, top, right, bottom);
     for (const path of this.area.paths ?? []) this.drawPath(graphics, path);
-    this.drawCrosswalk(graphics, this.area.roads ?? [], left, top, right, bottom);
+    this.drawCrosswalk(graphics, roads, left, top, right, bottom);
   }
 
   private drawPath(graphics: Phaser.GameObjects.Graphics, path: NeighborhoodPath) {
@@ -531,13 +531,13 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
     fillPolygon(graphics, [corners[1]!, corners[2]!, { ...roof[2]! }, { ...roof[1]! }], profile.wallColors[1]);
     fillPolygon(graphics, [corners[2]!, corners[3]!, { ...roof[3]! }, { ...roof[2]! }], profile.wallColors[0]);
 
+    fillPolygon(graphics, roof, profile.roofColor);
     const ribSpacing = Math.max(5, Math.min(width, depth) * profile.roofRibSpacingRatio);
     for (let rib = -width / 2; rib <= width / 2; rib += ribSpacing) {
       const from = localProject(rib, -depth / 2 - overhang, wallHeight);
       const to = localProject(rib, depth / 2 + overhang, wallHeight);
-      graphics.lineStyle(1, profile.trimColor, 0.2).lineBetween(from.x, from.y, to.x, to.y);
+      graphics.lineStyle(1, profile.trimColor, 0.34).lineBetween(from.x, from.y, to.x, to.y);
     }
-    fillPolygon(graphics, roof, profile.roofColor);
     graphics.lineStyle(2, 0x533e32, 0.86);
     graphics.strokePoints(
       roof.map(({ x: pointX, y: pointY }) => new Phaser.Geom.Point(pointX, pointY)),
@@ -582,6 +582,15 @@ class PhaserNeighborhoodScene extends Phaser.Scene implements PhaserNeighborhood
       graphics.lineStyle(1, profile.trimColor, 0.9);
       graphics.lineBetween(windowX, windowY - windowHeight / 2, windowX, windowY + windowHeight / 2);
       graphics.lineBetween(windowX - windowWidth / 2, windowY, windowX + windowWidth / 2, windowY);
+      if (profile.windowGrilles) {
+        const grilleInset = Math.max(1, windowWidth * 0.16);
+        graphics.lineStyle(Math.max(1, windowWidth * 0.045), profile.trimColor, 0.92);
+        for (const side of [-1, 1]) {
+          const grilleX = windowX + side * grilleInset;
+          graphics.lineBetween(grilleX, windowY - windowHeight / 2 + 1, grilleX, windowY + windowHeight / 2 - 1);
+        }
+        graphics.lineBetween(windowX - windowWidth / 2 + 1, windowY, windowX + windowWidth / 2 - 1, windowY);
+      }
     }
 
     if (profile.frontage === "awning" && profile.awningColor !== undefined) {
