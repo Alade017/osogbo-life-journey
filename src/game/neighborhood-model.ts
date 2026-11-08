@@ -206,6 +206,9 @@ export const OJA_OBA_AREA: NeighborhoodArea = {
     { x: 115, y: 65 },
     { x: 165, y: 65 },
   ],
+  // The legacy Oja-Oba location has a distinct database landmark ID.
+  // Keep its interaction anchor on the market approach path, not on a stall.
+  interactionPoints: [{ id: "oja-oba-market", x: 145, y: 220, radius: 60 }],
 };
 
 const AREA_STYLE_BY_CATEGORY: Record<WorldMapCategory, NeighborhoodArea["style"]> = {
