@@ -1,6 +1,8 @@
 # OSUN LIFE city map
 
-The authenticated `/map` route uses an original, fictional 2.5D isometric SVG city. It does not request map tiles, real-world coordinates, routing services, or a map-provider key. The layout takes visual cues from the supplied HUD reference while keeping the streets and districts fictional.
+The authenticated `/map` route renders the town through the React Three Fiber / Three.js surface in `src/components/map/R3FTownSurface.tsx`, loaded by `MapCanvas.tsx`. The current town overview is a procedural 3D world driven by `src/data/osogbo-town.json`; it includes road and sidewalk geometry, buildings, street furniture, traffic, pedestrians, district zones, landmark markers, and property markers. The town data is explicitly a fictional game layout with broad Osogbo-inspired character, not surveyed geographic data. Do not describe this active route as the older SVG map or imply that its grid is a verified real-world street map.
+
+The town camera supports open exploration: desktop users can drag to rotate and use the wheel to zoom; touch users can rotate with one finger, pan with two fingers, and pinch to zoom. Camera controls are presentation-only and must not alter server-authoritative player movement, transport, location, property, or multiplayer state.
 
 ## World data and save compatibility
 
