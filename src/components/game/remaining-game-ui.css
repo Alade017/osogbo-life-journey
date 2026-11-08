@@ -178,30 +178,77 @@
 }
 
 .phone-ui-refresh .phone-app {
-  min-height: 92px;
-  gap: 7px;
+  min-height: 96px;
+  gap: 8px;
   border: 1px solid transparent;
   border-radius: 18px;
   color: var(--brand-ink);
+  font-size: 11px;
   font-weight: 650;
-  transition:
-    transform 150ms ease,
-    background-color 150ms ease,
-    border-color 150ms ease;
+  transition: transform 150ms ease;
+}
+
+.phone-ui-refresh .phone-app > span:last-child {
+  display: -webkit-box;
+  max-width: 100%;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  word-break: break-word;
 }
 
 .phone-ui-refresh .phone-app:hover,
 .phone-ui-refresh .phone-app:focus-visible {
   transform: translateY(-2px);
-  border-color: color-mix(in srgb, var(--brand-royal) 12%, var(--border));
-  background: color-mix(in srgb, var(--brand-cream) 88%, transparent);
 }
 
-.phone-ui-refresh .phone-app-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 17px;
-  box-shadow: 0 7px 16px color-mix(in srgb, var(--brand-ink) 12%, transparent);
+/* App icon: a soft tile in the app's colour, with a matching glyph. The tone classes
+   (phone-app-green, -gold, -blue, -coral, -muted) only set --app-tone here. */
+.phone-ui-refresh .phone-app .phone-app-icon {
+  --app-tone: var(--brand-royal);
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--app-tone) 26%, transparent);
+  border-radius: 18px;
+  color: var(--app-tone);
+  background: color-mix(in srgb, var(--app-tone) 14%, var(--brand-cream));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 8px 18px color-mix(in srgb, var(--app-tone) 16%, transparent);
+}
+
+.phone-ui-refresh .phone-app .phone-app-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 1.8;
+}
+
+.phone-ui-refresh .phone-app .phone-app-icon.phone-app-green {
+  --app-tone: var(--success);
+}
+
+.phone-ui-refresh .phone-app .phone-app-icon.phone-app-gold {
+  --app-tone: var(--chart-4);
+}
+
+.phone-ui-refresh .phone-app .phone-app-icon.phone-app-blue {
+  --app-tone: var(--brand-royal);
+}
+
+.phone-ui-refresh .phone-app .phone-app-icon.phone-app-coral {
+  --app-tone: var(--destructive);
+}
+
+.phone-ui-refresh .phone-app .phone-app-icon.phone-app-muted {
+  --app-tone: var(--brand-slate);
+}
+
+.phone-ui-refresh .phone-app:hover .phone-app-icon {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 12px 22px color-mix(in srgb, var(--app-tone) 22%, transparent);
 }
 
 .phone-ui-refresh .phone-app-view {
@@ -291,4 +338,57 @@
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Settings design for the core phone apps: sectioned cards, Settings tokens and touch-sized controls.
+   Scoped to the apps listed in SETTINGS_STYLE_APPS so the other apps keep their current look. */
+.phone-ui-refresh .phone-app-body--sx {
+  --sx-muted: var(--muted-foreground, #7a6a58);
+  --sx-line: color-mix(in srgb, var(--border, #e5d6bf) 80%, transparent);
+  --sx-card: var(--card, #fffaf2);
+  display: grid;
+  gap: 14px;
+  padding: 6px 14px 24px;
+}
+
+.phone-ui-refresh .phone-app-body--sx .game-panel {
+  padding: 18px;
+  border: 1px solid var(--sx-line);
+  border-radius: 24px;
+  background: var(--sx-card);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 10px 30px rgba(60, 40, 20, 0.06);
+}
+
+.phone-ui-refresh .phone-app-body--sx .game-page-header h1 {
+  font-size: 1.25rem;
+  font-weight: 850;
+  letter-spacing: -0.02em;
+}
+
+.phone-ui-refresh .phone-app-body--sx .game-page-eyebrow {
+  color: var(--sx-muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.phone-ui-refresh .phone-app-body--sx button {
+  min-height: 44px;
+  border-radius: 14px;
+  font-weight: 750;
+}
+
+.phone-ui-refresh .phone-app-body--sx :is(input, select, textarea) {
+  min-height: 44px;
+  border: 1px solid var(--sx-line);
+  border-radius: 14px;
+  background: var(--card, #fffaf2);
+}
+
+.phone-ui-refresh .phone-app-body--sx :is(input, select, textarea):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
 }

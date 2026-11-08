@@ -19,7 +19,6 @@ import {
   ChartNoAxesCombined,
   ClipboardList,
   ChevronLeft,
-  House,
   GraduationCap,
   HandCoins,
   HousePlus,
@@ -114,7 +113,9 @@ const CommunityPhoneApps = lazy(() =>
 );
 const PhoneCommunityServices = lazy(() => import("@/components/game/phone/PhoneCommunityServices"));
 const ActivityCatalogueApp = lazy(() =>
-  import("@/components/game/ActivityCatalogueApp").then((m) => ({ default: m.ActivityCatalogueApp })),
+  import("@/components/game/ActivityCatalogueApp").then((m) => ({
+    default: m.ActivityCatalogueApp,
+  })),
 );
 
 type PhoneAppDefinition = {
@@ -124,7 +125,6 @@ type PhoneAppDefinition = {
 };
 
 const PHONE_APPS: readonly PhoneAppDefinition[] = [
-  { label: "Home", icon: House, tone: "phone-app-green" },
   { label: "Map", icon: MapPinned, tone: "phone-app-blue" },
   { label: "Messages", icon: MessagesSquare, tone: "phone-app-coral" },
   { label: "Career Life", icon: BriefcaseBusiness, tone: "phone-app-gold" },
@@ -152,6 +152,17 @@ const PHONE_APPS: readonly PhoneAppDefinition[] = [
 ] as const;
 
 const COMMUNITY_APPS = new Set<CommunityPhoneApp>(["Leaderboard", "Town News"]);
+
+/** Apps restyled to the Settings design (cards, sections, rows). Others keep their current look. */
+const SETTINGS_STYLE_APPS = new Set([
+  "Profile",
+  "Inventory",
+  "Town News",
+  "Market",
+  "Education",
+  "Bank",
+  "Messages",
+]);
 
 class PhoneAppBoundary extends Component<
   { appName: string; onHome: () => void; children: ReactNode },
@@ -623,7 +634,10 @@ export function PhoneLauncher({
                   <div className="w-8" aria-hidden="true" />
                 </div>
                 <div
-                  className="phone-app-body"
+                  className={cn(
+                    "phone-app-body",
+                    SETTINGS_STYLE_APPS.has(appName) && "phone-app-body--sx",
+                  )}
                   onClickCapture={(event) => handlePhoneLinkClick(event, openApp, openWorld)}
                 >
                   <PhoneAppBoundary key={appName} appName={appName} onHome={returnHome}>

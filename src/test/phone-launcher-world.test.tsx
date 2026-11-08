@@ -23,17 +23,17 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-it.each([
-  ["Map", "/map"],
-  ["Home", "/home"],
-])("opens the %s launcher as a full page and closes the phone", async (app, href) => {
-  render(<PhoneLauncher />);
-  fireEvent.click(screen.getByRole("button", { name: "Open in-game phone" }));
-  fireEvent.click(screen.getByRole("button", { name: `Open ${app}` }));
-  expect(state.navigate).toHaveBeenCalledWith({ href });
-  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-  expect(document.querySelector("canvas")).toBeNull();
-});
+it.each([["Map", "/map"]])(
+  "opens the %s launcher as a full page and closes the phone",
+  async (app, href) => {
+    render(<PhoneLauncher />);
+    fireEvent.click(screen.getByRole("button", { name: "Open in-game phone" }));
+    fireEvent.click(screen.getByRole("button", { name: `Open ${app}` }));
+    expect(state.navigate).toHaveBeenCalledWith({ href });
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(document.querySelector("canvas")).toBeNull();
+  },
+);
 
 it("redirects external neighborhood and friend-home requests without opening a phone world", () => {
   render(<PhoneLauncher />);
