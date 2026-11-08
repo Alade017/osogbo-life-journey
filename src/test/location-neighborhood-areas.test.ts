@@ -87,7 +87,11 @@ describe("every active location has a playable area", () => {
         map_category: entry.category,
       });
       for (const id of entry.ids) {
-        expect(area.interactionPoints?.some((point) => point.id === id)).toBe(true);
+        const point = area.interactionPoints?.find((candidate) => candidate.id === id);
+        expect(point).toBeDefined();
+        const origin = { x: 7, y: 6 };
+        const playerAtPoint = toWorld({ x: point!.x, y: point!.y }, origin);
+        expect(nearbyInteractionPoint(playerAtPoint, origin, area, id)?.id).toBe(id);
       }
     }
   });
