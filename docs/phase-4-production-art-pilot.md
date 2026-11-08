@@ -26,14 +26,14 @@ The active R3F/Three.js scene is the playable renderer. Its building geometry is
 
 ## Validation status
 
-The profile-focused Vitest file has been updated but not executed. Typecheck, lint, production build, desktop/mobile browser rendering and gameplay interaction tests have not been run in this environment. Automatic GitHub Actions triggers have been disabled; the workflow is retained for manual dispatch only and has not been run.
+The neighborhood art, model, dressing and interaction Vitest files have been updated but not executed. Typecheck, lint, production build, desktop/mobile browser rendering and gameplay interaction tests have not been run in this environment. Automatic GitHub Actions triggers have been disabled; the workflow is retained for manual dispatch only and has not been run.
 
 Before considering merge, execute locally:
 
 1. `npm run typecheck`
-2. `npx vitest run src/test/neighborhood-art.test.ts src/test/neighborhood-model.test.ts`
-3. `npm run lint -- src/game/neighborhood-art.ts src/game/phaser-neighborhood.ts src/test/neighborhood-art.test.ts` (or the repository's equivalent scoped lint command)
+2. `npx vitest run src/test/neighborhood-art.test.ts src/test/neighborhood-model.test.ts src/test/neighborhood-dressing.test.ts src/test/neighborhood-interactions.test.ts`
+3. `npm run lint -- src/game/neighborhood-art.ts src/game/phaser-neighborhood.ts src/game/neighborhood-dressing.ts src/components/game/R3FNeighborhoodSurface.tsx src/components/3d/WorldScene.tsx src/test/neighborhood-art.test.ts src/test/neighborhood-dressing.test.ts` (or the repository's equivalent scoped lint command)
 4. `npm run build`
-5. Test the authenticated full-page `/neighborhood` at desktop and 375px mobile widths. Check all building and prop families, depth sorting, approach to entrances, zoom, movement, resizing, navigation away/back, console errors and network failures.
+5. Test the authenticated full-page `/neighborhood` at desktop and 375px mobile widths. Check all building and prop families, roads, lane markings, crossings and sidewalk openings, traffic-signal orientation, vehicle direction/distribution, pedestrian distribution, depth sorting, approach to entrances, zoom, movement, resizing, navigation away/back, console errors and network failures.
 
 Visual scale and gameplay fit must be inspected in the actual browser before expanding this art pilot or recommending merge.
