@@ -282,6 +282,12 @@ export function trafficLightSpots(area: NeighborhoodArea): TrafficLightSpot[] {
 export function streetLightSpots(area: NeighborhoodArea, bounds: DressingBounds): WorldPoint[] {
   const lamps = (area.obstacles ?? []).filter((o) => o.kind === "streetlight");
   const boxes = occupiedBoxes(area);
+  const crossingBoxes: Box[] = pedestrianCrossings(area).map(({ x, y, width, depth }) => ({
+    x,
+    y,
+    width,
+    height: depth,
+  }));
   const spots: WorldPoint[] = [];
   for (const road of area.roads ?? []) {
     const { start, end, vertical } = roadExtent(road, bounds);
@@ -294,7 +300,10 @@ export function streetLightSpots(area: NeighborhoodArea, bounds: DressingBounds)
         const x = vertical ? road.offset + side * across : along;
         const y = vertical ? along : road.offset + side * across;
         if (lamps.some((lamp) => Math.hypot(lamp.x - x, lamp.y - y) < 40)) continue;
-        if (insideObstacle(x, y, boxes, 6)) continue;
+        if (
+          insideObstacle(x, y, boxes, 6) ||
+          insideObstacle(x, y, crossingBoxes, 6)
+        ) continue;
         spots.push({ x, y });
       }
     }
