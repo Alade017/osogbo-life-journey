@@ -399,6 +399,7 @@ export function PlayableNeighborhood() {
     npcPositionOverrides,
     npcQuery.data,
     simulation.gameTime,
+    simulation.paused,
   ]);
   const localPlaces =
     placesQuery.data?.filter((place) => place.location_id === currentLocation?.id) ?? [];
