@@ -26,7 +26,6 @@ import { Route as AuthenticatedGameJobsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedGameMapRouteImport } from './routes/_authenticated/_game/map'
 import { Route as AuthenticatedGameMarketRouteImport } from './routes/_authenticated/_game/market'
 import { Route as AuthenticatedGameMissionsRouteImport } from './routes/_authenticated/_game/missions'
-import { Route as AuthenticatedGameModelsRouteImport } from './routes/_authenticated/_game/models'
 import { Route as AuthenticatedGameNeighborhoodRouteImport } from './routes/_authenticated/_game/neighborhood'
 import { Route as AuthenticatedGameNotificationsRouteImport } from './routes/_authenticated/_game/notifications'
 import { Route as AuthenticatedGamePartyRouteImport } from './routes/_authenticated/_game/party'
@@ -37,10 +36,15 @@ import { Route as AuthenticatedGameRealEstateRouteImport } from './routes/_authe
 import { Route as AuthenticatedGameSettingsRouteImport } from './routes/_authenticated/_game/settings'
 import { Route as AuthenticatedGameSocialRouteImport } from './routes/_authenticated/_game/social'
 import { Route as AuthenticatedGameWalletRouteImport } from './routes/_authenticated/_game/wallet'
+import { Route as ApiDrawerEquipRouteImport } from './routes/api/drawer/equip'
+import { Route as ApiDrawerRetrieveRouteImport } from './routes/api/drawer/retrieve'
+import { Route as ApiDrawerStateRouteImport } from './routes/api/drawer/state'
+import { Route as ApiDrawerStoreRouteImport } from './routes/api/drawer/store'
 import { Route as ApiHomeEquipRouteImport } from './routes/api/home/equip'
 import { Route as ApiHomePlaceRouteImport } from './routes/api/home/place'
 import { Route as ApiHomeRemoveRouteImport } from './routes/api/home/remove'
 import { Route as ApiHomeUnequipRouteImport } from './routes/api/home/unequip'
+import { Route as ApiHouseLightRouteImport } from './routes/api/house/light'
 import { Route as ApiHouseMoveRouteImport } from './routes/api/house/move'
 import { Route as ApiHousePlaceRouteImport } from './routes/api/house/place'
 import { Route as ApiHouseRemoveRouteImport } from './routes/api/house/remove'
@@ -173,11 +177,6 @@ const AuthenticatedGameMissionsRoute =
     path: '/missions',
     getParentRoute: () => AuthenticatedGameRoute,
   } as any)
-const AuthenticatedGameModelsRoute = AuthenticatedGameModelsRouteImport.update({
-  id: '/models',
-  path: '/models',
-  getParentRoute: () => AuthenticatedGameRoute,
-} as any)
 const AuthenticatedGameNeighborhoodRoute =
   AuthenticatedGameNeighborhoodRouteImport.update({
     id: '/neighborhood',
@@ -235,6 +234,26 @@ const AuthenticatedGameWalletRoute = AuthenticatedGameWalletRouteImport.update({
   path: '/wallet',
   getParentRoute: () => AuthenticatedGameRoute,
 } as any)
+const ApiDrawerEquipRoute = ApiDrawerEquipRouteImport.update({
+  id: '/api/drawer/equip',
+  path: '/api/drawer/equip',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDrawerRetrieveRoute = ApiDrawerRetrieveRouteImport.update({
+  id: '/api/drawer/retrieve',
+  path: '/api/drawer/retrieve',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDrawerStateRoute = ApiDrawerStateRouteImport.update({
+  id: '/api/drawer/state',
+  path: '/api/drawer/state',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiDrawerStoreRoute = ApiDrawerStoreRouteImport.update({
+  id: '/api/drawer/store',
+  path: '/api/drawer/store',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHomeEquipRoute = ApiHomeEquipRouteImport.update({
   id: '/api/home/equip',
   path: '/api/home/equip',
@@ -253,6 +272,11 @@ const ApiHomeRemoveRoute = ApiHomeRemoveRouteImport.update({
 const ApiHomeUnequipRoute = ApiHomeUnequipRouteImport.update({
   id: '/api/home/unequip',
   path: '/api/home/unequip',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHouseLightRoute = ApiHouseLightRouteImport.update({
+  id: '/api/house/light',
+  path: '/api/house/light',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiHouseMoveRoute = ApiHouseMoveRouteImport.update({
@@ -491,7 +515,6 @@ export interface FileRoutesByFullPath {
   '/map': typeof AuthenticatedGameMapRoute
   '/market': typeof AuthenticatedGameMarketRoute
   '/missions': typeof AuthenticatedGameMissionsRoute
-  '/models': typeof AuthenticatedGameModelsRoute
   '/neighborhood': typeof AuthenticatedGameNeighborhoodRoute
   '/notifications': typeof AuthenticatedGameNotificationsRoute
   '/party': typeof AuthenticatedGamePartyRoute
@@ -502,10 +525,15 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedGameSettingsRoute
   '/social': typeof AuthenticatedGameSocialRoute
   '/wallet': typeof AuthenticatedGameWalletRoute
+  '/api/drawer/equip': typeof ApiDrawerEquipRoute
+  '/api/drawer/retrieve': typeof ApiDrawerRetrieveRoute
+  '/api/drawer/state': typeof ApiDrawerStateRoute
+  '/api/drawer/store': typeof ApiDrawerStoreRoute
   '/api/home/equip': typeof ApiHomeEquipRoute
   '/api/home/place': typeof ApiHomePlaceRoute
   '/api/home/remove': typeof ApiHomeRemoveRoute
   '/api/home/unequip': typeof ApiHomeUnequipRoute
+  '/api/house/light': typeof ApiHouseLightRoute
   '/api/house/move': typeof ApiHouseMoveRoute
   '/api/house/place': typeof ApiHousePlaceRoute
   '/api/house/remove': typeof ApiHouseRemoveRoute
@@ -566,7 +594,6 @@ export interface FileRoutesByTo {
   '/map': typeof AuthenticatedGameMapRoute
   '/market': typeof AuthenticatedGameMarketRoute
   '/missions': typeof AuthenticatedGameMissionsRoute
-  '/models': typeof AuthenticatedGameModelsRoute
   '/neighborhood': typeof AuthenticatedGameNeighborhoodRoute
   '/notifications': typeof AuthenticatedGameNotificationsRoute
   '/party': typeof AuthenticatedGamePartyRoute
@@ -577,10 +604,15 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedGameSettingsRoute
   '/social': typeof AuthenticatedGameSocialRoute
   '/wallet': typeof AuthenticatedGameWalletRoute
+  '/api/drawer/equip': typeof ApiDrawerEquipRoute
+  '/api/drawer/retrieve': typeof ApiDrawerRetrieveRoute
+  '/api/drawer/state': typeof ApiDrawerStateRoute
+  '/api/drawer/store': typeof ApiDrawerStoreRoute
   '/api/home/equip': typeof ApiHomeEquipRoute
   '/api/home/place': typeof ApiHomePlaceRoute
   '/api/home/remove': typeof ApiHomeRemoveRoute
   '/api/home/unequip': typeof ApiHomeUnequipRoute
+  '/api/house/light': typeof ApiHouseLightRoute
   '/api/house/move': typeof ApiHouseMoveRoute
   '/api/house/place': typeof ApiHousePlaceRoute
   '/api/house/remove': typeof ApiHouseRemoveRoute
@@ -644,7 +676,6 @@ export interface FileRoutesById {
   '/_authenticated/_game/map': typeof AuthenticatedGameMapRoute
   '/_authenticated/_game/market': typeof AuthenticatedGameMarketRoute
   '/_authenticated/_game/missions': typeof AuthenticatedGameMissionsRoute
-  '/_authenticated/_game/models': typeof AuthenticatedGameModelsRoute
   '/_authenticated/_game/neighborhood': typeof AuthenticatedGameNeighborhoodRoute
   '/_authenticated/_game/notifications': typeof AuthenticatedGameNotificationsRoute
   '/_authenticated/_game/party': typeof AuthenticatedGamePartyRoute
@@ -655,10 +686,15 @@ export interface FileRoutesById {
   '/_authenticated/_game/settings': typeof AuthenticatedGameSettingsRoute
   '/_authenticated/_game/social': typeof AuthenticatedGameSocialRoute
   '/_authenticated/_game/wallet': typeof AuthenticatedGameWalletRoute
+  '/api/drawer/equip': typeof ApiDrawerEquipRoute
+  '/api/drawer/retrieve': typeof ApiDrawerRetrieveRoute
+  '/api/drawer/state': typeof ApiDrawerStateRoute
+  '/api/drawer/store': typeof ApiDrawerStoreRoute
   '/api/home/equip': typeof ApiHomeEquipRoute
   '/api/home/place': typeof ApiHomePlaceRoute
   '/api/home/remove': typeof ApiHomeRemoveRoute
   '/api/home/unequip': typeof ApiHomeUnequipRoute
+  '/api/house/light': typeof ApiHouseLightRoute
   '/api/house/move': typeof ApiHouseMoveRoute
   '/api/house/place': typeof ApiHousePlaceRoute
   '/api/house/remove': typeof ApiHouseRemoveRoute
@@ -721,7 +757,6 @@ export interface FileRouteTypes {
     | '/map'
     | '/market'
     | '/missions'
-    | '/models'
     | '/neighborhood'
     | '/notifications'
     | '/party'
@@ -732,10 +767,15 @@ export interface FileRouteTypes {
     | '/settings'
     | '/social'
     | '/wallet'
+    | '/api/drawer/equip'
+    | '/api/drawer/retrieve'
+    | '/api/drawer/state'
+    | '/api/drawer/store'
     | '/api/home/equip'
     | '/api/home/place'
     | '/api/home/remove'
     | '/api/home/unequip'
+    | '/api/house/light'
     | '/api/house/move'
     | '/api/house/place'
     | '/api/house/remove'
@@ -796,7 +836,6 @@ export interface FileRouteTypes {
     | '/map'
     | '/market'
     | '/missions'
-    | '/models'
     | '/neighborhood'
     | '/notifications'
     | '/party'
@@ -807,10 +846,15 @@ export interface FileRouteTypes {
     | '/settings'
     | '/social'
     | '/wallet'
+    | '/api/drawer/equip'
+    | '/api/drawer/retrieve'
+    | '/api/drawer/state'
+    | '/api/drawer/store'
     | '/api/home/equip'
     | '/api/home/place'
     | '/api/home/remove'
     | '/api/home/unequip'
+    | '/api/house/light'
     | '/api/house/move'
     | '/api/house/place'
     | '/api/house/remove'
@@ -873,7 +917,6 @@ export interface FileRouteTypes {
     | '/_authenticated/_game/map'
     | '/_authenticated/_game/market'
     | '/_authenticated/_game/missions'
-    | '/_authenticated/_game/models'
     | '/_authenticated/_game/neighborhood'
     | '/_authenticated/_game/notifications'
     | '/_authenticated/_game/party'
@@ -884,10 +927,15 @@ export interface FileRouteTypes {
     | '/_authenticated/_game/settings'
     | '/_authenticated/_game/social'
     | '/_authenticated/_game/wallet'
+    | '/api/drawer/equip'
+    | '/api/drawer/retrieve'
+    | '/api/drawer/state'
+    | '/api/drawer/store'
     | '/api/home/equip'
     | '/api/home/place'
     | '/api/home/remove'
     | '/api/home/unequip'
+    | '/api/house/light'
     | '/api/house/move'
     | '/api/house/place'
     | '/api/house/remove'
@@ -939,10 +987,15 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
   ApiNewsRoute: typeof ApiNewsRoute
+  ApiDrawerEquipRoute: typeof ApiDrawerEquipRoute
+  ApiDrawerRetrieveRoute: typeof ApiDrawerRetrieveRoute
+  ApiDrawerStateRoute: typeof ApiDrawerStateRoute
+  ApiDrawerStoreRoute: typeof ApiDrawerStoreRoute
   ApiHomeEquipRoute: typeof ApiHomeEquipRoute
   ApiHomePlaceRoute: typeof ApiHomePlaceRoute
   ApiHomeRemoveRoute: typeof ApiHomeRemoveRoute
   ApiHomeUnequipRoute: typeof ApiHomeUnequipRoute
+  ApiHouseLightRoute: typeof ApiHouseLightRoute
   ApiHouseMoveRoute: typeof ApiHouseMoveRoute
   ApiHousePlaceRoute: typeof ApiHousePlaceRoute
   ApiHouseRemoveRoute: typeof ApiHouseRemoveRoute
@@ -1107,13 +1160,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGameMissionsRouteImport
       parentRoute: typeof AuthenticatedGameRoute
     }
-    '/_authenticated/_game/models': {
-      id: '/_authenticated/_game/models'
-      path: '/models'
-      fullPath: '/models'
-      preLoaderRoute: typeof AuthenticatedGameModelsRouteImport
-      parentRoute: typeof AuthenticatedGameRoute
-    }
     '/_authenticated/_game/neighborhood': {
       id: '/_authenticated/_game/neighborhood'
       path: '/neighborhood'
@@ -1184,6 +1230,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGameWalletRouteImport
       parentRoute: typeof AuthenticatedGameRoute
     }
+    '/api/drawer/equip': {
+      id: '/api/drawer/equip'
+      path: '/api/drawer/equip'
+      fullPath: '/api/drawer/equip'
+      preLoaderRoute: typeof ApiDrawerEquipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/drawer/retrieve': {
+      id: '/api/drawer/retrieve'
+      path: '/api/drawer/retrieve'
+      fullPath: '/api/drawer/retrieve'
+      preLoaderRoute: typeof ApiDrawerRetrieveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/drawer/state': {
+      id: '/api/drawer/state'
+      path: '/api/drawer/state'
+      fullPath: '/api/drawer/state'
+      preLoaderRoute: typeof ApiDrawerStateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/drawer/store': {
+      id: '/api/drawer/store'
+      path: '/api/drawer/store'
+      fullPath: '/api/drawer/store'
+      preLoaderRoute: typeof ApiDrawerStoreRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/home/equip': {
       id: '/api/home/equip'
       path: '/api/home/equip'
@@ -1210,6 +1284,13 @@ declare module '@tanstack/react-router' {
       path: '/api/home/unequip'
       fullPath: '/api/home/unequip'
       preLoaderRoute: typeof ApiHomeUnequipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/house/light': {
+      id: '/api/house/light'
+      path: '/api/house/light'
+      fullPath: '/api/house/light'
+      preLoaderRoute: typeof ApiHouseLightRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/house/move': {
@@ -1526,7 +1607,6 @@ interface AuthenticatedGameRouteChildren {
   AuthenticatedGameMapRoute: typeof AuthenticatedGameMapRoute
   AuthenticatedGameMarketRoute: typeof AuthenticatedGameMarketRoute
   AuthenticatedGameMissionsRoute: typeof AuthenticatedGameMissionsRoute
-  AuthenticatedGameModelsRoute: typeof AuthenticatedGameModelsRoute
   AuthenticatedGameNeighborhoodRoute: typeof AuthenticatedGameNeighborhoodRoute
   AuthenticatedGameNotificationsRoute: typeof AuthenticatedGameNotificationsRoute
   AuthenticatedGamePartyRoute: typeof AuthenticatedGamePartyRoute
@@ -1551,7 +1631,6 @@ const AuthenticatedGameRouteChildren: AuthenticatedGameRouteChildren = {
   AuthenticatedGameMapRoute: AuthenticatedGameMapRoute,
   AuthenticatedGameMarketRoute: AuthenticatedGameMarketRoute,
   AuthenticatedGameMissionsRoute: AuthenticatedGameMissionsRoute,
-  AuthenticatedGameModelsRoute: AuthenticatedGameModelsRoute,
   AuthenticatedGameNeighborhoodRoute: AuthenticatedGameNeighborhoodRoute,
   AuthenticatedGameNotificationsRoute: AuthenticatedGameNotificationsRoute,
   AuthenticatedGamePartyRoute: AuthenticatedGamePartyRoute,
@@ -1590,10 +1669,15 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
   ApiNewsRoute: ApiNewsRoute,
+  ApiDrawerEquipRoute: ApiDrawerEquipRoute,
+  ApiDrawerRetrieveRoute: ApiDrawerRetrieveRoute,
+  ApiDrawerStateRoute: ApiDrawerStateRoute,
+  ApiDrawerStoreRoute: ApiDrawerStoreRoute,
   ApiHomeEquipRoute: ApiHomeEquipRoute,
   ApiHomePlaceRoute: ApiHomePlaceRoute,
   ApiHomeRemoveRoute: ApiHomeRemoveRoute,
   ApiHomeUnequipRoute: ApiHomeUnequipRoute,
+  ApiHouseLightRoute: ApiHouseLightRoute,
   ApiHouseMoveRoute: ApiHouseMoveRoute,
   ApiHousePlaceRoute: ApiHousePlaceRoute,
   ApiHouseRemoveRoute: ApiHouseRemoveRoute,

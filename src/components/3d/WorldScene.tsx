@@ -15,14 +15,14 @@ export function WorldMaterial({ tone = "wall", color }: { tone?: WorldTone; colo
   return <meshStandardMaterial {...WORLD_MATERIAL} color={color ?? WORLD_PALETTE[tone]} />;
 }
 
-export function WorldLighting({ size = 30 }: { size?: number }) {
+export function WorldLighting({ size = 30, dimmed = false }: { size?: number; dimmed?: boolean }) {
   return (
     <>
       <color attach="background" args={[WORLD_PALETTE.ground]} />
-      <ambientLight intensity={1.4} />
+      <ambientLight intensity={dimmed ? 0.5 : 1.4} />
       <directionalLight
         position={[size * 0.3, size, size * 0.4]}
-        intensity={2}
+        intensity={dimmed ? 0.7 : 2}
         castShadow
         shadow-mapSize={[1024, 1024]}
         shadow-bias={-0.001}
@@ -975,6 +975,7 @@ export function WorldHouse({
   position,
   width = WORLD_SCALE.door * 1.43,
   depth = WORLD_SCALE.door * 1.24,
+  height = WORLD_SCALE.door * 1.4,
   shop = false,
   detailed = false,
   rotation = 0,
@@ -987,9 +988,8 @@ export function WorldHouse({
   detailed?: boolean;
   rotation?: number;
   variant?: string;
+  height?: number;
 }) {
-  const height = WORLD_SCALE.door * 1.4;
-
   const isMarket = variant === "market" || variant === "food";
   const isBank = variant === "bank";
   const isCivic = variant === "civic" || variant === "public-service";
@@ -1135,19 +1135,11 @@ export function WorldHouse({
       {isChurch && (
         <>
           {/* Pitched roof and compact bell tower distinguish the chapel silhouette. */}
-          <mesh
-            position={[-width * 0.2, height + 0.48, 0]}
-            rotation={[0, 0, -0.42]}
-            castShadow
-          >
+          <mesh position={[-width * 0.2, height + 0.48, 0]} rotation={[0, 0, -0.42]} castShadow>
             <boxGeometry args={[width * 0.58, 0.16, depth + 0.24]} />
             <WorldMaterial tone="clay" />
           </mesh>
-          <mesh
-            position={[width * 0.2, height + 0.48, 0]}
-            rotation={[0, 0, 0.42]}
-            castShadow
-          >
+          <mesh position={[width * 0.2, height + 0.48, 0]} rotation={[0, 0, 0.42]} castShadow>
             <boxGeometry args={[width * 0.58, 0.16, depth + 0.24]} />
             <WorldMaterial tone="clay" />
           </mesh>

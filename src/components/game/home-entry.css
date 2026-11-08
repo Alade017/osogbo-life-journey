@@ -1,0 +1,232 @@
+.entry {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: max(16px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+  background: var(--background);
+  color: var(--foreground);
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.entry-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+.entry-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: inherit;
+  text-decoration: none;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  min-width: 0;
+}
+
+.entry-auth {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.entry-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  background: none;
+  color: var(--primary);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.entry-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.entry-card {
+  width: 100%;
+  max-width: 880px;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: var(--card);
+  box-shadow: 0 18px 40px -24px rgb(0 0 0 / 0.35);
+}
+
+.entry-scene {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  background: var(--muted);
+  overflow: hidden;
+}
+
+.entry-scene svg,
+.entry-scene-photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.entry-scene-tag {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100% - 24px);
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 0.875rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.entry-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 20px 18px 22px;
+}
+
+.entry-player {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.entry-kicker {
+  margin: 0 0 4px;
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.entry-name {
+  margin: 0;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  font-weight: 800;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.entry-meta {
+  margin: 6px 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.95rem;
+}
+
+.entry-balance {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: var(--muted);
+  color: var(--foreground);
+  font-weight: 700;
+  font-size: 0.9375rem;
+}
+
+.entry-cta {
+  width: 100%;
+  min-height: 52px;
+}
+
+.entry-note {
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+  text-align: center;
+}
+
+@media (min-width: 760px) {
+  .entry-card {
+    flex-direction: row;
+    min-height: 420px;
+  }
+
+  .entry-scene {
+    flex: 1.4;
+    aspect-ratio: auto;
+  }
+
+  .entry-body {
+    flex: 1;
+    justify-content: center;
+    padding: 32px 32px 32px 28px;
+  }
+}
+
+.sunlife-district-spotlight {
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card);
+  color: var(--foreground);
+}
+
+.sunlife-spotlight-title {
+  margin: 0 0 4px;
+  font-size: 1.125rem;
+  font-weight: 800;
+}
+
+.sunlife-spotlight-desc {
+  margin: 0 0 12px;
+  color: var(--muted-foreground);
+  font-size: 0.9375rem;
+}
+
+.sunlife-spotlight-landmarks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sunlife-spotlight-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--muted);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}

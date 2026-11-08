@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import {
   Archive,
   Armchair,
+  ChevronDown,
+  ChevronUp,
   Bath,
   BedDouble,
   CookingPot,
@@ -97,6 +99,14 @@ export function HouseCatalogue({
   const [railId, setRailId] = useState<(typeof RAIL)[number]["id"]>("all");
   const [query, setQuery] = useState("");
   const [affordableOnly, setAffordableOnly] = useState(false);
+  // Minimised, the panel is only its title bar, so the room underneath stays reachable.
+  // Narrow screens start minimised so the room is never covered when the catalogue opens.
+  const [minimized, setMinimized] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(max-width: 1023px)").matches,
+  );
 
   if (!open) {
     return (
@@ -125,18 +135,33 @@ export function HouseCatalogue({
     placements.filter((placement) => placement.item_id === itemId).length;
 
   return (
-    <section className="house-catalogue" role="dialog" aria-label="Catalogue">
+    <section
+      className={minimized ? "house-catalogue house-catalogue--minimized" : "house-catalogue"}
+      role="dialog"
+      aria-label="Catalogue"
+    >
       <CatalogThumbnailQueue />
       <header className="house-catalogue-header">
         <h2>Catalogue</h2>
-        <button
-          type="button"
-          className="house-icon-button"
-          onClick={onClose}
-          aria-label="Close catalogue"
-        >
-          <X size={18} />
-        </button>
+        <div className="house-catalogue-header-actions">
+          <button
+            type="button"
+            className="house-icon-button"
+            onClick={() => setMinimized((value) => !value)}
+            aria-expanded={!minimized}
+            aria-label={minimized ? "Show catalogue" : "Minimise catalogue"}
+          >
+            {minimized ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+          </button>
+          <button
+            type="button"
+            className="house-icon-button"
+            onClick={onClose}
+            aria-label="Close catalogue"
+          >
+            <X size={18} />
+          </button>
+        </div>
       </header>
       <label className="house-catalogue-search">
         <Search size={15} aria-hidden="true" />

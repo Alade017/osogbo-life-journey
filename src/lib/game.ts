@@ -179,7 +179,14 @@ export const q = {
   profile: () =>
     queryOptions({
       queryKey: ["profile"],
-      queryFn: async () => unwrap(await supabase.from("profiles").select("*").maybeSingle()),
+      queryFn: async () => {
+        // Profiles are readable across players, so the query is limited to the signed-in player's row.
+        const { data: auth, error: authError } = await supabase.auth.getUser();
+        if (authError) throw authError;
+        const userId = auth.user?.id;
+        if (!userId) throw new Error("Sign in to load your profile.");
+        return unwrap(await supabase.from("profiles").select("*").eq("id", userId).maybeSingle());
+      },
     }),
   wallet: () =>
     queryOptions({
@@ -228,6 +235,20 @@ export const q = {
       queryFn: async () =>
         unwrap(
           await supabase.from("activities").select("*").eq("is_available", true).order("name"),
+        ),
+    }),
+  activityCompletions: () =>
+    queryOptions({
+      queryKey: ["activityCompletions"],
+      staleTime: 15_000,
+      refetchInterval: 15_000,
+      queryFn: async () =>
+        unwrap(
+          await supabase
+            .from("activity_completions")
+            .select("*")
+            .order("completed_at", { ascending: false })
+            .limit(30),
         ),
     }),
   places: () =>

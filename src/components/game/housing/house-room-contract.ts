@@ -5,6 +5,14 @@ import type { FoodDelivery } from "@/lib/food-delivery-service";
 
 export type HouseRoomRendererProps = {
   houseTypeId: string;
+  /** Room light switch. Off dims the room; omitted means on. */
+  lightOn?: boolean;
+  /** Floor being viewed: 0 ground, 1 upstairs (duplex only). */
+  activeFloor?: 0 | 1;
+  /** Tapping the stairs climbs or descends. */
+  onUseStairs?: () => void;
+  /** The entrance door is swung open. */
+  doorOpen?: boolean;
   accessoryBand: string;
   slots: HouseSlot[];
   placements: HousePlacement[];
@@ -35,12 +43,12 @@ export type HouseRoomRendererProps = {
 };
 
 export const HOUSE_ROOM_SIZE: Record<string, readonly [number, number]> = {
-  "shared-room": [5.4, 4.4],
-  "single-room": [6.2, 4.8],
-  "studio-flat": [7.8, 5.8],
-  "mini-flat": [9, 6.8],
-  bungalow: [10.5, 7.8],
-  duplex: [12, 8.8],
+  "shared-room": [5.9, 4.8],
+  "single-room": [6.8, 5.3],
+  "studio-flat": [8.6, 6.4],
+  "mini-flat": [9.9, 7.5],
+  bungalow: [11.5, 8.6],
+  duplex: [13.2, 9.7],
 };
 export const HOUSE_ACCESSORY_TIER: Record<string, number> = {
   basic: 1,
@@ -185,16 +193,31 @@ export type HouseWallSegment = {
   size: [number, number, number];
 };
 
+/** Point just inside the entrance door, where the character stands to go out or comes in. */
+export function houseDoorThreshold(
+  houseTypeId: string,
+  width: number,
+  depth: number,
+): [number, number, number] {
+  return [houseRearDoorCenter(houseTypeId, width), 0.06, -depth / 2 + 0.6];
+}
+
+/** Centre of the entrance door on the back wall. In four-room homes it opens into the sitting room. */
+export function houseRearDoorCenter(houseTypeId: string, width: number): number {
+  return FOUR_ROOM_HOME_TYPES.includes(houseTypeId) ? -width * 0.25 : width * 0.22;
+}
+
 export function houseWallSegments(
   width: number,
   depth: number,
   wallHeight: number,
   doorwayWidth: number,
+  rearDoorCenter: number = width * 0.22,
+  closedFront = false,
 ): HouseWallSegment[] {
-  const wallThickness = 0.16;
-  const frontWallHeight = wallHeight * 0.48;
+  const wallThickness = 0.22;
+  const frontWallHeight = closedFront ? wallHeight : wallHeight * 0.48;
   const doorHeight = wallHeight * 0.82;
-  const rearDoorCenter = width * 0.22;
   const rearDoorLeft = rearDoorCenter - doorwayWidth / 2;
   const rearDoorRight = rearDoorCenter + doorwayWidth / 2;
   const rearLeftWidth = width / 2 + rearDoorLeft;
@@ -205,6 +228,26 @@ export function houseWallSegments(
   const frontSideWidth = Math.max(0, (width - frontOpeningWidth) / 2);
   const rearY = wallHeight / 2;
   const frontY = frontWallHeight / 2;
+  const front: HouseWallSegment[] = closedFront
+    ? [
+        {
+          id: "front-wall",
+          position: [0, frontY, depth / 2],
+          size: [width, frontWallHeight, wallThickness],
+        },
+      ]
+    : [
+        {
+          id: "front-left-cutaway",
+          position: [-(frontOpeningWidth + frontSideWidth) / 2, frontY, depth / 2],
+          size: [frontSideWidth, frontWallHeight, wallThickness],
+        },
+        {
+          id: "front-right-cutaway",
+          position: [(frontOpeningWidth + frontSideWidth) / 2, frontY, depth / 2],
+          size: [frontSideWidth, frontWallHeight, wallThickness],
+        },
+      ];
   return [
     {
       id: "rear-left",
@@ -241,64 +284,123 @@ export function houseWallSegments(
       position: [width / 2, frontY, sideBackDepth / 2],
       size: [wallThickness, frontWallHeight, sideFrontDepth],
     },
-    {
-      id: "front-left-cutaway",
-      position: [-(frontOpeningWidth + frontSideWidth) / 2, frontY, depth / 2],
-      size: [frontSideWidth, frontWallHeight, wallThickness],
-    },
-    {
-      id: "front-right-cutaway",
-      position: [(frontOpeningWidth + frontSideWidth) / 2, frontY, depth / 2],
-      size: [frontSideWidth, frontWallHeight, wallThickness],
-    },
+    ...front,
   ];
 }
+
+/**
+ * Studio layout, four rooms with an empty doorway into each:
+ * sitting room (back-left), bedroom (front-left), kitchen and dining (back-right),
+ * bathroom (front-right). Walls are centred on the room, so the origin is the middle.
+ */
+function studioPartitionSegments(width: number, depth: number, height: number): HouseWallSegment[] {
+  const thickness = 0.22;
+  const doorway = 1.1;
+  const alongX = (id: string, z: number, x0: number, x1: number): HouseWallSegment => ({
+    id,
+    position: [(x0 + x1) / 2, height / 2, z],
+    size: [x1 - x0, height, thickness],
+  });
+  const alongZ = (id: string, x: number, z0: number, z1: number): HouseWallSegment => ({
+    id,
+    position: [x, height / 2, (z0 + z1) / 2],
+    size: [thickness, height, z1 - z0],
+  });
+  const sittingDoorX = -width * 0.25;
+  const bathDoorZ = depth * 0.25;
+  const kitchenDoorZ = -depth * 0.25;
+  return [
+    // Sitting room and bedroom, with a doorway at x = sittingDoorX.
+    alongX("sitting-bedroom-left", 0, -width / 2, sittingDoorX - doorway / 2),
+    alongX("sitting-bedroom-right", 0, sittingDoorX + doorway / 2, 0),
+    // Sitting room and kitchen, with a doorway at z = kitchenDoorZ.
+    alongZ("sitting-kitchen-back", 0, -depth / 2, kitchenDoorZ - doorway / 2),
+    alongZ("sitting-kitchen-front", 0, kitchenDoorZ + doorway / 2, 0),
+    // Kitchen and bathroom, a solid wall.
+    alongX("kitchen-bath", 0, 0, width / 2),
+    // Bedroom and bathroom, with a doorway at z = bathDoorZ.
+    alongZ("bedroom-bath-back", 0, 0, bathDoorZ - doorway / 2),
+    alongZ("bedroom-bath-front", 0, bathDoorZ + doorway / 2, depth / 2),
+  ];
+}
+
+/** Home types that have the four-room plan: sitting room, bedroom, kitchen and dining, bathroom. */
+export const FOUR_ROOM_HOME_TYPES: readonly string[] = [
+  "studio-flat",
+  "mini-flat",
+  "bungalow",
+  "duplex",
+];
 
 export function housePartitionSegments(
   houseTypeId: string,
   width: number,
   depth: number,
 ): HouseWallSegment[] {
-  if (!["studio-flat", "mini-flat", "bungalow", "duplex"].includes(houseTypeId)) return [];
-  const partitionHeight = 1.15;
-  const partitionThickness = 0.12;
-  const doorwayWidth = 1.25;
-  const dividerZ = -depth * 0.12;
-  const doorwayCenter = width * 0.05;
-  const leftEnd = doorwayCenter - doorwayWidth / 2;
-  const rightStart = doorwayCenter + doorwayWidth / 2;
-  const segments: HouseWallSegment[] = [
-    {
-      id: "room-divider-left",
-      position: [(-width / 2 + leftEnd) / 2, partitionHeight / 2, dividerZ],
-      size: [width / 2 + leftEnd, partitionHeight, partitionThickness],
-    },
-    {
-      id: "room-divider-right",
-      position: [(rightStart + width / 2) / 2, partitionHeight / 2, dividerZ],
-      size: [width / 2 - rightStart, partitionHeight, partitionThickness],
-    },
+  if (!FOUR_ROOM_HOME_TYPES.includes(houseTypeId)) return [];
+  // Taller than the furniture, so it reads clearly from the camera.
+  return studioPartitionSegments(width, depth, 1.9);
+}
+
+/** Stairs in a two-storey home. The same footprint serves both floors, against the left wall. */
+export type HouseStairs = {
+  x0: number;
+  x1: number;
+  z0: number;
+  z1: number;
+  /** Ground-floor point just outside the front of the stairs. */
+  bottom: [number, number];
+  /** Upstairs point just outside the back of the stairs. */
+  top: [number, number];
+};
+
+export function houseStairs(houseTypeId: string, width: number, depth: number): HouseStairs | null {
+  if (houseTypeId !== "duplex") return null;
+  const x0 = -width / 2 + 0.1;
+  const x1 = -width / 2 + 1.1;
+  const z0 = -depth * 0.45;
+  const z1 = -depth * 0.1;
+  const cx = (x0 + x1) / 2;
+  return { x0, x1, z0, z1, bottom: [cx, z1 + 0.35], top: [cx, z0 - 0.35] };
+}
+
+/**
+ * Upstairs walls for a duplex: a lounge with a mini gym (left, with the stairs), a living room
+ * (back-right) and a bedroom (front-right). Each has an empty doorway.
+ */
+export function upstairsPartitionSegments(width: number, depth: number): HouseWallSegment[] {
+  const height = 1.9;
+  const thickness = 0.22;
+  const doorway = 1.1;
+  const alongX = (id: string, z: number, x0: number, x1: number): HouseWallSegment => ({
+    id,
+    position: [(x0 + x1) / 2, height / 2, z],
+    size: [x1 - x0, height, thickness],
+  });
+  const alongZ = (id: string, x: number, z0: number, z1: number): HouseWallSegment => ({
+    id,
+    position: [x, height / 2, (z0 + z1) / 2],
+    size: [thickness, height, z1 - z0],
+  });
+  const livingDoorZ = -depth * 0.25;
+  const bedroomDoorX = width * 0.25;
+  return [
+    // Lounge and living room, with a doorway at z = livingDoorZ.
+    alongZ("upstairs-lounge-living-back", 0, -depth / 2, livingDoorZ - doorway / 2),
+    alongZ("upstairs-lounge-living-front", 0, livingDoorZ + doorway / 2, depth / 2),
+    // Living room and bedroom, with a doorway at x = bedroomDoorX.
+    alongX("upstairs-living-bedroom-left", 0, 0, bedroomDoorX - doorway / 2),
+    alongX("upstairs-living-bedroom-right", 0, bedroomDoorX + doorway / 2, width / 2),
   ];
-  if (houseTypeId === "bungalow" || houseTypeId === "duplex") {
-    const bathDividerX = -width * 0.28;
-    const bathDoorWidth = 0.9;
-    const bathDoorCenterZ = -depth * 0.31;
-    const bathStartZ = -depth / 2;
-    const bathEndZ = dividerZ;
-    const bathDoorStart = bathDoorCenterZ - bathDoorWidth / 2;
-    const bathDoorEnd = bathDoorCenterZ + bathDoorWidth / 2;
-    segments.push(
-      {
-        id: "bath-divider-back",
-        position: [bathDividerX, partitionHeight / 2, (bathStartZ + bathDoorStart) / 2],
-        size: [partitionThickness, partitionHeight, bathDoorStart - bathStartZ],
-      },
-      {
-        id: "bath-divider-front",
-        position: [bathDividerX, partitionHeight / 2, (bathDoorEnd + bathEndZ) / 2],
-        size: [partitionThickness, partitionHeight, bathEndZ - bathDoorEnd],
-      },
-    );
-  }
-  return segments;
+}
+
+/** Partition segments for the floor being viewed. Single-storey layouts have one floor. */
+export function housePartitionSegmentsForFloor(
+  houseTypeId: string,
+  width: number,
+  depth: number,
+  floor: 0 | 1,
+): HouseWallSegment[] {
+  if (floor === 1) return houseTypeId === "duplex" ? upstairsPartitionSegments(width, depth) : [];
+  return housePartitionSegments(houseTypeId, width, depth);
 }

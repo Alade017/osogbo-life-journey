@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { requestDepartureFromHome } from "@/lib/home-departure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarDays, CloudOff, MapPinned, Smile, Compass, Lock, X } from "lucide-react";
 import {
@@ -17,7 +18,7 @@ import { MapBillboardCampaignDialog } from "@/components/game/CityBillboards";
 import { OsunStateOverview } from "@/components/map/OsunStateOverview";
 import { MAP_LANDMARK_LOCATION_SLUG } from "@/components/map/map-location-links";
 import townData from "@/data/osogbo-town.json";
-import { q, rpc, xpProgress } from "@/lib/game";
+import { q, rpc } from "@/lib/game";
 import { isPlayableDistrict } from "@/game/playable-district";
 import { INITIAL_GAME_TIME, gameTimeFromCharacter } from "@/lib/game-time";
 import { useWorldClock } from "@/hooks/use-world-clock";
@@ -36,8 +37,6 @@ import { getCurrentMapBillboards, type CurrentMapBillboard } from "@/lib/map-bil
 import type { MapDistrict, MapLandmark } from "@/components/map/OsogboMap.svg";
 import "@/components/map/map-ui.css";
 import "@/components/map/map-hud.css";
-import { Avatar } from "@/components/game/Avatar";
-import type { Appearance } from "@/game/avatar-appearance";
 import { MapTicker } from "@/components/map/MapTicker";
 
 const categories: { id: MapFilter; label: string }[] = [
@@ -337,6 +336,14 @@ export function CityMapDashboard({
     if (travelSubmitLock.current || !selectedDestination || travel.isPending) return;
     travelSubmitLock.current = true;
     setTravelError(null);
+    if (character.data?.inside_home_property_id) {
+      // Leaving a house plays the door first; the house screen runs the trip alongside it.
+      requestDepartureFromHome({ locationId: selectedDestination.id, mode });
+      void navigate({ to: "/house" }).finally(() => {
+        travelSubmitLock.current = false;
+      });
+      return;
+    }
     travel.mutate({ locationId: selectedDestination.id, mode });
   };
   const closeTravelSelector = () => {
@@ -582,7 +589,9 @@ export function CityMapDashboard({
             const event = (cityEvents.data?.events ?? []).find(
               (item) => item.status === "active" && item.landmarkId === landmarkId,
             );
-            const found = landmarks.find((item) => item.id === landmarkId) ?? getQuickTravelLandmark(landmarkId);
+            const found =
+              landmarks.find((item) => item.id === landmarkId) ??
+              getQuickTravelLandmark(landmarkId);
             if (!event || !found) return;
             setSelectedDistrict(null);
             setSelectedLandmark(found);
@@ -619,23 +628,6 @@ export function CityMapDashboard({
           onSelectTown={setSelectedTownId}
           onOpenOsogbo={() => setMapLevel("town")}
         />
-      )}
-      {mapLevel === "town" && character.data && (
-        <div className="map-player-dock" aria-label="Your character">
-          <span className="map-player-avatar" aria-hidden="true">
-            <Avatar
-              appearance={(character.data.appearance ?? {}) as unknown as Appearance}
-              gender={character.data.gender}
-              size={52}
-            />
-          </span>
-          <span className="map-player-progress">
-            <strong>LV {character.data.level}</strong>
-            <span className="map-player-bar" aria-hidden="true">
-              <span style={{ width: `${xpProgress(character.data.xp).pct}%` }} />
-            </span>
-          </span>
-        </div>
       )}
       <MapBillboardCampaignDialog
         campaign={selectedBillboard}

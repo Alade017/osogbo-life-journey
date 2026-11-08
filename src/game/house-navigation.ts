@@ -1,6 +1,6 @@
 import type { HousePlacement, HouseSlot } from "@/components/game/housing/HouseRoomScene";
 import {
-  housePartitionSegments,
+  housePartitionSegmentsForFloor,
   houseSlotPosition,
   roomPercentToPosition,
 } from "@/components/game/housing/house-room-contract";
@@ -26,9 +26,10 @@ export function roomObstacles(
   depth: number,
   placements: HousePlacement[],
   slots: HouseSlot[],
+  floor: 0 | 1 = 0,
 ): RoomObstacle[] {
   return [
-    ...housePartitionSegments(type, width, depth).map((s) => ({
+    ...housePartitionSegmentsForFloor(type, width, depth, floor).map((s) => ({
       x: s.position[0],
       z: s.position[2],
       w: s.size[0],
