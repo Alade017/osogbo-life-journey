@@ -156,7 +156,17 @@
       color-mix(in srgb, var(--chart-4) 25%, transparent),
       transparent 18rem
     ),
-    var(--brand-porcelain);
+    var(--phone-surface);
+}
+
+/* Phone surface: a soft fade from cream at the top to a light mist blue at the
+   bottom, so white cards and the royal and green tiles stand out on it. */
+.phone-ui-refresh {
+  --phone-surface: linear-gradient(180deg, #f8f3f0 0%, #f5f2ea 38%, #e9eef7 100%);
+}
+
+.phone-ui-refresh .phone-app-view {
+  background: var(--phone-surface);
 }
 
 .phone-ui-refresh .phone-status {
