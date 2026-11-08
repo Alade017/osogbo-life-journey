@@ -307,6 +307,8 @@ export function PlayableNeighborhood() {
   const [activePanel, setActivePanel] = useState<InteractionPanel | null>(null);
   /** A tapped building or person the character is walking to; interaction opens on arrival. */
   const [pendingTargetId, setPendingTargetId] = useState<string | null>(null);
+  /** Set while the character walks to its home door after Go home. */
+  const [homeBound, setHomeBound] = useState(false);
   const [businessView, setBusinessView] = useState<BusinessView>("actions");
   const [workView, setWorkView] = useState<"actions" | "interior">("actions");
   const [selectedNpcId, setSelectedNpcId] = useState<string | null>(null);
@@ -474,8 +476,27 @@ export function PlayableNeighborhood() {
     },
     onError: () => endTransition(),
   });
-  const activateHome = enterHome.mutate;
+  /** Go home walks the character to the home door first; entry starts only on arrival. */
+  const homeObject = area.objects.find((object) => object.kind === "home");
+  const enterHomeNow = enterHome.mutate;
+  const nearHome = nearbyObject?.kind === "home";
+  const activateHome = useCallback(() => {
+    if (nearHome || !homeObject || !district?.personalHome) {
+      enterHomeNow();
+      return;
+    }
+    setDirections(new Set());
+    setGroundTarget({ x: homeObject.x, y: homeObject.y });
+    setHomeBound(true);
+  }, [nearHome, homeObject, district?.personalHome, enterHomeNow]);
   const enteringHome = enterHome.isPending;
+  useEffect(() => {
+    if (!homeBound || nearbyObject?.kind !== "home") return;
+    setHomeBound(false);
+    enterHome.mutate();
+    // enterHome is stable for this render; the effect only reacts to arrival.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [homeBound, nearbyObject]);
 
   useEffect(() => {
     setDirections(new Set());
@@ -496,6 +517,7 @@ export function PlayableNeighborhood() {
       if (pressed) {
         groundTargetRef.current = null;
         setGroundTarget(null);
+        setHomeBound(false);
       }
       setDirections((current) => {
         const next = new Set(current);
@@ -522,6 +544,7 @@ export function PlayableNeighborhood() {
   const tapGround = (point: { x: number; y: number }) => {
     if (activePanel) return;
     setPendingTargetId(null);
+    setHomeBound(false);
     setDirections(new Set());
     setGroundTarget(point);
   };
@@ -1118,11 +1141,11 @@ export function PlayableNeighborhood() {
                       <button
                         type="button"
                         className="neighborhood-go-home"
-                        disabled={enteringHome}
-                        aria-busy={enteringHome}
+                        disabled={enteringHome || homeBound}
+                        aria-busy={enteringHome || homeBound}
                         onClick={() => activateHome()}
                       >
-                        {enteringHome ? "Going home…" : "Go home"}
+                        {enteringHome || homeBound ? "Going home…" : "Go home"}
                       </button>
                     )}
                   </div>
