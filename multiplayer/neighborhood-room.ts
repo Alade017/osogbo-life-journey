@@ -348,6 +348,9 @@ export class NeighborhoodRoom extends Room {
     if (!credentials || !player) return;
     try {
       const fresh = await readCharacter(credentials.accessToken, credentials.locationId);
+      // A character switch must not copy the newly selected character's equipment
+      // into an already-authenticated room session for the previous character.
+      if (fresh.character.id !== credentials.characterId) return;
       player.equipment = fresh.equipment;
     } catch {
       // Keep the last verified snapshot; the normal reconnect path will retry.
