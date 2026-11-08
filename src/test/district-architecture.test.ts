@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { districtArchitectureVariantForCategory, getDistrictArchitecture } from "@/game/district-architecture";
+import {
+  districtArchitectureVariantForCategory,
+  getDistrictArchitecture,
+} from "@/game/district-architecture";
 
 describe("world-category building architecture", () => {
   it.each([
