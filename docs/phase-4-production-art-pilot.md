@@ -1,10 +1,10 @@
 # Phase 4 — Procedural neighborhood art pilot
 
-This pilot uses the existing Phaser renderer and its projected world coordinates. It adds no external image assets, SVGs, textures or fallback image renderer.
+This pilot uses the existing Phaser renderer and its projected world coordinates. All neighborhood architecture and environment props are drawn with Phaser Graphics; no external image assets or alternate renderer are used.
 
 ## Rendering approach
 
-- Buildings are constructed from Phaser Graphics geometry using data-driven profiles for compound, shop and kiosk families.
+- Buildings are constructed from Phaser Graphics geometry using semantic profiles for compound, shop, kiosk, market and work families. World-object kinds select the appropriate reusable family.
 - Roofs, wall planes, eaves, roof seams, doors, windows, grilles, awnings and verandas are derived from each building's existing width/depth footprint and a typed style profile.
 - Environment props are constructed procedurally from typed shape profiles for trees, streetlights, benches, bins and signs.
 - Dimensions are derived from each world's existing obstacle/building dimensions; no new per-location placement coordinates or collision dimensions are introduced.
@@ -19,13 +19,13 @@ This pilot uses the existing Phaser renderer and its projected world coordinates
 - No Three.js/R3F renderer is introduced into this Phaser scene; Phaser is already the renderer responsible for this playable neighborhood.
 - No phone routing, database, RPC, Colyseus, economy or deployment changes.
 
-## Removed
+## Renderer constraints
 
-All eight SVG assets and the SVG loading manifest have been removed. There is no SVG loading path and no SVG or image fallback renderer. Phaser geometry is the sole building and environment-prop renderer for this pilot.
+Phaser Graphics is the sole building and environment-prop renderer for this pilot. There is no external asset loader or fallback renderer. Shared geometry is scaled from world-provided footprints, and semantic profiles are reused across areas.
 
 ## Validation status
 
-The profile-focused Vitest file has been updated but not executed. Typecheck, lint, production build, desktop/mobile browser rendering and gameplay interaction tests have not been run in this environment. GitHub Actions are intentionally not being manually triggered or rerun.
+The profile-focused Vitest file has been updated but not executed. Typecheck, lint, production build, desktop/mobile browser rendering and gameplay interaction tests have not been run in this environment. Automatic GitHub Actions triggers have been disabled; the workflow is retained for manual dispatch only and has not been run.
 
 Before considering merge, execute locally:
 
