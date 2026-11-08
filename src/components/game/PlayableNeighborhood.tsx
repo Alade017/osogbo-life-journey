@@ -40,6 +40,7 @@ import {
   neighborhoodAreaForSlug,
   nearestInteraction,
   toScene,
+  toWorld,
   type NeighborhoodNpcView,
 } from "@/game/neighborhood-model";
 import { isPlayableDistrict, playableDistrictForLocation } from "@/game/playable-district";
@@ -485,7 +486,8 @@ export function PlayableNeighborhood() {
       return;
     }
     setDirections(new Set());
-    setGroundTarget({ x: homeObject.x, y: homeObject.y });
+    groundTargetRef.current = toWorld({ x: homeObject.x, y: homeObject.y }, district.origin);
+    setGroundTarget(groundTargetRef.current);
     setHomeBound(true);
   }, [nearHome, homeObject, district?.personalHome, enterHomeNow]);
   const enteringHome = enterHome.isPending;
@@ -685,7 +687,9 @@ export function PlayableNeighborhood() {
     toast.message(`Walking to ${target.name}`);
     setPendingTargetId(targetId);
     setDirections(new Set());
-    setGroundTarget({ x: target.x, y: target.y });
+    const destination = toWorld({ x: target.x, y: target.y }, district!.origin);
+    groundTargetRef.current = destination;
+    setGroundTarget(destination);
   };
   useEffect(() => {
     if (!pendingTargetId || nearbyObject?.id !== pendingTargetId) return;
