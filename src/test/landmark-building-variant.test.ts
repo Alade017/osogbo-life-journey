@@ -4,7 +4,7 @@ import { getLandmarkBuildingVariant } from "@/components/map/landmark-building-v
 import {
   DISTRICT_ARCHITECTURE_VARIANTS,
   getDistrictArchitecture,
-  getPitchedRoofPanelRotation,
+  getPitchedRoofPanel,
 } from "@/game/district-architecture";
 
 const SUPPORTED_VARIANTS = new Set([
@@ -55,17 +55,21 @@ describe("landmark building variants", () => {
   });
 
   it("orients pitched roof panels upward toward the shared ridge", () => {
-    const leftRotation = getPitchedRoofPanelRotation("left");
-    const rightRotation = getPitchedRoofPanelRotation("right");
-    const halfPanelWidth = 0.31;
-    // Each panel rotates around its own centre; the inner edge is the ridge.
-    const leftRidgeHeight = halfPanelWidth * Math.sin(leftRotation);
-    const leftEaveHeight = -halfPanelWidth * Math.sin(leftRotation);
-    const rightRidgeHeight = -halfPanelWidth * Math.sin(rightRotation);
-    const rightEaveHeight = halfPanelWidth * Math.sin(rightRotation);
+    const buildingWidth = 4;
+    const left = getPitchedRoofPanel("left", buildingWidth);
+    const right = getPitchedRoofPanel("right", buildingWidth);
+    const halfPanelWidth = left.width / 2;
+    const leftRidgeX = left.positionX + halfPanelWidth;
+    const rightRidgeX = right.positionX - halfPanelWidth;
+    const leftRidgeHeight = halfPanelWidth * Math.sin(left.rotation);
+    const leftEaveHeight = -halfPanelWidth * Math.sin(left.rotation);
+    const rightRidgeHeight = -halfPanelWidth * Math.sin(right.rotation);
+    const rightEaveHeight = halfPanelWidth * Math.sin(right.rotation);
 
-    expect(leftRotation).toBeGreaterThan(0);
-    expect(rightRotation).toBeLessThan(0);
+    expect(left.rotation).toBeGreaterThan(0);
+    expect(right.rotation).toBeLessThan(0);
+    expect(leftRidgeX).toBeCloseTo(0, 10);
+    expect(rightRidgeX).toBeCloseTo(0, 10);
     expect(leftRidgeHeight).toBeGreaterThan(leftEaveHeight);
     expect(rightRidgeHeight).toBeGreaterThan(rightEaveHeight);
     expect(leftRidgeHeight).toBeCloseTo(rightRidgeHeight, 10);
