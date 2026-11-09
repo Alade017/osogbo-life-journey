@@ -261,6 +261,16 @@ export class NeighborhoodRoom extends Room {
     if (!credentials || !player) return;
     try {
       const fresh = await readCharacter(credentials.accessToken, credentials.locationId);
+      // A refresh can finish after the client has left. Do not publish data onto
+      // a detached player snapshot or a session whose credentials were replaced.
+      if (
+        this.credentials.get(client.sessionId) !== credentials ||
+        this.state.players.get(client.sessionId) !== player ||
+        fresh.character.id !== player.characterId ||
+        fresh.character.current_location_id !== credentials.locationId
+      ) {
+        return;
+      }
       player.equipment = fresh.equipment;
     } catch {
       // Keep the last verified snapshot; the normal reconnect path will retry.
