@@ -839,14 +839,17 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       roomWidth,
       roomDepth,
     );
-    const travelling = rpc.travelToLocation(departure);
-    travelling.catch(() => undefined);
+    // Do not start the authoritative travel action until the character has
+    // successfully reached the door. A blocked or cancelled walk must not
+    // change the server-side location in the background.
     if (!(await walkTo([doorX, doorY, doorZ]))) return;
     setDoorOpen(true);
-    await new Promise<void>((resolve) => window.setTimeout(resolve, DOOR_SWING_MS));
     beginTransition("leaving", "Heading out for your trip", 3);
     try {
-      await travelling;
+      await Promise.all([
+        rpc.travelToLocation(departure),
+        new Promise<void>((resolve) => window.setTimeout(resolve, DOOR_SWING_MS)),
+      ]);
     } catch (error) {
       setDoorOpen(false);
       endTransition();
