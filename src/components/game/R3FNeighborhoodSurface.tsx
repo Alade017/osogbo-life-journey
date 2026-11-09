@@ -383,6 +383,16 @@ export function R3FNeighborhoodSurface({
     return point(p.x, p.y);
   });
   const npcPoints = npcs.map((npc) => point(npc.x, npc.y));
+  const npcWaypoints = useMemo(
+    () =>
+      new Map(
+        npcs.map((npc) => [
+          npc.id,
+          (npc.path ?? []).map((waypoint) => point(waypoint.x, waypoint.y)),
+        ] as const),
+      ),
+    [npcs, point],
+  );
   const self = players.find((player) => player.sessionId === selfSessionId);
   const selfPoint = self && toScene(self, district.origin);
   const target: [number, number, number] =
@@ -560,7 +570,7 @@ export function R3FNeighborhoodSurface({
               npc={npc}
               start={point(npc.x, npc.y)}
               target={point(npc.targetX, npc.targetY)}
-              waypoints={(npc.path ?? []).map((waypoint) => point(waypoint.x, waypoint.y))}
+              waypoints={npcWaypoints.get(npc.id) ?? []}
               onSelect={() => onSelectTarget(npc.id)}
               onArrive={() => onNpcArrive(npc.id, npc.targetX, npc.targetY)}
               onPause={(x, z) =>
