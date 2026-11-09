@@ -30,7 +30,8 @@ describe("business and investment RPCs", () => {
         (name) =>
           name.endsWith(".sql") &&
           name !== "0075_remove_orphaned_player_data.sql" &&
-          name !== "0077_market_stall_rent_categories_sales.sql",
+          name !== "0077_market_stall_rent_categories_sales.sql" &&
+          name !== "0079_free_house_placement.sql",
       )
       .sort()) {
         if (file === "0083_studio_room_layout.sql") {
