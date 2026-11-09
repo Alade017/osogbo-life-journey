@@ -1,18 +1,37 @@
 import { describe, expect, it } from "vitest";
-import { GAME_UPDATES, latestGameUpdates } from "@/lib/game-updates";
+import { sortGameUpdates, toGameUpdate, type GameUpdate } from "@/lib/game-updates";
+
+const updates: GameUpdate[] = [
+  { id: "a", title: "A", summary: "a", app: "Map", publishedOn: "2026-11-01" },
+  { id: "b", title: "B", summary: "b", app: "Map", publishedOn: "2026-11-09" },
+  { id: "c", title: "C", summary: "c", app: "Map", publishedOn: "2026-10-30" },
+];
 
 describe("game updates", () => {
   it("lists the newest update first", () => {
-    const dates = latestGameUpdates().map((update) => update.publishedOn);
-    expect(dates).toEqual([...dates].sort().reverse());
-  });
-
-  it("keeps ids unique so every card has a stable key", () => {
-    const ids = GAME_UPDATES.map((update) => update.id);
-    expect(new Set(ids).size).toBe(ids.length);
+    const dates = sortGameUpdates(updates).map((update) => update.publishedOn);
+    expect(dates).toEqual(["2026-11-09", "2026-11-01", "2026-10-30"]);
   });
 
   it("respects the limit", () => {
-    expect(latestGameUpdates(1)).toHaveLength(1);
+    expect(sortGameUpdates(updates, 1)).toHaveLength(1);
+  });
+
+  it("maps a database row to the phone's update shape", () => {
+    expect(
+      toGameUpdate({
+        id: "x",
+        title: "Osun Gist",
+        summary: "Headlines",
+        app: "Osun Gist",
+        published_on: "2026-11-09",
+      }),
+    ).toEqual({
+      id: "x",
+      title: "Osun Gist",
+      summary: "Headlines",
+      app: "Osun Gist",
+      publishedOn: "2026-11-09",
+    });
   });
 });

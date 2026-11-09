@@ -617,6 +617,13 @@
       "when": 1794203457530,
       "tag": "0086_osun_news_region",
       "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "7",
+      "when": 1794290000000,
+      "tag": "0087_game_updates",
+      "breakpoints": true
     }
   ]
 }

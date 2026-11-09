@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Newspaper, Trophy } from "lucide-react";
 import { PaletteSelect } from "@/components/ui/palette-select";
-import { latestGameUpdates } from "@/lib/game-updates";
+import { loadGameUpdates, sortGameUpdates } from "@/lib/game-updates";
 
 export type CommunityPhoneApp =
   "Calendar" | "Food Delivery" | "Okada Rides" | "Contribution" | "Leaderboard" | "Town News";
@@ -43,6 +43,11 @@ export function CommunityPhoneApps({ app }: { app: CommunityPhoneApp }) {
       if (error) throw error;
       return (Array.isArray(data) ? data : []) as TownRank[];
     },
+  });
+  const gameUpdates = useQuery({
+    queryKey: ["phoneGameUpdates"],
+    enabled: app === "Town News",
+    queryFn: loadGameUpdates,
   });
   const townPosts = useQuery({
     queryKey: ["phoneTownNewsPosts"],
@@ -168,7 +173,17 @@ export function CommunityPhoneApps({ app }: { app: CommunityPhoneApp }) {
       </header>
       <section className="phone-news-section" aria-labelledby="phone-game-updates">
         <h3 id="phone-game-updates">Game updates</h3>
-        {latestGameUpdates().map((update) => (
+        {gameUpdates.isLoading && (
+          <AppCard>
+            <small>Loading game updates...</small>
+          </AppCard>
+        )}
+        {gameUpdates.isError && (
+          <AppCard>
+            <small role="alert">Game updates could not be loaded.</small>
+          </AppCard>
+        )}
+        {sortGameUpdates(gameUpdates.data ?? []).map((update) => (
           <AppCard key={update.id}>
             <small>
               {update.app} ·{" "}
