@@ -48,3 +48,68 @@ export function deriveTownMobilityRoutes(
   }
   return routes;
 }
+
+/**
+ * Derives open pedestrian routes from walkable sidewalk cells beside roads.
+ * Building footprints, plots and water are excluded so walkers stay on paths
+ * that the town layout actually provides.
+ */
+export function deriveTownPedestrianRoutes(
+  rows: readonly string[],
+  cellSize: number,
+  blockedCells: readonly (readonly [number, number])[],
+): TownMobilityRoute[] {
+  const columnCount = Math.max(0, ...rows.map((row) => row.length));
+  const blocked = new Set(blockedCells.map(([x, z]) => `${x},${z}`));
+  const lines = new Map<string, Set<number>>();
+
+  rows.forEach((row, z) => {
+    Array.from(row).forEach((tile, x) => {
+      if (tile !== "r") return;
+      for (const [dx, dz] of [[0, -1], [0, 1], [-1, 0], [1, 0]] as const) {
+        const sidewalkX = x + dx;
+        const sidewalkZ = z + dz;
+        if (rows[sidewalkZ]?.[sidewalkX] !== "g") continue;
+        if (blocked.has(`${sidewalkX},${sidewalkZ}`)) continue;
+
+        const horizontal = dx === 0;
+        const lineKey = `${horizontal ? "h" : "v"}:${horizontal ? sidewalkZ : sidewalkX}`;
+        const coordinate = horizontal ? sidewalkX : sidewalkZ;
+        const values = lines.get(lineKey) ?? new Set<number>();
+        values.add(coordinate);
+        lines.set(lineKey, values);
+      }
+    });
+  });
+
+  const routes: TownMobilityRoute[] = [];
+  for (const [lineKey, values] of lines) {
+    const [orientation, fixedValue] = lineKey.split(":");
+    const fixed = Number(fixedValue);
+    const coordinates = [...values].sort((a, b) => a - b);
+    let run: number[] = [];
+
+    const appendRun = () => {
+      if (run.length >= 3) {
+        const points: [number, number][] = run.map((coordinate) => {
+          const x = orientation === "h" ? coordinate : fixed;
+          const z = orientation === "h" ? fixed : coordinate;
+          return [
+            (x - (columnCount - 1) / 2) * cellSize,
+            (z - (rows.length - 1) / 2) * cellSize,
+          ];
+        });
+        routes.push(points);
+      }
+      run = [];
+    };
+
+    for (const coordinate of coordinates) {
+      if (run.length > 0 && coordinate !== run[run.length - 1]! + 1) appendRun();
+      run.push(coordinate);
+    }
+    appendRun();
+  }
+
+  return routes;
+}
