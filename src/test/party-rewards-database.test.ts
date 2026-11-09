@@ -56,7 +56,7 @@ beforeAll(async () => {
         f !== "0075_remove_orphaned_player_data.sql" &&
         f !== "0077_market_stall_rent_categories_sales.sql",
     )
-    .sort())
+    .sort()) {
 if (file === "0083_studio_room_layout.sql") {
       // The studio layout migration depends on x/y columns from this Supabase migration.
       await db.exec(
@@ -67,6 +67,7 @@ if (file === "0083_studio_room_layout.sql") {
       );
     }
         await db.exec(readFileSync(`drizzle/migrations/${file}`, "utf8"));
+  }
   for (const file of [
     "20261019100000_party_life.sql",
     "20261019110000_party_clubs_and_activities.sql",
