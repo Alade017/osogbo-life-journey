@@ -121,7 +121,12 @@ begin
   if not found then raise exception 'NO_CHARACTER'; end if;
   select response into prior from public.osun_town_travels
     where user_id=p_user_id and idempotency_key=p_idempotency_key;
-  if found then return prior || jsonb_build_object('duplicate',true); end if;
+  if found then
+    if prior->>'to_town_id' is distinct from p_destination_id then
+      raise exception 'IDEMPOTENCY_CONFLICT';
+    end if;
+    return prior || jsonb_build_object('duplicate',true);
+  end if;
   select * into player from public.characters where user_id=p_user_id
     order by created_at desc, id desc limit 1 for update;
   if not found then raise exception 'NO_CHARACTER'; end if;
