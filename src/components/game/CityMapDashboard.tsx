@@ -228,6 +228,7 @@ export function CityMapDashboard({
         setTravelError("Travel is confirmed, but the saved destination has not refreshed yet.");
         return;
       }
+      setArrivalConfirmed(true);
       await navigate({ to: "/neighborhood" });
     } catch (error) {
       if (!isMounted.current) return;
