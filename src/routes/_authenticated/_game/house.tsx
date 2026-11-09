@@ -831,6 +831,8 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       taskBusy ||
       isOffline ||
       !serverState?.house ||
+      !character?.id ||
+      character.id !== departure.characterId ||
       !isInsideHome ||
       !gameTime.ready ||
       gameTime.busy
@@ -1221,6 +1223,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       editing,
       busy: taskBusy || !gameTime.ready || gameTime.busy,
       offline: isOffline,
+      activeCharacterId: character?.id,
     });
     if (!departure) return;
     departureRan.current = true;
