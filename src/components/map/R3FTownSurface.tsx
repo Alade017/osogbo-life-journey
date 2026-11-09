@@ -27,7 +27,7 @@ import {
   WorldInstances,
   type WorldInstance,
 } from "../3d/WorldScene";
-import { WORLD_SCALE, WORLD_PALETTE } from "../3d/world-theme";
+import { WORLD_SCALE, WORLD_PALETTE, worldFoliageColor } from "../3d/world-theme";
 import { MapLighting, useRealOrGameClock, daylightFor } from "./MapLighting";
 import { getLandmarkBuildingVariant } from "./landmark-building-variant";
 import { CompoundPlot3D } from "./CompoundPlot3D";
