@@ -219,7 +219,7 @@ export function R3FTownSurface(props: Props) {
     setSelectedTarget(null);
   }, [props.searchTarget, props.places, props.properties]);
   const trafficRoutes = useMemo(
-    () => deriveTownMobilityRoutes(town.grid.rows, cell, cell * 0.16),
+    () => deriveTownMobilityRoutes(town.grid.rows, cell, cell * 0.22),
     [],
   );
   const pedestrianRoutes = useMemo(() => {
