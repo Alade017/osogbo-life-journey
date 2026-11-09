@@ -147,7 +147,7 @@ function NeighborhoodNpcActor({
   const replanBackoff = useRef(replanDelay);
   const avoidanceBias = neighborhoodNpcAvoidanceBias(npc.id);
   const pauseSnapshotSaved = useRef(false);
-  const syncRouteReservation = () => {
+  const syncRouteReservation = useCallback(() => {
     if (!npc.isMoving || npc.isPaused) {
       actorRoutes.current.delete(npc.id);
       return;
@@ -163,7 +163,7 @@ function NeighborhoodNpcActor({
         Math.hypot(point.x - current.x, point.y - current.y) > 0.035,
       )] : remaining,
     );
-  };
+  }, [actorRoutes, npc.id, npc.isMoving, npc.isPaused, syncRouteReservation]);
 
   // Simulation updates may recreate an equivalent route. When its geometry or
   // destination really changes, rebuild it from the actor's rendered position
@@ -218,6 +218,7 @@ function NeighborhoodNpcActor({
     targetKey,
     waypointSignature,
     waypoints,
+    syncRouteReservation,
     actorRoutes,
     npc.id,
     npc.isMoving,
