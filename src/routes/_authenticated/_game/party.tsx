@@ -455,14 +455,15 @@ function ClubsTab({
                       <button
                         type="button"
                         className="min-h-11 shrink-0 rounded-full bg-primary px-4 text-sm font-semibold text-primary-foreground disabled:opacity-50"
-                        disabled={joinActivity.isPending}
-                        onClick={() =>
+                        disabled={!characterId || joinActivity.isPending}
+                        onClick={() => {
+                          if (!characterId) return;
                           joinActivity.mutate({
                             activitySlug: activity.slug,
                             requestId: newPartyRequestId(),
-                            characterId: characterId!,
-                          })
-                        }
+                            characterId,
+                          });
+                        }}
                       >
                         Join
                       </button>
@@ -569,8 +570,11 @@ function DrinksTab({
           <button
             type="button"
             className="min-h-11 rounded-full bg-primary px-4 font-semibold text-primary-foreground disabled:opacity-50"
-            disabled={!canBuy || buy.isPending || cash < (inClub ? drink.club_price : drink.price)}
-            onClick={() => characterId && buy.mutate({ drinkSlug: drink.slug, requestId: newPartyRequestId(), characterId })}
+            disabled={!characterId || !canBuy || buy.isPending || cash < (inClub ? drink.club_price : drink.price)}
+            onClick={() => {
+              if (!characterId) return;
+              buy.mutate({ drinkSlug: drink.slug, requestId: newPartyRequestId(), characterId });
+            }}
           >
             Buy
           </button>
@@ -709,6 +713,7 @@ function HostForm({
   ]);
 
   const submit = () => {
+    if (!characterId) return;
     const start = new Date(startsAt);
     const problem = validEventStart(start, new Date());
     if (problem) {
@@ -721,7 +726,7 @@ function HostForm({
       startsAt: start.toISOString(),
       requirements,
       requestId: newPartyRequestId(),
-      characterId: characterId!,
+      characterId,
     });
   };
 
