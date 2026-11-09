@@ -117,12 +117,14 @@ export function MapCanvas({
   useEffect(() => {
     if (!searchTarget) return;
     const id = typeof searchTarget === "string" ? searchTarget : searchTarget.id;
-    if (townData.landmarks.some((landmark) => landmark.id === id)) {
+    if (availablePlaces.some((place) => place.id === id)) {
       onSelectLandmark(id);
       return;
     }
-    if (townData.districts.some((district) => district.id === id)) onSelectDistrict(id);
-  }, [onSelectDistrict, onSelectLandmark, searchTarget]);
+    if (townData.districts.some((district) => district.id === id)) {
+      onSelectDistrict(id);
+    }
+  }, [availablePlaces, onSelectDistrict, onSelectLandmark, searchTarget]);
 
   const availablePlaces = useMemo(
     () =>
