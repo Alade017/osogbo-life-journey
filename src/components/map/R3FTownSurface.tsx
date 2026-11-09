@@ -222,17 +222,6 @@ export function R3FTownSurface(props: Props) {
     () => deriveTownMobilityRoutes(town.grid.rows, cell, cell * 0.22),
     [],
   );
-  const pedestrianRoutes = useMemo(() => {
-    const buildingCells = town.grid.buildings.flatMap((building) =>
-      [0, 1].flatMap((dx) => [0, 1].map((dz) => [building.x + dx, building.z + dz] as const)),
-    );
-    const blockedCells = [
-      ...buildingCells,
-      ...town.grid.waterCells,
-      ...town.grid.plotCells,
-    ];
-    return deriveTownPedestrianRoutes(town.grid.rows, cell, blockedCells);
-  }, []);
   const roads = useMemo(
     () =>
       town.grid.rows.flatMap((row, z) =>
@@ -1087,6 +1076,47 @@ export function R3FTownSurface(props: Props) {
     return { poles, spans, drains };
   }, [streetLights, wasteBins, trees, busStops, roadsideShops, motorcycles, tricycles, streetVendors, trafficLights]);
 
+  const pedestrianRoutes = useMemo(() => {
+    const buildingCells = town.grid.buildings.flatMap((building) =>
+      [0, 1].flatMap((dx) => [0, 1].map((dz) => [building.x + dx, building.z + dz] as const)),
+    );
+    const blockedCells: [number, number][] = [
+      ...buildingCells,
+      ...town.grid.waterCells,
+      ...town.grid.plotCells,
+    ];
+    const reserveWorldPosition = (x: number, z: number) => {
+      const gridX = Math.round(x / cell + (gridCols - 1) / 2 - 0.5);
+      const gridZ = Math.round(z / cell + (gridRows - 1) / 2 - 0.5);
+      blockedCells.push([gridX, gridZ]);
+    };
+
+    streetLights.forEach(([x, z]) => reserveWorldPosition(x, z));
+    trafficLights.forEach(([x, z]) => reserveWorldPosition(x, z));
+    busStops.forEach(([x, z]) => reserveWorldPosition(x, z));
+    roadSigns.forEach((sign) => reserveWorldPosition(sign.position[0], sign.position[1]));
+    roadsideShops.forEach(([x, z]) => reserveWorldPosition(x, z));
+    motorcycles.forEach(([x, z]) => reserveWorldPosition(x, z));
+    tricycles.forEach(([x, z]) => reserveWorldPosition(x, z));
+    streetVendors.forEach(([x, z]) => reserveWorldPosition(x, z));
+    wasteBins.forEach(([x, z]) => reserveWorldPosition(x, z));
+    trees.forEach((tree) => reserveWorldPosition(tree.position[0], tree.position[2]));
+    roadsideInfrastructure.poles.forEach(([x, z]) => reserveWorldPosition(x, z));
+
+    return deriveTownPedestrianRoutes(town.grid.rows, cell, blockedCells);
+  }, [
+    streetLights,
+    trafficLights,
+    busStops,
+    roadSigns,
+    roadsideShops,
+    motorcycles,
+    tricycles,
+    streetVendors,
+    wasteBins,
+    trees,
+    roadsideInfrastructure,
+  ]);
   const badgePositions = useMemo(
     () => calculateBadgePositions(props.places, point, cell),
     [props.places],
