@@ -130,3 +130,14 @@ The inset has been increased from 0.16 to 0.22 of a 2-unit road cell. This puts 
 Traffic motion now advances by world-space distance and carries leftover frame time across corners rather than resetting segment progress to zero. The travelled distance is reduced modulo the route perimeter after a long pause, bounding catch-up work. Degenerate zero-length paths return safely rather than entering a segment-advance loop. Vehicle speeds and the one-vehicle-per-loop count remain unchanged.
 
 **Remaining visual checkpoint:** inspect danfo and taxi wheel/body envelopes at the shared-road turns. The 0.16-unit nominal straight gap does not prove corner-sweep clearance; do not increase traffic density until the live scene has been inspected. Local test/build and desktop/375px browser QA remain pending; no GitHub Actions were run.
+
+
+## Pedestrian route and vehicle-separation audit
+
+The authored 24 × 18 road grid currently derives 30 pedestrian sidewalk runs containing 120 waypoints. The route builder only accepts grass (`g`) cells directly beside road (`r`) cells, splits runs at gaps, and excludes the 2 × 2 building footprints, water cells and reserved plot cells. It does not put pedestrian waypoints on road tiles. This keeps the generated NPC paths on the existing roadside walkable strips rather than crossing moving-traffic lanes.
+
+The pedestrian renderer previously advanced only one segment boundary per frame and discarded leftover frame time. It now advances by world-space distance, carries remaining movement through segment boundaries, reverses at each end of the sidewalk run, and caps a long paused-frame update to one round trip. Degenerate all-zero-length routes safely return.
+
+Added route tests verify that authored-town waypoints resolve to unblocked grass cells adjacent to roads, and that a blocked sidewalk cell splits a run rather than being crossed. The traffic inset regression assertion was also aligned to the current 0.22-cell route offset.
+
+**Scope limitation:** the current pedestrian system follows open sidewalk runs and turns around at their ends; it does not route across marked pedestrian crossings or perform dynamic collision avoidance with other pedestrians. Since the paths stay on grass cells beside roads, they are separated from traffic lanes at the route-data level. Live verification is still needed for character footprints, curb edges, sidewalk props and dense NPC overlap. No runtime tests/build or browser QA have been run in this pass.
