@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { NEIGHBORHOOD_SCENE_BOUNDS } from "@/game/neighborhood-geometry";
-import { neighborhoodNpcDestinationPoint, neighborhoodNpcPath, neighborhoodNpcSpawnPoint } from "@/game/neighborhood-npc-layout";
+import { neighborhoodNpcAvoidanceStep, neighborhoodNpcDestinationPoint, neighborhoodNpcPath, neighborhoodNpcSpawnPoint } from "@/game/neighborhood-npc-layout";
 
 describe("neighborhood NPC spawn distribution", () => {
   const slots = [
@@ -188,6 +188,34 @@ describe("neighborhood NPC spawn distribution", () => {
       [{ left: NEIGHBORHOOD_SCENE_BOUNDS.left - 100, top: -1000, width: 200, height: 2000 }],
     );
     expect(route).toBeNull();
+  });
+
+  it("keeps a live movement step outside another actor's separation radius", () => {
+    const next = neighborhoodNpcAvoidanceStep(
+      { x: 0, y: 0 },
+      { x: 10, y: 0 },
+      [{ x: 1, y: 0 }],
+      0.5,
+      0.85,
+    );
+    expect(Math.hypot(next.x - 1, next.y)).toBeGreaterThanOrEqual(0.85);
+  });
+
+  it("waits in place when every live movement alternative is occupied", () => {
+    const current = { x: 0, y: 0 };
+    const next = neighborhoodNpcAvoidanceStep(
+      current,
+      { x: 10, y: 0 },
+      [
+        { x: 0.5, y: 0 },
+        { x: -0.5, y: 0 },
+        { x: 0, y: 0.5 },
+        { x: 0, y: -0.5 },
+      ],
+      0.5,
+      0.85,
+    );
+    expect(next).toEqual(current);
   });
 
   it("returns null when there are no anchors or the index is invalid", () => {
