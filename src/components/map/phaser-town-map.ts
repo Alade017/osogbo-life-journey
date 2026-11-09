@@ -1,5 +1,5 @@
 import * as Phaser from "phaser";
-import { isQuickMapTap } from "@/lib/map-gesture";
+import { isQuickMapTap, mapPinchZoomFactor } from "@/lib/map-gesture";
 import townData from "@/data/osogbo-town.json";
 import {
   projectTownCell,
@@ -94,7 +94,8 @@ class PhaserTownMapScene extends Phaser.Scene implements PhaserMapSceneHandle {
         const other = [...this.dragPoints.entries()].find(([id]) => id !== pointer.id)?.[1];
         if (other) {
           const after = Math.hypot(current.x - other.x, current.y - other.y);
-          if (before > 0 && after > 0) this.setZoom(after / before);
+          const zoomFactor = mapPinchZoomFactor(before, after);
+          if (zoomFactor !== null) this.setZoom(zoomFactor);
         }
       }
 
