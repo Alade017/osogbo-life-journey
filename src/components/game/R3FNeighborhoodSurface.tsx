@@ -144,12 +144,14 @@ function NeighborhoodNpcActor({
 
   // Parent simulation updates can recreate an equivalent path array. Keep the
   // live route current without resetting progress unless its actual geometry changes.
-  routeWaypoints.current = waypoints;
-  if (waypointSignatureRef.current !== waypointSignature) {
-    waypointSignatureRef.current = waypointSignature;
-    waypointIndex.current = 0;
-    blockedDuration.current = 0;
-  }
+  useEffect(() => {
+    routeWaypoints.current = waypoints;
+    if (waypointSignatureRef.current !== waypointSignature) {
+      waypointSignatureRef.current = waypointSignature;
+      waypointIndex.current = 0;
+      blockedDuration.current = 0;
+    }
+  }, [waypoints, waypointSignature]);
 
   useEffect(() => {
     waypointIndex.current = 0;
