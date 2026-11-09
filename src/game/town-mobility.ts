@@ -203,6 +203,9 @@ export function stitchTownPedestrianRoutes(
     for (let index = 1; index < route.length; index += 1) {
       const a = route[index - 1]!;
       const b = route[index]!;
+      // Invalid authored or generated coordinates must never enter the graph:
+      // a single NaN/Infinity waypoint would otherwise poison the NPC transform.
+      if (![a[0], a[1], b[0], b[1]].every(Number.isFinite)) continue;
       if (Math.hypot(b[0] - a[0], b[1] - a[1]) < 0.001) continue;
       const aKey = keyOf(a);
       const bKey = keyOf(b);
