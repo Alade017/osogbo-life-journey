@@ -15,11 +15,11 @@ export interface Terrain3DProps {
  * Solves the flat appearance by introducing tiered elevation plateaus,
  * a sunken reflective river channel, and stone terrace retaining walls.
  */
-export const Terrain3D: FC<Terrain3DProps> = ({ gridCols, cellSize }) => {
+export const Terrain3D: FC<Terrain3DProps> = ({ gridCols, gridRows, cellSize }) => {
   const waterMeshRef = useRef<Mesh>(null);
 
   const totalWidth = gridCols * cellSize;
-  const totalDepth = 18 * cellSize;
+  const totalDepth = gridRows * cellSize;
 
   // Gentle river water shimmer
   useFrame(({ clock }) => {
