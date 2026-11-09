@@ -1,4 +1,4 @@
-import { useRef, useState, type FC } from "react";
+import { useEffect, useRef, useState, type FC } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import type { Group } from "three";
@@ -34,6 +34,20 @@ export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({
   gridRows,
 }) => {
   const [activeSpeech, setActiveSpeech] = useState<{ id: string; text: string } | null>(null);
+  const speechTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (speechTimeoutRef.current) clearTimeout(speechTimeoutRef.current);
+  }, []);
+
+  const showSpeech = (id: string, text: string, duration: number) => {
+    if (speechTimeoutRef.current) clearTimeout(speechTimeoutRef.current);
+    setActiveSpeech({ id, text });
+    speechTimeoutRef.current = setTimeout(() => {
+      setActiveSpeech((current) => current?.id === id ? null : current);
+      speechTimeoutRef.current = null;
+    }, duration);
+  };
 
   const xMax = (gridCols / 2 - 3) * cellSize;
   const zMax = (gridRows / 2 - 3) * cellSize;
@@ -104,10 +118,7 @@ export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({
           key={npc.id}
           npc={npc}
           cellSize={cellSize}
-          onInteract={(text) => {
-            setActiveSpeech({ id: npc.id, text });
-            setTimeout(() => setActiveSpeech(null), 3000);
-          }}
+          onInteract={(text) => showSpeech(npc.id, text, 3000)}}
           isSpeaking={activeSpeech?.id === npc.id}
           speechText={activeSpeech?.text}
         />
