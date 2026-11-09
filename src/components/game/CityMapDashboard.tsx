@@ -262,10 +262,12 @@ export function CityMapDashboard({
       window.dispatchEvent(new Event("osogbo:server-state-changed"));
       await refreshConfirmedArrival(variables.locationId, variables.characterId);
     },
-    onError: (error) => {
-      if (isMounted.current) {
-        setTravelError(error instanceof Error ? error.message : "Travel could not be completed.");
-      }
+    onError: (error, variables) => {
+      const activeCharacterId = queryClient.getQueryData<{ id?: string }>(
+        q.character().queryKey,
+      )?.id;
+      if (!isMounted.current || activeCharacterId !== variables.characterId) return;
+      setTravelError(error instanceof Error ? error.message : "Travel could not be completed.");
     },
     onSettled: () => {
       travelSubmitLock.current = false;
