@@ -1082,16 +1082,14 @@ export function R3FTownSurface(props: Props) {
                 position={badgePosition}
                 isSelected={selectedTarget?.id === place.id}
                 isHovered={hoveredTargetId === place.id}
-                onSelectLandmark={(id) =>
-                  select({} as any, () => {
-                    setSelectedTarget({
-                      id,
-                      position: [x, 0, z],
-                      type: "landmark",
-                    });
-                    props.onSelectLandmark(id);
-                  })
-                }
+                onSelectLandmark={(id) => {
+                  setSelectedTarget({
+                    id,
+                    position: [x, 0, z],
+                    type: "landmark",
+                  });
+                  props.onSelectLandmark(id);
+                }}
                 onPointerOver={(id, lbl) => {
                   setHoveredTargetId(id);
                   setHovered(lbl);
