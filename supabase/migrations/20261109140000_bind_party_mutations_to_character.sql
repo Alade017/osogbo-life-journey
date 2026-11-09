@@ -193,3 +193,16 @@ $$;
 
 revoke all on function public.dance_with_npc_for_character_locked(text, uuid, uuid) from public, anon;
 grant execute on function public.dance_with_npc_for_character_locked(text, uuid, uuid) to authenticated;
+
+-- Close the legacy direct-call paths. The wrappers above run as the function
+-- owner and can invoke these SECURITY DEFINER routines internally; authenticated
+-- clients must enter through the character-bound wrapper contract.
+revoke all on function public.enter_club(uuid) from public, anon, authenticated;
+revoke all on function public.leave_club(uuid) from public, anon, authenticated;
+revoke all on function public.buy_drink(text, uuid) from public, anon, authenticated;
+revoke all on function public.join_club_activity(text, uuid) from public, anon, authenticated;
+revoke all on function public.dance_with_npc(text, uuid) from public, anon, authenticated;
+revoke all on function public.dance_with_npc_for_character(text, uuid, uuid) from public, anon, authenticated;
+revoke all on function public.dance_with_player(uuid, uuid) from public, anon, authenticated;
+revoke all on function public.host_party_event(uuid, text, timestamptz, jsonb, uuid) from public, anon, authenticated;
+revoke all on function public.respond_to_event(uuid, uuid) from public, anon, authenticated;
