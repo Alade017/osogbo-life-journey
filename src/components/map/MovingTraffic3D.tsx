@@ -230,6 +230,63 @@ function TrafficVehicle({
         </group>
       )}
 
+      {config.type === "taxi" && (
+        <group scale={isHovered ? 1.15 : 1.0}>
+          {/* Compact four-door town taxi */}
+          <mesh position={[0, 0.29, 0]} castShadow>
+            <boxGeometry args={[0.64, 0.38, 1.18]} />
+            <meshStandardMaterial color={config.color} roughness={0.38} metalness={0.12} />
+          </mesh>
+          {/* Raised passenger cabin */}
+          <mesh position={[0, 0.55, -0.06]} castShadow>
+            <boxGeometry args={[0.54, 0.3, 0.66]} />
+            <meshStandardMaterial color={config.color} roughness={0.42} />
+          </mesh>
+          {/* Front and rear glass */}
+          <mesh position={[0, 0.56, 0.28]}>
+            <boxGeometry args={[0.48, 0.2, 0.025]} />
+            <meshStandardMaterial color="#647f8c" roughness={0.18} metalness={0.12} />
+          </mesh>
+          <mesh position={[0, 0.56, -0.4]}>
+            <boxGeometry args={[0.48, 0.2, 0.025]} />
+            <meshStandardMaterial color="#647f8c" roughness={0.18} metalness={0.12} />
+          </mesh>
+          {/* Side windows */}
+          {[-1, 1].map((side) => (
+            <mesh key={`taxi-window-${side}`} position={[side * 0.276, 0.56, -0.06]}>
+              <boxGeometry args={[0.018, 0.19, 0.55]} />
+              <meshStandardMaterial color="#647f8c" roughness={0.18} metalness={0.12} />
+            </mesh>
+          ))}
+          {/* Small roof taxi marker */}
+          <mesh position={[0, 0.72, -0.06]} castShadow>
+            <boxGeometry args={[0.22, 0.08, 0.16]} />
+            <meshStandardMaterial color="#fef3c7" roughness={0.55} />
+          </mesh>
+          {/* Four wheels */}
+          {[-0.31, 0.31].map((wx) =>
+            [-0.38, 0.38].map((wz) => (
+              <mesh
+                key={`taxi-wheel-${wx}-${wz}`}
+                position={[wx, 0.12, wz]}
+                rotation={[0, 0, Math.PI / 2]}
+                castShadow
+              >
+                <cylinderGeometry args={[0.105, 0.105, 0.07, 12]} />
+                <meshStandardMaterial color="#1e293b" roughness={0.82} />
+              </mesh>
+            )),
+          )}
+          {/* Front lamps */}
+          {[-0.22, 0.22].map((x) => (
+            <mesh key={`taxi-lamp-${x}`} position={[x, 0.3, 0.598]}>
+              <boxGeometry args={[0.1, 0.055, 0.018]} />
+              <meshBasicMaterial color="#fef08a" />
+            </mesh>
+          ))}
+        </group>
+      )}
+
       {/* Interactive Speech & Hail Bubble */}
       {isSpeaking && speechText && (
         <Html center position={[0, 1.2, 0]} distanceFactor={14}>
