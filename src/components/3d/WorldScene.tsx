@@ -1326,8 +1326,9 @@ export function WorldHouse({
               ))}
             </group>
           ))}
-          <mesh position={[width * 0.47, height * 0.5 + 0.28, depth / 2 + 0.16]}>
-            <boxGeometry args={[0.055, height + 0.05, 0.055]} />
+          {/* The downpipe runs from the gutter to ground level instead of stopping above the foundation. */}
+          <mesh position={[width * 0.47, height * 0.5 + 0.155, depth / 2 + 0.16]}>
+            <boxGeometry args={[0.055, height + 0.31, 0.055]} />
             <WorldMaterial tone="metal" color={surfaces.trim} />
           </mesh>
           <mesh position={[width * 0.47, 0.3, depth / 2 + 0.12]} rotation={[Math.PI / 2, 0, 0]}>
