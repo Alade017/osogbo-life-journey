@@ -46,26 +46,28 @@ beforeAll(async () => {
         f !== "0075_remove_orphaned_player_data.sql" &&
         f !== "0077_market_stall_rent_categories_sales.sql",
     )
-    .sort())
-      if (file === "0083_studio_room_layout.sql") {
-        // The studio layout migration depends on x/y columns from this Supabase migration.
-        await db.exec(
-          readFileSync(
-            "supabase/migrations/20261102223137_freeform_house_furniture_placement.sql",
-            "utf8",
-          ),
-        );
-      }
-      if (file === "0085_house_floors.sql") {
-        // House floors serialize the placement rotation column introduced by this Supabase migration.
-        await db.exec(
-          readFileSync(
-            "supabase/migrations/20261105080000_house_placement_rotation.sql",
-            "utf8",
-          ),
-        );
-      }
-      await db.exec(readFileSync(`drizzle/migrations/${file}`, "utf8"));
+    .sort()) {
+    if (file === "0083_studio_room_layout.sql") {
+      // This Supabase migration adds x/y and defines the base move RPC.
+      await db.exec(
+        readFileSync(
+          "supabase/migrations/20261102223137_freeform_house_furniture_placement.sql",
+          "utf8",
+        ),
+      );
+      // Replay 0079 after the base RPC exists so it can preserve the original implementation.
+      await db.exec(readFileSync("drizzle/migrations/0079_free_house_placement.sql", "utf8"));
+    }
+    if (file === "0085_house_floors.sql") {
+      await db.exec(
+        readFileSync(
+          "supabase/migrations/20261105080000_house_placement_rotation.sql",
+          "utf8",
+        ),
+      );
+    }
+    await db.exec(readFileSync(`drizzle/migrations/${file}`, "utf8"));
+  }
   for (const file of [
     "20261022000000_expanded_town_places.sql",
     "20261025092415_daily_life_tasks.sql",
