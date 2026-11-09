@@ -202,7 +202,7 @@ function NeighborhoodNpcActor({
         { x: waypoint[0], y: waypoint[2] },
         liveBlockers,
         distance * step,
-        0.85,
+        undefined,
         occupiedFootprints,
         sceneBounds,
       );
