@@ -132,7 +132,7 @@ function WaterBottle({ liquid = "#bfe6f7", cap = "#2b6fb3" }: { liquid?: string;
   );
 }
 
-/** A folded-up top: body, sleeves and a collar. */
+/** Folded shirt preview with details shared visually with the worn outfit. */
 function Shirt({ color = "#f2efe6", accent = "#2f6f4e" }: { color?: string; accent?: string }) {
   return (
     <group>
@@ -141,19 +141,33 @@ function Shirt({ color = "#f2efe6", accent = "#2f6f4e" }: { color?: string; acce
         {pbr(color, 0.9)}
       </mesh>
       {[-1, 1].map((side) => (
-        <mesh
-          key={side}
-          position={[side * 0.62, 0.32, 0]}
-          rotation={[0, 0, side * -0.5]}
-          castShadow
-        >
-          <boxGeometry args={[0.36, 0.6, 0.32]} />
-          {pbr(color, 0.9)}
-        </mesh>
+        <group key={side} position={[side * 0.62, 0.32, 0]} rotation={[0, 0, side * -0.5]}>
+          <mesh castShadow>
+            <boxGeometry args={[0.36, 0.6, 0.32]} />
+            {pbr(color, 0.9)}
+          </mesh>
+          <mesh position={[0, -0.25, 0.17]}>
+            <boxGeometry args={[0.34, 0.055, 0.025]} />
+            {pbr(accent, 0.82)}
+          </mesh>
+        </group>
       ))}
+      {/* Folded collar and front placket. */}
       <mesh position={[0, 1.02, 0.19]}>
         <boxGeometry args={[0.36, 0.14, 0.04]} />
         {pbr(accent, 0.8)}
+      </mesh>
+      <mesh position={[0, 0.54, 0.19]}>
+        <boxGeometry args={[0.045, 0.58, 0.025]} />
+        {pbr(accent, 0.82)}
+      </mesh>
+      <mesh position={[0.24, 0.62, 0.19]}>
+        <boxGeometry args={[0.22, 0.2, 0.025]} />
+        {pbr(accent, 0.82)}
+      </mesh>
+      <mesh position={[0, 0.015, 0]}>
+        <boxGeometry args={[0.92, 0.04, 0.38]} />
+        {pbr(accent, 0.9)}
       </mesh>
     </group>
   );
