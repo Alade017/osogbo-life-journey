@@ -348,7 +348,7 @@ export function PlayableNeighborhood() {
         slots,
         catalogIndex,
         occupiedFootprints,
-        occupiedSpawnPoints,
+        [...occupiedSpawnPoints, ...occupiedDestinationPoints],
         sceneBounds,
       );
       if (!slot) return [];
