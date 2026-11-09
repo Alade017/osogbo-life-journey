@@ -39,6 +39,7 @@ import {
 import {
   neighborhoodAreaForSlug,
   nearestInteraction,
+  neighborhoodSceneBounds,
   toScene,
   toWorld,
   type NeighborhoodNpcView,
@@ -329,6 +330,7 @@ export function PlayableNeighborhood() {
       ...area.objects.filter((object) => object.kind !== "npc").map(neighborhoodBuildingFootprint),
       ...(area.obstacles ?? []).map(neighborhoodObstacleFootprint),
     ];
+    const sceneBounds = neighborhoodSceneBounds(district?.origin ?? { x: 7, y: 6 });
     const occupiedSpawnPoints: Array<{ x: number; y: number }> = [];
     const occupiedDestinationPoints: Array<{ x: number; y: number }> = [];
     const scheduled = NPC_CATALOG.flatMap((npc, catalogIndex) => {
@@ -346,6 +348,7 @@ export function PlayableNeighborhood() {
         catalogIndex,
         occupiedFootprints,
         occupiedSpawnPoints,
+        sceneBounds,
       );
       if (!slot) return [];
       occupiedSpawnPoints.push(slot);
@@ -363,11 +366,12 @@ export function PlayableNeighborhood() {
         catalogIndex,
         occupiedFootprints,
         occupiedDestinationPoints,
+        sceneBounds,
       );
       if (!destination) return [];
       occupiedDestinationPoints.push(destination);
       const current = currentNpcPositionOverrides[npc.id] ?? { x: slot.x, y: slot.y };
-      const path = neighborhoodNpcPath(current, destination, occupiedFootprints);
+      const path = neighborhoodNpcPath(current, destination, occupiedFootprints, sceneBounds);
       if (!path) return [];
       const targetX = destination.x;
       const targetY = destination.y;
