@@ -67,7 +67,7 @@ import type { Appearance } from "@/game/avatar-appearance";
 import housingData from "@/data/housing.json";
 import { avatarAnimationForActivity } from "@/game/character-animation";
 import { formatNaira, q, rpc } from "@/lib/game";
-import { takeDepartureFromHome, type HomeDeparture } from "@/lib/home-departure";
+import { clearDepartureFromHome, takeDepartureFromHome, type HomeDeparture } from "@/lib/home-departure";
 import { supabase } from "@/integrations/supabase/client";
 import {
   houseStateQueryKey,
@@ -781,6 +781,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   };
   const [doorOpen, setDoorOpen] = useState(false);
   const [doorActionBusy, setDoorActionBusy] = useState(false);
+  const [failedDeparture, setFailedDeparture] = useState<HomeDeparture | null>(null);
   const doorActionInProgress = useRef(false);
   const outside = useOutsideTransition();
   const enteringRan = useRef(false);
@@ -867,6 +868,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     // successfully reached the door. A blocked or cancelled walk must not
     // change the server-side location in the background.
     if (!(await walkTo([doorX, doorY, doorZ]))) {
+      setFailedDeparture(departure);
       doorActionInProgress.current = false;
       setDoorActionBusy(false);
       return;
@@ -882,10 +884,14 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       setDoorOpen(false);
       endTransition();
       setActivityError(error instanceof Error ? error.message : "Travel could not be completed.");
+      setFailedDeparture(departure);
       doorActionInProgress.current = false;
       setDoorActionBusy(false);
       return;
     }
+    clearDepartureFromHome(departure);
+    setFailedDeparture(null);
+    departureRan.current = false;
     completeTransitionStep("Travelling");
     await Promise.all([
       queryClient.invalidateQueries({ queryKey: q.character().queryKey }),
@@ -998,6 +1004,11 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     // The trip runs once per arrival in the house; the handler reads current room state.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [serverState?.house?.id, isInsideHome]);
+  const retryDeparture = () => {
+    if (!failedDeparture || doorActionInProgress.current) return;
+    setActivityError("");
+    void leaveForTrip(failedDeparture);
+  };
   const deliveryQueryKey = [
     "homeFoodDeliveries",
     character?.id,
@@ -1544,6 +1555,11 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
               ))) && (
             <div className="house-scene-notices">
               {activityError && <p role="alert">{activityError}</p>}
+              {failedDeparture && (
+                <button type="button" disabled={doorActionBusy || isOffline} onClick={retryDeparture}>
+                  Retry trip
+                </button>
+              )}
               {isOffline ? (
                 <p role="status">Reconnect to use your accessories.</p>
               ) : !gameTime.ready ? (
