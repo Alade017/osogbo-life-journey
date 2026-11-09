@@ -462,14 +462,17 @@ export const q = {
 /** Wraps a server-validated game action; refreshes all player data after it runs. */
 export function useGameAction<TArgs, TResult>(
   fn: (args: TArgs) => Promise<TResult>,
-  opts?: { onSuccess?: (r: TResult) => void; onError?: (error: Error) => void },
+  opts?: {
+    onSuccess?: (r: TResult, args: TArgs) => void;
+    onError?: (error: Error, args: TArgs) => void;
+  },
 ) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: fn,
-    onSuccess: (r) => opts?.onSuccess?.(r),
-    onError: (e: Error) => {
-      opts?.onError?.(e);
+    onSuccess: (r, args) => opts?.onSuccess?.(r, args),
+    onError: (e: Error, args) => {
+      opts?.onError?.(e, args);
       toast.error(e.message);
     },
     onSettled: () => qc.invalidateQueries(),
@@ -615,9 +618,21 @@ export const rpc = {
         p_tenure: args.tenure,
       }),
     ) as Json,
-  travelToLocation: async ({ locationId, mode }: { locationId: string; mode: string }) =>
+  travelToLocation: async ({
+    locationId,
+    mode,
+    characterId,
+  }: {
+    locationId: string;
+    mode: string;
+    characterId: string;
+  }) =>
     unwrap(
-      await supabase.rpc("travel_to_location", { p_location_id: locationId, p_mode: mode }),
+      await supabase.rpc("travel_to_location_for_character", {
+        p_location_id: locationId,
+        p_mode: mode,
+        p_expected_character_id: characterId,
+      }),
     ) as unknown as {
       location: string;
       mode: string;
