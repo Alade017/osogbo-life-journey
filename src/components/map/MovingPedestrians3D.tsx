@@ -65,7 +65,7 @@ export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({ paths }) => 
     "As-salamu alaykum! Have a peaceful day.",
     "Hello! Lovely to see you around town.",
   ];
-  const npcs: NpcConfig[] = paths.map((path, index) => {
+  const npcs: NpcConfig[] = paths.filter((path) => path.length >= 2).map((path, index) => {
     const startJunctionId = endpointCounts.get(junctionKey(path[0]!))! > 1
       ? junctionKey(path[0]!)
       : undefined;
