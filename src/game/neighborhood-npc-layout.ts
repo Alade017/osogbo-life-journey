@@ -15,6 +15,26 @@ function overlapsFootprint(point: { x: number; y: number }, footprints: readonly
   );
 }
 
+/** Shared deterministic candidate search for spawn and destination positions. */
+function clearNpcPoint(
+  anchor: Pick<NeighborhoodObject, "x" | "y">,
+  index: number,
+  occupied: readonly GroundRect[],
+  baseRadius: number,
+): { x: number; y: number } | null {
+  for (let attempt = 0; attempt < 32; attempt += 1) {
+    const ring = Math.floor(attempt / 8) + 1;
+    const angle = index * GOLDEN_ANGLE + (attempt % 8) * GOLDEN_ANGLE;
+    const radius = baseRadius * Math.sqrt(ring);
+    const candidate = {
+      x: anchor.x + Math.cos(angle) * radius,
+      y: anchor.y + Math.sin(angle) * radius,
+    };
+    if (!overlapsFootprint(candidate, occupied)) return candidate;
+  }
+  return null;
+}
+
 /**
  * Reuse authored NPC anchors first, then deterministically distribute overflow
  * around those anchors. Candidate points avoid building and obstacle footprints.
@@ -27,36 +47,33 @@ export function neighborhoodNpcSpawnPoint(
   if (!Number.isInteger(index) || index < 0 || slots.length === 0) return null;
   const anchor = slots[index % slots.length];
   if (!anchor) return null;
-
-  for (let attempt = 0; attempt < 24; attempt += 1) {
-    const ring = Math.floor(index / slots.length) + Math.floor(attempt / 8);
-    const angle = index * GOLDEN_ANGLE + (attempt % 8) * GOLDEN_ANGLE;
-    const radius = attempt === 0 && ring === 0
-      ? 0
-      : NPC_SLOT_SPACING * Math.sqrt(Math.max(1, ring) + Math.floor(attempt / 8));
-    const candidate = {
-      x: anchor.x + Math.cos(angle) * radius,
-      y: anchor.y + Math.sin(angle) * radius,
-    };
-    if (!overlapsFootprint(candidate, occupied)) return candidate;
-  }
-  return null;
+  const ring = Math.floor(index / slots.length);
+  const angle = index * GOLDEN_ANGLE;
+  const initialRadius = ring === 0 ? 0 : NPC_SLOT_SPACING * Math.sqrt(ring);
+  const initial = {
+    x: anchor.x + Math.cos(angle) * initialRadius,
+    y: anchor.y + Math.sin(angle) * initialRadius,
+  };
+  if (!overlapsFootprint(initial, occupied)) return initial;
+  return clearNpcPoint(anchor, index, occupied, NPC_SLOT_SPACING);
 }
 
 /**
- * Give each catalog character a stable destination offset. Unlike centring by
- * the number currently present, this does not move every NPC when schedules
- * change and residents enter or leave a neighborhood.
+ * Give each catalog character a stable destination offset while keeping them
+ * outside building and obstacle footprints. Returns null if no safe point exists.
  */
 export function neighborhoodNpcDestinationPoint(
   destination: Pick<NeighborhoodObject, "x" | "y">,
   catalogIndex: number,
-): { x: number; y: number } {
-  if (!Number.isInteger(catalogIndex) || catalogIndex < 0) return destination;
+  occupied: readonly GroundRect[] = [],
+): { x: number; y: number } | null {
+  if (!Number.isInteger(catalogIndex) || catalogIndex < 0) return null;
   const angle = catalogIndex * GOLDEN_ANGLE;
   const radius = NEIGHBORHOOD_TILE_SIZE * 0.45 * Math.sqrt(catalogIndex + 1);
-  return {
+  const initial = {
     x: destination.x + Math.cos(angle) * radius,
     y: destination.y + Math.sin(angle) * radius,
   };
+  if (!overlapsFootprint(initial, occupied)) return initial;
+  return clearNpcPoint(destination, catalogIndex, occupied, NPC_SLOT_SPACING);
 }
