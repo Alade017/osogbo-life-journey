@@ -230,7 +230,7 @@ describe("neighborhood NPC spawn distribution", () => {
   });
 
   it("does not move outside the active scene bounds", () => {
-    const current = { x: 9.8, y: 5 };
+    const current = { x: 9, y: 5 };
     const next = neighborhoodNpcAvoidanceStep(
       current,
       { x: 20, y: 5 },
@@ -240,8 +240,8 @@ describe("neighborhood NPC spawn distribution", () => {
       [],
       { left: -10, top: -10, width: 20, height: 20 },
     );
-    expect(next.x).toBeLessThanOrEqual(10);
-    expect(next.x).toBeGreaterThanOrEqual(-10);
+    expect(next.x).toBeLessThanOrEqual(9.6);
+    expect(next.x).toBeGreaterThanOrEqual(-9.6);
   });
 
   it("waits in place when every live movement alternative is occupied", () => {
