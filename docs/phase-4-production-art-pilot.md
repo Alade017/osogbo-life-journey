@@ -17,6 +17,7 @@ The active playable neighborhood is rendered by the existing React Three Fiber /
 - Existing building footprints and obstacle collision rectangles are unchanged.
 - Art is presentation-only and does not change movement, collision, player depth, server authority or interactions.
 - Existing labels, object identity, room lifecycle, camera and player rendering remain in place.
+- Character movement is click/tap-to-move only: tapping open ground sets a destination, while tapping an available building or NPC approaches it and opens its interaction on arrival. Keyboard movement and keyboard interaction shortcuts are not part of this control model; camera zoom remains a separate camera action.
 - The active playable neighborhood remains on its existing R3F/Three.js renderer. No new rendering dependency is introduced.
 - No phone routing, database, RPC, Colyseus, economy or deployment changes.
 
