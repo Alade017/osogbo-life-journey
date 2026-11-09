@@ -7114,6 +7114,17 @@ export type Database = {
         }
         Returns: Json
       }
+      save_player_world_position_for_character: {
+        Args: {
+          p_building_slug: string
+          p_expected_revision: number
+          p_request_id: string
+          p_world_x: number
+          p_world_y: number
+          p_expected_character_id: string
+        }
+        Returns: Json
+      }
       search_player_profiles: {
         Args: { p_limit?: number; p_query: string }
         Returns: Json
@@ -7200,6 +7211,18 @@ export type Database = {
           p_request_id: string
           p_world_x: number
           p_world_y: number
+        }
+        Returns: Json
+      }
+      travel_to_city_location_for_character: {
+        Args: {
+          p_expected_revision: number
+          p_location_id: string
+          p_mode: string
+          p_request_id: string
+          p_world_x: number
+          p_world_y: number
+          p_expected_character_id: string
         }
         Returns: Json
       }
