@@ -42,6 +42,7 @@ import { MovingPedestrians3D } from "./MovingPedestrians3D";
 import { FunctionalStreetLights3D } from "./FunctionalStreetLights3D";
 import { RoadsideInfrastructure3D } from "./RoadsideInfrastructure3D";
 import { LockedPlaces3D, type LockedPlace } from "./LockedPlaces3D";
+import { isMapTargetSelectionAllowed } from "@/game/map-gesture";
 
 type Props = PhaserMapData &
   PhaserMapCallbacks & {
@@ -939,9 +940,9 @@ export function R3FTownSurface(props: Props) {
     () => calculateBadgePositions(props.places, point, cell),
     [props.places],
   );
-  const select = (event: ThreeEvent<MouseEvent>, action: () => void) => {
-    event.stopPropagation();
-    if (event.delta <= 5 && !gesture.current.moved) action();
+  const select = (event: ThreeEvent<MouseEvent> | null, action: () => void) => {
+    event?.stopPropagation();
+    if (isMapTargetSelectionAllowed(event?.delta, gesture.current.moved)) action();
   };
   return (
     <SurfaceBoundary onUnavailable={props.onUnavailable}>
@@ -1058,7 +1059,7 @@ export function R3FTownSurface(props: Props) {
                 isSelected={selectedTarget?.id === place.id}
                 isHovered={hoveredTargetId === place.id}
                 onSelectLandmark={(id) =>
-                  select({} as any, () => {
+                  select(null, () => {
                     setSelectedTarget({
                       id,
                       position: [x, 0, z],
