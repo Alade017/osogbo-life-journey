@@ -3177,6 +3177,13 @@ button.house-task-status-action:disabled {
   color: var(--destructive);
 }
 
+.house-task-actions button.house-task-wake {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--primary);
+}
+
 /* Meal menu grouped by tier. */
 .home-meal-groups {
   display: grid;

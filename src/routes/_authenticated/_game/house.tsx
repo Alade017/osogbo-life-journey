@@ -1549,65 +1549,23 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             onCollect={(orderId) => void collectPackage(orderId)}
           />
         )}
-        {(movement.walking || walkingTask || startingTask || (timedActivity && !activeSleep)) && (
-          <div className="house-task-status" role="status" aria-live="polite">
-            <ProgressRing
-              percent={
-                timedActivity && taskTiming
-                  ? (displayedElapsed / (taskTiming.duration || 1)) * 100
-                  : 0
-              }
-              label={
-                timedActivity && taskTiming
-                  ? `${Math.max(0, Math.ceil(taskTiming.duration - displayedElapsed))}s`
-                  : ""
-              }
-            />
-            <div className="house-task-status-copy">
-              <strong>
-                {collectingPackage
-                  ? "Collecting package"
-                  : walkingTask
-                    ? `Walking · ${walkingTask}`
-                    : startingTask
-                      ? "Connecting…"
-                      : timedActivity
-                        ? ACTION_CATALOG[timedActivity.actionId].name
-                        : "Walking"}
-              </strong>
-              <span>
-                {movement.walking
-                  ? "On the way"
-                  : taskTiming && timedActivity
-                    ? displayedElapsed >= taskTiming.duration
-                      ? "Confirming completion…"
-                      : `${Math.ceil(taskTiming.duration - displayedElapsed)}s remaining`
-                    : "Please wait"}
-              </span>
-            </div>
-          </div>
-        )}
-        {activeSleep && (
-          <button
-            type="button"
-            className="house-task-status house-task-status-action"
-            aria-label={`Asleep, ${sleepRemaining} seconds left. Tap to cancel sleep.`}
-            disabled={isOffline || !gameTime.ready || gameTime.busy}
-            onClick={() => void cancelSleep()}
-          >
-            <ProgressRing percent={sleepProgress} label={`${sleepRemaining}s`} />
-            <div className="house-task-status-copy">
-              <strong>Asleep</strong>
-              <span>Tap to cancel</span>
-            </div>
-          </button>
-        )}
-        {(movement.walking || walkingTask || startingTask || (timedActivity && !activeSleep)) && (
+        {(movement.walking ||
+          walkingTask ||
+          startingTask ||
+          (timedActivity && !activeSleep) ||
+          activeSleep) && (
           <div className="house-task-actions" role="group" aria-label="Task controls">
-            {(movement.walking ||
-              walkingTask ||
-              startingTask ||
-              (timedActivity && !activeSleep)) && (
+            {activeSleep ? (
+              <button
+                type="button"
+                className="house-task-wake"
+                disabled={isOffline || !gameTime.ready || gameTime.busy}
+                onClick={() => void cancelSleep()}
+              >
+                <Sunrise size={16} aria-hidden="true" />
+                Wake up
+              </button>
+            ) : (
               <button
                 type="button"
                 className="house-task-cancel"
