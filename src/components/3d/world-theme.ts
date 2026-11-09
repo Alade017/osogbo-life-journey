@@ -76,3 +76,10 @@ export const WORLD_CAMERA = {
   minZoom: 0.8,
   maxZoom: 1.35,
 } as const;
+
+/** Shared foliage variation used by procedural town and neighborhood trees. */
+const FOLIAGE_VARIANTS = ["#607d4b", "#718b52", "#82965c", "#536f49", "#91a267"] as const;
+export function worldFoliageColor(seed: number): string {
+  const index = Math.abs(Math.trunc(seed)) % FOLIAGE_VARIANTS.length;
+  return FOLIAGE_VARIANTS[index] ?? FOLIAGE_VARIANTS[0];
+}
