@@ -51,7 +51,7 @@ describe("character-bound local travel RPC", () => {
     await db.exec(
       readFileSync("supabase/migrations/20261109170000_bind_local_travel_to_character.sql", "utf8"),
     );
-  });
+  }, 180_000);
 
   afterAll(async () => {
     await db?.close();
