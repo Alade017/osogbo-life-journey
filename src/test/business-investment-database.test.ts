@@ -33,6 +33,15 @@ describe("business and investment RPCs", () => {
           name !== "0077_market_stall_rent_categories_sales.sql",
       )
       .sort()) {
+      if (file === "0083_studio_room_layout.sql") {
+        // This Drizzle migration depends on x/y columns introduced by the Supabase placement migration.
+        await db.exec(
+          readFileSync(
+            "supabase/migrations/20261102223137_freeform_house_furniture_placement.sql",
+            "utf8",
+          ),
+        );
+      }
       try {
         await db.exec(readFileSync(`drizzle/migrations/${file}`, "utf8"));
       } catch (error) {
