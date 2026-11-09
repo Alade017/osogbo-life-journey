@@ -111,10 +111,6 @@ function PedestrianCharacter({
 }) {
   const groupRef = useRef<Group>(null);
   const routeLength = useMemo(() => pathLength(npc.path), [npc.path]);
-  const initialPosition = useMemo(
-    () => locatePathDistance(npc.path, npc.startDistance),
-    [npc.path, npc.startDistance],
-  );
   const routeDistance = useRef(npc.startDistance);
   const travelDirection = useRef(1);
   const activeJunction = useRef<string | null>(null);
@@ -180,7 +176,7 @@ function PedestrianCharacter({
       }
     }
 
-    // Release queued requests if this pedestrian is removed or its route changes.
+    // Resolve the current route segment for rendering after movement is updated.
     const position = locatePathDistance(path, routeDistance.current);
     const currentSegment = position.segment;
     const curP1 = path[currentSegment]!;
