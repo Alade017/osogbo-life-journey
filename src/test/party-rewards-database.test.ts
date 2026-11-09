@@ -144,7 +144,7 @@ afterAll(async () => {
 describe("party rewards SQL", () => {
   it("selects the newest character deterministically when an account has multiple characters", async () => {
     await user(0);
-    const tiedCharacterId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    const tiedCharacterId = "ffffffff-ffff-4fff-8fff-ffffffffffff";
     await db.query(
       "insert into public.characters(id,user_id,name,gender,age,personality,created_at) values($1,$2,'Second player','female',22,'creative','2026-10-26T00:00:00Z')",
       [tiedCharacterId, users[0]],
