@@ -36,14 +36,14 @@ describe("character-bound fictional-world movement RPCs", () => {
       );
       create function public._my_character_id() returns uuid
         language sql stable security definer set search_path=public
-        as $
+        as $$
 
           select id from public.characters where user_id=auth.uid()
           order by created_at desc,id desc limit 1
-        $;
+        $$;
       create function public.travel_to_location(uuid,text) returns jsonb
         language sql security definer set search_path=public
-        as $ select jsonb_build_object('ok',true) $;
+        as $$ select jsonb_build_object('ok',true) $$;
       create function public.save_player_world_position(
         double precision,double precision,text,bigint,uuid
       ) returns jsonb language plpgsql security definer set search_path=public as $$
