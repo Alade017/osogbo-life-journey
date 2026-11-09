@@ -39,7 +39,9 @@ create table if not exists public.mini_game_boards (
 alter table public.mini_game_tables enable row level security;
 alter table public.mini_game_seats enable row level security;
 alter table public.mini_game_boards enable row level security;
-grant select on public.mini_game_tables, public.mini_game_seats, public.mini_game_boards to authenticated;
+grant select on public.mini_game_tables, public.mini_game_boards to authenticated;
+-- Seats expose only table and character data. user_id stays private to the server.
+grant select (table_id, character_id, seat, paid, last_active_at) on public.mini_game_seats to authenticated;
 grant all on public.mini_game_tables, public.mini_game_seats, public.mini_game_boards to service_role;
 create policy mini_game_tables_read on public.mini_game_tables for select to authenticated using (true);
 create policy mini_game_seats_read on public.mini_game_seats for select to authenticated using (true);
@@ -239,6 +241,12 @@ revoke all on function public.mini_game_leave_table(uuid) from public;
 revoke all on function public.mini_game_play_move(uuid, int) from public;
 revoke all on function public.mini_game_heartbeat(uuid) from public;
 revoke all on function public.mini_game_claim_forfeit(uuid) from public;
+-- Helpers move money and settle tables. Only the RPCs above may call them.
+revoke all on function public._mini_game_debit(uuid, uuid, bigint, uuid, text) from public, authenticated;
+revoke all on function public._mini_game_credit(uuid, uuid, bigint, uuid, text) from public, authenticated;
+revoke all on function public._mini_game_assert_free(uuid) from public, authenticated;
+revoke all on function public._mini_game_settle(uuid, text, smallint) from public, authenticated;
+revoke all on function public._mini_game_line_winner(text) from public, authenticated;
 grant execute on function public.mini_game_create_table(bigint) to authenticated;
 grant execute on function public.mini_game_join_table(uuid) to authenticated;
 grant execute on function public.mini_game_leave_table(uuid) to authenticated;
