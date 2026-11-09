@@ -277,3 +277,41 @@ export function neighborhoodNpcPath(
   }
   return null;
 }
+
+/**
+ * Resolve one frame of movement against live actor positions. The preferred
+ * direction is retained when clear; otherwise the actor tries either side
+ * and waits safely when both are occupied.
+ */
+export function neighborhoodNpcAvoidanceStep(
+  current: NpcPoint,
+  waypoint: NpcPoint,
+  blockers: readonly NpcPoint[],
+  maxStep: number,
+  minimumSeparation = 0.85,
+): NpcPoint {
+  const dx = waypoint.x - current.x;
+  const dy = waypoint.y - current.y;
+  const distance = Math.hypot(dx, dy);
+  if (distance <= 0 || maxStep <= 0) return current;
+  const travel = Math.min(distance, maxStep);
+  const direction = { x: dx / distance, y: dy / distance };
+  const candidates = [
+    { x: current.x + direction.x * travel, y: current.y + direction.y * travel },
+    { x: current.x - direction.y * travel, y: current.y + direction.x * travel },
+    { x: current.x + direction.y * travel, y: current.y - direction.x * travel },
+  ];
+  const clear = candidates.filter((candidate) =>
+    blockers.every(
+      (blocker) =>
+        Math.hypot(candidate.x - blocker.x, candidate.y - blocker.y) >= minimumSeparation,
+    ),
+  );
+  if (clear.length === 0) return current;
+  clear.sort(
+    (a, b) =>
+      Math.hypot(a.x - waypoint.x, a.y - waypoint.y) -
+      Math.hypot(b.x - waypoint.x, b.y - waypoint.y),
+  );
+  return clear[0]!;
+}
