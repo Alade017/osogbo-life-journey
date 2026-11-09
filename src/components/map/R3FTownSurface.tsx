@@ -2,7 +2,6 @@ import { DistrictZones } from "./DistrictZones";
 import { Component, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Canvas, type ThreeEvent } from "@react-three/fiber";
 import town from "@/data/osogbo-town.json";
-import type { PhaserMapData, PhaserMapCallbacks } from "./PhaserMapSurface";
 import {
   WorldCamera,
   WorldCars,
@@ -42,8 +41,28 @@ import { MovingPedestrians3D } from "./MovingPedestrians3D";
 import { FunctionalStreetLights3D } from "./FunctionalStreetLights3D";
 import { LockedPlaces3D, type LockedPlace } from "./LockedPlaces3D";
 
-type Props = PhaserMapData &
-  PhaserMapCallbacks & {
+type TownMapPlace = {
+  id: string;
+  label: string;
+  category: string;
+  grid: { x: number; z: number };
+};
+
+export type TownMapData = {
+  places: readonly TownMapPlace[];
+  properties: readonly import("@/components/map/MapCanvas").MapProperty[] | undefined;
+  playerLocation: import("@/components/map/MapCanvas").MapPlayerLocation | null | undefined;
+  billboardMarkers: readonly import("@/components/map/MapCanvas").MapBillboardMarker[];
+};
+
+export type TownMapCallbacks = {
+  onSelectLandmark: (id: string) => void;
+  onSelectDistrict: (id: string) => void;
+  onSelectBillboard: ((campaignId: string) => void) | undefined;
+};
+
+type Props = TownMapData &
+  TownMapCallbacks & {
     onSelectProperty?: (property: import("@/components/map/MapCanvas").MapProperty) => void;
     eventChips: readonly { id: string; label: string; x: number; y: number }[];
     onSelectEvent?: (landmarkId: string) => void;
@@ -61,7 +80,11 @@ const point = (x: number, z: number): [number, number, number] => [
   (z - (gridRows - 1) / 2) * cell,
 ];
 
-function CameraFocusController({ targetPosition }: { targetPosition: [number, number, number] | null }) {
+function CameraFocusController({
+  targetPosition,
+}: {
+  targetPosition: [number, number, number] | null;
+}) {
   useMapCameraFocus(targetPosition, Boolean(targetPosition));
   return null;
 }
@@ -86,7 +109,7 @@ function Ready({ onReady }: { onReady: () => void }) {
   return null;
 }
 
-type Landmark = PhaserMapData["places"][number];
+type Landmark = TownMapPlace;
 
 type BadgePosition = [number, number, number];
 
@@ -176,7 +199,8 @@ export function R3FTownSurface(props: Props) {
 
   useEffect(() => {
     if (!props.searchTarget) return;
-    const targetId = typeof props.searchTarget === "string" ? props.searchTarget : props.searchTarget.id;
+    const targetId =
+      typeof props.searchTarget === "string" ? props.searchTarget : props.searchTarget.id;
     const landmark = props.places.find((p) => p.id === targetId);
     if (landmark) {
       const [x, , z] = point(landmark.grid.x, landmark.grid.z);
@@ -835,9 +859,9 @@ export function R3FTownSurface(props: Props) {
     () => calculateBadgePositions(props.places, point, cell),
     [props.places],
   );
-  const select = (event: ThreeEvent<MouseEvent>, action: () => void) => {
-    event.stopPropagation();
-    if (event.delta <= 5 && !gesture.current.moved) action();
+  const select = (event: ThreeEvent<MouseEvent> | undefined, action: () => void) => {
+    event?.stopPropagation();
+    if ((event?.delta ?? 0) <= 5 && !gesture.current.moved) action();
   };
   return (
     <SurfaceBoundary onUnavailable={props.onUnavailable}>
@@ -953,7 +977,7 @@ export function R3FTownSurface(props: Props) {
                 isSelected={selectedTarget?.id === place.id}
                 isHovered={hoveredTargetId === place.id}
                 onSelectLandmark={(id) =>
-                  select({} as any, () => {
+                  select(undefined, () => {
                     setSelectedTarget({
                       id,
                       position: [x, 0, z],

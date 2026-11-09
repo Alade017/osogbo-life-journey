@@ -13,7 +13,7 @@ import { WorldStreetFurniture } from "@/components/3d/WorldStreetFurniture";
 import { worldAppearance, worldEquipment } from "@/game/world-character-view";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import type { Group } from "three";
-import type { NeighborhoodPlayerView, PhaserNeighborhoodHandle } from "@/game/phaser-neighborhood";
+import type { NeighborhoodPlayerView, NeighborhoodSceneHandle } from "@/game/neighborhood-types";
 import type { playableDistrictForLocation } from "@/game/playable-district";
 import {
   neighborhoodSceneBounds,
@@ -226,7 +226,7 @@ export function R3FNeighborhoodSurface({
   district: NonNullable<ReturnType<typeof playableDistrictForLocation>>;
   zoom: number;
   onZoomChange: (zoom: number) => void;
-  onScene: (scene: PhaserNeighborhoodHandle | null) => void;
+  onScene: (scene: NeighborhoodSceneHandle | null) => void;
 }) {
   const overlayHost = useRef<HTMLDivElement>(null!);
   const [follow, setFollow] = useState(true);

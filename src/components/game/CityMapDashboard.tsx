@@ -34,7 +34,7 @@ import type { PlaceActionResult } from "@/components/map/PlaceActionMenu";
 import { useCityEvents } from "@/hooks/use-city-events";
 import { cityEventsForDistrict } from "@/lib/city-event-service";
 import { getCurrentMapBillboards, type CurrentMapBillboard } from "@/lib/map-billboard-map";
-import type { MapDistrict, MapLandmark } from "@/components/map/OsogboMap.svg";
+import type { MapDistrict, MapLandmark } from "@/components/map/map-types";
 import "@/components/map/map-ui.css";
 import "@/components/map/map-hud.css";
 import { MapTicker } from "@/components/map/MapTicker";

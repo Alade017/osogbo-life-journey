@@ -3,7 +3,7 @@ import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { PlayableNeighborhood } from "@/components/game/PlayableNeighborhood";
-import type { PhaserNeighborhoodHandle } from "@/game/phaser-neighborhood";
+import type { NeighborhoodSceneHandle } from "@/game/neighborhood-types";
 import { toWorld } from "@/game/neighborhood-model";
 
 const state = vi.hoisted(() => ({
@@ -124,7 +124,7 @@ vi.mock("@/components/game/R3FNeighborhoodSurface", () => ({
     interactionTargets: readonly { id: string }[];
     onSelectTarget: (targetId: string) => void;
     onNpcArrive: (npcId: string, x: number, y: number) => void;
-    onScene: (handle: PhaserNeighborhoodHandle | null) => void;
+    onScene: (handle: NeighborhoodSceneHandle | null) => void;
   }) => {
     state.scene({
       area: props.district.area,

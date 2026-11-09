@@ -274,12 +274,9 @@ describe("isometric town map", () => {
     expect(screen.queryByText(/does not have a playable neighborhood/i)).not.toBeInTheDocument();
     expect(testState.travelToLocation).not.toHaveBeenCalled();
   }, 15_000);
-  it("renders the Phaser overview fallback and a keyboard-accessible list", async () => {
-    const { container } = renderDashboard();
-    expect(
-      screen.getByRole("region", { name: /Interactive isometric town map/i }),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("img", { name: "Illustrated town map fallback" })).toBeInTheDocument();
+  it("renders the 3D town region and a keyboard-accessible list", () => {
+    renderDashboard();
+    expect(screen.getByRole("region", { name: /Interactive 3D town map/i })).toBeInTheDocument();
     expect(screen.getByRole("list", { name: "Places on the map" })).toBeInTheDocument();
     expect(
       within(screen.getByRole("list", { name: "Places on the map" })).getByRole("button", {
@@ -287,7 +284,7 @@ describe("isometric town map", () => {
       }),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Travel to Olaiya" })).toBeInTheDocument();
-    expect(container.querySelector(".town-map-phaser-host")).not.toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "Illustrated town map fallback" })).toBeNull();
   });
 
   it("defines a compact hand-authored grid and fictional public venues with action definitions", () => {

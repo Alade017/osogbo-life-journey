@@ -39,7 +39,7 @@ import {
   type NeighborhoodNpcView,
 } from "@/game/neighborhood-model";
 import { isPlayableDistrict, playableDistrictForLocation } from "@/game/playable-district";
-import type { NeighborhoodPlayerView, PhaserNeighborhoodHandle } from "@/game/phaser-neighborhood";
+import type { NeighborhoodPlayerView, NeighborhoodSceneHandle } from "@/game/neighborhood-types";
 import type { MovementDirection } from "@/lib/player-movement";
 import { NPC_CATALOG, npcActivityAt, type SocialAction } from "@/lib/npc-simulation";
 import { hasLocationVenueDesign } from "@/lib/location-venue-designs";
@@ -299,7 +299,7 @@ export function PlayableNeighborhood() {
   groundTargetRef.current = groundTarget;
   const transition = useOutsideTransition();
   const leavingStepsRef = useRef({ data: false, scene: false });
-  const [scene, setScene] = useState<PhaserNeighborhoodHandle | null>(null);
+  const [scene, setScene] = useState<NeighborhoodSceneHandle | null>(null);
   const [zoom, setZoom] = useState<number>(WORLD_CAMERA.defaultZoom);
   const directionsRef = useRef(directions);
   directionsRef.current = directions;
@@ -652,7 +652,7 @@ export function PlayableNeighborhood() {
     return () => window.removeEventListener("keydown", activate);
   }, [activateHome, activePanel, connectionState, enteringHome, nearbyObject]);
 
-  const handleScene = useCallback((next: PhaserNeighborhoodHandle | null) => setScene(next), []);
+  const handleScene = useCallback((next: NeighborhoodSceneHandle | null) => setScene(next), []);
   const openInteraction = () => {
     if (!nearbyObject) return;
     if (nearbyObject.kind === "home") {
