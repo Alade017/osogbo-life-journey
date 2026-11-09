@@ -4536,3 +4536,46 @@
   padding: 16px 0;
   text-align: center;
 }
+
+/* Profile in the phone: token colours for the stage, XP track and tab switch, and a clear avatar card. */
+.phone-app-body .pi-profile .pi-stage {
+  background: radial-gradient(
+    circle at 50% 30%,
+    color-mix(in srgb, var(--primary) 10%, var(--card)) 0%,
+    var(--card) 75%
+  );
+}
+.phone-app-body .pi-profile .pi-stage-foot {
+  background: color-mix(in srgb, var(--card) 80%, transparent);
+}
+.phone-app-body .pi-profile .pi-xp {
+  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+}
+.phone-app-body .pi-profile .pi-segment {
+  background: var(--muted);
+}
+.phone-app-body .pi-profile .pi-segment button[aria-selected="true"] {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.phone-app-body .pi-profile .pi-stats {
+  gap: 8px;
+}
+.phone-app-body .pi-profile .pi-stat {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--elevation-card);
+  padding: 12px;
+}
+.phone-app-body .pi-profile .pi-quick {
+  gap: 8px;
+}
+.phone-app-body .pi-profile .pi-quick a,
+.phone-app-body .pi-profile .pi-quick button {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  color: var(--card-foreground);
+  padding: 12px 6px;
+}
