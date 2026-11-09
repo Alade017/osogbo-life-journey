@@ -3,11 +3,11 @@ import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import type { Group } from "three";
 import { WorldMaterial } from "@/components/3d/WorldScene";
+import type { TownMobilityRoute } from "@/game/town-mobility";
 
 export interface MovingTraffic3DProps {
   cellSize: number;
-  gridCols: number;
-  gridRows: number;
+  paths: readonly TownMobilityRoute[];
 }
 
 type VehicleType = "danfo" | "keke" | "okada" | "taxi";
@@ -18,7 +18,7 @@ interface VehicleConfig {
   name: string;
   description: string;
   speed: number;
-  path: [number, number][]; // [x, z] waypoints
+  path: TownMobilityRoute;
   color: string;
 }
 
@@ -30,7 +30,7 @@ interface VehicleConfig {
  * - Agile Okada motorcycles
  * - Interactive click/hover dialogs and horn feedback.
  */
-export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ cellSize, gridCols, gridRows }) => {
+export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ cellSize, paths }) => {
   const [activeSpeech, setActiveSpeech] = useState<{ id: string; text: string } | null>(null);
   const speechTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -47,68 +47,17 @@ export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ cellSize, gridCols, 
     }, duration);
   };
 
-  const xMax = (gridCols / 2 - 2) * cellSize;
-  const zMax = (gridRows / 2 - 2) * cellSize;
-
-  // Realistic transit routes across the road grid
-  const vehicles: VehicleConfig[] = [
-    {
-      id: "danfo-1",
-      type: "danfo",
-      name: "Danfo Bus #101",
-      description: "Olaiya Junction ⇄ Oja-Oba Market Express",
-      speed: 0.16,
-      path: [
-        [-xMax * 0.8, -zMax * 0.4],
-        [xMax * 0.8, -zMax * 0.4],
-        [xMax * 0.8, zMax * 0.4],
-        [-xMax * 0.8, zMax * 0.4],
-      ],
-      color: "#eab308",
-    },
-    {
-      id: "danfo-2",
-      type: "danfo",
-      name: "Danfo Bus #204",
-      description: "Transit Park ⇄ East Gate Terminal",
-      speed: 0.14,
-      path: [
-        [xMax * 0.7, zMax * 0.6],
-        [-xMax * 0.7, zMax * 0.6],
-        [-xMax * 0.7, -zMax * 0.6],
-        [xMax * 0.7, -zMax * 0.6],
-      ],
-      color: "#f59e0b",
-    },
-    {
-      id: "keke-1",
-      type: "keke",
-      name: "Keke Napep",
-      description: "Local Market Shuttle (₦100 per drop)",
-      speed: 0.22,
-      path: [
-        [-xMax * 0.4, zMax * 0.2],
-        [0, zMax * 0.2],
-        [0, -zMax * 0.2],
-        [-xMax * 0.4, -zMax * 0.2],
-      ],
-      color: "#16a34a",
-    },
-    {
-      id: "okada-1",
-      type: "okada",
-      name: "Commercial Okada",
-      description: "Fast junction crosser · Quick ride",
-      speed: 0.28,
-      path: [
-        [-xMax * 0.6, 0],
-        [xMax * 0.6, 0],
-        [xMax * 0.6, zMax * 0.5],
-        [-xMax * 0.6, zMax * 0.5],
-      ],
-      color: "#dc2626",
-    },
-  ];
+  const vehicleTypes: VehicleType[] = ["danfo", "keke", "okada", "taxi"];
+  const vehicleColors = ["#eab308", "#16a34a", "#dc2626", "#2563eb"];
+  const vehicles: VehicleConfig[] = paths.map((path, index) => ({
+    id: `town-traffic-${index}`,
+    type: vehicleTypes[index % vehicleTypes.length]!,
+    name: `Town vehicle ${index + 1}`,
+    description: "Following the connected town road network",
+    speed: 0.14 + (index % 4) * 0.025,
+    path,
+    color: vehicleColors[index % vehicleColors.length]!,
+  }));
 
   return (
     <group position={[0, 0.08, 0]}>
