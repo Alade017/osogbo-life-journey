@@ -83,3 +83,16 @@ export function worldFoliageColor(seed: number): string {
   const index = Math.abs(Math.trunc(seed)) % FOLIAGE_VARIANTS.length;
   return FOLIAGE_VARIANTS[index] ?? FOLIAGE_VARIANTS[0];
 }
+
+/** Subtle, deterministic surface palettes for repeated procedural buildings. */
+const BUILDING_SURFACES = [
+  { wall: "#d4bea0", roof: "#74685e", trim: "#b9b3a7" },
+  { wall: "#d9c7aa", roof: "#806f62", trim: "#c2b8a8" },
+  { wall: "#cdb99b", roof: "#6d665e", trim: "#b4ad9f" },
+  { wall: "#dfcdb2", roof: "#796b60", trim: "#c8bdac" },
+  { wall: "#d0c2aa", roof: "#71675d", trim: "#bdb5a7" },
+] as const;
+export function worldBuildingSurfaces(seed: number) {
+  const index = Math.abs(Math.trunc(seed)) % BUILDING_SURFACES.length;
+  return BUILDING_SURFACES[index] ?? BUILDING_SURFACES[0];
+}
