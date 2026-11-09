@@ -570,7 +570,7 @@ export function R3FNeighborhoodSurface({
         npcs.map((npc) => [
           npc.id,
           npcs.flatMap((other) => {
-            if (other.id === npc.id) return [];
+            if (other.id === npc.id || !other.isMoving || other.isPaused) return [];
             const path = npcWaypoints.get(other.id) ?? [];
             return path.length > 1
               ? [path.map(([x, , z]) => ({ x, y: z }))]
