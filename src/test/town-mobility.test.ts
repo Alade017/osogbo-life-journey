@@ -205,6 +205,16 @@ describe("stitched pedestrian sidewalk network", () => {
 
 
 describe("pedestrian route stitching edge deduplication", () => {
+  it("skips segments containing non-finite coordinates without losing valid segments", () => {
+    const routes = stitchTownPedestrianRoutes([
+      [[0, 0], [1, 0], [Number.NaN, 2], [2, 0], [3, 0]],
+      [[3, 0], [Number.POSITIVE_INFINITY, 1]],
+    ]);
+
+    expect(routes).toEqual([[[0, 0], [1, 0]], [[2, 0], [3, 0]]]);
+    expect(routes.flat().every(([x, z]) => Number.isFinite(x) && Number.isFinite(z))).toBe(true);
+  });
+
   it("does not duplicate a shared segment supplied in opposite directions", () => {
     const routes = stitchTownPedestrianRoutes([
       [[0, 0], [1, 0]],
