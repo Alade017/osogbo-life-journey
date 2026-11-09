@@ -235,7 +235,7 @@ describe("isometric town map", () => {
   it("sends one RPC with the selected mode and navigates only after saved location refresh", async () => {
     renderDashboard("residential");
     testState.travelToLocation.mockImplementation(
-      async ({ locationId }: { locationId: string; mode: string }) => {
+      async ({ locationId }: { locationId: string; mode: string; characterId: string }) => {
         testState.character = {
           ...testState.character,
           current_location_id: locationId,
@@ -257,6 +257,7 @@ describe("isometric town map", () => {
     expect(testState.travelToLocation).toHaveBeenCalledWith({
       locationId: "destination-city-centre",
       mode: "danfo",
+      characterId: "test-character",
     });
   }, 15_000);
 
@@ -303,6 +304,8 @@ describe("isometric town map", () => {
     expect(takeDepartureFromHome()).toEqual({
       locationId: "destination-city-centre",
       mode: "danfo",
+      characterId: "test-character",
+      fromLocationId: "confirmed-location",
     });
     expect(testState.travelToLocation).not.toHaveBeenCalled();
   }, 15_000);
@@ -321,7 +324,7 @@ describe("isometric town map", () => {
   it("renders the Phaser overview fallback and a keyboard-accessible list", async () => {
     const { container } = renderDashboard();
     expect(
-      screen.getByRole("region", { name: /Interactive isometric town map/i }),
+      screen.getByRole("region", { name: /Interactive 3D town map with open camera exploration/i }),
     ).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "Illustrated town map fallback" })).toBeInTheDocument();
     expect(screen.getByRole("list", { name: "Places on the map" })).toBeInTheDocument();
