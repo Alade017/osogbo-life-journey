@@ -39,7 +39,7 @@ import { MovingPedestrians3D } from "./MovingPedestrians3D";
 import { FunctionalStreetLights3D } from "./FunctionalStreetLights3D";
 import { RoadsideInfrastructure3D } from "./RoadsideInfrastructure3D";
 import { isMapTargetSelectionAllowed } from "@/game/map-gesture";
-import { deriveTownMobilityRoutes, deriveTownPedestrianRoutes } from "@/game/town-mobility";
+import { deriveTownMobilityRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells } from "@/game/town-mobility";
 
 type Props = PhaserMapData &
   PhaserMapCallbacks & {
@@ -805,8 +805,8 @@ export function R3FTownSurface(props: Props) {
       occupied.add(`${building.x + 1},${building.z + 1}`);
     });
 
-    // Reserve water and road locations.
-    town.grid.waterCells.forEach(([x, z]) => {
+    // Keep trees off reserved plots, water and the ground-level sidewalk corridor.
+    [...town.grid.waterCells, ...town.grid.plotCells, ...deriveTownSidewalkCells(town.grid.rows)].forEach(([x, z]) => {
       occupied.add(`${x},${z}`);
     });
 
@@ -1114,7 +1114,6 @@ export function R3FTownSurface(props: Props) {
     tricycles.forEach(([x, z]) => reserveWorldPosition(x, z));
     streetVendors.forEach(([x, z]) => reserveWorldPosition(x, z));
     wasteBins.forEach(([x, z]) => reserveWorldPosition(x, z));
-    trees.forEach((tree) => reserveWorldPosition(tree.position[0], tree.position[2]));
     roadsideInfrastructure.poles.forEach(([x, z]) => reserveWorldPosition(x, z));
 
     return deriveTownPedestrianRoutes(town.grid.rows, cell, blockedCells);
@@ -1128,7 +1127,6 @@ export function R3FTownSurface(props: Props) {
     tricycles,
     streetVendors,
     wasteBins,
-    trees,
     roadsideInfrastructure,
   ]);
   const badgePositions = useMemo(
