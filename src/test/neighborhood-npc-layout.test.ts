@@ -157,7 +157,7 @@ describe("neighborhood NPC spawn distribution", () => {
 
   it("routes around a previously reserved NPC corridor", () => {
     const reserved = [
-      { x: 0, y:: 0 },
+      { x: 0, y: 0 },
       { x: 200, y: 0 },
     ];
     const route = neighborhoodNpcPath(
