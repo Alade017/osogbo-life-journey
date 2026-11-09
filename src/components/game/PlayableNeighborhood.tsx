@@ -52,7 +52,7 @@ import { NPC_CATALOG, npcActivityAt, type SocialAction } from "@/lib/npc-simulat
 import { hasLocationVenueDesign } from "@/lib/location-venue-designs";
 import { JobsPage } from "@/routes/_authenticated/_game/jobs";
 import { MarketPage } from "@/routes/_authenticated/_game/market";
-import { WORLD_CAMERA } from "@/components/3d/world-theme";
+import { WORLD_CAMERA, WORLD_SCALE } from "@/components/3d/world-theme";
 import { neighborhoodNpcDestinationPoint, neighborhoodNpcPathWithFallback, neighborhoodNpcSpawnPoint } from "@/game/neighborhood-npc-layout";
 import { neighborhoodBuildingFootprint, neighborhoodObstacleFootprint } from "@/game/neighborhood-geometry";
 import "@/components/game/neighborhood.css";
@@ -302,6 +302,7 @@ export function PlayableNeighborhood() {
   const [workView, setWorkView] = useState<"actions" | "interior">("actions");
   const [selectedNpcId, setSelectedNpcId] = useState<string | null>(null);
   const [npcDialogue, setNpcDialogue] = useState<string | null>(null);
+  const npcActorPositions = useRef(new Map<string, { x: number; y: number }>());
   const [npcPositionOverrides, setNpcPositionOverrides] = useState<{
     locationId: string | null;
     positions: Record<string, { x: number; y: number }>;
@@ -672,7 +673,7 @@ export function PlayableNeighborhood() {
   const selectWorldTarget = (targetId: string) => {
     const target = interactionTargets.find((candidate) => candidate.id === targetId);
     if (!target || !district) return;
-    if (nearbyObject?.id === targetId) {
+    if (target.kind !== "npc" && nearbyObject?.id === targetId) {
       setPendingTargetId(null);
       openInteraction(target);
       return;
@@ -699,7 +700,16 @@ export function PlayableNeighborhood() {
     if (!pendingTargetId || !player || !district) return;
     const target = interactionTargets.find((candidate) => candidate.id === pendingTargetId);
     if (!target) return;
-    const interactionPoint = neighborhoodInteractionPoint(target, activeNpcs);
+    const scenePoint = npcActorPositions.current.get(target.id);
+    const sceneBounds = neighborhoodSceneBounds(district.origin);
+    const centerX = sceneBounds.left + sceneBounds.width / 2;
+    const centerY = sceneBounds.top + sceneBounds.height / 2;
+    const interactionPoint = target.kind === "npc" && scenePoint
+      ? {
+          x: centerX + scenePoint.x / WORLD_SCALE.neighborhoodUnit,
+          y: centerY + scenePoint.y / WORLD_SCALE.neighborhoodUnit,
+        }
+      : neighborhoodInteractionPoint(target, activeNpcs);
     const position = toScene({ x: player.x, y: player.y }, district.origin);
     if (Math.hypot(position.x - interactionPoint.x, position.y - interactionPoint.y) >= 65) return;
     setPendingTargetId(null);
@@ -839,6 +849,7 @@ export function PlayableNeighborhood() {
                         mapCategory={currentLocation?.map_category}
                         players={scenePlayers}
                         npcs={activeNpcs}
+                        npcActorPositions={npcActorPositions}
                         selfSessionId={sessionId}
                         homeTypeId={homeTypeId}
                         zoom={zoom}
