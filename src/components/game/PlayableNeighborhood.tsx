@@ -353,6 +353,12 @@ export function PlayableNeighborhood() {
       );
       if (!slot) return [];
       occupiedSpawnPoints.push(slot);
+      // Keep arrival pockets clear of other NPCs that are still leaving their
+      // spawn anchors; live avoidance then handles actors already in motion.
+      const reservedArrivalPoints = [
+        ...occupiedDestinationPoints,
+        ...occupiedSpawnPoints.slice(0, -1),
+      ];
       const destinationObject =
         activity.destination === "home"
           ? area.objects.find((object) => object.kind === "home")
@@ -366,7 +372,7 @@ export function PlayableNeighborhood() {
         destinationObject ?? slot,
         catalogIndex,
         occupiedFootprints,
-        occupiedDestinationPoints,
+        reservedArrivalPoints,
         sceneBounds,
       );
       if (!destination) return [];
