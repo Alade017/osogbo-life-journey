@@ -97,6 +97,7 @@ function NeighborhoodNpcActor({
   npc,
   start,
   target,
+  waypoints,
   onSelect,
   onArrive,
   onPause,
@@ -104,6 +105,7 @@ function NeighborhoodNpcActor({
   npc: NeighborhoodNpcView;
   start: [number, number, number];
   target: [number, number, number];
+  waypoints: readonly [number, number, number][];
   onSelect: () => void;
   onArrive: () => void;
   onPause: (x: number, y: number) => void;
@@ -119,7 +121,12 @@ function NeighborhoodNpcActor({
     (npc.isMoving || ["working", "shopping", "socializing"].includes(npc.activityKind));
   const targetKey = `${target[0].toFixed(3)}:${target[2].toFixed(3)}`;
   const arrivedTarget = useRef<string | null>(null);
+  const waypointIndex = useRef(0);
   const pauseSnapshotSaved = useRef(false);
+  useEffect(() => {
+    waypointIndex.current = 0;
+    arrivedTarget.current = null;
+  }, [target[0], target[2], waypoints]);
 
   // R3F receives a newly allocated start tuple on every parent render.
   // Only apply it when the actual spawn/confirmed position changes; otherwise
@@ -154,8 +161,9 @@ function NeighborhoodNpcActor({
   useFrame((state, delta) => {
     const actor = group.current;
     if (!actor || npc.isPaused) return;
-    const dx = target[0] - actor.position.x;
-    const dz = target[2] - actor.position.z;
+    const waypoint = waypoints[waypointIndex.current] ?? target;
+    const dx = waypoint[0] - actor.position.x;
+    const dz = waypoint[2] - actor.position.z;
     const distance = Math.hypot(dx, dz);
     const walking = distance > 0.035;
     if (walking) {
@@ -166,6 +174,8 @@ function NeighborhoodNpcActor({
       actor.position.x += dx * step;
       actor.position.z += dz * step;
       actor.rotation.y = Math.atan2(dx, dz);
+    } else if (waypointIndex.current < waypoints.length - 1) {
+      waypointIndex.current += 1;
     } else {
       actor.position.x = target[0];
       actor.position.z = target[2];
@@ -550,6 +560,7 @@ export function R3FNeighborhoodSurface({
               npc={npc}
               start={point(npc.x, npc.y)}
               target={point(npc.targetX, npc.targetY)}
+              waypoints={(npc.path ?? []).map((waypoint) => point(waypoint.x, waypoint.y))}
               onSelect={() => onSelectTarget(npc.id)}
               onArrive={() => onNpcArrive(npc.id, npc.targetX, npc.targetY)}
               onPause={(x, z) =>
