@@ -62,6 +62,9 @@ describe("character-bound fictional-world movement RPCs", () => {
       "supabase/migrations/20261109150000_canonical_active_character.sql", "utf8",
     ));
     await db.exec(readFileSync(
+      "supabase/migrations/20261109170000_bind_local_travel_to_character.sql", "utf8",
+    ));
+    await db.exec(readFileSync(
       "supabase/migrations/20261109180000_bind_world_movement_to_character.sql", "utf8",
     ));
   });
