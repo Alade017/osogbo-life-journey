@@ -142,6 +142,13 @@ export function CityMapDashboard({
       return mapHousingMarkers(await response.json());
     },
   });
+  useEffect(() => {
+    const refreshHousingMarkers = () => {
+      void queryClient.invalidateQueries({ queryKey: ["housingMapProperties"] });
+    };
+    window.addEventListener("osogbo:server-state-changed", refreshHousingMarkers);
+    return () => window.removeEventListener("osogbo:server-state-changed", refreshHousingMarkers);
+  }, [queryClient]);
   const rent = useQuery(q.rentStatus());
   const wallet = useQuery(q.wallet());
   const worldClock = useWorldClock();
