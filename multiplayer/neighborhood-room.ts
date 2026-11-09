@@ -134,18 +134,21 @@ async function readCharacter(accessToken: string, locationId: string) {
   } satisfies AuthenticatedPlayer;
 }
 
+function serializeAppearance(value: unknown) {
+  try {
+    return JSON.stringify(value ?? {}) ?? EMPTY_APPEARANCE;
+  } catch {
+    return EMPTY_APPEARANCE;
+  }
+}
+
 function playerSnapshot(
   character: CharacterRow,
   areaOrigin: WorldPoint,
   area: NeighborhoodArea,
   equipment = EMPTY_EQUIPMENT,
 ): NetworkPlayerSnapshot {
-  let appearance = EMPTY_APPEARANCE;
-  try {
-    appearance = JSON.stringify(character.appearance ?? {}) ?? EMPTY_APPEARANCE;
-  } catch {
-    appearance = EMPTY_APPEARANCE;
-  }
+  const appearance = serializeAppearance(character.appearance);
   const savedPoint =
     typeof character.world_x === "number" && typeof character.world_y === "number"
       ? { x: character.world_x, y: character.world_y }
@@ -271,6 +274,11 @@ export class NeighborhoodRoom extends Room {
       ) {
         return;
       }
+      // Refresh the complete public avatar snapshot together so other
+      // clients never see equipment paired with stale identity/appearance data.
+      player.name = String(fresh.character.name ?? "Neighbour").slice(0, 24);
+      player.gender = String(fresh.character.gender ?? "nonbinary").slice(0, 16);
+      player.appearance = serializeAppearance(fresh.character.appearance);
       player.equipment = fresh.equipment;
     } catch {
       // Keep the last verified snapshot; the normal reconnect path will retry.
