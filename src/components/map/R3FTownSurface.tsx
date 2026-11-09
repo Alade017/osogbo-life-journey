@@ -768,10 +768,10 @@ export function R3FTownSurface(props: Props) {
         // pedestrian edges and the diagonal ground tile exist.
         for (const dx of [-1, 1] as const) {
           for (const dz of [-1, 1] as const) {
-            const hasHorizontalEdge = greenNeighbors.has(`0,${dz}`);
-            const hasVerticalEdge = greenNeighbors.has(`${dx},0`);
-
-            if (!hasHorizontalEdge || !hasVerticalEdge) continue;
+            // At a four-way junction, the adjoining road tiles carry the
+            // straight sidewalk strips; this diagonal grass tile fills their turn.
+            if (town.grid.rows[z + dz]?.[x] !== "r") continue;
+            if (town.grid.rows[z]?.[x + dx] !== "r") continue;
 
             const diagonalX = x + dx;
             const diagonalZ = z + dz;
