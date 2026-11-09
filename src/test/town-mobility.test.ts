@@ -243,6 +243,14 @@ describe("pedestrian route stitching edge deduplication", () => {
 
     expect(routes).toEqual([[[0, 0], [1, 0]]]);
   });
+
+  it("discards zero-length and near-zero segments without breaking valid runs", () => {
+    const routes = stitchTownPedestrianRoutes([
+      [[0, 0], [0, 0], [0.0005, 0], [1, 0], [2, 0]],
+    ]);
+
+    expect(routes).toEqual([[[0.0005, 0], [1, 0], [2, 0]]]);
+  });
 });
 
 
@@ -268,6 +276,21 @@ describe("pedestrian junction reservations", () => {
     expect(scheduler.request("junction-a", "pedestrian-2")).toBe(false);
     expect(scheduler.request("junction-b", "pedestrian-3")).toBe(true);
     scheduler.release("junction-a", "pedestrian-2");
+    scheduler.release("junction-a", "pedestrian-1");
+
+    expect(scheduler.request("junction-a", "pedestrian-3")).toBe(true);
+  });
+
+  it("keeps repeated frame requests idempotent and protects the current owner", () => {
+    const scheduler = new TownPedestrianJunctionScheduler();
+
+    expect(scheduler.request("junction-a", "pedestrian-1")).toBe(true);
+    expect(scheduler.request("junction-a", "pedestrian-1")).toBe(true);
+    expect(scheduler.request("junction-a", "pedestrian-2")).toBe(false);
+    expect(scheduler.request("junction-a", "pedestrian-2")).toBe(false);
+
+    scheduler.release("junction-a", "pedestrian-2");
+    expect(scheduler.request("junction-a", "pedestrian-3")).toBe(false);
     scheduler.release("junction-a", "pedestrian-1");
 
     expect(scheduler.request("junction-a", "pedestrian-3")).toBe(true);
