@@ -1015,18 +1015,16 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       ? gameTime.simulation.currentAction
       : null;
 
-  const finishSleep = async (cancel: boolean) => {
+  const cancelSleep = async () => {
     if (!activeSleep || isOffline || !gameTime.ready || gameTime.busy) return;
     setActivityError("");
-    const error = cancel
-      ? await gameTime.interrupt(activeSleep.requestId)
-      : await gameTime.complete(activeSleep.requestId, "sleep");
+    const error = await gameTime.interrupt(activeSleep.requestId);
     if (error) {
       setActivityError(error);
       toast.error(error);
       return;
     }
-    toast.success(cancel ? "Sleep cancelled." : "You woke up. Your energy is up to date.");
+    toast.success("Sleep cancelled.");
   };
 
   const requestAction = (args: Parameters<typeof actionMutation.mutate>[0]) => {
@@ -1590,44 +1588,29 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           </div>
         )}
         {activeSleep && (
-          <div className="house-task-status" role="status" aria-live="polite">
+          <button
+            type="button"
+            className="house-task-status house-task-status-action"
+            aria-label={`Asleep, ${sleepRemaining} seconds left. Tap to cancel sleep.`}
+            disabled={isOffline || !gameTime.ready || gameTime.busy}
+            onClick={() => void cancelSleep()}
+          >
             <ProgressRing percent={sleepProgress} label={`${sleepRemaining}s`} />
             <div className="house-task-status-copy">
               <strong>Asleep</strong>
-              <span>{`${sleepRemaining}s until you wake`}</span>
+              <span>Tap to cancel</span>
             </div>
-          </div>
+          </button>
         )}
-        {(movement.walking ||
-          walkingTask ||
-          startingTask ||
-          (timedActivity && !activeSleep) ||
-          activeSleep) && (
+        {(movement.walking || walkingTask || startingTask || (timedActivity && !activeSleep)) && (
           <div className="house-task-actions" role="group" aria-label="Task controls">
-            {activeSleep && (
-              <button
-                type="button"
-                disabled={isOffline || !gameTime.ready || gameTime.busy}
-                onClick={() => void finishSleep(false)}
-              >
-                Wake up
-              </button>
-            )}
-            {activeSleep && (
-              <button
-                type="button"
-                disabled={isOffline || !gameTime.ready || gameTime.busy}
-                onClick={() => void finishSleep(true)}
-              >
-                Cancel sleep
-              </button>
-            )}
             {(movement.walking ||
               walkingTask ||
               startingTask ||
               (timedActivity && !activeSleep)) && (
               <button
                 type="button"
+                className="house-task-cancel"
                 disabled={startingTask || gameTime.busy || cancellingTask}
                 onClick={() => void cancelTask()}
               >

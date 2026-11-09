@@ -3073,6 +3073,17 @@
   top: calc(max(12px, env(safe-area-inset-top)) + 106px);
 }
 
+button.house-task-status-action {
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+button.house-task-status-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .house-task-status-copy {
   display: grid;
   min-width: 0;
@@ -3137,7 +3148,7 @@
   position: absolute;
   z-index: 3;
   right: max(14px, env(safe-area-inset-right));
-  bottom: calc(var(--game-dock-height, 64px) + env(safe-area-inset-bottom) + 12px);
+  bottom: calc(var(--game-dock-height, 64px) + env(safe-area-inset-bottom) + 28px);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -3160,6 +3171,10 @@
 .house-task-actions button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.house-task-actions button.house-task-cancel {
+  color: var(--destructive);
 }
 
 /* Meal menu grouped by tier. */
