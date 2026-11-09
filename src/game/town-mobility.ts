@@ -164,8 +164,8 @@ export function deriveTownPedestrianCornerRoutes(
           const horizontalCell = [x, z + dz] as const;
           const verticalCell = [x + dx, z] as const;
           const diagonalCell = [x + dx, z + dz] as const;
-          if (rows[horizontalCell[1]]?.[horizontalCell[0]] !== "g") continue;
-          if (rows[verticalCell[1]]?.[verticalCell[0]] !== "g") continue;
+          if (rows[horizontalCell[1]]?.[horizontalCell[0]] !== "r") continue;
+          if (rows[verticalCell[1]]?.[verticalCell[0]] !== "r") continue;
           if (rows[diagonalCell[1]]?.[diagonalCell[0]] !== "g") continue;
           if ([horizontalCell, verticalCell, diagonalCell].some(([cellX, cellZ]) => blocked.has(`${cellX},${cellZ}`))) continue;
 
