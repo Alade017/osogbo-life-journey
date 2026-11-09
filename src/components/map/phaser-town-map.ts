@@ -48,7 +48,7 @@ class PhaserTownMapScene extends Phaser.Scene implements PhaserMapSceneHandle {
   private playerLayer!: Phaser.GameObjects.Container;
   private markerKey = "";
   private draggedPointers = new Set<number>();
-  private lastDragPoint: { x: number; y: number } | null = null;
+  private dragPoints = new Map<number, { x: number; y: number }>();
 
   constructor(options: CreateOptions) {
     super({ key: "osogbo-town-map" });
@@ -73,22 +73,42 @@ class PhaserTownMapScene extends Phaser.Scene implements PhaserMapSceneHandle {
     );
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       this.draggedPointers.delete(pointer.id);
-      this.lastDragPoint = { x: pointer.x, y: pointer.y };
+      this.dragPoints.set(pointer.id, { x: pointer.x, y: pointer.y });
     });
     this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
-      if (!pointer.isDown || !this.lastDragPoint) return;
+      if (!pointer.isDown || !this.dragPoints.has(pointer.id)) return;
       if (Math.hypot(pointer.x - pointer.downX, pointer.y - pointer.downY) >= 6)
         this.draggedPointers.add(pointer.id);
-      const dx = pointer.x - this.lastDragPoint.x;
-      const dy = pointer.y - this.lastDragPoint.y;
-      if (Math.abs(dx) + Math.abs(dy) > 1) {
+
+      const previous = this.dragPoints.get(pointer.id)!;
+      const dx = pointer.x - previous.x;
+      const dy = pointer.y - previous.y;
+
+      if (this.dragPoints.size === 1 && Math.abs(dx) + Math.abs(dy) > 1) {
         this.cameras.main.scrollX -= dx / this.cameras.main.zoom;
         this.cameras.main.scrollY -= dy / this.cameras.main.zoom;
+      } else if (this.dragPoints.size === 2) {
+        const points = [...this.dragPoints.values()];
+        const before = Math.hypot(points[0]!.x - points[1]!.x, points[0]!.y - points[1]!.y);
+        const current = { x: pointer.x, y: pointer.y };
+        const other = [...this.dragPoints.entries()].find(([id]) => id !== pointer.id)?.[1];
+        if (other) {
+          const after = Math.hypot(current.x - other.x, current.y - other.y);
+          if (before > 0 && after > 0) this.setZoom(after / before);
+        }
       }
-      this.lastDragPoint = { x: pointer.x, y: pointer.y };
+
+      this.dragPoints.set(pointer.id, { x: pointer.x, y: pointer.y });
     });
-    this.input.on("pointerup", () => {
-      this.lastDragPoint = null;
+    this.input.on("pointerup", (pointer: Phaser.Input.Pointer) => {
+      this.dragPoints.delete(pointer.id);
+    });
+    this.input.on("pointerupoutside", (pointer: Phaser.Input.Pointer) => {
+      this.dragPoints.delete(pointer.id);
+    });
+    this.input.on("pointercancel", (pointer: Phaser.Input.Pointer) => {
+      this.dragPoints.delete(pointer.id);
+      this.draggedPointers.add(pointer.id);
     });
     this.onReady();
   }
