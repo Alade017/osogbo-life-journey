@@ -345,7 +345,7 @@ function InsulatedFlask() {
   );
 }
 
-/** Food models by slug. Replace these placeholder keys with the real inventory_items slugs. */
+/** Food models keyed by the existing inventory_items slugs. */
 export const FOOD_MODELS: Partial<Record<string, ComponentType>> = {
   puff_puff: PuffPuff,
   suya: Suya,
