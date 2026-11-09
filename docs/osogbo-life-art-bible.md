@@ -132,6 +132,14 @@ Use the existing Olaiya neighborhood as the pilot. Frame one connected crossing 
 
 Required review captures: normal daytime play view at 375px and desktop width; minimum/maximum zoom; player in front of/behind the tree and building; entrance interaction; the same scene at night when time-of-day support is approved. A beauty image alone cannot approve collision, navigation or performance.
 
+## 10A. Owner-supplied visual reference library
+
+The 31-image reference set supplied on 9 November 2026 is catalogued in [Reference image library review](./reference-image-library-review.md). It covers room cutaways, bedroom and living-room furniture, kitchens, appliances, packaging, retail displays, vehicles, dense low-rise urban environments, service interiors, gym equipment, clothing, footwear and construction props.
+
+Treat this as an inspiration library only. It is a mixed-style set, not a coherent production pack and not evidence of redistribution or derivative-work rights. The Art Bible remains the style authority. Re-author models with original geometry, local context, approved materials, the existing camera/projection, catalogue art keys and gameplay footprints. Record source and licence before any close adaptation or production use.
+
+The first practical slice is a catalogue-backed starter-room furnishing composition using the existing R3F house renderer and existing furniture fallbacks. Do not replace the house renderer, introduce SVG, hardcode inventory or ownership, change database schemas, or alter movement and interaction authority. Validate the scene beside the current avatar at desktop and 375px before expanding to appliances, retail props or vehicles.
+
 ## 11. Approval checklist
 
 - [x] Owner accepts this direction and the pilot composition.
