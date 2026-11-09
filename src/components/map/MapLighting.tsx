@@ -4,7 +4,6 @@ import { Color } from "three";
 import { useOptionalGameTime } from "@/components/game/GameTimeProvider";
 import { WORLD_PALETTE } from "../3d/world-theme";
 
-const DAY_BACKGROUND = new Color(WORLD_PALETTE.ground);
 const NIGHT_BACKGROUND = new Color("#0b1220"); // Atmospheric deep Osogbo midnight navy
 const DAY_AMBIENT = new Color("#ffffff");
 const NIGHT_AMBIENT = new Color("#253654"); // Moonlit blue ambient
@@ -15,7 +14,11 @@ const NIGHT_AMBIENT = new Color("#253654"); // Moonlit blue ambient
  */
 export function daylightFor(hour: number, minute = 0) {
   const t = (((hour % 24) + 24) % 24) + minute / 60;
-  const arc = ((t - 6) / 12) * Math.PI;
+  // Keep noon as the solar peak while allowing the longer afternoon to
+  // reach sunset at the documented 18:30 local time.
+  const arc = t <= 12
+    ? ((t - 6) / 6) * (Math.PI / 2)
+    : (Math.PI / 2) + ((t - 12) / 6.5) * (Math.PI / 2);
   const elevation = Math.sin(arc);
   const day = Math.min(1, Math.max(0, (elevation + 0.12) / 0.4));
   return { t, arc, day, isNight: day < 0.35 };
@@ -54,13 +57,22 @@ export function useRealOrGameClock(): { hour: number; minute: number; isRealTime
  * Synchronizes with real local time (or game clock), smoothly altering
  * sunlight elevation, nighttime moonlight, shadows, and ambient tint.
  */
-export function MapLighting({ size = 30 }: { size?: number }) {
+export function MapLighting({
+  size = 30,
+  dayBackground = WORLD_PALETTE.ground,
+}: {
+  size?: number;
+  dayBackground?: string;
+}) {
   const clock = useRealOrGameClock();
   const invalidate = useThree((state) => state.invalidate);
   const { hour, minute } = clock;
   const { arc, day, isNight } = daylightFor(hour, minute);
 
-  const background = useMemo(() => NIGHT_BACKGROUND.clone().lerp(DAY_BACKGROUND, day), [day]);
+  const background = useMemo(
+    () => NIGHT_BACKGROUND.clone().lerp(new Color(dayBackground), day),
+    [day, dayBackground],
+  );
   const ambientColor = useMemo(() => NIGHT_AMBIENT.clone().lerp(DAY_AMBIENT, day), [day]);
 
   const sunPosition: [number, number, number] = [
