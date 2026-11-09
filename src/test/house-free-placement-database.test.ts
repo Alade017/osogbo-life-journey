@@ -71,6 +71,9 @@ describe("free furniture placement database", () => {
           "0075_remove_orphaned_player_data",
           "0077_market_stall_rent_categories_sales",
           "0079_free_house_placement",
+          "0083_studio_room_layout",
+          "0084_other_homes_room_layout",
+          "0085_house_floors",
         ].includes(entry.tag),
     ))
       await db.exec(readFileSync(`drizzle/migrations/${tag}.sql`, "utf8").replace(/^\uFEFF/, ""));
@@ -81,6 +84,13 @@ describe("free furniture placement database", () => {
       ),
     );
     await db.exec(readFileSync("drizzle/migrations/0079_free_house_placement.sql", "utf8"));
+    for (const tag of [
+      "0083_studio_room_layout",
+      "0084_other_homes_room_layout",
+      "0085_house_floors",
+    ]) {
+      await db.exec(readFileSync(`drizzle/migrations/${tag}.sql`, "utf8"));
+    }
     await db.query("insert into auth.users(id) values($1)", [userId]);
   }, 180_000);
 
