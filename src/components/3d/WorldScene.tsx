@@ -497,7 +497,7 @@ export function WorldBusStops({
           {/* Rear shelter panel */}
           <mesh position={[0, roofHeight * 0.48, -shelterDepth * 0.4]}>
             <boxGeometry args={[shelterWidth * 0.82, roofHeight * 0.85, size * 0.045]} />
-            <WorldMaterial tone="concrete" color={surfaces.trim} />
+            <WorldMaterial tone="concrete" />
           </mesh>
 
           {/* Passenger bench */}
@@ -1061,7 +1061,7 @@ export function WorldHouse({
       {architecture.roof !== "pitched" && (
         <mesh position={[0, height + 0.31, 0]} castShadow receiveShadow>
           <boxGeometry args={[width + 0.32, 0.24, depth + 0.32]} />
-          <WorldMaterial tone={roofTone} color={surfaces.roof} />
+          <WorldMaterial tone={roofTone} color={roofTone === "roof" ? surfaces.roof : undefined} />
         </mesh>
       )}
 
@@ -1069,7 +1069,7 @@ export function WorldHouse({
       {architecture.roof !== "pitched" && (
         <mesh position={[0, height + 0.45, 0]}>
           <boxGeometry args={[width + 0.18, 0.07, depth + 0.18]} />
-          <WorldMaterial tone="concrete" />
+          <WorldMaterial tone="concrete" color={surfaces.trim} />
         </mesh>
       )}
 
