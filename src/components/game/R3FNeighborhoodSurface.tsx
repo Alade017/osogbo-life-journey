@@ -102,6 +102,7 @@ function NeighborhoodNpcActor({
   waypoints,
   reservedPaths,
   actorPositions,
+  actorRoutes,
   playerPositions,
   occupiedFootprints,
   sceneBounds,
@@ -115,6 +116,7 @@ function NeighborhoodNpcActor({
   waypoints: readonly [number, number, number][];
   reservedPaths: readonly (readonly { x: number; y: number }[])[];
   actorPositions: MutableRefObject<Map<string, { x: number; y: number }>>;
+  actorRoutes: MutableRefObject<Map<string, readonly { x: number; y: number }[]>>;
   playerPositions: readonly (readonly [number, number, number])[];
   occupiedFootprints: readonly { left: number; top: number; width: number; height: number }[];
   sceneBounds: { left: number; top: number; width: number; height: number };
@@ -145,6 +147,16 @@ function NeighborhoodNpcActor({
   const replanBackoff = useRef(replanDelay);
   const avoidanceBias = neighborhoodNpcAvoidanceBias(npc.id);
   const pauseSnapshotSaved = useRef(false);
+  const syncRouteReservation = () => {
+    if (!npc.isMoving || npc.isPaused) {
+      actorRoutes.current.delete(npc.id);
+      return;
+    }
+    actorRoutes.current.set(
+      npc.id,
+      routeWaypoints.current.slice(waypointIndex.current).map(([x, , y]) => ({ x, y })),
+    );
+  };
 
   // Simulation updates may recreate an equivalent route. When its geometry or
   // destination really changes, rebuild it from the actor's rendered position
@@ -183,6 +195,7 @@ function NeighborhoodNpcActor({
       blockedDuration.current = 0;
       replanBackoff.current = replanDelay;
       arrivedTarget.current = null;
+      syncRouteReservation();
     }
   }, [
     occupiedFootprints,
@@ -193,7 +206,18 @@ function NeighborhoodNpcActor({
     targetKey,
     waypointSignature,
     waypoints,
+    actorRoutes,
+    npc.id,
+    npc.isMoving,
+    npc.isPaused,
   ]);
+
+  useEffect(() => {
+    syncRouteReservation();
+    return () => {
+      actorRoutes.current.delete(npc.id);
+    };
+  }, [actorRoutes, npc.id, npc.isMoving, npc.isPaused]);
 
   // R3F receives a newly allocated start tuple on every parent render.
   // Only apply it when the actual spawn/confirmed position changes; otherwise
@@ -241,7 +265,9 @@ function NeighborhoodNpcActor({
         { x: target[0], y: target[2] },
         occupiedFootprints,
         sceneBounds,
-        reservedPaths,
+        [...actorRoutes.current.entries()]
+          .filter(([id, path]) => id !== npc.id && path.length > 1)
+          .map(([, path]) => path),
       );
       if (rerouted?.length) {
         routeWaypoints.current = rerouted.map(
@@ -249,6 +275,7 @@ function NeighborhoodNpcActor({
         );
         waypointIndex.current = 0;
         replanBackoff.current = replanDelay;
+        syncRouteReservation();
       } else {
         // Back off repeated searches when static geometry makes a destination
         // unreachable; movement or a new route resets the retry cadence.
@@ -301,11 +328,13 @@ function NeighborhoodNpcActor({
       actor.position.x = next.x;
       actor.position.z = next.y;
       actorPositions.current.set(npc.id, { x: next.x, y: next.y });
+      syncRouteReservation();
       if (Math.hypot(movedX, movedZ) > 0.0001) {
         actor.rotation.y = Math.atan2(movedX, movedZ);
       }
     } else if (waypointIndex.current < activeWaypoints.length - 1) {
       waypointIndex.current += 1;
+      syncRouteReservation();
     } else {
       const finalWaypoint = activeWaypoints[activeWaypoints.length - 1];
       const routeReachesTarget =
@@ -525,6 +554,7 @@ export function R3FNeighborhoodSurface({
   });
   const npcPoints = npcs.map((npc) => point(npc.x, npc.y));
   const actorPositions = useRef(new Map<string, { x: number; y: number }>());
+  const actorRoutes = useRef(new Map<string, readonly { x: number; y: number }[]>());
   const movementBounds = useMemo(
     () => ({
       left: -bounds.width * unit / 2,
@@ -760,6 +790,7 @@ export function R3FNeighborhoodSurface({
               waypoints={npcWaypoints.get(npc.id) ?? []}
               reservedPaths={npcReservedPaths.get(npc.id) ?? []}
               actorPositions={actorPositions}
+              actorRoutes={actorRoutes}
               playerPositions={scenePoints}
               occupiedFootprints={movementObstacles}
               sceneBounds={movementBounds}
