@@ -15,6 +15,7 @@ export function WorldStreetFurniture({
 }) {
   const frames: WorldInstance[] = [],
     seats: WorldInstance[] = [],
+    benchSlats: WorldInstance[] = [],
     panels: WorldInstance[] = [];
   const signLabels: { id: string; x: number; z: number; width: number; label: string }[] = [];
   for (const item of items) {
@@ -26,15 +27,27 @@ export function WorldStreetFurniture({
       );
       panels.push({ position: [x + 0.52, 3.08, z], scale: [0.35, 0.12, 0.22] });
     } else if (kind === "bench") {
-      seats.push(
-        { position: [x, 0.52, z], scale: [width, 0.12, depth] },
-        { position: [x, 0.85, z - depth * 0.4], scale: [width, 0.55, 0.1] },
-      );
-      for (const side of [-1, 1])
-        frames.push({
-          position: [x + side * width * 0.35, 0.25, z],
-          scale: [0.1, 0.5, depth * 0.8],
-        });
+      // Slatted seating and backrests read as timber furniture at street scale.
+      const slatCount = Math.max(3, Math.min(6, Math.floor(width / 0.32)));
+      for (let slat = 0; slat < slatCount; slat += 1) {
+        const across = ((slat + 0.5) / slatCount - 0.5) * width * 0.9;
+        benchSlats.push(
+          { position: [x + across, 0.55, z], scale: [width * 0.88 / slatCount * 0.78, 0.075, depth] },
+          { position: [x + across, 0.88, z - depth * 0.4], scale: [width * 0.88 / slatCount * 0.78, 0.075, 0.1] },
+        );
+      }
+      for (const side of [-1, 1]) {
+        frames.push(
+          {
+            position: [x + side * width * 0.35, 0.25, z],
+            scale: [0.1, 0.5, depth * 0.8],
+          },
+          {
+            position: [x + side * width * 0.4, 0.72, z - depth * 0.4],
+            scale: [0.09, 0.5, 0.09],
+          },
+        );
+      }
     } else if (kind === "bin") {
       frames.push({ position: [x, 0.36, z], scale: [width, 0.72, depth] });
       seats.push({ position: [x, 0.75, z], scale: [width + 0.07, 0.08, depth + 0.07] });
@@ -51,6 +64,7 @@ export function WorldStreetFurniture({
     <>
       <WorldInstances tone="timber" items={frames} />
       <WorldInstances tone="slate" items={seats} />
+      <WorldInstances tone="timber" items={benchSlats} />
       <WorldInstances tone="linen" items={panels} />
       {signLabels.map((sign) => (
         <Text
