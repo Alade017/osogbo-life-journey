@@ -127,6 +127,10 @@ describe("town pedestrian routes", () => {
     expect(waypointCount).toBe(120);
     expect(Math.min(...routeLengths)).toBe(3);
     expect(Math.max(...routeLengths)).toBe(6);
+    expect(routeLengths.reduce<Record<number, number>>((counts, length) => {
+      counts[length] = (counts[length] ?? 0) + 1;
+      return counts;
+    }, {})).toEqual({ 3: 14, 4: 5, 5: 8, 6: 3 });
   });
 
   it("splits both sidewalk edges at blocked sidewalk cells", () => {
