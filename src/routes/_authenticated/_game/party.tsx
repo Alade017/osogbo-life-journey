@@ -329,9 +329,21 @@ function ClubsTab({
   worldClock: { hour: number; minute: number } | undefined;
   worldClockUnverified: boolean;
 }) {
-  const joinActivity = useInvalidatingMutation(partyRpc.joinClubActivity, "Enjoy the show!");
-  const enter = useInvalidatingMutation(partyRpc.enterClub, "You joined the party.");
-  const leave = useInvalidatingMutation(partyRpc.leaveClub, "You left the club.");
+  const joinActivity = useInvalidatingMutation(
+    partyRpc.joinClubActivity,
+    "Enjoy the show!",
+    (args) => args.characterId === characterId,
+  );
+  const enter = useInvalidatingMutation(
+    partyRpc.enterClub,
+    "You joined the party.",
+    (args) => args.characterId === characterId,
+  );
+  const leave = useInvalidatingMutation(
+    partyRpc.leaveClub,
+    "You left the club.",
+    (args) => args.characterId === characterId,
+  );
   const dance = useInvalidatingMutation(
     partyRpc.danceWithNpc,
     "You danced!",
@@ -544,7 +556,11 @@ function DrinksTab({
   isLoading: boolean;
   characterId: string | null;
 }) {
-  const buy = useInvalidatingMutation(partyRpc.buyDrink, "Drink bought.");
+  const buy = useInvalidatingMutation(
+    partyRpc.buyDrink,
+    "Drink bought.",
+    (args) => args.characterId === characterId,
+  );
   if (isLoading) return <LoadingState />;
   const canBuy = inClub || Boolean(atEventCentre);
   return (
@@ -596,7 +612,11 @@ function EventsTab({
   venues: Awaited<ReturnType<typeof listPartyVenues>>;
 }) {
   const events = useQuery({ queryKey: ["partyEvents"], queryFn: listPartyEvents });
-  const respond = useInvalidatingMutation(partyRpc.respondToEvent, "Thanks for joining the event!");
+  const respond = useInvalidatingMutation(
+    partyRpc.respondToEvent,
+    "Thanks for joining the event!",
+    (args) => args.characterId === characterId,
+  );
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const update = () => setNow(new Date());
@@ -700,7 +720,11 @@ function HostForm({
   defaultLocationId: string | null;
   characterId: string | null;
 }) {
-  const host = useInvalidatingMutation(partyRpc.hostEvent, "Your event is scheduled.");
+  const host = useInvalidatingMutation(
+    partyRpc.hostEvent,
+    "Your event is scheduled.",
+    (args) => args.characterId === characterId,
+  );
   const [locationId, setLocationId] = useState(
     venues.find((v) => v.location_id === defaultLocationId)?.location_id ??
       venues[0]?.location_id ??
