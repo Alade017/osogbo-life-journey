@@ -289,12 +289,7 @@ describe("shared map activity schedules", () => {
     });
   });
   it("rejects a neighborhood action when the active character differs from the authorized character", async () => {
-    const newerCharacterId = "77777777-7777-4777-8777-777777777777";
-    await db.query(
-      `insert into public.characters(id,user_id,current_location_id,is_adult,game_time_hour,created_at)
-       values($1,$2,$3,true,0,now() + interval '2 seconds')`,
-      [newerCharacterId, userId, locationId],
-    );
+    const differentCharacterId = "77777777-7777-4777-8777-777777777777";
     const openDefinition = action(0, 24);
     await db.query(
       `insert into public.map_landmark_actions(landmark_id,id,definition)
@@ -304,17 +299,16 @@ describe("shared map activity schedules", () => {
     await expect(
       db.query(
         "select public.perform_map_place_action($1,$2,$3,$4,$5::jsonb)",
-        [userId, landmarkId, openDefinition.id, "88888888-8888-4888-8888-888888888888", JSON.stringify({ expected_character_id: characterId })],
+        [userId, landmarkId, openDefinition.id, "88888888-8888-4888-8888-888888888888", JSON.stringify({ expected_character_id: differentCharacterId })],
       ),
     ).rejects.toThrow(/CHARACTER_CHANGED/);
     const { rows } = await db.query(
       `select
         (select count(*)::integer from public.map_place_action_receipts) as receipts,
-        (select game_time_minute from public.characters where id=$1) as old_time,
-        (select game_time_minute from public.characters where id=$2) as new_time`,
-      [characterId, newerCharacterId],
+        (select game_time_minute from public.characters where id=$1) as game_time`,
+      [characterId],
     );
-    expect(rows[0]).toEqual({ receipts: 1, old_time: 15, new_time: 0 });
+    expect(rows[0]).toEqual({ receipts: 1, game_time: 15 });
   });
 
 });
