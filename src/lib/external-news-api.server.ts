@@ -1,6 +1,6 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-export const EXTERNAL_NEWS_REGIONS = ["nigeria", "world", "osun"] as const;
+export const EXTERNAL_NEWS_REGIONS = ["nigeria", "world", "osun", "schools"] as const;
 export type ExternalNewsRegion = (typeof EXTERNAL_NEWS_REGIONS)[number];
 export type ExternalNewsItem = {
   id: string;
@@ -18,6 +18,8 @@ const QUERY_BY_REGION: Record<ExternalNewsRegion, string> = {
   nigeria: "sourcecountry:nigeria",
   world: "(world OR international)",
   osun: '("Osun State" OR Osogbo OR Osun) sourcecountry:nigeria',
+  schools:
+    '(school OR schools OR WAEC OR JAMB OR "Ministry of Education" OR students OR university) sourcecountry:nigeria',
 };
 
 function queryFor(region: ExternalNewsRegion) {

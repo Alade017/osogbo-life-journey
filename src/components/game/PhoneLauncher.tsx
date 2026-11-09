@@ -101,6 +101,11 @@ const RealEstatePage = lazy(() =>
     default: m.RealEstatePage,
   })),
 );
+const NigerianSchoolsApp = lazy(() =>
+  import("@/components/game/phone/NigerianSchoolsApp").then((m) => ({
+    default: m.NigerianSchoolsApp,
+  })),
+);
 const GamesApp = lazy(() =>
   import("@/components/game/mini-games/GamesApp").then((m) => ({ default: m.GamesApp })),
 );
@@ -567,6 +572,7 @@ export function PhoneLauncher({
     }
 
     if (appName === "Games") return <GamesApp />;
+    if (appName === "Nigerian Schools") return <NigerianSchoolsApp />;
     if (appName === "Settings") return <SettingsPage />;
     if (appName === "Osun Gist") return <OsunGistApp />;
     if (appName === "Map") return <PhoneMapApp />;

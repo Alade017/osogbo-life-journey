@@ -624,6 +624,13 @@
       "when": 1794290000000,
       "tag": "0087_game_updates",
       "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "7",
+      "when": 1794376400000,
+      "tag": "0088_schools_news_region",
+      "breakpoints": true
     }
   ]
 }

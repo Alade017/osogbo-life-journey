@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 /** Headline feeds the phone can show. Each is cached on the server per region. */
-export type PhoneNewsRegion = "nigeria" | "world" | "osun";
+export type PhoneNewsRegion = "nigeria" | "world" | "osun" | "schools";
 
 export type ExternalNewsItem = {
   id: string;
