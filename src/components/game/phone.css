@@ -4288,3 +4288,77 @@
 .phone-app-body .contribution-app .contribution-card > button:disabled {
   opacity: 0.55;
 }
+
+/* Billboards in the phone: token colours, a card for the campaign form, and one card per campaign. */
+.phone-app-body .billboard-ad-app.phone-finance-app {
+  background: var(--background);
+  color: var(--foreground);
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+.phone-app-body .billboard-ad-app > h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+.phone-app-body .billboard-ad-app > form.billboard-ad-form {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card, 16px);
+  box-shadow: var(--elevation-card);
+  padding: 14px;
+}
+.phone-app-body .billboard-ad-app .billboard-ad-form label {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+}
+.phone-app-body .billboard-ad-app .billboard-ad-form input,
+.phone-app-body .billboard-ad-app .billboard-ad-form textarea {
+  border-radius: 12px;
+  font-size: 0.9rem;
+}
+.phone-app-body .billboard-ad-app .billboard-ad-price {
+  background: var(--primary);
+  border-radius: 14px;
+  color: var(--primary-foreground);
+  font-size: 0.8rem;
+  padding: 12px 14px;
+}
+.phone-app-body .billboard-ad-app .billboard-ad-price strong {
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+}
+.phone-app-body .billboard-ad-app .billboard-owned-campaigns {
+  border-top: 0;
+  display: grid;
+  gap: 8px;
+  margin-top: 0;
+  padding-top: 0;
+}
+.phone-app-body .billboard-ad-app .billboard-owned-campaigns > h3 {
+  font-size: 0.95rem;
+  margin: 4px 0 0;
+}
+.phone-app-body .billboard-ad-app .billboard-campaign {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--elevation-card);
+  color: var(--card-foreground);
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+}
+.phone-app-body .billboard-ad-app .billboard-campaign strong {
+  font-size: 0.9rem;
+}
+.phone-app-body .billboard-ad-app .billboard-campaign p,
+.phone-app-body .billboard-ad-app .billboard-campaign small {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  margin: 0;
+}
+.phone-app-body .billboard-ad-app .billboard-campaign button {
+  justify-self: start;
+  margin-top: 4px;
+}

@@ -201,7 +201,7 @@ export function BillboardAdApp() {
           <p className="phone-finance-empty">Your ads will appear here after purchase.</p>
         )}
         {market.data.myAds.map((ad) => (
-          <article className="phone-finance-card" key={ad.id}>
+          <article className="phone-finance-card billboard-campaign" key={ad.id}>
             {editingId === ad.id ? (
               <form
                 className="billboard-ad-form"
