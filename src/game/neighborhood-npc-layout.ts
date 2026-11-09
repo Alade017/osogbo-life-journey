@@ -387,3 +387,13 @@ export function neighborhoodNpcAvoidanceStep(
   );
   return clear[0]!;
 }
+
+/** Stable per-character retry delay prevents a crowd from replanning in lockstep. */
+export function neighborhoodNpcReplanDelay(npcId: string): number {
+  let hash = 2166136261;
+  for (let index = 0; index < npcId.length; index += 1) {
+    hash ^= npcId.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return 1.1 + ((hash >>> 0) % 8) * 0.1;
+}
