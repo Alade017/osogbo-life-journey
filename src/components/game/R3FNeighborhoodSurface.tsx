@@ -201,10 +201,13 @@ function NeighborhoodNpcActor({
 }
 
 /** Distant towers that frame the neighbourhood, so the open ground reads as a city. */
-const SKY_FOG_NEAR_SCALE = 1.4;
-const SKY_FOG_FAR_SCALE = 4;
+const SKY_FOG_NEAR_SCALE = 3.5;
+const SKY_FOG_FAR_SCALE = 9;
 const SKYLINE_TOWER_COUNT = 14;
 const SKYLINE_GAP_SCALE = 1.2;
+const SKYLINE_GROUND_SCALE = 3;
+/** Strip behind the town, in building heights, so it never overlaps the main ground. */
+const SKYLINE_GROUND_DEPTH = 6;
 
 function NeighborhoodSkyline({ width, depth }: { width: number; depth: number }) {
   const towers = useMemo(
@@ -213,7 +216,7 @@ function NeighborhoodSkyline({ width, depth }: { width: number; depth: number })
         // Deterministic spread so the skyline does not change between renders.
         const seed = (((index + 1) * 2654435761) % 1000) / 1000;
         const spread = (index + 0.5) / SKYLINE_TOWER_COUNT - 0.5;
-        const height = WORLD_SCALE.neighborhoodBuildingHeight * (2 + seed * 4);
+        const height = WORLD_SCALE.neighborhoodBuildingHeight * (1.2 + seed * 2.2);
         const size = WORLD_SCALE.neighborhoodBuildingHeight * (0.8 + seed * 0.6);
         return {
           id: index,
@@ -228,6 +231,24 @@ function NeighborhoodSkyline({ width, depth }: { width: number; depth: number })
   );
   return (
     <group>
+      {/* Ground under the towers, so they stand on the city rather than the sky. */}
+      <mesh
+        position={[
+          0,
+          -0.12,
+          -depth / 2 - (SKYLINE_GROUND_DEPTH * WORLD_SCALE.neighborhoodBuildingHeight) / 2,
+        ]}
+        receiveShadow
+      >
+        <boxGeometry
+          args={[
+            width * SKYLINE_GROUND_SCALE,
+            0.2,
+            SKYLINE_GROUND_DEPTH * WORLD_SCALE.neighborhoodBuildingHeight,
+          ]}
+        />
+        <WorldMaterial tone="ground" />
+      </mesh>
       {towers.map((tower) => (
         <mesh key={tower.id} position={[tower.x, tower.height / 2, tower.z]} castShadow>
           <boxGeometry args={[tower.size, tower.height, tower.size]} />
