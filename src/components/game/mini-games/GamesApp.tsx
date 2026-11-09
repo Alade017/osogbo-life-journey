@@ -1,12 +1,30 @@
-import { useEffect, useState, type ComponentType } from "react";
-import { ArrowLeft, Coins, Dices, Grid3x3, Layers, Crown, type LucideIcon } from "lucide-react";
+import { useEffect, useState, type ComponentType, type CSSProperties } from "react";
+import {
+  ArrowLeft,
+  Coins,
+  Dices,
+  Grid3x3,
+  Layers,
+  Crown as CrownIcon,
+  type LucideIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StakeTables } from "@/components/game/mini-games/StakeTables";
+import {
+  CardBack,
+  CardFace,
+  Crown,
+  Die,
+  ShapeGlyph,
+  TicMark,
+} from "@/components/game/mini-games/game-art";
+import { SHAPE_LABELS } from "@/components/game/mini-games/game-art-data";
+import "@/components/game/mini-games/mini-games.css";
 import {
   bestTicTacToeMove,
   newTicTacToe,
   playTicTacToe,
-  type Mark,
+  type Cell,
   type TicTacToeState,
 } from "@/lib/mini-games/tic-tac-toe";
 import {
@@ -34,11 +52,22 @@ import {
   newWhot,
   playWhot,
   playableCards,
-  type Shape,
   type WhotState,
 } from "@/lib/mini-games/whot";
 
 const COMPUTER_DELAY_MS = 550;
+const LUDO_TOKEN_COLORS = ["#f5b82e", "#22a06b", "#3b82f6", "#e5484d"] as const;
+const LUDO_TRACK_LENGTH = 58;
+const WIN_LINES = [
+  [0, 1, 2],
+  [3, 4, 5],
+  [6, 7, 8],
+  [0, 3, 6],
+  [1, 4, 7],
+  [2, 5, 8],
+  [0, 4, 8],
+  [2, 4, 6],
+] as const;
 
 type GameId = "tictactoe" | "draughts" | "ludo" | "whot" | "stakes";
 
@@ -59,7 +88,7 @@ const GAMES: { id: GameId; name: string; icon: LucideIcon; blurb: string }[] = [
   {
     id: "draughts",
     name: "Draughts",
-    icon: Crown,
+    icon: CrownIcon,
     blurb: "Jump the other side's pieces. Crown a king.",
   },
   {
@@ -79,12 +108,22 @@ function useComputerTurn(active: boolean, deps: unknown[], act: () => void) {
   }, [active, ...deps]);
 }
 
+function winningCells(board: readonly Cell[]): readonly number[] {
+  for (const line of WIN_LINES) {
+    const [a, b, c] = line;
+    const mark = board[a];
+    if (mark && mark === board[b] && mark === board[c]) return line;
+  }
+  return [];
+}
+
 function TicTacToeGame() {
   const [state, setState] = useState<TicTacToeState>(newTicTacToe);
   const humanTurn = state.turn === "X" && !state.winner;
   useComputerTurn(!humanTurn && !state.winner, [state], () =>
     setState((current) => playTicTacToe(current, bestTicTacToeMove(current))),
   );
+  const winning = winningCells(state.board);
   const status = state.winner
     ? state.winner === "draw"
       ? "A draw."
@@ -92,24 +131,24 @@ function TicTacToeGame() {
         ? "You won!"
         : "The computer won."
     : humanTurn
-      ? "Your turn (X)."
+      ? "Your turn. You are X."
       : "The computer is thinking…";
   return (
     <section className="mg-game" aria-label="Tic-Tac-Toe">
-      <p className="mg-status" role="status">
+      <p className={`mg-status ${state.winner === "X" ? "is-win" : ""}`} role="status">
         {status}
       </p>
-      <div className="mg-ttt" role="grid" aria-label="Tic-Tac-Toe board">
+      <div className="mg-board mg-ttt" role="group" aria-label="Tic-Tac-Toe board">
         {state.board.map((cell, index) => (
           <button
             key={index}
             type="button"
-            className="mg-ttt-cell"
+            className={`mg-ttt-cell ${winning.includes(index) ? "is-win" : ""}`}
             disabled={!humanTurn || !!cell}
             aria-label={cell ? `Square ${index + 1}, ${cell}` : `Square ${index + 1}, empty`}
             onClick={() => setState((current) => playTicTacToe(current, index))}
           >
-            {cell}
+            {cell && <TicMark mark={cell} />}
           </button>
         ))}
       </div>
@@ -140,19 +179,20 @@ function DraughtsGame() {
         ? "You won!"
         : "The computer won."
     : humanTurn
-      ? "Your turn (light). Tap a piece, then a square."
+      ? selected
+        ? "Now tap a highlighted square."
+        : "Your turn. Tap a light piece to move it."
       : "The computer is thinking…";
   return (
     <section className="mg-game" aria-label="Draughts">
-      <p className="mg-status" role="status">
+      <p className={`mg-status ${state.winner === "light" ? "is-win" : ""}`} role="status">
         {status}
       </p>
-      <div className="mg-draughts" role="grid" aria-label="Draughts board">
+      <div className="mg-board mg-draughts" role="group" aria-label="Draughts board">
         {state.board.map((rowCells, row) =>
           rowCells.map((piece, col) => {
             const dark = (row + col) % 2 === 1;
-            const targets =
-              selected && selected[0] === row && selected[1] === col ? targetsFor(row, col) : [];
+            const isSelected = selected?.[0] === row && selected?.[1] === col;
             const isTarget = selected
               ? legal.some(
                   (move) =>
@@ -167,9 +207,7 @@ function DraughtsGame() {
               <button
                 key={`${row}-${col}`}
                 type="button"
-                className={`mg-square ${dark ? "is-dark" : "is-light"} ${
-                  selected?.[0] === row && selected?.[1] === col ? "is-selected" : ""
-                } ${isTarget ? "is-target" : ""}`}
+                className={`mg-square ${dark ? "is-dark" : "is-light"} ${isSelected ? "is-selected" : ""} ${isTarget ? "is-target" : ""}`}
                 aria-label={`Row ${row + 1}, column ${col + 1}${piece ? `, ${piece.side}${piece.king ? " king" : ""}` : ""}`}
                 disabled={!dark || (!movable && !isTarget)}
                 onClick={() => {
@@ -187,7 +225,7 @@ function DraughtsGame() {
                     if (move) choose(move);
                     return;
                   }
-                  setSelected(targets.length ? [row, col] : null);
+                  setSelected(targetsFor(row, col).length ? [row, col] : null);
                 }}
               >
                 {piece && (
@@ -195,9 +233,10 @@ function DraughtsGame() {
                     className={`mg-piece ${piece.side} ${piece.king ? "is-king" : ""}`}
                     aria-hidden="true"
                   >
-                    {piece.king ? "♛" : ""}
+                    {piece.king && <Crown />}
                   </span>
                 )}
+                {isTarget && !piece && <span className="mg-dot" aria-hidden="true" />}
               </button>
             );
           }),
@@ -210,8 +249,10 @@ function DraughtsGame() {
 
 function LudoGame() {
   const [state, setState] = useState<LudoState>(() => newLudo(2));
+  const [rolls, setRolls] = useState(0);
   const humanTurn = state.turn === 0 && state.winner === null;
   useComputerTurn(!humanTurn && state.winner === null, [state], () => {
+    setRolls((count) => count + 1);
     setState((current) => {
       if (current.dice === null) return rollLudo(current, 1 + Math.floor(Math.random() * 6));
       const token = bestLudoToken(current);
@@ -220,7 +261,18 @@ function LudoGame() {
   });
   const options = state.dice !== null && humanTurn ? legalTokenMoves(state, state.dice) : [];
   const describe = (progress: number) =>
-    progress === BASE ? "in base" : progress === FINISHED ? "home" : `${progress + 1} of 58 steps`;
+    progress === BASE
+      ? "In base. Needs a six."
+      : progress === FINISHED
+        ? "Home."
+        : `${progress + 1} of ${LUDO_TRACK_LENGTH} steps`;
+  const percent = (progress: number) =>
+    progress === BASE
+      ? 0
+      : progress === FINISHED
+        ? 100
+        : ((progress + 1) / LUDO_TRACK_LENGTH) * 100;
+  const rivalHome = (state.tokens[1] ?? []).filter((progress) => progress === FINISHED).length;
   const status =
     state.winner === 0
       ? "You won!"
@@ -229,36 +281,54 @@ function LudoGame() {
         : humanTurn
           ? state.dice === null
             ? "Your turn. Roll the dice."
-            : `You rolled ${state.dice}. Choose a token.`
+            : `You rolled ${state.dice}. Choose a token to move.`
           : "The computer is playing…";
   return (
     <section className="mg-game" aria-label="Ludo">
-      <p className="mg-status" role="status">
+      <p className={`mg-status ${state.winner === 0 ? "is-win" : ""}`} role="status">
         {status}
       </p>
-      <div className="mg-ludo-tokens">
-        {(state.tokens[0] ?? []).map((progress, token) => (
-          <button
-            key={token}
-            type="button"
-            className="mg-token"
-            disabled={!options.includes(token)}
-            onClick={() => setState((current) => moveLudoToken(current, token))}
+      <div className="mg-ludo-dice">
+        <Die key={rolls} value={state.dice} />
+        {humanTurn && state.dice === null && (
+          <Button
+            onClick={() => {
+              setRolls((count) => count + 1);
+              setState((current) => rollLudo(current, 1 + Math.floor(Math.random() * 6)));
+            }}
           >
-            <strong>Token {token + 1}</strong>
-            <small>{describe(progress)}</small>
-          </button>
-        ))}
+            Roll the dice
+          </Button>
+        )}
       </div>
-      {humanTurn && state.dice === null && (
-        <Button
-          onClick={() =>
-            setState((current) => rollLudo(current, 1 + Math.floor(Math.random() * 6)))
-          }
-        >
-          Roll the dice
-        </Button>
-      )}
+      <ul className="mg-ludo-tokens">
+        {(state.tokens[0] ?? []).map((progress, token) => {
+          const playable = options.includes(token);
+          return (
+            <li key={token}>
+              <button
+                type="button"
+                className={`mg-token ${playable ? "is-playable" : ""}`}
+                disabled={!playable}
+                style={{ "--token": LUDO_TOKEN_COLORS[token % 4] } as CSSProperties}
+                onClick={() => setState((current) => moveLudoToken(current, token))}
+              >
+                <span className="mg-token-disc" aria-hidden="true" />
+                <span className="mg-token-body">
+                  <strong>Token {token + 1}</strong>
+                  <span className="mg-track" aria-hidden="true">
+                    <span style={{ width: `${percent(progress)}%` }} />
+                  </span>
+                  <small>{describe(progress)}</small>
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="mg-rival">
+        Computer: {rivalHome} of {(state.tokens[1] ?? []).length} tokens home.
+      </p>
       {state.winner !== null && <Button onClick={() => setState(newLudo(2))}>Play again</Button>}
     </section>
   );
@@ -276,6 +346,7 @@ function WhotGame() {
     });
   });
   const hand = state.hands[0] ?? [];
+  const rival = state.hands[1] ?? [];
   const playable = humanTurn
     ? new Set(playableCards(state).map((card) => card.id))
     : new Set<string>();
@@ -288,53 +359,81 @@ function WhotGame() {
         : humanTurn
           ? state.pendingDraw > 0
             ? `Penalty: defend with a ${state.pendingRank} or draw ${state.pendingDraw}.`
-            : `Your turn. The shape is ${state.shape}.`
+            : `Your turn. Play a card in shape ${SHAPE_LABELS[state.shape].toLowerCase()} or matching number.`
           : "The computer is playing…";
   return (
     <section className="mg-game" aria-label="Whot">
-      <p className="mg-status" role="status">
+      <p className={`mg-status ${state.winner === 0 ? "is-win" : ""}`} role="status">
         {status}
       </p>
-      <div className="mg-whot-top">
-        <span className="mg-card-face">
-          {top ? (top.rank === 20 ? "Whot" : `${top.rank} ${top.shape ?? ""}`) : "—"}
-        </span>
-        <small>
-          Computer holds {state.hands[1]?.length ?? 0} cards
-          {state.pendingDraw > 0 ? ` · penalty ${state.pendingDraw}` : ""}
-        </small>
+      <div className="mg-whot-table">
+        <div className="mg-pile">
+          <CardBack />
+          <small>{state.stock.length} left</small>
+        </div>
+        <div className="mg-discard">
+          {top && (
+            <span key={top.id} className="mg-deal">
+              <CardFace rank={top.rank} shape={top.shape} size="lg" />
+            </span>
+          )}
+          <small className="mg-shape-now">
+            <ShapeGlyph shape={state.shape} size={14} /> {SHAPE_LABELS[state.shape]}
+          </small>
+        </div>
       </div>
-      <div className="mg-hand" aria-label="Your hand">
-        {hand.map((card) => (
-          <button
-            key={card.id}
-            type="button"
-            className="mg-card"
-            disabled={!playable.has(card.id)}
-            onClick={() => {
-              if (card.rank === 20) setPendingWhot(card.id);
-              else setState((current) => playWhot(current, card.id));
-            }}
-          >
-            {card.rank === 20 ? "Whot" : `${card.rank}`}
-            <small>{card.shape ?? ""}</small>
-          </button>
+      <div className="mg-opponent" aria-label={`Computer holds ${rival.length} cards`}>
+        {rival.slice(0, 8).map((card, index) => (
+          <span key={card.id} className="mg-opp-card" style={{ "--i": index } as CSSProperties}>
+            <CardBack size="sm" />
+          </span>
         ))}
+        <small>Computer · {rival.length} cards</small>
+      </div>
+      {state.pendingDraw > 0 && <p className="mg-penalty">Penalty running: {state.pendingDraw}</p>}
+      <div className="mg-hand" role="group" aria-label="Your hand">
+        {hand.map((card, index) => {
+          const canPlay = playable.has(card.id);
+          return (
+            <button
+              key={card.id}
+              type="button"
+              className={`mg-hand-card ${canPlay ? "is-playable" : ""}`}
+              style={{ "--i": index } as CSSProperties}
+              disabled={!canPlay}
+              aria-label={
+                card.rank === 20
+                  ? "Whot card" + (canPlay ? "" : ", not playable")
+                  : `${card.rank} ${card.shape}${canPlay ? "" : ", not playable"}`
+              }
+              onClick={() => {
+                if (card.rank === 20) setPendingWhot(card.id);
+                else setState((current) => playWhot(current, card.id));
+              }}
+            >
+              <CardFace rank={card.rank} shape={card.shape} size="md" />
+            </button>
+          );
+        })}
       </div>
       {pendingWhot && (
         <div className="mg-shape-pick" role="group" aria-label="Choose a shape">
-          {SHAPES.map((shape: Shape) => (
-            <button
-              key={shape}
-              type="button"
-              onClick={() => {
-                setState((current) => playWhot(current, pendingWhot, shape));
-                setPendingWhot(null);
-              }}
-            >
-              {shape}
-            </button>
-          ))}
+          <p>Choose the shape to call:</p>
+          <div className="mg-shape-options">
+            {SHAPES.map((shape) => (
+              <button
+                key={shape}
+                type="button"
+                onClick={() => {
+                  setState((current) => playWhot(current, pendingWhot, shape));
+                  setPendingWhot(null);
+                }}
+              >
+                <ShapeGlyph shape={shape} size={26} />
+                <span>{SHAPE_LABELS[shape]}</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
       {humanTurn && playable.size === 0 && (
@@ -355,14 +454,14 @@ const BOARDS: Record<GameId, ComponentType> = {
   whot: WhotGame,
 };
 
-/** Games hub: four solo games against the computer. Stake tables come later. */
+/** Games hub: solo games against the computer, plus stake tables against another player. */
 export function GamesApp() {
   const [active, setActive] = useState<GameId | null>(null);
   if (active) {
     const Board = BOARDS[active];
     const meta = GAMES.find((game) => game.id === active);
     return (
-      <div className="mg-app" aria-label={meta?.name ?? "Game"}>
+      <div className={`mg-app mg-theme-${active}`} aria-label={meta?.name ?? "Game"}>
         <header className="mg-head">
           <Button variant="plain" onClick={() => setActive(null)} aria-label="Back to games">
             <ArrowLeft size={18} />
@@ -378,12 +477,19 @@ export function GamesApp() {
       <header className="mg-hub-head">
         <h2>Games</h2>
         <p>Play the computer for fun, or stake cash against another player.</p>
+        <div className="mg-hub-art" aria-hidden="true">
+          <CardFace rank={5} shape="circle" size="sm" />
+          <CardFace rank={20} shape={null} size="sm" />
+          <CardFace rank={8} shape="star" size="sm" />
+        </div>
       </header>
       <ul className="mg-list">
         {GAMES.map(({ id, name, icon: Icon, blurb }) => (
           <li key={id}>
-            <button type="button" className="mg-tile" onClick={() => setActive(id)}>
-              <Icon size={22} aria-hidden="true" />
+            <button type="button" className={`mg-tile mg-tile-${id}`} onClick={() => setActive(id)}>
+              <span className="mg-tile-badge">
+                <Icon size={22} aria-hidden="true" />
+              </span>
               <span>
                 <strong>{name}</strong>
                 <small>{blurb}</small>

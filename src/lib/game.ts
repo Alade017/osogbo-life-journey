@@ -153,6 +153,17 @@ export const q = {
           }),
         ) as Json,
     }),
+  friendHouseVisit: (characterId: string) =>
+    queryOptions({
+      queryKey: ["friendHouseVisit", characterId],
+      retry: false,
+      queryFn: async () =>
+        unwrap(
+          await supabase.rpc("get_friend_house_for_visit", {
+            p_target_character_id: characterId,
+          }),
+        ) as Json,
+    }),
   npcs: () =>
     queryOptions({
       queryKey: ["npcs"],

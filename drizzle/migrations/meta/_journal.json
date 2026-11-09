@@ -591,6 +591,13 @@
       "breakpoints": true
     },
     {
+      "idx": 87,
+      "version": "7",
+      "when": 1792610201019,
+      "tag": "0082_0_house_placement_columns",
+      "breakpoints": true
+    },
+    {
       "idx": 84,
       "version": "7",
       "when": 1792696601018,
@@ -658,6 +665,13 @@
       "version": "7",
       "when": 1794463202000,
       "tag": "0092_house_walls",
+      "breakpoints": true
+    },
+    {
+      "idx": 94,
+      "version": "7",
+      "when": 1794463204000,
+      "tag": "0093_friend_house_visit",
       "breakpoints": true
     }
   ]

@@ -1,6 +1,6 @@
 alter table public.house_placements
-  add column x numeric not null default 50 check (x between 0 and 100),
-  add column y numeric not null default 50 check (y between 0 and 100);
+  add column if not exists x numeric not null default 50 check (x between 0 and 100),
+  add column if not exists y numeric not null default 50 check (y between 0 and 100);
 
 update public.house_placements placement
 set x = coalesce(

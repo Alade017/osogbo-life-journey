@@ -6831,6 +6831,10 @@ export type Database = {
         Args: { p_target_character_id: string };
         Returns: Json;
       };
+      get_friend_house_for_visit: {
+        Args: { p_target_character_id: string };
+        Returns: Json;
+      };
       get_friend_status_posts: { Args: never; Returns: Json };
       get_house_state: { Args: { p_player_id: string }; Returns: Json };
       get_login_streak: { Args: never; Returns: Json };

@@ -239,6 +239,9 @@ export function houseRearDoorCenter(houseTypeId: string, width: number): number 
   return FOUR_ROOM_HOME_TYPES.includes(houseTypeId) ? -width * 0.25 : width * 0.22;
 }
 
+/** Thickness of every wall in the room, in metres. Thin walls keep the rooms open to view. */
+export const HOUSE_WALL_THICKNESS = 0.12;
+
 export function houseWallSegments(
   width: number,
   depth: number,
@@ -247,7 +250,7 @@ export function houseWallSegments(
   rearDoorCenter: number = width * 0.22,
   closedFront = false,
 ): HouseWallSegment[] {
-  const wallThickness = 0.22;
+  const wallThickness = HOUSE_WALL_THICKNESS;
   const frontWallHeight = closedFront ? wallHeight : wallHeight * 0.48;
   const doorHeight = wallHeight * 0.82;
   const rearDoorLeft = rearDoorCenter - doorwayWidth / 2;
@@ -326,7 +329,7 @@ export function houseWallSegments(
  * bathroom (front-right). Walls are centred on the room, so the origin is the middle.
  */
 function studioPartitionSegments(width: number, depth: number, height: number): HouseWallSegment[] {
-  const thickness = 0.22;
+  const thickness = HOUSE_WALL_THICKNESS;
   const doorway = 1.1;
   const alongX = (id: string, z: number, x0: number, x1: number): HouseWallSegment => ({
     id,
@@ -410,7 +413,7 @@ export function houseStairs(houseTypeId: string, width: number, depth: number): 
  */
 export function upstairsPartitionSegments(width: number, depth: number): HouseWallSegment[] {
   const height = 1.9;
-  const thickness = 0.22;
+  const thickness = HOUSE_WALL_THICKNESS;
   const doorway = 1.1;
   const alongX = (id: string, z: number, x0: number, x1: number): HouseWallSegment => ({
     id,
