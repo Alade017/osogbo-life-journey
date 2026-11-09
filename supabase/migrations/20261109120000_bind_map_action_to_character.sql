@@ -33,6 +33,10 @@ declare
   hunger_gain integer;
 begin
   if p_user_id is null or p_request_id is null then raise exception 'INVALID_REQUEST'; end if;
+  -- Serialize against character creation: characters.user_id references profiles(id),
+  -- so FOR UPDATE conflicts with the FK key-share lock taken by a concurrent insert.
+  perform 1 from public.profiles where id = p_user_id for update;
+  if not found then raise exception 'NO_CHARACTER'; end if;
   select * into player from public.characters
     where user_id = p_user_id order by created_at desc limit 1 for update;
   if not found then raise exception 'NO_CHARACTER'; end if;
