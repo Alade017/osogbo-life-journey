@@ -249,3 +249,34 @@ export function stitchTownPedestrianRoutes(
   }
   return trails;
 }
+
+/**
+ * Coordinates pedestrian access to shared trail endpoints. Requests are queued
+ * in arrival order so only one pedestrian occupies a junction clearance zone.
+ */
+export class TownPedestrianJunctionScheduler {
+  private readonly owners = new Map<string, string>();
+  private readonly waiters = new Map<string, string[]>();
+
+  request(junctionId: string, pedestrianId: string): boolean {
+    const owner = this.owners.get(junctionId);
+    if (owner === pedestrianId) return true;
+    const queue = this.waiters.get(junctionId) ?? [];
+    if (!queue.includes(pedestrianId)) queue.push(pedestrianId);
+    this.waiters.set(junctionId, queue);
+    if (owner || queue[0] !== pedestrianId) return false;
+    this.owners.set(junctionId, pedestrianId);
+    queue.shift();
+    if (queue.length === 0) this.waiters.delete(junctionId);
+    return true;
+  }
+
+  release(junctionId: string, pedestrianId: string): void {
+    if (this.owners.get(junctionId) === pedestrianId) this.owners.delete(junctionId);
+    const queue = this.waiters.get(junctionId);
+    if (!queue) return;
+    const remaining = queue.filter((id) => id !== pedestrianId);
+    if (remaining.length > 0) this.waiters.set(junctionId, remaining);
+    else this.waiters.delete(junctionId);
+  }
+}
