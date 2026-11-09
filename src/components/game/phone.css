@@ -4422,3 +4422,54 @@
 .phone-app-body .calendar-app .calendar-event > button:disabled {
   opacity: 0.55;
 }
+
+/* Wardrobe in the phone: token colours instead of the hardcoded cream gradients, a tighter three-column bag,
+   and the item detail as a card under the bag. */
+.phone-app-body .pi-inventory .pi-stage {
+  background: radial-gradient(
+    circle at 50% 30%,
+    color-mix(in srgb, var(--primary) 10%, var(--card)) 0%,
+    var(--card) 75%
+  );
+}
+.phone-app-body .pi-inventory .pi-stage-foot {
+  background: color-mix(in srgb, var(--card) 80%, transparent);
+}
+.phone-app-body .pi-inventory .pi-filters button[aria-pressed="true"] {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.phone-app-body .pi-inventory .pi-bag {
+  gap: 8px;
+}
+.phone-app-body .pi-inventory .pi-tile {
+  padding: 10px 6px 12px;
+}
+.phone-app-body .pi-inventory .pi-tile-art {
+  background: color-mix(in srgb, var(--primary) 8%, var(--card));
+  height: 56px;
+  width: 56px;
+}
+.phone-app-body .pi-inventory .pi-tile[aria-pressed="true"] {
+  outline-color: var(--primary);
+}
+.phone-app-body .pi-inventory .pi-detail {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: var(--elevation-card);
+  margin-top: 4px;
+  padding: 14px;
+}
+.phone-app-body .pi-inventory .pi-detail h2 {
+  font-size: 1.05rem;
+  margin: 0;
+}
+.phone-app-body .pi-inventory .pi-detail-actions {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.phone-app-body .pi-inventory .pi-detail-actions > button:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
