@@ -300,19 +300,30 @@ export function neighborhoodNpcAvoidanceStep(
   if (distance <= 0 || maxStep <= 0) return current;
   const travel = Math.min(distance, maxStep);
   const direction = { x: dx / distance, y: dy / distance };
-  const candidates = [
-    { x: current.x + direction.x * travel, y: current.y + direction.y * travel },
-    { x: current.x - direction.y * travel, y: current.y + direction.x * travel },
-    { x: current.x + direction.y * travel, y: current.y - direction.x * travel },
+  const candidateAngles = [
+    0,
+    Math.PI / 6,
+    -Math.PI / 6,
+    Math.PI / 3,
+    -Math.PI / 3,
+    Math.PI / 2,
+    -Math.PI / 2,
+    Math.PI,
   ];
+  const candidates = candidateAngles.map((angle) => ({
+    x: current.x + (direction.x * Math.cos(angle) - direction.y * Math.sin(angle)) * travel,
+    y: current.y + (direction.x * Math.sin(angle) + direction.y * Math.cos(angle)) * travel,
+  }));
   const clear = candidates.filter((candidate) => {
-    const distance = Math.hypot(candidate.x - current.x, candidate.y - current.y);
+    const segmentX = candidate.x - current.x;
+    const segmentY = candidate.y - current.y;
+    const distance = Math.hypot(segmentX, segmentY);
     const samples = Math.max(1, Math.ceil(distance / Math.max(minimumSeparation / 2, 0.1)));
     for (let index = 0; index <= samples; index += 1) {
       const progress = index / samples;
       const point = {
-        x: current.x + (candidate.x - current.x) * progress,
-        y: current.y + (candidate.y - current.y) * progress,
+        x: current.x + segmentX * progress,
+        y: current.y + segmentY * progress,
       };
       if (
         (bounds &&
@@ -329,8 +340,8 @@ export function neighborhoodNpcAvoidanceStep(
       ) return false;
     }
     return blockers.every((blocker) => {
-      const segmentX = candidate.x - current.x;
-      const segmentY = candidate.y - current.y;
+      const initialDistance = Math.hypot(current.x - blocker.x, current.y - blocker.y);
+      const endpointDistance = Math.hypot(candidate.x - blocker.x, candidate.y - blocker.y);
       const segmentLengthSquared = segmentX * segmentX + segmentY * segmentY;
       const projection =
         segmentLengthSquared === 0
@@ -346,7 +357,11 @@ export function neighborhoodNpcAvoidanceStep(
             );
       const closestX = current.x + segmentX * projection;
       const closestY = current.y + segmentY * projection;
-      return Math.hypot(closestX - blocker.x, closestY - blocker.y) >= minimumSeparation;
+      const closestDistance = Math.hypot(closestX - blocker.x, closestY - blocker.y);
+      // If actors are already overlapping, allow only a step that separates them further.
+      return initialDistance < minimumSeparation
+        ? endpointDistance > initialDistance + 0.0001
+        : closestDistance >= minimumSeparation;
     });
   });
   if (clear.length === 0) return current;
