@@ -967,29 +967,36 @@ export function WorldStreetVendors({
               </mesh>
             ))}
 
-            {/* Storage crate with visible slatted sides. */}
+            {/* Open storage crate: a floor board, spaced side slats and corner uprights. */}
             <group position={[size * 0.48, size * 0.13, -size * 0.12]}>
-              <mesh castShadow>
-                <boxGeometry args={[size * 0.22, size * 0.26, size * 0.22]} />
+              <mesh position={[0, -size * 0.115, 0]} castShadow>
+                <boxGeometry args={[size * 0.22, size * 0.025, size * 0.22]} />
                 <WorldMaterial tone="timber" />
               </mesh>
               {[-1, 1].flatMap((side) =>
-                [0.28, 0.72].map((height) => (
+                [0, 1].map((level) => (
                   <mesh
-                    key={`crate-side-${side}-${height}`}
-                    position={[side * size * 0.113, (height - 0.5) * size * 0.22, 0]}
+                    key={`crate-side-${side}-${level}`}
+                    position={[side * size * 0.105, (level - 0.5) * size * 0.12, 0]}
+                    castShadow
                   >
-                    <boxGeometry args={[size * 0.012, size * 0.035, size * 0.2]} />
+                    <boxGeometry args={[size * 0.016, size * 0.045, size * 0.2]} />
                     <WorldMaterial tone="clay" />
                   </mesh>
                 )),
               )}
-              {[-1, 1].map((side) => (
-                <mesh key={`crate-end-${side}`} position={[0, 0, side * size * 0.113]}>
-                  <boxGeometry args={[size * 0.2, size * 0.035, size * 0.012]} />
-                  <WorldMaterial tone="clay" />
-                </mesh>
-              ))}
+              {[-1, 1].flatMap((side) =>
+                [0, 1].map((level) => (
+                  <mesh
+                    key={`crate-end-${side}-${level}`}
+                    position={[0, (level - 0.5) * size * 0.12, side * size * 0.105]}
+                    castShadow
+                  >
+                    <boxGeometry args={[size * 0.2, size * 0.045, size * 0.016]} />
+                    <WorldMaterial tone="timber" />
+                  </mesh>
+                )),
+              )}
             </group>
           </group>
         );
