@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { NEIGHBORHOOD_SCENE_BOUNDS } from "@/game/neighborhood-geometry";
 import { neighborhoodNpcDestinationPoint, neighborhoodNpcSpawnPoint } from "@/game/neighborhood-npc-layout";
 
 describe("neighborhood NPC spawn distribution", () => {
@@ -73,6 +74,44 @@ describe("neighborhood NPC spawn distribution", () => {
   it("returns null when every deterministic candidate is blocked", () => {
     const occupied = [{ left: -10_000, top: -10_000, width: 20_000, height: 20_000 }];
     expect(neighborhoodNpcSpawnPoint([{ x: 100, y: 100 }], 0, occupied)).toBeNull();
+  });
+
+  it("keeps spawn positions inside scene bounds", () => {
+    const point = neighborhoodNpcSpawnPoint([{ x: NEIGHBORHOOD_SCENE_BOUNDS.left, y: 0 }], 0);
+    expect(point).not.toBeNull();
+    expect(point!.x).toBeGreaterThanOrEqual(NEIGHBORHOOD_SCENE_BOUNDS.left + 21);
+    expect(point!.x).toBeLessThanOrEqual(
+      NEIGHBORHOOD_SCENE_BOUNDS.left + NEIGHBORHOOD_SCENE_BOUNDS.width - 21,
+    );
+  });
+
+  it("keeps destination positions inside scene bounds", () => {
+    const point = neighborhoodNpcDestinationPoint(
+      { x: NEIGHBORHOOD_SCENE_BOUNDS.left, y: 0 },
+      0,
+    );
+    expect(point).not.toBeNull();
+    expect(point!.x).toBeGreaterThanOrEqual(NEIGHBORHOOD_SCENE_BOUNDS.left + 21);
+    expect(point!.x).toBeLessThanOrEqual(
+      NEIGHBORHOOD_SCENE_BOUNDS.left + NEIGHBORHOOD_SCENE_BOUNDS.width - 21,
+    );
+  });
+
+  it("keeps spawn positions separated from already assigned NPCs", () => {
+    const point = neighborhoodNpcSpawnPoint([{ x: 100, y: 100 }], 0, [], [{ x: 100, y: 100 }]);
+    expect(point).not.toBeNull();
+    expect(Math.hypot(point!.x - 100, point!.y - 100)).toBeGreaterThanOrEqual(42);
+  });
+
+  it("keeps destination positions separated from other NPC destinations", () => {
+    const point = neighborhoodNpcDestinationPoint(
+      { x: 100, y: 100 },
+      0,
+      [],
+      [{ x: 100, y: 100 }],
+    );
+    expect(point).not.toBeNull();
+    expect(Math.hypot(point!.x - 100, point!.y - 100)).toBeGreaterThanOrEqual(42);
   });
 
   it("returns null when there are no anchors or the index is invalid", () => {
