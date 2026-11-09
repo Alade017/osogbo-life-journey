@@ -833,6 +833,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       !serverState?.house ||
       !character?.id ||
       character.id !== departure.characterId ||
+      character.current_location_id !== departure.fromLocationId ||
       !isInsideHome ||
       !gameTime.ready ||
       gameTime.busy
@@ -1224,6 +1225,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       busy: taskBusy || !gameTime.ready || gameTime.busy,
       offline: isOffline,
       activeCharacterId: character?.id,
+      activeLocationId: character?.current_location_id ?? undefined,
     });
     if (!departure) return;
     departureRan.current = true;
