@@ -116,3 +116,87 @@ export function neighborhoodNpcDestinationPoint(
   if (isAvailable(initial, occupied, occupiedPoints)) return initial;
   return clearNpcPoint(destination, catalogIndex, occupied, occupiedPoints, NPC_SLOT_SPACING);
 }
+
+const NPC_PATH_GRID = NEIGHBORHOOD_TILE_SIZE / 2;
+const PATH_DIRECTIONS = [
+  [1, 0], [0, 1], [-1, 0], [0, -1],
+  [1, 1], [-1, 1], [-1, -1], [1, -1],
+] as const;
+
+function gridKey(x: number, y: number): string {
+  return `${x}:${y}`;
+}
+
+/**
+ * Find a deterministic grid route around static footprints. Diagonal moves are
+ * rejected when either adjacent cardinal cell is blocked, preventing corner cuts.
+ */
+export function neighborhoodNpcPath(
+  start: NpcPoint,
+  destination: NpcPoint,
+  occupied: readonly GroundRect[] = [],
+): NpcPoint[] | null {
+  const bounds = NEIGHBORHOOD_SCENE_BOUNDS;
+  const toCell = (point: NpcPoint) => ({
+    x: Math.round((point.x - bounds.left) / NPC_PATH_GRID),
+    y: Math.round((point.y - bounds.top) / NPC_PATH_GRID),
+  });
+  const toPoint = (cell: { x: number; y: number }): NpcPoint => ({
+    x: bounds.left + cell.x * NPC_PATH_GRID,
+    y: bounds.top + cell.y * NPC_PATH_GRID,
+  });
+  const maxX = Math.floor(bounds.width / NPC_PATH_GRID);
+  const maxY = Math.floor(bounds.height / NPC_PATH_GRID);
+  const source = toCell(start);
+  const goal = toCell(destination);
+  const blocked = (x: number, y: number) => {
+    if (x < 0 || y < 0 || x > maxX || y > maxY) return true;
+    const point = toPoint({ x, y });
+    return overlapsFootprint(point, occupied);
+  };
+  if (blocked(source.x, source.y) || blocked(goal.x, goal.y)) return null;
+
+  const heuristic = (x: number, y: number) => Math.hypot(goal.x - x, goal.y - y);
+  const open = [{ ...source, cost: 0, score: heuristic(source.x, source.y) }];
+  const cameFrom = new Map<string, string>();
+  const costs = new Map<string, number>([[gridKey(source.x, source.y), 0]]);
+  const cells = new Map<string, { x: number; y: number }>([
+    [gridKey(source.x, source.y), source],
+  ]);
+  const closed = new Set<string>();
+
+  while (open.length) {
+    open.sort((a, b) => a.score - b.score || a.y - b.y || a.x - b.x);
+    const current = open.shift()!;
+    const currentKey = gridKey(current.x, current.y);
+    if (closed.has(currentKey)) continue;
+    if (current.x === goal.x && current.y === goal.y) {
+      const route: NpcPoint[] = [destination];
+      let key = currentKey;
+      while (cameFrom.has(key)) {
+        const cell = cells.get(key)!;
+        route.push(toPoint(cell));
+        key = cameFrom.get(key)!;
+      }
+      route.push(start);
+      route.reverse();
+      return route.slice(1);
+    }
+    closed.add(currentKey);
+
+    for (const [dx, dy] of PATH_DIRECTIONS) {
+      const x = current.x + dx;
+      const y = current.y + dy;
+      const key = gridKey(x, y);
+      if (closed.has(key) || blocked(x, y)) continue;
+      if (dx !== 0 && dy !== 0 && (blocked(current.x + dx, current.y) || blocked(current.x, current.y + dy))) continue;
+      const nextCost = current.cost + (dx !== 0 && dy !== 0 ? Math.SQRT2 : 1);
+      if (nextCost >= (costs.get(key) ?? Number.POSITIVE_INFINITY)) continue;
+      costs.set(key, nextCost);
+      cameFrom.set(key, currentKey);
+      cells.set(key, { x, y });
+      open.push({ x, y, cost: nextCost, score: nextCost + heuristic(x, y) });
+    }
+  }
+  return null;
+}
