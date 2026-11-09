@@ -952,7 +952,7 @@ export function R3FTownSurface(props: Props) {
           gesture.current = { x: event.clientX, y: event.clientY, moved: false };
         }}
         onPointerMoveCapture={(event) => {
-          if (Math.hypot(event.clientX - gesture.current.x, event.clientY - gesture.current.y) > 10)
+          if (Math.hypot(event.clientX - gesture.current.x, event.clientY - gesture.current.y) > MAP_DRAG_THRESHOLD_PX)
             gesture.current.moved = true;
         }}
         onPointerCancelCapture={() => {
