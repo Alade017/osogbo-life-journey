@@ -6,7 +6,6 @@ import { WorldMaterial } from "@/components/3d/WorldScene";
 import type { TownMobilityRoute } from "@/game/town-mobility";
 
 export interface MovingPedestrians3DProps {
-  cellSize: number;
   paths: readonly TownMobilityRoute[];
 }
 
