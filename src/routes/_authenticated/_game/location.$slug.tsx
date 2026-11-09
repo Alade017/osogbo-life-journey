@@ -134,7 +134,11 @@ function LocationPage() {
       ),
   });
   const travel = useGameAction(rpc.travelToLocation, {
-    onSuccess: (r) => {
+    onSuccess: (r, variables) => {
+      const activeCharacterId = queryClient.getQueryData<{ id?: string }>(
+        q.character().queryKey,
+      )?.id;
+      if (activeCharacterId !== variables.characterId) return;
       dispatchTravel({ type: "arrive", estimatedMinutes: r.travel_minutes });
       const gameTime = r.game_time;
       if (gameTime) {
@@ -233,6 +237,10 @@ function LocationPage() {
       travelState.destinationId !== loc.id
     )
       return;
+    if (!character?.id) {
+      toast.error("Your active character could not be confirmed. Refresh and try again.");
+      return;
+    }
     const validationError = validateTripRequest({
       destinationId: loc.id,
       currentLocationId: character?.current_location_id ?? null,
@@ -264,7 +272,7 @@ function LocationPage() {
     travelStartTimer.current = window.setTimeout(
       () => {
         travelStartTimer.current = null;
-        travel.mutate({ locationId: loc.id, mode: travelState.mode });
+        travel.mutate({ locationId: loc.id, mode: travelState.mode, characterId: character.id });
       },
       travelAnimationDurationMs(travelState.estimatedMinutes ?? 1),
     );
