@@ -134,6 +134,7 @@ export async function handleNeighborhoodPlaceActionRequest(request: Request) {
         .select("id,current_location_id,is_adult")
         .eq("user_id", userId)
         .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
         .limit(1)
         .maybeSingle();
       if (error) throw new Error("INTERNAL_ERROR");
