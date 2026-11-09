@@ -39,7 +39,7 @@ import { MovingPedestrians3D } from "./MovingPedestrians3D";
 import { FunctionalStreetLights3D } from "./FunctionalStreetLights3D";
 import { RoadsideInfrastructure3D } from "./RoadsideInfrastructure3D";
 import { isMapTargetSelectionAllowed } from "@/game/map-gesture";
-import { deriveTownMobilityRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells } from "@/game/town-mobility";
+import { deriveTownMobilityRoutes, deriveTownPedestrianCornerRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells } from "@/game/town-mobility";
 
 type Props = PhaserMapData &
   PhaserMapCallbacks & {
@@ -1120,7 +1120,10 @@ export function R3FTownSurface(props: Props) {
     wasteBins.forEach(([x, z]) => reserveWorldPosition(x, z));
     roadsideInfrastructure.poles.forEach(([x, z]) => reserveWorldPosition(x, z));
 
-    return deriveTownPedestrianRoutes(town.grid.rows, cell, blockedCells);
+    return [
+      ...deriveTownPedestrianRoutes(town.grid.rows, cell, blockedCells),
+      ...deriveTownPedestrianCornerRoutes(town.grid.rows, cell, blockedCells),
+    ];
   }, [
     streetLights,
     trafficLights,
