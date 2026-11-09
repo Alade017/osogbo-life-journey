@@ -181,10 +181,6 @@ function NeighborhoodNpcActor({
       waypointIndex.current = 0;
       blockedDuration.current = 0;
       arrivedTarget.current = null;
-    } else {
-      // Equivalent routes may be recreated by simulation renders; accept the
-      // latest reference without resetting the actor's waypoint progress.
-      routeWaypoints.current = waypoints;
     }
   }, [
     occupiedFootprints,
