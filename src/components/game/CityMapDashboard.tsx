@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { requestDepartureFromHome } from "@/lib/home-departure";
+import { clearDepartureFromHome, requestDepartureFromHome } from "@/lib/home-departure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarDays, CloudOff, MapPinned, Smile, Compass, Lock, X } from "lucide-react";
 import {
@@ -345,8 +345,12 @@ export function CityMapDashboard({
     setTravelError(null);
     if (character.data?.inside_home_property_id) {
       // Leaving a house plays the door first; the house screen runs the trip alongside it.
-      requestDepartureFromHome({ locationId: selectedDestination.id, mode });
-      void navigate({ to: "/house" }).finally(() => {
+      const departure = { locationId: selectedDestination.id, mode };
+      requestDepartureFromHome(departure);
+      void navigate({ to: "/house" }).catch(() => {
+        clearDepartureFromHome(departure);
+        setTravelError("Could not open your home to begin the trip. Please try again.");
+      }).finally(() => {
         travelSubmitLock.current = false;
       });
       return;
