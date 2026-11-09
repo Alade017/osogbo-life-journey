@@ -90,8 +90,8 @@ describe("shared HUD database acceptance", () => {
       )
       .sort()) {
       try {
-if (file === "0083_studio_room_layout.sql") {
-          // This Drizzle migration depends on x/y columns introduced by the Supabase placement migration.
+        if (file === "0083_studio_room_layout") {
+          // The studio layout migration depends on x/y columns from this Supabase migration.
           await db.exec(
             readFileSync(
               "supabase/migrations/20261102223137_freeform_house_furniture_placement.sql",
@@ -99,7 +99,7 @@ if (file === "0083_studio_room_layout.sql") {
             ),
           );
         }
-                await db.exec(readFileSync(`drizzle/migrations/${file}`, "utf8"));
+          await db.exec(readFileSync(`drizzle/migrations/${file}`, "utf8"));
       } catch (error) {
         throw new Error(`Migration ${file} failed: ${String(error)}`);
       }
