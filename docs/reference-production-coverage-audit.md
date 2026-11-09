@@ -110,3 +110,12 @@ The R3F placement pass has now moved traffic-signal pole origins from an offset 
 The selected signal cells are also reserved from subsequent bus-stop, road-sign, roadside-shop, street-vendor, waste-bin and utility-pole placement passes. This avoids solving vehicle clearance at the cost of introducing a new prop overlap. The road grid, traffic loop points, vehicle dimensions, vehicle speed and gameplay authority are unchanged.
 
 This is a source-level placement correction only. Confirm the actual signal pole position, sidewalk relationship, visibility and danfo corner clearance in the live R3F scene during the pending desktop and 375px mobile visual QA.
+
+
+## Parked-car versus moving-traffic clearance
+
+The two authored parked-car cells are on horizontal road tiles. Their renderer previously placed each car directly at the tile centre, overlapping the moving traffic loop's centreline. The placement now evaluates small offsets perpendicular to the local road (and all four directions at a junction), measures distance to the existing closed traffic-route segments, and chooses the candidate with the greatest minimum route clearance. Vertically aligned parking cells also rotate the car model to follow the road.
+
+The final offset is 0.18 cell (0.36 world units). This keeps the outer wheel envelope within the 2-unit road tile while moving the parked vehicle away from the route. The car catalogue, count, mesh dimensions, route geometry and traffic speeds are unchanged.
+
+This remains source-level verification. The live scene must still confirm that the parked cars read as roadside parking, that wheels do not visually touch curbs, and that moving traffic clears them at both intersections and straight approaches.
