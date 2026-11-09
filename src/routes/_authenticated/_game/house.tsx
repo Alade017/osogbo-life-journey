@@ -702,7 +702,17 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       ]);
       toast.success("Rent paid. Your next due date is updated.");
     },
-    onError: (error: Error) => toast.error(error.message),
+    onError: async (error: Error) => {
+      toast.error(error.message);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["canonicalHousingHome"] }),
+        queryClient.invalidateQueries({ queryKey: ["authoritativeHouseState"] }),
+        queryClient.invalidateQueries({ queryKey: ["housingMapProperties"] }),
+        ...(character?.id
+          ? [queryClient.invalidateQueries({ queryKey: housingReliefQueryKey(character.id) })]
+          : []),
+      ]);
+    },
   });
 
   const homePresence = useMutation({
