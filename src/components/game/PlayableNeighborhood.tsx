@@ -570,6 +570,9 @@ export function PlayableNeighborhood() {
     setPendingTargetId(null);
     setHomeBound(false);
     setDirections(new Set());
+    // The movement loop reads the ref, not React state, so keep both in sync
+    // when the player taps an open point on the ground.
+    groundTargetRef.current = point;
     setGroundTarget(point);
   };
 
