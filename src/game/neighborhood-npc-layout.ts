@@ -120,6 +120,8 @@ export function neighborhoodNpcDestinationPoint(
   return clearNpcPoint(destination, catalogIndex, occupied, occupiedPoints, NPC_SLOT_SPACING, bounds);
 }
 
+export const NEIGHBORHOOD_NPC_ACTOR_SEPARATION = 0.85;
+
 const NPC_PATH_GRID = NEIGHBORHOOD_TILE_SIZE / 2;
 const PATH_DIRECTIONS = [
   [1, 0], [0, 1], [-1, 0], [0, -1],
@@ -288,7 +290,7 @@ export function neighborhoodNpcAvoidanceStep(
   waypoint: NpcPoint,
   blockers: readonly NpcPoint[],
   maxStep: number,
-  minimumSeparation = 0.85,
+  minimumSeparation = NEIGHBORHOOD_NPC_ACTOR_SEPARATION,
   occupied: readonly GroundRect[] = [],
   bounds?: GroundRect,
 ): NpcPoint {
