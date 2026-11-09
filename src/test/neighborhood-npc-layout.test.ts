@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { NEIGHBORHOOD_SCENE_BOUNDS } from "@/game/neighborhood-geometry";
-import { neighborhoodNpcAvoidanceBias, neighborhoodNpcAvoidanceStep, neighborhoodNpcDestinationPoint, neighborhoodNpcPath,
+import { neighborhoodNpcAvoidanceBias, neighborhoodNpcAvoidanceStep, neighborhoodNpcCrowdRecoveryPoint, neighborhoodNpcDestinationPoint, neighborhoodNpcPath,
   neighborhoodNpcPathWithFallback, neighborhoodNpcReplanDelay, neighborhoodNpcReservationPath, neighborhoodNpcSpawnPoint, neighborhoodNpcYieldPoint } from "@/game/neighborhood-npc-layout";
 
 describe("neighborhood NPC spawn distribution", () => {
@@ -330,6 +330,38 @@ describe("neighborhood NPC spawn distribution", () => {
 
 });
 
+
+
+describe("NPC crowd deadlock recovery", () => {
+  it("finds a geometry-safe escape point that improves crowd clearance", () => {
+    const current = { x: 0, y: 0 };
+    const blockers = [{ x: 0.4, y: 0 }, { x: -0.2, y: 0.1 }, { x: 0.1, y: -0.3 }];
+    const escape = neighborhoodNpcCrowdRecoveryPoint(current, blockers);
+    expect(escape).not.toBeNull();
+    expect(Math.hypot(escape!.x - current.x, escape!.y - current.y)).toBeGreaterThan(0);
+    const before = Math.min(...blockers.map((point) => Math.hypot(current.x - point.x, current.y - point.y)));
+    const after = Math.min(...blockers.map((point) => Math.hypot(escape!.x - point.x, escape!.y - point.y)));
+    expect(after).toBeGreaterThan(before);
+  });
+
+  it("does not escape through occupied building footprints or beyond scene bounds", () => {
+    const current = { x: 0, y: 0 };
+    const blockers = [{ x: 0.3, y: 0 }, { x: -0.2, y: 0.1 }];
+    const bounds = { left: -4, top: -4, width: 8, height: 8 };
+    const occupied = [{ left: -4, top: -4, width: 8, height: 8 }];
+    expect(neighborhoodNpcCrowdRecoveryPoint(current, blockers, occupied, bounds)).toBeNull();
+  });
+
+  it("returns null when no live crowd is blocking the actor", () => {
+    expect(neighborhoodNpcCrowdRecoveryPoint({ x: 0, y: 0 }, [])).toBeNull();
+  });
+
+  it("returns a stable escape point for the same inputs and bias", () => {
+    const args = [{ x: 0, y: 0 }, [{ x: 0.4, y: 0 }, { x: -0.2, y: 0.1 }]] as const;
+    expect(neighborhoodNpcCrowdRecoveryPoint(...args, [], undefined, 0.85, -1))
+      .toEqual(neighborhoodNpcCrowdRecoveryPoint(...args, [], undefined, 0.85, -1));
+  });
+});
 
 describe("opposing NPC traffic", () => {
   const current = { x: 0, y: 0 };
