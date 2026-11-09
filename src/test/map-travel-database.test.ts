@@ -256,7 +256,8 @@ describe("map travel database actions", () => {
       [walletId,newestWalletId],
     );
     expect(balances.rows.find((row) => row.character_id === newestCharacterId)?.balance).toBe(3800);
-    expect(balances.rows.find((row) => row.character_id === characterId)?.balance).toBe(3500);
+    // The stale character must not be charged; only the newest character pays for the trip.
+    expect(balances.rows.find((row) => row.character_id === characterId)?.balance).toBe(4700);
   });
 
   it("returns UNKNOWN_LANDMARK for an old landmark id", async () => {
