@@ -23,7 +23,8 @@ describe("map travel database actions", () => {
       );
       create table public.characters(
         id uuid primary key, user_id uuid not null references public.profiles(id),
-        age integer not null, current_location_id uuid references public.locations(id)
+        age integer not null, current_location_id uuid references public.locations(id),
+        created_at timestamptz not null default now()
       );
       create table public.wallets(
         id uuid primary key, user_id uuid not null references public.profiles(id),
@@ -35,6 +36,17 @@ describe("map travel database actions", () => {
         wallet_id uuid not null, character_id uuid not null, amount bigint not null,
         kind text not null, category text not null, description text not null,
         metadata jsonb not null default '{}'::jsonb
+      );
+      create table public.osun_towns(id text primary key, name text not null, travel_enabled boolean not null default true);
+      create table public.osun_town_routes(
+        from_town_id text not null, to_town_id text not null, fare_minor bigint not null,
+        travel_minutes integer not null, primary key(from_town_id,to_town_id)
+      );
+      create table public.osun_town_travels(
+        id uuid primary key, user_id uuid not null, character_id uuid not null,
+        idempotency_key text not null, from_town_id text not null, to_town_id text not null,
+        fare_minor bigint not null, travel_minutes integer not null, departed_at timestamptz not null default now(),
+        arrival_at timestamptz not null, status text not null default 'travelling', response jsonb not null
       );
       create table public.activities(
         id uuid primary key default gen_random_uuid(), name text not null,
@@ -91,6 +103,7 @@ describe("map travel database actions", () => {
         values ('${walletId}','${userId}','${characterId}',5000);
     `);
     await db.exec(readFileSync("drizzle/migrations/0037_map_api_travel.sql", "utf8"));
+    await db.exec(readFileSync("supabase/migrations/20261109160000_bind_travel_to_canonical_character.sql", "utf8"));
   }, 60_000);
 
   afterAll(async () => {
@@ -139,6 +152,41 @@ describe("map travel database actions", () => {
     expect(Number(wallet.rows[0]?.balance)).toBe(4700);
     expect(trips.rows[0]?.count).toBe(1);
     expect(transactions.rows[0]?.count).toBe(1);
+  });
+
+  it("binds travel to the newest character when an account has multiple characters", async () => {
+    const newestCharacterId = "99999999-9999-4999-8999-999999999999";
+    const newestWalletId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    await db.query(
+      `insert into public.characters(id,user_id,age,current_location_id,created_at)
+       values($1,$2,30,(select id from public.locations where slug='city-centre'),now()+interval '1 minute')`,
+      [newestCharacterId, userId],
+    );
+    await db.query(
+      "insert into public.wallets(id,user_id,character_id,balance) values($1,$2,$3,5000)",
+      [newestWalletId,userId,newestCharacterId],
+    );
+    const result = await db.query<{ character_id: string }>(
+      `select character_id from public.map_travels
+       where user_id=$1 order by departed_at desc limit 1`,
+      [userId],
+    );
+    expect(result.rows[0]?.character_id).toBe(characterId);
+    await db.query(
+      "select public.map_start_travel($1,'oja-oba-market',$2)",
+      [userId,"newest-character-travel-0001"],
+    );
+    const trip = await db.query<{ character_id: string }>(
+      "select character_id from public.map_travels where idempotency_key=$1",
+      ["newest-character-travel-0001"],
+    );
+    expect(trip.rows[0]?.character_id).toBe(newestCharacterId);
+    const balances = await db.query<{ balance: number; character_id: string }>(
+      "select balance,character_id from public.wallets where id in ($1,$2) order by character_id",
+      [walletId,newestWalletId],
+    );
+    expect(balances.rows.find((row) => row.character_id === newestCharacterId)?.balance).toBe(4700);
+    expect(balances.rows.find((row) => row.character_id === characterId)?.balance).toBe(4700);
   });
 
   it("returns UNKNOWN_LANDMARK for an old landmark id", async () => {
