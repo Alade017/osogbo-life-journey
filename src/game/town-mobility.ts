@@ -181,3 +181,67 @@ export function deriveTownPedestrianCornerRoutes(
 
   return routes;
 }
+
+
+/**
+ * Joins straight sidewalk runs and corner connectors at shared endpoints.
+ * Every input segment is retained exactly once; branches become separate
+ * pedestrian trails rather than forcing walkers through a road or prop.
+ */
+export function stitchTownPedestrianRoutes(
+  routes: readonly TownMobilityRoute[],
+): TownMobilityRoute[] {
+  type Point = readonly [number, number];
+  type Edge = { id: number; a: Point; b: Point };
+  const keyOf = ([x, z]: Point) => `${x.toFixed(5)},${z.toFixed(5)}`;
+  const points = new Map<string, Point>();
+  const adjacency = new Map<string, Edge[]>();
+  const edges: Edge[] = [];
+
+  routes.forEach((route) => {
+    for (let index = 1; index < route.length; index += 1) {
+      const a = route[index - 1]!;
+      const b = route[index]!;
+      if (Math.hypot(b[0] - a[0], b[1] - a[1]) < 0.001) continue;
+      const edge = { id: edges.length, a, b };
+      edges.push(edge);
+      const aKey = keyOf(a);
+      const bKey = keyOf(b);
+      points.set(aKey, a);
+      points.set(bKey, b);
+      adjacency.set(aKey, [...(adjacency.get(aKey) ?? []), edge]);
+      adjacency.set(bKey, [...(adjacency.get(bKey) ?? []), edge]);
+    }
+  });
+
+  const used = new Set<number>();
+  const trails: TownMobilityRoute[] = [];
+  const walk = (startKey: string, firstEdge: Edge) => {
+    const path: Point[] = [points.get(startKey)!];
+    let currentKey = startKey;
+    let edge: Edge | undefined = firstEdge;
+    while (edge && !used.has(edge.id)) {
+      used.add(edge.id);
+      const currentPoint = points.get(currentKey)!;
+      const nextPoint = keyOf(edge.a) === currentKey ? edge.b : edge.a;
+      const nextKey = keyOf(nextPoint);
+      path.push(nextPoint);
+      currentKey = nextKey;
+      if ((adjacency.get(currentKey)?.length ?? 0) !== 2) break;
+      edge = adjacency.get(currentKey)?.find((candidate) => !used.has(candidate.id));
+    }
+    if (path.length >= 2) trails.push(path);
+  };
+
+  // Start at endpoints and junctions first, so branch points split into safe trails.
+  for (const [key, connected] of adjacency) {
+    if (connected.length === 2) continue;
+    for (const edge of connected) if (!used.has(edge.id)) walk(key, edge);
+  }
+  // Consume closed loops and any remaining degree-two components.
+  for (const edge of edges) {
+    if (used.has(edge.id)) continue;
+    walk(keyOf(edge.a), edge);
+  }
+  return trails;
+}
