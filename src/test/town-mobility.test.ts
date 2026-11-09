@@ -77,39 +77,23 @@ describe("town sidewalk cells", () => {
 });
 
 describe("pedestrian sidewalk corner routes", () => {
-  it("uses the rendered diagonal sidewalk tile to connect perpendicular sidewalk strips", () => {
+  it("turns through the diagonal sidewalk patch between perpendicular road edges", () => {
     const routes = deriveTownPedestrianCornerRoutes(["rrr", "rgr", "rrr"], 2);
 
     expect(routes).toEqual([
-      [
-        [-1, -0.28],
-        [0.28, -0.28],
-        [0.28, 1],
-      ],
-      [
-        [1, -0.28],
-        [1.72, -0.28],
-        [1.72, 1],
-      ],
-      [
-        [-1, 0.28],
-        [-0.28, 0.28],
-        [-0.28, 1],
-      ],
-      [
-        [1, 0.28],
-        [1.72, 0.28],
-        [1.72, 1],
-      ],
+      [[-1, -0.72], [-0.72, -0.72], [-0.72, -1]],
+      [[1, -0.72], [0.72, -0.72], [0.72, -1]],
+      [[-1, 0.72], [-0.72, 0.72], [-0.72, 1]],
+      [[1, 0.72], [0.72, 0.72], [0.72, 1]],
     ]);
   });
 
   it("does not create a corner connector when its diagonal tile is blocked", () => {
-    expect(deriveTownPedestrianCornerRoutes(["rrr", "rgr", "rrr"], 2, [[2, 2]])).toEqual([]);
+    expect(deriveTownPedestrianCornerRoutes(["rrr", "rgr", "rrr"], 2, [[1, 1]])).toEqual([]);
   });
 
-  it("does not invent corner connectors where the authored town has no rendered corner patches", () => {
-    expect(deriveTownPedestrianCornerRoutes(town.grid.rows, town.grid.cellSize)).toHaveLength(38);
+  it("finds all eligible outer corners in the authored town grid", () => {
+    expect(deriveTownPedestrianCornerRoutes(town.grid.rows, town.grid.cellSize)).toHaveLength(48);
   });
 });
 
