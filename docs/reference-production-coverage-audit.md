@@ -47,6 +47,12 @@ A follow-up read-only pass compared the existing housing catalogue migrations wi
 - The player-placed furniture GLB contract remains `public/models/furniture/<art_key>.glb`; the room renderer's procedural fallback remains available for missing models.
 - The reference image set is inspiration only. No supplied image has been copied into the runtime bundle or treated as a licensed production model.
 
+## Service, job and vehicle identifier cross-check
+
+- The existing job seed includes `barber_assistant_osogbo` at the Oke-Fia location, and the world data includes the `oke-fia-salon` service destination. This supports the existence of the barber-service context, but the audited inventory/catalogue sources do not expose dedicated clipper, comb, chair or barber-tool item IDs. Do not add interactive salon props or inventory entries until their data contract exists.
+- The existing `mechanic_assistant` job is assigned to the Old Garage workshop and uses the construction job category. The audited inventory migration does not establish dedicated construction-tool item IDs. Keep the mechanic role and existing workshop dressing; do not imply tool inventory or new repair interactions.
+- `MovingTraffic3D.tsx` already cycles through four traffic types: danfo, keke, okada and taxi. The source had geometry for the first three but no taxi branch, leaving every fourth configured vehicle invisible. A compact taxi renderer has now been added using the existing traffic configuration and route data. This is a renderer-only correction; it does not change route generation, traffic authority or gameplay.
+
 ## Priority order
 
 1. **Visual QA before more asset creation.** Inspect the current market and vendor dressing, food packaging, appliance models, clothing previews and all seven gym items in the actual R3F scene. Record clipping, z-fighting, transparent-material sorting, unreadable silhouettes and mobile performance.
