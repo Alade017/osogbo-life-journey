@@ -533,7 +533,7 @@ export function PlayableNeighborhood() {
   useEffect(() => {
     if (connectionState !== "connected") return;
     if (activePanel) {
-        roomRef.current?.send("move", { x: 0, y: 0 });
+      roomRef.current?.send("move", { x: 0, y: 0 });
       lastIntentRef.current = "0:0";
     }
     const interval = window.setInterval(() => {
