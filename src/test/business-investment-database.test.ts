@@ -41,6 +41,7 @@ describe("business and investment RPCs", () => {
               "utf8",
             ),
           );
+          await db.exec(readFileSync("drizzle/migrations/0079_free_house_placement.sql", "utf8"));
         }
       try {
         if (file === "0085_house_floors.sql") {
