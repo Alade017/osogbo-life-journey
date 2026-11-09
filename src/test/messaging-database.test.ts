@@ -35,7 +35,7 @@ beforeAll(async () => {
     create function realtime.broadcast_changes(text,text,text,text,text,anyelement,anyelement) returns void language plpgsql as $$begin return;end$$;
     grant usage on schema auth to authenticated;grant execute on function auth.uid() to authenticated;`);
   for (const file of readdirSync("drizzle/migrations")
-    .filter((f) => f.endsWith(".sql") && !f.startsWith("0075_") && !f.startsWith("0077_"))
+    .filter((f) => f.endsWith(".sql") && !f.startsWith("0075_") && !f.startsWith("0077_") && !f.startsWith("0079_"))
     .sort()) {
       if (file === "0083_studio_room_layout.sql") {
         // The studio layout migration depends on x/y columns from this Supabase migration.
