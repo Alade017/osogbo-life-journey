@@ -493,7 +493,7 @@ export const rpc = {
       await supabase.rpc("save_player_world_position_for_character", {
         p_world_x: args.worldX,
         p_world_y: args.worldY,
-        p_building_slug: args.buildingSlug ?? "",
+        p_building_slug: args.buildingSlug,
         p_expected_revision: args.expectedRevision,
         p_request_id: args.requestId,
         p_expected_character_id: args.characterId,
