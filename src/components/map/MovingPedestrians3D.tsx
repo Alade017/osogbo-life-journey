@@ -145,8 +145,13 @@ function PedestrianCharacter({
       const distanceToJunction = destinationIsEnd
         ? routeLength - routeDistance.current
         : routeDistance.current;
+      const distanceFromReservedJunction = activeJunction.current === npc.startJunctionId
+        ? routeDistance.current
+        : activeJunction.current === npc.endJunctionId
+          ? routeLength - routeDistance.current
+          : Number.POSITIVE_INFINITY;
 
-      if (activeJunction.current && distanceToJunction > clearanceRadius) {
+      if (activeJunction.current && distanceFromReservedJunction > clearanceRadius) {
         junctionScheduler.release(activeJunction.current, npc.id);
         activeJunction.current = null;
       }
