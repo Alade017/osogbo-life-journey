@@ -1,7 +1,7 @@
 -- Bind every party mutation to the character selected by the initiating UI.
--- The helper locks the auth.users row. Character inserts reference auth.users via
--- their user_id FK, so a concurrent character creation must finish before this
--- check or wait until the party operation commits. The legacy RPC then executes
+-- The helper locks the public.profiles row. characters.user_id references
+-- profiles(id), so a concurrent character insert must wait for this lock. The
+-- legacy RPC then executes
 -- in this same transaction and retains its existing validation/idempotency logic.
 
 create or replace function public._assert_party_action_character(p_expected_character_id uuid)
@@ -18,7 +18,7 @@ begin
     raise exception 'Sign in and create a character first';
   end if;
 
-  perform 1 from auth.users where id = v_user_id for update;
+  perform 1 from public.profiles where id = v_user_id for update;
   if not found then
     raise exception 'Sign in and create a character first';
   end if;
