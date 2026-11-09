@@ -88,3 +88,16 @@ A source-level review of `town-mobility.ts`, the authored `osogbo-town.json` roa
 - The current town grid does not justify changing the route algorithm: all authored roads used by this traffic loop builder form the expected complete rectangular network. The next correctness check is visual: confirm that long vehicle bodies remain inside the intersection footprint while rotating through 90-degree corners, and that the taxi/van silhouettes have sufficient clearance from each other and roadside props.
 
 **Decision:** no route-generation or road-data change was made in this pass. Rewriting the route builder or inventing additional road links would be speculative without an actual scene capture. Keep the six existing loops and verify corner sweep/overlap in the live R3F scene before increasing traffic density or vehicle dimensions. The existing no-SVG and no-database-change constraints remain unchanged.
+
+
+## Vehicle footprint versus road and roadside fixtures
+
+The current road cells are 2 world units wide. The traffic model's largest body footprint is the danfo at 0.72 units wide by 1.45 units long; taxi is 0.64 × 1.18, keke is 0.55 × 0.90, and okada's frame is 0.14 × 0.65. On straight sections, the 0.32-unit route inset leaves at least 0.32 units between the danfo body edge and the nominal road-cell edge (before wheel/mesh details). This is a reasonable source-level straight-road fit.
+
+The roadside audit found one tighter point:
+
+- Traffic-light poles are placed at a 0.38-cell diagonal offset from an intersection-cell centre (0.76 units on each axis at the current scale). The traffic route corner is inset by 0.32 units on each axis. Along a straight approach, the danfo's 0.36-unit half-width leaves only about 0.08 units between its nominal body edge and the pole centreline; subtracting the pole's half-width leaves roughly 0.035 units of geometric clearance. This is close enough that visual overlap or shadow contact is plausible at a junction.
+- Drains are placed beyond the road edge and curb offset, so they are not a direct straight-road vehicle obstruction. Utility poles are reserved on adjacent grass cells, not on road cells. Bus stops and roadside shops are likewise generated from reserved grass-side positions.
+- The route builder does not model a vehicle's swept rectangle through a 90-degree turn. The centreline is continuous, but the danfo's long body can sweep across a larger area than its centreline suggests.
+
+**Decision:** no traffic-light relocation, vehicle scaling or route offset change was made without a live scene inspection. The likely first visual checkpoint is the danfo passing the traffic-light pole at an intersection, followed by its 90-degree corner sweep. If the live capture confirms contact, move only the affected signal placement into a reserved roadside grass cell using the existing occupancy checks; do not shrink all vehicles or alter the road grid to compensate. Keep vehicle speed, route authority and gameplay unchanged.
