@@ -119,20 +119,12 @@ afterAll(async () => {
 });
 describe("party rewards SQL", () => {
   it("rejects an in-flight party dance when the active character changed", async () => {
-    const newerCharacter = (
-      await db.query<{ id: string }>(
-        `insert into public.characters(
-          user_id,name,gender,age,personality,current_location_id,created_at
-        ) values($1,'New active character','male',21,'ambitious',$2,now() + interval '1 day')
-        returning id`,
-        [users[0], venue],
-      )
-    ).rows[0]!.id;
+    const differentCharacterId = "77777777-7777-4777-8777-777777777777";
     await user(0);
     await expect(
       db.query(
         "select public.dance_with_npc_for_character($1,$2,$3)",
-        ["fixture-dancer", "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", chars[0]],
+        ["fixture-dancer", "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", differentCharacterId],
       ),
     ).rejects.toThrow("CHARACTER_CHANGED");
     const effects = await db.query<{ cooldowns: number; moods: number; receipts: number }>(
@@ -140,7 +132,7 @@ describe("party rewards SQL", () => {
         (select count(*)::integer from public.party_dance_cooldowns where character_id=$1) as cooldowns,
         (select count(*)::integer from public.party_mood where character_id=$1) as moods,
         (select count(*)::integer from public.economy_request_results where character_id=$1) as receipts`,
-      [newerCharacter],
+      [chars[0]],
     );
     expect(effects.rows[0]).toEqual({ cooldowns: 0, moods: 0, receipts: 0 });
   });
