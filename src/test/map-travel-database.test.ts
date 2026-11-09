@@ -47,6 +47,11 @@ describe("map travel database actions", () => {
         sort_order integer not null default 0, is_active boolean not null default true,
         primary key(landmark_id,id)
       );
+      create table public.map_place_action_receipts(
+        character_id uuid not null, request_id uuid not null, landmark_id text not null,
+        action_id text not null, response jsonb, created_at timestamptz not null default now(),
+        primary key(character_id,request_id)
+      );
       create table public.character_jobs(
         character_id uuid not null, job_id uuid not null, is_current boolean not null default false
       );
