@@ -560,6 +560,15 @@ export function PlayableNeighborhood() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [homeBound, nearbyObject]);
 
+  // A home can be removed or become unavailable while the player is walking
+  // toward it. Cancel that destination instead of attempting entry with stale data.
+  useEffect(() => {
+    if (!homeBound || (district?.personalHome && homeTypeId && homeObject)) return;
+    groundTargetRef.current = null;
+    setGroundTarget(null);
+    setHomeBound(false);
+  }, [homeBound, district?.personalHome, homeTypeId, homeObject]);
+
   useEffect(() => {
     npcActorPositions.current.clear();
     groundTargetRef.current = null;
