@@ -357,6 +357,13 @@ function studioPartitionSegments(width: number, depth: number, height: number): 
 }
 
 /** Home types that have the four-room plan: sitting room, bedroom, kitchen and dining, bathroom. */
+/** Room restyle: pale walls and warm wood-tone floor tiles, from the reference room images. */
+export const HOUSE_ROOM_STYLE = {
+  wall: "#cfd6e8",
+  floorLight: "#e8d6b5",
+  floorShade: "#d4bd97",
+} as const;
+
 export const FOUR_ROOM_HOME_TYPES: readonly string[] = [
   "studio-flat",
   "mini-flat",
