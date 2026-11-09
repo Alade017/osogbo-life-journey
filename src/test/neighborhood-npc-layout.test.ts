@@ -1,9 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { NEIGHBORHOOD_SCENE_BOUNDS } from "@/game/neighborhood-geometry";
-import { neighborhoodNpcAvoidanceStep, neighborhoodNpcDestinationPoint, neighborhoodNpcPath,
+import { neighborhoodNpcAvoidanceBias, neighborhoodNpcAvoidanceStep, neighborhoodNpcDestinationPoint, neighborhoodNpcPath,
   neighborhoodNpcPathWithFallback, neighborhoodNpcReplanDelay, neighborhoodNpcSpawnPoint } from "@/game/neighborhood-npc-layout";
 
 describe("neighborhood NPC spawn distribution", () => {
+  it("assigns stable opposite sidestep preferences to different NPC identities", () => {
+    expect(neighborhoodNpcAvoidanceBias("npc-alpha")).toBe(neighborhoodNpcAvoidanceBias("npc-alpha"));
+    expect([-1, 1]).toContain(neighborhoodNpcAvoidanceBias("npc-alpha"));
+    expect([-1, 1]).toContain(neighborhoodNpcAvoidanceBias("npc-beta"));
+  });
+
   it("assigns stable, staggered retry delays to NPC identities", () => {
     const first = neighborhoodNpcReplanDelay("npc-alpha");
     expect(first).toBe(neighborhoodNpcReplanDelay("npc-alpha"));
