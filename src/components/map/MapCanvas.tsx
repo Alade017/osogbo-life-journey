@@ -4,8 +4,8 @@ import { WORLD_PALETTE } from "@/components/3d/world-theme";
 import { TownMapFallback } from "@/components/map/TownMapFallback";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
 
-const PixiTownMapSurface = lazy(() =>
-  import("./PixiTownMapSurface").then((module) => ({ default: module.PixiTownMapSurface })),
+const TownSurface3D = lazy(() =>
+  import("./R3FTownSurface").then((module) => ({ default: module.R3FTownSurface })),
 );
 
 export type MapFilter =
@@ -149,7 +149,7 @@ export function MapCanvas({
       )}
       <Suspense fallback={null}>
         {rendererState !== "fallback" && (
-          <PixiTownMapSurface
+          <TownSurface3D
             places={availablePlaces}
             properties={properties}
             playerLocation={playerLocation}

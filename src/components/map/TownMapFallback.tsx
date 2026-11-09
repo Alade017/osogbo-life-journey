@@ -297,7 +297,9 @@ export function TownMapFallback({
             className="town-map-svg-home"
             role="button"
             tabIndex={0}
-            aria-label={"Open " + (property.label ?? "home") + ": " + property.status.replace("_", " ")}
+            aria-label={
+              "Open " + (property.label ?? "home") + ": " + property.status.replace("_", " ")
+            }
             onClick={() => onSelectProperty?.(property)}
             onKeyDown={(event) => {
               if (event.key === "Enter" || event.key === " ") {
@@ -316,11 +318,7 @@ export function TownMapFallback({
 
       {/* LAYER 4: INDIVIDUAL LANDMARK COMPONENTS (NO GROUPING) */}
       {places.map((place) => (
-        <LandmarkPlaceFallback
-          key={place.id}
-          place={place}
-          onSelect={onSelectLandmark}
-        />
+        <LandmarkPlaceFallback key={place.id} place={place} onSelect={onSelectLandmark} />
       ))}
 
       {/* LAYER 5: LIVE EVENTS & BILLBOARDS */}
@@ -396,7 +394,12 @@ export function TownMapFallback({
                   onSelectDistrict(item.id);
                 }
               }}
-              style={{ cursor: "pointer", animation: "none", transition: "none", transform: "none" }}
+              style={{
+                cursor: "pointer",
+                animation: "none",
+                transition: "none",
+                transform: "none",
+              }}
             >
               {/* Drop Shadow */}
               <rect

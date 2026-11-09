@@ -1,9 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
-import {
-  parseSimulationSnapshot,
-  type SimulationSnapshot,
-} from "@/lib/simulation-service";
+import { parseSimulationSnapshot, type SimulationSnapshot } from "@/lib/simulation-service";
 
 export type CatalogActivityCompletion = {
   id: string;
@@ -26,7 +23,6 @@ export type CatalogActivityResult = {
   activity: CatalogActivityCompletion;
   duplicate: boolean;
 };
-
 
 const EXPECTED_ACTIVITY_REJECTION =
   /^(?:This activity|Travel to |Requires |Resume your personal simulation|Finish or interrupt|That home activity|Request ID belongs|Invalid activity request)/i;

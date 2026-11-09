@@ -147,10 +147,26 @@ export function WorldCamera({
       }}
       minDistance={distance / WORLD_CAMERA.maxZoom}
       maxDistance={distance / WORLD_CAMERA.minZoom}
-      minPolarAngle={freeExplore ? 0.35 : verticalOrbit ? Math.max(0.35, polar - 0.35) : polar - (stage ? 0 : 0.08)}
-      maxPolarAngle={freeExplore ? 1.25 : verticalOrbit ? Math.min(1.25, polar + 0.35) : polar + (stage ? 0 : 0.08)}
-      minAzimuthAngle={freeExplore ? -Infinity : azimuth - (horizontalOrbit ? Math.PI / 3 : stage ? 0 : 0.14)}
-      maxAzimuthAngle={freeExplore ? Infinity : azimuth + (horizontalOrbit ? Math.PI / 3 : stage ? 0 : 0.14)}
+      minPolarAngle={
+        freeExplore
+          ? 0.35
+          : verticalOrbit
+            ? Math.max(0.35, polar - 0.35)
+            : polar - (stage ? 0 : 0.08)
+      }
+      maxPolarAngle={
+        freeExplore
+          ? 1.25
+          : verticalOrbit
+            ? Math.min(1.25, polar + 0.35)
+            : polar + (stage ? 0 : 0.08)
+      }
+      minAzimuthAngle={
+        freeExplore ? -Infinity : azimuth - (horizontalOrbit ? Math.PI / 3 : stage ? 0 : 0.14)
+      }
+      maxAzimuthAngle={
+        freeExplore ? Infinity : azimuth + (horizontalOrbit ? Math.PI / 3 : stage ? 0 : 0.14)
+      }
     />
   );
 }
