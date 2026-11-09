@@ -161,3 +161,14 @@ The pedestrian mesh origin was sitting above the pavement because the character 
 Pedestrian route generation now runs after roadside placement data is available. It excludes grass cells near streetlights, traffic signals, bus stops, road signs, roadside shops, parked motorcycles and tricycles, vendors, bins, trees and utility poles, in addition to buildings, water and reserved plots. Each prop reserves only nearby grass cells in its 3 × 3 grid neighbourhood; road cells are not added as pedestrian blockers. The sidewalk route builder then splits paths around these reservations rather than sending NPCs through the prop footprints.
 
 This is conservative placement clearance, not full character-to-character collision avoidance. A live scene check is still required for feet-on-pavement alignment, prop footprints and remaining route continuity. No local tests/build or browser QA have been run; GitHub Actions remain disabled.
+
+
+## Pedestrian route coverage after roadside-prop reservations
+
+A source-level coverage check found that tree placement was the largest avoidable cause of sidewalk loss. The authored grid has 149 unique grass cells directly adjacent to road tiles (the cells used by the rendered sidewalk strips). The previous deterministic tree pattern selected 79 tree cells; expanding each tree into a 3 × 3 pedestrian reservation overlapped 123 of those 149 sidewalk cells, leaving only 26 candidate sidewalk cells before reservations for the other roadside props.
+
+The correction introduces `deriveTownSidewalkCells` as a shared, testable definition of the sidewalk corridor. Tree placement now excludes those sidewalk cells as well as building footprints, water and reserved plots. Pedestrian routing no longer adds a second 3 × 3 reservation around trees, because tree bases are already kept off the sidewalk corridor. Other roadside objects retain their existing conservative reservations.
+
+A regression test verifies that the helper returns unique grass cells directly adjacent to roads. The tree placement change uses that same helper, avoiding a separate hand-maintained sidewalk definition. This addresses trunk/base occupancy; tree canopy overhang still needs visual inspection and may cast over pavement without blocking the walking surface.
+
+**Remaining coverage check:** route counts after all non-tree prop reservations have not been measured in a running scene. Inspect sidewalk continuity and NPC distribution at desktop and 375px mobile widths. Local tests, typecheck, lint and production build remain pending; no GitHub Actions were triggered.
