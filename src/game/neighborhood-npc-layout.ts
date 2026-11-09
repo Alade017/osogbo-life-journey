@@ -289,6 +289,8 @@ export function neighborhoodNpcAvoidanceStep(
   blockers: readonly NpcPoint[],
   maxStep: number,
   minimumSeparation = 0.85,
+  occupied: readonly GroundRect[] = [],
+  bounds?: GroundRect,
 ): NpcPoint {
   const dx = waypoint.x - current.x;
   const dy = waypoint.y - current.y;
@@ -301,8 +303,28 @@ export function neighborhoodNpcAvoidanceStep(
     { x: current.x - direction.y * travel, y: current.y + direction.x * travel },
     { x: current.x + direction.y * travel, y: current.y - direction.x * travel },
   ];
-  const clear = candidates.filter((candidate) =>
-    blockers.every((blocker) => {
+  const clear = candidates.filter((candidate) => {
+    const distance = Math.hypot(candidate.x - current.x, candidate.y - current.y);
+    const samples = Math.max(1, Math.ceil(distance / Math.max(minimumSeparation / 2, 0.1)));
+    for (let index = 0; index <= samples; index += 1) {
+      const progress = index / samples;
+      const point = {
+        x: current.x + (candidate.x - current.x) * progress,
+        y: current.y + (candidate.y - current.y) * progress,
+      };
+      if (
+        (bounds &&
+          (point.x < bounds.left || point.y < bounds.top ||
+            point.x > bounds.left + bounds.width || point.y > bounds.top + bounds.height)) ||
+        occupied.some((rect) =>
+          point.x >= rect.left - minimumSeparation &&
+          point.x <= rect.left + rect.width + minimumSeparation &&
+          point.y >= rect.top - minimumSeparation &&
+          point.y <= rect.top + rect.height + minimumSeparation,
+        )
+      ) return false;
+    }
+    return blockers.every((blocker) => {
       const segmentX = candidate.x - current.x;
       const segmentY = candidate.y - current.y;
       const segmentLengthSquared = segmentX * segmentX + segmentY * segmentY;
@@ -321,8 +343,8 @@ export function neighborhoodNpcAvoidanceStep(
       const closestX = current.x + segmentX * projection;
       const closestY = current.y + segmentY * projection;
       return Math.hypot(closestX - blocker.x, closestY - blocker.y) >= minimumSeparation;
-    }),
-  );
+    });
+  });
   if (clear.length === 0) return current;
   clear.sort(
     (a, b) =>
