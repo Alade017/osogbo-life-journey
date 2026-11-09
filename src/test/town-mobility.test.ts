@@ -67,38 +67,45 @@ describe("town pedestrian routes", () => {
     ...town.grid.plotCells,
   ];
 
-  it("keeps every pedestrian waypoint on an unblocked grass cell beside a road", () => {
+  it("centres pedestrian waypoints on unblocked rendered sidewalk strips", () => {
     const routes = deriveTownPedestrianRoutes(town.grid.rows, town.grid.cellSize, blockedCells);
     const blocked = new Set(blockedCells.map(([x, z]) => `${x},${z}`));
+    const columnCount = Math.max(...town.grid.rows.map((row) => row.length));
+    const expectedOffset = town.grid.cellSize / 2 + town.grid.cellSize * 0.28 / 2;
 
     expect(routes.length).toBeGreaterThan(0);
     for (const route of routes) {
       expect(route.length).toBeGreaterThanOrEqual(3);
       for (const [worldX, worldZ] of route) {
-        const x = Math.round(worldX / town.grid.cellSize + (Math.max(...town.grid.rows.map((row) => row.length)) - 1) / 2);
-        const z = Math.round(worldZ / town.grid.cellSize + (town.grid.rows.length - 1) / 2);
-        expect(town.grid.rows[z]?.[x]).toBe("g");
-        expect(blocked.has(`${x},${z}`)).toBe(false);
-        const besideRoad = [
-          town.grid.rows[z]?.[x - 1],
-          town.grid.rows[z]?.[x + 1],
-          town.grid.rows[z - 1]?.[x],
-          town.grid.rows[z + 1]?.[x],
-        ].includes("r");
-        expect(besideRoad).toBe(true);
+        const gridX = worldX / town.grid.cellSize + (columnCount - 1) / 2;
+        const gridZ = worldZ / town.grid.cellSize + (town.grid.rows.length - 1) / 2;
+        const roadX = Math.round(gridX);
+        const roadZ = Math.round(gridZ);
+        const offsetX = gridX - roadX;
+        const offsetZ = gridZ - roadZ;
+
+        // The closest grid centre is the road tile; the waypoint is inset
+        // from its edge by half the rendered sidewalk width.
+        expect(town.grid.rows[roadZ]?.[roadX]).toBe("r");
+        expect(Math.max(Math.abs(offsetX), Math.abs(offsetZ))).toBeCloseTo(expectedOffset / town.grid.cellSize);
+        expect(Math.min(Math.abs(offsetX), Math.abs(offsetZ))).toBeCloseTo(0);
+
+        const sidewalkX = roadX + Math.sign(offsetX);
+        const sidewalkZ = roadZ + Math.sign(offsetZ);
+        expect(town.grid.rows[sidewalkZ]?.[sidewalkX]).toBe("g");
+        expect(blocked.has(`${sidewalkX},${sidewalkZ}`)).toBe(false);
       }
     }
   });
 
-  it("splits pedestrian runs at blocked sidewalk cells", () => {
+  it("splits both sidewalk edges at blocked sidewalk cells", () => {
     const routes = deriveTownPedestrianRoutes(
-      ["rrrrrrr", "ggggggg", "rrrrrrr"],
+      ["rrrrrrrrr", "ggggggggg", "rrrrrrrrr"],
       2,
-      [[3, 1]],
+      [[4, 1]],
     );
 
-    expect(routes).toHaveLength(2);
-    expect(routes.every((route) => route.length >= 3)).toBe(true);
-    expect(routes.flat()).not.toContainEqual([0, 0]);
+    expect(routes).toHaveLength(4);
+    expect(routes.every((route) => route.length === 4)).toBe(true);
   });
 });
