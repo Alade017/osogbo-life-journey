@@ -692,6 +692,20 @@ export function WorldRoadsideShops({
             <boxGeometry args={[shopWidth * 0.72, size * 0.42, size * 0.12]} />
             <WorldMaterial tone="timber" />
           </mesh>
+          {/* A shallow overhanging worktop and inset front boards finish the service counter. */}
+          <mesh position={[0, size * 0.465, shopDepth * 0.43]} castShadow>
+            <boxGeometry args={[shopWidth * 0.76, size * 0.045, size * 0.17]} />
+            <WorldMaterial tone="linen" />
+          </mesh>
+          {[-1, 0, 1].map((panel) => (
+            <mesh
+              key={`counter-front-panel-${panel}`}
+              position={[panel * shopWidth * 0.22, size * 0.24, shopDepth * 0.43 + size * 0.063]}
+            >
+              <boxGeometry args={[shopWidth * 0.19, size * 0.29, size * 0.012]} />
+              <WorldMaterial tone="timber" color="#805638" />
+            </mesh>
+          ))}
 
           {/* Simple rear display shelving, sized from the shop footprint. */}
           <group position={[0, 0, -shopDepth * 0.34]}>
