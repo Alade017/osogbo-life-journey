@@ -27,6 +27,7 @@ import {
   MessageCircle,
   Gamepad2,
   Newspaper,
+  School,
   PartyPopper,
   PanelsTopLeft,
   Target,
@@ -63,7 +64,6 @@ import {
 import { type CommunityPhoneApp } from "@/components/game/CommunityPhoneApps";
 import { PhoneComingSoonApp } from "@/components/game/phone/PhoneComingSoonApp";
 import { OsunGistApp } from "@/components/game/phone/OsunGistApp";
-import { PhoneGamesApp } from "@/components/game/phone/PhoneGamesApp";
 import { PhoneMapApp } from "@/components/game/phone/PhoneMapApp";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import {
@@ -158,6 +158,7 @@ const PHONE_APPS: readonly PhoneAppDefinition[] = [
   { label: "Education", icon: GraduationCap, tone: "phone-app-blue" },
   { label: "Food Delivery", icon: UtensilsCrossed, tone: "phone-app-coral" },
   { label: "Games", icon: Gamepad2, tone: "phone-app-coral" },
+  { label: "Nigerian Schools", icon: School, tone: "phone-app-blue" },
   { label: "Inventory", icon: Backpack, tone: "phone-app-blue", emphasis: "utility" },
   { label: "Invest", icon: ChartNoAxesCombined, tone: "phone-app-gold" },
   { label: "Leaderboard", icon: Trophy, tone: "phone-app-gold" },
@@ -557,7 +558,6 @@ export function PhoneLauncher({
 
     if (appName === "Settings") return <SettingsPage />;
     if (appName === "Osun Gist") return <OsunGistApp />;
-    if (appName === "Games") return <PhoneGamesApp />;
     if (appName === "Map") return <PhoneMapApp />;
     if (appName === "Support") return <SupportApp onHome={returnHome} />;
 

@@ -32,7 +32,7 @@ export function OsunGistApp() {
                 <strong>{story.title}</strong>
               </div>
               <a href={story.sourceUrl} target="_blank" rel="noreferrer">
-                Read
+                Read more
               </a>
             </div>
           ))

@@ -4,7 +4,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Newspaper, Trophy } from "lucide-react";
 import { PaletteSelect } from "@/components/ui/palette-select";
-import { useExternalNews, type ExternalNewsItem } from "@/components/game/phone/use-external-news";
 
 export type CommunityPhoneApp =
   "Calendar" | "Food Delivery" | "Okada Rides" | "Contribution" | "Leaderboard" | "Town News";
@@ -20,8 +19,6 @@ function AppCard({ children }: { children: ReactNode }) {
 
 export function CommunityPhoneApps({ app }: { app: CommunityPhoneApp }) {
   const queryClient = useQueryClient();
-  const [newsRegion, setNewsRegion] = useState<"nigeria" | "world">("nigeria");
-  const externalNews = useExternalNews(newsRegion, app === "Town News");
   const [postTitle, setPostTitle] = useState("");
   const [postBody, setPostBody] = useState("");
   const [postCategory, setPostCategory] = useState("Community");
@@ -165,56 +162,10 @@ export function CommunityPhoneApps({ app }: { app: CommunityPhoneApp }) {
         <Newspaper aria-hidden="true" />
         <span>
           <strong>News feed</strong>
-          <small>Nigeria, world, and town updates</small>
+          <small>Town updates</small>
         </span>
       </header>
-      <div className="phone-local-tabs" role="tablist" aria-label="News source">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={newsRegion === "nigeria"}
-          onClick={() => setNewsRegion("nigeria")}
-        >
-          Nigeria
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={newsRegion === "world"}
-          onClick={() => setNewsRegion("world")}
-        >
-          World
-        </button>
-      </div>
       <div className="phone-local-list">
-        {externalNews.state === "loading" ? (
-          <AppCard>
-            <small>Updating {newsRegion === "nigeria" ? "Nigeria" : "world"} headlines…</small>
-          </AppCard>
-        ) : externalNews.state === "ready" && externalNews.items.length ? (
-          externalNews.items.map((story) => (
-            <AppCard key={story.id}>
-              <div>
-                <small>
-                  {story.sourceName}
-                  {story.publishedAt
-                    ? ` · ${new Date(story.publishedAt).toLocaleDateString("en-NG")}`
-                    : ""}
-                </small>
-                <strong>{story.title}</strong>
-              </div>
-              <a href={story.sourceUrl} target="_blank" rel="noreferrer">
-                Read
-              </a>
-            </AppCard>
-          ))
-        ) : (
-          <AppCard>
-            <small>
-              Live headlines are temporarily unavailable. Town updates are still available below.
-            </small>
-          </AppCard>
-        )}
         {townPosts.isLoading ? (
           <AppCard>
             <small>Loading town posts...</small>

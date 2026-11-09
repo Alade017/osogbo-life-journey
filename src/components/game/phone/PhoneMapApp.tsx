@@ -1,4 +1,3 @@
-import { Link } from "@tanstack/react-router";
 import { MapPinned } from "lucide-react";
 import town from "@/data/osogbo-town.json";
 
@@ -26,7 +25,6 @@ export function PhoneMapApp() {
               <small>{categoryLabel(place.category)}</small>
               <strong>{place.label}</strong>
             </div>
-            <Link to="/map">Open map</Link>
           </div>
         ))}
       </div>
