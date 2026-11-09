@@ -23,7 +23,7 @@ describe("housing onboarding database actions", () => {
       (entry: { tag: string }) =>
         entry.tag !== "0075_remove_orphaned_player_data" &&
         entry.tag !== "0077_market_stall_rent_categories_sales",
-    ))
+    )) {
 if (tag === "0083_studio_room_layout") {
         // The studio layout migration depends on x/y columns from this Supabase migration.
         await db.exec(
@@ -34,6 +34,7 @@ if (tag === "0083_studio_room_layout") {
         );
       }
             await db.exec(readFileSync(`drizzle/migrations/${tag}.sql`, "utf8").replace(/^\uFEFF/, ""));
+    }
     await db.query("insert into auth.users(id) values($1)", [userId]);
   }, 180_000);
 
