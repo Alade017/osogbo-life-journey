@@ -95,19 +95,35 @@ function TrafficVehicle({
     const { path, speed } = config;
     if (path.length < 2) return;
 
-    const p1 = path[currentSegment.current]!;
-    const nextIdx = (currentSegment.current + 1) % path.length;
-    const p2 = path[nextIdx]!;
+    // Advance in world-space distance so crossing a corner never discards
+    // leftover frame time. Modulo the loop length also bounds catch-up work
+    // after a background-tab pause.
+    const routeLength = path.reduce((total, point, index) => {
+      const next = path[(index + 1) % path.length]!;
+      return total + Math.hypot(next[0] - point[0], next[1] - point[1]);
+    }, 0);
+    let distanceToTravel = (speed * Math.max(0, delta) * 8) % Math.max(routeLength, 0.1);
 
-    const dx = p2[0] - p1[0];
-    const dz = p2[1] - p1[1];
-    const segmentLength = Math.hypot(dx, dz);
+    while (distanceToTravel > 0) {
+      const start = path[currentSegment.current]!;
+      const end = path[(currentSegment.current + 1) % path.length]!;
+      const segmentLength = Math.hypot(end[0] - start[0], end[1] - start[1]);
 
-    progress.current += (speed * delta * 8) / Math.max(segmentLength, 0.1);
+      if (segmentLength < 0.001) {
+        currentSegment.current = (currentSegment.current + 1) % path.length;
+        progress.current = 0;
+        continue;
+      }
 
-    if (progress.current >= 1.0) {
-      progress.current = 0;
-      currentSegment.current = nextIdx;
+      const remainingOnSegment = segmentLength * (1 - progress.current);
+      if (distanceToTravel >= remainingOnSegment) {
+        distanceToTravel -= remainingOnSegment;
+        currentSegment.current = (currentSegment.current + 1) % path.length;
+        progress.current = 0;
+      } else {
+        progress.current += distanceToTravel / segmentLength;
+        distanceToTravel = 0;
+      }
     }
 
     const curP1 = path[currentSegment.current]!;
