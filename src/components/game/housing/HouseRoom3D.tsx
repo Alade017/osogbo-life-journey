@@ -30,6 +30,7 @@ import {
   houseWallSegments,
   houseRearDoorCenter,
   FOUR_ROOM_HOME_TYPES,
+  HOUSE_ROOM_STYLE,
   type HouseRoomRendererProps as Props,
 } from "./house-room-contract";
 
@@ -65,6 +66,12 @@ function hasRoomPosition(
 
 type FloorTone =
   "tileLight" | "tileShade" | "tileBath" | "tileBathShade" | "tileDark" | "tileDarkShade";
+
+function roomFloorColor(tone: FloorTone): string | undefined {
+  if (tone === "tileLight") return HOUSE_ROOM_STYLE.floorLight;
+  if (tone === "tileShade") return HOUSE_ROOM_STYLE.floorShade;
+  return undefined;
+}
 
 function RoomFloor({
   houseTypeId,
@@ -119,9 +126,12 @@ function RoomFloor({
 
   return (
     <>
-      {(Object.entries(groups) as [FloorTone, WorldInstance[]][]).map(([tone, items]) => (
-        <WorldInstances key={tone} items={items} tone={tone} />
-      ))}
+      {(Object.entries(groups) as [FloorTone, WorldInstance[]][]).map(([tone, items]) => {
+        const color = roomFloorColor(tone);
+        return (
+          <WorldInstances key={tone} items={items} tone={tone} {...(color ? { color } : {})} />
+        );
+      })}
     </>
   );
 }
@@ -205,6 +215,7 @@ function HouseDoorPanel({
 
 function OsogboRoomPrototype({
   houseTypeId,
+  wallsClosed = null,
   width,
   depth,
   editMode,
@@ -213,6 +224,7 @@ function OsogboRoomPrototype({
   doorOpen = false,
 }: {
   houseTypeId: string;
+  wallsClosed?: boolean | null;
   width: number;
   depth: number;
   activeFloor?: 0 | 1;
@@ -243,12 +255,12 @@ function OsogboRoomPrototype({
           height,
           doorwayWidth,
           rearDoorCenter,
-          FOUR_ROOM_HOME_TYPES.includes(houseTypeId),
+          wallsClosed ?? FOUR_ROOM_HOME_TYPES.includes(houseTypeId),
         ).map((segment) => (
           <group key={segment.id}>
             <mesh castShadow receiveShadow position={segment.position}>
               <boxGeometry args={segment.size} />
-              <WorldMaterial tone="partition" />
+              <WorldMaterial tone="partition" color={HOUSE_ROOM_STYLE.wall} />
             </mesh>
             <mesh
               castShadow
@@ -315,7 +327,7 @@ function OsogboRoomPrototype({
           <group key={segment.id}>
             <mesh castShadow receiveShadow position={segment.position}>
               <boxGeometry args={segment.size} />
-              <WorldMaterial tone="partition" />
+              <WorldMaterial tone="partition" color={HOUSE_ROOM_STYLE.wall} />
             </mesh>
             <mesh
               castShadow
@@ -1845,6 +1857,7 @@ function SlotObject({
 export function HouseRoom3D({
   inputBlocked = false,
   lightOn = true,
+  wallsClosed = null,
   doorOpen = false,
   activeFloor = 0,
   onUseStairs,
@@ -2023,6 +2036,7 @@ export function HouseRoom3D({
 
           <OsogboRoomPrototype
             houseTypeId={houseTypeId}
+            wallsClosed={wallsClosed}
             width={width}
             depth={depth}
             editMode={editMode}

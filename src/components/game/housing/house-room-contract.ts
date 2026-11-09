@@ -10,6 +10,8 @@ export type HouseRoomRendererProps = {
   houseTypeId: string;
   /** Room light switch. Off dims the room; omitted means on. */
   lightOn?: boolean;
+  /** Wall setting. True closes every wall; false cuts the front and sides away. Null keeps the home's default. */
+  wallsClosed?: boolean | null;
   /** Floor being viewed: 0 ground, 1 upstairs (duplex only). */
   activeFloor?: 0 | 1;
   /** Tapping the stairs climbs or descends. */
@@ -355,6 +357,13 @@ function studioPartitionSegments(width: number, depth: number, height: number): 
 }
 
 /** Home types that have the four-room plan: sitting room, bedroom, kitchen and dining, bathroom. */
+/** Room restyle: pale walls and warm wood-tone floor tiles, from the reference room images. */
+export const HOUSE_ROOM_STYLE = {
+  wall: "#cfd6e8",
+  floorLight: "#e8d6b5",
+  floorShade: "#d4bd97",
+} as const;
+
 export const FOUR_ROOM_HOME_TYPES: readonly string[] = [
   "studio-flat",
   "mini-flat",

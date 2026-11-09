@@ -36,12 +36,15 @@ import {
   House,
   Sunrise,
   WifiOff,
+  DoorClosed,
   DoorOpen,
   LoaderCircle,
   Lightbulb,
   LightbulbOff,
 } from "lucide-react";
 import { fetchHouseLight, setHouseLight } from "@/lib/house-light";
+import { fetchHouseWalls, setHouseWalls } from "@/lib/house-walls";
+import { FOUR_ROOM_HOME_TYPES } from "@/components/game/housing/house-room-contract";
 import { HouseEditSheets } from "@/components/game/housing/HouseEditSheets";
 import { HouseCatalogue } from "@/components/game/housing/HouseCatalogue";
 import { HomeFoodDeliveryPanel } from "@/components/game/housing/HomeFoodDeliveryPanel";
@@ -939,6 +942,26 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     enabled: !!character?.id,
   });
   const lightOn = lightQuery.data ?? true;
+  const wallsQuery = useQuery({
+    queryKey: ["house-walls", character?.id ?? "anonymous"],
+    queryFn: fetchHouseWalls,
+    enabled: !!character?.id,
+  });
+  const wallsSetting = wallsQuery.data ?? null;
+  const wallsMutation = useMutation({
+    mutationFn: (closed: boolean) => setHouseWalls(closed),
+    onMutate: async (closed: boolean) => {
+      const key = ["house-walls", character?.id ?? "anonymous"];
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<boolean | null>(key);
+      queryClient.setQueryData(key, closed);
+      return { previous };
+    },
+    onError: (error: Error, _closed, context) => {
+      queryClient.setQueryData(["house-walls", character?.id ?? "anonymous"], context?.previous);
+      toast.error(error.message);
+    },
+  });
   const lightMutation = useMutation({
     mutationFn: (on: boolean) => setHouseLight(on),
     onMutate: async (on: boolean) => {
@@ -1422,6 +1445,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           inputBlocked={taskBusy || (!editing && !!selectedPlacement && !!selectedAction)}
           houseTypeId={house.house_type_id}
           lightOn={lightOn}
+          wallsClosed={wallsSetting}
           accessoryBand={canonicalHome?.accessoryBand ?? "basic"}
           characterName={character?.name ?? "Your character"}
           appearance={appearance}
@@ -1601,6 +1625,35 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             <Lightbulb size={20} aria-hidden="true" />
           ) : (
             <LightbulbOff size={20} aria-hidden="true" />
+          )}
+        </button>
+      )}
+      {!editing && (
+        <button
+          type="button"
+          className="house-icon-button house-walls-switch"
+          aria-pressed={wallsSetting ?? FOUR_ROOM_HOME_TYPES.includes(house.house_type_id)}
+          aria-label={
+            (wallsSetting ?? FOUR_ROOM_HOME_TYPES.includes(house.house_type_id))
+              ? "Open the walls"
+              : "Close the walls"
+          }
+          title={
+            (wallsSetting ?? FOUR_ROOM_HOME_TYPES.includes(house.house_type_id))
+              ? "Walls closed"
+              : "Walls open"
+          }
+          disabled={isOffline || !character?.id || wallsMutation.isPending}
+          onClick={() =>
+            wallsMutation.mutate(
+              !(wallsSetting ?? FOUR_ROOM_HOME_TYPES.includes(house.house_type_id)),
+            )
+          }
+        >
+          {(wallsSetting ?? FOUR_ROOM_HOME_TYPES.includes(house.house_type_id)) ? (
+            <DoorClosed size={20} aria-hidden="true" />
+          ) : (
+            <DoorOpen size={20} aria-hidden="true" />
           )}
         </button>
       )}
