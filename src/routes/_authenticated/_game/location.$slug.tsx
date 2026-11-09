@@ -246,8 +246,8 @@ function LocationPage() {
       travelState.destinationId !== loc.id
     )
       return;
-    if (!character?.id) {
-      toast.error("Your active character could not be confirmed. Refresh and try again.");
+    if (!character?.id || !character.current_location_id) {
+      toast.error("Your active character and current location could not be confirmed. Refresh and try again.");
       return;
     }
     const validationError = validateTripRequest({
