@@ -577,7 +577,7 @@ export function WorldRoadSigns({
             </Text>
 
             {/* Arrow shaft */}
-            <mesh position={[size * 0.38, poleHeight * 0.78, size * 0.045]}>
+            <mesh position={[boardWidth * 0.36, poleHeight * 0.78, size * 0.045]}>
               <boxGeometry args={[size * 0.16, size * 0.035, size * 0.025]} />
               <meshBasicMaterial color="#ffffff" />
             </mesh>
