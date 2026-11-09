@@ -55,6 +55,7 @@ export function EntryTownPreview({
               playerLocation={null}
               billboardMarkers={[]}
               searchTarget={focusLandmarkId}
+              focusCloseUp
               onSelectLandmark={noop}
               onSelectDistrict={noop}
               onSelectBillboard={undefined}

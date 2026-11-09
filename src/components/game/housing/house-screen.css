@@ -2804,45 +2804,6 @@
   opacity: 0.7;
   white-space: nowrap;
 }
-.house-task-progress {
-  position: absolute;
-  z-index: 30;
-  bottom: calc(var(--game-dock-clearance, 80px) + 1rem);
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(380px, calc(100% - 2rem));
-  border-radius: 1.25rem;
-  padding: 1rem;
-  background: var(--card);
-  color: var(--foreground);
-  box-shadow: 0 8px 24px #0002;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0.6rem;
-}
-.house-task-progress strong,
-.house-task-progress span {
-  display: block;
-}
-.house-task-progress span {
-  font-size: 0.8rem;
-  opacity: 0.75;
-  margin-top: 0.25rem;
-}
-.house-task-progress progress {
-  grid-column: 1;
-  width: 100%;
-  accent-color: var(--primary);
-}
-.house-task-progress button {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  align-self: center;
-  padding: 0.6rem 0.85rem;
-  border-radius: 1rem;
-  background: var(--muted);
-  color: var(--foreground);
-}
 
 /* Placement mode: shown while moving a furniture item on the grid. */
 .house-placement-bar {

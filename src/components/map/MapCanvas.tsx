@@ -78,7 +78,7 @@ const filterCategories: Partial<Record<MapFilter, readonly string[]>> = {
   jobs: ["services", "food", "market", "transport"],
 };
 
-export function houseBadgeText(property: MapProperty) {
+function houseBadgeText(property: MapProperty) {
   if (property.status === "owned" && property.ownerName) return property.ownerName;
   return propertyStatusText[property.status];
 }

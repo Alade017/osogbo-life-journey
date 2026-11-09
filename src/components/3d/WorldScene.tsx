@@ -74,17 +74,20 @@ export function WorldCamera({
   onZoomChange,
   horizontalOrbit = false,
   verticalOrbit = false,
+  distanceScale = 1,
 }: {
   width: number;
   depth: number;
   stage?: boolean;
   enabled?: boolean;
-  target?: [number, number, number];
+  target?: [number, number, number] | undefined;
   zoom?: number;
   polarAngle?: number;
   onZoomChange?: (zoom: number) => void;
   horizontalOrbit?: boolean;
   verticalOrbit?: boolean;
+  /** Scales the camera distance past the zoom clamp, for close-up framing. */
+  distanceScale?: number;
 }) {
   const { camera, size, invalidate } = useThree();
   const controls = useRef<Controls>(null);
@@ -95,12 +98,14 @@ export function WorldCamera({
   const polar = polarAngle ?? (stage ? Math.PI / 4 : WORLD_CAMERA.polar);
   const azimuth = WORLD_CAMERA.azimuth;
   const [x, y, z] = target ?? [0, stage ? WORLD_SCALE.door * 0.65 : 0, 0];
-  const framing = useRef<{ distance: number; polar: number; zoom: number } | null>(null);
+  const framing = useRef<{ distance: number; polar: number; d: number } | null>(null);
   const offset = useMemo(() => new Vector3(), []);
   useLayoutEffect(() => {
     const previous = framing.current;
     const orbit = controls.current;
-    const d = distance / Math.max(WORLD_CAMERA.minZoom, Math.min(WORLD_CAMERA.maxZoom, zoom));
+    const d =
+      (distance / Math.max(WORLD_CAMERA.minZoom, Math.min(WORLD_CAMERA.maxZoom, zoom))) *
+      distanceScale;
     if (!previous || previous.distance !== distance || previous.polar !== polar || !orbit) {
       offset
         .set(
@@ -112,13 +117,13 @@ export function WorldCamera({
     } else {
       // Follow by translating the existing orbit, preserving touch/wheel framing.
       offset.copy(camera.position).sub(orbit.target);
-      if (previous.zoom !== zoom) offset.setLength(d);
+      if (previous.d !== d) offset.setLength(d);
     }
     camera.position.copy(offset);
     camera.position.x += x;
     camera.position.y += y;
     camera.position.z += z;
-    framing.current = { distance, polar, zoom };
+    framing.current = { distance, polar, d };
     camera.lookAt(x, y, z);
     const perspective = camera as PerspectiveCamera;
     perspective.fov = WORLD_CAMERA.fov;
@@ -127,7 +132,7 @@ export function WorldCamera({
     controls.current?.target.set(x, y, z);
     controls.current?.update();
     invalidate();
-  }, [camera, distance, azimuth, polar, x, y, z, zoom, invalidate, offset]);
+  }, [camera, distance, azimuth, polar, x, y, z, zoom, distanceScale, invalidate, offset]);
   return (
     <OrbitControls
       ref={controls}

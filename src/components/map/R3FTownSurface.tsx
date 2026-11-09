@@ -69,7 +69,12 @@ type Props = TownMapData &
     onReady: () => void;
     onUnavailable: () => void;
     searchTarget?: import("@/components/map/MapCanvas").MapSearchTarget | null;
+    /** Frame the search target close up instead of the whole town (landing preview). */
+    focusCloseUp?: boolean;
   };
+
+/** Close-up framing sits well inside the whole-town distance. */
+const CLOSE_UP_DISTANCE_SCALE = 0.5;
 
 const gridCols = town.grid.rows[0]?.length ?? 24;
 const gridRows = town.grid.rows.length ?? 18;
@@ -219,6 +224,7 @@ export function R3FTownSurface(props: Props) {
       setSelectedTarget({ id: district.id, position: [x, 0, z], type: "district" });
     }
   }, [props.searchTarget, props.places, props.properties]);
+  const closeUpTarget = props.focusCloseUp && selectedTarget ? selectedTarget.position : undefined;
   const roads = useMemo(
     () =>
       town.grid.rows.flatMap((row, z) =>
@@ -887,7 +893,13 @@ export function R3FTownSurface(props: Props) {
         >
           <Ready onReady={props.onReady} />
           <CameraFocusController targetPosition={selectedTarget?.position ?? null} />
-          <WorldCamera width={gridCols * cell} depth={gridRows * cell} zoom={1.55} />
+          <WorldCamera
+            width={gridCols * cell}
+            depth={gridRows * cell}
+            zoom={1.55}
+            target={closeUpTarget}
+            distanceScale={closeUpTarget ? CLOSE_UP_DISTANCE_SCALE : 1}
+          />
           <MapLighting size={gridCols * cell} />
           <Terrain3D gridCols={gridCols} gridRows={gridRows} cellSize={cell} />
 
