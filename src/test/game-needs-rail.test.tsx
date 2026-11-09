@@ -28,7 +28,7 @@ describe("persistent player needs dashboard", () => {
     expect(container.querySelectorAll(".game-needs-icon-ring")).toHaveLength(6);
     expect(container.querySelector(".game-needs-summary")).toHaveTextContent("1 critical");
     expect(container.querySelector("a")).toBeNull();
-    expect(container.querySelectorAll("button")).toHaveLength(6);
+    expect(container.querySelectorAll(".game-needs-item")).toHaveLength(6);
     expect(screen.getByRole("button", { name: "Hunger: 20 percent, warning" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Social: 10 percent, critical" })).toHaveClass(
       "is-critical",
