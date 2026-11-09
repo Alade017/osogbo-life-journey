@@ -9,6 +9,7 @@ const status: Record<string, number> = {
   ALREADY_THERE: 409,
   TOWN_UNAVAILABLE: 404,
   INSUFFICIENT_FUNDS: 409,
+  IDEMPOTENCY_CONFLICT: 409,
 };
 
 export async function handleTownTravelRequest(request: Request) {
