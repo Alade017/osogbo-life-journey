@@ -22,7 +22,7 @@ import {
   type NeighborhoodNpcView,
   type NeighborhoodObject,
 } from "@/game/neighborhood-model";
-import { neighborhoodBuildingFootprint } from "@/game/neighborhood-geometry";
+import { neighborhoodBuildingFootprint, neighborhoodObstacleFootprint } from "@/game/neighborhood-geometry";
 import { neighborhoodNpcAvoidanceStep } from "@/game/neighborhood-npc-layout";
 import {
   WorldCamera,
@@ -102,6 +102,8 @@ function NeighborhoodNpcActor({
   waypoints,
   actorPositions,
   playerPositions,
+  occupiedFootprints,
+  sceneBounds,
   onSelect,
   onArrive,
   onPause,
@@ -112,6 +114,8 @@ function NeighborhoodNpcActor({
   waypoints: readonly [number, number, number][];
   actorPositions: MutableRefObject<Map<string, { x: number; y: number }>>;
   playerPositions: readonly (readonly [number, number, number])[];
+  occupiedFootprints: readonly { left: number; top: number; width: number; height: number }[];
+  sceneBounds: { left: number; top: number; width: number; height: number };
   onSelect: () => void;
   onArrive: () => void;
   onPause: (x: number, y: number) => void;
@@ -199,6 +203,8 @@ function NeighborhoodNpcActor({
         liveBlockers,
         distance * step,
         0.85,
+        occupiedFootprints,
+        sceneBounds,
       );
       const movedX = next.x - actor.position.x;
       const movedZ = next.y - actor.position.z;
@@ -418,6 +424,35 @@ export function R3FNeighborhoodSurface({
   });
   const npcPoints = npcs.map((npc) => point(npc.x, npc.y));
   const actorPositions = useRef(new Map<string, { x: number; y: number }>());
+  const movementBounds = useMemo(
+    () => ({
+      left: -bounds.width * unit / 2,
+      top: -bounds.height * unit / 2,
+      width: bounds.width * unit,
+      height: bounds.height * unit,
+    }),
+    [bounds.width, bounds.height, unit],
+  );
+  const movementObstacles = useMemo(() => {
+    const footprints = [
+      ...area.objects
+        .filter((object) => object.kind !== "npc")
+        .map(neighborhoodBuildingFootprint),
+      ...(area.obstacles ?? []).map(neighborhoodObstacleFootprint),
+    ];
+    return footprints.map((footprint) => {
+      const center = point(
+        footprint.left + footprint.width / 2,
+        footprint.top + footprint.height / 2,
+      );
+      return {
+        left: center[0] - footprint.width * unit / 2,
+        top: center[2] - footprint.height * unit / 2,
+        width: footprint.width * unit,
+        height: footprint.height * unit,
+      };
+    });
+  }, [area, point, unit]);
   const npcWaypoints = useMemo(
     () =>
       new Map(
@@ -608,6 +643,8 @@ export function R3FNeighborhoodSurface({
               waypoints={npcWaypoints.get(npc.id) ?? []}
               actorPositions={actorPositions}
               playerPositions={scenePoints}
+              occupiedFootprints={movementObstacles}
+              sceneBounds={movementBounds}
               onSelect={() => onSelectTarget(npc.id)}
               onArrive={() => onNpcArrive(npc.id, npc.targetX, npc.targetY)}
               onPause={(x, z) =>
