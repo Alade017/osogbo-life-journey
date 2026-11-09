@@ -28,7 +28,6 @@ it("gives every district, landmark and building one identity in the expanded tow
   }
 });
 
-
 it("keeps every road tile connected to the town road network", () => {
   const roads = new Set<string>();
   town.grid.rows.forEach((row, z) => {
@@ -48,7 +47,12 @@ it("keeps every road tile connected to the town road network", () => {
     if (x === undefined || z === undefined || !Number.isFinite(x) || !Number.isFinite(z)) {
       continue;
     }
-    for (const [dx, dz] of [[0, -1], [0, 1], [-1, 0], [1, 0]] as const) {
+    for (const [dx, dz] of [
+      [0, -1],
+      [0, 1],
+      [-1, 0],
+      [1, 0],
+    ] as const) {
       const neighbor = `${x + dx},${z + dz}`;
       if (!roads.has(neighbor) || visited.has(neighbor)) continue;
       visited.add(neighbor);
