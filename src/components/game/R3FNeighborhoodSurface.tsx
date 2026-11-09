@@ -802,6 +802,36 @@ export function R3FNeighborhoodSurface({
           })}
           <WorldTrees positions={trees} />
 
+          {area.obstacles
+            ?.filter((o) => ["compound", "shop", "kiosk"].includes(o.kind))
+            .map((o) => (
+              <WorldHouse
+                detailed
+                key={o.id}
+                position={point(o.x, o.y)}
+                width={o.width * unit}
+                depth={o.height * unit}
+                height={WORLD_SCALE.neighborhoodBuildingHeight}
+                shop={o.kind !== "compound"}
+                variant={o.kind === "compound" ? "residential" : "market"}
+                materialSeed={Math.round(o.x * 37 + o.y * 61)}
+              />
+            ))}
+          <WorldStreetFurniture
+            items={(area.obstacles ?? [])
+              .filter((o) =>
+                ["streetlight", "bench", "bin", "sign", "landmark"].includes(o.kind),
+              )
+              .map((o) => ({
+                kind: o.kind,
+                x: point(o.x, o.y)[0],
+                z: point(o.x, o.y)[2],
+                width: o.width * unit,
+                depth: o.height * unit,
+                label: o.label,
+              }))}
+          />
+
           {area.objects
             .filter((o) => o.kind !== "npc")
             .map((o) => {
