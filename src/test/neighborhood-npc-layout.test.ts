@@ -326,6 +326,10 @@ describe("neighborhood NPC spawn distribution", () => {
     expect(neighborhoodNpcSpawnPoint(slots, 1.5)).toBeNull();
   });
 
+
+
+});
+
 describe("live NPC route reservations", () => {
   it("starts the reservation at the actor's rendered position", () => {
     expect(
@@ -367,7 +371,7 @@ describe("live NPC route reservations", () => {
 
   it("returns no reservation when there is no live actor or remaining route", () => {
     expect(neighborhoodNpcReservationPath(null, [])).toEqual([]);
-    expect(neighborhoodNpcReservationPath({ x: 1, y: 2 }, [], 1)).toEqual([{ x: 1, y: 2 }]);
+    expect(neighborhoodNpcReservationPath({ x: 1, y: 2 }, [], 1)).toEqual([]);
   });
 
   it("rejects invalid waypoint progress rather than reserving stale route segments", () => {
@@ -377,4 +381,3 @@ describe("live NPC route reservations", () => {
   });
 });
 
-});
