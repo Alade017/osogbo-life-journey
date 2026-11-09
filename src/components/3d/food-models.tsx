@@ -12,6 +12,41 @@ const plate = (radius: number) => (
   </mesh>
 );
 
+/** Reusable unbranded clear food pouch for locally sold dry goods and bakery items. */
+function ClearFoodPouch({
+  width,
+  height,
+  depth,
+}: {
+  width: number;
+  height: number;
+  depth: number;
+}) {
+  return (
+    <group>
+      <mesh position={[0, height * 0.48, 0]} scale={[width, height * 0.48, depth]}>
+        <sphereGeometry args={[1, 24, 16]} />
+        <meshStandardMaterial
+          color="#e8f2ed"
+          transparent
+          opacity={0.2}
+          roughness={0.12}
+          metalness={0}
+          depthWrite={false}
+        />
+      </mesh>
+      <mesh position={[0, height * 0.94, 0]}>
+        <cylinderGeometry args={[width * 0.18, width * 0.24, 0.045, 16]} />
+        {mat("#d6d0b8", 0.8)}
+      </mesh>
+      <mesh position={[0, height * 0.48, depth * 0.96]}>
+        <boxGeometry args={[width * 0.9, height * 0.22, 0.012]} />
+        {mat("#eee7d4", 0.9)}
+      </mesh>
+    </group>
+  );
+}
+
 /** Puff puff: golden balls on a plate. */
 function PuffPuff() {
   const balls: [number, number][] = [
@@ -123,10 +158,13 @@ function FriedPlantain() {
 /** Bread: a soft loaf. */
 function Bread() {
   return (
-    <mesh position={[0, 0.3, 0]} scale={[1.4, 0.7, 0.8]} castShadow>
-      <sphereGeometry args={[0.5, 28, 18]} />
-      {mat("#c98a4b", 0.9)}
-    </mesh>
+    <group>
+      <mesh position={[0, 0.3, 0]} scale={[1.4, 0.7, 0.8]} castShadow>
+        <sphereGeometry args={[0.5, 28, 18]} />
+        {mat("#c98a4b", 0.9)}
+      </mesh>
+      <ClearFoodPouch width={0.78} height={0.58} depth={0.48} />
+    </group>
   );
 }
 
@@ -145,6 +183,7 @@ function ChinChin() {
           {mat("#c98a3a", 0.7)}
         </mesh>
       ))}
+      <ClearFoodPouch width={0.58} height={0.58} depth={0.58} />
     </group>
   );
 }
