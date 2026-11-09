@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import townData from "@/data/osogbo-town.json";
 import { OSOGBO_WORLD_NODES, cityEntranceForLocation } from "@/lib/city-world";
 import {
   neighborhoodAreaForSlug,
@@ -15,6 +16,9 @@ import {
   checkNeighborhoodEntrances,
   neighborhoodRoadComponents,
 } from "@/game/neighborhood-navigation";
+const townDataLandmarkIdsForTest = () =>
+  Object.groupBy(townData.landmarks, (landmark) => landmark.locationSlug) as Record<string, string[]>;
+
 describe("neighborhood coordinates and interaction", () => {
   it("selects distinct shared street layouts for Olaiya and Oja-Oba", () => {
     const olaiya = neighborhoodAreaForSlug("city-centre");
@@ -148,6 +152,27 @@ describe("neighborhood coordinates and interaction", () => {
     const origin = { x: 7, y: 6 };
     const checkpoint = { x: 7.625, y: 5.75 };
     expect(toWorld(toScene(checkpoint, origin), origin)).toEqual(checkpoint);
+  });
+  it("registers exactly one authoritative interaction point for every town landmark", () => {
+    const town = neighborhoodAreaForSlug("city-centre");
+    const anchors = townDataLandmarkIdsForTest();
+    for (const [slug, ids] of Object.entries(anchors)) {
+      const area = neighborhoodAreaForSlug(slug);
+      expect(area.interactionPoints?.map((point) => point.id).sort(), slug).toEqual([...ids].sort());
+      expect(new Set(area.interactionPoints?.map((point) => point.id)).size).toBe(ids.length);
+      for (const point of area.interactionPoints ?? []) {
+        expect(point.radius).toBeGreaterThan(0);
+        expect(point.x).toBeGreaterThanOrEqual(48);
+        expect(point.x).toBeLessThanOrEqual(592);
+      }
+    }
+    expect(town.interactionPoints ?? []).toEqual([]);
+  });
+  it("resolves Oja-Oba only through its explicit landmark anchor", () => {
+    const area = neighborhoodAreaForSlug("oja-oba");
+    expect(area.interactionPoints).toEqual([
+      { id: "oja-oba-market", x: 145, y: 220, radius: 60 },
+    ]);
   });
   it("only offers interaction within reach and picks the closest target", () => {
     const area = neighborhoodAreaForSlug("city-centre");
