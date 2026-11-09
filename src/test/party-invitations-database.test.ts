@@ -67,7 +67,7 @@ beforeAll(async () => {
         f !== "0077_market_stall_rent_categories_sales.sql",
     )
     .sort()) {
-      if (file === "0083_studio_room_layout") {
+      if (file === "0083_studio_room_layout.sql") {
         // The studio layout migration depends on x/y columns from this Supabase migration.
         await db.exec(
           readFileSync(
@@ -76,16 +76,16 @@ beforeAll(async () => {
           ),
         );
       }
-if (file === "0085_house_floors".sql) {
-          // House floors serialize the placement rotation column introduced by this Supabase migration.
-          await db.exec(
-            readFileSync(
-              "supabase/migrations/20261105080000_house_placement_rotation.sql",
-              "utf8",
-            ),
-          );
-        }
-                await db.exec(readFileSync(`drizzle/migrations/${file}`, "utf8"));
+      if (file === "0085_house_floors.sql") {
+        // House floors serialize the placement rotation column introduced by this Supabase migration.
+        await db.exec(
+          readFileSync(
+            "supabase/migrations/20261105080000_house_placement_rotation.sql",
+            "utf8",
+          ),
+        );
+      }
+      await db.exec(readFileSync(`drizzle/migrations/${file}`, "utf8"));
   }
   for (const file of [
     "20261019100000_party_life.sql",
