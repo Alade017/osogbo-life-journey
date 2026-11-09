@@ -44,7 +44,21 @@ describe("neighborhood NPC spawn distribution", () => {
     expect(neighborhoodNpcDestinationPoint(destination, 0)).toEqual(firstCharacterPoint);
     expect(neighborhoodNpcDestinationPoint(destination, 4)).toEqual(laterCharacterPoint);
     expect(firstCharacterPoint).not.toEqual(destination);
-    expect(neighborhoodNpcDestinationPoint(destination, -1)).toEqual(destination);
+    expect(neighborhoodNpcDestinationPoint(destination, -1)).toBeNull();
+  });
+
+  it("keeps NPC destinations clear of building and obstacle footprints", () => {
+    const occupied = [{ left: 70, top: 70, width: 180, height: 180 }];
+    const point = neighborhoodNpcDestinationPoint({ x: 100, y: 100 }, 0, occupied);
+    expect(point).not.toBeNull();
+    expect(
+      point!.x >= 48 && point!.x <= 272 && point!.y >= 48 && point!.y <= 272,
+    ).toBe(false);
+  });
+
+  it("returns null when every deterministic destination candidate is blocked", () => {
+    const occupied = [{ left: -10_000, top: -10_000, width: 20_000, height: 20_000 }];
+    expect(neighborhoodNpcDestinationPoint({ x: 100, y: 100 }, 0, occupied)).toBeNull();
   });
 
   it("moves overflow candidates clear of building and obstacle footprints", () => {
