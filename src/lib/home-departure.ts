@@ -1,6 +1,11 @@
 import type { TravelMode } from "@/lib/transport-service";
 
-export type HomeDeparture = { locationId: string; mode: TravelMode; characterId: string; fromLocationId: string };
+export type HomeDeparture = {
+  locationId: string;
+  mode: TravelMode;
+  characterId: string;
+  fromLocationId: string;
+};
 
 export type HomeDepartureReadiness = {
   houseAvailable: boolean;
