@@ -178,14 +178,22 @@ export function R3FTownSurface(props: Props) {
   const [hoveredTargetId, setHoveredTargetId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (
-      selectedTarget?.type === "property" &&
-      props.properties &&
-      !props.properties.some((property) => property.id === selectedTarget.id)
-    ) {
+    if (!selectedTarget) return;
+    const propertyRemoved =
+      selectedTarget.type === "property" &&
+      props.properties !== undefined &&
+      !props.properties.some((property) => property.id === selectedTarget.id);
+    const landmarkFiltered =
+      selectedTarget.type === "landmark" &&
+      town.landmarks.some((landmark) => landmark.id === selectedTarget.id) &&
+      !props.places.some((place) => place.id === selectedTarget.id);
+    const eventRemoved =
+      selectedTarget.type === "event" &&
+      !props.eventChips.some((event) => event.id === selectedTarget.id);
+    if (propertyRemoved || landmarkFiltered || eventRemoved) {
       setSelectedTarget(null);
     }
-  }, [props.properties, selectedTarget]);
+  }, [props.eventChips, props.places, props.properties, selectedTarget]);
 
   useEffect(() => {
     if (!props.searchTarget) return;
