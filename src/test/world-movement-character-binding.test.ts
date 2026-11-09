@@ -37,6 +37,7 @@ describe("character-bound fictional-world movement RPCs", () => {
       create function public._my_character_id() returns uuid
         language sql stable security definer set search_path=public
         as $
+
           select id from public.characters where user_id=auth.uid()
           order by created_at desc,id desc limit 1
         $;
