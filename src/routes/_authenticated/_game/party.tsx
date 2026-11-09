@@ -190,6 +190,7 @@ export function PartyExperience({
         <ClubsTab
           venues={venues.data ?? []}
           visitLocationId={visit.data?.location_id ?? null}
+          characterId={characterId}
           currentLocationId={character.current_location_id}
           cooldownAt={cooldown.data ?? null}
           activities={activities.data ?? []}
@@ -243,7 +244,7 @@ function useInvalidatingMutation<TArgs, TResult>(
 
 // Connects to the party room while the player is in a club. Failures are shown
 // quietly: dancing still works through the database RPCs when the room is offline.
-function usePartyRoom(locationId: string | null) {
+function usePartyRoom(locationId: string | null, characterId: string | null) {
   const [people, setPeople] = useState<PartyPresence[]>([]);
   const [lastDance, setLastDance] = useState<PartyDanceEvent | null>(null);
   const [status, setStatus] = useState<"idle" | "connecting" | "live" | "offline">("idle");
@@ -266,6 +267,13 @@ function usePartyRoom(locationId: string | null) {
           setPeople(payload.people),
         );
         room.onMessage("dance", (event: PartyDanceEvent) => setLastDance(event));
+        room.onLeave(() => {
+          if (roomRef.current !== room) return;
+          roomRef.current = null;
+          setPeople([]);
+          setLastDance(null);
+          setStatus("offline");
+        });
         setStatus("live");
       })
       .catch(() => {
@@ -279,7 +287,7 @@ function usePartyRoom(locationId: string | null) {
       setStatus("idle");
       void joined?.leave();
     };
-  }, [locationId]);
+  }, [characterId, locationId]);
 
   const sendDance = (event: PartyDanceEvent) => {
     roomRef.current?.send("dance", event);
@@ -290,6 +298,7 @@ function usePartyRoom(locationId: string | null) {
 function ClubsTab({
   venues,
   visitLocationId,
+  characterId,
   currentLocationId,
   cooldownAt,
   activities,
@@ -299,6 +308,7 @@ function ClubsTab({
 }: {
   venues: Awaited<ReturnType<typeof listPartyVenues>>;
   visitLocationId: string | null;
+  characterId: string | null;
   currentLocationId: string | null;
   cooldownAt: string | null;
   activities: PartyClubActivity[];
@@ -310,7 +320,7 @@ function ClubsTab({
   const enter = useInvalidatingMutation(partyRpc.enterClub, "You joined the party.");
   const leave = useInvalidatingMutation(partyRpc.leaveClub, "You left the club.");
   const dance = useInvalidatingMutation(partyRpc.danceWithNpc, "You danced!");
-  const room = usePartyRoom(visitLocationId);
+  const room = usePartyRoom(visitLocationId, characterId);
   // The room is told about a dance only after the database confirms it.
   const danceWithNpc = (npcSlug: string) => {
     dance
