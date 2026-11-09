@@ -324,15 +324,61 @@ export function R3FTownSurface(props: Props) {
 
     return result;
   }, []);
-  const cars = useMemo<[number, number][]>(() => {
+  const cars = useMemo<[number, number, number][]>(() => {
+    const distanceToSegment = (
+      px: number,
+      pz: number,
+      start: readonly [number, number],
+      end: readonly [number, number],
+    ) => {
+      const dx = end[0] - start[0];
+      const dz = end[1] - start[1];
+      const lengthSquared = dx * dx + dz * dz;
+      const projection = lengthSquared > 0
+        ? Math.max(0, Math.min(1, ((px - start[0]) * dx + (pz - start[1]) * dz) / lengthSquared))
+        : 0;
+      return Math.hypot(px - (start[0] + projection * dx), pz - (start[1] + projection * dz));
+    };
+
     return town.grid.carCells.flatMap(([x, z]) => {
       if (x === undefined || z === undefined) return [];
 
       const position = point(x, z);
+      const row = town.grid.rows[z];
+      const horizontal = row?.[x - 1] === "r" || row?.[x + 1] === "r";
+      const vertical = town.grid.rows[z - 1]?.[x] === "r" || town.grid.rows[z + 1]?.[x] === "r";
 
-      return [[position[0], position[2]] as [number, number]];
+      // Park static cars toward the quieter edge of their road cell, leaving
+      // the traffic-loop lane clear. The offset is sized to keep the car mesh
+      // (including its wheels) inside the two-unit road tile.
+      const offset = cell * 0.275;
+      const candidates: [number, number][] = horizontal && vertical
+        ? [[0, -offset], [0, offset], [-offset, 0], [offset, 0]]
+        : vertical
+          ? [[-offset, 0], [offset, 0]]
+          : [[0, -offset], [0, offset]];
+
+      const clearance = (candidate: [number, number]) => {
+        if (trafficRoutes.length === 0) return 0;
+        const candidateX = position[0] + candidate[0];
+        const candidateZ = position[2] + candidate[1];
+        return Math.min(
+          ...trafficRoutes.flatMap((route) =>
+            route.map((start, index) =>
+              distanceToSegment(candidateX, candidateZ, start, route[(index + 1) % route.length]!),
+            ),
+          ),
+        );
+      };
+
+      const bestOffset = candidates.reduce((best, candidate) =>
+        clearance(candidate) > clearance(best) ? candidate : best,
+      );
+      const rotation = vertical && !horizontal ? Math.PI / 2 : 0;
+
+      return [[position[0] + bestOffset[0], position[2] + bestOffset[1], rotation]];
     });
-  }, []);
+  }, [trafficRoutes]);
   const trafficLights = useMemo<[number, number][]>(() => {
     const result: [number, number][] = [];
     const usedCells = new Set<string>();
