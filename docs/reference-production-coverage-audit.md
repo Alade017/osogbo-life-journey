@@ -1,0 +1,58 @@
+# Reference-led production coverage audit
+
+Reviewed: 9 November 2026  
+Branch: `feat/phase-4-neighborhood-production-art`  
+Reference source: owner-supplied 31-image `image models.zip`
+
+## Audit boundary
+
+This is a code and catalogue-structure audit, not a visual acceptance review. It checks the current renderer/model registries and existing catalogue integration points. It does not add catalogue rows, invent inventory identifiers, change database schemas, or recreate the household furnishing pilot already present on `main`.
+
+## Coverage matrix
+
+| Reference family | Existing project coverage | Assessment | Next action |
+| --- | --- | --- | --- |
+| Bedrooms, living rooms and kitchens | Six house types, R3F room renderer, procedural furniture fallback, starter furniture and kitchen/dining catalogue | **Existing foundation** | Reuse; inspect actual room compositions and placement at desktop and 375px |
+| Household appliances | Refrigerator, microwave, deep freezer and other appliance branches in the room furniture renderer | **Partially represented** | Add no new item IDs; improve only catalogue-backed models that are visibly weak |
+| Food and consumer packaging | Existing food preview registry, reusable clear pouch, paper snack tray, bakery sleeve, leaf wrapper and insulated flask | **Good first-pass coverage** | Visual QA; then add packaging variants only if a current catalogue item needs them |
+| Bags, baskets, carts and retail packaging | Backpack wearable model; existing shop crates and vendor produce trays | **Partial** | Paper shopping/carrier bags and baskets are not yet evidenced as dedicated catalogue-backed models |
+| Street vendors and kiosks | Vendor canopies, fabric valances, radial ribs, produce trays; roadside shop counter, shelves, signboard and crates | **Good first-pass world coverage** | Check scale, occlusion and mobile readability in the running neighborhood |
+| Vehicles | Procedural city cars and existing road traffic dressing | **Partial** | Audit current vehicle data and road clearances before adding vehicle variants |
+| Clothing and footwear | Existing shirt, trousers, shoes/slippers and backpack wearable renderers | **Core basics covered** | Nigerian patterned clothing and additional footwear require existing catalogue/appearance support before implementation |
+| Gym equipment | Seven catalogue items: treadmill, multi-gym machine, dumbbells, yoga mat, dumbbell rack, full-length mirror and gym bag; all have branches in the room furniture renderer | **Catalogue-backed coverage exists** | Do not rebuild; verify all seven in the live room and check footprint/camera framing |
+| Barbershop interior | No dedicated barbershop furniture model family was evidenced in the audited registries | **Gap, conditional** | First confirm a current service destination and usable catalogue entries; then model only supported props |
+| Construction tools and site equipment | No dedicated construction-tool inventory model family was evidenced in the audited item registries | **Gap, conditional** | Confirm job/tool inventory IDs and gameplay usage before creating previews |
+| Dense low-rise district / urban mood | Existing district architecture, authored neighborhood dressing, street furniture, lighting and road scene | **Existing foundation** | Visual review against the Art Bible; do not trace reference layouts or use photos as textures |
+| City-map UI screenshot | Existing map dashboard and playable R3F neighborhood are separate established surfaces | **Existing foundation** | Keep renderer roles distinct; no SVG fallback or duplicate map renderer |
+
+## Verified integration facts
+
+- `ITEM_MODELS` remains keyed by existing inventory slugs and includes the existing food model registry.
+- Worn models remain separated into backpack, clothing, bottoms and footwear registries.
+- The house placement renderer resolves the server-provided `art_key` and sanitizes it before rendering. Furniture ownership, placement and inventory remain server-controlled.
+- The house room renderer contains dedicated geometry branches for all seven gym catalogue entries. The gym catalogue test checks the seven IDs against the existing migration.
+- The player-placed furniture GLB contract remains `public/models/furniture/<art_key>.glb`; the room renderer's procedural fallback remains available for missing models.
+- The reference image set is inspiration only. No supplied image has been copied into the runtime bundle or treated as a licensed production model.
+
+## Priority order
+
+1. **Visual QA before more asset creation.** Inspect the current market and vendor dressing, food packaging, appliance models, clothing previews and all seven gym items in the actual R3F scene. Record clipping, z-fighting, transparent-material sorting, unreadable silhouettes and mobile performance.
+2. **Catalogue-backed retail packaging.** If the current catalogue already contains paper bag, carrier bag, basket or carton entries, add original low-poly previews for those exact IDs. If it does not, leave the family as a documented gap; do not add schema or seed data as part of this art pass.
+3. **Service and construction props.** Verify existing barbershop/service and job-tool identifiers before implementing. Do not create decorative props that imply unsupported interactions.
+4. **Vehicles.** Audit current vehicle definitions and road widths, then test clearance and traffic interaction before expanding the model family.
+5. **Cultural clothing variants.** Only extend the wearable system where existing appearance data and catalogue identifiers support the variant.
+
+## Acceptance checklist
+
+- [ ] Run local typecheck, focused tests, lint and production build after the review slice is complete.
+- [ ] Capture the playable neighborhood at desktop and 375px mobile widths.
+- [ ] Inspect market roof drainage, shop shelves/counters, vendor canopy ribs/valances and produce trays for overlap or clipping.
+- [ ] Inspect food pouch transparency and label depth for sorting artifacts.
+- [ ] Inspect all seven gym items in their actual room slots and confirm they fit without blocking paths.
+- [ ] Verify player movement remains click/tap-to-move only and furniture actions remain server-backed.
+- [ ] Confirm no economy, catalogue, ownership, travel, database or interaction rules changed.
+- [ ] Do not trigger GitHub Actions; do not merge without explicit owner approval.
+
+## Outcome
+
+The strongest immediate opportunity is not another procedural detail. It is **visual verification and catalogue-backed gap closure**. The existing home and gym systems already cover more of the reference library than a file-name-only audit suggests. Retail carrier packaging, barber props and construction tools are candidate gaps, but each must be tied to current catalogue/gameplay data before implementation.
