@@ -653,15 +653,15 @@ export function WorldRoadsideShops({
             <WorldMaterial tone="sign" />
           </mesh>
 
-          <Text
-            position={[0, wallHeight * 0.88, shopDepth * 0.49 + size * 0.03]}
-            fontSize={size * 0.105}
-            color="#ffffff"
-            anchorX="center"
-            anchorY="middle"
-          >
-            SHOP
-          </Text>
+          {/* Keep the frontage sign unbranded until a real business label is supplied. */}
+          <mesh position={[0, wallHeight * 0.88, shopDepth * 0.49 + size * 0.031]}>
+            <boxGeometry args={[shopWidth * 0.58, size * 0.025, size * 0.012]} />
+            <WorldMaterial tone="linen" />
+          </mesh>
+          <mesh position={[0, wallHeight * 0.88 - size * 0.045, shopDepth * 0.49 + size * 0.031]}>
+            <boxGeometry args={[shopWidth * 0.42, size * 0.018, size * 0.012]} />
+            <WorldMaterial tone="accent" />
+          </mesh>
 
           {/* Product crates */}
           {[-1, 1].map((side) => (
