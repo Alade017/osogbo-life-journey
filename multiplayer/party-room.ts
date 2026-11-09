@@ -54,6 +54,7 @@ async function readClubMember(accessToken: string, locationId: string): Promise<
   const characterQuery = new URLSearchParams({
     select: "id,name",
     user_id: `eq.${user.id}`,
+    order: "created_at.desc",
     limit: "1",
   });
   const characterResponse = await fetch(`${url}/rest/v1/characters?${characterQuery}`, {
