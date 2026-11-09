@@ -861,7 +861,6 @@ export function PlayableNeighborhood() {
                             : nearbyObject.kind === "work"
                               ? `Work at ${currentLocation?.name ?? nearbyObject.name}`
                               : `Explore ${currentLocation?.name ?? nearbyObject.name}`}
-                        <kbd>E</kbd>
                       </button>
                     )}
                   </div>
@@ -883,7 +882,6 @@ export function PlayableNeighborhood() {
                               type="button"
                               className="neighborhood-person"
                               onClick={() => selectWorldTarget(npc.id)}
-                              disabled={npc.isMoving || !npc.available}
                               aria-label={
                                 isNearby
                                   ? `Talk with ${npc.name}, ${npc.activity}`
@@ -1115,7 +1113,7 @@ export function PlayableNeighborhood() {
                   <div className="neighborhood-controls-row">
                     <div className="neighborhood-control-copy">
                       <strong>Explore at your pace</strong>
-                      <span>Tap or click the ground to walk · arrow keys also work</span>
+                      <span>Tap or click open ground to walk, or select a person or building to approach it.</span>
                     </div>
                     {homeTypeId && (
                       <button
