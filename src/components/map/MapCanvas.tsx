@@ -114,18 +114,6 @@ export function MapCanvas({
     }
   }, [properties, selectedPropertyId]);
 
-  useEffect(() => {
-    if (!searchTarget) return;
-    const id = typeof searchTarget === "string" ? searchTarget : searchTarget.id;
-    if (availablePlaces.some((place) => place.id === id)) {
-      onSelectLandmark(id);
-      return;
-    }
-    if (townData.districts.some((district) => district.id === id)) {
-      onSelectDistrict(id);
-    }
-  }, [availablePlaces, onSelectDistrict, onSelectLandmark, searchTarget]);
-
   const availablePlaces = useMemo(
     () =>
       townData.landmarks.filter(
@@ -138,6 +126,18 @@ export function MapCanvas({
       ),
     [activeFilter, availableLandmarkIds, jobLandmarkIds],
   );
+
+  useEffect(() => {
+    if (!searchTarget) return;
+    const id = typeof searchTarget === "string" ? searchTarget : searchTarget.id;
+    if (availablePlaces.some((place) => place.id === id)) {
+      onSelectLandmark(id);
+      return;
+    }
+    if (townData.districts.some((district) => district.id === id)) {
+      onSelectDistrict(id);
+    }
+  }, [availablePlaces, onSelectDistrict, onSelectLandmark, searchTarget]);
 
   const handleReady = useCallback(() => setRendererState("ready"), []);
   const handleUnavailable = useCallback(() => setRendererState("fallback"), []);
