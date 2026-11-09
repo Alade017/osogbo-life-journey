@@ -4211,3 +4211,80 @@
 .phone-app-body .missions-claim:disabled {
   opacity: 0.6;
 }
+
+/* Community contribution in the phone: a hero, one card per fund, figures in a two-column strip. */
+.phone-app-body .contribution-app {
+  display: grid;
+  gap: 12px;
+}
+.phone-app-body .contribution-hero h2 {
+  font-size: 1.05rem;
+  margin: 0;
+}
+.phone-app-body .contribution-hero p {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  margin: 2px 0 0;
+}
+.phone-app-body .contribution-app .contribution-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card, 14px);
+  box-shadow: var(--elevation-card);
+  color: var(--card-foreground);
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+.phone-app-body .contribution-app .contribution-card h3 {
+  font-size: 0.95rem;
+  margin: 0;
+}
+.phone-app-body .contribution-figures {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+.phone-app-body .contribution-figures > div {
+  background: var(--muted);
+  border-radius: 12px;
+  padding: 10px;
+}
+.phone-app-body .contribution-figures dt {
+  color: var(--muted-foreground);
+  font-size: 0.7rem;
+}
+.phone-app-body .contribution-figures dd {
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  margin: 2px 0 0;
+}
+.phone-app-body .contribution-app .phone-service-field {
+  color: var(--muted-foreground);
+  display: grid;
+  font-size: 0.78rem;
+  gap: 6px;
+}
+.phone-app-body .contribution-app .phone-service-field input {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--card-foreground);
+  font-size: 0.95rem;
+  min-height: 44px;
+  padding: 0 12px;
+}
+.phone-app-body .contribution-app .contribution-card > button {
+  background: var(--primary);
+  border-radius: 12px;
+  color: var(--primary-foreground);
+  font-size: 0.85rem;
+  font-weight: 700;
+  min-height: 44px;
+  width: 100%;
+}
+.phone-app-body .contribution-app .contribution-card > button:disabled {
+  opacity: 0.55;
+}

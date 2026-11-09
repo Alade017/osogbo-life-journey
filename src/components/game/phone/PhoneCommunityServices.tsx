@@ -600,8 +600,8 @@ function ContributionApp() {
     onError: (error: Error) => toast.error(error.message),
   });
   return (
-    <div className="phone-service-screen">
-      <header>
+    <div className="phone-service-screen contribution-app">
+      <header className="contribution-hero">
         <h2>Community contribution</h2>
         <p>Support town projects with Virtual Naira</p>
       </header>
@@ -633,17 +633,24 @@ function ContributionApp() {
         </label>
       )}
       {funds.data?.map((fund) => (
-        <article className="phone-service-card" key={fund.id}>
+        <article className="phone-service-card contribution-card" key={fund.id}>
           <h3>{fund.title}</h3>
-          <p>Goal: {formatNaira(fund.goal_minor)}</p>
-          <p>
-            Your contributions:{" "}
-            {formatNaira(
-              contributions.data
-                ?.filter((item) => item.fund_id === fund.id)
-                .reduce((sum, item) => sum + item.amount_minor, 0) ?? 0,
-            )}
-          </p>
+          <dl className="contribution-figures">
+            <div>
+              <dt>Goal</dt>
+              <dd>{formatNaira(fund.goal_minor)}</dd>
+            </div>
+            <div>
+              <dt>Your contributions</dt>
+              <dd>
+                {formatNaira(
+                  contributions.data
+                    ?.filter((item) => item.fund_id === fund.id)
+                    .reduce((sum, item) => sum + item.amount_minor, 0) ?? 0,
+                )}
+              </dd>
+            </div>
+          </dl>
           <button
             type="button"
             disabled={
