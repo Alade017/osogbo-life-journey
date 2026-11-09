@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   availableNeighborhoodTargets,
+  neighborhoodInteractionPoint,
+  neighborhoodNpcNavigationPoint,
   venueEntranceKindForCategory,
 } from "@/game/neighborhood-interactions";
 import type { NeighborhoodObject } from "@/game/neighborhood-model";
@@ -101,24 +103,43 @@ describe("available neighborhood interaction targets", () => {
 });
 
 
-describe("neighborhood interaction points", () => {
-  it("uses the scheduled destination for a moving NPC", () => {
-    expect(
-      neighborhoodInteractionPoint(objects[3]!, [
-        { id: "npc", x: 40, y: 40, targetX: 90, targetY: 120, isMoving: true },
-      ]),
-    ).toEqual({ x: 90, y: 120 });
+describe("neighborhood NPC interaction and navigation points", () => {
+  const movingNpc = {
+    id: "npc",
+    x: 42,
+    y: 48,
+    targetX: 90,
+    targetY: 120,
+    isMoving: true,
+  };
+
+  it("navigates toward the scheduled destination of a moving NPC", () => {
+    expect(neighborhoodNpcNavigationPoint(objects[3]!, [movingNpc]))
+      .toEqual({ x: 90, y: 120 });
   });
 
-  it("uses the current position for a stationary NPC", () => {
-    expect(
-      neighborhoodInteractionPoint(objects[3]!, [
-        { id: "npc", x: 55, y: 65, targetX: 90, targetY: 120, isMoving: false },
-      ]),
-    ).toEqual({ x: 55, y: 65 });
+  it("measures interaction range from the moving NPC's actual position", () => {
+    expect(neighborhoodInteractionPoint(objects[3]!, [movingNpc]))
+      .toEqual({ x: 42, y: 48 });
   });
 
-  it("keeps building interaction points on their authored coordinates", () => {
+  it("uses the current position for a stationary NPC for both purposes", () => {
+    const stationary = { ...movingNpc, x: 55, y: 65, isMoving: false };
+    expect(neighborhoodNpcNavigationPoint(objects[3]!, [stationary]))
+      .toEqual({ x: 55, y: 65 });
+    expect(neighborhoodInteractionPoint(objects[3]!, [stationary]))
+      .toEqual({ x: 55, y: 65 });
+  });
+
+  it("keeps building navigation and interaction points on authored coordinates", () => {
+    expect(neighborhoodNpcNavigationPoint(objects[1]!, [])).toEqual({ x: 20, y: 20 });
     expect(neighborhoodInteractionPoint(objects[1]!, [])).toEqual({ x: 20, y: 20 });
+  });
+
+  it("falls back to the target coordinates if the selected NPC is no longer present", () => {
+    expect(neighborhoodNpcNavigationPoint(objects[3]!, []))
+      .toEqual({ x: 40, y: 40 });
+    expect(neighborhoodInteractionPoint(objects[3]!, []))
+      .toEqual({ x: 40, y: 40 });
   });
 });
