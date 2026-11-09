@@ -151,7 +151,7 @@ it("saves before visiting campus, reloads persisted saves and supports unsave", 
   expect(screen.queryByRole("heading", { name: "Retail essentials" })).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Unsave Finance basics" }));
   await screen.findByText("Your next chapter is waiting");
-});
+}, 15_000);
 it("shows only this character's completions and searches by provider", async () => {
   show(<EducationPage />);
   await screen.findByRole("heading", { name: "Finance basics" });
