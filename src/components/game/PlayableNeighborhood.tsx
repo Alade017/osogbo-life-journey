@@ -372,11 +372,13 @@ export function PlayableNeighborhood() {
       occupiedDestinationPoints.push(destination);
       const current = currentNpcPositionOverrides[npc.id] ?? { x: slot.x, y: slot.y };
       const path = neighborhoodNpcPath(current, destination, occupiedFootprints, sceneBounds);
-      if (!path) return [];
-      const targetX = destination.x;
-      const targetY = destination.y;
+      // Keep a scheduled character visible if its destination is unreachable.
+      // Holding position is safer than dropping the NPC or sending it through a structure.
+      const safeDestination = path ? destination : current;
+      const targetX = safeDestination.x;
+      const targetY = safeDestination.y;
       const isMoving =
-        !simulation.paused && Math.hypot(targetX - current.x, targetY - current.y) > 2;
+        !simulation.paused && !!path && Math.hypot(targetX - current.x, targetY - current.y) > 2;
       const activityKind = isMoving
         ? "walking"
         : activity.destination === "work"
@@ -400,7 +402,7 @@ export function PlayableNeighborhood() {
         y: current.y,
         targetX,
         targetY,
-        path,
+        path: path ?? [current],
         isMoving,
       }];
     });
