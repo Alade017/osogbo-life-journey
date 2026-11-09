@@ -523,15 +523,22 @@ export function PlayableNeighborhood() {
         actionId,
         requestId,
       );
-      return result;
+      return { result, characterId: character.id };
     },
-    onSuccess: async (result) => {
-      setNeighborhoodActionResult(result);
-      toast.success(result.message);
+    onSuccess: async ({ result, characterId }) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: q.character().queryKey }),
         queryClient.invalidateQueries({ queryKey: q.wallet().queryKey }),
       ]);
+      // A character switch can happen while the server action is in flight.
+      // The server binds the effect to the signed character; never surface its
+      // result in a different character's UI.
+      const activeCharacterId = queryClient.getQueryData<{ id?: string }>(
+        q.character().queryKey,
+      )?.id;
+      if (activeCharacterId !== characterId) return;
+      setNeighborhoodActionResult(result);
+      toast.success(result.message);
       await landmarkDetailsQuery.refetch();
     },
     onError: (error: Error) => toast.error(error.message.replaceAll("_", " ")),
