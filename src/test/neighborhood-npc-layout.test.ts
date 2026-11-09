@@ -7,7 +7,7 @@ describe("neighborhood NPC spawn distribution", () => {
   it("assigns stable opposite sidestep preferences to different NPC identities", () => {
     expect(neighborhoodNpcAvoidanceBias("npc-alpha")).toBe(neighborhoodNpcAvoidanceBias("npc-alpha"));
     expect([-1, 1]).toContain(neighborhoodNpcAvoidanceBias("npc-alpha"));
-    expect([-1, 1]).toContain(neighborhoodNpcAvoidanceBias("npc-beta"));
+    expect(neighborhoodNpcAvoidanceBias("npc-gamma")).toBe(-neighborhoodNpcAvoidanceBias("npc-alpha"));
   });
 
   it("assigns stable, staggered retry delays to NPC identities", () => {
