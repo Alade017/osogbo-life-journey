@@ -41,7 +41,16 @@ beforeAll(async () => {
   for (const file of readdirSync("drizzle/migrations")
     .filter((f) => f.endsWith(".sql") && !f.startsWith("0075_") && !f.startsWith("0077_"))
     .sort())
-    await db.exec(readFileSync(`drizzle/migrations/${file}`, "utf8"));
+if (file === "0083_studio_room_layout.sql") {
+      // The studio layout migration depends on x/y columns from this Supabase migration.
+      await db.exec(
+        readFileSync(
+          "supabase/migrations/20261102223137_freeform_house_furniture_placement.sql",
+          "utf8",
+        ),
+      );
+    }
+        await db.exec(readFileSync(`drizzle/migrations/${file}`, "utf8"));
   await db.exec(
     readFileSync("supabase/migrations/20261027104102_stall_passive_income.sql", "utf8"),
   );
