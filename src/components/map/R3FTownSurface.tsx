@@ -455,7 +455,7 @@ export function R3FTownSurface(props: Props) {
 
     // Keep only two stops, spaced apart.
     return result.filter((_, index) => index % 4 === 0).slice(0, 2);
-  }, []);
+  }, [trafficLightCellKeys]);
   const roadSigns = useMemo(() => {
     const candidates: { position: [number, number]; gridX: number; gridZ: number }[] = [];
     const rows = town.grid.rows;
@@ -483,7 +483,10 @@ export function R3FTownSurface(props: Props) {
 
           if (roadCount !== 1) return false;
 
-          return !town.grid.carCells.some(([carX, carZ]) => carX === nx && carZ === nz) && !trafficLightCellKeys.has(`${nx},${nz}`);
+          return (
+            !town.grid.carCells.some(([carX, carZ]) => carX === nx && carZ === nz) &&
+            !trafficLightCellKeys.has(`${nx},${nz}`)
+          );
         });
 
         if (!available) return;
@@ -658,7 +661,7 @@ export function R3FTownSurface(props: Props) {
     }
 
     return selected;
-  }, [busStops, roadsideShops, motorcycles, tricycles, roadSigns]);
+  }, [busStops, roadsideShops, motorcycles, tricycles, roadSigns, trafficLights]);
   const { sidewalks, curbs } = useMemo(() => {
     const occupied = new Set<string>();
 
@@ -866,7 +869,7 @@ export function R3FTownSurface(props: Props) {
     });
 
     return result;
-  }, [trafficLightCellKeys]);
+  }, []);
   const wasteBins = useMemo<[number, number][]>(() => {
     const occupied = new Set<string>();
 
@@ -888,6 +891,7 @@ export function R3FTownSurface(props: Props) {
       const gridZ = Math.round(z / cell + (gridRows - 1) / 2 - 0.5);
       occupied.add(`${gridX},${gridZ}`);
     });
+    trafficLightCellKeys.forEach((key) => occupied.add(key));
 
     const result: [number, number][] = [];
     const used = new Set<string>();
