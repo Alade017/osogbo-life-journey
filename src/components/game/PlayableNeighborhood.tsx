@@ -332,7 +332,7 @@ export function PlayableNeighborhood() {
       return activity.destinationSlug === currentLocation.slug ? [{ npc, activity, catalogIndex }] : [];
     });
     return scheduled.flatMap(({ npc, activity, catalogIndex }, index) => {
-      const slot = neighborhoodNpcSpawnPoint(slots, index);
+      const slot = neighborhoodNpcSpawnPoint(slots, catalogIndex);
       if (!slot) return [];
       const destinationObject =
         activity.destination === "home"
