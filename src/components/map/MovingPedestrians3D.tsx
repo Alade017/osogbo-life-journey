@@ -3,11 +3,11 @@ import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import type { Group } from "three";
 import { WorldMaterial } from "@/components/3d/WorldScene";
+import type { TownMobilityRoute } from "@/game/town-mobility";
 
 export interface MovingPedestrians3DProps {
   cellSize: number;
-  gridCols: number;
-  gridRows: number;
+  paths: readonly TownMobilityRoute[];
 }
 
 interface NpcConfig {
@@ -16,7 +16,7 @@ interface NpcConfig {
   role: "trader" | "student" | "resident" | "elder";
   color: string;
   speed: number;
-  path: [number, number][];
+  path: TownMobilityRoute;
   greeting: string;
 }
 
@@ -28,11 +28,7 @@ interface NpcConfig {
  * - Residents commuting in colorful attire
  * - Footstep bobbing animations and interactive dialogue bubbles.
  */
-export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({
-  cellSize,
-  gridCols,
-  gridRows,
-}) => {
+export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({ paths }) => {
   const [activeSpeech, setActiveSpeech] = useState<{ id: string; text: string } | null>(null);
   const speechTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -49,67 +45,23 @@ export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({
     }, duration);
   };
 
-  const xMax = (gridCols / 2 - 3) * cellSize;
-  const zMax = (gridRows / 2 - 3) * cellSize;
-
-  const npcs: NpcConfig[] = [
-    {
-      id: "npc-trader-1",
-      name: "Iya Oja",
-      role: "trader",
-      color: "#ea580c",
-      speed: 0.12,
-      path: [
-        [-xMax * 0.7, zMax * 0.3],
-        [-xMax * 0.2, zMax * 0.3],
-        [-xMax * 0.2, zMax * 0.6],
-        [-xMax * 0.7, zMax * 0.6],
-      ],
-      greeting: "🧺 E kaasan! Fresh yams and peppers at Oja Oba!",
-    },
-    {
-      id: "npc-student-1",
-      name: "Tunde",
-      role: "student",
-      color: "#2563eb",
-      speed: 0.18,
-      path: [
-        [0, -zMax * 0.5],
-        [xMax * 0.5, -zMax * 0.5],
-        [xMax * 0.5, -zMax * 0.2],
-        [0, -zMax * 0.2],
-      ],
-      greeting: "🎒 On my way to the School of Art!",
-    },
-    {
-      id: "npc-resident-1",
-      name: "Alhaji Bello",
-      role: "elder",
-      color: "#16a34a",
-      speed: 0.09,
-      path: [
-        [-xMax * 0.3, -zMax * 0.3],
-        [xMax * 0.3, -zMax * 0.3],
-        [xMax * 0.3, 0],
-        [-xMax * 0.3, 0],
-      ],
-      greeting: "🕌 As-salamu alaykum! Heading towards the Grand Mosque.",
-    },
-    {
-      id: "npc-resident-2",
-      name: "Folake",
-      role: "resident",
-      color: "#c026d3",
-      speed: 0.15,
-      path: [
-        [xMax * 0.4, zMax * 0.2],
-        [xMax * 0.7, zMax * 0.2],
-        [xMax * 0.7, zMax * 0.5],
-        [xMax * 0.4, zMax * 0.5],
-      ],
-      greeting: "👋 Beautiful afternoon in Osogbo!",
-    },
+  const roles: NpcConfig["role"][] = ["trader", "student", "resident", "elder"];
+  const clothingColors = ["#ea580c", "#2563eb", "#16a34a", "#c026d3"];
+  const greetings = [
+    "E kaasan! Welcome to the neighbourhood.",
+    "Good day! Enjoy your walk around town.",
+    "As-salamu alaykum! Have a peaceful day.",
+    "Hello! Lovely to see you around town.",
   ];
+  const npcs: NpcConfig[] = paths.map((path, index) => ({
+    id: `town-pedestrian-${index}`,
+    name: `Neighbour ${index + 1}`,
+    role: roles[index % roles.length]!,
+    color: clothingColors[index % clothingColors.length]!,
+    speed: 0.09 + (index % 4) * 0.025,
+    path,
+    greeting: greetings[index % greetings.length]!,
+  }));
 
   return (
     <group position={[0, 0.05, 0]}>
@@ -117,7 +69,6 @@ export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({
         <PedestrianCharacter
           key={npc.id}
           npc={npc}
-          cellSize={cellSize}
           onInteract={(text) => showSpeech(npc.id, text, 3000)}
           isSpeaking={activeSpeech?.id === npc.id}
           speechText={activeSpeech?.text}
