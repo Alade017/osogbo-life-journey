@@ -16,6 +16,7 @@ export function WorldStreetFurniture({
   const frames: WorldInstance[] = [],
     seats: WorldInstance[] = [],
     benchSlats: WorldInstance[] = [],
+    binDetails: WorldInstance[] = [],
     panels: WorldInstance[] = [];
   const signLabels: { id: string; x: number; z: number; width: number; label: string }[] = [];
   for (const item of items) {
@@ -49,8 +50,17 @@ export function WorldStreetFurniture({
         );
       }
     } else if (kind === "bin") {
-      frames.push({ position: [x, 0.36, z], scale: [width, 0.72, depth] });
+      frames.push(
+        { position: [x, 0.36, z], scale: [width, 0.72, depth] },
+        { position: [x - width * 0.28, 0.035, z], scale: [width * 0.16, 0.07, depth * 0.72] },
+        { position: [x + width * 0.28, 0.035, z], scale: [width * 0.16, 0.07, depth * 0.72] },
+      );
       seats.push({ position: [x, 0.75, z], scale: [width + 0.07, 0.08, depth + 0.07] });
+      // A dark inset slot makes the lid legible without adding a branded decal.
+      binDetails.push({
+        position: [x, 0.765, z + depth * 0.505],
+        scale: [width * 0.42, 0.025, 0.012],
+      });
     } else {
       const panelWidth = Math.max(width, 0.65);
       frames.push({ position: [x, 0.75, z], scale: [0.1, 1.5, 0.1] });
@@ -65,6 +75,7 @@ export function WorldStreetFurniture({
       <WorldInstances tone="timber" items={frames} />
       <WorldInstances tone="slate" items={seats} />
       <WorldInstances tone="timber" items={benchSlats} />
+      <WorldInstances tone="drainage" items={binDetails} />
       <WorldInstances tone="linen" items={panels} />
       {signLabels.map((sign) => (
         <Text
