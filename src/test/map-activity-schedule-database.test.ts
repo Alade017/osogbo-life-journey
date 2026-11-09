@@ -28,6 +28,7 @@ describe("shared map activity schedules", () => {
       create role anon;
       create role authenticated;
       create role service_role;
+      create table public.profiles(id uuid primary key);
       create table public.locations(
         id uuid primary key, name text not null, description text not null default '',
         is_active boolean not null default true
@@ -84,6 +85,7 @@ describe("shared map activity schedules", () => {
     await db.exec(
       readFileSync("supabase/migrations/20261109120000_bind_map_action_to_character.sql", "utf8"),
     );
+    await db.query("insert into public.profiles(id) values($1)", [userId]);
     await db.query("insert into public.locations(id,name) values($1,'Schedule test location')", [
       locationId,
     ]);
@@ -290,7 +292,7 @@ describe("shared map activity schedules", () => {
   });
   it("rejects a neighborhood action when the active character differs from the authorized character", async () => {
     const differentCharacterId = "77777777-7777-4777-8777-777777777777";
-    const openDefinition = action(0, 24);
+    const openDefinition = { ...action(0, 24), id: "character-binding-action" };
     await db.query(
       `insert into public.map_landmark_actions(landmark_id,id,definition)
        values($1,$2,$3::jsonb)`,
