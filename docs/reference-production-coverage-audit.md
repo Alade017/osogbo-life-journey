@@ -101,3 +101,12 @@ The roadside audit found one tighter point:
 - The route builder does not model a vehicle's swept rectangle through a 90-degree turn. The centreline is continuous, but the danfo's long body can sweep across a larger area than its centreline suggests.
 
 **Decision:** no traffic-light relocation, vehicle scaling or route offset change was made without a live scene inspection. The likely first visual checkpoint is the danfo passing the traffic-light pole at an intersection, followed by its 90-degree corner sweep. If the live capture confirms contact, move only the affected signal placement into a reserved roadside grass cell using the existing occupancy checks; do not shrink all vehicles or alter the road grid to compensate. Keep vehicle speed, route authority and gameplay unchanged.
+
+
+## Intersection signal clearance correction
+
+The R3F placement pass has now moved traffic-signal pole origins from an offset inside the intersection road tile to a deterministically selected diagonal grass tile. Candidate cells must be grass, outside building/water/plot reservations, outside parked-car cells, and outside the existing deterministic tree pattern. Each selected signal cell is unique.
+
+The selected signal cells are also reserved from subsequent bus-stop, road-sign, roadside-shop, street-vendor, waste-bin and utility-pole placement passes. This avoids solving vehicle clearance at the cost of introducing a new prop overlap. The road grid, traffic loop points, vehicle dimensions, vehicle speed and gameplay authority are unchanged.
+
+This is a source-level placement correction only. Confirm the actual signal pole position, sidewalk relationship, visibility and danfo corner clearance in the live R3F scene during the pending desktop and 375px mobile visual QA.
