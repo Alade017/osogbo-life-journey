@@ -353,7 +353,9 @@ export function PlayableNeighborhood() {
       const destination = neighborhoodNpcDestinationPoint(
         destinationObject ?? slot,
         catalogIndex,
+        occupiedFootprints,
       );
+      if (!destination) return [];
       const targetX = destination.x;
       const targetY = destination.y;
       const current = currentNpcPositionOverrides[npc.id] ?? { x: slot.x, y: slot.y };
