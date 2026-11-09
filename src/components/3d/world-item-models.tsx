@@ -108,10 +108,22 @@ export function ShoesWorn({ h, color = "#2a2a2a" }: ItemModelProps & { color?: s
   return (
     <group>
       {[-1, 1].map((side) => (
-        <mesh key={side} position={[side * h * 0.075, h * 0.03, h * 0.03]} castShadow>
-          <boxGeometry args={[h * 0.12, h * 0.07, h * 0.2]} />
-          <WorldMaterial color={color} />
-        </mesh>
+        <group key={side} position={[side * h * 0.075, 0, h * 0.03]}>
+          {/* Soft sandal sole and raised toe strap. */}
+          <mesh position={[0, h * 0.025, 0]} castShadow receiveShadow>
+            <boxGeometry args={[h * 0.13, h * 0.045, h * 0.22]} />
+            <WorldMaterial color="#4a4036" />
+          </mesh>
+          <mesh position={[0, h * 0.065, h * 0.015]} rotation={[0.18, 0, 0]}>
+            <boxGeometry args={[h * 0.12, h * 0.025, h * 0.055]} />
+            <WorldMaterial color={color} />
+          </mesh>
+          {/* Narrow cross-foot strap gives the simple slipper a recognisable silhouette. */}
+          <mesh position={[0, h * 0.07, -h * 0.045]} rotation={[0, 0, 0]}>
+            <boxGeometry args={[h * 0.12, h * 0.025, h * 0.035]} />
+            <WorldMaterial color={color} />
+          </mesh>
+        </group>
       ))}
     </group>
   );
