@@ -197,16 +197,20 @@ export function stitchTownPedestrianRoutes(
   const points = new Map<string, Point>();
   const adjacency = new Map<string, Edge[]>();
   const edges: Edge[] = [];
+  const edgeKeys = new Set<string>();
 
   routes.forEach((route) => {
     for (let index = 1; index < route.length; index += 1) {
       const a = route[index - 1]!;
       const b = route[index]!;
       if (Math.hypot(b[0] - a[0], b[1] - a[1]) < 0.001) continue;
-      const edge = { id: edges.length, a, b };
-      edges.push(edge);
       const aKey = keyOf(a);
       const bKey = keyOf(b);
+      const edgeKey = aKey < bKey ? `${aKey}|${bKey}` : `${bKey}|${aKey}`;
+      if (edgeKeys.has(edgeKey)) continue;
+      edgeKeys.add(edgeKey);
+      const edge = { id: edges.length, a, b };
+      edges.push(edge);
       points.set(aKey, a);
       points.set(bKey, b);
       adjacency.set(aKey, [...(adjacency.get(aKey) ?? []), edge]);
