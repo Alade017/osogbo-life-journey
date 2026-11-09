@@ -128,7 +128,16 @@ export const q = {
     queryOptions({
       queryKey: ["character"],
       retry: false,
-      queryFn: async () => unwrap(await supabase.from("characters").select("*").maybeSingle()),
+      queryFn: async () =>
+        unwrap(
+          await supabase
+            .from("characters")
+            .select("*")
+            .order("created_at", { ascending: false })
+            .order("id", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+        ),
     }),
   homeSave: () =>
     queryOptions({
