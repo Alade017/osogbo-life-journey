@@ -514,6 +514,15 @@ export function PlayableNeighborhood() {
     setHomeBound(true);
   }, [nearHome, homeObject, district?.personalHome, enterHomeNow]);
   const enteringHome = enterHome.isPending;
+
+  /** Stop any outstanding tap destination before an interaction takes control. */
+  const stopGroundMovement = useCallback(() => {
+    groundTargetRef.current = null;
+    setGroundTarget(null);
+    setDirections(new Set());
+    setPendingTargetId(null);
+    setHomeBound(false);
+  }, []);
   useEffect(() => {
     if (!homeBound || nearbyObject?.kind !== "home") return;
     setHomeBound(false);
@@ -666,6 +675,7 @@ export function PlayableNeighborhood() {
       )
         return;
       event.preventDefault();
+      stopGroundMovement();
       if (nearbyObject.kind === "home") {
         activateHome();
       } else if (nearbyObject.kind === "npc") {
@@ -682,11 +692,12 @@ export function PlayableNeighborhood() {
     };
     window.addEventListener("keydown", activate);
     return () => window.removeEventListener("keydown", activate);
-  }, [activateHome, activePanel, connectionState, enteringHome, nearbyObject]);
+  }, [activateHome, activePanel, connectionState, enteringHome, nearbyObject, stopGroundMovement]);
 
   const handleScene = useCallback((next: PhaserNeighborhoodHandle | null) => setScene(next), []);
   const openInteraction = (target: NeighborhoodObject | null = nearbyObject) => {
     if (!target) return;
+    stopGroundMovement();
     if (target.kind === "home") {
       enterHome.mutate();
     } else if (target.kind === "npc") {
