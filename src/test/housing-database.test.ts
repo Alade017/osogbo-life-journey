@@ -359,6 +359,15 @@ describe("housing onboarding database actions", () => {
         tenure: "owned",
         propertyId: owned.rows[0]!.id,
       });
+      const map = await db.query<{
+        markers: { propertyId: string; status: string }[];
+      }>("select public.housing_map_properties($1) as markers", [userId]);
+      expect(map.rows[0]?.markers).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ propertyId: rented.rows[0]!.id, status: "vacant" }),
+          expect.objectContaining({ propertyId: owned.rows[0]!.id, status: "owned" }),
+        ]),
+      );
       const room = await db.query<{ result: { house: { status: string } } }>(
         "select public.get_house_state($1) as result",
         [userId],
