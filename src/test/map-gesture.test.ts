@@ -1,13 +1,29 @@
 import { describe, expect, it } from "vitest";
-import { isQuickMapTap } from "@/lib/map-gesture";
+import {
+  isMapTargetSelectionAllowed,
+  MAP_DRAG_THRESHOLD_PX,
+  MAP_TARGET_MAX_POINTER_DELTA,
+} from "@/game/map-gesture";
 
-describe("map tap gesture threshold", () => {
-  it("accepts a short press with less than six pixels of movement", () => {
-    expect(isQuickMapTap({ x: 20, y: 20, at: 100 }, { x: 23, y: 22, at: 380 })).toBe(true);
+describe("town map target gesture selection", () => {
+  it("allows landmark callbacks without a Three.js pointer event", () => {
+    expect(isMapTargetSelectionAllowed(undefined, false)).toBe(true);
   });
 
-  it("treats six pixels of movement or a long press as a map gesture", () => {
-    expect(isQuickMapTap({ x: 20, y: 20, at: 100 }, { x: 26, y: 20, at: 200 })).toBe(false);
-    expect(isQuickMapTap({ x: 20, y: 20, at: 100 }, { x: 20, y: 20, at: 601 })).toBe(false);
+  it("allows taps within the pointer delta tolerance", () => {
+    expect(isMapTargetSelectionAllowed(0, false)).toBe(true);
+    expect(isMapTargetSelectionAllowed(MAP_TARGET_MAX_POINTER_DELTA, false)).toBe(true);
+  });
+
+  it("rejects clicks with a large pointer delta", () => {
+    expect(isMapTargetSelectionAllowed(MAP_TARGET_MAX_POINTER_DELTA + 1, false)).toBe(false);
+  });
+
+  it("rejects gestures already classified as camera drags", () => {
+    expect(isMapTargetSelectionAllowed(0, true)).toBe(false);
+  });
+
+  it("keeps the drag threshold larger than the target click tolerance", () => {
+    expect(MAP_DRAG_THRESHOLD_PX).toBeGreaterThan(MAP_TARGET_MAX_POINTER_DELTA);
   });
 });
