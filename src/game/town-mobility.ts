@@ -286,3 +286,15 @@ export class TownPedestrianJunctionScheduler {
     else this.waiters.delete(junctionId);
   }
 }
+
+
+/** Measures traversable edges in a closed route, ignoring malformed and degenerate segments. */
+export function measureTownMobilityLoop(route: TownMobilityRoute): number {
+  if (route.length < 2) return 0;
+  return route.reduce((total, point, index) => {
+    const next = route[(index + 1) % route.length]!;
+    if (![point[0], point[1], next[0], next[1]].every(Number.isFinite)) return total;
+    const length = Math.hypot(next[0] - point[0], next[1] - point[1]);
+    return Number.isFinite(length) && length >= 0.001 ? total + length : total;
+  }, 0);
+}
