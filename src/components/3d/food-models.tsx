@@ -294,17 +294,48 @@ function BoiledEgg() {
     </group>
   );
 }
-/** Insulated flask: a steel body with a dark lid. */
+/** Insulated flask: steel body, protective grip, screw collar and cup lid. */
 function InsulatedFlask() {
   return (
     <group>
+      {/* Rounded shoulder and main double-wall body. */}
       <mesh position={[0, 0.45, 0]} castShadow>
-        <cylinderGeometry args={[0.22, 0.2, 0.9, 32]} />
+        <cylinderGeometry args={[0.22, 0.2, 0.9, 32, 1]} />
         {mat("#c9ced4", 0.25)}
       </mesh>
-      <mesh position={[0, 0.95, 0]} castShadow>
-        <cylinderGeometry args={[0.23, 0.23, 0.12, 32]} />
+      <mesh position={[0, 0.91, 0]} castShadow>
+        <cylinderGeometry args={[0.2, 0.22, 0.12, 32]} />
+        {mat("#dce0e4", 0.28)}
+      </mesh>
+      {/* Dark non-slip lower grip and narrow metal trim rings. */}
+      <mesh position={[0, 0.14, 0]}>
+        <cylinderGeometry args={[0.205, 0.205, 0.18, 32]} />
+        {mat("#34383d", 0.82)}
+      </mesh>
+      {[0.24, 0.83].map((y) => (
+        <mesh key={y} position={[0, y, 0]}>
+          <torusGeometry args={[0.211, 0.012, 6, 32]} />
+          {mat("#858d96", 0.24)}
+        </mesh>
+      ))}
+      {/* Threaded neck and a removable drinking-cup lid. */}
+      <mesh position={[0, 1.02, 0]}>
+        <cylinderGeometry args={[0.16, 0.18, 0.1, 28]} />
+        {mat("#34383d", 0.45)}
+      </mesh>
+      {[1.0, 1.04].map((y) => (
+        <mesh key={y} position={[0, y, 0]}>
+          <torusGeometry args={[0.165, 0.009, 5, 28]} />
+          {mat("#aeb5bc", 0.3)}
+        </mesh>
+      ))}
+      <mesh position={[0, 1.13, 0]} castShadow>
+        <cylinderGeometry args={[0.23, 0.23, 0.2, 32]} />
         {mat("#222326", 0.4)}
+      </mesh>
+      <mesh position={[0, 1.235, 0]}>
+        <cylinderGeometry args={[0.22, 0.22, 0.025, 32]} />
+        {mat("#41464d", 0.48)}
       </mesh>
       <mesh position={[0, 0.02, 0]}>
         <cylinderGeometry args={[0.2, 0.2, 0.04, 32]} />
