@@ -7106,7 +7106,7 @@ export type Database = {
       }
       save_player_world_position: {
         Args: {
-          p_building_slug: string
+          p_building_slug: string | null
           p_expected_revision: number
           p_request_id: string
           p_world_x: number
@@ -7116,7 +7116,7 @@ export type Database = {
       }
       save_player_world_position_for_character: {
         Args: {
-          p_building_slug: string
+          p_building_slug: string | null
           p_expected_revision: number
           p_request_id: string
           p_world_x: number
