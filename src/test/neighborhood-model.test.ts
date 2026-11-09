@@ -3,6 +3,7 @@ import townData from "@/data/osogbo-town.json";
 import { OSOGBO_WORLD_NODES, cityEntranceForLocation } from "@/lib/city-world";
 import {
   neighborhoodAreaForSlug,
+  neighborhoodAreaForLocation,
   neighborhoodAreaOrigin,
   neighborhoodOrigin,
   nearestInteraction,
@@ -17,7 +18,10 @@ import {
   neighborhoodRoadComponents,
 } from "@/game/neighborhood-navigation";
 const townDataLandmarkIdsForTest = () =>
-  Object.groupBy(townData.landmarks, (landmark) => landmark.locationSlug) as Record<string, string[]>;
+  townData.landmarks.reduce<Record<string, string[]>>((groups, landmark) => {
+    (groups[landmark.locationSlug] ??= []).push(landmark.id);
+    return groups;
+  }, {});
 
 describe("neighborhood coordinates and interaction", () => {
   it("selects distinct shared street layouts for Olaiya and Oja-Oba", () => {
@@ -130,7 +134,7 @@ describe("neighborhood coordinates and interaction", () => {
   it("keeps every generated playable entrance clear and the road network connected", () => {
     for (const slug of Object.keys(OSOGBO_WORLD_NODES).filter(isPlayableDistrict)) {
       if (slug === "city-centre" || slug === "oja-oba") continue;
-      const area = neighborhoodAreaForSlug(slug);
+      const area = neighborhoodAreaForLocation({ slug, name: slug, map_category: "commercial" });
       const origin = neighborhoodAreaOrigin(cityEntranceForLocation(slug));
       const report = checkNeighborhoodEntrances(area, { x: 320, y: 300 }, origin);
       expect(report.spawnClear, `${slug} should have a navigable entrance spawn`).toBe(true);
