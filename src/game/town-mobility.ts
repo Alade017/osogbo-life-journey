@@ -26,6 +26,7 @@ export function deriveTownMobilityRoutes(
   cellSize: number,
   laneOffset = 0,
 ): TownMobilityRoute[] {
+  if (!Number.isFinite(cellSize) || cellSize <= 0 || !Number.isFinite(laneOffset)) return [];
   const rowCount = rows.length;
   const columnCount = Math.max(0, ...rows.map((row) => row.length));
   const horizontalRoadRows = rows.flatMap((row, z) =>
@@ -77,6 +78,7 @@ export function deriveTownPedestrianRoutes(
   blockedCells: readonly (readonly [number, number])[],
   sidewalkWidth = cellSize * 0.28,
 ): TownMobilityRoute[] {
+  if (!Number.isFinite(cellSize) || cellSize <= 0 || !Number.isFinite(sidewalkWidth) || sidewalkWidth < 0) return [];
   const columnCount = Math.max(0, ...rows.map((row) => row.length));
   const blocked = new Set(blockedCells.map(([x, z]) => `${x},${z}`));
   const lines = new Map<string, { coordinates: Set<number>; orientation: "h" | "v"; fixed: number; side: number }>();
@@ -148,6 +150,7 @@ export function deriveTownPedestrianCornerRoutes(
   blockedCells: readonly (readonly [number, number])[] = [],
   sidewalkWidth = cellSize * 0.28,
 ): TownMobilityRoute[] {
+  if (!Number.isFinite(cellSize) || cellSize <= 0 || !Number.isFinite(sidewalkWidth) || sidewalkWidth < 0) return [];
   const columnCount = Math.max(0, ...rows.map((row) => row.length));
   const blocked = new Set(blockedCells.map(([x, z]) => `${x},${z}`));
   const offset = cellSize / 2 + sidewalkWidth / 2;
