@@ -58,10 +58,12 @@ export function deriveTownPedestrianRoutes(
   rows: readonly string[],
   cellSize: number,
   blockedCells: readonly (readonly [number, number])[],
+  sidewalkWidth = cellSize * 0.28,
 ): TownMobilityRoute[] {
   const columnCount = Math.max(0, ...rows.map((row) => row.length));
   const blocked = new Set(blockedCells.map(([x, z]) => `${x},${z}`));
-  const lines = new Map<string, Set<number>>();
+  const lines = new Map<string, { coordinates: Set<number>; orientation: "h" | "v"; fixed: number; side: number }>();
+  const sidewalkOffset = cellSize / 2 + sidewalkWidth / 2;
 
   rows.forEach((row, z) => {
     Array.from(row).forEach((tile, x) => {
@@ -72,32 +74,35 @@ export function deriveTownPedestrianRoutes(
         if (rows[sidewalkZ]?.[sidewalkX] !== "g") continue;
         if (blocked.has(`${sidewalkX},${sidewalkZ}`)) continue;
 
-        const horizontal = dx === 0;
-        const lineKey = `${horizontal ? "h" : "v"}:${horizontal ? sidewalkZ : sidewalkX}`;
-        const coordinate = horizontal ? sidewalkX : sidewalkZ;
-        const values = lines.get(lineKey) ?? new Set<number>();
-        values.add(coordinate);
-        lines.set(lineKey, values);
+        // Keep each side of a road as its own line. Waypoints sit at the
+        // centre of the rendered sidewalk strip, not at the grass-cell centre.
+        const orientation = dx === 0 ? "h" : "v";
+        const side = dx === 0 ? dz : dx;
+        const fixed = orientation === "h" ? sidewalkZ : sidewalkX;
+        const coordinate = orientation === "h" ? x : z;
+        const key = `${orientation}:${fixed}:${side}`;
+        const line = lines.get(key) ?? { coordinates: new Set<number>(), orientation, fixed, side };
+        line.coordinates.add(coordinate);
+        lines.set(key, line);
       }
     });
   });
 
   const routes: TownMobilityRoute[] = [];
-  for (const [lineKey, values] of lines) {
-    const [orientation, fixedValue] = lineKey.split(":");
-    const fixed = Number(fixedValue);
+  for (const { coordinates: values, orientation, fixed, side } of lines.values()) {
     const coordinates = [...values].sort((a, b) => a - b);
     let run: number[] = [];
 
     const appendRun = () => {
       if (run.length >= 3) {
         const points: [number, number][] = run.map((coordinate) => {
-          const x = orientation === "h" ? coordinate : fixed;
-          const z = orientation === "h" ? fixed : coordinate;
-          return [
-            (x - (columnCount - 1) / 2) * cellSize,
-            (z - (rows.length - 1) / 2) * cellSize,
-          ];
+          const roadX = orientation === "h" ? coordinate : fixed - side;
+          const roadZ = orientation === "h" ? fixed - side : coordinate;
+          const x = (roadX - (columnCount - 1) / 2) * cellSize;
+          const z = (roadZ - (rows.length - 1) / 2) * cellSize;
+          return orientation === "h"
+            ? [x, z + side * sidewalkOffset]
+            : [x + side * sidewalkOffset, z];
         });
         routes.push(points);
       }
