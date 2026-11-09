@@ -193,6 +193,24 @@ describe("party rewards SQL", () => {
       "select has_function_privilege('authenticated','public._assert_party_action_character(uuid)','execute') authenticated",
     );
     expect(helper.rows[0]?.authenticated).toBe(false);
+    const legacy = [
+      "public.enter_club(uuid)",
+      "public.leave_club(uuid)",
+      "public.buy_drink(text,uuid)",
+      "public.join_club_activity(text,uuid)",
+      "public.dance_with_npc(text,uuid)",
+      "public.dance_with_npc_for_character(text,uuid,uuid)",
+      "public.dance_with_player(uuid,uuid)",
+      "public.host_party_event(uuid,text,timestamp with time zone,jsonb,uuid)",
+      "public.respond_to_event(uuid,uuid)",
+    ];
+    for (const signature of legacy) {
+      const grant = await db.query<{ authenticated: boolean }>(
+        "select has_function_privilege('authenticated',$1,'execute') authenticated",
+        [signature],
+      );
+      expect(grant.rows[0]?.authenticated, signature).toBe(false);
+    }
   });
 
   it("grants only the locked dance entry point to authenticated callers", async () => {
