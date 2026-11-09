@@ -159,6 +159,9 @@ function NeighborhoodNpcActor({
     const distance = Math.hypot(dx, dz);
     const walking = distance > 0.035;
     if (walking) {
+      // A later trip may revisit the same destination. Treat it as a new arrival
+      // after movement resumes so the confirmed position is persisted again.
+      arrivedTarget.current = null;
       const step = 1 - Math.exp(-Math.min(delta, 0.1) * 2.8);
       actor.position.x += dx * step;
       actor.position.z += dz * step;
