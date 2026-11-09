@@ -534,9 +534,17 @@ export function CityMapDashboard({
           </ul>
         </div>
       )}
-      {!offline && housingMarkers.isError && (
+      {!offline && housingMarkers.isLoading && (
         <div role="status" className="map-housing-message">
-          Homes could not be loaded. The town map is still available.
+          Loading property markers…
+        </div>
+      )}
+      {!offline && housingMarkers.isError && (
+        <div role="alert" className="map-housing-message">
+          <span>Homes could not be loaded. The town map is still available.</span>
+          <button type="button" onClick={() => void housingMarkers.refetch()}>
+            Retry
+          </button>
         </div>
       )}
       {!offline && availableLandmarks.isError && (
@@ -583,7 +591,7 @@ export function CityMapDashboard({
               ? { x: currentMapPlace.grid.x, y: currentMapPlace.grid.z, label: "You are here" }
               : null
           }
-          properties={housingMarkers.data ?? []}
+          properties={housingMarkers.data}
           eventChips={eventChips}
           onSelectEvent={(landmarkId) => {
             const event = (cityEvents.data?.events ?? []).find(
