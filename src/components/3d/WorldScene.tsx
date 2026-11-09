@@ -984,7 +984,7 @@ export function WorldTrees({ positions }: { positions: readonly WorldTree[] }) {
         }))}
       />
 
-      {/* Tree canopies */}
+      {/* Main canopy crowns */}
       <WorldInstances
         tone="foliage"
         shape="sphere"
@@ -993,6 +993,27 @@ export function WorldTrees({ positions }: { positions: readonly WorldTree[] }) {
           scale: [h * tree.canopyScale, h * tree.canopyScale * 1.12, h * tree.canopyScale],
           color: tree.canopyColor,
         }))}
+      />
+
+      {/* Paired side crowns create a fuller silhouette without extra per-tree meshes. */}
+      <WorldInstances
+        tone="foliage"
+        shape="sphere"
+        items={positions.flatMap((tree) =>
+          [-1, 1].map((side) => ({
+            position: [
+              tree.position[0] + side * h * tree.canopyScale * 0.48,
+              h * tree.height * 1.1,
+              tree.position[1],
+            ],
+            scale: [
+              h * tree.canopyScale * 0.62,
+              h * tree.canopyScale * 0.72,
+              h * tree.canopyScale * 0.72,
+            ],
+            color: tree.canopyColor,
+          })),
+        )}
       />
     </>
   );
