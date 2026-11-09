@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { NEIGHBORHOOD_SCENE_BOUNDS } from "@/game/neighborhood-geometry";
 import { neighborhoodNpcAvoidanceBias, neighborhoodNpcAvoidanceStep, neighborhoodNpcDestinationPoint, neighborhoodNpcPath,
-  neighborhoodNpcPathWithFallback, neighborhoodNpcReplanDelay, neighborhoodNpcSpawnPoint } from "@/game/neighborhood-npc-layout";
+  neighborhoodNpcPathWithFallback, neighborhoodNpcReplanDelay, neighborhoodNpcReservationPath, neighborhoodNpcSpawnPoint } from "@/game/neighborhood-npc-layout";
 
 describe("neighborhood NPC spawn distribution", () => {
   it("assigns stable opposite sidestep preferences to different NPC identities", () => {
@@ -325,4 +325,56 @@ describe("neighborhood NPC spawn distribution", () => {
     expect(neighborhoodNpcSpawnPoint(slots, -1)).toBeNull();
     expect(neighborhoodNpcSpawnPoint(slots, 1.5)).toBeNull();
   });
+
+describe("live NPC route reservations", () => {
+  it("starts the reservation at the actor's rendered position", () => {
+    expect(
+      neighborhoodNpcReservationPath(
+        { x: 4, y: 6 },
+        [{ x: 10, y: 6 }, { x: 20, y: 6 }],
+      ),
+    ).toEqual([{ x: 4, y: 6 }, { x: 10, y: 6 }, { x: 20, y: 6 }]);
+  });
+
+  it("omits a first remaining waypoint already reached by the actor", () => {
+    expect(
+      neighborhoodNpcReservationPath(
+        { x: 10, y: 6 },
+        [{ x: 10.02, y: 6 }, { x: 20, y: 6 }],
+      ),
+    ).toEqual([{ x: 10, y: 6 }, { x: 20, y: 6 }]);
+  });
+
+  it("reserves only waypoints at or after the current progress index", () => {
+    expect(
+      neighborhoodNpcReservationPath(
+        { x: 12, y: 4 },
+        [{ x: 2, y: 4 }, { x: 8, y: 4 }, { x: 18, y: 4 }, { x: 28, y: 4 }],
+        2,
+      ),
+    ).toEqual([{ x: 12, y: 4 }, { x: 18, y: 4 }, { x: 28, y: 4 }]);
+  });
+
+  it("uses the first remaining waypoint when the actor ref is not mounted yet", () => {
+    expect(
+      neighborhoodNpcReservationPath(
+        null,
+        [{ x: 2, y: 4 }, { x: 18, y: 4 }, { x: 28, y: 4 }],
+        1,
+      ),
+    ).toEqual([{ x: 18, y: 4 }, { x: 28, y: 4 }]);
+  });
+
+  it("returns no reservation when there is no live actor or remaining route", () => {
+    expect(neighborhoodNpcReservationPath(null, [])).toEqual([]);
+    expect(neighborhoodNpcReservationPath({ x: 1, y: 2 }, [], 1)).toEqual([{ x: 1, y: 2 }]);
+  });
+
+  it("rejects invalid waypoint progress rather than reserving stale route segments", () => {
+    const route = [{ x: 1, y: 2 }, { x: 3, y: 4 }];
+    expect(neighborhoodNpcReservationPath({ x: 2, y: 2 }, route, -1)).toEqual([]);
+    expect(neighborhoodNpcReservationPath({ x: 2, y: 2 }, route, 1.5)).toEqual([]);
+  });
+});
+
 });
