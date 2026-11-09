@@ -47,6 +47,20 @@ describe("neighborhood NPC spawn distribution", () => {
     expect(neighborhoodNpcDestinationPoint(destination, -1)).toEqual(destination);
   });
 
+  it("moves overflow candidates clear of building and obstacle footprints", () => {
+    const occupied = [{ left: 70, top: 70, width: 180, height: 180 }];
+    const point = neighborhoodNpcSpawnPoint([{ x: 100, y: 100 }], 0, occupied);
+    expect(point).not.toBeNull();
+    expect(
+      point!.x >= 48 && point!.x <= 272 && point!.y >= 48 && point!.y <= 272,
+    ).toBe(false);
+  });
+
+  it("returns null when every deterministic candidate is blocked", () => {
+    const occupied = [{ left: -10_000, top: -10_000, width: 20_000, height: 20_000 }];
+    expect(neighborhoodNpcSpawnPoint([{ x: 100, y: 100 }], 0, occupied)).toBeNull();
+  });
+
   it("returns null when there are no anchors or the index is invalid", () => {
     expect(neighborhoodNpcSpawnPoint([], 0)).toBeNull();
     expect(neighborhoodNpcSpawnPoint(slots, -1)).toBeNull();
