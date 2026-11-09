@@ -42,6 +42,16 @@ describe("map travel database actions", () => {
         id uuid primary key default gen_random_uuid(), name text not null,
         description text not null default '', location_id uuid, is_available boolean not null default true
       );
+      create table public.map_landmark_actions(
+        landmark_id text not null, id text not null, definition jsonb not null,
+        sort_order integer not null default 0, is_active boolean not null default true,
+        primary key(landmark_id,id)
+      );
+      create table public.character_jobs(
+        character_id uuid not null, job_id uuid not null, is_current boolean not null default false
+      );
+      create table public.game_places(id uuid primary key, location_id uuid);
+
       create table public.jobs(
         id uuid primary key default gen_random_uuid(), name text not null,
         salary bigint not null default 0, location_id uuid, is_available boolean not null default true,
@@ -93,6 +103,7 @@ describe("map travel database actions", () => {
         values ('${walletId}','${userId}','${characterId}',5000);
     `);
     await db.exec(readFileSync("drizzle/migrations/0037_map_api_travel.sql", "utf8"));
+    await db.exec(readFileSync("supabase/migrations/20261101145505_map_activity_schedules.sql", "utf8"));
     await db.exec(readFileSync("supabase/migrations/202610170014_ede_town_travel.sql", "utf8"));
     await db.exec(readFileSync("supabase/migrations/202610170015_town_travel_arrival.sql", "utf8"));
     await db.exec(readFileSync("supabase/migrations/20261109160000_bind_travel_to_canonical_character.sql", "utf8"));
