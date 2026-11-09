@@ -39,13 +39,13 @@ describe("character-bound local travel RPC", () => {
       create table public.travel_calls(id bigint generated always as identity, character_id uuid not null);
       create function public.travel_to_location(p_location_id uuid,p_mode text)
         returns jsonb language plpgsql security definer set search_path=public
-        as $
+        as $function$
         declare cid uuid:=public._my_character_id();
         begin
           insert into public.travel_calls(character_id) values(cid);
           return jsonb_build_object('character_id',cid,'location_id',p_location_id,'mode',p_mode);
         end
-        $;
+        $function$;
       select set_config('request.jwt.claim.sub','${userId}',false);
     `);
     await db.exec(
