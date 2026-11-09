@@ -536,13 +536,15 @@ export function WorldRoadSigns({
   size: number;
 }) {
   const poleHeight = size * 1.15;
-  const boardWidth = size * 1.05;
-  const boardHeight = size * 0.28;
 
   return (
     <>
       {positions.map((sign, index) => {
         const arrowRotation = sign.direction === "right" ? -Math.PI / 2 : Math.PI / 2;
+        // Give longer destination names room to wrap without changing the
+        // sign scale for short labels or relying on landmark-specific sizing.
+        const boardWidth = size * Math.min(2.4, Math.max(1.05, 0.82 + sign.destination.trim().length * 0.055));
+        const boardHeight = size * 0.34;
 
         return (
           <group key={`road-sign-${index}`} position={[sign.position[0], 0, sign.position[1]]}>
@@ -560,13 +562,16 @@ export function WorldRoadSigns({
 
             {/* Destination label */}
             <Text
-              position={[-size * 0.13, poleHeight * 0.78, size * 0.041]}
-              fontSize={size * 0.105}
+              position={[-boardWidth * 0.13, poleHeight * 0.78, size * 0.041]}
+              fontSize={size * 0.09}
               color="#ffffff"
+              outlineWidth={size * 0.006}
+              outlineColor="#294638"
               anchorX="center"
               anchorY="middle"
-              maxWidth={size * 0.62}
+              maxWidth={boardWidth * 0.68}
               textAlign="center"
+              lineHeight={1.05}
             >
               {sign.destination}
             </Text>
@@ -579,7 +584,7 @@ export function WorldRoadSigns({
 
             {/* Arrow head */}
             <mesh
-              position={[size * 0.46, poleHeight * 0.78, size * 0.045]}
+              position={[boardWidth * 0.45, poleHeight * 0.78, size * 0.045]}
               rotation={[0, 0, arrowRotation]}
             >
               <coneGeometry args={[size * 0.085, size * 0.13, 3]} />
