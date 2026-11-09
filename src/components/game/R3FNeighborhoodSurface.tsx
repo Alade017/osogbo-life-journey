@@ -151,6 +151,7 @@ function NeighborhoodNpcActor({
   const syncRouteReservation = useCallback(() => {
     if (!npc.isMoving || npc.isPaused) {
       actorRoutes.current.delete(npc.id);
+      yieldState.current = null;
       return;
     }
     const actor = group.current;
@@ -172,6 +173,7 @@ function NeighborhoodNpcActor({
     const routeChanged = waypointSignatureRef.current !== waypointSignature;
     const destinationChanged = routeTargetRef.current !== targetKey;
     if (routeChanged || destinationChanged) {
+      yieldState.current = null;
       waypointSignatureRef.current = waypointSignature;
       routeTargetRef.current = targetKey;
       const actor = group.current;
