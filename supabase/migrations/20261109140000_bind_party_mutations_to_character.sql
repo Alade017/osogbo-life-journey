@@ -168,3 +168,28 @@ grant execute on function public.buy_drink_for_character(text, uuid, uuid) to au
 grant execute on function public.dance_with_player_for_character(uuid, uuid, uuid) to authenticated;
 grant execute on function public.host_party_event_for_character(uuid, text, timestamptz, jsonb, uuid, uuid) to authenticated;
 grant execute on function public.respond_to_event_for_character(uuid, uuid, uuid) to authenticated;
+
+-- Apply the same account-level serialization to NPC dancing. The existing
+-- character-bound implementation remains the source of dance/cooldown logic.
+create or replace function public.dance_with_npc_for_character_locked(
+  p_npc_slug text,
+  p_request_id uuid,
+  p_expected_character_id uuid
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  perform public._assert_party_action_character(p_expected_character_id);
+  return public.dance_with_npc_for_character(
+    p_npc_slug,
+    p_request_id,
+    p_expected_character_id
+  );
+end
+$$;
+
+revoke all on function public.dance_with_npc_for_character_locked(text, uuid, uuid) from public, anon;
+grant execute on function public.dance_with_npc_for_character_locked(text, uuid, uuid) to authenticated;
