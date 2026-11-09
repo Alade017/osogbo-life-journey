@@ -135,6 +135,7 @@ function LocationPage() {
   });
   const travel = useGameAction(rpc.travelToLocation, {
     onSuccess: async (r, variables) => {
+      await queryClient.invalidateQueries({ queryKey: q.character().queryKey });
       const savedCharacter = await queryClient.fetchQuery(q.character());
       if (
         savedCharacter?.id !== variables.characterId ||
