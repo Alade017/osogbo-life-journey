@@ -351,7 +351,7 @@ export function R3FTownSurface(props: Props) {
       // Park static cars toward the quieter edge of their road cell, leaving
       // the traffic-loop lane clear. The offset is sized to keep the car mesh
       // (including its wheels) inside the two-unit road tile.
-      const offset = cell * 0.275;
+      const offset = cell * 0.18;
       const candidates: [number, number][] = horizontal && vertical
         ? [[0, -offset], [0, offset], [-offset, 0], [offset, 0]]
         : vertical
