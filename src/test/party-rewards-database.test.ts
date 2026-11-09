@@ -137,6 +137,20 @@ describe("party rewards SQL", () => {
     expect(effects.rows[0]).toEqual({ cooldowns: 0, moods: 0, receipts: 0 });
   });
 
+  it("grants the character-bound party dance RPC only to authenticated callers", async () => {
+    const privileges = await db.query<{
+      anon: boolean;
+      authenticated: boolean;
+    }>(
+      `select
+        has_function_privilege('anon',
+          'public.dance_with_npc_for_character(text,uuid,uuid)','execute') as anon,
+        has_function_privilege('authenticated',
+          'public.dance_with_npc_for_character(text,uuid,uuid)','execute') as authenticated`,
+    );
+    expect(privileges.rows[0]).toEqual({ anon: false, authenticated: true });
+  });
+
   it("admits event-centre guests without club visits and preserves exactly one mood award", async () => {
     await respond(1);
     await expect(respond(1)).rejects.toThrow("already");
