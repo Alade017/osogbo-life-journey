@@ -748,6 +748,7 @@ export function R3FTownSurface(props: Props) {
           position: [point(x + 0.5, z + 0.5)[0], point(x + 0.5, z + 0.5)[2]],
           height: 0.85 + (seed % 30) / 100,
           canopyScale: 0.85 + (seed % 35) / 100,
+          canopyColor: worldFoliageColor(x * 37 + z * 61),
         });
       });
     });
