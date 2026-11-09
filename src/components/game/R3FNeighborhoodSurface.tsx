@@ -28,7 +28,6 @@ import {
   WorldCamera,
   WorldCars,
   WorldHouse,
-  WorldLighting,
   WorldMaterial,
   WorldPedestrianCrossings,
   WorldPeople,
@@ -44,6 +43,7 @@ import {
   type WorldInstance,
 } from "../3d/WorldScene";
 import { CHARACTER_MOTION } from "@/components/3d/character-config";
+import { MapLighting } from "@/components/map/MapLighting";
 import { WORLD_CAMERA, WORLD_PALETTE, WORLD_SCALE } from "../3d/world-theme";
 import { districtArchitectureVariantForCategory } from "@/game/district-architecture";
 import {
@@ -759,7 +759,10 @@ export function R3FNeighborhoodSurface({
             zoom={zoom}
             onZoomChange={onZoomChange}
           />
-          <WorldLighting size={Math.max(bounds.width, bounds.height) * unit} />
+          <MapLighting
+            size={Math.max(bounds.width, bounds.height) * unit}
+            dayBackground={`#${area.style.ground.toString(16).padStart(6, "0")}`}
+          />
           <mesh position={[0, -0.12, 0]} receiveShadow>
             <boxGeometry args={[bounds.width * unit, 0.2, bounds.height * unit]} />
             <WorldMaterial
