@@ -16,6 +16,7 @@ import {
 import {
   BASE,
   FINISHED,
+  bestLudoToken,
   legalTokenMoves,
   moveLudoToken,
   newLudo,
@@ -23,7 +24,9 @@ import {
   type LudoState,
 } from "@/lib/mini-games/ludo";
 import {
+  bestWhotCard,
   buildWhotDeck,
+  drawWhot,
   newWhot,
   playWhot,
   playableCards,
@@ -85,10 +88,35 @@ describe("draughts", () => {
     const state: DraughtsState = { board, turn: "light", quietPlies: 0, winner: null };
     const moves = legalDraughtsMoves(state);
     expect(moves).toHaveLength(1);
-    expect(moves[0]?.captured).toEqual([4, 3]);
+    expect(moves[0]?.captured).toEqual([[4, 3]]);
     const after = playDraughts(state, moves[0]!);
     expect(squareOf(after.board, 4, 3)).toBeNull();
     expect(squareOf(after.board, 3, 4)).toEqual({ side: "light", king: false });
+  });
+
+  it("keeps a capture sequence going until no jump is left", () => {
+    const board = Array.from({ length: 8 }, () =>
+      Array<DraughtsState["board"][number][number]>(8).fill(null),
+    );
+    board[6]![1] = { side: "light", king: false };
+    board[5]![2] = { side: "dark", king: false };
+    board[3]![4] = { side: "dark", king: false };
+    const state: DraughtsState = { board, turn: "light", quietPlies: 0, winner: null };
+    const moves = legalDraughtsMoves(state);
+    expect(moves).toHaveLength(1);
+    expect(moves[0]?.path).toEqual([
+      [6, 1],
+      [4, 3],
+      [2, 5],
+    ]);
+    expect(moves[0]?.captured).toEqual([
+      [5, 2],
+      [3, 4],
+    ]);
+    const after = playDraughts(state, moves[0]!);
+    expect(squareOf(after.board, 2, 5)).toEqual({ side: "light", king: false });
+    expect(squareOf(after.board, 5, 2)).toBeNull();
+    expect(squareOf(after.board, 3, 4)).toBeNull();
   });
 
   it("promotes a man on the far row", () => {
@@ -97,7 +125,15 @@ describe("draughts", () => {
     );
     board[1]![2] = { side: "light", king: false };
     const state: DraughtsState = { board, turn: "light", quietPlies: 0, winner: null };
-    const after = playDraughts(state, { from: [1, 2], to: [0, 1], captured: null });
+    const after = playDraughts(state, {
+      from: [1, 2],
+      to: [0, 1],
+      path: [
+        [1, 2],
+        [0, 1],
+      ],
+      captured: [],
+    });
     expect(squareOf(after.board, 0, 1)?.king).toBe(true);
   });
 
@@ -181,9 +217,9 @@ describe("ludo", () => {
 describe("whot", () => {
   it("deals five cards each from a 61-card deck", () => {
     const deck = buildWhotDeck(seeded(1));
-    expect(deck).toHaveLength(61);
+    expect(deck).toHaveLength(54);
     const state = newWhot(3, seeded(1));
-    expect(state.hands.map((hand) => hand.length)).toEqual([5, 5, 5]);
+    expect(state.hands.map((hand) => hand.length)).toEqual([6, 6, 6]);
     expect(state.discard).toHaveLength(1);
   });
 
@@ -211,7 +247,7 @@ describe("whot", () => {
     expect(after.turn).toBe(1);
   });
 
-  it("makes the next player draw two after a 2", () => {
+  it("starts a Pick Two penalty that the next player must defend or draw", () => {
     const base = newWhot(2, seeded(5));
     const two = { id: "two", shape: "circle" as const, rank: 2 };
     const state: WhotState = {
@@ -221,9 +257,92 @@ describe("whot", () => {
       shape: "circle",
       turn: 0,
       pendingDraw: 0,
+      pendingRank: null,
     };
     const after = playWhot(state, "two", undefined, seeded(9));
-    expect(after.hands[1]?.length).toBe((base.hands[1]?.length ?? 0) + 2);
+    expect(after.turn).toBe(1);
+    expect(after.pendingDraw).toBe(2);
+    const drawn = drawWhot(after, seeded(9));
+    expect(drawn.hands[1]?.length).toBe((base.hands[1]?.length ?? 0) + 2);
+    expect(drawn.turn).toBe(0);
+    expect(drawn.pendingDraw).toBe(0);
+  });
+
+  it("lets the next player defend a Pick Two with another Pick Two and stack the penalty", () => {
+    const base = newWhot(2, seeded(5));
+    const defender = { id: "two-b", shape: "star" as const, rank: 2 };
+    const state: WhotState = {
+      ...base,
+      hands: [
+        [{ id: "a", shape: "circle", rank: 1 }],
+        [defender, { id: "spare", shape: "star", rank: 3 }],
+      ],
+      discard: [{ id: "top", shape: "circle", rank: 2 }],
+      shape: "circle",
+      turn: 1,
+      pendingDraw: 2,
+      pendingRank: 2,
+    };
+    const after = playWhot(state, "two-b", undefined, seeded(3));
+    expect(after.pendingDraw).toBe(4);
     expect(after.turn).toBe(0);
+  });
+
+  it("makes Hold On keep the turn with the same player", () => {
+    const base = newWhot(2, seeded(11));
+    const hold = { id: "hold", shape: "circle" as const, rank: 1 };
+    const state: WhotState = {
+      ...base,
+      hands: [[hold, { id: "keep", shape: "star", rank: 3 }], base.hands[1] ?? []],
+      discard: [{ id: "top", shape: "circle", rank: 4 }],
+      shape: "circle",
+      turn: 0,
+      pendingDraw: 0,
+      pendingRank: null,
+    };
+    expect(playWhot(state, "hold", undefined, seeded(2)).turn).toBe(0);
+  });
+});
+
+describe("computer games finish", () => {
+  it("plays Whot to a winner for 2 to 4 players", () => {
+    for (let players = 2; players <= 4; players += 1) {
+      for (let seed = 1; seed <= 15; seed += 1) {
+        const rng = seeded(seed * 17 + players);
+        let state = newWhot(players, rng);
+        let steps = 0;
+        while (state.winner === null && steps < 4000) {
+          const choice = bestWhotCard(state);
+          state = choice
+            ? playWhot(state, choice.cardId, choice.shape ?? undefined, rng)
+            : drawWhot(state, rng);
+          steps += 1;
+        }
+        expect(state.winner).not.toBeNull();
+      }
+    }
+  });
+
+  it("plays Ludo to a winner for 2 to 4 players", () => {
+    for (let players = 2; players <= 4; players += 1) {
+      for (let seed = 1; seed <= 10; seed += 1) {
+        const rng = seeded(seed * 31 + players);
+        let state = newLudo(players);
+        let steps = 0;
+        while (state.winner === null && steps < 20000) {
+          if (state.dice === null) {
+            state = rollLudo(state, 1 + Math.floor(rng() * 6));
+          } else {
+            const token = bestLudoToken(state);
+            state =
+              token === null
+                ? { ...state, dice: null, turn: (state.turn + 1) % state.playerCount }
+                : moveLudoToken(state, token);
+          }
+          steps += 1;
+        }
+        expect(state.winner).not.toBeNull();
+      }
+    }
   });
 });

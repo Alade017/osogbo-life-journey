@@ -167,13 +167,16 @@ function DraughtsGame() {
                 disabled={!dark || (!movable && !isTarget)}
                 onClick={() => {
                   if (isTarget && selected) {
-                    const move = legal.find(
-                      (item) =>
-                        item.from[0] === selected[0] &&
-                        item.from[1] === selected[1] &&
-                        item.to[0] === row &&
-                        item.to[1] === col,
-                    );
+                    // Several capture sequences can end on the same square: take the longest.
+                    const move = legal
+                      .filter(
+                        (item) =>
+                          item.from[0] === selected[0] &&
+                          item.from[1] === selected[1] &&
+                          item.to[0] === row &&
+                          item.to[1] === col,
+                      )
+                      .sort((a, b) => b.captured.length - a.captured.length)[0];
                     if (move) choose(move);
                     return;
                   }
@@ -276,7 +279,9 @@ function WhotGame() {
       : state.winner !== null
         ? "The computer won."
         : humanTurn
-          ? `Your turn. The shape is ${state.shape}.`
+          ? state.pendingDraw > 0
+            ? `Penalty: defend with a ${state.pendingRank} or draw ${state.pendingDraw}.`
+            : `Your turn. The shape is ${state.shape}.`
           : "The computer is playing…";
   return (
     <section className="mg-game" aria-label="Whot">
@@ -287,7 +292,10 @@ function WhotGame() {
         <span className="mg-card-face">
           {top ? (top.rank === 20 ? "Whot" : `${top.rank} ${top.shape ?? ""}`) : "—"}
         </span>
-        <small>Computer holds {state.hands[1]?.length ?? 0} cards</small>
+        <small>
+          Computer holds {state.hands[1]?.length ?? 0} cards
+          {state.pendingDraw > 0 ? ` · penalty ${state.pendingDraw}` : ""}
+        </small>
       </div>
       <div className="mg-hand" aria-label="Your hand">
         {hand.map((card) => (
