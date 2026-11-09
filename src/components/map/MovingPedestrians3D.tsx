@@ -63,7 +63,7 @@ export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({ paths }) => 
   }));
 
   return (
-    <group position={[0, 0.05, 0]}>
+    <group>
       {npcs.map((npc) => (
         <PedestrianCharacter
           key={npc.id}
@@ -153,9 +153,11 @@ function PedestrianCharacter({
 
     // Natural footstep bobbing
     const t = clock.getElapsedTime();
-    const footstepBob = Math.abs(Math.sin(t * 7.5)) * 0.06;
+    const footstepBob = Math.abs(Math.sin(t * 7.5)) * 0.012;
 
-    groupRef.current.position.set(posX, 0.08 + footstepBob, posZ);
+    // The trouser mesh begins 0.03 units above the character origin.
+    // Match that base to the sidewalk top (0.06) without an extra parent lift.
+    groupRef.current.position.set(posX, 0.03 + footstepBob, posZ);
     groupRef.current.rotation.y = angle;
   });
 
