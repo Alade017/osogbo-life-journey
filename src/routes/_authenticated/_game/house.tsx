@@ -782,6 +782,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const [doorOpen, setDoorOpen] = useState(false);
   const [doorActionBusy, setDoorActionBusy] = useState(false);
   const [failedDeparture, setFailedDeparture] = useState<HomeDeparture | null>(null);
+  const [neighborhoodNavigationPending, setNeighborhoodNavigationPending] = useState(false);
   const doorActionInProgress = useRef(false);
   const outside = useOutsideTransition();
   const enteringRan = useRef(false);
@@ -829,6 +830,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       setDoorOpen(false);
       endTransition();
       setActivityError("You have left your home, but the neighbourhood could not load. Please try again.");
+      setNeighborhoodNavigationPending(true);
       doorActionInProgress.current = false;
       setDoorActionBusy(false);
     }
@@ -915,6 +917,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       setDoorOpen(false);
       endTransition();
       setActivityError("Your trip was completed, but the neighbourhood could not load. Please try again.");
+      setNeighborhoodNavigationPending(true);
       doorActionInProgress.current = false;
       setDoorActionBusy(false);
     }
@@ -1034,6 +1037,22 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     if (!failedDeparture || doorActionInProgress.current) return;
     setActivityError("");
     void leaveForTrip(failedDeparture);
+  };
+  const retryNeighborhoodNavigation = async () => {
+    if (!neighborhoodNavigationPending || doorActionInProgress.current) return;
+    doorActionInProgress.current = true;
+    setDoorActionBusy(true);
+    setActivityError("");
+    beginTransition("leaving", "Loading the neighbourhood", 2);
+    try {
+      await navigate({ to: "/neighborhood" });
+      setNeighborhoodNavigationPending(false);
+    } catch {
+      endTransition();
+      setActivityError("The neighbourhood still could not load. Please try again.");
+      doorActionInProgress.current = false;
+      setDoorActionBusy(false);
+    }
   };
   const deliveryQueryKey = [
     "homeFoodDeliveries",
@@ -1584,6 +1603,15 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
               {failedDeparture && (
                 <button type="button" disabled={doorActionBusy || isOffline} onClick={retryDeparture}>
                   Retry trip
+                </button>
+              )}
+              {neighborhoodNavigationPending && (
+                <button
+                  type="button"
+                  disabled={doorActionBusy || isOffline}
+                  onClick={() => void retryNeighborhoodNavigation()}
+                >
+                  Retry neighbourhood
                 </button>
               )}
               {isOffline ? (
