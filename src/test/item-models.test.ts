@@ -24,6 +24,24 @@ describe("3D item registries", () => {
     }
   });
 
+  it("registers the existing Nigerian food models", () => {
+    for (const slug of [
+      "puff_puff",
+      "suya",
+      "moi_moi",
+      "akara",
+      "meat_pie",
+      "fried_plantain",
+      "bread",
+      "chin_chin",
+      "pepper_soup",
+      "boiled_egg",
+      "insulated_flask",
+    ]) {
+      expect(hasItemModel(slug), slug).toBe(true);
+    }
+  });
+
   it("wears the right model for each slot", () => {
     expect(WORN_ITEM_MODELS["backpack"]).toBeDefined();
     expect(WORN_CLOTHING["basic_outfit"]).toBeDefined();
