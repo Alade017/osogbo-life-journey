@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FC } from "react";
+import { useEffect, useMemo, useRef, useState, type FC } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import type { Group } from "three";
@@ -93,6 +93,7 @@ function PedestrianCharacter({
   const travelDirection = useRef(1);
   const progress = useRef(0);
   const [isHovered, setIsHovered] = useState(false);
+  const routeLength = useMemo(() => pathLength(npc.path), [npc.path]);
 
   useFrame(({ clock }, delta) => {
     if (!groupRef.current) return;
@@ -100,10 +101,6 @@ function PedestrianCharacter({
     const { path, speed } = npc;
     if (path.length < 2) return;
 
-    const routeLength = path.slice(1).reduce((total, point, index) => {
-      const previous = path[index]!;
-      return total + Math.hypot(point[0] - previous[0], point[1] - previous[1]);
-    }, 0);
     if (routeLength < 0.001) return;
 
     // Pedestrians walk to each end of their sidewalk run, then turn around.
@@ -158,7 +155,13 @@ function PedestrianCharacter({
     // The trouser mesh begins 0.03 units above the character origin.
     // Match that base to the sidewalk top (0.06) without an extra parent lift.
     groupRef.current.position.set(posX, 0.03 + footstepBob, posZ);
-    groupRef.current.rotation.y = angle;
+    // Ease heading changes around corners instead of snapping at segment boundaries.
+    const currentAngle = groupRef.current.rotation.y;
+    const angleDifference = Math.atan2(
+      Math.sin(angle - currentAngle),
+      Math.cos(angle - currentAngle),
+    );
+    groupRef.current.rotation.y = currentAngle + angleDifference * (1 - Math.exp(-12 * Math.max(0, delta)));
   });
 
   return (
@@ -236,4 +239,12 @@ function PedestrianCharacter({
       )}
     </group>
   );
+}
+
+
+function pathLength(path: TownMobilityRoute): number {
+  return path.slice(1).reduce((total, point, index) => {
+    const previous = path[index]!;
+    return total + Math.hypot(point[0] - previous[0], point[1] - previous[1]);
+  }, 0);
 }
