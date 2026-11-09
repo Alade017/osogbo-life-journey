@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { measureTownMobilityLoop, describe, expect, it } from "vitest";
 import { deriveTownMobilityRoutes, deriveTownPedestrianCornerRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells, stitchTownPedestrianRoutes, TownPedestrianJunctionScheduler } from "@/game/town-mobility";
 import town from "@/data/osogbo-town.json";
 
@@ -19,6 +19,13 @@ describe("town mobility input validation", () => {
     expect(deriveTownMobilityRoutes(rows, 2, Number.NaN)).toEqual([]);
     expect(deriveTownPedestrianRoutes(rows, 2, [], -0.1)).toEqual([]);
     expect(deriveTownPedestrianCornerRoutes(rows, 2, [], Number.POSITIVE_INFINITY)).toEqual([]);
+  });
+});
+
+describe("town traffic loop measurement", () => {
+  it("measures only finite, traversable edges in a closed traffic loop", () => {
+    expect(measureTownMobilityLoop([[0, 0], [0.0005, 0], [1, 0], [Number.NaN, 2]])).toBeCloseTo(1);
+    expect(measureTownMobilityLoop([[0, 0], [0.0005, 0], [0, 0]])).toBe(0);
   });
 });
 
