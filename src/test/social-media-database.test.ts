@@ -53,7 +53,7 @@ beforeAll(async () => {
     .filter(
       (name) => name.endsWith(".sql") && !name.startsWith("0075_") && !name.startsWith("0077_"),
     )
-    .sort())
+    .sort()) {
 if (file === "0083_studio_room_layout.sql") {
       // The studio layout migration depends on x/y columns from this Supabase migration.
       await db.exec(
@@ -64,6 +64,7 @@ if (file === "0083_studio_room_layout.sql") {
       );
     }
         await db.exec(readFileSync(`drizzle/migrations/${file}`, "utf8").replace(/^\uFEFF/, ""));
+  }
   await db.exec(readFileSync("supabase/migrations/20261027113217_messaging_hardening.sql", "utf8"));
   await db.exec(
     readFileSync(
