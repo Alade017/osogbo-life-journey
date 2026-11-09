@@ -232,12 +232,17 @@ export function PartyExperience({
 function useInvalidatingMutation<TArgs, TResult>(
   fn: (args: TArgs) => Promise<TResult>,
   success: string,
+  shouldNotify?: (args: TArgs) => boolean,
 ) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: fn,
-    onSuccess: () => toast.success(success),
-    onError: (error: Error) => toast.error(error.message),
+    onSuccess: (_data, variables) => {
+      if (!shouldNotify || shouldNotify(variables)) toast.success(success);
+    },
+    onError: (error: Error, variables) => {
+      if (!shouldNotify || shouldNotify(variables)) toast.error(error.message);
+    },
     onSettled: () => qc.invalidateQueries(),
   });
 }
@@ -326,7 +331,11 @@ function ClubsTab({
   const joinActivity = useInvalidatingMutation(partyRpc.joinClubActivity, "Enjoy the show!");
   const enter = useInvalidatingMutation(partyRpc.enterClub, "You joined the party.");
   const leave = useInvalidatingMutation(partyRpc.leaveClub, "You left the club.");
-  const dance = useInvalidatingMutation(partyRpc.danceWithNpc, "You danced!");
+  const dance = useInvalidatingMutation(
+    partyRpc.danceWithNpc,
+    "You danced!",
+    (args) => args.characterId === characterId,
+  );
   const room = usePartyRoom(visitLocationId, characterId);
   // The room is told about a dance only after the database confirms it.
   const danceWithNpc = (npcSlug: string) => {
