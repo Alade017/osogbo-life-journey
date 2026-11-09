@@ -631,6 +631,13 @@
       "when": 1794376400000,
       "tag": "0088_schools_news_region",
       "breakpoints": true
+    },
+    {
+      "idx": 90,
+      "version": "7",
+      "when": 1794463200000,
+      "tag": "0089_mini_game_tables",
+      "breakpoints": true
     }
   ]
 }
