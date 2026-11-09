@@ -201,6 +201,18 @@ describe("neighborhood NPC spawn distribution", () => {
     expect(Math.hypot(next.x - 1, next.y)).toBeGreaterThanOrEqual(0.85);
   });
 
+  it("rejects a step whose swept segment clips a nearby actor", () => {
+    const current = { x: 0, y: 0 };
+    const next = neighborhoodNpcAvoidanceStep(
+      current,
+      { x: 10, y: 0 },
+      [{ x: 0.25, y: 0 }],
+      0.5,
+      0.4,
+    );
+    expect(next).toEqual(current);
+  });
+
   it("waits in place when every live movement alternative is occupied", () => {
     const current = { x: 0, y: 0 };
     const next = neighborhoodNpcAvoidanceStep(
