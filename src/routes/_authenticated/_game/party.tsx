@@ -209,6 +209,7 @@ export function PartyExperience({
           )}
           cash={wallet?.balance ?? 0}
           isLoading={drinks.isLoading}
+          characterId={characterId}
         />
       )}
       {tab === "events" && (
@@ -430,7 +431,7 @@ function ClubsTab({
                 type="button"
                 className="min-h-11 rounded-full bg-primary px-4 font-semibold text-primary-foreground"
                 disabled={enter.isPending}
-                onClick={() => enter.mutate(newPartyRequestId())}
+                onClick={() => characterId && enter.mutate({ requestId: newPartyRequestId(), characterId })}
               >
                 Join the party
               </button>
@@ -459,6 +460,7 @@ function ClubsTab({
                           joinActivity.mutate({
                             activitySlug: activity.slug,
                             requestId: newPartyRequestId(),
+                            characterId: characterId!,
                           })
                         }
                       >
@@ -513,7 +515,7 @@ function ClubsTab({
                   type="button"
                   className="min-h-11 rounded-full border border-border px-4 text-sm font-semibold"
                   disabled={leave.isPending}
-                  onClick={() => leave.mutate(newPartyRequestId())}
+                  onClick={() => characterId && leave.mutate({ requestId: newPartyRequestId(), characterId })}
                 >
                   Leave the club
                 </button>
@@ -532,12 +534,14 @@ function DrinksTab({
   atEventCentre,
   cash,
   isLoading,
+  characterId,
 }: {
   drinks: Awaited<ReturnType<typeof listPartyDrinks>>;
   inClub: boolean;
   atEventCentre: boolean | undefined;
   cash: number;
   isLoading: boolean;
+  characterId: string | null;
 }) {
   const buy = useInvalidatingMutation(partyRpc.buyDrink, "Drink bought.");
   if (isLoading) return <LoadingState />;
@@ -566,7 +570,7 @@ function DrinksTab({
             type="button"
             className="min-h-11 rounded-full bg-primary px-4 font-semibold text-primary-foreground disabled:opacity-50"
             disabled={!canBuy || buy.isPending || cash < (inClub ? drink.club_price : drink.price)}
-            onClick={() => buy.mutate({ drinkSlug: drink.slug, requestId: newPartyRequestId() })}
+            onClick={() => characterId && buy.mutate({ drinkSlug: drink.slug, requestId: newPartyRequestId(), characterId })}
           >
             Buy
           </button>
@@ -626,7 +630,7 @@ function EventsTab({
   return (
     <div className="grid gap-5">
       {eventCentres.length > 0 ? (
-        <HostForm venues={eventCentres} defaultLocationId={locationId} />
+        <HostForm venues={eventCentres} defaultLocationId={locationId} characterId={characterId} />
       ) : (
         <p className="text-sm text-muted-foreground">No event centers are open to host at yet.</p>
       )}
@@ -667,7 +671,7 @@ function EventsTab({
                       className="min-h-11 rounded-full bg-primary px-4 font-semibold text-primary-foreground disabled:opacity-50"
                       disabled={respond.isPending}
                       onClick={() =>
-                        respond.mutate({ requirementId: req.id, requestId: newPartyRequestId() })
+                        characterId && respond.mutate({ requirementId: req.id, requestId: newPartyRequestId(), characterId })
                       }
                     >
                       Take part
@@ -686,9 +690,11 @@ function EventsTab({
 function HostForm({
   venues,
   defaultLocationId,
+  characterId,
 }: {
   venues: Awaited<ReturnType<typeof listPartyVenues>>;
   defaultLocationId: string | null;
+  characterId: string | null;
 }) {
   const host = useInvalidatingMutation(partyRpc.hostEvent, "Your event is scheduled.");
   const [locationId, setLocationId] = useState(
@@ -715,6 +721,7 @@ function HostForm({
       startsAt: start.toISOString(),
       requirements,
       requestId: newPartyRequestId(),
+      characterId: characterId!,
     });
   };
 
