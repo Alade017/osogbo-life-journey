@@ -51,9 +51,32 @@ describe("authoritative business and investment database", () => {
     for (const { tag } of journal.entries.filter(
       (entry: { tag: string }) =>
         entry.tag !== "0075_remove_orphaned_player_data" &&
-        entry.tag !== "0077_market_stall_rent_categories_sales",
-    ))
+        entry.tag !== "0077_market_stall_rent_categories_sales" &&
+        ![
+          "0079_free_house_placement",
+          "0083_studio_room_layout",
+          "0084_other_homes_room_layout",
+          "0085_house_floors",
+        ].includes(entry.tag),
+    )) {
       await db.exec(readFileSync(`drizzle/migrations/${tag}.sql`, "utf8"));
+    }
+    await db.exec(
+      readFileSync(
+        "supabase/migrations/20261102223137_freeform_house_furniture_placement.sql",
+        "utf8",
+      ),
+    );
+    await db.exec(readFileSync("drizzle/migrations/0079_free_house_placement.sql", "utf8"));
+    await db.exec(readFileSync("drizzle/migrations/0083_studio_room_layout.sql", "utf8"));
+    await db.exec(readFileSync("drizzle/migrations/0084_other_homes_room_layout.sql", "utf8"));
+    await db.exec(
+      readFileSync(
+        "supabase/migrations/20261105080000_house_placement_rotation.sql",
+        "utf8",
+      ),
+    );
+    await db.exec(readFileSync("drizzle/migrations/0085_house_floors.sql", "utf8"));
     for (const id of [owner, investor]) {
       await db.query("insert into auth.users values($1)", [id]);
       await db.query("insert into public.profiles(id) values($1)", [id]);
