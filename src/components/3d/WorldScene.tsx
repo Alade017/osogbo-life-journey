@@ -270,6 +270,14 @@ export function WorldTrafficLights({
             <sphereGeometry args={[size * 0.045, 8, 8]} />
             <WorldMaterial tone="foliage" />
           </mesh>
+
+          {/* Small rain hoods keep each signal lens visually distinct at street scale. */}
+          {[0.96, 0.85, 0.74].map((level) => (
+            <mesh key={level} position={[0, poleHeight * level + size * 0.052, size * 0.075]}>
+              <boxGeometry args={[size * 0.14, size * 0.018, size * 0.11]} />
+              <WorldMaterial tone="metal" />
+            </mesh>
+          ))}
         </group>
       ))}
     </>
