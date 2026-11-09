@@ -1080,15 +1080,29 @@ export function R3FTownSurface(props: Props) {
     const buildingCells = town.grid.buildings.flatMap((building) =>
       [0, 1].flatMap((dx) => [0, 1].map((dz) => [building.x + dx, building.z + dz] as const)),
     );
-    const blockedCells: [number, number][] = [
+    const blockedCells: (readonly [number, number])[] = [
       ...buildingCells,
       ...town.grid.waterCells,
       ...town.grid.plotCells,
     ];
+    const reservedPropCells = new Set<string>();
     const reserveWorldPosition = (x: number, z: number) => {
       const gridX = Math.round(x / cell + (gridCols - 1) / 2 - 0.5);
       const gridZ = Math.round(z / cell + (gridRows - 1) / 2 - 0.5);
-      blockedCells.push([gridX, gridZ]);
+
+      // Reserve only nearby grass cells. Road-tile prop origins otherwise
+      // leave the adjacent pavement cells unblocked.
+      for (let dz = -1; dz <= 1; dz += 1) {
+        for (let dx = -1; dx <= 1; dx += 1) {
+          const xCell = gridX + dx;
+          const zCell = gridZ + dz;
+          if (town.grid.rows[zCell]?.[xCell] !== "g") continue;
+          const key = `${xCell},${zCell}`;
+          if (reservedPropCells.has(key)) continue;
+          reservedPropCells.add(key);
+          blockedCells.push([xCell, zCell]);
+        }
+      }
     };
 
     streetLights.forEach(([x, z]) => reserveWorldPosition(x, z));
