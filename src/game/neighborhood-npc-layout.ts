@@ -26,6 +26,7 @@ export function neighborhoodNpcReservationPath(
 ): NpcPoint[] {
   if (!Number.isInteger(waypointIndex) || waypointIndex < 0) return [];
   const remaining = waypoints.slice(waypointIndex);
+  if (remaining.length === 0) return [];
   const origin = current ?? remaining[0] ?? null;
   if (!origin) return [];
   return [
