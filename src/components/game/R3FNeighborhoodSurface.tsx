@@ -802,55 +802,6 @@ export function R3FNeighborhoodSurface({
           })}
           <WorldTrees positions={trees} />
 
-          {area.obstacles
-            ?.filter((o) => ["compound", "shop", "kiosk"].includes(o.kind))
-            .map((o) => (
-              <WorldHouse
-                detailed
-                key={o.id}
-                position={point(o.x, o.y)}
-                width={o.width * unit}
-                depth={o.height * unit}
-                height={WORLD_SCALE.neighborhoodBuildingHeight}
-                shop={o.kind !== "compound"}
-                variant={o.kind === "compound" ? "residential" : "market"}
-                materialSeed={Math.round(o.x * 37 + o.y * 61)}
-              />
-            ))}
-          <WorldStreetFurniture
-            items={(area.obstacles ?? [])
-              .filter((o) =>
-                ["streetlight", "bench", "bin", "sign", "landmark"].includes(o.kind),
-              )
-              .map((o) => ({
-                kind: o.kind,
-                x: point(o.x, o.y)[0],
-                z: point(o.x, o.y)[2],
-                width: o.width * unit,
-                depth: o.height * unit,
-                label: o.label,
-              }))}
-          />
-          {area.obstacles
-            ?.filter(
-              (obstacle) =>
-                ["sign", "landmark"].includes(obstacle.kind) && obstacle.label,
-            )
-            .map((landmark) => {
-              const p = point(landmark.x, landmark.y);
-              return (
-                <Html
-                  key={landmark.id}
-                  portal={overlayHost}
-                  center
-                  position={[p[0], 2.4, p[2]]}
-                  distanceFactor={18}
-                  style={{ pointerEvents: "none" }}
-                >
-                  <span className="world-place-label">{landmark.label}</span>
-                </Html>
-              );
-            })}
           {area.objects
             .filter((o) => o.kind !== "npc")
             .map((o) => {
