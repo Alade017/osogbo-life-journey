@@ -118,6 +118,18 @@ describe("neighborhood NPC spawn distribution", () => {
     expect(Math.hypot(point!.x - 100, point!.y - 100)).toBeGreaterThanOrEqual(42);
   });
 
+  it("keeps spawn positions separated from reserved arrival pockets", () => {
+    const reservedArrival = { x: 100, y: 100 };
+    const point = neighborhoodNpcSpawnPoint(
+      [{ x: 100, y: 100 }],
+      0,
+      [],
+      [reservedArrival],
+    );
+    expect(point).not.toBeNull();
+    expect(Math.hypot(point!.x - reservedArrival.x, point!.y - reservedArrival.y)).toBeGreaterThanOrEqual(42);
+  });
+
   it("keeps destination positions separated from other NPC destinations", () => {
     const point = neighborhoodNpcDestinationPoint(
       { x: 100, y: 100 },
