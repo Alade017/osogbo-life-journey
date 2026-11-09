@@ -428,8 +428,6 @@ export function neighborhoodNpcReplanDelay(npcId: string): number {
   return 1.1 + ((hash >>> 0) % 8) * 0.1;
 }
 
-/** Stable side preference distributes equally valid sidesteps across a crowd. */
-
 /**
  * Select one deterministic yielding actor when two live NPC routes approach
  * each other head-on. Stable identity ordering prevents both actors yielding.
