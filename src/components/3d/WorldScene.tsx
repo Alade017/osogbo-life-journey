@@ -515,11 +515,25 @@ export function WorldBusStops({
             <WorldMaterial tone="concrete" />
           </mesh>
 
-          {/* Passenger bench */}
-          <mesh position={[0, size * 0.29, -shelterDepth * 0.2]}>
-            <boxGeometry args={[shelterWidth * 0.62, size * 0.07, size * 0.2]} />
-            <WorldMaterial tone="timber" />
-          </mesh>
+          {/* Passenger bench: spaced timber slats with visible supporting rails. */}
+          <group position={[0, size * 0.29, -shelterDepth * 0.2]}>
+            {Array.from({ length: 4 }, (_, slat) => (
+              <mesh
+                key={`seat-slat-${slat}`}
+                position={[0, 0, (slat - 1.5) * size * 0.052]}
+                castShadow
+              >
+                <boxGeometry args={[shelterWidth * 0.62, size * 0.045, size * 0.035]} />
+                <WorldMaterial tone="timber" />
+              </mesh>
+            ))}
+            {[-1, 1].map((side) => (
+              <mesh key={`seat-rail-${side}`} position={[side * shelterWidth * 0.27, -size * 0.055, 0]}>
+                <boxGeometry args={[size * 0.045, size * 0.11, size * 0.24]} />
+                <WorldMaterial tone="metal" />
+              </mesh>
+            ))}
+          </group>
 
           {/* Bus stop sign pole */}
           <mesh position={[shelterWidth * 0.58, roofHeight * 0.5, shelterDepth * 0.15]}>
