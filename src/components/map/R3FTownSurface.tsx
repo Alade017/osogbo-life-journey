@@ -940,9 +940,11 @@ export function R3FTownSurface(props: Props) {
     () => calculateBadgePositions(props.places, point, cell),
     [props.places],
   );
-  const select = (event: ThreeEvent<MouseEvent> | null, action: () => void) => {
+  const select = (event: ThreeEvent<MouseEvent> | null, action: () => void): boolean => {
     event?.stopPropagation();
-    if (isMapTargetSelectionAllowed(event?.delta, gesture.current.moved)) action();
+    if (!isMapTargetSelectionAllowed(event?.delta, gesture.current.moved)) return false;
+    action();
+    return true;
   };
   return (
     <SurfaceBoundary onUnavailable={props.onUnavailable}>
