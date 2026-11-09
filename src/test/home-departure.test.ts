@@ -15,6 +15,7 @@ const ready: HomeDepartureReadiness = {
   editing: false,
   busy: false,
   offline: false,
+  activeCharacterId: "character-1",
 };
 
 afterEach(() => {
@@ -31,12 +32,19 @@ const blockedReadinessCases: Array<[string, Partial<HomeDepartureReadiness>]> = 
 ];
 
 describe("home departure handoff", () => {
+  it("discards a queued trip owned by a different active character", () => {
+    const departure = requestDepartureFromHome({ locationId: "destination-2", mode: "keke", characterId: "old-character" });
+    expect(takeDepartureFromHomeWhenReady({ ...ready, activeCharacterId: "new-character" })).toBeNull();
+    expect(peekPendingDepartureFromHome()).toBeNull();
+    expect(clearPendingDepartureFromHome(departure)).toBe(false);
+  });
   it.each(blockedReadinessCases)(
     "does not consume a queued request while %s",
     (_label, blocked) => {
       const departure = requestDepartureFromHome({
         locationId: "destination-1",
         mode: "walking",
+        characterId: "character-1",
       });
       expect(takeDepartureFromHomeWhenReady({ ...ready, ...blocked })).toBeNull();
       expect(peekPendingDepartureFromHome()).toBe(departure);
@@ -44,8 +52,8 @@ describe("home departure handoff", () => {
   );
 
   it("clears only the exact request that failed navigation", () => {
-    const older = requestDepartureFromHome({ locationId: "older", mode: "walking" });
-    const newer = requestDepartureFromHome({ locationId: "newer", mode: "danfo" });
+    const older = requestDepartureFromHome({ locationId: "older", mode: "walking", characterId: "character-1" });
+    const newer = requestDepartureFromHome({ locationId: "newer", mode: "danfo", characterId: "character-1" });
 
     expect(clearPendingDepartureFromHome(older)).toBe(false);
     expect(takeDepartureFromHome()).toBe(newer);
