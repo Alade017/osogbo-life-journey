@@ -1278,6 +1278,23 @@ export function WorldHouse({
         </mesh>
       )}
 
+      {/* Raised sheet-metal seams add a subtle corrugated-roof finish to market blocks. */}
+      {isMarket && architecture.roof !== "pitched" &&
+        Array.from({ length: 7 }, (_, seam) => (
+          <mesh
+            key={`market-roof-seam-${seam}`}
+            position={[
+              ((seam - 3) / 3) * width * 0.46,
+              height + 0.505,
+              0,
+            ]}
+            castShadow
+          >
+            <boxGeometry args={[0.035, 0.025, depth * 0.82]} />
+            <WorldMaterial tone="metal" color={surfaces.trim} />
+          </mesh>
+        ))}
+
       {/* Front entrance */}
       <mesh position={[0, WORLD_SCALE.door / 2 + 0.18, depth / 2 + 0.04]}>
         <boxGeometry args={[isMarket ? width * 0.48 : width * 0.3, WORLD_SCALE.door, 0.08]} />
