@@ -3,23 +3,57 @@ import { WorldMaterial } from "./WorldScene";
 
 type ItemModelProps = { h: number };
 
-/** A worn backpack: body, front pocket, and two shoulder straps. Sits on the character's back. */
-export function BackpackModel({ h }: ItemModelProps) {
+/** A worn everyday backpack with a flap, carry handle, pocket and shoulder straps. */
+export function BackpackModel({
+  h,
+  bodyColor = "#5a3b22",
+  trimColor = "#7a5233",
+  hardwareColor = "#c49a55",
+}: ItemModelProps & { bodyColor?: string; trimColor?: string; hardwareColor?: string }) {
   return (
     <group>
+      {/* Main soft-sided bag body and reinforced base. */}
       <mesh position={[0, h * 0.6, -h * 0.13]} castShadow>
         <boxGeometry args={[h * 0.26, h * 0.3, h * 0.12]} />
-        <WorldMaterial color="#5a3b22" />
+        <WorldMaterial color={bodyColor} />
       </mesh>
+      <mesh position={[0, h * 0.455, -h * 0.13]}>
+        <boxGeometry args={[h * 0.25, h * 0.035, h * 0.125]} />
+        <WorldMaterial color={trimColor} />
+      </mesh>
+      {/* Front pocket and curved-looking top flap, kept low-poly for mobile rendering. */}
       <mesh position={[0, h * 0.5, -h * 0.2]} castShadow>
         <boxGeometry args={[h * 0.22, h * 0.14, h * 0.05]} />
-        <WorldMaterial color="#7a5233" />
+        <WorldMaterial color={trimColor} />
+      </mesh>
+      <mesh position={[0, h * 0.735, -h * 0.13]}>
+        <boxGeometry args={[h * 0.27, h * 0.07, h * 0.13]} />
+        <WorldMaterial color={trimColor} />
+      </mesh>
+      <mesh position={[0, h * 0.69, -h * 0.205]}>
+        <boxGeometry args={[h * 0.045, h * 0.06, h * 0.018]} />
+        <WorldMaterial color={hardwareColor} />
+      </mesh>
+      {/* Top carry loop and paired adjustable shoulder straps. */}
+      <mesh position={[0, h * 0.79, -h * 0.13]}>
+        <boxGeometry args={[h * 0.09, h * 0.035, h * 0.035]} />
+        <WorldMaterial color={bodyColor} />
       </mesh>
       {[-1, 1].map((side) => (
-        <mesh key={side} position={[side * h * 0.1, h * 0.68, h * 0.075]} castShadow>
-          <boxGeometry args={[h * 0.04, h * 0.2, h * 0.03]} />
-          <WorldMaterial color="#3d2716" />
-        </mesh>
+        <group key={side}>
+          <mesh position={[side * h * 0.1, h * 0.68, h * 0.075]} castShadow>
+            <boxGeometry args={[h * 0.04, h * 0.2, h * 0.03]} />
+            <WorldMaterial color={trimColor} />
+          </mesh>
+          <mesh position={[side * h * 0.145, h * 0.56, -h * 0.13]}>
+            <boxGeometry args={[h * 0.045, h * 0.12, h * 0.1]} />
+            <WorldMaterial color={bodyColor} />
+          </mesh>
+          <mesh position={[side * h * 0.145, h * 0.5, -h * 0.13]}>
+            <boxGeometry args={[h * 0.05, h * 0.018, h * 0.105]} />
+            <WorldMaterial color={hardwareColor} />
+          </mesh>
+        </group>
       ))}
     </group>
   );
