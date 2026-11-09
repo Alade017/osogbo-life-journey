@@ -1,5 +1,5 @@
 import { useRef, useState, type FC } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import type { Group } from "three";
 import { WorldMaterial } from "@/components/3d/WorldScene";
@@ -165,9 +165,13 @@ function TrafficVehicle({
     groupRef.current.rotation.y = angle;
   });
 
-  const handleClick = (e: any) => {
+  const handleClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
-    const beeps = ["📯 Peep peep! Clear the road!", "🚖 Entering Olaiya junction!", "💨 Moving briskly!"];
+    const beeps = [
+      "📯 Peep peep! Clear the road!",
+      "🚖 Entering Olaiya junction!",
+      "💨 Moving briskly!",
+    ];
     const randomMsg = beeps[Math.floor(Math.random() * beeps.length)]!;
     onInteract(`${config.name}: ${randomMsg}`);
   };
@@ -215,7 +219,11 @@ function TrafficVehicle({
           {/* Wheels */}
           {[-0.34, 0.34].map((wx) =>
             [-0.45, 0.45].map((wz) => (
-              <mesh key={`wheel-${wx}-${wz}`} position={[wx, 0.12, wz]} rotation={[0, 0, Math.PI / 2]}>
+              <mesh
+                key={`wheel-${wx}-${wz}`}
+                position={[wx, 0.12, wz]}
+                rotation={[0, 0, Math.PI / 2]}
+              >
                 <cylinderGeometry args={[0.12, 0.12, 0.08, 12]} />
                 <meshStandardMaterial color="#1e293b" roughness={0.8} />
               </mesh>

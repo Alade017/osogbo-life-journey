@@ -201,10 +201,19 @@ export const LockedPlaces3D: FC<LockedPlaces3DProps> = ({
               </button>
             </div>
 
-            <h3 style={{ fontSize: "15px", fontWeight: "bold", margin: "10px 0 4px 0", color: "#ffffff" }}>
+            <h3
+              style={{
+                fontSize: "15px",
+                fontWeight: "bold",
+                margin: "10px 0 4px 0",
+                color: "#ffffff",
+              }}
+            >
               {activeModal.name}
             </h3>
-            <p style={{ fontSize: "12px", color: "#cbd5e1", lineHeight: 1.45, margin: "0 0 10px 0" }}>
+            <p
+              style={{ fontSize: "12px", color: "#cbd5e1", lineHeight: 1.45, margin: "0 0 10px 0" }}
+            >
               {activeModal.lore}
             </p>
 
@@ -218,7 +227,9 @@ export const LockedPlaces3D: FC<LockedPlaces3DProps> = ({
               }}
             >
               <div style={{ color: "#fef08a", fontWeight: "bold" }}>Requirement to Access:</div>
-              <div style={{ color: "#94a3b8", marginTop: "2px" }}>{activeModal.unlockRequirement}</div>
+              <div style={{ color: "#94a3b8", marginTop: "2px" }}>
+                {activeModal.unlockRequirement}
+              </div>
             </div>
           </div>
         </Html>

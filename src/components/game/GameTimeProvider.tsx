@@ -311,7 +311,12 @@ export function GameTimeProvider({
       inFlight.current = true;
       setBusy(true);
       try {
-        const result = await performCatalogActivity({ session: session.current, revision: revision.current, activitySlug, requestId });
+        const result = await performCatalogActivity({
+          session: session.current,
+          revision: revision.current,
+          activitySlug,
+          requestId,
+        });
         if (mounted.current) {
           applySnapshot(result.snapshot);
           setReady(true);
@@ -319,7 +324,8 @@ export function GameTimeProvider({
         }
         return result;
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Could not complete this activity.";
+        const message =
+          error instanceof Error ? error.message : "Could not complete this activity.";
         if (mounted.current) {
           if (isExpectedActivityRejection(message)) {
             setSyncError(null);
@@ -377,7 +383,6 @@ export function GameTimeProvider({
   return <GameTimeContext.Provider value={value}>{children}</GameTimeContext.Provider>;
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 /** Like useGameTime, but returns null outside a GameTimeProvider instead of throwing. */
 export function useOptionalGameTime(): ContextValue | null {
   return useContext(GameTimeContext);

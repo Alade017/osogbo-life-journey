@@ -170,7 +170,9 @@ describe("shared map activity schedules", () => {
       transactions: 0,
     });
 
-    const closedDefinition = action((clock.hour + 1) % 24, (clock.hour + 2) % 24);
+    // A one-hour window starting after the current hour. End hours must be 1..24, so no wrap to 0.
+    const closedStart = (clock.hour + 1) % 24;
+    const closedDefinition = action(closedStart, closedStart + 1);
     await db.query(
       `insert into public.map_landmark_actions(landmark_id,id,definition)
        values($1,$2,$3::jsonb)`,

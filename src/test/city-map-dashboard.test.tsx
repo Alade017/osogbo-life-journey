@@ -274,10 +274,10 @@ describe("isometric town map", () => {
     expect(screen.queryByText(/does not have a playable neighborhood/i)).not.toBeInTheDocument();
     expect(testState.travelToLocation).not.toHaveBeenCalled();
   }, 15_000);
-  it("renders the Phaser overview fallback and a keyboard-accessible list", async () => {
+  it("renders the 3D town map region and a keyboard-accessible list", async () => {
     const { container } = renderDashboard();
     expect(
-      screen.getByRole("region", { name: /Interactive isometric town map/i }),
+      screen.getByRole("region", { name: /Interactive 3D town map/i }),
     ).toBeInTheDocument();
     expect(screen.getByRole("img", { name: "Illustrated town map fallback" })).toBeInTheDocument();
     expect(screen.getByRole("list", { name: "Places on the map" })).toBeInTheDocument();

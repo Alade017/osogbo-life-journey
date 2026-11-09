@@ -81,6 +81,8 @@ describe("free furniture placement database", () => {
       ),
     );
     await db.exec(readFileSync("drizzle/migrations/0079_free_house_placement.sql", "utf8"));
+    // 0085 replaced the four-argument placement function; the live schema keeps only the five-argument version.
+    await db.exec("drop function if exists public.house_place_free(uuid, text, numeric, numeric);");
     await db.query("insert into auth.users(id) values($1)", [userId]);
   }, 180_000);
 
