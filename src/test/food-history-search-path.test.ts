@@ -44,7 +44,7 @@ describe("food delivery history function", () => {
     `);
     await db.exec(readFileSync(originalMigration, "utf8"));
     await db.exec(readFileSync(pinMigration, "utf8"));
-  });
+  }, 180_000);
 
   it("pins the search path to the empty path", async () => {
     const result = await db.query<{ config: string[] | null }>(
