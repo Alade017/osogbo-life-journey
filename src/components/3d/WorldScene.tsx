@@ -407,6 +407,15 @@ export function WorldStreetLights({
 
   return (
     <>
+      {/* Broad, low-profile footing gives each pole a stable street-level finish. */}
+      <WorldInstances
+        tone="metal"
+        items={positions.map(([x, z]) => ({
+          position: [x, size * 0.025, z],
+          scale: [size * 0.12, size * 0.05, size * 0.12],
+        }))}
+      />
+
       {/* Vertical poles */}
       <WorldInstances
         tone="metal"
