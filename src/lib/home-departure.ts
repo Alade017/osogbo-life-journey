@@ -1,6 +1,6 @@
 import type { TravelMode } from "@/lib/transport-service";
 
-export type HomeDeparture = { locationId: string; mode: TravelMode };
+export type HomeDeparture = { locationId: string; mode: TravelMode; characterId: string };
 
 export type HomeDepartureReadiness = {
   houseAvailable: boolean;
@@ -8,6 +8,7 @@ export type HomeDepartureReadiness = {
   editing: boolean;
   busy: boolean;
   offline: boolean;
+  activeCharacterId: string | undefined;
 };
 
 /**
@@ -50,6 +51,10 @@ export function takeDepartureFromHomeWhenReady(
     readiness.offline
   )
     return null;
+  if (pendingDeparture && pendingDeparture.characterId !== readiness.activeCharacterId) {
+    pendingDeparture = null;
+    return null;
+  }
   return takeDepartureFromHome();
 }
 
