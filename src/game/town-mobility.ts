@@ -20,11 +20,11 @@ export function deriveTownMobilityRoutes(
 
   const routes: TownMobilityRoute[] = [];
   for (let rowIndex = 0; rowIndex < horizontalRoadRows.length; rowIndex += 1) {
-    for (let nextRowIndex = rowIndex + 1; nextRowIndex < horizontalRoadRows.length; nextRowIndex += 1) {
+    for (let nextRowIndex = rowIndex + 1; nextRowIndex < Math.min(horizontalRoadRows.length, rowIndex + 2); nextRowIndex += 1) {
       const top = horizontalRoadRows[rowIndex]!;
       const bottom = horizontalRoadRows[nextRowIndex]!;
-      for (let columnIndex = 0; columnIndex < verticalRoadColumns.length; columnIndex += 1) {
-        for (let nextColumnIndex = columnIndex + 1; nextColumnIndex < verticalRoadColumns.length; nextColumnIndex += 1) {
+      for (let columnIndex = 0; columnIndex < verticalRoadColumns.length - 1; columnIndex += 1) {
+        for (let nextColumnIndex = columnIndex + 1; nextColumnIndex < Math.min(verticalRoadColumns.length, columnIndex + 2); nextColumnIndex += 1) {
           const left = verticalRoadColumns[columnIndex]!;
           const right = verticalRoadColumns[nextColumnIndex]!;
           const verticalSidesAreRoads = rows.slice(top, bottom + 1).every(
