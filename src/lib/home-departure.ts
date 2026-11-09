@@ -13,7 +13,14 @@ export function requestDepartureFromHome(departure: HomeDeparture) {
 }
 
 export function takeDepartureFromHome(): HomeDeparture | null {
-  const next = pendingDeparture;
-  pendingDeparture = null;
-  return next;
+  return pendingDeparture;
+}
+
+export function clearDepartureFromHome(departure: HomeDeparture) {
+  if (
+    pendingDeparture?.locationId === departure.locationId &&
+    pendingDeparture.mode === departure.mode
+  ) {
+    pendingDeparture = null;
+  }
 }
