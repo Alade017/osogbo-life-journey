@@ -149,16 +149,18 @@ function NeighborhoodNpcActor({
   // destination really changes, rebuild it from the actor's rendered position
   // so a moving NPC never has to backtrack to an obsolete spawn coordinate.
   useEffect(() => {
-    routeWaypoints.current = waypoints;
     const routeChanged = waypointSignatureRef.current !== waypointSignature;
     const destinationChanged = routeTargetRef.current !== targetKey;
     if (routeChanged || destinationChanged) {
       waypointSignatureRef.current = waypointSignature;
       routeTargetRef.current = targetKey;
       const actor = group.current;
-      const rerouted = actor
+      const current = actor
+        ? { x: actor.position.x, y: actor.position.z }
+        : null;
+      const rerouted = current
         ? neighborhoodNpcPathWithFallback(
-            { x: actor.position.x, y: actor.position.z },
+            current,
             { x: target[0], y: target[2] },
             occupiedFootprints,
             sceneBounds,
@@ -169,10 +171,20 @@ function NeighborhoodNpcActor({
         routeWaypoints.current = rerouted.map(
           (point) => [point.x, 0, point.y] as [number, number, number],
         );
+      } else if (current) {
+        // Never follow a newly supplied route from stale simulation coordinates
+        // when the new destination cannot be reached safely from the live actor.
+        routeWaypoints.current = [[current.x, 0, current.y]];
+      } else {
+        routeWaypoints.current = waypoints;
       }
       waypointIndex.current = 0;
       blockedDuration.current = 0;
       arrivedTarget.current = null;
+    } else {
+      // Equivalent routes may be recreated by simulation renders; accept the
+      // latest reference without resetting the actor's waypoint progress.
+      routeWaypoints.current = waypoints;
     }
   }, [
     occupiedFootprints,
