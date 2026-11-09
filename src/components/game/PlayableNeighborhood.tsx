@@ -45,7 +45,6 @@ import {
 } from "@/game/neighborhood-model";
 import { isPlayableDistrict, playableDistrictForLocation } from "@/game/playable-district";
 import type { NeighborhoodPlayerView, PhaserNeighborhoodHandle } from "@/game/phaser-neighborhood";
-import type { MovementDirection } from "@/lib/player-movement";
 import { NPC_CATALOG, npcActivityAt, type SocialAction } from "@/lib/npc-simulation";
 import { hasLocationVenueDesign } from "@/lib/location-venue-designs";
 import { JobsPage } from "@/routes/_authenticated/_game/jobs";
@@ -243,25 +242,6 @@ function useNeighborhoodConnection(
   };
 }
 
-function directionIntent(directions: ReadonlySet<MovementDirection>) {
-  return {
-    x: Number(directions.has("east")) - Number(directions.has("west")),
-    y: Number(directions.has("south")) - Number(directions.has("north")),
-  };
-}
-
-/** Keyboard keys that walk the character. Taps and clicks on the ground use the same intent. */
-const KEY_DIRECTIONS: Readonly<Record<string, MovementDirection>> = {
-  ArrowUp: "north",
-  KeyW: "north",
-  ArrowDown: "south",
-  KeyS: "south",
-  ArrowLeft: "west",
-  KeyA: "west",
-  ArrowRight: "east",
-  KeyD: "east",
-};
-
 function homeTypeFromRecord(value: unknown) {
   if (!isRecord(value) || typeof value["houseTypeId"] !== "string") return null;
   return value["houseTypeId"];
@@ -298,7 +278,6 @@ export function PlayableNeighborhood() {
       district !== null,
       connectionAttempt,
     );
-  const [directions, setDirections] = useState<ReadonlySet<MovementDirection>>(() => new Set());
   const [groundTarget, setGroundTarget] = useState<{ x: number; y: number } | null>(null);
   const groundTargetRef = useRef(groundTarget);
   groundTargetRef.current = groundTarget;
@@ -306,12 +285,8 @@ export function PlayableNeighborhood() {
   const leavingStepsRef = useRef({ data: false, scene: false });
   const [scene, setScene] = useState<PhaserNeighborhoodHandle | null>(null);
   const [zoom, setZoom] = useState<number>(WORLD_CAMERA.defaultZoom);
-  const directionsRef = useRef(directions);
-  directionsRef.current = directions;
   const lastIntentRef = useRef("0:0");
   const [activePanel, setActivePanel] = useState<InteractionPanel | null>(null);
-  const activePanelRef = useRef(activePanel);
-  activePanelRef.current = activePanel;
   /** A tapped building or person the character is walking to; interaction opens on arrival. */
   const [pendingTargetId, setPendingTargetId] = useState<string | null>(null);
   /** Set while the character walks to its home door after Go home. */
@@ -510,7 +485,6 @@ export function PlayableNeighborhood() {
       enterHomeNow();
       return;
     }
-    setDirections(new Set());
     groundTargetRef.current = toWorld({ x: homeObject.x, y: homeObject.y }, district.origin);
     setGroundTarget(groundTargetRef.current);
     setHomeBound(true);
@@ -521,7 +495,6 @@ export function PlayableNeighborhood() {
   const stopGroundMovement = useCallback(() => {
     groundTargetRef.current = null;
     setGroundTarget(null);
-    setDirections(new Set());
     setPendingTargetId(null);
     setHomeBound(false);
   }, []);
@@ -538,7 +511,6 @@ export function PlayableNeighborhood() {
     setGroundTarget(null);
     setPendingTargetId(null);
     setHomeBound(false);
-    setDirections(new Set());
     lastIntentRef.current = "0:0";
     setZoom(WORLD_CAMERA.defaultZoom);
     setActivePanel(null);
@@ -548,49 +520,12 @@ export function PlayableNeighborhood() {
     setNpcDialogue(null);
   }, [currentLocation?.id]);
 
-  /** Keyboard walking. Pressing a key cancels a tapped destination. */
-  useEffect(() => {
-    const set = (event: KeyboardEvent, pressed: boolean) => {
-      const direction = KEY_DIRECTIONS[event.code];
-      if (!direction) return;
-      // Do not queue movement while a dialogue or service panel owns keyboard input.
-      // Key-up is still processed so held directions cannot leak after the panel closes.
-      if (pressed && activePanelRef.current) return;
-      if (pressed) {
-        groundTargetRef.current = null;
-        setGroundTarget(null);
-        setPendingTargetId(null);
-        setHomeBound(false);
-      }
-      setDirections((current) => {
-        const next = new Set(current);
-        if (pressed) next.add(direction);
-        else next.delete(direction);
-        return next;
-      });
-    };
-    const down = (event: KeyboardEvent) => {
-      if (event.target instanceof HTMLElement && event.target.closest("input, textarea, select"))
-        return;
-      set(event, true);
-    };
-    const up = (event: KeyboardEvent) => set(event, false);
-    window.addEventListener("keydown", down);
-    window.addEventListener("keyup", up);
-    return () => {
-      window.removeEventListener("keydown", down);
-      window.removeEventListener("keyup", up);
-    };
-  }, []);
-
   /** Tapping or clicking the ground walks the character there. Panels hold them in place. */
   const tapGround = (point: { x: number; y: number }) => {
     if (activePanel) return;
     setPendingTargetId(null);
     setHomeBound(false);
-    setDirections(new Set());
-    // The movement loop reads the ref, not React state, so keep both in sync
-    // when the player taps an open point on the ground.
+    // The movement loop reads the ref, so keep it in sync when the player taps an open point.
     groundTargetRef.current = point;
     setGroundTarget(point);
   };
@@ -598,8 +533,7 @@ export function PlayableNeighborhood() {
   useEffect(() => {
     if (connectionState !== "connected") return;
     if (activePanel) {
-      setDirections(new Set());
-      roomRef.current?.send("move", { x: 0, y: 0 });
+        roomRef.current?.send("move", { x: 0, y: 0 });
       lastIntentRef.current = "0:0";
     }
     const interval = window.setInterval(() => {
@@ -616,9 +550,7 @@ export function PlayableNeighborhood() {
         setGroundTarget(null);
       }
       const tapped = groundIntent(groundTargetRef.current, position);
-      const intent = activePanel
-        ? { x: 0, y: 0 }
-        : (tapped ?? directionIntent(directionsRef.current));
+      const intent = activePanel ? { x: 0, y: 0 } : (tapped ?? { x: 0, y: 0 });
       const next = `${intent.x}:${intent.y}`;
       if (next !== lastIntentRef.current || intent.x !== 0 || intent.y !== 0) {
         room.send("move", intent);
@@ -668,37 +600,6 @@ export function PlayableNeighborhood() {
     [],
   );
 
-  useEffect(() => {
-    if (connectionState !== "connected" || !nearbyObject || activePanel) return;
-    const activate = (event: KeyboardEvent) => {
-      const target = event.target;
-      if (
-        event.key.toLowerCase() !== "e" ||
-        (target instanceof HTMLElement &&
-          (target.isContentEditable || /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(target.tagName))) ||
-        enteringHome
-      )
-        return;
-      event.preventDefault();
-      stopGroundMovement();
-      if (nearbyObject.kind === "home") {
-        activateHome();
-      } else if (nearbyObject.kind === "npc") {
-        setSelectedNpcId(nearbyObject.id);
-        setNpcDialogue(null);
-        setActivePanel("npc");
-      } else if (nearbyObject.kind === "work") {
-        setWorkView("actions");
-        setActivePanel("work");
-      } else {
-        setBusinessView("actions");
-        setActivePanel("business");
-      }
-    };
-    window.addEventListener("keydown", activate);
-    return () => window.removeEventListener("keydown", activate);
-  }, [activateHome, activePanel, connectionState, enteringHome, nearbyObject, stopGroundMovement]);
-
   const handleScene = useCallback((next: PhaserNeighborhoodHandle | null) => setScene(next), []);
   const openInteraction = (target: NeighborhoodObject | null = nearbyObject) => {
     if (!target) return;
@@ -729,7 +630,6 @@ export function PlayableNeighborhood() {
     toast.message(`Walking to ${target.name}`);
     setHomeBound(false);
     setPendingTargetId(targetId);
-    setDirections(new Set());
     const interactionPoint = neighborhoodInteractionPoint(target, activeNpcs);
     const destination = toWorld(interactionPoint, district.origin);
     groundTargetRef.current = destination;
