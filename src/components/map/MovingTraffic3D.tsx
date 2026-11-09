@@ -6,7 +6,6 @@ import { WorldMaterial } from "@/components/3d/WorldScene";
 import type { TownMobilityRoute } from "@/game/town-mobility";
 
 export interface MovingTraffic3DProps {
-  cellSize: number;
   paths: readonly TownMobilityRoute[];
 }
 
@@ -30,7 +29,7 @@ interface VehicleConfig {
  * - Agile Okada motorcycles
  * - Interactive click/hover dialogs and horn feedback.
  */
-export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ cellSize, paths }) => {
+export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ paths }) => {
   const [activeSpeech, setActiveSpeech] = useState<{ id: string; text: string } | null>(null);
   const speechTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
