@@ -261,13 +261,14 @@ export function CityMapDashboard({
         setArrivalConfirmed(true);
         setTravelError(null);
       }
-      await Promise.all([
+      await Promise.allSettled([
         queryClient.invalidateQueries({ queryKey: ["character"], refetchType: "none" }),
         queryClient.invalidateQueries({ queryKey: ["locations"], refetchType: "none" }),
         queryClient.invalidateQueries({ queryKey: ["wallet"] }),
         queryClient.invalidateQueries({ queryKey: ["worldClock"] }),
         queryClient.invalidateQueries({ queryKey: ["visits"] }),
       ]);
+      if (!isMounted.current) return;
       window.dispatchEvent(new Event("osogbo:server-state-changed"));
       await refreshConfirmedArrival(variables.locationId);
     },
