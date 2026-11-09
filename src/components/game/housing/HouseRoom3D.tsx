@@ -1453,6 +1453,13 @@ function RoomCharacter({
   );
 }
 
+/** Courier spots, measured from the room's real rear door. */
+const COURIER_DOOR_INSET = 0.2;
+const COURIER_EXIT_DISTANCE = 2.5;
+const COURIER_INSIDE_SHARE = 0.13;
+const COURIER_INSIDE_DEPTH = 1.35;
+const COURIER_SPACING = 0.5;
+
 /** Walks the courier out of the room after the player has collected the package. */
 function DepartingCourier({
   startX,
@@ -1506,24 +1513,26 @@ const COURIER_LOOK = { outfit: 1, bottoms: 1, shoes: 0 } as const;
 
 function FoodCourier({
   delivery,
+  houseTypeId,
   width,
   depth,
   index,
   onCollect,
 }: {
   delivery: FoodDelivery;
+  houseTypeId: string;
   width: number;
   depth: number;
   index: number;
   onCollect?: ((id: string) => void) | undefined;
 }) {
   const overlayPortal = useContext(RoomOverlayContext);
-  const doorX = width * 0.22;
-  const doorZ = -depth / 2 + 0.2;
+  const doorX = houseRearDoorCenter(houseTypeId, width);
+  const doorZ = -depth / 2 + COURIER_DOOR_INSET;
   const inside = delivery.deliveryChoice === "inside";
   // Where the courier stands once he has arrived (one spot per waiting package).
-  const standX = (inside ? width * 0.13 : doorX) + index * 0.5;
-  const standZ = inside ? -depth / 2 + 1.35 : doorZ;
+  const standX = (inside ? width * COURIER_INSIDE_SHARE : doorX) + index * COURIER_SPACING;
+  const standZ = inside ? -depth / 2 + COURIER_INSIDE_DEPTH : doorZ;
   const knocking = delivery.deliveryState === "awaiting_response";
   const approaching = delivery.deliveryState === "approaching";
   const waiting = delivery.deliveryState === "package_waiting";
@@ -1574,26 +1583,29 @@ function FoodCourier({
         gender="male"
         position={position}
         appearance={COURIER_LOOK}
-        animation={approaching && inside ? "walk" : waiting ? "talk" : "idle"}
+        animation={waiting ? "interact" : approaching && inside ? "walk" : "idle"}
         facing="south"
+        held={
+          <>
+            <FoodPackage
+              delivery={delivery}
+              position={[0, 0, 0]}
+              onCollect={waiting ? onCollect : undefined}
+            />
+            {waiting && onCollect && (
+              <Html
+                portal={overlayPortal}
+                zIndexRange={[8, 0]}
+                center
+                position={[0, 0.45, 0]}
+                style={{ pointerEvents: "none" }}
+              >
+                <span className="house-food-package-label">Tap package to collect</span>
+              </Html>
+            )}
+          </>
+        }
       />
-      {/* Package held in the courier's hand (offset is an estimate, tune if needed) */}
-      <FoodPackage
-        delivery={delivery}
-        position={[position[0] + 0.2, 0.9, position[2] + 0.2]}
-        onCollect={waiting ? onCollect : undefined}
-      />
-      {waiting && onCollect && (
-        <Html
-          portal={overlayPortal}
-          zIndexRange={[8, 0]}
-          center
-          position={[position[0] + 0.2, 1.25, position[2] + 0.2]}
-          style={{ pointerEvents: "none" }}
-        >
-          <span className="house-food-package-label">Tap package to collect</span>
-        </Html>
-      )}
     </>
   );
 }
@@ -2096,6 +2108,7 @@ export function HouseRoom3D({
               <FoodCourier
                 key={delivery.id}
                 delivery={delivery}
+                houseTypeId={houseTypeId}
                 width={width}
                 depth={depth}
                 index={0}
@@ -2109,6 +2122,7 @@ export function HouseRoom3D({
               <FoodCourier
                 key={delivery.id}
                 delivery={delivery}
+                houseTypeId={houseTypeId}
                 width={width}
                 depth={depth}
                 index={index}
@@ -2117,13 +2131,16 @@ export function HouseRoom3D({
             ))}
           {departing.map(({ delivery, index }) => {
             const inside = delivery.deliveryChoice === "inside";
+            const doorX = houseRearDoorCenter(houseTypeId, width);
             return (
               <DepartingCourier
                 key={`leaving-${delivery.id}`}
-                startX={(inside ? width * 0.13 : width * 0.22) + index * 0.5}
-                startZ={inside ? -depth / 2 + 1.35 : -depth / 2 + 0.2}
-                exitX={width * 0.22}
-                exitZ={-depth / 2 - 2.5}
+                startX={(inside ? width * COURIER_INSIDE_SHARE : doorX) + index * COURIER_SPACING}
+                startZ={
+                  inside ? -depth / 2 + COURIER_INSIDE_DEPTH : -depth / 2 + COURIER_DOOR_INSET
+                }
+                exitX={doorX}
+                exitZ={-depth / 2 - COURIER_EXIT_DISTANCE}
                 onGone={() =>
                   setDeparting((current) => current.filter((c) => c.delivery.id !== delivery.id))
                 }

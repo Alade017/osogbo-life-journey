@@ -716,6 +716,10 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   });
 
   const homePresence = useMutation({
+    // Entering from outside starts the door walk; the effect below plays it once the page sees it.
+    onMutate: (command) => {
+      if (command === "enter_player_home") beginTransition("entering", "Heading to your door", 3);
+    },
     mutationFn: async (command: "enter_player_home" | "leave_player_home") => {
       const { data, error } = await supabase.rpc(command);
       if (error) throw new Error(error.message);
@@ -731,7 +735,8 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       setActivityError("");
       toast.success(command === "enter_player_home" ? "You're home." : "You went outside.");
     },
-    onError: (error: Error) => {
+    onError: (error: Error, command) => {
+      if (command === "enter_player_home") endTransition();
       setActivityError(error.message);
       toast.error(error.message);
     },

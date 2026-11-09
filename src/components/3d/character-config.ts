@@ -14,6 +14,8 @@ export const CHARACTER_SOCKETS = {
 export const CHARACTER_MOTION = {
   /** Per-second rate for blending between poses so changes fade instead of snapping. */
   fadeRate: 10,
+  /** Per-second rate for gliding to a new position, so moves are walked, never teleported. */
+  glideRate: 6,
   /** Arm and leg swing amplitude in radians while walking. */
   armSwing: 0.5,
   legSwing: 0.4,
@@ -72,3 +74,17 @@ export const CHARACTER_HAND = {
   reachAngle: -1.1,
   reachSway: 0.08,
 } as const;
+
+/**
+ * Where the right hand is, in body space (feet on the floor, facing south), when the
+ * interact pose reaches forward. Props held in that hand are placed here.
+ */
+export function rightHandPoint(height: number): [number, number, number] {
+  const reach = CHARACTER_HAND.reachAngle;
+  const length = height * CHARACTER_ARM.length;
+  return [
+    CHARACTER_HAND.socketSide * height * CHARACTER_ARM.shoulderX,
+    height * CHARACTER_ARM.shoulderY - length * Math.cos(reach),
+    -length * Math.sin(reach),
+  ];
+}
