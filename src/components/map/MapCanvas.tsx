@@ -99,6 +99,11 @@ export function MapCanvas({
   onSelectEvent,
 }: MapCanvasProps) {
   const [rendererState, setRendererState] = useState<"loading" | "ready" | "fallback">("loading");
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(null);
+  const selectProperty = useCallback((property: MapProperty) => {
+    setSelectedPropertyId(property.id);
+    onSelectProperty?.(property);
+  }, [onSelectProperty]);
 
   useEffect(() => {
     if (!searchTarget) return;
@@ -136,12 +141,13 @@ export function MapCanvas({
         <R3FTownSurface
           places={availablePlaces}
           properties={properties}
+          selectedPropertyId={selectedPropertyId}
           playerLocation={playerLocation}
           billboardMarkers={billboardMarkers}
           onSelectLandmark={onSelectLandmark}
           onSelectDistrict={onSelectDistrict}
           onSelectBillboard={onSelectBillboard}
-          {...(onSelectProperty ? { onSelectProperty } : {})}
+          {...(onSelectProperty ? { onSelectProperty: selectProperty } : {})}
           eventChips={_eventChips}
           {...(onSelectEvent ? { onSelectEvent } : {})}
           onReady={handleReady}
@@ -168,7 +174,7 @@ export function MapCanvas({
           <li key={property.id}>
             <button
               type="button"
-              onClick={() => onSelectProperty?.(property)}
+              onClick={() => selectProperty(property)}
               aria-label={"Open " + (property.label ?? "house") + ": " + houseBadgeText(property)}
             >
               {property.label ?? "House"}, {houseBadgeText(property)} · View property
