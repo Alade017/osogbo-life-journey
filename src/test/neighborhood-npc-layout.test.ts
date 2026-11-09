@@ -155,6 +155,32 @@ describe("neighborhood NPC spawn distribution", () => {
     }
   });
 
+  it("routes around a previously reserved NPC corridor", () => {
+    const reserved = [
+      { x: 0, y:: 0 },
+      { x: 200, y: 0 },
+    ];
+    const route = neighborhoodNpcPath(
+      { x: 100, y: -200 },
+      { x: 100, y: 200 },
+      [],
+      NEIGHBORHOOD_SCENE_BOUNDS,
+      [reserved],
+    );
+    expect(route).not.toBeNull();
+    const points = [{ x: 100, y: -200 }, ...route!];
+    for (let index = 1; index < points.length; index += 1) {
+      const a = points[index - 1]!;
+      const b = points[index]!;
+      const crosses = (a.x <= 100 && b.x >= 100) || (b.x <= 100 && a.x >= 100);
+      if (crosses) {
+        const progress = b.x === a.x ? 0 : (100 - a.x) / (b.x - a.x);
+        const y = a.y + (b.y - a.y) * progress;
+        expect(Math.abs(y)).toBeGreaterThanOrEqual(21);
+      }
+    }
+  });
+
   it("returns null when no route exists inside the scene bounds", () => {
     const route = neighborhoodNpcPath(
       { x: NEIGHBORHOOD_SCENE_BOUNDS.left + 20, y: 0 },
