@@ -12,7 +12,7 @@ const plate = (radius: number) => (
   </mesh>
 );
 
-/** Reusable unbranded clear food pouch for locally sold dry goods and bakery items. */
+/** Reusable unbranded clear food pouch with sealed seams and a paper label. */
 function ClearFoodPouch({
   width,
   height,
@@ -22,25 +22,49 @@ function ClearFoodPouch({
   height: number;
   depth: number;
 }) {
+  const panelDepth = Math.max(0.018, depth * 0.08);
+  const seamHeight = Math.max(0.035, height * 0.07);
   return (
     <group>
-      <mesh position={[0, height * 0.48, 0]} scale={[width, height * 0.48, depth]}>
-        <sphereGeometry args={[1, 24, 16]} />
+      {/* Transparent front and back film panels. */}
+      <mesh position={[0, height * 0.5, depth * 0.42]}>
+        <boxGeometry args={[width, height - seamHeight * 2, panelDepth]} />
         <meshStandardMaterial
           color="#e8f2ed"
           transparent
           opacity={0.2}
           roughness={0.12}
-          metalness={0}
           depthWrite={false}
+          side={2}
         />
       </mesh>
-      <mesh position={[0, height * 0.94, 0]}>
-        <cylinderGeometry args={[width * 0.18, width * 0.24, 0.045, 16]} />
-        {mat("#d6d0b8", 0.8)}
+      <mesh position={[0, height * 0.5, -depth * 0.42]}>
+        <boxGeometry args={[width, height - seamHeight * 2, panelDepth]} />
+        <meshStandardMaterial
+          color="#e8f2ed"
+          transparent
+          opacity={0.16}
+          roughness={0.12}
+          depthWrite={false}
+          side={2}
+        />
       </mesh>
-      <mesh position={[0, height * 0.48, depth * 0.96]}>
-        <boxGeometry args={[width * 0.9, height * 0.22, 0.012]} />
+      {/* Folded side gussets and heat-sealed top and bottom edges. */}
+      {[-1, 1].map((side) => (
+        <mesh key={side} position={[side * width * 0.48, height * 0.5, 0]}>
+          <boxGeometry args={[width * 0.06, height - seamHeight * 2, depth * 0.9]} />
+          {mat("#dce8df", 0.5)}
+        </mesh>
+      ))}
+      {[-1, 1].map((edge) => (
+        <mesh key={edge} position={[0, edge === 1 ? height - seamHeight / 2 : seamHeight / 2, 0]}>
+          <boxGeometry args={[width * 1.02, seamHeight, depth * 0.9]} />
+          {mat("#d6d0b8", 0.8)}
+        </mesh>
+      ))}
+      {/* Small neutral label; intentionally carries no brand or readable claims. */}
+      <mesh position={[0, height * 0.48, depth * 0.51]}>
+        <boxGeometry args={[width * 0.66, height * 0.2, 0.012]} />
         {mat("#eee7d4", 0.9)}
       </mesh>
     </group>
@@ -163,7 +187,7 @@ function Bread() {
         <sphereGeometry args={[0.5, 28, 18]} />
         {mat("#c98a4b", 0.9)}
       </mesh>
-      <ClearFoodPouch width={0.78} height={0.58} depth={0.48} />
+      <ClearFoodPouch width={0.9} height={0.78} depth={0.58} />
     </group>
   );
 }
@@ -183,7 +207,7 @@ function ChinChin() {
           {mat("#c98a3a", 0.7)}
         </mesh>
       ))}
-      <ClearFoodPouch width={0.58} height={0.58} depth={0.58} />
+      <ClearFoodPouch width={0.62} height={0.7} depth={0.56} />
     </group>
   );
 }
