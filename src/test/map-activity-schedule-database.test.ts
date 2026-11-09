@@ -291,8 +291,8 @@ describe("shared map activity schedules", () => {
   it("rejects a neighborhood action when the active character differs from the authorized character", async () => {
     const newerCharacterId = "77777777-7777-4777-8777-777777777777";
     await db.query(
-      `insert into public.characters(id,user_id,current_location_id,is_adult,game_time_hour)
-       values($1,$2,$3,true,0)`,
+      `insert into public.characters(id,user_id,current_location_id,is_adult,game_time_hour,created_at)
+       values($1,$2,$3,true,0,now() + interval '2 seconds')`,
       [newerCharacterId, userId, locationId],
     );
     const openDefinition = action(0, 24);
