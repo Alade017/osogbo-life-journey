@@ -93,6 +93,8 @@ function TrafficVehicle({
     if (!groupRef.current) return;
 
     const { path, speed } = config;
+    if (path.length < 2) return;
+
     const p1 = path[currentSegment.current]!;
     const nextIdx = (currentSegment.current + 1) % path.length;
     const p2 = path[nextIdx]!;
