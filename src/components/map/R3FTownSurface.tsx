@@ -178,6 +178,16 @@ export function R3FTownSurface(props: Props) {
   const [hoveredTargetId, setHoveredTargetId] = useState<string | null>(null);
 
   useEffect(() => {
+    if (
+      selectedTarget?.type === "property" &&
+      props.properties &&
+      !props.properties.some((property) => property.id === selectedTarget.id)
+    ) {
+      setSelectedTarget(null);
+    }
+  }, [props.properties, selectedTarget]);
+
+  useEffect(() => {
     if (!props.searchTarget) return;
     const targetId = typeof props.searchTarget === "string" ? props.searchTarget : props.searchTarget.id;
     const landmark = props.places.find((p) => p.id === targetId);
