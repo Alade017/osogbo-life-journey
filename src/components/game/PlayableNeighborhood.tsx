@@ -318,9 +318,15 @@ export function PlayableNeighborhood() {
   const [workView, setWorkView] = useState<"actions" | "interior">("actions");
   const [selectedNpcId, setSelectedNpcId] = useState<string | null>(null);
   const [npcDialogue, setNpcDialogue] = useState<string | null>(null);
-  const [npcPositionOverrides, setNpcPositionOverrides] = useState<
-    Record<string, { x: number; y: number }>
-  >({});
+  const [npcPositionOverrides, setNpcPositionOverrides] = useState<{
+    locationId: string | null;
+    positions: Record<string, { x: number; y: number }>;
+  }>({ locationId: null, positions: {} });
+  // Ignore snapshots from the previous area immediately, before effects run.
+  const currentNpcPositionOverrides =
+    npcPositionOverrides.locationId === currentLocation?.id
+      ? npcPositionOverrides.positions
+      : {};
   const player = players.find((candidate) => candidate.sessionId === sessionId);
   const actionAnimation = simulation.currentAction
     ? avatarAnimationForActivity(simulation.currentAction.animation)
@@ -334,7 +340,6 @@ export function PlayableNeighborhood() {
       ),
     [actionAnimation, players, sessionId],
   );
-  useEffect(() => setNpcPositionOverrides({}), [currentLocation?.id]);
   const activeNpcs = useMemo((): NeighborhoodNpcView[] => {
     if (!currentLocation || !npcQuery.data || !locationsQuery.data) return [];
     const savedNpcIds = new Set(npcQuery.data.map((npc) => npc.id));
@@ -362,7 +367,7 @@ export function PlayableNeighborhood() {
       const spread = (index - (scheduled.length - 1) / 2) * 34;
       const targetX = (destinationObject?.x ?? slot.x) + spread;
       const targetY = (destinationObject?.y ?? slot.y) + (index % 2 === 0 ? 34 : -34);
-      const current = npcPositionOverrides[npc.id] ?? { x: slot.x, y: slot.y };
+      const current = currentNpcPositionOverrides[npc.id] ?? { x: slot.x, y: slot.y };
       const isMoving =
         !simulation.paused && Math.hypot(targetX - current.x, targetY - current.y) > 2;
       const activityKind = isMoving
@@ -396,7 +401,7 @@ export function PlayableNeighborhood() {
     area.obstacles,
     currentLocation,
     locationsQuery.data,
-    npcPositionOverrides,
+    currentNpcPositionOverrides,
     npcQuery.data,
     simulation.gameTime,
     simulation.paused,
@@ -876,7 +881,13 @@ export function PlayableNeighborhood() {
                         interactionTargets={interactionTargets}
                         onSelectTarget={selectWorldTarget}
                         onNpcArrive={(id, x, y) =>
-                          setNpcPositionOverrides((current) => ({ ...current, [id]: { x, y } }))
+                          setNpcPositionOverrides((current) => ({
+                            locationId: currentLocation?.id ?? null,
+                            positions: {
+                              ...(current.locationId === currentLocation?.id ? current.positions : {}),
+                              [id]: { x, y },
+                            },
+                          }))
                         }
                       />
                     </Suspense>
