@@ -303,6 +303,8 @@ export function PlayableNeighborhood() {
   const [selectedNpcId, setSelectedNpcId] = useState<string | null>(null);
   const [npcDialogue, setNpcDialogue] = useState<string | null>(null);
   const npcActorPositions = useRef(new Map<string, { x: number; y: number }>());
+  const currentLocationIdRef = useRef<string | undefined>(currentLocation?.id);
+  currentLocationIdRef.current = currentLocation?.id;
   const [npcPositionOverrides, setNpcPositionOverrides] = useState<{
     locationId: string | null;
     positions: Record<string, { x: number; y: number }>;
@@ -558,6 +560,7 @@ export function PlayableNeighborhood() {
   }, [homeBound, nearbyObject]);
 
   useEffect(() => {
+    npcActorPositions.current.clear();
     groundTargetRef.current = null;
     setGroundTarget(null);
     setPendingTargetId(null);
@@ -863,15 +866,22 @@ export function PlayableNeighborhood() {
                         onScene={handleScene}
                         interactionTargets={interactionTargets}
                         onSelectTarget={selectWorldTarget}
-                        onNpcArrive={(id, x, y) =>
-                          setNpcPositionOverrides((current) => ({
-                            locationId: currentLocation?.id ?? null,
-                            positions: {
-                              ...(current.locationId === currentLocation?.id ? current.positions : {}),
-                              [id]: { x, y },
-                            },
-                          }))
-                        }
+                        onNpcArrive={(id, x, y) => {
+                          const locationId = currentLocationIdRef.current;
+                          if (!locationId) return;
+                          setNpcPositionOverrides((current) => {
+                            // A scene from the previous neighborhood may finish an
+                            // animation during unmount; never let it overwrite the new area's snapshot.
+                            if (currentLocationIdRef.current !== locationId) return current;
+                            return {
+                              locationId,
+                              positions: {
+                                ...(current.locationId === locationId ? current.positions : {}),
+                                [id]: { x, y },
+                              },
+                            };
+                          });
+                        }}
                       />
                     </Suspense>
                     <div
