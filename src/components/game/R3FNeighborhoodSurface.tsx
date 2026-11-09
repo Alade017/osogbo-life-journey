@@ -23,7 +23,7 @@ import {
   type NeighborhoodObject,
 } from "@/game/neighborhood-model";
 import { neighborhoodBuildingFootprint, neighborhoodObstacleFootprint } from "@/game/neighborhood-geometry";
-import { neighborhoodNpcAvoidanceStep, neighborhoodNpcPath, neighborhoodNpcReplanDelay } from "@/game/neighborhood-npc-layout";
+import { neighborhoodNpcAvoidanceBias, neighborhoodNpcAvoidanceStep, neighborhoodNpcPath, neighborhoodNpcReplanDelay } from "@/game/neighborhood-npc-layout";
 import {
   WorldCamera,
   WorldCars,
@@ -135,6 +135,7 @@ function NeighborhoodNpcActor({
   const routeWaypoints = useRef(waypoints);
   const blockedDuration = useRef(0);
   const replanDelay = neighborhoodNpcReplanDelay(npc.id);
+  const avoidanceBias = neighborhoodNpcAvoidanceBias(npc.id);
   const pauseSnapshotSaved = useRef(false);
   useEffect(() => {
     waypointIndex.current = 0;
@@ -211,6 +212,7 @@ function NeighborhoodNpcActor({
         undefined,
         occupiedFootprints,
         sceneBounds,
+        avoidanceBias,
       );
       const movedX = next.x - actor.position.x;
       const movedZ = next.y - actor.position.z;
