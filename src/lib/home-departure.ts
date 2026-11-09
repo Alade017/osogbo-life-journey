@@ -17,10 +17,7 @@ export function takeDepartureFromHome(): HomeDeparture | null {
 }
 
 export function clearDepartureFromHome(departure: HomeDeparture) {
-  if (
-    pendingDeparture?.locationId === departure.locationId &&
-    pendingDeparture.mode === departure.mode
-  ) {
+  if (pendingDeparture === departure) {
     pendingDeparture = null;
   }
 }
