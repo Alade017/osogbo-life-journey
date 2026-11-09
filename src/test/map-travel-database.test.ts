@@ -96,7 +96,6 @@ describe("map travel database actions", () => {
     await db.exec(readFileSync("supabase/migrations/202610170014_ede_town_travel.sql", "utf8"));
     await db.exec(readFileSync("supabase/migrations/202610170015_town_travel_arrival.sql", "utf8"));
     await db.exec(readFileSync("supabase/migrations/20261109160000_bind_travel_to_canonical_character.sql", "utf8"));
-    await db.exec(readFileSync("supabase/migrations/20261109160000_bind_travel_to_canonical_character.sql", "utf8"));
   }, 60_000);
 
   afterAll(async () => {
