@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useThree } from "@react-three/fiber";
+import { ContactShadows } from "@react-three/drei";
 import { Color } from "three";
 import { useOptionalGameTime } from "@/components/game/GameTimeProvider";
 import { WORLD_PALETTE } from "../3d/world-theme";
@@ -97,10 +98,24 @@ export function MapLighting({
         intensity={0.15 + 1.35 * day}
         castShadow
         shadow-mapSize={[1024, 1024]}
+        shadow-bias={-0.001}
+        shadow-normalBias={0.04}
         shadow-camera-left={-size}
         shadow-camera-right={size}
         shadow-camera-top={size}
         shadow-camera-bottom={-size}
+        shadow-camera-far={size * 3}
+      />
+
+      <ContactShadows
+        position={[0, 0.015, 0]}
+        scale={size * 2}
+        opacity={0.28}
+        blur={2.5}
+        far={8}
+        resolution={256}
+        frames={Infinity}
+        color={WORLD_PALETTE.timber}
       />
 
       {/* Soft Moon Light (Nighttime) */}
