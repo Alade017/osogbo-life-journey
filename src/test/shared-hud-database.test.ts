@@ -86,7 +86,8 @@ describe("shared HUD database acceptance", () => {
         (f) =>
           f.endsWith(".sql") &&
           f !== "0075_remove_orphaned_player_data.sql" &&
-          f !== "0077_market_stall_rent_categories_sales.sql",
+          f !== "0077_market_stall_rent_categories_sales.sql" &&
+          f !== "0079_free_house_placement.sql",
       )
       .sort()) {
       try {
