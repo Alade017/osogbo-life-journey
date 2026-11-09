@@ -492,10 +492,18 @@ export function PlayableNeighborhood() {
     retry: false,
   });
   const neighborhoodActionMutation = useMutation({
-    mutationFn: async ({ landmarkId, actionId }: { landmarkId: string; actionId: string }) => {
+    mutationFn: async ({
+      landmarkId,
+      actionId,
+      characterId,
+    }: {
+      landmarkId: string;
+      actionId: string;
+      characterId: string;
+    }) => {
       const room = roomRef.current;
       const character = characterQuery.data;
-      if (!room || !player || !character?.id || !character.user_id) {
+      if (!room || !player || !character?.id || !character.user_id || character.id !== characterId) {
         throw new Error("Your neighborhood session is not ready.");
       }
       const requestId = getPendingMapActionKey(
@@ -541,7 +549,13 @@ export function PlayableNeighborhood() {
       toast.success(result.message);
       await landmarkDetailsQuery.refetch();
     },
-    onError: (error: Error) => toast.error(error.message.replaceAll("_", " ")),
+    onError: (error: Error, variables) => {
+      const activeCharacterId = queryClient.getQueryData<{ id?: string }>(
+        q.character().queryKey,
+      )?.id;
+      if (activeCharacterId !== variables.characterId) return;
+      toast.error(error.message.replaceAll("_", " "));
+    },
   });
   const selectedNpc = activeNpcs.find((npc) => npc.id === selectedNpcId) ?? nearbyNpc;
   const npcInteraction = useGameAction(rpc.interactWithNpc, {
@@ -1169,6 +1183,7 @@ export function PlayableNeighborhood() {
                                 neighborhoodActionMutation.mutate({
                                   landmarkId: selectedLandmarkId,
                                   actionId,
+                                   characterId: characterQuery.data?.id ?? "",
                                 });
                               }}
                             />
