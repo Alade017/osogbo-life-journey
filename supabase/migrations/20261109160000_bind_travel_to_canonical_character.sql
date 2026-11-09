@@ -169,3 +169,51 @@ begin
 end $$;
 
 notify pgrst,'reload schema';
+
+
+-- Landmark detail/schedule reads must use the same active character as travel
+-- and the neighborhood authorization path.
+create or replace function public.map_get_landmark_details(p_user_id uuid, p_landmark_id text)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare
+  player public.characters%rowtype;
+  destination public.map_landmarks%rowtype;
+  result jsonb;
+  schedule_clock jsonb;
+begin
+  select * into player from public.characters
+    where user_id = p_user_id
+    order by created_at desc, id desc
+    limit 1;
+  if not found then raise exception using message = 'NO_CHARACTER', errcode = 'P0002'; end if;
+  select landmark.* into destination from public.map_landmarks landmark
+    join public.locations location on location.id = landmark.location_id and location.is_active
+    where landmark.id = p_landmark_id and landmark.is_available;
+  if not found then raise exception using message = 'UNKNOWN_LANDMARK', errcode = 'P0002'; end if;
+  if destination.min_age >= 18 and not player.is_adult then
+    raise exception using message = 'AGE_RESTRICTED', errcode = '42501';
+  end if;
+  schedule_clock := public._map_schedule_clock();
+  select jsonb_build_object(
+    'schedule', schedule_clock || jsonb_build_object('actions', coalesce((select jsonb_agg(
+      jsonb_build_object('id',rule.id,'start',rule.definition#>'{open_hours,start}',
+        'end',rule.definition#>'{open_hours,end}',
+        'open',public._map_activity_is_open(rule.definition,(schedule_clock#>>'{clock,hour}')::integer))
+      order by rule.sort_order,rule.id) from public.map_landmark_actions rule
+      where rule.landmark_id=destination.id and rule.is_active),'[]'::jsonb)),
+    'landmark', jsonb_build_object('id', destination.id, 'district_id', destination.district_id,
+      'location_id', destination.location_id, 'player_location_id', player.current_location_id,
+      'min_age', destination.min_age,
+      'name', location.name, 'description', location.description),
+    'actions', coalesce((select jsonb_agg(rule.definition order by rule.sort_order, rule.id)
+      from public.map_landmark_actions rule
+      where rule.landmark_id = destination.id and rule.is_active), '[]'::jsonb),
+    'activities', coalesce((select jsonb_agg(to_jsonb(activity) order by activity.name)
+      from public.activities activity where activity.location_id = location.id and activity.is_available), '[]'::jsonb),
+    'jobs', coalesce((select jsonb_agg(to_jsonb(job) order by job.sort_order, job.name)
+      from public.jobs job where job.location_id = location.id and job.is_available), '[]'::jsonb)
+  ) into result
+  from public.locations location where location.id = destination.location_id;
+  return result;
+end;
+$$;
