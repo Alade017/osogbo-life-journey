@@ -281,9 +281,15 @@ export function CityMapDashboard({
     setTravelError(null);
     if (character.data?.inside_home_property_id) {
       // Leaving a house plays the door first; the house screen runs the trip alongside it.
+      if (!character.data?.id) {
+        setTravelError("Your active character could not be confirmed. Refresh and try again.");
+        travelSubmitLock.current = false;
+        return;
+      }
       const departure = requestDepartureFromHome({
         locationId: selectedDestination.id,
         mode,
+        characterId: character.data.id,
       });
       void navigate({ to: "/house" })
         .catch(() => clearPendingDepartureFromHome(departure))
