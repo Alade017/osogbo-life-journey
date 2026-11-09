@@ -29,6 +29,14 @@ describe("neighborhood NPC spawn distribution", () => {
     expect(new Set(positions.map((point) => point && String(point.x) + ":" + String(point.y))).size).toBe(6);
   });
 
+  it("keeps spawn anchors tied to catalog identity when the active population changes", () => {
+    const firstCharacterSpawn = neighborhoodNpcSpawnPoint(slots, 0);
+    const laterCharacterSpawn = neighborhoodNpcSpawnPoint(slots, 4);
+    expect(neighborhoodNpcSpawnPoint(slots, 0)).toEqual(firstCharacterSpawn);
+    expect(neighborhoodNpcSpawnPoint(slots, 4)).toEqual(laterCharacterSpawn);
+    expect(firstCharacterSpawn).not.toEqual(laterCharacterSpawn);
+  });
+
   it("keeps an NPC destination stable when the active population changes", () => {
     const destination = { x: 320, y: 300 };
     const firstCharacterPoint = neighborhoodNpcDestinationPoint(destination, 0);
