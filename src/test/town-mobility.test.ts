@@ -82,9 +82,9 @@ describe("pedestrian sidewalk corner routes", () => {
 
     expect(routes).toEqual([
       [
-        [-1, 0.28],
-        [-0.28, 0.28],
-        [-0.28, 1],
+        [-1, -0.28],
+        [0.28, -0.28],
+        [0.28, 1],
       ],
     ]);
   });
