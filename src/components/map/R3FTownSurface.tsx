@@ -1018,9 +1018,11 @@ export function R3FTownSurface(props: Props) {
             cellSize={cell}
             gridCols={gridCols}
             gridRows={gridRows}
-            onSelectLocked={(locked) => {
-              setSelectedTarget({ id: locked.id, position: locked.position, type: "landmark" });
-            }}
+            onSelectLocked={(locked) =>
+              select(null, () => {
+                setSelectedTarget({ id: locked.id, position: locked.position, type: "landmark" });
+              })
+            }
           />
           <DistrictZones
             districts={town.districts}
