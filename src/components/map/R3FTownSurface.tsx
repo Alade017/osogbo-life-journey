@@ -62,7 +62,11 @@ const point = (x: number, z: number): [number, number, number] => [
   (z - (gridRows - 1) / 2) * cell,
 ];
 
-function CameraFocusController({ targetPosition }: { targetPosition: [number, number, number] | null }) {
+function CameraFocusController({
+  targetPosition,
+}: {
+  targetPosition: [number, number, number] | null;
+}) {
   useMapCameraFocus(targetPosition, Boolean(targetPosition));
   return null;
 }
@@ -177,7 +181,8 @@ export function R3FTownSurface(props: Props) {
 
   useEffect(() => {
     if (!props.searchTarget) return;
-    const targetId = typeof props.searchTarget === "string" ? props.searchTarget : props.searchTarget.id;
+    const targetId =
+      typeof props.searchTarget === "string" ? props.searchTarget : props.searchTarget.id;
     const landmark = props.places.find((p) => p.id === targetId);
     if (landmark) {
       const [x, , z] = point(landmark.grid.x, landmark.grid.z);
@@ -882,9 +887,12 @@ export function R3FTownSurface(props: Props) {
         const runEnd = x - 1;
         if (runEnd - runStart < 4) continue;
 
-        const sideZ = town.grid.rows[z - 1]?.[runStart] === "g" ? z - 1
-          : town.grid.rows[z + 1]?.[runStart] === "g" ? z + 1
-          : null;
+        const sideZ =
+          town.grid.rows[z - 1]?.[runStart] === "g"
+            ? z - 1
+            : town.grid.rows[z + 1]?.[runStart] === "g"
+              ? z + 1
+              : null;
         if (sideZ === null) continue;
 
         let previousPole: [number, number] | null = null;
