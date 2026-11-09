@@ -76,7 +76,7 @@ describe("town sidewalk cells", () => {
   });
 });
 
- describe("town pedestrian routes", () => {
+describe("town pedestrian routes", () => {
   const blockedCells = [
     ...town.grid.buildings.flatMap((building) =>
       [0, 1].flatMap((dx) => [0, 1].map((dz) => [building.x + dx, building.z + dz] as const)),
