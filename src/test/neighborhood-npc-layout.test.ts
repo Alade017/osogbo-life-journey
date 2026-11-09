@@ -244,6 +244,20 @@ describe("neighborhood NPC spawn distribution", () => {
     expect(next.x).toBeGreaterThanOrEqual(-9.6);
   });
 
+  it("moves away from an actor when the two actors are already too close", () => {
+    const current = { x: 0, y: 0 };
+    const blocker = { x: 0.5, y: 0 };
+    const next = neighborhoodNpcAvoidanceStep(
+      current,
+      { x: 10, y: 0 },
+      [blocker],
+      0.5,
+      0.85,
+    );
+    expect(next).not.toEqual(current);
+    expect(Math.hypot(next.x - blocker.x, next.y - blocker.y)).toBeGreaterThan(0.5);
+  });
+
   it("waits in place when every live movement alternative is occupied", () => {
     const current = { x: 0, y: 0 };
     const next = neighborhoodNpcAvoidanceStep(
