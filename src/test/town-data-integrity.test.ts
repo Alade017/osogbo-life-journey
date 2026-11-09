@@ -45,7 +45,10 @@ it("keeps every road tile connected to the town road network", () => {
   while (queue.length) {
     const current = queue.shift()!;
     const [x, z] = current.split(",").map(Number);
-    for (const [dx, dz] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) {
+    if (x === undefined || z === undefined || !Number.isFinite(x) || !Number.isFinite(z)) {
+      continue;
+    }
+    for (const [dx, dz] of [[0, -1], [0, 1], [-1, 0], [1, 0]] as const) {
       const neighbor = `${x + dx},${z + dz}`;
       if (!roads.has(neighbor) || visited.has(neighbor)) continue;
       visited.add(neighbor);
