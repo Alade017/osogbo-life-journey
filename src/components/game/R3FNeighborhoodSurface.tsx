@@ -44,7 +44,7 @@ import {
 } from "../3d/WorldScene";
 import { CHARACTER_MOTION } from "@/components/3d/character-config";
 import { MapLighting } from "@/components/map/MapLighting";
-import { WORLD_CAMERA, WORLD_PALETTE, WORLD_SCALE } from "../3d/world-theme";
+import { WORLD_CAMERA, WORLD_PALETTE, WORLD_SCALE, worldFoliageColor } from "../3d/world-theme";
 import { districtArchitectureVariantForCategory } from "@/game/district-architecture";
 import {
   carSpots,
@@ -741,6 +741,7 @@ export function R3FNeighborhoodSurface({
       return {
         position: [p[0], p[2]],
         ...profile,
+        canopyColor: worldFoliageColor(Math.round(obstacle.x * 37 + obstacle.y * 61)),
       };
     });
   return (
