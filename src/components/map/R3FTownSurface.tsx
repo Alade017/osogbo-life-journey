@@ -1075,6 +1075,7 @@ export function R3FTownSurface(props: Props) {
               width={cell * 1.15}
               depth={cell * 1.15}
               variant={getLandmarkBuildingVariant(building.buildingType)}
+              materialSeed={building.x * 37 + building.z * 61}
               detailed
             />
           ))}
