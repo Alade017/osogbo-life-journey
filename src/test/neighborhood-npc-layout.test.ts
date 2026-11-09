@@ -213,6 +213,34 @@ describe("neighborhood NPC spawn distribution", () => {
     expect(next).toEqual(current);
   });
 
+  it("does not sidestep into a building footprint", () => {
+    const current = { x: 0, y: 0 };
+    const next = neighborhoodNpcAvoidanceStep(
+      current,
+      { x: 10, y: 0 },
+      [{ x: 0.5, y: 0 }],
+      0.5,
+      0.4,
+      [{ left: -0.1, top: 0.1, width: 0.8, height: 0.8 }],
+    );
+    expect(next).toEqual(current);
+  });
+
+  it("does not move outside the active scene bounds", () => {
+    const current = { x: 9.8, y: 5 };
+    const next = neighborhoodNpcAvoidanceStep(
+      current,
+      { x: 20, y: 5 },
+      [],
+      1,
+      0.4,
+      [],
+      { left: -10, top: -10, width: 20, height: 20 },
+    );
+    expect(next.x).toBeLessThanOrEqual(10);
+    expect(next.x).toBeGreaterThanOrEqual(-10);
+  });
+
   it("waits in place when every live movement alternative is occupied", () => {
     const current = { x: 0, y: 0 };
     const next = neighborhoodNpcAvoidanceStep(
