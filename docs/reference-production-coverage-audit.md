@@ -25,6 +25,19 @@ This is a code and catalogue-structure audit, not a visual acceptance review. It
 | Dense low-rise district / urban mood | Existing district architecture, authored neighborhood dressing, street furniture, lighting and road scene | **Existing foundation** | Visual review against the Art Bible; do not trace reference layouts or use photos as textures |
 | City-map UI screenshot | Existing map dashboard and playable R3F neighborhood are separate established surfaces | **Existing foundation** | Keep renderer roles distinct; no SVG fallback or duplicate map renderer |
 
+## Furniture catalogue-to-renderer cross-check
+
+A follow-up read-only pass compared the existing housing catalogue migrations with the `FurnitureFallback` branches in `HouseRoom3D.tsx`. The audited catalogue art keys are all represented:
+
+| Catalogue family | Existing art keys | Renderer coverage |
+| --- | --- | --- |
+| Starter and core fixtures | `bed`, `seat`, `light`, `stove`, `shower`, `toilet`, `television`, `computer` | Dedicated branches or existing aliases |
+| Living-room and storage | `sofa`, `plant`, `wardrobe`, `coffee-table`, `drawer`, `wall-art` | Dedicated branches |
+| Kitchen and dining | `fridge`, `microwave`, `deep-freezer`, `dining-table`, `dining-chair`, `plate-hanger` | Dedicated branches |
+| Fitness | `treadmill`, `multi-gym-machine`, `dumbbells`, `yoga-mat`, `dumbbell-rack`, `full-length-gym-mirror`, `gym-bag` | Dedicated branches |
+
+**Result:** no missing procedural furniture branch was found among the audited starter, essential-fixture, accessory, kitchen/dining and gym catalogue entries. This is source-level coverage only: it does not prove that each model fits its live slot, reads clearly at gameplay camera distance, or renders without visual artifacts. The documented visual QA remains required.
+
 ## Verified integration facts
 
 - `ITEM_MODELS` remains keyed by existing inventory slugs and includes the existing food model registry.
