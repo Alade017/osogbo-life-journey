@@ -541,7 +541,11 @@ export function CityMapDashboard({
       )}
       {!offline && housingMarkers.isError && (
         <div role="alert" className="map-housing-message">
-          <span>Homes could not be loaded. The town map is still available.</span>
+          <span>
+            {housingMarkers.data
+              ? "Property updates could not be refreshed. Showing the last successfully loaded homes."
+              : "Homes could not be loaded. The town map is still available."}
+          </span>
           <button type="button" onClick={() => void housingMarkers.refetch()}>
             Retry
           </button>
