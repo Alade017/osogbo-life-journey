@@ -13,7 +13,13 @@ type Dependencies = {
     actionId: string,
     isAdult: boolean,
   ) => Promise<void>;
-  perform: (userId: string, landmarkId: string, actionId: string, requestId: string, characterId: string) => Promise<unknown>;
+  perform: (
+    userId: string,
+    landmarkId: string,
+    actionId: string,
+    requestId: string,
+    characterId: string,
+  ) => Promise<unknown>;
   logAgeCheck: (userId: string, landmarkId: string) => Promise<void>;
   secret: () => string | undefined;
 };
@@ -28,7 +34,8 @@ function json(body: unknown, status = 200) {
 export function createNeighborhoodPlaceActionHandler(dependencies: Dependencies) {
   return async (request: Request) => {
     const authorization = request.headers.get("authorization");
-    if (!authorization?.startsWith("Bearer ")) return json({ error: { code: "UNAUTHORIZED" } }, 401);
+    if (!authorization?.startsWith("Bearer "))
+      return json({ error: { code: "UNAUTHORIZED" } }, 401);
     const userId = await dependencies.authenticate(request);
     if (!userId) return json({ error: { code: "UNAUTHORIZED" } }, 401);
 
@@ -51,8 +58,10 @@ export function createNeighborhoodPlaceActionHandler(dependencies: Dependencies)
     const landmarkId = candidate?.["landmarkId"];
     const actionId = candidate?.["actionId"];
     if (
-      typeof landmarkId !== "string" || !SLUG_PATTERN.test(landmarkId) ||
-      typeof actionId !== "string" || !SLUG_PATTERN.test(actionId)
+      typeof landmarkId !== "string" ||
+      !SLUG_PATTERN.test(landmarkId) ||
+      typeof actionId !== "string" ||
+      !SLUG_PATTERN.test(actionId)
     ) {
       return json({ error: { code: "INVALID_REQUEST" } }, 400);
     }
@@ -67,8 +76,11 @@ export function createNeighborhoodPlaceActionHandler(dependencies: Dependencies)
     } catch (error) {
       const code = error instanceof Error ? error.message : "INTERACTION_AUTH_INVALID";
       const status =
-        code === "INTERACTION_AUTH_EXPIRED" ? 409 :
-        code === "INTERACTION_AUTH_NOT_CONFIGURED" ? 503 : 403;
+        code === "INTERACTION_AUTH_EXPIRED"
+          ? 409
+          : code === "INTERACTION_AUTH_NOT_CONFIGURED"
+            ? 503
+            : 403;
       return json({ error: { code } }, status);
     }
 
@@ -79,7 +91,13 @@ export function createNeighborhoodPlaceActionHandler(dependencies: Dependencies)
         claims.locationId,
       );
       await dependencies.verifyLandmarkAction(userId, landmarkId, actionId, character.isAdult);
-      const result = await dependencies.perform(userId, landmarkId, actionId, requestId, claims.characterId);
+      const result = await dependencies.perform(
+        userId,
+        landmarkId,
+        actionId,
+        requestId,
+        claims.characterId,
+      );
       return json(result);
     } catch (error) {
       const message = error instanceof Error ? error.message : "INTERNAL_ERROR";

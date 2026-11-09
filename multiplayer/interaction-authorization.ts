@@ -117,8 +117,11 @@ export function verifyNeighborhoodInteractionAuthorization(
   }
   if (!isClaims(parsed)) throw new Error("INTERACTION_AUTH_INVALID");
   const now = Math.floor(nowMs / 1000);
-  if (parsed.issuedAt > now + 5 || parsed.expiresAt <= now ||
-      parsed.expiresAt - parsed.issuedAt !== TOKEN_TTL_SECONDS) {
+  if (
+    parsed.issuedAt > now + 5 ||
+    parsed.expiresAt <= now ||
+    parsed.expiresAt - parsed.issuedAt !== TOKEN_TTL_SECONDS
+  ) {
     throw new Error("INTERACTION_AUTH_EXPIRED");
   }
   if (

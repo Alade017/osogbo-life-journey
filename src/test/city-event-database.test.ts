@@ -52,7 +52,7 @@ beforeAll(async () => {
         f.endsWith(".sql") &&
         f !== "0075_remove_orphaned_player_data.sql" &&
         f !== "0077_market_stall_rent_categories_sales.sql" &&
-          f !== "0079_free_house_placement.sql",
+        f !== "0079_free_house_placement.sql",
     )
     .sort()) {
     if (file === "0083_studio_room_layout.sql") {
@@ -68,10 +68,7 @@ beforeAll(async () => {
     }
     if (file === "0085_house_floors.sql") {
       await db.exec(
-        readFileSync(
-          "supabase/migrations/20261105080000_house_placement_rotation.sql",
-          "utf8",
-        ),
+        readFileSync("supabase/migrations/20261105080000_house_placement_rotation.sql", "utf8"),
       );
     }
     await db.exec(readFileSync(`drizzle/migrations/${file}`, "utf8"));

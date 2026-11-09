@@ -288,6 +288,7 @@ export function PlayableNeighborhood() {
   );
   const district = useMemo(() => playableDistrictForLocation(currentLocation), [currentLocation]);
   const area = district?.area ?? neighborhoodAreaForSlug("city-centre");
+  const areaObjects = area.objects;
   const homeQuery = useQuery({
     ...canonicalHomeOptions(characterQuery.data?.id),
     enabled: !!characterQuery.data?.id && currentLocation?.slug === "city-centre",
@@ -409,6 +410,7 @@ export function PlayableNeighborhood() {
     npcPositionOverrides,
     npcQuery.data,
     simulation.gameTime,
+    simulation.paused,
   ]);
   const localPlaces =
     placesQuery.data?.filter((place) => place.location_id === currentLocation?.id) ?? [];
@@ -425,7 +427,7 @@ export function PlayableNeighborhood() {
     BUSINESS_PLACE_CATEGORIES.has(place.category),
   );
   const interactionTargets = useMemo(() => {
-    const buildings = area.objects.filter((object) => {
+    const buildings = areaObjects.filter((object) => {
       if (object.kind === "home") return !!district?.personalHome && !!homeTypeId;
       if (object.kind === "market")
         return hasShopOffers || hasLocalBusinesses || hasBankServices || hasVenueInterior;
@@ -434,7 +436,7 @@ export function PlayableNeighborhood() {
     });
     const npcTargets = activeNpcs
       .filter((npc) => npc.available && !npc.isMoving)
-      .map((npc): (typeof area.objects)[number] => ({
+      .map((npc): (typeof areaObjects)[number] => ({
         id: npc.id,
         name: npc.name,
         kind: "npc",
@@ -444,8 +446,7 @@ export function PlayableNeighborhood() {
     return [...buildings, ...npcTargets];
   }, [
     activeNpcs,
-    area,
-    area.objects,
+    areaObjects,
     district?.personalHome,
     hasBankServices,
     hasCareerServices,
@@ -472,11 +473,7 @@ export function PlayableNeighborhood() {
   });
   const nearbyLandmark = useMemo(() => {
     if (!player || !district || !area.interactionPoints?.length) return null;
-    const nearby = nearbyInteractionPoint(
-      { x: player.x, y: player.y },
-      district.origin,
-      area,
-    );
+    const nearby = nearbyInteractionPoint({ x: player.x, y: player.y }, district.origin, area);
     return nearby && availableLandmarksQuery.data?.includes(nearby.id) ? nearby : null;
   }, [area, availableLandmarksQuery.data, district, player]);
   const landmarkDetailsQuery = useQuery({
@@ -544,13 +541,7 @@ export function PlayableNeighborhood() {
         authorization.token,
         character.user_id,
       );
-      clearPendingMapActionKey(
-        character.user_id,
-        character.id,
-        landmarkId,
-        actionId,
-        requestId,
-      );
+      clearPendingMapActionKey(character.user_id, character.id, landmarkId, actionId, requestId);
       return { result, characterId: character.id, locationId, room };
     },
     onSuccess: async ({ result, characterId, locationId, room }) => {
@@ -572,7 +563,8 @@ export function PlayableNeighborhood() {
         activeCharacterId !== characterId ||
         activeCharacter?.current_location_id !== locationId ||
         roomRef.current !== room
-      ) return;
+      )
+        return;
       setNeighborhoodActionResult(result);
       toast.success(result.message);
       await landmarkDetailsQuery.refetch();
@@ -588,7 +580,8 @@ export function PlayableNeighborhood() {
       if (
         activeCharacterId !== variables.characterId ||
         activeCharacter?.current_location_id !== variables.locationId
-      ) return;
+      )
+        return;
       toast.error(error.message.replaceAll("_", " "));
     },
   });
@@ -1196,10 +1189,14 @@ export function PlayableNeighborhood() {
                               <button
                                 type="button"
                                 className="neighborhood-action-card"
-                                disabled={connectionState !== "connected" || landmarkDetailsQuery.isFetching}
+                                disabled={
+                                  connectionState !== "connected" || landmarkDetailsQuery.isFetching
+                                }
                                 onClick={() => void landmarkDetailsQuery.refetch()}
                               >
-                                {landmarkDetailsQuery.isFetching ? "Retrying…" : "Retry loading activities"}
+                                {landmarkDetailsQuery.isFetching
+                                  ? "Retrying…"
+                                  : "Retry loading activities"}
                               </button>
                             </div>
                           ) : (landmarkDetailsQuery.data?.actions?.length ?? 0) === 0 ? (
@@ -1229,11 +1226,12 @@ export function PlayableNeighborhood() {
                             />
                           )}
                           {neighborhoodActionMutation.isError &&
-                            neighborhoodActionMutation.variables?.characterId === characterQuery.data?.id && (
-                            <p role="alert" className="text-sm text-destructive">
-                              {neighborhoodActionMutation.error.message}
-                            </p>
-                          )}
+                            neighborhoodActionMutation.variables?.characterId ===
+                              characterQuery.data?.id && (
+                              <p role="alert" className="text-sm text-destructive">
+                                {neighborhoodActionMutation.error.message}
+                              </p>
+                            )}
                         </div>
                       )}
                       {activePanel === "business" && (

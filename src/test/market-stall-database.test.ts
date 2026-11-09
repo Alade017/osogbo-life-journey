@@ -62,10 +62,7 @@ beforeAll(async () => {
     if (file === "0085_house_floors.sql") {
       // House floors serialize the placement rotation column introduced by this Supabase migration.
       await db.exec(
-        readFileSync(
-          "supabase/migrations/20261105080000_house_placement_rotation.sql",
-          "utf8",
-        ),
+        readFileSync("supabase/migrations/20261105080000_house_placement_rotation.sql", "utf8"),
       );
     }
     await db.exec(readFileSync(`drizzle/migrations/${file}`, "utf8").replace(/^\uFEFF/, ""));

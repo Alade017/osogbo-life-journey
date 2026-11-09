@@ -200,7 +200,11 @@ export const partyRpc = {
         p_expected_character_id: args.characterId,
       }),
     ),
-  joinClubActivity: async (args: { activitySlug: string; requestId: string; characterId: string }) =>
+  joinClubActivity: async (args: {
+    activitySlug: string;
+    requestId: string;
+    characterId: string;
+  }) =>
     unwrap(
       await db.rpc("join_club_activity_for_character", {
         p_activity_slug: args.activitySlug,
@@ -216,11 +220,7 @@ export const partyRpc = {
         p_expected_character_id: args.characterId,
       }),
     ),
-  danceWithNpc: async (args: {
-    npcSlug: string;
-    requestId: string;
-    characterId: string;
-  }) =>
+  danceWithNpc: async (args: { npcSlug: string; requestId: string; characterId: string }) =>
     unwrap(
       await db.rpc("dance_with_npc_for_character_locked", {
         p_npc_slug: args.npcSlug,
@@ -258,11 +258,7 @@ export const partyRpc = {
         p_expected_character_id: args.characterId,
       }),
     ),
-  respondToEvent: async (args: {
-    requirementId: string;
-    requestId: string;
-    characterId: string;
-  }) =>
+  respondToEvent: async (args: { requirementId: string; requestId: string; characterId: string }) =>
     unwrap(
       await db.rpc("respond_to_event_for_character", {
         p_requirement_id: args.requirementId,

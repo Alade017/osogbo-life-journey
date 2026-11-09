@@ -71,10 +71,10 @@ describe("character-bound local travel RPC", () => {
 
   it("rejects a stale character before invoking the legacy travel RPC", async () => {
     await expect(
-      db.query(
-        "select public.travel_to_location_for_character($1,'danfo',$2)",
-        [destinationId, oldCharacterId],
-      ),
+      db.query("select public.travel_to_location_for_character($1,'danfo',$2)", [
+        destinationId,
+        oldCharacterId,
+      ]),
     ).rejects.toThrow(/CHARACTER_CHANGED/);
     const { rows } = await db.query<{ count: number }>(
       "select count(*)::int as count from public.travel_calls",

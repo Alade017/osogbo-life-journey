@@ -31,10 +31,13 @@ function makeHandler(overrides: Record<string, unknown> = {}) {
   return { handler: createNeighborhoodPlaceActionHandler(dependencies as never), dependencies };
 }
 
-function makeRequest(token: string, body: unknown = {
-  landmarkId: claims.landmarkId,
-  actionId: claims.actionId,
-}) {
+function makeRequest(
+  token: string,
+  body: unknown = {
+    landmarkId: claims.landmarkId,
+    actionId: claims.actionId,
+  },
+) {
   return new Request("https://game.example/api/neighborhood/action", {
     method: "POST",
     headers: {
@@ -53,10 +56,15 @@ describe("neighborhood place action endpoint", () => {
     const response = await handler(makeRequest(signedToken()));
     expect(response.status).toBe(200);
     expect(dependencies.verifyCharacter).toHaveBeenCalledWith(
-      claims.userId, claims.characterId, claims.locationId,
+      claims.userId,
+      claims.characterId,
+      claims.locationId,
     );
     expect(dependencies.verifyLandmarkAction).toHaveBeenCalledWith(
-      claims.userId, claims.landmarkId, claims.actionId, true,
+      claims.userId,
+      claims.landmarkId,
+      claims.actionId,
+      true,
     );
     expect(dependencies.perform).toHaveBeenCalledWith(
       claims.userId,
@@ -76,7 +84,9 @@ describe("neighborhood place action endpoint", () => {
 
   it("rejects changed character location before action execution", async () => {
     const { handler, dependencies } = makeHandler({
-      verifyCharacter: vi.fn(async () => { throw new Error("CHARACTER_LOCATION_CHANGED"); }),
+      verifyCharacter: vi.fn(async () => {
+        throw new Error("CHARACTER_LOCATION_CHANGED");
+      }),
     });
     const response = await handler(makeRequest(signedToken()));
     expect(response.status).toBe(409);
@@ -98,7 +108,9 @@ describe("neighborhood place action endpoint", () => {
 
   it("records an age restriction without allowing the action to run", async () => {
     const { handler, dependencies } = makeHandler({
-      verifyLandmarkAction: vi.fn(async () => { throw new Error("AGE_RESTRICTED"); }),
+      verifyLandmarkAction: vi.fn(async () => {
+        throw new Error("AGE_RESTRICTED");
+      }),
     });
     const response = await handler(makeRequest(signedToken()));
     expect(response.status).toBe(403);
@@ -108,7 +120,9 @@ describe("neighborhood place action endpoint", () => {
 
   it("rejects an action absent from the database allow-list", async () => {
     const { handler, dependencies } = makeHandler({
-      verifyLandmarkAction: vi.fn(async () => { throw new Error("UNKNOWN_ACTION"); }),
+      verifyLandmarkAction: vi.fn(async () => {
+        throw new Error("UNKNOWN_ACTION");
+      }),
     });
     const response = await handler(makeRequest(signedToken()));
     expect(response.status).toBe(404);

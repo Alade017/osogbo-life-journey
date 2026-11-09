@@ -283,9 +283,7 @@ describe("isometric town map", () => {
     fireEvent.click(screen.getByRole("radio", { name: /Danfo/ }));
     fireEvent.click(screen.getByRole("button", { name: "Confirm and travel" }));
 
-    await vi.waitFor(() =>
-      expect(testState.navigate).toHaveBeenCalledWith({ to: "/house" }),
-    );
+    await vi.waitFor(() => expect(testState.navigate).toHaveBeenCalledWith({ to: "/house" }));
     await vi.waitFor(() => expect(peekPendingDepartureFromHome()).toBeNull());
     expect(testState.travelToLocation).not.toHaveBeenCalled();
   }, 15_000);
@@ -298,9 +296,7 @@ describe("isometric town map", () => {
     fireEvent.click(screen.getByRole("radio", { name: /Danfo/ }));
     fireEvent.click(screen.getByRole("button", { name: "Confirm and travel" }));
 
-    await vi.waitFor(() =>
-      expect(testState.navigate).toHaveBeenCalledWith({ to: "/house" }),
-    );
+    await vi.waitFor(() => expect(testState.navigate).toHaveBeenCalledWith({ to: "/house" }));
     expect(takeDepartureFromHome()).toEqual({
       locationId: "destination-city-centre",
       mode: "danfo",

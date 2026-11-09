@@ -360,12 +360,7 @@ function ClubsTab({
         requestId: newPartyRequestId(),
         characterId: actionCharacterId,
       })
-      .then(() =>
-        room.sendDance(
-          { from: "You", partner: "npc", npcSlug },
-          actionCharacterId,
-        ),
-      )
+      .then(() => room.sendDance({ from: "You", partner: "npc", npcSlug }, actionCharacterId))
       .catch(() => {
         // The mutation already shows the server's message.
       });
@@ -443,7 +438,9 @@ function ClubsTab({
                 type="button"
                 className="min-h-11 rounded-full bg-primary px-4 font-semibold text-primary-foreground"
                 disabled={enter.isPending}
-                onClick={() => characterId && enter.mutate({ requestId: newPartyRequestId(), characterId })}
+                onClick={() =>
+                  characterId && enter.mutate({ requestId: newPartyRequestId(), characterId })
+                }
               >
                 Join the party
               </button>
@@ -528,7 +525,9 @@ function ClubsTab({
                   type="button"
                   className="min-h-11 rounded-full border border-border px-4 text-sm font-semibold"
                   disabled={leave.isPending}
-                  onClick={() => characterId && leave.mutate({ requestId: newPartyRequestId(), characterId })}
+                  onClick={() =>
+                    characterId && leave.mutate({ requestId: newPartyRequestId(), characterId })
+                  }
                 >
                   Leave the club
                 </button>
@@ -586,7 +585,12 @@ function DrinksTab({
           <button
             type="button"
             className="min-h-11 rounded-full bg-primary px-4 font-semibold text-primary-foreground disabled:opacity-50"
-            disabled={!characterId || !canBuy || buy.isPending || cash < (inClub ? drink.club_price : drink.price)}
+            disabled={
+              !characterId ||
+              !canBuy ||
+              buy.isPending ||
+              cash < (inClub ? drink.club_price : drink.price)
+            }
             onClick={() => {
               if (!characterId) return;
               buy.mutate({ drinkSlug: drink.slug, requestId: newPartyRequestId(), characterId });
@@ -695,7 +699,12 @@ function EventsTab({
                       className="min-h-11 rounded-full bg-primary px-4 font-semibold text-primary-foreground disabled:opacity-50"
                       disabled={respond.isPending}
                       onClick={() =>
-                        characterId && respond.mutate({ requirementId: req.id, requestId: newPartyRequestId(), characterId })
+                        characterId &&
+                        respond.mutate({
+                          requirementId: req.id,
+                          requestId: newPartyRequestId(),
+                          characterId,
+                        })
                       }
                     >
                       Take part

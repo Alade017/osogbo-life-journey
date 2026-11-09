@@ -40,7 +40,9 @@ describe("home departure handoff", () => {
       characterId: "old-character",
       fromLocationId: "location-1",
     });
-    expect(takeDepartureFromHomeWhenReady({ ...ready, activeCharacterId: "new-character" })).toBeNull();
+    expect(
+      takeDepartureFromHomeWhenReady({ ...ready, activeCharacterId: "new-character" }),
+    ).toBeNull();
     expect(peekPendingDepartureFromHome()).toBeNull();
     expect(clearPendingDepartureFromHome(departure)).toBe(false);
   });
@@ -51,7 +53,9 @@ describe("home departure handoff", () => {
       characterId: "character-1",
       fromLocationId: "old-location",
     });
-    expect(takeDepartureFromHomeWhenReady({ ...ready, activeLocationId: "new-location" })).toBeNull();
+    expect(
+      takeDepartureFromHomeWhenReady({ ...ready, activeLocationId: "new-location" }),
+    ).toBeNull();
     expect(peekPendingDepartureFromHome()).toBeNull();
     expect(clearPendingDepartureFromHome(departure)).toBe(false);
   });

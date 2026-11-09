@@ -299,10 +299,13 @@ describe("shared map activity schedules", () => {
       [landmarkId, openDefinition.id, JSON.stringify(openDefinition)],
     );
     await expect(
-      db.query(
-        "select public.perform_map_place_action($1,$2,$3,$4,$5::jsonb)",
-        [userId, landmarkId, openDefinition.id, "88888888-8888-4888-8888-888888888888", JSON.stringify({ expected_character_id: differentCharacterId })],
-      ),
+      db.query("select public.perform_map_place_action($1,$2,$3,$4,$5::jsonb)", [
+        userId,
+        landmarkId,
+        openDefinition.id,
+        "88888888-8888-4888-8888-888888888888",
+        JSON.stringify({ expected_character_id: differentCharacterId }),
+      ]),
     ).rejects.toThrow(/CHARACTER_CHANGED/);
     const { rows } = await db.query(
       `select
@@ -312,5 +315,4 @@ describe("shared map activity schedules", () => {
     );
     expect(rows[0]).toEqual({ receipts: 1, game_time: 15 });
   });
-
 });

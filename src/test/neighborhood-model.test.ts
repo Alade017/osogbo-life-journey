@@ -163,7 +163,9 @@ describe("neighborhood coordinates and interaction", () => {
     const anchors = townDataLandmarkIdsForTest();
     for (const [slug, ids] of Object.entries(anchors)) {
       const area = neighborhoodAreaForLocation({ slug, name: slug, map_category: "commercial" });
-      expect(area.interactionPoints?.map((point) => point.id).sort(), slug).toEqual([...ids].sort());
+      expect(area.interactionPoints?.map((point) => point.id).sort(), slug).toEqual(
+        [...ids].sort(),
+      );
       expect(new Set(area.interactionPoints?.map((point) => point.id)).size).toBe(ids.length);
       for (const point of area.interactionPoints ?? []) {
         expect(point.radius).toBeGreaterThan(0);
@@ -175,12 +177,14 @@ describe("neighborhood coordinates and interaction", () => {
   });
   it("resolves Oja-Oba only through its explicit landmark anchor", () => {
     const area = neighborhoodAreaForSlug("oja-oba");
-    expect(area.interactionPoints).toEqual([
-      { id: "oja-oba-market", x: 145, y: 220, radius: 60 },
-    ]);
+    expect(area.interactionPoints).toEqual([{ id: "oja-oba-market", x: 145, y: 220, radius: 60 }]);
   });
   it("checks landmark proximity against server-owned anchors, not caller coordinates", () => {
-    const area = neighborhoodAreaForLocation({ slug: "town-market", name: "Town Market", map_category: "commercial" });
+    const area = neighborhoodAreaForLocation({
+      slug: "town-market",
+      name: "Town Market",
+      map_category: "commercial",
+    });
     const target = area.interactionPoints?.[0];
     expect(target?.id).toBe("town-market");
     const origin = { x: 7, y: 6 };

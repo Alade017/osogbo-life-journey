@@ -62,15 +62,18 @@ describe("character-bound fictional-world movement RPCs", () => {
       end $$;
       select set_config('request.jwt.claim.sub','${userId}',false);
     `);
-    await db.exec(readFileSync(
-      "supabase/migrations/20261109150000_canonical_active_character.sql", "utf8",
-    ));
-    await db.exec(readFileSync(
-      "supabase/migrations/20261109170000_bind_local_travel_to_character.sql", "utf8",
-    ));
-    await db.exec(readFileSync(
-      "supabase/migrations/20261109180000_bind_world_movement_to_character.sql", "utf8",
-    ));
+    await db.exec(
+      readFileSync("supabase/migrations/20261109150000_canonical_active_character.sql", "utf8"),
+    );
+    await db.exec(
+      readFileSync("supabase/migrations/20261109170000_bind_local_travel_to_character.sql", "utf8"),
+    );
+    await db.exec(
+      readFileSync(
+        "supabase/migrations/20261109180000_bind_world_movement_to_character.sql",
+        "utf8",
+      ),
+    );
   }, 180_000);
 
   afterAll(async () => {
@@ -84,21 +87,32 @@ describe("character-bound fictional-world movement RPCs", () => {
     );
     const travel = await db.query<{ result: Record<string, unknown> }>(
       "select public.travel_to_city_location_for_character($1,'danfo',3,4,0,$2,$3) as result",
-      [locationId,"66666666-6666-4666-8666-666666666666",activeCharacterId],
+      [locationId, "66666666-6666-4666-8666-666666666666", activeCharacterId],
     );
-    expect(save.rows[0]?.result).toMatchObject({ operation: "save", character_id: activeCharacterId });
-    expect(travel.rows[0]?.result).toMatchObject({ operation: "travel", character_id: activeCharacterId });
+    expect(save.rows[0]?.result).toMatchObject({
+      operation: "save",
+      character_id: activeCharacterId,
+    });
+    expect(travel.rows[0]?.result).toMatchObject({
+      operation: "travel",
+      character_id: activeCharacterId,
+    });
   });
 
   it("rejects stale character requests before either legacy movement routine runs", async () => {
-    await expect(db.query(
-      "select public.save_player_world_position_for_character(1,2,null,0,$1,$2)",
-      ["77777777-7777-4777-8777-777777777777",oldCharacterId],
-    )).rejects.toThrow(/CHARACTER_CHANGED/);
-    await expect(db.query(
-      "select public.travel_to_city_location_for_character($1,'danfo',3,4,0,$2,$3)",
-      [locationId,"88888888-8888-4888-8888-888888888888",oldCharacterId],
-    )).rejects.toThrow(/CHARACTER_CHANGED/);
+    await expect(
+      db.query("select public.save_player_world_position_for_character(1,2,null,0,$1,$2)", [
+        "77777777-7777-4777-8777-777777777777",
+        oldCharacterId,
+      ]),
+    ).rejects.toThrow(/CHARACTER_CHANGED/);
+    await expect(
+      db.query("select public.travel_to_city_location_for_character($1,'danfo',3,4,0,$2,$3)", [
+        locationId,
+        "88888888-8888-4888-8888-888888888888",
+        oldCharacterId,
+      ]),
+    ).rejects.toThrow(/CHARACTER_CHANGED/);
     const calls = await db.query<{ count: number }>(
       "select count(*)::int as count from public.world_movement_calls",
     );
@@ -107,9 +121,12 @@ describe("character-bound fictional-world movement RPCs", () => {
 
   it("revokes direct authenticated access and exposes only character-bound wrappers", async () => {
     const { rows } = await db.query<{
-      save_legacy: boolean; travel_legacy: boolean;
-      save_bound: boolean; travel_bound: boolean;
-      save_anon: boolean; travel_anon: boolean;
+      save_legacy: boolean;
+      travel_legacy: boolean;
+      save_bound: boolean;
+      travel_bound: boolean;
+      save_anon: boolean;
+      travel_anon: boolean;
     }>(`
       select
         has_function_privilege('authenticated','public.save_player_world_position(double precision,double precision,text,bigint,uuid)','execute') as save_legacy,
@@ -120,9 +137,12 @@ describe("character-bound fictional-world movement RPCs", () => {
         has_function_privilege('anon','public.travel_to_city_location_for_character(uuid,text,double precision,double precision,bigint,uuid,uuid)','execute') as travel_anon
     `);
     expect(rows[0]).toEqual({
-      save_legacy: false, travel_legacy: false,
-      save_bound: true, travel_bound: true,
-      save_anon: false, travel_anon: false,
+      save_legacy: false,
+      travel_legacy: false,
+      save_bound: true,
+      travel_bound: true,
+      save_anon: false,
+      travel_anon: false,
     });
   });
 });

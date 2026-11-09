@@ -46,8 +46,7 @@ export function PlaceActionMenu({
       </div>
       {schedule ? (
         <p className="place-action-schedule" role="status">
-          Town time · Day {schedule.clock.day} ·{" "}
-          {String(schedule.clock.hour).padStart(2, "0")}:
+          Town time · Day {schedule.clock.day} · {String(schedule.clock.hour).padStart(2, "0")}:
           {String(schedule.clock.minute).padStart(2, "0")}
         </p>
       ) : (

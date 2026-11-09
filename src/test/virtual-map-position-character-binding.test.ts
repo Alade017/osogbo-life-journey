@@ -55,12 +55,15 @@ describe("character-bound virtual map position RPC", () => {
       end $$;
       select set_config('request.jwt.claim.sub','${userId}',false);
     `);
-    await db.exec(readFileSync(
-      "supabase/migrations/20261109170000_bind_local_travel_to_character.sql", "utf8",
-    ));
-    await db.exec(readFileSync(
-      "supabase/migrations/20261109190000_bind_virtual_map_position_to_character.sql", "utf8",
-    ));
+    await db.exec(
+      readFileSync("supabase/migrations/20261109170000_bind_local_travel_to_character.sql", "utf8"),
+    );
+    await db.exec(
+      readFileSync(
+        "supabase/migrations/20261109190000_bind_virtual_map_position_to_character.sql",
+        "utf8",
+      ),
+    );
   }, 180_000);
 
   afterAll(async () => {
@@ -81,10 +84,11 @@ describe("character-bound virtual map position RPC", () => {
   });
 
   it("rejects a stale queued position before the legacy saver runs", async () => {
-    await expect(db.query(
-      "select public.save_player_map_position_for_character(7.76,4.55,'idle',$1)",
-      [oldCharacterId],
-    )).rejects.toThrow(/CHARACTER_CHANGED/);
+    await expect(
+      db.query("select public.save_player_map_position_for_character(7.76,4.55,'idle',$1)", [
+        oldCharacterId,
+      ]),
+    ).rejects.toThrow(/CHARACTER_CHANGED/);
     const { rows } = await db.query<{ count: number }>(
       "select count(*)::int as count from public.virtual_position_calls",
     );

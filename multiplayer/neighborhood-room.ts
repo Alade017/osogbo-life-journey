@@ -17,9 +17,7 @@ import {
   type WorldPoint,
 } from "../src/game/neighborhood-model.ts";
 import type { MovementIntent, NetworkPlayerSnapshot } from "../src/game/multiplayer-state.ts";
-import {
-  createNeighborhoodInteractionAuthorization,
-} from "./interaction-authorization.ts";
+import { createNeighborhoodInteractionAuthorization } from "./interaction-authorization.ts";
 
 type CharacterRow = {
   id: string;
@@ -275,13 +273,16 @@ export class NeighborhoodRoom extends Room {
     const requestId = candidate?.["requestId"];
     const landmarkId = candidate?.["landmarkId"];
     const actionId = candidate?.["actionId"];
-    const reject = (code: string) => client.send("interaction-authorization-error", {
-      requestId: typeof requestId === "string" ? requestId : null,
-      code,
-    });
+    const reject = (code: string) =>
+      client.send("interaction-authorization-error", {
+        requestId: typeof requestId === "string" ? requestId : null,
+        code,
+      });
     if (
       typeof requestId !== "string" ||
-      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestId) ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        requestId,
+      ) ||
       typeof landmarkId !== "string" ||
       !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(landmarkId) ||
       typeof actionId !== "string" ||
@@ -318,15 +319,18 @@ export class NeighborhoodRoom extends Room {
       return;
     }
     try {
-      const authorization = createNeighborhoodInteractionAuthorization({
-        userId: credentials.userId,
-        characterId: credentials.characterId,
-        locationId: credentials.locationId,
-        landmarkId,
-        actionId,
-        requestId,
-        roomSessionId: client.sessionId,
-      }, secret);
+      const authorization = createNeighborhoodInteractionAuthorization(
+        {
+          userId: credentials.userId,
+          characterId: credentials.characterId,
+          locationId: credentials.locationId,
+          landmarkId,
+          actionId,
+          requestId,
+          roomSessionId: client.sessionId,
+        },
+        secret,
+      );
       client.send("interaction-authorization", {
         requestId,
         landmarkId,

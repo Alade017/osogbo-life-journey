@@ -71,10 +71,7 @@ describe("authoritative business and investment database", () => {
     await db.exec(readFileSync("drizzle/migrations/0083_studio_room_layout.sql", "utf8"));
     await db.exec(readFileSync("drizzle/migrations/0084_other_homes_room_layout.sql", "utf8"));
     await db.exec(
-      readFileSync(
-        "supabase/migrations/20261105080000_house_placement_rotation.sql",
-        "utf8",
-      ),
+      readFileSync("supabase/migrations/20261105080000_house_placement_rotation.sql", "utf8"),
     );
     await db.exec(readFileSync("drizzle/migrations/0085_house_floors.sql", "utf8"));
     for (const id of [owner, investor]) {

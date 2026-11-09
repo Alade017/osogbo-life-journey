@@ -70,9 +70,12 @@ describe("character-bound party mutation RPCs", () => {
         as $$ select public._party_stub('respond_to_event') $$;
       select set_config('request.jwt.claim.sub','${userId}',false);
     `);
-    await db.exec(readFileSync(
-      "supabase/migrations/20261109140000_bind_party_mutations_to_character.sql", "utf8",
-    ));
+    await db.exec(
+      readFileSync(
+        "supabase/migrations/20261109140000_bind_party_mutations_to_character.sql",
+        "utf8",
+      ),
+    );
   }, 180_000);
 
   afterAll(async () => {
@@ -81,14 +84,38 @@ describe("character-bound party mutation RPCs", () => {
 
   it("routes every party mutation through the expected active character", async () => {
     const calls = [
-      { sql: "select public.enter_club_for_character($1,$2)", params: [requestId, activeCharacterId] },
-      { sql: "select public.leave_club_for_character($1,$2)", params: [requestId, activeCharacterId] },
-      { sql: "select public.join_club_activity_for_character('quiz',$1,$2)", params: [requestId, activeCharacterId] },
-      { sql: "select public.buy_drink_for_character('chapman',$1,$2)", params: [requestId, activeCharacterId] },
-      { sql: "select public.dance_with_player_for_character($1::uuid,$2::uuid,$3::uuid)", params: [targetCharacterId, requestId, activeCharacterId] },
-      { sql: "select public.host_party_event_for_character($1::uuid,'Test',$2::timestamptz,'[]'::jsonb,$3::uuid,$4::uuid)", params: [locationId, "2026-11-10T20:00:00Z", requestId, activeCharacterId] },
-      { sql: "select public.respond_to_event_for_character($1::uuid,$2::uuid,$3::uuid)", params: [requirementId, requestId, activeCharacterId] },
-      { sql: "select public.dance_with_npc_for_character_locked('dancer-lola',$1,$2)", params: [requestId, activeCharacterId] },
+      {
+        sql: "select public.enter_club_for_character($1,$2)",
+        params: [requestId, activeCharacterId],
+      },
+      {
+        sql: "select public.leave_club_for_character($1,$2)",
+        params: [requestId, activeCharacterId],
+      },
+      {
+        sql: "select public.join_club_activity_for_character('quiz',$1,$2)",
+        params: [requestId, activeCharacterId],
+      },
+      {
+        sql: "select public.buy_drink_for_character('chapman',$1,$2)",
+        params: [requestId, activeCharacterId],
+      },
+      {
+        sql: "select public.dance_with_player_for_character($1::uuid,$2::uuid,$3::uuid)",
+        params: [targetCharacterId, requestId, activeCharacterId],
+      },
+      {
+        sql: "select public.host_party_event_for_character($1::uuid,'Test',$2::timestamptz,'[]'::jsonb,$3::uuid,$4::uuid)",
+        params: [locationId, "2026-11-10T20:00:00Z", requestId, activeCharacterId],
+      },
+      {
+        sql: "select public.respond_to_event_for_character($1::uuid,$2::uuid,$3::uuid)",
+        params: [requirementId, requestId, activeCharacterId],
+      },
+      {
+        sql: "select public.dance_with_npc_for_character_locked('dancer-lola',$1,$2)",
+        params: [requestId, activeCharacterId],
+      },
     ];
     for (const call of calls) {
       await db.query(call.sql, call.params);
@@ -103,16 +130,33 @@ describe("character-bound party mutation RPCs", () => {
     const calls = [
       { sql: "select public.enter_club_for_character($1,$2)", params: [requestId, oldCharacterId] },
       { sql: "select public.leave_club_for_character($1,$2)", params: [requestId, oldCharacterId] },
-      { sql: "select public.join_club_activity_for_character('quiz',$1,$2)", params: [requestId, oldCharacterId] },
-      { sql: "select public.buy_drink_for_character('chapman',$1,$2)", params: [requestId, oldCharacterId] },
-      { sql: "select public.dance_with_player_for_character($1::uuid,$2::uuid,$3::uuid)", params: [targetCharacterId, requestId, oldCharacterId] },
-      { sql: "select public.host_party_event_for_character($1::uuid,'Test',$2::timestamptz,'[]'::jsonb,$3::uuid,$4::uuid)", params: [locationId, "2026-11-10T20:00:00Z", requestId, oldCharacterId] },
-      { sql: "select public.respond_to_event_for_character($1::uuid,$2::uuid,$3::uuid)", params: [requirementId, requestId, oldCharacterId] },
-      { sql: "select public.dance_with_npc_for_character_locked('dancer-lola',$1,$2)", params: [requestId, oldCharacterId] },
+      {
+        sql: "select public.join_club_activity_for_character('quiz',$1,$2)",
+        params: [requestId, oldCharacterId],
+      },
+      {
+        sql: "select public.buy_drink_for_character('chapman',$1,$2)",
+        params: [requestId, oldCharacterId],
+      },
+      {
+        sql: "select public.dance_with_player_for_character($1::uuid,$2::uuid,$3::uuid)",
+        params: [targetCharacterId, requestId, oldCharacterId],
+      },
+      {
+        sql: "select public.host_party_event_for_character($1::uuid,'Test',$2::timestamptz,'[]'::jsonb,$3::uuid,$4::uuid)",
+        params: [locationId, "2026-11-10T20:00:00Z", requestId, oldCharacterId],
+      },
+      {
+        sql: "select public.respond_to_event_for_character($1::uuid,$2::uuid,$3::uuid)",
+        params: [requirementId, requestId, oldCharacterId],
+      },
+      {
+        sql: "select public.dance_with_npc_for_character_locked('dancer-lola',$1,$2)",
+        params: [requestId, oldCharacterId],
+      },
     ];
     for (const call of calls) {
-      await expect(db.query(call.sql, call.params))
-        .rejects.toThrow(/CHARACTER_CHANGED/);
+      await expect(db.query(call.sql, call.params)).rejects.toThrow(/CHARACTER_CHANGED/);
     }
     const result = await db.query<{ count: number }>(
       "select count(*)::int as count from public.party_mutation_calls",

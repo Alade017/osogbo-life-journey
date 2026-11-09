@@ -49,29 +49,26 @@ beforeAll(async () => {
         name.endsWith(".sql") &&
         name !== "0075_remove_orphaned_player_data.sql" &&
         name !== "0077_market_stall_rent_categories_sales.sql" &&
-          name !== "0079_free_house_placement.sql",
+        name !== "0079_free_house_placement.sql",
     )
     .sort()) {
-      if (file === "0083_studio_room_layout.sql") {
-        // The studio layout migration depends on x/y columns from this Supabase migration.
-        await db.exec(
-          readFileSync(
-            "supabase/migrations/20261102223137_freeform_house_furniture_placement.sql",
-            "utf8",
-          ),
-        );
-        await db.exec(readFileSync("drizzle/migrations/0079_free_house_placement.sql", "utf8"));
-      }
-      if (file === "0085_house_floors.sql") {
-        // House floors serialize the placement rotation column introduced by this Supabase migration.
-        await db.exec(
-          readFileSync(
-            "supabase/migrations/20261105080000_house_placement_rotation.sql",
-            "utf8",
-          ),
-        );
-      }
-      await db.exec(readFileSync(`drizzle/migrations/${file}`, "utf8"));
+    if (file === "0083_studio_room_layout.sql") {
+      // The studio layout migration depends on x/y columns from this Supabase migration.
+      await db.exec(
+        readFileSync(
+          "supabase/migrations/20261102223137_freeform_house_furniture_placement.sql",
+          "utf8",
+        ),
+      );
+      await db.exec(readFileSync("drizzle/migrations/0079_free_house_placement.sql", "utf8"));
+    }
+    if (file === "0085_house_floors.sql") {
+      // House floors serialize the placement rotation column introduced by this Supabase migration.
+      await db.exec(
+        readFileSync("supabase/migrations/20261105080000_house_placement_rotation.sql", "utf8"),
+      );
+    }
+    await db.exec(readFileSync(`drizzle/migrations/${file}`, "utf8"));
   }
 
   for (const file of [

@@ -140,7 +140,8 @@ function LocationPage() {
       if (
         savedCharacter?.id !== variables.characterId ||
         savedCharacter.current_location_id !== variables.locationId
-      ) return;
+      )
+        return;
       dispatchTravel({ type: "arrive", estimatedMinutes: r.travel_minutes });
       const gameTime = r.game_time;
       if (gameTime) {
@@ -247,7 +248,9 @@ function LocationPage() {
     )
       return;
     if (!character?.id || !character.current_location_id) {
-      toast.error("Your active character and current location could not be confirmed. Refresh and try again.");
+      toast.error(
+        "Your active character and current location could not be confirmed. Refresh and try again.",
+      );
       return;
     }
     const validationError = validateTripRequest({

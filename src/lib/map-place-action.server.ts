@@ -96,9 +96,7 @@ export async function handleMapPlaceActionRequest(request: Request) {
       { status: 403, headers: { "Cache-Control": "no-store" } },
     );
   }
-  const { handleNeighborhoodPlaceActionRequest } = await import(
-    "@/lib/neighborhood-place-action.server"
-  );
+  const { handleNeighborhoodPlaceActionRequest } =
+    await import("@/lib/neighborhood-place-action.server");
   return handleNeighborhoodPlaceActionRequest(request);
 }
-

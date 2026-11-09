@@ -108,10 +108,17 @@ describe("map travel database actions", () => {
         values ('${walletId}','${userId}','${characterId}',5000);
     `);
     await db.exec(readFileSync("drizzle/migrations/0037_map_api_travel.sql", "utf8"));
-    await db.exec(readFileSync("supabase/migrations/20261101145505_map_activity_schedules.sql", "utf8"));
+    await db.exec(
+      readFileSync("supabase/migrations/20261101145505_map_activity_schedules.sql", "utf8"),
+    );
     await db.exec(readFileSync("supabase/migrations/202610170014_ede_town_travel.sql", "utf8"));
     await db.exec(readFileSync("supabase/migrations/202610170015_town_travel_arrival.sql", "utf8"));
-    await db.exec(readFileSync("supabase/migrations/20261109160000_bind_travel_to_canonical_character.sql", "utf8"));
+    await db.exec(
+      readFileSync(
+        "supabase/migrations/20261109160000_bind_travel_to_canonical_character.sql",
+        "utf8",
+      ),
+    );
   }, 60_000);
 
   afterAll(async () => {
@@ -172,7 +179,7 @@ describe("map travel database actions", () => {
     );
     await db.query(
       "insert into public.wallets(id,user_id,character_id,balance) values($1,$2,$3,5000)",
-      [newestWalletId,userId,newestCharacterId],
+      [newestWalletId, userId, newestCharacterId],
     );
     const result = await db.query<{ character_id: string }>(
       `select character_id from public.map_travels
@@ -181,15 +188,15 @@ describe("map travel database actions", () => {
     );
     expect(result.rows[0]?.character_id).toBe(characterId);
     await expect(
-      db.query(
-        "select public.map_start_travel($1,'oja-oba-market',$2)",
-        [userId,"offline-retry-request-0001"],
-      ),
+      db.query("select public.map_start_travel($1,'oja-oba-market',$2)", [
+        userId,
+        "offline-retry-request-0001",
+      ]),
     ).rejects.toThrow(/CHARACTER_CHANGED/);
-    await db.query(
-      "select public.map_start_travel($1,'oja-oba-market',$2)",
-      [userId,"newest-character-travel-0001"],
-    );
+    await db.query("select public.map_start_travel($1,'oja-oba-market',$2)", [
+      userId,
+      "newest-character-travel-0001",
+    ]);
     const trip = await db.query<{ character_id: string }>(
       "select character_id from public.map_travels where idempotency_key=$1",
       ["newest-character-travel-0001"],
@@ -197,17 +204,17 @@ describe("map travel database actions", () => {
     expect(trip.rows[0]?.character_id).toBe(newestCharacterId);
     const balances = await db.query<{ balance: number; character_id: string }>(
       "select balance,character_id from public.wallets where id in ($1,$2) order by character_id",
-      [walletId,newestWalletId],
+      [walletId, newestWalletId],
     );
     expect(balances.rows.find((row) => row.character_id === newestCharacterId)?.balance).toBe(4700);
     expect(balances.rows.find((row) => row.character_id === characterId)?.balance).toBe(4700);
   });
 
   it("binds inter-town travel to the newest character", async () => {
-    await db.query(
-      "select public.start_osun_town_travel($1,'ede',$2)",
-      [userId,"old-character-town-trip-01"],
-    );
+    await db.query("select public.start_osun_town_travel($1,'ede',$2)", [
+      userId,
+      "old-character-town-trip-01",
+    ]);
     const newestCharacterId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
     const newestWalletId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
     await db.query(
@@ -217,28 +224,28 @@ describe("map travel database actions", () => {
     );
     await db.query(
       "insert into public.wallets(id,user_id,character_id,balance) values($1,$2,$3,5000)",
-      [newestWalletId,userId,newestCharacterId],
+      [newestWalletId, userId, newestCharacterId],
     );
     await expect(
-      db.query(
-        "select public.start_osun_town_travel($1,'ede',$2)",
-        [userId,"old-character-town-trip-01"],
-      ),
+      db.query("select public.start_osun_town_travel($1,'ede',$2)", [
+        userId,
+        "old-character-town-trip-01",
+      ]),
     ).rejects.toThrow(/CHARACTER_CHANGED/);
     const result = await db.query<{ result: Record<string, unknown> }>(
       "select public.start_osun_town_travel($1,'ede',$2) as result",
-      [userId,"newest-character-town-trip-01"],
+      [userId, "newest-character-town-trip-01"],
     );
     const replay = await db.query<{ result: Record<string, unknown> }>(
       "select public.start_osun_town_travel($1,'ede',$2) as result",
-      [userId,"newest-character-town-trip-01"],
+      [userId, "newest-character-town-trip-01"],
     );
     expect(replay.rows[0]?.result).toMatchObject({ duplicate: true, to_town_id: "ede" });
     await expect(
-      db.query(
-        "select public.start_osun_town_travel($1,'osogbo',$2)",
-        [userId,"newest-character-town-trip-01"],
-      ),
+      db.query("select public.start_osun_town_travel($1,'osogbo',$2)", [
+        userId,
+        "newest-character-town-trip-01",
+      ]),
     ).rejects.toThrow(/IDEMPOTENCY_CONFLICT/);
     const trip = await db.query<{ character_id: string }>(
       "select character_id from public.osun_town_travels where idempotency_key=$1",
@@ -253,7 +260,7 @@ describe("map travel database actions", () => {
     });
     const balances = await db.query<{ balance: number; character_id: string }>(
       "select balance,character_id from public.wallets where id in ($1,$2) order by character_id",
-      [walletId,newestWalletId],
+      [walletId, newestWalletId],
     );
     expect(balances.rows.find((row) => row.character_id === newestCharacterId)?.balance).toBe(3800);
     // The second trip must not debit the prior character's wallet again.

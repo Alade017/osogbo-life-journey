@@ -51,29 +51,30 @@ beforeAll(async () => {
     grant usage on schema auth to authenticated;grant execute on function auth.uid() to authenticated;`);
   for (const file of readdirSync("drizzle/migrations")
     .filter(
-      (name) => name.endsWith(".sql") && !name.startsWith("0075_") && !name.startsWith("0077_") && !name.startsWith("0079_"),
+      (name) =>
+        name.endsWith(".sql") &&
+        !name.startsWith("0075_") &&
+        !name.startsWith("0077_") &&
+        !name.startsWith("0079_"),
     )
     .sort()) {
-      if (file === "0083_studio_room_layout.sql") {
-        // The studio layout migration depends on x/y columns from this Supabase migration.
-        await db.exec(
-          readFileSync(
-            "supabase/migrations/20261102223137_freeform_house_furniture_placement.sql",
-            "utf8",
-          ),
-        );
-        await db.exec(readFileSync("drizzle/migrations/0079_free_house_placement.sql", "utf8"));
-      }
-      if (file === "0085_house_floors.sql") {
-        // House floors serialize the placement rotation column introduced by this Supabase migration.
-        await db.exec(
-          readFileSync(
-            "supabase/migrations/20261105080000_house_placement_rotation.sql",
-            "utf8",
-          ),
-        );
-      }
-      await db.exec(readFileSync(`drizzle/migrations/${file}`, "utf8").replace(/^\uFEFF/, ""));
+    if (file === "0083_studio_room_layout.sql") {
+      // The studio layout migration depends on x/y columns from this Supabase migration.
+      await db.exec(
+        readFileSync(
+          "supabase/migrations/20261102223137_freeform_house_furniture_placement.sql",
+          "utf8",
+        ),
+      );
+      await db.exec(readFileSync("drizzle/migrations/0079_free_house_placement.sql", "utf8"));
+    }
+    if (file === "0085_house_floors.sql") {
+      // House floors serialize the placement rotation column introduced by this Supabase migration.
+      await db.exec(
+        readFileSync("supabase/migrations/20261105080000_house_placement_rotation.sql", "utf8"),
+      );
+    }
+    await db.exec(readFileSync(`drizzle/migrations/${file}`, "utf8").replace(/^\uFEFF/, ""));
   }
   await db.exec(readFileSync("supabase/migrations/20261027113217_messaging_hardening.sql", "utf8"));
   await db.exec(

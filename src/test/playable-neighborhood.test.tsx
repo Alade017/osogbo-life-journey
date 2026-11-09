@@ -383,7 +383,9 @@ it("leaves the old room and ignores its late state events when changing district
 it("leaves and rejoins the neighborhood when the active character changes", async () => {
   const previousRoom = room("city");
   const nextRoom = room("city");
-  state.join.mockImplementationOnce(async () => previousRoom).mockImplementationOnce(async () => nextRoom);
+  state.join
+    .mockImplementationOnce(async () => previousRoom)
+    .mockImplementationOnce(async () => nextRoom);
   show();
   await screen.findByRole("button", { name: /Enter your home/ });
   await act(async () => {

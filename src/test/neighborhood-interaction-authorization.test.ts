@@ -22,11 +22,17 @@ describe("neighborhood interaction authorization client bridge", () => {
     const sent: Array<{ type: string; payload: unknown }> = [];
     const leaveHandlers: Array<() => void> = [];
     const room = {
-      onMessage: (type: string, callback: (payload: unknown) => void) => listeners.set(type, callback),
+      onMessage: (type: string, callback: (payload: unknown) => void) =>
+        listeners.set(type, callback),
       onLeave: (callback: () => void) => leaveHandlers.push(callback),
       send: (type: string, payload: unknown) => sent.push({ type, payload }),
     };
-    return { room: room as never, listeners, sent, leave: () => leaveHandlers.forEach((handler) => handler()) };
+    return {
+      room: room as never,
+      listeners,
+      sent,
+      leave: () => leaveHandlers.forEach((handler) => handler()),
+    };
   }
 
   it("accepts only an authorization matching the pending landmark and action", async () => {
@@ -140,12 +146,7 @@ describe("neighborhood interaction authorization", () => {
   it("rejects expired tokens and undersized secrets", () => {
     const signed = createNeighborhoodInteractionAuthorization(claims, secret, 1_800_000_000_000);
     expect(() =>
-      verifyNeighborhoodInteractionAuthorization(
-        signed.token,
-        claims,
-        secret,
-        1_800_000_021_000,
-      ),
+      verifyNeighborhoodInteractionAuthorization(signed.token, claims, secret, 1_800_000_021_000),
     ).toThrow("INTERACTION_AUTH_EXPIRED");
     expect(() =>
       createNeighborhoodInteractionAuthorization(claims, "too-short", 1_800_000_000_000),

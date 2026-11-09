@@ -58,26 +58,23 @@ beforeAll(async () => {
         f !== "0079_free_house_placement.sql",
     )
     .sort()) {
-      if (file === "0083_studio_room_layout.sql") {
-        // The studio layout migration depends on x/y columns from this Supabase migration.
-        await db.exec(
-          readFileSync(
-            "supabase/migrations/20261102223137_freeform_house_furniture_placement.sql",
-            "utf8",
-          ),
-        );
-        await db.exec(readFileSync("drizzle/migrations/0079_free_house_placement.sql", "utf8"));
-      }
-      if (file === "0085_house_floors.sql") {
-        // House floors serialize the placement rotation column introduced by this Supabase migration.
-        await db.exec(
-          readFileSync(
-            "supabase/migrations/20261105080000_house_placement_rotation.sql",
-            "utf8",
-          ),
-        );
-      }
-      await db.exec(readFileSync(`drizzle/migrations/${file}`, "utf8"));
+    if (file === "0083_studio_room_layout.sql") {
+      // The studio layout migration depends on x/y columns from this Supabase migration.
+      await db.exec(
+        readFileSync(
+          "supabase/migrations/20261102223137_freeform_house_furniture_placement.sql",
+          "utf8",
+        ),
+      );
+      await db.exec(readFileSync("drizzle/migrations/0079_free_house_placement.sql", "utf8"));
+    }
+    if (file === "0085_house_floors.sql") {
+      // House floors serialize the placement rotation column introduced by this Supabase migration.
+      await db.exec(
+        readFileSync("supabase/migrations/20261105080000_house_placement_rotation.sql", "utf8"),
+      );
+    }
+    await db.exec(readFileSync(`drizzle/migrations/${file}`, "utf8"));
   }
   for (const file of [
     "20261019100000_party_life.sql",
@@ -153,9 +150,7 @@ describe("party rewards SQL", () => {
       "update public.characters set created_at='2026-10-26T00:00:00Z' where user_id=$1",
       [users[0]],
     );
-    const selected = await db.query<{ id: string }>(
-      "select public._my_character_id()::text id",
-    );
+    const selected = await db.query<{ id: string }>("select public._my_character_id()::text id");
     const expected = await db.query<{ id: string }>(
       "select id::text from public.characters where user_id=$1 order by created_at desc,id desc limit 1",
       [users[0]],
@@ -168,10 +163,11 @@ describe("party rewards SQL", () => {
     const differentCharacterId = "77777777-7777-4777-8777-777777777777";
     await user(0);
     await expect(
-      db.query(
-        "select public.dance_with_npc_for_character($1,$2,$3)",
-        ["fixture-dancer", "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", differentCharacterId],
-      ),
+      db.query("select public.dance_with_npc_for_character($1,$2,$3)", [
+        "fixture-dancer",
+        "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        differentCharacterId,
+      ]),
     ).rejects.toThrow("CHARACTER_CHANGED");
     const effects = await db.query<{ cooldowns: number; moods: number; receipts: number }>(
       `select
@@ -190,17 +186,50 @@ describe("party rewards SQL", () => {
     const calls: Array<[string, unknown[]]> = [
       ["select public.enter_club_for_character($1::uuid,$2::uuid)", [requestId, staleCharacterId]],
       ["select public.leave_club_for_character($1::uuid,$2::uuid)", [requestId, staleCharacterId]],
-      ["select public.join_club_activity_for_character($1,$2::uuid,$3::uuid)", ["dance-off", requestId, staleCharacterId]],
-      ["select public.buy_drink_for_character($1,$2::uuid,$3::uuid)", ["zobo", requestId, staleCharacterId]],
-      ["select public.dance_with_npc_for_character_locked($1,$2::uuid,$3::uuid)", ["fixture-dancer", requestId, staleCharacterId]],
-      ["select public.dance_with_player_for_character($1::uuid,$2::uuid,$3::uuid)", [chars[2], requestId, staleCharacterId]],
-      ["select public.host_party_event_for_character($1::uuid,$2,$3::timestamptz,$4::jsonb,$5::uuid,$6::uuid)", [venue, "Fixture event", "2026-10-26T14:00:00Z", '[{"kind":"guest","item_or_role":"guest","quantity":1}]', requestId, staleCharacterId]],
-      ["select public.respond_to_event_for_character($1::uuid,$2::uuid,$3::uuid)", [requirement, requestId, staleCharacterId]],
+      [
+        "select public.join_club_activity_for_character($1,$2::uuid,$3::uuid)",
+        ["dance-off", requestId, staleCharacterId],
+      ],
+      [
+        "select public.buy_drink_for_character($1,$2::uuid,$3::uuid)",
+        ["zobo", requestId, staleCharacterId],
+      ],
+      [
+        "select public.dance_with_npc_for_character_locked($1,$2::uuid,$3::uuid)",
+        ["fixture-dancer", requestId, staleCharacterId],
+      ],
+      [
+        "select public.dance_with_player_for_character($1::uuid,$2::uuid,$3::uuid)",
+        [chars[2], requestId, staleCharacterId],
+      ],
+      [
+        "select public.host_party_event_for_character($1::uuid,$2,$3::timestamptz,$4::jsonb,$5::uuid,$6::uuid)",
+        [
+          venue,
+          "Fixture event",
+          "2026-10-26T14:00:00Z",
+          '[{"kind":"guest","item_or_role":"guest","quantity":1}]',
+          requestId,
+          staleCharacterId,
+        ],
+      ],
+      [
+        "select public.respond_to_event_for_character($1::uuid,$2::uuid,$3::uuid)",
+        [requirement, requestId, staleCharacterId],
+      ],
     ];
     for (const [sql, args] of calls) {
       await expect(db.query(sql, args)).rejects.toThrow("CHARACTER_CHANGED");
     }
-    const effects = await db.query<{ visits: number; purchases: number; events: number; fulfilments: number; cooldowns: number; moods: number; receipts: number }>(
+    const effects = await db.query<{
+      visits: number;
+      purchases: number;
+      events: number;
+      fulfilments: number;
+      cooldowns: number;
+      moods: number;
+      receipts: number;
+    }>(
       `select
         (select count(*)::integer from public.club_visits) visits,
         (select count(*)::integer from public.party_drink_purchases) purchases,
@@ -211,7 +240,13 @@ describe("party rewards SQL", () => {
         (select count(*)::integer from public.economy_request_results) receipts`,
     );
     expect(effects.rows[0]).toEqual({
-      visits: 0, purchases: 0, events: 1, fulfilments: 0, cooldowns: 0, moods: 0, receipts: 0,
+      visits: 0,
+      purchases: 0,
+      events: 1,
+      fulfilments: 0,
+      cooldowns: 0,
+      moods: 0,
+      receipts: 0,
     });
   });
 

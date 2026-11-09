@@ -41,8 +41,11 @@ export function GameNeedsRail({ player }: { player: PlayerState }) {
         setActionMessage("Finish your current activity and wait for the simulation to be ready.");
         return;
       }
-      const error = await start(needAction.action, "needs-" + needAction.action + "-" + crypto.randomUUID());
-      setActionMessage(error ?? (needAction.label + " started."));
+      const error = await start(
+        needAction.action,
+        "needs-" + needAction.action + "-" + crypto.randomUUID(),
+      );
+      setActionMessage(error ?? needAction.label + " started.");
       return;
     }
     window.dispatchEvent(
@@ -108,7 +111,11 @@ export function GameNeedsRail({ player }: { player: PlayerState }) {
             type="button"
             className="game-needs-action"
             onClick={() => void handleNeedAction()}
-            disabled={!!needAction && "action" in needAction && (busy || !ready || !!simulation.currentAction)}
+            disabled={
+              !!needAction &&
+              "action" in needAction &&
+              (busy || !ready || !!simulation.currentAction)
+            }
           >
             {needAction?.label ?? "Choose an action"}
           </button>

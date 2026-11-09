@@ -388,11 +388,16 @@ function AudioControls({ profile, onSave }: { profile: Profile; onSave: (patch: 
   // Keep the two in step whenever the account flags change.
   useEffect(() => {
     const next = { ...readGameAudioLevels() };
+
     (Object.keys(CHANNELS) as Channel[]).forEach((channel) => {
       const cfg = CHANNELS[channel];
-      if (!profile[cfg.flag]) next[channel] = 0;
+
+      const enabled = channel === "music" ? profile.music_enabled : profile.effects_enabled;
+
+      if (!enabled) next[channel] = 0;
       else if (!next[channel]) next[channel] = cfg.fallback;
     });
+
     setGameAudioLevels(next);
     setLevels(next);
   }, [profile.music_enabled, profile.effects_enabled]);

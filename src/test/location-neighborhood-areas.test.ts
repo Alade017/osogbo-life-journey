@@ -111,9 +111,7 @@ describe("every active location has a playable area", () => {
       name: "Oja-Oba Market",
       map_category: "commercial",
     });
-    expect(area.interactionPoints).toEqual([
-      { id: "oja-oba-market", x: 145, y: 220, radius: 60 },
-    ]);
+    expect(area.interactionPoints).toEqual([{ id: "oja-oba-market", x: 145, y: 220, radius: 60 }]);
     const origin = { x: 7, y: 6 };
     const playerAtApproach = toWorld({ x: 145, y: 220 }, origin);
     expect(nearbyInteractionPoint(playerAtApproach, origin, area)?.id).toBe("oja-oba-market");

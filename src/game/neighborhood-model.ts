@@ -58,7 +58,6 @@ export type NeighborhoodInteractionPoint = {
   x: number;
   y: number;
   radius: number;
-
 };
 export type NeighborhoodArea = {
   slug: string;
@@ -315,10 +314,7 @@ const ADDITIONAL_LANDMARK_ANCHORS: readonly { id: string; locationSlug: string }
   { id: "youth-arts-centre", locationSlug: "youth-arts-centre" },
 ];
 
-const ALL_LANDMARK_ANCHORS = [
-  ...townData.landmarks,
-  ...ADDITIONAL_LANDMARK_ANCHORS,
-].filter(
+const ALL_LANDMARK_ANCHORS = [...townData.landmarks, ...ADDITIONAL_LANDMARK_ANCHORS].filter(
   (landmark, index, landmarks) =>
     landmarks.findIndex((candidate) => candidate.id === landmark.id) === index,
 );
@@ -507,15 +503,15 @@ function generatedNeighborhoodArea(
     ],
     // Resolve real landmark identities from the reviewed catalog. Location slugs and
     // map_landmarks IDs are separate contracts; never manufacture one from the other.
-    interactionPoints: ALL_LANDMARK_ANCHORS
-      .filter((landmark) => landmark.locationSlug === slug)
-      .map((landmark, index, matches) => ({
-        id: landmark.id,
-        x: Math.max(48, Math.min(592, market.x + (index - (matches.length - 1) / 2) * 112)),
-        // Put the interaction point on the walkable frontage, outside the building footprint.
-        y: market.y < 280 ? market.y + 86 : market.y - 86,
-        radius: 60,
-      })),
+    interactionPoints: ALL_LANDMARK_ANCHORS.filter(
+      (landmark) => landmark.locationSlug === slug,
+    ).map((landmark, index, matches) => ({
+      id: landmark.id,
+      x: Math.max(48, Math.min(592, market.x + (index - (matches.length - 1) / 2) * 112)),
+      // Put the interaction point on the walkable frontage, outside the building footprint.
+      y: market.y < 280 ? market.y + 86 : market.y - 86,
+      radius: 60,
+    })),
     style: AREA_STYLE_BY_CATEGORY[category],
   };
 }

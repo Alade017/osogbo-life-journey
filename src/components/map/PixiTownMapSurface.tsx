@@ -99,10 +99,14 @@ export function PixiTownMapSurface({
             const w = 48;
             const h = 24;
             groundGraphics.poly([
-              pt.x - 600, pt.y - 400 - h / 2,
-              pt.x - 600 + w / 2, pt.y - 400,
-              pt.x - 600, pt.y - 400 + h / 2,
-              pt.x - 600 - w / 2, pt.y - 400,
+              pt.x - 600,
+              pt.y - 400 - h / 2,
+              pt.x - 600 + w / 2,
+              pt.y - 400,
+              pt.x - 600,
+              pt.y - 400 + h / 2,
+              pt.x - 600 - w / 2,
+              pt.y - 400,
             ]);
             groundGraphics.fill({ color: 0xd2c7b5, alpha: 0.4 });
             groundGraphics.stroke({ width: 1, color: 0xbaa992, alpha: 0.3 });
