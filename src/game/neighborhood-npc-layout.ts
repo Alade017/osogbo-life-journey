@@ -313,6 +313,7 @@ export function neighborhoodNpcAvoidanceStep(
   minimumSeparation = NEIGHBORHOOD_NPC_ACTOR_SEPARATION,
   occupied: readonly GroundRect[] = [],
   bounds?: GroundRect,
+  avoidanceBias = 1,
 ): NpcPoint {
   const dx = waypoint.x - current.x;
   const dy = waypoint.y - current.y;
@@ -380,11 +381,16 @@ export function neighborhoodNpcAvoidanceStep(
     });
   });
   if (clear.length === 0) return current;
-  clear.sort(
-    (a, b) =>
-      Math.hypot(a.x - waypoint.x, a.y - waypoint.y) -
-      Math.hypot(b.x - waypoint.x, b.y - waypoint.y),
-  );
+  clear.sort((a, b) => {
+    const distanceA = Math.hypot(a.x - waypoint.x, a.y - waypoint.y);
+    const distanceB = Math.hypot(b.x - waypoint.x, b.y - waypoint.y);
+    if (Math.abs(distanceA - distanceB) > 0.0001) return distanceA - distanceB;
+    // Give equally useful sidesteps a stable character-specific side preference
+    // so crowds do not all choose the same side of a blocked corridor.
+    const sideA = (a.x - current.x) * direction.y - (a.y - current.y) * direction.x;
+    const sideB = (b.x - current.x) * direction.y - (b.y - current.y) * direction.x;
+    return (sideB - sideA) * avoidanceBias;
+  });
   return clear[0]!;
 }
 
@@ -396,4 +402,13 @@ export function neighborhoodNpcReplanDelay(npcId: string): number {
     hash = Math.imul(hash, 16777619);
   }
   return 1.1 + ((hash >>> 0) % 8) * 0.1;
+}
+
+/** Stable side preference distributes equally valid sidesteps across a crowd. */
+export function neighborhoodNpcAvoidanceBias(npcId: string): number {
+  let hash = 0;
+  for (let index = 0; index < npcId.length; index += 1) {
+    hash = (hash * 31 + npcId.charCodeAt(index)) | 0;
+  }
+  return (hash & 1) === 0 ? 1 : -1;
 }
