@@ -464,7 +464,7 @@ export function useGameAction<TArgs, TResult>(
   fn: (args: TArgs) => Promise<TResult>,
   opts?: {
     onSuccess?: (r: TResult, args: TArgs) => void;
-    onError?: (error: Error, args: TArgs) => void;
+    onError?: (error: Error, args: TArgs) => boolean | void;
   },
 ) {
   const qc = useQueryClient();
@@ -472,8 +472,8 @@ export function useGameAction<TArgs, TResult>(
     mutationFn: fn,
     onSuccess: (r, args) => opts?.onSuccess?.(r, args),
     onError: (e: Error, args) => {
-      opts?.onError?.(e, args);
-      toast.error(e.message);
+      const shouldToast = opts?.onError?.(e, args);
+      if (shouldToast !== false) toast.error(e.message);
     },
     onSettled: () => qc.invalidateQueries(),
   });
