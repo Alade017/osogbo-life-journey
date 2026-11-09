@@ -380,6 +380,35 @@ it("leaves the old room and ignores its late state events when changing district
   expect(state.scene.mock.calls.length).toBe(latestCount);
 });
 
+it("ignores a delayed leave event from the previous district after the new room connects", async () => {
+  const old = room("city");
+  const next = room("market");
+  state.join.mockImplementation(async (id: string) => (id === "city" ? old : next));
+  show();
+  await screen.findByRole("button", { name: /Enter your home/ });
+  await changeLocation("market");
+  await screen.findByText("R3F neighbourhood");
+  const sceneCalls = state.scene.mock.calls.length;
+
+  act(() => old.listeners.leave?.(1000));
+
+  expect(state.scene.mock.calls.length).toBe(sceneCalls);
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+  expect(next.leave).not.toHaveBeenCalled();
+});
+
+it("leaves the active multiplayer room when the neighborhood component unmounts", async () => {
+  const active = room("market");
+  state.location = "market";
+  state.join.mockResolvedValue(active);
+  const view = show();
+  await screen.findByText("R3F neighbourhood");
+
+  view.unmount();
+
+  await waitFor(() => expect(active.leave).toHaveBeenCalledOnce());
+});
+
 it("does not join inactive locations", async () => {
   state.location = "closed";
   show();
