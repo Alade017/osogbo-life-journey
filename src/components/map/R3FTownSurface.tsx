@@ -29,10 +29,8 @@ import {
 } from "../3d/WorldScene";
 import { WORLD_SCALE, WORLD_PALETTE } from "../3d/world-theme";
 import { MapLighting, useRealOrGameClock, daylightFor } from "./MapLighting";
-import { PlaceBadge } from "./map-badge";
 import { getLandmarkBuildingVariant } from "./landmark-building-variant";
 import { CompoundPlot3D } from "./CompoundPlot3D";
-import { MapPin3D } from "./MapPin3D";
 import { LandmarkItem3D } from "./LandmarkItem3D";
 import { SelectionRing3D } from "./SelectionRing3D";
 import { Terrain3D } from "./Terrain3D";
