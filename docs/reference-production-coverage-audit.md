@@ -172,3 +172,12 @@ The correction introduces `deriveTownSidewalkCells` as a shared, testable defini
 A regression test verifies that the helper returns unique grass cells directly adjacent to roads. The tree placement change uses that same helper, avoiding a separate hand-maintained sidewalk definition. This addresses trunk/base occupancy; tree canopy overhang still needs visual inspection and may cast over pavement without blocking the walking surface.
 
 **Remaining coverage check:** route counts after all non-tree prop reservations have not been measured in a running scene. Inspect sidewalk continuity and NPC distribution at desktop and 375px mobile widths. Local tests, typecheck, lint and production build remain pending; no GitHub Actions were triggered.
+
+
+## Authored pedestrian route coverage baseline
+
+The pedestrian route generator produces 30 independent sidewalk runs and 120 waypoints for the current authored grid when only building footprints, water and reserved plots are blocked. Run lengths are 3–6 waypoints (14 runs of length 3, 5 of length 4, 8 of length 5 and 3 of length 6). The renderer creates one pedestrian per supplied route, so this is a baseline capacity of 30 NPC routes before roadside-prop reservations are applied.
+
+This confirms the base grid has distributed short walking runs, but does not establish final runtime coverage: roadside props reserve additional nearby grass cells and can split or remove runs. The new regression assertion pins the authored-grid baseline so future road or plot edits surface an intentional coverage change. It does not guarantee 30 pedestrians after prop clearance, nor that routes connect across intersections. Dynamic route stitching and crossing behaviour remain separate design work.
+
+Live checks still need to verify NPC distribution, route visibility and crowding at desktop and 375px mobile widths. No local tests, typecheck, lint or production build were run; GitHub Actions remain untouched.
