@@ -24,3 +24,7 @@ export function clearDepartureFromHome(departure: HomeDeparture) {
     pendingDeparture = null;
   }
 }
+
+export function clearPendingDepartureFromHome() {
+  pendingDeparture = null;
+}
