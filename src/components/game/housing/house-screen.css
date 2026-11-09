@@ -2621,6 +2621,13 @@
   animation: house-scene-controls-in 220ms ease-out both;
 }
 
+/* Wide screens: the scene actions share the header's row, to the right of its pills. */
+@media (min-width: 900px) {
+  .house-page.house-page-fill .house-scene-controls {
+    top: max(12px, env(safe-area-inset-top));
+  }
+}
+
 .house-page.house-page-fill .house-scene-controls :is(.house-edit-toggle, .house-scene-exit) {
   position: static;
   display: inline-flex;
@@ -2897,11 +2904,11 @@
 }
 .house-catalogue {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  bottom: calc(var(--game-dock-space, 96px) + 12px);
-  z-index: 20;
-  width: min(92vw, 380px);
+  left: 8px;
+  right: 8px;
+  bottom: calc(var(--game-dock-space, 96px) + env(safe-area-inset-bottom) + 8px);
+  z-index: 30;
+  max-height: min(44dvh, 420px);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -2986,7 +2993,7 @@
 }
 .house-catalogue-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 10px;
   overflow-y: auto;
   align-content: start;
@@ -3023,16 +3030,6 @@
 .house-catalogue-action:disabled {
   opacity: 0.45;
   cursor: not-allowed;
-}
-/* Narrow screens: the catalogue becomes a bottom sheet that leaves the top of the room open. */
-@media (max-width: 900px) {
-  .house-catalogue {
-    top: auto;
-    left: 8px;
-    right: 8px;
-    width: auto;
-    max-height: min(46dvh, 460px);
-  }
 }
 .house-catalogue-header-actions {
   display: inline-flex;
@@ -3244,18 +3241,8 @@ button.house-task-status-action:disabled {
   font-weight: 750;
 }
 
-/* Narrow screens: the catalogue is a bottom sheet, so the room above it stays reachable. */
+/* The catalogue is a bottom sheet at every width, so the room above it stays visible. */
 @media (max-width: 1023px) {
-  .house-catalogue {
-    top: auto;
-    left: 8px;
-    right: 8px;
-    width: auto;
-    bottom: calc(var(--game-dock-space, 96px) + env(safe-area-inset-bottom) + 8px);
-    max-height: min(44dvh, 420px);
-    z-index: 30;
-  }
-
   .house-catalogue--minimized {
     max-height: none;
   }
