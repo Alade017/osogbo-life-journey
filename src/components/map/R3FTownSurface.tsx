@@ -39,7 +39,12 @@ import { MovingPedestrians3D } from "./MovingPedestrians3D";
 import { FunctionalStreetLights3D } from "./FunctionalStreetLights3D";
 import { RoadsideInfrastructure3D } from "./RoadsideInfrastructure3D";
 import { isMapTargetSelectionAllowed } from "@/game/map-gesture";
-import { deriveTownMobilityRoutes, deriveTownPedestrianCornerRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells } from "@/game/town-mobility";
+import {
+  deriveTownMobilityRoutes,
+  deriveTownPedestrianCornerRoutes,
+  deriveTownPedestrianRoutes,
+  deriveTownSidewalkCells,
+} from "@/game/town-mobility";
 
 type Props = PhaserMapData &
   PhaserMapCallbacks & {
