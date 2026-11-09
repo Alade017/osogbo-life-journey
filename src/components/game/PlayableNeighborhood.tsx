@@ -70,6 +70,8 @@ type InteractionPanel = "business" | "work" | "npc";
 type BusinessView = "actions" | "interior" | "shops" | "bank";
 const NEIGHBORHOOD_JOIN_TIMEOUT_MS = 15_000;
 const NEIGHBORHOOD_STATE_TIMEOUT_MS = 10_000;
+const EMPTY_NPC_POSITION_OVERRIDES: Readonly<Record<string, { x: number; y: number }>> =
+  Object.freeze({});
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -304,7 +306,7 @@ export function PlayableNeighborhood() {
   const currentNpcPositionOverrides =
     npcPositionOverrides.locationId === currentLocation?.id
       ? npcPositionOverrides.positions
-      : {};
+      : EMPTY_NPC_POSITION_OVERRIDES;
   const player = players.find((candidate) => candidate.sessionId === sessionId);
   const actionAnimation = simulation.currentAction
     ? avatarAnimationForActivity(simulation.currentAction.animation)
