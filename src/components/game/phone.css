@@ -2189,6 +2189,24 @@
   color: var(--card-foreground);
 }
 
+.phone-bank-account-number {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0;
+  color: var(--primary);
+  font-size: 0.85rem;
+}
+
+.phone-bank-account-number strong {
+  color: var(--card-foreground);
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
 .phone-btn-primary {
   display: inline-flex;
   align-items: center;
