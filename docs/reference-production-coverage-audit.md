@@ -202,3 +202,10 @@ The authored-grid test now asserts 48 available corner connectors before prop re
 
 
 A follow-up geometry review corrected the connector endpoints: they now terminate at the centres of the two adjoining road tiles, at the same lateral offset as the straight sidewalk routes. This makes exact endpoint-to-waypoint stitching possible without introducing a gap or a half-cell shortcut. The synthetic geometry expectations were updated accordingly. Continuous multi-junction path assembly is still not implemented; these connector polylines remain independent inputs to the pedestrian renderer.
+
+
+## Continuous pedestrian route stitching
+
+Added `stitchTownPedestrianRoutes` to join straight sidewalk runs and validated corner connectors wherever their endpoint coordinates match. It consumes each segment once, follows degree-two paths continuously, and splits at branch nodes rather than making an arbitrary turn through a junction. Closed or otherwise unconsumed components are retained as separate trails. The R3F town surface now passes its straight and corner paths through this stitcher before creating pedestrian NPCs.
+
+This is geometric network stitching, not destination-aware navigation: NPCs still reverse along their assigned trail, and branch choices are not dynamically planned. Prop reservations are applied before both straight and corner routes are derived. Synthetic tests cover endpoint joining, branch splitting and segment preservation. Runtime coverage and junction alignment still need live scene inspection; no local tests, typecheck, lint or production build have been run. GitHub Actions remain untouched.
