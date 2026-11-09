@@ -214,7 +214,11 @@ export function R3FTownSurface(props: Props) {
       const area = district.gridArea;
       const [x, , z] = point(area.x + area.width / 2, area.z + area.depth / 2);
       setSelectedTarget({ id: district.id, position: [x, 0, z], type: "district" });
+      return;
     }
+
+    // A stale search result must not leave the previous destination focused.
+    setSelectedTarget(null);
   }, [props.searchTarget, props.places, props.properties]);
   const roads = useMemo(
     () =>
