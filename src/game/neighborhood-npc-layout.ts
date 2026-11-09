@@ -302,10 +302,26 @@ export function neighborhoodNpcAvoidanceStep(
     { x: current.x + direction.y * travel, y: current.y - direction.x * travel },
   ];
   const clear = candidates.filter((candidate) =>
-    blockers.every(
-      (blocker) =>
-        Math.hypot(candidate.x - blocker.x, candidate.y - blocker.y) >= minimumSeparation,
-    ),
+    blockers.every((blocker) => {
+      const segmentX = candidate.x - current.x;
+      const segmentY = candidate.y - current.y;
+      const segmentLengthSquared = segmentX * segmentX + segmentY * segmentY;
+      const projection =
+        segmentLengthSquared === 0
+          ? 0
+          : Math.max(
+              0,
+              Math.min(
+                1,
+                ((blocker.x - current.x) * segmentX +
+                  (blocker.y - current.y) * segmentY) /
+                  segmentLengthSquared,
+              ),
+            );
+      const closestX = current.x + segmentX * projection;
+      const closestY = current.y + segmentY * projection;
+      return Math.hypot(closestX - blocker.x, closestY - blocker.y) >= minimumSeparation;
+    }),
   );
   if (clear.length === 0) return current;
   clear.sort(
