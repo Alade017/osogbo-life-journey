@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Newspaper, Trophy } from "lucide-react";
 import { PaletteSelect } from "@/components/ui/palette-select";
+import { latestGameUpdates } from "@/lib/game-updates";
 
 export type CommunityPhoneApp =
   "Calendar" | "Food Delivery" | "Okada Rides" | "Contribution" | "Leaderboard" | "Town News";
@@ -165,7 +166,21 @@ export function CommunityPhoneApps({ app }: { app: CommunityPhoneApp }) {
           <small>Town updates</small>
         </span>
       </header>
+      <section className="phone-news-section" aria-labelledby="phone-game-updates">
+        <h3 id="phone-game-updates">Game updates</h3>
+        {latestGameUpdates().map((update) => (
+          <AppCard key={update.id}>
+            <small>
+              {update.app} ·{" "}
+              {new Date(`${update.publishedOn}T00:00:00`).toLocaleDateString("en-NG")}
+            </small>
+            <strong>{update.title}</strong>
+            <span>{update.summary}</span>
+          </AppCard>
+        ))}
+      </section>
       <div className="phone-local-list">
+        <h3 className="phone-news-section">Town posts</h3>
         {townPosts.isLoading ? (
           <AppCard>
             <small>Loading town posts...</small>
