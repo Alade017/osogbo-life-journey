@@ -91,17 +91,38 @@ const BOTTLE_PROFILE = [
 function WaterBottle({ liquid = "#bfe6f7", cap = "#2b6fb3" }: { liquid?: string; cap?: string }) {
   return (
     <group>
+      {/* Clear bottle shell and shoulder profile. */}
       <mesh castShadow>
         <latheGeometry args={[BOTTLE_PROFILE, 32]} />
         <meshStandardMaterial color={liquid} transparent opacity={0.55} roughness={0.08} />
       </mesh>
+      {/* Unbranded wrap label: visual packaging detail without copying a real product identity. */}
       <mesh position={[0, 0.6, 0]}>
-        <cylinderGeometry args={[0.47, 0.47, 0.5, 32, 1, true]} />
-        {pbr("#1e5fa8", 0.6)}
+        <cylinderGeometry args={[0.468, 0.468, 0.48, 32, 1, true]} />
+        {pbr("#f2f4ef", 0.72)}
       </mesh>
+      <mesh position={[0, 0.6, 0]}>
+        <cylinderGeometry args={[0.472, 0.472, 0.11, 32, 1, true]} />
+        {pbr("#1e5fa8", 0.52)}
+      </mesh>
+      <mesh position={[0, 0.88, 0]}>
+        <cylinderGeometry args={[0.469, 0.469, 0.055, 32, 1, true]} />
+        {pbr("#d7e7df", 0.8)}
+      </mesh>
+      {/* Molded grip rings and a tamper-evident cap. */}
+      {[0.16, 1.08, 1.15].map((y) => (
+        <mesh key={y} position={[0, y, 0]} rotation={[Math.PI / 2, 0, 0]}>
+          <torusGeometry args={[y < 0.2 ? 0.43 : 0.31, 0.018, 6, 32]} />
+          {pbr("#a9d5e8", 0.28)}
+        </mesh>
+      ))}
       <mesh position={[0, 1.58, 0]} castShadow>
         <cylinderGeometry args={[0.2, 0.2, 0.14, 24]} />
         {pbr(cap, 0.4)}
+      </mesh>
+      <mesh position={[0, 1.49, 0]}>
+        <cylinderGeometry args={[0.205, 0.205, 0.035, 24]} />
+        {pbr(cap, 0.55)}
       </mesh>
     </group>
   );
