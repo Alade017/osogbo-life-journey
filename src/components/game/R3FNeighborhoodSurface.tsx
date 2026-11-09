@@ -23,7 +23,7 @@ import {
   type NeighborhoodObject,
 } from "@/game/neighborhood-model";
 import { neighborhoodBuildingFootprint, neighborhoodObstacleFootprint } from "@/game/neighborhood-geometry";
-import { neighborhoodNpcAvoidanceBias, neighborhoodNpcAvoidanceStep, neighborhoodNpcPath, neighborhoodNpcReplanDelay } from "@/game/neighborhood-npc-layout";
+import { neighborhoodNpcAvoidanceBias, neighborhoodNpcAvoidanceStep, neighborhoodNpcPathWithFallback, neighborhoodNpcReplanDelay } from "@/game/neighborhood-npc-layout";
 import {
   WorldCamera,
   WorldCars,
@@ -100,6 +100,7 @@ function NeighborhoodNpcActor({
   start,
   target,
   waypoints,
+  reservedPaths,
   actorPositions,
   playerPositions,
   occupiedFootprints,
@@ -112,6 +113,7 @@ function NeighborhoodNpcActor({
   start: [number, number, number];
   target: [number, number, number];
   waypoints: readonly [number, number, number][];
+  reservedPaths: readonly (readonly { x: number; y: number }[])[];
   actorPositions: MutableRefObject<Map<string, { x: number; y: number }>>;
   playerPositions: readonly (readonly [number, number, number])[];
   occupiedFootprints: readonly { left: number; top: number; width: number; height: number }[];
@@ -173,6 +175,7 @@ function NeighborhoodNpcActor({
     }
   }, [
     occupiedFootprints,
+    reservedPaths,
     sceneBounds,
     target[0],
     target[2],
@@ -259,11 +262,12 @@ function NeighborhoodNpcActor({
         // sustained wait, advance to the next already-validated route waypoint.
         // Each actual movement step still passes obstacle and boundary checks.
         if (blockedDuration.current >= replanDelay) {
-          const rerouted = neighborhoodNpcPath(
+          const rerouted = neighborhoodNpcPathWithFallback(
             { x: actor.position.x, y: actor.position.z },
             { x: target[0], y: target[2] },
             occupiedFootprints,
             sceneBounds,
+            reservedPaths,
           );
           if (rerouted?.length) {
             routeWaypoints.current = rerouted.map(
@@ -531,6 +535,22 @@ export function R3FNeighborhoodSurface({
       ),
     [npcs, point],
   );
+  const npcReservedPaths = useMemo(
+    () =>
+      new Map(
+        npcs.map((npc) => [
+          npc.id,
+          npcs.flatMap((other) => {
+            if (other.id === npc.id) return [];
+            const path = npcWaypoints.get(other.id) ?? [];
+            return path.length > 1
+              ? [path.map(([x, , z]) => ({ x, y: z }))]
+              : [];
+          }),
+        ] as const),
+      ),
+    [npcWaypoints, npcs],
+  );
   const self = players.find((player) => player.sessionId === selfSessionId);
   const selfPoint = self && toScene(self, district.origin);
   const target: [number, number, number] =
@@ -709,6 +729,7 @@ export function R3FNeighborhoodSurface({
               start={point(npc.x, npc.y)}
               target={point(npc.targetX, npc.targetY)}
               waypoints={npcWaypoints.get(npc.id) ?? []}
+              reservedPaths={npcReservedPaths.get(npc.id) ?? []}
               actorPositions={actorPositions}
               playerPositions={scenePoints}
               occupiedFootprints={movementObstacles}
