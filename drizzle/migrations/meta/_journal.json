@@ -652,6 +652,13 @@
       "when": 1794463201000,
       "tag": "0091_mini_game_hardening",
       "breakpoints": true
+    },
+    {
+      "idx": 93,
+      "version": "7",
+      "when": 1794463202000,
+      "tag": "0092_house_walls",
+      "breakpoints": true
     }
   ]
 }

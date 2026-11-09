@@ -10,6 +10,8 @@ export type HouseRoomRendererProps = {
   houseTypeId: string;
   /** Room light switch. Off dims the room; omitted means on. */
   lightOn?: boolean;
+  /** Wall setting. True closes every wall; false cuts the front and sides away. Null keeps the home's default. */
+  wallsClosed?: boolean | null;
   /** Floor being viewed: 0 ground, 1 upstairs (duplex only). */
   activeFloor?: 0 | 1;
   /** Tapping the stairs climbs or descends. */

@@ -50,6 +50,7 @@ import { Route as ApiHousePlaceRouteImport } from './routes/api/house/place'
 import { Route as ApiHouseRemoveRouteImport } from './routes/api/house/remove'
 import { Route as ApiHouseRotateRouteImport } from './routes/api/house/rotate'
 import { Route as ApiHouseStateRouteImport } from './routes/api/house/state'
+import { Route as ApiHouseWallsRouteImport } from './routes/api/house/walls'
 import { Route as ApiHousingAccessoriesRouteImport } from './routes/api/housing/accessories'
 import { Route as ApiHousingAckRepossessionRouteImport } from './routes/api/housing/ack-repossession'
 import { Route as ApiHousingChooseRouteImport } from './routes/api/housing/choose'
@@ -304,6 +305,11 @@ const ApiHouseStateRoute = ApiHouseStateRouteImport.update({
   path: '/api/house/state',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHouseWallsRoute = ApiHouseWallsRouteImport.update({
+  id: '/api/house/walls',
+  path: '/api/house/walls',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHousingAccessoriesRoute = ApiHousingAccessoriesRouteImport.update({
   id: '/api/housing/accessories',
   path: '/api/housing/accessories',
@@ -539,6 +545,7 @@ export interface FileRoutesByFullPath {
   '/api/house/remove': typeof ApiHouseRemoveRoute
   '/api/house/rotate': typeof ApiHouseRotateRoute
   '/api/house/state': typeof ApiHouseStateRoute
+  '/api/house/walls': typeof ApiHouseWallsRoute
   '/api/housing/accessories': typeof ApiHousingAccessoriesRoute
   '/api/housing/ack-repossession': typeof ApiHousingAckRepossessionRoute
   '/api/housing/choose': typeof ApiHousingChooseRoute
@@ -618,6 +625,7 @@ export interface FileRoutesByTo {
   '/api/house/remove': typeof ApiHouseRemoveRoute
   '/api/house/rotate': typeof ApiHouseRotateRoute
   '/api/house/state': typeof ApiHouseStateRoute
+  '/api/house/walls': typeof ApiHouseWallsRoute
   '/api/housing/accessories': typeof ApiHousingAccessoriesRoute
   '/api/housing/ack-repossession': typeof ApiHousingAckRepossessionRoute
   '/api/housing/choose': typeof ApiHousingChooseRoute
@@ -700,6 +708,7 @@ export interface FileRoutesById {
   '/api/house/remove': typeof ApiHouseRemoveRoute
   '/api/house/rotate': typeof ApiHouseRotateRoute
   '/api/house/state': typeof ApiHouseStateRoute
+  '/api/house/walls': typeof ApiHouseWallsRoute
   '/api/housing/accessories': typeof ApiHousingAccessoriesRoute
   '/api/housing/ack-repossession': typeof ApiHousingAckRepossessionRoute
   '/api/housing/choose': typeof ApiHousingChooseRoute
@@ -781,6 +790,7 @@ export interface FileRouteTypes {
     | '/api/house/remove'
     | '/api/house/rotate'
     | '/api/house/state'
+    | '/api/house/walls'
     | '/api/housing/accessories'
     | '/api/housing/ack-repossession'
     | '/api/housing/choose'
@@ -860,6 +870,7 @@ export interface FileRouteTypes {
     | '/api/house/remove'
     | '/api/house/rotate'
     | '/api/house/state'
+    | '/api/house/walls'
     | '/api/housing/accessories'
     | '/api/housing/ack-repossession'
     | '/api/housing/choose'
@@ -941,6 +952,7 @@ export interface FileRouteTypes {
     | '/api/house/remove'
     | '/api/house/rotate'
     | '/api/house/state'
+    | '/api/house/walls'
     | '/api/housing/accessories'
     | '/api/housing/ack-repossession'
     | '/api/housing/choose'
@@ -1001,6 +1013,7 @@ export interface RootRouteChildren {
   ApiHouseRemoveRoute: typeof ApiHouseRemoveRoute
   ApiHouseRotateRoute: typeof ApiHouseRotateRoute
   ApiHouseStateRoute: typeof ApiHouseStateRoute
+  ApiHouseWallsRoute: typeof ApiHouseWallsRoute
   ApiHousingAccessoriesRoute: typeof ApiHousingAccessoriesRoute
   ApiHousingAckRepossessionRoute: typeof ApiHousingAckRepossessionRoute
   ApiHousingChooseRoute: typeof ApiHousingChooseRoute
@@ -1326,6 +1339,13 @@ declare module '@tanstack/react-router' {
       path: '/api/house/state'
       fullPath: '/api/house/state'
       preLoaderRoute: typeof ApiHouseStateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/house/walls': {
+      id: '/api/house/walls'
+      path: '/api/house/walls'
+      fullPath: '/api/house/walls'
+      preLoaderRoute: typeof ApiHouseWallsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/housing/accessories': {
@@ -1683,6 +1703,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHouseRemoveRoute: ApiHouseRemoveRoute,
   ApiHouseRotateRoute: ApiHouseRotateRoute,
   ApiHouseStateRoute: ApiHouseStateRoute,
+  ApiHouseWallsRoute: ApiHouseWallsRoute,
   ApiHousingAccessoriesRoute: ApiHousingAccessoriesRoute,
   ApiHousingAckRepossessionRoute: ApiHousingAckRepossessionRoute,
   ApiHousingChooseRoute: ApiHousingChooseRoute,
@@ -1723,13 +1744,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -205,6 +205,7 @@ function HouseDoorPanel({
 
 function OsogboRoomPrototype({
   houseTypeId,
+  wallsClosed = null,
   width,
   depth,
   editMode,
@@ -213,6 +214,7 @@ function OsogboRoomPrototype({
   doorOpen = false,
 }: {
   houseTypeId: string;
+  wallsClosed?: boolean | null;
   width: number;
   depth: number;
   activeFloor?: 0 | 1;
@@ -243,7 +245,7 @@ function OsogboRoomPrototype({
           height,
           doorwayWidth,
           rearDoorCenter,
-          FOUR_ROOM_HOME_TYPES.includes(houseTypeId),
+          wallsClosed ?? FOUR_ROOM_HOME_TYPES.includes(houseTypeId),
         ).map((segment) => (
           <group key={segment.id}>
             <mesh castShadow receiveShadow position={segment.position}>
@@ -1845,6 +1847,7 @@ function SlotObject({
 export function HouseRoom3D({
   inputBlocked = false,
   lightOn = true,
+  wallsClosed = null,
   doorOpen = false,
   activeFloor = 0,
   onUseStairs,
@@ -2023,6 +2026,7 @@ export function HouseRoom3D({
 
           <OsogboRoomPrototype
             houseTypeId={houseTypeId}
+            wallsClosed={wallsClosed}
             width={width}
             depth={depth}
             editMode={editMode}
