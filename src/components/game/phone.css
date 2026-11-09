@@ -3384,3 +3384,101 @@
   color: var(--destructive);
   border: 1px solid var(--destructive);
 }
+
+/* Party: hero, mood card, segmented tabs, and phone-style panels inside the app. */
+.phone-party {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+}
+
+.phone-party-hero {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.phone-party-hero h2 {
+  margin: 0;
+  color: var(--brand-ink);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.phone-party-hero p {
+  margin: 2px 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+}
+
+.phone-party-hero-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.phone-party-hero-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.phone-party-body {
+  display: grid;
+  gap: 14px;
+  padding-bottom: 8px;
+}
+
+.phone-party-mood {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--card);
+  color: var(--card-foreground);
+  box-shadow: var(--elevation-card);
+}
+
+.phone-party-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  overflow-x: auto;
+  border-radius: 999px;
+  background: var(--muted);
+}
+
+.phone-party-tab {
+  flex: 1 0 auto;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted-foreground);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.phone-party-tab.is-active {
+  background: var(--card);
+  color: var(--brand-ink);
+  box-shadow: var(--elevation-card);
+}
+
+/* Panels in the Party tabs take the phone card look. */
+.phone-party .game-panel {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--card);
+  color: var(--card-foreground);
+  box-shadow: var(--elevation-card);
+}
