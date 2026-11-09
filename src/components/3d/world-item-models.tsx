@@ -85,18 +85,48 @@ export function ShirtWorn({
 export const WORN_CLOTHING: Partial<Record<string, ComponentType<ItemModelProps>>> = {
   basic_outfit: ShirtWorn,
 };
-/** Trousers worn over the legs. Positions are estimates from the base legs and should be checked in the preview. */
-export function TrousersWorn({ h, color = "#3b4a5c" }: ItemModelProps & { color?: string }) {
+/** Trousers worn over the legs. All details scale with the avatar body height. */
+export function TrousersWorn({
+  h,
+  color = "#3b4a5c",
+  accent = "#263747",
+}: ItemModelProps & { color?: string; accent?: string }) {
   return (
     <group>
       <mesh position={[0, h * 0.2, 0]} castShadow>
         <boxGeometry args={[h * 0.3, h * 0.42, h * 0.18]} />
         <WorldMaterial color={color} />
       </mesh>
+      {/* Separate legs keep the trouser silhouette readable at gameplay scale. */}
       {[-1, 1].map((side) => (
-        <mesh key={side} position={[side * h * 0.075, h * 0.1, 0]} castShadow>
-          <boxGeometry args={[h * 0.13, h * 0.22, h * 0.15]} />
-          <WorldMaterial color={color} />
+        <group key={side} position={[side * h * 0.075, h * 0.1, 0]}>
+          <mesh castShadow>
+            <boxGeometry args={[h * 0.13, h * 0.22, h * 0.15]} />
+            <WorldMaterial color={color} />
+          </mesh>
+          <mesh position={[0, -h * 0.105, h * 0.076]}>
+            <boxGeometry args={[h * 0.125, h * 0.018, h * 0.012]} />
+            <WorldMaterial color={accent} />
+          </mesh>
+        </group>
+      ))}
+      {/* Waistband, fly seam and subtle front pocket openings. */}
+      <mesh position={[0, h * 0.415, h * 0.005]}>
+        <boxGeometry args={[h * 0.3, h * 0.045, h * 0.19]} />
+        <WorldMaterial color={accent} />
+      </mesh>
+      <mesh position={[0, h * 0.285, h * 0.094]}>
+        <boxGeometry args={[h * 0.012, h * 0.12, h * 0.012]} />
+        <WorldMaterial color={accent} />
+      </mesh>
+      {[-1, 1].map((side) => (
+        <mesh
+          key={side}
+          position={[side * h * 0.105, h * 0.34, h * 0.094]}
+          rotation={[0, 0, side * -0.28]}
+        >
+          <boxGeometry args={[h * 0.065, h * 0.012, h * 0.012]} />
+          <WorldMaterial color={accent} />
         </mesh>
       ))}
     </group>
