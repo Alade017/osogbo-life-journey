@@ -142,6 +142,7 @@ function NeighborhoodNpcActor({
   const routeTargetRef = useRef(targetKey);
   const blockedDuration = useRef(0);
   const replanDelay = neighborhoodNpcReplanDelay(npc.id);
+  const replanBackoff = useRef(replanDelay);
   const avoidanceBias = neighborhoodNpcAvoidanceBias(npc.id);
   const pauseSnapshotSaved = useRef(false);
 
@@ -180,6 +181,7 @@ function NeighborhoodNpcActor({
       }
       waypointIndex.current = 0;
       blockedDuration.current = 0;
+      replanBackoff.current = replanDelay;
       arrivedTarget.current = null;
     }
   }, [
@@ -233,6 +235,27 @@ function NeighborhoodNpcActor({
   }, [animated, invalidate]);
 
   useFrame((state, delta) => {
+    const retryRoute = (actor: Group) => {
+      const rerouted = neighborhoodNpcPathWithFallback(
+        { x: actor.position.x, y: actor.position.z },
+        { x: target[0], y: target[2] },
+        occupiedFootprints,
+        sceneBounds,
+        reservedPaths,
+      );
+      if (rerouted?.length) {
+        routeWaypoints.current = rerouted.map(
+          (point) => [point.x, 0, point.y] as [number, number, number],
+        );
+        waypointIndex.current = 0;
+        replanBackoff.current = replanDelay;
+      } else {
+        // Back off repeated searches when static geometry makes a destination
+        // unreachable; movement or a new route resets the retry cadence.
+        replanBackoff.current = Math.min(replanBackoff.current * 1.6, 8);
+      }
+      blockedDuration.current = 0;
+    };
     const actor = group.current;
     if (!actor || npc.isPaused) return;
     const activeWaypoints = routeWaypoints.current;
@@ -270,24 +293,10 @@ function NeighborhoodNpcActor({
         // A live actor can occupy a narrow waypoint indefinitely. After a
         // sustained wait, advance to the next already-validated route waypoint.
         // Each actual movement step still passes obstacle and boundary checks.
-        if (blockedDuration.current >= replanDelay) {
-          const rerouted = neighborhoodNpcPathWithFallback(
-            { x: actor.position.x, y: actor.position.z },
-            { x: target[0], y: target[2] },
-            occupiedFootprints,
-            sceneBounds,
-            reservedPaths,
-          );
-          if (rerouted?.length) {
-            routeWaypoints.current = rerouted.map(
-              (point) => [point.x, 0, point.y] as [number, number, number],
-            );
-            waypointIndex.current = 0;
-          }
-          blockedDuration.current = 0;
-        }
+        if (blockedDuration.current >= replanBackoff.current) retryRoute(actor);
       } else {
         blockedDuration.current = 0;
+        replanBackoff.current = replanDelay;
       }
       actor.position.x = next.x;
       actor.position.z = next.y;
@@ -313,22 +322,7 @@ function NeighborhoodNpcActor({
         // A one-point hold route means static geometry or reservations made
         // the destination unreachable. Never snap across the map to it.
         blockedDuration.current += Math.min(delta, 0.1);
-        if (blockedDuration.current >= replanDelay) {
-          const rerouted = neighborhoodNpcPathWithFallback(
-            { x: actor.position.x, y: actor.position.z },
-            { x: target[0], y: target[2] },
-            occupiedFootprints,
-            sceneBounds,
-            reservedPaths,
-          );
-          if (rerouted?.length) {
-            routeWaypoints.current = rerouted.map(
-              (point) => [point.x, 0, point.y] as [number, number, number],
-            );
-            waypointIndex.current = 0;
-          }
-          blockedDuration.current = 0;
-        }
+        if (blockedDuration.current >= replanBackoff.current) retryRoute(actor);
       }
     }
     const phase = state.clock.elapsedTime * (walking ? 7 : 2.2);
