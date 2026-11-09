@@ -118,8 +118,8 @@ function CalendarApp() {
   });
   const saved = new Set(reminders.data?.map((item) => item.event_id));
   return (
-    <div className="phone-service-screen">
-      <header>
+    <div className="phone-service-screen calendar-app">
+      <header className="calendar-hero">
         <h2>Town calendar</h2>
         <p>Town events and your saved reminders</p>
       </header>
@@ -133,7 +133,7 @@ function CalendarApp() {
         }}
       />
       {events.data?.map((event) => (
-        <article className="phone-service-card" key={event.id}>
+        <article className="phone-service-card calendar-event" key={event.id}>
           <time>
             {new Date(event.starts_at).toLocaleString("en-NG", {
               timeZone: "Africa/Lagos",

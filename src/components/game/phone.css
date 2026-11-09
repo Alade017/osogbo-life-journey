@@ -4362,3 +4362,63 @@
   justify-self: start;
   margin-top: 4px;
 }
+
+/* Town calendar in the phone: a hero, one card per event with its time as a kicker, and a reminder toggle. */
+.phone-app-body .calendar-app {
+  display: grid;
+  gap: 12px;
+}
+.phone-app-body .calendar-hero h2 {
+  font-size: 1.05rem;
+  margin: 0;
+}
+.phone-app-body .calendar-hero p {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  margin: 2px 0 0;
+}
+.phone-app-body .calendar-app .calendar-event {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card, 14px);
+  box-shadow: var(--elevation-card);
+  color: var(--card-foreground);
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+}
+.phone-app-body .calendar-app .calendar-event time {
+  color: var(--primary);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.phone-app-body .calendar-app .calendar-event h3 {
+  font-size: 0.95rem;
+  margin: 0;
+}
+.phone-app-body .calendar-app .calendar-event p {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  margin: 0;
+}
+.phone-app-body .calendar-app .calendar-event > button {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--card-foreground);
+  font-size: 0.8rem;
+  font-weight: 700;
+  justify-self: start;
+  margin-top: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+}
+.phone-app-body .calendar-app .calendar-event > button[aria-pressed="true"] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+}
+.phone-app-body .calendar-app .calendar-event > button:disabled {
+  opacity: 0.55;
+}
