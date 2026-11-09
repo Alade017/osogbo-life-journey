@@ -316,8 +316,10 @@ export function neighborhoodNpcAvoidanceStep(
       };
       if (
         (bounds &&
-          (point.x < bounds.left || point.y < bounds.top ||
-            point.x > bounds.left + bounds.width || point.y > bounds.top + bounds.height)) ||
+          (point.x < bounds.left + minimumSeparation ||
+            point.y < bounds.top + minimumSeparation ||
+            point.x > bounds.left + bounds.width - minimumSeparation ||
+            point.y > bounds.top + bounds.height - minimumSeparation)) ||
         occupied.some((rect) =>
           point.x >= rect.left - minimumSeparation &&
           point.x <= rect.left + rect.width + minimumSeparation &&
