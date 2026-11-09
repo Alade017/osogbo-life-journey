@@ -1295,6 +1295,34 @@ export function WorldHouse({
           </mesh>
         ))}
 
+      {/* Market roof drainage: shallow eaves channels and a corner downpipe. */}
+      {isMarket && architecture.roof !== "pitched" && (
+        <group>
+          {[-1, 1].map((side) => (
+            <group key={`market-gutter-${side}`} position={[0, height + 0.285, side * (depth / 2 + 0.16)]}>
+              <mesh>
+                <boxGeometry args={[width + 0.3, 0.055, 0.09]} />
+                <WorldMaterial tone="metal" color={surfaces.trim} />
+              </mesh>
+              {[-1, 1].map((lip) => (
+                <mesh key={`gutter-lip-${lip}`} position={[0, 0.035, lip * 0.035]}>
+                  <boxGeometry args={[width + 0.3, 0.035, 0.018]} />
+                  <WorldMaterial tone="metal" color={surfaces.trim} />
+                </mesh>
+              ))}
+            </group>
+          ))}
+          <mesh position={[width * 0.47, height * 0.5 + 0.28, depth / 2 + 0.16]}>
+            <boxGeometry args={[0.055, height + 0.05, 0.055]} />
+            <WorldMaterial tone="metal" color={surfaces.trim} />
+          </mesh>
+          <mesh position={[width * 0.47, 0.3, depth / 2 + 0.12]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.028, 0.028, 0.12, 8]} />
+            <WorldMaterial tone="metal" color={surfaces.trim} />
+          </mesh>
+        </group>
+      )}
+
       {/* Front entrance */}
       <mesh position={[0, WORLD_SCALE.door / 2 + 0.18, depth / 2 + 0.04]}>
         <boxGeometry args={[isMarket ? width * 0.48 : width * 0.3, WORLD_SCALE.door, 0.08]} />
