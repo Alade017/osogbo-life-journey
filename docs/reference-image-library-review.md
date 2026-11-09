@@ -82,7 +82,7 @@ The runtime house-model contract is documented in `public/models/README.md`. Kee
 
 ## Recommended implementation order
 
-1. **Household furnishing pilot:** build one representative room composition using existing house types and existing placeable item art keys. Review it with the player avatar and existing camera at desktop and 375px.
+1. **Household furnishing coverage audit:** compare the furnishing pilot already present on `main` with the reference groups. Reuse existing room composition, models, catalogue keys and placement flows; implement only demonstrable gaps on the feature branch.
 2. **Core furniture family:** make reusable bed, wardrobe, chair, table, sofa and shelf models with controlled Normal / Intermediate / Premium visual variants only where the existing catalogue supports them.
 3. **Appliance family:** add only catalogue-backed household appliances and essential fixtures.
 4. **Market and packaging family:** add modular stall display pieces and generic Nigerian retail packaging without copied logos.
@@ -103,4 +103,4 @@ A reference image is not an acceptance test. A production slice is ready for rev
 
 ## Review outcome
 
-The supplied 31-image set is accepted as an **inspiration library** for original production work. It is not accepted as a production asset pack. The best next production slice is a small, catalogue-backed household furnishing pilot, because the references strongly cover rooms, furniture and appliances and the repository already has a GLB loading contract and an active R3F house renderer.
+The supplied 31-image set is accepted as an **inspiration library** for original production work. It is not accepted as a production asset pack. The household furnishing pilot already exists on `main`, as confirmed by the owner. Do not recreate it on this branch. Treat it as the baseline and continue with reference-led improvements only where the feature branch demonstrably lacks coverage. The current art pass has added detail to existing inventory previews and neighborhood market props; those additions still require in-scene visual QA before they can be considered production-ready.
