@@ -74,7 +74,7 @@ export function deriveTownMobilityRoutes(
 export function deriveTownPedestrianRoutes(
   rows: readonly string[],
   cellSize: number,
-  blockedCells: readonly (readonly [number, number])[],
+  blockedCells: readonly (readonly [number, number])[] = [],
   sidewalkWidth = cellSize * 0.28,
 ): TownMobilityRoute[] {
   const columnCount = Math.max(0, ...rows.map((row) => row.length));
@@ -170,9 +170,9 @@ export function deriveTownPedestrianCornerRoutes(
           if ([horizontalCell, verticalCell, diagonalCell].some(([cellX, cellZ]) => blocked.has(`${cellX},${cellZ}`))) continue;
 
           routes.push([
-            [centerX, centerZ + dz * offset],
+            [centerX + dx * (cellSize / 2), centerZ + dz * offset],
             [centerX + dx * offset, centerZ + dz * offset],
-            [centerX + dx * offset, centerZ],
+            [centerX + dx * offset, centerZ + dz * (cellSize / 2)],
           ]);
         }
       }
