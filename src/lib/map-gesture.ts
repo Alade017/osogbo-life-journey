@@ -21,3 +21,12 @@ export function mapPinchZoomFactor(previousDistance: number, currentDistance: nu
     return null;
   return currentDistance / previousDistance;
 }
+
+/** A target activates only after an uninterrupted, non-drag, single-pointer tap. */
+export function isMapTargetTapAllowed(
+  start: MapPointerSample,
+  end: MapPointerSample,
+  wasDragged: boolean,
+) {
+  return !wasDragged && isQuickMapTap(start, end);
+}
