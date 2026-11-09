@@ -304,7 +304,8 @@ export function PlayableNeighborhood() {
   const [npcDialogue, setNpcDialogue] = useState<string | null>(null);
   const npcActorPositions = useRef(new Map<string, { x: number; y: number }>());
   const currentLocationIdRef = useRef<string | undefined>(currentLocation?.id);
-  currentLocationIdRef.current = currentLocation?.id;
+  const sceneLocationId = currentLocation?.id;
+  currentLocationIdRef.current = sceneLocationId;
   const [npcPositionOverrides, setNpcPositionOverrides] = useState<{
     locationId: string | null;
     positions: Record<string, { x: number; y: number }>;
@@ -867,8 +868,8 @@ export function PlayableNeighborhood() {
                         interactionTargets={interactionTargets}
                         onSelectTarget={selectWorldTarget}
                         onNpcArrive={(id, x, y) => {
-                          const locationId = currentLocationIdRef.current;
-                          if (!locationId) return;
+                          const locationId = sceneLocationId;
+                          if (!locationId || currentLocationIdRef.current !== locationId) return;
                           setNpcPositionOverrides((current) => {
                             // A scene from the previous neighborhood may finish an
                             // animation during unmount; never let it overwrite the new area's snapshot.
