@@ -5,6 +5,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type MutableRefObject,
   type ReactNode,
 } from "react";
 import { Html } from "@react-three/drei";
@@ -22,6 +23,7 @@ import {
   type NeighborhoodObject,
 } from "@/game/neighborhood-model";
 import { neighborhoodBuildingFootprint } from "@/game/neighborhood-geometry";
+import { neighborhoodNpcAvoidanceStep } from "@/game/neighborhood-npc-layout";
 import {
   WorldCamera,
   WorldCars,
@@ -98,6 +100,8 @@ function NeighborhoodNpcActor({
   start,
   target,
   waypoints,
+  actorPositions,
+  playerPositions,
   onSelect,
   onArrive,
   onPause,
@@ -106,6 +110,8 @@ function NeighborhoodNpcActor({
   start: [number, number, number];
   target: [number, number, number];
   waypoints: readonly [number, number, number][];
+  actorPositions: MutableRefObject<Map<string, { x: number; y: number }>>;
+  playerPositions: readonly (readonly [number, number, number])[];
   onSelect: () => void;
   onArrive: () => void;
   onPause: (x: number, y: number) => void;
@@ -137,6 +143,14 @@ function NeighborhoodNpcActor({
     actor.position.set(start[0], start[1], start[2]);
     invalidate();
   }, [start[0], start[1], start[2], invalidate]);
+  useEffect(() => {
+    const actor = group.current;
+    if (!actor) return;
+    actorPositions.current.set(npc.id, { x: actor.position.x, y: actor.position.z });
+    return () => {
+      actorPositions.current.delete(npc.id);
+    };
+  }, [actorPositions, npc.id]);
 
   // Pausing the simulation freezes the rendered actor where it actually is.
   // Persist that point so interactions and resume logic use the same position.
@@ -171,9 +185,28 @@ function NeighborhoodNpcActor({
       // after movement resumes so the confirmed position is persisted again.
       arrivedTarget.current = null;
       const step = 1 - Math.exp(-Math.min(delta, 0.1) * 2.8);
-      actor.position.x += dx * step;
-      actor.position.z += dz * step;
-      actor.rotation.y = Math.atan2(dx, dz);
+      const liveNpcPositions = [...actorPositions.current.entries()]
+        .filter(([id]) => id !== npc.id)
+        .map(([, position]) => position);
+      const liveBlockers = [
+        ...liveNpcPositions,
+        ...playerPositions.map((position) => ({ x: position[0], y: position[2] })),
+      ];
+      const next = neighborhoodNpcAvoidanceStep(
+        { x: actor.position.x, y: actor.position.z },
+        { x: waypoint[0], y: waypoint[2] },
+        liveBlockers,
+        distance * step,
+        0.85,
+      );
+      const movedX = next.x - actor.position.x;
+      const movedZ = next.y - actor.position.z;
+      actor.position.x = next.x;
+      actor.position.z = next.y;
+      actorPositions.current.set(npc.id, { x: next.x, y: next.y });
+      if (Math.hypot(movedX, movedZ) > 0.0001) {
+        actor.rotation.y = Math.atan2(movedX, movedZ);
+      }
     } else if (waypointIndex.current < waypoints.length - 1) {
       waypointIndex.current += 1;
     } else {
@@ -383,6 +416,7 @@ export function R3FNeighborhoodSurface({
     return point(p.x, p.y);
   });
   const npcPoints = npcs.map((npc) => point(npc.x, npc.y));
+  const actorPositions = useRef(new Map<string, { x: number; y: number }>());
   const npcWaypoints = useMemo(
     () =>
       new Map(
@@ -571,6 +605,8 @@ export function R3FNeighborhoodSurface({
               start={point(npc.x, npc.y)}
               target={point(npc.targetX, npc.targetY)}
               waypoints={npcWaypoints.get(npc.id) ?? []}
+              actorPositions={actorPositions}
+              playerPositions={scenePoints}
               onSelect={() => onSelectTarget(npc.id)}
               onArrive={() => onNpcArrive(npc.id, npc.targetX, npc.targetY)}
               onPause={(x, z) =>
