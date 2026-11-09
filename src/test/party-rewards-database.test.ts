@@ -195,20 +195,30 @@ describe("party rewards SQL", () => {
     expect(helper.rows[0]?.authenticated).toBe(false);
   });
 
-  it("grants the character-bound party dance RPC only to authenticated callers", async () => {
+  it("grants only the locked dance entry point to authenticated callers", async () => {
     const privileges = await db.query<{
-      anon: boolean;
-      authenticated: boolean;
+      legacy_anon: boolean;
+      legacy_authenticated: boolean;
+      locked_anon: boolean;
+      locked_authenticated: boolean;
     }>(
       `select
         has_function_privilege('anon',
-          'public.dance_with_npc_for_character(text,uuid,uuid)','execute') as anon,
+          'public.dance_with_npc_for_character(text,uuid,uuid)','execute') as legacy_anon,
         has_function_privilege('authenticated',
-          'public.dance_with_npc_for_character(text,uuid,uuid)','execute') as authenticated`,
+          'public.dance_with_npc_for_character(text,uuid,uuid)','execute') as legacy_authenticated,
+        has_function_privilege('anon',
+          'public.dance_with_npc_for_character_locked(text,uuid,uuid)','execute') as locked_anon,
+        has_function_privilege('authenticated',
+          'public.dance_with_npc_for_character_locked(text,uuid,uuid)','execute') as locked_authenticated`,
     );
-    expect(privileges.rows[0]).toEqual({ anon: false, authenticated: true });
+    expect(privileges.rows[0]).toEqual({
+      legacy_anon: false,
+      legacy_authenticated: false,
+      locked_anon: false,
+      locked_authenticated: true,
+    });
   });
-
   it("admits event-centre guests without club visits and preserves exactly one mood award", async () => {
     await respond(1);
     await expect(respond(1)).rejects.toThrow("already");
