@@ -65,18 +65,33 @@ export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({ paths }) => 
     "As-salamu alaykum! Have a peaceful day.",
     "Hello! Lovely to see you around town.",
   ];
-  const npcs: NpcConfig[] = paths.map((path, index) => ({
-    id: `town-pedestrian-${path.map(([x, z]) => `${x.toFixed(3)},${z.toFixed(3)}`).join("|")}`,
-    name: `Neighbour ${index + 1}`,
-    role: roles[index % roles.length]!,
-    color: clothingColors[index % clothingColors.length]!,
-    speed: 0.09 + (index % 4) * 0.025,
-    path,
-    startDistance: pathLength(path) * (((index + 1) * 0.61803398875) % 1),
-    greeting: greetings[index % greetings.length]!,
-    startJunctionId: endpointCounts.get(junctionKey(path[0]!))! > 1 ? junctionKey(path[0]!) : undefined,
-    endJunctionId: endpointCounts.get(junctionKey(path[path.length - 1]!))! > 1 ? junctionKey(path[path.length - 1]!) : undefined,
-  }));
+  const npcs: NpcConfig[] = paths.map((path, index) => {
+    const startJunctionId = endpointCounts.get(junctionKey(path[0]!))! > 1
+      ? junctionKey(path[0]!)
+      : undefined;
+    const endJunctionId = endpointCounts.get(junctionKey(path[path.length - 1]!))! > 1
+      ? junctionKey(path[path.length - 1]!)
+      : undefined;
+    const length = pathLength(path);
+    const desiredStart = length * (((index + 1) * 0.61803398875) % 1);
+    const safeStart = startJunctionId ? 0.48 : 0;
+    const safeEnd = endJunctionId ? length - 0.48 : length;
+
+    return {
+      id: `town-pedestrian-${path.map(([x, z]) => `${x.toFixed(3)},${z.toFixed(3)}`).join("|")}`,
+      name: `Neighbour ${index + 1}`,
+      role: roles[index % roles.length]!,
+      color: clothingColors[index % clothingColors.length]!,
+      speed: 0.09 + (index % 4) * 0.025,
+      path,
+      startDistance: safeEnd >= safeStart
+        ? Math.min(Math.max(desiredStart, safeStart), safeEnd)
+        : length / 2,
+      greeting: greetings[index % greetings.length]!,
+      startJunctionId,
+      endJunctionId,
+    };
+  });
 
   return (
     <group>
