@@ -9,6 +9,7 @@ import {
   WORLD_MATERIAL,
   WORLD_PALETTE,
   WORLD_SCALE,
+  worldBuildingSurfaces,
   type WorldTone,
 } from "./world-theme";
 
@@ -496,7 +497,7 @@ export function WorldBusStops({
           {/* Rear shelter panel */}
           <mesh position={[0, roofHeight * 0.48, -shelterDepth * 0.4]}>
             <boxGeometry args={[shelterWidth * 0.82, roofHeight * 0.85, size * 0.045]} />
-            <WorldMaterial tone="concrete" />
+            <WorldMaterial tone="concrete" color={surfaces.trim} />
           </mesh>
 
           {/* Passenger bench */}
@@ -1003,6 +1004,7 @@ export function WorldHouse({
   detailed = false,
   rotation = 0,
   variant = "residential",
+  materialSeed = 0,
 }: {
   position: [number, number, number];
   width?: number;
@@ -1011,6 +1013,7 @@ export function WorldHouse({
   detailed?: boolean;
   rotation?: number;
   variant?: string;
+  materialSeed?: number;
   height?: number;
 }) {
   const isMarket = variant === "market" || variant === "food";
@@ -1022,6 +1025,7 @@ export function WorldHouse({
   const isMosque = variant === "mosque";
   const isWorship = variant === "worship" || isChurch || isMosque;
   const architecture = getDistrictArchitecture(variant);
+  const surfaces = worldBuildingSurfaces(materialSeed);
 
   const roofTone = isMarket
     ? "accent"
@@ -1050,14 +1054,14 @@ export function WorldHouse({
       {/* Main structure */}
       <mesh position={[0, height / 2 + 0.18, 0]} castShadow receiveShadow>
         <boxGeometry args={[width, height, depth]} />
-        <WorldMaterial tone="wall" />
+        <WorldMaterial tone="wall" color={surfaces.wall} />
       </mesh>
 
       {/* Main roof */}
       {architecture.roof !== "pitched" && (
         <mesh position={[0, height + 0.31, 0]} castShadow receiveShadow>
           <boxGeometry args={[width + 0.32, 0.24, depth + 0.32]} />
-          <WorldMaterial tone={roofTone} />
+          <WorldMaterial tone={roofTone} color={surfaces.roof} />
         </mesh>
       )}
 
