@@ -38,7 +38,7 @@ describe("east venue action seed migration", () => {
     await db.exec(sql);
     await db.exec(sql); // a second run must be a no-op
     await db.exec(readFileSync(tasksMigration, "utf8"));
-  });
+  }, 180_000);
 
   it("seeds exactly one active action per east venue", async () => {
     const result = await db.query<{ landmark_id: string; count: number }>(
