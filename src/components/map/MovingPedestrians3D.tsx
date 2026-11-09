@@ -3,7 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import type { Group } from "three";
 import { WorldMaterial } from "@/components/3d/WorldScene";
-import type { TownMobilityRoute } from "@/game/town-mobility";
+import { TownPedestrianJunctionScheduler, type TownMobilityRoute } from "@/game/town-mobility";
 
 export interface MovingPedestrians3DProps {
   paths: readonly TownMobilityRoute[];
@@ -18,6 +18,8 @@ interface NpcConfig {
   path: TownMobilityRoute;
   startDistance: number;
   greeting: string;
+  startJunctionId?: string;
+  endJunctionId?: string;
 }
 
 /**
@@ -30,6 +32,18 @@ interface NpcConfig {
  */
 export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({ paths }) => {
   const [activeSpeech, setActiveSpeech] = useState<{ id: string; text: string } | null>(null);
+  const junctionScheduler = useMemo(() => new TownPedestrianJunctionScheduler(), []);
+  const endpointCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    paths.forEach((path) => {
+      if (path.length < 2) return;
+      for (const endpoint of [path[0]!, path[path.length - 1]!]) {
+        const key = junctionKey(endpoint);
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+      }
+    });
+    return counts;
+  }, [paths]);
   const speechTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => () => {
@@ -62,6 +76,8 @@ export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({ paths }) => 
     path,
     startDistance: pathLength(path) * (((index + 1) * 0.61803398875) % 1),
     greeting: greetings[index % greetings.length]!,
+    startJunctionId: endpointCounts.get(junctionKey(path[0]!))! > 1 ? junctionKey(path[0]!) : undefined,
+    endJunctionId: endpointCounts.get(junctionKey(path[path.length - 1]!))! > 1 ? junctionKey(path[path.length - 1]!) : undefined,
   }));
 
   return (
@@ -70,6 +86,7 @@ export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({ paths }) => 
         <PedestrianCharacter
           key={npc.id}
           npc={npc}
+          junctionScheduler={junctionScheduler}
           onInteract={(text) => showSpeech(npc.id, text, 3000)}
           isSpeaking={activeSpeech?.id === npc.id}
           speechText={activeSpeech?.text}
@@ -81,11 +98,13 @@ export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({ paths }) => 
 
 function PedestrianCharacter({
   npc,
+  junctionScheduler,
   onInteract,
   isSpeaking,
   speechText,
 }: {
   npc: NpcConfig;
+  junctionScheduler: TownPedestrianJunctionScheduler;
   onInteract: (text: string) => void;
   isSpeaking: boolean;
   speechText?: string | undefined;
@@ -96,10 +115,16 @@ function PedestrianCharacter({
     () => locatePathDistance(npc.path, npc.startDistance),
     [npc.path, npc.startDistance],
   );
-  const currentSegment = useRef(initialPosition.segment);
+  const routeDistance = useRef(npc.startDistance);
   const travelDirection = useRef(1);
-  const progress = useRef(initialPosition.progress);
+  const activeJunction = useRef<string | null>(null);
+  const clearanceRadius = 0.38;
   const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => () => {
+    junctionScheduler.release(npc.startJunctionId ?? "", npc.id);
+    junctionScheduler.release(npc.endJunctionId ?? "", npc.id);
+  }, [junctionScheduler, npc.id, npc.startJunctionId, npc.endJunctionId]);
 
   useFrame(({ clock }, delta) => {
     if (!groupRef.current) return;
@@ -109,50 +134,57 @@ function PedestrianCharacter({
 
     if (routeLength < 0.001) return;
 
-    // Pedestrians walk to each end of their sidewalk run, then turn around.
-    // Preserve leftover frame time at segment boundaries and cap long pauses
-    // to one round trip so they never skip across the town.
+    // Advance along the route while reserving shared endpoints before entering
+    // their clearance zone. A pedestrian waits just short of the junction.
     let distanceToTravel = (speed * Math.max(0, delta) * 6) % (routeLength * 2);
+    let safetyIterations = 0;
 
-    while (distanceToTravel > 0) {
-      const nextIndex = currentSegment.current + travelDirection.current;
-      if (nextIndex < 0 || nextIndex >= path.length) {
-        travelDirection.current *= -1;
-        continue;
+    while (distanceToTravel > 0 && safetyIterations++ < path.length * 4 + 8) {
+      const destinationIsEnd = travelDirection.current > 0;
+      const junctionId = destinationIsEnd ? npc.endJunctionId : npc.startJunctionId;
+      const distanceToJunction = destinationIsEnd
+        ? routeLength - routeDistance.current
+        : routeDistance.current;
+
+      if (activeJunction.current && distanceToJunction > clearanceRadius) {
+        junctionScheduler.release(activeJunction.current, npc.id);
+        activeJunction.current = null;
       }
 
-      const start = path[currentSegment.current]!;
-      const end = path[nextIndex]!;
-      const segmentLength = Math.hypot(end[0] - start[0], end[1] - start[1]);
-
-      if (segmentLength < 0.001) {
-        currentSegment.current = nextIndex;
-        continue;
-      }
-
-      const remainingOnSegment = segmentLength * (1 - progress.current);
-      if (distanceToTravel >= remainingOnSegment) {
-        distanceToTravel -= remainingOnSegment;
-        currentSegment.current = nextIndex;
-        progress.current = 0;
-        if (currentSegment.current === 0 || currentSegment.current === path.length - 1) {
-          travelDirection.current *= -1;
+      if (junctionId && activeJunction.current !== junctionId
+        && distanceToJunction <= clearanceRadius + distanceToTravel) {
+        if (!junctionScheduler.request(junctionId, npc.id)) {
+          const safeAdvance = Math.max(0, distanceToJunction - clearanceRadius);
+          routeDistance.current += travelDirection.current * Math.min(distanceToTravel, safeAdvance);
+          distanceToTravel = 0;
+          break;
         }
+        activeJunction.current = junctionId;
+      }
+
+      const distanceToRouteEnd = destinationIsEnd ? routeLength - routeDistance.current : routeDistance.current;
+      const step = Math.min(distanceToTravel, Math.max(0, distanceToRouteEnd));
+      routeDistance.current += travelDirection.current * step;
+      distanceToTravel -= step;
+
+      if (distanceToRouteEnd <= step + 0.000001) {
+        travelDirection.current *= -1;
+        if (step < 0.000001) break;
       } else {
-        progress.current += distanceToTravel / segmentLength;
-        distanceToTravel = 0;
+        break;
       }
     }
 
-    const curP1 = path[currentSegment.current]!;
-    const followingIndex = currentSegment.current + travelDirection.current;
-    const curP2 = path[followingIndex]!;
+    // Release queued requests if this pedestrian is removed or its route changes.
+    const position = locatePathDistance(path, routeDistance.current);
+    const currentSegment = position.segment;
+    const curP1 = path[currentSegment]!;
+    const curP2 = path[currentSegment + 1]!;
     const curDx = curP2[0] - curP1[0];
     const curDz = curP2[1] - curP1[1];
-
-    const posX = curP1[0] + curDx * progress.current;
-    const posZ = curP1[1] + curDz * progress.current;
-    const angle = Math.atan2(curDx, curDz);
+    const posX = curP1[0] + curDx * position.progress;
+    const posZ = curP1[1] + curDz * position.progress;
+    const angle = Math.atan2(curDx * travelDirection.current, curDz * travelDirection.current);
 
     // Natural footstep bobbing
     const t = clock.getElapsedTime();
@@ -247,6 +279,10 @@ function PedestrianCharacter({
   );
 }
 
+
+function junctionKey(point: readonly [number, number]): string {
+  return `${point[0].toFixed(5)},${point[1].toFixed(5)}`;
+}
 
 function pathLength(path: TownMobilityRoute): number {
   return path.slice(1).reduce((total, point, index) => {
