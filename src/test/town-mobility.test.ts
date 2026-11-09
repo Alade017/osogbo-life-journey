@@ -2,6 +2,26 @@ import { describe, expect, it } from "vitest";
 import { deriveTownMobilityRoutes, deriveTownPedestrianCornerRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells, stitchTownPedestrianRoutes, TownPedestrianJunctionScheduler } from "@/game/town-mobility";
 import town from "@/data/osogbo-town.json";
 
+describe("town mobility input validation", () => {
+  it("returns no traffic or pedestrian routes for invalid cell dimensions", () => {
+    const rows = ["rrrr", "rggg", "rrrr"];
+
+    for (const cellSize of [0, -1, Number.NaN, Number.POSITIVE_INFINITY]) {
+      expect(deriveTownMobilityRoutes(rows, cellSize)).toEqual([]);
+      expect(deriveTownPedestrianRoutes(rows, cellSize, [])).toEqual([]);
+      expect(deriveTownPedestrianCornerRoutes(rows, cellSize)).toEqual([]);
+    }
+  });
+
+  it("rejects non-finite lane offsets and invalid sidewalk widths", () => {
+    const rows = ["rrrr", "rgrr", "rrrr"];
+
+    expect(deriveTownMobilityRoutes(rows, 2, Number.NaN)).toEqual([]);
+    expect(deriveTownPedestrianRoutes(rows, 2, [], -0.1)).toEqual([]);
+    expect(deriveTownPedestrianCornerRoutes(rows, 2, [], Number.POSITIVE_INFINITY)).toEqual([]);
+  });
+});
+
 describe("town mobility routes", () => {
   it("builds one closed loop for each adjacent road-grid block", () => {
     const routes = deriveTownMobilityRoutes(town.grid.rows, town.grid.cellSize, town.grid.cellSize * 0.22);
