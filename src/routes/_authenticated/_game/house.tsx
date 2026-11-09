@@ -820,6 +820,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       setDoorActionBusy(false);
       return;
     }
+    clearDepartureFromHome(takeDepartureFromHome() ?? { locationId: "", mode: "walk" });
     completeTransitionStep("Loading the neighbourhood");
     await navigate({ to: "/neighborhood" });
   };
@@ -996,14 +997,22 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const departureRan = useRef(false);
   /** A map trip started from inside the house runs here, once, when the house is ready. */
   useEffect(() => {
-    if (!serverState?.house || !isInsideHome || departureRan.current) return;
+    if (
+      !serverState?.house ||
+      !isInsideHome ||
+      departureRan.current ||
+      taskBusy ||
+      editing ||
+      isOffline ||
+      doorActionInProgress.current
+    ) return;
     const departure = takeDepartureFromHome();
     if (!departure) return;
     departureRan.current = true;
     void leaveForTrip(departure);
     // The trip runs once per arrival in the house; the handler reads current room state.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [serverState?.house?.id, isInsideHome]);
+  }, [serverState?.house?.id, isInsideHome, taskBusy, editing, isOffline]);
   const retryDeparture = () => {
     if (!failedDeparture || doorActionInProgress.current) return;
     setActivityError("");
