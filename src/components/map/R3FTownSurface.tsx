@@ -47,6 +47,7 @@ import { isMapTargetSelectionAllowed } from "@/game/map-gesture";
 type Props = PhaserMapData &
   PhaserMapCallbacks & {
     onSelectProperty?: (property: import("@/components/map/MapCanvas").MapProperty) => void;
+    selectedPropertyId?: string | null;
     eventChips: readonly { id: string; label: string; x: number; y: number }[];
     onSelectEvent?: (landmarkId: string) => void;
     onReady: () => void;
@@ -1109,7 +1110,7 @@ export function R3FTownSurface(props: Props) {
               property={property}
               cellSize={cell}
               isNight={isNight}
-              isSelected={selectedTarget?.id === property.id}
+              isSelected={selectedTarget?.id === property.id || props.selectedPropertyId === property.id}
               isHovered={hoveredTargetId === property.id}
               onClick={(event) =>
                 select(event, () => {
