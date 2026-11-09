@@ -198,6 +198,17 @@ describe("map travel database actions", () => {
       "select public.start_osun_town_travel($1,'ede',$2) as result",
       [userId,"newest-character-town-trip-01"],
     );
+    const replay = await db.query<{ result: Record<string, unknown> }>(
+      "select public.start_osun_town_travel($1,'ede',$2) as result",
+      [userId,"newest-character-town-trip-01"],
+    );
+    expect(replay.rows[0]?.result).toMatchObject({ duplicate: true, to_town_id: "ede" });
+    await expect(
+      db.query(
+        "select public.start_osun_town_travel($1,'osogbo',$2)",
+        [userId,"newest-character-town-trip-01"],
+      ),
+    ).rejects.toThrow(/IDEMPOTENCY_CONFLICT/);
     const trip = await db.query<{ character_id: string }>(
       "select character_id from public.osun_town_travels where idempotency_key=$1",
       ["newest-character-town-trip-01"],
