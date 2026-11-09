@@ -487,14 +487,16 @@ export const rpc = {
     buildingSlug: string | null;
     expectedRevision: number;
     requestId: string;
+    characterId: string;
   }) =>
     unwrap(
-      await supabase.rpc("save_player_world_position", {
+      await supabase.rpc("save_player_world_position_for_character", {
         p_world_x: args.worldX,
         p_world_y: args.worldY,
         p_building_slug: args.buildingSlug ?? "",
         p_expected_revision: args.expectedRevision,
         p_request_id: args.requestId,
+        p_expected_character_id: args.characterId,
       }),
     ) as Json,
   travelToCityLocation: async (args: {
@@ -504,15 +506,17 @@ export const rpc = {
     worldY: number;
     expectedRevision: number;
     requestId: string;
+    characterId: string;
   }) =>
     unwrap(
-      await supabase.rpc("travel_to_city_location", {
+      await supabase.rpc("travel_to_city_location_for_character", {
         p_location_id: args.locationId,
         p_mode: args.mode,
         p_world_x: args.worldX,
         p_world_y: args.worldY,
         p_expected_revision: args.expectedRevision,
         p_request_id: args.requestId,
+        p_expected_character_id: args.characterId,
       }),
     ) as Json,
   saveMyHome: async (payload: Json, expectedRevision: number) =>
