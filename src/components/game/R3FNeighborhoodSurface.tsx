@@ -23,7 +23,7 @@ import {
   type NeighborhoodObject,
 } from "@/game/neighborhood-model";
 import { neighborhoodBuildingFootprint, neighborhoodObstacleFootprint } from "@/game/neighborhood-geometry";
-import { neighborhoodNpcAvoidanceBias, neighborhoodNpcAvoidanceStep, neighborhoodNpcPathWithFallback, neighborhoodNpcReplanDelay } from "@/game/neighborhood-npc-layout";
+import { neighborhoodNpcAvoidanceBias, neighborhoodNpcAvoidanceStep, neighborhoodNpcPathWithFallback, neighborhoodNpcReplanDelay, neighborhoodNpcReservationPath } from "@/game/neighborhood-npc-layout";
 import {
   WorldCamera,
   WorldCars,
@@ -153,16 +153,15 @@ function NeighborhoodNpcActor({
       return;
     }
     const actor = group.current;
-    const remaining = routeWaypoints.current
-      .slice(waypointIndex.current)
-      .map(([x, , y]) => ({ x, y }));
-    const current = actor ? { x: actor.position.x, y: actor.position.z } : remaining[0];
-    actorRoutes.current.set(
-      npc.id,
-      current ? [current, ...remaining.filter((point) =>
-        Math.hypot(point.x - current.x, point.y - current.y) > 0.035,
-      )] : remaining,
+    const waypoints = routeWaypoints.current.map(([x, , y]) => ({ x, y }));
+    const current = actor ? { x: actor.position.x, y: actor.position.z } : null;
+    const reservation = neighborhoodNpcReservationPath(
+      current,
+      waypoints,
+      waypointIndex.current,
     );
+    if (reservation.length > 1) actorRoutes.current.set(npc.id, reservation);
+    else actorRoutes.current.delete(npc.id);
   }, [actorRoutes, npc.id, npc.isMoving, npc.isPaused]);
 
   // Simulation updates may recreate an equivalent route. When its geometry or
