@@ -104,6 +104,15 @@ export function MapCanvas({
     setSelectedPropertyId(property.id);
     onSelectProperty?.(property);
   }, [onSelectProperty]);
+  useEffect(() => {
+    if (
+      selectedPropertyId &&
+      properties &&
+      !properties.some((property) => property.id === selectedPropertyId)
+    ) {
+      setSelectedPropertyId(null);
+    }
+  }, [properties, selectedPropertyId]);
 
   useEffect(() => {
     if (!searchTarget) return;
