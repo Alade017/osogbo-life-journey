@@ -806,7 +806,11 @@ export function R3FTownSurface(props: Props) {
     });
 
     // Keep trees off reserved plots, water and the ground-level sidewalk corridor.
-    [...town.grid.waterCells, ...town.grid.plotCells, ...deriveTownSidewalkCells(town.grid.rows)].forEach(([x, z]) => {
+    [
+      ...town.grid.waterCells,
+      ...town.grid.plotCells,
+      ...deriveTownSidewalkCells(town.grid.rows),
+    ].forEach(([x, z]) => {
       occupied.add(`${x},${z}`);
     });
 
