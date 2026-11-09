@@ -355,6 +355,15 @@ describe("opposing NPC traffic", () => {
     ).toBeNull();
   });
 
+  it("does not yield without a live opposing waypoint or for the same actor", () => {
+    expect(
+      neighborhoodNpcYieldPoint("npc-zeta", "npc-alpha", current, waypoint, otherCurrent, undefined),
+    ).toBeNull();
+    expect(
+      neighborhoodNpcYieldPoint("npc-alpha", "npc-alpha", current, waypoint, otherCurrent, otherWaypoint),
+    ).toBeNull();
+  });
+
   it("does not yield when opposing actors are not close enough to conflict", () => {
     expect(
       neighborhoodNpcYieldPoint("npc-zeta", "npc-alpha", current, waypoint, { x: 20, y: 0 }, { x: 10, y: 0 }),
