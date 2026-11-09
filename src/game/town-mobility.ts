@@ -135,3 +135,49 @@ export function deriveTownPedestrianRoutes(
 
   return routes;
 }
+
+
+/**
+ * Builds L-shaped pedestrian paths through rendered outer sidewalk-corner tiles.
+ * A connector exists only when both adjoining sidewalk strips and their diagonal
+ * grass corner are present and unblocked, matching R3FTownSurface geometry.
+ */
+export function deriveTownPedestrianCornerRoutes(
+  rows: readonly string[],
+  cellSize: number,
+  blockedCells: readonly (readonly [number, number])[],
+  sidewalkWidth = cellSize * 0.28,
+): TownMobilityRoute[] {
+  const columnCount = Math.max(0, ...rows.map((row) => row.length));
+  const blocked = new Set(blockedCells.map(([x, z]) => `${x},${z}`));
+  const offset = cellSize / 2 + sidewalkWidth / 2;
+  const routes: TownMobilityRoute[] = [];
+
+  rows.forEach((row, z) => {
+    Array.from(row).forEach((tile, x) => {
+      if (tile !== "r") return;
+      const centerX = (x - (columnCount - 1) / 2) * cellSize;
+      const centerZ = (z - (rows.length - 1) / 2) * cellSize;
+
+      for (const dx of [-1, 1] as const) {
+        for (const dz of [-1, 1] as const) {
+          const horizontalCell = [x, z + dz] as const;
+          const verticalCell = [x + dx, z] as const;
+          const diagonalCell = [x + dx, z + dz] as const;
+          if (rows[horizontalCell[1]]?.[horizontalCell[0]] !== "g") continue;
+          if (rows[verticalCell[1]]?.[verticalCell[0]] !== "g") continue;
+          if (rows[diagonalCell[1]]?.[diagonalCell[0]] !== "g") continue;
+          if ([horizontalCell, verticalCell, diagonalCell].some(([cellX, cellZ]) => blocked.has(`${cellX},${cellZ}`))) continue;
+
+          routes.push([
+            [centerX, centerZ + dz * offset],
+            [centerX + dx * offset, centerZ + dz * offset],
+            [centerX + dx * offset, centerZ],
+          ]);
+        }
+      }
+    });
+  });
+
+  return routes;
+}
