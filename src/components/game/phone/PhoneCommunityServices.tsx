@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { foodDeliveryService, type FoodDelivery } from "@/lib/food-delivery-service";
 import { formatNaira, q } from "@/lib/game";
 import { PaletteSelect } from "@/components/ui/palette-select";
-import { Bike, MapPin } from "lucide-react";
+import { Bike, MapPin, UtensilsCrossed } from "lucide-react";
 
 type ServiceApp = "Calendar" | "Food Delivery" | "Okada Rides" | "Contribution";
 type TownEvent = { id: string; title: string; venue: string; starts_at: string };
@@ -320,7 +320,10 @@ function FoodApp() {
   return (
     <div className="phone-service-screen food-app">
       <header className="food-hero">
-        <div>
+        <span className="food-hero-icon">
+          <UtensilsCrossed aria-hidden="true" />
+        </span>
+        <div className="food-hero-copy">
           <p className="food-eyebrow">Town kitchens</p>
           <h2>Food delivery</h2>
           <p>Choose your food, type the portions, and we will bring it to you.</p>

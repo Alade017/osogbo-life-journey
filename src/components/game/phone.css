@@ -2856,26 +2856,69 @@
 }
 
 .phone-service-screen .food-hero {
-  padding: 0.9rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
   border: 1px solid var(--border);
-  border-radius: 1rem;
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--primary) 18%, var(--card)),
-    var(--card)
-  );
+  border-radius: 18px;
+  background: var(--card);
+  box-shadow: var(--elevation-card);
 }
 
-.phone-service-screen .food-hero h3 {
+.phone-service-screen .food-hero-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.phone-service-screen .food-hero-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.phone-service-screen .food-hero-copy {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.phone-service-screen .food-eyebrow {
   margin: 0;
-  font-size: 1rem;
+  color: var(--primary);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.phone-service-screen .food-hero h2 {
+  margin: 0.1rem 0 0;
+  color: var(--brand-ink);
+  font-size: 1.1rem;
   font-weight: 800;
 }
 
-.phone-service-screen .food-hero p {
+.phone-service-screen .food-hero-copy > p:last-child {
   margin: 0.2rem 0 0;
   color: var(--muted-foreground);
-  font-size: 0.75rem;
+  font-size: 0.78rem;
+}
+
+.phone-service-screen .food-wallet {
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 0.74rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .phone-service-screen .food-card {
