@@ -727,22 +727,6 @@ export function WorldRoadsideShops({
             ))}
           </group>
 
-          {/* A compact frontage shade protects the counter without hiding the signboard. */}
-          <mesh position={[0, wallHeight * 0.77, shopDepth * 0.53]} castShadow>
-            <boxGeometry args={[shopWidth * 0.82, size * 0.045, size * 0.24]} />
-            <WorldMaterial tone="metal" color="#66716d" />
-          </mesh>
-          {[-1, 1].map((side) => (
-            <mesh
-              key={`awning-bracket-${side}`}
-              position={[side * shopWidth * 0.34, wallHeight * 0.69, shopDepth * 0.48]}
-              rotation={[0, 0, side * -0.32]}
-            >
-              <boxGeometry args={[size * 0.035, wallHeight * 0.2, size * 0.035]} />
-              <WorldMaterial tone="metal" />
-            </mesh>
-          ))}
-
           {/* Shop signboard */}
           <mesh position={[0, wallHeight * 0.88, shopDepth * 0.49]}>
             <boxGeometry args={[shopWidth * 0.78, size * 0.17, size * 0.055]} />
