@@ -65,7 +65,6 @@ export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ cellSize, paths }) =
         <TrafficVehicle
           key={v.id}
           config={v}
-          cellSize={cellSize}
           onInteract={(text) => showSpeech(v.id, text, 3200)}
           isSpeaking={activeSpeech?.id === v.id}
           speechText={activeSpeech?.text}
@@ -77,13 +76,11 @@ export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ cellSize, paths }) =
 
 function TrafficVehicle({
   config,
-  cellSize,
   onInteract,
   isSpeaking,
   speechText,
 }: {
   config: VehicleConfig;
-  cellSize: number;
   onInteract: (text: string) => void;
   isSpeaking: boolean;
   speechText?: string | undefined;
@@ -105,7 +102,7 @@ function TrafficVehicle({
     const dz = p2[1] - p1[1];
     const segmentLength = Math.hypot(dx, dz);
 
-    progress.current += (speed * delta * cellSize * 4) / Math.max(segmentLength, 0.1);
+    progress.current += (speed * delta * 8) / Math.max(segmentLength, 0.1);
 
     if (progress.current >= 1.0) {
       progress.current = 0;
