@@ -709,16 +709,41 @@ export function WorldRoadsideShops({
             <WorldMaterial tone="accent" />
           </mesh>
 
-          {/* Product crates */}
+          {/* Open product crates use spaced boards and corner uprights. */}
           {[-1, 1].map((side) => (
-            <mesh
+            <group
               key={`crate-${side}`}
               position={[side * shopWidth * 0.42, size * 0.12, shopDepth * 0.72]}
-              castShadow
             >
-              <boxGeometry args={[size * 0.2, size * 0.24, size * 0.2]} />
-              <WorldMaterial tone="timber" />
-            </mesh>
+              <mesh position={[0, -size * 0.105, 0]}>
+                <boxGeometry args={[size * 0.2, size * 0.025, size * 0.2]} />
+                <WorldMaterial tone="timber" />
+              </mesh>
+              {[-1, 1].flatMap((edge) =>
+                [0, 1].map((level) => (
+                  <mesh
+                    key={`crate-board-${edge}-${level}`}
+                    position={[edge * size * 0.092, (level - 0.2) * size * 0.12, 0]}
+                    castShadow
+                  >
+                    <boxGeometry args={[size * 0.016, size * 0.045, size * 0.2]} />
+                    <WorldMaterial tone="clay" />
+                  </mesh>
+                )),
+              )}
+              {[-1, 1].flatMap((edge) =>
+                [0, 1].map((level) => (
+                  <mesh
+                    key={`crate-end-${edge}-${level}`}
+                    position={[0, (level - 0.2) * size * 0.12, edge * size * 0.092]}
+                    castShadow
+                  >
+                    <boxGeometry args={[size * 0.2, size * 0.045, size * 0.016]} />
+                    <WorldMaterial tone="timber" />
+                  </mesh>
+                )),
+              )}
+            </group>
           ))}
         </group>
       ))}
