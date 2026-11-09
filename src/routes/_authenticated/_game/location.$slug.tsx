@@ -265,7 +265,9 @@ function LocationPage() {
     if (character?.inside_home_property_id) {
       // Leaving a house plays the door first; the house screen runs the trip alongside it.
       if (!character?.id || !character.current_location_id) {
-        toast.error("Your active character and current location could not be confirmed. Refresh and try again.");
+        toast.error(
+          "Your active character and current location could not be confirmed. Refresh and try again.",
+        );
         return;
       }
       const departure = requestDepartureFromHome({
@@ -281,7 +283,11 @@ function LocationPage() {
     travelStartTimer.current = window.setTimeout(
       () => {
         travelStartTimer.current = null;
-        travel.mutate({ locationId: loc.id, mode: travelState.mode, characterId: character.id });
+        travel.mutate({
+          locationId: loc.id,
+          mode: travelState.mode,
+          characterId: character.id,
+        });
       },
       travelAnimationDurationMs(travelState.estimatedMinutes ?? 1),
     );
