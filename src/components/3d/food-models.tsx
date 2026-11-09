@@ -151,6 +151,17 @@ function Akara() {
 function MeatPie() {
   return (
     <group>
+      {/* Folded unbranded bakery-paper cradle. */}
+      <mesh position={[0, 0.035, 0]} rotation={[0, 0, 0]}>
+        <boxGeometry args={[1.08, 0.035, 0.82]} />
+        {mat("#e5d5b5", 0.95)}
+      </mesh>
+      {[-1, 1].map((side) => (
+        <mesh key={side} position={[side * 0.52, 0.13, 0]} rotation={[0, 0, side * -0.16]}>
+          <boxGeometry args={[0.035, 0.22, 0.82]} />
+          {mat("#e5d5b5", 0.95)}
+        </mesh>
+      ))}
       <mesh position={[0, 0.1, 0]} rotation={[0, 0, 0]} castShadow>
         <cylinderGeometry args={[0.5, 0.5, 0.2, 28, 1, false, 0, Math.PI]} />
         {mat("#c98a3a", 0.7)}
