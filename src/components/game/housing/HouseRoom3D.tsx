@@ -973,10 +973,50 @@ export function FurnitureFallback({
         >
           <meshStandardMaterial color={FURNITURE_COLOURS.bedLinen} roughness={0.5} />
         </RoundedBox>
-        <mesh position={[-0.06, 0.15, 0.185]}>
-          <boxGeometry args={[0.32, 0.2, 0.01]} />
-          <meshStandardMaterial color={FURNITURE_COLOURS.screen} roughness={0.2} metalness={0.3} />
+        {/* Recessed door frame and dark viewing window. */}
+        <RoundedBox
+          position={[-0.075, 0.15, 0.185]}
+          args={[0.34, 0.23, 0.018]}
+          radius={0.012}
+          smoothness={3}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.screenBezel} roughness={0.42} />
+        </RoundedBox>
+        <mesh position={[-0.075, 0.15, 0.197]}>
+          <boxGeometry args={[0.29, 0.18, 0.008]} />
+          <meshStandardMaterial
+            color={FURNITURE_COLOURS.screen}
+            roughness={0.2}
+            metalness={0.25}
+          />
         </mesh>
+        {/* Right-side control strip with display and two tactile dials. */}
+        <mesh position={[0.18, 0.22, 0.188]}>
+          <boxGeometry args={[0.075, 0.055, 0.012]} />
+          <meshStandardMaterial color={FURNITURE_COLOURS.screen} emissive="#263b42" emissiveIntensity={0.18} />
+        </mesh>
+        {[0.11, 0.19].map((y) => (
+          <mesh key={y} position={[0.18, y, 0.2]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.022, 0.022, 0.018, 16]} />
+            <meshStandardMaterial color={FURNITURE_COLOURS.screenBezel} metalness={0.35} roughness={0.42} />
+          </mesh>
+        ))}
+        {/* Subtle lower ventilation slots. */}
+        {[-0.12, -0.075, -0.03, 0.015, 0.06].map((x) => (
+          <mesh key={x} position={[x, 0.025, 0.184]}>
+            <boxGeometry args={[0.025, 0.008, 0.006]} />
+            <meshStandardMaterial color={FURNITURE_COLOURS.screenBezel} />
+          </mesh>
+        ))}
+        {/* Four small feet lift the casing from the counter. */}
+        {[-1, 1].flatMap((x) =>
+          [-1, 1].map((z) => (
+            <mesh key={`${x}-${z}`} position={[x * 0.19, -0.012, z * 0.13]}>
+              <boxGeometry args={[0.07, 0.025, 0.07]} />
+              <meshStandardMaterial color={FURNITURE_COLOURS.screenBezel} roughness={0.85} />
+            </mesh>
+          )),
+        )}
       </group>
     );
   if (kind === "deep-freezer")
