@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { deriveTownMobilityRoutes } from "@/game/town-mobility";
+import { deriveTownMobilityRoutes, deriveTownPedestrianRoutes } from "@/game/town-mobility";
 import town from "@/data/osogbo-town.json";
 
 describe("town mobility routes", () => {
   it("builds one closed loop for each adjacent road-grid block", () => {
-    const routes = deriveTownMobilityRoutes(town.grid.rows, town.grid.cellSize, town.grid.cellSize * 0.16);
+    const routes = deriveTownMobilityRoutes(town.grid.rows, town.grid.cellSize, town.grid.cellSize * 0.22);
 
     // Four horizontal avenues and three continuous vertical roads form
     // three adjacent avenue pairs by two adjacent vertical-road pairs.
@@ -55,4 +55,50 @@ describe("town mobility routes", () => {
     expect(laneSeparation).toBeGreaterThan(0.72);
   });
 
+});
+
+
+describe("town pedestrian routes", () => {
+  const blockedCells = [
+    ...town.grid.buildings.flatMap((building) =>
+      [0, 1].flatMap((dx) => [0, 1].map((dz) => [building.x + dx, building.z + dz] as const)),
+    ),
+    ...town.grid.waterCells,
+    ...town.grid.plotCells,
+  ];
+
+  it("keeps every pedestrian waypoint on an unblocked grass cell beside a road", () => {
+    const routes = deriveTownPedestrianRoutes(town.grid.rows, town.grid.cellSize, blockedCells);
+    const blocked = new Set(blockedCells.map(([x, z]) => `${x},${z}`));
+
+    expect(routes.length).toBeGreaterThan(0);
+    for (const route of routes) {
+      expect(route.length).toBeGreaterThanOrEqual(3);
+      for (const [worldX, worldZ] of route) {
+        const x = Math.round(worldX / town.grid.cellSize + (Math.max(...town.grid.rows.map((row) => row.length)) - 1) / 2);
+        const z = Math.round(worldZ / town.grid.cellSize + (town.grid.rows.length - 1) / 2);
+        expect(town.grid.rows[z]?.[x]).toBe("g");
+        expect(blocked.has(`${x},${z}`)).toBe(false);
+        const besideRoad = [
+          town.grid.rows[z]?.[x - 1],
+          town.grid.rows[z]?.[x + 1],
+          town.grid.rows[z - 1]?.[x],
+          town.grid.rows[z + 1]?.[x],
+        ].includes("r");
+        expect(besideRoad).toBe(true);
+      }
+    }
+  });
+
+  it("splits pedestrian runs at blocked sidewalk cells", () => {
+    const routes = deriveTownPedestrianRoutes(
+      ["rrrrrrr", "ggggggg", "rrrrrrr"],
+      2,
+      [[3, 1]],
+    );
+
+    expect(routes).toHaveLength(2);
+    expect(routes.every((route) => route.length >= 3)).toBe(true);
+    expect(routes.flat()).not.toContainEqual([0, 0]);
+  });
 });
