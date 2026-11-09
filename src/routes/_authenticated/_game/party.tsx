@@ -333,7 +333,11 @@ function ClubsTab({
     const actionCharacterId = characterId;
     if (!actionCharacterId) return;
     dance
-      .mutateAsync({ npcSlug, requestId: newPartyRequestId() })
+      .mutateAsync({
+        npcSlug,
+        requestId: newPartyRequestId(),
+        characterId: actionCharacterId,
+      })
       .then(() =>
         room.sendDance(
           { from: "You", partner: "npc", npcSlug },
