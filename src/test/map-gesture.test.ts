@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   isQuickMapTap,
+  isMapTargetTapAllowed,
   mapPinchZoomFactor,
   MAP_TAP_MAX_DISTANCE,
   MAP_TAP_MAX_DURATION_MS,
@@ -64,5 +65,23 @@ describe("map pinch zoom", () => {
     expect(mapPinchZoomFactor(20, 0)).toBeNull();
     expect(mapPinchZoomFactor(-1, 20)).toBeNull();
     expect(mapPinchZoomFactor(20, Number.POSITIVE_INFINITY)).toBeNull();
+  });
+});
+
+describe("Phaser target activation guard", () => {
+  const start = { x: 30, y: 40, at: 100 };
+
+  it("allows an uninterrupted single-pointer tap", () => {
+    expect(isMapTargetTapAllowed(start, { x: 32, y: 42, at: 300 }, false)).toBe(true);
+  });
+
+  it("rejects a tap after a drag or pinch was detected", () => {
+    const end = { x: 32, y: 42, at: 300 };
+    expect(isMapTargetTapAllowed(start, end, true)).toBe(false);
+  });
+
+  it("rejects a long press and a movement beyond tap tolerance", () => {
+    expect(isMapTargetTapAllowed(start, { x: 30, y: 40, at: 700 }, false)).toBe(false);
+    expect(isMapTargetTapAllowed(start, { x: 36, y: 40, at: 200 }, false)).toBe(false);
   });
 });
