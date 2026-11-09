@@ -157,11 +157,12 @@ function NeighborhoodNpcActor({
       routeTargetRef.current = targetKey;
       const actor = group.current;
       const rerouted = actor
-        ? neighborhoodNpcPath(
+        ? neighborhoodNpcPathWithFallback(
             { x: actor.position.x, y: actor.position.z },
             { x: target[0], y: target[2] },
             occupiedFootprints,
             sceneBounds,
+            reservedPaths,
           )
         : null;
       if (rerouted?.length) {
