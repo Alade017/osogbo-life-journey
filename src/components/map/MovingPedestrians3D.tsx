@@ -100,21 +100,44 @@ function PedestrianCharacter({
     const { path, speed } = npc;
     if (path.length < 2) return;
 
-    const p1 = path[currentSegment.current]!;
-    const nextIdx = currentSegment.current + travelDirection.current;
-    const p2 = path[nextIdx]!;
+    const routeLength = path.slice(1).reduce((total, point, index) => {
+      const previous = path[index]!;
+      return total + Math.hypot(point[0] - previous[0], point[1] - previous[1]);
+    }, 0);
+    if (routeLength < 0.001) return;
 
-    const dx = p2[0] - p1[0];
-    const dz = p2[1] - p1[1];
-    const segmentLength = Math.hypot(dx, dz);
+    // Pedestrians walk to each end of their sidewalk run, then turn around.
+    // Preserve leftover frame time at segment boundaries and cap long pauses
+    // to one round trip so they never skip across the town.
+    let distanceToTravel = (speed * Math.max(0, delta) * 6) % (routeLength * 2);
 
-    progress.current += (speed * delta * 6) / Math.max(segmentLength, 0.1);
-
-    if (progress.current >= 1.0) {
-      progress.current = 0;
-      currentSegment.current = nextIdx;
-      if (nextIdx === 0 || nextIdx === path.length - 1) {
+    while (distanceToTravel > 0) {
+      const nextIndex = currentSegment.current + travelDirection.current;
+      if (nextIndex < 0 || nextIndex >= path.length) {
         travelDirection.current *= -1;
+        continue;
+      }
+
+      const start = path[currentSegment.current]!;
+      const end = path[nextIndex]!;
+      const segmentLength = Math.hypot(end[0] - start[0], end[1] - start[1]);
+
+      if (segmentLength < 0.001) {
+        currentSegment.current = nextIndex;
+        continue;
+      }
+
+      const remainingOnSegment = segmentLength * (1 - progress.current);
+      if (distanceToTravel >= remainingOnSegment) {
+        distanceToTravel -= remainingOnSegment;
+        currentSegment.current = nextIndex;
+        progress.current = 0;
+        if (currentSegment.current === 0 || currentSegment.current === path.length - 1) {
+          travelDirection.current *= -1;
+        }
+      } else {
+        progress.current += distanceToTravel / segmentLength;
+        distanceToTravel = 0;
       }
     }
 
