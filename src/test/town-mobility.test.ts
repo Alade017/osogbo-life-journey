@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deriveTownMobilityRoutes, deriveTownPedestrianCornerRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells, stitchTownPedestrianRoutes } from "@/game/town-mobility";
+import { deriveTownMobilityRoutes, deriveTownPedestrianCornerRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells, stitchTownPedestrianRoutes, TownPedestrianJunctionScheduler } from "@/game/town-mobility";
 import town from "@/data/osogbo-town.json";
 
 describe("town mobility routes", () => {
@@ -212,5 +212,34 @@ describe("pedestrian route stitching edge deduplication", () => {
     ]);
 
     expect(routes).toEqual([[[0, 0], [1, 0]]]);
+  });
+});
+
+
+describe("pedestrian junction reservations", () => {
+  it("grants exclusive access and serves queued pedestrians in arrival order", () => {
+    const scheduler = new TownPedestrianJunctionScheduler();
+
+    expect(scheduler.request("junction-a", "pedestrian-1")).toBe(true);
+    expect(scheduler.request("junction-a", "pedestrian-2")).toBe(false);
+    expect(scheduler.request("junction-a", "pedestrian-3")).toBe(false);
+    scheduler.release("junction-a", "pedestrian-1");
+
+    expect(scheduler.request("junction-a", "pedestrian-3")).toBe(false);
+    expect(scheduler.request("junction-a", "pedestrian-2")).toBe(true);
+    scheduler.release("junction-a", "pedestrian-2");
+    expect(scheduler.request("junction-a", "pedestrian-3")).toBe(true);
+  });
+
+  it("allows independent junctions and removes cancelled waiters", () => {
+    const scheduler = new TownPedestrianJunctionScheduler();
+
+    expect(scheduler.request("junction-a", "pedestrian-1")).toBe(true);
+    expect(scheduler.request("junction-a", "pedestrian-2")).toBe(false);
+    expect(scheduler.request("junction-b", "pedestrian-3")).toBe(true);
+    scheduler.release("junction-a", "pedestrian-2");
+    scheduler.release("junction-a", "pedestrian-1");
+
+    expect(scheduler.request("junction-a", "pedestrian-3")).toBe(true);
   });
 });
