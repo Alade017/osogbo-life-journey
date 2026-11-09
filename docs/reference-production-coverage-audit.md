@@ -141,3 +141,14 @@ The pedestrian renderer previously advanced only one segment boundary per frame 
 Added route tests verify that authored-town waypoints resolve to unblocked grass cells adjacent to roads, and that a blocked sidewalk cell splits a run rather than being crossed. The traffic inset regression assertion was also aligned to the current 0.22-cell route offset.
 
 **Scope limitation:** the current pedestrian system follows open sidewalk runs and turns around at their ends; it does not route across marked pedestrian crossings or perform dynamic collision avoidance with other pedestrians. Since the paths stay on grass cells beside roads, they are separated from traffic lanes at the route-data level. Live verification is still needed for character footprints, curb edges, sidewalk props and dense NPC overlap. No runtime tests/build or browser QA have been run in this pass.
+
+
+## Pedestrian waypoint alignment with rendered sidewalks
+
+A further placement mismatch was identified: pedestrian route points were at the centre of the adjacent grass grid cell, but the rendered sidewalk is a narrow strip immediately beside the road tile. NPCs could therefore appear to walk on grass rather than on the pavement.
+
+The route builder now keeps each side of a road as a separate run and offsets each waypoint to the centre of the actual sidewalk strip. The offset is derived from the same sidewalk width ratio used by the R3F sidewalk geometry (0.28 of a road cell), so a future cell-size change remains proportional. Blocked grass cells still split the route and are not traversed. Both horizontal and vertical road edges are handled independently.
+
+Regression tests now assert that every authored-town waypoint is centred at the sidewalk-strip offset from a road cell, points to an unblocked adjacent grass cell, and that a blocked sidewalk tile splits both sides into separate runs. The change affects pedestrian path placement only; road geometry, curb dimensions, pedestrian model dimensions and vehicle routes are unchanged.
+
+Live inspection is still required to verify the character foot placement against the curb and pavement in the rendered scene. No local tests/build or browser QA were run, and no GitHub Actions were triggered.
