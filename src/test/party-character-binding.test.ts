@@ -127,6 +127,8 @@ describe("character-bound party mutation RPCs", () => {
           or has_function_privilege('authenticated','public.leave_club(uuid)','execute')
           or has_function_privilege('authenticated','public.join_club_activity(text,uuid)','execute')
           or has_function_privilege('authenticated','public.buy_drink(text,uuid)','execute')
+          or has_function_privilege('authenticated','public.dance_with_npc(text,uuid)','execute')
+          or has_function_privilege('authenticated','public.dance_with_npc_for_character(text,uuid,uuid)','execute')
           or has_function_privilege('authenticated','public.dance_with_player(uuid,uuid)','execute')
           or has_function_privilege('authenticated','public.host_party_event(uuid,text,timestamptz,jsonb,uuid)','execute')
           or has_function_privilege('authenticated','public.respond_to_event(uuid,uuid)','execute')
