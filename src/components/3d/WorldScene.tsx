@@ -452,6 +452,21 @@ export function WorldWasteBins({
           scale: [size * 0.38, size * 0.07, size * 0.38],
         }))}
       />
+      {/* A recessed front opening and raised foot make the bin read clearly at map scale. */}
+      <WorldInstances
+        tone="drainage"
+        items={positions.map(([x, z]) => ({
+          position: [x, size * 0.34, z + size * 0.163],
+          scale: [size * 0.19, size * 0.055, size * 0.012],
+        }))}
+      />
+      <WorldInstances
+        tone="metal"
+        items={positions.map(([x, z]) => ({
+          position: [x, size * 0.035, z],
+          scale: [size * 0.35, size * 0.07, size * 0.35],
+        }))}
+      />
     </>
   );
 }
