@@ -1471,6 +1471,18 @@ export function WorldHouse({
               <WorldMaterial tone="metal" />
             </mesh>
           ))}
+          {/* Food premises get a short segmented fabric valance beneath the serving awning. */}
+          {variant === "food" &&
+            Array.from({ length: 5 }, (_, segment) => (
+              <mesh
+                key={`food-awning-valance-${segment}`}
+                position={[(segment - 2) * width * 0.215, -0.145, 0.31]}
+                castShadow
+              >
+                <boxGeometry args={[width * 0.19, 0.12, 0.045]} />
+                <WorldMaterial tone={segment % 2 === 0 ? "linen" : architecture.accent} />
+              </mesh>
+            ))}
         </group>
       )}
       {architecture.frontage === "portico" && (
