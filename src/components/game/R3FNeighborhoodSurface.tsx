@@ -23,7 +23,7 @@ import {
   type NeighborhoodObject,
 } from "@/game/neighborhood-model";
 import { neighborhoodBuildingFootprint, neighborhoodObstacleFootprint } from "@/game/neighborhood-geometry";
-import { neighborhoodNpcAvoidanceStep, neighborhoodNpcPath } from "@/game/neighborhood-npc-layout";
+import { neighborhoodNpcAvoidanceStep, neighborhoodNpcPath, neighborhoodNpcReplanDelay } from "@/game/neighborhood-npc-layout";
 import {
   WorldCamera,
   WorldCars,
@@ -134,6 +134,7 @@ function NeighborhoodNpcActor({
   const waypointIndex = useRef(0);
   const routeWaypoints = useRef(waypoints);
   const blockedDuration = useRef(0);
+  const replanDelay = neighborhoodNpcReplanDelay(npc.id);
   const pauseSnapshotSaved = useRef(false);
   useEffect(() => {
     waypointIndex.current = 0;
@@ -218,7 +219,7 @@ function NeighborhoodNpcActor({
         // A live actor can occupy a narrow waypoint indefinitely. After a
         // sustained wait, advance to the next already-validated route waypoint.
         // Each actual movement step still passes obstacle and boundary checks.
-        if (blockedDuration.current >= 1.25) {
+        if (blockedDuration.current >= replanDelay) {
           const rerouted = neighborhoodNpcPath(
             { x: actor.position.x, y: actor.position.z },
             { x: target[0], y: target[2] },
