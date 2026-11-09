@@ -130,6 +130,25 @@ function gridKey(x: number, y: number): string {
   return `${x}:${y}`;
 }
 
+function segmentIsClear(
+  from: NpcPoint,
+  to: NpcPoint,
+  occupied: readonly GroundRect[],
+  bounds: GroundRect,
+): boolean {
+  const distance = Math.hypot(to.x - from.x, to.y - from.y);
+  const samples = Math.max(1, Math.ceil(distance / 8));
+  for (let index = 0; index <= samples; index += 1) {
+    const progress = index / samples;
+    const point = {
+      x: from.x + (to.x - from.x) * progress,
+      y: from.y + (to.y - from.y) * progress,
+    };
+    if (!isInsideScene(point, bounds) || overlapsFootprint(point, occupied)) return false;
+  }
+  return true;
+}
+
 /**
  * Find a deterministic grid route around static footprints. Diagonal moves are
  * rejected when either adjacent cardinal cell is blocked, preventing corner cuts.
@@ -157,7 +176,14 @@ export function neighborhoodNpcPath(
     const point = toPoint({ x, y });
     return overlapsFootprint(point, occupied);
   };
-  if (blocked(source.x, source.y) || blocked(goal.x, goal.y)) return null;
+  const sourcePoint = toPoint(source);
+  const goalPoint = toPoint(goal);
+  if (
+    blocked(source.x, source.y) ||
+    blocked(goal.x, goal.y) ||
+    !segmentIsClear(start, sourcePoint, occupied, bounds) ||
+    !segmentIsClear(goalPoint, destination, occupied, bounds)
+  ) return null;
 
   const heuristic = (x: number, y: number) => Math.hypot(goal.x - x, goal.y - y);
   const open = [{ ...source, cost: 0, score: heuristic(source.x, source.y) }];
@@ -193,6 +219,7 @@ export function neighborhoodNpcPath(
       const key = gridKey(x, y);
       if (closed.has(key) || blocked(x, y)) continue;
       if (dx !== 0 && dy !== 0 && (blocked(current.x + dx, current.y) || blocked(current.x, current.y + dy))) continue;
+      if (!segmentIsClear(toPoint(current), toPoint({ x, y }), occupied, bounds)) continue;
       const nextCost = current.cost + (dx !== 0 && dy !== 0 ? Math.SQRT2 : 1);
       if (nextCost >= (costs.get(key) ?? Number.POSITIVE_INFINITY)) continue;
       costs.set(key, nextCost);
