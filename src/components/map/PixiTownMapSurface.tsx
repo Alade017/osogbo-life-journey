@@ -211,12 +211,7 @@ export function PixiTownMapSurface({
         ) => {
           const hw = ISO_TILE_WIDTH / 2;
           const hh = ISO_TILE_HEIGHT / 2;
-          g.poly([
-            cx, cy - hh,
-            cx + hw, cy,
-            cx, cy + hh,
-            cx - hw, cy,
-          ]);
+          g.poly([cx, cy - hh, cx + hw, cy, cx, cy + hh, cx - hw, cy]);
           g.fill({ color: fillColor, alpha: fillAlpha });
           if (strokeColor !== undefined) {
             g.stroke({ width: strokeWidth, color: strokeColor });
@@ -236,33 +231,27 @@ export function PixiTownMapSurface({
               // Road Shoulder Drainage Gutter (Concrete-lined ditches along edges)
               const hw = ISO_TILE_WIDTH / 2;
               const hh = ISO_TILE_HEIGHT / 2;
-              drainageGraphics.poly([
-                cx, cy + hh - 3,
-                cx + hw - 3, cy,
-                cx + hw, cy,
-                cx, cy + hh,
-              ]);
+              drainageGraphics.poly([cx, cy + hh - 3, cx + hw - 3, cy, cx + hw, cy, cx, cy + hh]);
               drainageGraphics.fill({ color: 0x334155, alpha: 0.85 });
 
               // Driveway Crossover Slab (Connecting roads into compound entrances)
               if ((c + r) % 3 === 0) {
                 drainageGraphics.poly([
-                  cx + hw * 0.4, cy + hh * 0.2,
-                  cx + hw * 0.6, cy + hh * 0.4,
-                  cx + hw * 0.5, cy + hh * 0.5,
-                  cx + hw * 0.3, cy + hh * 0.3,
+                  cx + hw * 0.4,
+                  cy + hh * 0.2,
+                  cx + hw * 0.6,
+                  cy + hh * 0.4,
+                  cx + hw * 0.5,
+                  cy + hh * 0.5,
+                  cx + hw * 0.3,
+                  cy + hh * 0.3,
                 ]);
                 drainageGraphics.fill({ color: 0xcfd6df });
               }
 
               // White Dashed Center Lane Marking
               if ((c + r) % 2 === 0) {
-                roadGraphics.poly([
-                  cx - 3, cy - 1,
-                  cx + 3, cy + 1,
-                  cx + 2, cy + 2,
-                  cx - 4, cy,
-                ]);
+                roadGraphics.poly([cx - 3, cy - 1, cx + 3, cy + 1, cx + 2, cy + 2, cx - 4, cy]);
                 roadGraphics.fill({ color: 0xf8fafc, alpha: 0.8 });
               }
 
@@ -270,10 +259,14 @@ export function PixiTownMapSurface({
               if (c % 4 === 0 && r % 4 === 0) {
                 for (let k = -2; k <= 2; k++) {
                   roadGraphics.poly([
-                    cx + k * 4 - 2, cy - 4,
-                    cx + k * 4 + 2, cy - 2,
-                    cx + k * 4, cy + 4,
-                    cx + k * 4 - 4, cy + 2,
+                    cx + k * 4 - 2,
+                    cy - 4,
+                    cx + k * 4 + 2,
+                    cy - 2,
+                    cx + k * 4,
+                    cy + 4,
+                    cx + k * 4 - 4,
+                    cy + 2,
                   ]);
                   roadGraphics.fill({ color: 0xffffff, alpha: 0.9 });
                 }
@@ -282,12 +275,7 @@ export function PixiTownMapSurface({
               // OSUN RIVER CANAL
               drawDiamond(riverGraphics, cx, cy, 0x0891b2, 0.95, 0x0e7490, 1.2);
               // Water Shimmer Ripples
-              riverGraphics.poly([
-                cx - 8, cy,
-                cx + 8, cy,
-                cx + 4, cy + 1,
-                cx - 4, cy + 1,
-              ]);
+              riverGraphics.poly([cx - 8, cy, cx + 8, cy, cx + 4, cy + 1, cx - 4, cy + 1]);
               riverGraphics.fill({ color: 0x67e8f9, alpha: 0.55 });
             } else if (cellType === "p") {
               // COMPOUND / PLOT TILE (Sandy gravel with perimeter wall footing)
@@ -789,7 +777,15 @@ export function PixiTownMapSurface({
         app.destroy(true, { children: true });
       }
     };
-  }, [places, properties, onSelectDistrict, onSelectLandmark, onSelectProperty, onReady, onUnavailable]);
+  }, [
+    places,
+    properties,
+    onSelectDistrict,
+    onSelectLandmark,
+    onSelectProperty,
+    onReady,
+    onUnavailable,
+  ]);
 
   if (initError) return null;
 

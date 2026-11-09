@@ -74,11 +74,8 @@ export function WorldCamera({
   onZoomChange,
   horizontalOrbit = false,
   verticalOrbit = false,
-<<<<<<< HEAD
   distanceScale = 1,
-=======
   freeExplore = false,
->>>>>>> 824ebadba4d1006731a338ac27771f07db84357a
 }: {
   width: number;
   depth: number;
@@ -90,12 +87,9 @@ export function WorldCamera({
   onZoomChange?: (zoom: number) => void;
   horizontalOrbit?: boolean;
   verticalOrbit?: boolean;
-<<<<<<< HEAD
   /** Scales the camera distance past the zoom clamp, for close-up framing. */
   distanceScale?: number;
-=======
   freeExplore?: boolean;
->>>>>>> 824ebadba4d1006731a338ac27771f07db84357a
 }) {
   const { camera, size, invalidate } = useThree();
   const controls = useRef<Controls>(null);
@@ -159,10 +153,26 @@ export function WorldCamera({
       }}
       minDistance={distance / WORLD_CAMERA.maxZoom}
       maxDistance={distance / WORLD_CAMERA.minZoom}
-      minPolarAngle={freeExplore ? 0.35 : verticalOrbit ? Math.max(0.35, polar - 0.35) : polar - (stage ? 0 : 0.08)}
-      maxPolarAngle={freeExplore ? 1.25 : verticalOrbit ? Math.min(1.25, polar + 0.35) : polar + (stage ? 0 : 0.08)}
-      minAzimuthAngle={freeExplore ? -Infinity : azimuth - (horizontalOrbit ? Math.PI / 3 : stage ? 0 : 0.14)}
-      maxAzimuthAngle={freeExplore ? Infinity : azimuth + (horizontalOrbit ? Math.PI / 3 : stage ? 0 : 0.14)}
+      minPolarAngle={
+        freeExplore
+          ? 0.35
+          : verticalOrbit
+            ? Math.max(0.35, polar - 0.35)
+            : polar - (stage ? 0 : 0.08)
+      }
+      maxPolarAngle={
+        freeExplore
+          ? 1.25
+          : verticalOrbit
+            ? Math.min(1.25, polar + 0.35)
+            : polar + (stage ? 0 : 0.08)
+      }
+      minAzimuthAngle={
+        freeExplore ? -Infinity : azimuth - (horizontalOrbit ? Math.PI / 3 : stage ? 0 : 0.14)
+      }
+      maxAzimuthAngle={
+        freeExplore ? Infinity : azimuth + (horizontalOrbit ? Math.PI / 3 : stage ? 0 : 0.14)
+      }
     />
   );
 }

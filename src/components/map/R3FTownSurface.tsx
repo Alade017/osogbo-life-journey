@@ -865,7 +865,13 @@ export function R3FTownSurface(props: Props) {
   const roadsideInfrastructure = useMemo(() => {
     const occupied = new Set<string>();
     town.grid.buildings.forEach((building) => {
-      for (const [dx, dz] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
+      const footprint: [number, number][] = [
+        [0, 0],
+        [1, 0],
+        [0, 1],
+        [1, 1],
+      ];
+      for (const [dx, dz] of footprint) {
         occupied.add(`${building.x + dx},${building.z + dz}`);
       }
     });
@@ -907,9 +913,12 @@ export function R3FTownSurface(props: Props) {
         const runEnd = x - 1;
         if (runEnd - runStart < 4) continue;
 
-        const sideZ = town.grid.rows[z - 1]?.[runStart] === "g" ? z - 1
-          : town.grid.rows[z + 1]?.[runStart] === "g" ? z + 1
-          : null;
+        const sideZ =
+          town.grid.rows[z - 1]?.[runStart] === "g"
+            ? z - 1
+            : town.grid.rows[z + 1]?.[runStart] === "g"
+              ? z + 1
+              : null;
         if (sideZ === null) continue;
 
         let previousPole: [number, number] | null = null;
@@ -931,7 +940,8 @@ export function R3FTownSurface(props: Props) {
       }
     });
 
-    const drains: { position: [number, number, number]; horizontal: boolean; length: number }[] = [];
+    const drains: { position: [number, number, number]; horizontal: boolean; length: number }[] =
+      [];
     const directions = [
       { dx: 0, dz: -1 },
       { dx: 0, dz: 1 },
@@ -951,11 +961,7 @@ export function R3FTownSurface(props: Props) {
           // a small separation so their meshes do not overlap.
           const drainOffset = cell / 2 + cell * 0.28 + cell * 0.09 + cell * 0.035;
           drains.push({
-            position: [
-              center[0] + dx * drainOffset,
-              0.025,
-              center[2] + dz * drainOffset,
-            ],
+            position: [center[0] + dx * drainOffset, 0.025, center[2] + dz * drainOffset],
             horizontal: dx === 0,
             length: cell,
           });
@@ -963,7 +969,16 @@ export function R3FTownSurface(props: Props) {
       });
     });
     return { poles, spans, drains };
-  }, [streetLights, wasteBins, trees, busStops, roadsideShops, motorcycles, tricycles, streetVendors]);
+  }, [
+    streetLights,
+    wasteBins,
+    trees,
+    busStops,
+    roadsideShops,
+    motorcycles,
+    tricycles,
+    streetVendors,
+  ]);
 
   const badgePositions = useMemo(
     () => calculateBadgePositions(props.places, point, cell),
@@ -997,17 +1012,14 @@ export function R3FTownSurface(props: Props) {
         >
           <Ready onReady={props.onReady} />
           <CameraFocusController targetPosition={selectedTarget?.position ?? null} />
-<<<<<<< HEAD
           <WorldCamera
             width={gridCols * cell}
             depth={gridRows * cell}
             zoom={1.55}
             target={closeUpTarget}
             distanceScale={closeUpTarget ? CLOSE_UP_DISTANCE_SCALE : 1}
+            freeExplore
           />
-=======
-          <WorldCamera width={gridCols * cell} depth={gridRows * cell} zoom={1.35} freeExplore />
->>>>>>> 824ebadba4d1006731a338ac27771f07db84357a
           <MapLighting size={gridCols * cell} />
           <Terrain3D gridCols={gridCols} gridRows={gridRows} cellSize={cell} />
 
@@ -1024,7 +1036,12 @@ export function R3FTownSurface(props: Props) {
           <WorldTricycles positions={tricycles} size={cell} />
           <WorldStreetVendors positions={streetVendors} size={cell} />
           <FunctionalStreetLights3D positions={streetLights} size={cell} isNight={isNight} />
-          <RoadsideInfrastructure3D poles={roadsideInfrastructure.poles} spans={roadsideInfrastructure.spans} drains={roadsideInfrastructure.drains} cellSize={cell} />
+          <RoadsideInfrastructure3D
+            poles={roadsideInfrastructure.poles}
+            spans={roadsideInfrastructure.spans}
+            drains={roadsideInfrastructure.drains}
+            cellSize={cell}
+          />
           <WorldWasteBins positions={wasteBins} size={cell} />
           <WorldInstances
             tone="slate"

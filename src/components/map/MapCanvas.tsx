@@ -3,13 +3,8 @@ import townData from "@/data/osogbo-town.json";
 import { WORLD_PALETTE } from "@/components/3d/world-theme";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
 
-<<<<<<< HEAD
 const TownSurface3D = lazy(() =>
   import("./R3FTownSurface").then((module) => ({ default: module.R3FTownSurface })),
-=======
-const PixiTownMapSurface = lazy(() =>
-  import("./PixiTownMapSurface").then((module) => ({ default: module.PixiTownMapSurface })),
->>>>>>> 824ebadba4d1006731a338ac27771f07db84357a
 );
 
 export type MapFilter =
@@ -137,28 +132,16 @@ export function MapCanvas({
     <section
       className="map-canvas town-map-canvas"
       style={{ background: WORLD_PALETTE.ground }}
-<<<<<<< HEAD
-      aria-label="Interactive 3D town map"
-=======
       aria-label="Interactive 3D town map with open camera exploration"
->>>>>>> 824ebadba4d1006731a338ac27771f07db84357a
     >
       <Suspense fallback={null}>
-<<<<<<< HEAD
         {rendererState !== "unavailable" && (
           <TownSurface3D
-=======
-        {rendererState !== "fallback" && (
-          <PixiTownMapSurface
->>>>>>> 824ebadba4d1006731a338ac27771f07db84357a
             places={availablePlaces}
             properties={properties}
             playerLocation={playerLocation}
             billboardMarkers={billboardMarkers}
-<<<<<<< HEAD
             searchTarget={searchTarget ?? null}
-=======
->>>>>>> 824ebadba4d1006731a338ac27771f07db84357a
             onSelectLandmark={onSelectLandmark}
             onSelectDistrict={onSelectDistrict}
             onSelectBillboard={onSelectBillboard}
