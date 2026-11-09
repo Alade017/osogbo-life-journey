@@ -221,6 +221,25 @@ describe("stitched pedestrian sidewalk network", () => {
     expect(segmentCount).toBe(4);
     expect(output).toHaveLength(1);
   });
+
+  it("consumes closed degree-two loops without dropping or duplicating edges", () => {
+    const output = stitchTownPedestrianRoutes([
+      [[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]],
+    ]);
+    const edgeKeys = output.flatMap((route) => route.slice(1).map((point, index) => {
+      const previous = route[index]!;
+      const currentKey = `${point[0]},${point[1]}`;
+      const previousKey = `${previous[0]},${previous[1]}`;
+      return previousKey < currentKey
+        ? `${previousKey}|${currentKey}`
+        : `${currentKey}|${previousKey}`;
+    }));
+
+    expect(output).toHaveLength(1);
+    expect(output[0]).toHaveLength(5);
+    expect(output[0]?.[0]).toEqual(output[0]?.[4]);
+    expect(new Set(edgeKeys).size).toBe(4);
+  });
 });
 
 
