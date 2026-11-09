@@ -26,7 +26,7 @@ begin
   select id into cid
     from public.characters
     where user_id = uid
-    order by created_at desc
+    order by created_at desc, id desc
     limit 1;
   if cid is null then
     raise exception 'Sign in and create a character first';
