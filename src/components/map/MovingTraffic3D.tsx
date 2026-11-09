@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FC } from "react";
+import { useEffect, useMemo, useRef, useState, type FC } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import type { Group } from "three";
@@ -88,23 +88,25 @@ function TrafficVehicle({
   const currentSegment = useRef(0);
   const progress = useRef(0);
   const [isHovered, setIsHovered] = useState(false);
+  const routeLength = useMemo(() => {
+    if (config.path.length < 2) return 0;
+    return config.path.reduce((total, point, index) => {
+      const next = config.path[(index + 1) % config.path.length]!;
+      return total + Math.hypot(next[0] - point[0], next[1] - point[1]);
+    }, 0);
+  }, [config.path]);
 
   useFrame((_, delta) => {
     if (!groupRef.current) return;
 
     const { path, speed } = config;
-    if (path.length < 2) return;
+    if (path.length < 2 || !Number.isFinite(routeLength) || routeLength < 0.001) return;
 
     // Advance in world-space distance so crossing a corner never discards
-    // leftover frame time. Modulo the loop length also bounds catch-up work
-    // after a background-tab pause.
-    const routeLength = path.reduce((total, point, index) => {
-      const next = path[(index + 1) % path.length]!;
-      return total + Math.hypot(next[0] - point[0], next[1] - point[1]);
-    }, 0);
-    if (routeLength < 0.001) return;
-
-    let distanceToTravel = (speed * Math.max(0, delta) * 8) % routeLength;
+    // leftover frame time. Modulo the cached loop length also bounds catch-up
+    // work after a background-tab pause.
+    if (!Number.isFinite(delta) || delta <= 0) return;
+    let distanceToTravel = (speed * delta * 8) % routeLength;
 
     while (distanceToTravel > 0) {
       const start = path[currentSegment.current]!;
