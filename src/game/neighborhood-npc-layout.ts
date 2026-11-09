@@ -201,6 +201,26 @@ function segmentIsClear(
  * Find a deterministic grid route around static footprints. Diagonal moves are
  * rejected when either adjacent cardinal cell is blocked, preventing corner cuts.
  */
+/**
+ * Prefer a conflict-free reserved corridor, but do not strand an NPC solely
+ * because another scheduled NPC reserved the same narrow passage. Runtime
+ * actor avoidance still resolves live proximity when the fallback is used.
+ */
+export function neighborhoodNpcPathWithFallback(
+  start: NpcPoint,
+  destination: NpcPoint,
+  occupied: readonly GroundRect[] = [],
+  bounds: GroundRect = NEIGHBORHOOD_SCENE_BOUNDS,
+  reservedPaths: readonly (readonly NpcPoint[])[] = [],
+): NpcPoint[] | null {
+  return (
+    neighborhoodNpcPath(start, destination, occupied, bounds, reservedPaths) ??
+    (reservedPaths.length > 0
+      ? neighborhoodNpcPath(start, destination, occupied, bounds)
+      : null)
+  );
+}
+
 export function neighborhoodNpcPath(
   start: NpcPoint,
   destination: NpcPoint,
