@@ -256,7 +256,7 @@ describe("map travel database actions", () => {
       [walletId,newestWalletId],
     );
     expect(balances.rows.find((row) => row.character_id === newestCharacterId)?.balance).toBe(3800);
-    // The stale character must not be charged; only the newest character pays for the trip.
+    // The second trip must not debit the prior character's wallet again.
     expect(balances.rows.find((row) => row.character_id === characterId)?.balance).toBe(4700);
   });
 
