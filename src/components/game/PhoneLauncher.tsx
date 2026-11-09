@@ -530,38 +530,33 @@ export function PhoneLauncher({
 
     if (appName === "Notifications") {
       return (
-        <div className="phone-sub-app p-3 space-y-3">
-          <div className="phone-card p-3 space-y-2">
-            <div className="flex items-center justify-between border-b border-border/40 pb-2">
-              <h4 className="font-bold text-sm">Town Notifications</h4>
+        <div className="phone-sub-app notifications-app">
+          <div className="phone-card notifications-panel">
+            <div className="notifications-head">
+              <h4 className="notifications-heading">Town Notifications</h4>
               <button
                 type="button"
                 onClick={() => markRead.mutate()}
-                className="text-xs font-bold text-primary hover:underline"
+                className="notifications-clear"
               >
                 Mark all read
               </button>
             </div>
             {notifications && notifications.length > 0 ? (
-              <div className="space-y-2">
+              <div className="notifications-list">
                 {notifications.map((n) => (
-                  <div
-                    key={n.id}
-                    className="p-2 rounded-lg border border-border text-xs space-y-0.5"
-                  >
-                    <strong className="block font-semibold">
+                  <div key={n.id} className="notifications-item">
+                    <strong className="notifications-kind">
                       {n.kind.replace(/_/g, " ").toUpperCase()}
                     </strong>
-                    <p className="text-muted-foreground">
+                    <p className="notifications-body">
                       {n.body ?? "Notification update from Osogbo."}
                     </p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-muted-foreground py-4 text-center">
-                No notifications yet.
-              </p>
+              <p className="notifications-state">No notifications yet.</p>
             )}
           </div>
         </div>

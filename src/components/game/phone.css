@@ -4473,3 +4473,66 @@
 .phone-app-body .pi-inventory .pi-detail-actions > button:last-child:nth-child(odd) {
   grid-column: 1 / -1;
 }
+
+/* Town notifications in the phone: a header with a clear action, and one bordered row per notification. */
+.phone-app-body .notifications-app {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+.phone-app-body .notifications-panel {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+.phone-app-body .notifications-head {
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 10px;
+}
+.phone-app-body .notifications-heading {
+  font-size: 0.98rem;
+  font-weight: 700;
+  margin: 0;
+}
+.phone-app-body .notifications-clear {
+  color: var(--primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  min-height: 36px;
+  padding: 0 4px;
+}
+.phone-app-body .notifications-list {
+  display: grid;
+  gap: 8px;
+}
+.phone-app-body .notifications-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  color: var(--card-foreground);
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+}
+.phone-app-body .notifications-kind {
+  color: var(--primary);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+.phone-app-body .notifications-body {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  margin: 0;
+}
+.phone-app-body .notifications-state {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  padding: 16px 0;
+  text-align: center;
+}
