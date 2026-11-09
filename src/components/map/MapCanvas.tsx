@@ -130,11 +130,18 @@ export function MapCanvas({
   useEffect(() => {
     if (!searchTarget) return;
     const id = typeof searchTarget === "string" ? searchTarget : searchTarget.id;
-    if (availablePlaces.some((place) => place.id === id)) {
+    const kind = typeof searchTarget === "string" ? undefined : searchTarget.kind;
+    if (
+      kind !== "district" &&
+      availablePlaces.some((place) => place.id === id)
+    ) {
       onSelectLandmark(id);
       return;
     }
-    if (townData.districts.some((district) => district.id === id)) {
+    if (
+      kind !== "landmark" &&
+      townData.districts.some((district) => district.id === id)
+    ) {
       onSelectDistrict(id);
     }
   }, [availablePlaces, onSelectDistrict, onSelectLandmark, searchTarget]);
