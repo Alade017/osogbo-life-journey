@@ -343,9 +343,12 @@ export function PlayableNeighborhood() {
               ? area.objects.find((object) => object.kind === "market")
               : (area.obstacles?.find((obstacle) => obstacle.kind === "bench") ??
                 area.objects.find((object) => object.kind === "market"));
-      const spread = (index - (scheduled.length - 1) / 2) * 34;
-      const targetX = (destinationObject?.x ?? slot.x) + spread;
-      const targetY = (destinationObject?.y ?? slot.y) + (index % 2 === 0 ? 34 : -34);
+      const destination = neighborhoodNpcDestinationPoint(
+        destinationObject ?? slot,
+        catalogIndex,
+      );
+      const targetX = destination.x;
+      const targetY = destination.y;
       const current = currentNpcPositionOverrides[npc.id] ?? { x: slot.x, y: slot.y };
       const isMoving =
         !simulation.paused && Math.hypot(targetX - current.x, targetY - current.y) > 2;
