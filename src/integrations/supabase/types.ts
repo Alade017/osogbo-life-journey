@@ -3296,6 +3296,102 @@ export type Database = {
           },
         ];
       };
+      mini_game_boards: {
+        Row: {
+          cells: string;
+          table_id: string;
+          turn: number;
+          updated_at: string;
+          version: number;
+        };
+        Insert: {
+          cells?: string;
+          table_id: string;
+          turn?: number;
+          updated_at?: string;
+          version?: number;
+        };
+        Update: {
+          cells?: string;
+          table_id?: string;
+          turn?: number;
+          updated_at?: string;
+          version?: number;
+        };
+        Relationships: [];
+      };
+      mini_game_seats: {
+        Row: {
+          character_id: string;
+          last_active_at: string;
+          paid: number;
+          seat: number;
+          table_id: string;
+          user_id: string;
+        };
+        Insert: {
+          character_id: string;
+          last_active_at?: string;
+          paid: number;
+          seat: number;
+          table_id: string;
+          user_id: string;
+        };
+        Update: {
+          character_id?: string;
+          last_active_at?: string;
+          paid?: number;
+          seat?: number;
+          table_id?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      mini_game_tables: {
+        Row: {
+          created_at: string;
+          fee_percent: number;
+          finished_at: string | null;
+          game: string;
+          host_character_id: string;
+          id: string;
+          pot: number;
+          result: string | null;
+          stake: number;
+          started_at: string | null;
+          status: string;
+          winner_character_id: string | null;
+        };
+        Insert: {
+          created_at?: string;
+          fee_percent?: number;
+          finished_at?: string | null;
+          game: string;
+          host_character_id: string;
+          id?: string;
+          pot?: number;
+          result?: string | null;
+          stake: number;
+          started_at?: string | null;
+          status?: string;
+          winner_character_id?: string | null;
+        };
+        Update: {
+          created_at?: string;
+          fee_percent?: number;
+          finished_at?: string | null;
+          game?: string;
+          host_character_id?: string;
+          id?: string;
+          pot?: number;
+          result?: string | null;
+          stake?: number;
+          started_at?: string | null;
+          status?: string;
+          winner_character_id?: string | null;
+        };
+        Relationships: [];
+      };
       okada_ride_requests: {
         Row: {
           assigned_at: string | null;
@@ -6935,6 +7031,12 @@ export type Database = {
       my_home_save: { Args: never; Returns: Json };
       my_home_visit_policy: { Args: never; Returns: Json };
       my_property_rent_status: { Args: never; Returns: Json };
+      mini_game_claim_forfeit: { Args: { p_table: string }; Returns: undefined };
+      mini_game_create_table: { Args: { p_stake: number }; Returns: string };
+      mini_game_heartbeat: { Args: { p_table: string }; Returns: undefined };
+      mini_game_join_table: { Args: { p_table: string }; Returns: string };
+      mini_game_leave_table: { Args: { p_table: string }; Returns: undefined };
+      mini_game_play_move: { Args: { p_cell: number; p_table: string }; Returns: Json };
       okada_ride_cancel: { Args: { p_ride: string }; Returns: Json };
       okada_ride_sync: { Args: never; Returns: undefined };
       open_bank_account: { Args: never; Returns: Json };

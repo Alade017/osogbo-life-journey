@@ -1,6 +1,7 @@
 import { useEffect, useState, type ComponentType } from "react";
-import { ArrowLeft, Dices, Grid3x3, Layers, Crown, type LucideIcon } from "lucide-react";
+import { ArrowLeft, Coins, Dices, Grid3x3, Layers, Crown, type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { StakeTables } from "@/components/game/mini-games/StakeTables";
 import {
   bestTicTacToeMove,
   newTicTacToe,
@@ -39,9 +40,15 @@ import {
 
 const COMPUTER_DELAY_MS = 550;
 
-type GameId = "tictactoe" | "draughts" | "ludo" | "whot";
+type GameId = "tictactoe" | "draughts" | "ludo" | "whot" | "stakes";
 
 const GAMES: { id: GameId; name: string; icon: LucideIcon; blurb: string }[] = [
+  {
+    id: "stakes",
+    name: "Stake tables",
+    icon: Coins,
+    blurb: "Stake cash against another player. The winner takes the pot less 5%.",
+  },
   {
     id: "whot",
     name: "Whot",
@@ -341,6 +348,7 @@ function WhotGame() {
 }
 
 const BOARDS: Record<GameId, ComponentType> = {
+  stakes: StakeTables,
   tictactoe: TicTacToeGame,
   draughts: DraughtsGame,
   ludo: LudoGame,
@@ -369,7 +377,7 @@ export function GamesApp() {
     <div className="mg-app" aria-label="Games">
       <header className="mg-hub-head">
         <h2>Games</h2>
-        <p>Play the computer for fun. Table stakes are coming next.</p>
+        <p>Play the computer for fun, or stake cash against another player.</p>
       </header>
       <ul className="mg-list">
         {GAMES.map(({ id, name, icon: Icon, blurb }) => (
