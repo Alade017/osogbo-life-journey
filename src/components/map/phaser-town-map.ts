@@ -1,5 +1,5 @@
 import * as Phaser from "phaser";
-import { isQuickMapTap, mapPinchZoomFactor } from "@/lib/map-gesture";
+import { isMapTargetTapAllowed, mapPinchZoomFactor } from "@/lib/map-gesture";
 import townData from "@/data/osogbo-town.json";
 import {
   projectTownCell,
@@ -74,6 +74,8 @@ class PhaserTownMapScene extends Phaser.Scene implements PhaserMapSceneHandle {
     this.input.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
       this.draggedPointers.delete(pointer.id);
       this.dragPoints.set(pointer.id, { x: pointer.x, y: pointer.y });
+      if (this.dragPoints.size > 1)
+        this.dragPoints.forEach((_point, id) => this.draggedPointers.add(id));
     });
     this.input.on("pointermove", (pointer: Phaser.Input.Pointer) => {
       if (!pointer.isDown || !this.dragPoints.has(pointer.id)) return;
@@ -269,10 +271,10 @@ class PhaserTownMapScene extends Phaser.Scene implements PhaserMapSceneHandle {
       .setInteractive({ useHandCursor: true })
       .on("pointerup", (pointer: Phaser.Input.Pointer) => {
         if (
-          !this.draggedPointers.has(pointer.id) &&
-          isQuickMapTap(
+          isMapTargetTapAllowed(
             { x: pointer.downX, y: pointer.downY, at: pointer.downTime },
             { x: pointer.x, y: pointer.y, at: pointer.upTime },
+            this.draggedPointers.has(pointer.id),
           )
         )
           activate();
