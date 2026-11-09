@@ -61,3 +61,23 @@ GitHub Actions are intentionally not used because of the owner's billing constra
 ## Current decision
 
 **Phase 6 source implementation: substantially complete. Phase 6 visual exit gate: pending. Phase 7 QA: not yet run. Merge: not recommended until the required browser/device tests pass.**
+
+## Existing validation assets found during Phase 7 handoff review
+
+A source inventory on 9 November found focused Vitest coverage for:
+
+- Daylight curve boundaries and progression: `src/test/map-lighting.test.ts`.
+- Procedural building-family profiles: `src/test/neighborhood-art.test.ts`.
+- Road dressing, crossing clearance, traffic-signal placement, vegetation sizing and deterministic generation: `src/test/neighborhood-dressing.test.ts`.
+- Entrance and NPC target eligibility/proximity: `src/test/neighborhood-interactions.test.ts`.
+- Room lifecycle, district selection and authoritative interaction behavior: `src/test/playable-neighborhood.test.tsx`.
+- Tap-versus-drag and pinch thresholds: `src/test/map-gesture.test.ts`.
+- Town identity and road-grid connectivity: `src/test/town-data-integrity.test.ts`.
+
+The repository also contains `scripts/world-restyle-browser-check.mjs`, a real-browser fixture that mounts the R3F town, neighborhood and house scenes with synthetic fixture data. It checks rendered scene structure, lighting-rig expectations, instancing, palette limits, camera state and selected responsive/editor layout conditions. It is useful for renderer smoke coverage, but it is **not** an authenticated end-to-end test and does not replace visual inspection of the live app or physical-device testing.
+
+`scripts/map-runtime-browser-check.mjs` is a separate map lifecycle fixture. Its DOM assertions include legacy `.town-place-bubble` selectors; confirm those selectors still match the current overview implementation before treating its result as an authoritative current-map acceptance test.
+
+`scripts/world-foundation-browser-check.mjs` exercises the separate Phaser prototype. It must not be used as evidence that the active R3F playable neighborhood has passed.
+
+These scripts and tests were inspected in source only. None was executed as part of this handoff. The repository's `npm run typecheck`, `npm test`, `npm run lint`, `npm run build` and browser scripts remain to be run locally. Do not dispatch GitHub Actions.
