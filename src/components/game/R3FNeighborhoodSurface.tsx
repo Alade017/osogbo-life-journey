@@ -143,7 +143,7 @@ function NeighborhoodNpcActor({
     actor.position.set(start[0], start[1], start[2]);
     actorPositions.current.set(npc.id, { x: start[0], y: start[2] });
     invalidate();
-  }, [start[0], start[1], start[2], invalidate]);
+  }, [actorPositions, invalidate, npc.id, start[0], start[1], start[2]]);
   useEffect(() => {
     const actor = group.current;
     if (!actor) return;
