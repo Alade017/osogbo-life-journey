@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { NEIGHBORHOOD_SCENE_BOUNDS } from "@/game/neighborhood-geometry";
-import { neighborhoodNpcDestinationPoint, neighborhoodNpcSpawnPoint } from "@/game/neighborhood-npc-layout";
+import { neighborhoodNpcDestinationPoint, neighborhoodNpcPath, neighborhoodNpcSpawnPoint } from "@/game/neighborhood-npc-layout";
 
 describe("neighborhood NPC spawn distribution", () => {
   const slots = [
@@ -112,6 +112,31 @@ describe("neighborhood NPC spawn distribution", () => {
     );
     expect(point).not.toBeNull();
     expect(Math.hypot(point!.x - 100, point!.y - 100)).toBeGreaterThanOrEqual(42);
+  });
+
+  it("routes around a blocking obstacle instead of crossing its footprint", () => {
+    const route = neighborhoodNpcPath(
+      { x: 0, y: 0 },
+      { x: 200, y: 0 },
+      [{ left: 70, top: -30, width: 60, height: 60 }],
+    );
+    expect(route).not.toBeNull();
+    expect(route!.length).toBeGreaterThan(2);
+    expect(
+      route!.some(
+        (point) =>
+          point.x >= 48 && point.x <= 152 && point.y >= -52 && point.y <= 52,
+      ),
+    ).toBe(false);
+  });
+
+  it("returns null when no route exists inside the scene bounds", () => {
+    const route = neighborhoodNpcPath(
+      { x: NEIGHBORHOOD_SCENE_BOUNDS.left + 20, y: 0 },
+      { x: NEIGHBORHOOD_SCENE_BOUNDS.left + 20, y: 100 },
+      [{ left: NEIGHBORHOOD_SCENE_BOUNDS.left - 100, top: -1000, width: 200, height: 2000 }],
+    );
+    expect(route).toBeNull();
   });
 
   it("returns null when there are no anchors or the index is invalid", () => {
