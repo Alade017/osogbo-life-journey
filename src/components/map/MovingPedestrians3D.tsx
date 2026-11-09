@@ -90,6 +90,7 @@ function PedestrianCharacter({
 }) {
   const groupRef = useRef<Group>(null);
   const currentSegment = useRef(0);
+  const travelDirection = useRef(1);
   const progress = useRef(0);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -97,8 +98,10 @@ function PedestrianCharacter({
     if (!groupRef.current) return;
 
     const { path, speed } = npc;
+    if (path.length < 2) return;
+
     const p1 = path[currentSegment.current]!;
-    const nextIdx = (currentSegment.current + 1) % path.length;
+    const nextIdx = currentSegment.current + travelDirection.current;
     const p2 = path[nextIdx]!;
 
     const dx = p2[0] - p1[0];
@@ -110,10 +113,14 @@ function PedestrianCharacter({
     if (progress.current >= 1.0) {
       progress.current = 0;
       currentSegment.current = nextIdx;
+      if (nextIdx === 0 || nextIdx === path.length - 1) {
+        travelDirection.current *= -1;
+      }
     }
 
     const curP1 = path[currentSegment.current]!;
-    const curP2 = path[(currentSegment.current + 1) % path.length]!;
+    const followingIndex = currentSegment.current + travelDirection.current;
+    const curP2 = path[followingIndex]!;
     const curDx = curP2[0] - curP1[0];
     const curDz = curP2[1] - curP1[1];
 
