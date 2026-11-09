@@ -81,6 +81,7 @@ import {
   type ThreadCommand,
   type ThreadSummary,
 } from "@/lib/thread-preferences";
+import { PaletteSelect } from "@/components/ui/palette-select";
 
 type Tab = "players" | "messages" | "friends" | "status" | "settings";
 type ReportTarget = { id: string; name: string; messageId?: string };
@@ -123,7 +124,7 @@ function PlayerAvatar({
 }) {
   const openProfile = useContext(ProfileOpenContext);
   const portrait = (
-    <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl bg-leaf/10">
+    <span className="phone-avatar-head grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl bg-leaf/10">
       <Avatar
         appearance={
           player.appearance &&
@@ -178,7 +179,7 @@ function VirtualConversationList({
   onCancelLongPress: () => void;
 }) {
   const [scrollTop, setScrollTop] = useState(0);
-  const rowHeight = 76;
+  const rowHeight = 72;
   const viewportHeight = 380;
   const start = Math.max(0, Math.floor(scrollTop / rowHeight) - 4);
   const end = Math.min(conversations.length, start + Math.ceil(viewportHeight / rowHeight) + 8);
@@ -1623,10 +1624,7 @@ export function PlayerSocial({
               ) : (
                 <section className="phone-chat-panel" aria-label="Private chats">
                   <div className="phone-inbox-heading">
-                    <div>
-                      <h3>Messages</h3>
-                      <p>Your people, one conversation away.</p>
-                    </div>
+                    <h3>Messages</h3>
                     <button
                       type="button"
                       className="phone-new-message-button"
@@ -1640,16 +1638,18 @@ export function PlayerSocial({
                       <Plus size={19} />
                     </button>
                   </div>
-                  <label className="phone-inbox-search">
-                    <Search size={16} aria-hidden="true" />
-                    <span className="sr-only">Search chats</span>
-                    <input
-                      type="search"
-                      value={conversationSearch}
-                      onChange={(event) => setConversationSearch(event.target.value)}
-                      placeholder="Search chats"
-                    />
-                  </label>
+                  <div className="phone-inbox-controls">
+                    <label className="phone-inbox-search">
+                      <Search size={16} aria-hidden="true" />
+                      <span className="sr-only">Search chats</span>
+                      <input
+                        type="search"
+                        value={conversationSearch}
+                        onChange={(event) => setConversationSearch(event.target.value)}
+                        placeholder="Search chats"
+                      />
+                    </label>
+                  </div>
                   <div className="phone-inbox-filters" role="group" aria-label="Chat filters">
                     {(["all", "unread"] as const).map((filter) => (
                       <button
@@ -2202,19 +2202,14 @@ export function PlayerSocial({
               </div>
               <label className="grid gap-1 text-sm font-medium">
                 Reason
-                <select
+                <PaletteSelect
                   value={reportCategory}
-                  onChange={(event) =>
-                    setReportCategory(event.target.value as SocialReportCategory)
-                  }
-                  className="min-h-10 rounded-xl border border-border bg-background px-3"
-                >
-                  {REPORT_OPTIONS.map((option) => (
-                    <option value={option.value} key={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                  onValueChange={(next) => setReportCategory(next as SocialReportCategory)}
+                  options={REPORT_OPTIONS.map((option) => ({
+                    value: option.value,
+                    label: option.label,
+                  }))}
+                />
               </label>
               <label className="grid gap-1 text-sm font-medium">
                 Details (optional)

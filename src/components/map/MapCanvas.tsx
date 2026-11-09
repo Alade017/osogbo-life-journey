@@ -131,7 +131,7 @@ export function MapCanvas({
     <section
       className="map-canvas town-map-canvas"
       style={{ background: WORLD_PALETTE.ground }}
-      aria-label="Interactive isometric town map"
+      aria-label="Interactive 3D town map with open camera exploration"
     >
       {rendererState !== "ready" && (
         <TownMapFallback

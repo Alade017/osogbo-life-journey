@@ -427,6 +427,11 @@ const FURNITURE_COLOURS = {
   blanket: "#89977c",
   wardrobeDoor: "#9b6a42",
   brass: "#d8b56a",
+  gymBlack: "#2c2f35",
+  gymSteel: "#9aa1aa",
+  gymRed: "#b5523b",
+  gymMat: "#6f8f63",
+  mirrorGlass: "#c9d6e0",
 } as const;
 
 export function FurnitureFallback({
@@ -1040,6 +1045,224 @@ export function FurnitureFallback({
         <mesh castShadow receiveShadow position={[0, 0.72, 0.05]} rotation={[Math.PI / 2, 0, 0]}>
           <cylinderGeometry args={[0.13, 0.13, 0.02, 20]} />
           <meshStandardMaterial color={FURNITURE_COLOURS.blanket} roughness={0.9} />
+        </mesh>
+      </group>
+    );
+  if (kind === "treadmill")
+    return (
+      <group>
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[0.7, 0.12, 1.5]}
+          radius={0.04}
+          smoothness={4}
+          position={[0, 0.16, 0]}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.gymBlack} roughness={0.6} />
+        </RoundedBox>
+        <mesh receiveShadow position={[0, 0.23, 0]}>
+          <boxGeometry args={[0.5, 0.01, 1.3]} />
+          <meshStandardMaterial
+            color={FURNITURE_COLOURS.gymSteel}
+            roughness={0.4}
+            metalness={0.5}
+          />
+        </mesh>
+        {[-0.3, 0.3].map((x) => (
+          <mesh key={x} castShadow position={[x, 0.7, -0.65]}>
+            <boxGeometry args={[0.06, 1.0, 0.06]} />
+            <meshStandardMaterial
+              color={FURNITURE_COLOURS.gymSteel}
+              roughness={0.4}
+              metalness={0.5}
+            />
+          </mesh>
+        ))}
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[0.7, 0.22, 0.12]}
+          radius={0.04}
+          smoothness={4}
+          position={[0, 1.2, -0.65]}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.gymBlack} roughness={0.5} />
+        </RoundedBox>
+      </group>
+    );
+  if (kind === "dumbbells")
+    return (
+      <group>
+        {[-0.22, 0.22].map((z) => (
+          <group key={z} position={[0, 0.1, z]}>
+            <mesh castShadow rotation={[0, 0, Math.PI / 2]}>
+              <cylinderGeometry args={[0.025, 0.025, 0.38, 12]} />
+              <meshStandardMaterial
+                color={FURNITURE_COLOURS.gymSteel}
+                roughness={0.35}
+                metalness={0.6}
+              />
+            </mesh>
+            {[-0.17, 0.17].map((x) => (
+              <mesh
+                key={x}
+                castShadow
+                receiveShadow
+                position={[x, 0, 0]}
+                rotation={[0, 0, Math.PI / 2]}
+              >
+                <cylinderGeometry args={[0.1, 0.1, 0.07, 18]} />
+                <meshStandardMaterial color={FURNITURE_COLOURS.gymBlack} roughness={0.6} />
+              </mesh>
+            ))}
+          </group>
+        ))}
+      </group>
+    );
+  if (kind === "multi-gym-machine")
+    return (
+      <group>
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[0.9, 0.1, 0.8]}
+          radius={0.04}
+          smoothness={4}
+          position={[0, 0.1, 0]}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.gymBlack} roughness={0.6} />
+        </RoundedBox>
+        {[-0.36, 0.36].map((x) => (
+          <mesh key={x} castShadow position={[x, 0.9, -0.2]}>
+            <boxGeometry args={[0.06, 1.6, 0.06]} />
+            <meshStandardMaterial
+              color={FURNITURE_COLOURS.gymSteel}
+              roughness={0.4}
+              metalness={0.5}
+            />
+          </mesh>
+        ))}
+        <mesh castShadow position={[0, 1.7, -0.2]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.03, 0.03, 0.8, 12]} />
+          <meshStandardMaterial
+            color={FURNITURE_COLOURS.gymSteel}
+            roughness={0.4}
+            metalness={0.5}
+          />
+        </mesh>
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[0.2, 0.7, 0.1]}
+          radius={0.03}
+          smoothness={3}
+          position={[0.45, 0.6, -0.2]}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.gymRed} roughness={0.6} />
+        </RoundedBox>
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[0.4, 0.1, 0.4]}
+          radius={0.04}
+          smoothness={3}
+          position={[0, 0.42, 0.15]}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.gymRed} roughness={0.7} />
+        </RoundedBox>
+      </group>
+    );
+  if (kind === "yoga-mat")
+    return (
+      <RoundedBox
+        castShadow
+        receiveShadow
+        args={[0.6, 0.03, 1.4]}
+        radius={0.015}
+        smoothness={3}
+        position={[0, 0.015, 0]}
+      >
+        <meshStandardMaterial color={FURNITURE_COLOURS.gymMat} roughness={0.95} />
+      </RoundedBox>
+    );
+  if (kind === "dumbbell-rack")
+    return (
+      <group>
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[0.9, 0.9, 0.08]}
+          radius={0.03}
+          smoothness={3}
+          position={[0, 0.45, -0.16]}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.gymBlack} roughness={0.6} />
+        </RoundedBox>
+        {[0.12, 0.42, 0.72].map((y) => (
+          <RoundedBox
+            key={y}
+            castShadow
+            receiveShadow
+            args={[0.9, 0.06, 0.4]}
+            radius={0.02}
+            smoothness={3}
+            position={[0, y, 0.04]}
+          >
+            <meshStandardMaterial color={FURNITURE_COLOURS.gymBlack} roughness={0.6} />
+          </RoundedBox>
+        ))}
+        {[-0.2, 0, 0.2].map((x) => (
+          <mesh key={x} castShadow position={[x, 0.2, 0.1]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.1, 0.1, 0.08, 16]} />
+            <meshStandardMaterial
+              color={FURNITURE_COLOURS.gymSteel}
+              roughness={0.35}
+              metalness={0.6}
+            />
+          </mesh>
+        ))}
+      </group>
+    );
+  if (kind === "full-length-gym-mirror")
+    return (
+      <group>
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[0.7, 1.8, 0.05]}
+          radius={0.03}
+          smoothness={3}
+          position={[0, 0.95, 0]}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.gymBlack} roughness={0.6} />
+        </RoundedBox>
+        <mesh position={[0, 0.95, 0.03]}>
+          <planeGeometry args={[0.6, 1.7]} />
+          <meshStandardMaterial
+            color={FURNITURE_COLOURS.mirrorGlass}
+            roughness={0.08}
+            metalness={0.9}
+          />
+        </mesh>
+      </group>
+    );
+  if (kind === "gym-bag")
+    return (
+      <group>
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[0.45, 0.28, 0.25]}
+          radius={0.08}
+          smoothness={4}
+          position={[0, 0.14, 0]}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.gymRed} roughness={0.8} />
+        </RoundedBox>
+        <mesh castShadow position={[0, 0.34, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <torusGeometry args={[0.1, 0.02, 8, 16, Math.PI]} />
+          <meshStandardMaterial color={FURNITURE_COLOURS.gymBlack} roughness={0.6} />
         </mesh>
       </group>
     );

@@ -19,7 +19,6 @@ import {
   ChartNoAxesCombined,
   ClipboardList,
   ChevronLeft,
-  House,
   GraduationCap,
   HandCoins,
   HousePlus,
@@ -41,7 +40,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
+import { PhoneAppLoader } from "@/components/game/phone/PhoneAppLoader";
+import { isSlowNetwork } from "@/lib/network-hint";
 import { q, rpc, useGameAction } from "@/lib/game";
 import { useQuery } from "@tanstack/react-query";
 import { playGameSound } from "@/lib/game-audio";
@@ -68,6 +68,18 @@ import {
   reducePhoneNavigation,
 } from "@/components/game/phone-navigation";
 import "./phone.css";
+
+// Start downloading the most-used phone app chunks early, so opening them is faster.
+// Skipped when the visitor asked for less data or is on a slow connection.
+function prefetchPhoneApps() {
+  if (isSlowNetwork()) return;
+  void Promise.allSettled([
+    import("@/components/game/PlayerSocial"),
+    import("@/components/game/phone/PhoneMarketApp"),
+    import("@/components/game/phone/PhonePartyApp"),
+    import("@/components/game/phone/PhoneBankApp"),
+  ]);
+}
 
 // Lazy-loaded app views for performance on mobile and low-end Android
 const PlayerSocial = lazy(() =>
@@ -114,44 +126,57 @@ const CommunityPhoneApps = lazy(() =>
 );
 const PhoneCommunityServices = lazy(() => import("@/components/game/phone/PhoneCommunityServices"));
 const ActivityCatalogueApp = lazy(() =>
-  import("@/components/game/ActivityCatalogueApp").then((m) => ({ default: m.ActivityCatalogueApp })),
+  import("@/components/game/ActivityCatalogueApp").then((m) => ({
+    default: m.ActivityCatalogueApp,
+  })),
 );
 
 type PhoneAppDefinition = {
   label: string;
   icon: LucideIcon;
   tone: string;
+  /** important: bright, layered tile. utility: flat, desaturated tile. */
+  emphasis?: "important" | "utility";
 };
 
 const PHONE_APPS: readonly PhoneAppDefinition[] = [
-  { label: "Home", icon: House, tone: "phone-app-green" },
-  { label: "Map", icon: MapPinned, tone: "phone-app-blue" },
-  { label: "Messages", icon: MessagesSquare, tone: "phone-app-coral" },
+  { label: "Activities", icon: ClipboardList, tone: "phone-app-green", emphasis: "important" },
+  { label: "Bank", icon: Landmark, tone: "phone-app-blue", emphasis: "important" },
+  { label: "Billboards", icon: PanelsTopLeft, tone: "phone-app-gold" },
+  { label: "Businesses", icon: Building2, tone: "phone-app-green" },
+  { label: "Calendar", icon: CalendarDays, tone: "phone-app-blue", emphasis: "utility" },
   { label: "Career Life", icon: BriefcaseBusiness, tone: "phone-app-gold" },
-  { label: "Bank", icon: Landmark, tone: "phone-app-blue" },
-  { label: "Missions", icon: Target, tone: "phone-app-gold" },
-  { label: "Inventory", icon: Backpack, tone: "phone-app-blue" },
-  { label: "Profile", icon: UserRound, tone: "phone-app-muted" },
+  { label: "Contribution", icon: HandCoins, tone: "phone-app-gold" },
+  { label: "Education", icon: GraduationCap, tone: "phone-app-blue" },
+  { label: "Food Delivery", icon: UtensilsCrossed, tone: "phone-app-coral" },
+  { label: "Inventory", icon: Backpack, tone: "phone-app-blue", emphasis: "utility" },
+  { label: "Invest", icon: ChartNoAxesCombined, tone: "phone-app-gold" },
+  { label: "Leaderboard", icon: Trophy, tone: "phone-app-gold" },
+  { label: "Map", icon: MapPinned, tone: "phone-app-blue", emphasis: "important" },
+  { label: "Market", icon: Store, tone: "phone-app-coral" },
+  { label: "Messages", icon: MessagesSquare, tone: "phone-app-green", emphasis: "important" },
+  { label: "Missions", icon: Target, tone: "phone-app-gold", emphasis: "important" },
+  { label: "Notifications", icon: Bell, tone: "phone-app-gold", emphasis: "utility" },
+  { label: "Okada Rides", icon: Bike, tone: "phone-app-green" },
+  { label: "Party", icon: PartyPopper, tone: "phone-app-coral" },
+  { label: "Profile", icon: UserRound, tone: "phone-app-muted", emphasis: "utility" },
   { label: "Property", icon: HousePlus, tone: "phone-app-green" },
   { label: "Real Estate", icon: Building2, tone: "phone-app-green" },
-  { label: "Market", icon: Store, tone: "phone-app-coral" },
-  { label: "Notifications", icon: Bell, tone: "phone-app-gold" },
-  { label: "Settings", icon: Settings, tone: "phone-app-muted" },
-  { label: "Education", icon: GraduationCap, tone: "phone-app-blue" },
-  { label: "Activities", icon: ClipboardList, tone: "phone-app-green" },
-  { label: "Party", icon: PartyPopper, tone: "phone-app-coral" },
-  { label: "Food Delivery", icon: UtensilsCrossed, tone: "phone-app-coral" },
-  { label: "Okada Rides", icon: Bike, tone: "phone-app-green" },
-  { label: "Calendar", icon: CalendarDays, tone: "phone-app-blue" },
+  { label: "Settings", icon: Settings, tone: "phone-app-muted", emphasis: "utility" },
   { label: "Town News", icon: Newspaper, tone: "phone-app-blue" },
-  { label: "Leaderboard", icon: Trophy, tone: "phone-app-gold" },
-  { label: "Contribution", icon: HandCoins, tone: "phone-app-gold" },
-  { label: "Businesses", icon: Building2, tone: "phone-app-green" },
-  { label: "Invest", icon: ChartNoAxesCombined, tone: "phone-app-gold" },
-  { label: "Billboards", icon: PanelsTopLeft, tone: "phone-app-gold" },
 ] as const;
 
 const COMMUNITY_APPS = new Set<CommunityPhoneApp>(["Leaderboard", "Town News"]);
+
+/** Apps restyled to the Settings design (cards, sections, rows). Others keep their current look. */
+const SETTINGS_STYLE_APPS = new Set([
+  "Profile",
+  "Inventory",
+  "Town News",
+  "Market",
+  "Education",
+  "Bank",
+]);
 
 class PhoneAppBoundary extends Component<
   { appName: string; onHome: () => void; children: ReactNode },
@@ -177,18 +202,6 @@ class PhoneAppBoundary extends Component<
   }
 }
 
-function PhoneAppLoadingSpinner({ title }: { title: string }) {
-  return (
-    <div className="flex h-full w-full items-center justify-center p-8 text-center">
-      <WorldLoadingIndicator
-        presentation="screen"
-        title={`Opening ${title}…`}
-        detail="Getting things ready…"
-      />
-    </div>
-  );
-}
-
 export function PhoneLauncher({
   className,
   compact = false,
@@ -206,6 +219,11 @@ export function PhoneLauncher({
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }) {
+  useEffect(() => {
+    const timer = window.setTimeout(prefetchPhoneApps, 300);
+    return () => window.clearTimeout(timer);
+  }, []);
+
   const [navigation, dispatchNavigation] = useReducer(reducePhoneNavigation, {
     app: null,
     history: [],
@@ -589,7 +607,13 @@ export function PhoneLauncher({
                 onClick={() => openApp(app.label)}
                 aria-label={`Open ${app.label}`}
               >
-                <span className={cn("phone-app-icon", app.tone)}>
+                <span
+                  className={cn(
+                    "phone-app-icon",
+                    app.tone,
+                    app.emphasis && `phone-app-${app.emphasis}`,
+                  )}
+                >
                   <Icon className="h-5 w-5" aria-hidden="true" />
                   {badge ? (
                     <i className="phone-app-badge" aria-label={`${badge} active notifications`}>
@@ -623,11 +647,18 @@ export function PhoneLauncher({
                   <div className="w-8" aria-hidden="true" />
                 </div>
                 <div
-                  className="phone-app-body"
+                  className={cn(
+                    "phone-app-body",
+                    SETTINGS_STYLE_APPS.has(appName) && "phone-app-body--sx",
+                  )}
                   onClickCapture={(event) => handlePhoneLinkClick(event, openApp, openWorld)}
                 >
                   <PhoneAppBoundary key={appName} appName={appName} onHome={returnHome}>
-                    <Suspense fallback={<PhoneAppLoadingSpinner title={appName} />}>
+                    <Suspense
+                      fallback={
+                        <PhoneAppLoader title={`Opening ${appName}…`} onHome={returnHome} />
+                      }
+                    >
                       {renderAppContent(appName)}
                     </Suspense>
                   </PhoneAppBoundary>

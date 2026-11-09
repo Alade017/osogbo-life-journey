@@ -12,6 +12,7 @@ import {
 } from "@/lib/advertising-service";
 import { formatNaira, q } from "@/lib/game";
 import "./billboard-ad.css";
+import { PaletteSelect } from "@/components/ui/palette-select";
 
 const themes: { id: AdTheme; label: string }[] = [
   { id: "green", label: "Market green" },
@@ -128,16 +129,14 @@ export function BillboardAdApp() {
         >
           <label>
             Billboard
-            <select
+            <PaletteSelect
               value={billboardId || selected.id}
-              onChange={(event) => setBillboardId(event.target.value)}
-            >
-              {market.data.billboards.map((board) => (
-                <option value={board.id} key={board.id}>
-                  {board.name} · {board.location} · {board.sizeType}
-                </option>
-              ))}
-            </select>
+              onValueChange={setBillboardId}
+              options={market.data.billboards.map((board) => ({
+                value: board.id,
+                label: `${board.name} · ${board.location} · ${board.sizeType}`,
+              }))}
+            />
           </label>
           <p className="billboard-placement">{selected.placement}</p>
           <label>
@@ -173,26 +172,19 @@ export function BillboardAdApp() {
           </label>
           <label>
             Design
-            <select value={theme} onChange={(event) => setTheme(event.target.value as AdTheme)}>
-              {themes.map((choice) => (
-                <option key={choice.id} value={choice.id}>
-                  {choice.label}
-                </option>
-              ))}
-            </select>
+            <PaletteSelect
+              value={theme}
+              onValueChange={(next) => setTheme(next as AdTheme)}
+              options={themes.map((choice) => ({ value: choice.id, label: choice.label }))}
+            />
           </label>
           <label>
             Campaign duration
-            <select
-              value={duration}
-              onChange={(event) => setDuration(Number(event.target.value) as 7 | 14 | 30)}
-            >
-              {[7, 14, 30].map((days) => (
-                <option value={days} key={days}>
-                  {days} days
-                </option>
-              ))}
-            </select>
+            <PaletteSelect
+              value={String(duration)}
+              onValueChange={(next) => setDuration(Number(next) as 7 | 14 | 30)}
+              options={[7, 14, 30].map((days) => ({ value: String(days), label: `${days} days` }))}
+            />
           </label>
           <div className="billboard-ad-price">
             <span>Campaign total</span>
@@ -257,21 +249,16 @@ export function BillboardAdApp() {
                 </label>
                 <label>
                   Design
-                  <select
+                  <PaletteSelect
                     value={editCreative.creativeTheme}
-                    onChange={(event) =>
+                    onValueChange={(next) =>
                       setEditCreative((value) => ({
                         ...value,
-                        creativeTheme: event.target.value as AdTheme,
+                        creativeTheme: next as AdTheme,
                       }))
                     }
-                  >
-                    {themes.map((choice) => (
-                      <option key={choice.id} value={choice.id}>
-                        {choice.label}
-                      </option>
-                    ))}
-                  </select>
+                    options={themes.map((choice) => ({ value: choice.id, label: choice.label }))}
+                  />
                 </label>
                 <div className="billboard-edit-actions">
                   <Button type="button" variant="outline" onClick={() => setEditingId(null)}>

@@ -40,6 +40,7 @@ import { Terrain3D } from "./Terrain3D";
 import { MovingTraffic3D } from "./MovingTraffic3D";
 import { MovingPedestrians3D } from "./MovingPedestrians3D";
 import { FunctionalStreetLights3D } from "./FunctionalStreetLights3D";
+import { RoadsideInfrastructure3D } from "./RoadsideInfrastructure3D";
 import { LockedPlaces3D, type LockedPlace } from "./LockedPlaces3D";
 
 type Props = PhaserMapData &
@@ -230,8 +231,9 @@ export function R3FTownSurface(props: Props) {
         // Skip intersections, corners and road endpoints.
         if (horizontal === vertical) return;
 
-        // Create a repeating dashed pattern.
-        if ((x + z) % 3 !== 0) return;
+        // Keep the centre marking legible on longer streets without turning
+        // the narrow grid roads into solid painted strips.
+        if ((x + z) % 2 !== 0) return;
 
         const p = point(x, z);
 
@@ -264,9 +266,8 @@ export function R3FTownSurface(props: Props) {
 
         if (!isIntersection) return;
 
-        // Avoid placing multiple crossings in adjacent intersection tiles.
-        if ((x + z) % 4 !== 0) return;
-
+        // Mark every connected junction so pedestrian crossings form a consistent
+        // city-wide network instead of appearing only at a sparse subset.
         const horizontalRoad = left || right;
         const p = point(x, z);
 
@@ -831,6 +832,109 @@ export function R3FTownSurface(props: Props) {
 
     return result;
   }, [streetLights]);
+  const roadsideInfrastructure = useMemo(() => {
+    const occupied = new Set<string>();
+    town.grid.buildings.forEach((building) => {
+      for (const [dx, dz] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
+        occupied.add(`${building.x + dx},${building.z + dz}`);
+      }
+    });
+    [...town.grid.waterCells, ...town.grid.plotCells].forEach(([x, z]) => {
+      occupied.add(`${x},${z}`);
+    });
+
+    // Reserve existing roadside props and deterministic tree cells before placing poles.
+    const reservePositions = (positions: readonly [number, number][]) => {
+      positions.forEach(([worldX, worldZ]) => {
+        const gridX = Math.round(worldX / cell + (gridCols - 1) / 2 - 0.5);
+        const gridZ = Math.round(worldZ / cell + (gridRows - 1) / 2 - 0.5);
+        occupied.add(`${gridX},${gridZ}`);
+      });
+    };
+    reservePositions(streetLights);
+    reservePositions(wasteBins);
+    reservePositions(trees.map((tree) => tree.position));
+    reservePositions(busStops);
+    reservePositions(roadsideShops);
+    reservePositions(motorcycles);
+    reservePositions(tricycles);
+    reservePositions(streetVendors);
+
+    const poles: [number, number][] = [];
+    const spans: { start: [number, number]; end: [number, number] }[] = [];
+
+    // Process each contiguous horizontal road run independently. This prevents
+    // wires from jumping between parallel roads, gaps, or separate road segments.
+    town.grid.rows.forEach((row, z) => {
+      let x = 0;
+      while (x < row.length) {
+        if (row[x] !== "r" || row[x - 1] === "r") {
+          x += 1;
+          continue;
+        }
+        const runStart = x;
+        while (x < row.length && row[x] === "r") x += 1;
+        const runEnd = x - 1;
+        if (runEnd - runStart < 4) continue;
+
+        const sideZ = town.grid.rows[z - 1]?.[runStart] === "g" ? z - 1
+          : town.grid.rows[z + 1]?.[runStart] === "g" ? z + 1
+          : null;
+        if (sideZ === null) continue;
+
+        let previousPole: [number, number] | null = null;
+        for (let roadX = runStart + 1; roadX <= runEnd - 1; roadX += 5) {
+          if (town.grid.rows[sideZ]?.[roadX] !== "g") continue;
+          const seed = (roadX * 17 + sideZ * 31) % 100;
+          const key = `${roadX},${sideZ}`;
+          if (seed <= 38 || occupied.has(key)) continue;
+
+          const p = point(roadX + 0.5, sideZ + 0.5);
+          const current: [number, number] = [p[0], p[2]];
+          if (previousPole) {
+            spans.push({ start: previousPole, end: current });
+          }
+          poles.push(current);
+          previousPole = current;
+          occupied.add(key);
+        }
+      }
+    });
+
+    const drains: { position: [number, number, number]; horizontal: boolean; length: number }[] = [];
+    const directions = [
+      { dx: 0, dz: -1 },
+      { dx: 0, dz: 1 },
+      { dx: -1, dz: 0 },
+      { dx: 1, dz: 0 },
+    ] as const;
+    town.grid.rows.forEach((row, z) => {
+      Array.from(row).forEach((tile, x) => {
+        if (tile !== "r") return;
+        const center = point(x, z);
+        directions.forEach(({ dx, dz }) => {
+          const nx = x + dx;
+          const nz = z + dz;
+          if (town.grid.rows[nz]?.[nx] !== "g" || occupied.has(`${nx},${nz}`)) return;
+
+          // The channel starts beyond the 0.28-cell sidewalk and curb, with
+          // a small separation so their meshes do not overlap.
+          const drainOffset = cell / 2 + cell * 0.28 + cell * 0.09 + cell * 0.035;
+          drains.push({
+            position: [
+              center[0] + dx * drainOffset,
+              0.025,
+              center[2] + dz * drainOffset,
+            ],
+            horizontal: dx === 0,
+            length: cell,
+          });
+        });
+      });
+    });
+    return { poles, spans, drains };
+  }, [streetLights, wasteBins, trees, busStops, roadsideShops, motorcycles, tricycles, streetVendors]);
+
   const badgePositions = useMemo(
     () => calculateBadgePositions(props.places, point, cell),
     [props.places],
@@ -863,7 +967,7 @@ export function R3FTownSurface(props: Props) {
         >
           <Ready onReady={props.onReady} />
           <CameraFocusController targetPosition={selectedTarget?.position ?? null} />
-          <WorldCamera width={gridCols * cell} depth={gridRows * cell} zoom={1.55} />
+          <WorldCamera width={gridCols * cell} depth={gridRows * cell} zoom={1.35} freeExplore />
           <MapLighting size={gridCols * cell} />
           <Terrain3D gridCols={gridCols} gridRows={gridRows} cellSize={cell} />
 
@@ -880,6 +984,7 @@ export function R3FTownSurface(props: Props) {
           <WorldTricycles positions={tricycles} size={cell} />
           <WorldStreetVendors positions={streetVendors} size={cell} />
           <FunctionalStreetLights3D positions={streetLights} size={cell} isNight={isNight} />
+          <RoadsideInfrastructure3D poles={roadsideInfrastructure.poles} spans={roadsideInfrastructure.spans} drains={roadsideInfrastructure.drains} cellSize={cell} />
           <WorldWasteBins positions={wasteBins} size={cell} />
           <WorldInstances
             tone="slate"
@@ -1053,6 +1158,25 @@ export function R3FTownSurface(props: Props) {
             }
           />
         </Canvas>
+        <div
+          aria-label="Map camera controls"
+          style={{
+            position: "absolute",
+            right: 12,
+            bottom: 12,
+            pointerEvents: "none",
+            color: WORLD_PALETTE.timber,
+            background: "rgba(241, 233, 217, 0.92)",
+            border: "1px solid rgba(130, 112, 93, 0.28)",
+            padding: "7px 10px",
+            borderRadius: 8,
+            fontSize: 11,
+            lineHeight: 1.45,
+            maxWidth: 230,
+          }}
+        >
+          Drag to rotate · Two-finger drag to pan · Scroll or pinch to zoom
+        </div>
         {hovered && (
           <div
             role="status"

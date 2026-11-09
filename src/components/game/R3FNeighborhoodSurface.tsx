@@ -41,12 +41,7 @@ import {
   type WorldInstance,
 } from "../3d/WorldScene";
 import { CHARACTER_MOTION } from "@/components/3d/character-config";
-import {
-  NEIGHBORHOOD_STREET_SCALE,
-  WORLD_CAMERA,
-  WORLD_PALETTE,
-  WORLD_SCALE,
-} from "../3d/world-theme";
+import { WORLD_CAMERA, WORLD_PALETTE, WORLD_SCALE } from "../3d/world-theme";
 import {
   carSpots,
   pedestrianCrossings,
@@ -357,8 +352,8 @@ export function R3FNeighborhoodSurface({
           gl={{ antialias: false, powerPreference: "low-power" }}
         >
           <WorldCamera
-            width={17 * NEIGHBORHOOD_STREET_SCALE}
-            depth={14 * NEIGHBORHOOD_STREET_SCALE}
+            width={bounds.width * unit}
+            depth={bounds.height * unit}
             target={target}
             zoom={zoom}
             onZoomChange={onZoomChange}

@@ -12,6 +12,7 @@ import { Chip, ComingSoon, EmptyState, LoadingState } from "@/components/game/ui
 import { LOCATION_TONE_BG } from "@/lib/location-theme";
 import { cn } from "@/lib/utils";
 import { TravelPanel } from "@/components/game/TravelPanel";
+import { requestDepartureFromHome } from "@/lib/home-departure";
 import { initialTravelState, travelReducer } from "@/lib/travel-state";
 import { getDrivingRoute, hasValidCoordinates } from "@/lib/route-service";
 import { checkJobEligibility } from "@/lib/job-board-service";
@@ -242,6 +243,12 @@ function LocationPage() {
     });
     if (validationError) {
       toast.error(validationError);
+      return;
+    }
+    if (character?.inside_home_property_id) {
+      // Leaving a house plays the door first; the house screen runs the trip alongside it.
+      requestDepartureFromHome({ locationId: loc.id, mode: travelState.mode });
+      void navigate({ to: "/house" });
       return;
     }
     dispatchTravel({ type: "start" });

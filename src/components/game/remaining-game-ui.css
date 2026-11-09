@@ -156,7 +156,17 @@
       color-mix(in srgb, var(--chart-4) 25%, transparent),
       transparent 18rem
     ),
-    var(--brand-porcelain);
+    var(--phone-surface);
+}
+
+/* Phone surface: a soft fade from cream at the top to a light mist blue at the
+   bottom, so white cards and the royal and green tiles stand out on it. */
+.phone-ui-refresh {
+  --phone-surface: linear-gradient(180deg, #f8f3f0 0%, #f5f2ea 38%, #e9eef7 100%);
+}
+
+.phone-ui-refresh .phone-app-view {
+  background: var(--phone-surface);
 }
 
 .phone-ui-refresh .phone-status {
@@ -178,30 +188,79 @@
 }
 
 .phone-ui-refresh .phone-app {
-  min-height: 92px;
-  gap: 7px;
+  min-height: 96px;
+  gap: 8px;
   border: 1px solid transparent;
   border-radius: 18px;
   color: var(--brand-ink);
+  font-size: 11px;
   font-weight: 650;
-  transition:
-    transform 150ms ease,
-    background-color 150ms ease,
-    border-color 150ms ease;
+  transition: transform 150ms ease;
+}
+
+.phone-ui-refresh .phone-app > span:last-child {
+  display: -webkit-box;
+  max-width: 100%;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  word-break: break-word;
 }
 
 .phone-ui-refresh .phone-app:hover,
 .phone-ui-refresh .phone-app:focus-visible {
   transform: translateY(-2px);
-  border-color: color-mix(in srgb, var(--brand-royal) 12%, var(--border));
-  background: color-mix(in srgb, var(--brand-cream) 88%, transparent);
 }
 
-.phone-ui-refresh .phone-app-icon {
-  width: 52px;
-  height: 52px;
-  border-radius: 17px;
-  box-shadow: 0 7px 16px color-mix(in srgb, var(--brand-ink) 12%, transparent);
+/* App icon: a solid palette tile with a cream glyph. The tone classes (phone-app-green, -gold,
+   -blue, -coral, -muted) only choose --app-tone, so every app uses the same shape and size. */
+.phone-ui-refresh .phone-app .phone-app-icon {
+  --app-tone: var(--brand-royal);
+  --app-glyph: var(--brand-cream);
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--brand-ink) 10%, transparent);
+  border-radius: 18px;
+  color: var(--app-glyph);
+  background: var(--app-tone);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 8px 16px color-mix(in srgb, var(--app-tone) 30%, transparent);
+}
+
+.phone-ui-refresh .phone-app .phone-app-icon svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 1.9;
+}
+
+.phone-ui-refresh .phone-app .phone-app-icon.phone-app-green {
+  --app-tone: var(--success);
+}
+
+.phone-ui-refresh .phone-app .phone-app-icon.phone-app-gold {
+  --app-tone: var(--chart-4);
+  --app-glyph: var(--brand-ink);
+}
+
+.phone-ui-refresh .phone-app .phone-app-icon.phone-app-blue {
+  --app-tone: var(--brand-royal);
+}
+
+.phone-ui-refresh .phone-app .phone-app-icon.phone-app-coral {
+  --app-tone: var(--destructive);
+}
+
+.phone-ui-refresh .phone-app .phone-app-icon.phone-app-muted {
+  --app-tone: var(--brand-slate);
+}
+
+.phone-ui-refresh .phone-app:hover .phone-app-icon {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 12px 22px color-mix(in srgb, var(--app-tone) 38%, transparent);
 }
 
 .phone-ui-refresh .phone-app-view {
@@ -238,7 +297,7 @@
 .phone-ui-refresh .phone-app-body .game-panel {
   border-color: color-mix(in srgb, var(--brand-royal) 11%, var(--border));
   border-radius: 18px;
-  background: var(--brand-cream);
+  background: #ffffff;
   box-shadow: 0 7px 20px color-mix(in srgb, var(--brand-ink) 6%, transparent);
 }
 
@@ -291,4 +350,490 @@
     scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Settings design for the core phone apps: sectioned cards, Settings tokens and touch-sized controls.
+   Scoped to the apps listed in SETTINGS_STYLE_APPS so the other apps keep their current look. */
+.phone-ui-refresh .phone-app-body--sx {
+  --sx-muted: var(--muted-foreground, #7a6a58);
+  --sx-line: color-mix(in srgb, var(--border, #e5d6bf) 80%, transparent);
+  --sx-card: #ffffff;
+  display: grid;
+  gap: 14px;
+  padding: 6px 14px 24px;
+}
+
+.phone-ui-refresh .phone-app-body--sx .game-panel {
+  padding: 18px;
+  border: 1px solid var(--sx-line);
+  border-radius: 24px;
+  background: var(--sx-card);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 10px 30px rgba(60, 40, 20, 0.06);
+}
+
+.phone-ui-refresh .phone-app-body--sx .game-page-header h1 {
+  font-size: 1.25rem;
+  font-weight: 850;
+  letter-spacing: -0.02em;
+}
+
+.phone-ui-refresh .phone-app-body--sx .game-page-eyebrow {
+  color: var(--sx-muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.phone-ui-refresh .phone-app-body--sx button {
+  min-height: 44px;
+  border-radius: 14px;
+  font-weight: 750;
+}
+
+.phone-ui-refresh .phone-app-body--sx :is(input, select, textarea) {
+  min-height: 44px;
+  border: 1px solid var(--sx-line);
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.phone-ui-refresh .phone-app-body--sx :is(input, select, textarea):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+
+/* Profile, Inventory and Education use their own class systems. These rules bring them to the
+   same card, eyebrow and control sizes as Settings, still scoped to the core phone apps. */
+.phone-ui-refresh .phone-app-body--sx {
+  --sx-gold: var(--brand-royal);
+}
+
+.phone-ui-refresh
+  .phone-app-body--sx
+  :is(
+    .pi-panel,
+    .learning-card,
+    .learning-notice,
+    .learning-empty,
+    .learning-stats,
+    .learning-balance
+  ) {
+  padding: 18px;
+  border: 1px solid var(--sx-line);
+  border-radius: 24px;
+  background: var(--sx-card);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 10px 30px rgba(60, 40, 20, 0.06);
+}
+
+.phone-ui-refresh .phone-app-body--sx .pi-stage {
+  border: 1px solid var(--sx-line);
+  border-radius: 24px;
+}
+
+.phone-ui-refresh .phone-app-body--sx .pi-stat {
+  border: 1px solid var(--sx-line);
+  border-radius: 18px;
+  background: #ffffff;
+}
+
+.phone-ui-refresh .phone-app-body--sx .pi-masthead h1,
+.phone-ui-refresh .phone-app-body--sx .learning-hero h1 {
+  font-size: 1.25rem;
+  font-weight: 850;
+  letter-spacing: -0.02em;
+}
+
+.phone-ui-refresh .phone-app-body--sx :is(.pi-eyebrow, .learning-kicker) {
+  color: var(--sx-gold);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.phone-ui-refresh .phone-app-body--sx .learning-hero {
+  padding: 22px 18px;
+  border: 1px solid var(--sx-line);
+  border-radius: 24px;
+  background: var(--sx-card);
+  color: var(--foreground);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.6),
+    0 10px 30px rgba(60, 40, 20, 0.06);
+}
+
+.phone-ui-refresh .phone-app-body--sx .learning-hero p {
+  color: var(--sx-muted);
+}
+
+.phone-ui-refresh
+  .phone-app-body--sx
+  :is(
+    .pi-chip-btn,
+    .pi-pill,
+    .pi-slot-actions button,
+    .pi-detail-actions button,
+    .learning-tabs button,
+    .learning-save,
+    .learning-search input
+  ) {
+  min-height: 44px;
+  border-radius: 14px;
+  font-weight: 750;
+}
+
+/* Each chat row is 64px tall with 8px between rows, matching the list's 72px row height. */
+.phone-ui-refresh .phone-app-body .phone-conversation {
+  box-sizing: border-box;
+  height: 64px;
+  min-height: 64px;
+  margin-bottom: 8px;
+  gap: 12px;
+  padding: 0 14px;
+  border: 1px solid color-mix(in srgb, var(--brand-mist) 90%, transparent);
+  border-radius: 18px;
+  color: var(--brand-ink);
+  background: #ffffff;
+  contain-intrinsic-size: 64px;
+}
+
+/* Profile pictures show the character's head only, inside a round frame. */
+.phone-ui-refresh .phone-app-body .phone-avatar-head {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--brand-royal) 8%, #ffffff);
+}
+
+.phone-ui-refresh .phone-app-body .phone-avatar-head svg {
+  position: absolute;
+  left: -26px;
+  top: -2px;
+  width: 96px;
+  height: 120px;
+  max-width: none;
+}
+
+.phone-ui-refresh .phone-app-body .phone-conversation:hover {
+  border-color: color-mix(in srgb, var(--brand-royal) 35%, transparent);
+  background: #ffffff;
+}
+
+.phone-ui-refresh .phone-app-body .phone-conversation-copy strong,
+.phone-ui-refresh .phone-app-body .phone-thread-person strong {
+  color: var(--brand-ink);
+  font-size: 15px;
+}
+
+.phone-ui-refresh .phone-app-body .phone-conversation-copy small,
+.phone-ui-refresh .phone-app-body .phone-thread-person small {
+  color: var(--brand-slate);
+  font-size: 13px;
+}
+
+.phone-ui-refresh .phone-app-body .phone-thread-header {
+  min-height: 72px;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid color-mix(in srgb, var(--brand-mist) 90%, transparent);
+  color: var(--brand-ink);
+  background: var(--brand-porcelain);
+}
+
+.phone-ui-refresh .phone-app-body .phone-thread-back {
+  width: 44px;
+  height: 44px;
+  color: var(--brand-royal);
+}
+
+.phone-ui-refresh .phone-app-body .phone-message-history {
+  gap: 14px;
+  padding: 20px 16px;
+}
+
+.phone-ui-refresh .phone-app-body .phone-message-bubble {
+  max-width: 78%;
+  gap: 6px;
+  padding: 12px 14px 8px;
+  border: 1px solid color-mix(in srgb, var(--brand-mist) 90%, transparent);
+  border-radius: 18px 18px 18px 6px;
+  color: var(--brand-ink);
+  background: #ffffff;
+  box-shadow: none;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.phone-ui-refresh .phone-app-body .phone-message-bubble.is-own {
+  border-color: transparent;
+  border-radius: 18px 18px 6px 18px;
+  color: #fff;
+  background: var(--brand-royal);
+}
+
+.phone-ui-refresh .phone-app-body .phone-message-bubble.is-own .phone-message-time {
+  color: color-mix(in srgb, #fff 75%, transparent);
+}
+
+.phone-ui-refresh .phone-app-body .phone-message-time {
+  font-size: 11px;
+}
+
+.phone-ui-refresh .phone-app-body .phone-chat-composer {
+  grid-template-columns: minmax(0, 1fr) 48px;
+  gap: 10px;
+  padding: 14px 16px 18px;
+  border-top: 1px solid color-mix(in srgb, var(--brand-mist) 90%, transparent);
+  background: var(--brand-porcelain);
+}
+
+.phone-ui-refresh .phone-app-body .phone-chat-input {
+  min-height: 48px;
+  padding: 13px 16px;
+  border: 1px solid color-mix(in srgb, var(--brand-mist) 90%, transparent);
+  border-radius: 24px;
+  color: var(--brand-ink);
+  background: #ffffff;
+  font-size: 15px;
+}
+
+.phone-ui-refresh .phone-app-body .phone-chat-send {
+  width: 48px;
+  height: 48px;
+  color: #fff;
+  background: var(--brand-royal);
+}
+
+.phone-ui-refresh .phone-app-body .phone-chat-send:disabled {
+  background: var(--brand-mist);
+  color: var(--brand-slate);
+}
+
+/* Messages header: one flowing column. The subtitle, then the search bar and new-message
+   button on one row, then the filters, then the chat list, which takes the remaining height. */
+.phone-ui-refresh .phone-app-body .phone-chat-panel {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 16px 0;
+}
+
+.phone-ui-refresh .phone-app-body .phone-inbox-heading {
+  flex: none;
+}
+
+.phone-ui-refresh .phone-app-body .phone-inbox-heading > div {
+  padding: 0;
+}
+
+.phone-ui-refresh .phone-app-body .phone-inbox-heading p {
+  margin: 0;
+}
+
+.phone-ui-refresh .phone-app-body .phone-inbox-controls {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 10px;
+}
+
+.phone-ui-refresh .phone-app-body .phone-new-message-button {
+  flex: none;
+}
+
+.phone-ui-refresh .phone-app-body .phone-inbox-search {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  min-height: 40px;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--brand-mist) 90%, transparent);
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.phone-ui-refresh .phone-app-body .phone-inbox-search input {
+  flex: 1;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--brand-ink);
+  font-size: 14px;
+}
+
+.phone-ui-refresh .phone-app-body .phone-inbox-filters {
+  display: flex;
+  flex: none;
+  gap: 8px;
+}
+
+.phone-ui-refresh .phone-app-body .phone-conversation-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
+  gap: 0;
+  padding: 4px 16px 16px;
+}
+/* Palette accents for the other apps: royal primary actions and eyebrows, ink headings. */
+.phone-ui-refresh .phone-app-body .phone-btn-primary {
+  color: #fff;
+  background: var(--brand-royal);
+}
+
+.phone-ui-refresh .phone-app-body .game-page-eyebrow {
+  color: var(--brand-royal);
+}
+
+.phone-ui-refresh .phone-app-body .game-page-header h1 {
+  color: var(--brand-ink);
+}
+
+/* Activities: location dropdown in the palette. The list opens in a portal above the phone. */
+.phone-ui-refresh .phone-app-body .activity-location-field {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--brand-ink);
+}
+
+.phone-ui-refresh .phone-app-body .activity-location-trigger {
+  height: 48px;
+  padding: 0 14px;
+  border: 1px solid color-mix(in srgb, var(--brand-mist) 90%, transparent);
+  border-radius: 14px;
+  background: #ffffff;
+  color: var(--brand-ink);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.activity-location-trigger:focus-visible {
+  outline: 2px solid var(--brand-royal);
+  outline-offset: 2px;
+}
+
+.activity-location-content {
+  max-height: 60vh;
+  padding: 6px;
+  border: 1px solid color-mix(in srgb, var(--brand-mist) 90%, transparent);
+  border-radius: 16px;
+  background: #ffffff;
+  color: var(--brand-ink);
+  box-shadow: 0 16px 40px color-mix(in srgb, var(--brand-ink) 18%, transparent);
+}
+
+.activity-location-content [role="option"] {
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.activity-location-content [role="option"][data-highlighted] {
+  background: color-mix(in srgb, var(--brand-royal) 10%, #ffffff);
+  color: var(--brand-royal);
+}
+
+.activity-location-content [role="option"][data-state="checked"] {
+  color: var(--brand-royal);
+  font-weight: 800;
+}
+
+/* Messages header, matching the New message screen: a bold title with the new-message button
+   on its right, then a full-width search bar. The subtitle is removed. */
+.phone-ui-refresh .phone-app-body .phone-inbox-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 6px;
+}
+
+.phone-ui-refresh .phone-app-body .phone-inbox-heading h3 {
+  display: block;
+  margin: 0;
+  color: var(--brand-ink);
+  font-size: 1.45rem;
+  font-weight: 850;
+  letter-spacing: -0.02em;
+}
+
+.phone-ui-refresh .phone-app-body .phone-inbox-controls {
+  padding: 4px 16px 8px;
+}
+
+.phone-ui-refresh .phone-app-body .phone-new-message-button {
+  width: 40px;
+  height: 40px;
+  border-color: color-mix(in srgb, var(--brand-royal) 30%, #ffffff);
+  color: var(--brand-royal);
+  background: #ffffff;
+}
+
+.phone-ui-refresh .phone-app-body .phone-inbox-search {
+  height: 44px;
+  min-height: 44px;
+  border-radius: 14px;
+}
+
+/* Tile emphasis. Important tiles get a bright gradient and a layered 3D bevel to draw the eye.
+   Utility tiles are flat and desaturated so they recede. Declared last so they win the ties. */
+.phone-ui-refresh .phone-app .phone-app-icon.phone-app-important {
+  background: linear-gradient(
+    150deg,
+    color-mix(in srgb, var(--app-tone) 72%, #ffffff) 0%,
+    var(--app-tone) 52%,
+    color-mix(in srgb, var(--app-tone) 74%, var(--brand-ink)) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.16),
+    0 2px 0 color-mix(in srgb, var(--app-tone) 60%, var(--brand-ink)),
+    0 12px 22px color-mix(in srgb, var(--app-tone) 40%, transparent);
+  transform: translateY(0);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.phone-ui-refresh .phone-app:hover .phone-app-icon.phone-app-important {
+  transform: translateY(-3px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.16),
+    0 4px 0 color-mix(in srgb, var(--app-tone) 60%, var(--brand-ink)),
+    0 18px 28px color-mix(in srgb, var(--app-tone) 46%, transparent);
+}
+
+.phone-ui-refresh .phone-app:active .phone-app-icon.phone-app-important {
+  transform: translateY(2px) scale(0.97);
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.2),
+    0 1px 0 color-mix(in srgb, var(--app-tone) 60%, var(--brand-ink));
+}
+
+.phone-ui-refresh .phone-app .phone-app-icon.phone-app-utility,
+.phone-ui-refresh .phone-app:hover .phone-app-icon.phone-app-utility {
+  background: color-mix(in srgb, var(--app-tone) 16%, #ffffff);
+  color: color-mix(in srgb, var(--app-tone) 45%, var(--brand-slate));
+  border-color: var(--brand-mist);
+  box-shadow: none;
+  filter: saturate(0.6);
 }

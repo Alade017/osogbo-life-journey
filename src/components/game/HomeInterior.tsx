@@ -25,6 +25,7 @@ import { parseHousingSave } from "@/lib/housing-service";
 import { readLocalHousingSave, writeLocalHousingSave } from "@/lib/save-storage";
 import { ACTION_CATALOG, type LifeActionId, type Needs } from "@/lib/life-simulation";
 import { homeFurnitureAction } from "@/lib/home-furniture-actions";
+import { PaletteSelect } from "@/components/ui/palette-select";
 
 const ROOM_ICONS = {
   lounge: Sofa,
@@ -464,16 +465,17 @@ export function HomeInterior({
             <div className="home-catalog">
               <div className="catalog-filter">
                 <label htmlFor="furniture-category">Catalog</label>
-                <select
+                <PaletteSelect
                   id="furniture-category"
                   value={category}
-                  onChange={(event) => setCategory(event.target.value)}
-                >
-                  <option value="all">All items</option>
-                  {[...new Set(FURNITURE_CATALOG.map((item) => item.category))].map((entry) => (
-                    <option key={entry}>{entry}</option>
-                  ))}
-                </select>
+                  onValueChange={setCategory}
+                  options={[
+                    { value: "all", label: "All items" },
+                    ...[...new Set(FURNITURE_CATALOG.map((item) => item.category))].map(
+                      (entry) => ({ value: entry, label: entry }),
+                    ),
+                  ]}
+                />
               </div>
               {!onPurchaseFurniture && <p>Save your home to the cloud before buying furniture.</p>}
               {FURNITURE_CATALOG.filter(

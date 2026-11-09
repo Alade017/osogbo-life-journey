@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import { formatNaira, q, rpc, useGameAction } from "@/lib/game";
 import { amountError } from "@/lib/economy-service";
 import { formatSignedAmount, directionTextClass } from "@/lib/transaction-direction";
-import { TransactionListSkeleton } from "@/components/game/loading-skeletons";
+import { PhoneAppLoader } from "@/components/game/phone/PhoneAppLoader";
 
 type NetworkConnection = EventTarget & {
   effectiveType?: string;
@@ -402,7 +402,7 @@ export function PhoneBankApp() {
               </div>
 
               {transactionsLoading ? (
-                <TransactionListSkeleton rows={2} label="Loading recent transactions" />
+                <PhoneAppLoader compact title="Loading recent transactions" />
               ) : transactions && transactions.length > 0 ? (
                 <div className="space-y-2">
                   {transactions.slice(0, 4).map((tx) => (
@@ -576,7 +576,7 @@ export function PhoneBankApp() {
               Account Transaction History
             </h4>
             {transactionsLoading ? (
-              <TransactionListSkeleton label="Loading account transaction history" />
+              <PhoneAppLoader compact title="Loading account transaction history" />
             ) : transactions && transactions.length > 0 ? (
               <div className="space-y-2">
                 {transactions.map((tx) => (

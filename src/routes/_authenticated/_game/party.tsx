@@ -31,6 +31,7 @@ import {
   validEventStart,
   PARTY_MOOD_START,
 } from "@/lib/party-mood";
+import { PaletteSelect } from "@/components/ui/palette-select";
 
 type Tab = "clubs" | "drinks" | "events" | "invitations";
 const TAB_IDS: readonly Tab[] = ["clubs", "drinks", "events", "invitations"];
@@ -691,17 +692,11 @@ function HostForm({
       <h2 className="font-display text-lg font-semibold">Host an event</h2>
       <label className="grid gap-1 text-sm">
         Event center
-        <select
-          className="min-h-11 rounded-lg border border-border bg-card px-3"
+        <PaletteSelect
           value={locationId}
-          onChange={(e) => setLocationId(e.target.value)}
-        >
-          {venues.map((venue) => (
-            <option key={venue.location_id} value={venue.location_id}>
-              {venue.name}
-            </option>
-          ))}
-        </select>
+          onValueChange={setLocationId}
+          options={venues.map((venue) => ({ value: venue.location_id, label: venue.name }))}
+        />
       </label>
       <label className="grid gap-1 text-sm">
         Title

@@ -263,15 +263,15 @@ describe("isometric town map", () => {
     expect(testState.character?.["current_location_id"]).toBe("confirmed-location");
   }, 15_000);
 
-  it("does not enable travel to a destination without a playable neighborhood", async () => {
+  it("offers the playable neighborhood for an active destination with a valid row", async () => {
     renderDashboard("residential");
     fireEvent.click(
       within(screen.getByRole("list", { name: "Places on the map" })).getByRole("button", {
         name: /Cedar Bank,/i,
       }),
     );
-    expect(await screen.findByText(/does not have a playable neighborhood/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Confirm and travel" })).toBeDisabled();
+    await screen.findByRole("button", { name: "Confirm and travel" });
+    expect(screen.queryByText(/does not have a playable neighborhood/i)).not.toBeInTheDocument();
     expect(testState.travelToLocation).not.toHaveBeenCalled();
   }, 15_000);
   it("renders the Phaser overview fallback and a keyboard-accessible list", async () => {

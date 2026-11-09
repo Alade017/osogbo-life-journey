@@ -9,6 +9,7 @@ import {
 import { cityEntranceForRecord } from "../src/lib/city-world.ts";
 import { isPlayableLocationRecord } from "../src/game/playable-district.ts";
 import {
+  neighborhoodAreaForLocation,
   neighborhoodAreaForSlug,
   neighborhoodAreaOrigin,
   type NeighborhoodArea,
@@ -28,6 +29,8 @@ type CharacterRow = {
 type LocationRow = {
   id: string;
   slug: string;
+  name: string | null;
+  map_category: string | null;
   map_x: number;
   map_y: number;
   is_active: boolean;
@@ -95,7 +98,7 @@ async function readCharacter(accessToken: string, locationId: string) {
   if (!character || character.current_location_id !== locationId)
     throw new Error("Your character is not saved in this neighborhood.");
   const locationQuery = new URLSearchParams({
-    select: "id,slug,map_x,map_y,is_active",
+    select: "id,slug,name,map_category,map_x,map_y,is_active",
     id: `eq.${locationId}`,
     is_active: "eq.true",
     limit: "1",
@@ -109,7 +112,7 @@ async function readCharacter(accessToken: string, locationId: string) {
   const location = locationRows[0];
   if (!isPlayableLocationRecord(location) || location.id !== locationId)
     throw new Error("This destination is not available for walking.");
-  const area = neighborhoodAreaForSlug(location.slug);
+  const area = neighborhoodAreaForLocation(location);
   const equipmentQuery = new URLSearchParams({
     select: "slot",
     character_id: `eq.${character.id}`,

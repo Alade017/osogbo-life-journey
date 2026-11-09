@@ -1,6 +1,8 @@
 # OSUN LIFE city map
 
-The authenticated `/map` route uses an original, fictional 2.5D isometric SVG city. It does not request map tiles, real-world coordinates, routing services, or a map-provider key. The layout takes visual cues from the supplied HUD reference while keeping the streets and districts fictional.
+The authenticated `/map` route renders the town through the React Three Fiber / Three.js surface in `src/components/map/R3FTownSurface.tsx`, loaded by `MapCanvas.tsx`. The current town overview is a procedural 3D world driven by `src/data/osogbo-town.json`; it includes road and sidewalk geometry, junction crosswalks, subtle district boundary outlines, buildings, street furniture, traffic, pedestrians, district zones, landmark markers, and property markers. The town data is explicitly a fictional game layout with broad Osogbo-inspired character, not surveyed geographic data. Do not describe this active route as the older SVG map or imply that its grid is a verified real-world street map.
+
+The town camera supports open exploration: desktop users can drag to rotate and use the wheel to zoom; touch users can rotate with one finger, pan with two fingers, and pinch to zoom. Camera controls are presentation-only and must not alter server-authoritative player movement, transport, location, property, or multiplayer state.
 
 ## World data and save compatibility
 
@@ -13,7 +15,7 @@ Apply the ordered SQL migrations through `0023_restore_travel_to_location_rpc.sq
 ## Movement and location interaction
 
 - Drag to pan, scroll or use the controls to zoom, and pinch on touch screens. Reduced-motion settings disable animated traffic and panel transitions.
-- Tapping an open street calculates a route on the local road graph. The avatar follows a short route and the server validates distance, energy, game-time cost, bounds, and expected position revision before persisting it.
+- The authored road tiles are checked by a connectivity test so a disconnected road segment cannot silently enter the town data. Tapping an open street calculates a route on the local road graph. The avatar follows a short route and the server validates distance, energy, game-time cost, bounds, and expected position revision before persisting it.
 - Selecting a different district opens a drawer over the map. Danfo, keke, okada, and car choices call the existing authoritative travel operation through the idempotent `travel_to_city_location` wrapper. The server remains authoritative for fare, simulation time, destination requirements, and wallet changes.
 - Selecting a location in the current district provides its details and the existing location page. Shops, jobs, and social systems remain connected through their existing routes and server actions.
 - Place, job, and NPC counts come from the existing Supabase records; decorative roads, trees, traffic, and district areas are client-side scenery.
