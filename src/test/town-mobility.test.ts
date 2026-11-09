@@ -116,6 +116,19 @@ describe("town pedestrian routes", () => {
     }
   });
 
+
+  it("preserves authored-town pedestrian route coverage before prop reservations", () => {
+    const routes = deriveTownPedestrianRoutes(town.grid.rows, town.grid.cellSize, blockedCells);
+    const waypointCount = routes.reduce((total, route) => total + route.length, 0);
+    const routeLengths = routes.map((route) => route.length);
+
+    // Baseline for the authored grid, before roadside prop clearance is applied in R3FTownSurface.
+    expect(routes).toHaveLength(30);
+    expect(waypointCount).toBe(120);
+    expect(Math.min(...routeLengths)).toBe(3);
+    expect(Math.max(...routeLengths)).toBe(6);
+  });
+
   it("splits both sidewalk edges at blocked sidewalk cells", () => {
     const routes = deriveTownPedestrianRoutes(
       ["rrrrrrrrr", "ggggggggg", "rrrrrrrrr"],
