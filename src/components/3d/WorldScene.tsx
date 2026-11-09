@@ -973,6 +973,18 @@ export function WorldStreetVendors({
                 <boxGeometry args={[size * 0.22, size * 0.025, size * 0.22]} />
                 <WorldMaterial tone="timber" />
               </mesh>
+              {[-1, 1].flatMap((sideX) =>
+                [-1, 1].map((sideZ) => (
+                  <mesh
+                    key={`crate-corner-${sideX}-${sideZ}`}
+                    position={[sideX * size * 0.105, 0, sideZ * size * 0.105]}
+                    castShadow
+                  >
+                    <boxGeometry args={[size * 0.018, size * 0.17, size * 0.018]} />
+                    <WorldMaterial tone="timber" />
+                  </mesh>
+                )),
+              )}
               {[-1, 1].flatMap((side) =>
                 [0, 1].map((level) => (
                   <mesh
