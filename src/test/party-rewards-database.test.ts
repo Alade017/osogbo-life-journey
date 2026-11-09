@@ -63,6 +63,7 @@ beforeAll(async () => {
     "20261019110000_party_clubs_and_activities.sql",
     "20261026162243_party_host_reputation.sql",
     "20261109130000_bind_party_dance_to_character.sql",
+    "20261109140000_bind_party_mutations_to_character.sql",
   ])
     await db.exec(readFileSync(`supabase/migrations/${file}`, "utf8"));
   await db.exec(`create table test_party_clock(stamp timestamptz);insert into test_party_clock values('2026-10-26T12:00:00Z');
@@ -135,6 +136,63 @@ describe("party rewards SQL", () => {
       [chars[0]],
     );
     expect(effects.rows[0]).toEqual({ cooldowns: 0, moods: 0, receipts: 0 });
+  });
+
+  it("rejects stale character IDs for every character-bound party mutation before effects", async () => {
+    await user(0);
+    const staleCharacterId = chars[1]!;
+    const requestId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+    const calls: Array<[string, unknown[]]> = [
+      ["select public.enter_club_for_character($1::uuid,$2::uuid)", [requestId, staleCharacterId]],
+      ["select public.leave_club_for_character($1::uuid,$2::uuid)", [requestId, staleCharacterId]],
+      ["select public.join_club_activity_for_character($1,$2::uuid,$3::uuid)", ["dance-off", requestId, staleCharacterId]],
+      ["select public.buy_drink_for_character($1,$2::uuid,$3::uuid)", ["zobo", requestId, staleCharacterId]],
+      ["select public.dance_with_npc_for_character_locked($1,$2::uuid,$3::uuid)", ["fixture-dancer", requestId, staleCharacterId]],
+      ["select public.dance_with_player_for_character($1::uuid,$2::uuid,$3::uuid)", [chars[2], requestId, staleCharacterId]],
+      ["select public.host_party_event_for_character($1::uuid,$2,$3::timestamptz,$4::jsonb,$5::uuid,$6::uuid)", [venue, "Fixture event", "2026-10-26T14:00:00Z", '[{"kind":"guest","item_or_role":"guest","quantity":1}]', requestId, staleCharacterId]],
+      ["select public.respond_to_event_for_character($1::uuid,$2::uuid,$3::uuid)", [requirement, requestId, staleCharacterId]],
+    ];
+    for (const [sql, args] of calls) {
+      await expect(db.query(sql, args)).rejects.toThrow("CHARACTER_CHANGED");
+    }
+    const effects = await db.query<{ visits: number; purchases: number; events: number; fulfilments: number; cooldowns: number; moods: number; receipts: number }>(
+      `select
+        (select count(*)::integer from public.club_visits) visits,
+        (select count(*)::integer from public.party_drink_purchases) purchases,
+        (select count(*)::integer from public.party_events) events,
+        (select count(*)::integer from public.party_event_fulfilments) fulfilments,
+        (select count(*)::integer from public.party_dance_cooldowns) cooldowns,
+        (select count(*)::integer from public.party_mood) moods,
+        (select count(*)::integer from public.economy_request_results) receipts`,
+    );
+    expect(effects.rows[0]).toEqual({
+      visits: 0, purchases: 0, events: 1, fulfilments: 0, cooldowns: 0, moods: 0, receipts: 0,
+    });
+  });
+
+  it("grants character-bound party mutation RPCs only to authenticated callers", async () => {
+    const signatures = [
+      "public.enter_club_for_character(uuid,uuid)",
+      "public.leave_club_for_character(uuid,uuid)",
+      "public.join_club_activity_for_character(text,uuid,uuid)",
+      "public.buy_drink_for_character(text,uuid,uuid)",
+      "public.dance_with_npc_for_character_locked(text,uuid,uuid)",
+      "public.dance_with_player_for_character(uuid,uuid,uuid)",
+      "public.host_party_event_for_character(uuid,text,timestamp with time zone,jsonb,uuid,uuid)",
+      "public.respond_to_event_for_character(uuid,uuid,uuid)",
+    ];
+    for (const signature of signatures) {
+      const privileges = await db.query<{ anon: boolean; authenticated: boolean }>(
+        `select has_function_privilege('anon',$1,'execute') anon,
+          has_function_privilege('authenticated',$1,'execute') authenticated`,
+        [signature],
+      );
+      expect(privileges.rows[0], signature).toEqual({ anon: false, authenticated: true });
+    }
+    const helper = await db.query<{ authenticated: boolean }>(
+      "select has_function_privilege('authenticated','public._assert_party_action_character(uuid)','execute') authenticated",
+    );
+    expect(helper.rows[0]?.authenticated).toBe(false);
   });
 
   it("grants the character-bound party dance RPC only to authenticated callers", async () => {
