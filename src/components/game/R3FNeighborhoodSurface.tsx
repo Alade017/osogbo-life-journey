@@ -814,6 +814,7 @@ export function R3FNeighborhoodSurface({
                 height={WORLD_SCALE.neighborhoodBuildingHeight}
                 shop={o.kind !== "compound"}
                 variant={o.kind === "compound" ? "residential" : "market"}
+                materialSeed={Math.round(o.x * 37 + o.y * 61)}
               />
             ))}
           <WorldStreetFurniture
@@ -865,6 +866,7 @@ export function R3FNeighborhoodSurface({
                     depth={footprint.height * unit}
                     height={WORLD_SCALE.neighborhoodBuildingHeight}
                     shop={o.kind !== "home"}
+                    materialSeed={Math.round(o.x * 37 + o.y * 61)}
                     variant={
                       o.kind === "home"
                         ? "residential"
