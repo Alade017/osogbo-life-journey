@@ -85,9 +85,9 @@ describe("character-bound party mutation RPCs", () => {
       { sql: "select public.leave_club_for_character($1,$2)", params: [requestId, activeCharacterId] },
       { sql: "select public.join_club_activity_for_character('quiz',$1,$2)", params: [requestId, activeCharacterId] },
       { sql: "select public.buy_drink_for_character('chapman',$1,$2)", params: [requestId, activeCharacterId] },
-      { sql: "select public.dance_with_player_for_character($3,$1,$2)", params: [requestId, activeCharacterId, targetCharacterId] },
-      { sql: "select public.host_party_event_for_character($4,'Test',$5,'[]'::jsonb,$1,$2)", params: [requestId, activeCharacterId, targetCharacterId, locationId, "2026-11-10T20:00:00Z"] },
-      { sql: "select public.respond_to_event_for_character($6,$1,$2)", params: [requestId, activeCharacterId, targetCharacterId, locationId, "2026-11-10T20:00:00Z", requirementId] },
+      { sql: "select public.dance_with_player_for_character($1::uuid,$2::uuid,$3::uuid)", params: [targetCharacterId, requestId, activeCharacterId] },
+      { sql: "select public.host_party_event_for_character($1::uuid,'Test',$2::timestamptz,'[]'::jsonb,$3::uuid,$4::uuid)", params: [locationId, "2026-11-10T20:00:00Z", requestId, activeCharacterId] },
+      { sql: "select public.respond_to_event_for_character($1::uuid,$2::uuid,$3::uuid)", params: [requirementId, requestId, activeCharacterId] },
       { sql: "select public.dance_with_npc_for_character_locked('dancer-lola',$1,$2)", params: [requestId, activeCharacterId] },
     ];
     for (const call of calls) {
@@ -105,9 +105,9 @@ describe("character-bound party mutation RPCs", () => {
       { sql: "select public.leave_club_for_character($1,$2)", params: [requestId, oldCharacterId] },
       { sql: "select public.join_club_activity_for_character('quiz',$1,$2)", params: [requestId, oldCharacterId] },
       { sql: "select public.buy_drink_for_character('chapman',$1,$2)", params: [requestId, oldCharacterId] },
-      { sql: "select public.dance_with_player_for_character($3,$1,$2)", params: [requestId, oldCharacterId, targetCharacterId] },
-      { sql: "select public.host_party_event_for_character($4,'Test',$5,'[]'::jsonb,$1,$2)", params: [requestId, oldCharacterId, targetCharacterId, locationId, "2026-11-10T20:00:00Z"] },
-      { sql: "select public.respond_to_event_for_character($6,$1,$2)", params: [requestId, oldCharacterId, targetCharacterId, locationId, "2026-11-10T20:00:00Z", requirementId] },
+      { sql: "select public.dance_with_player_for_character($1::uuid,$2::uuid,$3::uuid)", params: [targetCharacterId, requestId, oldCharacterId] },
+      { sql: "select public.host_party_event_for_character($1::uuid,'Test',$2::timestamptz,'[]'::jsonb,$3::uuid,$4::uuid)", params: [locationId, "2026-11-10T20:00:00Z", requestId, oldCharacterId] },
+      { sql: "select public.respond_to_event_for_character($1::uuid,$2::uuid,$3::uuid)", params: [requirementId, requestId, oldCharacterId] },
       { sql: "select public.dance_with_npc_for_character_locked('dancer-lola',$1,$2)", params: [requestId, oldCharacterId] },
     ];
     for (const call of calls) {
