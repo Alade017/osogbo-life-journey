@@ -37,14 +37,46 @@ export function ShirtWorn({
 }: ItemModelProps & { color?: string; accent?: string }) {
   return (
     <group>
+      {/* Main torso and short sleeves retain the established avatar proportions. */}
       <mesh position={[0, h * 0.57, 0]} castShadow>
         <boxGeometry args={[h * 0.3, h * 0.38, h * 0.19]} />
         <WorldMaterial color={color} />
       </mesh>
-      <mesh position={[0, h * 0.74, h * 0.1]}>
-        <boxGeometry args={[h * 0.14, h * 0.03, h * 0.03]} />
+      {[-1, 1].map((side) => (
+        <mesh
+          key={side}
+          position={[side * h * 0.19, h * 0.64, 0]}
+          rotation={[0, 0, side * -0.16]}
+          castShadow
+        >
+          <boxGeometry args={[h * 0.12, h * 0.2, h * 0.17]} />
+          <WorldMaterial color={color} />
+        </mesh>
+      ))}
+      {/* Collar, centre placket and restrained woven accent strip. */}
+      <mesh position={[0, h * 0.755, h * 0.1]}>
+        <boxGeometry args={[h * 0.14, h * 0.035, h * 0.025]} />
         <WorldMaterial color={accent} />
       </mesh>
+      <mesh position={[0, h * 0.57, h * 0.101]}>
+        <boxGeometry args={[h * 0.025, h * 0.25, h * 0.012]} />
+        <WorldMaterial color={accent} />
+      </mesh>
+      <mesh position={[0, h * 0.49, h * 0.108]}>
+        <boxGeometry args={[h * 0.11, h * 0.08, h * 0.012]} />
+        <WorldMaterial color={accent} />
+      </mesh>
+      {/* Small geometric woven marks suggest locally patterned fabric without a texture. */}
+      {[-1, 1].map((side) => (
+        <group key={side} position={[side * h * 0.095, h * 0.59, h * 0.105]}>
+          {[-1, 0, 1].map((row) => (
+            <mesh key={row} position={[0, row * h * 0.045, 0]} rotation={[0, 0, Math.PI / 4]}>
+              <boxGeometry args={[h * 0.025, h * 0.025, h * 0.012]} />
+              <WorldMaterial color={accent} />
+            </mesh>
+          ))}
+        </group>
+      ))}
     </group>
   );
 }
