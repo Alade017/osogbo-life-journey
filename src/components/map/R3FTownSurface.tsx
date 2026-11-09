@@ -400,7 +400,7 @@ export function R3FTownSurface(props: Props) {
     return result.filter((_, index) => index % 4 === 0).slice(0, 2);
   }, []);
   const roadSigns = useMemo(() => {
-    const candidates: [number, number][] = [];
+    const candidates: { position: [number, number]; gridX: number; gridZ: number }[] = [];
     const rows = town.grid.rows;
 
     rows.forEach((row, z) => {
@@ -432,31 +432,53 @@ export function R3FTownSurface(props: Props) {
         if (!available) return;
 
         const p = point(available.x, available.z);
-
         const nearBusStop = busStops.some(
           ([busX, busZ]) => Math.hypot(p[0] - busX, p[2] - busZ) < cell * 2,
         );
 
         if (!nearBusStop) {
-          candidates.push([p[0], p[2]]);
+          candidates.push({
+            position: [p[0], p[2]],
+            gridX: available.x,
+            gridZ: available.z,
+          });
         }
       });
     });
 
-    const destinations = [
-      { destination: "Osun Mall", direction: "right" as const },
-      { destination: "Cedar Bank", direction: "left" as const },
-      { destination: "Meridian Bank", direction: "right" as const },
-    ];
+    const selectedLandmarks = new Set<string>();
+    const selectedPositions: [number, number][] = [];
 
     return candidates
       .filter((_, index) => index % 6 === 0)
-      .slice(0, 3)
-      .map(([x, z], index) => ({
-        position: [x, z] as [number, number],
-        ...destinations[index]!,
-      }));
-  }, [busStops]);
+      .flatMap((candidate) => {
+        const destination = props.places
+          .map((place) => ({
+            place,
+            dx: place.grid.x - candidate.gridX,
+            dz: place.grid.z - candidate.gridZ,
+          }))
+          .filter(({ dx, dz }) => Math.abs(dx) > Math.abs(dz))
+          .sort((a, b) => Math.hypot(a.dx, a.dz) - Math.hypot(b.dx, b.dz))[0];
+
+        if (!destination || selectedLandmarks.has(destination.place.id)) return [];
+
+        const tooClose = selectedPositions.some(
+          ([x, z]) => Math.hypot(candidate.position[0] - x, candidate.position[1] - z) < cell * 3,
+        );
+        if (tooClose) return [];
+
+        selectedLandmarks.add(destination.place.id);
+        selectedPositions.push(candidate.position);
+
+        return [{
+          position: candidate.position,
+          destination: destination.place.label,
+          direction: destination.dx > 0 ? "right" as const : "left" as const,
+        }];
+      })
+      .slice(0, 3);
+  }, [busStops, props.places]);
   const roadsideShops = useMemo<[number, number][]>(() => {
     const candidates: [number, number][] = [];
     const rows = town.grid.rows;
