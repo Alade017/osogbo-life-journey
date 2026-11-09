@@ -16,6 +16,7 @@ interface NpcConfig {
   color: string;
   speed: number;
   path: TownMobilityRoute;
+  startDistance: number;
   greeting: string;
 }
 
@@ -59,6 +60,7 @@ export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({ paths }) => 
     color: clothingColors[index % clothingColors.length]!,
     speed: 0.09 + (index % 4) * 0.025,
     path,
+    startDistance: pathLength(path) * (((index + 1) * 0.61803398875) % 1),
     greeting: greetings[index % greetings.length]!,
   }));
 
@@ -89,11 +91,15 @@ function PedestrianCharacter({
   speechText?: string | undefined;
 }) {
   const groupRef = useRef<Group>(null);
-  const currentSegment = useRef(0);
-  const travelDirection = useRef(1);
-  const progress = useRef(0);
-  const [isHovered, setIsHovered] = useState(false);
   const routeLength = useMemo(() => pathLength(npc.path), [npc.path]);
+  const initialPosition = useMemo(
+    () => locatePathDistance(npc.path, npc.startDistance),
+    [npc.path, npc.startDistance],
+  );
+  const currentSegment = useRef(initialPosition.segment);
+  const travelDirection = useRef(1);
+  const progress = useRef(initialPosition.progress);
+  const [isHovered, setIsHovered] = useState(false);
 
   useFrame(({ clock }, delta) => {
     if (!groupRef.current) return;
@@ -247,4 +253,18 @@ function pathLength(path: TownMobilityRoute): number {
     const previous = path[index]!;
     return total + Math.hypot(point[0] - previous[0], point[1] - previous[1]);
   }, 0);
+}
+
+function locatePathDistance(path: TownMobilityRoute, distance: number): { segment: number; progress: number } {
+  if (path.length < 2) return { segment: 0, progress: 0 };
+  let remaining = Math.max(0, distance);
+  for (let index = 0; index < path.length - 1; index += 1) {
+    const start = path[index]!;
+    const end = path[index + 1]!;
+    const length = Math.hypot(end[0] - start[0], end[1] - start[1]);
+    if (length < 0.001) continue;
+    if (remaining <= length) return { segment: index, progress: remaining / length };
+    remaining -= length;
+  }
+  return { segment: path.length - 2, progress: 1 };
 }
