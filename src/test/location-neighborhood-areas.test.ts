@@ -139,7 +139,10 @@ describe("every active location has a playable area", () => {
       name: "Civic Services District",
       map_category: "government",
     });
-    expect(area.interactionPoints).toEqual([]);
+    expect(area.interactionPoints?.map((point) => point.id)).toEqual([
+      "ataoja-police-station",
+      "ataoja-palace",
+    ]);
   });
 
   it("still refuses rows that are inactive, unstable or without valid coordinates", () => {
