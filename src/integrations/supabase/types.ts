@@ -7100,6 +7100,15 @@ export type Database = {
         }
         Returns: Json
       }
+      save_player_map_position_for_character: {
+        Args: {
+          p_latitude: number
+          p_longitude: number
+          p_movement_state: string
+          p_expected_character_id: string
+        }
+        Returns: Json
+      }
       save_player_stall: {
         Args: { p_goods: string; p_is_open: boolean; p_name: string }
         Returns: Json
