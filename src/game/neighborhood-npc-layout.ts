@@ -429,6 +429,46 @@ export function neighborhoodNpcReplanDelay(npcId: string): number {
 }
 
 /** Stable side preference distributes equally valid sidesteps across a crowd. */
+
+/**
+ * Select one deterministic yielding actor when two live NPC routes approach
+ * each other head-on. Stable identity ordering prevents both actors yielding.
+ */
+export function neighborhoodNpcYieldPoint(
+  npcId: string,
+  otherNpcId: string,
+  current: NpcPoint,
+  waypoint: NpcPoint,
+  otherCurrent: NpcPoint,
+  otherWaypoint: NpcPoint | undefined,
+  minimumSeparation = NEIGHBORHOOD_NPC_ACTOR_SEPARATION,
+): NpcPoint | null {
+  if (npcId <= otherNpcId || !otherWaypoint) return null;
+  const ownX = waypoint.x - current.x;
+  const ownY = waypoint.y - current.y;
+  const otherX = otherWaypoint.x - otherCurrent.x;
+  const otherY = otherWaypoint.y - otherCurrent.y;
+  const ownLength = Math.hypot(ownX, ownY);
+  const otherLength = Math.hypot(otherX, otherY);
+  const proximity = Math.hypot(current.x - otherCurrent.x, current.y - otherCurrent.y);
+  if (
+    ownLength <= 0.035 ||
+    otherLength <= 0.035 ||
+    proximity > minimumSeparation * 3.5 ||
+    (ownX * otherX + ownY * otherY) / (ownLength * otherLength) > -0.35
+  ) return null;
+
+  const side = neighborhoodNpcAvoidanceBias(npcId);
+  const perpendicular = { x: -ownY / ownLength, y: ownX / ownLength };
+  const away = (current.x - otherCurrent.x) * perpendicular.x +
+    (current.y - otherCurrent.y) * perpendicular.y;
+  const direction = Math.abs(away) > 0.01 ? Math.sign(away) : side;
+  return {
+    x: current.x + perpendicular.x * direction * minimumSeparation * 1.35,
+    y: current.y + perpendicular.y * direction * minimumSeparation * 1.35,
+  };
+}
+
 export function neighborhoodNpcAvoidanceBias(npcId: string): number {
   let hash = 0;
   for (let index = 0; index < npcId.length; index += 1) {
