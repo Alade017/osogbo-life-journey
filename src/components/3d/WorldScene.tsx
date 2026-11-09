@@ -1525,7 +1525,14 @@ export function WorldHouse({
               <WorldMaterial tone="metal" />
             </mesh>
           ))}
-          {/* Food premises get a short segmented fabric valance beneath the serving awning. */}
+          {/* Small bracket arms visually tie the awning back into the facade. */}
+          {[-1, 1].map((side) => (
+            <mesh key={`awning-bracket-${side}`} position={[side * width * 0.37, -height * 0.05, -0.04]} rotation={[0, 0, side * -0.32]}>
+              <boxGeometry args={[0.045, height * 0.32, 0.055]} />
+              <WorldMaterial tone="metal" />
+            </mesh>
+          ))}
+          {/* Food premises get a short segmented fabric valance beneath the serving awning. */
           {variant === "food" &&
             Array.from({ length: 5 }, (_, segment) => (
               <mesh
