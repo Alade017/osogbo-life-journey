@@ -537,6 +537,7 @@ export function R3FNeighborhoodSurface({
   district,
   mapCategory,
   npcs,
+  npcActorPositions,
   interactionTargets,
   onSelectTarget,
   onNpcArrive,
@@ -550,6 +551,7 @@ export function R3FNeighborhoodSurface({
   groundTarget: { x: number; y: number } | null;
   players: readonly NeighborhoodPlayerView[];
   npcs: readonly NeighborhoodNpcView[];
+  npcActorPositions: MutableRefObject<Map<string, { x: number; y: number }>>;
   interactionTargets: readonly NeighborhoodObject[];
   onSelectTarget: (targetId: string) => void;
   onNpcArrive: (npcId: string, x: number, y: number) => void;
@@ -669,7 +671,7 @@ export function R3FNeighborhoodSurface({
     return point(p.x, p.y);
   });
   const npcPoints = npcs.map((npc) => point(npc.x, npc.y));
-  const actorPositions = useRef(new Map<string, { x: number; y: number }>());
+  const actorPositions = npcActorPositions;
   const actorRoutes = useRef(new Map<string, readonly { x: number; y: number }[]>());
   const movementBounds = useMemo(
     () => ({
