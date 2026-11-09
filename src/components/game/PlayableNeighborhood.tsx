@@ -50,6 +50,7 @@ import { hasLocationVenueDesign } from "@/lib/location-venue-designs";
 import { JobsPage } from "@/routes/_authenticated/_game/jobs";
 import { MarketPage } from "@/routes/_authenticated/_game/market";
 import { WORLD_CAMERA } from "@/components/3d/world-theme";
+import { neighborhoodNpcSpawnPoint } from "@/game/neighborhood-npc-layout";
 import "@/components/game/neighborhood.css";
 
 const R3FNeighborhoodSurface = lazy(() =>
@@ -329,9 +330,10 @@ export function PlayableNeighborhood() {
         (slug) => locationsQuery.data?.find((location) => location.slug === slug)?.id ?? null,
       );
       return activity.destinationSlug === currentLocation.slug ? [{ npc, activity }] : [];
-    }).slice(0, slots.length);
-    return scheduled.map(({ npc, activity }, index) => {
-      const slot = slots[index]!;
+    });
+    return scheduled.flatMap(({ npc, activity }, index) => {
+      const slot = neighborhoodNpcSpawnPoint(slots, index);
+      if (!slot) return [];
       const destinationObject =
         activity.destination === "home"
           ? area.objects.find((object) => object.kind === "home")
@@ -358,7 +360,7 @@ export function PlayableNeighborhood() {
               : activity.label.toLowerCase().includes("sleep")
                 ? "sleeping"
                 : "resting";
-      return {
+      return [{
         id: npc.id,
         name: npc.name,
         role: npc.role,
@@ -371,7 +373,7 @@ export function PlayableNeighborhood() {
         targetX,
         targetY,
         isMoving,
-      };
+      }];
     });
   }, [
     area.objects,
