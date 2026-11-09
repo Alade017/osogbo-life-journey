@@ -700,11 +700,16 @@ export function PlayableNeighborhood() {
     if (!pendingTargetId || !player || !district) return;
     const target = interactionTargets.find((candidate) => candidate.id === pendingTargetId);
     if (!target) return;
-    const scenePoint = npcActorPositions.current.get(target.id);
+    const scenePoint = target.kind === "npc"
+      ? npcActorPositions.current.get(target.id)
+      : undefined;
+    // Do not fall back to the NPC's old spawn anchor before its rendered actor
+    // has mounted; that could open dialogue at a position the NPC has left.
+    if (target.kind === "npc" && !scenePoint) return;
     const sceneBounds = neighborhoodSceneBounds(district.origin);
     const centerX = sceneBounds.left + sceneBounds.width / 2;
     const centerY = sceneBounds.top + sceneBounds.height / 2;
-    const interactionPoint = target.kind === "npc" && scenePoint
+    const interactionPoint = scenePoint
       ? {
           x: centerX + scenePoint.x / WORLD_SCALE.neighborhoodUnit,
           y: centerY + scenePoint.y / WORLD_SCALE.neighborhoodUnit,
