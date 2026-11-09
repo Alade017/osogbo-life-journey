@@ -15,6 +15,13 @@ describe("map daylight", () => {
     }
   });
 
+  it("aligns the daylight arc with the documented 06:00–18:30 solar window", () => {
+    expect(daylightFor(6).arc).toBe(0);
+    expect(daylightFor(12).arc).toBeCloseTo(Math.PI / 2);
+    expect(daylightFor(18, 30).arc).toBeCloseTo(Math.PI);
+    expect(daylightFor(18, 30).isNight).toBe(true);
+  });
+
   it("brightens from dawn to noon", () => {
     expect(daylightFor(7).day).toBeGreaterThan(daylightFor(5).day);
     expect(daylightFor(12).day).toBeGreaterThan(daylightFor(7).day);
