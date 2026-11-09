@@ -152,3 +152,12 @@ The route builder now keeps each side of a road as a separate run and offsets ea
 Regression tests now assert that every authored-town waypoint is centred at the sidewalk-strip offset from a road cell, points to an unblocked adjacent grass cell, and that a blocked sidewalk tile splits both sides into separate runs. The change affects pedestrian path placement only; road geometry, curb dimensions, pedestrian model dimensions and vehicle routes are unchanged.
 
 Live inspection is still required to verify the character foot placement against the curb and pavement in the rendered scene. No local tests/build or browser QA were run, and no GitHub Actions were triggered.
+
+
+## Pedestrian grounding and roadside-prop clearance
+
+The pedestrian mesh origin was sitting above the pavement because the character group had an additional 0.05-unit parent lift and the animated origin was another 0.08 units above its route. The trouser mesh's lower face is 0.03 units above the character origin, while the rendered sidewalk top is 0.06 units. The renderer now removes the parent lift and places the animated origin at 0.03 units, aligning the trouser base with the sidewalk surface. Footstep bob amplitude is reduced from 0.06 to 0.012 units to avoid a visibly floating gait.
+
+Pedestrian route generation now runs after roadside placement data is available. It excludes grass cells near streetlights, traffic signals, bus stops, road signs, roadside shops, parked motorcycles and tricycles, vendors, bins, trees and utility poles, in addition to buildings, water and reserved plots. Each prop reserves only nearby grass cells in its 3 × 3 grid neighbourhood; road cells are not added as pedestrian blockers. The sidewalk route builder then splits paths around these reservations rather than sending NPCs through the prop footprints.
+
+This is conservative placement clearance, not full character-to-character collision avoidance. A live scene check is still required for feet-on-pavement alignment, prop footprints and remaining route continuity. No local tests/build or browser QA have been run; GitHub Actions remain disabled.
