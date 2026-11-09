@@ -37,4 +37,22 @@ describe("town mobility routes", () => {
 
     expect(routes).toEqual([]);
   });
+
+  it("keeps opposing lanes farther apart than the widest traffic body", () => {
+    const cellSize = 2;
+    const routes = deriveTownMobilityRoutes(
+      ["rrrrrrr", "r..r..r", "rrrrrrr"],
+      cellSize,
+      cellSize * 0.22,
+    );
+
+    expect(routes).toHaveLength(2);
+    const sharedRoadRightLane = routes[0]![1]![0];
+    const sharedRoadLeftLane = routes[1]![0]![0];
+    const laneSeparation = Math.abs(sharedRoadLeftLane - sharedRoadRightLane);
+
+    // The danfo body is 0.72 units wide; leave a visible gap between opposing lanes.
+    expect(laneSeparation).toBeGreaterThan(0.72);
+  });
+
 });
