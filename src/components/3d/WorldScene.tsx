@@ -693,6 +693,26 @@ export function WorldRoadsideShops({
             <WorldMaterial tone="timber" />
           </mesh>
 
+          {/* Simple rear display shelving, sized from the shop footprint. */}
+          <group position={[0, 0, -shopDepth * 0.34]}>
+            {[-1, 1].map((side) => (
+              <mesh
+                key={`shelf-upright-${side}`}
+                position={[side * shopWidth * 0.31, wallHeight * 0.43, 0]}
+                castShadow
+              >
+                <boxGeometry args={[size * 0.045, wallHeight * 0.72, size * 0.055]} />
+                <WorldMaterial tone="timber" />
+              </mesh>
+            ))}
+            {[0.25, 0.52, 0.79].map((level) => (
+              <mesh key={`display-shelf-${level}`} position={[0, wallHeight * level, size * 0.035]} castShadow>
+                <boxGeometry args={[shopWidth * 0.68, size * 0.045, size * 0.2]} />
+                <WorldMaterial tone="timber" />
+              </mesh>
+            ))}
+          </group>
+
           {/* Shop signboard */}
           <mesh position={[0, wallHeight * 0.88, shopDepth * 0.49]}>
             <boxGeometry args={[shopWidth * 0.78, size * 0.17, size * 0.055]} />
