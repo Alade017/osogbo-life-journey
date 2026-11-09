@@ -23,7 +23,7 @@ import {
   type NeighborhoodObject,
 } from "@/game/neighborhood-model";
 import { neighborhoodBuildingFootprint, neighborhoodObstacleFootprint } from "@/game/neighborhood-geometry";
-import { neighborhoodNpcAvoidanceBias, neighborhoodNpcAvoidanceStep, neighborhoodNpcPathWithFallback, NEIGHBORHOOD_NPC_ACTOR_SEPARATION, neighborhoodNpcReplanDelay, neighborhoodNpcReservationPath, neighborhoodNpcYieldPoint } from "@/game/neighborhood-npc-layout";
+import { neighborhoodNpcAvoidanceBias, neighborhoodNpcAvoidanceStep, neighborhoodNpcCrowdRecoveryPoint, neighborhoodNpcPathWithFallback, NEIGHBORHOOD_NPC_ACTOR_SEPARATION, neighborhoodNpcReplanDelay, neighborhoodNpcReservationPath, neighborhoodNpcYieldPoint } from "@/game/neighborhood-npc-layout";
 import {
   WorldCamera,
   WorldCars,
@@ -148,6 +148,7 @@ function NeighborhoodNpcActor({
   const avoidanceBias = neighborhoodNpcAvoidanceBias(npc.id);
   const pauseSnapshotSaved = useRef(false);
   const yieldState = useRef<{ otherId: string; point: { x: number; y: number } } | null>(null);
+  const recoveryTarget = useRef<{ x: number; y: number } | null>(null);
   const syncRouteReservation = useCallback(() => {
     if (!npc.isMoving || npc.isPaused) {
       actorRoutes.current.delete(npc.id);
@@ -174,6 +175,7 @@ function NeighborhoodNpcActor({
     const destinationChanged = routeTargetRef.current !== targetKey;
     if (routeChanged || destinationChanged) {
       yieldState.current = null;
+      recoveryTarget.current = null;
       waypointSignatureRef.current = waypointSignature;
       routeTargetRef.current = targetKey;
       const actor = group.current;
@@ -276,6 +278,7 @@ function NeighborhoodNpcActor({
   useFrame((state, delta) => {
     const retryRoute = (actor: Group) => {
       yieldState.current = null;
+      recoveryTarget.current = null;
       const rerouted = neighborhoodNpcPathWithFallback(
         { x: actor.position.x, y: actor.position.z },
         { x: target[0], y: target[2] },
@@ -302,7 +305,17 @@ function NeighborhoodNpcActor({
     const actor = group.current;
     if (!actor || npc.isPaused) return;
     const activeWaypoints = routeWaypoints.current;
-    const waypoint = activeWaypoints[waypointIndex.current] ?? target;
+    if (
+      recoveryTarget.current &&
+      Math.hypot(
+        recoveryTarget.current.x - actor.position.x,
+        recoveryTarget.current.y - actor.position.z,
+      ) <= 0.08
+    ) recoveryTarget.current = null;
+    const routeWaypoint = activeWaypoints[waypointIndex.current] ?? target;
+    const waypoint = recoveryTarget.current
+      ? [recoveryTarget.current.x, 0, recoveryTarget.current.y] as [number, number, number]
+      : routeWaypoint;
     const dx = waypoint[0] - actor.position.x;
     const dz = waypoint[2] - actor.position.z;
     const distance = Math.hypot(dx, dz);
@@ -342,7 +355,7 @@ function NeighborhoodNpcActor({
           yieldingPoint = yieldState.current.point;
         }
       }
-      if (!yieldingPoint) {
+      if (!yieldingPoint && !recoveryTarget.current) {
         for (const [otherId, path] of liveRoutes) {
           if (path.length < 2) continue;
           const otherPosition = actorPositions.current.get(otherId) ?? path[0];
@@ -407,7 +420,22 @@ function NeighborhoodNpcActor({
         // A live actor can occupy a narrow waypoint indefinitely. After a
         // sustained wait, advance to the next already-validated route waypoint.
         // Each actual movement step still passes obstacle and boundary checks.
-        if (blockedDuration.current >= replanBackoff.current) retryRoute(actor);
+        if (blockedDuration.current >= replanBackoff.current) {
+          const escape = neighborhoodNpcCrowdRecoveryPoint(
+            currentPoint,
+            liveBlockers,
+            occupiedFootprints,
+            sceneBounds,
+            undefined,
+            avoidanceBias,
+          );
+          if (escape) {
+            recoveryTarget.current = escape;
+            blockedDuration.current = 0;
+          } else {
+            retryRoute(actor);
+          }
+        }
       } else {
         blockedDuration.current = 0;
         replanBackoff.current = replanDelay;
