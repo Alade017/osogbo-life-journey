@@ -85,6 +85,7 @@ beforeAll(async () => {
     "20261109130000_bind_party_dance_to_character.sql",
     "20261109140000_bind_party_mutations_to_character.sql",
     "20261109150000_canonical_active_character.sql",
+    "20261109200000_allow_multiple_characters_per_account.sql",
   ])
     await db.exec(readFileSync(`supabase/migrations/${file}`, "utf8"));
   await db.exec(`create table test_party_clock(stamp timestamptz);insert into test_party_clock values('2026-10-26T12:00:00Z');
