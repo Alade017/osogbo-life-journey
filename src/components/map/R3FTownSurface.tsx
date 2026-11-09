@@ -41,7 +41,6 @@ import { MovingTraffic3D } from "./MovingTraffic3D";
 import { MovingPedestrians3D } from "./MovingPedestrians3D";
 import { FunctionalStreetLights3D } from "./FunctionalStreetLights3D";
 import { RoadsideInfrastructure3D } from "./RoadsideInfrastructure3D";
-import { LockedPlaces3D, type LockedPlace } from "./LockedPlaces3D";
 import { isMapTargetSelectionAllowed } from "@/game/map-gesture";
 
 type Props = PhaserMapData &
@@ -1061,16 +1060,6 @@ export function R3FTownSurface(props: Props) {
           ))}
           <MovingTraffic3D cellSize={cell} gridCols={gridCols} gridRows={gridRows} />
           <MovingPedestrians3D cellSize={cell} gridCols={gridCols} gridRows={gridRows} />
-          <LockedPlaces3D
-            cellSize={cell}
-            gridCols={gridCols}
-            gridRows={gridRows}
-            onSelectLocked={(locked) =>
-              select(null, () => {
-                setSelectedTarget({ id: locked.id, position: locked.position, type: "landmark" });
-              })
-            }
-          />
           <DistrictZones
             districts={town.districts}
             point={point}
