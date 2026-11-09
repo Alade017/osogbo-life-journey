@@ -4,56 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Newspaper, Trophy } from "lucide-react";
 import { PaletteSelect } from "@/components/ui/palette-select";
+import { useExternalNews, type ExternalNewsItem } from "@/components/game/phone/use-external-news";
 
 export type CommunityPhoneApp =
   "Calendar" | "Food Delivery" | "Okada Rides" | "Contribution" | "Leaderboard" | "Town News";
-
-type ExternalNewsItem = {
-  id: string;
-  title: string;
-  sourceName: string;
-  sourceUrl: string;
-  publishedAt: string | null;
-};
 
 type TownRank = { rank: number; name: string; score: number };
 type TownPost = { id: string; category: string; title: string; body: string; created_at: string };
 type TownReaction = { post_id: string; user_id: string };
 type TownComment = { id: string; post_id: string; body: string; created_at: string };
-
-function useExternalNews(region: "nigeria" | "world", enabled: boolean) {
-  const [items, setItems] = useState<ExternalNewsItem[]>([]);
-  const [state, setState] = useState<"loading" | "ready" | "unavailable">("loading");
-
-  useEffect(() => {
-    if (!enabled) return;
-    let live = true;
-    async function load() {
-      setState("loading");
-      try {
-        const { data } = await supabase.auth.getSession();
-        if (!data.session?.access_token) throw new Error("No active session");
-        const response = await fetch(`/api/news?region=${region}`, {
-          headers: { Authorization: `Bearer ${data.session.access_token}` },
-        });
-        if (!response.ok) throw new Error("News is unavailable");
-        const payload = (await response.json()) as { items?: ExternalNewsItem[] };
-        if (live) {
-          setItems(payload.items ?? []);
-          setState("ready");
-        }
-      } catch {
-        if (live) setState("unavailable");
-      }
-    }
-    void load();
-    return () => {
-      live = false;
-    };
-  }, [region, enabled]);
-
-  return { items, state };
-}
 
 function AppCard({ children }: { children: ReactNode }) {
   return <div className="phone-local-card">{children}</div>;

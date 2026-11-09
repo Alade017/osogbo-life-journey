@@ -1,4 +1,4 @@
-﻿import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/api/news")({
   server: {
@@ -10,13 +10,15 @@ export const Route = createFileRoute("/api/news")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { data, error } = await supabaseAdmin.auth.getUser(authorization.slice(7).trim());
         if (error || !data.user) return Response.json({ error: "UNAUTHORIZED" }, { status: 401 });
+        const { EXTERNAL_NEWS_REGIONS, getExternalNews } =
+          await import("@/lib/external-news-api.server");
         const region = new URL(request.url).searchParams.get("region");
-        if (region !== "nigeria" && region !== "world")
+        if (!(EXTERNAL_NEWS_REGIONS as readonly string[]).includes(region ?? ""))
           return Response.json({ error: "INVALID_REGION" }, { status: 400 });
-        const { getExternalNews } = await import("@/lib/external-news-api.server");
+        const newsRegion = region as (typeof EXTERNAL_NEWS_REGIONS)[number];
         try {
           return Response.json(
-            { region, items: await getExternalNews(region) },
+            { region: newsRegion, items: await getExternalNews(newsRegion) },
             { headers: { "Cache-Control": "private, max-age=60" } },
           );
         } catch (newsError) {

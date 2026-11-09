@@ -25,6 +25,7 @@ import {
   MapPinned,
   MessageCircleCheck,
   MessageCircle,
+  Gamepad2,
   Newspaper,
   PartyPopper,
   PanelsTopLeft,
@@ -61,6 +62,9 @@ import {
 } from "react";
 import { type CommunityPhoneApp } from "@/components/game/CommunityPhoneApps";
 import { PhoneComingSoonApp } from "@/components/game/phone/PhoneComingSoonApp";
+import { OsunGistApp } from "@/components/game/phone/OsunGistApp";
+import { PhoneGamesApp } from "@/components/game/phone/PhoneGamesApp";
+import { PhoneMapApp } from "@/components/game/phone/PhoneMapApp";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import {
   fullPageWorldApp,
@@ -153,6 +157,7 @@ const PHONE_APPS: readonly PhoneAppDefinition[] = [
   { label: "Contribution", icon: HandCoins, tone: "phone-app-gold" },
   { label: "Education", icon: GraduationCap, tone: "phone-app-blue" },
   { label: "Food Delivery", icon: UtensilsCrossed, tone: "phone-app-coral" },
+  { label: "Games", icon: Gamepad2, tone: "phone-app-coral" },
   { label: "Inventory", icon: Backpack, tone: "phone-app-blue", emphasis: "utility" },
   { label: "Invest", icon: ChartNoAxesCombined, tone: "phone-app-gold" },
   { label: "Leaderboard", icon: Trophy, tone: "phone-app-gold" },
@@ -162,6 +167,7 @@ const PHONE_APPS: readonly PhoneAppDefinition[] = [
   { label: "Missions", icon: Target, tone: "phone-app-gold", emphasis: "important" },
   { label: "Notifications", icon: Bell, tone: "phone-app-gold", emphasis: "utility" },
   { label: "Okada Rides", icon: Bike, tone: "phone-app-green" },
+  { label: "Osun Gist", icon: Newspaper, tone: "phone-app-blue" },
   { label: "Party", icon: PartyPopper, tone: "phone-app-coral" },
   { label: "Profile", icon: UserRound, tone: "phone-app-muted", emphasis: "utility" },
   { label: "Property", icon: HousePlus, tone: "phone-app-green" },
@@ -550,6 +556,9 @@ export function PhoneLauncher({
     }
 
     if (appName === "Settings") return <SettingsPage />;
+    if (appName === "Osun Gist") return <OsunGistApp />;
+    if (appName === "Games") return <PhoneGamesApp />;
+    if (appName === "Map") return <PhoneMapApp />;
     if (appName === "Support") return <SupportApp onHome={returnHome} />;
 
     // Fallback coming soon for any unbuilt or auxiliary app
