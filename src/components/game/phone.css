@@ -3202,3 +3202,185 @@
   font-weight: 700;
   cursor: pointer;
 }
+
+/* Okada rides: hero, fare card, destination field, and ride history. */
+.okada-app {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+}
+
+.okada-hero {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.okada-hero h2 {
+  margin: 0;
+  color: var(--brand-ink);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.okada-hero p {
+  margin: 2px 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+}
+
+.okada-hero-icon,
+.okada-ride-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.okada-hero-icon svg,
+.okada-ride-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.okada-request,
+.okada-history {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--card);
+  color: var(--card-foreground);
+  box-shadow: var(--elevation-card);
+}
+
+.okada-history h3 {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.okada-fare {
+  display: grid;
+  gap: 2px;
+}
+
+.okada-fare span {
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+}
+
+.okada-fare strong {
+  font-size: 1.5rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.okada-field {
+  display: grid;
+  gap: 6px;
+}
+
+.okada-field > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.okada-field input {
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--card-foreground);
+  font: inherit;
+}
+
+.okada-submit {
+  min-height: 44px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.okada-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.okada-balance {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.okada-notice {
+  margin: 0;
+  color: var(--destructive);
+  font-size: 0.85rem;
+}
+
+.okada-ride {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.okada-ride-copy {
+  display: grid;
+  min-width: 0;
+}
+
+.okada-ride-copy strong {
+  overflow: hidden;
+  font-size: 0.9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.okada-ride-copy small {
+  color: var(--muted-foreground);
+  font-size: 0.74rem;
+}
+
+.okada-status {
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.okada-status-active {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.okada-status-done {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--brand-ink);
+}
+
+.okada-status-stopped {
+  color: var(--destructive);
+  border: 1px solid var(--destructive);
+}

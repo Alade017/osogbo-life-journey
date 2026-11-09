@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { foodDeliveryService, type FoodDelivery } from "@/lib/food-delivery-service";
 import { formatNaira, q } from "@/lib/game";
 import { PaletteSelect } from "@/components/ui/palette-select";
+import { Bike, MapPin } from "lucide-react";
 
 type ServiceApp = "Calendar" | "Food Delivery" | "Okada Rides" | "Contribution";
 type TownEvent = { id: string; title: string; venue: string; starts_at: string };
@@ -19,6 +20,13 @@ type Ride = {
   created_at: string;
 };
 type Contribution = { id: string; fund_id: string; amount_minor: number };
+
+/** Visual tone for a ride status: active, finished, or stopped. */
+function rideTone(status: string): "active" | "done" | "stopped" {
+  if (status === "completed") return "done";
+  if (status === "cancelled") return "stopped";
+  return "active";
+}
 
 function rideStatusLabel(status: string) {
   if (status === "assigned") return "Driver assigned";
@@ -478,11 +486,16 @@ function RidesApp() {
     onError: (error: Error) => toast.error(error.message),
   });
   return (
-    <div className="phone-service-screen">
-      <header>
-        <h2>Okada rides</h2>
-        <p>Request a town trip</p>
-      </header>
+    <div className="okada-app">
+      <section className="okada-hero">
+        <span className="okada-hero-icon">
+          <Bike aria-hidden="true" />
+        </span>
+        <div>
+          <h2>Okada rides</h2>
+          <p>Quick motorbike trips around town</p>
+        </div>
+      </section>
       <StateMessage
         loading={price.isLoading}
         error={price.isError}
@@ -490,16 +503,21 @@ function RidesApp() {
         retry={() => void price.refetch()}
       />
       {walletQuery.isError && (
-        <p role="alert" className="phone-service-state">
+        <p role="alert" className="okada-notice">
           Cash balance is unavailable. Try reopening this app.
         </p>
       )}
       {!!fare && (
-        <div className="phone-service-card">
-          <p>Current fare</p>
-          <h3>{formatNaira(fare)}</h3>
-          <label className="phone-service-field">
-            Destination
+        <section className="okada-request" aria-label="Request a ride">
+          <div className="okada-fare">
+            <span>Fare</span>
+            <strong>{formatNaira(fare)}</strong>
+          </div>
+          <label className="okada-field">
+            <span>
+              <MapPin aria-hidden="true" />
+              Destination
+            </span>
             <input
               maxLength={120}
               value={destination}
@@ -509,6 +527,7 @@ function RidesApp() {
           </label>
           <button
             type="button"
+            className="okada-submit"
             disabled={
               request.isPending || destination.trim().length < 2 || !wallet || fare > wallet.balance
             }
@@ -520,24 +539,32 @@ function RidesApp() {
                 ? "Insufficient cash"
                 : "Request ride"}
           </button>
-        </div>
+          {wallet && <p className="okada-balance">Cash balance {formatNaira(wallet.balance)}</p>}
+        </section>
       )}
-      <h3 className="phone-service-subheading">Your rides</h3>
-      <StateMessage
-        loading={rides.isLoading}
-        error={rides.isError}
-        empty={!rides.data?.length}
-        retry={() => void rides.refetch()}
-      />
-      {rides.data?.slice(0, 5).map((ride) => (
-        <article className="phone-service-card phone-service-row" key={ride.id}>
-          <span>
-            {ride.destination}
-            <small>{new Date(ride.created_at).toLocaleDateString("en-NG")}</small>
-          </span>
-          <strong>{rideStatusLabel(ride.status)}</strong>
-        </article>
-      ))}
+      <section className="okada-history" aria-labelledby="okada-rides-heading">
+        <h3 id="okada-rides-heading">Your rides</h3>
+        <StateMessage
+          loading={rides.isLoading}
+          error={rides.isError}
+          empty={!rides.data?.length}
+          retry={() => void rides.refetch()}
+        />
+        {rides.data?.slice(0, 5).map((ride) => (
+          <article className="okada-ride" key={ride.id}>
+            <span className="okada-ride-icon">
+              <MapPin aria-hidden="true" />
+            </span>
+            <span className="okada-ride-copy">
+              <strong>{ride.destination}</strong>
+              <small>{new Date(ride.created_at).toLocaleDateString("en-NG")}</small>
+            </span>
+            <span className={`okada-status okada-status-${rideTone(ride.status)}`}>
+              {rideStatusLabel(ride.status)}
+            </span>
+          </article>
+        ))}
+      </section>
     </div>
   );
 }
