@@ -163,7 +163,7 @@ function NeighborhoodNpcActor({
         Math.hypot(point.x - current.x, point.y - current.y) > 0.035,
       )] : remaining,
     );
-  }, [actorRoutes, npc.id, npc.isMoving, npc.isPaused, syncRouteReservation]);
+  }, [actorRoutes, npc.id, npc.isMoving, npc.isPaused]);
 
   // Simulation updates may recreate an equivalent route. When its geometry or
   // destination really changes, rebuild it from the actor's rendered position
@@ -230,7 +230,7 @@ function NeighborhoodNpcActor({
     return () => {
       actorRoutes.current.delete(npc.id);
     };
-  }, [actorRoutes, npc.id, npc.isMoving, npc.isPaused]);
+  }, [actorRoutes, npc.id, npc.isMoving, npc.isPaused, syncRouteReservation]);
 
   // R3F receives a newly allocated start tuple on every parent render.
   // Only apply it when the actual spawn/confirmed position changes; otherwise
