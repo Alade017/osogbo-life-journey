@@ -969,6 +969,29 @@ export function WorldStreetVendors({
               <WorldMaterial tone="accent" color={canopyColor} />
             </mesh>
 
+            {/* Slim radial ribs and a crown cap give the fabric canopy an umbrella frame. */}
+            {Array.from({ length: 8 }, (_, rib) => {
+              const angle = (rib / 8) * Math.PI * 2;
+              return (
+                <mesh
+                  key={`canopy-rib-${rib}`}
+                  position={[
+                    Math.cos(angle) * size * 0.285,
+                    size * 1.102,
+                    Math.sin(angle) * size * 0.285,
+                  ]}
+                  rotation={[0, -angle, 0]}
+                >
+                  <boxGeometry args={[size * 0.57, size * 0.018, size * 0.022]} />
+                  <WorldMaterial tone="linen" />
+                </mesh>
+              );
+            })}
+            <mesh position={[0, size * 1.112, 0]}>
+              <cylinderGeometry args={[size * 0.045, size * 0.055, size * 0.035, 8]} />
+              <WorldMaterial tone="metal" />
+            </mesh>
+
             {/* Fabric valance gives the canopy a recognisable market-stall edge. */}
             {[
               { position: [0, size * 0.98, size * 0.48] as [number, number, number], scale: [size * 0.82, size * 0.13, size * 0.035] as [number, number, number] },
