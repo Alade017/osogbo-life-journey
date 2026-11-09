@@ -64,15 +64,21 @@ describe("neighborhood interaction authorization client bridge", () => {
 
   it("rejects new authorization requests after the room has disconnected", async () => {
     const { room, leave, sent } = makeRoom();
+    const pending = requestNeighborhoodInteractionAuthorization(room, {
+      requestId: claims.requestId,
+      landmarkId: claims.landmarkId,
+      actionId: claims.actionId,
+    });
     leave();
+    await expect(pending).rejects.toThrow("NEIGHBORHOOD_DISCONNECTED");
     await expect(
       requestNeighborhoodInteractionAuthorization(room, {
-        requestId: claims.requestId,
+        requestId: "55555555-5555-4555-8555-555555555555",
         landmarkId: claims.landmarkId,
         actionId: claims.actionId,
       }),
     ).rejects.toThrow("NEIGHBORHOOD_DISCONNECTED");
-    expect(sent).toHaveLength(0);
+    expect(sent).toHaveLength(1);
   });
 
   it("rejects a response for a different landmark or action", async () => {
