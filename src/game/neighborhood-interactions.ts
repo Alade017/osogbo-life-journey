@@ -54,15 +54,23 @@ export function availableNeighborhoodTargets(
 }
 
 
-/** Use an NPC's scheduled destination while they are walking, not their stale spawn point. */
-export function neighborhoodInteractionPoint(
+/** Navigate toward an NPC's current scheduled destination while they are walking. */
+export function neighborhoodNpcNavigationPoint(
   target: NeighborhoodObject,
   npcs: readonly Pick<NeighborhoodNpcView, "id" | "x" | "y" | "targetX" | "targetY" | "isMoving">[],
 ): { x: number; y: number } {
   if (target.kind !== "npc") return { x: target.x, y: target.y };
   const npc = npcs.find((candidate) => candidate.id === target.id);
   if (!npc) return { x: target.x, y: target.y };
-  return npc.isMoving
-    ? { x: npc.targetX, y: npc.targetY }
-    : { x: npc.x, y: npc.y };
+  return npc.isMoving ? { x: npc.targetX, y: npc.targetY } : { x: npc.x, y: npc.y };
+}
+
+/** Interaction range must be measured from the NPC's actual position, never its future destination. */
+export function neighborhoodInteractionPoint(
+  target: NeighborhoodObject,
+  npcs: readonly Pick<NeighborhoodNpcView, "id" | "x" | "y">[],
+): { x: number; y: number } {
+  if (target.kind !== "npc") return { x: target.x, y: target.y };
+  const npc = npcs.find((candidate) => candidate.id === target.id);
+  return npc ? { x: npc.x, y: npc.y } : { x: target.x, y: target.y };
 }
