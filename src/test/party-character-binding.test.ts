@@ -81,17 +81,17 @@ describe("character-bound party mutation RPCs", () => {
 
   it("routes every party mutation through the expected active character", async () => {
     const calls = [
-      "select public.enter_club_for_character($1,$2)",
-      "select public.leave_club_for_character($1,$2)",
-      "select public.join_club_activity_for_character('quiz',$1,$2)",
-      "select public.buy_drink_for_character('chapman',$1,$2)",
-      "select public.dance_with_player_for_character($3,$1,$2)",
-      "select public.host_party_event_for_character($4,'Test',$5,'[]'::jsonb,$1,$2)",
-      "select public.respond_to_event_for_character($6,$1,$2)",
-      "select public.dance_with_npc_for_character_locked('dancer-lola',$1,$2)",
+      { sql: "select public.enter_club_for_character($1,$2)", params: [requestId, activeCharacterId] },
+      { sql: "select public.leave_club_for_character($1,$2)", params: [requestId, activeCharacterId] },
+      { sql: "select public.join_club_activity_for_character('quiz',$1,$2)", params: [requestId, activeCharacterId] },
+      { sql: "select public.buy_drink_for_character('chapman',$1,$2)", params: [requestId, activeCharacterId] },
+      { sql: "select public.dance_with_player_for_character($3,$1,$2)", params: [requestId, activeCharacterId, targetCharacterId] },
+      { sql: "select public.host_party_event_for_character($4,'Test',$5,'[]'::jsonb,$1,$2)", params: [requestId, activeCharacterId, targetCharacterId, locationId, "2026-11-10T20:00:00Z"] },
+      { sql: "select public.respond_to_event_for_character($6,$1,$2)", params: [requestId, activeCharacterId, targetCharacterId, locationId, "2026-11-10T20:00:00Z", requirementId] },
+      { sql: "select public.dance_with_npc_for_character_locked('dancer-lola',$1,$2)", params: [requestId, activeCharacterId] },
     ];
-    for (const sql of calls) {
-      await db.query(sql, [requestId,activeCharacterId,targetCharacterId,locationId,"2026-11-10T20:00:00Z",requirementId]);
+    for (const call of calls) {
+      await db.query(call.sql, call.params);
     }
     const result = await db.query<{ count: number }>(
       "select count(*)::int as count from public.party_mutation_calls",
@@ -101,17 +101,17 @@ describe("character-bound party mutation RPCs", () => {
 
   it("rejects stale-character requests before any party mutation executes", async () => {
     const calls = [
-      "select public.enter_club_for_character($1,$2)",
-      "select public.leave_club_for_character($1,$2)",
-      "select public.join_club_activity_for_character('quiz',$1,$2)",
-      "select public.buy_drink_for_character('chapman',$1,$2)",
-      "select public.dance_with_player_for_character($3,$1,$2)",
-      "select public.host_party_event_for_character($4,'Test',$5,'[]'::jsonb,$1,$2)",
-      "select public.respond_to_event_for_character($6,$1,$2)",
-      "select public.dance_with_npc_for_character_locked('dancer-lola',$1,$2)",
+      { sql: "select public.enter_club_for_character($1,$2)", params: [requestId, oldCharacterId] },
+      { sql: "select public.leave_club_for_character($1,$2)", params: [requestId, oldCharacterId] },
+      { sql: "select public.join_club_activity_for_character('quiz',$1,$2)", params: [requestId, oldCharacterId] },
+      { sql: "select public.buy_drink_for_character('chapman',$1,$2)", params: [requestId, oldCharacterId] },
+      { sql: "select public.dance_with_player_for_character($3,$1,$2)", params: [requestId, oldCharacterId, targetCharacterId] },
+      { sql: "select public.host_party_event_for_character($4,'Test',$5,'[]'::jsonb,$1,$2)", params: [requestId, oldCharacterId, targetCharacterId, locationId, "2026-11-10T20:00:00Z"] },
+      { sql: "select public.respond_to_event_for_character($6,$1,$2)", params: [requestId, oldCharacterId, targetCharacterId, locationId, "2026-11-10T20:00:00Z", requirementId] },
+      { sql: "select public.dance_with_npc_for_character_locked('dancer-lola',$1,$2)", params: [requestId, oldCharacterId] },
     ];
-    for (const sql of calls) {
-      await expect(db.query(sql, [requestId,oldCharacterId,targetCharacterId,locationId,"2026-11-10T20:00:00Z",requirementId]))
+    for (const call of calls) {
+      await expect(db.query(call.sql, call.params))
         .rejects.toThrow(/CHARACTER_CHANGED/);
     }
     const result = await db.query<{ count: number }>(
