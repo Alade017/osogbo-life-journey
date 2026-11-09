@@ -247,7 +247,15 @@ function LocationPage() {
     }
     if (character?.inside_home_property_id) {
       // Leaving a house plays the door first; the house screen runs the trip alongside it.
-      const departure = requestDepartureFromHome({ locationId: loc.id, mode: travelState.mode });
+      if (!character?.id) {
+        toast.error("Your active character could not be confirmed. Refresh and try again.");
+        return;
+      }
+      const departure = requestDepartureFromHome({
+        locationId: loc.id,
+        mode: travelState.mode,
+        characterId: character.id,
+      });
       void navigate({ to: "/house" }).catch(() => clearPendingDepartureFromHome(departure));
       return;
     }
