@@ -37,10 +37,8 @@ export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({ paths }) => 
     const counts = new Map<string, number>();
     paths.forEach((path) => {
       if (path.length < 2) return;
-      for (const endpoint of [path[0]!, path[path.length - 1]!]) {
-        const key = junctionKey(endpoint);
-        counts.set(key, (counts.get(key) ?? 0) + 1);
-      }
+      const endpointKeys = new Set([junctionKey(path[0]!), junctionKey(path[path.length - 1]!)]);
+      endpointKeys.forEach((key) => counts.set(key, (counts.get(key) ?? 0) + 1));
     });
     return counts;
   }, [paths]);
@@ -142,10 +140,13 @@ function PedestrianCharacter({
         ? routeLength - routeDistance.current
         : routeDistance.current;
       const distanceFromReservedJunction = activeJunction.current === npc.startJunctionId
-        ? routeDistance.current
-        : activeJunction.current === npc.endJunctionId
-          ? routeLength - routeDistance.current
-          : Number.POSITIVE_INFINITY;
+        && activeJunction.current === npc.endJunctionId
+        ? Math.min(routeDistance.current, routeLength - routeDistance.current)
+        : activeJunction.current === npc.startJunctionId
+          ? routeDistance.current
+          : activeJunction.current === npc.endJunctionId
+            ? routeLength - routeDistance.current
+            : Number.POSITIVE_INFINITY;
 
       if (activeJunction.current && distanceFromReservedJunction > clearanceRadius) {
         junctionScheduler.release(activeJunction.current, npc.id);
