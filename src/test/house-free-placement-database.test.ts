@@ -89,6 +89,14 @@ describe("free furniture placement database", () => {
       "0084_other_homes_room_layout",
       "0085_house_floors",
     ]) {
+      if (tag === "0085_house_floors") {
+        await db.exec(
+          readFileSync(
+            "supabase/migrations/20261105080000_house_placement_rotation.sql",
+            "utf8",
+          ),
+        );
+      }
       await db.exec(readFileSync(`drizzle/migrations/${tag}.sql`, "utf8"));
     }
     await db.query("insert into auth.users(id) values($1)", [userId]);
