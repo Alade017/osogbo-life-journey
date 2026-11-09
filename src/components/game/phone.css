@@ -3745,3 +3745,73 @@
   color: var(--card-foreground);
   font-size: 0.85rem;
 }
+
+/* Businesses and Invest inside the phone: hero, rounded cards, soft disclaimer. */
+.phone-finance-shell {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+}
+
+.phone-finance-hero {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.phone-finance-hero h2 {
+  margin: 0;
+  color: var(--brand-ink);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.phone-finance-hero p {
+  margin: 2px 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+}
+
+.phone-finance-hero-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.phone-finance-hero-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.phone-app-body .business-finance-app {
+  padding: 0;
+  background: transparent;
+}
+
+.phone-app-body .business-finance-app > h2,
+.phone-app-body .business-finance-app > h3 {
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.phone-app-body .business-finance-app .phone-finance-card,
+.phone-app-body .investment-summary > div {
+  border-radius: 18px;
+  box-shadow: var(--elevation-card);
+}
+
+.phone-app-body .business-finance-app .phone-finance-card {
+  padding: 14px;
+}
+
+.phone-app-body .phone-finance-disclaimer {
+  border-radius: 999px;
+  text-align: center;
+}

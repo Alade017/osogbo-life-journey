@@ -426,7 +426,26 @@ export function PhoneLauncher({
     if (appName === "Career Life" || appName === "Jobs") return <JobsPage />;
 
     if (appName === "Invest" || appName === "Company" || appName === "Businesses") {
-      return <BusinessInvestmentApp mode={appName === "Invest" ? "invest" : "company"} />;
+      const mode = appName === "Invest" ? "invest" : "company";
+      const HeroIcon = mode === "invest" ? ChartNoAxesCombined : Building2;
+      return (
+        <div className="phone-finance-shell">
+          <section className="phone-finance-hero">
+            <span className="phone-finance-hero-icon">
+              <HeroIcon aria-hidden="true" />
+            </span>
+            <div>
+              <h2>{mode === "invest" ? "Invest" : "Businesses"}</h2>
+              <p>
+                {mode === "invest"
+                  ? "Put your simulated savings to work."
+                  : "Own a company and manage what it sells."}
+              </p>
+            </div>
+          </section>
+          <BusinessInvestmentApp mode={mode} />
+        </div>
+      );
     }
 
     if (appName === "Billboards") {
