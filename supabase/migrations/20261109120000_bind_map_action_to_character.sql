@@ -38,7 +38,7 @@ begin
   perform 1 from public.profiles where id = p_user_id for update;
   if not found then raise exception 'NO_CHARACTER'; end if;
   select * into player from public.characters
-    where user_id = p_user_id order by created_at desc limit 1 for update;
+    where user_id = p_user_id order by created_at desc, id desc limit 1 for update;
   if not found then raise exception 'NO_CHARACTER'; end if;
   -- Bind neighborhood-authorized actions to the exact signed-token character.
   if p_action_definition ? 'expected_character_id'
