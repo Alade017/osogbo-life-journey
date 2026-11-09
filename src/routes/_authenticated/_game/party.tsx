@@ -249,6 +249,8 @@ function usePartyRoom(locationId: string | null, characterId: string | null) {
   const [lastDance, setLastDance] = useState<PartyDanceEvent | null>(null);
   const [status, setStatus] = useState<"idle" | "connecting" | "live" | "offline">("idle");
   const roomRef = useRef<Awaited<ReturnType<typeof joinPartyRoom>> | null>(null);
+  const activeCharacterIdRef = useRef(characterId);
+  activeCharacterIdRef.current = characterId;
 
   useEffect(() => {
     if (!locationId) return;
@@ -293,7 +295,8 @@ function usePartyRoom(locationId: string | null, characterId: string | null) {
     };
   }, [characterId, locationId]);
 
-  const sendDance = (event: PartyDanceEvent) => {
+  const sendDance = (event: PartyDanceEvent, expectedCharacterId: string | null) => {
+    if (!expectedCharacterId || activeCharacterIdRef.current !== expectedCharacterId) return;
     roomRef.current?.send("dance", event);
   };
   return { people, lastDance, status, sendDance };
@@ -327,9 +330,16 @@ function ClubsTab({
   const room = usePartyRoom(visitLocationId, characterId);
   // The room is told about a dance only after the database confirms it.
   const danceWithNpc = (npcSlug: string) => {
+    const actionCharacterId = characterId;
+    if (!actionCharacterId) return;
     dance
       .mutateAsync({ npcSlug, requestId: newPartyRequestId() })
-      .then(() => room.sendDance({ from: "You", partner: "npc", npcSlug }))
+      .then(() =>
+        room.sendDance(
+          { from: "You", partner: "npc", npcSlug },
+          actionCharacterId,
+        ),
+      )
       .catch(() => {
         // The mutation already shows the server's message.
       });
