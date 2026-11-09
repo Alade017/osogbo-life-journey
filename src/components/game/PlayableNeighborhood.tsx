@@ -310,6 +310,8 @@ export function PlayableNeighborhood() {
   directionsRef.current = directions;
   const lastIntentRef = useRef("0:0");
   const [activePanel, setActivePanel] = useState<InteractionPanel | null>(null);
+  const activePanelRef = useRef(activePanel);
+  activePanelRef.current = activePanel;
   /** A tapped building or person the character is walking to; interaction opens on arrival. */
   const [pendingTargetId, setPendingTargetId] = useState<string | null>(null);
   /** Set while the character walks to its home door after Go home. */
@@ -551,6 +553,9 @@ export function PlayableNeighborhood() {
     const set = (event: KeyboardEvent, pressed: boolean) => {
       const direction = KEY_DIRECTIONS[event.code];
       if (!direction) return;
+      // Do not queue movement while a dialogue or service panel owns keyboard input.
+      // Key-up is still processed so held directions cannot leak after the panel closes.
+      if (pressed && activePanelRef.current) return;
       if (pressed) {
         groundTargetRef.current = null;
         setGroundTarget(null);
