@@ -160,8 +160,8 @@ function NeighborhoodNpcActor({
     const current = actor ? { x: actor.position.x, y: actor.position.z } : null;
     const reservation = neighborhoodNpcReservationPath(
       current,
-      waypoints,
-      waypointIndex.current,
+      recoveryTarget.current ? [recoveryTarget.current, ...waypoints.slice(waypointIndex.current)] : waypoints,
+      recoveryTarget.current ? 0 : waypointIndex.current,
     );
     if (reservation.length > 1) actorRoutes.current.set(npc.id, reservation);
     else actorRoutes.current.delete(npc.id);
