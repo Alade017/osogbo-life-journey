@@ -333,6 +333,7 @@ export function PlayableNeighborhood() {
     const sceneBounds = neighborhoodSceneBounds(district.origin);
     const occupiedSpawnPoints: Array<{ x: number; y: number }> = [];
     const occupiedDestinationPoints: Array<{ x: number; y: number }> = [];
+    const occupiedNpcPaths: Array<readonly { x: number; y: number }[]> = [];
     const scheduled = NPC_CATALOG.flatMap((npc, catalogIndex) => {
       if (!savedNpcIds.has(npc.id)) return [];
       const activity = npcActivityAt(
@@ -371,7 +372,14 @@ export function PlayableNeighborhood() {
       if (!destination) return [];
       occupiedDestinationPoints.push(destination);
       const current = currentNpcPositionOverrides[npc.id] ?? { x: slot.x, y: slot.y };
-      const path = neighborhoodNpcPath(current, destination, occupiedFootprints, sceneBounds);
+      const path = neighborhoodNpcPath(
+        current,
+        destination,
+        occupiedFootprints,
+        sceneBounds,
+        occupiedNpcPaths,
+      );
+      if (path) occupiedNpcPaths.push([current, ...path]);
       // Keep a scheduled character visible if its destination is unreachable.
       // Holding position is safer than dropping the NPC or sending it through a structure.
       const safeDestination = path ? destination : current;
