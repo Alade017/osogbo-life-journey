@@ -215,7 +215,7 @@ export function CityMapDashboard({
     : cityEvents.data?.events.find(
         (event) => event.status === "active" && event.landmarkId === selectedLandmark?.id,
       );
-  const refreshConfirmedArrival = async (locationId: string) => {
+  const refreshConfirmedArrival = async (locationId: string, expectedCharacterId: string) => {
     if (isMounted.current) {
       setRefreshingArrival(true);
       setTravelError(null);
@@ -223,7 +223,8 @@ export function CityMapDashboard({
     try {
       const savedCharacter = await queryClient.fetchQuery(q.character());
       if (!isMounted.current) return;
-      if (savedCharacter?.current_location_id !== locationId) {
+      if (savedCharacter?.id !== expectedCharacterId) return;
+      if (savedCharacter.current_location_id !== locationId) {
         setTravelError("Travel is confirmed, but the saved destination has not refreshed yet.");
         return;
       }
@@ -240,13 +241,17 @@ export function CityMapDashboard({
     }
   };
   const travel = useMutation({
-    mutationFn: ({ locationId, mode }: { locationId: string; mode: TravelMode }) =>
-      rpc.travelToLocation({ locationId, mode }),
+    mutationFn: ({
+      locationId,
+      mode,
+      characterId,
+    }: {
+      locationId: string;
+      mode: TravelMode;
+      characterId: string;
+    }) => rpc.travelToLocation({ locationId, mode, characterId }),
     onSuccess: async (_result, variables) => {
-      if (isMounted.current) {
-        setArrivalConfirmed(true);
-        setTravelError(null);
-      }
+      if (isMounted.current) setTravelError(null);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["character"], refetchType: "none" }),
         queryClient.invalidateQueries({ queryKey: ["locations"], refetchType: "none" }),
@@ -255,7 +260,7 @@ export function CityMapDashboard({
         queryClient.invalidateQueries({ queryKey: ["visits"] }),
       ]);
       window.dispatchEvent(new Event("osogbo:server-state-changed"));
-      await refreshConfirmedArrival(variables.locationId);
+      await refreshConfirmedArrival(variables.locationId, variables.characterId);
     },
     onError: (error) => {
       if (isMounted.current) {
@@ -277,6 +282,10 @@ export function CityMapDashboard({
   });
   const confirmTravel = (mode: TravelMode) => {
     if (travelSubmitLock.current || !selectedDestination || travel.isPending) return;
+    if (!character.data?.id) {
+      setTravelError("Your active character could not be confirmed. Refresh and try again.");
+      return;
+    }
     travelSubmitLock.current = true;
     setTravelError(null);
     if (character.data?.inside_home_property_id) {
@@ -299,7 +308,7 @@ export function CityMapDashboard({
         });
       return;
     }
-    travel.mutate({ locationId: selectedDestination.id, mode });
+    travel.mutate({ locationId: selectedDestination.id, mode, characterId: character.data.id });
   };
   const closeTravelSelector = () => {
     setSelectedLandmark(null);
