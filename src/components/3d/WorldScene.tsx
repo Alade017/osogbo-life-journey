@@ -1079,6 +1079,28 @@ export function WorldHouse({
         <WorldMaterial tone="timber" />
       </mesh>
 
+      {detailed && (
+        <group position={[0, 0, depth / 2 + 0.095]}>
+          {[-1, 1].map((side) => (
+            <mesh
+              key={`door-jamb-${side}`}
+              position={[
+                side * ((isMarket ? width * 0.48 : width * 0.3) / 2 + 0.035),
+                WORLD_SCALE.door / 2 + 0.18,
+                0,
+              ]}
+            >
+              <boxGeometry args={[0.055, WORLD_SCALE.door + 0.08, 0.045]} />
+              <WorldMaterial tone="concrete" color={surfaces.trim} />
+            </mesh>
+          ))}
+          <mesh position={[0, WORLD_SCALE.door + 0.22, 0]}>
+            <boxGeometry args={[(isMarket ? width * 0.48 : width * 0.3) + 0.12, 0.065, 0.055]} />
+            <WorldMaterial tone="concrete" color={surfaces.trim} />
+          </mesh>
+        </group>
+      )}
+
       {/* Detailed windows */}
       {detailed &&
         windowPositions.map((x, index) => (
@@ -1096,6 +1118,14 @@ export function WorldHouse({
             <mesh position={[0, 0, 0.065]}>
               <boxGeometry args={[0.035, height * 0.25, 0.025]} />
               <WorldMaterial tone="metal" />
+            </mesh>
+            <mesh position={[0, height * 0.16, 0.015]}>
+              <boxGeometry args={[width * 0.23, Math.max(0.035, height * 0.035), 0.065]} />
+              <WorldMaterial tone="concrete" color={surfaces.trim} />
+            </mesh>
+            <mesh position={[0, -height * 0.16, 0.015]}>
+              <boxGeometry args={[width * 0.24, Math.max(0.04, height * 0.045), 0.085]} />
+              <WorldMaterial tone="concrete" color={surfaces.trim} />
             </mesh>
           </group>
         ))}
