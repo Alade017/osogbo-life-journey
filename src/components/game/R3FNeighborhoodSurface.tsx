@@ -23,7 +23,7 @@ import {
   type NeighborhoodObject,
 } from "@/game/neighborhood-model";
 import { neighborhoodBuildingFootprint, neighborhoodObstacleFootprint } from "@/game/neighborhood-geometry";
-import { neighborhoodNpcAvoidanceBias, neighborhoodNpcAvoidanceStep, neighborhoodNpcPathWithFallback, neighborhoodNpcReplanDelay, neighborhoodNpcReservationPath } from "@/game/neighborhood-npc-layout";
+import { neighborhoodNpcAvoidanceBias, neighborhoodNpcAvoidanceStep, neighborhoodNpcPathWithFallback, neighborhoodNpcReplanDelay, neighborhoodNpcReservationPath, neighborhoodNpcYieldPoint } from "@/game/neighborhood-npc-layout";
 import {
   WorldCamera,
   WorldCars,
@@ -315,19 +315,56 @@ function NeighborhoodNpcActor({
         ...liveNpcPositions,
         ...playerPositions.map((position) => ({ x: position[0], y: position[2] })),
       ];
-      const next = neighborhoodNpcAvoidanceStep(
-        { x: actor.position.x, y: actor.position.z },
-        { x: waypoint[0], y: waypoint[2] },
-        liveBlockers,
-        distance * step,
-        undefined,
-        occupiedFootprints,
-        sceneBounds,
-        avoidanceBias,
-      );
+      const currentPoint = { x: actor.position.x, y: actor.position.z };
+      const routeWaypoint = { x: waypoint[0], y: waypoint[2] };
+      const yieldingPoint = [...actorRoutes.current.entries()].reduce<
+        { x: number; y: number } | null
+      >((selected, [otherId, path]) => {
+        if (selected || path.length < 2) return selected;
+        const otherPosition = actorPositions.current.get(otherId) ?? path[0];
+        return neighborhoodNpcYieldPoint(
+          npc.id,
+          otherId,
+          currentPoint,
+          routeWaypoint,
+          otherPosition,
+          path[1],
+        );
+      }, null);
+      const yieldDistance = yieldingPoint
+        ? Math.hypot(yieldingPoint.x - actor.position.x, yieldingPoint.y - actor.position.z)
+        : 0;
+      const isYielding = !!yieldingPoint && yieldDistance > 0.08;
+      const next = isYielding
+        ? neighborhoodNpcAvoidanceStep(
+            currentPoint,
+            yieldingPoint!,
+            liveBlockers,
+            Math.min(distance * step, yieldDistance),
+            undefined,
+            occupiedFootprints,
+            sceneBounds,
+            avoidanceBias,
+          )
+        : yieldingPoint
+          ? currentPoint
+          : neighborhoodNpcAvoidanceStep(
+              currentPoint,
+              routeWaypoint,
+              liveBlockers,
+              distance * step,
+              undefined,
+              occupiedFootprints,
+              sceneBounds,
+              avoidanceBias,
+            );
       const movedX = next.x - actor.position.x;
       const movedZ = next.y - actor.position.z;
-      if (Math.hypot(movedX, movedZ) <= 0.0001) {
+      if (isYielding) {
+        // A yielding NPC waits in its clear side pocket without repeatedly
+        // replanning its main route while opposing traffic passes.
+        blockedDuration.current = 0;
+      } else if (Math.hypot(movedX, movedZ) <= 0.0001) {
         blockedDuration.current += Math.min(delta, 0.1);
         // A live actor can occupy a narrow waypoint indefinitely. After a
         // sustained wait, advance to the next already-validated route waypoint.
