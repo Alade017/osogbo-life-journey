@@ -4579,3 +4579,69 @@
   color: var(--card-foreground);
   padding: 12px 6px;
 }
+
+/* Town leaderboard in the phone: the top three ranks are highlighted, each rank is a numbered badge. */
+.phone-app-body .leaderboard-app {
+  gap: 12px;
+  padding: 12px;
+}
+.phone-app-body .leaderboard-app > header {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card, 16px);
+  box-shadow: var(--elevation-card);
+  padding: 14px;
+}
+.phone-app-body .leaderboard-app > header strong {
+  font-size: 1rem;
+}
+.phone-app-body .leaderboard-app > header small {
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+}
+.phone-app-body .leaderboard-ranks {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.phone-app-body .leaderboard-ranks > li {
+  align-items: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  color: var(--card-foreground);
+  display: flex;
+  gap: 12px;
+  padding: 10px 12px;
+}
+.phone-app-body .leaderboard-ranks > li > b {
+  align-items: center;
+  background: var(--muted);
+  border-radius: 999px;
+  color: var(--muted-foreground);
+  display: grid;
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  height: 34px;
+  place-items: center;
+  width: 34px;
+}
+.phone-app-body .leaderboard-ranks > li:nth-child(-n + 3) {
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+  background: color-mix(in srgb, var(--primary) 8%, var(--card));
+}
+.phone-app-body .leaderboard-ranks > li:nth-child(-n + 3) > b {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.phone-app-body .leaderboard-ranks > li > span {
+  flex: 1;
+  min-width: 0;
+}
+.phone-app-body .leaderboard-ranks > li > svg {
+  color: var(--primary);
+  flex-shrink: 0;
+  width: 1rem;
+}

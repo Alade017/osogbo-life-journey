@@ -121,7 +121,7 @@ export function CommunityPhoneApps({ app }: { app: CommunityPhoneApp }) {
   });
   if (app === "Leaderboard")
     return (
-      <div className="phone-local-app" aria-label="Town leaderboard">
+      <div className="phone-local-app leaderboard-app" aria-label="Town leaderboard">
         <header>
           <Trophy aria-hidden="true" />
           <span>
@@ -129,7 +129,7 @@ export function CommunityPhoneApps({ app }: { app: CommunityPhoneApp }) {
             <small>This week · community activity</small>
           </span>
         </header>
-        <ol className="phone-local-ranks">
+        <ol className="phone-local-ranks leaderboard-ranks">
           {leaderboard.isLoading ? (
             <li role="status">Loading town rankings...</li>
           ) : leaderboard.isError ? (
