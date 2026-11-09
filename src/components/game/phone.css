@@ -3525,3 +3525,152 @@
   color: var(--card-foreground);
   box-shadow: var(--elevation-card);
 }
+
+/* Property app inside the phone: hero with section links, asset cards and actions. */
+.phone-app-body .property-market-page {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+}
+
+.phone-app-body .property-market-hero {
+  display: grid;
+  gap: 4px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--card);
+  color: var(--card-foreground);
+  box-shadow: var(--elevation-card);
+}
+
+.phone-app-body .property-market-hero .map-sheet-eyebrow {
+  margin: 0;
+  color: var(--primary);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.phone-app-body .property-market-hero h1 {
+  margin: 0;
+  color: var(--brand-ink);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.phone-app-body .property-market-hero > p {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+}
+
+.phone-app-body .property-market-hero nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.phone-app-body .property-market-hero nav a {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--muted);
+  color: var(--brand-ink);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.phone-app-body .property-market-district {
+  display: grid;
+  gap: 10px;
+}
+
+.phone-app-body .property-market-district > h2 {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.phone-app-body .property-market-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.phone-app-body .property-market-card {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--card);
+  color: var(--card-foreground);
+  box-shadow: var(--elevation-card);
+}
+
+.phone-app-body .property-market-card img {
+  display: block;
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+}
+
+.phone-app-body .property-market-card-body {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+}
+
+.phone-app-body .property-market-card-body h3 {
+  margin: 0;
+  color: var(--brand-ink);
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.phone-app-body .property-market-card-body p,
+.phone-app-body .property-market-card-body small {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+}
+
+.phone-app-body .property-market-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.phone-app-body .property-market-message {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--card);
+  color: var(--card-foreground);
+  font-size: 0.85rem;
+}
+
+.phone-app-body .property-market-page .map-primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font: inherit;
+  font-weight: 750;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.phone-app-body .property-market-page .map-primary-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
