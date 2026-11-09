@@ -571,8 +571,7 @@ export function CityMapDashboard({
             setArrivalConfirmed(false);
             setTravelError(null);
             setActionError("");
-            setPlaceActionResult(null);
-          }}
+                }}
           availableLandmarkIds={availableLandmarks.data ?? []}
           onSelectDistrict={onDistrict}
           onSelectLandmark={onLandmark}
