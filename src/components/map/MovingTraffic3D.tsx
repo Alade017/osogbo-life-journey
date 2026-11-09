@@ -88,6 +88,11 @@ function TrafficVehicle({
   const currentSegment = useRef(0);
   const progress = useRef(0);
   const [isHovered, setIsHovered] = useState(false);
+  useEffect(() => {
+    currentSegment.current = 0;
+    progress.current = 0;
+  }, [config.path]);
+
   const routeLength = useMemo(() => {
     if (config.path.length < 2) return 0;
     return config.path.reduce((total, point, index) => {
