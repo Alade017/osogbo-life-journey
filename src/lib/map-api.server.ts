@@ -8,6 +8,7 @@ type MapApiCode =
   | "ALREADY_TRAVELLING"
   | "UNKNOWN_LANDMARK"
   | "IDEMPOTENCY_CONFLICT"
+  | "CHARACTER_CHANGED"
   | "INTERNAL_ERROR";
 
 type MapApiDependencies = {
@@ -27,6 +28,7 @@ const httpStatus: Record<MapApiCode, number> = {
   ALREADY_TRAVELLING: 409,
   UNKNOWN_LANDMARK: 404,
   IDEMPOTENCY_CONFLICT: 409,
+  CHARACTER_CHANGED: 409,
   INTERNAL_ERROR: 500,
 };
 
