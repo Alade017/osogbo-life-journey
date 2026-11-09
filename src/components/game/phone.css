@@ -4117,3 +4117,97 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Missions in the phone: gold heading, one card per mission, status badges from tokens. */
+.phone-app-body .missions-app {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+.phone-app-body .missions-panel {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+}
+.phone-app-body .missions-heading {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+}
+.phone-app-body .missions-intro {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  margin: 0;
+}
+.phone-app-body .missions-state {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  padding: 16px 0;
+  text-align: center;
+}
+.phone-app-body .missions-retry {
+  color: var(--primary);
+  font-weight: 700;
+  margin-top: 8px;
+}
+.phone-app-body .missions-list {
+  display: grid;
+  gap: 8px;
+}
+.phone-app-body .missions-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--elevation-card);
+  color: var(--card-foreground);
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+}
+.phone-app-body .missions-card-top {
+  align-items: flex-start;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+.phone-app-body .missions-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.phone-app-body .missions-badge {
+  background: var(--muted);
+  border-radius: 999px;
+  color: var(--muted-foreground);
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  white-space: nowrap;
+}
+.phone-app-body .missions-badge[data-status="completed"] {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.phone-app-body .missions-badge[data-status="claimed"] {
+  background: var(--brand-porcelain, var(--muted));
+  color: var(--brand-ink, var(--card-foreground));
+}
+.phone-app-body .missions-desc {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  margin: 0;
+}
+.phone-app-body .missions-claim {
+  background: var(--primary);
+  border-radius: 10px;
+  color: var(--primary-foreground);
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-top: 4px;
+  padding: 8px;
+  width: 100%;
+}
+.phone-app-body .missions-claim:disabled {
+  opacity: 0.6;
+}

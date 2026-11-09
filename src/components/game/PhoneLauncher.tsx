@@ -471,43 +471,34 @@ export function PhoneLauncher({
 
     if (appName === "Missions") {
       return (
-        <div className="phone-sub-app p-3 space-y-3">
-          <div className="phone-card p-3">
-            <h4 className="font-bold text-sm mb-1">Active Missions in Osogbo</h4>
-            <p className="text-xs text-muted-foreground mb-3">
+        <div className="phone-sub-app missions-app">
+          <div className="phone-card missions-panel">
+            <h4 className="missions-heading">Active Missions in Osogbo</h4>
+            <p className="missions-intro">
               Complete goals around town and collect in-game cash and XP.
             </p>
             {missionsLoading ? (
-              <p className="text-xs text-muted-foreground py-4 text-center" role="status">
+              <p className="missions-state" role="status">
                 Loading missions...
               </p>
             ) : missionsError ? (
-              <div role="alert" className="text-xs text-muted-foreground py-4 text-center">
+              <div role="alert" className="missions-state">
                 <p>Could not load missions.</p>
                 <button
                   type="button"
-                  className="mt-2 font-bold text-primary"
+                  className="missions-retry"
                   onClick={() => void refetchMissions()}
                 >
                   Try again
                 </button>
               </div>
             ) : missions && missions.length > 0 ? (
-              <div className="space-y-2">
+              <div className="missions-list">
                 {missions.map((m) => (
-                  <div
-                    key={m.id}
-                    className="p-2.5 rounded-xl border border-border bg-card space-y-1.5"
-                  >
-                    <div className="flex justify-between items-start">
-                      <span className="font-bold text-xs">{m.mission?.title ?? "Town Goal"}</span>
-                      <span
-                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                          m.status === "completed"
-                            ? "bg-emerald-500/20 text-emerald-600"
-                            : "bg-amber-500/20 text-amber-600"
-                        }`}
-                      >
+                  <div key={m.id} className="missions-card">
+                    <div className="missions-card-top">
+                      <span className="missions-title">{m.mission?.title ?? "Town Goal"}</span>
+                      <span className="missions-badge" data-status={m.status}>
                         {m.status === "completed"
                           ? "Ready to claim"
                           : m.status === "claimed"
@@ -515,13 +506,13 @@ export function PhoneLauncher({
                             : "In progress"}
                       </span>
                     </div>
-                    <p className="text-[11px] text-muted-foreground">{m.mission?.description}</p>
+                    <p className="missions-desc">{m.mission?.description}</p>
                     {m.status === "completed" && (
                       <button
                         type="button"
                         disabled={claimMission.isPending}
                         onClick={() => claimMission.mutate(m.id)}
-                        className="w-full py-1.5 rounded-lg text-xs font-bold bg-primary text-primary-foreground hover:opacity-90 mt-1"
+                        className="missions-claim"
                       >
                         Claim Reward
                       </button>
@@ -530,9 +521,7 @@ export function PhoneLauncher({
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-muted-foreground py-4 text-center">
-                No active missions right now.
-              </p>
+              <p className="missions-state">No active missions right now.</p>
             )}
           </div>
         </div>
