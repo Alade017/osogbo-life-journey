@@ -235,7 +235,7 @@ describe("isometric town map", () => {
   it("sends one RPC with the selected mode and navigates only after saved location refresh", async () => {
     renderDashboard("residential");
     testState.travelToLocation.mockImplementation(
-      async ({ locationId }: { locationId: string; mode: string; characterId: string }) => {
+      async ({ locationId }: { locationId: string }) => {
         testState.character = {
           ...testState.character,
           current_location_id: locationId,
