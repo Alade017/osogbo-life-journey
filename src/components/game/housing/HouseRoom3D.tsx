@@ -2045,6 +2045,16 @@ export function HouseRoom3D({
             doorOpen={doorOpen}
           />
           <RoomFloor houseTypeId={houseTypeId} width={width} depth={depth} />
+          <mesh receiveShadow position={[0, 0.03, depth * 0.12]}>
+            <boxGeometry args={[width * 0.46, 0.03, depth * 0.32]} />
+            <meshStandardMaterial color={HOUSE_ROOM_STYLE.rug} />
+          </mesh>
+          <pointLight
+            position={[0, WORLD_SCALE.door * 1.15 * 0.75, 0]}
+            intensity={lightOn ? 6 : 0}
+            distance={Math.max(width, depth) * 2}
+            color="#ffd9a0"
+          />
           {guideZone &&
             (() => {
               const [zoneX, , zoneZ] = roomPercentToPosition(
