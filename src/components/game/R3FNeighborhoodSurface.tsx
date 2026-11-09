@@ -23,7 +23,7 @@ import {
   type NeighborhoodObject,
 } from "@/game/neighborhood-model";
 import { neighborhoodBuildingFootprint, neighborhoodObstacleFootprint } from "@/game/neighborhood-geometry";
-import { neighborhoodNpcAvoidanceStep } from "@/game/neighborhood-npc-layout";
+import { neighborhoodNpcAvoidanceStep, neighborhoodNpcPath } from "@/game/neighborhood-npc-layout";
 import {
   WorldCamera,
   WorldCars,
@@ -132,10 +132,12 @@ function NeighborhoodNpcActor({
   const targetKey = `${target[0].toFixed(3)}:${target[2].toFixed(3)}`;
   const arrivedTarget = useRef<string | null>(null);
   const waypointIndex = useRef(0);
+  const routeWaypoints = useRef(waypoints);
   const blockedDuration = useRef(0);
   const pauseSnapshotSaved = useRef(false);
   useEffect(() => {
     waypointIndex.current = 0;
+    routeWaypoints.current = waypoints;
     blockedDuration.current = 0;
     arrivedTarget.current = null;
   }, [target[0], target[2], waypoints]);
@@ -182,7 +184,8 @@ function NeighborhoodNpcActor({
   useFrame((state, delta) => {
     const actor = group.current;
     if (!actor || npc.isPaused) return;
-    const waypoint = waypoints[waypointIndex.current] ?? target;
+    const activeWaypoints = routeWaypoints.current;
+    const waypoint = activeWaypoints[waypointIndex.current] ?? target;
     const dx = waypoint[0] - actor.position.x;
     const dz = waypoint[2] - actor.position.z;
     const distance = Math.hypot(dx, dz);
@@ -215,8 +218,19 @@ function NeighborhoodNpcActor({
         // A live actor can occupy a narrow waypoint indefinitely. After a
         // sustained wait, advance to the next already-validated route waypoint.
         // Each actual movement step still passes obstacle and boundary checks.
-        if (blockedDuration.current >= 1.25 && waypointIndex.current < waypoints.length - 1) {
-          waypointIndex.current += 1;
+        if (blockedDuration.current >= 1.25) {
+          const rerouted = neighborhoodNpcPath(
+            { x: actor.position.x, y: actor.position.z },
+            { x: target[0], y: target[2] },
+            occupiedFootprints,
+            sceneBounds,
+          );
+          if (rerouted?.length) {
+            routeWaypoints.current = rerouted.map(
+              (point) => [point.x, 0, point.y] as [number, number, number],
+            );
+            waypointIndex.current = 0;
+          }
           blockedDuration.current = 0;
         }
       } else {
@@ -228,7 +242,7 @@ function NeighborhoodNpcActor({
       if (Math.hypot(movedX, movedZ) > 0.0001) {
         actor.rotation.y = Math.atan2(movedX, movedZ);
       }
-    } else if (waypointIndex.current < waypoints.length - 1) {
+    } else if (waypointIndex.current < activeWaypoints.length - 1) {
       waypointIndex.current += 1;
     } else {
       actor.position.x = target[0];
