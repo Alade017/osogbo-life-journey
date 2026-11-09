@@ -48,20 +48,47 @@ describe("housing map marker input", () => {
     ).toEqual([]);
   });
 
-  it("drops invalid rows instead of inventing a property status", () => {
-    expect(
+  it("rejects an incomplete response instead of displaying a partial map", () => {
+    expect(() =>
       mapHousingMarkers([
-        { propertyId: "missing-status", label: "Room", model: "flat", gridX: 1, gridZ: 1, tier: 1 },
         {
-          propertyId: "bad-plot",
+          propertyId: "valid-home",
           label: "Room",
           model: "flat",
-          gridX: 50,
+          gridX: 1,
           gridZ: 1,
           tier: 1,
           status: "vacant",
         },
+        { propertyId: "missing-status", label: "Room", model: "flat", gridX: 2, gridZ: 2, tier: 1 },
       ]),
-    ).toEqual([]);
+    ).toThrow("incomplete property details");
+  });
+
+  it("rejects duplicate property IDs", () => {
+    const property = {
+      propertyId: "duplicate-home",
+      label: "Room",
+      model: "flat",
+      gridX: 1,
+      gridZ: 1,
+      tier: 1,
+      status: "vacant",
+    };
+    expect(() => mapHousingMarkers([property, property])).toThrow("duplicate property IDs");
+  });
+
+  it("rejects blank identifiers and labels", () => {
+    expect(() =>
+      mapHousingMarkers([{
+        propertyId: " ",
+        label: "Room",
+        model: "flat",
+        gridX: 1,
+        gridZ: 1,
+        tier: 1,
+        status: "vacant",
+      }]),
+    ).toThrow("incomplete property details");
   });
 });
