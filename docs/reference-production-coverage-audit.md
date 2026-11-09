@@ -209,3 +209,12 @@ A follow-up geometry review corrected the connector endpoints: they now terminat
 Added `stitchTownPedestrianRoutes` to join straight sidewalk runs and validated corner connectors wherever their endpoint coordinates match. It consumes each segment once, follows degree-two paths continuously, and splits at branch nodes rather than making an arbitrary turn through a junction. Closed or otherwise unconsumed components are retained as separate trails. The R3F town surface now passes its straight and corner paths through this stitcher before creating pedestrian NPCs.
 
 This is geometric network stitching, not destination-aware navigation: NPCs still reverse along their assigned trail, and branch choices are not dynamically planned. Prop reservations are applied before both straight and corner routes are derived. Synthetic tests cover endpoint joining, branch splitting and segment preservation. Runtime coverage and junction alignment still need live scene inspection; no local tests, typecheck, lint or production build have been run. GitHub Actions remain untouched.
+
+
+## Pedestrian crowd spacing and route-state stability
+
+Pedestrian characters no longer all spawn at the first waypoint of their assigned trail. Each trail receives one deterministic start distance distributed along its own length, and the character resolves that distance to a segment and interpolation progress before its first animation frame. This spreads the initial crowd without adding NPCs or changing sidewalk geometry.
+
+The pedestrian React key now includes the route geometry rather than only the route array index. If prop clearance changes and the route list is rebuilt, a character whose assigned path changes is remounted with fresh segment/progress state instead of carrying stale animation refs onto a different trail. The existing one-character-per-trail policy remains unchanged; there is no collision avoidance between NPCs on separate trails that meet at a shared junction.
+
+Changes are committed in `05ae5b3` and `e4f01d1`. No local tests, typecheck, lint, production build or live visual inspection have been run. NPC count, minimum separation at shared junctions and mobile performance still require runtime measurement. GitHub Actions remain untouched.
