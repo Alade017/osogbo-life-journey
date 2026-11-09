@@ -315,6 +315,14 @@ const ADDITIONAL_LANDMARK_ANCHORS: readonly { id: string; locationSlug: string }
   { id: "youth-arts-centre", locationSlug: "youth-arts-centre" },
 ];
 
+const ALL_LANDMARK_ANCHORS = [
+  ...townData.landmarks,
+  ...ADDITIONAL_LANDMARK_ANCHORS,
+].filter(
+  (landmark, index, landmarks) =>
+    landmarks.findIndex((candidate) => candidate.id === landmark.id) === index,
+);
+
 const AREA_ANCHOR_SETS = [
   [
     { x: 150, y: 155 },
@@ -499,7 +507,7 @@ function generatedNeighborhoodArea(
     ],
     // Resolve real landmark identities from the reviewed catalog. Location slugs and
     // map_landmarks IDs are separate contracts; never manufacture one from the other.
-    interactionPoints: [...townData.landmarks, ...ADDITIONAL_LANDMARK_ANCHORS]
+    interactionPoints: ALL_LANDMARK_ANCHORS
       .filter((landmark) => landmark.locationSlug === slug)
       .map((landmark, index, matches) => ({
         id: landmark.id,
