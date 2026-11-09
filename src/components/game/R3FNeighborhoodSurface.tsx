@@ -317,7 +317,9 @@ function NeighborhoodNpcActor({
       ];
       const currentPoint = { x: actor.position.x, y: actor.position.z };
       const routeWaypoint = { x: waypoint[0], y: waypoint[2] };
-      const yieldingPoint = [...actorRoutes.current.entries()].reduce<
+      const yieldingPoint = [...actorRoutes.current.entries()]
+        .sort(([leftId], [rightId]) => leftId.localeCompare(rightId))
+        .reduce<
         { x: number; y: number } | null
       >((selected, [otherId, path]) => {
         if (selected || path.length < 2) return selected;
@@ -360,9 +362,17 @@ function NeighborhoodNpcActor({
             );
       const movedX = next.x - actor.position.x;
       const movedZ = next.y - actor.position.z;
-      if (isYielding) {
-        // A yielding NPC waits in its clear side pocket without repeatedly
-        // replanning its main route while opposing traffic passes.
+      if (isYielding && Math.hypot(movedX, movedZ) > 0.0001) {
+        blockedDuration.current = 0;
+        replanBackoff.current = replanDelay;
+      } else if (isYielding) {
+        // If geometry prevents reaching the side pocket, retain the normal
+        // congestion recovery instead of waiting forever at the same point.
+        blockedDuration.current += Math.min(delta, 0.1);
+        if (blockedDuration.current >= replanBackoff.current) retryRoute(actor);
+      } else if (yieldingPoint) {
+        // The actor has reached its clear side pocket; wait for the opposing
+        // journey to pass before resuming the original route.
         blockedDuration.current = 0;
       } else if (Math.hypot(movedX, movedZ) <= 0.0001) {
         blockedDuration.current += Math.min(delta, 0.1);
