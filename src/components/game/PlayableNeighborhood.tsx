@@ -722,6 +722,7 @@ export function PlayableNeighborhood() {
       return;
     }
     toast.message(`Walking to ${target.name}`);
+    setHomeBound(false);
     setPendingTargetId(targetId);
     setDirections(new Set());
     const interactionPoint = neighborhoodInteractionPoint(target, activeNpcs);
