@@ -134,11 +134,12 @@ function LocationPage() {
       ),
   });
   const travel = useGameAction(rpc.travelToLocation, {
-    onSuccess: (r, variables) => {
-      const activeCharacterId = queryClient.getQueryData<{ id?: string }>(
-        q.character().queryKey,
-      )?.id;
-      if (activeCharacterId !== variables.characterId) return;
+    onSuccess: async (r, variables) => {
+      const savedCharacter = await queryClient.fetchQuery(q.character());
+      if (
+        savedCharacter?.id !== variables.characterId ||
+        savedCharacter.current_location_id !== variables.locationId
+      ) return;
       dispatchTravel({ type: "arrive", estimatedMinutes: r.travel_minutes });
       const gameTime = r.game_time;
       if (gameTime) {
@@ -163,7 +164,14 @@ function LocationPage() {
         void navigate({ to: "/bank/$slug", params: { slug: loc.slug } });
       }
     },
-    onError: (error) => dispatchTravel({ type: "fail", message: error.message }),
+    onError: (error, variables) => {
+      const activeCharacterId = queryClient.getQueryData<{ id?: string }>(
+        q.character().queryKey,
+      )?.id;
+      if (activeCharacterId !== variables.characterId) return false;
+      dispatchTravel({ type: "fail", message: error.message });
+      return true;
+    },
   });
   const selectJob = useGameAction(rpc.selectJob, {
     onSuccess: () => toast.success("You got the job!"),
