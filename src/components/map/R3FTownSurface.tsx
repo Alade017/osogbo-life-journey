@@ -598,7 +598,7 @@ export function R3FTownSurface(props: Props) {
     }
 
     return selected;
-  }, [busStops, roadSigns, trafficLights, trafficLightCellKeys]);
+  }, [busStops, roadSigns, trafficLightCellKeys]);
   const motorcycles = useMemo<[number, number][]>(() => {
     return roadsideShops.map(([x, z]) => [x + cell * 0.72, z + cell * 0.1]);
   }, [roadsideShops]);
