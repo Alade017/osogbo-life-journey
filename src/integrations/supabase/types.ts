@@ -7207,6 +7207,14 @@ export type Database = {
         Args: { p_location_id: string; p_mode: string }
         Returns: Json
       }
+      travel_to_location_for_character: {
+        Args: {
+          p_location_id: string
+          p_mode: string
+          p_expected_character_id: string
+        }
+        Returns: Json
+      }
       unblock_player: { Args: { p_target_character_id: string }; Returns: Json }
       unequip_item: { Args: { p_slot: string }; Returns: Json }
       update_my_settings: {
