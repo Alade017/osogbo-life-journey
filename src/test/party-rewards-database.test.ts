@@ -62,6 +62,7 @@ beforeAll(async () => {
     "20261019100000_party_life.sql",
     "20261019110000_party_clubs_and_activities.sql",
     "20261026162243_party_host_reputation.sql",
+    "20261109130000_bind_party_dance_to_character.sql",
   ])
     await db.exec(readFileSync(`supabase/migrations/${file}`, "utf8"));
   await db.exec(`create table test_party_clock(stamp timestamptz);insert into test_party_clock values('2026-10-26T12:00:00Z');
@@ -117,6 +118,33 @@ afterAll(async () => {
   await db?.close();
 });
 describe("party rewards SQL", () => {
+  it("rejects an in-flight party dance when the active character changed", async () => {
+    const newerCharacter = (
+      await db.query<{ id: string }>(
+        `insert into public.characters(
+          user_id,name,gender,age,personality,current_location_id,created_at
+        ) values($1,'New active character','male',21,'ambitious',$2,now() + interval '1 day')
+        returning id`,
+        [users[0], venue],
+      )
+    ).rows[0]!.id;
+    await user(0);
+    await expect(
+      db.query(
+        "select public.dance_with_npc_for_character($1,$2,$3)",
+        ["fixture-dancer", "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", chars[0]],
+      ),
+    ).rejects.toThrow("CHARACTER_CHANGED");
+    const effects = await db.query<{ cooldowns: number; moods: number; receipts: number }>(
+      `select
+        (select count(*)::integer from public.party_dance_cooldowns where character_id=$1) as cooldowns,
+        (select count(*)::integer from public.party_mood where character_id=$1) as moods,
+        (select count(*)::integer from public.economy_request_results where character_id=$1) as receipts`,
+      [newerCharacter],
+    );
+    expect(effects.rows[0]).toEqual({ cooldowns: 0, moods: 0, receipts: 0 });
+  });
+
   it("admits event-centre guests without club visits and preserves exactly one mood award", async () => {
     await respond(1);
     await expect(respond(1)).rejects.toThrow("already");
