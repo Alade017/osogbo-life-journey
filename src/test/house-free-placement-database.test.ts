@@ -46,7 +46,7 @@ async function freeCells(count: number): Promise<Array<{ x: number; y: number }>
      cells as (select (4+11.5*(i+0.5))::numeric as x, (4+11.5*(j+0.5))::numeric as y
        from generate_series(0,7) i, generate_series(0,7) j)
      select c.x::float8 as x, c.y::float8 as y from cells c, house h
-     where not public._house_grid_cell_taken(h.id, c.x, c.y, null)
+     where not public._house_grid_cell_taken(h.id, c.x, c.y, null::uuid, 0::smallint)
      order by c.x, c.y limit $2`,
     [userId, count],
   );
