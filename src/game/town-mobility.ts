@@ -1,5 +1,22 @@
 export type TownMobilityRoute = readonly [number, number][];
 
+/** Returns unique grass cells directly beside a road, where sidewalks are rendered. */
+export function deriveTownSidewalkCells(rows: readonly string[]): [number, number][] {
+  const cells = new Map<string, [number, number]>();
+  rows.forEach((row, z) => {
+    Array.from(row).forEach((tile, x) => {
+      if (tile !== "r") return;
+      for (const [dx, dz] of [[0, -1], [0, 1], [-1, 0], [1, 0]] as const) {
+        const sidewalkX = x + dx;
+        const sidewalkZ = z + dz;
+        if (rows[sidewalkZ]?.[sidewalkX] !== "g") continue;
+        cells.set(`${sidewalkX},${sidewalkZ}`, [sidewalkX, sidewalkZ]);
+      }
+    });
+  });
+  return [...cells.values()];
+}
+
 /**
  * Builds closed mobility loops from the town's road-cell data.
  * A route is emitted only when all four sides of its rectangle are roads.
