@@ -132,9 +132,11 @@ function NeighborhoodNpcActor({
   const targetKey = `${target[0].toFixed(3)}:${target[2].toFixed(3)}`;
   const arrivedTarget = useRef<string | null>(null);
   const waypointIndex = useRef(0);
+  const blockedDuration = useRef(0);
   const pauseSnapshotSaved = useRef(false);
   useEffect(() => {
     waypointIndex.current = 0;
+    blockedDuration.current = 0;
     arrivedTarget.current = null;
   }, [target[0], target[2], waypoints]);
 
@@ -208,6 +210,18 @@ function NeighborhoodNpcActor({
       );
       const movedX = next.x - actor.position.x;
       const movedZ = next.y - actor.position.z;
+      if (Math.hypot(movedX, movedZ) <= 0.0001) {
+        blockedDuration.current += Math.min(delta, 0.1);
+        // A live actor can occupy a narrow waypoint indefinitely. After a
+        // sustained wait, advance to the next already-validated route waypoint.
+        // Each actual movement step still passes obstacle and boundary checks.
+        if (blockedDuration.current >= 1.25 && waypointIndex.current < waypoints.length - 1) {
+          waypointIndex.current += 1;
+          blockedDuration.current = 0;
+        }
+      } else {
+        blockedDuration.current = 0;
+      }
       actor.position.x = next.x;
       actor.position.z = next.y;
       actorPositions.current.set(npc.id, { x: next.x, y: next.y });
