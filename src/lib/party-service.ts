@@ -201,9 +201,17 @@ export const partyRpc = {
     unwrap(
       await db.rpc("buy_drink", { p_drink_slug: args.drinkSlug, p_request_id: args.requestId }),
     ),
-  danceWithNpc: async (args: { npcSlug: string; requestId: string }) =>
+  danceWithNpc: async (args: {
+    npcSlug: string;
+    requestId: string;
+    characterId: string;
+  }) =>
     unwrap(
-      await db.rpc("dance_with_npc", { p_npc_slug: args.npcSlug, p_request_id: args.requestId }),
+      await db.rpc("dance_with_npc_for_character", {
+        p_npc_slug: args.npcSlug,
+        p_request_id: args.requestId,
+        p_expected_character_id: args.characterId,
+      }),
     ),
   danceWithPlayer: async (args: { targetCharacterId: string; requestId: string }) =>
     unwrap(
