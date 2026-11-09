@@ -988,16 +988,30 @@ export function WorldStreetVendors({
               <WorldMaterial tone="metal" />
             </mesh>
 
-            {/* Produce display */}
+            {/* Three shallow timber trays organize the stall's produce display. */}
             {[-1, 0, 1].map((side, itemIndex) => (
-              <mesh
-                key={`produce-${itemIndex}`}
-                position={[side * size * 0.2, size * 0.43, 0]}
-                castShadow
-              >
-                <sphereGeometry args={[size * 0.095, 8, 8]} />
-                <WorldMaterial tone={itemIndex === 1 ? "clay" : "foliage"} />
-              </mesh>
+              <group key={`produce-tray-${itemIndex}`} position={[side * size * 0.22, size * 0.385, 0]}>
+                <mesh position={[0, 0, 0]} receiveShadow>
+                  <boxGeometry args={[size * 0.2, size * 0.025, size * 0.28]} />
+                  <WorldMaterial tone="timber" />
+                </mesh>
+                {[-1, 1].map((edge) => (
+                  <mesh key={`tray-long-edge-${edge}`} position={[0, size * 0.035, edge * size * 0.125]}>
+                    <boxGeometry args={[size * 0.2, size * 0.07, size * 0.025]} />
+                    <WorldMaterial tone="clay" />
+                  </mesh>
+                ))}
+                {[-1, 1].map((edge) => (
+                  <mesh key={`tray-short-edge-${edge}`} position={[edge * size * 0.0875, size * 0.035, 0]}>
+                    <boxGeometry args={[size * 0.025, size * 0.07, size * 0.23]} />
+                    <WorldMaterial tone="timber" />
+                  </mesh>
+                ))}
+                <mesh position={[0, size * 0.105, 0]} castShadow>
+                  <sphereGeometry args={[size * 0.075, 8, 8]} />
+                  <WorldMaterial tone={itemIndex === 1 ? "clay" : "foliage"} />
+                </mesh>
+              </group>
             ))}
 
             {/* Open storage crate: a floor board with spaced side and end slats. */}
