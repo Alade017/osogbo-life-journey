@@ -286,7 +286,9 @@ export function CityMapDashboard({
   const confirmTravel = (mode: TravelMode) => {
     if (travelSubmitLock.current || !selectedDestination || travel.isPending) return;
     if (!character.data?.id || !character.data.current_location_id) {
-      setTravelError("Your active character and current location could not be confirmed. Refresh and try again.");
+      setTravelError(
+        "Your active character and current location could not be confirmed. Refresh and try again.",
+      );
       return;
     }
     travelSubmitLock.current = true;
