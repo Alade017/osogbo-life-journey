@@ -221,10 +221,10 @@ describe("neighborhood NPC spawn distribution", () => {
       [{ x: 0.5, y: 0 }],
       0.5,
       0.4,
-      [{ left: -0.1, top: 0.1, width: 0.8, height: 0.8 }],
+      [{ left: 0.2, top: 0.5, width: 0.4, height: 0.2 }],
     );
     expect(
-      next.x >= -0.5 && next.x <= 1.1 && next.y >= -0.3 && next.y <= 1.3,
+      next.x >= -0.2 && next.x <= 1 && next.y >= 0.1 && next.y <= 1.1,
     ).toBe(false);
     expect(next).not.toEqual(current);
   });
