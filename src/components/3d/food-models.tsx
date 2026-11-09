@@ -71,6 +71,31 @@ function ClearFoodPouch({
   );
 }
 
+/** Simple folded paper tray for loose market and takeaway snacks. */
+function PaperSnackTray({ width, depth }: { width: number; depth: number }) {
+  const wall = 0.045;
+  return (
+    <group>
+      <mesh position={[0, 0.035, 0]}>
+        <boxGeometry args={[width, 0.035, depth]} />
+        {mat("#dfcba5", 0.96)}
+      </mesh>
+      {[-1, 1].map((side) => (
+        <mesh key={`x-${side}`} position={[side * (width / 2 - wall / 2), 0.13, 0]}>
+          <boxGeometry args={[wall, 0.2, depth]} />
+          {mat("#e8d8b9", 0.96)}
+        </mesh>
+      ))}
+      {[-1, 1].map((side) => (
+        <mesh key={`z-${side}`} position={[0, 0.13, side * (depth / 2 - wall / 2)]}>
+          <boxGeometry args={[width, 0.2, wall]} />
+          {mat("#e8d8b9", 0.96)}
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 /** Puff puff: golden balls on a plate. */
 function PuffPuff() {
   const balls: [number, number][] = [
@@ -116,13 +141,22 @@ function Suya() {
 function MoiMoi() {
   return (
     <group>
+      {/* Bean cake with a folded leaf wrapper around the sides and top. */}
       <mesh position={[0, 0.25, 0]} castShadow>
         <cylinderGeometry args={[0.3, 0.3, 0.45, 24]} />
         {mat("#b5562a", 0.85)}
       </mesh>
+      <mesh position={[0, 0.25, 0]}>
+        <cylinderGeometry args={[0.315, 0.315, 0.43, 24, 1, true]} />
+        {mat("#64843a", 0.82)}
+      </mesh>
       <mesh position={[0, 0.48, 0]}>
         <cylinderGeometry args={[0.32, 0.32, 0.04, 24]} />
         {mat("#6b8f3a", 0.8)}
+      </mesh>
+      <mesh position={[0, 0.505, 0]} rotation={[0, 0.18, 0]}>
+        <boxGeometry args={[0.34, 0.025, 0.12]} />
+        {mat("#86a84b", 0.86)}
       </mesh>
     </group>
   );
@@ -132,14 +166,15 @@ function MoiMoi() {
 function Akara() {
   return (
     <group>
+      <PaperSnackTray width={0.94} depth={0.88} />
       {[0, 1, 2].map((i) => (
         <mesh
           key={i}
-          position={[(i - 1) * 0.12, 0.08 + i * 0.1, 0.05 * i]}
+          position={[(i - 1) * 0.12, 0.17 + i * 0.1, 0.05 * i]}
           rotation={[0, i * 0.3, 0]}
           castShadow
         >
-          <cylinderGeometry args={[0.36, 0.36, 0.14, 28]} />
+          <cylinderGeometry args={[0.3, 0.3, 0.14, 28]} />
           {mat("#d6a24a", 0.7)}
         </mesh>
       ))}
