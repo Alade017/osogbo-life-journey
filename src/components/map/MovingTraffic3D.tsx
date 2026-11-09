@@ -102,7 +102,9 @@ function TrafficVehicle({
       const next = path[(index + 1) % path.length]!;
       return total + Math.hypot(next[0] - point[0], next[1] - point[1]);
     }, 0);
-    let distanceToTravel = (speed * Math.max(0, delta) * 8) % Math.max(routeLength, 0.1);
+    if (routeLength < 0.001) return;
+
+    let distanceToTravel = (speed * Math.max(0, delta) * 8) % routeLength;
 
     while (distanceToTravel > 0) {
       const start = path[currentSegment.current]!;
