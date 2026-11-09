@@ -335,7 +335,25 @@ export function R3FTownSurface(props: Props) {
   }, []);
   const trafficLights = useMemo<[number, number][]>(() => {
     const result: [number, number][] = [];
+    const usedCells = new Set<string>();
+    const occupiedCells = new Set<string>();
+
+    town.grid.buildings.forEach((building) => {
+      for (const [dx, dz] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
+        occupiedCells.add(`${building.x + dx},${building.z + dz}`);
+      }
+    });
+    [...town.grid.waterCells, ...town.grid.plotCells].forEach(([x, z]) => {
+      occupiedCells.add(`${x},${z}`);
+    });
+
     const rows = town.grid.rows;
+    const diagonalOffsets = [
+      [1, 1],
+      [-1, 1],
+      [1, -1],
+      [-1, -1],
+    ] as const;
 
     rows.forEach((row, z) => {
       Array.from(row).forEach((tile, x) => {
@@ -346,29 +364,51 @@ export function R3FTownSurface(props: Props) {
         const up = rows[z - 1]?.[x] === "r";
         const down = rows[z + 1]?.[x] === "r";
 
-        const horizontal = left || right;
-        const vertical = up || down;
-
         // Only place traffic lights at connected intersections.
-        if (!horizontal || !vertical) return;
+        if (!(left || right) || !(up || down)) return;
 
         // Keep traffic lights relatively sparse.
         if ((x + z) % 5 !== 0) return;
 
-        // Avoid placing them directly beneath parked cars.
-        const occupiedByCar = town.grid.carCells.some(([carX, carZ]) => carX === x && carZ === z);
+        // Avoid intersections occupied by parked vehicles.
+        if (town.grid.carCells.some(([carX, carZ]) => carX === x && carZ === z)) return;
 
-        if (occupiedByCar) return;
+        // A signal belongs on the outside corner, never inside the carriageway.
+        const availableCorner = diagonalOffsets.find(([dx, dz]) => {
+          const cornerX = x + dx;
+          const cornerZ = z + dz;
+          const key = `${cornerX},${cornerZ}`;
+          const seed = (cornerX * 17 + cornerZ * 31) % 100;
+          return rows[cornerZ]?.[cornerX] === "g"
+            && !occupiedCells.has(key)
+            && !usedCells.has(key)
+            && !town.grid.carCells.some(([carX, carZ]) => carX === cornerX && carZ === cornerZ)
+            && seed > 38;
+        });
 
-        const p = point(x, z);
+        if (!availableCorner) return;
 
-        // Position the signal near the corner of the intersection.
-        result.push([p[0] + cell * 0.38, p[2] + cell * 0.38]);
+        const [dx, dz] = availableCorner;
+        const cornerX = x + dx;
+        const cornerZ = z + dz;
+        usedCells.add(`${cornerX},${cornerZ}`);
+
+        // Centre the pole on its reserved grass corner cell, clear of the road.
+        const p = point(cornerX + 0.5, cornerZ + 0.5);
+        result.push([p[0], p[2]]);
       });
     });
 
     return result;
   }, []);
+  const trafficLightCellKeys = useMemo(
+    () => new Set(trafficLights.map(([x, z]) => {
+      const gridX = Math.round(x / cell + (gridCols - 1) / 2 - 0.5);
+      const gridZ = Math.round(z / cell + (gridRows - 1) / 2 - 0.5);
+      return `${gridX},${gridZ}`;
+    })),
+    [trafficLights],
+  );
   const busStops = useMemo<[number, number][]>(() => {
     const result: [number, number][] = [];
     const rows = town.grid.rows;
@@ -403,7 +443,7 @@ export function R3FTownSurface(props: Props) {
             ([carX, carZ]) => carX === nx && carZ === nz,
           );
 
-          return !occupiedByCar;
+          return !occupiedByCar && !trafficLightCellKeys.has(`${nx},${nz}`);
         });
 
         if (!available) return;
@@ -443,7 +483,7 @@ export function R3FTownSurface(props: Props) {
 
           if (roadCount !== 1) return false;
 
-          return !town.grid.carCells.some(([carX, carZ]) => carX === nx && carZ === nz);
+          return !town.grid.carCells.some(([carX, carZ]) => carX === nx && carZ === nz) && !trafficLightCellKeys.has(`${nx},${nz}`);
         });
 
         if (!available) return;
@@ -495,7 +535,7 @@ export function R3FTownSurface(props: Props) {
         }];
       })
       .slice(0, 3);
-  }, [busStops, props.places]);
+  }, [busStops, props.places, trafficLightCellKeys]);
   const roadsideShops = useMemo<[number, number][]>(() => {
     const candidates: [number, number][] = [];
     const rows = town.grid.rows;
@@ -523,7 +563,7 @@ export function R3FTownSurface(props: Props) {
           ([carX, carZ]) => carX === shopX && carZ === shopZ,
         );
 
-        if (occupiedByCar) return;
+        if (occupiedByCar || trafficLightCellKeys.has(`${shopX},${shopZ}`)) return;
 
         const p = point(shopX, shopZ);
 
@@ -555,7 +595,7 @@ export function R3FTownSurface(props: Props) {
     }
 
     return selected;
-  }, [busStops, roadSigns]);
+  }, [busStops, roadSigns, trafficLights, trafficLightCellKeys]);
   const motorcycles = useMemo<[number, number][]>(() => {
     return roadsideShops.map(([x, z]) => [x + cell * 0.72, z + cell * 0.1]);
   }, [roadsideShops]);
@@ -588,6 +628,7 @@ export function R3FTownSurface(props: Props) {
             );
 
           if (tooClose(busStops, 2)) continue;
+          if (tooClose(trafficLights, 1.2)) continue;
           if (tooClose(roadsideShops, 1.8)) continue;
           if (tooClose(motorcycles, 1.5)) continue;
           if (tooClose(tricycles, 1.5)) continue;
@@ -825,7 +866,7 @@ export function R3FTownSurface(props: Props) {
     });
 
     return result;
-  }, []);
+  }, [trafficLightCellKeys]);
   const wasteBins = useMemo<[number, number][]>(() => {
     const occupied = new Set<string>();
 
@@ -891,7 +932,7 @@ export function R3FTownSurface(props: Props) {
     });
 
     return result;
-  }, [streetLights]);
+  }, [streetLights, trafficLightCellKeys]);
   const roadsideInfrastructure = useMemo(() => {
     const occupied = new Set<string>();
     town.grid.buildings.forEach((building) => {
@@ -912,6 +953,7 @@ export function R3FTownSurface(props: Props) {
       });
     };
     reservePositions(streetLights);
+    reservePositions(trafficLights);
     reservePositions(wasteBins);
     reservePositions(trees.map((tree) => tree.position));
     reservePositions(busStops);
@@ -993,7 +1035,7 @@ export function R3FTownSurface(props: Props) {
       });
     });
     return { poles, spans, drains };
-  }, [streetLights, wasteBins, trees, busStops, roadsideShops, motorcycles, tricycles, streetVendors]);
+  }, [streetLights, wasteBins, trees, busStops, roadsideShops, motorcycles, tricycles, streetVendors, trafficLights]);
 
   const badgePositions = useMemo(
     () => calculateBadgePositions(props.places, point, cell),
