@@ -496,14 +496,23 @@ export function PlayableNeighborhood() {
       landmarkId,
       actionId,
       characterId,
+      locationId,
     }: {
       landmarkId: string;
       actionId: string;
       characterId: string;
+      locationId: string;
     }) => {
       const room = roomRef.current;
       const character = characterQuery.data;
-      if (!room || !player || !character?.id || !character.user_id || character.id !== characterId) {
+      if (
+        !room ||
+        !player ||
+        !character?.id ||
+        !character.user_id ||
+        character.id !== characterId ||
+        character.current_location_id !== locationId
+      ) {
         throw new Error("Your neighborhood session is not ready.");
       }
       const requestId = getPendingMapActionKey(
@@ -517,6 +526,17 @@ export function PlayableNeighborhood() {
         landmarkId,
         actionId,
       });
+      const activeCharacter = queryClient.getQueryData<{
+        id?: string;
+        current_location_id?: string;
+      }>(q.character().queryKey);
+      if (
+        roomRef.current !== room ||
+        activeCharacter?.id !== characterId ||
+        activeCharacter.current_location_id !== locationId
+      ) {
+        throw new Error("CHARACTER_LOCATION_CHANGED");
+      }
       const result = await requestNeighborhoodPlaceAction(
         landmarkId,
         actionId,
@@ -531,9 +551,9 @@ export function PlayableNeighborhood() {
         actionId,
         requestId,
       );
-      return { result, characterId: character.id };
+      return { result, characterId: character.id, locationId, room };
     },
-    onSuccess: async ({ result, characterId }) => {
+    onSuccess: async ({ result, characterId, locationId, room }) => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: q.character().queryKey }),
         queryClient.invalidateQueries({ queryKey: q.wallet().queryKey }),
@@ -544,7 +564,15 @@ export function PlayableNeighborhood() {
       const activeCharacterId = queryClient.getQueryData<{ id?: string }>(
         q.character().queryKey,
       )?.id;
-      if (activeCharacterId !== characterId) return;
+      const activeCharacter = queryClient.getQueryData<{
+        id?: string;
+        current_location_id?: string;
+      }>(q.character().queryKey);
+      if (
+        activeCharacterId !== characterId ||
+        activeCharacter?.current_location_id !== locationId ||
+        roomRef.current !== room
+      ) return;
       setNeighborhoodActionResult(result);
       toast.success(result.message);
       await landmarkDetailsQuery.refetch();
@@ -553,7 +581,14 @@ export function PlayableNeighborhood() {
       const activeCharacterId = queryClient.getQueryData<{ id?: string }>(
         q.character().queryKey,
       )?.id;
-      if (activeCharacterId !== variables.characterId) return;
+      const activeCharacter = queryClient.getQueryData<{
+        id?: string;
+        current_location_id?: string;
+      }>(q.character().queryKey);
+      if (
+        activeCharacterId !== variables.characterId ||
+        activeCharacter?.current_location_id !== variables.locationId
+      ) return;
       toast.error(error.message.replaceAll("_", " "));
     },
   });
@@ -1188,6 +1223,7 @@ export function PlayableNeighborhood() {
                                   landmarkId: selectedLandmarkId,
                                   actionId,
                                   characterId: characterQuery.data?.id ?? "",
+                                  locationId: currentLocation?.id ?? "",
                                 });
                               }}
                             />
