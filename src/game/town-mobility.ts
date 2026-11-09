@@ -170,9 +170,9 @@ export function deriveTownPedestrianCornerRoutes(
           if ([horizontalCell, verticalCell, diagonalCell].some(([cellX, cellZ]) => blocked.has(`${cellX},${cellZ}`))) continue;
 
           routes.push([
-            [centerX + dx * (cellSize / 2), centerZ + dz * offset],
+            [centerX + dx * cellSize, centerZ + dz * offset],
             [centerX + dx * offset, centerZ + dz * offset],
-            [centerX + dx * offset, centerZ + dz * (cellSize / 2)],
+            [centerX + dx * offset, centerZ + dz * cellSize],
           ]);
         }
       }
