@@ -35,7 +35,6 @@ import { CompoundPlot3D } from "./CompoundPlot3D";
 import { MapPin3D } from "./MapPin3D";
 import { LandmarkItem3D } from "./LandmarkItem3D";
 import { SelectionRing3D } from "./SelectionRing3D";
-import { useMapCameraFocus } from "./use-map-camera-focus";
 import { Terrain3D } from "./Terrain3D";
 import { MovingTraffic3D } from "./MovingTraffic3D";
 import { MovingPedestrians3D } from "./MovingPedestrians3D";
@@ -64,10 +63,6 @@ const point = (x: number, z: number): [number, number, number] => [
   (z - (gridRows - 1) / 2) * cell,
 ];
 
-function CameraFocusController({ targetPosition }: { targetPosition: [number, number, number] | null }) {
-  useMapCameraFocus(targetPosition, Boolean(targetPosition));
-  return null;
-}
 class SurfaceBoundary extends Component<
   { children: ReactNode; onUnavailable: () => void },
   { failed: boolean }
@@ -1029,8 +1024,8 @@ export function R3FTownSurface(props: Props) {
           fallback={<span>WebGL is unavailable. Use the accessible map controls.</span>}
         >
           <Ready onReady={props.onReady} />
-          <CameraFocusController targetPosition={selectedTarget?.position ?? null} />
-          <WorldCamera width={gridCols * cell} depth={gridRows * cell} zoom={1.35} freeExplore />
+          
+          <WorldCamera width={gridCols * cell} depth={gridRows * cell} target={selectedTarget?.position ?? [0, 0, 0]} zoom={1.35} freeExplore />
           <MapLighting size={gridCols * cell} />
           <Terrain3D gridCols={gridCols} gridRows={gridRows} cellSize={cell} waterCells={town.grid.waterCells} />
 
