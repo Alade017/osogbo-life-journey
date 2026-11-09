@@ -101,6 +101,9 @@ const RealEstatePage = lazy(() =>
     default: m.RealEstatePage,
   })),
 );
+const GamesApp = lazy(() =>
+  import("@/components/game/mini-games/GamesApp").then((m) => ({ default: m.GamesApp })),
+);
 const PhoneJobList = lazy(() =>
   import("@/routes/_authenticated/_game/jobs").then((m) => ({ default: m.PhoneJobList })),
 );
@@ -563,6 +566,7 @@ export function PhoneLauncher({
       );
     }
 
+    if (appName === "Games") return <GamesApp />;
     if (appName === "Settings") return <SettingsPage />;
     if (appName === "Osun Gist") return <OsunGistApp />;
     if (appName === "Map") return <PhoneMapApp />;
