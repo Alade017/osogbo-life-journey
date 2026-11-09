@@ -967,7 +967,7 @@ export function WorldStreetVendors({
               </mesh>
             ))}
 
-            {/* Open storage crate: a floor board, spaced side slats and corner uprights. */}
+            {/* Open storage crate: a floor board with spaced side and end slats. */}
             <group position={[size * 0.48, size * 0.13, -size * 0.12]}>
               <mesh position={[0, -size * 0.115, 0]} castShadow>
                 <boxGeometry args={[size * 0.22, size * 0.025, size * 0.22]} />
