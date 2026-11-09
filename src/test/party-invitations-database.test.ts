@@ -75,6 +75,7 @@ beforeAll(async () => {
             "utf8",
           ),
         );
+        await db.exec(readFileSync("drizzle/migrations/0079_free_house_placement.sql", "utf8"));
       }
       if (file === "0085_house_floors.sql") {
         // House floors serialize the placement rotation column introduced by this Supabase migration.
