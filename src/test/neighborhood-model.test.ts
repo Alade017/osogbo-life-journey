@@ -162,7 +162,7 @@ describe("neighborhood coordinates and interaction", () => {
     const town = neighborhoodAreaForSlug("city-centre");
     const anchors = townDataLandmarkIdsForTest();
     for (const [slug, ids] of Object.entries(anchors)) {
-      const area = neighborhoodAreaForSlug(slug);
+      const area = neighborhoodAreaForLocation({ slug, name: slug, map_category: "commercial" });
       expect(area.interactionPoints?.map((point) => point.id).sort(), slug).toEqual([...ids].sort());
       expect(new Set(area.interactionPoints?.map((point) => point.id)).size).toBe(ids.length);
       for (const point of area.interactionPoints ?? []) {
