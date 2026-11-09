@@ -191,23 +191,28 @@ export function R3FTownSurface(props: Props) {
   useEffect(() => {
     if (!props.searchTarget) return;
     const targetId = typeof props.searchTarget === "string" ? props.searchTarget : props.searchTarget.id;
-    const landmark = props.places.find((p) => p.id === targetId);
-    if (landmark) {
-      const [x, , z] = point(landmark.grid.x, landmark.grid.z);
-      setSelectedTarget({ id: landmark.id, position: [x, 0, z], type: "landmark" });
-      return;
+    const targetKind = typeof props.searchTarget === "string" ? undefined : props.searchTarget.kind;
+    if (targetKind !== "district") {
+      const landmark = props.places.find((p) => p.id === targetId);
+      if (landmark) {
+        const [x, , z] = point(landmark.grid.x, landmark.grid.z);
+        setSelectedTarget({ id: landmark.id, position: [x, 0, z], type: "landmark" });
+        return;
+      }
+      const property = props.properties?.find((p) => p.id === targetId);
+      if (property) {
+        setSelectedTarget({ id: property.id, position: property.position, type: "property" });
+        return;
+      }
     }
-    const property = props.properties?.find((p) => p.id === targetId);
-    if (property) {
-      setSelectedTarget({ id: property.id, position: property.position, type: "property" });
-      return;
-    }
-    const district = town.districts.find((d) => d.id === targetId);
-    if (district) {
-      const area = district.gridArea;
-      const [x, , z] = point(area.x + area.width / 2, area.z + area.depth / 2);
-      setSelectedTarget({ id: district.id, position: [x, 0, z], type: "district" });
-      return;
+    if (targetKind !== "landmark") {
+      const district = town.districts.find((d) => d.id === targetId);
+      if (district) {
+        const area = district.gridArea;
+        const [x, , z] = point(area.x + area.width / 2, area.z + area.depth / 2);
+        setSelectedTarget({ id: district.id, position: [x, 0, z], type: "district" });
+        return;
+      }
     }
 
     // A stale search result must not leave the previous destination focused.
