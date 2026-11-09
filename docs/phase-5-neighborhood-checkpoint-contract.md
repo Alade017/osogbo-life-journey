@@ -59,3 +59,14 @@ A new server-only database function or authenticated multiplayer-server endpoint
 ## Scope and approval
 
 This contract intentionally does not add a migration, table, RPC, service-role call, or client write. Database changes and server persistence require separate approval because they introduce a new durable gameplay contract. Until that approval and implementation exist, live neighborhood positions remain room-authoritative and a reconnect may fall back to the existing saved city/world checkpoint or area origin.
+
+## Coordinate-space clarification from follow-up source tracing
+
+There are two different coordinate contracts and they must not be conflated:
+
+- The city blueprint registry uses `CITY_WORLD_BOUNDS` (0–20 X, 0–16 Y) for city overview destinations.
+- The multiplayer neighborhood simulation and the existing character world-position columns/RPC use the bounded 0–14 X, 0–12 Y coordinate domain. The room projects those coordinates into the 640 × 560 scene using the location's shared `neighborhoodAreaOrigin`.
+
+`cityEntranceForRecord` returns a city-blueprint entrance. `neighborhoodAreaOrigin` adapts that entrance into the bounded neighborhood simulation space. Consequently, do **not** expand `PLAYER_WORLD_BOUNDS` or `validCheckpoint` to 20 × 16: doing so would disagree with the existing character constraints, RPC contract, and room scene bounds. Likewise, do not persist projected scene pixels.
+
+The current room still reads `characters.world_x/world_y` as a candidate checkpoint. Those columns are the legacy city-position contract, not a location-scoped neighborhood checkpoint record. A future dedicated checkpoint must store the bounded simulation coordinates after the location-origin adapter, keyed by character and location, and the join path must prefer that exact record. Until then, the current fallback remains the area's adapted entrance origin. This clarification supersedes any interpretation of the earlier proposal that treated 20 × 16 city-blueprint coordinates as multiplayer movement bounds.
