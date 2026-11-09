@@ -231,12 +231,15 @@ function GameLayout() {
               <main
                 className={cn(
                   "city-game-main",
-                  pathname !== "/home" && pathname !== "/map" && pathname !== "/jobs"
+                  pathname !== "/home" &&
+                    pathname !== "/map" &&
+                    pathname !== "/jobs" &&
+                    pathname !== "/neighborhood"
                     ? "game-screen-restyle"
                     : undefined,
                 )}
               >
-                {pathname === "/home" && !visitingFriend ? (
+                {(pathname === "/home" || pathname === "/neighborhood") && !visitingFriend ? (
                   <HomeDashboard
                     player={player}
                     location={currentLocation?.name ?? "Osogbo"}

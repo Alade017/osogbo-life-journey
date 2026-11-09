@@ -200,6 +200,44 @@ function NeighborhoodNpcActor({
   );
 }
 
+/** Distant towers that frame the neighbourhood, so the open ground reads as a city. */
+const SKY_FOG_NEAR_SCALE = 1.4;
+const SKY_FOG_FAR_SCALE = 4;
+const SKYLINE_TOWER_COUNT = 14;
+const SKYLINE_GAP_SCALE = 1.2;
+
+function NeighborhoodSkyline({ width, depth }: { width: number; depth: number }) {
+  const towers = useMemo(
+    () =>
+      Array.from({ length: SKYLINE_TOWER_COUNT }, (_, index) => {
+        // Deterministic spread so the skyline does not change between renders.
+        const seed = (((index + 1) * 2654435761) % 1000) / 1000;
+        const spread = (index + 0.5) / SKYLINE_TOWER_COUNT - 0.5;
+        const height = WORLD_SCALE.neighborhoodBuildingHeight * (2 + seed * 4);
+        const size = WORLD_SCALE.neighborhoodBuildingHeight * (0.8 + seed * 0.6);
+        return {
+          id: index,
+          x: spread * width * 2.2,
+          z: -depth / 2 - WORLD_SCALE.neighborhoodBuildingHeight * SKYLINE_GAP_SCALE,
+          height,
+          size,
+          glass: index % 3 === 0,
+        };
+      }),
+    [width, depth],
+  );
+  return (
+    <group>
+      {towers.map((tower) => (
+        <mesh key={tower.id} position={[tower.x, tower.height / 2, tower.z]} castShadow>
+          <boxGeometry args={[tower.size, tower.height, tower.size]} />
+          <WorldMaterial tone={tower.glass ? "glass" : "concrete"} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 export function R3FNeighborhoodSurface({
   players,
   selfSessionId,
@@ -359,6 +397,16 @@ export function R3FNeighborhoodSurface({
             onZoomChange={onZoomChange}
           />
           <WorldLighting size={Math.max(bounds.width, bounds.height) * unit} />
+          <color attach="background" args={[WORLD_PALETTE.sky]} />
+          <fog
+            attach="fog"
+            args={[
+              WORLD_PALETTE.sky,
+              Math.max(bounds.width, bounds.height) * unit * SKY_FOG_NEAR_SCALE,
+              Math.max(bounds.width, bounds.height) * unit * SKY_FOG_FAR_SCALE,
+            ]}
+          />
+          <NeighborhoodSkyline width={bounds.width * unit} depth={bounds.height * unit} />
           <mesh position={[0, -0.12, 0]} receiveShadow>
             <boxGeometry args={[bounds.width * unit, 0.2, bounds.height * unit]} />
             <WorldMaterial

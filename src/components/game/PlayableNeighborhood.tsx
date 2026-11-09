@@ -11,6 +11,7 @@ import {
   Minus,
   Plus,
   Store,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -300,6 +301,7 @@ export function PlayableNeighborhood() {
   const transition = useOutsideTransition();
   const leavingStepsRef = useRef({ data: false, scene: false });
   const [scene, setScene] = useState<NeighborhoodSceneHandle | null>(null);
+  const [peopleOpen, setPeopleOpen] = useState(false);
   const [zoom, setZoom] = useState<number>(WORLD_CAMERA.defaultZoom);
   const directionsRef = useRef(directions);
   directionsRef.current = directions;
@@ -730,24 +732,9 @@ export function PlayableNeighborhood() {
 
   return (
     <section className="neighborhood-page" aria-label="Playable neighborhood">
-      <header className="neighborhood-header">
-        <div>
-          <p className="neighborhood-eyebrow">Osogbo Life · Playable world</p>
-          <h1>{district ? `${area.name} neighbourhood` : "Explore the neighbourhoods"}</h1>
-          <p>
-            {district?.area.slug === "oja-oba"
-              ? "Explore market lanes, covered stalls and the loading yard."
-              : district?.area.slug === "city-centre"
-                ? "Walk the crossing, residential compounds and local shopfronts."
-                : district
-                  ? `Explore the streets, local businesses and landmarks of ${area.name}.`
-                  : "Travel to an eligible destination to explore its neighborhood."}
-          </p>
-        </div>
-        <Link className="neighborhood-map-link" to="/map">
-          <Map size={17} aria-hidden="true" /> City map
-        </Link>
-      </header>
+      <h1 className="sr-only">
+        {district ? `${area.name} neighbourhood` : "Explore the neighbourhoods"}
+      </h1>
 
       {connectionState === "wrong-area" ? (
         <div className="neighborhood-message" role="status">
@@ -768,6 +755,7 @@ export function PlayableNeighborhood() {
               : connectionState === "unavailable"
                 ? "Connection unavailable"
                 : "Connecting to the authoritative world..."}
+            {connectionState === "connected" && <small>Tap the ground to walk</small>}
           </div>
           {connectionState === "unavailable" && (
             <div className="neighborhood-error">
@@ -848,6 +836,9 @@ export function PlayableNeighborhood() {
                       >
                         <Minus size={16} aria-hidden="true" />
                       </button>
+                      <Link to="/map" aria-label="City map">
+                        <Map size={16} aria-hidden="true" />
+                      </Link>
                     </div>
                     {nearbyObject && (
                       <button
@@ -886,7 +877,20 @@ export function PlayableNeighborhood() {
                     )}
                   </div>
                   {activeNpcs.length > 0 && (
+                    <button
+                      type="button"
+                      className="neighborhood-people-toggle"
+                      aria-expanded={peopleOpen}
+                      aria-controls="neighborhood-people-panel"
+                      onClick={() => setPeopleOpen((open) => !open)}
+                    >
+                      <Users size={16} aria-hidden="true" />
+                      People · {activeNpcs.length}
+                    </button>
+                  )}
+                  {activeNpcs.length > 0 && peopleOpen && (
                     <section
+                      id="neighborhood-people-panel"
                       className="neighborhood-people"
                       aria-label="People in this neighbourhood"
                     >
@@ -1133,10 +1137,6 @@ export function PlayableNeighborhood() {
                     </DialogContent>
                   </Dialog>
                   <div className="neighborhood-controls-row">
-                    <div className="neighborhood-control-copy">
-                      <strong>Explore at your pace</strong>
-                      <span>Tap or click the ground to walk · arrow keys also work</span>
-                    </div>
                     {homeTypeId && (
                       <button
                         type="button"
