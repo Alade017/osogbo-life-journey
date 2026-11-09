@@ -101,8 +101,11 @@ const RealEstatePage = lazy(() =>
     default: m.RealEstatePage,
   })),
 );
-const JobsPage = lazy(() =>
-  import("@/routes/_authenticated/_game/jobs").then((m) => ({ default: m.JobsPage })),
+const PhoneJobList = lazy(() =>
+  import("@/routes/_authenticated/_game/jobs").then((m) => ({ default: m.PhoneJobList })),
+);
+const CareerLifeApp = lazy(() =>
+  import("@/components/game/CareerLifeApp").then((m) => ({ default: m.CareerLifeApp })),
 );
 const EducationPage = lazy(() =>
   import("@/routes/_authenticated/_game/education").then((m) => ({ default: m.EducationPage })),
@@ -423,7 +426,8 @@ export function PhoneLauncher({
       return <PhoneBankApp />;
     }
 
-    if (appName === "Career Life" || appName === "Jobs") return <JobsPage />;
+    if (appName === "Career Life" || appName === "Jobs")
+      return <CareerLifeApp phone opportunities={<PhoneJobList />} />;
 
     if (appName === "Invest" || appName === "Company" || appName === "Businesses") {
       const mode = appName === "Invest" ? "invest" : "company";

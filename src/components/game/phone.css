@@ -3815,3 +3815,77 @@
   border-radius: 999px;
   text-align: center;
 }
+
+/* Career Life in the phone: no Learning tab, Opportunities is a plain job list. */
+.phone-app-body .career-learning-app .learning-hero {
+  padding: 16px;
+}
+.phone-app-body .career-learning-app .learning-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.phone-app-body .career-learning-app .learning-tabs button {
+  border-radius: 999px;
+  font-size: 0.8rem;
+  padding: 6px 12px;
+}
+.phone-app-body .phone-job-list,
+.phone-app-body .phone-job-state {
+  display: grid;
+  gap: 10px;
+}
+.phone-app-body .phone-job-list-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.phone-app-body .phone-job-list-heading h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+.phone-app-body .phone-job-list-heading span {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+}
+.phone-app-body .phone-job-list ul {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.phone-app-body .phone-job-row {
+  align-items: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card, 14px);
+  box-shadow: var(--elevation-card);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 12px 14px;
+}
+.phone-app-body .phone-job-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.phone-app-body .phone-job-copy strong {
+  color: var(--card-foreground);
+  overflow-wrap: anywhere;
+}
+.phone-app-body .phone-job-copy small {
+  color: var(--muted-foreground);
+}
+.phone-app-body .phone-job-pay {
+  color: var(--primary);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.phone-app-body .phone-job-state {
+  color: var(--muted-foreground);
+  justify-items: start;
+  margin: 0;
+}
