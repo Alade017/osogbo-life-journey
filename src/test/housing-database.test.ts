@@ -22,7 +22,8 @@ describe("housing onboarding database actions", () => {
     for (const { tag } of journal.entries.filter(
       (entry: { tag: string }) =>
         entry.tag !== "0075_remove_orphaned_player_data" &&
-        entry.tag !== "0077_market_stall_rent_categories_sales",
+        entry.tag !== "0077_market_stall_rent_categories_sales" &&
+        entry.tag !== "0079_free_house_placement",
     )) {
       if (tag === "0083_studio_room_layout") {
         // The studio layout migration depends on x/y columns from this Supabase migration.
