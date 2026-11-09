@@ -118,7 +118,7 @@ export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({
           key={npc.id}
           npc={npc}
           cellSize={cellSize}
-          onInteract={(text) => showSpeech(npc.id, text, 3000)}}
+          onInteract={(text) => showSpeech(npc.id, text, 3000)}
           isSpeaking={activeSpeech?.id === npc.id}
           speechText={activeSpeech?.text}
         />
