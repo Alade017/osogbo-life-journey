@@ -559,7 +559,6 @@ export function PlayableNeighborhood() {
   });
   useEffect(() => {
     setNeighborhoodActionResult(null);
-    neighborhoodActionMutation.reset();
   }, [characterQuery.data?.id]);
 
   const selectedNpc = activeNpcs.find((npc) => npc.id === selectedNpcId) ?? nearbyNpc;
@@ -1193,7 +1192,8 @@ export function PlayableNeighborhood() {
                               }}
                             />
                           )}
-                          {neighborhoodActionMutation.isError && (
+                          {neighborhoodActionMutation.isError &&
+                            neighborhoodActionMutation.variables?.characterId === characterQuery.data?.id && (
                             <p role="alert" className="text-sm text-destructive">
                               {neighborhoodActionMutation.error.message}
                             </p>
