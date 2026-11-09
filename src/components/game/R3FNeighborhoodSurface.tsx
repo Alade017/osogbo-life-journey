@@ -828,6 +828,7 @@ export function R3FNeighborhoodSurface({
                 z: point(o.x, o.y)[2],
                 width: o.width * unit,
                 depth: o.height * unit,
+                label: o.label,
               }))}
           />
           {area.obstacles
