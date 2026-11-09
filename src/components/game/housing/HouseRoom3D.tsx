@@ -958,6 +958,34 @@ export function FurnitureFallback({
             />
           </mesh>
         ))}
+        {/* Upper freezer door has its own shallow inset panel. */}
+        <RoundedBox
+          position={[-0.12, 1.38, 0.306]}
+          args={[0.32, 0.28, 0.012]}
+          radius={0.018}
+          smoothness={3}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.bedPillow} roughness={0.62} />
+        </RoundedBox>
+        {/* Recessed lower door panel and bottom ventilation grille. */}
+        <mesh position={[-0.1, 0.48, 0.306]}>
+          <boxGeometry args={[0.34, 0.38, 0.008]} />
+          <meshStandardMaterial color={FURNITURE_COLOURS.bedPillow} roughness={0.7} />
+        </mesh>
+        {[-0.16, -0.1, -0.04, 0.02, 0.08, 0.14].map((x) => (
+          <mesh key={`fridge-vent-${x}`} position={[x, 0.08, 0.304]}>
+            <boxGeometry args={[0.025, 0.008, 0.006]} />
+            <meshStandardMaterial color={FURNITURE_COLOURS.screenBezel} />
+          </mesh>
+        ))}
+        {[-1, 1].map((x) =>
+          [-1, 1].map((z) => (
+            <mesh key={`fridge-foot-${x}-${z}`} position={[x * 0.23, 0.025, z * 0.2]}>
+              <boxGeometry args={[0.1, 0.05, 0.1]} />
+              <meshStandardMaterial color={FURNITURE_COLOURS.screenBezel} roughness={0.85} />
+            </mesh>
+          )),
+        )}
       </group>
     );
   if (kind === "microwave")
@@ -1044,6 +1072,28 @@ export function FurnitureFallback({
             roughness={0.35}
           />
         </mesh>
+        {/* Raised lid rim and two rear hinge blocks distinguish the top-opening chest. */}
+        <mesh position={[0, 0.84, 0]}>
+          <boxGeometry args={[0.84, 0.018, 0.5]} />
+          <meshStandardMaterial color={FURNITURE_COLOURS.bedPillow} roughness={0.48} />
+        </mesh>
+        {[-0.28, 0.28].map((x) => (
+          <mesh key={`freezer-hinge-${x}`} position={[x, 0.88, -0.22]}>
+            <boxGeometry args={[0.12, 0.06, 0.08]} />
+            <meshStandardMaterial color={FURNITURE_COLOURS.screenBezel} metalness={0.5} roughness={0.4} />
+          </mesh>
+        ))}
+        {/* Small temperature-control dial on the front-right corner. */}
+        <mesh position={[0.34, 0.58, 0.292]} rotation={[Math.PI / 2, 0, 0]}>
+          <cylinderGeometry args={[0.045, 0.045, 0.025, 20]} />
+          <meshStandardMaterial color={FURNITURE_COLOURS.screenBezel} metalness={0.35} roughness={0.45} />
+        </mesh>
+        {[-1, 1].map((x) => (
+          <mesh key={`freezer-foot-${x}`} position={[x * 0.32, 0.025, 0.18]}>
+            <boxGeometry args={[0.14, 0.05, 0.12]} />
+            <meshStandardMaterial color={FURNITURE_COLOURS.screenBezel} roughness={0.85} />
+          </mesh>
+        ))}
       </group>
     );
   if (kind === "plate-hanger")
