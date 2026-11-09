@@ -342,7 +342,6 @@ export function CityMapDashboard({
       setArrivalConfirmed(false);
       setTravelError(null);
       setActionError("");
-      setPlaceActionResult(null);
     }
   };
   const searchMatches = useMemo(() => {
@@ -652,7 +651,10 @@ export function CityMapDashboard({
           onCancel={closeTravelSelector}
           onOpenDetails={() => setLandmarkDetailsOpen(true)}
           onRetryArrival={() => {
-            if (selectedDestination) void refreshConfirmedArrival(selectedDestination.id);
+            const expectedCharacterId = character.data?.id;
+            if (selectedDestination && expectedCharacterId) {
+              void refreshConfirmedArrival(selectedDestination.id, expectedCharacterId);
+            }
           }}
         />
       )}
