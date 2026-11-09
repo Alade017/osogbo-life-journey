@@ -26,7 +26,7 @@ begin
   select id into v_character_id
   from public.characters
   where user_id = v_user_id
-  order by created_at desc
+  order by created_at desc, id desc
   limit 1;
 
   if p_expected_character_id is null
