@@ -3889,3 +3889,85 @@
   justify-items: start;
   margin: 0;
 }
+
+/* Education in the phone: compact hero, search, and course cards that stack one per row. */
+.phone-app-body .career-learning-app[data-phone-mode] {
+  display: grid;
+  gap: 12px;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .education-hero {
+  border-radius: var(--shape-card, 16px);
+  display: grid;
+  gap: 4px;
+  padding: 16px;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .education-hero h1 {
+  font-size: 1.15rem;
+  line-height: 1.25;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .education-hero p {
+  font-size: 0.85rem;
+  margin: 0;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .education-hero .learning-hero-icon {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  opacity: 0.35;
+  width: 34px;
+  height: 34px;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .learning-stats {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .learning-stats > div {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card, 14px);
+  padding: 10px;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .learning-stats dd {
+  font-size: 1rem;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .learning-search {
+  border-radius: 999px;
+  padding: 0 14px;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .learning-search input {
+  font-size: 0.9rem;
+  min-height: 42px;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .learning-balance {
+  font-size: 0.85rem;
+  padding: 10px 14px;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .learning-course-grid {
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr);
+}
+.phone-app-body .career-learning-app[data-phone-mode] .learning-course {
+  gap: 8px;
+  padding: 14px;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .learning-course h2 {
+  font-size: 0.98rem;
+  margin: 0;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .learning-course > p {
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .learning-course-icon {
+  padding: 9px;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .learning-course-cost {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .learning-course button {
+  width: 100%;
+}
