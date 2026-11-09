@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deriveTownMobilityRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells } from "@/game/town-mobility";
+import { deriveTownMobilityRoutes, deriveTownPedestrianCornerRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells } from "@/game/town-mobility";
 import town from "@/data/osogbo-town.json";
 
 describe("town mobility routes", () => {
@@ -73,6 +73,28 @@ describe("town sidewalk cells", () => {
         ),
       ).toBe(true);
     }
+  });
+});
+
+describe("pedestrian sidewalk corner routes", () => {
+  it("uses the rendered diagonal sidewalk tile to connect perpendicular sidewalk strips", () => {
+    const routes = deriveTownPedestrianCornerRoutes(["gg", "rg"], 2);
+
+    expect(routes).toEqual([
+      [
+        [-1, 0.28],
+        [-0.28, 0.28],
+        [-0.28, 1],
+      ],
+    ]);
+  });
+
+  it("does not create a corner connector when its diagonal tile is blocked", () => {
+    expect(deriveTownPedestrianCornerRoutes(["gg", "rg"], 2, [[1, 0]])).toEqual([]);
+  });
+
+  it("does not invent corner connectors where the authored town has no rendered corner patches", () => {
+    expect(deriveTownPedestrianCornerRoutes(town.grid.rows, town.grid.cellSize)).toEqual([]);
   });
 });
 
