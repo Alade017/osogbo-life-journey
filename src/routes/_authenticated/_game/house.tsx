@@ -780,11 +780,21 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     setActiveFloor(up ? 1 : 0);
   };
   const [doorOpen, setDoorOpen] = useState(false);
+  const [doorActionBusy, setDoorActionBusy] = useState(false);
+  const doorActionInProgress = useRef(false);
   const outside = useOutsideTransition();
   const enteringRan = useRef(false);
   /** Walk to the door, open it, confirm the move with the server, then go to the neighbourhood. */
   const goOutside = async () => {
-    if (editing || taskBusy || isOffline || !serverState?.house) return;
+    if (
+      doorActionInProgress.current ||
+      editing ||
+      taskBusy ||
+      isOffline ||
+      !serverState?.house
+    ) return;
+    doorActionInProgress.current = true;
+    setDoorActionBusy(true);
     setActivityError("");
     const [doorX, doorY, doorZ] = houseDoorThreshold(
       serverState.house.house_type_id,
@@ -792,7 +802,11 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       roomDepth,
     );
     // The walk and the door swing play in the room first, so they stay visible.
-    if (!(await walkTo([doorX, doorY, doorZ]))) return;
+    if (!(await walkTo([doorX, doorY, doorZ]))) {
+      doorActionInProgress.current = false;
+      setDoorActionBusy(false);
+      return;
+    }
     setDoorOpen(true);
     await new Promise<void>((resolve) => window.setTimeout(resolve, DOOR_SWING_MS));
     beginTransition("leaving", "Confirming your move", 3);
@@ -801,6 +815,8 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     } catch {
       setDoorOpen(false);
       endTransition();
+      doorActionInProgress.current = false;
+      setDoorActionBusy(false);
       return;
     }
     completeTransitionStep("Loading the neighbourhood");
@@ -832,7 +848,15 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   }, [outside.kind, serverState?.house?.id]);
   /** A trip started from inside: the door opens and the walk out runs while the travel request is sent. */
   const leaveForTrip = async (departure: HomeDeparture) => {
-    if (editing || taskBusy || isOffline || !serverState?.house) return;
+    if (
+      doorActionInProgress.current ||
+      editing ||
+      taskBusy ||
+      isOffline ||
+      !serverState?.house
+    ) return;
+    doorActionInProgress.current = true;
+    setDoorActionBusy(true);
     setActivityError("");
     const [doorX, doorY, doorZ] = houseDoorThreshold(
       serverState.house.house_type_id,
@@ -842,7 +866,11 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     // Do not start the authoritative travel action until the character has
     // successfully reached the door. A blocked or cancelled walk must not
     // change the server-side location in the background.
-    if (!(await walkTo([doorX, doorY, doorZ]))) return;
+    if (!(await walkTo([doorX, doorY, doorZ]))) {
+      doorActionInProgress.current = false;
+      setDoorActionBusy(false);
+      return;
+    }
     setDoorOpen(true);
     beginTransition("leaving", "Heading out for your trip", 3);
     try {
@@ -854,6 +882,8 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       setDoorOpen(false);
       endTransition();
       setActivityError(error instanceof Error ? error.message : "Travel could not be completed.");
+      doorActionInProgress.current = false;
+      setDoorActionBusy(false);
       return;
     }
     completeTransitionStep("Travelling");
@@ -1462,8 +1492,8 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             <button
               type="button"
               className="house-scene-exit"
-              disabled={isOffline || homePresence.isPending || taskBusy}
-              aria-busy={homePresence.isPending}
+              disabled={isOffline || homePresence.isPending || taskBusy || doorActionBusy}
+              aria-busy={homePresence.isPending || doorActionBusy}
               onClick={() =>
                 isInsideHome ? void goOutside() : homePresence.mutate("enter_player_home")
               }
