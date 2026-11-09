@@ -1234,6 +1234,8 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     serverState?.house?.id,
+    character?.id,
+    character?.current_location_id,
     isInsideHome,
     editing,
     taskBusy,
