@@ -813,16 +813,25 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     beginTransition("leaving", "Confirming your move", 3);
     try {
       await homePresence.mutateAsync("leave_player_home");
-    } catch {
+    } catch (error) {
       setDoorOpen(false);
       endTransition();
+      setActivityError(error instanceof Error ? error.message : "Could not leave your home. Please try again.");
       doorActionInProgress.current = false;
       setDoorActionBusy(false);
       return;
     }
     clearPendingDepartureFromHome();
     completeTransitionStep("Loading the neighbourhood");
-    await navigate({ to: "/neighborhood" });
+    try {
+      await navigate({ to: "/neighborhood" });
+    } catch {
+      setDoorOpen(false);
+      endTransition();
+      setActivityError("You have left your home, but the neighbourhood could not load. Please try again.");
+      doorActionInProgress.current = false;
+      setDoorActionBusy(false);
+    }
   };
   /** Arriving from the neighbourhood: the door opens and the character walks in. */
   useEffect(() => {
@@ -894,13 +903,21 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     setFailedDeparture(null);
     departureRan.current = false;
     completeTransitionStep("Travelling");
-    await Promise.all([
+    await Promise.allSettled([
       queryClient.invalidateQueries({ queryKey: q.character().queryKey }),
       queryClient.invalidateQueries({ queryKey: q.locations().queryKey }),
       queryClient.invalidateQueries({ queryKey: q.wallet().queryKey }),
     ]);
     completeTransitionStep("Loading the neighbourhood");
-    await navigate({ to: "/neighborhood" });
+    try {
+      await navigate({ to: "/neighborhood" });
+    } catch {
+      setDoorOpen(false);
+      endTransition();
+      setActivityError("Your trip was completed, but the neighbourhood could not load. Please try again.");
+      doorActionInProgress.current = false;
+      setDoorActionBusy(false);
+    }
   };
   const walkTo = (point: RoomPoint, interact = false) => {
     const path = findRoomPath(
