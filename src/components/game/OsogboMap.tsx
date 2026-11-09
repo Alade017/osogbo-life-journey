@@ -128,6 +128,9 @@ export function OsogboMap({ onMapReady, onSelectDistrict, onSelectLandmark }: Os
               pendingPositionSaveRef.current = pending;
             }
             console.error("Could not save virtual player position", error);
+            if (pendingPositionSaveRef.current && pendingPositionSaveRef.current !== pending) {
+              continue;
+            }
             break;
           }
         }
