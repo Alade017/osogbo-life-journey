@@ -933,11 +933,30 @@ export function WorldStreetVendors({
               </mesh>
             ))}
 
-            {/* Storage crate */}
-            <mesh position={[size * 0.48, size * 0.13, -size * 0.12]}>
-              <boxGeometry args={[size * 0.22, size * 0.26, size * 0.22]} />
-              <WorldMaterial tone="timber" />
-            </mesh>
+            {/* Storage crate with visible slatted sides. */}
+            <group position={[size * 0.48, size * 0.13, -size * 0.12]}>
+              <mesh castShadow>
+                <boxGeometry args={[size * 0.22, size * 0.26, size * 0.22]} />
+                <WorldMaterial tone="timber" />
+              </mesh>
+              {[-1, 1].flatMap((side) =>
+                [0.28, 0.72].map((height) => (
+                  <mesh
+                    key={`crate-side-${side}-${height}`}
+                    position={[side * size * 0.113, (height - 0.5) * size * 0.22, 0]}
+                  >
+                    <boxGeometry args={[size * 0.012, size * 0.035, size * 0.2]} />
+                    <WorldMaterial tone="clay" />
+                  </mesh>
+                )),
+              )}
+              {[-1, 1].map((side) => (
+                <mesh key={`crate-end-${side}`} position={[0, 0, side * size * 0.113]}>
+                  <boxGeometry args={[size * 0.2, size * 0.035, size * 0.012]} />
+                  <WorldMaterial tone="clay" />
+                </mesh>
+              ))}
+            </group>
           </group>
         );
       })}
