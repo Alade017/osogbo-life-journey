@@ -194,7 +194,7 @@ Runtime routes after roadside-prop reservations and the final NPC count remain u
 
 ## Safe pedestrian corner traversal
 
-Added `deriveTownPedestrianCornerRoutes`, which creates an L-shaped route only when the two perpendicular road-adjacent grass cells and the diagonal grass cell all exist and are unblocked. This mirrors the outer-corner sidewalk patch conditions in `R3FTownSurface`, and its waypoints follow the centres of the two sidewalk strips through the rendered corner patch. The surface now includes these validated corner traversal paths alongside the straight sidewalk runs.
+Added `deriveTownPedestrianCornerRoutes`, which creates an L-shaped route only when both adjoining road tiles exist and the diagonal grass corner cell exists and is unblocked. This mirrors the outer-corner sidewalk patch conditions in `R3FTownSurface`, and its waypoints follow the centres of the two sidewalk strips through the rendered corner patch. The surface now includes these validated corner traversal paths alongside the straight sidewalk runs.
 
 The current authored town grid has **48** eligible outer-corner patches at its 12 road intersections. The new routes use the shared centre of the adjoining sidewalk strips and pass through the diagonal sidewalk patch, without adding pavement or changing the road layout. Synthetic tests cover the connector coordinates, blocked diagonal rejection and the no-corner authored-grid case. These are independent L-shaped traversal routes, not yet a stitched graph that lets one NPC continue from a straight run through multiple intersections. Adding authored corner pavement and continuous route stitching remains a separate map-design step.
 
