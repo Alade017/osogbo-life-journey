@@ -58,7 +58,16 @@ beforeAll(async () => {
         f !== "0077_market_stall_rent_categories_sales.sql",
     )
     .sort()) {
-    await db.exec(readFileSync(`drizzle/migrations/${file}`, "utf8"));
+if (file === "0083_studio_room_layout.sql") {
+      // The studio layout migration depends on x/y columns from this Supabase migration.
+      await db.exec(
+        readFileSync(
+          "supabase/migrations/20261102223137_freeform_house_furniture_placement.sql",
+          "utf8",
+        ),
+      );
+    }
+        await db.exec(readFileSync(`drizzle/migrations/${file}`, "utf8"));
   }
   // Apply the exact dated migration after the canonical existing game baseline.
   await db.exec(readFileSync("supabase/migrations/20261025092415_daily_life_tasks.sql", "utf8"));
