@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { ContactShadows, OrbitControls, Text } from "@react-three/drei";
+import { ContactShadows, OrbitControls } from "@react-three/drei";
+import { CanvasLabel } from "@/components/3d/CanvasLabel";
 import { Object3D, Vector3, type InstancedMesh, type PerspectiveCamera, type Texture } from "three";
 import type { OrbitControls as Controls } from "three-stdlib";
 import {
@@ -551,17 +552,11 @@ export function WorldRoadSigns({
             </mesh>
 
             {/* Destination label */}
-            <Text
+            <CanvasLabel
               position={[-size * 0.13, poleHeight * 0.78, size * 0.041]}
               fontSize={size * 0.105}
-              color="#ffffff"
-              anchorX="center"
-              anchorY="middle"
-              maxWidth={size * 0.62}
-              textAlign="center"
-            >
-              {sign.destination}
-            </Text>
+              text={sign.destination}
+            />
 
             {/* Arrow shaft */}
             <mesh position={[size * 0.38, poleHeight * 0.78, size * 0.045]}>
@@ -640,15 +635,11 @@ export function WorldRoadsideShops({
             <WorldMaterial tone="sign" />
           </mesh>
 
-          <Text
+          <CanvasLabel
             position={[0, wallHeight * 0.88, shopDepth * 0.49 + size * 0.03]}
             fontSize={size * 0.105}
-            color="#ffffff"
-            anchorX="center"
-            anchorY="middle"
-          >
-            SHOP
-          </Text>
+            text="SHOP"
+          />
 
           {/* Product crates */}
           {[-1, 1].map((side) => (

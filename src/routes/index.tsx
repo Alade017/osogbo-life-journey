@@ -3,7 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, CheckCircle2, LogOut, MapPin, WalletCards } from "lucide-react";
 import { EntryTownPreview } from "@/components/game/EntryTownPreview";
-import { findLandmarkCell } from "@/components/game/entry-town-preview";
+import { findLandmarkForSlug } from "@/components/game/entry-town-preview";
 import landingCopy from "@/data/landing-copy.json";
 import town from "@/data/osogbo-town.json";
 import { Logo } from "@/components/game/Logo";
@@ -81,7 +81,7 @@ function EntryPage() {
     () => (locationsQuery.data ? new Set(locationsQuery.data.map((place) => place.slug)) : null),
     [locationsQuery.data],
   );
-  const lastStop = findLandmarkCell(location?.slug);
+  const focusLandmarkId = findLandmarkForSlug(location?.slug)?.id ?? null;
   const action = entryAction(sessionState, Boolean(character));
   const currentDistrict = districtSpotlight(location?.slug);
   const glance = [
@@ -144,7 +144,7 @@ function EntryPage() {
       <section className="entry-card" aria-labelledby="entry-title">
         <div className="entry-scene">
           <EntryTownPreview
-            focus={lastStop}
+            focusLandmarkId={focusLandmarkId}
             focusLabel={location?.name ?? null}
             activeSlugs={activeSlugs}
           />
