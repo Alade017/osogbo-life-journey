@@ -137,27 +137,49 @@ function NeighborhoodNpcActor({
     .map(([x, , z]) => `${x.toFixed(3)}:${z.toFixed(3)}`)
     .join("|");
   const waypointSignatureRef = useRef(waypointSignature);
+  const routeTargetRef = useRef(targetKey);
   const blockedDuration = useRef(0);
   const replanDelay = neighborhoodNpcReplanDelay(npc.id);
   const avoidanceBias = neighborhoodNpcAvoidanceBias(npc.id);
   const pauseSnapshotSaved = useRef(false);
 
-  // Parent simulation updates can recreate an equivalent path array. Keep the
-  // live route current without resetting progress unless its actual geometry changes.
+  // Simulation updates may recreate an equivalent route. When its geometry or
+  // destination really changes, rebuild it from the actor's rendered position
+  // so a moving NPC never has to backtrack to an obsolete spawn coordinate.
   useEffect(() => {
     routeWaypoints.current = waypoints;
-    if (waypointSignatureRef.current !== waypointSignature) {
+    const routeChanged = waypointSignatureRef.current !== waypointSignature;
+    const destinationChanged = routeTargetRef.current !== targetKey;
+    if (routeChanged || destinationChanged) {
       waypointSignatureRef.current = waypointSignature;
+      routeTargetRef.current = targetKey;
+      const actor = group.current;
+      const rerouted = actor
+        ? neighborhoodNpcPath(
+            { x: actor.position.x, y: actor.position.z },
+            { x: target[0], y: target[2] },
+            occupiedFootprints,
+            sceneBounds,
+          )
+        : null;
+      if (rerouted?.length) {
+        routeWaypoints.current = rerouted.map(
+          (point) => [point.x, 0, point.y] as [number, number, number],
+        );
+      }
       waypointIndex.current = 0;
       blockedDuration.current = 0;
+      arrivedTarget.current = null;
     }
-  }, [waypoints, waypointSignature]);
-
-  useEffect(() => {
-    waypointIndex.current = 0;
-    blockedDuration.current = 0;
-    arrivedTarget.current = null;
-  }, [target[0], target[2]]);
+  }, [
+    occupiedFootprints,
+    sceneBounds,
+    target[0],
+    target[2],
+    targetKey,
+    waypointSignature,
+    waypoints,
+  ]);
 
   // R3F receives a newly allocated start tuple on every parent render.
   // Only apply it when the actual spawn/confirmed position changes; otherwise
