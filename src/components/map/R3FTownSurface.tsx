@@ -1024,8 +1024,13 @@ export function R3FTownSurface(props: Props) {
           fallback={<span>WebGL is unavailable. Use the accessible map controls.</span>}
         >
           <Ready onReady={props.onReady} />
-          
-          <WorldCamera width={gridCols * cell} depth={gridRows * cell} target={selectedTarget?.position ?? [0, 0, 0]} zoom={1.35} freeExplore />
+          <WorldCamera
+            width={gridCols * cell}
+            depth={gridRows * cell}
+            target={selectedTarget?.position ?? [0, 0, 0]}
+            zoom={1.35}
+            freeExplore
+          />
           <MapLighting size={gridCols * cell} />
           <Terrain3D gridCols={gridCols} gridRows={gridRows} cellSize={cell} waterCells={town.grid.waterCells} />
 
