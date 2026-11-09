@@ -119,3 +119,14 @@ The two authored parked-car cells are on horizontal road tiles. Their renderer p
 The final offset is 0.18 cell (0.36 world units). This keeps the outer wheel envelope within the 2-unit road tile while moving the parked vehicle away from the route. The car catalogue, count, mesh dimensions, route geometry and traffic speeds are unchanged.
 
 This remains source-level verification. The live scene must still confirm that the parked cars read as roadside parking, that wheels do not visually touch curbs, and that moving traffic clears them at both intersections and straight approaches.
+
+
+## Moving-traffic spacing and frame-step audit
+
+The town creates one moving vehicle per generated rectangular loop (six vehicles for the current authored grid). Neighbouring loops travel in opposite directions along shared road strips; they do not share the same centreline when the lane inset is applied.
+
+The inset has been increased from 0.16 to 0.22 of a 2-unit road cell. This puts opposing route centrelines 0.88 world units apart on shared road segments. The widest moving body (danfo, 0.72 units) therefore has a nominal 0.16-unit body-to-body gap on straight shared segments, before wheel/trim envelopes. The taxi body is 0.64 units wide. A route test now asserts that the shared-lane separation exceeds the danfo body width.
+
+Traffic motion now advances by world-space distance and carries leftover frame time across corners rather than resetting segment progress to zero. The travelled distance is reduced modulo the route perimeter after a long pause, bounding catch-up work. Degenerate zero-length paths return safely rather than entering a segment-advance loop. Vehicle speeds and the one-vehicle-per-loop count remain unchanged.
+
+**Remaining visual checkpoint:** inspect danfo and taxi wheel/body envelopes at the shared-road turns. The 0.16-unit nominal straight gap does not prove corner-sweep clearance; do not increase traffic density until the live scene has been inspected. Local test/build and desktop/375px browser QA remain pending; no GitHub Actions were run.
