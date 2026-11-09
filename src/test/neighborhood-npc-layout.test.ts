@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { NEIGHBORHOOD_SCENE_BOUNDS } from "@/game/neighborhood-geometry";
 import { neighborhoodNpcAvoidanceBias, neighborhoodNpcAvoidanceStep, neighborhoodNpcDestinationPoint, neighborhoodNpcPath,
-  neighborhoodNpcPathWithFallback, neighborhoodNpcReplanDelay, neighborhoodNpcReservationPath, neighborhoodNpcSpawnPoint } from "@/game/neighborhood-npc-layout";
+  neighborhoodNpcPathWithFallback, neighborhoodNpcReplanDelay, neighborhoodNpcReservationPath, neighborhoodNpcSpawnPoint, neighborhoodNpcYieldPoint } from "@/game/neighborhood-npc-layout";
 
 describe("neighborhood NPC spawn distribution", () => {
   it("assigns stable opposite sidestep preferences to different NPC identities", () => {
@@ -328,6 +328,47 @@ describe("neighborhood NPC spawn distribution", () => {
 
 
 
+});
+
+
+describe("opposing NPC traffic", () => {
+  const current = { x: 0, y: 0 };
+  const waypoint = { x: 10, y: 0 };
+  const otherCurrent = { x: 2, y: 0 };
+  const otherWaypoint = { x: -8, y: 0 };
+
+  it("makes exactly one actor yield during a close head-on approach", () => {
+    expect(
+      neighborhoodNpcYieldPoint("npc-zeta", "npc-alpha", current, waypoint, otherCurrent, otherWaypoint),
+    ).not.toBeNull();
+    expect(
+      neighborhoodNpcYieldPoint("npc-alpha", "npc-zeta", otherCurrent, otherWaypoint, current, waypoint),
+    ).toBeNull();
+  });
+
+  it("does not yield for parallel or crossing traffic", () => {
+    expect(
+      neighborhoodNpcYieldPoint("npc-zeta", "npc-alpha", current, waypoint, otherCurrent, { x: 12, y: 0 }),
+    ).toBeNull();
+    expect(
+      neighborhoodNpcYieldPoint("npc-zeta", "npc-alpha", current, waypoint, otherCurrent, { x: 2, y: 10 }),
+    ).toBeNull();
+  });
+
+  it("does not yield when opposing actors are not close enough to conflict", () => {
+    expect(
+      neighborhoodNpcYieldPoint("npc-zeta", "npc-alpha", current, waypoint, { x: 20, y: 0 }, { x: 10, y: 0 }),
+    ).toBeNull();
+  });
+
+  it("keeps the yielding point beside the current route, not beyond the opposing actor", () => {
+    const point = neighborhoodNpcYieldPoint(
+      "npc-zeta", "npc-alpha", current, waypoint, otherCurrent, otherWaypoint,
+    );
+    expect(point).not.toBeNull();
+    expect(Math.abs(point!.x)).toBeLessThan(0.01);
+    expect(Math.abs(point!.y)).toBeGreaterThan(0);
+  });
 });
 
 describe("live NPC route reservations", () => {
