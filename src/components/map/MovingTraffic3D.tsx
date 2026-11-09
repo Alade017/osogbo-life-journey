@@ -1,4 +1,4 @@
-import { useRef, useState, type FC } from "react";
+import { useEffect, useRef, useState, type FC } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import type { Group } from "three";
@@ -32,6 +32,20 @@ interface VehicleConfig {
  */
 export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ cellSize, gridCols, gridRows }) => {
   const [activeSpeech, setActiveSpeech] = useState<{ id: string; text: string } | null>(null);
+  const speechTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => () => {
+    if (speechTimeoutRef.current) clearTimeout(speechTimeoutRef.current);
+  }, []);
+
+  const showSpeech = (id: string, text: string, duration: number) => {
+    if (speechTimeoutRef.current) clearTimeout(speechTimeoutRef.current);
+    setActiveSpeech({ id, text });
+    speechTimeoutRef.current = setTimeout(() => {
+      setActiveSpeech((current) => current?.id === id ? null : current);
+      speechTimeoutRef.current = null;
+    }, duration);
+  };
 
   const xMax = (gridCols / 2 - 2) * cellSize;
   const zMax = (gridRows / 2 - 2) * cellSize;
@@ -103,10 +117,7 @@ export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ cellSize, gridCols, 
           key={v.id}
           config={v}
           cellSize={cellSize}
-          onInteract={(text) => {
-            setActiveSpeech({ id: v.id, text });
-            setTimeout(() => setActiveSpeech(null), 3200);
-          }}
+          onInteract={(text) => showSpeech(v.id, text, 3200)}
           isSpeaking={activeSpeech?.id === v.id}
           speechText={activeSpeech?.text}
         />
