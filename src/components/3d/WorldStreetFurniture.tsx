@@ -17,6 +17,8 @@ export function WorldStreetFurniture({
     seats: WorldInstance[] = [],
     benchSlats: WorldInstance[] = [],
     binDetails: WorldInstance[] = [],
+    lampHousings: WorldInstance[] = [],
+    lampDiffusers: WorldInstance[] = [],
     panels: WorldInstance[] = [];
   const signLabels: { id: string; x: number; z: number; width: number; label: string }[] = [];
   for (const item of items) {
@@ -26,7 +28,14 @@ export function WorldStreetFurniture({
         { position: [x, 1.6, z], scale: [0.1, 3.2, 0.1] },
         { position: [x + 0.27, 3.15, z], scale: [0.65, 0.1, 0.1] },
       );
-      panels.push({ position: [x + 0.52, 3.08, z], scale: [0.35, 0.12, 0.22] });
+      lampHousings.push({
+        position: [x + 0.52, 3.08, z],
+        scale: [0.38, 0.16, 0.25],
+      });
+      lampDiffusers.push({
+        position: [x + 0.52, 3.08, z + 0.128],
+        scale: [0.27, 0.075, 0.012],
+      });
     } else if (kind === "bench") {
       // Slatted seating and backrests read as timber furniture at street scale.
       const slatCount = Math.max(3, Math.min(6, Math.floor(width / 0.32)));
@@ -76,6 +85,8 @@ export function WorldStreetFurniture({
       <WorldInstances tone="slate" items={seats} />
       <WorldInstances tone="timber" items={benchSlats} />
       <WorldInstances tone="drainage" items={binDetails} />
+      <WorldInstances tone="metal" items={lampHousings} />
+      <WorldInstances tone="sign" items={lampDiffusers} />
       <WorldInstances tone="linen" items={panels} />
       {signLabels.map((sign) => (
         <Text
