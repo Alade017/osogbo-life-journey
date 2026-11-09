@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { NEIGHBORHOOD_SCENE_BOUNDS } from "@/game/neighborhood-geometry";
-import { neighborhoodNpcAvoidanceStep, neighborhoodNpcDestinationPoint, neighborhoodNpcPath, neighborhoodNpcSpawnPoint } from "@/game/neighborhood-npc-layout";
+import { neighborhoodNpcAvoidanceStep, neighborhoodNpcDestinationPoint, neighborhoodNpcPath,
+  neighborhoodNpcPathWithFallback, neighborhoodNpcSpawnPoint } from "@/game/neighborhood-npc-layout";
 
 describe("neighborhood NPC spawn distribution", () => {
   const slots = [
@@ -179,6 +180,24 @@ describe("neighborhood NPC spawn distribution", () => {
         expect(Math.abs(y)).toBeGreaterThanOrEqual(21);
       }
     }
+  });
+
+  it("falls back to a clear route when reservations alone block the corridor", () => {
+    const start = { x: 100, y: -200 };
+    const destination = { x: 100, y: 200 };
+    const reserved = [[{ x: 0, y: 0 }, { x: 200, y: 0 }]];
+    expect(neighborhoodNpcPath(start, destination, [], NEIGHBORHOOD_SCENE_BOUNDS, reserved)).toBeNull();
+    const fallback = neighborhoodNpcPathWithFallback(
+      start,
+      destination,
+      [],
+      NEIGHBORHOOD_SCENE_BOUNDS,
+      reserved,
+    );
+    expect(fallback).not.toBeNull();
+    expect(fallback).toEqual(
+      neighborhoodNpcPath(start, destination, [], NEIGHBORHOOD_SCENE_BOUNDS),
+    );
   });
 
   it("returns null when no route exists inside the scene bounds", () => {
