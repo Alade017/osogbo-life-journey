@@ -54,7 +54,7 @@ export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({ paths }) => 
     "Hello! Lovely to see you around town.",
   ];
   const npcs: NpcConfig[] = paths.map((path, index) => ({
-    id: `town-pedestrian-${index}`,
+    id: `town-pedestrian-${path.map(([x, z]) => `${x.toFixed(3)},${z.toFixed(3)}`).join("|")}`,
     name: `Neighbour ${index + 1}`,
     role: roles[index % roles.length]!,
     color: clothingColors[index % clothingColors.length]!,
