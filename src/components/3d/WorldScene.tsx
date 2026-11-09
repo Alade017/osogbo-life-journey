@@ -190,7 +190,6 @@ export function WorldInstances({
       animate(animatedObject, index, clock.elapsedTime);
       animatedObject.updateMatrix();
       mesh.current!.setMatrixAt(index, animatedObject.matrix);
-      mesh.current!.setColorAt(index, new Color(item.color ?? "#ffffff"));
     });
     mesh.current.instanceMatrix.needsUpdate = true;
     if (mesh.current.instanceColor) mesh.current.instanceColor.needsUpdate = true;
@@ -208,6 +207,7 @@ export function WorldInstances({
       mesh.current!.setColorAt(index, new Color(item.color ?? "#ffffff"));
     });
     mesh.current.instanceMatrix.needsUpdate = true;
+    if (mesh.current.instanceColor) mesh.current.instanceColor.needsUpdate = true;
     mesh.current.computeBoundingSphere();
   }, [items]);
   if (!items.length) return null;
