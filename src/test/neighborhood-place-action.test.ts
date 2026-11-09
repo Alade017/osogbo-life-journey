@@ -59,7 +59,11 @@ describe("neighborhood place action endpoint", () => {
       claims.userId, claims.landmarkId, claims.actionId, true,
     );
     expect(dependencies.perform).toHaveBeenCalledWith(
-      claims.userId, claims.landmarkId, claims.actionId, requestId,
+      claims.userId,
+      claims.landmarkId,
+      claims.actionId,
+      requestId,
+      claims.characterId,
     );
   });
 
