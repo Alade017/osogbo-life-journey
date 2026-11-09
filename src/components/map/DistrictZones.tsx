@@ -24,26 +24,41 @@ export function DistrictZones({
 }) {
   const boundarySegments: WorldInstance[] = districts.flatMap((district): WorldInstance[] => {
     const area = district.gridArea;
-    const [centerX, , centerZ] = point(
-      area.x + area.width / 2,
-      area.z + area.depth / 2,
-    );
-    const halfWidth = (area.width * cell) / 2;
-    const halfDepth = (area.depth * cell) / 2;
-    const y = 0.026;
+    const tint = DISTRICT_TINTS[district.theme] ?? DISTRICT_FALLBACK;
     const thickness = Math.max(0.035, cell * 0.018);
+    const dashLength = cell * 0.62;
+    const dashScale: [number, number, number] = [dashLength, 0.025, thickness];
+    const sideScale: [number, number, number] = [thickness, 0.025, dashLength];
+    const items: WorldInstance[] = [];
 
-    return [
-      { position: [centerX, y, centerZ - halfDepth], scale: [halfWidth * 2, 0.018, thickness] },
-      { position: [centerX, y, centerZ + halfDepth], scale: [halfWidth * 2, 0.018, thickness] },
-      { position: [centerX - halfWidth, y, centerZ], scale: [thickness, 0.018, halfDepth * 2] },
-      { position: [centerX + halfWidth, y, centerZ], scale: [thickness, 0.018, halfDepth * 2] },
-    ];
+    // Short, evenly spaced boundary marks keep district edges legible without
+    // drawing a heavy continuous frame across streets and building footprints.
+    for (let x = 0; x < area.width; x += 1) {
+      const sampleX = area.x + x + 0.5;
+      const [topX, , topZ] = point(sampleX, area.z);
+      const [bottomX, , bottomZ] = point(sampleX, area.z + area.depth);
+      items.push(
+        { position: [topX, 0.045, topZ], scale: dashScale, color: tint },
+        { position: [bottomX, 0.045, bottomZ], scale: dashScale, color: tint },
+      );
+    }
+
+    for (let z = 0; z < area.depth; z += 1) {
+      const sampleZ = area.z + z + 0.5;
+      const [leftX, , leftZ] = point(area.x, sampleZ);
+      const [rightX, , rightZ] = point(area.x + area.width, sampleZ);
+      items.push(
+        { position: [leftX, 0.045, leftZ], scale: sideScale, color: tint },
+        { position: [rightX, 0.045, rightZ], scale: sideScale, color: tint },
+      );
+    }
+
+    return items;
   });
 
   return (
     <>
-      <WorldInstances items={boundarySegments} tone="timber" />
+      <WorldInstances items={boundarySegments} tone="linen" />
       {districts.map((district) => {
         const a = district.gridArea;
         const [cx, , cz] = point(a.x + a.width / 2, a.z + a.depth / 2);
