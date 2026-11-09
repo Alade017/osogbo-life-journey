@@ -56,6 +56,15 @@ export const CHARACTER_CLOTH = {
   },
 } as const;
 
+/** Arm measurements, as fractions of body height. The hand socket sits at the end of the arm. */
+export const CHARACTER_ARM = {
+  /** Shoulder offset from the body centre, sideways (x) and height (y). */
+  shoulderX: 0.19,
+  shoulderY: 0.64,
+  /** Length from shoulder to hand. */
+  length: 0.4,
+} as const;
+
 export const CHARACTER_HAND = {
   /** Which arm carries the right-hand socket: +1 is the positive-x arm. */
   socketSide: 1,

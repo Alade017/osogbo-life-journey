@@ -13,6 +13,8 @@ import {
   firstFreeHouseGridCell,
   houseDoorThreshold,
   houseStairs,
+  BED_HEADBOARD_SIDE,
+  sleepFacingForHeadboard,
   isHouseGridCellOccupied,
   snapToHouseGrid,
   firstFreeBackWallCell,
@@ -1318,16 +1320,18 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         ? [taskPoint[0], 0.28, taskPoint[2] + 0.25]
         : movement.position;
   const taskFacing =
-    taskPoint && !seated
-      ? Math.abs(taskPoint[0] - movement.position[0]) >
-        Math.abs(taskPoint[2] - movement.position[2])
-        ? taskPoint[0] > movement.position[0]
-          ? "east"
-          : "west"
-        : taskPoint[2] > movement.position[2]
-          ? "south"
-          : "north"
-      : "south";
+    taskPoint && currentActivity?.animation === "sleeping"
+      ? sleepFacingForHeadboard(BED_HEADBOARD_SIDE)
+      : taskPoint && !seated
+        ? Math.abs(taskPoint[0] - movement.position[0]) >
+          Math.abs(taskPoint[2] - movement.position[2])
+          ? taskPoint[0] > movement.position[0]
+            ? "east"
+            : "west"
+          : taskPoint[2] > movement.position[2]
+            ? "south"
+            : "north"
+        : "south";
   const taskPose = collectingPackage
     ? ("collect" as const)
     : currentActivity

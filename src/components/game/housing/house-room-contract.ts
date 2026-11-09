@@ -434,3 +434,20 @@ export function housePartitionSegmentsForFloor(
   if (floor === 1) return houseTypeId === "duplex" ? upstairsPartitionSegments(width, depth) : [];
   return housePartitionSegments(houseTypeId, width, depth);
 }
+
+export type HouseFacing = "north" | "south" | "east" | "west";
+
+/** Side of the room the bed's headboard sits against. The bed is never rotated. */
+export const BED_HEADBOARD_SIDE: HouseFacing = "north";
+
+const OPPOSITE_FACING: Record<HouseFacing, HouseFacing> = {
+  north: "south",
+  south: "north",
+  east: "west",
+  west: "east",
+};
+
+/** A character lying on its back faces away from the headboard, so its head points at it. */
+export function sleepFacingForHeadboard(headboard: HouseFacing): HouseFacing {
+  return OPPOSITE_FACING[headboard];
+}

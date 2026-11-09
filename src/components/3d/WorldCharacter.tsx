@@ -15,6 +15,7 @@ import type { AvatarAnimationState, AvatarEquipment } from "@/components/game/Av
 import { WorldMaterial } from "./WorldScene";
 import { WORLD_SCALE } from "./world-theme";
 import {
+  CHARACTER_ARM,
   CHARACTER_CLOTH,
   CHARACTER_GROUND,
   CHARACTER_HAND,
@@ -37,6 +38,20 @@ export const ARM_POSES: Partial<Record<TaskPose, ArmPose>> = {
 };
 
 const blend = (rate: number, delta: number) => 1 - Math.exp(-rate * delta);
+
+/**
+ * Where the right hand is, in body space (feet on the floor, facing south), when the
+ * interact pose reaches forward. Props held in that hand are placed here.
+ */
+export function rightHandPoint(height: number): [number, number, number] {
+  const reach = CHARACTER_HAND.reachAngle;
+  const length = height * CHARACTER_ARM.length;
+  return [
+    CHARACTER_HAND.socketSide * height * CHARACTER_ARM.shoulderX,
+    height * CHARACTER_ARM.shoulderY - length * Math.cos(reach),
+    -length * Math.sin(reach),
+  ];
+}
 
 const FACING_YAW: Record<string, number> = {
   north: Math.PI,
@@ -269,7 +284,10 @@ export function WorldCharacter({
           </group>
           <group ref={arms}>
             {[-1, 1].map((side) => (
-              <group key={side} position={[side * h * 0.19, h * 0.64, 0]}>
+              <group
+                key={side}
+                position={[side * h * CHARACTER_ARM.shoulderX, h * CHARACTER_ARM.shoulderY, 0]}
+              >
                 <RoundedBox
                   args={[h * 0.1, h * 0.26, h * 0.11]}
                   radius={h * 0.035}
@@ -289,7 +307,7 @@ export function WorldCharacter({
                   <WorldMaterial color={skin} />
                 </RoundedBox>
                 {side === CHARACTER_HAND.socketSide && (
-                  <group name="hand_R_socket" position={[0, -h * 0.4, 0]} />
+                  <group name="hand_R_socket" position={[0, -h * CHARACTER_ARM.length, 0]} />
                 )}
               </group>
             ))}

@@ -3045,6 +3045,22 @@
   display: none;
 }
 
+/* Desktop: a centred panel tall enough for several rows of items. Tablets keep the strip. */
+@media (min-width: 1200px) {
+  .house-catalogue {
+    left: 50%;
+    right: auto;
+    width: min(1040px, calc(100% - 32px));
+    max-height: min(64dvh, 680px);
+    padding: 18px;
+    transform: translateX(-50%);
+  }
+  .house-catalogue-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 14px;
+  }
+}
+
 /* Current home task or sleep: a compact status under the location pill, top-left. */
 .house-task-status {
   position: absolute;
