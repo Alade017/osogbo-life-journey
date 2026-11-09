@@ -418,6 +418,56 @@ export function neighborhoodNpcAvoidanceStep(
   return clear[0]!;
 }
 
+
+/**
+ * Find a short, geometry-safe escape point that maximises clearance from a
+ * local crowd. Identity bias breaks ties consistently across frames.
+ */
+export function neighborhoodNpcCrowdRecoveryPoint(
+  current: NpcPoint,
+  blockers: readonly NpcPoint[],
+  occupied: readonly GroundRect[] = [],
+  bounds: GroundRect = NEIGHBORHOOD_SCENE_BOUNDS,
+  minimumSeparation = NEIGHBORHOOD_NPC_ACTOR_SEPARATION,
+  avoidanceBias = 1,
+): NpcPoint | null {
+  if (blockers.length === 0) return null;
+  const radius = minimumSeparation * 1.8;
+  const candidates = Array.from({ length: 24 }, (_, index) => {
+    const angle = (index * Math.PI * 2) / 24;
+    return {
+      x: current.x + Math.cos(angle) * radius,
+      y: current.y + Math.sin(angle) * radius,
+    };
+  }).filter((candidate) => {
+    if (!isInsideScene(candidate, bounds) || overlapsFootprint(candidate, occupied)) return false;
+    const distance = Math.hypot(candidate.x - current.x, candidate.y - current.y);
+    const samples = Math.max(1, Math.ceil(distance / Math.max(minimumSeparation / 2, 0.1)));
+    for (let index = 1; index <= samples; index += 1) {
+      const progress = index / samples;
+      const point = {
+        x: current.x + (candidate.x - current.x) * progress,
+        y: current.y + (candidate.y - current.y) * progress,
+      };
+      if (!isInsideScene(point, bounds) || overlapsFootprint(point, occupied)) return false;
+    }
+    return blockers.every((blocker) => {
+      const initial = Math.hypot(current.x - blocker.x, current.y - blocker.y);
+      const next = Math.hypot(candidate.x - blocker.x, candidate.y - blocker.y);
+      return initial < minimumSeparation ? next > initial + 0.0001 : next >= minimumSeparation;
+    });
+  });
+  candidates.sort((a, b) => {
+    const clearanceA = Math.min(...blockers.map((point) => Math.hypot(a.x - point.x, a.y - point.y)));
+    const clearanceB = Math.min(...blockers.map((point) => Math.hypot(b.x - point.x, b.y - point.y)));
+    if (Math.abs(clearanceA - clearanceB) > 0.0001) return clearanceB - clearanceA;
+    const angleA = Math.atan2(a.y - current.y, a.x - current.x);
+    const angleB = Math.atan2(b.y - current.y, b.x - current.x);
+    return (angleB - angleA) * avoidanceBias;
+  });
+  return candidates[0] ?? null;
+}
+
 /** Stable per-character retry delay prevents a crowd from replanning in lockstep. */
 export function neighborhoodNpcReplanDelay(npcId: string): number {
   let hash = 2166136261;
