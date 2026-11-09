@@ -638,6 +638,13 @@
       "when": 1794463200000,
       "tag": "0089_mini_game_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 91,
+      "version": "7",
+      "when": 1794549600000,
+      "tag": "0090_okada_ride_lifecycle",
+      "breakpoints": true
     }
   ]
 }

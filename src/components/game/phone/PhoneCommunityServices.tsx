@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -484,10 +484,35 @@ function RidesApp() {
       void client.invalidateQueries({ queryKey: ["phoneService", "okada_ride_requests"] });
       void client.invalidateQueries({ queryKey: q.wallet().queryKey });
       void client.invalidateQueries({ queryKey: q.transactions().queryKey });
-      toast.success("An okada rider has been assigned.");
+      toast.success("Ride requested. Searching for a rider.");
     },
     onError: (error: Error) => toast.error(error.message),
   });
+  const cancel = useMutation({
+    mutationFn: async (rideId: string) => {
+      const { error } = await supabase.rpc("okada_ride_cancel", { p_ride: rideId });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ["phoneService", "okada_ride_requests"] });
+      void client.invalidateQueries({ queryKey: q.wallet().queryKey });
+      void client.invalidateQueries({ queryKey: q.transactions().queryKey });
+      toast.success("Ride cancelled. The fare has been refunded.");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  useEffect(() => {
+    // Riders are found and rides finish on the server; this keeps the list current while the app is open.
+    const refresh = () =>
+      void supabase
+        .rpc("okada_ride_sync")
+        .then(() =>
+          client.invalidateQueries({ queryKey: ["phoneService", "okada_ride_requests"] }),
+        );
+    refresh();
+    const timer = window.setInterval(refresh, 15000);
+    return () => window.clearInterval(timer);
+  }, [client]);
   return (
     <div className="okada-app">
       <section className="okada-hero">
@@ -565,6 +590,16 @@ function RidesApp() {
             <span className={`okada-status okada-status-${rideTone(ride.status)}`}>
               {rideStatusLabel(ride.status)}
             </span>
+            {ride.status === "requested" && (
+              <button
+                type="button"
+                className="okada-cancel"
+                disabled={cancel.isPending}
+                onClick={() => cancel.mutate(ride.id)}
+              >
+                Cancel
+              </button>
+            )}
           </article>
         ))}
       </section>

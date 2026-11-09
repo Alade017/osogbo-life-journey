@@ -4846,3 +4846,19 @@
   padding: 6px 12px;
   text-transform: capitalize;
 }
+
+.okada-cancel {
+  margin-left: auto;
+  align-self: center;
+  border: 1px solid var(--destructive);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--destructive);
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.okada-cancel:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
