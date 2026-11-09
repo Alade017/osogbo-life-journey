@@ -42,6 +42,7 @@ import { MovingPedestrians3D } from "./MovingPedestrians3D";
 import { FunctionalStreetLights3D } from "./FunctionalStreetLights3D";
 import { RoadsideInfrastructure3D } from "./RoadsideInfrastructure3D";
 import { isMapTargetSelectionAllowed } from "@/game/map-gesture";
+import { deriveTownMobilityRoutes } from "@/game/town-mobility";
 
 type Props = PhaserMapData &
   PhaserMapCallbacks & {
@@ -219,6 +220,14 @@ export function R3FTownSurface(props: Props) {
     // A stale search result must not leave the previous destination focused.
     setSelectedTarget(null);
   }, [props.searchTarget, props.places, props.properties]);
+  const trafficRoutes = useMemo(
+    () => deriveTownMobilityRoutes(town.grid.rows, cell, cell * 0.16),
+    [],
+  );
+  const pedestrianRoutes = useMemo(
+    () => deriveTownMobilityRoutes(town.grid.rows, cell, -cell * 0.16),
+    [],
+  );
   const roads = useMemo(
     () =>
       town.grid.rows.flatMap((row, z) =>
@@ -1058,8 +1067,8 @@ export function R3FTownSurface(props: Props) {
               detailed
             />
           ))}
-          <MovingTraffic3D cellSize={cell} gridCols={gridCols} gridRows={gridRows} />
-          <MovingPedestrians3D cellSize={cell} gridCols={gridCols} gridRows={gridRows} />
+          <MovingTraffic3D paths={trafficRoutes} />
+          <MovingPedestrians3D paths={pedestrianRoutes} />
           <DistrictZones
             districts={town.districts}
             point={point}
