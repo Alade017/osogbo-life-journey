@@ -13,6 +13,29 @@ const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
 
 type NpcPoint = { x: number; y: number };
 
+/**
+ * Build the live corridor reservation from the actor's rendered position and
+ * only the waypoints it has not reached yet. Near-duplicate points are omitted
+ * so the reservation always describes the actor's actual remaining journey.
+ */
+export function neighborhoodNpcReservationPath(
+  current: NpcPoint | null,
+  waypoints: readonly NpcPoint[],
+  waypointIndex = 0,
+  tolerance = 0.035,
+): NpcPoint[] {
+  if (!Number.isInteger(waypointIndex) || waypointIndex < 0) return [];
+  const remaining = waypoints.slice(waypointIndex);
+  const origin = current ?? remaining[0] ?? null;
+  if (!origin) return [];
+  return [
+    origin,
+    ...remaining.filter(
+      (point) => Math.hypot(point.x - origin.x, point.y - origin.y) > tolerance,
+    ),
+  ];
+}
+
 function isInsideScene(point: NpcPoint, bounds: GroundRect): boolean {
   return (
     point.x >= bounds.left + SCENE_MARGIN &&
