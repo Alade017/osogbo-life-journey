@@ -528,7 +528,10 @@ export function PlayableNeighborhood() {
       await queryClient.invalidateQueries({ queryKey: q.character().queryKey });
       await navigate({ to: "/house" });
     },
-    onError: () => endTransition(),
+    onError: (error) => {
+      endTransition();
+      toast.error(error instanceof Error ? error.message : "Your home could not be opened. Try again.");
+    },
   });
   /** Go home walks the character to the home door first; entry starts only on arrival. */
   const homeObject = area.objects.find((object) => object.kind === "home");
