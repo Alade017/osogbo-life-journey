@@ -152,9 +152,16 @@ function NeighborhoodNpcActor({
       actorRoutes.current.delete(npc.id);
       return;
     }
+    const actor = group.current;
+    const remaining = routeWaypoints.current
+      .slice(waypointIndex.current)
+      .map(([x, , y]) => ({ x, y }));
+    const current = actor ? { x: actor.position.x, y: actor.position.z } : remaining[0];
     actorRoutes.current.set(
       npc.id,
-      routeWaypoints.current.slice(waypointIndex.current).map(([x, , y]) => ({ x, y })),
+      current ? [current, ...remaining.filter((point) =>
+        Math.hypot(point.x - current.x, point.y - current.y) > 0.035,
+      )] : remaining,
     );
   };
 
@@ -177,7 +184,12 @@ function NeighborhoodNpcActor({
             { x: target[0], y: target[2] },
             occupiedFootprints,
             sceneBounds,
-            reservedPaths,
+            (() => {
+              const live = [...actorRoutes.current.entries()]
+                .filter(([id, path]) => id !== npc.id && path.length > 1)
+                .map(([, path]) => path);
+              return live.length > 0 ? live : reservedPaths;
+            })(),
           )
         : null;
       if (rerouted?.length) {
