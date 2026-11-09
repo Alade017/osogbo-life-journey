@@ -73,7 +73,7 @@ describe("character-bound party mutation RPCs", () => {
     await db.exec(readFileSync(
       "supabase/migrations/20261109140000_bind_party_mutations_to_character.sql", "utf8",
     ));
-  });
+  }, 180_000);
 
   afterAll(async () => {
     await db?.close();
