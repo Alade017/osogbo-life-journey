@@ -263,10 +263,14 @@ function usePartyRoom(locationId: string | null, characterId: string | null) {
         }
         joined = room;
         roomRef.current = room;
-        room.onMessage("presence", (payload: { people: PartyPresence[] }) =>
-          setPeople(payload.people),
-        );
-        room.onMessage("dance", (event: PartyDanceEvent) => setLastDance(event));
+        room.onMessage("presence", (payload: { people: PartyPresence[] }) => {
+          if (roomRef.current !== room) return;
+          setPeople(payload.people);
+        });
+        room.onMessage("dance", (event: PartyDanceEvent) => {
+          if (roomRef.current !== room) return;
+          setLastDance(event);
+        });
         room.onLeave(() => {
           if (roomRef.current !== room) return;
           roomRef.current = null;
