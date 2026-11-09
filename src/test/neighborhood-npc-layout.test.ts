@@ -223,7 +223,10 @@ describe("neighborhood NPC spawn distribution", () => {
       0.4,
       [{ left: -0.1, top: 0.1, width: 0.8, height: 0.8 }],
     );
-    expect(next).toEqual(current);
+    expect(
+      next.x >= -0.5 && next.x <= 0.7 && next.y >= 0.1 && next.y <= 0.9,
+    ).toBe(false);
+    expect(next).not.toEqual(current);
   });
 
   it("does not move outside the active scene bounds", () => {
