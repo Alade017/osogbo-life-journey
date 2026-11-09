@@ -130,12 +130,49 @@ function gridKey(x: number, y: number): string {
   return `${x}:${y}`;
 }
 
+function segmentsIntersect(
+  a: NpcPoint,
+  b: NpcPoint,
+  c: NpcPoint,
+  d: NpcPoint,
+): boolean {
+  const cross = (p: NpcPoint, q: NpcPoint, r: NpcPoint) =>
+    (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x);
+  const abC = cross(a, b, c);
+  const abD = cross(a, b, d);
+  const cdA = cross(c, d, a);
+  const cdB = cross(c, d, b);
+  return abC * abD <= 0 && cdA * cdB <= 0;
+}
+
+function overlapsReservedPaths(
+  from: NpcPoint,
+  to: NpcPoint,
+  reservedPaths: readonly (readonly NpcPoint[])[],
+): boolean {
+  return reservedPaths.some((path) =>
+    path.some((point, index) => {
+      if (index === 0) return false;
+      const previous = path[index - 1]!;
+      if (!segmentsIntersect(from, to, previous, point)) return false;
+      return Math.min(
+        Math.hypot(from.x - previous.x, from.y - previous.y),
+        Math.hypot(from.x - point.x, from.y - point.y),
+        Math.hypot(to.x - previous.x, to.y - previous.y),
+        Math.hypot(to.x - point.x, to.y - point.y),
+      ) > NPC_SEPARATION;
+    }),
+  );
+}
+
 function segmentIsClear(
   from: NpcPoint,
   to: NpcPoint,
   occupied: readonly GroundRect[],
   bounds: GroundRect,
+  reservedPaths: readonly (readonly NpcPoint[])[] = [],
 ): boolean {
+  if (overlapsReservedPaths(from, to, reservedPaths)) return false;
   const distance = Math.hypot(to.x - from.x, to.y - from.y);
   const samples = Math.max(1, Math.ceil(distance / 8));
   for (let index = 0; index <= samples; index += 1) {
@@ -158,6 +195,7 @@ export function neighborhoodNpcPath(
   destination: NpcPoint,
   occupied: readonly GroundRect[] = [],
   bounds: GroundRect = NEIGHBORHOOD_SCENE_BOUNDS,
+  reservedPaths: readonly (readonly NpcPoint[])[] = [],
 ): NpcPoint[] | null {
   const toCell = (point: NpcPoint) => ({
     x: Math.round((point.x - bounds.left) / NPC_PATH_GRID),
@@ -181,8 +219,8 @@ export function neighborhoodNpcPath(
   if (
     blocked(source.x, source.y) ||
     blocked(goal.x, goal.y) ||
-    !segmentIsClear(start, sourcePoint, occupied, bounds) ||
-    !segmentIsClear(goalPoint, destination, occupied, bounds)
+    !segmentIsClear(start, sourcePoint, occupied, bounds, reservedPaths) ||
+    !segmentIsClear(goalPoint, destination, occupied, bounds, reservedPaths)
   ) return null;
 
   const heuristic = (x: number, y: number) => Math.hypot(goal.x - x, goal.y - y);
@@ -219,7 +257,7 @@ export function neighborhoodNpcPath(
       const key = gridKey(x, y);
       if (closed.has(key) || blocked(x, y)) continue;
       if (dx !== 0 && dy !== 0 && (blocked(current.x + dx, current.y) || blocked(current.x, current.y + dy))) continue;
-      if (!segmentIsClear(toPoint(current), toPoint({ x, y }), occupied, bounds)) continue;
+      if (!segmentIsClear(toPoint(current), toPoint({ x, y }), occupied, bounds, reservedPaths)) continue;
       const nextCost = current.cost + (dx !== 0 && dy !== 0 ? Math.SQRT2 : 1);
       if (nextCost >= (costs.get(key) ?? Number.POSITIVE_INFINITY)) continue;
       costs.set(key, nextCost);
