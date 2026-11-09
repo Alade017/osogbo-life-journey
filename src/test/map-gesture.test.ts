@@ -1,9 +1,30 @@
 import { describe, expect, it } from "vitest";
 import {
+  isQuickMapTap,
+  MAP_TAP_MAX_DISTANCE,
+  MAP_TAP_MAX_DURATION_MS,
+} from "@/lib/map-gesture";
+import {
   isMapTargetSelectionAllowed,
   MAP_DRAG_THRESHOLD_PX,
   MAP_TARGET_MAX_POINTER_DELTA,
 } from "@/game/map-gesture";
+
+describe("map tap gesture threshold", () => {
+  it("accepts a short press with less than six pixels of movement", () => {
+    expect(isQuickMapTap({ x: 20, y: 20, at: 100 }, { x: 23, y: 22, at: 380 })).toBe(true);
+  });
+
+  it("treats six pixels of movement or a long press as a map gesture", () => {
+    expect(isQuickMapTap({ x: 20, y: 20, at: 100 }, { x: 26, y: 20, at: 200 })).toBe(false);
+    expect(isQuickMapTap({ x: 20, y: 20, at: 100 }, { x: 20, y: 20, at: 601 })).toBe(false);
+  });
+
+  it("retains the existing movement and duration thresholds", () => {
+    expect(MAP_TAP_MAX_DISTANCE).toBe(6);
+    expect(MAP_TAP_MAX_DURATION_MS).toBe(500);
+  });
+});
 
 describe("town map target gesture selection", () => {
   it("allows landmark callbacks without a Three.js pointer event", () => {
