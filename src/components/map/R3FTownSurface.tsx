@@ -835,7 +835,7 @@ export function R3FTownSurface(props: Props) {
   const roadsideInfrastructure = useMemo(() => {
     const occupied = new Set<string>();
     town.grid.buildings.forEach((building) => {
-      for (const [dx, dz] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
+      for (const [dx, dz] of [[0, 0], [1, 0], [0, 1], [1, 1]] as const) {
         occupied.add(`${building.x + dx},${building.z + dz}`);
       }
     });
