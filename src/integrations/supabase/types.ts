@@ -6530,6 +6530,7 @@ export type Database = {
         Returns: Json
       }
       block_player: { Args: { p_target_character_id: string }; Returns: Json }
+      buy_drink_for_character: { Args: { p_drink_slug: string; p_expected_character_id: string; p_request_id: string }; Returns: Json }
       buy_drink: {
         Args: { p_drink_slug: string; p_request_id: string }
         Returns: Json
@@ -6653,6 +6654,9 @@ export type Database = {
         }
         Returns: Json
       }
+      dance_with_npc_for_character: { Args: { p_expected_character_id: string; p_npc_slug: string; p_request_id: string }; Returns: Json }
+      dance_with_npc_for_character_locked: { Args: { p_expected_character_id: string; p_npc_slug: string; p_request_id: string }; Returns: Json }
+      dance_with_player_for_character: { Args: { p_expected_character_id: string; p_request_id: string; p_target_character_id: string }; Returns: Json }
       dance_with_npc: {
         Args: { p_npc_slug: string; p_request_id: string }
         Returns: Json
@@ -6675,6 +6679,7 @@ export type Database = {
       }
       eat_at_place: { Args: { p_place_id: string }; Returns: Json }
       enter_club: { Args: { p_request_id: string }; Returns: Json }
+      enter_club_for_character: { Args: { p_expected_character_id: string; p_request_id: string }; Returns: Json }
       enter_player_home: { Args: never; Returns: Json }
       equip_inventory_item: {
         Args: { p_inventory_id: string; p_slot: string }
@@ -6791,6 +6796,7 @@ export type Database = {
         }
         Returns: Json
       }
+      host_party_event_for_character: { Args: { p_expected_character_id: string; p_location_id: string; p_request_id: string; p_requirements: Json; p_starts_at: string; p_title: string }; Returns: Json }
       host_party_event: {
         Args: {
           p_location_id: string
@@ -6862,12 +6868,14 @@ export type Database = {
         Args: { p_occurrence_id: string }
         Returns: Json
       }
+      join_club_activity_for_character: { Args: { p_activity_slug: string; p_expected_character_id: string; p_request_id: string }; Returns: Json }
       join_club_activity: {
         Args: { p_activity_slug: string; p_request_id: string }
         Returns: Json
       }
       leave_career: { Args: never; Returns: Json }
       leave_club: { Args: { p_request_id: string }; Returns: Json }
+      leave_club_for_character: { Args: { p_expected_character_id: string; p_request_id: string }; Returns: Json }
       leave_player_home: { Args: never; Returns: Json }
       list_expired_voice_notes: {
         Args: never
@@ -7066,6 +7074,7 @@ export type Database = {
         Args: { p_accept: boolean; p_request_id: string }
         Returns: Json
       }
+      respond_to_event_for_character: { Args: { p_expected_character_id: string; p_request_id: string; p_requirement_id: string }; Returns: Json }
       respond_to_event: {
         Args: { p_request_id: string; p_requirement_id: string }
         Returns: Json
