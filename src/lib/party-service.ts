@@ -186,20 +186,21 @@ export async function listPartyEvents(): Promise<
 }
 
 export const partyRpc = {
-  enterClub: async (requestId: string) =>
-    unwrap(await db.rpc("enter_club", { p_request_id: requestId })),
-  leaveClub: async (requestId: string) =>
-    unwrap(await db.rpc("leave_club", { p_request_id: requestId })),
-  joinClubActivity: async (args: { activitySlug: string; requestId: string }) =>
+  enterClub: async (args: { requestId: string; characterId: string }) =>
+    unwrap(await db.rpc("enter_club_for_character", { p_request_id: args.requestId, p_expected_character_id: args.characterId })),
+  leaveClub: async (args: { requestId: string; characterId: string }) =>
+    unwrap(await db.rpc("leave_club_for_character", { p_request_id: args.requestId, p_expected_character_id: args.characterId })),
+  joinClubActivity: async (args: { activitySlug: string; requestId: string; characterId: string }) =>
     unwrap(
-      await db.rpc("join_club_activity", {
+      await db.rpc("join_club_activity_for_character", {
         p_activity_slug: args.activitySlug,
         p_request_id: args.requestId,
+        p_expected_character_id: args.characterId,
       }),
     ),
-  buyDrink: async (args: { drinkSlug: string; requestId: string }) =>
+  buyDrink: async (args: { drinkSlug: string; requestId: string; characterId: string }) =>
     unwrap(
-      await db.rpc("buy_drink", { p_drink_slug: args.drinkSlug, p_request_id: args.requestId }),
+      await db.rpc("buy_drink_for_character", { p_drink_slug: args.drinkSlug, p_request_id: args.requestId, p_expected_character_id: args.characterId }),
     ),
   danceWithNpc: async (args: {
     npcSlug: string;
@@ -207,17 +208,18 @@ export const partyRpc = {
     characterId: string;
   }) =>
     unwrap(
-      await db.rpc("dance_with_npc_for_character", {
+      await db.rpc("dance_with_npc_for_character_locked", {
         p_npc_slug: args.npcSlug,
         p_request_id: args.requestId,
         p_expected_character_id: args.characterId,
       }),
     ),
-  danceWithPlayer: async (args: { targetCharacterId: string; requestId: string }) =>
+  danceWithPlayer: async (args: { targetCharacterId: string; requestId: string; characterId: string }) =>
     unwrap(
-      await db.rpc("dance_with_player", {
+      await db.rpc("dance_with_player_for_character", {
         p_target_character_id: args.targetCharacterId,
         p_request_id: args.requestId,
+        p_expected_character_id: args.characterId,
       }),
     ),
   hostEvent: async (args: {
@@ -226,21 +228,24 @@ export const partyRpc = {
     startsAt: string;
     requirements: HostRequirementInput[];
     requestId: string;
+    characterId: string;
   }) =>
     unwrap(
-      await db.rpc("host_party_event", {
+      await db.rpc("host_party_event_for_character", {
         p_location_id: args.locationId,
         p_title: args.title,
         p_starts_at: args.startsAt,
         p_requirements: args.requirements,
         p_request_id: args.requestId,
+        p_expected_character_id: args.characterId,
       }),
     ),
-  respondToEvent: async (args: { requirementId: string; requestId: string }) =>
+  respondToEvent: async (args: { requirementId: string; requestId: string; characterId: string }) =>
     unwrap(
-      await db.rpc("respond_to_event", {
+      await db.rpc("respond_to_event_for_character", {
         p_requirement_id: args.requirementId,
         p_request_id: args.requestId,
+        p_expected_character_id: args.characterId,
       }),
     ),
 };
