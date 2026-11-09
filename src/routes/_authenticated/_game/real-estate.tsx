@@ -152,10 +152,15 @@ export function RealEstatePage() {
           : `Your ${tier.label} rental is confirmed.${refund}`,
       );
     },
-    onError: (error: Error) => {
+    onError: async (error: Error) => {
       setActionError(error.message);
-      void rentQuery.refetch();
-      void ownedQuery.refetch();
+      await Promise.all([
+        rentQuery.refetch(),
+        ownedQuery.refetch(),
+        queryClient.invalidateQueries({ queryKey: ["canonicalHousingHome"] }),
+        queryClient.invalidateQueries({ queryKey: ["authoritativeHouseState"] }),
+        queryClient.invalidateQueries({ queryKey: ["housingMapProperties"] }),
+      ]);
     },
   });
 
