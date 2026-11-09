@@ -281,8 +281,8 @@ export function CityMapDashboard({
     setTravelError(null);
     if (character.data?.inside_home_property_id) {
       // Leaving a house plays the door first; the house screen runs the trip alongside it.
-      if (!character.data?.id) {
-        setTravelError("Your active character could not be confirmed. Refresh and try again.");
+      if (!character.data?.id || !character.data.current_location_id) {
+        setTravelError("Your active character and current location could not be confirmed. Refresh and try again.");
         travelSubmitLock.current = false;
         return;
       }
@@ -290,6 +290,7 @@ export function CityMapDashboard({
         locationId: selectedDestination.id,
         mode,
         characterId: character.data.id,
+        fromLocationId: character.data.current_location_id,
       });
       void navigate({ to: "/house" })
         .catch(() => clearPendingDepartureFromHome(departure))
