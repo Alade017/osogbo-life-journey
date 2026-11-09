@@ -181,3 +181,12 @@ The pedestrian route generator produces 30 independent sidewalk runs and 120 way
 This confirms the base grid has distributed short walking runs, but does not establish final runtime coverage: roadside props reserve additional nearby grass cells and can split or remove runs. The new regression assertion pins the authored-grid baseline so future road or plot edits surface an intentional coverage change. It does not guarantee 30 pedestrians after prop clearance, nor that routes connect across intersections. Dynamic route stitching and crossing behaviour remain separate design work.
 
 Live checks still need to verify NPC distribution, route visibility and crowding at desktop and 375px mobile widths. No local tests, typecheck, lint or production build were run; GitHub Actions remain untouched.
+
+
+## Sidewalk intersection connectivity decision
+
+The authored-grid baseline is composed of short independent straight runs (14 runs of 3 waypoints, 5 of 4, 8 of 5 and 3 of 6). These routes currently reverse at their endpoints. Although some endpoints occur near perpendicular sidewalk runs, the current waypoint format does not encode curb-corner geometry or a verified walkable connector. Joining endpoints with a straight segment would risk cutting across the road intersection or clipping the curb. No speculative connector was added.
+
+The route-length distribution is now asserted in the mobility tests so changes to the authored street grid make coverage changes explicit. A proper continuous pedestrian network should be implemented from explicit sidewalk-corner/connector data, with blocked-prop clearance applied to connector cells as well as straight runs. That is a separate geometry/data task and needs live scene validation before NPCs use it.
+
+Runtime routes after roadside-prop reservations and the final NPC count remain unmeasured. No local tests, typecheck, lint, build or browser QA were run; GitHub Actions remain untouched.
