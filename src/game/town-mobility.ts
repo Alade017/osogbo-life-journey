@@ -74,7 +74,7 @@ export function deriveTownMobilityRoutes(
 export function deriveTownPedestrianRoutes(
   rows: readonly string[],
   cellSize: number,
-  blockedCells: readonly (readonly [number, number])[] = [],
+  blockedCells: readonly (readonly [number, number])[],
   sidewalkWidth = cellSize * 0.28,
 ): TownMobilityRoute[] {
   const columnCount = Math.max(0, ...rows.map((row) => row.length));
@@ -145,7 +145,7 @@ export function deriveTownPedestrianRoutes(
 export function deriveTownPedestrianCornerRoutes(
   rows: readonly string[],
   cellSize: number,
-  blockedCells: readonly (readonly [number, number])[],
+  blockedCells: readonly (readonly [number, number])[] = [],
   sidewalkWidth = cellSize * 0.28,
 ): TownMobilityRoute[] {
   const columnCount = Math.max(0, ...rows.map((row) => row.length));
