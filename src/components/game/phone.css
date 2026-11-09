@@ -3971,3 +3971,149 @@
 .phone-app-body .career-learning-app[data-phone-mode] .learning-course button {
   width: 100%;
 }
+
+/* Activity catalogue in the phone: a clear header, filter chips, and one card per activity. */
+.phone-app-body .activity-catalogue {
+  display: grid;
+  gap: 12px;
+}
+.phone-app-body .activity-hero {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+.phone-app-body .activity-hero h2 {
+  font-size: 1.05rem;
+  margin: 0;
+}
+.phone-app-body .activity-hero p {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  margin: 2px 0 0;
+}
+.phone-app-body .activity-clock {
+  background: var(--muted);
+  border-radius: 999px;
+  color: var(--muted-foreground);
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  padding: 5px 10px;
+  white-space: nowrap;
+}
+.phone-app-body .activity-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.phone-app-body .activity-chip {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--card-foreground);
+  font-size: 0.78rem;
+  padding: 6px 12px;
+}
+.phone-app-body .activity-chip[aria-pressed="true"] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+}
+.phone-app-body .activity-list {
+  display: grid;
+  gap: 10px;
+}
+.phone-app-body .activity-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card, 14px);
+  box-shadow: var(--elevation-card);
+  color: var(--card-foreground);
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+}
+.phone-app-body .activity-card-top {
+  align-items: flex-start;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+.phone-app-body .activity-card-title {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.phone-app-body .activity-card-title h3 {
+  font-size: 0.95rem;
+  margin: 0;
+}
+.phone-app-body .activity-tag {
+  background: var(--muted);
+  border-radius: 999px;
+  color: var(--muted-foreground);
+  font-size: 0.68rem;
+  padding: 2px 8px;
+}
+.phone-app-body .activity-desc {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  margin: 0;
+}
+.phone-app-body .activity-duration {
+  color: var(--muted-foreground);
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+.phone-app-body .activity-meta {
+  color: var(--muted-foreground);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  gap: 4px 12px;
+}
+.phone-app-body .activity-note {
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+  margin: 0;
+}
+.phone-app-body .activity-blocked {
+  color: var(--destructive);
+  font-size: 0.78rem;
+  margin: 0;
+}
+.phone-app-body .activity-action {
+  margin-top: 4px;
+  width: 100%;
+}
+.phone-app-body .activity-history {
+  display: grid;
+  gap: 8px;
+}
+.phone-app-body .activity-history h3 {
+  margin: 0;
+}
+.phone-app-body .activity-history-list {
+  display: grid;
+  gap: 6px;
+}
+.phone-app-body .activity-history-row {
+  align-items: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: flex;
+  font-size: 0.78rem;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 10px 12px;
+}
+.phone-app-body .activity-history-row strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
