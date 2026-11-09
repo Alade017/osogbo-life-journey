@@ -44,7 +44,8 @@ beforeAll(async () => {
       (file) =>
         file.endsWith(".sql") &&
         !file.startsWith("0075_") &&
-        file !== "0077_market_stall_rent_categories_sales.sql",
+        file !== "0077_market_stall_rent_categories_sales.sql" &&
+        file !== "0079_free_house_placement.sql",
     )
     .sort();
   for (const file of migrationFiles) {
