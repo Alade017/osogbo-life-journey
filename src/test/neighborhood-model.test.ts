@@ -4,6 +4,7 @@ import { OSOGBO_WORLD_NODES, cityEntranceForLocation } from "@/lib/city-world";
 import {
   neighborhoodAreaForSlug,
   neighborhoodAreaForLocation,
+  nearbyInteractionPoint,
   neighborhoodAreaOrigin,
   neighborhoodOrigin,
   nearestInteraction,
@@ -177,6 +178,17 @@ describe("neighborhood coordinates and interaction", () => {
     expect(area.interactionPoints).toEqual([
       { id: "oja-oba-market", x: 145, y: 220, radius: 60 },
     ]);
+  });
+  it("checks landmark proximity against server-owned anchors, not caller coordinates", () => {
+    const area = neighborhoodAreaForLocation({ slug: "town-market", name: "Town Market", map_category: "commercial" });
+    const target = area.interactionPoints?.[0];
+    expect(target?.id).toBe("town-market");
+    const origin = { x: 7, y: 6 };
+    const atAnchor = toWorld({ x: target!.x, y: target!.y }, origin);
+    expect(nearbyInteractionPoint(atAnchor, origin, area, target!.id)).toEqual(target);
+    const outsideRadius = toWorld({ x: target!.x + target!.radius + 1, y: target!.y }, origin);
+    expect(nearbyInteractionPoint(outsideRadius, origin, area, target!.id)).toBeNull();
+    expect(nearbyInteractionPoint(atAnchor, origin, area, "client-invented-landmark")).toBeNull();
   });
   it("only offers interaction within reach and picks the closest target", () => {
     const area = neighborhoodAreaForSlug("city-centre");
