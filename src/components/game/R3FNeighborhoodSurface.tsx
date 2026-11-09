@@ -298,11 +298,37 @@ function NeighborhoodNpcActor({
     } else if (waypointIndex.current < activeWaypoints.length - 1) {
       waypointIndex.current += 1;
     } else {
-      actor.position.x = target[0];
-      actor.position.z = target[2];
-      if (arrivedTarget.current !== targetKey) {
-        arrivedTarget.current = targetKey;
-        onArrive();
+      const finalWaypoint = activeWaypoints[activeWaypoints.length - 1];
+      const routeReachesTarget =
+        !!finalWaypoint &&
+        Math.hypot(finalWaypoint[0] - target[0], finalWaypoint[2] - target[2]) <= 0.035;
+      if (routeReachesTarget) {
+        actor.position.x = target[0];
+        actor.position.z = target[2];
+        if (arrivedTarget.current !== targetKey) {
+          arrivedTarget.current = targetKey;
+          onArrive();
+        }
+      } else {
+        // A one-point hold route means static geometry or reservations made
+        // the destination unreachable. Never snap across the map to it.
+        blockedDuration.current += Math.min(delta, 0.1);
+        if (blockedDuration.current >= replanDelay) {
+          const rerouted = neighborhoodNpcPathWithFallback(
+            { x: actor.position.x, y: actor.position.z },
+            { x: target[0], y: target[2] },
+            occupiedFootprints,
+            sceneBounds,
+            reservedPaths,
+          );
+          if (rerouted?.length) {
+            routeWaypoints.current = rerouted.map(
+              (point) => [point.x, 0, point.y] as [number, number, number],
+            );
+            waypointIndex.current = 0;
+          }
+          blockedDuration.current = 0;
+        }
       }
     }
     const phase = state.clock.elapsedTime * (walking ? 7 : 2.2);
