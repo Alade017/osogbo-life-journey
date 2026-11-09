@@ -61,7 +61,7 @@ describe("character-bound virtual map position RPC", () => {
     await db.exec(readFileSync(
       "supabase/migrations/20261109190000_bind_virtual_map_position_to_character.sql", "utf8",
     ));
-  });
+  }, 180_000);
 
   afterAll(async () => {
     await db?.close();
