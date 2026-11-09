@@ -130,6 +130,31 @@ describe("neighborhood NPC spawn distribution", () => {
     ).toBe(false);
   });
 
+  it("keeps every returned path segment clear of obstacle footprints", () => {
+    const start = { x: 0, y: 0 };
+    const destination = { x: 200, y: 0 };
+    const obstacle = { left: 70, top: -30, width: 60, height: 60 };
+    const route = neighborhoodNpcPath(start, destination, [obstacle]);
+    expect(route).not.toBeNull();
+    const points = [start, ...route!];
+    for (let segment = 1; segment < points.length; segment += 1) {
+      const from = points[segment - 1]!;
+      const to = points[segment]!;
+      const samples = Math.max(1, Math.ceil(Math.hypot(to.x - from.x, to.y - from.y) / 8));
+      for (let sample = 0; sample <= samples; sample += 1) {
+        const progress = sample / samples;
+        const x = from.x + (to.x - from.x) * progress;
+        const y = from.y + (to.y - from.y) * progress;
+        expect(
+          x >= obstacle.left - 22 &&
+          x <= obstacle.left + obstacle.width + 22 &&
+          y >= obstacle.top - 22 &&
+          y <= obstacle.top + obstacle.height + 22,
+        ).toBe(false);
+      }
+    }
+  });
+
   it("returns null when no route exists inside the scene bounds", () => {
     const route = neighborhoodNpcPath(
       { x: NEIGHBORHOOD_SCENE_BOUNDS.left + 20, y: 0 },
