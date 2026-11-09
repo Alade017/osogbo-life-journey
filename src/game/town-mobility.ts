@@ -37,10 +37,10 @@ export function deriveTownMobilityRoutes(
             (z - (rowCount - 1) / 2) * cellSize,
           ];
           routes.push([
-            toWorld(left + 0.5 + laneOffset / cellSize, top + 0.5 + laneOffset / cellSize),
-            toWorld(right + 0.5 - laneOffset / cellSize, top + 0.5 + laneOffset / cellSize),
-            toWorld(right + 0.5 - laneOffset / cellSize, bottom + 0.5 - laneOffset / cellSize),
-            toWorld(left + 0.5 + laneOffset / cellSize, bottom + 0.5 - laneOffset / cellSize),
+            toWorld(left + laneOffset / cellSize, top + laneOffset / cellSize),
+            toWorld(right - laneOffset / cellSize, top + laneOffset / cellSize),
+            toWorld(right - laneOffset / cellSize, bottom - laneOffset / cellSize),
+            toWorld(left + laneOffset / cellSize, bottom - laneOffset / cellSize),
           ]);
         }
       }
