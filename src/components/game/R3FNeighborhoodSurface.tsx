@@ -23,7 +23,7 @@ import {
   type NeighborhoodObject,
 } from "@/game/neighborhood-model";
 import { neighborhoodBuildingFootprint, neighborhoodObstacleFootprint } from "@/game/neighborhood-geometry";
-import { neighborhoodNpcAvoidanceBias, neighborhoodNpcAvoidanceStep, neighborhoodNpcPathWithFallback, neighborhoodNpcReplanDelay, neighborhoodNpcReservationPath, neighborhoodNpcYieldPoint } from "@/game/neighborhood-npc-layout";
+import { neighborhoodNpcAvoidanceBias, neighborhoodNpcAvoidanceStep, neighborhoodNpcPathWithFallback, NEIGHBORHOOD_NPC_ACTOR_SEPARATION, neighborhoodNpcReplanDelay, neighborhoodNpcReservationPath, neighborhoodNpcYieldPoint } from "@/game/neighborhood-npc-layout";
 import {
   WorldCamera,
   WorldCars,
@@ -147,6 +147,7 @@ function NeighborhoodNpcActor({
   const replanBackoff = useRef(replanDelay);
   const avoidanceBias = neighborhoodNpcAvoidanceBias(npc.id);
   const pauseSnapshotSaved = useRef(false);
+  const yieldState = useRef<{ otherId: string; point: { x: number; y: number } } | null>(null);
   const syncRouteReservation = useCallback(() => {
     if (!npc.isMoving || npc.isPaused) {
       actorRoutes.current.delete(npc.id);
@@ -272,6 +273,7 @@ function NeighborhoodNpcActor({
 
   useFrame((state, delta) => {
     const retryRoute = (actor: Group) => {
+      yieldState.current = null;
       const rerouted = neighborhoodNpcPathWithFallback(
         { x: actor.position.x, y: actor.position.z },
         { x: target[0], y: target[2] },
@@ -317,22 +319,46 @@ function NeighborhoodNpcActor({
       ];
       const currentPoint = { x: actor.position.x, y: actor.position.z };
       const routeWaypoint = { x: waypoint[0], y: waypoint[2] };
-      const yieldingPoint = [...actorRoutes.current.entries()]
-        .sort(([leftId], [rightId]) => leftId.localeCompare(rightId))
-        .reduce<
-        { x: number; y: number } | null
-      >((selected, [otherId, path]) => {
-        if (selected || path.length < 2) return selected;
-        const otherPosition = actorPositions.current.get(otherId) ?? path[0];
-        return neighborhoodNpcYieldPoint(
-          npc.id,
-          otherId,
-          currentPoint,
-          routeWaypoint,
-          otherPosition,
-          path[1],
-        );
-      }, null);
+      const liveRoutes = [...actorRoutes.current.entries()]
+        .sort(([leftId], [rightId]) => leftId.localeCompare(rightId));
+      let yieldingPoint: { x: number; y: number } | null = null;
+      if (yieldState.current) {
+        const opposingPath = actorRoutes.current.get(yieldState.current.otherId);
+        const opposingPosition = actorPositions.current.get(yieldState.current.otherId) ??
+          opposingPath?.[0];
+        if (
+          !opposingPath ||
+          opposingPath.length < 2 ||
+          !opposingPosition ||
+          Math.hypot(
+            currentPoint.x - opposingPosition.x,
+            currentPoint.y - opposingPosition.y,
+          ) > NEIGHBORHOOD_NPC_ACTOR_SEPARATION * 4.5
+        ) {
+          yieldState.current = null;
+        } else {
+          yieldingPoint = yieldState.current.point;
+        }
+      }
+      if (!yieldingPoint) {
+        for (const [otherId, path] of liveRoutes) {
+          if (path.length < 2) continue;
+          const otherPosition = actorPositions.current.get(otherId) ?? path[0];
+          const candidate = neighborhoodNpcYieldPoint(
+            npc.id,
+            otherId,
+            currentPoint,
+            routeWaypoint,
+            otherPosition,
+            path[1],
+          );
+          if (candidate) {
+            yieldState.current = { otherId, point: candidate };
+            yieldingPoint = candidate;
+            break;
+          }
+        }
+      }
       const yieldDistance = yieldingPoint
         ? Math.hypot(yieldingPoint.x - actor.position.x, yieldingPoint.y - actor.position.z)
         : 0;
