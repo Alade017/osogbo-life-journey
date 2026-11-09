@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deriveTownMobilityRoutes, deriveTownPedestrianCornerRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells } from "@/game/town-mobility";
+import { deriveTownMobilityRoutes, deriveTownPedestrianCornerRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells, stitchTownPedestrianRoutes } from "@/game/town-mobility";
 import town from "@/data/osogbo-town.json";
 
 describe("town mobility routes", () => {
@@ -163,5 +163,42 @@ describe("town pedestrian routes", () => {
 
     expect(routes).toHaveLength(4);
     expect(routes.every((route) => route.length === 4)).toBe(true);
+  });
+});
+
+
+describe("stitched pedestrian sidewalk network", () => {
+  it("joins straight runs through a shared corner connector without losing geometry", () => {
+    const routes = stitchTownPedestrianRoutes([
+      [[-2, -0.72], [0, -0.72]],
+      [[0, -0.72], [0.72, -0.72], [0.72, -2]],
+    ]);
+
+    expect(routes).toEqual([
+      [[-2, -0.72], [0, -0.72], [0.72, -0.72], [0.72, -2]],
+    ]);
+  });
+
+  it("splits at junction branches instead of arbitrarily routing through them", () => {
+    const routes = stitchTownPedestrianRoutes([
+      [[-1, 0], [0, 0]],
+      [[0, 0], [1, 0]],
+      [[0, 0], [0, 1]],
+    ]);
+
+    expect(routes).toHaveLength(3);
+    expect(routes.every((route) => route.length === 2)).toBe(true);
+  });
+
+  it("retains every valid segment exactly once", () => {
+    const input = [
+      [[0, 0], [1, 0], [2, 0]],
+      [[2, 0], [2, 1], [2, 2]],
+    ] as const;
+    const output = stitchTownPedestrianRoutes(input);
+    const segmentCount = output.reduce((sum, route) => sum + route.length - 1, 0);
+
+    expect(segmentCount).toBe(4);
+    expect(output).toHaveLength(1);
   });
 });
