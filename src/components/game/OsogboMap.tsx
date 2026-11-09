@@ -56,6 +56,7 @@ export function OsogboMap({ onMapReady, onSelectDistrict, onSelectLandmark }: Os
   const pendingPositionSaveRef = useRef<{
     location: NonNullable<typeof virtualPlayer>;
     movementStatus: "idle" | "walking";
+    characterId: string;
   } | null>(null);
   const positionSaveInFlightRef = useRef(false);
   const [isMoving, setIsMoving] = useState(false);
@@ -64,6 +65,8 @@ export function OsogboMap({ onMapReady, onSelectDistrict, onSelectLandmark }: Os
   const lastPositionRef = useRef(virtualPlayer);
   lastPositionRef.current = virtualPlayer;
   const { data: character } = useQuery(q.character());
+  const activeCharacterIdRef = useRef<string | null>(character?.id ?? null);
+  activeCharacterIdRef.current = character?.id ?? null;
   const { data: currentLocation } = useQuery(
     q.locationById(character?.current_location_id ?? null),
   );
@@ -100,8 +103,9 @@ export function OsogboMap({ onMapReady, onSelectDistrict, onSelectLandmark }: Os
 
   const savePosition = useCallback(
     (location: NonNullable<typeof virtualPlayer>, movementStatus: "idle" | "walking") => {
-      if (location.latitude === null || location.longitude === null) return;
-      pendingPositionSaveRef.current = { location, movementStatus };
+      const characterId = activeCharacterIdRef.current;
+      if (!characterId || location.latitude === null || location.longitude === null) return;
+      pendingPositionSaveRef.current = { location, movementStatus, characterId };
       if (positionSaveInFlightRef.current) return;
       positionSaveInFlightRef.current = true;
       void (async () => {
@@ -113,10 +117,16 @@ export function OsogboMap({ onMapReady, onSelectDistrict, onSelectLandmark }: Os
               latitude: pending.location.latitude!,
               longitude: pending.location.longitude!,
               movementState: pending.movementStatus,
+              characterId: pending.characterId,
             });
             lastSavedAtRef.current = Date.now();
           } catch (error) {
-            if (!pendingPositionSaveRef.current) pendingPositionSaveRef.current = pending;
+            if (
+              !pendingPositionSaveRef.current &&
+              activeCharacterIdRef.current === pending.characterId
+            ) {
+              pendingPositionSaveRef.current = pending;
+            }
             console.error("Could not save virtual player position", error);
             break;
           }
