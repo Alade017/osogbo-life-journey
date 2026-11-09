@@ -35,18 +35,8 @@ describe("map travel database actions", () => {
         id uuid primary key default gen_random_uuid(), user_id uuid not null,
         wallet_id uuid not null, character_id uuid not null, amount bigint not null,
         kind text not null, category text not null, description text not null,
+        transaction_type text, account text, source text, destination text, balance_after bigint,
         metadata jsonb not null default '{}'::jsonb
-      );
-      create table public.osun_towns(id text primary key, name text not null, travel_enabled boolean not null default true);
-      create table public.osun_town_routes(
-        from_town_id text not null, to_town_id text not null, fare_minor bigint not null,
-        travel_minutes integer not null, primary key(from_town_id,to_town_id)
-      );
-      create table public.osun_town_travels(
-        id uuid primary key, user_id uuid not null, character_id uuid not null,
-        idempotency_key text not null, from_town_id text not null, to_town_id text not null,
-        fare_minor bigint not null, travel_minutes integer not null, departed_at timestamptz not null default now(),
-        arrival_at timestamptz not null, status text not null default 'travelling', response jsonb not null
       );
       create table public.activities(
         id uuid primary key default gen_random_uuid(), name text not null,
@@ -103,6 +93,9 @@ describe("map travel database actions", () => {
         values ('${walletId}','${userId}','${characterId}',5000);
     `);
     await db.exec(readFileSync("drizzle/migrations/0037_map_api_travel.sql", "utf8"));
+    await db.exec(readFileSync("supabase/migrations/202610170014_ede_town_travel.sql", "utf8"));
+    await db.exec(readFileSync("supabase/migrations/202610170015_town_travel_arrival.sql", "utf8"));
+    await db.exec(readFileSync("supabase/migrations/20261109160000_bind_travel_to_canonical_character.sql", "utf8"));
     await db.exec(readFileSync("supabase/migrations/20261109160000_bind_travel_to_canonical_character.sql", "utf8"));
   }, 60_000);
 
@@ -186,6 +179,41 @@ describe("map travel database actions", () => {
       [walletId,newestWalletId],
     );
     expect(balances.rows.find((row) => row.character_id === newestCharacterId)?.balance).toBe(4700);
+    expect(balances.rows.find((row) => row.character_id === characterId)?.balance).toBe(4700);
+  });
+
+  it("binds inter-town travel to the newest character", async () => {
+    const newestCharacterId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+    const newestWalletId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
+    await db.query(
+      `insert into public.characters(id,user_id,age,current_location_id,created_at)
+       values($1,$2,30,(select id from public.locations where slug='city-centre'),now()+interval '2 minutes')`,
+      [newestCharacterId, userId],
+    );
+    await db.query(
+      "insert into public.wallets(id,user_id,character_id,balance) values($1,$2,$3,5000)",
+      [newestWalletId,userId,newestCharacterId],
+    );
+    const result = await db.query<{ result: Record<string, unknown> }>(
+      "select public.start_osun_town_travel($1,'ede',$2) as result",
+      [userId,"newest-character-town-trip-01"],
+    );
+    const trip = await db.query<{ character_id: string }>(
+      "select character_id from public.osun_town_travels where idempotency_key=$1",
+      ["newest-character-town-trip-01"],
+    );
+    expect(trip.rows[0]?.character_id).toBe(newestCharacterId);
+    expect(result.rows[0]?.result).toMatchObject({
+      from_town_id: "osogbo",
+      to_town_id: "ede",
+      fare: 1200,
+      status: "travelling",
+    });
+    const balances = await db.query<{ balance: number; character_id: string }>(
+      "select balance,character_id from public.wallets where id in ($1,$2) order by character_id",
+      [walletId,newestWalletId],
+    );
+    expect(balances.rows.find((row) => row.character_id === newestCharacterId)?.balance).toBe(3800);
     expect(balances.rows.find((row) => row.character_id === characterId)?.balance).toBe(4700);
   });
 
