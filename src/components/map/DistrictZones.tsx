@@ -25,8 +25,8 @@ export function DistrictZones({
   const boundarySegments: WorldInstance[] = districts.flatMap((district): WorldInstance[] => {
     const area = district.gridArea;
     const [centerX, , centerZ] = point(
-      area.x + area.width / 2 - 0.5,
-      area.z + area.depth / 2 - 0.5,
+      area.x + area.width / 2,
+      area.z + area.depth / 2,
     );
     const halfWidth = (area.width * cell) / 2;
     const halfDepth = (area.depth * cell) / 2;
@@ -46,7 +46,7 @@ export function DistrictZones({
       <WorldInstances items={boundarySegments} tone="timber" />
       {districts.map((district) => {
         const a = district.gridArea;
-        const [cx, , cz] = point(a.x + a.width / 2 - 0.5, a.z + a.depth / 2 - 0.5);
+        const [cx, , cz] = point(a.x + a.width / 2, a.z + a.depth / 2);
         const tint = DISTRICT_TINTS[district.theme] ?? DISTRICT_FALLBACK;
         return (
           <group key={district.id}>
