@@ -36,14 +36,16 @@ describe("character-bound local travel RPC", () => {
           where user_id=auth.uid()
           order by created_at desc,id desc limit 1
         $$;
+      create table public.travel_calls(id bigint generated always as identity, character_id uuid not null);
       create function public.travel_to_location(p_location_id uuid,p_mode text)
         returns jsonb language plpgsql security definer set search_path=public
-        as $$
+        as $
         declare cid uuid:=public._my_character_id();
         begin
+          insert into public.travel_calls(character_id) values(cid);
           return jsonb_build_object('character_id',cid,'location_id',p_location_id,'mode',p_mode);
         end
-        $$;
+        $;
       select set_config('request.jwt.claim.sub','${userId}',false);
     `);
     await db.exec(
@@ -74,6 +76,10 @@ describe("character-bound local travel RPC", () => {
         [destinationId, oldCharacterId],
       ),
     ).rejects.toThrow(/CHARACTER_CHANGED/);
+    const { rows } = await db.query<{ count: number }>(
+      "select count(*)::int as count from public.travel_calls",
+    );
+    expect(rows[0]?.count).toBe(1);
   });
 
   it("removes the direct client entry point and grants only the bound wrapper", async () => {
