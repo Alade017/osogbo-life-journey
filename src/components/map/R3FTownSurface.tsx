@@ -829,8 +829,8 @@ export function R3FTownSurface(props: Props) {
     });
 
     streetLights.forEach(([x, z]) => {
-      const gridX = Math.round(x / cell + 11.5 - 0.5);
-      const gridZ = Math.round(z / cell + 8.5 - 0.5);
+      const gridX = Math.round(x / cell + (gridCols - 1) / 2 - 0.5);
+      const gridZ = Math.round(z / cell + (gridRows - 1) / 2 - 0.5);
       occupied.add(`${gridX},${gridZ}`);
     });
 
