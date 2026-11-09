@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows, OrbitControls, Text } from "@react-three/drei";
-import { Object3D, Vector3, type InstancedMesh, type PerspectiveCamera, type Texture } from "three";
+import { Color, Object3D, Vector3, type InstancedMesh, type PerspectiveCamera, type Texture } from "three";
 import type { OrbitControls as Controls } from "three-stdlib";
 import { getDistrictArchitecture, getPitchedRoofPanel } from "../../game/district-architecture";
 import {
@@ -160,6 +160,7 @@ export type WorldInstance = {
   position: [number, number, number];
   scale?: [number, number, number];
   rotation?: number;
+  color?: string;
 };
 export function WorldInstances({
   items,
@@ -189,8 +190,10 @@ export function WorldInstances({
       animate(animatedObject, index, clock.elapsedTime);
       animatedObject.updateMatrix();
       mesh.current!.setMatrixAt(index, animatedObject.matrix);
+      mesh.current!.setColorAt(index, new Color(item.color ?? "#ffffff"));
     });
     mesh.current.instanceMatrix.needsUpdate = true;
+    if (mesh.current.instanceColor) mesh.current.instanceColor.needsUpdate = true;
     mesh.current.computeBoundingSphere();
   });
   useLayoutEffect(() => {
@@ -202,6 +205,7 @@ export function WorldInstances({
       object.rotation.set(0, item.rotation ?? 0, 0);
       object.updateMatrix();
       mesh.current!.setMatrixAt(index, object.matrix);
+      mesh.current!.setColorAt(index, new Color(item.color ?? "#ffffff"));
     });
     mesh.current.instanceMatrix.needsUpdate = true;
     mesh.current.computeBoundingSphere();
@@ -901,6 +905,7 @@ export type WorldTree = {
   position: [number, number];
   height: number;
   canopyScale: number;
+  canopyColor?: string;
 };
 
 export function WorldTrees({ positions }: { positions: readonly WorldTree[] }) {
@@ -924,6 +929,7 @@ export function WorldTrees({ positions }: { positions: readonly WorldTree[] }) {
         items={positions.map((tree) => ({
           position: [tree.position[0], h * tree.height * 1.18, tree.position[1]],
           scale: [h * tree.canopyScale, h * tree.canopyScale * 1.12, h * tree.canopyScale],
+          color: tree.canopyColor,
         }))}
       />
     </>
