@@ -415,11 +415,12 @@ function NeighborhoodNpcActor({
         // The actor has reached its clear side pocket; wait for the opposing
         // journey to pass before resuming the original route.
         blockedDuration.current = 0;
-      } else if (Math.hypot(movedX, movedZ) <= 0.0001) {
+      } else if (
+        Math.hypot(next.x - waypoint[0], next.y - waypoint[2]) >= distance - 0.002
+      ) {
+        // Count time without route progress, not merely frames without motion:
+        // lateral sidesteps in a dense crowd must not reset deadlock recovery.
         blockedDuration.current += Math.min(delta, 0.1);
-        // A live actor can occupy a narrow waypoint indefinitely. After a
-        // sustained wait, advance to the next already-validated route waypoint.
-        // Each actual movement step still passes obstacle and boundary checks.
         if (blockedDuration.current >= replanBackoff.current) {
           const escape = neighborhoodNpcCrowdRecoveryPoint(
             currentPoint,
