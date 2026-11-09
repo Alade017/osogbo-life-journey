@@ -17,7 +17,7 @@ export interface LockedPlaces3DProps {
   cellSize: number;
   gridCols: number;
   gridRows: number;
-  onSelectLocked?: (place: LockedPlace) => void;
+  onSelectLocked?: (place: LockedPlace) => boolean | void;
 }
 
 /**
@@ -147,8 +147,8 @@ export const LockedPlaces3D: FC<LockedPlaces3DProps> = ({
             isLocked={true}
             lockReason={site.reason}
             onClick={() => {
-              setActiveModal(site);
-              onSelectLocked?.(site);
+              const accepted = onSelectLocked?.(site);
+              if (accepted !== false) setActiveModal(site);
             }}
           />
         </group>
