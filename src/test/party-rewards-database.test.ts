@@ -64,6 +64,7 @@ beforeAll(async () => {
     "20261026162243_party_host_reputation.sql",
     "20261109130000_bind_party_dance_to_character.sql",
     "20261109140000_bind_party_mutations_to_character.sql",
+    "20261109150000_canonical_active_character.sql",
   ])
     await db.exec(readFileSync(`supabase/migrations/${file}`, "utf8"));
   await db.exec(`create table test_party_clock(stamp timestamptz);insert into test_party_clock values('2026-10-26T12:00:00Z');
@@ -119,6 +120,28 @@ afterAll(async () => {
   await db?.close();
 });
 describe("party rewards SQL", () => {
+  it("selects the newest character deterministically when an account has multiple characters", async () => {
+    await user(0);
+    const tiedCharacterId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+    await db.query(
+      "insert into public.characters(id,user_id,name,gender,age,personality,created_at) values($1,$2,'Second player','female',22,'creative','2026-10-26T00:00:00Z')",
+      [tiedCharacterId, users[0]],
+    );
+    await db.query(
+      "update public.characters set created_at='2026-10-26T00:00:00Z' where user_id=$1",
+      [users[0]],
+    );
+    const selected = await db.query<{ id: string }>(
+      "select public._my_character_id()::text id",
+    );
+    const expected = await db.query<{ id: string }>(
+      "select id::text from public.characters where user_id=$1 order by created_at desc,id desc limit 1",
+      [users[0]],
+    );
+    expect(selected.rows[0]?.id).toBe(expected.rows[0]?.id);
+    expect(selected.rows[0]?.id).toBe(tiedCharacterId);
+  });
+
   it("rejects an in-flight party dance when the active character changed", async () => {
     const differentCharacterId = "77777777-7777-4777-8777-777777777777";
     await user(0);
