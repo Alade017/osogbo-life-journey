@@ -48,7 +48,7 @@ beforeAll(async () => {
     )
     .sort();
   for (const file of migrationFiles) {
-if (file === "0083_studio_room_layout.sql") {
+    if (file === "0083_studio_room_layout") {
       // The studio layout migration depends on x/y columns from this Supabase migration.
       await db.exec(
         readFileSync(
@@ -57,7 +57,7 @@ if (file === "0083_studio_room_layout.sql") {
         ),
       );
     }
-        await db.exec(readFileSync(`drizzle/migrations/${file}`, "utf8").replace(/^\uFEFF/, ""));
+      await db.exec(readFileSync(`drizzle/migrations/${file}`, "utf8").replace(/^\uFEFF/, ""));
   }
   await db.exec(
     readFileSync("supabase/migrations/20261027104102_stall_passive_income.sql", "utf8"),
