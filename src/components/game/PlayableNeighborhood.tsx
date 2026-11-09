@@ -323,14 +323,14 @@ export function PlayableNeighborhood() {
     [actionAnimation, players, sessionId],
   );
   const activeNpcs = useMemo((): NeighborhoodNpcView[] => {
-    if (!currentLocation || !npcQuery.data || !locationsQuery.data) return [];
+    if (!currentLocation || !district || !npcQuery.data || !locationsQuery.data) return [];
     const savedNpcIds = new Set(npcQuery.data.map((npc) => npc.id));
     const slots = area.objects.filter((object) => object.kind === "npc");
     const occupiedFootprints = [
       ...area.objects.filter((object) => object.kind !== "npc").map(neighborhoodBuildingFootprint),
       ...(area.obstacles ?? []).map(neighborhoodObstacleFootprint),
     ];
-    const sceneBounds = neighborhoodSceneBounds(district?.origin ?? { x: 7, y: 6 });
+    const sceneBounds = neighborhoodSceneBounds(district.origin);
     const occupiedSpawnPoints: Array<{ x: number; y: number }> = [];
     const occupiedDestinationPoints: Array<{ x: number; y: number }> = [];
     const scheduled = NPC_CATALOG.flatMap((npc, catalogIndex) => {
@@ -408,6 +408,7 @@ export function PlayableNeighborhood() {
     area.objects,
     area.obstacles,
     currentLocation,
+    district,
     locationsQuery.data,
     currentNpcPositionOverrides,
     npcQuery.data,
