@@ -138,11 +138,20 @@ function segmentsIntersect(
 ): boolean {
   const cross = (p: NpcPoint, q: NpcPoint, r: NpcPoint) =>
     (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x);
+  const onSegment = (p: NpcPoint, q: NpcPoint, r: NpcPoint) =>
+    q.x >= Math.min(p.x, r.x) &&
+    q.x <= Math.max(p.x, r.x) &&
+    q.y >= Math.min(p.y, r.y) &&
+    q.y <= Math.max(p.y, r.y);
   const abC = cross(a, b, c);
   const abD = cross(a, b, d);
   const cdA = cross(c, d, a);
   const cdB = cross(c, d, b);
-  return abC * abD <= 0 && cdA * cdB <= 0;
+  if (abC === 0 && onSegment(a, c, b)) return true;
+  if (abD === 0 && onSegment(a, d, b)) return true;
+  if (cdA === 0 && onSegment(c, a, d)) return true;
+  if (cdB === 0 && onSegment(c, b, d)) return true;
+  return (abC > 0) !== (abD > 0) && (cdA > 0) !== (cdB > 0);
 }
 
 function overlapsReservedPaths(
