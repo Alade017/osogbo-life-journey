@@ -110,9 +110,13 @@ function WaterBottle({ liquid = "#bfe6f7", cap = "#2b6fb3" }: { liquid?: string;
         {pbr("#d7e7df", 0.8)}
       </mesh>
       {/* Molded grip rings and a tamper-evident cap. */}
-      {[0.16, 1.08, 1.15].map((y) => (
+      {[
+        { y: 0.16, radius: 0.43 },
+        { y: 1.02, radius: 0.44 },
+        { y: 1.28, radius: 0.28 },
+      ].map(({ y, radius }) => (
         <mesh key={y} position={[0, y, 0]} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[y < 0.2 ? 0.43 : 0.31, 0.018, 6, 32]} />
+          <torusGeometry args={[radius, 0.018, 6, 32]} />
           {pbr("#a9d5e8", 0.28)}
         </mesh>
       ))}
