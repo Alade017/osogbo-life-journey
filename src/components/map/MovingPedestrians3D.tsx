@@ -80,13 +80,11 @@ export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({ paths }) => 
 
 function PedestrianCharacter({
   npc,
-  cellSize,
   onInteract,
   isSpeaking,
   speechText,
 }: {
   npc: NpcConfig;
-  cellSize: number;
   onInteract: (text: string) => void;
   isSpeaking: boolean;
   speechText?: string | undefined;
@@ -108,7 +106,7 @@ function PedestrianCharacter({
     const dz = p2[1] - p1[1];
     const segmentLength = Math.hypot(dx, dz);
 
-    progress.current += (speed * delta * cellSize * 3) / Math.max(segmentLength, 0.1);
+    progress.current += (speed * delta * 6) / Math.max(segmentLength, 0.1);
 
     if (progress.current >= 1.0) {
       progress.current = 0;
