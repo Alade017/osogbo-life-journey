@@ -557,6 +557,11 @@ export function PlayableNeighborhood() {
       toast.error(error.message.replaceAll("_", " "));
     },
   });
+  useEffect(() => {
+    setNeighborhoodActionResult(null);
+    neighborhoodActionMutation.reset();
+  }, [characterQuery.data?.id]);
+
   const selectedNpc = activeNpcs.find((npc) => npc.id === selectedNpcId) ?? nearbyNpc;
   const npcInteraction = useGameAction(rpc.interactWithNpc, {
     onSuccess: (result) => {
@@ -1183,7 +1188,7 @@ export function PlayableNeighborhood() {
                                 neighborhoodActionMutation.mutate({
                                   landmarkId: selectedLandmarkId,
                                   actionId,
-                                   characterId: characterQuery.data?.id ?? "",
+                                  characterId: characterQuery.data?.id ?? "",
                                 });
                               }}
                             />
