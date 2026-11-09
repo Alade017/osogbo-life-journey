@@ -300,16 +300,11 @@ export function neighborhoodNpcAvoidanceStep(
   if (distance <= 0 || maxStep <= 0) return current;
   const travel = Math.min(distance, maxStep);
   const direction = { x: dx / distance, y: dy / distance };
-  const candidateAngles = [
-    0,
-    Math.PI / 6,
-    -Math.PI / 6,
-    Math.PI / 3,
-    -Math.PI / 3,
-    Math.PI / 2,
-    -Math.PI / 2,
-    Math.PI,
-  ];
+  // Search a full radial fan so dense crowds and corners can offer a
+  // usable escape direction even when the direct and perpendicular steps fail.
+  const candidateAngles = Array.from({ length: 16 }, (_, index) =>
+    (index * Math.PI * 2) / 16,
+  );
   const candidates = candidateAngles.map((angle) => ({
     x: current.x + (direction.x * Math.cos(angle) - direction.y * Math.sin(angle)) * travel,
     y: current.y + (direction.x * Math.sin(angle) + direction.y * Math.cos(angle)) * travel,
