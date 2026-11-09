@@ -7,6 +7,7 @@ export type TownMobilityRoute = readonly [number, number][];
 export function deriveTownMobilityRoutes(
   rows: readonly string[],
   cellSize: number,
+  laneOffset = 0,
 ): TownMobilityRoute[] {
   const rowCount = rows.length;
   const columnCount = Math.max(0, ...rows.map((row) => row.length));
@@ -36,10 +37,10 @@ export function deriveTownMobilityRoutes(
             (z - (rowCount - 1) / 2) * cellSize,
           ];
           routes.push([
-            toWorld(left + 0.5, top + 0.5),
-            toWorld(right + 0.5, top + 0.5),
-            toWorld(right + 0.5, bottom + 0.5),
-            toWorld(left + 0.5, bottom + 0.5),
+            toWorld(left + 0.5 + laneOffset / cellSize, top + 0.5 + laneOffset / cellSize),
+            toWorld(right + 0.5 - laneOffset / cellSize, top + 0.5 + laneOffset / cellSize),
+            toWorld(right + 0.5 - laneOffset / cellSize, bottom + 0.5 - laneOffset / cellSize),
+            toWorld(left + 0.5 + laneOffset / cellSize, bottom + 0.5 - laneOffset / cellSize),
           ]);
         }
       }
