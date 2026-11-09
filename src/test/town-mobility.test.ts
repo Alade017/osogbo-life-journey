@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deriveTownMobilityRoutes, deriveTownPedestrianRoutes } from "@/game/town-mobility";
+import { deriveTownMobilityRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells } from "@/game/town-mobility";
 import town from "@/data/osogbo-town.json";
 
 describe("town mobility routes", () => {
@@ -58,7 +58,25 @@ describe("town mobility routes", () => {
 });
 
 
-describe("town pedestrian routes", () => {
+describe("town sidewalk cells", () => {
+  it("returns unique grass cells directly adjacent to roads", () => {
+    const cells = deriveTownSidewalkCells(town.grid.rows);
+    const keys = cells.map(([x, z]) => `${x},${z}`);
+
+    expect(new Set(keys).size).toBe(cells.length);
+    expect(cells.length).toBeGreaterThan(0);
+    for (const [x, z] of cells) {
+      expect(town.grid.rows[z]?.[x]).toBe("g");
+      expect(
+        [[0, -1], [0, 1], [-1, 0], [1, 0]].some(([dx, dz]) =>
+          town.grid.rows[z + dz]?.[x + dx] === "r",
+        ),
+      ).toBe(true);
+    }
+  });
+});
+
+ describe("town pedestrian routes", () => {
   const blockedCells = [
     ...town.grid.buildings.flatMap((building) =>
       [0, 1].flatMap((dx) => [0, 1].map((dz) => [building.x + dx, building.z + dz] as const)),
