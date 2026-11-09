@@ -133,16 +133,29 @@ function NeighborhoodNpcActor({
   const arrivedTarget = useRef<string | null>(null);
   const waypointIndex = useRef(0);
   const routeWaypoints = useRef(waypoints);
+  const waypointSignature = waypoints
+    .map(([x, , z]) => `${x.toFixed(3)}:${z.toFixed(3)}`)
+    .join("|");
+  const waypointSignatureRef = useRef(waypointSignature);
   const blockedDuration = useRef(0);
   const replanDelay = neighborhoodNpcReplanDelay(npc.id);
   const avoidanceBias = neighborhoodNpcAvoidanceBias(npc.id);
   const pauseSnapshotSaved = useRef(false);
+
+  // Parent simulation updates can recreate an equivalent path array. Keep the
+  // live route current without resetting progress unless its actual geometry changes.
+  routeWaypoints.current = waypoints;
+  if (waypointSignatureRef.current !== waypointSignature) {
+    waypointSignatureRef.current = waypointSignature;
+    waypointIndex.current = 0;
+    blockedDuration.current = 0;
+  }
+
   useEffect(() => {
     waypointIndex.current = 0;
-    routeWaypoints.current = waypoints;
     blockedDuration.current = 0;
     arrivedTarget.current = null;
-  }, [target[0], target[2], waypoints]);
+  }, [target[0], target[2]]);
 
   // R3F receives a newly allocated start tuple on every parent render.
   // Only apply it when the actual spawn/confirmed position changes; otherwise
