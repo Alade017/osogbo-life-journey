@@ -51,6 +51,7 @@ import { JobsPage } from "@/routes/_authenticated/_game/jobs";
 import { MarketPage } from "@/routes/_authenticated/_game/market";
 import { WORLD_CAMERA } from "@/components/3d/world-theme";
 import { neighborhoodNpcDestinationPoint, neighborhoodNpcSpawnPoint } from "@/game/neighborhood-npc-layout";
+import { neighborhoodBuildingFootprint, neighborhoodObstacleFootprint } from "@/game/neighborhood-geometry";
 import "@/components/game/neighborhood.css";
 
 const R3FNeighborhoodSurface = lazy(() =>
@@ -324,6 +325,10 @@ export function PlayableNeighborhood() {
     if (!currentLocation || !npcQuery.data || !locationsQuery.data) return [];
     const savedNpcIds = new Set(npcQuery.data.map((npc) => npc.id));
     const slots = area.objects.filter((object) => object.kind === "npc");
+    const occupiedFootprints = [
+      ...area.objects.filter((object) => object.kind !== "npc").map(neighborhoodBuildingFootprint),
+      ...(area.obstacles ?? []).map(neighborhoodObstacleFootprint),
+    ];
     const scheduled = NPC_CATALOG.flatMap((npc, catalogIndex) => {
       if (!savedNpcIds.has(npc.id)) return [];
       const activity = npcActivityAt(
@@ -334,7 +339,7 @@ export function PlayableNeighborhood() {
       return activity.destinationSlug === currentLocation.slug ? [{ npc, activity, catalogIndex }] : [];
     });
     return scheduled.flatMap(({ npc, activity, catalogIndex }, index) => {
-      const slot = neighborhoodNpcSpawnPoint(slots, catalogIndex);
+      const slot = neighborhoodNpcSpawnPoint(slots, catalogIndex, occupiedFootprints);
       if (!slot) return [];
       const destinationObject =
         activity.destination === "home"
