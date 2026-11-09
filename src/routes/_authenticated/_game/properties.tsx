@@ -88,9 +88,15 @@ export function PropertiesPage() {
       ) {
         setPurchaseError("");
         await Promise.all([
+          client.invalidateQueries({ queryKey: ["saleHomes"] }),
+          client.invalidateQueries({ queryKey: ["ownedHouses"] }),
           client.invalidateQueries({ queryKey: ["canonicalHousingHome"] }),
           client.invalidateQueries({ queryKey: ["authoritativeHouseState"] }),
+          client.invalidateQueries({ queryKey: ["housingProperties"] }),
+          client.invalidateQueries({ queryKey: ["housingEligibility"] }),
+          client.invalidateQueries({ queryKey: ["housingMapProperties"] }),
           client.invalidateQueries({ queryKey: q.wallet().queryKey }),
+          client.invalidateQueries({ queryKey: ["transactions"] }),
         ]);
         toast.success("House purchased. It is now your Home.");
         return;
