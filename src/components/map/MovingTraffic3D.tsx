@@ -123,7 +123,7 @@ function TrafficVehicle({
 
   const handleClick = (e: any) => {
     e.stopPropagation();
-    const beeps = ["📯 Peep peep! Clear the road!", "🚖 Entering Olaiya junction!", "💨 Moving briskly!"];
+    const beeps = ["📯 Peep peep! Clear the road!", "🚖 Approaching the next junction!", "💨 Moving briskly!"];
     const randomMsg = beeps[Math.floor(Math.random() * beeps.length)]!;
     onInteract(`${config.name}: ${randomMsg}`);
   };
