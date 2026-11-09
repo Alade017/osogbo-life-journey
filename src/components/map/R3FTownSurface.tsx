@@ -42,7 +42,7 @@ import { MovingPedestrians3D } from "./MovingPedestrians3D";
 import { FunctionalStreetLights3D } from "./FunctionalStreetLights3D";
 import { RoadsideInfrastructure3D } from "./RoadsideInfrastructure3D";
 import { isMapTargetSelectionAllowed } from "@/game/map-gesture";
-import { deriveTownMobilityRoutes } from "@/game/town-mobility";
+import { deriveTownMobilityRoutes, deriveTownPedestrianRoutes } from "@/game/town-mobility";
 
 type Props = PhaserMapData &
   PhaserMapCallbacks & {
@@ -224,10 +224,17 @@ export function R3FTownSurface(props: Props) {
     () => deriveTownMobilityRoutes(town.grid.rows, cell, cell * 0.16),
     [],
   );
-  const pedestrianRoutes = useMemo(
-    () => deriveTownMobilityRoutes(town.grid.rows, cell, -cell * 0.16),
-    [],
-  );
+  const pedestrianRoutes = useMemo(() => {
+    const buildingCells = town.grid.buildings.flatMap((building) =>
+      [0, 1].flatMap((dx) => [0, 1].map((dz) => [building.x + dx, building.z + dz] as const)),
+    );
+    const blockedCells = [
+      ...buildingCells,
+      ...town.grid.waterCells,
+      ...town.grid.plotCells,
+    ];
+    return deriveTownPedestrianRoutes(town.grid.rows, cell, blockedCells);
+  }, []);
   const roads = useMemo(
     () =>
       town.grid.rows.flatMap((row, z) =>
