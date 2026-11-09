@@ -9,3 +9,15 @@ export function isQuickMapTap(start: MapPointerSample, end: MapPointerSample) {
     end.at - start.at <= MAP_TAP_MAX_DURATION_MS
   );
 }
+
+/** Return a safe multiplicative zoom factor for a two-pointer pinch gesture. */
+export function mapPinchZoomFactor(previousDistance: number, currentDistance: number) {
+  if (
+    !Number.isFinite(previousDistance) ||
+    !Number.isFinite(currentDistance) ||
+    previousDistance <= 0 ||
+    currentDistance <= 0
+  )
+    return null;
+  return currentDistance / previousDistance;
+}
