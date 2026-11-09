@@ -32,6 +32,7 @@ describe("connected home task database", () => {
             "utf8",
           ),
         );
+        await db.exec(readFileSync("drizzle/migrations/0079_free_house_placement.sql", "utf8"));
       }
       if (tag === "0085_house_floors") {
         // House floors serialize the placement rotation column introduced by this Supabase migration.
