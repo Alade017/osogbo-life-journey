@@ -3,7 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import type { Group } from "three";
 import { WorldMaterial } from "@/components/3d/WorldScene";
-import type { TownMobilityRoute } from "@/game/town-mobility";
+import { measureTownMobilityLoop, type TownMobilityRoute } from "@/game/town-mobility";
 
 export interface MovingTraffic3DProps {
   paths: readonly TownMobilityRoute[];
@@ -93,13 +93,7 @@ function TrafficVehicle({
     progress.current = 0;
   }, [config.path]);
 
-  const routeLength = useMemo(() => {
-    if (config.path.length < 2) return 0;
-    return config.path.reduce((total, point, index) => {
-      const next = config.path[(index + 1) % config.path.length]!;
-      return total + Math.hypot(next[0] - point[0], next[1] - point[1]);
-    }, 0);
-  }, [config.path]);
+  const routeLength = useMemo(() => measureTownMobilityLoop(config.path), [config.path]);
 
   useFrame((_, delta) => {
     if (!groupRef.current) return;
@@ -116,9 +110,11 @@ function TrafficVehicle({
     while (distanceToTravel > 0) {
       const start = path[currentSegment.current]!;
       const end = path[(currentSegment.current + 1) % path.length]!;
-      const segmentLength = Math.hypot(end[0] - start[0], end[1] - start[1]);
+      const segmentLength = [start[0], start[1], end[0], end[1]].every(Number.isFinite)
+        ? Math.hypot(end[0] - start[0], end[1] - start[1])
+        : 0;
 
-      if (segmentLength < 0.001) {
+      if (!Number.isFinite(segmentLength) || segmentLength < 0.001) {
         currentSegment.current = (currentSegment.current + 1) % path.length;
         progress.current = 0;
         continue;
