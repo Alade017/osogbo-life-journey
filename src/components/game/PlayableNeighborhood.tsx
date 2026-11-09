@@ -34,6 +34,8 @@ import type { NetworkPlayerSnapshot } from "@/game/multiplayer-state";
 import { avatarAnimationForActivity } from "@/game/character-animation";
 import {
   availableNeighborhoodTargets,
+  neighborhoodInteractionPoint,
+  neighborhoodNpcNavigationPoint,
   venueEntranceKindForCategory,
 } from "@/game/neighborhood-interactions";
 import {
@@ -678,8 +680,8 @@ export function PlayableNeighborhood() {
     toast.message(`Walking to ${target.name}`);
     setHomeBound(false);
     setPendingTargetId(targetId);
-    const interactionPoint = neighborhoodInteractionPoint(target, activeNpcs);
-    const destination = toWorld(interactionPoint, district.origin);
+    const navigationPoint = neighborhoodNpcNavigationPoint(target, activeNpcs);
+    const destination = toWorld(navigationPoint, district.origin);
     groundTargetRef.current = destination;
     setGroundTarget(destination);
   };
@@ -689,7 +691,7 @@ export function PlayableNeighborhood() {
     if (!pendingTargetId || !district) return;
     const target = interactionTargets.find((candidate) => candidate.id === pendingTargetId);
     if (!target || target.kind !== "npc") return;
-    const destination = toWorld(neighborhoodInteractionPoint(target, activeNpcs), district.origin);
+    const destination = toWorld(neighborhoodNpcNavigationPoint(target, activeNpcs), district.origin);
     groundTargetRef.current = destination;
     setGroundTarget(destination);
   }, [activeNpcs, district, interactionTargets, pendingTargetId]);
