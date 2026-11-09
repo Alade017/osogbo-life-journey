@@ -202,3 +202,15 @@ describe("stitched pedestrian sidewalk network", () => {
     expect(output).toHaveLength(1);
   });
 });
+
+
+describe("pedestrian route stitching edge deduplication", () => {
+  it("does not duplicate a shared segment supplied in opposite directions", () => {
+    const routes = stitchTownPedestrianRoutes([
+      [[0, 0], [1, 0]],
+      [[1, 0], [0, 0]],
+    ]);
+
+    expect(routes).toEqual([[[0, 0], [1, 0]]]);
+  });
+});
