@@ -51,7 +51,7 @@ import { hasLocationVenueDesign } from "@/lib/location-venue-designs";
 import { JobsPage } from "@/routes/_authenticated/_game/jobs";
 import { MarketPage } from "@/routes/_authenticated/_game/market";
 import { WORLD_CAMERA } from "@/components/3d/world-theme";
-import { neighborhoodNpcDestinationPoint, neighborhoodNpcPath, neighborhoodNpcSpawnPoint } from "@/game/neighborhood-npc-layout";
+import { neighborhoodNpcDestinationPoint, neighborhoodNpcPathWithFallback, neighborhoodNpcSpawnPoint } from "@/game/neighborhood-npc-layout";
 import { neighborhoodBuildingFootprint, neighborhoodObstacleFootprint } from "@/game/neighborhood-geometry";
 import "@/components/game/neighborhood.css";
 
@@ -372,7 +372,7 @@ export function PlayableNeighborhood() {
       if (!destination) return [];
       occupiedDestinationPoints.push(destination);
       const current = currentNpcPositionOverrides[npc.id] ?? { x: slot.x, y: slot.y };
-      const path = neighborhoodNpcPath(
+      const path = neighborhoodNpcPathWithFallback(
         current,
         destination,
         occupiedFootprints,
