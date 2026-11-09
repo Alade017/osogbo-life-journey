@@ -36,6 +36,9 @@ begin
   select * into prior from public.map_travels
     where user_id = p_user_id and idempotency_key = p_idempotency_key;
   if found then
+    if prior.character_id <> player.id then
+      raise exception using message = 'CHARACTER_CHANGED', errcode = '55000';
+    end if;
     if prior.landmark_id <> p_landmark_id then
       raise exception using message = 'IDEMPOTENCY_CONFLICT', errcode = '23505';
     end if;
@@ -110,7 +113,7 @@ create or replace function public.start_osun_town_travel(
   p_user_id uuid,p_destination_id text,p_idempotency_key text
 ) returns jsonb language plpgsql security definer set search_path=public as $$
 declare player public.characters%rowtype; wallet public.wallets%rowtype;
-  route public.osun_town_routes%rowtype; prior jsonb; result jsonb;
+  route public.osun_town_routes%rowtype; prior jsonb; prior_character_id uuid; result jsonb;
   trip_id uuid:=gen_random_uuid(); arrival timestamptz; completed_destination text;
 begin
   if p_user_id is null then raise exception 'UNAUTHORIZED'; end if;
@@ -119,17 +122,21 @@ begin
   end if;
   perform 1 from public.profiles where id=p_user_id for update;
   if not found then raise exception 'NO_CHARACTER'; end if;
-  select response into prior from public.osun_town_travels
+  select * into player from public.characters where user_id=p_user_id
+    order by created_at desc, id desc limit 1 for update;
+  if not found then raise exception 'NO_CHARACTER'; end if;
+  select response,character_id into prior,prior_character_id
+    from public.osun_town_travels
     where user_id=p_user_id and idempotency_key=p_idempotency_key;
   if found then
+    if prior_character_id is distinct from player.id then
+      raise exception 'CHARACTER_CHANGED';
+    end if;
     if prior->>'to_town_id' is distinct from p_destination_id then
       raise exception 'IDEMPOTENCY_CONFLICT';
     end if;
     return prior || jsonb_build_object('duplicate',true);
   end if;
-  select * into player from public.characters where user_id=p_user_id
-    order by created_at desc, id desc limit 1 for update;
-  if not found then raise exception 'NO_CHARACTER'; end if;
   select to_town_id into completed_destination from public.osun_town_travels
     where character_id=player.id and status='travelling' and arrival_at<=clock_timestamp()
     order by arrival_at desc limit 1 for update;
