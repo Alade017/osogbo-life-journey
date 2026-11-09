@@ -44,6 +44,7 @@ class PhaserTownMapScene extends Phaser.Scene implements PhaserMapSceneHandle {
   private readonly dataRef: CreateOptions["dataRef"];
   private readonly callbacksRef: CreateOptions["callbacksRef"];
   private readonly onReady: () => void;
+  private terrainLayer!: Phaser.GameObjects.Container;
   private mapLayer!: Phaser.GameObjects.Container;
   private playerLayer!: Phaser.GameObjects.Container;
   private markerKey = "";
@@ -60,10 +61,10 @@ class PhaserTownMapScene extends Phaser.Scene implements PhaserMapSceneHandle {
   create() {
     this.cameras.main.setBounds(0, 0, TOWN_MAP_WIDTH, TOWN_MAP_HEIGHT);
     this.cameras.main.centerOn(TOWN_MAP_WIDTH / 2, TOWN_MAP_HEIGHT / 2);
-    this.mapLayer = this.add.container(0, 0);
-    this.drawTerrain();
+    this.terrainLayer = this.add.container(0, 0);
     this.mapLayer = this.add.container(0, 0);
     this.playerLayer = this.add.container(0, 0);
+    this.drawTerrain();
     this.drawMap(this.dataRef.current);
     this.input.on(
       "wheel",
@@ -118,7 +119,7 @@ class PhaserTownMapScene extends Phaser.Scene implements PhaserMapSceneHandle {
 
   private drawTerrain() {
     const graphics = this.add.graphics();
-    this.mapLayer.add(graphics);
+    this.terrainLayer.add(graphics);
     graphics.fillStyle(0xdce7dc, 1);
     graphics.fillRect(0, 0, TOWN_MAP_WIDTH, TOWN_MAP_HEIGHT);
 
@@ -145,9 +146,14 @@ class PhaserTownMapScene extends Phaser.Scene implements PhaserMapSceneHandle {
       graphics.lineStyle(2, 0x456b4e, 0.65);
       graphics.strokePoints(points, true);
       const center = projectTownCell(area.x + area.width / 2, area.z + area.depth / 2);
-      this.addText(center.x, center.y, district.name, 12, 0x35513a);
-      this.addZone(center.x, center.y, 100, 34, () =>
-        this.callbacksRef.current.onSelectDistrict(district.id),
+      this.addText(center.x, center.y, district.name, 12, 0x35513a, 0.5, this.terrainLayer);
+      this.addZone(
+        center.x,
+        center.y,
+        100,
+        34,
+        () => this.callbacksRef.current.onSelectDistrict(district.id),
+        this.terrainLayer,
       );
     });
 
@@ -265,7 +271,14 @@ class PhaserTownMapScene extends Phaser.Scene implements PhaserMapSceneHandle {
     layer.add(label);
   }
 
-  private addZone(x: number, y: number, width: number, height: number, activate: () => void) {
+  private addZone(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    activate: () => void,
+    layer = this.mapLayer,
+  ) {
     const zone = this.add
       .zone(x, y, width, height)
       .setInteractive({ useHandCursor: true })
@@ -279,7 +292,7 @@ class PhaserTownMapScene extends Phaser.Scene implements PhaserMapSceneHandle {
         )
           activate();
       });
-    this.mapLayer.add(zone);
+    layer.add(zone);
   }
 }
 
