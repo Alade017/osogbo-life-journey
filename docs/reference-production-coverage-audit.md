@@ -75,3 +75,16 @@ A follow-up read-only pass compared the existing housing catalogue migrations wi
 ## Outcome
 
 The strongest immediate opportunity is not another procedural detail. It is **visual verification and catalogue-backed gap closure**. The existing home and gym systems already cover more of the reference library than a file-name-only audit suggests. Retail carrier packaging, barber props and construction tools are candidate gaps, but each must be tied to current catalogue/gameplay data before implementation.
+
+
+## Road clearance and traffic-route audit
+
+A source-level review of `town-mobility.ts`, the authored `osogbo-town.json` road grid, `R3FTownSurface.tsx` and `MovingTraffic3D.tsx` confirms:
+
+- The authored grid is 24 columns by 18 rows, with four full-width horizontal road rows and three full-height vertical road columns. The current adjacent-row/adjacent-column pairing produces six closed rectangular traffic loops for this layout.
+- Each loop is emitted only when both vertical boundaries remain road cells throughout the interval. The horizontal boundaries are selected only from rows made entirely of road cells. No route is generated across an incomplete side.
+- The caller supplies an inset of 16% of a road cell (0.32 world units for the current 2-unit cells). This shifts each loop corner inward and keeps the straight portions within the road strips; it is a rectangular-loop inset, not a lane-by-lane traffic system.
+- Traffic interpolation follows the four points in order and wraps from the final point to the first. The vehicle heading is derived from the active segment direction.
+- The current town grid does not justify changing the route algorithm: all authored roads used by this traffic loop builder form the expected complete rectangular network. The next correctness check is visual: confirm that long vehicle bodies remain inside the intersection footprint while rotating through 90-degree corners, and that the taxi/van silhouettes have sufficient clearance from each other and roadside props.
+
+**Decision:** no route-generation or road-data change was made in this pass. Rewriting the route builder or inventing additional road links would be speculative without an actual scene capture. Keep the six existing loops and verify corner sweep/overlap in the live R3F scene before increasing traffic density or vehicle dimensions. The existing no-SVG and no-database-change constraints remain unchanged.
