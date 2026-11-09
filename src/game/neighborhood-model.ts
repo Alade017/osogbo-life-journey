@@ -13,6 +13,7 @@ export type NeighborhoodNpcView = {
   y: number;
   targetX: number;
   targetY: number;
+  path?: readonly WorldPoint[];
   isMoving: boolean;
 };
 export type NeighborhoodObject = {
