@@ -190,3 +190,12 @@ The authored-grid baseline is composed of short independent straight runs (14 ru
 The route-length distribution is now asserted in the mobility tests so changes to the authored street grid make coverage changes explicit. A proper continuous pedestrian network should be implemented from explicit sidewalk-corner/connector data, with blocked-prop clearance applied to connector cells as well as straight runs. That is a separate geometry/data task and needs live scene validation before NPCs use it.
 
 Runtime routes after roadside-prop reservations and the final NPC count remain unmeasured. No local tests, typecheck, lint, build or browser QA were run; GitHub Actions remain untouched.
+
+
+## Safe pedestrian corner traversal
+
+Added `deriveTownPedestrianCornerRoutes`, which creates an L-shaped route only when the two perpendicular road-adjacent grass cells and the diagonal grass cell all exist and are unblocked. This mirrors the outer-corner sidewalk patch conditions in `R3FTownSurface`, and its waypoints follow the centres of the two sidewalk strips through the rendered corner patch. The surface now includes these validated corner traversal paths alongside the straight sidewalk runs.
+
+The current authored town grid has **zero** qualifying outer-corner patches, so this adds tested capability without inventing new pavement or changing the current NPC layout. Synthetic tests cover the connector coordinates, blocked diagonal rejection and the no-corner authored-grid case. These are independent L-shaped traversal routes, not yet a stitched graph that lets one NPC continue from a straight run through multiple intersections. Adding authored corner pavement and continuous route stitching remains a separate map-design step.
+
+The code and regression tests have not been executed locally. Live inspection of corner alignment and NPC movement, plus typecheck, lint and production build, remain pending. No GitHub Actions were triggered.
