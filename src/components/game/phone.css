@@ -3674,3 +3674,74 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Real Estate inside the phone: hero card, home cards and Rent / Buy pills. */
+.phone-app-body .property-listings-hero {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--card);
+  color: var(--card-foreground);
+  box-shadow: var(--elevation-card);
+}
+
+.phone-app-body .property-listings-hero h1 {
+  margin: 0;
+  color: var(--brand-ink);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.phone-app-body .property-listings-grid.real-estate-grid {
+  gap: 12px;
+}
+
+.phone-app-body .property-listings-card {
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+}
+
+.phone-app-body .property-listings-card h2 {
+  color: var(--brand-ink);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.phone-app-body .property-listings-actions {
+  margin-top: 4px;
+}
+
+.phone-app-body .property-listings-actions button {
+  min-height: 42px;
+  border: 1px solid var(--primary);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--primary);
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.phone-app-body .property-listings-actions button:first-child {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.phone-app-body .property-listings-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.phone-app-body .property-listings-error,
+.phone-app-body .property-listings-empty {
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--card);
+  color: var(--card-foreground);
+  font-size: 0.85rem;
+}
