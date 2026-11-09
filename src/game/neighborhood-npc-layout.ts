@@ -13,8 +13,7 @@ const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
 
 type NpcPoint = { x: number; y: number };
 
-function isInsideScene(point: NpcPoint): boolean {
-  const bounds = NEIGHBORHOOD_SCENE_BOUNDS;
+function isInsideScene(point: NpcPoint, bounds: GroundRect): boolean {
   return (
     point.x >= bounds.left + SCENE_MARGIN &&
     point.x <= bounds.left + bounds.width - SCENE_MARGIN &&
@@ -43,9 +42,10 @@ function isAvailable(
   point: NpcPoint,
   occupied: readonly GroundRect[],
   occupiedPoints: readonly NpcPoint[],
+  bounds: GroundRect,
 ): boolean {
   return (
-    isInsideScene(point) &&
+    isInsideScene(point, bounds) &&
     !overlapsFootprint(point, occupied) &&
     !overlapsNpc(point, occupiedPoints)
   );
@@ -58,6 +58,7 @@ function clearNpcPoint(
   occupied: readonly GroundRect[],
   occupiedPoints: readonly NpcPoint[],
   baseRadius: number,
+  bounds: GroundRect,
 ): NpcPoint | null {
   for (let attempt = 0; attempt < 64; attempt += 1) {
     const ring = Math.floor(attempt / 8) + 1;
@@ -67,7 +68,7 @@ function clearNpcPoint(
       x: anchor.x + Math.cos(angle) * radius,
       y: anchor.y + Math.sin(angle) * radius,
     };
-    if (isAvailable(candidate, occupied, occupiedPoints)) return candidate;
+    if (isAvailable(candidate, occupied, occupiedPoints, bounds)) return candidate;
   }
   return null;
 }
@@ -81,6 +82,7 @@ export function neighborhoodNpcSpawnPoint(
   index: number,
   occupied: readonly GroundRect[] = [],
   occupiedPoints: readonly NpcPoint[] = [],
+  bounds: GroundRect = NEIGHBORHOOD_SCENE_BOUNDS,
 ): NpcPoint | null {
   if (!Number.isInteger(index) || index < 0 || slots.length === 0) return null;
   const anchor = slots[index % slots.length];
@@ -92,8 +94,8 @@ export function neighborhoodNpcSpawnPoint(
     x: anchor.x + Math.cos(angle) * initialRadius,
     y: anchor.y + Math.sin(angle) * initialRadius,
   };
-  if (isAvailable(initial, occupied, occupiedPoints)) return initial;
-  return clearNpcPoint(anchor, index, occupied, occupiedPoints, NPC_SLOT_SPACING);
+  if (isAvailable(initial, occupied, occupiedPoints, bounds)) return initial;
+  return clearNpcPoint(anchor, index, occupied, occupiedPoints, NPC_SLOT_SPACING, bounds);
 }
 
 /**
@@ -105,6 +107,7 @@ export function neighborhoodNpcDestinationPoint(
   catalogIndex: number,
   occupied: readonly GroundRect[] = [],
   occupiedPoints: readonly NpcPoint[] = [],
+  bounds: GroundRect = NEIGHBORHOOD_SCENE_BOUNDS,
 ): NpcPoint | null {
   if (!Number.isInteger(catalogIndex) || catalogIndex < 0) return null;
   const angle = catalogIndex * GOLDEN_ANGLE;
@@ -113,8 +116,8 @@ export function neighborhoodNpcDestinationPoint(
     x: destination.x + Math.cos(angle) * radius,
     y: destination.y + Math.sin(angle) * radius,
   };
-  if (isAvailable(initial, occupied, occupiedPoints)) return initial;
-  return clearNpcPoint(destination, catalogIndex, occupied, occupiedPoints, NPC_SLOT_SPACING);
+  if (isAvailable(initial, occupied, occupiedPoints, bounds)) return initial;
+  return clearNpcPoint(destination, catalogIndex, occupied, occupiedPoints, NPC_SLOT_SPACING, bounds);
 }
 
 const NPC_PATH_GRID = NEIGHBORHOOD_TILE_SIZE / 2;
@@ -135,8 +138,8 @@ export function neighborhoodNpcPath(
   start: NpcPoint,
   destination: NpcPoint,
   occupied: readonly GroundRect[] = [],
+  bounds: GroundRect = NEIGHBORHOOD_SCENE_BOUNDS,
 ): NpcPoint[] | null {
-  const bounds = NEIGHBORHOOD_SCENE_BOUNDS;
   const toCell = (point: NpcPoint) => ({
     x: Math.round((point.x - bounds.left) / NPC_PATH_GRID),
     y: Math.round((point.y - bounds.top) / NPC_PATH_GRID),
