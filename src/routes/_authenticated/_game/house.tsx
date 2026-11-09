@@ -67,7 +67,7 @@ import type { Appearance } from "@/game/avatar-appearance";
 import housingData from "@/data/housing.json";
 import { avatarAnimationForActivity } from "@/game/character-animation";
 import { formatNaira, q, rpc } from "@/lib/game";
-import { clearDepartureFromHome, takeDepartureFromHome, type HomeDeparture } from "@/lib/home-departure";
+import { clearDepartureFromHome, clearPendingDepartureFromHome, takeDepartureFromHome, type HomeDeparture } from "@/lib/home-departure";
 import { supabase } from "@/integrations/supabase/client";
 import {
   houseStateQueryKey,
@@ -820,7 +820,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       setDoorActionBusy(false);
       return;
     }
-    clearDepartureFromHome(takeDepartureFromHome() ?? { locationId: "", mode: "walk" });
+    clearPendingDepartureFromHome();
     completeTransitionStep("Loading the neighbourhood");
     await navigate({ to: "/neighborhood" });
   };
