@@ -44,6 +44,7 @@ import {
   deriveTownPedestrianCornerRoutes,
   deriveTownPedestrianRoutes,
   deriveTownSidewalkCells,
+  stitchTownPedestrianRoutes,
 } from "@/game/town-mobility";
 
 type Props = PhaserMapData &
@@ -1125,10 +1126,10 @@ export function R3FTownSurface(props: Props) {
     wasteBins.forEach(([x, z]) => reserveWorldPosition(x, z));
     roadsideInfrastructure.poles.forEach(([x, z]) => reserveWorldPosition(x, z));
 
-    return [
+    return stitchTownPedestrianRoutes([
       ...deriveTownPedestrianRoutes(town.grid.rows, cell, blockedCells),
       ...deriveTownPedestrianCornerRoutes(town.grid.rows, cell, blockedCells),
-    ];
+    ]);
   }, [
     streetLights,
     trafficLights,
