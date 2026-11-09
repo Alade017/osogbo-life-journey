@@ -1,5 +1,5 @@
-import { measureTownMobilityLoop, describe, expect, it } from "vitest";
-import { deriveTownMobilityRoutes, deriveTownPedestrianCornerRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells, stitchTownPedestrianRoutes, TownPedestrianJunctionScheduler } from "@/game/town-mobility";
+import { describe, expect, it } from "vitest";
+import { measureTownMobilityLoop, deriveTownMobilityRoutes, deriveTownPedestrianCornerRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells, stitchTownPedestrianRoutes, TownPedestrianJunctionScheduler } from "@/game/town-mobility";
 import town from "@/data/osogbo-town.json";
 
 describe("town mobility input validation", () => {
