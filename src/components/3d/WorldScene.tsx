@@ -949,6 +949,19 @@ export function WorldStreetVendors({
               <WorldMaterial tone="accent" color={canopyColor} />
             </mesh>
 
+            {/* Fabric valance gives the canopy a recognisable market-stall edge. */}
+            {[
+              { position: [0, size * 0.98, size * 0.48] as [number, number, number], scale: [size * 0.82, size * 0.13, size * 0.035] as [number, number, number] },
+              { position: [0, size * 0.98, -size * 0.48] as [number, number, number], scale: [size * 0.82, size * 0.13, size * 0.035] as [number, number, number] },
+              { position: [size * 0.48, size * 0.98, 0] as [number, number, number], scale: [size * 0.035, size * 0.13, size * 0.82] as [number, number, number] },
+              { position: [-size * 0.48, size * 0.98, 0] as [number, number, number], scale: [size * 0.035, size * 0.13, size * 0.82] as [number, number, number] },
+            ].map((panel, panelIndex) => (
+              <mesh key={`canopy-valance-${panelIndex}`} position={panel.position} castShadow>
+                <boxGeometry args={panel.scale} />
+                <WorldMaterial tone="linen" color={canopyColor} />
+              </mesh>
+            ))}
+
             {/* Umbrella centre pole */}
             <mesh position={[0, size * 0.68, 0]}>
               <cylinderGeometry args={[size * 0.025, size * 0.025, size * 0.75, 8]} />
