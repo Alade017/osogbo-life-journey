@@ -52,8 +52,8 @@ type Props = PhaserMapData &
     searchTarget?: import("@/components/map/MapCanvas").MapSearchTarget | null;
   };
 
-const gridCols = town.grid.rows[0]?.length ?? 24;
-const gridRows = town.grid.rows.length ?? 18;
+const gridCols = Math.max(0, ...town.grid.rows.map((row) => row.length));
+const gridRows = town.grid.rows.length;
 const cell = WORLD_SCALE.townCell;
 const point = (x: number, z: number): [number, number, number] => [
   (x - (gridCols - 1) / 2) * cell,
