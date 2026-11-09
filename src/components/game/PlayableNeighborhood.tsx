@@ -329,6 +329,8 @@ export function PlayableNeighborhood() {
       ...area.objects.filter((object) => object.kind !== "npc").map(neighborhoodBuildingFootprint),
       ...(area.obstacles ?? []).map(neighborhoodObstacleFootprint),
     ];
+    const occupiedSpawnPoints: Array<{ x: number; y: number }> = [];
+    const occupiedDestinationPoints: Array<{ x: number; y: number }> = [];
     const scheduled = NPC_CATALOG.flatMap((npc, catalogIndex) => {
       if (!savedNpcIds.has(npc.id)) return [];
       const activity = npcActivityAt(
@@ -339,8 +341,14 @@ export function PlayableNeighborhood() {
       return activity.destinationSlug === currentLocation.slug ? [{ npc, activity, catalogIndex }] : [];
     });
     return scheduled.flatMap(({ npc, activity, catalogIndex }, index) => {
-      const slot = neighborhoodNpcSpawnPoint(slots, catalogIndex, occupiedFootprints);
+      const slot = neighborhoodNpcSpawnPoint(
+        slots,
+        catalogIndex,
+        occupiedFootprints,
+        occupiedSpawnPoints,
+      );
       if (!slot) return [];
+      occupiedSpawnPoints.push(slot);
       const destinationObject =
         activity.destination === "home"
           ? area.objects.find((object) => object.kind === "home")
@@ -354,8 +362,10 @@ export function PlayableNeighborhood() {
         destinationObject ?? slot,
         catalogIndex,
         occupiedFootprints,
+        occupiedDestinationPoints,
       );
       if (!destination) return [];
+      occupiedDestinationPoints.push(destination);
       const targetX = destination.x;
       const targetY = destination.y;
       const current = currentNpcPositionOverrides[npc.id] ?? { x: slot.x, y: slot.y };
