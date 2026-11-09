@@ -651,12 +651,14 @@ export const rpc = {
     latitude: number;
     longitude: number;
     movementState: "idle" | "walking";
+    characterId: string;
   }) =>
     unwrap(
-      await supabase.rpc("save_player_map_position", {
+      await supabase.rpc("save_player_map_position_for_character", {
         p_latitude: position.latitude,
         p_longitude: position.longitude,
         p_movement_state: position.movementState,
+        p_expected_character_id: position.characterId,
       }),
     ),
   eatAtPlace: async (placeId: string) =>
