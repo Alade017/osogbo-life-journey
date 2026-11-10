@@ -1045,15 +1045,33 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       ? gameTime.simulation.currentAction
       : null;
 
-  const cancelSleep = async () => {
+  const wakeUp = async () => {
     if (!activeSleep || isOffline || !gameTime.ready || gameTime.busy) return;
+
     setActivityError("");
-    const error = await gameTime.interrupt(activeSleep.requestId);
+    const error = await gameTime.complete(activeSleep.requestId, "sleep");
+
     if (error) {
       setActivityError(error);
       toast.error(error);
       return;
     }
+
+    toast.success("You woke up.");
+  };
+
+  const cancelSleep = async () => {
+    if (!activeSleep || isOffline || !gameTime.ready || gameTime.busy) return;
+
+    setActivityError("");
+    const error = await gameTime.interrupt(activeSleep.requestId);
+
+    if (error) {
+      setActivityError(error);
+      toast.error(error);
+      return;
+    }
+
     toast.success("Sleep cancelled.");
   };
 
@@ -1526,7 +1544,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
                   ? "Updating location..."
                   : isInsideHome
                     ? activeSleep
-                      ? "Wake up to go outside"
+                      ? "Wake up first"
                       : "Go outside"
                     : "Travel home"}
               </span>
@@ -1589,15 +1607,26 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           activeSleep) && (
           <div className="house-task-actions" role="group" aria-label="Task controls">
             {activeSleep ? (
-              <button
-                type="button"
-                className="house-task-wake"
-                disabled={isOffline || !gameTime.ready || gameTime.busy}
-                onClick={() => void cancelSleep()}
-              >
-                <Sunrise size={16} aria-hidden="true" />
-                Wake up
-              </button>
+              <>
+                <button
+                  type="button"
+                  className="house-task-wake"
+                  disabled={isOffline || !gameTime.ready || gameTime.busy}
+                  onClick={() => void wakeUp()}
+                >
+                  <Sunrise size={16} aria-hidden="true" />
+                  Wake up
+                </button>
+
+                <button
+                  type="button"
+                  className="house-task-cancel"
+                  disabled={isOffline || !gameTime.ready || gameTime.busy}
+                  onClick={() => void cancelSleep()}
+                >
+                  Cancel sleep
+                </button>
+              </>
             ) : (
               <button
                 type="button"
