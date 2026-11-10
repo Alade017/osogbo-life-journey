@@ -23,6 +23,8 @@ export type HouseRoomRendererProps = {
   accessoryBand: string;
   slots: HouseSlot[];
   placements: HousePlacement[];
+  /** Room shown on its own (an id from houseRoomViews); omitted or null shows the whole home. */
+  roomView?: string | null;
   characterName?: string;
   appearance?: Appearance;
   gender?: string;
@@ -456,3 +458,75 @@ const OPPOSITE_FACING: Record<HouseFacing, HouseFacing> = {
 export function sleepFacingForHeadboard(headboard: HouseFacing): HouseFacing {
   return OPPOSITE_FACING[headboard];
 }
+
+/** A single room shown on its own in the room view. Bounds are in room metres, centred on the house. */
+export type HouseRoomView = {
+  id: string;
+  label: string;
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+};
+
+/**
+ * Rooms that can be viewed on their own. Multi-room homes split the ground floor into the four
+ * studio rooms; every other home is one room. The camera sits at +x, +z, so the walls on those
+ * sides are the ones hidden in the room view.
+ */
+export function houseRoomViews(houseTypeId: string, width: number, depth: number): HouseRoomView[] {
+  if (FOUR_ROOM_HOME_TYPES.includes(houseTypeId)) {
+    return [
+      {
+        id: "sitting",
+        label: "Sitting room",
+        minX: -width / 2,
+        maxX: 0,
+        minZ: -depth / 2,
+        maxZ: 0,
+      },
+      { id: "kitchen", label: "Kitchen", minX: 0, maxX: width / 2, minZ: -depth / 2, maxZ: 0 },
+      { id: "bedroom", label: "Bedroom", minX: -width / 2, maxX: 0, minZ: 0, maxZ: depth / 2 },
+      { id: "bathroom", label: "Bathroom", minX: 0, maxX: width / 2, minZ: 0, maxZ: depth / 2 },
+    ];
+  }
+  return [
+    {
+      id: "room",
+      label: "Room",
+      minX: -width / 2,
+      maxX: width / 2,
+      minZ: -depth / 2,
+      maxZ: depth / 2,
+    },
+  ];
+}
+
+/** Whether a point (room metres) lies inside a room view, with a small margin at the edges. */
+export function roomViewContains(room: HouseRoomView, x: number, z: number, margin = 0.2): boolean {
+  return (
+    x >= room.minX - margin &&
+    x <= room.maxX + margin &&
+    z >= room.minZ - margin &&
+    z <= room.maxZ + margin
+  );
+}
+
+/**
+ * Walls on the camera's side of the room, and the low cutaway walls, are hidden in the room view,
+ * so the room reads like the reference cutaway.
+ */
+export function roomViewHidesSegment(segment: HouseWallSegment, room: HouseRoomView): boolean {
+  const edge = 0.01;
+  const [x, , z] = segment.position;
+  if (segment.id.endsWith("cutaway")) return true;
+  return x >= room.maxX - edge || z >= room.maxZ - edge;
+}
+
+/** Warm colours for the room view only, taken from the reference cutaway. */
+export const ROOM_VIEW_STYLE = {
+  wall: "#a39e94",
+  floorLight: "#efe7d8",
+  floorShade: "#dcd0bb",
+  light: "#ffd9a0",
+} as const;

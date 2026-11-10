@@ -30,6 +30,11 @@ import {
   houseWallSegments,
   houseRearDoorCenter,
   FOUR_ROOM_HOME_TYPES,
+  houseRoomViews,
+  roomViewContains,
+  roomViewHidesSegment,
+  ROOM_VIEW_STYLE,
+  type HouseRoomView,
   type HouseRoomRendererProps as Props,
 } from "./house-room-contract";
 
@@ -66,14 +71,23 @@ function hasRoomPosition(
 type FloorTone =
   "tileLight" | "tileShade" | "tileBath" | "tileBathShade" | "tileDark" | "tileDarkShade";
 
+/** Warm tile colours for the room view; the whole-home view keeps its own palette. */
+function roomFloorColor(tone: FloorTone): string {
+  return tone.includes("Shade") || tone === "tileDark"
+    ? ROOM_VIEW_STYLE.floorShade
+    : ROOM_VIEW_STYLE.floorLight;
+}
+
 function RoomFloor({
   houseTypeId,
   width,
   depth,
+  roomView = null,
 }: {
   houseTypeId: string;
   width: number;
   depth: number;
+  roomView?: HouseRoomView | null;
 }) {
   const groups = useMemo(() => {
     const tiles: Record<FloorTone, WorldInstance[]> = {
@@ -120,7 +134,12 @@ function RoomFloor({
   return (
     <>
       {(Object.entries(groups) as [FloorTone, WorldInstance[]][]).map(([tone, items]) => (
-        <WorldInstances key={tone} items={items} tone={tone} />
+        <WorldInstances
+          key={tone}
+          items={items}
+          tone={tone}
+          {...(roomView ? { color: roomFloorColor(tone) } : {})}
+        />
       ))}
     </>
   );
@@ -212,8 +231,10 @@ function OsogboRoomPrototype({
   activeFloor = 0,
   onUseStairs,
   doorOpen = false,
+  roomView = null,
 }: {
   houseTypeId: string;
+  roomView?: HouseRoomView | null;
   wallsClosed?: boolean | null;
   width: number;
   depth: number;
@@ -246,26 +267,31 @@ function OsogboRoomPrototype({
           doorwayWidth,
           rearDoorCenter,
           wallsClosed ?? FOUR_ROOM_HOME_TYPES.includes(houseTypeId),
-        ).map((segment) => (
-          <group key={segment.id}>
-            <mesh castShadow receiveShadow position={segment.position}>
-              <boxGeometry args={segment.size} />
-              <WorldMaterial tone="partition" />
-            </mesh>
-            <mesh
-              castShadow
-              receiveShadow
-              position={[
-                segment.position[0],
-                segment.position[1] + segment.size[1] / 2,
-                segment.position[2],
-              ]}
-            >
-              <boxGeometry args={[segment.size[0] + 0.05, 0.065, segment.size[2] + 0.05]} />
-              <WorldMaterial tone="trim" />
-            </mesh>
-          </group>
-        ))}
+        )
+          .filter((segment) => !roomView || !roomViewHidesSegment(segment, roomView))
+          .map((segment) => (
+            <group key={segment.id}>
+              <mesh castShadow receiveShadow position={segment.position}>
+                <boxGeometry args={segment.size} />
+                <WorldMaterial
+                  tone="partition"
+                  {...(roomView ? { color: ROOM_VIEW_STYLE.wall } : {})}
+                />
+              </mesh>
+              <mesh
+                castShadow
+                receiveShadow
+                position={[
+                  segment.position[0],
+                  segment.position[1] + segment.size[1] / 2,
+                  segment.position[2],
+                ]}
+              >
+                <boxGeometry args={[segment.size[0] + 0.05, 0.065, segment.size[2] + 0.05]} />
+                <WorldMaterial tone="trim" />
+              </mesh>
+            </group>
+          ))}
         <mesh
           castShadow
           receiveShadow
@@ -313,26 +339,31 @@ function OsogboRoomPrototype({
         {houseStairs(houseTypeId, width, depth) && (
           <HouseStairsModel stairs={houseStairs(houseTypeId, width, depth)!} onUse={onUseStairs} />
         )}
-        {housePartitionSegmentsForFloor(houseTypeId, width, depth, activeFloor).map((segment) => (
-          <group key={segment.id}>
-            <mesh castShadow receiveShadow position={segment.position}>
-              <boxGeometry args={segment.size} />
-              <WorldMaterial tone="partition" />
-            </mesh>
-            <mesh
-              castShadow
-              receiveShadow
-              position={[
-                segment.position[0],
-                segment.position[1] + segment.size[1] / 2,
-                segment.position[2],
-              ]}
-            >
-              <boxGeometry args={[segment.size[0] + 0.04, 0.055, segment.size[2] + 0.04]} />
-              <WorldMaterial tone="trim" />
-            </mesh>
-          </group>
-        ))}
+        {housePartitionSegmentsForFloor(houseTypeId, width, depth, activeFloor)
+          .filter((segment) => !roomView || !roomViewHidesSegment(segment, roomView))
+          .map((segment) => (
+            <group key={segment.id}>
+              <mesh castShadow receiveShadow position={segment.position}>
+                <boxGeometry args={segment.size} />
+                <WorldMaterial
+                  tone="partition"
+                  {...(roomView ? { color: ROOM_VIEW_STYLE.wall } : {})}
+                />
+              </mesh>
+              <mesh
+                castShadow
+                receiveShadow
+                position={[
+                  segment.position[0],
+                  segment.position[1] + segment.size[1] / 2,
+                  segment.position[2],
+                ]}
+              >
+                <boxGeometry args={[segment.size[0] + 0.04, 0.055, segment.size[2] + 0.04]} />
+                <WorldMaterial tone="trim" />
+              </mesh>
+            </group>
+          ))}
       </group>
       <HouseDoorPanel
         hingeX={rearDoorCenter - doorwayWidth / 2}
@@ -1852,6 +1883,7 @@ export function HouseRoom3D({
   activeFloor = 0,
   onUseStairs,
   houseTypeId,
+  roomView: roomViewId = null,
   guideZone = null,
   characterName = "Your character",
   appearance = {},
@@ -1866,7 +1898,7 @@ export function HouseRoom3D({
   activityRequestId = null,
   activityLabel = null,
   slots,
-  placements,
+  placements: allPlacements,
   foodDeliveries = [],
   movingPlacement = null,
   editMode,
@@ -1879,6 +1911,17 @@ export function HouseRoom3D({
   onDraftMove,
 }: Props & { inputBlocked?: boolean }) {
   const [width, depth] = ROOM_SIZE[houseTypeId] ?? ROOM_SIZE["shared-room"]!;
+  const roomView = roomViewId
+    ? (houseRoomViews(houseTypeId, width, depth).find((room) => room.id === roomViewId) ?? null)
+    : null;
+  // In a room view only that room's furniture is shown and can be used.
+  const placements = roomView
+    ? allPlacements.filter((item) => {
+        if (!hasRoomPosition(item)) return true;
+        const [x, , z] = roomPercentToPosition(item.x, item.y, width, depth);
+        return roomViewContains(roomView, x, z);
+      })
+    : allPlacements;
   const bySlot = useMemo(() => new Map(placements.map((item) => [item.slot, item])), [placements]);
   const bedPlacement = placements.find((placement) => placement.slot_type === "bed");
   const bedSlot = slots.find((slot) => slot.id === bedPlacement?.slot);
@@ -2026,6 +2069,7 @@ export function HouseRoom3D({
 
           <OsogboRoomPrototype
             houseTypeId={houseTypeId}
+            roomView={roomView}
             wallsClosed={wallsClosed}
             width={width}
             depth={depth}
@@ -2034,7 +2078,15 @@ export function HouseRoom3D({
             onUseStairs={onUseStairs}
             doorOpen={doorOpen}
           />
-          <RoomFloor houseTypeId={houseTypeId} width={width} depth={depth} />
+          <RoomFloor houseTypeId={houseTypeId} width={width} depth={depth} roomView={roomView} />
+          {roomView && (
+            <pointLight
+              position={[0, WORLD_SCALE.door * 1.15 * 0.75, 0]}
+              intensity={lightOn ? 6 : 0}
+              distance={Math.max(width, depth) * 2}
+              color={ROOM_VIEW_STYLE.light}
+            />
+          )}
           {guideZone &&
             (() => {
               const [zoneX, , zoneZ] = roomPercentToPosition(
@@ -2212,13 +2264,24 @@ export function HouseRoom3D({
               />
             ))}
           <WorldCamera
-            width={width}
-            depth={depth}
+            width={roomView ? roomView.maxX - roomView.minX : width}
+            depth={roomView ? roomView.maxZ - roomView.minZ : depth}
             stage
-            horizontalOrbit={!editMode}
-            verticalOrbit={!editMode}
+            horizontalOrbit={!editMode && !roomView}
+            verticalOrbit={!editMode && !roomView}
             polarAngle={editMode ? Math.PI / 5 : Math.PI / 4}
-            target={editMode ? [0, 0.25, 0] : [0, WORLD_SCALE.door * 0.65, 0]}
+            target={
+              roomView
+                ? [
+                    (roomView.minX + roomView.maxX) / 2,
+                    WORLD_SCALE.door * 0.65,
+                    (roomView.minZ + roomView.maxZ) / 2,
+                  ]
+                : editMode
+                  ? [0, 0.25, 0]
+                  : [0, WORLD_SCALE.door * 0.65, 0]
+            }
+            distanceScale={roomView ? 0.9 : 1}
             enabled={!inputBlocked && !activePreview}
           />
         </Canvas>
