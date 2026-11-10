@@ -46,6 +46,7 @@ import { cn } from "@/lib/utils";
 import { PhoneAppLoader } from "@/components/game/phone/PhoneAppLoader";
 import { isSlowNetwork } from "@/lib/network-hint";
 import { q, rpc, useGameAction } from "@/lib/game";
+import { parseAppTileStyle } from "@/lib/app-tile-style";
 import { useQuery } from "@tanstack/react-query";
 import { playGameSound } from "@/lib/game-audio";
 import { useLiveClock } from "@/hooks/use-live-clock";
@@ -287,6 +288,8 @@ export function PhoneLauncher({
   } = useMissions();
   const claimMission = useMissionClaim(userId, characterId);
   const { data: notifications } = useQuery(q.notifications());
+  const { data: profile } = useQuery(q.profile());
+  const tileStyle = parseAppTileStyle(profile?.app_tile_style);
   const markRead = useGameAction(rpc.markRead);
 
   const missionCount = (missions ?? []).filter(
@@ -587,7 +590,7 @@ export function PhoneLauncher({
   const phoneContent = (
     <>
       <DialogTitle className="sr-only">In-game phone</DialogTitle>
-      <div className="phone-screen">
+      <div className="phone-screen" data-tile-style={tileStyle}>
         {/* Status Bar */}
         <div className="phone-status">
           <span className="phone-status-time">{phoneTime}</span>

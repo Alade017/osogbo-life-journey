@@ -429,3 +429,19 @@
   color: #1e40af;
   background: #ffffff;
 }
+
+/* Home screen background, from the reference: soft blue and warm glows over a light base */
+.phone-ui-refresh .phone-app-grid {
+  background:
+    radial-gradient(circle at 12% 8%, rgba(191, 219, 254, 0.8), transparent 45%),
+    radial-gradient(circle at 92% 88%, rgba(254, 243, 199, 0.7), transparent 42%),
+    radial-gradient(circle at 70% 40%, rgba(224, 231, 255, 0.5), transparent 35%),
+    linear-gradient(180deg, #eaf2fb 0%, #f7f9fc 52%, #eef3f9 100%);
+}
+
+/* Circle app tiles: the same tone colours, drawn as round badges */
+.phone-ui-refresh .phone-screen[data-tile-style="circle"] .phone-app-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+}

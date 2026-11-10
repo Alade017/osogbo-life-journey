@@ -5365,6 +5365,7 @@ export type Database = {
       };
       profiles: {
         Row: {
+          app_tile_style: string;
           created_at: string;
           dashboard_pins: Json;
           display_name: string | null;
@@ -5377,6 +5378,7 @@ export type Database = {
           username: string | null;
         };
         Insert: {
+          app_tile_style?: string;
           created_at?: string;
           dashboard_pins?: Json;
           display_name?: string | null;
@@ -5389,6 +5391,7 @@ export type Database = {
           username?: string | null;
         };
         Update: {
+          app_tile_style?: string;
           created_at?: string;
           dashboard_pins?: Json;
           display_name?: string | null;
@@ -6853,6 +6856,7 @@ export type Database = {
         Returns: Json;
       };
       get_social_groups_overview: { Args: never; Returns: Json };
+      set_my_app_tile_style: { Args: { p_style: string }; Returns: Json };
       send_social_group_media_as_user: {
         Args: {
           p_duration_ms: number | null;

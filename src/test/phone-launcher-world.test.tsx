@@ -9,7 +9,10 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 vi.mock("@tanstack/react-query", () => ({ useQuery: () => ({ data: [] }) }));
 vi.mock("@/lib/game", () => ({
-  q: { notifications: () => ({}) },
+  q: {
+    notifications: () => ({}),
+    profile: () => ({ queryKey: ["profile"], queryFn: async () => null }),
+  },
   rpc: { markRead: vi.fn() },
   useGameAction: () => ({ mutate: vi.fn() }),
 }));

@@ -687,6 +687,13 @@
       "when": 1794463206000,
       "tag": "0095_social_group_media_reactions_prefs",
       "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "7",
+      "when": 1794463207000,
+      "tag": "0096_app_tile_style",
+      "breakpoints": true
     }
   ]
 }

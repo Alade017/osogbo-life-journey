@@ -526,6 +526,8 @@ export const rpc = {
       await supabase.rpc("set_my_home_visit_access", { p_allow_friends: allowFriends }),
     ) as Json,
 
+  setMyAppTileStyle: async (style: "rounded" | "circle") =>
+    unwrap(await supabase.rpc("set_my_app_tile_style", { p_style: style })),
   updateMySettings: async (patch: {
     displayName?: string | undefined;
     musicEnabled?: boolean | undefined;
