@@ -476,6 +476,7 @@ export function R3FNeighborhoodSurface({
                 depth={o.height * unit}
                 height={WORLD_SCALE.neighborhoodBuildingHeight}
                 shop={o.kind !== "compound"}
+                variant={o.kind === "compound" ? "residential" : o.kind === "kiosk" ? "market" : "services"}
               />
             ))}
           <WorldStreetFurniture
@@ -523,6 +524,7 @@ export function R3FNeighborhoodSurface({
                     depth={footprint.height * unit}
                     height={WORLD_SCALE.neighborhoodBuildingHeight}
                     shop={o.kind !== "home"}
+                    variant={o.kind === "home" ? "residential" : o.kind === "market" ? "market" : "services"}
                   />
                   <Html
                     portal={overlayHost}
