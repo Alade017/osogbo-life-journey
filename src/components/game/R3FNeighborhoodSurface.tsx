@@ -26,6 +26,7 @@ import { neighborhoodBuildingFootprint } from "@/game/neighborhood-geometry";
 import { neighborhoodObstacleFootprint } from "@/game/neighborhood-geometry";
 import {
   NEIGHBORHOOD_NPC_ACTOR_SEPARATION,
+  NEIGHBORHOOD_TILE_SIZE,
   neighborhoodNpcAvoidanceBias,
   neighborhoodNpcAvoidanceStep,
   neighborhoodNpcPathWithFallback,
@@ -148,6 +149,7 @@ function NeighborhoodNpcActor({
       occupiedFootprints,
       sceneBounds,
       reservations,
+      NEIGHBORHOOD_TILE_SIZE * WORLD_SCALE.neighborhoodUnit / 2,
     );
     route.current = next ?? [origin];
     waypointIndex.current = 0;
