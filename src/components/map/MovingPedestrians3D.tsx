@@ -141,7 +141,8 @@ function PedestrianCharacter({
     const { path, speed } = npc;
     if (path.length < 2) return;
 
-    if (routeLength < 0.001) return;
+    if (!Number.isFinite(routeLength) || routeLength < 0.001) return;
+    if (!Number.isFinite(delta) || delta <= 0) return;
 
     // Advance along the route while reserving shared endpoints before entering
     // their clearance zone. A pedestrian waits just short of the junction.
