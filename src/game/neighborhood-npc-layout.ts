@@ -8,7 +8,7 @@ const NPC_SEPARATION = 42;
 const SCENE_MARGIN = NPC_SEPARATION / 2;
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
 
-type NpcPoint = { x: number; y: number };
+export type NpcPoint = { x: number; y: number };
 
 /**
  * Build the live corridor reservation from the actor's rendered position and
