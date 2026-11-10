@@ -3,7 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import type { Group } from "three";
 import { WorldMaterial } from "@/components/3d/WorldScene";
-import { isValidTownPedestrianRoute, TownPedestrianJunctionScheduler, type TownMobilityRoute } from "@/game/town-mobility";
+import { isValidTownPedestrianRoute, townPedestrianClearanceRadius, TownPedestrianJunctionScheduler, type TownMobilityRoute } from "@/game/town-mobility";
 
 export interface MovingPedestrians3DProps {
   paths: readonly TownMobilityRoute[];
@@ -127,7 +127,7 @@ function PedestrianCharacter({
   const routeDistance = useRef(npc.startDistance);
   const travelDirection = useRef(1);
   const activeJunction = useRef<string | null>(null);
-  const clearanceRadius = 0.38;
+  const clearanceRadius = townPedestrianClearanceRadius(routeLength);
   const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => () => {
