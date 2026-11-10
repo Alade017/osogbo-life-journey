@@ -1,5 +1,6 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { HomeLink } from "@/components/game/HomeLink";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BriefcaseBusiness,
@@ -319,6 +320,31 @@ export function PlayableNeighborhood() {
     Record<string, { x: number; y: number }>
   >({});
   const player = players.find((candidate) => candidate.sessionId === sessionId);
+
+  // Remember the spot in the neighbourhood, so the next sign-in starts where the player left.
+  const latestSpot = useRef<{ x: number; y: number } | null>(null);
+  const spotIsSaveable = useRef(false);
+  useEffect(() => {
+    latestSpot.current = player ? { x: player.x, y: player.y } : null;
+    spotIsSaveable.current = connectionState === "connected";
+  }, [player, connectionState]);
+  useEffect(() => {
+    const save = () => {
+      const spot = latestSpot.current;
+      if (!spotIsSaveable.current || !spot) return;
+      void supabase.rpc("save_my_world_checkpoint", { p_world_x: spot.x, p_world_y: spot.y }).then(
+        () => undefined,
+        () => undefined,
+      );
+    };
+    const timer = window.setInterval(save, 10_000);
+    window.addEventListener("pagehide", save);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("pagehide", save);
+      save();
+    };
+  }, []);
   const actionAnimation = simulation.currentAction
     ? avatarAnimationForActivity(simulation.currentAction.animation)
     : undefined;
@@ -744,7 +770,7 @@ export function PlayableNeighborhood() {
             destination from the city map.
           </span>
           <Link to="/map">Open the city map</Link>
-          <Link to="/house">Go to your home entrance</Link>
+          <HomeLink>Go to your home entrance</HomeLink>
         </div>
       ) : (
         <div className="neighborhood-world-card">

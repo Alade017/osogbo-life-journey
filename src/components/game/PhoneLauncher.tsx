@@ -47,7 +47,8 @@ import { PhoneAppLoader } from "@/components/game/phone/PhoneAppLoader";
 import { isSlowNetwork } from "@/lib/network-hint";
 import { q, rpc, useGameAction } from "@/lib/game";
 import { parseAppTileStyle } from "@/lib/app-tile-style";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { enterHomeFromAnywhere } from "@/lib/home-entry";
 import { playGameSound } from "@/lib/game-audio";
 import { useLiveClock } from "@/hooks/use-live-clock";
 import { OSOGBO_TIME_ZONE } from "@/lib/osogbo-weather";
@@ -254,6 +255,7 @@ export function PhoneLauncher({
     history: [],
   });
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const href = useLocation({ select: (location) => location.href });
   const previousHref = useRef(href);
   const [internalOpen, setInternalOpen] = useState(false);
@@ -317,6 +319,13 @@ export function PhoneLauncher({
     (appName: string, search?: string) => {
       playGameSound("ui");
       const worldPath = fullPageWorldApp(appName);
+      if (worldPath === "/house") {
+        // The phone's House app enters the house on the server before opening it.
+        void enterHomeFromAnywhere(queryClient).then((entered) => {
+          if (entered) openWorld("/house");
+        });
+        return;
+      }
       if (worldPath) {
         openWorld(worldPath + (search ?? ""));
         return;
@@ -327,7 +336,7 @@ export function PhoneLauncher({
         ...(search ? { search } : {}),
       });
     },
-    [openWorld],
+    [openWorld, queryClient],
   );
 
   useEffect(() => {

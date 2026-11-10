@@ -6857,6 +6857,10 @@ export type Database = {
       };
       get_social_groups_overview: { Args: never; Returns: Json };
       set_my_app_tile_style: { Args: { p_style: string }; Returns: Json };
+      save_my_world_checkpoint: {
+        Args: { p_world_x: number; p_world_y: number };
+        Returns: Json;
+      };
       send_social_group_media_as_user: {
         Args: {
           p_duration_ms: number | null;

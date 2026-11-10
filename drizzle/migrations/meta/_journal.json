@@ -694,6 +694,13 @@
       "when": 1794463207000,
       "tag": "0096_app_tile_style",
       "breakpoints": true
+    },
+    {
+      "idx": 98,
+      "version": "7",
+      "when": 1794463208000,
+      "tag": "0097_save_world_checkpoint",
+      "breakpoints": true
     }
   ]
 }
