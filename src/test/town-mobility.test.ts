@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { isValidTownPedestrianRoute, measureTownMobilityLoop, deriveTownMobilityRoutes, deriveTownPedestrianCornerRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells, stitchTownPedestrianRoutes, TownPedestrianJunctionScheduler } from "@/game/town-mobility";
+import { townPedestrianClearanceRadius, isValidTownPedestrianRoute, measureTownMobilityLoop, deriveTownMobilityRoutes, deriveTownPedestrianCornerRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells, stitchTownPedestrianRoutes, TownPedestrianJunctionScheduler } from "@/game/town-mobility";
 import town from "@/data/osogbo-town.json";
+
+describe("pedestrian junction clearance", () => {
+  it("reduces clearance on short trails while preserving the preferred radius on long trails", () => {
+    expect(townPedestrianClearanceRadius(4)).toBe(0.38);
+    expect(townPedestrianClearanceRadius(0.6)).toBeCloseTo(0.2);
+    expect(townPedestrianClearanceRadius(0)).toBe(0);
+    expect(townPedestrianClearanceRadius(Number.NaN)).toBe(0);
+  });
+});
 
 describe("pedestrian route validation", () => {
   it("rejects non-finite and zero-length trails before NPC assignment", () => {
