@@ -1,5 +1,4 @@
 import { isValidElement, type ReactNode } from "react";
-import * as Phaser from "phaser";
 import {
   AvatarArtwork,
   normalizeAvatarAppearance,
@@ -107,85 +106,4 @@ export function createAvatarAtlasMarkup(
     .join("");
   const atlasHeight = AVATAR_FRAME_HEIGHT * AVATAR_SPRITE_FRAME_COUNT;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${AVATAR_FRAME_WIDTH}" height="${atlasHeight}" viewBox="0 0 ${AVATAR_FRAME_WIDTH} ${atlasHeight}">${svgFrames}</svg>`;
-}
-
-const pendingAtlases = new WeakMap<
-  Phaser.Textures.TextureManager,
-  Map<string, Promise<string | null>>
->();
-
-function registerAnimations(scene: Phaser.Scene, textureKey: string) {
-  let start = 0;
-  for (const facing of AVATAR_DIRECTIONS) {
-    for (const clip of AVATAR_ANIMATION_CLIPS) {
-      const key = avatarAnimationKey(textureKey, clip.state, facing);
-      if (!scene.anims.exists(key)) {
-        scene.anims.create({
-          key,
-          frames: scene.anims.generateFrameNumbers(textureKey, {
-            start,
-            end: start + clip.frames - 1,
-          }),
-          frameRate: clip.frameRate,
-          repeat: clip.repeat,
-        });
-      }
-      start += clip.frames;
-    }
-  }
-}
-
-export function ensureAvatarTexture(
-  scene: Phaser.Scene,
-  appearance: Appearance | null | undefined,
-  gender = "nonbinary",
-  equipment: readonly AvatarEquipment[] = [],
-): Promise<string | null> {
-  const textureKey = avatarTextureKey(appearance, gender, equipment);
-  if (scene.textures.exists(textureKey)) {
-    registerAnimations(scene, textureKey);
-    return Promise.resolve(textureKey);
-  }
-
-  let sceneCache = pendingAtlases.get(scene.textures);
-  if (!sceneCache) {
-    sceneCache = new Map();
-    pendingAtlases.set(scene.textures, sceneCache);
-  }
-  const pending = sceneCache.get(textureKey);
-  if (pending) return pending;
-
-  const promise = new Promise<string | null>((resolve) => {
-    const image = new Image();
-    const markup = createAvatarAtlasMarkup(appearance, gender, equipment);
-    const url = URL.createObjectURL(new Blob([markup], { type: "image/svg+xml;charset=utf-8" }));
-    const timeout = window.setTimeout(() => finish(null), 12_000);
-    let settled = false;
-    const finish = (key: string | null) => {
-      if (settled) return;
-      settled = true;
-      window.clearTimeout(timeout);
-      URL.revokeObjectURL(url);
-      resolve(key);
-    };
-    image.onload = () => {
-      try {
-        if (!scene.sys.isActive()) return finish(null);
-        scene.textures.addSpriteSheet(textureKey, image, {
-          frameWidth: AVATAR_FRAME_WIDTH,
-          frameHeight: AVATAR_FRAME_HEIGHT,
-          endFrame: AVATAR_SPRITE_FRAME_COUNT - 1,
-        });
-        registerAnimations(scene, textureKey);
-        finish(textureKey);
-      } catch {
-        finish(null);
-      }
-    };
-    image.onerror = () => finish(null);
-    image.src = url;
-  }).finally(() => sceneCache!.delete(textureKey));
-
-  sceneCache.set(textureKey, promise);
-  return promise;
 }

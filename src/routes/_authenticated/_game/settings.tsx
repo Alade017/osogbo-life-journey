@@ -10,6 +10,7 @@ import {
   Mail,
   Music2,
   ShieldCheck,
+  LayoutGrid,
   Sparkles,
   Eye,
   UserRound,
@@ -21,6 +22,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { q, rpc } from "@/lib/game";
+import { parseAppTileStyle, type AppTileStyle } from "@/lib/app-tile-style";
 import { pageMeta } from "@/lib/seo";
 import { Avatar } from "@/components/game/Avatar";
 import { Button } from "@/components/ui/button";
@@ -62,6 +64,7 @@ type Profile = {
   effects_enabled: boolean;
   sound_enabled: boolean;
   reduced_motion: boolean;
+  app_tile_style: string;
 };
 
 type Patch = Partial<Pick<Profile, "music_enabled" | "effects_enabled" | "reduced_motion">> & {
@@ -132,6 +135,15 @@ export function SettingsPage() {
         q.profile().queryKey,
         data as unknown as Database["public"]["Tables"]["profiles"]["Row"],
       );
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const setTileStyle = useMutation({
+    mutationFn: (style: AppTileStyle) => rpc.setMyAppTileStyle(style),
+    onSuccess: async () => {
+      flash("app_tile_style");
+      await qc.invalidateQueries({ queryKey: q.profile().queryKey });
     },
     onError: (e) => toast.error(e.message),
   });
@@ -253,6 +265,38 @@ export function SettingsPage() {
         footer={<SavedPill show={saved === "music_enabled" || saved === "effects_enabled"} />}
       >
         <AudioControls profile={profile} onSave={(patch) => savePreferences.mutate(patch)} />
+      </Section>
+
+      <Section
+        id="sx-tiles"
+        icon={LayoutGrid}
+        title="App tiles"
+        description="Choose how app icons look on your phone. This follows your account to any device."
+        footer={<SavedPill show={saved === "app_tile_style"} />}
+      >
+        <div className="sx-tile-choices" role="radiogroup" aria-label="App tile style">
+          {(["rounded", "circle"] as const).map((style) => {
+            const selected = parseAppTileStyle(profile.app_tile_style) === style;
+            return (
+              <button
+                key={style}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                className="sx-tile-choice"
+                disabled={setTileStyle.isPending}
+                onClick={() => {
+                  if (!selected) setTileStyle.mutate(style);
+                }}
+              >
+                <span className={`sx-tile-sample sx-tile-sample-${style}`} aria-hidden="true">
+                  <Sparkles size={16} />
+                </span>
+                <span>{style === "circle" ? "Circle" : "Rounded"}</span>
+              </button>
+            );
+          })}
+        </div>
       </Section>
 
       <Section

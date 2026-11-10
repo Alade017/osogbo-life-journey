@@ -7,6 +7,10 @@ type Props = {
   onRotate: () => void;
   onCancel: () => void;
   onPlace: () => void;
+  /** The guide's suggestion for this item. */
+  guideHint?: string | undefined;
+  /** Notes for a placement that goes against the guide. They inform only. */
+  warnings?: readonly string[];
 };
 
 /** Shown while an item is being moved: pick a grid cell, then Place it or Cancel. */
@@ -17,6 +21,8 @@ export function HousePlacementBar({
   onRotate,
   onCancel,
   onPlace,
+  guideHint,
+  warnings = [],
 }: Props) {
   return (
     <div className="house-placement-bar" role="toolbar" aria-label="Placing item">
@@ -25,6 +31,12 @@ export function HousePlacementBar({
         <span>
           {occupied ? "That spot is taken. Pick another cell." : "Drag it or use ← → ↑ ↓ · R turns"}
         </span>
+        {guideHint && <span className="house-placement-hint">Suggested: {guideHint}</span>}
+        {warnings.map((note) => (
+          <span className="house-placement-warning" key={note}>
+            {note}
+          </span>
+        ))}
       </div>
       <div className="house-placement-actions">
         <button type="button" onClick={onRotate} disabled={disabled} aria-label="Turn 45 degrees">

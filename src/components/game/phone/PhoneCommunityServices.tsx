@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { foodDeliveryService, type FoodDelivery } from "@/lib/food-delivery-service";
 import { formatNaira, q } from "@/lib/game";
 import { PaletteSelect } from "@/components/ui/palette-select";
+import { Bike, MapPin, UtensilsCrossed } from "lucide-react";
 
 type ServiceApp = "Calendar" | "Food Delivery" | "Okada Rides" | "Contribution";
 type TownEvent = { id: string; title: string; venue: string; starts_at: string };
@@ -19,6 +20,13 @@ type Ride = {
   created_at: string;
 };
 type Contribution = { id: string; fund_id: string; amount_minor: number };
+
+/** Visual tone for a ride status: active, finished, or stopped. */
+function rideTone(status: string): "active" | "done" | "stopped" {
+  if (status === "completed") return "done";
+  if (status === "cancelled") return "stopped";
+  return "active";
+}
 
 function rideStatusLabel(status: string) {
   if (status === "assigned") return "Driver assigned";
@@ -110,8 +118,8 @@ function CalendarApp() {
   });
   const saved = new Set(reminders.data?.map((item) => item.event_id));
   return (
-    <div className="phone-service-screen">
-      <header>
+    <div className="phone-service-screen calendar-app">
+      <header className="calendar-hero">
         <h2>Town calendar</h2>
         <p>Town events and your saved reminders</p>
       </header>
@@ -125,7 +133,7 @@ function CalendarApp() {
         }}
       />
       {events.data?.map((event) => (
-        <article className="phone-service-card" key={event.id}>
+        <article className="phone-service-card calendar-event" key={event.id}>
           <time>
             {new Date(event.starts_at).toLocaleString("en-NG", {
               timeZone: "Africa/Lagos",
@@ -312,7 +320,10 @@ function FoodApp() {
   return (
     <div className="phone-service-screen food-app">
       <header className="food-hero">
-        <div>
+        <span className="food-hero-icon">
+          <UtensilsCrossed aria-hidden="true" />
+        </span>
+        <div className="food-hero-copy">
           <p className="food-eyebrow">Town kitchens</p>
           <h2>Food delivery</h2>
           <p>Choose your food, type the portions, and we will bring it to you.</p>
@@ -473,16 +484,46 @@ function RidesApp() {
       void client.invalidateQueries({ queryKey: ["phoneService", "okada_ride_requests"] });
       void client.invalidateQueries({ queryKey: q.wallet().queryKey });
       void client.invalidateQueries({ queryKey: q.transactions().queryKey });
-      toast.success("An okada rider has been assigned.");
+      toast.success("Ride requested. Searching for a rider.");
     },
     onError: (error: Error) => toast.error(error.message),
   });
+  const cancel = useMutation({
+    mutationFn: async (rideId: string) => {
+      const { error } = await supabase.rpc("okada_ride_cancel", { p_ride: rideId });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ["phoneService", "okada_ride_requests"] });
+      void client.invalidateQueries({ queryKey: q.wallet().queryKey });
+      void client.invalidateQueries({ queryKey: q.transactions().queryKey });
+      toast.success("Ride cancelled. The fare has been refunded.");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
+  useEffect(() => {
+    // Riders are found and rides finish on the server; this keeps the list current while the app is open.
+    const refresh = () =>
+      void supabase
+        .rpc("okada_ride_sync")
+        .then(() =>
+          client.invalidateQueries({ queryKey: ["phoneService", "okada_ride_requests"] }),
+        );
+    refresh();
+    const timer = window.setInterval(refresh, 15000);
+    return () => window.clearInterval(timer);
+  }, [client]);
   return (
-    <div className="phone-service-screen">
-      <header>
-        <h2>Okada rides</h2>
-        <p>Request a town trip</p>
-      </header>
+    <div className="okada-app">
+      <section className="okada-hero">
+        <span className="okada-hero-icon">
+          <Bike aria-hidden="true" />
+        </span>
+        <div>
+          <h2>Okada rides</h2>
+          <p>Quick motorbike trips around town</p>
+        </div>
+      </section>
       <StateMessage
         loading={price.isLoading}
         error={price.isError}
@@ -490,16 +531,21 @@ function RidesApp() {
         retry={() => void price.refetch()}
       />
       {walletQuery.isError && (
-        <p role="alert" className="phone-service-state">
+        <p role="alert" className="okada-notice">
           Cash balance is unavailable. Try reopening this app.
         </p>
       )}
       {!!fare && (
-        <div className="phone-service-card">
-          <p>Current fare</p>
-          <h3>{formatNaira(fare)}</h3>
-          <label className="phone-service-field">
-            Destination
+        <section className="okada-request" aria-label="Request a ride">
+          <div className="okada-fare">
+            <span>Fare</span>
+            <strong>{formatNaira(fare)}</strong>
+          </div>
+          <label className="okada-field">
+            <span>
+              <MapPin aria-hidden="true" />
+              Destination
+            </span>
             <input
               maxLength={120}
               value={destination}
@@ -509,6 +555,7 @@ function RidesApp() {
           </label>
           <button
             type="button"
+            className="okada-submit"
             disabled={
               request.isPending || destination.trim().length < 2 || !wallet || fare > wallet.balance
             }
@@ -520,24 +567,42 @@ function RidesApp() {
                 ? "Insufficient cash"
                 : "Request ride"}
           </button>
-        </div>
+          {wallet && <p className="okada-balance">Cash balance {formatNaira(wallet.balance)}</p>}
+        </section>
       )}
-      <h3 className="phone-service-subheading">Your rides</h3>
-      <StateMessage
-        loading={rides.isLoading}
-        error={rides.isError}
-        empty={!rides.data?.length}
-        retry={() => void rides.refetch()}
-      />
-      {rides.data?.slice(0, 5).map((ride) => (
-        <article className="phone-service-card phone-service-row" key={ride.id}>
-          <span>
-            {ride.destination}
-            <small>{new Date(ride.created_at).toLocaleDateString("en-NG")}</small>
-          </span>
-          <strong>{rideStatusLabel(ride.status)}</strong>
-        </article>
-      ))}
+      <section className="okada-history" aria-labelledby="okada-rides-heading">
+        <h3 id="okada-rides-heading">Your rides</h3>
+        <StateMessage
+          loading={rides.isLoading}
+          error={rides.isError}
+          empty={!rides.data?.length}
+          retry={() => void rides.refetch()}
+        />
+        {rides.data?.slice(0, 5).map((ride) => (
+          <article className="okada-ride" key={ride.id}>
+            <span className="okada-ride-icon">
+              <MapPin aria-hidden="true" />
+            </span>
+            <span className="okada-ride-copy">
+              <strong>{ride.destination}</strong>
+              <small>{new Date(ride.created_at).toLocaleDateString("en-NG")}</small>
+            </span>
+            <span className={`okada-status okada-status-${rideTone(ride.status)}`}>
+              {rideStatusLabel(ride.status)}
+            </span>
+            {ride.status === "requested" && (
+              <button
+                type="button"
+                className="okada-cancel"
+                disabled={cancel.isPending}
+                onClick={() => cancel.mutate(ride.id)}
+              >
+                Cancel
+              </button>
+            )}
+          </article>
+        ))}
+      </section>
     </div>
   );
 }
@@ -570,8 +635,8 @@ function ContributionApp() {
     onError: (error: Error) => toast.error(error.message),
   });
   return (
-    <div className="phone-service-screen">
-      <header>
+    <div className="phone-service-screen contribution-app">
+      <header className="contribution-hero">
         <h2>Community contribution</h2>
         <p>Support town projects with Virtual Naira</p>
       </header>
@@ -603,17 +668,24 @@ function ContributionApp() {
         </label>
       )}
       {funds.data?.map((fund) => (
-        <article className="phone-service-card" key={fund.id}>
+        <article className="phone-service-card contribution-card" key={fund.id}>
           <h3>{fund.title}</h3>
-          <p>Goal: {formatNaira(fund.goal_minor)}</p>
-          <p>
-            Your contributions:{" "}
-            {formatNaira(
-              contributions.data
-                ?.filter((item) => item.fund_id === fund.id)
-                .reduce((sum, item) => sum + item.amount_minor, 0) ?? 0,
-            )}
-          </p>
+          <dl className="contribution-figures">
+            <div>
+              <dt>Goal</dt>
+              <dd>{formatNaira(fund.goal_minor)}</dd>
+            </div>
+            <div>
+              <dt>Your contributions</dt>
+              <dd>
+                {formatNaira(
+                  contributions.data
+                    ?.filter((item) => item.fund_id === fund.id)
+                    .reduce((sum, item) => sum + item.amount_minor, 0) ?? 0,
+                )}
+              </dd>
+            </div>
+          </dl>
           <button
             type="button"
             disabled={

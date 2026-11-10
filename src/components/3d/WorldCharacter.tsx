@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { MathUtils, type Group } from "three";
+import { MathUtils, Vector3, type Group } from "three";
 import { Outlines, RoundedBox } from "@react-three/drei";
 import {
   normalizeAvatarAppearance,
@@ -15,7 +15,9 @@ import type { AvatarAnimationState, AvatarEquipment } from "@/components/game/Av
 import { WorldMaterial } from "./WorldScene";
 import { WORLD_SCALE } from "./world-theme";
 import {
+  CHARACTER_ARM,
   CHARACTER_CLOTH,
+  rightHandPoint,
   CHARACTER_GROUND,
   CHARACTER_HAND,
   CHARACTER_MOTION,
@@ -56,6 +58,7 @@ export function WorldCharacter({
   name = "Resident",
   taskPose,
   lookAt = null,
+  held = null,
 }: {
   appearance?: Appearance;
   gender?: string;
@@ -68,6 +71,8 @@ export function WorldCharacter({
   taskPose?: TaskPose | undefined;
   /** World point to turn the head toward, such as a nearby character. */
   lookAt?: readonly [number, number, number] | null;
+  /** Something carried in the right hand, such as a package. Follows the body. */
+  held?: ReactNode;
 }) {
   const safe = normalizeAvatarAppearance(appearance, gender);
   const h = WORLD_SCALE.character * ([0.92, 1, 1.06][safe.stature] ?? 1);
@@ -80,7 +85,14 @@ export function WorldCharacter({
   const [reduced, setReduced] = useState(false);
   const last = useRef(position);
   const walkUntil = useRef(0);
+  // The root glides toward `position` each frame, so a new spot is walked to rather than jumped to.
+  const root = useRef<Group>(null);
+  const goal = useRef(new Vector3(...position));
   const [x, y, z] = position;
+  goal.current.set(x, y, z);
+  useLayoutEffect(() => {
+    root.current?.position.copy(goal.current);
+  }, []);
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     setReduced(media.matches);
@@ -107,6 +119,13 @@ export function WorldCharacter({
   }, [x, y, z, animation, taskPose, reduced, invalidate, lookKey]);
   const yaw = FACING_YAW[facing] ?? 0;
   useFrame(({ clock }, delta) => {
+    const rootGroup = root.current;
+    if (rootGroup && rootGroup.position.distanceTo(goal.current) > 0.001) {
+      rootGroup.position.lerp(goal.current, 1 - Math.exp(-CHARACTER_MOTION.glideRate * delta));
+      if (rootGroup.position.distanceTo(goal.current) <= 0.001)
+        rootGroup.position.copy(goal.current);
+      invalidate();
+    }
     if (!arms.current || !legs.current || !body.current || !head.current) return;
     const moving =
       animation !== "sleep" &&
@@ -189,7 +208,7 @@ export function WorldCharacter({
   const clothMap = CHARACTER_CLOTH.patternedOutfits.includes(safe.outfit) ? adireTexture() : null;
   const clothColor = clothMap ? "#ffffff" : OUTFITS[safe.outfit]!;
   return (
-    <group name={`character:${name}`} position={position} rotation={[0, yaw, 0]}>
+    <group ref={root} name={`character:${name}`} rotation={[0, yaw, 0]}>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.012, 0]} renderOrder={-1}>
         <circleGeometry args={[h * CHARACTER_GROUND.shadowRadius, 20]} />
         <meshBasicMaterial
@@ -269,7 +288,10 @@ export function WorldCharacter({
           </group>
           <group ref={arms}>
             {[-1, 1].map((side) => (
-              <group key={side} position={[side * h * 0.19, h * 0.64, 0]}>
+              <group
+                key={side}
+                position={[side * h * CHARACTER_ARM.shoulderX, h * CHARACTER_ARM.shoulderY, 0]}
+              >
                 <RoundedBox
                   args={[h * 0.1, h * 0.26, h * 0.11]}
                   radius={h * 0.035}
@@ -289,7 +311,7 @@ export function WorldCharacter({
                   <WorldMaterial color={skin} />
                 </RoundedBox>
                 {side === CHARACTER_HAND.socketSide && (
-                  <group name="hand_R_socket" position={[0, -h * 0.4, 0]} />
+                  <group name="hand_R_socket" position={[0, -h * CHARACTER_ARM.length, 0]} />
                 )}
               </group>
             ))}
@@ -318,6 +340,11 @@ export function WorldCharacter({
               </group>
             ))}
           </group>
+          {held ? (
+            <group name="right_hand_socket" position={rightHandPoint(h)}>
+              {held}
+            </group>
+          ) : null}
           <group name="back_socket" position={[0, h * CHARACTER_SOCKETS.back, 0]}>
             {AccessoryModel ? (
               <AccessoryModel h={h} />

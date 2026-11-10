@@ -1,5 +1,6 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { HomeLink } from "@/components/game/HomeLink";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BriefcaseBusiness,
@@ -11,6 +12,7 @@ import {
   Minus,
   Plus,
   Store,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -39,7 +41,7 @@ import {
   type NeighborhoodNpcView,
 } from "@/game/neighborhood-model";
 import { isPlayableDistrict, playableDistrictForLocation } from "@/game/playable-district";
-import type { NeighborhoodPlayerView, PhaserNeighborhoodHandle } from "@/game/phaser-neighborhood";
+import type { NeighborhoodPlayerView, NeighborhoodSceneHandle } from "@/game/neighborhood-types";
 import type { MovementDirection } from "@/lib/player-movement";
 import { NPC_CATALOG, npcActivityAt, type SocialAction } from "@/lib/npc-simulation";
 import { hasLocationVenueDesign } from "@/lib/location-venue-designs";
@@ -299,7 +301,8 @@ export function PlayableNeighborhood() {
   groundTargetRef.current = groundTarget;
   const transition = useOutsideTransition();
   const leavingStepsRef = useRef({ data: false, scene: false });
-  const [scene, setScene] = useState<PhaserNeighborhoodHandle | null>(null);
+  const [scene, setScene] = useState<NeighborhoodSceneHandle | null>(null);
+  const [peopleOpen, setPeopleOpen] = useState(false);
   const [zoom, setZoom] = useState<number>(WORLD_CAMERA.defaultZoom);
   const directionsRef = useRef(directions);
   directionsRef.current = directions;
@@ -317,6 +320,31 @@ export function PlayableNeighborhood() {
     Record<string, { x: number; y: number }>
   >({});
   const player = players.find((candidate) => candidate.sessionId === sessionId);
+
+  // Remember the spot in the neighbourhood, so the next sign-in starts where the player left.
+  const latestSpot = useRef<{ x: number; y: number } | null>(null);
+  const spotIsSaveable = useRef(false);
+  useEffect(() => {
+    latestSpot.current = player ? { x: player.x, y: player.y } : null;
+    spotIsSaveable.current = connectionState === "connected";
+  }, [player, connectionState]);
+  useEffect(() => {
+    const save = () => {
+      const spot = latestSpot.current;
+      if (!spotIsSaveable.current || !spot) return;
+      void supabase.rpc("save_my_world_checkpoint", { p_world_x: spot.x, p_world_y: spot.y }).then(
+        () => undefined,
+        () => undefined,
+      );
+    };
+    const timer = window.setInterval(save, 10_000);
+    window.addEventListener("pagehide", save);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("pagehide", save);
+      save();
+    };
+  }, []);
   const actionAnimation = simulation.currentAction
     ? avatarAnimationForActivity(simulation.currentAction.animation)
     : undefined;
@@ -652,7 +680,7 @@ export function PlayableNeighborhood() {
     return () => window.removeEventListener("keydown", activate);
   }, [activateHome, activePanel, connectionState, enteringHome, nearbyObject]);
 
-  const handleScene = useCallback((next: PhaserNeighborhoodHandle | null) => setScene(next), []);
+  const handleScene = useCallback((next: NeighborhoodSceneHandle | null) => setScene(next), []);
   const openInteraction = () => {
     if (!nearbyObject) return;
     if (nearbyObject.kind === "home") {
@@ -730,24 +758,9 @@ export function PlayableNeighborhood() {
 
   return (
     <section className="neighborhood-page" aria-label="Playable neighborhood">
-      <header className="neighborhood-header">
-        <div>
-          <p className="neighborhood-eyebrow">Osogbo Life · Playable world</p>
-          <h1>{district ? `${area.name} neighbourhood` : "Explore the neighbourhoods"}</h1>
-          <p>
-            {district?.area.slug === "oja-oba"
-              ? "Explore market lanes, covered stalls and the loading yard."
-              : district?.area.slug === "city-centre"
-                ? "Walk the crossing, residential compounds and local shopfronts."
-                : district
-                  ? `Explore the streets, local businesses and landmarks of ${area.name}.`
-                  : "Travel to an eligible destination to explore its neighborhood."}
-          </p>
-        </div>
-        <Link className="neighborhood-map-link" to="/map">
-          <Map size={17} aria-hidden="true" /> City map
-        </Link>
-      </header>
+      <h1 className="sr-only">
+        {district ? `${area.name} neighbourhood` : "Explore the neighbourhoods"}
+      </h1>
 
       {connectionState === "wrong-area" ? (
         <div className="neighborhood-message" role="status">
@@ -757,7 +770,7 @@ export function PlayableNeighborhood() {
             destination from the city map.
           </span>
           <Link to="/map">Open the city map</Link>
-          <Link to="/house">Go to your home entrance</Link>
+          <HomeLink>Go to your home entrance</HomeLink>
         </div>
       ) : (
         <div className="neighborhood-world-card">
@@ -768,6 +781,7 @@ export function PlayableNeighborhood() {
               : connectionState === "unavailable"
                 ? "Connection unavailable"
                 : "Connecting to the authoritative world..."}
+            {connectionState === "connected" && <small>Tap the ground to walk</small>}
           </div>
           {connectionState === "unavailable" && (
             <div className="neighborhood-error">
@@ -848,6 +862,9 @@ export function PlayableNeighborhood() {
                       >
                         <Minus size={16} aria-hidden="true" />
                       </button>
+                      <Link to="/map" aria-label="City map">
+                        <Map size={16} aria-hidden="true" />
+                      </Link>
                     </div>
                     {nearbyObject && (
                       <button
@@ -886,7 +903,20 @@ export function PlayableNeighborhood() {
                     )}
                   </div>
                   {activeNpcs.length > 0 && (
+                    <button
+                      type="button"
+                      className="neighborhood-people-toggle"
+                      aria-expanded={peopleOpen}
+                      aria-controls="neighborhood-people-panel"
+                      onClick={() => setPeopleOpen((open) => !open)}
+                    >
+                      <Users size={16} aria-hidden="true" />
+                      People · {activeNpcs.length}
+                    </button>
+                  )}
+                  {activeNpcs.length > 0 && peopleOpen && (
                     <section
+                      id="neighborhood-people-panel"
                       className="neighborhood-people"
                       aria-label="People in this neighbourhood"
                     >
@@ -1133,10 +1163,6 @@ export function PlayableNeighborhood() {
                     </DialogContent>
                   </Dialog>
                   <div className="neighborhood-controls-row">
-                    <div className="neighborhood-control-copy">
-                      <strong>Explore at your pace</strong>
-                      <span>Tap or click the ground to walk · arrow keys also work</span>
-                    </div>
                     {homeTypeId && (
                       <button
                         type="button"

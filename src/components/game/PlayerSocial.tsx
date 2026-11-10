@@ -38,6 +38,7 @@ import { Avatar } from "@/components/game/Avatar";
 import type { Appearance } from "@/components/game/Avatar";
 import { FormattedMessage, MessageFormattingToolbar } from "@/components/game/MessageFormatting";
 import { VoiceNotePlayer, VoiceNoteRecorder } from "@/components/game/VoiceNotes";
+import { GroupChats } from "@/components/game/GroupChats";
 import { Button } from "@/components/ui/button";
 import { MessageBubble } from "@/components/game/MessageBubble";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
@@ -95,7 +96,7 @@ type InboxConversation = SocialPlayer & {
   mutedUntil?: string | null;
   starredAt?: string | null;
 };
-type InboxFilter = "all" | "unread";
+type InboxFilter = "all" | "unread" | "groups";
 
 function flattenMessagePages(pages: SocialMessage[][] | undefined) {
   const messages = new Map<string, SocialMessage>();
@@ -1638,20 +1639,22 @@ export function PlayerSocial({
                       <Plus size={19} />
                     </button>
                   </div>
-                  <div className="phone-inbox-controls">
-                    <label className="phone-inbox-search">
-                      <Search size={16} aria-hidden="true" />
-                      <span className="sr-only">Search chats</span>
-                      <input
-                        type="search"
-                        value={conversationSearch}
-                        onChange={(event) => setConversationSearch(event.target.value)}
-                        placeholder="Search chats"
-                      />
-                    </label>
-                  </div>
+                  {inboxFilter !== "groups" && (
+                    <div className="phone-inbox-controls">
+                      <label className="phone-inbox-search">
+                        <Search size={16} aria-hidden="true" />
+                        <span className="sr-only">Search chats</span>
+                        <input
+                          type="search"
+                          value={conversationSearch}
+                          onChange={(event) => setConversationSearch(event.target.value)}
+                          placeholder="Search chats"
+                        />
+                      </label>
+                    </div>
+                  )}
                   <div className="phone-inbox-filters" role="group" aria-label="Chat filters">
-                    {(["all", "unread"] as const).map((filter) => (
+                    {(["all", "unread", "groups"] as const).map((filter) => (
                       <button
                         type="button"
                         key={filter}
@@ -1659,16 +1662,20 @@ export function PlayerSocial({
                         aria-pressed={inboxFilter === filter}
                         onClick={() => setInboxFilter(filter)}
                       >
-                        {filter === "all" ? "All" : "Unread"}
+                        {filter === "all" ? "All" : filter === "unread" ? "Unread" : "Groups"}
                       </button>
                     ))}
                   </div>
-                  {threadQuery.error && !!overview?.conversations.length && (
-                    <p className="text-xs text-destructive" role="alert">
-                      Chat details could not load. Showing conversations with limited details.
-                    </p>
-                  )}
-                  {overviewQuery.isPending ? (
+                  {threadQuery.error &&
+                    !!overview?.conversations.length &&
+                    inboxFilter !== "groups" && (
+                      <p className="text-xs text-destructive" role="alert">
+                        Chat details could not load. Showing conversations with limited details.
+                      </p>
+                    )}
+                  {inboxFilter === "groups" ? (
+                    <GroupChats friends={overview?.friends ?? []} />
+                  ) : overviewQuery.isPending ? (
                     <p className="text-sm text-muted-foreground">Loading your chats…</p>
                   ) : overviewQuery.error ? (
                     <p className="text-sm text-destructive" role="alert">

@@ -180,7 +180,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-
   .game-needs-rail *,
   .game-needs-rail *::before,
   .game-needs-rail *::after {
@@ -274,4 +273,25 @@
     height: 32px;
     flex-basis: 32px;
   }
+}
+.game-needs-rail {
+  position: relative;
+}
+
+.game-needs-toggle {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--popover);
+  color: var(--popover-foreground);
+  box-shadow: var(--elevation-card);
+  cursor: pointer;
 }

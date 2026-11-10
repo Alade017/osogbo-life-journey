@@ -1,38 +1,9 @@
 .neighborhood-page {
-  display: grid;
-  gap: 1.25rem;
-  width: min(100%, 1120px);
-  margin: 0 auto;
-  padding: clamp(1rem, 3vw, 2rem);
-}
-
-.neighborhood-header {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.neighborhood-header h1 {
+  position: absolute;
+  inset: 0;
   margin: 0;
-  color: var(--brand-ink);
-  font-family: var(--typeface-display);
-  font-size: clamp(1.7rem, 4vw, 2.45rem);
-  letter-spacing: -0.035em;
-}
-
-.neighborhood-header p {
-  margin: 0.35rem 0 0;
-  color: var(--color-text-secondary);
-}
-
-.neighborhood-header .neighborhood-eyebrow {
-  margin: 0 0 0.4rem;
-  color: var(--brand-royal-deep);
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  padding: calc(max(12px, env(safe-area-inset-top)) + 56px) 14px 14px;
+  overflow: hidden;
 }
 
 .neighborhood-map-link,
@@ -58,7 +29,12 @@
   background: var(--color-primary-soft);
 }
 
-.neighborhood-world-card,
+.neighborhood-world-card {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
 .neighborhood-message {
   overflow: hidden;
   border: 1px solid var(--border);
@@ -68,14 +44,31 @@
 }
 
 .neighborhood-world-status {
+  position: absolute;
+  z-index: 4;
+  top: calc(max(12px, env(safe-area-inset-top)) + 56px);
+  left: max(12px, env(safe-area-inset-left));
   display: flex;
-  min-height: 48px;
+  min-height: 42px;
+  max-width: min(300px, calc(100% - 24px));
   align-items: center;
   gap: 0.55rem;
-  padding: 0.7rem 1rem;
-  color: var(--color-text-secondary);
+  box-sizing: border-box;
+  padding: 0.3rem 0.8rem 0.3rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--house-control-surface, var(--popover));
+  color: var(--brand-ink);
+  box-shadow: var(--elevation-card);
   font-size: 0.82rem;
   font-weight: 700;
+}
+
+.neighborhood-world-status small {
+  display: block;
+  color: var(--color-text-secondary);
+  font-size: 0.72rem;
+  font-weight: 600;
 }
 
 .neighborhood-world-status > span {
@@ -91,19 +84,15 @@
 }
 
 .neighborhood-stage {
-  position: relative;
-  min-height: 440px;
+  position: absolute;
+  inset: 0;
   overflow: hidden;
-  border-block: 1px solid var(--border);
-  background: radial-gradient(ellipse at 48% 48%, rgb(230 229 196 / 30%), transparent 58%), #9cae79;
   isolation: isolate;
 }
 
 .playable-neighborhood-canvas {
-  position: relative;
-  width: 100%;
-  height: min(64vh, 640px);
-  min-height: 440px;
+  position: absolute;
+  inset: 0;
   touch-action: none;
 }
 
@@ -150,28 +139,36 @@
 .neighborhood-zoom-controls {
   position: absolute;
   z-index: 3;
-  top: 0.85rem;
-  right: 0.85rem;
+  top: 50%;
+  right: max(12px, env(safe-area-inset-right));
   display: grid;
-  gap: 0.4rem;
+  gap: 0.5rem;
+  transform: translateY(-50%);
 }
 
-.neighborhood-zoom-controls button {
+.neighborhood-zoom-controls button,
+.neighborhood-zoom-controls a {
   display: grid;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   place-items: center;
-  border: 1px solid rgb(20 33 61 / 18%);
-  border-radius: 0.75rem;
-  background: rgb(255 255 255 / 92%);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--house-control-surface, var(--popover));
   color: var(--brand-ink);
   box-shadow: var(--elevation-card);
+  cursor: pointer;
+}
+
+.neighborhood-zoom-controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .neighborhood-interaction {
   position: absolute;
   z-index: 3;
-  top: 0.85rem;
+  bottom: calc(var(--game-dock-height, 64px) + env(safe-area-inset-bottom) + 12px);
   left: 50%;
   display: inline-flex;
   min-height: 44px;
@@ -199,11 +196,42 @@
   font-size: 0.7rem;
 }
 
+.neighborhood-people-toggle {
+  position: absolute;
+  z-index: 3;
+  bottom: calc(var(--game-dock-height, 64px) + env(safe-area-inset-bottom) + 12px);
+  left: max(12px, env(safe-area-inset-left));
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0 1rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--house-control-surface, var(--popover));
+  color: var(--brand-ink);
+  box-shadow: var(--elevation-card);
+  font-size: 0.84rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
 .neighborhood-people {
+  position: absolute;
+  z-index: 4;
+  bottom: calc(var(--game-dock-height, 64px) + env(safe-area-inset-bottom) + 66px);
+  left: max(12px, env(safe-area-inset-left));
   display: grid;
   gap: 0.75rem;
+  width: min(380px, calc(100% - 24px));
+  max-height: 46vh;
+  overflow-y: auto;
+  box-sizing: border-box;
   padding: 0.9rem 1rem;
-  border-top: 1px solid var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card);
+  background: var(--card);
+  box-shadow: var(--elevation-card);
 }
 
 .neighborhood-people-heading {
@@ -311,27 +339,13 @@
 }
 
 .neighborhood-controls-row {
+  position: absolute;
+  z-index: 3;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: calc(var(--game-dock-height, 64px) + env(safe-area-inset-bottom) + 12px);
   display: flex;
-  min-height: 112px;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.8rem 1rem;
-}
-
-.neighborhood-control-copy {
-  display: grid;
-  gap: 0.3rem;
-}
-
-.neighborhood-control-copy strong {
-  color: var(--brand-ink);
-  font-size: 0.92rem;
-}
-
-.neighborhood-control-copy span {
-  color: var(--color-text-secondary);
-  font-size: 0.78rem;
+  gap: 0.5rem;
 }
 
 .neighborhood-controls-row .player-movement-controls {
@@ -384,21 +398,6 @@
     padding: 0.85rem 0.7rem calc(var(--game-dock-height) + env(safe-area-inset-bottom) + 1rem);
   }
 
-  .neighborhood-header {
-    align-items: flex-start;
-  }
-
-  .neighborhood-header > div > p:last-child {
-    max-width: 22rem;
-    font-size: 0.84rem;
-  }
-
-  .neighborhood-header .neighborhood-map-link {
-    flex-shrink: 0;
-    min-height: 38px;
-    padding-inline: 0.65rem;
-  }
-
   .neighborhood-stage,
   .playable-neighborhood-canvas {
     min-height: 62vh;
@@ -408,11 +407,6 @@
     min-height: auto;
     align-items: flex-start;
     padding: 0.7rem;
-  }
-
-  .neighborhood-control-copy span {
-    max-width: 9rem;
-    line-height: 1.4;
   }
 
   .neighborhood-controls-row .player-movement-controls {

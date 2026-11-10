@@ -1,515 +1,516 @@
 /* Lagos-style top HUD: status chips, one action row, and round emoji place badges. */
 .map-hud {
-    z-index: 6;
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    padding: 0.45rem;
-    border-radius: 22px;
-    background: color-mix(in srgb, var(--card) 92%, transparent);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    box-shadow: var(--elevation-card);
-    color: var(--foreground);
-    font-size: 0.78rem;
-    animation: map-toolbar-enter 220ms ease-out both;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.45rem;
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: var(--elevation-card);
+  color: var(--foreground);
+  font-size: 0.78rem;
+  animation: map-toolbar-enter 220ms ease-out both;
 }
 
 .map-hud-status {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
 }
 
 .map-hud-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    min-height: 30px;
-    padding: 0.25rem 0.7rem;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--primary) 14%, transparent);
-    white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 30px;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  white-space: nowrap;
 }
 
 .map-hud-chip svg {
-    color: var(--primary);
+  color: var(--primary);
 }
 
 .map-hud-chip small {
-    color: var(--muted-foreground);
-    font-size: 0.68rem;
+  color: var(--muted-foreground);
+  font-size: 0.68rem;
 }
 
 .map-hud-chip strong {
-    font-weight: 750;
+  font-weight: 750;
 }
 
 .map-hud-actions {
-    display: flex;
-    gap: 0.4rem;
-    overflow-x: auto;
-    padding-bottom: 2px;
-    scrollbar-width: none;
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
 }
 
 .map-hud-actions::-webkit-scrollbar {
-    display: none;
+  display: none;
 }
 
 .map-hud .map-level-toggle {
-    flex: 0 0 auto;
-    margin-left: 0;
-    min-height: 34px;
-    border-color: transparent;
-    background: var(--foreground);
-    color: var(--background);
+  flex: 0 0 auto;
+  margin-left: 0;
+  min-height: 34px;
+  border-color: transparent;
+  background: var(--foreground);
+  color: var(--background);
 }
 
 .map-hud .map-level-toggle svg {
-    color: inherit;
+  color: inherit;
 }
 
 .map-hud .map-neighborhood-link {
-    flex: 0 0 auto;
-    min-height: 34px;
+  flex: 0 0 auto;
+  min-height: 34px;
 }
 
 /* Compact landmark markers for the city overview */
 .map-place-badge {
-    position: relative;
-    display: grid;
-    place-items: center;
-    width: 27px;
-    height: 27px;
-    border-radius: 50%;
-    background: #fff;
-    border: 2px solid var(--badge-tone, #64748b);
-    box-shadow: 0 2px 7px rgba(0, 0, 0, 0.24);
-    font-size: 14px;
-    line-height: 1;
-    user-select: none;
-    transition:
-        transform 160ms ease,
-        box-shadow 160ms ease;
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid var(--badge-tone, #64748b);
+  box-shadow: 0 2px 7px rgba(0, 0, 0, 0.24);
+  font-size: 14px;
+  line-height: 1;
+  user-select: none;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .map-place-badge::after {
-    content: "";
-    position: absolute;
-    left: 50%;
-    bottom: -6px;
-    transform: translateX(-50%);
-    border: 5px solid transparent;
-    border-top-color: #fff;
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-top-color: #fff;
 }
 
 @media (max-width: 600px) {
-    .map-place-badge {
-        width: 24px;
-        height: 24px;
-        font-size: 12px;
-    }
+  .map-place-badge {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+  }
 }
 
 /* Live ticker: scrolling city event headlines. */
 .map-ticker {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    min-height: 30px;
-    padding: 0.2rem 0.4rem 0.2rem 0.3rem;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--foreground) 88%, transparent);
-    color: var(--background);
-    font-size: 0.75rem;
-    overflow: hidden;
-    box-shadow: var(--elevation-card);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 30px;
+  padding: 0.2rem 0.4rem 0.2rem 0.3rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--foreground) 88%, transparent);
+  color: var(--background);
+  font-size: 0.75rem;
+  overflow: hidden;
+  box-shadow: var(--elevation-card);
 }
 
 .map-ticker-label {
-    flex: 0 0 auto;
-    padding: 0.15rem 0.55rem;
-    border-radius: 999px;
-    background: var(--primary);
-    color: var(--foreground);
-    font-size: 0.68rem;
-    font-weight: 800;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
+  flex: 0 0 auto;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--foreground);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .map-ticker-viewport {
-    flex: 1 1 auto;
-    min-width: 0;
-    overflow: hidden;
-    mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
 }
 
 .map-ticker-track {
-    display: inline-flex;
-    white-space: nowrap;
-    animation: map-ticker-scroll 18s linear infinite;
+  display: inline-flex;
+  white-space: nowrap;
+  animation: map-ticker-scroll 18s linear infinite;
 }
 
-.map-ticker-track>span {
-    padding-right: 2rem;
+.map-ticker-track > span {
+  padding-right: 2rem;
 }
 
 @keyframes map-ticker-scroll {
-    from {
-        transform: translateX(0);
-    }
+  from {
+    transform: translateX(0);
+  }
 
-    to {
-        transform: translateX(-50%);
-    }
+  to {
+    transform: translateX(-50%);
+  }
 }
 
 /* Locked places: shown as dashed "coming soon" chips. */
 .map-locked-strip {
-    display: flex;
-    gap: 0.35rem;
-    overflow-x: auto;
-    scrollbar-width: none;
+  display: flex;
+  gap: 0.35rem;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
 .map-locked-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    flex: 0 0 auto;
-    padding: 0.25rem 0.6rem;
-    border-radius: 999px;
-    border: 1px dashed color-mix(in srgb, var(--foreground) 35%, transparent);
-    background: color-mix(in srgb, var(--card) 85%, transparent);
-    color: var(--muted-foreground);
-    font-size: 0.72rem;
-    font-weight: 700;
-    white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex: 0 0 auto;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  border: 1px dashed color-mix(in srgb, var(--foreground) 35%, transparent);
+  background: color-mix(in srgb, var(--card) 85%, transparent);
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
 /* Player corner: avatar and level progress, bottom left of the map. */
 .map-player-dock {
-    position: absolute;
-    left: 0.6rem;
-    bottom: 0.6rem;
-    z-index: 6;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.35rem 0.7rem 0.35rem 0.35rem;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--card) 92%, transparent);
-    box-shadow: var(--elevation-card);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+  position: absolute;
+  left: 0.6rem;
+  bottom: 0.6rem;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.7rem 0.35rem 0.35rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card) 92%, transparent);
+  box-shadow: var(--elevation-card);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .map-player-avatar {
-    display: grid;
-    place-items: center;
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    overflow: hidden;
-    background: radial-gradient(circle, #fff8ec, #ecdcc2);
-    border: 2px solid var(--primary);
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: radial-gradient(circle, #fff8ec, #ecdcc2);
+  border: 2px solid var(--primary);
 }
 
 .map-player-progress {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    min-width: 88px;
-    font-size: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 88px;
+  font-size: 0.75rem;
 }
 
 .map-player-bar {
-    height: 6px;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--foreground) 12%, transparent);
-    overflow: hidden;
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--foreground) 12%, transparent);
+  overflow: hidden;
 }
 
-.map-player-bar>span {
-    display: block;
-    height: 100%;
-    border-radius: inherit;
-    background: var(--primary);
+.map-player-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary);
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .map-ticker-track {
-        animation: none;
-    }
+  .map-ticker-track {
+    animation: none;
+  }
 }
 
 /* Map redesign: a light ticker and quiet locked chips instead of dark bars. */
 .map-ticker {
-    background: var(--card);
-    color: var(--foreground);
-    border: 1px solid var(--border);
-    box-shadow: 0 8px 20px -16px color-mix(in srgb, var(--foreground) 60%, transparent);
+  background: var(--card);
+  color: var(--foreground);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 20px -16px color-mix(in srgb, var(--foreground) 60%, transparent);
 }
 
 .map-ticker-label {
-    background: var(--primary);
-    color: var(--primary-foreground);
+  background: var(--primary);
+  color: var(--primary-foreground);
 }
 
 .map-ticker-viewport {
-    mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
 }
 
 .map-locked-strip {
-    padding: 0 0.1rem;
+  padding: 0 0.1rem;
 }
 
 .map-locked-chip {
-    border: 1px dashed color-mix(in srgb, var(--muted-foreground) 45%, transparent);
-    background: transparent;
-    color: var(--muted-foreground);
-    font-weight: 650;
+  border: 1px dashed color-mix(in srgb, var(--muted-foreground) 45%, transparent);
+  background: transparent;
+  color: var(--muted-foreground);
+  font-weight: 650;
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .map-ticker-track {
-        animation: none;
-    }
+  .map-ticker-track {
+    animation: none;
+  }
 }
 
 .district-label {
-    display: inline-block;
-    padding: 2px 7px;
-    border-radius: 999px;
-    background: color-mix(in srgb, var(--card) 88%, transparent);
-    color: var(--foreground);
-    font: 650 10px/1.2 system-ui, sans-serif;
-    letter-spacing: 0.02em;
-    white-space: nowrap;
-    box-shadow: 0 4px 10px -8px color-mix(in srgb, var(--foreground) 70%, transparent);
-    pointer-events: none;
-    opacity: 0.92;
+  display: inline-block;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+  color: var(--foreground);
+  font:
+    650 10px/1.2 system-ui,
+    sans-serif;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  box-shadow: 0 4px 10px -8px color-mix(in srgb, var(--foreground) 70%, transparent);
+  pointer-events: none;
+  opacity: 0.92;
 }
 
 .district-label[data-traffic="high"] {
-    border: 1px solid color-mix(in srgb, var(--primary) 45%, transparent);
+  border: 1px solid color-mix(in srgb, var(--primary) 45%, transparent);
 }
 
 /* ===== Map redesign: one header card, a coming-soon sheet and a warm, consistent style ===== */
 
 .map-hud {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.5rem 0.6rem;
-    padding: 0.5rem 0.6rem;
-    border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
-    border-radius: 22px;
-    background: color-mix(in srgb, var(--card) 94%, transparent);
-    box-shadow: 0 10px 26px -18px color-mix(in srgb, var(--foreground) 55%, transparent);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.6rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--card) 94%, transparent);
+  box-shadow: 0 10px 26px -18px color-mix(in srgb, var(--foreground) 55%, transparent);
 }
 
 .map-hud-status {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.4rem;
-    min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
 }
 
 .map-hud-actions {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: flex-end;
-    gap: 0.4rem;
-    margin-left: auto;
-    min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  margin-left: auto;
+  min-width: 0;
 }
 
 .map-soon-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.3rem;
-    min-height: 34px;
-    padding: 0.3rem 0.7rem;
-    border: 1px dashed color-mix(in srgb, var(--muted-foreground) 50%, transparent);
-    border-radius: 999px;
-    background: transparent;
-    color: var(--foreground);
-    font: inherit;
-    font-size: 0.74rem;
-    cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  min-height: 34px;
+  padding: 0.3rem 0.7rem;
+  border: 1px dashed color-mix(in srgb, var(--muted-foreground) 50%, transparent);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  font-size: 0.74rem;
+  cursor: pointer;
 }
 
 .map-soon-button strong {
-    font-weight: 800;
+  font-weight: 800;
 }
 
 .map-soon-button small {
-    color: var(--muted-foreground);
+  color: var(--muted-foreground);
 }
 
 .map-soon-sheet {
-    height: auto;
-    max-height: min(60dvh, 520px);
+  height: auto;
+  max-height: min(60dvh, 520px);
 }
 
 .map-soon-list {
-    display: grid;
-    gap: 0.4rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
 .map-soon-list li {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    padding: 0.55rem 0.65rem;
-    border: 1px dashed color-mix(in srgb, var(--muted-foreground) 35%, transparent);
-    border-radius: 14px;
-    background: var(--background);
-    font-weight: 650;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.65rem;
+  border: 1px dashed color-mix(in srgb, var(--muted-foreground) 35%, transparent);
+  border-radius: 14px;
+  background: var(--background);
+  font-weight: 650;
 }
 
 .map-soon-list small {
-    margin-left: auto;
-    color: var(--muted-foreground);
-    font-size: 0.72rem;
+  margin-left: auto;
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
 }
 
 .map-soon-icon {
-    display: grid;
-    place-items: center;
-    width: 28px;
-    height: 28px;
-    flex: 0 0 28px;
-    border-radius: 10px;
-    background: var(--accent);
-    color: var(--foreground);
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  border-radius: 10px;
+  background: var(--accent);
+  color: var(--foreground);
 }
 
 @media (max-width: 640px) {
-    .map-hud-actions {
-        width: 100%;
-        margin-left: 0;
-        justify-content: flex-start;
-    }
+  .map-hud-actions {
+    width: 100%;
+    margin-left: 0;
+    justify-content: flex-start;
+  }
 }
 
 @media (min-width: 641px) {
-    .map-hud {
-        flex-wrap: nowrap;
-        align-items: center;
-        gap: 0.6rem;
-    }
+  .map-hud {
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0.6rem;
+  }
 
-    .map-hud-status {
-        flex: 1 1 auto;
-        min-width: 0;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        scrollbar-width: none;
-    }
+  .map-hud-status {
+    flex: 1 1 auto;
+    min-width: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
 
-    .map-hud-status::-webkit-scrollbar {
-        display: none;
-    }
+  .map-hud-status::-webkit-scrollbar {
+    display: none;
+  }
 
-    .map-hud-actions {
-        flex: 0 0 auto;
-        flex-wrap: nowrap;
-        margin-left: 0;
-        gap: 0.4rem;
-    }
+  .map-hud-actions {
+    flex: 0 0 auto;
+    flex-wrap: nowrap;
+    margin-left: 0;
+    gap: 0.4rem;
+  }
 
-    .map-hud-actions .map-neighborhood-link,
-    .map-hud-actions .map-level-toggle {
-        white-space: nowrap;
-    }
+  .map-hud-actions .map-neighborhood-link,
+  .map-hud-actions .map-level-toggle {
+    white-space: nowrap;
+  }
 }
 
 /* new */
 /* Header: one compact row, status on the left and every action on the right. */
 .dashboard-ui-refresh .map-experience .map-hud,
 .map-experience .map-hud {
-    flex-direction: row;
-    flex-wrap: nowrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.5rem;
-    width: 100%;
-    padding: 0.35rem 0.45rem;
-    box-sizing: border-box;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.35rem 0.45rem;
+  box-sizing: border-box;
 }
 
 .dashboard-ui-refresh .map-experience .map-hud-status,
 .map-experience .map-hud-status {
-    flex: 1 1 auto;
-    min-width: 0;
-    flex-wrap: nowrap;
-    align-items: center;
-    gap: 0.35rem;
-    overflow-x: auto;
-    scrollbar-width: none;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.35rem;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
 .dashboard-ui-refresh .map-experience .map-hud-status::-webkit-scrollbar,
 .map-experience .map-hud-status::-webkit-scrollbar {
-    display: none;
+  display: none;
 }
 
 .dashboard-ui-refresh .map-experience .map-hud-chip,
 .map-experience .map-hud-chip {
-    min-height: 28px;
-    padding: 0.2rem 0.6rem;
-    font-size: 0.74rem;
+  min-height: 28px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.74rem;
 }
 
 .dashboard-ui-refresh .map-experience .map-hud-actions,
 .map-experience .map-hud-actions {
-    flex: 0 0 auto;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    align-items: center;
-    gap: 0.35rem;
-    overflow: visible;
-    padding-bottom: 0;
+  flex: 0 0 auto;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.35rem;
+  overflow: visible;
+  padding-bottom: 0;
 }
 
 .dashboard-ui-refresh .map-experience .map-hud-actions .map-level-toggle,
 .dashboard-ui-refresh .map-experience .map-hud-actions .map-neighborhood-link,
 .map-experience .map-hud-actions .map-level-toggle,
 .map-experience .map-hud-actions .map-neighborhood-link {
-    flex: 0 0 auto;
-    min-height: 30px;
-    padding: 0.2rem 0.6rem;
-    font-size: 0.74rem;
-    white-space: nowrap;
+  flex: 0 0 auto;
+  min-height: 30px;
+  padding: 0.2rem 0.6rem;
+  font-size: 0.74rem;
+  white-space: nowrap;
 }
 
 .map-experience .map-soon-button {
-    min-height: 28px;
-    padding: 0.2rem 0.55rem;
-    font-size: 0.72rem;
+  min-height: 28px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.72rem;
 }
 
 @media (max-width: 640px) {
+  .dashboard-ui-refresh .map-experience .map-hud,
+  .map-experience .map-hud {
+    flex-direction: column;
+    flex-wrap: wrap;
+    align-items: stretch;
+  }
 
-    .dashboard-ui-refresh .map-experience .map-hud,
-    .map-experience .map-hud {
-        flex-direction: column;
-        flex-wrap: wrap;
-        align-items: stretch;
-    }
-
-    .dashboard-ui-refresh .map-experience .map-hud-actions,
-    .map-experience .map-hud-actions {
-        width: 100%;
-        flex-wrap: wrap;
-    }
+  .dashboard-ui-refresh .map-experience .map-hud-actions,
+  .map-experience .map-hud-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
 }

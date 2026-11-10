@@ -15,7 +15,21 @@ const tabs = [
   { name: "Learning", icon: GraduationCap },
 ] as const;
 
-export function CareerLifeApp({ opportunities }: { opportunities: ReactNode }) {
+/**
+ * Career Life. In the phone it has no Learning tab, and its Opportunities tab shows the
+ * `opportunities` content (a plain job list there).
+ */
+export function CareerLifeApp({
+  opportunities,
+  phone = false,
+}: {
+  opportunities: ReactNode;
+  phone?: boolean;
+}) {
+  const visibleTabs = phone ? tabs.filter((item) => item.name !== "Learning") : tabs;
+  const notice = phone
+    ? "Your career record could not be loaded. Opportunities are still available."
+    : "Your career record could not be loaded. Opportunities and Learning are still available.";
   const [tab, setTab] = useState<string>("Overview");
   const [offset, setOffset] = useState(0);
   const { data: character } = useQuery(q.character());
@@ -44,7 +58,7 @@ export function CareerLifeApp({ opportunities }: { opportunities: ReactNode }) {
         </div>
       </header>
       <nav className="learning-tabs" aria-label="Career Life sections">
-        {tabs.map(({ name, icon: Icon }) => (
+        {visibleTabs.map(({ name, icon: Icon }) => (
           <button
             key={name}
             type="button"
@@ -65,10 +79,7 @@ export function CareerLifeApp({ opportunities }: { opportunities: ReactNode }) {
           {summary.isPending && <p role="status">Loading your career record…</p>}
           {summary.isError && (
             <div className="learning-notice" role="alert">
-              <p>
-                Your career record could not be loaded. Opportunities and Learning are still
-                available.
-              </p>
+              <p>{notice}</p>
               <Button variant="plain" onClick={() => void summary.refetch()}>
                 Retry career record
               </Button>

@@ -24,10 +24,16 @@ import {
   renderSlotForPlacement,
   roomPercentToPosition,
   snapToHouseGrid,
+  isWallArtKind,
+  snapToBackWall,
   houseSlotPosition as slotPosition,
   houseWallSegments,
   houseRearDoorCenter,
   FOUR_ROOM_HOME_TYPES,
+  houseRoomViews,
+  roomViewContains,
+  roomViewHidesSegment,
+  type HouseRoomView,
   type HouseRoomRendererProps as Props,
 } from "./house-room-contract";
 
@@ -38,7 +44,7 @@ import {
   WorldMaterial,
   type WorldInstance,
 } from "@/components/3d/WorldScene";
-import { WORLD_SCALE } from "@/components/3d/world-theme";
+import { ROOM_VIEW_CAMERA, ROOM_VIEW_PALETTE, WORLD_SCALE } from "@/components/3d/world-theme";
 
 type WaitingCourier = { delivery: FoodDelivery; index: number };
 
@@ -54,6 +60,8 @@ type DragPointer = {
   moved: boolean;
 };
 const FLOOR_PLANE = new Plane(new Vector3(0, 1, 0), -0.2);
+/** Height of the warm room-view light: part of the door height above the floor. */
+const ROOM_VIEW_LIGHT_Y = WORLD_SCALE.door * 1.15 * 0.75;
 
 function hasRoomPosition(
   placement: HousePlacement,
@@ -64,14 +72,23 @@ function hasRoomPosition(
 type FloorTone =
   "tileLight" | "tileShade" | "tileBath" | "tileBathShade" | "tileDark" | "tileDarkShade";
 
+/** Warm tile colours for the room view; the whole-home view keeps its own palette. */
+function roomFloorColor(tone: FloorTone): string {
+  return tone.includes("Shade") || tone === "tileDark"
+    ? ROOM_VIEW_PALETTE.floorShade
+    : ROOM_VIEW_PALETTE.floorLight;
+}
+
 function RoomFloor({
   houseTypeId,
   width,
   depth,
+  roomView = null,
 }: {
   houseTypeId: string;
   width: number;
   depth: number;
+  roomView?: HouseRoomView | null;
 }) {
   const groups = useMemo(() => {
     const tiles: Record<FloorTone, WorldInstance[]> = {
@@ -118,7 +135,12 @@ function RoomFloor({
   return (
     <>
       {(Object.entries(groups) as [FloorTone, WorldInstance[]][]).map(([tone, items]) => (
-        <WorldInstances key={tone} items={items} tone={tone} />
+        <WorldInstances
+          key={tone}
+          items={items}
+          tone={tone}
+          {...(roomView ? { color: roomFloorColor(tone) } : {})}
+        />
       ))}
     </>
   );
@@ -203,14 +225,18 @@ function HouseDoorPanel({
 
 function OsogboRoomPrototype({
   houseTypeId,
+  wallsClosed = null,
   width,
   depth,
   editMode,
   activeFloor = 0,
   onUseStairs,
   doorOpen = false,
+  roomView = null,
 }: {
   houseTypeId: string;
+  roomView?: HouseRoomView | null;
+  wallsClosed?: boolean | null;
   width: number;
   depth: number;
   activeFloor?: 0 | 1;
@@ -241,27 +267,32 @@ function OsogboRoomPrototype({
           height,
           doorwayWidth,
           rearDoorCenter,
-          FOUR_ROOM_HOME_TYPES.includes(houseTypeId),
-        ).map((segment) => (
-          <group key={segment.id}>
-            <mesh castShadow receiveShadow position={segment.position}>
-              <boxGeometry args={segment.size} />
-              <WorldMaterial tone="partition" />
-            </mesh>
-            <mesh
-              castShadow
-              receiveShadow
-              position={[
-                segment.position[0],
-                segment.position[1] + segment.size[1] / 2,
-                segment.position[2],
-              ]}
-            >
-              <boxGeometry args={[segment.size[0] + 0.05, 0.065, segment.size[2] + 0.05]} />
-              <WorldMaterial tone="trim" />
-            </mesh>
-          </group>
-        ))}
+          wallsClosed ?? FOUR_ROOM_HOME_TYPES.includes(houseTypeId),
+        )
+          .filter((segment) => !roomView || !roomViewHidesSegment(segment, roomView))
+          .map((segment) => (
+            <group key={segment.id}>
+              <mesh castShadow receiveShadow position={segment.position}>
+                <boxGeometry args={segment.size} />
+                <WorldMaterial
+                  tone="partition"
+                  {...(roomView ? { color: ROOM_VIEW_PALETTE.wall } : {})}
+                />
+              </mesh>
+              <mesh
+                castShadow
+                receiveShadow
+                position={[
+                  segment.position[0],
+                  segment.position[1] + segment.size[1] / 2,
+                  segment.position[2],
+                ]}
+              >
+                <boxGeometry args={[segment.size[0] + 0.05, 0.065, segment.size[2] + 0.05]} />
+                <WorldMaterial tone="trim" />
+              </mesh>
+            </group>
+          ))}
         <mesh
           castShadow
           receiveShadow
@@ -309,26 +340,31 @@ function OsogboRoomPrototype({
         {houseStairs(houseTypeId, width, depth) && (
           <HouseStairsModel stairs={houseStairs(houseTypeId, width, depth)!} onUse={onUseStairs} />
         )}
-        {housePartitionSegmentsForFloor(houseTypeId, width, depth, activeFloor).map((segment) => (
-          <group key={segment.id}>
-            <mesh castShadow receiveShadow position={segment.position}>
-              <boxGeometry args={segment.size} />
-              <WorldMaterial tone="partition" />
-            </mesh>
-            <mesh
-              castShadow
-              receiveShadow
-              position={[
-                segment.position[0],
-                segment.position[1] + segment.size[1] / 2,
-                segment.position[2],
-              ]}
-            >
-              <boxGeometry args={[segment.size[0] + 0.04, 0.055, segment.size[2] + 0.04]} />
-              <WorldMaterial tone="trim" />
-            </mesh>
-          </group>
-        ))}
+        {housePartitionSegmentsForFloor(houseTypeId, width, depth, activeFloor)
+          .filter((segment) => !roomView || !roomViewHidesSegment(segment, roomView))
+          .map((segment) => (
+            <group key={segment.id}>
+              <mesh castShadow receiveShadow position={segment.position}>
+                <boxGeometry args={segment.size} />
+                <WorldMaterial
+                  tone="partition"
+                  {...(roomView ? { color: ROOM_VIEW_PALETTE.wall } : {})}
+                />
+              </mesh>
+              <mesh
+                castShadow
+                receiveShadow
+                position={[
+                  segment.position[0],
+                  segment.position[1] + segment.size[1] / 2,
+                  segment.position[2],
+                ]}
+              >
+                <boxGeometry args={[segment.size[0] + 0.04, 0.055, segment.size[2] + 0.04]} />
+                <WorldMaterial tone="trim" />
+              </mesh>
+            </group>
+          ))}
       </group>
       <HouseDoorPanel
         hingeX={rearDoorCenter - doorwayWidth / 2}
@@ -432,6 +468,9 @@ const FURNITURE_COLOURS = {
   gymRed: "#b5523b",
   gymMat: "#6f8f63",
   mirrorGlass: "#c9d6e0",
+  mirrorFrame: "#14213d",
+  artRoyal: "#014baa",
+  artGold: "#e7d9b4",
 } as const;
 
 export function FurnitureFallback({
@@ -1048,6 +1087,52 @@ export function FurnitureFallback({
         </mesh>
       </group>
     );
+  if (kind === "wall-art-canvas")
+    return (
+      <group>
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[0.84, 0.66, 0.04]}
+          radius={0.01}
+          smoothness={4}
+          position={[0, 0.7, 0]}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.bedLinen} roughness={0.95} />
+        </RoundedBox>
+        <mesh castShadow position={[-0.14, 0.74, 0.024]}>
+          <boxGeometry args={[0.36, 0.3, 0.01]} />
+          <meshStandardMaterial color={FURNITURE_COLOURS.artRoyal} roughness={0.8} />
+        </mesh>
+        <mesh castShadow position={[0.2, 0.62, 0.024]}>
+          <boxGeometry args={[0.22, 0.18, 0.01]} />
+          <meshStandardMaterial color={FURNITURE_COLOURS.artGold} roughness={0.8} />
+        </mesh>
+      </group>
+    );
+  if (kind === "wall-art-mirror")
+    return (
+      <group>
+        <RoundedBox
+          castShadow
+          receiveShadow
+          args={[0.7, 0.9, 0.05]}
+          radius={0.12}
+          smoothness={4}
+          position={[0, 0.7, 0]}
+        >
+          <meshStandardMaterial color={FURNITURE_COLOURS.mirrorFrame} roughness={0.5} />
+        </RoundedBox>
+        <mesh position={[0, 0.7, 0.03]}>
+          <planeGeometry args={[0.58, 0.78]} />
+          <meshStandardMaterial
+            color={FURNITURE_COLOURS.mirrorGlass}
+            roughness={0.15}
+            metalness={0.4}
+          />
+        </mesh>
+      </group>
+    );
   if (kind === "treadmill")
     return (
       <group>
@@ -1402,6 +1487,13 @@ function RoomCharacter({
   );
 }
 
+/** Courier spots, measured from the room's real rear door. */
+const COURIER_DOOR_INSET = 0.2;
+const COURIER_EXIT_DISTANCE = 2.5;
+const COURIER_INSIDE_SHARE = 0.13;
+const COURIER_INSIDE_DEPTH = 1.35;
+const COURIER_SPACING = 0.5;
+
 /** Walks the courier out of the room after the player has collected the package. */
 function DepartingCourier({
   startX,
@@ -1455,24 +1547,26 @@ const COURIER_LOOK = { outfit: 1, bottoms: 1, shoes: 0 } as const;
 
 function FoodCourier({
   delivery,
+  houseTypeId,
   width,
   depth,
   index,
   onCollect,
 }: {
   delivery: FoodDelivery;
+  houseTypeId: string;
   width: number;
   depth: number;
   index: number;
   onCollect?: ((id: string) => void) | undefined;
 }) {
   const overlayPortal = useContext(RoomOverlayContext);
-  const doorX = width * 0.22;
-  const doorZ = -depth / 2 + 0.2;
+  const doorX = houseRearDoorCenter(houseTypeId, width);
+  const doorZ = -depth / 2 + COURIER_DOOR_INSET;
   const inside = delivery.deliveryChoice === "inside";
   // Where the courier stands once he has arrived (one spot per waiting package).
-  const standX = (inside ? width * 0.13 : doorX) + index * 0.5;
-  const standZ = inside ? -depth / 2 + 1.35 : doorZ;
+  const standX = (inside ? width * COURIER_INSIDE_SHARE : doorX) + index * COURIER_SPACING;
+  const standZ = inside ? -depth / 2 + COURIER_INSIDE_DEPTH : doorZ;
   const knocking = delivery.deliveryState === "awaiting_response";
   const approaching = delivery.deliveryState === "approaching";
   const waiting = delivery.deliveryState === "package_waiting";
@@ -1523,26 +1617,29 @@ function FoodCourier({
         gender="male"
         position={position}
         appearance={COURIER_LOOK}
-        animation={approaching && inside ? "walk" : waiting ? "talk" : "idle"}
+        animation={waiting ? "interact" : approaching && inside ? "walk" : "idle"}
         facing="south"
+        held={
+          <>
+            <FoodPackage
+              delivery={delivery}
+              position={[0, 0, 0]}
+              onCollect={waiting ? onCollect : undefined}
+            />
+            {waiting && onCollect && (
+              <Html
+                portal={overlayPortal}
+                zIndexRange={[8, 0]}
+                center
+                position={[0, 0.45, 0]}
+                style={{ pointerEvents: "none" }}
+              >
+                <span className="house-food-package-label">Tap package to collect</span>
+              </Html>
+            )}
+          </>
+        }
       />
-      {/* Package held in the courier's hand (offset is an estimate, tune if needed) */}
-      <FoodPackage
-        delivery={delivery}
-        position={[position[0] + 0.2, 0.9, position[2] + 0.2]}
-        onCollect={waiting ? onCollect : undefined}
-      />
-      {waiting && onCollect && (
-        <Html
-          portal={overlayPortal}
-          zIndexRange={[8, 0]}
-          center
-          position={[position[0] + 0.2, 1.25, position[2] + 0.2]}
-          style={{ pointerEvents: "none" }}
-        >
-          <span className="house-food-package-label">Tap package to collect</span>
-        </Html>
-      )}
     </>
   );
 }
@@ -1782,10 +1879,13 @@ function SlotObject({
 export function HouseRoom3D({
   inputBlocked = false,
   lightOn = true,
+  wallsClosed = null,
   doorOpen = false,
   activeFloor = 0,
   onUseStairs,
   houseTypeId,
+  roomView: roomViewId = null,
+  guideZone = null,
   characterName = "Your character",
   appearance = {},
   gender = "nonbinary",
@@ -1799,7 +1899,7 @@ export function HouseRoom3D({
   activityRequestId = null,
   activityLabel = null,
   slots,
-  placements,
+  placements: allPlacements,
   foodDeliveries = [],
   movingPlacement = null,
   editMode,
@@ -1812,6 +1912,17 @@ export function HouseRoom3D({
   onDraftMove,
 }: Props & { inputBlocked?: boolean }) {
   const [width, depth] = ROOM_SIZE[houseTypeId] ?? ROOM_SIZE["shared-room"]!;
+  const roomView = roomViewId
+    ? (houseRoomViews(houseTypeId, width, depth).find((room) => room.id === roomViewId) ?? null)
+    : null;
+  // In a room view only that room's furniture is shown and can be used.
+  const placements = roomView
+    ? allPlacements.filter((item) => {
+        if (!hasRoomPosition(item)) return true;
+        const [x, , z] = roomPercentToPosition(item.x, item.y, width, depth);
+        return roomViewContains(roomView, x, z);
+      })
+    : allPlacements;
   const bySlot = useMemo(() => new Map(placements.map((item) => [item.slot, item])), [placements]);
   const bedPlacement = placements.find((placement) => placement.slot_type === "bed");
   const bedSlot = slots.find((slot) => slot.id === bedPlacement?.slot);
@@ -1870,7 +1981,9 @@ export function HouseRoom3D({
     const point = floorPoint(event);
     if (!point) return;
     const [percentX, percentY] = roomCoordinatesToPercent(point.x, point.z, width, depth);
-    const [snapX, snapY] = snapToHouseGrid(percentX, percentY);
+    const [snapX, snapY] = isWallArtKind(pointer.placement.art_key)
+      ? snapToBackWall(percentX)
+      : snapToHouseGrid(percentX, percentY);
     const [x, , z] = roomPercentToPosition(snapX, snapY, width, depth);
     setDragPreview({ placementId: pointer.placement.id, x, z });
   };
@@ -1891,7 +2004,9 @@ export function HouseRoom3D({
     const point = floorPoint(event);
     if (point) {
       const [percentX, percentY] = roomCoordinatesToPercent(point.x, point.z, width, depth);
-      const [x, y] = snapToHouseGrid(percentX, percentY);
+      const [x, y] = isWallArtKind(pointer.placement.art_key)
+        ? snapToBackWall(percentX)
+        : snapToHouseGrid(percentX, percentY);
       // One item per grid cell: a drop onto an occupied cell leaves the item where it was.
       if (isHouseGridCellOccupied(x, y, placements, pointer.placement.id)) return;
       if (draftMove) {
@@ -1955,6 +2070,8 @@ export function HouseRoom3D({
 
           <OsogboRoomPrototype
             houseTypeId={houseTypeId}
+            roomView={roomView}
+            wallsClosed={wallsClosed}
             width={width}
             depth={depth}
             editMode={editMode}
@@ -1962,7 +2079,44 @@ export function HouseRoom3D({
             onUseStairs={onUseStairs}
             doorOpen={doorOpen}
           />
-          <RoomFloor houseTypeId={houseTypeId} width={width} depth={depth} />
+          <RoomFloor houseTypeId={houseTypeId} width={width} depth={depth} roomView={roomView} />
+          {roomView && (
+            <pointLight
+              position={[0, ROOM_VIEW_LIGHT_Y, 0]}
+              intensity={lightOn ? 6 : 0}
+              distance={Math.max(width, depth) * 2}
+              color={ROOM_VIEW_PALETTE.light}
+            />
+          )}
+          {guideZone &&
+            (() => {
+              const [zoneX, , zoneZ] = roomPercentToPosition(
+                (guideZone.x0 + guideZone.x1) / 2,
+                (guideZone.y0 + guideZone.y1) / 2,
+                width,
+                depth,
+              );
+              return (
+                <mesh
+                  rotation={[-Math.PI / 2, 0, 0]}
+                  position={[zoneX, 0.03, zoneZ]}
+                  raycast={() => null}
+                >
+                  <planeGeometry
+                    args={[
+                      ((guideZone.x1 - guideZone.x0) / 100) * (width - 0.8),
+                      ((guideZone.y1 - guideZone.y0) / 100) * (depth - 0.8),
+                    ]}
+                  />
+                  <meshBasicMaterial
+                    color={FURNITURE_COLOURS.artRoyal}
+                    transparent
+                    opacity={0.14}
+                    depthWrite={false}
+                  />
+                </mesh>
+              );
+            })()}
           {!editMode && !inputBlocked && onWalk && (
             <mesh
               rotation={[-Math.PI / 2, 0, 0]}
@@ -2011,6 +2165,7 @@ export function HouseRoom3D({
               <FoodCourier
                 key={delivery.id}
                 delivery={delivery}
+                houseTypeId={houseTypeId}
                 width={width}
                 depth={depth}
                 index={0}
@@ -2024,6 +2179,7 @@ export function HouseRoom3D({
               <FoodCourier
                 key={delivery.id}
                 delivery={delivery}
+                houseTypeId={houseTypeId}
                 width={width}
                 depth={depth}
                 index={index}
@@ -2032,13 +2188,16 @@ export function HouseRoom3D({
             ))}
           {departing.map(({ delivery, index }) => {
             const inside = delivery.deliveryChoice === "inside";
+            const doorX = houseRearDoorCenter(houseTypeId, width);
             return (
               <DepartingCourier
                 key={`leaving-${delivery.id}`}
-                startX={(inside ? width * 0.13 : width * 0.22) + index * 0.5}
-                startZ={inside ? -depth / 2 + 1.35 : -depth / 2 + 0.2}
-                exitX={width * 0.22}
-                exitZ={-depth / 2 - 2.5}
+                startX={(inside ? width * COURIER_INSIDE_SHARE : doorX) + index * COURIER_SPACING}
+                startZ={
+                  inside ? -depth / 2 + COURIER_INSIDE_DEPTH : -depth / 2 + COURIER_DOOR_INSET
+                }
+                exitX={doorX}
+                exitZ={-depth / 2 - COURIER_EXIT_DISTANCE}
                 onGone={() =>
                   setDeparting((current) => current.filter((c) => c.delivery.id !== delivery.id))
                 }
@@ -2106,13 +2265,24 @@ export function HouseRoom3D({
               />
             ))}
           <WorldCamera
-            width={width}
-            depth={depth}
+            width={roomView ? roomView.maxX - roomView.minX : width}
+            depth={roomView ? roomView.maxZ - roomView.minZ : depth}
             stage
-            horizontalOrbit={!editMode}
-            verticalOrbit={!editMode}
+            horizontalOrbit={!editMode && !roomView}
+            verticalOrbit={!editMode && !roomView}
             polarAngle={editMode ? Math.PI / 5 : Math.PI / 4}
-            target={editMode ? [0, 0.25, 0] : [0, WORLD_SCALE.door * 0.65, 0]}
+            target={
+              roomView
+                ? [
+                    (roomView.minX + roomView.maxX) / 2,
+                    WORLD_SCALE.door * 0.65,
+                    (roomView.minZ + roomView.maxZ) / 2,
+                  ]
+                : editMode
+                  ? [0, 0.25, 0]
+                  : [0, WORLD_SCALE.door * 0.65, 0]
+            }
+            distanceScale={roomView ? ROOM_VIEW_CAMERA.distanceScale : 1}
             enabled={!inputBlocked && !activePreview}
           />
         </Canvas>

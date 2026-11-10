@@ -2612,13 +2612,20 @@
 .house-page.house-page-fill .house-scene-controls {
   position: absolute;
   z-index: 6;
-  top: 14px;
+  top: var(--house-scene-controls-top, calc(max(12px, env(safe-area-inset-top)) + 76px));
   right: max(14px, env(safe-area-inset-right));
   display: flex;
   align-items: center;
   gap: 8px;
   max-width: calc(100% - 78px);
   animation: house-scene-controls-in 220ms ease-out both;
+}
+
+/* Wide screens: the scene actions share the header's row, to the right of its pills. */
+@media (min-width: 900px) {
+  .house-page.house-page-fill .house-scene-controls {
+    top: max(12px, env(safe-area-inset-top));
+  }
 }
 
 .house-page.house-page-fill .house-scene-controls :is(.house-edit-toggle, .house-scene-exit) {
@@ -2768,7 +2775,6 @@
   border-radius: 0;
 }
 
-.house-page.house-page-fill .house-scene-controls,
 .house-page.house-page-fill .house-home-badge {
   top: max(12px, env(safe-area-inset-top));
 }
@@ -2805,45 +2811,6 @@
   opacity: 0.7;
   white-space: nowrap;
 }
-.house-task-progress {
-  position: absolute;
-  z-index: 30;
-  bottom: calc(var(--game-dock-clearance, 80px) + 1rem);
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(380px, calc(100% - 2rem));
-  border-radius: 1.25rem;
-  padding: 1rem;
-  background: var(--card);
-  color: var(--foreground);
-  box-shadow: 0 8px 24px #0002;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0.6rem;
-}
-.house-task-progress strong,
-.house-task-progress span {
-  display: block;
-}
-.house-task-progress span {
-  font-size: 0.8rem;
-  opacity: 0.75;
-  margin-top: 0.25rem;
-}
-.house-task-progress progress {
-  grid-column: 1;
-  width: 100%;
-  accent-color: var(--primary);
-}
-.house-task-progress button {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  align-self: center;
-  padding: 0.6rem 0.85rem;
-  border-radius: 1rem;
-  background: var(--muted);
-  color: var(--foreground);
-}
 
 /* Placement mode: shown while moving a furniture item on the grid. */
 .house-placement-bar {
@@ -2875,6 +2842,15 @@
 .house-placement-copy span {
   font-size: 0.8rem;
   opacity: 0.75;
+}
+.house-placement-copy .house-placement-hint {
+  color: var(--brand-royal);
+  font-weight: 600;
+  opacity: 1;
+}
+.house-placement-copy .house-placement-warning {
+  color: var(--destructive);
+  opacity: 1;
 }
 .house-placement-actions {
   display: flex;
@@ -2928,11 +2904,11 @@
 }
 .house-catalogue {
   position: absolute;
-  top: 12px;
-  right: 12px;
-  bottom: calc(var(--game-dock-space, 96px) + 12px);
-  z-index: 20;
-  width: min(92vw, 380px);
+  left: 8px;
+  right: 8px;
+  bottom: calc(var(--game-dock-space, 96px) + env(safe-area-inset-bottom) + 8px);
+  z-index: 30;
+  max-height: min(44dvh, 420px);
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -3017,7 +2993,7 @@
 }
 .house-catalogue-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 10px;
   overflow-y: auto;
   align-content: start;
@@ -3055,16 +3031,6 @@
   opacity: 0.45;
   cursor: not-allowed;
 }
-/* Narrow screens: the catalogue becomes a bottom sheet that leaves the top of the room open. */
-@media (max-width: 900px) {
-  .house-catalogue {
-    top: auto;
-    left: 8px;
-    right: 8px;
-    width: auto;
-    max-height: min(46dvh, 460px);
-  }
-}
 .house-catalogue-header-actions {
   display: inline-flex;
   align-items: center;
@@ -3079,27 +3045,77 @@
   display: none;
 }
 
-/* Sleep status: a small pill under the location header, top-left, above the room controls. */
-.house-sleep-pill {
+/* Desktop: a centred panel tall enough for several rows of items. Tablets keep the strip. */
+@media (min-width: 1200px) {
+  .house-catalogue {
+    left: 50%;
+    right: auto;
+    width: min(1040px, calc(100% - 32px));
+    max-height: min(64dvh, 680px);
+    padding: 18px;
+    transform: translateX(-50%);
+  }
+  .house-catalogue-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 14px;
+  }
+}
+
+/* Current home task or sleep: a compact status under the location pill, top-left. */
+.house-task-status {
   position: absolute;
-  top: 62px;
-  left: 14px;
   z-index: 3;
+  top: calc(max(12px, env(safe-area-inset-top)) + 56px);
+  left: max(12px, env(safe-area-inset-left));
   display: inline-flex;
   align-items: center;
   gap: 0.6rem;
   min-height: 42px;
+  max-width: min(280px, calc(100% - 24px));
   box-sizing: border-box;
-  padding: 0.3rem 0.5rem 0.3rem 0.4rem;
-  border: 1px solid rgb(255 255 255 / 75%);
+  padding: 0.3rem 0.8rem 0.3rem 0.4rem;
+  border: 1px solid var(--border);
   border-radius: 999px;
-  background: rgb(255 255 255 / 94%);
-  color: #233447;
-  box-shadow: 0 5px 18px rgb(22 32 24 / 12%);
-  font-size: 0.86rem;
-  font-weight: 750;
-  white-space: nowrap;
+  background: var(--house-control-surface, var(--popover));
+  color: var(--brand-ink);
+  box-shadow: var(--elevation-card);
   animation: home-hud-in 220ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+
+.house-task-status + .house-task-status {
+  top: calc(max(12px, env(safe-area-inset-top)) + 106px);
+}
+
+button.house-task-status-action {
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+button.house-task-status-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.house-task-status-copy {
+  display: grid;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.house-task-status-copy strong {
+  overflow: hidden;
+  font-size: 0.84rem;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.house-task-status-copy span {
+  font-size: 0.74rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
 }
 
 .house-ring {
@@ -3140,49 +3156,45 @@
   font-variant-numeric: tabular-nums;
 }
 
-.house-sleep-pill button {
-  display: inline-flex;
+/* Wake up and Cancel sit at the bottom right, above the navigation bar. */
+.house-task-actions {
+  position: absolute;
+  z-index: 3;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: calc(var(--game-dock-height, 64px) + env(safe-area-inset-bottom) + 28px);
+  display: flex;
   align-items: center;
-  height: 22px;
-  padding: 0 8px;
+  gap: 8px;
+}
+
+.house-task-actions button {
+  min-height: 42px;
+  padding: 0 1rem;
   border: 1px solid var(--border);
   border-radius: 999px;
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--house-control-surface, var(--popover));
+  color: var(--brand-ink);
+  box-shadow: var(--elevation-card);
   font: inherit;
-  font-size: 10px;
+  font-size: 0.84rem;
+  font-weight: 750;
   cursor: pointer;
 }
 
-.house-sleep-pill button[aria-label="Cancel sleep"] {
-  width: 22px;
-  padding: 0;
-  justify-content: center;
-}
-
-.house-sleep-pill button:disabled {
+.house-task-actions button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-/* Home tasks (walking, eating and the rest) use the same pill as sleep: name, status and a small progress bar. */
-.house-task-pill > div {
+.house-task-actions button.house-task-cancel {
+  color: var(--destructive);
+}
+
+.house-task-actions button.house-task-wake {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  min-width: 0;
-}
-
-.house-task-pill strong {
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.house-task-pill > div > span {
-  font-size: 10px;
-  font-weight: 600;
-  opacity: 0.75;
-  margin: 0;
+  gap: 6px;
+  color: var(--primary);
 }
 
 /* Meal menu grouped by tier. */
@@ -3245,18 +3257,8 @@
   font-weight: 750;
 }
 
-/* Narrow screens: the catalogue is a bottom sheet, so the room above it stays reachable. */
+/* The catalogue is a bottom sheet at every width, so the room above it stays visible. */
 @media (max-width: 1023px) {
-  .house-catalogue {
-    top: auto;
-    left: 8px;
-    right: 8px;
-    width: auto;
-    bottom: calc(var(--game-dock-space, 96px) + env(safe-area-inset-bottom) + 8px);
-    max-height: min(44dvh, 420px);
-    z-index: 30;
-  }
-
   .house-catalogue--minimized {
     max-height: none;
   }

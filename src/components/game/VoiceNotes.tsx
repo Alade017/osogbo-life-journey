@@ -27,11 +27,14 @@ export function VoiceNoteRecorder({
   disabled,
   livePlay,
   onSent,
+  upload,
 }: {
-  threadId: string;
+  threadId?: string;
   disabled?: boolean;
   livePlay?: boolean;
   onSent: () => void;
+  /** Group chats send through their own endpoint; private chats use the thread upload. */
+  upload?: (input: { blob: Blob; durationMs: number; requestId: string }) => Promise<unknown>;
 }) {
   const [state, dispatch] = useReducer(voiceRecorderReducer, initialVoiceRecorderState);
   const [permissionError, setPermissionError] = useState<string | null>(null);
@@ -60,7 +63,9 @@ export function VoiceNoteRecorder({
     try {
       const prepared = await prepareVoiceUpload(blob, reencodeVoiceNote);
       retry.current = { blob: prepared, durationMs, requestId };
-      await uploadVoiceNote({ threadId, blob: prepared, durationMs, requestId });
+      if (upload) await upload({ blob: prepared, durationMs, requestId });
+      else if (threadId) await uploadVoiceNote({ threadId, blob: prepared, durationMs, requestId });
+      else throw new Error("VOICE_UPLOAD_FAILED");
       retry.current = null;
       dispatch({ type: "upload_succeeded" });
       onSent();
@@ -261,9 +266,11 @@ let activeAudio: HTMLAudioElement | null = null;
 export function VoiceNotePlayer({
   messageId,
   durationMs,
+  loadUrl = getVoiceNoteUrl,
 }: {
   messageId: string;
   durationMs: number;
+  loadUrl?: (messageId: string) => Promise<string>;
 }) {
   const audio = useRef<HTMLAudioElement>(null);
   const [loading, setLoading] = useState(false);
@@ -284,7 +291,7 @@ export function VoiceNotePlayer({
     setLoading(true);
     pending.current = true;
     try {
-      if (!element.src) element.src = await getVoiceNoteUrl(messageId);
+      if (!element.src) element.src = await loadUrl(messageId);
       if (audio.current !== element) return;
       if (activeAudio && activeAudio !== element) activeAudio.pause();
       activeAudio = element;

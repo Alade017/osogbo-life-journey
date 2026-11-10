@@ -2189,6 +2189,45 @@
   color: var(--card-foreground);
 }
 
+.phone-news-section {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px 4px;
+}
+
+.phone-news-section h3 {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.phone-news-section > .phone-local-card,
+.phone-news-section > div {
+  display: grid;
+  gap: 4px;
+}
+
+.phone-bank-account-number {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0;
+  color: var(--primary);
+  font-size: 0.85rem;
+}
+
+.phone-bank-account-number strong {
+  color: var(--card-foreground);
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
 .phone-btn-primary {
   display: inline-flex;
   align-items: center;
@@ -2817,26 +2856,69 @@
 }
 
 .phone-service-screen .food-hero {
-  padding: 0.9rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px;
   border: 1px solid var(--border);
-  border-radius: 1rem;
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--primary) 18%, var(--card)),
-    var(--card)
-  );
+  border-radius: 18px;
+  background: var(--card);
+  box-shadow: var(--elevation-card);
 }
 
-.phone-service-screen .food-hero h3 {
+.phone-service-screen .food-hero-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.phone-service-screen .food-hero-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.phone-service-screen .food-hero-copy {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.phone-service-screen .food-eyebrow {
   margin: 0;
-  font-size: 1rem;
+  color: var(--primary);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.phone-service-screen .food-hero h2 {
+  margin: 0.1rem 0 0;
+  color: var(--brand-ink);
+  font-size: 1.1rem;
   font-weight: 800;
 }
 
-.phone-service-screen .food-hero p {
+.phone-service-screen .food-hero-copy > p:last-child {
   margin: 0.2rem 0 0;
   color: var(--muted-foreground);
-  font-size: 0.75rem;
+  font-size: 0.78rem;
+}
+
+.phone-service-screen .food-wallet {
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 0.74rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .phone-service-screen .food-card {
@@ -2921,4 +3003,1661 @@
   border-top: 1px solid var(--border);
   background: var(--card);
   box-shadow: 0 -6px 18px color-mix(in srgb, var(--foreground) 6%, transparent);
+}
+
+/* Support app */
+.support-app {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px 24px;
+}
+
+.support-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.support-header-mark {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: var(--brand-royal, #014baa);
+  color: #ffffff;
+}
+
+.support-header h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: var(--brand-ink, #14213d);
+}
+
+.support-header p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--brand-slate, #5b6475);
+}
+
+.support-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 4px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--brand-mist, #d9dee6) 55%, #ffffff);
+}
+
+.support-tab {
+  min-height: 38px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--brand-slate, #5b6475);
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.support-tab.is-active {
+  background: #ffffff;
+  color: var(--brand-royal, #014baa);
+  box-shadow: 0 2px 6px rgba(20, 33, 61, 0.1);
+}
+
+.support-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+}
+
+.support-search input,
+.support-field input,
+.support-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--brand-mist, #d9dee6);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--brand-ink, #14213d);
+  font: inherit;
+}
+
+.support-field textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.support-field {
+  display: grid;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--brand-ink, #14213d);
+}
+
+.support-field small {
+  justify-self: end;
+  font-weight: 500;
+  color: var(--brand-slate, #5b6475);
+}
+
+.support-faq-list,
+.support-feedback-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.support-faq button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 10px;
+  background: #f3f4f6;
+  color: var(--brand-ink, #14213d);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.support-faq button svg {
+  flex-shrink: 0;
+  transition: transform 140ms ease;
+}
+
+.support-faq button svg.is-open {
+  transform: rotate(180deg);
+}
+
+.support-faq p {
+  margin: 6px 4px 4px;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--brand-slate, #5b6475);
+}
+
+.support-empty {
+  text-align: center;
+  color: var(--brand-slate, #5b6475);
+  font-size: 0.9rem;
+}
+
+.support-notice {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--success, #2e7d5b) 12%, #ffffff);
+  color: var(--success, #2e7d5b);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.support-error {
+  margin: 0;
+  color: var(--destructive, #c2412d);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.support-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.support-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.support-feedback-card {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+}
+
+.support-feedback-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.support-feedback-card p {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--brand-ink, #14213d);
+}
+
+.support-feedback-card small {
+  color: var(--brand-slate, #5b6475);
+  font-size: 0.78rem;
+}
+
+.support-status {
+  flex-shrink: 0;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--brand-slate, #5b6475) 14%, #ffffff);
+  color: var(--brand-slate, #5b6475);
+}
+
+.support-status.is-in_progress {
+  background: color-mix(in srgb, var(--chart-4, #e7d9b4) 55%, #ffffff);
+  color: var(--brand-ink, #14213d);
+}
+
+.support-status.is-resolved {
+  background: color-mix(in srgb, var(--success, #2e7d5b) 16%, #ffffff);
+  color: var(--success, #2e7d5b);
+}
+
+.support-status.is-received {
+  background: color-mix(in srgb, var(--brand-royal, #014baa) 12%, #ffffff);
+  color: var(--brand-royal, #014baa);
+}
+
+.support-back {
+  align-self: center;
+  min-height: 40px;
+  padding: 0 16px;
+  border: 1px solid var(--brand-mist, #d9dee6);
+  border-radius: 12px;
+  background: #ffffff;
+  color: var(--brand-ink, #14213d);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* Okada rides: hero, fare card, destination field, and ride history. */
+.okada-app {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+}
+
+.okada-hero {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.okada-hero h2 {
+  margin: 0;
+  color: var(--brand-ink);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.okada-hero p {
+  margin: 2px 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+}
+
+.okada-hero-icon,
+.okada-ride-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.okada-hero-icon svg,
+.okada-ride-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.okada-request,
+.okada-history {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--card);
+  color: var(--card-foreground);
+  box-shadow: var(--elevation-card);
+}
+
+.okada-history h3 {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.okada-fare {
+  display: grid;
+  gap: 2px;
+}
+
+.okada-fare span {
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+}
+
+.okada-fare strong {
+  font-size: 1.5rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.okada-field {
+  display: grid;
+  gap: 6px;
+}
+
+.okada-field > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.okada-field input {
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--card-foreground);
+  font: inherit;
+}
+
+.okada-submit {
+  min-height: 44px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.okada-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.okada-balance {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.okada-notice {
+  margin: 0;
+  color: var(--destructive);
+  font-size: 0.85rem;
+}
+
+.okada-ride {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.okada-ride-copy {
+  display: grid;
+  min-width: 0;
+}
+
+.okada-ride-copy strong {
+  overflow: hidden;
+  font-size: 0.9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.okada-ride-copy small {
+  color: var(--muted-foreground);
+  font-size: 0.74rem;
+}
+
+.okada-status {
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.okada-status-active {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.okada-status-done {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--brand-ink);
+}
+
+.okada-status-stopped {
+  color: var(--destructive);
+  border: 1px solid var(--destructive);
+}
+
+/* Party: hero, mood card, segmented tabs, and phone-style panels inside the app. */
+.phone-party {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+}
+
+.phone-party-hero {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.phone-party-hero h2 {
+  margin: 0;
+  color: var(--brand-ink);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.phone-party-hero p {
+  margin: 2px 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+}
+
+.phone-party-hero-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.phone-party-hero-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.phone-party-body {
+  display: grid;
+  gap: 14px;
+  padding-bottom: 8px;
+}
+
+.phone-party-mood {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--card);
+  color: var(--card-foreground);
+  box-shadow: var(--elevation-card);
+}
+
+.phone-party-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  overflow-x: auto;
+  border-radius: 999px;
+  background: var(--muted);
+}
+
+.phone-party-tab {
+  flex: 1 0 auto;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted-foreground);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.phone-party-tab.is-active {
+  background: var(--card);
+  color: var(--brand-ink);
+  box-shadow: var(--elevation-card);
+}
+
+/* Panels in the Party tabs take the phone card look. */
+.phone-party .game-panel {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--card);
+  color: var(--card-foreground);
+  box-shadow: var(--elevation-card);
+}
+
+/* Property app inside the phone: hero with section links, asset cards and actions. */
+.phone-app-body .property-market-page {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+}
+
+.phone-app-body .property-market-hero {
+  display: grid;
+  gap: 4px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--card);
+  color: var(--card-foreground);
+  box-shadow: var(--elevation-card);
+}
+
+.phone-app-body .property-market-hero .map-sheet-eyebrow {
+  margin: 0;
+  color: var(--primary);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.phone-app-body .property-market-hero h1 {
+  margin: 0;
+  color: var(--brand-ink);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.phone-app-body .property-market-hero > p {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+}
+
+.phone-app-body .property-market-hero nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.phone-app-body .property-market-hero nav a {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--muted);
+  color: var(--brand-ink);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.phone-app-body .property-market-district {
+  display: grid;
+  gap: 10px;
+}
+
+.phone-app-body .property-market-district > h2 {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.phone-app-body .property-market-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.phone-app-body .property-market-card {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--card);
+  color: var(--card-foreground);
+  box-shadow: var(--elevation-card);
+}
+
+.phone-app-body .property-market-card img {
+  display: block;
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+}
+
+.phone-app-body .property-market-card-body {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+}
+
+.phone-app-body .property-market-card-body h3 {
+  margin: 0;
+  color: var(--brand-ink);
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.phone-app-body .property-market-card-body p,
+.phone-app-body .property-market-card-body small {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+}
+
+.phone-app-body .property-market-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.phone-app-body .property-market-message {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--card);
+  color: var(--card-foreground);
+  font-size: 0.85rem;
+}
+
+.phone-app-body .property-market-page .map-primary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font: inherit;
+  font-weight: 750;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.phone-app-body .property-market-page .map-primary-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Real Estate inside the phone: hero card, home cards and Rent / Buy pills. */
+.phone-app-body .property-listings-hero {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--card);
+  color: var(--card-foreground);
+  box-shadow: var(--elevation-card);
+}
+
+.phone-app-body .property-listings-hero h1 {
+  margin: 0;
+  color: var(--brand-ink);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.phone-app-body .property-listings-grid.real-estate-grid {
+  gap: 12px;
+}
+
+.phone-app-body .property-listings-card {
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+}
+
+.phone-app-body .property-listings-card h2 {
+  color: var(--brand-ink);
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.phone-app-body .property-listings-actions {
+  margin-top: 4px;
+}
+
+.phone-app-body .property-listings-actions button {
+  min-height: 42px;
+  border: 1px solid var(--primary);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--primary);
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.phone-app-body .property-listings-actions button:first-child {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.phone-app-body .property-listings-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.phone-app-body .property-listings-error,
+.phone-app-body .property-listings-empty {
+  margin: 0;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--card);
+  color: var(--card-foreground);
+  font-size: 0.85rem;
+}
+
+/* Businesses and Invest inside the phone: hero, rounded cards, soft disclaimer. */
+.phone-finance-shell {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+}
+
+.phone-finance-hero {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.phone-finance-hero h2 {
+  margin: 0;
+  color: var(--brand-ink);
+  font-size: 1.1rem;
+  font-weight: 800;
+}
+
+.phone-finance-hero p {
+  margin: 2px 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+}
+
+.phone-finance-hero-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.phone-finance-hero-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.phone-app-body .business-finance-app {
+  padding: 0;
+  background: transparent;
+}
+
+.phone-app-body .business-finance-app > h2,
+.phone-app-body .business-finance-app > h3 {
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.phone-app-body .business-finance-app .phone-finance-card,
+.phone-app-body .investment-summary > div {
+  border-radius: 18px;
+  box-shadow: var(--elevation-card);
+}
+
+.phone-app-body .business-finance-app .phone-finance-card {
+  padding: 14px;
+}
+
+.phone-app-body .phone-finance-disclaimer {
+  border-radius: 999px;
+  text-align: center;
+}
+
+/* Career Life in the phone: no Learning tab, Opportunities is a plain job list. */
+.phone-app-body .career-learning-app .learning-hero {
+  padding: 16px;
+}
+.phone-app-body .career-learning-app .learning-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.phone-app-body .career-learning-app .learning-tabs button {
+  border-radius: 999px;
+  font-size: 0.8rem;
+  padding: 6px 12px;
+}
+.phone-app-body .phone-job-list,
+.phone-app-body .phone-job-state {
+  display: grid;
+  gap: 10px;
+}
+.phone-app-body .phone-job-list-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.phone-app-body .phone-job-list-heading h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+.phone-app-body .phone-job-list-heading span {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+}
+.phone-app-body .phone-job-list ul {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.phone-app-body .phone-job-row {
+  align-items: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card, 14px);
+  box-shadow: var(--elevation-card);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 12px 14px;
+}
+.phone-app-body .phone-job-copy {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.phone-app-body .phone-job-copy strong {
+  color: var(--card-foreground);
+  overflow-wrap: anywhere;
+}
+.phone-app-body .phone-job-copy small {
+  color: var(--muted-foreground);
+}
+.phone-app-body .phone-job-pay {
+  color: var(--primary);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.phone-app-body .phone-job-state {
+  color: var(--muted-foreground);
+  justify-items: start;
+  margin: 0;
+}
+
+/* Education in the phone: compact hero, search, and course cards that stack one per row. */
+.phone-app-body .career-learning-app[data-phone-mode] {
+  display: grid;
+  gap: 12px;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .education-hero {
+  border-radius: var(--shape-card, 16px);
+  display: grid;
+  gap: 4px;
+  padding: 16px;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .education-hero h1 {
+  font-size: 1.15rem;
+  line-height: 1.25;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .education-hero p {
+  font-size: 0.85rem;
+  margin: 0;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .education-hero .learning-hero-icon {
+  position: absolute;
+  right: 14px;
+  top: 14px;
+  opacity: 0.35;
+  width: 34px;
+  height: 34px;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .learning-stats {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .learning-stats > div {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card, 14px);
+  padding: 10px;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .learning-stats dd {
+  font-size: 1rem;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .learning-search {
+  border-radius: 999px;
+  padding: 0 14px;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .learning-search input {
+  font-size: 0.9rem;
+  min-height: 42px;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .learning-balance {
+  font-size: 0.85rem;
+  padding: 10px 14px;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .learning-course-grid {
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr);
+}
+.phone-app-body .career-learning-app[data-phone-mode] .learning-course {
+  gap: 8px;
+  padding: 14px;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .learning-course h2 {
+  font-size: 0.98rem;
+  margin: 0;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .learning-course > p {
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .learning-course-icon {
+  padding: 9px;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .learning-course-cost {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+.phone-app-body .career-learning-app[data-phone-mode] .learning-course button {
+  width: 100%;
+}
+
+/* Activity catalogue in the phone: a clear header, filter chips, and one card per activity. */
+.phone-app-body .activity-catalogue {
+  display: grid;
+  gap: 12px;
+}
+.phone-app-body .activity-hero {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+.phone-app-body .activity-hero h2 {
+  font-size: 1.05rem;
+  margin: 0;
+}
+.phone-app-body .activity-hero p {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  margin: 2px 0 0;
+}
+.phone-app-body .activity-clock {
+  background: var(--muted);
+  border-radius: 999px;
+  color: var(--muted-foreground);
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  padding: 5px 10px;
+  white-space: nowrap;
+}
+.phone-app-body .activity-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.phone-app-body .activity-chip {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--card-foreground);
+  font-size: 0.78rem;
+  padding: 6px 12px;
+}
+.phone-app-body .activity-chip[aria-pressed="true"] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+}
+.phone-app-body .activity-list {
+  display: grid;
+  gap: 10px;
+}
+.phone-app-body .activity-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card, 14px);
+  box-shadow: var(--elevation-card);
+  color: var(--card-foreground);
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+}
+.phone-app-body .activity-card-top {
+  align-items: flex-start;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+.phone-app-body .activity-card-title {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.phone-app-body .activity-card-title h3 {
+  font-size: 0.95rem;
+  margin: 0;
+}
+.phone-app-body .activity-tag {
+  background: var(--muted);
+  border-radius: 999px;
+  color: var(--muted-foreground);
+  font-size: 0.68rem;
+  padding: 2px 8px;
+}
+.phone-app-body .activity-desc {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  margin: 0;
+}
+.phone-app-body .activity-duration {
+  color: var(--muted-foreground);
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+.phone-app-body .activity-meta {
+  color: var(--muted-foreground);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.75rem;
+  gap: 4px 12px;
+}
+.phone-app-body .activity-note {
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+  margin: 0;
+}
+.phone-app-body .activity-blocked {
+  color: var(--destructive);
+  font-size: 0.78rem;
+  margin: 0;
+}
+.phone-app-body .activity-action {
+  margin-top: 4px;
+  width: 100%;
+}
+.phone-app-body .activity-history {
+  display: grid;
+  gap: 8px;
+}
+.phone-app-body .activity-history h3 {
+  margin: 0;
+}
+.phone-app-body .activity-history-list {
+  display: grid;
+  gap: 6px;
+}
+.phone-app-body .activity-history-row {
+  align-items: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: flex;
+  font-size: 0.78rem;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 10px 12px;
+}
+.phone-app-body .activity-history-row strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Missions in the phone: gold heading, one card per mission, status badges from tokens. */
+.phone-app-body .missions-app {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+.phone-app-body .missions-panel {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+}
+.phone-app-body .missions-heading {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+}
+.phone-app-body .missions-intro {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  margin: 0;
+}
+.phone-app-body .missions-state {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  padding: 16px 0;
+  text-align: center;
+}
+.phone-app-body .missions-retry {
+  color: var(--primary);
+  font-weight: 700;
+  margin-top: 8px;
+}
+.phone-app-body .missions-list {
+  display: grid;
+  gap: 8px;
+}
+.phone-app-body .missions-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--elevation-card);
+  color: var(--card-foreground);
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+}
+.phone-app-body .missions-card-top {
+  align-items: flex-start;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+}
+.phone-app-body .missions-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.phone-app-body .missions-badge {
+  background: var(--muted);
+  border-radius: 999px;
+  color: var(--muted-foreground);
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 3px 9px;
+  white-space: nowrap;
+}
+.phone-app-body .missions-badge[data-status="completed"] {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.phone-app-body .missions-badge[data-status="claimed"] {
+  background: var(--brand-porcelain, var(--muted));
+  color: var(--brand-ink, var(--card-foreground));
+}
+.phone-app-body .missions-desc {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  line-height: 1.4;
+  margin: 0;
+}
+.phone-app-body .missions-claim {
+  background: var(--primary);
+  border-radius: 10px;
+  color: var(--primary-foreground);
+  font-size: 0.8rem;
+  font-weight: 700;
+  margin-top: 4px;
+  padding: 8px;
+  width: 100%;
+}
+.phone-app-body .missions-claim:disabled {
+  opacity: 0.6;
+}
+
+/* Community contribution in the phone: a hero, one card per fund, figures in a two-column strip. */
+.phone-app-body .contribution-app {
+  display: grid;
+  gap: 12px;
+}
+.phone-app-body .contribution-hero h2 {
+  font-size: 1.05rem;
+  margin: 0;
+}
+.phone-app-body .contribution-hero p {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  margin: 2px 0 0;
+}
+.phone-app-body .contribution-app .contribution-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card, 14px);
+  box-shadow: var(--elevation-card);
+  color: var(--card-foreground);
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+.phone-app-body .contribution-app .contribution-card h3 {
+  font-size: 0.95rem;
+  margin: 0;
+}
+.phone-app-body .contribution-figures {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+.phone-app-body .contribution-figures > div {
+  background: var(--muted);
+  border-radius: 12px;
+  padding: 10px;
+}
+.phone-app-body .contribution-figures dt {
+  color: var(--muted-foreground);
+  font-size: 0.7rem;
+}
+.phone-app-body .contribution-figures dd {
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  margin: 2px 0 0;
+}
+.phone-app-body .contribution-app .phone-service-field {
+  color: var(--muted-foreground);
+  display: grid;
+  font-size: 0.78rem;
+  gap: 6px;
+}
+.phone-app-body .contribution-app .phone-service-field input {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--card-foreground);
+  font-size: 0.95rem;
+  min-height: 44px;
+  padding: 0 12px;
+}
+.phone-app-body .contribution-app .contribution-card > button {
+  background: var(--primary);
+  border-radius: 12px;
+  color: var(--primary-foreground);
+  font-size: 0.85rem;
+  font-weight: 700;
+  min-height: 44px;
+  width: 100%;
+}
+.phone-app-body .contribution-app .contribution-card > button:disabled {
+  opacity: 0.55;
+}
+
+/* Billboards in the phone: token colours, a card for the campaign form, and one card per campaign. */
+.phone-app-body .billboard-ad-app.phone-finance-app {
+  background: var(--background);
+  color: var(--foreground);
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+.phone-app-body .billboard-ad-app > h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+.phone-app-body .billboard-ad-app > form.billboard-ad-form {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card, 16px);
+  box-shadow: var(--elevation-card);
+  padding: 14px;
+}
+.phone-app-body .billboard-ad-app .billboard-ad-form label {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+}
+.phone-app-body .billboard-ad-app .billboard-ad-form input,
+.phone-app-body .billboard-ad-app .billboard-ad-form textarea {
+  border-radius: 12px;
+  font-size: 0.9rem;
+}
+.phone-app-body .billboard-ad-app .billboard-ad-price {
+  background: var(--primary);
+  border-radius: 14px;
+  color: var(--primary-foreground);
+  font-size: 0.8rem;
+  padding: 12px 14px;
+}
+.phone-app-body .billboard-ad-app .billboard-ad-price strong {
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+}
+.phone-app-body .billboard-ad-app .billboard-owned-campaigns {
+  border-top: 0;
+  display: grid;
+  gap: 8px;
+  margin-top: 0;
+  padding-top: 0;
+}
+.phone-app-body .billboard-ad-app .billboard-owned-campaigns > h3 {
+  font-size: 0.95rem;
+  margin: 4px 0 0;
+}
+.phone-app-body .billboard-ad-app .billboard-campaign {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--elevation-card);
+  color: var(--card-foreground);
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+}
+.phone-app-body .billboard-ad-app .billboard-campaign strong {
+  font-size: 0.9rem;
+}
+.phone-app-body .billboard-ad-app .billboard-campaign p,
+.phone-app-body .billboard-ad-app .billboard-campaign small {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  margin: 0;
+}
+.phone-app-body .billboard-ad-app .billboard-campaign button {
+  justify-self: start;
+  margin-top: 4px;
+}
+
+/* Town calendar in the phone: a hero, one card per event with its time as a kicker, and a reminder toggle. */
+.phone-app-body .calendar-app {
+  display: grid;
+  gap: 12px;
+}
+.phone-app-body .calendar-hero h2 {
+  font-size: 1.05rem;
+  margin: 0;
+}
+.phone-app-body .calendar-hero p {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  margin: 2px 0 0;
+}
+.phone-app-body .calendar-app .calendar-event {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card, 14px);
+  box-shadow: var(--elevation-card);
+  color: var(--card-foreground);
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+}
+.phone-app-body .calendar-app .calendar-event time {
+  color: var(--primary);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.phone-app-body .calendar-app .calendar-event h3 {
+  font-size: 0.95rem;
+  margin: 0;
+}
+.phone-app-body .calendar-app .calendar-event p {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  margin: 0;
+}
+.phone-app-body .calendar-app .calendar-event > button {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--card-foreground);
+  font-size: 0.8rem;
+  font-weight: 700;
+  justify-self: start;
+  margin-top: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+}
+.phone-app-body .calendar-app .calendar-event > button[aria-pressed="true"] {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+}
+.phone-app-body .calendar-app .calendar-event > button:disabled {
+  opacity: 0.55;
+}
+
+/* Wardrobe in the phone: token colours instead of the hardcoded cream gradients, a tighter three-column bag,
+   and the item detail as a card under the bag. */
+.phone-app-body .pi-inventory .pi-stage {
+  background: radial-gradient(
+    circle at 50% 30%,
+    color-mix(in srgb, var(--primary) 10%, var(--card)) 0%,
+    var(--card) 75%
+  );
+}
+.phone-app-body .pi-inventory .pi-stage-foot {
+  background: color-mix(in srgb, var(--card) 80%, transparent);
+}
+.phone-app-body .pi-inventory .pi-filters button[aria-pressed="true"] {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.phone-app-body .pi-inventory .pi-bag {
+  gap: 8px;
+}
+.phone-app-body .pi-inventory .pi-tile {
+  padding: 10px 6px 12px;
+}
+.phone-app-body .pi-inventory .pi-tile-art {
+  background: color-mix(in srgb, var(--primary) 8%, var(--card));
+  height: 56px;
+  width: 56px;
+}
+.phone-app-body .pi-inventory .pi-tile[aria-pressed="true"] {
+  outline-color: var(--primary);
+}
+.phone-app-body .pi-inventory .pi-detail {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: var(--elevation-card);
+  margin-top: 4px;
+  padding: 14px;
+}
+.phone-app-body .pi-inventory .pi-detail h2 {
+  font-size: 1.05rem;
+  margin: 0;
+}
+.phone-app-body .pi-inventory .pi-detail-actions {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.phone-app-body .pi-inventory .pi-detail-actions > button:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+/* Town notifications in the phone: a header with a clear action, and one bordered row per notification. */
+.phone-app-body .notifications-app {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+}
+.phone-app-body .notifications-panel {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+.phone-app-body .notifications-head {
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 10px;
+}
+.phone-app-body .notifications-heading {
+  font-size: 0.98rem;
+  font-weight: 700;
+  margin: 0;
+}
+.phone-app-body .notifications-clear {
+  color: var(--primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  min-height: 36px;
+  padding: 0 4px;
+}
+.phone-app-body .notifications-list {
+  display: grid;
+  gap: 8px;
+}
+.phone-app-body .notifications-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  color: var(--card-foreground);
+  display: grid;
+  gap: 4px;
+  padding: 12px;
+}
+.phone-app-body .notifications-kind {
+  color: var(--primary);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+.phone-app-body .notifications-body {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  margin: 0;
+}
+.phone-app-body .notifications-state {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  padding: 16px 0;
+  text-align: center;
+}
+
+/* Profile in the phone: token colours for the stage, XP track and tab switch, and a clear avatar card. */
+.phone-app-body .pi-profile .pi-stage {
+  background: radial-gradient(
+    circle at 50% 30%,
+    color-mix(in srgb, var(--primary) 10%, var(--card)) 0%,
+    var(--card) 75%
+  );
+}
+.phone-app-body .pi-profile .pi-stage-foot {
+  background: color-mix(in srgb, var(--card) 80%, transparent);
+}
+.phone-app-body .pi-profile .pi-xp {
+  background: color-mix(in srgb, var(--foreground) 10%, transparent);
+}
+.phone-app-body .pi-profile .pi-segment {
+  background: var(--muted);
+}
+.phone-app-body .pi-profile .pi-segment button[aria-selected="true"] {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.phone-app-body .pi-profile .pi-stats {
+  gap: 8px;
+}
+.phone-app-body .pi-profile .pi-stat {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--elevation-card);
+  padding: 12px;
+}
+.phone-app-body .pi-profile .pi-quick {
+  gap: 8px;
+}
+.phone-app-body .pi-profile .pi-quick a,
+.phone-app-body .pi-profile .pi-quick button {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  color: var(--card-foreground);
+  padding: 12px 6px;
+}
+
+/* Town leaderboard in the phone: the top three ranks are highlighted, each rank is a numbered badge. */
+.phone-app-body .leaderboard-app {
+  gap: 12px;
+  padding: 12px;
+}
+.phone-app-body .leaderboard-app > header {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card, 16px);
+  box-shadow: var(--elevation-card);
+  padding: 14px;
+}
+.phone-app-body .leaderboard-app > header strong {
+  font-size: 1rem;
+}
+.phone-app-body .leaderboard-app > header small {
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+}
+.phone-app-body .leaderboard-ranks {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.phone-app-body .leaderboard-ranks > li {
+  align-items: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  color: var(--card-foreground);
+  display: flex;
+  gap: 12px;
+  padding: 10px 12px;
+}
+.phone-app-body .leaderboard-ranks > li > b {
+  align-items: center;
+  background: var(--muted);
+  border-radius: 999px;
+  color: var(--muted-foreground);
+  display: grid;
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  height: 34px;
+  place-items: center;
+  width: 34px;
+}
+.phone-app-body .leaderboard-ranks > li:nth-child(-n + 3) {
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+  background: color-mix(in srgb, var(--primary) 8%, var(--card));
+}
+.phone-app-body .leaderboard-ranks > li:nth-child(-n + 3) > b {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+.phone-app-body .leaderboard-ranks > li > span {
+  flex: 1;
+  min-width: 0;
+}
+.phone-app-body .leaderboard-ranks > li > svg {
+  color: var(--primary);
+  flex-shrink: 0;
+  width: 1rem;
+}
+
+.okada-cancel {
+  margin-left: auto;
+  align-self: center;
+  border: 1px solid var(--destructive);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--destructive);
+  padding: 4px 12px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.okada-cancel:disabled {
+  opacity: 0.5;
+  cursor: default;
 }

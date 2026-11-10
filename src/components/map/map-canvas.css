@@ -358,7 +358,6 @@
   }
 }
 
-
 .town-map-svg-event {
   cursor: pointer;
 }
@@ -371,7 +370,9 @@
 
 .town-map-svg-event text {
   fill: #fff;
-  font: 800 12px/1 system-ui, sans-serif;
+  font:
+    800 12px/1 system-ui,
+    sans-serif;
   pointer-events: none;
 }
 

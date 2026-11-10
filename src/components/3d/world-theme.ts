@@ -24,6 +24,7 @@ export const WORLD_SCALE = {
 export const WORLD_PALETTE = {
   // Outdoor environment
   ground: "#d9c9ad",
+  sky: "#cfe3ea",
   wall: "#d4bea0",
   clay: "#b77f68",
   foliage: "#89977c",
@@ -67,6 +68,17 @@ export const WORLD_MATERIAL = {
   metalness: 0,
   flatShading: true,
 } as const;
+
+/** Warm cutaway colours for a house room seen on its own. Presentation only. */
+export const ROOM_VIEW_PALETTE = {
+  wall: "#a39e94",
+  floorLight: "#efe7d8",
+  floorShade: "#dcd0bb",
+  light: "#ffd9a0",
+} as const;
+
+/** Camera distance for a room view, relative to the framed room. */
+export const ROOM_VIEW_CAMERA = { distanceScale: 0.9 } as const;
 
 export const WORLD_CAMERA = {
   fov: 42,

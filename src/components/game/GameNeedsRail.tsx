@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Droplets, Smile, Sparkles, Utensils, Users, Zap } from "lucide-react";
+import { Droplets, Plus, Smile, Sparkles, Utensils, Users, X, Zap } from "lucide-react";
 import { useGameTime } from "@/components/game/GameTimeProvider";
 import { NEED_NAMES, NEED_RULES, statusForNeed } from "@/lib/life-simulation";
 import type { PlayerState } from "@/lib/player-state";
@@ -18,9 +18,15 @@ export function GameNeedsRail({ player }: { player: PlayerState }) {
   const { simulation, start, busy, ready } = useGameTime();
   const [detailNeed, setDetailNeed] = useState<(typeof NEED_NAMES)[number] | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(true);
   const criticalCount = NEED_NAMES.filter(
     (name) => statusForNeed(name, Math.round(simulation.needs[name])) === "critical",
   ).length;
+  // Collapsed, the rail shows only the need that needs the most attention.
+  const attentionNeed = NEED_NAMES.reduce((lowest, name) =>
+    simulation.needs[name] < simulation.needs[lowest] ? name : lowest,
+  );
+  const visibleNeeds = expanded ? NEED_NAMES : [attentionNeed];
   const detailValue = detailNeed ? Math.round(simulation.needs[detailNeed]) : null;
   const needAction = detailNeed
     ? {
@@ -64,8 +70,18 @@ export function GameNeedsRail({ player }: { player: PlayerState }) {
           {criticalCount} critical
         </span>
       )}
+      <button
+        type="button"
+        className="game-needs-toggle"
+        aria-expanded={expanded}
+        aria-label={expanded ? "Hide other needs" : "Show all needs"}
+        title={expanded ? "Hide other needs" : "Show all needs"}
+        onClick={() => setExpanded((current) => !current)}
+      >
+        {expanded ? <X size={12} aria-hidden="true" /> : <Plus size={12} aria-hidden="true" />}
+      </button>
       <div className="game-needs-list">
-        {NEED_NAMES.map((name) => {
+        {visibleNeeds.map((name) => {
           const Icon = NEED_ICONS[name];
           const value = Math.round(simulation.needs[name]);
           const status = statusForNeed(name, value);

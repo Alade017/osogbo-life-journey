@@ -2,7 +2,6 @@ import { DistrictZones } from "./DistrictZones";
 import { Component, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Canvas, type ThreeEvent } from "@react-three/fiber";
 import town from "@/data/osogbo-town.json";
-import type { PhaserMapData, PhaserMapCallbacks } from "./PhaserMapSurface";
 import {
   WorldCamera,
   WorldCars,
@@ -43,15 +42,40 @@ import { FunctionalStreetLights3D } from "./FunctionalStreetLights3D";
 import { RoadsideInfrastructure3D } from "./RoadsideInfrastructure3D";
 import { LockedPlaces3D, type LockedPlace } from "./LockedPlaces3D";
 
-type Props = PhaserMapData &
-  PhaserMapCallbacks & {
+type TownMapPlace = {
+  id: string;
+  label: string;
+  category: string;
+  grid: { x: number; z: number };
+};
+
+export type TownMapData = {
+  places: readonly TownMapPlace[];
+  properties: readonly import("@/components/map/MapCanvas").MapProperty[] | undefined;
+  playerLocation: import("@/components/map/MapCanvas").MapPlayerLocation | null | undefined;
+  billboardMarkers: readonly import("@/components/map/MapCanvas").MapBillboardMarker[];
+};
+
+export type TownMapCallbacks = {
+  onSelectLandmark: (id: string) => void;
+  onSelectDistrict: (id: string) => void;
+  onSelectBillboard: ((campaignId: string) => void) | undefined;
+};
+
+type Props = TownMapData &
+  TownMapCallbacks & {
     onSelectProperty?: (property: import("@/components/map/MapCanvas").MapProperty) => void;
     eventChips: readonly { id: string; label: string; x: number; y: number }[];
     onSelectEvent?: (landmarkId: string) => void;
     onReady: () => void;
     onUnavailable: () => void;
     searchTarget?: import("@/components/map/MapCanvas").MapSearchTarget | null;
+    /** Frame the search target close up instead of the whole town (landing preview). */
+    focusCloseUp?: boolean;
   };
+
+/** Close-up framing sits well inside the whole-town distance. */
+const CLOSE_UP_DISTANCE_SCALE = 0.5;
 
 const gridCols = town.grid.rows[0]?.length ?? 24;
 const gridRows = town.grid.rows.length ?? 18;
@@ -91,7 +115,7 @@ function Ready({ onReady }: { onReady: () => void }) {
   return null;
 }
 
-type Landmark = PhaserMapData["places"][number];
+type Landmark = TownMapPlace;
 
 type BadgePosition = [number, number, number];
 
@@ -201,6 +225,7 @@ export function R3FTownSurface(props: Props) {
       setSelectedTarget({ id: district.id, position: [x, 0, z], type: "district" });
     }
   }, [props.searchTarget, props.places, props.properties]);
+  const closeUpTarget = props.focusCloseUp && selectedTarget ? selectedTarget.position : undefined;
   const roads = useMemo(
     () =>
       town.grid.rows.flatMap((row, z) =>
@@ -959,9 +984,9 @@ export function R3FTownSurface(props: Props) {
     () => calculateBadgePositions(props.places, point, cell),
     [props.places],
   );
-  const select = (event: ThreeEvent<MouseEvent>, action: () => void) => {
-    event.stopPropagation();
-    if (event.delta <= 5 && !gesture.current.moved) action();
+  const select = (event: ThreeEvent<MouseEvent> | undefined, action: () => void) => {
+    event?.stopPropagation();
+    if ((event?.delta ?? 0) <= 5 && !gesture.current.moved) action();
   };
   return (
     <SurfaceBoundary onUnavailable={props.onUnavailable}>
@@ -987,7 +1012,14 @@ export function R3FTownSurface(props: Props) {
         >
           <Ready onReady={props.onReady} />
           <CameraFocusController targetPosition={selectedTarget?.position ?? null} />
-          <WorldCamera width={gridCols * cell} depth={gridRows * cell} zoom={1.35} freeExplore />
+          <WorldCamera
+            width={gridCols * cell}
+            depth={gridRows * cell}
+            zoom={1.55}
+            target={closeUpTarget}
+            distanceScale={closeUpTarget ? CLOSE_UP_DISTANCE_SCALE : 1}
+            freeExplore
+          />
           <MapLighting size={gridCols * cell} />
           <Terrain3D gridCols={gridCols} gridRows={gridRows} cellSize={cell} />
 
@@ -1082,14 +1114,16 @@ export function R3FTownSurface(props: Props) {
                 position={badgePosition}
                 isSelected={selectedTarget?.id === place.id}
                 isHovered={hoveredTargetId === place.id}
-                onSelectLandmark={(id) => {
-                  setSelectedTarget({
-                    id,
-                    position: [x, 0, z],
-                    type: "landmark",
-                  });
-                  props.onSelectLandmark(id);
-                }}
+                onSelectLandmark={(id) =>
+                  select(undefined, () => {
+                    setSelectedTarget({
+                      id,
+                      position: [x, 0, z],
+                      type: "landmark",
+                    });
+                    props.onSelectLandmark(id);
+                  })
+                }
                 onPointerOver={(id, lbl) => {
                   setHoveredTargetId(id);
                   setHovered(lbl);

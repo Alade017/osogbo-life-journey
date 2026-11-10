@@ -7,9 +7,15 @@ vi.mock("@tanstack/react-router", () => ({
   useLocation: ({ select }: { select: (location: { href: string }) => unknown }) =>
     select({ href: state.href }),
 }));
-vi.mock("@tanstack/react-query", () => ({ useQuery: () => ({ data: [] }) }));
+vi.mock("@tanstack/react-query", () => ({
+  useQuery: () => ({ data: [] }),
+  useQueryClient: () => ({ invalidateQueries: vi.fn() }),
+}));
 vi.mock("@/lib/game", () => ({
-  q: { notifications: () => ({}) },
+  q: {
+    notifications: () => ({}),
+    profile: () => ({ queryKey: ["profile"], queryFn: async () => null }),
+  },
   rpc: { markRead: vi.fn() },
   useGameAction: () => ({ mutate: vi.fn() }),
 }));

@@ -31,12 +31,12 @@ export default defineConfig(({ command, mode }) => {
     if (process.env[key] === undefined) process.env[key] = value;
   }
   const nitroPreset =
-  process.env["NITRO_PRESET"] ??
-  (process.env["VERCEL"] === "1"
-    ? "vercel"
-    : process.env["CF_PAGES"] === "1"
-      ? "cloudflare-pages"
-      : "node-server");
+    process.env["NITRO_PRESET"] ??
+    (process.env["VERCEL"] === "1"
+      ? "vercel"
+      : process.env["CF_PAGES"] === "1"
+        ? "cloudflare-pages"
+        : "node-server");
   return {
     cacheDir: "node_modules/.vite-game",
     plugins: [

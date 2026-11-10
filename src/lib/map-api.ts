@@ -2,7 +2,7 @@ import { parseMapSchedule, type MapSchedule } from "@/lib/map-schedule";
 import { supabase } from "@/integrations/supabase/client";
 import type { Activity, Job } from "@/lib/game";
 import type { PlaceActionResult } from "@/components/map/PlaceActionMenu";
-import type { MapPlaceAction } from "@/components/map/OsogboMap.svg";
+import type { MapPlaceAction } from "@/components/map/map-types";
 
 export type MapTravelResponse = {
   travel_id: string;

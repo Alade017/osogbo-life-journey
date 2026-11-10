@@ -617,6 +617,97 @@
       "when": 1792869401018,
       "tag": "0085_house_floors",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1794203457530,
+      "tag": "0086_osun_news_region",
+      "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "7",
+      "when": 1794290000000,
+      "tag": "0087_game_updates",
+      "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "7",
+      "when": 1794376400000,
+      "tag": "0088_schools_news_region",
+      "breakpoints": true
+    },
+    {
+      "idx": 90,
+      "version": "7",
+      "when": 1794463200000,
+      "tag": "0089_mini_game_tables",
+      "breakpoints": true
+    },
+    {
+      "idx": 91,
+      "version": "7",
+      "when": 1794549600000,
+      "tag": "0090_okada_ride_lifecycle",
+      "breakpoints": true
+    },
+    {
+      "idx": 92,
+      "version": "7",
+      "when": 1794463201000,
+      "tag": "0091_mini_game_hardening",
+      "breakpoints": true
+    },
+    {
+      "idx": 93,
+      "version": "7",
+      "when": 1794463202000,
+      "tag": "0092_house_walls",
+      "breakpoints": true
+    },
+    {
+      "idx": 94,
+      "version": "7",
+      "when": 1794463204000,
+      "tag": "0093_friend_house_visit",
+      "breakpoints": true
+    },
+    {
+      "idx": 95,
+      "version": "7",
+      "when": 1794463205000,
+      "tag": "0094_social_groups",
+      "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "7",
+      "when": 1794463206000,
+      "tag": "0095_social_group_media_reactions_prefs",
+      "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "7",
+      "when": 1794463207000,
+      "tag": "0096_app_tile_style",
+      "breakpoints": true
+    },
+    {
+      "idx": 98,
+      "version": "7",
+      "when": 1794463208000,
+      "tag": "0097_save_world_checkpoint",
+      "breakpoints": true
+    },
+    {
+      "idx": 99,
+      "version": "7",
+      "when": 1794463209000,
+      "tag": "0098_whot_stake_tables",
+      "breakpoints": true
     }
   ]
 }

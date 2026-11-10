@@ -170,7 +170,8 @@ describe("shared map activity schedules", () => {
       transactions: 0,
     });
 
-    // A one-hour window starting after the current hour. End hours must be 1..24, so no wrap to 0.
+    // The next hour, as a one-hour window that does not wrap past midnight. The database
+    // accepts an end hour from 1 to 24, so an end of 0 at 22:00 would be rejected as invalid.
     const closedStart = (clock.hour + 1) % 24;
     const closedDefinition = action(closedStart, closedStart + 1);
     await db.query(

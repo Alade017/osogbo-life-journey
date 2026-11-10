@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { Group, Plane, Vector3 } from "three";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
@@ -10,6 +10,9 @@ import type { Appearance } from "@/game/avatar-appearance";
 import { BANK_BRANCH_STAFF, type BankSlug } from "@/lib/bank-branch-data";
 
 type Position = [number, number, number];
+
+/** Where the player stands when entering the bank. */
+const BANK_ENTRANCE: Position = [0, 0.06, 3.35];
 type OnlineBankPlayer = { characterId: string; name: string };
 const FLOOR = new Plane(new Vector3(0, 1, 0), 0);
 const FLOOR_TILE_GROUPS = [0, 1].map((parity) =>
@@ -206,49 +209,51 @@ function WalkingPlayer({
 }) {
   const group = useRef<Group>(null);
   const [walking, setWalking] = useState(false);
+  const walkingRef = useRef(false);
+  const target = useMemo(() => new Vector3(...destination), [destination]);
   const { invalidate } = useThree();
+
+  // Start at the entrance once. The position is not a prop, so renders never snap the body back.
+  useLayoutEffect(() => {
+    group.current?.position.set(...BANK_ENTRANCE);
+    invalidate();
+  }, [invalidate]);
 
   useEffect(() => {
     const current = group.current?.position;
     if (!current) return;
     if (reducedMotion) {
-      current.set(...destination);
+      current.copy(target);
+      walkingRef.current = false;
       setWalking(false);
       invalidate();
       return;
     }
-    const distance = current.distanceTo(new Vector3(...destination));
-    if (distance < 0.06) {
-      setWalking(false);
-      return;
-    }
+    if (current.distanceTo(target) < 0.06) return;
+    walkingRef.current = true;
     setWalking(true);
+  }, [target, reducedMotion, invalidate]);
+
+  // Keep frames coming while the character walks, so the walk is drawn in demand mode too.
+  useEffect(() => {
+    if (!walking) return;
     const timer = window.setInterval(invalidate, 1000 / 30);
-    const finish = window.setTimeout(
-      () => {
-        window.clearInterval(timer);
-        setWalking(false);
-      },
-      (distance / 2.6) * 1000 + 80,
-    );
-    return () => {
-      window.clearInterval(timer);
-      window.clearTimeout(finish);
-    };
-  }, [destination, reducedMotion, invalidate]);
+    return () => window.clearInterval(timer);
+  }, [walking, invalidate]);
 
   useFrame((_, delta) => {
     const current = group.current?.position;
-    if (!current || !walking) return;
-    const target = new Vector3(...destination);
+    if (!current || !walkingRef.current) return;
     current.lerp(target, Math.min(1, delta * 2.6));
     if (current.distanceTo(target) < 0.06) {
       current.copy(target);
+      walkingRef.current = false;
+      setWalking(false);
     }
   });
 
   return (
-    <group ref={group} position={[0, 0.06, 3.35]}>
+    <group ref={group}>
       <WorldCharacter
         name={name}
         appearance={appearance}
@@ -435,7 +440,7 @@ export function BankLobbyScene({
   const [sceneFailed, setSceneFailed] = useState(false);
   const [sceneReady, setSceneReady] = useState(false);
   const [loadingProgress, setLoadingProgress] = useState(0);
-  const [destination, setDestination] = useState<Position>([0, 0.06, 3.35]);
+  const [destination, setDestination] = useState<Position>(BANK_ENTRANCE);
   const handleReady = useCallback(() => setSceneReady(true), []);
   const fallback = <BankLobbyFallback bankName={bankName} onInteract={onInteract} />;
 

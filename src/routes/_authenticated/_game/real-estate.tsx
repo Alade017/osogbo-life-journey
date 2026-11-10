@@ -8,6 +8,7 @@ import { formatNaira, q } from "@/lib/game";
 import { loadOwnedHouses } from "@/lib/property-assets";
 import { housingRequest } from "@/lib/housing-request";
 import { pageMeta } from "@/lib/seo";
+import { HomeLink } from "@/components/game/HomeLink";
 import {
   buildTiers,
   buyChoice,
@@ -179,7 +180,7 @@ export function RealEstatePage() {
           <strong>{context.balance === null ? "Loading…" : formatNaira(context.balance)}</strong>
         </div>
         <nav className="property-listings-nav" aria-label="Housing navigation">
-          <Link to="/house">My home</Link>
+          <HomeLink>My home</HomeLink>
           <Link to="/properties">My properties</Link>
         </nav>
       </header>

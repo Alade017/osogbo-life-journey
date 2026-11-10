@@ -23,8 +23,11 @@ import {
   HandCoins,
   HousePlus,
   MapPinned,
-  MessagesSquare,
+  MessageCircleCheck,
+  MessageCircle,
+  Gamepad2,
   Newspaper,
+  School,
   PartyPopper,
   PanelsTopLeft,
   Target,
@@ -43,7 +46,9 @@ import { cn } from "@/lib/utils";
 import { PhoneAppLoader } from "@/components/game/phone/PhoneAppLoader";
 import { isSlowNetwork } from "@/lib/network-hint";
 import { q, rpc, useGameAction } from "@/lib/game";
-import { useQuery } from "@tanstack/react-query";
+import { parseAppTileStyle } from "@/lib/app-tile-style";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { enterHomeFromAnywhere } from "@/lib/home-entry";
 import { playGameSound } from "@/lib/game-audio";
 import { useLiveClock } from "@/hooks/use-live-clock";
 import { OSOGBO_TIME_ZONE } from "@/lib/osogbo-weather";
@@ -60,6 +65,8 @@ import {
 } from "react";
 import { type CommunityPhoneApp } from "@/components/game/CommunityPhoneApps";
 import { PhoneComingSoonApp } from "@/components/game/phone/PhoneComingSoonApp";
+import { OsunGistApp } from "@/components/game/phone/OsunGistApp";
+import { PhoneMapApp } from "@/components/game/phone/PhoneMapApp";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import {
   fullPageWorldApp,
@@ -96,8 +103,19 @@ const RealEstatePage = lazy(() =>
     default: m.RealEstatePage,
   })),
 );
-const JobsPage = lazy(() =>
-  import("@/routes/_authenticated/_game/jobs").then((m) => ({ default: m.JobsPage })),
+const NigerianSchoolsApp = lazy(() =>
+  import("@/components/game/phone/NigerianSchoolsApp").then((m) => ({
+    default: m.NigerianSchoolsApp,
+  })),
+);
+const GamesApp = lazy(() =>
+  import("@/components/game/mini-games/GamesApp").then((m) => ({ default: m.GamesApp })),
+);
+const PhoneJobList = lazy(() =>
+  import("@/routes/_authenticated/_game/jobs").then((m) => ({ default: m.PhoneJobList })),
+);
+const CareerLifeApp = lazy(() =>
+  import("@/components/game/CareerLifeApp").then((m) => ({ default: m.CareerLifeApp })),
 );
 const EducationPage = lazy(() =>
   import("@/routes/_authenticated/_game/education").then((m) => ({ default: m.EducationPage })),
@@ -107,6 +125,9 @@ const ProfilePage = lazy(() =>
 );
 const InventoryPage = lazy(() =>
   import("@/routes/_authenticated/_game/inventory").then((m) => ({ default: m.InventoryPage })),
+);
+const SupportApp = lazy(() =>
+  import("@/components/game/phone/SupportApp").then((m) => ({ default: m.SupportApp })),
 );
 const SettingsPage = lazy(() =>
   import("@/routes/_authenticated/_game/settings").then((m) => ({ default: m.SettingsPage })),
@@ -149,20 +170,24 @@ const PHONE_APPS: readonly PhoneAppDefinition[] = [
   { label: "Contribution", icon: HandCoins, tone: "phone-app-gold" },
   { label: "Education", icon: GraduationCap, tone: "phone-app-blue" },
   { label: "Food Delivery", icon: UtensilsCrossed, tone: "phone-app-coral" },
+  { label: "Games", icon: Gamepad2, tone: "phone-app-coral" },
+  { label: "Nigerian Schools", icon: School, tone: "phone-app-blue" },
   { label: "Inventory", icon: Backpack, tone: "phone-app-blue", emphasis: "utility" },
   { label: "Invest", icon: ChartNoAxesCombined, tone: "phone-app-gold" },
   { label: "Leaderboard", icon: Trophy, tone: "phone-app-gold" },
   { label: "Map", icon: MapPinned, tone: "phone-app-blue", emphasis: "important" },
   { label: "Market", icon: Store, tone: "phone-app-coral" },
-  { label: "Messages", icon: MessagesSquare, tone: "phone-app-green", emphasis: "important" },
+  { label: "Messages", icon: MessageCircleCheck, tone: "phone-app-green", emphasis: "important" },
   { label: "Missions", icon: Target, tone: "phone-app-gold", emphasis: "important" },
   { label: "Notifications", icon: Bell, tone: "phone-app-gold", emphasis: "utility" },
   { label: "Okada Rides", icon: Bike, tone: "phone-app-green" },
+  { label: "Osun Gist", icon: Newspaper, tone: "phone-app-blue" },
   { label: "Party", icon: PartyPopper, tone: "phone-app-coral" },
   { label: "Profile", icon: UserRound, tone: "phone-app-muted", emphasis: "utility" },
   { label: "Property", icon: HousePlus, tone: "phone-app-green" },
   { label: "Real Estate", icon: Building2, tone: "phone-app-green" },
   { label: "Settings", icon: Settings, tone: "phone-app-muted", emphasis: "utility" },
+  { label: "Support", icon: MessageCircle, tone: "phone-app-blue", emphasis: "utility" },
   { label: "Town News", icon: Newspaper, tone: "phone-app-blue" },
 ] as const;
 
@@ -171,6 +196,7 @@ const COMMUNITY_APPS = new Set<CommunityPhoneApp>(["Leaderboard", "Town News"]);
 /** Apps restyled to the Settings design (cards, sections, rows). Others keep their current look. */
 const SETTINGS_STYLE_APPS = new Set([
   "Profile",
+  "Support",
   "Inventory",
   "Town News",
   "Market",
@@ -229,6 +255,7 @@ export function PhoneLauncher({
     history: [],
   });
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const href = useLocation({ select: (location) => location.href });
   const previousHref = useRef(href);
   const [internalOpen, setInternalOpen] = useState(false);
@@ -263,6 +290,8 @@ export function PhoneLauncher({
   } = useMissions();
   const claimMission = useMissionClaim(userId, characterId);
   const { data: notifications } = useQuery(q.notifications());
+  const { data: profile } = useQuery(q.profile());
+  const tileStyle = parseAppTileStyle(profile?.app_tile_style);
   const markRead = useGameAction(rpc.markRead);
 
   const missionCount = (missions ?? []).filter(
@@ -290,6 +319,13 @@ export function PhoneLauncher({
     (appName: string, search?: string) => {
       playGameSound("ui");
       const worldPath = fullPageWorldApp(appName);
+      if (worldPath === "/house") {
+        // The phone's House app enters the house on the server before opening it.
+        void enterHomeFromAnywhere(queryClient).then((entered) => {
+          if (entered) openWorld("/house");
+        });
+        return;
+      }
       if (worldPath) {
         openWorld(worldPath + (search ?? ""));
         return;
@@ -300,7 +336,7 @@ export function PhoneLauncher({
         ...(search ? { search } : {}),
       });
     },
-    [openWorld],
+    [openWorld, queryClient],
   );
 
   useEffect(() => {
@@ -410,10 +446,30 @@ export function PhoneLauncher({
       return <PhoneBankApp />;
     }
 
-    if (appName === "Career Life" || appName === "Jobs") return <JobsPage />;
+    if (appName === "Career Life" || appName === "Jobs")
+      return <CareerLifeApp phone opportunities={<PhoneJobList />} />;
 
     if (appName === "Invest" || appName === "Company" || appName === "Businesses") {
-      return <BusinessInvestmentApp mode={appName === "Invest" ? "invest" : "company"} />;
+      const mode = appName === "Invest" ? "invest" : "company";
+      const HeroIcon = mode === "invest" ? ChartNoAxesCombined : Building2;
+      return (
+        <div className="phone-finance-shell">
+          <section className="phone-finance-hero">
+            <span className="phone-finance-hero-icon">
+              <HeroIcon aria-hidden="true" />
+            </span>
+            <div>
+              <h2>{mode === "invest" ? "Invest" : "Businesses"}</h2>
+              <p>
+                {mode === "invest"
+                  ? "Put your simulated savings to work."
+                  : "Own a company and manage what it sells."}
+              </p>
+            </div>
+          </section>
+          <BusinessInvestmentApp mode={mode} />
+        </div>
+      );
     }
 
     if (appName === "Billboards") {
@@ -435,43 +491,34 @@ export function PhoneLauncher({
 
     if (appName === "Missions") {
       return (
-        <div className="phone-sub-app p-3 space-y-3">
-          <div className="phone-card p-3">
-            <h4 className="font-bold text-sm mb-1">Active Missions in Osogbo</h4>
-            <p className="text-xs text-muted-foreground mb-3">
+        <div className="phone-sub-app missions-app">
+          <div className="phone-card missions-panel">
+            <h4 className="missions-heading">Active Missions in Osogbo</h4>
+            <p className="missions-intro">
               Complete goals around town and collect in-game cash and XP.
             </p>
             {missionsLoading ? (
-              <p className="text-xs text-muted-foreground py-4 text-center" role="status">
+              <p className="missions-state" role="status">
                 Loading missions...
               </p>
             ) : missionsError ? (
-              <div role="alert" className="text-xs text-muted-foreground py-4 text-center">
+              <div role="alert" className="missions-state">
                 <p>Could not load missions.</p>
                 <button
                   type="button"
-                  className="mt-2 font-bold text-primary"
+                  className="missions-retry"
                   onClick={() => void refetchMissions()}
                 >
                   Try again
                 </button>
               </div>
             ) : missions && missions.length > 0 ? (
-              <div className="space-y-2">
+              <div className="missions-list">
                 {missions.map((m) => (
-                  <div
-                    key={m.id}
-                    className="p-2.5 rounded-xl border border-border bg-card space-y-1.5"
-                  >
-                    <div className="flex justify-between items-start">
-                      <span className="font-bold text-xs">{m.mission?.title ?? "Town Goal"}</span>
-                      <span
-                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                          m.status === "completed"
-                            ? "bg-emerald-500/20 text-emerald-600"
-                            : "bg-amber-500/20 text-amber-600"
-                        }`}
-                      >
+                  <div key={m.id} className="missions-card">
+                    <div className="missions-card-top">
+                      <span className="missions-title">{m.mission?.title ?? "Town Goal"}</span>
+                      <span className="missions-badge" data-status={m.status}>
                         {m.status === "completed"
                           ? "Ready to claim"
                           : m.status === "claimed"
@@ -479,13 +526,13 @@ export function PhoneLauncher({
                             : "In progress"}
                       </span>
                     </div>
-                    <p className="text-[11px] text-muted-foreground">{m.mission?.description}</p>
+                    <p className="missions-desc">{m.mission?.description}</p>
                     {m.status === "completed" && (
                       <button
                         type="button"
                         disabled={claimMission.isPending}
                         onClick={() => claimMission.mutate(m.id)}
-                        className="w-full py-1.5 rounded-lg text-xs font-bold bg-primary text-primary-foreground hover:opacity-90 mt-1"
+                        className="missions-claim"
                       >
                         Claim Reward
                       </button>
@@ -494,9 +541,7 @@ export function PhoneLauncher({
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-muted-foreground py-4 text-center">
-                No active missions right now.
-              </p>
+              <p className="missions-state">No active missions right now.</p>
             )}
           </div>
         </div>
@@ -505,45 +550,45 @@ export function PhoneLauncher({
 
     if (appName === "Notifications") {
       return (
-        <div className="phone-sub-app p-3 space-y-3">
-          <div className="phone-card p-3 space-y-2">
-            <div className="flex items-center justify-between border-b border-border/40 pb-2">
-              <h4 className="font-bold text-sm">Town Notifications</h4>
+        <div className="phone-sub-app notifications-app">
+          <div className="phone-card notifications-panel">
+            <div className="notifications-head">
+              <h4 className="notifications-heading">Town Notifications</h4>
               <button
                 type="button"
                 onClick={() => markRead.mutate()}
-                className="text-xs font-bold text-primary hover:underline"
+                className="notifications-clear"
               >
                 Mark all read
               </button>
             </div>
             {notifications && notifications.length > 0 ? (
-              <div className="space-y-2">
+              <div className="notifications-list">
                 {notifications.map((n) => (
-                  <div
-                    key={n.id}
-                    className="p-2 rounded-lg border border-border text-xs space-y-0.5"
-                  >
-                    <strong className="block font-semibold">
+                  <div key={n.id} className="notifications-item">
+                    <strong className="notifications-kind">
                       {n.kind.replace(/_/g, " ").toUpperCase()}
                     </strong>
-                    <p className="text-muted-foreground">
+                    <p className="notifications-body">
                       {n.body ?? "Notification update from Osogbo."}
                     </p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-muted-foreground py-4 text-center">
-                No notifications yet.
-              </p>
+              <p className="notifications-state">No notifications yet.</p>
             )}
           </div>
         </div>
       );
     }
 
+    if (appName === "Games") return <GamesApp />;
+    if (appName === "Nigerian Schools") return <NigerianSchoolsApp />;
     if (appName === "Settings") return <SettingsPage />;
+    if (appName === "Osun Gist") return <OsunGistApp />;
+    if (appName === "Map") return <PhoneMapApp />;
+    if (appName === "Support") return <SupportApp onHome={returnHome} />;
 
     // Fallback coming soon for any unbuilt or auxiliary app
     const appDef = PHONE_APPS.find((a) => a.label === appName);
@@ -554,7 +599,7 @@ export function PhoneLauncher({
   const phoneContent = (
     <>
       <DialogTitle className="sr-only">In-game phone</DialogTitle>
-      <div className="phone-screen">
+      <div className="phone-screen" data-tile-style={tileStyle}>
         {/* Status Bar */}
         <div className="phone-status">
           <span className="phone-status-time">{phoneTime}</span>

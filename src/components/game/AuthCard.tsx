@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Logo } from "./Logo";
 import { primeGameAudioForLogin, disableGameAudio } from "@/lib/game-audio";
 import "./auth-switch.css";
+import "./auth-redesign.css";
 
 type Mode = "login" | "signup";
 
@@ -157,17 +158,20 @@ export function AuthCard({ mode: initialMode }: { mode: Mode }) {
             <p className="auth-story-copy">
               Explore the city, find work and build your own way forward.
             </p>
-            <ul className="auth-story-points" aria-label="Game highlights">
-              <li>
-                <Check size={15} aria-hidden="true" /> Build your own story
-              </li>
-              <li>
-                <Check size={15} aria-hidden="true" /> Find work and community
-              </li>
-              <li>
-                <Check size={15} aria-hidden="true" /> Play at your own pace
-              </li>
-            </ul>
+            <div className="auth-features-card">
+              <p className="auth-features-title">Features</p>
+              <ul className="auth-story-points" aria-label="Game highlights">
+                <li>
+                  <Check size={15} aria-hidden="true" /> Build your own story
+                </li>
+                <li>
+                  <Check size={15} aria-hidden="true" /> Find work and community
+                </li>
+                <li>
+                  <Check size={15} aria-hidden="true" /> Play at your own pace
+                </li>
+              </ul>
+            </div>
           </div>
         </section>
 
@@ -371,11 +375,29 @@ export function AuthCard({ mode: initialMode }: { mode: Mode }) {
                       <Button
                         variant="plain"
                         size="lg"
-                        className="auth-submit-button w-full"
+                        className="auth-submit-button auth-google-button w-full"
                         onClick={google}
                         disabled={busy}
                         aria-busy={busy}
                       >
+                        <svg className="auth-google-mark" viewBox="0 0 24 24" aria-hidden="true">
+                          <path
+                            fill="#4285F4"
+                            d="M23.5 12.27c0-.82-.07-1.6-.2-2.36H12v4.47h6.46a5.52 5.52 0 0 1-2.4 3.62v3h3.88c2.27-2.09 3.56-5.17 3.56-8.73z"
+                          />
+                          <path
+                            fill="#34A853"
+                            d="M12 24c3.24 0 5.95-1.07 7.94-2.9l-3.88-3c-1.08.72-2.45 1.15-4.06 1.15-3.12 0-5.77-2.11-6.71-4.95H1.28v3.09A12 12 0 0 0 12 24z"
+                          />
+                          <path
+                            fill="#FBBC05"
+                            d="M5.29 14.3a7.2 7.2 0 0 1 0-4.6V6.61H1.28a12 12 0 0 0 0 10.78z"
+                          />
+                          <path
+                            fill="#EA4335"
+                            d="M12 4.75c1.76 0 3.34.61 4.59 1.8l3.43-3.43C17.94 1.19 15.23 0 12 0A12 12 0 0 0 1.28 6.61L5.29 9.7C6.23 6.86 8.88 4.75 12 4.75z"
+                          />
+                        </svg>
                         Continue with Google
                       </Button>
                       <p className="mt-6 text-center text-sm">

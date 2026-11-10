@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { ContactShadows, OrbitControls, Text } from "@react-three/drei";
+import { ContactShadows, OrbitControls } from "@react-three/drei";
+import { CanvasLabel } from "@/components/3d/CanvasLabel";
 import { Object3D, Vector3, type InstancedMesh, type PerspectiveCamera, type Texture } from "three";
 import type { OrbitControls as Controls } from "three-stdlib";
 import {
@@ -73,18 +74,21 @@ export function WorldCamera({
   onZoomChange,
   horizontalOrbit = false,
   verticalOrbit = false,
+  distanceScale = 1,
   freeExplore = false,
 }: {
   width: number;
   depth: number;
   stage?: boolean;
   enabled?: boolean;
-  target?: [number, number, number];
+  target?: [number, number, number] | undefined;
   zoom?: number;
   polarAngle?: number;
   onZoomChange?: (zoom: number) => void;
   horizontalOrbit?: boolean;
   verticalOrbit?: boolean;
+  /** Scales the camera distance past the zoom clamp, for close-up framing. */
+  distanceScale?: number;
   freeExplore?: boolean;
 }) {
   const { camera, size, invalidate } = useThree();
@@ -96,12 +100,14 @@ export function WorldCamera({
   const polar = polarAngle ?? (stage ? Math.PI / 4 : WORLD_CAMERA.polar);
   const azimuth = WORLD_CAMERA.azimuth;
   const [x, y, z] = target ?? [0, stage ? WORLD_SCALE.door * 0.65 : 0, 0];
-  const framing = useRef<{ distance: number; polar: number; zoom: number } | null>(null);
+  const framing = useRef<{ distance: number; polar: number; d: number } | null>(null);
   const offset = useMemo(() => new Vector3(), []);
   useLayoutEffect(() => {
     const previous = framing.current;
     const orbit = controls.current;
-    const d = distance / Math.max(WORLD_CAMERA.minZoom, Math.min(WORLD_CAMERA.maxZoom, zoom));
+    const d =
+      (distance / Math.max(WORLD_CAMERA.minZoom, Math.min(WORLD_CAMERA.maxZoom, zoom))) *
+      distanceScale;
     if (!previous || previous.distance !== distance || previous.polar !== polar || !orbit) {
       offset
         .set(
@@ -113,13 +119,13 @@ export function WorldCamera({
     } else {
       // Follow by translating the existing orbit, preserving touch/wheel framing.
       offset.copy(camera.position).sub(orbit.target);
-      if (previous.zoom !== zoom) offset.setLength(d);
+      if (previous.d !== d) offset.setLength(d);
     }
     camera.position.copy(offset);
     camera.position.x += x;
     camera.position.y += y;
     camera.position.z += z;
-    framing.current = { distance, polar, zoom };
+    framing.current = { distance, polar, d };
     camera.lookAt(x, y, z);
     const perspective = camera as PerspectiveCamera;
     perspective.fov = WORLD_CAMERA.fov;
@@ -128,7 +134,7 @@ export function WorldCamera({
     controls.current?.target.set(x, y, z);
     controls.current?.update();
     invalidate();
-  }, [camera, distance, azimuth, polar, x, y, z, zoom, invalidate, offset]);
+  }, [camera, distance, azimuth, polar, x, y, z, zoom, distanceScale, invalidate, offset]);
   return (
     <OrbitControls
       ref={controls}
@@ -179,11 +185,14 @@ export type WorldInstance = {
 export function WorldInstances({
   items,
   tone,
+  color,
   shape = "box",
   animate,
 }: {
   items: readonly WorldInstance[];
   tone: WorldTone;
+  /** Optional colour that replaces the tone's palette colour for these instances. */
+  color?: string;
   shape?: "box" | "sphere";
   animate?: ((object: Object3D, index: number, seconds: number) => void) | undefined;
 }) {
@@ -225,7 +234,7 @@ export function WorldInstances({
   return (
     <instancedMesh ref={mesh} args={[undefined, undefined, items.length]} castShadow receiveShadow>
       {shape === "box" ? <boxGeometry /> : <sphereGeometry args={[0.5, 8, 6]} />}
-      <WorldMaterial tone={tone} />
+      <WorldMaterial tone={tone} {...(color ? { color } : {})} />
     </instancedMesh>
   );
 }
@@ -569,17 +578,11 @@ export function WorldRoadSigns({
             </mesh>
 
             {/* Destination label */}
-            <Text
+            <CanvasLabel
               position={[-size * 0.13, poleHeight * 0.78, size * 0.041]}
               fontSize={size * 0.105}
-              color="#ffffff"
-              anchorX="center"
-              anchorY="middle"
-              maxWidth={size * 0.62}
-              textAlign="center"
-            >
-              {sign.destination}
-            </Text>
+              text={sign.destination}
+            />
 
             {/* Arrow shaft */}
             <mesh position={[size * 0.38, poleHeight * 0.78, size * 0.045]}>
@@ -658,15 +661,11 @@ export function WorldRoadsideShops({
             <WorldMaterial tone="sign" />
           </mesh>
 
-          <Text
+          <CanvasLabel
             position={[0, wallHeight * 0.88, shopDepth * 0.49 + size * 0.03]}
             fontSize={size * 0.105}
-            color="#ffffff"
-            anchorX="center"
-            anchorY="middle"
-          >
-            SHOP
-          </Text>
+            text="SHOP"
+          />
 
           {/* Product crates */}
           {[-1, 1].map((side) => (
