@@ -7086,6 +7086,20 @@ export type Database = {
       my_property_rent_status: { Args: never; Returns: Json };
       mini_game_claim_forfeit: { Args: { p_table: string }; Returns: undefined };
       mini_game_create_table: { Args: { p_stake: number }; Returns: string };
+      mini_game_create_whot_table: { Args: { p_stake: number }; Returns: string };
+      mini_game_whot_view: { Args: { p_table: string }; Returns: Json };
+      mini_game_whot_load: { Args: { p_table: string }; Returns: Json };
+      mini_game_whot_init: { Args: { p_state: Json; p_table: string }; Returns: undefined };
+      mini_game_whot_commit: {
+        Args: {
+          p_actor_user: string;
+          p_expected_version: number;
+          p_state: Json;
+          p_table: string;
+          p_winner_seat: number | null;
+        };
+        Returns: number;
+      };
       mini_game_heartbeat: { Args: { p_table: string }; Returns: undefined };
       mini_game_join_table: { Args: { p_table: string }; Returns: string };
       mini_game_leave_table: { Args: { p_table: string }; Returns: undefined };

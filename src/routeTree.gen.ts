@@ -87,6 +87,7 @@ import { Route as ApiMessagesMediaIdRouteImport } from './routes/api/messages/me
 import { Route as ApiMessagesVoiceIndexRouteImport } from './routes/api/messages/voice/index'
 import { Route as ApiMessagesVoiceIdRouteImport } from './routes/api/messages/voice/$id'
 import { Route as ApiMessagesVoiceCleanupRouteImport } from './routes/api/messages/voice/cleanup'
+import { Route as ApiMiniGamesWhotIndexRouteImport } from './routes/api/mini-games/whot/index'
 import { Route as ApiSocialProfileIdRouteImport } from './routes/api/social/profile/$id'
 import { Route as ApiThreadsIdMuteRouteImport } from './routes/api/threads/$id/mute'
 import { Route as ApiThreadsIdPinRouteImport } from './routes/api/threads/$id/pin'
@@ -497,6 +498,11 @@ const ApiMessagesVoiceCleanupRoute = ApiMessagesVoiceCleanupRouteImport.update({
   path: '/api/messages/voice/cleanup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMiniGamesWhotIndexRoute = ApiMiniGamesWhotIndexRouteImport.update({
+  id: '/api/mini-games/whot/',
+  path: '/api/mini-games/whot/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiSocialProfileIdRoute = ApiSocialProfileIdRouteImport.update({
   id: '/api/social/profile/$id',
   path: '/api/social/profile/$id',
@@ -605,6 +611,7 @@ export interface FileRoutesByFullPath {
   '/api/groups/voice/': typeof ApiGroupsVoiceIndexRoute
   '/api/messages/media/': typeof ApiMessagesMediaIndexRoute
   '/api/messages/voice/': typeof ApiMessagesVoiceIndexRoute
+  '/api/mini-games/whot/': typeof ApiMiniGamesWhotIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -688,6 +695,7 @@ export interface FileRoutesByTo {
   '/api/groups/voice': typeof ApiGroupsVoiceIndexRoute
   '/api/messages/media': typeof ApiMessagesMediaIndexRoute
   '/api/messages/voice': typeof ApiMessagesVoiceIndexRoute
+  '/api/mini-games/whot': typeof ApiMiniGamesWhotIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -774,6 +782,7 @@ export interface FileRoutesById {
   '/api/groups/voice/': typeof ApiGroupsVoiceIndexRoute
   '/api/messages/media/': typeof ApiMessagesMediaIndexRoute
   '/api/messages/voice/': typeof ApiMessagesVoiceIndexRoute
+  '/api/mini-games/whot/': typeof ApiMiniGamesWhotIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -859,6 +868,7 @@ export interface FileRouteTypes {
     | '/api/groups/voice/'
     | '/api/messages/media/'
     | '/api/messages/voice/'
+    | '/api/mini-games/whot/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -942,6 +952,7 @@ export interface FileRouteTypes {
     | '/api/groups/voice'
     | '/api/messages/media'
     | '/api/messages/voice'
+    | '/api/mini-games/whot'
   id:
     | '__root__'
     | '/'
@@ -1027,6 +1038,7 @@ export interface FileRouteTypes {
     | '/api/groups/voice/'
     | '/api/messages/media/'
     | '/api/messages/voice/'
+    | '/api/mini-games/whot/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1089,6 +1101,7 @@ export interface RootRouteChildren {
   ApiGroupsVoiceIndexRoute: typeof ApiGroupsVoiceIndexRoute
   ApiMessagesMediaIndexRoute: typeof ApiMessagesMediaIndexRoute
   ApiMessagesVoiceIndexRoute: typeof ApiMessagesVoiceIndexRoute
+  ApiMiniGamesWhotIndexRoute: typeof ApiMiniGamesWhotIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1639,6 +1652,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMessagesVoiceCleanupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/mini-games/whot/': {
+      id: '/api/mini-games/whot/'
+      path: '/api/mini-games/whot'
+      fullPath: '/api/mini-games/whot/'
+      preLoaderRoute: typeof ApiMiniGamesWhotIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/social/profile/$id': {
       id: '/api/social/profile/$id'
       path: '/api/social/profile/$id'
@@ -1803,6 +1823,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGroupsVoiceIndexRoute: ApiGroupsVoiceIndexRoute,
   ApiMessagesMediaIndexRoute: ApiMessagesMediaIndexRoute,
   ApiMessagesVoiceIndexRoute: ApiMessagesVoiceIndexRoute,
+  ApiMiniGamesWhotIndexRoute: ApiMiniGamesWhotIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

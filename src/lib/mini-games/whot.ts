@@ -99,7 +99,10 @@ export function newWhot(playerCount: number, random: () => number = Math.random)
   };
 }
 
-export function canPlayCard(state: WhotState, card: Card): boolean {
+export function canPlayCard(
+  state: Pick<WhotState, "pendingDraw" | "pendingRank" | "shape" | "discard">,
+  card: Card,
+): boolean {
   if (state.pendingDraw > 0) return card.rank === state.pendingRank;
   if (card.rank === WHOT_RANK) return true;
   const top = state.discard[state.discard.length - 1];

@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { formatNaira, q } from "@/lib/game";
+import { WhotTableView } from "@/components/game/mini-games/WhotTableView";
 
 /** Stake choices in whole Naira. The server enforces the same range (100 to 5,000). */
 const STAKES = [100, 250, 500, 1000, 2500, 5000] as const;
@@ -11,9 +12,13 @@ const STAKES = [100, 250, 500, 1000, 2500, 5000] as const;
 const IDLE_MS = 2 * 60 * 1000;
 const HEARTBEAT_MS = 20_000;
 const REFRESH_MS = 3_000;
+type GameKind = "tictactoe" | "whot";
+const GAME_LABELS: Record<GameKind, string> = { tictactoe: "Tic-Tac-Toe", whot: "Whot" };
+const gameLabel = (game: string) => GAME_LABELS[game as GameKind] ?? "Stake game";
 
 type OpenTable = {
   id: string;
+  game: string;
   stake: number;
   pot: number;
   created_at: string;
@@ -21,6 +26,7 @@ type OpenTable = {
 };
 type TableRow = {
   id: string;
+  game: string;
   stake: number;
   pot: number;
   status: string;
@@ -65,12 +71,13 @@ function StakeLobby({
 }) {
   const client = useQueryClient();
   const [stake, setStake] = useState<number>(STAKES[0]);
+  const [game, setGame] = useState<GameKind>("tictactoe");
   const tables = useQuery({
     queryKey: ["miniGame", "open"],
     queryFn: async (): Promise<OpenTable[]> => {
       const { data, error } = await supabase
         .from("mini_game_tables")
-        .select("id,stake,pot,created_at,host_character_id")
+        .select("id,game,stake,pot,created_at,host_character_id")
         .eq("status", "open")
         .order("created_at", { ascending: false })
         .limit(20);
@@ -86,7 +93,10 @@ function StakeLobby({
   };
   const create = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.rpc("mini_game_create_table", { p_stake: stake });
+      const { data, error } =
+        game === "whot"
+          ? await supabase.rpc("mini_game_create_whot_table", { p_stake: stake })
+          : await supabase.rpc("mini_game_create_table", { p_stake: stake });
       if (error) throw error;
       return data as string;
     },
@@ -118,6 +128,17 @@ function StakeLobby({
           Open a table and stake cash. An opponent matches your stake. The winner takes the pot less
           a 5% house fee. Draws refund both stakes.
         </p>
+        <label className="mg-stake-field">
+          <span>Game</span>
+          <select
+            value={game}
+            onChange={(event) => setGame(event.target.value as GameKind)}
+            aria-label="Game"
+          >
+            <option value="tictactoe">Tic-Tac-Toe</option>
+            <option value="whot">Whot</option>
+          </select>
+        </label>
         <label className="mg-stake-field">
           <span>Stake</span>
           <select
@@ -153,7 +174,9 @@ function StakeLobby({
                 <div className="mg-tile">
                   <span>
                     <strong>Stake {formatNaira(table.stake)}</strong>
-                    <small>Pot {formatNaira(table.pot)} · Tic-Tac-Toe</small>
+                    <small>
+                      Pot {formatNaira(table.pot)} · {gameLabel(table.game)}
+                    </small>
                   </span>
                   <Button
                     disabled={mine || join.isPending || !canAfford(table.stake)}
@@ -187,7 +210,9 @@ function StakeTableView({
       const [table, seats, board] = await Promise.all([
         supabase
           .from("mini_game_tables")
-          .select("id,stake,pot,status,result,winner_character_id,host_character_id,fee_percent")
+          .select(
+            "id,game,stake,pot,status,result,winner_character_id,host_character_id,fee_percent",
+          )
           .eq("id", tableId)
           .maybeSingle(),
         supabase
@@ -287,6 +312,23 @@ function StakeTableView({
   const opponentIdle =
     !!opponent && Date.now() - new Date(opponent.last_active_at).getTime() > IDLE_MS;
   const canClaim = seated && table.status === "playing" && !!opponent && opponentIdle;
+
+  if (table.game === "whot") {
+    return (
+      <WhotTableView
+        tableId={tableId}
+        table={table}
+        characterId={characterId}
+        seated={seated}
+        canClaim={canClaim}
+        onLeave={() => leave.mutate()}
+        leavePending={leave.isPending}
+        onClaim={() => claim.mutate()}
+        claimPending={claim.isPending}
+        onExit={onExit}
+      />
+    );
+  }
 
   const status = (() => {
     if (table.status === "cancelled")
