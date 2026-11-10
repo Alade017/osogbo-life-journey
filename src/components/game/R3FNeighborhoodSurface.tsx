@@ -274,7 +274,7 @@ function NeighborhoodNpcActor({
   });
 
   return (
-    <group ref={group} position={start}>
+    <group ref={group}>
       <mesh position={[0, 0.9, 0]} castShadow>
         <capsuleGeometry args={[0.24, 0.52, 4, 8]} />
         <WorldMaterial tone="slate" />
