@@ -74,8 +74,9 @@ export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({ paths }) => 
       : undefined;
     const length = pathLength(path);
     const desiredStart = length * (((index + 1) * 0.61803398875) % 1);
-    const safeStart = startJunctionId ? 0.48 : 0;
-    const safeEnd = endJunctionId ? length - 0.48 : length;
+    const clearance = townPedestrianClearanceRadius(length);
+    const safeStart = startJunctionId ? clearance : 0;
+    const safeEnd = endJunctionId ? length - clearance : length;
 
     return {
       id: `town-pedestrian-${path.map(([x, z]) => `${x.toFixed(3)},${z.toFixed(3)}`).join("|")}`,
