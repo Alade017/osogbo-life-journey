@@ -318,3 +318,11 @@ export function townPedestrianClearanceRadius(routeLength: number, preferredRadi
     || !Number.isFinite(preferredRadius) || preferredRadius <= 0) return 0;
   return Math.min(preferredRadius, routeLength / 3);
 }
+
+
+/** Rejects traffic loops containing malformed points or no traversable perimeter. */
+export function isValidTownMobilityLoop(route: TownMobilityRoute): boolean {
+  return route.length >= 2
+    && route.every(([x, z]) => Number.isFinite(x) && Number.isFinite(z))
+    && measureTownMobilityLoop(route) >= 0.001;
+}
