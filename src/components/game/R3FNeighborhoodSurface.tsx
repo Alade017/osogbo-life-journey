@@ -6,6 +6,7 @@ import {
   useRef,
   useState,
   type ReactNode,
+  type MutableRefObject,
 } from "react";
 import { Html } from "@react-three/drei";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
@@ -113,7 +114,7 @@ function NeighborhoodNpcActor({
   npc: NeighborhoodNpcView;
   start: [number, number, number];
   target: [number, number, number];
-  actorPositions: React.MutableRefObject<Map<string, NpcPoint>>;
+  actorPositions: MutableRefObject<Map<string, NpcPoint>>;
   actorRoutes: React.MutableRefObject<Map<string, readonly NpcPoint[]>>;
   playerPositions: readonly (readonly [number, number, number])[];
   occupiedFootprints: readonly { left: number; top: number; width: number; height: number }[];
