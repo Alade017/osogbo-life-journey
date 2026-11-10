@@ -185,14 +185,11 @@ export type WorldInstance = {
 export function WorldInstances({
   items,
   tone,
-  color,
   shape = "box",
   animate,
 }: {
   items: readonly WorldInstance[];
   tone: WorldTone;
-  /** Optional colour that replaces the tone's palette colour for these instances. */
-  color?: string;
   shape?: "box" | "sphere";
   animate?: ((object: Object3D, index: number, seconds: number) => void) | undefined;
 }) {
@@ -234,7 +231,7 @@ export function WorldInstances({
   return (
     <instancedMesh ref={mesh} args={[undefined, undefined, items.length]} castShadow receiveShadow>
       {shape === "box" ? <boxGeometry /> : <sphereGeometry args={[0.5, 8, 6]} />}
-      <WorldMaterial tone={tone} {...(color ? { color } : {})} />
+      <WorldMaterial tone={tone} />
     </instancedMesh>
   );
 }

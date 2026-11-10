@@ -30,7 +30,6 @@ import {
   houseWallSegments,
   houseRearDoorCenter,
   FOUR_ROOM_HOME_TYPES,
-  HOUSE_ROOM_STYLE,
   type HouseRoomRendererProps as Props,
 } from "./house-room-contract";
 
@@ -66,12 +65,6 @@ function hasRoomPosition(
 
 type FloorTone =
   "tileLight" | "tileShade" | "tileBath" | "tileBathShade" | "tileDark" | "tileDarkShade";
-
-function roomFloorColor(tone: FloorTone): string | undefined {
-  if (tone === "tileLight") return HOUSE_ROOM_STYLE.floorLight;
-  if (tone === "tileShade") return HOUSE_ROOM_STYLE.floorShade;
-  return undefined;
-}
 
 function RoomFloor({
   houseTypeId,
@@ -126,12 +119,9 @@ function RoomFloor({
 
   return (
     <>
-      {(Object.entries(groups) as [FloorTone, WorldInstance[]][]).map(([tone, items]) => {
-        const color = roomFloorColor(tone);
-        return (
-          <WorldInstances key={tone} items={items} tone={tone} {...(color ? { color } : {})} />
-        );
-      })}
+      {(Object.entries(groups) as [FloorTone, WorldInstance[]][]).map(([tone, items]) => (
+        <WorldInstances key={tone} items={items} tone={tone} />
+      ))}
     </>
   );
 }
@@ -260,7 +250,7 @@ function OsogboRoomPrototype({
           <group key={segment.id}>
             <mesh castShadow receiveShadow position={segment.position}>
               <boxGeometry args={segment.size} />
-              <WorldMaterial tone="partition" color={HOUSE_ROOM_STYLE.wall} />
+              <WorldMaterial tone="partition" />
             </mesh>
             <mesh
               castShadow
@@ -327,7 +317,7 @@ function OsogboRoomPrototype({
           <group key={segment.id}>
             <mesh castShadow receiveShadow position={segment.position}>
               <boxGeometry args={segment.size} />
-              <WorldMaterial tone="partition" color={HOUSE_ROOM_STYLE.wall} />
+              <WorldMaterial tone="partition" />
             </mesh>
             <mesh
               castShadow
@@ -2045,16 +2035,6 @@ export function HouseRoom3D({
             doorOpen={doorOpen}
           />
           <RoomFloor houseTypeId={houseTypeId} width={width} depth={depth} />
-          <mesh receiveShadow position={[0, 0.03, depth * 0.12]}>
-            <boxGeometry args={[width * 0.46, 0.03, depth * 0.32]} />
-            <meshStandardMaterial color={HOUSE_ROOM_STYLE.rug} />
-          </mesh>
-          <pointLight
-            position={[0, WORLD_SCALE.door * 1.15 * 0.75, 0]}
-            intensity={lightOn ? 6 : 0}
-            distance={Math.max(width, depth) * 2}
-            color="#ffd9a0"
-          />
           {guideZone &&
             (() => {
               const [zoneX, , zoneZ] = roomPercentToPosition(
