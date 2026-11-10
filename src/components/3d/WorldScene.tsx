@@ -4,6 +4,7 @@ import { ContactShadows, OrbitControls } from "@react-three/drei";
 import { CanvasLabel } from "@/components/3d/CanvasLabel";
 import { Object3D, Vector3, type InstancedMesh, type PerspectiveCamera, type Texture } from "three";
 import type { OrbitControls as Controls } from "three-stdlib";
+import { getDistrictArchitecture, getPitchedRoofPanel } from "@/game/district-architecture";
 import {
   WORLD_CAMERA,
   WORLD_MATERIAL,
@@ -1029,10 +1030,7 @@ export function WorldHouse({
   const isChurch = variant === "church";
   const isMosque = variant === "mosque";
   const isWorship = variant === "worship" || isChurch || isMosque;
-  const isTransit = variant === "transit" || variant === "transport";
-  const isSport = variant === "sport";
-  const isClub = variant === "club";
-  const isServices = variant === "services";
+  const architecture = getDistrictArchitecture(variant);
 
   const roofTone = isMarket
     ? "accent"
@@ -1043,16 +1041,6 @@ export function WorldHouse({
         : isBank || isCivic
           ? "slate"
           : "roof";
-
-  const accentTone = isHealth
-    ? "foliage"
-    : isSchool
-      ? "sign"
-      : isWorship
-        ? "linen"
-        : isTransit
-          ? "accent"
-          : "concrete";
 
   const windowCount = isBank || isCivic || isSchool ? 3 : 2;
   const windowPositions = Array.from(
@@ -1075,22 +1063,94 @@ export function WorldHouse({
       </mesh>
 
       {/* Main roof */}
-      <mesh position={[0, height + 0.31, 0]} castShadow receiveShadow>
-        <boxGeometry args={[width + 0.32, 0.24, depth + 0.32]} />
-        <WorldMaterial tone={roofTone} />
-      </mesh>
+      {architecture.roof !== "pitched" && (
+        <mesh position={[0, height + 0.31, 0]} castShadow receiveShadow>
+          <boxGeometry args={[width + 0.32, 0.24, depth + 0.32]} />
+          <WorldMaterial tone={roofTone} />
+        </mesh>
+      )}
 
       {/* Roof edge */}
-      <mesh position={[0, height + 0.45, 0]}>
-        <boxGeometry args={[width + 0.18, 0.07, depth + 0.18]} />
-        <WorldMaterial tone="concrete" />
-      </mesh>
+      {architecture.roof !== "pitched" && (
+        <mesh position={[0, height + 0.45, 0]}>
+          <boxGeometry args={[width + 0.18, 0.07, depth + 0.18]} />
+          <WorldMaterial tone="concrete" />
+        </mesh>
+      )}
+
+      {/* Raised sheet-metal seams add a subtle corrugated-roof finish to market blocks. */}
+      {isMarket && architecture.roof !== "pitched" &&
+        Array.from({ length: 7 }, (_, seam) => (
+          <mesh
+            key={`market-roof-seam-${seam}`}
+            position={[
+              ((seam - 3) / 3) * width * 0.46,
+              height + 0.505,
+              0,
+            ]}
+            castShadow
+          >
+            <boxGeometry args={[0.035, 0.025, depth * 0.82]} />
+            <WorldMaterial tone="metal" />
+          </mesh>
+        ))}
+
+      {/* Market roof drainage: shallow eaves channels and a corner downpipe. */}
+      {isMarket && architecture.roof !== "pitched" && (
+        <group>
+          {[-1, 1].map((side) => (
+            <group key={`market-gutter-${side}`} position={[0, height + 0.285, side * (depth / 2 + 0.16)]}>
+              <mesh>
+                <boxGeometry args={[width + 0.3, 0.055, 0.09]} />
+                <WorldMaterial tone="metal" />
+              </mesh>
+              {[-1, 1].map((lip) => (
+                <mesh key={`gutter-lip-${lip}`} position={[0, 0.035, lip * 0.035]}>
+                  <boxGeometry args={[width + 0.3, 0.035, 0.018]} />
+                  <WorldMaterial tone="metal" />
+                </mesh>
+              ))}
+            </group>
+          ))}
+          {/* The downpipe runs from the gutter to ground level instead of stopping above the foundation. */}
+          <mesh position={[width * 0.47, height * 0.5 + 0.155, depth / 2 + 0.16]}>
+            <boxGeometry args={[0.055, height + 0.31, 0.055]} />
+            <WorldMaterial tone="metal" />
+          </mesh>
+          <mesh position={[width * 0.47, 0.3, depth / 2 + 0.12]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.028, 0.028, 0.12, 8]} />
+            <WorldMaterial tone="metal" />
+          </mesh>
+        </group>
+      )}
 
       {/* Front entrance */}
       <mesh position={[0, WORLD_SCALE.door / 2 + 0.18, depth / 2 + 0.04]}>
         <boxGeometry args={[isMarket ? width * 0.48 : width * 0.3, WORLD_SCALE.door, 0.08]} />
         <WorldMaterial tone="timber" />
       </mesh>
+
+      {detailed && (
+        <group position={[0, 0, depth / 2 + 0.095]}>
+          {[-1, 1].map((side) => (
+            <mesh
+              key={`door-jamb-${side}`}
+              position={[
+                side * ((isMarket ? width * 0.48 : width * 0.3) / 2 + 0.035),
+                WORLD_SCALE.door / 2 + 0.18,
+                0,
+              ]}
+            >
+              <boxGeometry args={[0.055, WORLD_SCALE.door + 0.08, 0.045]} />
+              <WorldMaterial tone="concrete" />
+            </mesh>
+          ))}
+          <mesh position={[0, WORLD_SCALE.door + 0.22, 0]}>
+            <boxGeometry args={[(isMarket ? width * 0.48 : width * 0.3) + 0.12, 0.065, 0.055]} />
+            <WorldMaterial tone="concrete" />
+          </mesh>
+        </group>
+      )}
 
       {/* Detailed windows */}
       {detailed &&
@@ -1110,41 +1170,34 @@ export function WorldHouse({
               <boxGeometry args={[0.035, height * 0.25, 0.025]} />
               <WorldMaterial tone="metal" />
             </mesh>
+            <mesh position={[0, height * 0.16, 0.015]}>
+              <boxGeometry args={[width * 0.23, Math.max(0.035, height * 0.035), 0.065]} />
+              <WorldMaterial tone="concrete" />
+            </mesh>
+            <mesh position={[0, -height * 0.16, 0.015]}>
+              <boxGeometry args={[width * 0.24, Math.max(0.04, height * 0.045), 0.085]} />
+              <WorldMaterial tone="concrete" />
+            </mesh>
+          </group>
+        ))}
+
+      {detailed && architecture.windowGrilles &&
+        windowPositions.map((x, index) => (
+          <group key={`security-grille-${index}`} position={[x, height * 0.65 + 0.18, depth / 2 + 0.105]}>
+            {[-1, 0, 1].map((bar) => (
+              <mesh key={`grille-bar-${bar}`} position={[bar * 0.045, 0, 0]}>
+                <boxGeometry args={[0.025, height * 0.3, 0.025]} />
+                <WorldMaterial tone="metal" />
+              </mesh>
+            ))}
           </group>
         ))}
 
       {/* MARKET AND FOOD BUILDINGS */}
-      {isMarket && (
-        <>
-          <mesh position={[0, height * 0.84, depth / 2 + 0.32]} castShadow>
-            <boxGeometry args={[width * 1.12, 0.17, 0.72]} />
-            <WorldMaterial tone="accent" />
-          </mesh>
-
-          {[-1, 1].map((side) => (
-            <mesh
-              key={`market-support-${side}`}
-              position={[side * width * 0.43, height * 0.65, depth / 2 + 0.28]}
-            >
-              <boxGeometry args={[0.07, height * 0.36, 0.07]} />
-              <WorldMaterial tone="metal" />
-            </mesh>
-          ))}
-        </>
-      )}
+      {/* Market awnings are supplied by the district frontage profile below. */}
 
       {/* BANK AND CIVIC BUILDINGS */}
-      {(isBank || isCivic) &&
-        [-1, 1].map((side) => (
-          <mesh
-            key={`column-${side}`}
-            position={[side * width * 0.4, height * 0.45 + 0.18, depth / 2 + 0.08]}
-            castShadow
-          >
-            <boxGeometry args={[0.16, height * 0.85, 0.18]} />
-            <WorldMaterial tone="linen" />
-          </mesh>
-        ))}
+      {/* Bank and civic portico columns are supplied by the district frontage profile below. */}
 
       {/* HEALTH BUILDINGS */}
       {isHealth && (
@@ -1155,12 +1208,7 @@ export function WorldHouse({
       )}
 
       {/* SCHOOL AND LIBRARY BUILDINGS */}
-      {(isSchool || isClub || isServices) && (
-        <mesh position={[0, height + 0.55, 0]}>
-          <boxGeometry args={[width * 0.72, 0.12, depth * 0.72]} />
-          <WorldMaterial tone={accentTone} />
-        </mesh>
-      )}
+      {/* School, club and service roof details are supplied by their roof profiles below. */}
 
       {/* WORSHIP BUILDINGS */}
       {isChurch && (
@@ -1230,35 +1278,146 @@ export function WorldHouse({
       )}
 
       {/* TRANSPORT BUILDINGS */}
-      {isTransit && (
-        <>
-          <mesh position={[0, height * 0.88, depth / 2 + 0.48]}>
-            <boxGeometry args={[width * 1.15, 0.12, 0.9]} />
-            <WorldMaterial tone="accent" />
-          </mesh>
+      {/* Transit canopies are supplied by the district frontage profile below. */}
 
-          {[-1, 1].map((side) => (
-            <mesh
-              key={`transit-pillar-${side}`}
-              position={[side * width * 0.42, height * 0.55, depth / 2 + 0.48]}
-            >
-              <boxGeometry args={[0.09, height * 0.65, 0.09]} />
-              <WorldMaterial tone="metal" />
-            </mesh>
-          ))}
+      {/* SPORTS AND RECREATION BUILDINGS */}
+      {/* Sports roof details are supplied by the district roof/frontage profiles below. */}
+
+      {/* District roof profiles add recognizable local rooflines without changing footprints. */}
+      {architecture.roof === "pitched" && (
+        <>
+          <mesh
+            position={[getPitchedRoofPanel("left", width).positionX, height + 0.43, 0]}
+            rotation={[0, 0, getPitchedRoofPanel("left", width).rotation]}
+            castShadow
+          >
+            <boxGeometry args={[getPitchedRoofPanel("left", width).width, 0.13, depth + 0.38]} />
+            <WorldMaterial tone={architecture.accent} />
+          </mesh>
+          <mesh
+            position={[getPitchedRoofPanel("right", width).positionX, height + 0.43, 0]}
+            rotation={[0, 0, getPitchedRoofPanel("right", width).rotation]}
+            castShadow
+          >
+            <boxGeometry args={[getPitchedRoofPanel("right", width).width, 0.13, depth + 0.38]} />
+            <WorldMaterial tone={architecture.accent} />
+          </mesh>
+        </>
+      )}
+      {architecture.roof === "parapet" && (
+        <>
+          <mesh position={[0, height + 0.53, depth * 0.43]} castShadow>
+            <boxGeometry args={[width + 0.12, 0.2, 0.1]} />
+            <WorldMaterial tone={architecture.accent} />
+          </mesh>
+          <mesh position={[-width * 0.48, height + 0.53, 0]} castShadow>
+            <boxGeometry args={[0.1, 0.2, depth]} />
+            <WorldMaterial tone={architecture.accent} />
+          </mesh>
+          <mesh position={[width * 0.48, height + 0.53, 0]} castShadow>
+            <boxGeometry args={[0.1, 0.2, depth]} />
+            <WorldMaterial tone={architecture.accent} />
+          </mesh>
         </>
       )}
 
-      {/* SPORTS AND RECREATION BUILDINGS */}
-      {isSport && (
-        <mesh position={[0, height + 0.55, 0]}>
-          <boxGeometry args={[width * 0.55, 0.15, depth * 0.55]} />
-          <WorldMaterial tone="foliage" />
-        </mesh>
+      {/* Shaded frontages vary by district: compound veranda, market awning, civic portico or transit canopy. */}
+      {architecture.frontage === "veranda" && (
+        <group position={[0, height * 0.62, depth / 2 + 0.28]}>
+          <mesh castShadow>
+            <boxGeometry args={[width * 0.9, 0.09, 0.62]} />
+            <WorldMaterial tone="roof" />
+          </mesh>
+          {[-1, 1].map((side) => (
+            <mesh key={`veranda-post-${side}`} position={[side * width * 0.38, -height * 0.3, 0.2]}>
+              <boxGeometry args={[0.07, height * 0.6, 0.07]} />
+              <WorldMaterial tone="concrete" />
+            </mesh>
+          ))}
+        </group>
+      )}
+      {architecture.frontage === "awning" && (
+        <group position={[0, height * 0.78, depth / 2 + 0.3]}>
+          <mesh castShadow>
+            <boxGeometry args={[width * 1.12, 0.13, 0.62]} />
+            <WorldMaterial tone={architecture.accent} />
+          </mesh>
+          {[-1, 0, 1].map((segment) => (
+            <mesh key={`awning-panel-${segment}`} position={[segment * width * 0.34, -0.08, 0.02]}>
+              <boxGeometry args={[width * 0.27, 0.035, 0.57]} />
+              <WorldMaterial tone={segment === 0 ? "linen" : architecture.accent} />
+            </mesh>
+          ))}
+          {[-1, 1].map((side) => (
+            <mesh key={`awning-support-${side}`} position={[side * width * 0.44, -height * 0.35, 0.22]}>
+              <boxGeometry args={[0.055, height * 0.7, 0.055]} />
+              <WorldMaterial tone="metal" />
+            </mesh>
+          ))}
+          {/* Small bracket arms visually tie the awning back into the facade. */}
+          {[-1, 1].map((side) => (
+            <mesh key={`awning-bracket-${side}`} position={[side * width * 0.37, -height * 0.05, -0.04]} rotation={[0, 0, side * -0.32]}>
+              <boxGeometry args={[0.045, height * 0.32, 0.055]} />
+              <WorldMaterial tone="metal" />
+            </mesh>
+          ))}
+          {/* Food premises get a short segmented fabric valance beneath the serving awning. */
+          {variant === "food" &&
+            Array.from({ length: 5 }, (_, segment) => (
+              <mesh
+                key={`food-awning-valance-${segment}`}
+                position={[(segment - 2) * width * 0.215, -0.145, 0.31]}
+                castShadow
+              >
+                <boxGeometry args={[width * 0.19, 0.12, 0.045]} />
+                <WorldMaterial tone={segment % 2 === 0 ? "linen" : architecture.accent} />
+              </mesh>
+            ))}
+        </group>
+      )}
+      {architecture.frontage === "portico" && (
+        <group position={[0, height * 0.55, depth / 2 + 0.22]}>
+          <mesh castShadow>
+            <boxGeometry args={[width * 0.72, 0.13, 0.58]} />
+            <WorldMaterial tone={architecture.accent} />
+          </mesh>
+          {[-1, 1].map((side) => (
+            <mesh key={`portico-column-${side}`} position={[side * width * 0.29, -height * 0.25, 0.18]} castShadow>
+              <boxGeometry args={[0.13, height * 0.5, 0.13]} />
+              <WorldMaterial tone="linen" />
+            </mesh>
+          ))}
+        </group>
+      )}
+      {architecture.frontage === "canopy" && (
+        <group position={[0, height * 0.78, depth / 2 + 0.34]}>
+          <mesh castShadow>
+            <boxGeometry args={[width * 1.18, 0.11, 0.82]} />
+            <WorldMaterial tone={architecture.accent} />
+          </mesh>
+          {[-1, 0, 1].map((side) => (
+            <mesh key={`canopy-support-${side}`} position={[side * width * 0.42, -height * 0.38, 0.28]}>
+              <boxGeometry args={[0.07, height * 0.76, 0.07]} />
+              <WorldMaterial tone="metal" />
+            </mesh>
+          ))}
+        </group>
+      )}
+      {architecture.frontage === "recessed" && (
+        <>
+          <mesh position={[0, 0.13, depth / 2 + 0.23]} receiveShadow>
+            <boxGeometry args={[width * 0.58, 0.18, 0.48]} />
+            <WorldMaterial tone="concrete" />
+          </mesh>
+          <mesh position={[0, WORLD_SCALE.door * 0.92 + 0.18, depth / 2 + 0.085]}>
+            <boxGeometry args={[width * 0.42, 0.12, 0.12]} />
+            <WorldMaterial tone={architecture.accent} />
+          </mesh>
+        </>
       )}
 
       {/* SHOPFRONT / BUILDING STEP */}
-      {detailed && (
+      {detailed && architecture.frontage !== "recessed" && (
         <mesh position={[0, 0.13, depth / 2 + 0.2]} receiveShadow>
           <boxGeometry args={[width * 0.55, 0.16, 0.38]} />
           <WorldMaterial tone="concrete" />
