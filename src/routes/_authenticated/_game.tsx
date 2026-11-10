@@ -34,6 +34,7 @@ import "@/components/game/game-cards.css";
 import "@/components/game/dashboard-ui-refresh.css";
 import "@/components/game/remaining-game-ui.css";
 import "@/components/game/game-dock.css";
+import "@/components/game/phone-redesign.css";
 import "@/components/game/game-bottom-bar.css";
 
 export const Route = createFileRoute("/_authenticated/_game")({
