@@ -6853,6 +6853,29 @@ export type Database = {
         Returns: Json;
       };
       get_social_groups_overview: { Args: never; Returns: Json };
+      send_social_group_media_as_user: {
+        Args: {
+          p_duration_ms: number | null;
+          p_group_id: string;
+          p_kind: string;
+          p_path: string;
+          p_request_id: string;
+          p_user_id: string;
+        };
+        Returns: Json;
+      };
+      get_social_group_media_as_user: {
+        Args: { p_message_id: string; p_user_id: string };
+        Returns: Json;
+      };
+      toggle_social_group_reaction: {
+        Args: { p_emoji: string; p_message_id: string };
+        Returns: Json;
+      };
+      set_social_group_prefs: {
+        Args: { p_group_id: string; p_muted: boolean; p_pinned: boolean };
+        Returns: Json;
+      };
       get_friend_status_posts: { Args: never; Returns: Json };
       get_house_state: { Args: { p_player_id: string }; Returns: Json };
       get_login_streak: { Args: never; Returns: Json };

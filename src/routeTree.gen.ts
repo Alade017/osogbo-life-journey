@@ -78,6 +78,9 @@ import { Route as AuthenticatedGameBankSlugRouteImport } from './routes/_authent
 import { Route as AuthenticatedGameLocationSlugRouteImport } from './routes/_authenticated/_game/location.$slug'
 import { Route as ApiAuthUsernameLoginRouteImport } from './routes/api/auth/username/login'
 import { Route as ApiAuthUsernameRegisterRouteImport } from './routes/api/auth/username/register'
+import { Route as ApiGroupsMediaIndexRouteImport } from './routes/api/groups/media/index'
+import { Route as ApiGroupsMediaIdRouteImport } from './routes/api/groups/media/$id'
+import { Route as ApiGroupsVoiceIndexRouteImport } from './routes/api/groups/voice/index'
 import { Route as ApiMapLandmarkIdRouteImport } from './routes/api/map/landmark.$id'
 import { Route as ApiMessagesMediaIndexRouteImport } from './routes/api/messages/media/index'
 import { Route as ApiMessagesMediaIdRouteImport } from './routes/api/messages/media/$id'
@@ -449,6 +452,21 @@ const ApiAuthUsernameRegisterRoute = ApiAuthUsernameRegisterRouteImport.update({
   path: '/api/auth/username/register',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGroupsMediaIndexRoute = ApiGroupsMediaIndexRouteImport.update({
+  id: '/api/groups/media/',
+  path: '/api/groups/media/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGroupsMediaIdRoute = ApiGroupsMediaIdRouteImport.update({
+  id: '/api/groups/media/$id',
+  path: '/api/groups/media/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGroupsVoiceIndexRoute = ApiGroupsVoiceIndexRouteImport.update({
+  id: '/api/groups/voice/',
+  path: '/api/groups/voice/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMapLandmarkIdRoute = ApiMapLandmarkIdRouteImport.update({
   id: '/api/map/landmark/$id',
   path: '/api/map/landmark/$id',
@@ -573,6 +591,7 @@ export interface FileRoutesByFullPath {
   '/location/$slug': typeof AuthenticatedGameLocationSlugRoute
   '/api/auth/username/login': typeof ApiAuthUsernameLoginRoute
   '/api/auth/username/register': typeof ApiAuthUsernameRegisterRoute
+  '/api/groups/media/$id': typeof ApiGroupsMediaIdRoute
   '/api/map/landmark/$id': typeof ApiMapLandmarkIdRoute
   '/api/messages/media/$id': typeof ApiMessagesMediaIdRoute
   '/api/messages/voice/$id': typeof ApiMessagesVoiceIdRoute
@@ -582,6 +601,8 @@ export interface FileRoutesByFullPath {
   '/api/threads/$id/pin': typeof ApiThreadsIdPinRoute
   '/api/threads/$id/read': typeof ApiThreadsIdReadRoute
   '/api/threads/$id/star': typeof ApiThreadsIdStarRoute
+  '/api/groups/media/': typeof ApiGroupsMediaIndexRoute
+  '/api/groups/voice/': typeof ApiGroupsVoiceIndexRoute
   '/api/messages/media/': typeof ApiMessagesMediaIndexRoute
   '/api/messages/voice/': typeof ApiMessagesVoiceIndexRoute
 }
@@ -653,6 +674,7 @@ export interface FileRoutesByTo {
   '/location/$slug': typeof AuthenticatedGameLocationSlugRoute
   '/api/auth/username/login': typeof ApiAuthUsernameLoginRoute
   '/api/auth/username/register': typeof ApiAuthUsernameRegisterRoute
+  '/api/groups/media/$id': typeof ApiGroupsMediaIdRoute
   '/api/map/landmark/$id': typeof ApiMapLandmarkIdRoute
   '/api/messages/media/$id': typeof ApiMessagesMediaIdRoute
   '/api/messages/voice/$id': typeof ApiMessagesVoiceIdRoute
@@ -662,6 +684,8 @@ export interface FileRoutesByTo {
   '/api/threads/$id/pin': typeof ApiThreadsIdPinRoute
   '/api/threads/$id/read': typeof ApiThreadsIdReadRoute
   '/api/threads/$id/star': typeof ApiThreadsIdStarRoute
+  '/api/groups/media': typeof ApiGroupsMediaIndexRoute
+  '/api/groups/voice': typeof ApiGroupsVoiceIndexRoute
   '/api/messages/media': typeof ApiMessagesMediaIndexRoute
   '/api/messages/voice': typeof ApiMessagesVoiceIndexRoute
 }
@@ -736,6 +760,7 @@ export interface FileRoutesById {
   '/_authenticated/_game/location/$slug': typeof AuthenticatedGameLocationSlugRoute
   '/api/auth/username/login': typeof ApiAuthUsernameLoginRoute
   '/api/auth/username/register': typeof ApiAuthUsernameRegisterRoute
+  '/api/groups/media/$id': typeof ApiGroupsMediaIdRoute
   '/api/map/landmark/$id': typeof ApiMapLandmarkIdRoute
   '/api/messages/media/$id': typeof ApiMessagesMediaIdRoute
   '/api/messages/voice/$id': typeof ApiMessagesVoiceIdRoute
@@ -745,6 +770,8 @@ export interface FileRoutesById {
   '/api/threads/$id/pin': typeof ApiThreadsIdPinRoute
   '/api/threads/$id/read': typeof ApiThreadsIdReadRoute
   '/api/threads/$id/star': typeof ApiThreadsIdStarRoute
+  '/api/groups/media/': typeof ApiGroupsMediaIndexRoute
+  '/api/groups/voice/': typeof ApiGroupsVoiceIndexRoute
   '/api/messages/media/': typeof ApiMessagesMediaIndexRoute
   '/api/messages/voice/': typeof ApiMessagesVoiceIndexRoute
 }
@@ -818,6 +845,7 @@ export interface FileRouteTypes {
     | '/location/$slug'
     | '/api/auth/username/login'
     | '/api/auth/username/register'
+    | '/api/groups/media/$id'
     | '/api/map/landmark/$id'
     | '/api/messages/media/$id'
     | '/api/messages/voice/$id'
@@ -827,6 +855,8 @@ export interface FileRouteTypes {
     | '/api/threads/$id/pin'
     | '/api/threads/$id/read'
     | '/api/threads/$id/star'
+    | '/api/groups/media/'
+    | '/api/groups/voice/'
     | '/api/messages/media/'
     | '/api/messages/voice/'
   fileRoutesByTo: FileRoutesByTo
@@ -898,6 +928,7 @@ export interface FileRouteTypes {
     | '/location/$slug'
     | '/api/auth/username/login'
     | '/api/auth/username/register'
+    | '/api/groups/media/$id'
     | '/api/map/landmark/$id'
     | '/api/messages/media/$id'
     | '/api/messages/voice/$id'
@@ -907,6 +938,8 @@ export interface FileRouteTypes {
     | '/api/threads/$id/pin'
     | '/api/threads/$id/read'
     | '/api/threads/$id/star'
+    | '/api/groups/media'
+    | '/api/groups/voice'
     | '/api/messages/media'
     | '/api/messages/voice'
   id:
@@ -980,6 +1013,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_game/location/$slug'
     | '/api/auth/username/login'
     | '/api/auth/username/register'
+    | '/api/groups/media/$id'
     | '/api/map/landmark/$id'
     | '/api/messages/media/$id'
     | '/api/messages/voice/$id'
@@ -989,6 +1023,8 @@ export interface FileRouteTypes {
     | '/api/threads/$id/pin'
     | '/api/threads/$id/read'
     | '/api/threads/$id/star'
+    | '/api/groups/media/'
+    | '/api/groups/voice/'
     | '/api/messages/media/'
     | '/api/messages/voice/'
   fileRoutesById: FileRoutesById
@@ -1039,6 +1075,7 @@ export interface RootRouteChildren {
   ApiThreadsIndexRoute: typeof ApiThreadsIndexRoute
   ApiAuthUsernameLoginRoute: typeof ApiAuthUsernameLoginRoute
   ApiAuthUsernameRegisterRoute: typeof ApiAuthUsernameRegisterRoute
+  ApiGroupsMediaIdRoute: typeof ApiGroupsMediaIdRoute
   ApiMapLandmarkIdRoute: typeof ApiMapLandmarkIdRoute
   ApiMessagesMediaIdRoute: typeof ApiMessagesMediaIdRoute
   ApiMessagesVoiceIdRoute: typeof ApiMessagesVoiceIdRoute
@@ -1048,6 +1085,8 @@ export interface RootRouteChildren {
   ApiThreadsIdPinRoute: typeof ApiThreadsIdPinRoute
   ApiThreadsIdReadRoute: typeof ApiThreadsIdReadRoute
   ApiThreadsIdStarRoute: typeof ApiThreadsIdStarRoute
+  ApiGroupsMediaIndexRoute: typeof ApiGroupsMediaIndexRoute
+  ApiGroupsVoiceIndexRoute: typeof ApiGroupsVoiceIndexRoute
   ApiMessagesMediaIndexRoute: typeof ApiMessagesMediaIndexRoute
   ApiMessagesVoiceIndexRoute: typeof ApiMessagesVoiceIndexRoute
 }
@@ -1537,6 +1576,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthUsernameRegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/groups/media/': {
+      id: '/api/groups/media/'
+      path: '/api/groups/media'
+      fullPath: '/api/groups/media/'
+      preLoaderRoute: typeof ApiGroupsMediaIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/groups/media/$id': {
+      id: '/api/groups/media/$id'
+      path: '/api/groups/media/$id'
+      fullPath: '/api/groups/media/$id'
+      preLoaderRoute: typeof ApiGroupsMediaIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/groups/voice/': {
+      id: '/api/groups/voice/'
+      path: '/api/groups/voice'
+      fullPath: '/api/groups/voice/'
+      preLoaderRoute: typeof ApiGroupsVoiceIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/map/landmark/$id': {
       id: '/api/map/landmark/$id'
       path: '/api/map/landmark/$id'
@@ -1729,6 +1789,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiThreadsIndexRoute: ApiThreadsIndexRoute,
   ApiAuthUsernameLoginRoute: ApiAuthUsernameLoginRoute,
   ApiAuthUsernameRegisterRoute: ApiAuthUsernameRegisterRoute,
+  ApiGroupsMediaIdRoute: ApiGroupsMediaIdRoute,
   ApiMapLandmarkIdRoute: ApiMapLandmarkIdRoute,
   ApiMessagesMediaIdRoute: ApiMessagesMediaIdRoute,
   ApiMessagesVoiceIdRoute: ApiMessagesVoiceIdRoute,
@@ -1738,6 +1799,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiThreadsIdPinRoute: ApiThreadsIdPinRoute,
   ApiThreadsIdReadRoute: ApiThreadsIdReadRoute,
   ApiThreadsIdStarRoute: ApiThreadsIdStarRoute,
+  ApiGroupsMediaIndexRoute: ApiGroupsMediaIndexRoute,
+  ApiGroupsVoiceIndexRoute: ApiGroupsVoiceIndexRoute,
   ApiMessagesMediaIndexRoute: ApiMessagesMediaIndexRoute,
   ApiMessagesVoiceIndexRoute: ApiMessagesVoiceIndexRoute,
 }

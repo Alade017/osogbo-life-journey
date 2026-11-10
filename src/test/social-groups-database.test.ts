@@ -61,7 +61,7 @@ describe("social group chat database", () => {
           "0079_free_house_placement",
         ].includes(entry.tag),
     ))
-      await db.exec(readFileSync(`drizzle/migrations/${tag}.sql`, "utf8").replace(/^﻿/, ""));
+      await db.exec(readFileSync(`drizzle/migrations/${tag}.sql`, "utf8").replace(/^\uFEFF/, ""));
     await db.exec(
       readFileSync(
         "supabase/migrations/20261102223137_freeform_house_furniture_placement.sql",
@@ -108,7 +108,10 @@ describe("social group chat database", () => {
       "select public.create_social_group($1,$2::uuid[]) as result",
       ["Stranger group", [strangerCharacterId]],
     );
-    expect(stranger).toMatchObject({ ok: false, message: expect.stringContaining("GROUP_MEMBER_UNAVAILABLE") });
+    expect(stranger).toMatchObject({
+      ok: false,
+      message: expect.stringContaining("GROUP_MEMBER_UNAVAILABLE"),
+    });
 
     const created = await asUser(
       ownerUserId,
@@ -195,7 +198,10 @@ describe("social group chat database", () => {
       "select public.get_social_group_messages($1,50) as result",
       [groupId],
     );
-    expect(strangerHistory).toMatchObject({ ok: false, message: expect.stringContaining("NOT_IN_GROUP") });
+    expect(strangerHistory).toMatchObject({
+      ok: false,
+      message: expect.stringContaining("NOT_IN_GROUP"),
+    });
   });
 
   it("removes the group when the last member leaves, and keeps it while others remain", async () => {
@@ -225,9 +231,9 @@ describe("social group chat database", () => {
   it("does not let clients read the group tables directly", async () => {
     await db.exec("set role authenticated");
     try {
-      await expect(
-        db.query("select count(*) from public.social_group_messages"),
-      ).rejects.toThrow(/permission denied/);
+      await expect(db.query("select count(*) from public.social_group_messages")).rejects.toThrow(
+        /permission denied/,
+      );
     } finally {
       await db.exec("reset role");
     }

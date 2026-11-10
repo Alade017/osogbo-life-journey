@@ -9,6 +9,12 @@ const service = vi.hoisted(() => ({
   createSocialGroup: vi.fn(),
   sendSocialGroupMessage: vi.fn(),
   leaveSocialGroup: vi.fn(),
+  setGroupPrefs: vi.fn(),
+  toggleGroupReaction: vi.fn(),
+  getGroupMediaUrl: vi.fn(),
+  sendGroupVoice: vi.fn(),
+  sendGroupPicture: vi.fn(),
+  GROUP_REACTIONS: ["👍", "❤️", "😂", "😮", "🙏"],
 }));
 
 vi.mock("@/lib/social-groups", () => service);
@@ -78,5 +84,44 @@ describe("group chats", () => {
     renderGroups();
     expect(await screen.findByText("Market crew")).toBeInTheDocument();
     expect(screen.getByText("See you at the market")).toBeInTheDocument();
+  });
+
+  it("pins and mutes a group through the server preference", async () => {
+    service.fetchSocialGroups.mockResolvedValue([
+      {
+        id: "group-1",
+        name: "Market crew",
+        memberCount: 3,
+        memberNames: ["Me", "Tunde", "Ife"],
+        lastBody: null,
+        lastMessageAt: "2026-11-10T02:00:00Z",
+        pinned: false,
+        muted: false,
+      },
+    ]);
+    service.setGroupPrefs.mockResolvedValue({ pinned: true, muted: false });
+    renderGroups();
+    fireEvent.click(await screen.findByRole("button", { name: "Pin Market crew" }));
+    await waitFor(() => expect(service.setGroupPrefs).toHaveBeenCalledWith("group-1", true, false));
+  });
+
+  it("shows a muted group with its unmute control", async () => {
+    service.fetchSocialGroups.mockResolvedValue([
+      {
+        id: "group-2",
+        name: "Quiet",
+        memberCount: 2,
+        memberNames: ["Me", "Ife"],
+        lastBody: "Hi",
+        lastMessageAt: "2026-11-10T02:00:00Z",
+        pinned: false,
+        muted: true,
+      },
+    ]);
+    renderGroups();
+    expect(await screen.findByRole("button", { name: "Unmute Quiet" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
   });
 });
