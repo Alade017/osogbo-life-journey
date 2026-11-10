@@ -310,3 +310,11 @@ export function isValidTownPedestrianRoute(route: TownMobilityRoute): boolean {
   }, 0);
   return Number.isFinite(length) && length >= 0.001;
 }
+
+
+/** Scales junction clearance for short trails so both endpoints remain reachable. */
+export function townPedestrianClearanceRadius(routeLength: number, preferredRadius = 0.38): number {
+  if (!Number.isFinite(routeLength) || routeLength <= 0
+    || !Number.isFinite(preferredRadius) || preferredRadius <= 0) return 0;
+  return Math.min(preferredRadius, routeLength / 3);
+}
