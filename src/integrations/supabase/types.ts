@@ -1979,6 +1979,13 @@ export type Database = {
           x: number;
           y: number;
           z: number;
+          collision_depth: number | null;
+          collision_width: number | null;
+          depth: number | null;
+          floor: number;
+          room_id: string | null;
+          rotation_deg: number;
+          width: number | null;
         };
         Insert: {
           character_id: string;
@@ -1993,6 +2000,13 @@ export type Database = {
           x?: number;
           y?: number;
           z?: number;
+          collision_depth?: number | null;
+          collision_width?: number | null;
+          depth?: number | null;
+          floor?: number;
+          room_id?: string | null;
+          rotation_deg?: number;
+          width?: number | null;
         };
         Update: {
           character_id?: string;
@@ -2007,6 +2021,13 @@ export type Database = {
           x?: number;
           y?: number;
           z?: number;
+          collision_depth?: number | null;
+          collision_width?: number | null;
+          depth?: number | null;
+          floor?: number;
+          room_id?: string | null;
+          rotation_deg?: number;
+          width?: number | null;
         };
         Relationships: [
           {
