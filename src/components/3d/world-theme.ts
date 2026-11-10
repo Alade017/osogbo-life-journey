@@ -70,10 +70,11 @@ export const WORLD_MATERIAL = {
 } as const;
 
 /** Warm cutaway colours for a house room seen on its own. Presentation only. */
+// Taken from the housing blueprints: cream walls and tiles, warm lamp light.
 export const ROOM_VIEW_PALETTE = {
-  wall: "#a39e94",
-  floorLight: "#efe7d8",
-  floorShade: "#dcd0bb",
+  wall: "#e8dcc4",
+  floorLight: "#f1e8d6",
+  floorShade: "#dccbaf",
   light: "#ffd9a0",
 } as const;
 

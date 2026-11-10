@@ -361,13 +361,28 @@ function studioPartitionSegments(width: number, depth: number, height: number): 
   ];
 }
 
-/** Home types that have the four-room plan: sitting room, bedroom, kitchen and dining, bathroom. */
-export const FOUR_ROOM_HOME_TYPES: readonly string[] = [
-  "studio-flat",
-  "mini-flat",
-  "bungalow",
-  "duplex",
-];
+/**
+ * How each home type is divided. "open" has no interior walls. "private-bath" is one open room with
+ * an enclosed bathroom. "four-room" is sitting room, bedroom, kitchen and dining, and bathroom.
+ * Every rule that depends on the layout reads this map, so a home type changes in one place.
+ */
+export const HOUSE_PLAN: Readonly<Record<string, "open" | "private-bath" | "four-room">> = {
+  "shared-room": "open",
+  "single-room": "private-bath",
+  "studio-flat": "private-bath",
+  "mini-flat": "four-room",
+  bungalow: "four-room",
+  duplex: "four-room",
+};
+
+export function housePlan(houseTypeId: string): "open" | "private-bath" | "four-room" {
+  return HOUSE_PLAN[houseTypeId] ?? "open";
+}
+
+/** Home types with the four-room plan. */
+export const FOUR_ROOM_HOME_TYPES: readonly string[] = Object.keys(HOUSE_PLAN).filter(
+  (id) => HOUSE_PLAN[id] === "four-room",
+);
 
 /**
  * Private room: one bedroom with an enclosed bathroom in the front-right corner, reached by a
@@ -434,8 +449,9 @@ export function housePartitionSegments(
   width: number,
   depth: number,
 ): HouseWallSegment[] {
-  if (houseTypeId === "single-room") return privateRoomPartitionSegments(width, depth, 1.9);
-  if (!FOUR_ROOM_HOME_TYPES.includes(houseTypeId)) return [];
+  const plan = housePlan(houseTypeId);
+  if (plan === "private-bath") return privateRoomPartitionSegments(width, depth, 1.9);
+  if (plan !== "four-room") return [];
   // Taller than the furniture, so it reads clearly from the camera.
   return studioPartitionSegments(width, depth, 1.9);
 }
@@ -608,7 +624,8 @@ export function houseRoomViews(houseTypeId: string, width: number, depth: number
     minZ: -depth / 2,
     maxZ: depth / 2,
   };
-  if (houseTypeId === "single-room") return [whole, privateBathroomBounds(width, depth)];
+  if (housePlan(houseTypeId) === "private-bath")
+    return [whole, privateBathroomBounds(width, depth)];
   return [whole];
 }
 

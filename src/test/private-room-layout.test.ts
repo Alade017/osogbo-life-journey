@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { ROOM_VIEW_PALETTE } from "@/components/3d/world-theme";
 import {
   HOUSE_ROOM_SIZE,
   HOUSE_ROOM_ID,
@@ -71,5 +72,19 @@ describe("private room layout", () => {
       expect(z - sizeZ / 2).toBeGreaterThanOrEqual(-depth / 2 - 1e-9);
       expect(z + sizeZ / 2).toBeLessThanOrEqual(depth / 2 + 1e-9);
     }
+  });
+});
+
+describe("studio flat layout", () => {
+  const [studioWidth, studioDepth] = HOUSE_ROOM_SIZE["studio-flat"]!;
+
+  it("is one open room with only the bathroom enclosed", () => {
+    const views = houseRoomViews("studio-flat", studioWidth, studioDepth);
+    expect(views.map((view) => view.id)).toEqual([HOUSE_ROOM_ID.single, HOUSE_ROOM_ID.bathroom]);
+    expect(housePartitionSegments("studio-flat", studioWidth, studioDepth)).toHaveLength(4);
+  });
+
+  it("uses the blueprint's cream wall tone for the room views", () => {
+    expect(ROOM_VIEW_PALETTE.wall).toBe("#e8dcc4");
   });
 });

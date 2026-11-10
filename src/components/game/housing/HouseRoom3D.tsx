@@ -30,6 +30,8 @@ import {
   houseWallSegments,
   houseRearDoorCenter,
   FOUR_ROOM_HOME_TYPES,
+  housePlan,
+  privateBathroomBounds,
   houseRoomViews,
   roomViewContains,
   roomViewHidesSegment,
@@ -101,6 +103,8 @@ function RoomFloor({
     };
     const tileSize = 0.78;
     const hasPrivateRooms = FOUR_ROOM_HOME_TYPES.includes(houseTypeId);
+    const bathroom =
+      housePlan(houseTypeId) === "private-bath" ? privateBathroomBounds(width, depth) : null;
     let row = 0;
     for (let z0 = -depth / 2; z0 < depth / 2; z0 += tileSize, row += 1) {
       const tileDepth = Math.min(tileSize, depth / 2 - z0);
@@ -111,8 +115,17 @@ function RoomFloor({
         const z = z0 + tileDepth / 2;
         const alternate = (row + column) % 2 === 0;
         // Four-room homes: kitchen and dining back-right, bathroom front-right.
-        const tone: FloorTone =
-          hasPrivateRooms && x > 0 && z > 0
+        const inBathroom =
+          bathroom !== null &&
+          x >= bathroom.minX &&
+          x <= bathroom.maxX &&
+          z >= bathroom.minZ &&
+          z <= bathroom.maxZ;
+        const tone: FloorTone = inBathroom
+          ? alternate
+            ? "tileBath"
+            : "tileBathShade"
+          : hasPrivateRooms && x > 0 && z > 0
             ? alternate
               ? "tileBath"
               : "tileBathShade"
