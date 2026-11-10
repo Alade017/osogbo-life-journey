@@ -298,3 +298,15 @@ export function measureTownMobilityLoop(route: TownMobilityRoute): number {
     return Number.isFinite(length) && length >= 0.001 ? total + length : total;
   }, 0);
 }
+
+
+/** Validates an open pedestrian trail before assigning it to an animated character. */
+export function isValidTownPedestrianRoute(route: TownMobilityRoute): boolean {
+  if (route.length < 2) return false;
+  if (!route.every(([x, z]) => Number.isFinite(x) && Number.isFinite(z))) return false;
+  const length = route.slice(1).reduce((total, point, index) => {
+    const previous = route[index]!;
+    return total + Math.hypot(point[0] - previous[0], point[1] - previous[1]);
+  }, 0);
+  return Number.isFinite(length) && length >= 0.001;
+}
