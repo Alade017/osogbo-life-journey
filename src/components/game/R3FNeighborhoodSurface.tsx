@@ -22,6 +22,16 @@ import {
   type NeighborhoodObject,
 } from "@/game/neighborhood-model";
 import { neighborhoodBuildingFootprint } from "@/game/neighborhood-geometry";
+import { neighborhoodObstacleFootprint } from "@/game/neighborhood-geometry";
+import {
+  NEIGHBORHOOD_NPC_ACTOR_SEPARATION,
+  neighborhoodNpcAvoidanceBias,
+  neighborhoodNpcAvoidanceStep,
+  neighborhoodNpcPathWithFallback,
+  neighborhoodNpcReplanDelay,
+  neighborhoodNpcReservationPath,
+  type NpcPoint,
+} from "@/game/neighborhood-npc-layout";
 import {
   WorldCamera,
   WorldCars,
@@ -92,12 +102,22 @@ function NeighborhoodNpcActor({
   npc,
   start,
   target,
+  actorPositions,
+  actorRoutes,
+  playerPositions,
+  occupiedFootprints,
+  sceneBounds,
   onSelect,
   onArrive,
 }: {
   npc: NeighborhoodNpcView;
   start: [number, number, number];
   target: [number, number, number];
+  actorPositions: React.MutableRefObject<Map<string, NpcPoint>>;
+  actorRoutes: React.MutableRefObject<Map<string, readonly NpcPoint[]>>;
+  playerPositions: readonly (readonly [number, number, number])[];
+  occupiedFootprints: readonly { left: number; top: number; width: number; height: number }[];
+  sceneBounds: { left: number; top: number; width: number; height: number };
   onSelect: () => void;
   onArrive: () => void;
 }) {
@@ -107,11 +127,58 @@ function NeighborhoodNpcActor({
   const leftLeg = useRef<Group>(null);
   const rightLeg = useRef<Group>(null);
   const { invalidate } = useThree();
-  const animated =
-    !npc.isPaused &&
+  const animated = !npc.isPaused &&
     (npc.isMoving || ["working", "shopping", "socializing"].includes(npc.activityKind));
-  const targetKey = `${target[0].toFixed(3)}:${target[2].toFixed(3)}`;
+  const targetKey = `${target[0].toFixed(2)}:${target[2].toFixed(2)}`;
+  const route = useRef<readonly NpcPoint[]>([]);
+  const waypointIndex = useRef(0);
+  const targetKeyRef = useRef("");
+  const blockedFor = useRef(0);
+  const retryAfter = useRef(neighborhoodNpcReplanDelay(npc.id));
   const arrivedTarget = useRef<string | null>(null);
+  const bias = neighborhoodNpcAvoidanceBias(npc.id);
+  const rebuildRoute = useCallback((origin: NpcPoint) => {
+    const reservations = [...actorRoutes.current.entries()]
+      .filter(([id, path]) => id !== npc.id && path.length > 1)
+      .map(([, path]) => path);
+    const next = neighborhoodNpcPathWithFallback(
+      origin,
+      { x: target[0], y: target[2] },
+      occupiedFootprints,
+      sceneBounds,
+      reservations,
+    );
+    route.current = next ?? [origin];
+    waypointIndex.current = 0;
+    blockedFor.current = 0;
+    targetKeyRef.current = targetKey;
+    if (route.current.length > 1) {
+      actorRoutes.current.set(npc.id, neighborhoodNpcReservationPath(origin, route.current));
+    } else {
+      actorRoutes.current.delete(npc.id);
+    }
+  }, [actorRoutes, npc.id, occupiedFootprints, sceneBounds, target[0], target[2], targetKey]);
+
+  useEffect(() => {
+    const actor = group.current;
+    if (!actor) return;
+    const current = { x: actor.position.x, y: actor.position.z };
+    if (targetKeyRef.current !== targetKey || route.current.length === 0) rebuildRoute(current);
+  }, [rebuildRoute, targetKey, start[0], start[2]]);
+
+  useEffect(() => {
+    const actor = group.current;
+    if (!actor) return;
+    // Apply authoritative spawn/confirmed-position updates only when they differ
+    // materially; ordinary parent renders must not snap a walking actor backwards.
+    const known = actorPositions.current.get(npc.id);
+    if (!known || Math.hypot(known.x - start[0], known.y - start[2]) > 1.5) {
+      actor.position.set(start[0], start[1], start[2]);
+      actorPositions.current.set(npc.id, { x: start[0], y: start[2] });
+      rebuildRoute({ x: start[0], y: start[2] });
+      invalidate();
+    }
+  }, [actorPositions, invalidate, npc.id, rebuildRoute, start[0], start[1], start[2]]);
 
   useEffect(() => {
     if (!animated) return;
@@ -119,21 +186,77 @@ function NeighborhoodNpcActor({
     return () => window.clearInterval(timer);
   }, [animated, invalidate]);
 
+  useEffect(() => () => {
+    actorPositions.current.delete(npc.id);
+    actorRoutes.current.delete(npc.id);
+  }, [actorPositions, actorRoutes, npc.id]);
+
   useFrame((state, delta) => {
     const actor = group.current;
     if (!actor || npc.isPaused) return;
-    const dx = target[0] - actor.position.x;
-    const dz = target[2] - actor.position.z;
-    const distance = Math.hypot(dx, dz);
+    const current = { x: actor.position.x, y: actor.position.z };
+    if (targetKeyRef.current !== targetKey) rebuildRoute(current);
+    const waypoint = route.current[waypointIndex.current] ??
+      { x: target[0], y: target[2] };
+    const distance = Math.hypot(waypoint.x - current.x, waypoint.y - current.y);
     const walking = distance > 0.035;
     if (walking) {
-      const step = 1 - Math.exp(-Math.min(delta, 0.1) * 2.8);
-      actor.position.x += dx * step;
-      actor.position.z += dz * step;
-      actor.rotation.y = Math.atan2(dx, dz);
+      arrivedTarget.current = null;
+      const desiredStep = Math.min(distance, (1 - Math.exp(-Math.min(delta, 0.1) * 2.8)) * distance);
+      const blockers = [
+        ...[...actorPositions.current.entries()]
+          .filter(([id]) => id !== npc.id)
+          .map(([, position]) => position),
+        ...playerPositions.map((position) => ({ x: position[0], y: position[2] })),
+      ];
+      const next = neighborhoodNpcAvoidanceStep(
+        current,
+        waypoint,
+        blockers,
+        desiredStep,
+        NEIGHBORHOOD_NPC_ACTOR_SEPARATION,
+        occupiedFootprints,
+        sceneBounds,
+        bias,
+      );
+      const moved = Math.hypot(next.x - current.x, next.y - current.y);
+      if (moved > 0.0001) {
+        actor.position.x = next.x;
+        actor.position.z = next.y;
+        actor.rotation.y = Math.atan2(next.x - current.x, next.y - current.y);
+        blockedFor.current = 0;
+        retryAfter.current = neighborhoodNpcReplanDelay(npc.id);
+        actorPositions.current.set(npc.id, next);
+      } else {
+        blockedFor.current += Math.min(delta, 0.1);
+        if (blockedFor.current >= retryAfter.current) {
+          rebuildRoute(current);
+          retryAfter.current = Math.min(retryAfter.current * 1.6, 8);
+        }
+      }
+      if (Math.hypot(waypoint.x - actor.position.x, waypoint.y - actor.position.z) <= 0.12) {
+        waypointIndex.current += 1;
+        if (waypointIndex.current >= route.current.length) {
+          actor.position.x = target[0];
+          actor.position.z = target[2];
+          actorPositions.current.set(npc.id, { x: target[0], y: target[2] });
+          actorRoutes.current.delete(npc.id);
+        } else {
+          actorRoutes.current.set(
+            npc.id,
+            neighborhoodNpcReservationPath(
+              { x: actor.position.x, y: actor.position.z },
+              route.current,
+              waypointIndex.current,
+            ),
+          );
+        }
+      }
     } else {
       actor.position.x = target[0];
       actor.position.z = target[2];
+      actorPositions.current.set(npc.id, { x: target[0], y: target[2] });
+      actorRoutes.current.delete(npc.id);
       if (arrivedTarget.current !== targetKey) {
         arrivedTarget.current = targetKey;
         onArrive();
@@ -183,13 +306,7 @@ function NeighborhoodNpcActor({
           <WorldMaterial tone="timber" />
         </mesh>
       </group>
-      <mesh
-        position={[0, 0.92, 0]}
-        onClick={(event) => {
-          event.stopPropagation();
-          onSelect();
-        }}
-      >
+      <mesh position={[0, 0.92, 0]} onClick={(event) => { event.stopPropagation(); onSelect(); }}>
         <cylinderGeometry args={[0.42, 0.42, 1.9, 10]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
@@ -383,6 +500,32 @@ export function R3FNeighborhoodSurface({
     return point(p.x, p.y);
   });
   const npcPoints = npcs.map((npc) => point(npc.x, npc.y));
+  const actorPositions = useRef(new Map<string, NpcPoint>());
+  const actorRoutes = useRef(new Map<string, readonly NpcPoint[]>());
+  const movementBounds = useMemo(() => ({
+    left: -bounds.width * unit / 2,
+    top: -bounds.height * unit / 2,
+    width: bounds.width * unit,
+    height: bounds.height * unit,
+  }), [bounds.width, bounds.height, unit]);
+  const movementObstacles = useMemo(() => {
+    const footprints = [
+      ...area.objects.filter((object) => object.kind !== "npc").map(neighborhoodBuildingFootprint),
+      ...(area.obstacles ?? []).map(neighborhoodObstacleFootprint),
+    ];
+    return footprints.map((footprint) => {
+      const center = point(
+        footprint.left + footprint.width / 2,
+        footprint.top + footprint.height / 2,
+      );
+      return {
+        left: center[0] - footprint.width * unit / 2,
+        top: center[2] - footprint.height * unit / 2,
+        width: footprint.width * unit,
+        height: footprint.height * unit,
+      };
+    });
+  }, [area, point, unit]);
   const self = players.find((player) => player.sessionId === selfSessionId);
   const selfPoint = self && toScene(self, district.origin);
   const target: [number, number, number] =
@@ -562,6 +705,11 @@ export function R3FNeighborhoodSurface({
               npc={npc}
               start={point(npc.x, npc.y)}
               target={point(npc.targetX, npc.targetY)}
+              actorPositions={actorPositions}
+              actorRoutes={actorRoutes}
+              playerPositions={scenePoints}
+              occupiedFootprints={movementObstacles}
+              sceneBounds={movementBounds}
               onSelect={() => onSelectTarget(npc.id)}
               onArrive={() => onNpcArrive(npc.id, npc.targetX, npc.targetY)}
             />
