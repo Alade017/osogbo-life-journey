@@ -33,7 +33,6 @@ import {
   houseRoomViews,
   roomViewContains,
   roomViewHidesSegment,
-  ROOM_VIEW_STYLE,
   type HouseRoomView,
   type HouseRoomRendererProps as Props,
 } from "./house-room-contract";
@@ -45,7 +44,7 @@ import {
   WorldMaterial,
   type WorldInstance,
 } from "@/components/3d/WorldScene";
-import { WORLD_SCALE } from "@/components/3d/world-theme";
+import { ROOM_VIEW_CAMERA, ROOM_VIEW_PALETTE, WORLD_SCALE } from "@/components/3d/world-theme";
 
 type WaitingCourier = { delivery: FoodDelivery; index: number };
 
@@ -61,6 +60,8 @@ type DragPointer = {
   moved: boolean;
 };
 const FLOOR_PLANE = new Plane(new Vector3(0, 1, 0), -0.2);
+/** Height of the warm room-view light: part of the door height above the floor. */
+const ROOM_VIEW_LIGHT_Y = WORLD_SCALE.door * 1.15 * 0.75;
 
 function hasRoomPosition(
   placement: HousePlacement,
@@ -74,8 +75,8 @@ type FloorTone =
 /** Warm tile colours for the room view; the whole-home view keeps its own palette. */
 function roomFloorColor(tone: FloorTone): string {
   return tone.includes("Shade") || tone === "tileDark"
-    ? ROOM_VIEW_STYLE.floorShade
-    : ROOM_VIEW_STYLE.floorLight;
+    ? ROOM_VIEW_PALETTE.floorShade
+    : ROOM_VIEW_PALETTE.floorLight;
 }
 
 function RoomFloor({
@@ -275,7 +276,7 @@ function OsogboRoomPrototype({
                 <boxGeometry args={segment.size} />
                 <WorldMaterial
                   tone="partition"
-                  {...(roomView ? { color: ROOM_VIEW_STYLE.wall } : {})}
+                  {...(roomView ? { color: ROOM_VIEW_PALETTE.wall } : {})}
                 />
               </mesh>
               <mesh
@@ -347,7 +348,7 @@ function OsogboRoomPrototype({
                 <boxGeometry args={segment.size} />
                 <WorldMaterial
                   tone="partition"
-                  {...(roomView ? { color: ROOM_VIEW_STYLE.wall } : {})}
+                  {...(roomView ? { color: ROOM_VIEW_PALETTE.wall } : {})}
                 />
               </mesh>
               <mesh
@@ -2081,10 +2082,10 @@ export function HouseRoom3D({
           <RoomFloor houseTypeId={houseTypeId} width={width} depth={depth} roomView={roomView} />
           {roomView && (
             <pointLight
-              position={[0, WORLD_SCALE.door * 1.15 * 0.75, 0]}
+              position={[0, ROOM_VIEW_LIGHT_Y, 0]}
               intensity={lightOn ? 6 : 0}
               distance={Math.max(width, depth) * 2}
-              color={ROOM_VIEW_STYLE.light}
+              color={ROOM_VIEW_PALETTE.light}
             />
           )}
           {guideZone &&
@@ -2281,7 +2282,7 @@ export function HouseRoom3D({
                   ? [0, 0.25, 0]
                   : [0, WORLD_SCALE.door * 0.65, 0]
             }
-            distanceScale={roomView ? 0.9 : 1}
+            distanceScale={roomView ? ROOM_VIEW_CAMERA.distanceScale : 1}
             enabled={!inputBlocked && !activePreview}
           />
         </Canvas>

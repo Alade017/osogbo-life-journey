@@ -348,16 +348,16 @@ function studioPartitionSegments(width: number, depth: number, height: number): 
   const kitchenDoorZ = -depth * 0.25;
   return [
     // Sitting room and bedroom, with a doorway at x = sittingDoorX.
-    alongX("sitting-bedroom-left", 0, -width / 2, sittingDoorX - doorway / 2),
-    alongX("sitting-bedroom-right", 0, sittingDoorX + doorway / 2, 0),
+    alongX("sitting-bedroom-left", STUDIO_ROOM_SPLIT.z, -width / 2, sittingDoorX - doorway / 2),
+    alongX("sitting-bedroom-right", STUDIO_ROOM_SPLIT.z, sittingDoorX + doorway / 2, 0),
     // Sitting room and kitchen, with a doorway at z = kitchenDoorZ.
-    alongZ("sitting-kitchen-back", 0, -depth / 2, kitchenDoorZ - doorway / 2),
-    alongZ("sitting-kitchen-front", 0, kitchenDoorZ + doorway / 2, 0),
+    alongZ("sitting-kitchen-back", STUDIO_ROOM_SPLIT.x, -depth / 2, kitchenDoorZ - doorway / 2),
+    alongZ("sitting-kitchen-front", STUDIO_ROOM_SPLIT.x, kitchenDoorZ + doorway / 2, 0),
     // Kitchen and bathroom, a solid wall.
-    alongX("kitchen-bath", 0, 0, width / 2),
+    alongX("kitchen-bath", STUDIO_ROOM_SPLIT.z, STUDIO_ROOM_SPLIT.x, width / 2),
     // Bedroom and bathroom, with a doorway at z = bathDoorZ.
-    alongZ("bedroom-bath-back", 0, 0, bathDoorZ - doorway / 2),
-    alongZ("bedroom-bath-front", 0, bathDoorZ + doorway / 2, depth / 2),
+    alongZ("bedroom-bath-back", STUDIO_ROOM_SPLIT.x, STUDIO_ROOM_SPLIT.z, bathDoorZ - doorway / 2),
+    alongZ("bedroom-bath-front", STUDIO_ROOM_SPLIT.x, bathDoorZ + doorway / 2, depth / 2),
   ];
 }
 
@@ -459,6 +459,15 @@ export function sleepFacingForHeadboard(headboard: HouseFacing): HouseFacing {
   return OPPOSITE_FACING[headboard];
 }
 
+/** Where the studio's rooms meet, in room metres from the centre (the partition lines). */
+export const STUDIO_ROOM_SPLIT = { x: 0, z: 0 } as const;
+/** Tolerance when deciding a wall sits on a room's edge. */
+const ROOM_VIEW_EDGE = 0.01;
+/** Space kept around a room when deciding which furniture belongs to it. */
+const ROOM_VIEW_MARGIN = 0.2;
+/** Wall ids ending with this are the low cutaway walls, hidden in every room view. */
+const CUTAWAY_ID_SUFFIX = "cutaway";
+
 /** A single room shown on its own in the room view. Bounds are in room metres, centred on the house. */
 export type HouseRoomView = {
   id: string;
@@ -476,18 +485,16 @@ export type HouseRoomView = {
  */
 export function houseRoomViews(houseTypeId: string, width: number, depth: number): HouseRoomView[] {
   if (FOUR_ROOM_HOME_TYPES.includes(houseTypeId)) {
+    const { x, z } = STUDIO_ROOM_SPLIT;
+    const left = { minX: -width / 2, maxX: x };
+    const right = { minX: x, maxX: width / 2 };
+    const back = { minZ: -depth / 2, maxZ: z };
+    const front = { minZ: z, maxZ: depth / 2 };
     return [
-      {
-        id: "sitting",
-        label: "Sitting room",
-        minX: -width / 2,
-        maxX: 0,
-        minZ: -depth / 2,
-        maxZ: 0,
-      },
-      { id: "kitchen", label: "Kitchen", minX: 0, maxX: width / 2, minZ: -depth / 2, maxZ: 0 },
-      { id: "bedroom", label: "Bedroom", minX: -width / 2, maxX: 0, minZ: 0, maxZ: depth / 2 },
-      { id: "bathroom", label: "Bathroom", minX: 0, maxX: width / 2, minZ: 0, maxZ: depth / 2 },
+      { id: "sitting", label: "Sitting room", ...left, ...back },
+      { id: "kitchen", label: "Kitchen", ...right, ...back },
+      { id: "bedroom", label: "Bedroom", ...left, ...front },
+      { id: "bathroom", label: "Bathroom", ...right, ...front },
     ];
   }
   return [
@@ -503,7 +510,12 @@ export function houseRoomViews(houseTypeId: string, width: number, depth: number
 }
 
 /** Whether a point (room metres) lies inside a room view, with a small margin at the edges. */
-export function roomViewContains(room: HouseRoomView, x: number, z: number, margin = 0.2): boolean {
+export function roomViewContains(
+  room: HouseRoomView,
+  x: number,
+  z: number,
+  margin = ROOM_VIEW_MARGIN,
+): boolean {
   return (
     x >= room.minX - margin &&
     x <= room.maxX + margin &&
@@ -517,16 +529,7 @@ export function roomViewContains(room: HouseRoomView, x: number, z: number, marg
  * so the room reads like the reference cutaway.
  */
 export function roomViewHidesSegment(segment: HouseWallSegment, room: HouseRoomView): boolean {
-  const edge = 0.01;
   const [x, , z] = segment.position;
-  if (segment.id.endsWith("cutaway")) return true;
-  return x >= room.maxX - edge || z >= room.maxZ - edge;
+  if (segment.id.endsWith(CUTAWAY_ID_SUFFIX)) return true;
+  return x >= room.maxX - ROOM_VIEW_EDGE || z >= room.maxZ - ROOM_VIEW_EDGE;
 }
-
-/** Warm colours for the room view only, taken from the reference cutaway. */
-export const ROOM_VIEW_STYLE = {
-  wall: "#a39e94",
-  floorLight: "#efe7d8",
-  floorShade: "#dcd0bb",
-  light: "#ffd9a0",
-} as const;
