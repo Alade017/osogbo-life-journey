@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { townPedestrianClearanceRadius, isValidTownPedestrianRoute, measureTownMobilityLoop, deriveTownMobilityRoutes, deriveTownPedestrianCornerRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells, stitchTownPedestrianRoutes, TownPedestrianJunctionScheduler } from "@/game/town-mobility";
+import { isValidTownMobilityLoop, townPedestrianClearanceRadius, isValidTownPedestrianRoute, measureTownMobilityLoop, deriveTownMobilityRoutes, deriveTownPedestrianCornerRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells, stitchTownPedestrianRoutes, TownPedestrianJunctionScheduler } from "@/game/town-mobility";
 import town from "@/data/osogbo-town.json";
 
 describe("pedestrian junction clearance", () => {
@@ -37,6 +37,15 @@ describe("town mobility input validation", () => {
     expect(deriveTownMobilityRoutes(rows, 2, Number.NaN)).toEqual([]);
     expect(deriveTownPedestrianRoutes(rows, 2, [], -0.1)).toEqual([]);
     expect(deriveTownPedestrianCornerRoutes(rows, 2, [], Number.POSITIVE_INFINITY)).toEqual([]);
+  });
+});
+
+describe("traffic loop validation", () => {
+  it("rejects malformed or non-traversable vehicle loops", () => {
+    expect(isValidTownMobilityLoop([[0, 0], [1, 0], [1, 1]])).toBe(true);
+    expect(isValidTownMobilityLoop([[0, 0], [Number.NaN, 1]])).toBe(false);
+    expect(isValidTownMobilityLoop([[0, 0], [0, 0]])).toBe(false);
+    expect(isValidTownMobilityLoop([[0, 0]])).toBe(false);
   });
 });
 
