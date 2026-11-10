@@ -369,11 +369,72 @@ export const FOUR_ROOM_HOME_TYPES: readonly string[] = [
   "duplex",
 ];
 
+/**
+ * Private room: one bedroom with an enclosed bathroom in the front-right corner, reached by a
+ * doorway in the bathroom's back wall. Sizes are fractions of the room width and depth, and the
+ * doorway width is in metres, so every private room shares one plan.
+ */
+export const PRIVATE_BATHROOM = {
+  widthFraction: 0.3,
+  doorway: 1,
+} as const;
+
+/** The bathroom's footprint in room metres: the front-right corner, from the middle of the room forward. */
+export function privateBathroomBounds(width: number, depth: number): HouseRoomView {
+  const bathWidth = width * PRIVATE_BATHROOM.widthFraction;
+  return {
+    id: HOUSE_ROOM_ID.bathroom,
+    label: HOUSE_ROOM_LABEL[HOUSE_ROOM_ID.bathroom],
+    minX: width / 2 - bathWidth,
+    maxX: width / 2,
+    minZ: 0,
+    maxZ: depth / 2,
+  };
+}
+
+function privateRoomPartitionSegments(
+  width: number,
+  depth: number,
+  height: number,
+): HouseWallSegment[] {
+  const thickness = HOUSE_WALL_THICKNESS;
+  const bath = privateBathroomBounds(width, depth);
+  const doorway = PRIVATE_BATHROOM.doorway;
+  const doorCenter = (bath.minX + bath.maxX) / 2;
+  const leftLength = doorCenter - doorway / 2 - bath.minX;
+  const rightLength = bath.maxX - (doorCenter + doorway / 2);
+  return [
+    // Side wall between the bedroom and the bathroom, running forward from the back wall.
+    {
+      id: "bedroom-bath-side",
+      position: [bath.minX, height / 2, depth / 4],
+      size: [thickness, height, depth / 2],
+    },
+    // Back wall of the bathroom, with the doorway in the middle.
+    {
+      id: "bath-back-left",
+      position: [bath.minX + leftLength / 2, height / 2, 0],
+      size: [leftLength, height, thickness],
+    },
+    {
+      id: "bath-back-right",
+      position: [doorCenter + doorway / 2 + rightLength / 2, height / 2, 0],
+      size: [rightLength, height, thickness],
+    },
+    {
+      id: "bath-doorway-lintel",
+      position: [doorCenter, height * 0.9, 0],
+      size: [doorway, height * 0.1, thickness],
+    },
+  ];
+}
+
 export function housePartitionSegments(
   houseTypeId: string,
   width: number,
   depth: number,
 ): HouseWallSegment[] {
+  if (houseTypeId === "single-room") return privateRoomPartitionSegments(width, depth, 1.9);
   if (!FOUR_ROOM_HOME_TYPES.includes(houseTypeId)) return [];
   // Taller than the furniture, so it reads clearly from the camera.
   return studioPartitionSegments(width, depth, 1.9);
@@ -539,16 +600,16 @@ export function houseRoomViews(houseTypeId: string, width: number, depth: number
       },
     ];
   }
-  return [
-    {
-      id: HOUSE_ROOM_ID.single,
-      label: HOUSE_ROOM_LABEL[HOUSE_ROOM_ID.single],
-      minX: -width / 2,
-      maxX: width / 2,
-      minZ: -depth / 2,
-      maxZ: depth / 2,
-    },
-  ];
+  const whole: HouseRoomView = {
+    id: HOUSE_ROOM_ID.single,
+    label: HOUSE_ROOM_LABEL[HOUSE_ROOM_ID.single],
+    minX: -width / 2,
+    maxX: width / 2,
+    minZ: -depth / 2,
+    maxZ: depth / 2,
+  };
+  if (houseTypeId === "single-room") return [whole, privateBathroomBounds(width, depth)];
+  return [whole];
 }
 
 /** Whether a point (room metres) lies inside a room view, with a small margin at the edges. */
