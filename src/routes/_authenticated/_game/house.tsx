@@ -48,6 +48,7 @@ import {
   FOUR_ROOM_HOME_TYPES,
   houseRoomViews,
   roomViewContains,
+  WHOLE_HOME_LABEL,
 } from "@/components/game/housing/house-room-contract";
 import { HouseEditSheets } from "@/components/game/housing/HouseEditSheets";
 import { HouseCatalogue } from "@/components/game/housing/HouseCatalogue";
@@ -1722,7 +1723,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             className={roomView === null ? "is-active" : undefined}
             onClick={() => setPinnedRoom(null)}
           >
-            Whole home
+            {WHOLE_HOME_LABEL}
           </button>
         </div>
       )}

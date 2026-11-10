@@ -468,9 +468,31 @@ const ROOM_VIEW_MARGIN = 0.2;
 /** Wall ids ending with this are the low cutaway walls, hidden in every room view. */
 const CUTAWAY_ID_SUFFIX = "cutaway";
 
+/** Ids of the rooms a house can show on their own. Use these instead of typing the strings. */
+export const HOUSE_ROOM_ID = {
+  sitting: "sitting",
+  kitchen: "kitchen",
+  bedroom: "bedroom",
+  bathroom: "bathroom",
+  single: "room",
+} as const;
+export type HouseRoomId = (typeof HOUSE_ROOM_ID)[keyof typeof HOUSE_ROOM_ID];
+
+/** Names shown on the room picker. One place to change the wording. */
+export const HOUSE_ROOM_LABEL: Record<HouseRoomId, string> = {
+  [HOUSE_ROOM_ID.sitting]: "Sitting room",
+  [HOUSE_ROOM_ID.kitchen]: "Kitchen",
+  [HOUSE_ROOM_ID.bedroom]: "Bedroom",
+  [HOUSE_ROOM_ID.bathroom]: "Bathroom",
+  [HOUSE_ROOM_ID.single]: "Room",
+};
+
+/** Picker button that goes back to the whole home. */
+export const WHOLE_HOME_LABEL = "Whole home";
+
 /** A single room shown on its own in the room view. Bounds are in room metres, centred on the house. */
 export type HouseRoomView = {
-  id: string;
+  id: HouseRoomId;
   label: string;
   minX: number;
   maxX: number;
@@ -491,16 +513,36 @@ export function houseRoomViews(houseTypeId: string, width: number, depth: number
     const back = { minZ: -depth / 2, maxZ: z };
     const front = { minZ: z, maxZ: depth / 2 };
     return [
-      { id: "sitting", label: "Sitting room", ...left, ...back },
-      { id: "kitchen", label: "Kitchen", ...right, ...back },
-      { id: "bedroom", label: "Bedroom", ...left, ...front },
-      { id: "bathroom", label: "Bathroom", ...right, ...front },
+      {
+        id: HOUSE_ROOM_ID.sitting,
+        label: HOUSE_ROOM_LABEL[HOUSE_ROOM_ID.sitting],
+        ...left,
+        ...back,
+      },
+      {
+        id: HOUSE_ROOM_ID.kitchen,
+        label: HOUSE_ROOM_LABEL[HOUSE_ROOM_ID.kitchen],
+        ...right,
+        ...back,
+      },
+      {
+        id: HOUSE_ROOM_ID.bedroom,
+        label: HOUSE_ROOM_LABEL[HOUSE_ROOM_ID.bedroom],
+        ...left,
+        ...front,
+      },
+      {
+        id: HOUSE_ROOM_ID.bathroom,
+        label: HOUSE_ROOM_LABEL[HOUSE_ROOM_ID.bathroom],
+        ...right,
+        ...front,
+      },
     ];
   }
   return [
     {
-      id: "room",
-      label: "Room",
+      id: HOUSE_ROOM_ID.single,
+      label: HOUSE_ROOM_LABEL[HOUSE_ROOM_ID.single],
       minX: -width / 2,
       maxX: width / 2,
       minZ: -depth / 2,
