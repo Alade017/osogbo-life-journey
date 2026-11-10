@@ -233,11 +233,12 @@ export function neighborhoodNpcPathWithFallback(
   occupied: readonly GroundRect[] = [],
   bounds: GroundRect = NEIGHBORHOOD_SCENE_BOUNDS,
   reservedPaths: readonly (readonly NpcPoint[])[] = [],
+  gridSize = NPC_PATH_GRID,
 ): NpcPoint[] | null {
   return (
-    neighborhoodNpcPath(start, destination, occupied, bounds, reservedPaths) ??
+    neighborhoodNpcPath(start, destination, occupied, bounds, reservedPaths, gridSize) ??
     (reservedPaths.length > 0
-      ? neighborhoodNpcPath(start, destination, occupied, bounds)
+      ? neighborhoodNpcPath(start, destination, occupied, bounds, [], gridSize)
       : null)
   );
 }
@@ -248,17 +249,19 @@ export function neighborhoodNpcPath(
   occupied: readonly GroundRect[] = [],
   bounds: GroundRect = NEIGHBORHOOD_SCENE_BOUNDS,
   reservedPaths: readonly (readonly NpcPoint[])[] = [],
+  gridSize = NPC_PATH_GRID,
 ): NpcPoint[] | null {
+  const cellSize = Math.max(0.25, gridSize);
   const toCell = (point: NpcPoint) => ({
-    x: Math.round((point.x - bounds.left) / NPC_PATH_GRID),
-    y: Math.round((point.y - bounds.top) / NPC_PATH_GRID),
+    x: Math.round((point.x - bounds.left) / cellSize),
+    y: Math.round((point.y - bounds.top) / cellSize),
   });
   const toPoint = (cell: { x: number; y: number }): NpcPoint => ({
-    x: bounds.left + cell.x * NPC_PATH_GRID,
-    y: bounds.top + cell.y * NPC_PATH_GRID,
+    x: bounds.left + cell.x * cellSize,
+    y: bounds.top + cell.y * cellSize,
   });
-  const maxX = Math.floor(bounds.width / NPC_PATH_GRID);
-  const maxY = Math.floor(bounds.height / NPC_PATH_GRID);
+  const maxX = Math.floor(bounds.width / cellSize);
+  const maxY = Math.floor(bounds.height / cellSize);
   const source = toCell(start);
   const goal = toCell(destination);
   const blocked = (x: number, y: number) => {
