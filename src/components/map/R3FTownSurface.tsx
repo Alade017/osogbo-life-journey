@@ -38,7 +38,7 @@ import { MovingTraffic3D } from "./MovingTraffic3D";
 import { MovingPedestrians3D } from "./MovingPedestrians3D";
 import { FunctionalStreetLights3D } from "./FunctionalStreetLights3D";
 import { RoadsideInfrastructure3D } from "./RoadsideInfrastructure3D";
-import { isMapTargetSelectionAllowed } from "@/game/map-gesture";
+import { MAP_DRAG_THRESHOLD_PX, isMapTargetSelectionAllowed } from "@/game/map-gesture";
 import {
   deriveTownMobilityRoutes,
   deriveTownPedestrianCornerRoutes,
