@@ -3,7 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import type { Group } from "three";
 import { WorldMaterial } from "@/components/3d/WorldScene";
-import { measureTownMobilityLoop, type TownMobilityRoute } from "@/game/town-mobility";
+import { isValidTownMobilityLoop, measureTownMobilityLoop, type TownMobilityRoute } from "@/game/town-mobility";
 
 export interface MovingTraffic3DProps {
   paths: readonly TownMobilityRoute[];
@@ -48,7 +48,7 @@ export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ paths }) => {
 
   const vehicleTypes: VehicleType[] = ["danfo", "keke", "okada", "taxi"];
   const vehicleColors = ["#eab308", "#16a34a", "#dc2626", "#2563eb"];
-  const vehicles: VehicleConfig[] = paths.map((path, index) => ({
+  const vehicles: VehicleConfig[] = paths.filter(isValidTownMobilityLoop).map((path, index) => ({
     id: `town-traffic-${index}`,
     type: vehicleTypes[index % vehicleTypes.length]!,
     name: `Town vehicle ${index + 1}`,
@@ -107,7 +107,8 @@ function TrafficVehicle({
     if (!Number.isFinite(delta) || delta <= 0) return;
     let distanceToTravel = (speed * delta * 8) % routeLength;
 
-    while (distanceToTravel > 0) {
+    let safetyIterations = 0;
+    while (distanceToTravel > 0 && safetyIterations++ < path.length * 2 + 2) {
       const start = path[currentSegment.current]!;
       const end = path[(currentSegment.current + 1) % path.length]!;
       const segmentLength = [start[0], start[1], end[0], end[1]].every(Number.isFinite)
@@ -133,6 +134,7 @@ function TrafficVehicle({
 
     const curP1 = path[currentSegment.current]!;
     const curP2 = path[(currentSegment.current + 1) % path.length]!;
+    if (![curP1[0], curP1[1], curP2[0], curP2[1]].every(Number.isFinite)) return;
     const curDx = curP2[0] - curP1[0];
     const curDz = curP2[1] - curP1[1];
 
