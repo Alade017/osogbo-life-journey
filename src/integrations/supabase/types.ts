@@ -6835,6 +6835,24 @@ export type Database = {
         Args: { p_target_character_id: string };
         Returns: Json;
       };
+      create_social_group: {
+        Args: { p_member_character_ids: string[]; p_name: string };
+        Returns: Json;
+      };
+      add_social_group_member: {
+        Args: { p_character_id: string; p_group_id: string };
+        Returns: Json;
+      };
+      leave_social_group: { Args: { p_group_id: string }; Returns: Json };
+      send_social_group_message: {
+        Args: { p_body: string; p_group_id: string; p_request_id: string };
+        Returns: Json;
+      };
+      get_social_group_messages: {
+        Args: { p_group_id: string; p_limit?: number };
+        Returns: Json;
+      };
+      get_social_groups_overview: { Args: never; Returns: Json };
       get_friend_status_posts: { Args: never; Returns: Json };
       get_house_state: { Args: { p_player_id: string }; Returns: Json };
       get_login_streak: { Args: never; Returns: Json };

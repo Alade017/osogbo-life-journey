@@ -137,3 +137,200 @@
   color: #94a3b8;
   font-size: 11px;
 }
+
+/* Group chats */
+.phone-ui-refresh .phone-group-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  color: #0f172a;
+}
+
+.phone-ui-refresh .phone-group-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.phone-ui-refresh .phone-group-heading h3,
+.phone-ui-refresh .phone-group-title {
+  color: #0f172a;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.phone-ui-refresh .phone-group-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.phone-ui-refresh .phone-group-card {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.06);
+  text-align: left;
+  cursor: pointer;
+}
+
+.phone-ui-refresh .phone-group-icon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: none;
+  place-items: center;
+  border-radius: 16px;
+  color: #ffffff;
+  background: #1e40af;
+}
+
+.phone-ui-refresh .phone-group-copy {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.phone-ui-refresh .phone-group-copy strong {
+  overflow: hidden;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phone-ui-refresh .phone-group-copy small,
+.phone-ui-refresh .phone-group-members {
+  overflow: hidden;
+  color: #64748b;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.phone-ui-refresh .phone-group-field {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.phone-ui-refresh .phone-group-field input,
+.phone-ui-refresh .phone-group-composer input {
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #0f172a;
+  font: inherit;
+}
+
+.phone-ui-refresh .phone-group-friends {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.phone-ui-refresh .phone-group-friends legend {
+  padding: 0 4px;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.phone-ui-refresh .phone-group-friend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.phone-ui-refresh .phone-group-primary {
+  width: 100%;
+  border-radius: 14px;
+  background: #1e40af;
+  color: #ffffff;
+}
+
+.phone-ui-refresh .phone-group-thread {
+  min-height: 0;
+  flex: 1;
+}
+
+.phone-ui-refresh .phone-group-leave {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid #fecaca;
+  border-radius: 9999px;
+  color: #b91c1c;
+  background: #ffffff;
+}
+
+.phone-ui-refresh .phone-group-messages {
+  display: grid;
+  flex: 1;
+  min-height: 0;
+  align-content: start;
+  gap: 8px;
+  overflow-y: auto;
+}
+
+.phone-ui-refresh .phone-group-message {
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px -4px rgba(15, 23, 42, 0.12);
+}
+
+.phone-ui-refresh .phone-group-message strong {
+  color: #1e40af;
+  font-size: 12px;
+}
+
+.phone-ui-refresh .phone-group-message p {
+  margin: 2px 0 0;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.phone-ui-refresh .phone-group-composer {
+  display: flex;
+  gap: 8px;
+}
+
+.phone-ui-refresh .phone-group-composer input {
+  flex: 1;
+  min-width: 0;
+}
+
+.phone-ui-refresh .phone-group-composer button {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: none;
+  place-items: center;
+  border: 0;
+  border-radius: 14px;
+  color: #ffffff;
+  background: #1e40af;
+}
+
+.phone-ui-refresh .phone-group-composer button:disabled {
+  opacity: 0.5;
+}
