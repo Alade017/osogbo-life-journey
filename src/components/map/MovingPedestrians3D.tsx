@@ -3,7 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import type { Group } from "three";
 import { WorldMaterial } from "@/components/3d/WorldScene";
-import { TownPedestrianJunctionScheduler, type TownMobilityRoute } from "@/game/town-mobility";
+import { isValidTownPedestrianRoute, TownPedestrianJunctionScheduler, type TownMobilityRoute } from "@/game/town-mobility";
 
 export interface MovingPedestrians3DProps {
   paths: readonly TownMobilityRoute[];
@@ -65,7 +65,7 @@ export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({ paths }) => 
     "As-salamu alaykum! Have a peaceful day.",
     "Hello! Lovely to see you around town.",
   ];
-  const npcs: NpcConfig[] = paths.filter((path) => path.length >= 2).map((path, index) => {
+  const npcs: NpcConfig[] = paths.filter(isValidTownPedestrianRoute).map((path, index) => {
     const startJunctionId = endpointCounts.get(junctionKey(path[0]!))! > 1
       ? junctionKey(path[0]!)
       : undefined;
