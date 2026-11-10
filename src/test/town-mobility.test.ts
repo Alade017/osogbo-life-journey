@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { measureTownMobilityLoop, deriveTownMobilityRoutes, deriveTownPedestrianCornerRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells, stitchTownPedestrianRoutes, TownPedestrianJunctionScheduler } from "@/game/town-mobility";
+import { isValidTownPedestrianRoute, measureTownMobilityLoop, deriveTownMobilityRoutes, deriveTownPedestrianCornerRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells, stitchTownPedestrianRoutes, TownPedestrianJunctionScheduler } from "@/game/town-mobility";
 import town from "@/data/osogbo-town.json";
+
+describe("pedestrian route validation", () => {
+  it("rejects non-finite and zero-length trails before NPC assignment", () => {
+    expect(isValidTownPedestrianRoute([[0, 0], [1, 0]])).toBe(true);
+    expect(isValidTownPedestrianRoute([[0, 0], [0, 0]])).toBe(false);
+    expect(isValidTownPedestrianRoute([[0, 0], [Number.NaN, 1]])).toBe(false);
+    expect(isValidTownPedestrianRoute([[0, 0], [Number.POSITIVE_INFINITY, 1]])).toBe(false);
+  });
+});
 
 describe("town mobility input validation", () => {
   it("returns no traffic or pedestrian routes for invalid cell dimensions", () => {
