@@ -386,7 +386,7 @@ export function CityMapDashboard({
     params.delete("details");
     const query = params.toString();
     window.history.replaceState(window.history.state, "", query ? "?" + query : window.location.pathname);
-  }, [availableLandmarks.data]);
+  }, [availableLandmarks.data, onLandmark]);
   const searchMatches = useMemo(() => {
     const value = search.trim().toLocaleLowerCase();
     if (!value) return null;
