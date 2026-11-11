@@ -3,7 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import type { Group } from "three";
 import { WorldMaterial } from "@/components/3d/WorldScene";
-import { isValidTownMobilityLoop, measureTownMobilityLoop, townMobilityRouteIdentity, type TownMobilityRoute } from "@/game/town-mobility";
+import { isValidTownMobilityLoop, measureTownMobilityLoop, townMobilityRouteIdentity, TownTrafficJunctionScheduler, type TownMobilityRoute } from "@/game/town-mobility";
 
 export interface MovingTraffic3DProps {
   paths: readonly TownMobilityRoute[];
@@ -21,6 +21,7 @@ interface VehicleConfig {
   path: TownMobilityRoute;
   startDistance: number;
   color: string;
+  junctionIds: readonly (string | null)[];
 }
 
 /**
@@ -32,6 +33,7 @@ interface VehicleConfig {
  * - Interactive click/hover dialogs and horn feedback.
  */
 export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ paths, onSelectTransit }) => {
+  const junctionScheduler = useMemo(() => new TownTrafficJunctionScheduler(), []);
   const [activeSpeech, setActiveSpeech] = useState<{ id: string; text: string } | null>(null);
   const speechTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -58,12 +60,24 @@ export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ paths, onSelectTrans
     okada: "#dc2626",
     taxi: "#2563eb",
   };
-  const vehicles: VehicleConfig[] = paths.filter(isValidTownMobilityLoop).flatMap((path) => {
+  const validPaths = paths.filter(isValidTownMobilityLoop);
+  const junctionCounts = new Map<string, number>();
+  for (const path of validPaths) {
+    for (const [x, z] of path) {
+      const key = `${x.toFixed(3)},${z.toFixed(3)}`;
+      junctionCounts.set(key, (junctionCounts.get(key) ?? 0) + 1);
+    }
+  }
+  const vehicles: VehicleConfig[] = validPaths.flatMap((path) => {
     const identity = townMobilityRouteIdentity(path);
     const numericIdentity = Number.parseInt(identity, 36);
     const routeLength = measureTownMobilityLoop(path);
     if (!identity || !Number.isFinite(numericIdentity) || routeLength < 0.001) return [];
     const type = vehicleTypes[numericIdentity % vehicleTypes.length]!;
+    const junctionIds = path.map(([x, z]) => {
+      const key = `${x.toFixed(3)},${z.toFixed(3)}`;
+      return (junctionCounts.get(key) ?? 0) > 1 ? `road-junction:${key}` : null;
+    });
     return [{
       id: `town-traffic-${identity}`,
       type,
@@ -73,6 +87,7 @@ export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ paths, onSelectTrans
       path,
       startDistance: ((numericIdentity >>> 8) / 0x1000000) * routeLength,
       color: vehicleColors[type],
+      junctionIds,
     }];
   });
 
@@ -82,6 +97,7 @@ export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ paths, onSelectTrans
         <TrafficVehicle
           key={v.id}
           config={v}
+          junctionScheduler={junctionScheduler}
           onInteract={(text) => showSpeech(v.id, text, 3200)}
           onSelectTransit={onSelectTransit}
           isSpeaking={activeSpeech?.id === v.id}
@@ -94,12 +110,14 @@ export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ paths, onSelectTrans
 
 function TrafficVehicle({
   config,
+  junctionScheduler,
   onInteract,
   onSelectTransit,
   isSpeaking,
   speechText,
 }: {
   config: VehicleConfig;
+  junctionScheduler: TownTrafficJunctionScheduler;
   onInteract: (text: string) => void;
   onSelectTransit: () => void;
   isSpeaking: boolean;
@@ -108,6 +126,7 @@ function TrafficVehicle({
   const groupRef = useRef<Group>(null);
   const currentSegment = useRef(0);
   const progress = useRef(0);
+  const activeJunction = useRef<string | null>(null);
   const [isHovered, setIsHovered] = useState(false);
   const routeLength = useMemo(() => measureTownMobilityLoop(config.path), [config.path]);
 
@@ -128,6 +147,25 @@ function TrafficVehicle({
     // work after a background-tab pause.
     if (!Number.isFinite(delta) || delta <= 0) return;
     let distanceToTravel = (speed * delta * 8) % routeLength;
+    const nextJunction = config.junctionIds[(currentSegment.current + 1) % path.length] ?? null;
+    const segmentStart = path[currentSegment.current]!;
+    const segmentEnd = path[(currentSegment.current + 1) % path.length]!;
+    const segmentLengthToJunction = Math.hypot(segmentEnd[0] - segmentStart[0], segmentEnd[1] - segmentStart[1]);
+    const remainingToJunction = segmentLengthToJunction * (1 - progress.current);
+    const clearanceDistance = Math.min(1.35, segmentLengthToJunction * 0.3);
+
+    if (activeJunction.current && activeJunction.current !== nextJunction) {
+      junctionScheduler.release(activeJunction.current, config.id);
+      activeJunction.current = null;
+    }
+    if (nextJunction && remainingToJunction <= clearanceDistance) {
+      if (!junctionScheduler.request(nextJunction, config.id)) {
+        distanceToTravel = Math.min(distanceToTravel, Math.max(0, remainingToJunction - clearanceDistance));
+        if (distanceToTravel <= 0) return;
+      } else {
+        activeJunction.current = nextJunction;
+      }
+    }
 
     let safetyIterations = 0;
     while (distanceToTravel > 0 && safetyIterations++ < path.length * 2 + 2) {
@@ -166,7 +204,15 @@ function TrafficVehicle({
 
     groupRef.current.position.set(posX, 0.05, posZ);
     groupRef.current.rotation.y = angle;
+    if (activeJunction.current && currentSegment.current !== (config.junctionIds.findIndex((id) => id === activeJunction.current) + path.length - 1) % path.length) {
+      junctionScheduler.release(activeJunction.current, config.id);
+      activeJunction.current = null;
+    }
   });
+
+  useEffect(() => () => {
+    junctionScheduler.cancelVehicle(config.id);
+  }, [config.id, junctionScheduler]);
 
   const handleClick = (e: any) => {
     e.stopPropagation();
