@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isValidTownMobilityLoop, townPedestrianClearanceRadius, isValidTownPedestrianRoute, measureTownMobilityLoop, deriveTownMobilityRoutes, deriveTownPedestrianCornerRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells, stitchTownPedestrianRoutes, TownPedestrianJunctionScheduler } from "@/game/town-mobility";
+import { isValidTownMobilityLoop, townPedestrianClearanceRadius, isValidTownPedestrianRoute, measureTownMobilityLoop, deriveTownMobilityRoutes, deriveTownPedestrianCornerRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells, stitchTownPedestrianRoutes, TownPedestrianJunctionScheduler, townMobilityRouteIdentity } from "@/game/town-mobility";
 import town from "@/data/osogbo-town.json";
 
 describe("pedestrian junction clearance", () => {
@@ -352,5 +352,25 @@ describe("pedestrian junction reservations", () => {
     scheduler.release("junction-a", "pedestrian-1");
 
     expect(scheduler.request("junction-a", "pedestrian-3")).toBe(true);
+  });
+});
+
+
+describe("stable traffic route identities", () => {
+  it("keeps a route identity when unrelated routes are inserted before it", () => {
+    const first = [[0, 0], [4, 0], [4, 3], [0, 3]] as const;
+    const added = [[10, 0], [14, 0], [14, 3], [10, 3]] as const;
+    expect(townMobilityRouteIdentity(first)).toBe(townMobilityRouteIdentity(first));
+    expect([added, first].map(townMobilityRouteIdentity)[1]).toBe(townMobilityRouteIdentity(first));
+  });
+
+  it("rejects invalid loops rather than assigning an unstable identity", () => {
+    expect(townMobilityRouteIdentity([[0, 0], [1, 0]])).toBe("");
+    expect(townMobilityRouteIdentity([[0, 0], [Number.NaN, 1], [1, 1]])).toBe("");
+  });
+
+  it("distinguishes different route geometry", () => {
+    expect(townMobilityRouteIdentity([[0, 0], [4, 0], [4, 3], [0, 3]]))
+      .not.toBe(townMobilityRouteIdentity([[0, 0], [5, 0], [5, 3], [0, 3]]));
   });
 });
