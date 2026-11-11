@@ -1,6 +1,7 @@
 import { expect, it } from "vitest";
 import town from "@/data/osogbo-town.json";
 import { MAP_LANDMARK_LOCATION_SLUG } from "@/components/map/map-location-links";
+import { getLocationVenueDesign, hasLocationVenueDesign } from "@/lib/location-venue-designs";
 import { validateTownMapData } from "@/game/town-map-validation";
 
 type AuthoredPlace = {
@@ -86,4 +87,25 @@ it("keeps every district grid area inside the authored map bounds", () => {
 
 it("passes the full map data validator", () => {
   expect(validateTownMapData(town)).toEqual([]);
+});
+
+
+it("provides dedicated interior designs for authored enterable landmarks", () => {
+  const enterablePlaces = places.filter(
+    (place) => Boolean(place.buildingType) && typeof place.locationSlug === "string",
+  );
+
+  expect(enterablePlaces.length).toBeGreaterThan(0);
+  for (const place of enterablePlaces) {
+    expect(hasLocationVenueDesign(place.locationSlug!)).toBe(true);
+    const design = getLocationVenueDesign(place.locationSlug!, place.id);
+    expect(design.fixtures.length).toBeGreaterThan(0);
+    expect(new Set(design.fixtures.map((item) => item.id)).size).toBe(
+      design.fixtures.length,
+    );
+  }
+
+  // Oja-Oba is an authored map landmark with its own location slug, although
+  // it is represented as a map landmark rather than a grid building.
+  expect(hasLocationVenueDesign("oja-oba")).toBe(true);
 });
