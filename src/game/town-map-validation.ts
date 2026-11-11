@@ -104,6 +104,7 @@ export function validateTownMapData(data: TownMapValidationInput): string[] {
   }
 
   const buildingIds = new Set<string>();
+  const occupiedBuildingCells = new Map<string, string>();
   for (const building of data.grid.buildings) {
     if (!building.placeId || buildingIds.has(building.placeId)) {
       errors.push(`Building place ID is missing or duplicated: "${building.placeId}".`);
@@ -121,8 +122,19 @@ export function validateTownMapData(data: TownMapValidationInput): string[] {
     }
     for (let z = building.z; z <= building.z + 1; z++) {
       for (let x = building.x; x <= building.x + 1; x++) {
+        const key = `${x},${z}`;
+        const previousBuilding = occupiedBuildingCells.get(key);
+        if (previousBuilding) {
+          errors.push(`Buildings "${previousBuilding}" and "${building.placeId}" overlap at ${key}.`);
+        } else {
+          occupiedBuildingCells.set(key, building.placeId);
+        }
         if (roadSymbol && rows[z]?.[x] === roadSymbol) {
           errors.push(`Building "${building.placeId}" overlaps a road at ${x},${z}.`);
+        }
+        const reservedKind = reservedKinds.get(key);
+        if (reservedKind) {
+          errors.push(`Building "${building.placeId}" overlaps reserved ${reservedKind} terrain at ${key}.`);
         }
       }
     }
@@ -144,6 +156,7 @@ export function validateTownMapData(data: TownMapValidationInput): string[] {
   }
 
   const reservedCells = new Set<string>();
+  const reservedKinds = new Map<string, "water" | "plot">();
   for (const [kind, cells] of [["water", data.grid.waterCells], ["plot", data.grid.plotCells]] as const) {
     for (const cell of cells) {
       const x = cell[0] ?? Number.NaN;
@@ -154,8 +167,14 @@ export function validateTownMapData(data: TownMapValidationInput): string[] {
         errors.push(`${kind} cell ${key} is outside the map grid.`);
         continue;
       }
-      if (reservedCells.has(key)) errors.push(`Map cell ${key} is reserved more than once.`);
+      if (reservedCells.has(key)) {
+        const previousKind = reservedKinds.get(key);
+        errors.push(previousKind === kind
+          ? `Map cell ${key} is reserved more than once.`
+          : `Map cell ${key} is assigned to both ${previousKind} and ${kind}.`);
+      }
       reservedCells.add(key);
+      reservedKinds.set(key, kind);
       const building = data.grid.buildings.find((item) =>
         x >= item.x && x <= item.x + 1 && z >= item.z && z <= item.z + 1,
       );
@@ -173,6 +192,11 @@ export function validateTownMapData(data: TownMapValidationInput): string[] {
         if (symbol === roadSymbol) roadCells.push([x, z]);
       });
     });
+    for (const [x, z] of roadCells) {
+      const key = `${x},${z}`;
+      const reservedKind = reservedKinds.get(key);
+      if (reservedKind) errors.push(`Road cell ${key} overlaps reserved ${reservedKind} terrain.`);
+    }
     if (roadCells.length === 0) errors.push("The authored map must contain a connected road network.");
     if (roadCells.length > 0) {
       const roadKeys = new Set(roadCells.map(([x, z]) => `${x},${z}`));
