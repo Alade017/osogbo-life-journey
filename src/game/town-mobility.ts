@@ -265,6 +265,7 @@ export class TownPedestrianJunctionScheduler {
   private readonly waiters = new Map<string, string[]>();
 
   request(junctionId: string, pedestrianId: string): boolean {
+    if (!junctionId || !pedestrianId) return false;
     const owner = this.owners.get(junctionId);
     if (owner === pedestrianId) return true;
     const queue = this.waiters.get(junctionId) ?? [];
@@ -278,12 +279,25 @@ export class TownPedestrianJunctionScheduler {
   }
 
   release(junctionId: string, pedestrianId: string): void {
+    if (!junctionId || !pedestrianId) return;
     if (this.owners.get(junctionId) === pedestrianId) this.owners.delete(junctionId);
     const queue = this.waiters.get(junctionId);
     if (!queue) return;
     const remaining = queue.filter((id) => id !== pedestrianId);
     if (remaining.length > 0) this.waiters.set(junctionId, remaining);
     else this.waiters.delete(junctionId);
+  }
+
+  cancelPedestrian(pedestrianId: string): void {
+    if (!pedestrianId) return;
+    for (const [junctionId, owner] of this.owners) {
+      if (owner === pedestrianId) this.owners.delete(junctionId);
+    }
+    for (const [junctionId, queue] of this.waiters) {
+      const remaining = queue.filter((id) => id !== pedestrianId);
+      if (remaining.length > 0) this.waiters.set(junctionId, remaining);
+      else this.waiters.delete(junctionId);
+    }
   }
 }
 
