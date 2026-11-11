@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_authenticated/_game/market")({
   component: MarketPage,
 });
 
-export function MarketPage() {
+export function MarketPage({ shopSlug }: { shopSlug?: string | null } = {}) {
   const { data: worldTime } = useWorldClock();
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const { data: character, isLoading: characterLoading } = useQuery(q.character());
@@ -32,6 +32,7 @@ export function MarketPage() {
           !!currentLocation &&
           !!offer.shop &&
           offer.shop.location_id === currentLocation.id &&
+          (shopSlug === undefined || (shopSlug !== null && offer.shop.slug === shopSlug)) &&
           shopIsOpen(
             offer.shop.is_open,
             offer.shop.opening_hour,
@@ -39,7 +40,7 @@ export function MarketPage() {
             worldTime?.hour ?? -1,
           ),
       ) ?? [],
-    [shopItems, currentLocation, worldTime?.hour],
+    [shopItems, currentLocation, worldTime?.hour, shopSlug],
   );
   const purchase = useGameAction(rpc.purchaseShopItem, {
     onSuccess: () => toast.success("Purchase complete. Your inventory has been updated."),
@@ -55,7 +56,7 @@ export function MarketPage() {
       <PageHeader eyebrow="SHOPS AROUND THE CITY" title="City market" />
       <section className="game-panel flex flex-wrap items-center justify-between gap-3 p-4">
         <div>
-          <p className="font-semibold">{currentLocation?.name ?? "No district selected"}</p>
+          <p className="font-semibold">{shopSlug ? (itemsHere[0]?.shop?.name ?? currentLocation?.name) : (currentLocation?.name ?? "No district selected")}</p>
           <p className="text-sm text-muted-foreground">
             Cash available: {formatNaira(wallet?.balance)}
           </p>
