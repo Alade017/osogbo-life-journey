@@ -484,6 +484,11 @@ describe("shared pedestrian and vehicle crossing priority", () => {
     expect(scheduler.request("crossing-a", "pedestrian-1", "pedestrian")).toBe(true);
   });
 
+  it("maps offset traffic lanes to the same centre-line junction as crossing signals", () => {
+    expect(townRoadJunctionIdentity(11.44, -8.44)).toBe(townRoadJunctionIdentity(11, -8));
+    expect(townRoadJunctionIdentity(10.56, -7.56)).toBe(townRoadJunctionIdentity(11, -8));
+  });
+
   it("drives signal state from active and waiting pedestrian crossing priority", () => {
     const scheduler = new TownRoadCrossingPriorityScheduler();
     expect(scheduler.getSignalState("crossing-a")).toBe("go");
