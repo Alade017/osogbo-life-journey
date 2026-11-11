@@ -484,6 +484,20 @@ describe("shared pedestrian and vehicle crossing priority", () => {
     expect(scheduler.request("crossing-a", "pedestrian-1", "pedestrian")).toBe(true);
   });
 
+  it("drives signal state from active and waiting pedestrian crossing priority", () => {
+    const scheduler = new TownRoadCrossingPriorityScheduler();
+    expect(scheduler.getSignalState("crossing-a")).toBe("go");
+    expect(scheduler.request("crossing-a", "vehicle-1", "vehicle")).toBe(true);
+    expect(scheduler.getSignalState("crossing-a")).toBe("go");
+    expect(scheduler.request("crossing-a", "pedestrian-1", "pedestrian")).toBe(false);
+    expect(scheduler.getSignalState("crossing-a")).toBe("caution");
+    scheduler.release("crossing-a", "vehicle-1");
+    expect(scheduler.getSignalState("crossing-a")).toBe("stop");
+    expect(scheduler.request("crossing-a", "pedestrian-1", "pedestrian")).toBe(true);
+    scheduler.release("crossing-a", "pedestrian-1");
+    expect(scheduler.getSignalState("crossing-a")).toBe("go");
+  });
+
   it("preserves arrival order for pedestrians while prioritising them over vehicles", () => {
     const scheduler = new TownRoadCrossingPriorityScheduler();
     expect(scheduler.request("crossing-a", "vehicle-owner", "vehicle")).toBe(true);
