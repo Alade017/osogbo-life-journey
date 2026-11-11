@@ -3,10 +3,11 @@ import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import type { Group } from "three";
 import { WorldMaterial } from "@/components/3d/WorldScene";
-import { isValidTownPedestrianRoute, townPedestrianClearanceRadius, TownPedestrianJunctionScheduler, type TownMobilityRoute } from "@/game/town-mobility";
+import { isValidTownPedestrianRoute, townPedestrianClearanceRadius, TownPedestrianJunctionScheduler, townPedestrianCrossingIdentity, TownRoadCrossingPriorityScheduler, type TownMobilityRoute } from "@/game/town-mobility";
 
 export interface MovingPedestrians3DProps {
   paths: readonly TownMobilityRoute[];
+  crossingScheduler: TownRoadCrossingPriorityScheduler;
   busStopPositions: readonly (readonly [number, number])[];
   onSelectTransit: () => void;
 }
@@ -22,6 +23,7 @@ interface NpcConfig {
   greeting: string;
   startJunctionId?: string;
   endJunctionId?: string;
+  crossingJunctionId?: string;
 }
 
 /**
@@ -32,7 +34,7 @@ interface NpcConfig {
  * - Residents commuting in colorful attire
  * - Footstep bobbing animations and interactive dialogue bubbles.
  */
-export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({ paths, busStopPositions, onSelectTransit }) => {
+export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({ paths, crossingScheduler, busStopPositions, onSelectTransit }) => {
   const [activeSpeech, setActiveSpeech] = useState<{ id: string; text: string } | null>(null);
   const junctionScheduler = useMemo(() => new TownPedestrianJunctionScheduler(), []);
   const endpointCounts = useMemo(() => {
@@ -96,6 +98,7 @@ export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({ paths, busSt
       greeting: greetings[index % greetings.length]!,
       startJunctionId,
       endJunctionId,
+      crossingJunctionId: townPedestrianCrossingIdentity(path) || undefined,
     };
   });
 
@@ -106,6 +109,7 @@ export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({ paths, busSt
           key={npc.id}
           npc={npc}
           junctionScheduler={junctionScheduler}
+          crossingScheduler={crossingScheduler}
           onInteract={(text) => showSpeech(npc.id, text, 3000)}
           isSpeaking={activeSpeech?.id === npc.id}
           speechText={activeSpeech?.text}
@@ -128,12 +132,14 @@ export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({ paths, busSt
 function PedestrianCharacter({
   npc,
   junctionScheduler,
+  crossingScheduler,
   onInteract,
   isSpeaking,
   speechText,
 }: {
   npc: NpcConfig;
   junctionScheduler: TownPedestrianJunctionScheduler;
+  crossingScheduler: TownRoadCrossingPriorityScheduler;
   onInteract: (text: string) => void;
   isSpeaking: boolean;
   speechText?: string | undefined;
@@ -143,12 +149,14 @@ function PedestrianCharacter({
   const routeDistance = useRef(npc.startDistance);
   const travelDirection = useRef(1);
   const activeJunction = useRef<string | null>(null);
+  const activeCrossing = useRef<string | null>(null);
   const clearanceRadius = townPedestrianClearanceRadius(routeLength);
   const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => () => {
     junctionScheduler.cancelPedestrian(npc.id);
-  }, [junctionScheduler, npc.id, npc.startJunctionId, npc.endJunctionId]);
+    crossingScheduler.cancelActor(npc.id);
+  }, [junctionScheduler, crossingScheduler, npc.id, npc.startJunctionId, npc.endJunctionId]);
 
   useFrame(({ clock }, delta) => {
     if (!groupRef.current) return;
@@ -165,6 +173,22 @@ function PedestrianCharacter({
     let safetyIterations = 0;
 
     while (distanceToTravel > 0 && safetyIterations++ < path.length * 4 + 8) {
+      const crossingDistance = Math.abs(routeLength / 2 - routeDistance.current);
+      if (activeCrossing.current && crossingDistance > clearanceRadius) {
+        crossingScheduler.release(activeCrossing.current, npc.id);
+        activeCrossing.current = null;
+      }
+      if (npc.crossingJunctionId && activeCrossing.current !== npc.crossingJunctionId
+        && crossingDistance <= clearanceRadius + distanceToTravel) {
+        if (!crossingScheduler.request(npc.crossingJunctionId, npc.id, "pedestrian")) {
+          const safeAdvance = Math.max(0, crossingDistance - clearanceRadius);
+          routeDistance.current += travelDirection.current * Math.min(distanceToTravel, safeAdvance);
+          distanceToTravel = 0;
+          break;
+        }
+        activeCrossing.current = npc.crossingJunctionId;
+      }
+
       const destinationIsEnd = travelDirection.current > 0;
       const junctionId = destinationIsEnd ? npc.endJunctionId : npc.startJunctionId;
       const distanceToJunction = destinationIsEnd
