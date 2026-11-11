@@ -26,7 +26,7 @@ import {
   WorldInstances,
   type WorldInstance,
 } from "../3d/WorldScene";
-import { WORLD_SCALE, WORLD_PALETTE } from "../3d/world-theme";
+import { WORLD_SCALE, WORLD_PALETTE, TOWN_MAP_CAMERA } from "../3d/world-theme";
 import { MapLighting, useRealOrGameClock, daylightFor } from "./MapLighting";
 import { PlaceBadge } from "./map-badge";
 import { getLandmarkBuildingVariant } from "./landmark-building-variant";
@@ -1090,9 +1090,9 @@ export function R3FTownSurface(props: Props) {
           <WorldCamera
             width={gridCols * cell}
             depth={gridRows * cell}
-            zoom={1.55}
-            minZoom={0.42}
-            maxZoom={3.4}
+            zoom={TOWN_MAP_CAMERA.defaultZoom}
+            minZoom={TOWN_MAP_CAMERA.minZoom}
+            maxZoom={TOWN_MAP_CAMERA.maxZoom}
             target={closeUpTarget}
             distanceScale={closeUpTarget ? CLOSE_UP_DISTANCE_SCALE : 1}
             freeExplore
