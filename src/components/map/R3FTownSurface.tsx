@@ -384,6 +384,9 @@ export function R3FTownSurface(props: Props) {
 
     return result;
   }, []);
+  useEffect(() => {
+    crossingScheduler.setSignalizedJunctions(trafficLights.map(([, , junctionId]) => junctionId));
+  }, [crossingScheduler, trafficLights]);
   const busStops = useMemo<[number, number][]>(() => {
     const result: [number, number][] = [];
     const rows = town.grid.rows;
