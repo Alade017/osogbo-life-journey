@@ -40,6 +40,21 @@ describe("authored town map validation", () => {
     expect(errors.some((error) => error.includes("outline shape"))).toBe(true);
   });
 
+  it("detects building-road and landmark-district conflicts", () => {
+    const invalid = JSON.parse(JSON.stringify(town)) as typeof town;
+    const building = invalid.grid.buildings[0]!;
+    const row = [...invalid.grid.rows[building.z]!];
+    row[building.x] = "r";
+    invalid.grid.rows[building.z] = row.join("");
+    const landmark = invalid.landmarks.find((place) => place.id === building.placeId)!;
+    landmark.districtId = invalid.districts.find((district) => district.id !== landmark.districtId)!.id;
+
+    const errors = validateTownMapData(invalid);
+
+    expect(errors.some((error) => error.includes("overlaps a road"))).toBe(true);
+    expect(errors.some((error) => error.includes("outside its assigned district"))).toBe(true);
+  });
+
   it("detects disconnected road networks", () => {
     const disconnected = {
       meta: {
