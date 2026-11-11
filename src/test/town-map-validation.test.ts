@@ -29,6 +29,17 @@ describe("authored town map validation", () => {
     expect(errors.some((error) => error.includes("invalid or out-of-bounds"))).toBe(true);
   });
 
+  it("detects overlapping districts and malformed outlines", () => {
+    const invalid = JSON.parse(JSON.stringify(town)) as typeof town;
+    invalid.districts[0]!.gridArea.x = invalid.districts[1]!.gridArea.x;
+    invalid.districts[0]!.shape = [[0, 0], [Number.NaN, 2]];
+
+    const errors = validateTownMapData(invalid);
+
+    expect(errors.some((error) => error.includes("overlap"))).toBe(true);
+    expect(errors.some((error) => error.includes("outline shape"))).toBe(true);
+  });
+
   it("detects disconnected road networks", () => {
     const disconnected = {
       meta: {
