@@ -44,6 +44,7 @@ import { LockedPlaces3D, type LockedPlace } from "./LockedPlaces3D";
 import {
   deriveTownMobilityRoutes,
   TownRoadCrossingPriorityScheduler,
+  townRoadJunctionIdentity,
   deriveTownPedestrianCornerRoutes,
   deriveTownPedestrianCrossingRoutes,
   deriveTownPedestrianRoutes,
@@ -347,8 +348,8 @@ export function R3FTownSurface(props: Props) {
       return [[position[0], position[2]] as [number, number]];
     });
   }, []);
-  const trafficLights = useMemo<[number, number][]>(() => {
-    const result: [number, number][] = [];
+  const trafficLights = useMemo<[number, number, string][]>(() => {
+    const result: [number, number, string][] = [];
     const rows = town.grid.rows;
 
     rows.forEach((row, z) => {
@@ -377,7 +378,7 @@ export function R3FTownSurface(props: Props) {
         const p = point(x, z);
 
         // Position the signal near the corner of the intersection.
-        result.push([p[0] + cell * 0.38, p[2] + cell * 0.38]);
+        result.push([p[0] + cell * 0.38, p[2] + cell * 0.38, townRoadJunctionIdentity(p[0], p[2])]);
       });
     });
 
@@ -1119,7 +1120,7 @@ export function R3FTownSurface(props: Props) {
           <WorldRoads items={roads} />
           <WorldRoadMarkings items={roadMarkings} />
           <WorldPedestrianCrossings items={pedestrianCrossings} />
-          <WorldTrafficLights positions={trafficLights} size={cell} />
+          <WorldTrafficLights positions={trafficLights} size={cell} getSignalState={(junctionId) => crossingScheduler.getSignalState(junctionId)} />
           <WorldCars positions={cars} size={cell} />
           <WorldSidewalks sidewalks={sidewalks} curbs={curbs} />
           <WorldBusStops
