@@ -427,8 +427,8 @@ export class TownRoadCrossingPriorityScheduler {
     const queue = this.waiters.get(junctionId) ?? [];
     if (!queue.some((item) => item.id === actorId)) {
       queue.push({ id: actorId, kind });
-      queue.sort((a, b) => (a.kind === "pedestrian" ? 0 : 1) - (b.kind === "pedestrian" ? 0 : 1)
-        || a.id.localeCompare(b.id));
+      // Stable sorting preserves arrival order within each priority class.
+      queue.sort((a, b) => (a.kind === "pedestrian" ? 0 : 1) - (b.kind === "pedestrian" ? 0 : 1));
     }
     this.waiters.set(junctionId, queue);
     if (owner || queue[0]?.id !== actorId) return false;
