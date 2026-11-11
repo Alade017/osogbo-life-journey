@@ -45,6 +45,7 @@ import type { NeighborhoodPlayerView, NeighborhoodSceneHandle } from "@/game/nei
 import type { MovementDirection } from "@/lib/player-movement";
 import { NPC_CATALOG, npcActivityAt, type SocialAction } from "@/lib/npc-simulation";
 import { hasLocationVenueDesign } from "@/lib/location-venue-designs";
+import { MAP_LANDMARK_LOCATION_SLUG } from "@/components/map/map-location-links";
 import { JobsPage } from "@/routes/_authenticated/_game/jobs";
 import { MarketPage } from "@/routes/_authenticated/_game/market";
 import { WORLD_CAMERA } from "@/components/3d/world-theme";
@@ -435,6 +436,9 @@ export function PlayableNeighborhood() {
     jobsQuery.data?.some((job) => job.is_available && job.location_id === currentLocation?.id) ??
     false;
   const hasVenueInterior = currentLocation ? hasLocationVenueDesign(currentLocation.slug) : false;
+  const activityLandmarkId = Object.entries(MAP_LANDMARK_LOCATION_SLUG).find(
+    ([, slug]) => !!slug && slug === currentLocation?.slug,
+  )?.[0];
   const hasLocalBusinesses = localPlaces.some((place) =>
     BUSINESS_PLACE_CATEGORIES.has(place.category),
   );
@@ -1024,6 +1028,15 @@ export function PlayableNeighborhood() {
                                   <DoorOpen size={18} aria-hidden="true" />
                                   Explore venue interior
                                 </button>
+                              )}
+                              {activityLandmarkId && (
+                                <a
+                                  className="neighborhood-action-card"
+                                  href={"/map?landmark=" + encodeURIComponent(activityLandmarkId) + "&details=1"}
+                                >
+                                  <Landmark size={18} aria-hidden="true" />
+                                  View official place activities
+                                </a>
                               )}
                               {hasShopOffers && (
                                 <button
