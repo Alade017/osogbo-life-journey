@@ -20,6 +20,17 @@ export interface LockedPlaces3DProps {
   onSelectLocked?: (place: LockedPlace) => void;
 }
 
+type AuthoredMapPoi = {
+  id: string;
+  label: string;
+  category: string;
+  grid: { x: number; z: number };
+  mapObjectType?: string;
+  availabilityReason?: string;
+  description?: string;
+  unlockRequirement?: string;
+};
+
 /** Renders map-only POIs from authored data; no coordinates or landmark copy live here. */
 export const LockedPlaces3D: FC<LockedPlaces3DProps> = ({
   cellSize,
@@ -28,7 +39,8 @@ export const LockedPlaces3D: FC<LockedPlaces3DProps> = ({
   onSelectLocked,
 }) => {
   const [activeModal, setActiveModal] = useState<LockedPlace | null>(null);
-  const lockedSites: LockedPlace[] = town.landmarks
+  const authoredPlaces = town.landmarks as readonly AuthoredMapPoi[];
+  const lockedSites: LockedPlace[] = authoredPlaces
     .filter((place) => place.mapObjectType === "poi")
     .map((place) => ({
       id: place.id,
