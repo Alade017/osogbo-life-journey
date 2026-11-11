@@ -288,6 +288,18 @@ export class TownPedestrianJunctionScheduler {
 }
 
 
+/** Stable identity for an authored traffic loop; independent of route array ordering. */
+export function townMobilityRouteIdentity(route: TownMobilityRoute): string {
+  if (!isValidTownMobilityLoop(route)) return "";
+  const canonical = route.map(([x, z]) => `${x.toFixed(4)},${z.toFixed(4)}`).join("|");
+  let hash = 2166136261;
+  for (let index = 0; index < canonical.length; index += 1) {
+    hash ^= canonical.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(36);
+}
+
 /** Measures traversable edges in a closed route, ignoring malformed and degenerate segments. */
 export function measureTownMobilityLoop(route: TownMobilityRoute): number {
   if (route.length < 2) return 0;
