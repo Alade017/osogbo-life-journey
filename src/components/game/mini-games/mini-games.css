@@ -60,14 +60,20 @@
   border-radius: 16px;
   border: 1px solid var(--mg-line);
   background: var(--mg-paper);
-  box-shadow: 0 1px 0 rgb(0 0 0 / 0.04), 0 6px 16px -10px rgb(0 0 0 / 0.25);
+  box-shadow:
+    0 1px 0 rgb(0 0 0 / 0.04),
+    0 6px 16px -10px rgb(0 0 0 / 0.25);
   cursor: pointer;
-  transition: transform 160ms ease, box-shadow 160ms ease;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
 }
 .mg-tile:hover,
 .mg-tile:focus-visible {
   transform: translateY(-2px);
-  box-shadow: 0 1px 0 rgb(0 0 0 / 0.04), 0 12px 24px -12px rgb(0 0 0 / 0.35);
+  box-shadow:
+    0 1px 0 rgb(0 0 0 / 0.04),
+    0 12px 24px -12px rgb(0 0 0 / 0.35);
 }
 .mg-tile-badge {
   display: grid;
@@ -141,7 +147,9 @@
 .mg-board {
   border-radius: 18px;
   background: linear-gradient(160deg, #fbf6ea, #efe3c8);
-  box-shadow: inset 0 0 0 1px rgb(120 84 30 / 0.2), 0 10px 24px -14px rgb(60 40 10 / 0.5);
+  box-shadow:
+    inset 0 0 0 1px rgb(120 84 30 / 0.2),
+    0 10px 24px -14px rgb(60 40 10 / 0.5);
   padding: 10px;
 }
 .mg-ttt {
@@ -238,7 +246,9 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  box-shadow: inset 0 -4px 0 rgb(0 0 0 / 0.25), 0 3px 5px rgb(0 0 0 / 0.35);
+  box-shadow:
+    inset 0 -4px 0 rgb(0 0 0 / 0.25),
+    0 3px 5px rgb(0 0 0 / 0.35);
   animation: mg-pop 320ms cubic-bezier(0.2, 1.4, 0.4, 1);
 }
 .mg-piece.light {
@@ -309,7 +319,9 @@
   background: var(--mg-paper);
   text-align: left;
   cursor: default;
-  transition: transform 160ms ease, box-shadow 160ms ease;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
 }
 .mg-token.is-playable {
   cursor: pointer;
@@ -328,8 +340,15 @@
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #fff 0 12%, var(--token) 13% 70%, color-mix(in srgb, var(--token) 70%, #000) 100%);
-  box-shadow: 0 3px 6px rgb(0 0 0 / 0.3), inset 0 -3px 0 rgb(0 0 0 / 0.2);
+  background: radial-gradient(
+    circle at 35% 30%,
+    #fff 0 12%,
+    var(--token) 13% 70%,
+    color-mix(in srgb, var(--token) 70%, #000) 100%
+  );
+  box-shadow:
+    0 3px 6px rgb(0 0 0 / 0.3),
+    inset 0 -3px 0 rgb(0 0 0 / 0.2);
 }
 .mg-token-body {
   display: grid;
@@ -376,7 +395,9 @@
   border-radius: 9px;
   background: linear-gradient(170deg, #fffdf7 0%, #f7f1e1 100%);
   border: 2px solid var(--card-accent);
-  box-shadow: 0 6px 12px -6px rgb(0 0 0 / 0.45), inset 0 0 0 3px rgb(255 255 255 / 0.7);
+  box-shadow:
+    0 6px 12px -6px rgb(0 0 0 / 0.45),
+    inset 0 0 0 3px rgb(255 255 255 / 0.7);
   color: var(--card-accent);
   user-select: none;
 }
@@ -461,7 +482,9 @@
   width: 100%;
   border-radius: 18px;
   background: radial-gradient(ellipse at 50% 40%, #2c8a64, #155a42 75%);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.15), 0 12px 20px -14px rgb(0 0 0 / 0.6);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.15),
+    0 12px 20px -14px rgb(0 0 0 / 0.6);
   box-sizing: border-box;
 }
 .mg-pile,
@@ -473,7 +496,10 @@
   font-size: 0.75rem;
 }
 .mg-pile .mg-card-art {
-  box-shadow: 2px 3px 0 -1px #0f3d2f, 4px 6px 0 -2px #0c3126, 0 6px 12px -6px rgb(0 0 0 / 0.5);
+  box-shadow:
+    2px 3px 0 -1px #0f3d2f,
+    4px 6px 0 -2px #0c3126,
+    0 6px 12px -6px rgb(0 0 0 / 0.5);
 }
 .mg-deal {
   display: inline-flex;
@@ -535,7 +561,10 @@
   cursor: default;
   opacity: 0.55;
   filter: saturate(0.6);
-  transition: transform 180ms ease, opacity 180ms ease, filter 180ms ease;
+  transition:
+    transform 180ms ease,
+    opacity 180ms ease,
+    filter 180ms ease;
   scroll-snap-align: center;
   animation: mg-deal 360ms ease-out both;
   animation-delay: calc(var(--i, 0) * 45ms);
@@ -666,4 +695,54 @@
 .mg-card-sm .mg-whot-word {
   font-size: 0.38rem;
   letter-spacing: 0.03em;
+}
+
+/* Liveliness: rows arrive one after another, a live dot shows the list is updating, and the
+   pot pops when it changes. Each uses --i for its stagger; reduced motion turns all of it off. */
+.mg-app .mg-enter {
+  animation: mg-enter 360ms cubic-bezier(0.2, 0.9, 0.3, 1.1) both;
+  animation-delay: calc(var(--i, 0) * 70ms);
+}
+@keyframes mg-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.mg-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--mg-muted, #5b6470);
+}
+.mg-live::before {
+  content: "";
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: #22c55e;
+  animation: mg-live 1.8s ease-out infinite;
+}
+@keyframes mg-live {
+  0% {
+    box-shadow: 0 0 0 0 rgb(34 197 94 / 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 0.5rem rgb(34 197 94 / 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(34 197 94 / 0);
+  }
+}
+.mg-pot-pop {
+  display: inline-block;
+  animation: mg-bounce 420ms ease-out;
 }

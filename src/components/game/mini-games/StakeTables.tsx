@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -162,20 +162,26 @@ function StakeLobby({
       </section>
 
       <section className="mg-stake-list" aria-label="Open tables">
-        <h3>Open tables</h3>
+        <h3>
+          Open tables <span className="mg-live">Live</span>
+        </h3>
         {tables.isLoading && <p className="mg-status">Loading tables…</p>}
         {tables.isError && <p className="mg-status">Tables are unavailable. Try again.</p>}
         {tables.data?.length === 0 && <p className="mg-status">No open tables yet.</p>}
         <ul className="mg-list">
-          {tables.data?.map((table) => {
+          {tables.data?.map((table, index) => {
             const mine = table.host_character_id === characterId;
             return (
-              <li key={table.id}>
+              <li key={table.id} className="mg-enter" style={{ "--i": index } as CSSProperties}>
                 <div className="mg-tile">
                   <span>
                     <strong>Stake {formatNaira(table.stake)}</strong>
                     <small>
-                      Pot {formatNaira(table.pot)} · {gameLabel(table.game)}
+                      Pot{" "}
+                      <span key={table.pot} className="mg-pot-pop">
+                        {formatNaira(table.pot)}
+                      </span>{" "}
+                      · {gameLabel(table.game)}
                     </small>
                   </span>
                   <Button

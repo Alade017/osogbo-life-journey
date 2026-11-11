@@ -484,8 +484,8 @@ export function GamesApp() {
         </div>
       </header>
       <ul className="mg-list">
-        {GAMES.map(({ id, name, icon: Icon, blurb }) => (
-          <li key={id}>
+        {GAMES.map(({ id, name, icon: Icon, blurb }, index) => (
+          <li key={id} className="mg-enter" style={{ "--i": index } as CSSProperties}>
             <button type="button" className={`mg-tile mg-tile-${id}`} onClick={() => setActive(id)}>
               <span className="mg-tile-badge">
                 <Icon size={22} aria-hidden="true" />
