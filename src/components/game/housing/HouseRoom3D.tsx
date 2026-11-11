@@ -9,7 +9,7 @@ import {
 } from "react";
 import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { Html, RoundedBox } from "@react-three/drei";
-import { DoubleSide, Plane, Vector3, type Group } from "three";
+import { CatmullRomCurve3, DoubleSide, Plane, Vector3, type Group } from "three";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
 import type { FoodDelivery } from "@/lib/food-delivery-service";
 import { homeFurnitureAction } from "@/lib/home-furniture-actions";
@@ -488,14 +488,71 @@ const FURNITURE_COLOURS = {
   artGold: "#e7d9b4",
 } as const;
 
-/** Charcoal strokes on the zoning rug, from the approved reference: cream shag with dark wavy lines. */
-const ZONING_RUG_STROKES: { position: [number, number, number]; angle: number; length: number }[] =
+/** Wavy charcoal lines on the zoning rug, traced from the approved reference. Points are [x, z] on the rug. */
+const ZONING_RUG_LINES: [number, number][][] = [
   [
-    { position: [-0.35, 0.05, -0.2], angle: 0.5, length: 0.9 },
-    { position: [0.25, 0.05, 0.12], angle: -0.7, length: 0.8 },
-    { position: [0.05, 0.05, -0.3], angle: 0.1, length: 0.7 },
-    { position: [-0.25, 0.05, 0.3], angle: -0.2, length: 0.6 },
-  ];
+    [-0.72, 0.2],
+    [-0.4, 0.42],
+    [-0.1, 0.12],
+    [0.2, 0.36],
+    [0.72, 0.1],
+  ],
+  [
+    [-0.7, -0.05],
+    [-0.35, -0.2],
+    [0.05, 0.02],
+    [0.4, -0.32],
+    [0.7, -0.12],
+  ],
+  [
+    [-0.5, -0.46],
+    [-0.2, -0.3],
+    [0.1, -0.44],
+    [0.45, -0.22],
+  ],
+  [
+    [0.12, 0.5],
+    [0.3, 0.2],
+    [0.55, 0.42],
+    [0.72, 0.28],
+  ],
+];
+
+/** Cream shag rug with charcoal wavy lines, built in code like the other accessories. */
+function ZoningRug() {
+  const lines = useMemo(
+    () =>
+      ZONING_RUG_LINES.map(
+        (points) =>
+          new CatmullRomCurve3(
+            points.map(([x, z]) => new Vector3(x, 0.05, z)),
+            false,
+            "catmullrom",
+            0.5,
+          ),
+      ),
+    [],
+  );
+  return (
+    <group>
+      <RoundedBox
+        receiveShadow
+        args={[1.6, 0.04, 1.1]}
+        radius={0.02}
+        smoothness={3}
+        position={[0, 0.02, 0]}
+      >
+        <meshStandardMaterial color="#efe8d8" roughness={0.95} />
+      </RoundedBox>
+      {lines.map((curve, index) => (
+        <mesh key={index} receiveShadow>
+          <tubeGeometry args={[curve, 64, 0.03, 6, false]} />
+          <meshStandardMaterial color="#2c2a27" roughness={0.9} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
 
 export function FurnitureFallback({
   artKey,
@@ -515,31 +572,7 @@ export function FurnitureFallback({
         : rawKind === "starter-light"
           ? "light"
           : rawKind;
-  if (kind === "zoning-rug")
-    return (
-      <group>
-        <RoundedBox
-          receiveShadow
-          args={[1.6, 0.04, 1.1]}
-          radius={0.02}
-          smoothness={3}
-          position={[0, 0.02, 0]}
-        >
-          <meshStandardMaterial color="#efe8d8" roughness={0.95} />
-        </RoundedBox>
-        {ZONING_RUG_STROKES.map((stroke, index) => (
-          <mesh
-            key={index}
-            position={stroke.position}
-            rotation={[0, stroke.angle, 0]}
-            receiveShadow
-          >
-            <boxGeometry args={[stroke.length, 0.045, 0.06]} />
-            <meshStandardMaterial color="#2c2a27" roughness={0.9} />
-          </mesh>
-        ))}
-      </group>
-    );
+  if (kind === "zoning-rug") return <ZoningRug />;
   if (kind === "bed")
     return (
       <group scale={[1.2, 1, 1.45]}>
