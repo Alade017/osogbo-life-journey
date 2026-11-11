@@ -7,6 +7,8 @@ import { isValidTownPedestrianRoute, townPedestrianClearanceRadius, TownPedestri
 
 export interface MovingPedestrians3DProps {
   paths: readonly TownMobilityRoute[];
+  busStopPositions: readonly (readonly [number, number])[];
+  onSelectTransit: () => void;
 }
 
 interface NpcConfig {
@@ -30,7 +32,7 @@ interface NpcConfig {
  * - Residents commuting in colorful attire
  * - Footstep bobbing animations and interactive dialogue bubbles.
  */
-export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({ paths }) => {
+export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({ paths, busStopPositions, onSelectTransit }) => {
   const [activeSpeech, setActiveSpeech] = useState<{ id: string; text: string } | null>(null);
   const junctionScheduler = useMemo(() => new TownPedestrianJunctionScheduler(), []);
   const endpointCounts = useMemo(() => {
@@ -109,6 +111,16 @@ export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({ paths }) => 
           speechText={activeSpeech?.text}
         />
       ))}
+      {busStopPositions.flatMap(([x, z], stopIndex) =>
+        [-1, 1].map((side, passengerIndex) => (
+          <WaitingPassenger
+            key={`waiting-passenger-${stopIndex}-${passengerIndex}`}
+            position={[x + side * 0.42, z + 0.92]}
+            color={clothingColors[(stopIndex * 2 + passengerIndex) % clothingColors.length]!}
+            onSelectTransit={onSelectTransit}
+          />
+        )),
+      )}
     </group>
   );
 };
@@ -325,4 +337,64 @@ function locatePathDistance(path: TownMobilityRoute, distance: number): { segmen
     remaining -= length;
   }
   return { segment: path.length - 2, progress: 1 };
+}
+
+function WaitingPassenger({
+  position,
+  color,
+  onSelectTransit,
+}: {
+  position: readonly [number, number];
+  color: string;
+  onSelectTransit: () => void;
+}) {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <group
+      position={[position[0], 0, position[1]]}
+      scale={isHovered ? 1.12 : 1}
+      onClick={(event) => {
+        event.stopPropagation();
+        onSelectTransit();
+      }}
+      onPointerEnter={() => {
+        setIsHovered(true);
+        document.body.style.cursor = "pointer";
+      }}
+      onPointerLeave={() => {
+        setIsHovered(false);
+        document.body.style.cursor = "auto";
+      }}
+    >
+      <mesh position={[0, 0.62, 0]} castShadow>
+        <sphereGeometry args={[0.105, 10, 10]} />
+        <WorldMaterial tone="timber" />
+      </mesh>
+      <mesh position={[0, 0.37, 0]} castShadow>
+        <boxGeometry args={[0.21, 0.31, 0.14]} />
+        <meshStandardMaterial color={color} roughness={0.65} />
+      </mesh>
+      <mesh position={[0, 0.13, 0]} castShadow>
+        <boxGeometry args={[0.19, 0.21, 0.12]} />
+        <meshStandardMaterial color="#334155" roughness={0.7} />
+      </mesh>
+      <Html center position={[0, 0.92, 0]} distanceFactor={13}>
+        <span
+          style={{
+            background: "rgba(15, 23, 42, 0.88)",
+            color: "#fff",
+            borderRadius: 6,
+            padding: "2px 5px",
+            fontSize: 9,
+            fontWeight: 600,
+            whiteSpace: "nowrap",
+            pointerEvents: "none",
+          }}
+        >
+          Waiting
+        </span>
+      </Html>
+    </group>
+  );
 }
