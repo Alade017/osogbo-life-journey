@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,6 +44,13 @@ const PIPS: Record<number, readonly number[]> = {
 };
 const SAFE = new Set<number>(SAFE_SQUARES);
 const INTRO_KEY = "osogbo-ludo-intro-seen";
+/** Offsets, in board percent, that move a finished seed into its house's centre triangle. */
+const TRIANGLE_NUDGE = [
+  { x: 0, y: -4 },
+  { x: 4, y: 0 },
+  { x: 0, y: 4 },
+  { x: -4, y: 0 },
+] as const;
 
 function hasSeenIntro(): boolean {
   try {
@@ -60,13 +67,6 @@ function rememberIntro() {
     // Storage can be blocked; the popup then shows again next time, which is harmless.
   }
 }
-/** Offsets, in board percent, that move a finished seed into its house's centre triangle. */
-const TRIANGLE_NUDGE = [
-  { x: 0, y: -4 },
-  { x: 4, y: 0 },
-  { x: 0, y: 4 },
-  { x: -4, y: 0 },
-] as const;
 
 function useComputerTurn(active: boolean, deps: unknown[], act: () => void) {
   useEffect(() => {
@@ -123,12 +123,16 @@ type SeedView = {
   top: number;
 };
 
+/** Houses in play for the chosen setup, for either side. */
+function housesInPlay(mode: LudoMode) {
+  return [0, 1, 2, 3].filter(
+    (house) => housesFor(mode, 0).includes(house) || housesFor(mode, 1).includes(house),
+  );
+}
+
 /** Every seed's place on the board. Seeds sharing a cell are spread side by side. */
 function seedViews(state: LudoState): SeedView[] {
-  const playing = [0, 1, 2, 3].filter(
-    (house) => housesFor(state.mode, 0).includes(house) || housesFor(state.mode, 1).includes(house),
-  );
-  const raw = playing.flatMap((house) =>
+  const raw = housesInPlay(state.mode).flatMap((house) =>
     (state.seeds[house] ?? []).map((progress, token) => ({
       house,
       token,
@@ -184,22 +188,20 @@ function PawnSvg({ house }: { house: number }) {
 
 function LudoBoardView({
   state,
-  locked,
   movesBySeed,
   selected,
+  busy,
   onSeed,
   onChoose,
 }: {
   state: LudoState;
-  locked: boolean;
   movesBySeed: Map<string, LudoMove[]>;
   selected: string | null;
+  busy: boolean;
   onSeed: (key: string) => void;
   onChoose: (move: LudoMove) => void;
 }) {
-  const playing = [0, 1, 2, 3].filter(
-    (house) => housesFor(state.mode, 0).includes(house) || housesFor(state.mode, 1).includes(house),
-  );
+  const playing = housesInPlay(state.mode);
   return (
     <div className="ludo-board" role="group" aria-label="Ludo board">
       {TRACK_CELLS.map((cell, index) => (
@@ -258,8 +260,8 @@ function LudoBoardView({
       </div>
       <div className="ludo-pawns">
         {seedViews(state).map((view) => {
-          const seedMoves = locked ? [] : (movesBySeed.get(view.key) ?? []);
-          const eligible = seedMoves.length > 0;
+          const seedMoves = movesBySeed.get(view.key) ?? [];
+          const eligible = seedMoves.length > 0 && !busy;
           const isSelected = selected === view.key;
           const steps = [...new Set(seedMoves.map((move) => stepsOf(state, move)))];
           return (
@@ -312,7 +314,17 @@ function LudoDie({ value }: { value: number }) {
   );
 }
 
-function Hud({ state }: { state: LudoState }) {
+function Hud({
+  state,
+  mySide,
+  youLabel,
+  opponentLabel,
+}: {
+  state: LudoState;
+  mySide: number;
+  youLabel: string;
+  opponentLabel: string;
+}) {
   const total = seedsPerSide(state.mode);
   const side = (index: number, name: string) => (
     <div className={`ludo-hud${state.turn === index && state.winner === null ? " is-turn" : ""}`}>
@@ -332,21 +344,177 @@ function Hud({ state }: { state: LudoState }) {
   );
   return (
     <div className="ludo-hud-row">
-      {side(0, "YOU")}
-      {side(1, "COMPUTER")}
+      {side(mySide, youLabel)}
+      {side(1 - mySide, opponentLabel)}
     </div>
   );
 }
 
-function statusText(state: LudoState, humanTurn: boolean): string {
-  if (state.winner === 0) return "You won!";
-  if (state.winner !== null) return "The computer won.";
-  if (!humanTurn) return "Computer is playing…";
+function statusText(
+  state: LudoState,
+  mySide: number,
+  interactive: boolean,
+  waitingText: string,
+  opponentName: string,
+): string {
+  if (state.winner === mySide) return "You won!";
+  if (state.winner !== null) return `${opponentName} won.`;
+  if (!interactive) return waitingText;
   const pending = state.pending ?? [];
   if (pending.length === 0) return "Your turn. Roll the dice.";
   if (pending.length === 2)
     return `You rolled ${pending[0]} and ${pending[1]}. Tap a glowing seed to move.`;
   return `Play the remaining ${pending[0]}. Tap a glowing seed to move.`;
+}
+
+function HowToPlay({ onClose }: { onClose: () => void }) {
+  return (
+    <div className="ludo-modal" role="dialog" aria-label="How to play Ludo">
+      <div className="ludo-modal-card">
+        <h3>How to play</h3>
+        <ul className="ludo-rules">
+          <li>Roll the dice. A six brings a seed out of its yard.</li>
+          <li>Tap a glowing seed to move it.</li>
+          <li>Land on an opponent's seed to send it back to its yard.</li>
+          <li>Star squares are safe: seeds there can't be captured.</li>
+          <li>Get all your seeds to the centre to win.</li>
+        </ul>
+        <Button
+          onClick={() => {
+            rememberIntro();
+            onClose();
+          }}
+        >
+          OK
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+export type LudoSceneProps = {
+  state: LudoState;
+  /** The side this player controls: 0 or 1. */
+  mySide: number;
+  /** Whether this player may act now: roll, or move a seed. */
+  interactive: boolean;
+  /** This player's legal moves now; empty unless interactive. */
+  moves: LudoMove[];
+  youLabel: string;
+  opponentLabel: string;
+  /** Who won, in words: "The computer" or "Your opponent". */
+  opponentName: string;
+  /** Shown in the status line while the other side plays. */
+  waitingText: string;
+  /** Replaces the status line, e.g. "Pick a table to start". */
+  statusOverride?: string | undefined;
+  note?: string | null;
+  busy?: boolean;
+  onRoll: () => void;
+  onMove: (move: LudoMove) => void;
+  /** Shows the how-to-play popup, once per browser, until OK. */
+  introAllowed?: boolean;
+  /** Drawn over the board, e.g. the table picker. */
+  overlay?: ReactNode;
+  /** Actions in the game-over popup. */
+  finishedFooter?: ReactNode;
+};
+
+/** The whole board, status, dice and popups, driven by props. Solo and stake tables both use it. */
+export function LudoScene({
+  state,
+  mySide,
+  interactive,
+  moves,
+  youLabel,
+  opponentLabel,
+  opponentName,
+  waitingText,
+  statusOverride,
+  note = null,
+  busy = false,
+  onRoll,
+  onMove,
+  introAllowed = false,
+  overlay,
+  finishedFooter,
+}: LudoSceneProps) {
+  const [selected, setSelected] = useState<string | null>(null);
+  const [introOpen, setIntroOpen] = useState(() => introAllowed && !hasSeenIntro());
+  const movesBySeed = new Map<string, LudoMove[]>();
+  for (const move of moves) {
+    const key = `${move.house}-${move.token}`;
+    movesBySeed.set(key, [...(movesBySeed.get(key) ?? []), move]);
+  }
+  const prompting = interactive && movesBySeed.size > 0 && !busy;
+
+  const choose = (move: LudoMove) => {
+    setSelected(null);
+    onMove(move);
+  };
+
+  const onSeed = (key: string) => {
+    const seedMoves = movesBySeed.get(key) ?? [];
+    if (seedMoves.length === 1) choose(seedMoves[0]!);
+    else if (seedMoves.length > 1) setSelected((current) => (current === key ? null : key));
+  };
+
+  const rolled = state.lastRoll;
+  const finished = state.winner !== null;
+  const rollKey = `${state.turn}-${state.pending?.length ?? 0}`;
+  return (
+    <section className="ludo-app" aria-label="Ludo">
+      <Hud state={state} mySide={mySide} youLabel={youLabel} opponentLabel={opponentLabel} />
+      <p
+        className={`ludo-status${state.winner === mySide ? " is-win" : ""}${prompting ? " is-prompt" : ""}`}
+        role="status"
+      >
+        {statusOverride ?? statusText(state, mySide, interactive, waitingText, opponentName)}
+      </p>
+      <div className="ludo-board-wrap">
+        <LudoBoardView
+          state={state}
+          movesBySeed={movesBySeed}
+          selected={selected}
+          busy={busy}
+          onSeed={onSeed}
+          onChoose={choose}
+        />
+        {overlay}
+        {introOpen && introAllowed && !finished && (
+          <HowToPlay onClose={() => setIntroOpen(false)} />
+        )}
+        {finished && (
+          <div className="ludo-modal" role="dialog" aria-label="Game over">
+            <div className="ludo-modal-card">
+              <h3>{state.winner === mySide ? "You won!" : `${opponentName} won.`}</h3>
+              <p className="ludo-note">
+                You: {clearedCount(state, mySide)} / {seedsPerSide(state.mode)} · {opponentLabel}:{" "}
+                {clearedCount(state, 1 - mySide)} / {seedsPerSide(state.mode)}
+              </p>
+              {finishedFooter}
+            </div>
+          </div>
+        )}
+      </div>
+      <div className="ludo-tray">
+        <div className="ludo-dice">
+          {rolled && (
+            <>
+              <LudoDie key={`a-${rollKey}-${rolled[0]}`} value={rolled[0]} />
+              <LudoDie key={`b-${rollKey}-${rolled[1]}`} value={rolled[1]} />
+            </>
+          )}
+        </div>
+        {interactive && state.pending === null && !finished && (
+          <button type="button" className="ludo-roll" onClick={onRoll} disabled={busy}>
+            Roll dice
+          </button>
+        )}
+        {note && <p className="ludo-note">{note}</p>}
+      </div>
+    </section>
+  );
 }
 
 type BoardProps = {
@@ -359,13 +527,11 @@ type BoardProps = {
   initial?: LudoState;
 };
 
+/** The solo game against the computer. */
 export function LudoBoard({ mode, locked = false, onPick, onAgain, initial }: BoardProps) {
   const [state, setState] = useState<LudoState>(() => initial ?? newLudo(mode));
-  const [rolls, setRolls] = useState(0);
   const [note, setNote] = useState<string | null>(null);
-  const [selected, setSelected] = useState<string | null>(null);
-  const [introOpen, setIntroOpen] = useState(() => !locked && !hasSeenIntro());
-  const humanTurn = !locked && state.turn === 0 && state.winner === null;
+  const interactive = !locked && state.turn === 0 && state.winner === null;
 
   useComputerTurn(!locked && state.turn === 1 && state.winner === null, [state], () => {
     const first = die();
@@ -379,7 +545,6 @@ export function LudoBoard({ mode, locked = false, onPick, onAgain, initial }: Bo
 
   const rollYourDice = () => {
     const next = rollLudo(state, die(), die());
-    setRolls((count) => count + 1);
     setNote(
       next.turn === 1 && next.winner === null
         ? "No seed can move with that roll. Your turn passes."
@@ -390,44 +555,26 @@ export function LudoBoard({ mode, locked = false, onPick, onAgain, initial }: Bo
 
   const play = (move: LudoMove) => {
     setNote(null);
-    setSelected(null);
     setState((current) => moveLudoSeed(current, move));
   };
 
-  const moves = humanTurn ? legalMoves(state) : [];
-  const movesBySeed = new Map<string, LudoMove[]>();
-  for (const move of moves) {
-    const key = `${move.house}-${move.token}`;
-    movesBySeed.set(key, [...(movesBySeed.get(key) ?? []), move]);
-  }
-
-  const onSeed = (key: string) => {
-    const seedMoves = movesBySeed.get(key) ?? [];
-    if (seedMoves.length === 1) play(seedMoves[0]!);
-    else if (seedMoves.length > 1) setSelected((current) => (current === key ? null : key));
-  };
-
-  const rolled = state.lastRoll;
-  const finished = state.winner !== null;
   return (
-    <section className="ludo-app" aria-label="Ludo">
-      <Hud state={state} />
-      <p
-        className={`ludo-status${state.winner === 0 ? " is-win" : ""}${humanTurn && movesBySeed.size > 0 ? " is-prompt" : ""}`}
-        role="status"
-      >
-        {locked ? "Pick a table to start" : statusText(state, humanTurn)}
-      </p>
-      <div className="ludo-board-wrap">
-        <LudoBoardView
-          state={state}
-          locked={locked}
-          movesBySeed={movesBySeed}
-          selected={selected}
-          onSeed={onSeed}
-          onChoose={play}
-        />
-        {locked && (
+    <LudoScene
+      state={state}
+      mySide={0}
+      interactive={interactive}
+      moves={interactive ? legalMoves(state) : []}
+      youLabel="YOU"
+      opponentLabel="COMPUTER"
+      opponentName="The computer"
+      waitingText="Computer is playing…"
+      statusOverride={locked ? "Pick a table to start" : undefined}
+      note={note}
+      onRoll={rollYourDice}
+      onMove={play}
+      introAllowed={!locked}
+      overlay={
+        locked ? (
           <div className="ludo-modal" role="dialog" aria-label="Choose a table">
             <div className="ludo-modal-card">
               <h3>Choose a table</h3>
@@ -441,59 +588,10 @@ export function LudoBoard({ mode, locked = false, onPick, onAgain, initial }: Bo
               </button>
             </div>
           </div>
-        )}
-        {introOpen && !locked && (
-          <div className="ludo-modal" role="dialog" aria-label="How to play Ludo">
-            <div className="ludo-modal-card">
-              <h3>How to play</h3>
-              <ul className="ludo-rules">
-                <li>Roll the dice. A six brings a seed out of its yard.</li>
-                <li>Tap a glowing seed to move it.</li>
-                <li>Land on an opponent's seed to send it back to its yard.</li>
-                <li>Star squares are safe: seeds there can't be captured.</li>
-                <li>Get all your seeds to the centre to win.</li>
-              </ul>
-              <Button
-                onClick={() => {
-                  rememberIntro();
-                  setIntroOpen(false);
-                }}
-              >
-                OK
-              </Button>
-            </div>
-          </div>
-        )}
-        {finished && (
-          <div className="ludo-modal" role="dialog" aria-label="Game over">
-            <div className="ludo-modal-card">
-              <h3>{state.winner === 0 ? "You won!" : "The computer won."}</h3>
-              <p className="ludo-note">
-                You: {clearedCount(state, 0)} / {seedsPerSide(state.mode)} · Computer:{" "}
-                {clearedCount(state, 1)} / {seedsPerSide(state.mode)}
-              </p>
-              <Button onClick={onAgain}>Play again</Button>
-            </div>
-          </div>
-        )}
-      </div>
-      <div className="ludo-tray">
-        <div className="ludo-dice">
-          {rolled && (
-            <>
-              <LudoDie key={`a-${rolls}`} value={rolled[0]} />
-              <LudoDie key={`b-${rolls}`} value={rolled[1]} />
-            </>
-          )}
-        </div>
-        {humanTurn && state.pending === null && (
-          <button type="button" className="ludo-roll" onClick={rollYourDice}>
-            Roll dice
-          </button>
-        )}
-        {note && <p className="ludo-note">{note}</p>}
-      </div>
-    </section>
+        ) : undefined
+      }
+      finishedFooter={onAgain ? <Button onClick={onAgain}>Play again</Button> : undefined}
+    />
   );
 }
 

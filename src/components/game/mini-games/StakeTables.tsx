@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { formatNaira, q } from "@/lib/game";
 import { WhotTableView } from "@/components/game/mini-games/WhotTableView";
+import { LudoTableView } from "@/components/game/mini-games/LudoTableView";
 
 /** Stake choices in whole Naira. The server enforces the same range (100 to 5,000). */
 const STAKES = [100, 250, 500, 1000, 2500, 5000] as const;
@@ -12,8 +13,12 @@ const STAKES = [100, 250, 500, 1000, 2500, 5000] as const;
 const IDLE_MS = 2 * 60 * 1000;
 const HEARTBEAT_MS = 20_000;
 const REFRESH_MS = 3_000;
-type GameKind = "tictactoe" | "whot";
-const GAME_LABELS: Record<GameKind, string> = { tictactoe: "Tic-Tac-Toe", whot: "Whot" };
+type GameKind = "tictactoe" | "whot" | "ludo";
+const GAME_LABELS: Record<GameKind, string> = {
+  tictactoe: "Tic-Tac-Toe",
+  whot: "Whot",
+  ludo: "Ludo",
+};
 const gameLabel = (game: string) => GAME_LABELS[game as GameKind] ?? "Stake game";
 
 type OpenTable = {
@@ -72,6 +77,7 @@ function StakeLobby({
   const client = useQueryClient();
   const [stake, setStake] = useState<number>(STAKES[0]);
   const [game, setGame] = useState<GameKind>("tictactoe");
+  const [ludoMode, setLudoMode] = useState<1 | 2>(1);
   const tables = useQuery({
     queryKey: ["miniGame", "open"],
     queryFn: async (): Promise<OpenTable[]> => {
@@ -96,7 +102,12 @@ function StakeLobby({
       const { data, error } =
         game === "whot"
           ? await supabase.rpc("mini_game_create_whot_table", { p_stake: stake })
-          : await supabase.rpc("mini_game_create_table", { p_stake: stake });
+          : game === "ludo"
+            ? await supabase.rpc("mini_game_create_ludo_table", {
+                p_stake: stake,
+                p_mode: ludoMode,
+              })
+            : await supabase.rpc("mini_game_create_table", { p_stake: stake });
       if (error) throw error;
       return data as string;
     },
@@ -137,8 +148,22 @@ function StakeLobby({
           >
             <option value="tictactoe">Tic-Tac-Toe</option>
             <option value="whot">Whot</option>
+            <option value="ludo">Ludo</option>
           </select>
         </label>
+        {game === "ludo" && (
+          <label className="mg-stake-field">
+            <span>Setup</span>
+            <select
+              value={ludoMode}
+              onChange={(event) => setLudoMode(Number(event.target.value) === 2 ? 2 : 1)}
+              aria-label="Ludo setup"
+            >
+              <option value={1}>Single House (4 seeds each)</option>
+              <option value={2}>Double House (8 seeds each)</option>
+            </select>
+          </label>
+        )}
         <label className="mg-stake-field">
           <span>Stake</span>
           <select
@@ -322,6 +347,23 @@ function StakeTableView({
   if (table.game === "whot") {
     return (
       <WhotTableView
+        tableId={tableId}
+        table={table}
+        characterId={characterId}
+        seated={seated}
+        canClaim={canClaim}
+        onLeave={() => leave.mutate()}
+        leavePending={leave.isPending}
+        onClaim={() => claim.mutate()}
+        claimPending={claim.isPending}
+        onExit={onExit}
+      />
+    );
+  }
+
+  if (table.game === "ludo") {
+    return (
+      <LudoTableView
         tableId={tableId}
         table={table}
         characterId={characterId}

@@ -3370,6 +3370,7 @@ export type Database = {
       };
       mini_game_tables: {
         Row: {
+          ludo_mode: number | null;
           created_at: string;
           fee_percent: number;
           finished_at: string | null;
@@ -3384,6 +3385,7 @@ export type Database = {
           winner_character_id: string | null;
         };
         Insert: {
+          ludo_mode?: number | null;
           created_at?: string;
           fee_percent?: number;
           finished_at?: string | null;
@@ -3398,6 +3400,7 @@ export type Database = {
           winner_character_id?: string | null;
         };
         Update: {
+          ludo_mode?: number | null;
           created_at?: string;
           fee_percent?: number;
           finished_at?: string | null;
@@ -7130,6 +7133,26 @@ export type Database = {
       mini_game_heartbeat: { Args: { p_table: string }; Returns: undefined };
       mini_game_join_table: { Args: { p_table: string }; Returns: string };
       mini_game_leave_table: { Args: { p_table: string }; Returns: undefined };
+      mini_game_create_ludo_table: {
+        Args: { p_mode: number; p_stake: number };
+        Returns: string;
+      };
+      mini_game_ludo_commit: {
+        Args: {
+          p_actor_user: string;
+          p_expected_version: number;
+          p_state: Json;
+          p_table: string;
+          p_winner_seat: number;
+        };
+        Returns: number;
+      };
+      mini_game_ludo_init: {
+        Args: { p_state: Json; p_table: string };
+        Returns: undefined;
+      };
+      mini_game_ludo_load: { Args: { p_table: string }; Returns: Json };
+      mini_game_ludo_view: { Args: { p_table: string }; Returns: Json };
       mini_game_play_move: { Args: { p_cell: number; p_table: string }; Returns: Json };
       okada_ride_cancel: { Args: { p_ride: string }; Returns: Json };
       okada_ride_sync: { Args: never; Returns: undefined };

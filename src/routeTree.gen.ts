@@ -89,6 +89,7 @@ import { Route as ApiMessagesMediaIdRouteImport } from './routes/api/messages/me
 import { Route as ApiMessagesVoiceIndexRouteImport } from './routes/api/messages/voice/index'
 import { Route as ApiMessagesVoiceIdRouteImport } from './routes/api/messages/voice/$id'
 import { Route as ApiMessagesVoiceCleanupRouteImport } from './routes/api/messages/voice/cleanup'
+import { Route as ApiMiniGamesLudoIndexRouteImport } from './routes/api/mini-games/ludo/index'
 import { Route as ApiMiniGamesWhotIndexRouteImport } from './routes/api/mini-games/whot/index'
 import { Route as ApiSocialProfileIdRouteImport } from './routes/api/social/profile/$id'
 import { Route as ApiThreadsIdMuteRouteImport } from './routes/api/threads/$id/mute'
@@ -510,6 +511,11 @@ const ApiMessagesVoiceCleanupRoute = ApiMessagesVoiceCleanupRouteImport.update({
   path: '/api/messages/voice/cleanup',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiMiniGamesLudoIndexRoute = ApiMiniGamesLudoIndexRouteImport.update({
+  id: '/api/mini-games/ludo/',
+  path: '/api/mini-games/ludo/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMiniGamesWhotIndexRoute = ApiMiniGamesWhotIndexRouteImport.update({
   id: '/api/mini-games/whot/',
   path: '/api/mini-games/whot/',
@@ -625,6 +631,7 @@ export interface FileRoutesByFullPath {
   '/api/groups/voice/': typeof ApiGroupsVoiceIndexRoute
   '/api/messages/media/': typeof ApiMessagesMediaIndexRoute
   '/api/messages/voice/': typeof ApiMessagesVoiceIndexRoute
+  '/api/mini-games/ludo/': typeof ApiMiniGamesLudoIndexRoute
   '/api/mini-games/whot/': typeof ApiMiniGamesWhotIndexRoute
 }
 export interface FileRoutesByTo {
@@ -711,6 +718,7 @@ export interface FileRoutesByTo {
   '/api/groups/voice': typeof ApiGroupsVoiceIndexRoute
   '/api/messages/media': typeof ApiMessagesMediaIndexRoute
   '/api/messages/voice': typeof ApiMessagesVoiceIndexRoute
+  '/api/mini-games/ludo': typeof ApiMiniGamesLudoIndexRoute
   '/api/mini-games/whot': typeof ApiMiniGamesWhotIndexRoute
 }
 export interface FileRoutesById {
@@ -800,6 +808,7 @@ export interface FileRoutesById {
   '/api/groups/voice/': typeof ApiGroupsVoiceIndexRoute
   '/api/messages/media/': typeof ApiMessagesMediaIndexRoute
   '/api/messages/voice/': typeof ApiMessagesVoiceIndexRoute
+  '/api/mini-games/ludo/': typeof ApiMiniGamesLudoIndexRoute
   '/api/mini-games/whot/': typeof ApiMiniGamesWhotIndexRoute
 }
 export interface FileRouteTypes {
@@ -888,6 +897,7 @@ export interface FileRouteTypes {
     | '/api/groups/voice/'
     | '/api/messages/media/'
     | '/api/messages/voice/'
+    | '/api/mini-games/ludo/'
     | '/api/mini-games/whot/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -974,6 +984,7 @@ export interface FileRouteTypes {
     | '/api/groups/voice'
     | '/api/messages/media'
     | '/api/messages/voice'
+    | '/api/mini-games/ludo'
     | '/api/mini-games/whot'
   id:
     | '__root__'
@@ -1062,6 +1073,7 @@ export interface FileRouteTypes {
     | '/api/groups/voice/'
     | '/api/messages/media/'
     | '/api/messages/voice/'
+    | '/api/mini-games/ludo/'
     | '/api/mini-games/whot/'
   fileRoutesById: FileRoutesById
 }
@@ -1127,6 +1139,7 @@ export interface RootRouteChildren {
   ApiGroupsVoiceIndexRoute: typeof ApiGroupsVoiceIndexRoute
   ApiMessagesMediaIndexRoute: typeof ApiMessagesMediaIndexRoute
   ApiMessagesVoiceIndexRoute: typeof ApiMessagesVoiceIndexRoute
+  ApiMiniGamesLudoIndexRoute: typeof ApiMiniGamesLudoIndexRoute
   ApiMiniGamesWhotIndexRoute: typeof ApiMiniGamesWhotIndexRoute
 }
 
@@ -1692,6 +1705,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiMessagesVoiceCleanupRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/mini-games/ludo/': {
+      id: '/api/mini-games/ludo/'
+      path: '/api/mini-games/ludo'
+      fullPath: '/api/mini-games/ludo/'
+      preLoaderRoute: typeof ApiMiniGamesLudoIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/mini-games/whot/': {
       id: '/api/mini-games/whot/'
       path: '/api/mini-games/whot'
@@ -1865,6 +1885,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiGroupsVoiceIndexRoute: ApiGroupsVoiceIndexRoute,
   ApiMessagesMediaIndexRoute: ApiMessagesMediaIndexRoute,
   ApiMessagesVoiceIndexRoute: ApiMessagesVoiceIndexRoute,
+  ApiMiniGamesLudoIndexRoute: ApiMiniGamesLudoIndexRoute,
   ApiMiniGamesWhotIndexRoute: ApiMiniGamesWhotIndexRoute,
 }
 export const routeTree = rootRouteImport
