@@ -160,6 +160,14 @@ export function InventoryPage() {
         <p className="pi-sub">
           {inventory.length} item types · {countInventoryUnits(inventory)} items in your bag
         </p>
+        <div className="pi-overview" aria-label="Wardrobe summary">
+          <span>
+            <strong>{countInventoryUnits(inventory)}</strong> Items owned
+          </span>
+          <span>
+            <strong>{normalizedEquipment.length}</strong> Equipped
+          </span>
+        </div>
       </header>
 
       <section className="pi-stage" aria-label="Your character">
@@ -198,57 +206,75 @@ export function InventoryPage() {
           </Button>
         </div>
       ) : (
-        <ul className="pi-slots" aria-label="Equipment slots">
-          {EQUIPMENT_SLOTS.map((slot) => {
-            const equipped = equipment?.find((entry) => entry.slot === slot);
-            return (
-              <li key={slot} className={`pi-slot ${requestedSlot === slot ? "is-selected" : ""}`}>
-                <span className="pi-slot-name">{slot}</span>
-                {equipped ? (
-                  <strong className="pi-slot-item">{equipped.item?.name ?? "Equipped"}</strong>
-                ) : (
-                  <span className="pi-slot-empty">Nothing on</span>
-                )}
-                <div className="pi-slot-actions">
-                  <button
-                    type="button"
-                    className="pi-chip-btn pi-chip-btn-primary"
-                    aria-pressed={requestedSlot === slot}
-                    onClick={() => {
-                      setRequestedSlot(slot);
-                      setActiveCategory("all");
-                      setSelectedId(null);
-                      window.requestAnimationFrame(() =>
-                        document.getElementById("inventory-items")?.scrollIntoView({
-                          behavior: "smooth",
-                          block: "start",
-                        }),
-                      );
-                    }}
-                  >
-                    {equipped ? "Change" : "Choose"}
-                  </button>
-                  {equipped && (
+        <section className="pi-section" aria-label="Equipment">
+          <div className="pi-section-heading">
+            <div>
+              <p className="pi-eyebrow">Your outfit</p>
+              <h2>Equipped items</h2>
+            </div>
+            <span>
+              {normalizedEquipment.length} / {EQUIPMENT_SLOTS.length}
+            </span>
+          </div>
+          <ul className="pi-slots" aria-label="Equipment slots">
+            {EQUIPMENT_SLOTS.map((slot) => {
+              const equipped = equipment?.find((entry) => entry.slot === slot);
+              return (
+                <li key={slot} className={`pi-slot ${requestedSlot === slot ? "is-selected" : ""}`}>
+                  <span className="pi-slot-name">{slot}</span>
+                  {equipped ? (
+                    <strong className="pi-slot-item">{equipped.item?.name ?? "Equipped"}</strong>
+                  ) : (
+                    <span className="pi-slot-empty">Nothing on</span>
+                  )}
+                  <div className="pi-slot-actions">
                     <button
                       type="button"
-                      className="pi-chip-btn"
-                      disabled={unequipItem.isPending}
-                      onClick={() => unequipItem.mutate(slot)}
+                      className="pi-chip-btn pi-chip-btn-primary"
+                      aria-pressed={requestedSlot === slot}
+                      onClick={() => {
+                        setRequestedSlot(slot);
+                        setActiveCategory("all");
+                        setSelectedId(null);
+                        window.requestAnimationFrame(() =>
+                          document.getElementById("inventory-items")?.scrollIntoView({
+                            behavior: "smooth",
+                            block: "start",
+                          }),
+                        );
+                      }}
                     >
-                      Remove
+                      {equipped ? "Change" : "Choose"}
                     </button>
-                  )}
-                </div>
-              </li>
-            );
-          })}
-        </ul>
+                    {equipped && (
+                      <button
+                        type="button"
+                        className="pi-chip-btn"
+                        disabled={unequipItem.isPending}
+                        onClick={() => unequipItem.mutate(slot)}
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
       )}
 
       {!items?.length ? (
         <EmptyState title="Empty backpack" body="You don't own any items yet." />
       ) : (
         <>
+          <div className="pi-section-heading">
+            <div>
+              <p className="pi-eyebrow">Everything you carry</p>
+              <h2>Your bag</h2>
+            </div>
+            <span>{compatibleItems.length} shown</span>
+          </div>
           <div className="pi-filters" role="group" aria-label="Filter bag by category">
             {categoryFilters.map((category) => (
               <button

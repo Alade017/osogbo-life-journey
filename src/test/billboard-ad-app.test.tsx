@@ -3,11 +3,17 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { BillboardAdApp } from "@/components/game/BillboardAdApp";
 
-const mock = vi.hoisted(() => ({ market: vi.fn(), purchase: vi.fn(), update: vi.fn() }));
+const mock = vi.hoisted(() => ({
+  market: vi.fn(),
+  locations: vi.fn(),
+  purchase: vi.fn(),
+  update: vi.fn(),
+}));
 vi.mock("@/lib/game", () => ({
   formatNaira: (value: number) => `â‚¦${value}`,
   q: {
     advertisingMarket: () => ({ queryKey: ["advertisingMarket"], queryFn: mock.market }),
+    locations: () => ({ queryKey: ["locations"], queryFn: mock.locations }),
   },
 }));
 vi.mock("@/lib/advertising-service", () => ({
@@ -22,10 +28,10 @@ const data = {
   billboards: [
     {
       id: "11111111-1111-4111-8111-111111111111",
-      name: "Oke-Fia Junction Board",
+      name: "Town Market Board",
       placement: "Facing the city route",
       sizeType: "large" as const,
-      location: "Oke-Fia",
+      location: "Town Market",
       locationId: "22222222-2222-4222-8222-222222222222",
       dailyPrice: 5000,
     },
@@ -45,6 +51,9 @@ function mount() {
 describe("player billboard campaign app", () => {
   beforeEach(() => {
     mock.market.mockReset().mockResolvedValue(data);
+    mock.locations
+      .mockReset()
+      .mockResolvedValue([{ id: data.billboards[0]!.locationId, slug: "town-market" }]);
     mock.purchase.mockReset();
     mock.update.mockReset();
     vi.stubGlobal("crypto", { randomUUID: () => "33333333-3333-4333-8333-333333333333" });
@@ -103,6 +112,12 @@ describe("player billboard campaign app", () => {
       durationDays: 7,
       requestId: "33333333-3333-4333-8333-333333333333",
     });
+  });
+
+  it("links a placement to the city map using its server billboard ID", async () => {
+    mount();
+    const link = await screen.findByRole("link", { name: "View on map" });
+    expect(link.getAttribute("href")).toBe(`/map?billboard=${data.billboards[0]!.id}`);
   });
 
   it("retries a failed purchase with the same request ID and inputs", async () => {

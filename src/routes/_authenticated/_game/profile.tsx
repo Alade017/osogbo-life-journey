@@ -77,6 +77,14 @@ export function ProfilePage() {
         <p className="pi-sub">
           {occupation} · {player.location?.name ?? "Osogbo"}
         </p>
+        <div className="pi-overview" aria-label="Character summary">
+          <span>
+            <strong>Level {player.level}</strong> Character
+          </span>
+          <span>
+            <strong>{xpPercent}%</strong> To next level
+          </span>
+        </div>
       </header>
 
       <div className="pi-hero">
@@ -111,6 +119,12 @@ export function ProfilePage() {
         </section>
 
         <div className="pi-side">
+          <div className="pi-section-heading">
+            <div>
+              <p className="pi-eyebrow">At a glance</p>
+              <h2>Your life</h2>
+            </div>
+          </div>
           <section className="pi-stats" aria-label="Life at a glance">
             <article className="pi-stat">
               <span className="pi-stat-label">Wallet</span>

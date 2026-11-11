@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { requestDepartureFromHome } from "@/lib/home-departure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarDays, CloudOff, MapPinned, Smile, Compass, Lock, X } from "lucide-react";
@@ -33,7 +33,13 @@ import type { TravelMode } from "@/lib/transport-service";
 import type { PlaceActionResult } from "@/components/map/PlaceActionMenu";
 import { useCityEvents } from "@/hooks/use-city-events";
 import { cityEventsForDistrict } from "@/lib/city-event-service";
-import { getCurrentMapBillboards, type CurrentMapBillboard } from "@/lib/map-billboard-map";
+import {
+  getBillboardLandmarkId,
+  getCurrentMapBillboards,
+  isCurrentAdvertisement,
+  playerCampaignAsAdvertisement,
+  type CurrentMapBillboard,
+} from "@/lib/map-billboard-map";
 import type { MapDistrict, MapLandmark } from "@/components/map/map-types";
 import "@/components/map/map-ui.css";
 import "@/components/map/map-hud.css";
@@ -118,7 +124,12 @@ export function CityMapDashboard({
   const [soonOpen, setSoonOpen] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const mapHref = useLocation({ select: (location) => location.href });
+  const requestedBillboardId = new URLSearchParams(mapHref.split("?")[1]?.split("#")[0] ?? "").get(
+    "billboard",
+  );
   const travelSubmitLock = useRef(false);
+  const focusedBillboardId = useRef<string | null>(null);
   const isMounted = useRef(false);
   useEffect(() => {
     isMounted.current = true;
@@ -205,6 +216,37 @@ export function CityMapDashboard({
     imageUrl: entry.advertisement.creative_image_url,
     count: entry.count,
   }));
+  useEffect(() => {
+    if (
+      !requestedBillboardId ||
+      !billboards.data ||
+      !locations.data ||
+      !advertisements.data ||
+      !playerAdvertisements.data
+    )
+      return;
+    if (focusedBillboardId.current === requestedBillboardId) return;
+    const board = billboards.data.find((item) => item.id === requestedBillboardId);
+    if (!board) return;
+    const landmarkId = getBillboardLandmarkId(board.location_id, locations.data);
+    if (!landmarkId) return;
+    focusedBillboardId.current = requestedBillboardId;
+    setMapLevel("town");
+    setSearchTarget({ id: landmarkId, kind: "landmark" });
+    const campaign = [
+      ...advertisements.data,
+      ...playerAdvertisements.data.map(playerCampaignAsAdvertisement),
+    ].find((ad) => ad.billboard_id === board.id && isCurrentAdvertisement(ad, Date.now()));
+    setSelectedBillboard(
+      campaign ? { landmarkId, count: 1, billboard: board, advertisement: campaign } : null,
+    );
+  }, [
+    requestedBillboardId,
+    billboards.data,
+    locations.data,
+    advertisements.data,
+    playerAdvertisements.data,
+  ]);
   const activeEvents = cityEvents.isError
     ? []
     : cityEventsForDistrict(cityEvents.data?.events ?? [], selectedDistrict?.id);
