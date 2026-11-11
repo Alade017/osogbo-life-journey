@@ -53,7 +53,7 @@ import {
   type WorldInstance,
 } from "../3d/WorldScene";
 import { CHARACTER_MOTION } from "@/components/3d/character-config";
-import { WORLD_CAMERA, WORLD_PALETTE, WORLD_SCALE } from "../3d/world-theme";
+import { NEIGHBORHOOD_CAMERA, WORLD_PALETTE, WORLD_SCALE } from "../3d/world-theme";
 import {
   carSpots,
   pedestrianCrossings,
@@ -430,7 +430,7 @@ export function R3FNeighborhoodSurface({
       setPlayers: () => undefined,
       setZoom: (factor) =>
         onZoomChange(
-          Math.max(WORLD_CAMERA.minZoom, Math.min(WORLD_CAMERA.maxZoom, zoomRef.current * factor)),
+          Math.max(NEIGHBORHOOD_CAMERA.minZoom, Math.min(NEIGHBORHOOD_CAMERA.maxZoom, zoomRef.current * factor)),
         ),
       setFollow,
     });
@@ -561,6 +561,8 @@ export function R3FNeighborhoodSurface({
             depth={bounds.height * unit}
             target={target}
             zoom={zoom}
+            minZoom={NEIGHBORHOOD_CAMERA.minZoom}
+            maxZoom={NEIGHBORHOOD_CAMERA.maxZoom}
             onZoomChange={onZoomChange}
           />
           <WorldLighting size={Math.max(bounds.width, bounds.height) * unit} />
