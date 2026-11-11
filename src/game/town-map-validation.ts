@@ -93,6 +93,13 @@ export function validateTownMapData(data: TownMapValidationInput): string[] {
     }
     if (landmark.districtId && !districtIds.has(landmark.districtId)) {
       errors.push(`Landmark "${landmark.id}" references unknown district "${landmark.districtId}".`);
+    } else if (landmark.districtId) {
+      const district = data.districts.find((item) => item.id === landmark.districtId)!;
+      const area = district.gridArea;
+      if (landmark.grid.x < area.x || landmark.grid.z < area.z ||
+        landmark.grid.x >= area.x + area.width || landmark.grid.z >= area.z + area.depth) {
+        errors.push(`Landmark "${landmark.id}" is outside its assigned district "${landmark.districtId}".`);
+      }
     }
   }
 
@@ -108,7 +115,17 @@ export function validateTownMapData(data: TownMapValidationInput): string[] {
     } else if (landmark.grid.x !== building.x || landmark.grid.z !== building.z) {
       errors.push(`Building "${building.placeId}" does not share its landmark's authored grid anchor.`);
     }
-    if (!inBounds(building.x, building.z)) errors.push(`Building "${building.placeId}" is outside the map grid.`);
+    if (!inBounds(building.x, building.z) || !inBounds(building.x + 1, building.z + 1)) {
+      errors.push(`Building "${building.placeId}" footprint is outside the map grid.`);
+      continue;
+    }
+    for (let z = building.z; z <= building.z + 1; z++) {
+      for (let x = building.x; x <= building.x + 1; x++) {
+        if (roadSymbol && rows[z]?.[x] === roadSymbol) {
+          errors.push(`Building "${building.placeId}" overlaps a road at ${x},${z}.`);
+        }
+      }
+    }
   }
 
   for (const landmark of data.landmarks) {
