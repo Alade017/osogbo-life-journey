@@ -9,7 +9,7 @@ import {
 } from "react";
 import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { Html, RoundedBox } from "@react-three/drei";
-import { CatmullRomCurve3, DoubleSide, Plane, Vector3, type Group } from "three";
+import { CurvePath, DoubleSide, LineCurve3, Plane, Vector3, type Group } from "three";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
 import type { FoodDelivery } from "@/lib/food-delivery-service";
 import { homeFurnitureAction } from "@/lib/home-furniture-actions";
@@ -488,50 +488,96 @@ const FURNITURE_COLOURS = {
   artGold: "#e7d9b4",
 } as const;
 
-/** Wavy charcoal lines on the zoning rug, traced from the approved reference. Points are [x, z] on the rug. */
-const ZONING_RUG_LINES: [number, number][][] = [
-  [
-    [-0.72, 0.2],
-    [-0.4, 0.42],
-    [-0.1, 0.12],
-    [0.2, 0.36],
-    [0.72, 0.1],
-  ],
-  [
-    [-0.7, -0.05],
-    [-0.35, -0.2],
-    [0.05, 0.02],
-    [0.4, -0.32],
-    [0.7, -0.12],
-  ],
-  [
-    [-0.5, -0.46],
-    [-0.2, -0.3],
-    [0.1, -0.44],
-    [0.45, -0.22],
-  ],
-  [
-    [0.12, 0.5],
-    [0.3, 0.2],
-    [0.55, 0.42],
-    [0.72, 0.28],
-  ],
-];
+type RugDesign = {
+  base: string;
+  line: string;
+  /** Each path is a polyline of [x, z] points on the rug, drawn as a tube. */
+  paths: [number, number][][];
+};
 
-/** Cream shag rug with charcoal wavy lines, built in code like the other accessories. */
-function ZoningRug() {
-  const lines = useMemo(
+const closed = (points: [number, number][]) => [...points, points[0]!];
+
+/**
+ * Zoning rug designs. Each rug differs in colour and pattern; none copies a photo.
+ * The item's art_key picks the design; unknown keys fall back to the first.
+ */
+const RUG_DESIGNS: Record<string, RugDesign> = {
+  // Sage base with ivory zigzags.
+  "zoning-rug": {
+    base: "#7d8f6e",
+    line: "#f1ead8",
+    paths: [
+      [
+        [-0.72, -0.4],
+        [-0.36, 0.1],
+        [0, -0.4],
+        [0.36, 0.1],
+        [0.72, -0.4],
+      ],
+      [
+        [-0.72, 0.4],
+        [-0.36, -0.1],
+        [0, 0.4],
+        [0.36, -0.1],
+        [0.72, 0.4],
+      ],
+    ],
+  },
+  // Terracotta base with a cream frame and an inner border.
+  "zoning-rug-terracotta": {
+    base: "#b5603a",
+    line: "#f3e6cf",
+    paths: [
+      closed([
+        [-0.7, -0.44],
+        [0.7, -0.44],
+        [0.7, 0.44],
+        [-0.7, 0.44],
+      ]),
+      closed([
+        [-0.5, -0.26],
+        [0.5, -0.26],
+        [0.5, 0.26],
+        [-0.5, 0.26],
+      ]),
+    ],
+  },
+  // Indigo base with ochre nested diamonds.
+  "zoning-rug-indigo": {
+    base: "#2d3a5e",
+    line: "#d9a441",
+    paths: [
+      closed([
+        [0, -0.42],
+        [0.52, 0],
+        [0, 0.42],
+        [-0.52, 0],
+      ]),
+      closed([
+        [0, -0.2],
+        [0.26, 0],
+        [0, 0.2],
+        [-0.26, 0],
+      ]),
+    ],
+  },
+};
+
+/** A zoning rug: a coloured base with its design drawn in code, like the other accessories. */
+function ZoningRug({ artKey }: { artKey: string }) {
+  const design = RUG_DESIGNS[artKey] ?? RUG_DESIGNS["zoning-rug"]!;
+  const curves = useMemo(
     () =>
-      ZONING_RUG_LINES.map(
-        (points) =>
-          new CatmullRomCurve3(
-            points.map(([x, z]) => new Vector3(x, 0.05, z)),
-            false,
-            "catmullrom",
-            0.5,
-          ),
-      ),
-    [],
+      design.paths.map((points) => {
+        const path = new CurvePath<Vector3>();
+        for (let index = 0; index < points.length - 1; index += 1) {
+          const [ax, az] = points[index]!;
+          const [bx, bz] = points[index + 1]!;
+          path.add(new LineCurve3(new Vector3(ax, 0.05, az), new Vector3(bx, 0.05, bz)));
+        }
+        return path;
+      }),
+    [design],
   );
   return (
     <group>
@@ -542,12 +588,12 @@ function ZoningRug() {
         smoothness={3}
         position={[0, 0.02, 0]}
       >
-        <meshStandardMaterial color="#efe8d8" roughness={0.95} />
+        <meshStandardMaterial color={design.base} roughness={0.95} />
       </RoundedBox>
-      {lines.map((curve, index) => (
+      {curves.map((curve, index) => (
         <mesh key={index} receiveShadow>
-          <tubeGeometry args={[curve, 64, 0.03, 6, false]} />
-          <meshStandardMaterial color="#2c2a27" roughness={0.9} />
+          <tubeGeometry args={[curve, 64, 0.028, 6, false]} />
+          <meshStandardMaterial color={design.line} roughness={0.9} />
         </mesh>
       ))}
     </group>
@@ -572,7 +618,7 @@ export function FurnitureFallback({
         : rawKind === "starter-light"
           ? "light"
           : rawKind;
-  if (kind === "zoning-rug") return <ZoningRug />;
+  if (kind.startsWith("zoning-rug")) return <ZoningRug artKey={kind} />;
   if (kind === "bed")
     return (
       <group scale={[1.2, 1, 1.45]}>
