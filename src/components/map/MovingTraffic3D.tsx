@@ -1,13 +1,12 @@
-import { useRef, useState, type FC } from "react";
-import { useFrame, type ThreeEvent } from "@react-three/fiber";
+import { useEffect, useMemo, useRef, useState, type FC } from "react";
+import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import type { Group } from "three";
 import { WorldMaterial } from "@/components/3d/WorldScene";
+import { isValidTownMobilityLoop, measureTownMobilityLoop, type TownMobilityRoute } from "@/game/town-mobility";
 
 export interface MovingTraffic3DProps {
-  cellSize: number;
-  gridCols: number;
-  gridRows: number;
+  paths: readonly TownMobilityRoute[];
 }
 
 type VehicleType = "danfo" | "keke" | "okada" | "taxi";
@@ -18,7 +17,7 @@ interface VehicleConfig {
   name: string;
   description: string;
   speed: number;
-  path: [number, number][]; // [x, z] waypoints
+  path: TownMobilityRoute;
   color: string;
 }
 
@@ -30,71 +29,34 @@ interface VehicleConfig {
  * - Agile Okada motorcycles
  * - Interactive click/hover dialogs and horn feedback.
  */
-export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ cellSize, gridCols, gridRows }) => {
+export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ paths }) => {
   const [activeSpeech, setActiveSpeech] = useState<{ id: string; text: string } | null>(null);
+  const speechTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const xMax = (gridCols / 2 - 2) * cellSize;
-  const zMax = (gridRows / 2 - 2) * cellSize;
+  useEffect(() => () => {
+    if (speechTimeoutRef.current) clearTimeout(speechTimeoutRef.current);
+  }, []);
 
-  // Realistic transit routes across the road grid
-  const vehicles: VehicleConfig[] = [
-    {
-      id: "danfo-1",
-      type: "danfo",
-      name: "Danfo Bus #101",
-      description: "Olaiya Junction ⇄ Oja-Oba Market Express",
-      speed: 0.16,
-      path: [
-        [-xMax * 0.8, -zMax * 0.4],
-        [xMax * 0.8, -zMax * 0.4],
-        [xMax * 0.8, zMax * 0.4],
-        [-xMax * 0.8, zMax * 0.4],
-      ],
-      color: "#eab308",
-    },
-    {
-      id: "danfo-2",
-      type: "danfo",
-      name: "Danfo Bus #204",
-      description: "Transit Park ⇄ East Gate Terminal",
-      speed: 0.14,
-      path: [
-        [xMax * 0.7, zMax * 0.6],
-        [-xMax * 0.7, zMax * 0.6],
-        [-xMax * 0.7, -zMax * 0.6],
-        [xMax * 0.7, -zMax * 0.6],
-      ],
-      color: "#f59e0b",
-    },
-    {
-      id: "keke-1",
-      type: "keke",
-      name: "Keke Napep",
-      description: "Local Market Shuttle (₦100 per drop)",
-      speed: 0.22,
-      path: [
-        [-xMax * 0.4, zMax * 0.2],
-        [0, zMax * 0.2],
-        [0, -zMax * 0.2],
-        [-xMax * 0.4, -zMax * 0.2],
-      ],
-      color: "#16a34a",
-    },
-    {
-      id: "okada-1",
-      type: "okada",
-      name: "Commercial Okada",
-      description: "Fast junction crosser · Quick ride",
-      speed: 0.28,
-      path: [
-        [-xMax * 0.6, 0],
-        [xMax * 0.6, 0],
-        [xMax * 0.6, zMax * 0.5],
-        [-xMax * 0.6, zMax * 0.5],
-      ],
-      color: "#dc2626",
-    },
-  ];
+  const showSpeech = (id: string, text: string, duration: number) => {
+    if (speechTimeoutRef.current) clearTimeout(speechTimeoutRef.current);
+    setActiveSpeech({ id, text });
+    speechTimeoutRef.current = setTimeout(() => {
+      setActiveSpeech((current) => current?.id === id ? null : current);
+      speechTimeoutRef.current = null;
+    }, duration);
+  };
+
+  const vehicleTypes: VehicleType[] = ["danfo", "keke", "okada", "taxi"];
+  const vehicleColors = ["#eab308", "#16a34a", "#dc2626", "#2563eb"];
+  const vehicles: VehicleConfig[] = paths.filter(isValidTownMobilityLoop).map((path, index) => ({
+    id: `town-traffic-${index}`,
+    type: vehicleTypes[index % vehicleTypes.length]!,
+    name: `Town vehicle ${index + 1}`,
+    description: "Following the connected town road network",
+    speed: 0.14 + (index % 4) * 0.025,
+    path,
+    color: vehicleColors[index % vehicleColors.length]!,
+  }));
 
   return (
     <group position={[0, 0.08, 0]}>
@@ -102,11 +64,7 @@ export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ cellSize, gridCols, 
         <TrafficVehicle
           key={v.id}
           config={v}
-          cellSize={cellSize}
-          onInteract={(text) => {
-            setActiveSpeech({ id: v.id, text });
-            setTimeout(() => setActiveSpeech(null), 3200);
-          }}
+          onInteract={(text) => showSpeech(v.id, text, 3200)}
           isSpeaking={activeSpeech?.id === v.id}
           speechText={activeSpeech?.text}
         />
@@ -117,13 +75,11 @@ export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ cellSize, gridCols, 
 
 function TrafficVehicle({
   config,
-  cellSize,
   onInteract,
   isSpeaking,
   speechText,
 }: {
   config: VehicleConfig;
-  cellSize: number;
   onInteract: (text: string) => void;
   isSpeaking: boolean;
   speechText?: string | undefined;
@@ -132,28 +88,53 @@ function TrafficVehicle({
   const currentSegment = useRef(0);
   const progress = useRef(0);
   const [isHovered, setIsHovered] = useState(false);
+  useEffect(() => {
+    currentSegment.current = 0;
+    progress.current = 0;
+  }, [config.path]);
+
+  const routeLength = useMemo(() => measureTownMobilityLoop(config.path), [config.path]);
 
   useFrame((_, delta) => {
     if (!groupRef.current) return;
 
     const { path, speed } = config;
-    const p1 = path[currentSegment.current]!;
-    const nextIdx = (currentSegment.current + 1) % path.length;
-    const p2 = path[nextIdx]!;
+    if (path.length < 2 || !Number.isFinite(routeLength) || routeLength < 0.001) return;
 
-    const dx = p2[0] - p1[0];
-    const dz = p2[1] - p1[1];
-    const segmentLength = Math.hypot(dx, dz);
+    // Advance in world-space distance so crossing a corner never discards
+    // leftover frame time. Modulo the cached loop length also bounds catch-up
+    // work after a background-tab pause.
+    if (!Number.isFinite(delta) || delta <= 0) return;
+    let distanceToTravel = (speed * delta * 8) % routeLength;
 
-    progress.current += (speed * delta * cellSize * 4) / Math.max(segmentLength, 0.1);
+    let safetyIterations = 0;
+    while (distanceToTravel > 0 && safetyIterations++ < path.length * 2 + 2) {
+      const start = path[currentSegment.current]!;
+      const end = path[(currentSegment.current + 1) % path.length]!;
+      const segmentLength = [start[0], start[1], end[0], end[1]].every(Number.isFinite)
+        ? Math.hypot(end[0] - start[0], end[1] - start[1])
+        : 0;
 
-    if (progress.current >= 1.0) {
-      progress.current = 0;
-      currentSegment.current = nextIdx;
+      if (!Number.isFinite(segmentLength) || segmentLength < 0.001) {
+        currentSegment.current = (currentSegment.current + 1) % path.length;
+        progress.current = 0;
+        continue;
+      }
+
+      const remainingOnSegment = segmentLength * (1 - progress.current);
+      if (distanceToTravel >= remainingOnSegment) {
+        distanceToTravel -= remainingOnSegment;
+        currentSegment.current = (currentSegment.current + 1) % path.length;
+        progress.current = 0;
+      } else {
+        progress.current += distanceToTravel / segmentLength;
+        distanceToTravel = 0;
+      }
     }
 
     const curP1 = path[currentSegment.current]!;
     const curP2 = path[(currentSegment.current + 1) % path.length]!;
+    if (![curP1[0], curP1[1], curP2[0], curP2[1]].every(Number.isFinite)) return;
     const curDx = curP2[0] - curP1[0];
     const curDz = curP2[1] - curP1[1];
 
@@ -165,13 +146,9 @@ function TrafficVehicle({
     groupRef.current.rotation.y = angle;
   });
 
-  const handleClick = (e: ThreeEvent<MouseEvent>) => {
+  const handleClick = (e: any) => {
     e.stopPropagation();
-    const beeps = [
-      "📯 Peep peep! Clear the road!",
-      "🚖 Entering Olaiya junction!",
-      "💨 Moving briskly!",
-    ];
+    const beeps = ["📯 Peep peep! Clear the road!", "🚖 Approaching the next junction!", "💨 Moving briskly!"];
     const randomMsg = beeps[Math.floor(Math.random() * beeps.length)]!;
     onInteract(`${config.name}: ${randomMsg}`);
   };
@@ -219,11 +196,7 @@ function TrafficVehicle({
           {/* Wheels */}
           {[-0.34, 0.34].map((wx) =>
             [-0.45, 0.45].map((wz) => (
-              <mesh
-                key={`wheel-${wx}-${wz}`}
-                position={[wx, 0.12, wz]}
-                rotation={[0, 0, Math.PI / 2]}
-              >
+              <mesh key={`wheel-${wx}-${wz}`} position={[wx, 0.12, wz]} rotation={[0, 0, Math.PI / 2]}>
                 <cylinderGeometry args={[0.12, 0.12, 0.08, 12]} />
                 <meshStandardMaterial color="#1e293b" roughness={0.8} />
               </mesh>
@@ -275,6 +248,63 @@ function TrafficVehicle({
             <mesh key={`okw-${wz}`} position={[0, 0.1, wz]} rotation={[0, 0, Math.PI / 2]}>
               <cylinderGeometry args={[0.1, 0.1, 0.05, 12]} />
               <meshStandardMaterial color="#1e293b" />
+            </mesh>
+          ))}
+        </group>
+      )}
+
+      {config.type === "taxi" && (
+        <group scale={isHovered ? 1.15 : 1.0}>
+          {/* Compact four-door town taxi */}
+          <mesh position={[0, 0.29, 0]} castShadow>
+            <boxGeometry args={[0.64, 0.38, 1.18]} />
+            <meshStandardMaterial color={config.color} roughness={0.38} metalness={0.12} />
+          </mesh>
+          {/* Raised passenger cabin */}
+          <mesh position={[0, 0.55, -0.06]} castShadow>
+            <boxGeometry args={[0.54, 0.3, 0.66]} />
+            <meshStandardMaterial color={config.color} roughness={0.42} />
+          </mesh>
+          {/* Front and rear glass */}
+          <mesh position={[0, 0.56, 0.28]}>
+            <boxGeometry args={[0.48, 0.2, 0.025]} />
+            <meshStandardMaterial color="#647f8c" roughness={0.18} metalness={0.12} />
+          </mesh>
+          <mesh position={[0, 0.56, -0.4]}>
+            <boxGeometry args={[0.48, 0.2, 0.025]} />
+            <meshStandardMaterial color="#647f8c" roughness={0.18} metalness={0.12} />
+          </mesh>
+          {/* Side windows */}
+          {[-1, 1].map((side) => (
+            <mesh key={`taxi-window-${side}`} position={[side * 0.276, 0.56, -0.06]}>
+              <boxGeometry args={[0.018, 0.19, 0.55]} />
+              <meshStandardMaterial color="#647f8c" roughness={0.18} metalness={0.12} />
+            </mesh>
+          ))}
+          {/* Small roof taxi marker */}
+          <mesh position={[0, 0.72, -0.06]} castShadow>
+            <boxGeometry args={[0.22, 0.08, 0.16]} />
+            <meshStandardMaterial color="#fef3c7" roughness={0.55} />
+          </mesh>
+          {/* Four wheels */}
+          {[-0.31, 0.31].map((wx) =>
+            [-0.38, 0.38].map((wz) => (
+              <mesh
+                key={`taxi-wheel-${wx}-${wz}`}
+                position={[wx, 0.12, wz]}
+                rotation={[0, 0, Math.PI / 2]}
+                castShadow
+              >
+                <cylinderGeometry args={[0.105, 0.105, 0.07, 12]} />
+                <meshStandardMaterial color="#1e293b" roughness={0.82} />
+              </mesh>
+            )),
+          )}
+          {/* Front lamps */}
+          {[-0.22, 0.22].map((x) => (
+            <mesh key={`taxi-lamp-${x}`} position={[x, 0.3, 0.598]}>
+              <boxGeometry args={[0.1, 0.055, 0.018]} />
+              <meshBasicMaterial color="#fef08a" />
             </mesh>
           ))}
         </group>
