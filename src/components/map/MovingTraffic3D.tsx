@@ -75,7 +75,7 @@ export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ paths, onSelectTrans
     if (!identity || !Number.isFinite(numericIdentity) || routeLength < 0.001) return [];
     const type = vehicleTypes[numericIdentity % vehicleTypes.length]!;
     const junctionIds = path.map(([x, z]) => {
-      const key = `${x.toFixed(3)},${z.toFixed(3)}`;
+      const key = `${Math.round(x)},${Math.round(z)}`;
       return (junctionCounts.get(key) ?? 0) > 1 ? `road-junction:${key}` : null;
     });
     return [{
