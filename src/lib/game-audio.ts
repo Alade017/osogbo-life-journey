@@ -90,6 +90,11 @@ let audioGeneration = 0;
 const effectsBuffers = new Map<string, Promise<AudioBuffer>>();
 const activeEffects = new Set<AudioBufferSourceNode>();
 const activeTones = new Set<OscillatorNode>();
+/** A notification chime is held here when the audio context is not running yet, then played on the next gesture. */
+const CHIME_MIN_GAP_MS = 1500;
+const CHIME_PENDING_MS = 20000;
+let lastChimeAt = 0;
+let pendingChimeAt: number | null = null;
 const lastRechargeSound = new Map<SoundName, number>();
 type MusicState = {
   track: MusicTrack | null;
@@ -429,6 +434,7 @@ export async function enableGameAudio(levels = readGameAudioLevels()): Promise<b
       return false;
     }
     publishMusic({ soundEnabled: graph.context.state === "running" });
+    if (graph.context.state === "running") flushPendingChime(graph);
     if (graph.context.state === "running") void resumeGameMusic(true);
     if (graph.context.state === "running" && !playableMusicTracks.length)
       clearAudioGestureListeners();
@@ -467,6 +473,10 @@ export function setGameAudioLevels(levels: AudioLevels) {
 }
 
 export function playGameSound(name: SoundName) {
+  if (name === "notification") {
+    playNotificationChime();
+    return;
+  }
   const current = graph;
   if (!current || !isGameAudioActive() || !readGameAudioLevels().effects) return;
   if (name === "health-recharge" || name === "energy-recharge") {
@@ -529,6 +539,66 @@ function stopEffects() {
   for (const tone of activeTones) tone.stop();
   activeTones.clear();
 }
+/** A new notification: play now, or hold it until the audio context can run. Rapid ones share a chime. */
+function playNotificationChime() {
+  if (typeof document === "undefined" || document.hidden) return;
+  if (!readGameAudioLevels().effects) return;
+  const now = Date.now();
+  if (now - lastChimeAt < CHIME_MIN_GAP_MS) return;
+  const current = graph;
+  if (!current || current.context.state !== "running") {
+    pendingChimeAt = now;
+    return;
+  }
+  pendingChimeAt = null;
+  lastChimeAt = now;
+  playChime(current);
+}
+
+/** Plays a held chime once audio is running, if it is still fresh enough to be relevant. */
+function flushPendingChime(current: AudioGraph) {
+  if (pendingChimeAt === null) return;
+  const fresh = Date.now() - pendingChimeAt <= CHIME_PENDING_MS;
+  pendingChimeAt = null;
+  if (fresh && readGameAudioLevels().effects && !document.hidden) {
+    lastChimeAt = Date.now();
+    playChime(current);
+  }
+}
+
+/** A soft bell: two rising notes, each with inharmonic overtones that decay at their own rates. */
+function playChime(current: AudioGraph) {
+  const { context, effects } = current;
+  const now = context.currentTime;
+  const partials: readonly (readonly [number, number, number])[] = [
+    [1, 0.5, 1.3],
+    [2.76, 0.18, 0.8],
+    [5.4, 0.07, 0.45],
+  ];
+  [1046.5, 1318.51].forEach((base, noteIndex) => {
+    const start = now + noteIndex * 0.14;
+    for (const [ratio, gain, decay] of partials) {
+      const oscillator = context.createOscillator();
+      const envelope = context.createGain();
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(base * ratio, start);
+      envelope.gain.setValueAtTime(0.0001, start);
+      envelope.gain.exponentialRampToValueAtTime(0.1 * gain, start + 0.006);
+      envelope.gain.exponentialRampToValueAtTime(0.0001, start + decay);
+      oscillator.connect(envelope);
+      envelope.connect(effects);
+      activeTones.add(oscillator);
+      oscillator.onended = () => {
+        activeTones.delete(oscillator);
+        oscillator.disconnect();
+        envelope.disconnect();
+      };
+      oscillator.start(start);
+      oscillator.stop(start + decay + 0.05);
+    }
+  });
+}
+
 function playSynthesizedSound(name: SoundName, current: AudioGraph) {
   const patterns: Record<SoundName, number[]> = {
     ui: [660],

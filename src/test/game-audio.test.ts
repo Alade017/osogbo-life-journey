@@ -436,7 +436,7 @@ describe("game music playback", () => {
     await settle();
     expect(audio.getMusicState().playing).toBe(false);
     expect(fetch).not.toHaveBeenCalled();
-    audio.playGameSound("notification");
+    audio.playGameSound("message");
     await settle();
     expect(fetch).toHaveBeenCalledTimes(1);
     audio.setGameAudioLevels({ master: 0.55, music: 0, effects: 0 });
@@ -455,12 +455,50 @@ describe("game music playback", () => {
         }),
     );
     const source = vi.spyOn(contexts[0]!, "createBufferSource");
-    audio.playGameSound("notification");
+    audio.playGameSound("message");
     await settle();
     audio.setGameAudioLevels({ master: 0.55, music: 0.2, effects: 0 });
     finish({ duration: 1 });
     await settle();
     expect(source).not.toHaveBeenCalled();
     expect(contexts[0]!.gains[1]!.gain.value).toBe(0);
+  });
+  it("plays a notification as a bell chime, not a file", async () => {
+    const audio = await import("../lib/game-audio");
+    await audio.enableGameAudio();
+    const oscillator = vi.spyOn(contexts[0]!, "createOscillator");
+    audio.playGameSound("notification");
+    await settle();
+    // Two notes, each with three partials.
+    expect(oscillator).toHaveBeenCalledTimes(6);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+  it("shares one chime between rapid notifications", async () => {
+    const audio = await import("../lib/game-audio");
+    await audio.enableGameAudio();
+    const oscillator = vi.spyOn(contexts[0]!, "createOscillator");
+    audio.playGameSound("notification");
+    audio.playGameSound("notification");
+    audio.playGameSound("notification");
+    await settle();
+    expect(oscillator).toHaveBeenCalledTimes(6);
+  });
+  it("holds a notification until audio runs, then plays it once", async () => {
+    const audio = await import("../lib/game-audio");
+    const oscillator = vi.spyOn(FakeContext.prototype, "createOscillator");
+    audio.playGameSound("notification");
+    await settle();
+    expect(oscillator).not.toHaveBeenCalled();
+    await audio.enableGameAudio();
+    await settle();
+    expect(oscillator).toHaveBeenCalledTimes(6);
+  });
+  it("plays no chime when effects are off", async () => {
+    const audio = await import("../lib/game-audio");
+    const oscillator = vi.spyOn(FakeContext.prototype, "createOscillator");
+    await audio.enableGameAudio({ master: 0.55, music: 0, effects: 0 });
+    audio.playGameSound("notification");
+    await settle();
+    expect(oscillator).not.toHaveBeenCalled();
   });
 });
