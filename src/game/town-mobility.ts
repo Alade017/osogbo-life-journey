@@ -304,11 +304,17 @@ export function measureTownMobilityLoop(route: TownMobilityRoute): number {
 export function isValidTownPedestrianRoute(route: TownMobilityRoute): boolean {
   if (route.length < 2) return false;
   if (!route.every(([x, z]) => Number.isFinite(x) && Number.isFinite(z))) return false;
-  const length = route.slice(1).reduce((total, point, index) => {
-    const previous = route[index]!;
-    return total + Math.hypot(point[0] - previous[0], point[1] - previous[1]);
-  }, 0);
-  return Number.isFinite(length) && length >= 0.001;
+
+  let totalLength = 0;
+  for (let index = 1; index < route.length; index += 1) {
+    const previous = route[index - 1]!;
+    const current = route[index]!;
+    const segmentLength = Math.hypot(current[0] - previous[0], current[1] - previous[1]);
+    if (!Number.isFinite(segmentLength) || segmentLength < 0.001) return false;
+    totalLength += segmentLength;
+  }
+
+  return Number.isFinite(totalLength) && totalLength >= 0.001;
 }
 
 
