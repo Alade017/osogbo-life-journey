@@ -18,6 +18,8 @@ export type TownMapValidationInput = {
     id: string;
     grid: { x: number; z: number };
     districtId?: string;
+    buildingType?: string;
+    mapObjectType?: "landmark" | "junction" | "poi";
   }[];
 };
 
@@ -85,7 +87,15 @@ export function validateTownMapData(data: TownMapValidationInput): string[] {
   }
 
   for (const landmark of data.landmarks) {
-    if (!buildingIds.has(landmark.id)) errors.push(`Landmark "${landmark.id}" has no authored building entry.`);
+    if (landmark.buildingType && !buildingIds.has(landmark.id)) {
+      errors.push(`Building landmark "${landmark.id}" has no authored building entry.`);
+    }
+    if (!landmark.buildingType && buildingIds.has(landmark.id)) {
+      errors.push(`Map-only landmark "${landmark.id}" must not create a building footprint.`);
+    }
+    if (!landmark.buildingType && !landmark.mapObjectType) {
+      errors.push(`Map-only landmark "${landmark.id}" must declare its map object type.`);
+    }
   }
 
   const reservedCells = new Set<string>();
