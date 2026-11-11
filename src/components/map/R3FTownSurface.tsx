@@ -47,6 +47,7 @@ import {
   deriveTownPedestrianRoutes,
   stitchTownPedestrianRoutes,
 } from "@/game/town-mobility";
+import { validateTownMapData } from "@/game/town-map-validation";
 
 type TownMapPlace = {
   id: string;
@@ -83,8 +84,14 @@ type Props = TownMapData &
 /** Close-up framing sits well inside the whole-town distance. */
 const CLOSE_UP_DISTANCE_SCALE = 0.5;
 
-const gridCols = town.grid.rows[0]?.length ?? 24;
-const gridRows = town.grid.rows.length ?? 18;
+const townMapValidationErrors = validateTownMapData(town);
+if (townMapValidationErrors.length > 0) {
+  throw new Error(`Invalid authored town map data: ${townMapValidationErrors.join(" ")}`);
+}
+
+const gridCols = town.grid.rows[0]?.length ?? town.meta.grid.columns;
+
+const gridRows = town.grid.rows.length;
 const cell = WORLD_SCALE.townCell;
 const point = (x: number, z: number): [number, number, number] => [
   (x - (gridCols - 1) / 2) * cell,
