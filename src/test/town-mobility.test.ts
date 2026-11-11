@@ -529,10 +529,9 @@ describe("shared pedestrian and vehicle crossing priority", () => {
       scheduler.advanceTime(second);
       phases.add(scheduler.getSignalPhase("road-junction:4,8"));
     }
+    const phaseAtFortyEight = scheduler.getSignalPhase("road-junction:4,8");
     scheduler.advanceTime(12);
-    expect(scheduler.getSignalPhase("road-junction:4,8")).toBe(
-      [...phases].length === 5 ? scheduler.getSignalPhase("road-junction:4,8") : expect.any(String),
-    );
+    expect(scheduler.getSignalPhase("road-junction:4,8")).toBe(phaseAtFortyEight);
     expect(phases).toEqual(new Set([
       "vehicle-green", "amber", "all-red", "pedestrian-walk", "clearance",
     ]));
