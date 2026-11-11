@@ -30,6 +30,47 @@ function fixture(
 }
 
 const venues: Readonly<Record<string, LocationVenueDesign>> = {
+  "oja-oba": {
+    name: "Oja-Oba trading hall",
+    description: "An Osogbo-inspired covered market interior with produce, staple-goods and household trading spaces.",
+    floorColor: "#cdbb92",
+    wallColor: "#e5d3ad",
+    accentColor: "#c77a3b",
+    fixtures: [
+      fixture(
+        "oja-oba-produce-counter",
+        "Fresh produce counter",
+        "A shaded trading counter for fruit and fresh vegetables.",
+        "counter",
+        -2.7,
+        -0.5,
+      ),
+      fixture(
+        "oja-oba-staples-shelves",
+        "Grains and staples shelves",
+        "Shelving for grains, beans and everyday dry goods.",
+        "shelf",
+        2.7,
+        -0.5,
+      ),
+      fixture(
+        "oja-oba-household-table",
+        "Household goods display",
+        "A shared display table for practical household items.",
+        "table",
+        0,
+        0.9,
+      ),
+      fixture(
+        "oja-oba-trader-seats",
+        "Trader seating",
+        "A small shared resting place beside the market aisle.",
+        "seat",
+        0,
+        -2.1,
+      ),
+    ],
+  },
   "town-market": {
     name: "Market aisles",
     description: "A covered trading floor with produce stalls and a shared aisle.",
