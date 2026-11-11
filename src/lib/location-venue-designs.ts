@@ -743,6 +743,17 @@ export function hasLocationVenueDesign(slug: string) {
   return Object.hasOwn(venues, slug);
 }
 
+/**
+ * A null shop slug marks a sub-building stall without its own enterable interior.
+ * Undefined keeps the legacy district-wide venue behaviour for existing locations.
+ */
+export function hasBuildingVenueInterior(
+  locationSlug: string,
+  shopSlug?: string | null,
+) {
+  return shopSlug !== null && hasLocationVenueDesign(locationSlug);
+}
+
 /** Mount a venue only when the character query confirms the server-saved location. */
 export function hasAuthoritativeLocationArrival(
   currentLocationId: string | null | undefined,
