@@ -19,6 +19,8 @@ export type NeighborhoodObject = {
   id: string;
   name: string;
   kind: "home" | "market" | "work" | "npc";
+  /** undefined = district-wide; null = no dedicated catalogue; string = stable shop slug. */
+  shopSlug?: string | null;
   x: number;
   y: number;
 };
@@ -177,10 +179,10 @@ export const OJA_OBA_AREA: NeighborhoodArea = {
   ],
   objects: [
     { id: "home", name: "Market-side courtyard", kind: "home", x: 515, y: 165 },
-    { id: "market", name: "Oja-Oba stalls", kind: "market", x: 145, y: 165 },
-    { id: "oja-oba-produce-stall", name: "Fresh produce stall", kind: "market", x: 65, y: 110 },
-    { id: "oja-oba-grain-stall", name: "Grains and staples stall", kind: "market", x: 115, y: 110 },
-    { id: "oja-oba-household-stall", name: "Household goods stall", kind: "market", x: 165, y: 110 },
+    { id: "market", name: "Oja-Oba stalls", kind: "market", shopSlug: "market-sales-stall", x: 145, y: 165 },
+    { id: "oja-oba-produce-stall", name: "Fresh produce stall", kind: "market", shopSlug: null, x: 65, y: 110 },
+    { id: "oja-oba-grain-stall", name: "Grains and staples stall", kind: "market", shopSlug: null, x: 115, y: 110 },
+    { id: "oja-oba-household-stall", name: "Household goods stall", kind: "market", shopSlug: null, x: 165, y: 110 },
     { id: "work", name: "Market loading yard", kind: "work", x: 500, y: 420 },
     { id: "npc", name: "Ayo · market trader", kind: "npc", x: 155, y: 420 },
   ],
