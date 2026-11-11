@@ -1042,11 +1042,16 @@ export function R3FTownSurface(props: Props) {
     wasteBins.forEach(([x, z]) => reserveWorldPosition(x, z));
     roadsideInfrastructure.poles.forEach(([x, z]) => reserveWorldPosition(x, z));
 
-    return stitchTownPedestrianRoutes([
+    const sidewalkRoutes = stitchTownPedestrianRoutes([
       ...deriveTownPedestrianRoutes(town.grid.rows, cell, blockedCells),
       ...deriveTownPedestrianCornerRoutes(town.grid.rows, cell, blockedCells),
-      ...deriveTownPedestrianCrossingRoutes(town.grid.rows, cell, blockedCells),
     ]);
+    // Keep zebra-crossing routes as dedicated three-point paths so the shared
+    // crossing scheduler can identify their exact centre without guessing.
+    return [
+      ...sidewalkRoutes,
+      ...deriveTownPedestrianCrossingRoutes(town.grid.rows, cell, blockedCells),
+    ];
   }, [
     streetLights,
     trafficLights,
