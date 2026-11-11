@@ -14,7 +14,7 @@ describe("authored town map validation", () => {
 
     const errors = validateTownMapData(invalid);
 
-    expect(errors.some((error) => error.includes("does not match grid metadata") || error.includes("expected 24"))).toBe(true);
+    expect(errors.some((error) => error.includes("does not match grid metadata") || error.includes(`expected ${town.meta.grid.columns}`))).toBe(true);
     expect(errors.some((error) => error.includes("must be placed on a grass tile"))).toBe(true);
   });
 
