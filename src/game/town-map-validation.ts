@@ -19,7 +19,7 @@ export type TownMapValidationInput = {
     grid: { x: number; z: number };
     districtId?: string;
     buildingType?: string;
-    mapObjectType?: "landmark" | "junction" | "poi";
+    mapObjectType?: string;
   }[];
 };
 
@@ -95,6 +95,9 @@ export function validateTownMapData(data: TownMapValidationInput): string[] {
     }
     if (!landmark.buildingType && !landmark.mapObjectType) {
       errors.push(`Map-only landmark "${landmark.id}" must declare its map object type.`);
+    }
+    if (landmark.mapObjectType && !["landmark", "junction", "poi"].includes(landmark.mapObjectType)) {
+      errors.push(`Landmark "${landmark.id}" has an unsupported map object type.`);
     }
   }
 
