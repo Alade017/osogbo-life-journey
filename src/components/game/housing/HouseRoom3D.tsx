@@ -18,6 +18,7 @@ import {
   HOUSE_ROOM_SIZE as ROOM_SIZE,
   housePartitionSegmentsForFloor,
   houseStairs,
+  houseStructureBoxes,
   interpolateRoomPosition,
   roomCoordinatesToPercent,
   isHouseGridCellOccupied,
@@ -158,6 +159,34 @@ function RoomFloor({
         />
       ))}
     </>
+  );
+}
+
+/** Verandas and balconies, drawn from the house's structure config. */
+function HouseStructures({
+  houseTypeId,
+  width,
+  depth,
+  floor,
+}: {
+  houseTypeId: string;
+  width: number;
+  depth: number;
+  floor: 0 | 1;
+}) {
+  const boxes = houseStructureBoxes(houseTypeId, width, depth, floor);
+  return (
+    <group>
+      {boxes.map((box) => (
+        <mesh key={box.id} castShadow receiveShadow position={box.position}>
+          <boxGeometry args={box.size} />
+          <meshStandardMaterial
+            color={box.material === "wood" ? FURNITURE_COLOURS.mediaWood : "#efe8d8"}
+            roughness={0.75}
+          />
+        </mesh>
+      ))}
+    </group>
   );
 }
 
@@ -352,6 +381,14 @@ function OsogboRoomPrototype({
             <WorldMaterial tone="trim" />
           </mesh>
         </group>
+        {!roomView && (
+          <HouseStructures
+            houseTypeId={houseTypeId}
+            width={width}
+            depth={depth}
+            floor={activeFloor}
+          />
+        )}
         {houseStairs(houseTypeId, width, depth) && (
           <HouseStairsModel stairs={houseStairs(houseTypeId, width, depth)!} onUse={onUseStairs} />
         )}

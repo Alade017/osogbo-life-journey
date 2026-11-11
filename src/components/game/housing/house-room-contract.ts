@@ -486,6 +486,128 @@ export function houseStairs(houseTypeId: string, width: number, depth: number): 
 }
 
 /**
+ * Property structures that are geometry, not furniture: a bungalow's front veranda and a duplex's
+ * optional upstairs balcony. Dimensions are metres. "entrance" is the back wall with the door.
+ */
+export type HouseStructure = {
+  id: string;
+  kind: "veranda" | "balcony";
+  floor: 0 | 1;
+  /** Share of the room width the structure spans, centred on the wall. */
+  widthShare: number;
+  /** How far the structure projects beyond its wall. */
+  projection: number;
+  wall: "entrance" | "garden";
+  /** An optional structure is part of the design but a home may be built without it. */
+  optional: boolean;
+};
+
+export const HOUSE_STRUCTURES: Readonly<Record<string, readonly HouseStructure[]>> = {
+  bungalow: [
+    {
+      id: "front-veranda",
+      kind: "veranda",
+      floor: 0,
+      widthShare: 0.6,
+      projection: 2,
+      wall: "entrance",
+      optional: false,
+    },
+  ],
+  duplex: [
+    {
+      id: "upstairs-balcony",
+      kind: "balcony",
+      floor: 1,
+      widthShare: 0.5,
+      projection: 1.4,
+      wall: "garden",
+      optional: true,
+    },
+  ],
+};
+
+/** Sizes shared by every structure, in metres. */
+export const STRUCTURE_DIMENSIONS = {
+  slab: 0.1,
+  post: 0.14,
+  roofHeight: 2.6,
+  roofThickness: 0.14,
+  railingHeight: 1,
+  railingThickness: 0.05,
+} as const;
+
+export type StructureBox = {
+  id: string;
+  material: "wood" | "trim";
+  position: [number, number, number];
+  size: [number, number, number];
+};
+
+/** The boxes that make up each structure on a floor. Empty when the home has none there. */
+export function houseStructureBoxes(
+  houseTypeId: string,
+  width: number,
+  depth: number,
+  floor: 0 | 1,
+): StructureBox[] {
+  const dims = STRUCTURE_DIMENSIONS;
+  return (HOUSE_STRUCTURES[houseTypeId] ?? [])
+    .filter((structure) => structure.floor === floor)
+    .flatMap((structure): StructureBox[] => {
+      const span = width * structure.widthShare;
+      const sign = structure.wall === "entrance" ? -1 : 1;
+      const wallZ = structure.wall === "entrance" ? -depth / 2 : depth / 2;
+      const outerZ = wallZ + sign * structure.projection;
+      const slabZ = wallZ + (sign * structure.projection) / 2;
+      const id = structure.id;
+      const boxes: StructureBox[] = [
+        {
+          id: `${id}-slab`,
+          material: "wood",
+          position: [0, dims.slab / 2, slabZ],
+          size: [span, dims.slab, structure.projection],
+        },
+      ];
+      if (structure.kind === "veranda") {
+        for (const side of [-1, 1]) {
+          for (const edge of ["outer", "inner"] as const) {
+            const z = edge === "outer" ? outerZ - sign * dims.post : wallZ + sign * dims.post;
+            boxes.push({
+              id: `${id}-post-${side < 0 ? "left" : "right"}-${edge}`,
+              material: "trim",
+              position: [side * (span / 2 - dims.post / 2), dims.roofHeight / 2, z],
+              size: [dims.post, dims.roofHeight, dims.post],
+            });
+          }
+        }
+        boxes.push({
+          id: `${id}-roof`,
+          material: "trim",
+          position: [0, dims.roofHeight + dims.roofThickness / 2, slabZ],
+          size: [span + 0.2, dims.roofThickness, structure.projection + 0.2],
+        });
+      } else {
+        boxes.push({
+          id: `${id}-rail-front`,
+          material: "trim",
+          position: [0, dims.slab + dims.railingHeight / 2, outerZ],
+          size: [span, dims.railingHeight, dims.railingThickness],
+        });
+        for (const side of [-1, 1]) {
+          boxes.push({
+            id: `${id}-rail-${side < 0 ? "left" : "right"}`,
+            material: "trim",
+            position: [side * (span / 2), dims.slab + dims.railingHeight / 2, slabZ],
+            size: [dims.railingThickness, dims.railingHeight, structure.projection],
+          });
+        }
+      }
+      return boxes;
+    });
+}
+
+/**
  * Upstairs walls for a duplex: a lounge with a mini gym (left, with the stairs), a living room
  * (back-right) and a bedroom (front-right). Each has an empty doorway.
  */
