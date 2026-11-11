@@ -384,9 +384,6 @@ export function R3FTownSurface(props: Props) {
 
     return result;
   }, []);
-  useEffect(() => {
-    crossingScheduler.setSignalizedJunctions(trafficLights.map(([, , junctionId]) => junctionId));
-  }, [crossingScheduler, trafficLights]);
   const busStops = useMemo<[number, number][]>(() => {
     const result: [number, number][] = [];
     const rows = town.grid.rows;
@@ -1006,6 +1003,9 @@ export function R3FTownSurface(props: Props) {
   ]);
 
   const crossingScheduler = useMemo(() => new TownRoadCrossingPriorityScheduler(), []);
+  useEffect(() => {
+    crossingScheduler.setSignalizedJunctions(trafficLights.map(([, , junctionId]) => junctionId));
+  }, [crossingScheduler, trafficLights]);
   const pedestrianRoutes = useMemo(() => {
     const buildingCells = town.grid.buildings.flatMap((building) =>
       [0, 1].flatMap((dx) => [0, 1].map((dz) => [building.x + dx, building.z + dz] as const)),
