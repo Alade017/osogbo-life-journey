@@ -23,6 +23,10 @@ describe("neighborhood coordinates and interaction", () => {
       market.objects.find((object) => object.id === "market")?.x,
     );
     expect(market.marketStalls).toHaveLength(3);
+    expect(market.objects.find((object) => object.id === "market")?.shopSlug).toBe("market-sales-stall");
+    for (const id of ["oja-oba-produce-stall", "oja-oba-grain-stall", "oja-oba-household-stall"]) {
+      expect(market.objects.find((object) => object.id === id)?.shopSlug).toBeNull();
+    }
     expect(neighborhoodAreaForSlug("unmapped-district")).toBe(olaiya);
   });
   it("defines connected Olaiya roads and collision obstacles for the playable scene", () => {
