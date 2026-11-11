@@ -48,7 +48,7 @@ import { hasBuildingVenueInterior, hasLocationVenueDesign } from "@/lib/location
 import { MAP_LANDMARK_LOCATION_SLUG } from "@/components/map/map-location-links";
 import { JobsPage } from "@/routes/_authenticated/_game/jobs";
 import { MarketPage } from "@/routes/_authenticated/_game/market";
-import { WORLD_CAMERA } from "@/components/3d/world-theme";
+import { NEIGHBORHOOD_CAMERA } from "@/components/3d/world-theme";
 import "@/components/game/neighborhood.css";
 
 const R3FNeighborhoodSurface = lazy(() =>
@@ -304,7 +304,7 @@ export function PlayableNeighborhood() {
   const leavingStepsRef = useRef({ data: false, scene: false });
   const [scene, setScene] = useState<NeighborhoodSceneHandle | null>(null);
   const [peopleOpen, setPeopleOpen] = useState(false);
-  const [zoom, setZoom] = useState<number>(WORLD_CAMERA.defaultZoom);
+  const [zoom, setZoom] = useState<number>(NEIGHBORHOOD_CAMERA.defaultZoom);
   const directionsRef = useRef(directions);
   directionsRef.current = directions;
   const lastIntentRef = useRef("0:0");
@@ -545,7 +545,7 @@ export function PlayableNeighborhood() {
   useEffect(() => {
     setDirections(new Set());
     lastIntentRef.current = "0:0";
-    setZoom(WORLD_CAMERA.defaultZoom);
+    setZoom(NEIGHBORHOOD_CAMERA.defaultZoom);
     setActivePanel(null);
     setSelectedBuildingName(null);
     setSelectedShopSlug(undefined);
@@ -754,7 +754,7 @@ export function PlayableNeighborhood() {
   ];
   const changeZoom = (factor: number) => {
     setZoom((current) =>
-      Math.min(WORLD_CAMERA.maxZoom, Math.max(WORLD_CAMERA.minZoom, current * factor)),
+      Math.min(NEIGHBORHOOD_CAMERA.maxZoom, Math.max(NEIGHBORHOOD_CAMERA.minZoom, current * factor)),
     );
   };
 
@@ -873,7 +873,7 @@ export function PlayableNeighborhood() {
                       <button
                         type="button"
                         aria-label="Zoom in"
-                        disabled={zoom >= WORLD_CAMERA.maxZoom}
+                        disabled={zoom >= NEIGHBORHOOD_CAMERA.maxZoom}
                         onClick={() => changeZoom(1.12)}
                       >
                         <Plus size={16} aria-hidden="true" />
@@ -881,7 +881,7 @@ export function PlayableNeighborhood() {
                       <button
                         type="button"
                         aria-label="Zoom out"
-                        disabled={zoom <= WORLD_CAMERA.minZoom}
+                        disabled={zoom <= NEIGHBORHOOD_CAMERA.minZoom}
                         onClick={() => changeZoom(1 / 1.12)}
                       >
                         <Minus size={16} aria-hidden="true" />
