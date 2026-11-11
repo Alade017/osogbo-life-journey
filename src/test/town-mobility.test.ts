@@ -538,6 +538,14 @@ describe("shared pedestrian and vehicle crossing priority", () => {
     ]));
   });
 
+  it("does not impose timed lights on unsignalized junctions", () => {
+    const scheduler = new TownRoadCrossingPriorityScheduler();
+    scheduler.setSignalizedJunctions(["signalized-junction"]);
+    scheduler.advanceTime(8);
+    expect(scheduler.request("unsignalized-junction", "vehicle-1", "vehicle")).toBe(true);
+    expect(scheduler.getSignalState("unsignalized-junction")).toBe("go");
+  });
+
   it("allows vehicles and pedestrians to reserve only during their respective green phases", () => {
     const junction = "road-junction:4,8";
     const vehicleScheduler = new TownRoadCrossingPriorityScheduler();
