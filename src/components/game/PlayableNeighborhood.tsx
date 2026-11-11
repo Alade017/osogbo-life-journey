@@ -308,6 +308,7 @@ export function PlayableNeighborhood() {
   directionsRef.current = directions;
   const lastIntentRef = useRef("0:0");
   const [activePanel, setActivePanel] = useState<InteractionPanel | null>(null);
+  const [selectedBuildingName, setSelectedBuildingName] = useState<string | null>(null);
   /** A tapped building or person the character is walking to; interaction opens on arrival. */
   const [pendingTargetId, setPendingTargetId] = useState<string | null>(null);
   /** Set while the character walks to its home door after Go home. */
@@ -531,6 +532,7 @@ export function PlayableNeighborhood() {
     lastIntentRef.current = "0:0";
     setZoom(WORLD_CAMERA.defaultZoom);
     setActivePanel(null);
+    setSelectedBuildingName(null);
     setBusinessView("actions");
     setWorkView("actions");
     setSelectedNpcId(null);
@@ -683,6 +685,7 @@ export function PlayableNeighborhood() {
   const handleScene = useCallback((next: NeighborhoodSceneHandle | null) => setScene(next), []);
   const openInteraction = () => {
     if (!nearbyObject) return;
+    setSelectedBuildingName(nearbyObject.kind === "npc" ? null : nearbyObject.name);
     if (nearbyObject.kind === "home") {
       enterHome.mutate();
     } else if (nearbyObject.kind === "npc") {
@@ -721,6 +724,7 @@ export function PlayableNeighborhood() {
   const closeInteraction = (open: boolean) => {
     if (open) return;
     setActivePanel(null);
+    setSelectedBuildingName(null);
     setSelectedNpcId(null);
   };
   const npcActions: readonly { action: SocialAction; label: string }[] = [
@@ -997,7 +1001,7 @@ export function PlayableNeighborhood() {
                       <DialogTitle>
                         {activePanel === "npc"
                           ? (selectedNpc?.name ?? "Neighbour")
-                          : (currentLocation?.name ?? "Nearby services")}
+                          : (selectedBuildingName ?? currentLocation?.name ?? "Nearby services")}
                       </DialogTitle>
                       <DialogDescription>
                         {activePanel === "npc"
