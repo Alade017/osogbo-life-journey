@@ -1917,6 +1917,7 @@ export function HouseRoom3D({
   placements: allPlacements,
   sharedPlacements = NO_SHARED_PLACEMENTS,
   myBedZone = null,
+  myBedSpot = null,
   foodDeliveries = [],
   movingPlacement = null,
   editMode,
@@ -2269,6 +2270,21 @@ export function HouseRoom3D({
                     opacity={0.12}
                     depthWrite={false}
                   />
+                </mesh>
+              );
+            })()}
+          {/* The tenant's own bed: a gold ring on the floor under it */}
+          {myBedSpot &&
+            (() => {
+              const [bx, , bz] = roomPercentToPosition(myBedSpot.x, myBedSpot.y, width, depth);
+              return (
+                <mesh
+                  position={[bx, 0.014, bz]}
+                  rotation={[-Math.PI / 2, 0, 0]}
+                  raycast={() => undefined}
+                >
+                  <ringGeometry args={[0.42, 0.5, 40]} />
+                  <meshBasicMaterial color="#f2c14e" transparent opacity={0.9} depthWrite={false} />
                 </mesh>
               );
             })()}

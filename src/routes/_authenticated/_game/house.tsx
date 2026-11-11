@@ -798,6 +798,10 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     () => sharedRoomPlacements(serverState?.sharedHome ?? null),
     [serverState?.sharedHome],
   );
+  const sharedBedSpot = useMemo(
+    () => serverState?.sharedHome?.myBed ?? null,
+    [serverState?.sharedHome],
+  );
   const sharedBedZone = useMemo(
     () => myBedZone(serverState?.sharedHome ?? null),
     [serverState?.sharedHome],
@@ -1529,6 +1533,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           placements={floorPlacements}
           sharedPlacements={sharedPlacements}
           myBedZone={sharedBedZone}
+          myBedSpot={sharedBedSpot}
           activeFloor={activeFloor}
           {...(stairs ? { onUseStairs: () => void climbStairs() } : {})}
           foodDeliveries={deliveries.data ?? []}

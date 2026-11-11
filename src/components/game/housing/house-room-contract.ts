@@ -28,6 +28,8 @@ export type HouseRoomRendererProps = {
   sharedPlacements?: HousePlacement[];
   /** The tenant's own bed zone, lightly marked on the floor. */
   myBedZone?: SharedBedZone | null;
+  /** The tenant's own bed, ringed on the floor so it stands out from the other bed. */
+  myBedSpot?: { x: number; y: number } | null;
   /** Room shown on its own (an id from houseRoomViews); omitted or null shows the whole home. */
   roomView?: string | null;
   characterName?: string;

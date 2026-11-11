@@ -15,6 +15,8 @@ export type SharedHomeState = {
   myBedSlot: number;
   zones: SharedBedZone[];
   placements: HousePlacement[];
+  /** Where the tenant's own bed stands, in room percentages, or null if it is not placed. */
+  myBed: { x: number; y: number } | null;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -74,6 +76,7 @@ export function parseSharedHome(value: unknown): SharedHomeState | null {
   });
 
   const rawPlacements = Array.isArray(value["placements"]) ? value["placements"] : [];
+  let myBed: { x: number; y: number } | null = null;
   const placements = rawPlacements.flatMap((entry, index): HousePlacement[] => {
     if (!isRecord(entry)) return [];
     const slot = typeof entry["slot"] === "string" ? entry["slot"] : null;
@@ -81,6 +84,8 @@ export function parseSharedHome(value: unknown): SharedHomeState | null {
     const x = finite(entry["x"]);
     const y = finite(entry["y"]);
     if (!slot || !itemId || x === null || y === null) return [];
+    if (myBed === null && entry["slot_type"] === "bed" && finite(entry["bed_slot"]) === myBedSlot)
+      myBed = { x, y };
     const artKey = typeof entry["art_key"] === "string" ? entry["art_key"] : itemId;
     return [
       {
@@ -98,7 +103,7 @@ export function parseSharedHome(value: unknown): SharedHomeState | null {
     ];
   });
 
-  return { unitId: value["unit_id"], myBedSlot, zones, placements };
+  return { unitId: value["unit_id"], myBedSlot, zones, placements, myBed };
 }
 
 /** The shared pieces to draw in a tenant's room. They are read-only: the game places them. */

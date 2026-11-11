@@ -75,4 +75,17 @@ describe("shared room view", () => {
     expect(rect.centerX).toBeCloseTo(1.3);
     expect(rect.centerZ).toBeCloseTo(0);
   });
+
+  it("locates the tenant's own bed from its bed slot, not from the other bed", () => {
+    expect(parseSharedHome(serverValue)?.myBed).toBeNull();
+    const mine = parseSharedHome({
+      ...serverValue,
+      my_bed_slot: 1,
+      placements: [
+        { id: "b1", item_id: "bed-1", slot: "bed-1", bed_slot: 1, x: 24, y: 30, slot_type: "bed" },
+        { id: "b2", item_id: "bed-2", slot: "bed-2", bed_slot: 2, x: 76, y: 30, slot_type: "bed" },
+      ],
+    });
+    expect(mine?.myBed).toEqual({ x: 24, y: 30 });
+  });
 });
