@@ -23,6 +23,8 @@ export type HouseRoomRendererProps = {
   accessoryBand: string;
   slots: HouseSlot[];
   placements: HousePlacement[];
+  /** Game-placed shared-room furniture, drawn read-only beside the tenant's own items. */
+  sharedPlacements?: HousePlacement[];
   /** Room shown on its own (an id from houseRoomViews); omitted or null shows the whole home. */
   roomView?: string | null;
   characterName?: string;

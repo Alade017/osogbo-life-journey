@@ -51,6 +51,7 @@ import { ROOM_VIEW_CAMERA, ROOM_VIEW_PALETTE, WORLD_SCALE } from "@/components/3
 type WaitingCourier = { delivery: FoodDelivery; index: number };
 
 // Keep drei's independent HTML roots outside React's canvas DOM children.
+const NO_SHARED_PLACEMENTS: HousePlacement[] = [];
 const RoomOverlayContext = createContext<RefObject<HTMLElement>>({ current: null! });
 
 type DragPreview = { placementId: string; x: number; z: number };
@@ -1913,6 +1914,7 @@ export function HouseRoom3D({
   activityLabel = null,
   slots,
   placements: allPlacements,
+  sharedPlacements = NO_SHARED_PLACEMENTS,
   foodDeliveries = [],
   movingPlacement = null,
   editMode,
@@ -2245,6 +2247,32 @@ export function HouseRoom3D({
                 onDragEnd={onDragEnd}
                 onDragCancel={onDragCancel}
                 suppressClick={suppressClick}
+              />
+            );
+          })}
+          {/* Shared-room furniture: game-placed and read-only, so no drag, select or remove */}
+          {sharedPlacements.map((placement) => {
+            const slot = renderSlotForPlacement(placement, slots);
+            if (!slot) return null;
+            return (
+              <SlotObject
+                key={placement.id}
+                slot={slot}
+                placement={placement}
+                width={width}
+                depth={depth}
+                editMode={false}
+                moveEnabled={false}
+                inputBlocked
+                dragPreview={null}
+                activeSlotType={null}
+                onSelectPlacement={() => undefined}
+                onSelectSlot={() => undefined}
+                onDragStart={() => undefined}
+                onDragMove={() => undefined}
+                onDragEnd={() => undefined}
+                onDragCancel={() => undefined}
+                suppressClick={() => true}
               />
             );
           })}

@@ -63,6 +63,11 @@ import { HomeAccessoryPanel } from "@/components/game/housing/HomeAccessoryPanel
 import { DrawerSheet } from "@/components/game/housing/DrawerSheet";
 import { drawerAction, fetchDrawerState, storableRows } from "@/lib/drawer";
 import { HouseRoomRenderer } from "@/components/game/housing/HouseRoomRenderer";
+import {
+  parseSharedHome,
+  sharedRoomPlacements,
+  type SharedHomeState,
+} from "@/components/game/housing/shared-room-view";
 import { useGameTime } from "@/components/game/GameTimeProvider";
 import {
   beginTransition,
@@ -125,6 +130,8 @@ type HouseState = {
   placements: HousePlacement[];
   outfit: HouseOutfit;
   inventory: HouseInventoryItem[];
+  /** The shared room this player rents a bed in, if any. */
+  sharedHome?: SharedHomeState | null;
 };
 type HouseStateSnapshot = { state: HouseState; source: "server" | "saved" };
 type CanonicalHome = {
@@ -230,6 +237,7 @@ function normalizeHouseState(value: unknown): HouseState | null {
     };
   }
   const rawOutfit = isRecord(value["outfit"]) ? value["outfit"] : {};
+  const sharedHome = parseSharedHome(value["shared_home"]);
   const outfit = Object.fromEntries(
     Object.keys(EMPTY_OUTFIT).map((slot) => [
       slot,
@@ -243,6 +251,7 @@ function normalizeHouseState(value: unknown): HouseState | null {
     inventory: Array.isArray(value["inventory"])
       ? (value["inventory"] as HouseInventoryItem[])
       : [],
+    sharedHome,
   };
 }
 
@@ -784,6 +793,10 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const [clockNow, setClockNow] = useState(Date.now());
   const [activeFloor, setActiveFloor] = useState<0 | 1>(0);
   const floorPlacements = scenePlacements.filter((item) => (item.floor ?? 0) === activeFloor);
+  const sharedPlacements = useMemo(
+    () => sharedRoomPlacements(serverState?.sharedHome ?? null),
+    [serverState?.sharedHome],
+  );
   const obstacles = roomObstacles(
     serverState?.house?.house_type_id ?? "shared-room",
     roomWidth,
@@ -1509,6 +1522,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           activityLabel={currentActivity ? ACTION_CATALOG[currentActivity.actionId].name : null}
           slots={slots}
           placements={floorPlacements}
+          sharedPlacements={sharedPlacements}
           activeFloor={activeFloor}
           {...(stairs ? { onUseStairs: () => void climbStairs() } : {})}
           foodDeliveries={deliveries.data ?? []}
