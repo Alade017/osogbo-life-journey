@@ -510,12 +510,14 @@ export class TownRoadCrossingPriorityScheduler {
     if (!junctionId) return "go";
     const owner = this.owners.get(junctionId);
     if (owner?.kind === "pedestrian") return "stop";
+    if (this.elapsedSeconds !== null && this.signalizedJunctions.has(junctionId)) {
+      const phase = this.getSignalPhase(junctionId);
+      if (phase === "vehicle-green") return "go";
+      if (phase === "amber") return "caution";
+      return "stop";
+    }
     if (this.waiters.get(junctionId)?.some((actor) => actor.kind === "pedestrian")) return "caution";
-    if (this.elapsedSeconds === null || !this.signalizedJunctions.has(junctionId)) return "go";
-    const phase = this.getSignalPhase(junctionId);
-    if (phase === "vehicle-green") return "go";
-    if (phase === "amber") return "caution";
-    return "stop";
+    return "go";
   }
 
   cancelActor(actorId: string): void {
