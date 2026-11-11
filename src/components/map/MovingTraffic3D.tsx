@@ -205,7 +205,7 @@ function TrafficVehicle({
     groupRef.current.position.set(posX, 0.05, posZ);
     groupRef.current.rotation.y = angle;
     if (activeJunction.current && currentSegment.current !== (config.junctionIds.findIndex((id) => id === activeJunction.current) + path.length - 1) % path.length) {
-      junctionScheduler.release(activeJunction.current, config.id);
+      crossingScheduler.release(activeJunction.current, config.id);
       activeJunction.current = null;
     }
   });
