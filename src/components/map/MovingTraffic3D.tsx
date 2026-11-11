@@ -61,13 +61,6 @@ export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ paths, crossingSched
     taxi: "#2563eb",
   };
   const validPaths = paths.filter(isValidTownMobilityLoop);
-  const junctionCounts = new Map<string, number>();
-  for (const path of validPaths) {
-    for (const [x, z] of path) {
-      const key = townRoadJunctionIdentity(x, z);
-      junctionCounts.set(key, (junctionCounts.get(key) ?? 0) + 1);
-    }
-  }
   const vehicles: VehicleConfig[] = validPaths.flatMap((path) => {
     const identity = townMobilityRouteIdentity(path);
     const numericIdentity = Number.parseInt(identity, 36);
@@ -76,7 +69,7 @@ export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ paths, crossingSched
     const type = vehicleTypes[numericIdentity % vehicleTypes.length]!;
     const junctionIds = path.map(([x, z]) => {
       const key = townRoadJunctionIdentity(x, z);
-      return (junctionCounts.get(key) ?? 0) > 1 ? key : null;
+      return key || null;
     });
     return [{
       id: `town-traffic-${identity}`,
@@ -127,6 +120,7 @@ function TrafficVehicle({
   const currentSegment = useRef(0);
   const progress = useRef(0);
   const activeJunction = useRef<string | null>(null);
+  const activeJunctionIndex = useRef<number | null>(null);
   const [isHovered, setIsHovered] = useState(false);
   const routeLength = useMemo(() => measureTownMobilityLoop(config.path), [config.path]);
 
@@ -147,16 +141,24 @@ function TrafficVehicle({
     // work after a background-tab pause.
     if (!Number.isFinite(delta) || delta <= 0) return;
     let distanceToTravel = (speed * delta * 8) % routeLength;
-    const nextJunction = config.junctionIds[(currentSegment.current + 1) % path.length] ?? null;
+    const nextJunctionIndex = (currentSegment.current + 1) % path.length;
+    const nextJunction = config.junctionIds[nextJunctionIndex] ?? null;
     const segmentStart = path[currentSegment.current]!;
-    const segmentEnd = path[(currentSegment.current + 1) % path.length]!;
+    const segmentEnd = path[nextJunctionIndex]!;
     const segmentLengthToJunction = Math.hypot(segmentEnd[0] - segmentStart[0], segmentEnd[1] - segmentStart[1]);
     const remainingToJunction = segmentLengthToJunction * (1 - progress.current);
     const clearanceDistance = Math.min(1.35, segmentLengthToJunction * 0.3);
 
-    if (activeJunction.current && activeJunction.current !== nextJunction) {
-      crossingScheduler.release(activeJunction.current, config.id);
-      activeJunction.current = null;
+    if (activeJunction.current && activeJunctionIndex.current !== null
+      && currentSegment.current === activeJunctionIndex.current) {
+      const activeSegmentStart = path[currentSegment.current]!;
+      const activeSegmentEnd = path[(currentSegment.current + 1) % path.length]!;
+      const activeSegmentLength = Math.hypot(activeSegmentEnd[0] - activeSegmentStart[0], activeSegmentEnd[1] - activeSegmentStart[1]);
+      if (progress.current * activeSegmentLength >= clearanceDistance) {
+        crossingScheduler.release(activeJunction.current, config.id);
+        activeJunction.current = null;
+        activeJunctionIndex.current = null;
+      }
     }
     if (nextJunction && remainingToJunction <= clearanceDistance + distanceToTravel) {
       if (!crossingScheduler.request(nextJunction, config.id, "vehicle")) {
@@ -164,6 +166,7 @@ function TrafficVehicle({
         if (distanceToTravel <= 0) return;
       } else {
         activeJunction.current = nextJunction;
+        activeJunctionIndex.current = nextJunctionIndex;
       }
     }
 
@@ -204,10 +207,7 @@ function TrafficVehicle({
 
     groupRef.current.position.set(posX, 0.05, posZ);
     groupRef.current.rotation.y = angle;
-    if (activeJunction.current && currentSegment.current !== (config.junctionIds.findIndex((id) => id === activeJunction.current) + path.length - 1) % path.length) {
-      crossingScheduler.release(activeJunction.current, config.id);
-      activeJunction.current = null;
-    }
+
   });
 
   useEffect(() => () => {
