@@ -11,5 +11,11 @@
   color: var(--foreground);
   font-size: 0.8rem;
   font-weight: 600;
-  pointer-events: none;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.house-floor-label:disabled {
+  cursor: default;
+  opacity: 0.6;
 }

@@ -1753,9 +1753,15 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         </div>
       )}
       {!editing && stairs && (
-        <span className="house-floor-label" role="status" aria-live="polite">
-          {activeFloor === 0 ? "Ground floor" : "Upstairs"}
-        </span>
+        <button
+          type="button"
+          className="house-floor-label"
+          aria-label={activeFloor === 0 ? "Go upstairs" : "Go downstairs"}
+          disabled={taskBusy || isOffline || !isInsideHome}
+          onClick={() => void climbStairs()}
+        >
+          {activeFloor === 0 ? "Ground floor · Go upstairs" : "Upstairs · Go downstairs"}
+        </button>
       )}
       {!editing && drawerOpen && (
         <DrawerSheet
