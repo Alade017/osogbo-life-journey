@@ -310,6 +310,7 @@ export function PlayableNeighborhood() {
   const lastIntentRef = useRef("0:0");
   const [activePanel, setActivePanel] = useState<InteractionPanel | null>(null);
   const [selectedBuildingName, setSelectedBuildingName] = useState<string | null>(null);
+  const [selectedShopSlug, setSelectedShopSlug] = useState<string | null | undefined>(undefined);
   /** A tapped building or person the character is walking to; interaction opens on arrival. */
   const [pendingTargetId, setPendingTargetId] = useState<string | null>(null);
   /** Set while the character walks to its home door after Go home. */
@@ -429,6 +430,13 @@ export function PlayableNeighborhood() {
     placesQuery.data?.filter((place) => place.location_id === currentLocation?.id) ?? [];
   const hasShopOffers =
     shopItemsQuery.data?.some((offer) => offer.shop?.location_id === currentLocation?.id) ?? false;
+  const hasSelectedShopOffers =
+    selectedShopSlug === undefined
+      ? hasShopOffers
+      : selectedShopSlug !== null &&
+        (shopItemsQuery.data?.some(
+          (offer) => offer.shop?.location_id === currentLocation?.id && offer.shop.slug === selectedShopSlug,
+        ) ?? false);
   const hasBankServices =
     currentLocation?.type === "bank" ||
     localPlaces.some((place) => place.category === "bank" || place.category === "atm");
@@ -537,6 +545,7 @@ export function PlayableNeighborhood() {
     setZoom(WORLD_CAMERA.defaultZoom);
     setActivePanel(null);
     setSelectedBuildingName(null);
+    setSelectedShopSlug(undefined);
     setBusinessView("actions");
     setWorkView("actions");
     setSelectedNpcId(null);
@@ -669,6 +678,7 @@ export function PlayableNeighborhood() {
         return;
       event.preventDefault();
       setSelectedBuildingName(nearbyObject.kind === "npc" ? null : nearbyObject.name);
+      setSelectedShopSlug(nearbyObject.kind === "market" ? nearbyObject.shopSlug : undefined);
       if (nearbyObject.kind === "home") {
         activateHome();
       } else if (nearbyObject.kind === "npc") {
@@ -691,6 +701,7 @@ export function PlayableNeighborhood() {
   const openInteraction = () => {
     if (!nearbyObject) return;
     setSelectedBuildingName(nearbyObject.kind === "npc" ? null : nearbyObject.name);
+    setSelectedShopSlug(nearbyObject.kind === "market" ? nearbyObject.shopSlug : undefined);
     if (nearbyObject.kind === "home") {
       enterHome.mutate();
     } else if (nearbyObject.kind === "npc") {
@@ -730,6 +741,7 @@ export function PlayableNeighborhood() {
     if (open) return;
     setActivePanel(null);
     setSelectedBuildingName(null);
+    setSelectedShopSlug(undefined);
     setSelectedNpcId(null);
   };
   const npcActions: readonly { action: SocialAction; label: string }[] = [
@@ -1038,15 +1050,20 @@ export function PlayableNeighborhood() {
                                   View official place activities
                                 </a>
                               )}
-                              {hasShopOffers && (
+                              {hasSelectedShopOffers && (
                                 <button
                                   type="button"
                                   className="neighborhood-action-card"
                                   onClick={() => setBusinessView("shops")}
                                 >
                                   <Store size={18} aria-hidden="true" />
-                                  Browse local shop offers
+                                  Browse {selectedBuildingName ?? "local"} shop offers
                                 </button>
+                              )}
+                              {selectedShopSlug === null && (
+                                <p className="text-sm text-muted-foreground">
+                                  This stall does not have its own server-backed shop catalogue yet. Browse the main Oja-Oba stalls for the currently available market offers.
+                                </p>
                               )}
                               {hasBankServices && (
                                 <button
@@ -1090,7 +1107,7 @@ export function PlayableNeighborhood() {
                               >
                                 Back to building actions
                               </button>
-                              <MarketPage />
+                              <MarketPage shopSlug={selectedShopSlug} />
                             </>
                           )}
                           {businessView === "bank" && (
