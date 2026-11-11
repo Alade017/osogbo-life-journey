@@ -161,8 +161,7 @@ export function deriveTownPedestrianCrossingRoutes(
     Array.from(row).forEach((tile, x) => {
       if (tile !== "r") return;
       const horizontal = row[x - 1] === "r" || row[x + 1] === "r";
-      const vertical = rows[z - 1]?.[x] === "r" || rows[z + 1]?.[x] === "r";
-      if (!horizontal || !vertical) return;
+      if (!horizontal) return;
 
       // Match the currently rendered zebra-stripe orientation: cross the
       // north/south sidewalk pair where the intersection has a horizontal arm.
@@ -186,8 +185,7 @@ export function deriveTownPedestrianCrossingRoutes(
 
 /**
  * Builds L-shaped pedestrian paths through rendered outer sidewalk-corner tiles.
- * A connector exists only when both adjoining sidewalk strips and their diagonal
- * grass corner are present and unblocked, matching R3FTownSurface geometry.
+ * Each diagonal grass patch can connect its two adjoining road-sidewalk strips.
  */
 export function deriveTownPedestrianCornerRoutes(
   rows: readonly string[],
@@ -199,28 +197,30 @@ export function deriveTownPedestrianCornerRoutes(
   const columnCount = Math.max(0, ...rows.map((row) => row.length));
   const blocked = new Set(blockedCells.map(([x, z]) => `${x},${z}`));
   const offset = cellSize / 2 + sidewalkWidth / 2;
+  const toWorld = (x: number, z: number): [number, number] => [
+    (x - (columnCount - 1) / 2) * cellSize,
+    (z - (rows.length - 1) / 2) * cellSize,
+  ];
   const routes: TownMobilityRoute[] = [];
 
   rows.forEach((row, z) => {
     Array.from(row).forEach((tile, x) => {
-      if (tile !== "r") return;
-      const centerX = (x - (columnCount - 1) / 2) * cellSize;
-      const centerZ = (z - (rows.length - 1) / 2) * cellSize;
-
+      if (tile !== "g" || blocked.has(`${x},${z}`)) return;
       for (const dx of [-1, 1] as const) {
         for (const dz of [-1, 1] as const) {
-          const horizontalCell = [x, z + dz] as const;
-          const verticalCell = [x + dx, z] as const;
-          const diagonalCell = [x + dx, z + dz] as const;
-          if (rows[horizontalCell[1]]?.[horizontalCell[0]] !== "r") continue;
-          if (rows[verticalCell[1]]?.[verticalCell[0]] !== "r") continue;
-          if (rows[diagonalCell[1]]?.[diagonalCell[0]] !== "g") continue;
-          if ([horizontalCell, verticalCell, diagonalCell].some(([cellX, cellZ]) => blocked.has(`${cellX},${cellZ}`))) continue;
+          const horizontalRoad = [x + dx, z] as const;
+          const verticalRoad = [x, z + dz] as const;
+          if (rows[horizontalRoad[1]]?.[horizontalRoad[0]] !== "r") continue;
+          if (rows[verticalRoad[1]]?.[verticalRoad[0]] !== "r") continue;
+          if ([horizontalRoad, verticalRoad].some(([cellX, cellZ]) => blocked.has(`${cellX},${cellZ}`))) continue;
 
+          const horizontal = toWorld(horizontalRoad[0], horizontalRoad[1]);
+          const vertical = toWorld(verticalRoad[0], verticalRoad[1]);
+          const corner = toWorld(x, z);
           routes.push([
-            [centerX + dx * cellSize, centerZ + dz * offset],
-            [centerX + dx * offset, centerZ + dz * offset],
-            [centerX + dx * offset, centerZ + dz * cellSize],
+            [horizontal[0], horizontal[1] + dz * offset],
+            [corner[0] + dx * offset, corner[1] + dz * offset],
+            [vertical[0] + dx * offset, vertical[1]],
           ]);
         }
       }
@@ -229,7 +229,6 @@ export function deriveTownPedestrianCornerRoutes(
 
   return routes;
 }
-
 
 /**
  * Joins straight sidewalk runs and corner connectors at shared endpoints.
@@ -510,13 +509,14 @@ export class TownRoadCrossingPriorityScheduler {
     if (!junctionId) return "go";
     const owner = this.owners.get(junctionId);
     if (owner?.kind === "pedestrian") return "stop";
+    const pedestrianWaiting = this.waiters.get(junctionId)?.some((actor) => actor.kind === "pedestrian") ?? false;
     if (this.elapsedSeconds !== null && this.signalizedJunctions.has(junctionId)) {
       const phase = this.getSignalPhase(junctionId);
       if (phase === "vehicle-green") return "go";
       if (phase === "amber") return "caution";
       return "stop";
     }
-    if (this.waiters.get(junctionId)?.some((actor) => actor.kind === "pedestrian")) return "caution";
+    if (pedestrianWaiting) return owner?.kind === "vehicle" ? "caution" : "stop";
     return "go";
   }
 
