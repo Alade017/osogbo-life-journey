@@ -528,7 +528,10 @@ describe("shared pedestrian and vehicle crossing priority", () => {
     const phases = new Set<string>();
     for (let second = 0; second <= 48; second += 1) {
       scheduler.advanceTime(second);
-      phases.add(scheduler.getSignalPhase("road-junction:4,8"));
+      const phase = scheduler.getSignalPhase("road-junction:4,8");
+      phases.add(phase);
+      const expectedSignal = phase === "vehicle-green" ? "go" : phase === "amber" ? "caution" : "stop";
+      expect(scheduler.getSignalState("road-junction:4,8")).toBe(expectedSignal);
     }
     const phaseAtFortyEight = scheduler.getSignalPhase("road-junction:4,8");
     scheduler.advanceTime(12);
