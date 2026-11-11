@@ -7,6 +7,7 @@ import { isValidTownMobilityLoop, measureTownMobilityLoop, type TownMobilityRout
 
 export interface MovingTraffic3DProps {
   paths: readonly TownMobilityRoute[];
+  onSelectTransit: () => void;
 }
 
 type VehicleType = "danfo" | "keke" | "okada" | "taxi";
@@ -30,7 +31,7 @@ interface VehicleConfig {
  * - Agile Okada motorcycles
  * - Interactive click/hover dialogs and horn feedback.
  */
-export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ paths }) => {
+export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ paths, onSelectTransit }) => {
   const [activeSpeech, setActiveSpeech] = useState<{ id: string; text: string } | null>(null);
   const speechTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -70,6 +71,7 @@ export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ paths }) => {
           key={v.id}
           config={v}
           onInteract={(text) => showSpeech(v.id, text, 3200)}
+          onSelectTransit={onSelectTransit}
           isSpeaking={activeSpeech?.id === v.id}
           speechText={activeSpeech?.text}
         />
@@ -81,11 +83,13 @@ export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ paths }) => {
 function TrafficVehicle({
   config,
   onInteract,
+  onSelectTransit,
   isSpeaking,
   speechText,
 }: {
   config: VehicleConfig;
   onInteract: (text: string) => void;
+  onSelectTransit: () => void;
   isSpeaking: boolean;
   speechText?: string | undefined;
 }) {
@@ -154,9 +158,15 @@ function TrafficVehicle({
 
   const handleClick = (e: any) => {
     e.stopPropagation();
-    const beeps = ["📯 Peep peep! Clear the road!", "🚖 Approaching the next junction!", "💨 Moving briskly!"];
-    const randomMsg = beeps[Math.floor(Math.random() * beeps.length)]!;
-    onInteract(`${config.name}: ${randomMsg}`);
+    const vehicleLabel = config.type === "danfo"
+      ? "Danfo"
+      : config.type === "keke"
+        ? "Keke"
+        : config.type === "okada"
+          ? "Okada"
+          : "Taxi";
+    onInteract(`${vehicleLabel}: Opening the Transit Park travel options.`);
+    onSelectTransit();
   };
 
   return (
