@@ -64,7 +64,7 @@ export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ paths, onSelectTrans
   const junctionCounts = new Map<string, number>();
   for (const path of validPaths) {
     for (const [x, z] of path) {
-      const key = `${x.toFixed(3)},${z.toFixed(3)}`;
+      const key = `${Math.round(x)},${Math.round(z)}`;
       junctionCounts.set(key, (junctionCounts.get(key) ?? 0) + 1);
     }
   }
