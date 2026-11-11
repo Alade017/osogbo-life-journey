@@ -130,7 +130,8 @@ function TrafficVehicle({
     progress.current = start.progress;
   }, [config.path, config.startDistance]);
 
-  useFrame((_, delta) => {
+  useFrame(({ clock }, delta) => {
+    crossingScheduler.advanceTime(clock.elapsedTime);
     if (!groupRef.current) return;
 
     const { path, speed } = config;
