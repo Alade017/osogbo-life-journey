@@ -717,7 +717,7 @@ export function R3FTownSurface(props: Props) {
     });
 
     // Reserve water and road locations.
-    town.grid.waterCells.forEach(([x, z]) => {
+    [...town.grid.waterCells, ...town.grid.plotCells].forEach(([x, z]) => {
       occupied.add(`${x},${z}`);
     });
 
