@@ -42,9 +42,12 @@ describe("town mobility input validation", () => {
 
 describe("traffic loop validation", () => {
   it("rejects malformed or non-traversable vehicle loops", () => {
-    expect(isValidTownMobilityLoop([[0, 0], [1, 0], [1, 1]])).toBe(true);
-    expect(isValidTownMobilityLoop([[0, 0], [Number.NaN, 1]])).toBe(false);
-    expect(isValidTownMobilityLoop([[0, 0], [0, 0]])).toBe(false);
+    expect(isValidTownMobilityLoop([[0, 0], [1, 0], [1, 1], [0, 1]])).toBe(true);
+    expect(isValidTownMobilityLoop([[0, 0], [1, 0]])).toBe(false);
+    expect(isValidTownMobilityLoop([[0, 0], [1, 0], [2, 0]])).toBe(false);
+    expect(isValidTownMobilityLoop([[0, 0], [1, 0], [1, 1], [1, 0]])).toBe(false);
+    expect(isValidTownMobilityLoop([[0, 0], [Number.NaN, 1], [1, 1]])).toBe(false);
+    expect(isValidTownMobilityLoop([[0, 0], [0, 0], [1, 1]])).toBe(false);
     expect(isValidTownMobilityLoop([[0, 0]])).toBe(false);
   });
 });
