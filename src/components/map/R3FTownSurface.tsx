@@ -85,9 +85,6 @@ type Props = TownMapData &
 const CLOSE_UP_DISTANCE_SCALE = 0.5;
 
 const townMapValidationErrors = validateTownMapData(town);
-if (townMapValidationErrors.length > 0) {
-  throw new Error(`Invalid authored town map data: ${townMapValidationErrors.join(" ")}`);
-}
 
 const gridCols = town.meta.grid.columns;
 const gridRows = town.meta.grid.rows;
@@ -205,6 +202,9 @@ function calculateBadgePositions(
 
 export function R3FTownSurface(props: Props) {
   const [hovered, setHovered] = useState<string | null>(null);
+  useEffect(() => {
+    if (townMapValidationErrors.length > 0) props.onUnavailable();
+  }, [props.onUnavailable]);
   const gesture = useRef({ x: 0, y: 0, moved: false });
   const clockTime = useRealOrGameClock();
   const { isNight } = daylightFor(clockTime.hour, clockTime.minute);
@@ -1063,6 +1063,13 @@ export function R3FTownSurface(props: Props) {
     event?.stopPropagation();
     if ((event?.delta ?? 0) <= 5 && !gesture.current.moved) action();
   };
+  if (townMapValidationErrors.length > 0) {
+    return (
+      <div role="alert" className="town-map-renderer-status">
+        The authored town map has invalid data: {townMapValidationErrors.join(" ")}
+      </div>
+    );
+  }
   return (
     <SurfaceBoundary onUnavailable={props.onUnavailable}>
       <div
