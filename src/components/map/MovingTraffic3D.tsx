@@ -3,7 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import type { Group } from "three";
 import { WorldMaterial } from "@/components/3d/WorldScene";
-import { isValidTownMobilityLoop, measureTownMobilityLoop, type TownMobilityRoute } from "@/game/town-mobility";
+import { isValidTownMobilityLoop, measureTownMobilityLoop, townMobilityRouteIdentity, type TownMobilityRoute } from "@/game/town-mobility";
 
 export interface MovingTraffic3DProps {
   paths: readonly TownMobilityRoute[];
@@ -52,17 +52,29 @@ export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ paths, onSelectTrans
   };
 
   const vehicleTypes: VehicleType[] = ["danfo", "keke", "okada", "taxi"];
-  const vehicleColors = ["#eab308", "#16a34a", "#dc2626", "#2563eb"];
-  const vehicles: VehicleConfig[] = paths.filter(isValidTownMobilityLoop).map((path, index) => ({
-    id: `town-traffic-${index}`,
-    type: vehicleTypes[index % vehicleTypes.length]!,
-    name: `Town vehicle ${index + 1}`,
-    description: "Following the connected town road network",
-    speed: 0.14 + (index % 4) * 0.025,
-    path,
-    startDistance: (index * 0.37 * measureTownMobilityLoop(path)) % measureTownMobilityLoop(path),
-    color: vehicleColors[index % vehicleColors.length]!,
-  }));
+  const vehicleColors: Record<VehicleType, string> = {
+    danfo: "#eab308",
+    keke: "#16a34a",
+    okada: "#dc2626",
+    taxi: "#2563eb",
+  };
+  const vehicles: VehicleConfig[] = paths.filter(isValidTownMobilityLoop).flatMap((path) => {
+    const identity = townMobilityRouteIdentity(path);
+    const numericIdentity = Number.parseInt(identity, 36);
+    const routeLength = measureTownMobilityLoop(path);
+    if (!identity || !Number.isFinite(numericIdentity) || routeLength < 0.001) return [];
+    const type = vehicleTypes[numericIdentity % vehicleTypes.length]!;
+    return [{
+      id: `town-traffic-${identity}`,
+      type,
+      name: `Town vehicle ${identity.toUpperCase()}`,
+      description: "Following the connected town road network",
+      speed: 0.14 + ((numericIdentity >>> 4) % 4) * 0.025,
+      path,
+      startDistance: ((numericIdentity >>> 8) / 0x1000000) * routeLength,
+      color: vehicleColors[type],
+    }];
+  });
 
   return (
     <group position={[0, 0.08, 0]}>
