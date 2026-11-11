@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
+import { Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   CLEARED,
   HOUSE_NAMES,
-  HOUSE_START,
-  LOOP_LENGTH,
+  SAFE_SQUARES,
   TRACK_LAST,
   YARD,
   bestLudoMove,
@@ -21,15 +21,17 @@ import {
   type LudoState,
 } from "@/lib/mini-games/ludo";
 import {
+  HOME_CELLS,
   HOUSE_COLOURS,
   HOUSE_EDGE,
-  YARD_CENTRES,
-  ringPoint,
-  seatPoint,
-  seedPosition,
-  squarePoint,
-} from "@/components/game/mini-games/ludo-view";
-import "@/components/game/mini-games/ludo.css";
+  TRACK_CELLS,
+  YARD_BLOCKS,
+  YARD_SEATS,
+  cellCentre,
+  seedCell,
+  type Cell,
+} from "@/components/game/mini-games/ludo-track";
+import "@/components/game/mini-games/ludo-board.css";
 
 const COMPUTER_DELAY_MS = 700;
 const PIPS: Record<number, readonly number[]> = {
@@ -40,6 +42,7 @@ const PIPS: Record<number, readonly number[]> = {
   5: [0, 2, 4, 6, 8],
   6: [0, 2, 3, 5, 6, 8],
 };
+const SAFE = new Set<number>(SAFE_SQUARES);
 
 function useComputerTurn(active: boolean, deps: unknown[], act: () => void) {
   useEffect(() => {
@@ -54,27 +57,21 @@ function die() {
   return 1 + Math.floor(Math.random() * 6);
 }
 
-/** Whether a move lands on a seed of the other side on the track. */
+function stepsOf(state: LudoState, move: LudoMove) {
+  return move.uses.reduce((total, index) => total + (state.pending?.[index] ?? 0), 0);
+}
+
+/** Whether a move lands on an unprotected seed of the other side on the track. */
 function capturesOn(state: LudoState, move: LudoMove) {
   if (move.to < 0 || move.to > TRACK_LAST) return false;
   const square = loopSquare(move.house, move.to);
+  if (SAFE.has(square)) return false;
   return housesFor(state.mode, 1 - state.turn).some((house) =>
     (state.seeds[house] ?? []).some(
       (progress) =>
         progress >= 0 && progress <= TRACK_LAST && loopSquare(house, progress) === square,
     ),
   );
-}
-
-function moveCopy(state: LudoState, move: LudoMove) {
-  const title = `${HOUSE_NAMES[move.house]} seed ${move.token + 1}`;
-  if (move.from === YARD) return { title, detail: "Bring out on a six" };
-  const steps = move.uses.reduce((total, index) => total + (state.pending?.[index] ?? 0), 0);
-  const parts = [`Move ${steps}`];
-  if (capturesOn(state, move)) parts.push("capture");
-  if (move.to === CLEARED) parts.push("into the centre");
-  else if (move.to > TRACK_LAST) parts.push("home column");
-  return { title, detail: parts.join(" · ") };
 }
 
 function clearedCount(state: LudoState, side: number) {
@@ -84,119 +81,200 @@ function clearedCount(state: LudoState, side: number) {
   );
 }
 
-function Pawn({
-  x,
-  y,
-  house,
-  active,
-  label,
-}: {
-  x: number;
-  y: number;
-  house: number;
-  active: boolean;
-  label: string;
-}) {
-  const fill = HOUSE_COLOURS[house] ?? "#ffffff";
-  const edge = HOUSE_EDGE[house] ?? "#000000";
-  return (
-    <g className="ludo-pawn" style={{ transform: `translate(${x}px, ${y}px)` }}>
-      <title>{label}</title>
-      {active && <circle className="ludo-ring" r="5.4" />}
-      <g transform="scale(0.8)">
-        <ellipse cx="0" cy="2.7" rx="3.4" ry="0.9" fill="#0b1240" opacity="0.3" />
-        <path
-          d="M -3.2 2.6 Q -3.4 0.4 -1.6 -0.6 L 1.6 -0.6 Q 3.4 0.4 3.2 2.6 Z"
-          fill={fill}
-          stroke={edge}
-          strokeWidth="0.4"
-        />
-        <circle cx="0" cy="-2.1" r="2.5" fill={fill} stroke={edge} strokeWidth="0.4" />
-        <circle cx="-0.8" cy="-2.9" r="0.8" fill="#ffffff" opacity="0.75" />
-      </g>
-    </g>
-  );
+function cellBox(cell: Cell): CSSProperties {
+  return {
+    left: `${((cell.col - 1) / 15) * 100}%`,
+    top: `${((cell.row - 1) / 15) * 100}%`,
+    width: `${100 / 15}%`,
+    height: `${100 / 15}%`,
+  };
 }
 
-function LudoBoardSvg({ state, movable }: { state: LudoState; movable: ReadonlySet<string> }) {
+type SeedView = {
+  key: string;
+  house: number;
+  token: number;
+  progress: number;
+  left: number;
+  top: number;
+};
+
+/** Every seed's place on the board. Seeds sharing a cell are spread side by side. */
+function seedViews(state: LudoState): SeedView[] {
   const playing = [0, 1, 2, 3].filter(
     (house) => housesFor(state.mode, 0).includes(house) || housesFor(state.mode, 1).includes(house),
   );
-  const starts = HOUSE_START as readonly number[];
-  const seeds = playing.flatMap((house) =>
-    (state.seeds[house] ?? []).map((progress, token) => ({ house, token, progress })),
+  const raw = playing.flatMap((house) =>
+    (state.seeds[house] ?? []).map((progress, token) => ({
+      house,
+      token,
+      progress,
+      cell: seedCell(house, token, progress),
+    })),
+  );
+  const onCell = (cell: Cell) => `${cell.row},${cell.col}`;
+  const counts = new Map<string, number>();
+  for (const seed of raw) {
+    if (seed.progress === YARD) continue;
+    counts.set(onCell(seed.cell), (counts.get(onCell(seed.cell)) ?? 0) + 1);
+  }
+  const seen = new Map<string, number>();
+  return raw.map((seed) => {
+    const centre = cellCentre(seed.cell);
+    let offset = 0;
+    if (seed.progress !== YARD) {
+      const key = onCell(seed.cell);
+      const total = counts.get(key) ?? 1;
+      const index = seen.get(key) ?? 0;
+      seen.set(key, index + 1);
+      offset = (index - (total - 1) / 2) * 2.6;
+    }
+    return {
+      key: `${seed.house}-${seed.token}`,
+      house: seed.house,
+      token: seed.token,
+      progress: seed.progress,
+      left: centre.left + offset,
+      top: centre.top,
+    };
+  });
+}
+
+function PawnSvg({ house }: { house: number }) {
+  const fill = HOUSE_COLOURS[house] ?? "#ffffff";
+  const edge = HOUSE_EDGE[house] ?? "#000000";
+  return (
+    <svg viewBox="-4 -5.4 8 8.8" aria-hidden="true" className="ludo-pawn-svg">
+      <ellipse cx="0" cy="2.8" rx="3.2" ry="0.9" fill="#0b1240" opacity="0.3" />
+      <path
+        d="M -3.1 2.6 Q -3.3 0.4 -1.6 -0.6 L 1.6 -0.6 Q 3.3 0.4 3.1 2.6 Z"
+        fill={fill}
+        stroke={edge}
+        strokeWidth="0.4"
+      />
+      <circle cx="0" cy="-2.1" r="2.5" fill={fill} stroke={edge} strokeWidth="0.4" />
+      <circle cx="-0.8" cy="-2.9" r="0.8" fill="#ffffff" opacity="0.75" />
+    </svg>
+  );
+}
+
+function LudoBoardView({
+  state,
+  locked,
+  movesBySeed,
+  selected,
+  onSeed,
+  onChoose,
+}: {
+  state: LudoState;
+  locked: boolean;
+  movesBySeed: Map<string, LudoMove[]>;
+  selected: string | null;
+  onSeed: (key: string) => void;
+  onChoose: (move: LudoMove) => void;
+}) {
+  const playing = [0, 1, 2, 3].filter(
+    (house) => housesFor(state.mode, 0).includes(house) || housesFor(state.mode, 1).includes(house),
   );
   return (
-    <svg className="ludo-board" viewBox="0 0 100 100" role="img" aria-label="Ludo board">
-      <rect x="1" y="1" width="98" height="98" rx="8" className="ludo-board-frame" />
-      {Array.from({ length: LOOP_LENGTH }, (_, index) => {
-        const point = ringPoint(index);
-        const house = starts.indexOf(index);
-        return house >= 0 ? (
-          <circle
-            key={`track-${index}`}
-            cx={point.x}
-            cy={point.y}
-            r="3.1"
-            fill={HOUSE_COLOURS[house]}
-            stroke="#ffffff"
-            strokeWidth="0.7"
-          />
-        ) : (
-          <circle key={`track-${index}`} cx={point.x} cy={point.y} r="2" className="ludo-square" />
-        );
-      })}
-      {YARD_CENTRES.map(([cx, cy], house) => (
-        <g key={`yard-${house}`} opacity={playing.includes(house) ? 1 : 0.3}>
-          <rect x={cx - 14} y={cy - 14} width="28" height="28" rx="7" fill={HOUSE_COLOURS[house]} />
-          <rect
-            x={cx - 10}
-            y={cy - 10}
-            width="20"
-            height="20"
-            rx="5"
-            fill="#ffffff"
-            opacity="0.22"
-          />
-          {[0, 1, 2, 3].map((token) => {
-            const seat = seatPoint(house, token);
-            return <circle key={token} cx={seat.x} cy={seat.y} r="4.2" className="ludo-seat" />;
-          })}
-        </g>
+    <div className="ludo-board" role="group" aria-label="Ludo board">
+      {TRACK_CELLS.map((cell, index) => (
+        <div
+          key={`track-${index}`}
+          className={`ludo-cell${SAFE.has(index) ? " is-safe" : ""}`}
+          style={cellBox(cell)}
+        >
+          {SAFE.has(index) && <span className="ludo-star">★</span>}
+        </div>
       ))}
-      {playing.flatMap((house) =>
-        [51, 52, 53, 54, 55].map((progress) => {
-          const point = squarePoint(house, progress);
-          return (
-            <circle
-              key={`lane-${house}-${progress}`}
-              cx={point.x}
-              cy={point.y}
-              r="2.4"
-              fill={HOUSE_COLOURS[house]}
-              opacity="0.7"
-            />
-          );
-        }),
+      {HOME_CELLS.map((cells, house) =>
+        cells.map((cell, index) => (
+          <div
+            key={`home-${house}-${index}`}
+            className="ludo-cell ludo-home"
+            style={{
+              ...cellBox(cell),
+              background: HOUSE_COLOURS[house],
+              opacity: playing.includes(house) ? 1 : 0.35,
+            }}
+          />
+        )),
       )}
-      <polygon points="34,34 66,34 50,50" fill={HOUSE_COLOURS[0]} />
-      <polygon points="66,34 66,66 50,50" fill={HOUSE_COLOURS[1]} />
-      <polygon points="66,66 34,66 50,50" fill={HOUSE_COLOURS[2]} />
-      <polygon points="34,66 34,34 50,50" fill={HOUSE_COLOURS[3]} />
-      {seeds.map(({ house, token, progress }) => {
-        const point = seedPosition(house, token, progress);
+      {YARD_BLOCKS.map((block, house) => (
+        <div
+          key={`yard-${house}`}
+          className="ludo-yard"
+          style={{
+            left: `${((block.col - 1) / 15) * 100}%`,
+            top: `${((block.row - 1) / 15) * 100}%`,
+            background: HOUSE_COLOURS[house],
+            opacity: playing.includes(house) ? 1 : 0.35,
+          }}
+        ></div>
+      ))}
+      {YARD_SEATS.flat().map((seat) => {
+        const centre = cellCentre(seat);
         return (
-          <Pawn
-            key={`pawn-${house}-${token}`}
-            x={point.x}
-            y={point.y}
-            house={house}
-            active={movable.has(`${house}-${token}`)}
-            label={`${HOUSE_NAMES[house]} seed ${token + 1}`}
+          <span
+            key={`seat-${seat.row}-${seat.col}`}
+            className="ludo-seat"
+            style={{ left: `${centre.left}%`, top: `${centre.top}%` }}
+            aria-hidden="true"
           />
         );
       })}
-    </svg>
+      <div className="ludo-centre" style={{ left: "40%", top: "40%" }}>
+        <span className="ludo-tri ludo-tri-top" style={{ background: HOUSE_COLOURS[0] }} />
+        <span className="ludo-tri ludo-tri-right" style={{ background: HOUSE_COLOURS[1] }} />
+        <span className="ludo-tri ludo-tri-bottom" style={{ background: HOUSE_COLOURS[2] }} />
+        <span className="ludo-tri ludo-tri-left" style={{ background: HOUSE_COLOURS[3] }} />
+        <span className="ludo-crown" aria-hidden="true">
+          <Crown size={16} />
+        </span>
+      </div>
+      <div className="ludo-pawns">
+        {seedViews(state).map((view) => {
+          const seedMoves = locked ? [] : (movesBySeed.get(view.key) ?? []);
+          const eligible = seedMoves.length > 0;
+          const isSelected = selected === view.key;
+          const steps = [...new Set(seedMoves.map((move) => stepsOf(state, move)))];
+          return (
+            <div
+              key={view.key}
+              className="ludo-pawn-slot"
+              style={{ left: `${view.left}%`, top: `${view.top}%` }}
+            >
+              <button
+                type="button"
+                className={`ludo-pawn${eligible ? " is-eligible" : ""}`}
+                disabled={!eligible}
+                aria-label={`${HOUSE_NAMES[view.house]} seed ${view.token + 1}${
+                  eligible ? `, move ${steps.join(" or ")}` : ""
+                }`}
+                onClick={() => onSeed(view.key)}
+              >
+                <PawnSvg house={view.house} />
+              </button>
+              {eligible && !isSelected && <span className="ludo-step">+{steps.join("/")}</span>}
+              {isSelected && seedMoves.length > 1 && (
+                <div className="ludo-choices">
+                  {seedMoves.map((move) => (
+                    <button
+                      key={`${move.to}-${move.uses.join()}`}
+                      type="button"
+                      onClick={() => onChoose(move)}
+                    >
+                      +{stepsOf(state, move)}
+                      {capturesOn(state, move) ? " ⚔" : ""}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -211,55 +289,61 @@ function LudoDie({ value }: { value: number }) {
   );
 }
 
-function Scoreboard({ state }: { state: LudoState }) {
+function Hud({ state }: { state: LudoState }) {
   const total = seedsPerSide(state.mode);
   const side = (index: number, name: string) => (
-    <div className={`ludo-chip${state.turn === index && state.winner === null ? " is-turn" : ""}`}>
-      <span className="ludo-chip-dots" aria-hidden="true">
+    <div className={`ludo-hud${state.turn === index && state.winner === null ? " is-turn" : ""}`}>
+      <span className="ludo-hud-name">{name}</span>
+      <span className="ludo-hud-houses">
         {housesFor(state.mode, index).map((house) => (
           <i key={house} style={{ background: HOUSE_COLOURS[house] }} />
         ))}
+        {housesFor(state.mode, index)
+          .map((house) => HOUSE_NAMES[house]?.toUpperCase())
+          .join(" / ")}
       </span>
-      <strong>{name}</strong>
-      <span>
-        {clearedCount(state, index)}/{total}
+      <span className="ludo-hud-score">
+        {clearedCount(state, index)} / {total} finished
       </span>
     </div>
   );
   return (
-    <div className="ludo-scores">
-      {side(0, "You")}
-      {side(1, "Computer")}
+    <div className="ludo-hud-row">
+      {side(0, "YOU")}
+      {side(1, "COMPUTER")}
     </div>
   );
 }
 
-function LudoStatus(state: LudoState, humanTurn: boolean): string {
+function statusText(state: LudoState, humanTurn: boolean): string {
   if (state.winner === 0) return "You won!";
   if (state.winner !== null) return "The computer won.";
-  if (!humanTurn) return "The computer is playing…";
+  if (!humanTurn) return "Computer is playing…";
   const pending = state.pending ?? [];
   if (pending.length === 0) return "Your turn. Roll the dice.";
-  if (pending.length === 2) return `You rolled ${pending[0]} and ${pending[1]}. Choose a move.`;
-  return `Play the remaining ${pending[0]}. Choose a move.`;
+  if (pending.length === 2)
+    return `You rolled ${pending[0]} and ${pending[1]}. Tap a glowing seed.`;
+  return `Play the remaining ${pending[0]}. Tap a glowing seed.`;
 }
 
-export function LudoBoard({
-  mode,
-  onAgain,
-  initial,
-}: {
+type BoardProps = {
   mode: LudoMode;
-  onAgain: () => void;
-  /** A position to start from, used for previews. Normal play starts from a new game. */
+  /** Locked while the table is being picked: the board shows, the moves don't. */
+  locked?: boolean;
+  onPick?: (mode: LudoMode) => void;
+  onAgain?: () => void;
+  /** A position to start from, used for previews. */
   initial?: LudoState;
-}) {
+};
+
+export function LudoBoard({ mode, locked = false, onPick, onAgain, initial }: BoardProps) {
   const [state, setState] = useState<LudoState>(() => initial ?? newLudo(mode));
   const [rolls, setRolls] = useState(0);
   const [note, setNote] = useState<string | null>(null);
-  const humanTurn = state.turn === 0 && state.winner === null;
+  const [selected, setSelected] = useState<string | null>(null);
+  const humanTurn = !locked && state.turn === 0 && state.winner === null;
 
-  useComputerTurn(state.turn === 1 && state.winner === null, [state], () => {
+  useComputerTurn(!locked && state.turn === 1 && state.winner === null, [state], () => {
     const first = die();
     const second = die();
     setState((current) => {
@@ -274,27 +358,77 @@ export function LudoBoard({
     setRolls((count) => count + 1);
     setNote(
       next.turn === 1 && next.winner === null
-        ? "No seed can move with that roll, so your turn passes."
+        ? "No seed can move with that roll. Your turn passes."
         : null,
     );
     setState(next);
   };
+
   const play = (move: LudoMove) => {
     setNote(null);
+    setSelected(null);
     setState((current) => moveLudoSeed(current, move));
   };
 
   const moves = humanTurn ? legalMoves(state) : [];
-  const movable = new Set(moves.map((move) => `${move.house}-${move.token}`));
+  const movesBySeed = new Map<string, LudoMove[]>();
+  for (const move of moves) {
+    const key = `${move.house}-${move.token}`;
+    movesBySeed.set(key, [...(movesBySeed.get(key) ?? []), move]);
+  }
+
+  const onSeed = (key: string) => {
+    const seedMoves = movesBySeed.get(key) ?? [];
+    if (seedMoves.length === 1) play(seedMoves[0]!);
+    else if (seedMoves.length > 1) setSelected((current) => (current === key ? null : key));
+  };
+
   const rolled = state.lastRoll;
+  const finished = state.winner !== null;
   return (
     <section className="ludo-app" aria-label="Ludo">
-      <Scoreboard state={state} />
+      <Hud state={state} />
       <p className={`ludo-status${state.winner === 0 ? " is-win" : ""}`} role="status">
-        {LudoStatus(state, humanTurn)}
+        {locked ? "Pick a table to start" : statusText(state, humanTurn)}
       </p>
-      <LudoBoardSvg state={state} movable={movable} />
-      <div className="ludo-dock">
+      <div className="ludo-board-wrap">
+        <LudoBoardView
+          state={state}
+          locked={locked}
+          movesBySeed={movesBySeed}
+          selected={selected}
+          onSeed={onSeed}
+          onChoose={play}
+        />
+        {locked && (
+          <div className="ludo-modal" role="dialog" aria-label="Choose a table">
+            <div className="ludo-modal-card">
+              <h3>Choose a table</h3>
+              <button type="button" className="ludo-table" onClick={() => onPick?.(1)}>
+                <strong>Single House</strong>
+                <small>4 seeds each. You red, the computer yellow.</small>
+              </button>
+              <button type="button" className="ludo-table" onClick={() => onPick?.(2)}>
+                <strong>Double House</strong>
+                <small>8 seeds each. You red and yellow, the computer green and blue.</small>
+              </button>
+            </div>
+          </div>
+        )}
+        {finished && (
+          <div className="ludo-modal" role="dialog" aria-label="Game over">
+            <div className="ludo-modal-card">
+              <h3>{state.winner === 0 ? "You won!" : "The computer won."}</h3>
+              <p className="ludo-note">
+                You: {clearedCount(state, 0)} / {seedsPerSide(state.mode)} · Computer:{" "}
+                {clearedCount(state, 1)} / {seedsPerSide(state.mode)}
+              </p>
+              <Button onClick={onAgain}>Play again</Button>
+            </div>
+          </div>
+        )}
+      </div>
+      <div className="ludo-tray">
         <div className="ludo-dice">
           {rolled && (
             <>
@@ -305,95 +439,27 @@ export function LudoBoard({
         </div>
         {humanTurn && state.pending === null && (
           <button type="button" className="ludo-roll" onClick={rollYourDice}>
-            Roll the dice
+            Roll dice
           </button>
         )}
         {note && <p className="ludo-note">{note}</p>}
-        {moves.length > 0 && (
-          <div className="ludo-moves" role="group" aria-label="Legal moves">
-            {moves.map((move) => {
-              const copy = moveCopy(state, move);
-              return (
-                <button
-                  key={`${move.house}-${move.token}-${move.to}-${move.uses.join()}`}
-                  type="button"
-                  className="ludo-move"
-                  onClick={() => play(move)}
-                >
-                  <span
-                    className="ludo-move-dot"
-                    aria-hidden="true"
-                    style={{ background: HOUSE_COLOURS[move.house] }}
-                  />
-                  <span className="ludo-move-copy">
-                    <strong>{copy.title}</strong>
-                    <small>{copy.detail}</small>
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        )}
-        {state.winner !== null && (
-          <div className="ludo-end">
-            <Button onClick={onAgain}>Play again</Button>
-          </div>
-        )}
-      </div>
-    </section>
-  );
-}
-
-function PawnRow({ houses }: { houses: readonly number[] }) {
-  return (
-    <svg className="ludo-setup-art" viewBox="0 0 84 52" aria-hidden="true">
-      {houses.map((house, index) => (
-        <Pawn
-          key={`${house}-${index}`}
-          x={14 + index * 17}
-          y={36}
-          house={house}
-          active={false}
-          label=""
-        />
-      ))}
-    </svg>
-  );
-}
-
-function LudoSetup({ onPick }: { onPick: (mode: LudoMode) => void }) {
-  return (
-    <section className="ludo-app" aria-label="Ludo setup">
-      <h3 className="ludo-title">Ludo</h3>
-      <p className="ludo-status">Pick a table</p>
-      <div className="ludo-setup-grid">
-        <button type="button" className="ludo-setup-card" onClick={() => onPick(1)}>
-          <PawnRow houses={[0, 2]} />
-          <span>
-            <strong>Single house</strong>
-            <small>4 seeds each. You red, the computer yellow.</small>
-          </span>
-        </button>
-        <button type="button" className="ludo-setup-card" onClick={() => onPick(2)}>
-          <PawnRow houses={[0, 2, 1, 3]} />
-          <span>
-            <strong>Double house</strong>
-            <small>8 seeds each. You red and yellow, the computer green and blue.</small>
-          </span>
-        </button>
       </div>
     </section>
   );
 }
 
 export function LudoGame() {
-  const [setup, setSetup] = useState<{ mode: LudoMode; round: number } | null>(null);
-  if (!setup) return <LudoSetup onPick={(mode) => setSetup({ mode, round: 0 })} />;
+  const [table, setTable] = useState<{ mode: LudoMode; round: number } | null>(null);
+  if (!table) {
+    return (
+      <LudoBoard key="locked" mode={2} locked onPick={(mode) => setTable({ mode, round: 0 })} />
+    );
+  }
   return (
     <LudoBoard
-      key={`${setup.mode}-${setup.round}`}
-      mode={setup.mode}
-      onAgain={() => setSetup({ mode: setup.mode, round: setup.round + 1 })}
+      key={`${table.mode}-${table.round}`}
+      mode={table.mode}
+      onAgain={() => setTable({ mode: table.mode, round: table.round + 1 })}
     />
   );
 }

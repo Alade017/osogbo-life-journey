@@ -3,8 +3,8 @@
  * - single house: each side has four seeds, one house each (red v yellow);
  * - double house: each side has two opposite houses and eight seeds (red and yellow v green and blue).
  *
- * A seed progresses 0..56 steps: 0 is its starting square, 0..50 run round the 52-square track,
- * 51..55 are its home column and 56 is the centre. A seed that reaches the centre, or that captures
+ * A seed progresses 0..58 steps: 0 is its starting square, 0..51 run round the 52-square track,
+ * 52..57 are its home column and 58 is the centre. A seed that reaches the centre, or that captures
  * an opponent, is cleared. A side wins by clearing all of its seeds.
  *
  * Dice: both dice are always played if any play uses them (mandatory). Each die moves a seed on its
@@ -13,15 +13,20 @@
  */
 
 export const LOOP_LENGTH = 52;
-/** Last track step (0..50) before a seed turns into its home column. */
-export const TRACK_LAST = 50;
+/** Last track step (0..51, the whole loop) before a seed turns into its home column. */
+export const TRACK_LAST = 51;
 /** The centre: the progress of a cleared seed. */
-export const CLEARED = 56;
+export const CLEARED = 58;
 /** A seed in its yard, waiting for a six. */
 export const YARD = -1;
 export const HOUSE_COUNT = 4;
 /** Loop square where each house's step 0 lies (houses 0..3 are red, green, yellow, blue). */
 export const HOUSE_START = [0, 13, 26, 39] as const;
+/** Star squares: each house's start and four mid-track refuges. Seeds here cannot be captured. */
+export const SAFE_SQUARES = [0, 13, 16, 23, 26, 39, 42, 49] as const;
+export function isSafeSquare(square: number) {
+  return (SAFE_SQUARES as readonly number[]).includes(square);
+}
 export const HOUSE_NAMES = ["Red", "Green", "Yellow", "Blue"] as const;
 const SEEDS_PER_HOUSE = 4;
 
@@ -93,6 +98,8 @@ function applySeeds(state: LudoState, move: LudoMove): number[][] {
   seeds[move.house]![move.token] = move.to;
   if (move.to < 0 || move.to > TRACK_LAST) return seeds;
   const square = loopSquare(move.house, move.to);
+  // Star squares are safe: opponents can share them, and nothing is captured there.
+  if (isSafeSquare(square)) return seeds;
   let captured = false;
   for (const house of housesFor(state.mode, 1 - state.turn)) {
     const row = seeds[house];
@@ -222,13 +229,13 @@ export function bestLudoMove(state: LudoState): LudoMove | null {
     if (move.to === CLEARED) value += 10;
     if (move.to >= 0 && move.to <= TRACK_LAST) {
       const square = loopSquare(move.house, move.to);
-      if (rivals.includes(square)) value += 8;
+      if (rivals.includes(square) && !isSafeSquare(square)) value += 8;
       // A rival square 1..6 steps behind can land on this seed next turn.
       const exposed = rivals.some((rival) => {
         const gap = (square - rival + LOOP_LENGTH) % LOOP_LENGTH;
         return gap >= 1 && gap <= 6;
       });
-      if (exposed) value -= 3;
+      if (exposed && !isSafeSquare(square)) value -= 3;
     }
     if (move.from === YARD) value += 4;
     if (move.to > TRACK_LAST && move.to < CLEARED) value += 3;

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   CLEARED,
+  SAFE_SQUARES,
   YARD,
   bestLudoMove,
   legalMoves,
@@ -12,6 +13,7 @@ import {
   type LudoMode,
   type LudoState,
 } from "@/lib/mini-games/ludo";
+import { HOME_CELLS, TRACK_CELLS, seedCell } from "@/components/game/mini-games/ludo-track";
 
 /** A position with the given seed progress: [house, token, progress] edits on a new game. */
 function withSeeds(
@@ -47,7 +49,6 @@ describe("ludo rules: bringing seeds out", () => {
     const state = rollLudo(newLudo(1), 6, 2);
     const moves = legalMoves(state);
     expect(moves.length).toBeGreaterThan(0);
-    // The six must bring a seed out; the two then moves that seed (mandatory play).
     for (const move of moves) {
       expect(move.from).toBe(YARD);
       expect(move.to).toBe(0);
@@ -98,8 +99,8 @@ describe("ludo rules: dice and movement", () => {
   });
 
   it("mandatory play: a die that can be played must be played", () => {
-    // The seed at 54 can take the 2 (to 56) but not the 5, so only the 2 is legal.
-    const state = withSeeds(1, [[0, 0, 54]], 0, [2, 5]);
+    // Two steps from the centre: the 2 finishes it, the 5 cannot be played.
+    const state = withSeeds(1, [[0, 0, CLEARED - 2]], 0, [2, 5]);
     const moves = legalMoves(state);
     expect(moves).toHaveLength(1);
     expect(moves[0]?.uses).toEqual([0]);
@@ -107,11 +108,11 @@ describe("ludo rules: dice and movement", () => {
   });
 
   it("an exact finish: a seed cannot overshoot the centre", () => {
-    const state = withSeeds(1, [[0, 0, 54]], 0, [3, 1]);
+    const state = withSeeds(1, [[0, 0, CLEARED - 2]], 0, [3, 1]);
     const moves = legalMoves(state);
     expect(moves.every((move) => move.to <= CLEARED)).toBe(true);
-    expect(moves.some((move) => move.to === 55 && move.uses[0] === 1)).toBe(true);
-    expect(moves.some((move) => move.to === 57)).toBe(false);
+    expect(moves.some((move) => move.to === CLEARED - 1 && move.uses[0] === 1)).toBe(true);
+    expect(moves.some((move) => move.to > CLEARED)).toBe(false);
   });
 
   it("a single six does not give a bonus turn", () => {
@@ -122,20 +123,20 @@ describe("ludo rules: dice and movement", () => {
   });
 });
 
-describe("ludo rules: capturing", () => {
-  it("landing on an opponent seed sends it back and clears the capturing seed", () => {
-    // Our seed at progress 10 moves 3 to square 13. Yellow's progress 39 is square 13.
+describe("ludo rules: capturing and star squares", () => {
+  it("landing on an unprotected opponent seed sends it back and clears the capturing seed", () => {
+    // Our seed at progress 9 moves 3 to square 12. Yellow's progress 38 is square 12 as well.
     const state = withSeeds(
       1,
       [
-        [0, 0, 10],
-        [2, 0, 39],
+        [0, 0, 9],
+        [2, 0, 38],
       ],
       0,
       [3, 6],
     );
     const move = legalMoves(state).find(
-      (item) => item.house === 0 && item.token === 0 && item.to === 13 && item.uses.join() === "0",
+      (item) => item.house === 0 && item.token === 0 && item.to === 12 && item.uses.join() === "0",
     );
     expect(move).toBeDefined();
     const after = moveLudoSeed(state, move!);
@@ -143,8 +144,8 @@ describe("ludo rules: capturing", () => {
     expect(after.seeds[0]?.[0]).toBe(CLEARED);
   });
 
-  it("there are no safe squares: a start square does not protect a seed", () => {
-    // Square 13 is green's start square, which is a safe square in classic Ludo.
+  it("a star square protects a seed: no capture, and both seeds stay", () => {
+    // Square 13 is green's start, a star square. Yellow's progress 39 is square 13.
     const state = withSeeds(
       1,
       [
@@ -158,11 +159,14 @@ describe("ludo rules: capturing", () => {
       (item) => item.house === 0 && item.token === 0 && item.to === 13,
     );
     expect(move).toBeDefined();
+    const after = moveLudoSeed(state, move!);
+    expect(after.seeds[2]?.[0]).toBe(39);
+    expect(after.seeds[0]?.[0]).toBe(13);
   });
 
   it("captures only on the track, not in an opponent's home column", () => {
-    // Yellow's seed at progress 52 is in its home column. Our seed landing on the same loop
-    // index (26) must not capture it.
+    // Yellow's seed at progress 52 is in its home column. Our seed landing on the same loop index
+    // (square 26, a star) must not capture it.
     const state = withSeeds(
       1,
       [
@@ -194,6 +198,14 @@ describe("ludo rules: capturing", () => {
     const moves = legalMoves(state);
     expect(moves.some((move) => move.token === 2 && move.to === 10)).toBe(true);
   });
+
+  it("there are eight star squares: four starts and four mid-track refuges", () => {
+    expect(SAFE_SQUARES).toHaveLength(8);
+    expect(SAFE_SQUARES).toContain(0);
+    expect(SAFE_SQUARES).toContain(13);
+    expect(SAFE_SQUARES).toContain(26);
+    expect(SAFE_SQUARES).toContain(39);
+  });
 });
 
 describe("ludo rules: winning", () => {
@@ -204,7 +216,7 @@ describe("ludo rules: winning", () => {
         [0, 0, CLEARED],
         [0, 1, CLEARED],
         [0, 2, CLEARED],
-        [0, 3, 55],
+        [0, 3, CLEARED - 1],
       ],
       0,
       [1, 1],
@@ -219,7 +231,7 @@ describe("ludo rules: winning", () => {
     const edits: [number, number, number][] = [];
     for (const house of [0, 2])
       for (const token of [0, 1, 2, 3]) edits.push([house, token, CLEARED]);
-    edits[7] = [2, 3, 55];
+    edits[7] = [2, 3, CLEARED - 1];
     const state = withSeeds(2, edits, 0, [1, 1]);
     const after = moveLudoSeed(state, legalMoves(state)[0]!);
     expect(after.winner).toBe(0);
@@ -229,9 +241,34 @@ describe("ludo rules: winning", () => {
     const edits: [number, number, number][] = [];
     for (const house of [0, 2])
       for (const token of [0, 1, 2, 3]) edits.push([house, token, CLEARED]);
-    edits[7] = [2, 3, 55];
     const state = withSeeds(2, edits.slice(0, 7), 0, [1, 1]);
     expect(state.winner).toBeNull();
+  });
+});
+
+describe("ludo board geometry", () => {
+  it("the 52 track cells form a closed loop with no repeats", () => {
+    expect(TRACK_CELLS).toHaveLength(52);
+    expect(new Set(TRACK_CELLS.map((c) => `${c.row},${c.col}`)).size).toBe(52);
+    for (let i = 0; i < 52; i += 1) {
+      const a = TRACK_CELLS[i]!;
+      const b = TRACK_CELLS[(i + 1) % 52]!;
+      expect(Math.max(Math.abs(a.row - b.row), Math.abs(a.col - b.col))).toBe(1);
+    }
+  });
+
+  it("home stretches never overlap the track", () => {
+    const track = new Set(TRACK_CELLS.map((c) => `${c.row},${c.col}`));
+    for (const cells of HOME_CELLS) {
+      expect(cells).toHaveLength(6);
+      for (const cell of cells) expect(track.has(`${cell.row},${cell.col}`)).toBe(false);
+    }
+  });
+
+  it("a seed's cell follows its progress from yard to centre", () => {
+    expect(seedCell(0, 0, YARD)).toEqual({ row: 2, col: 2 });
+    expect(seedCell(0, 0, 0)).toEqual(TRACK_CELLS[0]);
+    expect(seedCell(0, 0, CLEARED)).toEqual({ row: 8, col: 8 });
   });
 });
 
