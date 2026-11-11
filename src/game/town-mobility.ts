@@ -29,36 +29,43 @@ export function deriveTownMobilityRoutes(
   if (!Number.isFinite(cellSize) || cellSize <= 0 || !Number.isFinite(laneOffset)) return [];
   const rowCount = rows.length;
   const columnCount = Math.max(0, ...rows.map((row) => row.length));
-  const horizontalRoadRows = rows.flatMap((row, z) =>
-    row.length > 0 && Array.from(row).every((tile) => tile === "r") ? [z] : [],
-  );
-  const verticalRoadColumns = Array.from({ length: columnCount }, (_, x) => x).filter(
-    (x) => rows.length > 1 && rows.every((row) => row[x] === "r"),
-  );
-
+  const isRoad = (x: number, z: number) => rows[z]?.[x] === "r";
+  const toWorld = (x: number, z: number): [number, number] => [
+    (x - (columnCount - 1) / 2) * cellSize,
+    (z - (rowCount - 1) / 2) * cellSize,
+  ];
   const routes: TownMobilityRoute[] = [];
-  for (let rowIndex = 0; rowIndex < horizontalRoadRows.length; rowIndex += 1) {
-    for (let nextRowIndex = rowIndex + 1; nextRowIndex < Math.min(horizontalRoadRows.length, rowIndex + 2); nextRowIndex += 1) {
-      const top = horizontalRoadRows[rowIndex]!;
-      const bottom = horizontalRoadRows[nextRowIndex]!;
-      for (let columnIndex = 0; columnIndex < verticalRoadColumns.length - 1; columnIndex += 1) {
-        for (let nextColumnIndex = columnIndex + 1; nextColumnIndex < Math.min(verticalRoadColumns.length, columnIndex + 2); nextColumnIndex += 1) {
-          const left = verticalRoadColumns[columnIndex]!;
-          const right = verticalRoadColumns[nextColumnIndex]!;
-          const verticalSidesAreRoads = rows.slice(top, bottom + 1).every(
-            (row) => row[left] === "r" && row[right] === "r",
-          );
-          if (!verticalSidesAreRoads) continue;
 
-          const toWorld = (x: number, z: number): [number, number] => [
-            (x - (columnCount - 1) / 2) * cellSize,
-            (z - (rowCount - 1) / 2) * cellSize,
-          ];
+  // Find closed rectangles from contiguous road edges, rather than requiring
+  // an avenue to span the entire map or a road to span every map row.
+  for (let top = 0; top < rowCount - 2; top += 1) {
+    for (let bottom = top + 2; bottom < rowCount; bottom += 1) {
+      for (let left = 0; left < columnCount - 2; left += 1) {
+        for (let right = left + 2; right < columnCount; right += 1) {
+          const perimeterIsRoad = (
+            Array.from({ length: right - left + 1 }, (_, i) => left + i)
+              .every((x) => isRoad(x, top) && isRoad(x, bottom))
+            && Array.from({ length: bottom - top + 1 }, (_, i) => top + i)
+              .every((z) => isRoad(left, z) && isRoad(right, z))
+          );
+          if (!perimeterIsRoad) continue;
+
+          // Keep only adjacent road-grid blocks: an uninterrupted internal
+          // road edge means this rectangle should be represented by its
+          // smaller neighbouring blocks instead.
+          const splitHorizontally = Array.from({ length: bottom - top - 1 }, (_, i) => top + i + 1)
+            .some((z) => Array.from({ length: right - left + 1 }, (_, i) => left + i).every((x) => isRoad(x, z)));
+          if (splitHorizontally) continue;
+          const splitVertically = Array.from({ length: right - left - 1 }, (_, i) => left + i + 1)
+            .some((x) => Array.from({ length: bottom - top + 1 }, (_, i) => top + i).every((z) => isRoad(x, z)));
+          if (splitVertically) continue;
+
+          const inset = laneOffset / cellSize;
           routes.push([
-            toWorld(left + laneOffset / cellSize, top + laneOffset / cellSize),
-            toWorld(right - laneOffset / cellSize, top + laneOffset / cellSize),
-            toWorld(right - laneOffset / cellSize, bottom - laneOffset / cellSize),
-            toWorld(left + laneOffset / cellSize, bottom - laneOffset / cellSize),
+            toWorld(left + inset, top + inset),
+            toWorld(right - inset, top + inset),
+            toWorld(right - inset, bottom - inset),
+            toWorld(left + inset, bottom - inset),
           ]);
         }
       }
@@ -196,7 +203,7 @@ export function deriveTownPedestrianCornerRoutes(
   if (!Number.isFinite(cellSize) || cellSize <= 0 || !Number.isFinite(sidewalkWidth) || sidewalkWidth < 0) return [];
   const columnCount = Math.max(0, ...rows.map((row) => row.length));
   const blocked = new Set(blockedCells.map(([x, z]) => `${x},${z}`));
-  const offset = cellSize / 2 + sidewalkWidth / 2;
+  const offset = cellSize / 2 - sidewalkWidth / 2;
   const toWorld = (x: number, z: number): [number, number] => [
     (x - (columnCount - 1) / 2) * cellSize,
     (z - (rows.length - 1) / 2) * cellSize,
@@ -206,8 +213,8 @@ export function deriveTownPedestrianCornerRoutes(
   rows.forEach((row, z) => {
     Array.from(row).forEach((tile, x) => {
       if (tile !== "g" || blocked.has(`${x},${z}`)) return;
-      for (const dx of [-1, 1] as const) {
-        for (const dz of [-1, 1] as const) {
+      for (const dz of [-1, 1] as const) {
+        for (const dx of [-1, 1] as const) {
           const horizontalRoad = [x + dx, z] as const;
           const verticalRoad = [x, z + dz] as const;
           if (rows[horizontalRoad[1]]?.[horizontalRoad[0]] !== "r") continue;
