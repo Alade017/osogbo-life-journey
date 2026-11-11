@@ -41,6 +41,12 @@ import { MovingPedestrians3D } from "./MovingPedestrians3D";
 import { FunctionalStreetLights3D } from "./FunctionalStreetLights3D";
 import { RoadsideInfrastructure3D } from "./RoadsideInfrastructure3D";
 import { LockedPlaces3D, type LockedPlace } from "./LockedPlaces3D";
+import {
+  deriveTownMobilityRoutes,
+  deriveTownPedestrianCornerRoutes,
+  deriveTownPedestrianRoutes,
+  stitchTownPedestrianRoutes,
+} from "@/game/town-mobility";
 
 type TownMapPlace = {
   id: string;
@@ -196,6 +202,28 @@ export function R3FTownSurface(props: Props) {
   const gesture = useRef({ x: 0, y: 0, moved: false });
   const clockTime = useRealOrGameClock();
   const { isNight } = daylightFor(clockTime.hour, clockTime.minute);
+  // Derive moving traffic and pedestrian paths from the same authored town grid
+  // that renders the roads and sidewalks; never invent separate rectangular routes.
+  const trafficRoutes = useMemo(
+    () => deriveTownMobilityRoutes(town.grid.rows, cell, cell * 0.22),
+    [],
+  );
+  const pedestrianRoutes = useMemo(() => {
+    const blockedCells = [
+      ...town.grid.buildings.flatMap((building) => [
+        [building.x, building.z] as const,
+        [building.x + 1, building.z] as const,
+        [building.x, building.z + 1] as const,
+        [building.x + 1, building.z + 1] as const,
+      ]),
+      ...town.grid.waterCells,
+      ...town.grid.plotCells,
+    ];
+    return stitchTownPedestrianRoutes([
+      ...deriveTownPedestrianRoutes(town.grid.rows, cell, blockedCells),
+      ...deriveTownPedestrianCornerRoutes(town.grid.rows, cell, blockedCells),
+    ]);
+  }, []);
   const [selectedTarget, setSelectedTarget] = useState<{
     id: string;
     position: [number, number, number];
@@ -1068,8 +1096,8 @@ export function R3FTownSurface(props: Props) {
               detailed
             />
           ))}
-          <MovingTraffic3D cellSize={cell} gridCols={gridCols} gridRows={gridRows} />
-          <MovingPedestrians3D cellSize={cell} gridCols={gridCols} gridRows={gridRows} />
+          <MovingTraffic3D paths={trafficRoutes} />
+          <MovingPedestrians3D paths={pedestrianRoutes} />
           <LockedPlaces3D
             cellSize={cell}
             gridCols={gridCols}
