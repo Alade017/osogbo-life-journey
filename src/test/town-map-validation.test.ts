@@ -9,7 +9,7 @@ describe("authored town map validation", () => {
 
   it("detects grid dimension and terrain-overlay errors", () => {
     const invalid = JSON.parse(JSON.stringify(town)) as typeof town;
-    invalid.grid.rows[0] = invalid.grid.rows[0] + "g";
+    invalid.grid.rows[0] = (invalid.grid.rows[0] ?? "") + "g";
     invalid.grid.waterCells.push([6, 0]);
 
     const errors = validateTownMapData(invalid);
