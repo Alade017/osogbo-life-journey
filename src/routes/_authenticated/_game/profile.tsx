@@ -1,17 +1,17 @@
-import { useState } from "react";
 import { useMissions } from "@/hooks/use-missions";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Award,
-  BriefcaseBusiness,
-  Gauge,
+  Footprints,
+  Handshake,
   House,
-  MapPin,
+  Medal,
+  Route as RouteIcon,
   Settings2,
   Shirt,
-  Smile,
+  Star,
   Users,
+  type LucideIcon,
 } from "lucide-react";
 import { q, formatNaira, xpProgress } from "@/lib/game";
 import { pageMeta } from "@/lib/seo";
@@ -19,19 +19,26 @@ import { GameDataUnavailable, LoadingState } from "@/components/game/ui";
 import { CharacterPreview } from "@/components/3d/CharacterPreview";
 import type { Appearance } from "@/game/avatar-appearance";
 import { playerStateFromRows } from "@/lib/player-state";
-import { normalizeEquippedItems } from "@/lib/equipment-service";
+import { EQUIPMENT_SLOTS, normalizeEquippedItems } from "@/lib/equipment-service";
 import { moodLabel } from "@/lib/profile-service";
+import { profileBadges, type BadgeId } from "@/lib/profile-badges";
 import "@/components/game/profile-inventory.css";
 
 export const Route = createFileRoute("/_authenticated/_game/profile")({
-  head: () => pageMeta("Player Profile", "Your OSUN LIFE character, outfit and progress."),
+  head: () => pageMeta("Player Profile", "Your OSUN LIFE character, outfit and badges."),
   component: ProfilePage,
 });
 
-type ProfileTab = "life" | "milestones";
+const BADGE_ICONS: Record<BadgeId, LucideIcon> = {
+  "first-steps": Footprints,
+  "mission-runner": Medal,
+  trailblazer: RouteIcon,
+  "rising-star": Star,
+  respected: Handshake,
+  "dressed-up": Shirt,
+};
 
 export function ProfilePage() {
-  const [tab, setTab] = useState<ProfileTab>("life");
   const characterQuery = useQuery(q.character());
   const walletQuery = useQuery(q.wallet());
   const { data: jobs } = useQuery(q.jobs());
@@ -51,22 +58,28 @@ export function ProfilePage() {
     return <LoadingState />;
 
   const c = characterQuery.data;
+  const normalizedEquipment = normalizeEquippedItems(equipment);
   const player = playerStateFromRows({
     character: c,
     wallet: walletQuery.data,
     location: locations?.find((item) => item.id === c.current_location_id),
-    equipment: normalizeEquippedItems(equipment),
+    equipment: normalizedEquipment,
   });
   const xp = xpProgress(player.experience);
   const xpPercent = xp.needed > 0 ? Math.min(100, Math.round((xp.into / xp.needed) * 100)) : 0;
   const occupation =
     jobs?.find((job) => job.slug === c.occupation_preference)?.name ?? "Exploring options";
-  const milestones = (missions ?? [])
-    .filter((mission) => mission.completed_at || mission.claimed_at)
-    .sort((a, b) =>
-      String(b.completed_at ?? b.claimed_at).localeCompare(String(a.completed_at ?? a.claimed_at)),
-    )
-    .slice(0, 3);
+  const missionsCompleted = (missions ?? []).filter(
+    (mission) => mission.completed_at || mission.claimed_at,
+  ).length;
+  const badges = profileBadges({
+    missionsCompleted,
+    level: player.level,
+    reputation: player.reputation,
+    outfitWorn: normalizedEquipment.length,
+    outfitSlots: EQUIPMENT_SLOTS.length,
+  });
+  const earned = badges.filter((badge) => badge.earned).length;
   const mood = moodLabel(c.happiness, c.stress);
 
   return (
@@ -77,14 +90,6 @@ export function ProfilePage() {
         <p className="pi-sub">
           {occupation} · {player.location?.name ?? "Osogbo"}
         </p>
-        <div className="pi-overview" aria-label="Character summary">
-          <span>
-            <strong>Level {player.level}</strong> Character
-          </span>
-          <span>
-            <strong>{xpPercent}%</strong> To next level
-          </span>
-        </div>
       </header>
 
       <div className="pi-hero">
@@ -149,86 +154,46 @@ export function ProfilePage() {
               <small className="pi-stat-hint">Around Osogbo</small>
             </article>
           </section>
-
-          <div className="pi-segment" role="tablist" aria-label="Profile sections">
-            {(["life", "milestones"] as const).map((id) => (
-              <button
-                key={id}
-                type="button"
-                role="tab"
-                id={`profile-tab-${id}`}
-                aria-selected={tab === id}
-                aria-controls="profile-tabpanel"
-                onClick={() => setTab(id)}
-              >
-                {id === "life" ? "Your life" : "Milestones"}
-              </button>
-            ))}
-          </div>
-
-          <section
-            id="profile-tabpanel"
-            role="tabpanel"
-            aria-labelledby={`profile-tab-${tab}`}
-            className="pi-panel"
-          >
-            {tab === "life" ? (
-              <ul className="pi-rows">
-                <li>
-                  <span>
-                    <BriefcaseBusiness size={17} aria-hidden="true" /> Occupation
-                  </span>
-                  <strong>{occupation}</strong>
-                </li>
-                <li>
-                  <span>
-                    <MapPin size={17} aria-hidden="true" /> District
-                  </span>
-                  <strong>{player.location?.name ?? "Osogbo"}</strong>
-                </li>
-                <li>
-                  <span>
-                    <Award size={17} aria-hidden="true" /> Reputation
-                  </span>
-                  <strong>{player.reputation}/100</strong>
-                </li>
-                <li>
-                  <span>
-                    <Gauge size={17} aria-hidden="true" /> Energy
-                  </span>
-                  <strong>{player.energy}%</strong>
-                </li>
-                <li>
-                  <span>
-                    <Smile size={17} aria-hidden="true" /> Happiness
-                  </span>
-                  <strong>{c.happiness}%</strong>
-                </li>
-              </ul>
-            ) : milestones.length ? (
-              <ol className="pi-timeline">
-                {milestones.map((milestone) => (
-                  <li key={milestone.id}>
-                    <span className="pi-timeline-dot" aria-hidden="true">
-                      <Award size={17} />
-                    </span>
-                    <span>
-                      <strong>Mission completed</strong>
-                      <small>
-                        {new Date(
-                          milestone.completed_at ?? milestone.claimed_at!,
-                        ).toLocaleDateString("en-NG")}
-                      </small>
-                    </span>
-                  </li>
-                ))}
-              </ol>
-            ) : (
-              <p className="pi-note">Complete missions to build your story here.</p>
-            )}
-          </section>
         </div>
       </div>
+
+      <section className="pi-section" aria-labelledby="profile-badges-title">
+        <div className="pi-section-heading">
+          <div>
+            <p className="pi-eyebrow">Achievements</p>
+            <h2 id="profile-badges-title">Badges</h2>
+          </div>
+          <span>
+            {earned} / {badges.length} earned
+          </span>
+        </div>
+        <ul className="pi-badges">
+          {badges.map((badge) => {
+            const Icon = BADGE_ICONS[badge.id];
+            return (
+              <li key={badge.id} className={`pi-badge${badge.earned ? " is-earned" : ""}`}>
+                <span className="pi-badge-icon" aria-hidden="true">
+                  <Icon size={22} />
+                </span>
+                <strong>{badge.name}</strong>
+                <small>{badge.description}</small>
+                {badge.earned ? (
+                  <span className="pi-badge-state">Earned</span>
+                ) : (
+                  <span className="pi-badge-progress">
+                    <span className="pi-badge-bar" aria-hidden="true">
+                      <span style={{ width: `${(badge.progress / badge.target) * 100}%` }} />
+                    </span>
+                    <span>
+                      {badge.progress} / {badge.target}
+                    </span>
+                  </span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </section>
 
       <nav className="pi-quick" aria-label="Profile actions">
         <button

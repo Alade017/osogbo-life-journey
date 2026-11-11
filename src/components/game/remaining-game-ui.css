@@ -83,9 +83,7 @@
   box-shadow: 0 5px 15px color-mix(in srgb, var(--brand-ink) 9%, transparent);
 }
 
-.city-game.dashboard-ui-refresh
-  .game-screen-restyle
-  :is(.profile-hero, .profile-story, .profile-milestones) {
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(.profile-hero, .profile-story) {
   border-radius: 24px;
   box-shadow: var(--screen-shadow-soft);
 }

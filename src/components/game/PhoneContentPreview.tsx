@@ -83,7 +83,7 @@ const previews: Record<
     icon: CircleUserRound,
     title: "Profile",
     subtitle: "Your character journey",
-    rows: ["Skills and milestones", "Appearance", "Account details"],
+    rows: ["Skills and badges", "Appearance", "Account details"],
   },
   Businesses: {
     icon: Building2,
@@ -95,7 +95,7 @@ const previews: Record<
     icon: Target,
     title: "Missions",
     subtitle: "Goals for today",
-    rows: ["Active missions", "Rewards ready to claim", "Completed milestones"],
+    rows: ["Active missions", "Rewards ready to claim", "Earned badges"],
   },
   Notifications: {
     icon: Bell,
