@@ -147,8 +147,7 @@ function PedestrianCharacter({
   const [isHovered, setIsHovered] = useState(false);
 
   useEffect(() => () => {
-    junctionScheduler.release(npc.startJunctionId ?? "", npc.id);
-    junctionScheduler.release(npc.endJunctionId ?? "", npc.id);
+    junctionScheduler.cancelPedestrian(npc.id);
   }, [junctionScheduler, npc.id, npc.startJunctionId, npc.endJunctionId]);
 
   useFrame(({ clock }, delta) => {
