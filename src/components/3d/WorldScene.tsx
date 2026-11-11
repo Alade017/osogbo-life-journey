@@ -481,9 +481,11 @@ export function WorldWasteBins({
 export function WorldBusStops({
   positions,
   size,
+  onSelectTransit,
 }: {
   positions: readonly [number, number][];
   size: number;
+  onSelectTransit: () => void;
 }) {
   const roofHeight = size * 0.95;
   const shelterWidth = size * 1.15;
@@ -492,7 +494,20 @@ export function WorldBusStops({
   return (
     <>
       {positions.map(([x, z], index) => (
-        <group key={`bus-stop-${index}`} position={[x, 0, z]}>
+        <group
+          key={`bus-stop-${index}`}
+          position={[x, 0, z]}
+          onClick={(event) => {
+            event.stopPropagation();
+            onSelectTransit();
+          }}
+          onPointerEnter={() => {
+            document.body.style.cursor = "pointer";
+          }}
+          onPointerLeave={() => {
+            document.body.style.cursor = "";
+          }}
+        >
           {/* Shelter roof */}
           <mesh position={[0, roofHeight, 0]} castShadow>
             <boxGeometry args={[shelterWidth, size * 0.12, shelterDepth]} />
@@ -540,6 +555,11 @@ export function WorldBusStops({
             <boxGeometry args={[size * 0.3, size * 0.24, size * 0.07]} />
             <WorldMaterial tone="sign" />
           </mesh>
+          <CanvasLabel
+            position={[shelterWidth * 0.58, roofHeight * 0.88, shelterDepth * 0.15 + size * 0.04]}
+            fontSize={size * 0.085}
+            text="BUS"
+          />
         </group>
       ))}
     </>
