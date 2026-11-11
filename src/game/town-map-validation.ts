@@ -156,6 +156,10 @@ export function validateTownMapData(data: TownMapValidationInput): string[] {
       }
       if (reservedCells.has(key)) errors.push(`Map cell ${key} is reserved more than once.`);
       reservedCells.add(key);
+      const building = data.grid.buildings.find((item) =>
+        x >= item.x && x <= item.x + 1 && z >= item.z && z <= item.z + 1,
+      );
+      if (building) errors.push(`${kind} cell ${key} overlaps building "${building.placeId}".`);
       if (grassSymbol && rows[z]?.[x] !== grassSymbol) {
         errors.push(`${kind} cell ${key} must be placed on a grass tile, not a road or another terrain tile.`);
       }
