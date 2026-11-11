@@ -1,139 +1,243 @@
 /**
- * Ludo for 2 to 4 players. Each player has four tokens. A six brings a token out and gives another
- * roll. Landing on an opponent on a shared square sends it back, except on safe squares. A token
- * finishes by reaching the centre exactly. Pure: no React, no network.
+ * Ludo rules for one player against the computer, in two setups:
+ * - single house: each side has four seeds, one house each (red v yellow);
+ * - double house: each side has two opposite houses and eight seeds (red and yellow v green and blue).
+ *
+ * A seed progresses 0..56 steps: 0 is its starting square, 0..50 run round the 52-square track,
+ * 51..55 are its home column and 56 is the centre. A seed that reaches the centre, or that captures
+ * an opponent, is cleared. A side wins by clearing all of its seeds.
+ *
+ * Dice: both dice are always played if any play uses them (mandatory). Each die moves a seed on its
+ * own, or both dice together move one seed. A seed leaves the yard only on a six. A roll of 6-6
+ * gives a bonus turn. Pure: no React, no network.
  */
+
 export const LOOP_LENGTH = 52;
-/** Progress: -1 in base, 0..50 on the shared loop, 51..56 home lane, 57 finished. */
-export const BASE = -1;
-export const FINISHED = 57;
-const LOOP_STEPS = 51;
-/** Fixed safe squares on the loop: the start squares and the star squares. */
-const SAFE_SQUARES = new Set([0, 8, 13, 21, 26, 34, 39, 47]);
+/** Last track step (0..50) before a seed turns into its home column. */
+export const TRACK_LAST = 50;
+/** The centre: the progress of a cleared seed. */
+export const CLEARED = 56;
+/** A seed in its yard, waiting for a six. */
+export const YARD = -1;
+export const HOUSE_COUNT = 4;
+/** Loop square where each house's step 0 lies (houses 0..3 are red, green, yellow, blue). */
+export const HOUSE_START = [0, 13, 26, 39] as const;
+export const HOUSE_NAMES = ["Red", "Green", "Yellow", "Blue"] as const;
+const SEEDS_PER_HOUSE = 4;
+
+export type LudoMode = 1 | 2;
 
 export type LudoState = {
-  playerCount: number;
-  tokens: number[][];
+  mode: LudoMode;
+  /** Progress of every seed: [house][token], YARD, 0..55 on the path, or CLEARED. */
+  seeds: number[][];
+  /** Side to move: 0 is the player, 1 is the computer. */
   turn: number;
-  dice: number | null;
+  /** Dice still to be played this turn; null while the side is waiting to roll. */
+  pending: number[] | null;
+  lastRoll: [number, number] | null;
   winner: number | null;
 };
 
-function tokenAt(tokens: readonly (readonly number[])[], player: number, token: number): number {
-  return tokens[player]?.[token] ?? BASE;
+export type LudoMove = {
+  house: number;
+  token: number;
+  from: number;
+  to: number;
+  /** Indices into the pending dice this move uses: one for a single die, both for a combined move. */
+  uses: number[];
+};
+
+/** The houses a side controls in the chosen setup. */
+export function housesFor(mode: LudoMode, side: number): readonly number[] {
+  if (mode === 1) return side === 0 ? [0] : [2];
+  return side === 0 ? [0, 2] : [1, 3];
 }
 
-export function newLudo(playerCount: number): LudoState {
-  const count = Math.min(4, Math.max(2, playerCount));
+export function seedsPerSide(mode: LudoMode) {
+  return housesFor(mode, 0).length * SEEDS_PER_HOUSE;
+}
+
+export function newLudo(mode: LudoMode = 1): LudoState {
   return {
-    playerCount: count,
-    tokens: Array.from({ length: count }, () => [BASE, BASE, BASE, BASE]),
+    mode,
+    seeds: Array.from({ length: HOUSE_COUNT }, () => Array(SEEDS_PER_HOUSE).fill(YARD) as number[]),
     turn: 0,
-    dice: null,
+    pending: null,
+    lastRoll: null,
     winner: null,
   };
 }
 
-/** Absolute loop square for a player's token progress (0..50). */
-export function startOffset(player: number, playerCount: number) {
-  return Math.round((player * LOOP_LENGTH) / playerCount);
+/** The loop square a seed stands on, for progress 0..50. */
+export function loopSquare(house: number, progress: number) {
+  return (HOUSE_START[house]! + progress) % LOOP_LENGTH;
 }
 
-export function absoluteSquare(player: number, progress: number, playerCount: number) {
-  return (startOffset(player, playerCount) + progress) % LOOP_LENGTH;
-}
-
-export function isSafeSquare(square: number) {
-  return SAFE_SQUARES.has(square);
-}
-
-/** Token indices the player may move with this die value. */
-export function legalTokenMoves(state: LudoState, dice: number): number[] {
-  if (state.winner !== null) return [];
-  return (state.tokens[state.turn] ?? [])
-    .map((progress, token) => ({ progress, token }))
-    .filter(({ progress }) => {
-      if (progress === FINISHED) return false;
-      if (progress === BASE) return dice === 6;
-      return progress + dice <= FINISHED;
-    })
-    .map(({ token }) => token);
-}
-
-export function rollLudo(state: LudoState, roll: number): LudoState {
-  if (state.winner !== null || state.dice !== null) return state;
-  const dice = Math.min(6, Math.max(1, Math.floor(roll)));
-  const next = { ...state, dice };
-  if (legalTokenMoves(next, dice).length === 0) {
-    return { ...next, dice: null, turn: (state.turn + 1) % state.playerCount };
+function winnerOf(state: LudoState): number | null {
+  for (let side = 0; side < 2; side += 1) {
+    const cleared = housesFor(state.mode, side).every((house) =>
+      (state.seeds[house] ?? []).every((progress) => progress === CLEARED),
+    );
+    if (cleared) return side;
   }
-  return next;
+  return null;
 }
 
-/** Moves a token by the rolled die. Returns the same state if the move is not legal. */
-export function moveLudoToken(state: LudoState, token: number): LudoState {
-  if (state.dice === null || !legalTokenMoves(state, state.dice).includes(token)) return state;
-  const dice = state.dice;
-  const tokens = state.tokens.map((row) => [...row]);
-  const player = state.turn;
-  const current = tokenAt(tokens, player, token);
-  const progress = current === BASE ? 0 : current + dice;
-  const playerTokens = tokens[player];
-  if (playerTokens) playerTokens[token] = progress;
-
-  if (progress <= 50 && !isSafeSquare(absoluteSquare(player, progress, state.playerCount))) {
-    const square = absoluteSquare(player, progress, state.playerCount);
-    tokens.forEach((others, other) => {
-      if (other === player) return;
-      others.forEach((otherProgress, otherToken) => {
-        if (
-          otherProgress >= 0 &&
-          otherProgress <= 50 &&
-          absoluteSquare(other, otherProgress, state.playerCount) === square
-        ) {
-          others[otherToken] = BASE;
-        }
-      });
+/**
+ * The seeds after a move: the mover's seed lands, and any opponent seed on that loop square goes
+ * back to its yard. The mover's seed is then cleared, so a capture scores the seed that made it.
+ */
+function applySeeds(state: LudoState, move: LudoMove): number[][] {
+  const seeds = state.seeds.map((row) => [...row]);
+  seeds[move.house]![move.token] = move.to;
+  if (move.to < 0 || move.to > TRACK_LAST) return seeds;
+  const square = loopSquare(move.house, move.to);
+  let captured = false;
+  for (const house of housesFor(state.mode, 1 - state.turn)) {
+    const row = seeds[house];
+    if (!row) continue;
+    row.forEach((progress, token) => {
+      if (progress >= 0 && progress <= TRACK_LAST && loopSquare(house, progress) === square) {
+        row[token] = YARD;
+        captured = true;
+      }
     });
   }
-
-  const finished = (tokens[player] ?? []).every((value) => value === FINISHED);
-  if (finished) return { ...state, tokens, dice: null, winner: player };
-  const extraTurn = dice === 6;
-  return {
-    ...state,
-    tokens,
-    dice: null,
-    turn: extraTurn ? player : (player + 1) % state.playerCount,
-  };
+  // The capturing seed is removed from the board and scored.
+  if (captured) seeds[move.house]![move.token] = CLEARED;
+  return seeds;
 }
 
-/** Computer choice: finish, capture, leave base, then the furthest token. */
-export function bestLudoToken(state: LudoState): number | null {
-  if (state.dice === null) return null;
-  const options = legalTokenMoves(state, state.dice);
-  if (!options.length) return null;
-  const value = (token: number) => {
-    const progress = tokenAt(state.tokens, state.turn, token);
-    const next = progress === BASE ? 0 : progress + (state.dice ?? 0);
-    let score = 0;
-    if (next === FINISHED) score += 10;
-    if (progress === BASE) score += 4;
-    if (next <= 50 && !isSafeSquare(absoluteSquare(state.turn, next, state.playerCount))) {
-      const square = absoluteSquare(state.turn, next, state.playerCount);
-      const captures = state.tokens.some(
-        (others, other) =>
-          other !== state.turn &&
-          others.some(
-            (value) =>
-              value >= 0 &&
-              value <= 50 &&
-              absoluteSquare(other, value, state.playerCount) === square,
-          ),
-      );
-      if (captures) score += 6;
+/** Every move the dice allow for the side to move, before the mandatory-play filter. */
+function candidateMoves(state: LudoState, pending: readonly number[]): LudoMove[] {
+  const moves: LudoMove[] = [];
+  for (const house of housesFor(state.mode, state.turn)) {
+    (state.seeds[house] ?? []).forEach((from, token) => {
+      if (from === CLEARED) return;
+      pending.forEach((die, index) => {
+        if (from === YARD) {
+          if (die === 6) moves.push({ house, token, from, to: 0, uses: [index] });
+          return;
+        }
+        if (from + die <= CLEARED) {
+          moves.push({ house, token, from, to: from + die, uses: [index] });
+        }
+      });
+      // Both dice on one seed: it moves their sum and lands once, at the end.
+      if (from !== YARD && pending.length === 2) {
+        const sum = (pending[0] ?? 0) + (pending[1] ?? 0);
+        if (from + sum <= CLEARED) {
+          moves.push({ house, token, from, to: from + sum, uses: [0, 1] });
+        }
+      }
+    });
+  }
+  return moves;
+}
+
+/** The most dice that can still be played from this position. */
+function playable(state: LudoState, pending: readonly number[]): number {
+  if (pending.length === 0) return 0;
+  let best = 0;
+  for (const move of candidateMoves(state, pending)) {
+    const rest = pending.filter((_, index) => !move.uses.includes(index));
+    const next = { ...state, seeds: applySeeds(state, move) };
+    best = Math.max(best, move.uses.length + playable(next, rest));
+  }
+  return best;
+}
+
+export function sameMove(a: LudoMove, b: LudoMove) {
+  return (
+    a.house === b.house && a.token === b.token && a.to === b.to && a.uses.join() === b.uses.join()
+  );
+}
+
+/**
+ * The moves the side to move may make now. Mandatory play: only moves that use the most dice are
+ * offered, so a die is never skipped when it could be played.
+ */
+export function legalMoves(state: LudoState): LudoMove[] {
+  if (state.winner !== null || state.pending === null || state.pending.length === 0) return [];
+  const pending = state.pending;
+  const scored = candidateMoves(state, pending).map((move) => {
+    const rest = pending.filter((_, index) => !move.uses.includes(index));
+    const next = { ...state, seeds: applySeeds(state, move) };
+    return { move, score: move.uses.length + playable(next, rest) };
+  });
+  const best = Math.max(0, ...scored.map((entry) => entry.score));
+  if (best === 0) return [];
+  const seen = new Set<string>();
+  const moves: LudoMove[] = [];
+  for (const { move, score } of scored) {
+    if (score !== best) continue;
+    // Two sixes bring out two seeds the same way, so keep one of each.
+    const key = `${move.house}-${move.token}-${move.to}-${move.uses.map((i) => pending[i]).join()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    moves.push(move);
+  }
+  return moves;
+}
+
+/** Ends the turn once no dice are left or none can be played; a 6-6 keeps the same side on. */
+function settle(state: LudoState): LudoState {
+  const winner = winnerOf(state);
+  if (winner !== null) return { ...state, winner, pending: null };
+  if (state.pending !== null && state.pending.length > 0 && legalMoves(state).length > 0) {
+    return state;
+  }
+  const bonus = state.lastRoll !== null && state.lastRoll[0] === 6 && state.lastRoll[1] === 6;
+  return { ...state, pending: null, turn: bonus ? state.turn : 1 - state.turn };
+}
+
+/** Rolls the two dice for the side to move. A roll with no legal play passes the turn. */
+export function rollLudo(state: LudoState, first: number, second: number): LudoState {
+  if (state.winner !== null || state.pending !== null) return state;
+  const a = Math.min(6, Math.max(1, Math.floor(first)));
+  const b = Math.min(6, Math.max(1, Math.floor(second)));
+  return settle({ ...state, pending: [a, b], lastRoll: [a, b] });
+}
+
+/** Plays one legal move. Returns the same state if the move is not one the dice allow. */
+export function moveLudoSeed(state: LudoState, move: LudoMove): LudoState {
+  if (!legalMoves(state).some((legal) => sameMove(legal, move))) return state;
+  const pending = (state.pending ?? []).filter((_, index) => !move.uses.includes(index));
+  return settle({ ...state, seeds: applySeeds(state, move), pending });
+}
+
+/** Computer choice: clear a seed, capture, bring one out, reach the home column, and avoid danger. */
+export function bestLudoMove(state: LudoState): LudoMove | null {
+  const moves = legalMoves(state);
+  if (moves.length === 0) return null;
+  const rivals: number[] = [];
+  for (const house of housesFor(state.mode, 1 - state.turn)) {
+    (state.seeds[house] ?? []).forEach((progress) => {
+      if (progress >= 0 && progress <= TRACK_LAST) rivals.push(loopSquare(house, progress));
+    });
+  }
+  const score = (move: LudoMove) => {
+    let value = move.to / 100;
+    if (move.to === CLEARED) value += 10;
+    if (move.to >= 0 && move.to <= TRACK_LAST) {
+      const square = loopSquare(move.house, move.to);
+      if (rivals.includes(square)) value += 8;
+      // A rival square 1..6 steps behind can land on this seed next turn.
+      const exposed = rivals.some((rival) => {
+        const gap = (square - rival + LOOP_LENGTH) % LOOP_LENGTH;
+        return gap >= 1 && gap <= 6;
+      });
+      if (exposed) value -= 3;
     }
-    return score + (progress === BASE ? 0 : progress) / 100;
+    if (move.from === YARD) value += 4;
+    if (move.to > TRACK_LAST && move.to < CLEARED) value += 3;
+    return value;
   };
-  return options.reduce((best, token) => (value(token) > value(best) ? token : best));
+  return moves.reduce((best, move) => (score(move) > score(best) ? move : best));
+}
+
+/** Ends the side's turn now, for the rare case the computer has nothing it can play. */
+export function passLudoTurn(state: LudoState): LudoState {
+  return { ...state, pending: null, turn: 1 - state.turn };
 }

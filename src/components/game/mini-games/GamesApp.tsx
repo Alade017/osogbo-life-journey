@@ -36,13 +36,23 @@ import {
   type DraughtsState,
 } from "@/lib/mini-games/draughts";
 import {
-  BASE,
-  FINISHED,
-  bestLudoToken,
-  legalTokenMoves,
-  moveLudoToken,
+  CLEARED,
+  HOUSE_NAMES,
+  HOUSE_START,
+  LOOP_LENGTH,
+  TRACK_LAST,
+  YARD,
+  bestLudoMove,
+  housesFor,
+  legalMoves,
+  loopSquare,
+  moveLudoSeed,
   newLudo,
+  passLudoTurn,
   rollLudo,
+  seedsPerSide,
+  type LudoMode,
+  type LudoMove,
   type LudoState,
 } from "@/lib/mini-games/ludo";
 import {
@@ -56,8 +66,6 @@ import {
 } from "@/lib/mini-games/whot";
 
 const COMPUTER_DELAY_MS = 550;
-const LUDO_TOKEN_COLORS = ["#f5b82e", "#22a06b", "#3b82f6", "#e5484d"] as const;
-const LUDO_TRACK_LENGTH = 58;
 const WIN_LINES = [
   [0, 1, 2],
   [3, 4, 5],
@@ -84,7 +92,12 @@ const GAMES: { id: GameId; name: string; icon: LucideIcon; blurb: string }[] = [
     icon: Layers,
     blurb: "Match shape or number. Empty your hand first.",
   },
-  { id: "ludo", name: "Ludo", icon: Dices, blurb: "Race your tokens home. Six brings one out." },
+  {
+    id: "ludo",
+    name: "Ludo",
+    icon: Dices,
+    blurb: "Capture or race your seeds home. Clear them all first.",
+  },
   {
     id: "draughts",
     name: "Draughts",
@@ -247,90 +260,271 @@ function DraughtsGame() {
   );
 }
 
-function LudoGame() {
-  const [state, setState] = useState<LudoState>(() => newLudo(2));
+/** Ludo house colours: red, green, yellow, blue. */
+const HOUSE_COLORS = ["#e5484d", "#22a06b", "#f5b82e", "#3b82f6"] as const;
+/** Where each house's yard sits on the 0..100 board. */
+const YARD_CENTRES = [
+  [14, 14],
+  [86, 14],
+  [86, 86],
+  [14, 86],
+] as const;
+/** Radius of the 52-square track on the 0..100 board. */
+const BOARD_RADIUS = 40;
+
+/** A loop square on the ring, square 0 at the top and running clockwise. */
+function ringPoint(index: number) {
+  const angle = (index / LOOP_LENGTH) * Math.PI * 2 - Math.PI / 2;
+  return { x: 50 + BOARD_RADIUS * Math.cos(angle), y: 50 + BOARD_RADIUS * Math.sin(angle) };
+}
+
+/** The centre point of a seed's place: a yard, a loop square, a home-column step or the centre. */
+function basePoint(house: number, progress: number) {
+  if (progress === YARD) {
+    const [x, y] = YARD_CENTRES[house] ?? [50, 50];
+    return { x, y };
+  }
+  if (progress === CLEARED) {
+    const angle = (house * Math.PI) / 2;
+    return { x: 50 + Math.cos(angle) * 5, y: 50 + Math.sin(angle) * 5 };
+  }
+  if (progress <= TRACK_LAST) return ringPoint(loopSquare(house, progress));
+  // The home column runs from the house's start square toward the centre.
+  const start = ringPoint(HOUSE_START[house] ?? 0);
+  const t = (progress - TRACK_LAST) / (CLEARED - TRACK_LAST);
+  return { x: start.x + (50 - start.x) * t, y: start.y + (50 - start.y) * t };
+}
+
+/** A seed's drawn place. Seeds that share a point are nudged apart by token. */
+function seedPoint(house: number, token: number, progress: number) {
+  const spread = progress === YARD ? 3.2 : 2.4;
+  const dx = ((token % 2) - 0.5) * spread;
+  const dy = (Math.floor(token / 2) - 0.5) * spread;
+  const base = basePoint(house, progress);
+  return { x: base.x + dx, y: base.y + dy };
+}
+
+/** Whether a move lands on a seed of the other side on the track. */
+function capturesOn(state: LudoState, move: LudoMove) {
+  if (move.to < 0 || move.to > TRACK_LAST) return false;
+  const square = loopSquare(move.house, move.to);
+  return housesFor(state.mode, 1 - state.turn).some((house) =>
+    (state.seeds[house] ?? []).some(
+      (progress) =>
+        progress >= 0 && progress <= TRACK_LAST && loopSquare(house, progress) === square,
+    ),
+  );
+}
+
+function moveLabel(state: LudoState, move: LudoMove) {
+  const seed = `${HOUSE_NAMES[move.house]} seed ${move.token + 1}`;
+  if (move.from === YARD) return `Bring out ${seed}`;
+  const steps = move.uses.reduce((total, index) => total + (state.pending?.[index] ?? 0), 0);
+  const captures = capturesOn(state, move) ? ", capturing" : "";
+  const home = move.to === CLEARED ? ", into the centre" : "";
+  return `Move ${seed} by ${steps}${captures}${home}`;
+}
+
+function clearedCount(state: LudoState, side: number) {
+  return housesFor(state.mode, side).reduce(
+    (total, house) => total + (state.seeds[house] ?? []).filter((p) => p === CLEARED).length,
+    0,
+  );
+}
+
+function LudoBoardSvg({ state, movable }: { state: LudoState; movable: Set<string> }) {
+  const inUse = (house: number) =>
+    housesFor(state.mode, 0).includes(house) || housesFor(state.mode, 1).includes(house);
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      role="img"
+      aria-label="Ludo board"
+      style={{ width: "100%", maxWidth: 360, display: "block", margin: "0 auto" }}
+    >
+      <rect x="0" y="0" width="100" height="100" rx="6" fill="currentColor" fillOpacity="0.06" />
+      {YARD_CENTRES.map(([x, y], house) => (
+        <circle
+          key={`yard-${house}`}
+          cx={x}
+          cy={y}
+          r="11"
+          fill={HOUSE_COLORS[house]}
+          fillOpacity="0.14"
+        />
+      ))}
+      {Array.from({ length: LOOP_LENGTH }, (_, index) => {
+        const point = ringPoint(index);
+        const houseAt = (HOUSE_START as readonly number[]).indexOf(index);
+        return (
+          <circle
+            key={`ring-${index}`}
+            cx={point.x}
+            cy={point.y}
+            r={houseAt >= 0 ? 2.6 : 1.8}
+            fill={houseAt >= 0 ? HOUSE_COLORS[houseAt] : "currentColor"}
+            fillOpacity={houseAt >= 0 ? 1 : 0.3}
+          />
+        );
+      })}
+      {[0, 1, 2, 3].filter(inUse).flatMap((house) =>
+        [51, 52, 53, 54, 55].map((progress) => {
+          const point = basePoint(house, progress);
+          return (
+            <circle
+              key={`lane-${house}-${progress}`}
+              cx={point.x}
+              cy={point.y}
+              r="1.6"
+              fill={HOUSE_COLORS[house]}
+              fillOpacity="0.5"
+            />
+          );
+        }),
+      )}
+      <circle cx="50" cy="50" r="4" fill="currentColor" fillOpacity="0.15" />
+      {[0, 1, 2, 3].filter(inUse).flatMap((house) =>
+        (state.seeds[house] ?? []).map((progress, token) => {
+          const point = seedPoint(house, token, progress);
+          const canMove = movable.has(`${house}-${token}`);
+          return (
+            <circle
+              key={`seed-${house}-${token}`}
+              cx={point.x}
+              cy={point.y}
+              r="3"
+              fill={HOUSE_COLORS[house]}
+              stroke={canMove ? "#ffffff" : "rgba(0,0,0,0.35)"}
+              strokeWidth={canMove ? 1.2 : 0.5}
+              style={{ transition: "cx 0.35s ease, cy 0.35s ease" }}
+            >
+              <title>{`${HOUSE_NAMES[house]} seed ${token + 1}`}</title>
+            </circle>
+          );
+        }),
+      )}
+    </svg>
+  );
+}
+
+function LudoBoard({ mode, onAgain }: { mode: LudoMode; onAgain: () => void }) {
+  const [state, setState] = useState<LudoState>(() => newLudo(mode));
   const [rolls, setRolls] = useState(0);
+  const [note, setNote] = useState<string | null>(null);
   const humanTurn = state.turn === 0 && state.winner === null;
-  useComputerTurn(!humanTurn && state.winner === null, [state], () => {
-    setRolls((count) => count + 1);
+  useComputerTurn(state.turn === 1 && state.winner === null, [state], () => {
+    const first = 1 + Math.floor(Math.random() * 6);
+    const second = 1 + Math.floor(Math.random() * 6);
     setState((current) => {
-      if (current.dice === null) return rollLudo(current, 1 + Math.floor(Math.random() * 6));
-      const token = bestLudoToken(current);
-      return token === null ? { ...current, dice: null, turn: 0 } : moveLudoToken(current, token);
+      if (current.pending === null) return rollLudo(current, first, second);
+      const move = bestLudoMove(current);
+      return move ? moveLudoSeed(current, move) : passLudoTurn(current);
     });
   });
-  const options = state.dice !== null && humanTurn ? legalTokenMoves(state, state.dice) : [];
-  const describe = (progress: number) =>
-    progress === BASE
-      ? "In base. Needs a six."
-      : progress === FINISHED
-        ? "Home."
-        : `${progress + 1} of ${LUDO_TRACK_LENGTH} steps`;
-  const percent = (progress: number) =>
-    progress === BASE
-      ? 0
-      : progress === FINISHED
-        ? 100
-        : ((progress + 1) / LUDO_TRACK_LENGTH) * 100;
-  const rivalHome = (state.tokens[1] ?? []).filter((progress) => progress === FINISHED).length;
+
+  const rollYourDice = () => {
+    const next = rollLudo(
+      state,
+      1 + Math.floor(Math.random() * 6),
+      1 + Math.floor(Math.random() * 6),
+    );
+    setRolls((count) => count + 1);
+    setNote(
+      next.turn === 1 && next.winner === null
+        ? "No seed can move with that roll, so your turn passes."
+        : null,
+    );
+    setState(next);
+  };
+  const play = (move: LudoMove) => {
+    setNote(null);
+    setState((current) => moveLudoSeed(current, move));
+  };
+
+  const moves = humanTurn ? legalMoves(state) : [];
+  const movable = new Set(moves.map((move) => `${move.house}-${move.token}`));
+  const pending = state.pending ?? [];
   const status =
     state.winner === 0
       ? "You won!"
       : state.winner !== null
         ? "The computer won."
         : humanTurn
-          ? state.dice === null
+          ? pending.length === 0
             ? "Your turn. Roll the dice."
-            : `You rolled ${state.dice}. Choose a token to move.`
+            : pending.length === 2
+              ? `You rolled ${pending[0]} and ${pending[1]}. Choose a move.`
+              : `Play the remaining ${pending[0]}. Choose a move.`
           : "The computer is playing…";
+  const total = seedsPerSide(mode);
   return (
     <section className="mg-game" aria-label="Ludo">
       <p className={`mg-status ${state.winner === 0 ? "is-win" : ""}`} role="status">
         {status}
       </p>
       <div className="mg-ludo-dice">
-        <Die key={rolls} value={state.dice} />
-        {humanTurn && state.dice === null && (
-          <Button
-            onClick={() => {
-              setRolls((count) => count + 1);
-              setState((current) => rollLudo(current, 1 + Math.floor(Math.random() * 6)));
-            }}
-          >
-            Roll the dice
-          </Button>
+        {state.lastRoll && (
+          <>
+            <Die key={`a-${rolls}`} value={state.lastRoll[0]} />
+            <Die key={`b-${rolls}`} value={state.lastRoll[1]} />
+          </>
+        )}
+        {humanTurn && state.pending === null && state.winner === null && (
+          <Button onClick={rollYourDice}>Roll the dice</Button>
         )}
       </div>
-      <ul className="mg-ludo-tokens">
-        {(state.tokens[0] ?? []).map((progress, token) => {
-          const playable = options.includes(token);
-          return (
-            <li key={token}>
-              <button
-                type="button"
-                className={`mg-token ${playable ? "is-playable" : ""}`}
-                disabled={!playable}
-                style={{ "--token": LUDO_TOKEN_COLORS[token % 4] } as CSSProperties}
-                onClick={() => setState((current) => moveLudoToken(current, token))}
-              >
-                <span className="mg-token-disc" aria-hidden="true" />
-                <span className="mg-token-body">
-                  <strong>Token {token + 1}</strong>
-                  <span className="mg-track" aria-hidden="true">
-                    <span style={{ width: `${percent(progress)}%` }} />
-                  </span>
-                  <small>{describe(progress)}</small>
-                </span>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+      {note && <p className="mg-rival">{note}</p>}
+      <LudoBoardSvg state={state} movable={movable} />
+      {moves.length > 0 && (
+        <div
+          role="group"
+          aria-label="Legal moves"
+          style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center" }}
+        >
+          {moves.map((move) => (
+            <Button
+              key={`${move.house}-${move.token}-${move.to}-${move.uses.join()}`}
+              onClick={() => play(move)}
+            >
+              {moveLabel(state, move)}
+            </Button>
+          ))}
+        </div>
+      )}
       <p className="mg-rival">
-        Computer: {rivalHome} of {(state.tokens[1] ?? []).length} tokens home.
+        You: {clearedCount(state, 0)} of {total} seeds home. Computer: {clearedCount(state, 1)} of{" "}
+        {total}.
       </p>
-      {state.winner !== null && <Button onClick={() => setState(newLudo(2))}>Play again</Button>}
+      {state.winner !== null && <Button onClick={onAgain}>Play again</Button>}
     </section>
+  );
+}
+
+function LudoGame() {
+  const [setup, setSetup] = useState<{ mode: LudoMode; round: number } | null>(null);
+  if (!setup) {
+    return (
+      <section className="mg-game" aria-label="Ludo setup">
+        <p className="mg-status" role="status">
+          Choose a setup.
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          <Button onClick={() => setSetup({ mode: 1, round: 0 })}>
+            Single house · 4 seeds each
+          </Button>
+          <Button onClick={() => setSetup({ mode: 2, round: 0 })}>
+            Double house · 8 seeds each
+          </Button>
+        </div>
+      </section>
+    );
+  }
+  return (
+    <LudoBoard
+      key={`${setup.mode}-${setup.round}`}
+      mode={setup.mode}
+      onAgain={() => setSetup({ mode: setup.mode, round: setup.round + 1 })}
+    />
   );
 }
 
