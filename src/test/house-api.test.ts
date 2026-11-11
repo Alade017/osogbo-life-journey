@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it, vi } from "vitest";
-import { createHouseApiHandlers } from "@/lib/house-api.server";
+import { createHouseApiHandlers, withSharedHome } from "@/lib/house-api.server";
 
 function setup(
   authenticate: (request: Request) => Promise<string | null> = async () => "player-1",
@@ -183,5 +183,13 @@ describe("house API handlers", () => {
     const response = await broken.getState(new Request("https://game.test/api/house/state"));
     expect(response.status).toBe(503);
     expect(await response.json()).toEqual({ error: { code: "HOUSE_SETUP_REQUIRED" } });
+  });
+
+  it("adds the shared room to the house state without hiding the player's own home", () => {
+    const base = { house: null, placements: [], outfit: {}, inventory: [] };
+    const shared = { unit_id: "u1", my_bed_slot: 1, zones: [], placements: [] };
+    expect(withSharedHome(base, shared)).toEqual({ ...base, shared_home: shared });
+    expect(withSharedHome(base, null)).toEqual({ ...base, shared_home: null });
+    expect(withSharedHome(null, shared)).toBeNull();
   });
 });

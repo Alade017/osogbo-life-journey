@@ -170,6 +170,13 @@ export function createHouseApiHandlers(deps: HouseApiDependencies) {
   };
 }
 
+/** Adds the shared-room read to the house state. Non-object state is returned unchanged. */
+export function withSharedHome(base: unknown, shared: unknown): unknown {
+  return base && typeof base === "object" && !Array.isArray(base)
+    ? { ...base, shared_home: shared }
+    : base;
+}
+
 async function productionHandlers() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const rpc = async (name: string, args: Record<string, unknown>) => {
@@ -184,7 +191,17 @@ async function productionHandlers() {
       const { data, error } = await supabaseAdmin.auth.getUser(authorization.slice(7).trim());
       return error ? null : (data.user?.id ?? null);
     },
-    state: (playerId) => rpc("get_house_state", { p_player_id: playerId }),
+    state: async (playerId) => {
+      const base = await rpc("get_house_state", { p_player_id: playerId });
+      // The shared room is an extra read; a failure here must not hide the player's own home.
+      let shared: unknown = null;
+      try {
+        shared = await rpc("shared_home_state", { p_player_id: playerId });
+      } catch (error) {
+        console.error("[house] shared_home_state failed", error);
+      }
+      return withSharedHome(base, shared);
+    },
     place: (playerId, itemId, slot) =>
       rpc("house_place", { p_player_id: playerId, p_item_id: itemId, p_slot: slot }),
     placeAt: (playerId, itemId, x, y, floor) =>

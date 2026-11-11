@@ -7112,6 +7112,7 @@ export type Database = {
         Returns: Json;
       };
       shared_home_leave: { Args: { p_request_id: string; p_user_id: string }; Returns: Json };
+      shared_home_state: { Args: { p_player_id: string }; Returns: Json };
       mini_game_create_whot_table: { Args: { p_stake: number }; Returns: string };
       mini_game_whot_view: { Args: { p_table: string }; Returns: Json };
       mini_game_whot_load: { Args: { p_table: string }; Returns: Json };
