@@ -74,4 +74,45 @@ describe("authored town map validation", () => {
 
     expect(validateTownMapData(disconnected).some((error) => error.includes("Road network is disconnected"))).toBe(true);
   });
+
+  it("detects overlapping building footprints", () => {
+    const invalid = JSON.parse(JSON.stringify(town)) as typeof town;
+    const first = invalid.grid.buildings[0]!;
+    const second = invalid.grid.buildings[1]!;
+    second.x = first.x;
+    second.z = first.z;
+    const errors = validateTownMapData(invalid);
+    expect(errors.some((error) => error.includes("Buildings") && error.includes("overlap at"))).toBe(true);
+  });
+
+  it("detects roads and buildings placed on reserved terrain", () => {
+    const roadConflict = JSON.parse(JSON.stringify(town)) as typeof town;
+    const [waterX, waterZ] = roadConflict.grid.waterCells[0]!;
+    const row = [...roadConflict.grid.rows[waterZ]!];
+    row[waterX] = "r";
+    roadConflict.grid.rows[waterZ] = row.join("");
+    expect(validateTownMapData(roadConflict).some((error) =>
+      error.includes("Road cell") && error.includes("reserved water"),
+    )).toBe(true);
+
+    const buildingConflict = JSON.parse(JSON.stringify(town)) as typeof town;
+    const [plotX, plotZ] = buildingConflict.grid.plotCells[0]!;
+    const building = buildingConflict.grid.buildings[0]!;
+    building.x = plotX;
+    building.z = plotZ;
+    const landmark = buildingConflict.landmarks.find((item) => item.id === building.placeId)!;
+    landmark.grid.x = plotX;
+    landmark.grid.z = plotZ;
+    expect(validateTownMapData(buildingConflict).some((error) =>
+      error.includes("overlaps reserved plot terrain"),
+    )).toBe(true);
+  });
+
+  it("detects a cell assigned to both water and plot terrain", () => {
+    const invalid = JSON.parse(JSON.stringify(town)) as typeof town;
+    invalid.grid.plotCells.push([...invalid.grid.waterCells[0]!]);
+    expect(validateTownMapData(invalid).some((error) =>
+      error.includes("assigned to both water and plot"),
+    )).toBe(true);
+  });
 });
