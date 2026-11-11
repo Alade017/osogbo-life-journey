@@ -898,7 +898,7 @@ export function PlayableNeighborhood() {
                             ? `Talk with ${nearbyNpc?.name ?? nearbyObject.name}`
                             : nearbyObject.kind === "home"
                               ? "Enter your home"
-                              : `Interact with ${currentLocation?.name ?? nearbyObject.name}`
+                              : `Interact with ${nearbyObject.name}`
                         }
                       >
                         {nearbyObject.kind === "home" ? (
@@ -917,8 +917,8 @@ export function PlayableNeighborhood() {
                           : nearbyObject.kind === "npc"
                             ? `Talk with ${nearbyNpc?.name ?? nearbyObject.name}`
                             : nearbyObject.kind === "work"
-                              ? `Work at ${currentLocation?.name ?? nearbyObject.name}`
-                              : `Explore ${currentLocation?.name ?? nearbyObject.name}`}
+                              ? `Work at ${nearbyObject.name}`
+                              : `Explore ${nearbyObject.name}`}
                         <kbd>E</kbd>
                       </button>
                     )}
