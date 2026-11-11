@@ -192,8 +192,8 @@ describe("town pedestrian routes", () => {
           town.grid.rows[roadZ]?.[roadX] === "r"
           && town.grid.rows[roadZ + sideZ]?.[roadX + sideX] === "g"
           && !blocked.has(`${roadX + sideX},${roadZ + sideZ}`)
-          && Math.max(Math.abs(dx), Math.abs(dz)) === offset
-          && Math.min(Math.abs(dx), Math.abs(dz)) === 0
+          && Math.abs(Math.max(Math.abs(dx), Math.abs(dz)) - offset) < 1e-6
+          && Math.min(Math.abs(dx), Math.abs(dz)) < 1e-6
         );
         expect(matching).toBeDefined();
       }
