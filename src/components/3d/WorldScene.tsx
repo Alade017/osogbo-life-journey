@@ -1,4 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { useFrame } from "@react-three/fiber";
+import { MeshBasicMaterial } from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows, OrbitControls } from "@react-three/drei";
 import { CanvasLabel } from "@/components/3d/CanvasLabel";
@@ -254,48 +256,75 @@ export function WorldPedestrianCrossings({ items }: { items: readonly WorldInsta
 export function WorldTrafficLights({
   positions,
   size,
+  getSignalState,
 }: {
-  positions: readonly [number, number][];
+  positions: readonly [number, number, string][];
   size: number;
+  getSignalState: (junctionId: string) => "stop" | "caution" | "go";
 }) {
   const poleHeight = size * 1.15;
 
   return (
     <>
-      {positions.map(([x, z], index) => (
-        <group key={`traffic-light-${index}`} position={[x, 0, z]}>
-          {/* Vertical pole */}
-          <mesh position={[0, poleHeight / 2, 0]} castShadow>
-            <boxGeometry args={[size * 0.045, poleHeight, size * 0.045]} />
-            <WorldMaterial tone="metal" />
-          </mesh>
-
-          {/* Signal housing */}
-          <mesh position={[0, poleHeight * 0.85, 0]} castShadow>
-            <boxGeometry args={[size * 0.19, size * 0.42, size * 0.13]} />
-            <WorldMaterial tone="slate" />
-          </mesh>
-
-          {/* Red signal */}
-          <mesh position={[0, poleHeight * 0.96, size * 0.071]}>
-            <sphereGeometry args={[size * 0.045, 8, 8]} />
-            <WorldMaterial tone="clay" />
-          </mesh>
-
-          {/* Amber signal */}
-          <mesh position={[0, poleHeight * 0.85, size * 0.071]}>
-            <sphereGeometry args={[size * 0.045, 8, 8]} />
-            <WorldMaterial tone="linen" />
-          </mesh>
-
-          {/* Green signal */}
-          <mesh position={[0, poleHeight * 0.74, size * 0.071]}>
-            <sphereGeometry args={[size * 0.045, 8, 8]} />
-            <WorldMaterial tone="foliage" />
-          </mesh>
-        </group>
+      {positions.map(([x, z, junctionId], index) => (
+        <TrafficLightSignal
+          key={junctionId || `traffic-light-${index}`}
+          x={x}
+          z={z}
+          junctionId={junctionId}
+          size={size}
+          poleHeight={poleHeight}
+          getSignalState={getSignalState}
+        />
       ))}
     </>
+  );
+}
+
+function TrafficLightSignal({
+  x, z, junctionId, size, poleHeight, getSignalState,
+}: {
+  x: number;
+  z: number;
+  junctionId: string;
+  size: number;
+  poleHeight: number;
+  getSignalState: (junctionId: string) => "stop" | "caution" | "go";
+}) {
+  const red = useRef<MeshBasicMaterial>(null);
+  const amber = useRef<MeshBasicMaterial>(null);
+  const green = useRef<MeshBasicMaterial>(null);
+
+  useFrame(() => {
+    const state = getSignalState(junctionId);
+    if (red.current) red.current.color.set(state === "stop" ? "#ef2929" : "#401b1b");
+    if (amber.current) amber.current.color.set(state === "caution" ? "#f59e0b" : "#49320d");
+    if (green.current) green.current.color.set(state === "go" ? "#22c55e" : "#173b27");
+  });
+
+  return (
+    <group position={[x, 0, z]}>
+      <mesh position={[0, poleHeight / 2, 0]} castShadow>
+        <boxGeometry args={[size * 0.045, poleHeight, size * 0.045]} />
+        <WorldMaterial tone="metal" />
+      </mesh>
+      <mesh position={[0, poleHeight * 0.85, 0]} castShadow>
+        <boxGeometry args={[size * 0.19, size * 0.42, size * 0.13]} />
+        <WorldMaterial tone="slate" />
+      </mesh>
+      <mesh position={[0, poleHeight * 0.96, size * 0.071]}>
+        <sphereGeometry args={[size * 0.045, 8, 8]} />
+        <meshBasicMaterial ref={red} color="#401b1b" />
+      </mesh>
+      <mesh position={[0, poleHeight * 0.85, size * 0.071]}>
+        <sphereGeometry args={[size * 0.045, 8, 8]} />
+        <meshBasicMaterial ref={amber} color="#49320d" />
+      </mesh>
+      <mesh position={[0, poleHeight * 0.74, size * 0.071]}>
+        <sphereGeometry args={[size * 0.045, 8, 8]} />
+        <meshBasicMaterial ref={green} color="#173b27" />
+      </mesh>
+    </group>
   );
 }
 export function WorldCars({
