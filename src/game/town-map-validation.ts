@@ -132,7 +132,11 @@ export function validateTownMapData(data: TownMapValidationInput): string[] {
         if (roadSymbol && rows[z]?.[x] === roadSymbol) {
           errors.push(`Building "${building.placeId}" overlaps a road at ${x},${z}.`);
         }
-        const reservedKind = reservedKinds.get(key);
+        const reservedKind = data.grid.waterCells.some(([cellX, cellZ]) => cellX === x && cellZ === z)
+          ? "water"
+          : data.grid.plotCells.some(([cellX, cellZ]) => cellX === x && cellZ === z)
+            ? "plot"
+            : undefined;
         if (reservedKind) {
           errors.push(`Building "${building.placeId}" overlaps reserved ${reservedKind} terrain at ${key}.`);
         }
