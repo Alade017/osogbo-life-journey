@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isValidTownMobilityLoop, townPedestrianClearanceRadius, isValidTownPedestrianRoute, measureTownMobilityLoop, deriveTownMobilityRoutes, deriveTownPedestrianCornerRoutes, deriveTownPedestrianCrossingRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells, stitchTownPedestrianRoutes, TownPedestrianJunctionScheduler, TownTrafficJunctionScheduler, townMobilityRouteIdentity } from "@/game/town-mobility";
+import { isValidTownMobilityLoop, townPedestrianClearanceRadius, isValidTownPedestrianRoute, measureTownMobilityLoop, deriveTownMobilityRoutes, deriveTownPedestrianCornerRoutes, deriveTownPedestrianCrossingRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells, stitchTownPedestrianRoutes, TownPedestrianJunctionScheduler, TownTrafficJunctionScheduler, townMobilityRouteIdentity, townRoadJunctionIdentity, townPedestrianCrossingIdentity, TownRoadCrossingPriorityScheduler } from "@/game/town-mobility";
 import town from "@/data/osogbo-town.json";
 
 describe("pedestrian junction clearance", () => {
@@ -460,5 +460,34 @@ describe("pedestrian routes through rendered zebra crossings", () => {
     expect(deriveTownPedestrianCrossingRoutes([".g.", ".r.", ".g."], 2)).toHaveLength(0);
     expect(deriveTownPedestrianCrossingRoutes(["...", "rrr", "..."], 2)).toHaveLength(0);
     expect(deriveTownPedestrianCrossingRoutes([".g.", "rrr", ".g."], 0)).toHaveLength(0);
+  });
+});
+
+
+describe("shared pedestrian and vehicle crossing priority", () => {
+  it("gives waiting pedestrians priority over vehicles when a junction clears", () => {
+    const scheduler = new TownRoadCrossingPriorityScheduler();
+    expect(scheduler.request("road-junction:4,8", "vehicle-1", "vehicle")).toBe(true);
+    expect(scheduler.request("road-junction:4,8", "vehicle-2", "vehicle")).toBe(false);
+    expect(scheduler.request("road-junction:4,8", "pedestrian-1", "pedestrian")).toBe(false);
+    scheduler.release("road-junction:4,8", "vehicle-1");
+    expect(scheduler.request("road-junction:4,8", "pedestrian-1", "pedestrian")).toBe(true);
+    expect(scheduler.request("road-junction:4,8", "vehicle-2", "vehicle")).toBe(false);
+  });
+
+  it("keeps an active actor safe, isolates crossings and cleans up removed actors", () => {
+    const scheduler = new TownRoadCrossingPriorityScheduler();
+    expect(scheduler.request("crossing-a", "vehicle-1", "vehicle")).toBe(true);
+    expect(scheduler.request("crossing-b", "pedestrian-1", "pedestrian")).toBe(true);
+    expect(scheduler.request("crossing-a", "pedestrian-1", "pedestrian")).toBe(false);
+    scheduler.cancelActor("vehicle-1");
+    expect(scheduler.request("crossing-a", "pedestrian-1", "pedestrian")).toBe(true);
+  });
+
+  it("identifies only straight symmetric three-point zebra-crossing routes", () => {
+    const crossing = [[0, -1.28], [0, 0], [0, 1.28]] as const;
+    expect(townPedestrianCrossingIdentity(crossing)).toBe(townRoadJunctionIdentity(0, 0));
+    expect(townPedestrianCrossingIdentity([[0, 0], [1, 0], [1, 1]])).toBe("");
+    expect(townRoadJunctionIdentity(Number.NaN, 0)).toBe("");
   });
 });
