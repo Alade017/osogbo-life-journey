@@ -10,8 +10,8 @@ export type TownMapValidationInput = {
   grid: {
     cellSize: number;
     rows: readonly string[];
-    waterCells: readonly (readonly [number, number])[];
-    plotCells: readonly (readonly [number, number])[];
+    waterCells: readonly (readonly number[])[];
+    plotCells: readonly (readonly number[])[];
     buildings: readonly { placeId: string; x: number; z: number }[];
   };
   landmarks: readonly {
@@ -81,7 +81,9 @@ export function validateTownMapData(data: TownMapValidationInput): string[] {
 
   const reservedCells = new Set<string>();
   for (const [kind, cells] of [["water", data.grid.waterCells], ["plot", data.grid.plotCells]] as const) {
-    for (const [x, z] of cells) {
+    for (const cell of cells) {
+      const x = cell[0] ?? Number.NaN;
+      const z = cell[1] ?? Number.NaN;
       const key = `${x},${z}`;
       if (!inBounds(x, z)) {
         errors.push(`${kind} cell ${key} is outside the map grid.`);
