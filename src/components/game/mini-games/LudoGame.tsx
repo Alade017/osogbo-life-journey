@@ -43,6 +43,23 @@ const PIPS: Record<number, readonly number[]> = {
   6: [0, 2, 3, 5, 6, 8],
 };
 const SAFE = new Set<number>(SAFE_SQUARES);
+const INTRO_KEY = "osogbo-ludo-intro-seen";
+
+function hasSeenIntro(): boolean {
+  try {
+    return window.localStorage.getItem(INTRO_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function rememberIntro() {
+  try {
+    window.localStorage.setItem(INTRO_KEY, "1");
+  } catch {
+    // Storage can be blocked; the popup then shows again next time, which is harmless.
+  }
+}
 /** Offsets, in board percent, that move a finished seed into its house's centre triangle. */
 const TRIANGLE_NUDGE = [
   { x: 0, y: -4 },
@@ -262,12 +279,6 @@ function LudoBoardView({
               >
                 <PawnSvg house={view.house} />
               </button>
-              {eligible && !isSelected && steps.length === 1 && (
-                <span className="ludo-step">+{steps[0]}</span>
-              )}
-              {eligible && !isSelected && steps.length > 1 && (
-                <span className="ludo-step ludo-step-muted">tap</span>
-              )}
               {isSelected && seedMoves.length > 1 && (
                 <div className="ludo-choices">
                   {seedMoves.map((move) => (
@@ -334,8 +345,8 @@ function statusText(state: LudoState, humanTurn: boolean): string {
   const pending = state.pending ?? [];
   if (pending.length === 0) return "Your turn. Roll the dice.";
   if (pending.length === 2)
-    return `You rolled ${pending[0]} and ${pending[1]}. Tap a glowing seed.`;
-  return `Play the remaining ${pending[0]}. Tap a glowing seed.`;
+    return `You rolled ${pending[0]} and ${pending[1]}. Tap a glowing seed to move.`;
+  return `Play the remaining ${pending[0]}. Tap a glowing seed to move.`;
 }
 
 type BoardProps = {
@@ -353,6 +364,7 @@ export function LudoBoard({ mode, locked = false, onPick, onAgain, initial }: Bo
   const [rolls, setRolls] = useState(0);
   const [note, setNote] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
+  const [introOpen, setIntroOpen] = useState(() => !locked && !hasSeenIntro());
   const humanTurn = !locked && state.turn === 0 && state.winner === null;
 
   useComputerTurn(!locked && state.turn === 1 && state.winner === null, [state], () => {
@@ -400,7 +412,10 @@ export function LudoBoard({ mode, locked = false, onPick, onAgain, initial }: Bo
   return (
     <section className="ludo-app" aria-label="Ludo">
       <Hud state={state} />
-      <p className={`ludo-status${state.winner === 0 ? " is-win" : ""}`} role="status">
+      <p
+        className={`ludo-status${state.winner === 0 ? " is-win" : ""}${humanTurn && movesBySeed.size > 0 ? " is-prompt" : ""}`}
+        role="status"
+      >
         {locked ? "Pick a table to start" : statusText(state, humanTurn)}
       </p>
       <div className="ludo-board-wrap">
@@ -424,6 +439,28 @@ export function LudoBoard({ mode, locked = false, onPick, onAgain, initial }: Bo
                 <strong>Double House</strong>
                 <small>8 seeds each. You red and yellow, the computer green and blue.</small>
               </button>
+            </div>
+          </div>
+        )}
+        {introOpen && !locked && (
+          <div className="ludo-modal" role="dialog" aria-label="How to play Ludo">
+            <div className="ludo-modal-card">
+              <h3>How to play</h3>
+              <ul className="ludo-rules">
+                <li>Roll the dice. A six brings a seed out of its yard.</li>
+                <li>Tap a glowing seed to move it.</li>
+                <li>Land on an opponent's seed to send it back to its yard.</li>
+                <li>Star squares are safe: seeds there can't be captured.</li>
+                <li>Get all your seeds to the centre to win.</li>
+              </ul>
+              <Button
+                onClick={() => {
+                  rememberIntro();
+                  setIntroOpen(false);
+                }}
+              >
+                OK
+              </Button>
             </div>
           </div>
         )}
