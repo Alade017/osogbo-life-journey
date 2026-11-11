@@ -416,9 +416,52 @@ export function townPedestrianCrossingIdentity(route: TownMobilityRoute): string
  * Pedestrians receive priority when a junction becomes free; an actor already
  * inside the clearance zone is never pre-empted.
  */
+export type TownTrafficSignalPhase =
+  | "vehicle-green"
+  | "amber"
+  | "all-red"
+  | "pedestrian-walk"
+  | "clearance";
+
+const TOWN_SIGNAL_PHASES: readonly { phase: TownTrafficSignalPhase; duration: number }[] = [
+  { phase: "vehicle-green", duration: 12 },
+  { phase: "amber", duration: 3 },
+  { phase: "all-red", duration: 1 },
+  { phase: "pedestrian-walk", duration: 7 },
+  { phase: "clearance", duration: 1 },
+];
+const TOWN_SIGNAL_CYCLE_SECONDS = TOWN_SIGNAL_PHASES.reduce((total, phase) => total + phase.duration, 0);
+
+/** Shared, deterministic signal timing and crossing reservations for the rendered town. */
 export class TownRoadCrossingPriorityScheduler {
   private readonly owners = new Map<string, { id: string; kind: "pedestrian" | "vehicle" }>();
   private readonly waiters = new Map<string, Array<{ id: string; kind: "pedestrian" | "vehicle" }>>();
+  private elapsedSeconds: number | null = null;
+
+  /** R3F actors may call this every frame; max() makes multi-caller updates idempotent. */
+  advanceTime(elapsedSeconds: number): void {
+    if (!Number.isFinite(elapsedSeconds) || elapsedSeconds < 0) return;
+    this.elapsedSeconds = Math.max(this.elapsedSeconds ?? 0, elapsedSeconds);
+  }
+
+  private phaseOffset(junctionId: string): number {
+    let hash = 2166136261;
+    for (let index = 0; index < junctionId.length; index += 1) {
+      hash ^= junctionId.charCodeAt(index);
+      hash = Math.imul(hash, 16777619);
+    }
+    return (hash >>> 0) % TOWN_SIGNAL_CYCLE_SECONDS;
+  }
+
+  getSignalPhase(junctionId: string): TownTrafficSignalPhase {
+    if (!junctionId || this.elapsedSeconds === null) return "vehicle-green";
+    let cycleTime = (this.elapsedSeconds + this.phaseOffset(junctionId)) % TOWN_SIGNAL_CYCLE_SECONDS;
+    for (const phase of TOWN_SIGNAL_PHASES) {
+      if (cycleTime < phase.duration) return phase.phase;
+      cycleTime -= phase.duration;
+    }
+    return "clearance";
+  }
 
   request(junctionId: string, actorId: string, kind: "pedestrian" | "vehicle"): boolean {
     if (!junctionId || !actorId) return false;
@@ -432,6 +475,15 @@ export class TownRoadCrossingPriorityScheduler {
     }
     this.waiters.set(junctionId, queue);
     if (owner || queue[0]?.id !== actorId) return false;
+
+    // Preserve the legacy scheduler behaviour in isolated tests/tools until a
+    // live R3F clock is supplied. In the town scene, phase permissions gate entry.
+    if (this.elapsedSeconds !== null) {
+      const phase = this.getSignalPhase(junctionId);
+      if (kind === "vehicle" && phase !== "vehicle-green") return false;
+      if (kind === "pedestrian" && phase !== "pedestrian-walk") return false;
+    }
+
     this.owners.set(junctionId, { id: actorId, kind });
     queue.shift();
     if (queue.length === 0) this.waiters.delete(junctionId);
@@ -453,7 +505,11 @@ export class TownRoadCrossingPriorityScheduler {
     const owner = this.owners.get(junctionId);
     if (owner?.kind === "pedestrian") return "stop";
     if (this.waiters.get(junctionId)?.some((actor) => actor.kind === "pedestrian")) return "caution";
-    return "go";
+    if (this.elapsedSeconds === null) return "go";
+    const phase = this.getSignalPhase(junctionId);
+    if (phase === "vehicle-green") return "go";
+    if (phase === "amber") return "caution";
+    return "stop";
   }
 
   cancelActor(actorId: string): void {
