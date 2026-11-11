@@ -43,6 +43,7 @@ import { RoadsideInfrastructure3D } from "./RoadsideInfrastructure3D";
 import { LockedPlaces3D, type LockedPlace } from "./LockedPlaces3D";
 import {
   deriveTownMobilityRoutes,
+  TownRoadCrossingPriorityScheduler,
   deriveTownPedestrianCornerRoutes,
   deriveTownPedestrianCrossingRoutes,
   deriveTownPedestrianRoutes,
@@ -1000,6 +1001,7 @@ export function R3FTownSurface(props: Props) {
     streetVendors,
   ]);
 
+  const crossingScheduler = useMemo(() => new TownRoadCrossingPriorityScheduler(), []);
   const pedestrianRoutes = useMemo(() => {
     const buildingCells = town.grid.buildings.flatMap((building) =>
       [0, 1].flatMap((dx) => [0, 1].map((dz) => [building.x + dx, building.z + dz] as const)),
@@ -1160,10 +1162,12 @@ export function R3FTownSurface(props: Props) {
           ))}
           <MovingTraffic3D
             paths={trafficRoutes}
+            crossingScheduler={crossingScheduler}
             onSelectTransit={() => onSelectLandmark("transit-park")}
           />
           <MovingPedestrians3D
             paths={pedestrianRoutes}
+            crossingScheduler={crossingScheduler}
             busStopPositions={busStops}
             onSelectTransit={() => onSelectLandmark("transit-park")}
           />
