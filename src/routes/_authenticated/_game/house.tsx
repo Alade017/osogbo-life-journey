@@ -1415,7 +1415,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
 
   if (stateQuery.isError && !snapshot)
     return (
-      <div className="house-page">
+      <div className="house-page house-page-error">
         <section className="house-error-card" role="alert">
           <p>{houseLoadMessage(stateQuery.error)}</p>
           <button type="button" onClick={() => void stateQuery.refetch()}>

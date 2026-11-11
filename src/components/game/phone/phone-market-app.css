@@ -1,0 +1,147 @@
+.market-app {
+  min-width: 0;
+  color: var(--foreground);
+}
+
+.market-app .phone-sub-header {
+  display: grid;
+  gap: 14px;
+  padding: 14px 14px 0;
+}
+
+.market-app-hero {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+
+.market-app-hero-icon {
+  display: grid;
+  flex: 0 0 44px;
+  place-items: center;
+  height: 44px;
+  border-radius: 15px;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 12%, var(--card));
+}
+
+.market-app-hero h2 {
+  margin: 1px 0 2px;
+  font-size: 1.2rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.market-app-hero p {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.market-app-eyebrow {
+  color: var(--primary);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.market-app-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  margin: 0;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--muted);
+}
+
+.market-app-tabs button {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  min-width: 0;
+  min-height: 49px;
+  padding: 6px 3px;
+  border-radius: 11px;
+  font-size: 0.69rem;
+  line-height: 1.1;
+  white-space: normal;
+}
+
+.market-app-tabs button.is-active {
+  background: var(--card);
+  color: var(--primary);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--foreground) 10%, transparent);
+}
+
+.market-app .phone-sub-content {
+  min-width: 0;
+}
+
+.market-app-section {
+  padding: 14px;
+}
+
+.market-app
+  :is(
+    .market-app-lease,
+    .market-app-stall,
+    .market-app-stock,
+    .market-app-vendor,
+    .market-app-product
+  ) {
+  border: 1px solid var(--border);
+  border-radius: 17px;
+  background: var(--card);
+  box-shadow: 0 6px 16px -13px color-mix(in srgb, var(--foreground) 35%, transparent);
+}
+
+.market-app-lease {
+  border-left: 3px solid var(--primary);
+}
+
+.market-app :is(.market-app-lease, .market-app-stock) h3 {
+  font-size: 0.9rem;
+}
+
+.market-app-stall {
+  padding: 14px;
+}
+
+.market-app-preview {
+  min-height: 112px;
+  box-shadow: 0 10px 20px -13px color-mix(in srgb, var(--foreground) 75%, transparent);
+}
+
+.market-app-shop-summary {
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 9px 11px;
+  border-radius: 11px;
+  background: var(--muted);
+}
+
+.market-app-product {
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.market-app-product:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 15%, transparent);
+}
+
+.market-app :is(input, button):focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .market-app-product {
+    transition: none;
+  }
+}

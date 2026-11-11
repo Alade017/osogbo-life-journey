@@ -91,6 +91,16 @@ export function BillboardAdApp() {
   };
   return (
     <div className="phone-finance-app billboard-ad-app scrollbar-hidden">
+      <header className="billboard-app-hero">
+        <span className="billboard-app-hero-icon">
+          <Megaphone size={21} aria-hidden="true" />
+        </span>
+        <div>
+          <span className="billboard-eyebrow">Promote your business</span>
+          <h2>Billboards</h2>
+          <p>Choose a placement and create an ad for the city.</p>
+        </div>
+      </header>
       {purchase.isError && (
         <div role="alert" className="phone-finance-card">
           <p>{purchase.error.message}</p>
@@ -102,13 +112,16 @@ export function BillboardAdApp() {
           </Button>
         </div>
       )}
-      <p className="phone-finance-disclaimer">
-        Virtual in-game Naira only. Other players can view active ads; only you can manage your
-        campaigns.
+      <p className="phone-finance-disclaimer billboard-disclaimer">
+        Active ads are visible to other players. Only you can manage your campaigns. Purchases use
+        in-game Naira.
       </p>
-      <h2>
-        <Megaphone size={18} /> Create a campaign
-      </h2>
+      <div className="billboard-section-heading">
+        <div>
+          <span className="billboard-eyebrow">New promotion</span>
+          <h2>Create a campaign</h2>
+        </div>
+      </div>
       {!selected ? (
         <p className="phone-finance-empty">There are no active billboards available right now.</p>
       ) : (
@@ -138,7 +151,14 @@ export function BillboardAdApp() {
               }))}
             />
           </label>
-          <p className="billboard-placement">{selected.placement}</p>
+          <div className="billboard-location-card">
+            <span className="billboard-eyebrow">Selected placement</span>
+            <strong>{selected.name}</strong>
+            <span>
+              {selected.location} · {selected.sizeType}
+            </span>
+            <small>{selected.placement}</small>
+          </div>
           <label>
             Advertiser name
             <input
@@ -186,6 +206,15 @@ export function BillboardAdApp() {
               options={[7, 14, 30].map((days) => ({ value: String(days), label: `${days} days` }))}
             />
           </label>
+          <div
+            className={`billboard-creative-preview billboard-theme-${theme}`}
+            aria-label="Campaign preview"
+          >
+            <span>Preview</span>
+            <strong>{title.trim() || "Your headline will appear here"}</strong>
+            <p>{description.trim() || "Your ad description will appear here."}</p>
+            {advertiserName.trim() && <small>{advertiserName.trim()}</small>}
+          </div>
           <div className="billboard-ad-price">
             <span>Campaign total</span>
             <strong>{formatNaira(cost)}</strong>
@@ -196,7 +225,13 @@ export function BillboardAdApp() {
         </form>
       )}
       <section className="billboard-owned-campaigns">
-        <h3>Your campaigns</h3>
+        <div className="billboard-section-heading">
+          <div>
+            <span className="billboard-eyebrow">Your promotions</span>
+            <h3>Your campaigns</h3>
+          </div>
+          <span className="billboard-campaign-count">{market.data.myAds.length}</span>
+        </div>
         {!market.data.myAds.length && (
           <p className="phone-finance-empty">Your ads will appear here after purchase.</p>
         )}

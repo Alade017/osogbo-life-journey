@@ -261,22 +261,6 @@
   flex: 1;
 }
 
-.phone-dialog > button:last-child {
-  z-index: 3;
-  top: 12px;
-  right: 12px;
-  display: grid;
-  width: 28px;
-  height: 28px;
-  place-items: center;
-  border: 1px solid color-mix(in srgb, var(--brand-cream) 18%, transparent);
-  border-radius: 50%;
-  color: var(--brand-cream);
-  background: color-mix(in srgb, var(--brand-ink) 84%, transparent);
-  opacity: 1;
-  cursor: pointer;
-}
-
 .phone-screen {
   display: flex;
   width: 100%;
@@ -316,10 +300,6 @@
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
   }
-
-  .phone-dialog > button:last-child {
-    top: calc(12px + env(safe-area-inset-top));
-  }
 }
 
 .phone-status {
@@ -338,6 +318,31 @@
 .phone-status-brand {
   font-size: 9px;
   letter-spacing: 0.09em;
+}
+
+.phone-status-actions {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-self: end;
+  gap: 8px;
+}
+
+.phone-cancel-button {
+  min-height: 36px;
+  padding: 0 9px;
+  border: 0;
+  border-radius: var(--shape-pill);
+  color: var(--brand-royal);
+  background: color-mix(in srgb, var(--brand-royal) 10%, transparent);
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.phone-cancel-button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }
 
 .phone-home-heading {
@@ -361,17 +366,96 @@
   line-height: 1.45;
 }
 
-.phone-app-grid {
+.phone-launcher-home {
+  display: flex;
   min-height: 0;
   flex: 1;
-  align-content: start;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 16px 7px;
-  overflow-y: auto;
+  flex-direction: column;
+}
+
+.phone-app-pages {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  overscroll-behavior-x: contain;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+
+.phone-app-pages::-webkit-scrollbar {
+  display: none;
+}
+
+.phone-app-grid {
+  display: grid;
+  min-width: 100%;
+  width: 100%;
+  min-height: 0;
+  flex: none;
+  align-content: start;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: repeat(3, min-content);
+  gap: 16px 7px;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
   padding: 20px 6px 14px;
+}
+
+.phone-page-dots {
+  display: flex;
+  flex: none;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  min-height: 40px;
+}
+
+.phone-page-dot {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  cursor: pointer;
+}
+
+.phone-page-dot::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--brand-slate);
+  opacity: 0.75;
+  transition:
+    width 220ms ease,
+    background-color 220ms ease,
+    opacity 220ms ease;
+}
+
+.phone-page-dot[aria-current="page"]::before {
+  width: 24px;
+  border-radius: 6px;
+  background: var(--brand-royal);
+  opacity: 1;
+}
+
+.phone-page-dot:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+  border-radius: 8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .phone-app-pages {
+    scroll-behavior: auto;
+  }
+  .phone-page-dot::before {
+    transition: none;
+  }
 }
 
 .phone-mission-summary {
@@ -2585,41 +2669,84 @@
 }
 
 .phone-messenger .phone-chat-composer {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 8px;
-  margin: 8px 10px 12px;
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 7px 10px 10px;
+  border: 0;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
   background: var(--card);
-  box-shadow: 0 3px 16px color-mix(in srgb, var(--foreground) 5%, transparent);
+  box-shadow: none;
+}
+
+.phone-messenger .phone-chat-entry {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 4px 3px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--shape-pill);
+  background: var(--card);
+  box-shadow: var(--elevation-rest);
+}
+
+.phone-messenger .phone-chat-entry:focus-within {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--ring) 25%, transparent);
 }
 
 .phone-messenger .phone-chat-composer .phone-chat-input {
-  grid-column: 1;
-  grid-row: auto;
-  width: 100%;
-  min-height: 48px;
-  padding: 12px 10px;
+  width: auto;
+  min-width: 0;
+  min-height: 42px;
+  padding: 10px 4px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 0;
   background: transparent;
 }
 
 .phone-messenger .phone-chat-composer .phone-chat-input-actions {
   display: flex;
   position: relative;
-  grid-column: 1;
   align-items: center;
-  grid-row: auto;
-  gap: 4px;
-  width: 100%;
+  flex: none;
+  gap: 1px;
+  width: auto;
   padding: 0;
 }
 
+.phone-messenger
+  .phone-chat-input-actions
+  :is(.phone-chat-utility, .voice-record-button, .phone-chat-send) {
+  width: 40px;
+  min-width: 40px;
+  height: 44px;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.phone-messenger .phone-chat-input-actions .voice-record-button,
+.phone-messenger .phone-chat-input-actions .phone-chat-send:not(:disabled) {
+  color: var(--primary-foreground);
+  background: var(--primary);
+  border-radius: 50%;
+}
+
+.phone-messenger .phone-chat-input-actions .phone-chat-send:disabled {
+  display: none;
+}
+
+.phone-messenger .phone-chat-input-actions.has-draft .voice-record-button {
+  display: none;
+}
+
 .phone-messenger .phone-chat-composer .phone-chat-send {
-  margin-inline-start: auto;
+  margin-inline-start: 0;
 }
 
 .phone-chat-composer .voice-note-recorder {
