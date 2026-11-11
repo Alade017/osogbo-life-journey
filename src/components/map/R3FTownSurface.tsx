@@ -1113,7 +1113,11 @@ export function R3FTownSurface(props: Props) {
           <WorldTrafficLights positions={trafficLights} size={cell} />
           <WorldCars positions={cars} size={cell} />
           <WorldSidewalks sidewalks={sidewalks} curbs={curbs} />
-          <WorldBusStops positions={busStops} size={cell} />
+          <WorldBusStops
+            positions={busStops}
+            size={cell}
+            onSelectTransit={() => onSelectLandmark("transit-park")}
+          />
           <WorldRoadSigns positions={roadSigns} size={cell} />
           <WorldRoadsideShops positions={roadsideShops} size={cell} />
           <WorldMotorcycles positions={motorcycles} size={cell} />
