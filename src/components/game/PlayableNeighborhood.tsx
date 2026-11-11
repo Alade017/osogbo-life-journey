@@ -664,6 +664,7 @@ export function PlayableNeighborhood() {
       )
         return;
       event.preventDefault();
+      setSelectedBuildingName(nearbyObject.kind === "npc" ? null : nearbyObject.name);
       if (nearbyObject.kind === "home") {
         activateHome();
       } else if (nearbyObject.kind === "npc") {
