@@ -619,24 +619,24 @@
   "grid": {
     "cellSize": 2,
     "rows": [
-      "ggggggrgggggrgggggrgggggrgggggrg",
-      "ggggggrgggggrgggggrgggggrgggggrg",
-      "ggggggrgggggrgggggrgggggrgggggrg",
-      "ggggggrgggggrgggggrgggggrgggggrg",
-      "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
-      "ggggggrgggggrgggggrgggggrgggggrg",
-      "ggggggrgggggrgggggrgggggrgggggrg",
-      "ggggggrgggggrgggggrgggggrgggggrg",
-      "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
-      "ggggggrgggggrgggggrgggggrgggggrg",
-      "ggggggrgggggrgggggrgggggrgggggrg",
-      "ggggggrgggggrgggggrgggggrgggggrg",
-      "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
-      "ggggggrgggggrgggggrgggggrgggggrg",
-      "ggggggrgggggrgggggrgggggrgggggrg",
-      "ggggggrgggggrgggggrgggggrgggggrg",
-      "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
-      "ggggggrgggggrgggggrgggggrgggggrg",
+      "ggggrrrgggrrrgggggrrrrrrrgggggrg",
+      "ggggrgggggrggggggggggggrrgggggrg",
+      "ggggrgggggrggggggggggggrrgggggrg",
+      "ggggrgggggrggggggggggggrrgggggrg",
+      "rrrrrrrrrrrrrrrrrggggggrrgggggrr",
+      "ggggggrgggggrgggrrrggggrrgggggrr",
+      "ggggggrgggggrgggggrggggrrgggggrr",
+      "ggggggrgggggrgggggrrrggrrgggggrr",
+      "rrggggrgggggrggggggrrrrrrrrrrrrr",
+      "grggggrgggggrggggggrggggrgggggrr",
+      "grggggrgggggrggggggrrrrrrrrrrrrr",
+      "grggggrgggggrggggggrrgggrgggggrg",
+      "rrggggrgggggrgggrrrrrgggrgggggrr",
+      "grrrrrrrrrrrrrrrrggrrrrrrrrrrrrr",
+      "ggggggrgggggrggggggrggggrgggggrg",
+      "ggggggrgggggrgggggrrggggrgggggrg",
+      "rrrrrrrrrrggrgggggrgggggrgggggrr",
+      "ggggggrggrrrrrrrrrrrrrrrrrrrrrrr",
       "ggggggrgggggrgggggrgggggrgggggrg",
       "ggggggrgggggrgggggrgggggrgggggrg",
       "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
@@ -690,10 +690,6 @@
       [
         9,
         6
-      ],
-      [
-        3,
-        7
       ]
     ],
     "buildings": [
@@ -735,7 +731,7 @@
       },
       {
         "placeId": "community-clinic",
-        "x": 4,
+        "x": 3,
         "z": 7,
         "buildingType": "clinic"
       },
@@ -1427,11 +1423,11 @@
       "category": "health",
       "districtId": "central-crossing",
       "locationSlug": "community-clinic",
-      "x": 350,
-      "y": 500,
+      "x": 297,
+      "y": 520,
       "verify": false,
       "grid": {
-        "x": 4,
+        "x": 3,
         "z": 7
       },
       "buildingType": "clinic",
