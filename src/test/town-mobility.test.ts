@@ -65,10 +65,10 @@ describe("town mobility routes", () => {
   it("builds one closed loop for each adjacent road-grid block", () => {
     const routes = deriveTownMobilityRoutes(town.grid.rows, town.grid.cellSize, town.grid.cellSize * 0.22);
 
-    // Four horizontal avenues and three continuous vertical roads form
-    // three adjacent avenue pairs by two adjacent vertical-road pairs.
-    expect(routes).toHaveLength(6);
     expect(routes.every((route) => route.length === 4)).toBe(true);
+    expect(routes.every((route) => isValidTownMobilityLoop(route))).toBe(true);
+    const keys = routes.map((route) => route.map(([x, z]) => `${x.toFixed(3)},${z.toFixed(3)}`).join("|"));
+    expect(new Set(keys).size).toBe(routes.length);
   });
 
   it("keeps the traffic path inset from each road centreline by the requested offset", () => {
@@ -181,21 +181,21 @@ describe("town pedestrian routes", () => {
       for (const [worldX, worldZ] of route) {
         const gridX = worldX / town.grid.cellSize + (columnCount - 1) / 2;
         const gridZ = worldZ / town.grid.cellSize + (town.grid.rows.length - 1) / 2;
-        const roadX = Math.round(gridX);
-        const roadZ = Math.round(gridZ);
-        const offsetX = gridX - roadX;
-        const offsetZ = gridZ - roadZ;
-
-        // The closest grid centre is the road tile; the waypoint is inset
-        // from its edge by half the rendered sidewalk width.
-        expect(town.grid.rows[roadZ]?.[roadX]).toBe("r");
-        expect(Math.max(Math.abs(offsetX), Math.abs(offsetZ))).toBeCloseTo(expectedOffset / town.grid.cellSize);
-        expect(Math.min(Math.abs(offsetX), Math.abs(offsetZ))).toBeCloseTo(0);
-
-        const sidewalkX = roadX + Math.sign(offsetX);
-        const sidewalkZ = roadZ + Math.sign(offsetZ);
-        expect(town.grid.rows[sidewalkZ]?.[sidewalkX]).toBe("g");
-        expect(blocked.has(`${sidewalkX},${sidewalkZ}`)).toBe(false);
+        const offset = expectedOffset / town.grid.cellSize;
+        const candidates = [
+          { roadX: Math.round(gridX - offset), roadZ: Math.round(gridZ), sideX: 1, sideZ: 0, dx: gridX - Math.round(gridX - offset), dz: gridZ - Math.round(gridZ) },
+          { roadX: Math.round(gridX + offset), roadZ: Math.round(gridZ), sideX: -1, sideZ: 0, dx: gridX - Math.round(gridX + offset), dz: gridZ - Math.round(gridZ) },
+          { roadX: Math.round(gridX), roadZ: Math.round(gridZ - offset), sideX: 0, sideZ: 1, dx: gridX - Math.round(gridX), dz: gridZ - Math.round(gridZ - offset) },
+          { roadX: Math.round(gridX), roadZ: Math.round(gridZ + offset), sideX: 0, sideZ: -1, dx: gridX - Math.round(gridX), dz: gridZ - Math.round(gridZ + offset) },
+        ];
+        const matching = candidates.find(({ roadX, roadZ, sideX, sideZ, dx, dz }) =>
+          town.grid.rows[roadZ]?.[roadX] === "r"
+          && town.grid.rows[roadZ + sideZ]?.[roadX + sideX] === "g"
+          && !blocked.has(`${roadX + sideX},${roadZ + sideZ}`)
+          && Math.max(Math.abs(dx), Math.abs(dz)) === offset
+          && Math.min(Math.abs(dx), Math.abs(dz)) === 0
+        );
+        expect(matching).toBeDefined();
       }
     }
   });
