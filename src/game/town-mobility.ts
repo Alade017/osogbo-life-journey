@@ -140,6 +140,51 @@ export function deriveTownPedestrianRoutes(
 
 
 /**
+ * Connects opposite sidewalk edges through rendered zebra crossings at road
+ * intersections. The route is emitted only when both sidewalk landing cells
+ * exist and are not occupied by buildings, plots, water or reserved props.
+ */
+export function deriveTownPedestrianCrossingRoutes(
+  rows: readonly string[],
+  cellSize: number,
+  blockedCells: readonly (readonly [number, number])[] = [],
+  sidewalkWidth = cellSize * 0.28,
+): TownMobilityRoute[] {
+  if (!Number.isFinite(cellSize) || cellSize <= 0
+    || !Number.isFinite(sidewalkWidth) || sidewalkWidth < 0) return [];
+  const columnCount = Math.max(0, ...rows.map((row) => row.length));
+  const blocked = new Set(blockedCells.map(([x, z]) => `${x},${z}`));
+  const offset = cellSize / 2 + sidewalkWidth / 2;
+  const routes: TownMobilityRoute[] = [];
+
+  rows.forEach((row, z) => {
+    Array.from(row).forEach((tile, x) => {
+      if (tile !== "r") return;
+      const horizontal = row[x - 1] === "r" || row[x + 1] === "r";
+      const vertical = rows[z - 1]?.[x] === "r" || rows[z + 1]?.[x] === "r";
+      if (!horizontal || !vertical) return;
+
+      // Match the currently rendered zebra-stripe orientation: cross the
+      // north/south sidewalk pair where the intersection has a horizontal arm.
+      const north = [x, z - 1] as const;
+      const south = [x, z + 1] as const;
+      if (rows[north[1]]?.[north[0]] !== "g" || rows[south[1]]?.[south[0]] !== "g") return;
+      if ([north, south].some(([cellX, cellZ]) => blocked.has(`${cellX},${cellZ}`))) return;
+
+      const centerX = (x - (columnCount - 1) / 2) * cellSize;
+      const centerZ = (z - (rows.length - 1) / 2) * cellSize;
+      routes.push([
+        [centerX, centerZ - offset],
+        [centerX, centerZ],
+        [centerX, centerZ + offset],
+      ]);
+    });
+  });
+
+  return routes;
+}
+
+/**
  * Builds L-shaped pedestrian paths through rendered outer sidewalk-corner tiles.
  * A connector exists only when both adjoining sidewalk strips and their diagonal
  * grass corner are present and unblocked, matching R3FTownSurface geometry.
