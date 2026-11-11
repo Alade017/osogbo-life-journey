@@ -288,6 +288,51 @@ export class TownPedestrianJunctionScheduler {
 }
 
 
+/**
+ * Reserves shared road-junction clearance zones for ambient traffic simulation.
+ * This is presentation-only coordination; it is not a multiplayer or travel authority.
+ */
+export class TownTrafficJunctionScheduler {
+  private readonly owners = new Map<string, string>();
+  private readonly waiters = new Map<string, string[]>();
+
+  request(junctionId: string, vehicleId: string): boolean {
+    if (!junctionId || !vehicleId) return false;
+    if (this.owners.get(junctionId) === vehicleId) return true;
+    const queue = this.waiters.get(junctionId) ?? [];
+    if (!queue.includes(vehicleId)) {
+      queue.push(vehicleId);
+      queue.sort((a, b) => a.localeCompare(b));
+    }
+    this.waiters.set(junctionId, queue);
+    if (this.owners.has(junctionId) || queue[0] !== vehicleId) return false;
+    this.owners.set(junctionId, vehicleId);
+    queue.shift();
+    if (queue.length === 0) this.waiters.delete(junctionId);
+    return true;
+  }
+
+  release(junctionId: string, vehicleId: string): void {
+    if (this.owners.get(junctionId) === vehicleId) this.owners.delete(junctionId);
+    const queue = this.waiters.get(junctionId);
+    if (!queue) return;
+    const remaining = queue.filter((id) => id !== vehicleId);
+    if (remaining.length > 0) this.waiters.set(junctionId, remaining);
+    else this.waiters.delete(junctionId);
+  }
+
+  cancelVehicle(vehicleId: string): void {
+    for (const junctionId of this.owners.keys()) {
+      if (this.owners.get(junctionId) === vehicleId) this.owners.delete(junctionId);
+    }
+    for (const [junctionId, queue] of this.waiters) {
+      const remaining = queue.filter((id) => id !== vehicleId);
+      if (remaining.length > 0) this.waiters.set(junctionId, remaining);
+      else this.waiters.delete(junctionId);
+    }
+  }
+}
+
 /** Stable identity for an authored traffic loop; independent of route array ordering. */
 export function townMobilityRouteIdentity(route: TownMobilityRoute): string {
   if (!isValidTownMobilityLoop(route)) return "";
