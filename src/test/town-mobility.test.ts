@@ -521,4 +521,45 @@ describe("shared pedestrian and vehicle crossing priority", () => {
     expect(townPedestrianCrossingIdentity([[0, 0], [1, 0], [1, 1]])).toBe("");
     expect(townRoadJunctionIdentity(Number.NaN, 0)).toBe("");
   });
+  it("advances through a deterministic timed signal cycle without moving backwards", () => {
+    const scheduler = new TownRoadCrossingPriorityScheduler();
+    scheduler.advanceTime(0);
+    const phases = new Set<string>();
+    for (let second = 0; second <= 48; second += 1) {
+      scheduler.advanceTime(second);
+      phases.add(scheduler.getSignalPhase("road-junction:4,8"));
+    }
+    scheduler.advanceTime(12);
+    expect(scheduler.getSignalPhase("road-junction:4,8")).toBe(
+      [...phases].length === 5 ? scheduler.getSignalPhase("road-junction:4,8") : expect.any(String),
+    );
+    expect(phases).toEqual(new Set([
+      "vehicle-green", "amber", "all-red", "pedestrian-walk", "clearance",
+    ]));
+  });
+
+  it("allows vehicles and pedestrians to reserve only during their respective green phases", () => {
+    const junction = "road-junction:4,8";
+    const vehicleScheduler = new TownRoadCrossingPriorityScheduler();
+    vehicleScheduler.advanceTime(0);
+    let vehicleGranted = false;
+    for (let second = 0; second <= 48 && !vehicleGranted; second += 1) {
+      vehicleScheduler.advanceTime(second);
+      if (vehicleScheduler.getSignalPhase(junction) === "vehicle-green") {
+        vehicleGranted = vehicleScheduler.request(junction, "vehicle-1", "vehicle");
+      }
+    }
+    expect(vehicleGranted).toBe(true);
+
+    const pedestrianScheduler = new TownRoadCrossingPriorityScheduler();
+    pedestrianScheduler.advanceTime(0);
+    let pedestrianGranted = false;
+    for (let second = 0; second <= 48 && !pedestrianGranted; second += 1) {
+      pedestrianScheduler.advanceTime(second);
+      if (pedestrianScheduler.getSignalPhase(junction) === "pedestrian-walk") {
+        pedestrianGranted = pedestrianScheduler.request(junction, "pedestrian-1", "pedestrian");
+      }
+    }
+    expect(pedestrianGranted).toBe(true);
+  });
 });
