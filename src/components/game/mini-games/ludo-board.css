@@ -219,11 +219,16 @@
   position: absolute;
   left: 50%;
   top: 72%;
-  width: 150%;
-  height: 60%;
+  width: 190%;
+  height: 80%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 214, 90, 0.95), rgba(255, 214, 90, 0) 70%);
+  background: radial-gradient(
+    circle,
+    rgba(255, 221, 80, 1),
+    rgba(255, 214, 90, 0.35) 45%,
+    rgba(255, 214, 90, 0) 72%
+  );
   animation: ludo-glow 1.4s ease-in-out infinite;
   pointer-events: none;
 }
@@ -231,8 +236,8 @@
 @keyframes ludo-glow {
   0%,
   100% {
-    opacity: 0.4;
-    transform: translate(-50%, -50%) scale(0.9);
+    opacity: 0.65;
+    transform: translate(-50%, -50%) scale(0.95);
   }
   50% {
     opacity: 1;
@@ -254,6 +259,11 @@
   white-space: nowrap;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
   pointer-events: none;
+}
+
+.ludo-step-muted {
+  background: rgba(255, 255, 255, 0.85);
+  color: #1d2a6b;
 }
 
 .ludo-choices {

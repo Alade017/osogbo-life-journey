@@ -43,6 +43,13 @@ const PIPS: Record<number, readonly number[]> = {
   6: [0, 2, 3, 5, 6, 8],
 };
 const SAFE = new Set<number>(SAFE_SQUARES);
+/** Offsets, in board percent, that move a finished seed into its house's centre triangle. */
+const TRIANGLE_NUDGE = [
+  { x: 0, y: -4 },
+  { x: 4, y: 0 },
+  { x: 0, y: 4 },
+  { x: -4, y: 0 },
+] as const;
 
 function useComputerTurn(active: boolean, deps: unknown[], act: () => void) {
   useEffect(() => {
@@ -134,8 +141,8 @@ function seedViews(state: LudoState): SeedView[] {
       house: seed.house,
       token: seed.token,
       progress: seed.progress,
-      left: centre.left + offset,
-      top: centre.top,
+      left: centre.left + offset + (seed.progress === CLEARED ? TRIANGLE_NUDGE[seed.house]!.x : 0),
+      top: centre.top + (seed.progress === CLEARED ? TRIANGLE_NUDGE[seed.house]!.y : 0),
     };
   });
 }
@@ -255,7 +262,12 @@ function LudoBoardView({
               >
                 <PawnSvg house={view.house} />
               </button>
-              {eligible && !isSelected && <span className="ludo-step">+{steps.join("/")}</span>}
+              {eligible && !isSelected && steps.length === 1 && (
+                <span className="ludo-step">+{steps[0]}</span>
+              )}
+              {eligible && !isSelected && steps.length > 1 && (
+                <span className="ludo-step ludo-step-muted">tap</span>
+              )}
               {isSelected && seedMoves.length > 1 && (
                 <div className="ludo-choices">
                   {seedMoves.map((move) => (
