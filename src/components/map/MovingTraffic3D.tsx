@@ -167,6 +167,9 @@ function TrafficVehicle({
       } else {
         activeJunction.current = nextJunction;
         activeJunctionIndex.current = nextJunctionIndex;
+        // Do not let a long animation frame skip over a second junction before
+        // its reservation can be requested on the next frame.
+        distanceToTravel = Math.min(distanceToTravel, remainingToJunction + clearanceDistance);
       }
     }
 
