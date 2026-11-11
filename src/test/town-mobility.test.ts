@@ -523,6 +523,7 @@ describe("shared pedestrian and vehicle crossing priority", () => {
   });
   it("advances through a deterministic timed signal cycle without moving backwards", () => {
     const scheduler = new TownRoadCrossingPriorityScheduler();
+    scheduler.setSignalizedJunctions(["road-junction:4,8"]);
     scheduler.advanceTime(0);
     const phases = new Set<string>();
     for (let second = 0; second <= 48; second += 1) {
@@ -540,6 +541,7 @@ describe("shared pedestrian and vehicle crossing priority", () => {
   it("allows vehicles and pedestrians to reserve only during their respective green phases", () => {
     const junction = "road-junction:4,8";
     const vehicleScheduler = new TownRoadCrossingPriorityScheduler();
+    vehicleScheduler.setSignalizedJunctions([junction]);
     vehicleScheduler.advanceTime(0);
     let vehicleGranted = false;
     for (let second = 0; second <= 48 && !vehicleGranted; second += 1) {
@@ -551,6 +553,7 @@ describe("shared pedestrian and vehicle crossing priority", () => {
     expect(vehicleGranted).toBe(true);
 
     const pedestrianScheduler = new TownRoadCrossingPriorityScheduler();
+    pedestrianScheduler.setSignalizedJunctions([junction]);
     pedestrianScheduler.advanceTime(0);
     let pedestrianGranted = false;
     for (let second = 0; second <= 48 && !pedestrianGranted; second += 1) {
