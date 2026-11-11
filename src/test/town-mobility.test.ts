@@ -15,6 +15,8 @@ describe("pedestrian route validation", () => {
   it("rejects non-finite and zero-length trails before NPC assignment", () => {
     expect(isValidTownPedestrianRoute([[0, 0], [1, 0]])).toBe(true);
     expect(isValidTownPedestrianRoute([[0, 0], [0, 0]])).toBe(false);
+    expect(isValidTownPedestrianRoute([[0, 0], [0, 0], [1, 0]])).toBe(false);
+    expect(isValidTownPedestrianRoute([[0, 0], [1, 0], [1, 0], [2, 0]])).toBe(false);
     expect(isValidTownPedestrianRoute([[0, 0], [Number.NaN, 1]])).toBe(false);
     expect(isValidTownPedestrianRoute([[0, 0], [Number.POSITIVE_INFINITY, 1]])).toBe(false);
   });
