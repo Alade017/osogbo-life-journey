@@ -372,6 +372,21 @@ export function CityMapDashboard({
       setPlaceActionResult(null);
     }
   };
+  const deepLinkedLandmark = useRef<string | null>(null);
+  useEffect(() => {
+    if (!availableLandmarks.data) return;
+    const params = new URLSearchParams(window.location.search);
+    const landmarkId = params.get("landmark");
+    if (!landmarkId || params.get("details") !== "1" || deepLinkedLandmark.current === landmarkId) return;
+    if (!availableLandmarks.data.includes(landmarkId)) return;
+    deepLinkedLandmark.current = landmarkId;
+    onLandmark(landmarkId);
+    setLandmarkDetailsOpen(true);
+    params.delete("landmark");
+    params.delete("details");
+    const query = params.toString();
+    window.history.replaceState(window.history.state, "", query ? "?" + query : window.location.pathname);
+  }, [availableLandmarks.data]);
   const searchMatches = useMemo(() => {
     const value = search.trim().toLocaleLowerCase();
     if (!value) return null;
