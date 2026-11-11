@@ -12,28 +12,25 @@ This plan expands the playable game map in selected phases. It does **not** atte
 - Use data-driven map geometry and landmark metadata; do not invent live database destinations or claim unverified coordinates.
 - The intended map is a selected Osogbo-inspired game region, not the entire city boundary.
 
-## Geography reference and interpretation
+## Map design approach: inspired by Osogbo, not traced from it
 
-The first expansion should reflect the structure of Osogbo rather than a uniform rectangular grid:
+The map is an original game-world layout. Real Osogbo is a source of **place-name, architectural, cultural and neighbourhood inspiration only**. Do not import, trace, digitise, reproduce or align real-world road centre-lines, satellite imagery, GIS polygons, exact building footprints or surveyed coordinates.
 
-1. Traditional core: palace / Oja-Oba market area, Isale-Osun and Olu-Ode.
-2. Intermediate urban area: Station Road, Okefia, Old Garage, Ajegunle, Olaiya, Alekunwodo, Jaleyemi, Hospital Road, Igbona, Ayetoro and Sabo.
-3. Selected outer areas: Ogo-Oluwa, Oke-Bale, Dada Estate and the Ota-Efun / Powerline corridor.
+- Place familiar areas and landmarks in a believable game layout that supports good exploration and gameplay.
+- Their relative placement is a creative design decision, not a claim about exact real-world distance, direction, adjacency or scale.
+- Use recognisable Osogbo/Nigerian street character, markets, compounds, civic spaces, transport stops and local architecture as visual references.
+- Keep fictional businesses, venues and game-only destinations clearly fictional even when placed in an Osogbo-inspired district.
+- The world should feel coherent and navigable, not geographically identical to the real city.
 
-The map should depict a connected but selective subset of these places. Keep the real-world place names where they are useful, while clearly labelling fictional businesses and venues as game locations.
+## Data-driven map authoring and no-hardcoding rule
 
-Useful public references:
-- UN-Habitat's Osogbo spatial-development overview describes the palace and Oja-Oba as the traditional core, railway-era growth around the station, and later residential expansion.
-- Osun State's township-road project list identifies real links including Station Road–Ebenezer Hotel, Oja-Oba–Plantain Area, Gbodofon–Jaleyemi–Gbemu, Oke-Fia–Ita-Olokan and Oja-Oba–Oke-Baale.
-- Osun State's road project pages identify the Alekunwodo network and Oja-Oba–Oke-Baale corridor.
-
-References (checked 11 November 2026):
-- https://unhabitat.org/sites/default/files/2020/09/osogbo_print_final.pdf
-- https://www.osunstate.gov.ng/infrastructure/roads/township-roads/
-- https://www.osunstate.gov.ng/Projects/ongoing-reconstruction-of-the-alekuwodo-road-network-in-osogbo/
-- https://www.osunstate.gov.ng/Projects/ongoing-road-maintenance-work-along-oja-oba-oke-baale-road-osogbo/
-
-These sources establish place and corridor relationships, not a complete current GIS road centreline dataset. Exact road geometry, landmark coordinates and boundaries must be verified against suitable mapping data before being treated as geographically accurate.
+- Keep map dimensions, district definitions, road segments, place metadata, building footprints, entrances and spawn/exit points in typed map data/configuration, not scattered conditional logic or renderer constants.
+- Derive camera bounds, world extents, road connectivity, traffic routes, pedestrian routes, district hit areas and map labels from the authored map data.
+- Use stable IDs and references between places, buildings, districts, entrances and supported game interactions. Avoid duplicate names/IDs and positional assumptions based on array order.
+- Use reusable generators/helpers for repeated layout patterns, with explicit data overrides for meaningful places; do not embed one-off coordinates or landmark-specific branches in rendering components.
+- Validate map data at load/test time: dimensions, rectangular rows, allowed tile symbols, in-bounds coordinates, unique IDs, valid district/place/building references, non-overlapping reserved footprints, reachable entrances and connected road/pedestrian graphs.
+- Adding a visible place must also define its data identity and supported interaction. Do not invent database destinations or wire fake actions.
+- Keep the authored map data versioned and deterministic so the frontend and multiplayer room can agree on collision, movement and interaction locations.
 
 ## Implementation phases
 
@@ -47,14 +44,14 @@ These sources establish place and corridor relationships, not a complete current
 
 ### Phase B — selected geography and map coverage
 
-Build the next areas as connected, data-authored map modules:
+Build the next game areas as connected, original, data-authored map modules inspired by Osogbo's character (never traced from real map geometry):
 1. Strengthen the traditional core around Oja-Oba, palace / civic surroundings and Isale-Osun / Olu-Ode connections.
 2. Add selected Station Road, Old Garage and Okefia links as the next connected urban section.
 3. Add selected Olaiya, Jaleyemi and Alekunwodo links.
 4. Add one outer residential slice such as Oke-Bale or Dada Estate only after its entry/exit and road connectivity are tested.
 
 For every area:
-- Define road segments, intersections, sidewalks, pedestrian crossings, district bounds and landmarks from stable data.
+- Define road segments, intersections, sidewalks, pedestrian crossings, district bounds and landmarks in the map data; derive their rendered geometry and movement routes from that data.
 - Preserve the existing district and location IDs; new clickable destinations require a real existing backend destination or separately approved backend work.
 - Validate connected roads, building footprints, spawn/exit reachability, pedestrian routes and camera bounds.
 - Keep the map streamed or phased; do not load every planned district and all its props at once.
@@ -96,7 +93,7 @@ For every area:
 
 A phase is not complete merely because the map renders.
 
-- **Geography:** selected places are correctly related, road graph is connected, and real-world claims have source-backed coordinates or are labelled illustrative.
+- **Map coherence:** selected places are intentionally arranged, all map coordinates are valid, road and pedestrian graphs are connected where intended, and no layout is presented as an exact real-world trace.
 - **Scale:** map can zoom from district context to landmark detail without clipping, loss of controls or unreadable labels.
 - **Buildings:** each advertised entrance reaches a valid interaction and safe exit.
 - **NPCs:** routines are deterministic and avoid buildings, roads and player spawn points.
