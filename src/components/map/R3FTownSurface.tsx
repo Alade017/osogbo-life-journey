@@ -1085,6 +1085,8 @@ export function R3FTownSurface(props: Props) {
             width={gridCols * cell}
             depth={gridRows * cell}
             zoom={1.55}
+            minZoom={0.42}
+            maxZoom={3.4}
             target={closeUpTarget}
             distanceScale={closeUpTarget ? CLOSE_UP_DISTANCE_SCALE : 1}
             freeExplore
