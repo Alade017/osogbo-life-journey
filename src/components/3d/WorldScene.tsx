@@ -71,6 +71,8 @@ export function WorldCamera({
   enabled = true,
   target,
   zoom = 1,
+  minZoom = WORLD_CAMERA.minZoom,
+  maxZoom = WORLD_CAMERA.maxZoom,
   polarAngle,
   onZoomChange,
   horizontalOrbit = false,
@@ -84,6 +86,8 @@ export function WorldCamera({
   enabled?: boolean;
   target?: [number, number, number] | undefined;
   zoom?: number;
+  minZoom?: number;
+  maxZoom?: number;
   polarAngle?: number;
   onZoomChange?: (zoom: number) => void;
   horizontalOrbit?: boolean;
@@ -107,8 +111,7 @@ export function WorldCamera({
     const previous = framing.current;
     const orbit = controls.current;
     const d =
-      (distance / Math.max(WORLD_CAMERA.minZoom, Math.min(WORLD_CAMERA.maxZoom, zoom))) *
-      distanceScale;
+      (distance / Math.max(minZoom, Math.min(maxZoom, zoom))) * distanceScale;
     if (!previous || previous.distance !== distance || previous.polar !== polar || !orbit) {
       offset
         .set(
@@ -135,7 +138,7 @@ export function WorldCamera({
     controls.current?.target.set(x, y, z);
     controls.current?.update();
     invalidate();
-  }, [camera, distance, azimuth, polar, x, y, z, zoom, distanceScale, invalidate, offset]);
+  }, [camera, distance, azimuth, polar, x, y, z, zoom, minZoom, maxZoom, distanceScale, invalidate, offset]);
   return (
     <OrbitControls
       ref={controls}
@@ -147,13 +150,13 @@ export function WorldCamera({
         if (!controls.current || !onZoomChange) return;
         onZoomChange(
           Math.max(
-            WORLD_CAMERA.minZoom,
-            Math.min(WORLD_CAMERA.maxZoom, distance / controls.current.getDistance()),
+            minZoom,
+            Math.min(maxZoom, distance / controls.current.getDistance()),
           ),
         );
       }}
-      minDistance={distance / WORLD_CAMERA.maxZoom}
-      maxDistance={distance / WORLD_CAMERA.minZoom}
+      minDistance={distance / maxZoom}
+      maxDistance={distance / minZoom}
       minPolarAngle={
         freeExplore
           ? 0.35
