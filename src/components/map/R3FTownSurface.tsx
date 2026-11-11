@@ -1152,7 +1152,10 @@ export function R3FTownSurface(props: Props) {
               detailed
             />
           ))}
-          <MovingTraffic3D paths={trafficRoutes} />
+          <MovingTraffic3D
+            paths={trafficRoutes}
+            onSelectTransit={() => onSelectLandmark("transit-park")}
+          />
           <MovingPedestrians3D paths={pedestrianRoutes} />
           <LockedPlaces3D
             cellSize={cell}
