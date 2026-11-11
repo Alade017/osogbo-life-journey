@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import town from "@/data/osogbo-town.json";
 import { MAP_LANDMARK_LOCATION_SLUG } from "@/components/map/map-location-links";
-import { getLocationVenueDesign, hasLocationVenueDesign } from "@/lib/location-venue-designs";
+import { getLocationVenueDesign, hasBuildingVenueInterior, hasLocationVenueDesign } from "@/lib/location-venue-designs";
 import { validateTownMapData } from "@/game/town-map-validation";
 
 type AuthoredPlace = {
@@ -108,4 +108,11 @@ it("provides dedicated interior designs for authored enterable landmarks", () =>
   // Oja-Oba is an authored map landmark with its own location slug, although
   // it is represented as a map landmark rather than a grid building.
   expect(hasLocationVenueDesign("oja-oba")).toBe(true);
+});
+
+it("does not expose a shared venue interior from stalls without their own entrance", () => {
+  expect(hasBuildingVenueInterior("oja-oba", "market-sales-stall")).toBe(true);
+  expect(hasBuildingVenueInterior("oja-oba", null)).toBe(false);
+  expect(hasBuildingVenueInterior("oja-oba")).toBe(true);
+  expect(hasBuildingVenueInterior("unknown-location", null)).toBe(false);
 });
