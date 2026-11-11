@@ -44,6 +44,7 @@ import { LockedPlaces3D, type LockedPlace } from "./LockedPlaces3D";
 import {
   deriveTownMobilityRoutes,
   deriveTownPedestrianCornerRoutes,
+  deriveTownPedestrianCrossingRoutes,
   deriveTownPedestrianRoutes,
   stitchTownPedestrianRoutes,
 } from "@/game/town-mobility";
@@ -1042,6 +1043,7 @@ export function R3FTownSurface(props: Props) {
     return stitchTownPedestrianRoutes([
       ...deriveTownPedestrianRoutes(town.grid.rows, cell, blockedCells),
       ...deriveTownPedestrianCornerRoutes(town.grid.rows, cell, blockedCells),
+      ...deriveTownPedestrianCrossingRoutes(town.grid.rows, cell, blockedCells),
     ]);
   }, [
     streetLights,
