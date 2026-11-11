@@ -32,6 +32,20 @@ The map is an original game-world layout. Real Osogbo is a source of **place-nam
 - Adding a visible place must also define its data identity and supported interaction. Do not invent database destinations or wire fake actions.
 - Keep the authored map data versioned and deterministic so the frontend and multiplayer room can agree on collision, movement and interaction locations.
 
+## Current staging implementation
+
+The first coverage expansion has been authored in `src/data/osogbo-town.json`:
+
+- Grid: 32 columns × 24 rows (up from 24 × 18).
+- Districts: 17 (up from 11), with non-overlapping in-bounds authored areas.
+- Landmarks: 35 (up from 26), including selected Oja-Oba, Ataoja, Oke-Baale, Aleku-Wodo, Ogo-Oluwa and Oke-Fia inspired points.
+- Building footprints: 26 retained; the new destination markers are kept separate from building geometry until their building/interior work is implemented.
+- Road cells: generated from the existing authored road spacing and extended across the new grid; the current road graph is connected.
+- The Osun-Osogbo Sacred Grove is represented as a data-driven map-only point, not a playable travel destination.
+- The existing destination slugs and server travel/action flows are preserved. No new database migration or backend destination is introduced by this map pass.
+
+The map validator and integrity tests now check authored dimensions, tile symbols, district bounds/overlaps/outlines, landmark and building identities, map-only point types, terrain overlays and road connectivity. These checks have been added to the test suite; they still require execution in the local project environment.
+
 ## Implementation phases
 
 ### Phase A — camera range and map controls
