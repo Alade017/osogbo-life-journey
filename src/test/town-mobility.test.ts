@@ -484,6 +484,18 @@ describe("shared pedestrian and vehicle crossing priority", () => {
     expect(scheduler.request("crossing-a", "pedestrian-1", "pedestrian")).toBe(true);
   });
 
+  it("preserves arrival order for pedestrians while prioritising them over vehicles", () => {
+    const scheduler = new TownRoadCrossingPriorityScheduler();
+    expect(scheduler.request("crossing-a", "vehicle-owner", "vehicle")).toBe(true);
+    expect(scheduler.request("crossing-a", "vehicle-waiter", "vehicle")).toBe(false);
+    expect(scheduler.request("crossing-a", "pedestrian-z", "pedestrian")).toBe(false);
+    expect(scheduler.request("crossing-a", "pedestrian-a", "pedestrian")).toBe(false);
+    scheduler.release("crossing-a", "vehicle-owner");
+    expect(scheduler.request("crossing-a", "pedestrian-z", "pedestrian")).toBe(true);
+    scheduler.release("crossing-a", "pedestrian-z");
+    expect(scheduler.request("crossing-a", "pedestrian-a", "pedestrian")).toBe(true);
+  });
+
   it("identifies only straight symmetric three-point zebra-crossing routes", () => {
     const crossing = [[0, -1.28], [0, 0], [0, 1.28]] as const;
     expect(townPedestrianCrossingIdentity(crossing)).toBe(townRoadJunctionIdentity(0, 0));
