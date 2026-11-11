@@ -3,10 +3,21 @@ import town from "@/data/osogbo-town.json";
 import { MAP_LANDMARK_LOCATION_SLUG } from "@/components/map/map-location-links";
 import { validateTownMapData } from "@/game/town-map-validation";
 
+type AuthoredPlace = {
+  id: string;
+  districtId: string;
+  locationSlug: string | null;
+  grid: { x: number; z: number };
+  buildingType?: string;
+  mapObjectType?: string;
+};
+
+const places = town.landmarks as readonly AuthoredPlace[];
+
 it("keeps every authored district, landmark and building identity unique", () => {
   for (const ids of [
     town.districts.map((district) => district.id),
-    town.landmarks.map((place) => place.id),
+    places.map((place) => place.id),
     town.grid.buildings.map((building) => building.placeId),
   ]) {
     expect(new Set(ids).size).toBe(ids.length);
@@ -22,7 +33,7 @@ it("derives map dimensions and counts from authored data", () => {
 });
 
 it("links every landmark to a stable destination or explicitly marks it map-only", () => {
-  for (const place of town.landmarks) {
+  for (const place of places) {
     expect(town.districts.some((district) => district.id === place.districtId)).toBe(true);
     expect(Object.hasOwn(MAP_LANDMARK_LOCATION_SLUG, place.id)).toBe(true);
     expect(MAP_LANDMARK_LOCATION_SLUG[place.id]).toBe(place.locationSlug);
