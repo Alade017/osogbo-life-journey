@@ -448,7 +448,7 @@ describe("pedestrian routes through rendered zebra crossings", () => {
   it("connects opposite clear sidewalks at a four-way road intersection", () => {
     const routes = deriveTownPedestrianCrossingRoutes([".g.", "rrr", ".g."], 2);
     expect(routes).toHaveLength(1);
-    expect(routes[0]).toEqual([[0, -0.64], [0, 0], [0, 0.64]]);
+    expect(routes[0]).toEqual([[0, -1.28], [0, 0], [0, 1.28]]);
   });
 
   it("does not create a crossing when either sidewalk landing is blocked", () => {
