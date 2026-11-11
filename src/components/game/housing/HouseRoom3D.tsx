@@ -488,6 +488,15 @@ const FURNITURE_COLOURS = {
   artGold: "#e7d9b4",
 } as const;
 
+/** Charcoal strokes on the zoning rug, from the approved reference: cream shag with dark wavy lines. */
+const ZONING_RUG_STROKES: { position: [number, number, number]; angle: number; length: number }[] =
+  [
+    { position: [-0.35, 0.05, -0.2], angle: 0.5, length: 0.9 },
+    { position: [0.25, 0.05, 0.12], angle: -0.7, length: 0.8 },
+    { position: [0.05, 0.05, -0.3], angle: 0.1, length: 0.7 },
+    { position: [-0.25, 0.05, 0.3], angle: -0.2, length: 0.6 },
+  ];
+
 export function FurnitureFallback({
   artKey,
   slotType,
@@ -506,6 +515,31 @@ export function FurnitureFallback({
         : rawKind === "starter-light"
           ? "light"
           : rawKind;
+  if (kind === "zoning-rug")
+    return (
+      <group>
+        <RoundedBox
+          receiveShadow
+          args={[1.6, 0.04, 1.1]}
+          radius={0.02}
+          smoothness={3}
+          position={[0, 0.02, 0]}
+        >
+          <meshStandardMaterial color="#efe8d8" roughness={0.95} />
+        </RoundedBox>
+        {ZONING_RUG_STROKES.map((stroke, index) => (
+          <mesh
+            key={index}
+            position={stroke.position}
+            rotation={[0, stroke.angle, 0]}
+            receiveShadow
+          >
+            <boxGeometry args={[stroke.length, 0.045, 0.06]} />
+            <meshStandardMaterial color="#2c2a27" roughness={0.9} />
+          </mesh>
+        ))}
+      </group>
+    );
   if (kind === "bed")
     return (
       <group scale={[1.2, 1, 1.45]}>
