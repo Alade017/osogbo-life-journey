@@ -65,6 +65,8 @@ import { Route as ApiHousingPropertiesRouteImport } from './routes/api/housing/p
 import { Route as ApiHousingRentRouteImport } from './routes/api/housing/rent'
 import { Route as ApiHousingRentReliefRouteImport } from './routes/api/housing/rent-relief'
 import { Route as ApiHousingResolveOverdueRouteImport } from './routes/api/housing/resolve-overdue'
+import { Route as ApiHousingSharedJoinRouteImport } from './routes/api/housing/shared-join'
+import { Route as ApiHousingSharedLeaveRouteImport } from './routes/api/housing/shared-leave'
 import { Route as ApiMapActionRouteImport } from './routes/api/map/action'
 import { Route as ApiMapLandmarksRouteImport } from './routes/api/map/landmarks'
 import { Route as ApiMapTownTravelRouteImport } from './routes/api/map/town-travel'
@@ -386,6 +388,16 @@ const ApiHousingResolveOverdueRoute =
     path: '/api/housing/resolve-overdue',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiHousingSharedJoinRoute = ApiHousingSharedJoinRouteImport.update({
+  id: '/api/housing/shared-join',
+  path: '/api/housing/shared-join',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHousingSharedLeaveRoute = ApiHousingSharedLeaveRouteImport.update({
+  id: '/api/housing/shared-leave',
+  path: '/api/housing/shared-leave',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMapActionRoute = ApiMapActionRouteImport.update({
   id: '/api/map/action',
   path: '/api/map/action',
@@ -584,6 +596,8 @@ export interface FileRoutesByFullPath {
   '/api/housing/rent': typeof ApiHousingRentRoute
   '/api/housing/rent-relief': typeof ApiHousingRentReliefRoute
   '/api/housing/resolve-overdue': typeof ApiHousingResolveOverdueRoute
+  '/api/housing/shared-join': typeof ApiHousingSharedJoinRoute
+  '/api/housing/shared-leave': typeof ApiHousingSharedLeaveRoute
   '/api/map/action': typeof ApiMapActionRoute
   '/api/map/landmarks': typeof ApiMapLandmarksRoute
   '/api/map/town-travel': typeof ApiMapTownTravelRoute
@@ -668,6 +682,8 @@ export interface FileRoutesByTo {
   '/api/housing/rent': typeof ApiHousingRentRoute
   '/api/housing/rent-relief': typeof ApiHousingRentReliefRoute
   '/api/housing/resolve-overdue': typeof ApiHousingResolveOverdueRoute
+  '/api/housing/shared-join': typeof ApiHousingSharedJoinRoute
+  '/api/housing/shared-leave': typeof ApiHousingSharedLeaveRoute
   '/api/map/action': typeof ApiMapActionRoute
   '/api/map/landmarks': typeof ApiMapLandmarksRoute
   '/api/map/town-travel': typeof ApiMapTownTravelRoute
@@ -755,6 +771,8 @@ export interface FileRoutesById {
   '/api/housing/rent': typeof ApiHousingRentRoute
   '/api/housing/rent-relief': typeof ApiHousingRentReliefRoute
   '/api/housing/resolve-overdue': typeof ApiHousingResolveOverdueRoute
+  '/api/housing/shared-join': typeof ApiHousingSharedJoinRoute
+  '/api/housing/shared-leave': typeof ApiHousingSharedLeaveRoute
   '/api/map/action': typeof ApiMapActionRoute
   '/api/map/landmarks': typeof ApiMapLandmarksRoute
   '/api/map/town-travel': typeof ApiMapTownTravelRoute
@@ -841,6 +859,8 @@ export interface FileRouteTypes {
     | '/api/housing/rent'
     | '/api/housing/rent-relief'
     | '/api/housing/resolve-overdue'
+    | '/api/housing/shared-join'
+    | '/api/housing/shared-leave'
     | '/api/map/action'
     | '/api/map/landmarks'
     | '/api/map/town-travel'
@@ -925,6 +945,8 @@ export interface FileRouteTypes {
     | '/api/housing/rent'
     | '/api/housing/rent-relief'
     | '/api/housing/resolve-overdue'
+    | '/api/housing/shared-join'
+    | '/api/housing/shared-leave'
     | '/api/map/action'
     | '/api/map/landmarks'
     | '/api/map/town-travel'
@@ -1011,6 +1033,8 @@ export interface FileRouteTypes {
     | '/api/housing/rent'
     | '/api/housing/rent-relief'
     | '/api/housing/resolve-overdue'
+    | '/api/housing/shared-join'
+    | '/api/housing/shared-leave'
     | '/api/map/action'
     | '/api/map/landmarks'
     | '/api/map/town-travel'
@@ -1076,6 +1100,8 @@ export interface RootRouteChildren {
   ApiHousingRentRoute: typeof ApiHousingRentRoute
   ApiHousingRentReliefRoute: typeof ApiHousingRentReliefRoute
   ApiHousingResolveOverdueRoute: typeof ApiHousingResolveOverdueRoute
+  ApiHousingSharedJoinRoute: typeof ApiHousingSharedJoinRoute
+  ApiHousingSharedLeaveRoute: typeof ApiHousingSharedLeaveRoute
   ApiMapActionRoute: typeof ApiMapActionRoute
   ApiMapLandmarksRoute: typeof ApiMapLandmarksRoute
   ApiMapTownTravelRoute: typeof ApiMapTownTravelRoute
@@ -1498,6 +1524,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHousingResolveOverdueRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/housing/shared-join': {
+      id: '/api/housing/shared-join'
+      path: '/api/housing/shared-join'
+      fullPath: '/api/housing/shared-join'
+      preLoaderRoute: typeof ApiHousingSharedJoinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/housing/shared-leave': {
+      id: '/api/housing/shared-leave'
+      path: '/api/housing/shared-leave'
+      fullPath: '/api/housing/shared-leave'
+      preLoaderRoute: typeof ApiHousingSharedLeaveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/map/action': {
       id: '/api/map/action'
       path: '/api/map/action'
@@ -1798,6 +1838,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHousingRentRoute: ApiHousingRentRoute,
   ApiHousingRentReliefRoute: ApiHousingRentReliefRoute,
   ApiHousingResolveOverdueRoute: ApiHousingResolveOverdueRoute,
+  ApiHousingSharedJoinRoute: ApiHousingSharedJoinRoute,
+  ApiHousingSharedLeaveRoute: ApiHousingSharedLeaveRoute,
   ApiMapActionRoute: ApiMapActionRoute,
   ApiMapLandmarksRoute: ApiMapLandmarksRoute,
   ApiMapTownTravelRoute: ApiMapTownTravelRoute,
