@@ -35,6 +35,9 @@ export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ paths }) => {
 
   useEffect(() => () => {
     if (speechTimeoutRef.current) clearTimeout(speechTimeoutRef.current);
+    // Do not leave the page cursor in its interactive state if the map unmounts
+    // while a vehicle or pedestrian is hovered.
+    document.body.style.cursor = "auto";
   }, []);
 
   const showSpeech = (id: string, text: string, duration: number) => {
