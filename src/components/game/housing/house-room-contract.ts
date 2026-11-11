@@ -1,4 +1,5 @@
 import type { HousePlacement, HouseSlot } from "./HouseRoomScene";
+import type { SharedBedZone } from "./shared-room-view";
 import type { AvatarAnimationState, AvatarEquipment } from "@/components/game/Avatar";
 import type { Appearance } from "@/game/avatar-appearance";
 import type { FoodDelivery } from "@/lib/food-delivery-service";
@@ -25,6 +26,8 @@ export type HouseRoomRendererProps = {
   placements: HousePlacement[];
   /** Game-placed shared-room furniture, drawn read-only beside the tenant's own items. */
   sharedPlacements?: HousePlacement[];
+  /** The tenant's own bed zone, lightly marked on the floor. */
+  myBedZone?: SharedBedZone | null;
   /** Room shown on its own (an id from houseRoomViews); omitted or null shows the whole home. */
   roomView?: string | null;
   characterName?: string;

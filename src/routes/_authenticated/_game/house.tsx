@@ -64,6 +64,7 @@ import { DrawerSheet } from "@/components/game/housing/DrawerSheet";
 import { drawerAction, fetchDrawerState, storableRows } from "@/lib/drawer";
 import { HouseRoomRenderer } from "@/components/game/housing/HouseRoomRenderer";
 import {
+  myBedZone,
   parseSharedHome,
   sharedRoomPlacements,
   type SharedHomeState,
@@ -797,6 +798,10 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     () => sharedRoomPlacements(serverState?.sharedHome ?? null),
     [serverState?.sharedHome],
   );
+  const sharedBedZone = useMemo(
+    () => myBedZone(serverState?.sharedHome ?? null),
+    [serverState?.sharedHome],
+  );
   const obstacles = roomObstacles(
     serverState?.house?.house_type_id ?? "shared-room",
     roomWidth,
@@ -1523,6 +1528,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           slots={slots}
           placements={floorPlacements}
           sharedPlacements={sharedPlacements}
+          myBedZone={sharedBedZone}
           activeFloor={activeFloor}
           {...(stairs ? { onUseStairs: () => void climbStairs() } : {})}
           foodDeliveries={deliveries.data ?? []}

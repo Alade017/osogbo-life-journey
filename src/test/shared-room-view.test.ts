@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  myBedZone,
   parseSharedHome,
+  zoneWorldRect,
   sharedRoomPlacements,
   sharedSlotKey,
 } from "@/components/game/housing/shared-room-view";
@@ -60,5 +62,17 @@ describe("shared room view", () => {
     expect(parseSharedHome(null)).toBeNull();
     expect(parseSharedHome({ unit_id: 5, my_bed_slot: 1 })).toBeNull();
     expect(sharedRoomPlacements(null)).toEqual([]);
+  });
+
+  it("finds the tenant's own bed zone and covers the whole zone in world units", () => {
+    const shared = parseSharedHome(serverValue);
+    expect(myBedZone(shared)).toEqual({ bedSlot: 2, xMin: 50, xMax: 100, yMin: 0, yMax: 100 });
+    expect(myBedZone(null)).toBeNull();
+    // The right half of a 6 by 5 room: x from 0 to 2.6, z the full depth less the inset.
+    const rect = zoneWorldRect({ bedSlot: 2, xMin: 50, xMax: 100, yMin: 0, yMax: 100 }, 6, 5);
+    expect(rect.sizeX).toBeCloseTo(2.6);
+    expect(rect.sizeZ).toBeCloseTo(4.2);
+    expect(rect.centerX).toBeCloseTo(1.3);
+    expect(rect.centerZ).toBeCloseTo(0);
   });
 });

@@ -25,6 +25,29 @@ function finite(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
+/** The tenant's own bed zone, or null when the player has no shared bed. */
+export function myBedZone(shared: SharedHomeState | null): SharedBedZone | null {
+  if (!shared) return null;
+  return shared.zones.find((zone) => zone.bedSlot === shared.myBedSlot) ?? null;
+}
+
+/**
+ * A zone's rectangle in world units, on the same inset as roomPercentToPosition but without its
+ * 4 to 96 clamp, so the outline covers the whole zone.
+ */
+export function zoneWorldRect(zone: SharedBedZone, width: number, depth: number) {
+  const x0 = (zone.xMin / 100 - 0.5) * (width - 0.8);
+  const x1 = (zone.xMax / 100 - 0.5) * (width - 0.8);
+  const z0 = (0.5 - zone.yMin / 100) * (depth - 0.8);
+  const z1 = (0.5 - zone.yMax / 100) * (depth - 0.8);
+  return {
+    centerX: (x0 + x1) / 2,
+    centerZ: (z0 + z1) / 2,
+    sizeX: Math.abs(x1 - x0),
+    sizeZ: Math.abs(z1 - z0),
+  };
+}
+
 /** Shared-room furniture is game-placed and read-only, so its slot keys never reach a move or remove call. */
 export function sharedSlotKey(slot: string): string {
   return `shared:${slot}`;

@@ -38,6 +38,7 @@ import {
   type HouseRoomView,
   type HouseRoomRendererProps as Props,
 } from "./house-room-contract";
+import { zoneWorldRect } from "./shared-room-view";
 
 import {
   WorldCamera,
@@ -1915,6 +1916,7 @@ export function HouseRoom3D({
   slots,
   placements: allPlacements,
   sharedPlacements = NO_SHARED_PLACEMENTS,
+  myBedZone = null,
   foodDeliveries = [],
   movingPlacement = null,
   editMode,
@@ -2250,6 +2252,26 @@ export function HouseRoom3D({
               />
             );
           })}
+          {/* The tenant's own bed zone: a faint floor tint, not clickable */}
+          {myBedZone &&
+            (() => {
+              const rect = zoneWorldRect(myBedZone, width, depth);
+              return (
+                <mesh
+                  position={[rect.centerX, 0.012, rect.centerZ]}
+                  rotation={[-Math.PI / 2, 0, 0]}
+                  raycast={() => undefined}
+                >
+                  <planeGeometry args={[rect.sizeX, rect.sizeZ]} />
+                  <meshBasicMaterial
+                    color="#f2c14e"
+                    transparent
+                    opacity={0.12}
+                    depthWrite={false}
+                  />
+                </mesh>
+              );
+            })()}
           {/* Shared-room furniture: game-placed and read-only, so no drag, select or remove */}
           {sharedPlacements.map((placement) => {
             const slot = renderSlotForPlacement(placement, slots);
