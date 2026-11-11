@@ -448,6 +448,14 @@ export class TownRoadCrossingPriorityScheduler {
     else this.waiters.delete(junctionId);
   }
 
+  getSignalState(junctionId: string): "stop" | "caution" | "go" {
+    if (!junctionId) return "go";
+    const owner = this.owners.get(junctionId);
+    if (owner?.kind === "pedestrian") return "stop";
+    if (this.waiters.get(junctionId)?.some((actor) => actor.kind === "pedestrian")) return "caution";
+    return "go";
+  }
+
   cancelActor(actorId: string): void {
     if (!actorId) return;
     for (const [junctionId, owner] of this.owners) {
