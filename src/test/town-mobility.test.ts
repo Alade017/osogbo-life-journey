@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isValidTownMobilityLoop, townPedestrianClearanceRadius, isValidTownPedestrianRoute, measureTownMobilityLoop, deriveTownMobilityRoutes, deriveTownPedestrianCornerRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells, stitchTownPedestrianRoutes, TownPedestrianJunctionScheduler, TownTrafficJunctionScheduler, townMobilityRouteIdentity } from "@/game/town-mobility";
+import { isValidTownMobilityLoop, townPedestrianClearanceRadius, isValidTownPedestrianRoute, measureTownMobilityLoop, deriveTownMobilityRoutes, deriveTownPedestrianCornerRoutes, deriveTownPedestrianCrossingRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells, stitchTownPedestrianRoutes, TownPedestrianJunctionScheduler, TownTrafficJunctionScheduler, townMobilityRouteIdentity } from "@/game/town-mobility";
 import town from "@/data/osogbo-town.json";
 
 describe("pedestrian junction clearance", () => {
@@ -440,5 +440,25 @@ describe("pedestrian junction reservation lifecycle", () => {
     scheduler.cancelPedestrian("");
     scheduler.cancelPedestrian("ped-1");
     expect(scheduler.request("crossing-a", "ped-2")).toBe(true);
+  });
+});
+
+
+describe("pedestrian routes through rendered zebra crossings", () => {
+  it("connects opposite clear sidewalks at a four-way road intersection", () => {
+    const routes = deriveTownPedestrianCrossingRoutes([".g.", "rrr", ".g."], 2);
+    expect(routes).toHaveLength(1);
+    expect(routes[0]).toEqual([[0, -0.64], [0, 0], [0, 0.64]]);
+  });
+
+  it("does not create a crossing when either sidewalk landing is blocked", () => {
+    expect(deriveTownPedestrianCrossingRoutes([".g.", "rrr", ".g."], 2, [[1, 0]])).toHaveLength(0);
+    expect(deriveTownPedestrianCrossingRoutes([".g.", "rrr", ".g."], 2, [[1, 2]])).toHaveLength(0);
+  });
+
+  it("ignores non-intersections, missing sidewalks and invalid dimensions", () => {
+    expect(deriveTownPedestrianCrossingRoutes([".g.", ".r.", ".g."], 2)).toHaveLength(0);
+    expect(deriveTownPedestrianCrossingRoutes(["...", "rrr", "..."], 2)).toHaveLength(0);
+    expect(deriveTownPedestrianCrossingRoutes([".g.", "rrr", ".g."], 0)).toHaveLength(0);
   });
 });
