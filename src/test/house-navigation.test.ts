@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { findRoomPath, roomObstacles, type RoomPoint } from "@/game/house-navigation";
-import { housePartitionSegments } from "@/components/game/housing/house-room-contract";
+import {
+  houseDoorThreshold,
+  houseStairs,
+  housePartitionSegments,
+} from "@/components/game/housing/house-room-contract";
 describe("house navigation", () => {
   it("routes through the doorway rather than crossing partitions", () => {
     const obstacles = roomObstacles("mini-flat", 9, 6.8, [], []);
@@ -41,4 +45,39 @@ it("will not interact through a wall when the other room is inaccessible", () =>
       true,
     ),
   ).toBeNull();
+});
+
+describe("duplex stairs", () => {
+  const width = 13.2;
+  const depth = 9.7;
+  const stairs = houseStairs("duplex", width, depth);
+  const at = ([x, z]: [number, number]): RoomPoint => [x, 0.06, z];
+
+  it("has stairs in a duplex only", () => {
+    expect(stairs).not.toBeNull();
+    expect(houseStairs("studio-flat", width, depth)).toBeNull();
+  });
+
+  it("reaches the foot of the stairs from the door on the ground floor", () => {
+    const door = houseDoorThreshold("duplex", width, depth);
+    const obstacles = roomObstacles("duplex", width, depth, [], [], 0);
+    expect(findRoomPath(door, at(stairs!.bottom), width, depth, obstacles)).not.toBeNull();
+  });
+
+  it("reaches the top of the stairs upstairs and can walk into the upstairs rooms", () => {
+    const obstacles = roomObstacles("duplex", width, depth, [], [], 1);
+    expect(findRoomPath(at(stairs!.top), at([2, -1.5]), width, depth, obstacles)).not.toBeNull();
+    expect(findRoomPath(at(stairs!.top), at([3.5, -3.5]), width, depth, obstacles)).not.toBeNull();
+  });
+
+  it("keeps each stair landing clear of walls on its floor", () => {
+    const ground = roomObstacles("duplex", width, depth, [], [], 0);
+    const upstairs = roomObstacles("duplex", width, depth, [], [], 1);
+    const clear = (point: [number, number], list: typeof ground) =>
+      list.every(
+        (o) => Math.abs(point[0] - o.x) > o.w / 2 + 0.1 || Math.abs(point[1] - o.z) > o.d / 2 + 0.1,
+      );
+    expect(clear(stairs!.bottom, ground)).toBe(true);
+    expect(clear(stairs!.top, upstairs)).toBe(true);
+  });
 });
