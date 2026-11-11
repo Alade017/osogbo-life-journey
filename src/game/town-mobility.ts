@@ -437,6 +437,12 @@ export class TownRoadCrossingPriorityScheduler {
   private readonly owners = new Map<string, { id: string; kind: "pedestrian" | "vehicle" }>();
   private readonly waiters = new Map<string, Array<{ id: string; kind: "pedestrian" | "vehicle" }>>();
   private elapsedSeconds: number | null = null;
+  private readonly signalizedJunctions = new Set<string>();
+
+  setSignalizedJunctions(junctionIds: readonly string[]): void {
+    this.signalizedJunctions.clear();
+    junctionIds.forEach((id) => { if (id) this.signalizedJunctions.add(id); });
+  }
 
   /** R3F actors may call this every frame; max() makes multi-caller updates idempotent. */
   advanceTime(elapsedSeconds: number): void {
@@ -478,7 +484,7 @@ export class TownRoadCrossingPriorityScheduler {
 
     // Preserve the legacy scheduler behaviour in isolated tests/tools until a
     // live R3F clock is supplied. In the town scene, phase permissions gate entry.
-    if (this.elapsedSeconds !== null) {
+    if (this.elapsedSeconds !== null && this.signalizedJunctions.has(junctionId)) {
       const phase = this.getSignalPhase(junctionId);
       if (kind === "vehicle" && phase !== "vehicle-green") return false;
       if (kind === "pedestrian" && phase !== "pedestrian-walk") return false;
@@ -505,7 +511,7 @@ export class TownRoadCrossingPriorityScheduler {
     const owner = this.owners.get(junctionId);
     if (owner?.kind === "pedestrian") return "stop";
     if (this.waiters.get(junctionId)?.some((actor) => actor.kind === "pedestrian")) return "caution";
-    if (this.elapsedSeconds === null) return "go";
+    if (this.elapsedSeconds === null || !this.signalizedJunctions.has(junctionId)) return "go";
     const phase = this.getSignalPhase(junctionId);
     if (phase === "vehicle-green") return "go";
     if (phase === "amber") return "caution";
