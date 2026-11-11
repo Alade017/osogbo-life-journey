@@ -852,42 +852,6 @@
         "x": 17,
         "z": 13,
         "buildingType": "sport"
-      },
-      {
-        "placeId": "oja-oba-market",
-        "x": 25,
-        "z": 2,
-        "buildingType": "market"
-      },
-      {
-        "placeId": "ataoja-police-station",
-        "x": 27,
-        "z": 2,
-        "buildingType": "public-service"
-      },
-      {
-        "placeId": "ataoja-palace",
-        "x": 29,
-        "z": 2,
-        "buildingType": "civic"
-      },
-      {
-        "placeId": "oke-baale-local-government-hq",
-        "x": 2,
-        "z": 21,
-        "buildingType": "civic"
-      },
-      {
-        "placeId": "osogbo-school-of-art",
-        "x": 5,
-        "z": 22,
-        "buildingType": "school"
-      },
-      {
-        "placeId": "osogbo-township-stadium",
-        "x": 18,
-        "z": 22,
-        "buildingType": "sport"
       }
     ],
     "treeCells": [
@@ -2336,8 +2300,9 @@
         "x": 25,
         "z": 2
       },
-      "buildingType": "market",
-      "actions": []
+      "actions": [],
+      "mapObjectType": "landmark",
+      "availabilityReason": "Map landmark linked to an existing game destination."
     },
     {
       "id": "ataoja-police-station",
@@ -2352,8 +2317,9 @@
         "x": 27,
         "z": 2
       },
-      "buildingType": "public-service",
-      "actions": []
+      "actions": [],
+      "mapObjectType": "landmark",
+      "availabilityReason": "Map landmark linked to an existing game destination."
     },
     {
       "id": "ataoja-palace",
@@ -2368,8 +2334,9 @@
         "x": 29,
         "z": 2
       },
-      "buildingType": "civic",
-      "actions": []
+      "actions": [],
+      "mapObjectType": "landmark",
+      "availabilityReason": "Map landmark linked to an existing game destination."
     },
     {
       "id": "oke-baale-local-government-hq",
@@ -2384,8 +2351,9 @@
         "x": 2,
         "z": 21
       },
-      "buildingType": "civic",
-      "actions": []
+      "actions": [],
+      "mapObjectType": "landmark",
+      "availabilityReason": "Map landmark linked to an existing game destination."
     },
     {
       "id": "osogbo-school-of-art",
@@ -2400,8 +2368,9 @@
         "x": 5,
         "z": 22
       },
-      "buildingType": "school",
-      "actions": []
+      "actions": [],
+      "mapObjectType": "landmark",
+      "availabilityReason": "Map landmark linked to an existing game destination."
     },
     {
       "id": "osogbo-township-stadium",
@@ -2416,8 +2385,9 @@
         "x": 18,
         "z": 22
       },
-      "buildingType": "sport",
-      "actions": []
+      "actions": [],
+      "mapObjectType": "landmark",
+      "availabilityReason": "Map landmark linked to an existing game destination."
     },
     {
       "id": "aleku-wodo-road-network",
