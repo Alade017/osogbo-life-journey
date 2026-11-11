@@ -408,3 +408,37 @@ describe("ambient traffic junction reservations", () => {
     expect(scheduler.request("junction-1", "vehicle-b")).toBe(true);
   });
 });
+
+
+describe("pedestrian junction reservation lifecycle", () => {
+  it("keeps one pedestrian in a junction and serves waiting pedestrians in order", () => {
+    const scheduler = new TownPedestrianJunctionScheduler();
+    expect(scheduler.request("crossing-a", "ped-1")).toBe(true);
+    expect(scheduler.request("crossing-a", "ped-2")).toBe(false);
+    expect(scheduler.request("crossing-a", "ped-3")).toBe(false);
+    expect(scheduler.request("crossing-a", "ped-2")).toBe(false);
+    scheduler.release("crossing-a", "ped-1");
+    expect(scheduler.request("crossing-a", "ped-2")).toBe(true);
+    expect(scheduler.request("crossing-a", "ped-3")).toBe(false);
+  });
+
+  it("cancels an active or waiting pedestrian without blocking the crossing", () => {
+    const scheduler = new TownPedestrianJunctionScheduler();
+    expect(scheduler.request("crossing-a", "ped-1")).toBe(true);
+    expect(scheduler.request("crossing-a", "ped-2")).toBe(false);
+    scheduler.cancelPedestrian("ped-1");
+    expect(scheduler.request("crossing-a", "ped-2")).toBe(true);
+    scheduler.cancelPedestrian("ped-2");
+    expect(scheduler.request("crossing-a", "ped-3")).toBe(true);
+  });
+
+  it("ignores empty IDs and repeated cleanup safely", () => {
+    const scheduler = new TownPedestrianJunctionScheduler();
+    expect(scheduler.request("", "ped-1")).toBe(false);
+    expect(scheduler.request("crossing-a", "")).toBe(false);
+    scheduler.release("", "ped-1");
+    scheduler.cancelPedestrian("");
+    scheduler.cancelPedestrian("ped-1");
+    expect(scheduler.request("crossing-a", "ped-2")).toBe(true);
+  });
+});
