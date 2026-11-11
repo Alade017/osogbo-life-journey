@@ -6,6 +6,7 @@ export type TownMapValidationInput = {
   districts: readonly {
     id: string;
     gridArea: { x: number; z: number; width: number; depth: number };
+    shape?: readonly (readonly number[])[];
   }[];
   grid: {
     cellSize: number;
@@ -17,6 +18,8 @@ export type TownMapValidationInput = {
   landmarks: readonly {
     id: string;
     grid: { x: number; z: number };
+    x?: number;
+    y?: number;
     districtId?: string;
     buildingType?: string;
     mapObjectType?: string;
@@ -59,6 +62,24 @@ export function validateTownMapData(data: TownMapValidationInput): string[] {
       x < 0 || z < 0 || x + width > columns || z + depth > expectedRows) {
       errors.push(`District "${district.id}" has an invalid or out-of-bounds grid area.`);
     }
+    if (district.shape && (district.shape.length < 3 || district.shape.some(
+      (point) => point.length !== 2 || !point.every(Number.isFinite),
+    ))) {
+      errors.push(`District "${district.id}" has an invalid outline shape.`);
+    }
+  }
+
+  for (let index = 0; index < data.districts.length; index++) {
+    const first = data.districts[index]!;
+    for (const second of data.districts.slice(index + 1)) {
+      const a = first.gridArea;
+      const b = second.gridArea;
+      const overlapX = Math.max(a.x, b.x) < Math.min(a.x + a.width, b.x + b.width);
+      const overlapZ = Math.max(a.z, b.z) < Math.min(a.z + a.depth, b.z + b.depth);
+      if (overlapX && overlapZ) {
+        errors.push(`District areas "${first.id}" and "${second.id}" overlap.`);
+      }
+    }
   }
 
   const landmarkIds = new Set<string>();
@@ -66,6 +87,10 @@ export function validateTownMapData(data: TownMapValidationInput): string[] {
     if (!landmark.id || landmarkIds.has(landmark.id)) errors.push(`Landmark ID is missing or duplicated: "${landmark.id}".`);
     landmarkIds.add(landmark.id);
     if (!inBounds(landmark.grid.x, landmark.grid.z)) errors.push(`Landmark "${landmark.id}" is outside the map grid.`);
+    if ((landmark.x !== undefined && !Number.isFinite(landmark.x)) ||
+      (landmark.y !== undefined && !Number.isFinite(landmark.y))) {
+      errors.push(`Landmark "${landmark.id}" has invalid label coordinates.`);
+    }
     if (landmark.districtId && !districtIds.has(landmark.districtId)) {
       errors.push(`Landmark "${landmark.id}" references unknown district "${landmark.districtId}".`);
     }
