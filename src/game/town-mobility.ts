@@ -322,7 +322,21 @@ export function townPedestrianClearanceRadius(routeLength: number, preferredRadi
 
 /** Rejects traffic loops containing malformed points or no traversable perimeter. */
 export function isValidTownMobilityLoop(route: TownMobilityRoute): boolean {
-  return route.length >= 2
-    && route.every(([x, z]) => Number.isFinite(x) && Number.isFinite(z))
-    && measureTownMobilityLoop(route) >= 0.001;
+  if (route.length < 3 || !route.every(([x, z]) => Number.isFinite(x) && Number.isFinite(z))) {
+    return false;
+  }
+
+  const uniquePoints = new Set(route.map(([x, z]) => `${x.toFixed(5)},${z.toFixed(5)}`));
+  if (uniquePoints.size < 3) return false;
+
+  let twiceArea = 0;
+  for (let index = 0; index < route.length; index += 1) {
+    const current = route[index]!;
+    const next = route[(index + 1) % route.length]!;
+    const edgeLength = Math.hypot(next[0] - current[0], next[1] - current[1]);
+    if (!Number.isFinite(edgeLength) || edgeLength < 0.001) return false;
+    twiceArea += current[0] * next[1] - next[0] * current[1];
+  }
+
+  return Number.isFinite(twiceArea) && Math.abs(twiceArea) >= 0.002;
 }
