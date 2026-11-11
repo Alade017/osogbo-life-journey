@@ -118,3 +118,22 @@ A phase is not complete merely because the map renders.
 ## Protected scope
 
 No database migration, SQL execution, economy change, production server rollout, merge to main or deployment is included in this roadmap. Keep all implementation on the staging feature branch until review and acceptance.
+
+
+## Transport gameplay review — boarding is not yet server-backed
+
+The current town renderer has interactive traffic vehicles, bus-stop shelters and visual waiting-passenger meshes. The waiting passengers are generated from bus-stop positions in `MovingPedestrians3D`; they are presentation-only and their click callback opens the shared Transit Park travel selector. They do not represent persistent passenger records, stop-specific queues, reserved seats or a boarded state. Moving traffic is also client-rendered ambient traffic, not a transport vehicle entity with a server-owned trip lifecycle.
+
+Do not implement boarding by locally hiding a passenger, moving a player into a vehicle, decrementing a client-side seat count or starting a client-only departure timer. Those approaches would diverge between multiplayer clients and could bypass fare, location, capacity and travel validation.
+
+A safe boarding phase requires an existing or separately approved server-authoritative contract that can validate at minimum:
+
+- stable vehicle, route and stop IDs;
+- current vehicle trip and stop sequence;
+- player proximity and eligibility at the selected stop;
+- available capacity and idempotent boarding requests;
+- fare/payment handling through existing authoritative economy rules;
+- departure, arrival, cancellation and disembark state;
+- Colyseus room/state replication so all clients observe the same occupancy and trip status.
+
+Until that contract is confirmed, the supported interaction remains opening the existing travel selector. No database schema, migration, fare logic or multiplayer authority is changed by this review.
