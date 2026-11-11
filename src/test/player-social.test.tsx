@@ -185,6 +185,12 @@ describe("real-player social panel", () => {
     expect(await screen.findByRole("button", { name: /Ayo/ })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Ayo/ }));
     const composer = await screen.findByLabelText("Message Ayo");
+    const searchButton = screen.getByRole("button", { name: "Search messages" });
+    expect(searchButton.querySelector("svg")).not.toBeNull();
+    fireEvent.click(searchButton);
+    expect(
+      screen.getByRole("searchbox", { name: "Search messages in this chat" }),
+    ).toBeInTheDocument();
     await waitFor(() =>
       expect(mocks.getSocialMessages).toHaveBeenCalledWith({
         conversationId: "conversation-ayo",
@@ -261,7 +267,7 @@ describe("phone message interactions", () => {
     fireEvent.scroll(history, { target: { scrollTop: 0 } });
     expect(screen.getByText("Message 0")).toBeInTheDocument();
   });
-  it("persists individual stars and filters the chat", () => {
+  it("persists individual stars without covering the chat history", () => {
     render(
       <MessageList
         messages={messages.slice(0, 2)}
@@ -273,9 +279,9 @@ describe("phone message interactions", () => {
     );
     fireEvent.doubleClick(screen.getByText("Message 0"));
     expect(JSON.parse(localStorage.getItem("osun-message-stars:me")!)).toEqual(["message-0"]);
-    fireEvent.click(screen.getByRole("button", { name: "Starred messages on this device" }));
     expect(screen.getByText("Message 0")).toBeInTheDocument();
-    expect(screen.queryByText("Message 1")).not.toBeInTheDocument();
+    expect(screen.getByText("Message 1")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Starred messages on this device" })).toBeNull();
   });
   it("shows loading feedback and preserves the visible scroll position when prepending history", () => {
     const onLoadOlder = vi.fn();

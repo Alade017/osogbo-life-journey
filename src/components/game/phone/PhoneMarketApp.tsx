@@ -21,6 +21,7 @@ import {
   type StallCategory,
 } from "@/lib/market-stall-service";
 import { PaletteSelect } from "@/components/ui/palette-select";
+import "./phone-market-app.css";
 
 const THEMES = [
   { id: "indigo", label: "Adire Indigo", color: "#1e3a8a", border: "#3b82f6" },
@@ -179,11 +180,22 @@ export function PhoneMarketApp() {
   );
 
   return (
-    <div className="phone-sub-app" role="region" aria-label="Market and Stall Rental">
+    <div className="phone-sub-app market-app" role="region" aria-label="Market and Stall Rental">
       <div className="phone-sub-header">
-        <div className="phone-segmented-tabs">
+        <div className="market-app-hero">
+          <span className="market-app-hero-icon">
+            <ShoppingBag aria-hidden="true" size={21} />
+          </span>
+          <div>
+            <span className="market-app-eyebrow">Osogbo marketplace</span>
+            <h2>Market</h2>
+            <p>Shop nearby, manage your stall, and discover local sellers.</p>
+          </div>
+        </div>
+        <div className="phone-segmented-tabs market-app-tabs" aria-label="Market sections">
           <button
             type="button"
+            aria-pressed={tab === "stalls"}
             className={tab === "stalls" ? "is-active" : ""}
             onClick={() => setTab("stalls")}
           >
@@ -192,6 +204,7 @@ export function PhoneMarketApp() {
           </button>
           <button
             type="button"
+            aria-pressed={tab === "shops"}
             className={tab === "shops" ? "is-active" : ""}
             onClick={() => setTab("shops")}
           >
@@ -200,6 +213,7 @@ export function PhoneMarketApp() {
           </button>
           <button
             type="button"
+            aria-pressed={tab === "players"}
             className={tab === "players" ? "is-active" : ""}
             onClick={() => setTab("players")}
           >
@@ -219,8 +233,11 @@ export function PhoneMarketApp() {
             </p>
           )
         ) : tab === "stalls" ? (
-          <div className="space-y-4 p-3">
-            <section className="phone-card space-y-3 p-3" aria-label="Market stall rent">
+          <div className="market-app-section space-y-4 p-3">
+            <section
+              className="phone-card market-app-lease space-y-3 p-3"
+              aria-label="Market stall rent"
+            >
               <div>
                 <h3 className="text-sm font-bold">Oja-Oba Stall Lease</h3>
                 <p className="text-xs text-muted-foreground">
@@ -290,7 +307,7 @@ export function PhoneMarketApp() {
               )}
             </section>
             {/* Player's Stall Builder Card */}
-            <div className="phone-card">
+            <div className="phone-card market-app-stall">
               <div className="flex items-center justify-between gap-2 border-b border-border/40 pb-2">
                 <div className="flex items-center gap-2">
                   <span className="phone-app-icon-badge phone-app-green">
@@ -314,7 +331,7 @@ export function PhoneMarketApp() {
 
               {/* Stall Live Preview */}
               <div
-                className="my-3 p-3 rounded-xl text-white transition-all"
+                className="market-app-preview my-3 p-3 rounded-xl text-white transition-all"
                 style={{
                   backgroundColor: THEMES.find((t) => t.id === selectedTheme)?.color ?? "#1e3a8a",
                   borderColor: THEMES.find((t) => t.id === selectedTheme)?.border ?? "#3b82f6",
@@ -436,7 +453,10 @@ export function PhoneMarketApp() {
               <StallIncomePanel key={character.user_id} userId={character.user_id} />
             )}
             {activeLease && (
-              <section className="phone-card space-y-3 p-3" aria-label="My stall stock">
+              <section
+                className="phone-card market-app-stock space-y-3 p-3"
+                aria-label="My stall stock"
+              >
                 <div>
                   <h3 className="text-sm font-bold">Manage stock</h3>
                   <p className="text-xs text-muted-foreground">
@@ -652,7 +672,7 @@ export function PhoneMarketApp() {
                 {npcStalls.data?.map((npc) => (
                   <div
                     key={npc.id}
-                    className="phone-card flex items-center justify-between gap-3 p-3"
+                    className="phone-card market-app-vendor flex items-center justify-between gap-3 p-3"
                   >
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
@@ -672,8 +692,8 @@ export function PhoneMarketApp() {
             </div>
           </div>
         ) : (
-          <div className="space-y-4 p-3">
-            <div className="flex items-center justify-between text-xs px-1">
+          <div className="market-app-section space-y-4 p-3">
+            <div className="market-app-shop-summary flex items-center justify-between text-xs px-1">
               <span className="font-semibold text-muted-foreground">
                 Wallet Cash:{" "}
                 <strong className="text-foreground">{formatNaira(wallet?.balance)}</strong>
@@ -696,7 +716,7 @@ export function PhoneMarketApp() {
                     (offer.stock === null || offer.stock >= quantity);
 
                   return (
-                    <div key={offer.id} className="phone-card p-3 space-y-2">
+                    <div key={offer.id} className="phone-card market-app-product p-3 space-y-2">
                       <div className="flex items-start gap-2.5">
                         <span className="p-2 rounded-lg bg-primary/10 text-primary flex-none">
                           <ShoppingBag className="h-4 w-4" />
@@ -771,7 +791,7 @@ export function PhoneMarketApp() {
                     .map((entry) => (
                       <div
                         key={entry.id}
-                        className="phone-card flex items-center justify-between p-2.5"
+                        className="phone-card market-app-product flex items-center justify-between p-2.5"
                       >
                         <div className="min-w-0">
                           <span className="font-bold text-xs block truncate">

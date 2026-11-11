@@ -79,3 +79,51 @@ it("keeps the shared navigation inside the modal focus boundary", async () => {
   fireEvent.keyDown(dialog, { key: "Escape" });
   await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
 });
+
+it("groups launcher apps into pages of twelve and includes optional Shortcuts", () => {
+  render(<PhoneLauncher shortcutEditor={<div>Editor</div>} />);
+  fireEvent.click(screen.getByRole("button", { name: "Open in-game phone" }));
+
+  const pages = document.querySelectorAll(".phone-app-grid");
+  expect(Array.from(pages, (page) => page.querySelectorAll(".phone-app").length)).toEqual([
+    12, 12, 5,
+  ]);
+  expect(pages[0]?.querySelector('[aria-label="Open Shortcuts"]')).not.toBeNull();
+  expect(screen.getAllByRole("button", { name: /Go to app page/ })).toHaveLength(pages.length);
+  expect(screen.getByRole("button", { name: "Go to app page 1" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+});
+
+it("moves one launcher page per swipe and closes from the external Cancel button", async () => {
+  render(<PhoneLauncher />);
+  fireEvent.click(screen.getByRole("button", { name: "Open in-game phone" }));
+  const pages = screen.getByLabelText("Phone apps");
+  const scrollTo = vi.fn();
+  Object.defineProperty(pages, "clientWidth", { configurable: true, value: 360 });
+  Object.defineProperty(pages, "scrollTo", { configurable: true, value: scrollTo });
+
+  fireEvent.touchStart(pages, {
+    touches: [{ clientX: 300, clientY: 200 }],
+    changedTouches: [{ clientX: 300, clientY: 200 }],
+  });
+  fireEvent.touchEnd(pages, {
+    touches: [],
+    changedTouches: [{ clientX: 80, clientY: 205 }],
+  });
+  expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ left: 360 }));
+  fireEvent.wheel(pages, { deltaX: 240 });
+  fireEvent.wheel(pages, { deltaX: 240 });
+  expect(scrollTo).toHaveBeenCalledTimes(2);
+  expect(scrollTo).toHaveBeenLastCalledWith(expect.objectContaining({ left: 720 }));
+
+  const cancel = screen.getByRole("button", { name: "Cancel and close phone" });
+  expect(screen.getByRole("dialog")).toContainElement(cancel);
+  expect(document.querySelector(".phone-screen")).not.toContainElement(cancel);
+  expect(cancel).toHaveTextContent("Cancel");
+  expect(cancel.querySelector("svg")).not.toBeNull();
+  expect(document.querySelector(".phone-status-camera")).not.toBeNull();
+  fireEvent.click(cancel);
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+});

@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { ArrowRight, Coins, Gamepad2, Users } from "lucide-react";
 import { formatNaira, q } from "@/lib/game";
 import { WhotTableView } from "@/components/game/mini-games/WhotTableView";
 
@@ -123,62 +124,120 @@ function StakeLobby({
 
   return (
     <div className="mg-stakes">
-      <section className="mg-stake-create" aria-label="Open a table">
-        <p className="mg-status">
-          Open a table and stake cash. An opponent matches your stake. The winner takes the pot less
-          a 5% house fee. Draws refund both stakes.
-        </p>
-        <label className="mg-stake-field">
-          <span>Game</span>
-          <select
-            value={game}
-            onChange={(event) => setGame(event.target.value as GameKind)}
-            aria-label="Game"
-          >
-            <option value="tictactoe">Tic-Tac-Toe</option>
-            <option value="whot">Whot</option>
-          </select>
-        </label>
-        <label className="mg-stake-field">
-          <span>Stake</span>
-          <select
-            value={stake}
-            onChange={(event) => setStake(Number(event.target.value))}
-            aria-label="Stake amount"
-          >
-            {STAKES.map((amount) => (
-              <option key={amount} value={amount}>
-                {formatNaira(amount)}
-              </option>
-            ))}
-          </select>
-        </label>
+      <div className="mg-stake-intro">
+        <span className="mg-stake-intro-icon" aria-hidden="true">
+          <Coins size={20} />
+        </span>
+        <div>
+          <h2>Play for stakes</h2>
+          <p>Choose a game, set your stake, and challenge another player.</p>
+        </div>
+      </div>
+      <section className="mg-stake-create" aria-labelledby="mg-stake-create-title">
+        <div className="mg-stake-section-head">
+          <div>
+            <span className="mg-stake-eyebrow">New match</span>
+            <h3 id="mg-stake-create-title">Open a table</h3>
+          </div>
+          <span className="mg-stake-balance">Cash {formatNaira(balance)}</span>
+        </div>
+        <div className="mg-stake-fields">
+          <label className="mg-stake-field">
+            <span>
+              <Gamepad2 size={15} aria-hidden="true" /> Game
+            </span>
+            <select
+              value={game}
+              onChange={(event) => setGame(event.target.value as GameKind)}
+              aria-label="Game"
+            >
+              {(Object.entries(GAME_LABELS) as [GameKind, string][]).map(([id, label]) => (
+                <option key={id} value={id}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="mg-stake-field">
+            <span>
+              <Coins size={15} aria-hidden="true" /> Your stake
+            </span>
+            <select
+              value={stake}
+              onChange={(event) => setStake(Number(event.target.value))}
+              aria-label="Stake amount"
+            >
+              {STAKES.map((amount) => (
+                <option key={amount} value={amount}>
+                  {formatNaira(amount)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
         <Button
+          className="mg-stake-create-button"
           disabled={!characterId || create.isPending || !canAfford(stake)}
           onClick={() => create.mutate()}
         >
-          {canAfford(stake) ? `Open table for ${formatNaira(stake)}` : "Not enough cash"}
+          {canAfford(stake) ? (
+            <>
+              Open table for {formatNaira(stake)} <ArrowRight size={16} aria-hidden="true" />
+            </>
+          ) : (
+            "Not enough cash"
+          )}
         </Button>
+        <p className="mg-stake-rules">
+          Your opponent matches your stake. Draws refund both players; wins pay out after the table
+          fee.
+        </p>
       </section>
 
-      <section className="mg-stake-list" aria-label="Open tables">
-        <h3>Open tables</h3>
-        {tables.isLoading && <p className="mg-status">Loading tables…</p>}
-        {tables.isError && <p className="mg-status">Tables are unavailable. Try again.</p>}
-        {tables.data?.length === 0 && <p className="mg-status">No open tables yet.</p>}
-        <ul className="mg-list">
+      <section className="mg-stake-list" aria-labelledby="mg-stake-list-title">
+        <div className="mg-stake-section-head">
+          <div>
+            <span className="mg-stake-eyebrow">Join a match</span>
+            <h3 id="mg-stake-list-title">Open tables</h3>
+          </div>
+          {tables.data && (
+            <span className="mg-stake-count" aria-label={`${tables.data.length} open tables`}>
+              {tables.data.length}
+            </span>
+          )}
+        </div>
+        {tables.isLoading && (
+          <p className="mg-stake-empty" role="status">
+            Loading open tables…
+          </p>
+        )}
+        {tables.isError && (
+          <p className="mg-stake-empty" role="alert">
+            Tables are unavailable. Try again.
+          </p>
+        )}
+        {tables.data?.length === 0 && (
+          <div className="mg-stake-empty">
+            <Users size={22} aria-hidden="true" />
+            <strong>No open tables yet</strong>
+            <span>Open a table above and wait for another player to join.</span>
+          </div>
+        )}
+        <ul className="mg-list mg-stake-table-list">
           {tables.data?.map((table) => {
             const mine = table.host_character_id === characterId;
             return (
               <li key={table.id}>
-                <div className="mg-tile">
-                  <span>
-                    <strong>Stake {formatNaira(table.stake)}</strong>
-                    <small>
-                      Pot {formatNaira(table.pot)} · {gameLabel(table.game)}
-                    </small>
-                  </span>
+                <div className="mg-stake-table-card">
+                  <div className="mg-stake-table-info">
+                    <span className="mg-stake-game">{gameLabel(table.game)}</span>
+                    <strong>
+                      {formatNaira(table.stake)} <span>stake</span>
+                    </strong>
+                    <small>Pot {formatNaira(table.pot)}</small>
+                  </div>
                   <Button
+                    className="mg-stake-join-button"
                     disabled={mine || join.isPending || !canAfford(table.stake)}
                     onClick={() => join.mutate(table.id)}
                   >

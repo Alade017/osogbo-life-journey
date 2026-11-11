@@ -1,6 +1,78 @@
 .billboard-ad-app {
-  max-height: min(70vh, 680px);
-  overflow-y: auto;
+  display: grid;
+  align-content: start;
+  gap: 15px;
+  min-width: 0;
+  padding: 14px;
+}
+
+.billboard-app-hero {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.billboard-app-hero-icon {
+  display: grid;
+  flex: 0 0 44px;
+  place-items: center;
+  height: 44px;
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--primary) 12%, var(--card));
+  color: var(--primary);
+}
+
+.billboard-eyebrow {
+  display: block;
+  color: var(--primary);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.billboard-ad-app .billboard-app-hero h2 {
+  margin: 2px 0;
+  font-size: 1.2rem;
+  line-height: 1.1;
+}
+
+.billboard-app-hero p {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.76rem;
+  line-height: 1.4;
+}
+
+.billboard-disclaimer {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: var(--muted);
+  line-height: 1.4;
+}
+
+.billboard-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.billboard-ad-app .billboard-section-heading :is(h2, h3) {
+  margin: 2px 0 0;
+  font-size: 1rem;
+}
+
+.billboard-campaign-count {
+  min-width: 27px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 12%, var(--card));
+  color: var(--primary);
+  font-size: 0.71rem;
+  font-weight: 800;
+  text-align: center;
 }
 
 .billboard-ad-app h2,
@@ -16,6 +88,74 @@
 .billboard-ad-form {
   display: grid;
   gap: 0.8rem;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 17px;
+  background: var(--card);
+}
+
+.billboard-location-card {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 11px;
+  border-radius: 12px;
+  background: var(--muted);
+}
+
+.billboard-location-card strong {
+  font-size: 0.86rem;
+  overflow-wrap: anywhere;
+}
+.billboard-location-card > span:not(.billboard-eyebrow),
+.billboard-location-card small {
+  color: var(--muted-foreground);
+  font-size: 0.73rem;
+}
+
+.billboard-creative-preview {
+  display: grid;
+  gap: 6px;
+  min-height: 108px;
+  padding: 14px;
+  border-radius: 13px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  overflow-wrap: anywhere;
+}
+
+.billboard-creative-preview > span {
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.8;
+}
+.billboard-creative-preview strong {
+  font-size: 1rem;
+  line-height: 1.2;
+}
+.billboard-creative-preview p {
+  margin: 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+.billboard-creative-preview small {
+  font-size: 0.7rem;
+  opacity: 0.85;
+}
+.billboard-theme-ink {
+  background: var(--foreground);
+  color: var(--background);
+}
+.billboard-theme-sun {
+  background: var(--color-warm-gold, #d89b2b);
+  color: var(--foreground);
+}
+.billboard-theme-clay {
+  background: var(--color-terracotta, #a14a31);
+  color: var(--primary-foreground);
 }
 
 .billboard-ad-form label {
@@ -61,9 +201,33 @@
 }
 
 .billboard-owned-campaigns {
-  margin-top: 1.35rem;
-  border-top: 1px solid var(--border);
-  padding-top: 0.5rem;
+  display: grid;
+  gap: 10px;
+  padding-top: 3px;
+}
+
+.billboard-campaign {
+  display: grid;
+  gap: 7px;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: var(--card);
+}
+
+.billboard-campaign > strong {
+  font-size: 0.9rem;
+}
+.billboard-campaign > p,
+.billboard-campaign > small {
+  margin: 0;
+}
+.billboard-campaign > button {
+  justify-self: start;
+}
+.billboard-campaign .billboard-ad-form {
+  padding: 0;
+  border: 0;
 }
 
 .billboard-edit-actions {

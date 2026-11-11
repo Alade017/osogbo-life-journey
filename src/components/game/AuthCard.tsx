@@ -1,6 +1,6 @@
 import { useEffect, useState, type CSSProperties, type FormEvent } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Check, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import cityPhoto from "@/assets/osogbo-city.jpg";
 import { supabase } from "@/integrations/supabase/client";
@@ -141,42 +141,14 @@ export function AuthCard({ mode: initialMode }: { mode: Mode }) {
     <div className="auth-screen relative isolate min-h-screen overflow-hidden bg-ink">
       <img
         src={cityPhoto}
-        alt="Osogbo city panorama"
+        alt=""
+        aria-hidden="true"
         className="absolute inset-0 h-full w-full object-cover object-center"
       />
       <div className="absolute inset-0 auth-screen-scrim" />
-      <div className="auth-layout relative mx-auto grid min-h-screen max-w-7xl lg:grid-cols-2">
-        <section className="auth-story-panel flex min-h-57.5 flex-col justify-end px-5 pb-7 pt-8 text-white sm:px-8 lg:min-h-screen lg:justify-between lg:px-12 lg:py-12">
-          <Link to="/" className="auth-story-brand" aria-label="OSUN LIFE home">
-            <Logo small /> <span>OSUN LIFE</span>
-          </Link>
-          <div key={mode} className="auth-pane max-w-lg" style={paneStyle}>
-            <p className="auth-story-kicker">Your next chapter starts here</p>
-            <h1 className="auth-story-title">
-              {mode === "signup" ? "Make a life in Osogbo." : "Good to have you back."}
-            </h1>
-            <p className="auth-story-copy">
-              Explore the city, find work and build your own way forward.
-            </p>
-            <div className="auth-features-card">
-              <p className="auth-features-title">Features</p>
-              <ul className="auth-story-points" aria-label="Game highlights">
-                <li>
-                  <Check size={15} aria-hidden="true" /> Build your own story
-                </li>
-                <li>
-                  <Check size={15} aria-hidden="true" /> Find work and community
-                </li>
-                <li>
-                  <Check size={15} aria-hidden="true" /> Play at your own pace
-                </li>
-              </ul>
-            </div>
-          </div>
-        </section>
-
-        <section className="auth-form-panel flex items-center justify-center px-4 py-8 sm:px-8 lg:my-6 lg:rounded-l-2xl lg:px-10">
-          <div className="auth-form-card game-panel pop-in w-full max-w-md p-6 sm:p-8">
+      <main className="auth-layout relative mx-auto flex min-h-screen items-center justify-center px-4 py-6">
+        <section className="auth-form-panel w-full max-w-md" aria-label="Player account">
+          <div className="auth-form-card game-panel pop-in w-full">
             <Link to="/" className="auth-form-logo" aria-label="OSUN LIFE home">
               <Logo />
             </Link>
@@ -222,7 +194,7 @@ export function AuthCard({ mode: initialMode }: { mode: Mode }) {
                   <p className="mt-2 text-sm text-muted-foreground">
                     Enter your account email and we’ll send a secure reset link.
                   </p>
-                  <form onSubmit={submit} className="mt-6 space-y-4">
+                  <form onSubmit={submit} className="auth-form">
                     <div className="space-y-1.5">
                       <Label htmlFor="email">Email</Label>
                       <Input
@@ -255,14 +227,14 @@ export function AuthCard({ mode: initialMode }: { mode: Mode }) {
                 </>
               ) : (
                 <>
-                  <h2 className="text-3xl font-bold">
+                  <h2 className="auth-form-title font-bold">
                     {resettingPassword
                       ? "Choose a new password"
                       : mode === "signup"
                         ? "Create your account"
                         : "Welcome back"}
                   </h2>
-                  <p className="mt-1 text-sm text-muted-foreground">
+                  <p className="auth-form-description text-sm text-muted-foreground">
                     {resettingPassword
                       ? "Use at least 8 characters for your new password."
                       : mode === "signup"
@@ -270,7 +242,7 @@ export function AuthCard({ mode: initialMode }: { mode: Mode }) {
                         : "Log in to continue your life in the city."}
                   </p>
 
-                  <form onSubmit={submit} className="mt-6 space-y-4">
+                  <form onSubmit={submit} className="auth-form">
                     {!resettingPassword && (
                       <div className="space-y-1.5">
                         <Label htmlFor="username">
@@ -364,11 +336,11 @@ export function AuthCard({ mode: initialMode }: { mode: Mode }) {
                       <button
                         type="button"
                         onClick={() => setRecoverySent(true)}
-                        className="auth-text-link mt-4"
+                        className="auth-text-link auth-recovery-link"
                       >
                         Forgot password?
                       </button>
-                      <div className="my-5 flex items-center gap-3 text-xs font-semibold text-muted-foreground">
+                      <div className="auth-divider flex items-center gap-3 text-xs font-semibold text-muted-foreground">
                         <span className="h-px flex-1 bg-border" /> OR{" "}
                         <span className="h-px flex-1 bg-border" />
                       </div>
@@ -400,37 +372,14 @@ export function AuthCard({ mode: initialMode }: { mode: Mode }) {
                         </svg>
                         Continue with Google
                       </Button>
-                      <p className="mt-6 text-center text-sm">
-                        New to Osogbo?{" "}
-                        <button
-                          type="button"
-                          className="auth-text-link"
-                          onClick={() => switchMode("signup")}
-                        >
-                          Create an account
-                        </button>
-                      </p>
                     </>
-                  )}
-
-                  {!resettingPassword && mode === "signup" && (
-                    <p className="mt-6 text-center text-sm">
-                      Already playing?{" "}
-                      <button
-                        type="button"
-                        className="auth-text-link"
-                        onClick={() => switchMode("login")}
-                      >
-                        Log in
-                      </button>
-                    </p>
                   )}
                 </>
               )}
             </div>
           </div>
         </section>
-      </div>
+      </main>
     </div>
   );
 }

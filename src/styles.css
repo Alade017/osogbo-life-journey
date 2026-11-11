@@ -9310,7 +9310,7 @@
   align-items: center;
   justify-content: center;
   gap: 5px;
-  border-radius: var(--shape-button);
+  border-radius: var(--shape-pill);
   color: var(--brand-ink);
   font-size: 11px;
 }
@@ -9343,7 +9343,7 @@
   margin: -20px 0 0;
   padding: 4px;
   border: 3px solid var(--brand-cream);
-  border-radius: 19px;
+  border-radius: var(--shape-pill);
   color: var(--brand-ink);
   background: var(--chart-4);
   box-shadow: var(--elevation-lift);
@@ -9591,7 +9591,7 @@
 /* A translucent porcelain pill keeps the shared game dock distinct over every scene. */
 .city-game.navigation-redesign .game-mobile-nav {
   border: 1px solid color-mix(in srgb, var(--brand-ink) 14%, transparent);
-  border-radius: 999px;
+  border-radius: var(--shape-pill);
   background:
     radial-gradient(
       ellipse at 50% 0%,
@@ -10546,58 +10546,44 @@
 }
 
 .phone-messenger .phone-conversation {
-  height: 76px;
-  min-height: 76px;
+  height: 72px;
+  min-height: 72px;
   overflow: hidden;
 }
 
 .phone-messenger .phone-chat-composer {
-  grid-template-columns: repeat(3, 44px) minmax(0, 1fr) 44px;
-  gap: 0;
-  margin: 6px;
-  padding: 4px;
-  border: 1px solid var(--border);
-  border-radius: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 7px 10px 10px;
+  border: 0;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
   box-shadow: none;
   background: var(--card);
 }
 
 .phone-messenger .phone-chat-composer .phone-chat-input {
-  grid-column: 4;
-  grid-row: 2;
+  flex: 1;
   min-width: 0;
-  width: 100%;
-  padding: 12px 4px;
+  width: auto;
+  padding: 10px 4px;
   border: 0;
   background: transparent;
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .phone-chat-composer .phone-chat-input-actions {
-  display: contents;
+  display: flex;
 }
 
 .phone-messenger .phone-chat-utility {
-  width: 44px;
+  width: 40px;
   height: 44px;
-  grid-row: 2;
-}
-
-.phone-chat-utility:nth-child(1) {
-  grid-column: 1;
-}
-
-.phone-chat-utility:nth-child(2) {
-  grid-column: 2;
-}
-
-.phone-chat-utility:nth-child(3) {
-  grid-column: 3;
 }
 
 .phone-chat-composer .phone-chat-send {
-  grid-column: 5;
-  grid-row: 2;
   color: var(--primary-foreground);
   background: var(--primary);
 }
@@ -10613,18 +10599,6 @@
 .phone-thread-search-toggle {
   min-width: 44px;
   min-height: 44px;
-}
-
-.phone-star-filter {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 44px;
-  flex: none;
-  color: var(--foreground);
-  background: var(--card);
-  font-size: 12px;
 }
 
 .phone-messenger .message-actions {

@@ -60,14 +60,20 @@
   border-radius: 16px;
   border: 1px solid var(--mg-line);
   background: var(--mg-paper);
-  box-shadow: 0 1px 0 rgb(0 0 0 / 0.04), 0 6px 16px -10px rgb(0 0 0 / 0.25);
+  box-shadow:
+    0 1px 0 rgb(0 0 0 / 0.04),
+    0 6px 16px -10px rgb(0 0 0 / 0.25);
   cursor: pointer;
-  transition: transform 160ms ease, box-shadow 160ms ease;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
 }
 .mg-tile:hover,
 .mg-tile:focus-visible {
   transform: translateY(-2px);
-  box-shadow: 0 1px 0 rgb(0 0 0 / 0.04), 0 12px 24px -12px rgb(0 0 0 / 0.35);
+  box-shadow:
+    0 1px 0 rgb(0 0 0 / 0.04),
+    0 12px 24px -12px rgb(0 0 0 / 0.35);
 }
 .mg-tile-badge {
   display: grid;
@@ -137,11 +143,194 @@
   animation: mg-bounce 700ms ease-out;
 }
 
+/* Stake table lobby */
+.mg-stakes {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+  min-width: 0;
+}
+.mg-stake-intro {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 3px 2px 1px;
+}
+.mg-stake-intro-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 42px;
+  height: 42px;
+  border-radius: 14px;
+  color: var(--mg-accent);
+  background: color-mix(in srgb, var(--mg-accent) 12%, var(--mg-paper));
+}
+.mg-stake-intro h2,
+.mg-stake-section-head h3 {
+  margin: 0;
+  font-family: var(--font-display, inherit);
+  line-height: 1.2;
+}
+.mg-stake-intro h2 {
+  font-size: 1.18rem;
+}
+.mg-stake-intro p {
+  margin: 3px 0 0;
+  color: var(--muted-foreground, #6b7280);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+.mg-stake-create {
+  display: grid;
+  gap: 13px;
+  padding: 16px;
+  border: 1px solid var(--mg-line);
+  border-radius: 20px;
+  background: var(--mg-paper);
+  box-shadow: 0 10px 24px -18px rgb(0 0 0 / 0.32);
+}
+.mg-stake-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.mg-stake-eyebrow {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--mg-accent);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.mg-stake-section-head h3 {
+  font-size: 1rem;
+}
+.mg-stake-balance,
+.mg-stake-count {
+  flex-shrink: 0;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mg-accent) 10%, var(--mg-paper));
+  color: var(--mg-accent);
+  font-size: 0.71rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.mg-stake-count {
+  min-width: 28px;
+  text-align: center;
+}
+.mg-stake-fields {
+  display: grid;
+  gap: 10px;
+}
+.mg-stake-field {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+.mg-stake-field > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted-foreground, #6b7280);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+.mg-stake-field select {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid var(--mg-line);
+  border-radius: 11px;
+  background: var(--background, #fff);
+  color: var(--mg-ink);
+  font: inherit;
+  font-size: 0.88rem;
+}
+.mg-stake-field select:focus-visible {
+  outline: 2px solid var(--mg-accent);
+  outline-offset: 2px;
+}
+.mg-stake-create-button {
+  width: 100%;
+  min-height: 42px;
+  gap: 8px;
+}
+.mg-stake-rules {
+  margin: -3px 0 0;
+  color: var(--muted-foreground, #6b7280);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+.mg-stake-list {
+  display: grid;
+  gap: 10px;
+}
+.mg-stake-list > .mg-stake-section-head {
+  padding: 0 2px;
+}
+.mg-stake-empty {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 20px 16px;
+  border: 1px dashed var(--mg-line);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--mg-paper) 75%, transparent);
+  color: var(--muted-foreground, #6b7280);
+  font-size: 0.78rem;
+  line-height: 1.4;
+  text-align: center;
+}
+.mg-stake-empty strong {
+  color: var(--mg-ink);
+  font-size: 0.86rem;
+}
+.mg-stake-table-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--mg-line);
+  border-radius: 15px;
+  background: var(--mg-paper);
+}
+.mg-stake-table-info {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.mg-stake-game {
+  color: var(--mg-accent);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.mg-stake-table-info strong {
+  font-size: 0.98rem;
+}
+.mg-stake-table-info strong span,
+.mg-stake-table-info small {
+  color: var(--muted-foreground, #6b7280);
+  font-size: 0.72rem;
+  font-weight: 500;
+}
+.mg-stake-join-button {
+  flex-shrink: 0;
+}
+
 /* Tic-Tac-Toe */
 .mg-board {
   border-radius: 18px;
   background: linear-gradient(160deg, #fbf6ea, #efe3c8);
-  box-shadow: inset 0 0 0 1px rgb(120 84 30 / 0.2), 0 10px 24px -14px rgb(60 40 10 / 0.5);
+  box-shadow:
+    inset 0 0 0 1px rgb(120 84 30 / 0.2),
+    0 10px 24px -14px rgb(60 40 10 / 0.5);
   padding: 10px;
 }
 .mg-ttt {
@@ -238,7 +427,9 @@
   border-radius: 50%;
   display: grid;
   place-items: center;
-  box-shadow: inset 0 -4px 0 rgb(0 0 0 / 0.25), 0 3px 5px rgb(0 0 0 / 0.35);
+  box-shadow:
+    inset 0 -4px 0 rgb(0 0 0 / 0.25),
+    0 3px 5px rgb(0 0 0 / 0.35);
   animation: mg-pop 320ms cubic-bezier(0.2, 1.4, 0.4, 1);
 }
 .mg-piece.light {
@@ -309,7 +500,9 @@
   background: var(--mg-paper);
   text-align: left;
   cursor: default;
-  transition: transform 160ms ease, box-shadow 160ms ease;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
 }
 .mg-token.is-playable {
   cursor: pointer;
@@ -328,8 +521,15 @@
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #fff 0 12%, var(--token) 13% 70%, color-mix(in srgb, var(--token) 70%, #000) 100%);
-  box-shadow: 0 3px 6px rgb(0 0 0 / 0.3), inset 0 -3px 0 rgb(0 0 0 / 0.2);
+  background: radial-gradient(
+    circle at 35% 30%,
+    #fff 0 12%,
+    var(--token) 13% 70%,
+    color-mix(in srgb, var(--token) 70%, #000) 100%
+  );
+  box-shadow:
+    0 3px 6px rgb(0 0 0 / 0.3),
+    inset 0 -3px 0 rgb(0 0 0 / 0.2);
 }
 .mg-token-body {
   display: grid;
@@ -376,7 +576,9 @@
   border-radius: 9px;
   background: linear-gradient(170deg, #fffdf7 0%, #f7f1e1 100%);
   border: 2px solid var(--card-accent);
-  box-shadow: 0 6px 12px -6px rgb(0 0 0 / 0.45), inset 0 0 0 3px rgb(255 255 255 / 0.7);
+  box-shadow:
+    0 6px 12px -6px rgb(0 0 0 / 0.45),
+    inset 0 0 0 3px rgb(255 255 255 / 0.7);
   color: var(--card-accent);
   user-select: none;
 }
@@ -461,7 +663,9 @@
   width: 100%;
   border-radius: 18px;
   background: radial-gradient(ellipse at 50% 40%, #2c8a64, #155a42 75%);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.15), 0 12px 20px -14px rgb(0 0 0 / 0.6);
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 0.15),
+    0 12px 20px -14px rgb(0 0 0 / 0.6);
   box-sizing: border-box;
 }
 .mg-pile,
@@ -473,7 +677,10 @@
   font-size: 0.75rem;
 }
 .mg-pile .mg-card-art {
-  box-shadow: 2px 3px 0 -1px #0f3d2f, 4px 6px 0 -2px #0c3126, 0 6px 12px -6px rgb(0 0 0 / 0.5);
+  box-shadow:
+    2px 3px 0 -1px #0f3d2f,
+    4px 6px 0 -2px #0c3126,
+    0 6px 12px -6px rgb(0 0 0 / 0.5);
 }
 .mg-deal {
   display: inline-flex;
@@ -535,7 +742,10 @@
   cursor: default;
   opacity: 0.55;
   filter: saturate(0.6);
-  transition: transform 180ms ease, opacity 180ms ease, filter 180ms ease;
+  transition:
+    transform 180ms ease,
+    opacity 180ms ease,
+    filter 180ms ease;
   scroll-snap-align: center;
   animation: mg-deal 360ms ease-out both;
   animation-delay: calc(var(--i, 0) * 45ms);
