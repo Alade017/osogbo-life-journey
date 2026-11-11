@@ -18,6 +18,7 @@ interface VehicleConfig {
   description: string;
   speed: number;
   path: TownMobilityRoute;
+  startDistance: number;
   color: string;
 }
 
@@ -58,6 +59,7 @@ export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ paths }) => {
     description: "Following the connected town road network",
     speed: 0.14 + (index % 4) * 0.025,
     path,
+    startDistance: (index * 0.37 * measureTownMobilityLoop(path)) % measureTownMobilityLoop(path),
     color: vehicleColors[index % vehicleColors.length]!,
   }));
 
@@ -91,12 +93,13 @@ function TrafficVehicle({
   const currentSegment = useRef(0);
   const progress = useRef(0);
   const [isHovered, setIsHovered] = useState(false);
-  useEffect(() => {
-    currentSegment.current = 0;
-    progress.current = 0;
-  }, [config.path]);
-
   const routeLength = useMemo(() => measureTownMobilityLoop(config.path), [config.path]);
+
+  useEffect(() => {
+    const start = locateTrafficLoopDistance(config.path, config.startDistance);
+    currentSegment.current = start.segment;
+    progress.current = start.progress;
+  }, [config.path, config.startDistance]);
 
   useFrame((_, delta) => {
     if (!groupRef.current) return;
@@ -336,4 +339,25 @@ function TrafficVehicle({
       )}
     </group>
   );
+}
+
+function locateTrafficLoopDistance(
+  path: TownMobilityRoute,
+  distance: number,
+): { segment: number; progress: number } {
+  if (path.length < 2 || !Number.isFinite(distance) || distance <= 0) {
+    return { segment: 0, progress: 0 };
+  }
+
+  let remaining = distance;
+  for (let index = 0; index < path.length; index += 1) {
+    const start = path[index]!;
+    const end = path[(index + 1) % path.length]!;
+    const segmentLength = Math.hypot(end[0] - start[0], end[1] - start[1]);
+    if (!Number.isFinite(segmentLength) || segmentLength < 0.001) continue;
+    if (remaining < segmentLength) return { segment: index, progress: remaining / segmentLength };
+    remaining -= segmentLength;
+  }
+
+  return { segment: 0, progress: 0 };
 }
