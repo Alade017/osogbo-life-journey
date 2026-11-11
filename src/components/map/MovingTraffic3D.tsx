@@ -3,10 +3,11 @@ import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import type { Group } from "three";
 import { WorldMaterial } from "@/components/3d/WorldScene";
-import { isValidTownMobilityLoop, measureTownMobilityLoop, townMobilityRouteIdentity, TownTrafficJunctionScheduler, type TownMobilityRoute } from "@/game/town-mobility";
+import { isValidTownMobilityLoop, measureTownMobilityLoop, townMobilityRouteIdentity, townRoadJunctionIdentity, TownRoadCrossingPriorityScheduler, type TownMobilityRoute } from "@/game/town-mobility";
 
 export interface MovingTraffic3DProps {
   paths: readonly TownMobilityRoute[];
+  crossingScheduler: TownRoadCrossingPriorityScheduler;
   onSelectTransit: () => void;
 }
 
@@ -32,8 +33,7 @@ interface VehicleConfig {
  * - Agile Okada motorcycles
  * - Interactive click/hover dialogs and horn feedback.
  */
-export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ paths, onSelectTransit }) => {
-  const junctionScheduler = useMemo(() => new TownTrafficJunctionScheduler(), []);
+export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ paths, crossingScheduler, onSelectTransit }) => {
   const [activeSpeech, setActiveSpeech] = useState<{ id: string; text: string } | null>(null);
   const speechTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -64,7 +64,7 @@ export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ paths, onSelectTrans
   const junctionCounts = new Map<string, number>();
   for (const path of validPaths) {
     for (const [x, z] of path) {
-      const key = `${Math.round(x)},${Math.round(z)}`;
+      const key = townRoadJunctionIdentity(x, z);
       junctionCounts.set(key, (junctionCounts.get(key) ?? 0) + 1);
     }
   }
@@ -76,7 +76,7 @@ export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ paths, onSelectTrans
     const type = vehicleTypes[numericIdentity % vehicleTypes.length]!;
     const junctionIds = path.map(([x, z]) => {
       const key = `${Math.round(x)},${Math.round(z)}`;
-      return (junctionCounts.get(key) ?? 0) > 1 ? `road-junction:${key}` : null;
+      return (junctionCounts.get(key) ?? 0) > 1 ? key : null;
     });
     return [{
       id: `town-traffic-${identity}`,
@@ -97,7 +97,7 @@ export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ paths, onSelectTrans
         <TrafficVehicle
           key={v.id}
           config={v}
-          junctionScheduler={junctionScheduler}
+          crossingScheduler={crossingScheduler}
           onInteract={(text) => showSpeech(v.id, text, 3200)}
           onSelectTransit={onSelectTransit}
           isSpeaking={activeSpeech?.id === v.id}
@@ -110,14 +110,14 @@ export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ paths, onSelectTrans
 
 function TrafficVehicle({
   config,
-  junctionScheduler,
+  crossingScheduler,
   onInteract,
   onSelectTransit,
   isSpeaking,
   speechText,
 }: {
   config: VehicleConfig;
-  junctionScheduler: TownTrafficJunctionScheduler;
+  crossingScheduler: TownRoadCrossingPriorityScheduler;
   onInteract: (text: string) => void;
   onSelectTransit: () => void;
   isSpeaking: boolean;
@@ -155,11 +155,11 @@ function TrafficVehicle({
     const clearanceDistance = Math.min(1.35, segmentLengthToJunction * 0.3);
 
     if (activeJunction.current && activeJunction.current !== nextJunction) {
-      junctionScheduler.release(activeJunction.current, config.id);
+      crossingScheduler.release(activeJunction.current, config.id);
       activeJunction.current = null;
     }
     if (nextJunction && remainingToJunction <= clearanceDistance + distanceToTravel) {
-      if (!junctionScheduler.request(nextJunction, config.id)) {
+      if (!crossingScheduler.request(nextJunction, config.id, "vehicle")) {
         distanceToTravel = Math.min(distanceToTravel, Math.max(0, remainingToJunction - clearanceDistance));
         if (distanceToTravel <= 0) return;
       } else {
@@ -211,8 +211,8 @@ function TrafficVehicle({
   });
 
   useEffect(() => () => {
-    junctionScheduler.cancelVehicle(config.id);
-  }, [config.id, junctionScheduler]);
+    crossingScheduler.cancelActor(config.id);
+  }, [config.id, crossingScheduler]);
 
   const handleClick = (e: any) => {
     e.stopPropagation();
