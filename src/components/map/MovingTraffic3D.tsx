@@ -158,7 +158,7 @@ function TrafficVehicle({
       junctionScheduler.release(activeJunction.current, config.id);
       activeJunction.current = null;
     }
-    if (nextJunction && remainingToJunction <= clearanceDistance) {
+    if (nextJunction && remainingToJunction <= clearanceDistance + distanceToTravel) {
       if (!junctionScheduler.request(nextJunction, config.id)) {
         distanceToTravel = Math.min(distanceToTravel, Math.max(0, remainingToJunction - clearanceDistance));
         if (distanceToTravel <= 0) return;
