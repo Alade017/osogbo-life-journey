@@ -137,3 +137,15 @@ A safe boarding phase requires an existing or separately approved server-authori
 - Colyseus room/state replication so all clients observe the same occupancy and trip status.
 
 Until that contract is confirmed, the supported interaction remains opening the existing travel selector. No database schema, migration, fare logic or multiplayer authority is changed by this review.
+
+
+## Colyseus transport capability audit
+
+Reviewed the active staging-branch room implementation and browser join service:
+
+- `src/lib/multiplayer-service.ts` joins the authenticated `neighborhood` room with a location ID and access token. Its only client-to-room message added here is `refresh-equipment`; the room connection is removed on leave.
+- `multiplayer/neighborhood-room.ts` authenticates the session, verifies that the character is saved at the requested active location, loads the shared neighborhood area and equipment, and maintains a 32-client room with a 50 ms authoritative movement simulation.
+- The room currently registers `move` and `refresh-equipment` messages. Its replicated state is a set of network players. It has no vehicle-trip registry, stop-arrival state, passenger manifest, seat-capacity reservation, boarding/disembarking messages or transport-specific authorization.
+- `src/lib/game.ts` documents and implements the existing rule that durable game-state changes go through server-validated RPCs. The town transit selector and map-place actions remain separate existing flows; they do not establish a vehicle occupancy contract.
+
+**Conclusion:** the existing neighborhood room is a sound authenticated movement authority, but it is not currently a transport-trip authority. A client-side boarding animation or extra room message alone would not be sufficient: the server needs trusted route/vehicle definitions, stop proximity checks, capacity serialization, idempotency, fare integration and a clear durable-versus-transient trip lifecycle. Do not add this to the room until the data source and authoritative action contract are designed and separately approved. Keep current vehicle and passenger interactions as travel-selector entry points for now.
