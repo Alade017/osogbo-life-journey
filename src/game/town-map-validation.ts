@@ -75,8 +75,17 @@ export function validateTownMapData(data: TownMapValidationInput): string[] {
       errors.push(`Building place ID is missing or duplicated: "${building.placeId}".`);
     }
     buildingIds.add(building.placeId);
-    if (!landmarkIds.has(building.placeId)) errors.push(`Building "${building.placeId}" has no matching landmark.`);
+    const landmark = data.landmarks.find((item) => item.id === building.placeId);
+    if (!landmark) {
+      errors.push(`Building "${building.placeId}" has no matching landmark.`);
+    } else if (landmark.grid.x !== building.x || landmark.grid.z !== building.z) {
+      errors.push(`Building "${building.placeId}" does not share its landmark's authored grid anchor.`);
+    }
     if (!inBounds(building.x, building.z)) errors.push(`Building "${building.placeId}" is outside the map grid.`);
+  }
+
+  for (const landmark of data.landmarks) {
+    if (!buildingIds.has(landmark.id)) errors.push(`Landmark "${landmark.id}" has no authored building entry.`);
   }
 
   const reservedCells = new Set<string>();
@@ -84,6 +93,7 @@ export function validateTownMapData(data: TownMapValidationInput): string[] {
     for (const cell of cells) {
       const x = cell[0] ?? Number.NaN;
       const z = cell[1] ?? Number.NaN;
+      if (cell.length !== 2) errors.push(`${kind} cell must contain exactly two coordinates.`);
       const key = `${x},${z}`;
       if (!inBounds(x, z)) {
         errors.push(`${kind} cell ${key} is outside the map grid.`);
@@ -104,12 +114,13 @@ export function validateTownMapData(data: TownMapValidationInput): string[] {
         if (symbol === roadSymbol) roadCells.push([x, z]);
       });
     });
+    if (roadCells.length === 0) errors.push("The authored map must contain a connected road network.");
     if (roadCells.length > 0) {
       const roadKeys = new Set(roadCells.map(([x, z]) => `${x},${z}`));
       const visited = new Set<string>();
       const queue: Array<readonly [number, number]> = [roadCells[0]!];
-      while (queue.length > 0) {
-        const [x, z] = queue.shift()!;
+      for (let cursor = 0; cursor < queue.length; cursor++) {
+        const [x, z] = queue[cursor]!;
         const key = `${x},${z}`;
         if (visited.has(key)) continue;
         visited.add(key);
