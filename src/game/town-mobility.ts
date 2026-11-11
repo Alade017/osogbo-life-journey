@@ -392,6 +392,75 @@ export class TownTrafficJunctionScheduler {
   }
 }
 
+/** Stable shared key for a road intersection expressed in world coordinates. */
+export function townRoadJunctionIdentity(x: number, z: number): string {
+  if (!Number.isFinite(x) || !Number.isFinite(z)) return "";
+  return `road-junction:${Math.round(x)},${Math.round(z)}`;
+}
+
+/** Identifies the centre of a straight, three-point route through a zebra crossing. */
+export function townPedestrianCrossingIdentity(route: TownMobilityRoute): string {
+  if (route.length !== 3 || !isValidTownPedestrianRoute(route)) return "";
+  const [start, centre, end] = route;
+  const first = [centre[0] - start[0], centre[1] - start[1]];
+  const second = [end[0] - centre[0], end[1] - centre[1]];
+  const cross = first[0] * second[1] - first[1] * second[0];
+  const dot = first[0] * second[0] + first[1] * second[1];
+  if (Math.abs(cross) > 0.001 || dot <= 0
+    || Math.abs(Math.hypot(...first) - Math.hypot(...second)) > 0.001) return "";
+  return townRoadJunctionIdentity(centre[0], centre[1]);
+}
+
+/**
+ * Shared local right-of-way for ambient traffic and pedestrians.
+ * Pedestrians receive priority when a junction becomes free; an actor already
+ * inside the clearance zone is never pre-empted.
+ */
+export class TownRoadCrossingPriorityScheduler {
+  private readonly owners = new Map<string, { id: string; kind: "pedestrian" | "vehicle" }>();
+  private readonly waiters = new Map<string, Array<{ id: string; kind: "pedestrian" | "vehicle" }>>();
+
+  request(junctionId: string, actorId: string, kind: "pedestrian" | "vehicle"): boolean {
+    if (!junctionId || !actorId) return false;
+    const owner = this.owners.get(junctionId);
+    if (owner?.id === actorId) return true;
+    const queue = this.waiters.get(junctionId) ?? [];
+    if (!queue.some((item) => item.id === actorId)) {
+      queue.push({ id: actorId, kind });
+      queue.sort((a, b) => (a.kind === "pedestrian" ? 0 : 1) - (b.kind === "pedestrian" ? 0 : 1)
+        || a.id.localeCompare(b.id));
+    }
+    this.waiters.set(junctionId, queue);
+    if (owner || queue[0]?.id !== actorId) return false;
+    this.owners.set(junctionId, { id: actorId, kind });
+    queue.shift();
+    if (queue.length === 0) this.waiters.delete(junctionId);
+    return true;
+  }
+
+  release(junctionId: string, actorId: string): void {
+    if (!junctionId || !actorId) return;
+    if (this.owners.get(junctionId)?.id === actorId) this.owners.delete(junctionId);
+    const queue = this.waiters.get(junctionId);
+    if (!queue) return;
+    const remaining = queue.filter((item) => item.id !== actorId);
+    if (remaining.length) this.waiters.set(junctionId, remaining);
+    else this.waiters.delete(junctionId);
+  }
+
+  cancelActor(actorId: string): void {
+    if (!actorId) return;
+    for (const [junctionId, owner] of this.owners) {
+      if (owner.id === actorId) this.owners.delete(junctionId);
+    }
+    for (const [junctionId, queue] of this.waiters) {
+      const remaining = queue.filter((item) => item.id !== actorId);
+      if (remaining.length) this.waiters.set(junctionId, remaining);
+      else this.waiters.delete(junctionId);
+    }
+  }
+}
+
 /** Stable identity for an authored traffic loop; independent of route array ordering. */
 export function townMobilityRouteIdentity(route: TownMobilityRoute): string {
   if (!isValidTownMobilityLoop(route)) return "";
