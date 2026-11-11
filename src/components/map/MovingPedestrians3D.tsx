@@ -159,6 +159,7 @@ function PedestrianCharacter({
   }, [junctionScheduler, crossingScheduler, npc.id, npc.startJunctionId, npc.endJunctionId]);
 
   useFrame(({ clock }, delta) => {
+    crossingScheduler.advanceTime(clock.elapsedTime);
     if (!groupRef.current) return;
 
     const { path, speed } = npc;
