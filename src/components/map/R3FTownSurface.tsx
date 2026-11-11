@@ -89,9 +89,8 @@ if (townMapValidationErrors.length > 0) {
   throw new Error(`Invalid authored town map data: ${townMapValidationErrors.join(" ")}`);
 }
 
-const gridCols = town.grid.rows[0]?.length ?? town.meta.grid.columns;
-
-const gridRows = town.grid.rows.length;
+const gridCols = town.meta.grid.columns;
+const gridRows = town.meta.grid.rows;
 const cell = WORLD_SCALE.townCell;
 const point = (x: number, z: number): [number, number, number] => [
   (x - (gridCols - 1) / 2) * cell,
