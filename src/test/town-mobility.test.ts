@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isValidTownMobilityLoop, townPedestrianClearanceRadius, isValidTownPedestrianRoute, measureTownMobilityLoop, deriveTownMobilityRoutes, deriveTownPedestrianCornerRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells, stitchTownPedestrianRoutes, TownPedestrianJunctionScheduler, townMobilityRouteIdentity } from "@/game/town-mobility";
+import { isValidTownMobilityLoop, townPedestrianClearanceRadius, isValidTownPedestrianRoute, measureTownMobilityLoop, deriveTownMobilityRoutes, deriveTownPedestrianCornerRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells, stitchTownPedestrianRoutes, TownPedestrianJunctionScheduler, TownTrafficJunctionScheduler, townMobilityRouteIdentity } from "@/game/town-mobility";
 import town from "@/data/osogbo-town.json";
 
 describe("pedestrian junction clearance", () => {
@@ -372,5 +372,39 @@ describe("stable traffic route identities", () => {
   it("distinguishes different route geometry", () => {
     expect(townMobilityRouteIdentity([[0, 0], [4, 0], [4, 3], [0, 3]]))
       .not.toBe(townMobilityRouteIdentity([[0, 0], [5, 0], [5, 3], [0, 3]]));
+  });
+});
+
+
+describe("ambient traffic junction reservations", () => {
+  it("grants one vehicle clearance and queues competing vehicles deterministically", () => {
+    const scheduler = new TownTrafficJunctionScheduler();
+    expect(scheduler.request("junction-1", "vehicle-b")).toBe(false);
+    expect(scheduler.request("junction-1", "vehicle-a")).toBe(true);
+    expect(scheduler.request("junction-1", "vehicle-c")).toBe(false);
+    expect(scheduler.request("junction-1", "vehicle-a")).toBe(true);
+    scheduler.release("junction-1", "vehicle-a");
+    expect(scheduler.request("junction-1", "vehicle-b")).toBe(true);
+    expect(scheduler.request("junction-1", "vehicle-c")).toBe(false);
+  });
+
+  it("allows independent junctions and removes vehicles that leave the simulation", () => {
+    const scheduler = new TownTrafficJunctionScheduler();
+    expect(scheduler.request("junction-1", "vehicle-a")).toBe(true);
+    expect(scheduler.request("junction-1", "vehicle-b")).toBe(false);
+    expect(scheduler.request("junction-2", "vehicle-c")).toBe(true);
+    scheduler.cancelVehicle("vehicle-a");
+    expect(scheduler.request("junction-1", "vehicle-b")).toBe(true);
+    scheduler.cancelVehicle("vehicle-b");
+    expect(scheduler.request("junction-1", "vehicle-c")).toBe(true);
+  });
+
+  it("rejects empty identifiers and makes release/cancellation idempotent", () => {
+    const scheduler = new TownTrafficJunctionScheduler();
+    expect(scheduler.request("", "vehicle-a")).toBe(false);
+    expect(scheduler.request("junction-1", "")).toBe(false);
+    scheduler.release("junction-1", "vehicle-a");
+    scheduler.cancelVehicle("vehicle-a");
+    expect(scheduler.request("junction-1", "vehicle-b")).toBe(true);
   });
 });
