@@ -44,7 +44,7 @@ import { isPlayableDistrict, playableDistrictForLocation } from "@/game/playable
 import type { NeighborhoodPlayerView, NeighborhoodSceneHandle } from "@/game/neighborhood-types";
 import type { MovementDirection } from "@/lib/player-movement";
 import { NPC_CATALOG, npcActivityAt, type SocialAction } from "@/lib/npc-simulation";
-import { hasLocationVenueDesign } from "@/lib/location-venue-designs";
+import { hasBuildingVenueInterior, hasLocationVenueDesign } from "@/lib/location-venue-designs";
 import { MAP_LANDMARK_LOCATION_SLUG } from "@/components/map/map-location-links";
 import { JobsPage } from "@/routes/_authenticated/_game/jobs";
 import { MarketPage } from "@/routes/_authenticated/_game/market";
@@ -444,6 +444,9 @@ export function PlayableNeighborhood() {
     jobsQuery.data?.some((job) => job.is_available && job.location_id === currentLocation?.id) ??
     false;
   const hasVenueInterior = currentLocation ? hasLocationVenueDesign(currentLocation.slug) : false;
+  const hasSelectedVenueInterior = currentLocation
+    ? hasBuildingVenueInterior(currentLocation.slug, selectedShopSlug)
+    : false;
   const activityLandmarkId = Object.entries(MAP_LANDMARK_LOCATION_SLUG).find(
     ([, slug]) => !!slug && slug === currentLocation?.slug,
   )?.[0];
@@ -1031,7 +1034,7 @@ export function PlayableNeighborhood() {
                         <>
                           {businessView === "actions" && (
                             <div className="grid gap-3 sm:grid-cols-2">
-                              {hasVenueInterior && (
+                              {hasSelectedVenueInterior && (
                                 <button
                                   type="button"
                                   className="neighborhood-action-card"
