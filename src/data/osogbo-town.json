@@ -4,8 +4,8 @@
     "source": "Fictional game layout with broad Osogbo-inspired town character; not geographic data.",
     "reviewed": false,
     "grid": {
-      "columns": 24,
-      "rows": 18,
+      "columns": 32,
+      "rows": 24,
       "cellSize": 2
     },
     "legend": {
@@ -428,29 +428,221 @@
         "width": 10,
         "depth": 8
       }
+    },
+    {
+      "id": "oja-oba",
+      "name": "Oja-Oba Quarter",
+      "theme": "market",
+      "traffic": "high",
+      "description": "An Osogbo-inspired market and heritage quarter, arranged as an original game district.",
+      "gridArea": {
+        "x": 24,
+        "z": 0,
+        "width": 8,
+        "depth": 8
+      },
+      "shape": [
+        [
+          960,
+          0
+        ],
+        [
+          1280,
+          0
+        ],
+        [
+          1280,
+          320
+        ],
+        [
+          960,
+          320
+        ]
+      ]
+    },
+    {
+      "id": "ataoja",
+      "name": "Ataoja Civic Quarter",
+      "theme": "school",
+      "traffic": "medium",
+      "description": "A civic and cultural game district inspired by the Ataoja area.",
+      "gridArea": {
+        "x": 24,
+        "z": 8,
+        "width": 8,
+        "depth": 10
+      },
+      "shape": [
+        [
+          960,
+          320
+        ],
+        [
+          1280,
+          320
+        ],
+        [
+          1280,
+          720
+        ],
+        [
+          960,
+          720
+        ]
+      ]
+    },
+    {
+      "id": "oke-baale",
+      "name": "Oke-Baale Neighbourhood",
+      "theme": "residential",
+      "traffic": "medium",
+      "description": "A residential and public-service game district inspired by Oke-Baale.",
+      "gridArea": {
+        "x": 0,
+        "z": 18,
+        "width": 8,
+        "depth": 6
+      },
+      "shape": [
+        [
+          0,
+          720
+        ],
+        [
+          320,
+          720
+        ],
+        [
+          320,
+          960
+        ],
+        [
+          0,
+          960
+        ]
+      ]
+    },
+    {
+      "id": "aleku-wodo",
+      "name": "Aleku-Wodo Corridor",
+      "theme": "transport",
+      "traffic": "medium",
+      "description": "A road-oriented game district inspired by the Aleku-Wodo area.",
+      "gridArea": {
+        "x": 8,
+        "z": 18,
+        "width": 8,
+        "depth": 6
+      },
+      "shape": [
+        [
+          320,
+          720
+        ],
+        [
+          640,
+          720
+        ],
+        [
+          640,
+          960
+        ],
+        [
+          320,
+          960
+        ]
+      ]
+    },
+    {
+      "id": "ogo-oluwa",
+      "name": "Ogo-Oluwa Quarter",
+      "theme": "outskirts",
+      "traffic": "low",
+      "description": "A quieter neighbourhood game district inspired by Ogo-Oluwa.",
+      "gridArea": {
+        "x": 16,
+        "z": 18,
+        "width": 8,
+        "depth": 6
+      },
+      "shape": [
+        [
+          640,
+          720
+        ],
+        [
+          960,
+          720
+        ],
+        [
+          960,
+          960
+        ],
+        [
+          640,
+          960
+        ]
+      ]
+    },
+    {
+      "id": "oke-fia",
+      "name": "Oke-Fia Quarter",
+      "theme": "leisure",
+      "traffic": "medium",
+      "description": "A mixed-use game district inspired by Oke-Fia.",
+      "gridArea": {
+        "x": 24,
+        "z": 18,
+        "width": 8,
+        "depth": 6
+      },
+      "shape": [
+        [
+          960,
+          720
+        ],
+        [
+          1280,
+          720
+        ],
+        [
+          1280,
+          960
+        ],
+        [
+          960,
+          960
+        ]
+      ]
     }
   ],
   "grid": {
     "cellSize": 2,
     "rows": [
-      "ggggggrgggggrgggggrggggg",
-      "ggggggrgggggrgggggrggggg",
-      "ggggggrgggggrgggggrggggg",
-      "ggggggrgggggrgggggrggggg",
-      "rrrrrrrrrrrrrrrrrrrrrrrr",
-      "ggggggrgggggrgggggrggggg",
-      "ggggggrgggggrgggggrggggg",
-      "ggggggrgggggrgggggrggggg",
-      "rrrrrrrrrrrrrrrrrrrrrrrr",
-      "ggggggrgggggrgggggrggggg",
-      "ggggggrgggggrgggggrggggg",
-      "ggggggrgggggrgggggrggggg",
-      "rrrrrrrrrrrrrrrrrrrrrrrr",
-      "ggggggrgggggrgggggrggggg",
-      "ggggggrgggggrgggggrggggg",
-      "ggggggrgggggrgggggrggggg",
-      "rrrrrrrrrrrrrrrrrrrrrrrr",
-      "ggggggrgggggrgggggrggggg"
+      "ggggggrgggggrgggggrgggggrgggggrg",
+      "ggggggrgggggrgggggrgggggrgggggrg",
+      "ggggggrgggggrgggggrgggggrgggggrg",
+      "ggggggrgggggrgggggrgggggrgggggrg",
+      "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+      "ggggggrgggggrgggggrgggggrgggggrg",
+      "ggggggrgggggrgggggrgggggrgggggrg",
+      "ggggggrgggggrgggggrgggggrgggggrg",
+      "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+      "ggggggrgggggrgggggrgggggrgggggrg",
+      "ggggggrgggggrgggggrgggggrgggggrg",
+      "ggggggrgggggrgggggrgggggrgggggrg",
+      "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+      "ggggggrgggggrgggggrgggggrgggggrg",
+      "ggggggrgggggrgggggrgggggrgggggrg",
+      "ggggggrgggggrgggggrgggggrgggggrg",
+      "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+      "ggggggrgggggrgggggrgggggrgggggrg",
+      "ggggggrgggggrgggggrgggggrgggggrg",
+      "ggggggrgggggrgggggrgggggrgggggrg",
+      "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+      "ggggggrgggggrgggggrgggggrgggggrg",
+      "ggggggrgggggrgggggrgggggrgggggrg",
+      "ggggggrgggggrgggggrgggggrgggggrg"
     ],
     "waterCells": [
       [
@@ -531,7 +723,7 @@
       },
       {
         "placeId": "meridian-bank",
-        "x": 12,
+        "x": 13,
         "z": 6,
         "buildingType": "bank"
       },
@@ -659,6 +851,42 @@
         "placeId": "neighborhood-play-park",
         "x": 17,
         "z": 13,
+        "buildingType": "sport"
+      },
+      {
+        "placeId": "oja-oba-market",
+        "x": 25,
+        "z": 2,
+        "buildingType": "market"
+      },
+      {
+        "placeId": "ataoja-police-station",
+        "x": 27,
+        "z": 2,
+        "buildingType": "public-service"
+      },
+      {
+        "placeId": "ataoja-palace",
+        "x": 29,
+        "z": 2,
+        "buildingType": "civic"
+      },
+      {
+        "placeId": "oke-baale-local-government-hq",
+        "x": 2,
+        "z": 21,
+        "buildingType": "civic"
+      },
+      {
+        "placeId": "osogbo-school-of-art",
+        "x": 5,
+        "z": 22,
+        "buildingType": "school"
+      },
+      {
+        "placeId": "osogbo-township-stadium",
+        "x": 18,
+        "z": 22,
         "buildingType": "sport"
       }
     ],
@@ -1064,11 +1292,11 @@
       "category": "services",
       "districtId": "learning-quarter",
       "locationSlug": "meridian-bank",
-      "x": 1010,
-      "y": 490,
+      "x": 1414,
+      "y": 445,
       "verify": false,
       "grid": {
-        "x": 12,
+        "x": 13,
         "z": 6
       },
       "buildingType": "bank",
@@ -2094,6 +2322,154 @@
           "verify": false
         }
       ]
+    },
+    {
+      "id": "oja-oba-market",
+      "label": "Oja-Oba Market",
+      "category": "market",
+      "districtId": "oja-oba",
+      "locationSlug": "oja-oba",
+      "x": 2755,
+      "y": 145,
+      "verify": false,
+      "grid": {
+        "x": 25,
+        "z": 2
+      },
+      "buildingType": "market",
+      "actions": []
+    },
+    {
+      "id": "ataoja-police-station",
+      "label": "Ataoja Police Station",
+      "category": "services",
+      "districtId": "ataoja",
+      "locationSlug": "government-area",
+      "x": 2978,
+      "y": 145,
+      "verify": false,
+      "grid": {
+        "x": 27,
+        "z": 2
+      },
+      "buildingType": "public-service",
+      "actions": []
+    },
+    {
+      "id": "ataoja-palace",
+      "label": "Ataoja Palace",
+      "category": "services",
+      "districtId": "ataoja",
+      "locationSlug": "government-area",
+      "x": 3201,
+      "y": 145,
+      "verify": false,
+      "grid": {
+        "x": 29,
+        "z": 2
+      },
+      "buildingType": "civic",
+      "actions": []
+    },
+    {
+      "id": "oke-baale-local-government-hq",
+      "label": "Oke-Baale Local Government HQ",
+      "category": "services",
+      "districtId": "oke-baale",
+      "locationSlug": "oke-baale",
+      "x": 185,
+      "y": 1570,
+      "verify": false,
+      "grid": {
+        "x": 2,
+        "z": 21
+      },
+      "buildingType": "civic",
+      "actions": []
+    },
+    {
+      "id": "osogbo-school-of-art",
+      "label": "Osogbo School of Art",
+      "category": "school",
+      "districtId": "oke-baale",
+      "locationSlug": "student-district",
+      "x": 521,
+      "y": 1645,
+      "verify": false,
+      "grid": {
+        "x": 5,
+        "z": 22
+      },
+      "buildingType": "school",
+      "actions": []
+    },
+    {
+      "id": "osogbo-township-stadium",
+      "label": "Osogbo Township Stadium",
+      "category": "sport",
+      "districtId": "ogo-oluwa",
+      "locationSlug": "stadium",
+      "x": 1973,
+      "y": 1645,
+      "verify": false,
+      "grid": {
+        "x": 18,
+        "z": 22
+      },
+      "buildingType": "sport",
+      "actions": []
+    },
+    {
+      "id": "aleku-wodo-road-network",
+      "label": "Aleku-Wodo Road Network",
+      "category": "junction",
+      "districtId": "aleku-wodo",
+      "locationSlug": "residential",
+      "x": 1302,
+      "y": 1495,
+      "verify": false,
+      "grid": {
+        "x": 12,
+        "z": 20
+      },
+      "mapObjectType": "junction",
+      "availabilityReason": "Road-network landmark; use it as an orientation point.",
+      "actions": []
+    },
+    {
+      "id": "oke-fia-flyover",
+      "label": "Oke-Fia Flyover",
+      "category": "junction",
+      "districtId": "oke-fia",
+      "locationSlug": "oke-fia",
+      "x": 2978,
+      "y": 1495,
+      "verify": false,
+      "grid": {
+        "x": 27,
+        "z": 20
+      },
+      "mapObjectType": "junction",
+      "availabilityReason": "Flyover landmark; use it as an orientation point.",
+      "actions": []
+    },
+    {
+      "id": "osun-sacred-grove",
+      "label": "Osun-Osogbo Sacred Grove",
+      "category": "worship",
+      "districtId": "oke-fia",
+      "locationSlug": null,
+      "x": 3201,
+      "y": 1645,
+      "verify": false,
+      "grid": {
+        "x": 29,
+        "z": 22
+      },
+      "mapObjectType": "poi",
+      "availabilityReason": "Heritage destination reserved for a later playable phase.",
+      "unlockRequirement": "Future heritage-area implementation.",
+      "actions": []
     }
   ]
 }
