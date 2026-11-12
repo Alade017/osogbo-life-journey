@@ -526,7 +526,7 @@ function AudioControls({ profile, onSave }: { profile: Profile; onSave: (patch: 
           <output className="sx-volume-value">{Math.round((levels.environment ?? 0) * 100)}%</output>
         </div>
         <p className="sx-row-hint">
-          Optional synthesized background texture. Uses no additional audio files or downloads.
+          Procedural outdoor ambience: soft wind, distant road rumble and occasional birds. Generated locally without audio downloads.
         </p>
         <div className="sx-volume">
           <Slider
