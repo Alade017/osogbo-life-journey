@@ -204,6 +204,7 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     ],
   },
   "lantern-club": {
+    environment: { url: "/models/environments/market-and-bank/lantern-club-nightclub.glb" },
     name: "Lantern Club lounge",
     description: "A warm lounge with a small stage, low tables and a refreshment bar.",
     floorColor: "#453b39",
@@ -320,6 +321,7 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     ],
   },
   "riverside-food-court": {
+    environment: { url: "/models/environments/market-and-bank/street-food-market-yard.glb" },
     name: "Riverside food court",
     description: "An open-sided dining room with vendor counters and shared tables.",
     floorColor: "#c7b99c",
