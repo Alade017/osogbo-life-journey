@@ -4,8 +4,8 @@ import { Color } from "three";
 import { useOptionalGameTime } from "@/components/game/GameTimeProvider";
 import { WORLD_PALETTE } from "../3d/world-theme";
 
-/** The map sits on a plain white backdrop, so the darkened terrain and the pins stand out. */
-const MAP_BACKGROUND = new Color("#ffffff");
+const DAY_BACKGROUND = new Color(WORLD_PALETTE.ground);
+const NIGHT_BACKGROUND = new Color("#0b1220"); // Atmospheric deep Osogbo midnight navy
 const DAY_AMBIENT = new Color("#ffffff");
 const NIGHT_AMBIENT = new Color("#253654"); // Moonlit blue ambient
 
@@ -60,7 +60,7 @@ export function MapLighting({ size = 30 }: { size?: number }) {
   const { hour, minute } = clock;
   const { arc, day, isNight } = daylightFor(hour, minute);
 
-  const background = useMemo(() => MAP_BACKGROUND.clone(), []);
+  const background = useMemo(() => NIGHT_BACKGROUND.clone().lerp(DAY_BACKGROUND, day), [day]);
   const ambientColor = useMemo(() => NIGHT_AMBIENT.clone().lerp(DAY_AMBIENT, day), [day]);
 
   const sunPosition: [number, number, number] = [

@@ -142,7 +142,7 @@ export function MapCanvas({
   return (
     <section
       className="map-canvas town-map-canvas"
-      style={{ background: "#ffffff" }}
+      style={{ background: WORLD_PALETTE.ground }}
       aria-label="Interactive 3D town map with open camera exploration"
     >
       <Suspense fallback={null}>
