@@ -414,13 +414,21 @@ function createAmbientSoundscape(context: AudioContext): AudioBuffer {
       const elapsed = time - chirp.start;
       if (elapsed < 0 || elapsed >= chirp.duration) continue;
       const progress = elapsed / chirp.duration;
-      const frequency = chirp.low + (chirp.high - chirp.low) * progress;
       const envelope = Math.sin(Math.PI * progress) ** 2;
       birds += Math.sin(2 * Math.PI * (chirp.low * elapsed +
         ((chirp.high - chirp.low) / (2 * chirp.duration)) * elapsed * elapsed)) *
         envelope * 0.15;
     }
     samples[index] = Math.max(-0.55, Math.min(0.55, wind + traffic + birds));
+  }
+
+  // Blend the loop tail into its opening so the repeating buffer does not click.
+  const fadeLength = Math.floor(sampleRate * 0.45);
+  for (let index = 0; index < fadeLength; index++) {
+    const progress = index / fadeLength;
+    const tailIndex = length - fadeLength + index;
+    samples[tailIndex] =
+      samples[tailIndex] * (1 - progress) + samples[index] * progress;
   }
 
   return buffer;
