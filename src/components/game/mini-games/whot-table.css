@@ -113,7 +113,9 @@
   border-radius: 0.5rem;
   opacity: 0.6;
   transform: translateY(0);
-  transition: transform 0.15s ease, opacity 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
 }
 .wt-card:disabled {
   cursor: default;
@@ -123,6 +125,20 @@
   cursor: pointer;
   outline: 2px solid #f6c744;
   outline-offset: 2px;
+  animation: wt-card-glow 1.4s ease-in-out infinite alternate;
+}
+@keyframes wt-card-glow {
+  from {
+    box-shadow: 0 0 8px 1px rgb(246 199 68 / 0.35);
+  }
+  to {
+    box-shadow: 0 0 24px 6px rgb(246 199 68 / 0.75);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wt-card.is-playable {
+    animation: none;
+  }
 }
 .wt-card.is-playable:hover,
 .wt-card.is-playable:focus-visible {

@@ -1,4 +1,5 @@
 import { useEffect, useState, type ComponentType, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import {
   ArrowLeft,
   Coins,
@@ -337,6 +338,14 @@ function LudoGame() {
 function WhotGame() {
   const [state, setState] = useState<WhotState>(() => newWhot(2));
   const [pendingWhot, setPendingWhot] = useState<string | null>(null);
+  useEffect(() => {
+    if (!pendingWhot) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setPendingWhot(null);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [pendingWhot]);
   const humanTurn = state.turn === 0 && state.winner === null;
   useComputerTurn(!humanTurn && state.winner === null, [state], () => {
     setState((current) => {
@@ -416,26 +425,43 @@ function WhotGame() {
           );
         })}
       </div>
-      {pendingWhot && (
-        <div className="mg-shape-pick" role="group" aria-label="Choose a shape">
-          <p>Choose the shape to call:</p>
-          <div className="mg-shape-options">
-            {SHAPES.map((shape) => (
+      {pendingWhot &&
+        createPortal(
+          <div className="mg-shape-overlay" onClick={() => setPendingWhot(null)}>
+            <div
+              className="mg-shape-pick"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Choose a shape"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <p>Choose the shape to call:</p>
+              <div className="mg-shape-options">
+                {SHAPES.map((shape) => (
+                  <button
+                    key={shape}
+                    type="button"
+                    onClick={() => {
+                      setState((current) => playWhot(current, pendingWhot, shape));
+                      setPendingWhot(null);
+                    }}
+                  >
+                    <ShapeGlyph shape={shape} size={26} />
+                    <span>{SHAPE_LABELS[shape]}</span>
+                  </button>
+                ))}
+              </div>
               <button
-                key={shape}
                 type="button"
-                onClick={() => {
-                  setState((current) => playWhot(current, pendingWhot, shape));
-                  setPendingWhot(null);
-                }}
+                className="mg-shape-cancel"
+                onClick={() => setPendingWhot(null)}
               >
-                <ShapeGlyph shape={shape} size={26} />
-                <span>{SHAPE_LABELS[shape]}</span>
+                Cancel
               </button>
-            ))}
-          </div>
-        </div>
-      )}
+            </div>
+          </div>,
+          document.body,
+        )}
       {humanTurn && playable.size === 0 && (
         <Button onClick={() => setState((current) => drawWhot(current))}>
           {state.pendingDraw > 0 ? `Draw ${state.pendingDraw}` : "Draw a card"}

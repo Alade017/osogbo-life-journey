@@ -754,6 +754,7 @@
   opacity: 1;
   filter: none;
   cursor: pointer;
+  animation: mg-card-glow 1.4s ease-in-out infinite alternate;
 }
 .mg-hand-card.is-playable:hover,
 .mg-hand-card.is-playable:focus-visible {
@@ -763,16 +764,38 @@
   cursor: default;
 }
 
+.mg-shape-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(15 20 30 / 0.55);
+  animation: mg-fade-in 180ms ease-out;
+}
 .mg-shape-pick {
   display: grid;
-  gap: 8px;
+  gap: 10px;
   justify-items: center;
-  padding: 12px;
-  border-radius: 16px;
+  width: min(92vw, 360px);
+  padding: 16px;
+  border-radius: 18px;
   background: var(--mg-paper);
   border: 1px solid var(--mg-line);
-  width: 100%;
+  box-shadow: 0 18px 48px rgb(0 0 0 / 0.35);
   box-sizing: border-box;
+  animation: mg-pop-in 260ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+.mg-shape-cancel {
+  margin-top: 4px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--mg-line);
+  background: transparent;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
 }
 .mg-shape-pick p {
   margin: 0;
@@ -876,4 +899,42 @@
 .mg-card-sm .mg-whot-word {
   font-size: 0.38rem;
   letter-spacing: 0.03em;
+}
+
+@keyframes mg-card-glow {
+  from {
+    box-shadow:
+      0 0 0 0 color-mix(in srgb, var(--mg-gold) 30%, transparent),
+      0 0 10px 1px color-mix(in srgb, var(--mg-gold) 25%, transparent);
+  }
+  to {
+    box-shadow:
+      0 0 0 4px color-mix(in srgb, var(--mg-gold) 22%, transparent),
+      0 0 22px 6px color-mix(in srgb, var(--mg-gold) 60%, transparent);
+  }
+}
+@keyframes mg-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes mg-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mg-hand-card.is-playable,
+  .mg-shape-overlay,
+  .mg-shape-pick {
+    animation: none;
+  }
 }
