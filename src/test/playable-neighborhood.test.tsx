@@ -465,8 +465,11 @@ it("reports a bounded timeout when joining never resolves", async () => {
   await act(async () => {
     await vi.advanceTimersByTimeAsync(15_000);
   });
-  expect(screen.getByRole("alert")).toHaveTextContent(/taking too long to connect/i);
-  act(() => screen.getByRole("button", { name: "Retry connection" }).click());
+  expect(screen.queryByRole("button", { name: "Retry connection" })).not.toBeInTheDocument();
+  expect(screen.queryByText(/Connected ·/)).not.toBeInTheDocument();
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(1_500);
+  });
   expect(state.join).toHaveBeenCalledTimes(2);
 });
 
@@ -489,6 +492,10 @@ it("closes a room that never publishes its initial authoritative state", async (
   await act(async () => {
     await vi.advanceTimersByTimeAsync(10_000);
   });
-  expect(screen.getByRole("alert")).toHaveTextContent(/world state did not finish loading/i);
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   expect(pending.leave).toHaveBeenCalledOnce();
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(1_500);
+  });
+  expect(state.join).toHaveBeenCalledTimes(2);
 });
