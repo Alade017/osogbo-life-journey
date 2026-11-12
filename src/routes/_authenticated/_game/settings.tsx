@@ -261,7 +261,7 @@ export function SettingsPage() {
         id="sx-sound"
         icon={Volume2}
         title="Sound"
-        description="Tune the town soundtrack and game cues separately."
+        description="Tune music, game cues and ambient texture independently."
         footer={<SavedPill show={saved === "music_enabled" || saved === "effects_enabled"} />}
       >
         <AudioControls profile={profile} onSave={(patch) => savePreferences.mutate(patch)} />
@@ -464,6 +464,20 @@ function AudioControls({ profile, onSave }: { profile: Profile; onSave: (patch: 
     onSave({ [cfg.flag]: on } as Patch);
   }
 
+  async function applyEnvironment(volume: number) {
+    const currentVolume = levels.environment ?? 0;
+    const next = { ...levels, environment: volume };
+    if (volume > 0 && currentVolume === 0 && !(await enableGameAudio(next))) {
+      setBlocked(true);
+      toast.error("Your browser needs one tap on this page before audio can start.");
+      return;
+    }
+    setBlocked(false);
+    setGameAudioLevels(next);
+    setLevels(next);
+    if (!next.music && !next.effects && !next.environment) await disableGameAudio();
+  }
+
   return (
     <>
       {(Object.keys(CHANNELS) as Channel[]).map((channel) => {
@@ -503,6 +517,29 @@ function AudioControls({ profile, onSave }: { profile: Profile; onSave: (patch: 
           </div>
         );
       })}
+      <div className={`sx-channel${(levels.environment ?? 0) > 0 ? " is-on" : ""}`}>
+        <div className="sx-channel-head">
+          <span className="sx-channel-title">
+            <Waves aria-hidden="true" />
+            <strong>Ambient texture</strong>
+          </span>
+          <output className="sx-volume-value">{Math.round((levels.environment ?? 0) * 100)}%</output>
+        </div>
+        <p className="sx-row-hint">
+          Optional synthesized background texture. Uses no additional audio files or downloads.
+        </p>
+        <div className="sx-volume">
+          <Slider
+            className="sx-slider"
+            aria-label="Ambient texture volume"
+            min={0}
+            max={100}
+            step={1}
+            value={[Math.round((levels.environment ?? 0) * 100)]}
+            onValueChange={([value]) => void applyEnvironment((value ?? 0) / 100)}
+          />
+        </div>
+      </div>
       <div className="sx-row">
         <span className="sx-row-hint">Hear a sample at your current effects volume.</span>
         <Button
