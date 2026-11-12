@@ -4,21 +4,22 @@ import { MathUtils, Vector3, type Group } from "three";
 import {
   normalizeAvatarAppearance,
   OUTFITS,
+  SHOE_COLORS,
   SKIN_TONES,
+  TROUSERS,
   type Appearance,
 } from "@/game/avatar-appearance";
 import type { AvatarAnimationState, AvatarEquipment } from "@/components/game/Avatar";
 import { WorldMaterial } from "./WorldScene";
 import { WORLD_SCALE } from "./world-theme";
 import {
-  CHARACTER_CLOTH,
   rightHandPoint,
   CHARACTER_GROUND,
   CHARACTER_MOTION,
   CHARACTER_SOCKETS,
 } from "./character-config";
-import { adireTexture } from "./cloth-patterns";
 import { bodyVariantFor, CharacterBody, type BodyVariant } from "./CharacterBody";
+import { CharacterClothing, outfitFabric, type ClothingColours } from "./CharacterClothing";
 import { WORN_BOTTOMS, WORN_CLOTHING, WORN_ITEM_MODELS, WORN_SHOES } from "./world-item-models";
 
 export type TaskPose = "sit" | "wash" | "cook" | "collect" | "stretch";
@@ -157,8 +158,15 @@ export function WorldCharacter({
   const wornShoes = equipment.find((item) => item.slot === "shoes") as
     { item?: { slug?: string | null } | null } | undefined;
   const ShoesModel = wornShoes?.item?.slug ? WORN_SHOES[wornShoes.item.slug] : undefined;
-  const clothMap = CHARACTER_CLOTH.patternedOutfits.includes(safe.outfit) ? adireTexture() : null;
-  const clothColor = clothMap ? "#ffffff" : OUTFITS[safe.outfit]!;
+  // The default outfit is cut from the body itself, so a basic top keeps that fit rather than a box.
+  const showFittedTop = !TopModel || wornTop?.item?.slug === "basic_outfit";
+  const fabric = outfitFabric(safe.outfit, OUTFITS);
+  const clothing: ClothingColours = {
+    shirt: fabric,
+    trousers: TROUSERS[safe.bottoms]!,
+    shoes: SHOE_COLORS[safe.shoes]!,
+    cap: safe.headwear > 0 || equipment.some((item) => item.slot === "head") ? fabric : null,
+  };
   return (
     <group ref={root} name={`character:${name}`} rotation={[0, yaw, 0]}>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.012, 0]} renderOrder={-1}>
@@ -187,18 +195,18 @@ export function WorldCharacter({
             height={h}
             skin={bodyVariant === "courier" ? undefined : skin}
           />
+          {bodyVariant === "courier" ? null : (
+            <CharacterClothing
+              variant={bodyVariant}
+              height={h}
+              colours={clothing}
+              show={{ shirt: showFittedTop, trousers: !BottomModel, shoes: !ShoesModel }}
+            />
+          )}
           <group name="torso_socket" position={[0, h * 0.52, 0]}>
-            {TopModel ? <TopModel h={h} /> : null}
+            {showFittedTop && TopModel ? <TopModel h={h} /> : null}
             {BottomModel ? <BottomModel h={h} /> : null}
             {ShoesModel ? <ShoesModel h={h} /> : null}
-          </group>
-          <group name="head_socket" position={[0, h * CHARACTER_SOCKETS.head, 0]}>
-            {(safe.headwear > 0 || equipment.some((item) => item.slot === "head")) && (
-              <mesh castShadow>
-                <cylinderGeometry args={[h * 0.15, h * 0.17, h * 0.08, 8]} />
-                <WorldMaterial color={clothColor} map={clothMap} />
-              </mesh>
-            )}
           </group>
           {held ? (
             <group name="right_hand_socket" position={rightHandPoint(h)}>
