@@ -12,6 +12,7 @@ export type PreviewLandmark = {
 /** Landmarks to show on the landing town. Null shows every landmark in the town. */
 export function previewLandmarks(activeSlugs: ReadonlySet<string> | null): PreviewLandmark[] {
   return town.landmarks
+    .filter((place) => place.locationSlug !== null)
     .filter((place) => !activeSlugs || activeSlugs.has(place.locationSlug))
     .map((place) => ({
       id: place.id,

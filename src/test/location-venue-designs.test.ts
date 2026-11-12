@@ -8,12 +8,16 @@ import {
 
 describe("location venue designs", () => {
   it("provides a distinct set of interactive fixtures for every current map location", () => {
-    const designs = townData.landmarks.map((landmark) =>
-      getLocationVenueDesign(landmark.locationSlug, landmark.label),
-    );
+    const designs = townData.landmarks
+      .filter(
+        (landmark): landmark is typeof landmark & { locationSlug: string } =>
+          typeof landmark.locationSlug === "string",
+      )
+      .map((landmark) => getLocationVenueDesign(landmark.locationSlug, landmark.label));
 
-    expect(designs).toHaveLength(townData.landmarks.length);
+    expect(designs.length).toBeGreaterThan(0);
     expect(new Set(designs.map((design) => design.name)).size).toBe(designs.length);
+
     for (const design of designs) {
       expect(design.fixtures.length).toBeGreaterThanOrEqual(3);
       expect(new Set(design.fixtures.map((fixture) => fixture.id)).size).toBe(

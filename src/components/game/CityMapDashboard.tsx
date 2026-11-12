@@ -401,19 +401,44 @@ export function CityMapDashboard({
       setSelectedDistrict(d);
     }
   };
-  const onLandmark = (id: string) => {
-    if (!availableLandmarks.data?.includes(id)) return;
-    const found = landmarks.find((item) => item.id === id) ?? getQuickTravelLandmark(id);
-    if (found) {
-      setSelectedDistrict(null);
-      setSelectedLandmark(found);
-      setLandmarkDetailsOpen(false);
-      setArrivalConfirmed(false);
-      setTravelError(null);
-      setActionError("");
-      setPlaceActionResult(null);
-    }
-  };
+  const onLandmark = useCallback(
+    (id: string) => {
+      if (!availableLandmarks.data?.includes(id)) return;
+
+      const found = landmarks.find((item) => item.id === id) ?? getQuickTravelLandmark(id);
+
+      if (found) {
+        setSelectedDistrict(null);
+        setSelectedLandmark(found);
+        setLandmarkDetailsOpen(false);
+        setArrivalConfirmed(false);
+        setTravelError(null);
+        setActionError("");
+        setPlaceActionResult(null);
+      }
+    },
+    [availableLandmarks.data],
+  );
+  const deepLinkedLandmark = useRef<string | null>(null);
+  useEffect(() => {
+    if (!availableLandmarks.data) return;
+    const params = new URLSearchParams(window.location.search);
+    const landmarkId = params.get("landmark");
+    if (!landmarkId || params.get("details") !== "1" || deepLinkedLandmark.current === landmarkId)
+      return;
+    if (!availableLandmarks.data.includes(landmarkId)) return;
+    deepLinkedLandmark.current = landmarkId;
+    onLandmark(landmarkId);
+    setLandmarkDetailsOpen(true);
+    params.delete("landmark");
+    params.delete("details");
+    const query = params.toString();
+    window.history.replaceState(
+      window.history.state,
+      "",
+      query ? "?" + query : window.location.pathname,
+    );
+  }, [availableLandmarks.data, onLandmark]);
   const searchMatches = useMemo(() => {
     const value = search.trim().toLocaleLowerCase();
     if (!value) return null;
