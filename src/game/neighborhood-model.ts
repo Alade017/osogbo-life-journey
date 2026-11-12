@@ -72,8 +72,8 @@ export const NEIGHBORHOOD_SIZE = { width: 640, height: 560 };
 export const NEIGHBORHOOD_SCENE_BOUNDS = {
   left: -800,
   top: -660,
-  width: 3840,
-  height: 3200,
+  width: 2240,
+  height: 1920,
 } as const;
 const CITY_CENTRE_ROADS: readonly NeighborhoodRoad[] = [
   { id: "olaiya-arterial-north-south", axis: "vertical", offset: 500, width: 84, type: "arterial" },
@@ -91,11 +91,6 @@ const CITY_CENTRE_ROADS: readonly NeighborhoodRoad[] = [
   { id: "east-market-street", axis: "vertical", offset: 850, width: 62, type: "street" },
   { id: "north-compound-lane", axis: "horizontal", offset: -280, width: 54, type: "lane" },
   { id: "south-compound-lane", axis: "horizontal", offset: 730, width: 58, type: "street" },
-  { id: "east-residential-arterial", axis: "vertical", offset: 1600, width: 72, type: "arterial" },
-  { id: "outer-east-street", axis: "vertical", offset: 2550, width: 56, type: "street" },
-  { id: "north-extension-street", axis: "horizontal", offset: -520, width: 52, type: "street" },
-  { id: "midtown-extension-street", axis: "horizontal", offset: 1120, width: 58, type: "street" },
-  { id: "south-extension-arterial", axis: "horizontal", offset: 1900, width: 74, type: "arterial" },
 ];
 const CITY_CENTRE_OBSTACLES: readonly NeighborhoodObstacle[] = [
   { id: "compound-west-north", kind: "compound", x: -615, y: -470, width: 150, height: 92 },
@@ -122,39 +117,6 @@ const CITY_CENTRE_OBSTACLES: readonly NeighborhoodObstacle[] = [
   { id: "bin-market-row", kind: "bin", x: 670, y: 300, width: 22, height: 22 },
   { id: "bin-crossing", kind: "bin", x: 80, y: 345, width: 22, height: 22 },
   { id: "olaiya-wayfinding", kind: "sign", x: 455, y: 430, width: 28, height: 24 },
-  { id: "outer-compound-1", kind: "compound", x: -615, y: -50, width: 156, height: 104 },
-  { id: "outer-compound-2", kind: "compound", x: -180, y: -50, width: 156, height: 104 },
-  { id: "outer-compound-3", kind: "compound", x: 510, y: -50, width: 156, height: 104 },
-  { id: "outer-compound-4", kind: "compound", x: 1130, y: -50, width: 156, height: 104 },
-  { id: "outer-compound-5", kind: "compound", x: 1750, y: -50, width: 156, height: 104 },
-  { id: "outer-compound-6", kind: "compound", x: 2600, y: -50, width: 156, height: 104 },
-  { id: "outer-compound-7", kind: "compound", x: -615, y: 1050, width: 156, height: 104 },
-  { id: "outer-compound-8", kind: "compound", x: -180, y: 1050, width: 156, height: 104 },
-  { id: "outer-compound-9", kind: "compound", x: 1050, y: 900, width: 156, height: 104 },
-  { id: "outer-compound-10", kind: "compound", x: 1750, y: 1050, width: 156, height: 104 },
-  { id: "outer-compound-11", kind: "compound", x: 2750, y: 900, width: 156, height: 104 },
-  { id: "outer-compound-12", kind: "compound", x: -615, y: 1500, width: 156, height: 104 },
-  { id: "outer-compound-13", kind: "compound", x: -180, y: 1500, width: 156, height: 104 },
-  { id: "outer-compound-14", kind: "compound", x: 1050, y: 1500, width: 156, height: 104 },
-  { id: "outer-compound-15", kind: "compound", x: 1750, y: 1500, width: 156, height: 104 },
-  { id: "outer-compound-16", kind: "compound", x: 2750, y: 1500, width: 156, height: 104 },
-  { id: "outer-compound-17", kind: "compound", x: -615, y: 2300, width: 156, height: 104 },
-  { id: "outer-compound-18", kind: "compound", x: -180, y: 2300, width: 156, height: 104 },
-  { id: "outer-compound-19", kind: "compound", x: 1050, y: 2300, width: 156, height: 104 },
-  { id: "outer-compound-20", kind: "compound", x: 1750, y: 2300, width: 156, height: 104 },
-  { id: "outer-compound-21", kind: "compound", x: 2750, y: 2300, width: 156, height: 104 },
-  { id: "outer-tree-1", kind: "tree", x: -720, y: 180, width: 48, height: 48 },
-  { id: "outer-tree-2", kind: "tree", x: -700, y: 1180, width: 48, height: 48 },
-  { id: "outer-tree-3", kind: "tree", x: 300, y: 1450, width: 48, height: 48 },
-  { id: "outer-tree-4", kind: "tree", x: 700, y: 2250, width: 48, height: 48 },
-  { id: "outer-tree-5", kind: "tree", x: 1450, y: 350, width: 48, height: 48 },
-  { id: "outer-tree-6", kind: "tree", x: 2200, y: 1150, width: 48, height: 48 },
-  { id: "outer-tree-7", kind: "tree", x: 2950, y: 2200, width: 48, height: 48 },
-  { id: "outer-bench-1", kind: "bench", x: -300, y: 1000, width: 58, height: 26 },
-  { id: "outer-bench-2", kind: "bench", x: 1000, y: 1000, width: 58, height: 26 },
-  { id: "outer-bench-3", kind: "bench", x: 2000, y: 1000, width: 58, height: 26 },
-  { id: "outer-bench-4", kind: "bench", x: 1500, y: 1800, width: 58, height: 26 },
-  { id: "outer-bench-5", kind: "bench", x: 2800, y: 1800, width: 58, height: 26 },
 ];
 export const CITY_CENTRE_AREA: NeighborhoodArea = {
   slug: "city-centre",
@@ -602,7 +564,7 @@ export function neighborhoodOrigin(entrance: WorldPoint, checkpoint: WorldPoint)
     Math.abs(checkpoint.x - entrance.x) <= 1.7 && Math.abs(checkpoint.y - entrance.y) <= 1.6
       ? entrance
       : { x: Math.floor(checkpoint.x / 3) * 3 + 1.5, y: Math.floor(checkpoint.y / 3) * 3 + 1.5 };
-  return { x: Math.max(1.8, Math.min(22.2, anchor.x)), y: Math.max(1.9, Math.min(18.3, anchor.y)) };
+  return { x: Math.max(1.8, Math.min(12.2, anchor.x)), y: Math.max(1.9, Math.min(10.3, anchor.y)) };
 }
 /** Stable origin shared by every player in an area; per-checkpoint origins desync peers. */
 export function neighborhoodAreaOrigin(entrance: WorldPoint): WorldPoint {
@@ -623,7 +585,7 @@ export function toWorld(point: WorldPoint, origin: WorldPoint): WorldPoint {
 /** Existing authoritative movement window expressed in the area's scene coordinates. */
 export function neighborhoodSceneBounds(origin: WorldPoint) {
   const corner = toScene({ x: 0, y: 0 }, origin);
-  return { left: corner.x, top: corner.y, width: 24 * WORLD_SCALE, height: 20 * WORLD_SCALE };
+  return { left: corner.x, top: corner.y, width: 14 * WORLD_SCALE, height: 12 * WORLD_SCALE };
 }
 
 export function nearestInteraction(
@@ -646,8 +608,8 @@ export function validCheckpoint(point: WorldPoint): boolean {
     Number.isFinite(point.x) &&
     Number.isFinite(point.y) &&
     point.x >= 0 &&
-    point.x <= 24 &&
+    point.x <= 14 &&
     point.y >= 0 &&
-    point.y <= 20
+    point.y <= 12
   );
 }
