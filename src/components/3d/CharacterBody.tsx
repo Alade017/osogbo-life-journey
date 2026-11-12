@@ -1,4 +1,6 @@
 import { createPortal, useThree } from "@react-three/fiber";
+import type { Appearance } from "@/game/avatar-appearance";
+import { CharacterWardrobe } from "./CharacterWardrobe";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { AnimationClip, Box3, type Group, Object3D, Vector3 } from "three";
@@ -70,11 +72,15 @@ export function CharacterBody({
   height,
   motion,
   held = null,
+  appearance = {},
+  gender = "nonbinary",
 }: {
   variant: BodyVariant;
   height: number;
   motion: MotionName;
   held?: ReactNode;
+  appearance?: Appearance;
+  gender?: string;
 }) {
   const gltf = useGLTF(BODY_FILES[variant]);
   const talk = useGLTF(TALK_FILES[variant]);
@@ -115,6 +121,7 @@ export function CharacterBody({
   return (
     <group ref={root} position={[fit.x, fit.y, fit.z]} scale={fit.scale}>
       <primitive object={rig} />
+      <CharacterWardrobe rig={rig} appearance={appearance} gender={gender} />
       {held && hand ? createPortal(<group scale={1 / fit.scale}>{held}</group>, hand) : null}
     </group>
   );

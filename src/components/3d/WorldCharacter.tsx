@@ -157,7 +157,7 @@ export function WorldCharacter({
         scale={[build, 1, 1]}
       >
         <group ref={bodyRef}>
-          <CharacterBody variant={variant} height={h} motion={motion} held={held} />
+          <CharacterBody variant={variant} height={h} motion={motion} held={held} appearance={safe} gender={gender} />
           <group name="back_socket" position={[0, h * CHARACTER_SOCKETS.back, 0]}>
             {AccessoryModel ? <AccessoryModel h={h} /> : null}
           </group>
