@@ -88,6 +88,7 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
   },
   "town-market": {
     name: "Market aisles",
+    environment: { url: "/models/environments/market-and-bank/seafood-market-stall.glb" },
     description: "A covered trading floor with produce stalls and a shared aisle.",
     floorColor: "#cdbb92",
     wallColor: "#e5d3ad",
