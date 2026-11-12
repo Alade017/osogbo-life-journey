@@ -6,7 +6,7 @@ import {
   type MusicTrack,
 } from "./music-tracks";
 import { soundEffects, validSoundEffects, type SoundName } from "./sound-effects";
-type AudioLevels = { master: number; music: number; effects: number };
+type AudioLevels = { master: number; music: number; effects: number; environment?: number };
 
 type AudioGraph = {
   context: AudioContext;
@@ -17,7 +17,7 @@ type AudioGraph = {
 };
 
 const STORAGE_KEY = "osogbo-world-audio-v1";
-const DEFAULT_LEVELS: AudioLevels = { master: 0.75, music: 0.4, effects: 0.65 };
+const DEFAULT_LEVELS: AudioLevels = { master: 0.75, music: 0.4, effects: 0.65, environment: 0 };
 let graph: AudioGraph | null = null;
 let automaticAudioAllowed = false;
 let sessionCleanup: (() => void) | null = null;
@@ -68,7 +68,7 @@ export function startGameAudioSession() {
     window.removeEventListener("pageshow", show);
   };
   const levels = readGameAudioLevels();
-  if ((!levels.music && !levels.effects) || document.hidden) return;
+  if ((!levels.music && !levels.effects && !levels.environment) || document.hidden) return;
   automaticAudioAllowed = true;
   clearAudioGestureListeners();
   const retry = (event: Event) => {
@@ -356,7 +356,7 @@ export function readGameAudioLevels(): AudioLevels {
       typeof input[key] === "number" && Number.isFinite(input[key])
         ? Math.max(0, Math.min(1, input[key] as number))
         : DEFAULT_LEVELS[key];
-    return { master: level("master"), music: level("music"), effects: level("effects") };
+    return { master: level("master"), music: level("music"), effects: level("effects"), environment: level("environment") };
   } catch {
     return DEFAULT_LEVELS;
   }
@@ -376,7 +376,7 @@ function applyLevels(current: AudioGraph, levels: AudioLevels) {
   current.master.gain.setTargetAtTime(levels.master, now, 0.08);
   current.music.gain.setTargetAtTime(levels.music, now, 0.08);
   current.effects.gain.setTargetAtTime(levels.effects, now, 0.08);
-  current.ambience.gain.value = levels.effects > 0 ? 0.035 : 0;
+  current.ambience.gain.value = (levels.environment ?? 0) * 0.035;
 }
 
 function createAudioGraph(levels: AudioLevels): AudioGraph | null {
@@ -389,7 +389,7 @@ function createAudioGraph(levels: AudioLevels): AudioGraph | null {
   const effects = context.createGain();
   const current = { context, master, ambience, music, effects };
   applyLevels(current, levels);
-  ambience.gain.value = levels.effects > 0 ? 0.035 : 0;
+  ambience.gain.value = (levels.environment ?? 0) * 0.035;
   ambience.connect(master);
   music.connect(master);
   effects.connect(master);
@@ -414,7 +414,7 @@ function createAudioGraph(levels: AudioLevels): AudioGraph | null {
 }
 
 export async function enableGameAudio(levels = readGameAudioLevels()): Promise<boolean> {
-  if (typeof window === "undefined" || document.hidden || (!levels.music && !levels.effects))
+  if (typeof window === "undefined" || document.hidden || (!levels.music && !levels.effects && !levels.environment))
     return false;
   automaticAudioAllowed = true;
   saveLevels(levels);
@@ -463,7 +463,7 @@ export function setGameAudioLevels(levels: AudioLevels) {
   if (graph) applyLevels(graph, levels);
   if (!levels.effects) stopEffects();
   if (!levels.music) pauseGameMusic();
-  if (!levels.music && !levels.effects) void disableGameAudio();
+  if (!levels.music && !levels.effects && !levels.environment) void disableGameAudio();
 }
 
 export function playGameSound(name: SoundName) {
