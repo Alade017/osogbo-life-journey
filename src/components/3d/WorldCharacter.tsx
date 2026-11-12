@@ -1,26 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { MathUtils, Vector3, type Group } from "three";
-import {
-  normalizeAvatarAppearance,
-  OUTFITS,
-  SHOE_COLORS,
-  SKIN_TONES,
-  TROUSERS,
-  type Appearance,
-} from "@/game/avatar-appearance";
+import { normalizeAvatarAppearance, type Appearance } from "@/game/avatar-appearance";
 import type { AvatarAnimationState, AvatarEquipment } from "@/components/game/Avatar";
-import { WorldMaterial } from "./WorldScene";
 import { WORLD_SCALE } from "./world-theme";
-import {
-  rightHandPoint,
-  CHARACTER_GROUND,
-  CHARACTER_MOTION,
-  CHARACTER_SOCKETS,
-} from "./character-config";
-import { bodyVariantFor, CharacterBody, type BodyVariant } from "./CharacterBody";
-import { CharacterClothing, outfitFabric, type ClothingColours } from "./CharacterClothing";
-import { WORN_BOTTOMS, WORN_CLOTHING, WORN_ITEM_MODELS, WORN_SHOES } from "./world-item-models";
+import { CHARACTER_GROUND, CHARACTER_MOTION, CHARACTER_SOCKETS } from "./character-config";
+import { bodyVariantFor, CharacterBody, motionFor, type BodyVariant } from "./CharacterBody";
+import { WORN_ITEM_MODELS } from "./world-item-models";
 
 export type TaskPose = "sit" | "wash" | "cook" | "collect" | "stretch";
 
@@ -34,9 +20,9 @@ const FACING_YAW: Record<string, number> = {
 };
 
 /**
- * The same saved appearance contract is used by portraits and both world scenes. The supplied
- * body asset is currently a single mesh, so locomotion is expressed through root travel, gait
- * timing, body bounce and a restrained counter-sway until articulated character assets are added.
+ * The same saved appearance contract is used by portraits and both world scenes. Bodies are
+ * rigged adults with their own clothing and hair, so the saved outfit, hair and skin options no
+ * longer change the body; height and build still scale it.
  */
 export function WorldCharacter({
   appearance = {},
@@ -62,17 +48,19 @@ export function WorldCharacter({
   taskPose?: TaskPose | undefined;
   /** World point to turn toward, such as a nearby character. */
   lookAt?: readonly [number, number, number] | null;
-  /** Something carried in the right hand, such as a package. Follows the body. */
+  /** Something carried in the right hand, such as a package. Follows the hand bone. */
   held?: ReactNode;
-  /** Forces a specific body, such as the delivery courier. Defaults from the saved gender. */
+  /** Forces a specific body, such as the bank staff body. Defaults from the saved gender. */
   body?: BodyVariant | undefined;
 }) {
   const safe = normalizeAvatarAppearance(appearance, gender);
   const h = WORLD_SCALE.character * ([0.92, 1, 1.06][safe.stature] ?? 1);
   const build = [0.9, 1, 1.07, 1.14][safe.build] ?? 1;
+  const variant = body ?? bodyVariantFor(gender);
   const bodyRef = useRef<Group>(null);
   const { invalidate } = useThree();
   const [reduced, setReduced] = useState(false);
+  const [walking, setWalking] = useState(false);
   const last = useRef(position);
   const walkUntil = useRef(0);
   // The root glides toward `position` each frame, so a new spot is walked to rather than jumped to.
@@ -94,21 +82,29 @@ export function WorldCharacter({
   useEffect(() => {
     const moved = Math.hypot(x - last.current[0], z - last.current[2]) > 0.001;
     last.current = [x, y, z];
-    if (moved) walkUntil.current = performance.now() + 350;
+    if (moved) {
+      walkUntil.current = performance.now() + 350;
+      setWalking(true);
+    }
     if (reduced) return;
-    const continuous = ["walk", "work", "talk", "interact"].includes(animation) || !!taskPose;
-    const turning = !!lookKey;
-    if (!moved && !continuous && !turning) return;
+    const continuous =
+      animation === "walk" ||
+      animation === "work" ||
+      animation === "talk" ||
+      animation === "interact" ||
+      !!taskPose;
+    if (!moved && !continuous && !walking && !lookKey) return;
     const settleUntil = performance.now() + CHARACTER_MOTION.settleSeconds * 1000;
     const timer = window.setInterval(() => {
       invalidate();
+      if (performance.now() >= walkUntil.current) setWalking(false);
       const active = continuous || performance.now() < Math.max(walkUntil.current, settleUntil);
       if (!active) window.clearInterval(timer);
     }, 1000 / 15);
     return () => window.clearInterval(timer);
-  }, [x, y, z, animation, taskPose, reduced, invalidate, lookKey]);
+  }, [x, y, z, animation, taskPose, reduced, invalidate, lookKey, walking]);
   const yaw = FACING_YAW[facing] ?? 0;
-  useFrame(({ clock }, delta) => {
+  useFrame((_state, delta) => {
     const rootGroup = root.current;
     if (rootGroup && rootGroup.position.distanceTo(goal.current) > 0.001) {
       rootGroup.position.lerp(goal.current, 1 - Math.exp(-CHARACTER_MOTION.glideRate * delta));
@@ -118,24 +114,6 @@ export function WorldCharacter({
     }
     const group = bodyRef.current;
     if (!group) return;
-    // Drive the gait from actual remaining travel, not a fixed 350ms timeout. Long walks
-    // therefore keep animating until the character reaches the server-authoritative destination.
-    const travelling = !!rootGroup && rootGroup.position.distanceTo(goal.current) > 0.018;
-    const moving =
-      animation !== "sleep" &&
-      !taskPose &&
-      (animation === "walk" || travelling || performance.now() < walkUntil.current);
-    const phase = clock.elapsedTime * (moving ? 8 : 3.2);
-    // Poses are blended toward their targets so changes fade rather than snap.
-    const k = reduced ? 1 : blend(CHARACTER_MOTION.fadeRate, delta);
-    // Footfall: the body rises mid-stride and squashes slightly as each foot lands.
-    const footfall = reduced || !moving ? 0 : Math.abs(Math.sin(phase));
-    const gait = reduced || !moving ? 0 : Math.sin(phase);
-    group.position.y = MathUtils.lerp(group.position.y, footfall * CHARACTER_MOTION.bob * h, k);
-    group.scale.y = MathUtils.lerp(group.scale.y, 1 - footfall * CHARACTER_MOTION.squash, k);
-    // A subtle counter-sway gives the one-piece source mesh a more legible walking cycle.
-    group.rotation.x = MathUtils.lerp(group.rotation.x, moving ? 0.035 : 0, k);
-    group.rotation.z = MathUtils.lerp(group.rotation.z, gait * 0.025, k);
     // A look at a nearby character turns the body a little, measured relative to its facing.
     let turn = 0;
     if (lookAt && !reduced) {
@@ -149,31 +127,13 @@ export function WorldCharacter({
       blend(CHARACTER_MOTION.headTurnRate, delta),
     );
   });
-  const skin = SKIN_TONES[safe.skin]!;
-  const bodyVariant = body ?? bodyVariantFor(gender);
+  const moving = walking && !reduced && !taskPose;
+  const motion = motionFor(animation, moving);
   const wornAccessory = equipment.find((item) => item.slot === "accessory") as
     { item?: { slug?: string } | null } | undefined;
   const AccessoryModel = wornAccessory?.item?.slug
     ? WORN_ITEM_MODELS[wornAccessory.item.slug]
     : undefined;
-  const wornTop = equipment.find((item) => item.slot === "top") as
-    { item?: { slug?: string | null } | null } | undefined;
-  const TopModel = wornTop?.item?.slug ? WORN_CLOTHING[wornTop.item.slug] : undefined;
-  const wornBottom = equipment.find((item) => item.slot === "bottom") as
-    { item?: { slug?: string | null } | null } | undefined;
-  const BottomModel = wornBottom?.item?.slug ? WORN_BOTTOMS[wornBottom.item.slug] : undefined;
-  const wornShoes = equipment.find((item) => item.slot === "shoes") as
-    { item?: { slug?: string | null } | null } | undefined;
-  const ShoesModel = wornShoes?.item?.slug ? WORN_SHOES[wornShoes.item.slug] : undefined;
-  // The default outfit is cut from the body itself, so a basic top keeps that fit rather than a box.
-  const showFittedTop = !TopModel || wornTop?.item?.slug === "basic_outfit";
-  const fabric = outfitFabric(safe.outfit, OUTFITS);
-  const clothing: ClothingColours = {
-    shirt: fabric,
-    trousers: TROUSERS[safe.bottoms]!,
-    shoes: SHOE_COLORS[safe.shoes]!,
-    cap: safe.headwear > 0 || equipment.some((item) => item.slot === "head") ? fabric : null,
-  };
   return (
     <group ref={root} name={`character:${name}`} rotation={[0, yaw, 0]}>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.012, 0]} renderOrder={-1}>
@@ -197,39 +157,9 @@ export function WorldCharacter({
         scale={[build, 1, 1]}
       >
         <group ref={bodyRef}>
-          <CharacterBody
-            variant={bodyVariant}
-            height={h}
-            skin={bodyVariant === "courier" ? undefined : skin}
-          />
-          {bodyVariant === "courier" ? null : (
-            <CharacterClothing
-              variant={bodyVariant}
-              height={h}
-              colours={clothing}
-              patterned={CHARACTER_CLOTH.patternedOutfits.includes(safe.outfit)}
-              show={{ shirt: showFittedTop, trousers: !BottomModel, shoes: !ShoesModel }}
-            />
-          )}
-          <group name="torso_socket" position={[0, h * 0.52, 0]}>
-            {showFittedTop && TopModel ? <TopModel h={h} /> : null}
-            {BottomModel ? <BottomModel h={h} /> : null}
-            {ShoesModel ? <ShoesModel h={h} /> : null}
-          </group>
-          {held ? (
-            <group name="right_hand_socket" position={rightHandPoint(h)}>
-              {held}
-            </group>
-          ) : null}
+          <CharacterBody variant={variant} height={h} motion={motion} held={held} />
           <group name="back_socket" position={[0, h * CHARACTER_SOCKETS.back, 0]}>
-            {AccessoryModel ? (
-              <AccessoryModel h={h} />
-            ) : equipment.some((item) => item.slot === "accessory") ? (
-              <mesh position={[h * 0.22, h * 0.48, 0]} castShadow>
-                <boxGeometry args={[h * 0.12, h * 0.16, h * 0.14]} />
-                <WorldMaterial tone="timber" />
-              </mesh>
-            ) : null}
+            {AccessoryModel ? <AccessoryModel h={h} /> : null}
           </group>
         </group>
       </group>

@@ -34,7 +34,6 @@ export const CHARACTER_GROUND = {
   shadowOpacity: 0.22,
   shadowColor: "#2b2118",
 } as const;
-
 export const CHARACTER_CLOTH = {
   /** Outfit palette indices that are drawn with the Adire resist pattern instead of plain colour. */
   patternedOutfits: [3] as readonly number[],
@@ -46,19 +45,3 @@ export const CHARACTER_CLOTH = {
     cells: 8,
   },
 } as const;
-
-/**
- * Where the right hand rests, in body space (feet on the floor, facing +z), as fractions of
- * height. The body GLBs are single meshes whose arms are lowered to the sides at load time, so
- * the hand sits at the same place on every body. Props held in that hand are placed here.
- */
-export const CHARACTER_HAND = {
-  x: 0.2,
-  y: 0.31,
-  /** A little forward of the thigh, so carried items clear the body. */
-  z: 0.08,
-} as const;
-
-export function rightHandPoint(height: number): [number, number, number] {
-  return [CHARACTER_HAND.x * height, CHARACTER_HAND.y * height, CHARACTER_HAND.z * height];
-}

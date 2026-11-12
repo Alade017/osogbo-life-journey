@@ -4,19 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { q } from "@/lib/game";
-import {
-  Avatar,
-  BODY_BUILDS,
-  BODY_HEIGHTS,
-  HAIR_COLORS,
-  HAIR_STYLES_BY_GENDER,
-  HEADWEAR,
-  OUTFITS,
-  SHOE_COLORS,
-  SKIN_TONES,
-  TROUSERS,
-  type Appearance,
-} from "@/components/game/Avatar";
+import { BODY_BUILDS, BODY_HEIGHTS, type Appearance } from "@/components/game/Avatar";
+import { CharacterPreview } from "@/components/3d/CharacterPreview";
+import "@/components/game/profile-inventory.css";
 import {
   appearanceForGender,
   DEFAULT_CHARACTER_APPEARANCE,
@@ -176,7 +166,6 @@ function CreateCharacter() {
       />
     );
   const valid = name.trim().length >= 2 && name.trim().length <= 24;
-  const hairOptions = HAIR_STYLES_BY_GENDER[gender] ?? HAIR_STYLES_BY_GENDER["nonbinary"] ?? [];
 
   return (
     <div className="game-canvas min-h-screen px-4 py-6">
@@ -189,8 +178,13 @@ function CreateCharacter() {
 
         <div className="mt-6 grid gap-6 md:grid-cols-[280px_1fr]">
           <div className="game-panel game-panel-accent flex flex-col items-center justify-center p-6 md:sticky md:top-6 md:self-start">
-            <div className="character-creation-preview" aria-live="polite">
-              <Avatar appearance={ap} gender={gender} size={170} />
+            <div className="character-creation-preview w-full max-w-[260px]" aria-live="polite">
+              <CharacterPreview
+                appearance={ap}
+                gender={gender}
+                equipment={[]}
+                label={`${name.trim() || "Your character"} preview`}
+              />
             </div>
             <div className="mt-4 rounded-lg border-2 border-edge bg-card px-4 py-1.5 font-display text-lg font-bold">
               {name.trim() || "Your name"}
@@ -264,13 +258,10 @@ function CreateCharacter() {
                 setAp((current) => appearanceForGender(current, nextGender));
               }}
             />
-            <Picker
-              label="Skin tone"
-              options={SKIN_TONES}
-              swatches
-              value={ap.skin}
-              onChange={(skin) => setAp({ ...ap, skin })}
-            />
+            <p className="text-sm text-muted-foreground">
+              Bodies come with their own skin, hair and clothing, so only height and build change
+              how your character looks.
+            </p>
             <Picker
               label="Height"
               options={BODY_HEIGHTS}
@@ -282,46 +273,6 @@ function CreateCharacter() {
               options={BODY_BUILDS}
               value={ap.build}
               onChange={(build) => setAp({ ...ap, build })}
-            />
-            <Picker
-              label="Hair style"
-              options={hairOptions}
-              value={ap.hair}
-              onChange={(hair) => setAp({ ...ap, hair })}
-            />
-            <Picker
-              label="Hair colour"
-              options={HAIR_COLORS}
-              swatches
-              value={ap.hairColor}
-              onChange={(hairColor) => setAp({ ...ap, hairColor })}
-            />
-            <Picker
-              label="Outfit colour"
-              options={OUTFITS}
-              swatches
-              value={ap.outfit}
-              onChange={(outfit) => setAp({ ...ap, outfit })}
-            />
-            <Picker
-              label="Trousers / bottoms"
-              options={TROUSERS}
-              swatches
-              value={ap.bottoms}
-              onChange={(bottoms) => setAp({ ...ap, bottoms })}
-            />
-            <Picker
-              label="Shoes"
-              options={SHOE_COLORS}
-              swatches
-              value={ap.shoes}
-              onChange={(shoes) => setAp({ ...ap, shoes })}
-            />
-            <Picker
-              label="Headwear"
-              options={HEADWEAR}
-              value={ap.headwear}
-              onChange={(headwear) => setAp({ ...ap, headwear })}
             />
 
             <div>

@@ -1,59 +1,121 @@
-import { useGLTF } from "@react-three/drei";
-import { useMemo } from "react";
-import { type BufferGeometry, Mesh, type MeshStandardMaterial } from "three";
-import { buildBodyGeometry } from "./character-body-geometry";
+import { createPortal, useThree } from "@react-three/fiber";
+import { useAnimations, useGLTF } from "@react-three/drei";
+import { useEffect, useMemo, useRef, type ReactNode } from "react";
+import { AnimationClip, Box3, type Group, Object3D, Vector3 } from "three";
+import { clone as cloneRig } from "three/addons/utils/SkeletonUtils.js";
 
-/** The character bodies shipped in public/models/characters. */
-export type BodyVariant = "female" | "male" | "courier";
+/** The rigged adult bodies shipped in public/models/characters. */
+export type BodyVariant = "female" | "male" | "business";
 
 export const BODY_FILES: Record<BodyVariant, string> = {
-  female: "/models/characters/female-base.glb",
-  male: "/models/characters/male-base.glb",
-  courier: "/models/characters/delivery-courier.glb",
+  female: "/models/characters/female-adult.glb",
+  male: "/models/characters/male-adult.glb",
+  business: "/models/characters/business-male.glb",
 };
 
-/** The body that best matches a saved gender. Non-binary characters use the female base. */
+/** Talking gestures are separate clips on the same skeleton. Business staff share the male set. */
+const TALK_FILES: Record<BodyVariant, string> = {
+  female: "/models/characters/motion/female-gesture-thoughtful.glb",
+  male: "/models/characters/motion/male-gesture-thoughtful.glb",
+  business: "/models/characters/motion/male-gesture-thoughtful.glb",
+};
+
+/** Clip names the body understands. Idle, Walk and Work come from the adult models. */
+export type MotionName = "Idle" | "Walk" | "Work" | "Talk";
+
+/** The body that best matches a saved gender. Non-binary characters use the female body. */
 export function bodyVariantFor(gender: string): BodyVariant {
   return gender === "male" ? "male" : "female";
 }
 
-/** Each body is built once and shared by every character that uses it. */
-const bodyGeometries = new Map<BodyVariant, BufferGeometry>();
-
-/** The unit-tall, arm-lowered geometry for a body, shared across characters. */
-export function useBodyGeometry(variant: BodyVariant): BufferGeometry {
-  const gltf = useGLTF(BODY_FILES[variant]);
-  return useMemo(() => {
-    const cached = bodyGeometries.get(variant);
-    if (cached) return cached;
-    const mesh = gltf.scene.getObjectByProperty("type", "Mesh") as Mesh | undefined;
-    if (!mesh) throw new Error(`Character body ${variant} has no mesh`);
-    const geometry = buildBodyGeometry(mesh.geometry);
-    bodyGeometries.set(variant, geometry);
-    return geometry;
-  }, [gltf, variant]);
+/** Picks the clip for a character's state. Walking wins over any pose while the character moves. */
+export function motionFor(animation: string, walking: boolean): MotionName {
+  if (walking) return "Walk";
+  if (animation === "work" || animation === "interact") return "Work";
+  if (animation === "talk") return "Talk";
+  return "Idle";
 }
 
+/** Keeps only tracks whose bone exists on the target rig, and names the talk clip. */
+export function retargetClips(
+  base: readonly AnimationClip[],
+  talk: readonly AnimationClip[],
+  bones: ReadonlySet<string>,
+): AnimationClip[] {
+  const keep = (clip: AnimationClip) => {
+    const copy = clip.clone();
+    copy.tracks = copy.tracks.filter((track) => {
+      const node = track.name.slice(0, track.name.lastIndexOf("."));
+      return bones.has(node);
+    });
+    return copy;
+  };
+  const clips = base.map(keep);
+  for (const clip of talk) {
+    const copy = keep(clip);
+    copy.name = "Talk";
+    clips.push(copy);
+  }
+  return clips;
+}
+
+const FADE_SECONDS = 0.25;
+
 /**
- * One unit-tall body standing on the origin, scaled to `height`. The skin tone recolours the
- * body's single material; the courier keeps its own clothed grey.
+ * A rigged, textured adult body that plays its own animation clips. Each character gets its own
+ * copy of the rig, so poses never leak between characters. Held items attach to the right hand.
  */
 export function CharacterBody({
   variant,
   height,
-  skin,
+  motion,
+  held = null,
 }: {
   variant: BodyVariant;
   height: number;
-  skin?: string | undefined;
+  motion: MotionName;
+  held?: ReactNode;
 }) {
-  const geometry = useBodyGeometry(variant);
   const gltf = useGLTF(BODY_FILES[variant]);
-  const material = useMemo(() => {
-    const mesh = gltf.scene.getObjectByProperty("type", "Mesh") as Mesh | undefined;
-    const copy = (mesh?.material as MeshStandardMaterial).clone();
-    if (skin) copy.color.set(skin);
-    return copy;
-  }, [gltf, skin]);
-  return <mesh geometry={geometry} material={material} scale={height} castShadow receiveShadow />;
+  const talk = useGLTF(TALK_FILES[variant]);
+  const { invalidate } = useThree();
+  const rig = useMemo(() => cloneRig(gltf.scene), [gltf]);
+  const bones = useMemo(() => {
+    const names = new Set<string>();
+    rig.traverse((node) => names.add(node.name));
+    return names;
+  }, [rig]);
+  const clips = useMemo(
+    () => retargetClips(gltf.animations, talk.animations, bones),
+    [gltf, talk, bones],
+  );
+  const root = useRef<Group>(null);
+  const { actions } = useAnimations(clips, root);
+  const hand = useMemo<Object3D | null>(() => rig.getObjectByName("Bip01 R Hand") ?? null, [rig]);
+
+  // Fit the rig so its feet stand on the origin at the requested height.
+  const fit = useMemo(() => {
+    const box = new Box3().setFromObject(rig);
+    const size = box.getSize(new Vector3());
+    const centre = box.getCenter(new Vector3());
+    const scale = height / size.y;
+    return { scale, x: -centre.x * scale, y: -box.min.y * scale, z: -centre.z * scale };
+  }, [rig, height]);
+
+  useEffect(() => {
+    const action = actions[motion] ?? actions["Idle"];
+    if (!action) return;
+    action.reset().fadeIn(FADE_SECONDS).play();
+    invalidate();
+    return () => {
+      action.fadeOut(FADE_SECONDS);
+    };
+  }, [actions, motion, invalidate]);
+
+  return (
+    <group ref={root} position={[fit.x, fit.y, fit.z]} scale={fit.scale}>
+      <primitive object={rig} />
+      {held && hand ? createPortal(<group scale={1 / fit.scale}>{held}</group>, hand) : null}
+    </group>
+  );
 }
