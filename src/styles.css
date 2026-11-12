@@ -529,8 +529,7 @@
 
 .profile-glance-card span,
 .profile-glance-card small,
-.profile-data-note,
-.profile-milestones p {
+.profile-data-note {
   color: var(--brand-slate);
   font-size: 11px;
 }
@@ -547,21 +546,18 @@
   margin-top: 12px;
 }
 
-.profile-story,
-.profile-milestones {
+.profile-story {
   padding: 16px;
   background: var(--brand-porcelain);
 }
 
-.profile-story h3,
-.profile-milestones h3 {
+.profile-story h3 {
   margin: 0 0 12px;
   font-family: var(--font-display);
   font-size: 17px;
 }
 
-.profile-story dl,
-.profile-milestones ul {
+.profile-story dl {
   display: grid;
   gap: 10px;
   margin: 0;
@@ -569,8 +565,7 @@
   list-style: none;
 }
 
-.profile-story dl > div,
-.profile-milestones li {
+.profile-story dl > div {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -579,8 +574,7 @@
   border-top: 1px solid var(--border);
 }
 
-.profile-story dt,
-.profile-milestones li {
+.profile-story dt {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -594,22 +588,6 @@
   font-size: 12px;
   font-weight: 750;
   text-align: right;
-}
-
-.profile-milestones li span {
-  display: grid;
-  flex: 1;
-  gap: 2px;
-}
-
-.profile-milestones li strong {
-  color: var(--brand-ink);
-  font-size: 12px;
-}
-
-.profile-milestones li small {
-  color: var(--brand-slate);
-  font-size: 10px;
 }
 
 .profile-actions {

@@ -77,7 +77,9 @@ describe("profile page", () => {
     render(<ProfilePage />);
     expect(screen.getByRole("heading", { name: "Ayo" })).toBeInTheDocument();
     expect(screen.getByText("₦12,000")).toBeInTheDocument();
-    expect(screen.getAllByText("Designer").length).toBeGreaterThan(0);
+    expect(screen.getByText(/Designer/)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Badges" })).toBeInTheDocument();
+    expect(screen.getByText("0 / 6 earned")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Wardrobe/i })).toBeInTheDocument();
     expect(screen.getByRole("img", { name: /level/i })).toBeInTheDocument();
   });

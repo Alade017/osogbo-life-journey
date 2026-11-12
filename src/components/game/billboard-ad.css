@@ -1,9 +1,118 @@
 .billboard-ad-app {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   align-content: start;
   gap: 15px;
   min-width: 0;
   padding: 14px;
+}
+
+.billboard-placement-section {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+.billboard-placement-list {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 9px;
+}
+
+.billboard-placement {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 17px;
+  background: var(--card);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--foreground) 5%, transparent);
+}
+
+.billboard-placement.is-selected {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+.billboard-placement-choice {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 12px;
+  border: 0;
+  background: transparent;
+  color: var(--foreground);
+  text-align: left;
+  cursor: pointer;
+}
+
+.billboard-placement-choice:focus-visible,
+.billboard-map-link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+.billboard-placement-icon {
+  display: grid;
+  flex: 0 0 36px;
+  place-items: center;
+  height: 36px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--primary) 12%, var(--card));
+  color: var(--primary);
+}
+
+.billboard-placement-copy {
+  display: grid;
+  flex: 1;
+  gap: 3px;
+  min-width: 0;
+}
+
+.billboard-placement-copy strong {
+  font-size: 0.78rem;
+  line-height: 1.25;
+}
+
+.billboard-placement-copy small,
+.billboard-placement-price small {
+  color: var(--muted-foreground);
+  font-size: 0.67rem;
+  line-height: 1.3;
+}
+
+.billboard-placement-price {
+  display: grid;
+  flex: 0 0 auto;
+  color: var(--primary);
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-align: right;
+}
+
+.billboard-map-link,
+.billboard-map-unavailable {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: fit-content;
+  margin: 0 12px 10px;
+  color: var(--primary);
+  font-size: 0.7rem;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.billboard-map-link:hover {
+  text-decoration: underline;
+}
+.billboard-map-unavailable {
+  color: var(--muted-foreground);
+}
+.billboard-location-card .billboard-map-link {
+  margin: 6px 0 0;
+}
+.billboard-campaign .billboard-map-link {
+  margin: 4px 0 0;
 }
 
 .billboard-app-hero {
@@ -87,6 +196,7 @@
 
 .billboard-ad-form {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.8rem;
   min-width: 0;
   padding: 14px;
@@ -160,7 +270,9 @@
 
 .billboard-ad-form label {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 0.35rem;
+  min-width: 0;
   color: var(--foreground);
   font-size: 0.78rem;
   font-weight: 700;
@@ -169,7 +281,10 @@
 .billboard-ad-form input,
 .billboard-ad-form textarea,
 .billboard-ad-form select {
+  box-sizing: border-box;
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   min-height: 2.65rem;
   border: 1px solid var(--border);
   border-radius: 0.65rem;
@@ -177,6 +292,11 @@
   padding: 0.65rem 0.75rem;
   color: var(--foreground);
   font: inherit;
+}
+
+.billboard-ad-form button.palette-select-trigger {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .billboard-ad-form textarea {
@@ -202,12 +322,14 @@
 
 .billboard-owned-campaigns {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
   padding-top: 3px;
 }
 
 .billboard-campaign {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 7px;
   padding: 13px;
   border: 1px solid var(--border);
