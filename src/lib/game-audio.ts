@@ -12,6 +12,7 @@ type AudioGraph = {
   context: AudioContext;
   master: GainNode;
   ambience: GainNode;
+  ambienceSource: AudioBufferSourceNode | null;
   music: GainNode;
   effects: GainNode;
 };
@@ -434,16 +435,29 @@ function createAmbientSoundscape(context: AudioContext): AudioBuffer {
   return buffer;
 }
 
+function updateAmbientPlayback(current: AudioGraph, enabled: boolean) {
+  if (enabled && !current.ambienceSource) {
+    const source = current.context.createBufferSource();
+    source.buffer = createAmbientSoundscape(current.context);
+    source.loop = true;
+    source.connect(current.ambience);
+    source.start();
+    current.ambienceSource = source;
+  } else if (!enabled && current.ambienceSource) {
+    current.ambienceSource.stop();
+    current.ambienceSource.disconnect();
+    current.ambienceSource = null;
+  }
+}
+
 function applyLevels(current: AudioGraph, levels: AudioLevels) {
   const now = current.context.currentTime;
   current.master.gain.setTargetAtTime(levels.master, now, 0.08);
   current.music.gain.setTargetAtTime(levels.music, now, 0.08);
   current.effects.gain.setTargetAtTime(levels.effects, now, 0.08);
-  current.ambience.gain.setTargetAtTime(
-    (levels.environment ?? 0) * AMBIENCE_GAIN,
-    now,
-    0.12,
-  );
+  const environment = levels.environment ?? 0;
+  current.ambience.gain.setTargetAtTime(environment * AMBIENCE_GAIN, now, 0.12);
+  updateAmbientPlayback(current, environment > 0);
 }
 
 function createAudioGraph(levels: AudioLevels): AudioGraph | null {
@@ -454,18 +468,12 @@ function createAudioGraph(levels: AudioLevels): AudioGraph | null {
   const ambience = context.createGain();
   const music = context.createGain();
   const effects = context.createGain();
-  const current = { context, master, ambience, music, effects };
+  const current: AudioGraph = { context, master, ambience, ambienceSource: null, music, effects };
   applyLevels(current, levels);
   ambience.connect(master);
   music.connect(master);
   effects.connect(master);
   master.connect(context.destination);
-
-  const soundscape = context.createBufferSource();
-  soundscape.buffer = createAmbientSoundscape(context);
-  soundscape.loop = true;
-  soundscape.connect(ambience);
-  soundscape.start();
 
   return current;
 }
