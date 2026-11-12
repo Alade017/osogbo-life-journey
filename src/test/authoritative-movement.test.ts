@@ -29,8 +29,10 @@ describe("authoritative neighborhood movement", () => {
   });
 
   it("keeps movement within world bounds", () => {
-    expect(stepAuthoritativePosition({ x: 13.99, y: 6 }, { x: 1, y: 0 }, 0.1, origin).x).toBe(14);
-    expect(stepAuthoritativePosition({ x: 0, y: 6 }, { x: -1, y: 0 }, 0.1, origin).x).toBe(0);
+    expect(stepAuthoritativePosition({ x: 23.99, y: 10 }, { x: 1, y: 0 }, 0.1, origin).x).toBe(24);
+    expect(stepAuthoritativePosition({ x: 10, y: 19.99 }, { x: 0, y: 1 }, 0.1, origin).y).toBe(20);
+    expect(stepAuthoritativePosition({ x: 0, y: 10 }, { x: -1, y: 0 }, 0.1, origin).x).toBe(0);
+    expect(stepAuthoritativePosition({ x: 10, y: 0 }, { x: 0, y: -1 }, 0.1, origin).y).toBe(0);
   });
 
   it("restores only in-bounds, navigable saved checkpoints", () => {
@@ -44,8 +46,11 @@ describe("authoritative neighborhood movement", () => {
       false,
     );
     expect(
-      canRestoreNeighborhoodCheckpoint({ x: 15, y: 9 }, origin, area.objects, area.obstacles),
+      canRestoreNeighborhoodCheckpoint({ x: 25, y: 9 }, origin, area.objects, area.obstacles),
     ).toBe(false);
+    expect(
+      canRestoreNeighborhoodCheckpoint({ x: 24, y: 20 }, origin, [], []),
+    ).toBe(true);
   });
 
   it("blocks building footprints on the server movement model", () => {
