@@ -45,7 +45,6 @@ import {
 import {
   disableGameAudio,
   enableGameAudio,
-  playGameSound,
   readGameAudioLevels,
   setGameAudioLevels,
 } from "@/lib/game-audio";
@@ -539,21 +538,6 @@ function AudioControls({ profile, onSave }: { profile: Profile; onSave: (patch: 
             onValueChange={([value]) => void applyEnvironment((value ?? 0) / 100)}
           />
         </div>
-      </div>
-      <div className="sx-row">
-        <span className="sx-row-hint">Hear a sample at your current effects volume.</span>
-        <Button
-          className="sx-btn-ghost"
-          onClick={() => {
-            if (!profile.effects_enabled || levels.effects === 0) {
-              toast.message("Turn on sound effects to hear a sample.");
-              return;
-            }
-            playGameSound("ui");
-          }}
-        >
-          Play sample
-        </Button>
       </div>
       {blocked && (
         <p className="sx-error" role="alert">
