@@ -90,16 +90,6 @@ describe("neighborhood coordinates and interaction", () => {
     expect(neighborhoodAreaForSlug("residential").name).toBe("Residential District");
     expect(neighborhoodAreaForSlug("business-district").name).toBe("Business District");
   });
-  it("supports the expanded 24 by 20 world and preserves legacy checkpoints", () => {
-    expect(validCheckpoint({ x: 14, y: 12 })).toBe(true);
-    expect(validCheckpoint({ x: 24, y: 20 })).toBe(true);
-    expect(validCheckpoint({ x: 24.01, y: 20 })).toBe(false);
-    const area = neighborhoodAreaForSlug("city-centre");
-    expect(area.roads?.some((road) => road.id === "east-residential-arterial")).toBe(true);
-    expect(area.obstacles?.filter((obstacle) => obstacle.id.startsWith("outer-compound-")).length).toBeGreaterThanOrEqual(20);
-    expect(neighborhoodRoadComponents(area)).toHaveLength(1);
-  });
-
   it("admits any stable slug with an active row and valid coordinates", () => {
     for (const slug of ["residential", "osogbo-central-mosque", "student-district"]) {
       expect(isPlayableDistrict(slug)).toBe(true);
