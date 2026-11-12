@@ -4,7 +4,18 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { q } from "@/lib/game";
-import { BODY_BUILDS, BODY_HEIGHTS, type Appearance } from "@/components/game/Avatar";
+import {
+  BODY_BUILDS,
+  BODY_HEIGHTS,
+  HAIR_COLORS,
+  HAIR_STYLES_BY_GENDER,
+  HEADWEAR,
+  OUTFITS,
+  SHOE_COLORS,
+  SKIN_TONES,
+  TROUSERS,
+  type Appearance,
+} from "@/components/game/Avatar";
 import { CharacterPreview } from "@/components/3d/CharacterPreview";
 import "@/components/game/profile-inventory.css";
 import {
@@ -203,7 +214,7 @@ function CreateCharacter() {
               </Button>
             </div>
             <p className="mt-3 max-w-56 text-center text-xs text-muted-foreground">
-              Every change updates this preview. You can change your look before entering the city.
+              Outfit, trousers, shoes, height and build update this 3D preview. Skin tone, hair and headwear are saved, but the current rigged model has those details baked into its source mesh and does not yet render those selections.
             </p>
           </div>
 
@@ -258,10 +269,32 @@ function CreateCharacter() {
                 setAp((current) => appearanceForGender(current, nextGender));
               }}
             />
-            <p className="text-sm text-muted-foreground">
-              Bodies come with their own skin, hair and clothing, so only height and build change
-              how your character looks.
-            </p>
+            <div className="space-y-5 rounded-xl border border-edge/70 bg-card/50 p-4">
+              <div>
+                <h2 className="font-display text-lg font-bold">Appearance</h2>
+                <p className="mt-1 text-xs text-muted-foreground">Choose your character’s saved appearance and wardrobe.</p>
+              </div>
+              <Picker label="Skin tone" options={SKIN_TONES} value={ap.skin} onChange={(skin) => setAp({ ...ap, skin })} swatches />
+              <Picker label="Hairstyle" options={HAIR_STYLES_BY_GENDER[gender] ?? HAIR_STYLES_BY_GENDER.nonbinary} value={ap.hair} onChange={(hair) => setAp({ ...ap, hair })} />
+              <Picker label="Hair colour" options={HAIR_COLORS} value={ap.hairColor} onChange={(hairColor) => setAp({ ...ap, hairColor })} swatches />
+              <Picker label="Headwear" options={HEADWEAR} value={ap.headwear} onChange={(headwear) => setAp({ ...ap, headwear })} />
+            </div>
+
+            <div className="space-y-5 rounded-xl border border-edge/70 bg-card/50 p-4">
+              <div>
+                <h2 className="font-display text-lg font-bold">Clothing & footwear</h2>
+                <p className="mt-1 text-xs text-muted-foreground">These wardrobe selections are rendered on the same rig used in the game world.</p>
+              </div>
+              <Picker label="Top / outfit" options={OUTFITS} value={ap.outfit} onChange={(outfit) => setAp({ ...ap, outfit })} swatches />
+              <Picker label="Trousers" options={TROUSERS} value={ap.bottoms} onChange={(bottoms) => setAp({ ...ap, bottoms })} swatches />
+              <Picker label="Shoes" options={SHOE_COLORS} value={ap.shoes} onChange={(shoes) => setAp({ ...ap, shoes })} swatches />
+            </div>
+
+            <div className="space-y-5 rounded-xl border border-edge/70 bg-card/50 p-4">
+              <div>
+                <h2 className="font-display text-lg font-bold">Body</h2>
+                <p className="mt-1 text-xs text-muted-foreground">Adjust your character’s proportions.</p>
+              </div>
             <Picker
               label="Height"
               options={BODY_HEIGHTS}
@@ -274,6 +307,7 @@ function CreateCharacter() {
               value={ap.build}
               onChange={(build) => setAp({ ...ap, build })}
             />
+            </div>
 
             <div>
               <Label className="mb-2 block">Personality</Label>
