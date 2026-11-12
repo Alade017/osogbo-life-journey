@@ -249,8 +249,9 @@ describe("game music playback", () => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
-  it("keeps the audio graph active when only ambient texture is enabled", async () => {
+  it("plays a continuous layered ambient soundscape when only ambience is enabled", async () => {
     const audio = await import("../lib/game-audio");
+    const source = vi.spyOn(FakeContext.prototype, "createBufferSource");
     const enabled = await audio.enableGameAudio({
       master: 0.75,
       music: 0,
@@ -259,14 +260,22 @@ describe("game music playback", () => {
     });
     expect(enabled).toBe(true);
     expect(audio.isGameAudioActive()).toBe(true);
-    expect(contexts[0]!.gains[1]!.gain.value).toBe(0.0175);
 
+    // One looping source is created for the ambience bed, even with music/effects off.
+    expect(source).toHaveBeenCalledTimes(1);
+    expect(source.mock.results[0]!.value.loop).toBe(true);
+    expect(source.mock.results[0]!.value.start).toHaveBeenCalledTimes(1);
     audio.setGameAudioLevels({
       master: 0.75,
       music: 0,
       effects: 0,
-      environment: 0.5,
+      environment: 0.75,
     });
+    expect(contexts[0]!.gains[1]!.gain.setTargetAtTime).toHaveBeenLastCalledWith(
+      0.4125,
+      0,
+      0.12,
+    );
     expect(audio.isGameAudioActive()).toBe(true);
     await audio.disableGameAudio();
   });
