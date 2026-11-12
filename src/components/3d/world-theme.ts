@@ -99,7 +99,7 @@ export const NEIGHBORHOOD_CAMERA = {
 
 /** Overview-map camera tuning, kept separate from shared world and interior camera limits. */
 export const TOWN_MAP_CAMERA = {
-  defaultZoom: 1.55,
+  defaultZoom: 1.15,
   minZoom: 0.42,
   maxZoom: 3.4,
 } as const;

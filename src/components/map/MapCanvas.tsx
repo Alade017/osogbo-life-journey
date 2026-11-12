@@ -124,6 +124,17 @@ export function MapCanvas({
       ),
     [activeFilter, availableLandmarkIds, jobLandmarkIds],
   );
+  // Every landmark not yet open to the player is shown as a locked pin, whatever the filter.
+  const lockedPlaces = useMemo(
+    () =>
+      availableLandmarkIds === undefined
+        ? []
+        : townData.landmarks.filter(
+            (place) =>
+              !availableLandmarkIds.includes(place.id) && place.mapObjectType !== "junction",
+          ),
+    [availableLandmarkIds],
+  );
 
   const handleReady = useCallback(() => setRendererState("ready"), []);
   const handleUnavailable = useCallback(() => setRendererState("unavailable"), []);
@@ -131,13 +142,14 @@ export function MapCanvas({
   return (
     <section
       className="map-canvas town-map-canvas"
-      style={{ background: WORLD_PALETTE.ground }}
+      style={{ background: "#ffffff" }}
       aria-label="Interactive 3D town map with open camera exploration"
     >
       <Suspense fallback={null}>
         {rendererState !== "unavailable" && (
           <TownSurface3D
             places={availablePlaces}
+            lockedPlaces={lockedPlaces}
             properties={properties}
             playerLocation={playerLocation}
             billboardMarkers={billboardMarkers}

@@ -40,7 +40,7 @@ import { MovingTraffic3D } from "./MovingTraffic3D";
 import { MovingPedestrians3D } from "./MovingPedestrians3D";
 import { FunctionalStreetLights3D } from "./FunctionalStreetLights3D";
 import { RoadsideInfrastructure3D } from "./RoadsideInfrastructure3D";
-import { LockedPlaces3D, type LockedPlace } from "./LockedPlaces3D";
+import { LockedPlaces3D, type LockedPlace, type LockedSourcePlace } from "./LockedPlaces3D";
 import {
   deriveTownMobilityRoutes,
   TownRoadCrossingPriorityScheduler,
@@ -61,6 +61,8 @@ type TownMapPlace = {
 
 export type TownMapData = {
   places: readonly TownMapPlace[];
+  /** Landmarks the player cannot visit yet; drawn as locked pins. */
+  lockedPlaces?: readonly LockedSourcePlace[];
   properties: readonly import("@/components/map/MapCanvas").MapProperty[] | undefined;
   playerLocation: import("@/components/map/MapCanvas").MapPlayerLocation | null | undefined;
   billboardMarkers: readonly import("@/components/map/MapCanvas").MapBillboardMarker[];
@@ -1205,6 +1207,7 @@ export function R3FTownSurface(props: Props) {
             onSelectTransit={() => props.onSelectLandmark("transit-park")}
           />
           <LockedPlaces3D
+            places={props.lockedPlaces ?? []}
             cellSize={cell}
             gridCols={gridCols}
             gridRows={gridRows}
