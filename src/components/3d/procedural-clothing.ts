@@ -167,7 +167,10 @@ function material(color: string): MeshStandardMaterial {
 }
 
 /** Clothing sits just outside the skin so it does not z-fight with the body. */
+/** Torso clothing sits this far off the skin; the baked-in clothes need the extra room. */
 const SKIN_GAP = 0.035;
+/** Limb clothing sits closer, so sleeves and trouser legs keep the body's own proportions. */
+const LIMB_GAP = 0.015;
 
 /** Finds a bone by its authored name. three.js writes spaces as underscores when it loads a GLB. */
 export function boneNamed(rig: Object3D, name: string): Object3D | null {
@@ -236,9 +239,9 @@ export function dressRig(rig: Object3D, variant: BodyVariant): void {
     const forearm = boneNamed(rig, `Bip01 ${side} Forearm`);
 
     if (thigh && calf) {
-      addTube(thigh, calf, p.thigh + SKIN_GAP, p.knee + SKIN_GAP, outfit.trousers.color, 0.04);
+      addTube(thigh, calf, p.thigh + LIMB_GAP, p.knee + LIMB_GAP, outfit.trousers.color, 0.04);
       if (foot) {
-        addTube(calf, foot, p.knee + SKIN_GAP, p.ankle + SKIN_GAP, outfit.trousers.color);
+        addTube(calf, foot, p.knee + LIMB_GAP, p.ankle + LIMB_GAP, outfit.trousers.color);
       }
     }
     if (foot) {
@@ -252,11 +255,11 @@ export function dressRig(rig: Object3D, variant: BodyVariant): void {
     }
     if (upperArm && forearm) {
       if (outfit.top.sleeves === "long") {
-        addTube(upperArm, forearm, p.upperArm + SKIN_GAP, p.elbow + SKIN_GAP, outfit.top.color);
+        addTube(upperArm, forearm, p.upperArm + LIMB_GAP, p.elbow + LIMB_GAP, outfit.top.color);
       } else {
         // Short sleeves cover the top part of the upper arm only.
         const sleeve = forearm.position.clone().multiplyScalar(0.45);
-        const tube = limbTube(sleeve, p.upperArm + SKIN_GAP, p.upperArm + SKIN_GAP);
+        const tube = limbTube(sleeve, p.upperArm + LIMB_GAP, p.upperArm + LIMB_GAP);
         const mesh = new Mesh(tube.geometry, material(outfit.top.color));
         mesh.position.copy(tube.position);
         mesh.quaternion.copy(tube.quaternion);
