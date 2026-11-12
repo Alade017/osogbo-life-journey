@@ -214,7 +214,7 @@ function CreateCharacter() {
               </Button>
             </div>
             <p className="mt-3 max-w-56 text-center text-xs text-muted-foreground">
-              Outfit, trousers, shoes, height and build update this 3D preview. Skin tone, hair and headwear are saved, but the current rigged model has those details baked into its source mesh and does not yet render those selections.
+              Clothing colours, height and build update this 3D preview. Skin tone, hairstyle, hair colour and headwear are saved with your character, but the current rigged model does not yet display those four selections.
             </p>
           </div>
 
@@ -271,8 +271,8 @@ function CreateCharacter() {
             />
             <div className="space-y-5 rounded-xl border border-edge/70 bg-card/50 p-4">
               <div>
-                <h2 className="font-display text-lg font-bold">Appearance</h2>
-                <p className="mt-1 text-xs text-muted-foreground">Choose your character’s saved appearance and wardrobe.</p>
+                <h2 className="font-display text-lg font-bold">Personal appearance</h2>
+                <p className="mt-1 text-xs text-muted-foreground">These choices are saved to your character. The current 3D rig does not yet render them.</p>
               </div>
               <Picker label="Skin tone" options={SKIN_TONES} value={ap.skin} onChange={(skin) => setAp({ ...ap, skin })} swatches />
               <Picker label="Hairstyle" options={HAIR_STYLES_BY_GENDER[gender] ?? HAIR_STYLES_BY_GENDER.nonbinary} value={ap.hair} onChange={(hair) => setAp({ ...ap, hair })} />
@@ -283,11 +283,11 @@ function CreateCharacter() {
             <div className="space-y-5 rounded-xl border border-edge/70 bg-card/50 p-4">
               <div>
                 <h2 className="font-display text-lg font-bold">Clothing & footwear</h2>
-                <p className="mt-1 text-xs text-muted-foreground">These wardrobe selections are rendered on the same rig used in the game world.</p>
+                <p className="mt-1 text-xs text-muted-foreground">These clothing colours are applied by the same rigged character renderer used in the game world.</p>
               </div>
-              <Picker label="Top / outfit" options={OUTFITS} value={ap.outfit} onChange={(outfit) => setAp({ ...ap, outfit })} swatches />
-              <Picker label="Trousers" options={TROUSERS} value={ap.bottoms} onChange={(bottoms) => setAp({ ...ap, bottoms })} swatches />
-              <Picker label="Shoes" options={SHOE_COLORS} value={ap.shoes} onChange={(shoes) => setAp({ ...ap, shoes })} swatches />
+              <Picker label="Top colour" options={OUTFITS} value={ap.outfit} onChange={(outfit) => setAp({ ...ap, outfit })} swatches />
+              <Picker label="Trousers colour" options={TROUSERS} value={ap.bottoms} onChange={(bottoms) => setAp({ ...ap, bottoms })} swatches />
+              <Picker label="Shoe colour" options={SHOE_COLORS} value={ap.shoes} onChange={(shoes) => setAp({ ...ap, shoes })} swatches />
             </div>
 
             <div className="space-y-5 rounded-xl border border-edge/70 bg-card/50 p-4">
@@ -295,18 +295,18 @@ function CreateCharacter() {
                 <h2 className="font-display text-lg font-bold">Body</h2>
                 <p className="mt-1 text-xs text-muted-foreground">Adjust your character’s proportions.</p>
               </div>
-            <Picker
-              label="Height"
-              options={BODY_HEIGHTS}
-              value={ap.stature}
-              onChange={(stature) => setAp({ ...ap, stature })}
-            />
-            <Picker
-              label="Build"
-              options={BODY_BUILDS}
-              value={ap.build}
-              onChange={(build) => setAp({ ...ap, build })}
-            />
+              <Picker
+                label="Height"
+                options={BODY_HEIGHTS}
+                value={ap.stature}
+                onChange={(stature) => setAp({ ...ap, stature })}
+              />
+              <Picker
+                label="Build"
+                options={BODY_BUILDS}
+                value={ap.build}
+                onChange={(build) => setAp({ ...ap, build })}
+              />
             </div>
 
             <div>
