@@ -35,5 +35,5 @@ export const MAP_LANDMARK_LOCATION_SLUG: Record<string, string | null> = {
   "osogbo-township-stadium": "stadium",
   "aleku-wodo-road-network": "residential",
   "oke-fia-flyover": "oke-fia",
-  "osun-sacred-grove": null,
+  "river-shrine-court": null,
 };

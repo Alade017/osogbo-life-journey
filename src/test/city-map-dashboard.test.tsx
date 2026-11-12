@@ -309,7 +309,7 @@ describe("isometric town map", () => {
     }
     expect(
       townData.landmarks.filter((place) => place.category === "worship").map((place) => place.id),
-    ).toEqual(["garden-chapel", "mosque-square", "osun-sacred-grove"]);
+    ).toEqual(["garden-chapel", "mosque-square", "river-shrine-court"]);
     expect(JSON.stringify(townData)).not.toMatch(/\/models\/city\//);
     expect(JSON.stringify(townData).toLowerCase()).not.toMatch(/sacred|grove|osun-osogbo/);
     expect(townData.landmarks.find((place) => place.id === "lantern-club")?.min_age).toBe(18);
