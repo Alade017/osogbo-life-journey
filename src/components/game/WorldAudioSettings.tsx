@@ -89,7 +89,7 @@ export function WorldAudioSettings({
     }
   }
 
-  async function preview(channel: Channel) {
+  async function previewMusic() {
     if (busy.current) return;
     busy.current = true;
     setChanging(true);
@@ -99,8 +99,7 @@ export function WorldAudioSettings({
         return;
       }
       setUnavailable(false);
-      if (channel === "effects") playGameSound("ui");
-      else await resumeGameMusic(true);
+      await resumeGameMusic(true);
     } catch {
       setUnavailable(true);
     } finally {
@@ -156,7 +155,7 @@ export function WorldAudioSettings({
             type="button"
             className="mt-2 text-xs font-semibold text-primary underline"
             disabled={changing}
-            onClick={() => void preview("music")}
+            onClick={() => void previewMusic()}
           >
             Play music
           </button>
@@ -183,16 +182,6 @@ export function WorldAudioSettings({
             />
           </div>
         </div>
-        {levels.effects > 0 && (
-          <button
-            type="button"
-            className="mt-2 text-xs font-semibold text-primary underline"
-            disabled={changing}
-            onClick={() => void preview("effects")}
-          >
-            Play sound sample
-          </button>
-        )}
       </div>
 
       {unavailable && (
