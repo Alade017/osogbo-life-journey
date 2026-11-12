@@ -423,13 +423,15 @@ function createAmbientSoundscape(context: AudioContext): AudioBuffer {
     samples[index] = Math.max(-0.55, Math.min(0.55, wind + traffic + birds));
   }
 
-  // Blend the loop tail into its opening so the repeating buffer does not click.
+  // Match both ends at the loop boundary, then fade back to the original signal.
   const fadeLength = Math.floor(sampleRate * 0.45);
+  const boundaryValue = (samples[0]! + samples[length - 1]!) / 2;
   for (let index = 0; index < fadeLength; index++) {
     const progress = index / fadeLength;
-    const tailIndex = length - fadeLength + index;
-    samples[tailIndex] =
-      samples[tailIndex] * (1 - progress) + samples[index] * progress;
+    const blend = 1 - progress;
+    samples[index] = samples[index]! * progress + boundaryValue * blend;
+    const tailIndex = length - 1 - index;
+    samples[tailIndex] = samples[tailIndex]! * progress + boundaryValue * blend;
   }
 
   return buffer;
