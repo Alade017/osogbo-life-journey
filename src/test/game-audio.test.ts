@@ -271,11 +271,9 @@ describe("game music playback", () => {
       effects: 0,
       environment: 0.75,
     });
-    expect(contexts[0]!.gains[1]!.gain.setTargetAtTime).toHaveBeenLastCalledWith(
-      0.4125,
-      0,
-      0.12,
-    );
+    const ambienceGain = contexts[0]!.gains[1]!.gain.setTargetAtTime;
+    expect(ambienceGain).toHaveBeenLastCalledWith(expect.any(Number), 0, 0.12);
+    expect(ambienceGain.mock.calls.at(-1)?.[0]).toBeCloseTo(0.4125);
     expect(audio.isGameAudioActive()).toBe(true);
     await audio.disableGameAudio();
   });
