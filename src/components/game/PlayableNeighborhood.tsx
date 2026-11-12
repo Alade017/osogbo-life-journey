@@ -170,7 +170,7 @@ function useNeighborhoodConnection(
           return true;
         };
         room.onStateChange(publish);
-        room.onLeave((code) => {
+        room.onLeave(() => {
           if (!active || roomEnded) return;
           roomEnded = true;
           window.clearTimeout(stateTimeout);
@@ -196,7 +196,7 @@ function useNeighborhoodConnection(
           }, NEIGHBORHOOD_STATE_TIMEOUT_MS);
         }
       })
-      .catch((error: unknown) => {
+      .catch(() => {
         if (!active || joinTimedOut) return;
         window.clearTimeout(joinTimeout);
         const failedRoom = joinedRoom;
