@@ -20,6 +20,9 @@ const FLOOR = new Plane(new Vector3(0, 1, 0), 0);
 const BANK_SHELL_URL = "/models/environments/market-and-bank/bank-vault-hall.glb";
 /** The walkable lobby, in metres from its centre. The shell is fitted inside this rectangle. */
 const LOBBY_WALK = { x: 5.7, z: 3.45 };
+/** The ATM kiosk model and where it stands in the walkable lobby, in lobby coordinates. */
+const BANK_ATM_URL = "/models/environments/market-and-bank/atm-kiosk.glb";
+const ATM_POSITION: Position = [4.6, 0, 2.5];
 /** Model parts that open an activity when clicked, matched by the names in the model file. */
 const SHELL_HOTSPOTS: Record<string, "teller" | "seat"> = {
   "025-teller-counter": "teller",
@@ -79,6 +82,8 @@ function LobbyArchitecture({
   const { invalidate } = useThree();
   const gltf = useGLTF(BANK_SHELL_URL);
   const fitted = useMemo(() => fitBankShell(gltf.scene), [gltf]);
+  const atmModel = useGLTF(BANK_ATM_URL);
+  const atm = useMemo(() => atmModel.scene.clone(true), [atmModel]);
 
   useEffect(() => {
     const update = () => invalidate();
@@ -103,6 +108,15 @@ function LobbyArchitecture({
         <planeGeometry args={[LOBBY_WALK.x * 2, LOBBY_WALK.z * 2]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
+      <group
+        position={ATM_POSITION}
+        onClick={(event: ThreeEvent<MouseEvent>) => {
+          event.stopPropagation();
+          onInteract("atm");
+        }}
+      >
+        <primitive object={atm} />
+      </group>
       <primitive object={fitted.holder}>
         <primitive object={fitted.shell}>
           {fitted.hotspots.map((hotspot) => (
