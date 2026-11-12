@@ -277,6 +277,23 @@ describe("game music playback", () => {
     expect(audio.isGameAudioActive()).toBe(true);
     await audio.disableGameAudio();
   });
+  it("stops and recreates the ambient source when its channel is toggled", async () => {
+    const audio = await import("../lib/game-audio");
+    const source = vi.spyOn(FakeContext.prototype, "createBufferSource");
+    const levels = { master: 0.75, music: 0, effects: 0, environment: 0.5 };
+    await audio.enableGameAudio(levels);
+    expect(source).toHaveBeenCalledTimes(1);
+    const firstSource = source.mock.results[0]!.value;
+
+    audio.setGameAudioLevels({ ...levels, environment: 0 });
+    expect(firstSource.stop).toHaveBeenCalledTimes(1);
+    expect(firstSource.disconnect).toHaveBeenCalledTimes(1);
+
+    audio.setGameAudioLevels(levels);
+    expect(source).toHaveBeenCalledTimes(2);
+    await audio.disableGameAudio();
+  });
+
   it("does not fetch or create media for an empty catalog", async () => {
     const audio = await import("../lib/game-audio");
     audio.configureGameMusic("player");
