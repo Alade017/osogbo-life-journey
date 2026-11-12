@@ -72,8 +72,8 @@ export const NEIGHBORHOOD_SIZE = { width: 640, height: 560 };
 export const NEIGHBORHOOD_SCENE_BOUNDS = {
   left: -800,
   top: -660,
-  width: 2240,
-  height: 1920,
+  width: 24 * WORLD_SCALE,
+  height: 20 * WORLD_SCALE,
 } as const;
 const CITY_CENTRE_ROADS: readonly NeighborhoodRoad[] = [
   { id: "olaiya-arterial-north-south", axis: "vertical", offset: 500, width: 84, type: "arterial" },
