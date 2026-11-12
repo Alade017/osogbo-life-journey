@@ -50,6 +50,51 @@ export function JobsPage() {
   return <CareerLifeApp opportunities={<JobBoardPage />} />;
 }
 
+/** Phone Opportunities: the open jobs as a plain list. Each row shows the job, its place and pay. */
+export function PhoneJobList() {
+  const { data: jobs, isLoading, isError, refetch } = useQuery(q.jobs());
+  const { data: locations } = useQuery(q.locations());
+  if (isError)
+    return (
+      <div className="phone-job-state" role="alert">
+        <p>Available jobs could not be loaded.</p>
+        <Button variant="plain" onClick={() => void refetch()}>
+          Retry
+        </Button>
+      </div>
+    );
+  if (isLoading || !jobs) return <CardListSkeleton label="Loading jobs" cards={3} />;
+  const openJobs = jobs.filter((job) => !isCareerJob(job.slug));
+  return (
+    <section className="phone-job-list" aria-label="Available jobs">
+      <div className="phone-job-list-heading">
+        <h2>Available jobs</h2>
+        <span>
+          {openJobs.length} {openJobs.length === 1 ? "job" : "jobs"}
+        </span>
+      </div>
+      {openJobs.length === 0 ? (
+        <p className="phone-job-state">No jobs are open right now.</p>
+      ) : (
+        <ul>
+          {openJobs.map((job) => {
+            const location = locations?.find((item) => item.id === job.location_id);
+            return (
+              <li key={job.id} className="phone-job-row">
+                <span className="phone-job-copy">
+                  <strong>{job.name}</strong>
+                  {location && <small>{location.name}</small>}
+                </span>
+                <strong className="phone-job-pay">{formatNaira(job.salary)}</strong>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
+  );
+}
+
 function JobBoardPage() {
   const { data: worldTime } = useWorldClock();
   const now = useNow();

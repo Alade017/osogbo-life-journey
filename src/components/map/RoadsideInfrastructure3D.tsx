@@ -77,31 +77,39 @@ export function RoadsideInfrastructure3D({
         <group key={`road-drain-${index}`} position={drain.position}>
           <mesh position={[0, 0.025, 0]} receiveShadow>
             <boxGeometry
-              args={drain.horizontal
-                ? [drain.length, 0.055, cellSize * 0.11]
-                : [cellSize * 0.11, 0.055, drain.length]}
+              args={
+                drain.horizontal
+                  ? [drain.length, 0.055, cellSize * 0.11]
+                  : [cellSize * 0.11, 0.055, drain.length]
+              }
             />
             <WorldMaterial tone="concrete" />
           </mesh>
           <mesh position={[0, 0.055, 0]}>
             <boxGeometry
-              args={drain.horizontal
-                ? [drain.length * 0.92, 0.012, cellSize * 0.055]
-                : [cellSize * 0.055, 0.012, drain.length * 0.92]}
+              args={
+                drain.horizontal
+                  ? [drain.length * 0.92, 0.012, cellSize * 0.055]
+                  : [cellSize * 0.055, 0.012, drain.length * 0.92]
+              }
             />
             <meshStandardMaterial color="#263238" roughness={1} />
           </mesh>
           {Array.from({ length: Math.max(1, Math.floor(drain.length / cellSize)) }, (_, cover) => (
             <mesh
               key={cover}
-              position={drain.horizontal
-                ? [(cover + 0.5) * cellSize - drain.length / 2, 0.07, 0]
-                : [0, 0.07, (cover + 0.5) * cellSize - drain.length / 2]}
+              position={
+                drain.horizontal
+                  ? [(cover + 0.5) * cellSize - drain.length / 2, 0.07, 0]
+                  : [0, 0.07, (cover + 0.5) * cellSize - drain.length / 2]
+              }
             >
               <boxGeometry
-                args={drain.horizontal
-                  ? [cellSize * 0.08, 0.025, cellSize * 0.13]
-                  : [cellSize * 0.13, 0.025, cellSize * 0.08]}
+                args={
+                  drain.horizontal
+                    ? [cellSize * 0.08, 0.025, cellSize * 0.13]
+                    : [cellSize * 0.13, 0.025, cellSize * 0.08]
+                }
               />
               <WorldMaterial tone="wall" />
             </mesh>

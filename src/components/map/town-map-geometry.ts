@@ -3,6 +3,14 @@ export const TOWN_MAP_HEIGHT = 800;
 export const TOWN_GRID_COLUMNS = 24;
 export const TOWN_GRID_ROWS = 18;
 
+/** Tile colours for the town grid, shared by the city map and the landing preview. */
+export const TOWN_TILE_COLOURS: Record<string, string> = {
+  g: "#9bc58a",
+  r: "#c8b99d",
+  w: "#78b9d1",
+  p: "#d7c8a9",
+};
+
 const HALF_TILE_WIDTH = 22;
 const HALF_TILE_HEIGHT = 12;
 

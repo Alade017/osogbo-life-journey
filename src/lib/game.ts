@@ -153,6 +153,17 @@ export const q = {
           }),
         ) as Json,
     }),
+  friendHouseVisit: (characterId: string) =>
+    queryOptions({
+      queryKey: ["friendHouseVisit", characterId],
+      retry: false,
+      queryFn: async () =>
+        unwrap(
+          await supabase.rpc("get_friend_house_for_visit", {
+            p_target_character_id: characterId,
+          }),
+        ) as Json,
+    }),
   npcs: () =>
     queryOptions({
       queryKey: ["npcs"],
@@ -515,6 +526,8 @@ export const rpc = {
       await supabase.rpc("set_my_home_visit_access", { p_allow_friends: allowFriends }),
     ) as Json,
 
+  setMyAppTileStyle: async (style: "rounded" | "circle") =>
+    unwrap(await supabase.rpc("set_my_app_tile_style", { p_style: style })),
   updateMySettings: async (patch: {
     displayName?: string | undefined;
     musicEnabled?: boolean | undefined;

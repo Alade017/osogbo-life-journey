@@ -1,6 +1,6 @@
 import townData from "@/data/osogbo-town.json";
 import legacyMapData from "@/data/osogbo-map.json";
-import type { MapPlaceAction } from "@/components/map/OsogboMap.svg";
+import type { MapPlaceAction } from "@/components/map/map-types";
 
 type Dependencies = {
   authenticate: (request: Request) => Promise<string | null>;

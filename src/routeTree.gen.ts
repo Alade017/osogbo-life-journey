@@ -50,6 +50,7 @@ import { Route as ApiHousePlaceRouteImport } from './routes/api/house/place'
 import { Route as ApiHouseRemoveRouteImport } from './routes/api/house/remove'
 import { Route as ApiHouseRotateRouteImport } from './routes/api/house/rotate'
 import { Route as ApiHouseStateRouteImport } from './routes/api/house/state'
+import { Route as ApiHouseWallsRouteImport } from './routes/api/house/walls'
 import { Route as ApiHousingAccessoriesRouteImport } from './routes/api/housing/accessories'
 import { Route as ApiHousingAckRepossessionRouteImport } from './routes/api/housing/ack-repossession'
 import { Route as ApiHousingChooseRouteImport } from './routes/api/housing/choose'
@@ -77,12 +78,16 @@ import { Route as AuthenticatedGameBankSlugRouteImport } from './routes/_authent
 import { Route as AuthenticatedGameLocationSlugRouteImport } from './routes/_authenticated/_game/location.$slug'
 import { Route as ApiAuthUsernameLoginRouteImport } from './routes/api/auth/username/login'
 import { Route as ApiAuthUsernameRegisterRouteImport } from './routes/api/auth/username/register'
+import { Route as ApiGroupsMediaIndexRouteImport } from './routes/api/groups/media/index'
+import { Route as ApiGroupsMediaIdRouteImport } from './routes/api/groups/media/$id'
+import { Route as ApiGroupsVoiceIndexRouteImport } from './routes/api/groups/voice/index'
 import { Route as ApiMapLandmarkIdRouteImport } from './routes/api/map/landmark.$id'
 import { Route as ApiMessagesMediaIndexRouteImport } from './routes/api/messages/media/index'
 import { Route as ApiMessagesMediaIdRouteImport } from './routes/api/messages/media/$id'
 import { Route as ApiMessagesVoiceIndexRouteImport } from './routes/api/messages/voice/index'
 import { Route as ApiMessagesVoiceIdRouteImport } from './routes/api/messages/voice/$id'
 import { Route as ApiMessagesVoiceCleanupRouteImport } from './routes/api/messages/voice/cleanup'
+import { Route as ApiMiniGamesWhotIndexRouteImport } from './routes/api/mini-games/whot/index'
 import { Route as ApiSocialProfileIdRouteImport } from './routes/api/social/profile/$id'
 import { Route as ApiThreadsIdMuteRouteImport } from './routes/api/threads/$id/mute'
 import { Route as ApiThreadsIdPinRouteImport } from './routes/api/threads/$id/pin'
@@ -304,6 +309,11 @@ const ApiHouseStateRoute = ApiHouseStateRouteImport.update({
   path: '/api/house/state',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiHouseWallsRoute = ApiHouseWallsRouteImport.update({
+  id: '/api/house/walls',
+  path: '/api/house/walls',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiHousingAccessoriesRoute = ApiHousingAccessoriesRouteImport.update({
   id: '/api/housing/accessories',
   path: '/api/housing/accessories',
@@ -443,6 +453,21 @@ const ApiAuthUsernameRegisterRoute = ApiAuthUsernameRegisterRouteImport.update({
   path: '/api/auth/username/register',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGroupsMediaIndexRoute = ApiGroupsMediaIndexRouteImport.update({
+  id: '/api/groups/media/',
+  path: '/api/groups/media/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGroupsMediaIdRoute = ApiGroupsMediaIdRouteImport.update({
+  id: '/api/groups/media/$id',
+  path: '/api/groups/media/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiGroupsVoiceIndexRoute = ApiGroupsVoiceIndexRouteImport.update({
+  id: '/api/groups/voice/',
+  path: '/api/groups/voice/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiMapLandmarkIdRoute = ApiMapLandmarkIdRouteImport.update({
   id: '/api/map/landmark/$id',
   path: '/api/map/landmark/$id',
@@ -471,6 +496,11 @@ const ApiMessagesVoiceIdRoute = ApiMessagesVoiceIdRouteImport.update({
 const ApiMessagesVoiceCleanupRoute = ApiMessagesVoiceCleanupRouteImport.update({
   id: '/api/messages/voice/cleanup',
   path: '/api/messages/voice/cleanup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiMiniGamesWhotIndexRoute = ApiMiniGamesWhotIndexRouteImport.update({
+  id: '/api/mini-games/whot/',
+  path: '/api/mini-games/whot/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiSocialProfileIdRoute = ApiSocialProfileIdRouteImport.update({
@@ -539,6 +569,7 @@ export interface FileRoutesByFullPath {
   '/api/house/remove': typeof ApiHouseRemoveRoute
   '/api/house/rotate': typeof ApiHouseRotateRoute
   '/api/house/state': typeof ApiHouseStateRoute
+  '/api/house/walls': typeof ApiHouseWallsRoute
   '/api/housing/accessories': typeof ApiHousingAccessoriesRoute
   '/api/housing/ack-repossession': typeof ApiHousingAckRepossessionRoute
   '/api/housing/choose': typeof ApiHousingChooseRoute
@@ -566,6 +597,7 @@ export interface FileRoutesByFullPath {
   '/location/$slug': typeof AuthenticatedGameLocationSlugRoute
   '/api/auth/username/login': typeof ApiAuthUsernameLoginRoute
   '/api/auth/username/register': typeof ApiAuthUsernameRegisterRoute
+  '/api/groups/media/$id': typeof ApiGroupsMediaIdRoute
   '/api/map/landmark/$id': typeof ApiMapLandmarkIdRoute
   '/api/messages/media/$id': typeof ApiMessagesMediaIdRoute
   '/api/messages/voice/$id': typeof ApiMessagesVoiceIdRoute
@@ -575,8 +607,11 @@ export interface FileRoutesByFullPath {
   '/api/threads/$id/pin': typeof ApiThreadsIdPinRoute
   '/api/threads/$id/read': typeof ApiThreadsIdReadRoute
   '/api/threads/$id/star': typeof ApiThreadsIdStarRoute
+  '/api/groups/media/': typeof ApiGroupsMediaIndexRoute
+  '/api/groups/voice/': typeof ApiGroupsVoiceIndexRoute
   '/api/messages/media/': typeof ApiMessagesMediaIndexRoute
   '/api/messages/voice/': typeof ApiMessagesVoiceIndexRoute
+  '/api/mini-games/whot/': typeof ApiMiniGamesWhotIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -618,6 +653,7 @@ export interface FileRoutesByTo {
   '/api/house/remove': typeof ApiHouseRemoveRoute
   '/api/house/rotate': typeof ApiHouseRotateRoute
   '/api/house/state': typeof ApiHouseStateRoute
+  '/api/house/walls': typeof ApiHouseWallsRoute
   '/api/housing/accessories': typeof ApiHousingAccessoriesRoute
   '/api/housing/ack-repossession': typeof ApiHousingAckRepossessionRoute
   '/api/housing/choose': typeof ApiHousingChooseRoute
@@ -645,6 +681,7 @@ export interface FileRoutesByTo {
   '/location/$slug': typeof AuthenticatedGameLocationSlugRoute
   '/api/auth/username/login': typeof ApiAuthUsernameLoginRoute
   '/api/auth/username/register': typeof ApiAuthUsernameRegisterRoute
+  '/api/groups/media/$id': typeof ApiGroupsMediaIdRoute
   '/api/map/landmark/$id': typeof ApiMapLandmarkIdRoute
   '/api/messages/media/$id': typeof ApiMessagesMediaIdRoute
   '/api/messages/voice/$id': typeof ApiMessagesVoiceIdRoute
@@ -654,8 +691,11 @@ export interface FileRoutesByTo {
   '/api/threads/$id/pin': typeof ApiThreadsIdPinRoute
   '/api/threads/$id/read': typeof ApiThreadsIdReadRoute
   '/api/threads/$id/star': typeof ApiThreadsIdStarRoute
+  '/api/groups/media': typeof ApiGroupsMediaIndexRoute
+  '/api/groups/voice': typeof ApiGroupsVoiceIndexRoute
   '/api/messages/media': typeof ApiMessagesMediaIndexRoute
   '/api/messages/voice': typeof ApiMessagesVoiceIndexRoute
+  '/api/mini-games/whot': typeof ApiMiniGamesWhotIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -700,6 +740,7 @@ export interface FileRoutesById {
   '/api/house/remove': typeof ApiHouseRemoveRoute
   '/api/house/rotate': typeof ApiHouseRotateRoute
   '/api/house/state': typeof ApiHouseStateRoute
+  '/api/house/walls': typeof ApiHouseWallsRoute
   '/api/housing/accessories': typeof ApiHousingAccessoriesRoute
   '/api/housing/ack-repossession': typeof ApiHousingAckRepossessionRoute
   '/api/housing/choose': typeof ApiHousingChooseRoute
@@ -727,6 +768,7 @@ export interface FileRoutesById {
   '/_authenticated/_game/location/$slug': typeof AuthenticatedGameLocationSlugRoute
   '/api/auth/username/login': typeof ApiAuthUsernameLoginRoute
   '/api/auth/username/register': typeof ApiAuthUsernameRegisterRoute
+  '/api/groups/media/$id': typeof ApiGroupsMediaIdRoute
   '/api/map/landmark/$id': typeof ApiMapLandmarkIdRoute
   '/api/messages/media/$id': typeof ApiMessagesMediaIdRoute
   '/api/messages/voice/$id': typeof ApiMessagesVoiceIdRoute
@@ -736,8 +778,11 @@ export interface FileRoutesById {
   '/api/threads/$id/pin': typeof ApiThreadsIdPinRoute
   '/api/threads/$id/read': typeof ApiThreadsIdReadRoute
   '/api/threads/$id/star': typeof ApiThreadsIdStarRoute
+  '/api/groups/media/': typeof ApiGroupsMediaIndexRoute
+  '/api/groups/voice/': typeof ApiGroupsVoiceIndexRoute
   '/api/messages/media/': typeof ApiMessagesMediaIndexRoute
   '/api/messages/voice/': typeof ApiMessagesVoiceIndexRoute
+  '/api/mini-games/whot/': typeof ApiMiniGamesWhotIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -781,6 +826,7 @@ export interface FileRouteTypes {
     | '/api/house/remove'
     | '/api/house/rotate'
     | '/api/house/state'
+    | '/api/house/walls'
     | '/api/housing/accessories'
     | '/api/housing/ack-repossession'
     | '/api/housing/choose'
@@ -808,6 +854,7 @@ export interface FileRouteTypes {
     | '/location/$slug'
     | '/api/auth/username/login'
     | '/api/auth/username/register'
+    | '/api/groups/media/$id'
     | '/api/map/landmark/$id'
     | '/api/messages/media/$id'
     | '/api/messages/voice/$id'
@@ -817,8 +864,11 @@ export interface FileRouteTypes {
     | '/api/threads/$id/pin'
     | '/api/threads/$id/read'
     | '/api/threads/$id/star'
+    | '/api/groups/media/'
+    | '/api/groups/voice/'
     | '/api/messages/media/'
     | '/api/messages/voice/'
+    | '/api/mini-games/whot/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -860,6 +910,7 @@ export interface FileRouteTypes {
     | '/api/house/remove'
     | '/api/house/rotate'
     | '/api/house/state'
+    | '/api/house/walls'
     | '/api/housing/accessories'
     | '/api/housing/ack-repossession'
     | '/api/housing/choose'
@@ -887,6 +938,7 @@ export interface FileRouteTypes {
     | '/location/$slug'
     | '/api/auth/username/login'
     | '/api/auth/username/register'
+    | '/api/groups/media/$id'
     | '/api/map/landmark/$id'
     | '/api/messages/media/$id'
     | '/api/messages/voice/$id'
@@ -896,8 +948,11 @@ export interface FileRouteTypes {
     | '/api/threads/$id/pin'
     | '/api/threads/$id/read'
     | '/api/threads/$id/star'
+    | '/api/groups/media'
+    | '/api/groups/voice'
     | '/api/messages/media'
     | '/api/messages/voice'
+    | '/api/mini-games/whot'
   id:
     | '__root__'
     | '/'
@@ -941,6 +996,7 @@ export interface FileRouteTypes {
     | '/api/house/remove'
     | '/api/house/rotate'
     | '/api/house/state'
+    | '/api/house/walls'
     | '/api/housing/accessories'
     | '/api/housing/ack-repossession'
     | '/api/housing/choose'
@@ -968,6 +1024,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_game/location/$slug'
     | '/api/auth/username/login'
     | '/api/auth/username/register'
+    | '/api/groups/media/$id'
     | '/api/map/landmark/$id'
     | '/api/messages/media/$id'
     | '/api/messages/voice/$id'
@@ -977,8 +1034,11 @@ export interface FileRouteTypes {
     | '/api/threads/$id/pin'
     | '/api/threads/$id/read'
     | '/api/threads/$id/star'
+    | '/api/groups/media/'
+    | '/api/groups/voice/'
     | '/api/messages/media/'
     | '/api/messages/voice/'
+    | '/api/mini-games/whot/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1001,6 +1061,7 @@ export interface RootRouteChildren {
   ApiHouseRemoveRoute: typeof ApiHouseRemoveRoute
   ApiHouseRotateRoute: typeof ApiHouseRotateRoute
   ApiHouseStateRoute: typeof ApiHouseStateRoute
+  ApiHouseWallsRoute: typeof ApiHouseWallsRoute
   ApiHousingAccessoriesRoute: typeof ApiHousingAccessoriesRoute
   ApiHousingAckRepossessionRoute: typeof ApiHousingAckRepossessionRoute
   ApiHousingChooseRoute: typeof ApiHousingChooseRoute
@@ -1026,6 +1087,7 @@ export interface RootRouteChildren {
   ApiThreadsIndexRoute: typeof ApiThreadsIndexRoute
   ApiAuthUsernameLoginRoute: typeof ApiAuthUsernameLoginRoute
   ApiAuthUsernameRegisterRoute: typeof ApiAuthUsernameRegisterRoute
+  ApiGroupsMediaIdRoute: typeof ApiGroupsMediaIdRoute
   ApiMapLandmarkIdRoute: typeof ApiMapLandmarkIdRoute
   ApiMessagesMediaIdRoute: typeof ApiMessagesMediaIdRoute
   ApiMessagesVoiceIdRoute: typeof ApiMessagesVoiceIdRoute
@@ -1035,8 +1097,11 @@ export interface RootRouteChildren {
   ApiThreadsIdPinRoute: typeof ApiThreadsIdPinRoute
   ApiThreadsIdReadRoute: typeof ApiThreadsIdReadRoute
   ApiThreadsIdStarRoute: typeof ApiThreadsIdStarRoute
+  ApiGroupsMediaIndexRoute: typeof ApiGroupsMediaIndexRoute
+  ApiGroupsVoiceIndexRoute: typeof ApiGroupsVoiceIndexRoute
   ApiMessagesMediaIndexRoute: typeof ApiMessagesMediaIndexRoute
   ApiMessagesVoiceIndexRoute: typeof ApiMessagesVoiceIndexRoute
+  ApiMiniGamesWhotIndexRoute: typeof ApiMiniGamesWhotIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1328,6 +1393,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiHouseStateRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/house/walls': {
+      id: '/api/house/walls'
+      path: '/api/house/walls'
+      fullPath: '/api/house/walls'
+      preLoaderRoute: typeof ApiHouseWallsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/housing/accessories': {
       id: '/api/housing/accessories'
       path: '/api/housing/accessories'
@@ -1517,6 +1589,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthUsernameRegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/groups/media/': {
+      id: '/api/groups/media/'
+      path: '/api/groups/media'
+      fullPath: '/api/groups/media/'
+      preLoaderRoute: typeof ApiGroupsMediaIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/groups/media/$id': {
+      id: '/api/groups/media/$id'
+      path: '/api/groups/media/$id'
+      fullPath: '/api/groups/media/$id'
+      preLoaderRoute: typeof ApiGroupsMediaIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/groups/voice/': {
+      id: '/api/groups/voice/'
+      path: '/api/groups/voice'
+      fullPath: '/api/groups/voice/'
+      preLoaderRoute: typeof ApiGroupsVoiceIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/map/landmark/$id': {
       id: '/api/map/landmark/$id'
       path: '/api/map/landmark/$id'
@@ -1557,6 +1650,13 @@ declare module '@tanstack/react-router' {
       path: '/api/messages/voice/cleanup'
       fullPath: '/api/messages/voice/cleanup'
       preLoaderRoute: typeof ApiMessagesVoiceCleanupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/mini-games/whot/': {
+      id: '/api/mini-games/whot/'
+      path: '/api/mini-games/whot'
+      fullPath: '/api/mini-games/whot/'
+      preLoaderRoute: typeof ApiMiniGamesWhotIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/social/profile/$id': {
@@ -1683,6 +1783,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHouseRemoveRoute: ApiHouseRemoveRoute,
   ApiHouseRotateRoute: ApiHouseRotateRoute,
   ApiHouseStateRoute: ApiHouseStateRoute,
+  ApiHouseWallsRoute: ApiHouseWallsRoute,
   ApiHousingAccessoriesRoute: ApiHousingAccessoriesRoute,
   ApiHousingAckRepossessionRoute: ApiHousingAckRepossessionRoute,
   ApiHousingChooseRoute: ApiHousingChooseRoute,
@@ -1708,6 +1809,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiThreadsIndexRoute: ApiThreadsIndexRoute,
   ApiAuthUsernameLoginRoute: ApiAuthUsernameLoginRoute,
   ApiAuthUsernameRegisterRoute: ApiAuthUsernameRegisterRoute,
+  ApiGroupsMediaIdRoute: ApiGroupsMediaIdRoute,
   ApiMapLandmarkIdRoute: ApiMapLandmarkIdRoute,
   ApiMessagesMediaIdRoute: ApiMessagesMediaIdRoute,
   ApiMessagesVoiceIdRoute: ApiMessagesVoiceIdRoute,
@@ -1717,8 +1819,11 @@ const rootRouteChildren: RootRouteChildren = {
   ApiThreadsIdPinRoute: ApiThreadsIdPinRoute,
   ApiThreadsIdReadRoute: ApiThreadsIdReadRoute,
   ApiThreadsIdStarRoute: ApiThreadsIdStarRoute,
+  ApiGroupsMediaIndexRoute: ApiGroupsMediaIndexRoute,
+  ApiGroupsVoiceIndexRoute: ApiGroupsVoiceIndexRoute,
   ApiMessagesMediaIndexRoute: ApiMessagesMediaIndexRoute,
   ApiMessagesVoiceIndexRoute: ApiMessagesVoiceIndexRoute,
+  ApiMiniGamesWhotIndexRoute: ApiMiniGamesWhotIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

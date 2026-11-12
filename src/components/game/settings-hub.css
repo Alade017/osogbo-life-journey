@@ -512,3 +512,49 @@
         animation: none;
     }
 }
+/* App tile style choice */
+.sx-tile-choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.sx-tile-choice {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 14px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sx-tile-choice[aria-checked="true"] {
+  border-color: #1e40af;
+  box-shadow: 0 0 0 2px #dbeafe;
+}
+
+.sx-tile-choice:disabled {
+  opacity: 0.6;
+}
+
+.sx-tile-sample {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  color: #ffffff;
+  background: #1e40af;
+}
+
+.sx-tile-sample-rounded {
+  border-radius: 16px;
+}
+
+.sx-tile-sample-circle {
+  border-radius: 50%;
+}

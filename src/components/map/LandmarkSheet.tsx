@@ -6,7 +6,7 @@ import { MapApiError, requestMapLandmark } from "@/lib/map-api";
 import { careerShiftPay } from "@/lib/economy-service";
 import { isCareerJob } from "@/lib/career-rules";
 import { PlaceActionMenu, type PlaceActionResult } from "@/components/map/PlaceActionMenu";
-import type { MapPlaceAction } from "@/components/map/OsogboMap.svg";
+import type { MapPlaceAction } from "@/components/map/map-types";
 
 export function LandmarkSheet({
   landmark,

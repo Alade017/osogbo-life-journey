@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
-export type ExternalNewsRegion = "nigeria" | "world";
+export const EXTERNAL_NEWS_REGIONS = ["nigeria", "world", "osun", "schools"] as const;
+export type ExternalNewsRegion = (typeof EXTERNAL_NEWS_REGIONS)[number];
 export type ExternalNewsItem = {
   id: string;
   title: string;
@@ -13,8 +14,16 @@ const REFRESH_MS = 15 * 60 * 1000;
 const MAX_ITEMS = 20;
 const GDELT_URL = "https://api.gdeltproject.org/api/v2/doc/doc";
 
+const QUERY_BY_REGION: Record<ExternalNewsRegion, string> = {
+  nigeria: "sourcecountry:nigeria",
+  world: "(world OR international)",
+  osun: '("Osun State" OR Osogbo OR Osun) sourcecountry:nigeria',
+  schools:
+    '(school OR schools OR WAEC OR JAMB OR "Ministry of Education" OR students OR university) sourcecountry:nigeria',
+};
+
 function queryFor(region: ExternalNewsRegion) {
-  return region === "nigeria" ? "sourcecountry:nigeria" : "(world OR international)";
+  return QUERY_BY_REGION[region];
 }
 
 function safeText(value: unknown, limit: number) {

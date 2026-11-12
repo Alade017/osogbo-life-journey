@@ -1,7 +1,9 @@
 import type { WorldTone } from "../components/3d/world-theme";
+import type { WorldMapCategory } from "../lib/city-world";
 
 export type BuildingRoofProfile = "pitched" | "flat" | "parapet";
-export type BuildingFrontageProfile = "veranda" | "awning" | "portico" | "canopy" | "recessed" | "plain";
+export type BuildingFrontageProfile =
+  "veranda" | "awning" | "portico" | "canopy" | "recessed" | "plain";
 
 export type DistrictArchitecture = {
   roof: BuildingRoofProfile;
@@ -33,10 +35,45 @@ const VARIANT_ALIASES: Readonly<Record<string, keyof typeof ARCHITECTURE>> = {
   transport: "transit",
 };
 
+const WORLD_CATEGORY_ARCHITECTURE: Readonly<Record<WorldMapCategory, string>> = {
+  residential: "residential",
+  commercial: "market",
+  work_industrial: "services",
+  education: "school",
+  health: "health",
+  transport: "transit",
+  government: "civic",
+  recreation: "sport",
+  water_nature: "services",
+};
+
+/** Resolve a database world category to an existing reusable building profile. */
+export function districtArchitectureVariantForCategory(
+  category: string | null | undefined,
+): string {
+  if (!category || !Object.hasOwn(WORLD_CATEGORY_ARCHITECTURE, category)) return "services";
+  return WORLD_CATEGORY_ARCHITECTURE[category as WorldMapCategory];
+}
+
 export function getDistrictArchitecture(variant: string | null | undefined): DistrictArchitecture {
   const key = variant?.trim().toLowerCase() ?? "";
   const canonical = VARIANT_ALIASES[key] ?? key;
-  return ARCHITECTURE[canonical] ?? ARCHITECTURE.residential!;
+
+  const architecture = ARCHITECTURE[canonical];
+
+  if (architecture) {
+    return architecture;
+  }
+
+  const residentialFallback = ARCHITECTURE["residential"];
+
+  if (!residentialFallback) {
+    throw new Error(
+      'District architecture configuration is missing the required "residential" fallback.',
+    );
+  }
+
+  return residentialFallback;
 }
 
 export type PitchedRoofPanel = {
@@ -46,7 +83,10 @@ export type PitchedRoofPanel = {
 };
 
 /** Returns two matching roof panels whose inner edges meet at the ridge. */
-export function getPitchedRoofPanel(side: "left" | "right", buildingWidth: number): PitchedRoofPanel {
+export function getPitchedRoofPanel(
+  side: "left" | "right",
+  buildingWidth: number,
+): PitchedRoofPanel {
   return {
     positionX: side === "left" ? -buildingWidth * 0.25 : buildingWidth * 0.25,
     width: buildingWidth * 0.5,

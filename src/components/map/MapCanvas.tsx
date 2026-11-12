@@ -1,10 +1,9 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react";
 import townData from "@/data/osogbo-town.json";
 import { WORLD_PALETTE } from "@/components/3d/world-theme";
-import { TownMapFallback } from "@/components/map/TownMapFallback";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
 
-const R3FTownSurface = lazy(() =>
+const TownSurface3D = lazy(() =>
   import("./R3FTownSurface").then((module) => ({ default: module.R3FTownSurface })),
 );
 
@@ -79,7 +78,7 @@ const filterCategories: Partial<Record<MapFilter, readonly string[]>> = {
   jobs: ["services", "food", "market", "transport"],
 };
 
-export function houseBadgeText(property: MapProperty) {
+function houseBadgeText(property: MapProperty) {
   if (property.status === "owned" && property.ownerName) return property.ownerName;
   return propertyStatusText[property.status];
 }
@@ -99,7 +98,9 @@ export function MapCanvas({
   onSelectProperty,
   onSelectEvent,
 }: MapCanvasProps) {
-  const [rendererState, setRendererState] = useState<"loading" | "ready" | "fallback">("loading");
+  const [rendererState, setRendererState] = useState<"loading" | "ready" | "unavailable">(
+    "loading",
+  );
 
   useEffect(() => {
     if (!searchTarget) return;
@@ -125,7 +126,7 @@ export function MapCanvas({
   );
 
   const handleReady = useCallback(() => setRendererState("ready"), []);
-  const handleUnavailable = useCallback(() => setRendererState("fallback"), []);
+  const handleUnavailable = useCallback(() => setRendererState("unavailable"), []);
 
   return (
     <section
@@ -133,36 +134,24 @@ export function MapCanvas({
       style={{ background: WORLD_PALETTE.ground }}
       aria-label="Interactive 3D town map with open camera exploration"
     >
-      {rendererState !== "ready" && (
-        <TownMapFallback
-          places={availablePlaces}
-          properties={properties}
-          playerLocation={playerLocation}
-          billboardMarkers={billboardMarkers}
-          onSelectLandmark={onSelectLandmark}
-          onSelectDistrict={onSelectDistrict}
-          onSelectBillboard={onSelectBillboard}
-          {...(onSelectProperty ? { onSelectProperty } : {})}
-          eventChips={_eventChips}
-          {...(onSelectEvent ? { onSelectEvent } : {})}
-        />
-      )}
       <Suspense fallback={null}>
-        <R3FTownSurface
-          places={availablePlaces}
-          properties={properties}
-          playerLocation={playerLocation}
-          billboardMarkers={billboardMarkers}
-          onSelectLandmark={onSelectLandmark}
-          onSelectDistrict={onSelectDistrict}
-          onSelectBillboard={onSelectBillboard}
-          {...(onSelectProperty ? { onSelectProperty } : {})}
-          eventChips={_eventChips}
-          {...(onSelectEvent ? { onSelectEvent } : {})}
-          onReady={handleReady}
-          onUnavailable={handleUnavailable}
-          {...(searchTarget ? { searchTarget } : {})}
-        />
+        {rendererState !== "unavailable" && (
+          <TownSurface3D
+            places={availablePlaces}
+            properties={properties}
+            playerLocation={playerLocation}
+            billboardMarkers={billboardMarkers}
+            searchTarget={searchTarget ?? null}
+            onSelectLandmark={onSelectLandmark}
+            onSelectDistrict={onSelectDistrict}
+            onSelectBillboard={onSelectBillboard}
+            {...(onSelectProperty ? { onSelectProperty } : {})}
+            eventChips={_eventChips}
+            {...(onSelectEvent ? { onSelectEvent } : {})}
+            onReady={handleReady}
+            onUnavailable={handleUnavailable}
+          />
+        )}
       </Suspense>
       {rendererState === "loading" && (
         <div className="town-map-renderer-status">
@@ -173,10 +162,17 @@ export function MapCanvas({
           />
         </div>
       )}
-      {rendererState === "fallback" && (
-        <p className="town-map-renderer-status" role="status">
-          Interactive rendering is unavailable. Showing the accessible town map.
-        </p>
+      {rendererState === "unavailable" && (
+        <div className="town-map-renderer-status" role="alert">
+          <p>The 3D town could not start on this device.</p>
+          <button
+            type="button"
+            className="phone-btn-primary"
+            onClick={() => window.location.reload()}
+          >
+            Try again
+          </button>
+        </div>
       )}
       <ul className="town-map-accessible-list" aria-label="Places on the map">
         {properties?.map((property) => (

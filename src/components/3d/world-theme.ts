@@ -24,6 +24,7 @@ export const WORLD_SCALE = {
 export const WORLD_PALETTE = {
   // Outdoor environment
   ground: "#d9c9ad",
+  sky: "#cfe3ea",
   wall: "#d4bea0",
   clay: "#b77f68",
   foliage: "#89977c",
@@ -68,6 +69,17 @@ export const WORLD_MATERIAL = {
   flatShading: true,
 } as const;
 
+/** Warm cutaway colours for a house room seen on its own. Presentation only. */
+export const ROOM_VIEW_PALETTE = {
+  wall: "#a39e94",
+  floorLight: "#efe7d8",
+  floorShade: "#dcd0bb",
+  light: "#ffd9a0",
+} as const;
+
+/** Camera distance for a room view, relative to the framed room. */
+export const ROOM_VIEW_CAMERA = { distanceScale: 0.9 } as const;
+
 export const WORLD_CAMERA = {
   fov: 42,
   azimuth: Math.PI / 4,
@@ -75,4 +87,19 @@ export const WORLD_CAMERA = {
   defaultZoom: 1,
   minZoom: 0.8,
   maxZoom: 1.35,
+} as const;
+
+/** Playable-neighbourhood zoom limits, isolated from shared interior camera framing. */
+// Camera distance is the base distance divided by zoom, so a higher zoom sits closer to the street.
+export const NEIGHBORHOOD_CAMERA = {
+  defaultZoom: 1.8,
+  minZoom: 1.1,
+  maxZoom: 2.8,
+} as const;
+
+/** Overview-map camera tuning, kept separate from shared world and interior camera limits. */
+export const TOWN_MAP_CAMERA = {
+  defaultZoom: 1.55,
+  minZoom: 0.42,
+  maxZoom: 3.4,
 } as const;

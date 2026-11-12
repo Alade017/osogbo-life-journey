@@ -1,7 +1,7 @@
 import { mapActivityHours, type MapSchedule } from "@/lib/map-schedule";
 import { useState } from "react";
 import { Check, Clock3, Coins, Heart } from "lucide-react";
-import type { MapPlaceAction } from "@/components/map/OsogboMap.svg";
+import type { MapPlaceAction } from "@/components/map/map-types";
 import { formatMapNaira } from "@/components/map/map-ui-utils";
 
 export type PlaceActionResult = {

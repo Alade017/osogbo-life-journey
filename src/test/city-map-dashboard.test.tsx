@@ -14,6 +14,10 @@ vi.mock("@tanstack/react-router", async (importOriginal) => {
   return {
     ...actual,
     useNavigate: () => testState.navigate,
+    useLocation: (options?: { select?: (location: { href: string }) => unknown }) => {
+      const location = { href: "/map" };
+      return options?.select ? options.select(location) : location;
+    },
     Link: ({ to, children, ...props }: { to: string; children: ReactNode; className?: string }) => (
       <a href={to} {...props}>
         {children}
@@ -27,12 +31,6 @@ const testState = vi.hoisted(() => ({
   character: null as Record<string, unknown> | null,
   locations: [] as Record<string, unknown>[],
   wallet: null as Record<string, unknown> | null,
-}));
-vi.mock("@/components/map/PhaserMapSurface", () => ({
-  PhaserMapSurface: ({ onUnavailable }: { onUnavailable: () => void }) => {
-    useEffect(() => onUnavailable(), [onUnavailable]);
-    return null;
-  },
 }));
 const eventState = vi.hoisted(() => ({
   events: [] as import("@/lib/city-event-service").CityEventOccurrence[],
@@ -274,12 +272,9 @@ describe("isometric town map", () => {
     expect(screen.queryByText(/does not have a playable neighborhood/i)).not.toBeInTheDocument();
     expect(testState.travelToLocation).not.toHaveBeenCalled();
   }, 15_000);
-  it("renders the Phaser overview fallback and a keyboard-accessible list", async () => {
-    const { container } = renderDashboard();
-    expect(
-      screen.getByRole("region", { name: /Interactive isometric town map/i }),
-    ).toBeInTheDocument();
-    expect(screen.getByRole("img", { name: "Illustrated town map fallback" })).toBeInTheDocument();
+  it("renders the 3D town region and a keyboard-accessible list", () => {
+    renderDashboard();
+    expect(screen.getByRole("region", { name: /Interactive 3D town map/i })).toBeInTheDocument();
     expect(screen.getByRole("list", { name: "Places on the map" })).toBeInTheDocument();
     expect(
       within(screen.getByRole("list", { name: "Places on the map" })).getByRole("button", {
@@ -287,14 +282,14 @@ describe("isometric town map", () => {
       }),
     ).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Travel to Olaiya" })).toBeInTheDocument();
-    expect(container.querySelector(".town-map-phaser-host")).not.toBeInTheDocument();
+    expect(screen.queryByRole("img", { name: "Illustrated town map fallback" })).toBeNull();
   });
 
-  it("defines a compact hand-authored grid and fictional public venues with action definitions", () => {
-    expect(townData.meta.grid).toEqual({ columns: 24, rows: 18, cellSize: 2 });
-    expect(townData.grid.rows).toHaveLength(18);
-    expect(townData.grid.rows.every((row) => row.length === 24)).toBe(true);
-    expect(townData.districts).toHaveLength(11);
+  it("defines a hand-authored grid and fictional public venues with action definitions", () => {
+    expect(townData.meta.grid).toEqual({ columns: 32, rows: 24, cellSize: 2 });
+    expect(townData.grid.rows).toHaveLength(24);
+    expect(townData.grid.rows.every((row) => row.length === 32)).toBe(true);
+    expect(townData.districts).toHaveLength(17);
     expect(townData.landmarks.map((place) => place.label)).toEqual(
       expect.arrayContaining([
         "Civic court",
@@ -304,9 +299,9 @@ describe("isometric town map", () => {
         "Lantern Club",
       ]),
     );
-    // Expanded venues intentionally have one server-defined activity each.
+    // Some landmarks, such as junctions and public services, have no activity; those that do
+    // must have unique, server-defined actions.
     for (const place of townData.landmarks) {
-      expect(place.actions.length).toBeGreaterThan(0);
       expect(new Set(place.actions.map((action) => action.id)).size).toBe(place.actions.length);
       for (const action of place.actions) {
         expect(findMapPlaceAction(place.id, action.id)).not.toBeNull();

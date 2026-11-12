@@ -51,6 +51,8 @@ describe("authoritative business and investment database", () => {
     for (const { tag } of journal.entries.filter(
       (entry: { tag: string }) =>
         entry.tag !== "0075_remove_orphaned_player_data" &&
+        entry.tag !== "0083_studio_room_layout" &&
+        entry.tag !== "0084_other_homes_room_layout" &&
         entry.tag !== "0077_market_stall_rent_categories_sales",
     ))
       await db.exec(readFileSync(`drizzle/migrations/${tag}.sql`, "utf8"));

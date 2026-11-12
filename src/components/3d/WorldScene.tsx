@@ -1,9 +1,11 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { MeshBasicMaterial } from "three";
 import { useFrame, useThree } from "@react-three/fiber";
-import { ContactShadows, OrbitControls, Text } from "@react-three/drei";
+import { ContactShadows, OrbitControls } from "@react-three/drei";
+import { CanvasLabel } from "@/components/3d/CanvasLabel";
 import { Object3D, Vector3, type InstancedMesh, type PerspectiveCamera, type Texture } from "three";
 import type { OrbitControls as Controls } from "three-stdlib";
-import { getDistrictArchitecture, getPitchedRoofPanel } from "../../game/district-architecture";
+import { getDistrictArchitecture, getPitchedRoofPanel } from "@/game/district-architecture";
 import {
   WORLD_CAMERA,
   WORLD_MATERIAL,
@@ -70,22 +72,29 @@ export function WorldCamera({
   enabled = true,
   target,
   zoom = 1,
+  minZoom = WORLD_CAMERA.minZoom,
+  maxZoom = WORLD_CAMERA.maxZoom,
   polarAngle,
   onZoomChange,
   horizontalOrbit = false,
   verticalOrbit = false,
+  distanceScale = 1,
   freeExplore = false,
 }: {
   width: number;
   depth: number;
   stage?: boolean;
   enabled?: boolean;
-  target?: [number, number, number];
+  target?: [number, number, number] | undefined;
   zoom?: number;
+  minZoom?: number;
+  maxZoom?: number;
   polarAngle?: number;
   onZoomChange?: (zoom: number) => void;
   horizontalOrbit?: boolean;
   verticalOrbit?: boolean;
+  /** Scales the camera distance past the zoom clamp, for close-up framing. */
+  distanceScale?: number;
   freeExplore?: boolean;
 }) {
   const { camera, size, invalidate } = useThree();
@@ -97,12 +106,12 @@ export function WorldCamera({
   const polar = polarAngle ?? (stage ? Math.PI / 4 : WORLD_CAMERA.polar);
   const azimuth = WORLD_CAMERA.azimuth;
   const [x, y, z] = target ?? [0, stage ? WORLD_SCALE.door * 0.65 : 0, 0];
-  const framing = useRef<{ distance: number; polar: number; zoom: number } | null>(null);
+  const framing = useRef<{ distance: number; polar: number; d: number } | null>(null);
   const offset = useMemo(() => new Vector3(), []);
   useLayoutEffect(() => {
     const previous = framing.current;
     const orbit = controls.current;
-    const d = distance / Math.max(WORLD_CAMERA.minZoom, Math.min(WORLD_CAMERA.maxZoom, zoom));
+    const d = (distance / Math.max(minZoom, Math.min(maxZoom, zoom))) * distanceScale;
     if (!previous || previous.distance !== distance || previous.polar !== polar || !orbit) {
       offset
         .set(
@@ -114,13 +123,13 @@ export function WorldCamera({
     } else {
       // Follow by translating the existing orbit, preserving touch/wheel framing.
       offset.copy(camera.position).sub(orbit.target);
-      if (previous.zoom !== zoom) offset.setLength(d);
+      if (previous.d !== d) offset.setLength(d);
     }
     camera.position.copy(offset);
     camera.position.x += x;
     camera.position.y += y;
     camera.position.z += z;
-    framing.current = { distance, polar, zoom };
+    framing.current = { distance, polar, d };
     camera.lookAt(x, y, z);
     const perspective = camera as PerspectiveCamera;
     perspective.fov = WORLD_CAMERA.fov;
@@ -129,7 +138,21 @@ export function WorldCamera({
     controls.current?.target.set(x, y, z);
     controls.current?.update();
     invalidate();
-  }, [camera, distance, azimuth, polar, x, y, z, zoom, invalidate, offset]);
+  }, [
+    camera,
+    distance,
+    azimuth,
+    polar,
+    x,
+    y,
+    z,
+    zoom,
+    minZoom,
+    maxZoom,
+    distanceScale,
+    invalidate,
+    offset,
+  ]);
   return (
     <OrbitControls
       ref={controls}
@@ -140,18 +163,31 @@ export function WorldCamera({
       onEnd={() => {
         if (!controls.current || !onZoomChange) return;
         onZoomChange(
-          Math.max(
-            WORLD_CAMERA.minZoom,
-            Math.min(WORLD_CAMERA.maxZoom, distance / controls.current.getDistance()),
-          ),
+          Math.max(minZoom, Math.min(maxZoom, distance / controls.current.getDistance())),
         );
       }}
-      minDistance={distance / WORLD_CAMERA.maxZoom}
-      maxDistance={distance / WORLD_CAMERA.minZoom}
-      minPolarAngle={freeExplore ? 0.35 : verticalOrbit ? Math.max(0.35, polar - 0.35) : polar - (stage ? 0 : 0.08)}
-      maxPolarAngle={freeExplore ? 1.25 : verticalOrbit ? Math.min(1.25, polar + 0.35) : polar + (stage ? 0 : 0.08)}
-      minAzimuthAngle={freeExplore ? -Infinity : azimuth - (horizontalOrbit ? Math.PI / 3 : stage ? 0 : 0.14)}
-      maxAzimuthAngle={freeExplore ? Infinity : azimuth + (horizontalOrbit ? Math.PI / 3 : stage ? 0 : 0.14)}
+      minDistance={distance / maxZoom}
+      maxDistance={distance / minZoom}
+      minPolarAngle={
+        freeExplore
+          ? 0.35
+          : verticalOrbit
+            ? Math.max(0.35, polar - 0.35)
+            : polar - (stage ? 0 : 0.08)
+      }
+      maxPolarAngle={
+        freeExplore
+          ? 1.25
+          : verticalOrbit
+            ? Math.min(1.25, polar + 0.35)
+            : polar + (stage ? 0 : 0.08)
+      }
+      minAzimuthAngle={
+        freeExplore ? -Infinity : azimuth - (horizontalOrbit ? Math.PI / 3 : stage ? 0 : 0.14)
+      }
+      maxAzimuthAngle={
+        freeExplore ? Infinity : azimuth + (horizontalOrbit ? Math.PI / 3 : stage ? 0 : 0.14)
+      }
     />
   );
 }
@@ -164,11 +200,14 @@ export type WorldInstance = {
 export function WorldInstances({
   items,
   tone,
+  color,
   shape = "box",
   animate,
 }: {
   items: readonly WorldInstance[];
   tone: WorldTone;
+  /** Optional colour that replaces the tone's palette colour for these instances. */
+  color?: string;
   shape?: "box" | "sphere";
   animate?: ((object: Object3D, index: number, seconds: number) => void) | undefined;
 }) {
@@ -210,7 +249,7 @@ export function WorldInstances({
   return (
     <instancedMesh ref={mesh} args={[undefined, undefined, items.length]} castShadow receiveShadow>
       {shape === "box" ? <boxGeometry /> : <sphereGeometry args={[0.5, 8, 6]} />}
-      <WorldMaterial tone={tone} />
+      <WorldMaterial tone={tone} {...(color ? { color } : {})} />
     </instancedMesh>
   );
 }
@@ -226,48 +265,80 @@ export function WorldPedestrianCrossings({ items }: { items: readonly WorldInsta
 export function WorldTrafficLights({
   positions,
   size,
+  getSignalState,
 }: {
-  positions: readonly [number, number][];
+  positions: readonly [number, number, string][];
   size: number;
+  getSignalState: (junctionId: string) => "stop" | "caution" | "go";
 }) {
   const poleHeight = size * 1.15;
 
   return (
     <>
-      {positions.map(([x, z], index) => (
-        <group key={`traffic-light-${index}`} position={[x, 0, z]}>
-          {/* Vertical pole */}
-          <mesh position={[0, poleHeight / 2, 0]} castShadow>
-            <boxGeometry args={[size * 0.045, poleHeight, size * 0.045]} />
-            <WorldMaterial tone="metal" />
-          </mesh>
-
-          {/* Signal housing */}
-          <mesh position={[0, poleHeight * 0.85, 0]} castShadow>
-            <boxGeometry args={[size * 0.19, size * 0.42, size * 0.13]} />
-            <WorldMaterial tone="slate" />
-          </mesh>
-
-          {/* Red signal */}
-          <mesh position={[0, poleHeight * 0.96, size * 0.071]}>
-            <sphereGeometry args={[size * 0.045, 8, 8]} />
-            <WorldMaterial tone="clay" />
-          </mesh>
-
-          {/* Amber signal */}
-          <mesh position={[0, poleHeight * 0.85, size * 0.071]}>
-            <sphereGeometry args={[size * 0.045, 8, 8]} />
-            <WorldMaterial tone="linen" />
-          </mesh>
-
-          {/* Green signal */}
-          <mesh position={[0, poleHeight * 0.74, size * 0.071]}>
-            <sphereGeometry args={[size * 0.045, 8, 8]} />
-            <WorldMaterial tone="foliage" />
-          </mesh>
-        </group>
+      {positions.map(([x, z, junctionId], index) => (
+        <TrafficLightSignal
+          key={junctionId || `traffic-light-${index}`}
+          x={x}
+          z={z}
+          junctionId={junctionId}
+          size={size}
+          poleHeight={poleHeight}
+          getSignalState={getSignalState}
+        />
       ))}
     </>
+  );
+}
+
+function TrafficLightSignal({
+  x,
+  z,
+  junctionId,
+  size,
+  poleHeight,
+  getSignalState,
+}: {
+  x: number;
+  z: number;
+  junctionId: string;
+  size: number;
+  poleHeight: number;
+  getSignalState: (junctionId: string) => "stop" | "caution" | "go";
+}) {
+  const red = useRef<MeshBasicMaterial>(null);
+  const amber = useRef<MeshBasicMaterial>(null);
+  const green = useRef<MeshBasicMaterial>(null);
+
+  useFrame(() => {
+    const state = getSignalState(junctionId);
+    if (red.current) red.current.color.set(state === "stop" ? "#ef2929" : "#401b1b");
+    if (amber.current) amber.current.color.set(state === "caution" ? "#f59e0b" : "#49320d");
+    if (green.current) green.current.color.set(state === "go" ? "#22c55e" : "#173b27");
+  });
+
+  return (
+    <group position={[x, 0, z]}>
+      <mesh position={[0, poleHeight / 2, 0]} castShadow>
+        <boxGeometry args={[size * 0.045, poleHeight, size * 0.045]} />
+        <WorldMaterial tone="metal" />
+      </mesh>
+      <mesh position={[0, poleHeight * 0.85, 0]} castShadow>
+        <boxGeometry args={[size * 0.19, size * 0.42, size * 0.13]} />
+        <WorldMaterial tone="slate" />
+      </mesh>
+      <mesh position={[0, poleHeight * 0.96, size * 0.071]}>
+        <sphereGeometry args={[size * 0.045, 8, 8]} />
+        <meshBasicMaterial ref={red} color="#401b1b" />
+      </mesh>
+      <mesh position={[0, poleHeight * 0.85, size * 0.071]}>
+        <sphereGeometry args={[size * 0.045, 8, 8]} />
+        <meshBasicMaterial ref={amber} color="#49320d" />
+      </mesh>
+      <mesh position={[0, poleHeight * 0.74, size * 0.071]}>
+        <sphereGeometry args={[size * 0.045, 8, 8]} />
+        <meshBasicMaterial ref={green} color="#173b27" />
+      </mesh>
+    </group>
   );
 }
 export function WorldCars({
@@ -453,9 +524,11 @@ export function WorldWasteBins({
 export function WorldBusStops({
   positions,
   size,
+  onSelectTransit,
 }: {
   positions: readonly [number, number][];
   size: number;
+  onSelectTransit: () => void;
 }) {
   const roofHeight = size * 0.95;
   const shelterWidth = size * 1.15;
@@ -464,7 +537,20 @@ export function WorldBusStops({
   return (
     <>
       {positions.map(([x, z], index) => (
-        <group key={`bus-stop-${index}`} position={[x, 0, z]}>
+        <group
+          key={`bus-stop-${index}`}
+          position={[x, 0, z]}
+          onClick={(event) => {
+            event.stopPropagation();
+            onSelectTransit();
+          }}
+          onPointerEnter={() => {
+            document.body.style.cursor = "pointer";
+          }}
+          onPointerLeave={() => {
+            document.body.style.cursor = "";
+          }}
+        >
           {/* Shelter roof */}
           <mesh position={[0, roofHeight, 0]} castShadow>
             <boxGeometry args={[shelterWidth, size * 0.12, shelterDepth]} />
@@ -512,6 +598,11 @@ export function WorldBusStops({
             <boxGeometry args={[size * 0.3, size * 0.24, size * 0.07]} />
             <WorldMaterial tone="sign" />
           </mesh>
+          <CanvasLabel
+            position={[shelterWidth * 0.58, roofHeight * 0.88, shelterDepth * 0.15 + size * 0.04]}
+            fontSize={size * 0.085}
+            text="BUS"
+          />
         </group>
       ))}
     </>
@@ -554,17 +645,11 @@ export function WorldRoadSigns({
             </mesh>
 
             {/* Destination label */}
-            <Text
+            <CanvasLabel
               position={[-size * 0.13, poleHeight * 0.78, size * 0.041]}
               fontSize={size * 0.105}
-              color="#ffffff"
-              anchorX="center"
-              anchorY="middle"
-              maxWidth={size * 0.62}
-              textAlign="center"
-            >
-              {sign.destination}
-            </Text>
+              text={sign.destination}
+            />
 
             {/* Arrow shaft */}
             <mesh position={[size * 0.38, poleHeight * 0.78, size * 0.045]}>
@@ -643,15 +728,11 @@ export function WorldRoadsideShops({
             <WorldMaterial tone="sign" />
           </mesh>
 
-          <Text
+          <CanvasLabel
             position={[0, wallHeight * 0.88, shopDepth * 0.49 + size * 0.03]}
             fontSize={size * 0.105}
-            color="#ffffff"
-            anchorX="center"
-            anchorY="middle"
-          >
-            SHOP
-          </Text>
+            text="SHOP"
+          />
 
           {/* Product crates */}
           {[-1, 1].map((side) => (
@@ -1063,11 +1144,79 @@ export function WorldHouse({
         </mesh>
       )}
 
+      {/* Raised sheet-metal seams add a subtle corrugated-roof finish to market blocks. */}
+      {isMarket &&
+        architecture.roof !== "pitched" &&
+        Array.from({ length: 7 }, (_, seam) => (
+          <mesh
+            key={`market-roof-seam-${seam}`}
+            position={[((seam - 3) / 3) * width * 0.46, height + 0.505, 0]}
+            castShadow
+          >
+            <boxGeometry args={[0.035, 0.025, depth * 0.82]} />
+            <WorldMaterial tone="metal" />
+          </mesh>
+        ))}
+
+      {/* Market roof drainage: shallow eaves channels and a corner downpipe. */}
+      {isMarket && architecture.roof !== "pitched" && (
+        <group>
+          {[-1, 1].map((side) => (
+            <group
+              key={`market-gutter-${side}`}
+              position={[0, height + 0.285, side * (depth / 2 + 0.16)]}
+            >
+              <mesh>
+                <boxGeometry args={[width + 0.3, 0.055, 0.09]} />
+                <WorldMaterial tone="metal" />
+              </mesh>
+              {[-1, 1].map((lip) => (
+                <mesh key={`gutter-lip-${lip}`} position={[0, 0.035, lip * 0.035]}>
+                  <boxGeometry args={[width + 0.3, 0.035, 0.018]} />
+                  <WorldMaterial tone="metal" />
+                </mesh>
+              ))}
+            </group>
+          ))}
+          {/* The downpipe runs from the gutter to ground level instead of stopping above the foundation. */}
+          <mesh position={[width * 0.47, height * 0.5 + 0.155, depth / 2 + 0.16]}>
+            <boxGeometry args={[0.055, height + 0.31, 0.055]} />
+            <WorldMaterial tone="metal" />
+          </mesh>
+          <mesh position={[width * 0.47, 0.3, depth / 2 + 0.12]} rotation={[Math.PI / 2, 0, 0]}>
+            <cylinderGeometry args={[0.028, 0.028, 0.12, 8]} />
+            <WorldMaterial tone="metal" />
+          </mesh>
+        </group>
+      )}
+
       {/* Front entrance */}
       <mesh position={[0, WORLD_SCALE.door / 2 + 0.18, depth / 2 + 0.04]}>
         <boxGeometry args={[isMarket ? width * 0.48 : width * 0.3, WORLD_SCALE.door, 0.08]} />
         <WorldMaterial tone="timber" />
       </mesh>
+
+      {detailed && (
+        <group position={[0, 0, depth / 2 + 0.095]}>
+          {[-1, 1].map((side) => (
+            <mesh
+              key={`door-jamb-${side}`}
+              position={[
+                side * ((isMarket ? width * 0.48 : width * 0.3) / 2 + 0.035),
+                WORLD_SCALE.door / 2 + 0.18,
+                0,
+              ]}
+            >
+              <boxGeometry args={[0.055, WORLD_SCALE.door + 0.08, 0.045]} />
+              <WorldMaterial tone="concrete" />
+            </mesh>
+          ))}
+          <mesh position={[0, WORLD_SCALE.door + 0.22, 0]}>
+            <boxGeometry args={[(isMarket ? width * 0.48 : width * 0.3) + 0.12, 0.065, 0.055]} />
+            <WorldMaterial tone="concrete" />
+          </mesh>
+        </group>
+      )}
 
       {/* Detailed windows */}
       {detailed &&
@@ -1087,12 +1236,24 @@ export function WorldHouse({
               <boxGeometry args={[0.035, height * 0.25, 0.025]} />
               <WorldMaterial tone="metal" />
             </mesh>
+            <mesh position={[0, height * 0.16, 0.015]}>
+              <boxGeometry args={[width * 0.23, Math.max(0.035, height * 0.035), 0.065]} />
+              <WorldMaterial tone="concrete" />
+            </mesh>
+            <mesh position={[0, -height * 0.16, 0.015]}>
+              <boxGeometry args={[width * 0.24, Math.max(0.04, height * 0.045), 0.085]} />
+              <WorldMaterial tone="concrete" />
+            </mesh>
           </group>
         ))}
 
-      {detailed && architecture.windowGrilles &&
+      {detailed &&
+        architecture.windowGrilles &&
         windowPositions.map((x, index) => (
-          <group key={`security-grille-${index}`} position={[x, height * 0.65 + 0.18, depth / 2 + 0.105]}>
+          <group
+            key={`security-grille-${index}`}
+            position={[x, height * 0.65 + 0.18, depth / 2 + 0.105]}
+          >
             {[-1, 0, 1].map((bar) => (
               <mesh key={`grille-bar-${bar}`} position={[bar * 0.045, 0, 0]}>
                 <boxGeometry args={[0.025, height * 0.3, 0.025]} />
@@ -1258,11 +1419,37 @@ export function WorldHouse({
             </mesh>
           ))}
           {[-1, 1].map((side) => (
-            <mesh key={`awning-support-${side}`} position={[side * width * 0.44, -height * 0.35, 0.22]}>
+            <mesh
+              key={`awning-support-${side}`}
+              position={[side * width * 0.44, -height * 0.35, 0.22]}
+            >
               <boxGeometry args={[0.055, height * 0.7, 0.055]} />
               <WorldMaterial tone="metal" />
             </mesh>
           ))}
+          {/* Small bracket arms visually tie the awning back into the facade. */}
+          {[-1, 1].map((side) => (
+            <mesh
+              key={`awning-bracket-${side}`}
+              position={[side * width * 0.37, -height * 0.05, -0.04]}
+              rotation={[0, 0, side * -0.32]}
+            >
+              <boxGeometry args={[0.045, height * 0.32, 0.055]} />
+              <WorldMaterial tone="metal" />
+            </mesh>
+          ))}
+          {/* Food premises get a short segmented fabric valance beneath the serving awning. */}
+          {variant === "food" &&
+            Array.from({ length: 5 }, (_, segment) => (
+              <mesh
+                key={`food-awning-valance-${segment}`}
+                position={[(segment - 2) * width * 0.215, -0.145, 0.31]}
+                castShadow
+              >
+                <boxGeometry args={[width * 0.19, 0.12, 0.045]} />
+                <WorldMaterial tone={segment % 2 === 0 ? "linen" : architecture.accent} />
+              </mesh>
+            ))}
         </group>
       )}
       {architecture.frontage === "portico" && (
@@ -1272,7 +1459,11 @@ export function WorldHouse({
             <WorldMaterial tone={architecture.accent} />
           </mesh>
           {[-1, 1].map((side) => (
-            <mesh key={`portico-column-${side}`} position={[side * width * 0.29, -height * 0.25, 0.18]} castShadow>
+            <mesh
+              key={`portico-column-${side}`}
+              position={[side * width * 0.29, -height * 0.25, 0.18]}
+              castShadow
+            >
               <boxGeometry args={[0.13, height * 0.5, 0.13]} />
               <WorldMaterial tone="linen" />
             </mesh>
@@ -1286,7 +1477,10 @@ export function WorldHouse({
             <WorldMaterial tone={architecture.accent} />
           </mesh>
           {[-1, 0, 1].map((side) => (
-            <mesh key={`canopy-support-${side}`} position={[side * width * 0.42, -height * 0.38, 0.28]}>
+            <mesh
+              key={`canopy-support-${side}`}
+              position={[side * width * 0.42, -height * 0.38, 0.28]}
+            >
               <boxGeometry args={[0.07, height * 0.76, 0.07]} />
               <WorldMaterial tone="metal" />
             </mesh>

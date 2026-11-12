@@ -4,56 +4,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Newspaper, Trophy } from "lucide-react";
 import { PaletteSelect } from "@/components/ui/palette-select";
+import { loadGameUpdates, sortGameUpdates } from "@/lib/game-updates";
 
 export type CommunityPhoneApp =
   "Calendar" | "Food Delivery" | "Okada Rides" | "Contribution" | "Leaderboard" | "Town News";
-
-type ExternalNewsItem = {
-  id: string;
-  title: string;
-  sourceName: string;
-  sourceUrl: string;
-  publishedAt: string | null;
-};
 
 type TownRank = { rank: number; name: string; score: number };
 type TownPost = { id: string; category: string; title: string; body: string; created_at: string };
 type TownReaction = { post_id: string; user_id: string };
 type TownComment = { id: string; post_id: string; body: string; created_at: string };
-
-function useExternalNews(region: "nigeria" | "world", enabled: boolean) {
-  const [items, setItems] = useState<ExternalNewsItem[]>([]);
-  const [state, setState] = useState<"loading" | "ready" | "unavailable">("loading");
-
-  useEffect(() => {
-    if (!enabled) return;
-    let live = true;
-    async function load() {
-      setState("loading");
-      try {
-        const { data } = await supabase.auth.getSession();
-        if (!data.session?.access_token) throw new Error("No active session");
-        const response = await fetch(`/api/news?region=${region}`, {
-          headers: { Authorization: `Bearer ${data.session.access_token}` },
-        });
-        if (!response.ok) throw new Error("News is unavailable");
-        const payload = (await response.json()) as { items?: ExternalNewsItem[] };
-        if (live) {
-          setItems(payload.items ?? []);
-          setState("ready");
-        }
-      } catch {
-        if (live) setState("unavailable");
-      }
-    }
-    void load();
-    return () => {
-      live = false;
-    };
-  }, [region, enabled]);
-
-  return { items, state };
-}
 
 function AppCard({ children }: { children: ReactNode }) {
   return <div className="phone-local-card">{children}</div>;
@@ -61,8 +20,6 @@ function AppCard({ children }: { children: ReactNode }) {
 
 export function CommunityPhoneApps({ app }: { app: CommunityPhoneApp }) {
   const queryClient = useQueryClient();
-  const [newsRegion, setNewsRegion] = useState<"nigeria" | "world">("nigeria");
-  const externalNews = useExternalNews(newsRegion, app === "Town News");
   const [postTitle, setPostTitle] = useState("");
   const [postBody, setPostBody] = useState("");
   const [postCategory, setPostCategory] = useState("Community");
@@ -86,6 +43,11 @@ export function CommunityPhoneApps({ app }: { app: CommunityPhoneApp }) {
       if (error) throw error;
       return (Array.isArray(data) ? data : []) as TownRank[];
     },
+  });
+  const gameUpdates = useQuery({
+    queryKey: ["phoneGameUpdates"],
+    enabled: app === "Town News",
+    queryFn: loadGameUpdates,
   });
   const townPosts = useQuery({
     queryKey: ["phoneTownNewsPosts"],
@@ -164,7 +126,7 @@ export function CommunityPhoneApps({ app }: { app: CommunityPhoneApp }) {
   });
   if (app === "Leaderboard")
     return (
-      <div className="phone-local-app" aria-label="Town leaderboard">
+      <div className="phone-local-app leaderboard-app" aria-label="Town leaderboard">
         <header>
           <Trophy aria-hidden="true" />
           <span>
@@ -172,7 +134,7 @@ export function CommunityPhoneApps({ app }: { app: CommunityPhoneApp }) {
             <small>This week · community activity</small>
           </span>
         </header>
-        <ol className="phone-local-ranks">
+        <ol className="phone-local-ranks leaderboard-ranks">
           {leaderboard.isLoading ? (
             <li role="status">Loading town rankings...</li>
           ) : leaderboard.isError ? (
@@ -206,56 +168,34 @@ export function CommunityPhoneApps({ app }: { app: CommunityPhoneApp }) {
         <Newspaper aria-hidden="true" />
         <span>
           <strong>News feed</strong>
-          <small>Nigeria, world, and town updates</small>
+          <small>Town updates</small>
         </span>
       </header>
-      <div className="phone-local-tabs" role="tablist" aria-label="News source">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={newsRegion === "nigeria"}
-          onClick={() => setNewsRegion("nigeria")}
-        >
-          Nigeria
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={newsRegion === "world"}
-          onClick={() => setNewsRegion("world")}
-        >
-          World
-        </button>
-      </div>
-      <div className="phone-local-list">
-        {externalNews.state === "loading" ? (
+      <section className="phone-news-section" aria-labelledby="phone-game-updates">
+        <h3 id="phone-game-updates">Game updates</h3>
+        {gameUpdates.isLoading && (
           <AppCard>
-            <small>Updating {newsRegion === "nigeria" ? "Nigeria" : "world"} headlines…</small>
-          </AppCard>
-        ) : externalNews.state === "ready" && externalNews.items.length ? (
-          externalNews.items.map((story) => (
-            <AppCard key={story.id}>
-              <div>
-                <small>
-                  {story.sourceName}
-                  {story.publishedAt
-                    ? ` · ${new Date(story.publishedAt).toLocaleDateString("en-NG")}`
-                    : ""}
-                </small>
-                <strong>{story.title}</strong>
-              </div>
-              <a href={story.sourceUrl} target="_blank" rel="noreferrer">
-                Read
-              </a>
-            </AppCard>
-          ))
-        ) : (
-          <AppCard>
-            <small>
-              Live headlines are temporarily unavailable. Town updates are still available below.
-            </small>
+            <small>Loading game updates...</small>
           </AppCard>
         )}
+        {gameUpdates.isError && (
+          <AppCard>
+            <small role="alert">Game updates could not be loaded.</small>
+          </AppCard>
+        )}
+        {sortGameUpdates(gameUpdates.data ?? []).map((update) => (
+          <AppCard key={update.id}>
+            <small>
+              {update.app} ·{" "}
+              {new Date(`${update.publishedOn}T00:00:00`).toLocaleDateString("en-NG")}
+            </small>
+            <strong>{update.title}</strong>
+            <span>{update.summary}</span>
+          </AppCard>
+        ))}
+      </section>
+      <div className="phone-local-list">
+        <h3 className="phone-news-section">Town posts</h3>
         {townPosts.isLoading ? (
           <AppCard>
             <small>Loading town posts...</small>
