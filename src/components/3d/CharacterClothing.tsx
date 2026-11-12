@@ -40,11 +40,13 @@ export function CharacterClothing({
   height,
   colours,
   show,
+  patterned = false,
 }: {
   variant: BodyVariant;
   height: number;
   colours: ClothingColours;
   show: { shirt: boolean; trousers: boolean; shoes: boolean };
+  patterned?: boolean;
 }) {
   const body = useBodyGeometry(variant);
   const shirt = useGarment(body, "shirt");
@@ -54,19 +56,80 @@ export function CharacterClothing({
   return (
     <group name="garments">
       {show.shirt ? (
-        <mesh geometry={shirt} scale={height} castShadow receiveShadow>
-          <WorldMaterial color={colours.shirt} />
-        </mesh>
+        <group name="tailored-shirt">
+          <mesh geometry={shirt} scale={height} castShadow receiveShadow>
+            <WorldMaterial color={colours.shirt} />
+          </mesh>
+          {/* A raised collar, centre placket, buttons and pocket make the top read as clothing. */}
+          <mesh position={[0, height * 0.815, height * 0.018]} rotation={[Math.PI / 2, 0, 0]}>
+            <torusGeometry args={[height * 0.047, height * 0.009, 5, 16]} />
+            <WorldMaterial color="#e9e1d2" />
+          </mesh>
+          <mesh position={[0, height * 0.665, height * 0.113]}>
+            <boxGeometry args={[height * 0.012, height * 0.19, height * 0.008]} />
+            <WorldMaterial color="#d8c8a8" />
+          </mesh>
+          {[0.72, 0.67, 0.62].map((y) => (
+            <mesh key={y} position={[height * 0.009, height * y, height * 0.12]}>
+              <sphereGeometry args={[height * 0.009, 6, 5]} />
+              <WorldMaterial color="#e9e1d2" />
+            </mesh>
+          ))}
+          <mesh position={[-height * 0.075, height * 0.65, height * 0.115]}>
+            <boxGeometry args={[height * 0.075, height * 0.07, height * 0.009]} />
+            <WorldMaterial color={colours.shirt} />
+          </mesh>
+          <mesh position={[-height * 0.075, height * 0.65, height * 0.121]}>
+            <boxGeometry args={[height * 0.055, height * 0.003, height * 0.003]} />
+            <WorldMaterial color="#d8c8a8" />
+          </mesh>
+          {patterned
+            ? Array.from({ length: 12 }, (_, index) => {
+                const column = index % 4;
+                const row = Math.floor(index / 4);
+                return (
+                  <mesh
+                    key={index}
+                    position={[
+                      height * (-0.075 + column * 0.05),
+                      height * (0.57 + row * 0.055),
+                      height * 0.116,
+                    ]}
+                    rotation={[0, 0, Math.PI / 4]}
+                  >
+                    <boxGeometry args={[height * 0.018, height * 0.018, height * 0.004]} />
+                    <WorldMaterial color="#e9e2d0" />
+                  </mesh>
+                );
+              })
+            : null}
+        </group>
       ) : null}
       {show.trousers ? (
-        <mesh geometry={trousers} scale={height} castShadow receiveShadow>
-          <WorldMaterial color={colours.trousers} />
-        </mesh>
+        <group name="tailored-trousers">
+          <mesh geometry={trousers} scale={height} castShadow receiveShadow>
+            <WorldMaterial color={colours.trousers} />
+          </mesh>
+          {[-1, 1].map((side) => (
+            <mesh key={side} position={[side * height * 0.105, height * 0.29, height * 0.09]}>
+              <boxGeometry args={[height * 0.006, height * 0.31, height * 0.004]} />
+              <WorldMaterial color="#b8aa91" />
+            </mesh>
+          ))}
+        </group>
       ) : null}
       {show.shoes ? (
-        <mesh geometry={shoes} scale={height} castShadow receiveShadow>
-          <WorldMaterial color={colours.shoes} />
-        </mesh>
+        <group name="finished-shoes">
+          <mesh geometry={shoes} scale={height} castShadow receiveShadow>
+            <WorldMaterial color={colours.shoes} />
+          </mesh>
+          {[-1, 1].map((side) => (
+            <mesh key={side} position={[side * height * 0.075, height * 0.014, height * 0.025]}>
+              <boxGeometry args={[height * 0.12, height * 0.018, height * 0.19]} />
+              <WorldMaterial color="#242321" />
+            </mesh>
+          ))}
+        </group>
       ) : null}
       {colours.cap ? (
         <mesh geometry={cap} scale={height} castShadow receiveShadow>

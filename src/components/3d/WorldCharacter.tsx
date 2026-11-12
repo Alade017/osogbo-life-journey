@@ -207,6 +207,7 @@ export function WorldCharacter({
               variant={bodyVariant}
               height={h}
               colours={clothing}
+              patterned={CHARACTER_CLOTH.patternedOutfits.includes(safe.outfit)}
               show={{ shirt: showFittedTop, trousers: !BottomModel, shoes: !ShoesModel }}
             />
           )}
