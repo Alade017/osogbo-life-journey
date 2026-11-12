@@ -1,5 +1,22 @@
 import { describe, expect, it } from "vitest";
-import { isValidTownMobilityLoop, townPedestrianClearanceRadius, isValidTownPedestrianRoute, measureTownMobilityLoop, deriveTownMobilityRoutes, deriveTownPedestrianCornerRoutes, deriveTownPedestrianCrossingRoutes, deriveTownPedestrianRoutes, deriveTownSidewalkCells, stitchTownPedestrianRoutes, TownPedestrianJunctionScheduler, TownTrafficJunctionScheduler, townMobilityRouteIdentity, townRoadJunctionIdentity, townPedestrianCrossingIdentity, TownRoadCrossingPriorityScheduler } from "@/game/town-mobility";
+import {
+  isValidTownMobilityLoop,
+  townPedestrianClearanceRadius,
+  isValidTownPedestrianRoute,
+  measureTownMobilityLoop,
+  deriveTownMobilityRoutes,
+  deriveTownPedestrianCornerRoutes,
+  deriveTownPedestrianCrossingRoutes,
+  deriveTownPedestrianRoutes,
+  deriveTownSidewalkCells,
+  stitchTownPedestrianRoutes,
+  TownPedestrianJunctionScheduler,
+  TownTrafficJunctionScheduler,
+  townMobilityRouteIdentity,
+  townRoadJunctionIdentity,
+  townPedestrianCrossingIdentity,
+  TownRoadCrossingPriorityScheduler,
+} from "@/game/town-mobility";
 import town from "@/data/osogbo-town.json";
 
 describe("pedestrian junction clearance", () => {
@@ -13,12 +30,45 @@ describe("pedestrian junction clearance", () => {
 
 describe("pedestrian route validation", () => {
   it("rejects non-finite and zero-length trails before NPC assignment", () => {
-    expect(isValidTownPedestrianRoute([[0, 0], [1, 0]])).toBe(true);
-    expect(isValidTownPedestrianRoute([[0, 0], [0, 0]])).toBe(false);
-    expect(isValidTownPedestrianRoute([[0, 0], [0, 0], [1, 0]])).toBe(false);
-    expect(isValidTownPedestrianRoute([[0, 0], [1, 0], [1, 0], [2, 0]])).toBe(false);
-    expect(isValidTownPedestrianRoute([[0, 0], [Number.NaN, 1]])).toBe(false);
-    expect(isValidTownPedestrianRoute([[0, 0], [Number.POSITIVE_INFINITY, 1]])).toBe(false);
+    expect(
+      isValidTownPedestrianRoute([
+        [0, 0],
+        [1, 0],
+      ]),
+    ).toBe(true);
+    expect(
+      isValidTownPedestrianRoute([
+        [0, 0],
+        [0, 0],
+      ]),
+    ).toBe(false);
+    expect(
+      isValidTownPedestrianRoute([
+        [0, 0],
+        [0, 0],
+        [1, 0],
+      ]),
+    ).toBe(false);
+    expect(
+      isValidTownPedestrianRoute([
+        [0, 0],
+        [1, 0],
+        [1, 0],
+        [2, 0],
+      ]),
+    ).toBe(false);
+    expect(
+      isValidTownPedestrianRoute([
+        [0, 0],
+        [Number.NaN, 1],
+      ]),
+    ).toBe(false);
+    expect(
+      isValidTownPedestrianRoute([
+        [0, 0],
+        [Number.POSITIVE_INFINITY, 1],
+      ]),
+    ).toBe(false);
   });
 });
 
@@ -44,39 +94,91 @@ describe("town mobility input validation", () => {
 
 describe("traffic loop validation", () => {
   it("rejects malformed or non-traversable vehicle loops", () => {
-    expect(isValidTownMobilityLoop([[0, 0], [1, 0], [1, 1], [0, 1]])).toBe(true);
-    expect(isValidTownMobilityLoop([[0, 0], [1, 0]])).toBe(false);
-    expect(isValidTownMobilityLoop([[0, 0], [1, 0], [2, 0]])).toBe(false);
-    expect(isValidTownMobilityLoop([[0, 0], [1, 0], [1, 1], [1, 0]])).toBe(false);
-    expect(isValidTownMobilityLoop([[0, 0], [Number.NaN, 1], [1, 1]])).toBe(false);
-    expect(isValidTownMobilityLoop([[0, 0], [0, 0], [1, 1]])).toBe(false);
+    expect(
+      isValidTownMobilityLoop([
+        [0, 0],
+        [1, 0],
+        [1, 1],
+        [0, 1],
+      ]),
+    ).toBe(true);
+    expect(
+      isValidTownMobilityLoop([
+        [0, 0],
+        [1, 0],
+      ]),
+    ).toBe(false);
+    expect(
+      isValidTownMobilityLoop([
+        [0, 0],
+        [1, 0],
+        [2, 0],
+      ]),
+    ).toBe(false);
+    expect(
+      isValidTownMobilityLoop([
+        [0, 0],
+        [1, 0],
+        [1, 1],
+        [1, 0],
+      ]),
+    ).toBe(false);
+    expect(
+      isValidTownMobilityLoop([
+        [0, 0],
+        [Number.NaN, 1],
+        [1, 1],
+      ]),
+    ).toBe(false);
+    expect(
+      isValidTownMobilityLoop([
+        [0, 0],
+        [0, 0],
+        [1, 1],
+      ]),
+    ).toBe(false);
     expect(isValidTownMobilityLoop([[0, 0]])).toBe(false);
   });
 });
 
 describe("town traffic loop measurement", () => {
   it("measures only finite, traversable edges in a closed traffic loop", () => {
-    expect(measureTownMobilityLoop([[0, 0], [0.0005, 0], [1, 0], [Number.NaN, 2]])).toBeCloseTo(1);
-    expect(measureTownMobilityLoop([[0, 0], [0.0005, 0], [0, 0]])).toBe(0);
+    expect(
+      measureTownMobilityLoop([
+        [0, 0],
+        [0.0005, 0],
+        [1, 0],
+        [Number.NaN, 2],
+      ]),
+    ).toBeCloseTo(1);
+    expect(
+      measureTownMobilityLoop([
+        [0, 0],
+        [0.0005, 0],
+        [0, 0],
+      ]),
+    ).toBe(0);
   });
 });
 
 describe("town mobility routes", () => {
   it("builds one closed loop for each adjacent road-grid block", () => {
-    const routes = deriveTownMobilityRoutes(town.grid.rows, town.grid.cellSize, town.grid.cellSize * 0.22);
+    const routes = deriveTownMobilityRoutes(
+      town.grid.rows,
+      town.grid.cellSize,
+      town.grid.cellSize * 0.22,
+    );
 
     expect(routes.every((route) => route.length === 4)).toBe(true);
     expect(routes.every((route) => isValidTownMobilityLoop(route))).toBe(true);
-    const keys = routes.map((route) => route.map(([x, z]) => `${x.toFixed(3)},${z.toFixed(3)}`).join("|"));
+    const keys = routes.map((route) =>
+      route.map(([x, z]) => `${x.toFixed(3)},${z.toFixed(3)}`).join("|"),
+    );
     expect(new Set(keys).size).toBe(routes.length);
   });
 
   it("keeps the traffic path inset from each road centreline by the requested offset", () => {
-    const routes = deriveTownMobilityRoutes(
-      ["rrrrr", "rgggr", "rgggr", "rrrrr"],
-      2,
-      0.25,
-    );
+    const routes = deriveTownMobilityRoutes(["rrrrr", "rgggr", "rgggr", "rrrrr"], 2, 0.25);
 
     expect(routes).toEqual([
       [
@@ -89,10 +191,7 @@ describe("town mobility routes", () => {
   });
 
   it("rejects a rectangular loop when either vertical road edge is broken", () => {
-    const routes = deriveTownMobilityRoutes(
-      ["rrrrr", "rgggr", "rgggg", "rrrrr"],
-      2,
-    );
+    const routes = deriveTownMobilityRoutes(["rrrrr", "rgggr", "rgggg", "rrrrr"], 2);
 
     expect(routes).toEqual([]);
   });
@@ -113,9 +212,7 @@ describe("town mobility routes", () => {
     // The danfo body is 0.72 units wide; leave a visible gap between opposing lanes.
     expect(laneSeparation).toBeGreaterThan(0.72);
   });
-
 });
-
 
 describe("town sidewalk cells", () => {
   it("returns unique grass cells directly adjacent to roads", () => {
@@ -127,9 +224,14 @@ describe("town sidewalk cells", () => {
     for (const [x, z] of cells) {
       expect(town.grid.rows[z]?.[x]).toBe("g");
       expect(
-        [[0, -1], [0, 1], [-1, 0], [1, 0]].some(([dx, dz]) =>
-          town.grid.rows[z + dz]?.[x + dx] === "r",
-        ),
+        (
+          [
+            [0, -1],
+            [0, 1],
+            [-1, 0],
+            [1, 0],
+          ] as const
+        ).some(([dx, dz]) => town.grid.rows[z + dz]?.[x + dx] === "r"),
       ).toBe(true);
     }
   });
@@ -140,10 +242,26 @@ describe("pedestrian sidewalk corner routes", () => {
     const routes = deriveTownPedestrianCornerRoutes(["rrr", "rgr", "rrr"], 2);
 
     expect(routes).toEqual([
-      [[-2, -0.72], [-0.72, -0.72], [-0.72, -2]],
-      [[2, -0.72], [0.72, -0.72], [0.72, -2]],
-      [[-2, 0.72], [-0.72, 0.72], [-0.72, 2]],
-      [[2, 0.72], [0.72, 0.72], [0.72, 2]],
+      [
+        [-2, -0.72],
+        [-0.72, -0.72],
+        [-0.72, -2],
+      ],
+      [
+        [2, -0.72],
+        [0.72, -0.72],
+        [0.72, -2],
+      ],
+      [
+        [-2, 0.72],
+        [-0.72, 0.72],
+        [-0.72, 2],
+      ],
+      [
+        [2, 0.72],
+        [0.72, 0.72],
+        [0.72, 2],
+      ],
     ]);
   });
 
@@ -153,27 +271,52 @@ describe("pedestrian sidewalk corner routes", () => {
 
   it("finds only unique, geometrically valid outer corners in the authored town grid", () => {
     const routes = deriveTownPedestrianCornerRoutes(town.grid.rows, town.grid.cellSize);
-    const keys = routes.map((route) => route.map(([x, z]) => `${x.toFixed(3)},${z.toFixed(3)}`).join("|"));
+    const keys = routes.map((route) =>
+      route.map(([x, z]) => `${x.toFixed(3)},${z.toFixed(3)}`).join("|"),
+    );
     expect(routes.length).toBeGreaterThan(0);
     expect(new Set(keys).size).toBe(routes.length);
-    expect(routes.every((route) => route.length === 3 && isValidTownPedestrianRoute(route))).toBe(true);
+    expect(routes.every((route) => route.length === 3 && isValidTownPedestrianRoute(route))).toBe(
+      true,
+    );
   });
 });
 
 describe("town pedestrian routes", () => {
-  const blockedCells = [
+  const blockedCells: (readonly [number, number])[] = [
     ...town.grid.buildings.flatMap((building) =>
-      [0, 1].flatMap((dx) => [0, 1].map((dz) => [building.x + dx, building.z + dz] as const)),
+      [0, 1].flatMap((dx) =>
+        [0, 1].map((dz): readonly [number, number] => [building.x + dx, building.z + dz]),
+      ),
     ),
-    ...town.grid.waterCells,
-    ...town.grid.plotCells,
-  ];
 
+    ...town.grid.waterCells.map((cell) => {
+      const x = cell[0];
+      const z = cell[1];
+
+      if (x === undefined || z === undefined) {
+        throw new Error("Invalid water cell coordinates.");
+      }
+
+      return [x, z] as const;
+    }),
+
+    ...town.grid.plotCells.map((cell) => {
+      const x = cell[0];
+      const z = cell[1];
+
+      if (x === undefined || z === undefined) {
+        throw new Error("Invalid plot cell coordinates.");
+      }
+
+      return [x, z] as const;
+    }),
+  ];
   it("centres pedestrian waypoints on unblocked rendered sidewalk strips", () => {
     const routes = deriveTownPedestrianRoutes(town.grid.rows, town.grid.cellSize, blockedCells);
     const blocked = new Set(blockedCells.map(([x, z]) => `${x},${z}`));
     const columnCount = Math.max(...town.grid.rows.map((row) => row.length));
-    const expectedOffset = town.grid.cellSize / 2 + town.grid.cellSize * 0.28 / 2;
+    const expectedOffset = town.grid.cellSize / 2 + (town.grid.cellSize * 0.28) / 2;
 
     expect(routes.length).toBeGreaterThan(0);
     for (const route of routes) {
@@ -183,23 +326,51 @@ describe("town pedestrian routes", () => {
         const gridZ = worldZ / town.grid.cellSize + (town.grid.rows.length - 1) / 2;
         const offset = expectedOffset / town.grid.cellSize;
         const candidates = [
-          { roadX: Math.round(gridX - offset), roadZ: Math.round(gridZ), sideX: 1, sideZ: 0, dx: gridX - Math.round(gridX - offset), dz: gridZ - Math.round(gridZ) },
-          { roadX: Math.round(gridX + offset), roadZ: Math.round(gridZ), sideX: -1, sideZ: 0, dx: gridX - Math.round(gridX + offset), dz: gridZ - Math.round(gridZ) },
-          { roadX: Math.round(gridX), roadZ: Math.round(gridZ - offset), sideX: 0, sideZ: 1, dx: gridX - Math.round(gridX), dz: gridZ - Math.round(gridZ - offset) },
-          { roadX: Math.round(gridX), roadZ: Math.round(gridZ + offset), sideX: 0, sideZ: -1, dx: gridX - Math.round(gridX), dz: gridZ - Math.round(gridZ + offset) },
+          {
+            roadX: Math.round(gridX - offset),
+            roadZ: Math.round(gridZ),
+            sideX: 1,
+            sideZ: 0,
+            dx: gridX - Math.round(gridX - offset),
+            dz: gridZ - Math.round(gridZ),
+          },
+          {
+            roadX: Math.round(gridX + offset),
+            roadZ: Math.round(gridZ),
+            sideX: -1,
+            sideZ: 0,
+            dx: gridX - Math.round(gridX + offset),
+            dz: gridZ - Math.round(gridZ),
+          },
+          {
+            roadX: Math.round(gridX),
+            roadZ: Math.round(gridZ - offset),
+            sideX: 0,
+            sideZ: 1,
+            dx: gridX - Math.round(gridX),
+            dz: gridZ - Math.round(gridZ - offset),
+          },
+          {
+            roadX: Math.round(gridX),
+            roadZ: Math.round(gridZ + offset),
+            sideX: 0,
+            sideZ: -1,
+            dx: gridX - Math.round(gridX),
+            dz: gridZ - Math.round(gridZ + offset),
+          },
         ];
-        const matching = candidates.find(({ roadX, roadZ, sideX, sideZ, dx, dz }) =>
-          town.grid.rows[roadZ]?.[roadX] === "r"
-          && town.grid.rows[roadZ + sideZ]?.[roadX + sideX] === "g"
-          && !blocked.has(`${roadX + sideX},${roadZ + sideZ}`)
-          && Math.abs(Math.max(Math.abs(dx), Math.abs(dz)) - offset) < 1e-6
-          && Math.min(Math.abs(dx), Math.abs(dz)) < 1e-6
+        const matching = candidates.find(
+          ({ roadX, roadZ, sideX, sideZ, dx, dz }) =>
+            town.grid.rows[roadZ]?.[roadX] === "r" &&
+            town.grid.rows[roadZ + sideZ]?.[roadX + sideX] === "g" &&
+            !blocked.has(`${roadX + sideX},${roadZ + sideZ}`) &&
+            Math.abs(Math.max(Math.abs(dx), Math.abs(dz)) - offset) < 1e-6 &&
+            Math.min(Math.abs(dx), Math.abs(dz)) < 1e-6,
         );
         expect(matching).toBeDefined();
       }
     }
   });
-
 
   it("preserves authored-town pedestrian route coverage before prop reservations", () => {
     const routes = deriveTownPedestrianRoutes(town.grid.rows, town.grid.cellSize, blockedCells);
@@ -214,35 +385,51 @@ describe("town pedestrian routes", () => {
   });
 
   it("splits both sidewalk edges at blocked sidewalk cells", () => {
-    const routes = deriveTownPedestrianRoutes(
-      ["rrrrrrrrr", "ggggggggg", "rrrrrrrrr"],
-      2,
-      [[4, 1]],
-    );
+    const routes = deriveTownPedestrianRoutes(["rrrrrrrrr", "ggggggggg", "rrrrrrrrr"], 2, [[4, 1]]);
 
     expect(routes).toHaveLength(4);
     expect(routes.every((route) => route.length === 4)).toBe(true);
   });
 });
 
-
 describe("stitched pedestrian sidewalk network", () => {
   it("joins straight runs through a shared corner connector without losing geometry", () => {
     const routes = stitchTownPedestrianRoutes([
-      [[-2, -0.72], [0, -0.72]],
-      [[0, -0.72], [0.72, -0.72], [0.72, -2]],
+      [
+        [-2, -0.72],
+        [0, -0.72],
+      ],
+      [
+        [0, -0.72],
+        [0.72, -0.72],
+        [0.72, -2],
+      ],
     ]);
 
     expect(routes).toEqual([
-      [[-2, -0.72], [0, -0.72], [0.72, -0.72], [0.72, -2]],
+      [
+        [-2, -0.72],
+        [0, -0.72],
+        [0.72, -0.72],
+        [0.72, -2],
+      ],
     ]);
   });
 
   it("splits at junction branches instead of arbitrarily routing through them", () => {
     const routes = stitchTownPedestrianRoutes([
-      [[-1, 0], [0, 0]],
-      [[0, 0], [1, 0]],
-      [[0, 0], [0, 1]],
+      [
+        [-1, 0],
+        [0, 0],
+      ],
+      [
+        [0, 0],
+        [1, 0],
+      ],
+      [
+        [0, 0],
+        [0, 1],
+      ],
     ]);
 
     expect(routes).toHaveLength(3);
@@ -251,8 +438,16 @@ describe("stitched pedestrian sidewalk network", () => {
 
   it("retains every valid segment exactly once", () => {
     const input = [
-      [[0, 0], [1, 0], [2, 0]],
-      [[2, 0], [2, 1], [2, 2]],
+      [
+        [0, 0],
+        [1, 0],
+        [2, 0],
+      ],
+      [
+        [2, 0],
+        [2, 1],
+        [2, 2],
+      ],
     ] as const;
     const output = stitchTownPedestrianRoutes(input);
     const segmentCount = output.reduce((sum, route) => sum + route.length - 1, 0);
@@ -263,16 +458,24 @@ describe("stitched pedestrian sidewalk network", () => {
 
   it("consumes closed degree-two loops without dropping or duplicating edges", () => {
     const output = stitchTownPedestrianRoutes([
-      [[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]],
+      [
+        [0, 0],
+        [1, 0],
+        [1, 1],
+        [0, 1],
+        [0, 0],
+      ],
     ]);
-    const edgeKeys = output.flatMap((route) => route.slice(1).map((point, index) => {
-      const previous = route[index]!;
-      const currentKey = `${point[0]},${point[1]}`;
-      const previousKey = `${previous[0]},${previous[1]}`;
-      return previousKey < currentKey
-        ? `${previousKey}|${currentKey}`
-        : `${currentKey}|${previousKey}`;
-    }));
+    const edgeKeys = output.flatMap((route) =>
+      route.slice(1).map((point, index) => {
+        const previous = route[index]!;
+        const currentKey = `${point[0]},${point[1]}`;
+        const previousKey = `${previous[0]},${previous[1]}`;
+        return previousKey < currentKey
+          ? `${previousKey}|${currentKey}`
+          : `${currentKey}|${previousKey}`;
+      }),
+    );
 
     expect(output).toHaveLength(1);
     expect(output[0]).toHaveLength(5);
@@ -281,36 +484,75 @@ describe("stitched pedestrian sidewalk network", () => {
   });
 });
 
-
 describe("pedestrian route stitching edge deduplication", () => {
   it("skips segments containing non-finite coordinates without losing valid segments", () => {
     const routes = stitchTownPedestrianRoutes([
-      [[0, 0], [1, 0], [Number.NaN, 2], [2, 0], [3, 0]],
-      [[3, 0], [Number.POSITIVE_INFINITY, 1]],
+      [
+        [0, 0],
+        [1, 0],
+        [Number.NaN, 2],
+        [2, 0],
+        [3, 0],
+      ],
+      [
+        [3, 0],
+        [Number.POSITIVE_INFINITY, 1],
+      ],
     ]);
 
-    expect(routes).toEqual([[[0, 0], [1, 0]], [[2, 0], [3, 0]]]);
+    expect(routes).toEqual([
+      [
+        [0, 0],
+        [1, 0],
+      ],
+      [
+        [2, 0],
+        [3, 0],
+      ],
+    ]);
     expect(routes.flat().every(([x, z]) => Number.isFinite(x) && Number.isFinite(z))).toBe(true);
   });
 
   it("does not duplicate a shared segment supplied in opposite directions", () => {
     const routes = stitchTownPedestrianRoutes([
-      [[0, 0], [1, 0]],
-      [[1, 0], [0, 0]],
+      [
+        [0, 0],
+        [1, 0],
+      ],
+      [
+        [1, 0],
+        [0, 0],
+      ],
     ]);
 
-    expect(routes).toEqual([[[0, 0], [1, 0]]]);
+    expect(routes).toEqual([
+      [
+        [0, 0],
+        [1, 0],
+      ],
+    ]);
   });
 
   it("discards zero-length and near-zero segments without breaking valid runs", () => {
     const routes = stitchTownPedestrianRoutes([
-      [[0, 0], [0, 0], [0.0005, 0], [1, 0], [2, 0]],
+      [
+        [0, 0],
+        [0, 0],
+        [0.0005, 0],
+        [1, 0],
+        [2, 0],
+      ],
     ]);
 
-    expect(routes).toEqual([[[0.0005, 0], [1, 0], [2, 0]]]);
+    expect(routes).toEqual([
+      [
+        [0.0005, 0],
+        [1, 0],
+        [2, 0],
+      ],
+    ]);
   });
 });
-
 
 describe("pedestrian junction reservations", () => {
   it("grants exclusive access and serves queued pedestrians in arrival order", () => {
@@ -355,26 +597,58 @@ describe("pedestrian junction reservations", () => {
   });
 });
 
-
 describe("stable traffic route identities", () => {
   it("keeps a route identity when unrelated routes are inserted before it", () => {
-    const first = [[0, 0], [4, 0], [4, 3], [0, 3]] as const;
-    const added = [[10, 0], [14, 0], [14, 3], [10, 3]] as const;
+    const first = [
+      [0, 0],
+      [4, 0],
+      [4, 3],
+      [0, 3],
+    ] as const;
+    const added = [
+      [10, 0],
+      [14, 0],
+      [14, 3],
+      [10, 3],
+    ] as const;
     expect(townMobilityRouteIdentity(first)).toBe(townMobilityRouteIdentity(first));
     expect([added, first].map(townMobilityRouteIdentity)[1]).toBe(townMobilityRouteIdentity(first));
   });
 
   it("rejects invalid loops rather than assigning an unstable identity", () => {
-    expect(townMobilityRouteIdentity([[0, 0], [1, 0]])).toBe("");
-    expect(townMobilityRouteIdentity([[0, 0], [Number.NaN, 1], [1, 1]])).toBe("");
+    expect(
+      townMobilityRouteIdentity([
+        [0, 0],
+        [1, 0],
+      ]),
+    ).toBe("");
+    expect(
+      townMobilityRouteIdentity([
+        [0, 0],
+        [Number.NaN, 1],
+        [1, 1],
+      ]),
+    ).toBe("");
   });
 
   it("distinguishes different route geometry", () => {
-    expect(townMobilityRouteIdentity([[0, 0], [4, 0], [4, 3], [0, 3]]))
-      .not.toBe(townMobilityRouteIdentity([[0, 0], [5, 0], [5, 3], [0, 3]]));
+    expect(
+      townMobilityRouteIdentity([
+        [0, 0],
+        [4, 0],
+        [4, 3],
+        [0, 3],
+      ]),
+    ).not.toBe(
+      townMobilityRouteIdentity([
+        [0, 0],
+        [5, 0],
+        [5, 3],
+        [0, 3],
+      ]),
+    );
   });
 });
-
 
 describe("ambient traffic junction reservations", () => {
   it("grants one vehicle clearance and queues competing vehicles deterministically", () => {
@@ -409,7 +683,6 @@ describe("ambient traffic junction reservations", () => {
   });
 });
 
-
 describe("pedestrian junction reservation lifecycle", () => {
   it("keeps one pedestrian in a junction and serves waiting pedestrians in order", () => {
     const scheduler = new TownPedestrianJunctionScheduler();
@@ -443,12 +716,15 @@ describe("pedestrian junction reservation lifecycle", () => {
   });
 });
 
-
 describe("pedestrian routes through rendered zebra crossings", () => {
   it("connects opposite clear sidewalks at a four-way road intersection", () => {
     const routes = deriveTownPedestrianCrossingRoutes([".g.", "rrr", ".g."], 2);
     expect(routes).toHaveLength(1);
-    expect(routes[0]).toEqual([[0, -1.28], [0, 0], [0, 1.28]]);
+    expect(routes[0]).toEqual([
+      [0, -1.28],
+      [0, 0],
+      [0, 1.28],
+    ]);
   });
 
   it("does not create a crossing when either sidewalk landing is blocked", () => {
@@ -463,8 +739,46 @@ describe("pedestrian routes through rendered zebra crossings", () => {
   });
 });
 
-
 describe("shared pedestrian and vehicle crossing priority", () => {
+  it("does not let a waiting pedestrian block vehicles during vehicle-green", () => {
+    const junction = "road-junction:4,8";
+    const scheduler = new TownRoadCrossingPriorityScheduler();
+
+    scheduler.setSignalizedJunctions([junction]);
+
+    let vehicleGranted = false;
+
+    for (let second = 0; second <= 48 && !vehicleGranted; second += 1) {
+      scheduler.advanceTime(second);
+
+      if (scheduler.getSignalPhase(junction) !== "vehicle-green") {
+        continue;
+      }
+
+      // The pedestrian queues first but cannot cross during vehicle-green.
+      expect(scheduler.request(junction, "pedestrian-1", "pedestrian")).toBe(false);
+
+      // The waiting pedestrian must not block an eligible vehicle.
+      vehicleGranted = scheduler.request(junction, "vehicle-1", "vehicle");
+    }
+
+    expect(vehicleGranted).toBe(true);
+
+    scheduler.release(junction, "vehicle-1");
+
+    let pedestrianGranted = false;
+
+    for (let second = 49; second <= 96 && !pedestrianGranted; second += 1) {
+      scheduler.advanceTime(second);
+
+      if (scheduler.getSignalPhase(junction) === "pedestrian-walk") {
+        pedestrianGranted = scheduler.request(junction, "pedestrian-1", "pedestrian");
+      }
+    }
+
+    expect(pedestrianGranted).toBe(true);
+  });
+
   it("gives waiting pedestrians priority over vehicles when a junction clears", () => {
     const scheduler = new TownRoadCrossingPriorityScheduler();
     expect(scheduler.request("road-junction:4,8", "vehicle-1", "vehicle")).toBe(true);
@@ -516,9 +830,19 @@ describe("shared pedestrian and vehicle crossing priority", () => {
   });
 
   it("identifies only straight symmetric three-point zebra-crossing routes", () => {
-    const crossing = [[0, -1.28], [0, 0], [0, 1.28]] as const;
+    const crossing = [
+      [0, -1.28],
+      [0, 0],
+      [0, 1.28],
+    ] as const;
     expect(townPedestrianCrossingIdentity(crossing)).toBe(townRoadJunctionIdentity(0, 0));
-    expect(townPedestrianCrossingIdentity([[0, 0], [1, 0], [1, 1]])).toBe("");
+    expect(
+      townPedestrianCrossingIdentity([
+        [0, 0],
+        [1, 0],
+        [1, 1],
+      ]),
+    ).toBe("");
     expect(townRoadJunctionIdentity(Number.NaN, 0)).toBe("");
   });
   it("advances through a deterministic timed signal cycle without moving backwards", () => {
@@ -530,15 +854,16 @@ describe("shared pedestrian and vehicle crossing priority", () => {
       scheduler.advanceTime(second);
       const phase = scheduler.getSignalPhase("road-junction:4,8");
       phases.add(phase);
-      const expectedSignal = phase === "vehicle-green" ? "go" : phase === "amber" ? "caution" : "stop";
+      const expectedSignal =
+        phase === "vehicle-green" ? "go" : phase === "amber" ? "caution" : "stop";
       expect(scheduler.getSignalState("road-junction:4,8")).toBe(expectedSignal);
     }
     const phaseAtFortyEight = scheduler.getSignalPhase("road-junction:4,8");
     scheduler.advanceTime(12);
     expect(scheduler.getSignalPhase("road-junction:4,8")).toBe(phaseAtFortyEight);
-    expect(phases).toEqual(new Set([
-      "vehicle-green", "amber", "all-red", "pedestrian-walk", "clearance",
-    ]));
+    expect(phases).toEqual(
+      new Set(["vehicle-green", "amber", "all-red", "pedestrian-walk", "clearance"]),
+    );
   });
 
   it("does not impose timed lights on unsignalized junctions", () => {

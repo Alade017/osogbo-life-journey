@@ -1,7 +1,11 @@
 import { expect, it } from "vitest";
 import town from "@/data/osogbo-town.json";
 import { MAP_LANDMARK_LOCATION_SLUG } from "@/components/map/map-location-links";
-import { getLocationVenueDesign, hasBuildingVenueInterior, hasLocationVenueDesign } from "@/lib/location-venue-designs";
+import {
+  getLocationVenueDesign,
+  hasBuildingVenueInterior,
+  hasLocationVenueDesign,
+} from "@/lib/location-venue-designs";
 import { validateTownMapData } from "@/game/town-map-validation";
 
 type AuthoredPlace = {
@@ -64,7 +68,12 @@ it("keeps the authored road network connected", () => {
   for (let cursor = 0; cursor < queue.length; cursor++) {
     const current = queue[cursor]!;
     const [x = 0, z = 0] = current.split(",").map(Number);
-    for (const [dx, dz] of [[0, -1], [0, 1], [-1, 0], [1, 0]] as const) {
+    for (const [dx, dz] of [
+      [0, -1],
+      [0, 1],
+      [-1, 0],
+      [1, 0],
+    ] as const) {
       const neighbor = `${x + dx},${z + dz}`;
       if (!roads.has(neighbor) || visited.has(neighbor)) continue;
       visited.add(neighbor);
@@ -89,7 +98,6 @@ it("passes the full map data validator", () => {
   expect(validateTownMapData(town)).toEqual([]);
 });
 
-
 it("provides dedicated interior designs for authored enterable landmarks", () => {
   const enterablePlaces = places.filter(
     (place) => Boolean(place.buildingType) && typeof place.locationSlug === "string",
@@ -100,9 +108,7 @@ it("provides dedicated interior designs for authored enterable landmarks", () =>
     expect(hasLocationVenueDesign(place.locationSlug!)).toBe(true);
     const design = getLocationVenueDesign(place.locationSlug!, place.id);
     expect(design.fixtures.length).toBeGreaterThan(0);
-    expect(new Set(design.fixtures.map((item) => item.id)).size).toBe(
-      design.fixtures.length,
-    );
+    expect(new Set(design.fixtures.map((item) => item.id)).size).toBe(design.fixtures.length);
   }
 
   // Oja-Oba is an authored map landmark with its own location slug, although

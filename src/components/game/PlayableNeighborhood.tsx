@@ -425,6 +425,7 @@ export function PlayableNeighborhood() {
     npcPositionOverrides,
     npcQuery.data,
     simulation.gameTime,
+    simulation.paused,
   ]);
   const localPlaces =
     placesQuery.data?.filter((place) => place.location_id === currentLocation?.id) ?? [];
@@ -435,8 +436,10 @@ export function PlayableNeighborhood() {
       ? hasShopOffers
       : selectedShopSlug !== null &&
         (shopItemsQuery.data?.some(
-          (offer) => offer.shop?.location_id === currentLocation?.id && offer.shop.slug === selectedShopSlug,
-        ) ?? false);
+          (offer) =>
+            offer.shop?.location_id === currentLocation?.id && offer.shop.slug === selectedShopSlug,
+        ) ??
+          false);
   const hasBankServices =
     currentLocation?.type === "bank" ||
     localPlaces.some((place) => place.category === "bank" || place.category === "atm");
@@ -474,7 +477,6 @@ export function PlayableNeighborhood() {
   }, [
     activeNpcs,
     area,
-    area.objects,
     district?.personalHome,
     hasBankServices,
     hasCareerServices,
@@ -754,7 +756,10 @@ export function PlayableNeighborhood() {
   ];
   const changeZoom = (factor: number) => {
     setZoom((current) =>
-      Math.min(NEIGHBORHOOD_CAMERA.maxZoom, Math.max(NEIGHBORHOOD_CAMERA.minZoom, current * factor)),
+      Math.min(
+        NEIGHBORHOOD_CAMERA.maxZoom,
+        Math.max(NEIGHBORHOOD_CAMERA.minZoom, current * factor),
+      ),
     );
   };
 
@@ -1047,7 +1052,11 @@ export function PlayableNeighborhood() {
                               {activityLandmarkId && (
                                 <a
                                   className="neighborhood-action-card"
-                                  href={"/map?landmark=" + encodeURIComponent(activityLandmarkId) + "&details=1"}
+                                  href={
+                                    "/map?landmark=" +
+                                    encodeURIComponent(activityLandmarkId) +
+                                    "&details=1"
+                                  }
                                 >
                                   <Landmark size={18} aria-hidden="true" />
                                   View official place activities
@@ -1065,7 +1074,9 @@ export function PlayableNeighborhood() {
                               )}
                               {selectedShopSlug === null && (
                                 <p className="text-sm text-muted-foreground">
-                                  This stall does not have its own server-backed shop catalogue yet. Browse the main Oja-Oba stalls for the currently available market offers.
+                                  This stall does not have its own server-backed shop catalogue yet.
+                                  Browse the main Oja-Oba stalls for the currently available market
+                                  offers.
                                 </p>
                               )}
                               {hasBankServices && (
@@ -1110,7 +1121,7 @@ export function PlayableNeighborhood() {
                               >
                                 Back to building actions
                               </button>
-                              <MarketPage shopSlug={selectedShopSlug} />
+                              <MarketPage shopSlug={selectedShopSlug ?? null} />
                             </>
                           )}
                           {businessView === "bank" && (

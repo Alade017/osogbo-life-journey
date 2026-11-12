@@ -2,7 +2,8 @@ import type { WorldTone } from "../components/3d/world-theme";
 import type { WorldMapCategory } from "../lib/city-world";
 
 export type BuildingRoofProfile = "pitched" | "flat" | "parapet";
-export type BuildingFrontageProfile = "veranda" | "awning" | "portico" | "canopy" | "recessed" | "plain";
+export type BuildingFrontageProfile =
+  "veranda" | "awning" | "portico" | "canopy" | "recessed" | "plain";
 
 export type DistrictArchitecture = {
   roof: BuildingRoofProfile;
@@ -57,7 +58,22 @@ export function districtArchitectureVariantForCategory(
 export function getDistrictArchitecture(variant: string | null | undefined): DistrictArchitecture {
   const key = variant?.trim().toLowerCase() ?? "";
   const canonical = VARIANT_ALIASES[key] ?? key;
-  return ARCHITECTURE[canonical] ?? ARCHITECTURE.residential!;
+
+  const architecture = ARCHITECTURE[canonical];
+
+  if (architecture) {
+    return architecture;
+  }
+
+  const residentialFallback = ARCHITECTURE["residential"];
+
+  if (!residentialFallback) {
+    throw new Error(
+      'District architecture configuration is missing the required "residential" fallback.',
+    );
+  }
+
+  return residentialFallback;
 }
 
 export type PitchedRoofPanel = {
@@ -67,7 +83,10 @@ export type PitchedRoofPanel = {
 };
 
 /** Returns two matching roof panels whose inner edges meet at the ridge. */
-export function getPitchedRoofPanel(side: "left" | "right", buildingWidth: number): PitchedRoofPanel {
+export function getPitchedRoofPanel(
+  side: "left" | "right",
+  buildingWidth: number,
+): PitchedRoofPanel {
   return {
     positionX: side === "left" ? -buildingWidth * 0.25 : buildingWidth * 0.25,
     width: buildingWidth * 0.5,

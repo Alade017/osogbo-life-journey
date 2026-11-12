@@ -35,36 +35,58 @@ export function validateTownMapData(data: TownMapValidationInput): string[] {
   const roadSymbol = Object.entries(data.meta.legend).find(([, label]) => label === "road")?.[0];
   const grassSymbol = Object.entries(data.meta.legend).find(([, label]) => label === "grass")?.[0];
 
-  if (!Number.isInteger(columns) || columns < 1) errors.push("Grid column count must be a positive integer.");
-  if (!Number.isInteger(expectedRows) || expectedRows < 1) errors.push("Grid row count must be a positive integer.");
+  if (!Number.isInteger(columns) || columns < 1)
+    errors.push("Grid column count must be a positive integer.");
+  if (!Number.isInteger(expectedRows) || expectedRows < 1)
+    errors.push("Grid row count must be a positive integer.");
   if (!Number.isFinite(metaCellSize) || metaCellSize <= 0 || cellSize !== metaCellSize) {
     errors.push("Grid cell size must be finite, positive and consistent with metadata.");
   }
   if (rows.length !== expectedRows) errors.push("Authored row count does not match grid metadata.");
 
   rows.forEach((row, z) => {
-    if (row.length !== columns) errors.push(`Grid row ${z} has ${row.length} columns; expected ${columns}.`);
+    if (row.length !== columns)
+      errors.push(`Grid row ${z} has ${row.length} columns; expected ${columns}.`);
     for (const symbol of row) {
-      if (!tileSymbols.has(symbol)) errors.push(`Grid row ${z} contains unknown tile symbol "${symbol}".`);
+      if (!tileSymbols.has(symbol))
+        errors.push(`Grid row ${z} contains unknown tile symbol "${symbol}".`);
     }
   });
 
   const inBounds = (x: number, z: number) =>
-    Number.isInteger(x) && Number.isInteger(z) && x >= 0 && z >= 0 && x < columns && z < expectedRows;
+    Number.isInteger(x) &&
+    Number.isInteger(z) &&
+    x >= 0 &&
+    z >= 0 &&
+    x < columns &&
+    z < expectedRows;
 
   const districtIds = new Set<string>();
   for (const district of data.districts) {
-    if (!district.id || districtIds.has(district.id)) errors.push(`District ID is missing or duplicated: "${district.id}".`);
+    if (!district.id || districtIds.has(district.id))
+      errors.push(`District ID is missing or duplicated: "${district.id}".`);
     districtIds.add(district.id);
     const { x, z, width, depth } = district.gridArea;
-    if (![x, z, width, depth].every(Number.isFinite) || !Number.isInteger(x) || !Number.isInteger(z) ||
-      !Number.isInteger(width) || !Number.isInteger(depth) || width < 1 || depth < 1 ||
-      x < 0 || z < 0 || x + width > columns || z + depth > expectedRows) {
+    if (
+      ![x, z, width, depth].every(Number.isFinite) ||
+      !Number.isInteger(x) ||
+      !Number.isInteger(z) ||
+      !Number.isInteger(width) ||
+      !Number.isInteger(depth) ||
+      width < 1 ||
+      depth < 1 ||
+      x < 0 ||
+      z < 0 ||
+      x + width > columns ||
+      z + depth > expectedRows
+    ) {
       errors.push(`District "${district.id}" has an invalid or out-of-bounds grid area.`);
     }
-    if (district.shape && (district.shape.length < 3 || district.shape.some(
-      (point) => point.length !== 2 || !point.every(Number.isFinite),
-    ))) {
+    if (
+      district.shape &&
+      (district.shape.length < 3 ||
+        district.shape.some((point) => point.length !== 2 || !point.every(Number.isFinite)))
+    ) {
       errors.push(`District "${district.id}" has an invalid outline shape.`);
     }
   }
@@ -84,21 +106,33 @@ export function validateTownMapData(data: TownMapValidationInput): string[] {
 
   const landmarkIds = new Set<string>();
   for (const landmark of data.landmarks) {
-    if (!landmark.id || landmarkIds.has(landmark.id)) errors.push(`Landmark ID is missing or duplicated: "${landmark.id}".`);
+    if (!landmark.id || landmarkIds.has(landmark.id))
+      errors.push(`Landmark ID is missing or duplicated: "${landmark.id}".`);
     landmarkIds.add(landmark.id);
-    if (!inBounds(landmark.grid.x, landmark.grid.z)) errors.push(`Landmark "${landmark.id}" is outside the map grid.`);
-    if ((landmark.x !== undefined && !Number.isFinite(landmark.x)) ||
-      (landmark.y !== undefined && !Number.isFinite(landmark.y))) {
+    if (!inBounds(landmark.grid.x, landmark.grid.z))
+      errors.push(`Landmark "${landmark.id}" is outside the map grid.`);
+    if (
+      (landmark.x !== undefined && !Number.isFinite(landmark.x)) ||
+      (landmark.y !== undefined && !Number.isFinite(landmark.y))
+    ) {
       errors.push(`Landmark "${landmark.id}" has invalid label coordinates.`);
     }
     if (landmark.districtId && !districtIds.has(landmark.districtId)) {
-      errors.push(`Landmark "${landmark.id}" references unknown district "${landmark.districtId}".`);
+      errors.push(
+        `Landmark "${landmark.id}" references unknown district "${landmark.districtId}".`,
+      );
     } else if (landmark.districtId) {
       const district = data.districts.find((item) => item.id === landmark.districtId)!;
       const area = district.gridArea;
-      if (landmark.grid.x < area.x || landmark.grid.z < area.z ||
-        landmark.grid.x >= area.x + area.width || landmark.grid.z >= area.z + area.depth) {
-        errors.push(`Landmark "${landmark.id}" is outside its assigned district "${landmark.districtId}".`);
+      if (
+        landmark.grid.x < area.x ||
+        landmark.grid.z < area.z ||
+        landmark.grid.x >= area.x + area.width ||
+        landmark.grid.z >= area.z + area.depth
+      ) {
+        errors.push(
+          `Landmark "${landmark.id}" is outside its assigned district "${landmark.districtId}".`,
+        );
       }
     }
   }
@@ -114,7 +148,9 @@ export function validateTownMapData(data: TownMapValidationInput): string[] {
     if (!landmark) {
       errors.push(`Building "${building.placeId}" has no matching landmark.`);
     } else if (landmark.grid.x !== building.x || landmark.grid.z !== building.z) {
-      errors.push(`Building "${building.placeId}" does not share its landmark's authored grid anchor.`);
+      errors.push(
+        `Building "${building.placeId}" does not share its landmark's authored grid anchor.`,
+      );
     }
     if (!inBounds(building.x, building.z) || !inBounds(building.x + 1, building.z + 1)) {
       errors.push(`Building "${building.placeId}" footprint is outside the map grid.`);
@@ -125,20 +161,26 @@ export function validateTownMapData(data: TownMapValidationInput): string[] {
         const key = `${x},${z}`;
         const previousBuilding = occupiedBuildingCells.get(key);
         if (previousBuilding) {
-          errors.push(`Buildings "${previousBuilding}" and "${building.placeId}" overlap at ${key}.`);
+          errors.push(
+            `Buildings "${previousBuilding}" and "${building.placeId}" overlap at ${key}.`,
+          );
         } else {
           occupiedBuildingCells.set(key, building.placeId);
         }
         if (roadSymbol && rows[z]?.[x] === roadSymbol) {
           errors.push(`Building "${building.placeId}" overlaps a road at ${x},${z}.`);
         }
-        const reservedKind = data.grid.waterCells.some(([cellX, cellZ]) => cellX === x && cellZ === z)
+        const reservedKind = data.grid.waterCells.some(
+          ([cellX, cellZ]) => cellX === x && cellZ === z,
+        )
           ? "water"
           : data.grid.plotCells.some(([cellX, cellZ]) => cellX === x && cellZ === z)
             ? "plot"
             : undefined;
         if (reservedKind) {
-          errors.push(`Building "${building.placeId}" overlaps reserved ${reservedKind} terrain at ${key}.`);
+          errors.push(
+            `Building "${building.placeId}" overlaps reserved ${reservedKind} terrain at ${key}.`,
+          );
         }
       }
     }
@@ -154,14 +196,20 @@ export function validateTownMapData(data: TownMapValidationInput): string[] {
     if (!landmark.buildingType && !landmark.mapObjectType) {
       errors.push(`Map-only landmark "${landmark.id}" must declare its map object type.`);
     }
-    if (landmark.mapObjectType && !["landmark", "junction", "poi"].includes(landmark.mapObjectType)) {
+    if (
+      landmark.mapObjectType &&
+      !["landmark", "junction", "poi"].includes(landmark.mapObjectType)
+    ) {
       errors.push(`Landmark "${landmark.id}" has an unsupported map object type.`);
     }
   }
 
   const reservedCells = new Set<string>();
   const reservedKinds = new Map<string, "water" | "plot">();
-  for (const [kind, cells] of [["water", data.grid.waterCells], ["plot", data.grid.plotCells]] as const) {
+  for (const [kind, cells] of [
+    ["water", data.grid.waterCells],
+    ["plot", data.grid.plotCells],
+  ] as const) {
     for (const cell of cells) {
       const x = cell[0] ?? Number.NaN;
       const z = cell[1] ?? Number.NaN;
@@ -173,18 +221,22 @@ export function validateTownMapData(data: TownMapValidationInput): string[] {
       }
       if (reservedCells.has(key)) {
         const previousKind = reservedKinds.get(key);
-        errors.push(previousKind === kind
-          ? `Map cell ${key} is reserved more than once.`
-          : `Map cell ${key} is assigned to both ${previousKind} and ${kind}.`);
+        errors.push(
+          previousKind === kind
+            ? `Map cell ${key} is reserved more than once.`
+            : `Map cell ${key} is assigned to both ${previousKind} and ${kind}.`,
+        );
       }
       reservedCells.add(key);
       reservedKinds.set(key, kind);
-      const building = data.grid.buildings.find((item) =>
-        x >= item.x && x <= item.x + 1 && z >= item.z && z <= item.z + 1,
+      const building = data.grid.buildings.find(
+        (item) => x >= item.x && x <= item.x + 1 && z >= item.z && z <= item.z + 1,
       );
       if (building) errors.push(`${kind} cell ${key} overlaps building "${building.placeId}".`);
       if (grassSymbol && rows[z]?.[x] !== grassSymbol) {
-        errors.push(`${kind} cell ${key} must be placed on a grass tile, not a road or another terrain tile.`);
+        errors.push(
+          `${kind} cell ${key} must be placed on a grass tile, not a road or another terrain tile.`,
+        );
       }
     }
   }
@@ -201,7 +253,8 @@ export function validateTownMapData(data: TownMapValidationInput): string[] {
       const reservedKind = reservedKinds.get(key);
       if (reservedKind) errors.push(`Road cell ${key} overlaps reserved ${reservedKind} terrain.`);
     }
-    if (roadCells.length === 0) errors.push("The authored map must contain a connected road network.");
+    if (roadCells.length === 0)
+      errors.push("The authored map must contain a connected road network.");
     if (roadCells.length > 0) {
       const roadKeys = new Set(roadCells.map(([x, z]) => `${x},${z}`));
       const visited = new Set<string>();
@@ -211,13 +264,20 @@ export function validateTownMapData(data: TownMapValidationInput): string[] {
         const key = `${x},${z}`;
         if (visited.has(key)) continue;
         visited.add(key);
-        for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+        for (const [dx, dz] of [
+          [1, 0],
+          [-1, 0],
+          [0, 1],
+          [0, -1],
+        ] as const) {
           const next = `${x + dx},${z + dz}`;
           if (roadKeys.has(next) && !visited.has(next)) queue.push([x + dx, z + dz]);
         }
       }
       if (visited.size !== roadCells.length) {
-        errors.push(`Road network is disconnected: ${visited.size} of ${roadCells.length} road cells are reachable.`);
+        errors.push(
+          `Road network is disconnected: ${visited.size} of ${roadCells.length} road cells are reachable.`,
+        );
       }
     }
   }

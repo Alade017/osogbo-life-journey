@@ -204,10 +204,11 @@ function calculateBadgePositions(
 }
 
 export function R3FTownSurface(props: Props) {
+  const { onUnavailable } = props;
   const [hovered, setHovered] = useState<string | null>(null);
   useEffect(() => {
-    if (townMapValidationErrors.length > 0) props.onUnavailable();
-  }, [props.onUnavailable]);
+    if (townMapValidationErrors.length > 0) onUnavailable();
+  }, [onUnavailable]);
   const gesture = useRef({ x: 0, y: 0, moved: false });
   const clockTime = useRealOrGameClock();
   const { isNight } = daylightFor(clockTime.hour, clockTime.minute);
@@ -1010,10 +1011,29 @@ export function R3FTownSurface(props: Props) {
     const buildingCells = town.grid.buildings.flatMap((building) =>
       [0, 1].flatMap((dx) => [0, 1].map((dz) => [building.x + dx, building.z + dz] as const)),
     );
+
+    const toTuple = (cell: readonly number[]): readonly [number, number] | undefined => {
+      const [x, z] = cell;
+
+      if (x === undefined || z === undefined) {
+        return undefined;
+      }
+
+      return [x, z];
+    };
+
+    const waterCells = town.grid.waterCells
+      .map(toTuple)
+      .filter((cell): cell is readonly [number, number] => cell !== undefined);
+
+    const plotCells = town.grid.plotCells
+      .map(toTuple)
+      .filter((cell): cell is readonly [number, number] => cell !== undefined);
+
     const blockedCells: (readonly [number, number])[] = [
       ...buildingCells,
-      ...town.grid.waterCells,
-      ...town.grid.plotCells,
+      ...waterCells,
+      ...plotCells,
     ];
     const reservedPropCells = new Set<string>();
     const reserveWorldPosition = (x: number, z: number) => {
@@ -1123,13 +1143,17 @@ export function R3FTownSurface(props: Props) {
           <WorldRoads items={roads} />
           <WorldRoadMarkings items={roadMarkings} />
           <WorldPedestrianCrossings items={pedestrianCrossings} />
-          <WorldTrafficLights positions={trafficLights} size={cell} getSignalState={(junctionId) => crossingScheduler.getSignalState(junctionId)} />
+          <WorldTrafficLights
+            positions={trafficLights}
+            size={cell}
+            getSignalState={(junctionId) => crossingScheduler.getSignalState(junctionId)}
+          />
           <WorldCars positions={cars} size={cell} />
           <WorldSidewalks sidewalks={sidewalks} curbs={curbs} />
           <WorldBusStops
             positions={busStops}
             size={cell}
-            onSelectTransit={() => onSelectLandmark("transit-park")}
+            onSelectTransit={() => props.onSelectLandmark("transit-park")}
           />
           <WorldRoadSigns positions={roadSigns} size={cell} />
           <WorldRoadsideShops positions={roadsideShops} size={cell} />
@@ -1172,13 +1196,13 @@ export function R3FTownSurface(props: Props) {
           <MovingTraffic3D
             paths={trafficRoutes}
             crossingScheduler={crossingScheduler}
-            onSelectTransit={() => onSelectLandmark("transit-park")}
+            onSelectTransit={() => props.onSelectLandmark("transit-park")}
           />
           <MovingPedestrians3D
             paths={pedestrianRoutes}
             crossingScheduler={crossingScheduler}
             busStopPositions={busStops}
-            onSelectTransit={() => onSelectLandmark("transit-park")}
+            onSelectTransit={() => props.onSelectLandmark("transit-park")}
           />
           <LockedPlaces3D
             cellSize={cell}

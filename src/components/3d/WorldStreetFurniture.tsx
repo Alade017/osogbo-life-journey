@@ -42,8 +42,14 @@ export function WorldStreetFurniture({
       for (let slat = 0; slat < slatCount; slat += 1) {
         const across = ((slat + 0.5) / slatCount - 0.5) * width * 0.9;
         benchSlats.push(
-          { position: [x + across, 0.55, z], scale: [width * 0.88 / slatCount * 0.78, 0.075, depth] },
-          { position: [x + across, 0.88, z - depth * 0.4], scale: [width * 0.88 / slatCount * 0.78, 0.075, 0.1] },
+          {
+            position: [x + across, 0.55, z],
+            scale: [((width * 0.88) / slatCount) * 0.78, 0.075, depth],
+          },
+          {
+            position: [x + across, 0.88, z - depth * 0.4],
+            scale: [((width * 0.88) / slatCount) * 0.78, 0.075, 0.1],
+          },
         );
       }
       for (const side of [-1, 1]) {
@@ -75,7 +81,13 @@ export function WorldStreetFurniture({
       frames.push({ position: [x, 0.75, z], scale: [0.1, 1.5, 0.1] });
       panels.push({ position: [x, 1.45, z], scale: [panelWidth, 0.55, 0.1] });
       if (item.label?.trim()) {
-        signLabels.push({ id: `${kind}-${x}-${z}`, x, z, width: panelWidth, label: item.label.trim() });
+        signLabels.push({
+          id: `${kind}-${x}-${z}`,
+          x,
+          z,
+          width: panelWidth,
+          label: item.label.trim(),
+        });
       }
     }
   }

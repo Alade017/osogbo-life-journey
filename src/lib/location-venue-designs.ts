@@ -32,7 +32,8 @@ function fixture(
 const venues: Readonly<Record<string, LocationVenueDesign>> = {
   "oja-oba": {
     name: "Oja-Oba trading hall",
-    description: "An Osogbo-inspired covered market interior with produce, staple-goods and household trading spaces.",
+    description:
+      "An Osogbo-inspired covered market interior with produce, staple-goods and household trading spaces.",
     floorColor: "#cdbb92",
     wallColor: "#e5d3ad",
     accentColor: "#c77a3b",
@@ -747,10 +748,7 @@ export function hasLocationVenueDesign(slug: string) {
  * A null shop slug marks a sub-building stall without its own enterable interior.
  * Undefined keeps the legacy district-wide venue behaviour for existing locations.
  */
-export function hasBuildingVenueInterior(
-  locationSlug: string,
-  shopSlug?: string | null,
-) {
+export function hasBuildingVenueInterior(locationSlug: string, shopSlug?: string | null) {
   return shopSlug !== null && hasLocationVenueDesign(locationSlug);
 }
 

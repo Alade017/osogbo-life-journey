@@ -1,4 +1,6 @@
-export type TownMobilityRoute = readonly [number, number][];
+export type TownMobilityPoint = readonly [number, number];
+
+export type TownMobilityRoute = readonly TownMobilityPoint[];
 
 /** Returns unique grass cells directly beside a road, where sidewalks are rendered. */
 export function deriveTownSidewalkCells(rows: readonly string[]): [number, number][] {
@@ -6,7 +8,12 @@ export function deriveTownSidewalkCells(rows: readonly string[]): [number, numbe
   rows.forEach((row, z) => {
     Array.from(row).forEach((tile, x) => {
       if (tile !== "r") return;
-      for (const [dx, dz] of [[0, -1], [0, 1], [-1, 0], [1, 0]] as const) {
+      for (const [dx, dz] of [
+        [0, -1],
+        [0, 1],
+        [-1, 0],
+        [1, 0],
+      ] as const) {
         const sidewalkX = x + dx;
         const sidewalkZ = z + dz;
         if (rows[sidewalkZ]?.[sidewalkX] !== "g") continue;
@@ -42,22 +49,31 @@ export function deriveTownMobilityRoutes(
     for (let bottom = top + 2; bottom < rowCount; bottom += 1) {
       for (let left = 0; left < columnCount - 2; left += 1) {
         for (let right = left + 2; right < columnCount; right += 1) {
-          const perimeterIsRoad = (
-            Array.from({ length: right - left + 1 }, (_, i) => left + i)
-              .every((x) => isRoad(x, top) && isRoad(x, bottom))
-            && Array.from({ length: bottom - top + 1 }, (_, i) => top + i)
-              .every((z) => isRoad(left, z) && isRoad(right, z))
-          );
+          const perimeterIsRoad =
+            Array.from({ length: right - left + 1 }, (_, i) => left + i).every(
+              (x) => isRoad(x, top) && isRoad(x, bottom),
+            ) &&
+            Array.from({ length: bottom - top + 1 }, (_, i) => top + i).every(
+              (z) => isRoad(left, z) && isRoad(right, z),
+            );
           if (!perimeterIsRoad) continue;
 
           // Keep only adjacent road-grid blocks: an uninterrupted internal
           // road edge means this rectangle should be represented by its
           // smaller neighbouring blocks instead.
-          const splitHorizontally = Array.from({ length: bottom - top - 1 }, (_, i) => top + i + 1)
-            .some((z) => Array.from({ length: right - left + 1 }, (_, i) => left + i).every((x) => isRoad(x, z)));
+          const splitHorizontally = Array.from(
+            { length: bottom - top - 1 },
+            (_, i) => top + i + 1,
+          ).some((z) =>
+            Array.from({ length: right - left + 1 }, (_, i) => left + i).every((x) => isRoad(x, z)),
+          );
           if (splitHorizontally) continue;
-          const splitVertically = Array.from({ length: right - left - 1 }, (_, i) => left + i + 1)
-            .some((x) => Array.from({ length: bottom - top + 1 }, (_, i) => top + i).every((z) => isRoad(x, z)));
+          const splitVertically = Array.from(
+            { length: right - left - 1 },
+            (_, i) => left + i + 1,
+          ).some((x) =>
+            Array.from({ length: bottom - top + 1 }, (_, i) => top + i).every((z) => isRoad(x, z)),
+          );
           if (splitVertically) continue;
 
           const inset = laneOffset / cellSize;
@@ -85,16 +101,30 @@ export function deriveTownPedestrianRoutes(
   blockedCells: readonly (readonly [number, number])[],
   sidewalkWidth = cellSize * 0.28,
 ): TownMobilityRoute[] {
-  if (!Number.isFinite(cellSize) || cellSize <= 0 || !Number.isFinite(sidewalkWidth) || sidewalkWidth < 0) return [];
+  if (
+    !Number.isFinite(cellSize) ||
+    cellSize <= 0 ||
+    !Number.isFinite(sidewalkWidth) ||
+    sidewalkWidth < 0
+  )
+    return [];
   const columnCount = Math.max(0, ...rows.map((row) => row.length));
   const blocked = new Set(blockedCells.map(([x, z]) => `${x},${z}`));
-  const lines = new Map<string, { coordinates: Set<number>; orientation: "h" | "v"; fixed: number; side: number }>();
+  const lines = new Map<
+    string,
+    { coordinates: Set<number>; orientation: "h" | "v"; fixed: number; side: number }
+  >();
   const sidewalkOffset = cellSize / 2 + sidewalkWidth / 2;
 
   rows.forEach((row, z) => {
     Array.from(row).forEach((tile, x) => {
       if (tile !== "r") return;
-      for (const [dx, dz] of [[0, -1], [0, 1], [-1, 0], [1, 0]] as const) {
+      for (const [dx, dz] of [
+        [0, -1],
+        [0, 1],
+        [-1, 0],
+        [1, 0],
+      ] as const) {
         const sidewalkX = x + dx;
         const sidewalkZ = z + dz;
         if (rows[sidewalkZ]?.[sidewalkX] !== "g") continue;
@@ -145,7 +175,6 @@ export function deriveTownPedestrianRoutes(
   return routes;
 }
 
-
 /**
  * Connects opposite sidewalk edges through rendered zebra crossings at road
  * intersections. The route is emitted only when both sidewalk landing cells
@@ -157,8 +186,13 @@ export function deriveTownPedestrianCrossingRoutes(
   blockedCells: readonly (readonly [number, number])[] = [],
   sidewalkWidth = cellSize * 0.28,
 ): TownMobilityRoute[] {
-  if (!Number.isFinite(cellSize) || cellSize <= 0
-    || !Number.isFinite(sidewalkWidth) || sidewalkWidth < 0) return [];
+  if (
+    !Number.isFinite(cellSize) ||
+    cellSize <= 0 ||
+    !Number.isFinite(sidewalkWidth) ||
+    sidewalkWidth < 0
+  )
+    return [];
   const columnCount = Math.max(0, ...rows.map((row) => row.length));
   const blocked = new Set(blockedCells.map(([x, z]) => `${x},${z}`));
   const offset = cellSize / 2 + sidewalkWidth / 2;
@@ -200,7 +234,13 @@ export function deriveTownPedestrianCornerRoutes(
   blockedCells: readonly (readonly [number, number])[] = [],
   sidewalkWidth = cellSize * 0.28,
 ): TownMobilityRoute[] {
-  if (!Number.isFinite(cellSize) || cellSize <= 0 || !Number.isFinite(sidewalkWidth) || sidewalkWidth < 0) return [];
+  if (
+    !Number.isFinite(cellSize) ||
+    cellSize <= 0 ||
+    !Number.isFinite(sidewalkWidth) ||
+    sidewalkWidth < 0
+  )
+    return [];
   const columnCount = Math.max(0, ...rows.map((row) => row.length));
   const blocked = new Set(blockedCells.map(([x, z]) => `${x},${z}`));
   const offset = cellSize / 2 - sidewalkWidth / 2;
@@ -219,7 +259,12 @@ export function deriveTownPedestrianCornerRoutes(
           const verticalRoad = [x, z + dz] as const;
           if (rows[horizontalRoad[1]]?.[horizontalRoad[0]] !== "r") continue;
           if (rows[verticalRoad[1]]?.[verticalRoad[0]] !== "r") continue;
-          if ([horizontalRoad, verticalRoad].some(([cellX, cellZ]) => blocked.has(`${cellX},${cellZ}`))) continue;
+          if (
+            [horizontalRoad, verticalRoad].some(([cellX, cellZ]) =>
+              blocked.has(`${cellX},${cellZ}`),
+            )
+          )
+            continue;
 
           const horizontal = toWorld(horizontalRoad[0], horizontalRoad[1]);
           const vertical = toWorld(verticalRoad[0], verticalRoad[1]);
@@ -352,7 +397,6 @@ export class TownPedestrianJunctionScheduler {
   }
 }
 
-
 /**
  * Reserves shared road-junction clearance zones for ambient traffic simulation.
  * This is presentation-only coordination; it is not a multiplayer or travel authority.
@@ -406,28 +450,42 @@ export function townRoadJunctionIdentity(x: number, z: number): string {
 
 /** Identifies the centre of a straight, three-point route through a zebra crossing. */
 export function townPedestrianCrossingIdentity(route: TownMobilityRoute): string {
-  if (route.length !== 3 || !isValidTownPedestrianRoute(route)) return "";
-  const [start, centre, end] = route;
-  const first = [centre[0] - start[0], centre[1] - start[1]];
-  const second = [end[0] - centre[0], end[1] - centre[1]];
+  if (route.length !== 3 || !isValidTownPedestrianRoute(route)) {
+    return "";
+  }
+
+  const start = route[0];
+  const centre = route[1];
+  const end = route[2];
+
+  if (!start || !centre || !end) {
+    return "";
+  }
+
+  const first: readonly [number, number] = [centre[0] - start[0], centre[1] - start[1]];
+
+  const second: readonly [number, number] = [end[0] - centre[0], end[1] - centre[1]];
+
   const cross = first[0] * second[1] - first[1] * second[0];
   const dot = first[0] * second[0] + first[1] * second[1];
-  if (Math.abs(cross) > 0.001 || dot <= 0
-    || Math.abs(Math.hypot(...first) - Math.hypot(...second)) > 0.001) return "";
+
+  if (
+    Math.abs(cross) > 0.001 ||
+    dot <= 0 ||
+    Math.abs(Math.hypot(...first) - Math.hypot(...second)) > 0.001
+  ) {
+    return "";
+  }
+
   return townRoadJunctionIdentity(centre[0], centre[1]);
 }
-
 /**
  * Shared local right-of-way for ambient traffic and pedestrians.
  * Pedestrians receive priority when a junction becomes free; an actor already
  * inside the clearance zone is never pre-empted.
  */
 export type TownTrafficSignalPhase =
-  | "vehicle-green"
-  | "amber"
-  | "all-red"
-  | "pedestrian-walk"
-  | "clearance";
+  "vehicle-green" | "amber" | "all-red" | "pedestrian-walk" | "clearance";
 
 const TOWN_SIGNAL_PHASES: readonly { phase: TownTrafficSignalPhase; duration: number }[] = [
   { phase: "vehicle-green", duration: 12 },
@@ -436,18 +494,26 @@ const TOWN_SIGNAL_PHASES: readonly { phase: TownTrafficSignalPhase; duration: nu
   { phase: "pedestrian-walk", duration: 7 },
   { phase: "clearance", duration: 1 },
 ];
-const TOWN_SIGNAL_CYCLE_SECONDS = TOWN_SIGNAL_PHASES.reduce((total, phase) => total + phase.duration, 0);
+const TOWN_SIGNAL_CYCLE_SECONDS = TOWN_SIGNAL_PHASES.reduce(
+  (total, phase) => total + phase.duration,
+  0,
+);
 
 /** Shared, deterministic signal timing and crossing reservations for the rendered town. */
 export class TownRoadCrossingPriorityScheduler {
   private readonly owners = new Map<string, { id: string; kind: "pedestrian" | "vehicle" }>();
-  private readonly waiters = new Map<string, Array<{ id: string; kind: "pedestrian" | "vehicle" }>>();
+  private readonly waiters = new Map<
+    string,
+    Array<{ id: string; kind: "pedestrian" | "vehicle" }>
+  >();
   private elapsedSeconds: number | null = null;
   private readonly signalizedJunctions = new Set<string>();
 
   setSignalizedJunctions(junctionIds: readonly string[]): void {
     this.signalizedJunctions.clear();
-    junctionIds.forEach((id) => { if (id) this.signalizedJunctions.add(id); });
+    junctionIds.forEach((id) => {
+      if (id) this.signalizedJunctions.add(id);
+    });
   }
 
   /** R3F actors may call this every frame; max() makes multi-caller updates idempotent. */
@@ -467,7 +533,8 @@ export class TownRoadCrossingPriorityScheduler {
 
   getSignalPhase(junctionId: string): TownTrafficSignalPhase {
     if (!junctionId || this.elapsedSeconds === null) return "vehicle-green";
-    let cycleTime = (this.elapsedSeconds + this.phaseOffset(junctionId)) % TOWN_SIGNAL_CYCLE_SECONDS;
+    let cycleTime =
+      (this.elapsedSeconds + this.phaseOffset(junctionId)) % TOWN_SIGNAL_CYCLE_SECONDS;
     for (const phase of TOWN_SIGNAL_PHASES) {
       if (cycleTime < phase.duration) return phase.phase;
       cycleTime -= phase.duration;
@@ -477,46 +544,85 @@ export class TownRoadCrossingPriorityScheduler {
 
   request(junctionId: string, actorId: string, kind: "pedestrian" | "vehicle"): boolean {
     if (!junctionId || !actorId) return false;
+
     const owner = this.owners.get(junctionId);
     if (owner?.id === actorId) return true;
-    const queue = this.waiters.get(junctionId) ?? [];
-    if (!queue.some((item) => item.id === actorId)) {
-      queue.push({ id: actorId, kind });
-      // Stable sorting preserves arrival order within each priority class.
-      queue.sort((a, b) => (a.kind === "pedestrian" ? 0 : 1) - (b.kind === "pedestrian" ? 0 : 1));
-    }
-    this.waiters.set(junctionId, queue);
-    if (owner || queue[0]?.id !== actorId) return false;
 
-    // Preserve the legacy scheduler behaviour in isolated tests/tools until a
-    // live R3F clock is supplied. In the town scene, phase permissions gate entry.
+    const queue = this.waiters.get(junctionId) ?? [];
+    const existingIndex = queue.findIndex((item) => item.id === actorId);
+
+    if (existingIndex === -1) {
+      queue.push({ id: actorId, kind });
+    } else {
+      // Keep an actor's queued priority consistent with its latest request.
+      queue[existingIndex] = { id: actorId, kind };
+    }
+
+    // Preserve pedestrian priority and arrival order at unsignalized junctions.
+    queue.sort((a, b) => (a.kind === "pedestrian" ? 0 : 1) - (b.kind === "pedestrian" ? 0 : 1));
+
+    this.waiters.set(junctionId, queue);
+
+    if (owner) return false;
+
+    let eligibleIndex = 0;
+
     if (this.elapsedSeconds !== null && this.signalizedJunctions.has(junctionId)) {
       const phase = this.getSignalPhase(junctionId);
-      if (kind === "vehicle" && phase !== "vehicle-green") return false;
-      if (kind === "pedestrian" && phase !== "pedestrian-walk") return false;
+
+      const eligibleKind =
+        phase === "vehicle-green" ? "vehicle" : phase === "pedestrian-walk" ? "pedestrian" : null;
+
+      if (!eligibleKind) return false;
+
+      // Select the first waiting actor whose type is permitted by this phase.
+      eligibleIndex = queue.findIndex((item) => item.kind === eligibleKind);
+
+      if (eligibleIndex === -1 || queue[eligibleIndex]?.id !== actorId) {
+        return false;
+      }
+    } else if (queue[0]?.id !== actorId) {
+      return false;
     }
 
-    this.owners.set(junctionId, { id: actorId, kind });
-    queue.shift();
-    if (queue.length === 0) this.waiters.delete(junctionId);
+    const [granted] = queue.splice(eligibleIndex, 1);
+
+    if (!granted) return false;
+
+    this.owners.set(junctionId, granted);
+
+    if (queue.length === 0) {
+      this.waiters.delete(junctionId);
+    }
+
     return true;
   }
 
   release(junctionId: string, actorId: string): void {
     if (!junctionId || !actorId) return;
-    if (this.owners.get(junctionId)?.id === actorId) this.owners.delete(junctionId);
+
+    if (this.owners.get(junctionId)?.id === actorId) {
+      this.owners.delete(junctionId);
+    }
+
     const queue = this.waiters.get(junctionId);
     if (!queue) return;
+
     const remaining = queue.filter((item) => item.id !== actorId);
-    if (remaining.length) this.waiters.set(junctionId, remaining);
-    else this.waiters.delete(junctionId);
+
+    if (remaining.length > 0) {
+      this.waiters.set(junctionId, remaining);
+    } else {
+      this.waiters.delete(junctionId);
+    }
   }
 
   getSignalState(junctionId: string): "stop" | "caution" | "go" {
     if (!junctionId) return "go";
     const owner = this.owners.get(junctionId);
     if (owner?.kind === "pedestrian") return "stop";
-    const pedestrianWaiting = this.waiters.get(junctionId)?.some((actor) => actor.kind === "pedestrian") ?? false;
+    const pedestrianWaiting =
+      this.waiters.get(junctionId)?.some((actor) => actor.kind === "pedestrian") ?? false;
     if (this.elapsedSeconds !== null && this.signalizedJunctions.has(junctionId)) {
       const phase = this.getSignalPhase(junctionId);
       if (phase === "vehicle-green") return "go";
@@ -563,7 +669,6 @@ export function measureTownMobilityLoop(route: TownMobilityRoute): number {
   }, 0);
 }
 
-
 /** Validates an open pedestrian trail before assigning it to an animated character. */
 export function isValidTownPedestrianRoute(route: TownMobilityRoute): boolean {
   if (route.length < 2) return false;
@@ -581,14 +686,17 @@ export function isValidTownPedestrianRoute(route: TownMobilityRoute): boolean {
   return Number.isFinite(totalLength) && totalLength >= 0.001;
 }
 
-
 /** Scales junction clearance for short trails so both endpoints remain reachable. */
 export function townPedestrianClearanceRadius(routeLength: number, preferredRadius = 0.38): number {
-  if (!Number.isFinite(routeLength) || routeLength <= 0
-    || !Number.isFinite(preferredRadius) || preferredRadius <= 0) return 0;
+  if (
+    !Number.isFinite(routeLength) ||
+    routeLength <= 0 ||
+    !Number.isFinite(preferredRadius) ||
+    preferredRadius <= 0
+  )
+    return 0;
   return Math.min(preferredRadius, routeLength / 3);
 }
-
 
 /** Rejects traffic loops containing malformed points or no traversable perimeter. */
 export function isValidTownMobilityLoop(route: TownMobilityRoute): boolean {

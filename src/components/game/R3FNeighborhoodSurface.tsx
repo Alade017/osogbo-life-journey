@@ -24,9 +24,9 @@ import {
 } from "@/game/neighborhood-model";
 import { neighborhoodBuildingFootprint } from "@/game/neighborhood-geometry";
 import { neighborhoodObstacleFootprint } from "@/game/neighborhood-geometry";
+import { NEIGHBORHOOD_TILE_SIZE } from "@/game/neighborhood-geometry";
 import {
   NEIGHBORHOOD_NPC_ACTOR_SEPARATION,
-  NEIGHBORHOOD_TILE_SIZE,
   neighborhoodNpcAvoidanceBias,
   neighborhoodNpcAvoidanceStep,
   neighborhoodNpcPathWithFallback,
@@ -129,7 +129,8 @@ function NeighborhoodNpcActor({
   const leftLeg = useRef<Group>(null);
   const rightLeg = useRef<Group>(null);
   const { invalidate } = useThree();
-  const animated = !npc.isPaused &&
+  const animated =
+    !npc.isPaused &&
     (npc.isMoving || ["working", "shopping", "socializing"].includes(npc.activityKind));
   const targetKey = `${target[0].toFixed(2)}:${target[2].toFixed(2)}`;
   const route = useRef<readonly NpcPoint[]>([]);
@@ -139,73 +140,104 @@ function NeighborhoodNpcActor({
   const retryAfter = useRef(neighborhoodNpcReplanDelay(npc.id));
   const arrivedTarget = useRef<string | null>(null);
   const bias = neighborhoodNpcAvoidanceBias(npc.id);
-  const rebuildRoute = useCallback((origin: NpcPoint) => {
-    const reservations = [...actorRoutes.current.entries()]
-      .filter(([id, path]) => id !== npc.id && path.length > 1)
-      .map(([, path]) => path);
-    const next = neighborhoodNpcPathWithFallback(
-      origin,
-      { x: target[0], y: target[2] },
-      occupiedFootprints,
-      sceneBounds,
-      reservations,
-      NEIGHBORHOOD_TILE_SIZE * WORLD_SCALE.neighborhoodUnit / 2,
-    );
-    route.current = next ?? [origin];
-    waypointIndex.current = 0;
-    blockedFor.current = 0;
-    targetKeyRef.current = targetKey;
-    if (route.current.length > 1) {
-      actorRoutes.current.set(npc.id, neighborhoodNpcReservationPath(origin, route.current));
-    } else {
-      actorRoutes.current.delete(npc.id);
+  const targetX = target[0];
+  const targetZ = target[2];
+
+  const startX = start[0];
+  const startY = start[1];
+  const startZ = start[2];
+  const rebuildRoute = useCallback(
+    (origin: NpcPoint) => {
+      const reservations = [...actorRoutes.current.entries()]
+        .filter(([id, path]) => id !== npc.id && path.length > 1)
+        .map(([, path]) => path);
+
+      const next = neighborhoodNpcPathWithFallback(
+        origin,
+        { x: targetX, y: targetZ },
+        occupiedFootprints,
+        sceneBounds,
+        reservations,
+        (NEIGHBORHOOD_TILE_SIZE * WORLD_SCALE.neighborhoodUnit) / 2,
+      );
+
+      route.current = next ?? [origin];
+      waypointIndex.current = 0;
+      blockedFor.current = 0;
+      targetKeyRef.current = targetKey;
+
+      if (route.current.length > 1) {
+        actorRoutes.current.set(npc.id, neighborhoodNpcReservationPath(origin, route.current));
+      } else {
+        actorRoutes.current.delete(npc.id);
+      }
+    },
+    [actorRoutes, npc.id, occupiedFootprints, sceneBounds, targetX, targetZ, targetKey],
+  );
+
+  useEffect(() => {
+    const actor = group.current;
+    if (!actor) return;
+
+    const current = {
+      x: actor.position.x,
+      y: actor.position.z,
+    };
+
+    if (targetKeyRef.current !== targetKey || route.current.length === 0) {
+      rebuildRoute(current);
     }
-  }, [actorRoutes, npc.id, occupiedFootprints, sceneBounds, target[0], target[2], targetKey]);
+  }, [rebuildRoute, targetKey, startX, startZ]);
 
   useEffect(() => {
     const actor = group.current;
     if (!actor) return;
-    const current = { x: actor.position.x, y: actor.position.z };
-    if (targetKeyRef.current !== targetKey || route.current.length === 0) rebuildRoute(current);
-  }, [rebuildRoute, targetKey, start[0], start[2]]);
 
-  useEffect(() => {
-    const actor = group.current;
-    if (!actor) return;
     // Apply authoritative spawn/confirmed-position updates only when they differ
     // materially; ordinary parent renders must not snap a walking actor backwards.
     const known = actorPositions.current.get(npc.id);
-    if (!known || Math.hypot(known.x - start[0], known.y - start[2]) > 1.5) {
-      actor.position.set(start[0], start[1], start[2]);
-      actorPositions.current.set(npc.id, { x: start[0], y: start[2] });
-      rebuildRoute({ x: start[0], y: start[2] });
+
+    if (!known || Math.hypot(known.x - startX, known.y - startZ) > 1.5) {
+      actor.position.set(startX, startY, startZ);
+      actorPositions.current.set(npc.id, {
+        x: startX,
+        y: startZ,
+      });
+
+      rebuildRoute({ x: startX, y: startZ });
       invalidate();
     }
-  }, [actorPositions, invalidate, npc.id, rebuildRoute, start[0], start[1], start[2]]);
+  }, [actorPositions, invalidate, npc.id, rebuildRoute, startX, startY, startZ]);
 
   useEffect(() => {
     if (!animated) return;
+
     const timer = window.setInterval(invalidate, 1000 / 15);
+
     return () => window.clearInterval(timer);
   }, [animated, invalidate]);
-
-  useEffect(() => () => {
-    actorPositions.current.delete(npc.id);
-    actorRoutes.current.delete(npc.id);
-  }, [actorPositions, actorRoutes, npc.id]);
+  useEffect(
+    () => () => {
+      actorPositions.current.delete(npc.id);
+      actorRoutes.current.delete(npc.id);
+    },
+    [actorPositions, actorRoutes, npc.id],
+  );
 
   useFrame((state, delta) => {
     const actor = group.current;
     if (!actor || npc.isPaused) return;
     const current = { x: actor.position.x, y: actor.position.z };
     if (targetKeyRef.current !== targetKey) rebuildRoute(current);
-    const waypoint = route.current[waypointIndex.current] ??
-      { x: target[0], y: target[2] };
+    const waypoint = route.current[waypointIndex.current] ?? { x: target[0], y: target[2] };
     const distance = Math.hypot(waypoint.x - current.x, waypoint.y - current.y);
     const walking = distance > 0.035;
     if (walking) {
       arrivedTarget.current = null;
-      const desiredStep = Math.min(distance, (1 - Math.exp(-Math.min(delta, 0.1) * 2.8)) * distance);
+      const desiredStep = Math.min(
+        distance,
+        (1 - Math.exp(-Math.min(delta, 0.1) * 2.8)) * distance,
+      );
       const blockers = [
         ...[...actorPositions.current.entries()]
           .filter(([id]) => id !== npc.id)
@@ -309,7 +341,13 @@ function NeighborhoodNpcActor({
           <WorldMaterial tone="timber" />
         </mesh>
       </group>
-      <mesh position={[0, 0.92, 0]} onClick={(event) => { event.stopPropagation(); onSelect(); }}>
+      <mesh
+        position={[0, 0.92, 0]}
+        onClick={(event) => {
+          event.stopPropagation();
+          onSelect();
+        }}
+      >
         <cylinderGeometry args={[0.42, 0.42, 1.9, 10]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
@@ -430,7 +468,10 @@ export function R3FNeighborhoodSurface({
       setPlayers: () => undefined,
       setZoom: (factor) =>
         onZoomChange(
-          Math.max(NEIGHBORHOOD_CAMERA.minZoom, Math.min(NEIGHBORHOOD_CAMERA.maxZoom, zoomRef.current * factor)),
+          Math.max(
+            NEIGHBORHOOD_CAMERA.minZoom,
+            Math.min(NEIGHBORHOOD_CAMERA.maxZoom, zoomRef.current * factor),
+          ),
         ),
       setFollow,
     });
@@ -505,12 +546,15 @@ export function R3FNeighborhoodSurface({
   const npcPoints = npcs.map((npc) => point(npc.x, npc.y));
   const actorPositions = useRef(new Map<string, NpcPoint>());
   const actorRoutes = useRef(new Map<string, readonly NpcPoint[]>());
-  const movementBounds = useMemo(() => ({
-    left: -bounds.width * unit / 2,
-    top: -bounds.height * unit / 2,
-    width: bounds.width * unit,
-    height: bounds.height * unit,
-  }), [bounds.width, bounds.height, unit]);
+  const movementBounds = useMemo(
+    () => ({
+      left: (-bounds.width * unit) / 2,
+      top: (-bounds.height * unit) / 2,
+      width: bounds.width * unit,
+      height: bounds.height * unit,
+    }),
+    [bounds.width, bounds.height, unit],
+  );
   const movementObstacles = useMemo(() => {
     const footprints = [
       ...area.objects.filter((object) => object.kind !== "npc").map(neighborhoodBuildingFootprint),
@@ -522,8 +566,8 @@ export function R3FNeighborhoodSurface({
         footprint.top + footprint.height / 2,
       );
       return {
-        left: center[0] - footprint.width * unit / 2,
-        top: center[2] - footprint.height * unit / 2,
+        left: center[0] - (footprint.width * unit) / 2,
+        top: center[2] - (footprint.height * unit) / 2,
         width: footprint.width * unit,
         height: footprint.height * unit,
       };
@@ -624,7 +668,9 @@ export function R3FNeighborhoodSurface({
                 depth={o.height * unit}
                 height={WORLD_SCALE.neighborhoodBuildingHeight}
                 shop={o.kind !== "compound"}
-                variant={o.kind === "compound" ? "residential" : o.kind === "kiosk" ? "market" : "services"}
+                variant={
+                  o.kind === "compound" ? "residential" : o.kind === "kiosk" ? "market" : "services"
+                }
               />
             ))}
           <WorldStreetFurniture
@@ -636,7 +682,7 @@ export function R3FNeighborhoodSurface({
                 z: point(o.x, o.y)[2],
                 width: o.width * unit,
                 depth: o.height * unit,
-                label: o.label,
+                ...(o.label !== undefined ? { label: o.label } : {}),
               }))}
           />
           {area.obstacles
@@ -672,7 +718,13 @@ export function R3FNeighborhoodSurface({
                     depth={footprint.height * unit}
                     height={WORLD_SCALE.neighborhoodBuildingHeight}
                     shop={o.kind !== "home"}
-                    variant={o.kind === "home" ? "residential" : o.kind === "market" ? "market" : "services"}
+                    variant={
+                      o.kind === "home"
+                        ? "residential"
+                        : o.kind === "market"
+                          ? "market"
+                          : "services"
+                    }
                   />
                   <Html
                     portal={overlayHost}

@@ -3,7 +3,14 @@ import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import type { Group } from "three";
 import { WorldMaterial } from "@/components/3d/WorldScene";
-import { isValidTownPedestrianRoute, townPedestrianClearanceRadius, TownPedestrianJunctionScheduler, townPedestrianCrossingIdentity, TownRoadCrossingPriorityScheduler, type TownMobilityRoute } from "@/game/town-mobility";
+import {
+  isValidTownPedestrianRoute,
+  townPedestrianClearanceRadius,
+  TownPedestrianJunctionScheduler,
+  townPedestrianCrossingIdentity,
+  TownRoadCrossingPriorityScheduler,
+  type TownMobilityRoute,
+} from "@/game/town-mobility";
 
 export interface MovingPedestrians3DProps {
   paths: readonly TownMobilityRoute[];
@@ -34,7 +41,12 @@ interface NpcConfig {
  * - Residents commuting in colorful attire
  * - Footstep bobbing animations and interactive dialogue bubbles.
  */
-export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({ paths, crossingScheduler, busStopPositions, onSelectTransit }) => {
+export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({
+  paths,
+  crossingScheduler,
+  busStopPositions,
+  onSelectTransit,
+}) => {
   const [activeSpeech, setActiveSpeech] = useState<{ id: string; text: string } | null>(null);
   const junctionScheduler = useMemo(() => new TownPedestrianJunctionScheduler(), []);
   const endpointCounts = useMemo(() => {
@@ -48,18 +60,21 @@ export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({ paths, cross
   }, [paths]);
   const speechTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => () => {
-    if (speechTimeoutRef.current) clearTimeout(speechTimeoutRef.current);
-    // Do not leave the page cursor in its interactive state if the map unmounts
-    // while a vehicle or pedestrian is hovered.
-    document.body.style.cursor = "auto";
-  }, []);
+  useEffect(
+    () => () => {
+      if (speechTimeoutRef.current) clearTimeout(speechTimeoutRef.current);
+      // Do not leave the page cursor in its interactive state if the map unmounts
+      // while a vehicle or pedestrian is hovered.
+      document.body.style.cursor = "auto";
+    },
+    [],
+  );
 
   const showSpeech = (id: string, text: string, duration: number) => {
     if (speechTimeoutRef.current) clearTimeout(speechTimeoutRef.current);
     setActiveSpeech({ id, text });
     speechTimeoutRef.current = setTimeout(() => {
-      setActiveSpeech((current) => current?.id === id ? null : current);
+      setActiveSpeech((current) => (current?.id === id ? null : current));
       speechTimeoutRef.current = null;
     }, duration);
   };
@@ -73,12 +88,16 @@ export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({ paths, cross
     "Hello! Lovely to see you around town.",
   ];
   const npcs: NpcConfig[] = paths.filter(isValidTownPedestrianRoute).map((path, index) => {
-    const startJunctionId = endpointCounts.get(junctionKey(path[0]!))! > 1
-      ? junctionKey(path[0]!)
-      : undefined;
-    const endJunctionId = endpointCounts.get(junctionKey(path[path.length - 1]!))! > 1
-      ? junctionKey(path[path.length - 1]!)
-      : undefined;
+    const startJunctionId =
+      endpointCounts.get(junctionKey(path[0]!))! > 1 ? junctionKey(path[0]!) : undefined;
+
+    const endJunctionId =
+      endpointCounts.get(junctionKey(path[path.length - 1]!))! > 1
+        ? junctionKey(path[path.length - 1]!)
+        : undefined;
+
+    const crossingJunctionId = townPedestrianCrossingIdentity(path) || undefined;
+
     const length = pathLength(path);
     const desiredStart = length * (((index + 1) * 0.61803398875) % 1);
     const clearance = townPedestrianClearanceRadius(length);
@@ -92,13 +111,12 @@ export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({ paths, cross
       color: clothingColors[index % clothingColors.length]!,
       speed: 0.09 + (index % 4) * 0.025,
       path,
-      startDistance: safeEnd >= safeStart
-        ? Math.min(Math.max(desiredStart, safeStart), safeEnd)
-        : length / 2,
+      startDistance:
+        safeEnd >= safeStart ? Math.min(Math.max(desiredStart, safeStart), safeEnd) : length / 2,
       greeting: greetings[index % greetings.length]!,
-      startJunctionId,
-      endJunctionId,
-      crossingJunctionId: townPedestrianCrossingIdentity(path) || undefined,
+      ...(startJunctionId ? { startJunctionId } : {}),
+      ...(endJunctionId ? { endJunctionId } : {}),
+      ...(crossingJunctionId ? { crossingJunctionId } : {}),
     };
   });
 
@@ -153,10 +171,13 @@ function PedestrianCharacter({
   const clearanceRadius = townPedestrianClearanceRadius(routeLength);
   const [isHovered, setIsHovered] = useState(false);
 
-  useEffect(() => () => {
-    junctionScheduler.cancelPedestrian(npc.id);
-    crossingScheduler.cancelActor(npc.id);
-  }, [junctionScheduler, crossingScheduler, npc.id, npc.startJunctionId, npc.endJunctionId]);
+  useEffect(
+    () => () => {
+      junctionScheduler.cancelPedestrian(npc.id);
+      crossingScheduler.cancelActor(npc.id);
+    },
+    [junctionScheduler, crossingScheduler, npc.id, npc.startJunctionId, npc.endJunctionId],
+  );
 
   useFrame(({ clock }, delta) => {
     crossingScheduler.advanceTime(clock.elapsedTime);
@@ -179,11 +200,15 @@ function PedestrianCharacter({
         crossingScheduler.release(activeCrossing.current, npc.id);
         activeCrossing.current = null;
       }
-      if (npc.crossingJunctionId && activeCrossing.current !== npc.crossingJunctionId
-        && crossingDistance <= clearanceRadius + distanceToTravel) {
+      if (
+        npc.crossingJunctionId &&
+        activeCrossing.current !== npc.crossingJunctionId &&
+        crossingDistance <= clearanceRadius + distanceToTravel
+      ) {
         if (!crossingScheduler.request(npc.crossingJunctionId, npc.id, "pedestrian")) {
           const safeAdvance = Math.max(0, crossingDistance - clearanceRadius);
-          routeDistance.current += travelDirection.current * Math.min(distanceToTravel, safeAdvance);
+          routeDistance.current +=
+            travelDirection.current * Math.min(distanceToTravel, safeAdvance);
           distanceToTravel = 0;
           break;
         }
@@ -195,32 +220,39 @@ function PedestrianCharacter({
       const distanceToJunction = destinationIsEnd
         ? routeLength - routeDistance.current
         : routeDistance.current;
-      const distanceFromReservedJunction = activeJunction.current === npc.startJunctionId
-        && activeJunction.current === npc.endJunctionId
-        ? Math.min(routeDistance.current, routeLength - routeDistance.current)
-        : activeJunction.current === npc.startJunctionId
-          ? routeDistance.current
-          : activeJunction.current === npc.endJunctionId
-            ? routeLength - routeDistance.current
-            : Number.POSITIVE_INFINITY;
+      const distanceFromReservedJunction =
+        activeJunction.current === npc.startJunctionId &&
+        activeJunction.current === npc.endJunctionId
+          ? Math.min(routeDistance.current, routeLength - routeDistance.current)
+          : activeJunction.current === npc.startJunctionId
+            ? routeDistance.current
+            : activeJunction.current === npc.endJunctionId
+              ? routeLength - routeDistance.current
+              : Number.POSITIVE_INFINITY;
 
       if (activeJunction.current && distanceFromReservedJunction > clearanceRadius) {
         junctionScheduler.release(activeJunction.current, npc.id);
         activeJunction.current = null;
       }
 
-      if (junctionId && activeJunction.current !== junctionId
-        && distanceToJunction <= clearanceRadius + distanceToTravel) {
+      if (
+        junctionId &&
+        activeJunction.current !== junctionId &&
+        distanceToJunction <= clearanceRadius + distanceToTravel
+      ) {
         if (!junctionScheduler.request(junctionId, npc.id)) {
           const safeAdvance = Math.max(0, distanceToJunction - clearanceRadius);
-          routeDistance.current += travelDirection.current * Math.min(distanceToTravel, safeAdvance);
+          routeDistance.current +=
+            travelDirection.current * Math.min(distanceToTravel, safeAdvance);
           distanceToTravel = 0;
           break;
         }
         activeJunction.current = junctionId;
       }
 
-      const distanceToRouteEnd = destinationIsEnd ? routeLength - routeDistance.current : routeDistance.current;
+      const distanceToRouteEnd = destinationIsEnd
+        ? routeLength - routeDistance.current
+        : routeDistance.current;
       const step = Math.min(distanceToTravel, Math.max(0, distanceToRouteEnd));
       routeDistance.current += travelDirection.current * step;
       distanceToTravel -= step;
@@ -257,7 +289,8 @@ function PedestrianCharacter({
       Math.sin(angle - currentAngle),
       Math.cos(angle - currentAngle),
     );
-    groupRef.current.rotation.y = currentAngle + angleDifference * (1 - Math.exp(-12 * Math.max(0, delta)));
+    groupRef.current.rotation.y =
+      currentAngle + angleDifference * (1 - Math.exp(-12 * Math.max(0, delta)));
   });
 
   return (
@@ -337,7 +370,6 @@ function PedestrianCharacter({
   );
 }
 
-
 function junctionKey(point: readonly [number, number]): string {
   return `${point[0].toFixed(5)},${point[1].toFixed(5)}`;
 }
@@ -349,7 +381,10 @@ function pathLength(path: TownMobilityRoute): number {
   }, 0);
 }
 
-function locatePathDistance(path: TownMobilityRoute, distance: number): { segment: number; progress: number } {
+function locatePathDistance(
+  path: TownMobilityRoute,
+  distance: number,
+): { segment: number; progress: number } {
   if (path.length < 2) return { segment: 0, progress: 0 };
   let remaining = Math.max(0, distance);
   for (let index = 0; index < path.length - 1; index += 1) {

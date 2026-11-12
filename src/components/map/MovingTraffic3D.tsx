@@ -1,9 +1,16 @@
 import { useEffect, useMemo, useRef, useState, type FC } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import type { Group } from "three";
 import { WorldMaterial } from "@/components/3d/WorldScene";
-import { isValidTownMobilityLoop, measureTownMobilityLoop, townMobilityRouteIdentity, townRoadJunctionIdentity, TownRoadCrossingPriorityScheduler, type TownMobilityRoute } from "@/game/town-mobility";
+import {
+  isValidTownMobilityLoop,
+  measureTownMobilityLoop,
+  townMobilityRouteIdentity,
+  townRoadJunctionIdentity,
+  TownRoadCrossingPriorityScheduler,
+  type TownMobilityRoute,
+} from "@/game/town-mobility";
 
 export interface MovingTraffic3DProps {
   paths: readonly TownMobilityRoute[];
@@ -33,22 +40,29 @@ interface VehicleConfig {
  * - Agile Okada motorcycles
  * - Interactive click/hover dialogs and horn feedback.
  */
-export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ paths, crossingScheduler, onSelectTransit }) => {
+export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({
+  paths,
+  crossingScheduler,
+  onSelectTransit,
+}) => {
   const [activeSpeech, setActiveSpeech] = useState<{ id: string; text: string } | null>(null);
   const speechTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => () => {
-    if (speechTimeoutRef.current) clearTimeout(speechTimeoutRef.current);
-    // Do not leave the page cursor in its interactive state if the map unmounts
-    // while a vehicle or pedestrian is hovered.
-    document.body.style.cursor = "auto";
-  }, []);
+  useEffect(
+    () => () => {
+      if (speechTimeoutRef.current) clearTimeout(speechTimeoutRef.current);
+      // Do not leave the page cursor in its interactive state if the map unmounts
+      // while a vehicle or pedestrian is hovered.
+      document.body.style.cursor = "auto";
+    },
+    [],
+  );
 
   const showSpeech = (id: string, text: string, duration: number) => {
     if (speechTimeoutRef.current) clearTimeout(speechTimeoutRef.current);
     setActiveSpeech({ id, text });
     speechTimeoutRef.current = setTimeout(() => {
-      setActiveSpeech((current) => current?.id === id ? null : current);
+      setActiveSpeech((current) => (current?.id === id ? null : current));
       speechTimeoutRef.current = null;
     }, duration);
   };
@@ -71,17 +85,19 @@ export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({ paths, crossingSched
       const key = townRoadJunctionIdentity(x, z);
       return key || null;
     });
-    return [{
-      id: `town-traffic-${identity}`,
-      type,
-      name: `Town vehicle ${identity.toUpperCase()}`,
-      description: "Following the connected town road network",
-      speed: 0.14 + ((numericIdentity >>> 4) % 4) * 0.025,
-      path,
-      startDistance: ((numericIdentity >>> 8) / 0x1000000) * routeLength,
-      color: vehicleColors[type],
-      junctionIds,
-    }];
+    return [
+      {
+        id: `town-traffic-${identity}`,
+        type,
+        name: `Town vehicle ${identity.toUpperCase()}`,
+        description: "Following the connected town road network",
+        speed: 0.14 + ((numericIdentity >>> 4) % 4) * 0.025,
+        path,
+        startDistance: ((numericIdentity >>> 8) / 0x1000000) * routeLength,
+        color: vehicleColors[type],
+        junctionIds,
+      },
+    ];
   });
 
   return (
@@ -146,15 +162,24 @@ function TrafficVehicle({
     const nextJunction = config.junctionIds[nextJunctionIndex] ?? null;
     const segmentStart = path[currentSegment.current]!;
     const segmentEnd = path[nextJunctionIndex]!;
-    const segmentLengthToJunction = Math.hypot(segmentEnd[0] - segmentStart[0], segmentEnd[1] - segmentStart[1]);
+    const segmentLengthToJunction = Math.hypot(
+      segmentEnd[0] - segmentStart[0],
+      segmentEnd[1] - segmentStart[1],
+    );
     const remainingToJunction = segmentLengthToJunction * (1 - progress.current);
     const clearanceDistance = Math.min(1.35, segmentLengthToJunction * 0.3);
 
-    if (activeJunction.current && activeJunctionIndex.current !== null
-      && currentSegment.current === activeJunctionIndex.current) {
+    if (
+      activeJunction.current &&
+      activeJunctionIndex.current !== null &&
+      currentSegment.current === activeJunctionIndex.current
+    ) {
       const activeSegmentStart = path[currentSegment.current]!;
       const activeSegmentEnd = path[(currentSegment.current + 1) % path.length]!;
-      const activeSegmentLength = Math.hypot(activeSegmentEnd[0] - activeSegmentStart[0], activeSegmentEnd[1] - activeSegmentStart[1]);
+      const activeSegmentLength = Math.hypot(
+        activeSegmentEnd[0] - activeSegmentStart[0],
+        activeSegmentEnd[1] - activeSegmentStart[1],
+      );
       if (progress.current * activeSegmentLength >= clearanceDistance) {
         crossingScheduler.release(activeJunction.current, config.id);
         activeJunction.current = null;
@@ -163,7 +188,10 @@ function TrafficVehicle({
     }
     if (nextJunction && remainingToJunction <= clearanceDistance + distanceToTravel) {
       if (!crossingScheduler.request(nextJunction, config.id, "vehicle")) {
-        distanceToTravel = Math.min(distanceToTravel, Math.max(0, remainingToJunction - clearanceDistance));
+        distanceToTravel = Math.min(
+          distanceToTravel,
+          Math.max(0, remainingToJunction - clearanceDistance),
+        );
         if (distanceToTravel <= 0) return;
       } else {
         activeJunction.current = nextJunction;
@@ -211,22 +239,25 @@ function TrafficVehicle({
 
     groupRef.current.position.set(posX, 0.05, posZ);
     groupRef.current.rotation.y = angle;
-
   });
 
-  useEffect(() => () => {
-    crossingScheduler.cancelActor(config.id);
-  }, [config.id, crossingScheduler]);
+  useEffect(
+    () => () => {
+      crossingScheduler.cancelActor(config.id);
+    },
+    [config.id, crossingScheduler],
+  );
 
-  const handleClick = (e: any) => {
+  const handleClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
-    const vehicleLabel = config.type === "danfo"
-      ? "Danfo"
-      : config.type === "keke"
-        ? "Keke"
-        : config.type === "okada"
-          ? "Okada"
-          : "Taxi";
+    const vehicleLabel =
+      config.type === "danfo"
+        ? "Danfo"
+        : config.type === "keke"
+          ? "Keke"
+          : config.type === "okada"
+            ? "Okada"
+            : "Taxi";
     onInteract(`${vehicleLabel}: Opening the Transit Park travel options.`);
     onSelectTransit();
   };
@@ -274,7 +305,11 @@ function TrafficVehicle({
           {/* Wheels */}
           {[-0.34, 0.34].map((wx) =>
             [-0.45, 0.45].map((wz) => (
-              <mesh key={`wheel-${wx}-${wz}`} position={[wx, 0.12, wz]} rotation={[0, 0, Math.PI / 2]}>
+              <mesh
+                key={`wheel-${wx}-${wz}`}
+                position={[wx, 0.12, wz]}
+                rotation={[0, 0, Math.PI / 2]}
+              >
                 <cylinderGeometry args={[0.12, 0.12, 0.08, 12]} />
                 <meshStandardMaterial color="#1e293b" roughness={0.8} />
               </mesh>

@@ -439,7 +439,7 @@ function AudioControls({ profile, onSave }: { profile: Profile; onSave: (patch: 
     });
     setGameAudioLevels(next);
     setLevels(next);
-  }, [profile.music_enabled, profile.effects_enabled]);
+  }, [profile]);
 
   async function applyVolume(channel: Channel, volume: number): Promise<boolean> {
     const wasSilent = levels[channel] === 0;

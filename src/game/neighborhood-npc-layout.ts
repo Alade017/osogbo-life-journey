@@ -28,9 +28,7 @@ export function neighborhoodNpcReservationPath(
   if (!origin) return [];
   return [
     origin,
-    ...remaining.filter(
-      (point) => Math.hypot(point.x - origin.x, point.y - origin.y) > tolerance,
-    ),
+    ...remaining.filter((point) => Math.hypot(point.x - origin.x, point.y - origin.y) > tolerance),
   ];
 }
 
@@ -138,27 +136,35 @@ export function neighborhoodNpcDestinationPoint(
     y: destination.y + Math.sin(angle) * radius,
   };
   if (isAvailable(initial, occupied, occupiedPoints, bounds)) return initial;
-  return clearNpcPoint(destination, catalogIndex, occupied, occupiedPoints, NPC_SLOT_SPACING, bounds);
+  return clearNpcPoint(
+    destination,
+    catalogIndex,
+    occupied,
+    occupiedPoints,
+    NPC_SLOT_SPACING,
+    bounds,
+  );
 }
 
 export const NEIGHBORHOOD_NPC_ACTOR_SEPARATION = 0.85;
 
 const NPC_PATH_GRID = NEIGHBORHOOD_TILE_SIZE / 2;
 const PATH_DIRECTIONS = [
-  [1, 0], [0, 1], [-1, 0], [0, -1],
-  [1, 1], [-1, 1], [-1, -1], [1, -1],
+  [1, 0],
+  [0, 1],
+  [-1, 0],
+  [0, -1],
+  [1, 1],
+  [-1, 1],
+  [-1, -1],
+  [1, -1],
 ] as const;
 
 function gridKey(x: number, y: number): string {
   return `${x}:${y}`;
 }
 
-function segmentsIntersect(
-  a: NpcPoint,
-  b: NpcPoint,
-  c: NpcPoint,
-  d: NpcPoint,
-): boolean {
+function segmentsIntersect(a: NpcPoint, b: NpcPoint, c: NpcPoint, d: NpcPoint): boolean {
   const cross = (p: NpcPoint, q: NpcPoint, r: NpcPoint) =>
     (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x);
   const onSegment = (p: NpcPoint, q: NpcPoint, r: NpcPoint) =>
@@ -174,7 +180,7 @@ function segmentsIntersect(
   if (abD === 0 && onSegment(a, d, b)) return true;
   if (cdA === 0 && onSegment(c, a, d)) return true;
   if (cdB === 0 && onSegment(c, b, d)) return true;
-  return (abC > 0) !== (abD > 0) && (cdA > 0) !== (cdB > 0);
+  return abC > 0 !== abD > 0 && cdA > 0 !== cdB > 0;
 }
 
 function overlapsReservedPaths(
@@ -187,12 +193,14 @@ function overlapsReservedPaths(
       if (index === 0) return false;
       const previous = path[index - 1]!;
       if (!segmentsIntersect(from, to, previous, point)) return false;
-      return Math.min(
-        Math.hypot(from.x - previous.x, from.y - previous.y),
-        Math.hypot(from.x - point.x, from.y - point.y),
-        Math.hypot(to.x - previous.x, to.y - previous.y),
-        Math.hypot(to.x - point.x, to.y - point.y),
-      ) > NPC_SEPARATION;
+      return (
+        Math.min(
+          Math.hypot(from.x - previous.x, from.y - previous.y),
+          Math.hypot(from.x - point.x, from.y - point.y),
+          Math.hypot(to.x - previous.x, to.y - previous.y),
+          Math.hypot(to.x - point.x, to.y - point.y),
+        ) > NPC_SEPARATION
+      );
     }),
   );
 }
@@ -276,15 +284,14 @@ export function neighborhoodNpcPath(
     blocked(goal.x, goal.y) ||
     !segmentIsClear(start, sourcePoint, occupied, bounds, reservedPaths) ||
     !segmentIsClear(goalPoint, destination, occupied, bounds, reservedPaths)
-  ) return null;
+  )
+    return null;
 
   const heuristic = (x: number, y: number) => Math.hypot(goal.x - x, goal.y - y);
   const open = [{ ...source, cost: 0, score: heuristic(source.x, source.y) }];
   const cameFrom = new Map<string, string>();
   const costs = new Map<string, number>([[gridKey(source.x, source.y), 0]]);
-  const cells = new Map<string, { x: number; y: number }>([
-    [gridKey(source.x, source.y), source],
-  ]);
+  const cells = new Map<string, { x: number; y: number }>([[gridKey(source.x, source.y), source]]);
   const closed = new Set<string>();
 
   while (open.length) {
@@ -311,8 +318,14 @@ export function neighborhoodNpcPath(
       const y = current.y + dy;
       const key = gridKey(x, y);
       if (closed.has(key) || blocked(x, y)) continue;
-      if (dx !== 0 && dy !== 0 && (blocked(current.x + dx, current.y) || blocked(current.x, current.y + dy))) continue;
-      if (!segmentIsClear(toPoint(current), toPoint({ x, y }), occupied, bounds, reservedPaths)) continue;
+      if (
+        dx !== 0 &&
+        dy !== 0 &&
+        (blocked(current.x + dx, current.y) || blocked(current.x, current.y + dy))
+      )
+        continue;
+      if (!segmentIsClear(toPoint(current), toPoint({ x, y }), occupied, bounds, reservedPaths))
+        continue;
       const nextCost = current.cost + (dx !== 0 && dy !== 0 ? Math.SQRT2 : 1);
       if (nextCost >= (costs.get(key) ?? Number.POSITIVE_INFINITY)) continue;
       costs.set(key, nextCost);
@@ -347,9 +360,7 @@ export function neighborhoodNpcAvoidanceStep(
   const direction = { x: dx / distance, y: dy / distance };
   // Search a full radial fan so dense crowds and corners can offer a
   // usable escape direction even when the direct and perpendicular steps fail.
-  const candidateAngles = Array.from({ length: 16 }, (_, index) =>
-    (index * Math.PI * 2) / 16,
-  );
+  const candidateAngles = Array.from({ length: 16 }, (_, index) => (index * Math.PI * 2) / 16);
   const candidates = candidateAngles.map((angle) => ({
     x: current.x + (direction.x * Math.cos(angle) - direction.y * Math.sin(angle)) * travel,
     y: current.y + (direction.x * Math.sin(angle) + direction.y * Math.cos(angle)) * travel,
@@ -371,13 +382,15 @@ export function neighborhoodNpcAvoidanceStep(
             point.y < bounds.top + minimumSeparation ||
             point.x > bounds.left + bounds.width - minimumSeparation ||
             point.y > bounds.top + bounds.height - minimumSeparation)) ||
-        occupied.some((rect) =>
-          point.x >= rect.left - minimumSeparation &&
-          point.x <= rect.left + rect.width + minimumSeparation &&
-          point.y >= rect.top - minimumSeparation &&
-          point.y <= rect.top + rect.height + minimumSeparation,
+        occupied.some(
+          (rect) =>
+            point.x >= rect.left - minimumSeparation &&
+            point.x <= rect.left + rect.width + minimumSeparation &&
+            point.y >= rect.top - minimumSeparation &&
+            point.y <= rect.top + rect.height + minimumSeparation,
         )
-      ) return false;
+      )
+        return false;
     }
     return blockers.every((blocker) => {
       const initialDistance = Math.hypot(current.x - blocker.x, current.y - blocker.y);
@@ -390,8 +403,7 @@ export function neighborhoodNpcAvoidanceStep(
               0,
               Math.min(
                 1,
-                ((blocker.x - current.x) * segmentX +
-                  (blocker.y - current.y) * segmentY) /
+                ((blocker.x - current.x) * segmentX + (blocker.y - current.y) * segmentY) /
                   segmentLengthSquared,
               ),
             );
@@ -417,7 +429,6 @@ export function neighborhoodNpcAvoidanceStep(
   });
   return clear[0]!;
 }
-
 
 /**
  * Find a short, geometry-safe escape point that maximises clearance from a
@@ -458,8 +469,12 @@ export function neighborhoodNpcCrowdRecoveryPoint(
     });
   });
   candidates.sort((a, b) => {
-    const clearanceA = Math.min(...blockers.map((point) => Math.hypot(a.x - point.x, a.y - point.y)));
-    const clearanceB = Math.min(...blockers.map((point) => Math.hypot(b.x - point.x, b.y - point.y)));
+    const clearanceA = Math.min(
+      ...blockers.map((point) => Math.hypot(a.x - point.x, a.y - point.y)),
+    );
+    const clearanceB = Math.min(
+      ...blockers.map((point) => Math.hypot(b.x - point.x, b.y - point.y)),
+    );
     if (Math.abs(clearanceA - clearanceB) > 0.0001) return clearanceB - clearanceA;
     const angleA = Math.atan2(a.y - current.y, a.x - current.x);
     const angleB = Math.atan2(b.y - current.y, b.x - current.x);
@@ -504,12 +519,13 @@ export function neighborhoodNpcYieldPoint(
     otherLength <= 0.035 ||
     proximity > minimumSeparation * 3.5 ||
     (ownX * otherX + ownY * otherY) / (ownLength * otherLength) > -0.35
-  ) return null;
+  )
+    return null;
 
   const side = neighborhoodNpcAvoidanceBias(npcId);
   const perpendicular = { x: -ownY / ownLength, y: ownX / ownLength };
-  const away = (current.x - otherCurrent.x) * perpendicular.x +
-    (current.y - otherCurrent.y) * perpendicular.y;
+  const away =
+    (current.x - otherCurrent.x) * perpendicular.x + (current.y - otherCurrent.y) * perpendicular.y;
   const direction = Math.abs(away) > 0.01 ? Math.sign(away) : side;
   return {
     x: current.x + perpendicular.x * direction * minimumSeparation * 1.35,

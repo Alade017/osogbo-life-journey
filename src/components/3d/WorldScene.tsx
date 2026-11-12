@@ -1,5 +1,4 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
 import { MeshBasicMaterial } from "three";
 import { useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows, OrbitControls } from "@react-three/drei";
@@ -112,8 +111,7 @@ export function WorldCamera({
   useLayoutEffect(() => {
     const previous = framing.current;
     const orbit = controls.current;
-    const d =
-      (distance / Math.max(minZoom, Math.min(maxZoom, zoom))) * distanceScale;
+    const d = (distance / Math.max(minZoom, Math.min(maxZoom, zoom))) * distanceScale;
     if (!previous || previous.distance !== distance || previous.polar !== polar || !orbit) {
       offset
         .set(
@@ -140,7 +138,21 @@ export function WorldCamera({
     controls.current?.target.set(x, y, z);
     controls.current?.update();
     invalidate();
-  }, [camera, distance, azimuth, polar, x, y, z, zoom, minZoom, maxZoom, distanceScale, invalidate, offset]);
+  }, [
+    camera,
+    distance,
+    azimuth,
+    polar,
+    x,
+    y,
+    z,
+    zoom,
+    minZoom,
+    maxZoom,
+    distanceScale,
+    invalidate,
+    offset,
+  ]);
   return (
     <OrbitControls
       ref={controls}
@@ -151,10 +163,7 @@ export function WorldCamera({
       onEnd={() => {
         if (!controls.current || !onZoomChange) return;
         onZoomChange(
-          Math.max(
-            minZoom,
-            Math.min(maxZoom, distance / controls.current.getDistance()),
-          ),
+          Math.max(minZoom, Math.min(maxZoom, distance / controls.current.getDistance())),
         );
       }}
       minDistance={distance / maxZoom}
@@ -282,7 +291,12 @@ export function WorldTrafficLights({
 }
 
 function TrafficLightSignal({
-  x, z, junctionId, size, poleHeight, getSignalState,
+  x,
+  z,
+  junctionId,
+  size,
+  poleHeight,
+  getSignalState,
 }: {
   x: number;
   z: number;
@@ -1131,15 +1145,12 @@ export function WorldHouse({
       )}
 
       {/* Raised sheet-metal seams add a subtle corrugated-roof finish to market blocks. */}
-      {isMarket && architecture.roof !== "pitched" &&
+      {isMarket &&
+        architecture.roof !== "pitched" &&
         Array.from({ length: 7 }, (_, seam) => (
           <mesh
             key={`market-roof-seam-${seam}`}
-            position={[
-              ((seam - 3) / 3) * width * 0.46,
-              height + 0.505,
-              0,
-            ]}
+            position={[((seam - 3) / 3) * width * 0.46, height + 0.505, 0]}
             castShadow
           >
             <boxGeometry args={[0.035, 0.025, depth * 0.82]} />
@@ -1151,7 +1162,10 @@ export function WorldHouse({
       {isMarket && architecture.roof !== "pitched" && (
         <group>
           {[-1, 1].map((side) => (
-            <group key={`market-gutter-${side}`} position={[0, height + 0.285, side * (depth / 2 + 0.16)]}>
+            <group
+              key={`market-gutter-${side}`}
+              position={[0, height + 0.285, side * (depth / 2 + 0.16)]}
+            >
               <mesh>
                 <boxGeometry args={[width + 0.3, 0.055, 0.09]} />
                 <WorldMaterial tone="metal" />
@@ -1233,9 +1247,13 @@ export function WorldHouse({
           </group>
         ))}
 
-      {detailed && architecture.windowGrilles &&
+      {detailed &&
+        architecture.windowGrilles &&
         windowPositions.map((x, index) => (
-          <group key={`security-grille-${index}`} position={[x, height * 0.65 + 0.18, depth / 2 + 0.105]}>
+          <group
+            key={`security-grille-${index}`}
+            position={[x, height * 0.65 + 0.18, depth / 2 + 0.105]}
+          >
             {[-1, 0, 1].map((bar) => (
               <mesh key={`grille-bar-${bar}`} position={[bar * 0.045, 0, 0]}>
                 <boxGeometry args={[0.025, height * 0.3, 0.025]} />
@@ -1401,19 +1419,26 @@ export function WorldHouse({
             </mesh>
           ))}
           {[-1, 1].map((side) => (
-            <mesh key={`awning-support-${side}`} position={[side * width * 0.44, -height * 0.35, 0.22]}>
+            <mesh
+              key={`awning-support-${side}`}
+              position={[side * width * 0.44, -height * 0.35, 0.22]}
+            >
               <boxGeometry args={[0.055, height * 0.7, 0.055]} />
               <WorldMaterial tone="metal" />
             </mesh>
           ))}
           {/* Small bracket arms visually tie the awning back into the facade. */}
           {[-1, 1].map((side) => (
-            <mesh key={`awning-bracket-${side}`} position={[side * width * 0.37, -height * 0.05, -0.04]} rotation={[0, 0, side * -0.32]}>
+            <mesh
+              key={`awning-bracket-${side}`}
+              position={[side * width * 0.37, -height * 0.05, -0.04]}
+              rotation={[0, 0, side * -0.32]}
+            >
               <boxGeometry args={[0.045, height * 0.32, 0.055]} />
               <WorldMaterial tone="metal" />
             </mesh>
           ))}
-          {/* Food premises get a short segmented fabric valance beneath the serving awning. */
+          {/* Food premises get a short segmented fabric valance beneath the serving awning. */}
           {variant === "food" &&
             Array.from({ length: 5 }, (_, segment) => (
               <mesh
@@ -1434,7 +1459,11 @@ export function WorldHouse({
             <WorldMaterial tone={architecture.accent} />
           </mesh>
           {[-1, 1].map((side) => (
-            <mesh key={`portico-column-${side}`} position={[side * width * 0.29, -height * 0.25, 0.18]} castShadow>
+            <mesh
+              key={`portico-column-${side}`}
+              position={[side * width * 0.29, -height * 0.25, 0.18]}
+              castShadow
+            >
               <boxGeometry args={[0.13, height * 0.5, 0.13]} />
               <WorldMaterial tone="linen" />
             </mesh>
@@ -1448,7 +1477,10 @@ export function WorldHouse({
             <WorldMaterial tone={architecture.accent} />
           </mesh>
           {[-1, 0, 1].map((side) => (
-            <mesh key={`canopy-support-${side}`} position={[side * width * 0.42, -height * 0.38, 0.28]}>
+            <mesh
+              key={`canopy-support-${side}`}
+              position={[side * width * 0.42, -height * 0.38, 0.28]}
+            >
               <boxGeometry args={[0.07, height * 0.76, 0.07]} />
               <WorldMaterial tone="metal" />
             </mesh>
