@@ -249,6 +249,27 @@ describe("game music playback", () => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
+  it("keeps the audio graph active when only ambient texture is enabled", async () => {
+    const audio = await import("../lib/game-audio");
+    const enabled = await audio.enableGameAudio({
+      master: 0.75,
+      music: 0,
+      effects: 0,
+      environment: 0.5,
+    });
+    expect(enabled).toBe(true);
+    expect(audio.isGameAudioActive()).toBe(true);
+    expect(contexts[0]!.gains[1]!.gain.value).toBe(0.0175);
+
+    audio.setGameAudioLevels({
+      master: 0.75,
+      music: 0,
+      effects: 0,
+      environment: 0.5,
+    });
+    expect(audio.isGameAudioActive()).toBe(true);
+    await audio.disableGameAudio();
+  });
   it("does not fetch or create media for an empty catalog", async () => {
     const audio = await import("../lib/game-audio");
     audio.configureGameMusic("player");
