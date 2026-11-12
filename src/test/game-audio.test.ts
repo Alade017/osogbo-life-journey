@@ -273,7 +273,7 @@ describe("game music playback", () => {
     });
     const ambienceGain = contexts[0]!.gains[1]!.gain.setTargetAtTime;
     expect(ambienceGain).toHaveBeenLastCalledWith(expect.any(Number), 0, 0.12);
-    expect(ambienceGain.mock.calls.at(-1)?.[0]).toBeCloseTo(0.4125);
+    expect(ambienceGain.mock.calls[ambienceGain.mock.calls.length - 1]?.[0]).toBeCloseTo(0.4125);
     expect(audio.isGameAudioActive()).toBe(true);
     await audio.disableGameAudio();
   });
