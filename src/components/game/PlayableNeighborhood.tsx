@@ -98,11 +98,11 @@ function useNeighborhoodConnection(
   slug: string | undefined,
   locationIsPlayable: boolean,
   attempt: number,
+  setAttempt: (update: (attempt: number) => number) => void,
 ) {
   const [connectionState, setConnectionState] = useState<ConnectionState>("loading");
   const [players, setPlayers] = useState<NeighborhoodPlayerView[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
-  const [connectionError, setConnectionError] = useState("");
   const [roomLocationId, setRoomLocationId] = useState<string | null>(null);
   const roomRef = useRef<NeighborhoodRoom | null>(null);
 
@@ -112,16 +112,12 @@ function useNeighborhoodConnection(
     setRoomLocationId(null);
     if (!locationId || !slug) {
       setConnectionState("unavailable");
-      setConnectionError(
-        "Your saved world location could not be resolved. Return to the city map.",
-      );
       return;
     }
     if (!locationIsPlayable || !isPlayableDistrict(slug)) {
       setConnectionState("wrong-area");
       setPlayers([]);
       setSessionId(null);
-      setConnectionError("");
       return;
     }
 
@@ -131,14 +127,22 @@ function useNeighborhoodConnection(
     let joinedRoom: NeighborhoodRoom | null = null;
     let joinTimeout = 0;
     let stateTimeout = 0;
+    let retryTimeout = 0;
+    const scheduleRetry = () => {
+      if (!active || retryTimeout) return;
+      const delay = Math.min(30_000, 1_500 * 2 ** Math.min(attempt, 4));
+      retryTimeout = window.setTimeout(() => {
+        retryTimeout = 0;
+        if (active) setAttempt((current) => current + 1);
+      }, delay);
+    };
     setConnectionState("connecting");
-    setConnectionError("");
 
     joinTimeout = window.setTimeout(() => {
       if (!active) return;
       joinTimedOut = true;
       setConnectionState("unavailable");
-      setConnectionError("The neighborhood is taking too long to connect. Please try again.");
+      scheduleRetry();
     }, NEIGHBORHOOD_JOIN_TIMEOUT_MS);
 
     void joinNeighborhood(locationId)
@@ -166,7 +170,7 @@ function useNeighborhoodConnection(
           return true;
         };
         room.onStateChange(publish);
-        room.onLeave((code) => {
+        room.onLeave(() => {
           if (!active || roomEnded) return;
           roomEnded = true;
           window.clearTimeout(stateTimeout);
@@ -174,9 +178,7 @@ function useNeighborhoodConnection(
           joinedRoom = null;
           setPlayers([]);
           setConnectionState("unavailable");
-          setConnectionError(
-            `The neighborhood connection closed (${code}). Reconnect to continue.`,
-          );
+          scheduleRetry();
         });
         if (!publish()) {
           stateTimeout = window.setTimeout(() => {
@@ -185,9 +187,7 @@ function useNeighborhoodConnection(
             roomRef.current = null;
             joinedRoom = null;
             setConnectionState("unavailable");
-            setConnectionError(
-              "The neighborhood connected but its world state did not finish loading. Please try again.",
-            );
+            scheduleRetry();
             void room
               .leave()
               .catch((error: unknown) =>
@@ -196,7 +196,7 @@ function useNeighborhoodConnection(
           }, NEIGHBORHOOD_STATE_TIMEOUT_MS);
         }
       })
-      .catch((error: unknown) => {
+      .catch(() => {
         if (!active || joinTimedOut) return;
         window.clearTimeout(joinTimeout);
         const failedRoom = joinedRoom;
@@ -210,15 +210,14 @@ function useNeighborhoodConnection(
             );
         }
         setConnectionState("unavailable");
-        setConnectionError(
-          error instanceof Error ? error.message : "The neighborhood could not be connected.",
-        );
+        scheduleRetry();
       });
 
     return () => {
       active = false;
       window.clearTimeout(joinTimeout);
       window.clearTimeout(stateTimeout);
+      window.clearTimeout(retryTimeout);
       roomRef.current = null;
       if (joinedRoom) {
         void joinedRoom
@@ -234,7 +233,6 @@ function useNeighborhoodConnection(
   return {
     connectionState:
       !sameLocation && connectionState === "connected" ? ("connecting" as const) : connectionState,
-    connectionError,
     players: sameLocation ? players : [],
     sessionId: sameLocation ? sessionId : null,
     roomRef,
@@ -270,6 +268,29 @@ export function PlayableNeighborhood() {
   const queryClient = useQueryClient();
   const { simulation } = useGameTime();
   const [connectionAttempt, setConnectionAttempt] = useState(0);
+
+  // The neighbourhood is a game viewport, not a document section. Prevent the browser
+  // page from scrolling while this route is mounted, then restore the previous shell state.
+  useEffect(() => {
+    const body = document.body;
+    const root = document.documentElement;
+    const previous = {
+      bodyOverflow: body.style.overflow,
+      rootOverflow: root.style.overflow,
+      bodyOverscroll: body.style.overscrollBehavior,
+      rootOverscroll: root.style.overscrollBehavior,
+    };
+    body.style.overflow = "hidden";
+    root.style.overflow = "hidden";
+    body.style.overscrollBehavior = "none";
+    root.style.overscrollBehavior = "none";
+    return () => {
+      body.style.overflow = previous.bodyOverflow;
+      root.style.overflow = previous.rootOverflow;
+      body.style.overscrollBehavior = previous.bodyOverscroll;
+      root.style.overscrollBehavior = previous.rootOverscroll;
+    };
+  }, []);
   const characterQuery = useQuery(q.character());
   const locationsQuery = useQuery({
     ...q.locations(),
@@ -289,12 +310,13 @@ export function PlayableNeighborhood() {
   const placesQuery = useQuery({ ...q.places(), enabled: !!currentLocation?.id });
   const shopItemsQuery = useQuery({ ...q.shopItems(), enabled: !!currentLocation?.id });
   const jobsQuery = useQuery({ ...q.jobs(), enabled: !!currentLocation?.id });
-  const { connectionState, connectionError, players, sessionId, roomRef } =
+  const { connectionState, players, sessionId, roomRef } =
     useNeighborhoodConnection(
       currentLocation?.id,
       currentLocation?.slug,
       district !== null,
       connectionAttempt,
+      setConnectionAttempt,
     );
   const [directions, setDirections] = useState<ReadonlySet<MovementDirection>>(() => new Set());
   const [groundTarget, setGroundTarget] = useState<{ x: number; y: number } | null>(null);
@@ -803,33 +825,23 @@ export function PlayableNeighborhood() {
         </div>
       ) : (
         <div className="neighborhood-world-card">
-          <div className="neighborhood-world-status">
-            <span className={connectionState === "connected" ? "is-connected" : ""} />
-            {connectionState === "connected"
-              ? `Connected · ${players.length} ${players.length === 1 ? "resident" : "residents"}`
-              : connectionState === "unavailable"
-                ? "Connection unavailable"
-                : "Connecting to the authoritative world..."}
-            {connectionState === "connected" && <small>Tap the ground to walk</small>}
-          </div>
-          {connectionState === "unavailable" && (
-            <div className="neighborhood-error">
-              <p role="alert">{connectionError}</p>
-              <button
-                type="button"
-                className="neighborhood-map-link"
-                onClick={() => setConnectionAttempt((attempt) => attempt + 1)}
-              >
-                Retry connection
-              </button>
+          {connectionState === "connected" && (
+            <div className="neighborhood-walk-hint" aria-label="Movement instruction">
+              Tap the ground to walk
             </div>
           )}
-          {(connectionState === "connecting" || connectionState === "loading") && (
+          {(connectionState === "connecting" ||
+            connectionState === "loading" ||
+            connectionState === "unavailable") && (
             <div className="neighborhood-loading-overlay">
               <WorldLoadingIndicator
                 presentation="screen"
                 title="Entering the neighbourhood"
-                detail="Connecting to the authoritative world…"
+                detail={
+                  connectionState === "unavailable"
+                    ? "Your connection is slow. Reconnecting automatically…"
+                    : "Fetching your neighbourhood and connecting to the game server…"
+                }
               />
             </div>
           )}

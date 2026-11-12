@@ -13,6 +13,11 @@ import { CITY_CENTRE_AREA, NEIGHBORHOOD_SCENE_BOUNDS } from "@/game/neighborhood
 const bounds = NEIGHBORHOOD_SCENE_BOUNDS;
 
 describe("neighbourhood street dressing", () => {
+  it("uses the expanded scene bounds for NPCs and street dressing", () => {
+    expect(bounds.width).toBe(24 * 160);
+    expect(bounds.height).toBe(20 * 160);
+  });
+
   it("derives markings, kerbs and sidewalks from the area's roads", () => {
     expect(roadMarkings(CITY_CENTRE_AREA, bounds).length).toBeGreaterThan(0);
     const { sidewalks, curbs } = sidewalksAndCurbs(CITY_CENTRE_AREA, bounds);

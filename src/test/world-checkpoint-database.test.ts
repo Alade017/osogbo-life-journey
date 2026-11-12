@@ -48,6 +48,8 @@ describe("neighbourhood checkpoint database", () => {
     );
     await db.exec(readFileSync("drizzle/migrations/0079_free_house_placement.sql", "utf8"));
     await db.exec("drop function if exists public.house_place_free(uuid, text, numeric, numeric);");
+    await db.exec(readFileSync("supabase/migrations/20261110082709_save_world_checkpoint.sql", "utf8"));
+    await db.exec(readFileSync("supabase/migrations/20261113120000_expand_neighborhood_world_bounds.sql", "utf8"));
   }, 180_000);
 
   afterAll(async () => {
@@ -82,6 +84,12 @@ describe("neighbourhood checkpoint database", () => {
     expect(rows[0]).toMatchObject({ world_x: 3.5, world_y: 4.25 });
   });
 
+  it("accepts positions in the expanded neighbourhood", async () => {
+    expect(
+      await asUser(userId, "select public.save_my_world_checkpoint(24, 20) as result"),
+    ).toMatchObject({ ok: true, result: { saved: true, world_x: 24, world_y: 20 } });
+  });
+
   it("does not spend energy or game time when saving", async () => {
     const before = await db.query<{ energy: number; game_time_minute: number }>(
       "select energy, game_time_minute from public.characters where id=$1",
@@ -97,7 +105,7 @@ describe("neighbourhood checkpoint database", () => {
 
   it("refuses positions outside the fictional city", async () => {
     expect(
-      await asUser(userId, "select public.save_my_world_checkpoint(20, 1) as result"),
+      await asUser(userId, "select public.save_my_world_checkpoint(25, 1) as result"),
     ).toMatchObject({ ok: false, message: expect.stringContaining("outside the fictional city") });
   });
 
