@@ -127,26 +127,26 @@ export function CharacterWardrobe({
 
   return (
     <>
-      {anchors.torso.map((segment, index) =>
+      {anchors.torso.map((segment) =>
         createPortal(
           <SegmentGarment segment={segment} color={top} trim={trim} radiusFactor={0.72} cuff={false} patterned={patterned} />,
           segment.bone
         ),
       )}
-      {anchors.arms.map((segment, index) =>
+      {anchors.arms.map((segment) =>
         createPortal(
           <SegmentGarment segment={segment} color={top} trim={trim} radiusFactor={0.2} patterned={patterned} />,
           segment.bone
         ),
       )}
-      {anchors.legs.map((segment, index) =>
+      {anchors.legs.map((segment) =>
         createPortal(
           <SegmentGarment segment={segment} color={bottom} trim={trim} radiusFactor={0.22} />,
           segment.bone
         ),
       )}
-      {anchors.feet.map((bone, index) =>
-        createPortal(<ShoeGarment color={shoes} />, bone, `wardrobe-shoe-${index}`),
+      {anchors.feet.map((bone) =>
+        createPortal(<ShoeGarment color={shoes} />, bone),
       )}
     </>
   );
