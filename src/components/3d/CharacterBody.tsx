@@ -3,6 +3,7 @@ import { useAnimations, useGLTF } from "@react-three/drei";
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import { AnimationClip, Box3, type Group, Object3D, Vector3 } from "three";
 import { clone as cloneRig } from "three/addons/utils/SkeletonUtils.js";
+import { boneNamed, dressRig } from "./procedural-clothing";
 
 /** The rigged adult bodies shipped in public/models/characters. */
 export type BodyVariant = "female" | "male" | "business";
@@ -79,7 +80,11 @@ export function CharacterBody({
   const gltf = useGLTF(BODY_FILES[variant]);
   const talk = useGLTF(TALK_FILES[variant]);
   const { invalidate } = useThree();
-  const rig = useMemo(() => cloneRig(gltf.scene), [gltf]);
+  const rig = useMemo(() => {
+    const copy = cloneRig(gltf.scene);
+    dressRig(copy, variant);
+    return copy;
+  }, [gltf, variant]);
   const bones = useMemo(() => {
     const names = new Set<string>();
     rig.traverse((node) => names.add(node.name));
@@ -91,7 +96,7 @@ export function CharacterBody({
   );
   const root = useRef<Group>(null);
   const { actions } = useAnimations(clips, root);
-  const hand = useMemo<Object3D | null>(() => rig.getObjectByName("Bip01 R Hand") ?? null, [rig]);
+  const hand = useMemo<Object3D | null>(() => boneNamed(rig, "Bip01 R Hand"), [rig]);
 
   // Fit the rig so its feet stand on the origin at the requested height.
   const fit = useMemo(() => {
