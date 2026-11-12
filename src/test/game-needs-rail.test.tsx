@@ -47,4 +47,15 @@ describe("persistent player needs dashboard", () => {
     expect(detail).toHaveTextContent("Social");
     expect(detail).toHaveTextContent("10% · critical");
   });
+  it("collapses to a circular needs button with a red critical-count badge", () => {
+    const { container } = render(<GameNeedsRail player={player} />);
+    fireEvent.click(screen.getByRole("button", { name: "Collapse needs panel" }));
+    const expandButton = screen.getByRole("button", { name: "Expand needs panel, 1 critical need" });
+    expect(expandButton).toBeVisible();
+    expect(expandButton.querySelector(".game-needs-collapsed-icon")).not.toBeNull();
+    expect(container.querySelector(".game-needs-collapsed-count")).toHaveTextContent("1");
+    expect(container.querySelector(".game-needs-list")).not.toBeVisible();
+    fireEvent.click(expandButton);
+    expect(container.querySelectorAll(".game-needs-item")).toHaveLength(6);
+  });
 });

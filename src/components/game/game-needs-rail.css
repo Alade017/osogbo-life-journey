@@ -295,3 +295,32 @@
   box-shadow: var(--elevation-card);
   cursor: pointer;
 }
+
+/* Compact collapsed needs control: keep the HUD closed, with critical count attached. */
+.city-game.navigation-redesign .game-needs-rail.is-collapsed {
+  display: grid; width: 68px; height: 68px; place-items: center; padding: 0; overflow: visible;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent); border-radius: 50%;
+  background: color-mix(in srgb, var(--card) 96%, transparent);
+  box-shadow: 0 10px 24px -10px color-mix(in srgb, var(--foreground) 38%, transparent), var(--elevation-card);
+}
+.city-game.navigation-redesign .game-needs-rail.is-collapsed .game-needs-list,
+.city-game.navigation-redesign .game-needs-rail.is-collapsed .game-needs-summary,
+.city-game.navigation-redesign .game-needs-rail.is-collapsed .game-needs-detail { display: none; }
+.city-game.navigation-redesign .game-needs-rail.is-collapsed .game-needs-toggle {
+  position: relative; inset: auto; display: grid; width: 58px; height: 58px; place-items: center;
+  border: 5px solid color-mix(in srgb, var(--primary) 10%, var(--card)); border-radius: 50%;
+  background: var(--card); color: var(--foreground);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--border) 65%, transparent);
+}
+.game-needs-collapsed-icon { stroke-width: 2.5; }
+.game-needs-collapsed-plus {
+  position: absolute; top: -5px; right: -7px; display: grid; width: 24px; height: 24px;
+  place-items: center; border: 1px solid var(--border); border-radius: 50%;
+  background: var(--card); color: var(--foreground); box-shadow: var(--elevation-card);
+}
+.game-needs-collapsed-count {
+  position: absolute; right: -5px; bottom: -5px; display: grid; min-width: 28px; height: 28px;
+  place-items: center; padding: 0 5px; border: 2px solid var(--card); border-radius: 999px;
+  background: var(--card); color: #d71920; font-size: 17px; font-weight: 800; line-height: 1;
+  font-variant-numeric: tabular-nums; box-shadow: 0 3px 10px rgb(22 32 24 / 12%);
+}

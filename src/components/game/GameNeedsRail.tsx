@@ -61,7 +61,7 @@ export function GameNeedsRail({ player }: { player: PlayerState }) {
 
   return (
     <aside
-      className="game-needs-rail"
+      className={`game-needs-rail${expanded ? "" : " is-collapsed"}`}
       aria-label={`${player.name}'s needs dashboard${criticalCount ? `, ${criticalCount} critical` : ""}`}
       data-critical-count={criticalCount}
     >
@@ -74,12 +74,28 @@ export function GameNeedsRail({ player }: { player: PlayerState }) {
         type="button"
         className="game-needs-toggle"
         aria-expanded={expanded}
-        aria-label={expanded ? "Hide other needs" : "Show all needs"}
-        title={expanded ? "Hide other needs" : "Show all needs"}
+        aria-label={
+          expanded
+            ? "Collapse needs panel"
+            : `Expand needs panel${criticalCount ? `, ${criticalCount} critical ${criticalCount === 1 ? "need" : "needs"}` : ""}`
+        }
+        title={expanded ? "Collapse needs panel" : "Expand needs panel"}
         onClick={() => setExpanded((current) => !current)}
       >
-        {expanded ? <X size={12} aria-hidden="true" /> : <Plus size={12} aria-hidden="true" />}
+        {expanded ? (
+          <X size={12} aria-hidden="true" />
+        ) : (
+          <>
+            <Zap className="game-needs-collapsed-icon" size={23} aria-hidden="true" />
+            <span className="game-needs-collapsed-plus" aria-hidden="true"><Plus size={13} /></span>
+          </>
+        )}
       </button>
+      {!expanded && criticalCount > 0 && (
+        <span className="game-needs-collapsed-count" aria-label={`${criticalCount} critical needs`}>
+          {criticalCount}
+        </span>
+      )}
       <div className="game-needs-list">
         {visibleNeeds.map((name) => {
           const Icon = NEED_ICONS[name];
