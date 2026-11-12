@@ -825,6 +825,11 @@ export function PlayableNeighborhood() {
         </div>
       ) : (
         <div className="neighborhood-world-card">
+          {connectionState === "connected" && (
+            <div className="neighborhood-walk-hint" aria-label="Movement instruction">
+              Tap the ground to walk
+            </div>
+          )}
           {(connectionState === "connecting" ||
             connectionState === "loading" ||
             connectionState === "unavailable") && (
