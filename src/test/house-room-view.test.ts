@@ -34,24 +34,4 @@ describe("room view", () => {
     expect(shown).not.toContain("right-back");
     expect(shown.some((id) => id.endsWith("cutaway"))).toBe(false);
   });
-
-  it("keeps the partitions that bound a room from the far side only", () => {
-    const sitting = houseRoomViews("studio-flat", width, depth).find(
-      (view) => view.id === "sitting",
-    )!;
-    const partitions = housePartitionSegmentsForFloor("studio-flat", width, depth, 0);
-    const shown = partitions
-      .filter((wall) => !roomViewHidesSegment(wall, sitting))
-      .map((wall) => wall.id);
-    expect(shown).toEqual([]);
-
-    const bedroom = houseRoomViews("studio-flat", width, depth).find(
-      (view) => view.id === "bedroom",
-    )!;
-    const bedroomShown = partitions
-      .filter((wall) => !roomViewHidesSegment(wall, bedroom))
-      .map((wall) => wall.id);
-    expect(bedroomShown).toContain("sitting-bedroom-left");
-    expect(bedroomShown).not.toContain("bedroom-bath-back");
-  });
 });

@@ -369,11 +369,41 @@ export const FOUR_ROOM_HOME_TYPES: readonly string[] = [
   "duplex",
 ];
 
+/**
+ * Studio flat, open plan as in the housing guide: one continuous living space with no partition
+ * walls. Only the bathroom is enclosed, in the back-right corner, with a doorway in its front wall.
+ */
+function studioBathroomSegments(width: number, depth: number, height: number): HouseWallSegment[] {
+  const thickness = HOUSE_WALL_THICKNESS;
+  const doorway = 0.9;
+  const bathLeft = width * 0.3;
+  const bathFront = -depth * 0.12;
+  const doorX = (bathLeft + width / 2) / 2;
+  return [
+    {
+      id: "bath-front-left",
+      position: [(bathLeft + doorX - doorway / 2) / 2, height / 2, bathFront],
+      size: [doorX - doorway / 2 - bathLeft, height, thickness],
+    },
+    {
+      id: "bath-front-right",
+      position: [(doorX + doorway / 2 + width / 2) / 2, height / 2, bathFront],
+      size: [width / 2 - (doorX + doorway / 2), height, thickness],
+    },
+    {
+      id: "bath-left",
+      position: [bathLeft, height / 2, (-depth / 2 + bathFront) / 2],
+      size: [thickness, height, bathFront + depth / 2],
+    },
+  ];
+}
+
 export function housePartitionSegments(
   houseTypeId: string,
   width: number,
   depth: number,
 ): HouseWallSegment[] {
+  if (houseTypeId === "studio-flat") return studioBathroomSegments(width, depth, 1.9);
   if (!FOUR_ROOM_HOME_TYPES.includes(houseTypeId)) return [];
   // Taller than the furniture, so it reads clearly from the camera.
   return studioPartitionSegments(width, depth, 1.9);
