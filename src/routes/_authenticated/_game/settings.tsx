@@ -453,7 +453,7 @@ function AudioControls({ profile, onSave }: { profile: Profile; onSave: (patch: 
     setBlocked(false);
     setGameAudioLevels(next);
     setLevels(next);
-    if (!next.music && !next.effects) await disableGameAudio();
+    if (!next.music && !next.effects && !next.environment) await disableGameAudio();
     return true;
   }
 
