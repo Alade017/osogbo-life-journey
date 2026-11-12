@@ -2,7 +2,13 @@ import { Component, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Canvas } from "@react-three/fiber";
 import { WorldCamera, WorldLighting, WorldMaterial } from "@/components/3d/WorldScene";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
-import { getLocationVenueDesign, type VenueFixture } from "@/lib/location-venue-designs";
+import {
+  getLocationVenueDesign,
+  isTradingOpen,
+  type VenueFixture,
+} from "@/lib/location-venue-designs";
+import { VenueEnvironment } from "@/components/3d/VenueEnvironment";
+import { useOptionalGameTime } from "@/components/game/GameTimeProvider";
 
 const SCENE_START_TIMEOUT_MS = 5_000;
 
@@ -127,6 +133,11 @@ function FixtureModel({
 
 export function LocationVenueScene({ slug, locationName }: { slug: string; locationName: string }) {
   const venue = useMemo(() => getLocationVenueDesign(slug, locationName), [slug, locationName]);
+  const gameTime = useOptionalGameTime();
+  // Shops with trading hours show their shutter open or closed for the current game hour.
+  const shutterOpen = venue.environment?.trading
+    ? isTradingOpen(gameTime?.simulation.gameTime.hour ?? 12, venue.environment.trading)
+    : undefined;
   const [selectedFixture, setSelectedFixture] = useState(venue.fixtures[0]?.id ?? "");
   const [sceneStatus, setSceneStatus] = useState<"loading" | "ready" | "fallback">("loading");
   const selected =
@@ -182,27 +193,40 @@ export function LocationVenueScene({ slug, locationName }: { slug: string; locat
             >
               <WorldCamera width={10} depth={7} stage target={[0, 1.2, 0]} zoom={1.2} />
               <WorldLighting size={14} />
-              <mesh position={[0, -0.08, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-                <planeGeometry args={[11, 8]} />
-                <WorldMaterial tone="tileLight" color={venue.floorColor} />
-              </mesh>
-              <mesh position={[0, 1.45, -3.95]} receiveShadow>
-                <boxGeometry args={[11, 3, 0.18]} />
-                <WorldMaterial tone="wall" color={venue.wallColor} />
-              </mesh>
-              <mesh position={[-5.42, 1.45, 0]} receiveShadow>
-                <boxGeometry args={[0.18, 3, 8]} />
-                <WorldMaterial tone="wall" color={venue.wallColor} />
-              </mesh>
-              {venue.fixtures.map((fixture) => (
-                <FixtureModel
-                  key={fixture.id}
-                  fixture={fixture}
-                  active={fixture.id === selectedFixture}
+              {venue.environment ? (
+                <VenueEnvironment
+                  url={venue.environment.url}
+                  open={shutterOpen}
+                  fixtures={venue.fixtures}
+                  activeId={selectedFixture}
                   accentColor={venue.accentColor}
-                  onSelect={() => setSelectedFixture(fixture.id)}
+                  onSelect={setSelectedFixture}
                 />
-              ))}
+              ) : (
+                <>
+                  <mesh position={[0, -0.08, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+                    <planeGeometry args={[11, 8]} />
+                    <WorldMaterial tone="tileLight" color={venue.floorColor} />
+                  </mesh>
+                  <mesh position={[0, 1.45, -3.95]} receiveShadow>
+                    <boxGeometry args={[11, 3, 0.18]} />
+                    <WorldMaterial tone="wall" color={venue.wallColor} />
+                  </mesh>
+                  <mesh position={[-5.42, 1.45, 0]} receiveShadow>
+                    <boxGeometry args={[0.18, 3, 8]} />
+                    <WorldMaterial tone="wall" color={venue.wallColor} />
+                  </mesh>
+                  {venue.fixtures.map((fixture) => (
+                    <FixtureModel
+                      key={fixture.id}
+                      fixture={fixture}
+                      active={fixture.id === selectedFixture}
+                      accentColor={venue.accentColor}
+                      onSelect={() => setSelectedFixture(fixture.id)}
+                    />
+                  ))}
+                </>
+              )}
             </Canvas>
           </VenueSceneBoundary>
         )}

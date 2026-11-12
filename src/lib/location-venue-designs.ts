@@ -9,6 +9,13 @@ export type VenueFixture = {
   position: [number, number];
 };
 
+/** A restyled environment model for a venue interior, from public/models/environments. */
+export type VenueEnvironment = {
+  url: string;
+  /** Hours (game clock) when the trading shutter is up. Omit for venues without a shutter. */
+  trading?: { openHour: number; closeHour: number };
+};
+
 export type LocationVenueDesign = {
   name: string;
   description: string;
@@ -16,7 +23,14 @@ export type LocationVenueDesign = {
   wallColor: string;
   accentColor: string;
   fixtures: readonly VenueFixture[];
+  environment?: VenueEnvironment;
 };
+
+/** True while a venue with trading hours is open at this game hour. */
+export function isTradingOpen(hour: number, trading: VenueEnvironment["trading"]) {
+  if (!trading) return true;
+  return hour >= trading.openHour && hour < trading.closeHour;
+}
 
 function fixture(
   id: string,
@@ -440,6 +454,10 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     floorColor: "#bac5c1",
     wallColor: "#dce3df",
     accentColor: "#648b91",
+    environment: {
+      url: "/models/environments/market-and-bank/fish-market-bay.glb",
+      trading: { openHour: 7, closeHour: 19 },
+    },
     fixtures: [
       fixture("fish-counter", "Vendor counter", "A market service counter.", "counter", -2.7, -1.2),
       fixture("fish-display", "Display table", "A washable display surface.", "table", 0, 0.7),
