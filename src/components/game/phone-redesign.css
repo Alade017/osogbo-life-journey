@@ -647,7 +647,6 @@
   border-radius: 50%;
 }
 
-
 /* On mobile, the open handset extends over the game dock instead of stopping above it. */
 @media (max-width: 640px) {
   .phone-dialog-shell-docked {
@@ -667,8 +666,12 @@
   .phone-dialog-shell-docked > .phone-dialog.phone-ui-refresh {
     position: relative !important;
     inset: auto !important;
+    /* The desktop centring offset would push the handset off the left edge. */
+    transform: none !important;
     width: calc(100vw - 12px - env(safe-area-inset-left) - env(safe-area-inset-right)) !important;
-    max-width: calc(100vw - 12px - env(safe-area-inset-left) - env(safe-area-inset-right)) !important;
+    max-width: calc(
+      100vw - 12px - env(safe-area-inset-left) - env(safe-area-inset-right)
+    ) !important;
     height: 100% !important;
     max-height: none !important;
     margin: 0 !important;
