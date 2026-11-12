@@ -619,8 +619,8 @@ export function R3FNeighborhoodSurface({
           gl={{ antialias: false, powerPreference: "low-power" }}
         >
           <WorldCamera
-            width={14 * WORLD_SCALE * unit}
-            depth={12 * WORLD_SCALE * unit}
+            width={bounds.width * unit}
+            depth={bounds.height * unit}
             target={target}
             zoom={zoom}
             minZoom={NEIGHBORHOOD_CAMERA.minZoom}
