@@ -75,7 +75,7 @@ export function avatarTextureKey(
   return `osogbo-avatar-${stableHash(JSON.stringify([gender, normalized, slots]))}`;
 }
 
-/** Build a single, static SVG atlas. Phaser advances frames; SVG never runs per game frame. */
+/** Build a single, static SVG atlas. Frames are chosen by the renderer; SVG never runs per game frame. */
 export function createAvatarAtlasMarkup(
   appearance: Appearance | null | undefined,
   gender = "nonbinary",

@@ -1,4 +1,4 @@
-/** Pure presentation/footprint contract shared by Phaser and movement validation. */
+/** Pure presentation/footprint contract shared by the 3D renderer and movement validation. */
 export const NEIGHBORHOOD_TILE_SIZE = 80;
 export const NEIGHBORHOOD_PROJECTION = { x: 0.45, y: 0.22, originX: 1180, originY: 920 } as const;
 export type GroundRect = { left: number; top: number; width: number; height: number };

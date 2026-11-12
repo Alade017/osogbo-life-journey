@@ -32,12 +32,6 @@ const testState = vi.hoisted(() => ({
   locations: [] as Record<string, unknown>[],
   wallet: null as Record<string, unknown> | null,
 }));
-vi.mock("@/components/map/PhaserMapSurface", () => ({
-  PhaserMapSurface: ({ onUnavailable }: { onUnavailable: () => void }) => {
-    useEffect(() => onUnavailable(), [onUnavailable]);
-    return null;
-  },
-}));
 const eventState = vi.hoisted(() => ({
   events: [] as import("@/lib/city-event-service").CityEventOccurrence[],
 }));
