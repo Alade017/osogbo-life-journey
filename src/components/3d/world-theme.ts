@@ -90,10 +90,11 @@ export const WORLD_CAMERA = {
 } as const;
 
 /** Playable-neighbourhood zoom limits, isolated from shared interior camera framing. */
+// Camera distance is the base distance divided by zoom, so a higher zoom sits closer to the street.
 export const NEIGHBORHOOD_CAMERA = {
-  defaultZoom: WORLD_CAMERA.defaultZoom,
-  minZoom: 0.55,
-  maxZoom: 2,
+  defaultZoom: 1.8,
+  minZoom: 1.1,
+  maxZoom: 2.8,
 } as const;
 
 /** Overview-map camera tuning, kept separate from shared world and interior camera limits. */
