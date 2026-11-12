@@ -34,9 +34,9 @@ const FACING_YAW: Record<string, number> = {
 };
 
 /**
- * The same saved appearance contract is used by portraits and both world scenes. The body is a
- * single mesh, so limbs do not swing separately: walking bobs the whole figure and the head
- * glance turns the body as one.
+ * The same saved appearance contract is used by portraits and both world scenes. The supplied
+ * body asset is currently a single mesh, so locomotion is expressed through root travel, gait
+ * timing, body bounce and a restrained counter-sway until articulated character assets are added.
  */
 export function WorldCharacter({
   appearance = {},
@@ -118,17 +118,24 @@ export function WorldCharacter({
     }
     const group = bodyRef.current;
     if (!group) return;
+    // Drive the gait from actual remaining travel, not a fixed 350ms timeout. Long walks
+    // therefore keep animating until the character reaches the server-authoritative destination.
+    const travelling = !!rootGroup && rootGroup.position.distanceTo(goal.current) > 0.018;
     const moving =
       animation !== "sleep" &&
       !taskPose &&
-      (animation === "walk" || performance.now() < walkUntil.current);
-    const phase = clock.elapsedTime * (moving ? 8 : 4);
+      (animation === "walk" || travelling || performance.now() < walkUntil.current);
+    const phase = clock.elapsedTime * (moving ? 8 : 3.2);
     // Poses are blended toward their targets so changes fade rather than snap.
     const k = reduced ? 1 : blend(CHARACTER_MOTION.fadeRate, delta);
     // Footfall: the body rises mid-stride and squashes slightly as each foot lands.
     const footfall = reduced || !moving ? 0 : Math.abs(Math.sin(phase));
+    const gait = reduced || !moving ? 0 : Math.sin(phase);
     group.position.y = MathUtils.lerp(group.position.y, footfall * CHARACTER_MOTION.bob * h, k);
     group.scale.y = MathUtils.lerp(group.scale.y, 1 - footfall * CHARACTER_MOTION.squash, k);
+    // A subtle counter-sway gives the one-piece source mesh a more legible walking cycle.
+    group.rotation.x = MathUtils.lerp(group.rotation.x, moving ? 0.035 : 0, k);
+    group.rotation.z = MathUtils.lerp(group.rotation.z, gait * 0.025, k);
     // A look at a nearby character turns the body a little, measured relative to its facing.
     let turn = 0;
     if (lookAt && !reduced) {
