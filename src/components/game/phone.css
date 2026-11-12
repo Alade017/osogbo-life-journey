@@ -399,11 +399,11 @@
   flex: none;
   align-content: start;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  grid-template-rows: repeat(3, min-content);
-  gap: 16px 7px;
+  grid-template-rows: repeat(4, min-content);
+  gap: 12px 7px;
   scroll-snap-align: start;
   scroll-snap-stop: always;
-  padding: 20px 6px 14px;
+  padding: 14px 6px 10px;
 }
 
 .phone-page-dots {
@@ -1834,8 +1834,8 @@
 
 @media (max-width: 480px) {
   .phone-app-grid {
-    gap: 12px 5px;
-    padding-inline: 2px;
+    gap: 10px 5px;
+    padding: 12px 2px 8px;
   }
 
   .phone-app-icon {
