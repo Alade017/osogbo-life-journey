@@ -2280,9 +2280,9 @@ export function HouseRoom3D({
                   ]
                 : editMode
                   ? [0, 0.25, 0]
-                  : [0, WORLD_SCALE.door * 0.65, 0]
+                  : [0, WORLD_SCALE.door * 0.58, depth * 0.06]
             }
-            distanceScale={roomView ? ROOM_VIEW_CAMERA.distanceScale : 1}
+            distanceScale={roomView ? ROOM_VIEW_CAMERA.distanceScale : 0.94}
             enabled={!inputBlocked && !activePreview}
           />
         </Canvas>
