@@ -130,22 +130,19 @@ export function CharacterWardrobe({
       {anchors.torso.map((segment, index) =>
         createPortal(
           <SegmentGarment segment={segment} color={top} trim={trim} radiusFactor={0.72} cuff={false} patterned={patterned} />,
-          segment.bone,
-          `wardrobe-torso-${index}`,
+          segment.bone
         ),
       )}
       {anchors.arms.map((segment, index) =>
         createPortal(
           <SegmentGarment segment={segment} color={top} trim={trim} radiusFactor={0.2} patterned={patterned} />,
-          segment.bone,
-          `wardrobe-arm-${index}`,
+          segment.bone
         ),
       )}
       {anchors.legs.map((segment, index) =>
         createPortal(
           <SegmentGarment segment={segment} color={bottom} trim={trim} radiusFactor={0.22} />,
-          segment.bone,
-          `wardrobe-leg-${index}`,
+          segment.bone
         ),
       )}
       {anchors.feet.map((bone, index) =>
