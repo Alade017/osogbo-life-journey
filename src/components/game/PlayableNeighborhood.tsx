@@ -310,7 +310,7 @@ export function PlayableNeighborhood() {
   const placesQuery = useQuery({ ...q.places(), enabled: !!currentLocation?.id });
   const shopItemsQuery = useQuery({ ...q.shopItems(), enabled: !!currentLocation?.id });
   const jobsQuery = useQuery({ ...q.jobs(), enabled: !!currentLocation?.id });
-  const { connectionState, connectionError, players, sessionId, roomRef } =
+  const { connectionState, players, sessionId, roomRef } =
     useNeighborhoodConnection(
       currentLocation?.id,
       currentLocation?.slug,
