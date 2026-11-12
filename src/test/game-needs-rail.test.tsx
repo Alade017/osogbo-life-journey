@@ -47,15 +47,15 @@ describe("persistent player needs dashboard", () => {
     expect(detail).toHaveTextContent("Social");
     expect(detail).toHaveTextContent("10% · critical");
   });
-  it("collapses to a circular needs button with a red critical-count badge", () => {
+  it("shows the most urgent needs as compact pills in preview mode", () => {
     const { container } = render(<GameNeedsRail player={player} />);
     fireEvent.click(screen.getByRole("button", { name: "Collapse needs panel" }));
-    const expandButton = screen.getByRole("button", { name: "Expand needs panel, 1 critical need" });
-    expect(expandButton).toBeVisible();
-    expect(expandButton.querySelector(".game-needs-collapsed-icon")).not.toBeNull();
-    expect(container.querySelector(".game-needs-collapsed-count")).toHaveTextContent("1");
+    expect(container.querySelector(".game-needs-toggle")).toHaveStyle({ width: "42px", height: "42px" });
+    expect(container.querySelectorAll(".game-needs-preview-pill")).toHaveLength(2);
+    expect(container.querySelector(".game-needs-preview")).toHaveTextContent("Social");
+    expect(container.querySelector(".game-needs-preview")).toHaveTextContent("Hunger");
     expect(container.querySelector(".game-needs-list")).not.toBeVisible();
-    fireEvent.click(expandButton);
-    expect(container.querySelectorAll(".game-needs-item")).toHaveLength(6);
+    fireEvent.click(screen.getByRole("button", { name: /Social: 10 percent, critical/ }));
+    expect(screen.getByRole("status", { name: "Social need status" })).toHaveTextContent("10%");
   });
 });

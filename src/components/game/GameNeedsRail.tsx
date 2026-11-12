@@ -22,11 +22,20 @@ export function GameNeedsRail({ player }: { player: PlayerState }) {
   const criticalCount = NEED_NAMES.filter(
     (name) => statusForNeed(name, Math.round(simulation.needs[name])) === "critical",
   ).length;
-  // Collapsed, the rail shows only the need that needs the most attention.
-  const attentionNeed = NEED_NAMES.reduce((lowest, name) =>
-    simulation.needs[name] < simulation.needs[lowest] ? name : lowest,
-  );
-  const visibleNeeds = expanded ? NEED_NAMES : [attentionNeed];
+  // Preview mode surfaces the two needs requiring the most attention.
+  const previewNeeds = NEED_NAMES
+    .map((name) => ({
+      name,
+      value: Math.round(simulation.needs[name]),
+      status: statusForNeed(name, Math.round(simulation.needs[name])),
+    }))
+    .filter((need) => need.status !== "healthy")
+    .sort((a, b) => {
+      const priority = { critical: 0, warning: 1, healthy: 2 };
+      return priority[a.status] - priority[b.status] || a.value - b.value;
+    })
+    .slice(0, 2);
+  const visibleNeeds = expanded ? NEED_NAMES : [];
   const detailValue = detailNeed ? Math.round(simulation.needs[detailNeed]) : null;
   const needAction = detailNeed
     ? {
@@ -91,10 +100,26 @@ export function GameNeedsRail({ player }: { player: PlayerState }) {
           </>
         )}
       </button>
-      {!expanded && criticalCount > 0 && (
-        <span className="game-needs-collapsed-count" aria-label={`${criticalCount} critical needs`}>
-          {criticalCount}
-        </span>
+      {!expanded && (
+        <div className="game-needs-preview" aria-label="Needs requiring attention">
+          {previewNeeds.map(({ name, value, status }) => {
+            const Icon = NEED_ICONS[name];
+            return (
+              <button
+                type="button"
+                className={`game-needs-preview-pill is-${status}`}
+                key={name}
+                aria-label={`${NEED_RULES[name].label}: ${value} percent, ${status}. Tap for details`}
+                onClick={() => { setActionMessage(null); setDetailNeed(name); }}
+              >
+                <Icon size={13} aria-hidden="true" />
+                <span>{NEED_RULES[name].label}</span>
+                <strong>{value}%</strong>
+              </button>
+            );
+          })}
+          {previewNeeds.length === 0 && <span className="game-needs-preview-empty">All needs are good</span>}
+        </div>
       )}
       <div className="game-needs-list">
         {visibleNeeds.map((name) => {
