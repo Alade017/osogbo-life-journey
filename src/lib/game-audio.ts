@@ -371,12 +371,71 @@ function saveLevels(levels: AudioLevels) {
   }
 }
 
+const AMBIENCE_GAIN = 0.55;
+const AMBIENCE_LOOP_SECONDS = 12;
+
+function createAmbientSoundscape(context: AudioContext): AudioBuffer {
+  const sampleRate = context.sampleRate;
+  const length = sampleRate * AMBIENCE_LOOP_SECONDS;
+  const buffer = context.createBuffer(1, length, sampleRate);
+  const samples = buffer.getChannelData(0);
+  let seed = 0x51f15e;
+  let windFilter = 0;
+  const random = () => {
+    seed ^= seed << 13;
+    seed ^= seed >>> 17;
+    seed ^= seed << 5;
+    return (seed >>> 0) / 0xffffffff * 2 - 1;
+  };
+
+  // Build a seamless, original sound bed: soft wind, distant road rumble,
+  // and sparse bird chirps. No network requests or third-party audio assets.
+  const chirps = [0.8, 1.02, 3.25, 3.47, 6.6, 8.9, 9.12, 10.8].map((start, index) => ({
+    start,
+    duration: index % 3 === 0 ? 0.14 : 0.105,
+    low: index % 2 === 0 ? 1850 : 2250,
+    high: index % 2 === 0 ? 2850 : 3150,
+  }));
+
+  for (let index = 0; index < length; index++) {
+    const time = index / sampleRate;
+    const white = random();
+    windFilter += (white - windFilter) * 0.0018;
+    const wind = windFilter * 2.1 + white * 0.012;
+    const trafficMotion = 0.5 + 0.5 * Math.sin(2 * Math.PI * 0.075 * time);
+    const traffic =
+      (Math.sin(2 * Math.PI * 48 * time) * 0.052 +
+        Math.sin(2 * Math.PI * 63 * time) * 0.026 +
+        Math.sin(2 * Math.PI * 81 * time) * 0.014) *
+      (0.45 + trafficMotion * 0.55);
+
+    let birds = 0;
+    for (const chirp of chirps) {
+      const elapsed = time - chirp.start;
+      if (elapsed < 0 || elapsed >= chirp.duration) continue;
+      const progress = elapsed / chirp.duration;
+      const frequency = chirp.low + (chirp.high - chirp.low) * progress;
+      const envelope = Math.sin(Math.PI * progress) ** 2;
+      birds += Math.sin(2 * Math.PI * (chirp.low * elapsed +
+        ((chirp.high - chirp.low) / (2 * chirp.duration)) * elapsed * elapsed)) *
+        envelope * 0.15;
+    }
+    samples[index] = Math.max(-0.55, Math.min(0.55, wind + traffic + birds));
+  }
+
+  return buffer;
+}
+
 function applyLevels(current: AudioGraph, levels: AudioLevels) {
   const now = current.context.currentTime;
   current.master.gain.setTargetAtTime(levels.master, now, 0.08);
   current.music.gain.setTargetAtTime(levels.music, now, 0.08);
   current.effects.gain.setTargetAtTime(levels.effects, now, 0.08);
-  current.ambience.gain.value = (levels.environment ?? 0) * 0.035;
+  current.ambience.gain.setTargetAtTime(
+    (levels.environment ?? 0) * AMBIENCE_GAIN,
+    now,
+    0.12,
+  );
 }
 
 function createAudioGraph(levels: AudioLevels): AudioGraph | null {
@@ -389,26 +448,16 @@ function createAudioGraph(levels: AudioLevels): AudioGraph | null {
   const effects = context.createGain();
   const current = { context, master, ambience, music, effects };
   applyLevels(current, levels);
-  ambience.gain.value = (levels.environment ?? 0) * 0.035;
   ambience.connect(master);
   music.connect(master);
   effects.connect(master);
   master.connect(context.destination);
 
-  // Original synthesized ambience and tones; no recordings or remote audio assets.
-  const buffer = context.createBuffer(1, context.sampleRate * 2, context.sampleRate);
-  const channel = buffer.getChannelData(0);
-  for (let index = 0; index < channel.length; index++)
-    channel[index] = (Math.random() * 2 - 1) * 0.12;
-  const noise = context.createBufferSource();
-  const lowPass = context.createBiquadFilter();
-  noise.buffer = buffer;
-  noise.loop = true;
-  lowPass.type = "lowpass";
-  lowPass.frequency.value = 460;
-  noise.connect(lowPass);
-  lowPass.connect(ambience);
-  noise.start();
+  const soundscape = context.createBufferSource();
+  soundscape.buffer = createAmbientSoundscape(context);
+  soundscape.loop = true;
+  soundscape.connect(ambience);
+  soundscape.start();
 
   return current;
 }
