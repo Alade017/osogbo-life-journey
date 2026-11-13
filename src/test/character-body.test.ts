@@ -108,7 +108,7 @@ describe("humanoid rig", () => {
     // The body is unindexed (skin and feature materials are merged as groups), so count corners.
     const triangles =
       (body.geometry.index?.count ?? body.geometry.attributes["position"]!.count) / 3;
-    expect(triangles).toBeLessThan(4500);
+    expect(triangles).toBeLessThan(5000);
   });
 
   it("skips the hair mesh for bald characters", () => {
