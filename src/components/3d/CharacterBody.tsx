@@ -83,7 +83,11 @@ export function CharacterBody({
 
   useEffect(() => {
     return () => {
-      for (const mesh of rig.meshes) (mesh.material as Material).dispose();
+      for (const mesh of rig.meshes) {
+        for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material]) {
+          (material as Material).dispose();
+        }
+      }
     };
   }, [rig]);
 

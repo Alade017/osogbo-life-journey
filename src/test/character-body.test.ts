@@ -105,7 +105,9 @@ describe("humanoid rig", () => {
   it("keeps the body within a low triangle budget", () => {
     const rig = createHumanoid({ variant: "male", skinColor: "#8a5a3b", hairColor: null });
     const body = rig.meshes[0] as SkinnedMesh;
-    const triangles = body.geometry.index!.count / 3;
+    // The body is unindexed (skin and feature materials are merged as groups), so count corners.
+    const triangles =
+      (body.geometry.index?.count ?? body.geometry.attributes["position"]!.count) / 3;
     expect(triangles).toBeLessThan(2000);
   });
 

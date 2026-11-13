@@ -3,10 +3,10 @@ import {
   BufferGeometry,
   CylinderGeometry,
   Float32BufferAttribute,
+  IcosahedronGeometry,
   MeshStandardMaterial,
   Skeleton,
   SkinnedMesh,
-  SphereGeometry,
   Uint16BufferAttribute,
 } from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
@@ -41,6 +41,8 @@ export const JOINTS: readonly Joint[] = [
 type Part = { geometry: BufferGeometry; bone: BoneName };
 
 function skinTo(geometry: BufferGeometry, boneIndex: number): BufferGeometry {
+  // Parts mix indexed and unindexed geometry, so every part is unindexed before merging.
+  if (geometry.index) geometry = geometry.toNonIndexed();
   const count = geometry.attributes["position"]!.count;
   const indices = new Uint16Array(count * 4);
   const weights = new Float32Array(count * 4);
@@ -68,68 +70,112 @@ function cylinder(
   return { geometry, bone };
 }
 
-function sphere(
-  radius: number,
+/**
+ * A faceted ellipsoid. Detail 1 gives a rounder silhouette for the torso and head, detail 0 is
+ * used for hands, feet and joints so the overall count stays low.
+ */
+function blob(
+  radii: [number, number, number],
   at: [number, number, number],
   bone: BoneName,
-  scale: [number, number, number] = [1, 1, 1],
+  detail: 0 | 1 = 1,
 ): Part {
-  const geometry = new SphereGeometry(radius, 8, 6);
-  geometry.scale(...scale);
+  const geometry = new IcosahedronGeometry(1, detail);
+  geometry.scale(...radii);
   geometry.translate(...at);
   return { geometry, bone };
 }
 
-function bodyParts(variant: BodyVariant): Part[] {
-  const w = variant === "female" ? 0.9 : 1;
-  const hip = variant === "female" ? 1.08 : 1;
-  const parts: Part[] = [
-    cylinder(0.13, 0.12, 0.16, [0, 0.46, 0], BONE.root, [hip, 1, hip], 10),
-    cylinder(0.115, 0.125, 0.14, [0, 0.6, 0], BONE.spine1, [w, 1, w], 10),
-    cylinder(0.14, 0.115, 0.2, [0, 0.74, 0], BONE.spine2, [w, 1, w], 10),
-    cylinder(0.05, 0.055, 0.1, [0, 0.84, 0], BONE.neck),
-    sphere(0.09, [0, 0.91, 0], BONE.head, [1, 1.15, 1]),
+/** Each side of the body, mirrored: side 1 is the left limb, -1 the right. */
+function limbParts(side: 1 | -1, w: number): Part[] {
+  const upper = side === 1 ? BONE.lUpperArm : BONE.rUpperArm;
+  const fore = side === 1 ? BONE.lForearm : BONE.rForearm;
+  const hand = side === 1 ? BONE.lHand : BONE.rHand;
+  const thigh = side === 1 ? BONE.lThigh : BONE.rThigh;
+  const calf = side === 1 ? BONE.lCalf : BONE.rCalf;
+  const foot = side === 1 ? BONE.lFoot : BONE.rFoot;
+  const ax = 0.19 * side * w;
+  const lx = 0.09 * side;
+  return [
+    // Shoulder cap and arm, tapering from deltoid to wrist.
+    blob([0.062, 0.068, 0.062], [ax, 0.79, 0], upper),
+    cylinder(0.05, 0.041, 0.17, [ax, 0.695, 0], upper),
+    blob([0.042, 0.042, 0.042], [ax, 0.607, 0], upper, 0),
+    cylinder(0.041, 0.031, 0.16, [ax, 0.53, 0], fore),
+    blob([0.034, 0.034, 0.034], [ax, 0.45, 0], fore, 0),
+    // Hand: a flat palm with a thumb bump on the outside.
+    blob([0.04, 0.078, 0.024], [ax, 0.38, 0], hand),
+    blob([0.02, 0.03, 0.02], [ax - 0.03 * side, 0.4, 0.01], hand, 0),
+    // Leg: a full thigh, a calf bulge at the back, a slimmer shin and a foot.
+    cylinder(0.086, 0.061, 0.23, [lx, 0.365, 0], thigh),
+    blob([0.055, 0.055, 0.055], [lx, 0.25, 0], calf, 0),
+    blob([0.06, 0.11, 0.058], [lx, 0.16, -0.012], calf),
+    cylinder(0.056, 0.04, 0.2, [lx, 0.14, 0], calf),
+    blob([0.04, 0.04, 0.04], [lx, 0.04, 0], foot, 0),
+    blob([0.05, 0.034, 0.1], [lx, 0.03, 0.03], foot),
   ];
-  for (const side of [1, -1] as const) {
-    const upper = side === 1 ? BONE.lUpperArm : BONE.rUpperArm;
-    const fore = side === 1 ? BONE.lForearm : BONE.rForearm;
-    const hand = side === 1 ? BONE.lHand : BONE.rHand;
-    const thigh = side === 1 ? BONE.lThigh : BONE.rThigh;
-    const calf = side === 1 ? BONE.lCalf : BONE.rCalf;
-    const foot = side === 1 ? BONE.lFoot : BONE.rFoot;
-    const ax = 0.19 * side;
-    const lx = 0.09 * side;
-    parts.push(
-      sphere(0.07, [ax, 0.78, 0], upper),
-      cylinder(0.05, 0.042, 0.17, [ax, 0.695, 0], upper),
-      sphere(0.042, [ax, 0.61, 0], upper),
-      cylinder(0.04, 0.034, 0.15, [ax, 0.535, 0], fore),
-      sphere(0.045, [ax, 0.39, 0], hand, [0.8, 1.5, 0.5]),
-      cylinder(0.078, 0.058, 0.23, [lx, 0.365, 0], thigh),
-      sphere(0.056, [lx, 0.25, 0], calf),
-      cylinder(0.056, 0.04, 0.22, [lx, 0.14, 0], calf),
-      sphere(0.04, [lx, 0.05, 0], foot),
-      sphere(0.06, [lx, 0.04, -0.04], foot, [0.8, 0.6, 1.7]),
-    );
-  }
+}
+
+function bodyParts(variant: BodyVariant): Part[] {
+  const female = variant === "female";
+  const w = female ? 0.9 : 1;
+  const hip = female ? 1.1 : 1;
+  const parts: Part[] = [
+    // Pelvis and hips, then a tapered waist, a chest and a shoulder bar.
+    blob([0.13 * hip, 0.1, 0.09 * hip], [0, 0.45, 0], BONE.root),
+    blob([0.11 * w, 0.11, 0.085 * w], [0, 0.6, 0], BONE.spine1),
+    blob([0.16 * w, 0.13, 0.11 * w], [0, 0.74, 0], BONE.spine2),
+    blob([0.19 * w, 0.05, 0.095], [0, 0.83, 0], BONE.spine2, 0),
+    // Neck and head: a slightly longer jaw, ears on each side.
+    cylinder(0.05, 0.056, 0.1, [0, 0.865, 0], BONE.neck),
+    blob([0.085, 0.108, 0.095], [0, 0.945, 0], BONE.head),
+    blob([0.07, 0.055, 0.07], [0, 0.885, 0.012], BONE.head),
+    blob([0.02, 0.03, 0.016], [0.086, 0.935, 0], BONE.head, 0),
+    blob([0.02, 0.03, 0.016], [-0.086, 0.935, 0], BONE.head, 0),
+  ];
+  parts.push(...limbParts(1, w), ...limbParts(-1, w));
   return parts;
 }
 
+/** Facial features sit on the head bone in a separate mesh, so they can take dark materials. */
+function featureParts(): Part[] {
+  return [
+    blob([0.012, 0.011, 0.01], [0.032, 0.948, 0.083], BONE.head, 0),
+    blob([0.012, 0.011, 0.01], [-0.032, 0.948, 0.083], BONE.head, 0),
+    blob([0.03, 0.007, 0.01], [0.032, 0.97, 0.08], BONE.head, 0),
+    blob([0.03, 0.007, 0.01], [-0.032, 0.97, 0.08], BONE.head, 0),
+    blob([0.02, 0.03, 0.022], [0, 0.92, 0.095], BONE.head, 0),
+    blob([0.03, 0.01, 0.012], [0, 0.893, 0.088], BONE.head, 0),
+  ];
+}
+
+function hairParts(): Part[] {
+  return [blob([0.095, 0.072, 0.105], [0, 0.968, -0.01], BONE.head)];
+}
+
 const geometryCache = new Map<BodyVariant, { body: BufferGeometry; hair: BufferGeometry }>();
+
+function mergeSkinned(parts: readonly Part[], indexOf: Map<BoneName, number>): BufferGeometry {
+  const merged = mergeGeometries(
+    parts.map((part) => skinTo(part.geometry, indexOf.get(part.bone) ?? 0)),
+    false,
+  );
+  if (!merged) throw new Error("Humanoid geometry could not be merged");
+  return merged;
+}
 
 /** Geometry is shared per body shape; only the material colours differ between characters. */
 function geometriesFor(variant: BodyVariant) {
   const cached = geometryCache.get(variant);
   if (cached) return cached;
   const indexOf = new Map(JOINTS.map((joint, index) => [joint.name, index]));
-  const body = mergeGeometries(
-    bodyParts(variant).map((part) => skinTo(part.geometry, indexOf.get(part.bone) ?? 0)),
-    false,
-  );
-  const hairPart = sphere(0.1, [0, 0.94, -0.005], BONE.head, [1, 0.7, 1]);
-  const hair = skinTo(hairPart.geometry, indexOf.get(BONE.head) ?? 0);
-  if (!body) throw new Error("Body geometry could not be merged");
-  const built = { body, hair };
+  // Skin is material 0 and facial features are material 1, so the body stays one mesh.
+  const skin = mergeSkinned(bodyParts(variant), indexOf);
+  const features = mergeSkinned(featureParts(), indexOf);
+  const built = {
+    body: mergeGeometries([skin, features], true) ?? skin,
+    hair: mergeSkinned(hairParts(), indexOf),
+  };
   geometryCache.set(variant, built);
   return built;
 }
@@ -166,13 +212,13 @@ export function createHumanoid({
   const skeleton = new Skeleton(bones);
   const geometries = geometriesFor(variant);
 
-  const body = new SkinnedMesh(
-    geometries.body,
-    new MeshStandardMaterial({ color: skinColor, roughness: 0.82, flatShading: true }),
-  );
+  const body = new SkinnedMesh(geometries.body, [
+    new MeshStandardMaterial({ color: skinColor, roughness: 0.78, flatShading: true }),
+    new MeshStandardMaterial({ color: "#1d1410", roughness: 0.6, flatShading: true }),
+  ]);
   body.castShadow = true;
   body.bind(skeleton);
-  const meshes = [body];
+  const meshes: SkinnedMesh[] = [body];
   if (hairColor) {
     const hair = new SkinnedMesh(
       geometries.hair,
