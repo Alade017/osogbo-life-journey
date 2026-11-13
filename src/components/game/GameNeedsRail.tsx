@@ -23,12 +23,11 @@ export function GameNeedsRail({ player }: { player: PlayerState }) {
     (name) => statusForNeed(name, Math.round(simulation.needs[name])) === "critical",
   ).length;
   // Preview mode surfaces the two needs requiring the most attention.
-  const previewNeeds = NEED_NAMES
-    .map((name) => ({
-      name,
-      value: Math.round(simulation.needs[name]),
-      status: statusForNeed(name, Math.round(simulation.needs[name])),
-    }))
+  const previewNeeds = NEED_NAMES.map((name) => ({
+    name,
+    value: Math.round(simulation.needs[name]),
+    status: statusForNeed(name, Math.round(simulation.needs[name])),
+  }))
     .filter((need) => need.status !== "healthy")
     .sort((a, b) => {
       const priority = { critical: 0, warning: 1, healthy: 2 };
@@ -96,7 +95,9 @@ export function GameNeedsRail({ player }: { player: PlayerState }) {
         ) : (
           <>
             <Zap className="game-needs-collapsed-icon" size={23} aria-hidden="true" />
-            <span className="game-needs-collapsed-plus" aria-hidden="true"><Plus size={13} /></span>
+            <span className="game-needs-collapsed-plus" aria-hidden="true">
+              <Plus size={13} />
+            </span>
           </>
         )}
       </button>
@@ -110,7 +111,10 @@ export function GameNeedsRail({ player }: { player: PlayerState }) {
                 className={`game-needs-preview-pill is-${status}`}
                 key={name}
                 aria-label={`${NEED_RULES[name].label}: ${value} percent, ${status}. Tap for details`}
-                onClick={() => { setActionMessage(null); setDetailNeed(name); }}
+                onClick={() => {
+                  setActionMessage(null);
+                  setDetailNeed(name);
+                }}
               >
                 <Icon size={13} aria-hidden="true" />
                 <span>{NEED_RULES[name].label}</span>
@@ -118,7 +122,9 @@ export function GameNeedsRail({ player }: { player: PlayerState }) {
               </button>
             );
           })}
-          {previewNeeds.length === 0 && <span className="game-needs-preview-empty">All needs are good</span>}
+          {previewNeeds.length === 0 && (
+            <span className="game-needs-preview-empty">All needs are good</span>
+          )}
         </div>
       )}
       <div className="game-needs-list">
@@ -149,6 +155,7 @@ export function GameNeedsRail({ player }: { player: PlayerState }) {
                   <Icon size={15} aria-hidden="true" />
                 </span>
               </span>
+              <span className="game-needs-value">{value}%</span>
             </button>
           );
         })}
