@@ -158,12 +158,65 @@ function highlightParts(): Part[] {
 }
 
 function hairParts(shape: HairShape): Part[] {
-  // Keep the hair mass behind the facial plane so it cannot occlude brows or eyes.
-  if (shape === "afro")
+  // Hair masses sit behind the facial plane (+z is the face on this rig).
+  const base = blob([0.09, 0.071, 0.09], [0, 0.985, -0.03], BONE.head, { detail: 1 });
+  if (shape === "afro") {
     return [blob([0.116, 0.103, 0.09], [0, 1.005, -0.035], BONE.head, { detail: 1 })];
-  if (shape === "buzz")
+  }
+  if (shape === "buzz") {
     return [blob([0.09, 0.057, 0.07], [0, 1.002, -0.025], BONE.head, { detail: 1 })];
-  return [blob([0.09, 0.071, 0.09], [0, 0.985, -0.03], BONE.head, { detail: 1 })];
+  }
+  if (shape === "braids") {
+    const parts: Part[] = [base];
+    for (let row = -2; row <= 2; row += 1) {
+      const x = row * 0.029;
+      parts.push(
+        blob([0.012, 0.013, 0.073], [x, 1.025, -0.018], BONE.head),
+        blob([0.013, 0.012, 0.062], [x + 0.006, 1.018, -0.045], BONE.head),
+      );
+    }
+    for (const side of [-1, 1] as const) {
+      parts.push(
+        blob([0.018, 0.07, 0.022], [side * 0.083, 0.94, -0.035], BONE.head, { detail: 1 }),
+        blob([0.014, 0.065, 0.018], [side * 0.088, 0.86, -0.025], BONE.head),
+      );
+    }
+    return parts;
+  }
+  if (shape === "locs") {
+    const parts: Part[] = [base];
+    for (const side of [-1, 1] as const) {
+      for (let i = 0; i < 3; i += 1) {
+        const x = side * (0.07 + (i % 2) * 0.012);
+        const z = -0.06 + i * 0.035;
+        parts.push(
+          blob([0.018, 0.065, 0.02], [x, 0.93 - (i % 2) * 0.015, z], BONE.head, { detail: 1 }),
+          blob([0.016, 0.055, 0.018], [x * 1.04, 0.84 - (i % 2) * 0.015, z + 0.008], BONE.head),
+        );
+      }
+    }
+    for (let i = 0; i < 3; i += 1) {
+      parts.push(blob([0.017, 0.075, 0.018], [(i - 1) * 0.035, 0.91, -0.105], BONE.head));
+    }
+    return parts;
+  }
+  if (shape === "knots") {
+    const parts: Part[] = [base];
+    for (const x of [-0.055, 0, 0.055]) {
+      for (const z of [-0.055, 0.005]) {
+        parts.push(blob([0.027, 0.03, 0.027], [x, 1.055, z], BONE.head, { detail: 1 }));
+      }
+    }
+    return parts;
+  }
+  if (shape === "bun") {
+    return [
+      base,
+      blob([0.047, 0.045, 0.045], [0, 1.005, -0.105], BONE.head, { detail: 1 }),
+      blob([0.018, 0.058, 0.018], [0, 0.94, -0.105], BONE.head),
+    ];
+  }
+  return [base];
 }
 
 const geometryCache = new Map<string, {
