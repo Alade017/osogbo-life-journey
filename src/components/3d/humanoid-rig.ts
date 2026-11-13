@@ -135,7 +135,8 @@ function limbParts(side: 1 | -1, shape: { shoulder: number; hip: number; limb: n
     ),
     // Rounded thigh and a narrower calf with an ankle transition.
     taperedSegment(thighWidth, 0.052 * arm, 0.31 * arm, [lx, 0.33, 0], thigh),
-    blob([0.048 * arm, 0.055 * arm, 0.047 * arm], [lx, 0.17, 0], calf),
+    // A small patella volume bridges thigh and shin without a large spherical knee.
+    blob([0.039 * arm, 0.039 * arm, 0.039 * arm], [lx, 0.205, 0.006], calf),
     taperedSegment(0.049 * arm, 0.034 * arm, 0.19 * arm, [lx, 0.12, -0.008], calf),
     blob([0.041 * arm, 0.033 * arm, 0.078 * arm], [lx, 0.02, 0.035], foot, { detail: 1 }),
     // Toe box and heel give the foot a recognizable forward direction.
@@ -174,9 +175,9 @@ function bodyParts(variant: BodyVariant, build: number): Part[] {
     blob([0.017, 0.014, 0.019], [0, 0.915, 0.108], BONE.head, { detail: 1 }),
     blob([0.022, 0.027, 0.021], [0.09, 0.94, 0], BONE.head, { detail: 1 }),
     blob([0.022, 0.027, 0.021], [-0.09, 0.94, 0], BONE.head, { detail: 1 }),
-    // Shoulder caps and a subtle clavicle bridge.
-    blob([0.073 * shoulder, 0.068, 0.075], [0.155, 0.79, 0], BONE.spine2, { detail: 1 }),
-    blob([0.073 * shoulder, 0.068, 0.075], [-0.155, 0.79, 0], BONE.spine2, { detail: 1 }),
+    // Shoulder caps are restrained and overlap the tapered upper arms to soften the joint seam.
+    blob([0.061 * shoulder, 0.055, 0.062], [0.155, 0.79, 0], BONE.spine2, { detail: 1 }),
+    blob([0.061 * shoulder, 0.055, 0.062], [-0.155, 0.79, 0], BONE.spine2, { detail: 1 }),
     blob([0.12 * shoulder, 0.012, 0.014], [0.065, 0.84, 0.098], BONE.spine2),
     blob([0.12 * shoulder, 0.012, 0.014], [-0.065, 0.84, 0.098], BONE.spine2),
   ];
