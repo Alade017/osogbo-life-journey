@@ -15,6 +15,11 @@ describe("code-built humanoid", () => {
     expect(total).toBeLessThan(4000);
   });
 
+  it("keeps the female body within the low triangle budget", () => {
+    const rig = createHumanoid({ variant: "female", skinColor: "#8a5a3b", hairColor: null });
+    expect(rig.meshes[0]!.geometry.attributes["position"]!.count / 3).toBeLessThan(2000);
+  });
+
   it("stands about one body height tall with the head on top", () => {
     const rig = createHumanoid({ variant: "male", skinColor: "#8a5a3b", hairColor: null });
     const box = new Box3();

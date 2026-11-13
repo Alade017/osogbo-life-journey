@@ -93,15 +93,31 @@ function blob(
  * Limbs are separate pieces with a joint sphere at each end, so the elbows, knees and wrists read
  * as physical gaps rather than smooth bends. Side 1 is the left limb, -1 the right.
  */
-function limbParts(side: 1 | -1, shoulder: number): Part[] {
+/**
+ * Body proportions per variant. Values scale the shared action-figure shapes, so each body shape
+ * is data rather than separate hardcoded code paths. Bust is the radius of the chest pieces (0 for none).
+ */
+const SHAPES: Record<BodyVariant, { shoulder: number; waist: number; hip: number; bust: number }> =
+  {
+    male: { shoulder: 1, waist: 1, hip: 1, bust: 0 },
+    business: { shoulder: 1, waist: 1, hip: 1, bust: 0 },
+    female: { shoulder: 0.84, waist: 0.8, hip: 1.25, bust: 1 },
+  };
+
+/**
+ * Limbs are separate pieces with a joint sphere at each end, so the elbows, knees and wrists read
+ * as physical gaps rather than smooth bends. Side 1 is the left limb, -1 the right.
+ */
+function limbParts(side: 1 | -1, shape: { shoulder: number; hip: number }): Part[] {
   const upper = side === 1 ? BONE.lUpperArm : BONE.rUpperArm;
   const fore = side === 1 ? BONE.lForearm : BONE.rForearm;
   const hand = side === 1 ? BONE.lHand : BONE.rHand;
   const thigh = side === 1 ? BONE.lThigh : BONE.rThigh;
   const calf = side === 1 ? BONE.lCalf : BONE.rCalf;
   const foot = side === 1 ? BONE.lFoot : BONE.rFoot;
-  const ax = 0.2 * side * shoulder;
-  const lx = 0.1 * side;
+  const ax = 0.2 * side * shape.shoulder;
+  const lx = 0.1 * side * shape.hip;
+  const thighWidth = 0.1 * shape.hip;
   return [
     // Shoulder joint, then a bulging upper arm (biceps and triceps) with a gap above the elbow.
     blob([0.07, 0.07, 0.07], [ax, 0.79, 0], upper),
@@ -112,7 +128,7 @@ function limbParts(side: 1 | -1, shoulder: number): Part[] {
     cylinder(0.05, 0.05, 0.02, [ax, 0.36, 0], fore, { radial: 6, accessory: true }),
     blob([0.045, 0.07, 0.03], [ax, 0.3, 0], hand),
     // Leg: a bulging thigh, a knee joint, a calf and an ankle band above a rounded foot.
-    blob([0.1, 0.2, 0.1], [lx, 0.33, 0], thigh),
+    blob([thighWidth, 0.2, thighWidth], [lx, 0.33, 0], thigh),
     blob([0.055, 0.055, 0.055], [lx, 0.17, 0], calf),
     blob([0.07, 0.12, 0.065], [lx, 0.12, -0.01], calf),
     cylinder(0.055, 0.045, 0.02, [lx, 0.03, 0], calf, { radial: 6, accessory: true }),
@@ -121,26 +137,30 @@ function limbParts(side: 1 | -1, shoulder: number): Part[] {
 }
 
 function bodyParts(variant: BodyVariant): Part[] {
-  const female = variant === "female";
-  const shoulder = female ? 0.9 : 1;
-  const hip = female ? 1.15 : 1;
+  const shape = SHAPES[variant];
+  const { shoulder, waist, hip, bust } = shape;
   const parts: Part[] = [
-    // V-shaped chest with a bulging upper back, very wide shoulders, a narrow waist and a small
-    // round pelvis joint that makes the segmented action-figure waist.
+    // Chest with a bulging upper back, shoulders, a waist and a small round pelvis joint.
     blob([0.2 * shoulder, 0.07, 0.12], [0, 0.85, 0], BONE.spine2),
     blob([0.19 * shoulder, 0.13, 0.13], [0, 0.76, 0], BONE.spine2, { detail: 1 }),
-    blob([0.08, 0.09, 0.07], [0, 0.6, 0], BONE.spine1),
+    blob([0.08 * waist, 0.09, 0.07], [0, 0.6, 0], BONE.spine1),
     blob([0.085 * hip, 0.075, 0.075], [0, 0.49, 0], BONE.root),
     // Neck, then a blocky head with a flat shelf for the brow and a broad jaw.
     cylinder(0.05, 0.056, 0.1, [0, 0.865, 0], BONE.neck, { radial: 6 }),
     blob([0.085, 0.105, 0.09], [0, 0.945, 0], BONE.head, { detail: 1 }),
     blob([0.07, 0.05, 0.07], [0, 0.885, 0.01], BONE.head),
   ];
-  parts.push(...limbParts(1, shoulder), ...limbParts(-1, shoulder));
+  if (bust > 0) {
+    // Two chest pieces, one per side, sit on the upper chest.
+    parts.push(
+      blob([0.075 * bust, 0.065 * bust, 0.07 * bust], [0.075, 0.74, 0.085], BONE.spine2),
+      blob([0.075 * bust, 0.065 * bust, 0.07 * bust], [-0.075, 0.74, 0.085], BONE.spine2),
+    );
+  }
+  parts.push(...limbParts(1, shape), ...limbParts(-1, shape));
   return parts;
 }
 
-/** Face, blindfold and bands. These take the dark accessory material. */
 function accessoryParts(): Part[] {
   return [
     // Blindfold: a squashed dark ring across the upper face that covers the eyes.
