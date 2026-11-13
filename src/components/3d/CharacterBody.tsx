@@ -125,13 +125,15 @@ export function CharacterBody({
         <primitive key={index} object={mesh} />
       ))}
       <CharacterWardrobe rig={rig.root} appearance={safe} gender={gender} />
-      {head && safe.headwear > 0 ? createPortal(
-        <ProceduralHeadwear
-          style={safe.headwear as 1 | 2 | 3}
-          color={HAIR_COLORS[safe.hairColor] ?? HAIR_COLORS[0]!}
-        />,
-        head,
-      ) : null}
+      {head && safe.headwear > 0
+        ? createPortal(
+            <ProceduralHeadwear
+              style={safe.headwear as 1 | 2 | 3}
+              color={HAIR_COLORS[safe.hairColor] ?? HAIR_COLORS[0]!}
+            />,
+            head,
+          )
+        : null}
       {held && hand ? createPortal(<group scale={1 / height}>{held}</group>, hand) : null}
     </group>
   );
