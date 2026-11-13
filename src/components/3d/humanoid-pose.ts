@@ -37,22 +37,41 @@ const sin = Math.sin;
 const cos = Math.cos;
 
 /** The pose a motion wants at `t` seconds. Pure, so it can be tested without a renderer. */
-export function poseFor(motion: PoseMotion, t: number): Pose {
+/** Per-body motion style. Hip sway is stronger on the female body, so her walk reads as hers. */
+export const POSE_STYLE: Record<"female" | "male" | "business", { hipSway: number }> = {
+  female: { hipSway: 1.8 },
+  male: { hipSway: 1 },
+  business: { hipSway: 1 },
+};
+
+export function poseFor(
+  motion: PoseMotion,
+  t: number,
+  options: { hipSway: number } = { hipSway: 1 },
+): Pose {
   switch (motion) {
     case "Walk": {
       const p = t * 6.2;
       const s = sin(p);
+      // Each leg swings half a cycle apart. Calves bend smoothly during the forward swing
+      // (no hard kinks), and the hips roll with a counter-rotating spine.
+      const left = p;
+      const right = p + Math.PI;
+      const lift = (phase: number) => (1 + cos(phase + 0.6)) / 2;
+      const hipSway = options.hipSway;
       return {
         rootY: Math.abs(cos(p)) * 0.025,
         bones: {
-          [BONE.lThigh]: [s * 0.5, 0, 0],
-          [BONE.rThigh]: [-s * 0.5, 0, 0],
-          [BONE.lCalf]: [-Math.max(0, s) * 0.6, 0, 0],
-          [BONE.rCalf]: [-Math.max(0, -s) * 0.6, 0, 0],
+          [BONE.root]: [0, 0, sin(p) * 0.03 * hipSway],
+          [BONE.spine]: [0, -sin(p) * 0.05 * hipSway, 0],
+          [BONE.lThigh]: [sin(left) * 0.5, 0, 0],
+          [BONE.rThigh]: [sin(right) * 0.5, 0, 0],
+          [BONE.lCalf]: [-0.6 * lift(left) * lift(left), 0, 0],
+          [BONE.rCalf]: [-0.6 * lift(right) * lift(right), 0, 0],
           [BONE.lUpperArm]: [-s * 0.4, 0, 0.08],
           [BONE.rUpperArm]: [s * 0.4, 0, -0.08],
-          [BONE.lForearm]: [0.25, 0, 0],
-          [BONE.rForearm]: [0.25, 0, 0],
+          [BONE.lForearm]: [0.22 + 0.12 * Math.max(0, -s), 0, 0],
+          [BONE.rForearm]: [0.22 + 0.12 * Math.max(0, s), 0, 0],
         },
       };
     }

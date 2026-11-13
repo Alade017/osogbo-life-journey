@@ -10,7 +10,14 @@ import {
 } from "@/game/avatar-appearance";
 import { CharacterWardrobe } from "./CharacterWardrobe";
 import { CHARACTER_MOTION } from "./character-config";
-import { BONE, poseFor, ROOT_REST_Y, type BoneName, type PoseMotion } from "./humanoid-pose";
+import {
+  BONE,
+  POSE_STYLE,
+  poseFor,
+  ROOT_REST_Y,
+  type BoneName,
+  type PoseMotion,
+} from "./humanoid-pose";
 import { hairShapeFor } from "./hair-shapes";
 import { createHumanoid, type BodyVariant } from "./humanoid-rig";
 
@@ -93,7 +100,7 @@ export function CharacterBody({
   }, [rig]);
 
   useFrame((state, delta) => {
-    const pose = poseFor(motion, state.clock.elapsedTime);
+    const pose = poseFor(motion, state.clock.elapsedTime, POSE_STYLE[variant]);
     const blend = 1 - Math.exp(-CHARACTER_MOTION.fadeRate * delta);
     let moving = false;
     for (const bone of rig.bones) {
