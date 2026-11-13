@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { Box3, Mesh, SkinnedMesh } from "three";
 import { createHumanoid, JOINTS } from "@/components/3d/humanoid-rig";
+import { BONE, poseFor } from "@/components/3d/humanoid-pose";
 
 function triangles(mesh: SkinnedMesh): number {
   const index = mesh.geometry.getIndex();
@@ -52,6 +53,25 @@ describe("code-built humanoid", () => {
     const leanWidth = lean.meshes[0]!.geometry.boundingBox!.max.x - lean.meshes[0]!.geometry.boundingBox!.min.x;
     const muscularWidth = muscular.meshes[0]!.geometry.boundingBox!.max.x - muscular.meshes[0]!.geometry.boundingBox!.min.x;
     expect(muscularWidth).toBeGreaterThan(leanWidth);
+  });
+
+  it("animates a balanced walk with knee flexion and ankle compensation", () => {
+    const pose = poseFor("Walk", 0);
+    expect(pose.bones[BONE.lThigh]).toBeDefined();
+    expect(pose.bones[BONE.rThigh]).toBeDefined();
+    expect(pose.bones[BONE.lCalf]![0]).toBeLessThan(0);
+    expect(pose.bones[BONE.rCalf]![0]).toBeLessThanOrEqual(0);
+    expect(pose.bones[BONE.lFoot]).toBeDefined();
+    expect(pose.bones[BONE.rFoot]).toBeDefined();
+    expect(pose.bones[BONE.spine2]).toBeDefined();
+  });
+
+  it("keeps both feet articulated in the seated pose", () => {
+    const pose = poseFor("Sit", 0);
+    expect(pose.bones[BONE.lCalf]![0]).toBeCloseTo(-1.45);
+    expect(pose.bones[BONE.rCalf]![0]).toBeCloseTo(-1.45);
+    expect(pose.bones[BONE.lFoot]![0]).toBeCloseTo(0.28);
+    expect(pose.bones[BONE.rFoot]![0]).toBeCloseTo(0.28);
   });
 
   it("skins every vertex to a real joint and leaves bald characters without hair", () => {
