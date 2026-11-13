@@ -363,80 +363,6 @@ function NeighborhoodNpcActor({
 /** Distant towers that frame the neighbourhood, so the open ground reads as a city. */
 const SKY_FOG_NEAR_SCALE = 3.5;
 const SKY_FOG_FAR_SCALE = 9;
-/** A stable 32-bit hash of a district slug, so each neighbourhood gets its own skyline. */
-function skylineSeed(slug: string) {
-  let hash = 2166136261;
-  for (let index = 0; index < slug.length; index++) {
-    hash = Math.imul(hash ^ slug.charCodeAt(index), 16777619);
-  }
-  return hash >>> 0;
-}
-
-const SKYLINE_MIN_TOWERS = 9;
-const SKYLINE_TOWER_VARIATION = 8;
-const SKYLINE_GAP_SCALE = 1.2;
-const SKYLINE_GROUND_SCALE = 3;
-/** Strip behind the town, in building heights, so it never overlaps the main ground. */
-const SKYLINE_GROUND_DEPTH = 6;
-
-function NeighborhoodSkyline({
-  slug,
-  width,
-  depth,
-}: {
-  slug: string;
-  width: number;
-  depth: number;
-}) {
-  const towers = useMemo(() => {
-    // Each district gets its own tower count, heights and glass pattern, stable between renders.
-    const base = skylineSeed(slug);
-    const count = SKYLINE_MIN_TOWERS + (base % SKYLINE_TOWER_VARIATION);
-    return Array.from({ length: count }, (_, index) => {
-      const seed = (((base + (index + 1) * 2654435761) >>> 0) % 1000) / 1000;
-      const spread = (index + 0.5) / count - 0.5;
-      const height = WORLD_SCALE.neighborhoodBuildingHeight * (1.2 + seed * 2.2);
-      const size = WORLD_SCALE.neighborhoodBuildingHeight * (0.8 + seed * 0.6);
-      return {
-        id: index,
-        x: spread * width * 2.2,
-        z: -depth / 2 - WORLD_SCALE.neighborhoodBuildingHeight * SKYLINE_GAP_SCALE,
-        height,
-        size,
-        glass: (index + (base % 3)) % 3 === 0,
-      };
-    });
-  }, [slug, width, depth]);
-  return (
-    <group>
-      {/* Ground under the towers, so they stand on the city rather than the sky. */}
-      <mesh
-        position={[
-          0,
-          -0.12,
-          -depth / 2 - (SKYLINE_GROUND_DEPTH * WORLD_SCALE.neighborhoodBuildingHeight) / 2,
-        ]}
-        receiveShadow
-      >
-        <boxGeometry
-          args={[
-            width * SKYLINE_GROUND_SCALE,
-            0.2,
-            SKYLINE_GROUND_DEPTH * WORLD_SCALE.neighborhoodBuildingHeight,
-          ]}
-        />
-        <WorldMaterial tone="ground" />
-      </mesh>
-      {towers.map((tower) => (
-        <mesh key={tower.id} position={[tower.x, tower.height / 2, tower.z]} castShadow>
-          <boxGeometry args={[tower.size, tower.height, tower.size]} />
-          <WorldMaterial tone={tower.glass ? "glass" : "concrete"} />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
 export function R3FNeighborhoodSurface({
   players,
   selfSessionId,
@@ -645,11 +571,6 @@ export function R3FNeighborhoodSurface({
               Math.max(bounds.width, bounds.height) * unit * SKY_FOG_NEAR_SCALE,
               Math.max(bounds.width, bounds.height) * unit * SKY_FOG_FAR_SCALE,
             ]}
-          />
-          <NeighborhoodSkyline
-            slug={area.slug}
-            width={bounds.width * unit}
-            depth={bounds.height * unit}
           />
           <mesh position={[0, -0.12, 0]} receiveShadow>
             <boxGeometry args={[bounds.width * unit, 0.2, bounds.height * unit]} />
