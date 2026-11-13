@@ -68,11 +68,17 @@ function blob(
 const SHAPES: Record<BodyVariant, { shoulder: number; waist: number; hip: number; bust: number }> = {
   male: { shoulder: 1, waist: 1, hip: 1, bust: 0 },
   business: { shoulder: 1, waist: 1, hip: 1, bust: 0 },
-  female: { shoulder: 0.88, waist: 0.82, hip: 1.18, bust: 1 },
+  female: { shoulder: 0.92, waist: 0.88, hip: 1.1, bust: 1 },
 };
+const BUILD_FACTORS = [
+  { shoulder: 0.9, waist: 0.86, hip: 0.92, limb: 0.9 },
+  { shoulder: 1, waist: 1, hip: 1, limb: 1 },
+  { shoulder: 1.07, waist: 0.94, hip: 1.02, limb: 1.06 },
+  { shoulder: 1.13, waist: 1.02, hip: 1.08, limb: 1.12 },
+] as const;
 
 /** Overlapping smooth volumes create continuous-looking muscle transitions at game scale. */
-function limbParts(side: 1 | -1, shape: { shoulder: number; hip: number }): Part[] {
+function limbParts(side: 1 | -1, shape: { shoulder: number; hip: number; limb: number }): Part[] {
   const upper = side === 1 ? BONE.lUpperArm : BONE.rUpperArm;
   const fore = side === 1 ? BONE.lForearm : BONE.rForearm;
   const hand = side === 1 ? BONE.lHand : BONE.rHand;
@@ -81,35 +87,55 @@ function limbParts(side: 1 | -1, shape: { shoulder: number; hip: number }): Part
   const foot = side === 1 ? BONE.lFoot : BONE.rFoot;
   const ax = 0.19 * side * shape.shoulder;
   const lx = 0.1 * side * shape.hip;
-  const thighWidth = 0.095 * shape.hip;
+  const arm = shape.limb;
+  const thighWidth = 0.073 * shape.hip * arm;
+  const fingerSpread = 0.012 * arm;
   return [
-    blob([0.082, 0.09, 0.085], [ax, 0.79, 0], upper, { detail: 1 }),
-    blob([0.071, 0.13, 0.071], [ax, 0.66, 0], upper, { detail: 1 }),
-    blob([0.048, 0.052, 0.048], [ax, 0.545, 0], fore),
-    blob([0.047, 0.105, 0.047], [ax, 0.46, 0], fore, { detail: 1 }),
-    blob([0.039, 0.045, 0.036], [ax, 0.36, 0], hand),
-    blob([0.045, 0.055, 0.04], [ax, 0.3, 0], hand),
-    blob([thighWidth, 0.19, thighWidth * 0.9], [lx, 0.33, 0], thigh, { detail: 1 }),
-    blob([0.058, 0.065, 0.056], [lx, 0.17, 0], calf),
-    blob([0.064, 0.12, 0.06], [lx, 0.12, -0.01], calf, { detail: 1 }),
-    blob([0.052, 0.038, 0.09], [lx, 0.02, 0.03], foot),
+    // Deltoid, upper arm and forearm taper toward the wrist instead of forming oversized balls.
+    blob([0.061 * arm, 0.074 * arm, 0.062 * arm], [ax, 0.79, 0], upper, { detail: 1 }),
+    blob([0.052 * arm, 0.118 * arm, 0.051 * arm], [ax, 0.665, 0], upper, { detail: 1 }),
+    blob([0.039 * arm, 0.047 * arm, 0.039 * arm], [ax, 0.545, 0], fore),
+    blob([0.038 * arm, 0.095 * arm, 0.038 * arm], [ax, 0.46, 0], fore, { detail: 1 }),
+    // Palm, thumb and four individually readable fingers.
+    blob([0.036 * arm, 0.047 * arm, 0.025 * arm], [ax, 0.355, 0.008], hand, { detail: 1 }),
+    blob([0.014 * arm, 0.029 * arm, 0.016 * arm], [ax - side * 0.035 * arm, 0.348, 0.012], hand),
+    ...[-1.5, -0.5, 0.5, 1.5].map((finger) =>
+      blob([0.0065 * arm, 0.027 * arm, 0.008 * arm],
+        [ax + finger * fingerSpread, 0.31, 0.018], hand),
+    ),
+    // Rounded thigh and a narrower calf with an ankle transition.
+    blob([thighWidth, 0.17 * arm, thighWidth * 0.88], [lx, 0.33, 0], thigh, { detail: 1 }),
+    blob([0.048 * arm, 0.055 * arm, 0.047 * arm], [lx, 0.17, 0], calf),
+    blob([0.052 * arm, 0.105 * arm, 0.05 * arm], [lx, 0.12, -0.008], calf, { detail: 1 }),
+    blob([0.041 * arm, 0.033 * arm, 0.078 * arm], [lx, 0.02, 0.035], foot, { detail: 1 }),
+    // Toe box and heel give the foot a recognizable forward direction.
+    blob([0.042 * arm, 0.025 * arm, 0.045 * arm], [lx, 0.012, 0.075], foot),
+    blob([0.034 * arm, 0.025 * arm, 0.028 * arm], [lx, 0.018, -0.018], foot),
   ];
 }
 
-function bodyParts(variant: BodyVariant): Part[] {
-  const shape = SHAPES[variant];
+function bodyParts(variant: BodyVariant, build: number): Part[] {
+  const base = SHAPES[variant];
+  const factor = BUILD_FACTORS[Math.max(0, Math.min(3, Math.round(build)))]!;
+  const shape = {
+    shoulder: base.shoulder * factor.shoulder,
+    waist: base.waist * factor.waist,
+    hip: base.hip * factor.hip,
+    bust: base.bust,
+    limb: factor.limb,
+  };
   const { shoulder, waist, hip, bust } = shape;
   const parts: Part[] = [
-    // Rib cage, tapered abdomen and pelvis overlap to avoid the old segmented mannequin silhouette.
-    blob([0.205 * shoulder, 0.105, 0.125], [0, 0.82, 0], BONE.spine2, { detail: 1 }),
-    blob([0.178 * shoulder, 0.105, 0.118], [0, 0.745, 0], BONE.spine2, { detail: 1 }),
-    blob([0.105 * waist, 0.12, 0.085], [0, 0.625, 0], BONE.spine1, { detail: 1 }),
-    blob([0.12 * hip, 0.09, 0.09], [0, 0.505, 0], BONE.root, { detail: 1 }),
-    // Neck and a rounded head with a softer jaw and cheek volume.
-    blob([0.052, 0.09, 0.052], [0, 0.865, 0], BONE.neck, { detail: 1 }),
-    blob([0.087, 0.108, 0.09], [0, 0.95, 0], BONE.head, { detail: 1 }),
+    // Narrower rib cage, visible waist taper and a pelvis that connects cleanly to the thighs.
+    blob([0.174 * shoulder, 0.105, 0.112], [0, 0.82, 0], BONE.spine2, { detail: 1 }),
+    blob([0.158 * shoulder, 0.095, 0.105], [0, 0.745, 0], BONE.spine2, { detail: 1 }),
+    blob([0.112 * waist, 0.105, 0.082], [0, 0.625, 0], BONE.spine1, { detail: 1 }),
+    blob([0.137 * hip, 0.092, 0.09], [0, 0.505, 0], BONE.root, { detail: 1 }),
+    // A visible neck, larger cranium and tapered lower face improve head-to-body proportion.
+    blob([0.047, 0.092, 0.047], [0, 0.865, 0], BONE.neck, { detail: 1 }),
+    blob([0.096, 0.122, 0.096], [0, 0.95, 0], BONE.head, { detail: 1 }),
     // Jaw, chin and cheek planes blend into the cranium instead of reading as separate beads.
-    blob([0.067, 0.047, 0.073], [0, 0.89, 0.025], BONE.head, { detail: 1 }),
+    blob([0.071, 0.052, 0.076], [0, 0.89, 0.025], BONE.head, { detail: 1 }),
     blob([0.029, 0.022, 0.026], [0, 0.866, 0.053], BONE.head, { detail: 1 }),
     blob([0.034, 0.035, 0.027], [0.054, 0.928, 0.055], BONE.head, { detail: 1 }),
     blob([0.034, 0.035, 0.027], [-0.054, 0.928, 0.055], BONE.head, { detail: 1 }),
@@ -119,10 +145,10 @@ function bodyParts(variant: BodyVariant): Part[] {
     blob([0.022, 0.027, 0.021], [0.09, 0.94, 0], BONE.head, { detail: 1 }),
     blob([0.022, 0.027, 0.021], [-0.09, 0.94, 0], BONE.head, { detail: 1 }),
     // Shoulder caps and a subtle clavicle bridge.
-    blob([0.09 * shoulder, 0.075, 0.09], [0.17, 0.79, 0], BONE.spine2, { detail: 1 }),
-    blob([0.09 * shoulder, 0.075, 0.09], [-0.17, 0.79, 0], BONE.spine2, { detail: 1 }),
-    blob([0.14 * shoulder, 0.018, 0.018], [0.075, 0.84, 0.108], BONE.spine2),
-    blob([0.14 * shoulder, 0.018, 0.018], [-0.075, 0.84, 0.108], BONE.spine2),
+    blob([0.073 * shoulder, 0.068, 0.075], [0.155, 0.79, 0], BONE.spine2, { detail: 1 }),
+    blob([0.073 * shoulder, 0.068, 0.075], [-0.155, 0.79, 0], BONE.spine2, { detail: 1 }),
+    blob([0.12 * shoulder, 0.012, 0.014], [0.065, 0.84, 0.098], BONE.spine2),
+    blob([0.12 * shoulder, 0.012, 0.014], [-0.065, 0.84, 0.098], BONE.spine2),
   ];
   if (bust > 0) {
     parts.push(
@@ -236,12 +262,13 @@ function mergeSkinned(parts: readonly Part[], indexOf: Map<BoneName, number>): B
   if (!merged) throw new Error("Humanoid geometry could not be merged");
   return merged;
 }
-function geometriesFor(variant: BodyVariant, hairShape: HairShape) {
-  const key = `${variant}:${hairShape}`;
+function geometriesFor(variant: BodyVariant, hairShape: HairShape, build: number) {
+  const normalizedBuild = Math.max(0, Math.min(3, Math.round(build)));
+  const key = `${variant}:${hairShape}:${normalizedBuild}`;
   const cached = geometryCache.get(key);
   if (cached) return cached;
   const indexOf = new Map(JOINTS.map((joint, index) => [joint.name, index]));
-  const parts = bodyParts(variant);
+  const parts = bodyParts(variant, normalizedBuild);
   const built = {
     body: mergeSkinned(parts, indexOf),
     face: mergeSkinned(faceDetailParts(), indexOf),
@@ -257,9 +284,9 @@ function geometriesFor(variant: BodyVariant, hairShape: HairShape) {
 
 export type Humanoid = { root: Bone; bones: Bone[]; byName: Map<string, Bone>; meshes: SkinnedMesh[] };
 export function createHumanoid({
-  variant, skinColor, hairColor, hairShape = "cap",
+  variant, skinColor, hairColor, hairShape = "cap", build = 1,
 }: {
-  variant: BodyVariant; skinColor: string; hairColor: string | null; hairShape?: HairShape;
+  variant: BodyVariant; skinColor: string; hairColor: string | null; hairShape?: HairShape; build?: number;
 }): Humanoid {
   const byName = new Map<string, Bone>();
   const bones: Bone[] = [];
@@ -274,7 +301,7 @@ export function createHumanoid({
   const root = byName.get(BONE.root)!;
   root.updateMatrixWorld(true);
   const skeleton = new Skeleton(bones);
-  const geo = geometriesFor(variant, hairShape);
+  const geo = geometriesFor(variant, hairShape, build);
   const makeMesh = (geometry: BufferGeometry, material: MeshStandardMaterial) => {
     const mesh = new SkinnedMesh(geometry, material);
     mesh.castShadow = true;
