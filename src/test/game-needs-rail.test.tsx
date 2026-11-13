@@ -39,12 +39,29 @@ describe("persistent player needs dashboard", () => {
   });
 
   it("reveals the tapped need's exact level and status", () => {
-    render(<GameNeedsRail player={player} />);
+    render(
+      <div className="city-game navigation-redesign">
+        <GameNeedsRail player={player} />
+      </div>,
+    );
     const socialNeed = screen.getByRole("button", { name: "Social: 10 percent, critical" });
     fireEvent.click(socialNeed);
     expect(socialNeed).toHaveAttribute("aria-pressed", "true");
     const detail = screen.getByRole("status", { name: "Social need status" });
     expect(detail).toHaveTextContent("Social");
     expect(detail).toHaveTextContent("10% · critical");
+  });
+  it("shows the most urgent needs as compact pills in preview mode", () => {
+    const { container } = render(<GameNeedsRail player={player} />);
+    fireEvent.click(screen.getByRole("button", { name: "Collapse needs panel" }));
+    expect(container.querySelector(".game-needs-rail")).toHaveClass("is-collapsed");
+    expect(container.querySelector(".game-needs-toggle")).toBeInTheDocument();
+    expect(container.querySelectorAll(".game-needs-preview-pill")).toHaveLength(2);
+    expect(container.querySelector(".game-needs-preview")).toHaveTextContent("Social");
+    expect(container.querySelector(".game-needs-preview")).toHaveTextContent("Hunger");
+    expect(container.querySelector(".game-needs-list")).toBeEmptyDOMElement();
+    expect(container.querySelectorAll(".game-needs-item")).toHaveLength(0);
+    fireEvent.click(screen.getByRole("button", { name: /Social: 10 percent, critical/ }));
+    expect(screen.getByRole("status", { name: "Social need status" })).toHaveTextContent("10%");
   });
 });

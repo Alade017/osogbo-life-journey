@@ -87,8 +87,14 @@ export function checkNeighborhoodEntrances(
       [x, y + 1],
       [x, y - 1],
     ] as const) {
-      if (!valid(nx, ny) || seen[index(nx, ny)] || !open(nx, ny)) continue;
-      seen[index(nx, ny)] = 1;
+      if (!valid(nx, ny)) continue;
+
+      const nextIndex = index(nx, ny);
+
+      if (seen[nextIndex]) continue;
+      if (!open(nx, ny)) continue;
+
+      seen[nextIndex] = 1;
       queue.push([nx, ny]);
     }
   }

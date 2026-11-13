@@ -1,4 +1,4 @@
-/** Pure presentation/footprint contract shared by Phaser and movement validation. */
+/** Pure presentation/footprint contract shared by the 3D renderer and movement validation. */
 export const NEIGHBORHOOD_TILE_SIZE = 80;
 export const NEIGHBORHOOD_PROJECTION = { x: 0.45, y: 0.22, originX: 1180, originY: 920 } as const;
 export type GroundRect = { left: number; top: number; width: number; height: number };
@@ -22,6 +22,18 @@ export function neighborhoodDepth(x: number, y: number, bias = 0) {
 /** Preserve the existing authoritative building extents and entrance opening. */
 export function neighborhoodBuildingFootprint(object: { x: number; y: number }): GroundRect {
   return { left: object.x - 57, top: object.y - 62, width: 114, height: 58 };
+}
+
+/**
+ * Movement collision sections can differ from the visual building footprint
+ * when an authored building has walkable entrances.
+ */
+export function neighborhoodBuildingCollisionFootprints(object: {
+  x: number;
+  y: number;
+  collisionFootprints?: readonly GroundRect[];
+}): readonly GroundRect[] {
+  return object.collisionFootprints ?? [neighborhoodBuildingFootprint(object)];
 }
 
 export function neighborhoodObstacleFootprint(object: {

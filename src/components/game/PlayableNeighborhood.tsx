@@ -44,10 +44,11 @@ import { isPlayableDistrict, playableDistrictForLocation } from "@/game/playable
 import type { NeighborhoodPlayerView, NeighborhoodSceneHandle } from "@/game/neighborhood-types";
 import type { MovementDirection } from "@/lib/player-movement";
 import { NPC_CATALOG, npcActivityAt, type SocialAction } from "@/lib/npc-simulation";
-import { hasLocationVenueDesign } from "@/lib/location-venue-designs";
+import { hasBuildingVenueInterior, hasLocationVenueDesign } from "@/lib/location-venue-designs";
+import { MAP_LANDMARK_LOCATION_SLUG } from "@/components/map/map-location-links";
 import { JobsPage } from "@/routes/_authenticated/_game/jobs";
 import { MarketPage } from "@/routes/_authenticated/_game/market";
-import { WORLD_CAMERA } from "@/components/3d/world-theme";
+import { NEIGHBORHOOD_CAMERA } from "@/components/3d/world-theme";
 import "@/components/game/neighborhood.css";
 
 const R3FNeighborhoodSurface = lazy(() =>
@@ -303,11 +304,13 @@ export function PlayableNeighborhood() {
   const leavingStepsRef = useRef({ data: false, scene: false });
   const [scene, setScene] = useState<NeighborhoodSceneHandle | null>(null);
   const [peopleOpen, setPeopleOpen] = useState(false);
-  const [zoom, setZoom] = useState<number>(WORLD_CAMERA.defaultZoom);
+  const [zoom, setZoom] = useState<number>(NEIGHBORHOOD_CAMERA.defaultZoom);
   const directionsRef = useRef(directions);
   directionsRef.current = directions;
   const lastIntentRef = useRef("0:0");
   const [activePanel, setActivePanel] = useState<InteractionPanel | null>(null);
+  const [selectedBuildingName, setSelectedBuildingName] = useState<string | null>(null);
+  const [selectedShopSlug, setSelectedShopSlug] = useState<string | null | undefined>(undefined);
   /** A tapped building or person the character is walking to; interaction opens on arrival. */
   const [pendingTargetId, setPendingTargetId] = useState<string | null>(null);
   /** Set while the character walks to its home door after Go home. */
@@ -422,11 +425,21 @@ export function PlayableNeighborhood() {
     npcPositionOverrides,
     npcQuery.data,
     simulation.gameTime,
+    simulation.paused,
   ]);
   const localPlaces =
     placesQuery.data?.filter((place) => place.location_id === currentLocation?.id) ?? [];
   const hasShopOffers =
     shopItemsQuery.data?.some((offer) => offer.shop?.location_id === currentLocation?.id) ?? false;
+  const hasSelectedShopOffers =
+    selectedShopSlug === undefined
+      ? hasShopOffers
+      : selectedShopSlug !== null &&
+        (shopItemsQuery.data?.some(
+          (offer) =>
+            offer.shop?.location_id === currentLocation?.id && offer.shop.slug === selectedShopSlug,
+        ) ??
+          false);
   const hasBankServices =
     currentLocation?.type === "bank" ||
     localPlaces.some((place) => place.category === "bank" || place.category === "atm");
@@ -434,6 +447,12 @@ export function PlayableNeighborhood() {
     jobsQuery.data?.some((job) => job.is_available && job.location_id === currentLocation?.id) ??
     false;
   const hasVenueInterior = currentLocation ? hasLocationVenueDesign(currentLocation.slug) : false;
+  const hasSelectedVenueInterior = currentLocation
+    ? hasBuildingVenueInterior(currentLocation.slug, selectedShopSlug)
+    : false;
+  const activityLandmarkId = Object.entries(MAP_LANDMARK_LOCATION_SLUG).find(
+    ([, slug]) => !!slug && slug === currentLocation?.slug,
+  )?.[0];
   const hasLocalBusinesses = localPlaces.some((place) =>
     BUSINESS_PLACE_CATEGORIES.has(place.category),
   );
@@ -458,7 +477,6 @@ export function PlayableNeighborhood() {
   }, [
     activeNpcs,
     area,
-    area.objects,
     district?.personalHome,
     hasBankServices,
     hasCareerServices,
@@ -529,8 +547,10 @@ export function PlayableNeighborhood() {
   useEffect(() => {
     setDirections(new Set());
     lastIntentRef.current = "0:0";
-    setZoom(WORLD_CAMERA.defaultZoom);
+    setZoom(NEIGHBORHOOD_CAMERA.defaultZoom);
     setActivePanel(null);
+    setSelectedBuildingName(null);
+    setSelectedShopSlug(undefined);
     setBusinessView("actions");
     setWorkView("actions");
     setSelectedNpcId(null);
@@ -662,6 +682,8 @@ export function PlayableNeighborhood() {
       )
         return;
       event.preventDefault();
+      setSelectedBuildingName(nearbyObject.kind === "npc" ? null : nearbyObject.name);
+      setSelectedShopSlug(nearbyObject.kind === "market" ? nearbyObject.shopSlug : undefined);
       if (nearbyObject.kind === "home") {
         activateHome();
       } else if (nearbyObject.kind === "npc") {
@@ -683,6 +705,8 @@ export function PlayableNeighborhood() {
   const handleScene = useCallback((next: NeighborhoodSceneHandle | null) => setScene(next), []);
   const openInteraction = () => {
     if (!nearbyObject) return;
+    setSelectedBuildingName(nearbyObject.kind === "npc" ? null : nearbyObject.name);
+    setSelectedShopSlug(nearbyObject.kind === "market" ? nearbyObject.shopSlug : undefined);
     if (nearbyObject.kind === "home") {
       enterHome.mutate();
     } else if (nearbyObject.kind === "npc") {
@@ -721,6 +745,8 @@ export function PlayableNeighborhood() {
   const closeInteraction = (open: boolean) => {
     if (open) return;
     setActivePanel(null);
+    setSelectedBuildingName(null);
+    setSelectedShopSlug(undefined);
     setSelectedNpcId(null);
   };
   const npcActions: readonly { action: SocialAction; label: string }[] = [
@@ -730,7 +756,10 @@ export function PlayableNeighborhood() {
   ];
   const changeZoom = (factor: number) => {
     setZoom((current) =>
-      Math.min(WORLD_CAMERA.maxZoom, Math.max(WORLD_CAMERA.minZoom, current * factor)),
+      Math.min(
+        NEIGHBORHOOD_CAMERA.maxZoom,
+        Math.max(NEIGHBORHOOD_CAMERA.minZoom, current * factor),
+      ),
     );
   };
 
@@ -849,7 +878,7 @@ export function PlayableNeighborhood() {
                       <button
                         type="button"
                         aria-label="Zoom in"
-                        disabled={zoom >= WORLD_CAMERA.maxZoom}
+                        disabled={zoom >= NEIGHBORHOOD_CAMERA.maxZoom}
                         onClick={() => changeZoom(1.12)}
                       >
                         <Plus size={16} aria-hidden="true" />
@@ -857,7 +886,7 @@ export function PlayableNeighborhood() {
                       <button
                         type="button"
                         aria-label="Zoom out"
-                        disabled={zoom <= WORLD_CAMERA.minZoom}
+                        disabled={zoom <= NEIGHBORHOOD_CAMERA.minZoom}
                         onClick={() => changeZoom(1 / 1.12)}
                       >
                         <Minus size={16} aria-hidden="true" />
@@ -877,7 +906,7 @@ export function PlayableNeighborhood() {
                             ? `Talk with ${nearbyNpc?.name ?? nearbyObject.name}`
                             : nearbyObject.kind === "home"
                               ? "Enter your home"
-                              : `Interact with ${currentLocation?.name ?? nearbyObject.name}`
+                              : `Interact with ${nearbyObject.name}`
                         }
                       >
                         {nearbyObject.kind === "home" ? (
@@ -896,8 +925,8 @@ export function PlayableNeighborhood() {
                           : nearbyObject.kind === "npc"
                             ? `Talk with ${nearbyNpc?.name ?? nearbyObject.name}`
                             : nearbyObject.kind === "work"
-                              ? `Work at ${currentLocation?.name ?? nearbyObject.name}`
-                              : `Explore ${currentLocation?.name ?? nearbyObject.name}`}
+                              ? `Work at ${nearbyObject.name}`
+                              : `Explore ${nearbyObject.name}`}
                         <kbd>E</kbd>
                       </button>
                     )}
@@ -997,7 +1026,7 @@ export function PlayableNeighborhood() {
                       <DialogTitle>
                         {activePanel === "npc"
                           ? (selectedNpc?.name ?? "Neighbour")
-                          : (currentLocation?.name ?? "Nearby services")}
+                          : (selectedBuildingName ?? currentLocation?.name ?? "Nearby services")}
                       </DialogTitle>
                       <DialogDescription>
                         {activePanel === "npc"
@@ -1010,7 +1039,7 @@ export function PlayableNeighborhood() {
                         <>
                           {businessView === "actions" && (
                             <div className="grid gap-3 sm:grid-cols-2">
-                              {hasVenueInterior && (
+                              {hasSelectedVenueInterior && (
                                 <button
                                   type="button"
                                   className="neighborhood-action-card"
@@ -1020,15 +1049,35 @@ export function PlayableNeighborhood() {
                                   Explore venue interior
                                 </button>
                               )}
-                              {hasShopOffers && (
+                              {activityLandmarkId && (
+                                <a
+                                  className="neighborhood-action-card"
+                                  href={
+                                    "/map?landmark=" +
+                                    encodeURIComponent(activityLandmarkId) +
+                                    "&details=1"
+                                  }
+                                >
+                                  <Landmark size={18} aria-hidden="true" />
+                                  View official place activities
+                                </a>
+                              )}
+                              {hasSelectedShopOffers && (
                                 <button
                                   type="button"
                                   className="neighborhood-action-card"
                                   onClick={() => setBusinessView("shops")}
                                 >
                                   <Store size={18} aria-hidden="true" />
-                                  Browse local shop offers
+                                  Browse {selectedBuildingName ?? "local"} shop offers
                                 </button>
+                              )}
+                              {selectedShopSlug === null && (
+                                <p className="text-sm text-muted-foreground">
+                                  This stall does not have its own server-backed shop catalogue yet.
+                                  Browse the main Oja-Oba stalls for the currently available market
+                                  offers.
+                                </p>
                               )}
                               {hasBankServices && (
                                 <button
@@ -1072,7 +1121,7 @@ export function PlayableNeighborhood() {
                               >
                                 Back to building actions
                               </button>
-                              <MarketPage />
+                              <MarketPage shopSlug={selectedShopSlug ?? null} />
                             </>
                           )}
                           {businessView === "bank" && (

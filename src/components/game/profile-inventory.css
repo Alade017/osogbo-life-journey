@@ -1,20 +1,28 @@
-/* Profile and wardrobe. Built around the 3D character stage. Responsive rules use container
-   queries so the layout is correct both on the full page and inside the phone dialog. */
+/* Profile and wardrobe. Responsive rules use container queries, so the layout is right on the full
+   page and inside the phone dialog alike. */
+
 .pi-page {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.25rem;
   width: 100%;
   min-width: 0;
   container-type: inline-size;
 }
 
+/* Header */
+.pi-masthead {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
 .pi-masthead h1 {
   margin: 0.1rem 0 0;
-  font-size: 1.6rem;
+  font-size: clamp(1.5rem, 4.5cqi, 2rem);
   font-weight: 850;
   line-height: 1.1;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
   overflow-wrap: anywhere;
 }
 
@@ -39,6 +47,25 @@
   color: var(--muted-foreground);
 }
 
+.pi-banner {
+  margin: 0;
+  padding: 0.7rem 0.9rem;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--primary) 10%, var(--card));
+  font-size: 0.88rem;
+}
+
+.pi-banner button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--primary);
+  font: inherit;
+  font-weight: 750;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .pi-pill {
   display: inline-flex;
   align-items: center;
@@ -61,21 +88,69 @@
   border-color: transparent;
 }
 
-/* 3D stage: the character sits on a warm spotlight backdrop. */
+/* Section scaffolding */
+.pi-section {
+  display: grid;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.pi-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.pi-section-heading h2 {
+  margin: 0.1rem 0 0;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.pi-section-heading > span {
+  font-size: 0.82rem;
+  font-weight: 750;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+
+/* Character stage: the 3D figure on a warm spotlight */
+.pi-hero {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
 .pi-stage {
   position: relative;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: 28px;
+  border: 1px solid var(--border);
+  border-radius: 24px;
   background: radial-gradient(circle at 50% 30%, #fff8ec 0%, #ecdcc2 55%, #d4bea0 100%);
   box-shadow: var(--elevation-card, 0 8px 24px rgba(60, 40, 20, 0.12));
+}
+
+.pi-level {
+  position: absolute;
+  top: 0.9rem;
+  left: 0.9rem;
+  z-index: 1;
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-foreground, #fff);
+  font-size: 0.75rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
 }
 
 .pi-canvas {
   position: relative;
   width: 100%;
-  height: 300px;
+  height: 280px;
 }
 
 .pi-canvas canvas {
@@ -84,47 +159,21 @@
   height: 100% !important;
 }
 
-.pi-stage-foot {
+.pi-xp-label {
   display: flex;
-  align-items: flex-end;
   justify-content: space-between;
-  gap: 0.75rem;
-  padding: 0.9rem 1rem 1rem;
-  background: rgba(255, 255, 255, 0.55);
-  backdrop-filter: blur(6px);
-}
-
-.pi-stage-foot strong {
-  display: block;
-  font-size: 1.1rem;
-  font-weight: 850;
-  overflow-wrap: anywhere;
-}
-
-.pi-stage-foot span {
-  font-size: 0.85rem;
-  color: var(--muted-foreground);
-}
-
-.pi-level {
-  position: absolute;
-  top: 0.85rem;
-  left: 0.85rem;
-  z-index: 1;
-  padding: 0.3rem 0.65rem;
-  border-radius: 999px;
-  background: var(--foreground);
-  color: var(--background, #fff);
-  font-size: 0.75rem;
-  font-weight: 850;
-  letter-spacing: 0.04em;
+  gap: 0.5rem;
+  padding: 0 1rem;
+  font-size: 0.8rem;
+  font-weight: 750;
+  color: #5b4630;
 }
 
 .pi-xp {
-  height: 6px;
-  margin: 0 1rem 1rem;
+  height: 8px;
+  margin: 0.4rem 1rem 0;
   border-radius: 999px;
-  background: rgba(0, 0, 0, 0.1);
+  background: rgba(91, 70, 48, 0.18);
   overflow: hidden;
 }
 
@@ -135,35 +184,54 @@
   background: var(--primary);
 }
 
-.pi-xp-label {
+.pi-stage-foot {
   display: flex;
+  align-items: center;
   justify-content: space-between;
-  margin: 0 1rem 0.35rem;
-  font-size: 0.75rem;
-  font-weight: 750;
-  color: var(--muted-foreground);
+  gap: 0.75rem;
+  padding: 0.9rem 1rem 1rem;
 }
 
-/* Profile */
+.pi-stage-foot strong {
+  display: block;
+  font-size: 1rem;
+  color: #3a2a18;
+}
+
+.pi-stage-foot span {
+  font-size: 0.82rem;
+  color: #6b5538;
+}
+
+/* Life stats */
+.pi-side {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
 .pi-stats {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 1fr;
   gap: 0.6rem;
+  flex: 1;
 }
 
 .pi-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
+  display: grid;
+  align-content: center;
+  gap: 0.15rem;
+  padding: 0.9rem;
   min-width: 0;
-  padding: 0.85rem;
-  border-radius: 18px;
-  background: var(--card, #fff);
   border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--card);
 }
 
 .pi-stat-label {
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -171,138 +239,134 @@
 }
 
 .pi-stat-value {
-  font-size: 1.15rem;
+  font-size: 1.2rem;
   font-weight: 850;
   overflow-wrap: anywhere;
 }
 
 .pi-stat-hint {
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--muted-foreground);
 }
 
-.pi-segment {
+/* Badges */
+.pi-badges {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.35rem;
-  padding: 0.3rem;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.05);
-}
-
-.pi-segment button {
-  min-height: 40px;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--muted-foreground);
-  font-weight: 750;
-}
-
-.pi-segment button[aria-selected="true"] {
-  background: var(--card, #fff);
-  color: var(--foreground);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.pi-panel {
-  padding: 0.25rem 0;
-}
-
-.pi-rows {
-  display: grid;
+  gap: 0.6rem;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.pi-rows li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.85rem 0.25rem;
-  border-bottom: 1px solid var(--border);
+.pi-badge {
+  display: grid;
+  justify-items: start;
+  align-content: start;
+  gap: 0.3rem;
+  min-width: 0;
+  padding: 0.95rem;
+  border: 1px dashed var(--border);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--card) 70%, transparent);
 }
 
-.pi-rows li:last-child {
-  border-bottom: 0;
+.pi-badge strong {
+  font-size: 0.95rem;
+  font-weight: 800;
 }
 
-.pi-rows li>span {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
+.pi-badge small {
+  font-size: 0.8rem;
+  line-height: 1.35;
   color: var(--muted-foreground);
 }
 
-.pi-rows li>strong {
-  margin: 0;
-  font-weight: 750;
-  text-align: right;
-}
-
-.pi-timeline {
-  display: grid;
-  gap: 0.9rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.pi-timeline li {
-  display: flex;
-  gap: 0.75rem;
-  align-items: flex-start;
-}
-
-.pi-timeline-dot {
+.pi-badge-icon {
   display: grid;
   place-items: center;
-  flex: 0 0 auto;
-  width: 34px;
-  height: 34px;
-  border-radius: 12px;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 0.2rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--muted-foreground) 14%, var(--card));
+  color: var(--muted-foreground);
+}
+
+.pi-badge.is-earned {
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, var(--border));
+  border-style: solid;
+  background: var(--card);
+  box-shadow: var(--elevation-card, 0 6px 18px rgba(60, 40, 20, 0.08));
+}
+
+.pi-badge.is-earned .pi-badge-icon {
   background: var(--primary);
   color: var(--primary-foreground, #fff);
 }
 
-.pi-timeline strong {
-  display: block;
+.pi-badge-state {
+  margin-top: auto;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 14%, var(--card));
+  color: var(--primary);
+  font-size: 0.72rem;
+  font-weight: 800;
 }
 
-.pi-timeline small {
+.pi-badge-progress {
+  display: grid;
+  gap: 0.3rem;
+  width: 100%;
+  margin-top: auto;
+  font-size: 0.75rem;
+  font-weight: 750;
   color: var(--muted-foreground);
 }
 
+.pi-badge-bar {
+  display: block;
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted-foreground) 18%, transparent);
+  overflow: hidden;
+}
+
+.pi-badge-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--primary);
+}
+
+/* Quick actions */
 .pi-quick {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.5rem;
+  gap: 0.6rem;
 }
 
-.pi-quick a,
-.pi-quick button {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  min-height: 76px;
-  padding: 0.6rem 0.4rem;
-  border-radius: 18px;
+.pi-quick > button,
+.pi-quick > a {
+  display: grid;
+  justify-items: center;
+  gap: 0.3rem;
+  padding: 0.85rem 0.5rem;
   border: 1px solid var(--border);
-  background: var(--card, #fff);
+  border-radius: 18px;
+  background: var(--card);
   color: var(--foreground);
+  font: inherit;
   font-size: 0.82rem;
   font-weight: 750;
   text-decoration: none;
+  cursor: pointer;
 }
 
-/* Wardrobe */
+/* Wardrobe: outfit slots */
 .pi-slots {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.5rem;
   margin: 0;
   padding: 0;
@@ -310,67 +374,75 @@
 }
 
 .pi-slot {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  min-width: 0;
-  padding: 0.7rem;
-  border-radius: 18px;
-  background: var(--card, #fff);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.2rem 0.75rem;
+  padding: 0.75rem 0.9rem;
   border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card);
 }
 
 .pi-slot.is-selected {
-  outline: 2px solid var(--primary);
-  outline-offset: 1px;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary) inset;
 }
 
 .pi-slot-name {
-  font-size: 0.68rem;
-  font-weight: 850;
+  grid-column: 1 / -1;
+  font-size: 0.7rem;
+  font-weight: 800;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--muted-foreground);
 }
 
 .pi-slot-item {
-  font-size: 0.95rem;
-  font-weight: 750;
   overflow-wrap: anywhere;
+  font-size: 0.92rem;
 }
 
 .pi-slot-empty {
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   color: var(--muted-foreground);
 }
 
 .pi-slot-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem;
-  margin-top: 0.3rem;
+  justify-content: flex-end;
+  gap: 0.4rem;
 }
 
 .pi-chip-btn {
   min-height: 34px;
-  padding: 0.25rem 0.7rem;
-  border-radius: 999px;
+  padding: 0.3rem 0.75rem;
   border: 1px solid var(--border);
-  background: transparent;
+  border-radius: 999px;
+  background: var(--card);
   color: var(--foreground);
+  font: inherit;
   font-size: 0.8rem;
   font-weight: 750;
+  cursor: pointer;
+}
+
+.pi-chip-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .pi-chip-btn-primary {
   background: var(--primary);
-  color: var(--primary-foreground, #fff);
   border-color: transparent;
+  color: var(--primary-foreground, #fff);
 }
 
+/* Wardrobe: bag */
 .pi-filters {
   display: flex;
-  gap: 0.45rem;
+  gap: 0.4rem;
   overflow-x: auto;
   padding-bottom: 0.2rem;
   scrollbar-width: none;
@@ -378,62 +450,68 @@
 
 .pi-filters button {
   flex: 0 0 auto;
-  min-height: 38px;
-  padding: 0.35rem 0.9rem;
-  border-radius: 999px;
+  min-height: 36px;
+  padding: 0.3rem 0.8rem;
   border: 1px solid var(--border);
-  background: transparent;
+  border-radius: 999px;
+  background: var(--card);
   color: var(--foreground);
+  font: inherit;
+  font-size: 0.82rem;
   font-weight: 750;
+  cursor: pointer;
 }
 
 .pi-filters button[aria-pressed="true"] {
-  background: var(--foreground);
-  color: var(--background, #fff);
+  background: var(--primary);
   border-color: transparent;
+  color: var(--primary-foreground, #fff);
 }
 
-.pi-banner {
-  margin: 0;
-  padding: 0.6rem 0.8rem;
-  border-radius: 14px;
-  background: rgba(0, 0, 0, 0.05);
-  font-size: 0.88rem;
-}
-
-.pi-banner button {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: inherit;
-  font-weight: 750;
-  text-decoration: underline;
+.pi-bag-layout {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
 }
 
 .pi-bag {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
   gap: 0.6rem;
+  min-width: 0;
 }
 
 .pi-tile {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.35rem;
+  display: grid;
+  justify-items: center;
+  gap: 0.2rem;
   min-width: 0;
-  padding: 0.6rem 0.5rem 0.7rem;
-  border-radius: 18px;
+  padding: 0.7rem 0.5rem;
   border: 1px solid var(--border);
-  background: var(--card, #fff);
+  border-radius: 18px;
+  background: var(--card);
   color: var(--foreground);
+  font: inherit;
   text-align: center;
   cursor: pointer;
 }
 
 .pi-tile[aria-pressed="true"] {
-  outline: 2px solid var(--primary);
-  outline-offset: 1px;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 1px var(--primary) inset;
+}
+
+.pi-tile strong {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.85rem;
+}
+
+.pi-tile small {
+  font-size: 0.74rem;
+  color: var(--muted-foreground);
 }
 
 .pi-tile-art {
@@ -441,9 +519,10 @@
   place-items: center;
   width: 64px;
   height: 64px;
+  margin-bottom: 0.2rem;
   border-radius: 16px;
-  background: linear-gradient(160deg, #fff8ec, #ecdcc2);
-  overflow: hidden;
+  background: color-mix(in srgb, var(--primary) 8%, var(--card));
+  color: var(--primary);
 }
 
 .pi-tile-art img {
@@ -452,50 +531,47 @@
   object-fit: contain;
 }
 
-.pi-tile strong {
-  font-size: 0.82rem;
-  line-height: 1.2;
-  overflow-wrap: anywhere;
-}
-
-.pi-tile small {
-  font-size: 0.72rem;
-  color: var(--muted-foreground);
-}
-
 .pi-detail {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  align-content: start;
   gap: 0.6rem;
   padding: 1rem;
-  border-radius: 24px;
-  background: var(--card, #fff);
+  min-width: 0;
   border: 1px solid var(--border);
+  border-radius: 22px;
+  background: var(--card);
 }
 
 .pi-detail h2 {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   font-weight: 850;
+  overflow-wrap: anywhere;
 }
 
 .pi-detail-facts {
   display: grid;
-  gap: 0.35rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem;
   margin: 0;
 }
 
 .pi-detail-facts div {
-  display: flex;
-  justify-content: space-between;
+  padding: 0.6rem 0.7rem;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--primary) 6%, var(--card));
 }
 
 .pi-detail-facts dt {
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--muted-foreground);
 }
 
 .pi-detail-facts dd {
-  margin: 0;
+  margin: 0.1rem 0 0;
   font-weight: 750;
 }
 
@@ -503,53 +579,9 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-top: 0.2rem;
 }
 
-/* Wider containers: side-by-side stage and sections. */
-@container (min-width: 620px) {
-  .pi-canvas {
-    height: 380px;
-  }
-
-  .pi-stats {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .pi-hero {
-    display: grid;
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-    gap: 1rem;
-    align-items: stretch;
-  }
-
-  .pi-slots {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
-
-  .pi-bag {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  }
-
-  .pi-bag-layout {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 340px;
-    gap: 1rem;
-    align-items: start;
-  }
-
-  .pi-quick {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-.pi-side {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  min-width: 0;
-}
-
+/* Shared 3D item preview (used by ItemPreview3D) */
 .item-preview-3d {
   position: relative;
   width: 100%;
@@ -558,11 +590,62 @@
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 18px;
-  background: radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--primary) 12%, var(--card)), var(--background));
+  background: radial-gradient(
+    circle at 50% 30%,
+    color-mix(in srgb, var(--primary) 12%, var(--card)),
+    var(--background)
+  );
 }
 
 .item-preview-3d canvas {
   display: block;
   width: 100% !important;
   height: 100% !important;
+}
+
+/* Wider containers: two columns for the hero, the bag beside its details */
+@container (min-width: 620px) {
+  .pi-hero {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .pi-canvas {
+    height: 380px;
+  }
+
+  .pi-badges {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .pi-quick {
+    grid-template-columns: repeat(3, minmax(0, 200px));
+    justify-content: start;
+  }
+}
+
+@container (min-width: 760px) {
+  .pi-bag-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
+    align-items: start;
+  }
+
+  .pi-detail {
+    position: sticky;
+    top: 1rem;
+  }
+}
+
+@container (max-width: 380px) {
+  .pi-stage-foot {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pi-xp span,
+  .pi-badge-bar span {
+    transition: none;
+  }
 }

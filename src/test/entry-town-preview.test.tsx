@@ -6,9 +6,12 @@ import { EntryTownPreview } from "@/components/game/EntryTownPreview";
 import { findLandmarkForSlug, previewLandmarks } from "@/components/game/entry-town-preview";
 import town from "@/data/osogbo-town.json";
 
+/** Location-backed landmarks to show on the landing town. Null shows all eligible landmarks. */
 describe("town preview data", () => {
   it("shows every landmark for a null filter, and only active ones otherwise", () => {
-    expect(previewLandmarks(null)).toHaveLength(town.landmarks.length);
+    expect(previewLandmarks(null)).toHaveLength(
+      town.landmarks.filter((place) => place.locationSlug !== null).length,
+    );
     const onlyMarket = previewLandmarks(new Set(["town-market"]));
     expect(onlyMarket.map((place) => place.slug)).toEqual(["town-market"]);
     expect(previewLandmarks(new Set())).toEqual([]);

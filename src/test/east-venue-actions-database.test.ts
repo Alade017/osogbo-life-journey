@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { PGlite } from "@electric-sql/pglite";
 import { readFileSync } from "node:fs";
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import townData from "@/data/osogbo-town.json";
 
 const migration = "supabase/migrations/20261106120000_east_venue_actions.sql";
@@ -38,6 +38,10 @@ describe("east venue action seed migration", () => {
     await db.exec(sql);
     await db.exec(sql); // a second run must be a no-op
     await db.exec(readFileSync(tasksMigration, "utf8"));
+  }, 30_000);
+
+  afterAll(async () => {
+    await db.close();
   });
 
   it("seeds exactly one active action per east venue", async () => {

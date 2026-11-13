@@ -191,6 +191,8 @@ const PHONE_APPS: readonly PhoneAppDefinition[] = [
   { label: "Town News", icon: Newspaper, tone: "phone-app-blue" },
 ] as const;
 
+const APPS_PER_PAGE = 16;
+
 const COMMUNITY_APPS = new Set<CommunityPhoneApp>(["Leaderboard", "Town News"]);
 
 /** Apps restyled to the Settings design (cards, sections, rows). Others keep their current look. */
@@ -259,8 +261,35 @@ export function PhoneLauncher({
   const href = useLocation({ select: (location) => location.href });
   const previousHref = useRef(href);
   const [internalOpen, setInternalOpen] = useState(false);
+  const [launcherPage, setLauncherPage] = useState(0);
+  const launcherScrollRef = useRef<HTMLDivElement>(null);
+  const launcherPageRef = useRef(0);
+  const swipeStartRef = useRef<{ x: number; y: number; page: number } | null>(null);
+  const wheelTravelRef = useRef(0);
+  const lastWheelPageRef = useRef(0);
   const [messagePlayerId, setMessagePlayerId] = useState<string | undefined>();
   const dialogOpen = open ?? internalOpen;
+  const launcherApps: readonly PhoneAppDefinition[] = shortcutEditor
+    ? [{ label: "Shortcuts", icon: SlidersHorizontal, tone: "phone-app-muted" }, ...PHONE_APPS]
+    : PHONE_APPS;
+  const launcherPages = Array.from(
+    { length: Math.ceil(launcherApps.length / APPS_PER_PAGE) },
+    (_, index) => launcherApps.slice(index * APPS_PER_PAGE, (index + 1) * APPS_PER_PAGE),
+  );
+
+  const scrollToLauncherPage = (page: number) => {
+    const scrollArea = launcherScrollRef.current;
+    if (!scrollArea) return;
+    const nextPage = Math.max(0, Math.min(page, launcherPages.length - 1));
+    scrollArea.scrollTo({
+      left: nextPage * scrollArea.clientWidth,
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "instant"
+        : "smooth",
+    });
+    launcherPageRef.current = nextPage;
+    setLauncherPage(nextPage);
+  };
 
   const setPhoneOpen = useCallback(
     (next: boolean) => {
@@ -599,77 +628,139 @@ export function PhoneLauncher({
   const phoneContent = (
     <>
       <DialogTitle className="sr-only">In-game phone</DialogTitle>
-      <div className="phone-screen" data-tile-style={tileStyle}>
+      <div
+        className={cn("phone-screen", navigation.app === null && "phone-screen-home")}
+        data-tile-style={tileStyle}
+      >
         {/* Status Bar */}
         <div className="phone-status">
           <span className="phone-status-time">{phoneTime}</span>
-          <span className="phone-status-brand">OSUN WAT</span>
-          <span className="phone-status-indicators" aria-label="Game phone status">
-            <span className="phone-signal" aria-hidden="true">
-              <i />
-              <i />
-              <i />
-            </span>
-            <span className="phone-battery" aria-hidden="true">
-              <i />
+          <span className="phone-status-camera" aria-hidden="true" />
+          <span className="phone-status-actions">
+            <span className="phone-status-indicators" aria-label="Game phone status">
+              <span className="phone-signal" aria-hidden="true">
+                <i />
+                <i />
+                <i />
+              </span>
+              <span className="phone-battery" aria-hidden="true">
+                <i />
+              </span>
             </span>
           </span>
         </div>
 
         {/* Launcher Home Grid: visible when no app is active */}
         <div
-          className="phone-app-grid"
-          style={{ display: navigation.app === null ? "grid" : "none" }}
+          className="phone-launcher-home"
+          style={{ display: navigation.app === null ? undefined : "none" }}
         >
-          {shortcutEditor && (
-            <button
-              type="button"
-              className="phone-app"
-              onClick={() => openApp("Shortcuts")}
-              aria-label="Open Shortcuts"
-            >
-              <span className="phone-app-icon phone-app-muted">
-                <SlidersHorizontal className="h-5 w-5" aria-hidden="true" />
-              </span>
-              <span>Shortcuts</span>
-            </button>
-          )}
-
-          {PHONE_APPS.map((app) => {
-            const Icon = app.icon;
-            const badge =
-              app.label === "Missions" && missionCount > 0
-                ? missionCount > 9
-                  ? "9+"
-                  : missionCount
-                : null;
-
-            return (
-              <button
-                type="button"
-                className="phone-app"
-                key={app.label}
-                onClick={() => openApp(app.label)}
-                aria-label={`Open ${app.label}`}
+          <div
+            ref={launcherScrollRef}
+            className="phone-app-pages"
+            aria-label="Phone apps"
+            onWheel={(event) => {
+              const travel = event.shiftKey ? event.deltaY : event.deltaX;
+              if (Math.abs(travel) < 1) return;
+              event.preventDefault();
+              if (Date.now() - lastWheelPageRef.current < 550) return;
+              wheelTravelRef.current += travel;
+              if (Math.abs(wheelTravelRef.current) < 90) return;
+              scrollToLauncherPage(launcherPageRef.current + Math.sign(wheelTravelRef.current));
+              wheelTravelRef.current = 0;
+              lastWheelPageRef.current = Date.now();
+            }}
+            onTouchStart={(event) => {
+              const touch = event.touches[0];
+              if (touch)
+                swipeStartRef.current = {
+                  x: touch.clientX,
+                  y: touch.clientY,
+                  page: launcherPageRef.current,
+                };
+            }}
+            onTouchEnd={(event) => {
+              const start = swipeStartRef.current;
+              const touch = event.changedTouches[0];
+              swipeStartRef.current = null;
+              if (!start || !touch) return;
+              const dx = start.x - touch.clientX;
+              if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(start.y - touch.clientY)) return;
+              scrollToLauncherPage(start.page + Math.sign(dx));
+            }}
+            onScroll={(event) => {
+              const area = event.currentTarget;
+              if (area.clientWidth) {
+                const page = Math.min(
+                  launcherPages.length - 1,
+                  Math.round(area.scrollLeft / area.clientWidth),
+                );
+                launcherPageRef.current = page;
+                setLauncherPage(page);
+              }
+            }}
+          >
+            {launcherPages.map((apps, pageIndex) => (
+              <div
+                className="phone-app-grid"
+                key={apps[0]?.label}
+                aria-label={`App page ${pageIndex + 1}`}
               >
-                <span
-                  className={cn(
-                    "phone-app-icon",
-                    app.tone,
-                    app.emphasis && `phone-app-${app.emphasis}`,
-                  )}
-                >
-                  <Icon className="h-5 w-5" aria-hidden="true" />
-                  {badge ? (
-                    <i className="phone-app-badge" aria-label={`${badge} active notifications`}>
-                      {badge}
-                    </i>
-                  ) : null}
-                </span>
-                <span>{app.label}</span>
-              </button>
-            );
-          })}
+                {apps.map((app) => {
+                  const Icon = app.icon;
+                  const badge =
+                    app.label === "Missions" && missionCount > 0
+                      ? missionCount > 9
+                        ? "9+"
+                        : missionCount
+                      : null;
+
+                  return (
+                    <button
+                      type="button"
+                      className="phone-app"
+                      key={app.label}
+                      onClick={() => openApp(app.label)}
+                      aria-label={`Open ${app.label}`}
+                    >
+                      <span
+                        className={cn(
+                          "phone-app-icon",
+                          app.tone,
+                          app.emphasis && `phone-app-${app.emphasis}`,
+                        )}
+                      >
+                        <Icon className="h-5 w-5" aria-hidden="true" />
+                        {badge ? (
+                          <i
+                            className="phone-app-badge"
+                            aria-label={`${badge} active notifications`}
+                          >
+                            {badge}
+                          </i>
+                        ) : null}
+                      </span>
+                      <span>{app.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+          {launcherPages.length > 1 && (
+            <div className="phone-page-dots" aria-label="App pages">
+              {launcherPages.map((apps, index) => (
+                <button
+                  key={apps[0]?.label}
+                  type="button"
+                  className="phone-page-dot"
+                  aria-label={`Go to app page ${index + 1}`}
+                  aria-current={launcherPage === index ? "page" : undefined}
+                  onClick={() => scrollToLauncherPage(index)}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Opened Apps: retain state when navigating back and forth */}
@@ -726,9 +817,6 @@ export function PhoneLauncher({
           <span className="phone-home-indicator" aria-hidden="true" />
         </button>
       </div>
-      <DialogClose type="button" aria-label="Close in-game phone">
-        <X size={18} aria-hidden="true" />
-      </DialogClose>
     </>
   );
 
@@ -737,7 +825,12 @@ export function PhoneLauncher({
       open={dialogOpen}
       onOpenChange={(next) => {
         // Opening from the Phone button always starts on the app grid; apps opened by an event still open directly.
-        if (next) dispatchNavigation({ type: "home" });
+        if (next) {
+          dispatchNavigation({ type: "home" });
+          setLauncherPage(0);
+          launcherPageRef.current = 0;
+          launcherScrollRef.current?.scrollTo({ left: 0 });
+        }
         setPhoneOpen(next);
       }}
     >
@@ -758,14 +851,21 @@ export function PhoneLauncher({
       <DialogPortal>
         <DialogOverlay />
         <DialogPrimitive.Content
-          className={dock ? "phone-dialog-shell" : "phone-dialog phone-ui-refresh"}
-          style={{ zIndex: "var(--game-dialog-layer)", pointerEvents: dock ? "none" : undefined }}
-        >
-          {dock ? (
-            <div className="phone-dialog phone-ui-refresh phone-dock-surface">{phoneContent}</div>
-          ) : (
-            phoneContent
+          className={cn(
+            "phone-dialog-shell",
+            dock ? "phone-dialog-shell-docked" : "phone-dialog-shell-solo",
           )}
+          style={{ zIndex: "var(--game-dialog-layer)" }}
+        >
+          <div className="phone-dialog phone-ui-refresh phone-dock-surface">{phoneContent}</div>
+          <DialogClose
+            type="button"
+            className="phone-cancel-button"
+            aria-label="Cancel and close phone"
+          >
+            <X size={18} aria-hidden="true" />
+            <span>Cancel</span>
+          </DialogClose>
           {dock}
         </DialogPrimitive.Content>
       </DialogPortal>

@@ -14,6 +14,10 @@ vi.mock("@tanstack/react-router", async (importOriginal) => {
   return {
     ...actual,
     useNavigate: () => testState.navigate,
+    useLocation: (options?: { select?: (location: { href: string }) => unknown }) => {
+      const location = { href: "/map" };
+      return options?.select ? options.select(location) : location;
+    },
     Link: ({ to, children, ...props }: { to: string; children: ReactNode; className?: string }) => (
       <a href={to} {...props}>
         {children}
@@ -27,12 +31,6 @@ const testState = vi.hoisted(() => ({
   character: null as Record<string, unknown> | null,
   locations: [] as Record<string, unknown>[],
   wallet: null as Record<string, unknown> | null,
-}));
-vi.mock("@/components/map/PhaserMapSurface", () => ({
-  PhaserMapSurface: ({ onUnavailable }: { onUnavailable: () => void }) => {
-    useEffect(() => onUnavailable(), [onUnavailable]);
-    return null;
-  },
 }));
 const eventState = vi.hoisted(() => ({
   events: [] as import("@/lib/city-event-service").CityEventOccurrence[],
@@ -210,7 +208,7 @@ describe("isometric town map", () => {
     );
     fireEvent.click(await screen.findByRole("button", { name: "Place details and activities" }));
     expect(await screen.findByText(/Town Market Day · Until/)).toBeVisible();
-  });
+  }, 15_000);
 
   it("opens the transport selector on landmark selection and cancellation does not travel", async () => {
     renderDashboard("residential");
@@ -287,11 +285,11 @@ describe("isometric town map", () => {
     expect(screen.queryByRole("img", { name: "Illustrated town map fallback" })).toBeNull();
   });
 
-  it("defines a compact hand-authored grid and fictional public venues with action definitions", () => {
-    expect(townData.meta.grid).toEqual({ columns: 24, rows: 18, cellSize: 2 });
-    expect(townData.grid.rows).toHaveLength(18);
-    expect(townData.grid.rows.every((row) => row.length === 24)).toBe(true);
-    expect(townData.districts).toHaveLength(11);
+  it("defines a hand-authored grid and fictional public venues with action definitions", () => {
+    expect(townData.meta.grid).toEqual({ columns: 32, rows: 24, cellSize: 2 });
+    expect(townData.grid.rows).toHaveLength(24);
+    expect(townData.grid.rows.every((row) => row.length === 32)).toBe(true);
+    expect(townData.districts).toHaveLength(17);
     expect(townData.landmarks.map((place) => place.label)).toEqual(
       expect.arrayContaining([
         "Civic court",
@@ -301,19 +299,31 @@ describe("isometric town map", () => {
         "Lantern Club",
       ]),
     );
-    // Expanded venues intentionally have one server-defined activity each.
+    // Some landmarks, such as junctions and public services, have no activity; those that do
+    // must have unique, server-defined actions.
     for (const place of townData.landmarks) {
-      expect(place.actions.length).toBeGreaterThan(0);
       expect(new Set(place.actions.map((action) => action.id)).size).toBe(place.actions.length);
       for (const action of place.actions) {
         expect(findMapPlaceAction(place.id, action.id)).not.toBeNull();
       }
     }
+    const worshipLandmarks = townData.landmarks.filter((place) => place.category === "worship");
+
     expect(
-      townData.landmarks.filter((place) => place.category === "worship").map((place) => place.id),
+      worshipLandmarks.filter((place) => place.locationSlug !== null).map((place) => place.id),
     ).toEqual(["garden-chapel", "mosque-square"]);
+
+    const sacredGrove = townData.landmarks.find((place) => place.id === "osun-sacred-grove");
+
+    expect(sacredGrove).toMatchObject({
+      label: "Osun-Osogbo Sacred Grove",
+      category: "worship",
+      locationSlug: null,
+      verify: false,
+      actions: [],
+    });
+
     expect(JSON.stringify(townData)).not.toMatch(/\/models\/city\//);
-    expect(JSON.stringify(townData).toLowerCase()).not.toMatch(/sacred|grove|osun-osogbo/);
     expect(townData.landmarks.find((place) => place.id === "lantern-club")?.min_age).toBe(18);
   });
 

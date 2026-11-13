@@ -5,6 +5,16 @@
   color: var(--foreground);
 }
 
+.house-page-error {
+  display: grid;
+  min-height: calc(100dvh - 6rem);
+  place-items: center;
+}
+
+.house-page-error .house-error-card {
+  width: min(100%, 34rem);
+}
+
 .house-cover-image {
   display: block;
   width: 100%;

@@ -26,7 +26,7 @@ import {
   WorldInstances,
   type WorldInstance,
 } from "../3d/WorldScene";
-import { WORLD_SCALE, WORLD_PALETTE } from "../3d/world-theme";
+import { WORLD_SCALE, WORLD_PALETTE, TOWN_MAP_CAMERA } from "../3d/world-theme";
 import { MapLighting, useRealOrGameClock, daylightFor } from "./MapLighting";
 import { PlaceBadge } from "./map-badge";
 import { getLandmarkBuildingVariant } from "./landmark-building-variant";
@@ -41,6 +41,16 @@ import { MovingPedestrians3D } from "./MovingPedestrians3D";
 import { FunctionalStreetLights3D } from "./FunctionalStreetLights3D";
 import { RoadsideInfrastructure3D } from "./RoadsideInfrastructure3D";
 import { LockedPlaces3D, type LockedPlace } from "./LockedPlaces3D";
+import {
+  deriveTownMobilityRoutes,
+  TownRoadCrossingPriorityScheduler,
+  townRoadJunctionIdentity,
+  deriveTownPedestrianCornerRoutes,
+  deriveTownPedestrianCrossingRoutes,
+  deriveTownPedestrianRoutes,
+  stitchTownPedestrianRoutes,
+} from "@/game/town-mobility";
+import { validateTownMapData } from "@/game/town-map-validation";
 
 type TownMapPlace = {
   id: string;
@@ -77,8 +87,10 @@ type Props = TownMapData &
 /** Close-up framing sits well inside the whole-town distance. */
 const CLOSE_UP_DISTANCE_SCALE = 0.5;
 
-const gridCols = town.grid.rows[0]?.length ?? 24;
-const gridRows = town.grid.rows.length ?? 18;
+const townMapValidationErrors = validateTownMapData(town);
+
+const gridCols = town.meta.grid.columns;
+const gridRows = town.meta.grid.rows;
 const cell = WORLD_SCALE.townCell;
 const point = (x: number, z: number): [number, number, number] => [
   (x - (gridCols - 1) / 2) * cell,
@@ -192,10 +204,21 @@ function calculateBadgePositions(
 }
 
 export function R3FTownSurface(props: Props) {
+  const { onUnavailable } = props;
   const [hovered, setHovered] = useState<string | null>(null);
+  useEffect(() => {
+    if (townMapValidationErrors.length > 0) onUnavailable();
+  }, [onUnavailable]);
   const gesture = useRef({ x: 0, y: 0, moved: false });
   const clockTime = useRealOrGameClock();
   const { isNight } = daylightFor(clockTime.hour, clockTime.minute);
+  // Derive moving traffic and pedestrian paths from the same authored town grid
+  // that renders the roads and sidewalks; never invent separate rectangular routes.
+  const trafficRoutes = useMemo(
+    () => deriveTownMobilityRoutes(town.grid.rows, cell, cell * 0.22),
+    [],
+  );
+
   const [selectedTarget, setSelectedTarget] = useState<{
     id: string;
     position: [number, number, number];
@@ -326,8 +349,8 @@ export function R3FTownSurface(props: Props) {
       return [[position[0], position[2]] as [number, number]];
     });
   }, []);
-  const trafficLights = useMemo<[number, number][]>(() => {
-    const result: [number, number][] = [];
+  const trafficLights = useMemo<[number, number, string][]>(() => {
+    const result: [number, number, string][] = [];
     const rows = town.grid.rows;
 
     rows.forEach((row, z) => {
@@ -356,7 +379,7 @@ export function R3FTownSurface(props: Props) {
         const p = point(x, z);
 
         // Position the signal near the corner of the intersection.
-        result.push([p[0] + cell * 0.38, p[2] + cell * 0.38]);
+        result.push([p[0] + cell * 0.38, p[2] + cell * 0.38, townRoadJunctionIdentity(p[0], p[2])]);
       });
     });
 
@@ -698,7 +721,7 @@ export function R3FTownSurface(props: Props) {
     });
 
     // Reserve water and road locations.
-    town.grid.waterCells.forEach(([x, z]) => {
+    [...town.grid.waterCells, ...town.grid.plotCells].forEach(([x, z]) => {
       occupied.add(`${x},${z}`);
     });
 
@@ -980,6 +1003,91 @@ export function R3FTownSurface(props: Props) {
     streetVendors,
   ]);
 
+  const crossingScheduler = useMemo(() => new TownRoadCrossingPriorityScheduler(), []);
+  useEffect(() => {
+    crossingScheduler.setSignalizedJunctions(trafficLights.map(([, , junctionId]) => junctionId));
+  }, [crossingScheduler, trafficLights]);
+  const pedestrianRoutes = useMemo(() => {
+    const buildingCells = town.grid.buildings.flatMap((building) =>
+      [0, 1].flatMap((dx) => [0, 1].map((dz) => [building.x + dx, building.z + dz] as const)),
+    );
+
+    const toTuple = (cell: readonly number[]): readonly [number, number] | undefined => {
+      const [x, z] = cell;
+
+      if (x === undefined || z === undefined) {
+        return undefined;
+      }
+
+      return [x, z];
+    };
+
+    const waterCells = town.grid.waterCells
+      .map(toTuple)
+      .filter((cell): cell is readonly [number, number] => cell !== undefined);
+
+    const plotCells = town.grid.plotCells
+      .map(toTuple)
+      .filter((cell): cell is readonly [number, number] => cell !== undefined);
+
+    const blockedCells: (readonly [number, number])[] = [
+      ...buildingCells,
+      ...waterCells,
+      ...plotCells,
+    ];
+    const reservedPropCells = new Set<string>();
+    const reserveWorldPosition = (x: number, z: number) => {
+      const gridX = Math.round(x / cell + (gridCols - 1) / 2 - 0.5);
+      const gridZ = Math.round(z / cell + (gridRows - 1) / 2 - 0.5);
+
+      // Reserve only nearby grass cells. Road-tile prop origins otherwise
+      // leave the adjacent pavement cells unblocked.
+      for (let dz = -1; dz <= 1; dz += 1) {
+        for (let dx = -1; dx <= 1; dx += 1) {
+          const xCell = gridX + dx;
+          const zCell = gridZ + dz;
+          if (town.grid.rows[zCell]?.[xCell] !== "g") continue;
+          const key = `${xCell},${zCell}`;
+          if (reservedPropCells.has(key)) continue;
+          reservedPropCells.add(key);
+          blockedCells.push([xCell, zCell]);
+        }
+      }
+    };
+
+    streetLights.forEach(([x, z]) => reserveWorldPosition(x, z));
+    trafficLights.forEach(([x, z]) => reserveWorldPosition(x, z));
+    busStops.forEach(([x, z]) => reserveWorldPosition(x, z));
+    roadSigns.forEach((sign) => reserveWorldPosition(sign.position[0], sign.position[1]));
+    roadsideShops.forEach(([x, z]) => reserveWorldPosition(x, z));
+    motorcycles.forEach(([x, z]) => reserveWorldPosition(x, z));
+    tricycles.forEach(([x, z]) => reserveWorldPosition(x, z));
+    streetVendors.forEach(([x, z]) => reserveWorldPosition(x, z));
+    wasteBins.forEach(([x, z]) => reserveWorldPosition(x, z));
+    roadsideInfrastructure.poles.forEach(([x, z]) => reserveWorldPosition(x, z));
+
+    const sidewalkRoutes = stitchTownPedestrianRoutes([
+      ...deriveTownPedestrianRoutes(town.grid.rows, cell, blockedCells),
+      ...deriveTownPedestrianCornerRoutes(town.grid.rows, cell, blockedCells),
+    ]);
+    // Keep zebra-crossing routes as dedicated three-point paths so the shared
+    // crossing scheduler can identify their exact centre without guessing.
+    return [
+      ...sidewalkRoutes,
+      ...deriveTownPedestrianCrossingRoutes(town.grid.rows, cell, blockedCells),
+    ];
+  }, [
+    streetLights,
+    trafficLights,
+    busStops,
+    roadSigns,
+    roadsideShops,
+    motorcycles,
+    tricycles,
+    streetVendors,
+    wasteBins,
+    roadsideInfrastructure,
+  ]);
   const badgePositions = useMemo(
     () => calculateBadgePositions(props.places, point, cell),
     [props.places],
@@ -988,6 +1096,13 @@ export function R3FTownSurface(props: Props) {
     event?.stopPropagation();
     if ((event?.delta ?? 0) <= 5 && !gesture.current.moved) action();
   };
+  if (townMapValidationErrors.length > 0) {
+    return (
+      <div role="alert" className="town-map-renderer-status">
+        The authored town map has invalid data: {townMapValidationErrors.join(" ")}
+      </div>
+    );
+  }
   return (
     <SurfaceBoundary onUnavailable={props.onUnavailable}>
       <div
@@ -1015,7 +1130,9 @@ export function R3FTownSurface(props: Props) {
           <WorldCamera
             width={gridCols * cell}
             depth={gridRows * cell}
-            zoom={1.55}
+            zoom={TOWN_MAP_CAMERA.defaultZoom}
+            minZoom={TOWN_MAP_CAMERA.minZoom}
+            maxZoom={TOWN_MAP_CAMERA.maxZoom}
             target={closeUpTarget}
             distanceScale={closeUpTarget ? CLOSE_UP_DISTANCE_SCALE : 1}
             freeExplore
@@ -1026,10 +1143,18 @@ export function R3FTownSurface(props: Props) {
           <WorldRoads items={roads} />
           <WorldRoadMarkings items={roadMarkings} />
           <WorldPedestrianCrossings items={pedestrianCrossings} />
-          <WorldTrafficLights positions={trafficLights} size={cell} />
+          <WorldTrafficLights
+            positions={trafficLights}
+            size={cell}
+            getSignalState={(junctionId) => crossingScheduler.getSignalState(junctionId)}
+          />
           <WorldCars positions={cars} size={cell} />
           <WorldSidewalks sidewalks={sidewalks} curbs={curbs} />
-          <WorldBusStops positions={busStops} size={cell} />
+          <WorldBusStops
+            positions={busStops}
+            size={cell}
+            onSelectTransit={() => props.onSelectLandmark("transit-park")}
+          />
           <WorldRoadSigns positions={roadSigns} size={cell} />
           <WorldRoadsideShops positions={roadsideShops} size={cell} />
           <WorldMotorcycles positions={motorcycles} size={cell} />
@@ -1068,8 +1193,17 @@ export function R3FTownSurface(props: Props) {
               detailed
             />
           ))}
-          <MovingTraffic3D cellSize={cell} gridCols={gridCols} gridRows={gridRows} />
-          <MovingPedestrians3D cellSize={cell} gridCols={gridCols} gridRows={gridRows} />
+          <MovingTraffic3D
+            paths={trafficRoutes}
+            crossingScheduler={crossingScheduler}
+            onSelectTransit={() => props.onSelectLandmark("transit-park")}
+          />
+          <MovingPedestrians3D
+            paths={pedestrianRoutes}
+            crossingScheduler={crossingScheduler}
+            busStopPositions={busStops}
+            onSelectTransit={() => props.onSelectLandmark("transit-park")}
+          />
           <LockedPlaces3D
             cellSize={cell}
             gridCols={gridCols}

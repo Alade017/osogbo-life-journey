@@ -1,13 +1,22 @@
-import { useRef, useState, type FC } from "react";
+import { useEffect, useMemo, useRef, useState, type FC } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import type { Group } from "three";
 import { WorldMaterial } from "@/components/3d/WorldScene";
+import {
+  isValidTownPedestrianRoute,
+  townPedestrianClearanceRadius,
+  TownPedestrianJunctionScheduler,
+  townPedestrianCrossingIdentity,
+  TownRoadCrossingPriorityScheduler,
+  type TownMobilityRoute,
+} from "@/game/town-mobility";
 
 export interface MovingPedestrians3DProps {
-  cellSize: number;
-  gridCols: number;
-  gridRows: number;
+  paths: readonly TownMobilityRoute[];
+  crossingScheduler: TownRoadCrossingPriorityScheduler;
+  busStopPositions: readonly (readonly [number, number])[];
+  onSelectTransit: () => void;
 }
 
 interface NpcConfig {
@@ -16,8 +25,12 @@ interface NpcConfig {
   role: "trader" | "student" | "resident" | "elder";
   color: string;
   speed: number;
-  path: [number, number][];
+  path: TownMobilityRoute;
+  startDistance: number;
   greeting: string;
+  startJunctionId?: string;
+  endJunctionId?: string;
+  crossingJunctionId?: string;
 }
 
 /**
@@ -29,145 +42,255 @@ interface NpcConfig {
  * - Footstep bobbing animations and interactive dialogue bubbles.
  */
 export const MovingPedestrians3D: FC<MovingPedestrians3DProps> = ({
-  cellSize,
-  gridCols,
-  gridRows,
+  paths,
+  crossingScheduler,
+  busStopPositions,
+  onSelectTransit,
 }) => {
   const [activeSpeech, setActiveSpeech] = useState<{ id: string; text: string } | null>(null);
+  const junctionScheduler = useMemo(() => new TownPedestrianJunctionScheduler(), []);
+  const endpointCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    paths.forEach((path) => {
+      if (path.length < 2) return;
+      const endpointKeys = new Set([junctionKey(path[0]!), junctionKey(path[path.length - 1]!)]);
+      endpointKeys.forEach((key) => counts.set(key, (counts.get(key) ?? 0) + 1));
+    });
+    return counts;
+  }, [paths]);
+  const speechTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const xMax = (gridCols / 2 - 3) * cellSize;
-  const zMax = (gridRows / 2 - 3) * cellSize;
+  useEffect(
+    () => () => {
+      if (speechTimeoutRef.current) clearTimeout(speechTimeoutRef.current);
+      // Do not leave the page cursor in its interactive state if the map unmounts
+      // while a vehicle or pedestrian is hovered.
+      document.body.style.cursor = "auto";
+    },
+    [],
+  );
 
-  const npcs: NpcConfig[] = [
-    {
-      id: "npc-trader-1",
-      name: "Iya Oja",
-      role: "trader",
-      color: "#ea580c",
-      speed: 0.12,
-      path: [
-        [-xMax * 0.7, zMax * 0.3],
-        [-xMax * 0.2, zMax * 0.3],
-        [-xMax * 0.2, zMax * 0.6],
-        [-xMax * 0.7, zMax * 0.6],
-      ],
-      greeting: "🧺 E kaasan! Fresh yams and peppers at Oja Oba!",
-    },
-    {
-      id: "npc-student-1",
-      name: "Tunde",
-      role: "student",
-      color: "#2563eb",
-      speed: 0.18,
-      path: [
-        [0, -zMax * 0.5],
-        [xMax * 0.5, -zMax * 0.5],
-        [xMax * 0.5, -zMax * 0.2],
-        [0, -zMax * 0.2],
-      ],
-      greeting: "🎒 On my way to the School of Art!",
-    },
-    {
-      id: "npc-resident-1",
-      name: "Alhaji Bello",
-      role: "elder",
-      color: "#16a34a",
-      speed: 0.09,
-      path: [
-        [-xMax * 0.3, -zMax * 0.3],
-        [xMax * 0.3, -zMax * 0.3],
-        [xMax * 0.3, 0],
-        [-xMax * 0.3, 0],
-      ],
-      greeting: "🕌 As-salamu alaykum! Heading towards the Grand Mosque.",
-    },
-    {
-      id: "npc-resident-2",
-      name: "Folake",
-      role: "resident",
-      color: "#c026d3",
-      speed: 0.15,
-      path: [
-        [xMax * 0.4, zMax * 0.2],
-        [xMax * 0.7, zMax * 0.2],
-        [xMax * 0.7, zMax * 0.5],
-        [xMax * 0.4, zMax * 0.5],
-      ],
-      greeting: "👋 Beautiful afternoon in Osogbo!",
-    },
+  const showSpeech = (id: string, text: string, duration: number) => {
+    if (speechTimeoutRef.current) clearTimeout(speechTimeoutRef.current);
+    setActiveSpeech({ id, text });
+    speechTimeoutRef.current = setTimeout(() => {
+      setActiveSpeech((current) => (current?.id === id ? null : current));
+      speechTimeoutRef.current = null;
+    }, duration);
+  };
+
+  const roles: NpcConfig["role"][] = ["trader", "student", "resident", "elder"];
+  const clothingColors = ["#ea580c", "#2563eb", "#16a34a", "#c026d3"];
+  const greetings = [
+    "E kaasan! Welcome to the neighbourhood.",
+    "Good day! Enjoy your walk around town.",
+    "As-salamu alaykum! Have a peaceful day.",
+    "Hello! Lovely to see you around town.",
   ];
+  const npcs: NpcConfig[] = paths.filter(isValidTownPedestrianRoute).map((path, index) => {
+    const startJunctionId =
+      endpointCounts.get(junctionKey(path[0]!))! > 1 ? junctionKey(path[0]!) : undefined;
+
+    const endJunctionId =
+      endpointCounts.get(junctionKey(path[path.length - 1]!))! > 1
+        ? junctionKey(path[path.length - 1]!)
+        : undefined;
+
+    const crossingJunctionId = townPedestrianCrossingIdentity(path) || undefined;
+
+    const length = pathLength(path);
+    const desiredStart = length * (((index + 1) * 0.61803398875) % 1);
+    const clearance = townPedestrianClearanceRadius(length);
+    const safeStart = startJunctionId ? clearance : 0;
+    const safeEnd = endJunctionId ? length - clearance : length;
+
+    return {
+      id: `town-pedestrian-${path.map(([x, z]) => `${x.toFixed(3)},${z.toFixed(3)}`).join("|")}`,
+      name: `Neighbour ${index + 1}`,
+      role: roles[index % roles.length]!,
+      color: clothingColors[index % clothingColors.length]!,
+      speed: 0.09 + (index % 4) * 0.025,
+      path,
+      startDistance:
+        safeEnd >= safeStart ? Math.min(Math.max(desiredStart, safeStart), safeEnd) : length / 2,
+      greeting: greetings[index % greetings.length]!,
+      ...(startJunctionId ? { startJunctionId } : {}),
+      ...(endJunctionId ? { endJunctionId } : {}),
+      ...(crossingJunctionId ? { crossingJunctionId } : {}),
+    };
+  });
 
   return (
-    <group position={[0, 0.05, 0]}>
+    <group>
       {npcs.map((npc) => (
         <PedestrianCharacter
           key={npc.id}
           npc={npc}
-          cellSize={cellSize}
-          onInteract={(text) => {
-            setActiveSpeech({ id: npc.id, text });
-            setTimeout(() => setActiveSpeech(null), 3000);
-          }}
+          junctionScheduler={junctionScheduler}
+          crossingScheduler={crossingScheduler}
+          onInteract={(text) => showSpeech(npc.id, text, 3000)}
           isSpeaking={activeSpeech?.id === npc.id}
           speechText={activeSpeech?.text}
         />
       ))}
+      {busStopPositions.flatMap(([x, z], stopIndex) =>
+        [-1, 1].map((side, passengerIndex) => (
+          <WaitingPassenger
+            key={`waiting-passenger-${stopIndex}-${passengerIndex}`}
+            position={[x + side * 0.42, z + 0.92]}
+            color={clothingColors[(stopIndex * 2 + passengerIndex) % clothingColors.length]!}
+            onSelectTransit={onSelectTransit}
+          />
+        )),
+      )}
     </group>
   );
 };
 
 function PedestrianCharacter({
   npc,
-  cellSize,
+  junctionScheduler,
+  crossingScheduler,
   onInteract,
   isSpeaking,
   speechText,
 }: {
   npc: NpcConfig;
-  cellSize: number;
+  junctionScheduler: TownPedestrianJunctionScheduler;
+  crossingScheduler: TownRoadCrossingPriorityScheduler;
   onInteract: (text: string) => void;
   isSpeaking: boolean;
   speechText?: string | undefined;
 }) {
   const groupRef = useRef<Group>(null);
-  const currentSegment = useRef(0);
-  const progress = useRef(0);
+  const routeLength = useMemo(() => pathLength(npc.path), [npc.path]);
+  const routeDistance = useRef(npc.startDistance);
+  const travelDirection = useRef(1);
+  const activeJunction = useRef<string | null>(null);
+  const activeCrossing = useRef<string | null>(null);
+  const clearanceRadius = townPedestrianClearanceRadius(routeLength);
   const [isHovered, setIsHovered] = useState(false);
 
+  useEffect(
+    () => () => {
+      junctionScheduler.cancelPedestrian(npc.id);
+      crossingScheduler.cancelActor(npc.id);
+    },
+    [junctionScheduler, crossingScheduler, npc.id, npc.startJunctionId, npc.endJunctionId],
+  );
+
   useFrame(({ clock }, delta) => {
+    crossingScheduler.advanceTime(clock.elapsedTime);
     if (!groupRef.current) return;
 
     const { path, speed } = npc;
-    const p1 = path[currentSegment.current]!;
-    const nextIdx = (currentSegment.current + 1) % path.length;
-    const p2 = path[nextIdx]!;
+    if (path.length < 2) return;
 
-    const dx = p2[0] - p1[0];
-    const dz = p2[1] - p1[1];
-    const segmentLength = Math.hypot(dx, dz);
+    if (!Number.isFinite(routeLength) || routeLength < 0.001) return;
+    if (!Number.isFinite(delta) || delta <= 0) return;
 
-    progress.current += (speed * delta * cellSize * 3) / Math.max(segmentLength, 0.1);
+    // Advance along the route while reserving shared endpoints before entering
+    // their clearance zone. A pedestrian waits just short of the junction.
+    let distanceToTravel = (speed * Math.max(0, delta) * 6) % (routeLength * 2);
+    let safetyIterations = 0;
 
-    if (progress.current >= 1.0) {
-      progress.current = 0;
-      currentSegment.current = nextIdx;
+    while (distanceToTravel > 0 && safetyIterations++ < path.length * 4 + 8) {
+      const crossingDistance = Math.abs(routeLength / 2 - routeDistance.current);
+      if (activeCrossing.current && crossingDistance > clearanceRadius) {
+        crossingScheduler.release(activeCrossing.current, npc.id);
+        activeCrossing.current = null;
+      }
+      if (
+        npc.crossingJunctionId &&
+        activeCrossing.current !== npc.crossingJunctionId &&
+        crossingDistance <= clearanceRadius + distanceToTravel
+      ) {
+        if (!crossingScheduler.request(npc.crossingJunctionId, npc.id, "pedestrian")) {
+          const safeAdvance = Math.max(0, crossingDistance - clearanceRadius);
+          routeDistance.current +=
+            travelDirection.current * Math.min(distanceToTravel, safeAdvance);
+          distanceToTravel = 0;
+          break;
+        }
+        activeCrossing.current = npc.crossingJunctionId;
+      }
+
+      const destinationIsEnd = travelDirection.current > 0;
+      const junctionId = destinationIsEnd ? npc.endJunctionId : npc.startJunctionId;
+      const distanceToJunction = destinationIsEnd
+        ? routeLength - routeDistance.current
+        : routeDistance.current;
+      const distanceFromReservedJunction =
+        activeJunction.current === npc.startJunctionId &&
+        activeJunction.current === npc.endJunctionId
+          ? Math.min(routeDistance.current, routeLength - routeDistance.current)
+          : activeJunction.current === npc.startJunctionId
+            ? routeDistance.current
+            : activeJunction.current === npc.endJunctionId
+              ? routeLength - routeDistance.current
+              : Number.POSITIVE_INFINITY;
+
+      if (activeJunction.current && distanceFromReservedJunction > clearanceRadius) {
+        junctionScheduler.release(activeJunction.current, npc.id);
+        activeJunction.current = null;
+      }
+
+      if (
+        junctionId &&
+        activeJunction.current !== junctionId &&
+        distanceToJunction <= clearanceRadius + distanceToTravel
+      ) {
+        if (!junctionScheduler.request(junctionId, npc.id)) {
+          const safeAdvance = Math.max(0, distanceToJunction - clearanceRadius);
+          routeDistance.current +=
+            travelDirection.current * Math.min(distanceToTravel, safeAdvance);
+          distanceToTravel = 0;
+          break;
+        }
+        activeJunction.current = junctionId;
+      }
+
+      const distanceToRouteEnd = destinationIsEnd
+        ? routeLength - routeDistance.current
+        : routeDistance.current;
+      const step = Math.min(distanceToTravel, Math.max(0, distanceToRouteEnd));
+      routeDistance.current += travelDirection.current * step;
+      distanceToTravel -= step;
+
+      if (distanceToRouteEnd <= step + 0.000001) {
+        travelDirection.current *= -1;
+        if (step < 0.000001) break;
+      } else {
+        break;
+      }
     }
 
-    const curP1 = path[currentSegment.current]!;
-    const curP2 = path[(currentSegment.current + 1) % path.length]!;
+    // Resolve the current route segment for rendering after movement is updated.
+    const position = locatePathDistance(path, routeDistance.current);
+    const currentSegment = position.segment;
+    const curP1 = path[currentSegment]!;
+    const curP2 = path[currentSegment + 1]!;
     const curDx = curP2[0] - curP1[0];
     const curDz = curP2[1] - curP1[1];
-
-    const posX = curP1[0] + curDx * progress.current;
-    const posZ = curP1[1] + curDz * progress.current;
-    const angle = Math.atan2(curDx, curDz);
+    const posX = curP1[0] + curDx * position.progress;
+    const posZ = curP1[1] + curDz * position.progress;
+    const angle = Math.atan2(curDx * travelDirection.current, curDz * travelDirection.current);
 
     // Natural footstep bobbing
     const t = clock.getElapsedTime();
-    const footstepBob = Math.abs(Math.sin(t * 7.5)) * 0.06;
+    const footstepBob = Math.abs(Math.sin(t * 7.5)) * 0.012;
 
-    groupRef.current.position.set(posX, 0.08 + footstepBob, posZ);
-    groupRef.current.rotation.y = angle;
+    // The trouser mesh begins 0.03 units above the character origin.
+    // Match that base to the sidewalk top (0.06) without an extra parent lift.
+    groupRef.current.position.set(posX, 0.03 + footstepBob, posZ);
+    // Ease heading changes around corners instead of snapping at segment boundaries.
+    const currentAngle = groupRef.current.rotation.y;
+    const angleDifference = Math.atan2(
+      Math.sin(angle - currentAngle),
+      Math.cos(angle - currentAngle),
+    );
+    groupRef.current.rotation.y =
+      currentAngle + angleDifference * (1 - Math.exp(-12 * Math.max(0, delta)));
   });
 
   return (
@@ -243,6 +366,94 @@ function PedestrianCharacter({
           </div>
         </Html>
       )}
+    </group>
+  );
+}
+
+function junctionKey(point: readonly [number, number]): string {
+  return `${point[0].toFixed(5)},${point[1].toFixed(5)}`;
+}
+
+function pathLength(path: TownMobilityRoute): number {
+  return path.slice(1).reduce((total, point, index) => {
+    const previous = path[index]!;
+    return total + Math.hypot(point[0] - previous[0], point[1] - previous[1]);
+  }, 0);
+}
+
+function locatePathDistance(
+  path: TownMobilityRoute,
+  distance: number,
+): { segment: number; progress: number } {
+  if (path.length < 2) return { segment: 0, progress: 0 };
+  let remaining = Math.max(0, distance);
+  for (let index = 0; index < path.length - 1; index += 1) {
+    const start = path[index]!;
+    const end = path[index + 1]!;
+    const length = Math.hypot(end[0] - start[0], end[1] - start[1]);
+    if (length < 0.001) continue;
+    if (remaining <= length) return { segment: index, progress: remaining / length };
+    remaining -= length;
+  }
+  return { segment: path.length - 2, progress: 1 };
+}
+
+function WaitingPassenger({
+  position,
+  color,
+  onSelectTransit,
+}: {
+  position: readonly [number, number];
+  color: string;
+  onSelectTransit: () => void;
+}) {
+  const [isHovered, setIsHovered] = useState(false);
+
+  return (
+    <group
+      position={[position[0], 0, position[1]]}
+      scale={isHovered ? 1.12 : 1}
+      onClick={(event) => {
+        event.stopPropagation();
+        onSelectTransit();
+      }}
+      onPointerEnter={() => {
+        setIsHovered(true);
+        document.body.style.cursor = "pointer";
+      }}
+      onPointerLeave={() => {
+        setIsHovered(false);
+        document.body.style.cursor = "auto";
+      }}
+    >
+      <mesh position={[0, 0.62, 0]} castShadow>
+        <sphereGeometry args={[0.105, 10, 10]} />
+        <WorldMaterial tone="timber" />
+      </mesh>
+      <mesh position={[0, 0.37, 0]} castShadow>
+        <boxGeometry args={[0.21, 0.31, 0.14]} />
+        <meshStandardMaterial color={color} roughness={0.65} />
+      </mesh>
+      <mesh position={[0, 0.13, 0]} castShadow>
+        <boxGeometry args={[0.19, 0.21, 0.12]} />
+        <meshStandardMaterial color="#334155" roughness={0.7} />
+      </mesh>
+      <Html center position={[0, 0.92, 0]} distanceFactor={13}>
+        <span
+          style={{
+            background: "rgba(15, 23, 42, 0.88)",
+            color: "#fff",
+            borderRadius: 6,
+            padding: "2px 5px",
+            fontSize: 9,
+            fontWeight: 600,
+            whiteSpace: "nowrap",
+            pointerEvents: "none",
+          }}
+        >
+          Waiting
+        </span>
+      </Html>
     </group>
   );
 }

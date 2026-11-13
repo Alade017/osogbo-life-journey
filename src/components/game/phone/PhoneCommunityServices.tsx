@@ -5,7 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { foodDeliveryService, type FoodDelivery } from "@/lib/food-delivery-service";
 import { formatNaira, q } from "@/lib/game";
 import { PaletteSelect } from "@/components/ui/palette-select";
-import { Bike, MapPin, UtensilsCrossed } from "lucide-react";
+import { Bike, MapPin, PackageCheck, ShoppingBasket, UtensilsCrossed } from "lucide-react";
+import "./food-delivery-app.css";
 
 type ServiceApp = "Calendar" | "Food Delivery" | "Okada Rides" | "Contribution";
 type TownEvent = { id: string; title: string; venue: string; starts_at: string };
@@ -175,7 +176,13 @@ function DeliveryRecords() {
 
   return (
     <section className="phone-delivery-records" aria-label="Delivery records">
-      <h3 className="phone-service-subheading">Delivery records</h3>
+      <div className="food-section-heading">
+        <div>
+          <span className="food-section-eyebrow">Your activity</span>
+          <h3 className="phone-service-subheading">Recent deliveries</h3>
+        </div>
+        <PackageCheck size={18} aria-hidden="true" />
+      </div>
       {records.isLoading && <p className="phone-empty-state">Loading recent deliveries.</p>}
       {records.isError && (
         <div className="phone-service-state" role="alert">
@@ -193,13 +200,18 @@ function DeliveryRecords() {
         </div>
       )}
       {!records.isLoading && !records.isError && rows.length === 0 && (
-        <p className="phone-empty-state">No deliveries yet.</p>
+        <p className="phone-empty-state">
+          Your deliveries will appear here after your first order.
+        </p>
       )}
       <ul className="phone-record-list">
         {rows.map((row) => (
-          <li key={row.id} className="phone-record-row">
-            <div>
+          <li key={row.id} className="phone-record-row food-record-row">
+            <div className="food-record-top">
               <strong>{row.vendorName}</strong>
+              <span className="food-record-state">
+                {stateLabels[row.deliveryState] ?? row.deliveryState}
+              </span>
               <small>
                 {new Date(row.createdAt).toLocaleString("en-NG", {
                   day: "numeric",
@@ -209,18 +221,17 @@ function DeliveryRecords() {
                 })}
               </small>
             </div>
-            <div>
+            <div className="food-record-details">
               <span>{row.items.map((item) => `${item.quantity} × ${item.name}`).join(", ")}</span>
               <small>
                 {row.deliveryChoice === "inside"
                   ? "Brought inside"
                   : row.deliveryChoice === "outside"
                     ? "Left at door"
-                    : "Awaiting choice"}{" "}
-                · {stateLabels[row.deliveryState] ?? row.deliveryState}
+                    : "Awaiting choice"}
               </small>
             </div>
-            <strong>{formatNaira(row.totalMinor)}</strong>
+            <strong className="food-record-total">{formatNaira(row.totalMinor)}</strong>
           </li>
         ))}
       </ul>
@@ -348,7 +359,8 @@ function FoodApp() {
       )}
 
       {!!vendors.data?.length && (
-        <label className="phone-service-field">
+        <label className="phone-service-field food-kitchen-field">
+          <span className="food-section-eyebrow">Start your order</span>
           Kitchen
           <PaletteSelect
             value={selectedVendorId}
@@ -359,7 +371,14 @@ function FoodApp() {
       )}
 
       {!!selectedItems.length && (
-        <section className="food-card" aria-label="Add food">
+        <section className="food-card food-menu-card" aria-label="Add food">
+          <div className="food-section-heading">
+            <div>
+              <span className="food-section-eyebrow">Menu</span>
+              <h3 className="food-card-title">Choose your food</h3>
+            </div>
+            <UtensilsCrossed size={18} aria-hidden="true" />
+          </div>
           <label className="phone-service-field">
             Food
             <PaletteSelect
@@ -400,7 +419,13 @@ function FoodApp() {
 
       {!!basketLines.length && (
         <section className="food-card" aria-label="Your basket">
-          <h3 className="food-card-title">Your order</h3>
+          <div className="food-section-heading">
+            <div>
+              <span className="food-section-eyebrow">Review</span>
+              <h3 className="food-card-title">Your order</h3>
+            </div>
+            <ShoppingBasket size={18} aria-hidden="true" />
+          </div>
           <ul className="food-basket">
             {basketLines.map((item) => (
               <li key={item.id} className="food-line">

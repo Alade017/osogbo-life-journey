@@ -6,18 +6,19 @@ import {
   type MusicTrack,
 } from "./music-tracks";
 import { soundEffects, validSoundEffects, type SoundName } from "./sound-effects";
-type AudioLevels = { master: number; music: number; effects: number };
+type AudioLevels = { master: number; music: number; effects: number; environment?: number };
 
 type AudioGraph = {
   context: AudioContext;
   master: GainNode;
   ambience: GainNode;
+  ambienceSource: AudioBufferSourceNode | null;
   music: GainNode;
   effects: GainNode;
 };
 
 const STORAGE_KEY = "osogbo-world-audio-v1";
-const DEFAULT_LEVELS: AudioLevels = { master: 0.75, music: 0.4, effects: 0.65 };
+const DEFAULT_LEVELS: AudioLevels = { master: 0.75, music: 0.4, effects: 0.65, environment: 0 };
 let graph: AudioGraph | null = null;
 let automaticAudioAllowed = false;
 let sessionCleanup: (() => void) | null = null;
@@ -68,7 +69,7 @@ export function startGameAudioSession() {
     window.removeEventListener("pageshow", show);
   };
   const levels = readGameAudioLevels();
-  if ((!levels.music && !levels.effects) || document.hidden) return;
+  if ((!levels.music && !levels.effects && !levels.environment) || document.hidden) return;
   automaticAudioAllowed = true;
   clearAudioGestureListeners();
   const retry = (event: Event) => {
@@ -349,19 +350,33 @@ export async function nextGameMusic(allowReplay = false) {
     if (token === revision) loading = false;
   }
 }
-
 export function readGameAudioLevels(): AudioLevels {
   if (sessionLevels) return sessionLevels;
   if (typeof window === "undefined") return DEFAULT_LEVELS;
+
   try {
     const value: unknown = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "null");
+
     if (!value || typeof value !== "object") return DEFAULT_LEVELS;
+
     const input = value as Record<string, unknown>;
-    const level = (key: keyof AudioLevels) =>
-      typeof input[key] === "number" && Number.isFinite(input[key])
-        ? Math.max(0, Math.min(1, input[key] as number))
-        : DEFAULT_LEVELS[key];
-    return { master: level("master"), music: level("music"), effects: level("effects") };
+
+    const level = (key: keyof AudioLevels): number => {
+      const stored = input[key];
+
+      if (typeof stored === "number" && Number.isFinite(stored)) {
+        return Math.max(0, Math.min(1, stored));
+      }
+
+      return DEFAULT_LEVELS[key] ?? 0;
+    };
+
+    return {
+      master: level("master"),
+      music: level("music"),
+      effects: level("effects"),
+      environment: level("environment"),
+    };
   } catch {
     return DEFAULT_LEVELS;
   }
@@ -376,12 +391,100 @@ function saveLevels(levels: AudioLevels) {
   }
 }
 
+const AMBIENCE_GAIN = 0.55;
+const AMBIENCE_LOOP_SECONDS = 12;
+
+function createAmbientSoundscape(context: AudioContext): AudioBuffer {
+  const sampleRate = context.sampleRate;
+  const length = sampleRate * AMBIENCE_LOOP_SECONDS;
+  const buffer = context.createBuffer(1, length, sampleRate);
+  const samples = buffer.getChannelData(0);
+  let seed = 0x51f15e;
+  let windFilter = 0;
+  const random = () => {
+    seed ^= seed << 13;
+    seed ^= seed >>> 17;
+    seed ^= seed << 5;
+    return ((seed >>> 0) / 0xffffffff) * 2 - 1;
+  };
+
+  // Build a seamless, original sound bed: soft wind, distant road rumble,
+  // and sparse bird chirps. No network requests or third-party audio assets.
+  const chirps = [0.8, 1.02, 3.25, 3.47, 6.6, 8.9, 9.12, 10.8].map((start, index) => ({
+    start,
+    duration: index % 3 === 0 ? 0.14 : 0.105,
+    low: index % 2 === 0 ? 1850 : 2250,
+    high: index % 2 === 0 ? 2850 : 3150,
+  }));
+
+  for (let index = 0; index < length; index++) {
+    const time = index / sampleRate;
+    const white = random();
+    windFilter += (white - windFilter) * 0.0018;
+    const wind = windFilter * 2.1 + white * 0.012;
+    const trafficMotion = 0.5 + 0.5 * Math.sin(2 * Math.PI * 0.075 * time);
+    const traffic =
+      (Math.sin(2 * Math.PI * 48 * time) * 0.052 +
+        Math.sin(2 * Math.PI * 63 * time) * 0.026 +
+        Math.sin(2 * Math.PI * 81 * time) * 0.014) *
+      (0.45 + trafficMotion * 0.55);
+
+    let birds = 0;
+    for (const chirp of chirps) {
+      const elapsed = time - chirp.start;
+      if (elapsed < 0 || elapsed >= chirp.duration) continue;
+      const progress = elapsed / chirp.duration;
+      const envelope = Math.sin(Math.PI * progress) ** 2;
+      birds +=
+        Math.sin(
+          2 *
+            Math.PI *
+            (chirp.low * elapsed +
+              ((chirp.high - chirp.low) / (2 * chirp.duration)) * elapsed * elapsed),
+        ) *
+        envelope *
+        0.15;
+    }
+    samples[index] = Math.max(-0.55, Math.min(0.55, wind + traffic + birds));
+  }
+
+  // Match both ends at the loop boundary, then fade back to the original signal.
+  const fadeLength = Math.floor(sampleRate * 0.45);
+  const boundaryValue = (samples[0]! + samples[length - 1]!) / 2;
+  for (let index = 0; index < fadeLength; index++) {
+    const progress = index / fadeLength;
+    const blend = 1 - progress;
+    samples[index] = samples[index]! * progress + boundaryValue * blend;
+    const tailIndex = length - 1 - index;
+    samples[tailIndex] = samples[tailIndex]! * progress + boundaryValue * blend;
+  }
+
+  return buffer;
+}
+
+function updateAmbientPlayback(current: AudioGraph, enabled: boolean) {
+  if (enabled && !current.ambienceSource) {
+    const source = current.context.createBufferSource();
+    source.buffer = createAmbientSoundscape(current.context);
+    source.loop = true;
+    source.connect(current.ambience);
+    source.start();
+    current.ambienceSource = source;
+  } else if (!enabled && current.ambienceSource) {
+    current.ambienceSource.stop();
+    current.ambienceSource.disconnect();
+    current.ambienceSource = null;
+  }
+}
+
 function applyLevels(current: AudioGraph, levels: AudioLevels) {
   const now = current.context.currentTime;
   current.master.gain.setTargetAtTime(levels.master, now, 0.08);
   current.music.gain.setTargetAtTime(levels.music, now, 0.08);
   current.effects.gain.setTargetAtTime(levels.effects, now, 0.08);
-  current.ambience.gain.value = levels.effects > 0 ? 0.035 : 0;
+  const environment = levels.environment ?? 0;
+  current.ambience.gain.setTargetAtTime(environment * AMBIENCE_GAIN, now, 0.12);
+  updateAmbientPlayback(current, environment > 0);
 }
 
 function createAudioGraph(levels: AudioLevels): AudioGraph | null {
@@ -392,34 +495,22 @@ function createAudioGraph(levels: AudioLevels): AudioGraph | null {
   const ambience = context.createGain();
   const music = context.createGain();
   const effects = context.createGain();
-  const current = { context, master, ambience, music, effects };
+  const current: AudioGraph = { context, master, ambience, ambienceSource: null, music, effects };
   applyLevels(current, levels);
-  ambience.gain.value = levels.effects > 0 ? 0.035 : 0;
   ambience.connect(master);
   music.connect(master);
   effects.connect(master);
   master.connect(context.destination);
 
-  // Original synthesized ambience and tones; no recordings or remote audio assets.
-  const buffer = context.createBuffer(1, context.sampleRate * 2, context.sampleRate);
-  const channel = buffer.getChannelData(0);
-  for (let index = 0; index < channel.length; index++)
-    channel[index] = (Math.random() * 2 - 1) * 0.12;
-  const noise = context.createBufferSource();
-  const lowPass = context.createBiquadFilter();
-  noise.buffer = buffer;
-  noise.loop = true;
-  lowPass.type = "lowpass";
-  lowPass.frequency.value = 460;
-  noise.connect(lowPass);
-  lowPass.connect(ambience);
-  noise.start();
-
   return current;
 }
 
 export async function enableGameAudio(levels = readGameAudioLevels()): Promise<boolean> {
-  if (typeof window === "undefined" || document.hidden || (!levels.music && !levels.effects))
+  if (
+    typeof window === "undefined" ||
+    document.hidden ||
+    (!levels.music && !levels.effects && !levels.environment)
+  )
     return false;
   automaticAudioAllowed = true;
   saveLevels(levels);
@@ -469,7 +560,7 @@ export function setGameAudioLevels(levels: AudioLevels) {
   if (graph) applyLevels(graph, levels);
   if (!levels.effects) stopEffects();
   if (!levels.music) pauseGameMusic();
-  if (!levels.music && !levels.effects) void disableGameAudio();
+  if (!levels.music && !levels.effects && !levels.environment) void disableGameAudio();
 }
 
 export function playGameSound(name: SoundName) {

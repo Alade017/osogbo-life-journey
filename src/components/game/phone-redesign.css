@@ -1,18 +1,21 @@
-/* Phone redesign, from the Mobile UI spec: navy device frame, light screen, frosted bars,
-   royal-blue active pills and white squircle chat cards. Loaded after the older phone styles,
-   so these rules win. Phones keep the full-screen layout from the older rules. */
+/* Handset frame and app surfaces. This file loads after the base phone styles. */
 
 @media (min-width: 641px) {
   .phone-dialog-shell > .phone-dialog.phone-ui-refresh,
   .phone-dialog.phone-ui-refresh {
     width: 400px !important;
     max-width: calc(100% - 32px) !important;
-    height: 670px !important;
-    max-height: calc(100dvh - 32px) !important;
+    height: min(
+      670px,
+      calc(100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - 28px)
+    ) !important;
+    max-height: calc(
+      100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - 28px
+    ) !important;
     padding: 0 !important;
-    border: 5px solid #1e2d4a !important;
+    border: 5px solid #2c3036 !important;
     border-radius: 44px !important;
-    background: #1e2d4a !important;
+    background: #2c3036 !important;
     box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.5) !important;
   }
 }
@@ -25,9 +28,207 @@
   box-shadow: none !important;
 }
 
+.phone-ui-refresh .phone-screen.phone-screen-home {
+  background: var(--brand-porcelain) !important;
+}
+
 .phone-ui-refresh .phone-status {
   color: #0f172a;
   font-weight: 600;
+}
+
+.phone-dialog-shell {
+  --phone-frame-height: min(
+    670px,
+    calc(100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - 28px)
+  );
+  --phone-frame-bottom: calc(var(--game-dock-space) + var(--game-keyboard-inset, 0px) + 8px);
+}
+
+.phone-dialog-shell > .phone-dialog.phone-ui-refresh {
+  overflow: visible;
+  height: var(--phone-frame-height) !important;
+  border-color: color-mix(in srgb, var(--brand-ink) 78%, #6b737e) !important;
+  background: linear-gradient(
+    100deg,
+    color-mix(in srgb, var(--brand-ink) 80%, #69717c),
+    var(--brand-ink) 35%,
+    color-mix(in srgb, var(--brand-ink) 84%, #89919a) 75%,
+    var(--brand-ink)
+  ) !important;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, white 24%, transparent),
+    inset 0 0 0 3px color-mix(in srgb, black 30%, transparent),
+    0 28px 54px -18px color-mix(in srgb, var(--brand-ink) 70%, transparent) !important;
+}
+
+.phone-dialog-shell > .phone-dialog.phone-ui-refresh::before,
+.phone-dialog-shell > .phone-dialog.phone-ui-refresh::after {
+  position: absolute;
+  z-index: 0;
+  display: block;
+  width: 5px;
+  background: linear-gradient(90deg, #161c23, #69727d 55%, #20262e);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--brand-ink) 70%, transparent);
+  content: "";
+  pointer-events: none;
+}
+
+.phone-dialog-shell > .phone-dialog.phone-ui-refresh::before {
+  top: 18%;
+  left: -8px;
+  height: 65px;
+  border-radius: 3px 0 0 3px;
+}
+
+.phone-dialog-shell > .phone-dialog.phone-ui-refresh::after {
+  top: 27%;
+  right: -8px;
+  height: 45px;
+  border-radius: 0 3px 3px 0;
+}
+
+.phone-dialog-shell-solo {
+  --phone-frame-height: min(670px, calc(100dvh - 28px));
+}
+
+.phone-dialog-shell-solo > .phone-dialog.phone-ui-refresh {
+  inset: auto auto calc((100dvh - var(--phone-frame-height)) / 2) 50%;
+  transform: translateX(-50%);
+}
+
+.phone-ui-refresh .phone-status-camera {
+  display: block;
+  justify-self: center;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #252c35;
+  border-radius: 50%;
+  background: radial-gradient(circle at 64% 30%, #7690ab 0 10%, #26384a 24%, #090e15 66%);
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--brand-ink) 28%, transparent),
+    inset 0 0 3px #05070a;
+}
+
+.phone-ui-refresh .phone-screen {
+  position: relative;
+  z-index: 1;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--brand-ink) 14%, transparent),
+    inset 0 3px 8px color-mix(in srgb, var(--brand-ink) 7%, transparent) !important;
+}
+
+.phone-ui-refresh .phone-screen::after {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow:
+    inset 1px 0 0 color-mix(in srgb, white 38%, transparent),
+    inset -1px 0 0 color-mix(in srgb, var(--brand-ink) 13%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 40%, transparent);
+  content: "";
+  pointer-events: none;
+}
+
+.phone-ui-refresh .phone-screen.phone-screen-home {
+  background: linear-gradient(
+    160deg,
+    var(--brand-porcelain) 0%,
+    color-mix(in srgb, var(--brand-porcelain) 88%, var(--muted)) 55%,
+    var(--brand-porcelain) 100%
+  ) !important;
+}
+
+.phone-ui-refresh .phone-status {
+  min-height: 36px;
+  padding: 7px 16px 5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.phone-ui-refresh .phone-status-time {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.phone-ui-refresh .phone-status-indicators {
+  gap: 7px;
+  color: color-mix(in srgb, var(--brand-ink) 90%, black);
+}
+
+.phone-ui-refresh .phone-home-indicator {
+  width: 105px;
+  height: 4px;
+  background: color-mix(in srgb, var(--brand-ink) 72%, transparent);
+}
+
+.phone-dialog-shell > .phone-cancel-button {
+  position: absolute;
+  top: calc(100dvh - var(--phone-frame-bottom) - var(--phone-frame-height) + 8px);
+  left: calc(50% + 212px);
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  border-radius: var(--shape-pill);
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow: 0 7px 20px color-mix(in srgb, var(--foreground) 18%, transparent);
+  font-size: 0.78rem;
+  font-weight: 750;
+  pointer-events: auto;
+}
+
+.phone-dialog-shell-solo > .phone-cancel-button {
+  top: calc((100dvh - var(--phone-frame-height)) / 2 + 8px);
+}
+
+@media (max-width: 640px) {
+  .phone-dialog-shell {
+    --phone-frame-height: calc(
+      100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - 64px
+    );
+  }
+
+  .phone-dialog-shell-solo {
+    --phone-frame-height: calc(100dvh - 64px);
+  }
+
+  .phone-dialog-shell > .phone-dialog.phone-ui-refresh {
+    width: calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right)) !important;
+    max-width: calc(
+      100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right)
+    ) !important;
+    height: var(--phone-frame-height) !important;
+    border-radius: 25px !important;
+  }
+
+  .phone-dialog-shell > .phone-dialog.phone-ui-refresh .phone-screen {
+    border-radius: 20px !important;
+  }
+
+  .phone-dialog-shell-solo > .phone-dialog.phone-ui-refresh {
+    bottom: 8px;
+  }
+
+  .phone-dialog-shell > .phone-cancel-button,
+  .phone-dialog-shell-solo > .phone-cancel-button {
+    top: max(8px, env(safe-area-inset-top));
+    right: max(12px, env(safe-area-inset-right));
+    left: auto;
+    width: 38px;
+    min-height: 38px;
+    padding: 0;
+  }
+
+  .phone-dialog-shell > .phone-cancel-button span {
+    display: none;
+  }
 }
 
 .phone-ui-refresh .phone-app-toolbar {
@@ -444,4 +645,54 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
+}
+
+/* On mobile, the open handset extends over the game dock instead of stopping above it. */
+@media (max-width: 640px) {
+  .phone-dialog-shell-docked {
+    position: fixed !important;
+    inset: max(6px, env(safe-area-inset-top)) 0 0 !important;
+    display: flex !important;
+    width: 100vw !important;
+    height: auto !important;
+    max-width: 100vw !important;
+    max-height: none !important;
+    align-items: stretch !important;
+    justify-content: center !important;
+    transform: none !important;
+    pointer-events: none;
+  }
+
+  .phone-dialog-shell-docked > .phone-dialog.phone-ui-refresh {
+    position: relative !important;
+    inset: auto !important;
+    /* The desktop centring offset would push the handset off the left edge. */
+    transform: none !important;
+    width: calc(100vw - 12px - env(safe-area-inset-left) - env(safe-area-inset-right)) !important;
+    max-width: calc(
+      100vw - 12px - env(safe-area-inset-left) - env(safe-area-inset-right)
+    ) !important;
+    height: 100% !important;
+    max-height: none !important;
+    margin: 0 !important;
+    border-radius: 25px 25px 0 0 !important;
+    pointer-events: auto;
+  }
+
+  .phone-dialog-shell-docked > .phone-dialog.phone-ui-refresh .phone-screen {
+    border-radius: 20px 20px 0 0 !important;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .phone-dialog-shell-docked > .gbb {
+    display: none !important;
+  }
+
+  .phone-dialog-shell-docked > .phone-cancel-button {
+    top: max(12px, env(safe-area-inset-top)) !important;
+    right: max(18px, env(safe-area-inset-right)) !important;
+    left: auto !important;
+    z-index: 5;
+    pointer-events: auto;
+  }
 }

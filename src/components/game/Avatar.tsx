@@ -30,7 +30,7 @@ export type AvatarFacing = "north" | "east" | "south" | "west";
 export type AvatarAnimationState = "idle" | "walk" | "turn" | "talk" | "work" | "sleep";
 
 export const AVATAR_VIEWBOX = { width: 64, height: 80 } as const;
-// AvatarArtwork is also serialized into a standalone SVG image for Phaser. CSS
+// AvatarArtwork is also serialized into a standalone SVG image for the renderer. CSS
 // custom properties from the app document are unavailable in that image context.
 const EDGE = "#263238";
 const EQUIPMENT_ACCENT = "#d4ae5c";
@@ -46,7 +46,7 @@ function poseFor(state: AvatarAnimationState, frame: number) {
   return { bob: index % 2 ? -1 : 0, arm: 0, leg: 0, lean: 0 };
 }
 
-/** Shared artwork used by React portraits and the one-time Phaser sprite atlas. */
+/** Shared artwork used by React portraits and the one-time sprite atlas. */
 export function AvatarArtwork({
   appearance,
   gender = "nonbinary",

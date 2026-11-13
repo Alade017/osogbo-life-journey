@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Megaphone, Pencil, X } from "lucide-react";
+import { ArrowUpRight, MapPin, Megaphone, Pencil, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,6 +11,7 @@ import {
   type AdvertisingMarket,
 } from "@/lib/advertising-service";
 import { formatNaira, q } from "@/lib/game";
+import { getBillboardLandmarkId } from "@/lib/map-billboard-map";
 import "./billboard-ad.css";
 import { PaletteSelect } from "@/components/ui/palette-select";
 
@@ -26,6 +27,7 @@ type Creative = Pick<Campaign, "advertiserName" | "title" | "description" | "cre
 export function BillboardAdApp() {
   const client = useQueryClient();
   const market = useQuery(q.advertisingMarket());
+  const locations = useQuery(q.locations());
   const [billboardId, setBillboardId] = useState("");
   const [advertiserName, setAdvertiserName] = useState("");
   const [title, setTitle] = useState("");
@@ -91,6 +93,16 @@ export function BillboardAdApp() {
   };
   return (
     <div className="phone-finance-app billboard-ad-app scrollbar-hidden">
+      <header className="billboard-app-hero">
+        <span className="billboard-app-hero-icon">
+          <Megaphone size={21} aria-hidden="true" />
+        </span>
+        <div>
+          <span className="billboard-eyebrow">Promote your business</span>
+          <h2>Billboards</h2>
+          <p>Choose a placement and create an ad for the city.</p>
+        </div>
+      </header>
       {purchase.isError && (
         <div role="alert" className="phone-finance-card">
           <p>{purchase.error.message}</p>
@@ -102,13 +114,72 @@ export function BillboardAdApp() {
           </Button>
         </div>
       )}
-      <p className="phone-finance-disclaimer">
-        Virtual in-game Naira only. Other players can view active ads; only you can manage your
-        campaigns.
+      <p className="phone-finance-disclaimer billboard-disclaimer">
+        Active ads are visible to other players. Only you can manage your campaigns. Purchases use
+        in-game Naira.
       </p>
-      <h2>
-        <Megaphone size={18} /> Create a campaign
-      </h2>
+      <section className="billboard-placement-section" aria-label="Billboard placements">
+        <div className="billboard-section-heading">
+          <div>
+            <span className="billboard-eyebrow">Across the city</span>
+            <h2>Choose a location</h2>
+          </div>
+          <span className="billboard-campaign-count">{market.data.billboards.length}</span>
+        </div>
+        <div className="billboard-placement-list">
+          {market.data.billboards.map((board) => {
+            const mapped = locations.data
+              ? getBillboardLandmarkId(board.locationId, locations.data)
+              : null;
+            const active = selected?.id === board.id;
+            return (
+              <article
+                className={`billboard-placement${active ? " is-selected" : ""}`}
+                key={board.id}
+              >
+                <button
+                  type="button"
+                  className="billboard-placement-choice"
+                  onClick={() => setBillboardId(board.id)}
+                  aria-pressed={active}
+                >
+                  <span className="billboard-placement-icon">
+                    <MapPin size={19} aria-hidden="true" />
+                  </span>
+                  <span className="billboard-placement-copy">
+                    <strong>{board.name}</strong>
+                    <small>
+                      {board.location} · {board.sizeType} · {board.placement}
+                    </small>
+                  </span>
+                  <span className="billboard-placement-price">
+                    {formatNaira(board.dailyPrice)}
+                    <small>/ day</small>
+                  </span>
+                </button>
+                {mapped ? (
+                  <a
+                    className="billboard-map-link"
+                    href={`/map?billboard=${encodeURIComponent(board.id)}`}
+                  >
+                    View on map <ArrowUpRight size={14} aria-hidden="true" />
+                  </a>
+                ) : (
+                  <span className="billboard-map-unavailable">
+                    {locations.isPending ? "Checking map location…" : "Map location unavailable"}
+                  </span>
+                )}
+              </article>
+            );
+          })}
+        </div>
+      </section>
+      <div className="billboard-section-heading">
+        <div>
+          <span className="billboard-eyebrow">New promotion</span>
+          <h2>Create a campaign</h2>
+        </div>
+      </div>
       {!selected ? (
         <p className="phone-finance-empty">There are no active billboards available right now.</p>
       ) : (
@@ -138,7 +209,22 @@ export function BillboardAdApp() {
               }))}
             />
           </label>
-          <p className="billboard-placement">{selected.placement}</p>
+          <div className="billboard-location-card">
+            <span className="billboard-eyebrow">Selected placement</span>
+            <strong>{selected.name}</strong>
+            <span>
+              {selected.location} · {selected.sizeType}
+            </span>
+            <small>{selected.placement}</small>
+            {locations.data && getBillboardLandmarkId(selected.locationId, locations.data) && (
+              <a
+                className="billboard-map-link"
+                href={`/map?billboard=${encodeURIComponent(selected.id)}`}
+              >
+                Preview this location on the map <ArrowUpRight size={14} aria-hidden="true" />
+              </a>
+            )}
+          </div>
           <label>
             Advertiser name
             <input
@@ -186,6 +272,15 @@ export function BillboardAdApp() {
               options={[7, 14, 30].map((days) => ({ value: String(days), label: `${days} days` }))}
             />
           </label>
+          <div
+            className={`billboard-creative-preview billboard-theme-${theme}`}
+            aria-label="Campaign preview"
+          >
+            <span>Preview</span>
+            <strong>{title.trim() || "Your headline will appear here"}</strong>
+            <p>{description.trim() || "Your ad description will appear here."}</p>
+            {advertiserName.trim() && <small>{advertiserName.trim()}</small>}
+          </div>
           <div className="billboard-ad-price">
             <span>Campaign total</span>
             <strong>{formatNaira(cost)}</strong>
@@ -196,7 +291,13 @@ export function BillboardAdApp() {
         </form>
       )}
       <section className="billboard-owned-campaigns">
-        <h3>Your campaigns</h3>
+        <div className="billboard-section-heading">
+          <div>
+            <span className="billboard-eyebrow">Your promotions</span>
+            <h3>Your campaigns</h3>
+          </div>
+          <span className="billboard-campaign-count">{market.data.myAds.length}</span>
+        </div>
         {!market.data.myAds.length && (
           <p className="phone-finance-empty">Your ads will appear here after purchase.</p>
         )}
@@ -281,6 +382,19 @@ export function BillboardAdApp() {
                     : `Live until ${new Date(ad.endsAt).toLocaleDateString("en-NG")}`}{" "}
                   · Paid {formatNaira(ad.amountPaid)}
                 </small>
+                {(() => {
+                  const board = market.data.billboards.find((item) => item.id === ad.billboardId);
+                  return board &&
+                    locations.data &&
+                    getBillboardLandmarkId(board.locationId, locations.data) ? (
+                    <a
+                      className="billboard-map-link"
+                      href={`/map?billboard=${encodeURIComponent(board.id)}`}
+                    >
+                      View campaign on map <ArrowUpRight size={14} aria-hidden="true" />
+                    </a>
+                  ) : null;
+                })()}
                 {ad.status === "active" && (
                   <Button type="button" size="sm" variant="outline" onClick={() => startEdit(ad)}>
                     <Pencil size={15} /> Edit creative

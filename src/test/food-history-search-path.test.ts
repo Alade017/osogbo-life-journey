@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { PGlite } from "@electric-sql/pglite";
 import { readFileSync } from "node:fs";
-import { beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 const originalMigration = "supabase/migrations/20261106040000_food_history_delivery_choice.sql";
 const pinMigration = "supabase/migrations/20261106120100_food_history_search_path.sql";
@@ -44,6 +44,10 @@ describe("food delivery history function", () => {
     `);
     await db.exec(readFileSync(originalMigration, "utf8"));
     await db.exec(readFileSync(pinMigration, "utf8"));
+  }, 30_000);
+
+  afterAll(async () => {
+    await db.close();
   });
 
   it("pins the search path to the empty path", async () => {

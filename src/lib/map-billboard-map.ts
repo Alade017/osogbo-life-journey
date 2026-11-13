@@ -25,6 +25,19 @@ export type CurrentMapBillboard = {
   advertisement: BillboardCampaign;
 };
 
+/** Resolve server location IDs through the map's existing landmark links. */
+export function getBillboardLandmarkId(
+  locationId: string,
+  locations: Pick<Location, "id" | "slug">[],
+) {
+  const slug = locations.find((location) => location.id === locationId)?.slug;
+  if (!slug) return null;
+  return (
+    townData.landmarks.find((landmark) => MAP_LANDMARK_LOCATION_SLUG[landmark.id] === slug)?.id ??
+    null
+  );
+}
+
 export function isCurrentAdvertisement(advertisement: BillboardCampaign, now: number) {
   const startsAt = Date.parse(advertisement.starts_at);
   const endsAt = advertisement.ends_at

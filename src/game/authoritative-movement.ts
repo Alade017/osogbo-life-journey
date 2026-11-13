@@ -1,6 +1,6 @@
 import type { MovementIntent, NetworkPlayerSnapshot } from "./multiplayer-state.ts";
 import {
-  neighborhoodBuildingFootprint,
+  neighborhoodBuildingCollisionFootprints,
   neighborhoodObstacleFootprint,
 } from "./neighborhood-geometry.ts";
 import {
@@ -29,19 +29,21 @@ export function canOccupyNeighborhoodPoint(
     bottom: scenePoint.y + 20,
   };
   const canOccupyObjects = objects.every((object) => {
-    if (object.kind === "npc") return true;
-    const footprint = neighborhoodBuildingFootprint(object);
-    const solid = {
-      ...footprint,
-      right: footprint.left + footprint.width,
-      bottom: footprint.top + footprint.height,
-    };
-    return (
-      body.right <= solid.left ||
-      body.left >= solid.right ||
-      body.bottom <= solid.top ||
-      body.top >= solid.bottom
-    );
+    if (object.kind === "npc" || object.collision === false) return true;
+    return neighborhoodBuildingCollisionFootprints(object).every((footprint) => {
+      const solid = {
+        ...footprint,
+        right: footprint.left + footprint.width,
+        bottom: footprint.top + footprint.height,
+      };
+
+      return (
+        body.right <= solid.left ||
+        body.left >= solid.right ||
+        body.bottom <= solid.top ||
+        body.top >= solid.bottom
+      );
+    });
   });
   if (!canOccupyObjects) return false;
   return obstacles.every((obstacle) => {

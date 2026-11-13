@@ -16,7 +16,7 @@ const state = vi.hoisted(() => ({
   gameTime: { minute: 0, hour: 8, day: 1, weekday: 0 },
   npcRows: [] as Array<{ id: string }>,
   placeRows: [] as Array<{ location_id: string; category: string }>,
-  shopRows: [] as Array<{ shop: { location_id: string } }>,
+  shopRows: [] as Array<{ shop: { location_id: string; slug: string } }>,
   jobRows: [] as Array<{ is_available: boolean; location_id: string }>,
   position: null as { x: number; y: number } | null,
 }));
@@ -275,14 +275,37 @@ it("loads Oja-Oba's confirmed room and correct origin without fetching or exposi
 it("offers shop interactions only when real local shop offers are configured", async () => {
   state.location = "market";
   state.position = { x: 1.90625, y: 4.15625 };
-  state.shopRows = [{ shop: { location_id: "market" } }];
+  state.shopRows = [
+    {
+      shop: {
+        location_id: "market",
+        slug: "market-sales-stall",
+      },
+    },
+  ];
   show();
-  await screen.findByRole("button", { name: /Interact with Oja-Oba Market/i });
-  await act(async () => {
-    screen.getByRole("button", { name: /Interact with Oja-Oba Market/i }).click();
+  await screen.findByRole("button", {
+    name: /Interact with Oja-Oba stalls/i,
   });
-  await screen.findByRole("button", { name: "Browse local shop offers" });
-  screen.getByRole("button", { name: "Browse local shop offers" }).click();
+
+  await act(async () => {
+    screen
+      .getByRole("button", {
+        name: /Interact with Oja-Oba stalls/i,
+      })
+      .click();
+  });
+
+  await screen.findByRole("button", {
+    name: "Browse Oja-Oba stalls shop offers",
+  });
+
+  screen
+    .getByRole("button", {
+      name: "Browse Oja-Oba stalls shop offers",
+    })
+    .click();
+
   await screen.findByText("Market offers");
 });
 
@@ -341,9 +364,18 @@ it("opens an NPC conversation from a 3D target only when the player is within in
   await screen.findByText("R3F neighbourhood");
   await settleNpcsAtDestination(joined);
   const sceneProps = state.scene.mock.lastCall?.[0];
-  expect(sceneProps?.interactionTargets).toEqual([
-    expect.objectContaining({ id: "npc-adeola", kind: "npc" }),
-  ]);
+  expect(sceneProps?.interactionTargets).toEqual(
+    expect.arrayContaining([
+      expect.objectContaining({
+        id: "npc-adeola",
+        kind: "npc",
+      }),
+      expect.objectContaining({
+        id: "market",
+        kind: "market",
+      }),
+    ]),
+  );
   await act(async () => sceneProps?.onSelectTarget("npc-adeola"));
   await screen.findByRole("button", { name: "Say hello" });
 });

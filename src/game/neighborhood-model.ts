@@ -15,10 +15,20 @@ export type NeighborhoodNpcView = {
   targetY: number;
   isMoving: boolean;
 };
+export type NeighborhoodCollisionRect = {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+};
 export type NeighborhoodObject = {
   id: string;
   name: string;
   kind: "home" | "market" | "work" | "npc";
+  collisionFootprints?: readonly NeighborhoodCollisionRect[];
+  /** Whether this object blocks player movement. Defaults to true. */
+  collision?: boolean;
+  shopSlug?: string | null;
   x: number;
   y: number;
 };
@@ -161,6 +171,9 @@ export const OJA_OBA_AREA: NeighborhoodArea = {
   paths: [
     { id: "courtyard-approach", from: { x: 515, y: 165 }, to: { x: 515, y: 236 }, width: 14 },
     { id: "stalls-approach", from: { x: 145, y: 165 }, to: { x: 145, y: 236 }, width: 14 },
+    { id: "produce-stall-approach", from: { x: 65, y: 110 }, to: { x: 65, y: 236 }, width: 10 },
+    { id: "grains-stall-approach", from: { x: 115, y: 110 }, to: { x: 115, y: 236 }, width: 10 },
+    { id: "household-stall-approach", from: { x: 165, y: 110 }, to: { x: 165, y: 236 }, width: 10 },
     { id: "loading-yard-approach", from: { x: 500, y: 420 }, to: { x: 500, y: 480 }, width: 14 },
   ],
   obstacles: [
@@ -174,8 +187,47 @@ export const OJA_OBA_AREA: NeighborhoodArea = {
   ],
   objects: [
     { id: "home", name: "Market-side courtyard", kind: "home", x: 515, y: 165 },
-    { id: "market", name: "Oja-Oba stalls", kind: "market", x: 145, y: 165 },
+    {
+      id: "market",
+      name: "Oja-Oba stalls",
+      kind: "market",
+      shopSlug: "market-sales-stall",
+      x: 145,
+      y: 165,
+      collisionFootprints: [
+        // West section
+        { left: 88, top: 103, width: 15, height: 58 },
+        // Solid middle section
+        { left: 127, top: 103, width: 26, height: 58 },
+        // East section
+        { left: 177, top: 103, width: 25, height: 58 },
+      ],
+    },
     { id: "work", name: "Market loading yard", kind: "work", x: 500, y: 420 },
+    {
+      id: "oja-oba-produce-stall",
+      name: "Fresh produce stall",
+      kind: "market",
+      shopSlug: null,
+      x: 65,
+      y: 110,
+    },
+    {
+      id: "oja-oba-grain-stall",
+      name: "Grains and staples stall",
+      kind: "market",
+      shopSlug: null,
+      x: 115,
+      y: 110,
+    },
+    {
+      id: "oja-oba-household-stall",
+      name: "Household goods stall",
+      kind: "market",
+      shopSlug: null,
+      x: 165,
+      y: 110,
+    },
     { id: "npc", name: "Ayo · market trader", kind: "npc", x: 155, y: 420 },
   ],
   style: {

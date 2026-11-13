@@ -1,13 +1,5 @@
 /** Explicit links connect fictional map markers to stable server location slugs. */
 export const MAP_LANDMARK_LOCATION_SLUG: Record<string, string | null> = {
-  "oja-oba-market": "oja-oba",
-  "ataoja-police-station": "government-area",
-  "ataoja-palace": "government-area",
-  "oke-baale-local-government-hq": "oke-baale",
-  "osogbo-school-of-art": "student-district",
-  "osogbo-township-stadium": "stadium",
-  "aleku-wodo-road-network": "residential",
-  "oke-fia-flyover": "oke-fia",
   "olaiya-junction": "city-centre",
   "town-market": "town-market",
   "civic-court": "civic-court",
@@ -35,4 +27,13 @@ export const MAP_LANDMARK_LOCATION_SLUG: Record<string, string | null> = {
   "eastside-produce-coop": "eastside-produce-coop",
   "adire-makers-yard": "adire-makers-yard",
   "neighborhood-play-park": "neighborhood-play-park",
+  "oja-oba-market": "oja-oba",
+  "ataoja-police-station": "government-area",
+  "ataoja-palace": "government-area",
+  "oke-baale-local-government-hq": "oke-baale",
+  "osogbo-school-of-art": "student-district",
+  "osogbo-township-stadium": "stadium",
+  "aleku-wodo-road-network": "residential",
+  "oke-fia-flyover": "oke-fia",
+  "osun-sacred-grove": null,
 };
