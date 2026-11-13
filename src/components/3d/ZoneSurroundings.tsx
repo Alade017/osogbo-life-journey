@@ -1,6 +1,5 @@
-import { useMemo, useRef } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
-import type { Group, MeshStandardMaterial } from "three";
+import { useLayoutEffect, useMemo, useRef } from "react";
+import { Object3D, type InstancedMesh } from "three";
 import type {
   AdireMarketSpec,
   CommercialBankSpec,
@@ -14,7 +13,7 @@ import {
   interlockingPavingTexture,
   lateriteGroundTexture,
 } from "./neighborhood-textures";
-import { approachOpacity } from "./building-occlusion";
+import { useInteriorRoofFade } from "./BuildingOcclusion";
 import { InteractableZone } from "./InteractableZone";
 import { WORLD_PALETTE, WORLD_SCALE } from "./world-theme";
 
@@ -28,63 +27,153 @@ type InteractiveProps = {
   onHoverZone?: (zoneId: string | null) => void;
 };
 
-/** Smoothly fades out roofs/upper stories when the player walks inside an interior footprint. */
-function useInteriorRoofFade(inside: boolean) {
-  const { invalidate } = useThree();
-  const groupRef = useRef<Group>(null);
-  const opacityRef = useRef(1);
-  const materialsRef = useRef<MeshStandardMaterial[]>([]);
+function InstancedBankStanchions({
+  stanchions,
+  point,
+}: {
+  stanchions: CommercialBankSpec["stanchions"];
+  point: PointFn;
+}) {
+  const baseRef = useRef<InstancedMesh>(null);
+  const postRef = useRef<InstancedMesh>(null);
+  const beltRef = useRef<InstancedMesh>(null);
+  const beltCount = Math.max(0, stanchions.length - 1);
 
-  useFrame((_, delta) => {
-    const group = groupRef.current;
-    if (!group) return;
+  useLayoutEffect(() => {
+    const baseMesh = baseRef.current;
+    const postMesh = postRef.current;
+    const beltMesh = beltRef.current;
+    if (!baseMesh || !postMesh || stanchions.length === 0) return;
 
-    if (materialsRef.current.length === 0) {
-      const mats: MeshStandardMaterial[] = [];
-      group.traverse((child) => {
-        if ("isMesh" in child && child.isMesh) {
-          const mat = (child as { material?: MeshStandardMaterial | MeshStandardMaterial[] })
-            .material;
-          if (Array.isArray(mat)) {
-            mat.forEach((m) => {
-              m.transparent = true;
-              mats.push(m);
-            });
-          } else if (mat) {
-            mat.transparent = true;
-            mats.push(mat);
-          }
-        }
-      });
-      materialsRef.current = mats;
-    }
+    const dummy = new Object3D();
+    stanchions.forEach((stanchion, idx) => {
+      const sp = point(stanchion.x, stanchion.y);
+      dummy.position.set(sp[0], 0.085, sp[2]);
+      dummy.rotation.set(0, 0, 0);
+      dummy.scale.set(1, 1, 1);
+      dummy.updateMatrix();
+      baseMesh.setMatrixAt(idx, dummy.matrix);
 
-    const target = inside ? 0 : 1;
-    const current = opacityRef.current;
-    if (Math.abs(current - target) < 0.015) {
-      if (current !== target) {
-        opacityRef.current = target;
-        materialsRef.current.forEach((m) => {
-          m.opacity = target;
-          m.depthWrite = target > 0.5;
-        });
-        group.visible = target > 0.05;
-        invalidate();
+      dummy.position.set(sp[0], 0.535, sp[2]);
+      dummy.updateMatrix();
+      postMesh.setMatrixAt(idx, dummy.matrix);
+
+      if (beltMesh && idx < beltCount) {
+        const next = stanchions[idx + 1]!;
+        const np = point(next.x, next.y);
+        const dx = np[0] - sp[0];
+        const dz = np[2] - sp[2];
+        const length = Math.hypot(dx, dz);
+        dummy.position.set((sp[0] + np[0]) / 2, 0.88, (sp[2] + np[2]) / 2);
+        dummy.rotation.set(0, Math.atan2(dx, dz), 0);
+        dummy.scale.set(1, 1, length);
+        dummy.updateMatrix();
+        beltMesh.setMatrixAt(idx, dummy.matrix);
       }
-      return;
-    }
-
-    const next = approachOpacity(current, target, Math.min(delta, 0.1), 12);
-    opacityRef.current = next;
-    materialsRef.current.forEach((m) => {
-      m.opacity = next;
-      m.depthWrite = next > 0.5;
     });
-    group.visible = next > 0.05;
-    invalidate();
-  });
 
-  return groupRef;
+    baseMesh.instanceMatrix.needsUpdate = true;
+    baseMesh.computeBoundingSphere();
+    postMesh.instanceMatrix.needsUpdate = true;
+    postMesh.computeBoundingSphere();
+    if (beltMesh && beltCount > 0) {
+      beltMesh.instanceMatrix.needsUpdate = true;
+      beltMesh.computeBoundingSphere();
+    }
+  }, [beltCount, point, stanchions]);
+
+  if (stanchions.length === 0) return null;
+
+  return (
+    <group raycast={() => null}>
+      <instancedMesh
+        ref={baseRef}
+        args={[undefined, undefined, stanchions.length]}
+        raycast={() => null}
+      >
+        <cylinderGeometry args={[0.14, 0.16, 0.06, 12]} />
+        <meshStandardMaterial color="#475569" metalness={0.6} roughness={0.4} />
+      </instancedMesh>
+      <instancedMesh
+        ref={postRef}
+        args={[undefined, undefined, stanchions.length]}
+        castShadow
+        raycast={() => null}
+      >
+        <cylinderGeometry args={[0.028, 0.028, 0.9, 8]} />
+        <meshStandardMaterial color="#cbd5e1" metalness={0.75} roughness={0.25} />
+      </instancedMesh>
+      {beltCount > 0 && (
+        <instancedMesh ref={beltRef} args={[undefined, undefined, beltCount]} raycast={() => null}>
+          <boxGeometry args={[0.03, 0.07, 1]} />
+          <meshStandardMaterial color="#0f2b5b" roughness={0.7} />
+        </instancedMesh>
+      )}
+    </group>
+  );
+}
+
+function InstancedMarketCrates({
+  crates,
+  point,
+}: {
+  crates: AdireMarketSpec["crates"];
+  point: PointFn;
+}) {
+  const mainRef = useRef<InstancedMesh>(null);
+  const sideRef = useRef<InstancedMesh>(null);
+
+  useLayoutEffect(() => {
+    const mainMesh = mainRef.current;
+    const sideMesh = sideRef.current;
+    if (!mainMesh || !sideMesh || crates.length === 0) return;
+
+    const dummy = new Object3D();
+    crates.forEach((crate, idx) => {
+      const cp = point(crate.x, crate.y);
+      dummy.position.set(cp[0], 0.28, cp[2]);
+      dummy.rotation.set(0, 0, 0);
+      dummy.scale.set(1, 1, 1);
+      dummy.updateMatrix();
+      mainMesh.setMatrixAt(idx, dummy.matrix);
+
+      dummy.position.set(cp[0] + 0.46, 0.22, cp[2] + 0.12);
+      dummy.rotation.set(0, 0.25, 0);
+      dummy.updateMatrix();
+      sideMesh.setMatrixAt(idx, dummy.matrix);
+    });
+
+    mainMesh.instanceMatrix.needsUpdate = true;
+    mainMesh.computeBoundingSphere();
+    sideMesh.instanceMatrix.needsUpdate = true;
+    sideMesh.computeBoundingSphere();
+  }, [crates, point]);
+
+  if (crates.length === 0) return null;
+
+  return (
+    <group raycast={() => null}>
+      <instancedMesh
+        ref={mainRef}
+        args={[undefined, undefined, crates.length]}
+        castShadow
+        receiveShadow
+        raycast={() => null}
+      >
+        <boxGeometry args={[0.52, 0.48, 0.52]} />
+        <meshStandardMaterial color="#b48352" roughness={0.88} />
+      </instancedMesh>
+      <instancedMesh
+        ref={sideRef}
+        args={[undefined, undefined, crates.length]}
+        castShadow
+        raycast={() => null}
+      >
+        <boxGeometry args={[0.4, 0.36, 0.4]} />
+        <meshStandardMaterial color="#9c6c3f" roughness={0.88} />
+      </instancedMesh>
+    </group>
+  );
 }
 
 function ServiceAlley({
@@ -369,32 +458,8 @@ function CommercialBank({
         ))}
       </group>
 
-      {/* 4. ATM Queue Stanchions */}
-      {spec.stanchions.map((stanchion, idx) => {
-        const sp = point(stanchion.x, stanchion.y);
-        const next = spec.stanchions[idx + 1];
-        const nextP = next ? point(next.x, next.y) : null;
-        return (
-          <group key={`stanchion-${idx}`}>
-            <group position={[sp[0], 0.055, sp[2]]}>
-              <mesh position={[0, 0.03, 0]}>
-                <cylinderGeometry args={[0.14, 0.16, 0.06, 12]} />
-                <meshStandardMaterial color="#475569" metalness={0.6} roughness={0.4} />
-              </mesh>
-              <mesh position={[0, 0.48, 0]} castShadow>
-                <cylinderGeometry args={[0.028, 0.028, 0.9, 8]} />
-                <meshStandardMaterial color="#cbd5e1" metalness={0.75} roughness={0.25} />
-              </mesh>
-            </group>
-            {nextP && (
-              <mesh position={[(sp[0] + nextP[0]) / 2, 0.88, (sp[2] + nextP[2]) / 2]}>
-                <boxGeometry args={[0.03, 0.07, Math.hypot(nextP[0] - sp[0], nextP[2] - sp[2])]} />
-                <meshStandardMaterial color="#0f2b5b" roughness={0.7} />
-              </mesh>
-            )}
-          </group>
-        );
-      })}
+      {/* 4. Instanced ATM Queue Stanchions */}
+      <InstancedBankStanchions stanchions={spec.stanchions} point={point} />
 
       {/* 5. Potted Palms */}
       {spec.pottedPalms.map((palm, idx) => {
@@ -726,22 +791,8 @@ function AdireMarketStrip({
         ))}
       </group>
 
-      {/* 7. Wooden Crates */}
-      {spec.crates.map((crate, idx) => {
-        const cp = point(crate.x, crate.y);
-        return (
-          <group key={`adire-crate-${idx}`} position={[cp[0], 0.04, cp[2]]}>
-            <mesh position={[0, 0.24, 0]} castShadow receiveShadow>
-              <boxGeometry args={[0.52, 0.48, 0.52]} />
-              <meshStandardMaterial color="#b48352" roughness={0.88} />
-            </mesh>
-            <mesh position={[0.46, 0.18, 0.12]} rotation={[0, 0.25, 0]} castShadow>
-              <boxGeometry args={[0.4, 0.36, 0.4]} />
-              <meshStandardMaterial color="#9c6c3f" roughness={0.88} />
-            </mesh>
-          </group>
-        );
-      })}
+      {/* 7. Instanced Wooden Crates */}
+      <InstancedMarketCrates crates={spec.crates} point={point} />
 
       {/* 8. Adire & Market Interactables */}
       {onSelectZone && (

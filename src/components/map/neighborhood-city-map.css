@@ -529,8 +529,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 44px;
+  height: 44px;
   border-radius: 10px;
   border: 1px solid rgba(22, 34, 92, 0.15);
   background: #ffffff;
@@ -621,7 +621,7 @@
   align-items: center;
   justify-content: center;
   gap: 0.42rem;
-  min-height: 42px;
+  min-height: 44px;
   padding: 0.55rem 0.95rem;
   border-radius: 12px;
   font: inherit;

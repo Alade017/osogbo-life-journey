@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import {
@@ -89,6 +89,11 @@ export function NeighborhoodZoneModal({
   const [tipIndex, setTipIndex] = useState(0);
   const [travelMode, setTravelMode] = useState<TravelMode>("keke");
 
+  useEffect(() => {
+    setSubTab("actions");
+    setTipIndex(0);
+  }, [zone?.id, npc?.id]);
+
   const locationsQuery = useQuery({
     ...q.locations(),
     enabled: open && zone?.category === "transit",
@@ -178,8 +183,8 @@ export function NeighborhoodZoneModal({
                 <CategoryIcon category={zone.category} />
                 <span>{zone.zoneTag.replace("_", " ")}</span>
               </div>
-              <DialogTitle className="text-xl font-black text-[#14213d]">{zone.title}</DialogTitle>
-              <DialogDescription className="text-sm text-[#3e4c63]">
+              <DialogTitle className="text-xl font-black text-[#16225C]">{zone.title}</DialogTitle>
+              <DialogDescription className="text-sm text-[#3a4668]">
                 {zone.subtitle}
               </DialogDescription>
 
@@ -285,7 +290,7 @@ export function NeighborhoodZoneModal({
                         className="neighborhood-zone-action-tile"
                       >
                         <div className="flex w-full items-start justify-between gap-2">
-                          <strong className="text-sm font-extrabold text-[#14213d]">
+                          <strong className="text-sm font-extrabold text-[#16225C]">
                             {outcome.label}
                           </strong>
                           <span
@@ -297,7 +302,7 @@ export function NeighborhoodZoneModal({
                           </span>
                         </div>
                         <p className="text-xs text-[#4b5970]">{outcome.description}</p>
-                        <div className="flex flex-wrap gap-1.5 pt-1 text-[11px] font-bold text-[#014baa]">
+                        <div className="flex flex-wrap gap-1.5 pt-1 text-[11px] font-bold text-[#16225C]">
                           {outcome.needDeltas?.hunger ? (
                             <span>
                               {outcome.needDeltas.hunger > 0 ? "+" : ""}
@@ -323,9 +328,11 @@ export function NeighborhoodZoneModal({
                             <span>+{outcome.needDeltas.social} Social</span>
                           ) : null}
                           {outcome.craftItem ? (
-                            <span className="text-[#9a5f00]">+ Item: {outcome.craftItem.name}</span>
+                            <span className="text-[#b87b00]">+ Item: {outcome.craftItem.name}</span>
                           ) : null}
-                          {outcome.xpGain ? <span>+{outcome.xpGain} XP</span> : null}
+                          {outcome.xpGain ? (
+                            <span className="text-[#1E9A5F]">+{outcome.xpGain} XP</span>
+                          ) : null}
                         </div>
                       </button>
                     );
@@ -336,11 +343,11 @@ export function NeighborhoodZoneModal({
                 {localInventory.length > 0 && (
                   <div className="neighborhood-zone-pack-box">
                     <div className="mb-2 flex items-center justify-between">
-                      <span className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[#014baa]">
+                      <span className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[#16225C]">
                         <Package size={14} aria-hidden="true" />
-                        Satchel & Zone Crafts ({localInventory.length})
+                        Satchel &amp; Zone Crafts ({localInventory.length})
                       </span>
-                      <Link to="/inventory" className="text-xs font-bold text-[#014baa] underline">
+                      <Link to="/inventory" className="text-xs font-bold text-[#16225C] underline">
                         Open Inventory
                       </Link>
                     </div>
@@ -358,7 +365,7 @@ export function NeighborhoodZoneModal({
                               <button
                                 type="button"
                                 onClick={() => onToggleAccessory(equipped ? null : item.slug)}
-                                className="ml-1 rounded bg-[#014baa] px-1.5 py-0.5 text-[10px] font-bold text-white"
+                                className="ml-1 min-h-[28px] rounded bg-[#16225C] px-2 py-0.5 text-[10px] font-bold text-[#FAF7F0]"
                               >
                                 {equipped ? "Unequip" : "Equip"}
                               </button>
@@ -373,28 +380,28 @@ export function NeighborhoodZoneModal({
             )}
 
             {subTab === "bank" && (
-              <div className="rounded-xl border border-[#014baa]/15 bg-white/80 p-2">
+              <div className="rounded-xl border border-[#16225C]/15 bg-white/85 p-2">
                 <PhoneBankApp />
               </div>
             )}
 
             {subTab === "market" && (
-              <div className="rounded-xl border border-[#014baa]/15 bg-white/80 p-2">
+              <div className="rounded-xl border border-[#16225C]/15 bg-white/85 p-2">
                 <MarketPage shopSlug={zone.shopSlug ?? null} />
               </div>
             )}
 
             {subTab === "jobs" && (
-              <div className="rounded-xl border border-[#014baa]/15 bg-white/80 p-2">
+              <div className="rounded-xl border border-[#16225C]/15 bg-white/85 p-2">
                 <JobsPage />
               </div>
             )}
 
             {subTab === "transit" && (
               <div className="space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#014baa]/15 bg-[#f5f2ea] p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#16225C]/15 bg-[#f5f2ea] p-3">
                   <div>
-                    <strong className="block text-sm text-[#14213d]">Choose Transit Vehicle</strong>
+                    <strong className="block text-sm text-[#16225C]">Choose Transit Vehicle</strong>
                     <span className="text-xs text-[#4b5970]">
                       Board from Olaiya Right Avenue shoulder bay
                     </span>
@@ -405,10 +412,10 @@ export function NeighborhoodZoneModal({
                         key={mode}
                         type="button"
                         onClick={() => setTravelMode(mode)}
-                        className={`rounded-lg border px-3 py-1.5 text-xs font-bold capitalize ${
+                        className={`min-h-[40px] rounded-lg border px-3 py-1.5 text-xs font-bold capitalize ${
                           travelMode === mode
-                            ? "border-[#014baa] bg-[#014baa] text-white"
-                            : "border-[#014baa]/20 bg-white text-[#14213d]"
+                            ? "border-[#16225C] bg-[#16225C] text-[#FAF7F0]"
+                            : "border-[#16225C]/20 bg-white text-[#16225C]"
                         }`}
                       >
                         {mode === "danfo" ? "Korope / Danfo" : mode}
@@ -436,7 +443,7 @@ export function NeighborhoodZoneModal({
                           className="neighborhood-zone-action-tile"
                         >
                           <div className="flex w-full items-center justify-between">
-                            <strong className="text-sm text-[#14213d]">{loc.name}</strong>
+                            <strong className="text-sm text-[#16225C]">{loc.name}</strong>
                             <span className="neighborhood-zone-price-tag">
                               {formatNaira(est.fare)}
                             </span>
@@ -449,8 +456,8 @@ export function NeighborhoodZoneModal({
                     })}
                   </div>
                 ) : (
-                  <div className="rounded-xl border border-[#014baa]/15 bg-[#f5f2ea] p-4 text-center">
-                    <p className="mb-3 text-sm text-[#3e4c63]">
+                  <div className="rounded-xl border border-[#16225C]/15 bg-[#f5f2ea] p-4 text-center">
+                    <p className="mb-3 text-sm text-[#3a4668]">
                       Open the interactive Osogbo City Map to board a Keke or Korope to any
                       district.
                     </p>
@@ -460,7 +467,7 @@ export function NeighborhoodZoneModal({
                         handleClose(false);
                         void navigate({ to: "/map" });
                       }}
-                      className="inline-flex items-center gap-2 rounded-xl bg-[#014baa] px-4 py-2 text-sm font-bold text-white"
+                      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#16225C] px-4 py-2 text-sm font-bold text-[#FAF7F0]"
                     >
                       <MapIcon size={16} aria-hidden="true" />
                       Open City Transit Map
@@ -479,15 +486,15 @@ export function NeighborhoodZoneModal({
                 <MessageCircle size={16} aria-hidden="true" />
                 <span>{npc.role}</span>
               </div>
-              <DialogTitle className="text-xl font-black text-[#14213d]">{npc.name}</DialogTitle>
-              <DialogDescription className="text-sm text-[#3e4c63]">
+              <DialogTitle className="text-xl font-black text-[#16225C]">{npc.name}</DialogTitle>
+              <DialogDescription className="text-sm text-[#3a4668]">
                 Local Olaiya resident · Social score: <strong>{needs.social}%</strong>
               </DialogDescription>
             </div>
 
             <div className="space-y-4">
-              <div className="rounded-2xl border border-[#014baa]/20 bg-[#f5f2ea] p-4">
-                <p className="text-sm font-semibold text-[#14213d]" aria-live="polite">
+              <div className="rounded-2xl border border-[#16225C]/20 bg-[#f5f2ea] p-4">
+                <p className="text-sm font-semibold text-[#16225C]" aria-live="polite">
                   “{npcTip ?? npc.greeting}”
                 </p>
               </div>
@@ -502,8 +509,8 @@ export function NeighborhoodZoneModal({
                   }}
                   className="neighborhood-zone-action-tile"
                 >
-                  <strong className="flex items-center gap-1.5 text-sm text-[#14213d]">
-                    <Sparkles size={15} className="text-[#014baa]" aria-hidden="true" />
+                  <strong className="flex items-center gap-1.5 text-sm text-[#16225C]">
+                    <Sparkles size={15} className="text-[#F2B21C]" aria-hidden="true" />
                     Ask for Local Zone Tip
                   </strong>
                   <span className="text-xs text-[#4b5970]">
@@ -518,12 +525,12 @@ export function NeighborhoodZoneModal({
                   }}
                   className="neighborhood-zone-action-tile"
                 >
-                  <strong className="flex items-center gap-1.5 text-sm text-[#14213d]">
-                    <CheckCircle2 size={15} className="text-[#0f766e]" aria-hidden="true" />
+                  <strong className="flex items-center gap-1.5 text-sm text-[#16225C]">
+                    <CheckCircle2 size={15} className="text-[#1E9A5F]" aria-hidden="true" />
                     Share Friendly Banter
                   </strong>
                   <span className="text-xs text-[#4b5970]">
-                    Boost your Social & Mood around Olaiya (+10 Social, +4 Mood)
+                    Boost your Social &amp; Mood around Olaiya (+10 Social, +4 Mood)
                   </span>
                 </button>
               </div>

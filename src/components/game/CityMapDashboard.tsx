@@ -760,7 +760,17 @@ export function CityMapDashboard({
             <MapCanvas
               playerLocation={
                 currentMapPlace
-                  ? { x: currentMapPlace.grid.x, y: currentMapPlace.grid.z, label: "You are here" }
+                  ? {
+                      x:
+                        currentLocation?.slug === "city-centre"
+                          ? currentMapPlace.grid.x + (playerMapPosition.mapCoords.x - 0.5) * 2.2
+                          : currentMapPlace.grid.x,
+                      y:
+                        currentLocation?.slug === "city-centre"
+                          ? currentMapPlace.grid.z + (playerMapPosition.mapCoords.y - 0.5) * 1.4
+                          : currentMapPlace.grid.z,
+                      label: "You are here",
+                    }
                   : null
               }
               properties={housingMarkers.data ?? []}

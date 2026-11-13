@@ -409,10 +409,36 @@ export function PlayableNeighborhood() {
     undefined,
     loadPersistedNeighborhoodState,
   );
+  const [hasWalked, setHasWalked] = useState(false);
   const autoWalkRouteRef = useRef<{ route: WorldPoint[]; index: number } | null>(null);
   const zoneModalOpen = zoneState.activeZoneId !== null || zoneState.activeNpcId !== null;
   const anyModalOpen = activePanel !== null || zoneModalOpen;
   const player = players.find((candidate) => candidate.sessionId === sessionId);
+  const playerRef = useRef(player);
+  playerRef.current = player;
+
+  const startPathfindingTo = useCallback(
+    (targetScenePoint: WorldPoint) => {
+      const currentPlayer = playerRef.current;
+      if (currentPlayer && district) {
+        const plannedRoute = planCommuteRoute(
+          { x: currentPlayer.x, y: currentPlayer.y },
+          targetScenePoint,
+          district.origin,
+          area.objects,
+          area.obstacles,
+        );
+        autoWalkRouteRef.current =
+          plannedRoute && plannedRoute.length > 0 ? { route: plannedRoute, index: 0 } : null;
+      } else {
+        autoWalkRouteRef.current = null;
+      }
+      setHasWalked(true);
+      setDirections(new Set());
+      setGroundTarget(targetScenePoint);
+    },
+    [area.objects, area.obstacles, district],
+  );
 
   useEffect(() => {
     persistNeighborhoodState(zoneState);
@@ -663,10 +689,9 @@ export function PlayableNeighborhood() {
       enterHomeNow();
       return;
     }
-    setDirections(new Set());
-    setGroundTarget({ x: homeObject.x, y: homeObject.y });
+    startPathfindingTo({ x: homeObject.x, y: homeObject.y });
     setHomeBound(true);
-  }, [nearHome, homeObject, district?.personalHome, enterHomeNow]);
+  }, [nearHome, homeObject, district?.personalHome, enterHomeNow, startPathfindingTo]);
   const enteringHome = enterHome.isPending;
   useEffect(() => {
     if (!homeBound || nearbyObject?.kind !== "home") return;
@@ -709,6 +734,7 @@ export function PlayableNeighborhood() {
         groundTargetRef.current = null;
         setGroundTarget(null);
         setHomeBound(false);
+        setHasWalked(true);
       }
       setDirections((current) => {
         const next = new Set(current);
@@ -732,8 +758,17 @@ export function PlayableNeighborhood() {
   }, []);
 
   /** Consume Walk Here / Board Keke navigation commands issued from the City Map. */
+  const hasActivePlayer = Boolean(player);
   useEffect(() => {
-    if (connectionState !== "connected" || !player || !district || !roomRef.current) return;
+    const activePlayer = playerRef.current;
+    if (
+      connectionState !== "connected" ||
+      !hasActivePlayer ||
+      !activePlayer ||
+      !district ||
+      !roomRef.current
+    )
+      return;
     const pendingNav = consumeNeighborhoodNavigation();
     if (!pendingNav) return;
 
@@ -763,58 +798,32 @@ export function PlayableNeighborhood() {
       );
       const fallbackTimer = window.setTimeout(() => {
         if (acked) return;
-        const fallbackRoute = planCommuteRoute(
-          { x: player.x, y: player.y },
-          pendingNav.dropOffScenePoint,
-          district.origin,
-          area.objects,
-          area.obstacles,
-        );
-        if (fallbackRoute && fallbackRoute.length > 0) {
-          autoWalkRouteRef.current = { route: fallbackRoute, index: 0 };
-        }
-        setGroundTarget(pendingNav.dropOffScenePoint);
+        startPathfindingTo(pendingNav.dropOffScenePoint);
       }, 450);
       return () => window.clearTimeout(fallbackTimer);
     }
 
-    const plannedRoute = planCommuteRoute(
-      { x: player.x, y: player.y },
-      pendingNav.targetScenePoint,
-      district.origin,
-      area.objects,
-      area.obstacles,
-    );
-    if (plannedRoute && plannedRoute.length > 0) {
-      autoWalkRouteRef.current = { route: plannedRoute, index: 0 };
-    } else {
-      autoWalkRouteRef.current = null;
-    }
-    setDirections(new Set());
     setPendingTargetId(null);
     setHomeBound(false);
     dispatchZone(setPendingZoneId(pendingNav.primaryZoneId));
-    setGroundTarget(pendingNav.targetScenePoint);
+    startPathfindingTo(pendingNav.targetScenePoint);
     toast.message(`Walking to ${pendingNav.landmarkName}`);
   }, [
-    area.objects,
-    area.obstacles,
     connectionState,
     currentLocation?.slug,
     district,
-    player,
+    hasActivePlayer,
     roomRef,
+    startPathfindingTo,
   ]);
 
   /** Tapping or clicking the ground walks the character there. Panels hold them in place. */
   const tapGround = (point: { x: number; y: number }) => {
     if (anyModalOpen) return;
-    autoWalkRouteRef.current = null;
     setPendingTargetId(null);
     dispatchZone(setPendingZoneId(null));
     setHomeBound(false);
-    setDirections(new Set());
-    setGroundTarget(point);
+    startPathfindingTo(point);
   };
 
   useEffect(() => {
@@ -827,9 +836,12 @@ export function PlayableNeighborhood() {
     const interval = window.setInterval(() => {
       const room = roomRef.current;
       if (!room) return;
-      const position = player ? { x: player.x, y: player.y } : null;
+      const currentPlayer = playerRef.current;
+      const position = currentPlayer ? { x: currentPlayer.x, y: currentPlayer.y } : null;
       const scenePos =
-        player && district ? toScene({ x: player.x, y: player.y }, district.origin) : null;
+        currentPlayer && district
+          ? toScene({ x: currentPlayer.x, y: currentPlayer.y }, district.origin)
+          : null;
       const target = groundTargetRef.current;
       if (
         target &&
@@ -870,7 +882,7 @@ export function PlayableNeighborhood() {
       }
     }, 100);
     return () => window.clearInterval(interval);
-  }, [anyModalOpen, connectionState, district, roomRef, player]);
+  }, [anyModalOpen, connectionState, district, roomRef]);
 
   /**
    * Leaving the house: report real loads, then close the veil once the neighbourhood has
@@ -1003,8 +1015,7 @@ export function PlayableNeighborhood() {
     }
     toast.message(`Walking to ${target.name}`);
     setPendingTargetId(targetId);
-    setDirections(new Set());
-    setGroundTarget({ x: target.x, y: target.y });
+    startPathfindingTo({ x: target.x, y: target.y });
   };
   useEffect(() => {
     if (!pendingTargetId || nearbyObject?.id !== pendingTargetId) return;
@@ -1027,8 +1038,7 @@ export function PlayableNeighborhood() {
         setPendingTargetId(null);
         setHomeBound(false);
         dispatchZone(setPendingZoneId(id));
-        setDirections(new Set());
-        setGroundTarget(zone.accessPoint);
+        startPathfindingTo(zone.accessPoint);
         return;
       }
       const npc = findZoneNpc(id);
@@ -1041,11 +1051,10 @@ export function PlayableNeighborhood() {
         setPendingTargetId(null);
         setHomeBound(false);
         dispatchZone(setPendingZoneId(id));
-        setDirections(new Set());
-        setGroundTarget(npc.accessPoint);
+        startPathfindingTo(npc.accessPoint);
       }
     },
-    [nearbyZoneMatch, nearbyZoneNpcMatch],
+    [nearbyZoneMatch, nearbyZoneNpcMatch, startPathfindingTo],
   );
 
   useEffect(() => {
@@ -1157,9 +1166,9 @@ export function PlayableNeighborhood() {
         </div>
       ) : (
         <div className="neighborhood-world-card">
-          {connectionState === "connected" && (
+          {connectionState === "connected" && !hasWalked && (
             <div className="neighborhood-walk-hint" aria-label="Movement instruction">
-              Tap the ground to walk
+              Tap the ground or a zone to walk
             </div>
           )}
           {(connectionState === "connecting" ||
@@ -1236,7 +1245,7 @@ export function PlayableNeighborhood() {
                     {minimapTelemetry && (
                       <NeighborhoodMinimap
                         telemetry={minimapTelemetry}
-                        className="absolute bottom-3 right-3 z-10 md:bottom-auto md:top-3"
+                        className="absolute left-3 top-[4.5rem] z-10 md:left-auto md:right-3 md:top-3"
                       />
                     )}
                     <div
@@ -1325,7 +1334,7 @@ export function PlayableNeighborhood() {
                       onClick={() => setPeopleOpen((open) => !open)}
                     >
                       <Users size={16} aria-hidden="true" />
-                      People · {activeNpcs.length + zoneNpcs.length} · {formatNaira(pocketBalance)}
+                      People · {activeNpcs.length + zoneNpcs.length}
                     </button>
                   )}
                   {(activeNpcs.length > 0 || zoneNpcs.length > 0) && peopleOpen && (

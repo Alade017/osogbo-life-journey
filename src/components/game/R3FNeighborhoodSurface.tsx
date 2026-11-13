@@ -9,7 +9,8 @@ import {
   type ReactNode,
   type MutableRefObject,
 } from "react";
-import { Html, useGLTF } from "@react-three/drei";
+import { useGLTF } from "@react-three/drei";
+import { SceneHtml as Html } from "@/components/3d/SceneHtml";
 import { fitFurniture } from "@/components/3d/VenueFurniture";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
 import { BuildingOcclusion } from "@/components/3d/BuildingOcclusion";
@@ -547,11 +548,15 @@ export function R3FNeighborhoodSurface({
   }, [dressing, point, unit]);
   const streetSize = WORLD_SCALE.neighborhoodStreetCell;
   const lookRange = CHARACTER_MOTION.lookRange * WORLD_SCALE.character;
-  const scenePoints = players.map((player) => {
-    const p = toScene(player, district.origin);
-    return point(p.x, p.y);
-  });
-  const npcPoints = npcs.map((npc) => point(npc.x, npc.y));
+  const scenePoints = useMemo(
+    () =>
+      players.map((player) => {
+        const p = toScene(player, district.origin);
+        return point(p.x, p.y);
+      }),
+    [district.origin, players, point],
+  );
+  const npcPoints = useMemo(() => npcs.map((npc) => point(npc.x, npc.y)), [npcs, point]);
   const actorPositions = useRef(new Map<string, NpcPoint>());
   const actorRoutes = useRef(new Map<string, readonly NpcPoint[]>());
   const movementBounds = useMemo(
@@ -594,20 +599,24 @@ export function R3FNeighborhoodSurface({
         point(selfPoint.x, selfPoint.y)[2],
       ] as const)
     : null;
-  const trees: WorldTree[] = (area.obstacles ?? [])
-    .filter((o) => o.kind === "tree")
-    .map((o, index) => {
-      const p = point(o.x, o.y);
+  const trees: WorldTree[] = useMemo(
+    () =>
+      (area.obstacles ?? [])
+        .filter((o) => o.kind === "tree")
+        .map((o, index) => {
+          const p = point(o.x, o.y);
 
-      // Deterministic variation based on tree index.
-      const variation = (index * 17) % 30;
+          // Deterministic variation based on tree index.
+          const variation = (index * 17) % 30;
 
-      return {
-        position: [p[0], p[2]],
-        height: 0.85 + variation / 100,
-        canopyScale: 0.85 + ((index * 13) % 35) / 100,
-      };
-    });
+          return {
+            position: [p[0], p[2]],
+            height: 0.85 + variation / 100,
+            canopyScale: 0.85 + ((index * 13) % 35) / 100,
+          };
+        }),
+    [area.obstacles, point],
+  );
   return (
     <NeighborhoodBoundary>
       <div className="playable-neighborhood-canvas">

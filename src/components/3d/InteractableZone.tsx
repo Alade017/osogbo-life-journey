@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { Html } from "@react-three/drei";
 import { useThree, type ThreeEvent } from "@react-three/fiber";
+import { SceneHtml as Html } from "./SceneHtml";
 
 export interface InteractableZoneProps {
   id: string;

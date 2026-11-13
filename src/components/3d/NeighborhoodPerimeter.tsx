@@ -394,7 +394,11 @@ export function NeighborhoodPerimeter({
 
   return (
     <group name="neighborhood-perimeter">
-      <InstancedBoxLayer items={layers.foundations} color={WORLD_PALETTE.concrete} />
+      <InstancedBoxLayer
+        items={layers.foundations}
+        color={WORLD_PALETTE.concrete}
+        castShadow={false}
+      />
       <InstancedBoxLayer items={layers.bodies} color="#e8dcc6" />
       <InstancedBoxLayer
         items={layers.roofs}
@@ -408,17 +412,22 @@ export function NeighborhoodPerimeter({
         roughness={0.68}
         metalness={0.18}
       />
-      <InstancedBoxLayer items={layers.doors} color={WORLD_PALETTE.door} />
-      <InstancedBoxLayer items={layers.windows} color={WORLD_PALETTE.glass} roughness={0.35} />
+      <InstancedBoxLayer items={layers.doors} color={WORLD_PALETTE.door} castShadow={false} />
+      <InstancedBoxLayer
+        items={layers.windows}
+        color={WORLD_PALETTE.glass}
+        roughness={0.35}
+        castShadow={false}
+      />
       <InstancedBoxLayer items={layers.compoundWalls} color="#cfc4b2" />
-      <InstancedBoxLayer items={layers.compoundCaps} color="#9e9689" />
+      <InstancedBoxLayer items={layers.compoundCaps} color="#9e9689" castShadow={false} />
       <InstancedBoxLayer items={layers.palmTrunks} color="#7c6248" />
       <InstancedBoxLayer items={layers.palmFronds} color="#4d7c4a" />
       <InstancedBoxLayer items={layers.neemTrunks} color={WORLD_PALETTE.timber} />
       <InstancedSphereLayer items={layers.neemCanopies} color="#6b885b" />
       <InstancedBoxLayer items={layers.poles} color={WORLD_PALETTE.concrete} />
       <InstancedBoxLayer items={layers.crossarms} color={WORLD_PALETTE.timber} />
-      <InstancedBoxLayer items={layers.insulators} color={WORLD_PALETTE.linen} />
+      <InstancedBoxLayer items={layers.insulators} color={WORLD_PALETTE.linen} castShadow={false} />
       <InstancedBoxLayer items={layers.wires} color="#283038" castShadow={false} />
     </group>
   );

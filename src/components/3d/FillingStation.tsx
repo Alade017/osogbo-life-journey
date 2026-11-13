@@ -1,12 +1,144 @@
-import { useMemo, useRef } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
-import type { Group, MeshStandardMaterial } from "three";
+import { useLayoutEffect, useMemo, useRef } from "react";
+import { Object3D, type InstancedMesh } from "three";
 import type { FillingStationSpec } from "@/game/neighborhood-zones";
 import type { WorldPoint } from "@/game/neighborhood-model";
 import { stainedConcreteTexture } from "./neighborhood-textures";
-import { approachOpacity } from "./building-occlusion";
+import { useInteriorRoofFade } from "./BuildingOcclusion";
 import { InteractableZone } from "./InteractableZone";
 import { WORLD_PALETTE, WORLD_SCALE } from "./world-theme";
+
+function InstancedJerrycanStacks({
+  stacks,
+  point,
+}: {
+  stacks: FillingStationSpec["jerrycanStacks"];
+  point: (x: number, y: number) => [number, number, number];
+}) {
+  const canRef = useRef<InstancedMesh>(null);
+  const capRef = useRef<InstancedMesh>(null);
+
+  const offsets = useMemo(
+    () =>
+      [
+        [-0.16, 0.2, -0.1],
+        [0.16, 0.2, -0.1],
+        [-0.16, 0.2, 0.14],
+        [0.16, 0.2, 0.14],
+        [0, 0.58, 0.02],
+      ] as const,
+    [],
+  );
+
+  const totalCount = stacks.length * offsets.length;
+
+  useLayoutEffect(() => {
+    const canMesh = canRef.current;
+    const capMesh = capRef.current;
+    if (!canMesh || !capMesh || totalCount === 0) return;
+
+    const dummy = new Object3D();
+    let idx = 0;
+    for (const stack of stacks) {
+      const sp = point(stack.x, stack.y);
+      for (const [jx, jy, jz] of offsets) {
+        dummy.position.set(sp[0] + jx, jy, sp[2] + jz);
+        dummy.rotation.set(0, 0, 0);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        canMesh.setMatrixAt(idx, dummy.matrix);
+
+        dummy.position.set(sp[0] + jx + 0.05, jy + 0.21, sp[2] + jz);
+        dummy.updateMatrix();
+        capMesh.setMatrixAt(idx, dummy.matrix);
+        idx += 1;
+      }
+    }
+    canMesh.instanceMatrix.needsUpdate = true;
+    canMesh.computeBoundingSphere();
+    capMesh.instanceMatrix.needsUpdate = true;
+    capMesh.computeBoundingSphere();
+  }, [offsets, point, stacks, totalCount]);
+
+  if (totalCount === 0) return null;
+
+  return (
+    <group raycast={() => null}>
+      <instancedMesh
+        ref={canRef}
+        args={[undefined, undefined, totalCount]}
+        castShadow
+        raycast={() => null}
+      >
+        <boxGeometry args={[0.24, 0.38, 0.18]} />
+        <meshStandardMaterial color="#facc15" roughness={0.45} />
+      </instancedMesh>
+      <instancedMesh ref={capRef} args={[undefined, undefined, totalCount]} raycast={() => null}>
+        <cylinderGeometry args={[0.035, 0.035, 0.05, 8]} />
+        <meshStandardMaterial color="#1e293b" />
+      </instancedMesh>
+    </group>
+  );
+}
+
+function InstancedSafetyBollards({
+  bollards,
+  point,
+}: {
+  bollards: FillingStationSpec["bollards"];
+  point: (x: number, y: number) => [number, number, number];
+}) {
+  const postRef = useRef<InstancedMesh>(null);
+  const bandRef = useRef<InstancedMesh>(null);
+
+  useLayoutEffect(() => {
+    const postMesh = postRef.current;
+    const bandMesh = bandRef.current;
+    if (!postMesh || !bandMesh || bollards.length === 0) return;
+
+    const dummy = new Object3D();
+    bollards.forEach((bollard, idx) => {
+      const bp = point(bollard.x, bollard.y);
+      dummy.position.set(bp[0], 0.42, bp[2]);
+      dummy.rotation.set(0, 0, 0);
+      dummy.scale.set(1, 1, 1);
+      dummy.updateMatrix();
+      postMesh.setMatrixAt(idx, dummy.matrix);
+
+      dummy.position.set(bp[0], 0.68, bp[2]);
+      dummy.updateMatrix();
+      bandMesh.setMatrixAt(idx, dummy.matrix);
+    });
+
+    postMesh.instanceMatrix.needsUpdate = true;
+    postMesh.computeBoundingSphere();
+    bandMesh.instanceMatrix.needsUpdate = true;
+    bandMesh.computeBoundingSphere();
+  }, [bollards, point]);
+
+  if (bollards.length === 0) return null;
+
+  return (
+    <group raycast={() => null}>
+      <instancedMesh
+        ref={postRef}
+        args={[undefined, undefined, bollards.length]}
+        castShadow
+        raycast={() => null}
+      >
+        <cylinderGeometry args={[0.11, 0.13, 0.84, 10]} />
+        <meshStandardMaterial color="#d6d3cd" roughness={0.85} />
+      </instancedMesh>
+      <instancedMesh
+        ref={bandRef}
+        args={[undefined, undefined, bollards.length]}
+        raycast={() => null}
+      >
+        <cylinderGeometry args={[0.115, 0.115, 0.16, 10]} />
+        <meshStandardMaterial color="#eab308" roughness={0.5} />
+      </instancedMesh>
+    </group>
+  );
+}
 
 export function FillingStation({
   spec,
@@ -26,11 +158,7 @@ export function FillingStation({
   onHoverZone?: (zoneId: string | null) => void;
 }) {
   const unit = WORLD_SCALE.neighborhoodUnit;
-  const { invalidate } = useThree();
   const concreteMap = useMemo(() => stainedConcreteTexture(), []);
-  const roofGroupRef = useRef<Group>(null);
-  const roofOpacityRef = useRef(1);
-  const roofMaterialsRef = useRef<MeshStandardMaterial[]>([]);
 
   const playerInsideMart = useMemo(() => {
     if (!playerScenePoint) return false;
@@ -44,53 +172,7 @@ export function FillingStation({
   }, [playerScenePoint, spec.miniMart.interiorBounds]);
 
   // Smoothly fade and hide the mini-mart roof when the player walks inside.
-  useFrame((_, delta) => {
-    const group = roofGroupRef.current;
-    if (!group) return;
-    if (roofMaterialsRef.current.length === 0) {
-      const mats: MeshStandardMaterial[] = [];
-      group.traverse((child) => {
-        if ("isMesh" in child && child.isMesh) {
-          const mat = (child as { material?: MeshStandardMaterial | MeshStandardMaterial[] })
-            .material;
-          if (Array.isArray(mat)) {
-            mat.forEach((m) => {
-              m.transparent = true;
-              mats.push(m);
-            });
-          } else if (mat) {
-            mat.transparent = true;
-            mats.push(mat);
-          }
-        }
-      });
-      roofMaterialsRef.current = mats;
-    }
-
-    const target = playerInsideMart ? 0 : 1;
-    const current = roofOpacityRef.current;
-    if (Math.abs(current - target) < 0.015) {
-      if (current !== target) {
-        roofOpacityRef.current = target;
-        roofMaterialsRef.current.forEach((m) => {
-          m.opacity = target;
-          m.depthWrite = target > 0.5;
-        });
-        group.visible = target > 0.05;
-        invalidate();
-      }
-      return;
-    }
-
-    const next = approachOpacity(current, target, Math.min(delta, 0.1), 12);
-    roofOpacityRef.current = next;
-    roofMaterialsRef.current.forEach((m) => {
-      m.opacity = next;
-      m.depthWrite = next > 0.5;
-    });
-    group.visible = next > 0.05;
-    invalidate();
-  });
+  const roofGroupRef = useInteriorRoofFade(playerInsideMart);
 
   const forecourtPos = point(spec.forecourt.x, spec.forecourt.y);
   const apronPos = point(spec.apron.x, spec.apron.y);
@@ -434,49 +516,9 @@ export function FillingStation({
         </mesh>
       </group>
 
-      {/* 7. Stacked Yellow Jerrycans */}
-      {spec.jerrycanStacks.map((stack, sIdx) => {
-        const sp = point(stack.x, stack.y);
-        return (
-          <group key={`jerrycan-stack-${sIdx}`} position={[sp[0], 0, sp[2]]} raycast={() => null}>
-            {[
-              [-0.16, 0.2, -0.1],
-              [0.16, 0.2, -0.1],
-              [-0.16, 0.2, 0.14],
-              [0.16, 0.2, 0.14],
-              [0, 0.58, 0.02],
-            ].map(([jx, jy, jz], cIdx) => (
-              <group key={`can-${cIdx}`} position={[jx!, jy!, jz!]}>
-                <mesh castShadow>
-                  <boxGeometry args={[0.24, 0.38, 0.18]} />
-                  <meshStandardMaterial color="#facc15" roughness={0.45} />
-                </mesh>
-                <mesh position={[0.05, 0.21, 0]}>
-                  <cylinderGeometry args={[0.035, 0.035, 0.05, 8]} />
-                  <meshStandardMaterial color="#1e293b" />
-                </mesh>
-              </group>
-            ))}
-          </group>
-        );
-      })}
-
-      {/* 8. Concrete Safety Bollards */}
-      {spec.bollards.map((bollard, idx) => {
-        const bp = point(bollard.x, bollard.y);
-        return (
-          <group key={`bollard-${idx}`} position={[bp[0], 0, bp[2]]} raycast={() => null}>
-            <mesh position={[0, 0.42, 0]} castShadow>
-              <cylinderGeometry args={[0.11, 0.13, 0.84, 10]} />
-              <meshStandardMaterial color="#d6d3cd" roughness={0.85} />
-            </mesh>
-            <mesh position={[0, 0.68, 0]}>
-              <cylinderGeometry args={[0.115, 0.115, 0.16, 10]} />
-              <meshStandardMaterial color="#eab308" roughness={0.5} />
-            </mesh>
-          </group>
-        );
-      })}
+      {/* 7. Instanced Stacked Yellow Jerrycans & Safety Bollards */}
+      <InstancedJerrycanStacks stacks={spec.jerrycanStacks} point={point} />
+      <InstancedSafetyBollards bollards={spec.bollards} point={point} />
 
       {/* 9. Interactive Zone Markers: Fuel Pumps, Mini-Mart Counter, Vulcanizer */}
       {onSelectZone && (
