@@ -14,7 +14,7 @@ create or replace function public.save_player_world_position(
   p_expected_revision bigint,
   p_request_id uuid
 ) returns jsonb
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = '' as $
 declare
   cid uuid := public._my_character_id();
   player public.characters%rowtype;
