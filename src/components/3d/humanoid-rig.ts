@@ -108,9 +108,16 @@ function bodyParts(variant: BodyVariant): Part[] {
     // Neck and a rounded head with a softer jaw and cheek volume.
     blob([0.052, 0.09, 0.052], [0, 0.865, 0], BONE.neck, { detail: 1 }),
     blob([0.087, 0.108, 0.09], [0, 0.95, 0], BONE.head, { detail: 1 }),
-    blob([0.073, 0.05, 0.074], [0, 0.895, 0.012], BONE.head, { detail: 1 }),
-    blob([0.018, 0.027, 0.018], [0.09, 0.94, 0], BONE.head),
-    blob([0.018, 0.027, 0.018], [-0.09, 0.94, 0], BONE.head),
+    // Jaw, chin and cheek planes blend into the cranium instead of reading as separate beads.
+    blob([0.067, 0.047, 0.073], [0, 0.89, 0.025], BONE.head, { detail: 1 }),
+    blob([0.029, 0.022, 0.026], [0, 0.866, 0.053], BONE.head, { detail: 1 }),
+    blob([0.034, 0.035, 0.027], [0.054, 0.928, 0.055], BONE.head, { detail: 1 }),
+    blob([0.034, 0.035, 0.027], [-0.054, 0.928, 0.055], BONE.head, { detail: 1 }),
+    // A tapered bridge and rounded tip are skin geometry, not dark painted facial marks.
+    blob([0.012, 0.031, 0.016], [0, 0.936, 0.096], BONE.head, { detail: 1 }),
+    blob([0.017, 0.014, 0.019], [0, 0.915, 0.108], BONE.head, { detail: 1 }),
+    blob([0.022, 0.027, 0.021], [0.09, 0.94, 0], BONE.head, { detail: 1 }),
+    blob([0.022, 0.027, 0.021], [-0.09, 0.94, 0], BONE.head, { detail: 1 }),
     // Shoulder caps and a subtle clavicle bridge.
     blob([0.09 * shoulder, 0.075, 0.09], [0.17, 0.79, 0], BONE.spine2, { detail: 1 }),
     blob([0.09 * shoulder, 0.075, 0.09], [-0.17, 0.79, 0], BONE.spine2, { detail: 1 }),
@@ -132,8 +139,9 @@ function faceDetailParts(): Part[] {
     // Brows, nose definition and lips. Eye whites/irises/highlights use their own material meshes below.
     blob([0.024, 0.006, 0.009], [0.038, 0.976, 0.083], BONE.head, { accessory: true }),
     blob([0.024, 0.006, 0.009], [-0.038, 0.976, 0.083], BONE.head, { accessory: true }),
-    blob([0.012, 0.026, 0.015], [0, 0.928, 0.094], BONE.head, { accessory: true }),
-    blob([0.027, 0.006, 0.009], [0, 0.895, 0.087], BONE.head, { accessory: true }),
+    blob([0.009, 0.0035, 0.004], [0.012, 0.914, 0.122], BONE.head, { accessory: true }),
+    blob([0.009, 0.0035, 0.004], [-0.012, 0.914, 0.122], BONE.head, { accessory: true }),
+    blob([0.025, 0.005, 0.006], [0, 0.884, 0.092], BONE.head, { accessory: true }),
   ];
 }
 function eyeWhiteParts(): Part[] {
