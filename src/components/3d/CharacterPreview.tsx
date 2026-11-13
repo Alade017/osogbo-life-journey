@@ -6,7 +6,7 @@ import { WorldLighting } from "./WorldScene";
 /** Worn items may carry their slug so 3D models can be shown on the character. */
 export type PreviewEquipment = readonly { slot: string; item?: { slug?: string | null } | null }[];
 
-/** The same 3D character used in the house, framed for a profile or wardrobe stage. */
+/** Full-body preview shared by profile and wardrobe. */
 export function CharacterPreview({
   appearance,
   gender,
@@ -34,6 +34,36 @@ export function CharacterPreview({
           appearance={appearance}
           gender={gender}
           equipment={equipment}
+          position={[0, 0, 0]}
+        />
+      </Canvas>
+    </div>
+  );
+}
+
+/** Waist-up studio framing for character creation; leaves gameplay/profile camera untouched. */
+export function CharacterStudioPreview({
+  appearance, gender, label,
+}: {
+  appearance: Appearance;
+  gender: string;
+  label: string;
+}) {
+  return (
+    <div className="character-studio-canvas" role="img" aria-label={label}>
+      <Canvas
+        dpr={[1, 1.5]}
+        frameloop="demand"
+        camera={{ position: [0, 1.02, 2.25], fov: 30, near: 0.1, far: 20 }}
+        onCreated={({ camera }) => camera.lookAt(0, 0.79, 0)}
+        gl={{ antialias: true, powerPreference: "low-power" }}
+      >
+        <WorldLighting size={2.5} />
+        <WorldCharacter
+          name={label}
+          appearance={appearance}
+          gender={gender}
+          equipment={[]}
           position={[0, 0, 0]}
         />
       </Canvas>
