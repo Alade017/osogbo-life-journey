@@ -414,9 +414,12 @@ export function R3FNeighborhoodSurface({
   onZoomChange,
   onGroundTap,
   groundTarget,
+  commuteTarget = null,
 }: {
   onGroundTap: (point: { x: number; y: number }) => void;
   groundTarget: { x: number; y: number } | null;
+  /** Workplace beacon during an automatic commute; separate from the tapped destination. */
+  commuteTarget?: { x: number; y: number } | null;
   players: readonly NeighborhoodPlayerView[];
   npcs: readonly NeighborhoodNpcView[];
   interactionTargets: readonly NeighborhoodObject[];
@@ -787,6 +790,7 @@ export function R3FNeighborhoodSurface({
             <meshBasicMaterial transparent opacity={0} depthWrite={false} />
           </mesh>
           {groundTarget && <WaypointBeacon position={point(groundTarget.x, groundTarget.y)} />}
+          {commuteTarget && <WaypointBeacon position={point(commuteTarget.x, commuteTarget.y)} />}
           {occlusionSubject && <BuildingOcclusion subject={occlusionSubject} />}
           {groundTarget && (
             <mesh

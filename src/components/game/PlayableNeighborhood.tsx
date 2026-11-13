@@ -27,6 +27,8 @@ import { PhoneBankApp } from "@/components/game/phone/PhoneBankApp";
 import { LocationVenueScene } from "@/components/game/LocationVenueScene";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
 import { GROUND_ARRIVE_DISTANCE, groundIntent } from "@/game/ground-intent";
+import { commuteNotice } from "@/game/commute-notice";
+import "./commute-banner.css";
 import { joinNeighborhood, type NeighborhoodRoom } from "@/lib/multiplayer-service";
 import { q, rpc, useGameAction } from "@/lib/game";
 import { supabase } from "@/integrations/supabase/client";
@@ -102,7 +104,10 @@ function useNeighborhoodConnection(
   locationIsPlayable: boolean,
   attempt: number,
   setAttempt: (update: (attempt: number) => number) => void,
+  onCommuteState: (message: unknown) => void,
 ) {
+  const commuteHandler = useRef(onCommuteState);
+  commuteHandler.current = onCommuteState;
   const [connectionState, setConnectionState] = useState<ConnectionState>("loading");
   const [players, setPlayers] = useState<NeighborhoodPlayerView[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -161,6 +166,7 @@ function useNeighborhoodConnection(
         }
         joinedRoom = room;
         roomRef.current = room;
+        room.onMessage("commute-state", (message: unknown) => commuteHandler.current(message));
         setSessionId(room.sessionId);
         setRoomLocationId(locationId);
         const publish = () => {
@@ -313,12 +319,23 @@ export function PlayableNeighborhood() {
   const placesQuery = useQuery({ ...q.places(), enabled: !!currentLocation?.id });
   const shopItemsQuery = useQuery({ ...q.shopItems(), enabled: !!currentLocation?.id });
   const jobsQuery = useQuery({ ...q.jobs(), enabled: !!currentLocation?.id });
+  const [commuting, setCommuting] = useState(false);
   const { connectionState, players, sessionId, roomRef } = useNeighborhoodConnection(
     currentLocation?.id,
     currentLocation?.slug,
     district !== null,
     connectionAttempt,
     setConnectionAttempt,
+    (message) => {
+      const notice = commuteNotice(message);
+      if (!notice) return;
+      setCommuting(notice.heading);
+      if (notice.toast) toast[notice.toast.kind](notice.toast.text);
+      if (notice.openWork) {
+        setWorkView("actions");
+        setActivePanel("work");
+      }
+    },
   );
   const [directions, setDirections] = useState<ReadonlySet<MovementDirection>>(() => new Set());
   const [groundTarget, setGroundTarget] = useState<{ x: number; y: number } | null>(null);
@@ -569,6 +586,16 @@ export function PlayableNeighborhood() {
     setSelectedNpcId(null);
     setNpcDialogue(null);
   }, [currentLocation?.id]);
+
+  /** Career shifts ask the server to walk the character to work from this neighbourhood. */
+  useEffect(() => {
+    const requestCommute = (event: Event) => {
+      const shiftId = (event as CustomEvent<{ shiftId?: unknown }>).detail?.shiftId;
+      if (typeof shiftId === "string") roomRef.current?.send("commute-to-work", { shiftId });
+    };
+    window.addEventListener("osun:commute-to-work", requestCommute);
+    return () => window.removeEventListener("osun:commute-to-work", requestCommute);
+  }, []);
 
   /** Keyboard walking. Pressing a key cancels a tapped destination. */
   useEffect(() => {
@@ -855,6 +882,11 @@ export function PlayableNeighborhood() {
                         </div>
                       }
                     >
+                      {commuting && (
+                        <div className="commute-banner" role="status">
+                          Heading to work
+                        </div>
+                      )}
                       <R3FNeighborhoodSurface
                         key={`${currentLocation?.id}:${sessionId}`}
                         onGroundTap={tapGround}
@@ -866,6 +898,11 @@ export function PlayableNeighborhood() {
                         zoom={zoom}
                         onZoomChange={setZoom}
                         groundTarget={groundTarget}
+                        commuteTarget={
+                          commuting
+                            ? (area.objects.find((object) => object.kind === "work") ?? null)
+                            : null
+                        }
                         onScene={handleScene}
                         interactionTargets={interactionTargets}
                         onSelectTarget={selectWorldTarget}
