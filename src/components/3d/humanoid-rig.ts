@@ -3,6 +3,8 @@ import {
   BufferGeometry,
   Float32BufferAttribute,
   MeshStandardMaterial,
+  LatheGeometry,
+  Vector2,
   Skeleton,
   SkinnedMesh,
   SphereGeometry,
@@ -52,6 +54,34 @@ function skinTo(geometry: BufferGeometry, boneIndex: number): BufferGeometry {
   return flat;
 }
 
+/** Tapered lathe surface for limbs: avoids the stack-of-balls silhouette while keeping the existing bone contract. */
+function taperedSegment(
+  radiusBottom: number,
+  radiusTop: number,
+  length: number,
+  at: [number, number, number],
+  bone: BoneName,
+): Part {
+  const half = length / 2;
+  const r = radiusBottom;
+  const t = radiusTop;
+  const geometry = new LatheGeometry(
+    [
+      new Vector2(0, -half),
+      new Vector2(r * 0.62, -half * 0.96),
+      new Vector2(r * 0.92, -half * 0.78),
+      new Vector2(r, -half * 0.38),
+      new Vector2((r + t) * 0.5, half * 0.18),
+      new Vector2(t, half * 0.62),
+      new Vector2(t * 0.78, half * 0.9),
+      new Vector2(0, half),
+    ],
+    12,
+  );
+  geometry.translate(...at);
+  return { geometry, bone, accessory: false };
+}
+
 /** Smooth UV spheres replace the old faceted icosahedra; detail is concentrated around the face and torso. */
 function blob(
   radii: [number, number, number],
@@ -92,10 +122,10 @@ function limbParts(side: 1 | -1, shape: { shoulder: number; hip: number; limb: n
   const fingerSpread = 0.012 * arm;
   return [
     // Deltoid, upper arm and forearm taper toward the wrist instead of forming oversized balls.
-    blob([0.061 * arm, 0.074 * arm, 0.062 * arm], [ax, 0.79, 0], upper, { detail: 1 }),
-    blob([0.052 * arm, 0.118 * arm, 0.051 * arm], [ax, 0.665, 0], upper, { detail: 1 }),
+    taperedSegment(0.061 * arm, 0.052 * arm, 0.15, [ax, 0.79, 0], upper),
+    taperedSegment(0.052 * arm, 0.038 * arm, 0.23, [ax, 0.665, 0], upper),
     blob([0.039 * arm, 0.047 * arm, 0.039 * arm], [ax, 0.545, 0], fore),
-    blob([0.038 * arm, 0.095 * arm, 0.038 * arm], [ax, 0.46, 0], fore, { detail: 1 }),
+    taperedSegment(0.039 * arm, 0.03 * arm, 0.19, [ax, 0.46, 0], fore),
     // Palm, thumb and four individually readable fingers.
     blob([0.036 * arm, 0.047 * arm, 0.025 * arm], [ax, 0.355, 0.008], hand, { detail: 1 }),
     blob([0.014 * arm, 0.029 * arm, 0.016 * arm], [ax - side * 0.035 * arm, 0.348, 0.012], hand),
@@ -104,9 +134,9 @@ function limbParts(side: 1 | -1, shape: { shoulder: number; hip: number; limb: n
         [ax + finger * fingerSpread, 0.31, 0.018], hand),
     ),
     // Rounded thigh and a narrower calf with an ankle transition.
-    blob([thighWidth, 0.17 * arm, thighWidth * 0.88], [lx, 0.33, 0], thigh, { detail: 1 }),
+    taperedSegment(thighWidth, 0.052 * arm, 0.31 * arm, [lx, 0.33, 0], thigh),
     blob([0.048 * arm, 0.055 * arm, 0.047 * arm], [lx, 0.17, 0], calf),
-    blob([0.052 * arm, 0.105 * arm, 0.05 * arm], [lx, 0.12, -0.008], calf, { detail: 1 }),
+    taperedSegment(0.049 * arm, 0.034 * arm, 0.19 * arm, [lx, 0.12, -0.008], calf),
     blob([0.041 * arm, 0.033 * arm, 0.078 * arm], [lx, 0.02, 0.035], foot, { detail: 1 }),
     // Toe box and heel give the foot a recognizable forward direction.
     blob([0.042 * arm, 0.025 * arm, 0.045 * arm], [lx, 0.012, 0.075], foot),
