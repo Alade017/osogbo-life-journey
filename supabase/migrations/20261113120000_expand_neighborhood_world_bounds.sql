@@ -14,7 +14,7 @@ create or replace function public.save_player_world_position(
   p_expected_revision bigint,
   p_request_id uuid
 ) returns jsonb
-language plpgsql security definer set search_path = '' as $
+language plpgsql security definer set search_path = '' as $movement_fn$
 declare
   cid uuid := public._my_character_id();
   player public.characters%rowtype;
@@ -96,7 +96,7 @@ begin
   insert into public.character_world_operations(character_id, operation_id, operation_type, result)
     values (cid, p_request_id, 'walk', result);
   return result;
-end $$;
+end $movement_fn$;
 
 -- Remember where the character stands in the neighbourhood, so the next sign-in starts there.
 -- Unlike save_player_world_position, this costs no energy or game time: it only records the spot.
