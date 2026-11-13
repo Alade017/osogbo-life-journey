@@ -44,7 +44,10 @@ function SegmentGarment({
   const vector = segment.child.position;
   const length = Math.max(vector.length(), 0.025);
   const radius = Math.max(length * radiusFactor, 0.012);
-  const rotation = new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), vector.clone().normalize());
+  const rotation = new Quaternion().setFromUnitVectors(
+    new Vector3(0, 1, 0),
+    vector.clone().normalize(),
+  );
   const map = patterned ? adireTexture() : null;
   return (
     <group position={vector.clone().multiplyScalar(0.5)} quaternion={rotation}>
@@ -54,12 +57,16 @@ function SegmentGarment({
       </mesh>
       {cuff ? (
         <mesh position={[0, -length * 0.44, 0]} castShadow>
-          <cylinderGeometry args={[radius * 0.96, radius * 0.96, Math.max(length * 0.075, 0.01), 12]} />
+          <cylinderGeometry
+            args={[radius * 0.96, radius * 0.96, Math.max(length * 0.075, 0.01), 12]}
+          />
           <meshStandardMaterial color={trim} roughness={0.82} />
         </mesh>
       ) : null}
       <mesh position={[0, length * 0.2, 0]}>
-        <cylinderGeometry args={[radius * 1.01, radius * 1.01, Math.max(length * 0.018, 0.004), 12]} />
+        <cylinderGeometry
+          args={[radius * 1.01, radius * 1.01, Math.max(length * 0.018, 0.004), 12]}
+        />
         <meshStandardMaterial color={trim} roughness={0.82} />
       </mesh>
     </group>
@@ -119,6 +126,7 @@ export function CharacterWardrobe({
     return { torso, arms, legs, feet };
   }, [rig]);
 
+  if (appearance.clothed === false) return null;
   const top = OUTFITS[appearance.outfit ?? 0] ?? OUTFITS[0]!;
   const bottom = TROUSERS[appearance.bottoms ?? 0] ?? TROUSERS[0]!;
   const shoes = SHOE_COLORS[appearance.shoes ?? 0] ?? SHOE_COLORS[0]!;
@@ -129,25 +137,36 @@ export function CharacterWardrobe({
     <>
       {anchors.torso.map((segment) =>
         createPortal(
-          <SegmentGarment segment={segment} color={top} trim={trim} radiusFactor={0.72} cuff={false} patterned={patterned} />,
-          segment.bone
+          <SegmentGarment
+            segment={segment}
+            color={top}
+            trim={trim}
+            radiusFactor={0.72}
+            cuff={false}
+            patterned={patterned}
+          />,
+          segment.bone,
         ),
       )}
       {anchors.arms.map((segment) =>
         createPortal(
-          <SegmentGarment segment={segment} color={top} trim={trim} radiusFactor={0.2} patterned={patterned} />,
-          segment.bone
+          <SegmentGarment
+            segment={segment}
+            color={top}
+            trim={trim}
+            radiusFactor={0.2}
+            patterned={patterned}
+          />,
+          segment.bone,
         ),
       )}
       {anchors.legs.map((segment) =>
         createPortal(
           <SegmentGarment segment={segment} color={bottom} trim={trim} radiusFactor={0.22} />,
-          segment.bone
+          segment.bone,
         ),
       )}
-      {anchors.feet.map((bone) =>
-        createPortal(<ShoeGarment color={shoes} />, bone),
-      )}
+      {anchors.feet.map((bone) => createPortal(<ShoeGarment color={shoes} />, bone))}
     </>
   );
 }
