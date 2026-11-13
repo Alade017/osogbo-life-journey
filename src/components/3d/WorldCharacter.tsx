@@ -128,7 +128,7 @@ export function WorldCharacter({
     );
   });
   const moving = walking && !reduced && !taskPose;
-  const motion = motionFor(animation, moving);
+  const motion = motionFor(animation, moving, taskPose);
   const wornAccessory = equipment.find((item) => item.slot === "accessory") as
     { item?: { slug?: string } | null } | undefined;
   const AccessoryModel = wornAccessory?.item?.slug
@@ -157,7 +157,14 @@ export function WorldCharacter({
         scale={[build, 1, 1]}
       >
         <group ref={bodyRef}>
-          <CharacterBody variant={variant} height={h} motion={motion} held={held} appearance={safe} gender={gender} />
+          <CharacterBody
+            variant={variant}
+            height={h}
+            motion={motion}
+            held={held}
+            appearance={safe}
+            gender={gender}
+          />
           <group name="back_socket" position={[0, h * CHARACTER_SOCKETS.back, 0]}>
             {AccessoryModel ? <AccessoryModel h={h} /> : null}
           </group>

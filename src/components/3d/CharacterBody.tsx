@@ -1,71 +1,55 @@
-import { createPortal, useThree } from "@react-three/fiber";
-import type { Appearance } from "@/game/avatar-appearance";
+import { createPortal, useFrame, useThree } from "@react-three/fiber";
+import { useEffect, useMemo, type ReactNode } from "react";
+import { Euler, Quaternion, type Material } from "three";
+import {
+  HAIR_COLORS,
+  HAIR_STYLES_BY_GENDER,
+  normalizeAvatarAppearance,
+  SKIN_TONES,
+  type Appearance,
+} from "@/game/avatar-appearance";
 import { CharacterWardrobe } from "./CharacterWardrobe";
-import { useAnimations, useGLTF } from "@react-three/drei";
-import { useEffect, useMemo, useRef, type ReactNode } from "react";
-import { AnimationClip, Box3, type Group, Object3D, Vector3 } from "three";
-import { clone as cloneRig } from "three/addons/utils/SkeletonUtils.js";
+import { CHARACTER_MOTION } from "./character-config";
+import { BONE, poseFor, ROOT_REST_Y, type BoneName, type PoseMotion } from "./humanoid-pose";
+import { createHumanoid, type BodyVariant } from "./humanoid-rig";
 
-/** The rigged adult bodies shipped in public/models/characters. */
-export type BodyVariant = "female" | "male" | "business";
+export type { BodyVariant } from "./humanoid-rig";
+export type MotionName = PoseMotion;
 
-export const BODY_FILES: Record<BodyVariant, string> = {
-  female: "/models/characters/female-adult.glb",
-  male: "/models/characters/male-adult.glb",
-  business: "/models/characters/business-male.glb",
+const TASK_MOTIONS: Record<string, PoseMotion> = {
+  sit: "Sit",
+  wash: "Wash",
+  cook: "Cook",
+  collect: "Collect",
+  stretch: "Stretch",
 };
-
-/** Talking gestures are separate clips on the same skeleton. Business staff share the male set. */
-const TALK_FILES: Record<BodyVariant, string> = {
-  female: "/models/characters/motion/female-gesture-thoughtful.glb",
-  male: "/models/characters/motion/male-gesture-thoughtful.glb",
-  business: "/models/characters/motion/male-gesture-thoughtful.glb",
-};
-
-/** Clip names the body understands. Idle, Walk and Work come from the adult models. */
-export type MotionName = "Idle" | "Walk" | "Work" | "Talk";
 
 /** The body that best matches a saved gender. Non-binary characters use the female body. */
 export function bodyVariantFor(gender: string): BodyVariant {
   return gender === "male" ? "male" : "female";
 }
 
-/** Picks the clip for a character's state. Walking wins over any pose while the character moves. */
-export function motionFor(animation: string, walking: boolean): MotionName {
+/**
+ * Picks the pose for a character's state. A task pose wins, then walking, then the standing
+ * states. Walking wins over any standing pose while the character moves.
+ */
+export function motionFor(animation: string, walking: boolean, taskPose?: string): PoseMotion {
+  const task = taskPose ? TASK_MOTIONS[taskPose] : undefined;
+  if (task) return task;
   if (walking) return "Walk";
-  if (animation === "work" || animation === "interact") return "Work";
+  if (animation === "work") return "Work";
+  if (animation === "interact") return "Interact";
   if (animation === "talk") return "Talk";
   return "Idle";
 }
 
-/** Keeps only tracks whose bone exists on the target rig, and names the talk clip. */
-export function retargetClips(
-  base: readonly AnimationClip[],
-  talk: readonly AnimationClip[],
-  bones: ReadonlySet<string>,
-): AnimationClip[] {
-  const keep = (clip: AnimationClip) => {
-    const copy = clip.clone();
-    copy.tracks = copy.tracks.filter((track) => {
-      const node = track.name.slice(0, track.name.lastIndexOf("."));
-      return bones.has(node);
-    });
-    return copy;
-  };
-  const clips = base.map(keep);
-  for (const clip of talk) {
-    const copy = keep(clip);
-    copy.name = "Talk";
-    clips.push(copy);
-  }
-  return clips;
-}
-
-const FADE_SECONDS = 0.25;
+const scratchEuler = new Euler();
+const scratchQuat = new Quaternion();
+const identity = new Quaternion();
 
 /**
- * A rigged, textured adult body that plays its own animation clips. Each character gets its own
- * copy of the rig, so poses never leak between characters. Held items attach to the right hand.
+ * A low-poly body built in code: one skinned mesh on a 18-bone biped. Each character owns its
+ * skeleton, so poses never leak between characters. Held items attach to the right hand.
  */
 export function CharacterBody({
   variant,
@@ -77,52 +61,57 @@ export function CharacterBody({
 }: {
   variant: BodyVariant;
   height: number;
-  motion: MotionName;
+  motion: PoseMotion;
   held?: ReactNode;
   appearance?: Appearance;
   gender?: string;
 }) {
-  const gltf = useGLTF(BODY_FILES[variant]);
-  const talk = useGLTF(TALK_FILES[variant]);
   const { invalidate } = useThree();
-  const rig = useMemo(() => cloneRig(gltf.scene), [gltf]);
-  const bones = useMemo(() => {
-    const names = new Set<string>();
-    rig.traverse((node) => names.add(node.name));
-    return names;
-  }, [rig]);
-  const clips = useMemo(
-    () => retargetClips(gltf.animations, talk.animations, bones),
-    [gltf, talk, bones],
-  );
-  const root = useRef<Group>(null);
-  const { actions } = useAnimations(clips, root);
-  const hand = useMemo<Object3D | null>(() => rig.getObjectByName("Bip01 R Hand") ?? null, [rig]);
+  const safe = normalizeAvatarAppearance(appearance, gender);
+  const skinColor = SKIN_TONES[safe.skin] ?? SKIN_TONES[0]!;
+  const hairStyle = (HAIR_STYLES_BY_GENDER[gender] ?? HAIR_STYLES_BY_GENDER["female"] ?? [])[
+    safe.hair
+  ];
+  const hairColor =
+    hairStyle && hairStyle !== "Bald" ? (HAIR_COLORS[safe.hairColor] ?? HAIR_COLORS[0]!) : null;
 
-  // Fit the rig so its feet stand on the origin at the requested height.
-  const fit = useMemo(() => {
-    const box = new Box3().setFromObject(rig);
-    const size = box.getSize(new Vector3());
-    const centre = box.getCenter(new Vector3());
-    const scale = height / size.y;
-    return { scale, x: -centre.x * scale, y: -box.min.y * scale, z: -centre.z * scale };
-  }, [rig, height]);
+  const rig = useMemo(
+    () => createHumanoid({ variant, skinColor, hairColor }),
+    [variant, skinColor, hairColor],
+  );
+  const hand = rig.byName.get(BONE.rHand) ?? null;
 
   useEffect(() => {
-    const action = actions[motion] ?? actions["Idle"];
-    if (!action) return;
-    action.reset().fadeIn(FADE_SECONDS).play();
-    invalidate();
     return () => {
-      action.fadeOut(FADE_SECONDS);
+      for (const mesh of rig.meshes) (mesh.material as Material).dispose();
     };
-  }, [actions, motion, invalidate]);
+  }, [rig]);
+
+  useFrame((state, delta) => {
+    const pose = poseFor(motion, state.clock.elapsedTime);
+    const blend = 1 - Math.exp(-CHARACTER_MOTION.fadeRate * delta);
+    let moving = false;
+    for (const bone of rig.bones) {
+      const angles = pose.bones[bone.name as BoneName];
+      if (angles) scratchQuat.setFromEuler(scratchEuler.set(angles[0], angles[1], angles[2]));
+      else scratchQuat.copy(identity);
+      if (bone.quaternion.angleTo(scratchQuat) > 0.0005) moving = true;
+      bone.quaternion.slerp(scratchQuat, blend);
+    }
+    const restY = ROOT_REST_Y + (pose.rootY ?? 0);
+    if (Math.abs(rig.root.position.y - restY) > 0.0005) moving = true;
+    rig.root.position.y += (restY - rig.root.position.y) * blend;
+    if (moving) invalidate();
+  });
 
   return (
-    <group ref={root} position={[fit.x, fit.y, fit.z]} scale={fit.scale}>
-      <primitive object={rig} />
-      <CharacterWardrobe rig={rig} appearance={appearance} gender={gender} />
-      {held && hand ? createPortal(<group scale={1 / fit.scale}>{held}</group>, hand) : null}
+    <group scale={height}>
+      <primitive object={rig.root} />
+      {rig.meshes.map((mesh, index) => (
+        <primitive key={index} object={mesh} />
+      ))}
+      <CharacterWardrobe rig={rig.root} appearance={safe} gender={gender} />
+      {held && hand ? createPortal(<group scale={1 / height}>{held}</group>, hand) : null}
     </group>
   );
 }
