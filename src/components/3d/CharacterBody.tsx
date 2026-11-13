@@ -85,8 +85,14 @@ export function CharacterBody({
   const hairColor = hairShape ? (HAIR_COLORS[safe.hairColor] ?? HAIR_COLORS[0]!) : null;
 
   const rig = useMemo(
-    () => createHumanoid({ variant, skinColor, hairColor, hairShape: hairShape ?? "cap" }),
-    [variant, skinColor, hairColor, hairShape],
+    () => createHumanoid({
+      variant,
+      skinColor,
+      hairColor,
+      hairShape: hairShape ?? "cap",
+      build: safe.build,
+    }),
+    [variant, skinColor, hairColor, hairShape, safe.build],
   );
   const hand = rig.byName.get(BONE.rHand) ?? null;
   const head = rig.byName.get(BONE.head) ?? null;
