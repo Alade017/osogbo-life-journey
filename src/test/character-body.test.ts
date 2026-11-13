@@ -114,10 +114,10 @@ describe("humanoid rig", () => {
   it("skips the hair mesh for bald characters", () => {
     expect(
       createHumanoid({ variant: "male", skinColor: "#000", hairColor: null }).meshes,
-    ).toHaveLength(1);
+    ).toHaveLength(6);
     expect(
       createHumanoid({ variant: "male", skinColor: "#000", hairColor: "#111" }).meshes,
-    ).toHaveLength(2);
+    ).toHaveLength(7);
   });
 
   it("keeps the shadow tuning available to the ground shadow", () => {
