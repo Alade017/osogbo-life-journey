@@ -136,7 +136,15 @@ function torsoSurface(
   for (const ring of rings) {
     for (let segment = 0; segment < radialSegments; segment += 1) {
       const angle = (segment / radialSegments) * Math.PI * 2;
-      positions.push(Math.cos(angle) * ring.x, ring.y, Math.sin(angle) * ring.z);
+      const front = Math.max(0, Math.sin(angle));
+      const back = Math.max(0, -Math.sin(angle));
+      const frontFullness = ring.y >= 0.7 && ring.y <= 0.81 ? 0.012 * front : 0;
+      const backFullness = ring.y >= 0.5 && ring.y <= 0.59 ? 0.008 * back : 0;
+      positions.push(
+        Math.cos(angle) * ring.x,
+        ring.y,
+        Math.sin(angle) * (ring.z + frontFullness + backFullness),
+      );
       uvs.push(segment / radialSegments, ring.y);
       let lower = rootIndex;
       let upper = spine1Index;
@@ -158,6 +166,23 @@ function torsoSurface(
       const d = (ring + 1) * radialSegments + (segment + 1) % radialSegments;
       indices.push(a, c, b, b, c, d);
     }
+  }
+  // Close the lower pelvis and upper neckline so the shell has no open boundary rings.
+  const bottomCenter = positions.length / 3;
+  positions.push(0, rings[0]!.y, 0);
+  uvs.push(0.5, rings[0]!.y);
+  skinIndices.push(rootIndex, rootIndex, 0, 0);
+  skinWeights.push(1, 0, 0, 0);
+  const topCenter = positions.length / 3;
+  positions.push(0, rings[rings.length - 1]!.y, 0);
+  uvs.push(0.5, rings[rings.length - 1]!.y);
+  skinIndices.push(spine2Index, spine2Index, 0, 0);
+  skinWeights.push(1, 0, 0, 0);
+  for (let segment = 0; segment < radialSegments; segment += 1) {
+    const next = (segment + 1) % radialSegments;
+    indices.push(bottomCenter, next, segment);
+    const topStart = (rings.length - 1) * radialSegments;
+    indices.push(topCenter, topStart + segment, topStart + next);
   }
   const geometry = new BufferGeometry();
   geometry.setAttribute("position", new Float32BufferAttribute(positions, 3));
