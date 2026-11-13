@@ -11,6 +11,7 @@ import {
 import { CharacterWardrobe } from "./CharacterWardrobe";
 import { CHARACTER_MOTION } from "./character-config";
 import { BONE, poseFor, ROOT_REST_Y, type BoneName, type PoseMotion } from "./humanoid-pose";
+import { hairShapeFor } from "./hair-shapes";
 import { createHumanoid, type BodyVariant } from "./humanoid-rig";
 
 export type { BodyVariant } from "./humanoid-rig";
@@ -72,12 +73,12 @@ export function CharacterBody({
   const hairStyle = (HAIR_STYLES_BY_GENDER[gender] ?? HAIR_STYLES_BY_GENDER["female"] ?? [])[
     safe.hair
   ];
-  const hairColor =
-    hairStyle && hairStyle !== "Bald" ? (HAIR_COLORS[safe.hairColor] ?? HAIR_COLORS[0]!) : null;
+  const hairShape = hairStyle ? hairShapeFor(hairStyle) : null;
+  const hairColor = hairShape ? (HAIR_COLORS[safe.hairColor] ?? HAIR_COLORS[0]!) : null;
 
   const rig = useMemo(
-    () => createHumanoid({ variant, skinColor, hairColor }),
-    [variant, skinColor, hairColor],
+    () => createHumanoid({ variant, skinColor, hairColor, hairShape: hairShape ?? "cap" }),
+    [variant, skinColor, hairColor, hairShape],
   );
   const hand = rig.byName.get(BONE.rHand) ?? null;
 
