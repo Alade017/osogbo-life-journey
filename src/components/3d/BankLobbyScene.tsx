@@ -315,49 +315,63 @@ function BankLobbyModel({
   );
 }
 
+/**
+ * Shown only when the 3D lobby cannot load. It states that plainly and offers the same three real
+ * services, so no stand-in room is drawn.
+ */
 export function BankLobbyFallback({
   bankName,
+  onRetry,
   onInteract,
 }: {
   bankName: string;
+  onRetry?: () => void;
   onInteract: (place: "teller" | "atm" | "seat") => void;
 }) {
   return (
     <div
-      className="flex h-full min-h-[260px] flex-col justify-between rounded-xl border border-border bg-[#e7e2d7] p-5 text-[#243d49]"
+      className="flex min-h-[260px] flex-col items-start justify-center gap-4 rounded-xl border border-border bg-card p-5"
       role="group"
-      aria-label={`${bankName} lobby illustration`}
+      aria-label={`${bankName} lobby`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#386a68]">{bankName}</p>
-          <h2 className="mt-1 text-xl font-black">Welcome to the lobby</h2>
-        </div>
-        <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-bold">OPEN</span>
+      <div>
+        <p className="text-sm font-semibold text-foreground">The 3D lobby could not load.</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          You can still use the bank's services from here.
+        </p>
       </div>
-      <div className="grid grid-cols-3 gap-3">
-        <div className="col-span-3 h-3 rounded bg-[#244d5b]" />
+      <div className="flex flex-wrap gap-2">
         <button
           type="button"
           onClick={() => onInteract("teller")}
-          className="h-16 rounded-lg border-b-4 border-[#b78050] bg-[#d2c0a3]"
-          aria-label="Talk to a bank teller"
-        />
+          className="rounded-lg border border-border px-3 py-2 text-sm font-semibold"
+        >
+          Talk to a bank teller
+        </button>
         <button
           type="button"
           onClick={() => onInteract("seat")}
-          className="h-16 rounded-lg border-b-4 border-[#b78050] bg-[#d2c0a3]"
-          aria-label="Use the waiting area"
-        />
+          className="rounded-lg border border-border px-3 py-2 text-sm font-semibold"
+        >
+          Use the waiting area
+        </button>
         <button
           type="button"
           onClick={() => onInteract("atm")}
-          className="flex h-16 items-center justify-center rounded-lg bg-[#375d68] text-xs font-bold text-white"
+          className="rounded-lg border border-border px-3 py-2 text-sm font-semibold"
         >
-          ATM
+          Use the ATM
         </button>
+        {onRetry && (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground"
+          >
+            Try the lobby again
+          </button>
+        )}
       </div>
-      <p className="text-sm font-semibold">Teller service | Waiting area | 24-hour ATM</p>
     </div>
   );
 }
@@ -386,7 +400,14 @@ export function BankLobbyScene({
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [destination, setDestination] = useState<Position>(BANK_ENTRANCE);
   const handleReady = useCallback(() => setSceneReady(true), []);
-  const fallback = <BankLobbyFallback bankName={bankName} onInteract={onInteract} />;
+  const retry = useCallback(() => {
+    setSceneFailed(false);
+    setSceneReady(false);
+    setLoadingProgress(0);
+  }, []);
+  const fallback = (
+    <BankLobbyFallback bankName={bankName} onRetry={retry} onInteract={onInteract} />
+  );
 
   useEffect(() => {
     if (sceneReady || sceneFailed) return;
