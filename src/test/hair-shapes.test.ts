@@ -7,7 +7,9 @@ describe("hair shapes", () => {
     expect(hairShapeFor("Bald")).toBeNull();
     expect(hairShapeFor("Short afro")).toBe("afro");
     expect(hairShapeFor("Natural afro")).toBe("afro");
-    expect(hairShapeFor("Low fade")).toBe("cap");
+    expect(hairShapeFor("Low fade")).toBe("buzz");
+    expect(hairShapeFor("Wave cut")).toBe("buzz");
+    expect(hairShapeFor("Cornrows")).toBe("cap");
     for (const styles of Object.values(HAIR_STYLES_BY_GENDER)) {
       for (const style of styles)
         expect(hairShapeFor(style) === null || typeof hairShapeFor(style) === "string").toBe(true);
