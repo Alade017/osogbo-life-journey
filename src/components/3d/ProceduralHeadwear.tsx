@@ -1,5 +1,3 @@
-import type { JSX } from "react";
-
 type HeadwearStyle = 0 | 1 | 2 | 3;
 
 /**
