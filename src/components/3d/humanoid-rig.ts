@@ -39,9 +39,10 @@ export const JOINTS: readonly Joint[] = [
   { name: BONE.rFoot, parent: BONE.rCalf, offset: [0, -0.2, 0] },
 ];
 
-type Part = { geometry: BufferGeometry; bone: BoneName; accessory: boolean };
-function skinTo(geometry: BufferGeometry, boneIndex: number): BufferGeometry {
+type Part = { geometry: BufferGeometry; bone: BoneName; accessory: boolean; preSkinned?: boolean };
+function skinTo(geometry: BufferGeometry, boneIndex: number, preSkinned = false): BufferGeometry {
   const flat = geometry.index ? geometry.toNonIndexed() : geometry.clone();
+  if (preSkinned) return flat;
   const count = flat.attributes["position"]!.count;
   const indices = new Uint16Array(count * 4);
   const weights = new Float32Array(count * 4);
@@ -107,6 +108,64 @@ const BUILD_FACTORS = [
   { shoulder: 1.13, waist: 1.02, hip: 1.08, limb: 1.12 },
 ] as const;
 
+/** A single closed torso surface with blended root/spine skin weights. */
+function torsoSurface(
+  shape: { shoulder: number; waist: number; hip: number },
+): Part {
+  const rings = [
+    { y: 0.49, x: 0.105 * shape.hip, z: 0.075 },
+    { y: 0.53, x: 0.137 * shape.hip, z: 0.09 },
+    { y: 0.58, x: 0.13 * shape.waist, z: 0.085 },
+    { y: 0.63, x: 0.112 * shape.waist, z: 0.08 },
+    { y: 0.68, x: 0.13 * shape.waist, z: 0.09 },
+    { y: 0.73, x: 0.157 * shape.shoulder, z: 0.105 },
+    { y: 0.78, x: 0.174 * shape.shoulder, z: 0.112 },
+    { y: 0.83, x: 0.165 * shape.shoulder, z: 0.105 },
+    { y: 0.87, x: 0.125 * shape.shoulder, z: 0.085 },
+    { y: 0.89, x: 0.072, z: 0.06 },
+  ];
+  const radialSegments = 20;
+  const positions: number[] = [];
+  const indices: number[] = [];
+  const skinIndices: number[] = [];
+  const skinWeights: number[] = [];
+  const rootIndex = JOINTS.findIndex((joint) => joint.name === BONE.root);
+  const spine1Index = JOINTS.findIndex((joint) => joint.name === BONE.spine1);
+  const spine2Index = JOINTS.findIndex((joint) => joint.name === BONE.spine2);
+  for (const ring of rings) {
+    for (let segment = 0; segment < radialSegments; segment += 1) {
+      const angle = (segment / radialSegments) * Math.PI * 2;
+      positions.push(Math.cos(angle) * ring.x, ring.y, Math.sin(angle) * ring.z);
+      let lower = rootIndex;
+      let upper = spine1Index;
+      let blend = Math.max(0, Math.min(1, (ring.y - 0.53) / 0.15));
+      if (ring.y >= 0.68) {
+        lower = spine1Index;
+        upper = spine2Index;
+        blend = Math.max(0, Math.min(1, (ring.y - 0.63) / 0.1));
+      }
+      skinIndices.push(lower, upper, 0, 0);
+      skinWeights.push(1 - blend, blend, 0, 0);
+    }
+  }
+  for (let ring = 0; ring < rings.length - 1; ring += 1) {
+    for (let segment = 0; segment < radialSegments; segment += 1) {
+      const a = ring * radialSegments + segment;
+      const b = ring * radialSegments + (segment + 1) % radialSegments;
+      const c = (ring + 1) * radialSegments + segment;
+      const d = (ring + 1) * radialSegments + (segment + 1) % radialSegments;
+      indices.push(a, c, b, b, c, d);
+    }
+  }
+  const geometry = new BufferGeometry();
+  geometry.setAttribute("position", new Float32BufferAttribute(positions, 3));
+  geometry.setAttribute("skinIndex", new Uint16BufferAttribute(skinIndices, 4));
+  geometry.setAttribute("skinWeight", new Float32BufferAttribute(skinWeights, 4));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return { geometry, bone: BONE.root, accessory: false, preSkinned: true };
+}
+
 /** Overlapping smooth volumes create continuous-looking muscle transitions at game scale. */
 function limbParts(side: 1 | -1, shape: { shoulder: number; hip: number; limb: number }): Part[] {
   const upper = side === 1 ? BONE.lUpperArm : BONE.rUpperArm;
@@ -157,11 +216,8 @@ function bodyParts(variant: BodyVariant, build: number): Part[] {
   };
   const { shoulder, waist, hip, bust } = shape;
   const parts: Part[] = [
-    // Narrower rib cage, visible waist taper and a pelvis that connects cleanly to the thighs.
-    blob([0.174 * shoulder, 0.105, 0.112], [0, 0.82, 0], BONE.spine2, { detail: 1 }),
-    blob([0.158 * shoulder, 0.095, 0.105], [0, 0.745, 0], BONE.spine2, { detail: 1 }),
-    blob([0.112 * waist, 0.105, 0.082], [0, 0.625, 0], BONE.spine1, { detail: 1 }),
-    blob([0.137 * hip, 0.092, 0.09], [0, 0.505, 0], BONE.root, { detail: 1 }),
+    // One continuous torso shell replaces the disconnected chest, abdomen and pelvis spheres.
+    torsoSurface(shape),
     // A visible neck, larger cranium and tapered lower face improve head-to-body proportion.
     blob([0.047, 0.092, 0.047], [0, 0.865, 0], BONE.neck, { detail: 1 }),
     blob([0.096, 0.122, 0.096], [0, 0.95, 0], BONE.head, { detail: 1 }),
@@ -289,7 +345,10 @@ const geometryCache = new Map<string, {
   pupils: BufferGeometry; highlights: BufferGeometry; hair: BufferGeometry;
 }>();
 function mergeSkinned(parts: readonly Part[], indexOf: Map<BoneName, number>): BufferGeometry {
-  const merged = mergeGeometries(parts.map((part) => skinTo(part.geometry, indexOf.get(part.bone) ?? 0)), false);
+  const merged = mergeGeometries(
+    parts.map((part) => skinTo(part.geometry, indexOf.get(part.bone) ?? 0, part.preSkinned)),
+    false,
+  );
   if (!merged) throw new Error("Humanoid geometry could not be merged");
   return merged;
 }
