@@ -16,7 +16,7 @@ import {
   TROUSERS,
   type Appearance,
 } from "@/components/game/Avatar";
-import { CharacterPreview } from "@/components/3d/CharacterPreview";
+import { CharacterStudioPreview } from "@/components/3d/CharacterPreview";
 import "@/components/game/profile-inventory.css";
 import {
   appearanceForGender,
@@ -190,11 +190,10 @@ function CreateCharacter() {
         <div className="mt-6 grid gap-6 md:grid-cols-[280px_1fr]">
           <div className="game-panel game-panel-accent flex flex-col items-center justify-center p-6 md:sticky md:top-6 md:self-start">
             <div className="character-creation-preview w-full max-w-[260px]" aria-live="polite">
-              <CharacterPreview
+              <CharacterStudioPreview
                 appearance={ap}
                 gender={gender}
-                equipment={[]}
-                label={`${name.trim() || "Your character"} preview`}
+                label={`${name.trim() || "Your character"} studio preview`}
               />
             </div>
             <div className="mt-4 rounded-lg border-2 border-edge bg-card px-4 py-1.5 font-display text-lg font-bold">
@@ -214,7 +213,7 @@ function CreateCharacter() {
               </Button>
             </div>
             <p className="mt-3 max-w-56 text-center text-xs text-muted-foreground">
-              Clothing colours, height and build update this 3D preview. Skin tone, hairstyle, hair colour and headwear are saved with your character, but the current rigged model does not yet display those four selections.
+              Your selected skin tone, hairstyle, hair colour and clothing are rendered on the procedural character. Headwear options remain saved but are not yet modelled in this preview.
             </p>
           </div>
 
@@ -272,7 +271,7 @@ function CreateCharacter() {
             <div className="space-y-5 rounded-xl border border-edge/70 bg-card/50 p-4">
               <div>
                 <h2 className="font-display text-lg font-bold">Personal appearance</h2>
-                <p className="mt-1 text-xs text-muted-foreground">These choices are saved to your character. The current 3D rig does not yet render them.</p>
+                <p className="mt-1 text-xs text-muted-foreground">Skin tone, hairstyle and hair colour are shown on the live character model.</p>
               </div>
               <Picker label="Skin tone" options={SKIN_TONES} value={ap.skin} onChange={(skin) => setAp({ ...ap, skin })} swatches />
               <Picker label="Hairstyle" options={HAIR_STYLES_BY_GENDER[gender] ?? HAIR_STYLES_BY_GENDER.nonbinary} value={ap.hair} onChange={(hair) => setAp({ ...ap, hair })} />
