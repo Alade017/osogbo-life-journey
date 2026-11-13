@@ -66,6 +66,8 @@ export type NeighborhoodArea = {
     horizontalRoad: { y: number; height: number };
   };
   marketStalls?: readonly WorldPoint[];
+  /** A real model that covers a footprint in area coordinates; procedural buildings inside it are not drawn. */
+  environment?: { url: string; x: number; y: number; width: number; height: number };
 };
 export const WORLD_SCALE = 160;
 export const NEIGHBORHOOD_SIZE = { width: 640, height: 560 };
@@ -138,10 +140,24 @@ const CITY_CENTRE_OBSTACLES: readonly NeighborhoodObstacle[] = [
   { id: "expansion-south-east", kind: "compound", x: 1800, y: 1500, width: 156, height: 104 },
   { id: "expansion-south-far-east", kind: "compound", x: 2700, y: 1500, width: 156, height: 104 },
   { id: "expansion-far-south-west", kind: "compound", x: -500, y: 2350, width: 156, height: 104 },
-  { id: "expansion-far-south-west-centre", kind: "compound", x: 100, y: 2350, width: 156, height: 104 },
+  {
+    id: "expansion-far-south-west-centre",
+    kind: "compound",
+    x: 100,
+    y: 2350,
+    width: 156,
+    height: 104,
+  },
   { id: "expansion-far-south-centre", kind: "compound", x: 950, y: 2350, width: 156, height: 104 },
   { id: "expansion-far-south-east", kind: "compound", x: 1800, y: 2350, width: 156, height: 104 },
-  { id: "expansion-far-south-far-east", kind: "compound", x: 2700, y: 2350, width: 156, height: 104 },
+  {
+    id: "expansion-far-south-far-east",
+    kind: "compound",
+    x: 2700,
+    y: 2350,
+    width: 156,
+    height: 104,
+  },
   { id: "expansion-prop-1", kind: "tree", x: -720, y: 180, width: 48, height: 48 },
   { id: "expansion-prop-2", kind: "tree", x: -700, y: 1180, width: 48, height: 48 },
   { id: "expansion-prop-3", kind: "tree", x: 1450, y: 350, width: 48, height: 48 },
@@ -540,6 +556,58 @@ function generatedNeighborhoodArea(
   };
 }
 
+/**
+ * Fuel and Go: a hand-built filling station. The entrance is on the west road at (320, 300), and
+ * the forecourt lies east of it, from x 600 to about 1085. Pump islands and the shop are solid,
+ * and the walkway from the entrance to the forecourt is kept clear.
+ */
+export const FUEL_AND_GO_AREA: NeighborhoodArea = {
+  slug: "fuel-and-go",
+  name: "Fuel and Go",
+  objects: [
+    { id: "market", name: "Fuel and Go shop", kind: "market", shopSlug: null, x: 1000, y: 300 },
+  ],
+  roads: [
+    { id: "fuel-main-road", axis: "horizontal", offset: 300, width: 84, type: "arterial" },
+    { id: "fuel-approach-road", axis: "vertical", offset: 320, width: 60, type: "street" },
+  ],
+  paths: [
+    { id: "fuel-forecourt-walkway", from: { x: 320, y: 300 }, to: { x: 600, y: 300 }, width: 14 },
+  ],
+  obstacles: [
+    { id: "fuel-pump-island-north-west", kind: "kiosk", x: 760, y: 250, width: 40, height: 22 },
+    { id: "fuel-pump-island-south-west", kind: "kiosk", x: 760, y: 350, width: 40, height: 22 },
+    { id: "fuel-pump-island-north-east", kind: "kiosk", x: 900, y: 250, width: 40, height: 22 },
+    { id: "fuel-pump-island-south-east", kind: "kiosk", x: 900, y: 350, width: 40, height: 22 },
+    {
+      id: "fuel-and-go-shop",
+      kind: "shop",
+      label: "Fuel and Go",
+      x: 1000,
+      y: 300,
+      width: 110,
+      height: 150,
+    },
+    { id: "fuel-forecourt-bin", kind: "bin", x: 1040, y: 470, width: 16, height: 16 },
+  ],
+  environment: {
+    url: "/models/environments/fuel-station/filling-station-forecourt.glb",
+    x: 842,
+    y: 300,
+    width: 485,
+    height: 445,
+  },
+  style: {
+    ground: 0xe8eedf,
+    grid: 0xd3dfcb,
+    road: 0xbac6b4,
+    paving: 0xe8ddbd,
+    marking: 0xfffaf0,
+    verticalRoad: { x: 320, width: 60 },
+    horizontalRoad: { y: 300, height: 84 },
+  },
+};
+
 const generatedAreas = Object.fromEntries(
   [
     ...Object.values(OSOGBO_WORLD_NODES),
@@ -549,6 +617,7 @@ const generatedAreas = Object.fromEntries(
 
 export const NEIGHBORHOOD_AREAS: Readonly<Record<string, NeighborhoodArea>> = {
   ...generatedAreas,
+  [FUEL_AND_GO_AREA.slug]: FUEL_AND_GO_AREA,
   [CITY_CENTRE_AREA.slug]: CITY_CENTRE_AREA,
   [OJA_OBA_AREA.slug]: OJA_OBA_AREA,
 };

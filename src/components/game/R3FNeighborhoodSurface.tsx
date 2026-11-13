@@ -1,5 +1,6 @@
 import {
   Component,
+  Suspense,
   useCallback,
   useEffect,
   useMemo,
@@ -8,7 +9,8 @@ import {
   type ReactNode,
   type MutableRefObject,
 } from "react";
-import { Html } from "@react-three/drei";
+import { Html, useGLTF } from "@react-three/drei";
+import { fitFurniture } from "@/components/3d/VenueFurniture";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
 import { BuildingOcclusion } from "@/components/3d/BuildingOcclusion";
 import { WaypointBeacon } from "./WaypointBeacon";
@@ -363,6 +365,42 @@ function NeighborhoodNpcActor({
 /** Distant towers that frame the neighbourhood, so the open ground reads as a city. */
 const SKY_FOG_NEAR_SCALE = 3.5;
 const SKY_FOG_FAR_SCALE = 9;
+/** Whether an obstacle sits inside a real model's footprint, so its procedural stand-in is skipped. */
+function insideEnvironment(
+  environment: { x: number; y: number; width: number; height: number } | undefined,
+  obstacle: { x: number; y: number },
+) {
+  if (!environment) return false;
+  return (
+    Math.abs(obstacle.x - environment.x) <= environment.width / 2 &&
+    Math.abs(obstacle.y - environment.y) <= environment.height / 2
+  );
+}
+
+function NeighborhoodEnvironment({
+  url,
+  position,
+  width,
+}: {
+  url: string;
+  position: [number, number, number];
+  width: number;
+}) {
+  const gltf = useGLTF(url);
+  const fitted = useMemo(() => fitFurniture(gltf.scene, width), [gltf.scene, width]);
+  return (
+    <primitive
+      object={fitted.copy}
+      scale={fitted.scale}
+      position={[
+        position[0] + fitted.offset[0],
+        position[1] + fitted.offset[1],
+        position[2] + fitted.offset[2],
+      ]}
+    />
+  );
+}
+
 export function R3FNeighborhoodSurface({
   players,
   selfSessionId,
@@ -609,8 +647,18 @@ export function R3FNeighborhoodSurface({
           })}
           <WorldTrees positions={trees} />
 
+          {area.environment && (
+            <Suspense fallback={null}>
+              <NeighborhoodEnvironment
+                url={area.environment.url}
+                position={point(area.environment.x, area.environment.y)}
+                width={area.environment.width * unit}
+              />
+            </Suspense>
+          )}
           {area.obstacles
             ?.filter((o) => ["compound", "shop", "kiosk"].includes(o.kind))
+            .filter((o) => !insideEnvironment(area.environment, o))
             .map((o) => (
               <WorldHouse
                 detailed
