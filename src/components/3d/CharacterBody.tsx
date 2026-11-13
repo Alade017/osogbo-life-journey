@@ -9,6 +9,7 @@ import {
   type Appearance,
 } from "@/game/avatar-appearance";
 import { CharacterWardrobe } from "./CharacterWardrobe";
+import { ProceduralHeadwear } from "./ProceduralHeadwear";
 import { CHARACTER_MOTION } from "./character-config";
 import {
   BONE,
@@ -88,6 +89,7 @@ export function CharacterBody({
     [variant, skinColor, hairColor, hairShape],
   );
   const hand = rig.byName.get(BONE.rHand) ?? null;
+  const head = rig.byName.get(BONE.head) ?? null;
 
   useEffect(() => {
     return () => {
@@ -123,6 +125,13 @@ export function CharacterBody({
         <primitive key={index} object={mesh} />
       ))}
       <CharacterWardrobe rig={rig.root} appearance={safe} gender={gender} />
+      {head && safe.headwear > 0 ? createPortal(
+        <ProceduralHeadwear
+          style={safe.headwear as 1 | 2 | 3}
+          color={HAIR_COLORS[safe.hairColor] ?? HAIR_COLORS[0]!}
+        />,
+        head,
+      ) : null}
       {held && hand ? createPortal(<group scale={1 / height}>{held}</group>, hand) : null}
     </group>
   );
