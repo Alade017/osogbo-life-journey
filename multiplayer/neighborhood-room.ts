@@ -16,6 +16,13 @@ import {
   type WorldPoint,
 } from "../src/game/neighborhood-model.ts";
 import type { MovementIntent, NetworkPlayerSnapshot } from "../src/game/multiplayer-state.ts";
+import { supabaseAdmin } from "../src/integrations/supabase/client.server.ts";
+import {
+  CHECKPOINT_INTERVAL_MS,
+  NeighborhoodCheckpoints,
+  type CheckpointPoint,
+  type CheckpointTarget,
+} from "./neighborhood-checkpoints.ts";
 
 type CharacterRow = {
   id: string;
@@ -51,6 +58,23 @@ const LOCATION_ID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const EMPTY_APPEARANCE = "{}";
 const EMPTY_EQUIPMENT = "[]";
+
+/**
+ * Writes one checkpoint with the server-only admin client. The identity is always the one the room
+ * verified at join time, never a value from the browser. Errors are rethrown without their details
+ * so no key or token can reach the logs.
+ */
+async function saveCheckpoint(target: CheckpointTarget, point: CheckpointPoint) {
+  const { data, error } = await supabaseAdmin.rpc("save_neighborhood_world_checkpoint", {
+    p_character_id: target.characterId,
+    p_user_id: target.userId,
+    p_location_id: target.locationId,
+    p_world_x: point.x,
+    p_world_y: point.y,
+  });
+  if (error) throw new Error("checkpoint write failed");
+  return (data as { saved?: unknown } | null)?.saved === true;
+}
 
 function serializeEquipment(rows: { slot?: unknown }[]) {
   const allowed = new Set(["head", "top", "bottom", "shoes", "accessory"]);
@@ -176,6 +200,9 @@ export class NeighborhoodRoom extends Room {
   private readonly movement = new Map<string, InputState>();
   private readonly credentials = new Map<string, { accessToken: string; locationId: string }>();
   private readonly equipmentRefreshAt = new Map<string, number>();
+  private readonly checkpoints = new NeighborhoodCheckpoints(saveCheckpoint, (message) =>
+    console.warn(message),
+  );
   private areaOrigin: WorldPoint = { x: 7, y: 6 };
   private area = neighborhoodAreaForSlug(undefined);
 
@@ -183,6 +210,8 @@ export class NeighborhoodRoom extends Room {
     if (typeof options.locationId !== "string" || !LOCATION_ID_PATTERN.test(options.locationId))
       throw new Error("A valid neighborhood is required.");
     this.setMetadata({ locationId: options.locationId });
+    // The room clock is cleared automatically when the room is disposed.
+    this.clock.setInterval(() => void this.persistCheckpoints(), CHECKPOINT_INTERVAL_MS);
     this.onMessage("move", (client, payload: unknown) => {
       const intent = parseMovementIntent(payload);
       if (!intent) {
@@ -242,14 +271,40 @@ export class NeighborhoodRoom extends Room {
       accessToken: auth.accessToken,
       locationId: auth.character.current_location_id!,
     });
+    this.checkpoints.track(
+      client.sessionId,
+      {
+        userId: auth.userId,
+        characterId: auth.character.id,
+        locationId: auth.character.current_location_id!,
+      },
+      typeof auth.character.world_x === "number" && typeof auth.character.world_y === "number"
+        ? { x: auth.character.world_x, y: auth.character.world_y }
+        : null,
+    );
     this.movement.set(client.sessionId, { intent: { x: 0, y: 0 }, updatedAt: Date.now() });
   }
 
   override onLeave(client: Client) {
+    // Capture the authoritative position before the player is removed, then save it.
+    const player = this.state.players.get(client.sessionId);
+    const finalPosition = player ? { x: player.x, y: player.y } : undefined;
     this.state.players.delete(client.sessionId);
     this.movement.delete(client.sessionId);
     this.credentials.delete(client.sessionId);
     this.equipmentRefreshAt.delete(client.sessionId);
+    void this.checkpoints.release(client.sessionId, finalPosition);
+  }
+
+  override onDispose() {
+    return this.checkpoints.dispose();
+  }
+
+  private persistCheckpoints() {
+    return this.checkpoints.saveAll((sessionId) => {
+      const player = this.state.players.get(sessionId);
+      return player ? { x: player.x, y: player.y } : undefined;
+    });
   }
 
   private async refreshEquipment(client: Client) {

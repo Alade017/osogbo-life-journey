@@ -345,31 +345,7 @@ export function PlayableNeighborhood() {
     Record<string, { x: number; y: number }>
   >({});
   const player = players.find((candidate) => candidate.sessionId === sessionId);
-
-  // Remember the spot in the neighbourhood, so the next sign-in starts where the player left.
-  const latestSpot = useRef<{ x: number; y: number } | null>(null);
-  const spotIsSaveable = useRef(false);
-  useEffect(() => {
-    latestSpot.current = player ? { x: player.x, y: player.y } : null;
-    spotIsSaveable.current = connectionState === "connected";
-  }, [player, connectionState]);
-  useEffect(() => {
-    const save = () => {
-      const spot = latestSpot.current;
-      if (!spotIsSaveable.current || !spot) return;
-      void supabase.rpc("save_my_world_checkpoint", { p_world_x: spot.x, p_world_y: spot.y }).then(
-        () => undefined,
-        () => undefined,
-      );
-    };
-    const timer = window.setInterval(save, 10_000);
-    window.addEventListener("pagehide", save);
-    return () => {
-      window.clearInterval(timer);
-      window.removeEventListener("pagehide", save);
-      save();
-    };
-  }, []);
+  // Neighbourhood checkpoints are saved by the multiplayer server, not by the browser.
   const actionAnimation = simulation.currentAction
     ? avatarAnimationForActivity(simulation.currentAction.animation)
     : undefined;
