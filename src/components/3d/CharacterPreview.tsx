@@ -105,8 +105,8 @@ export function CharacterStudioPreview({
         onCreated={({ camera }) => camera.lookAt(0, 1.55, 0)}
         gl={{ antialias: true, powerPreference: "low-power" }}
       >
-        <color attach="background" args={["#e8e2d8"]} />
         <WorldLighting size={2.5} />
+        <color attach="background" args={["#e8e2d8"]} />
         <Grid
           position={[0, 0.008, 0]}
           args={[12, 12]}
