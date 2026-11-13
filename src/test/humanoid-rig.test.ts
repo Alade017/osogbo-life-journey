@@ -32,6 +32,28 @@ describe("code-built humanoid", () => {
     expect(box.max.y).toBeLessThan(1.1);
   });
 
+  it("uses saved build indices to change body proportions without changing the rig", () => {
+    const lean = createHumanoid({
+      variant: "male",
+      skinColor: "#8a5a3b",
+      hairColor: null,
+      build: 0,
+    });
+    const muscular = createHumanoid({
+      variant: "male",
+      skinColor: "#8a5a3b",
+      hairColor: null,
+      build: 3,
+    });
+    expect(lean.bones).toHaveLength(JOINTS.length);
+    expect(muscular.bones).toHaveLength(JOINTS.length);
+    lean.meshes[0]!.geometry.computeBoundingBox();
+    muscular.meshes[0]!.geometry.computeBoundingBox();
+    const leanWidth = lean.meshes[0]!.geometry.boundingBox!.max.x - lean.meshes[0]!.geometry.boundingBox!.min.x;
+    const muscularWidth = muscular.meshes[0]!.geometry.boundingBox!.max.x - muscular.meshes[0]!.geometry.boundingBox!.min.x;
+    expect(muscularWidth).toBeGreaterThan(leanWidth);
+  });
+
   it("skins every vertex to a real joint and leaves bald characters without hair", () => {
     const rig = createHumanoid({ variant: "female", skinColor: "#5a3825", hairColor: null });
     expect(rig.meshes).toHaveLength(6);
