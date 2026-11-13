@@ -72,15 +72,31 @@ function TorsoGarment({ color, trim, patterned = false }: { color: string; trim:
   return (
     <group position={[0, 0.012, 0]} name="torso-garment">
       <mesh position={[0, -0.012, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.132, 0.112, 0.31, 20, 2, false]} />
+        <cylinderGeometry args={[0.15, 0.12, 0.36, 20, 2, false]} />
         <meshStandardMaterial color={color} map={map} roughness={0.93} side={2} />
       </mesh>
-      <mesh position={[0, 0.145, 0]} castShadow>
-        <cylinderGeometry args={[0.132, 0.132, 0.025, 20]} />
+      <mesh position={[0, 0.17, 0]} castShadow>
+        <cylinderGeometry args={[0.15, 0.15, 0.025, 20]} />
         <meshStandardMaterial color={trim} roughness={0.86} />
       </mesh>
       <mesh position={[0, -0.17, 0]} castShadow>
         <cylinderGeometry args={[0.113, 0.108, 0.018, 20]} />
+        <meshStandardMaterial color={trim} roughness={0.86} />
+      </mesh>
+    </group>
+  );
+}
+
+
+function WaistGarment({ color, trim }: { color: string; trim: string }) {
+  return (
+    <group position={[0, 0.018, 0]} name="waist-garment">
+      <mesh position={[0, 0, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.132, 0.118, 0.19, 20, 2, false]} />
+        <meshStandardMaterial color={color} roughness={0.94} side={2} />
+      </mesh>
+      <mesh position={[0, 0.096, 0]}>
+        <cylinderGeometry args={[0.132, 0.132, 0.014, 20]} />
         <meshStandardMaterial color={trim} roughness={0.86} />
       </mesh>
     </group>
@@ -117,6 +133,7 @@ export function CharacterWardrobe({
 }) {
   const anchors = useMemo(() => {
     const torso = findBone(rig, ["Bip01 Spine2", "Spine2", "spine_2"]);
+    const pelvis = findBone(rig, ["Bip01", "Root", "Hips"]);
     const arms = [
       segmentFrom(rig, ["Bip01 L UpperArm", "L UpperArm", "LeftUpperArm", "upperarm_l"]),
       segmentFrom(rig, ["Bip01 R UpperArm", "R UpperArm", "RightUpperArm", "upperarm_r"]),
@@ -133,7 +150,7 @@ export function CharacterWardrobe({
       findBone(rig, ["Bip01 L Foot", "L Foot", "LeftFoot", "foot_l"]),
       findBone(rig, ["Bip01 R Foot", "R Foot", "RightFoot", "foot_r"]),
     ].filter((value): value is Bone => !!value);
-    return { torso, arms, legs, feet };
+    return { torso, pelvis, arms, legs, feet };
   }, [rig]);
 
   const top = OUTFITS[appearance.outfit ?? 0] ?? OUTFITS[0]!;
@@ -150,9 +167,12 @@ export function CharacterWardrobe({
             anchors.torso,
           )
         : null}
+      {anchors.pelvis
+        ? createPortal(<WaistGarment color={bottom} trim={trim} />, anchors.pelvis)
+        : null}
       {anchors.arms.map((segment) =>
         createPortal(
-          <SegmentGarment segment={segment} color={top} trim={trim} radiusFactor={0.32} patterned={patterned} />,
+          <SegmentGarment segment={segment} color={top} trim={trim} radiusFactor={0.39} patterned={patterned} />,
           segment.bone
         ),
       )}
