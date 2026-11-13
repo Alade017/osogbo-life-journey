@@ -66,6 +66,27 @@ function SegmentGarment({
   );
 }
 
+
+function TorsoGarment({ color, trim, patterned = false }: { color: string; trim: string; patterned?: boolean }) {
+  const map = patterned ? adireTexture() : null;
+  return (
+    <group position={[0, 0.012, 0]} name="torso-garment">
+      <mesh position={[0, -0.012, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[0.132, 0.112, 0.31, 20, 2, false]} />
+        <meshStandardMaterial color={color} map={map} roughness={0.93} side={2} />
+      </mesh>
+      <mesh position={[0, 0.145, 0]} castShadow>
+        <cylinderGeometry args={[0.132, 0.132, 0.025, 20]} />
+        <meshStandardMaterial color={trim} roughness={0.86} />
+      </mesh>
+      <mesh position={[0, -0.17, 0]} castShadow>
+        <cylinderGeometry args={[0.113, 0.108, 0.018, 20]} />
+        <meshStandardMaterial color={trim} roughness={0.86} />
+      </mesh>
+    </group>
+  );
+}
+
 function ShoeGarment({ color }: { color: string }) {
   return (
     <group>
@@ -95,11 +116,7 @@ export function CharacterWardrobe({
   gender: string;
 }) {
   const anchors = useMemo(() => {
-    const torso = [
-      segmentFrom(rig, ["Bip01 Spine", "Spine", "spine"]),
-      segmentFrom(rig, ["Bip01 Spine1", "Spine1", "spine_1"]),
-      segmentFrom(rig, ["Bip01 Spine2", "Spine2", "spine_2"]),
-    ].filter((value): value is Segment => !!value);
+    const torso = findBone(rig, ["Bip01 Spine2", "Spine2", "spine_2"]);
     const arms = [
       segmentFrom(rig, ["Bip01 L UpperArm", "L UpperArm", "LeftUpperArm", "upperarm_l"]),
       segmentFrom(rig, ["Bip01 R UpperArm", "R UpperArm", "RightUpperArm", "upperarm_r"]),
@@ -127,21 +144,21 @@ export function CharacterWardrobe({
 
   return (
     <>
-      {anchors.torso.map((segment) =>
-        createPortal(
-          <SegmentGarment segment={segment} color={top} trim={trim} radiusFactor={0.72} cuff={false} patterned={patterned} />,
-          segment.bone
-        ),
-      )}
+      {anchors.torso
+        ? createPortal(
+            <TorsoGarment color={top} trim={trim} patterned={patterned} />,
+            anchors.torso,
+          )
+        : null}
       {anchors.arms.map((segment) =>
         createPortal(
-          <SegmentGarment segment={segment} color={top} trim={trim} radiusFactor={0.2} patterned={patterned} />,
+          <SegmentGarment segment={segment} color={top} trim={trim} radiusFactor={0.32} patterned={patterned} />,
           segment.bone
         ),
       )}
       {anchors.legs.map((segment) =>
         createPortal(
-          <SegmentGarment segment={segment} color={bottom} trim={trim} radiusFactor={0.22} />,
+          <SegmentGarment segment={segment} color={bottom} trim={trim} radiusFactor={0.3} />,
           segment.bone
         ),
       )}
