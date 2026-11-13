@@ -187,9 +187,9 @@ function CreateCharacter() {
           You start with ₦5,000 (in-game), full energy and a few essentials.
         </p>
 
-        <div className="mt-6 grid gap-6 md:grid-cols-[280px_1fr]">
+        <div className="mt-6 grid gap-6 md:grid-cols-[minmax(320px,380px)_1fr]">
           <div className="game-panel game-panel-accent flex flex-col items-center justify-center p-6 md:sticky md:top-6 md:self-start">
-            <div className="character-creation-preview w-full max-w-[260px]" aria-live="polite">
+            <div className="character-creation-preview w-full max-w-[380px]" aria-live="polite">
               <CharacterStudioPreview
                 appearance={ap}
                 gender={gender}
