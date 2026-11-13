@@ -129,6 +129,7 @@ function torsoSurface(
   const indices: number[] = [];
   const skinIndices: number[] = [];
   const skinWeights: number[] = [];
+  const uvs: number[] = [];
   const rootIndex = JOINTS.findIndex((joint) => joint.name === BONE.root);
   const spine1Index = JOINTS.findIndex((joint) => joint.name === BONE.spine1);
   const spine2Index = JOINTS.findIndex((joint) => joint.name === BONE.spine2);
@@ -136,6 +137,7 @@ function torsoSurface(
     for (let segment = 0; segment < radialSegments; segment += 1) {
       const angle = (segment / radialSegments) * Math.PI * 2;
       positions.push(Math.cos(angle) * ring.x, ring.y, Math.sin(angle) * ring.z);
+      uvs.push(segment / radialSegments, ring.y);
       let lower = rootIndex;
       let upper = spine1Index;
       let blend = Math.max(0, Math.min(1, (ring.y - 0.53) / 0.15));
@@ -159,6 +161,7 @@ function torsoSurface(
   }
   const geometry = new BufferGeometry();
   geometry.setAttribute("position", new Float32BufferAttribute(positions, 3));
+  geometry.setAttribute("uv", new Float32BufferAttribute(uvs, 2));
   geometry.setAttribute("skinIndex", new Uint16BufferAttribute(skinIndices, 4));
   geometry.setAttribute("skinWeight", new Float32BufferAttribute(skinWeights, 4));
   geometry.setIndex(indices);
