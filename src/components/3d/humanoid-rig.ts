@@ -158,17 +158,12 @@ function highlightParts(): Part[] {
 }
 
 function hairParts(shape: HairShape): Part[] {
+  // Keep the hair mass behind the facial plane so it cannot occlude brows or eyes.
   if (shape === "afro")
-    return [blob([0.116, 0.103, 0.116], [0, 1.005, -0.012], BONE.head, { detail: 1 })];
+    return [blob([0.116, 0.103, 0.09], [0, 1.005, -0.035], BONE.head, { detail: 1 })];
   if (shape === "buzz")
-    return [
-      blob([0.09, 0.057, 0.092], [0, 1.002, -0.012], BONE.head, { detail: 1 }),
-      blob([0.09, 0.022, 0.025], [0, 0.975, 0.061], BONE.head),
-    ];
-  return [
-    blob([0.09, 0.071, 0.096], [0, 0.985, -0.012], BONE.head, { detail: 1 }),
-    blob([0.09, 0.025, 0.028], [0, 0.958, 0.064], BONE.head),
-  ];
+    return [blob([0.09, 0.057, 0.07], [0, 1.002, -0.025], BONE.head, { detail: 1 })];
+  return [blob([0.09, 0.071, 0.09], [0, 0.985, -0.03], BONE.head, { detail: 1 })];
 }
 
 const geometryCache = new Map<string, {
