@@ -10,6 +10,8 @@ import {
 } from "react";
 import { Html } from "@react-three/drei";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
+import { BuildingOcclusion } from "@/components/3d/BuildingOcclusion";
+import { WaypointBeacon } from "./WaypointBeacon";
 import { WorldStreetFurniture } from "@/components/3d/WorldStreetFurniture";
 import { worldAppearance, worldEquipment } from "@/game/world-character-view";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
@@ -595,6 +597,13 @@ export function R3FNeighborhoodSurface({
   const selfPoint = self && toScene(self, district.origin);
   const target: [number, number, number] =
     follow && selfPoint ? point(selfPoint.x, selfPoint.y) : [0, 0, 0];
+  const occlusionSubject = selfPoint
+    ? ([
+        point(selfPoint.x, selfPoint.y)[0],
+        WORLD_SCALE.character,
+        point(selfPoint.x, selfPoint.y)[2],
+      ] as const)
+    : null;
   const trees: WorldTree[] = (area.obstacles ?? [])
     .filter((o) => o.kind === "tree")
     .map((o, index) => {
@@ -627,7 +636,7 @@ export function R3FNeighborhoodSurface({
             maxZoom={NEIGHBORHOOD_CAMERA.maxZoom}
             onZoomChange={onZoomChange}
           />
-          <WorldLighting size={Math.max(bounds.width, bounds.height) * unit} />
+          <WorldLighting size={Math.max(bounds.width, bounds.height) * unit} animateFoliage />
           <color attach="background" args={[WORLD_PALETTE.sky]} />
           <fog
             attach="fog"
@@ -808,6 +817,8 @@ export function R3FNeighborhoodSurface({
             <planeGeometry args={[bounds.width * unit, bounds.height * unit]} />
             <meshBasicMaterial transparent opacity={0} depthWrite={false} />
           </mesh>
+          {groundTarget && <WaypointBeacon position={point(groundTarget.x, groundTarget.y)} />}
+          {occlusionSubject && <BuildingOcclusion subject={occlusionSubject} />}
           {groundTarget && (
             <mesh
               rotation={[-Math.PI / 2, 0, 0]}

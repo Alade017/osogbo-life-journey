@@ -34,8 +34,11 @@ import { canonicalHomeOptions } from "@/lib/living-cost-service";
 import { useGameTime } from "@/components/game/GameTimeProvider";
 import type { NetworkPlayerSnapshot } from "@/game/multiplayer-state";
 import { avatarAnimationForActivity } from "@/game/character-animation";
+import { buildMinimapTelemetry } from "@/game/neighborhood-minimap";
+import { NeighborhoodMinimap } from "./NeighborhoodMinimap";
 import {
   neighborhoodAreaForSlug,
+  neighborhoodSceneBounds,
   nearestInteraction,
   toScene,
   type NeighborhoodNpcView,
@@ -310,14 +313,13 @@ export function PlayableNeighborhood() {
   const placesQuery = useQuery({ ...q.places(), enabled: !!currentLocation?.id });
   const shopItemsQuery = useQuery({ ...q.shopItems(), enabled: !!currentLocation?.id });
   const jobsQuery = useQuery({ ...q.jobs(), enabled: !!currentLocation?.id });
-  const { connectionState, players, sessionId, roomRef } =
-    useNeighborhoodConnection(
-      currentLocation?.id,
-      currentLocation?.slug,
-      district !== null,
-      connectionAttempt,
-      setConnectionAttempt,
-    );
+  const { connectionState, players, sessionId, roomRef } = useNeighborhoodConnection(
+    currentLocation?.id,
+    currentLocation?.slug,
+    district !== null,
+    connectionAttempt,
+    setConnectionAttempt,
+  );
   const [directions, setDirections] = useState<ReadonlySet<MovementDirection>>(() => new Set());
   const [groundTarget, setGroundTarget] = useState<{ x: number; y: number } | null>(null);
   const groundTargetRef = useRef(groundTarget);
@@ -349,6 +351,19 @@ export function PlayableNeighborhood() {
   const actionAnimation = simulation.currentAction
     ? avatarAnimationForActivity(simulation.currentAction.animation)
     : undefined;
+  const minimapTelemetry = useMemo(() => {
+    if (!district) return null;
+    const origin = district.origin;
+    const self = players.find((candidate) => candidate.sessionId === sessionId);
+    return buildMinimapTelemetry({
+      bounds: neighborhoodSceneBounds(origin),
+      self: self ? toScene(self, origin) : null,
+      others: players
+        .filter((candidate) => candidate.sessionId !== sessionId)
+        .map((candidate) => toScene(candidate, origin)),
+      target: groundTarget,
+    });
+  }, [district, groundTarget, players, sessionId]);
   const scenePlayers = useMemo(
     () =>
       players.map((candidate) =>
@@ -859,6 +874,12 @@ export function PlayableNeighborhood() {
                         }
                       />
                     </Suspense>
+                    {minimapTelemetry && (
+                      <NeighborhoodMinimap
+                        telemetry={minimapTelemetry}
+                        className="absolute bottom-3 right-3 z-10 md:bottom-auto md:top-3"
+                      />
+                    )}
                     <div
                       className="neighborhood-zoom-controls"
                       aria-label="Neighborhood camera controls"

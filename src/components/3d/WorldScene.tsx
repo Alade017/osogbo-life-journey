@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
-import { MeshBasicMaterial } from "three";
+import { MeshBasicMaterial, type MeshStandardMaterial } from "three";
+import { applyFoliageSway, FOLIAGE_SWAY, foliageSwayAmplitude } from "./foliage-sway";
 import { useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows, OrbitControls } from "@react-three/drei";
 import { CanvasLabel } from "@/components/3d/CanvasLabel";
@@ -28,11 +29,42 @@ export function WorldMaterial({
       {...WORLD_MATERIAL}
       color={color ?? WORLD_PALETTE[tone]}
       map={map ?? null}
+      ref={(material: MeshStandardMaterial | null) => {
+        if (material && tone === "foliage") applyFoliageSway(material);
+      }}
     />
   );
 }
 
-export function WorldLighting({ size = 30, dimmed = false }: { size?: number; dimmed?: boolean }) {
+export function WorldLighting({
+  size = 30,
+  dimmed = false,
+  animateFoliage = false,
+}: {
+  size?: number;
+  dimmed?: boolean;
+  /** Lets foliage sway in this scene. Off by default so static scenes never lean. */
+  animateFoliage?: boolean;
+}) {
+  const { invalidate } = useThree();
+  useEffect(() => {
+    if (!animateFoliage) {
+      FOLIAGE_SWAY.amplitude.value = 0;
+      return;
+    }
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const coarse = window.matchMedia("(pointer: coarse)").matches;
+    FOLIAGE_SWAY.amplitude.value = foliageSwayAmplitude({ reducedMotion });
+    if (reducedMotion) return;
+    const timer = window.setInterval(invalidate, 1000 / (coarse ? 10 : 15));
+    return () => {
+      window.clearInterval(timer);
+      FOLIAGE_SWAY.amplitude.value = 0;
+    };
+  }, [animateFoliage, invalidate]);
+  useFrame(({ clock }) => {
+    if (animateFoliage) FOLIAGE_SWAY.time.value = clock.elapsedTime;
+  });
   return (
     <>
       <color attach="background" args={[WORLD_PALETTE.ground]} />
@@ -1115,7 +1147,7 @@ export function WorldHouse({
   );
 
   return (
-    <group position={position} rotation={[0, rotation, 0]}>
+    <group position={position} rotation={[0, rotation, 0]} userData={{ occluder: true }}>
       {/* Foundation */}
       <mesh position={[0, 0.09, 0]} receiveShadow castShadow>
         <boxGeometry args={[width + 0.16, 0.18, depth + 0.16]} />
