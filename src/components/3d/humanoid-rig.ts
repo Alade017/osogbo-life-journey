@@ -1,7 +1,6 @@
 import {
   Bone,
   BufferGeometry,
-  CylinderGeometry,
   Float32BufferAttribute,
   MeshStandardMaterial,
   Skeleton,
@@ -53,20 +52,6 @@ function skinTo(geometry: BufferGeometry, boneIndex: number): BufferGeometry {
   return flat;
 }
 
-function cylinder(
-  top: number,
-  bottom: number,
-  height: number,
-  at: [number, number, number],
-  bone: BoneName,
-  options: { radial?: number; scale?: [number, number, number]; accessory?: boolean } = {},
-): Part {
-  const geometry = new CylinderGeometry(top, bottom, height, options.radial ?? 14, 2);
-  if (options.scale) geometry.scale(...options.scale);
-  geometry.translate(...at);
-  return { geometry, bone, accessory: options.accessory ?? false };
-}
-
 /** Smooth UV spheres replace the old faceted icosahedra; detail is concentrated around the face and torso. */
 function blob(
   radii: [number, number, number],
@@ -74,7 +59,7 @@ function blob(
   bone: BoneName,
   options: { detail?: 0 | 1; accessory?: boolean } = {},
 ): Part {
-  const geometry = new SphereGeometry(1, options.detail ? 22 : 12, options.detail ? 16 : 10);
+  const geometry = new SphereGeometry(1, options.detail ? 12 : 8, options.detail ? 8 : 6);
   geometry.scale(...radii);
   geometry.translate(...at);
   return { geometry, bone, accessory: options.accessory ?? false };
