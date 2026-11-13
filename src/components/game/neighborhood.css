@@ -492,3 +492,196 @@ body:has(.neighborhood-page) {
   white-space: nowrap;
   pointer-events: none;
 }
+
+/* World-space porcelain-and-blue interaction prompt badge */
+.world-interact-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  padding: 0.34rem 0.68rem;
+  border: 1.5px solid rgba(1, 75, 170, 0.34);
+  border-radius: 0.65rem;
+  background: rgba(248, 243, 240, 0.96);
+  color: #14213d;
+  font: 800 11.5px/1.15 var(--typeface-body, system-ui);
+  white-space: nowrap;
+  box-shadow:
+    0 6px 18px rgba(15, 23, 42, 0.18),
+    0 0 0 2px rgba(242, 178, 28, 0.22);
+  cursor: pointer;
+  transition: transform 140ms ease, border-color 140ms ease, background-color 140ms ease;
+}
+
+.world-interact-badge:hover,
+.world-interact-badge.is-in-range {
+  border-color: #014baa;
+  background: #ffffff;
+  transform: translateY(-2px);
+}
+
+.world-interact-badge.is-targeted {
+  border-color: #f2b21c;
+}
+
+.world-interact-dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: #014baa;
+  box-shadow: 0 0 0 3px rgba(1, 75, 170, 0.16);
+}
+
+.world-interact-badge.is-in-range .world-interact-dot {
+  background: #f2b21c;
+  box-shadow: 0 0 0 3px rgba(242, 178, 28, 0.28);
+}
+
+.world-interact-badge kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.2rem;
+  border-radius: 0.32rem;
+  background: #014baa;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+/* Porcelain & Royal Blue Interactive Zone Modal */
+.neighborhood-zone-modal {
+  border: 1px solid rgba(1, 75, 170, 0.18);
+  background: rgba(248, 243, 240, 0.97);
+  color: #14213d;
+}
+
+.neighborhood-zone-modal-header {
+  display: grid;
+  gap: 0.55rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(1, 75, 170, 0.12);
+}
+
+.neighborhood-zone-modal-badge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.28rem 0.65rem;
+  border-radius: 0.5rem;
+  background: rgba(1, 75, 170, 0.1);
+  color: #014baa;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.neighborhood-zone-stats-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  padding-top: 0.2rem;
+}
+
+.neighborhood-zone-stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.32rem 0.6rem;
+  border: 1px solid rgba(1, 75, 170, 0.14);
+  border-radius: 0.55rem;
+  background: #ffffff;
+  color: #3e4c63;
+  font-size: 0.74rem;
+  font-weight: 600;
+}
+
+.neighborhood-zone-stat-pill strong {
+  color: #14213d;
+  font-weight: 800;
+}
+
+.neighborhood-zone-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.neighborhood-zone-tabs button {
+  padding: 0.42rem 0.85rem;
+  border: 1px solid rgba(1, 75, 170, 0.18);
+  border-radius: 0.6rem;
+  background: #ffffff;
+  color: #14213d;
+  font-size: 0.78rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.neighborhood-zone-tabs button.is-active {
+  border-color: #014baa;
+  background: #014baa;
+  color: #ffffff;
+}
+
+.neighborhood-zone-action-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  padding: 0.85rem 0.95rem;
+  border: 1px solid rgba(1, 75, 170, 0.18);
+  border-radius: 0.85rem;
+  background: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+}
+
+.neighborhood-zone-action-tile:hover:not(:disabled) {
+  border-color: #014baa;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(1, 75, 170, 0.12);
+}
+
+.neighborhood-zone-action-tile:disabled {
+  opacity: 0.52;
+  cursor: not-allowed;
+}
+
+.neighborhood-zone-price-tag {
+  flex: 0 0 auto;
+  padding: 0.18rem 0.48rem;
+  border-radius: 0.45rem;
+  background: rgba(1, 75, 170, 0.1);
+  color: #014baa;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.neighborhood-zone-price-tag.is-earn {
+  background: rgba(16, 185, 129, 0.15);
+  color: #065f46;
+}
+
+.neighborhood-zone-pack-box {
+  padding: 0.8rem;
+  border: 1px solid rgba(1, 75, 170, 0.14);
+  border-radius: 0.85rem;
+  background: #ffffff;
+}
+
+.neighborhood-zone-item-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem 0.55rem;
+  border: 1px solid rgba(1, 75, 170, 0.16);
+  border-radius: 0.5rem;
+  background: #f5f2ea;
+  color: #14213d;
+  font-size: 0.74rem;
+  font-weight: 700;
+}

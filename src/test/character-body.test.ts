@@ -108,16 +108,16 @@ describe("humanoid rig", () => {
     // The body is unindexed (skin and feature materials are merged as groups), so count corners.
     const triangles =
       (body.geometry.index?.count ?? body.geometry.attributes["position"]!.count) / 3;
-    expect(triangles).toBeLessThan(5000);
+    expect(triangles).toBeLessThan(2000);
   });
 
   it("skips the hair mesh for bald characters", () => {
     expect(
       createHumanoid({ variant: "male", skinColor: "#000", hairColor: null }).meshes,
-    ).toHaveLength(6);
+    ).toHaveLength(1);
     expect(
       createHumanoid({ variant: "male", skinColor: "#000", hairColor: "#111" }).meshes,
-    ).toHaveLength(7);
+    ).toHaveLength(2);
   });
 
   it("keeps the shadow tuning available to the ground shadow", () => {

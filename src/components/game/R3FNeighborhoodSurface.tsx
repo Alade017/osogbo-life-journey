@@ -56,6 +56,11 @@ import {
   WorldInstances,
   type WorldInstance,
 } from "../3d/WorldScene";
+import { FillingStation } from "@/components/3d/FillingStation";
+import { NeighborhoodPerimeter } from "@/components/3d/NeighborhoodPerimeter";
+import { ZoneSurroundings } from "@/components/3d/ZoneSurroundings";
+import { ZoneNpcs } from "@/components/3d/ZoneNpcs";
+import type { ZoneNpcSpec } from "@/game/neighborhood-interactions";
 import { CHARACTER_MOTION } from "@/components/3d/character-config";
 import { NEIGHBORHOOD_CAMERA, WORLD_PALETTE, WORLD_SCALE } from "../3d/world-theme";
 import {
@@ -362,9 +367,9 @@ function NeighborhoodNpcActor({
   );
 }
 
-/** Distant towers that frame the neighbourhood, so the open ground reads as a city. */
-const SKY_FOG_NEAR_SCALE = 3.5;
-const SKY_FOG_FAR_SCALE = 9;
+/** Subtle distance fog matching the sky color so the outer perimeter blends smoothly into the horizon. */
+const SKY_FOG_NEAR_SCALE = 0.42;
+const SKY_FOG_FAR_SCALE = 1.05;
 /** Whether an obstacle sits inside a real model's footprint, so its procedural stand-in is skipped. */
 function insideEnvironment(
   environment: { x: number; y: number; width: number; height: number } | undefined,
@@ -415,6 +420,14 @@ export function R3FNeighborhoodSurface({
   onGroundTap,
   groundTarget,
   commuteTarget = null,
+  nearbyZoneId = null,
+  targetedZoneId = null,
+  zoneNpcs = [],
+  nearbyZoneNpcId = null,
+  targetedZoneNpcId = null,
+  onSelectZone,
+  onSelectZoneNpc,
+  onHoverZone,
 }: {
   onGroundTap: (point: { x: number; y: number }) => void;
   groundTarget: { x: number; y: number } | null;
@@ -431,6 +444,14 @@ export function R3FNeighborhoodSurface({
   zoom: number;
   onZoomChange: (zoom: number) => void;
   onScene: (scene: NeighborhoodSceneHandle | null) => void;
+  nearbyZoneId?: string | null;
+  targetedZoneId?: string | null;
+  zoneNpcs?: readonly ZoneNpcSpec[];
+  nearbyZoneNpcId?: string | null;
+  targetedZoneNpcId?: string | null;
+  onSelectZone?: (zoneId: string) => void;
+  onSelectZoneNpc?: (npcId: string) => void;
+  onHoverZone?: (zoneId: string | null) => void;
 }) {
   const overlayHost = useRef<HTMLDivElement>(null!);
   const [follow, setFollow] = useState(true);
@@ -544,7 +565,9 @@ export function R3FNeighborhoodSurface({
   );
   const movementObstacles = useMemo(() => {
     const footprints = [
-      ...area.objects.filter((object) => object.kind !== "npc").map(neighborhoodBuildingFootprint),
+      ...area.objects
+        .filter((object) => object.kind !== "npc" && !object.walkIn)
+        .map(neighborhoodBuildingFootprint),
       ...(area.obstacles ?? []).map(neighborhoodObstacleFootprint),
     ];
     return footprints.map((footprint) => {
@@ -613,7 +636,11 @@ export function R3FNeighborhoodSurface({
               Math.max(bounds.width, bounds.height) * unit * SKY_FOG_FAR_SCALE,
             ]}
           />
-          <mesh position={[0, -0.12, 0]} receiveShadow>
+          <mesh position={[0, -0.24, 0]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
+            <planeGeometry args={[bounds.width * unit * 2.6, bounds.height * unit * 2.6]} />
+            <meshBasicMaterial color={WORLD_PALETTE.sky} />
+          </mesh>
+          <mesh position={[0, -0.12, 0]} receiveShadow raycast={() => null}>
             <boxGeometry args={[bounds.width * unit, 0.2, bounds.height * unit]} />
             <WorldMaterial
               tone="ground"
@@ -650,6 +677,40 @@ export function R3FNeighborhoodSurface({
           })}
           <WorldTrees positions={trees} />
 
+          {area.zoneLayout && (
+            <>
+              <NeighborhoodPerimeter perimeter={area.zoneLayout.perimeter} point={point} />
+              <FillingStation
+                spec={area.zoneLayout.fillingStation}
+                point={point}
+                playerScenePoint={selfPoint ?? null}
+                nearbyZoneId={nearbyZoneId}
+                targetedZoneId={targetedZoneId}
+                {...(onSelectZone ? { onSelectZone } : {})}
+                {...(onHoverZone ? { onHoverZone } : {})}
+              />
+              <ZoneSurroundings
+                layout={area.zoneLayout}
+                point={point}
+                playerScenePoint={selfPoint ?? null}
+                nearbyZoneId={nearbyZoneId}
+                targetedZoneId={targetedZoneId}
+                {...(onSelectZone ? { onSelectZone } : {})}
+                {...(onHoverZone ? { onHoverZone } : {})}
+              />
+              {zoneNpcs.length > 0 && onSelectZoneNpc && (
+                <ZoneNpcs
+                  npcs={zoneNpcs}
+                  point={point}
+                  nearbyNpcId={nearbyZoneNpcId}
+                  targetedId={targetedZoneNpcId}
+                  onSelect={onSelectZoneNpc}
+                  {...(onHoverZone ? { onHoverChange: onHoverZone } : {})}
+                />
+              )}
+            </>
+          )}
+
           {area.environment && (
             <Suspense fallback={null}>
               <NeighborhoodEnvironment
@@ -660,7 +721,7 @@ export function R3FNeighborhoodSurface({
             </Suspense>
           )}
           {area.obstacles
-            ?.filter((o) => ["compound", "shop", "kiosk"].includes(o.kind))
+            ?.filter((o) => !o.visualManaged && ["compound", "shop", "kiosk"].includes(o.kind))
             .filter((o) => !insideEnvironment(area.environment, o))
             .map((o) => (
               <WorldHouse
@@ -678,7 +739,9 @@ export function R3FNeighborhoodSurface({
             ))}
           <WorldStreetFurniture
             items={(area.obstacles ?? [])
-              .filter((o) => !["tree", "compound", "shop", "kiosk"].includes(o.kind))
+              .filter(
+                (o) => !o.visualManaged && !["tree", "compound", "shop", "kiosk"].includes(o.kind),
+              )
               .map((o) => ({
                 kind: o.kind,
                 x: point(o.x, o.y)[0],
@@ -708,31 +771,33 @@ export function R3FNeighborhoodSurface({
           {area.objects
             .filter((o) => o.kind !== "npc")
             .map((o) => {
-              const footprint = neighborhoodBuildingFootprint(o);
+              const footprint = o.walkIn ? null : neighborhoodBuildingFootprint(o);
               return (
                 <group key={o.id}>
-                  <WorldHouse
-                    detailed
-                    position={point(
-                      footprint.left + footprint.width / 2,
-                      footprint.top + footprint.height / 2,
-                    )}
-                    width={footprint.width * unit}
-                    depth={footprint.height * unit}
-                    height={WORLD_SCALE.neighborhoodBuildingHeight}
-                    shop={o.kind !== "home"}
-                    variant={
-                      o.kind === "home"
-                        ? "residential"
-                        : o.kind === "market"
-                          ? "market"
-                          : "services"
-                    }
-                  />
+                  {footprint && (
+                    <WorldHouse
+                      detailed
+                      position={point(
+                        footprint.left + footprint.width / 2,
+                        footprint.top + footprint.height / 2,
+                      )}
+                      width={footprint.width * unit}
+                      depth={footprint.height * unit}
+                      height={WORLD_SCALE.neighborhoodBuildingHeight}
+                      shop={o.kind !== "home"}
+                      variant={
+                        o.kind === "home"
+                          ? "residential"
+                          : o.kind === "market"
+                            ? "market"
+                            : "services"
+                      }
+                    />
+                  )}
                   <Html
                     portal={overlayHost}
                     center
-                    position={[point(o.x, o.y)[0], 3.7, point(o.x, o.y)[2]]}
+                    position={[point(o.x, o.y)[0], o.walkIn ? 4.8 : 3.7, point(o.x, o.y)[2]]}
                     distanceFactor={18}
                     style={{ pointerEvents: "none" }}
                   >
@@ -814,15 +879,21 @@ export function R3FNeighborhoodSurface({
             </mesh>
           )}
           {interactionTargets
-            .filter((target) => target.kind !== "npc")
+            .filter((target) => {
+              if (target.kind === "npc") return false;
+              if (area.zoneLayout && target.kind !== "home") return false;
+              return true;
+            })
             .map((target) => {
-              const p = point(target.x, target.y);
+              const anchor = point(target.x, target.y);
               const footprint =
-                target.kind === "npc" ? null : neighborhoodBuildingFootprint(target);
+                target.kind === "npc" || target.walkIn
+                  ? null
+                  : neighborhoodBuildingFootprint(target);
               return (
                 <mesh
                   key={target.id}
-                  position={[p[0], 1.3, p[2]]}
+                  position={[anchor[0], 1.3, anchor[2]]}
                   onClick={(event) => {
                     event.stopPropagation();
                     onSelectTarget(target.id);
@@ -830,6 +901,8 @@ export function R3FNeighborhoodSurface({
                 >
                   {target.kind === "npc" ? (
                     <cylinderGeometry args={[0.58, 0.58, 2.6, 12]} />
+                  ) : target.walkIn ? (
+                    <boxGeometry args={[1.1, 2.4, 1.4]} />
                   ) : (
                     <boxGeometry args={[footprint!.width * unit, 2.6, footprint!.height * unit]} />
                   )}

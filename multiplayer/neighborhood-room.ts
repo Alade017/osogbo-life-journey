@@ -1,9 +1,11 @@
 import { Room, type AuthContext, type Client } from "colyseus";
 import { NeighborhoodState, NetworkPlayer } from "../src/game/multiplayer-state.ts";
 import {
+  canOccupyNeighborhoodPoint,
   canRestoreNeighborhoodCheckpoint,
   movementFacing,
   parseMovementIntent,
+  PLAYER_WORLD_BOUNDS,
   stepAuthoritativePosition,
 } from "../src/game/authoritative-movement.ts";
 import { cityEntranceForRecord } from "../src/lib/city-world.ts";
@@ -243,8 +245,45 @@ export class NeighborhoodRoom extends Room {
       "commute-to-work",
       (client, payload: unknown) => void this.startCommute(client, payload),
     );
+    this.onMessage("keke-dropoff", (client, payload: unknown) =>
+      this.handleKekeDropoff(client, payload),
+    );
     this.onMessage("refresh-equipment", (client) => void this.refreshEquipment(client));
     this.setSimulationInterval(() => this.stepPlayers(), 50);
+  }
+
+  private handleKekeDropoff(client: Client, payload: unknown) {
+    const player = this.state.players.get(client.sessionId);
+    if (!player || !payload || typeof payload !== "object") return;
+    const rawX = (payload as { x?: unknown }).x;
+    const rawY = (payload as { y?: unknown }).y;
+    if (
+      typeof rawX !== "number" ||
+      typeof rawY !== "number" ||
+      !Number.isFinite(rawX) ||
+      !Number.isFinite(rawY)
+    ) {
+      return;
+    }
+    const target = {
+      x: Math.max(PLAYER_WORLD_BOUNDS.minX, Math.min(PLAYER_WORLD_BOUNDS.maxX, rawX)),
+      y: Math.max(PLAYER_WORLD_BOUNDS.minY, Math.min(PLAYER_WORLD_BOUNDS.maxY, rawY)),
+    };
+    if (
+      !canOccupyNeighborhoodPoint(target, this.areaOrigin, this.area.objects, this.area.obstacles)
+    ) {
+      client.send("keke-arrived", { ok: false, x: player.x, y: player.y });
+      return;
+    }
+    const commute = this.commutes.get(client.sessionId);
+    if (commute) {
+      this.endCommute(client.sessionId, commute, "cancelled");
+    }
+    this.movement.set(client.sessionId, { intent: { x: 0, y: 0 }, updatedAt: Date.now() });
+    player.x = target.x;
+    player.y = target.y;
+    player.facing = "south";
+    client.send("keke-arrived", { ok: true, x: target.x, y: target.y });
   }
 
   override async onAuth(
