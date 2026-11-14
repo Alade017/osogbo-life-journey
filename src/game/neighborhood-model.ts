@@ -63,8 +63,20 @@ export type NeighborhoodPath = {
   to: WorldPoint;
   width: number;
 };
+/** Decorative props placed in an area. They never block movement. */
+export type NeighborhoodDressingKind = "umbrella" | "jerrycans" | "water-tank" | "dye-vat" | "palm";
+
+export type NeighborhoodDressing = {
+  id: string;
+  kind: NeighborhoodDressingKind;
+  x: number;
+  y: number;
+  rotation?: number;
+};
+
 export type NeighborhoodArea = {
   slug: string;
+  dressing?: readonly NeighborhoodDressing[];
   name: string;
   objects: readonly NeighborhoodObject[];
   obstacles?: readonly NeighborhoodObstacle[];
@@ -159,6 +171,13 @@ export const CITY_CENTRE_AREA: NeighborhoodArea = {
 /** A second, data-backed street layout for the seeded Oja-Oba Market destination. */
 export const OJA_OBA_AREA: NeighborhoodArea = {
   slug: "oja-oba",
+  dressing: [
+    { id: "market-umbrella-west", kind: "umbrella", x: 20, y: 150 },
+    { id: "market-umbrella-north", kind: "umbrella", x: 20, y: 80 },
+    { id: "market-dye-vat", kind: "dye-vat", x: 440, y: 150 },
+    { id: "market-jerrycans", kind: "jerrycans", x: 205, y: 175 },
+    { id: "market-palm", kind: "palm", x: 580, y: 430 },
+  ],
   name: "Oja-Oba Market",
   roads: [
     { id: "market-spine", axis: "vertical", offset: 270, width: 92, type: "street" },
@@ -631,6 +650,12 @@ export const FUEL_AND_GO_AREA: NeighborhoodArea = {
   name: "Fuel and Go",
   objects: [
     { id: "market", name: "Fuel and Go shop", kind: "market", shopSlug: null, x: 1000, y: 300 },
+  ],
+  dressing: [
+    { id: "fuel-water-tank", kind: "water-tank", x: 1110, y: 190 },
+    { id: "fuel-jerrycans", kind: "jerrycans", x: 930, y: 420 },
+    { id: "fuel-umbrella", kind: "umbrella", x: 700, y: 430 },
+    { id: "fuel-palm", kind: "palm", x: 1200, y: 500 },
   ],
   roads: [
     { id: "fuel-main-road", axis: "horizontal", offset: 300, width: 84, type: "arterial" },
