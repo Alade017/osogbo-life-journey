@@ -9,7 +9,7 @@ type Segment = { bone: Bone; child: Bone };
 function clean(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
-function findBone(root: Object3D, candidates: string[]) {
+function findBone(root: Object3D, candidates: string[]): Bone | null {
   const wanted = candidates.map(clean);
   let found: Bone | null = null;
   root.traverse((node) => {
@@ -41,13 +41,24 @@ function SegmentGarment({
   patterned?: boolean;
   cuff?: boolean;
 }) {
-  const vector = segment.child.position;
-  const length = Math.max(vector.length(), 0.025);
-  const radius = Math.max(length * radiusFactor, 0.012);
-  const rotation = new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), vector.clone().normalize());
-  const map = patterned ? adireTexture() : null;
+  const { length, radius, rotation, midpoint } = useMemo(() => {
+    const vector = segment.child.position;
+    const len = Math.max(vector.length(), 0.025);
+    const rad = Math.max(len * radiusFactor, 0.012);
+    const rot = new Quaternion().setFromUnitVectors(
+      new Vector3(0, 1, 0),
+      vector.clone().normalize(),
+    );
+    return {
+      length: len,
+      radius: rad,
+      rotation: rot,
+      midpoint: vector.clone().multiplyScalar(0.5),
+    };
+  }, [segment, radiusFactor]);
+  const map = useMemo(() => (patterned ? adireTexture() : null), [patterned]);
   return (
-    <group position={vector.clone().multiplyScalar(0.5)} quaternion={rotation}>
+    <group position={midpoint} quaternion={rotation}>
       <mesh castShadow receiveShadow>
         <cylinderGeometry args={[radius * 0.94, radius, length * 1.04, 12, 1]} />
         <meshStandardMaterial color={color} map={map} roughness={0.94} side={2} />
@@ -68,7 +79,7 @@ function SegmentGarment({
 
 
 function TorsoGarment({ color, trim, patterned = false }: { color: string; trim: string; patterned?: boolean }) {
-  const map = patterned ? adireTexture() : null;
+  const map = useMemo(() => (patterned ? adireTexture() : null), [patterned]);
   return (
     <group position={[0, 0.012, 0]} name="torso-garment">
       <mesh position={[0, -0.012, 0]} castShadow receiveShadow>

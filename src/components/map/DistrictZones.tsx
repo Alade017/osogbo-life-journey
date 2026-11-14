@@ -1,5 +1,5 @@
 import type { ThreeEvent } from "@react-three/fiber";
-import { Html } from "@react-three/drei";
+import { SceneHtml as Html } from "@/components/3d/SceneHtml";
 import { WorldInstances, WorldMaterial, type WorldInstance } from "../3d/WorldScene";
 import { DISTRICT_FALLBACK, DISTRICT_TINTS } from "./district-tints";
 

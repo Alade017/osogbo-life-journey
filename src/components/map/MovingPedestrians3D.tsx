@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FC } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Html } from "@react-three/drei";
 import type { Group } from "three";
+import { SceneHtml as Html } from "@/components/3d/SceneHtml";
 import { WorldMaterial } from "@/components/3d/WorldScene";
 import {
   isValidTownPedestrianRoute,

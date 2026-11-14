@@ -38,7 +38,13 @@ export function CareerPanel({ mode = "all" }: { mode?: "all" | "current" | "oppo
     onSuccess: () => toast.success("Career application accepted"),
   });
   const start = useGameAction(startCareerShift, {
-    onSuccess: () => toast.success("Shift started"),
+    onSuccess: (shift) => {
+      toast.success("Shift started");
+      // The neighbourhood screen, when open, asks the server to walk the character to work.
+      window.dispatchEvent(
+        new CustomEvent("osun:commute-to-work", { detail: { shiftId: shift.id } }),
+      );
+    },
   });
   const step = useGameAction(completeCareerStep, {
     onSuccess: () => toast.success("Work step complete"),

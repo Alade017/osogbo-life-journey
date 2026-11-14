@@ -1,4 +1,4 @@
-import {
+﻿import {
   Bone,
   BufferGeometry,
   Float32BufferAttribute,

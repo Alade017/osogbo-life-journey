@@ -1,5 +1,5 @@
 // Routes shown full screen (the bottom navigation). Every other game route opens in the phone.
-export const FULL_SCREEN_ROUTES = ["/home", "/map", "/jobs"] as const;
+export const FULL_SCREEN_ROUTES = ["/home", "/neighborhood", "/map", "/jobs"] as const;
 export const DEFAULT_FULL_SCREEN_ROUTE = "/map";
 
 export type RouteSurface = "full" | "phone";

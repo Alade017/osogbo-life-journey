@@ -38,7 +38,7 @@ function occupiedBoxes(area: NeighborhoodArea): Box[] {
     .filter((o) => o.kind !== "tree" && o.kind !== "streetlight")
     .map((o) => ({ x: o.x, y: o.y, width: o.width, height: o.height }));
   const buildings: Box[] = area.objects
-    .filter((o) => o.kind !== "npc")
+    .filter((o) => o.kind !== "npc" && !o.walkIn)
     .map((o) => {
       const footprint = neighborhoodBuildingFootprint(o);
       return {
@@ -86,15 +86,24 @@ export function sidewalksAndCurbs(
   const sidewalks: DressingRect[] = [];
   const curbs: DressingRect[] = [];
   const boxes = occupiedBoxes(area);
+  const cutouts = area.zoneLayout?.drivewayCutouts ?? [];
   for (const road of area.roads ?? []) {
     const { start, end, vertical } = roadExtent(road, bounds);
     const offsetAcross = road.width / 2 + SIDEWALK_WIDTH / 2;
-    for (const side of [-1, 1]) {
+    for (const side of [-1, 1] as const) {
       for (let along = start; along < end; along += SEGMENT_LENGTH) {
         const segmentEnd = Math.min(end, along + SEGMENT_LENGTH);
         const span = segmentEnd - along;
         const mid = (along + segmentEnd) / 2;
         const across = road.offset + side * offsetAcross;
+        const hasCutout = cutouts.some(
+          (cutout) =>
+            cutout.roadId === road.id &&
+            cutout.side === side &&
+            segmentEnd > cutout.start &&
+            along < cutout.end,
+        );
+        if (hasCutout) continue;
         // Check both ends and the middle, so a segment cannot run into a building.
         const blocked = [along, mid, segmentEnd].some((at) =>
           insideObstacle(vertical ? across : at, vertical ? at : across, boxes, 10),
@@ -163,11 +172,17 @@ export function streetLightSpots(area: NeighborhoodArea, bounds: DressingBounds)
 /** Cars in the lanes of arterials and streets, alternating direction by lane. */
 export function carSpots(area: NeighborhoodArea, bounds: DressingBounds): WorldPoint[] {
   const spots: WorldPoint[] = [];
+  const cutouts = area.zoneLayout?.drivewayCutouts ?? [];
   for (const road of area.roads ?? []) {
     if (road.type === "lane") continue;
     const { start, end, vertical } = roadExtent(road, bounds);
     for (const lane of [-1, 1])
       for (let along = start + CAR_SPACING / 2; along < end; along += CAR_SPACING) {
+        const nearCutout = cutouts.some(
+          (cutout) =>
+            cutout.roadId === road.id && along >= cutout.start - 20 && along <= cutout.end + 20,
+        );
+        if (nearCutout) continue;
         const across = lane * road.width * 0.22;
         spots.push({
           x: vertical ? road.offset + across : along,

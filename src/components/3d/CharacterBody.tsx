@@ -115,12 +115,16 @@ export function CharacterBody({
       const angles = pose.bones[bone.name as BoneName];
       if (angles) scratchQuat.setFromEuler(scratchEuler.set(angles[0], angles[1], angles[2]));
       else scratchQuat.copy(identity);
-      if (bone.quaternion.angleTo(scratchQuat) > 0.0005) moving = true;
-      bone.quaternion.slerp(scratchQuat, blend);
+      if (bone.quaternion.angleTo(scratchQuat) > 0.0005) {
+        moving = true;
+        bone.quaternion.slerp(scratchQuat, blend);
+      }
     }
     const restY = ROOT_REST_Y + (pose.rootY ?? 0);
-    if (Math.abs(rig.root.position.y - restY) > 0.0005) moving = true;
-    rig.root.position.y += (restY - rig.root.position.y) * blend;
+    if (Math.abs(rig.root.position.y - restY) > 0.0005) {
+      moving = true;
+      rig.root.position.y += (restY - rig.root.position.y) * blend;
+    }
     if (moving) invalidate();
   });
 

@@ -1,6 +1,6 @@
 // src/components/game/map/MapLoading.tsx
 import { FC } from "react";
-import { Html } from "@react-three/drei";
+import { SceneHtml as Html } from "@/components/3d/SceneHtml";
 
 /**
  * Simple animated loading indicator that appears inside the 3D scene while

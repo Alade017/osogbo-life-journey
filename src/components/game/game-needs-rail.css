@@ -18,12 +18,12 @@
   align-items: center;
   gap: 8px;
   padding: 8px 6px;
-  border: 1px solid rgb(255 255 255 / 85%);
+  border: 1px solid rgb(22 34 92 / 16%);
   border-radius: 22px;
-  background: rgb(255 255 255 / 92%);
-  color: #22302a;
-  box-shadow: 0 10px 24px rgb(22 32 24 / 16%);
-  backdrop-filter: blur(10px);
+  background: rgb(250 247 240 / 92%);
+  color: #16225c;
+  box-shadow: 0 12px 26px rgb(22 34 92 / 16%);
+  backdrop-filter: blur(12px);
   animation: none;
 }
 
@@ -39,10 +39,10 @@
   align-items: center;
   justify-content: center;
   padding: 0 8px;
-  border: 1px solid rgb(203 78 66 / 26%);
+  border: 1px solid rgb(200 69 45 / 28%);
   border-radius: 999px;
-  background: #fde9e6;
-  color: #a9362d;
+  background: rgb(200 69 45 / 12%);
+  color: #c8452d;
   font-size: 10px;
   font-weight: 750;
   line-height: 1;
@@ -51,24 +51,24 @@
 
 .city-game .game-needs-rail .game-needs-toggle {
   display: grid;
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   place-items: center;
   padding: 0;
-  border: 1px solid #d8e0d9;
+  border: 1px solid rgb(22 34 92 / 16%);
   border-radius: 50%;
-  background: #f6f8f4;
-  color: #4a5a52;
+  background: #ffffff;
+  color: #16225c;
   cursor: pointer;
 }
 
 .city-game .game-needs-rail .game-needs-toggle:focus-visible {
-  outline: 2px solid var(--primary, #0f5fd1);
+  outline: 2px solid #f2b21c;
   outline-offset: 2px;
 }
 
 .city-game .game-needs-rail .game-needs-collapsed-icon {
-  color: #0f5fd1;
+  color: #16225c;
 }
 
 .city-game .game-needs-rail .game-needs-collapsed-plus {
@@ -94,10 +94,10 @@
   align-items: center;
   gap: 3px;
   padding: 5px 0 4px;
-  border: 1px solid #e3e9e4;
+  border: 1px solid rgb(22 34 92 / 14%);
   border-radius: 14px;
-  background: #f4f7f3;
-  color: #33423a;
+  background: #ffffff;
+  color: #16225c;
   cursor: pointer;
   transition:
     transform 150ms ease,
@@ -107,32 +107,33 @@
 
 .city-game .game-needs-rail .game-needs-item:hover {
   transform: translateY(-1px);
+  border-color: #f2b21c;
 }
 
 .city-game .game-needs-rail .game-needs-item:focus-visible {
-  outline: 2px solid var(--primary, #0f5fd1);
+  outline: 2px solid #f2b21c;
   outline-offset: 2px;
 }
 
 .city-game .game-needs-rail .game-needs-item.is-healthy {
-  --need-tone: #2f8a55;
+  --need-tone: #1e9a5f;
 }
 
 .city-game .game-needs-rail .game-needs-item.is-warning {
-  --need-tone: #c98a1b;
-  border-color: #efd7a1;
-  background: #fff7e4;
+  --need-tone: #c78b07;
+  border-color: rgb(242 178 28 / 55%);
+  background: rgb(242 178 28 / 12%);
 }
 
 .city-game .game-needs-rail .game-needs-item.is-critical {
-  --need-tone: #cb4e42;
-  border-color: #efb2aa;
-  background: #fdeeeb;
+  --need-tone: #c8452d;
+  border-color: rgb(200 69 45 / 45%);
+  background: rgb(200 69 45 / 11%);
 }
 
 .city-game .game-needs-rail .game-needs-item.is-active {
-  border-color: #0f5fd1;
-  box-shadow: 0 0 0 2px rgb(15 95 209 / 18%);
+  border-color: #16225c;
+  box-shadow: 0 0 0 2px rgb(242 178 28 / 38%);
 }
 
 .city-game .game-needs-rail .game-needs-icon-ring {
@@ -183,15 +184,15 @@
 }
 
 .city-game .game-needs-rail .game-needs-preview-pill.is-critical {
-  --need-pill-tone: #cb4e42;
-  border-color: #efb2aa;
-  background: #fdeeeb;
+  --need-pill-tone: #c8452d;
+  border-color: rgb(200 69 45 / 45%);
+  background: rgb(200 69 45 / 11%);
 }
 
 .city-game .game-needs-rail .game-needs-preview-pill.is-warning {
-  --need-pill-tone: #c98a1b;
-  border-color: #efd7a1;
-  background: #fff7e4;
+  --need-pill-tone: #c78b07;
+  border-color: rgb(242 178 28 / 55%);
+  background: rgb(242 178 28 / 12%);
 }
 
 .city-game .game-needs-rail .game-needs-preview-pill svg {
@@ -214,13 +215,13 @@
 }
 
 .city-game .game-needs-rail .game-needs-preview-pill:focus-visible {
-  outline: 2px solid var(--primary, #0f5fd1);
+  outline: 2px solid #f2b21c;
   outline-offset: 2px;
 }
 
 .city-game .game-needs-rail .game-needs-preview-empty {
   font-size: 10px;
-  color: #5d6f64;
+  color: #4f5974;
   text-align: center;
 }
 
@@ -234,28 +235,29 @@
   flex-direction: column;
   gap: 6px;
   padding: 12px;
-  border: 1px solid #e3e9e4;
+  border: 1px solid rgb(22 34 92 / 18%);
   border-radius: 16px;
-  background: #ffffff;
-  box-shadow: 0 12px 28px rgb(22 32 24 / 18%);
+  background: rgb(250 247 240 / 96%);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 12px 28px rgb(22 34 92 / 20%);
 }
 
 .city-game .game-needs-rail .game-needs-detail strong {
   font-size: 13px;
-  color: #22302a;
+  color: #16225c;
 }
 
 .city-game .game-needs-rail .game-needs-detail span {
   font-size: 11px;
-  color: #5d6f64;
+  color: #4f5974;
 }
 
 .city-game .game-needs-rail .game-needs-action {
-  min-height: 34px;
+  min-height: 40px;
   border: 0;
   border-radius: 10px;
-  background: #0f5fd1;
-  color: #ffffff;
+  background: #16225c;
+  color: #faf7f0;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;

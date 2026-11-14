@@ -1,8 +1,8 @@
 // src/components/game/map/MapPin.tsx
 import { useRef, useEffect, FC } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Html } from "@react-three/drei";
 import type { Group } from "three";
+import { SceneHtml as Html } from "@/components/3d/SceneHtml";
 import type { POI } from "@/store/mapSlice";
 
 interface MapPinProps {

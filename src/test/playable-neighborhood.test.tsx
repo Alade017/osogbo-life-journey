@@ -192,6 +192,7 @@ function room(location: string) {
       listeners.leave = fn;
     },
     send: vi.fn(),
+    onMessage: vi.fn(),
     leave: vi.fn(async () => {}),
     listeners,
   };

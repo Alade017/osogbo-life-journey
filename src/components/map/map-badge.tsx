@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { Html } from "@react-three/drei";
+import { SceneHtml as Html } from "@/components/3d/SceneHtml";
 
 const CATEGORY_BADGES: Record<string, { emoji: string; tone: string }> = {
   food: { emoji: "🍽️", tone: "#f97316" },

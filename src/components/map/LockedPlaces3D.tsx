@@ -1,5 +1,5 @@
 import { useState, type FC } from "react";
-import { Html } from "@react-three/drei";
+import { SceneHtml as Html } from "@/components/3d/SceneHtml";
 import { MapPin3D } from "./MapPin3D";
 
 export interface LockedPlace {

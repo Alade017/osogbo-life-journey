@@ -122,7 +122,7 @@
   C:\Users\user\Desktop\Osogbo-life-journey\osogbo-life-journey\supabase\migrations\202610170004_weekly_housing.sql:171:      when coalesce(w.balance,0) < h.weekly_rent_minor*h.deposit_weeks
   C:\Users\user\Desktop\Osogbo-life-journey\osogbo-life-journey\supabase\migrations\202610170004_weekly_housing.sql:172:        then 'Deposit is ?'||to_char(h.weekly_rent_minor*h.deposit_weeks-coalesce(w.balance,0),'FM999,999,999,990')||' short'
   C:\Users\user\Desktop\Osogbo-life-journey\osogbo-life-journey\supabase\migrations\202610170004_weekly_housing.sql:173:      when coalesce(w.balance,0) < h.weekly_rent_minor*(h.deposit_weeks+1)
-  C:\Users\user\Desktop\Osogbo-life-journey\osogbo-life-journey\supabase\migrations\202610170004_weekly_housing.sql:174:        then 'First week’s rent is ?'||to_char(h.weekly_rent_minor*(h.deposit_weeks+1)-coalesce(w.balance,0),'FM999,999,999,990')||' short'
+  C:\Users\user\Desktop\Osogbo-life-journey\osogbo-life-journey\supabase\migrations\202610170004_weekly_housing.sql:174:        then 'First weekï¿½s rent is ?'||to_char(h.weekly_rent_minor*(h.deposit_weeks+1)-coalesce(w.balance,0),'FM999,999,999,990')||' short'
 
 ========== 202610170007_map_places.sql ==========
   C:\Users\user\Desktop\Osogbo-life-journey\osogbo-life-journey\supabase\migrations\202610170007_map_places.sql:143:on conflict (slug) do nothing;

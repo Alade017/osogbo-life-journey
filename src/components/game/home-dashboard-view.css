@@ -60,10 +60,11 @@
   min-height: 40px;
   padding: 6px 11px;
 
-  border: 1px solid var(--border);
+  border: 1px solid rgb(22 34 92 / 18%);
   border-radius: var(--shape-pill);
-  background: var(--card);
-  color: var(--primary);
+  background: rgb(250 247 240 / 92%);
+  backdrop-filter: blur(12px);
+  color: #16225c;
   box-shadow: var(--elevation-rest);
 }
 
@@ -149,8 +150,10 @@
   width: 40px;
   min-width: 40px;
   padding: 0;
-  background: var(--card);
-  color: var(--primary);
+  border-color: rgb(22 34 92 / 18%);
+  background: rgb(250 247 240 / 92%);
+  backdrop-filter: blur(12px);
+  color: #16225c;
   box-shadow: var(--elevation-rest);
 }
 
@@ -168,30 +171,30 @@
   align-items: center;
   justify-content: center;
 
-  min-width: 16px;
-  height: 16px;
+  min-width: 17px;
+  height: 17px;
   padding: 0 3px;
 
-  border: 1px solid var(--card);
+  border: 1.5px solid #faf7f0;
   border-radius: var(--shape-pill);
-  background: var(--destructive);
-  color: var(--primary-foreground);
+  background: #c8452d;
+  color: #faf7f0;
 
   font-size: 9px;
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1;
 }
 
 /* Wallet pill */
 .home-dashboard .hd-balance {
   min-width: 0;
-  max-width: 125px;
+  max-width: 132px;
   height: 40px;
-  padding: 0 11px;
+  padding: 0 12px;
 
   overflow: hidden;
-  background: var(--primary);
-  color: var(--primary-foreground);
+  background: #16225c;
+  color: #faf7f0;
 
   font-family: var(--typeface-display);
   font-size: 12px;
@@ -200,7 +203,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 
-  border-color: transparent;
+  border: 1px solid rgba(242, 178, 28, 0.45);
   box-shadow: var(--elevation-rest);
 }
 

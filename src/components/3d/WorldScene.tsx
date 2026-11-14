@@ -234,6 +234,7 @@ export function WorldInstances({
   tone,
   color,
   shape = "box",
+  castShadow = true,
   animate,
 }: {
   items: readonly WorldInstance[];
@@ -241,6 +242,7 @@ export function WorldInstances({
   /** Optional colour that replaces the tone's palette colour for these instances. */
   color?: string;
   shape?: "box" | "sphere";
+  castShadow?: boolean;
   animate?: ((object: Object3D, index: number, seconds: number) => void) | undefined;
 }) {
   const mesh = useRef<InstancedMesh>(null);
@@ -279,20 +281,25 @@ export function WorldInstances({
   }, [items]);
   if (!items.length) return null;
   return (
-    <instancedMesh ref={mesh} args={[undefined, undefined, items.length]} castShadow receiveShadow>
+    <instancedMesh
+      ref={mesh}
+      args={[undefined, undefined, items.length]}
+      castShadow={castShadow}
+      receiveShadow
+    >
       {shape === "box" ? <boxGeometry /> : <sphereGeometry args={[0.5, 8, 6]} />}
       <WorldMaterial tone={tone} {...(color ? { color } : {})} />
     </instancedMesh>
   );
 }
 export function WorldRoads({ items }: { items: readonly WorldInstance[] }) {
-  return <WorldInstances items={items} tone="road" />;
+  return <WorldInstances items={items} tone="road" castShadow={false} />;
 }
 export function WorldRoadMarkings({ items }: { items: readonly WorldInstance[] }) {
-  return <WorldInstances items={items} tone="linen" />;
+  return <WorldInstances items={items} tone="linen" castShadow={false} />;
 }
 export function WorldPedestrianCrossings({ items }: { items: readonly WorldInstance[] }) {
-  return <WorldInstances items={items} tone="linen" />;
+  return <WorldInstances items={items} tone="linen" castShadow={false} />;
 }
 export function WorldTrafficLights({
   positions,
@@ -481,8 +488,8 @@ export function WorldSidewalks({
 }) {
   return (
     <>
-      <WorldInstances items={sidewalks} tone="concrete" />
-      <WorldInstances items={curbs} tone="slate" />
+      <WorldInstances items={sidewalks} tone="concrete" castShadow={false} />
+      <WorldInstances items={curbs} tone="slate" castShadow={false} />
     </>
   );
 }
