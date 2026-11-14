@@ -14,6 +14,7 @@ import {
 export type CharacterAppearance = Required<Appearance>;
 
 export const DEFAULT_CHARACTER_APPEARANCE: CharacterAppearance = {
+  clothed: false,
   skin: 1,
   hair: 1,
   hairColor: 0,
@@ -32,6 +33,7 @@ export function appearanceForGender(
   const styles = HAIR_STYLES_BY_GENDER[gender] ?? HAIR_STYLES_BY_GENDER["nonbinary"] ?? [];
   return {
     ...appearance,
+    clothed: gender !== "female",
     hair: Math.min(Math.max(appearance.hair, 0), Math.max(styles.length - 1, 0)),
   };
 }
@@ -47,6 +49,7 @@ export function randomizeCharacterAppearance(
 ): CharacterAppearance {
   const hairStyles = HAIR_STYLES_BY_GENDER[gender] ?? HAIR_STYLES_BY_GENDER["nonbinary"] ?? [];
   return {
+    clothed: gender !== "female",
     skin: chooseIndex(SKIN_TONES.length, random),
     hair: chooseIndex(hairStyles.length, random),
     hairColor: chooseIndex(HAIR_COLORS.length, random),

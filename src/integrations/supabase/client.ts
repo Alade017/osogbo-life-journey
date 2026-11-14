@@ -28,6 +28,71 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
   };
 }
 
+function createUnconfiguredSupabaseClient(message: string) {
+  const notConfiguredError = new Error(message);
+  const queryResult = Promise.resolve({ data: [], error: null, count: 0 });
+  const singleResult = Promise.resolve({ data: null, error: null });
+
+  const makeQueryBuilder = (): unknown =>
+    new Proxy(
+      {},
+      {
+        get(_, prop) {
+          if (prop === "then") {
+            return queryResult.then.bind(queryResult);
+          }
+          if (prop === "single" || prop === "maybeSingle") {
+            return () => singleResult;
+          }
+          return () => makeQueryBuilder();
+        },
+      },
+    );
+
+  const noopChannel = {
+    on: () => noopChannel,
+    subscribe: () => noopChannel,
+    unsubscribe: async () => "ok",
+    send: async () => "ok",
+    track: async () => "ok",
+    untrack: async () => "ok",
+  };
+
+  return {
+    auth: {
+      getSession: async () => ({ data: { session: null }, error: null }),
+      getUser: async () => ({ data: { user: null }, error: null }),
+      onAuthStateChange: () => ({
+        data: { subscription: { id: "offline", callback: () => {}, unsubscribe: () => {} } },
+      }),
+      signOut: async () => ({ error: null }),
+      signInWithPassword: async () => ({
+        data: { user: null, session: null },
+        error: notConfiguredError,
+      }),
+      signInWithOAuth: async () => ({
+        data: { provider: "google", url: "" },
+        error: notConfiguredError,
+      }),
+      signUp: async () => ({ data: { user: null, session: null }, error: notConfiguredError }),
+      setSession: async () => ({ data: { user: null, session: null }, error: notConfiguredError }),
+      updateUser: async () => ({ data: { user: null }, error: notConfiguredError }),
+      resetPasswordForEmail: async () => ({ data: null, error: notConfiguredError }),
+    },
+    from: () => makeQueryBuilder(),
+    rpc: async () => ({ data: null, error: null }),
+    channel: () => noopChannel,
+    removeChannel: async () => "ok",
+    storage: {
+      from: () => ({
+        getPublicUrl: () => ({ data: { publicUrl: "" } }),
+        upload: async () => ({ data: null, error: notConfiguredError }),
+        createSignedUrl: async () => ({ data: null, error: notConfiguredError }),
+      }),
+    },
+  } as unknown as ReturnType<typeof createClient<Database>>;
+}
+
 function createSupabaseClient() {
   // Use import.meta.env for client-side (Vite build-time replacement)
   // Fall back to process.env for SSR (server-side rendering)
@@ -42,8 +107,8 @@ function createSupabaseClient() {
       ...(!SUPABASE_PUBLISHABLE_KEY ? ["SUPABASE_PUBLISHABLE_KEY"] : []),
     ];
     const message = `Missing Supabase environment variable(s): ${missing.join(", ")}. Configure your local .env file.`;
-    console.error(`[Supabase] ${message}`);
-    throw new Error(message);
+    console.warn(`[Supabase] ${message} Running with offline stub client.`);
+    return createUnconfiguredSupabaseClient(message);
   }
 
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {

@@ -1140,6 +1140,11 @@ export function R3FTownSurface(props: Props) {
             freeExplore
           />
           <MapLighting size={gridCols * cell} />
+          <color attach="background" args={[WORLD_PALETTE.sky]} />
+          <fog
+            attach="fog"
+            args={[WORLD_PALETTE.sky, gridCols * cell * 0.85, gridCols * cell * 1.95]}
+          />
           <Terrain3D gridCols={gridCols} gridRows={gridRows} cellSize={cell} />
 
           <WorldRoads items={roads} />
@@ -1172,6 +1177,7 @@ export function R3FTownSurface(props: Props) {
           <WorldWasteBins positions={wasteBins} size={cell} />
           <WorldInstances
             tone="slate"
+            castShadow={false}
             items={town.grid.waterCells.map(([x, z]) => ({
               position: [point(x!, z!)[0], 0.015, point(x!, z!)[2]],
               scale: [cell, 0.03, cell],
@@ -1179,6 +1185,7 @@ export function R3FTownSurface(props: Props) {
           />
           <WorldInstances
             tone="wall"
+            castShadow={false}
             items={town.grid.plotCells.map(([x, z]) => ({
               position: [point(x!, z!)[0], 0.015, point(x!, z!)[2]],
               scale: [cell, 0.03, cell],

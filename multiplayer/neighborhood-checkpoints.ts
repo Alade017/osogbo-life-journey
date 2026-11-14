@@ -32,6 +32,7 @@ export function checkpointChanged(saved: CheckpointPoint | null, current: Checkp
 
 export class NeighborhoodCheckpoints {
   private readonly sessions = new Map<string, Session>();
+  private readonly releases = new Set<Promise<void>>();
 
   constructor(
     private readonly saver: CheckpointSaver,
@@ -89,16 +90,29 @@ export class NeighborhoodCheckpoints {
     }
   }
 
-  /** Save the final position of a leaving player, then forget the session. */
+  /** Save the final position, forget the session, and keep its write visible to disposal. */
   release(sessionId: string, finalPosition?: CheckpointPoint) {
-    const pending = finalPosition ? this.save(sessionId, finalPosition) : Promise.resolve();
+    const session = this.sessions.get(sessionId);
+    if (!session) return Promise.resolve();
+
+    const pending = finalPosition ? this.save(sessionId, finalPosition) : session.queue;
     this.sessions.delete(sessionId);
-    return pending;
+
+    let tracked!: Promise<void>;
+    tracked = pending.finally(() => {
+      this.releases.delete(tracked);
+    });
+    this.releases.add(tracked);
+
+    return tracked;
   }
 
-  /** Room disposal: nothing may keep a session alive, and every pending write is awaited. */
+  /** Room disposal waits for active sessions and writes already released by onLeave. */
   dispose() {
-    const pending = [...this.sessions.values()].map((session) => session.queue);
+    const pending = [
+      ...[...this.sessions.values()].map((session) => session.queue),
+      ...this.releases,
+    ];
     this.sessions.clear();
     return Promise.all(pending);
   }
