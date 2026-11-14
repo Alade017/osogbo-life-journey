@@ -281,3 +281,74 @@ export function bankTowerParts({
   );
   return mergeParts(parts);
 }
+
+/**
+ * A Nigerian compound: a concrete boundary wall with a gate gap, a house with a veranda,
+ * a pitched roof of rusted corrugated sheet, and a water drum. Metres, base at y = 0,
+ * centred on x and z.
+ */
+export function compoundParts({ width, depth }: { width: number; depth: number }): PropPart[] {
+  const wallT = 0.2;
+  const wallH = 1.8;
+  const gate = Math.min(1.2, width * 0.35);
+  const side = (width - gate) / 2;
+  const houseW = width * 0.72;
+  const houseD = depth * 0.5;
+  const houseH = 2.6;
+  const houseZ = -depth / 2 + wallT + houseD / 2 + 0.05;
+  const run = houseD / 2 + 0.08;
+  const rise = 0.6;
+  const slope = Math.hypot(run, rise);
+  const angle = Math.atan2(rise, run);
+  const parts: PropPart[] = [
+    // Boundary walls: north, east, west, and the south wall split around the gate.
+    part("wall", new BoxGeometry(width, wallH, wallT), {
+      at: [0, wallH / 2, -depth / 2 + wallT / 2],
+    }),
+    part("wall", new BoxGeometry(wallT, wallH, depth), {
+      at: [-width / 2 + wallT / 2, wallH / 2, 0],
+    }),
+    part("wall", new BoxGeometry(wallT, wallH, depth), {
+      at: [width / 2 - wallT / 2, wallH / 2, 0],
+    }),
+    part("wall", new BoxGeometry(side, wallH, wallT), {
+      at: [-(width + gate) / 4, wallH / 2, depth / 2 - wallT / 2],
+    }),
+    part("wall", new BoxGeometry(side, wallH, wallT), {
+      at: [(width + gate) / 4, wallH / 2, depth / 2 - wallT / 2],
+    }),
+    // Gate posts stand taller than the wall.
+    part("concrete", new BoxGeometry(wallT, 2.1, wallT), {
+      at: [-gate / 2, 1.05, depth / 2 - wallT / 2],
+    }),
+    part("concrete", new BoxGeometry(wallT, 2.1, wallT), {
+      at: [gate / 2, 1.05, depth / 2 - wallT / 2],
+    }),
+    // House block, veranda slab and two timber posts.
+    part("wall", new BoxGeometry(houseW, houseH, houseD), { at: [0, houseH / 2, houseZ] }),
+    part("concrete", new BoxGeometry(houseW + 0.3, 0.1, 0.5), {
+      at: [0, 0.05, houseZ + houseD / 2 + 0.25],
+    }),
+    part("door", new BoxGeometry(0.55, 1.6, 0.05), { at: [0, 0.8, houseZ + houseD / 2 + 0.01] }),
+    part("timber", new BoxGeometry(0.08, 2.3, 0.08), {
+      at: [-houseW / 2 - 0.1, 1.15, houseZ + houseD / 2 + 0.45],
+    }),
+    part("timber", new BoxGeometry(0.08, 2.3, 0.08), {
+      at: [houseW / 2 + 0.1, 1.15, houseZ + houseD / 2 + 0.45],
+    }),
+    // Pitched roof of rusted sheet: two slopes meeting at a ridge.
+    part("rust", new BoxGeometry(houseW + 0.3, 0.06, slope), {
+      at: [0, houseH + rise / 2, houseZ + run / 2],
+      rotation: [angle, 0, 0],
+    }),
+    part("rust", new BoxGeometry(houseW + 0.3, 0.06, slope), {
+      at: [0, houseH + rise / 2, houseZ - run / 2],
+      rotation: [-angle, 0, 0],
+    }),
+    // Water drum beside the wall.
+    part("metal", new CylinderGeometry(0.25, 0.25, 0.8, 10), {
+      at: [width * 0.36, 0.4, -depth / 2 + wallT + 0.3],
+    }),
+  ];
+  return mergeParts(parts);
+}

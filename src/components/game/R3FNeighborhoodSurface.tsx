@@ -64,7 +64,7 @@ import { ZoneNpcs } from "@/components/3d/ZoneNpcs";
 import type { ZoneNpcSpec } from "@/game/neighborhood-interactions";
 import { CHARACTER_MOTION } from "@/components/3d/character-config";
 import { ProceduralProp } from "@/components/3d/props/ProceduralProp";
-import { palmTreeParts } from "@/components/3d/props/procedural-props";
+import { compoundParts, palmTreeParts } from "@/components/3d/props/procedural-props";
 import { dressingPartsFor } from "@/components/3d/props/dressing";
 import { NEIGHBORHOOD_CAMERA, WORLD_PALETTE, WORLD_SCALE } from "../3d/world-theme";
 import {
@@ -614,6 +614,19 @@ export function R3FNeighborhoodSurface({
   const palmSpots = (area.obstacles ?? [])
     .filter((o) => o.kind === "tree" && o.id.startsWith("perimeter-tree"))
     .map((o) => point(o.x, o.y));
+  // Compounds: boundary wall, house and rusted roof, built in metres to fit each footprint.
+  const compoundSpots = useMemo(
+    () =>
+      (area.obstacles ?? [])
+        .filter((o) => !o.visualManaged && o.kind === "compound")
+        .filter((o) => !insideEnvironment(area.environment, o))
+        .map((o) => ({
+          id: o.id,
+          position: point(o.x, o.y),
+          parts: compoundParts({ width: o.width * unit, depth: o.height * unit }),
+        })),
+    [area, point, unit],
+  );
   // Market umbrellas, jerrycans, tanks, vats and palms declared by the area; decorative only.
   const dressingSpots = useMemo(
     () =>
@@ -773,7 +786,7 @@ export function R3FNeighborhoodSurface({
             </Suspense>
           )}
           {area.obstacles
-            ?.filter((o) => !o.visualManaged && ["compound", "shop", "kiosk"].includes(o.kind))
+            ?.filter((o) => !o.visualManaged && ["shop", "kiosk"].includes(o.kind))
             .filter((o) => !insideEnvironment(area.environment, o))
             .map((o) => (
               <WorldHouse
@@ -789,6 +802,13 @@ export function R3FNeighborhoodSurface({
                 }
               />
             ))}
+          {compoundSpots.map((item) => (
+            <ProceduralProp
+              key={item.id}
+              parts={item.parts}
+              position={[item.position[0], 0, item.position[2]]}
+            />
+          ))}
           <WorldStreetFurniture
             items={(area.obstacles ?? [])
               .filter(

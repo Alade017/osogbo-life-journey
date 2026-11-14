@@ -39,6 +39,7 @@ export const WORLD_PALETTE = {
   concrete: "#b9b3a7",
   roof: "#74685e",
   roofLight: "#918174",
+  rust: "#9a5b3a",
   accent: "#c47c45",
   jerrycan: "#e3b13c",
   indigo: "#2e4170",
