@@ -1,6 +1,7 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { COLOURS, absoluteTile, isSafeTile, type Colour } from "@/lib/mini-games/ludo-engine";
 import { LUDO_COLOURS } from "@/components/game/mini-games/ludo-palette";
+import { PawnArt } from "@/components/game/mini-games/ludo-art";
 import {
   BOARD_SIZE,
   CENTRE,
@@ -54,28 +55,7 @@ function sameAll(a: Progress, b: Progress) {
 
 /** Pawn drawn in its colour with a dark base, centred on the origin. */
 function Pawn({ colour }: { colour: Colour }) {
-  return (
-    <svg viewBox="-0.4 -0.4 0.8 0.8" className="lb-pawn" aria-hidden="true">
-      <ellipse cx="0.04" cy="0.36" rx="0.3" ry="0.07" className="lb-pawn-shadow" />
-      <path
-        d="M -0.1 -0.06 L -0.27 0.3 L 0.27 0.3 L 0.1 -0.06 Z"
-        fill={LUDO_COLOURS[colour]}
-        stroke="#1f2937"
-        strokeWidth="0.035"
-        strokeLinejoin="round"
-      />
-      <rect x="-0.33" y="0.28" width="0.66" height="0.12" rx="0.05" fill="#1f2937" opacity="0.7" />
-      <circle
-        cx="0"
-        cy="-0.2"
-        r="0.2"
-        fill={LUDO_COLOURS[colour]}
-        stroke="#1f2937"
-        strokeWidth="0.035"
-      />
-      <circle cx="-0.07" cy="-0.27" r="0.05" fill="#fff" opacity="0.55" />
-    </svg>
-  );
+  return <PawnArt colour={colour} className="lb-pawn" />;
 }
 
 function cellStyle(row: number, col: number): CSSProperties {

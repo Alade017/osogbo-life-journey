@@ -1,6 +1,7 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
+import { PawnArt } from "@/components/game/mini-games/ludo-art";
 import {
   Dialog,
   DialogContent,
@@ -72,41 +73,27 @@ function seatsFor(players: number): Seat[] {
   }));
 }
 
-/** Pip positions on a 3 by 3 grid, [column, row], for each die face. */
-const PIPS: Readonly<Record<number, readonly (readonly [number, number])[]>> = {
-  1: [[1, 1]],
-  2: [
-    [0, 0],
-    [2, 2],
-  ],
-  3: [
-    [0, 0],
-    [1, 1],
-    [2, 2],
-  ],
-  4: [
-    [0, 0],
-    [2, 0],
-    [0, 2],
-    [2, 2],
-  ],
-  5: [
-    [0, 0],
-    [2, 0],
-    [1, 1],
-    [0, 2],
-    [2, 2],
-  ],
-  6: [
-    [0, 0],
-    [2, 0],
-    [0, 1],
-    [2, 1],
-    [0, 2],
-    [2, 2],
-  ],
+/** Which face of the cube turns to the viewer for each value (CSS rotations in degrees). */
+const CUBE_TURN: Record<number, { x: number; y: number }> = {
+  1: { x: 0, y: 0 },
+  2: { x: -90, y: 0 },
+  3: { x: 0, y: -90 },
+  4: { x: 0, y: 90 },
+  5: { x: 90, y: 0 },
+  6: { x: 0, y: 180 },
 };
+/** Which cells of a 3x3 face carry a pip, for each face value. */
+const PIPS: Record<number, number[]> = {
+  1: [4],
+  2: [0, 8],
+  3: [0, 4, 8],
+  4: [0, 2, 6, 8],
+  5: [0, 2, 4, 6, 8],
+  6: [0, 3, 6, 2, 5, 8],
+};
+const FACES = [1, 2, 3, 4, 5, 6];
 
+/** A real 3D cube: it spins while rolling and lands with the rolled value facing up. */
 function Die({
   value,
   rolling,
@@ -120,29 +107,29 @@ function Die({
   onClick?: () => void;
   disabled?: boolean;
 }) {
+  const turn = CUBE_TURN[value] ?? { x: 0, y: 0 };
   return (
     <button type="button" className={className} {...props}>
-      <svg
-        className={`mg-ludo-face ${rolling ? "is-rolling" : ""}`}
-        viewBox="0 0 64 64"
-        width={56}
-        height={56}
-        aria-hidden="true"
-      >
-        <rect
-          x="2"
-          y="2"
-          width="60"
-          height="60"
-          rx="13"
-          fill="#fdfcf8"
-          stroke="#b9b29f"
-          strokeWidth="1.5"
-        />
-        {(PIPS[value] ?? []).map(([col, row], index) => (
-          <circle key={index} cx={14 + col * 18} cy={14 + row * 18} r="6.2" fill="#15171c" />
-        ))}
-      </svg>
+      <span className="mg-die-stage" aria-hidden="true">
+        <span
+          className={`mg-cube ${rolling ? "is-rolling" : ""}`}
+          style={
+            {
+              "--ax": `${turn.x}deg`,
+              "--ay": `${turn.y}deg`,
+              transform: `rotateX(${turn.x}deg) rotateY(${turn.y}deg)`,
+            } as CSSProperties
+          }
+        >
+          {FACES.map((face) => (
+            <span key={face} className={`mg-cube-face f${face}`}>
+              {Array.from({ length: 9 }, (_, cell) => (
+                <i key={cell} className={`mg-pip ${PIPS[face]?.includes(cell) ? "is-on" : ""}`} />
+              ))}
+            </span>
+          ))}
+        </span>
+      </span>
     </button>
   );
 }
@@ -228,29 +215,7 @@ function describeEvents(events: LudoEvent[], name: (playerId: string) => string)
 
 /** A pawn in the seat's colour, used for avatars and the results popup. */
 function PawnMark({ colour, size = 28 }: { colour: Colour; size?: number }) {
-  return (
-    <svg viewBox="0 0 32 32" width={size} height={size} aria-hidden="true" className="lb-pawn">
-      <ellipse cx="16" cy="28.5" rx="9" ry="2.4" fill="rgb(20 14 6 / 0.28)" />
-      <path
-        d="M16 3.5a6.6 6.6 0 0 0-2.7 12.6L11.2 22h9.6l-2.1-5.9A6.6 6.6 0 0 0 16 3.5Z"
-        fill={LUDO_COLOURS[colour]}
-        stroke="#1f2937"
-        strokeWidth="1.4"
-        strokeLinejoin="round"
-      />
-      <rect
-        x="8.6"
-        y="21.6"
-        width="14.8"
-        height="4.6"
-        rx="2.3"
-        fill={LUDO_COLOURS[colour]}
-        stroke="#1f2937"
-        strokeWidth="1.4"
-      />
-      <circle cx="13.4" cy="9.2" r="1.7" fill="#ffffff" opacity="0.85" />
-    </svg>
-  );
+  return <PawnArt colour={colour} size={size} className="lb-pawn" />;
 }
 
 /** Results popup: shown over the finished board, and can be reopened from the table. */
