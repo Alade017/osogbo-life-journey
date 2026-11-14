@@ -88,6 +88,7 @@ export function GameNeedsRail({ player }: { player: PlayerState }) {
             : `Expand needs panel${criticalCount ? `, ${criticalCount} critical ${criticalCount === 1 ? "need" : "needs"}` : ""}`
         }
         title={expanded ? "Collapse needs panel" : "Expand needs panel"}
+        style={!expanded ? { width: 42, height: 42 } : undefined}
         onClick={() => setExpanded((current) => !current)}
       >
         {expanded ? (
