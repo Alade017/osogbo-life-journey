@@ -518,6 +518,7 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     floorColor: "#c8c8be",
     wallColor: "#e1e0d7",
     accentColor: "#b67843",
+    environment: { url: "/models/environments/fuel-station/filling-station-forecourt.glb" },
     fixtures: [
       fixture("fuel-counter", "Service counter", "The forecourt office desk.", "counter", -2.7, -1),
       fixture("fuel-pump", "Pump island", "A model of the forecourt pump.", "display", 0, 0.7),

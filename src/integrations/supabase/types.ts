@@ -6861,6 +6861,16 @@ export type Database = {
         Args: { p_world_x: number; p_world_y: number };
         Returns: Json;
       };
+      save_neighborhood_world_checkpoint: {
+        Args: {
+          p_character_id: string;
+          p_user_id: string;
+          p_location_id: string;
+          p_world_x: number;
+          p_world_y: number;
+        };
+        Returns: Json;
+      };
       send_social_group_media_as_user: {
         Args: {
           p_duration_ms: number | null;

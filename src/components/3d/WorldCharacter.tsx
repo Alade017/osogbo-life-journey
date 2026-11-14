@@ -6,6 +6,7 @@ import type { AvatarAnimationState, AvatarEquipment } from "@/components/game/Av
 import { WORLD_SCALE } from "./world-theme";
 import { CHARACTER_GROUND, CHARACTER_MOTION, CHARACTER_SOCKETS } from "./character-config";
 import { bodyVariantFor, CharacterBody, motionFor, type BodyVariant } from "./CharacterBody";
+import { followStep, measuredSpeed, type Vec3 } from "./character-follow";
 import { WORN_ITEM_MODELS } from "./world-item-models";
 
 export type TaskPose = "sit" | "wash" | "cook" | "collect" | "stretch";
@@ -66,7 +67,21 @@ export function WorldCharacter({
   // The root glides toward `position` each frame, so a new spot is walked to rather than jumped to.
   const root = useRef<Group>(null);
   const goal = useRef(new Vector3(...position));
+  // Speed of the server's last update, so the glide keeps pace with the walk rather than easing off.
+  const speed = useRef(0);
+  const updateAt = useRef(performance.now());
+  const previousGoal = useRef<Vec3>(position);
   const [x, y, z] = position;
+  if (
+    previousGoal.current[0] !== x ||
+    previousGoal.current[1] !== y ||
+    previousGoal.current[2] !== z
+  ) {
+    const now = performance.now();
+    speed.current = measuredSpeed(previousGoal.current, position, (now - updateAt.current) / 1000);
+    updateAt.current = now;
+    previousGoal.current = position;
+  }
   goal.current.set(x, y, z);
   useLayoutEffect(() => {
     root.current?.position.copy(goal.current);
@@ -79,6 +94,9 @@ export function WorldCharacter({
     return () => media.removeEventListener("change", change);
   }, []);
   const lookKey = lookAt ? lookAt.map((value) => value.toFixed(2)).join(":") : "";
+  useEffect(() => {
+    invalidate();
+  }, [lookKey, invalidate]);
   useEffect(() => {
     const moved = Math.hypot(x - last.current[0], z - last.current[2]) > 0.001;
     last.current = [x, y, z];
@@ -93,7 +111,7 @@ export function WorldCharacter({
       animation === "talk" ||
       animation === "interact" ||
       !!taskPose;
-    if (!moved && !continuous && !walking && !lookKey) return;
+    if (!moved && !continuous && !walking) return;
     const settleUntil = performance.now() + CHARACTER_MOTION.settleSeconds * 1000;
     const timer = window.setInterval(() => {
       invalidate();
@@ -102,14 +120,20 @@ export function WorldCharacter({
       if (!active) window.clearInterval(timer);
     }, 1000 / 15);
     return () => window.clearInterval(timer);
-  }, [x, y, z, animation, taskPose, reduced, invalidate, lookKey, walking]);
+  }, [x, y, z, animation, taskPose, reduced, invalidate, walking]);
   const yaw = FACING_YAW[facing] ?? 0;
   useFrame((_state, delta) => {
     const rootGroup = root.current;
     if (rootGroup && rootGroup.position.distanceTo(goal.current) > 0.001) {
-      rootGroup.position.lerp(goal.current, 1 - Math.exp(-CHARACTER_MOTION.glideRate * delta));
-      if (rootGroup.position.distanceTo(goal.current) <= 0.001)
-        rootGroup.position.copy(goal.current);
+      const here = rootGroup.position;
+      const [nx, ny, nz] = followStep(
+        [here.x, here.y, here.z],
+        [goal.current.x, goal.current.y, goal.current.z],
+        delta,
+        speed.current,
+        CHARACTER_MOTION.glideRate,
+      );
+      rootGroup.position.set(nx, ny, nz);
       invalidate();
     }
     const group = bodyRef.current;
@@ -121,14 +145,20 @@ export function WorldCharacter({
       const limit = CHARACTER_MOTION.headTurnLimit * 0.5;
       turn = MathUtils.clamp(worldYaw - yaw, -limit, limit);
     }
-    group.rotation.y = MathUtils.lerp(
-      group.rotation.y,
-      turn,
-      blend(CHARACTER_MOTION.headTurnRate, delta),
-    );
+    if (Math.abs(group.rotation.y - turn) > 0.002) {
+      group.rotation.y = MathUtils.lerp(
+        group.rotation.y,
+        turn,
+        blend(CHARACTER_MOTION.headTurnRate, delta),
+      );
+      if (Math.abs(group.rotation.y - turn) <= 0.002) {
+        group.rotation.y = turn;
+      }
+      invalidate();
+    }
   });
   const moving = walking && !reduced && !taskPose;
-  const motion = motionFor(animation, moving);
+  const motion = motionFor(animation, moving, taskPose);
   const wornAccessory = equipment.find((item) => item.slot === "accessory") as
     { item?: { slug?: string } | null } | undefined;
   const AccessoryModel = wornAccessory?.item?.slug
@@ -157,7 +187,14 @@ export function WorldCharacter({
         scale={[build, 1, 1]}
       >
         <group ref={bodyRef}>
-          <CharacterBody variant={variant} height={h} motion={motion} held={held} appearance={safe} gender={gender} />
+          <CharacterBody
+            variant={variant}
+            height={h}
+            motion={motion}
+            held={held}
+            appearance={safe}
+            gender={gender}
+          />
           <group name="back_socket" position={[0, h * CHARACTER_SOCKETS.back, 0]}>
             {AccessoryModel ? <AccessoryModel h={h} /> : null}
           </group>

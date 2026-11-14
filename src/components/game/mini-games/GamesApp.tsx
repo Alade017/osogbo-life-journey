@@ -40,12 +40,24 @@ import {
   BASE,
   FINISHED,
   bestLudoToken,
+  isSafeSquare,
   legalTokenMoves,
   moveLudoToken,
   newLudo,
   rollLudo,
+  startOffset,
   type LudoState,
 } from "@/lib/mini-games/ludo";
+import {
+  BOARD_SIZE,
+  CENTRE,
+  LOOP_CELLS,
+  armFor,
+  centreTriangle,
+  homeLane,
+  tokenPoint,
+  yardRect,
+} from "@/lib/mini-games/ludo-board";
 import {
   SHAPES,
   bestWhotCard,
@@ -261,6 +273,7 @@ function LudoGame() {
     });
   });
   const options = state.dice !== null && humanTurn ? legalTokenMoves(state, state.dice) : [];
+  const playerCount = state.playerCount;
   const describe = (progress: number) =>
     progress === BASE
       ? "In base. Needs a six."
@@ -284,11 +297,152 @@ function LudoGame() {
             ? "Your turn. Roll the dice."
             : `You rolled ${state.dice}. Choose a token to move.`
           : "The computer is playing…";
+
+  // Board: each arm takes the colour of the player who starts on it.
+  const armColour = (arm: number) => {
+    for (let player = 0; player < playerCount; player += 1) {
+      if (armFor(player, playerCount) === arm) return LUDO_TOKEN_COLORS[player];
+    }
+    return undefined;
+  };
+  const startSquares = new Map<number, string>();
+  for (let player = 0; player < playerCount; player += 1) {
+    startSquares.set(startOffset(player, playerCount), LUDO_TOKEN_COLORS[player]);
+  }
+  const pieces = state.tokens.flatMap((row, player) =>
+    row.map((progress, token) => {
+      const point = tokenPoint(player, playerCount, progress, token);
+      // Tokens that share a square sit slightly apart, so each stays visible.
+      const onTrack = progress !== BASE && progress !== FINISHED;
+      const nudge = onTrack
+        ? [((token % 2) - 0.5) * 0.36, (Math.floor(token / 2) - 0.5) * 0.36]
+        : [0, 0];
+      return {
+        key: `${player}-${token}`,
+        player,
+        token,
+        progress,
+        x: point.x + (nudge[0] ?? 0),
+        y: point.y + (nudge[1] ?? 0),
+        playable: player === 0 && options.includes(token),
+      };
+    }),
+  );
+  const movePiece = (token: number) => setState((current) => moveLudoToken(current, token));
+
   return (
-    <section className="mg-game" aria-label="Ludo">
+    <section className="mg-game mg-ludo" aria-label="Ludo">
       <p className={`mg-status ${state.winner === 0 ? "is-win" : ""}`} role="status">
         {status}
       </p>
+      <div className="mg-ludo-board-wrap">
+        <svg
+          className="mg-ludo-board"
+          viewBox={`0 0 ${BOARD_SIZE} ${BOARD_SIZE}`}
+          role="img"
+          aria-label="Ludo board"
+        >
+          <rect
+            className="mg-ludo-ground"
+            x="0"
+            y="0"
+            width={BOARD_SIZE}
+            height={BOARD_SIZE}
+            rx="0.3"
+          />
+          {[0, 1, 2, 3].map((arm) => {
+            const rect = yardRect(arm);
+            return (
+              <rect
+                key={`yard-${arm}`}
+                className="mg-ludo-yard"
+                x={rect.x}
+                y={rect.y}
+                width={rect.size}
+                height={rect.size}
+                rx="0.5"
+                style={{ "--yard": armColour(arm) ?? "transparent" } as CSSProperties}
+              />
+            );
+          })}
+          {LOOP_CELLS.map(([row, col], square) => {
+            const start = startSquares.get(square);
+            const safe = isSafeSquare(square);
+            return (
+              <rect
+                key={`loop-${square}`}
+                className={`mg-ludo-cell ${safe ? "is-safe" : ""} ${start ? "is-start" : ""}`}
+                x={col}
+                y={row}
+                width="1"
+                height="1"
+                style={start ? ({ "--start": start } as CSSProperties) : undefined}
+              />
+            );
+          })}
+          {[0, 1, 2, 3].map((arm) =>
+            homeLane(arm).map(([row, col], index) => (
+              <rect
+                key={`home-${arm}-${index}`}
+                className="mg-ludo-cell is-home"
+                x={col}
+                y={row}
+                width="1"
+                height="1"
+                style={{ "--start": armColour(arm) ?? "transparent" } as CSSProperties}
+              />
+            )),
+          )}
+          <rect
+            className="mg-ludo-centre"
+            x={CENTRE.low}
+            y={CENTRE.low}
+            width={CENTRE.size}
+            height={CENTRE.size}
+          />
+          {[0, 1, 2, 3].map((arm) => (
+            <polygon
+              key={`tri-${arm}`}
+              points={centreTriangle(arm)}
+              style={{ fill: armColour(arm) ?? "transparent" }}
+            />
+          ))}
+          {pieces.map((piece) => (
+            <g
+              key={piece.key}
+              className={`mg-ludo-piece ${piece.playable ? "is-playable" : ""}`}
+              style={
+                {
+                  transform: `translate(${piece.x}px, ${piece.y}px)`,
+                  "--piece": LUDO_TOKEN_COLORS[piece.player],
+                } as CSSProperties
+              }
+              role={piece.player === 0 ? "button" : undefined}
+              tabIndex={piece.playable ? 0 : undefined}
+              aria-disabled={piece.player === 0 && !piece.playable ? true : undefined}
+              aria-label={
+                piece.player === 0
+                  ? `Token ${piece.token + 1}: ${describe(piece.progress)}`
+                  : undefined
+              }
+              onClick={piece.playable ? () => movePiece(piece.token) : undefined}
+              onKeyDown={
+                piece.playable
+                  ? (event) => {
+                      if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        movePiece(piece.token);
+                      }
+                    }
+                  : undefined
+              }
+            >
+              <circle className="mg-ludo-disc" r="0.36" />
+              <circle className="mg-ludo-glint" cx="-0.12" cy="-0.12" r="0.1" />
+            </g>
+          ))}
+        </svg>
+      </div>
       <div className="mg-ludo-dice">
         <Die key={rolls} value={state.dice} />
         {humanTurn && state.dice === null && (
@@ -311,8 +465,8 @@ function LudoGame() {
                 type="button"
                 className={`mg-token ${playable ? "is-playable" : ""}`}
                 disabled={!playable}
-                style={{ "--token": LUDO_TOKEN_COLORS[token % 4] } as CSSProperties}
-                onClick={() => setState((current) => moveLudoToken(current, token))}
+                style={{ "--token": LUDO_TOKEN_COLORS[0] } as CSSProperties}
+                onClick={() => movePiece(token)}
               >
                 <span className="mg-token-disc" aria-hidden="true" />
                 <span className="mg-token-body">

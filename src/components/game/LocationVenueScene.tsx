@@ -1,4 +1,4 @@
-import { Component, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Component, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Canvas } from "@react-three/fiber";
 import { WorldCamera, WorldLighting, WorldMaterial } from "@/components/3d/WorldScene";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
@@ -8,6 +8,7 @@ import {
   type VenueFixture,
 } from "@/lib/location-venue-designs";
 import { VenueEnvironment } from "@/components/3d/VenueEnvironment";
+import { VenueFurnitureModel } from "@/components/3d/VenueFurniture";
 import { useOptionalGameTime } from "@/components/game/GameTimeProvider";
 
 const SCENE_START_TIMEOUT_MS = 5_000;
@@ -43,92 +44,21 @@ function FixtureModel({
   onSelect: () => void;
 }) {
   const [x, z] = fixture.position;
-  const color = active ? accentColor : "#a99c83";
-  const clickable = {
-    onClick: (event: { stopPropagation: () => void }) => {
-      event.stopPropagation();
-      onSelect();
-    },
-  };
-
-  switch (fixture.kind) {
-    case "counter":
-      return (
-        <group position={[x, 0, z]} {...clickable}>
-          <mesh position={[0, 0.48, 0]} castShadow>
-            <boxGeometry args={[1.8, 0.9, 0.72]} />
-            <WorldMaterial tone="timber" color={color} />
-          </mesh>
-          <mesh position={[0, 0.97, 0]}>
-            <boxGeometry args={[1.94, 0.1, 0.82]} />
-            <WorldMaterial tone="linen" />
-          </mesh>
-        </group>
-      );
-    case "table":
-    case "bench":
-    case "seat":
-      return (
-        <group position={[x, 0, z]} {...clickable}>
-          <mesh position={[0, fixture.kind === "table" ? 0.72 : 0.42, 0]} castShadow>
-            <boxGeometry args={[fixture.kind === "seat" ? 1.25 : 1.8, 0.16, 0.72]} />
-            <WorldMaterial tone="timber" color={color} />
-          </mesh>
-          {[-0.65, 0.65].map((leg) => (
-            <mesh key={leg} position={[leg, fixture.kind === "table" ? 0.35 : 0.2, 0]}>
-              <boxGeometry args={[0.12, fixture.kind === "table" ? 0.65 : 0.38, 0.14]} />
-              <WorldMaterial tone="timber" />
-            </mesh>
-          ))}
-        </group>
-      );
-    case "shelf":
-      return (
-        <group position={[x, 0, z]} {...clickable}>
-          <mesh position={[0, 0.85, 0]} castShadow>
-            <boxGeometry args={[1.7, 1.7, 0.32]} />
-            <WorldMaterial tone="timber" color={color} />
-          </mesh>
-          {[0.4, 0.9, 1.4].map((height) => (
-            <mesh key={height} position={[0, height, 0.21]}>
-              <boxGeometry args={[1.78, 0.08, 0.52]} />
-              <WorldMaterial tone="linen" />
-            </mesh>
-          ))}
-        </group>
-      );
-    case "screen":
-    case "display":
-      return (
-        <group position={[x, 0, z]} {...clickable}>
-          <mesh position={[0, fixture.kind === "screen" ? 1.35 : 0.7, 0]} castShadow>
-            <boxGeometry
-              args={fixture.kind === "screen" ? [1.65, 1.08, 0.12] : [1.35, 0.85, 0.8]}
-            />
-            <WorldMaterial tone={fixture.kind === "screen" ? "slate" : "sign"} color={color} />
-          </mesh>
-          {fixture.kind === "display" && (
-            <mesh position={[0, 0.22, 0]}>
-              <boxGeometry args={[0.18, 0.46, 0.18]} />
-              <WorldMaterial tone="concrete" />
-            </mesh>
-          )}
-        </group>
-      );
-    case "planter":
-      return (
-        <group position={[x, 0, z]} {...clickable}>
-          <mesh position={[0, 0.28, 0]}>
-            <boxGeometry args={[1.1, 0.52, 0.9]} />
-            <WorldMaterial tone="clay" color={color} />
-          </mesh>
-          <mesh position={[0, 0.92, 0]}>
-            <sphereGeometry args={[0.48, 8, 6]} />
-            <WorldMaterial tone="foliage" />
-          </mesh>
-        </group>
-      );
-  }
+  return (
+    <group position={[x, 0, z]}>
+      <Suspense fallback={null}>
+        <VenueFurnitureModel
+          kind={fixture.kind}
+          active={active}
+          accentColor={accentColor}
+          onClick={(event) => {
+            event.stopPropagation();
+            onSelect();
+          }}
+        />
+      </Suspense>
+    </group>
+  );
 }
 
 export function LocationVenueScene({ slug, locationName }: { slug: string; locationName: string }) {

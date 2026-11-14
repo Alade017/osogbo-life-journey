@@ -1,6 +1,6 @@
 import { useRef, type FC } from "react";
-import { Html } from "@react-three/drei";
 import type { Group } from "three";
+import { SceneHtml as Html } from "@/components/3d/SceneHtml";
 import { placeBadgeFor } from "./map-badge";
 
 export interface MapPin3DProps {

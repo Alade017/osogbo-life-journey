@@ -1,11 +1,10 @@
 {
   "name": "tanstack_start_ts",
   "private": true,
-  "packageManager": "npm@11.6.2",
   "sideEffects": false,
   "type": "module",
   "scripts": {
-    "dev": "vite dev",
+    "dev": "vite dev --host 0.0.0.0 --port 3000",
     "dev:public": "vite --config vite.public.config.ts",
     "multiplayer:dev": "node --env-file-if-exists=.env --experimental-strip-types multiplayer/server.ts",
     "multiplayer:start": "node --experimental-strip-types multiplayer/server.ts",
@@ -100,7 +99,7 @@
     "@testing-library/jest-dom": "^6.6.0",
     "@testing-library/react": "^16.0.0",
     "@types/express": "^5.0.6",
-    "@types/node": "^22.16.5",
+    "@types/node": "^24.0.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "@types/three": "^0.186.0",
@@ -123,6 +122,6 @@
     "vitest": "4.1.10"
   },
   "engines": {
-    "node": "24.x"
+    "node": "^24.0.0"
   }
 }

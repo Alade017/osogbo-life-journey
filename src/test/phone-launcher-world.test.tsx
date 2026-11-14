@@ -61,7 +61,7 @@ it("dismisses an open phone after programmatic navigation to a world page", asyn
   await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
 });
 
-it("keeps the shared navigation inside the modal focus boundary", async () => {
+it("keeps the navigation out of the phone so the handset shows only the phone", async () => {
   render(
     <PhoneLauncher
       dock={
@@ -74,7 +74,7 @@ it("keeps the shared navigation inside the modal focus boundary", async () => {
   fireEvent.click(screen.getByRole("button", { name: "Open in-game phone" }));
   const dialog = screen.getByRole("dialog");
   expect(dialog).toHaveClass("phone-dialog-shell");
-  expect(dialog).toContainElement(screen.getByRole("navigation", { name: "Game navigation" }));
+  expect(dialog.querySelector("nav")).toBeNull();
   expect(dialog.querySelector(".phone-dialog")).not.toBeNull();
   fireEvent.keyDown(dialog, { key: "Escape" });
   await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());

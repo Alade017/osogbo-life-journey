@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
-import { MeshBasicMaterial } from "three";
+import { MeshBasicMaterial, type MeshStandardMaterial } from "three";
+import { applyFoliageSway, FOLIAGE_SWAY, foliageSwayAmplitude } from "./foliage-sway";
 import { useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows, OrbitControls } from "@react-three/drei";
 import { CanvasLabel } from "@/components/3d/CanvasLabel";
@@ -28,11 +29,42 @@ export function WorldMaterial({
       {...WORLD_MATERIAL}
       color={color ?? WORLD_PALETTE[tone]}
       map={map ?? null}
+      ref={(material: MeshStandardMaterial | null) => {
+        if (material && tone === "foliage") applyFoliageSway(material);
+      }}
     />
   );
 }
 
-export function WorldLighting({ size = 30, dimmed = false }: { size?: number; dimmed?: boolean }) {
+export function WorldLighting({
+  size = 30,
+  dimmed = false,
+  animateFoliage = false,
+}: {
+  size?: number;
+  dimmed?: boolean;
+  /** Lets foliage sway in this scene. Off by default so static scenes never lean. */
+  animateFoliage?: boolean;
+}) {
+  const { invalidate } = useThree();
+  useEffect(() => {
+    if (!animateFoliage) {
+      FOLIAGE_SWAY.amplitude.value = 0;
+      return;
+    }
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const coarse = window.matchMedia("(pointer: coarse)").matches;
+    FOLIAGE_SWAY.amplitude.value = foliageSwayAmplitude({ reducedMotion });
+    if (reducedMotion) return;
+    const timer = window.setInterval(invalidate, 1000 / (coarse ? 10 : 15));
+    return () => {
+      window.clearInterval(timer);
+      FOLIAGE_SWAY.amplitude.value = 0;
+    };
+  }, [animateFoliage, invalidate]);
+  useFrame(({ clock }) => {
+    if (animateFoliage) FOLIAGE_SWAY.time.value = clock.elapsedTime;
+  });
   return (
     <>
       <color attach="background" args={[WORLD_PALETTE.ground]} />
@@ -202,6 +234,7 @@ export function WorldInstances({
   tone,
   color,
   shape = "box",
+  castShadow = true,
   animate,
 }: {
   items: readonly WorldInstance[];
@@ -209,6 +242,7 @@ export function WorldInstances({
   /** Optional colour that replaces the tone's palette colour for these instances. */
   color?: string;
   shape?: "box" | "sphere";
+  castShadow?: boolean;
   animate?: ((object: Object3D, index: number, seconds: number) => void) | undefined;
 }) {
   const mesh = useRef<InstancedMesh>(null);
@@ -247,20 +281,25 @@ export function WorldInstances({
   }, [items]);
   if (!items.length) return null;
   return (
-    <instancedMesh ref={mesh} args={[undefined, undefined, items.length]} castShadow receiveShadow>
+    <instancedMesh
+      ref={mesh}
+      args={[undefined, undefined, items.length]}
+      castShadow={castShadow}
+      receiveShadow
+    >
       {shape === "box" ? <boxGeometry /> : <sphereGeometry args={[0.5, 8, 6]} />}
       <WorldMaterial tone={tone} {...(color ? { color } : {})} />
     </instancedMesh>
   );
 }
 export function WorldRoads({ items }: { items: readonly WorldInstance[] }) {
-  return <WorldInstances items={items} tone="road" />;
+  return <WorldInstances items={items} tone="road" castShadow={false} />;
 }
 export function WorldRoadMarkings({ items }: { items: readonly WorldInstance[] }) {
-  return <WorldInstances items={items} tone="linen" />;
+  return <WorldInstances items={items} tone="linen" castShadow={false} />;
 }
 export function WorldPedestrianCrossings({ items }: { items: readonly WorldInstance[] }) {
-  return <WorldInstances items={items} tone="linen" />;
+  return <WorldInstances items={items} tone="linen" castShadow={false} />;
 }
 export function WorldTrafficLights({
   positions,
@@ -449,8 +488,8 @@ export function WorldSidewalks({
 }) {
   return (
     <>
-      <WorldInstances items={sidewalks} tone="concrete" />
-      <WorldInstances items={curbs} tone="slate" />
+      <WorldInstances items={sidewalks} tone="concrete" castShadow={false} />
+      <WorldInstances items={curbs} tone="slate" castShadow={false} />
     </>
   );
 }
@@ -1115,7 +1154,7 @@ export function WorldHouse({
   );
 
   return (
-    <group position={position} rotation={[0, rotation, 0]}>
+    <group position={position} rotation={[0, rotation, 0]} userData={{ occluder: true }}>
       {/* Foundation */}
       <mesh position={[0, 0.09, 0]} receiveShadow castShadow>
         <boxGeometry args={[width + 0.16, 0.18, depth + 0.16]} />

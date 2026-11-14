@@ -1,5 +1,7 @@
 /** Presentation units only. Never use these to change simulation coordinates. */
 const CHARACTER_HEIGHT = 1.7;
+/** Body height in metres, separate from the environment scale that CHARACTER_HEIGHT drives. */
+const CHARACTER_BODY_HEIGHT = 1.55;
 /**
  * The playable street is drawn larger than the character so buildings, roads and lamps read at a
  * believable size next to people. Collision and positions stay in simulation coordinates.
@@ -7,7 +9,7 @@ const CHARACTER_HEIGHT = 1.7;
 export const NEIGHBORHOOD_STREET_SCALE = 1.5;
 
 export const WORLD_SCALE = {
-  character: CHARACTER_HEIGHT,
+  character: CHARACTER_BODY_HEIGHT,
   door: CHARACTER_HEIGHT * (2.1 / 1.7),
   road: CHARACTER_HEIGHT * (3.6 / 1.7),
   townCell: CHARACTER_HEIGHT * (3.6 / 1.7),
@@ -37,7 +39,10 @@ export const WORLD_PALETTE = {
   concrete: "#b9b3a7",
   roof: "#74685e",
   roofLight: "#918174",
+  rust: "#9a5b3a",
   accent: "#c47c45",
+  jerrycan: "#e3b13c",
+  indigo: "#2e4170",
   sign: "#e7c77f",
   metal: "#626b6b",
   glass: "#9bc8d8",

@@ -8,7 +8,8 @@ import {
   type RefObject,
 } from "react";
 import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
-import { Html, RoundedBox } from "@react-three/drei";
+import { RoundedBox } from "@react-three/drei";
+import { SceneHtml as Html } from "@/components/3d/SceneHtml";
 import { DoubleSide, Plane, Vector3, type Group } from "three";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
 import type { FoodDelivery } from "@/lib/food-delivery-service";
