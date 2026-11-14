@@ -389,7 +389,14 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
           const isHuman = seat.playerId === HUMAN;
           const AvatarIcon = isHuman ? User : Bot;
           const home = finishedFor(seat.colour);
-          const turnLabel = active ? (isHuman ? "Your turn" : "Playing") : "Waiting";
+          const turnLabel =
+            game.phase === "GAME_OVER"
+              ? "Game over"
+              : active
+                ? isHuman
+                  ? "Your turn"
+                  : "Playing"
+                : "Waiting";
           return (
             <div
               key={seat.colour}

@@ -1052,6 +1052,7 @@
 
 /* Results: a separate panel that replaces the dice once the game is over. */
 .lb-results {
+  box-sizing: border-box;
   display: grid;
   gap: 12px;
   width: 100%;
