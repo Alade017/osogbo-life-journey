@@ -1,5 +1,6 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
+import { Bot, Check, Globe, Lock, User, UserPlus, type LucideIcon } from "lucide-react";
 import { useComputerTurn } from "@/components/game/mini-games/computer-turn";
 import { LudoBoard } from "@/components/game/mini-games/LudoBoard";
 import { LUDO_COLOURS } from "@/components/game/mini-games/ludo-palette";
@@ -31,6 +32,12 @@ const PLAYER_OPTIONS: readonly { players: number; blurb: string }[] = [
   { players: 2, blurb: "You and the computer, two colours each." },
   { players: 3, blurb: "You and two computers, one colour each." },
   { players: 4, blurb: "You and three computers, one colour each." },
+];
+/** Online play is not connected to this screen yet, so these show as unavailable. */
+const ONLINE_OPTIONS: readonly { label: string; blurb: string; icon: LucideIcon }[] = [
+  { label: "Play online", blurb: "Match with other players online.", icon: Globe },
+  { label: "Join a friend's room", blurb: "Enter a room code from a friend.", icon: UserPlus },
+  { label: "Create a private room", blurb: "Start a room and invite friends.", icon: Lock },
 ];
 const NO_MOVES_DELAY_MS = 1200;
 const TOAST_MS = 2_400;
@@ -133,25 +140,64 @@ function Die({
 export function LudoGame() {
   const [players, setPlayers] = useState<number | null>(null);
   if (players === null) return <LudoSetup onStart={setPlayers} />;
-  return <LudoTable key={players} players={players} />;
+  return <LudoTable key={players} players={players} onLobby={() => setPlayers(null)} />;
 }
 
 function LudoSetup({ onStart }: { onStart: (players: number) => void }) {
+  const [choice, setChoice] = useState(2);
   return (
-    <section className="mg-game mg-setup" aria-label="Ludo setup">
-      <h3 className="mg-setup-title">How many players?</h3>
-      <div className="mg-setup-options">
-        {PLAYER_OPTIONS.map(({ players, blurb }) => (
-          <button
-            key={players}
-            type="button"
-            className="mg-setup-option"
-            onClick={() => onStart(players)}
-          >
-            <strong>{players} players</strong>
-            <span>{blurb}</span>
-          </button>
-        ))}
+    <section className="mg-game mg-setup" aria-label="Ludo lobby">
+      <div className="mg-setup-block">
+        <h3 className="mg-setup-title">Play the computer</h3>
+        <p className="mg-setup-lede">Choose how many players sit at the table.</p>
+        <div className="mg-setup-options" role="radiogroup" aria-label="Number of players">
+          {PLAYER_OPTIONS.map(({ players: count, blurb }) => {
+            const selected = choice === count;
+            return (
+              <button
+                key={count}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                className={`mg-setup-option ${selected ? "is-selected" : ""}`}
+                onClick={() => setChoice(count)}
+              >
+                <span className="mg-setup-count" aria-hidden="true">
+                  {count}
+                </span>
+                <span className="mg-setup-text">
+                  <strong>{count} players</strong>
+                  <small>{blurb}</small>
+                </span>
+                <span className="mg-setup-tick" aria-hidden="true">
+                  {selected && <Check size={14} />}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <Button className="mg-setup-start" onClick={() => onStart(choice)}>
+          Start game
+        </Button>
+      </div>
+      <div className="mg-setup-block">
+        <h4 className="mg-setup-subtitle">Online</h4>
+        <ul className="mg-setup-soon">
+          {ONLINE_OPTIONS.map(({ label, blurb, icon: Icon }) => (
+            <li key={label}>
+              <button type="button" className="mg-setup-option is-unavailable" disabled>
+                <span className="mg-setup-icon" aria-hidden="true">
+                  <Icon size={18} />
+                </span>
+                <span className="mg-setup-text">
+                  <strong>{label}</strong>
+                  <small>{blurb}</small>
+                </span>
+                <span className="mg-setup-badge">Coming soon</span>
+              </button>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   );
@@ -171,7 +217,62 @@ function describeEvents(events: LudoEvent[], name: (playerId: string) => string)
   return out;
 }
 
-function LudoTable({ players }: { players: number }) {
+function LudoResults({
+  seats,
+  game,
+  nameOf,
+  onAgain,
+  onLobby,
+}: {
+  seats: readonly Seat[];
+  game: Game;
+  nameOf: (playerId: string) => string;
+  onAgain: () => void;
+  onLobby: () => void;
+}) {
+  const ranked = seats
+    .map((seat) => ({
+      seat,
+      home: game.pieces[seat.colour].filter((step) => step === FINISH_STEP).length,
+    }))
+    .sort((a, b) => b.home - a.home);
+  const winner = game.winnerId ?? "";
+  const youWon = winner === HUMAN;
+  return (
+    <section className="lb-results" aria-label="Results">
+      <div className="lb-results-head">
+        <span className="lb-results-avatar" aria-hidden="true">
+          {youWon ? <User size={22} /> : <Bot size={22} />}
+        </span>
+        <div>
+          <h3>{youWon ? "You won!" : `${nameOf(winner)} won`}</h3>
+          <p>{youWon ? "Well played. Start another round?" : "Good game. Try again?"}</p>
+        </div>
+      </div>
+      <ol className="lb-rank">
+        {ranked.map(({ seat, home }, index) => (
+          <li key={seat.colour} style={{ "--seat": LUDO_COLOURS[seat.colour] } as CSSProperties}>
+            <span className="lb-rank-place" aria-hidden="true">
+              {index + 1}
+            </span>
+            <span className="lb-rank-name">
+              {nameOf(seat.playerId)} · {COLOUR_NAMES[seat.colour]}
+            </span>
+            <span className="lb-rank-home">{home} of 4 home</span>
+          </li>
+        ))}
+      </ol>
+      <div className="lb-results-actions">
+        <Button onClick={onAgain}>Play again</Button>
+        <Button variant="plain" onClick={onLobby}>
+          Back to Ludo lobby
+        </Button>
+      </div>
+    </section>
+  );
+}
+
+function LudoTable({ players, onLobby }: { players: number; onLobby: () => void }) {
   const [seats] = useState(() => seatsFor(players));
   const [game, setGame] = useState<Game>(() => createLudoGame(seats));
   const [selectedDie, setSelectedDie] = useState<0 | 1 | null>(null);
@@ -265,12 +366,12 @@ function LudoTable({ players }: { players: number }) {
         : `${nameOf(game.winnerId ?? "")} won.`
       : humanTurn
         ? game.phase === "WAITING_FOR_ROLL"
-          ? "Your turn. Tap the dice to roll."
+          ? "Your turn! Tap the dice to roll."
           : game.phase === "NO_LEGAL_MOVES"
             ? "No legal move for either die."
             : selectedDie !== null
-              ? `Pick a pawn to move ${game.dice?.[selectedDie]}.`
-              : `You rolled ${game.dice?.[0]} and ${game.dice?.[1]}. Pick a die, then a pawn.`
+              ? "Choose a highlighted pawn to move."
+              : `You rolled ${game.dice?.[0]} and ${game.dice?.[1]}. Select a die, then choose a pawn.`
         : `${nameOf(turnPlayer ?? "")} is playing…`;
 
   const finishedFor = (colour: Colour) =>
@@ -283,7 +384,12 @@ function LudoTable({ players }: { players: number }) {
       </p>
       <div className="lb-hud" aria-label="Players">
         {seats.map((seat, index) => {
-          const active = turnPlayer === seat.playerId;
+          // Two-player games give one player two seats, so the turn follows the colour, not the player.
+          const active = turnPlayer !== null && game.seats[game.turnIndex]?.colour === seat.colour;
+          const isHuman = seat.playerId === HUMAN;
+          const AvatarIcon = isHuman ? User : Bot;
+          const home = finishedFor(seat.colour);
+          const turnLabel = active ? (isHuman ? "Your turn" : "Playing") : "Waiting";
           return (
             <div
               key={seat.colour}
@@ -291,20 +397,19 @@ function LudoTable({ players }: { players: number }) {
               style={{ "--seat": LUDO_COLOURS[seat.colour] } as CSSProperties}
             >
               <span className="lb-avatar" aria-hidden="true">
-                {seat.playerId === HUMAN ? "You" : `C${index}`}
+                <AvatarIcon size={16} />
               </span>
-              <span className="lb-name">
-                {nameOf(seat.playerId)} · {COLOUR_NAMES[seat.colour]}
+              <span className="lb-info">
+                <span className="lb-name">{nameOf(seat.playerId)}</span>
+                <span className="lb-turn">
+                  {COLOUR_NAMES[seat.colour]} · {turnLabel}
+                </span>
               </span>
-              <span className="lb-done" aria-label={`${finishedFor(seat.colour)} of 4 home`}>
+              <span className="lb-done" aria-label={`${home} of 4 home`}>
                 {Array.from({ length: 4 }, (_, token) => (
-                  <i key={token} className={token < finishedFor(seat.colour) ? "is-home" : ""} />
+                  <i key={token} className={token < home ? "is-home" : ""} />
                 ))}
               </span>
-              <span
-                className={`lb-link ${seat.playerId === HUMAN ? "is-online" : ""}`}
-                aria-hidden="true"
-              />
             </div>
           );
         })}
@@ -322,36 +427,44 @@ function LudoTable({ players }: { players: number }) {
           </div>
         )}
       </div>
-      <div className="mg-ludo-dice" role="group" aria-label="Dice">
-        {[0, 1].map((index) => {
-          const die = index as 0 | 1;
-          const used = game.dice !== null && game.used[die];
-          const usable = humanTurn && game.dice !== null && !used && usableDie(die);
-          const selected = selectedDie === die;
-          const onClick = canRoll
-            ? roll
-            : usable
-              ? () => setSelectedDie(selected ? null : die)
-              : undefined;
-          return (
-            <Die
-              key={index}
-              className={`mg-ludo-die ${canRoll ? "is-rollable" : ""} ${usable ? "is-usable" : ""} ${selected ? "is-selected" : ""} ${used ? "is-used" : ""}`}
-              value={faces[index]}
-              rolling={rolls > 0 && game.dice !== null && !used}
-              disabled={!onClick}
-              aria-label={
-                canRoll
-                  ? "Roll the dice"
-                  : `Die ${index + 1}: ${faces[index]}${used ? ", played" : ""}`
-              }
-              onClick={onClick}
-            />
-          );
-        })}
-      </div>
+      {game.phase !== "GAME_OVER" && (
+        <div className="mg-ludo-dice" role="group" aria-label="Dice">
+          {[0, 1].map((index) => {
+            const die = index as 0 | 1;
+            const used = game.dice !== null && game.used[die];
+            const usable = humanTurn && game.dice !== null && !used && usableDie(die);
+            const selected = selectedDie === die;
+            const onClick = canRoll
+              ? roll
+              : usable
+                ? () => setSelectedDie(selected ? null : die)
+                : undefined;
+            return (
+              <Die
+                key={index}
+                className={`mg-ludo-die ${canRoll ? "is-rollable" : ""} ${usable ? "is-usable" : ""} ${selected ? "is-selected" : ""} ${used ? "is-used" : ""}`}
+                value={faces[index]}
+                rolling={rolls > 0 && game.dice !== null && !used}
+                disabled={!onClick}
+                aria-label={
+                  canRoll
+                    ? "Roll the dice"
+                    : `Die ${index + 1}: ${faces[index]}${used ? ", played" : ""}`
+                }
+                onClick={onClick}
+              />
+            );
+          })}
+        </div>
+      )}
       {game.phase === "GAME_OVER" && (
-        <Button onClick={() => setGame(createLudoGame(seats))}>Play again</Button>
+        <LudoResults
+          seats={seats}
+          game={game}
+          nameOf={nameOf}
+          onAgain={() => setGame(createLudoGame(seats))}
+          onLobby={onLobby}
+        />
       )}
     </section>
   );
