@@ -458,42 +458,37 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
           onPick={pick}
           playerCount={seats.length}
         />
-        {canRoll && (
-          <div className="lb-roll-hint" aria-hidden="true">
-            Tap to roll
+        {game.phase !== "GAME_OVER" && (
+          <div className="lb-dice-centre" role="group" aria-label="Dice">
+            {[0, 1].map((index) => {
+              const die = index as 0 | 1;
+              const used = game.dice !== null && game.used[die];
+              const usable = humanTurn && game.dice !== null && !used && usableDie(die);
+              const selected = selectedDie === die;
+              const onClick = canRoll
+                ? roll
+                : usable
+                  ? () => setSelectedDie(selected ? null : die)
+                  : undefined;
+              return (
+                <Die
+                  key={index}
+                  className={`mg-ludo-die ${canRoll ? "is-rollable" : ""} ${usable ? "is-usable" : ""} ${selected ? "is-selected" : ""} ${used ? "is-used" : ""}`}
+                  value={faces[index]}
+                  rolling={rolls > 0 && game.dice !== null && !used}
+                  disabled={!onClick}
+                  aria-label={
+                    canRoll
+                      ? "Roll the dice"
+                      : `Die ${index + 1}: ${faces[index]}${used ? ", played" : ""}`
+                  }
+                  onClick={onClick}
+                />
+              );
+            })}
           </div>
         )}
       </div>
-      {game.phase !== "GAME_OVER" && (
-        <div className="mg-ludo-dice" role="group" aria-label="Dice">
-          {[0, 1].map((index) => {
-            const die = index as 0 | 1;
-            const used = game.dice !== null && game.used[die];
-            const usable = humanTurn && game.dice !== null && !used && usableDie(die);
-            const selected = selectedDie === die;
-            const onClick = canRoll
-              ? roll
-              : usable
-                ? () => setSelectedDie(selected ? null : die)
-                : undefined;
-            return (
-              <Die
-                key={index}
-                className={`mg-ludo-die ${canRoll ? "is-rollable" : ""} ${usable ? "is-usable" : ""} ${selected ? "is-selected" : ""} ${used ? "is-used" : ""}`}
-                value={faces[index]}
-                rolling={rolls > 0 && game.dice !== null && !used}
-                disabled={!onClick}
-                aria-label={
-                  canRoll
-                    ? "Roll the dice"
-                    : `Die ${index + 1}: ${faces[index]}${used ? ", played" : ""}`
-                }
-                onClick={onClick}
-              />
-            );
-          })}
-        </div>
-      )}
       {game.phase === "GAME_OVER" && (
         <LudoResults
           open={!resultsDismissed}

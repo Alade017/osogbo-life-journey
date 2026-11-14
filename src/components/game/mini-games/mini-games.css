@@ -1423,3 +1423,26 @@
 .lb-results.lb-results .lb-results-actions {
   grid-template-columns: 1fr;
 }
+
+/* Dice sit on the board's centre; each die keeps a 44px touch target. */
+.lb-dice-centre {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.lb-dice-centre .mg-ludo-die {
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+}
+.lb-dice-centre .mg-ludo-face {
+  width: 30px;
+  height: 30px;
+}
