@@ -1,0 +1,680 @@
+/* =========================================================
+   Olaiya & Osogbo Interactive City Map
+   Palette: Porcelain (#FAF7F0), Deep Indigo (#16225C),
+   Brass Gold (#F2B21C), River Green (#1E9A5F), Laterite (#C8452D)
+   ========================================================= */
+
+.ncm-layout-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.85rem;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+@media (min-width: 1080px) {
+  .ncm-layout-grid.is-split {
+    grid-template-columns: minmax(0, 1.38fr) minmax(320px, 0.92fr);
+    align-items: stretch;
+  }
+}
+
+.ncm-3d-companion {
+  display: flex;
+  flex-direction: column;
+  min-height: 360px;
+  border: 1px solid rgba(22, 34, 92, 0.14);
+  border-radius: 22px;
+  overflow: hidden;
+  background: #f5f0e4;
+  box-shadow: 0 14px 32px -22px rgba(22, 34, 92, 0.35);
+}
+
+.ncm-3d-companion-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
+  background: #faf7f0;
+  border-bottom: 1px solid rgba(22, 34, 92, 0.1);
+}
+
+.ncm-3d-companion-bar strong {
+  color: #16225c;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.ncm-3d-companion-bar span {
+  color: #4b556b;
+  font-size: 0.76rem;
+}
+
+.ncm-3d-expand-btn {
+  padding: 0.35rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid rgba(22, 34, 92, 0.22);
+  background: #ffffff;
+  color: #16225c;
+  font-size: 0.76rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.ncm-3d-expand-btn:hover {
+  background: #16225c;
+  color: #faf7f0;
+}
+
+.ncm-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 480px;
+  padding: 1rem;
+  border: 1px solid rgba(22, 34, 92, 0.14);
+  border-radius: 22px;
+  background: #faf7f0;
+  color: #16225c;
+  box-shadow: 0 18px 40px -26px rgba(22, 34, 92, 0.38);
+}
+
+.ncm-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+}
+
+.ncm-eyebrow {
+  margin: 0;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #c8452d;
+}
+
+.ncm-title-block h2 {
+  margin: 0.1rem 0 0;
+  font-size: 1.32rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #16225c;
+  text-wrap: balance;
+}
+
+.ncm-live-readout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.9rem;
+  font-size: 0.8rem;
+  color: #364160;
+}
+
+.ncm-coord-badge,
+.ncm-wallet-readout {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.ncm-coord-badge svg {
+  color: #1e9a5f;
+}
+
+.ncm-wallet-readout {
+  font-weight: 700;
+  color: #16225c;
+}
+
+.ncm-wallet-readout svg {
+  color: #c8452d;
+}
+
+/* Filter Row */
+.ncm-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.ncm-filter-pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem;
+  border-radius: 14px;
+  background: #efe9dc;
+  border: 1px solid rgba(22, 34, 92, 0.1);
+}
+
+.ncm-filter-pill {
+  min-height: 36px;
+  padding: 0.42rem 0.9rem;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #2c385c;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    color 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 160ms ease;
+}
+
+.ncm-filter-pill:hover {
+  color: #16225c;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.ncm-filter-pill[aria-pressed="true"] {
+  background: #16225c;
+  color: #faf7f0;
+  box-shadow: 0 4px 12px -4px rgba(22, 34, 92, 0.48);
+}
+
+.ncm-district-switch {
+  min-height: 36px;
+  padding: 0.42rem 0.9rem;
+  border: 1px solid rgba(22, 34, 92, 0.2);
+  border-radius: 10px;
+  background: #ffffff;
+  color: #16225c;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease;
+}
+
+.ncm-district-switch:hover {
+  background: #f2ead9;
+  border-color: #16225c;
+}
+
+/* Interactive Map Stage */
+.ncm-stage {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 390px;
+}
+
+.ncm-canvas-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1000 / 600;
+  min-height: 360px;
+  border-radius: 18px;
+  border: 1px solid rgba(22, 34, 92, 0.16);
+  background: #faf7f0;
+  overflow: hidden;
+}
+
+.ncm-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.ncm-road-label {
+  fill: #f6efe2;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  opacity: 0.92;
+}
+
+.ncm-alley-label {
+  fill: #16225c;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  opacity: 0.72;
+}
+
+/* Surrounding Districts Compass Ring */
+.ncm-compass-ring {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.ncm-compass-chip {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.05rem;
+  padding: 0.32rem 0.62rem;
+  border-radius: 10px;
+  border: 1px solid rgba(22, 34, 92, 0.18);
+  background: rgba(250, 247, 240, 0.94);
+  backdrop-filter: blur(6px);
+  color: #16225c;
+  font-size: 0.7rem;
+  line-height: 1.2;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 6px 14px -8px rgba(22, 34, 92, 0.32);
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background 160ms ease;
+}
+
+.ncm-compass-chip:hover {
+  transform: translateY(-1px);
+  border-color: #16225c;
+  background: #ffffff;
+}
+
+.ncm-compass-chip strong {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.ncm-compass-chip span {
+  font-size: 0.64rem;
+  color: #4f5974;
+  white-space: nowrap;
+}
+
+.ncm-compass-north {
+  top: 0.55rem;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.ncm-compass-north:hover {
+  transform: translate(-50%, -1px);
+}
+
+.ncm-compass-south {
+  bottom: 0.55rem;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.ncm-compass-south:hover {
+  transform: translate(-50%, -1px);
+}
+
+.ncm-compass-west {
+  left: 0.55rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.ncm-compass-west:hover {
+  transform: translateY(calc(-50% - 1px));
+}
+
+.ncm-compass-east {
+  right: 0.55rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.ncm-compass-east:hover {
+  transform: translateY(calc(-50% - 1px));
+}
+
+/* Pin Layer */
+.ncm-pin-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.ncm-home-marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  padding: 0.24rem 0.52rem;
+  border-radius: 8px;
+  background: rgba(250, 247, 240, 0.94);
+  border: 1.5px solid #1e9a5f;
+  color: #13683f;
+  font-size: 0.7rem;
+  font-weight: 700;
+  box-shadow: 0 6px 14px -8px rgba(30, 154, 95, 0.55);
+}
+
+.ncm-pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.42rem;
+  padding: 0.28rem 0.55rem 0.28rem 0.3rem;
+  border-radius: 12px;
+  border: 1.5px solid rgba(22, 34, 92, 0.24);
+  background: rgba(250, 247, 240, 0.96);
+  color: #16225c;
+  text-align: left;
+  cursor: pointer;
+  pointer-events: auto;
+  box-shadow: 0 8px 18px -10px rgba(22, 34, 92, 0.4);
+  transition:
+    transform 160ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.ncm-pin:hover {
+  transform: translate(-50%, calc(-50% - 2px));
+  border-color: #16225c;
+  box-shadow: 0 12px 22px -10px rgba(22, 34, 92, 0.48);
+  z-index: 6;
+}
+
+.ncm-pin.is-selected {
+  border-color: #f2b21c;
+  box-shadow:
+    0 0 0 3px rgba(242, 178, 28, 0.35),
+    0 12px 24px -10px rgba(22, 34, 92, 0.52);
+  z-index: 7;
+}
+
+.ncm-pin-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  color: #ffffff;
+  flex-shrink: 0;
+}
+
+.ncm-pin-label {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.ncm-pin-label strong {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #16225c;
+  white-space: nowrap;
+}
+
+.ncm-pin-label small {
+  font-size: 0.64rem;
+  font-weight: 600;
+  color: #4f5974;
+  white-space: nowrap;
+}
+
+/* Live Player Position Marker */
+.ncm-player-marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 8;
+  pointer-events: none;
+  transition:
+    left 180ms linear,
+    top 180ms linear;
+}
+
+.ncm-player-halo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 28px;
+  height: 28px;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: rgba(242, 178, 28, 0.34);
+  border: 1.5px solid #f2b21c;
+}
+
+.ncm-player-core {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #16225c;
+  border: 2.5px solid #faf7f0;
+  box-shadow: 0 2px 6px rgba(22, 34, 92, 0.55);
+}
+
+.ncm-player-tag {
+  margin-top: 3px;
+  padding: 0.08rem 0.4rem;
+  border-radius: 6px;
+  background: #16225c;
+  color: #f2b21c;
+  font-size: 0.63rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/* Porcelain & Indigo Location Drawer */
+.ncm-drawer {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  z-index: 12;
+  width: min(390px, calc(100% - 1.5rem));
+  max-height: calc(100% - 1.5rem);
+  overflow-y: auto;
+  padding: 1rem 1.05rem;
+  border-radius: 16px;
+  border: 1px solid rgba(22, 34, 92, 0.22);
+  background: rgba(250, 247, 240, 0.97);
+  backdrop-filter: blur(10px);
+  color: #16225c;
+  box-shadow: 0 22px 46px -18px rgba(22, 34, 92, 0.48);
+  animation: ncm-drawer-in 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes ncm-drawer-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ncm-drawer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.ncm-drawer-kicker {
+  margin: 0;
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: #c8452d;
+}
+
+.ncm-drawer-head h3 {
+  margin: 0.15rem 0 0;
+  font-size: 1.08rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: #16225c;
+}
+
+.ncm-drawer-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid rgba(22, 34, 92, 0.15);
+  background: #ffffff;
+  color: #16225c;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.ncm-drawer-close:hover {
+  background: #efe9dc;
+}
+
+.ncm-drawer-desc {
+  margin: 0.55rem 0 0.8rem;
+  font-size: 0.84rem;
+  line-height: 1.48;
+  color: #323c5b;
+}
+
+.ncm-drawer-section-label {
+  margin: 0 0 0.45rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #16225c;
+}
+
+.ncm-drawer-activities ul {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ncm-drawer-activities li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding-top: 0.42rem;
+  border-top: 1px solid rgba(22, 34, 92, 0.08);
+  font-size: 0.78rem;
+}
+
+.ncm-drawer-activities li svg {
+  margin-top: 2px;
+  color: #1e9a5f;
+  flex-shrink: 0;
+}
+
+.ncm-drawer-activities li strong {
+  display: block;
+  color: #16225c;
+  font-weight: 700;
+}
+
+.ncm-drawer-activities li span {
+  display: block;
+  color: #4f5974;
+  line-height: 1.35;
+}
+
+.ncm-drawer-error {
+  margin: 0.65rem 0 0;
+  padding: 0.5rem 0.7rem;
+  border-radius: 10px;
+  background: rgba(200, 69, 45, 0.12);
+  color: #9e2d1a;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.ncm-drawer-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+  margin-top: 0.9rem;
+}
+
+@media (min-width: 440px) {
+  .ncm-drawer-actions {
+    grid-template-columns: auto 1fr;
+  }
+}
+
+.ncm-btn-walk,
+.ncm-btn-keke {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.42rem;
+  min-height: 44px;
+  padding: 0.55rem 0.95rem;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    transform 150ms ease,
+    filter 150ms ease,
+    background 150ms ease;
+}
+
+.ncm-btn-walk {
+  border: 0;
+  background: #16225c;
+  color: #faf7f0;
+}
+
+.ncm-btn-walk:hover {
+  filter: brightness(1.12);
+}
+
+.ncm-btn-keke {
+  border: 1.5px solid #d1960d;
+  background: #f2b21c;
+  color: #16225c;
+}
+
+.ncm-btn-keke:hover {
+  filter: brightness(1.04);
+}
+
+.ncm-btn-walk:active,
+.ncm-btn-keke:active {
+  transform: scale(0.98);
+}
+
+@media (max-width: 680px) {
+  .ncm-canvas-frame {
+    aspect-ratio: 4 / 3;
+    min-height: 340px;
+  }
+  .ncm-compass-chip {
+    display: none;
+  }
+  .ncm-pin-label small {
+    display: none;
+  }
+  .ncm-drawer {
+    left: 0.5rem;
+    right: 0.5rem;
+    bottom: 0.5rem;
+    width: auto;
+  }
+}

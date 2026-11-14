@@ -46,16 +46,20 @@ function SegmentGarment({
   patterned?: boolean;
   cuff?: boolean;
 }) {
-  const vector = segment.child.position;
-  const length = Math.max(vector.length(), 0.025);
-  const radius = Math.max(length * radiusFactor, 0.012);
-  const rotation = new Quaternion().setFromUnitVectors(
-    new Vector3(0, 1, 0),
-    vector.clone().normalize(),
-  );
-  const map = patterned ? adireTexture() : null;
+  const { length, radius, rotation, midpoint } = useMemo(() => {
+    const vector = segment.child.position;
+    const len = Math.max(vector.length(), 0.025);
+    const rad = Math.max(len * radiusFactor, 0.012);
+    const rot = new Quaternion().setFromUnitVectors(
+      new Vector3(0, 1, 0),
+      vector.clone().normalize(),
+    );
+    const mid = vector.clone().multiplyScalar(0.5);
+    return { length: len, radius: rad, rotation: rot, midpoint: mid };
+  }, [segment, radiusFactor]);
+  const map = useMemo(() => (patterned ? adireTexture() : null), [patterned]);
   return (
-    <group position={vector.clone().multiplyScalar(0.5)} quaternion={rotation}>
+    <group position={midpoint} quaternion={rotation}>
       <mesh castShadow receiveShadow>
         <cylinderGeometry args={[radius * 0.94, radius, length * 1.04, 12, 1]} />
         <meshStandardMaterial color={color} map={map} roughness={0.94} side={2} />

@@ -80,6 +80,9 @@ export function WorldCharacter({
   }, []);
   const lookKey = lookAt ? lookAt.map((value) => value.toFixed(2)).join(":") : "";
   useEffect(() => {
+    invalidate();
+  }, [lookKey, invalidate]);
+  useEffect(() => {
     const moved = Math.hypot(x - last.current[0], z - last.current[2]) > 0.001;
     last.current = [x, y, z];
     if (moved) {
@@ -93,7 +96,7 @@ export function WorldCharacter({
       animation === "talk" ||
       animation === "interact" ||
       !!taskPose;
-    if (!moved && !continuous && !walking && !lookKey) return;
+    if (!moved && !continuous && !walking) return;
     const settleUntil = performance.now() + CHARACTER_MOTION.settleSeconds * 1000;
     const timer = window.setInterval(() => {
       invalidate();
@@ -102,7 +105,7 @@ export function WorldCharacter({
       if (!active) window.clearInterval(timer);
     }, 1000 / 15);
     return () => window.clearInterval(timer);
-  }, [x, y, z, animation, taskPose, reduced, invalidate, lookKey, walking]);
+  }, [x, y, z, animation, taskPose, reduced, invalidate, walking]);
   const yaw = FACING_YAW[facing] ?? 0;
   useFrame((_state, delta) => {
     const rootGroup = root.current;
@@ -121,14 +124,20 @@ export function WorldCharacter({
       const limit = CHARACTER_MOTION.headTurnLimit * 0.5;
       turn = MathUtils.clamp(worldYaw - yaw, -limit, limit);
     }
-    group.rotation.y = MathUtils.lerp(
-      group.rotation.y,
-      turn,
-      blend(CHARACTER_MOTION.headTurnRate, delta),
-    );
+    if (Math.abs(group.rotation.y - turn) > 0.002) {
+      group.rotation.y = MathUtils.lerp(
+        group.rotation.y,
+        turn,
+        blend(CHARACTER_MOTION.headTurnRate, delta),
+      );
+      if (Math.abs(group.rotation.y - turn) <= 0.002) {
+        group.rotation.y = turn;
+      }
+      invalidate();
+    }
   });
   const moving = walking && !reduced && !taskPose;
-  const motion = motionFor(animation, moving);
+  const motion = motionFor(animation, moving, taskPose);
   const wornAccessory = equipment.find((item) => item.slot === "accessory") as
     { item?: { slug?: string } | null } | undefined;
   const AccessoryModel = wornAccessory?.item?.slug

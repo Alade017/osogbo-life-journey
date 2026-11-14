@@ -9,6 +9,13 @@ export type VenueFixture = {
   position: [number, number];
 };
 
+/** A restyled environment model for a venue interior, from public/models/environments. */
+export type VenueEnvironment = {
+  url: string;
+  /** Hours (game clock) when the trading shutter is up. Omit for venues without a shutter. */
+  trading?: { openHour: number; closeHour: number };
+};
+
 export type LocationVenueDesign = {
   name: string;
   description: string;
@@ -16,7 +23,14 @@ export type LocationVenueDesign = {
   wallColor: string;
   accentColor: string;
   fixtures: readonly VenueFixture[];
+  environment?: VenueEnvironment;
 };
+
+/** True while a venue with trading hours is open at this game hour. */
+export function isTradingOpen(hour: number, trading: VenueEnvironment["trading"]) {
+  if (!trading) return true;
+  return hour >= trading.openHour && hour < trading.closeHour;
+}
 
 function fixture(
   id: string,
@@ -74,6 +88,7 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
   },
   "town-market": {
     name: "Market aisles",
+    environment: { url: "/models/environments/market-and-bank/seafood-market-stall.glb" },
     description: "A covered trading floor with produce stalls and a shared aisle.",
     floorColor: "#cdbb92",
     wallColor: "#e5d3ad",
@@ -189,6 +204,7 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     ],
   },
   "lantern-club": {
+    environment: { url: "/models/environments/market-and-bank/lantern-club-nightclub.glb" },
     name: "Lantern Club lounge",
     description: "A warm lounge with a small stage, low tables and a refreshment bar.",
     floorColor: "#453b39",
@@ -305,6 +321,7 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     ],
   },
   "riverside-food-court": {
+    environment: { url: "/models/environments/market-and-bank/street-food-market-yard.glb" },
     name: "Riverside food court",
     description: "An open-sided dining room with vendor counters and shared tables.",
     floorColor: "#c7b99c",
@@ -440,6 +457,10 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     floorColor: "#bac5c1",
     wallColor: "#dce3df",
     accentColor: "#648b91",
+    environment: {
+      url: "/models/environments/market-and-bank/fish-market-bay.glb",
+      trading: { openHour: 7, closeHour: 19 },
+    },
     fixtures: [
       fixture("fish-counter", "Vendor counter", "A market service counter.", "counter", -2.7, -1.2),
       fixture("fish-display", "Display table", "A washable display surface.", "table", 0, 0.7),
@@ -497,6 +518,7 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     floorColor: "#c8c8be",
     wallColor: "#e1e0d7",
     accentColor: "#b67843",
+    environment: { url: "/models/environments/fuel-station/filling-station-forecourt.glb" },
     fixtures: [
       fixture("fuel-counter", "Service counter", "The forecourt office desk.", "counter", -2.7, -1),
       fixture("fuel-pump", "Pump island", "A model of the forecourt pump.", "display", 0, 0.7),

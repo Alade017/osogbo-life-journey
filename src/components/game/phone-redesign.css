@@ -696,3 +696,34 @@
     pointer-events: auto;
   }
 }
+
+/* Mobile handset: 88% of the screen, centred, with the navigation kept outside the phone. */
+@media (max-width: 640px) {
+  .phone-dialog-shell.phone-dialog-shell.phone-dialog-shell-solo {
+    position: fixed !important;
+    inset: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    max-width: none !important;
+    max-height: none !important;
+    padding: 0 !important;
+    transform: none !important;
+    pointer-events: none;
+  }
+
+  .phone-dialog-shell.phone-dialog-shell.phone-dialog-shell-solo > .phone-dialog.phone-ui-refresh {
+    position: relative !important;
+    inset: auto !important;
+    margin: 0 !important;
+    transform: none !important;
+    translate: none !important;
+    width: 88vw !important;
+    max-width: 88vw !important;
+    height: 88dvh !important;
+    max-height: 88dvh !important;
+    pointer-events: auto;
+  }
+}

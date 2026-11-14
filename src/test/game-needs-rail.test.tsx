@@ -35,7 +35,8 @@ describe("persistent player needs dashboard", () => {
     );
     expect(screen.getByTitle("Hunger: 20% · Tap for details")).toBeInTheDocument();
     expect(screen.queryByText("Hunger")).not.toBeInTheDocument();
-    expect(screen.queryByText("20%")).not.toBeInTheDocument();
+    // Each need shows its percentage beside the ring, so the at-a-glance state is readable.
+    expect(screen.getByText("20%")).toBeInTheDocument();
   });
 
   it("reveals the tapped need's exact level and status", () => {
@@ -56,6 +57,10 @@ describe("persistent player needs dashboard", () => {
     fireEvent.click(screen.getByRole("button", { name: "Collapse needs panel" }));
     expect(container.querySelector(".game-needs-rail")).toHaveClass("is-collapsed");
     expect(container.querySelector(".game-needs-toggle")).toBeInTheDocument();
+    expect(container.querySelector(".game-needs-toggle")).toHaveStyle({
+      width: "42px",
+      height: "42px",
+    });
     expect(container.querySelectorAll(".game-needs-preview-pill")).toHaveLength(2);
     expect(container.querySelector(".game-needs-preview")).toHaveTextContent("Social");
     expect(container.querySelector(".game-needs-preview")).toHaveTextContent("Hunger");

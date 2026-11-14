@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { mapHousingMarkers } from "@/components/map/map-housing-markers";
+import town from "@/data/osogbo-town.json";
+
+// The town grid's size and cell size come from the data, so these expectations follow any resize.
+const columns = town.grid.rows[0]!.length;
+const rows = town.grid.rows.length;
+const cellSize = town.grid.cellSize;
+const sceneX = (gridX: number) => (gridX - (columns - 1) / 2) * cellSize;
+const sceneZ = (gridZ: number) => (gridZ - (rows - 1) / 2) * cellSize;
 
 describe("housing map marker input", () => {
   it("projects the server plot and preserves its rent status", () => {
@@ -22,7 +30,7 @@ describe("housing map marker input", () => {
         type: "compound",
         tier: 2,
         status: "rent_due",
-        position: [-29, 0, -21],
+        position: [-21, 0, -15],
       },
     ]);
   });
@@ -32,23 +40,20 @@ describe("housing map marker input", () => {
       propertyId: "edge-home",
       label: "Room",
       model: "flat",
-      gridX: 31,
-      gridZ: 23,
+      gridX: 23,
+      gridZ: 17,
       tier: 1,
       status: "current",
     };
 
     expect(mapHousingMarkers([marker])).toEqual([
-      expect.objectContaining({
-        id: "edge-home",
-        position: [31, 0, 23],
-      }),
+      expect.objectContaining({ id: "edge-home", position: [23, 0, 17] }),
     ]);
 
     expect(
       mapHousingMarkers([
-        { ...marker, gridX: 32 },
-        { ...marker, gridZ: 24 },
+        { ...marker, gridX: 24 },
+        { ...marker, gridZ: 18 },
       ]),
     ).toEqual([]);
   });

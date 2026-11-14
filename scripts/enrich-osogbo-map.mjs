@@ -166,6 +166,6 @@ for (const [districtId, id, label, category, x, y, source, verify] of placeSeed)
   );
   district.landmarks.push({ id, label, category, x, y, isoCell, source, verify, actions });
 }
-data.excluded = [{ name: "Osun-Osogbo Sacred Grove", reason: "sacred site, not playable" }];
+data.excluded = [{ name: "River Shrine Court", reason: "heritage site, not playable" }];
 data.meta.source = "Hand-placed gameplay map; no geographic coordinates";
 writeFileSync(path, `${JSON.stringify(data, null, 2)}\n`);

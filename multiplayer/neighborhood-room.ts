@@ -1,12 +1,20 @@
 import { Room, type AuthContext, type Client } from "colyseus";
 import { NeighborhoodState, NetworkPlayer } from "../src/game/multiplayer-state.ts";
 import {
+  canOccupyNeighborhoodPoint,
   canRestoreNeighborhoodCheckpoint,
   movementFacing,
   parseMovementIntent,
+  PLAYER_WORLD_BOUNDS,
   stepAuthoritativePosition,
 } from "../src/game/authoritative-movement.ts";
 import { cityEntranceForRecord } from "../src/lib/city-world.ts";
+import {
+  advanceCommute,
+  createCommutePlan,
+  type CommuteContext,
+  type CommutePlan,
+} from "../src/game/commute-route.ts";
 import { isPlayableLocationRecord } from "../src/game/playable-district.ts";
 import {
   neighborhoodAreaForLocation,
@@ -16,6 +24,14 @@ import {
   type WorldPoint,
 } from "../src/game/neighborhood-model.ts";
 import type { MovementIntent, NetworkPlayerSnapshot } from "../src/game/multiplayer-state.ts";
+import { supabaseAdmin } from "../src/integrations/supabase/client.server.ts";
+import {
+  CHECKPOINT_INTERVAL_MS,
+  NeighborhoodCheckpoints,
+  type CheckpointPoint,
+  type CheckpointTarget,
+} from "./neighborhood-checkpoints.ts";
+import { verifyCommuteShift, type CommuteShiftRow } from "./commute-verification.ts";
 
 type CharacterRow = {
   id: string;
@@ -47,10 +63,30 @@ type AuthenticatedPlayer = {
 
 type InputState = { intent: MovementIntent; updatedAt: number };
 
+/** A server-driven walk from the character's position to the workplace in this neighbourhood. */
+type CommuteState = { client: Client; plan: CommutePlan };
+
 const LOCATION_ID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const EMPTY_APPEARANCE = "{}";
 const EMPTY_EQUIPMENT = "[]";
+
+/**
+ * Writes one checkpoint with the server-only admin client. The identity is always the one the room
+ * verified at join time, never a value from the browser. Errors are rethrown without their details
+ * so no key or token can reach the logs.
+ */
+async function saveCheckpoint(target: CheckpointTarget, point: CheckpointPoint) {
+  const { data, error } = await supabaseAdmin.rpc("save_neighborhood_world_checkpoint", {
+    p_character_id: target.characterId,
+    p_user_id: target.userId,
+    p_location_id: target.locationId,
+    p_world_x: point.x,
+    p_world_y: point.y,
+  });
+  if (error) throw new Error("checkpoint write failed");
+  return (data as { saved?: unknown } | null)?.saved === true;
+}
 
 function serializeEquipment(rows: { slot?: unknown }[]) {
   const allowed = new Set(["head", "top", "bottom", "shoes", "accessory"]);
@@ -174,8 +210,15 @@ export class NeighborhoodRoom extends Room {
   override patchRate = 50;
 
   private readonly movement = new Map<string, InputState>();
-  private readonly credentials = new Map<string, { accessToken: string; locationId: string }>();
+  private readonly credentials = new Map<
+    string,
+    { accessToken: string; locationId: string; characterId: string }
+  >();
+  private readonly commutes = new Map<string, CommuteState>();
   private readonly equipmentRefreshAt = new Map<string, number>();
+  private readonly checkpoints = new NeighborhoodCheckpoints(saveCheckpoint, (message) =>
+    console.warn(message),
+  );
   private areaOrigin: WorldPoint = { x: 7, y: 6 };
   private area = neighborhoodAreaForSlug(undefined);
 
@@ -183,16 +226,64 @@ export class NeighborhoodRoom extends Room {
     if (typeof options.locationId !== "string" || !LOCATION_ID_PATTERN.test(options.locationId))
       throw new Error("A valid neighborhood is required.");
     this.setMetadata({ locationId: options.locationId });
+    // The room clock is cleared automatically when the room is disposed.
+    this.clock.setInterval(() => void this.persistCheckpoints(), CHECKPOINT_INTERVAL_MS);
     this.onMessage("move", (client, payload: unknown) => {
       const intent = parseMovementIntent(payload);
+      // Any real movement input takes control back from an automatic commute.
+      const commute = this.commutes.get(client.sessionId);
+      if (commute && intent && (intent.x !== 0 || intent.y !== 0)) {
+        this.endCommute(client.sessionId, commute, "cancelled");
+      }
       if (!intent) {
         this.movement.set(client.sessionId, { intent: { x: 0, y: 0 }, updatedAt: Date.now() });
         return;
       }
       this.movement.set(client.sessionId, { intent, updatedAt: Date.now() });
     });
+    this.onMessage(
+      "commute-to-work",
+      (client, payload: unknown) => void this.startCommute(client, payload),
+    );
+    this.onMessage("keke-dropoff", (client, payload: unknown) =>
+      this.handleKekeDropoff(client, payload),
+    );
     this.onMessage("refresh-equipment", (client) => void this.refreshEquipment(client));
     this.setSimulationInterval(() => this.stepPlayers(), 50);
+  }
+
+  private handleKekeDropoff(client: Client, payload: unknown) {
+    const player = this.state.players.get(client.sessionId);
+    if (!player || !payload || typeof payload !== "object") return;
+    const rawX = (payload as { x?: unknown }).x;
+    const rawY = (payload as { y?: unknown }).y;
+    if (
+      typeof rawX !== "number" ||
+      typeof rawY !== "number" ||
+      !Number.isFinite(rawX) ||
+      !Number.isFinite(rawY)
+    ) {
+      return;
+    }
+    const target = {
+      x: Math.max(PLAYER_WORLD_BOUNDS.minX, Math.min(PLAYER_WORLD_BOUNDS.maxX, rawX)),
+      y: Math.max(PLAYER_WORLD_BOUNDS.minY, Math.min(PLAYER_WORLD_BOUNDS.maxY, rawY)),
+    };
+    if (
+      !canOccupyNeighborhoodPoint(target, this.areaOrigin, this.area.objects, this.area.obstacles)
+    ) {
+      client.send("keke-arrived", { ok: false, x: player.x, y: player.y });
+      return;
+    }
+    const commute = this.commutes.get(client.sessionId);
+    if (commute) {
+      this.endCommute(client.sessionId, commute, "cancelled");
+    }
+    this.movement.set(client.sessionId, { intent: { x: 0, y: 0 }, updatedAt: Date.now() });
+    player.x = target.x;
+    player.y = target.y;
+    player.facing = "south";
+    client.send("keke-arrived", { ok: true, x: target.x, y: target.y });
   }
 
   override async onAuth(
@@ -241,15 +332,43 @@ export class NeighborhoodRoom extends Room {
     this.credentials.set(client.sessionId, {
       accessToken: auth.accessToken,
       locationId: auth.character.current_location_id!,
+      characterId: auth.character.id,
     });
+    this.checkpoints.track(
+      client.sessionId,
+      {
+        userId: auth.userId,
+        characterId: auth.character.id,
+        locationId: auth.character.current_location_id!,
+      },
+      typeof auth.character.world_x === "number" && typeof auth.character.world_y === "number"
+        ? { x: auth.character.world_x, y: auth.character.world_y }
+        : null,
+    );
     this.movement.set(client.sessionId, { intent: { x: 0, y: 0 }, updatedAt: Date.now() });
   }
 
   override onLeave(client: Client) {
+    // Capture the authoritative position before the player is removed, then save it.
+    const player = this.state.players.get(client.sessionId);
+    const finalPosition = player ? { x: player.x, y: player.y } : undefined;
     this.state.players.delete(client.sessionId);
     this.movement.delete(client.sessionId);
+    this.commutes.delete(client.sessionId);
     this.credentials.delete(client.sessionId);
     this.equipmentRefreshAt.delete(client.sessionId);
+    void this.checkpoints.release(client.sessionId, finalPosition);
+  }
+
+  override onDispose() {
+    return this.checkpoints.dispose();
+  }
+
+  private persistCheckpoints() {
+    return this.checkpoints.saveAll((sessionId) => {
+      const player = this.state.players.get(sessionId);
+      return player ? { x: player.x, y: player.y } : undefined;
+    });
   }
 
   private async refreshEquipment(client: Client) {
@@ -267,13 +386,93 @@ export class NeighborhoodRoom extends Room {
     }
   }
 
+  private async startCommute(client: Client, payload: unknown) {
+    const shiftId =
+      payload && typeof payload === "object"
+        ? (payload as { shiftId?: unknown }).shiftId
+        : undefined;
+    const refuse = (reason: string) => client.send("commute-state", { status: "refused", reason });
+
+    if (typeof shiftId !== "string" || !LOCATION_ID_PATTERN.test(shiftId))
+      return refuse("That shift could not be found.");
+    const credentials = this.credentials.get(client.sessionId);
+    if (!credentials || !this.state.players.has(client.sessionId)) return;
+    const workplace = this.area.objects.find((object) => object.kind === "work");
+    if (!workplace) return refuse("There is no workplace in this neighbourhood.");
+
+    let verdict;
+    try {
+      // Service role, server-only: the shift row is read here, never trusted from the client.
+      const { data, error } = await supabaseAdmin
+        .from("career_shifts")
+        .select("id, character_id, location_id, status")
+        .eq("id", shiftId)
+        .maybeSingle();
+      if (error) throw error;
+      verdict = verifyCommuteShift(data as CommuteShiftRow | null, {
+        characterId: credentials.characterId,
+        locationId: credentials.locationId,
+      });
+    } catch {
+      return refuse("Could not check your shift. Try again.");
+    }
+    if (!verdict.ok) return refuse(verdict.reason);
+
+    // The player may have left while the shift was being checked.
+    const player = this.state.players.get(client.sessionId);
+    if (!player) return;
+    const plan = createCommutePlan({ x: player.x, y: player.y }, workplace, this.commuteContext());
+    if (!plan) return refuse("No walkable route to work from here.");
+
+    this.commutes.set(client.sessionId, { client, plan });
+    client.send("commute-state", { status: "started" });
+  }
+
+  private commuteContext(): CommuteContext {
+    return {
+      origin: this.areaOrigin,
+      objects: this.area.objects,
+      ...(this.area.obstacles ? { obstacles: this.area.obstacles } : {}),
+    };
+  }
+
+  /** Ends a commute and tells the client why, so it can clear the banner or open work. */
+  private endCommute(
+    sessionId: string,
+    commute: CommuteState,
+    reason: "arrived" | "cancelled" | "blocked",
+  ) {
+    this.commutes.delete(sessionId);
+    commute.client.send("commute-state", { status: "ended", reason });
+  }
+
+  /** Returns this tick's intent, or null when the commute has ended. */
+  private commuteStep(
+    sessionId: string,
+    player: { x: number; y: number },
+    commute: CommuteState,
+  ): MovementIntent | null {
+    const tick = advanceCommute(commute.plan, { x: player.x, y: player.y }, this.commuteContext());
+    if (tick.status === "moving") return tick.intent;
+    this.endCommute(sessionId, commute, tick.status === "arrived" ? "arrived" : "blocked");
+    return null;
+  }
+
   private stepPlayers() {
     const now = Date.now();
     const delta = 0.05;
     for (const [sessionId, player] of this.state.players) {
-      const input = this.movement.get(sessionId);
-      if (!input) continue;
-      const intent = now - input.updatedAt > 250 ? { x: 0, y: 0 } : input.intent;
+      let intent: MovementIntent;
+      const commute = this.commutes.get(sessionId);
+      if (commute) {
+        const commuting = this.commuteStep(sessionId, player, commute);
+        if (!commuting) continue;
+        intent = commuting;
+      } else {
+        const input = this.movement.get(sessionId);
+        if (!input) continue;
+        intent = now - input.updatedAt > 250 ? { x: 0, y: 0 } : input.intent;
+      }
       const next = stepAuthoritativePosition(
         player,
         intent,

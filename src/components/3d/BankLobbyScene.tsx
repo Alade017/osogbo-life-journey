@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
-import { Group, Plane, Vector3 } from "three";
+import { useGLTF } from "@react-three/drei";
+import { Box3, Group, Plane, Vector3 } from "three";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
-import { WorldInstances, WorldMaterial, type WorldInstance } from "@/components/3d/WorldScene";
 import { Scene } from "@/components/3d/Scene";
 import { SceneHtml as Html } from "@/components/3d/SceneHtml";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
@@ -15,71 +15,61 @@ type Position = [number, number, number];
 const BANK_ENTRANCE: Position = [0, 0.06, 3.35];
 type OnlineBankPlayer = { characterId: string; name: string };
 const FLOOR = new Plane(new Vector3(0, 1, 0), 0);
-const FLOOR_TILE_GROUPS = [0, 1].map((parity) =>
-  Array.from({ length: 10 * 14 }, (_, index) => {
-    const row = Math.floor(index / 14);
-    const column = index % 14;
-    return { row, column };
-  })
-    .filter(({ row, column }) => (row + column) % 2 === parity)
-    .map(({ row, column }): WorldInstance => ({
-      position: [column - 6.5, 0.011, row - 4.5],
-      scale: [0.97, 0.018, 0.97],
-    })),
-);
 
-function Block({
-  position,
-  size,
-  color,
-  onClick,
-}: {
-  position: Position;
-  size: Position;
-  color: string;
-  onClick?: (() => void) | undefined;
-}) {
-  return (
-    <mesh
-      position={position}
-      castShadow
-      receiveShadow
-      {...(onClick
-        ? {
-            onClick: (event: ThreeEvent<MouseEvent>) => {
-              event.stopPropagation();
-              onClick();
-            },
-          }
-        : {})}
-    >
-      <boxGeometry args={size} />
-      <WorldMaterial color={color} />
-    </mesh>
-  );
-}
+/** The bank hall shell from the supplied environment models. */
+const BANK_SHELL_URL = "/models/environments/market-and-bank/bank-vault-hall.glb";
+/** The walkable lobby, in metres from its centre. The shell is fitted inside this rectangle. */
+const LOBBY_WALK = { x: 5.7, z: 3.45 };
+/** The ATM kiosk model and where it stands in the walkable lobby, in lobby coordinates. */
+const BANK_ATM_URL = "/models/environments/market-and-bank/atm-kiosk.glb";
+const ATM_POSITION: Position = [4.6, 0, 2.5];
+/** Model parts that open an activity when clicked, matched by the names in the model file. */
+const SHELL_HOTSPOTS: Record<string, "teller" | "seat"> = {
+  "025-teller-counter": "teller",
+  "026-bulletproof-screen": "teller",
+  "033-waiting-chairs": "seat",
+};
 
-function Plant({ position }: { position: Position }) {
-  return (
-    <group position={position}>
-      <mesh position={[0, 0.35, 0]}>
-        <cylinderGeometry args={[0.32, 0.26, 0.7, 8]} />
-        <WorldMaterial color="#b76e48" />
-      </mesh>
-      <mesh position={[0, 1.05, 0]}>
-        <icosahedronGeometry args={[0.65, 0]} />
-        <WorldMaterial tone="foliage" />
-      </mesh>
-      <mesh position={[-0.38, 0.9, 0.08]} scale={0.7}>
-        <icosahedronGeometry args={[0.55, 0]} />
-        <WorldMaterial color="#71866e" />
-      </mesh>
-      <mesh position={[0.4, 0.88, -0.08]} scale={0.72}>
-        <icosahedronGeometry args={[0.55, 0]} />
-        <WorldMaterial color="#9aa47b" />
-      </mesh>
-    </group>
-  );
+type ShellHotspot = { place: "teller" | "seat"; centre: Position; size: Position };
+
+/**
+ * Turns the shell so its long side runs across the lobby, scales it to fit the walkable floor,
+ * and reads each hotspot's bounds from the model's own named parts.
+ */
+function fitBankShell(scene: Group) {
+  const shell = scene.clone(true);
+  const holder = new Group();
+  holder.add(shell);
+  holder.updateMatrixWorld(true);
+
+  const hotspots: ShellHotspot[] = [];
+  for (const [name, place] of Object.entries(SHELL_HOTSPOTS)) {
+    const part = shell.getObjectByName(name);
+    if (!part) continue;
+    const box = new Box3().setFromObject(part);
+    const centre = box.getCenter(new Vector3());
+    const size = box.getSize(new Vector3());
+    hotspots.push({
+      place,
+      centre: [centre.x, centre.y, centre.z],
+      size: [size.x, size.y, size.z],
+    });
+  }
+
+  // Turn a quarter, then scale so the rotated footprint fits the walkable floor.
+  holder.rotation.y = Math.PI / 2;
+  holder.updateMatrixWorld(true);
+  const turned = new Box3().setFromObject(holder);
+  const turnedSize = turned.getSize(new Vector3());
+  const fit = Math.min((LOBBY_WALK.x * 2) / turnedSize.x, (LOBBY_WALK.z * 2) / turnedSize.z);
+  holder.scale.setScalar(fit);
+  holder.updateMatrixWorld(true);
+  const placed = new Box3().setFromObject(holder);
+  const centre = placed.getCenter(new Vector3());
+  // Centre the hall on the origin, with its floor at y = 0.
+  holder.position.set(-centre.x, -placed.min.y, -centre.z);
+
+  return { holder, shell, hotspots };
 }
 
 function LobbyArchitecture({
@@ -90,6 +80,10 @@ function LobbyArchitecture({
   onWalk: (position: Position) => void;
 }) {
   const { invalidate } = useThree();
+  const gltf = useGLTF(BANK_SHELL_URL);
+  const fitted = useMemo(() => fitBankShell(gltf.scene), [gltf]);
+  const atmModel = useGLTF(BANK_ATM_URL);
+  const atm = useMemo(() => atmModel.scene.clone(true), [atmModel]);
 
   useEffect(() => {
     const update = () => invalidate();
@@ -101,95 +95,45 @@ function LobbyArchitecture({
     event.stopPropagation();
     const point = event.ray.intersectPlane(FLOOR, new Vector3());
     if (!point) return;
-    onWalk([Math.max(-5.7, Math.min(5.7, point.x)), 0.06, Math.max(-3.9, Math.min(3.9, point.z))]);
+    onWalk([
+      Math.max(-LOBBY_WALK.x, Math.min(LOBBY_WALK.x, point.x)),
+      0.06,
+      Math.max(-LOBBY_WALK.z, Math.min(LOBBY_WALK.z, point.z)),
+    ]);
   };
 
   return (
     <group>
-      <mesh position={[0, -0.04, 0]} onClick={walkOnFloor} receiveShadow>
-        <boxGeometry args={[14, 0.08, 10]} />
-        <WorldMaterial tone="tileLight" />
+      <mesh position={[0, 0.01, 0]} rotation={[-Math.PI / 2, 0, 0]} onClick={walkOnFloor}>
+        <planeGeometry args={[LOBBY_WALK.x * 2, LOBBY_WALK.z * 2]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
-      <WorldInstances items={FLOOR_TILE_GROUPS[0]!} tone="tileLight" />
-      <WorldInstances items={FLOOR_TILE_GROUPS[1]!} tone="tileShade" />
-
-      <Block position={[0, 2, -5.15]} size={[14, 4, 0.3]} color="#e5dece" />
-      <Block position={[-6.85, 2, 0]} size={[0.3, 4, 10.2]} color="#e5dece" />
-      <Block position={[6.85, 2, -1.6]} size={[0.3, 4, 6.8]} color="#e5dece" />
-      <Block position={[0, 3.2, -4.95]} size={[12.8, 0.12, 0.08]} color="#1e5960" />
-
-      {[-4.7, -2.1, 0.5, 3.1].map((x) => (
-        <group key={x}>
-          <Block position={[x, 1.85, -4.92]} size={[2.1, 1.75, 0.06]} color="#a8d1d6" />
-          <Block position={[x, 1.85, -4.85]} size={[0.09, 1.9, 0.12]} color="#f0e9dc" />
-        </group>
-      ))}
-
-      <Block position={[-0.5, 0.24, -2.55]} size={[7.4, 0.48, 0.9]} color="#bd9b73" />
-      <Block position={[-0.5, 0.63, -2.55]} size={[7.65, 0.2, 1]} color="#213f51" />
-      {[-2.4, 1.2].map((x) => (
-        <group key={x}>
-          <Block position={[x, 1.2, -3.1]} size={[2.2, 0.9, 0.08]} color="#d9c8ac" />
-          <Block position={[x, 1.68, -3.04]} size={[2.2, 0.08, 0.08]} color="#be874e" />
-          <Block
-            position={[x, 0.92, -2.1]}
-            size={[1.65, 0.5, 0.08]}
-            color="#d0b38c"
-            onClick={() => onInteract("teller")}
-          />
-        </group>
-      ))}
-
       <group
-        onClick={(event) => {
+        position={ATM_POSITION}
+        onClick={(event: ThreeEvent<MouseEvent>) => {
           event.stopPropagation();
           onInteract("atm");
         }}
       >
-        <Block position={[5, 0.88, 0.6]} size={[1.05, 1.76, 0.48]} color="#294d5a" />
-        <Block position={[5, 1.46, 0.87]} size={[0.66, 0.56, 0.06]} color="#92c6bd" />
-        <Block position={[5, 0.63, 0.88]} size={[0.42, 0.12, 0.05]} color="#d5ae6a" />
-        <Block position={[5, 0.14, 0.87]} size={[0.72, 0.18, 0.06]} color="#d6d2c7" />
+        <primitive object={atm} />
       </group>
-
-      {[-5.15, -3.8, 3.8].map((x) => (
-        <group
-          key={x}
-          onClick={(event) => {
-            event.stopPropagation();
-            onInteract("seat");
-          }}
-        >
-          <Block position={[x, 0.55, 1.85]} size={[1.15, 0.18, 0.92]} color="#bd8a5e" />
-          <Block position={[x, 1.04, 1.51]} size={[1.15, 0.82, 0.16]} color="#53766f" />
-          {[-0.4, 0.4].map((leg) => (
-            <Block
-              key={leg}
-              position={[x + leg, 0.26, 1.85]}
-              size={[0.1, 0.52, 0.1]}
-              color="#4b4d48"
-            />
+      <primitive object={fitted.holder}>
+        <primitive object={fitted.shell}>
+          {fitted.hotspots.map((hotspot) => (
+            <mesh
+              key={`${hotspot.place}-${hotspot.centre.join(",")}`}
+              position={hotspot.centre}
+              onClick={(event: ThreeEvent<MouseEvent>) => {
+                event.stopPropagation();
+                onInteract(hotspot.place);
+              }}
+            >
+              <boxGeometry args={hotspot.size} />
+              <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+            </mesh>
           ))}
-        </group>
-      ))}
-
-      {[-2.5, -0.9, 0.7, 2.3].map((x) => (
-        <group key={x} position={[x, 0, 0.05]}>
-          <mesh position={[0, 0.48, 0]}>
-            <cylinderGeometry args={[0.07, 0.07, 0.9, 6]} />
-            <WorldMaterial color="#b27c47" />
-          </mesh>
-          <mesh position={[0, 0.97, 0]}>
-            <sphereGeometry args={[0.13, 8, 6]} />
-            <WorldMaterial color="#d8c6a9" />
-          </mesh>
-          {x < 2.3 && (
-            <Block position={[x + 0.8, 0.48, 0]} size={[0.8, 0.045, 0.045]} color="#b27c47" />
-          )}
-        </group>
-      ))}
-      <Plant position={[-6.3, 0, -3.9]} />
-      <Plant position={[6.2, 0, -3.9]} />
+        </primitive>
+      </primitive>
     </group>
   );
 }
@@ -371,49 +315,63 @@ function BankLobbyModel({
   );
 }
 
+/**
+ * Shown only when the 3D lobby cannot load. It states that plainly and offers the same three real
+ * services, so no stand-in room is drawn.
+ */
 export function BankLobbyFallback({
   bankName,
+  onRetry,
   onInteract,
 }: {
   bankName: string;
+  onRetry?: () => void;
   onInteract: (place: "teller" | "atm" | "seat") => void;
 }) {
   return (
     <div
-      className="flex h-full min-h-[260px] flex-col justify-between rounded-xl border border-border bg-[#e7e2d7] p-5 text-[#243d49]"
+      className="flex min-h-[260px] flex-col items-start justify-center gap-4 rounded-xl border border-border bg-card p-5"
       role="group"
-      aria-label={`${bankName} lobby illustration`}
+      aria-label={`${bankName} lobby`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#386a68]">{bankName}</p>
-          <h2 className="mt-1 text-xl font-black">Welcome to the lobby</h2>
-        </div>
-        <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-bold">OPEN</span>
+      <div>
+        <p className="text-sm font-semibold text-foreground">The 3D lobby could not load.</p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          You can still use the bank's services from here.
+        </p>
       </div>
-      <div className="grid grid-cols-3 gap-3">
-        <div className="col-span-3 h-3 rounded bg-[#244d5b]" />
+      <div className="flex flex-wrap gap-2">
         <button
           type="button"
           onClick={() => onInteract("teller")}
-          className="h-16 rounded-lg border-b-4 border-[#b78050] bg-[#d2c0a3]"
-          aria-label="Talk to a bank teller"
-        />
+          className="rounded-lg border border-border px-3 py-2 text-sm font-semibold"
+        >
+          Talk to a bank teller
+        </button>
         <button
           type="button"
           onClick={() => onInteract("seat")}
-          className="h-16 rounded-lg border-b-4 border-[#b78050] bg-[#d2c0a3]"
-          aria-label="Use the waiting area"
-        />
+          className="rounded-lg border border-border px-3 py-2 text-sm font-semibold"
+        >
+          Use the waiting area
+        </button>
         <button
           type="button"
           onClick={() => onInteract("atm")}
-          className="flex h-16 items-center justify-center rounded-lg bg-[#375d68] text-xs font-bold text-white"
+          className="rounded-lg border border-border px-3 py-2 text-sm font-semibold"
         >
-          ATM
+          Use the ATM
         </button>
+        {onRetry && (
+          <button
+            type="button"
+            onClick={onRetry}
+            className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground"
+          >
+            Try the lobby again
+          </button>
+        )}
       </div>
-      <p className="text-sm font-semibold">Teller service | Waiting area | 24-hour ATM</p>
     </div>
   );
 }
@@ -442,7 +400,14 @@ export function BankLobbyScene({
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [destination, setDestination] = useState<Position>(BANK_ENTRANCE);
   const handleReady = useCallback(() => setSceneReady(true), []);
-  const fallback = <BankLobbyFallback bankName={bankName} onInteract={onInteract} />;
+  const retry = useCallback(() => {
+    setSceneFailed(false);
+    setSceneReady(false);
+    setLoadingProgress(0);
+  }, []);
+  const fallback = (
+    <BankLobbyFallback bankName={bankName} onRetry={retry} onInteract={onInteract} />
+  );
 
   useEffect(() => {
     if (sceneReady || sceneFailed) return;

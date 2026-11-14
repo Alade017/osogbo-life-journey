@@ -3,7 +3,6 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { clone } from "three/addons/utils/SkeletonUtils.js";
-import { DEVELOPMENT_MODELS } from "@/types/models";
 import { characterAppearance3D } from "@/game/character-3d-appearance";
 
 describe("3D development fixtures", () => {
@@ -18,7 +17,7 @@ describe("3D development fixtures", () => {
   });
   it("loads the room GLB with independent cloned objects", async () => {
     const loader = new GLTFLoader();
-    const bytes = readFileSync(`public${DEVELOPMENT_MODELS.room}`);
+    const bytes = readFileSync("public/models/rooms/development-room.glb");
     const gltf = await loader.parseAsync(
       bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
       "",

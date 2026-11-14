@@ -50,7 +50,7 @@ export function GameNeedsRail({ player }: { player: PlayerState }) {
   const handleNeedAction = async () => {
     if (!needAction || !detailNeed) return;
     setActionMessage(null);
-    if ("action" in needAction) {
+    if ("action" in needAction && needAction.action === "eat") {
       if (!ready || busy || simulation.currentAction) {
         setActionMessage("Finish your current activity and wait for the simulation to be ready.");
         return;
@@ -155,6 +155,7 @@ export function GameNeedsRail({ player }: { player: PlayerState }) {
                   <Icon size={15} aria-hidden="true" />
                 </span>
               </span>
+              <span className="game-needs-value">{value}%</span>
             </button>
           );
         })}

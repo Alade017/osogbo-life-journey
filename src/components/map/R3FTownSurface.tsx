@@ -40,7 +40,7 @@ import { MovingTraffic3D } from "./MovingTraffic3D";
 import { MovingPedestrians3D } from "./MovingPedestrians3D";
 import { FunctionalStreetLights3D } from "./FunctionalStreetLights3D";
 import { RoadsideInfrastructure3D } from "./RoadsideInfrastructure3D";
-import { LockedPlaces3D, type LockedPlace } from "./LockedPlaces3D";
+import { LockedPlaces3D, type LockedPlace, type LockedSourcePlace } from "./LockedPlaces3D";
 import {
   deriveTownMobilityRoutes,
   TownRoadCrossingPriorityScheduler,
@@ -61,6 +61,8 @@ type TownMapPlace = {
 
 export type TownMapData = {
   places: readonly TownMapPlace[];
+  /** Landmarks the player cannot visit yet; drawn as locked pins. */
+  lockedPlaces?: readonly LockedSourcePlace[];
   properties: readonly import("@/components/map/MapCanvas").MapProperty[] | undefined;
   playerLocation: import("@/components/map/MapCanvas").MapPlayerLocation | null | undefined;
   billboardMarkers: readonly import("@/components/map/MapCanvas").MapBillboardMarker[];
@@ -1138,6 +1140,11 @@ export function R3FTownSurface(props: Props) {
             freeExplore
           />
           <MapLighting size={gridCols * cell} />
+          <color attach="background" args={[WORLD_PALETTE.sky]} />
+          <fog
+            attach="fog"
+            args={[WORLD_PALETTE.sky, gridCols * cell * 0.85, gridCols * cell * 1.95]}
+          />
           <Terrain3D gridCols={gridCols} gridRows={gridRows} cellSize={cell} />
 
           <WorldRoads items={roads} />
@@ -1170,6 +1177,7 @@ export function R3FTownSurface(props: Props) {
           <WorldWasteBins positions={wasteBins} size={cell} />
           <WorldInstances
             tone="slate"
+            castShadow={false}
             items={town.grid.waterCells.map(([x, z]) => ({
               position: [point(x!, z!)[0], 0.015, point(x!, z!)[2]],
               scale: [cell, 0.03, cell],
@@ -1177,6 +1185,7 @@ export function R3FTownSurface(props: Props) {
           />
           <WorldInstances
             tone="wall"
+            castShadow={false}
             items={town.grid.plotCells.map(([x, z]) => ({
               position: [point(x!, z!)[0], 0.015, point(x!, z!)[2]],
               scale: [cell, 0.03, cell],
@@ -1205,6 +1214,7 @@ export function R3FTownSurface(props: Props) {
             onSelectTransit={() => props.onSelectLandmark("transit-park")}
           />
           <LockedPlaces3D
+            places={props.lockedPlaces ?? []}
             cellSize={cell}
             gridCols={gridCols}
             gridRows={gridRows}

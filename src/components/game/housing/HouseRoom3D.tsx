@@ -8,7 +8,8 @@ import {
   type RefObject,
 } from "react";
 import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
-import { Html, RoundedBox } from "@react-three/drei";
+import { RoundedBox } from "@react-three/drei";
+import { SceneHtml as Html } from "@/components/3d/SceneHtml";
 import { CurvePath, DoubleSide, LineCurve3, Plane, Vector3, type Group } from "three";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
 import type { FoodDelivery } from "@/lib/food-delivery-service";
@@ -2509,9 +2510,9 @@ export function HouseRoom3D({
                   ]
                 : editMode
                   ? [0, 0.25, 0]
-                  : [0, WORLD_SCALE.door * 0.65, 0]
+                  : [0, WORLD_SCALE.door * 0.58, depth * 0.06]
             }
-            distanceScale={roomView ? ROOM_VIEW_CAMERA.distanceScale : 1}
+            distanceScale={roomView ? ROOM_VIEW_CAMERA.distanceScale : 0.94}
             enabled={!inputBlocked && !activePreview}
           />
         </Canvas>

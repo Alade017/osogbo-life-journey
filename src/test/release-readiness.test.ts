@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 // The deployment script is also imported here to exercise its pure validation helpers.
-// @ts-expect-error JavaScript CLI helpers do not require application type declarations.
 import { auditMigrationJournal, safeEndpoint } from "../../scripts/release-readiness-check.mjs";
 
 describe("read-only release checks", () => {

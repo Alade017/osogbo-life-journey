@@ -1,6 +1,5 @@
 import { useState, type FC } from "react";
-import { Html } from "@react-three/drei";
-import town from "@/data/osogbo-town.json";
+import { SceneHtml as Html } from "@/components/3d/SceneHtml";
 import { MapPin3D } from "./MapPin3D";
 
 export interface LockedPlace {
@@ -13,48 +12,48 @@ export interface LockedPlace {
   unlockRequirement: string;
 }
 
+/** A landmark that is not available to visit yet, shown as a locked pin. */
+export type LockedSourcePlace = {
+  id: string;
+  label: string;
+  category: string;
+  grid: { x: number; z: number };
+  availabilityReason?: string;
+  description?: string;
+  unlockRequirement?: string;
+};
+
 export interface LockedPlaces3DProps {
+  /** Every landmark the player cannot visit yet. */
+  places: readonly LockedSourcePlace[];
   cellSize: number;
   gridCols: number;
   gridRows: number;
   onSelectLocked?: (place: LockedPlace) => void;
 }
 
-type AuthoredMapPoi = {
-  id: string;
-  label: string;
-  category: string;
-  grid: { x: number; z: number };
-  mapObjectType?: string;
-  availabilityReason?: string;
-  description?: string;
-  unlockRequirement?: string;
-};
-
-/** Renders map-only POIs from authored data; no coordinates or landmark copy live here. */
+/** Renders each locked landmark as a locked pin at its authored grid cell. */
 export const LockedPlaces3D: FC<LockedPlaces3DProps> = ({
+  places,
   cellSize,
   gridCols,
   gridRows,
   onSelectLocked,
 }) => {
   const [activeModal, setActiveModal] = useState<LockedPlace | null>(null);
-  const authoredPlaces = town.landmarks as readonly AuthoredMapPoi[];
-  const lockedSites: LockedPlace[] = authoredPlaces
-    .filter((place) => place.mapObjectType === "poi")
-    .map((place) => ({
-      id: place.id,
-      name: place.label,
-      category: place.category,
-      position: [
-        (place.grid.x - (gridCols - 1) / 2) * cellSize,
-        0.2,
-        (place.grid.z - (gridRows - 1) / 2) * cellSize,
-      ],
-      reason: place.availabilityReason ?? "This map-only point is not a travel destination yet.",
-      lore: place.description ?? "A point of interest in the Osogbo-inspired game world.",
-      unlockRequirement: place.unlockRequirement ?? "A future map implementation phase.",
-    }));
+  const lockedSites: LockedPlace[] = places.map((place) => ({
+    id: place.id,
+    name: place.label,
+    category: place.category,
+    position: [
+      (place.grid.x - (gridCols - 1) / 2) * cellSize,
+      0.2,
+      (place.grid.z - (gridRows - 1) / 2) * cellSize,
+    ],
+    reason: place.availabilityReason ?? "This map-only point is not a travel destination yet.",
+    lore: place.description ?? "A point of interest in the Osogbo-inspired game world.",
+    unlockRequirement: place.unlockRequirement ?? "A future map implementation phase.",
+  }));
 
   return (
     <group>
