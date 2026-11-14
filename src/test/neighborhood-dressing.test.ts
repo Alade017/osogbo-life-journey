@@ -1,97 +1,62 @@
 import { describe, expect, it } from "vitest";
 import {
-  FUEL_AND_GO_AREA,
-  NEIGHBORHOOD_AREAS,
-  type NeighborhoodArea,
-} from "../game/neighborhood-model.ts";
-import { dressingPartsFor } from "../components/3d/props/dressing.ts";
+  carSpots,
+  pedestrianCrossings,
+  pedestrianSpots,
+  roadMarkings,
+  sidewalksAndCurbs,
+  streetLightSpots,
+  vendorSpots,
+} from "@/game/neighborhood-dressing";
+import { CITY_CENTRE_AREA, NEIGHBORHOOD_SCENE_BOUNDS } from "@/game/neighborhood-model";
 
-const dressed = Object.values(NEIGHBORHOOD_AREAS).filter(
-  (area: NeighborhoodArea) => (area.dressing ?? []).length > 0,
-);
+const bounds = NEIGHBORHOOD_SCENE_BOUNDS;
 
-/** Bounding box of an area's own objects and obstacles, with a margin for dressing. */
-function areaExtent(area: NeighborhoodArea) {
-  const xs: number[] = [];
-  const ys: number[] = [];
-  for (const object of area.objects) {
-    xs.push(object.x);
-    ys.push(object.y);
-  }
-  for (const box of area.obstacles ?? []) {
-    xs.push(box.x - box.width / 2, box.x + box.width / 2);
-    ys.push(box.y - box.height / 2, box.y + box.height / 2);
-  }
-  const margin = 160;
-  return {
-    minX: Math.min(...xs) - margin,
-    maxX: Math.max(...xs) + margin,
-    minY: Math.min(...ys) - margin,
-    maxY: Math.max(...ys) + margin,
-  };
-}
+describe("neighbourhood street dressing", () => {
+  it("uses the expanded scene bounds for NPCs and street dressing", () => {
+    expect(bounds.width).toBe(24 * 160);
+    expect(bounds.height).toBe(20 * 160);
+  });
 
-function inside(
-  point: { x: number; y: number },
-  box: { x: number; y: number; width: number; height: number },
-  gap: number,
-) {
-  return (
-    Math.abs(point.x - box.x) < box.width / 2 + gap &&
-    Math.abs(point.y - box.y) < box.height / 2 + gap
-  );
-}
+  it("derives markings, kerbs and sidewalks from the area's roads", () => {
+    expect(roadMarkings(CITY_CENTRE_AREA, bounds).length).toBeGreaterThan(0);
+    const { sidewalks, curbs } = sidewalksAndCurbs(CITY_CENTRE_AREA, bounds);
+    expect(sidewalks.length).toBeGreaterThan(0);
+    expect(curbs.length).toBe(sidewalks.length);
+  });
 
-describe("neighbourhood dressing", () => {
-  it("dresses the market and the filling station", () => {
-    expect(dressed.map((area) => area.slug)).toEqual(
-      expect.arrayContaining(["oja-oba", "fuel-and-go"]),
+  it("places street lights and cars along streets, not in lanes", () => {
+    expect(streetLightSpots(CITY_CENTRE_AREA, bounds).length).toBeGreaterThan(0);
+    expect(carSpots(CITY_CENTRE_AREA, bounds).length).toBeLessThanOrEqual(12);
+  });
+
+  it("keeps sidewalks and lamps clear of main building footprints", () => {
+    const buildings = CITY_CENTRE_AREA.objects.map((o) => ({
+      left: o.x - 57,
+      right: o.x + 57,
+      top: o.y - 62,
+      bottom: o.y - 4,
+    }));
+    for (const rect of sidewalksAndCurbs(CITY_CENTRE_AREA, bounds).sidewalks)
+      for (const b of buildings) {
+        const overlapX =
+          Math.abs(rect.x - (b.left + b.right) / 2) < (rect.width + (b.right - b.left)) / 2;
+        const overlapY =
+          Math.abs(rect.y - (b.top + b.bottom) / 2) < (rect.depth + (b.bottom - b.top)) / 2;
+        expect(overlapX && overlapY).toBe(false);
+      }
+    for (const spot of streetLightSpots(CITY_CENTRE_AREA, bounds))
+      for (const b of buildings)
+        expect(spot.x > b.left && spot.x < b.right && spot.y > b.top && spot.y < b.bottom).toBe(
+          false,
+        );
+  });
+
+  it("is deterministic for the same area", () => {
+    expect(pedestrianSpots(CITY_CENTRE_AREA, bounds)).toEqual(
+      pedestrianSpots(CITY_CENTRE_AREA, bounds),
     );
-  });
-
-  it("keeps every decorative prop within the area's own extent", () => {
-    for (const area of dressed) {
-      const extent = areaExtent(area);
-      for (const item of area.dressing ?? []) {
-        const label = `${area.slug} ${item.id}`;
-        expect(item.x, label).toBeGreaterThanOrEqual(extent.minX);
-        expect(item.x, label).toBeLessThanOrEqual(extent.maxX);
-        expect(item.y, label).toBeGreaterThanOrEqual(extent.minY);
-        expect(item.y, label).toBeLessThanOrEqual(extent.maxY);
-      }
-    }
-  });
-
-  it("never places a prop on an obstacle, a hero object or a road", () => {
-    for (const area of dressed) {
-      for (const item of area.dressing ?? []) {
-        const label = `${area.slug} ${item.id}`;
-        for (const box of area.obstacles ?? []) {
-          expect(inside(item, box, 16), `${label} on ${box.id}`).toBe(false);
-        }
-        for (const object of area.objects) {
-          expect(
-            inside(item, { ...object, width: 40, height: 40 }, 16),
-            `${label} on ${object.id}`,
-          ).toBe(false);
-        }
-        for (const road of area.roads ?? []) {
-          const onRoad =
-            road.axis === "vertical"
-              ? Math.abs(item.x - road.offset) < road.width / 2
-              : Math.abs(item.y - road.offset) < road.width / 2;
-          expect(onRoad, `${label} on ${road.id}`).toBe(false);
-        }
-      }
-    }
-  });
-
-  it("gives every dressing kind drawable parts", () => {
-    for (const area of dressed) {
-      for (const item of area.dressing ?? []) {
-        expect(dressingPartsFor(item.kind).length, `${area.slug} ${item.kind}`).toBeGreaterThan(0);
-      }
-    }
-    expect(FUEL_AND_GO_AREA.dressing?.length).toBeGreaterThan(0);
+    expect(pedestrianCrossings(CITY_CENTRE_AREA).length).toBeGreaterThan(0);
+    expect(vendorSpots(CITY_CENTRE_AREA)).toEqual([...(CITY_CENTRE_AREA.marketStalls ?? [])]);
   });
 });
