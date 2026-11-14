@@ -2420,6 +2420,24 @@
       "actions": []
     },
     {
+      "id": "osun-sacred-grove",
+      "label": "Osun-Osogbo Sacred Grove",
+      "category": "worship",
+      "districtId": "river-quarter",
+      "locationSlug": null,
+      "x": 2755,
+      "y": 1645,
+      "verify": false,
+      "grid": {
+        "x": 25,
+        "z": 22
+      },
+      "mapObjectType": "poi",
+      "availabilityReason": "UNESCO heritage landmark reserved for a later playable phase.",
+      "unlockRequirement": "Future heritage-area implementation.",
+      "actions": []
+    },
+    {
       "id": "river-shrine-court",
       "label": "River Shrine Court",
       "category": "worship",
