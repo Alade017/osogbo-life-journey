@@ -1,7 +1,7 @@
-/** Hair silhouettes map stable saved style labels to shared procedural geometry families. */
+/** Hair silhouettes map stable saved style labels to procedural geometry families. */
 export type HairShape = "cap" | "afro" | "buzz" | "braids" | "locs" | "knots" | "bun";
 
-/** Returns a distinct silhouette for each saved style family, or null for bald. */
+/** Returns a renderable silhouette for a saved style, or null for bald. */
 export function hairShapeFor(style: string): HairShape | null {
   if (/^bald$/i.test(style)) return null;
   if (/afro|twist.?out/i.test(style)) return "afro";

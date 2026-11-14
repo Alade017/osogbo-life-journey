@@ -1,6 +1,9 @@
-type HeadwearStyle = 1 | 2 | 3;
+type HeadwearStyle = 0 | 1 | 2 | 3;
 
-/** Procedural Yoruba and everyday headwear, positioned in the local head-bone space. */
+/**
+ * Lightweight procedural Yoruba and everyday headwear.
+ * Coordinates are local to the existing head bone; no rig changes are required.
+ */
 export function ProceduralHeadwear({
   style,
   color,
