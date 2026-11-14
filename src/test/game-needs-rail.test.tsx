@@ -53,7 +53,9 @@ describe("persistent player needs dashboard", () => {
     expect(detail).toHaveTextContent("10% · critical");
   });
   it("shows the most urgent needs as compact pills in preview mode", () => {
-    const { container } = render(<GameNeedsRail player={player} />);
+    const { container } = render(
+      <div className="city-game"><GameNeedsRail player={player} /></div>,
+    );
     fireEvent.click(screen.getByRole("button", { name: "Collapse needs panel" }));
     expect(container.querySelector(".game-needs-rail")).toHaveClass("is-collapsed");
     expect(container.querySelector(".game-needs-toggle")).toBeInTheDocument();
