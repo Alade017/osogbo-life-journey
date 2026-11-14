@@ -938,3 +938,93 @@
     animation: none;
   }
 }
+
+/* Ludo board: an illustrated cross-shaped track with coloured yards, home lanes and pieces. */
+.mg-ludo {
+  gap: 14px;
+}
+.mg-ludo-board-wrap {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+}
+.mg-ludo-board {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 18px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7) inset,
+    0 14px 30px -18px rgba(60, 40, 20, 0.55);
+  overflow: visible;
+}
+.mg-ludo-ground {
+  fill: #efe2c4;
+  stroke: #c9b48a;
+  stroke-width: 0.06;
+}
+.mg-ludo-yard {
+  fill: color-mix(in srgb, var(--yard, #bbb) 26%, #fbf5e6);
+  stroke: color-mix(in srgb, var(--yard, #bbb) 70%, #5b4630);
+  stroke-width: 0.05;
+}
+.mg-ludo-cell {
+  fill: #fbf5e6;
+  stroke: #cdb98f;
+  stroke-width: 0.035;
+}
+.mg-ludo-cell.is-safe {
+  fill: #fff8df;
+}
+.mg-ludo-cell.is-start {
+  fill: color-mix(in srgb, var(--start) 55%, #fff8df);
+}
+.mg-ludo-cell.is-home {
+  fill: color-mix(in srgb, var(--start) 45%, #fbf5e6);
+}
+.mg-ludo-centre {
+  fill: #fffaf0;
+  stroke: #5b4630;
+  stroke-width: 0.06;
+}
+.mg-ludo polygon {
+  stroke: rgba(255, 255, 255, 0.6);
+  stroke-width: 0.03;
+}
+.mg-ludo-piece {
+  transition: transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.mg-ludo-piece.is-playable {
+  cursor: pointer;
+}
+.mg-ludo-disc {
+  fill: var(--piece);
+  stroke: #fffdf6;
+  stroke-width: 0.07;
+  filter: drop-shadow(0 0.06px 0.05px rgba(40, 26, 10, 0.35));
+}
+.mg-ludo-piece.is-playable .mg-ludo-disc {
+  stroke: var(--mg-gold);
+  stroke-width: 0.13;
+  animation: mg-pulse 1100ms ease-in-out infinite alternate;
+}
+.mg-ludo-glint {
+  fill: #ffffff;
+  opacity: 0.55;
+  pointer-events: none;
+}
+.mg-ludo-piece:focus-visible {
+  outline: none;
+}
+.mg-ludo-piece:focus-visible .mg-ludo-disc {
+  stroke: #1d4ed8;
+  stroke-width: 0.16;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mg-ludo-piece {
+    transition: none;
+  }
+  .mg-ludo-piece.is-playable .mg-ludo-disc {
+    animation: none;
+  }
+}
