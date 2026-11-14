@@ -117,16 +117,16 @@ const CITY_CENTRE_ROADS: readonly NeighborhoodRoad[] = [
     end: 500,
   },
   { id: "west-residential-street", axis: "vertical", offset: -410, width: 58, type: "street" },
-  { id: "east-market-street", axis: "vertical", offset: 850, width: 62, type: "street" },
-  { id: "north-compound-lane", axis: "horizontal", offset: -280, width: 54, type: "lane" },
-  { id: "south-compound-lane", axis: "horizontal", offset: 730, width: 58, type: "street" },
-  { id: "east-residential-arterial", axis: "vertical", offset: 1600, width: 72, type: "arterial" },
+  { id: "east-market-street", axis: "vertical", offset: 1280, width: 72, type: "arterial" },
+  { id: "north-compound-lane", axis: "horizontal", offset: -160, width: 54, type: "lane" },
+  { id: "south-compound-lane", axis: "horizontal", offset: 820, width: 58, type: "street" },
+  { id: "east-residential-arterial", axis: "vertical", offset: 1880, width: 72, type: "arterial" },
   { id: "outer-east-street", axis: "vertical", offset: 2550, width: 56, type: "street" },
-  { id: "north-extension-street", axis: "horizontal", offset: -520, width: 52, type: "street" },
-  { id: "midtown-extension-street", axis: "horizontal", offset: 1120, width: 58, type: "street" },
+  { id: "north-extension-street", axis: "horizontal", offset: -540, width: 52, type: "street" },
+  { id: "midtown-extension-street", axis: "horizontal", offset: 1220, width: 58, type: "street" },
   { id: "south-extension-arterial", axis: "horizontal", offset: 1900, width: 74, type: "arterial" },
 ];
-const CITY_CENTRE_OBSTACLES: readonly NeighborhoodObstacle[] = [
+const CITY_CENTRE_BASE_OBSTACLES: readonly NeighborhoodObstacle[] = [
   { id: "compound-west-north", kind: "compound", x: -615, y: -470, width: 150, height: 92 },
   { id: "compound-west-centre", kind: "compound", x: -180, y: -470, width: 150, height: 92 },
   { id: "compound-east-north", kind: "compound", x: 510, y: -470, width: 150, height: 92 },
@@ -181,17 +181,11 @@ const CITY_CENTRE_OBSTACLES: readonly NeighborhoodObstacle[] = [
   { id: "expansion-prop-8", kind: "bench", x: 2000, y: 1000, width: 58, height: 26 },
   { id: "expansion-prop-9", kind: "bench", x: 1500, y: 1800, width: 58, height: 26 },
   { id: "expansion-prop-10", kind: "bench", x: 2800, y: 1800, width: 58, height: 26 },
-  { id: "east-market-street", axis: "vertical", offset: 1280, width: 72, type: "arterial" },
-  { id: "north-compound-lane", axis: "horizontal", offset: -160, width: 54, type: "lane" },
-  { id: "south-compound-lane", axis: "horizontal", offset: 820, width: 58, type: "street" },
-  { id: "east-residential-arterial", axis: "vertical", offset: 1880, width: 72, type: "arterial" },
-  { id: "outer-east-street", axis: "vertical", offset: 2550, width: 56, type: "street" },
-  { id: "north-extension-street", axis: "horizontal", offset: -540, width: 52, type: "street" },
-  { id: "midtown-extension-street", axis: "horizontal", offset: 1220, width: 58, type: "street" },
-  { id: "south-extension-arterial", axis: "horizontal", offset: 1900, width: 74, type: "arterial" },
 ];
-const { zoneLayout: CITY_CENTRE_ZONE_LAYOUT, zoneObstacles: CITY_CENTRE_OBSTACLES } =
-  createCityCentreZoneLayout();
+const {
+  zoneLayout: CITY_CENTRE_ZONE_LAYOUT,
+  zoneObstacles: CITY_CENTRE_ZONE_OBSTACLES,
+} = createCityCentreZoneLayout();
 export const CITY_CENTRE_AREA: NeighborhoodArea = {
   slug: "city-centre",
   name: "Olaiya",
@@ -199,7 +193,7 @@ export const CITY_CENTRE_AREA: NeighborhoodArea = {
   paths: [
     { id: "home-to-street-path", from: { x: 320, y: 300 }, to: { x: 320, y: 340 }, width: 12 },
   ],
-  obstacles: CITY_CENTRE_OBSTACLES,
+  obstacles: [...CITY_CENTRE_BASE_OBSTACLES, ...CITY_CENTRE_ZONE_OBSTACLES],
   zoneLayout: CITY_CENTRE_ZONE_LAYOUT,
   objects: [
     { id: "home", name: "Your home", kind: "home", x: 320, y: 300 },
