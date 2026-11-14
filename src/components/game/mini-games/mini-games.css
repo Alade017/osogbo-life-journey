@@ -1009,10 +1009,8 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: var(--seat);
-  color: #ffffff;
-  font-size: 0.7rem;
-  font-weight: 700;
+  background: color-mix(in srgb, var(--seat) 14%, #ffffff);
+  flex: none;
 }
 .lb-name {
   font-size: 0.8rem;
@@ -1051,18 +1049,24 @@
 }
 
 /* Results: a separate panel that replaces the dice once the game is over. */
-.lb-results {
+/* Results popup: a centred dialog over the finished board. */
+.lb-results.lb-results {
   box-sizing: border-box;
   display: grid;
-  gap: 12px;
-  width: 100%;
-  max-width: 440px;
-  margin: 0 auto;
-  padding: 16px;
-  border-radius: 18px;
+  gap: 16px;
+  width: min(92vw, 380px);
+  max-width: 380px;
+  padding: 22px;
+  border-radius: 24px;
   background: var(--mg-paper, #fffdf7);
-  border: 1px solid var(--mg-line);
-  box-shadow: 0 10px 30px rgb(0 0 0 / 0.12);
+  border: 2px solid #1f2937;
+  box-shadow:
+    0 6px 0 #1f2937,
+    0 24px 48px rgb(0 0 0 / 0.35);
+}
+.lb-pawn {
+  flex: none;
+  filter: drop-shadow(0 3px 2px rgb(0 0 0 / 0.2));
 }
 .lb-results-head {
   display: flex;
@@ -1077,16 +1081,6 @@
   margin: 2px 0 0;
   font-size: 0.85rem;
   color: var(--muted-foreground, #6b7280);
-}
-.lb-results-avatar {
-  display: inline-grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: var(--mg-gold);
-  color: #1f2937;
-  flex: none;
 }
 .lb-rank {
   display: grid;
@@ -1273,15 +1267,12 @@
   font-size: 0.8rem;
   color: var(--muted-foreground, #6b7280);
 }
-.mg-setup-count,
-.mg-setup-icon {
-  display: inline-grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: color-mix(in srgb, var(--mg-gold) 22%, transparent);
-  font-weight: 700;
+.mg-setup-pawns {
+  display: grid;
+  grid-template-columns: repeat(2, 16px);
+  gap: 2px 4px;
+  width: 40px;
+  justify-items: center;
 }
 .mg-setup-tick {
   display: inline-grid;
@@ -1385,4 +1376,32 @@
   .mg-ludo-die.is-rollable {
     animation: none;
   }
+}
+
+/* Results popup header: pawn beside the title, the pawn at a fixed size. */
+.lb-results.lb-results .lb-results-head {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+}
+.lb-results.lb-results .lb-results-head svg {
+  width: 64px;
+  height: 64px;
+  flex: none;
+}
+.lb-results.lb-results .lb-results-head > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.lb-results.lb-results .lb-results-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.mg-setup-title,
+.mg-setup-subtitle {
+  font-weight: 700;
 }

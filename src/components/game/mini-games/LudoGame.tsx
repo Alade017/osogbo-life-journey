@@ -1,6 +1,14 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
-import { Bot, Check, Globe, Lock, User, UserPlus, type LucideIcon } from "lucide-react";
+import { Check } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useComputerTurn } from "@/components/game/mini-games/computer-turn";
 import { LudoBoard } from "@/components/game/mini-games/LudoBoard";
 import { LUDO_COLOURS } from "@/components/game/mini-games/ludo-palette";
@@ -34,10 +42,10 @@ const PLAYER_OPTIONS: readonly { players: number; blurb: string }[] = [
   { players: 4, blurb: "You and three computers, one colour each." },
 ];
 /** Online play is not connected to this screen yet, so these show as unavailable. */
-const ONLINE_OPTIONS: readonly { label: string; blurb: string; icon: LucideIcon }[] = [
-  { label: "Play online", blurb: "Match with other players online.", icon: Globe },
-  { label: "Join a friend's room", blurb: "Enter a room code from a friend.", icon: UserPlus },
-  { label: "Create a private room", blurb: "Start a room and invite friends.", icon: Lock },
+const ONLINE_OPTIONS: readonly { label: string; blurb: string }[] = [
+  { label: "Play online", blurb: "Match with other players online." },
+  { label: "Join a friend's room", blurb: "Enter a room code from a friend." },
+  { label: "Create a private room", blurb: "Start a room and invite friends." },
 ];
 const NO_MOVES_DELAY_MS = 1200;
 const TOAST_MS = 2_400;
@@ -162,8 +170,10 @@ function LudoSetup({ onStart }: { onStart: (players: number) => void }) {
                 className={`mg-setup-option ${selected ? "is-selected" : ""}`}
                 onClick={() => setChoice(count)}
               >
-                <span className="mg-setup-count" aria-hidden="true">
-                  {count}
+                <span className="mg-setup-pawns" aria-hidden="true">
+                  {seatsFor(count).map((seat) => (
+                    <PawnMark key={seat.colour} colour={seat.colour} size={16} />
+                  ))}
                 </span>
                 <span className="mg-setup-text">
                   <strong>{count} players</strong>
@@ -183,12 +193,9 @@ function LudoSetup({ onStart }: { onStart: (players: number) => void }) {
       <div className="mg-setup-block">
         <h4 className="mg-setup-subtitle">Online</h4>
         <ul className="mg-setup-soon">
-          {ONLINE_OPTIONS.map(({ label, blurb, icon: Icon }) => (
+          {ONLINE_OPTIONS.map(({ label, blurb }) => (
             <li key={label}>
               <button type="button" className="mg-setup-option is-unavailable" disabled>
-                <span className="mg-setup-icon" aria-hidden="true">
-                  <Icon size={18} />
-                </span>
                 <span className="mg-setup-text">
                   <strong>{label}</strong>
                   <small>{blurb}</small>
@@ -217,58 +224,102 @@ function describeEvents(events: LudoEvent[], name: (playerId: string) => string)
   return out;
 }
 
+/** A pawn in the seat's colour, used for avatars and the results popup. */
+function PawnMark({ colour, size = 28 }: { colour: Colour; size?: number }) {
+  return (
+    <svg viewBox="0 0 32 32" width={size} height={size} aria-hidden="true" className="lb-pawn">
+      <ellipse cx="16" cy="28.5" rx="9" ry="2.4" fill="rgb(20 14 6 / 0.28)" />
+      <path
+        d="M16 3.5a6.6 6.6 0 0 0-2.7 12.6L11.2 22h9.6l-2.1-5.9A6.6 6.6 0 0 0 16 3.5Z"
+        fill={LUDO_COLOURS[colour]}
+        stroke="#1f2937"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+      <rect
+        x="8.6"
+        y="21.6"
+        width="14.8"
+        height="4.6"
+        rx="2.3"
+        fill={LUDO_COLOURS[colour]}
+        stroke="#1f2937"
+        strokeWidth="1.4"
+      />
+      <circle cx="13.4" cy="9.2" r="1.7" fill="#ffffff" opacity="0.85" />
+    </svg>
+  );
+}
+
+/** Results popup: shown over the finished board, and can be reopened from the table. */
 function LudoResults({
+  open,
   seats,
   game,
   nameOf,
   onAgain,
   onLobby,
+  onClose,
 }: {
+  open: boolean;
   seats: readonly Seat[];
   game: Game;
   nameOf: (playerId: string) => string;
   onAgain: () => void;
   onLobby: () => void;
+  onClose: () => void;
 }) {
   const ranked = seats
     .map((seat) => ({
       seat,
       home: game.pieces[seat.colour].filter((step) => step === FINISH_STEP).length,
     }))
-    .sort((a, b) => b.home - a.home);
+    // The winner's seat always ranks first; the rest follow by pieces home.
+    .sort(
+      (a, b) =>
+        Number(b.seat.playerId === game.winnerId) - Number(a.seat.playerId === game.winnerId) ||
+        b.home - a.home,
+    );
   const winner = game.winnerId ?? "";
   const youWon = winner === HUMAN;
   return (
-    <section className="lb-results" aria-label="Results">
-      <div className="lb-results-head">
-        <span className="lb-results-avatar" aria-hidden="true">
-          {youWon ? <User size={22} /> : <Bot size={22} />}
-        </span>
-        <div>
-          <h3>{youWon ? "You won!" : `${nameOf(winner)} won`}</h3>
-          <p>{youWon ? "Well played. Start another round?" : "Good game. Try again?"}</p>
-        </div>
-      </div>
-      <ol className="lb-rank">
-        {ranked.map(({ seat, home }, index) => (
-          <li key={seat.colour} style={{ "--seat": LUDO_COLOURS[seat.colour] } as CSSProperties}>
-            <span className="lb-rank-place" aria-hidden="true">
-              {index + 1}
-            </span>
-            <span className="lb-rank-name">
-              {nameOf(seat.playerId)} · {COLOUR_NAMES[seat.colour]}
-            </span>
-            <span className="lb-rank-home">{home} of 4 home</span>
-          </li>
-        ))}
-      </ol>
-      <div className="lb-results-actions">
-        <Button onClick={onAgain}>Play again</Button>
-        <Button variant="plain" onClick={onLobby}>
-          Back to Ludo lobby
-        </Button>
-      </div>
-    </section>
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
+    >
+      <DialogContent className="lb-results">
+        <DialogHeader className="lb-results-head">
+          <PawnMark colour={ranked[0]?.seat.colour ?? "RED"} size={64} />
+          <div>
+            <DialogTitle>{youWon ? "You won!" : `${nameOf(winner)} won`}</DialogTitle>
+            <DialogDescription>
+              {youWon ? "Well played. Another round?" : "Good game. Try again?"}
+            </DialogDescription>
+          </div>
+        </DialogHeader>
+        <ol className="lb-rank">
+          {ranked.map(({ seat, home }, index) => (
+            <li key={seat.colour} style={{ "--seat": LUDO_COLOURS[seat.colour] } as CSSProperties}>
+              <span className="lb-rank-place" aria-hidden="true">
+                {index + 1}
+              </span>
+              <span className="lb-rank-name">
+                {nameOf(seat.playerId)} · {COLOUR_NAMES[seat.colour]}
+              </span>
+              <span className="lb-rank-home">{home} of 4 home</span>
+            </li>
+          ))}
+        </ol>
+        <DialogFooter className="lb-results-actions">
+          <Button onClick={onAgain}>Play again</Button>
+          <Button variant="plain" onClick={onLobby}>
+            Back to Ludo lobby
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -279,6 +330,7 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
   const [idle, setIdle] = useState<readonly [number, number]>(() => [randomFace(), randomFace()]);
   const [rolls, setRolls] = useState(0);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [resultsDismissed, setResultsDismissed] = useState(false);
 
   const turnPlayer = game.phase === "GAME_OVER" ? null : currentPlayerId(game);
   const humanTurn = turnPlayer === HUMAN && game.phase !== "GAME_OVER";
@@ -387,7 +439,6 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
           // Two-player games give one player two seats, so the turn follows the colour, not the player.
           const active = turnPlayer !== null && game.seats[game.turnIndex]?.colour === seat.colour;
           const isHuman = seat.playerId === HUMAN;
-          const AvatarIcon = isHuman ? User : Bot;
           const home = finishedFor(seat.colour);
           const turnLabel =
             game.phase === "GAME_OVER"
@@ -404,7 +455,7 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
               style={{ "--seat": LUDO_COLOURS[seat.colour] } as CSSProperties}
             >
               <span className="lb-avatar" aria-hidden="true">
-                <AvatarIcon size={16} />
+                <PawnMark colour={seat.colour} size={30} />
               </span>
               <span className="lb-info">
                 <span className="lb-name">{nameOf(seat.playerId)}</span>
@@ -466,12 +517,22 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
       )}
       {game.phase === "GAME_OVER" && (
         <LudoResults
+          open={!resultsDismissed}
           seats={seats}
           game={game}
           nameOf={nameOf}
-          onAgain={() => setGame(createLudoGame(seats))}
+          onAgain={() => {
+            setResultsDismissed(false);
+            setGame(createLudoGame(seats));
+          }}
           onLobby={onLobby}
+          onClose={() => setResultsDismissed(true)}
         />
+      )}
+      {game.phase === "GAME_OVER" && resultsDismissed && (
+        <Button variant="plain" onClick={() => setResultsDismissed(false)}>
+          See results
+        </Button>
       )}
     </section>
   );
