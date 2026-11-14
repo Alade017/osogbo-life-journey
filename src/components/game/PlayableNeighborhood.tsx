@@ -1,4 +1,13 @@
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { HomeLink } from "@/components/game/HomeLink";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -26,9 +35,12 @@ import {
 import { PhoneBankApp } from "@/components/game/phone/PhoneBankApp";
 import { LocationVenueScene } from "@/components/game/LocationVenueScene";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
+import { NeighborhoodZoneModal } from "@/components/game/NeighborhoodZoneModal";
 import { GROUND_ARRIVE_DISTANCE, groundIntent } from "@/game/ground-intent";
+import { commuteNotice } from "@/game/commute-notice";
+import "./commute-banner.css";
 import { joinNeighborhood, type NeighborhoodRoom } from "@/lib/multiplayer-service";
-import { q, rpc, useGameAction } from "@/lib/game";
+import { formatNaira, q, rpc, useGameAction } from "@/lib/game";
 import { supabase } from "@/integrations/supabase/client";
 import { canonicalHomeOptions } from "@/lib/living-cost-service";
 import { useGameTime } from "@/components/game/GameTimeProvider";
@@ -41,8 +53,38 @@ import {
   neighborhoodSceneBounds,
   nearestInteraction,
   toScene,
+  toWorld,
   type NeighborhoodNpcView,
+  type WorldPoint,
 } from "@/game/neighborhood-model";
+import { commuteIntent, planCommuteRoute } from "@/game/commute-route";
+import { scenePointToThreeXZ } from "@/data/neighborhoodLocations";
+import { consumeNeighborhoodNavigation, publishLivePlayerPose } from "@/store/neighborhoodNavSync";
+import {
+  findInteractableZone,
+  findZoneNpc,
+  NEIGHBORHOOD_ZONE_NPCS,
+  nearestInteractableZone,
+  nearestZoneNpc,
+  type InteractableZoneSpec,
+  type ZoneActionOutcome,
+  type ZoneNpcSpec,
+} from "@/game/neighborhood-interactions";
+import {
+  applyZoneOutcomeAction,
+  closeZoneInteraction,
+  effectiveNeedsFromCharacter,
+  equipLocalAccessoryAction,
+  loadPersistedNeighborhoodState,
+  neighborhoodReducer,
+  openZoneInteraction,
+  persistNeighborhoodState,
+  recordNpcChatAction,
+  setHoveredZoneId,
+  setPendingZoneId,
+  syncNpcChatToQueryCache,
+  syncZoneOutcomeToQueryCache,
+} from "@/store/neighborhoodSlice";
 import { isPlayableDistrict, playableDistrictForLocation } from "@/game/playable-district";
 import type { NeighborhoodPlayerView, NeighborhoodSceneHandle } from "@/game/neighborhood-types";
 import type { MovementDirection } from "@/lib/player-movement";
@@ -102,7 +144,10 @@ function useNeighborhoodConnection(
   locationIsPlayable: boolean,
   attempt: number,
   setAttempt: (update: (attempt: number) => number) => void,
+  onCommuteState: (message: unknown) => void,
 ) {
+  const commuteHandler = useRef(onCommuteState);
+  commuteHandler.current = onCommuteState;
   const [connectionState, setConnectionState] = useState<ConnectionState>("loading");
   const [players, setPlayers] = useState<NeighborhoodPlayerView[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -161,6 +206,7 @@ function useNeighborhoodConnection(
         }
         joinedRoom = room;
         roomRef.current = room;
+        room.onMessage("commute-state", (message: unknown) => commuteHandler.current(message));
         setSessionId(room.sessionId);
         setRoomLocationId(locationId);
         const publish = () => {
@@ -295,6 +341,7 @@ export function PlayableNeighborhood() {
     };
   }, []);
   const characterQuery = useQuery(q.character());
+  const walletQuery = useQuery(q.wallet());
   const locationsQuery = useQuery({
     ...q.locations(),
     enabled: !!characterQuery.data?.current_location_id,
@@ -313,12 +360,23 @@ export function PlayableNeighborhood() {
   const placesQuery = useQuery({ ...q.places(), enabled: !!currentLocation?.id });
   const shopItemsQuery = useQuery({ ...q.shopItems(), enabled: !!currentLocation?.id });
   const jobsQuery = useQuery({ ...q.jobs(), enabled: !!currentLocation?.id });
+  const [commuting, setCommuting] = useState(false);
   const { connectionState, players, sessionId, roomRef } = useNeighborhoodConnection(
     currentLocation?.id,
     currentLocation?.slug,
     district !== null,
     connectionAttempt,
     setConnectionAttempt,
+    (message) => {
+      const notice = commuteNotice(message);
+      if (!notice) return;
+      setCommuting(notice.heading);
+      if (notice.toast) toast[notice.toast.kind](notice.toast.text);
+      if (notice.openWork) {
+        setWorkView("actions");
+        setActivePanel("work");
+      }
+    },
   );
   const [directions, setDirections] = useState<ReadonlySet<MovementDirection>>(() => new Set());
   const [groundTarget, setGroundTarget] = useState<{ x: number; y: number } | null>(null);
@@ -346,7 +404,61 @@ export function PlayableNeighborhood() {
   const [npcPositionOverrides, setNpcPositionOverrides] = useState<
     Record<string, { x: number; y: number }>
   >({});
+  const [zoneState, dispatchZone] = useReducer(
+    neighborhoodReducer,
+    undefined,
+    loadPersistedNeighborhoodState,
+  );
+  const [hasWalked, setHasWalked] = useState(false);
+  const autoWalkRouteRef = useRef<{ route: WorldPoint[]; index: number } | null>(null);
+  const zoneModalOpen = zoneState.activeZoneId !== null || zoneState.activeNpcId !== null;
+  const anyModalOpen = activePanel !== null || zoneModalOpen;
   const player = players.find((candidate) => candidate.sessionId === sessionId);
+  const playerRef = useRef(player);
+  playerRef.current = player;
+
+  const startPathfindingTo = useCallback(
+    (targetScenePoint: WorldPoint) => {
+      const currentPlayer = playerRef.current;
+      if (currentPlayer && district) {
+        const plannedRoute = planCommuteRoute(
+          { x: currentPlayer.x, y: currentPlayer.y },
+          targetScenePoint,
+          district.origin,
+          area.objects,
+          area.obstacles,
+        );
+        autoWalkRouteRef.current =
+          plannedRoute && plannedRoute.length > 0 ? { route: plannedRoute, index: 0 } : null;
+      } else {
+        autoWalkRouteRef.current = null;
+      }
+      setHasWalked(true);
+      setDirections(new Set());
+      setGroundTarget(targetScenePoint);
+    },
+    [area.objects, area.obstacles, district],
+  );
+
+  useEffect(() => {
+    persistNeighborhoodState(zoneState);
+  }, [zoneState]);
+
+  useEffect(() => {
+    if (!player || !district) return;
+    const scenePoint = toScene({ x: player.x, y: player.y }, district.origin);
+    const [threeX, threeZ] = scenePointToThreeXZ(scenePoint);
+    publishLivePlayerPose({
+      worldX: player.x,
+      worldY: player.y,
+      sceneX: scenePoint.x,
+      sceneY: scenePoint.y,
+      threeX,
+      threeZ,
+      locationSlug: currentLocation?.slug ?? "city-centre",
+      updatedAt: Date.now(),
+    });
+  }, [currentLocation?.slug, district, player]);
   // Neighbourhood checkpoints are saved by the multiplayer server, not by the browser.
   const actionAnimation = simulation.currentAction
     ? avatarAnimationForActivity(simulation.currentAction.animation)
@@ -366,12 +478,30 @@ export function PlayableNeighborhood() {
   }, [district, groundTarget, players, sessionId]);
   const scenePlayers = useMemo(
     () =>
-      players.map((candidate) =>
-        candidate.sessionId === sessionId && actionAnimation
-          ? { ...candidate, actionAnimation }
-          : candidate,
-      ),
-    [actionAnimation, players, sessionId],
+      players.map((candidate) => {
+        if (candidate.sessionId !== sessionId) return candidate;
+        let nextEquipment = candidate.equipment;
+        if (zoneState.equippedAccessorySlug) {
+          try {
+            const parsed = JSON.parse(candidate.equipment || "[]");
+            const arr = Array.isArray(parsed)
+              ? parsed.filter((entry) => entry?.slot !== "accessory")
+              : [];
+            arr.push({ slot: "accessory", item: { slug: zoneState.equippedAccessorySlug } });
+            nextEquipment = JSON.stringify(arr);
+          } catch {
+            nextEquipment = JSON.stringify([
+              { slot: "accessory", item: { slug: zoneState.equippedAccessorySlug } },
+            ]);
+          }
+        }
+        return {
+          ...candidate,
+          equipment: nextEquipment,
+          ...(actionAnimation ? { actionAnimation } : {}),
+        };
+      }),
+    [actionAnimation, players, sessionId, zoneState.equippedAccessorySlug],
   );
   useEffect(() => setNpcPositionOverrides({}), [currentLocation?.id]);
   const activeNpcs = useMemo((): NeighborhoodNpcView[] => {
@@ -498,11 +628,26 @@ export function PlayableNeighborhood() {
     hasVenueInterior,
     homeTypeId,
   ]);
-  const nearbyObject = useMemo(() => {
+  const playerScenePoint = useMemo(() => {
     if (!player || !district) return null;
-    const point = toScene({ x: player.x, y: player.y }, district.origin);
-    return nearestInteraction(point, interactionTargets);
-  }, [interactionTargets, player, district]);
+    return toScene({ x: player.x, y: player.y }, district.origin);
+  }, [district, player]);
+  const zoneNpcs = useMemo(
+    () => (area.zoneLayout ? NEIGHBORHOOD_ZONE_NPCS : []),
+    [area.zoneLayout],
+  );
+  const nearbyZoneMatch = useMemo(() => {
+    if (!area.zoneLayout || !playerScenePoint) return null;
+    return nearestInteractableZone(playerScenePoint);
+  }, [area.zoneLayout, playerScenePoint]);
+  const nearbyZoneNpcMatch = useMemo(() => {
+    if (!area.zoneLayout || !playerScenePoint) return null;
+    return nearestZoneNpc(playerScenePoint, zoneNpcs);
+  }, [area.zoneLayout, playerScenePoint, zoneNpcs]);
+  const nearbyObject = useMemo(() => {
+    if (!playerScenePoint) return null;
+    return nearestInteraction(playerScenePoint, interactionTargets);
+  }, [interactionTargets, playerScenePoint]);
   const nearbyNpc =
     nearbyObject?.kind === "npc"
       ? (activeNpcs.find((npc) => npc.id === nearbyObject.id) ?? null)
@@ -544,10 +689,9 @@ export function PlayableNeighborhood() {
       enterHomeNow();
       return;
     }
-    setDirections(new Set());
-    setGroundTarget({ x: homeObject.x, y: homeObject.y });
+    startPathfindingTo({ x: homeObject.x, y: homeObject.y });
     setHomeBound(true);
-  }, [nearHome, homeObject, district?.personalHome, enterHomeNow]);
+  }, [nearHome, homeObject, district?.personalHome, enterHomeNow, startPathfindingTo]);
   const enteringHome = enterHome.isPending;
   useEffect(() => {
     if (!homeBound || nearbyObject?.kind !== "home") return;
@@ -570,15 +714,27 @@ export function PlayableNeighborhood() {
     setNpcDialogue(null);
   }, [currentLocation?.id]);
 
+  /** Career shifts ask the server to walk the character to work from this neighbourhood. */
+  useEffect(() => {
+    const requestCommute = (event: Event) => {
+      const shiftId = (event as CustomEvent<{ shiftId?: unknown }>).detail?.shiftId;
+      if (typeof shiftId === "string") roomRef.current?.send("commute-to-work", { shiftId });
+    };
+    window.addEventListener("osun:commute-to-work", requestCommute);
+    return () => window.removeEventListener("osun:commute-to-work", requestCommute);
+  }, []);
+
   /** Keyboard walking. Pressing a key cancels a tapped destination. */
   useEffect(() => {
     const set = (event: KeyboardEvent, pressed: boolean) => {
       const direction = KEY_DIRECTIONS[event.code];
       if (!direction) return;
       if (pressed) {
+        autoWalkRouteRef.current = null;
         groundTargetRef.current = null;
         setGroundTarget(null);
         setHomeBound(false);
+        setHasWalked(true);
       }
       setDirections((current) => {
         const next = new Set(current);
@@ -601,18 +757,78 @@ export function PlayableNeighborhood() {
     };
   }, []);
 
-  /** Tapping or clicking the ground walks the character there. Panels hold them in place. */
-  const tapGround = (point: { x: number; y: number }) => {
-    if (activePanel) return;
+  /** Consume Walk Here / Board Keke navigation commands issued from the City Map. */
+  const hasActivePlayer = Boolean(player);
+  useEffect(() => {
+    const activePlayer = playerRef.current;
+    if (
+      connectionState !== "connected" ||
+      !hasActivePlayer ||
+      !activePlayer ||
+      !district ||
+      !roomRef.current
+    )
+      return;
+    const pendingNav = consumeNeighborhoodNavigation();
+    if (!pendingNav) return;
+
+    const room = roomRef.current;
+    if (pendingNav.mode === "keke") {
+      const worldDropOff = toWorld(pendingNav.dropOffScenePoint, district.origin);
+      let acked = false;
+      const onArrived = () => {
+        acked = true;
+      };
+      room.onMessage("keke-arrived", onArrived);
+      room.send("keke-dropoff", worldDropOff);
+      dispatchZone(setPendingZoneId(pendingNav.primaryZoneId));
+      const [dropThreeX, dropThreeZ] = scenePointToThreeXZ(pendingNav.dropOffScenePoint);
+      publishLivePlayerPose({
+        worldX: worldDropOff.x,
+        worldY: worldDropOff.y,
+        sceneX: pendingNav.dropOffScenePoint.x,
+        sceneY: pendingNav.dropOffScenePoint.y,
+        threeX: dropThreeX,
+        threeZ: dropThreeZ,
+        locationSlug: currentLocation?.slug ?? "city-centre",
+        updatedAt: Date.now(),
+      });
+      toast.success(
+        `Keke dropped you off at ${pendingNav.landmarkName} (-₦${pendingNav.fare.toLocaleString("en-NG")})`,
+      );
+      const fallbackTimer = window.setTimeout(() => {
+        if (acked) return;
+        startPathfindingTo(pendingNav.dropOffScenePoint);
+      }, 450);
+      return () => window.clearTimeout(fallbackTimer);
+    }
+
     setPendingTargetId(null);
     setHomeBound(false);
-    setDirections(new Set());
-    setGroundTarget(point);
+    dispatchZone(setPendingZoneId(pendingNav.primaryZoneId));
+    startPathfindingTo(pendingNav.targetScenePoint);
+    toast.message(`Walking to ${pendingNav.landmarkName}`);
+  }, [
+    connectionState,
+    currentLocation?.slug,
+    district,
+    hasActivePlayer,
+    roomRef,
+    startPathfindingTo,
+  ]);
+
+  /** Tapping or clicking the ground walks the character there. Panels hold them in place. */
+  const tapGround = (point: { x: number; y: number }) => {
+    if (anyModalOpen) return;
+    setPendingTargetId(null);
+    dispatchZone(setPendingZoneId(null));
+    setHomeBound(false);
+    startPathfindingTo(point);
   };
 
   useEffect(() => {
     if (connectionState !== "connected") return;
-    if (activePanel) {
+    if (anyModalOpen) {
       setDirections(new Set());
       roomRef.current?.send("move", { x: 0, y: 0 });
       lastIntentRef.current = "0:0";
@@ -620,18 +836,43 @@ export function PlayableNeighborhood() {
     const interval = window.setInterval(() => {
       const room = roomRef.current;
       if (!room) return;
-      const position = player ? { x: player.x, y: player.y } : null;
+      const currentPlayer = playerRef.current;
+      const position = currentPlayer ? { x: currentPlayer.x, y: currentPlayer.y } : null;
+      const scenePos =
+        currentPlayer && district
+          ? toScene({ x: currentPlayer.x, y: currentPlayer.y }, district.origin)
+          : null;
       const target = groundTargetRef.current;
       if (
         target &&
-        position &&
-        Math.hypot(target.x - position.x, target.y - position.y) <= GROUND_ARRIVE_DISTANCE
+        scenePos &&
+        Math.hypot(target.x - scenePos.x, target.y - scenePos.y) <= GROUND_ARRIVE_DISTANCE
       ) {
         groundTargetRef.current = null;
+        autoWalkRouteRef.current = null;
         setGroundTarget(null);
       }
-      const tapped = groundIntent(groundTargetRef.current, position);
-      const intent = activePanel
+
+      let autoIntent: { x: number; y: number } | null = null;
+      if (autoWalkRouteRef.current && position) {
+        const stepped = commuteIntent(
+          position,
+          autoWalkRouteRef.current.route,
+          autoWalkRouteRef.current.index,
+        );
+        autoWalkRouteRef.current.index = stepped.index;
+        autoIntent = stepped.intent;
+        if (!stepped.intent) {
+          autoWalkRouteRef.current = null;
+          groundTargetRef.current = null;
+          setGroundTarget(null);
+        }
+      }
+
+      const tapped =
+        autoIntent ??
+        (target && scenePos ? groundIntent(target, scenePos) : groundIntent(target, position));
+      const intent = anyModalOpen
         ? { x: 0, y: 0 }
         : (tapped ?? directionIntent(directionsRef.current));
       const next = `${intent.x}:${intent.y}`;
@@ -641,7 +882,7 @@ export function PlayableNeighborhood() {
       }
     }, 100);
     return () => window.clearInterval(interval);
-  }, [activePanel, connectionState, roomRef, player]);
+  }, [anyModalOpen, connectionState, district, roomRef]);
 
   /**
    * Leaving the house: report real loads, then close the veil once the neighbourhood has
@@ -683,8 +924,25 @@ export function PlayableNeighborhood() {
     [],
   );
 
+  const openZoneOrNpcInteraction = useCallback(() => {
+    if (nearbyZoneMatch) {
+      dispatchZone(openZoneInteraction({ zoneId: nearbyZoneMatch.zone.id }));
+      return true;
+    }
+    if (nearbyZoneNpcMatch) {
+      dispatchZone(openZoneInteraction({ npcId: nearbyZoneNpcMatch.npc.id }));
+      return true;
+    }
+    return false;
+  }, [nearbyZoneMatch, nearbyZoneNpcMatch]);
+
   useEffect(() => {
-    if (connectionState !== "connected" || !nearbyObject || activePanel) return;
+    if (
+      connectionState !== "connected" ||
+      anyModalOpen ||
+      (!nearbyObject && !nearbyZoneMatch && !nearbyZoneNpcMatch)
+    )
+      return;
     const activate = (event: KeyboardEvent) => {
       const target = event.target;
       if (
@@ -695,6 +953,8 @@ export function PlayableNeighborhood() {
       )
         return;
       event.preventDefault();
+      if (openZoneOrNpcInteraction()) return;
+      if (!nearbyObject) return;
       setSelectedBuildingName(nearbyObject.kind === "npc" ? null : nearbyObject.name);
       setSelectedShopSlug(nearbyObject.kind === "market" ? nearbyObject.shopSlug : undefined);
       if (nearbyObject.kind === "home") {
@@ -713,10 +973,20 @@ export function PlayableNeighborhood() {
     };
     window.addEventListener("keydown", activate);
     return () => window.removeEventListener("keydown", activate);
-  }, [activateHome, activePanel, connectionState, enteringHome, nearbyObject]);
+  }, [
+    activateHome,
+    anyModalOpen,
+    connectionState,
+    enteringHome,
+    nearbyObject,
+    nearbyZoneMatch,
+    nearbyZoneNpcMatch,
+    openZoneOrNpcInteraction,
+  ]);
 
   const handleScene = useCallback((next: NeighborhoodSceneHandle | null) => setScene(next), []);
   const openInteraction = () => {
+    if (openZoneOrNpcInteraction()) return;
     if (!nearbyObject) return;
     setSelectedBuildingName(nearbyObject.kind === "npc" ? null : nearbyObject.name);
     setSelectedShopSlug(nearbyObject.kind === "market" ? nearbyObject.shopSlug : undefined);
@@ -745,8 +1015,7 @@ export function PlayableNeighborhood() {
     }
     toast.message(`Walking to ${target.name}`);
     setPendingTargetId(targetId);
-    setDirections(new Set());
-    setGroundTarget({ x: target.x, y: target.y });
+    startPathfindingTo({ x: target.x, y: target.y });
   };
   useEffect(() => {
     if (!pendingTargetId || nearbyObject?.id !== pendingTargetId) return;
@@ -755,6 +1024,87 @@ export function PlayableNeighborhood() {
     // openInteraction reads the current nearby object, which this effect already tracks.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingTargetId, nearbyObject]);
+
+  /** Tapping an InteractableZone or ZoneNpc walks to its walkable access point first, then opens the modal. */
+  const selectZoneTarget = useCallback(
+    (id: string) => {
+      const zone = findInteractableZone(id);
+      if (zone) {
+        if (nearbyZoneMatch?.zone.id === id) {
+          dispatchZone(openZoneInteraction({ zoneId: id }));
+          return;
+        }
+        toast.message(`Walking to ${zone.title}`);
+        setPendingTargetId(null);
+        setHomeBound(false);
+        dispatchZone(setPendingZoneId(id));
+        startPathfindingTo(zone.accessPoint);
+        return;
+      }
+      const npc = findZoneNpc(id);
+      if (npc) {
+        if (nearbyZoneNpcMatch?.npc.id === id) {
+          dispatchZone(openZoneInteraction({ npcId: id }));
+          return;
+        }
+        toast.message(`Walking to ${npc.name}`);
+        setPendingTargetId(null);
+        setHomeBound(false);
+        dispatchZone(setPendingZoneId(id));
+        startPathfindingTo(npc.accessPoint);
+      }
+    },
+    [nearbyZoneMatch, nearbyZoneNpcMatch, startPathfindingTo],
+  );
+
+  useEffect(() => {
+    const pendingId = zoneState.pendingZoneId;
+    if (!pendingId) return;
+    if (nearbyZoneMatch?.zone.id === pendingId) {
+      dispatchZone(openZoneInteraction({ zoneId: pendingId }));
+      return;
+    }
+    if (nearbyZoneNpcMatch?.npc.id === pendingId) {
+      dispatchZone(openZoneInteraction({ npcId: pendingId }));
+    }
+  }, [nearbyZoneMatch, nearbyZoneNpcMatch, zoneState.pendingZoneId]);
+
+  const handlePerformZoneAction = useCallback(
+    (zoneSpec: InteractableZoneSpec, outcome: ZoneActionOutcome) => {
+      dispatchZone(applyZoneOutcomeAction({ zoneTitle: zoneSpec.title, outcome }));
+      syncZoneOutcomeToQueryCache(queryClient, zoneSpec.title, outcome);
+      toast.success(outcome.toastMessage);
+    },
+    [queryClient],
+  );
+
+  const handleNpcTipSelect = useCallback(
+    (npc: ZoneNpcSpec, tipIndex: number) => {
+      const tip = npc.tips[tipIndex % npc.tips.length] ?? npc.greeting;
+      dispatchZone(recordNpcChatAction({ npc, tip, socialBoost: 10 }));
+      syncNpcChatToQueryCache(queryClient, 10);
+      toast.success(
+        `${npc.name.split("·")[0]?.trim() ?? npc.name} shared a local tip (+10 Social)`,
+      );
+    },
+    [queryClient],
+  );
+
+  const handleToggleAccessory = useCallback((slug: string | null) => {
+    dispatchZone(equipLocalAccessoryAction({ slug }));
+    toast.success(
+      slug ? "Equipped Craft Leather Backpack on your character!" : "Accessory unequipped.",
+    );
+  }, []);
+
+  const effectiveNeeds = useMemo(
+    () => effectiveNeedsFromCharacter(characterQuery.data, simulation.needs, zoneState.needOffsets),
+    [characterQuery.data, simulation.needs, zoneState.needOffsets],
+  );
+  const pocketBalance = walletQuery.data?.balance ?? 5000 + zoneState.walletOffset;
+  const bankBalance = walletQuery.data?.bank_balance ?? 12000 + zoneState.bankOffset;
+  const activeZoneSpec = findInteractableZone(zoneState.activeZoneId);
+  const activeZoneNpc = findZoneNpc(zoneState.activeNpcId);
   const closeInteraction = (open: boolean) => {
     if (open) return;
     setActivePanel(null);
@@ -816,9 +1166,9 @@ export function PlayableNeighborhood() {
         </div>
       ) : (
         <div className="neighborhood-world-card">
-          {connectionState === "connected" && (
+          {connectionState === "connected" && !hasWalked && (
             <div className="neighborhood-walk-hint" aria-label="Movement instruction">
-              Tap the ground to walk
+              Tap the ground or a zone to walk
             </div>
           )}
           {(connectionState === "connecting" ||
@@ -855,6 +1205,11 @@ export function PlayableNeighborhood() {
                         </div>
                       }
                     >
+                      {commuting && (
+                        <div className="commute-banner" role="status">
+                          Heading to work
+                        </div>
+                      )}
                       <R3FNeighborhoodSurface
                         key={`${currentLocation?.id}:${sessionId}`}
                         onGroundTap={tapGround}
@@ -866,18 +1221,31 @@ export function PlayableNeighborhood() {
                         zoom={zoom}
                         onZoomChange={setZoom}
                         groundTarget={groundTarget}
+                        commuteTarget={
+                          commuting
+                            ? (area.objects.find((object) => object.kind === "work") ?? null)
+                            : null
+                        }
                         onScene={handleScene}
                         interactionTargets={interactionTargets}
                         onSelectTarget={selectWorldTarget}
                         onNpcArrive={(id, x, y) =>
                           setNpcPositionOverrides((current) => ({ ...current, [id]: { x, y } }))
                         }
+                        nearbyZoneId={nearbyZoneMatch?.zone.id ?? null}
+                        targetedZoneId={zoneState.pendingZoneId}
+                        zoneNpcs={zoneNpcs}
+                        nearbyZoneNpcId={nearbyZoneNpcMatch?.npc.id ?? null}
+                        targetedZoneNpcId={zoneState.pendingZoneId}
+                        onSelectZone={selectZoneTarget}
+                        onSelectZoneNpc={selectZoneTarget}
+                        onHoverZone={(id) => dispatchZone(setHoveredZoneId(id))}
                       />
                     </Suspense>
                     {minimapTelemetry && (
                       <NeighborhoodMinimap
                         telemetry={minimapTelemetry}
-                        className="absolute bottom-3 right-3 z-10 md:bottom-auto md:top-3"
+                        className="absolute left-3 top-[4.5rem] z-10 md:left-auto md:right-3 md:top-3"
                       />
                     )}
                     <div
@@ -904,43 +1272,60 @@ export function PlayableNeighborhood() {
                         <Map size={16} aria-hidden="true" />
                       </Link>
                     </div>
-                    {nearbyObject && (
+                    {(nearbyZoneMatch || nearbyZoneNpcMatch || nearbyObject) && (
                       <button
                         type="button"
                         className="neighborhood-interaction"
-                        disabled={nearbyObject.kind === "home" && enteringHome}
+                        disabled={
+                          !nearbyZoneMatch &&
+                          !nearbyZoneNpcMatch &&
+                          nearbyObject?.kind === "home" &&
+                          enteringHome
+                        }
                         onClick={openInteraction}
                         aria-label={
-                          nearbyObject.kind === "npc"
-                            ? `Talk with ${nearbyNpc?.name ?? nearbyObject.name}`
-                            : nearbyObject.kind === "home"
-                              ? "Enter your home"
-                              : `Interact with ${nearbyObject.name}`
+                          nearbyZoneMatch
+                            ? nearbyZoneMatch.zone.promptLabel
+                            : nearbyZoneNpcMatch
+                              ? `Chat with ${nearbyZoneNpcMatch.npc.name}`
+                              : nearbyObject?.kind === "npc"
+                                ? `Talk with ${nearbyNpc?.name ?? nearbyObject.name}`
+                                : nearbyObject?.kind === "home"
+                                  ? "Enter your home"
+                                  : `Interact with ${nearbyObject?.name ?? ""}`
                         }
                       >
-                        {nearbyObject.kind === "home" ? (
-                          <Home size={17} aria-hidden="true" />
-                        ) : nearbyObject.kind === "market" ? (
+                        {nearbyZoneMatch ? (
                           <Store size={17} aria-hidden="true" />
-                        ) : nearbyObject.kind === "work" ? (
+                        ) : nearbyZoneNpcMatch ? (
+                          <MessageCircle size={17} aria-hidden="true" />
+                        ) : nearbyObject?.kind === "home" ? (
+                          <Home size={17} aria-hidden="true" />
+                        ) : nearbyObject?.kind === "market" ? (
+                          <Store size={17} aria-hidden="true" />
+                        ) : nearbyObject?.kind === "work" ? (
                           <BriefcaseBusiness size={17} aria-hidden="true" />
                         ) : (
                           <MessageCircle size={17} aria-hidden="true" />
                         )}
-                        {nearbyObject.kind === "home"
-                          ? enteringHome
-                            ? "Opening your home..."
-                            : "Enter your home"
-                          : nearbyObject.kind === "npc"
-                            ? `Talk with ${nearbyNpc?.name ?? nearbyObject.name}`
-                            : nearbyObject.kind === "work"
-                              ? `Work at ${nearbyObject.name}`
-                              : `Explore ${nearbyObject.name}`}
+                        {nearbyZoneMatch
+                          ? nearbyZoneMatch.zone.promptLabel
+                          : nearbyZoneNpcMatch
+                            ? `Chat · ${nearbyZoneNpcMatch.npc.name.split("·")[0]?.trim()}`
+                            : nearbyObject?.kind === "home"
+                              ? enteringHome
+                                ? "Opening your home..."
+                                : "Enter your home"
+                              : nearbyObject?.kind === "npc"
+                                ? `Talk with ${nearbyNpc?.name ?? nearbyObject.name}`
+                                : nearbyObject?.kind === "work"
+                                  ? `Work at ${nearbyObject.name}`
+                                  : `Explore ${nearbyObject?.name ?? ""}`}
                         <kbd>E</kbd>
                       </button>
                     )}
                   </div>
-                  {activeNpcs.length > 0 && (
+                  {(activeNpcs.length > 0 || zoneNpcs.length > 0) && (
                     <button
                       type="button"
                       className="neighborhood-people-toggle"
@@ -949,10 +1334,10 @@ export function PlayableNeighborhood() {
                       onClick={() => setPeopleOpen((open) => !open)}
                     >
                       <Users size={16} aria-hidden="true" />
-                      People · {activeNpcs.length}
+                      People · {activeNpcs.length + zoneNpcs.length}
                     </button>
                   )}
-                  {activeNpcs.length > 0 && peopleOpen && (
+                  {(activeNpcs.length > 0 || zoneNpcs.length > 0) && peopleOpen && (
                     <section
                       id="neighborhood-people-panel"
                       className="neighborhood-people"
@@ -960,9 +1345,33 @@ export function PlayableNeighborhood() {
                     >
                       <div className="neighborhood-people-heading">
                         <strong>People around here</strong>
-                        <span>NPCs follow their own daily routines</span>
+                        <span>Tap anyone to walk over &amp; chat</span>
                       </div>
                       <div className="neighborhood-people-list">
+                        {zoneNpcs.map((zNpc) => {
+                          const isNearby = nearbyZoneNpcMatch?.npc.id === zNpc.id;
+                          return (
+                            <button
+                              key={zNpc.id}
+                              type="button"
+                              className="neighborhood-person"
+                              onClick={() => {
+                                setPeopleOpen(false);
+                                selectZoneTarget(zNpc.id);
+                              }}
+                            >
+                              <span className="neighborhood-person-copy">
+                                <strong>{zNpc.name}</strong>
+                                <span>
+                                  {zNpc.role} · {zNpc.zoneTag.replace("_", " ")}
+                                </span>
+                              </span>
+                              <span className="neighborhood-person-action">
+                                {isNearby ? "Chat" : "Walk over"}
+                              </span>
+                            </button>
+                          );
+                        })}
                         {activeNpcs.map((npc) => {
                           const isNearby = nearbyObject?.id === npc.id;
                           return (
@@ -1220,6 +1629,24 @@ export function PlayableNeighborhood() {
                       )}
                     </DialogContent>
                   </Dialog>
+                  <NeighborhoodZoneModal
+                    open={zoneModalOpen}
+                    onOpenChange={(open) => {
+                      if (!open) dispatchZone(closeZoneInteraction());
+                    }}
+                    zone={activeZoneSpec}
+                    npc={activeZoneNpc}
+                    pocketBalance={pocketBalance}
+                    bankBalance={bankBalance}
+                    needs={effectiveNeeds}
+                    localInventory={zoneState.localInventory}
+                    equippedAccessorySlug={zoneState.equippedAccessorySlug}
+                    currentLocationId={currentLocation?.id}
+                    npcTip={zoneState.lastNpcTip}
+                    onPerformZoneAction={handlePerformZoneAction}
+                    onNpcTipSelect={handleNpcTipSelect}
+                    onToggleAccessory={handleToggleAccessory}
+                  />
                   <div className="neighborhood-controls-row">
                     {homeTypeId && (
                       <button

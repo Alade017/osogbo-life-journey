@@ -108,3 +108,62 @@ function fadeMaterials(mesh: Mesh): MeshStandardMaterial[] {
   mesh.userData["fadeMaterials"] = copies;
   return copies;
 }
+
+/** Smoothly fades out and hides roofs/upper stories when the player walks inside an interior footprint. */
+export function useInteriorRoofFade(inside: boolean) {
+  const { invalidate } = useThree();
+  const groupRef = useRef<Group>(null);
+  const opacityRef = useRef(1);
+  const materialsRef = useRef<MeshStandardMaterial[]>([]);
+
+  useFrame((_, delta) => {
+    const group = groupRef.current;
+    if (!group) return;
+
+    if (materialsRef.current.length === 0) {
+      const mats: MeshStandardMaterial[] = [];
+      group.traverse((child) => {
+        if ("isMesh" in child && child.isMesh) {
+          const mat = (child as { material?: MeshStandardMaterial | MeshStandardMaterial[] })
+            .material;
+          if (Array.isArray(mat)) {
+            mat.forEach((m) => {
+              m.transparent = true;
+              mats.push(m);
+            });
+          } else if (mat) {
+            mat.transparent = true;
+            mats.push(mat);
+          }
+        }
+      });
+      materialsRef.current = mats;
+    }
+
+    const target = inside ? 0 : 1;
+    const current = opacityRef.current;
+    if (Math.abs(current - target) < 0.015) {
+      if (current !== target) {
+        opacityRef.current = target;
+        materialsRef.current.forEach((m) => {
+          m.opacity = target;
+          m.depthWrite = target > 0.5;
+        });
+        group.visible = target > 0.05;
+        invalidate();
+      }
+      return;
+    }
+
+    const next = approachOpacity(current, target, Math.min(delta, 0.1), 12);
+    opacityRef.current = next;
+    materialsRef.current.forEach((m) => {
+      m.opacity = next;
+      m.depthWrite = next > 0.5;
+    });
+    group.visible = next > 0.05;
+    invalidate();
+  });
+
+  return groupRef;
+}

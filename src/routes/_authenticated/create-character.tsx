@@ -16,7 +16,7 @@ import {
   TROUSERS,
   type Appearance,
 } from "@/components/game/Avatar";
-import { CharacterStudioPreview } from "@/components/3d/CharacterPreview";
+import { CharacterPreview } from "@/components/3d/CharacterPreview";
 import "@/components/game/profile-inventory.css";
 import {
   appearanceForGender,
@@ -187,13 +187,14 @@ function CreateCharacter() {
           You start with ₦5,000 (in-game), full energy and a few essentials.
         </p>
 
-        <div className="mt-6 grid gap-6 md:grid-cols-[minmax(320px,380px)_1fr]">
+        <div className="mt-6 grid gap-6 md:grid-cols-[280px_1fr]">
           <div className="game-panel game-panel-accent flex flex-col items-center justify-center p-6 md:sticky md:top-6 md:self-start">
-            <div className="character-creation-preview w-full max-w-[380px]" aria-live="polite">
-              <CharacterStudioPreview
+            <div className="character-creation-preview w-full max-w-[260px]" aria-live="polite">
+              <CharacterPreview
                 appearance={ap}
                 gender={gender}
-                label={`${name.trim() || "Your character"} studio preview`}
+                equipment={[]}
+                label={`${name.trim() || "Your character"} preview`}
               />
             </div>
             <div className="mt-4 rounded-lg border-2 border-edge bg-card px-4 py-1.5 font-display text-lg font-bold">
@@ -213,7 +214,9 @@ function CreateCharacter() {
               </Button>
             </div>
             <p className="mt-3 max-w-56 text-center text-xs text-muted-foreground">
-              Your selected skin tone, hairstyle, hair colour and clothing are rendered on the procedural character. Headwear options remain saved but are not yet modelled in this preview.
+              Clothing colours, height and build update this 3D preview. Skin tone, hairstyle, hair
+              colour and headwear are saved with your character, but the current rigged model does
+              not yet display those four selections.
             </p>
           </div>
 
@@ -271,28 +274,96 @@ function CreateCharacter() {
             <div className="space-y-5 rounded-xl border border-edge/70 bg-card/50 p-4">
               <div>
                 <h2 className="font-display text-lg font-bold">Personal appearance</h2>
-                <p className="mt-1 text-xs text-muted-foreground">Skin tone, hairstyle and hair colour are shown on the live character model.</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  These choices are saved to your character. The current 3D rig does not yet render
+                  them.
+                </p>
               </div>
-              <Picker label="Skin tone" options={SKIN_TONES} value={ap.skin} onChange={(skin) => setAp({ ...ap, skin })} swatches />
-              <Picker label="Hairstyle" options={HAIR_STYLES_BY_GENDER[gender] ?? HAIR_STYLES_BY_GENDER.nonbinary} value={ap.hair} onChange={(hair) => setAp({ ...ap, hair })} />
-              <Picker label="Hair colour" options={HAIR_COLORS} value={ap.hairColor} onChange={(hairColor) => setAp({ ...ap, hairColor })} swatches />
-              <Picker label="Headwear" options={HEADWEAR} value={ap.headwear} onChange={(headwear) => setAp({ ...ap, headwear })} />
+              <Picker
+                label="Skin tone"
+                options={SKIN_TONES}
+                value={ap.skin}
+                onChange={(skin) => setAp({ ...ap, skin })}
+                swatches
+              />
+              <Picker
+                label="Hairstyle"
+                options={HAIR_STYLES_BY_GENDER[gender] ?? HAIR_STYLES_BY_GENDER.nonbinary}
+                value={ap.hair}
+                onChange={(hair) => setAp({ ...ap, hair })}
+              />
+              <Picker
+                label="Hair colour"
+                options={HAIR_COLORS}
+                value={ap.hairColor}
+                onChange={(hairColor) => setAp({ ...ap, hairColor })}
+                swatches
+              />
+              <Picker
+                label="Headwear"
+                options={HEADWEAR}
+                value={ap.headwear}
+                onChange={(headwear) => setAp({ ...ap, headwear })}
+              />
             </div>
 
             <div className="space-y-5 rounded-xl border border-edge/70 bg-card/50 p-4">
               <div>
                 <h2 className="font-display text-lg font-bold">Clothing & footwear</h2>
-                <p className="mt-1 text-xs text-muted-foreground">These clothing colours are applied by the same rigged character renderer used in the game world.</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  These clothing colours are applied by the same rigged character renderer used in
+                  the game world.
+                </p>
               </div>
-              <Picker label="Top colour" options={OUTFITS} value={ap.outfit} onChange={(outfit) => setAp({ ...ap, outfit })} swatches />
-              <Picker label="Trousers colour" options={TROUSERS} value={ap.bottoms} onChange={(bottoms) => setAp({ ...ap, bottoms })} swatches />
-              <Picker label="Shoe colour" options={SHOE_COLORS} value={ap.shoes} onChange={(shoes) => setAp({ ...ap, shoes })} swatches />
+              <div className="flex flex-wrap gap-2" role="group" aria-label="Clothing">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={ap.clothed ? "default" : "outline"}
+                  aria-pressed={ap.clothed}
+                  onClick={() => setAp({ ...ap, clothed: true })}
+                >
+                  Wear clothes
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={ap.clothed ? "outline" : "default"}
+                  aria-pressed={!ap.clothed}
+                  onClick={() => setAp({ ...ap, clothed: false })}
+                >
+                  No clothes
+                </Button>
+              </div>
+              <Picker
+                label="Top colour"
+                options={OUTFITS}
+                value={ap.outfit}
+                onChange={(outfit) => setAp({ ...ap, outfit, clothed: true })}
+                swatches
+              />
+              <Picker
+                label="Trousers colour"
+                options={TROUSERS}
+                value={ap.bottoms}
+                onChange={(bottoms) => setAp({ ...ap, bottoms, clothed: true })}
+                swatches
+              />
+              <Picker
+                label="Shoe colour"
+                options={SHOE_COLORS}
+                value={ap.shoes}
+                onChange={(shoes) => setAp({ ...ap, shoes, clothed: true })}
+                swatches
+              />
             </div>
 
             <div className="space-y-5 rounded-xl border border-edge/70 bg-card/50 p-4">
               <div>
                 <h2 className="font-display text-lg font-bold">Body</h2>
-                <p className="mt-1 text-xs text-muted-foreground">Adjust your character’s proportions.</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Adjust your character’s proportions.
+                </p>
               </div>
               <Picker
                 label="Height"

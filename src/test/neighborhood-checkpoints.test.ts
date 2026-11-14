@@ -142,6 +142,32 @@ describe("neighbourhood checkpoint manager", () => {
     expect(manager.trackedCount).toBe(0);
   });
 
+  it("waits for a released final checkpoint when the room is disposed", async () => {
+    const gate = deferred<void>();
+    const writes: CheckpointPoint[] = [];
+    const manager = new NeighborhoodCheckpoints(async (_t, point) => {
+      writes.push(point);
+      await gate.promise;
+      return true;
+    });
+    manager.track("s1", target, null);
+
+    const leave = manager.release("s1", { x: 8, y: 9 });
+    expect(manager.trackedCount).toBe(0);
+
+    let disposed = false;
+    const disposal = manager.dispose().then(() => {
+      disposed = true;
+    });
+    await flush();
+    expect(writes).toEqual([{ x: 8, y: 9 }]);
+    expect(disposed).toBe(false);
+
+    gate.resolve();
+    await Promise.all([leave, disposal]);
+    expect(disposed).toBe(true);
+  });
+
   it("treats an unknown saved point as changed", () => {
     expect(checkpointChanged(null, { x: 0, y: 0 })).toBe(true);
     expect(checkpointChanged({ x: 0, y: 0 }, { x: 0, y: 0 })).toBe(false);

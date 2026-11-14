@@ -9,7 +9,7 @@ type Segment = { bone: Bone; child: Bone };
 function clean(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]/g, "");
 }
-function findBone(root: Object3D, candidates: string[]) {
+function findBone(root: Object3D, candidates: string[]): Bone | null {
   const wanted = candidates.map(clean);
   let found: Bone | null = null;
   root.traverse((node) => {
@@ -41,25 +41,36 @@ function SegmentGarment({
   patterned?: boolean;
   cuff?: boolean;
 }) {
-  const vector = segment.child.position;
-  const length = Math.max(vector.length(), 0.025);
-  const radius = Math.max(length * radiusFactor, 0.012);
-  const rotation = new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), vector.clone().normalize());
-  const map = patterned ? adireTexture() : null;
+  const { length, radius, rotation, midpoint } = useMemo(() => {
+    const vector = segment.child.position;
+    const len = Math.max(vector.length(), 0.025);
+    const rad = Math.max(len * radiusFactor, 0.012);
+    const rot = new Quaternion().setFromUnitVectors(
+      new Vector3(0, 1, 0),
+      vector.clone().normalize(),
+    );
+    const mid = vector.clone().multiplyScalar(0.5);
+    return { length: len, radius: rad, rotation: rot, midpoint: mid };
+  }, [segment, radiusFactor]);
+  const map = useMemo(() => (patterned ? adireTexture() : null), [patterned]);
   return (
-    <group position={vector.clone().multiplyScalar(0.5)} quaternion={rotation}>
+    <group position={midpoint} quaternion={rotation}>
       <mesh castShadow receiveShadow>
         <cylinderGeometry args={[radius * 0.94, radius, length * 1.04, 12, 1]} />
         <meshStandardMaterial color={color} map={map} roughness={0.94} side={2} />
       </mesh>
       {cuff ? (
-        <mesh position={[0, -length * 0.44, 0]} castShadow>
-          <cylinderGeometry args={[radius * 0.96, radius * 0.96, Math.max(length * 0.075, 0.01), 12]} />
+        <mesh position={[0, -length * 0.44, 0]}>
+          <cylinderGeometry
+            args={[radius * 0.96, radius * 0.96, Math.max(length * 0.075, 0.01), 12]}
+          />
           <meshStandardMaterial color={trim} roughness={0.82} />
         </mesh>
       ) : null}
       <mesh position={[0, length * 0.2, 0]}>
-        <cylinderGeometry args={[radius * 1.01, radius * 1.01, Math.max(length * 0.018, 0.004), 12]} />
+        <cylinderGeometry
+          args={[radius * 1.01, radius * 1.01, Math.max(length * 0.018, 0.004), 12]}
+        />
         <meshStandardMaterial color={trim} roughness={0.82} />
       </mesh>
     </group>
@@ -153,6 +164,7 @@ export function CharacterWardrobe({
     return { torso, pelvis, arms, legs, feet };
   }, [rig]);
 
+  if (appearance.clothed === false) return null;
   const top = OUTFITS[appearance.outfit ?? 0] ?? OUTFITS[0]!;
   const bottom = TROUSERS[appearance.bottoms ?? 0] ?? TROUSERS[0]!;
   const shoes = SHOE_COLORS[appearance.shoes ?? 0] ?? SHOE_COLORS[0]!;
@@ -182,9 +194,7 @@ export function CharacterWardrobe({
           segment.bone
         ),
       )}
-      {anchors.feet.map((bone) =>
-        createPortal(<ShoeGarment color={shoes} />, bone),
-      )}
+      {anchors.feet.map((bone) => createPortal(<ShoeGarment color={shoes} />, bone))}
     </>
   );
 }
