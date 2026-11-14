@@ -179,6 +179,8 @@ function accessoryParts(): Part[] {
 function hairParts(shape: HairShape): Part[] {
   if (shape === "afro")
     return [blob([0.115, 0.1, 0.115], [0, 0.99, -0.01], BONE.head, { detail: 1 })];
+  if (shape === "buzz")
+    return [blob([0.092, 0.035, 0.1], [0, 0.947, -0.01], BONE.head)];
   return [blob([0.095, 0.072, 0.105], [0, 0.968, -0.01], BONE.head)];
 }
 
