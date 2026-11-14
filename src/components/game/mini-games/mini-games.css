@@ -862,113 +862,212 @@
   }
 }
 
-/* Ludo board: a bright cross-shaped track with solid coloured yards, home lanes and pawns. */
+/* Ludo board: a 15 by 15 CSS grid with solid yards, a white track and pawns that hop tile to tile. */
 .mg-ludo {
-  gap: 14px;
+  position: relative;
+  gap: 12px;
 }
-.mg-ludo-board-wrap {
+.lb-board {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  aspect-ratio: 1;
+  background: #ffffff;
+  border: 3px solid #1f2937;
+  border-radius: 16px;
+  box-shadow: 0 18px 32px -20px rgb(40 26 10 / 0.6);
+  overflow: hidden;
+}
+.lb-stage {
+  position: relative;
+  width: 100%;
+}
+.lb-grid {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(15, 1fr);
+  grid-template-rows: repeat(15, 1fr);
+}
+.lb-cell {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid #1f2937;
+  box-sizing: border-box;
+}
+.lb-cell.is-start,
+.lb-cell.is-home {
+  border-color: #1f2937;
+}
+.lb-mark {
+  position: absolute;
+  inset: 10%;
+  width: 80%;
+  height: 80%;
+}
+.lb-yard {
+  position: absolute;
+  border-radius: 14%;
+  z-index: 1;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.lb-yard-plate {
+  position: absolute;
+  inset: 13%;
+  border-radius: 14%;
+  background: #ffffff;
+}
+.lb-socket {
+  position: absolute;
+  width: 15%;
+  height: 15%;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  border: 2px solid #ffffff;
+}
+.lb-centre {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.lb-piece {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  aspect-ratio: 1;
+  transition: left 170ms linear, top 170ms linear, width 200ms ease;
+  pointer-events: none;
+}
+.lb-piece.is-playable {
+  pointer-events: auto;
+  cursor: pointer;
+  filter: drop-shadow(0 0 4px #f5c518) drop-shadow(0 0 2px #f5c518);
+  animation: mg-pulse 1100ms ease-in-out infinite alternate;
+}
+.lb-piece.is-playable:focus-visible {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+.lb-pawn {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.lb-pawn-shadow {
+  fill: rgb(20 14 6 / 0.3);
+}
+.lb-roll-hint {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgb(31 41 55 / 0.8);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+/* HUD: one compact card per seat, with the turn highlighted. */
+.lb-hud {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
   width: 100%;
   max-width: 440px;
   margin: 0 auto;
 }
-.mg-ludo-board {
-  display: block;
-  width: 100%;
-  height: auto;
-  border-radius: 16px;
-  box-shadow: 0 18px 32px -20px rgba(40, 26, 10, 0.6);
+.lb-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  border: 2px solid transparent;
+  background: var(--mg-paper, #fffdf7);
+  box-shadow: inset 4px 0 0 var(--seat);
 }
-.mg-ludo-ground {
-  fill: #ffffff;
-  stroke: #1f2937;
-  stroke-width: 0.12;
+.lb-card.is-active {
+  border-color: var(--seat);
 }
-.mg-ludo-star {
-  fill: none;
-  stroke: #1f2937;
-  stroke-width: 0.05;
-  stroke-linejoin: round;
+.lb-avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--seat);
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 700;
 }
-.mg-ludo-chevron {
-  fill: #ffffff;
+.lb-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lb-done {
+  display: inline-flex;
+  gap: 3px;
+}
+.lb-done i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1px solid var(--seat);
+}
+.lb-done i.is-home {
+  background: var(--seat);
+}
+.lb-link {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #9ca3af;
+}
+.lb-link.is-online {
+  background: #22c55e;
+}
+
+/* Toasts: short notices for captures, forfeits and passes. */
+.lb-toasts {
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  z-index: 8;
+  transform: translateX(-50%);
+  display: grid;
+  gap: 6px;
+  width: min(92%, 360px);
   pointer-events: none;
 }
-.mg-ludo-yard {
-  fill: var(--yard, #bbb);
-}
-.mg-ludo-yard-inner {
-  fill: #ffffff;
-}
-.mg-ludo-socket {
-  fill: var(--yard, #bbb);
-  stroke: #ffffff;
-  stroke-width: 0.06;
-}
-.mg-ludo-cell {
-  fill: #ffffff;
-  stroke: #1f2937;
-  stroke-width: 0.05;
-}
-.mg-ludo-cell.is-safe {
-  fill: #fffbeb;
-}
-.mg-ludo-cell.is-start {
-  fill: var(--start);
-}
-.mg-ludo-cell.is-home {
-  fill: var(--start);
-}
-.mg-ludo-centre {
-  fill: #ffffff;
-  stroke: #1f2937;
-  stroke-width: 0.06;
-}
-.mg-ludo polygon {
-  stroke: #1f2937;
-  stroke-width: 0.04;
-}
-.mg-ludo-piece {
-  transition: transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.mg-ludo-piece.is-playable {
-  cursor: pointer;
-}
-.mg-ludo-shadow {
-  fill: rgba(20, 14, 6, 0.28);
-}
-.mg-ludo-pawn {
-  fill: var(--piece);
-  stroke: #1f2937;
-  stroke-width: 0.04;
-  stroke-linejoin: round;
-}
-.mg-ludo-pawn-base {
-  fill: color-mix(in srgb, var(--piece) 70%, #000);
-  stroke: #1f2937;
-  stroke-width: 0.04;
-}
-.mg-ludo-glint {
-  fill: #ffffff;
-  opacity: 0.5;
-  pointer-events: none;
-}
-.mg-ludo-ring {
-  fill: none;
-  stroke: var(--mg-gold);
-  stroke-width: 0.1;
-  animation: mg-pulse 1100ms ease-in-out infinite alternate;
-}
-.mg-ludo-piece:focus-visible {
-  outline: none;
-}
-.mg-ludo-piece:focus-visible .mg-ludo-ring {
-  stroke: #1d4ed8;
+.lb-toast {
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgb(31 41 55 / 0.9);
+  color: #ffffff;
+  font-size: 0.8rem;
+  text-align: center;
+  animation: mg-pulse 1s ease-in-out 1;
 }
 @media (prefers-reduced-motion: reduce) {
-  .mg-ludo-piece {
+  .lb-piece,
+  .lb-piece.is-playable {
     transition: none;
-  }
-  .mg-ludo-ring {
     animation: none;
   }
 }

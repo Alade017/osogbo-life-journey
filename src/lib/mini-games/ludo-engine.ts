@@ -342,3 +342,38 @@ export function timeoutAction(game: LudoGame, playerId: string, random: () => nu
   if (game.phase === "NO_LEGAL_MOVES") return completeNoLegalMoves(game, playerId);
   return fail("INVALID_PHASE");
 }
+
+/** The arm of the board a colour sits on: RED is arm 0, then GREEN, YELLOW and BLUE. */
+export function armOf(colour: Colour): number {
+  return COLOURS.indexOf(colour);
+}
+
+/**
+ * Computer choice for one roll: finish, capture, leave the yard, then the furthest token.
+ * Returns null when the seat has no legal move.
+ */
+export function bestComputerMove(game: LudoGame, playerId: string): LegalMove | null {
+  const options = getLegalMoves(game, playerId);
+  if (options.length === 0) return null;
+  const score = (move: LegalMove) => {
+    const progress = game.pieces[move.colour][move.token] ?? YARD_STEP;
+    let points = 0;
+    if (move.to === FINISH_STEP) points += 10;
+    if (progress === YARD_STEP) points += 4;
+    if (move.to <= LAST_TRACK_STEP) {
+      const tile = absoluteTile(move.colour, move.to);
+      const captures =
+        !isSafeTile(tile) &&
+        COLOURS.some(
+          (victim) =>
+            victim !== move.colour &&
+            game.pieces[victim].some(
+              (step) => step >= 0 && step <= LAST_TRACK_STEP && absoluteTile(victim, step) === tile,
+            ),
+        );
+      if (captures) points += 6;
+    }
+    return points + (progress === YARD_STEP ? 0 : progress) / 100;
+  };
+  return options.reduce((best, move) => (score(move) > score(best) ? move : best));
+}
