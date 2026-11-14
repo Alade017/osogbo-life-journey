@@ -52,8 +52,8 @@ describe("housing map marker input", () => {
 
     expect(
       mapHousingMarkers([
-        { ...marker, gridX: 24 },
-        { ...marker, gridZ: 18 },
+        { ...marker, gridX: columns },
+        { ...marker, gridZ: rows },
       ]),
     ).toEqual([]);
   });
