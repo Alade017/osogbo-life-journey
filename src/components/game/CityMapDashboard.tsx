@@ -398,10 +398,15 @@ export function CityMapDashboard({
     setTravelError(null);
     if (character.data?.inside_home_property_id) {
       // Leaving a house plays the door first; the house screen runs the trip alongside it.
-      requestDepartureFromHome({ locationId: selectedDestination.id, mode });
-      void navigate({ to: "/house" }).finally(() => {
-        travelSubmitLock.current = false;
+      const departure = requestDepartureFromHome({
+        locationId: selectedDestination.id,
+        mode,
       });
+      void navigate({ to: "/house" })
+        .catch(() => clearPendingDepartureFromHome(departure))
+        .finally(() => {
+          travelSubmitLock.current = false;
+        });
       return;
     }
     travel.mutate({ locationId: selectedDestination.id, mode });
