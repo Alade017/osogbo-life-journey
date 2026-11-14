@@ -56,6 +56,7 @@ import {
   centreTriangle,
   homeLane,
   tokenPoint,
+  YARD_SLOTS,
   yardRect,
 } from "@/lib/mini-games/ludo-board";
 import {
@@ -280,12 +281,6 @@ function LudoGame() {
       : progress === FINISHED
         ? "Home."
         : `${progress + 1} of ${LUDO_TRACK_LENGTH} steps`;
-  const percent = (progress: number) =>
-    progress === BASE
-      ? 0
-      : progress === FINISHED
-        ? 100
-        : ((progress + 1) / LUDO_TRACK_LENGTH) * 100;
   const rivalHome = (state.tokens[1] ?? []).filter((progress) => progress === FINISHED).length;
   const status =
     state.winner === 0
@@ -352,17 +347,39 @@ function LudoGame() {
           />
           {[0, 1, 2, 3].map((arm) => {
             const rect = yardRect(arm);
+            const cx = rect.x + rect.size / 2;
+            const cy = rect.y + rect.size / 2;
+            const yardStyle = { "--yard": armColour(arm) ?? "transparent" } as CSSProperties;
             return (
-              <rect
-                key={`yard-${arm}`}
-                className="mg-ludo-yard"
-                x={rect.x}
-                y={rect.y}
-                width={rect.size}
-                height={rect.size}
-                rx="0.5"
-                style={{ "--yard": armColour(arm) ?? "transparent" } as CSSProperties}
-              />
+              <g key={`yard-${arm}`}>
+                <rect
+                  className="mg-ludo-yard"
+                  x={rect.x}
+                  y={rect.y}
+                  width={rect.size}
+                  height={rect.size}
+                  rx="0.6"
+                  style={yardStyle}
+                />
+                <rect
+                  className="mg-ludo-yard-inner"
+                  x={rect.x + 0.6}
+                  y={rect.y + 0.6}
+                  width={rect.size - 1.2}
+                  height={rect.size - 1.2}
+                  rx="0.5"
+                />
+                {YARD_SLOTS.map((slot, index) => (
+                  <circle
+                    key={`socket-${arm}-${index}`}
+                    className="mg-ludo-socket"
+                    cx={cx + slot.x}
+                    cy={cy + slot.y}
+                    r="0.46"
+                    style={yardStyle}
+                  />
+                ))}
+              </g>
             );
           })}
           {LOOP_CELLS.map(([row, col], square) => {
@@ -437,8 +454,12 @@ function LudoGame() {
                   : undefined
               }
             >
-              <circle className="mg-ludo-disc" r="0.36" />
-              <circle className="mg-ludo-glint" cx="-0.12" cy="-0.12" r="0.1" />
+              {piece.playable && <circle className="mg-ludo-ring" r="0.46" />}
+              <ellipse className="mg-ludo-shadow" cx="0.04" cy="0.4" rx="0.32" ry="0.09" />
+              <path className="mg-ludo-pawn" d="M -0.1 -0.06 L -0.27 0.3 L 0.27 0.3 L 0.1 -0.06 Z" />
+              <rect className="mg-ludo-pawn-base" x="-0.33" y="0.28" width="0.66" height="0.12" rx="0.05" />
+              <circle className="mg-ludo-pawn" cx="0" cy="-0.2" r="0.2" />
+              <circle className="mg-ludo-glint" cx="-0.07" cy="-0.27" r="0.06" />
             </g>
           ))}
         </svg>
@@ -456,31 +477,6 @@ function LudoGame() {
           </Button>
         )}
       </div>
-      <ul className="mg-ludo-tokens">
-        {(state.tokens[0] ?? []).map((progress, token) => {
-          const playable = options.includes(token);
-          return (
-            <li key={token}>
-              <button
-                type="button"
-                className={`mg-token ${playable ? "is-playable" : ""}`}
-                disabled={!playable}
-                style={{ "--token": LUDO_TOKEN_COLORS[0] } as CSSProperties}
-                onClick={() => movePiece(token)}
-              >
-                <span className="mg-token-disc" aria-hidden="true" />
-                <span className="mg-token-body">
-                  <strong>Token {token + 1}</strong>
-                  <span className="mg-track" aria-hidden="true">
-                    <span style={{ width: `${percent(progress)}%` }} />
-                  </span>
-                  <small>{describe(progress)}</small>
-                </span>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
       <p className="mg-rival">
         Computer: {rivalHome} of {(state.tokens[1] ?? []).length} tokens home.
       </p>
