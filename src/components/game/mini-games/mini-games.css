@@ -1405,3 +1405,21 @@
 .mg-setup-subtitle {
   font-weight: 700;
 }
+
+/* Results popup: small, centred, winner only. */
+.lb-results.lb-results {
+  width: min(86vw, 330px);
+  max-width: 330px;
+  padding: 22px 20px 20px;
+  gap: 18px;
+}
+.lb-results.lb-results .lb-results-head svg {
+  width: 48px;
+  height: 48px;
+}
+.lb-results.lb-results .lb-results-head > div {
+  min-width: 0;
+}
+.lb-results.lb-results .lb-results-actions {
+  grid-template-columns: 1fr;
+}

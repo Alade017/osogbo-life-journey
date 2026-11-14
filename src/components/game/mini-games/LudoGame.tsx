@@ -252,6 +252,7 @@ function PawnMark({ colour, size = 28 }: { colour: Colour; size?: number }) {
 }
 
 /** Results popup: shown over the finished board, and can be reopened from the table. */
+/** Results popup: a centred card that names only the winner. */
 function LudoResults({
   open,
   seats,
@@ -269,19 +270,10 @@ function LudoResults({
   onLobby: () => void;
   onClose: () => void;
 }) {
-  const ranked = seats
-    .map((seat) => ({
-      seat,
-      home: game.pieces[seat.colour].filter((step) => step === FINISH_STEP).length,
-    }))
-    // The winner's seat always ranks first; the rest follow by pieces home.
-    .sort(
-      (a, b) =>
-        Number(b.seat.playerId === game.winnerId) - Number(a.seat.playerId === game.winnerId) ||
-        b.home - a.home,
-    );
   const winner = game.winnerId ?? "";
   const youWon = winner === HUMAN;
+  const winnerSeat = seats.find((seat) => seat.playerId === winner) ??
+    seats[0] ?? { colour: "RED" as Colour };
   return (
     <Dialog
       open={open}
@@ -291,31 +283,18 @@ function LudoResults({
     >
       <DialogContent className="lb-results">
         <DialogHeader className="lb-results-head">
-          <PawnMark colour={ranked[0]?.seat.colour ?? "RED"} size={64} />
+          <PawnMark colour={winnerSeat.colour} size={48} />
           <div>
             <DialogTitle>{youWon ? "You won!" : `${nameOf(winner)} won`}</DialogTitle>
             <DialogDescription>
-              {youWon ? "Well played. Another round?" : "Good game. Try again?"}
+              {youWon ? "Well played." : "Better luck next game."}
             </DialogDescription>
           </div>
         </DialogHeader>
-        <ol className="lb-rank">
-          {ranked.map(({ seat, home }, index) => (
-            <li key={seat.colour} style={{ "--seat": LUDO_COLOURS[seat.colour] } as CSSProperties}>
-              <span className="lb-rank-place" aria-hidden="true">
-                {index + 1}
-              </span>
-              <span className="lb-rank-name">
-                {nameOf(seat.playerId)} · {COLOUR_NAMES[seat.colour]}
-              </span>
-              <span className="lb-rank-home">{home} of 4 home</span>
-            </li>
-          ))}
-        </ol>
         <DialogFooter className="lb-results-actions">
           <Button onClick={onAgain}>Play again</Button>
           <Button variant="plain" onClick={onLobby}>
-            Back to Ludo lobby
+            Back to lobby
           </Button>
         </DialogFooter>
       </DialogContent>
