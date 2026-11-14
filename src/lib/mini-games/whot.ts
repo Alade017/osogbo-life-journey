@@ -16,6 +16,8 @@ export type Card = { id: string; shape: Shape | null; rank: number };
 export const SHAPES: readonly Shape[] = ["circle", "triangle", "cross", "square", "star"];
 export const WHOT_RANK = 20;
 const HAND_SIZE = 6;
+/** Cards drawn for each penalty number: Pick Two draws 2 cards and Pick Three draws 3. Defences stack. */
+export const PENALTY_CARDS: Readonly<Record<number, number>> = { 2: 2, 5: 3 };
 
 /** Ranks in each shape, from the official composition: circles and triangles 12, crosses and squares 9, stars 7. */
 const RANKS_BY_SHAPE: Record<Shape, readonly number[]> = {
@@ -38,6 +40,8 @@ export type WhotState = {
   pendingDraw: number;
   /** The number (2 or 5) that started the running penalty; only that number defends it. */
   pendingRank: number | null;
+  /** House rule agreed before the game: a Whot card may neutralise a running penalty. */
+  whotBlocksPenalty?: boolean;
   winner: number | null;
 };
 
@@ -68,7 +72,11 @@ function handOf(hands: readonly (readonly Card[])[], player: number): Card[] {
   return [...(hands[player] ?? [])];
 }
 
-export function newWhot(playerCount: number, random: () => number = Math.random): WhotState {
+export function newWhot(
+  playerCount: number,
+  random: () => number = Math.random,
+  options: { whotBlocksPenalty?: boolean } = {},
+): WhotState {
   const count = Math.min(4, Math.max(2, playerCount));
   const stock = buildWhotDeck(random);
   const hands: Card[][] = Array.from({ length: count }, () => []);
@@ -95,15 +103,20 @@ export function newWhot(playerCount: number, random: () => number = Math.random)
     turn: 0,
     pendingDraw: 0,
     pendingRank: null,
+    whotBlocksPenalty: options.whotBlocksPenalty ?? false,
     winner: null,
   };
 }
 
 export function canPlayCard(
-  state: Pick<WhotState, "pendingDraw" | "pendingRank" | "shape" | "discard">,
+  state: Pick<WhotState, "pendingDraw" | "pendingRank" | "shape" | "discard" | "whotBlocksPenalty">,
   card: Card,
 ): boolean {
-  if (state.pendingDraw > 0) return card.rank === state.pendingRank;
+  if (state.pendingDraw > 0) {
+    // A defence must match the penalty number exactly, so a 5 never answers a 2.
+    if (card.rank === state.pendingRank) return true;
+    return state.whotBlocksPenalty === true && card.rank === WHOT_RANK;
+  }
   if (card.rank === WHOT_RANK) return true;
   const top = state.discard[state.discard.length - 1];
   return card.shape === state.shape || (top !== undefined && card.rank === top.rank);
@@ -179,9 +192,15 @@ export function playWhot(
   let stock = state.stock;
   let finalDiscard = discard;
 
-  if (card.rank === 2 || card.rank === 5) {
-    pendingDraw = (state.pendingDraw > 0 ? state.pendingDraw : 0) + (card.rank === 2 ? 2 : 3);
+  const penalty = PENALTY_CARDS[card.rank];
+  if (penalty !== undefined) {
+    // Defending adds to the penalty and draws nothing; the next player must match or draw it all.
+    pendingDraw = (state.pendingDraw > 0 ? state.pendingDraw : 0) + penalty;
     pendingRank = card.rank;
+  } else if (card.rank === WHOT_RANK && state.pendingDraw > 0) {
+    // House rule: a Whot card neutralises the running penalty and the next player plays freely.
+    pendingDraw = 0;
+    pendingRank = null;
   } else if (card.rank === 1) {
     // Hold On: the same player plays again.
     turn = state.turn;

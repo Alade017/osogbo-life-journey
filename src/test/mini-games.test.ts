@@ -16,8 +16,10 @@ import {
 import {
   BASE,
   FINISHED,
-  bestLudoToken,
+  bestLudoMove,
+  legalMoves,
   legalTokenMoves,
+  seatsForPlayers,
   moveLudoToken,
   newLudo,
   rollLudo,
@@ -149,17 +151,56 @@ describe("draughts", () => {
 });
 
 describe("ludo", () => {
-  it("only a six takes a token out of base", () => {
-    const state = rollLudo(newLudo(2), 3);
+  const withDice = (
+    tokens: number[][],
+    dice: [number, number],
+    options: { turn?: number; playerCount?: number } = {},
+  ): LudoState => ({
+    playerCount: options.playerCount ?? 2,
+    humans: [0],
+    tokens,
+    turn: options.turn ?? 0,
+    dice,
+    used: [false, false],
+    sixPlayed: false,
+    winner: null,
+  });
+
+  it("passes the turn when neither die can bring a token out", () => {
+    const state = rollLudo(newLudo(2), 3, 4);
     expect(state.dice).toBeNull();
     expect(state.turn).toBe(1);
   });
 
-  it("brings a token out on six and gives another roll", () => {
-    let state: LudoState = rollLudo(newLudo(2), 6);
-    expect(legalTokenMoves(state, 6)).toEqual([0, 1, 2, 3]);
-    state = moveLudoToken(state, 0);
+  it("uses each die on its own, and passes when both are played", () => {
+    let state = rollLudo(
+      withDice(
+        [
+          [0, 5, BASE, BASE],
+          [BASE, BASE, BASE, BASE],
+        ],
+        [2, 3],
+      ),
+      2,
+      3,
+    );
+    expect(state.dice).toEqual([2, 3]);
+    state = moveLudoToken(state, 0, 0);
+    expect(state.tokens[0]?.[0]).toBe(2);
+    expect(state.used).toEqual([true, false]);
+    state = moveLudoToken(state, 1, 1);
+    expect(state.tokens[0]?.[1]).toBe(8);
+    expect(state.turn).toBe(1);
+    expect(state.dice).toBeNull();
+  });
+
+  it("brings a token out on a six and gives the seat another roll", () => {
+    let state = rollLudo(newLudo(2), 6, 2);
+    expect(state.dice).toEqual([6, 2]);
+    state = moveLudoToken(state, 0, 0);
     expect(state.tokens[0]?.[0]).toBe(0);
+    expect(state.turn).toBe(0);
+    state = moveLudoToken(state, 0, 1);
     expect(state.turn).toBe(0);
     expect(state.dice).toBeNull();
   });
@@ -167,50 +208,69 @@ describe("ludo", () => {
   it("sends an opponent back when landing on an unsafe shared square", () => {
     // Player 0 starts at loop square 0 and player 1 at 26. Progress 12 for player 0 is loop square 12,
     // which is not safe. Player 1 progress 38 is loop square (26 + 38) % 52 = 12, the same square.
-    const state: LudoState = {
-      playerCount: 2,
-      tokens: [
+    const state = withDice(
+      [
         [10, BASE, BASE, BASE],
         [38, BASE, BASE, BASE],
       ],
-      turn: 0,
-      dice: 2,
-      winner: null,
-    };
-    const after = moveLudoToken(state, 0);
+      [2, 3],
+    );
+    const after = moveLudoToken(state, 0, 0);
     expect(after.tokens[0]?.[0]).toBe(12);
     expect(after.tokens[1]?.[0]).toBe(BASE);
   });
 
   it("does not send an opponent back on a safe square", () => {
     // Progress 13 for player 0 is loop square 13, a safe square. Player 1 progress 39 is also square 13.
-    const state: LudoState = {
-      playerCount: 2,
-      tokens: [
+    const state = withDice(
+      [
         [10, BASE, BASE, BASE],
         [39, BASE, BASE, BASE],
       ],
-      turn: 0,
-      dice: 3,
-      winner: null,
-    };
-    const after = moveLudoToken(state, 0);
+      [3, 1],
+    );
+    const after = moveLudoToken(state, 0, 0);
     expect(after.tokens[0]?.[0]).toBe(13);
     expect(after.tokens[1]?.[0]).toBe(39);
   });
 
   it("needs an exact roll to finish", () => {
-    const state: LudoState = {
-      playerCount: 2,
-      tokens: [
+    const state = withDice(
+      [
         [FINISHED - 2, BASE, BASE, BASE],
         [BASE, BASE, BASE, BASE],
       ],
-      turn: 0,
-      dice: 5,
-      winner: null,
-    };
+      [5, 1],
+    );
     expect(legalTokenMoves(state, 5)).not.toContain(0);
+    expect(legalMoves(state).some((move) => move.token === 0 && move.die === 0)).toBe(false);
+  });
+
+  it("gives two colours to each human in a two-player game", () => {
+    expect(seatsForPlayers(2)).toEqual({ seats: 4, humans: [0, 2] });
+    expect(seatsForPlayers(3)).toEqual({ seats: 3, humans: [0] });
+    expect(seatsForPlayers(4)).toEqual({ seats: 4, humans: [0] });
+  });
+
+  it("plays Ludo to a winner for 2 to 4 players", () => {
+    for (let players = 2; players <= 4; players += 1) {
+      const mode = seatsForPlayers(players);
+      for (let seed = 1; seed <= 10; seed += 1) {
+        const rng = seeded(seed * 31 + players);
+        let state = newLudo(mode.seats, mode.humans);
+        let steps = 0;
+        while (state.winner === null && steps < 20000) {
+          if (state.dice === null) {
+            state = rollLudo(state, 1 + Math.floor(rng() * 6), 1 + Math.floor(rng() * 6));
+          } else {
+            const move = bestLudoMove(state);
+            state = move === null ? state : moveLudoToken(state, move.token, move.die);
+          }
+          steps += 1;
+        }
+        expect(state.winner).not.toBeNull();
+      }
+    }
   });
 });
 
@@ -316,29 +376,6 @@ describe("computer games finish", () => {
           state = choice
             ? playWhot(state, choice.cardId, choice.shape ?? undefined, rng)
             : drawWhot(state, rng);
-          steps += 1;
-        }
-        expect(state.winner).not.toBeNull();
-      }
-    }
-  });
-
-  it("plays Ludo to a winner for 2 to 4 players", () => {
-    for (let players = 2; players <= 4; players += 1) {
-      for (let seed = 1; seed <= 10; seed += 1) {
-        const rng = seeded(seed * 31 + players);
-        let state = newLudo(players);
-        let steps = 0;
-        while (state.winner === null && steps < 20000) {
-          if (state.dice === null) {
-            state = rollLudo(state, 1 + Math.floor(rng() * 6));
-          } else {
-            const token = bestLudoToken(state);
-            state =
-              token === null
-                ? { ...state, dice: null, turn: (state.turn + 1) % state.playerCount }
-                : moveLudoToken(state, token);
-          }
           steps += 1;
         }
         expect(state.winner).not.toBeNull();

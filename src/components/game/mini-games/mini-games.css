@@ -481,83 +481,6 @@
 .mg-pip {
   fill: #1f2937;
 }
-.mg-ludo-tokens {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  display: grid;
-  gap: 8px;
-}
-.mg-token {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: 14px;
-  border: 1px solid var(--mg-line);
-  background: var(--mg-paper);
-  text-align: left;
-  cursor: default;
-  transition:
-    transform 160ms ease,
-    box-shadow 160ms ease;
-}
-.mg-token.is-playable {
-  cursor: pointer;
-  border-color: var(--mg-gold);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mg-gold) 30%, transparent);
-  animation: mg-pulse 1100ms ease-in-out infinite alternate;
-}
-.mg-token.is-playable:hover {
-  transform: translateY(-2px);
-}
-.mg-token:disabled {
-  opacity: 0.85;
-}
-.mg-token-disc {
-  flex-shrink: 0;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle at 35% 30%,
-    #fff 0 12%,
-    var(--token) 13% 70%,
-    color-mix(in srgb, var(--token) 70%, #000) 100%
-  );
-  box-shadow:
-    0 3px 6px rgb(0 0 0 / 0.3),
-    inset 0 -3px 0 rgb(0 0 0 / 0.2);
-}
-.mg-token-body {
-  display: grid;
-  gap: 4px;
-  min-width: 0;
-  flex: 1;
-}
-.mg-token-body strong {
-  font-size: 0.92rem;
-}
-.mg-token-body small {
-  font-size: 0.76rem;
-  color: var(--muted-foreground, #6b7280);
-}
-.mg-track {
-  display: block;
-  height: 6px;
-  border-radius: 999px;
-  background: var(--muted, #ece8dc);
-  overflow: hidden;
-}
-.mg-track > span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--token, var(--mg-accent));
-  transition: width 500ms ease;
-}
 .mg-rival {
   margin: 0;
   font-size: 0.82rem;
@@ -939,57 +862,70 @@
   }
 }
 
-/* Ludo board: an illustrated cross-shaped track with coloured yards, home lanes and pieces. */
+/* Ludo board: a bright cross-shaped track with solid coloured yards, home lanes and pawns. */
 .mg-ludo {
   gap: 14px;
 }
 .mg-ludo-board-wrap {
   width: 100%;
-  max-width: 420px;
+  max-width: 440px;
   margin: 0 auto;
 }
 .mg-ludo-board {
   display: block;
   width: 100%;
   height: auto;
-  border-radius: 18px;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.7) inset,
-    0 14px 30px -18px rgba(60, 40, 20, 0.55);
-  overflow: visible;
+  border-radius: 16px;
+  box-shadow: 0 18px 32px -20px rgba(40, 26, 10, 0.6);
 }
 .mg-ludo-ground {
-  fill: #efe2c4;
-  stroke: #c9b48a;
-  stroke-width: 0.06;
+  fill: #ffffff;
+  stroke: #1f2937;
+  stroke-width: 0.12;
+}
+.mg-ludo-star {
+  fill: none;
+  stroke: #1f2937;
+  stroke-width: 0.05;
+  stroke-linejoin: round;
+}
+.mg-ludo-chevron {
+  fill: #ffffff;
+  pointer-events: none;
 }
 .mg-ludo-yard {
-  fill: color-mix(in srgb, var(--yard, #bbb) 26%, #fbf5e6);
-  stroke: color-mix(in srgb, var(--yard, #bbb) 70%, #5b4630);
-  stroke-width: 0.05;
+  fill: var(--yard, #bbb);
+}
+.mg-ludo-yard-inner {
+  fill: #ffffff;
+}
+.mg-ludo-socket {
+  fill: var(--yard, #bbb);
+  stroke: #ffffff;
+  stroke-width: 0.06;
 }
 .mg-ludo-cell {
-  fill: #fbf5e6;
-  stroke: #cdb98f;
-  stroke-width: 0.035;
+  fill: #ffffff;
+  stroke: #1f2937;
+  stroke-width: 0.05;
 }
 .mg-ludo-cell.is-safe {
-  fill: #fff8df;
+  fill: #fffbeb;
 }
 .mg-ludo-cell.is-start {
-  fill: color-mix(in srgb, var(--start) 55%, #fff8df);
+  fill: var(--start);
 }
 .mg-ludo-cell.is-home {
-  fill: color-mix(in srgb, var(--start) 45%, #fbf5e6);
+  fill: var(--start);
 }
 .mg-ludo-centre {
-  fill: #fffaf0;
-  stroke: #5b4630;
+  fill: #ffffff;
+  stroke: #1f2937;
   stroke-width: 0.06;
 }
 .mg-ludo polygon {
-  stroke: rgba(255, 255, 255, 0.6);
-  stroke-width: 0.03;
+  stroke: #1f2937;
+  stroke-width: 0.04;
 }
 .mg-ludo-piece {
   transition: transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -997,34 +933,183 @@
 .mg-ludo-piece.is-playable {
   cursor: pointer;
 }
-.mg-ludo-disc {
-  fill: var(--piece);
-  stroke: #fffdf6;
-  stroke-width: 0.07;
-  filter: drop-shadow(0 0.06px 0.05px rgba(40, 26, 10, 0.35));
+.mg-ludo-shadow {
+  fill: rgba(20, 14, 6, 0.28);
 }
-.mg-ludo-piece.is-playable .mg-ludo-disc {
-  stroke: var(--mg-gold);
-  stroke-width: 0.13;
-  animation: mg-pulse 1100ms ease-in-out infinite alternate;
+.mg-ludo-pawn {
+  fill: var(--piece);
+  stroke: #1f2937;
+  stroke-width: 0.04;
+  stroke-linejoin: round;
+}
+.mg-ludo-pawn-base {
+  fill: color-mix(in srgb, var(--piece) 70%, #000);
+  stroke: #1f2937;
+  stroke-width: 0.04;
 }
 .mg-ludo-glint {
   fill: #ffffff;
-  opacity: 0.55;
+  opacity: 0.5;
   pointer-events: none;
+}
+.mg-ludo-ring {
+  fill: none;
+  stroke: var(--mg-gold);
+  stroke-width: 0.1;
+  animation: mg-pulse 1100ms ease-in-out infinite alternate;
 }
 .mg-ludo-piece:focus-visible {
   outline: none;
 }
-.mg-ludo-piece:focus-visible .mg-ludo-disc {
+.mg-ludo-piece:focus-visible .mg-ludo-ring {
   stroke: #1d4ed8;
-  stroke-width: 0.16;
 }
 @media (prefers-reduced-motion: reduce) {
   .mg-ludo-piece {
     transition: none;
   }
-  .mg-ludo-piece.is-playable .mg-ludo-disc {
+  .mg-ludo-ring {
+    animation: none;
+  }
+}
+
+/* Ludo dice: two white dice that roll when tapped before the roll and select a die after it. */
+.mg-ludo-dice {
+  gap: 18px;
+}
+.mg-ludo-die {
+  padding: 6px;
+  border: 0;
+  border-radius: 18px;
+  background: transparent;
+  cursor: default;
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+.mg-ludo-die.is-rollable,
+.mg-ludo-die.is-usable {
+  cursor: pointer;
+}
+.mg-ludo-die.is-rollable:hover,
+.mg-ludo-die.is-usable:hover {
+  transform: translateY(-2px);
+}
+.mg-ludo-die.is-rollable {
+  animation: mg-pulse 1100ms ease-in-out infinite alternate;
+}
+.mg-ludo-die.is-usable {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mg-gold) 45%, transparent);
+}
+.mg-ludo-die.is-selected {
+  box-shadow: 0 0 0 3px var(--mg-gold);
+}
+.mg-ludo-die.is-used {
+  opacity: 0.35;
+}
+.mg-ludo-face {
+  display: block;
+  filter: drop-shadow(0 4px 4px rgb(0 0 0 / 0.25));
+}
+.mg-ludo-face.is-rolling {
+  animation: mg-die-roll 480ms cubic-bezier(0.3, 1.2, 0.5, 1);
+}
+
+/* Setup screens: pick the players or the house rules before a game starts. */
+.mg-setup {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  gap: 12px;
+}
+.mg-setup-title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.mg-setup-options {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+}
+.mg-setup-option {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--mg-line);
+  background: var(--mg-paper);
+  text-align: left;
+  cursor: pointer;
+}
+.mg-setup-option span {
+  font-size: 0.85rem;
+  color: var(--muted-foreground, #6b7280);
+}
+.mg-setup-rules {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.85rem;
+  display: grid;
+  gap: 6px;
+}
+.mg-setup-check {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--mg-line);
+  background: var(--mg-paper);
+}
+.mg-setup-check span {
+  display: grid;
+  gap: 2px;
+}
+.mg-setup-check small {
+  color: var(--muted-foreground, #6b7280);
+}
+
+/* Whot: shuffle on load, and the draw popup that asks the player to pick from the deck. */
+.mg-shuffle {
+  position: relative;
+  width: 100%;
+  height: 150px;
+  display: grid;
+  place-items: center;
+}
+.mg-shuffle-card {
+  position: absolute;
+  animation: mg-shuffle 0.9s ease-in-out infinite alternate;
+  animation-delay: calc(var(--i) * 60ms);
+}
+@keyframes mg-shuffle {
+  from {
+    transform: translateX(-34px) rotate(-7deg);
+  }
+  to {
+    transform: translateX(34px) rotate(7deg);
+  }
+}
+.mg-draw-pick {
+  width: min(88vw, 300px);
+  background: #fffdf7;
+  color: #1f2937;
+}
+.mg-draw-deck {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: var(--mg-ink);
+  font-size: 0.8rem;
+  font-weight: 600;
+  animation: mg-pulse 1100ms ease-in-out infinite alternate;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mg-shuffle-card,
+  .mg-draw-deck,
+  .mg-ludo-die.is-rollable {
     animation: none;
   }
 }
