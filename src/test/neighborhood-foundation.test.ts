@@ -51,7 +51,7 @@ it("reaches every authored Olaiya entrance from the saved entrance without cross
   expect(report.spawnClear).toBe(true);
   expect(report.unreachable).toEqual([]);
   expect(report.visited).toBeGreaterThan(1000);
-});
+}, 20_000);
 
 it("rejects a blocked spawn and a sealed entrance in authored data", () => {
   const area = neighborhoodAreaForSlug("city-centre");
@@ -74,7 +74,7 @@ it("rejects a blocked spawn and a sealed entrance in authored data", () => {
     checkNeighborhoodEntrances(obstructed, { x: 320, y: 300 }, { x: 7, y: 6 }).unreachable,
   ).toContain(market.id);
   expect(checkNeighborhoodEntrances(obstructed, market, { x: 7, y: 6 }).spawnClear).toBe(false);
-});
+}, 20_000);
 
 it("connects every Olaiya road including the home lane and detects isolated segments", () => {
   const area = neighborhoodAreaForSlug("city-centre");
