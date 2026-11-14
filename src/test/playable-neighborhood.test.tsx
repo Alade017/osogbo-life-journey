@@ -228,6 +228,7 @@ const show = () =>
   );
 function primeLocationQueries() {
   client.setQueryDefaults(["character"], { staleTime: Infinity });
+  client.setQueryDefaults(["locations"], { staleTime: Infinity });
   client.setQueryData(["character"], {
     id: "player",
     current_location_id: state.location,
