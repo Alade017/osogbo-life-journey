@@ -937,7 +937,7 @@
 }
 .lb-piece {
   position: absolute;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -94%);
   aspect-ratio: 1;
   transition:
     left 170ms linear,
@@ -968,15 +968,55 @@
 .lb-roll-hint {
   position: absolute;
   left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgb(31 41 55 / 0.8);
+  top: calc(100% + 10px);
+  transform: translateX(-50%);
+  display: grid;
+  min-width: 128px;
+  padding: 6px 12px 8px;
+  border-radius: 12px;
+  background: #1f2937;
   color: #ffffff;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 600;
+  text-align: center;
+  overflow: hidden;
   pointer-events: none;
+  box-shadow: 0 6px 16px rgb(0 0 0 / 0.25);
+  animation: lb-hint-in 220ms ease-out;
+}
+.lb-roll-timer {
+  display: block;
+  height: 3px;
+  margin: 4px -12px -8px;
+  background: #f5c518;
+  transform-origin: left center;
+  animation-name: lb-hint-timer;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+@keyframes lb-hint-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -4px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+@keyframes lb-hint-timer {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lb-roll-hint,
+  .lb-roll-timer {
+    animation: none;
+  }
 }
 
 /* HUD: one compact card per seat, with the turn highlighted. */

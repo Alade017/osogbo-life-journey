@@ -48,6 +48,8 @@ const ONLINE_OPTIONS: readonly { label: string; blurb: string }[] = [
   { label: "Create a private room", blurb: "Start a room and invite friends." },
 ];
 const NO_MOVES_DELAY_MS = 1200;
+/** How long the "Tap to roll" hint stays before it disappears. */
+const ROLL_HINT_MS = 3500;
 const TOAST_MS = 2_400;
 
 function randomFace() {
@@ -380,6 +382,16 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
   );
   const faces: readonly [number, number] = game.dice ?? idle;
   const canRoll = humanTurn && game.phase === "WAITING_FOR_ROLL";
+  const [hintVisible, setHintVisible] = useState(false);
+  useEffect(() => {
+    if (!canRoll) {
+      setHintVisible(false);
+      return;
+    }
+    setHintVisible(true);
+    const timer = window.setTimeout(() => setHintVisible(false), ROLL_HINT_MS);
+    return () => window.clearTimeout(timer);
+  }, [canRoll]);
 
   const roll = () => {
     setRolls((count) => count + 1);
@@ -458,6 +470,16 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
           onPick={pick}
           playerCount={seats.length}
         />
+        {hintVisible && canRoll && (
+          <div className="lb-roll-hint" role="status">
+            Tap to roll
+            <span
+              className="lb-roll-timer"
+              aria-hidden="true"
+              style={{ animationDuration: `${ROLL_HINT_MS}ms` }}
+            />
+          </div>
+        )}
         {game.phase !== "GAME_OVER" && (
           <div className="lb-dice-centre" role="group" aria-label="Dice">
             {[0, 1].map((index) => {
