@@ -59,13 +59,19 @@ export function checkNeighborhoodEntrances(
   const index = (x: number, y: number) => y * columns + x;
   const point = (x: number, y: number) => ({ x: left + x * step, y: top + y * step });
   const valid = (x: number, y: number) => x >= 0 && y >= 0 && x < columns && y < rows;
+  // Cache occupancy for each sampled grid point. BFS checks neighbouring cells repeatedly;
+  // without this cache every edge re-runs all object and obstacle collision tests.
+  const occupancy = new Uint8Array(columns * rows);
   const open = (x: number, y: number) => {
     if (!valid(x, y)) return false;
+    const cell = index(x, y);
+    if (occupancy[cell] !== 0) return occupancy[cell] === 1;
     const world = toWorld(point(x, y), origin);
-    return (
+    const isOpen =
       validCheckpoint(world) &&
-      canOccupyNeighborhoodPoint(world, origin, area.objects, area.obstacles)
-    );
+      canOccupyNeighborhoodPoint(world, origin, area.objects, area.obstacles);
+    occupancy[cell] = isOpen ? 1 : 2;
+    return isOpen;
   };
   const sx = Math.round((spawn.x - left) / step);
   const sy = Math.round((spawn.y - top) / step);
