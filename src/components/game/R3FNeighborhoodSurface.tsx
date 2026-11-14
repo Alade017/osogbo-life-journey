@@ -64,7 +64,13 @@ import { ZoneNpcs } from "@/components/3d/ZoneNpcs";
 import type { ZoneNpcSpec } from "@/game/neighborhood-interactions";
 import { CHARACTER_MOTION } from "@/components/3d/character-config";
 import { ProceduralProp } from "@/components/3d/props/ProceduralProp";
-import { compoundParts, palmTreeParts } from "@/components/3d/props/procedural-props";
+import {
+  busParts,
+  compoundParts,
+  palmTreeParts,
+  tukTukParts,
+} from "@/components/3d/props/procedural-props";
+import type { NeighborhoodArea, WorldPoint } from "@/game/neighborhood-model";
 import { dressingPartsFor } from "@/components/3d/props/dressing";
 import { NEIGHBORHOOD_CAMERA, WORLD_PALETTE, WORLD_SCALE } from "../3d/world-theme";
 import {
@@ -375,6 +381,18 @@ function NeighborhoodNpcActor({
 const SKY_FOG_NEAR_SCALE = 0.42;
 const SKY_FOG_FAR_SCALE = 1.05;
 /** Whether an obstacle sits inside a real model's footprint, so its procedural stand-in is skipped. */
+/** Heading along the road a point sits nearest to: quarter turn on north–south roads. */
+function vehicleHeading(area: NeighborhoodArea, spot: WorldPoint) {
+  let best: { distance: number; vertical: boolean } | null = null;
+  for (const road of area.roads ?? []) {
+    if (road.type === "lane") continue;
+    const vertical = road.axis === "vertical";
+    const distance = Math.abs((vertical ? spot.x : spot.y) - road.offset);
+    if (!best || distance < best.distance) best = { distance, vertical };
+  }
+  return best?.vertical ? Math.PI / 2 : 0;
+}
+
 function insideEnvironment(
   environment: { x: number; y: number; width: number; height: number } | undefined,
   obstacle: { x: number; y: number },
@@ -544,13 +562,26 @@ export function R3FNeighborhoodSurface({
       sidewalks: flat(dressing.sidewalks, 0.05, 0.1),
       curbs: flat(dressing.curbs, 0.09, 0.14),
       lights: onGround(dressing.lights),
-      cars: onGround(dressing.cars),
+      cars: onGround(dressing.cars.slice(2)),
       people: onGround(dressing.people),
       vendors: onGround(dressing.vendors),
     };
   }, [dressing, point, unit]);
   const streetSize = WORLD_SCALE.neighborhoodStreetCell;
   const lookRange = CHARACTER_MOTION.lookRange * WORLD_SCALE.character;
+  // The first two car spots of each area carry a bus and a tuk-tuk; the rest stay simple cars.
+  const busModel = useMemo(() => busParts({ length: 9, width: 2.5, height: 3 }), []);
+  const tukTukModel = useMemo(() => tukTukParts({ length: 2.4, width: 1.2 }), []);
+  const vehicles = useMemo(
+    () =>
+      dressing.cars.slice(0, 2).map((spot, index) => ({
+        id: `vehicle-${index}`,
+        parts: index === 0 ? busModel : tukTukModel,
+        position: point(spot.x, spot.y),
+        rotation: vehicleHeading(area, spot),
+      })),
+    [area, dressing, point, busModel, tukTukModel],
+  );
   const scenePoints = useMemo(
     () =>
       players.map((player) => {
@@ -701,6 +732,14 @@ export function R3FNeighborhoodSurface({
           <WorldSidewalks sidewalks={street.sidewalks} curbs={street.curbs} />
           <WorldStreetLights positions={street.lights} size={streetSize} />
           <WorldCars positions={street.cars} size={streetSize} />
+          {vehicles.map((vehicle) => (
+            <ProceduralProp
+              key={vehicle.id}
+              parts={vehicle.parts}
+              position={[vehicle.position[0], 0, vehicle.position[2]]}
+              rotation={vehicle.rotation}
+            />
+          ))}
           <WorldStreetVendors positions={street.vendors} size={streetSize} />
           <WorldPeople positions={street.people} />
           {area.paths?.map((path) => {

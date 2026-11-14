@@ -352,3 +352,81 @@ export function compoundParts({ width, depth }: { width: number; depth: number }
   ];
   return mergeParts(parts);
 }
+
+/**
+ * A city bus in yellow with a glazed window band, a linen roof and four wheels.
+ * Metres, length along x, base at y = 0, centred on x and z.
+ */
+export function busParts({
+  length,
+  width,
+  height,
+}: {
+  length: number;
+  width: number;
+  height: number;
+}): PropPart[] {
+  const wheelR = 0.45;
+  const clear = wheelR * 0.6;
+  const bodyH = height * 0.75;
+  const wheels: PropPart[] = [];
+  for (const sx of [-1, 1]) {
+    for (const sz of [-1, 1]) {
+      wheels.push(
+        part("roof", new CylinderGeometry(wheelR, wheelR, 0.3, 12), {
+          at: [(sx * length) / 3, wheelR, (sz * width) / 2],
+          rotation: [0, 0, Math.PI / 2],
+        }),
+      );
+    }
+  }
+  return mergeParts([
+    part("jerrycan", new BoxGeometry(length, bodyH, width), { at: [0, clear + bodyH / 2, 0] }),
+    part("linen", new BoxGeometry(length * 0.98, height * 0.06, width * 0.98), {
+      at: [0, clear + bodyH + height * 0.03, 0],
+    }),
+    ...[-1, 1].map((side) =>
+      part("glass", new BoxGeometry(length * 0.86, bodyH * 0.35, 0.03), {
+        at: [0, clear + bodyH * 0.6, (side * width) / 2 + 0.01],
+      }),
+    ),
+    part("glass", new BoxGeometry(0.03, bodyH * 0.5, width * 0.86), {
+      at: [length / 2 + 0.01, clear + bodyH * 0.6, 0],
+    }),
+    part("metal", new BoxGeometry(0.08, 0.25, width * 0.9), { at: [length / 2 - 0.04, clear, 0] }),
+    ...wheels,
+  ]);
+}
+
+/**
+ * A three-wheeled tuk-tuk: a green-yellow cab over the rear axle, a small nose at the front,
+ * a metal canopy, and two rear wheels with one at the front. Metres, length along x.
+ */
+export function tukTukParts({ length, width }: { length: number; width: number }): PropPart[] {
+  const wheelR = 0.3;
+  const base = wheelR * 1.2;
+  const cabL = length * 0.55;
+  return mergeParts([
+    part("accent", new BoxGeometry(cabL, 0.9, width * 0.95), {
+      at: [-length * 0.2, base + 0.45, 0],
+    }),
+    part("accent", new BoxGeometry(length * 0.3, 0.5, width * 0.5), {
+      at: [length * 0.35, base + 0.25, 0],
+    }),
+    part("metal", new BoxGeometry(cabL, 0.07, width), { at: [-length * 0.2, base + 0.94, 0] }),
+    part("glass", new BoxGeometry(cabL * 0.9, 0.5, width * 0.9), {
+      at: [-length * 0.2, base + 1.2, 0],
+    }),
+    part("metal", new BoxGeometry(0.05, 0.6, 0.05), { at: [length * 0.42, base + 0.7, 0] }),
+    ...[-1, 1].map((side) =>
+      part("roof", new CylinderGeometry(wheelR, wheelR, 0.18, 10), {
+        at: [-length * 0.3, wheelR, side * width * 0.4],
+        rotation: [0, 0, Math.PI / 2],
+      }),
+    ),
+    part("roof", new CylinderGeometry(wheelR, wheelR, 0.18, 10), {
+      at: [length * 0.4, wheelR, 0],
+      rotation: [0, 0, Math.PI / 2],
+    }),
+  ]);
+}
