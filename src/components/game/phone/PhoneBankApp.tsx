@@ -333,8 +333,9 @@ export function PhoneBankApp() {
                 </span>
               </div>
               {bankAccount && (
-                <p className="font-mono text-xs text-blue-200">
-                  Account number: {bankAccount.account_number}
+                <p className="phone-bank-account-number">
+                  <span>Account number :</span>
+                  <strong>{bankAccount.account_number}</strong>
                 </p>
               )}
               <div>

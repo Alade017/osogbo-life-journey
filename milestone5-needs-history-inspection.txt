@@ -263,9 +263,9 @@ desk.',8200,20,4,'landmark',233,'services','medium','{"skills":{"financial_liter
   drizzle\migrations\0076_career_progression.sql:43:select seed.job_slug,seed.job_name,seed.description,seed.salary,16,1,30,18,'career',seed.icon,
   drizzle\migrations\0076_career_progression.sql:44: seed.sort_order,seed.category,90,5,3,l.id,true,seed.skill,12,8,17,seed.path_slug
   drizzle\migrations\0076_career_progression.sql:45:from (values
-  drizzle\migrations\0076_career_progression.sql:46: ('career_cedar_banking','Cedar Bank · Banking & Finance','Build a banking career at Cedar Bank.',3500,'banknote',240,'services','financial_literacy','banking','cedar-bank'),
-  drizzle\migrations\0076_career_progression.sql:47: ('career_meridian_banking','Meridian Bank · Banking & Finance','Build a banking career at Meridian Bank.',3500,'banknote',241,'services','financial_literacy','banking','meridian-bank'),
-  drizzle\migrations\0076_career_progression.sql:48: ('career_osun_mall_retail','Osun Mall · Retail Operations','Build a retail career at Osun Mall.',3000,'store',242,'retail','customer_service','retail','osun-mall')
+  drizzle\migrations\0076_career_progression.sql:46: ('career_cedar_banking','Cedar Bank ï¿½ Banking & Finance','Build a banking career at Cedar Bank.',3500,'banknote',240,'services','financial_literacy','banking','cedar-bank'),
+  drizzle\migrations\0076_career_progression.sql:47: ('career_meridian_banking','Meridian Bank ï¿½ Banking & Finance','Build a banking career at Meridian Bank.',3500,'banknote',241,'services','financial_literacy','banking','meridian-bank'),
+  drizzle\migrations\0076_career_progression.sql:48: ('career_osun_mall_retail','Osun Mall ï¿½ Retail Operations','Build a retail career at Osun Mall.',3000,'store',242,'retail','customer_service','retail','osun-mall')
   drizzle\migrations\0076_career_progression.sql:49:) seed(job_slug,job_name,description,salary,icon,sort_order,category,skill,path_slug,location_slug)
   drizzle\migrations\0076_career_progression.sql:248:  update public.character_jobs set times_performed=times_performed+1,last_performed_at=now() where id=employment.id;
   drizzle\migrations\0076_career_progression.sql:249:  update public.characters set happiness=least(100,happiness+path.mood_reward),

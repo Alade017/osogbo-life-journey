@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { clearPendingDepartureFromHome, requestDepartureFromHome } from "@/lib/home-departure";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { requestDepartureFromHome } from "@/lib/home-departure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarDays, CloudOff, MapPinned, Smile, Compass, Lock, X } from "lucide-react";
+import { toast } from "sonner";
 import {
   MapCanvas,
   type MapBillboardMarker,
@@ -10,6 +11,20 @@ import {
   type MapSearchTarget,
   type MapEventChip,
 } from "@/components/map/MapCanvas";
+import { NeighborhoodCityMap } from "@/components/map/NeighborhoodCityMap";
+import type { NeighborhoodLandmarkSpec } from "@/data/neighborhoodLocations";
+import {
+  enqueueNeighborhoodNavigation,
+  resolvePlayerMapPosition,
+  useLivePlayerPose,
+} from "@/store/neighborhoodNavSync";
+import {
+  applyZoneOutcomeAction,
+  loadPersistedNeighborhoodState,
+  neighborhoodReducer,
+  persistNeighborhoodState,
+  syncZoneOutcomeToQueryCache,
+} from "@/store/neighborhoodSlice";
 import { mapHousingMarkers } from "@/components/map/map-housing-markers";
 import { DistrictSheet } from "@/components/map/DistrictSheet";
 import { LandmarkSheet } from "@/components/map/LandmarkSheet";
@@ -33,10 +48,17 @@ import type { TravelMode } from "@/lib/transport-service";
 import type { PlaceActionResult } from "@/components/map/PlaceActionMenu";
 import { useCityEvents } from "@/hooks/use-city-events";
 import { cityEventsForDistrict } from "@/lib/city-event-service";
-import { getCurrentMapBillboards, type CurrentMapBillboard } from "@/lib/map-billboard-map";
-import type { MapDistrict, MapLandmark } from "@/components/map/OsogboMap.svg";
+import {
+  getBillboardLandmarkId,
+  getCurrentMapBillboards,
+  isCurrentAdvertisement,
+  playerCampaignAsAdvertisement,
+  type CurrentMapBillboard,
+} from "@/lib/map-billboard-map";
+import type { MapDistrict, MapLandmark } from "@/components/map/map-types";
 import "@/components/map/map-ui.css";
 import "@/components/map/map-hud.css";
+import "@/components/map/neighborhood-city-map.css";
 import { MapTicker } from "@/components/map/MapTicker";
 
 const categories: { id: MapFilter; label: string }[] = [
@@ -114,11 +136,18 @@ export function CityMapDashboard({
   const [selectedBillboard, setSelectedBillboard] = useState<CurrentMapBillboard | null>(null);
   const [billboardNow, setBillboardNow] = useState(() => Date.now());
   const [mapLevel, setMapLevel] = useState<"town" | "state">("town");
+  const [townFocus, setTownFocus] = useState<"split" | "3d-town">("split");
   const [selectedTownId, setSelectedTownId] = useState("osogbo");
   const [soonOpen, setSoonOpen] = useState(false);
+  const livePlayerPose = useLivePlayerPose();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const mapHref = useLocation({ select: (location) => location.href });
+  const requestedBillboardId = new URLSearchParams(mapHref.split("?")[1]?.split("#")[0] ?? "").get(
+    "billboard",
+  );
   const travelSubmitLock = useRef(false);
+  const focusedBillboardId = useRef<string | null>(null);
   const isMounted = useRef(false);
   useEffect(() => {
     isMounted.current = true;
@@ -205,6 +234,37 @@ export function CityMapDashboard({
     imageUrl: entry.advertisement.creative_image_url,
     count: entry.count,
   }));
+  useEffect(() => {
+    if (
+      !requestedBillboardId ||
+      !billboards.data ||
+      !locations.data ||
+      !advertisements.data ||
+      !playerAdvertisements.data
+    )
+      return;
+    if (focusedBillboardId.current === requestedBillboardId) return;
+    const board = billboards.data.find((item) => item.id === requestedBillboardId);
+    if (!board) return;
+    const landmarkId = getBillboardLandmarkId(board.location_id, locations.data);
+    if (!landmarkId) return;
+    focusedBillboardId.current = requestedBillboardId;
+    setMapLevel("town");
+    setSearchTarget({ id: landmarkId, kind: "landmark" });
+    const campaign = [
+      ...advertisements.data,
+      ...playerAdvertisements.data.map(playerCampaignAsAdvertisement),
+    ].find((ad) => ad.billboard_id === board.id && isCurrentAdvertisement(ad, Date.now()));
+    setSelectedBillboard(
+      campaign ? { landmarkId, count: 1, billboard: board, advertisement: campaign } : null,
+    );
+  }, [
+    requestedBillboardId,
+    billboards.data,
+    locations.data,
+    advertisements.data,
+    playerAdvertisements.data,
+  ]);
   const activeEvents = cityEvents.isError
     ? []
     : cityEventsForDistrict(cityEvents.data?.events ?? [], selectedDistrict?.id);
@@ -364,19 +424,44 @@ export function CityMapDashboard({
       setSelectedDistrict(d);
     }
   };
-  const onLandmark = (id: string) => {
-    if (!availableLandmarks.data?.includes(id)) return;
-    const found = landmarks.find((item) => item.id === id) ?? getQuickTravelLandmark(id);
-    if (found) {
-      setSelectedDistrict(null);
-      setSelectedLandmark(found);
-      setLandmarkDetailsOpen(false);
-      setArrivalConfirmed(false);
-      setTravelError(null);
-      setActionError("");
-      setPlaceActionResult(null);
-    }
-  };
+  const onLandmark = useCallback(
+    (id: string) => {
+      if (!availableLandmarks.data?.includes(id)) return;
+
+      const found = landmarks.find((item) => item.id === id) ?? getQuickTravelLandmark(id);
+
+      if (found) {
+        setSelectedDistrict(null);
+        setSelectedLandmark(found);
+        setLandmarkDetailsOpen(false);
+        setArrivalConfirmed(false);
+        setTravelError(null);
+        setActionError("");
+        setPlaceActionResult(null);
+      }
+    },
+    [availableLandmarks.data],
+  );
+  const deepLinkedLandmark = useRef<string | null>(null);
+  useEffect(() => {
+    if (!availableLandmarks.data) return;
+    const params = new URLSearchParams(window.location.search);
+    const landmarkId = params.get("landmark");
+    if (!landmarkId || params.get("details") !== "1" || deepLinkedLandmark.current === landmarkId)
+      return;
+    if (!availableLandmarks.data.includes(landmarkId)) return;
+    deepLinkedLandmark.current = landmarkId;
+    onLandmark(landmarkId);
+    setLandmarkDetailsOpen(true);
+    params.delete("landmark");
+    params.delete("details");
+    const query = params.toString();
+    window.history.replaceState(
+      window.history.state,
+      "",
+      query ? "?" + query : window.location.pathname,
+    );
+  }, [availableLandmarks.data, onLandmark]);
   const searchMatches = useMemo(() => {
     const value = search.trim().toLocaleLowerCase();
     if (!value) return null;
@@ -431,6 +516,71 @@ export function CityMapDashboard({
           ? "Content"
           : "Low"
       : "Settled");
+
+  const playerMapPosition = useMemo(
+    () => resolvePlayerMapPosition(character.data, livePlayerPose),
+    [character.data, livePlayerPose],
+  );
+
+  const effectivePocketBalance = useMemo(() => {
+    if (typeof wallet.data?.balance === "number") return wallet.data.balance;
+    const persisted = loadPersistedNeighborhoodState();
+    return 5000 + persisted.walletOffset;
+  }, [wallet.data?.balance]);
+
+  const handleWalkHere = useCallback(
+    (landmark: NeighborhoodLandmarkSpec) => {
+      enqueueNeighborhoodNavigation({
+        mode: "walk",
+        landmarkId: landmark.id,
+        landmarkName: landmark.name,
+        primaryZoneId: landmark.primaryZoneId,
+        targetScenePoint: landmark.walkToPoint,
+        dropOffScenePoint: landmark.dropOffPoint,
+        fare: 0,
+      });
+      toast.message(`Walking to ${landmark.name}`);
+      void navigate({ to: "/neighborhood" });
+    },
+    [navigate],
+  );
+
+  const handleBoardKeke = useCallback(
+    (landmark: NeighborhoodLandmarkSpec) => {
+      if (effectivePocketBalance < landmark.kekeFare) {
+        toast.error(`You need ₦${landmark.kekeFare} pocket cash to board a Keke here.`);
+        return;
+      }
+      const outcome = {
+        id: `keke-fare-${landmark.id}`,
+        label: `Keke / Korope to ${landmark.name}`,
+        description: `Fast-travel drop-off at ${landmark.name}.`,
+        walletDelta: -landmark.kekeFare,
+        toastMessage: `Keke dropped you off at ${landmark.name} (-₦${landmark.kekeFare}).`,
+        activityKind: "transit" as const,
+      };
+      const prevSlice = loadPersistedNeighborhoodState();
+      const nextSlice = neighborhoodReducer(
+        prevSlice,
+        applyZoneOutcomeAction({ zoneTitle: "City Transit", outcome }),
+      );
+      persistNeighborhoodState(nextSlice);
+      syncZoneOutcomeToQueryCache(queryClient, "City Transit", outcome);
+
+      enqueueNeighborhoodNavigation({
+        mode: "keke",
+        landmarkId: landmark.id,
+        landmarkName: landmark.name,
+        primaryZoneId: landmark.primaryZoneId,
+        targetScenePoint: landmark.walkToPoint,
+        dropOffScenePoint: landmark.dropOffPoint,
+        fare: landmark.kekeFare,
+      });
+      toast.success(`Boarded Keke to ${landmark.name} (-₦${landmark.kekeFare})`);
+      void navigate({ to: "/neighborhood" });
+    },
+    [effectivePocketBalance, navigate, queryClient],
+  );
 
   return (
     <section className="city-map-dashboard is-world-map map-experience" aria-label="Osun Life map">
@@ -582,51 +732,94 @@ export function CityMapDashboard({
         </div>
       )}
       {mapLevel === "town" ? (
-        <MapCanvas
-          playerLocation={
-            currentMapPlace
-              ? { x: currentMapPlace.grid.x, y: currentMapPlace.grid.z, label: "You are here" }
-              : null
-          }
-          properties={housingMarkers.data ?? []}
-          eventChips={eventChips}
-          onSelectEvent={(landmarkId) => {
-            const event = (cityEvents.data?.events ?? []).find(
-              (item) => item.status === "active" && item.landmarkId === landmarkId,
-            );
-            const found =
-              landmarks.find((item) => item.id === landmarkId) ??
-              getQuickTravelLandmark(landmarkId);
-            if (!event || !found) return;
-            setSelectedDistrict(null);
-            setSelectedLandmark(found);
-            setLandmarkDetailsOpen(true);
-            setArrivalConfirmed(false);
-            setTravelError(null);
-            setActionError("");
-            setPlaceActionResult(null);
-          }}
-          availableLandmarkIds={availableLandmarks.data ?? []}
-          onSelectDistrict={onDistrict}
-          onSelectLandmark={onLandmark}
-          activeFilter={filter}
-          searchTarget={searchTarget}
-          jobLandmarkIds={jobLandmarkIds}
-          billboardMarkers={billboardMarkers}
-          onSelectBillboard={(campaignId) => {
-            setSelectedBillboard(
-              activeMapBillboards.find(({ advertisement }) => advertisement.id === campaignId) ??
-                null,
-            );
-          }}
-          onSelectProperty={(property) => {
-            window.dispatchEvent(
-              new CustomEvent("osogbo-open-phone-app", {
-                detail: { app: property.status === "vacant" ? "Find homes" : "Property" },
-              }),
-            );
-          }}
-        />
+        <div className={townFocus === "split" ? "ncm-layout-grid is-split" : "ncm-layout-grid"}>
+          {townFocus === "split" && (
+            <NeighborhoodCityMap
+              playerPosition={playerMapPosition}
+              walletBalance={wallet.data?.balance ?? effectivePocketBalance}
+              offline={offline}
+              onWalkHere={handleWalkHere}
+              onBoardKeke={handleBoardKeke}
+              onSelectSurroundingDistrict={(landmarkId) => {
+                setTownFocus("3d-town");
+                setSearchTarget({ id: landmarkId, kind: "landmark" });
+                onLandmark(landmarkId);
+              }}
+              onOpenDistrictMapView={() => setTownFocus("3d-town")}
+            />
+          )}
+          <div className="ncm-3d-companion">
+            <div className="ncm-3d-companion-bar">
+              <div>
+                <strong>Osogbo 3D Town Districts</strong>{" "}
+                <span>Explore surrounding quarters &amp; city transit</span>
+              </div>
+              <button
+                type="button"
+                className="ncm-3d-expand-btn"
+                onClick={() => setTownFocus((mode) => (mode === "split" ? "3d-town" : "split"))}
+              >
+                {townFocus === "split" ? "Expand 3D Town" : "Back to Olaiya Map"}
+              </button>
+            </div>
+            <MapCanvas
+              playerLocation={
+                currentMapPlace
+                  ? {
+                      x:
+                        currentLocation?.slug === "city-centre"
+                          ? currentMapPlace.grid.x + (playerMapPosition.mapCoords.x - 0.5) * 2.2
+                          : currentMapPlace.grid.x,
+                      y:
+                        currentLocation?.slug === "city-centre"
+                          ? currentMapPlace.grid.z + (playerMapPosition.mapCoords.y - 0.5) * 1.4
+                          : currentMapPlace.grid.z,
+                      label: "You are here",
+                    }
+                  : null
+              }
+              properties={housingMarkers.data ?? []}
+              eventChips={eventChips}
+              onSelectEvent={(landmarkId) => {
+                const event = (cityEvents.data?.events ?? []).find(
+                  (item) => item.status === "active" && item.landmarkId === landmarkId,
+                );
+                const found =
+                  landmarks.find((item) => item.id === landmarkId) ??
+                  getQuickTravelLandmark(landmarkId);
+                if (!event || !found) return;
+                setSelectedDistrict(null);
+                setSelectedLandmark(found);
+                setLandmarkDetailsOpen(true);
+                setArrivalConfirmed(false);
+                setTravelError(null);
+                setActionError("");
+                setPlaceActionResult(null);
+              }}
+              availableLandmarkIds={availableLandmarks.data ?? []}
+              onSelectDistrict={onDistrict}
+              onSelectLandmark={onLandmark}
+              activeFilter={filter}
+              searchTarget={searchTarget}
+              jobLandmarkIds={jobLandmarkIds}
+              billboardMarkers={billboardMarkers}
+              onSelectBillboard={(campaignId) => {
+                setSelectedBillboard(
+                  activeMapBillboards.find(
+                    ({ advertisement }) => advertisement.id === campaignId,
+                  ) ?? null,
+                );
+              }}
+              onSelectProperty={(property) => {
+                window.dispatchEvent(
+                  new CustomEvent("osogbo-open-phone-app", {
+                    detail: { app: property.status === "vacant" ? "Find homes" : "Property" },
+                  }),
+                );
+              }}
+            />
+          </div>
+        </div>
       ) : (
         <OsunStateOverview
           selectedTownId={selectedTownId}

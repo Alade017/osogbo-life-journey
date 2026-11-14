@@ -38,6 +38,7 @@ import { Avatar } from "@/components/game/Avatar";
 import type { Appearance } from "@/components/game/Avatar";
 import { FormattedMessage, MessageFormattingToolbar } from "@/components/game/MessageFormatting";
 import { VoiceNotePlayer, VoiceNoteRecorder } from "@/components/game/VoiceNotes";
+import { GroupChats } from "@/components/game/GroupChats";
 import { Button } from "@/components/ui/button";
 import { MessageBubble } from "@/components/game/MessageBubble";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
@@ -95,7 +96,7 @@ type InboxConversation = SocialPlayer & {
   mutedUntil?: string | null;
   starredAt?: string | null;
 };
-type InboxFilter = "all" | "unread";
+type InboxFilter = "all" | "unread" | "groups";
 
 function flattenMessagePages(pages: SocialMessage[][] | undefined) {
   const messages = new Map<string, SocialMessage>();
@@ -179,7 +180,7 @@ function VirtualConversationList({
   onCancelLongPress: () => void;
 }) {
   const [scrollTop, setScrollTop] = useState(0);
-  const rowHeight = 72;
+  const rowHeight = 80;
   const viewportHeight = 380;
   const start = Math.max(0, Math.floor(scrollTop / rowHeight) - 4);
   const end = Math.min(conversations.length, start + Math.ceil(viewportHeight / rowHeight) + 8);
@@ -308,7 +309,6 @@ export function MessageList({
   onLoadOlder?: () => void;
 }) {
   const [starred, setStarred] = useState<string[]>([]);
-  const [starredOnly, setStarredOnly] = useState(false);
   const [actionMessage, setActionMessage] = useState<SocialMessage | null>(null);
   const starKey = "osun-message-stars:" + (ownCharacterId ?? "guest");
   useEffect(() => {
@@ -331,15 +331,12 @@ export function MessageList({
       /* Session stars remain available. */
     }
   };
-  const filteredMessages = starredOnly
-    ? messages.filter((message) => starred.includes(message.id))
-    : messages;
   const windowed = useMessageWindow(
-    filteredMessages.map((message) => message.id),
+    messages.map((message) => message.id),
     phoneMode,
   );
   const listRef = windowed.ref;
-  const visibleMessages = filteredMessages.slice(windowed.first, windowed.last);
+  const visibleMessages = messages.slice(windowed.first, windowed.last);
   const scrollAnchor = useRef<{ height: number; top: number } | null>(null);
   const wasAtBottom = useRef(true);
   useLayoutEffect(() => {
@@ -380,23 +377,12 @@ export function MessageList({
     );
   return (
     <>
-      {phoneMode && (
-        <button
-          type="button"
-          className="phone-star-filter"
-          aria-pressed={starredOnly}
-          onClick={() => setStarredOnly((value) => !value)}
-        >
-          <Star size={16} aria-hidden="true" />{" "}
-          {starredOnly ? "Show all messages" : "Starred messages on this device"}
-        </button>
-      )}
       {error && (
         <p className="text-sm text-destructive" role="alert">
           {error.message}
         </p>
       )}
-      {!starredOnly && hasOlder && onLoadOlder && (
+      {hasOlder && onLoadOlder && (
         <div className="flex justify-center py-2">
           <Button
             type="button"
@@ -432,9 +418,6 @@ export function MessageList({
             className="message-window-spacer"
             style={{ height: windowed.before }}
           />
-        )}
-        {starredOnly && !visibleMessages.length && (
-          <li className="phone-chat-empty">No starred messages in this chat.</li>
         )}
         {visibleMessages.map((message) => (
           <MessageBubble
@@ -630,58 +613,66 @@ export function ChatComposer({
       <label className="sr-only" htmlFor={label.replaceAll(" ", "-")}>
         {label}
       </label>
-      <textarea
-        ref={textareaRef}
-        id={label.replaceAll(" ", "-")}
-        value={body}
-        maxLength={1000}
-        rows={phoneMode ? 1 : 2}
-        disabled={disabled || sending}
-        onChange={(event) => setBody(event.target.value)}
-        placeholder={label}
-        className={
-          phoneMode
-            ? "phone-chat-input"
-            : "w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-        }
-      />
-      <span className="message-character-count" aria-live="polite">
-        {body.length}/1000
-      </span>
-      {phoneMode ? (
-        <div className="phone-chat-input-actions">
-          <button
-            type="button"
-            className="phone-chat-utility"
-            aria-label="Add emoji"
-            disabled={disabled || sending}
-            onClick={() => {
-              setBody((value) => `${value}${value ? " " : ""}🙂`);
-              textareaRef.current?.focus();
-            }}
+      <div className={phoneMode ? "phone-chat-entry" : "contents"}>
+        <textarea
+          ref={textareaRef}
+          id={label.replaceAll(" ", "-")}
+          value={body}
+          maxLength={1000}
+          rows={phoneMode ? 1 : 2}
+          disabled={disabled || sending}
+          onChange={(event) => setBody(event.target.value)}
+          placeholder={label}
+          className={
+            phoneMode
+              ? "phone-chat-input"
+              : "w-full resize-y rounded-xl border border-border bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          }
+        />
+        {(!phoneMode || body.length > 900) && (
+          <span className="message-character-count" aria-live="polite">
+            {body.length}/1000
+          </span>
+        )}
+        {phoneMode ? (
+          <div
+            className={
+              body.trim() ? "phone-chat-input-actions has-draft" : "phone-chat-input-actions"
+            }
           >
-            <Smile size={18} />
-          </button>
-          {mediaControls}
-          {recorder}
-          <Button
-            className="phone-chat-send"
-            size="icon"
-            type="submit"
-            aria-label="Send message"
-            disabled={disabled || sending || !body.trim()}
-          >
-            <Send size={17} />
-          </Button>
-        </div>
-      ) : (
-        <div className="flex items-center justify-between gap-2">
-          <span />
-          <Button size="sm" type="submit" disabled={disabled || sending || !body.trim()}>
-            <MessageCircle size={15} /> Send
-          </Button>
-        </div>
-      )}
+            <button
+              type="button"
+              className="phone-chat-utility"
+              aria-label="Add emoji"
+              disabled={disabled || sending}
+              onClick={() => {
+                setBody((value) => `${value}${value ? " " : ""}🙂`);
+                textareaRef.current?.focus();
+              }}
+            >
+              <Smile size={18} />
+            </button>
+            {mediaControls}
+            {recorder}
+            <Button
+              className="phone-chat-send"
+              size="icon"
+              type="submit"
+              aria-label="Send message"
+              disabled={disabled || sending || !body.trim()}
+            >
+              <Send size={17} />
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between gap-2">
+            <span />
+            <Button size="sm" type="submit" disabled={disabled || sending || !body.trim()}>
+              <MessageCircle size={15} /> Send
+            </Button>
+          </div>
+        )}
+      </div>
     </form>
   );
 }
@@ -1622,9 +1613,23 @@ export function PlayerSocial({
                   />
                 </section>
               ) : (
-                <section className="phone-chat-panel" aria-label="Private chats">
-                  <div className="phone-inbox-heading">
-                    <h3>Messages</h3>
+                <section
+                  className="phone-chat-panel phone-chat-panel-inbox"
+                  aria-label="Private chats"
+                >
+                  <div className="phone-inbox-controls">
+                    {inboxFilter !== "groups" && (
+                      <label className="phone-inbox-search">
+                        <Search size={16} aria-hidden="true" />
+                        <span className="sr-only">Search chats</span>
+                        <input
+                          type="search"
+                          value={conversationSearch}
+                          onChange={(event) => setConversationSearch(event.target.value)}
+                          placeholder="Search chats"
+                        />
+                      </label>
+                    )}
                     <button
                       type="button"
                       className="phone-new-message-button"
@@ -1638,20 +1643,8 @@ export function PlayerSocial({
                       <Plus size={19} />
                     </button>
                   </div>
-                  <div className="phone-inbox-controls">
-                    <label className="phone-inbox-search">
-                      <Search size={16} aria-hidden="true" />
-                      <span className="sr-only">Search chats</span>
-                      <input
-                        type="search"
-                        value={conversationSearch}
-                        onChange={(event) => setConversationSearch(event.target.value)}
-                        placeholder="Search chats"
-                      />
-                    </label>
-                  </div>
                   <div className="phone-inbox-filters" role="group" aria-label="Chat filters">
-                    {(["all", "unread"] as const).map((filter) => (
+                    {(["all", "unread", "groups"] as const).map((filter) => (
                       <button
                         type="button"
                         key={filter}
@@ -1659,16 +1652,20 @@ export function PlayerSocial({
                         aria-pressed={inboxFilter === filter}
                         onClick={() => setInboxFilter(filter)}
                       >
-                        {filter === "all" ? "All" : "Unread"}
+                        {filter === "all" ? "All" : filter === "unread" ? "Unread" : "Groups"}
                       </button>
                     ))}
                   </div>
-                  {threadQuery.error && !!overview?.conversations.length && (
-                    <p className="text-xs text-destructive" role="alert">
-                      Chat details could not load. Showing conversations with limited details.
-                    </p>
-                  )}
-                  {overviewQuery.isPending ? (
+                  {threadQuery.error &&
+                    !!overview?.conversations.length &&
+                    inboxFilter !== "groups" && (
+                      <p className="text-xs text-destructive" role="alert">
+                        Chat details could not load. Showing conversations with limited details.
+                      </p>
+                    )}
+                  {inboxFilter === "groups" ? (
+                    <GroupChats friends={overview?.friends ?? []} />
+                  ) : overviewQuery.isPending ? (
                     <p className="text-sm text-muted-foreground">Loading your chats…</p>
                   ) : overviewQuery.error ? (
                     <p className="text-sm text-destructive" role="alert">

@@ -4,8 +4,8 @@
     "source": "Fictional game layout with broad Osogbo-inspired town character; not geographic data.",
     "reviewed": false,
     "grid": {
-      "columns": 24,
-      "rows": 18,
+      "columns": 32,
+      "rows": 24,
       "cellSize": 2
     },
     "legend": {
@@ -23,12 +23,30 @@
       "traffic": "high",
       "description": "A lively fictional trading quarter with public services and neighborhood shops.",
       "shape": [
-        [40, 40],
-        [340, 30],
-        [390, 180],
-        [330, 310],
-        [50, 300],
-        [20, 170]
+        [
+          40,
+          40
+        ],
+        [
+          340,
+          30
+        ],
+        [
+          390,
+          180
+        ],
+        [
+          330,
+          310
+        ],
+        [
+          50,
+          300
+        ],
+        [
+          20,
+          170
+        ]
       ],
       "gridArea": {
         "x": 0,
@@ -44,12 +62,30 @@
       "traffic": "medium",
       "description": "A fictional civic area for public help desks, community safety and everyday errands.",
       "shape": [
-        [390, 35],
-        [720, 40],
-        [760, 190],
-        [690, 320],
-        [390, 300],
-        [350, 175]
+        [
+          390,
+          35
+        ],
+        [
+          720,
+          40
+        ],
+        [
+          760,
+          190
+        ],
+        [
+          690,
+          320
+        ],
+        [
+          390,
+          300
+        ],
+        [
+          350,
+          175
+        ]
       ],
       "gridArea": {
         "x": 5,
@@ -65,12 +101,30 @@
       "traffic": "medium",
       "description": "A fictional business district with small services and neighborhood meeting places.",
       "shape": [
-        [770, 35],
-        [1140, 55],
-        [1170, 195],
-        [1080, 320],
-        [720, 315],
-        [750, 185]
+        [
+          770,
+          35
+        ],
+        [
+          1140,
+          55
+        ],
+        [
+          1170,
+          195
+        ],
+        [
+          1080,
+          320
+        ],
+        [
+          720,
+          315
+        ],
+        [
+          750,
+          185
+        ]
       ],
       "gridArea": {
         "x": 10,
@@ -86,12 +140,30 @@
       "traffic": "high",
       "description": "A fictional junction where the town's main roads and shared activities meet.",
       "shape": [
-        [35, 335],
-        [350, 325],
-        [390, 465],
-        [340, 615],
-        [30, 610],
-        [15, 475]
+        [
+          35,
+          335
+        ],
+        [
+          350,
+          325
+        ],
+        [
+          390,
+          465
+        ],
+        [
+          340,
+          615
+        ],
+        [
+          30,
+          610
+        ],
+        [
+          15,
+          475
+        ]
       ],
       "gridArea": {
         "x": 0,
@@ -107,12 +179,30 @@
       "traffic": "low",
       "description": "A fictional green neighborhood with room to relax, exercise and meet friends.",
       "shape": [
-        [390, 335],
-        [700, 330],
-        [750, 475],
-        [700, 620],
-        [390, 610],
-        [350, 475]
+        [
+          390,
+          335
+        ],
+        [
+          700,
+          330
+        ],
+        [
+          750,
+          475
+        ],
+        [
+          700,
+          620
+        ],
+        [
+          390,
+          610
+        ],
+        [
+          350,
+          475
+        ]
       ],
       "gridArea": {
         "x": 5,
@@ -128,12 +218,30 @@
       "traffic": "medium",
       "description": "A fictional learning and community area for study, care and skill-building.",
       "shape": [
-        [760, 330],
-        [1150, 340],
-        [1175, 480],
-        [1090, 620],
-        [720, 615],
-        [750, 475]
+        [
+          760,
+          330
+        ],
+        [
+          1150,
+          340
+        ],
+        [
+          1175,
+          480
+        ],
+        [
+          1090,
+          620
+        ],
+        [
+          720,
+          615
+        ],
+        [
+          750,
+          475
+        ]
       ],
       "gridArea": {
         "x": 10,
@@ -149,10 +257,22 @@
       "traffic": "medium",
       "description": "A fictional transit and shopping edge with convenient routes around town.",
       "shape": [
-        [55, 635],
-        [560, 630],
-        [610, 765],
-        [65, 765]
+        [
+          55,
+          635
+        ],
+        [
+          560,
+          630
+        ],
+        [
+          610,
+          765
+        ],
+        [
+          65,
+          765
+        ]
       ],
       "gridArea": {
         "x": 1,
@@ -168,10 +288,22 @@
       "traffic": "low",
       "description": "A fictional open edge of town with community sports and quieter roads.",
       "shape": [
-        [640, 635],
-        [1140, 630],
-        [1135, 765],
-        [590, 765]
+        [
+          640,
+          635
+        ],
+        [
+          1140,
+          630
+        ],
+        [
+          1135,
+          765
+        ],
+        [
+          590,
+          765
+        ]
       ],
       "gridArea": {
         "x": 8,
@@ -187,12 +319,30 @@
       "traffic": "medium",
       "description": "A fictional riverside quarter with food, care and learning spots.",
       "shape": [
-        [560, 0],
-        [760, 0],
-        [960, 0],
-        [960, 320],
-        [760, 320],
-        [560, 320]
+        [
+          560,
+          0
+        ],
+        [
+          760,
+          0
+        ],
+        [
+          960,
+          0
+        ],
+        [
+          960,
+          320
+        ],
+        [
+          760,
+          320
+        ],
+        [
+          560,
+          320
+        ]
       ],
       "gridArea": {
         "x": 14,
@@ -208,12 +358,30 @@
       "traffic": "medium",
       "description": "A fictional southern quarter with services and worship spaces.",
       "shape": [
-        [0, 400],
-        [280, 400],
-        [560, 400],
-        [560, 720],
-        [280, 720],
-        [0, 720]
+        [
+          0,
+          400
+        ],
+        [
+          280,
+          400
+        ],
+        [
+          560,
+          400
+        ],
+        [
+          560,
+          720
+        ],
+        [
+          280,
+          720
+        ],
+        [
+          0,
+          720
+        ]
       ],
       "gridArea": {
         "x": 0,
@@ -229,12 +397,30 @@
       "traffic": "high",
       "description": "A fictional gateway with travel, entertainment and work spots.",
       "shape": [
-        [560, 400],
-        [760, 400],
-        [960, 400],
-        [960, 720],
-        [760, 720],
-        [560, 720]
+        [
+          560,
+          400
+        ],
+        [
+          760,
+          400
+        ],
+        [
+          960,
+          400
+        ],
+        [
+          960,
+          720
+        ],
+        [
+          760,
+          720
+        ],
+        [
+          560,
+          720
+        ]
       ],
       "gridArea": {
         "x": 14,
@@ -242,45 +428,269 @@
         "width": 10,
         "depth": 8
       }
+    },
+    {
+      "id": "oja-oba",
+      "name": "Oja-Oba Quarter",
+      "theme": "market",
+      "traffic": "high",
+      "description": "An Osogbo-inspired market and heritage quarter, arranged as an original game district.",
+      "gridArea": {
+        "x": 24,
+        "z": 0,
+        "width": 8,
+        "depth": 8
+      },
+      "shape": [
+        [
+          960,
+          0
+        ],
+        [
+          1280,
+          0
+        ],
+        [
+          1280,
+          320
+        ],
+        [
+          960,
+          320
+        ]
+      ]
+    },
+    {
+      "id": "ataoja",
+      "name": "Ataoja Civic Quarter",
+      "theme": "school",
+      "traffic": "medium",
+      "description": "A civic and cultural game district inspired by the Ataoja area.",
+      "gridArea": {
+        "x": 24,
+        "z": 8,
+        "width": 8,
+        "depth": 10
+      },
+      "shape": [
+        [
+          960,
+          320
+        ],
+        [
+          1280,
+          320
+        ],
+        [
+          1280,
+          720
+        ],
+        [
+          960,
+          720
+        ]
+      ]
+    },
+    {
+      "id": "oke-baale",
+      "name": "Oke-Baale Neighbourhood",
+      "theme": "residential",
+      "traffic": "medium",
+      "description": "A residential and public-service game district inspired by Oke-Baale.",
+      "gridArea": {
+        "x": 0,
+        "z": 18,
+        "width": 8,
+        "depth": 6
+      },
+      "shape": [
+        [
+          0,
+          720
+        ],
+        [
+          320,
+          720
+        ],
+        [
+          320,
+          960
+        ],
+        [
+          0,
+          960
+        ]
+      ]
+    },
+    {
+      "id": "aleku-wodo",
+      "name": "Aleku-Wodo Corridor",
+      "theme": "transport",
+      "traffic": "medium",
+      "description": "A road-oriented game district inspired by the Aleku-Wodo area.",
+      "gridArea": {
+        "x": 8,
+        "z": 18,
+        "width": 8,
+        "depth": 6
+      },
+      "shape": [
+        [
+          320,
+          720
+        ],
+        [
+          640,
+          720
+        ],
+        [
+          640,
+          960
+        ],
+        [
+          320,
+          960
+        ]
+      ]
+    },
+    {
+      "id": "ogo-oluwa",
+      "name": "Ogo-Oluwa Quarter",
+      "theme": "outskirts",
+      "traffic": "low",
+      "description": "A quieter neighbourhood game district inspired by Ogo-Oluwa.",
+      "gridArea": {
+        "x": 16,
+        "z": 18,
+        "width": 8,
+        "depth": 6
+      },
+      "shape": [
+        [
+          640,
+          720
+        ],
+        [
+          960,
+          720
+        ],
+        [
+          960,
+          960
+        ],
+        [
+          640,
+          960
+        ]
+      ]
+    },
+    {
+      "id": "oke-fia",
+      "name": "Oke-Fia Quarter",
+      "theme": "leisure",
+      "traffic": "medium",
+      "description": "A mixed-use game district inspired by Oke-Fia.",
+      "gridArea": {
+        "x": 24,
+        "z": 18,
+        "width": 8,
+        "depth": 6
+      },
+      "shape": [
+        [
+          960,
+          720
+        ],
+        [
+          1280,
+          720
+        ],
+        [
+          1280,
+          960
+        ],
+        [
+          960,
+          960
+        ]
+      ]
     }
   ],
   "grid": {
     "cellSize": 2,
     "rows": [
-      "ggggggrgggggrgggggrggggg",
-      "ggggggrgggggrgggggrggggg",
-      "ggggggrgggggrgggggrggggg",
-      "ggggggrgggggrgggggrggggg",
-      "rrrrrrrrrrrrrrrrrrrrrrrr",
-      "ggggggrgggggrgggggrggggg",
-      "ggggggrgggggrgggggrggggg",
-      "ggggggrgggggrgggggrggggg",
-      "rrrrrrrrrrrrrrrrrrrrrrrr",
-      "ggggggrgggggrgggggrggggg",
-      "ggggggrgggggrgggggrggggg",
-      "ggggggrgggggrgggggrggggg",
-      "rrrrrrrrrrrrrrrrrrrrrrrr",
-      "ggggggrgggggrgggggrggggg",
-      "ggggggrgggggrgggggrggggg",
-      "ggggggrgggggrgggggrggggg",
-      "rrrrrrrrrrrrrrrrrrrrrrrr",
-      "ggggggrgggggrgggggrggggg"
+      "ggggrrrgggrrrgggggrrrrrrrgggggrg",
+      "ggggrgggggrggggggggggggrrgggggrg",
+      "ggggrgggggrggggggggggggrrgggggrg",
+      "ggggrgggggrggggggggggggrrgggggrg",
+      "rrrrrrrrrrrrrrrrrggggggrrgggggrr",
+      "ggggggrgggggrgggrrrggggrrgggggrr",
+      "ggggggrgggggrgggggrggggrrgggggrr",
+      "ggggggrgggggrgggggrrrggrrgggggrr",
+      "rrggggrgggggrggggggrrrrrrrrrrrrr",
+      "grggggrgggggrggggggrggggrgggggrr",
+      "grggggrgggggrggggggrrrrrrrrrrrrr",
+      "grggggrgggggrggggggrrgggrgggggrg",
+      "rrggggrgggggrgggrrrrrgggrgggggrr",
+      "grrrrrrrrrrrrrrrrggrrrrrrrrrrrrr",
+      "ggggggrgggggrggggggrggggrgggggrg",
+      "ggggggrgggggrgggggrrggggrgggggrg",
+      "rrrrrrrrrrggrgggggrgggggrgggggrr",
+      "ggggggrggrrrrrrrrrrrrrrrrrrrrrrr",
+      "ggggggrgggggrgggggrgggggrgggggrg",
+      "ggggggrgggggrgggggrgggggrgggggrg",
+      "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
+      "ggggggrgggggrgggggrgggggrgggggrg",
+      "ggggggrgggggrgggggrgggggrgggggrg",
+      "ggggggrgggggrgggggrgggggrgggggrg"
     ],
     "waterCells": [
-      [0, 7],
-      [1, 7],
-      [12, 1],
-      [13, 1]
+      [
+        0,
+        7
+      ],
+      [
+        1,
+        7
+      ],
+      [
+        14,
+        1
+      ],
+      [
+        13,
+        1
+      ]
     ],
     "plotCells": [
-      [1, 1],
-      [3, 2],
-      [7, 1],
-      [11, 2],
-      [2, 6],
-      [6, 7],
-      [10, 6],
-      [3, 8]
+      [
+        1,
+        1
+      ],
+      [
+        1,
+        3
+      ],
+      [
+        7,
+        1
+      ],
+      [
+        14,
+        2
+      ],
+      [
+        2,
+        6
+      ],
+      [
+        7,
+        7
+      ],
+      [
+        9,
+        6
+      ]
     ],
     "buildings": [
       {
@@ -309,19 +719,19 @@
       },
       {
         "placeId": "meridian-bank",
-        "x": 12,
+        "x": 13,
         "z": 6,
         "buildingType": "bank"
       },
       {
         "placeId": "lantern-club",
-        "x": 9,
+        "x": 8,
         "z": 7,
         "buildingType": "club"
       },
       {
         "placeId": "community-clinic",
-        "x": 4,
+        "x": 3,
         "z": 7,
         "buildingType": "clinic"
       },
@@ -333,7 +743,7 @@
       },
       {
         "placeId": "sports-ground",
-        "x": 7,
+        "x": 8,
         "z": 9,
         "buildingType": "sport"
       },
@@ -430,7 +840,7 @@
       {
         "placeId": "adire-makers-yard",
         "x": 17,
-        "z": 9,
+        "z": 10,
         "buildingType": "services"
       },
       {
@@ -441,20 +851,56 @@
       }
     ],
     "treeCells": [
-      [0, 0],
-      [5, 1],
-      [9, 0],
-      [13, 3],
-      [0, 6],
-      [5, 6],
-      [11, 7],
-      [13, 9],
-      [3, 9],
-      [8, 0]
+      [
+        0,
+        0
+      ],
+      [
+        5,
+        1
+      ],
+      [
+        9,
+        0
+      ],
+      [
+        13,
+        3
+      ],
+      [
+        0,
+        6
+      ],
+      [
+        5,
+        6
+      ],
+      [
+        11,
+        7
+      ],
+      [
+        13,
+        9
+      ],
+      [
+        3,
+        9
+      ],
+      [
+        8,
+        0
+      ]
     ],
     "carCells": [
-      [4, 4],
-      [10, 4]
+      [
+        4,
+        4
+      ],
+      [
+        10,
+        4
+      ]
     ]
   },
   "landmarks": [
@@ -806,11 +1252,11 @@
       "category": "services",
       "districtId": "learning-quarter",
       "locationSlug": "meridian-bank",
-      "x": 1010,
-      "y": 490,
+      "x": 1414,
+      "y": 445,
       "verify": false,
       "grid": {
-        "x": 12,
+        "x": 13,
         "z": 6
       },
       "buildingType": "bank",
@@ -891,12 +1337,12 @@
       "category": "food",
       "districtId": "garden-quarter",
       "locationSlug": "lantern-club",
-      "x": 780,
+      "x": 856,
       "y": 520,
       "verify": false,
       "min_age": 18,
       "grid": {
-        "x": 9,
+        "x": 8,
         "z": 7
       },
       "buildingType": "club",
@@ -975,13 +1421,13 @@
       "id": "community-clinic",
       "label": "Community clinic",
       "category": "health",
-      "districtId": "learning-quarter",
+      "districtId": "central-crossing",
       "locationSlug": "community-clinic",
-      "x": 350,
-      "y": 500,
+      "x": 297,
+      "y": 520,
       "verify": false,
       "grid": {
-        "x": 4,
+        "x": 3,
         "z": 7
       },
       "buildingType": "clinic",
@@ -1145,7 +1591,7 @@
       "id": "osun-mall",
       "label": "Osun Mall",
       "category": "market",
-      "districtId": "commerce-quarter",
+      "districtId": "learning-quarter",
       "locationSlug": "osun-mall",
       "x": 850,
       "y": 365,
@@ -1198,11 +1644,11 @@
       "category": "sport",
       "districtId": "open-fields",
       "locationSlug": "sports-ground",
-      "x": 600,
-      "y": 690,
+      "x": 856,
+      "y": 670,
       "verify": false,
       "grid": {
-        "x": 7,
+        "x": 8,
         "z": 9
       },
       "buildingType": "sport",
@@ -1773,12 +2219,12 @@
       "category": "school",
       "districtId": "east-gate",
       "locationSlug": "adire-makers-yard",
-      "x": 776,
-      "y": 394,
+      "x": 1861,
+      "y": 745,
       "verify": false,
       "grid": {
         "x": 17,
-        "z": 9
+        "z": 10
       },
       "buildingType": "services",
       "actions": [
@@ -1836,6 +2282,160 @@
           "verify": false
         }
       ]
+    },
+    {
+      "id": "oja-oba-market",
+      "label": "Oja-Oba Market",
+      "category": "market",
+      "districtId": "oja-oba",
+      "locationSlug": "oja-oba",
+      "x": 2755,
+      "y": 145,
+      "verify": false,
+      "grid": {
+        "x": 25,
+        "z": 2
+      },
+      "actions": [],
+      "mapObjectType": "landmark",
+      "availabilityReason": "Map landmark linked to an existing game destination."
+    },
+    {
+      "id": "ataoja-police-station",
+      "label": "Ataoja Police Station",
+      "category": "services",
+      "districtId": "ataoja",
+      "locationSlug": "government-area",
+      "x": 2978,
+      "y": 745,
+      "verify": false,
+      "grid": {
+        "x": 27,
+        "z": 10
+      },
+      "actions": [],
+      "mapObjectType": "landmark",
+      "availabilityReason": "Map landmark linked to an existing game destination."
+    },
+    {
+      "id": "ataoja-palace",
+      "label": "Ataoja Palace",
+      "category": "services",
+      "districtId": "ataoja",
+      "locationSlug": "government-area",
+      "x": 3201,
+      "y": 745,
+      "verify": false,
+      "grid": {
+        "x": 29,
+        "z": 10
+      },
+      "actions": [],
+      "mapObjectType": "landmark",
+      "availabilityReason": "Map landmark linked to an existing game destination."
+    },
+    {
+      "id": "oke-baale-local-government-hq",
+      "label": "Oke-Baale Local Government HQ",
+      "category": "services",
+      "districtId": "oke-baale",
+      "locationSlug": "oke-baale",
+      "x": 185,
+      "y": 1570,
+      "verify": false,
+      "grid": {
+        "x": 2,
+        "z": 21
+      },
+      "actions": [],
+      "mapObjectType": "landmark",
+      "availabilityReason": "Map landmark linked to an existing game destination."
+    },
+    {
+      "id": "osogbo-school-of-art",
+      "label": "Osogbo School of Art",
+      "category": "school",
+      "districtId": "oke-baale",
+      "locationSlug": "student-district",
+      "x": 521,
+      "y": 1645,
+      "verify": false,
+      "grid": {
+        "x": 5,
+        "z": 22
+      },
+      "actions": [],
+      "mapObjectType": "landmark",
+      "availabilityReason": "Map landmark linked to an existing game destination."
+    },
+    {
+      "id": "osogbo-township-stadium",
+      "label": "Osogbo Township Stadium",
+      "category": "sport",
+      "districtId": "ogo-oluwa",
+      "locationSlug": "stadium",
+      "x": 1973,
+      "y": 1645,
+      "verify": false,
+      "grid": {
+        "x": 18,
+        "z": 22
+      },
+      "actions": [],
+      "mapObjectType": "landmark",
+      "availabilityReason": "Map landmark linked to an existing game destination."
+    },
+    {
+      "id": "aleku-wodo-road-network",
+      "label": "Aleku-Wodo Road Network",
+      "category": "junction",
+      "districtId": "aleku-wodo",
+      "locationSlug": "residential",
+      "x": 1302,
+      "y": 1495,
+      "verify": false,
+      "grid": {
+        "x": 12,
+        "z": 20
+      },
+      "mapObjectType": "junction",
+      "availabilityReason": "Road-network landmark; use it as an orientation point.",
+      "actions": []
+    },
+    {
+      "id": "oke-fia-flyover",
+      "label": "Oke-Fia Flyover",
+      "category": "junction",
+      "districtId": "oke-fia",
+      "locationSlug": "oke-fia",
+      "x": 2978,
+      "y": 1495,
+      "verify": false,
+      "grid": {
+        "x": 27,
+        "z": 20
+      },
+      "mapObjectType": "junction",
+      "availabilityReason": "Flyover landmark; use it as an orientation point.",
+      "actions": []
+    },
+    {
+      "id": "river-shrine-court",
+      "label": "River Shrine Court",
+      "category": "worship",
+      "districtId": "oke-fia",
+      "locationSlug": null,
+      "x": 3201,
+      "y": 1645,
+      "verify": false,
+      "grid": {
+        "x": 29,
+        "z": 22
+      },
+      "mapObjectType": "poi",
+      "availabilityReason": "Heritage destination reserved for a later playable phase.",
+      "unlockRequirement": "Future heritage-area implementation.",
+      "actions": []
     }
   ]
 }

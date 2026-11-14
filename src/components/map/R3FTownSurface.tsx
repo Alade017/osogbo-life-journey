@@ -2,7 +2,6 @@ import { DistrictZones } from "./DistrictZones";
 import { Component, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Canvas, type ThreeEvent } from "@react-three/fiber";
 import town from "@/data/osogbo-town.json";
-import type { PhaserMapData, PhaserMapCallbacks } from "./PhaserMapSurface";
 import {
   WorldCamera,
   WorldCars,
@@ -27,7 +26,7 @@ import {
   WorldInstances,
   type WorldInstance,
 } from "../3d/WorldScene";
-import { WORLD_SCALE, WORLD_PALETTE } from "../3d/world-theme";
+import { WORLD_SCALE, WORLD_PALETTE, TOWN_MAP_CAMERA } from "../3d/world-theme";
 import { MapLighting, useRealOrGameClock, daylightFor } from "./MapLighting";
 import { PlaceBadge } from "./map-badge";
 import { getLandmarkBuildingVariant } from "./landmark-building-variant";
@@ -41,20 +40,59 @@ import { MovingTraffic3D } from "./MovingTraffic3D";
 import { MovingPedestrians3D } from "./MovingPedestrians3D";
 import { FunctionalStreetLights3D } from "./FunctionalStreetLights3D";
 import { RoadsideInfrastructure3D } from "./RoadsideInfrastructure3D";
-import { LockedPlaces3D, type LockedPlace } from "./LockedPlaces3D";
+import { LockedPlaces3D, type LockedPlace, type LockedSourcePlace } from "./LockedPlaces3D";
+import {
+  deriveTownMobilityRoutes,
+  TownRoadCrossingPriorityScheduler,
+  townRoadJunctionIdentity,
+  deriveTownPedestrianCornerRoutes,
+  deriveTownPedestrianCrossingRoutes,
+  deriveTownPedestrianRoutes,
+  stitchTownPedestrianRoutes,
+} from "@/game/town-mobility";
+import { validateTownMapData } from "@/game/town-map-validation";
 
-type Props = PhaserMapData &
-  PhaserMapCallbacks & {
+type TownMapPlace = {
+  id: string;
+  label: string;
+  category: string;
+  grid: { x: number; z: number };
+};
+
+export type TownMapData = {
+  places: readonly TownMapPlace[];
+  /** Landmarks the player cannot visit yet; drawn as locked pins. */
+  lockedPlaces?: readonly LockedSourcePlace[];
+  properties: readonly import("@/components/map/MapCanvas").MapProperty[] | undefined;
+  playerLocation: import("@/components/map/MapCanvas").MapPlayerLocation | null | undefined;
+  billboardMarkers: readonly import("@/components/map/MapCanvas").MapBillboardMarker[];
+};
+
+export type TownMapCallbacks = {
+  onSelectLandmark: (id: string) => void;
+  onSelectDistrict: (id: string) => void;
+  onSelectBillboard: ((campaignId: string) => void) | undefined;
+};
+
+type Props = TownMapData &
+  TownMapCallbacks & {
     onSelectProperty?: (property: import("@/components/map/MapCanvas").MapProperty) => void;
     eventChips: readonly { id: string; label: string; x: number; y: number }[];
     onSelectEvent?: (landmarkId: string) => void;
     onReady: () => void;
     onUnavailable: () => void;
     searchTarget?: import("@/components/map/MapCanvas").MapSearchTarget | null;
+    /** Frame the search target close up instead of the whole town (landing preview). */
+    focusCloseUp?: boolean;
   };
 
-const gridCols = town.grid.rows[0]?.length ?? 24;
-const gridRows = town.grid.rows.length ?? 18;
+/** Close-up framing sits well inside the whole-town distance. */
+const CLOSE_UP_DISTANCE_SCALE = 0.5;
+
+const townMapValidationErrors = validateTownMapData(town);
+
+const gridCols = town.meta.grid.columns;
+const gridRows = town.meta.grid.rows;
 const cell = WORLD_SCALE.townCell;
 const point = (x: number, z: number): [number, number, number] => [
   (x - (gridCols - 1) / 2) * cell,
@@ -62,7 +100,11 @@ const point = (x: number, z: number): [number, number, number] => [
   (z - (gridRows - 1) / 2) * cell,
 ];
 
-function CameraFocusController({ targetPosition }: { targetPosition: [number, number, number] | null }) {
+function CameraFocusController({
+  targetPosition,
+}: {
+  targetPosition: [number, number, number] | null;
+}) {
   useMapCameraFocus(targetPosition, Boolean(targetPosition));
   return null;
 }
@@ -87,7 +129,7 @@ function Ready({ onReady }: { onReady: () => void }) {
   return null;
 }
 
-type Landmark = PhaserMapData["places"][number];
+type Landmark = TownMapPlace;
 
 type BadgePosition = [number, number, number];
 
@@ -164,10 +206,21 @@ function calculateBadgePositions(
 }
 
 export function R3FTownSurface(props: Props) {
+  const { onUnavailable } = props;
   const [hovered, setHovered] = useState<string | null>(null);
+  useEffect(() => {
+    if (townMapValidationErrors.length > 0) onUnavailable();
+  }, [onUnavailable]);
   const gesture = useRef({ x: 0, y: 0, moved: false });
   const clockTime = useRealOrGameClock();
   const { isNight } = daylightFor(clockTime.hour, clockTime.minute);
+  // Derive moving traffic and pedestrian paths from the same authored town grid
+  // that renders the roads and sidewalks; never invent separate rectangular routes.
+  const trafficRoutes = useMemo(
+    () => deriveTownMobilityRoutes(town.grid.rows, cell, cell * 0.22),
+    [],
+  );
+
   const [selectedTarget, setSelectedTarget] = useState<{
     id: string;
     position: [number, number, number];
@@ -177,7 +230,8 @@ export function R3FTownSurface(props: Props) {
 
   useEffect(() => {
     if (!props.searchTarget) return;
-    const targetId = typeof props.searchTarget === "string" ? props.searchTarget : props.searchTarget.id;
+    const targetId =
+      typeof props.searchTarget === "string" ? props.searchTarget : props.searchTarget.id;
     const landmark = props.places.find((p) => p.id === targetId);
     if (landmark) {
       const [x, , z] = point(landmark.grid.x, landmark.grid.z);
@@ -196,6 +250,7 @@ export function R3FTownSurface(props: Props) {
       setSelectedTarget({ id: district.id, position: [x, 0, z], type: "district" });
     }
   }, [props.searchTarget, props.places, props.properties]);
+  const closeUpTarget = props.focusCloseUp && selectedTarget ? selectedTarget.position : undefined;
   const roads = useMemo(
     () =>
       town.grid.rows.flatMap((row, z) =>
@@ -296,8 +351,8 @@ export function R3FTownSurface(props: Props) {
       return [[position[0], position[2]] as [number, number]];
     });
   }, []);
-  const trafficLights = useMemo<[number, number][]>(() => {
-    const result: [number, number][] = [];
+  const trafficLights = useMemo<[number, number, string][]>(() => {
+    const result: [number, number, string][] = [];
     const rows = town.grid.rows;
 
     rows.forEach((row, z) => {
@@ -326,7 +381,7 @@ export function R3FTownSurface(props: Props) {
         const p = point(x, z);
 
         // Position the signal near the corner of the intersection.
-        result.push([p[0] + cell * 0.38, p[2] + cell * 0.38]);
+        result.push([p[0] + cell * 0.38, p[2] + cell * 0.38, townRoadJunctionIdentity(p[0], p[2])]);
       });
     });
 
@@ -668,7 +723,7 @@ export function R3FTownSurface(props: Props) {
     });
 
     // Reserve water and road locations.
-    town.grid.waterCells.forEach(([x, z]) => {
+    [...town.grid.waterCells, ...town.grid.plotCells].forEach(([x, z]) => {
       occupied.add(`${x},${z}`);
     });
 
@@ -835,7 +890,13 @@ export function R3FTownSurface(props: Props) {
   const roadsideInfrastructure = useMemo(() => {
     const occupied = new Set<string>();
     town.grid.buildings.forEach((building) => {
-      for (const [dx, dz] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
+      const footprint: [number, number][] = [
+        [0, 0],
+        [1, 0],
+        [0, 1],
+        [1, 1],
+      ];
+      for (const [dx, dz] of footprint) {
         occupied.add(`${building.x + dx},${building.z + dz}`);
       }
     });
@@ -877,9 +938,12 @@ export function R3FTownSurface(props: Props) {
         const runEnd = x - 1;
         if (runEnd - runStart < 4) continue;
 
-        const sideZ = town.grid.rows[z - 1]?.[runStart] === "g" ? z - 1
-          : town.grid.rows[z + 1]?.[runStart] === "g" ? z + 1
-          : null;
+        const sideZ =
+          town.grid.rows[z - 1]?.[runStart] === "g"
+            ? z - 1
+            : town.grid.rows[z + 1]?.[runStart] === "g"
+              ? z + 1
+              : null;
         if (sideZ === null) continue;
 
         let previousPole: [number, number] | null = null;
@@ -901,7 +965,8 @@ export function R3FTownSurface(props: Props) {
       }
     });
 
-    const drains: { position: [number, number, number]; horizontal: boolean; length: number }[] = [];
+    const drains: { position: [number, number, number]; horizontal: boolean; length: number }[] =
+      [];
     const directions = [
       { dx: 0, dz: -1 },
       { dx: 0, dz: 1 },
@@ -921,11 +986,7 @@ export function R3FTownSurface(props: Props) {
           // a small separation so their meshes do not overlap.
           const drainOffset = cell / 2 + cell * 0.28 + cell * 0.09 + cell * 0.035;
           drains.push({
-            position: [
-              center[0] + dx * drainOffset,
-              0.025,
-              center[2] + dz * drainOffset,
-            ],
+            position: [center[0] + dx * drainOffset, 0.025, center[2] + dz * drainOffset],
             horizontal: dx === 0,
             length: cell,
           });
@@ -933,16 +994,117 @@ export function R3FTownSurface(props: Props) {
       });
     });
     return { poles, spans, drains };
-  }, [streetLights, wasteBins, trees, busStops, roadsideShops, motorcycles, tricycles, streetVendors]);
+  }, [
+    streetLights,
+    wasteBins,
+    trees,
+    busStops,
+    roadsideShops,
+    motorcycles,
+    tricycles,
+    streetVendors,
+  ]);
 
+  const crossingScheduler = useMemo(() => new TownRoadCrossingPriorityScheduler(), []);
+  useEffect(() => {
+    crossingScheduler.setSignalizedJunctions(trafficLights.map(([, , junctionId]) => junctionId));
+  }, [crossingScheduler, trafficLights]);
+  const pedestrianRoutes = useMemo(() => {
+    const buildingCells = town.grid.buildings.flatMap((building) =>
+      [0, 1].flatMap((dx) => [0, 1].map((dz) => [building.x + dx, building.z + dz] as const)),
+    );
+
+    const toTuple = (cell: readonly number[]): readonly [number, number] | undefined => {
+      const [x, z] = cell;
+
+      if (x === undefined || z === undefined) {
+        return undefined;
+      }
+
+      return [x, z];
+    };
+
+    const waterCells = town.grid.waterCells
+      .map(toTuple)
+      .filter((cell): cell is readonly [number, number] => cell !== undefined);
+
+    const plotCells = town.grid.plotCells
+      .map(toTuple)
+      .filter((cell): cell is readonly [number, number] => cell !== undefined);
+
+    const blockedCells: (readonly [number, number])[] = [
+      ...buildingCells,
+      ...waterCells,
+      ...plotCells,
+    ];
+    const reservedPropCells = new Set<string>();
+    const reserveWorldPosition = (x: number, z: number) => {
+      const gridX = Math.round(x / cell + (gridCols - 1) / 2 - 0.5);
+      const gridZ = Math.round(z / cell + (gridRows - 1) / 2 - 0.5);
+
+      // Reserve only nearby grass cells. Road-tile prop origins otherwise
+      // leave the adjacent pavement cells unblocked.
+      for (let dz = -1; dz <= 1; dz += 1) {
+        for (let dx = -1; dx <= 1; dx += 1) {
+          const xCell = gridX + dx;
+          const zCell = gridZ + dz;
+          if (town.grid.rows[zCell]?.[xCell] !== "g") continue;
+          const key = `${xCell},${zCell}`;
+          if (reservedPropCells.has(key)) continue;
+          reservedPropCells.add(key);
+          blockedCells.push([xCell, zCell]);
+        }
+      }
+    };
+
+    streetLights.forEach(([x, z]) => reserveWorldPosition(x, z));
+    trafficLights.forEach(([x, z]) => reserveWorldPosition(x, z));
+    busStops.forEach(([x, z]) => reserveWorldPosition(x, z));
+    roadSigns.forEach((sign) => reserveWorldPosition(sign.position[0], sign.position[1]));
+    roadsideShops.forEach(([x, z]) => reserveWorldPosition(x, z));
+    motorcycles.forEach(([x, z]) => reserveWorldPosition(x, z));
+    tricycles.forEach(([x, z]) => reserveWorldPosition(x, z));
+    streetVendors.forEach(([x, z]) => reserveWorldPosition(x, z));
+    wasteBins.forEach(([x, z]) => reserveWorldPosition(x, z));
+    roadsideInfrastructure.poles.forEach(([x, z]) => reserveWorldPosition(x, z));
+
+    const sidewalkRoutes = stitchTownPedestrianRoutes([
+      ...deriveTownPedestrianRoutes(town.grid.rows, cell, blockedCells),
+      ...deriveTownPedestrianCornerRoutes(town.grid.rows, cell, blockedCells),
+    ]);
+    // Keep zebra-crossing routes as dedicated three-point paths so the shared
+    // crossing scheduler can identify their exact centre without guessing.
+    return [
+      ...sidewalkRoutes,
+      ...deriveTownPedestrianCrossingRoutes(town.grid.rows, cell, blockedCells),
+    ];
+  }, [
+    streetLights,
+    trafficLights,
+    busStops,
+    roadSigns,
+    roadsideShops,
+    motorcycles,
+    tricycles,
+    streetVendors,
+    wasteBins,
+    roadsideInfrastructure,
+  ]);
   const badgePositions = useMemo(
     () => calculateBadgePositions(props.places, point, cell),
     [props.places],
   );
-  const select = (event: ThreeEvent<MouseEvent>, action: () => void) => {
-    event.stopPropagation();
-    if (event.delta <= 5 && !gesture.current.moved) action();
+  const select = (event: ThreeEvent<MouseEvent> | undefined, action: () => void) => {
+    event?.stopPropagation();
+    if ((event?.delta ?? 0) <= 5 && !gesture.current.moved) action();
   };
+  if (townMapValidationErrors.length > 0) {
+    return (
+      <div role="alert" className="town-map-renderer-status">
+        The authored town map has invalid data: {townMapValidationErrors.join(" ")}
+      </div>
+    );
+  }
   return (
     <SurfaceBoundary onUnavailable={props.onUnavailable}>
       <div
@@ -967,27 +1129,55 @@ export function R3FTownSurface(props: Props) {
         >
           <Ready onReady={props.onReady} />
           <CameraFocusController targetPosition={selectedTarget?.position ?? null} />
-          <WorldCamera width={gridCols * cell} depth={gridRows * cell} zoom={1.35} freeExplore />
+          <WorldCamera
+            width={gridCols * cell}
+            depth={gridRows * cell}
+            zoom={TOWN_MAP_CAMERA.defaultZoom}
+            minZoom={TOWN_MAP_CAMERA.minZoom}
+            maxZoom={TOWN_MAP_CAMERA.maxZoom}
+            target={closeUpTarget}
+            distanceScale={closeUpTarget ? CLOSE_UP_DISTANCE_SCALE : 1}
+            freeExplore
+          />
           <MapLighting size={gridCols * cell} />
+          <color attach="background" args={[WORLD_PALETTE.sky]} />
+          <fog
+            attach="fog"
+            args={[WORLD_PALETTE.sky, gridCols * cell * 0.85, gridCols * cell * 1.95]}
+          />
           <Terrain3D gridCols={gridCols} gridRows={gridRows} cellSize={cell} />
 
           <WorldRoads items={roads} />
           <WorldRoadMarkings items={roadMarkings} />
           <WorldPedestrianCrossings items={pedestrianCrossings} />
-          <WorldTrafficLights positions={trafficLights} size={cell} />
+          <WorldTrafficLights
+            positions={trafficLights}
+            size={cell}
+            getSignalState={(junctionId) => crossingScheduler.getSignalState(junctionId)}
+          />
           <WorldCars positions={cars} size={cell} />
           <WorldSidewalks sidewalks={sidewalks} curbs={curbs} />
-          <WorldBusStops positions={busStops} size={cell} />
+          <WorldBusStops
+            positions={busStops}
+            size={cell}
+            onSelectTransit={() => props.onSelectLandmark("transit-park")}
+          />
           <WorldRoadSigns positions={roadSigns} size={cell} />
           <WorldRoadsideShops positions={roadsideShops} size={cell} />
           <WorldMotorcycles positions={motorcycles} size={cell} />
           <WorldTricycles positions={tricycles} size={cell} />
           <WorldStreetVendors positions={streetVendors} size={cell} />
           <FunctionalStreetLights3D positions={streetLights} size={cell} isNight={isNight} />
-          <RoadsideInfrastructure3D poles={roadsideInfrastructure.poles} spans={roadsideInfrastructure.spans} drains={roadsideInfrastructure.drains} cellSize={cell} />
+          <RoadsideInfrastructure3D
+            poles={roadsideInfrastructure.poles}
+            spans={roadsideInfrastructure.spans}
+            drains={roadsideInfrastructure.drains}
+            cellSize={cell}
+          />
           <WorldWasteBins positions={wasteBins} size={cell} />
           <WorldInstances
             tone="slate"
+            castShadow={false}
             items={town.grid.waterCells.map(([x, z]) => ({
               position: [point(x!, z!)[0], 0.015, point(x!, z!)[2]],
               scale: [cell, 0.03, cell],
@@ -995,6 +1185,7 @@ export function R3FTownSurface(props: Props) {
           />
           <WorldInstances
             tone="wall"
+            castShadow={false}
             items={town.grid.plotCells.map(([x, z]) => ({
               position: [point(x!, z!)[0], 0.015, point(x!, z!)[2]],
               scale: [cell, 0.03, cell],
@@ -1011,9 +1202,19 @@ export function R3FTownSurface(props: Props) {
               detailed
             />
           ))}
-          <MovingTraffic3D cellSize={cell} gridCols={gridCols} gridRows={gridRows} />
-          <MovingPedestrians3D cellSize={cell} gridCols={gridCols} gridRows={gridRows} />
+          <MovingTraffic3D
+            paths={trafficRoutes}
+            crossingScheduler={crossingScheduler}
+            onSelectTransit={() => props.onSelectLandmark("transit-park")}
+          />
+          <MovingPedestrians3D
+            paths={pedestrianRoutes}
+            crossingScheduler={crossingScheduler}
+            busStopPositions={busStops}
+            onSelectTransit={() => props.onSelectLandmark("transit-park")}
+          />
           <LockedPlaces3D
+            places={props.lockedPlaces ?? []}
             cellSize={cell}
             gridCols={gridCols}
             gridRows={gridRows}
@@ -1058,7 +1259,7 @@ export function R3FTownSurface(props: Props) {
                 isSelected={selectedTarget?.id === place.id}
                 isHovered={hoveredTargetId === place.id}
                 onSelectLandmark={(id) =>
-                  select({} as any, () => {
+                  select(undefined, () => {
                     setSelectedTarget({
                       id,
                       position: [x, 0, z],

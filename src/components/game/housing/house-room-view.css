@@ -1,0 +1,33 @@
+/* Room view picker: one button per room, plus the whole home. Sits under the top-left controls. */
+.house-room-views {
+  position: fixed;
+  z-index: 79;
+  top: calc(max(12px, env(safe-area-inset-top)) + 52px);
+  left: max(14px, env(safe-area-inset-left));
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: min(420px, calc(100vw - 28px));
+}
+
+.house-room-views button {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  padding: 0.3rem 0.7rem;
+  color: var(--foreground);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.house-room-views button.is-active {
+  border-color: #1e40af;
+  background: #1e40af;
+  color: #ffffff;
+}
+
+.house-room-views button:focus-visible {
+  outline: 2px solid #1e40af;
+  outline-offset: 2px;
+}

@@ -1,0 +1,183 @@
+/* Whot stake table: a card table, unlike the solo card layout. Classes use the wt- prefix. */
+.wt-table {
+  display: grid;
+  gap: 0.85rem;
+  padding: 0.9rem;
+  border-radius: 1.1rem;
+  background: radial-gradient(ellipse at 50% 40%, #1f6b4a 0%, #144a33 70%, #0d3224 100%);
+  color: #f7f3e8;
+}
+.wt-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: center;
+}
+.wt-pill {
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.3);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.wt-pill.is-pot {
+  background: #f6c744;
+  color: #3b2a00;
+}
+.wt-seat {
+  display: grid;
+  justify-items: center;
+  gap: 0.25rem;
+}
+.wt-seat-name {
+  font-size: 0.8rem;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.wt-fan {
+  display: flex;
+  justify-content: center;
+}
+.wt-fan > * + * {
+  margin-left: -1.6rem;
+}
+.wt-felt {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem 0.5rem;
+  border: 2px dashed rgba(246, 199, 68, 0.45);
+  border-radius: 0.9rem;
+}
+.wt-pile {
+  display: grid;
+  justify-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+}
+.wt-centre {
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  min-width: 7rem;
+}
+.wt-shape {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.6rem;
+  border-radius: 0.5rem;
+  background: #f7f3e8;
+  color: #1d2b24;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.wt-penalty {
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.4rem;
+  background: #e5484d;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-align: center;
+}
+.wt-turn {
+  margin: 0;
+  text-align: center;
+  font-weight: 600;
+}
+.wt-hand-wrap {
+  display: grid;
+  gap: 0.4rem;
+}
+.wt-hand-title {
+  margin: 0;
+  font-size: 0.8rem;
+  text-align: center;
+  opacity: 0.85;
+}
+.wt-hand {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 0.25rem;
+}
+.wt-card {
+  padding: 0;
+  border: 0;
+  background: none;
+  border-radius: 0.5rem;
+  opacity: 0.6;
+  transform: translateY(0);
+  transition:
+    transform 0.15s ease,
+    opacity 0.15s ease;
+}
+.wt-card:disabled {
+  cursor: default;
+}
+.wt-card.is-playable {
+  opacity: 1;
+  cursor: pointer;
+  outline: 2px solid #f6c744;
+  outline-offset: 2px;
+  animation: wt-card-glow 1.4s ease-in-out infinite alternate;
+}
+@keyframes wt-card-glow {
+  from {
+    box-shadow: 0 0 8px 1px rgb(246 199 68 / 0.35);
+  }
+  to {
+    box-shadow: 0 0 24px 6px rgb(246 199 68 / 0.75);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wt-card.is-playable {
+    animation: none;
+  }
+}
+.wt-card.is-playable:hover,
+.wt-card.is-playable:focus-visible {
+  transform: translateY(-6px);
+}
+.wt-shape-sheet {
+  display: grid;
+  gap: 0.6rem;
+  justify-items: center;
+  padding: 0.8rem;
+  border-radius: 0.8rem;
+  background: rgba(0, 0, 0, 0.45);
+}
+.wt-shape-options {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.wt-shape-options button {
+  display: grid;
+  justify-items: center;
+  gap: 0.2rem;
+  min-width: 4.5rem;
+  padding: 0.5rem;
+  border: 2px solid transparent;
+  border-radius: 0.6rem;
+  background: #f7f3e8;
+  color: #1d2b24;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+.wt-shape-options button:hover,
+.wt-shape-options button:focus-visible {
+  border-color: #f6c744;
+}
+.wt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}

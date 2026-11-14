@@ -1,19 +1,25 @@
 import {
   Component,
+  Suspense,
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
   type ReactNode,
+  type MutableRefObject,
 } from "react";
-import { Html } from "@react-three/drei";
+import { useGLTF } from "@react-three/drei";
+import { SceneHtml as Html } from "@/components/3d/SceneHtml";
+import { fitFurniture } from "@/components/3d/VenueFurniture";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
+import { BuildingOcclusion } from "@/components/3d/BuildingOcclusion";
+import { WaypointBeacon } from "./WaypointBeacon";
 import { WorldStreetFurniture } from "@/components/3d/WorldStreetFurniture";
 import { worldAppearance, worldEquipment } from "@/game/world-character-view";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import type { Group } from "three";
-import type { NeighborhoodPlayerView, PhaserNeighborhoodHandle } from "@/game/phaser-neighborhood";
+import type { NeighborhoodPlayerView, NeighborhoodSceneHandle } from "@/game/neighborhood-types";
 import type { playableDistrictForLocation } from "@/game/playable-district";
 import {
   neighborhoodSceneBounds,
@@ -22,6 +28,17 @@ import {
   type NeighborhoodObject,
 } from "@/game/neighborhood-model";
 import { neighborhoodBuildingFootprint } from "@/game/neighborhood-geometry";
+import { neighborhoodObstacleFootprint } from "@/game/neighborhood-geometry";
+import { NEIGHBORHOOD_TILE_SIZE } from "@/game/neighborhood-geometry";
+import {
+  NEIGHBORHOOD_NPC_ACTOR_SEPARATION,
+  neighborhoodNpcAvoidanceBias,
+  neighborhoodNpcAvoidanceStep,
+  neighborhoodNpcPathWithFallback,
+  neighborhoodNpcReplanDelay,
+  neighborhoodNpcReservationPath,
+  type NpcPoint,
+} from "@/game/neighborhood-npc-layout";
 import {
   WorldCamera,
   WorldCars,
@@ -40,8 +57,22 @@ import {
   WorldInstances,
   type WorldInstance,
 } from "../3d/WorldScene";
+import { FillingStation } from "@/components/3d/FillingStation";
+import { NeighborhoodPerimeter } from "@/components/3d/NeighborhoodPerimeter";
+import { ZoneSurroundings } from "@/components/3d/ZoneSurroundings";
+import { ZoneNpcs } from "@/components/3d/ZoneNpcs";
+import type { ZoneNpcSpec } from "@/game/neighborhood-interactions";
 import { CHARACTER_MOTION } from "@/components/3d/character-config";
-import { WORLD_CAMERA, WORLD_PALETTE, WORLD_SCALE } from "../3d/world-theme";
+import { ProceduralProp } from "@/components/3d/props/ProceduralProp";
+import {
+  busParts,
+  compoundParts,
+  palmTreeParts,
+  tukTukParts,
+} from "@/components/3d/props/procedural-props";
+import type { NeighborhoodArea, WorldPoint } from "@/game/neighborhood-model";
+import { dressingPartsFor } from "@/components/3d/props/dressing";
+import { NEIGHBORHOOD_CAMERA, WORLD_PALETTE, WORLD_SCALE } from "../3d/world-theme";
 import {
   carSpots,
   pedestrianCrossings,
@@ -92,12 +123,22 @@ function NeighborhoodNpcActor({
   npc,
   start,
   target,
+  actorPositions,
+  actorRoutes,
+  playerPositions,
+  occupiedFootprints,
+  sceneBounds,
   onSelect,
   onArrive,
 }: {
   npc: NeighborhoodNpcView;
   start: [number, number, number];
   target: [number, number, number];
+  actorPositions: MutableRefObject<Map<string, NpcPoint>>;
+  actorRoutes: React.MutableRefObject<Map<string, readonly NpcPoint[]>>;
+  playerPositions: readonly (readonly [number, number, number])[];
+  occupiedFootprints: readonly { left: number; top: number; width: number; height: number }[];
+  sceneBounds: { left: number; top: number; width: number; height: number };
   onSelect: () => void;
   onArrive: () => void;
 }) {
@@ -110,30 +151,166 @@ function NeighborhoodNpcActor({
   const animated =
     !npc.isPaused &&
     (npc.isMoving || ["working", "shopping", "socializing"].includes(npc.activityKind));
-  const targetKey = `${target[0].toFixed(3)}:${target[2].toFixed(3)}`;
+  const targetKey = `${target[0].toFixed(2)}:${target[2].toFixed(2)}`;
+  const route = useRef<readonly NpcPoint[]>([]);
+  const waypointIndex = useRef(0);
+  const targetKeyRef = useRef("");
+  const blockedFor = useRef(0);
+  const retryAfter = useRef(neighborhoodNpcReplanDelay(npc.id));
   const arrivedTarget = useRef<string | null>(null);
+  const bias = neighborhoodNpcAvoidanceBias(npc.id);
+  const targetX = target[0];
+  const targetZ = target[2];
+
+  const startX = start[0];
+  const startY = start[1];
+  const startZ = start[2];
+  const rebuildRoute = useCallback(
+    (origin: NpcPoint) => {
+      const reservations = [...actorRoutes.current.entries()]
+        .filter(([id, path]) => id !== npc.id && path.length > 1)
+        .map(([, path]) => path);
+
+      const next = neighborhoodNpcPathWithFallback(
+        origin,
+        { x: targetX, y: targetZ },
+        occupiedFootprints,
+        sceneBounds,
+        reservations,
+        (NEIGHBORHOOD_TILE_SIZE * WORLD_SCALE.neighborhoodUnit) / 2,
+      );
+
+      route.current = next ?? [origin];
+      waypointIndex.current = 0;
+      blockedFor.current = 0;
+      targetKeyRef.current = targetKey;
+
+      if (route.current.length > 1) {
+        actorRoutes.current.set(npc.id, neighborhoodNpcReservationPath(origin, route.current));
+      } else {
+        actorRoutes.current.delete(npc.id);
+      }
+    },
+    [actorRoutes, npc.id, occupiedFootprints, sceneBounds, targetX, targetZ, targetKey],
+  );
+
+  useEffect(() => {
+    const actor = group.current;
+    if (!actor) return;
+
+    const current = {
+      x: actor.position.x,
+      y: actor.position.z,
+    };
+
+    if (targetKeyRef.current !== targetKey || route.current.length === 0) {
+      rebuildRoute(current);
+    }
+  }, [rebuildRoute, targetKey, startX, startZ]);
+
+  useEffect(() => {
+    const actor = group.current;
+    if (!actor) return;
+
+    // Apply authoritative spawn/confirmed-position updates only when they differ
+    // materially; ordinary parent renders must not snap a walking actor backwards.
+    const known = actorPositions.current.get(npc.id);
+
+    if (!known || Math.hypot(known.x - startX, known.y - startZ) > 1.5) {
+      actor.position.set(startX, startY, startZ);
+      actorPositions.current.set(npc.id, {
+        x: startX,
+        y: startZ,
+      });
+
+      rebuildRoute({ x: startX, y: startZ });
+      invalidate();
+    }
+  }, [actorPositions, invalidate, npc.id, rebuildRoute, startX, startY, startZ]);
 
   useEffect(() => {
     if (!animated) return;
+
     const timer = window.setInterval(invalidate, 1000 / 15);
+
     return () => window.clearInterval(timer);
   }, [animated, invalidate]);
+  useEffect(
+    () => () => {
+      actorPositions.current.delete(npc.id);
+      actorRoutes.current.delete(npc.id);
+    },
+    [actorPositions, actorRoutes, npc.id],
+  );
 
   useFrame((state, delta) => {
     const actor = group.current;
     if (!actor || npc.isPaused) return;
-    const dx = target[0] - actor.position.x;
-    const dz = target[2] - actor.position.z;
-    const distance = Math.hypot(dx, dz);
+    const current = { x: actor.position.x, y: actor.position.z };
+    if (targetKeyRef.current !== targetKey) rebuildRoute(current);
+    const waypoint = route.current[waypointIndex.current] ?? { x: target[0], y: target[2] };
+    const distance = Math.hypot(waypoint.x - current.x, waypoint.y - current.y);
     const walking = distance > 0.035;
     if (walking) {
-      const step = 1 - Math.exp(-Math.min(delta, 0.1) * 2.8);
-      actor.position.x += dx * step;
-      actor.position.z += dz * step;
-      actor.rotation.y = Math.atan2(dx, dz);
+      arrivedTarget.current = null;
+      const desiredStep = Math.min(
+        distance,
+        (1 - Math.exp(-Math.min(delta, 0.1) * 2.8)) * distance,
+      );
+      const blockers = [
+        ...[...actorPositions.current.entries()]
+          .filter(([id]) => id !== npc.id)
+          .map(([, position]) => position),
+        ...playerPositions.map((position) => ({ x: position[0], y: position[2] })),
+      ];
+      const next = neighborhoodNpcAvoidanceStep(
+        current,
+        waypoint,
+        blockers,
+        desiredStep,
+        NEIGHBORHOOD_NPC_ACTOR_SEPARATION,
+        occupiedFootprints,
+        sceneBounds,
+        bias,
+      );
+      const moved = Math.hypot(next.x - current.x, next.y - current.y);
+      if (moved > 0.0001) {
+        actor.position.x = next.x;
+        actor.position.z = next.y;
+        actor.rotation.y = Math.atan2(next.x - current.x, next.y - current.y);
+        blockedFor.current = 0;
+        retryAfter.current = neighborhoodNpcReplanDelay(npc.id);
+        actorPositions.current.set(npc.id, next);
+      } else {
+        blockedFor.current += Math.min(delta, 0.1);
+        if (blockedFor.current >= retryAfter.current) {
+          rebuildRoute(current);
+          retryAfter.current = Math.min(retryAfter.current * 1.6, 8);
+        }
+      }
+      if (Math.hypot(waypoint.x - actor.position.x, waypoint.y - actor.position.z) <= 0.12) {
+        waypointIndex.current += 1;
+        if (waypointIndex.current >= route.current.length) {
+          actor.position.x = target[0];
+          actor.position.z = target[2];
+          actorPositions.current.set(npc.id, { x: target[0], y: target[2] });
+          actorRoutes.current.delete(npc.id);
+        } else {
+          actorRoutes.current.set(
+            npc.id,
+            neighborhoodNpcReservationPath(
+              { x: actor.position.x, y: actor.position.z },
+              route.current,
+              waypointIndex.current,
+            ),
+          );
+        }
+      }
     } else {
       actor.position.x = target[0];
       actor.position.z = target[2];
+      actorPositions.current.set(npc.id, { x: target[0], y: target[2] });
+      actorRoutes.current.delete(npc.id);
       if (arrivedTarget.current !== targetKey) {
         arrivedTarget.current = targetKey;
         onArrive();
@@ -150,7 +327,7 @@ function NeighborhoodNpcActor({
   });
 
   return (
-    <group ref={group} position={start}>
+    <group ref={group}>
       <mesh position={[0, 0.9, 0]} castShadow>
         <capsuleGeometry args={[0.24, 0.52, 4, 8]} />
         <WorldMaterial tone="slate" />
@@ -200,6 +377,57 @@ function NeighborhoodNpcActor({
   );
 }
 
+/** Subtle distance fog matching the sky color so the outer perimeter blends smoothly into the horizon. */
+const SKY_FOG_NEAR_SCALE = 0.42;
+const SKY_FOG_FAR_SCALE = 1.05;
+/** Whether an obstacle sits inside a real model's footprint, so its procedural stand-in is skipped. */
+/** Heading along the road a point sits nearest to: quarter turn on north–south roads. */
+function vehicleHeading(area: NeighborhoodArea, spot: WorldPoint) {
+  let best: { distance: number; vertical: boolean } | null = null;
+  for (const road of area.roads ?? []) {
+    if (road.type === "lane") continue;
+    const vertical = road.axis === "vertical";
+    const distance = Math.abs((vertical ? spot.x : spot.y) - road.offset);
+    if (!best || distance < best.distance) best = { distance, vertical };
+  }
+  return best?.vertical ? Math.PI / 2 : 0;
+}
+
+function insideEnvironment(
+  environment: { x: number; y: number; width: number; height: number } | undefined,
+  obstacle: { x: number; y: number },
+) {
+  if (!environment) return false;
+  return (
+    Math.abs(obstacle.x - environment.x) <= environment.width / 2 &&
+    Math.abs(obstacle.y - environment.y) <= environment.height / 2
+  );
+}
+
+function NeighborhoodEnvironment({
+  url,
+  position,
+  width,
+}: {
+  url: string;
+  position: [number, number, number];
+  width: number;
+}) {
+  const gltf = useGLTF(url);
+  const fitted = useMemo(() => fitFurniture(gltf.scene, width), [gltf.scene, width]);
+  return (
+    <primitive
+      object={fitted.copy}
+      scale={fitted.scale}
+      position={[
+        position[0] + fitted.offset[0],
+        position[1] + fitted.offset[1],
+        position[2] + fitted.offset[2],
+      ]}
+    />
+  );
+}
+
 export function R3FNeighborhoodSurface({
   players,
   selfSessionId,
@@ -213,9 +441,20 @@ export function R3FNeighborhoodSurface({
   onZoomChange,
   onGroundTap,
   groundTarget,
+  commuteTarget = null,
+  nearbyZoneId = null,
+  targetedZoneId = null,
+  zoneNpcs = [],
+  nearbyZoneNpcId = null,
+  targetedZoneNpcId = null,
+  onSelectZone,
+  onSelectZoneNpc,
+  onHoverZone,
 }: {
   onGroundTap: (point: { x: number; y: number }) => void;
   groundTarget: { x: number; y: number } | null;
+  /** Workplace beacon during an automatic commute; separate from the tapped destination. */
+  commuteTarget?: { x: number; y: number } | null;
   players: readonly NeighborhoodPlayerView[];
   npcs: readonly NeighborhoodNpcView[];
   interactionTargets: readonly NeighborhoodObject[];
@@ -226,7 +465,15 @@ export function R3FNeighborhoodSurface({
   district: NonNullable<ReturnType<typeof playableDistrictForLocation>>;
   zoom: number;
   onZoomChange: (zoom: number) => void;
-  onScene: (scene: PhaserNeighborhoodHandle | null) => void;
+  onScene: (scene: NeighborhoodSceneHandle | null) => void;
+  nearbyZoneId?: string | null;
+  targetedZoneId?: string | null;
+  zoneNpcs?: readonly ZoneNpcSpec[];
+  nearbyZoneNpcId?: string | null;
+  targetedZoneNpcId?: string | null;
+  onSelectZone?: (zoneId: string) => void;
+  onSelectZoneNpc?: (npcId: string) => void;
+  onHoverZone?: (zoneId: string | null) => void;
 }) {
   const overlayHost = useRef<HTMLDivElement>(null!);
   const [follow, setFollow] = useState(true);
@@ -251,7 +498,10 @@ export function R3FNeighborhoodSurface({
       setPlayers: () => undefined,
       setZoom: (factor) =>
         onZoomChange(
-          Math.max(WORLD_CAMERA.minZoom, Math.min(WORLD_CAMERA.maxZoom, zoomRef.current * factor)),
+          Math.max(
+            NEIGHBORHOOD_CAMERA.minZoom,
+            Math.min(NEIGHBORHOOD_CAMERA.maxZoom, zoomRef.current * factor),
+          ),
         ),
       setFollow,
     });
@@ -312,36 +562,131 @@ export function R3FNeighborhoodSurface({
       sidewalks: flat(dressing.sidewalks, 0.05, 0.1),
       curbs: flat(dressing.curbs, 0.09, 0.14),
       lights: onGround(dressing.lights),
-      cars: onGround(dressing.cars),
+      cars: onGround(dressing.cars.slice(2)),
       people: onGround(dressing.people),
       vendors: onGround(dressing.vendors),
     };
   }, [dressing, point, unit]);
   const streetSize = WORLD_SCALE.neighborhoodStreetCell;
   const lookRange = CHARACTER_MOTION.lookRange * WORLD_SCALE.character;
-  const scenePoints = players.map((player) => {
-    const p = toScene(player, district.origin);
-    return point(p.x, p.y);
-  });
-  const npcPoints = npcs.map((npc) => point(npc.x, npc.y));
+  // The first two car spots of each area carry a bus and a tuk-tuk; the rest stay simple cars.
+  const busModel = useMemo(() => busParts({ length: 9, width: 2.5, height: 3 }), []);
+  const tukTukModel = useMemo(() => tukTukParts({ length: 2.4, width: 1.2 }), []);
+  const vehicles = useMemo(
+    () =>
+      dressing.cars.slice(0, 2).map((spot, index) => ({
+        id: `vehicle-${index}`,
+        parts: index === 0 ? busModel : tukTukModel,
+        position: point(spot.x, spot.y),
+        rotation: vehicleHeading(area, spot),
+      })),
+    [area, dressing, point, busModel, tukTukModel],
+  );
+  const scenePoints = useMemo(
+    () =>
+      players.map((player) => {
+        const p = toScene(player, district.origin);
+        return point(p.x, p.y);
+      }),
+    [district.origin, players, point],
+  );
+  const npcPoints = useMemo(() => npcs.map((npc) => point(npc.x, npc.y)), [npcs, point]);
+  const actorPositions = useRef(new Map<string, NpcPoint>());
+  const actorRoutes = useRef(new Map<string, readonly NpcPoint[]>());
+  const movementBounds = useMemo(
+    () => ({
+      left: (-bounds.width * unit) / 2,
+      top: (-bounds.height * unit) / 2,
+      width: bounds.width * unit,
+      height: bounds.height * unit,
+    }),
+    [bounds.width, bounds.height, unit],
+  );
+  const movementObstacles = useMemo(() => {
+    const footprints = [
+      ...area.objects
+        .filter((object) => object.kind !== "npc" && !object.walkIn)
+        .map(neighborhoodBuildingFootprint),
+      ...(area.obstacles ?? []).map(neighborhoodObstacleFootprint),
+    ];
+    return footprints.map((footprint) => {
+      const center = point(
+        footprint.left + footprint.width / 2,
+        footprint.top + footprint.height / 2,
+      );
+      return {
+        left: center[0] - (footprint.width * unit) / 2,
+        top: center[2] - (footprint.height * unit) / 2,
+        width: footprint.width * unit,
+        height: footprint.height * unit,
+      };
+    });
+  }, [area, point, unit]);
   const self = players.find((player) => player.sessionId === selfSessionId);
   const selfPoint = self && toScene(self, district.origin);
   const target: [number, number, number] =
     follow && selfPoint ? point(selfPoint.x, selfPoint.y) : [0, 0, 0];
-  const trees: WorldTree[] = (area.obstacles ?? [])
-    .filter((o) => o.kind === "tree")
-    .map((o, index) => {
-      const p = point(o.x, o.y);
+  const occlusionSubject = selfPoint
+    ? ([
+        point(selfPoint.x, selfPoint.y)[0],
+        WORLD_SCALE.character,
+        point(selfPoint.x, selfPoint.y)[2],
+      ] as const)
+    : null;
+  // Filler trees on the outer edge are palms; the rest keep the scene's generic trees.
+  const palmParts = useMemo(
+    () =>
+      palmTreeParts({
+        height: WORLD_SCALE.character * 3.4,
+        frondLength: WORLD_SCALE.character * 1.5,
+      }),
+    [],
+  );
+  const palmSpots = (area.obstacles ?? [])
+    .filter((o) => o.kind === "tree" && o.id.startsWith("perimeter-tree"))
+    .map((o) => point(o.x, o.y));
+  // Compounds: boundary wall, house and rusted roof, built in metres to fit each footprint.
+  const compoundSpots = useMemo(
+    () =>
+      (area.obstacles ?? [])
+        .filter((o) => !o.visualManaged && o.kind === "compound")
+        .filter((o) => !insideEnvironment(area.environment, o))
+        .map((o) => ({
+          id: o.id,
+          position: point(o.x, o.y),
+          parts: compoundParts({ width: o.width * unit, depth: o.height * unit }),
+        })),
+    [area, point, unit],
+  );
+  // Market umbrellas, jerrycans, tanks, vats and palms declared by the area; decorative only.
+  const dressingSpots = useMemo(
+    () =>
+      (area.dressing ?? []).map((item) => ({
+        id: item.id,
+        kind: item.kind,
+        position: point(item.x, item.y),
+        rotation: item.rotation ?? 0,
+      })),
+    [area, point],
+  );
+  const trees: WorldTree[] = useMemo(
+    () =>
+      (area.obstacles ?? [])
+        .filter((o) => o.kind === "tree" && !o.id.startsWith("perimeter-tree"))
+        .map((o, index) => {
+          const p = point(o.x, o.y);
 
-      // Deterministic variation based on tree index.
-      const variation = (index * 17) % 30;
+          // Deterministic variation based on tree index.
+          const variation = (index * 17) % 30;
 
-      return {
-        position: [p[0], p[2]],
-        height: 0.85 + variation / 100,
-        canopyScale: 0.85 + ((index * 13) % 35) / 100,
-      };
-    });
+          return {
+            position: [p[0], p[2]],
+            height: 0.85 + variation / 100,
+            canopyScale: 0.85 + ((index * 13) % 35) / 100,
+          };
+        }),
+    [area.obstacles, point],
+  );
   return (
     <NeighborhoodBoundary>
       <div className="playable-neighborhood-canvas">
@@ -356,10 +701,25 @@ export function R3FNeighborhoodSurface({
             depth={bounds.height * unit}
             target={target}
             zoom={zoom}
+            minZoom={NEIGHBORHOOD_CAMERA.minZoom}
+            maxZoom={NEIGHBORHOOD_CAMERA.maxZoom}
             onZoomChange={onZoomChange}
           />
-          <WorldLighting size={Math.max(bounds.width, bounds.height) * unit} />
-          <mesh position={[0, -0.12, 0]} receiveShadow>
+          <WorldLighting size={Math.max(bounds.width, bounds.height) * unit} animateFoliage />
+          <color attach="background" args={[WORLD_PALETTE.sky]} />
+          <fog
+            attach="fog"
+            args={[
+              WORLD_PALETTE.sky,
+              Math.max(bounds.width, bounds.height) * unit * SKY_FOG_NEAR_SCALE,
+              Math.max(bounds.width, bounds.height) * unit * SKY_FOG_FAR_SCALE,
+            ]}
+          />
+          <mesh position={[0, -0.24, 0]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
+            <planeGeometry args={[bounds.width * unit * 2.6, bounds.height * unit * 2.6]} />
+            <meshBasicMaterial color={WORLD_PALETTE.sky} />
+          </mesh>
+          <mesh position={[0, -0.12, 0]} receiveShadow raycast={() => null}>
             <boxGeometry args={[bounds.width * unit, 0.2, bounds.height * unit]} />
             <WorldMaterial
               tone="ground"
@@ -372,6 +732,14 @@ export function R3FNeighborhoodSurface({
           <WorldSidewalks sidewalks={street.sidewalks} curbs={street.curbs} />
           <WorldStreetLights positions={street.lights} size={streetSize} />
           <WorldCars positions={street.cars} size={streetSize} />
+          {vehicles.map((vehicle) => (
+            <ProceduralProp
+              key={vehicle.id}
+              parts={vehicle.parts}
+              position={[vehicle.position[0], 0, vehicle.position[2]]}
+              rotation={vehicle.rotation}
+            />
+          ))}
           <WorldStreetVendors positions={street.vendors} size={streetSize} />
           <WorldPeople positions={street.people} />
           {area.paths?.map((path) => {
@@ -395,9 +763,70 @@ export function R3FNeighborhoodSurface({
             );
           })}
           <WorldTrees positions={trees} />
+          {palmSpots.map((spot, index) => (
+            <ProceduralProp
+              key={`palm-${index}`}
+              parts={palmParts}
+              position={[spot[0], 0, spot[2]]}
+              rotation={index * 1.7}
+            />
+          ))}
 
+          {dressingSpots.map((item) => (
+            <ProceduralProp
+              key={item.id}
+              parts={dressingPartsFor(item.kind)}
+              position={[item.position[0], 0, item.position[2]]}
+              rotation={item.rotation}
+            />
+          ))}
+
+          {area.zoneLayout && (
+            <>
+              <NeighborhoodPerimeter perimeter={area.zoneLayout.perimeter} point={point} />
+              <FillingStation
+                spec={area.zoneLayout.fillingStation}
+                point={point}
+                playerScenePoint={selfPoint ?? null}
+                nearbyZoneId={nearbyZoneId}
+                targetedZoneId={targetedZoneId}
+                {...(onSelectZone ? { onSelectZone } : {})}
+                {...(onHoverZone ? { onHoverZone } : {})}
+              />
+              <ZoneSurroundings
+                layout={area.zoneLayout}
+                point={point}
+                playerScenePoint={selfPoint ?? null}
+                nearbyZoneId={nearbyZoneId}
+                targetedZoneId={targetedZoneId}
+                {...(onSelectZone ? { onSelectZone } : {})}
+                {...(onHoverZone ? { onHoverZone } : {})}
+              />
+              {zoneNpcs.length > 0 && onSelectZoneNpc && (
+                <ZoneNpcs
+                  npcs={zoneNpcs}
+                  point={point}
+                  nearbyNpcId={nearbyZoneNpcId}
+                  targetedId={targetedZoneNpcId}
+                  onSelect={onSelectZoneNpc}
+                  {...(onHoverZone ? { onHoverChange: onHoverZone } : {})}
+                />
+              )}
+            </>
+          )}
+
+          {area.environment && (
+            <Suspense fallback={null}>
+              <NeighborhoodEnvironment
+                url={area.environment.url}
+                position={point(area.environment.x, area.environment.y)}
+                width={area.environment.width * unit}
+              />
+            </Suspense>
+          )}
           {area.obstacles
-            ?.filter((o) => ["compound", "shop", "kiosk"].includes(o.kind))
+            ?.filter((o) => !o.visualManaged && ["shop", "kiosk"].includes(o.kind))
+            .filter((o) => !insideEnvironment(area.environment, o))
             .map((o) => (
               <WorldHouse
                 detailed
@@ -407,17 +836,30 @@ export function R3FNeighborhoodSurface({
                 depth={o.height * unit}
                 height={WORLD_SCALE.neighborhoodBuildingHeight}
                 shop={o.kind !== "compound"}
+                variant={
+                  o.kind === "compound" ? "residential" : o.kind === "kiosk" ? "market" : "services"
+                }
               />
             ))}
+          {compoundSpots.map((item) => (
+            <ProceduralProp
+              key={item.id}
+              parts={item.parts}
+              position={[item.position[0], 0, item.position[2]]}
+            />
+          ))}
           <WorldStreetFurniture
             items={(area.obstacles ?? [])
-              .filter((o) => !["tree", "compound", "shop", "kiosk"].includes(o.kind))
+              .filter(
+                (o) => !o.visualManaged && !["tree", "compound", "shop", "kiosk"].includes(o.kind),
+              )
               .map((o) => ({
                 kind: o.kind,
                 x: point(o.x, o.y)[0],
                 z: point(o.x, o.y)[2],
                 width: o.width * unit,
                 depth: o.height * unit,
+                ...(o.label !== undefined ? { label: o.label } : {}),
               }))}
           />
           {area.obstacles
@@ -440,24 +882,33 @@ export function R3FNeighborhoodSurface({
           {area.objects
             .filter((o) => o.kind !== "npc")
             .map((o) => {
-              const footprint = neighborhoodBuildingFootprint(o);
+              const footprint = o.walkIn ? null : neighborhoodBuildingFootprint(o);
               return (
                 <group key={o.id}>
-                  <WorldHouse
-                    detailed
-                    position={point(
-                      footprint.left + footprint.width / 2,
-                      footprint.top + footprint.height / 2,
-                    )}
-                    width={footprint.width * unit}
-                    depth={footprint.height * unit}
-                    height={WORLD_SCALE.neighborhoodBuildingHeight}
-                    shop={o.kind !== "home"}
-                  />
+                  {footprint && (
+                    <WorldHouse
+                      detailed
+                      position={point(
+                        footprint.left + footprint.width / 2,
+                        footprint.top + footprint.height / 2,
+                      )}
+                      width={footprint.width * unit}
+                      depth={footprint.height * unit}
+                      height={WORLD_SCALE.neighborhoodBuildingHeight}
+                      shop={o.kind !== "home"}
+                      variant={
+                        o.kind === "home"
+                          ? "residential"
+                          : o.kind === "market"
+                            ? "market"
+                            : "services"
+                      }
+                    />
+                  )}
                   <Html
                     portal={overlayHost}
                     center
-                    position={[point(o.x, o.y)[0], 3.7, point(o.x, o.y)[2]]}
+                    position={[point(o.x, o.y)[0], o.walkIn ? 4.8 : 3.7, point(o.x, o.y)[2]]}
                     distanceFactor={18}
                     style={{ pointerEvents: "none" }}
                   >
@@ -490,6 +941,11 @@ export function R3FNeighborhoodSurface({
               npc={npc}
               start={point(npc.x, npc.y)}
               target={point(npc.targetX, npc.targetY)}
+              actorPositions={actorPositions}
+              actorRoutes={actorRoutes}
+              playerPositions={scenePoints}
+              occupiedFootprints={movementObstacles}
+              sceneBounds={movementBounds}
               onSelect={() => onSelectTarget(npc.id)}
               onArrive={() => onNpcArrive(npc.id, npc.targetX, npc.targetY)}
             />
@@ -509,6 +965,9 @@ export function R3FNeighborhoodSurface({
             <planeGeometry args={[bounds.width * unit, bounds.height * unit]} />
             <meshBasicMaterial transparent opacity={0} depthWrite={false} />
           </mesh>
+          {groundTarget && <WaypointBeacon position={point(groundTarget.x, groundTarget.y)} />}
+          {commuteTarget && <WaypointBeacon position={point(commuteTarget.x, commuteTarget.y)} />}
+          {occlusionSubject && <BuildingOcclusion subject={occlusionSubject} />}
           {groundTarget && (
             <mesh
               rotation={[-Math.PI / 2, 0, 0]}
@@ -531,15 +990,21 @@ export function R3FNeighborhoodSurface({
             </mesh>
           )}
           {interactionTargets
-            .filter((target) => target.kind !== "npc")
+            .filter((target) => {
+              if (target.kind === "npc") return false;
+              if (area.zoneLayout && target.kind !== "home") return false;
+              return true;
+            })
             .map((target) => {
-              const p = point(target.x, target.y);
+              const anchor = point(target.x, target.y);
               const footprint =
-                target.kind === "npc" ? null : neighborhoodBuildingFootprint(target);
+                target.kind === "npc" || target.walkIn
+                  ? null
+                  : neighborhoodBuildingFootprint(target);
               return (
                 <mesh
                   key={target.id}
-                  position={[p[0], 1.3, p[2]]}
+                  position={[anchor[0], 1.3, anchor[2]]}
                   onClick={(event) => {
                     event.stopPropagation();
                     onSelectTarget(target.id);
@@ -547,6 +1012,8 @@ export function R3FNeighborhoodSurface({
                 >
                   {target.kind === "npc" ? (
                     <cylinderGeometry args={[0.58, 0.58, 2.6, 12]} />
+                  ) : target.walkIn ? (
+                    <boxGeometry args={[1.1, 2.4, 1.4]} />
                   ) : (
                     <boxGeometry args={[footprint!.width * unit, 2.6, footprint!.height * unit]} />
                   )}

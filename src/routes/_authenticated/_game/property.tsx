@@ -10,6 +10,7 @@ import { housingReliefQueryKey } from "@/lib/housing-relief-client";
 import { getMarketStallRentStatus, payMarketStallRent } from "@/lib/market-stall-service";
 import { stallIncomeKey } from "@/lib/stall-income-service";
 import { pageMeta } from "@/lib/seo";
+import { HomeLink } from "@/components/game/HomeLink";
 import "@/components/map/map-ui.css";
 import "@/components/game/housing/property-market.css";
 
@@ -192,7 +193,7 @@ export function PropertyPage() {
         <h1>Property</h1>
         <p>Your saved houses, stalls, businesses and shares.</p>
         <nav aria-label="Housing navigation">
-          <Link to="/house">Home</Link>
+          <HomeLink>Home</HomeLink>
           <Link to="/real-estate">Real Estate</Link>
           <Link to="/properties">Find Homes</Link>
         </nav>
@@ -252,9 +253,7 @@ export function PropertyPage() {
                       </p>
                       <div className="property-market-actions">
                         {row.is_home ? (
-                          <Link className="map-primary-button" to="/house">
-                            Open Home
-                          </Link>
+                          <HomeLink className="map-primary-button">Open Home</HomeLink>
                         ) : (
                           <button
                             className="map-primary-button"

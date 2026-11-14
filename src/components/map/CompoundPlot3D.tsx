@@ -1,6 +1,6 @@
 import { useRef, type FC } from "react";
 import { useFrame } from "@react-three/fiber";
-import type { Group, Mesh } from "three";
+import { Vector3, type Group, type Mesh } from "three";
 import { WorldMaterial } from "@/components/3d/WorldScene";
 import type { MapProperty } from "./MapCanvas";
 
@@ -69,7 +69,7 @@ export const CompoundPlot3D: FC<CompoundPlot3DProps> = ({
 
     // Smooth hover elevation and scale
     const targetScale = isSelected ? 1.08 : isHovered ? 1.05 : 1.0;
-    rootGroupRef.current.scale.lerp({ x: targetScale, y: targetScale, z: targetScale } as any, 0.18);
+    rootGroupRef.current.scale.lerp(new Vector3(targetScale, targetScale, targetScale), 0.18);
 
     // Subtle beacon glow pulse
     if (statusLightRef.current) {

@@ -3,19 +3,28 @@ import type { AvatarAnimationState, AvatarEquipment } from "@/components/game/Av
 import type { Appearance } from "@/game/avatar-appearance";
 import type { FoodDelivery } from "@/lib/food-delivery-service";
 
+/** A rectangle of the room, in room percent (see house-arrangement-guide). */
+export type GuideZoneBounds = { x0: number; x1: number; y0: number; y1: number };
+
 export type HouseRoomRendererProps = {
   houseTypeId: string;
   /** Room light switch. Off dims the room; omitted means on. */
   lightOn?: boolean;
+  /** Wall setting. True closes every wall; false cuts the front and sides away. Null keeps the home's default. */
+  wallsClosed?: boolean | null;
   /** Floor being viewed: 0 ground, 1 upstairs (duplex only). */
   activeFloor?: 0 | 1;
   /** Tapping the stairs climbs or descends. */
   onUseStairs?: () => void;
   /** The entrance door is swung open. */
   doorOpen?: boolean;
+  /** Highlighted area while an item is being placed: the guide's recommended zone. */
+  guideZone?: GuideZoneBounds | null;
   accessoryBand: string;
   slots: HouseSlot[];
   placements: HousePlacement[];
+  /** Room shown on its own (an id from houseRoomViews); omitted or null shows the whole home. */
+  roomView?: string | null;
   characterName?: string;
   appearance?: Appearance;
   gender?: string;
@@ -99,6 +108,31 @@ const GRID_MAX = 96;
 const GRID_CELL = (GRID_MAX - GRID_MIN) / HOUSE_GRID_SIZE;
 /** One grid step in room percent (the width of one cell). */
 export const HOUSE_GRID_STEP = GRID_CELL;
+
+/** Wall art hangs on the back wall: the last grid row, centred on it. */
+export const HOUSE_BACK_WALL_Y = GRID_MIN + GRID_CELL * (HOUSE_GRID_SIZE - 0.5);
+
+/** True for wall art pieces (art keys start with "wall-art"). */
+export function isWallArtKind(artKey: string | null | undefined): boolean {
+  return typeof artKey === "string" && artKey.startsWith("wall-art");
+}
+
+/** Keeps wall art on the back wall: the x is snapped to a column, the y is fixed. */
+export function snapToBackWall(x: number): [number, number] {
+  const { col } = gridCellOf(x, HOUSE_BACK_WALL_Y);
+  return [GRID_MIN + GRID_CELL * (col + 0.5), HOUSE_BACK_WALL_Y];
+}
+
+/** First free column on the back wall, or null when the wall is full. */
+export function firstFreeBackWallCell(
+  others: readonly { id: string; x?: number; y?: number }[],
+): { x: number; y: number } | null {
+  for (let col = 0; col < HOUSE_GRID_SIZE; col++) {
+    const x = GRID_MIN + GRID_CELL * (col + 0.5);
+    if (!isHouseGridCellOccupied(x, HOUSE_BACK_WALL_Y, others)) return { x, y: HOUSE_BACK_WALL_Y };
+  }
+  return null;
+}
 
 export function gridCellOf(x: number, y: number): { col: number; row: number } {
   const clamp = (value: number) =>
@@ -207,6 +241,9 @@ export function houseRearDoorCenter(houseTypeId: string, width: number): number 
   return FOUR_ROOM_HOME_TYPES.includes(houseTypeId) ? -width * 0.25 : width * 0.22;
 }
 
+/** Thickness of every wall in the room, in metres. Thin walls keep the rooms open to view. */
+export const HOUSE_WALL_THICKNESS = 0.12;
+
 export function houseWallSegments(
   width: number,
   depth: number,
@@ -215,7 +252,7 @@ export function houseWallSegments(
   rearDoorCenter: number = width * 0.22,
   closedFront = false,
 ): HouseWallSegment[] {
-  const wallThickness = 0.22;
+  const wallThickness = HOUSE_WALL_THICKNESS;
   const frontWallHeight = closedFront ? wallHeight : wallHeight * 0.48;
   const doorHeight = wallHeight * 0.82;
   const rearDoorLeft = rearDoorCenter - doorwayWidth / 2;
@@ -294,7 +331,7 @@ export function houseWallSegments(
  * bathroom (front-right). Walls are centred on the room, so the origin is the middle.
  */
 function studioPartitionSegments(width: number, depth: number, height: number): HouseWallSegment[] {
-  const thickness = 0.22;
+  const thickness = HOUSE_WALL_THICKNESS;
   const doorway = 1.1;
   const alongX = (id: string, z: number, x0: number, x1: number): HouseWallSegment => ({
     id,
@@ -311,16 +348,16 @@ function studioPartitionSegments(width: number, depth: number, height: number): 
   const kitchenDoorZ = -depth * 0.25;
   return [
     // Sitting room and bedroom, with a doorway at x = sittingDoorX.
-    alongX("sitting-bedroom-left", 0, -width / 2, sittingDoorX - doorway / 2),
-    alongX("sitting-bedroom-right", 0, sittingDoorX + doorway / 2, 0),
+    alongX("sitting-bedroom-left", STUDIO_ROOM_SPLIT.z, -width / 2, sittingDoorX - doorway / 2),
+    alongX("sitting-bedroom-right", STUDIO_ROOM_SPLIT.z, sittingDoorX + doorway / 2, 0),
     // Sitting room and kitchen, with a doorway at z = kitchenDoorZ.
-    alongZ("sitting-kitchen-back", 0, -depth / 2, kitchenDoorZ - doorway / 2),
-    alongZ("sitting-kitchen-front", 0, kitchenDoorZ + doorway / 2, 0),
+    alongZ("sitting-kitchen-back", STUDIO_ROOM_SPLIT.x, -depth / 2, kitchenDoorZ - doorway / 2),
+    alongZ("sitting-kitchen-front", STUDIO_ROOM_SPLIT.x, kitchenDoorZ + doorway / 2, 0),
     // Kitchen and bathroom, a solid wall.
-    alongX("kitchen-bath", 0, 0, width / 2),
+    alongX("kitchen-bath", STUDIO_ROOM_SPLIT.z, STUDIO_ROOM_SPLIT.x, width / 2),
     // Bedroom and bathroom, with a doorway at z = bathDoorZ.
-    alongZ("bedroom-bath-back", 0, 0, bathDoorZ - doorway / 2),
-    alongZ("bedroom-bath-front", 0, bathDoorZ + doorway / 2, depth / 2),
+    alongZ("bedroom-bath-back", STUDIO_ROOM_SPLIT.x, STUDIO_ROOM_SPLIT.z, bathDoorZ - doorway / 2),
+    alongZ("bedroom-bath-front", STUDIO_ROOM_SPLIT.x, bathDoorZ + doorway / 2, depth / 2),
   ];
 }
 
@@ -370,7 +407,7 @@ export function houseStairs(houseTypeId: string, width: number, depth: number): 
  */
 export function upstairsPartitionSegments(width: number, depth: number): HouseWallSegment[] {
   const height = 1.9;
-  const thickness = 0.22;
+  const thickness = HOUSE_WALL_THICKNESS;
   const doorway = 1.1;
   const alongX = (id: string, z: number, x0: number, x1: number): HouseWallSegment => ({
     id,
@@ -403,4 +440,138 @@ export function housePartitionSegmentsForFloor(
 ): HouseWallSegment[] {
   if (floor === 1) return houseTypeId === "duplex" ? upstairsPartitionSegments(width, depth) : [];
   return housePartitionSegments(houseTypeId, width, depth);
+}
+
+export type HouseFacing = "north" | "south" | "east" | "west";
+
+/** Side of the room the bed's headboard sits against. The bed is never rotated. */
+export const BED_HEADBOARD_SIDE: HouseFacing = "north";
+
+const OPPOSITE_FACING: Record<HouseFacing, HouseFacing> = {
+  north: "south",
+  south: "north",
+  east: "west",
+  west: "east",
+};
+
+/** A character lying on its back faces away from the headboard, so its head points at it. */
+export function sleepFacingForHeadboard(headboard: HouseFacing): HouseFacing {
+  return OPPOSITE_FACING[headboard];
+}
+
+/** Where the studio's rooms meet, in room metres from the centre (the partition lines). */
+export const STUDIO_ROOM_SPLIT = { x: 0, z: 0 } as const;
+/** Tolerance when deciding a wall sits on a room's edge. */
+const ROOM_VIEW_EDGE = 0.01;
+/** Space kept around a room when deciding which furniture belongs to it. */
+const ROOM_VIEW_MARGIN = 0.2;
+/** Wall ids ending with this are the low cutaway walls, hidden in every room view. */
+const CUTAWAY_ID_SUFFIX = "cutaway";
+
+/** Ids of the rooms a house can show on their own. Use these instead of typing the strings. */
+export const HOUSE_ROOM_ID = {
+  sitting: "sitting",
+  kitchen: "kitchen",
+  bedroom: "bedroom",
+  bathroom: "bathroom",
+  single: "room",
+} as const;
+export type HouseRoomId = (typeof HOUSE_ROOM_ID)[keyof typeof HOUSE_ROOM_ID];
+
+/** Names shown on the room picker. One place to change the wording. */
+export const HOUSE_ROOM_LABEL: Record<HouseRoomId, string> = {
+  [HOUSE_ROOM_ID.sitting]: "Sitting room",
+  [HOUSE_ROOM_ID.kitchen]: "Kitchen",
+  [HOUSE_ROOM_ID.bedroom]: "Bedroom",
+  [HOUSE_ROOM_ID.bathroom]: "Bathroom",
+  [HOUSE_ROOM_ID.single]: "Room",
+};
+
+/** Picker button that goes back to the whole home. */
+export const WHOLE_HOME_LABEL = "Whole home";
+
+/** A single room shown on its own in the room view. Bounds are in room metres, centred on the house. */
+export type HouseRoomView = {
+  id: HouseRoomId;
+  label: string;
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+};
+
+/**
+ * Rooms that can be viewed on their own. Multi-room homes split the ground floor into the four
+ * studio rooms; every other home is one room. The camera sits at +x, +z, so the walls on those
+ * sides are the ones hidden in the room view.
+ */
+export function houseRoomViews(houseTypeId: string, width: number, depth: number): HouseRoomView[] {
+  if (FOUR_ROOM_HOME_TYPES.includes(houseTypeId)) {
+    const { x, z } = STUDIO_ROOM_SPLIT;
+    const left = { minX: -width / 2, maxX: x };
+    const right = { minX: x, maxX: width / 2 };
+    const back = { minZ: -depth / 2, maxZ: z };
+    const front = { minZ: z, maxZ: depth / 2 };
+    return [
+      {
+        id: HOUSE_ROOM_ID.sitting,
+        label: HOUSE_ROOM_LABEL[HOUSE_ROOM_ID.sitting],
+        ...left,
+        ...back,
+      },
+      {
+        id: HOUSE_ROOM_ID.kitchen,
+        label: HOUSE_ROOM_LABEL[HOUSE_ROOM_ID.kitchen],
+        ...right,
+        ...back,
+      },
+      {
+        id: HOUSE_ROOM_ID.bedroom,
+        label: HOUSE_ROOM_LABEL[HOUSE_ROOM_ID.bedroom],
+        ...left,
+        ...front,
+      },
+      {
+        id: HOUSE_ROOM_ID.bathroom,
+        label: HOUSE_ROOM_LABEL[HOUSE_ROOM_ID.bathroom],
+        ...right,
+        ...front,
+      },
+    ];
+  }
+  return [
+    {
+      id: HOUSE_ROOM_ID.single,
+      label: HOUSE_ROOM_LABEL[HOUSE_ROOM_ID.single],
+      minX: -width / 2,
+      maxX: width / 2,
+      minZ: -depth / 2,
+      maxZ: depth / 2,
+    },
+  ];
+}
+
+/** Whether a point (room metres) lies inside a room view, with a small margin at the edges. */
+export function roomViewContains(
+  room: HouseRoomView,
+  x: number,
+  z: number,
+  margin = ROOM_VIEW_MARGIN,
+): boolean {
+  return (
+    x >= room.minX - margin &&
+    x <= room.maxX + margin &&
+    z >= room.minZ - margin &&
+    z <= room.maxZ + margin
+  );
+}
+
+/**
+ * Walls on the camera's side of the room, and the low cutaway walls, are hidden in the room view,
+ * so the room reads like the reference cutaway.
+ */
+export function roomViewHidesSegment(segment: HouseWallSegment, room: HouseRoomView): boolean {
+  const [x, , z] = segment.position;
+  if (segment.id.endsWith(CUTAWAY_ID_SUFFIX)) return true;
+  return x >= room.maxX - ROOM_VIEW_EDGE || z >= room.maxZ - ROOM_VIEW_EDGE;
 }

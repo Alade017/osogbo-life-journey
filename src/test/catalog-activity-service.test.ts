@@ -81,13 +81,18 @@ describe("catalog activity service", () => {
     });
   });
 
-
   it("distinguishes expected activity-rule rejections from session failures", () => {
-    expect(isExpectedActivityRejection("This activity is cooling down. Try again in 30 seconds.")).toBe(true);
+    expect(
+      isExpectedActivityRejection("This activity is cooling down. Try again in 30 seconds."),
+    ).toBe(true);
     expect(isExpectedActivityRejection("Travel to the activity location first")).toBe(true);
     expect(isExpectedActivityRejection("Requires Level 5.")).toBe(true);
     expect(isExpectedActivityRejection("Resume your personal simulation first")).toBe(true);
-    expect(isExpectedActivityRejection("Simulation changed on another device. Reconnect before continuing.")).toBe(false);
+    expect(
+      isExpectedActivityRejection(
+        "Simulation changed on another device. Reconnect before continuing.",
+      ),
+    ).toBe(false);
     expect(isExpectedActivityRejection("Failed to fetch")).toBe(false);
   });
 

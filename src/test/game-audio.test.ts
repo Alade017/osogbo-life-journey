@@ -249,6 +249,51 @@ describe("game music playback", () => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
+  it("plays a continuous layered ambient soundscape when only ambience is enabled", async () => {
+    const audio = await import("../lib/game-audio");
+    const source = vi.spyOn(FakeContext.prototype, "createBufferSource");
+    const enabled = await audio.enableGameAudio({
+      master: 0.75,
+      music: 0,
+      effects: 0,
+      environment: 0.5,
+    });
+    expect(enabled).toBe(true);
+    expect(audio.isGameAudioActive()).toBe(true);
+
+    // One looping source is created for the ambience bed, even with music/effects off.
+    expect(source).toHaveBeenCalledTimes(1);
+    expect(source.mock.results[0]!.value.loop).toBe(true);
+    expect(source.mock.results[0]!.value.start).toHaveBeenCalledTimes(1);
+    audio.setGameAudioLevels({
+      master: 0.75,
+      music: 0,
+      effects: 0,
+      environment: 0.75,
+    });
+    const ambienceGain = contexts[0]!.gains[1]!.gain.setTargetAtTime;
+    expect(ambienceGain).toHaveBeenLastCalledWith(expect.any(Number), 0, 0.12);
+    expect(ambienceGain.mock.calls[ambienceGain.mock.calls.length - 1]?.[0]).toBeCloseTo(0.4125);
+    expect(audio.isGameAudioActive()).toBe(true);
+    await audio.disableGameAudio();
+  });
+  it("stops and recreates the ambient source when its channel is toggled", async () => {
+    const audio = await import("../lib/game-audio");
+    const source = vi.spyOn(FakeContext.prototype, "createBufferSource");
+    const levels = { master: 0.75, music: 0, effects: 0, environment: 0.5 };
+    await audio.enableGameAudio(levels);
+    expect(source).toHaveBeenCalledTimes(1);
+    const firstSource = source.mock.results[0]!.value;
+
+    audio.setGameAudioLevels({ ...levels, environment: 0 });
+    expect(firstSource.stop).toHaveBeenCalledTimes(1);
+    expect(firstSource.disconnect).toHaveBeenCalledTimes(1);
+
+    audio.setGameAudioLevels(levels);
+    expect(source).toHaveBeenCalledTimes(2);
+    await audio.disableGameAudio();
+  });
+
   it("does not fetch or create media for an empty catalog", async () => {
     const audio = await import("../lib/game-audio");
     audio.configureGameMusic("player");

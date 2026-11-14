@@ -3,7 +3,7 @@ import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { PlayableNeighborhood } from "@/components/game/PlayableNeighborhood";
-import type { PhaserNeighborhoodHandle } from "@/game/phaser-neighborhood";
+import type { NeighborhoodSceneHandle } from "@/game/neighborhood-types";
 import { toWorld } from "@/game/neighborhood-model";
 
 const state = vi.hoisted(() => ({
@@ -124,7 +124,7 @@ vi.mock("@/components/game/R3FNeighborhoodSurface", () => ({
     interactionTargets: readonly { id: string }[];
     onSelectTarget: (targetId: string) => void;
     onNpcArrive: (npcId: string, x: number, y: number) => void;
-    onScene: (handle: PhaserNeighborhoodHandle | null) => void;
+    onScene: (handle: NeighborhoodSceneHandle | null) => void;
   }) => {
     state.scene({
       area: props.district.area,
@@ -192,6 +192,7 @@ function room(location: string) {
       listeners.leave = fn;
     },
     send: vi.fn(),
+    onMessage: vi.fn(),
     leave: vi.fn(async () => {}),
     listeners,
   };
@@ -258,7 +259,7 @@ async function changeLocation(location: string) {
 it("loads Oja-Oba's confirmed room and correct origin without fetching or exposing a personal home", async () => {
   state.location = "market";
   show();
-  await screen.findByText(/Tap or click the ground to walk/);
+  await screen.findByText(/Tap the ground to walk/);
   await screen.findByText("R3F neighbourhood");
   expect(state.join).toHaveBeenCalledWith("market");
   expect(screen.getByRole("heading", { name: "Oja-Oba Market neighbourhood" })).toBeInTheDocument();
@@ -391,7 +392,7 @@ it("does not join inactive locations", async () => {
 it("joins a mapped city-world blueprint beyond the two authored districts", async () => {
   state.location = "school";
   show();
-  await screen.findByText(/Tap or click the ground to walk/);
+  await screen.findByText(/Tap the ground to walk/);
   expect(state.join).toHaveBeenCalledWith("school");
   expect(state.scene.mock.lastCall?.[0].area.slug).toBe("student-district");
   expect(state.scene.mock.lastCall?.[0].area.roads.length).toBeGreaterThan(2);
@@ -405,14 +406,14 @@ it("waits for the initial authoritative room state before publishing players", a
   state.join.mockResolvedValue(pending);
   show();
   await waitFor(() => expect(pending.listeners.publish).toBeDefined());
-  expect(screen.queryByText(/Tap or click the ground to walk/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/Tap the ground to walk/)).not.toBeInTheDocument();
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   Object.defineProperty(pending, "state", {
     value: { players: initialPlayers },
     configurable: true,
   });
   act(() => pending.listeners.publish?.());
-  await screen.findByText(/Tap or click the ground to walk/);
+  await screen.findByText(/Tap the ground to walk/);
   await screen.findByText("R3F neighbourhood");
 });
 
@@ -420,7 +421,7 @@ it("adds only the confirmed local activity animation to the scene player snapsho
   state.location = "market";
   state.currentAction = { animation: "socializing" };
   show();
-  await screen.findByText(/Tap or click the ground to walk/);
+  await screen.findByText(/Tap the ground to walk/);
   await screen.findByText("R3F neighbourhood");
 
   const players = state.scene.mock.lastCall?.[0].playersRef.current;
@@ -441,7 +442,7 @@ it("disposes a room whose join completes after navigation to another district", 
   show();
   await waitFor(() => expect(state.join).toHaveBeenCalledWith("city"));
   await changeLocation("market");
-  await screen.findByText(/Tap or click the ground to walk/);
+  await screen.findByText(/Tap the ground to walk/);
   await screen.findByText("R3F neighbourhood");
   const late = room("city");
   await act(async () => {
@@ -465,8 +466,11 @@ it("reports a bounded timeout when joining never resolves", async () => {
   await act(async () => {
     await vi.advanceTimersByTimeAsync(15_000);
   });
-  expect(screen.getByRole("alert")).toHaveTextContent(/taking too long to connect/i);
-  act(() => screen.getByRole("button", { name: "Retry connection" }).click());
+  expect(screen.queryByRole("button", { name: "Retry connection" })).not.toBeInTheDocument();
+  expect(screen.queryByText(/Connected ·/)).not.toBeInTheDocument();
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(1_500);
+  });
   expect(state.join).toHaveBeenCalledTimes(2);
 });
 
@@ -489,6 +493,10 @@ it("closes a room that never publishes its initial authoritative state", async (
   await act(async () => {
     await vi.advanceTimersByTimeAsync(10_000);
   });
-  expect(screen.getByRole("alert")).toHaveTextContent(/world state did not finish loading/i);
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   expect(pending.leave).toHaveBeenCalledOnce();
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(1_500);
+  });
+  expect(state.join).toHaveBeenCalledTimes(2);
 });

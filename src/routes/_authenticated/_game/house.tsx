@@ -13,11 +13,21 @@ import {
   firstFreeHouseGridCell,
   houseDoorThreshold,
   houseStairs,
+  BED_HEADBOARD_SIDE,
+  sleepFacingForHeadboard,
   isHouseGridCellOccupied,
   snapToHouseGrid,
+  firstFreeBackWallCell,
+  isWallArtKind,
+  snapToBackWall,
   type DraftMove,
 } from "@/components/game/housing/house-room-contract";
 import { HousePlacementBar } from "@/components/game/housing/HousePlacementBar";
+import {
+  arrangementWarnings,
+  guideFor,
+  houseDoorPercentX,
+} from "@/components/game/housing/house-arrangement-guide";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -26,12 +36,20 @@ import {
   House,
   Sunrise,
   WifiOff,
+  DoorClosed,
   DoorOpen,
   LoaderCircle,
   Lightbulb,
   LightbulbOff,
 } from "lucide-react";
 import { fetchHouseLight, setHouseLight } from "@/lib/house-light";
+import { fetchHouseWalls, setHouseWalls } from "@/lib/house-walls";
+import {
+  FOUR_ROOM_HOME_TYPES,
+  houseRoomViews,
+  roomViewContains,
+  WHOLE_HOME_LABEL,
+} from "@/components/game/housing/house-room-contract";
 import { HouseEditSheets } from "@/components/game/housing/HouseEditSheets";
 import { HouseCatalogue } from "@/components/game/housing/HouseCatalogue";
 import { HomeFoodDeliveryPanel } from "@/components/game/housing/HomeFoodDeliveryPanel";
@@ -83,6 +101,7 @@ import { pageMeta } from "@/lib/seo";
 import "@/components/game/housing/house-screen.css";
 import "@/components/game/housing/house-light-switch.css";
 import "@/components/game/housing/house-floor-label.css";
+import "@/components/game/housing/house-room-view.css";
 
 /** Seconds of sleep for a full rest. */
 const SLEEP_FULL_REST_SECONDS = 120;
@@ -710,6 +729,10 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   });
 
   const homePresence = useMutation({
+    // Entering from outside starts the door walk; the effect below plays it once the page sees it.
+    onMutate: (command) => {
+      if (command === "enter_player_home") beginTransition("entering", "Heading to your door", 3);
+    },
     mutationFn: async (command: "enter_player_home" | "leave_player_home") => {
       const { data, error } = await supabase.rpc(command);
       if (error) throw new Error(error.message);
@@ -725,7 +748,8 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       setActivityError("");
       toast.success(command === "enter_player_home" ? "You're home." : "You went outside.");
     },
-    onError: (error: Error) => {
+    onError: (error: Error, command) => {
+      if (command === "enter_player_home") endTransition();
       setActivityError(error.message);
       toast.error(error.message);
     },
@@ -743,6 +767,17 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     HOUSE_ROOM_SIZE[serverState?.house?.house_type_id ?? "shared-room"] ??
     HOUSE_ROOM_SIZE["shared-room"]!;
   const movement = useHouseMovement(serverState?.house?.id ?? "none", [0, 0.06, roomDepth * 0.18]);
+  // The room view shows one room close up. It follows the character until a room or the whole home is picked.
+  const roomViews = serverState?.house
+    ? houseRoomViews(serverState.house.house_type_id, roomWidth, roomDepth)
+    : [];
+  const [pinnedRoom, setPinnedRoom] = useState<string | null | undefined>(undefined);
+  const followedRoom =
+    roomViews.find((room) => roomViewContains(room, movement.position[0], movement.position[2]))
+      ?.id ??
+    roomViews[0]?.id ??
+    null;
+  const roomView = pinnedRoom === undefined ? followedRoom : pinnedRoom;
   const [walkingTask, setWalkingTask] = useState<string | null>(null);
   const interactionVersion = useRef(0);
   const interactionLock = useRef(false);
@@ -942,6 +977,26 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     enabled: !!character?.id,
   });
   const lightOn = lightQuery.data ?? true;
+  const wallsQuery = useQuery({
+    queryKey: ["house-walls", character?.id ?? "anonymous"],
+    queryFn: fetchHouseWalls,
+    enabled: !!character?.id,
+  });
+  const wallsSetting = wallsQuery.data ?? null;
+  const wallsMutation = useMutation({
+    mutationFn: (closed: boolean) => setHouseWalls(closed),
+    onMutate: async (closed: boolean) => {
+      const key = ["house-walls", character?.id ?? "anonymous"];
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<boolean | null>(key);
+      queryClient.setQueryData(key, closed);
+      return { previous };
+    },
+    onError: (error: Error, _closed, context) => {
+      queryClient.setQueryData(["house-walls", character?.id ?? "anonymous"], context?.previous);
+      toast.error(error.message);
+    },
+  });
   const lightMutation = useMutation({
     mutationFn: (on: boolean) => setHouseLight(on),
     onMutate: async (on: boolean) => {
@@ -1015,18 +1070,34 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       ? gameTime.simulation.currentAction
       : null;
 
-  const finishSleep = async (cancel: boolean) => {
+  const wakeUp = async () => {
     if (!activeSleep || isOffline || !gameTime.ready || gameTime.busy) return;
+
     setActivityError("");
-    const error = cancel
-      ? await gameTime.interrupt(activeSleep.requestId)
-      : await gameTime.complete(activeSleep.requestId, "sleep");
+    const error = await gameTime.complete(activeSleep.requestId, "sleep");
+
     if (error) {
       setActivityError(error);
       toast.error(error);
       return;
     }
-    toast.success(cancel ? "Sleep cancelled." : "You woke up. Your energy is up to date.");
+
+    toast.success("You woke up.");
+  };
+
+  const cancelSleep = async () => {
+    if (!activeSleep || isOffline || !gameTime.ready || gameTime.busy) return;
+
+    setActivityError("");
+    const error = await gameTime.interrupt(activeSleep.requestId);
+
+    if (error) {
+      setActivityError(error);
+      toast.error(error);
+      return;
+    }
+
+    toast.success("Sleep cancelled.");
   };
 
   const requestAction = (args: Parameters<typeof actionMutation.mutate>[0]) => {
@@ -1055,6 +1126,18 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const draftOccupied = draftMove
     ? isHouseGridCellOccupied(draftMove.x, draftMove.y, scenePlacements, draftMove.placementId)
     : false;
+  const guide =
+    draftPlacement && draftMove ? guideFor(draftPlacement.slot_type, draftPlacement.art_key) : null;
+  const arrangementNotes =
+    draftPlacement && draftMove
+      ? arrangementWarnings(
+          draftPlacement.slot_type,
+          draftPlacement.art_key,
+          draftMove.x,
+          draftMove.y,
+          houseDoorPercentX(houseTypeId ?? ""),
+        )
+      : [];
   const startMove = (placement: HousePlacement) => {
     if (isOffline || actionMutation.isPending || !editing || activeSleep) return;
     const start = draftStartFor(placement, slots);
@@ -1088,6 +1171,11 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const nudgeDraft = (dx: number, dy: number) =>
     setDraftMove((current) => {
       if (!current) return current;
+      // Wall art slides along the back wall only.
+      if (isWallArtKind(draftPlacement?.art_key)) {
+        const [wallX, wallY] = snapToBackWall(current.x + dx * HOUSE_GRID_STEP);
+        return { ...current, x: wallX, y: wallY };
+      }
       const [x, y] = snapToHouseGrid(
         current.x + dx * HOUSE_GRID_STEP,
         current.y + dy * HOUSE_GRID_STEP,
@@ -1327,16 +1415,18 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         ? [taskPoint[0], 0.28, taskPoint[2] + 0.25]
         : movement.position;
   const taskFacing =
-    taskPoint && !seated
-      ? Math.abs(taskPoint[0] - movement.position[0]) >
-        Math.abs(taskPoint[2] - movement.position[2])
-        ? taskPoint[0] > movement.position[0]
-          ? "east"
-          : "west"
-        : taskPoint[2] > movement.position[2]
-          ? "south"
-          : "north"
-      : "south";
+    taskPoint && currentActivity?.animation === "sleeping"
+      ? sleepFacingForHeadboard(BED_HEADBOARD_SIDE)
+      : taskPoint && !seated
+        ? Math.abs(taskPoint[0] - movement.position[0]) >
+          Math.abs(taskPoint[2] - movement.position[2])
+          ? taskPoint[0] > movement.position[0]
+            ? "east"
+            : "west"
+          : taskPoint[2] > movement.position[2]
+            ? "south"
+            : "north"
+        : "south";
   const taskPose = collectingPackage
     ? ("collect" as const)
     : currentActivity
@@ -1357,7 +1447,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
 
   if (stateQuery.isError && !snapshot)
     return (
-      <div className="house-page">
+      <div className="house-page house-page-error">
         <section className="house-error-card" role="alert">
           <p>{houseLoadMessage(stateQuery.error)}</p>
           <button type="button" onClick={() => void stateQuery.refetch()}>
@@ -1418,9 +1508,12 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         aria-label={`${house.house_type.label} room`}
       >
         <HouseRoomRenderer
+          roomView={activeFloor === 0 ? roomView : null}
+          guideZone={guide?.zoneBounds ?? null}
           inputBlocked={taskBusy || (!editing && !!selectedPlacement && !!selectedAction)}
           houseTypeId={house.house_type_id}
           lightOn={lightOn}
+          wallsClosed={wallsSetting}
           accessoryBand={canonicalHome?.accessoryBand ?? "basic"}
           characterName={character?.name ?? "Your character"}
           appearance={appearance}
@@ -1501,7 +1594,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
                   ? "Updating location..."
                   : isInsideHome
                     ? activeSleep
-                      ? "Wake up to go outside"
+                      ? "Wake up first"
                       : "Go outside"
                     : "Travel home"}
               </span>
@@ -1557,72 +1650,43 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             onCollect={(orderId) => void collectPackage(orderId)}
           />
         )}
-        {(movement.walking || walkingTask || startingTask || (timedActivity && !activeSleep)) && (
-          <div
-            className="house-sleep-pill house-task-pill"
-            role="region"
-            aria-label="Current home task"
-          >
-            <div>
-              <strong>
-                {collectingPackage
-                  ? "Collecting package"
-                  : walkingTask
-                    ? "Walking � " + walkingTask
-                    : startingTask
-                      ? "Connecting�"
-                      : timedActivity
-                        ? ACTION_CATALOG[timedActivity.actionId].name
-                        : "Walking"}
-              </strong>
-              {!(timedActivity && taskTiming) && (
-                <span role="status">
-                  {movement.walking
-                    ? "On the way"
-                    : taskTiming && timedActivity
-                      ? displayedElapsed >= taskTiming.duration
-                        ? "Confirming completion�"
-                        : Math.ceil(taskTiming.duration - displayedElapsed) + "s remaining"
-                      : "Please wait"}
-                </span>
-              )}
-            </div>
-            {timedActivity && taskTiming && (
-              <ProgressRing
-                percent={(displayedElapsed / (taskTiming.duration || 1)) * 100}
-                label={`${Math.max(0, Math.ceil(taskTiming.duration - displayedElapsed))}s`}
-              />
+        {(movement.walking ||
+          walkingTask ||
+          startingTask ||
+          (timedActivity && !activeSleep) ||
+          activeSleep) && (
+          <div className="house-task-actions" role="group" aria-label="Task controls">
+            {activeSleep ? (
+              <>
+                <button
+                  type="button"
+                  className="house-task-wake"
+                  disabled={isOffline || !gameTime.ready || gameTime.busy}
+                  onClick={() => void wakeUp()}
+                >
+                  <Sunrise size={16} aria-hidden="true" />
+                  Wake up
+                </button>
+
+                <button
+                  type="button"
+                  className="house-task-cancel"
+                  disabled={isOffline || !gameTime.ready || gameTime.busy}
+                  onClick={() => void cancelSleep()}
+                >
+                  Cancel sleep
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                className="house-task-cancel"
+                disabled={startingTask || gameTime.busy || cancellingTask}
+                onClick={() => void cancelTask()}
+              >
+                {cancellingTask ? "Cancelling…" : "Cancel"}
+              </button>
             )}
-            <button
-              type="button"
-              disabled={startingTask || gameTime.busy || cancellingTask}
-              onClick={() => void cancelTask()}
-            >
-              {cancellingTask ? "Cancelling�" : "Cancel"}
-            </button>
-          </div>
-        )}
-        {activeSleep && (
-          <div className="house-sleep-pill" role="region" aria-label="Sleep controls">
-            <ProgressRing percent={sleepProgress} label={`${sleepRemaining}s`} />
-            <span role="status">
-              <strong>Asleep</strong>
-            </span>
-            <button
-              type="button"
-              disabled={isOffline || !gameTime.ready || gameTime.busy}
-              onClick={() => void finishSleep(false)}
-            >
-              Wake up
-            </button>
-            <button
-              type="button"
-              aria-label="Cancel sleep"
-              disabled={isOffline || !gameTime.ready || gameTime.busy}
-              onClick={() => void finishSleep(true)}
-            >
-              ✕
-            </button>
           </div>
         )}
       </section>
@@ -1642,6 +1706,58 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             <LightbulbOff size={20} aria-hidden="true" />
           )}
         </button>
+      )}
+      {!editing && (
+        <button
+          type="button"
+          className="house-icon-button house-walls-switch"
+          aria-pressed={wallsSetting ?? FOUR_ROOM_HOME_TYPES.includes(house.house_type_id)}
+          aria-label={
+            (wallsSetting ?? FOUR_ROOM_HOME_TYPES.includes(house.house_type_id))
+              ? "Open the walls"
+              : "Close the walls"
+          }
+          title={
+            (wallsSetting ?? FOUR_ROOM_HOME_TYPES.includes(house.house_type_id))
+              ? "Walls closed"
+              : "Walls open"
+          }
+          disabled={isOffline || !character?.id || wallsMutation.isPending}
+          onClick={() =>
+            wallsMutation.mutate(
+              !(wallsSetting ?? FOUR_ROOM_HOME_TYPES.includes(house.house_type_id)),
+            )
+          }
+        >
+          {(wallsSetting ?? FOUR_ROOM_HOME_TYPES.includes(house.house_type_id)) ? (
+            <DoorClosed size={20} aria-hidden="true" />
+          ) : (
+            <DoorOpen size={20} aria-hidden="true" />
+          )}
+        </button>
+      )}
+      {!editing && activeFloor === 0 && roomViews.length > 0 && (
+        <div className="house-room-views" role="group" aria-label="Room view">
+          {roomViews.map((room) => (
+            <button
+              key={room.id}
+              type="button"
+              aria-pressed={roomView === room.id}
+              className={roomView === room.id ? "is-active" : undefined}
+              onClick={() => setPinnedRoom(room.id)}
+            >
+              {room.label}
+            </button>
+          ))}
+          <button
+            type="button"
+            aria-pressed={roomView === null}
+            className={roomView === null ? "is-active" : undefined}
+            onClick={() => setPinnedRoom(null)}
+          >
+            {WHOLE_HOME_LABEL}
+          </button>
+        </div>
       )}
       {!editing && stairs && (
         <span className="house-floor-label" role="status" aria-live="polite">
@@ -1700,7 +1816,10 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           onClose={() => setCatalogueOpen(false)}
           onBuy={(itemId) => requestAction({ action: "buy", itemId })}
           onPlaceOwned={(itemId) => {
-            const cell = firstFreeHouseGridCell(floorPlacements);
+            const artKey = inventory.find((entry) => entry.item_id === itemId)?.art_key;
+            const cell = isWallArtKind(artKey)
+              ? firstFreeBackWallCell(floorPlacements)
+              : firstFreeHouseGridCell(floorPlacements);
             if (!cell) {
               toast.error("There is no free spot in your home.");
               return;
@@ -1730,6 +1849,8 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           onRotate={turnDraft}
           onCancel={cancelMove}
           onPlace={placeMove}
+          guideHint={guide?.hint}
+          warnings={arrangementNotes}
         />
       )}
     </div>

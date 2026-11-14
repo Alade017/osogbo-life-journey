@@ -1,11 +1,9 @@
 /**
- * Presentation tuning for the procedural character. Lengths are fractions of the character's
- * body height unless a name says otherwise. Simulation positions never read these values.
+ * Presentation tuning for the character body. Lengths are fractions of the character's body
+ * height unless a name says otherwise. Simulation positions never read these values.
  */
 export const CHARACTER_SOCKETS = {
-  /** Neck pivot, where the head turns. */
-  neck: 0.68,
-  /** Anchor for headwear and hair accessories. */
+  /** Anchor for headwear and hair accessories, at the top of the head. */
   head: 1.0,
   /** Anchor for back-worn items such as bags. Body-space origin, so existing offsets stay valid. */
   back: 0,
@@ -14,9 +12,8 @@ export const CHARACTER_SOCKETS = {
 export const CHARACTER_MOTION = {
   /** Per-second rate for blending between poses so changes fade instead of snapping. */
   fadeRate: 10,
-  /** Arm and leg swing amplitude in radians while walking. */
-  armSwing: 0.5,
-  legSwing: 0.4,
+  /** Per-second rate for gliding to a new position, so moves are walked, never teleported. */
+  glideRate: 6,
   /** Body rise on each footfall, as a fraction of height. */
   bob: 0.025,
   /** Vertical squash on each footfall (negative scale delta), as a fraction. */
@@ -37,13 +34,6 @@ export const CHARACTER_GROUND = {
   shadowOpacity: 0.22,
   shadowColor: "#2b2118",
 } as const;
-
-export const CHARACTER_OUTLINE = {
-  /** Torso outline thickness, as a fraction of height. */
-  thickness: 0.012,
-  color: "#2b2118",
-} as const;
-
 export const CHARACTER_CLOTH = {
   /** Outfit palette indices that are drawn with the Adire resist pattern instead of plain colour. */
   patternedOutfits: [3] as readonly number[],
@@ -54,12 +44,4 @@ export const CHARACTER_CLOTH = {
     /** Motif cells across the texture; each cell holds one resist dot and two diagonal strokes. */
     cells: 8,
   },
-} as const;
-
-export const CHARACTER_HAND = {
-  /** Which arm carries the right-hand socket: +1 is the positive-x arm. */
-  socketSide: 1,
-  /** Forward reach for the interact pose, in radians. */
-  reachAngle: -1.1,
-  reachSway: 0.08,
 } as const;

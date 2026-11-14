@@ -115,7 +115,7 @@ export function PartyExperience({
   ].find(Boolean);
 
   return (
-    <div className={compact ? "grid gap-5 pb-4" : "grid gap-5 pb-28"}>
+    <div className={compact ? "phone-party-body" : "grid gap-5 pb-28"}>
       {!compact && (
         <PageHeader
           title="Party"
@@ -145,7 +145,10 @@ export function PartyExperience({
         </div>
       )}
 
-      <section className="game-panel grid gap-2 p-4" aria-label="Your mood">
+      <section
+        className={compact ? "phone-party-mood" : "game-panel grid gap-2 p-4"}
+        aria-label="Your mood"
+      >
         <div className="flex items-center justify-between gap-3">
           <p className="font-semibold">Mood: {partyMoodLabel(score)}</p>
           <p className="text-sm tabular-nums text-muted-foreground">
@@ -167,7 +170,11 @@ export function PartyExperience({
         )}
       </section>
 
-      <div role="tablist" aria-label="Party sections" className="flex gap-2 overflow-x-auto">
+      <div
+        role="tablist"
+        aria-label="Party sections"
+        className={compact ? "phone-party-tabs" : "flex gap-2 overflow-x-auto"}
+      >
         {TABS.map((item) => (
           <button
             key={item.id}
@@ -175,11 +182,15 @@ export function PartyExperience({
             role="tab"
             aria-selected={tab === item.id}
             onClick={() => setTab(item.id)}
-            className={`min-h-11 rounded-full px-3 text-sm font-semibold ${
-              tab === item.id
-                ? "bg-primary text-primary-foreground"
-                : "bg-card text-foreground border border-border"
-            }`}
+            className={
+              compact
+                ? `phone-party-tab${tab === item.id ? " is-active" : ""}`
+                : `min-h-11 rounded-full px-3 text-sm font-semibold ${
+                    tab === item.id
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-card text-foreground border border-border"
+                  }`
+            }
           >
             {item.label}
           </button>

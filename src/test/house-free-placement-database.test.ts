@@ -69,6 +69,8 @@ describe("free furniture placement database", () => {
       (entry: { tag: string }) =>
         ![
           "0075_remove_orphaned_player_data",
+          "0083_studio_room_layout",
+          "0084_other_homes_room_layout",
           "0077_market_stall_rent_categories_sales",
           "0079_free_house_placement",
         ].includes(entry.tag),
@@ -81,6 +83,9 @@ describe("free furniture placement database", () => {
       ),
     );
     await db.exec(readFileSync("drizzle/migrations/0079_free_house_placement.sql", "utf8"));
+    // 0085 drops the four-argument house_place_free, but 0079 is replayed after it here and
+    // brings that overload back. Drop it again so the five-argument version is the only one.
+    await db.exec("drop function if exists public.house_place_free(uuid, text, numeric, numeric);");
     await db.query("insert into auth.users(id) values($1)", [userId]);
   }, 180_000);
 

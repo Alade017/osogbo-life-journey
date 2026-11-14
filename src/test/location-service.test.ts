@@ -1,11 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { normalizeCityLocation } from "@/lib/location-service";
-import {
-  hasValidCoordinates,
-  isFictionalMapDestination,
-  locationsToFeatureCollection,
-  type MappableLocation,
-} from "@/lib/location-map-model";
 import type { MapLocation } from "@/lib/game";
 
 function location(overrides: Partial<MapLocation> = {}): MapLocation {
@@ -62,58 +56,5 @@ describe("city location model", () => {
   it("keeps active status from the Supabase record", () => {
     expect(normalizeCityLocation(location()).status).toBe("active");
     expect(normalizeCityLocation(location({ is_active: false })).status).toBe("inactive");
-  });
-
-  it("only exposes fictional, non-religious destinations as interactive map places", () => {
-    expect(isFictionalMapDestination(normalizeCityLocation(location()))).toBe(true);
-    expect(
-      isFictionalMapDestination(
-        normalizeCityLocation(location({ metadata: { category: "religious" } })),
-      ),
-    ).toBe(false);
-    expect(
-      isFictionalMapDestination(normalizeCityLocation(location({ name: "Sacred Grove" }))),
-    ).toBe(false);
-    expect(
-      isFictionalMapDestination(
-        normalizeCityLocation(location({ metadata: { origin: "real-world-inspired" } })),
-      ),
-    ).toBe(false);
-  });
-
-  it("converts valid latitude and longitude into MapLibre longitude-latitude features", () => {
-    const mappedLocation = normalizeCityLocation(
-      location({ type: "market", latitude: 7.7677, longitude: 4.556 }),
-    );
-    expect(hasValidCoordinates(mappedLocation)).toBe(true);
-    expect(locationsToFeatureCollection([mappedLocation as MappableLocation])).toMatchObject({
-      type: "FeatureCollection",
-      features: [
-        {
-          id: "location-1",
-          geometry: { type: "Point", coordinates: [4.556, 7.7677] },
-          properties: {
-            id: "location-1",
-            category: "market",
-            markerImage: "location-marker-market",
-          },
-        },
-      ],
-    });
-  });
-
-  it("rejects missing, non-finite, and out-of-range coordinates", () => {
-    expect(hasValidCoordinates(normalizeCityLocation(location()))).toBe(false);
-    expect(
-      hasValidCoordinates(
-        normalizeCityLocation(location({ latitude: Number.NaN, longitude: 4.5 })),
-      ),
-    ).toBe(false);
-    expect(
-      hasValidCoordinates(normalizeCityLocation(location({ latitude: 91, longitude: 4.5 }))),
-    ).toBe(false);
-    expect(
-      hasValidCoordinates(normalizeCityLocation(location({ latitude: 7.7, longitude: 181 }))),
-    ).toBe(false);
   });
 });

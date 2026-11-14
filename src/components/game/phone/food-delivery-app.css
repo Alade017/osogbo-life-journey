@@ -1,0 +1,196 @@
+.phone-service-screen.food-app {
+  gap: 14px;
+  padding: 14px;
+  min-width: 0;
+}
+
+.food-app .food-hero {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 9px 11px;
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--card);
+  box-shadow: var(--elevation-card);
+}
+
+.food-app .food-hero-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 12%, var(--card));
+}
+
+.food-app .food-hero-icon svg {
+  width: 20px;
+  height: 20px;
+}
+.food-app .food-hero-copy {
+  min-width: 0;
+}
+.food-app .food-eyebrow,
+.food-section-eyebrow {
+  display: block;
+  margin: 0;
+  color: var(--primary);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.food-app .food-hero h2 {
+  margin: 2px 0 3px;
+  font-size: 1.16rem;
+  line-height: 1.1;
+}
+.food-app .food-hero-copy > p:last-child {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+.food-app .food-wallet {
+  grid-column: 1 / -1;
+  justify-self: start;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 12%, var(--card));
+  color: var(--primary);
+  font-size: 0.73rem;
+  font-weight: 800;
+}
+
+.food-app .food-kitchen-field,
+.food-app .food-card {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 17px;
+  background: var(--card);
+}
+.food-app .food-kitchen-field {
+  gap: 5px;
+}
+.food-app .food-card {
+  display: grid;
+  gap: 12px;
+}
+.food-app .food-card-title {
+  margin: 2px 0 0;
+  font-size: 0.95rem;
+}
+.food-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--primary);
+}
+.food-section-heading h3 {
+  color: var(--foreground);
+}
+.food-app .food-add-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.food-app .food-add-button {
+  white-space: nowrap;
+}
+.food-app .food-basket {
+  gap: 8px;
+}
+.food-app .food-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 54px auto;
+  gap: 7px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--background);
+}
+.food-app .food-line > div {
+  min-width: 0;
+}
+.food-app .food-line > div strong {
+  display: block;
+  overflow-wrap: anywhere;
+  font-size: 0.8rem;
+}
+.food-app .food-line > div small {
+  color: var(--muted-foreground);
+  font-size: 0.69rem;
+}
+.food-app .food-line > strong {
+  font-size: 0.76rem;
+  white-space: nowrap;
+}
+.food-app .food-line .food-remove {
+  grid-column: 1 / -1;
+  justify-self: end;
+  min-height: 30px;
+  padding: 3px 9px;
+  background: color-mix(in srgb, var(--destructive) 10%, var(--card));
+  color: var(--destructive);
+}
+.food-app .food-checkout {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: var(--elevation-card);
+}
+.food-app .food-checkout > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 5px;
+}
+.food-app .food-checkout > div > small {
+  width: 100%;
+}
+.food-app .food-checkout > button {
+  width: 100%;
+}
+.food-app .phone-delivery-records {
+  gap: 10px;
+  margin-top: 2px;
+}
+.food-app .food-record-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 14px;
+}
+.food-app .food-record-top {
+  grid-column: 1 / -1;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+.food-app .food-record-top strong {
+  font-size: 0.82rem;
+}
+.food-app .food-record-top small {
+  grid-column: 1 / -1;
+}
+.food-app .food-record-state {
+  align-self: start;
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 12%, var(--card));
+  color: var(--primary);
+  font-size: 0.67rem;
+  font-weight: 700;
+}
+.food-app .food-record-details {
+  min-width: 0;
+}
+.food-app .food-record-total {
+  align-self: end;
+  font-size: 0.78rem;
+}

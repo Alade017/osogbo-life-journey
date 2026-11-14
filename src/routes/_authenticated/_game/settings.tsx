@@ -10,6 +10,7 @@ import {
   Mail,
   Music2,
   ShieldCheck,
+  LayoutGrid,
   Sparkles,
   Eye,
   UserRound,
@@ -21,8 +22,9 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { q, rpc } from "@/lib/game";
+import { parseAppTileStyle, type AppTileStyle } from "@/lib/app-tile-style";
 import { pageMeta } from "@/lib/seo";
-import { Avatar } from "@/components/game/Avatar";
+import { CharacterPreview } from "@/components/3d/CharacterPreview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,7 +45,6 @@ import {
 import {
   disableGameAudio,
   enableGameAudio,
-  playGameSound,
   readGameAudioLevels,
   setGameAudioLevels,
 } from "@/lib/game-audio";
@@ -62,6 +63,7 @@ type Profile = {
   effects_enabled: boolean;
   sound_enabled: boolean;
   reduced_motion: boolean;
+  app_tile_style: string;
 };
 
 type Patch = Partial<Pick<Profile, "music_enabled" | "effects_enabled" | "reduced_motion">> & {
@@ -136,6 +138,15 @@ export function SettingsPage() {
     onError: (e) => toast.error(e.message),
   });
 
+  const setTileStyle = useMutation({
+    mutationFn: (style: AppTileStyle) => rpc.setMyAppTileStyle(style),
+    onSuccess: async () => {
+      flash("app_tile_style");
+      await qc.invalidateQueries({ queryKey: q.profile().queryKey });
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
   const setFriendVisits = useMutation({
     mutationFn: (allow: boolean) => rpc.setHomeVisitAccess(allow),
     onSuccess: async () => {
@@ -192,7 +203,13 @@ export function SettingsPage() {
     <div className="sx-page" data-reduced={profile.reduced_motion ? "true" : "false"}>
       <header className="sx-hero">
         <div className="sx-hero-avatar" aria-hidden="true">
-          <Avatar appearance={appearance} gender={character?.gender ?? "nonbinary"} size={84} />
+          <CharacterPreview
+            appearance={appearance}
+            gender={character?.gender ?? "nonbinary"}
+            equipment={[]}
+            label={`${profile.display_name || "Your character"}, head portrait`}
+            framing="head"
+          />
         </div>
         <div className="sx-hero-copy">
           <p className="sx-eyebrow">Make it yours</p>
@@ -249,10 +266,42 @@ export function SettingsPage() {
         id="sx-sound"
         icon={Volume2}
         title="Sound"
-        description="Tune the town soundtrack and game cues separately."
+        description="Tune music, game cues and ambient texture independently."
         footer={<SavedPill show={saved === "music_enabled" || saved === "effects_enabled"} />}
       >
         <AudioControls profile={profile} onSave={(patch) => savePreferences.mutate(patch)} />
+      </Section>
+
+      <Section
+        id="sx-tiles"
+        icon={LayoutGrid}
+        title="App tiles"
+        description="Choose how app icons look on your phone. This follows your account to any device."
+        footer={<SavedPill show={saved === "app_tile_style"} />}
+      >
+        <div className="sx-tile-choices" role="radiogroup" aria-label="App tile style">
+          {(["rounded", "circle"] as const).map((style) => {
+            const selected = parseAppTileStyle(profile.app_tile_style) === style;
+            return (
+              <button
+                key={style}
+                type="button"
+                role="radio"
+                aria-checked={selected}
+                className="sx-tile-choice"
+                disabled={setTileStyle.isPending}
+                onClick={() => {
+                  if (!selected) setTileStyle.mutate(style);
+                }}
+              >
+                <span className={`sx-tile-sample sx-tile-sample-${style}`} aria-hidden="true">
+                  <Sparkles size={16} />
+                </span>
+                <span>{style === "circle" ? "Circle" : "Rounded"}</span>
+              </button>
+            );
+          })}
+        </div>
       </Section>
 
       <Section
@@ -395,7 +444,7 @@ function AudioControls({ profile, onSave }: { profile: Profile; onSave: (patch: 
     });
     setGameAudioLevels(next);
     setLevels(next);
-  }, [profile.music_enabled, profile.effects_enabled]);
+  }, [profile]);
 
   async function applyVolume(channel: Channel, volume: number): Promise<boolean> {
     const wasSilent = levels[channel] === 0;
@@ -409,7 +458,7 @@ function AudioControls({ profile, onSave }: { profile: Profile; onSave: (patch: 
     setBlocked(false);
     setGameAudioLevels(next);
     setLevels(next);
-    if (!next.music && !next.effects) await disableGameAudio();
+    if (!next.music && !next.effects && !next.environment) await disableGameAudio();
     return true;
   }
 
@@ -418,6 +467,20 @@ function AudioControls({ profile, onSave }: { profile: Profile; onSave: (patch: 
     const volume = on ? levels[channel] || cfg.fallback : 0;
     if (!(await applyVolume(channel, volume))) return;
     onSave({ [cfg.flag]: on } as Patch);
+  }
+
+  async function applyEnvironment(volume: number) {
+    const currentVolume = levels.environment ?? 0;
+    const next = { ...levels, environment: volume };
+    if (volume > 0 && currentVolume === 0 && !(await enableGameAudio(next))) {
+      setBlocked(true);
+      toast.error("Your browser needs one tap on this page before audio can start.");
+      return;
+    }
+    setBlocked(false);
+    setGameAudioLevels(next);
+    setLevels(next);
+    if (!next.music && !next.effects && !next.environment) await disableGameAudio();
   }
 
   return (
@@ -459,20 +522,31 @@ function AudioControls({ profile, onSave }: { profile: Profile; onSave: (patch: 
           </div>
         );
       })}
-      <div className="sx-row">
-        <span className="sx-row-hint">Hear a sample at your current effects volume.</span>
-        <Button
-          className="sx-btn-ghost"
-          onClick={() => {
-            if (!profile.effects_enabled || levels.effects === 0) {
-              toast.message("Turn on sound effects to hear a sample.");
-              return;
-            }
-            playGameSound("ui");
-          }}
-        >
-          Play sample
-        </Button>
+      <div className={`sx-channel${(levels.environment ?? 0) > 0 ? " is-on" : ""}`}>
+        <div className="sx-channel-head">
+          <span className="sx-channel-title">
+            <Waves aria-hidden="true" />
+            <strong>Ambient texture</strong>
+          </span>
+          <output className="sx-volume-value">
+            {Math.round((levels.environment ?? 0) * 100)}%
+          </output>
+        </div>
+        <p className="sx-row-hint">
+          Procedural outdoor ambience: soft wind, distant road rumble and occasional birds.
+          Generated locally without audio downloads.
+        </p>
+        <div className="sx-volume">
+          <Slider
+            className="sx-slider"
+            aria-label="Ambient texture volume"
+            min={0}
+            max={100}
+            step={1}
+            value={[Math.round((levels.environment ?? 0) * 100)]}
+            onValueChange={([value]) => void applyEnvironment((value ?? 0) / 100)}
+          />
+        </div>
       </div>
       {blocked && (
         <p className="sx-error" role="alert">

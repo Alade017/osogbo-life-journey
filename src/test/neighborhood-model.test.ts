@@ -5,6 +5,8 @@ import {
   neighborhoodAreaOrigin,
   neighborhoodOrigin,
   nearestInteraction,
+  neighborhoodSceneBounds,
+  WORLD_SCALE,
   toScene,
   toWorld,
   validCheckpoint,
@@ -23,6 +25,12 @@ describe("neighborhood coordinates and interaction", () => {
       market.objects.find((object) => object.id === "market")?.x,
     );
     expect(market.marketStalls).toHaveLength(3);
+    expect(market.objects.find((object) => object.id === "market")?.shopSlug).toBe(
+      "market-sales-stall",
+    );
+    for (const id of ["oja-oba-produce-stall", "oja-oba-grain-stall", "oja-oba-household-stall"]) {
+      expect(market.objects.find((object) => object.id === id)?.shopSlug).toBeNull();
+    }
     expect(neighborhoodAreaForSlug("unmapped-district")).toBe(olaiya);
   });
   it("defines connected Olaiya roads and collision obstacles for the playable scene", () => {
@@ -167,7 +175,12 @@ describe("neighborhood coordinates and interaction", () => {
   });
   it("rejects corrupt and out-of-city checkpoints", () => {
     expect(validCheckpoint({ x: 7, y: 6 })).toBe(true);
-    for (const x of [NaN, Infinity, -1, 15]) expect(validCheckpoint({ x, y: 6 })).toBe(false);
-    expect(validCheckpoint({ x: 7, y: 13 })).toBe(false);
+    for (const x of [NaN, Infinity, -1, 25]) expect(validCheckpoint({ x, y: 6 })).toBe(false);
+    expect(validCheckpoint({ x: 7, y: 21 })).toBe(false);
+    expect(validCheckpoint({ x: 24, y: 20 })).toBe(true);
+    expect(neighborhoodSceneBounds({ x: 7, y: 6 })).toMatchObject({
+      width: 24 * WORLD_SCALE,
+      height: 20 * WORLD_SCALE,
+    });
   });
 });

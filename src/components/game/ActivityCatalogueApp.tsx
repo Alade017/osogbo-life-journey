@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { useGameTime } from "@/components/game/GameTimeProvider";
 import { q, type Activity } from "@/lib/game";
 import { ACTIVITY_CATEGORIES, parseJobActivityRequirements } from "@/lib/job-activity-model";
-import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
   Select,
@@ -305,15 +304,15 @@ export function ActivityCatalogueApp() {
   );
 
   return (
-    <div className="phone-theme-page" aria-label="Activity catalogue">
-      <header className="flex items-start justify-between gap-3">
+    <div className="phone-theme-page activity-catalogue" aria-label="Activity catalogue">
+      <header className="activity-hero">
         <div>
           <h2 className="text-base font-bold">Activity catalogue</h2>
           <p className="text-xs text-muted-foreground">
             Discover activities around town. The server checks eligibility and awards progression.
           </p>
         </div>
-        <span className="shrink-0 rounded-full bg-muted px-2 py-1 text-xs">
+        <span className="activity-clock">
           Day {simulation.gameTime.day} · {String(simulation.gameTime.hour).padStart(2, "0")}:
           {String(simulation.gameTime.minute).padStart(2, "0")}
         </span>
@@ -344,15 +343,12 @@ export function ActivityCatalogueApp() {
         </Select>
       </div>
 
-      <div className="flex flex-wrap gap-2" aria-label="Filter activities by category">
+      <div className="activity-chips" aria-label="Filter activities by category">
         <button
           type="button"
           onClick={() => setCategory("all")}
           aria-pressed={category === "all"}
-          className={cn(
-            "rounded-full border px-3 py-1.5 text-xs",
-            category === "all" && "border-primary bg-primary text-primary-foreground",
-          )}
+          className="activity-chip"
         >
           All
         </button>
@@ -362,10 +358,7 @@ export function ActivityCatalogueApp() {
             key={value}
             onClick={() => setCategory(value)}
             aria-pressed={category === value}
-            className={cn(
-              "rounded-full border px-3 py-1.5 text-xs",
-              category === value && "border-primary bg-primary text-primary-foreground",
-            )}
+            className="activity-chip"
           >
             {CATEGORY_LABELS[value] ?? value}
           </button>
@@ -395,7 +388,7 @@ export function ActivityCatalogueApp() {
           No activities are available in this category.
         </p>
       ) : (
-        <div className="grid gap-3">
+        <div className="activity-list">
           {catalogue.map((activity) => {
             const blocked = requirementStatus(activity, context);
             const cooldown = cooldownFor(activity);
@@ -408,26 +401,21 @@ export function ActivityCatalogueApp() {
               : "Anywhere";
 
             return (
-              <article
-                key={activity.id}
-                className="rounded-xl border bg-card p-3 text-card-foreground"
-              >
-                <div className="flex items-start justify-between gap-3">
+              <article key={activity.id} className="activity-card">
+                <div className="activity-card-top">
                   <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
+                    <div className="activity-card-title">
                       <h3 className="font-semibold">{activity.name}</h3>
-                      <span className="rounded-full bg-muted px-2 py-0.5 text-[10px]">
+                      <span className="activity-tag">
                         {CATEGORY_LABELS[activity.category] ?? activity.category}
                       </span>
                     </div>
-                    <p className="mt-1 text-xs text-muted-foreground">{activity.description}</p>
+                    <p className="activity-desc">{activity.description}</p>
                   </div>
-                  <span className="shrink-0 text-xs tabular-nums">
-                    {activity.duration_minutes} min
-                  </span>
+                  <span className="activity-duration">{activity.duration_minutes} min</span>
                 </div>
 
-                <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                <div className="activity-meta">
                   <span>📍 {locationName}</span>
                   <span>
                     ⚡ {activity.energy_delta > 0 ? "+" : ""}
@@ -459,15 +447,15 @@ export function ActivityCatalogueApp() {
                 </div>
 
                 {unsupportedRewardMetadata(activity.rewards) && (
-                  <p className="mt-2 text-[11px] text-muted-foreground">
+                  <p className="activity-note">
                     Some configured reward metadata has no defined effect yet; it is not awarded.
                   </p>
                 )}
 
-                {disabledReason && <p className="mt-2 text-xs text-amber-700">{disabledReason}</p>}
+                {disabledReason && <p className="activity-blocked">{disabledReason}</p>}
 
                 <Button
-                  className="mt-3 w-full"
+                  className="activity-action"
                   size="sm"
                   disabled={!ready || busy || !!submitting || !!disabledReason}
                   onClick={() => void complete(activity)}
@@ -482,15 +470,12 @@ export function ActivityCatalogueApp() {
         </div>
       )}
 
-      <section className="space-y-2" aria-label="Recent activity history">
+      <section className="activity-history" aria-label="Recent activity history">
         <h3 className="text-sm font-semibold">Recent activity</h3>
         {playerHistory.length ? (
-          <div className="space-y-2">
+          <div className="activity-history-list">
             {playerHistory.slice(0, 8).map((entry) => (
-              <div
-                key={entry.id}
-                className="flex items-center justify-between gap-3 rounded-lg border bg-card p-2.5 text-xs"
-              >
+              <div key={entry.id} className="activity-history-row">
                 <span className="min-w-0">
                   <strong className="block truncate">{entry.activity_name}</strong>
                   <span className="text-muted-foreground">
@@ -502,9 +487,7 @@ export function ActivityCatalogueApp() {
             ))}
           </div>
         ) : (
-          <p className="rounded-lg border p-3 text-xs text-muted-foreground">
-            No completed catalogue activities yet.
-          </p>
+          <p className="activity-note">No completed catalogue activities yet.</p>
         )}
       </section>
     </div>

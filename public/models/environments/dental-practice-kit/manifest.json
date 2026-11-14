@@ -1,0 +1,182 @@
+[
+  {
+    "group": "waiting-chairs-run",
+    "bytes": 16372,
+    "sizeMetres": [
+      1.76,
+      0.95,
+      0.52
+    ],
+    "meshes": 4
+  },
+  {
+    "group": "waiting-chairs-run-coral",
+    "bytes": 16568,
+    "sizeMetres": [
+      1.76,
+      0.95,
+      0.52
+    ],
+    "meshes": 4
+  },
+  {
+    "group": "low-table-with-magazines",
+    "bytes": 14244,
+    "sizeMetres": [
+      0.9,
+      0.46,
+      0.5
+    ],
+    "meshes": 6
+  },
+  {
+    "group": "coat-stand",
+    "bytes": 16400,
+    "sizeMetres": [
+      0.4,
+      1.74,
+      0.37
+    ],
+    "meshes": 6
+  },
+  {
+    "group": "water-cooler",
+    "bytes": 19276,
+    "sizeMetres": [
+      0.41,
+      1.35,
+      0.42
+    ],
+    "meshes": 8
+  },
+  {
+    "group": "notice-board",
+    "bytes": 12700,
+    "sizeMetres": [
+      1,
+      0.72,
+      0.04
+    ],
+    "meshes": 6
+  },
+  {
+    "group": "cabinet-run-module",
+    "bytes": 15160,
+    "sizeMetres": [
+      1,
+      0.96,
+      0.65
+    ],
+    "meshes": 5
+  },
+  {
+    "group": "cabinet-run-sink-module",
+    "bytes": 17692,
+    "sizeMetres": [
+      1,
+      1.21,
+      0.65
+    ],
+    "meshes": 5
+  },
+  {
+    "group": "pedal-waste-bin",
+    "bytes": 12948,
+    "sizeMetres": [
+      0.34,
+      0.55,
+      0.39
+    ],
+    "meshes": 4
+  },
+  {
+    "group": "ceiling-light-panel",
+    "bytes": 8476,
+    "sizeMetres": [
+      1.24,
+      0.1,
+      0.64
+    ],
+    "meshes": 3
+  },
+  {
+    "group": "radiator",
+    "bytes": 14720,
+    "sizeMetres": [
+      1.02,
+      0.68,
+      0.15
+    ],
+    "meshes": 6
+  },
+  {
+    "group": "glazed-partition-module",
+    "bytes": 8908,
+    "sizeMetres": [
+      2,
+      2.7,
+      0.15
+    ],
+    "meshes": 3
+  },
+  {
+    "group": "delivery-unit",
+    "bytes": 20968,
+    "sizeMetres": [
+      0.51,
+      1.23,
+      1.11
+    ],
+    "meshes": 6
+  },
+  {
+    "group": "model-box-stack",
+    "bytes": 15928,
+    "sizeMetres": [
+      0.32,
+      0.54,
+      0.24
+    ],
+    "meshes": 9
+  },
+  {
+    "group": "glove-and-mask-dispenser",
+    "bytes": 19204,
+    "sizeMetres": [
+      0.52,
+      0.34,
+      0.13
+    ],
+    "meshes": 7
+  },
+  {
+    "group": "corridor-wall-module",
+    "bytes": 5920,
+    "sizeMetres": [
+      2,
+      2.7,
+      0.15
+    ],
+    "meshes": 3
+  },
+  {
+    "group": "skirting-run",
+    "bytes": 4912,
+    "sizeMetres": [
+      2,
+      0.11,
+      0.04
+    ],
+    "meshes": 2
+  },
+  {
+    "group": "clinical-floor-tile",
+    "bytes": 5672,
+    "sizeMetres": [
+      2,
+      0.07,
+      2
+    ],
+    "meshes": 4
+  }
+]

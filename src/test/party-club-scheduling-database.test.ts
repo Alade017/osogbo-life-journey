@@ -48,6 +48,8 @@ beforeAll(async () => {
       (name) =>
         name.endsWith(".sql") &&
         name !== "0075_remove_orphaned_player_data.sql" &&
+        name !== "0083_studio_room_layout.sql" &&
+        name !== "0084_other_homes_room_layout.sql" &&
         name !== "0077_market_stall_rent_categories_sales.sql",
     )
     .sort()) {

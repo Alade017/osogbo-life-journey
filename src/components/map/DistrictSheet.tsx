@@ -1,7 +1,7 @@
 import { useRef, useState, type PointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { MapPin, X } from "lucide-react";
-import type { MapDistrict } from "@/components/map/OsogboMap.svg";
+import type { MapDistrict } from "@/components/map/map-types";
 import { formatGameHourInLagos, formatMapEventEnd } from "@/components/map/map-ui-utils";
 
 export function DistrictSheet({

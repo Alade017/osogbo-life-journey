@@ -587,3 +587,9 @@
     transition: none !important;
   }
 }
+
+/* When the in-game phone is open, its full-height surface replaces game navigation. */
+.city-game.phone-open .game-floating-nav,
+.city-game.phone-open .game-phone-fab {
+  display: none !important;
+}

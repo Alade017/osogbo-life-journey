@@ -34,6 +34,7 @@ import "@/components/game/game-cards.css";
 import "@/components/game/dashboard-ui-refresh.css";
 import "@/components/game/remaining-game-ui.css";
 import "@/components/game/game-dock.css";
+import "@/components/game/phone-redesign.css";
 import "@/components/game/game-bottom-bar.css";
 
 export const Route = createFileRoute("/_authenticated/_game")({
@@ -231,12 +232,15 @@ function GameLayout() {
               <main
                 className={cn(
                   "city-game-main",
-                  pathname !== "/home" && pathname !== "/map" && pathname !== "/jobs"
+                  pathname !== "/home" &&
+                    pathname !== "/map" &&
+                    pathname !== "/jobs" &&
+                    pathname !== "/neighborhood"
                     ? "game-screen-restyle"
                     : undefined,
                 )}
               >
-                {pathname === "/home" && !visitingFriend ? (
+                {(pathname === "/home" || pathname === "/neighborhood") && !visitingFriend ? (
                   <HomeDashboard
                     player={player}
                     location={currentLocation?.name ?? "Osogbo"}

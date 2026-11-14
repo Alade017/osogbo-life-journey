@@ -91,6 +91,26 @@ it("requests a ride and displays the returned server ride history", async () => 
   });
 });
 
+it("tells the player the ride is searching, and cancels a requested ride through the refund function", async () => {
+  db.rows["town_service_prices"] = [{ service: "okada_ride", amount_minor: 300 }];
+  db.rows["okada_ride_requests"] = [
+    {
+      id: "ride-2",
+      destination: "Station",
+      fare_minor: 300,
+      status: "requested",
+      created_at: "2026-10-23T10:00:00Z",
+    },
+  ];
+  db.rpc.mockImplementation(async () => ({ data: null, error: null }));
+  renderWithQuery(<PhoneCommunityServices app="Okada Rides" />);
+  expect(await screen.findByText("Searching for a rider")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+  await waitFor(() =>
+    expect(db.rpc).toHaveBeenCalledWith("okada_ride_cancel", { p_ride: "ride-2" }),
+  );
+});
+
 it("shows the approved food vendor, order items, and delivery status", async () => {
   db.rows["food_vendors"] = [{ id: "kitchen-1", name: "Town kitchen" }];
   db.rows["food_menu_items"] = [
