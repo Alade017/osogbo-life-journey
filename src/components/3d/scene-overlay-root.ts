@@ -5,7 +5,8 @@ export function mountSceneOverlay(target: HTMLElement) {
   const element = document.createElement("div");
   element.dataset["sceneOverlay"] = "";
   element.translate = false;
-  element.style.cssText = "position:absolute;top:0;left:0;pointer-events:none;";
+  element.style.cssText =
+    "position:absolute;top:0;left:0;transform-origin:0 0;pointer-events:none;";
   const root = createRoot(element);
   target.appendChild(element);
   let disposed = false;
@@ -15,13 +16,17 @@ export function mountSceneOverlay(target: HTMLElement) {
     dispose() {
       if (disposed) return;
       disposed = true;
-      // Navigation or a blur handler may already have detached or moved the host.
-      // Disposing another root during a React commit can race its own DOM removal.
-      queueMicrotask(() => {
-        root.unmount();
-        // remove() never throws, even if a blur handler already moved the node.
-        element.remove();
-      });
+      // Remove the host wrapper immediately so stale labels disappear without flicker,
+      // then defer root.unmount() to a macrotask so React 19 never unmounts a nested
+      // root synchronously during an active render or commit pass.
+      element.remove();
+      globalThis.setTimeout(() => {
+        try {
+          root.unmount();
+        } catch {
+          // Ignore teardown errors if the document or container was already destroyed.
+        }
+      }, 0);
     },
   };
 }

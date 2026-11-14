@@ -15,12 +15,12 @@ import { MapLoading } from "./MapLoading";
 // Sample POIs for Osogbo
 const samplePois: POI[] = [
   {
-    id: "sacred-grove",
-    name: "Osun-Osogbo Sacred Grove",
+    id: "river-shrine-court",
+    name: "River Shrine Court",
     category: "Cultural",
     position: [0, 0, 0],
     description:
-      "A UNESCO‑listed sacred forest with shrines, sculptures, and rituals dedicated to the river goddess Osun.",
+      "A fictional riverside court with shrines and carved figures, kept for a later playable phase.",
   },
   {
     id: "ataoja-palace",

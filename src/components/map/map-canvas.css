@@ -32,7 +32,7 @@
   max-width: 100% !important;
   height: min(100dvh - var(--top-bar-height, 0px) - var(--map-dock-clearance, 90px), 64rem);
   min-height: 30rem;
-  background: #ffffff;
+  background: #dce7dc;
   isolation: isolate;
   border: none !important;
   border-radius: 0 !important;

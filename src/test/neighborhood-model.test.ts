@@ -5,6 +5,8 @@ import {
   neighborhoodAreaOrigin,
   neighborhoodOrigin,
   nearestInteraction,
+  neighborhoodSceneBounds,
+  WORLD_SCALE,
   toScene,
   toWorld,
   validCheckpoint,
@@ -173,7 +175,12 @@ describe("neighborhood coordinates and interaction", () => {
   });
   it("rejects corrupt and out-of-city checkpoints", () => {
     expect(validCheckpoint({ x: 7, y: 6 })).toBe(true);
-    for (const x of [NaN, Infinity, -1, 15]) expect(validCheckpoint({ x, y: 6 })).toBe(false);
-    expect(validCheckpoint({ x: 7, y: 13 })).toBe(false);
+    for (const x of [NaN, Infinity, -1, 25]) expect(validCheckpoint({ x, y: 6 })).toBe(false);
+    expect(validCheckpoint({ x: 7, y: 21 })).toBe(false);
+    expect(validCheckpoint({ x: 24, y: 20 })).toBe(true);
+    expect(neighborhoodSceneBounds({ x: 7, y: 6 })).toMatchObject({
+      width: 24 * WORLD_SCALE,
+      height: 20 * WORLD_SCALE,
+    });
   });
 });

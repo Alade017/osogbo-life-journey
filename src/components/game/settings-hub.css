@@ -558,3 +558,11 @@
 .sx-tile-sample-circle {
   border-radius: 50%;
 }
+
+/* Settings avatar: a 3D head portrait that fills the circular frame. */
+.sx-hero-avatar .pi-canvas.pi-canvas-head {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    overflow: hidden;
+}

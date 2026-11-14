@@ -13,7 +13,7 @@ import {
 } from "./neighborhood-model.ts";
 
 export const PLAYER_SPEED = 0.6875;
-export const PLAYER_WORLD_BOUNDS = { minX: 0, maxX: 14, minY: 0, maxY: 12 } as const;
+export const PLAYER_WORLD_BOUNDS = { minX: 0, maxX: 24, minY: 0, maxY: 20 } as const;
 
 export function canOccupyNeighborhoodPoint(
   point: WorldPoint,
@@ -29,7 +29,7 @@ export function canOccupyNeighborhoodPoint(
     bottom: scenePoint.y + 20,
   };
   const canOccupyObjects = objects.every((object) => {
-    if (object.kind === "npc") return true;
+    if (object.kind === "npc" || object.walkIn) return true;
     const footprint = neighborhoodBuildingFootprint(object);
     const solid = {
       ...footprint,

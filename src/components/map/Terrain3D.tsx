@@ -2,13 +2,7 @@ import { useMemo, type FC } from "react";
 import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
 import type { Mesh } from "three";
-import { Color } from "three";
 import { WorldMaterial } from "@/components/3d/WorldScene";
-import { WORLD_PALETTE } from "@/components/3d/world-theme";
-
-/** Terrain tones are darkened so the white backdrop frames the town. */
-const TERRAIN_DIM = 0.72;
-const dimmed = (hex: string) => new Color(hex).multiplyScalar(TERRAIN_DIM).getStyle();
 
 export interface Terrain3DProps {
   gridCols: number;
@@ -39,13 +33,13 @@ export const Terrain3D: FC<Terrain3DProps> = ({ gridCols, cellSize }) => {
       {/* 1. Base Ground Foundation Plinth (Diorama base) */}
       <mesh position={[0, -0.6, 0]} receiveShadow>
         <boxGeometry args={[totalWidth + 1.6, 0.8, totalDepth + 1.6]} />
-        <WorldMaterial color={dimmed(WORLD_PALETTE.concrete)} />
+        <WorldMaterial tone="concrete" />
       </mesh>
 
       {/* Earth & Grass Top Layer */}
       <mesh position={[0, -0.05, 0]} receiveShadow>
         <boxGeometry args={[totalWidth + 0.8, 0.3, totalDepth + 0.8]} />
-        <WorldMaterial color={dimmed(WORLD_PALETTE.ground)} />
+        <WorldMaterial tone="ground" />
       </mesh>
 
       {/* 2. Elevated Civic & Palace Plateau Terrace (High-elevation district) */}
@@ -53,17 +47,17 @@ export const Terrain3D: FC<Terrain3DProps> = ({ gridCols, cellSize }) => {
         {/* Retaining Wall */}
         <mesh position={[0, 0.15, 0]} receiveShadow castShadow>
           <boxGeometry args={[totalWidth * 0.38, 0.36, totalDepth * 0.36]} />
-          <WorldMaterial color={dimmed(WORLD_PALETTE.wall)} />
+          <WorldMaterial tone="wall" />
         </mesh>
         {/* Upper Grass Lawn */}
         <mesh position={[0, 0.34, 0]} receiveShadow>
           <boxGeometry args={[totalWidth * 0.36, 0.04, totalDepth * 0.34]} />
-          <WorldMaterial color={dimmed(WORLD_PALETTE.foliage)} />
+          <WorldMaterial tone="foliage" />
         </mesh>
         {/* Stone steps / Ramp outline */}
         <mesh position={[0, 0.1, totalDepth * 0.185]}>
           <boxGeometry args={[cellSize * 1.8, 0.2, 0.4]} />
-          <WorldMaterial color={dimmed(WORLD_PALETTE.concrete)} />
+          <WorldMaterial tone="concrete" />
         </mesh>
       </group>
 
@@ -71,7 +65,7 @@ export const Terrain3D: FC<Terrain3DProps> = ({ gridCols, cellSize }) => {
       <group position={[-totalWidth * 0.28, 0.08, totalDepth * 0.16]}>
         <mesh position={[0, 0.08, 0]} receiveShadow castShadow>
           <boxGeometry args={[totalWidth * 0.34, 0.2, totalDepth * 0.32]} />
-          <WorldMaterial color={dimmed(WORLD_PALETTE.concrete)} />
+          <WorldMaterial tone="concrete" />
         </mesh>
       </group>
 
@@ -104,7 +98,7 @@ export const Terrain3D: FC<Terrain3DProps> = ({ gridCols, cellSize }) => {
             receiveShadow
           >
             <boxGeometry args={[0.22, 0.24, totalDepth * 0.94]} />
-            <WorldMaterial color={dimmed(WORLD_PALETTE.concrete)} />
+            <WorldMaterial tone="concrete" />
           </mesh>
         ))}
 
@@ -112,7 +106,7 @@ export const Terrain3D: FC<Terrain3DProps> = ({ gridCols, cellSize }) => {
         <group position={[0, 0.14, -totalDepth * 0.1]}>
           <mesh castShadow receiveShadow>
             <boxGeometry args={[cellSize * 3.1, 0.16, cellSize * 1.2]} />
-            <WorldMaterial color={dimmed(WORLD_PALETTE.concrete)} />
+            <WorldMaterial tone="concrete" />
           </mesh>
           {/* Bridge Railings */}
           {[-1, 1].map((side) => (

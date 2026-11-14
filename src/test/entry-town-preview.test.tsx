@@ -8,7 +8,9 @@ import town from "@/data/osogbo-town.json";
 
 describe("town preview data", () => {
   it("shows every landmark for a null filter, and only active ones otherwise", () => {
-    expect(previewLandmarks(null)).toHaveLength(town.landmarks.length);
+    // Map-only points have no location slug and are not playable, so the preview leaves them out.
+    const playable = town.landmarks.filter((place) => place.locationSlug !== null);
+    expect(previewLandmarks(null)).toHaveLength(playable.length);
     const onlyMarket = previewLandmarks(new Set(["town-market"]));
     expect(onlyMarket.map((place) => place.slug)).toEqual(["town-market"]);
     expect(previewLandmarks(new Set())).toEqual([]);

@@ -235,7 +235,6 @@ export function PhoneLauncher({
   compact = false,
   trigger,
   shortcutEditor,
-  dock,
   open,
   onOpenChange,
 }: {
@@ -243,6 +242,7 @@ export function PhoneLauncher({
   compact?: boolean;
   trigger?: ReactNode;
   shortcutEditor?: ReactNode;
+  /** Kept for callers; the navigation is no longer shown inside the phone. */
   dock?: ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -851,10 +851,7 @@ export function PhoneLauncher({
       <DialogPortal>
         <DialogOverlay />
         <DialogPrimitive.Content
-          className={cn(
-            "phone-dialog-shell",
-            dock ? "phone-dialog-shell-docked" : "phone-dialog-shell-solo",
-          )}
+          className="phone-dialog-shell phone-dialog-shell-solo"
           style={{ zIndex: "var(--game-dialog-layer)" }}
         >
           <div className="phone-dialog phone-ui-refresh phone-dock-surface">{phoneContent}</div>
@@ -866,7 +863,6 @@ export function PhoneLauncher({
             <X size={18} aria-hidden="true" />
             <span>Cancel</span>
           </DialogClose>
-          {dock}
         </DialogPrimitive.Content>
       </DialogPortal>
     </Dialog>
