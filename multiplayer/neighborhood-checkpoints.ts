@@ -22,6 +22,7 @@ type Session = {
   saved: CheckpointPoint | null;
   queue: Promise<void>;
   /** Writes queued or running for this session; the periodic pass skips a busy session. */
+  queued: CheckpointPoint | null;
   pending: number;
   stale: boolean;
 };
@@ -45,6 +46,7 @@ export class NeighborhoodCheckpoints {
       target,
       saved: saved ? { x: saved.x, y: saved.y } : null,
       queue: Promise.resolve(),
+      queued: saved ? { x: saved.x, y: saved.y } : null,
       pending: 0,
       stale: false,
     });
@@ -58,24 +60,55 @@ export class NeighborhoodCheckpoints {
   save(sessionId: string, current: CheckpointPoint, options: { skipIfBusy?: boolean } = {}) {
     const session = this.sessions.get(sessionId);
     if (!session || session.stale) return Promise.resolve();
-    if (!checkpointChanged(session.saved, current)) return session.queue;
-    if (options.skipIfBusy && session.pending > 0) return Promise.resolve();
-
+  
+    if (options.skipIfBusy && session.pending > 0) {
+      return Promise.resolve();
+    }
+  
+    if (
+      session.pending === 0 &&
+      !checkpointChanged(session.saved, current)
+    ) {
+      return session.queue;
+    }
+  
+    if (
+      session.pending > 0 &&
+      session.queued?.x === current.x &&
+      session.queued?.y === current.y
+    ) {
+      return session.queue;
+    }
+  
     const point = { x: current.x, y: current.y };
+    session.queued = point;
     session.pending += 1;
+  
     session.queue = session.queue.then(async () => {
       try {
         if (session.stale || !checkpointChanged(session.saved, point)) return;
+  
         const saved = await this.saver(session.target, point);
-        if (saved) session.saved = point;
-        else session.stale = true;
+  
+        if (saved) {
+          session.saved = point;
+        } else {
+          session.stale = true;
+        }
       } catch {
-        // Never include the token, keys or raw error text here; the next interval retries.
-        this.report("Neighbourhood checkpoint could not be saved; it will be retried.");
+        try {
+          this.report("Neighbourhood checkpoint could not be saved; it will be retried.");
+        } catch {
+          // Reporting must never interrupt checkpoint persistence.
+        }
       } finally {
         session.pending -= 1;
+        if (session.pending === 0) {
+          session.queued = session.saved ? { ...session.saved } : null;
+        }
       }
     });
+  
     return session.queue;
   }
 

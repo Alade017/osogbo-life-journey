@@ -29,7 +29,13 @@ export function canOccupyNeighborhoodPoint(
     bottom: scenePoint.y + 20,
   };
   const canOccupyObjects = objects.every((object) => {
-    if (object.kind === "npc" || object.collision === false) return true;
+    if (
+      object.kind === "npc" ||
+      object.collision === false ||
+      object.walkIn
+    ) {
+      return true;
+    }
     return neighborhoodBuildingCollisionFootprints(object).every((footprint) => {
       const solid = {
         ...footprint,

@@ -5,18 +5,15 @@ import {
   type CheckpointPoint,
   type CheckpointTarget,
 } from "../../multiplayer/neighborhood-checkpoints.ts";
-
 const target: CheckpointTarget = {
   userId: "u1",
   characterId: "c1",
   locationId: "l1",
 };
-
 /** Lets queued promise callbacks run before the test looks at their effects. */
 function flush() {
   return new Promise<void>((done) => setTimeout(done, 0));
 }
-
 function deferred<T>() {
   let resolve!: (value: T) => void;
   const promise = new Promise<T>((done) => {
@@ -24,7 +21,6 @@ function deferred<T>() {
   });
   return { promise, resolve };
 }
-
 describe("neighbourhood checkpoint manager", () => {
   it("skips positions that match the last saved point", async () => {
     const writes: CheckpointPoint[] = [];
@@ -36,7 +32,6 @@ describe("neighbourhood checkpoint manager", () => {
     await manager.save("s1", { x: 3, y: 4 });
     expect(writes).toEqual([]);
   });
-
   it("saves a changed position once and then skips it", async () => {
     const writes: CheckpointPoint[] = [];
     const manager = new NeighborhoodCheckpoints(async (_t, point) => {
@@ -48,7 +43,6 @@ describe("neighbourhood checkpoint manager", () => {
     await manager.save("s1", { x: 5, y: 4 });
     expect(writes).toEqual([{ x: 5, y: 4 }]);
   });
-
   it("never overlaps writes for the same session", async () => {
     let active = 0;
     let maxActive = 0;
@@ -77,7 +71,6 @@ describe("neighbourhood checkpoint manager", () => {
     await leave;
     expect(maxActive).toBe(1);
   });
-
   it("skips the periodic pass while a write is pending, but still saves at leave", async () => {
     const writes: CheckpointPoint[] = [];
     const gate = deferred<void>();
@@ -100,7 +93,6 @@ describe("neighbourhood checkpoint manager", () => {
       { x: 7, y: 7 },
     ]);
   });
-
   it("stops saving a session once the database reports the character is no longer eligible", async () => {
     const writes: CheckpointPoint[] = [];
     const manager = new NeighborhoodCheckpoints(async (_t, point) => {
@@ -112,7 +104,6 @@ describe("neighbourhood checkpoint manager", () => {
     await manager.save("s1", { x: 2, y: 2 });
     expect(writes).toEqual([{ x: 1, y: 1 }]);
   });
-
   it("reports failures without throwing and keeps the session for a retry", async () => {
     const reports: string[] = [];
     let attempts = 0;
@@ -131,7 +122,6 @@ describe("neighbourhood checkpoint manager", () => {
     await manager.save("s1", { x: 1, y: 1 });
     expect(attempts).toBe(2);
   });
-
   it("forgets sessions on release and on dispose", async () => {
     const manager = new NeighborhoodCheckpoints(async () => true);
     manager.track("s1", target, null);
@@ -141,7 +131,6 @@ describe("neighbourhood checkpoint manager", () => {
     await manager.dispose();
     expect(manager.trackedCount).toBe(0);
   });
-
   it("waits for a released final checkpoint when the room is disposed", async () => {
     const gate = deferred<void>();
     const writes: CheckpointPoint[] = [];
@@ -151,10 +140,8 @@ describe("neighbourhood checkpoint manager", () => {
       return true;
     });
     manager.track("s1", target, null);
-
     const leave = manager.release("s1", { x: 8, y: 9 });
     expect(manager.trackedCount).toBe(0);
-
     let disposed = false;
     const disposal = manager.dispose().then(() => {
       disposed = true;
@@ -162,14 +149,50 @@ describe("neighbourhood checkpoint manager", () => {
     await flush();
     expect(writes).toEqual([{ x: 8, y: 9 }]);
     expect(disposed).toBe(false);
-
     gate.resolve();
     await Promise.all([leave, disposal]);
     expect(disposed).toBe(true);
   });
-
   it("treats an unknown saved point as changed", () => {
     expect(checkpointChanged(null, { x: 0, y: 0 })).toBe(true);
     expect(checkpointChanged({ x: 0, y: 0 }, { x: 0, y: 0 })).toBe(false);
+  }); 
+  it("saves the final position when it matches the previous saved point but an update is pending", async () => {
+    const gate = deferred<void>();
+    const writes: CheckpointPoint[] = [];
+    const manager = new NeighborhoodCheckpoints(async (_t, point) => {
+      writes.push(point);
+      if (writes.length === 1) await gate.promise;
+      return true;
+    });
+    manager.track("s1", target, { x: 3, y: 4 });
+    const first = manager.save("s1", { x: 5, y: 4 });
+    await flush();
+    const leave = manager.release("s1", { x: 3, y: 4 });
+    gate.resolve();
+    await Promise.all([first, leave]);
+    expect(writes).toEqual([
+      { x: 5, y: 4 },
+      { x: 3, y: 4 },
+    ]);
+  }); 
+  it("continues saving when the error reporting callback throws", async () => {
+    let attempts = 0;
+    const manager = new NeighborhoodCheckpoints(
+      async () => {
+        attempts += 1;
+        if (attempts === 1) throw new Error("database failure");
+        return true;
+      },
+      () => {
+        throw new Error("reporting failure");
+      },
+    );
+    manager.track("s1", target, null);
+  
+    await manager.save("s1", { x: 1, y: 1 });
+    await manager.save("s1", { x: 1, y: 1 });
+  
+    expect(attempts).toBe(2);
   });
 });
