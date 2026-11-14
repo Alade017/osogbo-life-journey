@@ -228,6 +228,7 @@ const show = () =>
   );
 function primeLocationQueries() {
   client.setQueryDefaults(["character"], { staleTime: Infinity });
+  client.setQueryDefaults(["locations"], { staleTime: Infinity });
   client.setQueryData(["character"], {
     id: "player",
     current_location_id: state.location,
@@ -415,6 +416,7 @@ it("leaves the old room and ignores its late state events when changing district
 
 it("does not join inactive locations", async () => {
   state.location = "closed";
+  primeLocationQueries();
   show();
   await screen.findByText(/not available|could not be resolved/i);
   expect(state.join).not.toHaveBeenCalled();
