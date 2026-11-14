@@ -40,6 +40,8 @@ export const WORLD_PALETTE = {
   roof: "#74685e",
   roofLight: "#918174",
   accent: "#c47c45",
+  jerrycan: "#e3b13c",
+  indigo: "#2e4170",
   sign: "#e7c77f",
   metal: "#626b6b",
   glass: "#9bc8d8",

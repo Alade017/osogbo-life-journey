@@ -57,6 +57,8 @@ import {
   type WorldInstance,
 } from "../3d/WorldScene";
 import { CHARACTER_MOTION } from "@/components/3d/character-config";
+import { ProceduralProp } from "@/components/3d/props/ProceduralProp";
+import { palmTreeParts } from "@/components/3d/props/procedural-props";
 import { NEIGHBORHOOD_CAMERA, WORLD_PALETTE, WORLD_SCALE } from "../3d/world-theme";
 import {
   carSpots,
@@ -571,8 +573,20 @@ export function R3FNeighborhoodSurface({
         point(selfPoint.x, selfPoint.y)[2],
       ] as const)
     : null;
+  // Filler trees on the outer edge are palms; the rest keep the scene's generic trees.
+  const palmParts = useMemo(
+    () =>
+      palmTreeParts({
+        height: WORLD_SCALE.character * 3.4,
+        frondLength: WORLD_SCALE.character * 1.5,
+      }),
+    [],
+  );
+  const palmSpots = (area.obstacles ?? [])
+    .filter((o) => o.kind === "tree" && o.id.startsWith("perimeter-tree"))
+    .map((o) => point(o.x, o.y));
   const trees: WorldTree[] = (area.obstacles ?? [])
-    .filter((o) => o.kind === "tree")
+    .filter((o) => o.kind === "tree" && !o.id.startsWith("perimeter-tree"))
     .map((o, index) => {
       const p = point(o.x, o.y);
 
@@ -649,6 +663,14 @@ export function R3FNeighborhoodSurface({
             );
           })}
           <WorldTrees positions={trees} />
+          {palmSpots.map((spot, index) => (
+            <ProceduralProp
+              key={`palm-${index}`}
+              parts={palmParts}
+              position={[spot[0], 0, spot[2]]}
+              rotation={index * 1.7}
+            />
+          ))}
 
           {area.environment && (
             <Suspense fallback={null}>
