@@ -236,3 +236,48 @@ export function dyeVatParts({ radius, height }: { radius: number; height: number
     }),
   ]);
 }
+
+/**
+ * A glass-and-concrete office tower: a glazed core between concrete corner piers,
+ * with a slab band at each floor, a parapet and a plant box on the roof. Metres, base at y = 0.
+ */
+export function bankTowerParts({
+  width,
+  depth,
+  height,
+  floorHeight = 2,
+}: {
+  width: number;
+  depth: number;
+  height: number;
+  floorHeight?: number;
+}): PropPart[] {
+  const floors = Math.max(1, Math.round(height / floorHeight));
+  const pier = Math.min(width, depth) * 0.12;
+  const parts: PropPart[] = [
+    part("glass", new BoxGeometry(width - pier, height, depth - pier), { at: [0, height / 2, 0] }),
+  ];
+  for (let floor = 1; floor < floors; floor++) {
+    parts.push(
+      part("concrete", new BoxGeometry(width + 0.3, 0.3, depth + 0.3), {
+        at: [0, (floor * height) / floors, 0],
+      }),
+    );
+  }
+  for (const sx of [-1, 1]) {
+    for (const sz of [-1, 1]) {
+      parts.push(
+        part("concrete", new BoxGeometry(pier, height, pier), {
+          at: [(sx * (width - pier)) / 2, height / 2, (sz * (depth - pier)) / 2],
+        }),
+      );
+    }
+  }
+  parts.push(
+    part("concrete", new BoxGeometry(width + 0.3, 0.8, depth + 0.3), { at: [0, height + 0.4, 0] }),
+    part("metal", new BoxGeometry(width * 0.4, 1.1, depth * 0.35), {
+      at: [0, height + 1.35, -depth * 0.15],
+    }),
+  );
+  return mergeParts(parts);
+}
