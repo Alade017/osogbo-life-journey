@@ -168,7 +168,6 @@ function useNeighborhoodConnection(
       setSessionId(null);
       return;
     }
-
     let active = true;
     let joinTimedOut = false;
     let roomEnded = false;

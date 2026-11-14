@@ -60,36 +60,29 @@ export class NeighborhoodCheckpoints {
   save(sessionId: string, current: CheckpointPoint, options: { skipIfBusy?: boolean } = {}) {
     const session = this.sessions.get(sessionId);
     if (!session || session.stale) return Promise.resolve();
-  
+
     if (options.skipIfBusy && session.pending > 0) {
       return Promise.resolve();
     }
-  
-    if (
-      session.pending === 0 &&
-      !checkpointChanged(session.saved, current)
-    ) {
+
+    if (session.pending === 0 && !checkpointChanged(session.saved, current)) {
       return session.queue;
     }
-  
-    if (
-      session.pending > 0 &&
-      session.queued?.x === current.x &&
-      session.queued?.y === current.y
-    ) {
+
+    if (session.pending > 0 && session.queued?.x === current.x && session.queued?.y === current.y) {
       return session.queue;
     }
-  
+
     const point = { x: current.x, y: current.y };
     session.queued = point;
     session.pending += 1;
-  
+
     session.queue = session.queue.then(async () => {
       try {
         if (session.stale || !checkpointChanged(session.saved, point)) return;
-  
+
         const saved = await this.saver(session.target, point);
-  
+
         if (saved) {
           session.saved = point;
         } else {
@@ -108,7 +101,7 @@ export class NeighborhoodCheckpoints {
         }
       }
     });
-  
+
     return session.queue;
   }
 
@@ -129,12 +122,13 @@ export class NeighborhoodCheckpoints {
     if (!session) return Promise.resolve();
 
     const pending = finalPosition ? this.save(sessionId, finalPosition) : session.queue;
+
     this.sessions.delete(sessionId);
 
-    let tracked!: Promise<void>;
-    tracked = pending.finally(() => {
+    const tracked = pending.finally(() => {
       this.releases.delete(tracked);
     });
+
     this.releases.add(tracked);
 
     return tracked;

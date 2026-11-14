@@ -48,9 +48,7 @@ describe("authoritative neighborhood movement", () => {
     expect(
       canRestoreNeighborhoodCheckpoint({ x: 25, y: 9 }, origin, area.objects, area.obstacles),
     ).toBe(false);
-    expect(
-      canRestoreNeighborhoodCheckpoint({ x: 24, y: 20 }, origin, [], []),
-    ).toBe(true);
+    expect(canRestoreNeighborhoodCheckpoint({ x: 24, y: 20 }, origin, [], [])).toBe(true);
   });
 
   it("blocks building footprints on the server movement model", () => {

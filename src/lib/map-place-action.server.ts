@@ -15,9 +15,8 @@ type Dependencies = {
 };
 
 export function findMapPlaceAction(landmarkId: string, actionId: string) {
-  const landmark = townData.landmarks.find(
-    (place) => place.id === landmarkId,
-  ) as { id: string; actions: MapPlaceAction[] } | undefined;
+  const landmark = townData.landmarks.find((place) => place.id === landmarkId) as
+    { id: string; actions: MapPlaceAction[] } | undefined;
 
   const action = landmark?.actions.find((item) => item.id === actionId);
   if (landmark && action) return { landmark, action: action as MapPlaceAction };

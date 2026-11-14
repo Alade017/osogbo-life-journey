@@ -156,7 +156,7 @@ describe("neighbourhood checkpoint manager", () => {
   it("treats an unknown saved point as changed", () => {
     expect(checkpointChanged(null, { x: 0, y: 0 })).toBe(true);
     expect(checkpointChanged({ x: 0, y: 0 }, { x: 0, y: 0 })).toBe(false);
-  }); 
+  });
   it("saves the final position when it matches the previous saved point but an update is pending", async () => {
     const gate = deferred<void>();
     const writes: CheckpointPoint[] = [];
@@ -175,7 +175,7 @@ describe("neighbourhood checkpoint manager", () => {
       { x: 5, y: 4 },
       { x: 3, y: 4 },
     ]);
-  }); 
+  });
   it("continues saving when the error reporting callback throws", async () => {
     let attempts = 0;
     const manager = new NeighborhoodCheckpoints(
@@ -189,10 +189,10 @@ describe("neighbourhood checkpoint manager", () => {
       },
     );
     manager.track("s1", target, null);
-  
+
     await manager.save("s1", { x: 1, y: 1 });
     await manager.save("s1", { x: 1, y: 1 });
-  
+
     expect(attempts).toBe(2);
   });
 });
