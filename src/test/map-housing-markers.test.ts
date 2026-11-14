@@ -30,7 +30,7 @@ describe("housing map marker input", () => {
         type: "compound",
         tier: 2,
         status: "rent_due",
-        position: [-21, 0, -15],
+        position: [sceneX(1), 0, sceneZ(1)],
       },
     ]);
   });
@@ -47,7 +47,7 @@ describe("housing map marker input", () => {
     };
 
     expect(mapHousingMarkers([marker])).toEqual([
-      expect.objectContaining({ id: "edge-home", position: [23, 0, 17] }),
+      expect.objectContaining({ id: "edge-home", position: [sceneX(23), 0, sceneZ(17)] }),
     ]);
 
     expect(
