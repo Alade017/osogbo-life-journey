@@ -16,7 +16,7 @@ it.each(["detached", "moved"])("cleans a focused overlay after its host was %s",
     entry.dispose();
     entry.dispose();
     expect(unmount).not.toHaveBeenCalled();
-    await Promise.resolve();
+    await new Promise<void>((resolve) => globalThis.setTimeout(resolve, 0));
   });
   expect(unmount).toHaveBeenCalledTimes(1);
   expect(other.childNodes).toHaveLength(0);
