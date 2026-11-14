@@ -883,6 +883,16 @@
   stroke: #1f2937;
   stroke-width: 0.12;
 }
+.mg-ludo-star {
+  fill: none;
+  stroke: #1f2937;
+  stroke-width: 0.05;
+  stroke-linejoin: round;
+}
+.mg-ludo-chevron {
+  fill: #ffffff;
+  pointer-events: none;
+}
 .mg-ludo-yard {
   fill: var(--yard, #bbb);
 }
@@ -890,8 +900,8 @@
   fill: #ffffff;
 }
 .mg-ludo-socket {
-  fill: color-mix(in srgb, var(--yard, #bbb) 18%, #ffffff);
-  stroke: color-mix(in srgb, var(--yard, #bbb) 55%, #1f2937);
+  fill: var(--yard, #bbb);
+  stroke: #ffffff;
   stroke-width: 0.06;
 }
 .mg-ludo-cell {
@@ -959,6 +969,147 @@
     transition: none;
   }
   .mg-ludo-ring {
+    animation: none;
+  }
+}
+
+/* Ludo dice: two white dice that roll when tapped before the roll and select a die after it. */
+.mg-ludo-dice {
+  gap: 18px;
+}
+.mg-ludo-die {
+  padding: 6px;
+  border: 0;
+  border-radius: 18px;
+  background: transparent;
+  cursor: default;
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+.mg-ludo-die.is-rollable,
+.mg-ludo-die.is-usable {
+  cursor: pointer;
+}
+.mg-ludo-die.is-rollable:hover,
+.mg-ludo-die.is-usable:hover {
+  transform: translateY(-2px);
+}
+.mg-ludo-die.is-rollable {
+  animation: mg-pulse 1100ms ease-in-out infinite alternate;
+}
+.mg-ludo-die.is-usable {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mg-gold) 45%, transparent);
+}
+.mg-ludo-die.is-selected {
+  box-shadow: 0 0 0 3px var(--mg-gold);
+}
+.mg-ludo-die.is-used {
+  opacity: 0.35;
+}
+.mg-ludo-face {
+  display: block;
+  filter: drop-shadow(0 4px 4px rgb(0 0 0 / 0.25));
+}
+.mg-ludo-face.is-rolling {
+  animation: mg-die-roll 480ms cubic-bezier(0.3, 1.2, 0.5, 1);
+}
+
+/* Setup screens: pick the players or the house rules before a game starts. */
+.mg-setup {
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
+  gap: 12px;
+}
+.mg-setup-title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.mg-setup-options {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+}
+.mg-setup-option {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--mg-line);
+  background: var(--mg-paper);
+  text-align: left;
+  cursor: pointer;
+}
+.mg-setup-option span {
+  font-size: 0.85rem;
+  color: var(--muted-foreground, #6b7280);
+}
+.mg-setup-rules {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.85rem;
+  display: grid;
+  gap: 6px;
+}
+.mg-setup-check {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--mg-line);
+  background: var(--mg-paper);
+}
+.mg-setup-check span {
+  display: grid;
+  gap: 2px;
+}
+.mg-setup-check small {
+  color: var(--muted-foreground, #6b7280);
+}
+
+/* Whot: shuffle on load, and the draw popup that asks the player to pick from the deck. */
+.mg-shuffle {
+  position: relative;
+  width: 100%;
+  height: 150px;
+  display: grid;
+  place-items: center;
+}
+.mg-shuffle-card {
+  position: absolute;
+  animation: mg-shuffle 0.9s ease-in-out infinite alternate;
+  animation-delay: calc(var(--i) * 60ms);
+}
+@keyframes mg-shuffle {
+  from {
+    transform: translateX(-34px) rotate(-7deg);
+  }
+  to {
+    transform: translateX(34px) rotate(7deg);
+  }
+}
+.mg-draw-pick {
+  width: min(88vw, 300px);
+  background: #fffdf7;
+  color: #1f2937;
+}
+.mg-draw-deck {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: var(--mg-ink);
+  font-size: 0.8rem;
+  font-weight: 600;
+  animation: mg-pulse 1100ms ease-in-out infinite alternate;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mg-shuffle-card,
+  .mg-draw-deck,
+  .mg-ludo-die.is-rollable {
     animation: none;
   }
 }
