@@ -865,6 +865,7 @@
 .lb-board {
   position: relative;
   box-sizing: border-box;
+  overflow: hidden;
   width: 100%;
   max-width: 440px;
   margin: 0 auto;

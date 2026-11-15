@@ -59,14 +59,17 @@ function randomFace() {
   return 1 + Math.floor(Math.random() * 6);
 }
 
-/** Seats for a local game. Two players split the four colours, alternating turns. */
+/**
+ * Seats for a local game. In two-player games each side owns two houses (You: Red and Yellow;
+ * Computer: Green and Blue) and the sides alternate turns.
+ */
 function seatsFor(players: number): Seat[] {
   if (players === 2) {
     return [
       { colour: "RED", playerId: HUMAN },
       { colour: "GREEN", playerId: "cpu-1" },
       { colour: "YELLOW", playerId: HUMAN },
-      { colour: "BLUE", playerId: "cpu-2" },
+      { colour: "BLUE", playerId: "cpu-1" },
     ];
   }
   return COLOURS.slice(0, players).map((colour, index) => ({
@@ -281,6 +284,7 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
   const [resultsDismissed, setResultsDismissed] = useState(false);
 
   const turnPlayer = game.phase === "GAME_OVER" ? null : currentPlayerId(game);
+  const playerIds = [...new Set(seats.map((seat) => seat.playerId))];
   const humanTurn = turnPlayer === HUMAN && game.phase !== "GAME_OVER";
   const nameOf = (playerId: string) =>
     playerId === HUMAN ? "You" : `Computer ${playerId.split("-")[1] ?? ""}`.trim();
@@ -449,11 +453,12 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
         </Dialog>
       )}
       <div className="lb-hud" aria-label="Players">
-        {seats.map((seat, index) => {
-          // Two-player games give one player two seats, so the turn follows the colour, not the player.
-          const active = turnPlayer !== null && game.seats[game.turnIndex]?.colour === seat.colour;
-          const isHuman = seat.playerId === HUMAN;
-          const home = finishedFor(seat.colour);
+        {playerIds.map((playerId) => {
+          // One card per player. A player with two houses sees both houses' pawns here.
+          const houses = seats.filter((seat) => seat.playerId === playerId);
+          const isHuman = playerId === HUMAN;
+          const active = turnPlayer === playerId;
+          const home = houses.reduce((sum, seat) => sum + finishedFor(seat.colour), 0);
           const turnLabel =
             game.phase === "GAME_OVER"
               ? "Game over"
@@ -464,9 +469,9 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
                 : "Waiting";
           return (
             <div
-              key={seat.colour}
+              key={playerId}
               className={`lb-card ${active ? "is-active" : ""}`}
-              style={{ "--seat": LUDO_COLOURS[seat.colour] } as CSSProperties}
+              style={{ "--seat": LUDO_COLOURS[houses[0]?.colour ?? "RED"] } as CSSProperties}
             >
               <span className="lb-avatar" aria-hidden="true">
                 {isHuman ? (
@@ -476,15 +481,22 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
                 )}
               </span>
               <span className="lb-info">
-                <span className="lb-name">{nameOf(seat.playerId)}</span>
+                <span className="lb-name">{nameOf(playerId)}</span>
                 <span className="lb-turn">
-                  {COLOUR_NAMES[seat.colour]} · {turnLabel}
+                  {houses.map((seat) => COLOUR_NAMES[seat.colour]).join(" & ")} · {turnLabel}
                 </span>
               </span>
-              <span className="lb-done" aria-label={`${home} of 4 home`}>
-                {Array.from({ length: 4 }, (_, token) => (
-                  <i key={token} className={token < home ? "is-home" : ""} />
-                ))}
+              <span className="lb-done" aria-label={`${home} of ${houses.length * 4} home`}>
+                {houses.map((seat) => {
+                  const finished = finishedFor(seat.colour);
+                  return Array.from({ length: 4 }, (_, token) => (
+                    <i
+                      key={`${seat.colour}-${token}`}
+                      style={{ "--seat": LUDO_COLOURS[seat.colour] } as CSSProperties}
+                      className={token < finished ? "is-home" : ""}
+                    />
+                  ));
+                })}
               </span>
             </div>
           );
