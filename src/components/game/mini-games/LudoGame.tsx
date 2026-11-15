@@ -496,6 +496,7 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
           playable={playable}
           onPick={pick}
           playerCount={seats.length}
+          humanColours={seats.filter((seat) => seat.playerId === HUMAN).map((seat) => seat.colour)}
         />
         {hintVisible && canRoll && (
           <div className="lb-roll-hint" role="status">

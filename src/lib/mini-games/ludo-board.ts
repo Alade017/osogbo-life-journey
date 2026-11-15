@@ -69,8 +69,11 @@ export function homeLane(arm: number): readonly Cell[] {
   );
 }
 
-/** Yard centre for arm 0 is the bottom-left corner; other arms turn it. */
-const YARD_CENTRE: Point = { x: EDGE / 2, y: BOARD_SIZE - EDGE / 2 };
+/**
+ * Yard centre for arm 0 is the top-left corner, the yard that touches RED's start square; other arms
+ * turn it, so every yard sits next to its own colour's start.
+ */
+const YARD_CENTRE: Point = { x: EDGE / 2, y: EDGE / 2 };
 const YARD_OFFSET = 1.25;
 export const YARD_SLOTS: readonly Point[] = [
   { x: -YARD_OFFSET, y: -YARD_OFFSET },

@@ -915,6 +915,23 @@
   border-radius: 14%;
   background: #ffffff;
 }
+/* The label sits in the yard's coloured band, above the white plate, so it never covers a socket. */
+.lb-yard-tag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 13%;
+  display: grid;
+  place-items: center;
+  font-size: 0.55rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  line-height: 1;
+  pointer-events: none;
+}
 .lb-socket {
   position: absolute;
   width: 15%;

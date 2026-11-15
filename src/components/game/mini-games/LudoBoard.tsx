@@ -57,16 +57,30 @@ function cellStyle(row: number, col: number): CSSProperties {
   return { gridRow: row + 1, gridColumn: col + 1 };
 }
 
+/**
+ * The four corners of the centre square. The track turns through these corners, so they are drawn as
+ * white track squares and the path reads as one continuous loop.
+ */
+const JOINTS: readonly (readonly [number, number])[] = [
+  [CENTRE.low, CENTRE.low],
+  [CENTRE.low, CENTRE.low + CENTRE.size - 1],
+  [CENTRE.low + CENTRE.size - 1, CENTRE.low],
+  [CENTRE.low + CENTRE.size - 1, CENTRE.low + CENTRE.size - 1],
+];
+
 export function LudoBoard({
   pieces,
   playable,
   onPick,
   playerCount,
+  humanColours,
 }: {
   pieces: Progress;
   playable: ReadonlySet<string>;
   onPick: (colour: Colour, token: number) => void;
   playerCount: number;
+  /** The colours the local player controls; their yards are labelled as home. */
+  humanColours: readonly Colour[];
 }) {
   const [shown, setShown] = useState<Progress>(pieces);
 
@@ -169,6 +183,12 @@ export function LudoBoard({
             style={{ ...box, background: LUDO_COLOURS[colour] }}
           >
             <div className="lb-yard-plate" />
+            <span
+              className="lb-yard-tag"
+              style={{ color: colour === "YELLOW" ? "#1f2937" : "#ffffff" }}
+            >
+              {humanColours.includes(colour) ? "Your home" : "Not yours"}
+            </span>
             {YARD_SLOTS.map((slot, index) => (
               <span
                 key={index}
@@ -200,6 +220,18 @@ export function LudoBoard({
             fill={LUDO_COLOURS[colour]}
             stroke="#1f2937"
             strokeWidth="0.04"
+          />
+        ))}
+        {JOINTS.map(([row, col]) => (
+          <rect
+            key={`${row},${col}`}
+            x={col}
+            y={row}
+            width={1}
+            height={1}
+            fill="#fff"
+            stroke="#1f2937"
+            strokeWidth="0.06"
           />
         ))}
       </svg>

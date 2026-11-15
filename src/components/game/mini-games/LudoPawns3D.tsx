@@ -21,6 +21,10 @@ const VIEW_SQUARES = BOARD_SIZE;
 /** Tilt of the camera away from straight down, so the pawns show their height. */
 const TILT = (24 * Math.PI) / 180;
 const CAMERA_DISTANCE = 24;
+/** Seconds a pawn takes to walk one square. Matches the board's time per tile. */
+const HOP_SECONDS = 0.17;
+/** How high a pawn lifts while it crosses a square. */
+const HOP_LIFT = 0.34;
 
 /** Half profile of a pawn (radius, height), turned into a solid by LatheGeometry. */
 const PROFILE = [
@@ -76,7 +80,8 @@ function PawnMesh({ piece, materials }: { piece: ScenePiece; materials: Material
   const group = useRef<THREE.Group>(null);
   const invalidate = useThree((state) => state.invalidate);
   const goal = useRef({ x: 0, z: 0, scale: 0 });
-  const snapped = useRef(false);
+  const hop = useRef({ fromX: 0, fromZ: 0, t: 1 });
+  const mounted = useRef(false);
   goal.current = {
     x: piece.x - CENTRE,
     // Squares foreshorten by cos(TILT) on screen; stretch the bases to keep them on their squares.
@@ -84,30 +89,43 @@ function PawnMesh({ piece, materials }: { piece: ScenePiece; materials: Material
     scale: piece.scale * 0.95,
   };
 
+  // Each move to a new square starts a hop from where the pawn is now, so it is walked tile by tile.
+  useEffect(() => {
+    const pawn = group.current;
+    if (!pawn) return;
+    if (!mounted.current) {
+      mounted.current = true;
+      pawn.position.set(goal.current.x, 0, goal.current.z);
+      pawn.scale.setScalar(goal.current.scale);
+      return;
+    }
+    hop.current = { fromX: pawn.position.x, fromZ: pawn.position.z, t: 0 };
+    invalidate();
+  }, [piece.x, piece.y, invalidate]);
+
   useEffect(() => {
     invalidate();
-  }, [piece.x, piece.y, piece.scale, invalidate]);
+  }, [piece.scale, invalidate]);
 
   useFrame((state, delta) => {
     const pawn = group.current;
     if (!pawn) return;
     const { x, z, scale } = goal.current;
-    if (!snapped.current) {
+    const current = hop.current;
+    if (current.t < 1) {
+      current.t = Math.min(1, current.t + delta / HOP_SECONDS);
+      const eased = current.t * current.t * (3 - 2 * current.t);
+      pawn.position.x = current.fromX + (x - current.fromX) * eased;
+      pawn.position.z = current.fromZ + (z - current.fromZ) * eased;
+      // The pawn arcs over each square and lands flat on it.
+      pawn.position.y = Math.sin(Math.PI * current.t) * HOP_LIFT;
+    } else {
       pawn.position.set(x, 0, z);
-      pawn.scale.setScalar(scale);
-      snapped.current = true;
     }
     const ease = 1 - Math.exp(-delta * 14);
-    const dx = x - pawn.position.x;
-    const dz = z - pawn.position.z;
-    pawn.position.x += dx * ease;
-    pawn.position.z += dz * ease;
-    const distance = Math.hypot(dx, dz);
-    // The pawn hops while it travels, and lands flat on its square.
-    pawn.position.y = Math.min(0.3, distance * 0.8);
     const before = pawn.scale.x;
     pawn.scale.setScalar(before + (scale - before) * ease);
-    if (distance > 0.002 || Math.abs(scale - pawn.scale.x) > 0.001 || pawn.position.y > 0.002) {
+    if (current.t < 1 || Math.abs(scale - pawn.scale.x) > 0.001) {
       state.invalidate();
     }
   });
