@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
-import { PawnArt } from "@/components/game/mini-games/ludo-art";
+import { PawnMark3D } from "@/components/game/mini-games/LudoPawns3D";
 import {
   Dialog,
   DialogContent,
@@ -215,7 +215,7 @@ function describeEvents(events: LudoEvent[], name: (playerId: string) => string)
 
 /** A pawn in the seat's colour, used for avatars and the results popup. */
 function PawnMark({ colour, size = 28 }: { colour: Colour; size?: number }) {
-  return <PawnArt colour={colour} size={size} className="lb-pawn" />;
+  return <PawnMark3D colour={colour} size={size} />;
 }
 
 /** Results popup: shown over the finished board, and can be reopened from the table. */

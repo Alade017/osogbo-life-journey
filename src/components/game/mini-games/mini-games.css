@@ -1571,3 +1571,15 @@
   width: 100% !important;
   height: 100% !important;
 }
+
+/* A single 3D pawn: a square box that holds its own small canvas. */
+.lb-mark-3d {
+  position: relative;
+  display: block;
+  flex: none;
+}
+.lb-mark-3d canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}

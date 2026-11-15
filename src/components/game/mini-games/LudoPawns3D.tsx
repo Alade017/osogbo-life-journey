@@ -169,3 +169,42 @@ export function LudoPawns3D({ pieces }: { pieces: readonly ScenePiece[] }) {
     </div>
   );
 }
+
+/** One pawn on its own, for the player cards and the results popup. */
+export function PawnMark3D({ colour, size }: { colour: Colour; size: number }) {
+  const material = useMemo(
+    () =>
+      new THREE.MeshStandardMaterial({
+        color: LUDO_COLOURS[colour],
+        roughness: 0.3,
+        metalness: 0.05,
+      }),
+    [colour],
+  );
+  return (
+    <span className="lb-mark-3d" style={{ width: size, height: size }} aria-hidden="true">
+      <Canvas
+        orthographic
+        frameloop="demand"
+        dpr={[1, 2]}
+        gl={{ antialias: true, alpha: true }}
+        camera={{
+          position: [0, CAMERA_DISTANCE * Math.cos(TILT), CAMERA_DISTANCE * Math.sin(TILT)],
+          zoom: size / 1.25,
+          near: 0.1,
+          far: 100,
+        }}
+        onCreated={({ camera }) => camera.lookAt(0, 0, 0)}
+      >
+        <ambientLight intensity={0.8} />
+        <hemisphereLight args={["#ffffff", "#c9b99a", 0.5]} />
+        <directionalLight position={[-3, 22, 6]} intensity={1.7} />
+        {/* The pawn stands 1.08 units tall; centre it on the canvas. */}
+        <group position={[0, -0.54, 0]}>
+          <mesh geometry={BODY} material={material} />
+          <mesh geometry={HEAD} material={material} />
+        </group>
+      </Canvas>
+    </span>
+  );
+}
