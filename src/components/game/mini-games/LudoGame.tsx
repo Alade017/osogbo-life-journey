@@ -51,6 +51,8 @@ const ONLINE_OPTIONS: readonly { label: string; blurb: string }[] = [
 const NO_MOVES_DELAY_MS = 1200;
 /** How long the "Tap to roll" hint stays before it disappears. */
 const ROLL_HINT_MS = 3500;
+/** After this long without a move, the your-turn card comes back. */
+const TURN_REMINDER_MS = 20000;
 const TOAST_MS = 2_400;
 
 function randomFace() {
@@ -362,6 +364,22 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
     setRolls((count) => count + 1);
     apply(rollDice(game, HUMAN, [randomFace(), randomFace()]));
   };
+  // The your-turn card opens when a human turn starts, and returns after a long pause.
+  const humanReady =
+    humanTurn && (game.phase === "WAITING_FOR_ROLL" || game.phase === "WAITING_FOR_MOVE");
+  const [promptOpen, setPromptOpen] = useState(false);
+  useEffect(() => {
+    if (!humanReady) {
+      setPromptOpen(false);
+      return;
+    }
+    setPromptOpen(true);
+  }, [humanReady, game]);
+  useEffect(() => {
+    if (!humanReady || promptOpen) return;
+    const timer = window.setTimeout(() => setPromptOpen(true), TURN_REMINDER_MS);
+    return () => window.clearTimeout(timer);
+  }, [humanReady, promptOpen, game]);
   const pick = (colour: Colour, token: number) => {
     apply(moveToken(game, HUMAN, colour, token, selectedDie ?? undefined));
   };
@@ -374,7 +392,7 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
         : `${nameOf(game.winnerId ?? "")} won.`
       : humanTurn
         ? game.phase === "WAITING_FOR_ROLL"
-          ? "Your turn! Tap the dice to roll."
+          ? ""
           : game.phase === "NO_LEGAL_MOVES"
             ? "No legal move for either die."
             : selectedDie !== null
@@ -387,9 +405,49 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
 
   return (
     <section className="mg-game mg-ludo" aria-label="Ludo">
-      <p className={`mg-status ${humanWon ? "is-win" : ""}`} role="status">
-        {status}
-      </p>
+      {status && (
+        <p className={`mg-status ${humanWon ? "is-win" : ""}`} role="status">
+          {status}
+        </p>
+      )}
+      {humanReady && (
+        <Dialog
+          open={promptOpen}
+          onOpenChange={(next) => {
+            if (!next) setPromptOpen(false);
+          }}
+        >
+          <DialogContent className="lb-results lb-turn-prompt">
+            <DialogHeader className="lb-results-head">
+              <span className="lb-prompt-icon" aria-hidden="true">
+                <User size={22} />
+              </span>
+              <div>
+                <DialogTitle>Your turn</DialogTitle>
+                <DialogDescription>
+                  {game.phase === "WAITING_FOR_ROLL"
+                    ? "Tap the dice to roll."
+                    : "Choose a highlighted pawn to move."}
+                </DialogDescription>
+              </div>
+            </DialogHeader>
+            <DialogFooter className="lb-results-actions">
+              {game.phase === "WAITING_FOR_ROLL" ? (
+                <Button
+                  onClick={() => {
+                    setPromptOpen(false);
+                    roll();
+                  }}
+                >
+                  Roll the dice
+                </Button>
+              ) : (
+                <Button onClick={() => setPromptOpen(false)}>Got it</Button>
+              )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
       <div className="lb-hud" aria-label="Players">
         {seats.map((seat, index) => {
           // Two-player games give one player two seats, so the turn follows the colour, not the player.

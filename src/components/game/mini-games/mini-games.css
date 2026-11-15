@@ -1586,3 +1586,15 @@
   width: 100% !important;
   height: 100% !important;
 }
+
+/* Your-turn card: the same card as the results, with a small icon chip. */
+.lb-prompt-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #f5c518;
+  color: #1f2937;
+  flex: none;
+}
