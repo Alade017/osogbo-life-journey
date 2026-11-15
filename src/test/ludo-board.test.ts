@@ -13,6 +13,7 @@ import {
 } from "@/lib/mini-games/ludo-engine";
 import {
   BOARD_SIZE,
+  CENTRE,
   LOOP_CELLS,
   homeLane,
   hopStep,
@@ -78,10 +79,13 @@ describe("ludo board geometry", () => {
       x: LOOP_CELLS[13]![1] + 0.5,
       y: LOOP_CELLS[13]![0] + 0.5,
     });
-    expect(tokenPoint("RED", FINISH_STEP, 0)).toEqual({
-      x: (BOARD_SIZE - 1) / 2 + 0.5,
-      y: (BOARD_SIZE - 1) / 2 + 0.5,
-    });
+    const finished = tokenPoint("RED", FINISH_STEP, 0);
+    expect(finished.x).toBeGreaterThan(CENTRE.low);
+    expect(finished.x).toBeLessThan(CENTRE.low + CENTRE.size);
+    expect(finished.y).toBeGreaterThan(CENTRE.low);
+    expect(finished.y).toBeLessThan(CENTRE.low + CENTRE.size);
+    const slots = [0, 1, 2, 3].map((token) => tokenPoint("RED", FINISH_STEP, token));
+    expect(new Set(slots.map((p) => `${p.x},${p.y}`)).size).toBe(4);
   });
 
   it("gives every arm a yard rectangle on the board", () => {

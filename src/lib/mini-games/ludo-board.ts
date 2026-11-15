@@ -82,6 +82,24 @@ export const YARD_SLOTS: readonly Point[] = [
   { x: -YARD_OFFSET, y: YARD_OFFSET },
 ];
 
+/** Turns a vector a quarter at a time, clockwise on screen. */
+function turnVectorBy(vector: Point, turns: number): Point {
+  let out = vector;
+  for (let step = 0; step < ((turns % ARMS) + ARMS) % ARMS; step += 1) {
+    out = { x: -out.y, y: out.x };
+  }
+  return out;
+}
+
+/** Four slots inside the finish triangle, so each finished token keeps its own space. */
+const FINISH_SLOTS: readonly Point[] = [
+  { x: -0.28, y: -0.28 },
+  { x: 0.28, y: -0.28 },
+  { x: 0.28, y: 0.28 },
+  { x: -0.28, y: 0.28 },
+];
+const FINISH_REACH = 0.85;
+
 /** Where a token sits: its colour, its progress from the engine, and its index in the yard. */
 export function tokenPoint(colour: Colour, step: number, token: number): Point {
   const arm = armOf(colour);
@@ -90,7 +108,15 @@ export function tokenPoint(colour: Colour, step: number, token: number): Point {
     const centre = turnPointBy(YARD_CENTRE, arm);
     return { x: centre.x + slot.x, y: centre.y + slot.y };
   }
-  if (step === FINISH_STEP) return { x: MID + 0.5, y: MID + 0.5 };
+  if (step === FINISH_STEP) {
+    // Finished tokens sit in their own colour's triangle of the centre square, one slot each.
+    const toward = turnVectorBy({ x: -1, y: 0 }, arm);
+    const slot = FINISH_SLOTS[token % 4] ?? FINISH_SLOTS[0]!;
+    return {
+      x: MID + 0.5 + toward.x * FINISH_REACH + slot.x,
+      y: MID + 0.5 + toward.y * FINISH_REACH + slot.y,
+    };
+  }
   if (step <= LAST_TRACK_STEP) {
     const [row, col] = LOOP_CELLS[absoluteTile(colour, step)] ?? LOOP_CELLS[0]!;
     return { x: col + 0.5, y: row + 0.5 };

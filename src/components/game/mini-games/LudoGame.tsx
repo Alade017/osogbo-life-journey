@@ -365,21 +365,21 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
     apply(rollDice(game, HUMAN, [randomFace(), randomFace()]));
   };
   // The your-turn card opens when a human turn starts, and returns after a long pause.
-  const humanReady =
-    humanTurn && (game.phase === "WAITING_FOR_ROLL" || game.phase === "WAITING_FOR_MOVE");
+  // Only the roll turn gets the card. On a move turn the status line already says what to do.
+  const rollReady = humanTurn && game.phase === "WAITING_FOR_ROLL";
   const [promptOpen, setPromptOpen] = useState(false);
   useEffect(() => {
-    if (!humanReady) {
+    if (!rollReady) {
       setPromptOpen(false);
       return;
     }
     setPromptOpen(true);
-  }, [humanReady, game]);
+  }, [rollReady, game]);
   useEffect(() => {
-    if (!humanReady || promptOpen) return;
+    if (!rollReady || promptOpen) return;
     const timer = window.setTimeout(() => setPromptOpen(true), TURN_REMINDER_MS);
     return () => window.clearTimeout(timer);
-  }, [humanReady, promptOpen, game]);
+  }, [rollReady, promptOpen, game]);
   const pick = (colour: Colour, token: number) => {
     apply(moveToken(game, HUMAN, colour, token, selectedDie ?? undefined));
   };
@@ -410,7 +410,7 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
           {status}
         </p>
       )}
-      {humanReady && (
+      {rollReady && (
         <Dialog
           open={promptOpen}
           onOpenChange={(next) => {
