@@ -18,7 +18,8 @@ import { WaypointBeacon } from "./WaypointBeacon";
 import { WorldStreetFurniture } from "@/components/3d/WorldStreetFurniture";
 import { worldAppearance, worldEquipment } from "@/game/world-character-view";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import type { Group } from "three";
+import { EffectComposer, Vignette } from "@react-three/postprocessing";
+import { ACESFilmicToneMapping, type Group } from "three";
 import type { NeighborhoodPlayerView, NeighborhoodSceneHandle } from "@/game/neighborhood-types";
 import type { playableDistrictForLocation } from "@/game/playable-district";
 import {
@@ -691,10 +692,15 @@ export function R3FNeighborhoodSurface({
     <NeighborhoodBoundary>
       <div className="playable-neighborhood-canvas">
         <Canvas
-          shadows
+          shadows="soft"
           frameloop="demand"
           dpr={[1, 1.5]}
-          gl={{ antialias: false, powerPreference: "low-power" }}
+          gl={{
+            antialias: false,
+            powerPreference: "low-power",
+            toneMapping: ACESFilmicToneMapping,
+            toneMappingExposure: 1.05,
+          }}
         >
           <WorldCamera
             width={bounds.width * unit}
@@ -705,7 +711,14 @@ export function R3FNeighborhoodSurface({
             maxZoom={NEIGHBORHOOD_CAMERA.maxZoom}
             onZoomChange={onZoomChange}
           />
-          <WorldLighting size={Math.max(bounds.width, bounds.height) * unit} animateFoliage />
+          <WorldLighting
+            size={Math.max(bounds.width, bounds.height) * unit}
+            animateFoliage
+            refined
+          />
+          <EffectComposer multisampling={0}>
+            <Vignette eskil={false} offset={0.28} darkness={0.42} />
+          </EffectComposer>
           <color attach="background" args={[WORLD_PALETTE.sky]} />
           <fog
             attach="fog"

@@ -36,15 +36,25 @@ export function WorldMaterial({
   );
 }
 
+/** Sky, ground bounce and warm sun colours for the refined neighbourhood light. */
+const WORLD_LIGHT = {
+  sky: "#dbeaf7",
+  ground: "#b89a6a",
+  sun: "#fff1d6",
+} as const;
+
 export function WorldLighting({
   size = 30,
   dimmed = false,
   animateFoliage = false,
+  refined = false,
 }: {
   size?: number;
   dimmed?: boolean;
   /** Lets foliage sway in this scene. Off by default so static scenes never lean. */
   animateFoliage?: boolean;
+  /** Sky-and-ground fill and higher-quality sun shadows, for the neighbourhood view. */
+  refined?: boolean;
 }) {
   const { invalidate } = useThree();
   useEffect(() => {
@@ -68,12 +78,18 @@ export function WorldLighting({
   return (
     <>
       <color attach="background" args={[WORLD_PALETTE.ground]} />
-      <ambientLight intensity={dimmed ? 0.5 : 1.4} />
+      {refined ? (
+        <hemisphereLight args={[WORLD_LIGHT.sky, WORLD_LIGHT.ground, 1.1]} />
+      ) : (
+        <ambientLight intensity={dimmed ? 0.5 : 1.4} />
+      )}
       <directionalLight
         position={[size * 0.3, size, size * 0.4]}
-        intensity={dimmed ? 0.7 : 2}
+        intensity={refined ? 2.4 : dimmed ? 0.7 : 2}
+        color={refined ? WORLD_LIGHT.sun : undefined}
         castShadow
-        shadow-mapSize={[1024, 1024]}
+        shadow-mapSize={refined ? [2048, 2048] : [1024, 1024]}
+        shadow-radius={refined ? 4 : 1}
         shadow-bias={-0.001}
         shadow-normalBias={0.04}
         shadow-camera-left={-size}

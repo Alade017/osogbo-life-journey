@@ -9,6 +9,11 @@ import townData from "@/data/osogbo-town.json";
 import osunPlaces from "@/data/osun-public-places.json";
 import { MapCanvas } from "@/components/map/MapCanvas";
 import { findMapPlaceAction } from "@/lib/map-place-action.server";
+import {
+  clearPendingDepartureFromHome,
+  peekPendingDepartureFromHome,
+  takeDepartureFromHome,
+} from "@/lib/home-departure";
 vi.mock("@tanstack/react-router", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@tanstack/react-router")>();
   return {
@@ -31,6 +36,7 @@ const testState = vi.hoisted(() => ({
   character: null as Record<string, unknown> | null,
   locations: [] as Record<string, unknown>[],
   wallet: null as Record<string, unknown> | null,
+  insideHome: false,
 }));
 const eventState = vi.hoisted(() => ({
   events: [] as import("@/lib/city-event-service").CityEventOccurrence[],
@@ -89,6 +95,9 @@ beforeEach(() => {
   testState.character = null;
   testState.locations = [];
   testState.wallet = null;
+  testState.insideHome = false;
+  const pending = takeDepartureFromHome();
+  if (pending) clearPendingDepartureFromHome(pending);
   class TestResizeObserver {
     constructor(private readonly callback: ResizeObserverCallback) {}
     observe() {
@@ -107,7 +116,8 @@ afterEach(() => {
   clients.splice(0).forEach((client) => client.clear());
 });
 
-function renderDashboard(currentSlug?: string) {
+function renderDashboard(currentSlug?: string, insideHome = false) {
+  testState.insideHome = insideHome;
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   if (currentSlug) {
     testState.character = {
@@ -115,6 +125,7 @@ function renderDashboard(currentSlug?: string) {
       user_id: "test-account",
       current_location_id: "confirmed-location",
       level: 5,
+      inside_home_property_id: insideHome ? "player-property" : null,
     };
     testState.locations = [
       { id: "confirmed-location", slug: currentSlug, name: "Current location" },
@@ -259,6 +270,39 @@ describe("isometric town map", () => {
     expect(await screen.findByRole("alert")).toHaveTextContent("INSUFFICIENT_FUNDS");
     expect(testState.navigate).not.toHaveBeenCalled();
     expect(testState.character?.["current_location_id"]).toBe("confirmed-location");
+  }, 15_000);
+
+  it("clears the queued home departure when navigation to the house fails", async () => {
+    renderDashboard("residential", true);
+    testState.navigate.mockRejectedValueOnce(new Error("navigation failed"));
+    fireEvent.click(screen.getByRole("button", { name: "Travel to Olaiya" }));
+    await screen.findByText("Destination access confirmed.");
+    fireEvent.click(screen.getByRole("radio", { name: /Danfo/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm and travel" }));
+
+    await vi.waitFor(() =>
+      expect(testState.navigate).toHaveBeenCalledWith({ to: "/house" }),
+    );
+    await vi.waitFor(() => expect(peekPendingDepartureFromHome()).toBeNull());
+    expect(testState.travelToLocation).not.toHaveBeenCalled();
+  }, 15_000);
+
+  it("preserves the queued home departure after successful navigation", async () => {
+    renderDashboard("residential", true);
+    testState.navigate.mockResolvedValueOnce(undefined);
+    fireEvent.click(screen.getByRole("button", { name: "Travel to Olaiya" }));
+    await screen.findByText("Destination access confirmed.");
+    fireEvent.click(screen.getByRole("radio", { name: /Danfo/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm and travel" }));
+
+    await vi.waitFor(() =>
+      expect(testState.navigate).toHaveBeenCalledWith({ to: "/house" }),
+    );
+    expect(takeDepartureFromHome()).toEqual({
+      locationId: "destination-city-centre",
+      mode: "danfo",
+    });
+    expect(testState.travelToLocation).not.toHaveBeenCalled();
   }, 15_000);
 
   it("offers the playable neighborhood for an active destination with a valid row", async () => {
