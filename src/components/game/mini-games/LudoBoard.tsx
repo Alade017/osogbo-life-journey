@@ -1,7 +1,7 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { COLOURS, absoluteTile, isSafeTile, type Colour } from "@/lib/mini-games/ludo-engine";
 import { LUDO_COLOURS } from "@/components/game/mini-games/ludo-palette";
-import { PawnArt } from "@/components/game/mini-games/ludo-art";
+import { LudoPawns3D, type ScenePiece } from "@/components/game/mini-games/LudoPawns3D";
 import {
   BOARD_SIZE,
   CENTRE,
@@ -53,11 +53,6 @@ function sameAll(a: Progress, b: Progress) {
   );
 }
 
-/** Pawn drawn in its colour with a dark base, centred on the origin. */
-function Pawn({ colour }: { colour: Colour }) {
-  return <PawnArt colour={colour} className="lb-pawn" />;
-}
-
 function cellStyle(row: number, col: number): CSSProperties {
   return { gridRow: row + 1, gridColumn: col + 1 };
 }
@@ -90,6 +85,24 @@ export function LudoBoard({
       tiles.set(key, [...(tiles.get(key) ?? []), { colour, token, point }]);
     });
   }
+
+  const scenePieces: ScenePiece[] = [...tiles.values()].flatMap((group) =>
+    group.map((item, index) => {
+      const stacked = group.length > 1;
+      const offset = stacked
+        ? (STACK_OFFSETS[index % STACK_OFFSETS.length] ?? { x: 0, y: 0 })
+        : { x: 0, y: 0 };
+      const key = `${item.colour}-${item.token}`;
+      return {
+        key,
+        colour: item.colour,
+        x: item.point.x + offset.x,
+        y: item.point.y + offset.y,
+        scale: stacked ? 0.62 : 0.9,
+        playable: playable.has(key),
+      };
+    }),
+  );
 
   return (
     <div className="lb-board" data-players={playerCount}>
@@ -226,12 +239,11 @@ export function LudoBoard({
                     }
                   : undefined
               }
-            >
-              <Pawn colour={item.colour} />
-            </div>
+            ></div>
           );
         }),
       )}
+      <LudoPawns3D pieces={scenePieces} />
     </div>
   );
 }
