@@ -1033,23 +1033,27 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border-radius: 14px;
-  border: 2px solid transparent;
-  background: var(--mg-paper, #fffdf7);
-  box-shadow: inset 4px 0 0 var(--seat);
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid rgb(0 0 0 / 0.07);
+  background: #ffffff;
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.04),
+    0 4px 12px rgb(0 0 0 / 0.05);
 }
 .lb-card.is-active {
-  border-color: var(--seat);
+  border-color: #1f2937;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.12);
 }
 .lb-avatar {
   display: inline-grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
-  background: color-mix(in srgb, var(--seat) 14%, #ffffff);
+  background: #f1efe8;
+  color: #1f2937;
   flex: none;
 }
 .lb-name {
@@ -1136,7 +1140,6 @@
   align-items: center;
   padding: 8px 10px;
   border-radius: 12px;
-  box-shadow: inset 4px 0 0 var(--seat);
   background: rgb(0 0 0 / 0.03);
   font-size: 0.85rem;
 }

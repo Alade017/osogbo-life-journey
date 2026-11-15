@@ -1,6 +1,6 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
-import { Check } from "lucide-react";
+import { Bot, Check, User } from "lucide-react";
 import { PawnMark3D } from "@/components/game/mini-games/LudoPawns3D";
 import {
   Dialog,
@@ -411,7 +411,11 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
               style={{ "--seat": LUDO_COLOURS[seat.colour] } as CSSProperties}
             >
               <span className="lb-avatar" aria-hidden="true">
-                <PawnMark colour={seat.colour} size={30} />
+                {isHuman ? (
+                  <User size={16} aria-hidden="true" />
+                ) : (
+                  <Bot size={16} aria-hidden="true" />
+                )}
               </span>
               <span className="lb-info">
                 <span className="lb-name">{nameOf(seat.playerId)}</span>
