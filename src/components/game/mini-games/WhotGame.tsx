@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
+import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useComputerTurn } from "@/components/game/mini-games/computer-turn";
 import { CardBack, CardFace, ShapeGlyph } from "@/components/game/mini-games/game-art";
@@ -18,6 +19,8 @@ import {
 /** How long the deck shuffles when the game loads, before the cards are dealt to the screen. */
 export const SHUFFLE_MS = 1400;
 const SHUFFLE_CARDS = 5;
+/** How long the "pick a card" note stays up before the deck starts to glow. */
+const DRAW_NOTE_MS = 4000;
 
 type WhotSetupChoice = { whotBlocksPenalty: boolean };
 
@@ -59,6 +62,7 @@ function WhotTable({ config }: { config: WhotSetupChoice }) {
   );
   const [pendingWhot, setPendingWhot] = useState<string | null>(null);
   const [shuffling, setShuffling] = useState(true);
+  const [noteOpen, setNoteOpen] = useState(false);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setShuffling(false), SHUFFLE_MS);
@@ -107,6 +111,17 @@ function WhotTable({ config }: { config: WhotSetupChoice }) {
 
   const drawFromDeck = () => setState((current) => drawWhot(current));
 
+  // The "pick a card" note shows for a few seconds each time a draw is forced, then the deck glows.
+  useEffect(() => {
+    if (!mustDraw) {
+      setNoteOpen(false);
+      return;
+    }
+    setNoteOpen(true);
+    const timer = window.setTimeout(() => setNoteOpen(false), DRAW_NOTE_MS);
+    return () => window.clearTimeout(timer);
+  }, [mustDraw, state]);
+
   return (
     <section className="mg-game mg-whot" aria-label="Whot">
       <p className={`mg-status ${state.winner === 0 ? "is-win" : ""}`} role="status">
@@ -123,10 +138,16 @@ function WhotTable({ config }: { config: WhotSetupChoice }) {
       ) : (
         <>
           <div className="mg-whot-table">
-            <div className="mg-pile">
+            <button
+              type="button"
+              className={`mg-pile ${mustDraw && !noteOpen ? "is-draw-glow" : ""}`}
+              disabled={!mustDraw}
+              onClick={drawFromDeck}
+              aria-label={mustDraw ? `Pick ${drawCount} from the deck` : "Deck"}
+            >
               <CardBack />
               <small>{state.stock.length} left</small>
-            </div>
+            </button>
             <div className="mg-discard">
               {top && (
                 <span key={top.id} className="mg-deal">
@@ -177,29 +198,24 @@ function WhotTable({ config }: { config: WhotSetupChoice }) {
         </>
       )}
       {mustDraw &&
+        noteOpen &&
         state.winner === null &&
         createPortal(
-          <div className="mg-shape-overlay" role="presentation">
-            <div
-              className="mg-shape-pick mg-draw-pick"
-              role="dialog"
-              aria-modal="true"
-              aria-label="Pick a card"
-            >
-              <p>
-                {state.pendingDraw > 0
-                  ? `You have no ${state.pendingRank} to defend. Pick ${drawCount} cards.`
-                  : "No card matches. Pick a new card."}
-              </p>
+          <div className="mg-draw-note" role="presentation">
+            <div className="mg-draw-note-card" role="dialog" aria-label="Pick a card">
               <button
                 type="button"
-                className="mg-draw-deck"
-                onClick={drawFromDeck}
-                aria-label={`Pick ${drawCount} card${drawCount > 1 ? "s" : ""} from the deck`}
+                className="mg-draw-close"
+                onClick={() => setNoteOpen(false)}
+                aria-label="Close"
               >
-                <CardBack />
-                <small>Tap the deck</small>
+                <X size={16} aria-hidden="true" />
               </button>
+              <p>
+                {state.pendingDraw > 0
+                  ? `You have no ${state.pendingRank} to defend. Pick ${drawCount} cards from the deck.`
+                  : "No card matches. Pick a new card from the deck."}
+              </p>
             </div>
           </div>,
           document.body,
