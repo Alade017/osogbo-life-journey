@@ -97,10 +97,10 @@ function turnVectorBy(vector: Point, turns: number): Point {
  * slot at `along` may sit up to `along` to either side without crossing its edges.
  */
 const FINISH_SLOTS: readonly { along: number; across: number }[] = [
-  { along: 0.95, across: -0.3 },
-  { along: 0.95, across: 0.3 },
-  { along: 0.5, across: -0.22 },
-  { along: 0.5, across: 0.22 },
+  { along: 1.05, across: -0.3 },
+  { along: 1.05, across: 0.3 },
+  { along: 0.6, across: -0.2 },
+  { along: 0.6, across: 0.2 },
 ];
 
 /** Where a token sits: its colour, its progress from the engine, and its index in the yard. */

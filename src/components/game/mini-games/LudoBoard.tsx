@@ -124,7 +124,7 @@ export function LudoBoard({
         x: item.point.x + offset.x,
         y: item.point.y + offset.y,
         // Finished tokens are smaller so all four fit in their colour's triangle.
-        scale: item.finished ? 0.52 : stacked ? 0.5 : 0.9,
+        scale: item.finished ? 0.46 : stacked ? 0.5 : 0.9,
         playable: playable.has(key),
       };
     }),
@@ -225,27 +225,26 @@ export function LudoBoard({
           stroke="#1f2937"
           strokeWidth="0.06"
         />
-        {COLOURS.map((colour, arm) => (
-          <polygon
-            key={colour}
-            points={centreTriangle(arm)}
-            fill={LUDO_COLOURS[colour]}
-            stroke="#1f2937"
-            strokeWidth="0.04"
-          />
-        ))}
         {JOINTS.map(([row, col]) => (
+          <rect key={`${row},${col}`} x={col} y={row} width={1} height={1} fill="#fff" />
+        ))}
+        {COLOURS.map((colour, arm) => (
+          <polygon key={colour} points={centreTriangle(arm)} fill={LUDO_COLOURS[colour]} />
+        ))}
+        {/* Drawn last so the box edges and both diagonals stay crisp over the triangles and corners. */}
+        <g fill="none" stroke="#1f2937" strokeLinecap="square">
           <rect
-            key={`${row},${col}`}
-            x={col}
-            y={row}
-            width={1}
-            height={1}
-            fill="#fff"
-            stroke="#1f2937"
+            x={CENTRE.low}
+            y={CENTRE.low}
+            width={CENTRE.size}
+            height={CENTRE.size}
+            strokeWidth="0.08"
+          />
+          <path
+            d={`M${CENTRE.low},${CENTRE.low} L${CENTRE.low + CENTRE.size},${CENTRE.low + CENTRE.size} M${CENTRE.low + CENTRE.size},${CENTRE.low} L${CENTRE.low},${CENTRE.low + CENTRE.size}`}
             strokeWidth="0.06"
           />
-        ))}
+        </g>
       </svg>
       {[...tiles.values()].flatMap((group) =>
         group.map((item, index) => {
@@ -256,7 +255,7 @@ export function LudoBoard({
           const left = ((item.point.x + offset.x) / BOARD_SIZE) * 100;
           const top = ((item.point.y + offset.y) / BOARD_SIZE) * 100;
           const isPlayable = playable.has(`${item.colour}-${item.token}`);
-          const size = item.finished ? 0.52 : stacked ? 0.5 : 0.9;
+          const size = item.finished ? 0.46 : stacked ? 0.5 : 0.9;
           return (
             <div
               key={`${item.colour}-${item.token}`}
