@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { useComputerTurn } from "@/components/game/mini-games/computer-turn";
@@ -85,9 +85,10 @@ function WhotTable({ config }: { config: WhotSetupChoice }) {
 
   const hand = state.hands[0] ?? [];
   const rival = state.hands[1] ?? [];
-  const playable = humanTurn
-    ? new Set(playableCards(state).map((card) => card.id))
-    : new Set<string>();
+  const playable = useMemo(
+    () => (humanTurn ? new Set(playableCards(state).map((card) => card.id)) : new Set<string>()),
+    [state, humanTurn],
+  );
   const mustDraw = humanTurn && !shuffling && playable.size === 0;
   const top = state.discard[state.discard.length - 1];
   const drawCount = state.pendingDraw > 0 ? state.pendingDraw : 1;

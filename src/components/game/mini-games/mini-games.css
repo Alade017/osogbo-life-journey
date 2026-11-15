@@ -131,15 +131,13 @@
 }
 .mg-status {
   margin: 0;
-  padding: 6px 14px;
-  border-radius: 999px;
-  background: var(--muted, #f3f1ea);
   font-size: 0.9rem;
   font-weight: 600;
   text-align: center;
+  color: var(--muted-foreground, #6b7280);
 }
 .mg-status.is-win {
-  background: color-mix(in srgb, var(--mg-gold) 28%, transparent);
+  color: var(--mg-gold);
   animation: mg-bounce 700ms ease-out;
 }
 
@@ -497,11 +495,9 @@
   justify-content: center;
   flex-shrink: 0;
   border-radius: 9px;
-  background: linear-gradient(170deg, #fffdf7 0%, #f7f1e1 100%);
-  border: 2px solid var(--card-accent);
-  box-shadow:
-    0 6px 12px -6px rgb(0 0 0 / 0.45),
-    inset 0 0 0 3px rgb(255 255 255 / 0.7);
+  background: #fffdf7;
+  border: 1px solid rgb(40 30 20 / 0.16);
+  box-shadow: 0 4px 10px -6px rgb(0 0 0 / 0.4);
   color: var(--card-accent);
   user-select: none;
 }
@@ -551,9 +547,9 @@
 }
 .mg-card-art.is-whot {
   --card-accent: #3b2a6b;
-  background: radial-gradient(circle at 50% 35%, #4b3a86, #241a4a 75%);
+  background: #2a2150;
   color: #f6c744;
-  border-color: #f6c744;
+  border-color: rgb(246 199 68 / 0.5);
 }
 .mg-whot-star {
   display: grid;
@@ -613,9 +609,8 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgb(255 255 255 / 0.14);
+  padding: 2px 0;
+  color: #f6f1de;
 }
 .mg-opponent {
   display: flex;
@@ -648,12 +643,10 @@
 /* Whot: hand */
 .mg-hand {
   display: flex;
-  gap: 6px;
   width: 100%;
   overflow-x: auto;
-  padding: 16px 6px 10px;
+  padding: 18px 6px 10px;
   box-sizing: border-box;
-  scroll-snap-type: x proximity;
   justify-content: safe center;
 }
 .mg-hand-card {
@@ -663,25 +656,27 @@
   background: none;
   border-radius: 9px;
   cursor: default;
-  opacity: 0.55;
-  filter: saturate(0.6);
+  opacity: 0.6;
   transition:
-    transform 180ms ease,
-    opacity 180ms ease,
-    filter 180ms ease;
-  scroll-snap-align: center;
-  animation: mg-deal 360ms ease-out both;
-  animation-delay: calc(var(--i, 0) * 45ms);
+    transform 160ms ease,
+    opacity 160ms ease;
+  animation: mg-deal 320ms ease-out both;
+  animation-delay: calc(var(--i, 0) * 35ms);
+}
+.mg-hand-card + .mg-hand-card {
+  margin-left: -18px;
 }
 .mg-hand-card.is-playable {
   opacity: 1;
-  filter: none;
   cursor: pointer;
-  animation: mg-card-glow 1.4s ease-in-out infinite alternate;
+}
+.mg-hand-card.is-playable .mg-card-art {
+  outline: 2px solid var(--mg-gold);
+  outline-offset: 1px;
 }
 .mg-hand-card.is-playable:hover,
 .mg-hand-card.is-playable:focus-visible {
-  transform: translateY(-10px) scale(1.05);
+  transform: translateY(-8px);
 }
 .mg-hand-card:disabled {
   cursor: default;
@@ -1352,10 +1347,28 @@
 }
 .mg-setup-rules {
   margin: 0;
-  padding-left: 18px;
+  padding: 12px 14px;
+  list-style: none;
   font-size: 0.85rem;
   display: grid;
-  gap: 6px;
+  gap: 8px;
+  border-radius: 14px;
+  border: 1px solid var(--mg-line);
+  background: var(--mg-paper);
+}
+.mg-setup-rules li {
+  position: relative;
+  padding-left: 14px;
+}
+.mg-setup-rules li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--mg-gold);
 }
 .mg-setup-check {
   display: flex;
@@ -1365,6 +1378,10 @@
   border-radius: 14px;
   border: 1px solid var(--mg-line);
   background: var(--mg-paper);
+}
+.mg-setup-check strong {
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 .mg-setup-check span {
   display: grid;
