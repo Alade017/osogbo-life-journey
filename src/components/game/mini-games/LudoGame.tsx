@@ -283,7 +283,7 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
   const turnPlayer = game.phase === "GAME_OVER" ? null : currentPlayerId(game);
   const humanTurn = turnPlayer === HUMAN && game.phase !== "GAME_OVER";
   const nameOf = (playerId: string) =>
-    playerId === HUMAN ? "You" : `CPU ${playerId.split("-")[1] ?? ""}`.trim();
+    playerId === HUMAN ? "You" : `Computer ${playerId.split("-")[1] ?? ""}`.trim();
 
   const apply = (result: LudoResult) => {
     if (!result.ok) return;
@@ -496,7 +496,7 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
           playable={playable}
           onPick={pick}
           playerCount={seats.length}
-          humanColours={seats.filter((seat) => seat.playerId === HUMAN).map((seat) => seat.colour)}
+          labels={Object.fromEntries(seats.map((seat) => [seat.colour, nameOf(seat.playerId)]))}
         />
         {hintVisible && canRoll && (
           <div className="lb-roll-hint" role="status">

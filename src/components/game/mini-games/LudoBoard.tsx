@@ -73,14 +73,14 @@ export function LudoBoard({
   playable,
   onPick,
   playerCount,
-  humanColours,
+  labels,
 }: {
   pieces: Progress;
   playable: ReadonlySet<string>;
   onPick: (colour: Colour, token: number) => void;
   playerCount: number;
-  /** The colours the local player controls; their yards are labelled as home. */
-  humanColours: readonly Colour[];
+  /** The name shown on each colour's home: the player's name, or the computer's. */
+  labels: Partial<Record<Colour, string>>;
 }) {
   const [shown, setShown] = useState<Progress>(pieces);
 
@@ -187,7 +187,7 @@ export function LudoBoard({
               className="lb-yard-tag"
               style={{ color: colour === "YELLOW" ? "#1f2937" : "#ffffff" }}
             >
-              {humanColours.includes(colour) ? "Your home" : "Not yours"}
+              {labels[colour] ?? ""}
             </span>
             {YARD_SLOTS.map((slot, index) => (
               <span
