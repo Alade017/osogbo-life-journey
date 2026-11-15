@@ -1,5 +1,11 @@
 import { useEffect, useState, type CSSProperties } from "react";
-import { COLOURS, absoluteTile, isSafeTile, type Colour } from "@/lib/mini-games/ludo-engine";
+import {
+  COLOURS,
+  FINISH_STEP,
+  absoluteTile,
+  isSafeTile,
+  type Colour,
+} from "@/lib/mini-games/ludo-engine";
 import { LUDO_COLOURS } from "@/components/game/mini-games/ludo-palette";
 import { LudoPawns3D, type ScenePiece } from "@/components/game/mini-games/LudoPawns3D";
 import {
@@ -17,11 +23,12 @@ import {
 
 /** Time per tile while a token walks its path. */
 const HOP_MS = 170;
+// Tokens that share a square are laid out inside it, never over its edges.
 const STACK_OFFSETS: readonly Point[] = [
-  { x: -0.24, y: -0.24 },
-  { x: 0.24, y: -0.24 },
-  { x: 0.24, y: 0.24 },
-  { x: -0.24, y: 0.24 },
+  { x: -0.17, y: -0.17 },
+  { x: 0.17, y: -0.17 },
+  { x: 0.17, y: 0.17 },
+  { x: -0.17, y: 0.17 },
 ];
 
 type Progress = Readonly<Record<Colour, readonly number[]>>;
@@ -91,12 +98,16 @@ export function LudoBoard({
   }, [shown, pieces]);
 
   // Group tokens that share a tile, so stacked tokens are scaled and laid out in a small sub-grid.
-  const tiles = new Map<string, { colour: Colour; token: number; point: Point }[]>();
+  const tiles = new Map<
+    string,
+    { colour: Colour; token: number; point: Point; finished: boolean }[]
+  >();
   for (const colour of COLOURS) {
     (shown[colour] ?? []).forEach((step, token) => {
       const point = tokenPoint(colour, step, token);
       const key = `${point.x},${point.y}`;
-      tiles.set(key, [...(tiles.get(key) ?? []), { colour, token, point }]);
+      const finished = step === FINISH_STEP;
+      tiles.set(key, [...(tiles.get(key) ?? []), { colour, token, point, finished }]);
     });
   }
 
@@ -112,7 +123,8 @@ export function LudoBoard({
         colour: item.colour,
         x: item.point.x + offset.x,
         y: item.point.y + offset.y,
-        scale: stacked ? 0.62 : 0.9,
+        // Finished tokens are smaller so all four fit in their colour's triangle.
+        scale: item.finished ? 0.52 : stacked ? 0.5 : 0.9,
         playable: playable.has(key),
       };
     }),
@@ -244,7 +256,7 @@ export function LudoBoard({
           const left = ((item.point.x + offset.x) / BOARD_SIZE) * 100;
           const top = ((item.point.y + offset.y) / BOARD_SIZE) * 100;
           const isPlayable = playable.has(`${item.colour}-${item.token}`);
-          const size = stacked ? 0.62 : 0.9;
+          const size = item.finished ? 0.52 : stacked ? 0.5 : 0.9;
           return (
             <div
               key={`${item.colour}-${item.token}`}

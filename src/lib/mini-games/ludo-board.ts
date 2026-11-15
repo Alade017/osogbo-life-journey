@@ -91,14 +91,17 @@ function turnVectorBy(vector: Point, turns: number): Point {
   return out;
 }
 
-/** Four slots inside the finish triangle, so each finished token keeps its own space. */
-const FINISH_SLOTS: readonly Point[] = [
-  { x: -0.28, y: -0.28 },
-  { x: 0.28, y: -0.28 },
-  { x: 0.28, y: 0.28 },
-  { x: -0.28, y: 0.28 },
+/**
+ * Four slots inside a colour's finish triangle. A slot is `along` steps out from the centre towards the
+ * colour's arm and `across` steps to the side. The triangle is as wide as it is far from the centre, so a
+ * slot at `along` may sit up to `along` to either side without crossing its edges.
+ */
+const FINISH_SLOTS: readonly { along: number; across: number }[] = [
+  { along: 0.95, across: -0.3 },
+  { along: 0.95, across: 0.3 },
+  { along: 0.5, across: -0.22 },
+  { along: 0.5, across: 0.22 },
 ];
-const FINISH_REACH = 0.85;
 
 /** Where a token sits: its colour, its progress from the engine, and its index in the yard. */
 export function tokenPoint(colour: Colour, step: number, token: number): Point {
@@ -111,10 +114,11 @@ export function tokenPoint(colour: Colour, step: number, token: number): Point {
   if (step === FINISH_STEP) {
     // Finished tokens sit in their own colour's triangle of the centre square, one slot each.
     const toward = turnVectorBy({ x: -1, y: 0 }, arm);
+    const across = turnVectorBy(toward, 1);
     const slot = FINISH_SLOTS[token % 4] ?? FINISH_SLOTS[0]!;
     return {
-      x: MID + 0.5 + toward.x * FINISH_REACH + slot.x,
-      y: MID + 0.5 + toward.y * FINISH_REACH + slot.y,
+      x: MID + 0.5 + toward.x * slot.along + across.x * slot.across,
+      y: MID + 0.5 + toward.y * slot.along + across.y * slot.across,
     };
   }
   if (step <= LAST_TRACK_STEP) {
