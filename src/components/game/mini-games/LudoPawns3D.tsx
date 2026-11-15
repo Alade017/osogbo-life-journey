@@ -19,7 +19,7 @@ const CENTRE = BOARD_SIZE / 2;
 /** How many board squares the camera shows across the stage. */
 const VIEW_SQUARES = BOARD_SIZE;
 /** Tilt of the camera away from straight down, so the pawns show their height. */
-const TILT = (12 * Math.PI) / 180;
+const TILT = (24 * Math.PI) / 180;
 const CAMERA_DISTANCE = 24;
 
 /** Half profile of a pawn (radius, height), turned into a solid by LatheGeometry. */
@@ -79,7 +79,8 @@ function PawnMesh({ piece, materials }: { piece: ScenePiece; materials: Material
   const snapped = useRef(false);
   goal.current = {
     x: piece.x - CENTRE,
-    z: piece.y - CENTRE,
+    // Squares foreshorten by cos(TILT) on screen; stretch the bases to keep them on their squares.
+    z: (piece.y - CENTRE) / Math.cos(TILT),
     scale: piece.scale * 0.95,
   };
 
