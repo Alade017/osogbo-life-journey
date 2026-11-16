@@ -64,7 +64,7 @@ export function mapGdeltArticles(region: ExternalNewsRegion, payload: unknown) {
         source_url: sourceUrl,
         title,
         published_at: parseDate(item["seendate"]),
-        expires_at: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+        expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
       },
     ];
   });
@@ -79,7 +79,7 @@ async function refresh(region: ExternalNewsRegion) {
   url.searchParams.set("format", "json");
   const response = await fetch(url, {
     headers: { Accept: "application/json" },
-    signal: AbortSignal.timeout(8000),
+    signal: AbortSignal.timeout(20000),
   });
   if (!response.ok) throw new Error(`Provider returned ${response.status}`);
   const items = mapGdeltArticles(region, await response.json());
