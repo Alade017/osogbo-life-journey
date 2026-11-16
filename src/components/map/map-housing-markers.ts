@@ -1,3 +1,4 @@
+import { WORLD_SCALE } from "@/components/3d/world-theme";
 import type { MapProperty } from "./MapCanvas";
 import town from "@/data/osogbo-town.json";
 import { mapTownGridToScene } from "@/lib/town-grid";
@@ -5,7 +6,7 @@ import { mapTownGridToScene } from "@/lib/town-grid";
 const grid = {
   columns: town.grid.rows[0]!.length,
   rows: town.grid.rows.length,
-  cellSize: town.grid.cellSize,
+  cellSize: WORLD_SCALE.townCell,
 };
 
 const models = new Set<MapProperty["type"]>(["compound", "flat", "shophouse"]);

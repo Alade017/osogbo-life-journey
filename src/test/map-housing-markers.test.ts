@@ -1,3 +1,4 @@
+import { WORLD_SCALE } from "@/components/3d/world-theme";
 import { describe, expect, it } from "vitest";
 import { mapHousingMarkers } from "@/components/map/map-housing-markers";
 import town from "@/data/osogbo-town.json";
@@ -5,7 +6,7 @@ import town from "@/data/osogbo-town.json";
 // The town grid's size and cell size come from the data, so these expectations follow any resize.
 const columns = town.grid.rows[0]!.length;
 const rows = town.grid.rows.length;
-const cellSize = town.grid.cellSize;
+const cellSize = WORLD_SCALE.townCell;
 const sceneX = (gridX: number) => (gridX - (columns - 1) / 2) * cellSize;
 const sceneZ = (gridZ: number) => (gridZ - (rows - 1) / 2) * cellSize;
 

@@ -1,3 +1,4 @@
+import { TOWN_SURFACE } from "./town-surface-layout";
 import { useRef, type FC } from "react";
 import { useFrame } from "@react-three/fiber";
 import type { Mesh } from "three";
@@ -21,6 +22,8 @@ export const SelectionRing3D: FC<SelectionRing3DProps> = ({
   const outerRingRef = useRef<Mesh>(null);
 
   useFrame(({ clock }) => {
+    if (typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches)
+      return;
     const t = clock.getElapsedTime();
 
     // Pulse wave 1
@@ -43,7 +46,20 @@ export const SelectionRing3D: FC<SelectionRing3DProps> = ({
   });
 
   return (
-    <group position={[position[0], 0.04, position[2]]} rotation={[-Math.PI / 2, 0, 0]}>
+    <group
+      position={[position[0], TOWN_SURFACE.groundTop + 0.04, position[2]]}
+      rotation={[-Math.PI / 2, 0, 0]}
+    >
+      <mesh renderOrder={2}>
+        <ringGeometry args={[radius * 0.9, radius, 48]} />
+        <meshBasicMaterial
+          color={color}
+          transparent
+          opacity={0.85}
+          depthTest={false}
+          depthWrite={false}
+        />
+      </mesh>
       {/* Central Target Disc */}
       <mesh>
         <circleGeometry args={[radius * 0.28, 24]} />

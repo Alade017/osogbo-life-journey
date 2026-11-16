@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import townData from "@/data/osogbo-town.json";
 import { WORLD_PALETTE } from "@/components/3d/world-theme";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
@@ -54,6 +54,9 @@ export interface MapCanvasProps {
   onSelectLandmark: (id: string) => void;
   activeFilter?: MapFilter;
   searchTarget?: MapSearchTarget | null;
+  selectedLandmarkId?: string | null;
+  travelMode?: import("@/lib/transport-service").TravelMode | null;
+  travelPending?: boolean;
   playerLocation?: MapPlayerLocation | null;
   eventChips?: MapEventChip[];
   jobLandmarkIds?: string[];
@@ -88,6 +91,9 @@ export function MapCanvas({
   onSelectLandmark,
   activeFilter = "all",
   searchTarget,
+  selectedLandmarkId,
+  travelMode,
+  travelPending,
   playerLocation,
   eventChips: _eventChips = [],
   jobLandmarkIds = [],
@@ -98,6 +104,38 @@ export function MapCanvas({
   onSelectProperty,
   onSelectEvent,
 }: MapCanvasProps) {
+  const container = useRef<HTMLElement>(null);
+  const [focusInsets, setFocusInsets] = useState({ right: 0, bottom: 0 });
+  useEffect(() => {
+    if (!selectedLandmarkId) return; // Closing must not move the camera back.
+    const sheet = document.querySelector(".destination-sheet");
+    const map = container.current;
+    if (!sheet || !map || typeof ResizeObserver === "undefined") return;
+    const update = () => {
+      const m = map.getBoundingClientRect(),
+        s = sheet.getBoundingClientRect();
+      const intersects =
+        s.left < m.right && s.right > m.left && s.top < m.bottom && s.bottom > m.top;
+      const mobile = window.matchMedia("(max-width: 640px)").matches;
+      const next = !intersects
+        ? { right: 0, bottom: 0 }
+        : mobile
+          ? { right: 0, bottom: Math.max(0, m.bottom - s.top) }
+          : { right: Math.max(0, m.right - s.left), bottom: 0 };
+      setFocusInsets((old) =>
+        old.right === next.right && old.bottom === next.bottom ? old : next,
+      );
+    };
+    const observer = new ResizeObserver(update);
+    observer.observe(sheet);
+    observer.observe(map);
+    window.addEventListener("resize", update);
+    update();
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, [selectedLandmarkId]);
   const [rendererState, setRendererState] = useState<"loading" | "ready" | "unavailable">(
     "loading",
   );
@@ -141,6 +179,7 @@ export function MapCanvas({
 
   return (
     <section
+      ref={container}
       className="map-canvas town-map-canvas"
       style={{ background: WORLD_PALETTE.ground }}
       aria-label="Interactive 3D town map with open camera exploration"
@@ -154,6 +193,10 @@ export function MapCanvas({
             playerLocation={playerLocation}
             billboardMarkers={billboardMarkers}
             searchTarget={searchTarget ?? null}
+            selectedLandmarkId={selectedLandmarkId}
+            travelMode={travelMode}
+            travelPending={travelPending}
+            focusInsets={focusInsets}
             onSelectLandmark={onSelectLandmark}
             onSelectDistrict={onSelectDistrict}
             onSelectBillboard={onSelectBillboard}

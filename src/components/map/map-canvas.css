@@ -346,3 +346,20 @@
   outline: none;
   filter: drop-shadow(0 0 4px #fff);
 }
+
+.town-route-status {
+  position: absolute;
+  left: 16px;
+  top: 76px;
+  max-width: min(320px, calc(100% - 32px));
+  z-index: 21;
+  margin: 0;
+  padding: 9px 12px;
+  border-radius: 12px;
+  background: var(--card, #faf7f0);
+  color: var(--foreground, #16225c);
+  font:
+    500 12px/1.5 system-ui,
+    sans-serif;
+  pointer-events: none;
+}

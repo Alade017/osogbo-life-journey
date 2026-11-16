@@ -1,9 +1,12 @@
+import { findTownRoute } from "@/game/town-route";
+import { TownRoute3D } from "./TownRoute3D";
+import { MapPointerGesture } from "./map-pointer-gesture";
+import { MapMarkerLayout } from "./MapMarkerLayout";
 import { DistrictZones } from "./DistrictZones";
 import { Component, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Canvas, type ThreeEvent } from "@react-three/fiber";
 import town from "@/data/osogbo-town.json";
 import {
-  WorldCamera,
   WorldCars,
   WorldBusStops,
   WorldRoadSigns,
@@ -11,7 +14,6 @@ import {
   WorldMotorcycles,
   WorldTricycles,
   WorldStreetVendors,
-  WorldHouse,
   WorldMaterial,
   WorldPeople,
   WorldRoads,
@@ -26,16 +28,18 @@ import {
   WorldInstances,
   type WorldInstance,
 } from "../3d/WorldScene";
-import { WORLD_SCALE, WORLD_PALETTE, TOWN_MAP_CAMERA } from "../3d/world-theme";
+import { WORLD_SCALE, WORLD_PALETTE } from "../3d/world-theme";
 import { MapLighting, useRealOrGameClock, daylightFor } from "./MapLighting";
-import { PlaceBadge } from "./map-badge";
+import { TownBrandBillboards3D } from "./TownBrandBillboards3D";
 import { HouseBlocks3D } from "./HouseBlocks3D";
-import { getLandmarkBuildingVariant } from "./landmark-building-variant";
+import { townResidentialLayout } from "./town-residential-layout";
+import { TownBuilding3D } from "./TownBuilding3D";
+import { townBuildingProfile } from "./town-building-profile";
 import { CompoundPlot3D } from "./CompoundPlot3D";
 import { MapPin3D } from "./MapPin3D";
 import { LandmarkItem3D } from "./LandmarkItem3D";
 import { SelectionRing3D } from "./SelectionRing3D";
-import { useMapCameraFocus } from "./use-map-camera-focus";
+import { MapCameraRig } from "./MapCameraRig";
 import { Terrain3D } from "./Terrain3D";
 import { MovingTraffic3D } from "./MovingTraffic3D";
 import { MovingPedestrians3D } from "./MovingPedestrians3D";
@@ -85,6 +89,10 @@ type Props = TownMapData &
     searchTarget?: import("@/components/map/MapCanvas").MapSearchTarget | null;
     /** Frame the search target close up instead of the whole town (landing preview). */
     focusCloseUp?: boolean;
+    selectedLandmarkId?: string | null;
+    travelMode?: import("@/lib/transport-service").TravelMode | null;
+    travelPending?: boolean;
+    focusInsets?: import("./map-focus").MapFocusInsets;
   };
 
 /** Close-up framing sits well inside the whole-town distance. */
@@ -92,8 +100,8 @@ const CLOSE_UP_DISTANCE_SCALE = 0.5;
 
 const townMapValidationErrors = validateTownMapData(town);
 
-const gridCols = town.grid.rows[0]!.length;
-const gridRows = town.grid.rows.length;
+const gridCols = town.meta.grid.columns;
+const gridRows = town.meta.grid.rows;
 const cell = WORLD_SCALE.townCell;
 const point = (x: number, z: number): [number, number, number] => [
   (x - (gridCols - 1) / 2) * cell,
@@ -101,14 +109,6 @@ const point = (x: number, z: number): [number, number, number] => [
   (z - (gridRows - 1) / 2) * cell,
 ];
 
-function CameraFocusController({
-  targetPosition,
-}: {
-  targetPosition: [number, number, number] | null;
-}) {
-  useMapCameraFocus(targetPosition, Boolean(targetPosition));
-  return null;
-}
 class SurfaceBoundary extends Component<
   { children: ReactNode; onUnavailable: () => void },
   { failed: boolean }
@@ -130,89 +130,17 @@ function Ready({ onReady }: { onReady: () => void }) {
   return null;
 }
 
-type Landmark = TownMapPlace;
-
-type BadgePosition = [number, number, number];
-
-function calculateBadgePositions(
-  places: readonly Landmark[],
-  point: (x: number, z: number) => [number, number, number],
-  cellSize: number,
-): Map<string, BadgePosition> {
-  const positions = places.map((place, index) => {
-    const [x, , z] = point(place.grid.x, place.grid.z);
-
-    return {
-      id: place.id,
-      x,
-      z,
-      originalX: x,
-      originalZ: z,
-      index,
-    };
-  });
-
-  const minDistance = cellSize * 1.65;
-  const maxOffset = cellSize * 2.5;
-
-  for (let iteration = 0; iteration < 24; iteration++) {
-    for (let i = 0; i < positions.length; i++) {
-      for (let j = i + 1; j < positions.length; j++) {
-        const a = positions[i];
-        const b = positions[j];
-
-        // Protect against possibly undefined array elements.
-        if (!a || !b) continue;
-
-        let dx = b.x - a.x;
-        let dz = b.z - a.z;
-        let distance = Math.hypot(dx, dz);
-
-        if (distance < 0.001) {
-          const angle = ((a.index + b.index + 1) * Math.PI) / 5;
-          dx = Math.cos(angle);
-          dz = Math.sin(angle);
-          distance = 1;
-        }
-
-        if (distance >= minDistance) continue;
-
-        const force = (minDistance - distance) * 0.18;
-        const nx = dx / distance;
-        const nz = dz / distance;
-
-        a.x -= nx * force;
-        a.z -= nz * force;
-
-        b.x += nx * force;
-        b.z += nz * force;
-      }
-    }
-
-    for (const item of positions) {
-      const dx = item.x - item.originalX;
-      const dz = item.z - item.originalZ;
-      const offset = Math.hypot(dx, dz);
-
-      if (offset > maxOffset) {
-        const scale = maxOffset / offset;
-
-        item.x = item.originalX + dx * scale;
-        item.z = item.originalZ + dz * scale;
-      }
-    }
-  }
-
-  return new Map(positions.map((item) => [item.id, [item.x, 1.8, item.z] as BadgePosition]));
-}
-
 export function R3FTownSurface(props: Props) {
   const { onUnavailable } = props;
+  const [cameraActive, setCameraActive] = useState(true);
+  const [cameraReset, setCameraReset] = useState(0);
+  const [followPlayer, setFollowPlayer] = useState(false);
+  const [showNames, setShowNames] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
   useEffect(() => {
     if (townMapValidationErrors.length > 0) onUnavailable();
   }, [onUnavailable]);
-  const gesture = useRef({ x: 0, y: 0, moved: false });
+  const gesture = useRef(new MapPointerGesture());
   const clockTime = useRealOrGameClock();
   const { isNight } = daylightFor(clockTime.hour, clockTime.minute);
   // Derive moving traffic and pedestrian paths from the same authored town grid
@@ -228,6 +156,11 @@ export function R3FTownSurface(props: Props) {
     type: "landmark" | "property" | "district" | "event";
   } | null>(null);
   const [hoveredTargetId, setHoveredTargetId] = useState<string | null>(null);
+  useEffect(() => {
+    setCameraActive(true);
+    if (selectedTarget) setFollowPlayer(false);
+    else if (props.selectedLandmarkId === null) setCameraActive(false);
+  }, [selectedTarget, props.selectedLandmarkId]);
 
   useEffect(() => {
     if (!props.searchTarget) return;
@@ -251,6 +184,35 @@ export function R3FTownSurface(props: Props) {
       setSelectedTarget({ id: district.id, position: [x, 0, z], type: "district" });
     }
   }, [props.searchTarget, props.places, props.properties]);
+  useEffect(() => {
+    if (props.selectedLandmarkId === undefined) return;
+    if (props.selectedLandmarkId === null) {
+      setCameraActive(false);
+      setSelectedTarget(null);
+      return;
+    }
+    const landmark = town.landmarks.find((p) => p.id === props.selectedLandmarkId);
+    if (!landmark) return;
+    setSelectedTarget({
+      id: landmark.id,
+      position: point(landmark.grid.x, landmark.grid.z),
+      type: "landmark",
+    });
+  }, [props.selectedLandmarkId]);
+  const routeDestination = town.landmarks.find((p) => p.id === props.selectedLandmarkId);
+  const originX = props.playerLocation ? Math.round(props.playerLocation.x) : undefined,
+    originZ = props.playerLocation ? Math.round(props.playerLocation.y) : undefined;
+  const roadRoute = useMemo(
+    () =>
+      originX !== undefined && originZ !== undefined && routeDestination
+        ? findTownRoute(
+            town.grid.rows,
+            [originX, originZ],
+            [routeDestination.grid.x, routeDestination.grid.z],
+          )
+        : null,
+    [originX, originZ, routeDestination],
+  );
   const closeUpTarget = props.focusCloseUp && selectedTarget ? selectedTarget.position : undefined;
   const roads = useMemo(
     () =>
@@ -1091,9 +1053,46 @@ export function R3FTownSurface(props: Props) {
     wasteBins,
     roadsideInfrastructure,
   ]);
-  const badgePositions = useMemo(
-    () => calculateBadgePositions(props.places, point, cell),
-    [props.places],
+  const residentialHomes = useMemo(
+    () =>
+      townResidentialLayout({
+        rows: town.grid.rows,
+        buildings: town.grid.buildings,
+        landmarks: town.landmarks,
+        districts: town.districts,
+        reservedCells: town.grid.plotCells,
+        cell,
+        reserved: [
+          ...trees.map((tree) => tree.position),
+          ...cars,
+          ...streetLights,
+          ...busStops,
+          ...roadsideShops,
+          ...motorcycles,
+          ...tricycles,
+          ...streetVendors,
+          ...wasteBins,
+          ...roadSigns.map((sign) => sign.position),
+          ...roadsideInfrastructure.poles,
+          ...(props.properties ?? []).map(
+            (property) => [property.position[0], property.position[2]] as [number, number],
+          ),
+        ],
+      }),
+    [
+      trees,
+      cars,
+      streetLights,
+      busStops,
+      roadsideShops,
+      motorcycles,
+      tricycles,
+      streetVendors,
+      wasteBins,
+      roadSigns,
+      roadsideInfrastructure,
+      props.properties,
+    ],
   );
   const select = (event: ThreeEvent<MouseEvent> | undefined, action: () => void) => {
     event?.stopPropagation();
@@ -1110,235 +1109,307 @@ export function R3FTownSurface(props: Props) {
     <SurfaceBoundary onUnavailable={props.onUnavailable}>
       <div
         style={{ position: "absolute", inset: 0, zIndex: 1 }}
-        onPointerDownCapture={(event) => {
-          gesture.current = { x: event.clientX, y: event.clientY, moved: false };
-        }}
-        onPointerMoveCapture={(event) => {
-          if (Math.hypot(event.clientX - gesture.current.x, event.clientY - gesture.current.y) > 10)
-            gesture.current.moved = true;
-        }}
-        onPointerCancelCapture={() => {
-          gesture.current.moved = true;
+        onPointerDownCapture={(event) =>
+          gesture.current.down(event.pointerId, event.clientX, event.clientY)
+        }
+        onPointerMoveCapture={(event) => gesture.current.move(event.clientX, event.clientY)}
+        onPointerUpCapture={(event) => gesture.current.up(event.pointerId)}
+        onPointerCancelCapture={(event) => gesture.current.cancel(event.pointerId)}
+        onKeyDownCapture={(event) => {
+          if (event.key === "Enter" || event.key === " ") gesture.current.keyboard();
         }}
       >
+        {props.selectedLandmarkId && (
+          <p className="town-route-status" role="status">
+            {roadRoute
+              ? `${props.travelPending ? "Submitting trip · " : ""}${props.travelMode === "walking" ? "Walking access" : "Road"} route preview · Nearest road access points`
+              : "Route preview unavailable from this position"}
+          </p>
+        )}
+        <div className="town-camera-tools" role="toolbar" aria-label="3D town camera">
+          <button
+            type="button"
+            onClick={() => {
+              setSelectedTarget(null);
+              setFollowPlayer(false);
+              setCameraReset((value) => value + 1);
+              setCameraActive(true);
+            }}
+          >
+            Centre city
+          </button>
+          <button
+            type="button"
+            disabled={!props.playerLocation}
+            aria-pressed={followPlayer}
+            onClick={() => {
+              setFollowPlayer((value) => !value);
+              setCameraActive(true);
+            }}
+          >
+            Follow me
+          </button>
+          <button
+            type="button"
+            aria-label="Show district names"
+            aria-pressed={showNames}
+            onClick={() => setShowNames((value) => !value)}
+          >
+            Names
+          </button>
+        </div>
         <Canvas
+          orthographic
           shadows
           frameloop="always"
           dpr={[1, 1.5]}
           gl={{ antialias: false, powerPreference: "low-power" }}
           fallback={<span>WebGL is unavailable. Use the accessible map controls.</span>}
         >
-          <Ready onReady={props.onReady} />
-          <CameraFocusController targetPosition={selectedTarget?.position ?? null} />
-          <WorldCamera
-            width={gridCols * cell}
-            depth={gridRows * cell}
-            zoom={TOWN_MAP_CAMERA.defaultZoom}
-            minZoom={TOWN_MAP_CAMERA.minZoom}
-            maxZoom={TOWN_MAP_CAMERA.maxZoom}
-            target={closeUpTarget}
-            distanceScale={closeUpTarget ? CLOSE_UP_DISTANCE_SCALE : 1}
-            freeExplore
-          />
-          <MapLighting size={gridCols * cell} />
-          <color attach="background" args={[WORLD_PALETTE.sky]} />
-          <fog
-            attach="fog"
-            args={[WORLD_PALETTE.sky, gridCols * cell * 0.85, gridCols * cell * 1.95]}
-          />
-          <Terrain3D gridCols={gridCols} gridRows={gridRows} cellSize={cell} />
-
-          <WorldRoads items={roads} />
-          <WorldRoadMarkings items={roadMarkings} />
-          <WorldPedestrianCrossings items={pedestrianCrossings} />
-          <WorldTrafficLights
-            positions={trafficLights}
-            size={cell}
-            getSignalState={(junctionId) => crossingScheduler.getSignalState(junctionId)}
-          />
-          <WorldCars positions={cars} size={cell} />
-          <WorldSidewalks sidewalks={sidewalks} curbs={curbs} />
-          <WorldBusStops
-            positions={busStops}
-            size={cell}
-            onSelectTransit={() => props.onSelectLandmark("transit-park")}
-          />
-          <WorldRoadSigns positions={roadSigns} size={cell} />
-          <WorldRoadsideShops positions={roadsideShops} size={cell} />
-          <WorldMotorcycles positions={motorcycles} size={cell} />
-          <WorldTricycles positions={tricycles} size={cell} />
-          <WorldStreetVendors positions={streetVendors} size={cell} />
-          <FunctionalStreetLights3D positions={streetLights} size={cell} isNight={isNight} />
-          <RoadsideInfrastructure3D
-            poles={roadsideInfrastructure.poles}
-            spans={roadsideInfrastructure.spans}
-            drains={roadsideInfrastructure.drains}
-            cellSize={cell}
-          />
-          <WorldWasteBins positions={wasteBins} size={cell} />
-          <WorldInstances
-            tone="slate"
-            castShadow={false}
-            items={town.grid.waterCells.map(([x, z]) => ({
-              position: [point(x!, z!)[0], 0.015, point(x!, z!)[2]],
-              scale: [cell, 0.03, cell],
-            }))}
-          />
-          <WorldInstances
-            tone="wall"
-            castShadow={false}
-            items={town.grid.plotCells.map(([x, z]) => ({
-              position: [point(x!, z!)[0], 0.015, point(x!, z!)[2]],
-              scale: [cell, 0.03, cell],
-            }))}
-          />
-          <WorldTrees positions={trees} />
-          {town.grid.buildings.map((building) => (
-            <WorldHouse
-              key={`building-${building.x}-${building.z}`}
-              position={point(building.x + 0.5, building.z + 0.5)}
-              width={cell * 1.15}
-              depth={cell * 1.15}
-              variant={getLandmarkBuildingVariant(building.buildingType)}
-              detailed
+          <MapMarkerLayout>
+            <Ready onReady={props.onReady} />
+            <MapCameraRig
+              key={cameraReset}
+              width={gridCols * cell}
+              depth={gridRows * cell}
+              target={
+                followPlayer && props.playerLocation
+                  ? point(props.playerLocation.x, props.playerLocation.y)
+                  : (selectedTarget?.position ?? closeUpTarget ?? [0, 0, 0])
+              }
+              zoom={
+                closeUpTarget ? 1 / CLOSE_UP_DISTANCE_SCALE : props.selectedLandmarkId ? 2.4 : 1.1
+              }
+              focusInsets={props.selectedLandmarkId ? props.focusInsets : undefined}
+              active={cameraActive}
+              onManual={() => {
+                setCameraActive(false);
+                setFollowPlayer(false);
+              }}
             />
-          ))}
-          <HouseBlocks3D point={point} cell={cell} />
-          <MovingTraffic3D
-            paths={trafficRoutes}
-            crossingScheduler={crossingScheduler}
-            onSelectTransit={() => props.onSelectLandmark("transit-park")}
-          />
-          <MovingPedestrians3D
-            paths={pedestrianRoutes}
-            crossingScheduler={crossingScheduler}
-            busStopPositions={busStops}
-            onSelectTransit={() => props.onSelectLandmark("transit-park")}
-          />
-          <LockedPlaces3D
-            places={props.lockedPlaces ?? []}
-            cellSize={cell}
-            gridCols={gridCols}
-            gridRows={gridRows}
-            onSelectLocked={(locked) => {
-              setSelectedTarget({ id: locked.id, position: locked.position, type: "landmark" });
-            }}
-          />
-          <DistrictZones
-            districts={town.districts}
-            point={point}
-            cell={cell}
-            onSelect={(id, event) =>
-              select(event, () => {
-                const district = town.districts.find((d) => d.id === id);
-                if (district) {
-                  const area = district.gridArea;
-                  const [x, , z] = point(area.x + area.width / 2, area.z + area.depth / 2);
-                  setSelectedTarget({ id, position: [x, 0, z], type: "district" });
-                }
-                props.onSelectDistrict(id);
-              })
-            }
-          />
-          {selectedTarget && (
-            <SelectionRing3D
-              position={selectedTarget.position}
-              color={selectedTarget.type === "property" ? "#10b981" : "#38bdf8"}
-              radius={cell * 0.75}
+            <MapLighting size={gridCols * cell} />
+            {/* Fixed-angle maps need clear visibility across the full authored city. */}
+            <Terrain3D rows={town.grid.rows} cellSize={cell} />
+
+            <WorldRoads items={roads} />
+            {roadRoute && (
+              <TownRoute3D
+                route={roadRoute}
+                walking={props.travelMode === "walking"}
+                pending={!!props.travelPending}
+              />
+            )}
+            <WorldRoadMarkings items={roadMarkings} />
+            <WorldPedestrianCrossings items={pedestrianCrossings} />
+            <WorldTrafficLights
+              positions={trafficLights}
+              size={cell}
+              getSignalState={(junctionId) => crossingScheduler.getSignalState(junctionId)}
             />
-          )}
-          {props.places.map((place) => {
-            const badgePosition = badgePositions.get(place.id);
-            const [x, , z] = point(place.grid.x, place.grid.z);
+            <WorldCars positions={cars} size={cell} />
+            <WorldSidewalks sidewalks={sidewalks} curbs={curbs} />
+            <WorldBusStops
+              positions={busStops}
+              size={cell}
+              onSelectTransit={() => props.onSelectLandmark("transit-park")}
+            />
+            <WorldRoadSigns positions={roadSigns.slice(2)} size={cell} />
+            <TownBrandBillboards3D positions={roadSigns} cell={cell} />
+            <WorldRoadsideShops positions={roadsideShops} size={cell} />
+            <WorldMotorcycles positions={motorcycles} size={cell} />
+            <WorldTricycles positions={tricycles} size={cell} />
+            <WorldStreetVendors positions={streetVendors} size={cell} />
+            <FunctionalStreetLights3D positions={streetLights} size={cell} isNight={isNight} />
+            <RoadsideInfrastructure3D
+              poles={roadsideInfrastructure.poles}
+              spans={roadsideInfrastructure.spans}
+              drains={roadsideInfrastructure.drains}
+              cellSize={cell}
+            />
+            <WorldWasteBins positions={wasteBins} size={cell} />
+            <WorldInstances
+              tone="wall"
+              castShadow={false}
+              items={town.grid.plotCells.map(([x, z]) => ({
+                position: [point(x!, z!)[0], 0.015, point(x!, z!)[2]],
+                scale: [cell, 0.03, cell],
+              }))}
+            />
+            <WorldTrees positions={trees} />
+            <HouseBlocks3D homes={residentialHomes} point={point} cell={cell} />
+            {town.grid.buildings.map((building) => (
+              <TownBuilding3D
+                key={`building-${building.x}-${building.z}`}
+                building={building}
+                position={point(building.x + 0.5, building.z + 0.5)}
+                cell={cell}
+              />
+            ))}
+            <MovingTraffic3D
+              paths={trafficRoutes}
+              crossingScheduler={crossingScheduler}
+              onSelectTransit={() => props.onSelectLandmark("transit-park")}
+            />
+            <MovingPedestrians3D
+              paths={pedestrianRoutes}
+              crossingScheduler={crossingScheduler}
+              busStopPositions={busStops}
+              onSelectTransit={() => props.onSelectLandmark("transit-park")}
+            />
+            <LockedPlaces3D
+              places={props.lockedPlaces ?? []}
+              cellSize={cell}
+              gridCols={gridCols}
+              gridRows={gridRows}
+              onSelectLocked={(locked) => {
+                setSelectedTarget({ id: locked.id, position: locked.position, type: "landmark" });
+              }}
+            />
+            <DistrictZones
+              showLabels={showNames}
+              districts={town.districts}
+              point={point}
+              cell={cell}
+              onSelect={(id, event) =>
+                select(event, () => {
+                  const district = town.districts.find((d) => d.id === id);
+                  if (district) {
+                    const area = district.gridArea;
+                    const [x, , z] = point(area.x + area.width / 2, area.z + area.depth / 2);
+                    setSelectedTarget({ id, position: [x, 0, z], type: "district" });
+                  }
+                  props.onSelectDistrict(id);
+                })
+              }
+            />
+            {selectedTarget && (
+              <SelectionRing3D
+                position={selectedTarget.position}
+                color={selectedTarget.type === "property" ? "#10b981" : "#38bdf8"}
+                radius={cell * 0.75}
+              />
+            )}
+            {props.places.map((place) => {
+              const [x, , z] = point(place.grid.x, place.grid.z);
+              const buildingType =
+                town.grid.buildings.find((building) => building.placeId === place.id)
+                  ?.buildingType ?? place.category;
+              const markerCategory = buildingType === "bank" ? "bank" : place.category;
+              const markerHeight = Math.max(
+                3.8,
+                townBuildingProfile(buildingType, place.grid.x, place.grid.z, cell).height + 0.5,
+              );
 
-            if (!badgePosition) return null;
-
-            return (
-              <LandmarkItem3D
-                key={place.id}
-                place={place}
-                position={badgePosition}
-                isSelected={selectedTarget?.id === place.id}
-                isHovered={hoveredTargetId === place.id}
-                onSelectLandmark={(id) =>
-                  select(undefined, () => {
+              return (
+                <LandmarkItem3D
+                  key={place.id}
+                  place={{ ...place, category: markerCategory }}
+                  position={[x, markerHeight, z]}
+                  isSelected={selectedTarget?.id === place.id}
+                  isHovered={hoveredTargetId === place.id}
+                  onSelectLandmark={(id) =>
+                    select(undefined, () => {
+                      setSelectedTarget({
+                        id,
+                        position: [x, 0, z],
+                        type: "landmark",
+                      });
+                      props.onSelectLandmark(id);
+                    })
+                  }
+                  onPointerOver={(id, lbl) => {
+                    setHoveredTargetId(id);
+                    setHovered(lbl);
+                  }}
+                  onPointerOut={() => {
+                    setHoveredTargetId(null);
+                    setHovered(null);
+                  }}
+                />
+              );
+            })}
+            {props.eventChips.map((event) => {
+              const p = point(event.x, event.y);
+              return (
+                <group
+                  key={event.id}
+                  name={"event:" + event.id}
+                  onPointerOver={(pointer) => {
+                    pointer.stopPropagation();
+                    setHovered("Live event · " + event.label);
+                  }}
+                  onPointerOut={() => setHovered(null)}
+                  onClick={(pointer) => select(pointer, () => props.onSelectEvent?.(event.id))}
+                >
+                  <mesh position={[p[0], 2.5, p[2]]} castShadow>
+                    <sphereGeometry args={[0.24, 12, 12]} />
+                    <WorldMaterial tone="clay" />
+                  </mesh>
+                </group>
+              );
+            })}
+            {props.properties?.map((property) => (
+              <CompoundPlot3D
+                key={property.id}
+                property={property}
+                cellSize={cell}
+                isNight={isNight}
+                isSelected={selectedTarget?.id === property.id}
+                isHovered={hoveredTargetId === property.id}
+                onClick={(event) =>
+                  select(event, () => {
                     setSelectedTarget({
-                      id,
-                      position: [x, 0, z],
-                      type: "landmark",
+                      id: property.id,
+                      position: property.position,
+                      type: "property",
                     });
-                    props.onSelectLandmark(id);
+                    props.onSelectProperty?.(property);
                   })
                 }
-                onPointerOver={(id, lbl) => {
-                  setHoveredTargetId(id);
-                  setHovered(lbl);
+                onPointerOver={(event) => {
+                  event.stopPropagation();
+                  setHoveredTargetId(property.id);
+                  setHovered(
+                    (property.label ?? "Home") + " · " + property.status.replace("_", " "),
+                  );
                 }}
                 onPointerOut={() => {
                   setHoveredTargetId(null);
                   setHovered(null);
                 }}
               />
-            );
-          })}
-          {props.eventChips.map((event) => {
-            const p = point(event.x, event.y);
-            return (
-              <group
-                key={event.id}
-                name={"event:" + event.id}
-                onPointerOver={(pointer) => {
-                  pointer.stopPropagation();
-                  setHovered("Live event · " + event.label);
-                }}
-                onPointerOut={() => setHovered(null)}
-                onClick={(pointer) => select(pointer, () => props.onSelectEvent?.(event.id))}
-              >
-                <mesh position={[p[0], 2.5, p[2]]} castShadow>
-                  <sphereGeometry args={[0.24, 12, 12]} />
-                  <WorldMaterial tone="clay" />
+            ))}
+            {props.billboardMarkers.map((marker) => {
+              const place = props.places.find((p) => p.id === marker.landmarkId);
+              if (!place) return null;
+              const p = point(place.grid.x, place.grid.z);
+              return (
+                <mesh
+                  key={marker.campaignId}
+                  position={[p[0] + 1.9, 2, p[2]]}
+                  castShadow
+                  onClick={(event) =>
+                    select(event, () => props.onSelectBillboard?.(marker.campaignId))
+                  }
+                >
+                  <boxGeometry args={[1.2, 1.5, 0.18]} />
+                  <WorldMaterial tone="slate" />
                 </mesh>
-              </group>
-            );
-          })}
-          {props.properties?.map((property) => (
-            <CompoundPlot3D
-              key={property.id}
-              property={property}
-              cellSize={cell}
-              isNight={isNight}
+              );
+            })}
+            <WorldPeople
+              positions={
+                props.playerLocation
+                  ? [
+                      [
+                        point(props.playerLocation.x, props.playerLocation.y)[0],
+                        point(props.playerLocation.x, props.playerLocation.y)[2],
+                      ],
+                    ]
+                  : []
+              }
             />
-          ))}
-          {props.billboardMarkers.map((marker) => {
-            const place = props.places.find((p) => p.id === marker.landmarkId);
-            if (!place) return null;
-            const p = point(place.grid.x, place.grid.z);
-            return (
-              <mesh
-                key={marker.campaignId}
-                position={[p[0] + 1.9, 2, p[2]]}
-                castShadow
-                onClick={(event) =>
-                  select(event, () => props.onSelectBillboard?.(marker.campaignId))
-                }
-              >
-                <boxGeometry args={[1.2, 1.5, 0.18]} />
-                <WorldMaterial tone="slate" />
-              </mesh>
-            );
-          })}
-          <WorldPeople
-            positions={
-              props.playerLocation
-                ? [
-                    [
-                      point(props.playerLocation.x, props.playerLocation.y)[0],
-                      point(props.playerLocation.x, props.playerLocation.y)[2],
-                    ],
-                  ]
-                : []
-            }
-          />
+          </MapMarkerLayout>
         </Canvas>
         <div
           aria-label="Map camera controls"
@@ -1357,14 +1428,14 @@ export function R3FTownSurface(props: Props) {
             maxWidth: 230,
           }}
         >
-          Drag to rotate · Two-finger drag to pan · Scroll or pinch to zoom
+          Drag to move · Pinch to zoom · Zoom in for more places
         </div>
         {hovered && (
           <div
             role="status"
             style={{
               position: "absolute",
-              top: 12,
+              top: 64,
               left: 12,
               pointerEvents: "none",
               color: WORLD_PALETTE.timber,

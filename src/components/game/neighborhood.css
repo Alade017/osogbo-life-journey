@@ -406,12 +406,12 @@
 }
 
 @media (max-width: 680px) {
-    .neighborhood-page {
+  .neighborhood-page {
     gap: 0;
     padding: 0;
   }
 
-    .neighborhood-stage,
+  .neighborhood-stage,
   .playable-neighborhood-canvas {
     min-height: 0;
     height: 100%;
@@ -527,7 +527,10 @@ body:has(.neighborhood-page) {
     0 8px 20px rgba(22, 34, 92, 0.2),
     0 0 0 2px rgba(242, 178, 28, 0.28);
   cursor: pointer;
-  transition: transform 140ms ease, border-color 140ms ease, background-color 140ms ease;
+  transition:
+    transform 140ms ease,
+    border-color 140ms ease,
+    background-color 140ms ease;
 }
 
 .world-interact-badge:hover,
@@ -643,7 +646,10 @@ body:has(.neighborhood-page) {
   font-weight: 750;
   white-space: nowrap;
   cursor: pointer;
-  transition: border-color 140ms ease, background-color 140ms ease, color 140ms ease;
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease,
+    color 140ms ease;
 }
 
 .neighborhood-zone-tabs button:hover:not(.is-active) {
@@ -669,7 +675,10 @@ body:has(.neighborhood-page) {
   background: #ffffff;
   text-align: left;
   cursor: pointer;
-  transition: border-color 140ms ease, transform 140ms ease, box-shadow 140ms ease;
+  transition:
+    border-color 140ms ease,
+    transform 140ms ease,
+    box-shadow 140ms ease;
 }
 
 .neighborhood-zone-action-tile:hover:not(:disabled) {
@@ -717,4 +726,33 @@ body:has(.neighborhood-page) {
   color: #16225c;
   font-size: 0.74rem;
   font-weight: 700;
+}
+
+.neighborhood-map-shortcut {
+  position: absolute;
+  top: 4.5rem;
+  left: 0.75rem;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0.5rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--foreground);
+  font: 600 0.8rem var(--typeface-body, system-ui);
+  text-decoration: none;
+}
+.neighborhood-map-shortcut:focus-visible {
+  outline: 3px solid var(--ring, #1e9a5f);
+  outline-offset: 3px;
+}
+@media (min-width: 768px) {
+  .neighborhood-map-shortcut {
+    top: 0.75rem;
+    left: auto;
+    right: 0.75rem;
+  }
 }
