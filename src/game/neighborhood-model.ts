@@ -1,5 +1,5 @@
 import { OSOGBO_WORLD_NODES, type WorldMapCategory } from "../lib/city-world.ts";
-import { createCityCentreZoneLayout, type NeighborhoodZoneLayout } from "./neighborhood-zones.ts";
+import { townAnchorForSlug, townNeighborhoodArea } from "./town-neighborhood.ts";
 
 export type WorldPoint = { x: number; y: number };
 export type NeighborhoodNpcView = {
@@ -104,127 +104,14 @@ export const NEIGHBORHOOD_SCENE_BOUNDS = {
   width: 24 * WORLD_SCALE,
   height: 20 * WORLD_SCALE,
 } as const;
-const CITY_CENTRE_ROADS: readonly NeighborhoodRoad[] = [
-  { id: "olaiya-arterial-north-south", axis: "vertical", offset: 500, width: 84, type: "arterial" },
-  { id: "olaiya-arterial-east-west", axis: "horizontal", offset: 500, width: 80, type: "arterial" },
-  {
-    id: "home-access-lane",
-    axis: "horizontal",
-    offset: 340,
-    width: 44,
-    type: "lane",
-    start: 320,
-    end: 500,
-  },
-  { id: "west-residential-street", axis: "vertical", offset: -410, width: 58, type: "street" },
-  { id: "east-market-street", axis: "vertical", offset: 1280, width: 72, type: "arterial" },
-  { id: "north-compound-lane", axis: "horizontal", offset: -160, width: 54, type: "lane" },
-  { id: "south-compound-lane", axis: "horizontal", offset: 820, width: 58, type: "street" },
-  { id: "east-residential-arterial", axis: "vertical", offset: 1880, width: 72, type: "arterial" },
-  { id: "outer-east-street", axis: "vertical", offset: 2550, width: 56, type: "street" },
-  { id: "north-extension-street", axis: "horizontal", offset: -540, width: 52, type: "street" },
-  { id: "midtown-extension-street", axis: "horizontal", offset: 1220, width: 58, type: "street" },
-  { id: "south-extension-arterial", axis: "horizontal", offset: 1900, width: 74, type: "arterial" },
-];
-const CITY_CENTRE_BASE_OBSTACLES: readonly NeighborhoodObstacle[] = [
-  { id: "compound-west-north", kind: "compound", x: -615, y: -470, width: 150, height: 92 },
-  { id: "compound-west-centre", kind: "compound", x: -180, y: -470, width: 150, height: 92 },
-  { id: "compound-east-north", kind: "compound", x: 510, y: -470, width: 150, height: 92 },
-  { id: "compound-far-east-north", kind: "compound", x: 1130, y: -470, width: 150, height: 92 },
-  { id: "compound-west-south", kind: "compound", x: -615, y: 800, width: 150, height: 92 },
-  { id: "compound-west-far-south", kind: "compound", x: -180, y: 800, width: 150, height: 92 },
-  { id: "compound-east-south", kind: "compound", x: 760, y: 800, width: 150, height: 92 },
-  { id: "compound-east-far-south", kind: "compound", x: 1190, y: 800, width: 150, height: 92 },
-  { id: "corner-kiosk-west", kind: "kiosk", x: -170, y: 190, width: 70, height: 54 },
-  { id: "corner-kiosk-east", kind: "kiosk", x: 670, y: 385, width: 70, height: 54 },
-  { id: "tree-west-north", kind: "tree", x: -730, y: -170, width: 42, height: 42 },
-  { id: "tree-west-south", kind: "tree", x: -690, y: 805, width: 42, height: 42 },
-  { id: "tree-east-north", kind: "tree", x: 1240, y: -180, width: 42, height: 42 },
-  { id: "tree-east-south", kind: "tree", x: 1260, y: 850, width: 42, height: 42 },
-  { id: "tree-market-north", kind: "tree", x: 635, y: -420, width: 42, height: 42 },
-  { id: "streetlight-crossing-west", kind: "streetlight", x: 430, y: 430, width: 20, height: 20 },
-  { id: "streetlight-crossing-east", kind: "streetlight", x: 570, y: 570, width: 20, height: 20 },
-  { id: "streetlight-market-row", kind: "streetlight", x: 895, y: 275, width: 20, height: 20 },
-  { id: "streetlight-south-row", kind: "streetlight", x: 90, y: 755, width: 20, height: 20 },
-  { id: "bench-market-row", kind: "bench", x: 620, y: 300, width: 56, height: 24 },
-  { id: "bench-neighbourhood-square", kind: "bench", x: 30, y: 555, width: 56, height: 24 },
-  { id: "bin-market-row", kind: "bin", x: 670, y: 300, width: 22, height: 22 },
-  { id: "bin-crossing", kind: "bin", x: 80, y: 345, width: 22, height: 22 },
-  { id: "olaiya-wayfinding", kind: "sign", x: 455, y: 430, width: 28, height: 24 },
-  { id: "expansion-north-west", kind: "compound", x: -500, y: -400, width: 156, height: 104 },
-  { id: "expansion-north-west-centre", kind: "compound", x: 100, y: -400, width: 156, height: 104 },
-  { id: "expansion-north-centre", kind: "compound", x: 950, y: -400, width: 156, height: 104 },
-  { id: "expansion-north-east", kind: "compound", x: 1800, y: -400, width: 156, height: 104 },
-  { id: "expansion-north-far-east", kind: "compound", x: 2700, y: -400, width: 156, height: 104 },
-  { id: "expansion-mid-west", kind: "compound", x: -500, y: 900, width: 156, height: 104 },
-  { id: "expansion-mid-west-centre", kind: "compound", x: 100, y: 900, width: 156, height: 104 },
-  { id: "expansion-mid-centre", kind: "compound", x: 950, y: 900, width: 156, height: 104 },
-  { id: "expansion-mid-east", kind: "compound", x: 1800, y: 900, width: 156, height: 104 },
-  { id: "expansion-mid-far-east", kind: "compound", x: 2700, y: 900, width: 156, height: 104 },
-  { id: "expansion-south-west", kind: "compound", x: -500, y: 1500, width: 156, height: 104 },
-  { id: "expansion-south-west-centre", kind: "compound", x: 100, y: 1500, width: 156, height: 104 },
-  { id: "expansion-south-centre", kind: "compound", x: 950, y: 1500, width: 156, height: 104 },
-  { id: "expansion-south-east", kind: "compound", x: 1800, y: 1500, width: 156, height: 104 },
-  { id: "expansion-south-far-east", kind: "compound", x: 2700, y: 1500, width: 156, height: 104 },
-  { id: "expansion-far-south-west", kind: "compound", x: -500, y: 2350, width: 156, height: 104 },
-  { id: "expansion-far-south-west-centre", kind: "compound", x: 100, y: 2350, width: 156, height: 104 },
-  { id: "expansion-far-south-centre", kind: "compound", x: 950, y: 2350, width: 156, height: 104 },
-  { id: "expansion-far-south-east", kind: "compound", x: 1800, y: 2350, width: 156, height: 104 },
-  { id: "expansion-far-south-far-east", kind: "compound", x: 2700, y: 2350, width: 156, height: 104 },
-  { id: "expansion-prop-1", kind: "tree", x: -720, y: 180, width: 48, height: 48 },
-  { id: "expansion-prop-2", kind: "tree", x: -700, y: 1180, width: 48, height: 48 },
-  { id: "expansion-prop-3", kind: "tree", x: 1450, y: 350, width: 48, height: 48 },
-  { id: "expansion-prop-4", kind: "tree", x: 2200, y: 1150, width: 48, height: 48 },
-  { id: "expansion-prop-5", kind: "tree", x: 2950, y: 2200, width: 48, height: 48 },
-  { id: "expansion-prop-6", kind: "bench", x: -300, y: 1000, width: 58, height: 26 },
-  { id: "expansion-prop-7", kind: "bench", x: 1000, y: 1000, width: 58, height: 26 },
-  { id: "expansion-prop-8", kind: "bench", x: 2000, y: 1000, width: 58, height: 26 },
-  { id: "expansion-prop-9", kind: "bench", x: 1500, y: 1800, width: 58, height: 26 },
-  { id: "expansion-prop-10", kind: "bench", x: 2800, y: 1800, width: 58, height: 26 },
-];
-const {
-  zoneLayout: CITY_CENTRE_ZONE_LAYOUT,
-  zoneObstacles: CITY_CENTRE_ZONE_OBSTACLES,
-} = createCityCentreZoneLayout();
-export const CITY_CENTRE_AREA: NeighborhoodArea = {
-  slug: "city-centre",
-  name: "Olaiya",
-  roads: CITY_CENTRE_ROADS,
-  paths: [
-    { id: "home-to-street-path", from: { x: 320, y: 300 }, to: { x: 320, y: 340 }, width: 12 },
-  ],
-  obstacles: [...CITY_CENTRE_BASE_OBSTACLES, ...CITY_CENTRE_ZONE_OBSTACLES],
-  zoneLayout: CITY_CENTRE_ZONE_LAYOUT,
-  objects: [
-    { id: "home", name: "Your home", kind: "home", x: 320, y: 300 },
-    {
-      id: "market",
-      name: "Fuel & Go Mini-Mart",
-      kind: "market",
-      walkIn: true,
-      x: 800,
-      y: 255,
-    },
-    {
-      id: "work",
-      name: "Meridian Commercial Bank",
-      kind: "work",
-      walkIn: true,
-      x: 1135,
-      y: 110,
-    },
-    { id: "npc", name: "Bisi · neighbour", kind: "npc", x: 200, y: 420 },
-  ],
-  style: {
-    ground: 0xe8eedf,
-    grid: 0xd3dfcb,
-    road: 0xbac6b4,
-    paving: 0xe8ddbd,
-    marking: 0xfffaf0,
-    verticalRoad: { x: 278, width: 84 },
-    horizontalRoad: { y: 260, height: 80 },
-  },
-};
+/**
+ * Olaiya is walked from the town data like every other place (see town-neighborhood). This export
+ * keeps the name for the default fallback and for callers that want the Olaiya layout directly.
+ */
+export const CITY_CENTRE_AREA: NeighborhoodArea = townNeighborhoodArea(
+  townAnchorForSlug("city-centre")!,
+  "Olaiya",
+);
 
 /** A second, data-backed street layout for the seeded Oja-Oba Market destination. */
 export const OJA_OBA_AREA: NeighborhoodArea = {
@@ -771,7 +658,34 @@ export const NEIGHBORHOOD_AREAS: Readonly<Record<string, NeighborhoodArea>> = {
 };
 export const NEIGHBORHOOD_OBJECTS = CITY_CENTRE_AREA.objects;
 
+/**
+ * Places kept as hand-built layouts (custom GLB environment or bespoke zones). Every other place
+ * with a landmark in the town data is walked from that data.
+ */
+const HAND_BUILT_SLUGS: ReadonlySet<string> = new Set([FUEL_AND_GO_AREA.slug, OJA_OBA_AREA.slug]);
+const townAreaCache = new Map<string, NeighborhoodArea>();
+
+function townAreaForSlug(slug: string): NeighborhoodArea | null {
+  if (slug === CITY_CENTRE_AREA.slug) return CITY_CENTRE_AREA;
+  if (HAND_BUILT_SLUGS.has(slug)) return null;
+  const anchor = townAnchorForSlug(slug);
+  if (!anchor) return null;
+  const cached = townAreaCache.get(anchor.id);
+  if (cached) return cached;
+  const node = Object.values(OSOGBO_WORLD_NODES).find((item) => item.slug === slug);
+  const area = townNeighborhoodArea(
+    anchor,
+    slug === CITY_CENTRE_AREA.slug ? CITY_CENTRE_AREA.name : (node?.name ?? anchor.label),
+  );
+  townAreaCache.set(anchor.id, area);
+  return area;
+}
+
 export function neighborhoodAreaForSlug(slug: string | null | undefined): NeighborhoodArea {
+  if (slug) {
+    const fromTown = townAreaForSlug(slug);
+    if (fromTown) return fromTown;
+  }
   return (slug && NEIGHBORHOOD_AREAS[slug]) || CITY_CENTRE_AREA;
 }
 
@@ -800,6 +714,8 @@ export function neighborhoodAreaForLocation(location: {
   name?: string | null;
   map_category?: string | null;
 }): NeighborhoodArea {
+  const fromTown = townAreaForSlug(location.slug);
+  if (fromTown) return fromTown;
   const known = NEIGHBORHOOD_AREAS[location.slug];
   if (known) return known;
   const cached = locationAreaCache.get(location.slug);

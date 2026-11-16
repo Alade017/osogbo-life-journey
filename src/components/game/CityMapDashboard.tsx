@@ -11,7 +11,6 @@ import {
   type MapSearchTarget,
   type MapEventChip,
 } from "@/components/map/MapCanvas";
-import { NeighborhoodCityMap } from "@/components/map/NeighborhoodCityMap";
 import type { NeighborhoodLandmarkSpec } from "@/data/neighborhoodLocations";
 import {
   enqueueNeighborhoodNavigation,
@@ -136,7 +135,6 @@ export function CityMapDashboard({
   const [selectedBillboard, setSelectedBillboard] = useState<CurrentMapBillboard | null>(null);
   const [billboardNow, setBillboardNow] = useState(() => Date.now());
   const [mapLevel, setMapLevel] = useState<"town" | "state">("town");
-  const [townFocus, setTownFocus] = useState<"split" | "3d-town">("split");
   const [selectedTownId, setSelectedTownId] = useState("osogbo");
   const [soonOpen, setSoonOpen] = useState(false);
   const livePlayerPose = useLivePlayerPose();
@@ -732,35 +730,13 @@ export function CityMapDashboard({
         </div>
       )}
       {mapLevel === "town" ? (
-        <div className={townFocus === "split" ? "ncm-layout-grid is-split" : "ncm-layout-grid"}>
-          {townFocus === "split" && (
-            <NeighborhoodCityMap
-              playerPosition={playerMapPosition}
-              walletBalance={wallet.data?.balance ?? effectivePocketBalance}
-              offline={offline}
-              onWalkHere={handleWalkHere}
-              onBoardKeke={handleBoardKeke}
-              onSelectSurroundingDistrict={(landmarkId) => {
-                setTownFocus("3d-town");
-                setSearchTarget({ id: landmarkId, kind: "landmark" });
-                onLandmark(landmarkId);
-              }}
-              onOpenDistrictMapView={() => setTownFocus("3d-town")}
-            />
-          )}
+        <div className="ncm-layout-grid">
           <div className="ncm-3d-companion">
             <div className="ncm-3d-companion-bar">
               <div>
                 <strong>Osogbo 3D Town Districts</strong>{" "}
                 <span>Explore surrounding quarters &amp; city transit</span>
               </div>
-              <button
-                type="button"
-                className="ncm-3d-expand-btn"
-                onClick={() => setTownFocus((mode) => (mode === "split" ? "3d-town" : "split"))}
-              >
-                {townFocus === "split" ? "Expand 3D Town" : "Back to Olaiya Map"}
-              </button>
             </div>
             <MapCanvas
               playerLocation={

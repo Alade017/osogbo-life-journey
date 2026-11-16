@@ -46,8 +46,6 @@ import { canonicalHomeOptions } from "@/lib/living-cost-service";
 import { useGameTime } from "@/components/game/GameTimeProvider";
 import type { NetworkPlayerSnapshot } from "@/game/multiplayer-state";
 import { avatarAnimationForActivity } from "@/game/character-animation";
-import { buildMinimapTelemetry } from "@/game/neighborhood-minimap";
-import { NeighborhoodMinimap } from "./NeighborhoodMinimap";
 import {
   neighborhoodAreaForSlug,
   neighborhoodSceneBounds,
@@ -463,19 +461,6 @@ export function PlayableNeighborhood() {
   const actionAnimation = simulation.currentAction
     ? avatarAnimationForActivity(simulation.currentAction.animation)
     : undefined;
-  const minimapTelemetry = useMemo(() => {
-    if (!district) return null;
-    const origin = district.origin;
-    const self = players.find((candidate) => candidate.sessionId === sessionId);
-    return buildMinimapTelemetry({
-      bounds: neighborhoodSceneBounds(origin),
-      self: self ? toScene(self, origin) : null,
-      others: players
-        .filter((candidate) => candidate.sessionId !== sessionId)
-        .map((candidate) => toScene(candidate, origin)),
-      target: groundTarget,
-    });
-  }, [district, groundTarget, players, sessionId]);
   const scenePlayers = useMemo(
     () =>
       players.map((candidate) => {
@@ -1242,12 +1227,6 @@ export function PlayableNeighborhood() {
                         onHoverZone={(id) => dispatchZone(setHoveredZoneId(id))}
                       />
                     </Suspense>
-                    {minimapTelemetry && (
-                      <NeighborhoodMinimap
-                        telemetry={minimapTelemetry}
-                        className="absolute left-3 top-[4.5rem] z-10 md:left-auto md:right-3 md:top-3"
-                      />
-                    )}
                     <div
                       className="neighborhood-zoom-controls"
                       aria-label="Neighborhood camera controls"
