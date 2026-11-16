@@ -388,17 +388,6 @@ function NeighborhoodNpcActor({
 const SKY_FOG_NEAR_SCALE = 0.42;
 const SKY_FOG_FAR_SCALE = 1.05;
 /** Whether an obstacle sits inside a real model's footprint, so its procedural stand-in is skipped. */
-/** Heading along the road a point sits nearest to: quarter turn on north–south roads. */
-function vehicleHeading(area: NeighborhoodArea, spot: WorldPoint) {
-  let best: { distance: number; vertical: boolean } | null = null;
-  for (const road of area.roads ?? []) {
-    if (road.type === "lane") continue;
-    const vertical = road.axis === "vertical";
-    const distance = Math.abs((vertical ? spot.x : spot.y) - road.offset);
-    if (!best || distance < best.distance) best = { distance, vertical };
-  }
-  return best?.vertical ? Math.PI / 2 : 0;
-}
 
 function insideEnvironment(
   environment: { x: number; y: number; width: number; height: number } | undefined,
@@ -595,7 +584,7 @@ export function R3FNeighborhoodSurface({
         position: point(spot.x, spot.y),
         rotation: spot.rotation,
       })),
-    [area, dressing, point, busModel, tukTukModel],
+    [dressing, point, busModel, tukTukModel],
   );
   const scenePoints = useMemo(
     () =>
