@@ -1,7 +1,9 @@
+import { HealthcareScene } from "@/components/3d/HealthcareScene";
 import { MarketTradingHall } from "@/components/3d/MarketTradingScene";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { VenueSceneBoundary } from "./VenueSceneBoundary";
 
+const ClinicVenue = lazy(() => import("./ClinicVenue").then(module => ({ default: module.ClinicVenue })));
 const SchoolCampusVenue = lazy(() => import("./SchoolCampusVenue").then(module => ({ default: module.SchoolCampusVenue })));
 import { Canvas } from "@react-three/fiber";
 import { WorldCamera, WorldLighting, WorldMaterial } from "@/components/3d/WorldScene";
@@ -112,7 +114,9 @@ function BasicLocationVenueScene({ slug, locationName, onBrowseMarket }: {
             >
               <WorldCamera width={venue.sceneSize?.width ?? 10} depth={venue.sceneSize?.depth ?? 7} stage target={[0, 1.2, 0]} zoom={1.2} />
               <WorldLighting size={14} />
-              {venue.scene === "market" ? (
+              {venue.scene === "healthcare" ? (
+                <HealthcareScene fixtures={venue.fixtures} selected={selectedFixture} onSelect={setSelectedFixture} />
+              ) : venue.scene === "market" ? (
                 <MarketTradingHall fixtures={venue.fixtures} selected={selectedFixture} onSelect={setSelectedFixture} />
               ) : venue.environment ? (
                 <VenueEnvironment
@@ -209,6 +213,11 @@ function BasicLocationVenueScene({ slug, locationName, onBrowseMarket }: {
 
 export function LocationVenueScene(props: { slug: string; locationName: string; onBrowseMarket?: () => void }) {
   const venue = getLocationVenueDesign(props.slug, props.locationName);
+  if (venue.scene === "clinic") return (
+    <Suspense fallback={<WorldLoadingIndicator title="Opening the clinic" detail="Preparing the rooms…" />}>
+      <ClinicVenue key={props.slug} slug={props.slug} locationName={props.locationName} />
+    </Suspense>
+  );
   return venue.scene === "campus" ? (
     <Suspense fallback={<WorldLoadingIndicator title="Opening the campus" detail="Preparing the grounds…" />}>
       <SchoolCampusVenue key={props.slug} slug={props.slug} locationName={props.locationName} />
