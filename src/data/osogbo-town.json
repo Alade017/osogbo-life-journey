@@ -4,7 +4,7 @@
     "source": "Fictional game layout with broad Osogbo-inspired town character; not geographic data.",
     "reviewed": false,
     "grid": {
-      "columns": 32,
+      "columns": 40,
       "rows": 24,
       "cellSize": 2
     },
@@ -614,35 +614,97 @@
           960
         ]
       ]
+    },
+    {
+      "id": "olaiya",
+      "name": "Olaiya",
+      "theme": "residential",
+      "traffic": "medium",
+      "description": "A fictional residential quarter of family homes along quiet streets.",
+      "shape": [
+        [
+          2640,
+          80
+        ],
+        [
+          3120,
+          80
+        ],
+        [
+          3120,
+          560
+        ],
+        [
+          2640,
+          560
+        ]
+      ],
+      "gridArea": {
+        "x": 33,
+        "z": 1,
+        "width": 6,
+        "depth": 6
+      }
+    },
+    {
+      "id": "isale-aro",
+      "name": "Isale-Aro",
+      "theme": "market",
+      "traffic": "medium",
+      "description": "A fictional older quarter with lanes of family homes and small trading spots.",
+      "shape": [
+        [
+          2640,
+          720
+        ],
+        [
+          3120,
+          720
+        ],
+        [
+          3120,
+          1200
+        ],
+        [
+          2640,
+          1200
+        ]
+      ],
+      "gridArea": {
+        "x": 33,
+        "z": 9,
+        "width": 6,
+        "depth": 6
+      }
     }
   ],
   "grid": {
     "cellSize": 2,
     "rows": [
-      "ggggrrrgggrrrgggggrrrrrrrgggggrg",
-      "ggggrgggggrggggggggggggrrgggggrg",
-      "ggggrgggggrggggggggggggrrgggggrg",
-      "ggggrgggggrggggggggggggrrgggggrg",
-      "rrrrrrrrrrrrrrrrrggggggrrgggggrr",
-      "ggggggrgggggrgggrrrggggrrgggggrr",
-      "ggggggrgggggrgggggrggggrrgggggrr",
-      "ggggggrgggggrgggggrrrggrrgggggrr",
-      "rrggggrgggggrggggggrrrrrrrrrrrrr",
-      "grggggrgggggrggggggrggggrgggggrr",
-      "grggggrgggggrggggggrrrrrrrrrrrrr",
-      "grggggrgggggrggggggrrgggrgggggrg",
-      "rrggggrgggggrgggrrrrrgggrgggggrr",
-      "grrrrrrrrrrrrrrrrggrrrrrrrrrrrrr",
-      "ggggggrgggggrggggggrggggrgggggrg",
-      "ggggggrgggggrgggggrrggggrgggggrg",
-      "rrrrrrrrrrggrgggggrgggggrgggggrr",
-      "ggggggrggrrrrrrrrrrrrrrrrrrrrrrr",
-      "ggggggrgggggrgggggrgggggrgggggrg",
-      "ggggggrgggggrgggggrgggggrgggggrg",
-      "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
-      "ggggggrgggggrgggggrgggggrgggggrg",
-      "ggggggrgggggrgggggrgggggrgggggrg",
-      "ggggggrgggggrgggggrgggggrgggggrg"
+      "ggggrrrgggrrrgggggrrrrrrrgggggrgrggggggg",
+      "ggggrgggggrggggggggggggrrgggggrgrggggggg",
+      "ggggrgggggrggggggggggggrrgggggrgrggggggg",
+      "ggggrgggggrggggggggggggrrgggggrgrggggggg",
+      "rrrrrrrrrrrrrrrrrggggggrrgggggrrrggggggg",
+      "ggggggrgggggrgggrrrggggrrgggggrrrggggggg",
+      "ggggggrgggggrgggggrggggrrgggggrrrggggggg",
+      "ggggggrgggggrgggggrrrggrrgggggrrrggggggg",
+      "rrggggrgggggrggggggrrrrrrrrrrrrrrrrrrrrr",
+      "grggggrgggggrggggggrggggrgggggrrrggggggg",
+      "grggggrgggggrggggggrrrrrrrrrrrrrrggggggg",
+      "grggggrgggggrggggggrrgggrgggggrgrggggggg",
+      "rrggggrgggggrgggrrrrrgggrgggggrrrggggggg",
+      "grrrrrrrrrrrrrrrrggrrrrrrrrrrrrrrggggggg",
+      "ggggggrgggggrggggggrggggrgggggrgrggggggg",
+      "ggggggrgggggrgggggrrggggrgggggrgrggggggg",
+      "rrrrrrrrrrggrgggggrgggggrgggggrrrggggggg",
+      "ggggggrggrrrrrrrrrrrrrrrrrrrrrrrrggggggg",
+      "ggggggrgggggrgggggrgggggrgggggrgrggggggg",
+      "ggggggrgggggrgggggrgggggrgggggrgrggggggg",
+      "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrggggggg",
+      "ggggggrgggggrgggggrgggggrgggggrgrggggggg",
+      "ggggggrgggggrgggggrgggggrgggggrgrggggggg",
+      "ggggggrgggggrgggggrgggggrgggggrgrggggggg"
     ],
     "waterCells": [
       [
@@ -2436,6 +2498,198 @@
       "availabilityReason": "Heritage destination reserved for a later playable phase.",
       "unlockRequirement": "Future heritage-area implementation.",
       "actions": []
+    },
+    {
+      "id": "art-craft-gallery",
+      "label": "Art and Craft Gallery",
+      "category": "services",
+      "districtId": "garden-quarter",
+      "locationSlug": "art-craft-gallery",
+      "x": 660,
+      "y": 366,
+      "verify": false,
+      "grid": {
+        "x": 7,
+        "z": 5
+      },
+      "actions": [],
+      "mapObjectType": "landmark"
+    },
+    {
+      "id": "hair-salon-tailor",
+      "label": "Hair Salon and Tailor",
+      "category": "services",
+      "districtId": "market-quarter",
+      "locationSlug": "hair-salon-tailor",
+      "x": 123,
+      "y": -1,
+      "verify": false,
+      "grid": {
+        "x": 2,
+        "z": 0
+      },
+      "actions": [],
+      "mapObjectType": "landmark"
+    },
+    {
+      "id": "shrine-garden-park",
+      "label": "Shrine Garden Park",
+      "category": "services",
+      "districtId": "river-quarter",
+      "locationSlug": "shrine-garden-park",
+      "x": 1733,
+      "y": 72,
+      "verify": false,
+      "grid": {
+        "x": 17,
+        "z": 1
+      },
+      "actions": [],
+      "mapObjectType": "landmark"
+    },
+    {
+      "id": "osun-festival-grounds",
+      "label": "Osun Festival Grounds",
+      "category": "sport",
+      "districtId": "river-quarter",
+      "locationSlug": "osun-festival-grounds",
+      "x": 1948,
+      "y": 72,
+      "verify": false,
+      "grid": {
+        "x": 19,
+        "z": 1
+      },
+      "actions": [],
+      "mapObjectType": "landmark"
+    },
+    {
+      "id": "central-church",
+      "label": "Central Church",
+      "category": "worship",
+      "districtId": "river-quarter",
+      "locationSlug": "central-church",
+      "x": 1948,
+      "y": 219,
+      "verify": false,
+      "grid": {
+        "x": 19,
+        "z": 3
+      },
+      "actions": [],
+      "mapObjectType": "landmark"
+    },
+    {
+      "id": "general-hospital",
+      "label": "General Hospital",
+      "category": "health",
+      "districtId": "river-quarter",
+      "locationSlug": "general-hospital",
+      "x": 2162,
+      "y": 219,
+      "verify": false,
+      "grid": {
+        "x": 21,
+        "z": 3
+      },
+      "actions": [],
+      "mapObjectType": "landmark"
+    },
+    {
+      "id": "fuel-station",
+      "label": "Fuel Station",
+      "category": "transport",
+      "districtId": "south-quarter",
+      "locationSlug": "fuel-station",
+      "x": 338,
+      "y": 733,
+      "verify": false,
+      "grid": {
+        "x": 4,
+        "z": 10
+      },
+      "actions": [],
+      "mapObjectType": "landmark"
+    },
+    {
+      "id": "okada-stand",
+      "label": "Okada Stand",
+      "category": "transport",
+      "districtId": "south-quarter",
+      "locationSlug": "okada-stand",
+      "x": 660,
+      "y": 806,
+      "verify": false,
+      "grid": {
+        "x": 7,
+        "z": 11
+      },
+      "actions": [],
+      "mapObjectType": "landmark"
+    },
+    {
+      "id": "cinema-event-hall",
+      "label": "Cinema and Event Hall",
+      "category": "services",
+      "districtId": "south-quarter",
+      "locationSlug": "cinema-event-hall",
+      "x": -91,
+      "y": 1027,
+      "verify": false,
+      "grid": {
+        "x": 0,
+        "z": 14
+      },
+      "actions": [],
+      "mapObjectType": "landmark"
+    },
+    {
+      "id": "post-office-cafe",
+      "label": "Post Office and Internet Cafe",
+      "category": "services",
+      "districtId": "south-quarter",
+      "locationSlug": "post-office-cafe",
+      "x": 123,
+      "y": 1027,
+      "verify": false,
+      "grid": {
+        "x": 2,
+        "z": 14
+      },
+      "actions": [],
+      "mapObjectType": "landmark"
+    },
+    {
+      "id": "central-mosque",
+      "label": "Central Mosque",
+      "category": "worship",
+      "districtId": "south-quarter",
+      "locationSlug": "central-mosque",
+      "x": 660,
+      "y": 1027,
+      "verify": false,
+      "grid": {
+        "x": 7,
+        "z": 14
+      },
+      "actions": [],
+      "mapObjectType": "landmark"
+    },
+    {
+      "id": "community-pharmacy",
+      "label": "Community Pharmacy",
+      "category": "health",
+      "districtId": "oja-oba",
+      "locationSlug": "community-pharmacy",
+      "x": 2592,
+      "y": -1,
+      "verify": false,
+      "grid": {
+        "x": 25,
+        "z": 0
+      },
+      "actions": [],
+      "mapObjectType": "landmark"
     }
   ]
 }
