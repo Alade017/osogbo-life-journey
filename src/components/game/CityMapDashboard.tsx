@@ -734,9 +734,16 @@ export function CityMapDashboard({
           <div className="ncm-3d-companion">
             <div className="ncm-3d-companion-bar">
               <div>
-                <strong>Osogbo 3D Town Districts</strong>{" "}
-                <span>Explore surrounding quarters &amp; city transit</span>
+                <strong>Places &amp; districts</strong>{" "}
+                <span>Pick a place, then walk its streets</span>
               </div>
+              <button
+                type="button"
+                className="ncm-3d-expand-btn"
+                onClick={() => void navigate({ to: "/neighborhood" })}
+              >
+                Walk the streets
+              </button>
             </div>
             <MapCanvas
               playerLocation={

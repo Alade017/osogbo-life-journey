@@ -1,11 +1,7 @@
-import { Suspense, lazy, useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import townData from "@/data/osogbo-town.json";
 import { WORLD_PALETTE } from "@/components/3d/world-theme";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
-
-const TownSurface3D = lazy(() =>
-  import("./R3FTownSurface").then((module) => ({ default: module.R3FTownSurface })),
-);
 
 export type MapFilter =
   | "market"
@@ -88,7 +84,6 @@ export function MapCanvas({
   onSelectLandmark,
   activeFilter = "all",
   searchTarget,
-  playerLocation,
   eventChips: _eventChips = [],
   jobLandmarkIds = [],
   billboardMarkers = [],
@@ -98,10 +93,6 @@ export function MapCanvas({
   onSelectProperty,
   onSelectEvent,
 }: MapCanvasProps) {
-  const [rendererState, setRendererState] = useState<"loading" | "ready" | "unavailable">(
-    "loading",
-  );
-
   useEffect(() => {
     if (!searchTarget) return;
     const id = typeof searchTarget === "string" ? searchTarget : searchTarget.id;
@@ -124,68 +115,9 @@ export function MapCanvas({
       ),
     [activeFilter, availableLandmarkIds, jobLandmarkIds],
   );
-  // Every landmark not yet open to the player is shown as a locked pin, whatever the filter.
-  const lockedPlaces = useMemo(
-    () =>
-      availableLandmarkIds === undefined
-        ? []
-        : townData.landmarks.filter(
-            (place) =>
-              !availableLandmarkIds.includes(place.id) && place.mapObjectType !== "junction",
-          ),
-    [availableLandmarkIds],
-  );
-
-  const handleReady = useCallback(() => setRendererState("ready"), []);
-  const handleUnavailable = useCallback(() => setRendererState("unavailable"), []);
 
   return (
-    <section
-      className="map-canvas town-map-canvas"
-      style={{ background: WORLD_PALETTE.ground }}
-      aria-label="Interactive 3D town map with open camera exploration"
-    >
-      <Suspense fallback={null}>
-        {rendererState !== "unavailable" && (
-          <TownSurface3D
-            places={availablePlaces}
-            lockedPlaces={lockedPlaces}
-            properties={properties}
-            playerLocation={playerLocation}
-            billboardMarkers={billboardMarkers}
-            searchTarget={searchTarget ?? null}
-            onSelectLandmark={onSelectLandmark}
-            onSelectDistrict={onSelectDistrict}
-            onSelectBillboard={onSelectBillboard}
-            {...(onSelectProperty ? { onSelectProperty } : {})}
-            eventChips={_eventChips}
-            {...(onSelectEvent ? { onSelectEvent } : {})}
-            onReady={handleReady}
-            onUnavailable={handleUnavailable}
-          />
-        )}
-      </Suspense>
-      {rendererState === "loading" && (
-        <div className="town-map-renderer-status">
-          <WorldLoadingIndicator
-            presentation="screen"
-            title="Opening the map"
-            detail="Loading the town…"
-          />
-        </div>
-      )}
-      {rendererState === "unavailable" && (
-        <div className="town-map-renderer-status" role="alert">
-          <p>The 3D town could not start on this device.</p>
-          <button
-            type="button"
-            className="phone-btn-primary"
-            onClick={() => window.location.reload()}
-          >
-            Try again
-          </button>
-        </div>
-      )}
+    <section className="map-canvas town-map-canvas" aria-label="Places and districts in Osogbo">
       <ul className="town-map-accessible-list" aria-label="Places on the map">
         {properties?.map((property) => (
           <li key={property.id}>

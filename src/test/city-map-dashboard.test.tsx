@@ -316,9 +316,9 @@ describe("isometric town map", () => {
     expect(screen.queryByText(/does not have a playable neighborhood/i)).not.toBeInTheDocument();
     expect(testState.travelToLocation).not.toHaveBeenCalled();
   }, 15_000);
-  it("renders the 3D town region and a keyboard-accessible list", () => {
+  it("renders the places and districts as a keyboard-accessible list", () => {
     renderDashboard();
-    expect(screen.getByRole("region", { name: /Interactive 3D town map/i })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: /Places and districts in Osogbo/i })).toBeInTheDocument();
     expect(screen.getByRole("list", { name: "Places on the map" })).toBeInTheDocument();
     expect(
       within(screen.getByRole("list", { name: "Places on the map" })).getByRole("button", {
