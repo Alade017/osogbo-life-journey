@@ -1,3 +1,4 @@
+import { MarketTradingHall } from "@/components/3d/MarketTradingScene";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { VenueSceneBoundary } from "./VenueSceneBoundary";
 
@@ -45,7 +46,11 @@ function FixtureModel({
   );
 }
 
-function BasicLocationVenueScene({ slug, locationName }: { slug: string; locationName: string }) {
+function BasicLocationVenueScene({ slug, locationName, onBrowseMarket }: {
+  slug: string;
+  locationName: string;
+  onBrowseMarket?: () => void;
+}) {
   const venue = useMemo(() => getLocationVenueDesign(slug, locationName), [slug, locationName]);
   const gameTime = useOptionalGameTime();
   // Shops with trading hours show their shutter open or closed for the current game hour.
@@ -105,9 +110,11 @@ function BasicLocationVenueScene({ slug, locationName }: { slug: string; locatio
               onCreated={() => setSceneStatus("ready")}
               aria-hidden="true"
             >
-              <WorldCamera width={10} depth={7} stage target={[0, 1.2, 0]} zoom={1.2} />
+              <WorldCamera width={venue.sceneSize?.width ?? 10} depth={venue.sceneSize?.depth ?? 7} stage target={[0, 1.2, 0]} zoom={1.2} />
               <WorldLighting size={14} />
-              {venue.environment ? (
+              {venue.scene === "market" ? (
+                <MarketTradingHall fixtures={venue.fixtures} selected={selectedFixture} onSelect={setSelectedFixture} />
+              ) : venue.environment ? (
                 <VenueEnvironment
                   url={venue.environment.url}
                   open={shutterOpen}
@@ -161,6 +168,12 @@ function BasicLocationVenueScene({ slug, locationName }: { slug: string; locatio
         )}
       </div>
 
+      {venue.scene === "market" && onBrowseMarket && (
+        <button type="button" onClick={onBrowseMarket}
+          className="rounded-lg border border-edge bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground">
+          Browse market offers
+        </button>
+      )}
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(14rem,0.8fr)]">
         <div>
           <h3 className="mb-2 text-sm font-bold">Explore a feature</h3>

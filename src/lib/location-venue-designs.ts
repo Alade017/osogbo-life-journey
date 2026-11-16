@@ -19,6 +19,7 @@ export type VenueEnvironment = {
 
 export type LocationVenueDesign = {
   scene?: "campus" | "market";
+  sceneSize?: { width: number; depth: number };
   name: string;
   description: string;
   floorColor: string;
@@ -83,6 +84,8 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
   },
 
   "oja-oba": {
+    scene: "market",
+    sceneSize: { width: 12, depth: 9 },
     name: "Oja-Oba trading hall",
     description:
       "An Osogbo-inspired covered market interior with produce, staple-goods and household trading spaces.",
