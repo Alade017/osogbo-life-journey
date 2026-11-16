@@ -330,10 +330,10 @@ describe("isometric town map", () => {
   });
 
   it("defines a hand-authored grid and fictional public venues with action definitions", () => {
-    expect(townData.meta.grid).toEqual({ columns: 32, rows: 24, cellSize: 2 });
+    expect(townData.meta.grid).toEqual({ columns: 40, rows: 24, cellSize: 2 });
     expect(townData.grid.rows).toHaveLength(24);
-    expect(townData.grid.rows.every((row) => row.length === 32)).toBe(true);
-    expect(townData.districts).toHaveLength(17);
+    expect(townData.grid.rows.every((row) => row.length === 40)).toBe(true);
+    expect(townData.districts).toHaveLength(19);
     expect(townData.landmarks.map((place) => place.label)).toEqual(
       expect.arrayContaining([
         "Civic court",
@@ -353,7 +353,13 @@ describe("isometric town map", () => {
     }
     expect(
       townData.landmarks.filter((place) => place.category === "worship").map((place) => place.id),
-    ).toEqual(["garden-chapel", "mosque-square", "river-shrine-court"]);
+    ).toEqual([
+      "garden-chapel",
+      "mosque-square",
+      "river-shrine-court",
+      "central-church",
+      "central-mosque",
+    ]);
     expect(JSON.stringify(townData)).not.toMatch(/\/models\/city\//);
     expect(JSON.stringify(townData).toLowerCase()).not.toMatch(/sacred|grove|osun-osogbo/);
     expect(townData.landmarks.find((place) => place.id === "lantern-club")?.min_age).toBe(18);

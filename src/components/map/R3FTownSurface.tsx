@@ -29,6 +29,7 @@ import {
 import { WORLD_SCALE, WORLD_PALETTE, TOWN_MAP_CAMERA } from "../3d/world-theme";
 import { MapLighting, useRealOrGameClock, daylightFor } from "./MapLighting";
 import { PlaceBadge } from "./map-badge";
+import { HouseBlocks3D } from "./HouseBlocks3D";
 import { getLandmarkBuildingVariant } from "./landmark-building-variant";
 import { CompoundPlot3D } from "./CompoundPlot3D";
 import { MapPin3D } from "./MapPin3D";
@@ -91,8 +92,8 @@ const CLOSE_UP_DISTANCE_SCALE = 0.5;
 
 const townMapValidationErrors = validateTownMapData(town);
 
-const gridCols = town.meta.grid.columns;
-const gridRows = town.meta.grid.rows;
+const gridCols = town.grid.rows[0]!.length;
+const gridRows = town.grid.rows.length;
 const cell = WORLD_SCALE.townCell;
 const point = (x: number, z: number): [number, number, number] => [
   (x - (gridCols - 1) / 2) * cell,
@@ -1202,6 +1203,7 @@ export function R3FTownSurface(props: Props) {
               detailed
             />
           ))}
+          <HouseBlocks3D point={point} cell={cell} />
           <MovingTraffic3D
             paths={trafficRoutes}
             crossingScheduler={crossingScheduler}
@@ -1305,27 +1307,6 @@ export function R3FTownSurface(props: Props) {
               property={property}
               cellSize={cell}
               isNight={isNight}
-              isSelected={selectedTarget?.id === property.id}
-              isHovered={hoveredTargetId === property.id}
-              onClick={(event) =>
-                select(event, () => {
-                  setSelectedTarget({
-                    id: property.id,
-                    position: property.position,
-                    type: "property",
-                  });
-                  props.onSelectProperty?.(property);
-                })
-              }
-              onPointerOver={(event) => {
-                event.stopPropagation();
-                setHoveredTargetId(property.id);
-                setHovered((property.label ?? "Home") + " · " + property.status.replace("_", " "));
-              }}
-              onPointerOut={() => {
-                setHoveredTargetId(null);
-                setHovered(null);
-              }}
             />
           ))}
           {props.billboardMarkers.map((marker) => {

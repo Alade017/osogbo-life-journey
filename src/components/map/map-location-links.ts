@@ -1,5 +1,17 @@
 /** Explicit links connect fictional map markers to stable server location slugs. */
 export const MAP_LANDMARK_LOCATION_SLUG: Record<string, string | null> = {
+  "shrine-garden-park": "shrine-garden-park",
+  "osun-festival-grounds": "osun-festival-grounds",
+  "art-craft-gallery": "art-craft-gallery",
+  "central-mosque": "central-mosque",
+  "central-church": "central-church",
+  "community-pharmacy": "community-pharmacy",
+  "general-hospital": "general-hospital",
+  "fuel-station": "fuel-station",
+  "okada-stand": "okada-stand",
+  "hair-salon-tailor": "hair-salon-tailor",
+  "cinema-event-hall": "cinema-event-hall",
+  "post-office-cafe": "post-office-cafe",
   "olaiya-junction": "city-centre",
   "town-market": "town-market",
   "civic-court": "civic-court",
