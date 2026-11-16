@@ -1,6 +1,6 @@
 import { neighborhoodSceneBounds, type WorldPoint } from "../game/neighborhood-model.ts";
 import { findInteractableZone } from "../game/neighborhood-interactions.ts";
-import type { NeighborhoodZoneTag } from "../game/neighborhood-zones.ts";
+import type { NeighborhoodZoneTag } from "../game/neighborhood-interactions.ts";
 import { WORLD_SCALE } from "../components/3d/world-theme.ts";
 
 export type NeighborhoodFilterCategory = "all" | "work-hustle" | "food-shops" | "banking-transit";

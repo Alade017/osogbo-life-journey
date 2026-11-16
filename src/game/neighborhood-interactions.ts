@@ -1,4 +1,3 @@
-import type { NeighborhoodZoneTag } from "./neighborhood-zones.ts";
 import type { WorldPoint } from "./neighborhood-model.ts";
 import type { NeedName } from "../lib/life-simulation.ts";
 import { townSpotFor } from "./town-neighborhood.ts";
@@ -70,6 +69,9 @@ export interface ZoneNpcSpec {
 
 type AuthoredZone = Omit<InteractableZoneSpec, "position" | "accessPoint">;
 type AuthoredNpc = Omit<ZoneNpcSpec, "position" | "accessPoint">;
+
+export type NeighborhoodZoneTag =
+  "FILLING_STATION" | "BANK" | "ADIRE_MARKET" | "COMMERCIAL_SHOPS" | "PERIMETER";
 
 const AUTHORED_ZONES: readonly AuthoredZone[] = [
   {

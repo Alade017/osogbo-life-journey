@@ -58,9 +58,6 @@ import {
   WorldInstances,
   type WorldInstance,
 } from "../3d/WorldScene";
-import { FillingStation } from "@/components/3d/FillingStation";
-import { NeighborhoodPerimeter } from "@/components/3d/NeighborhoodPerimeter";
-import { ZoneSurroundings } from "@/components/3d/ZoneSurroundings";
 import { ZoneNpcs } from "@/components/3d/ZoneNpcs";
 import type { ZoneNpcSpec } from "@/game/neighborhood-interactions";
 import { CHARACTER_MOTION } from "@/components/3d/character-config";
@@ -794,38 +791,15 @@ export function R3FNeighborhoodSurface({
             />
           ))}
 
-          {area.zoneLayout && (
-            <>
-              <NeighborhoodPerimeter perimeter={area.zoneLayout.perimeter} point={point} />
-              <FillingStation
-                spec={area.zoneLayout.fillingStation}
-                point={point}
-                playerScenePoint={selfPoint ?? null}
-                nearbyZoneId={nearbyZoneId}
-                targetedZoneId={targetedZoneId}
-                {...(onSelectZone ? { onSelectZone } : {})}
-                {...(onHoverZone ? { onHoverZone } : {})}
-              />
-              <ZoneSurroundings
-                layout={area.zoneLayout}
-                point={point}
-                playerScenePoint={selfPoint ?? null}
-                nearbyZoneId={nearbyZoneId}
-                targetedZoneId={targetedZoneId}
-                {...(onSelectZone ? { onSelectZone } : {})}
-                {...(onHoverZone ? { onHoverZone } : {})}
-              />
-              {zoneNpcs.length > 0 && onSelectZoneNpc && (
-                <ZoneNpcs
-                  npcs={zoneNpcs}
-                  point={point}
-                  nearbyNpcId={nearbyZoneNpcId}
-                  targetedId={targetedZoneNpcId}
-                  onSelect={onSelectZoneNpc}
-                  {...(onHoverZone ? { onHoverChange: onHoverZone } : {})}
-                />
-              )}
-            </>
+          {zoneNpcs.length > 0 && onSelectZoneNpc && (
+            <ZoneNpcs
+              npcs={zoneNpcs}
+              point={point}
+              nearbyNpcId={nearbyZoneNpcId}
+              targetedId={targetedZoneNpcId}
+              onSelect={onSelectZoneNpc}
+              {...(onHoverZone ? { onHoverChange: onHoverZone } : {})}
+            />
           )}
 
           {area.environment && (
@@ -1005,7 +979,6 @@ export function R3FNeighborhoodSurface({
           {interactionTargets
             .filter((target) => {
               if (target.kind === "npc") return false;
-              if (area.zoneLayout && target.kind !== "home") return false;
               return true;
             })
             .map((target) => {

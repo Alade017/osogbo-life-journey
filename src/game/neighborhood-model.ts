@@ -82,7 +82,6 @@ export type NeighborhoodArea = {
   obstacles?: readonly NeighborhoodObstacle[];
   roads?: readonly NeighborhoodRoad[];
   paths?: readonly NeighborhoodPath[];
-  zoneLayout?: NeighborhoodZoneLayout;
   style: {
     ground: number;
     grid: number;
