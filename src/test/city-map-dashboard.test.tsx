@@ -179,6 +179,7 @@ function renderDashboard(currentSlug?: string, insideHome = false) {
 describe("isometric town map", () => {
   it("offers the market walking route only after confirmed arrival", () => {
     renderDashboard("oja-oba");
+    fireEvent.click(screen.getByText("Map options"));
     expect(screen.getByRole("link", { name: "Walk Oja-Oba Market" })).toHaveAttribute(
       "href",
       "/neighborhood",
@@ -189,6 +190,7 @@ describe("isometric town map", () => {
 
   it("offers the transport selector rather than walking when another district is confirmed", async () => {
     renderDashboard("student-district");
+    fireEvent.click(screen.getByText("Map options"));
     fireEvent.click(screen.getByRole("button", { name: "Visit Oja-Oba Market" }));
     expect(await screen.findByRole("dialog")).toBeVisible();
     expect(screen.queryByRole("link", { name: "Walk Oja-Oba Market" })).not.toBeInTheDocument();
@@ -319,10 +321,10 @@ describe("isometric town map", () => {
     expect(
       screen.queryByRole("region", { name: /Interactive 3D town map/i }),
     ).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Olaiya in 3D" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Olaiya" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Osogbo districts" }));
     expect(screen.getByRole("region", { name: /Interactive 3D town map/i })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Olaiya in 3D" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Olaiya" })).not.toBeInTheDocument();
   });
 
   it("renders the 3D town region and a keyboard-accessible list", () => {
@@ -408,6 +410,7 @@ describe("isometric town map", () => {
 
   it("shows only public venue categories for towns outside the detailed Osogbo map", () => {
     renderDashboard();
+    fireEvent.click(screen.getByText("Map options"));
     fireEvent.click(screen.getByRole("button", { name: "Explore Osun" }));
     fireEvent.click(screen.getByRole("button", { name: "Ilesa" }));
     expect(screen.getByRole("heading", { name: "Ilesa" })).toBeInTheDocument();

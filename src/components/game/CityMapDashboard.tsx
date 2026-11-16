@@ -1,3 +1,4 @@
+import "@/components/map/map-compact.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -500,76 +501,81 @@ export function CityMapDashboard({
 
   return (
     <section className="city-map-dashboard is-world-map map-experience" aria-label="Osun Life map">
-      <header className="map-hud">
-        <div className="map-hud-status" aria-label="Map status">
-          <span className="map-hud-chip">
-            <Smile size={15} aria-hidden="true" />
-            <strong>{displayedMood}</strong>
-          </span>
-          <span className="map-hud-chip">
-            <CalendarDays size={15} aria-hidden="true" />
-            <small>Rent</small>
-            <strong>
-              {due
-                ? new Intl.DateTimeFormat("en-NG", {
-                    timeZone: "Africa/Lagos",
-                    day: "numeric",
-                    month: "short",
-                  }).format(new Date(due))
-                : "Not scheduled"}
-            </strong>
-          </span>
-          {mapLevel === "town" && lockedPlaces.length > 0 && (
+      <details className="map-options">
+        <summary>Map options</summary>
+        <header className="map-hud">
+          <div className="map-hud-status" aria-label="Map status">
+            <span className="map-hud-chip">
+              <Smile size={15} aria-hidden="true" />
+              <strong>{displayedMood}</strong>
+            </span>
+            <span className="map-hud-chip">
+              <CalendarDays size={15} aria-hidden="true" />
+              <small>Rent</small>
+              <strong>
+                {due
+                  ? new Intl.DateTimeFormat("en-NG", {
+                      timeZone: "Africa/Lagos",
+                      day: "numeric",
+                      month: "short",
+                    }).format(new Date(due))
+                  : "Not scheduled"}
+              </strong>
+            </span>
+            {mapLevel === "town" && lockedPlaces.length > 0 && (
+              <button
+                type="button"
+                className="map-soon-button"
+                aria-expanded={soonOpen}
+                onClick={() => setSoonOpen(true)}
+              >
+                <Lock size={13} aria-hidden="true" />
+                <strong>{lockedPlaces.length}</strong>
+                <small>coming soon</small>
+              </button>
+            )}
+          </div>
+          <div className="map-hud-actions">
             <button
+              className="map-level-toggle"
               type="button"
-              className="map-soon-button"
-              aria-expanded={soonOpen}
-              onClick={() => setSoonOpen(true)}
+              onClick={() => setMapLevel((level) => (level === "town" ? "state" : "town"))}
             >
-              <Lock size={13} aria-hidden="true" />
-              <strong>{lockedPlaces.length}</strong>
-              <small>coming soon</small>
+              <MapPinned size={16} />
+              {mapLevel === "town" ? "Explore Osun" : "Osogbo map"}
             </button>
-          )}
-        </div>
-        <div className="map-hud-actions">
-          <button
-            className="map-level-toggle"
-            type="button"
-            onClick={() => setMapLevel((level) => (level === "town" ? "state" : "town"))}
-          >
-            <MapPinned size={16} />
-            {mapLevel === "town" ? "Explore Osun" : "Osogbo map"}
-          </button>
-          {mapLevel === "town" && isPlayableDistrict(currentLocation?.slug) && (
-            <Link className="map-neighborhood-link" to="/neighborhood">
-              {currentLocation?.slug === "oja-oba" ? "Walk Oja-Oba Market" : "Walk Olaiya"}
-            </Link>
-          )}
-          {mapLevel === "town" && currentLocation?.slug !== "oja-oba" && (
-            <button
-              className="map-neighborhood-link"
-              type="button"
-              onClick={() => onLandmark("oja-oba-market")}
-            >
-              Visit Oja-Oba Market
-            </button>
-          )}
-          {mapLevel === "town" &&
-            currentLocation?.slug !== "city-centre" &&
-            availableLandmarks.data?.includes("olaiya-junction") && (
+            {mapLevel === "town" && isPlayableDistrict(currentLocation?.slug) && (
+              <Link className="map-neighborhood-link" to="/neighborhood">
+                {currentLocation?.slug === "oja-oba" ? "Walk Oja-Oba Market" : "Walk Olaiya"}
+              </Link>
+            )}
+            {mapLevel === "town" && currentLocation?.slug !== "oja-oba" && (
               <button
                 className="map-neighborhood-link"
                 type="button"
-                disabled={offline}
-                onClick={() => onLandmark("olaiya-junction")}
+                onClick={() => onLandmark("oja-oba-market")}
               >
-                Travel to Olaiya
+                Visit Oja-Oba Market
               </button>
             )}
-        </div>
-      </header>
-      <MapTicker />
+            {mapLevel === "town" &&
+              currentLocation?.slug !== "city-centre" &&
+              availableLandmarks.data?.includes("olaiya-junction") && (
+                <button
+                  className="map-neighborhood-link"
+                  type="button"
+                  disabled={offline}
+                  onClick={() => onLandmark("olaiya-junction")}
+                >
+                  Travel to Olaiya
+                </button>
+              )}
+          </div>
+        </header>
+      </details>
+      <div className="map-news">
+        <MapTicker />
+      </div>
       {offline && (
         <div role="status" className="map-offline-banner">
           <CloudOff size={16} />

@@ -73,7 +73,7 @@ export const LockedPlaces3D: FC<LockedPlaces3DProps> = ({
         />
       ))}
       {activeModal && (
-        <Html center position={activeModal.position} distanceFactor={14}>
+        <Html center position={activeModal.position}>
           <section
             role="dialog"
             aria-label={activeModal.name}

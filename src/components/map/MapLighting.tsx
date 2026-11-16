@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useThree } from "@react-three/fiber";
 import { Color } from "three";
-import { useOptionalGameTime } from "@/components/game/GameTimeProvider";
 import { WORLD_PALETTE } from "../3d/world-theme";
 
 const DAY_BACKGROUND = new Color(WORLD_PALETTE.ground);
@@ -23,7 +22,6 @@ export function daylightFor(hour: number, minute = 0) {
 
 /** Reads real-world local time or active game simulation clock. */
 export function useRealOrGameClock(): { hour: number; minute: number; isRealTime: boolean } {
-  const game = useOptionalGameTime();
   const [realClock, setRealClock] = useState(() => {
     const now = new Date();
     return { hour: now.getHours(), minute: now.getMinutes() };
@@ -33,14 +31,17 @@ export function useRealOrGameClock(): { hour: number; minute: number; isRealTime
     // Keep in sync with real-world time ticking
     const interval = setInterval(() => {
       const now = new Date();
-      setRealClock({ hour: now.getHours(), minute: now.getMinutes() });
+      const hour = now.getHours(),
+        minute = now.getMinutes();
+      setRealClock((previous) =>
+        previous.hour === hour && previous.minute === minute ? previous : { hour, minute },
+      );
     }, 15000);
     return () => clearInterval(interval);
   }, []);
 
   // The map follows the player's real local time, so daylight matches the day outside.
   // The game clock is not used here, because it can sit at night while it is daytime.
-  void game;
   return { ...realClock, isRealTime: true };
 }
 

@@ -255,7 +255,11 @@ function GameLayout() {
             </div>
           </div>
 
-          <GameNeedsRail player={player} />
+          <GameNeedsRail
+            key={pathname === "/map" ? "map" : "game"}
+            player={player}
+            compact={pathname === "/map"}
+          />
 
           <div className={phoneOpen ? "gbb is-open" : "gbb"}>
             <GameMobileNav hidden={phoneOpen} onNavigate={() => setPhoneOpen(false)} />

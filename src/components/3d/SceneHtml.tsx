@@ -18,6 +18,8 @@ import { mountSceneOverlay } from "./scene-overlay-root";
 
 type OverlayRoot = ReturnType<typeof mountSceneOverlay>;
 
+const DEFAULT_Z_INDEX_RANGE: [number, number] = [20, 0];
+
 const cameraWorldPos = new Vector3();
 const groupWorldPos = new Vector3();
 
@@ -27,7 +29,7 @@ export function SceneHtml({
   position,
   center = false,
   distanceFactor,
-  zIndexRange = [20, 0],
+  zIndexRange = DEFAULT_Z_INDEX_RANGE,
   portal,
   style,
   pointerEvents,
@@ -47,6 +49,7 @@ export function SceneHtml({
   const previous = useRef("");
   const { camera, size, gl, invalidate } = useThree();
   const target = portal?.current ?? gl.domElement.parentElement;
+  const [zIndexMax, zIndexMin] = zIndexRange;
 
   const syncTransform = useCallback(
     (cam: Camera, viewport: { width: number; height: number }) => {
@@ -79,14 +82,12 @@ export function SceneHtml({
         element.style.transform = transform;
         previous.current = transform;
       }
-      const zIndex = Math.round(
-        zIndexRange[1] + ((1 - point.z) / 2) * (zIndexRange[0] - zIndexRange[1]),
-      );
+      const zIndex = Math.round(zIndexMin + ((1 - point.z) / 2) * (zIndexMax - zIndexMin));
       const hidden = point.z < -1 || point.z > 1;
       if (element.style.zIndex !== String(zIndex)) element.style.zIndex = String(zIndex);
       if (element.hidden !== hidden) element.hidden = hidden;
     },
-    [distanceFactor, zIndexRange],
+    [distanceFactor, zIndexMax, zIndexMin],
   );
 
   useLayoutEffect(() => {
@@ -94,12 +95,15 @@ export function SceneHtml({
     const entry = mountSceneOverlay(target);
     overlay.current = entry;
     previous.current = "";
-    syncTransform(camera, size);
     return () => {
       if (overlay.current === entry) overlay.current = null;
       entry.dispose();
     };
-  }, [target, camera, size, syncTransform]);
+  }, [target]);
+
+  useLayoutEffect(() => {
+    syncTransform(camera, size);
+  }, [camera, size, syncTransform]);
 
   useLayoutEffect(() => {
     overlay.current?.root.render(

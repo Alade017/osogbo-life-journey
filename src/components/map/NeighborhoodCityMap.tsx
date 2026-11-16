@@ -36,7 +36,6 @@ export function NeighborhoodCityMap({
   onWalkHere,
   onBoardKeke,
   onSelectSurroundingDistrict,
-  onOpenDistrictMapView,
 }: NeighborhoodCityMapProps) {
   const [activeFilter, setActiveFilter] = useState<NeighborhoodFilterCategory>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -77,7 +76,7 @@ export function NeighborhoodCityMap({
       <header className="ncm-header">
         <div className="ncm-title-block">
           <p className="ncm-eyebrow">Olaiya Central · Osogbo</p>
-          <h2>Olaiya in 3D</h2>
+          <h2>Olaiya</h2>
         </div>
 
         <div className="ncm-live-readout" aria-live="polite">
@@ -99,32 +98,29 @@ export function NeighborhoodCityMap({
         </div>
       </header>
 
-      <div className="ncm-filter-row" role="toolbar" aria-label="Filter neighborhood landmarks">
-        <div className="ncm-filter-pills">
-          {NEIGHBORHOOD_FILTER_PILLS.map((pill) => (
-            <button
-              key={pill.id}
-              type="button"
-              className="ncm-filter-pill"
-              aria-pressed={activeFilter === pill.id}
-              onClick={() => {
-                setActiveFilter(pill.id);
-                setSelectedId(null);
-                setFareError(null);
-                setFocus("overview");
-              }}
-            >
-              {pill.label}
-            </button>
-          ))}
+      <details className="ncm-filter-menu">
+        <summary>Filter places</summary>
+        <div className="ncm-filter-row" role="toolbar" aria-label="Filter neighborhood landmarks">
+          <div className="ncm-filter-pills">
+            {NEIGHBORHOOD_FILTER_PILLS.map((pill) => (
+              <button
+                key={pill.id}
+                type="button"
+                className="ncm-filter-pill"
+                aria-pressed={activeFilter === pill.id}
+                onClick={() => {
+                  setActiveFilter(pill.id);
+                  setSelectedId(null);
+                  setFareError(null);
+                  setFocus("overview");
+                }}
+              >
+                {pill.label}
+              </button>
+            ))}
+          </div>
         </div>
-
-        {onOpenDistrictMapView && (
-          <button type="button" className="ncm-district-switch" onClick={onOpenDistrictMapView}>
-            3D City Districts
-          </button>
-        )}
-      </div>
+      </details>
 
       <div className="ncm-stage">
         <div className="ncm-canvas-frame">
@@ -248,35 +244,41 @@ export function NeighborhoodCityMap({
           )}
         </div>
       </div>
-      <div className="ncm-destinations" role="group" aria-label="Neighborhood destinations">
-        {visibleLandmarks.map((landmark) => (
-          <button
-            key={landmark.id}
-            type="button"
-            aria-label={`${landmark.name}, ${landmark.badgeLabel}`}
-            aria-pressed={selectedId === landmark.id}
-            onClick={() => handleSelectPin(landmark)}
-          >
-            <span className="ncm-destination-dot" style={{ background: landmark.accentColor }} />
-            <span>
-              {landmark.shortLabel}
-              <small>{landmark.badgeLabel}</small>
-            </span>
-          </button>
-        ))}
-      </div>
-      <nav className="ncm-district-links" aria-label="Surrounding Osogbo districts">
-        {SURROUNDING_CITY_DISTRICTS.map((district) => (
-          <button
-            key={district.id}
-            type="button"
-            title={district.summary}
-            onClick={() => onSelectSurroundingDistrict?.(district.landmarkId)}
-          >
-            {district.name} · {district.directionLabel}
-          </button>
-        ))}
-      </nav>
+      <details className="ncm-place-list">
+        <summary>Browse places</summary>
+        <div className="ncm-destinations" role="group" aria-label="Neighborhood destinations">
+          {visibleLandmarks.map((landmark) => (
+            <button
+              key={landmark.id}
+              type="button"
+              aria-label={`${landmark.name}, ${landmark.badgeLabel}`}
+              aria-pressed={selectedId === landmark.id}
+              onClick={() => handleSelectPin(landmark)}
+            >
+              <span className="ncm-destination-dot" style={{ background: landmark.accentColor }} />
+              <span>
+                {landmark.shortLabel}
+                <small>{landmark.badgeLabel}</small>
+              </span>
+            </button>
+          ))}
+        </div>
+      </details>
+      <details className="ncm-area-list">
+        <summary>Nearby districts</summary>
+        <nav className="ncm-district-links" aria-label="Surrounding Osogbo districts">
+          {SURROUNDING_CITY_DISTRICTS.map((district) => (
+            <button
+              key={district.id}
+              type="button"
+              title={district.summary}
+              onClick={() => onSelectSurroundingDistrict?.(district.landmarkId)}
+            >
+              {district.name} · {district.directionLabel}
+            </button>
+          ))}
+        </nav>
+      </details>
     </section>
   );
 }

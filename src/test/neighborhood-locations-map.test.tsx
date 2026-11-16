@@ -134,6 +134,10 @@ describe("neighborhoodLocations registry & City Map sync", () => {
         onBoardKeke={onBoardKeke}
       />,
     );
+    expect(screen.getByText("Filter places").parentElement).not.toHaveAttribute("open");
+    expect(screen.getByText("Browse places").parentElement).not.toHaveAttribute("open");
+    fireEvent.click(screen.getByText("Filter places"));
+    fireEvent.click(screen.getByText("Browse places"));
 
     expect(filterNeighborhoodLandmarks("work-hustle")).toHaveLength(2);
     expect(filterNeighborhoodLandmarks("food-shops")).toHaveLength(2);
@@ -183,6 +187,8 @@ describe("neighborhoodLocations registry & City Map sync", () => {
         onBoardKeke={vi.fn()}
       />,
     );
+    fireEvent.click(screen.getByText("Filter places"));
+    fireEvent.click(screen.getByText("Browse places"));
     fireEvent.click(screen.getByRole("button", { name: /Adire Makers' Yard/i }));
     expect(screen.getByRole("dialog")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Banking & Transit" }));
@@ -202,6 +208,8 @@ describe("neighborhoodLocations registry & City Map sync", () => {
         onBoardKeke={onBoardKeke}
       />,
     );
+    fireEvent.click(screen.getByText("Filter places"));
+    fireEvent.click(screen.getByText("Browse places"));
 
     fireEvent.click(screen.getByRole("button", { name: /Commercial Bank & ATM/i }));
     fireEvent.click(screen.getByRole("button", { name: /Board Keke \/ Korope/i }));
