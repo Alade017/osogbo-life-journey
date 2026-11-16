@@ -3,17 +3,17 @@
 .map-experience .ncm-filter-menu > summary,
 .map-experience .ncm-place-list > summary,
 .map-experience .ncm-area-list > summary {
-  min-height: 44px;
+  min-height: 2.75rem;
   padding: 10px 12px;
-  border: 1px solid #16225c26;
-  border-radius: 12px;
-  background: #faf7f0;
-  color: #16225c;
-  font: 600 13px/22px system-ui;
+  border: 1px solid var(--border);
+  border-radius: var(--shape-button);
+  background: var(--card);
+  color: var(--foreground);
+  font: 600 0.8125rem/1.375rem var(--font-sans);
   cursor: pointer;
 }
 .map-experience summary:focus-visible {
-  outline: 3px solid #1e9a5f;
+  outline: 3px solid var(--ring);
   outline-offset: 2px;
 }
 .map-experience .map-options {
@@ -23,10 +23,10 @@
   width: 100%;
 }
 .map-experience .map-options .map-hud {
-  margin-top: 8px;
+  margin-top: var(--spacing-sm);
 }
 .map-experience .ncm-filter-menu .ncm-filter-row {
-  margin-top: 8px;
+  margin-top: var(--spacing-sm);
 }
 .city-game .game-needs-rail.game-needs-rail.game-needs-rail.is-map-compact.is-collapsed {
   width: 54px;
@@ -42,8 +42,8 @@
 }
 @media (max-width: 760px) {
   .city-game .map-experience.city-map-dashboard {
-    gap: 8px;
-    padding: 8px 6px calc(var(--game-dock-space, 92px) + env(safe-area-inset-bottom));
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) 6px calc(var(--game-dock-space, 92px) + env(safe-area-inset-bottom));
   }
   .city-game .map-experience .map-news {
     display: none;
@@ -55,47 +55,53 @@
   .city-game .map-experience .map-view-switch button {
     flex: 1;
     min-width: 0;
-    min-height: 44px;
+    min-height: 2.75rem;
     padding: 6px 10px;
     font-size: 12px;
   }
   .city-game .map-experience .ncm-layout-grid {
-    gap: 8px;
+    gap: var(--spacing-sm);
   }
   .city-game .map-experience .ncm-shell {
     position: relative;
-    gap: 8px;
-    padding: 8px;
-    border-radius: 16px;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    border-radius: var(--shape-card);
   }
   .city-game .map-experience .ncm-header {
-    min-height: 44px;
-    margin-right: 130px;
+    min-height: 2.75rem;
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+    margin-right: 0;
     padding: 0 4px;
   }
   .city-game .map-experience .ncm-header h2 {
     margin: 0;
-    font-size: 18px;
+    font-size: 1.125rem;
   }
   .city-game .map-experience .ncm-eyebrow,
   .city-game .map-experience .ncm-live-readout {
     display: none;
   }
   .city-game .map-experience .ncm-filter-menu {
-    position: absolute;
-    top: 8px;
-    right: 8px;
+    position: relative;
+    grid-column: 2;
+    grid-row: 1;
+    align-self: start;
     z-index: 30;
   }
   .city-game .map-experience .ncm-filter-menu .ncm-filter-row {
     position: absolute;
     right: 0;
-    width: min(280px, calc(100vw - 48px));
-    padding: 8px;
-    border: 1px solid #16225c26;
-    border-radius: 12px;
-    background: #faf7f0;
-    box-shadow: 0 6px 22px #16225c22;
+    width: min(280px, calc(100vw - 3rem));
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border);
+    border-radius: var(--shape-button);
+    background: var(--card);
+    box-shadow: 0 6px 22px var(--foreground)22;
   }
   .city-game .map-experience .ncm-filter-pills {
     display: grid;
@@ -103,22 +109,22 @@
     width: 100%;
   }
   .city-game .map-experience .ncm-filter-pill {
-    min-height: 44px;
-    padding: 8px;
+    min-height: 2.75rem;
+    padding: var(--spacing-sm);
   }
   .city-game .map-experience .ncm-canvas-frame {
     min-height: 320px;
-    height: max(320px, calc(100svh - 255px));
-    border-radius: 12px;
+    height: clamp(20rem, 65svh, 46rem);
+    border-radius: var(--shape-button);
   }
   .city-game .map-experience .ncm-camera-tools {
-    top: 8px;
-    left: 8px;
+    top: var(--spacing-sm);
+    left: var(--spacing-sm);
     gap: 4px;
   }
   .city-game .map-experience .ncm-camera-tools button {
     padding: 6px 10px;
-    min-height: 44px;
+    min-height: 2.75rem;
     font-size: 12px;
   }
   .city-game .map-experience .ncm-camera-hint {
@@ -129,7 +135,7 @@
     display: none;
   }
   .city-game .map-experience .ncm-3d-companion-bar {
-    padding: 8px 12px;
+    padding: var(--spacing-sm) 12px;
   }
   .city-game .map-experience .ncm-canvas-frame:has(.ncm-drawer) {
     height: auto;
@@ -137,5 +143,14 @@
   }
   .city-game .map-experience .ncm-canvas-frame:has(.ncm-drawer) .ncm-world {
     height: 320px;
+  }
+}
+
+@media (max-width: 760px) {
+  .city-game .map-experience .ncm-shell > .ncm-stage,
+  .city-game .map-experience .ncm-shell > .ncm-place-list,
+  .city-game .map-experience .ncm-shell > .ncm-area-list {
+    grid-column: 1 / -1;
+    min-width: 0;
   }
 }
