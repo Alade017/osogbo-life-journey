@@ -14,11 +14,17 @@ const NEED_ICONS = {
   social: Users,
 };
 
-export function GameNeedsRail({ player }: { player: PlayerState }) {
+export function GameNeedsRail({
+  player,
+  compact = false,
+}: {
+  player: PlayerState;
+  compact?: boolean;
+}) {
   const { simulation, start, busy, ready } = useGameTime();
   const [detailNeed, setDetailNeed] = useState<(typeof NEED_NAMES)[number] | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(!compact);
   const criticalCount = NEED_NAMES.filter(
     (name) => statusForNeed(name, Math.round(simulation.needs[name])) === "critical",
   ).length;
@@ -69,7 +75,7 @@ export function GameNeedsRail({ player }: { player: PlayerState }) {
 
   return (
     <aside
-      className={`game-needs-rail${expanded ? "" : " is-collapsed"}`}
+      className={`game-needs-rail${expanded ? "" : " is-collapsed"}${compact ? " is-map-compact" : ""}`}
       aria-label={`${player.name}'s needs dashboard${criticalCount ? `, ${criticalCount} critical` : ""}`}
       data-critical-count={criticalCount}
     >
@@ -101,7 +107,7 @@ export function GameNeedsRail({ player }: { player: PlayerState }) {
           </>
         )}
       </button>
-      {!expanded && (
+      {!expanded && !compact && (
         <div className="game-needs-preview" aria-label="Needs requiring attention">
           {previewNeeds.map(({ name, value, status }) => {
             const Icon = NEED_ICONS[name];

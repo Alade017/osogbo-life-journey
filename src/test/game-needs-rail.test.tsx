@@ -51,15 +51,24 @@ describe("persistent player needs dashboard", () => {
   it("shows the most urgent needs as compact pills in preview mode", () => {
     const { container } = render(<GameNeedsRail player={player} />);
     fireEvent.click(screen.getByRole("button", { name: "Collapse needs panel" }));
-    expect(container.querySelector(".game-needs-toggle")).toHaveStyle({
-      width: "42px",
-      height: "42px",
-    });
+    expect(container.querySelector(".game-needs-toggle")).toHaveAttribute("aria-expanded", "false");
+    expect(container.querySelector(".game-needs-rail")).toHaveClass("is-collapsed");
     expect(container.querySelectorAll(".game-needs-preview-pill")).toHaveLength(2);
     expect(container.querySelector(".game-needs-preview")).toHaveTextContent("Social");
     expect(container.querySelector(".game-needs-preview")).toHaveTextContent("Hunger");
-    expect(container.querySelector(".game-needs-list")).not.toBeVisible();
+    expect(container.querySelector(".game-needs-list")).toBeEmptyDOMElement();
     fireEvent.click(screen.getByRole("button", { name: /Social: 10 percent, critical/ }));
     expect(screen.getByRole("status", { name: "Social need status" })).toHaveTextContent("10%");
+  });
+  it("starts the map panel collapsed and keeps needs available on demand", () => {
+    const { container } = render(<GameNeedsRail player={player} compact />);
+    expect(screen.getByRole("button", { name: /Expand needs panel/ })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
+    expect(container.querySelectorAll(".game-needs-item")).toHaveLength(0);
+    expect(container.querySelector(".game-needs-preview")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /Expand needs panel/ }));
+    expect(container.querySelectorAll(".game-needs-item")).toHaveLength(6);
   });
 });

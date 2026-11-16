@@ -131,7 +131,9 @@ function NeighborhoodNpcActor({
   sceneBounds,
   onSelect,
   onArrive,
+  showLabel = true,
 }: {
+  showLabel?: boolean;
   npc: NeighborhoodNpcView;
   start: [number, number, number];
   target: [number, number, number];
@@ -371,9 +373,11 @@ function NeighborhoodNpcActor({
         <cylinderGeometry args={[0.42, 0.42, 1.9, 10]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
-      <Html center position={[0, 2.05, 0]} distanceFactor={18} style={{ pointerEvents: "none" }}>
-        <span className="world-place-label">{npc.name}</span>
-      </Html>
+      {showLabel && (
+        <Html center position={[0, 2.05, 0]} distanceFactor={18} style={{ pointerEvents: "none" }}>
+          <span className="world-place-label">{npc.name}</span>
+        </Html>
+      )}
     </group>
   );
 }
@@ -931,15 +935,17 @@ export function R3FNeighborhoodSurface({
                       }
                     />
                   )}
-                  <Html
-                    portal={overlayHost}
-                    center
-                    position={[point(o.x, o.y)[0], o.walkIn ? 4.8 : 3.7, point(o.x, o.y)[2]]}
-                    distanceFactor={18}
-                    style={{ pointerEvents: "none" }}
-                  >
-                    <span className="world-place-label">{o.name}</span>
-                  </Html>
+                  {!overview && (
+                    <Html
+                      portal={overlayHost}
+                      center
+                      position={[point(o.x, o.y)[0], o.walkIn ? 4.8 : 3.7, point(o.x, o.y)[2]]}
+                      distanceFactor={18}
+                      style={{ pointerEvents: "none" }}
+                    >
+                      <span className="world-place-label">{o.name}</span>
+                    </Html>
+                  )}
                 </group>
               );
             })}
@@ -965,6 +971,7 @@ export function R3FNeighborhoodSurface({
             <NeighborhoodNpcActor
               key={npc.id}
               npc={npc}
+              showLabel={!overview}
               start={point(npc.x, npc.y)}
               target={point(npc.targetX, npc.targetY)}
               actorPositions={actorPositions}
