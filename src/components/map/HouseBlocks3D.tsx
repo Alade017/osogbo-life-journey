@@ -159,8 +159,8 @@ export function HouseBlocks3D({ point, cell }: { point: Point; cell: number }) {
           <WorldHouse
             key={entry.key}
             position={point(entry.x, entry.z)}
-            width={cell * entry.style.width * 0.9}
-            depth={cell * entry.style.depth * 0.9}
+            width={cell * entry.style.width * 0.6}
+            depth={cell * entry.style.depth * 0.6}
             height={cell * entry.style.height * jitter}
             rotation={entry.style.rotation}
             variant={entry.style.variant}

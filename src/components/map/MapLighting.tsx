@@ -38,14 +38,9 @@ export function useRealOrGameClock(): { hour: number; minute: number; isRealTime
     return () => clearInterval(interval);
   }, []);
 
-  if (game?.simulation?.gameTime) {
-    return {
-      hour: game.simulation.gameTime.hour,
-      minute: game.simulation.gameTime.minute,
-      isRealTime: false,
-    };
-  }
-
+  // The map follows the player's real local time, so daylight matches the day outside.
+  // The game clock is not used here, because it can sit at night while it is daytime.
+  void game;
   return { ...realClock, isRealTime: true };
 }
 
