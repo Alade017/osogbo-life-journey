@@ -101,7 +101,7 @@
     border: 1px solid var(--border);
     border-radius: var(--shape-button);
     background: var(--card);
-    box-shadow: 0 6px 22px var(--foreground)22;
+    box-shadow: var(--elevation-lift);
   }
   .city-game .map-experience .ncm-filter-pills {
     display: grid;
