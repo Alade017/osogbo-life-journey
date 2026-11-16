@@ -3,23 +3,57 @@ import { WorldMaterial } from "./WorldScene";
 
 type ItemModelProps = { h: number };
 
-/** A worn backpack: body, front pocket, and two shoulder straps. Sits on the character's back. */
-export function BackpackModel({ h }: ItemModelProps) {
+/** A worn everyday backpack with a flap, carry handle, pocket and shoulder straps. */
+export function BackpackModel({
+  h,
+  bodyColor = "#5a3b22",
+  trimColor = "#7a5233",
+  hardwareColor = "#c49a55",
+}: ItemModelProps & { bodyColor?: string; trimColor?: string; hardwareColor?: string }) {
   return (
     <group>
+      {/* Main soft-sided bag body and reinforced base. */}
       <mesh position={[0, h * 0.6, -h * 0.13]} castShadow>
         <boxGeometry args={[h * 0.26, h * 0.3, h * 0.12]} />
-        <WorldMaterial color="#5a3b22" />
+        <WorldMaterial color={bodyColor} />
       </mesh>
+      <mesh position={[0, h * 0.455, -h * 0.13]}>
+        <boxGeometry args={[h * 0.25, h * 0.035, h * 0.125]} />
+        <WorldMaterial color={trimColor} />
+      </mesh>
+      {/* Front pocket and curved-looking top flap, kept low-poly for mobile rendering. */}
       <mesh position={[0, h * 0.5, -h * 0.2]} castShadow>
         <boxGeometry args={[h * 0.22, h * 0.14, h * 0.05]} />
-        <WorldMaterial color="#7a5233" />
+        <WorldMaterial color={trimColor} />
+      </mesh>
+      <mesh position={[0, h * 0.735, -h * 0.13]}>
+        <boxGeometry args={[h * 0.27, h * 0.07, h * 0.13]} />
+        <WorldMaterial color={trimColor} />
+      </mesh>
+      <mesh position={[0, h * 0.69, -h * 0.205]}>
+        <boxGeometry args={[h * 0.045, h * 0.06, h * 0.018]} />
+        <WorldMaterial color={hardwareColor} />
+      </mesh>
+      {/* Top carry loop and paired adjustable shoulder straps. */}
+      <mesh position={[0, h * 0.79, -h * 0.13]}>
+        <boxGeometry args={[h * 0.09, h * 0.035, h * 0.035]} />
+        <WorldMaterial color={bodyColor} />
       </mesh>
       {[-1, 1].map((side) => (
-        <mesh key={side} position={[side * h * 0.1, h * 0.68, h * 0.075]} castShadow>
-          <boxGeometry args={[h * 0.04, h * 0.2, h * 0.03]} />
-          <WorldMaterial color="#3d2716" />
-        </mesh>
+        <group key={side}>
+          <mesh position={[side * h * 0.1, h * 0.68, h * 0.075]} castShadow>
+            <boxGeometry args={[h * 0.04, h * 0.2, h * 0.03]} />
+            <WorldMaterial color={trimColor} />
+          </mesh>
+          <mesh position={[side * h * 0.145, h * 0.56, -h * 0.13]}>
+            <boxGeometry args={[h * 0.045, h * 0.12, h * 0.1]} />
+            <WorldMaterial color={bodyColor} />
+          </mesh>
+          <mesh position={[side * h * 0.145, h * 0.5, -h * 0.13]}>
+            <boxGeometry args={[h * 0.05, h * 0.018, h * 0.105]} />
+            <WorldMaterial color={hardwareColor} />
+          </mesh>
+        </group>
       ))}
     </group>
   );
@@ -37,14 +71,46 @@ export function ShirtWorn({
 }: ItemModelProps & { color?: string; accent?: string }) {
   return (
     <group>
+      {/* Main torso and short sleeves retain the established avatar proportions. */}
       <mesh position={[0, h * 0.57, 0]} castShadow>
         <boxGeometry args={[h * 0.3, h * 0.38, h * 0.19]} />
         <WorldMaterial color={color} />
       </mesh>
-      <mesh position={[0, h * 0.74, h * 0.1]}>
-        <boxGeometry args={[h * 0.14, h * 0.03, h * 0.03]} />
+      {[-1, 1].map((side) => (
+        <mesh
+          key={side}
+          position={[side * h * 0.19, h * 0.64, 0]}
+          rotation={[0, 0, side * -0.16]}
+          castShadow
+        >
+          <boxGeometry args={[h * 0.12, h * 0.2, h * 0.17]} />
+          <WorldMaterial color={color} />
+        </mesh>
+      ))}
+      {/* Collar, centre placket and restrained woven accent strip. */}
+      <mesh position={[0, h * 0.755, h * 0.1]}>
+        <boxGeometry args={[h * 0.14, h * 0.035, h * 0.025]} />
         <WorldMaterial color={accent} />
       </mesh>
+      <mesh position={[0, h * 0.57, h * 0.101]}>
+        <boxGeometry args={[h * 0.025, h * 0.25, h * 0.012]} />
+        <WorldMaterial color={accent} />
+      </mesh>
+      <mesh position={[0, h * 0.49, h * 0.108]}>
+        <boxGeometry args={[h * 0.11, h * 0.08, h * 0.012]} />
+        <WorldMaterial color={accent} />
+      </mesh>
+      {/* Small geometric woven marks suggest locally patterned fabric without a texture. */}
+      {[-1, 1].map((side) => (
+        <group key={side} position={[side * h * 0.095, h * 0.59, h * 0.105]}>
+          {[-1, 0, 1].map((row) => (
+            <mesh key={row} position={[0, row * h * 0.045, 0]} rotation={[0, 0, Math.PI / 4]}>
+              <boxGeometry args={[h * 0.025, h * 0.025, h * 0.012]} />
+              <WorldMaterial color={accent} />
+            </mesh>
+          ))}
+        </group>
+      ))}
     </group>
   );
 }
@@ -53,18 +119,48 @@ export function ShirtWorn({
 export const WORN_CLOTHING: Partial<Record<string, ComponentType<ItemModelProps>>> = {
   basic_outfit: ShirtWorn,
 };
-/** Trousers worn over the legs. Positions are estimates from the base legs and should be checked in the preview. */
-export function TrousersWorn({ h, color = "#3b4a5c" }: ItemModelProps & { color?: string }) {
+/** Trousers worn over the legs. All details scale with the avatar body height. */
+export function TrousersWorn({
+  h,
+  color = "#3b4a5c",
+  accent = "#263747",
+}: ItemModelProps & { color?: string; accent?: string }) {
   return (
     <group>
       <mesh position={[0, h * 0.2, 0]} castShadow>
         <boxGeometry args={[h * 0.3, h * 0.42, h * 0.18]} />
         <WorldMaterial color={color} />
       </mesh>
+      {/* Separate legs keep the trouser silhouette readable at gameplay scale. */}
       {[-1, 1].map((side) => (
-        <mesh key={side} position={[side * h * 0.075, h * 0.1, 0]} castShadow>
-          <boxGeometry args={[h * 0.13, h * 0.22, h * 0.15]} />
-          <WorldMaterial color={color} />
+        <group key={side} position={[side * h * 0.075, h * 0.1, 0]}>
+          <mesh castShadow>
+            <boxGeometry args={[h * 0.13, h * 0.22, h * 0.15]} />
+            <WorldMaterial color={color} />
+          </mesh>
+          <mesh position={[0, -h * 0.105, h * 0.076]}>
+            <boxGeometry args={[h * 0.125, h * 0.018, h * 0.012]} />
+            <WorldMaterial color={accent} />
+          </mesh>
+        </group>
+      ))}
+      {/* Waistband, fly seam and subtle front pocket openings. */}
+      <mesh position={[0, h * 0.415, h * 0.005]}>
+        <boxGeometry args={[h * 0.3, h * 0.045, h * 0.19]} />
+        <WorldMaterial color={accent} />
+      </mesh>
+      <mesh position={[0, h * 0.285, h * 0.094]}>
+        <boxGeometry args={[h * 0.012, h * 0.12, h * 0.012]} />
+        <WorldMaterial color={accent} />
+      </mesh>
+      {[-1, 1].map((side) => (
+        <mesh
+          key={side}
+          position={[side * h * 0.105, h * 0.34, h * 0.094]}
+          rotation={[0, 0, side * -0.28]}
+        >
+          <boxGeometry args={[h * 0.065, h * 0.012, h * 0.012]} />
+          <WorldMaterial color={accent} />
         </mesh>
       ))}
     </group>
@@ -76,10 +172,22 @@ export function ShoesWorn({ h, color = "#2a2a2a" }: ItemModelProps & { color?: s
   return (
     <group>
       {[-1, 1].map((side) => (
-        <mesh key={side} position={[side * h * 0.075, h * 0.03, h * 0.03]} castShadow>
-          <boxGeometry args={[h * 0.12, h * 0.07, h * 0.2]} />
-          <WorldMaterial color={color} />
-        </mesh>
+        <group key={side} position={[side * h * 0.075, 0, h * 0.03]}>
+          {/* Soft sandal sole and raised toe strap. */}
+          <mesh position={[0, h * 0.025, 0]} castShadow receiveShadow>
+            <boxGeometry args={[h * 0.13, h * 0.045, h * 0.22]} />
+            <WorldMaterial color="#4a4036" />
+          </mesh>
+          <mesh position={[0, h * 0.065, h * 0.015]} rotation={[0.18, 0, 0]}>
+            <boxGeometry args={[h * 0.12, h * 0.025, h * 0.055]} />
+            <WorldMaterial color={color} />
+          </mesh>
+          {/* Narrow cross-foot strap gives the simple slipper a recognisable silhouette. */}
+          <mesh position={[0, h * 0.07, -h * 0.045]} rotation={[0, 0, 0]}>
+            <boxGeometry args={[h * 0.12, h * 0.025, h * 0.035]} />
+            <WorldMaterial color={color} />
+          </mesh>
+        </group>
       ))}
     </group>
   );
