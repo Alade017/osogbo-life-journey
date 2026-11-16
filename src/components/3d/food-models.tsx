@@ -12,6 +12,90 @@ const plate = (radius: number) => (
   </mesh>
 );
 
+/** Reusable unbranded clear food pouch with sealed seams and a paper label. */
+function ClearFoodPouch({
+  width,
+  height,
+  depth,
+}: {
+  width: number;
+  height: number;
+  depth: number;
+}) {
+  const panelDepth = Math.max(0.018, depth * 0.08);
+  const seamHeight = Math.max(0.035, height * 0.07);
+  return (
+    <group>
+      {/* Transparent front and back film panels. */}
+      <mesh position={[0, height * 0.5, depth * 0.42]}>
+        <boxGeometry args={[width, height - seamHeight * 2, panelDepth]} />
+        <meshStandardMaterial
+          color="#e8f2ed"
+          transparent
+          opacity={0.2}
+          roughness={0.12}
+          depthWrite={false}
+          side={2}
+        />
+      </mesh>
+      <mesh position={[0, height * 0.5, -depth * 0.42]}>
+        <boxGeometry args={[width, height - seamHeight * 2, panelDepth]} />
+        <meshStandardMaterial
+          color="#e8f2ed"
+          transparent
+          opacity={0.16}
+          roughness={0.12}
+          depthWrite={false}
+          side={2}
+        />
+      </mesh>
+      {/* Folded side gussets and heat-sealed top and bottom edges. */}
+      {[-1, 1].map((side) => (
+        <mesh key={side} position={[side * width * 0.48, height * 0.5, 0]}>
+          <boxGeometry args={[width * 0.06, height - seamHeight * 2, depth * 0.9]} />
+          {mat("#dce8df", 0.5)}
+        </mesh>
+      ))}
+      {[-1, 1].map((edge) => (
+        <mesh key={edge} position={[0, edge === 1 ? height - seamHeight / 2 : seamHeight / 2, 0]}>
+          <boxGeometry args={[width * 1.02, seamHeight, depth * 0.9]} />
+          {mat("#d6d0b8", 0.8)}
+        </mesh>
+      ))}
+      {/* Small neutral label; intentionally carries no brand or readable claims. */}
+      <mesh position={[0, height * 0.48, depth * 0.51]}>
+        <boxGeometry args={[width * 0.66, height * 0.2, 0.012]} />
+        {mat("#eee7d4", 0.9)}
+      </mesh>
+    </group>
+  );
+}
+
+/** Simple folded paper tray for loose market and takeaway snacks. */
+function PaperSnackTray({ width, depth }: { width: number; depth: number }) {
+  const wall = 0.045;
+  return (
+    <group>
+      <mesh position={[0, 0.035, 0]}>
+        <boxGeometry args={[width, 0.035, depth]} />
+        {mat("#dfcba5", 0.96)}
+      </mesh>
+      {[-1, 1].map((side) => (
+        <mesh key={`x-${side}`} position={[side * (width / 2 - wall / 2), 0.13, 0]}>
+          <boxGeometry args={[wall, 0.2, depth]} />
+          {mat("#e8d8b9", 0.96)}
+        </mesh>
+      ))}
+      {[-1, 1].map((side) => (
+        <mesh key={`z-${side}`} position={[0, 0.13, side * (depth / 2 - wall / 2)]}>
+          <boxGeometry args={[width, 0.2, wall]} />
+          {mat("#e8d8b9", 0.96)}
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 /** Puff puff: golden balls on a plate. */
 function PuffPuff() {
   const balls: [number, number][] = [
@@ -57,13 +141,22 @@ function Suya() {
 function MoiMoi() {
   return (
     <group>
+      {/* Bean cake with a folded leaf wrapper around the sides and top. */}
       <mesh position={[0, 0.25, 0]} castShadow>
         <cylinderGeometry args={[0.3, 0.3, 0.45, 24]} />
         {mat("#b5562a", 0.85)}
       </mesh>
+      <mesh position={[0, 0.25, 0]}>
+        <cylinderGeometry args={[0.315, 0.315, 0.43, 24, 1, true]} />
+        {mat("#64843a", 0.82)}
+      </mesh>
       <mesh position={[0, 0.48, 0]}>
         <cylinderGeometry args={[0.32, 0.32, 0.04, 24]} />
         {mat("#6b8f3a", 0.8)}
+      </mesh>
+      <mesh position={[0, 0.505, 0]} rotation={[0, 0.18, 0]}>
+        <boxGeometry args={[0.34, 0.025, 0.12]} />
+        {mat("#86a84b", 0.86)}
       </mesh>
     </group>
   );
@@ -73,14 +166,15 @@ function MoiMoi() {
 function Akara() {
   return (
     <group>
+      <PaperSnackTray width={0.94} depth={0.88} />
       {[0, 1, 2].map((i) => (
         <mesh
           key={i}
-          position={[(i - 1) * 0.12, 0.08 + i * 0.1, 0.05 * i]}
+          position={[(i - 1) * 0.12, 0.17 + i * 0.1, 0.05 * i]}
           rotation={[0, i * 0.3, 0]}
           castShadow
         >
-          <cylinderGeometry args={[0.36, 0.36, 0.14, 28]} />
+          <cylinderGeometry args={[0.3, 0.3, 0.14, 28]} />
           {mat("#d6a24a", 0.7)}
         </mesh>
       ))}
@@ -92,6 +186,17 @@ function Akara() {
 function MeatPie() {
   return (
     <group>
+      {/* Folded unbranded bakery-paper cradle. */}
+      <mesh position={[0, 0.035, 0]} rotation={[0, 0, 0]}>
+        <boxGeometry args={[1.08, 0.035, 0.82]} />
+        {mat("#e5d5b5", 0.95)}
+      </mesh>
+      {[-1, 1].map((side) => (
+        <mesh key={side} position={[side * 0.52, 0.13, 0]} rotation={[0, 0, side * -0.16]}>
+          <boxGeometry args={[0.035, 0.22, 0.82]} />
+          {mat("#e5d5b5", 0.95)}
+        </mesh>
+      ))}
       <mesh position={[0, 0.1, 0]} rotation={[0, 0, 0]} castShadow>
         <cylinderGeometry args={[0.5, 0.5, 0.2, 28, 1, false, 0, Math.PI]} />
         {mat("#c98a3a", 0.7)}
@@ -123,10 +228,13 @@ function FriedPlantain() {
 /** Bread: a soft loaf. */
 function Bread() {
   return (
-    <mesh position={[0, 0.3, 0]} scale={[1.4, 0.7, 0.8]} castShadow>
-      <sphereGeometry args={[0.5, 28, 18]} />
-      {mat("#c98a4b", 0.9)}
-    </mesh>
+    <group>
+      <mesh position={[0, 0.3, 0]} scale={[1.4, 0.7, 0.8]} castShadow>
+        <sphereGeometry args={[0.5, 28, 18]} />
+        {mat("#c98a4b", 0.9)}
+      </mesh>
+      <ClearFoodPouch width={0.9} height={0.78} depth={0.58} />
+    </group>
   );
 }
 
@@ -145,6 +253,7 @@ function ChinChin() {
           {mat("#c98a3a", 0.7)}
         </mesh>
       ))}
+      <ClearFoodPouch width={0.62} height={0.7} depth={0.56} />
     </group>
   );
 }
@@ -185,17 +294,48 @@ function BoiledEgg() {
     </group>
   );
 }
-/** Insulated flask: a steel body with a dark lid. */
+/** Insulated flask: steel body, protective grip, screw collar and cup lid. */
 function InsulatedFlask() {
   return (
     <group>
+      {/* Rounded shoulder and main double-wall body. */}
       <mesh position={[0, 0.45, 0]} castShadow>
-        <cylinderGeometry args={[0.22, 0.2, 0.9, 32]} />
+        <cylinderGeometry args={[0.22, 0.2, 0.9, 32, 1]} />
         {mat("#c9ced4", 0.25)}
       </mesh>
-      <mesh position={[0, 0.95, 0]} castShadow>
-        <cylinderGeometry args={[0.23, 0.23, 0.12, 32]} />
+      <mesh position={[0, 0.91, 0]} castShadow>
+        <cylinderGeometry args={[0.2, 0.22, 0.12, 32]} />
+        {mat("#dce0e4", 0.28)}
+      </mesh>
+      {/* Dark non-slip lower grip and narrow metal trim rings. */}
+      <mesh position={[0, 0.14, 0]}>
+        <cylinderGeometry args={[0.205, 0.205, 0.18, 32]} />
+        {mat("#34383d", 0.82)}
+      </mesh>
+      {[0.24, 0.83].map((y) => (
+        <mesh key={y} position={[0, y, 0]}>
+          <torusGeometry args={[0.211, 0.012, 6, 32]} />
+          {mat("#858d96", 0.24)}
+        </mesh>
+      ))}
+      {/* Threaded neck and a removable drinking-cup lid. */}
+      <mesh position={[0, 1.02, 0]}>
+        <cylinderGeometry args={[0.16, 0.18, 0.1, 28]} />
+        {mat("#34383d", 0.45)}
+      </mesh>
+      {[1.0, 1.04].map((y) => (
+        <mesh key={y} position={[0, y, 0]}>
+          <torusGeometry args={[0.165, 0.009, 5, 28]} />
+          {mat("#aeb5bc", 0.3)}
+        </mesh>
+      ))}
+      <mesh position={[0, 1.13, 0]} castShadow>
+        <cylinderGeometry args={[0.23, 0.23, 0.2, 32]} />
         {mat("#222326", 0.4)}
+      </mesh>
+      <mesh position={[0, 1.235, 0]}>
+        <cylinderGeometry args={[0.22, 0.22, 0.025, 32]} />
+        {mat("#41464d", 0.48)}
       </mesh>
       <mesh position={[0, 0.02, 0]}>
         <cylinderGeometry args={[0.2, 0.2, 0.04, 32]} />
@@ -205,7 +345,7 @@ function InsulatedFlask() {
   );
 }
 
-/** Food models by slug. Replace these placeholder keys with the real inventory_items slugs. */
+/** Food models keyed by the existing inventory_items slugs. */
 export const FOOD_MODELS: Partial<Record<string, ComponentType>> = {
   puff_puff: PuffPuff,
   suya: Suya,
