@@ -1,3 +1,5 @@
+import { TownResidentialBlocks3D } from "./TownResidentialBlocks3D";
+import type { TownInfillHome } from "./town-residential-layout";
 import { useMemo } from "react";
 import town from "@/data/osogbo-town.json";
 import { WorldHouse } from "@/components/3d/WorldScene";
@@ -5,72 +7,117 @@ import { WorldHouse } from "@/components/3d/WorldScene";
 type Point = (x: number, z: number) => [number, number, number];
 
 /**
- * Exterior shapes for the six home types from the housing blueprints. Sizes are fractions of the
- * town cell. Duplexes are two storeys, bungalows are wide and low, and the Shared Room is the
- * smallest block (the cheaper version of the Private Room).
+ * Each district gets its own house style, so one street of homes looks different from the next.
+ * Height, width and rotation are multiples of the town cell size.
  */
-export const HOME_TYPE_EXTERIOR = {
-  "shared-room": { width: 0.5, depth: 0.5, height: 0.5 },
-  "private-room": { width: 0.55, depth: 0.55, height: 0.6 },
-  "mini-flat": { width: 0.6, depth: 0.6, height: 0.9 },
-  "studio-flat": { width: 0.6, depth: 0.7, height: 0.9 },
-  bungalow: { width: 0.75, depth: 0.75, height: 0.55 },
-  duplex: { width: 0.65, depth: 0.65, height: 1.4 },
-} as const;
-
-export type HomeType = keyof typeof HOME_TYPE_EXTERIOR;
-
-/** Which home types each district uses. Each house picks one from its district's list. */
-const DISTRICT_HOME_TYPES: Record<string, readonly HomeType[]> = {
-  "market-quarter": ["studio-flat", "mini-flat", "shared-room"],
-  "civic-quarter": ["private-room", "mini-flat"],
-  "commerce-quarter": ["studio-flat", "duplex"],
-  "central-crossing": ["shared-room", "private-room"],
-  "garden-quarter": ["bungalow", "private-room"],
-  "learning-quarter": ["shared-room", "mini-flat"],
-  "transit-quarter": ["private-room", "shared-room"],
-  "open-fields": ["bungalow"],
-  "river-quarter": ["bungalow", "duplex"],
-  "south-quarter": ["mini-flat", "studio-flat", "private-room"],
-  "east-gate": ["studio-flat", "duplex"],
-  "oja-oba": ["duplex", "studio-flat"],
-  ataoja: ["bungalow", "duplex"],
-  "oke-baale": ["bungalow", "mini-flat"],
-  "aleku-wodo": ["shared-room", "private-room", "mini-flat"],
-  "ogo-oluwa": ["bungalow", "private-room"],
-  "oke-fia": ["duplex", "bungalow"],
-  olaiya: ["mini-flat", "private-room"],
-  "isale-aro": ["shared-room", "private-room"],
+const DISTRICT_HOUSE_STYLE: Record<
+  string,
+  { height: number; width: number; depth: number; rotation: number; variant: string }
+> = {
+  "market-quarter": { height: 1.5, width: 1.0, depth: 1.0, rotation: 0, variant: "residential" },
+  "civic-quarter": {
+    height: 1.1,
+    width: 0.95,
+    depth: 0.95,
+    rotation: Math.PI / 2,
+    variant: "residential",
+  },
+  "commerce-quarter": { height: 1.9, width: 1.0, depth: 0.9, rotation: 0, variant: "residential" },
+  "central-crossing": {
+    height: 1.3,
+    width: 0.9,
+    depth: 1.0,
+    rotation: Math.PI / 2,
+    variant: "residential",
+  },
+  "garden-quarter": { height: 0.8, width: 0.85, depth: 0.85, rotation: 0, variant: "residential" },
+  "learning-quarter": {
+    height: 1.2,
+    width: 1.0,
+    depth: 0.8,
+    rotation: Math.PI / 2,
+    variant: "residential",
+  },
+  "transit-quarter": { height: 1.0, width: 0.9, depth: 0.9, rotation: 0, variant: "residential" },
+  "open-fields": {
+    height: 0.6,
+    width: 0.8,
+    depth: 0.8,
+    rotation: Math.PI / 4,
+    variant: "residential",
+  },
+  "river-quarter": {
+    height: 0.9,
+    width: 0.9,
+    depth: 1.0,
+    rotation: Math.PI / 4,
+    variant: "residential",
+  },
+  "south-quarter": {
+    height: 1.4,
+    width: 1.0,
+    depth: 1.0,
+    rotation: Math.PI / 2,
+    variant: "residential",
+  },
+  "east-gate": { height: 1.7, width: 0.9, depth: 0.9, rotation: 0, variant: "residential" },
+  "oja-oba": { height: 1.6, width: 1.0, depth: 1.0, rotation: Math.PI / 4, variant: "residential" },
+  ataoja: { height: 1.0, width: 1.0, depth: 0.9, rotation: 0, variant: "residential" },
+  "oke-baale": {
+    height: 1.2,
+    width: 0.95,
+    depth: 0.95,
+    rotation: Math.PI / 2,
+    variant: "residential",
+  },
+  "aleku-wodo": { height: 0.9, width: 0.85, depth: 1.1, rotation: 0, variant: "residential" },
+  "ogo-oluwa": {
+    height: 0.7,
+    width: 0.9,
+    depth: 0.9,
+    rotation: Math.PI / 4,
+    variant: "residential",
+  },
+  olaiya: { height: 1.0, width: 0.9, depth: 0.9, rotation: 0, variant: "residential" },
+  "isale-aro": {
+    height: 1.3,
+    width: 0.85,
+    depth: 0.85,
+    rotation: Math.PI / 2,
+    variant: "residential",
+  },
+  "oke-fia": {
+    height: 1.35,
+    width: 0.9,
+    depth: 0.85,
+    rotation: Math.PI / 2,
+    variant: "residential",
+  },
 };
 
-const DEFAULT_TYPES: readonly HomeType[] = ["private-room"];
-
-/** Each district turns its houses this way, so neighbouring districts look different. */
-const DISTRICT_ROTATION: Record<string, number> = {
-  "civic-quarter": Math.PI / 2,
-  "central-crossing": Math.PI / 2,
-  "learning-quarter": Math.PI / 2,
-  "oke-baale": Math.PI / 2,
-  "south-quarter": Math.PI / 2,
-  "oke-fia": Math.PI / 2,
-  "river-quarter": Math.PI / 4,
-  "oja-oba": Math.PI / 4,
-  "open-fields": Math.PI / 4,
-  "ogo-oluwa": Math.PI / 4,
-};
+const FALLBACK_STYLE = { height: 1.0, width: 0.9, depth: 0.9, rotation: 0, variant: "residential" };
 
 /** A cheap, stable 0..1 value from a cell, so each house varies a little without randomness per render. */
-function cellNoise(x: number, z: number, salt: number) {
-  const n = Math.sin(x * 12.9898 + z * 78.233 + salt * 37.719) * 43758.5453;
+function cellNoise(x: number, z: number) {
+  const n = Math.sin(x * 12.9898 + z * 78.233) * 43758.5453;
   return n - Math.floor(n);
 }
 
 /**
- * Builds the decorative houses across every district's free grid cells. Each house takes its
- * exterior from its home type. The houses are scenery only: they have no pointer handlers.
+ * Builds blocks of decorative houses across every district's free grid cells. The houses are
+ * scenery only: they have no pointer handlers, so they can't be clicked.
  */
-export function HouseBlocks3D({ point, cell }: { point: Point; cell: number }) {
-  const houses = useMemo(() => {
+export function HouseBlocks3D({
+  point,
+  cell,
+  homes,
+}: {
+  point: Point;
+  cell: number;
+  homes?: readonly TownInfillHome[];
+}) {
+  const blocks = useMemo(() => {
+    if (homes) return [];
     const rows = town.grid.rows;
     const blocked = new Set<string>();
     const block = (x: number, z: number) => blocked.add(x + "," + z);
@@ -99,45 +146,46 @@ export function HouseBlocks3D({ point, cell }: { point: Point; cell: number }) {
       key: string;
       x: number;
       z: number;
-      type: HomeType;
-      rotation: number;
+      style: (typeof DISTRICT_HOUSE_STYLE)[string];
     }[] = [];
     for (const district of town.districts) {
-      const types = DISTRICT_HOME_TYPES[district.id] ?? DEFAULT_TYPES;
-      const rotation = DISTRICT_ROTATION[district.id] ?? 0;
+      const style = DISTRICT_HOUSE_STYLE[district.id] ?? FALLBACK_STYLE;
       const area = district.gridArea;
-      // Every free cell in the district gets one house. Its type comes from the district's list.
+      // Every free cell in the district gets one house, so each district fills with its own street of homes.
       for (let z = area.z; z < area.z + area.depth; z += 1) {
         for (let x = area.x; x < area.x + area.width; x += 1) {
           if (!isFree(x, z)) continue;
-          const pick = Math.floor(cellNoise(x, z, 1) * types.length);
-          out.push({
-            key: `${district.id}-${x}-${z}`,
-            x: x + 0.5,
-            z: z + 0.5,
-            type: types[pick]!,
-            rotation,
-          });
+          out.push({ key: `${district.id}-${x}-${z}`, x: x + 0.5, z: z + 0.5, style });
         }
       }
     }
     return out;
-  }, []);
+  }, [homes]);
 
+  if (homes)
+    return (
+      <group name="house-blocks">
+        <TownResidentialBlocks3D
+          homes={homes}
+          point={point}
+          cell={cell}
+          districtProfiles={DISTRICT_HOUSE_STYLE}
+        />
+      </group>
+    );
   return (
     <group name="house-blocks">
-      {houses.map((house) => {
-        const exterior = HOME_TYPE_EXTERIOR[house.type];
-        const jitter = 0.9 + cellNoise(house.x, house.z, 2) * 0.2;
+      {blocks.map((entry) => {
+        const jitter = 0.9 + cellNoise(entry.x, entry.z) * 0.2;
         return (
           <WorldHouse
-            key={house.key}
-            position={point(house.x, house.z)}
-            width={cell * exterior.width}
-            depth={cell * exterior.depth}
-            height={cell * exterior.height * jitter * 0.95}
-            rotation={house.rotation}
-            variant="residential"
+            key={entry.key}
+            position={point(entry.x, entry.z)}
+            width={cell * entry.style.width * 0.6}
+            depth={cell * entry.style.depth * 0.6}
+            height={cell * entry.style.height * jitter}
+            rotation={entry.style.rotation}
+            variant={entry.style.variant}
           />
         );
       })}

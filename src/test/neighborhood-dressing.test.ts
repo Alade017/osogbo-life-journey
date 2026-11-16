@@ -9,6 +9,7 @@ import {
   vendorSpots,
 } from "@/game/neighborhood-dressing";
 import { CITY_CENTRE_AREA, NEIGHBORHOOD_SCENE_BOUNDS } from "@/game/neighborhood-model";
+import { neighborhoodBuildingFootprint } from "@/game/neighborhood-geometry";
 
 const bounds = NEIGHBORHOOD_SCENE_BOUNDS;
 
@@ -31,12 +32,12 @@ describe("neighbourhood street dressing", () => {
   });
 
   it("keeps sidewalks and lamps clear of main building footprints", () => {
-    const buildings = CITY_CENTRE_AREA.objects.map((o) => ({
-      left: o.x - 57,
-      right: o.x + 57,
-      top: o.y - 62,
-      bottom: o.y - 4,
-    }));
+    const buildings = CITY_CENTRE_AREA.objects
+      .filter((o) => o.kind !== "npc")
+      .map((o) => {
+        const f = neighborhoodBuildingFootprint(o);
+        return { left: f.left, right: f.left + f.width, top: f.top, bottom: f.top + f.height };
+      });
     for (const rect of sidewalksAndCurbs(CITY_CENTRE_AREA, bounds).sidewalks)
       for (const b of buildings) {
         const overlapX =

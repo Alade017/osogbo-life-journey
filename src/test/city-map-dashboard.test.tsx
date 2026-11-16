@@ -179,6 +179,7 @@ function renderDashboard(currentSlug?: string, insideHome = false) {
 describe("isometric town map", () => {
   it("offers the market walking route only after confirmed arrival", () => {
     renderDashboard("oja-oba");
+    fireEvent.click(screen.getByText("Map options"));
     expect(screen.getByRole("link", { name: "Walk Oja-Oba Market" })).toHaveAttribute(
       "href",
       "/neighborhood",
@@ -189,6 +190,7 @@ describe("isometric town map", () => {
 
   it("offers the transport selector rather than walking when another district is confirmed", async () => {
     renderDashboard("student-district");
+    fireEvent.click(screen.getByText("Map options"));
     fireEvent.click(screen.getByRole("button", { name: "Visit Oja-Oba Market" }));
     expect(await screen.findByRole("dialog")).toBeVisible();
     expect(screen.queryByRole("link", { name: "Walk Oja-Oba Market" })).not.toBeInTheDocument();
@@ -217,7 +219,7 @@ describe("isometric town map", () => {
         name: /Town market,/i,
       }),
     );
-    fireEvent.click(await screen.findByRole("button", { name: "Place details and activities" }));
+    fireEvent.click(await screen.findByRole("tab", { name: "Details & activities" }));
     expect(await screen.findByText(/Town Market Day · Until/)).toBeVisible();
   });
 
@@ -267,7 +269,7 @@ describe("isometric town map", () => {
     fireEvent.click(screen.getByRole("button", { name: "Confirm and travel" }));
 
     await vi.waitFor(() => expect(testState.travelToLocation).toHaveBeenCalledTimes(1));
-    expect(await screen.findByRole("alert")).toHaveTextContent("INSUFFICIENT_FUNDS");
+    expect(await screen.findByRole("alert")).toHaveTextContent("You do not have enough money");
     expect(testState.navigate).not.toHaveBeenCalled();
     expect(testState.character?.["current_location_id"]).toBe("confirmed-location");
   }, 15_000);
@@ -280,9 +282,7 @@ describe("isometric town map", () => {
     fireEvent.click(screen.getByRole("radio", { name: /Danfo/ }));
     fireEvent.click(screen.getByRole("button", { name: "Confirm and travel" }));
 
-    await vi.waitFor(() =>
-      expect(testState.navigate).toHaveBeenCalledWith({ to: "/house" }),
-    );
+    await vi.waitFor(() => expect(testState.navigate).toHaveBeenCalledWith({ to: "/house" }));
     await vi.waitFor(() => expect(peekPendingDepartureFromHome()).toBeNull());
     expect(testState.travelToLocation).not.toHaveBeenCalled();
   }, 15_000);
@@ -295,9 +295,7 @@ describe("isometric town map", () => {
     fireEvent.click(screen.getByRole("radio", { name: /Danfo/ }));
     fireEvent.click(screen.getByRole("button", { name: "Confirm and travel" }));
 
-    await vi.waitFor(() =>
-      expect(testState.navigate).toHaveBeenCalledWith({ to: "/house" }),
-    );
+    await vi.waitFor(() => expect(testState.navigate).toHaveBeenCalledWith({ to: "/house" }));
     expect(takeDepartureFromHome()).toEqual({
       locationId: "destination-city-centre",
       mode: "danfo",
@@ -316,9 +314,9 @@ describe("isometric town map", () => {
     expect(screen.queryByText(/does not have a playable neighborhood/i)).not.toBeInTheDocument();
     expect(testState.travelToLocation).not.toHaveBeenCalled();
   }, 15_000);
-  it("renders the places and districts as a keyboard-accessible list", () => {
+  it("renders the 3D town region and a keyboard-accessible list", () => {
     renderDashboard();
-    expect(screen.getByRole("region", { name: /Places and districts in Osogbo/i })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: /Interactive 3D town map/i })).toBeInTheDocument();
     expect(screen.getByRole("list", { name: "Places on the map" })).toBeInTheDocument();
     expect(
       within(screen.getByRole("list", { name: "Places on the map" })).getByRole("button", {
@@ -399,6 +397,7 @@ describe("isometric town map", () => {
 
   it("shows only public venue categories for towns outside the detailed Osogbo map", () => {
     renderDashboard();
+    fireEvent.click(screen.getByText("Map options"));
     fireEvent.click(screen.getByRole("button", { name: "Explore Osun" }));
     fireEvent.click(screen.getByRole("button", { name: "Ilesa" }));
     expect(screen.getByRole("heading", { name: "Ilesa" })).toBeInTheDocument();

@@ -1,6 +1,6 @@
+import "@/components/map/map-compact.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { requestDepartureFromHome } from "@/lib/home-departure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarDays, CloudOff, MapPinned, Smile, Compass, Lock, X } from "lucide-react";
 import { toast } from "sonner";
@@ -26,7 +26,7 @@ import {
 } from "@/store/neighborhoodSlice";
 import { mapHousingMarkers } from "@/components/map/map-housing-markers";
 import { DistrictSheet } from "@/components/map/DistrictSheet";
-import { LandmarkSheet } from "@/components/map/LandmarkSheet";
+import { useMapTravelController } from "@/components/map/use-map-travel-controller";
 import { MapTravelSelector } from "@/components/map/MapTravelSelector";
 import { MapBillboardCampaignDialog } from "@/components/game/CityBillboards";
 import { OsunStateOverview } from "@/components/map/OsunStateOverview";
@@ -43,7 +43,6 @@ import {
   clearPendingMapActionKey,
   requestAvailableMapLandmarks,
 } from "@/lib/map-api";
-import type { TravelMode } from "@/lib/transport-service";
 import type { PlaceActionResult } from "@/components/map/PlaceActionMenu";
 import { useCityEvents } from "@/hooks/use-city-events";
 import { cityEventsForDistrict } from "@/lib/city-event-service";
@@ -58,6 +57,7 @@ import type { MapDistrict, MapLandmark } from "@/components/map/map-types";
 import "@/components/map/map-ui.css";
 import "@/components/map/map-hud.css";
 import "@/components/map/neighborhood-city-map.css";
+import "@/components/map/map-explorer.css";
 import { MapTicker } from "@/components/map/MapTicker";
 
 const categories: { id: MapFilter; label: string }[] = [
@@ -119,17 +119,10 @@ export function CityMapDashboard({
   nextRentDueAt,
 }: { money?: number; mood?: string; nextRentDueAt?: string } = {}) {
   const [selectedDistrict, setSelectedDistrict] = useState<MapDistrict | null>(null);
-  const [selectedLandmark, setSelectedLandmark] = useState<
-    (MapLandmark & { district: MapDistrict }) | null
-  >(null);
-  const [landmarkDetailsOpen, setLandmarkDetailsOpen] = useState(false);
   const [filter, setFilter] = useState<MapFilter>("all");
   const [search, setSearch] = useState("");
   const [searchTarget, setSearchTarget] = useState<MapSearchTarget | null>(null);
   const [offline, setOffline] = useState(typeof navigator !== "undefined" && !navigator.onLine);
-  const [travelError, setTravelError] = useState<string | null>(null);
-  const [arrivalConfirmed, setArrivalConfirmed] = useState(false);
-  const [refreshingArrival, setRefreshingArrival] = useState(false);
   const [actionError, setActionError] = useState("");
   const [placeActionResult, setPlaceActionResult] = useState<PlaceActionResult | null>(null);
   const [selectedBillboard, setSelectedBillboard] = useState<CurrentMapBillboard | null>(null);
@@ -144,15 +137,7 @@ export function CityMapDashboard({
   const requestedBillboardId = new URLSearchParams(mapHref.split("?")[1]?.split("#")[0] ?? "").get(
     "billboard",
   );
-  const travelSubmitLock = useRef(false);
   const focusedBillboardId = useRef<string | null>(null);
-  const isMounted = useRef(false);
-  useEffect(() => {
-    isMounted.current = true;
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
   const character = useQuery(q.character());
   const housingMarkers = useQuery({
     queryKey: ["housingMapProperties", character.data?.id],
@@ -184,6 +169,12 @@ export function CityMapDashboard({
   const currentLocation = locations.data?.find(
     (row) => row.id === character.data?.current_location_id,
   );
+  const travelController = useMapTravelController<MapLandmark & { district: MapDistrict }>({
+    character: character.data,
+    queryClient,
+    navigate,
+  });
+  const selectedLandmark = travelController.state.landmark;
   const selectedDestinationSlug = selectedLandmark
     ? MAP_LANDMARK_LOCATION_SLUG[selectedLandmark.id]
     : null;
@@ -280,57 +271,6 @@ export function CityMapDashboard({
     : cityEvents.data?.events.find(
         (event) => event.status === "active" && event.landmarkId === selectedLandmark?.id,
       );
-  const refreshConfirmedArrival = async (locationId: string) => {
-    if (isMounted.current) {
-      setRefreshingArrival(true);
-      setTravelError(null);
-    }
-    try {
-      const savedCharacter = await queryClient.fetchQuery(q.character());
-      if (!isMounted.current) return;
-      if (savedCharacter?.current_location_id !== locationId) {
-        setTravelError("Travel is confirmed, but the saved destination has not refreshed yet.");
-        return;
-      }
-      await navigate({ to: "/neighborhood" });
-    } catch (error) {
-      if (!isMounted.current) return;
-      setTravelError(
-        error instanceof Error
-          ? `Travel is confirmed, but your destination could not be loaded: ${error.message}`
-          : "Travel is confirmed, but your destination could not be loaded. Please retry.",
-      );
-    } finally {
-      if (isMounted.current) setRefreshingArrival(false);
-    }
-  };
-  const travel = useMutation({
-    mutationFn: ({ locationId, mode }: { locationId: string; mode: TravelMode }) =>
-      rpc.travelToLocation({ locationId, mode }),
-    onSuccess: async (_result, variables) => {
-      if (isMounted.current) {
-        setArrivalConfirmed(true);
-        setTravelError(null);
-      }
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["character"], refetchType: "none" }),
-        queryClient.invalidateQueries({ queryKey: ["locations"], refetchType: "none" }),
-        queryClient.invalidateQueries({ queryKey: ["wallet"] }),
-        queryClient.invalidateQueries({ queryKey: ["worldClock"] }),
-        queryClient.invalidateQueries({ queryKey: ["visits"] }),
-      ]);
-      window.dispatchEvent(new Event("osogbo:server-state-changed"));
-      await refreshConfirmedArrival(variables.locationId);
-    },
-    onError: (error) => {
-      if (isMounted.current) {
-        setTravelError(error instanceof Error ? error.message : "Travel could not be completed.");
-      }
-    },
-    onSettled: () => {
-      travelSubmitLock.current = false;
-    },
-  });
   const apply = useMutation({
     mutationFn: (id: string) => rpc.selectJob(id),
     onSuccess: async () => {
@@ -390,36 +330,15 @@ export function CityMapDashboard({
       }
     },
   });
-  const confirmTravel = (mode: TravelMode) => {
-    if (travelSubmitLock.current || !selectedDestination || travel.isPending) return;
-    travelSubmitLock.current = true;
-    setTravelError(null);
-    if (character.data?.inside_home_property_id) {
-      // Leaving a house plays the door first; the house screen runs the trip alongside it.
-      const departure = requestDepartureFromHome({
-        locationId: selectedDestination.id,
-        mode,
-      });
-      void navigate({ to: "/house" })
-        .catch(() => clearPendingDepartureFromHome(departure))
-        .finally(() => {
-          travelSubmitLock.current = false;
-        });
-      return;
-    }
-    travel.mutate({ locationId: selectedDestination.id, mode });
-  };
-  const closeTravelSelector = () => {
-    setSelectedLandmark(null);
-    setLandmarkDetailsOpen(false);
-    setTravelError(null);
-    setArrivalConfirmed(false);
-  };
+  const closeTravelSelector = travelController.close;
+  const selectDestination = travelController.select;
+  const setDestinationTab = travelController.setTab;
   const onDistrict = (id: string) => {
-    const d = districts.find((item) => item.id === id);
-    if (d) {
-      setSelectedLandmark(null);
-      setSelectedDistrict(d);
+    if (travelController.busy || travelController.arrivalConfirmed) return;
+    const district = districts.find((item) => item.id === id);
+    if (district) {
+      travelController.close();
+      setSelectedDistrict(district);
     }
   };
   const onLandmark = useCallback(
@@ -430,15 +349,12 @@ export function CityMapDashboard({
 
       if (found) {
         setSelectedDistrict(null);
-        setSelectedLandmark(found);
-        setLandmarkDetailsOpen(false);
-        setArrivalConfirmed(false);
-        setTravelError(null);
+        selectDestination(found);
         setActionError("");
         setPlaceActionResult(null);
       }
     },
-    [availableLandmarks.data],
+    [availableLandmarks.data, selectDestination],
   );
   const deepLinkedLandmark = useRef<string | null>(null);
   useEffect(() => {
@@ -450,7 +366,7 @@ export function CityMapDashboard({
     if (!availableLandmarks.data.includes(landmarkId)) return;
     deepLinkedLandmark.current = landmarkId;
     onLandmark(landmarkId);
-    setLandmarkDetailsOpen(true);
+    setDestinationTab("details");
     params.delete("landmark");
     params.delete("details");
     const query = params.toString();
@@ -459,7 +375,7 @@ export function CityMapDashboard({
       "",
       query ? "?" + query : window.location.pathname,
     );
-  }, [availableLandmarks.data, onLandmark]);
+  }, [availableLandmarks.data, onLandmark, setDestinationTab]);
   const searchMatches = useMemo(() => {
     const value = search.trim().toLocaleLowerCase();
     if (!value) return null;
@@ -497,6 +413,7 @@ export function CityMapDashboard({
     .map((item) => item.id);
   const submitSearch = () => {
     if (!searchMatches) return;
+    setTownFocus("3d-town");
     setSearchTarget({ id: searchMatches.id, kind: searchMatches.kind });
   };
   const rentRecord = rent.data as { next_due_at?: string; due_at?: string } | null;
@@ -526,132 +443,83 @@ export function CityMapDashboard({
     return 5000 + persisted.walletOffset;
   }, [wallet.data?.balance]);
 
-  const handleWalkHere = useCallback(
-    (landmark: NeighborhoodLandmarkSpec) => {
-      enqueueNeighborhoodNavigation({
-        mode: "walk",
-        landmarkId: landmark.id,
-        landmarkName: landmark.name,
-        primaryZoneId: landmark.primaryZoneId,
-        targetScenePoint: landmark.walkToPoint,
-        dropOffScenePoint: landmark.dropOffPoint,
-        fare: 0,
-      });
-      toast.message(`Walking to ${landmark.name}`);
-      void navigate({ to: "/neighborhood" });
-    },
-    [navigate],
-  );
-
-  const handleBoardKeke = useCallback(
-    (landmark: NeighborhoodLandmarkSpec) => {
-      if (effectivePocketBalance < landmark.kekeFare) {
-        toast.error(`You need ₦${landmark.kekeFare} pocket cash to board a Keke here.`);
-        return;
-      }
-      const outcome = {
-        id: `keke-fare-${landmark.id}`,
-        label: `Keke / Korope to ${landmark.name}`,
-        description: `Fast-travel drop-off at ${landmark.name}.`,
-        walletDelta: -landmark.kekeFare,
-        toastMessage: `Keke dropped you off at ${landmark.name} (-₦${landmark.kekeFare}).`,
-        activityKind: "transit" as const,
-      };
-      const prevSlice = loadPersistedNeighborhoodState();
-      const nextSlice = neighborhoodReducer(
-        prevSlice,
-        applyZoneOutcomeAction({ zoneTitle: "City Transit", outcome }),
-      );
-      persistNeighborhoodState(nextSlice);
-      syncZoneOutcomeToQueryCache(queryClient, "City Transit", outcome);
-
-      enqueueNeighborhoodNavigation({
-        mode: "keke",
-        landmarkId: landmark.id,
-        landmarkName: landmark.name,
-        primaryZoneId: landmark.primaryZoneId,
-        targetScenePoint: landmark.walkToPoint,
-        dropOffScenePoint: landmark.dropOffPoint,
-        fare: landmark.kekeFare,
-      });
-      toast.success(`Boarded Keke to ${landmark.name} (-₦${landmark.kekeFare})`);
-      void navigate({ to: "/neighborhood" });
-    },
-    [effectivePocketBalance, navigate, queryClient],
-  );
-
   return (
     <section className="city-map-dashboard is-world-map map-experience" aria-label="Osun Life map">
-      <header className="map-hud">
-        <div className="map-hud-status" aria-label="Map status">
-          <span className="map-hud-chip">
-            <Smile size={15} aria-hidden="true" />
-            <strong>{displayedMood}</strong>
-          </span>
-          <span className="map-hud-chip">
-            <CalendarDays size={15} aria-hidden="true" />
-            <small>Rent</small>
-            <strong>
-              {due
-                ? new Intl.DateTimeFormat("en-NG", {
-                    timeZone: "Africa/Lagos",
-                    day: "numeric",
-                    month: "short",
-                  }).format(new Date(due))
-                : "Not scheduled"}
-            </strong>
-          </span>
-          {mapLevel === "town" && lockedPlaces.length > 0 && (
+      <details className="map-options">
+        <summary>Map options</summary>
+        <header className="map-hud">
+          <div className="map-hud-status" aria-label="Map status">
+            <span className="map-hud-chip">
+              <Smile size={15} aria-hidden="true" />
+              <strong>{displayedMood}</strong>
+            </span>
+            <span className="map-hud-chip">
+              <CalendarDays size={15} aria-hidden="true" />
+              <small>Rent</small>
+              <strong>
+                {due
+                  ? new Intl.DateTimeFormat("en-NG", {
+                      timeZone: "Africa/Lagos",
+                      day: "numeric",
+                      month: "short",
+                    }).format(new Date(due))
+                  : "Not scheduled"}
+              </strong>
+            </span>
+            {mapLevel === "town" && lockedPlaces.length > 0 && (
+              <button
+                type="button"
+                className="map-soon-button"
+                aria-expanded={soonOpen}
+                onClick={() => setSoonOpen(true)}
+              >
+                <Lock size={13} aria-hidden="true" />
+                <strong>{lockedPlaces.length}</strong>
+                <small>coming soon</small>
+              </button>
+            )}
+          </div>
+          <div className="map-hud-actions">
             <button
+              className="map-level-toggle"
               type="button"
-              className="map-soon-button"
-              aria-expanded={soonOpen}
-              onClick={() => setSoonOpen(true)}
+              onClick={() => setMapLevel((level) => (level === "town" ? "state" : "town"))}
             >
-              <Lock size={13} aria-hidden="true" />
-              <strong>{lockedPlaces.length}</strong>
-              <small>coming soon</small>
+              <MapPinned size={16} />
+              {mapLevel === "town" ? "Explore Osun" : "Osogbo map"}
             </button>
-          )}
-        </div>
-        <div className="map-hud-actions">
-          <button
-            className="map-level-toggle"
-            type="button"
-            onClick={() => setMapLevel((level) => (level === "town" ? "state" : "town"))}
-          >
-            <MapPinned size={16} />
-            {mapLevel === "town" ? "Explore Osun" : "Osogbo map"}
-          </button>
-          {mapLevel === "town" && isPlayableDistrict(currentLocation?.slug) && (
-            <Link className="map-neighborhood-link" to="/neighborhood">
-              {currentLocation?.slug === "oja-oba" ? "Walk Oja-Oba Market" : "Walk Olaiya"}
-            </Link>
-          )}
-          {mapLevel === "town" && currentLocation?.slug !== "oja-oba" && (
-            <button
-              className="map-neighborhood-link"
-              type="button"
-              onClick={() => onLandmark("oja-oba-market")}
-            >
-              Visit Oja-Oba Market
-            </button>
-          )}
-          {mapLevel === "town" &&
-            currentLocation?.slug !== "city-centre" &&
-            availableLandmarks.data?.includes("olaiya-junction") && (
+            {mapLevel === "town" && isPlayableDistrict(currentLocation?.slug) && (
+              <Link className="map-neighborhood-link" to="/neighborhood">
+                {currentLocation?.slug === "oja-oba" ? "Walk Oja-Oba Market" : "Walk Olaiya"}
+              </Link>
+            )}
+            {mapLevel === "town" && currentLocation?.slug !== "oja-oba" && (
               <button
                 className="map-neighborhood-link"
                 type="button"
-                disabled={offline}
-                onClick={() => onLandmark("olaiya-junction")}
+                onClick={() => onLandmark("oja-oba-market")}
               >
-                Travel to Olaiya
+                Visit Oja-Oba Market
               </button>
             )}
-        </div>
-      </header>
-      <MapTicker />
+            {mapLevel === "town" &&
+              currentLocation?.slug !== "city-centre" &&
+              availableLandmarks.data?.includes("olaiya-junction") && (
+                <button
+                  className="map-neighborhood-link"
+                  type="button"
+                  disabled={offline}
+                  onClick={() => onLandmark("olaiya-junction")}
+                >
+                  Travel to Olaiya
+                </button>
+              )}
+          </div>
+        </header>
+      </details>
+      <div className="map-news">
+        <MapTicker />
+      </div>
       {offline && (
         <div role="status" className="map-offline-banner">
           <CloudOff size={16} />
@@ -704,7 +572,10 @@ export function CityMapDashboard({
               <button
                 key={c.id}
                 aria-pressed={filter === c.id}
-                onClick={() => setFilter(c.id === "all" ? "all" : filter === c.id ? "all" : c.id)}
+                onClick={() => {
+                  setTownFocus("3d-town");
+                  setFilter(c.id === "all" ? "all" : filter === c.id ? "all" : c.id);
+                }}
               >
                 {c.label}
               </button>
@@ -746,6 +617,9 @@ export function CityMapDashboard({
               </button>
             </div>
             <MapCanvas
+              selectedLandmarkId={selectedLandmark?.id ?? null}
+              travelMode={travelController.state.mode}
+              travelPending={travelController.state.phase === "submitting"}
               playerLocation={
                 currentMapPlace
                   ? {
@@ -772,10 +646,7 @@ export function CityMapDashboard({
                   getQuickTravelLandmark(landmarkId);
                 if (!event || !found) return;
                 setSelectedDistrict(null);
-                setSelectedLandmark(found);
-                setLandmarkDetailsOpen(true);
-                setArrivalConfirmed(false);
-                setTravelError(null);
+                travelController.select(found, "details");
                 setActionError("");
                 setPlaceActionResult(null);
               }}
@@ -831,14 +702,14 @@ export function CityMapDashboard({
           onLandmark={onLandmark}
         />
       )}
-      {mapLevel === "town" && selectedLandmark && !landmarkDetailsOpen && (
+      {mapLevel === "town" && selectedLandmark && (
         <MapTravelSelector
           open
           landmark={selectedLandmark}
           districtName={selectedLandmark.district.name}
-          {...(character.data?.user_id ? { accountId: character.data.user_id } : {})}
-          {...(character.data?.id ? { characterId: character.data.id } : {})}
-          destination={selectedDestination ?? null}
+          accountId={character.data?.user_id}
+          characterId={character.data?.id}
+          destination={selectedDestination}
           isLoadingDestination={locations.isLoading}
           destinationLoadError={locations.isError}
           onRetryDestination={() => void locations.refetch()}
@@ -847,67 +718,56 @@ export function CityMapDashboard({
           characterLevel={character.data?.level ?? null}
           walletBalance={wallet.data?.balance ?? null}
           walletLoading={wallet.isLoading}
+          onRetryWallet={() => void wallet.refetch()}
           gameTime={
             worldClock.data ??
             (character.data ? gameTimeFromCharacter(character.data) : INITIAL_GAME_TIME)
           }
           offline={offline}
-          pending={travel.isPending}
-          arrivalConfirmed={arrivalConfirmed}
-          refreshingArrival={refreshingArrival}
-          error={travelError}
-          onConfirm={confirmTravel}
+          state={travelController.state}
+          onTabChange={travelController.setTab}
+          onModeChange={travelController.selectMode}
+          onConfirm={(mode) => {
+            if (selectedDestination) void travelController.confirm(selectedDestination.id, mode);
+          }}
           onCancel={closeTravelSelector}
-          onOpenDetails={() => setLandmarkDetailsOpen(true)}
-          onRetryArrival={() => {
-            if (selectedDestination) void refreshConfirmedArrival(selectedDestination.id);
+          onRetryArrival={() => void travelController.retryArrival()}
+          detailsProps={{
+            description:
+              selectedLandmark.category === "worship"
+                ? "This map marker is informational and is not an in-game destination."
+                : `${selectedLandmark.category[0]!.toUpperCase()}${selectedLandmark.category.slice(1)} destination in ${selectedLandmark.district.name}.`,
+            locationName: selectedLandmark.district.name,
+            event: landmarkEvent
+              ? { label: landmarkEvent.title, endsAt: landmarkEvent.endsAt }
+              : null,
+            onApply: (id) => apply.mutate(id),
+            pending: apply.isPending,
+            error: actionError,
+            onRunPlaceAction: (actionId) => {
+              const accountId = character.data?.user_id,
+                characterId = character.data?.id;
+              if (!accountId || !characterId) {
+                setActionError("Player details are not ready. Reopen this place and try again.");
+                return;
+              }
+              const requestId = getPendingMapActionKey(
+                accountId,
+                characterId,
+                selectedLandmark.id,
+                actionId,
+              );
+              runPlaceAction.mutate({
+                accountId,
+                characterId,
+                landmarkId: selectedLandmark.id,
+                actionId,
+                requestId,
+              });
+            },
+            actionPending: runPlaceAction.isPending,
+            actionResult: placeActionResult,
           }}
-        />
-      )}
-      {mapLevel === "town" && selectedLandmark && landmarkDetailsOpen && (
-        <LandmarkSheet
-          key={selectedLandmark.id}
-          accountId={character.data?.user_id ?? undefined}
-          characterId={character.data?.id ?? undefined}
-          landmark={selectedLandmark}
-          event={
-            landmarkEvent ? { label: landmarkEvent.title, endsAt: landmarkEvent.endsAt } : null
-          }
-          description={
-            selectedLandmark.category === "worship"
-              ? "This map marker is informational and is not an in-game destination."
-              : `${selectedLandmark.category[0]!.toUpperCase()}${selectedLandmark.category.slice(1)} destination in ${selectedLandmark.district.name}.`
-          }
-          locationName={selectedLandmark.district.name}
-          offline={offline}
-          onClose={closeTravelSelector}
-          onBackToTransport={() => setLandmarkDetailsOpen(false)}
-          onApply={(id) => apply.mutate(id)}
-          pending={apply.isPending}
-          error={actionError}
-          onRunPlaceAction={(actionId) => {
-            const accountId = character.data?.user_id;
-            const characterId = character.data?.id;
-            if (!accountId || !characterId) {
-              setActionError("Player details are not ready. Reopen this place and try again.");
-              return;
-            }
-            const requestId = getPendingMapActionKey(
-              accountId,
-              characterId,
-              selectedLandmark.id,
-              actionId,
-            );
-            runPlaceAction.mutate({
-              accountId,
-              characterId,
-              landmarkId: selectedLandmark.id,
-              actionId,
-              requestId,
-            });
-          }}
-          actionPending={runPlaceAction.isPending}
-          actionResult={placeActionResult}
         />
       )}
     </section>

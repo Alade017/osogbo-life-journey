@@ -38,7 +38,7 @@ function occupiedBoxes(area: NeighborhoodArea): Box[] {
     .filter((o) => o.kind !== "tree" && o.kind !== "streetlight")
     .map((o) => ({ x: o.x, y: o.y, width: o.width, height: o.height }));
   const buildings: Box[] = area.objects
-    .filter((o) => o.kind !== "npc" && !o.walkIn)
+    .filter((o) => o.kind !== "npc")
     .map((o) => {
       const footprint = neighborhoodBuildingFootprint(o);
       return {

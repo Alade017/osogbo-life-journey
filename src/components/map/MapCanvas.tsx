@@ -1,7 +1,11 @@
-import { useEffect, useMemo } from "react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import townData from "@/data/osogbo-town.json";
 import { WORLD_PALETTE } from "@/components/3d/world-theme";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
+
+const TownSurface3D = lazy(() =>
+  import("./R3FTownSurface").then((module) => ({ default: module.R3FTownSurface })),
+);
 
 export type MapFilter =
   | "market"
@@ -50,6 +54,9 @@ export interface MapCanvasProps {
   onSelectLandmark: (id: string) => void;
   activeFilter?: MapFilter;
   searchTarget?: MapSearchTarget | null;
+  selectedLandmarkId?: string | null;
+  travelMode?: import("@/lib/transport-service").TravelMode | null;
+  travelPending?: boolean;
   playerLocation?: MapPlayerLocation | null;
   eventChips?: MapEventChip[];
   jobLandmarkIds?: string[];
@@ -84,6 +91,10 @@ export function MapCanvas({
   onSelectLandmark,
   activeFilter = "all",
   searchTarget,
+  selectedLandmarkId,
+  travelMode,
+  travelPending,
+  playerLocation,
   eventChips: _eventChips = [],
   jobLandmarkIds = [],
   billboardMarkers = [],
@@ -93,6 +104,42 @@ export function MapCanvas({
   onSelectProperty,
   onSelectEvent,
 }: MapCanvasProps) {
+  const container = useRef<HTMLElement>(null);
+  const [focusInsets, setFocusInsets] = useState({ right: 0, bottom: 0 });
+  useEffect(() => {
+    if (!selectedLandmarkId) return; // Closing must not move the camera back.
+    const sheet = document.querySelector(".destination-sheet");
+    const map = container.current;
+    if (!sheet || !map || typeof ResizeObserver === "undefined") return;
+    const update = () => {
+      const m = map.getBoundingClientRect(),
+        s = sheet.getBoundingClientRect();
+      const intersects =
+        s.left < m.right && s.right > m.left && s.top < m.bottom && s.bottom > m.top;
+      const mobile = window.matchMedia("(max-width: 640px)").matches;
+      const next = !intersects
+        ? { right: 0, bottom: 0 }
+        : mobile
+          ? { right: 0, bottom: Math.max(0, m.bottom - s.top) }
+          : { right: Math.max(0, m.right - s.left), bottom: 0 };
+      setFocusInsets((old) =>
+        old.right === next.right && old.bottom === next.bottom ? old : next,
+      );
+    };
+    const observer = new ResizeObserver(update);
+    observer.observe(sheet);
+    observer.observe(map);
+    window.addEventListener("resize", update);
+    update();
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", update);
+    };
+  }, [selectedLandmarkId]);
+  const [rendererState, setRendererState] = useState<"loading" | "ready" | "unavailable">(
+    "loading",
+  );
+
   useEffect(() => {
     if (!searchTarget) return;
     const id = typeof searchTarget === "string" ? searchTarget : searchTarget.id;
@@ -115,9 +162,73 @@ export function MapCanvas({
       ),
     [activeFilter, availableLandmarkIds, jobLandmarkIds],
   );
+  // Every landmark not yet open to the player is shown as a locked pin, whatever the filter.
+  const lockedPlaces = useMemo(
+    () =>
+      availableLandmarkIds === undefined
+        ? []
+        : townData.landmarks.filter(
+            (place) =>
+              !availableLandmarkIds.includes(place.id) && place.mapObjectType !== "junction",
+          ),
+    [availableLandmarkIds],
+  );
+
+  const handleReady = useCallback(() => setRendererState("ready"), []);
+  const handleUnavailable = useCallback(() => setRendererState("unavailable"), []);
 
   return (
-    <section className="map-canvas town-map-canvas" aria-label="Places and districts in Osogbo">
+    <section
+      ref={container}
+      className="map-canvas town-map-canvas"
+      style={{ background: WORLD_PALETTE.ground }}
+      aria-label="Interactive 3D town map with open camera exploration"
+    >
+      <Suspense fallback={null}>
+        {rendererState !== "unavailable" && (
+          <TownSurface3D
+            places={availablePlaces}
+            lockedPlaces={lockedPlaces}
+            properties={properties}
+            playerLocation={playerLocation}
+            billboardMarkers={billboardMarkers}
+            searchTarget={searchTarget ?? null}
+            selectedLandmarkId={selectedLandmarkId}
+            travelMode={travelMode}
+            travelPending={travelPending}
+            focusInsets={focusInsets}
+            onSelectLandmark={onSelectLandmark}
+            onSelectDistrict={onSelectDistrict}
+            onSelectBillboard={onSelectBillboard}
+            {...(onSelectProperty ? { onSelectProperty } : {})}
+            eventChips={_eventChips}
+            {...(onSelectEvent ? { onSelectEvent } : {})}
+            onReady={handleReady}
+            onUnavailable={handleUnavailable}
+          />
+        )}
+      </Suspense>
+      {rendererState === "loading" && (
+        <div className="town-map-renderer-status">
+          <WorldLoadingIndicator
+            presentation="screen"
+            title="Opening the map"
+            detail="Loading the town…"
+          />
+        </div>
+      )}
+      {rendererState === "unavailable" && (
+        <div className="town-map-renderer-status" role="alert">
+          <p>The 3D town could not start on this device.</p>
+          <button
+            type="button"
+            className="phone-btn-primary"
+            onClick={() => window.location.reload()}
+          >
+            Try again
+          </button>
+        </div>
+      )}
       <ul className="town-map-accessible-list" aria-label="Places on the map">
         {properties?.map((property) => (
           <li key={property.id}>

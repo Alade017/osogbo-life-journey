@@ -26,6 +26,8 @@ export const WORLD_SCALE = {
 export const WORLD_PALETTE = {
   // Outdoor environment
   ground: "#d9c9ad",
+  cityLawn: "#a8bd8c",
+  cityWater: "#4b9bb3",
   sky: "#cfe3ea",
   wall: "#d4bea0",
   clay: "#b77f68",

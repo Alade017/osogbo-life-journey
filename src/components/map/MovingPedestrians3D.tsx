@@ -347,7 +347,7 @@ function PedestrianCharacter({
 
       {/* Interactive Greeting Speech Bubble */}
       {isSpeaking && speechText && (
-        <Html center position={[0, 1.1, 0]} distanceFactor={12}>
+        <Html center position={[0, 1.1, 0]}>
           <div
             style={{
               background: "rgba(15, 23, 42, 0.95)",
@@ -438,7 +438,7 @@ function WaitingPassenger({
         <boxGeometry args={[0.19, 0.21, 0.12]} />
         <meshStandardMaterial color="#334155" roughness={0.7} />
       </mesh>
-      <Html center position={[0, 0.92, 0]} distanceFactor={13}>
+      <Html center position={[0, 0.92, 0]}>
         <span
           style={{
             background: "rgba(15, 23, 42, 0.88)",

@@ -128,7 +128,9 @@ function NeighborhoodNpcActor({
   sceneBounds,
   onSelect,
   onArrive,
+  showLabel = true,
 }: {
+  showLabel?: boolean;
   npc: NeighborhoodNpcView;
   start: [number, number, number];
   target: [number, number, number];
@@ -368,9 +370,11 @@ function NeighborhoodNpcActor({
         <cylinderGeometry args={[0.42, 0.42, 1.9, 10]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
-      <Html center position={[0, 2.05, 0]} distanceFactor={18} style={{ pointerEvents: "none" }}>
-        <span className="world-place-label">{npc.name}</span>
-      </Html>
+      {showLabel && (
+        <Html center position={[0, 2.05, 0]} distanceFactor={18} style={{ pointerEvents: "none" }}>
+          <span className="world-place-label">{npc.name}</span>
+        </Html>
+      )}
     </group>
   );
 }
@@ -448,6 +452,7 @@ export function R3FNeighborhoodSurface({
   onSelectZone,
   onSelectZoneNpc,
   onHoverZone,
+  overview,
 }: {
   onGroundTap: (point: { x: number; y: number }) => void;
   groundTarget: { x: number; y: number } | null;
@@ -472,6 +477,8 @@ export function R3FNeighborhoodSurface({
   onSelectZone?: (zoneId: string) => void;
   onSelectZoneNpc?: (npcId: string) => void;
   onHoverZone?: (zoneId: string | null) => void;
+  /** Reuse the playable world's geometry for the map without a second world definition. */
+  overview?: { camera: ReactNode; markers: ReactNode };
 }) {
   const overlayHost = useRef<HTMLDivElement>(null!);
   const [follow, setFollow] = useState(true);
@@ -689,6 +696,7 @@ export function R3FNeighborhoodSurface({
     <NeighborhoodBoundary>
       <div className="playable-neighborhood-canvas">
         <Canvas
+          orthographic={Boolean(overview)}
           shadows="soft"
           frameloop="demand"
           dpr={[1, 1.5]}
@@ -699,32 +707,40 @@ export function R3FNeighborhoodSurface({
             toneMappingExposure: 1.05,
           }}
         >
-          <WorldCamera
-            width={bounds.width * unit}
-            depth={bounds.height * unit}
-            target={target}
-            zoom={zoom}
-            minZoom={NEIGHBORHOOD_CAMERA.minZoom}
-            maxZoom={NEIGHBORHOOD_CAMERA.maxZoom}
-            onZoomChange={onZoomChange}
-          />
+          {overview ? (
+            overview.camera
+          ) : (
+            <WorldCamera
+              width={bounds.width * unit}
+              depth={bounds.height * unit}
+              target={target}
+              zoom={zoom}
+              minZoom={NEIGHBORHOOD_CAMERA.minZoom}
+              maxZoom={NEIGHBORHOOD_CAMERA.maxZoom}
+              onZoomChange={onZoomChange}
+            />
+          )}
           <WorldLighting
             size={Math.max(bounds.width, bounds.height) * unit}
-            animateFoliage
+            animateFoliage={!overview}
             refined
           />
-          <EffectComposer multisampling={0}>
-            <Vignette eskil={false} offset={0.28} darkness={0.42} />
-          </EffectComposer>
+          {!overview && (
+            <EffectComposer multisampling={0}>
+              <Vignette eskil={false} offset={0.28} darkness={0.42} />
+            </EffectComposer>
+          )}
           <color attach="background" args={[WORLD_PALETTE.sky]} />
-          <fog
-            attach="fog"
-            args={[
-              WORLD_PALETTE.sky,
-              Math.max(bounds.width, bounds.height) * unit * SKY_FOG_NEAR_SCALE,
-              Math.max(bounds.width, bounds.height) * unit * SKY_FOG_FAR_SCALE,
-            ]}
-          />
+          {!overview && (
+            <fog
+              attach="fog"
+              args={[
+                WORLD_PALETTE.sky,
+                Math.max(bounds.width, bounds.height) * unit * SKY_FOG_NEAR_SCALE,
+                Math.max(bounds.width, bounds.height) * unit * SKY_FOG_FAR_SCALE,
+              ]}
+            />
+          )}
           <mesh position={[0, -0.24, 0]} rotation={[-Math.PI / 2, 0, 0]} raycast={() => null}>
             <planeGeometry args={[bounds.width * unit * 2.6, bounds.height * unit * 2.6]} />
             <meshBasicMaterial color={WORLD_PALETTE.sky} />
@@ -849,23 +865,24 @@ export function R3FNeighborhoodSurface({
                 ...(o.label !== undefined ? { label: o.label } : {}),
               }))}
           />
-          {area.obstacles
-            ?.filter((obstacle) => obstacle.kind === "landmark" && obstacle.label)
-            .map((landmark) => {
-              const p = point(landmark.x, landmark.y);
-              return (
-                <Html
-                  key={landmark.id}
-                  portal={overlayHost}
-                  center
-                  position={[p[0], 2.4, p[2]]}
-                  distanceFactor={18}
-                  style={{ pointerEvents: "none" }}
-                >
-                  <span className="world-place-label">{landmark.label}</span>
-                </Html>
-              );
-            })}
+          {!overview &&
+            area.obstacles
+              ?.filter((obstacle) => obstacle.kind === "landmark" && obstacle.label)
+              .map((landmark) => {
+                const p = point(landmark.x, landmark.y);
+                return (
+                  <Html
+                    key={landmark.id}
+                    portal={overlayHost}
+                    center
+                    position={[p[0], 2.4, p[2]]}
+                    distanceFactor={18}
+                    style={{ pointerEvents: "none" }}
+                  >
+                    <span className="world-place-label">{landmark.label}</span>
+                  </Html>
+                );
+              })}
           {area.objects
             .filter((o) => o.kind !== "npc")
             .map((o) => {
@@ -892,15 +909,17 @@ export function R3FNeighborhoodSurface({
                       }
                     />
                   )}
-                  <Html
-                    portal={overlayHost}
-                    center
-                    position={[point(o.x, o.y)[0], o.walkIn ? 4.8 : 3.7, point(o.x, o.y)[2]]}
-                    distanceFactor={18}
-                    style={{ pointerEvents: "none" }}
-                  >
-                    <span className="world-place-label">{o.name}</span>
-                  </Html>
+                  {!overview && (
+                    <Html
+                      portal={overlayHost}
+                      center
+                      position={[point(o.x, o.y)[0], o.walkIn ? 4.8 : 3.7, point(o.x, o.y)[2]]}
+                      distanceFactor={18}
+                      style={{ pointerEvents: "none" }}
+                    >
+                      <span className="world-place-label">{o.name}</span>
+                    </Html>
+                  )}
                 </group>
               );
             })}
@@ -926,6 +945,7 @@ export function R3FNeighborhoodSurface({
             <NeighborhoodNpcActor
               key={npc.id}
               npc={npc}
+              showLabel={!overview}
               start={point(npc.x, npc.y)}
               target={point(npc.targetX, npc.targetY)}
               actorPositions={actorPositions}
@@ -1007,6 +1027,7 @@ export function R3FNeighborhoodSurface({
                 </mesh>
               );
             })}
+          {overview?.markers}
         </Canvas>
         <div ref={overlayHost} className="world-label-layer" />
       </div>

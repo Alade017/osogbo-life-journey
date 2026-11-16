@@ -48,7 +48,6 @@ import type { NetworkPlayerSnapshot } from "@/game/multiplayer-state";
 import { avatarAnimationForActivity } from "@/game/character-animation";
 import {
   neighborhoodAreaForSlug,
-  neighborhoodSceneBounds,
   nearestInteraction,
   toScene,
   toWorld,
@@ -1227,6 +1226,9 @@ export function PlayableNeighborhood() {
                         onHoverZone={(id) => dispatchZone(setHoveredZoneId(id))}
                       />
                     </Suspense>
+                    <Link to="/map" className="neighborhood-map-shortcut">
+                      <Map size={16} aria-hidden="true" /> Explore 3D map
+                    </Link>
                     <div
                       className="neighborhood-zoom-controls"
                       aria-label="Neighborhood camera controls"
