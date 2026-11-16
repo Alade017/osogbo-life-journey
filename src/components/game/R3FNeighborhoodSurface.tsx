@@ -77,10 +77,12 @@ import { NEIGHBORHOOD_CAMERA, WORLD_PALETTE, WORLD_SCALE } from "../3d/world-the
 import {
   carSpots,
   pedestrianCrossings,
+  pedestrianCrossingStripes,
   pedestrianSpots,
   roadMarkings,
   sidewalksAndCurbs,
   streetLightSpots,
+  treeVisualProfile,
   vendorSpots,
   type DressingRect,
 } from "@/game/neighborhood-dressing";
@@ -538,11 +540,13 @@ export function R3FNeighborhoodSurface({
   // Street dressing comes from the area's own roads, objects and stalls.
   const dressing = useMemo(() => {
     const kerbs = sidewalksAndCurbs(area, bounds);
+    const crossings = pedestrianCrossings(area);
     return {
       markings: roadMarkings(area, bounds),
       sidewalks: kerbs.sidewalks,
       curbs: kerbs.curbs,
-      crossings: pedestrianCrossings(area),
+      crossings,
+      crossingStripes: pedestrianCrossingStripes(crossings),
       lights: streetLightSpots(area, bounds),
       cars: carSpots(area, bounds),
       people: pedestrianSpots(area, bounds),
@@ -566,11 +570,14 @@ export function R3FNeighborhoodSurface({
       });
     return {
       markings: flat(dressing.markings, 0.07, 0.03),
-      crossings: flat(dressing.crossings, 0.07, 0.03),
+      crossings: flat(dressing.crossingStripes, 0.07, 0.03),
       sidewalks: flat(dressing.sidewalks, 0.05, 0.1),
       curbs: flat(dressing.curbs, 0.09, 0.14),
       lights: onGround(dressing.lights),
-      cars: onGround(dressing.cars.slice(2)),
+      cars: dressing.cars.slice(2).map((spot) => {
+        const p = point(spot.x, spot.y);
+        return [p[0], p[2], spot.rotation] as [number, number, number];
+      }),
       people: onGround(dressing.people),
       vendors: onGround(dressing.vendors),
     };
@@ -586,7 +593,7 @@ export function R3FNeighborhoodSurface({
         id: `vehicle-${index}`,
         parts: index === 0 ? busModel : tukTukModel,
         position: point(spot.x, spot.y),
-        rotation: vehicleHeading(area, spot),
+        rotation: spot.rotation,
       })),
     [area, dressing, point, busModel, tukTukModel],
   );
@@ -681,16 +688,13 @@ export function R3FNeighborhoodSurface({
     () =>
       (area.obstacles ?? [])
         .filter((o) => o.kind === "tree" && !o.id.startsWith("perimeter-tree"))
-        .map((o, index) => {
-          const p = point(o.x, o.y);
-
-          // Deterministic variation based on tree index.
-          const variation = (index * 17) % 30;
-
+        .map((obstacle) => {
+          const p = point(obstacle.x, obstacle.y);
+          const profile = treeVisualProfile(obstacle);
           return {
             position: [p[0], p[2]],
-            height: 0.85 + variation / 100,
-            canopyScale: 0.85 + ((index * 13) % 35) / 100,
+            height: profile.height,
+            canopyScale: profile.canopyScale,
           };
         }),
     [area.obstacles, point],
