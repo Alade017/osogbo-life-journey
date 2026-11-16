@@ -1,3 +1,4 @@
+import { WORLD_PALETTE } from "@/components/3d/world-theme";
 export type VenueFixtureKind =
   "counter" | "table" | "bench" | "shelf" | "screen" | "display" | "planter" | "seat";
 
@@ -17,6 +18,7 @@ export type VenueEnvironment = {
 };
 
 export type LocationVenueDesign = {
+  scene?: "campus" | "market";
   name: string;
   description: string;
   floorColor: string;
@@ -44,6 +46,42 @@ function fixture(
 }
 
 const venues: Readonly<Record<string, LocationVenueDesign>> = {
+  "student-district": {
+    scene: "campus",
+    name: "School campus",
+    description:
+      "A teaching campus with a shared courtyard, classroom, library and administration office.",
+    floorColor: WORLD_PALETTE.tileLight,
+    wallColor: WORLD_PALETTE.wall,
+    accentColor: WORLD_PALETTE.foliage,
+    fixtures: [
+      fixture(
+        "campus-classroom",
+        "Classroom",
+        "Inspect the teaching space, then browse available courses.",
+        "table",
+        -2.5,
+        0,
+      ),
+      fixture(
+        "campus-library",
+        "Campus library",
+        "Browse the campus study space.",
+        "shelf",
+        2.5,
+        0,
+      ),
+      fixture(
+        "campus-administration",
+        "Administration",
+        "Find the existing course and enrolment options.",
+        "counter",
+        0,
+        -2,
+      ),
+    ],
+  },
+
   "oja-oba": {
     name: "Oja-Oba trading hall",
     description:

@@ -1,4 +1,7 @@
-import { Component, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { VenueSceneBoundary } from "./VenueSceneBoundary";
+
+const SchoolCampusVenue = lazy(() => import("./SchoolCampusVenue").then(module => ({ default: module.SchoolCampusVenue })));
 import { Canvas } from "@react-three/fiber";
 import { WorldCamera, WorldLighting, WorldMaterial } from "@/components/3d/WorldScene";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
@@ -12,25 +15,6 @@ import { VenueFurnitureModel } from "@/components/3d/VenueFurniture";
 import { useOptionalGameTime } from "@/components/game/GameTimeProvider";
 
 const SCENE_START_TIMEOUT_MS = 5_000;
-
-class VenueSceneBoundary extends Component<
-  { children: ReactNode; onError: () => void },
-  { failed: boolean }
-> {
-  override state = { failed: false };
-
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-
-  override componentDidCatch() {
-    this.props.onError();
-  }
-
-  override render() {
-    return this.state.failed ? null : this.props.children;
-  }
-}
 
 function FixtureModel({
   fixture,
@@ -61,7 +45,7 @@ function FixtureModel({
   );
 }
 
-export function LocationVenueScene({ slug, locationName }: { slug: string; locationName: string }) {
+function BasicLocationVenueScene({ slug, locationName }: { slug: string; locationName: string }) {
   const venue = useMemo(() => getLocationVenueDesign(slug, locationName), [slug, locationName]);
   const gameTime = useOptionalGameTime();
   // Shops with trading hours show their shutter open or closed for the current game hour.
@@ -208,4 +192,13 @@ export function LocationVenueScene({ slug, locationName }: { slug: string; locat
       </div>
     </section>
   );
+}
+
+export function LocationVenueScene(props: { slug: string; locationName: string; onBrowseMarket?: () => void }) {
+  const venue = getLocationVenueDesign(props.slug, props.locationName);
+  return venue.scene === "campus" ? (
+    <Suspense fallback={<WorldLoadingIndicator title="Opening the campus" detail="Preparing the grounds…" />}>
+      <SchoolCampusVenue key={props.slug} slug={props.slug} locationName={props.locationName} />
+    </Suspense>
+  ) : <BasicLocationVenueScene {...props} />;
 }
