@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
-import { requestDepartureFromHome } from "@/lib/home-departure";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CalendarDays, CloudOff, MapPinned, Smile, Compass, Lock, X } from "lucide-react";
 import { toast } from "sonner";
@@ -27,7 +26,7 @@ import {
 } from "@/store/neighborhoodSlice";
 import { mapHousingMarkers } from "@/components/map/map-housing-markers";
 import { DistrictSheet } from "@/components/map/DistrictSheet";
-import { LandmarkSheet } from "@/components/map/LandmarkSheet";
+import { useMapTravelController } from "@/components/map/use-map-travel-controller";
 import { MapTravelSelector } from "@/components/map/MapTravelSelector";
 import { MapBillboardCampaignDialog } from "@/components/game/CityBillboards";
 import { OsunStateOverview } from "@/components/map/OsunStateOverview";
@@ -44,7 +43,6 @@ import {
   clearPendingMapActionKey,
   requestAvailableMapLandmarks,
 } from "@/lib/map-api";
-import type { TravelMode } from "@/lib/transport-service";
 import type { PlaceActionResult } from "@/components/map/PlaceActionMenu";
 import { useCityEvents } from "@/hooks/use-city-events";
 import { cityEventsForDistrict } from "@/lib/city-event-service";
@@ -59,6 +57,7 @@ import type { MapDistrict, MapLandmark } from "@/components/map/map-types";
 import "@/components/map/map-ui.css";
 import "@/components/map/map-hud.css";
 import "@/components/map/neighborhood-city-map.css";
+import "@/components/map/map-explorer.css";
 import { MapTicker } from "@/components/map/MapTicker";
 
 const categories: { id: MapFilter; label: string }[] = [
@@ -120,23 +119,16 @@ export function CityMapDashboard({
   nextRentDueAt,
 }: { money?: number; mood?: string; nextRentDueAt?: string } = {}) {
   const [selectedDistrict, setSelectedDistrict] = useState<MapDistrict | null>(null);
-  const [selectedLandmark, setSelectedLandmark] = useState<
-    (MapLandmark & { district: MapDistrict }) | null
-  >(null);
-  const [landmarkDetailsOpen, setLandmarkDetailsOpen] = useState(false);
   const [filter, setFilter] = useState<MapFilter>("all");
   const [search, setSearch] = useState("");
   const [searchTarget, setSearchTarget] = useState<MapSearchTarget | null>(null);
   const [offline, setOffline] = useState(typeof navigator !== "undefined" && !navigator.onLine);
-  const [travelError, setTravelError] = useState<string | null>(null);
-  const [arrivalConfirmed, setArrivalConfirmed] = useState(false);
-  const [refreshingArrival, setRefreshingArrival] = useState(false);
   const [actionError, setActionError] = useState("");
   const [placeActionResult, setPlaceActionResult] = useState<PlaceActionResult | null>(null);
   const [selectedBillboard, setSelectedBillboard] = useState<CurrentMapBillboard | null>(null);
   const [billboardNow, setBillboardNow] = useState(() => Date.now());
   const [mapLevel, setMapLevel] = useState<"town" | "state">("town");
-  const [townFocus, setTownFocus] = useState<"split" | "3d-town">("split");
+  const [townFocus, setTownFocus] = useState<"neighborhood" | "3d-town">("3d-town");
   const [selectedTownId, setSelectedTownId] = useState("osogbo");
   const [soonOpen, setSoonOpen] = useState(false);
   const livePlayerPose = useLivePlayerPose();
@@ -146,15 +138,7 @@ export function CityMapDashboard({
   const requestedBillboardId = new URLSearchParams(mapHref.split("?")[1]?.split("#")[0] ?? "").get(
     "billboard",
   );
-  const travelSubmitLock = useRef(false);
   const focusedBillboardId = useRef<string | null>(null);
-  const isMounted = useRef(false);
-  useEffect(() => {
-    isMounted.current = true;
-    return () => {
-      isMounted.current = false;
-    };
-  }, []);
   const character = useQuery(q.character());
   const housingMarkers = useQuery({
     queryKey: ["housingMapProperties", character.data?.id],
@@ -186,6 +170,12 @@ export function CityMapDashboard({
   const currentLocation = locations.data?.find(
     (row) => row.id === character.data?.current_location_id,
   );
+  const travelController = useMapTravelController<MapLandmark & { district: MapDistrict }>({
+    character: character.data,
+    queryClient,
+    navigate,
+  });
+  const selectedLandmark = travelController.state.landmark;
   const selectedDestinationSlug = selectedLandmark
     ? MAP_LANDMARK_LOCATION_SLUG[selectedLandmark.id]
     : null;
@@ -282,57 +272,6 @@ export function CityMapDashboard({
     : cityEvents.data?.events.find(
         (event) => event.status === "active" && event.landmarkId === selectedLandmark?.id,
       );
-  const refreshConfirmedArrival = async (locationId: string) => {
-    if (isMounted.current) {
-      setRefreshingArrival(true);
-      setTravelError(null);
-    }
-    try {
-      const savedCharacter = await queryClient.fetchQuery(q.character());
-      if (!isMounted.current) return;
-      if (savedCharacter?.current_location_id !== locationId) {
-        setTravelError("Travel is confirmed, but the saved destination has not refreshed yet.");
-        return;
-      }
-      await navigate({ to: "/neighborhood" });
-    } catch (error) {
-      if (!isMounted.current) return;
-      setTravelError(
-        error instanceof Error
-          ? `Travel is confirmed, but your destination could not be loaded: ${error.message}`
-          : "Travel is confirmed, but your destination could not be loaded. Please retry.",
-      );
-    } finally {
-      if (isMounted.current) setRefreshingArrival(false);
-    }
-  };
-  const travel = useMutation({
-    mutationFn: ({ locationId, mode }: { locationId: string; mode: TravelMode }) =>
-      rpc.travelToLocation({ locationId, mode }),
-    onSuccess: async (_result, variables) => {
-      if (isMounted.current) {
-        setArrivalConfirmed(true);
-        setTravelError(null);
-      }
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["character"], refetchType: "none" }),
-        queryClient.invalidateQueries({ queryKey: ["locations"], refetchType: "none" }),
-        queryClient.invalidateQueries({ queryKey: ["wallet"] }),
-        queryClient.invalidateQueries({ queryKey: ["worldClock"] }),
-        queryClient.invalidateQueries({ queryKey: ["visits"] }),
-      ]);
-      window.dispatchEvent(new Event("osogbo:server-state-changed"));
-      await refreshConfirmedArrival(variables.locationId);
-    },
-    onError: (error) => {
-      if (isMounted.current) {
-        setTravelError(error instanceof Error ? error.message : "Travel could not be completed.");
-      }
-    },
-    onSettled: () => {
-      travelSubmitLock.current = false;
-    },
-  });
   const apply = useMutation({
     mutationFn: (id: string) => rpc.selectJob(id),
     onSuccess: async () => {
@@ -392,36 +331,15 @@ export function CityMapDashboard({
       }
     },
   });
-  const confirmTravel = (mode: TravelMode) => {
-    if (travelSubmitLock.current || !selectedDestination || travel.isPending) return;
-    travelSubmitLock.current = true;
-    setTravelError(null);
-    if (character.data?.inside_home_property_id) {
-      // Leaving a house plays the door first; the house screen runs the trip alongside it.
-      const departure = requestDepartureFromHome({
-        locationId: selectedDestination.id,
-        mode,
-      });
-      void navigate({ to: "/house" })
-        .catch(() => clearPendingDepartureFromHome(departure))
-        .finally(() => {
-          travelSubmitLock.current = false;
-        });
-      return;
-    }
-    travel.mutate({ locationId: selectedDestination.id, mode });
-  };
-  const closeTravelSelector = () => {
-    setSelectedLandmark(null);
-    setLandmarkDetailsOpen(false);
-    setTravelError(null);
-    setArrivalConfirmed(false);
-  };
+  const closeTravelSelector = travelController.close;
+  const selectDestination = travelController.select;
+  const setDestinationTab = travelController.setTab;
   const onDistrict = (id: string) => {
-    const d = districts.find((item) => item.id === id);
-    if (d) {
-      setSelectedLandmark(null);
-      setSelectedDistrict(d);
+    if (travelController.busy || travelController.arrivalConfirmed) return;
+    const district = districts.find((item) => item.id === id);
+    if (district) {
+      travelController.close();
+      setSelectedDistrict(district);
     }
   };
   const onLandmark = useCallback(
@@ -432,15 +350,12 @@ export function CityMapDashboard({
 
       if (found) {
         setSelectedDistrict(null);
-        setSelectedLandmark(found);
-        setLandmarkDetailsOpen(false);
-        setArrivalConfirmed(false);
-        setTravelError(null);
+        selectDestination(found);
         setActionError("");
         setPlaceActionResult(null);
       }
     },
-    [availableLandmarks.data],
+    [availableLandmarks.data, selectDestination],
   );
   const deepLinkedLandmark = useRef<string | null>(null);
   useEffect(() => {
@@ -452,7 +367,7 @@ export function CityMapDashboard({
     if (!availableLandmarks.data.includes(landmarkId)) return;
     deepLinkedLandmark.current = landmarkId;
     onLandmark(landmarkId);
-    setLandmarkDetailsOpen(true);
+    setDestinationTab("details");
     params.delete("landmark");
     params.delete("details");
     const query = params.toString();
@@ -461,7 +376,7 @@ export function CityMapDashboard({
       "",
       query ? "?" + query : window.location.pathname,
     );
-  }, [availableLandmarks.data, onLandmark]);
+  }, [availableLandmarks.data, onLandmark, setDestinationTab]);
   const searchMatches = useMemo(() => {
     const value = search.trim().toLocaleLowerCase();
     if (!value) return null;
@@ -499,6 +414,7 @@ export function CityMapDashboard({
     .map((item) => item.id);
   const submitSearch = () => {
     if (!searchMatches) return;
+    setTownFocus("3d-town");
     setSearchTarget({ id: searchMatches.id, kind: searchMatches.kind });
   };
   const rentRecord = rent.data as { next_due_at?: string; due_at?: string } | null;
@@ -699,14 +615,17 @@ export function CityMapDashboard({
           Places could not be loaded. Reconnect to browse the town.
         </div>
       )}
-      {mapLevel === "town" && (
+      {mapLevel === "town" && townFocus === "3d-town" && (
         <div className="map-controls">
           <div className="map-category-chips" aria-label="Filter places">
             {categories.map((c) => (
               <button
                 key={c.id}
                 aria-pressed={filter === c.id}
-                onClick={() => setFilter(c.id === "all" ? "all" : filter === c.id ? "all" : c.id)}
+                onClick={() => {
+                  setTownFocus("3d-town");
+                  setFilter(c.id === "all" ? "all" : filter === c.id ? "all" : c.id);
+                }}
               >
                 {c.label}
               </button>
@@ -732,8 +651,24 @@ export function CityMapDashboard({
         </div>
       )}
       {mapLevel === "town" ? (
-        <div className={townFocus === "split" ? "ncm-layout-grid is-split" : "ncm-layout-grid"}>
-          {townFocus === "split" && (
+        <div className="ncm-layout-grid">
+          <div className="map-view-switch" role="group" aria-label="Choose 3D map view">
+            <button
+              type="button"
+              aria-pressed={townFocus === "neighborhood"}
+              onClick={() => setTownFocus("neighborhood")}
+            >
+              Olaiya neighborhood
+            </button>
+            <button
+              type="button"
+              aria-pressed={townFocus === "3d-town"}
+              onClick={() => setTownFocus("3d-town")}
+            >
+              Osogbo districts
+            </button>
+          </div>
+          {townFocus === "neighborhood" && (
             <NeighborhoodCityMap
               playerPosition={playerMapPosition}
               walletBalance={wallet.data?.balance ?? effectivePocketBalance}
@@ -748,77 +683,81 @@ export function CityMapDashboard({
               onOpenDistrictMapView={() => setTownFocus("3d-town")}
             />
           )}
-          <div className="ncm-3d-companion">
-            <div className="ncm-3d-companion-bar">
-              <div>
-                <strong>Osogbo 3D Town Districts</strong>{" "}
-                <span>Explore surrounding quarters &amp; city transit</span>
+          {townFocus === "3d-town" && (
+            <div className="ncm-3d-companion">
+              <div className="ncm-3d-companion-bar">
+                <div>
+                  <strong>Osogbo 3D Town Districts</strong>{" "}
+                  <span>Explore surrounding quarters &amp; city transit</span>
+                </div>
+                <button
+                  type="button"
+                  className="ncm-3d-expand-btn"
+                  onClick={() =>
+                    setTownFocus((mode) => (mode === "neighborhood" ? "3d-town" : "neighborhood"))
+                  }
+                >
+                  Back to Olaiya in 3D
+                </button>
               </div>
-              <button
-                type="button"
-                className="ncm-3d-expand-btn"
-                onClick={() => setTownFocus((mode) => (mode === "split" ? "3d-town" : "split"))}
-              >
-                {townFocus === "split" ? "Expand 3D Town" : "Back to Olaiya Map"}
-              </button>
+              <MapCanvas
+                selectedLandmarkId={selectedLandmark?.id ?? null}
+                travelMode={travelController.state.mode}
+                travelPending={travelController.state.phase === "submitting"}
+                playerLocation={
+                  currentMapPlace
+                    ? {
+                        x:
+                          currentLocation?.slug === "city-centre"
+                            ? currentMapPlace.grid.x + (playerMapPosition.mapCoords.x - 0.5) * 2.2
+                            : currentMapPlace.grid.x,
+                        y:
+                          currentLocation?.slug === "city-centre"
+                            ? currentMapPlace.grid.z + (playerMapPosition.mapCoords.y - 0.5) * 1.4
+                            : currentMapPlace.grid.z,
+                        label: "You are here",
+                      }
+                    : null
+                }
+                properties={housingMarkers.data ?? []}
+                eventChips={eventChips}
+                onSelectEvent={(landmarkId) => {
+                  const event = (cityEvents.data?.events ?? []).find(
+                    (item) => item.status === "active" && item.landmarkId === landmarkId,
+                  );
+                  const found =
+                    landmarks.find((item) => item.id === landmarkId) ??
+                    getQuickTravelLandmark(landmarkId);
+                  if (!event || !found) return;
+                  setSelectedDistrict(null);
+                  travelController.select(found, "details");
+                  setActionError("");
+                  setPlaceActionResult(null);
+                }}
+                availableLandmarkIds={availableLandmarks.data ?? []}
+                onSelectDistrict={onDistrict}
+                onSelectLandmark={onLandmark}
+                activeFilter={filter}
+                searchTarget={searchTarget}
+                jobLandmarkIds={jobLandmarkIds}
+                billboardMarkers={billboardMarkers}
+                onSelectBillboard={(campaignId) => {
+                  setSelectedBillboard(
+                    activeMapBillboards.find(
+                      ({ advertisement }) => advertisement.id === campaignId,
+                    ) ?? null,
+                  );
+                }}
+                onSelectProperty={(property) => {
+                  window.dispatchEvent(
+                    new CustomEvent("osogbo-open-phone-app", {
+                      detail: { app: property.status === "vacant" ? "Find homes" : "Property" },
+                    }),
+                  );
+                }}
+              />
             </div>
-            <MapCanvas
-              playerLocation={
-                currentMapPlace
-                  ? {
-                      x:
-                        currentLocation?.slug === "city-centre"
-                          ? currentMapPlace.grid.x + (playerMapPosition.mapCoords.x - 0.5) * 2.2
-                          : currentMapPlace.grid.x,
-                      y:
-                        currentLocation?.slug === "city-centre"
-                          ? currentMapPlace.grid.z + (playerMapPosition.mapCoords.y - 0.5) * 1.4
-                          : currentMapPlace.grid.z,
-                      label: "You are here",
-                    }
-                  : null
-              }
-              properties={housingMarkers.data ?? []}
-              eventChips={eventChips}
-              onSelectEvent={(landmarkId) => {
-                const event = (cityEvents.data?.events ?? []).find(
-                  (item) => item.status === "active" && item.landmarkId === landmarkId,
-                );
-                const found =
-                  landmarks.find((item) => item.id === landmarkId) ??
-                  getQuickTravelLandmark(landmarkId);
-                if (!event || !found) return;
-                setSelectedDistrict(null);
-                setSelectedLandmark(found);
-                setLandmarkDetailsOpen(true);
-                setArrivalConfirmed(false);
-                setTravelError(null);
-                setActionError("");
-                setPlaceActionResult(null);
-              }}
-              availableLandmarkIds={availableLandmarks.data ?? []}
-              onSelectDistrict={onDistrict}
-              onSelectLandmark={onLandmark}
-              activeFilter={filter}
-              searchTarget={searchTarget}
-              jobLandmarkIds={jobLandmarkIds}
-              billboardMarkers={billboardMarkers}
-              onSelectBillboard={(campaignId) => {
-                setSelectedBillboard(
-                  activeMapBillboards.find(
-                    ({ advertisement }) => advertisement.id === campaignId,
-                  ) ?? null,
-                );
-              }}
-              onSelectProperty={(property) => {
-                window.dispatchEvent(
-                  new CustomEvent("osogbo-open-phone-app", {
-                    detail: { app: property.status === "vacant" ? "Find homes" : "Property" },
-                  }),
-                );
-              }}
-            />
-          </div>
+          )}
         </div>
       ) : (
         <OsunStateOverview
@@ -848,14 +787,14 @@ export function CityMapDashboard({
           onLandmark={onLandmark}
         />
       )}
-      {mapLevel === "town" && selectedLandmark && !landmarkDetailsOpen && (
+      {mapLevel === "town" && selectedLandmark && (
         <MapTravelSelector
           open
           landmark={selectedLandmark}
           districtName={selectedLandmark.district.name}
-          {...(character.data?.user_id ? { accountId: character.data.user_id } : {})}
-          {...(character.data?.id ? { characterId: character.data.id } : {})}
-          destination={selectedDestination ?? null}
+          accountId={character.data?.user_id}
+          characterId={character.data?.id}
+          destination={selectedDestination}
           isLoadingDestination={locations.isLoading}
           destinationLoadError={locations.isError}
           onRetryDestination={() => void locations.refetch()}
@@ -864,67 +803,56 @@ export function CityMapDashboard({
           characterLevel={character.data?.level ?? null}
           walletBalance={wallet.data?.balance ?? null}
           walletLoading={wallet.isLoading}
+          onRetryWallet={() => void wallet.refetch()}
           gameTime={
             worldClock.data ??
             (character.data ? gameTimeFromCharacter(character.data) : INITIAL_GAME_TIME)
           }
           offline={offline}
-          pending={travel.isPending}
-          arrivalConfirmed={arrivalConfirmed}
-          refreshingArrival={refreshingArrival}
-          error={travelError}
-          onConfirm={confirmTravel}
+          state={travelController.state}
+          onTabChange={travelController.setTab}
+          onModeChange={travelController.selectMode}
+          onConfirm={(mode) => {
+            if (selectedDestination) void travelController.confirm(selectedDestination.id, mode);
+          }}
           onCancel={closeTravelSelector}
-          onOpenDetails={() => setLandmarkDetailsOpen(true)}
-          onRetryArrival={() => {
-            if (selectedDestination) void refreshConfirmedArrival(selectedDestination.id);
+          onRetryArrival={() => void travelController.retryArrival()}
+          detailsProps={{
+            description:
+              selectedLandmark.category === "worship"
+                ? "This map marker is informational and is not an in-game destination."
+                : `${selectedLandmark.category[0]!.toUpperCase()}${selectedLandmark.category.slice(1)} destination in ${selectedLandmark.district.name}.`,
+            locationName: selectedLandmark.district.name,
+            event: landmarkEvent
+              ? { label: landmarkEvent.title, endsAt: landmarkEvent.endsAt }
+              : null,
+            onApply: (id) => apply.mutate(id),
+            pending: apply.isPending,
+            error: actionError,
+            onRunPlaceAction: (actionId) => {
+              const accountId = character.data?.user_id,
+                characterId = character.data?.id;
+              if (!accountId || !characterId) {
+                setActionError("Player details are not ready. Reopen this place and try again.");
+                return;
+              }
+              const requestId = getPendingMapActionKey(
+                accountId,
+                characterId,
+                selectedLandmark.id,
+                actionId,
+              );
+              runPlaceAction.mutate({
+                accountId,
+                characterId,
+                landmarkId: selectedLandmark.id,
+                actionId,
+                requestId,
+              });
+            },
+            actionPending: runPlaceAction.isPending,
+            actionResult: placeActionResult,
           }}
-        />
-      )}
-      {mapLevel === "town" && selectedLandmark && landmarkDetailsOpen && (
-        <LandmarkSheet
-          key={selectedLandmark.id}
-          accountId={character.data?.user_id ?? undefined}
-          characterId={character.data?.id ?? undefined}
-          landmark={selectedLandmark}
-          event={
-            landmarkEvent ? { label: landmarkEvent.title, endsAt: landmarkEvent.endsAt } : null
-          }
-          description={
-            selectedLandmark.category === "worship"
-              ? "This map marker is informational and is not an in-game destination."
-              : `${selectedLandmark.category[0]!.toUpperCase()}${selectedLandmark.category.slice(1)} destination in ${selectedLandmark.district.name}.`
-          }
-          locationName={selectedLandmark.district.name}
-          offline={offline}
-          onClose={closeTravelSelector}
-          onBackToTransport={() => setLandmarkDetailsOpen(false)}
-          onApply={(id) => apply.mutate(id)}
-          pending={apply.isPending}
-          error={actionError}
-          onRunPlaceAction={(actionId) => {
-            const accountId = character.data?.user_id;
-            const characterId = character.data?.id;
-            if (!accountId || !characterId) {
-              setActionError("Player details are not ready. Reopen this place and try again.");
-              return;
-            }
-            const requestId = getPendingMapActionKey(
-              accountId,
-              characterId,
-              selectedLandmark.id,
-              actionId,
-            );
-            runPlaceAction.mutate({
-              accountId,
-              characterId,
-              landmarkId: selectedLandmark.id,
-              actionId,
-              requestId,
-            });
-          }}
-          actionPending={runPlaceAction.isPending}
-          actionResult={placeActionResult}
         />
       )}
     </section>

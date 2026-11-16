@@ -173,6 +173,23 @@ describe("neighborhoodLocations registry & City Map sync", () => {
     expect(consumeNeighborhoodNavigation()).toBeNull();
   });
 
+  it("clears a selected destination when its category is hidden", () => {
+    render(
+      <NeighborhoodCityMap
+        playerPosition={resolvePlayerMapPosition(null, null)}
+        walletBalance={3500}
+        offline={false}
+        onWalkHere={vi.fn()}
+        onBoardKeke={vi.fn()}
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Adire Makers' Yard/i }));
+    expect(screen.getByRole("dialog")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Banking & Transit" }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Walk Here/i })).not.toBeInTheDocument();
+  });
+
   it("blocks Keke boarding cleanly when pocket wallet balance is below fare", () => {
     const onBoardKeke = vi.fn();
 

@@ -1,3 +1,5 @@
+import { TownResidentialBlocks3D } from "./TownResidentialBlocks3D";
+import type { TownInfillHome } from "./town-residential-layout";
 import { useMemo } from "react";
 import town from "@/data/osogbo-town.json";
 import { WorldHouse } from "@/components/3d/WorldScene";
@@ -105,8 +107,17 @@ function cellNoise(x: number, z: number) {
  * Builds blocks of decorative houses across every district's free grid cells. The houses are
  * scenery only: they have no pointer handlers, so they can't be clicked.
  */
-export function HouseBlocks3D({ point, cell }: { point: Point; cell: number }) {
+export function HouseBlocks3D({
+  point,
+  cell,
+  homes,
+}: {
+  point: Point;
+  cell: number;
+  homes?: readonly TownInfillHome[];
+}) {
   const blocks = useMemo(() => {
+    if (homes) return [];
     const rows = town.grid.rows;
     const blocked = new Set<string>();
     const block = (x: number, z: number) => blocked.add(x + "," + z);
@@ -149,8 +160,19 @@ export function HouseBlocks3D({ point, cell }: { point: Point; cell: number }) {
       }
     }
     return out;
-  }, []);
+  }, [homes]);
 
+  if (homes)
+    return (
+      <group name="house-blocks">
+        <TownResidentialBlocks3D
+          homes={homes}
+          point={point}
+          cell={cell}
+          districtProfiles={DISTRICT_HOUSE_STYLE}
+        />
+      </group>
+    );
   return (
     <group name="house-blocks">
       {blocks.map((entry) => {

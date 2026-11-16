@@ -1,0 +1,322 @@
+/* Shared map chrome. Scenery and position markers are rendered in WebGL. */
+.map-view-switch,
+.ncm-camera-tools,
+.state-town-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.map-view-switch button,
+.ncm-camera-tools button,
+.state-town-choices button,
+.state-world-reset,
+.map-scene-message button {
+  min-height: 44px;
+  padding: 0.55rem 0.9rem;
+  border: 1px solid var(--border, #d7d6ce);
+  border-radius: 12px;
+  background: var(--card, #faf7f0);
+  color: var(--foreground, #16225c);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.map-view-switch button[aria-pressed="true"],
+.ncm-camera-tools button[aria-pressed="true"],
+.state-town-choices button[aria-pressed="true"] {
+  background: #16225c;
+  color: #faf7f0;
+}
+.map-view-switch button:focus-visible,
+.ncm-shell button:focus-visible,
+.state-world-shell button:focus-visible,
+.state-town-choices button:focus-visible {
+  outline: 3px solid #1e9a5f;
+  outline-offset: 3px;
+}
+.ncm-stage {
+  position: relative;
+  min-height: 0;
+}
+.ncm-canvas-frame {
+  position: relative;
+  min-height: 480px;
+  height: min(65svh, 740px);
+  overflow: hidden;
+  border: 1px solid rgba(22, 34, 92, 0.12);
+  border-radius: 16px;
+  background: #cfe3ea;
+}
+.ncm-world {
+  position: absolute;
+  inset: 0;
+}
+.ncm-world .playable-neighborhood-canvas {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+}
+.ncm-world .world-label-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.ncm-camera-tools {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  z-index: 25;
+}
+.ncm-camera-hint {
+  position: absolute;
+  left: 12px;
+  bottom: 10px;
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(250, 247, 240, 0.92);
+  color: #364160;
+  font-size: 0.7rem;
+  pointer-events: none;
+}
+.ncm-world-label,
+.state-world-label {
+  display: block;
+  padding: 6px 10px;
+  border: 1px solid #d7d6ce;
+  border-radius: 8px;
+  background: #faf7f0;
+  color: #16225c;
+  font: 600 12px/1.3 system-ui;
+  white-space: nowrap;
+  box-shadow: 0 3px 8px #16225c18;
+}
+.ncm-destinations {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+.ncm-destinations button {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 52px;
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  border: 1px solid #dedbd1;
+  border-radius: 12px;
+  background: #fffdf8;
+  color: #16225c;
+  font: 600 0.8rem/1.4 system-ui;
+  cursor: pointer;
+}
+.ncm-destinations button[aria-pressed="true"] {
+  border-color: #16225c;
+  background: #eaece9;
+}
+.ncm-destinations small {
+  display: block;
+  color: #536077;
+  font-weight: 400;
+  font-size: 0.68rem;
+}
+.ncm-destination-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+}
+.ncm-district-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.ncm-district-links button {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: #364160;
+  padding: 0.4rem;
+  font: 500 0.74rem system-ui;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.ncm-drawer {
+  z-index: 30;
+}
+.map-scene-viewport {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+}
+.map-scene-message {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  text-align: center;
+  padding: 2rem;
+  color: #16225c;
+}
+.state-world-shell {
+  position: relative;
+  min-height: 500px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #cfe3ea;
+}
+.state-world-reset {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 25;
+}
+.state-world-caption {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  font-size: 0.75rem;
+  color: #16225c;
+}
+.state-town-choices {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+.osun-state-overview > .osun-town-panel {
+  grid-column: 2;
+  grid-row: 1;
+}
+.state-world-label {
+  cursor: pointer;
+  min-height: 36px;
+}
+.state-world-label[aria-pressed="true"] {
+  background: #16225c;
+  color: #faf7f0;
+}
+.town-camera-tools {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 25;
+  display: flex;
+  gap: 6px;
+}
+.town-camera-tools button {
+  min-height: 44px;
+  border: 1px solid #dedbd1;
+  border-radius: 10px;
+  padding: 6px 12px;
+  background: #faf7f0;
+  color: #16225c;
+  cursor: pointer;
+  font-size: 0.8rem;
+}
+.map-pin-label {
+  min-height: 36px;
+  padding: 6px 10px;
+  border: 1px solid #dedbd1;
+  border-radius: 8px;
+  background: #faf7f0;
+  color: #16225c;
+  font: 600 12px system-ui;
+  white-space: nowrap;
+  cursor: pointer;
+}
+@media (max-width: 760px) {
+  .ncm-shell {
+    padding: 0.7rem;
+  }
+  .ncm-canvas-frame {
+    min-height: 400px;
+    height: 58svh;
+  }
+  .ncm-destinations {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .ncm-drawer {
+    position: relative;
+    inset: auto;
+    width: auto;
+    max-height: 320px;
+    margin: 0.5rem;
+  }
+  .ncm-canvas-frame:has(.ncm-drawer) {
+    height: auto;
+    padding-top: 360px;
+  }
+  .ncm-canvas-frame:has(.ncm-drawer) .ncm-world {
+    bottom: auto;
+    height: 360px;
+  }
+  .ncm-canvas-frame:has(.ncm-drawer) .ncm-camera-hint {
+    display: none;
+  }
+  .osun-state-overview {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .osun-state-overview > .osun-town-panel {
+    grid-column: 1;
+    grid-row: 3;
+  }
+  .state-world-shell {
+    min-height: 400px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ncm-drawer {
+    animation: none;
+  }
+}
+
+/* Marker size stays readable while the 3D world pans and zooms beneath it. */
+.map-location-marker {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 2px solid #dedbd1;
+  border-radius: 50%;
+  background: #faf7f0;
+  color: #16225c;
+  font: 22px/1 system-ui;
+  box-shadow: 0 2px 6px #16225c26;
+  cursor: pointer;
+}
+.map-location-marker[hidden] {
+  display: none !important;
+}
+.map-location-marker[aria-pressed="true"] {
+  outline: 3px solid #16225c;
+  outline-offset: 3px;
+}
+.map-location-marker:focus-visible {
+  outline: 3px solid #1e9a5f;
+  outline-offset: 4px;
+}
+.map-location-lock {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  font-size: 12px;
+}
+.map-location-name {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 5px 8px;
+  border-radius: 7px;
+  background: #faf7f0;
+  color: #16225c;
+  font: 600 12px/1.3 system-ui;
+  white-space: nowrap;
+  pointer-events: none;
+}

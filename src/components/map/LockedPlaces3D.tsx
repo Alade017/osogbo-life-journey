@@ -64,6 +64,7 @@ export const LockedPlaces3D: FC<LockedPlaces3DProps> = ({
           label={site.name}
           category={site.category}
           isLocked
+          isSelected={activeModal?.id === site.id}
           lockReason={site.reason}
           onClick={() => {
             setActiveModal(site);

@@ -52,6 +52,7 @@ export function useRealOrGameClock(): { hour: number; minute: number; isRealTime
 export function MapLighting({ size = 30 }: { size?: number }) {
   const clock = useRealOrGameClock();
   const invalidate = useThree((state) => state.invalidate);
+  const viewportWidth = useThree((state) => state.size.width);
   const { hour, minute } = clock;
   const { arc, day, isNight } = daylightFor(hour, minute);
 
@@ -71,19 +72,20 @@ export function MapLighting({ size = 30 }: { size?: number }) {
   return (
     <>
       <color attach="background" args={[background]} />
-      <ambientLight color={ambientColor} intensity={isNight ? 0.8 : 0.95 + 0.6 * day} />
+      <ambientLight color={ambientColor} intensity={isNight ? 0.8 : 0.35 + 0.3 * day} />
 
       {/* Sun Light (Daytime) */}
       <directionalLight
         position={sunPosition}
         color={ambientColor}
-        intensity={0.15 + 1.35 * day}
+        intensity={0.15 + 2.15 * day}
         castShadow
-        shadow-mapSize={[1024, 1024]}
-        shadow-camera-left={-size}
-        shadow-camera-right={size}
-        shadow-camera-top={size}
-        shadow-camera-bottom={-size}
+        shadow-mapSize={viewportWidth < 768 ? [1024, 1024] : [2048, 2048]}
+        shadow-normalBias={0.025}
+        shadow-camera-left={-size * 0.65}
+        shadow-camera-right={size * 0.65}
+        shadow-camera-top={size * 0.65}
+        shadow-camera-bottom={-size * 0.65}
       />
 
       {/* Soft Moon Light (Nighttime) */}

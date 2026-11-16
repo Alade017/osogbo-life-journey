@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Building2, Music2, Scale, ShoppingBasket, Smartphone } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -7,6 +8,10 @@ import {
   getPendingTownTravelKey,
   requestTownTravel,
 } from "@/lib/map-api";
+
+const StateWorldOverview = lazy(() =>
+  import("./StateWorldOverview").then((module) => ({ default: module.StateWorldOverview })),
+);
 
 type Town = (typeof worldData.towns)[number];
 
@@ -30,22 +35,21 @@ export function OsunStateOverview({
     worldData.towns.find((town) => town.id === selectedTownId) ?? worldData.towns[0]!;
   return (
     <section className="osun-state-overview" aria-label="Osun State places">
-      <div className="osun-state-board" aria-label="Hand-placed Osun State town overview">
-        <div className="osun-state-route osun-state-route-one" />
-        <div className="osun-state-route osun-state-route-two" />
+      <Suspense fallback={<p role="status">Loading Osun in 3D…</p>}>
+        <StateWorldOverview selectedTownId={selectedTownId} onSelectTown={onSelectTown} />
+      </Suspense>
+      <nav className="state-town-choices" aria-label="Choose an Osun town">
         {worldData.towns.map((town) => (
           <button
             key={town.id}
             type="button"
-            className="osun-town-marker"
-            style={{ left: `${town.x}%`, top: `${town.y}%` }}
             aria-pressed={selected.id === town.id}
             onClick={() => onSelectTown(town.id)}
           >
-            <span>{town.name}</span>
+            {town.name}
           </button>
         ))}
-      </div>
+      </nav>
       <TownPublicPlaces town={selected} onOpenOsogbo={onOpenOsogbo} />
     </section>
   );
