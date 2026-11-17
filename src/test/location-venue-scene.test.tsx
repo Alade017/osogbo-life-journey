@@ -43,13 +43,21 @@ describe("location venue scene", () => {
 it("keeps transit planning and fixture controls available when WebGL fails", () => {
   vi.useFakeTimers();
   render(<LocationVenueScene slug="transit-park" locationName="Transit Park" />);
-  act(() => { vi.advanceTimersByTime(5000); });
+  act(() => {
+    vi.advanceTimersByTime(5000);
+  });
   fireEvent.click(screen.getByRole("button", { name: "Ticket counter" }));
-  expect(screen.getByRole("button", { name: "Ticket counter" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("button", { name: "Ticket counter" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
   expect(screen.getByRole("link", { name: "Choose destination" })).toHaveAttribute("href", "/map");
   fireEvent.click(screen.getByText("Preferred transport"));
   fireEvent.click(screen.getByRole("button", { name: "Danfo" }));
-  expect(screen.getByRole("link", { name: "Choose destination" })).toHaveAttribute("href", "/map?transport=danfo");
+  expect(screen.getByRole("link", { name: "Choose destination" })).toHaveAttribute(
+    "href",
+    "/map?transport=danfo",
+  );
   vi.useRealTimers();
 });
 
@@ -60,19 +68,30 @@ it.each([
   vi.useFakeTimers();
   const openBank = vi.fn();
   render(<LocationVenueScene slug={slug} locationName={name} onBankServices={openBank} />);
-  act(() => { vi.advanceTimersByTime(5000); });
+  act(() => {
+    vi.advanceTimersByTime(5000);
+  });
   fireEvent.click(screen.getByRole("button", { name: feature }));
   expect(screen.getByRole("button", { name: feature })).toHaveAttribute("aria-pressed", "true");
   fireEvent.click(screen.getByRole("button", { name: "Access bank services" }));
   expect(openBank).toHaveBeenCalledTimes(1);
+});
+
 it("keeps market fixture selection and server-offer handoff available without WebGL", () => {
   vi.useFakeTimers();
   const browse = vi.fn();
   render(<LocationVenueScene slug="oja-oba" locationName="Oja-Oba" onBrowseMarket={browse} />);
-  act(() => { vi.advanceTimersByTime(5000); });
+  act(() => {
+    vi.advanceTimersByTime(5000);
+  });
   fireEvent.click(screen.getByRole("button", { name: "Household goods display" }));
-  expect(screen.getByRole("button", { name: "Household goods display" })).toHaveAttribute("aria-pressed", "true");
-  expect(screen.getByText("A shared display table for practical household items.")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Household goods display" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  expect(
+    screen.getByText("A shared display table for practical household items."),
+  ).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Browse market offers" }));
   expect(browse).toHaveBeenCalledTimes(1);
   vi.useRealTimers();
