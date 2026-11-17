@@ -35,6 +35,20 @@ export function studioBlueprint(width: number, depth: number) {
     entranceX: -width * 0.25,
     bathroomDoor: { x: bathroom.minX, z: depth * 0.25, width: doorwayWidth },
     windows: [-depth * 0.25, depth * 0.25],
+    windowWidth: depth * 0.22,
+  };
+}
+
+/** Shared bedroom shell: the room's kitchen and washing facilities are not private rooms. */
+export function sharedRoomBlueprint(width: number, depth: number) {
+  return {
+    whole: { minX: -width / 2, maxX: width / 2, minZ: -depth / 2, maxZ: depth / 2 },
+    bathroom: null,
+    bathroomDoor: null,
+    sleep: null,
+    entranceX: width * 0.22,
+    windows: [0],
+    windowWidth: depth * 0.42,
   };
 }
 
