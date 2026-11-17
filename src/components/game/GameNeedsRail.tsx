@@ -118,7 +118,7 @@ export function GameNeedsRail({
   return (
     <aside
       ref={rail}
-      className={`game-needs-rail${expanded ? " is-expanded" : " is-collapsed"}${compact ? " is-map-compact" : ""}`}
+      className={`game-needs-rail${expanded ? " is-expanded" : " is-collapsed"}${criticalCount > 0 ? " has-critical" : ""}${compact ? " is-map-compact" : ""}`}
       aria-label={`${player.name}'s needs dashboard${criticalCount ? `, ${criticalCount} critical` : ""}`}
     >
       <button
