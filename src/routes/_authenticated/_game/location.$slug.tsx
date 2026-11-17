@@ -13,6 +13,7 @@ import { LOCATION_TONE_BG } from "@/lib/location-theme";
 import { cn } from "@/lib/utils";
 import { TravelPanel } from "@/components/game/TravelPanel";
 import { clearPendingDepartureFromHome, requestDepartureFromHome } from "@/lib/home-departure";
+import { hasConfirmedHomeDeparture } from "@/lib/home-departure-query";
 import { initialTravelState, travelReducer } from "@/lib/travel-state";
 import { getDrivingRoute, hasValidCoordinates } from "@/lib/route-service";
 import { checkJobEligibility } from "@/lib/job-board-service";
@@ -49,6 +50,7 @@ function LocationPage() {
   const { slug } = Route.useParams();
   const [travelState, dispatchTravel] = useReducer(travelReducer, initialTravelState);
   const travelStartTimer = useRef<number | null>(null);
+  const travelPreflight = useRef<object | null>(null);
   const queryClient = useQueryClient();
   const { data: locations, isLoading } = useQuery(q.locations());
   const { data: visits } = useQuery(q.visits());
@@ -174,11 +176,13 @@ function LocationPage() {
   useEffect(() => {
     if (travelStartTimer.current !== null) window.clearTimeout(travelStartTimer.current);
     travelStartTimer.current = null;
+    travelPreflight.current = null;
     dispatchTravel({ type: "reset" });
   }, [slug]);
 
   useEffect(
     () => () => {
+      travelPreflight.current = null;
       if (travelStartTimer.current !== null) window.clearTimeout(travelStartTimer.current);
     },
     [],
@@ -210,6 +214,7 @@ function LocationPage() {
   ]);
 
   function selectDestination() {
+    travelPreflight.current = null;
     if (!loc) return;
     const mode = availableModes.includes("danfo") ? "danfo" : availableModes[0];
     if (!mode) return;
@@ -225,8 +230,9 @@ function LocationPage() {
     });
   }
 
-  function startTravel() {
+  async function startTravel() {
     if (
+      travelPreflight.current !== null ||
       travelStartTimer.current !== null ||
       !loc ||
       travelState.status !== "selecting_destination" ||
@@ -245,8 +251,20 @@ function LocationPage() {
       toast.error(validationError);
       return;
     }
-    if (character?.inside_home_property_id) {
-      // Leaving a house plays the door first; the house screen runs the trip alongside it.
+    const check = {};
+    travelPreflight.current = check;
+    let departing = false;
+    try {
+      departing = !!character && (await hasConfirmedHomeDeparture(queryClient, character));
+    } catch {
+      if (travelPreflight.current === check)
+        toast.error("Your home status could not be checked. Try again; travel has not started.");
+      if (travelPreflight.current === check) travelPreflight.current = null;
+      return;
+    }
+    if (travelPreflight.current !== check) return;
+    travelPreflight.current = null;
+    if (departing) {
       const departure = requestDepartureFromHome({ locationId: loc.id, mode: travelState.mode });
       void navigate({ to: "/house" }).catch(() => clearPendingDepartureFromHome(departure));
       return;
@@ -262,6 +280,7 @@ function LocationPage() {
   }
 
   function changeTravelMode(mode: (typeof availableModes)[number]) {
+    travelPreflight.current = null;
     if (!loc) return;
     const estimate = estimateTrip(mode, loc.travel_fare, loc.travel_minutes);
     dispatchTravel({
@@ -273,6 +292,7 @@ function LocationPage() {
   }
 
   function cancelDestination() {
+    travelPreflight.current = null;
     void queryClient.cancelQueries({ queryKey: routeQueryKey, exact: true });
     dispatchTravel({ type: "cancel" });
   }
@@ -376,7 +396,10 @@ function LocationPage() {
             onModeChange={changeTravelMode}
             onStart={startTravel}
             onCancel={cancelDestination}
-            onReset={() => dispatchTravel({ type: "reset" })}
+            onReset={() => {
+              travelPreflight.current = null;
+              dispatchTravel({ type: "reset" });
+            }}
           />
         )}
         <p className="mt-3 text-xs text-muted-foreground">
