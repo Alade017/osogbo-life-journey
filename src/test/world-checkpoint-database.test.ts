@@ -160,6 +160,10 @@ describe("neighbourhood checkpoint database", () => {
     const after = await db.query<{ energy: number; game_time_minute: number }>(
       "select energy, game_time_minute from public.characters where id=$1",
       [characterId],
+    );
+    expect(after.rows[0]).toEqual(before.rows[0]);
+  });
+
   it("does not let visitors call the old checkpoint function", async () => {
     const outcome = await asRole("anon", "select public.save_my_world_checkpoint(3, 3) as result");
     expect(outcome).toMatchObject({
