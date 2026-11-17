@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Box3, Mesh, SkinnedMesh } from "three";
+import { Box3, Mesh, MeshStandardMaterial, SkinnedMesh } from "three";
 import { createHumanoid, JOINTS } from "@/components/3d/humanoid-rig";
 import { BONE, poseFor } from "@/components/3d/humanoid-pose";
 
@@ -50,8 +50,11 @@ describe("code-built humanoid", () => {
     expect(muscular.bones).toHaveLength(JOINTS.length);
     lean.meshes[0]!.geometry.computeBoundingBox();
     muscular.meshes[0]!.geometry.computeBoundingBox();
-    const leanWidth = lean.meshes[0]!.geometry.boundingBox!.max.x - lean.meshes[0]!.geometry.boundingBox!.min.x;
-    const muscularWidth = muscular.meshes[0]!.geometry.boundingBox!.max.x - muscular.meshes[0]!.geometry.boundingBox!.min.x;
+    const leanWidth =
+      lean.meshes[0]!.geometry.boundingBox!.max.x - lean.meshes[0]!.geometry.boundingBox!.min.x;
+    const muscularWidth =
+      muscular.meshes[0]!.geometry.boundingBox!.max.x -
+      muscular.meshes[0]!.geometry.boundingBox!.min.x;
     expect(muscularWidth).toBeGreaterThan(leanWidth);
   });
 
@@ -85,4 +88,45 @@ describe("code-built humanoid", () => {
       expect(mesh).toBeInstanceOf(Mesh);
     }
   });
+});
+
+describe("reference-inspired character surface", () => {
+  it("uses adult head proportions and faceted skin", () => {
+    const rig = createHumanoid({ variant: "male", skinColor: "#754c32", hairColor: "#171512" });
+    const skin = rig.meshes[0]!;
+    const positions = skin.geometry.getAttribute("position");
+    const indices = skin.geometry.getAttribute("skinIndex");
+    const weights = skin.geometry.getAttribute("skinWeight");
+    const head = rig.bones.findIndex((bone) => bone.name === BONE.head);
+    let min = Infinity,
+      max = -Infinity;
+    for (let i = 0; i < positions.count; i++) {
+      if (indices.getX(i) === head && weights.getX(i) === 1) {
+        min = Math.min(min, positions.getY(i));
+        max = Math.max(max, positions.getY(i));
+      }
+    }
+    expect(max - min).toBeGreaterThan(0.12);
+    expect(max - min).toBeLessThan(0.19);
+    expect((skin.material as MeshStandardMaterial).flatShading).toBe(true);
+  });
+  it.each(["male", "female", "business"] as const)(
+    "keeps valid blended skin weights on the %s body",
+    (variant) => {
+      const rig = createHumanoid({ variant, skinColor: "#754c32", hairColor: null });
+      const geometry = rig.meshes[0]!.geometry;
+      const weights = geometry.getAttribute("skinWeight");
+      const indices = geometry.getAttribute("skinIndex");
+      let blended = 0;
+      for (let i = 0; i < weights.count; i++) {
+        const values = [weights.getX(i), weights.getY(i), weights.getZ(i), weights.getW(i)];
+        expect(values.reduce((a, b) => a + b)).toBeCloseTo(1);
+        expect(values.every((w) => Number.isFinite(w) && w >= 0 && w <= 1)).toBe(true);
+        if (values[1]! > 0 && values[1]! < 1) blended++;
+        expect(indices.getX(i)).toBeLessThan(rig.bones.length);
+        expect(indices.getY(i)).toBeLessThan(rig.bones.length);
+      }
+      expect(blended).toBeGreaterThan(0);
+    },
+  );
 });

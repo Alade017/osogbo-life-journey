@@ -105,19 +105,19 @@ describe("humanoid rig", () => {
   it("keeps the body within a low triangle budget", () => {
     const rig = createHumanoid({ variant: "male", skinColor: "#8a5a3b", hairColor: null });
     const body = rig.meshes[0] as SkinnedMesh;
-    // The body is unindexed (skin and feature materials are merged as groups), so count corners.
+    // The faceted skin is unindexed; face and eye materials are separate skinned meshes.
     const triangles =
       (body.geometry.index?.count ?? body.geometry.attributes["position"]!.count) / 3;
-    expect(triangles).toBeLessThan(2000);
+    expect(triangles).toBeLessThan(3500);
   });
 
   it("skips the hair mesh for bald characters", () => {
     expect(
       createHumanoid({ variant: "male", skinColor: "#000", hairColor: null }).meshes,
-    ).toHaveLength(1);
+    ).toHaveLength(6);
     expect(
       createHumanoid({ variant: "male", skinColor: "#000", hairColor: "#111" }).meshes,
-    ).toHaveLength(2);
+    ).toHaveLength(7);
   });
 
   it("keeps the shadow tuning available to the ground shadow", () => {
