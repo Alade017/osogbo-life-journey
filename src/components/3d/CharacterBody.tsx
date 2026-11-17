@@ -55,6 +55,7 @@ export function motionFor(animation: string, walking: boolean, taskPose?: string
 const scratchEuler = new Euler();
 const scratchQuat = new Quaternion();
 const identity = new Quaternion();
+const LOOPING_MOTIONS = new Set<PoseMotion>(["Idle", "Walk", "Talk", "Wash", "Cook", "Collect"]);
 
 /**
  * A low-poly body built in code: one skinned mesh on a 18-bone biped. Each character owns its
@@ -64,6 +65,7 @@ export function CharacterBody({
   variant,
   height,
   motion,
+  animated = true,
   held = null,
   appearance = {},
   gender = "nonbinary",
@@ -71,6 +73,7 @@ export function CharacterBody({
   variant: BodyVariant;
   height: number;
   motion: PoseMotion;
+  animated?: boolean;
   held?: ReactNode;
   appearance?: Appearance;
   gender?: string;
@@ -85,13 +88,14 @@ export function CharacterBody({
   const hairColor = hairShape ? (HAIR_COLORS[safe.hairColor] ?? HAIR_COLORS[0]!) : null;
 
   const rig = useMemo(
-    () => createHumanoid({
-      variant,
-      skinColor,
-      hairColor,
-      hairShape: hairShape ?? "cap",
-      build: safe.build,
-    }),
+    () =>
+      createHumanoid({
+        variant,
+        skinColor,
+        hairColor,
+        hairShape: hairShape ?? "cap",
+        build: safe.build,
+      }),
     [variant, skinColor, hairColor, hairShape, safe.build],
   );
   const hand = rig.byName.get(BONE.rHand) ?? null;
@@ -108,7 +112,7 @@ export function CharacterBody({
   }, [rig]);
 
   useFrame((state, delta) => {
-    const pose = poseFor(motion, state.clock.elapsedTime, POSE_STYLE[variant]);
+    const pose = poseFor(motion, animated ? state.clock.elapsedTime : 0, POSE_STYLE[variant]);
     const blend = 1 - Math.exp(-CHARACTER_MOTION.fadeRate * delta);
     let moving = false;
     for (const bone of rig.bones) {
@@ -125,7 +129,7 @@ export function CharacterBody({
       moving = true;
       rig.root.position.y += (restY - rig.root.position.y) * blend;
     }
-    if (moving) invalidate();
+    if (moving || (animated && LOOPING_MOTIONS.has(motion))) invalidate();
   });
 
   return (

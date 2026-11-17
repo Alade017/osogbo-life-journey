@@ -1,4 +1,4 @@
-import { useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { LoadingSpinner } from "./LoadingSpinner";
 import "./world-loading.css";
@@ -8,11 +8,13 @@ export function WorldLoadingIndicator({
   detail,
   progress,
   presentation = "inline",
+  action,
 }: {
   title: string;
   detail?: string;
   progress?: number;
   presentation?: "inline" | "screen";
+  action?: ReactNode;
 }) {
   // Layout effect: the full-page screen mounts before the browser paints, so the
   // page underneath never shows for a frame.
@@ -45,6 +47,7 @@ export function WorldLoadingIndicator({
         </div>
       )}
       {detail && <span className="world-loading-detail">{detail}</span>}
+      {action}
     </div>
   );
   if (!isScreen) return indicator;
