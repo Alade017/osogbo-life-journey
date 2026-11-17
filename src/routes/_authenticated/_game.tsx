@@ -65,6 +65,7 @@ function GameLayout() {
   const { data: equipment } = useQuery({ ...q.equipment(), enabled: !!character });
   const [housingOpen, setHousingOpen] = useState(false);
   const [phoneOpen, setPhoneOpen] = useState(false);
+  const [hudIdle, setHudIdle] = useState(false);
   const [housingRequested, setHousingRequested] = useState(false);
   const [housingSource, setHousingSource] = useState<"home" | "profile">("home");
   const housingHandledThisSession = useRef(false);
@@ -73,6 +74,28 @@ function GameLayout() {
   )?.onboarding_step;
   const housingPending = onboardingStep === "housing";
   const unread = notes?.filter((n) => !n.read_at).length ?? 0;
+
+  useEffect(() => {
+    let timeout = window.setTimeout(() => setHudIdle(true), 4000);
+    const wakeHud = () => {
+      setHudIdle(false);
+      window.clearTimeout(timeout);
+      timeout = window.setTimeout(() => setHudIdle(true), 4000);
+    };
+    window.addEventListener("pointerdown", wakeHud, { passive: true });
+    window.addEventListener("pointermove", wakeHud, { passive: true });
+    window.addEventListener("keydown", wakeHud);
+    window.addEventListener("touchstart", wakeHud, { passive: true });
+    window.addEventListener("focusin", wakeHud);
+    return () => {
+      window.clearTimeout(timeout);
+      window.removeEventListener("pointerdown", wakeHud);
+      window.removeEventListener("pointermove", wakeHud);
+      window.removeEventListener("keydown", wakeHud);
+      window.removeEventListener("touchstart", wakeHud);
+      window.removeEventListener("focusin", wakeHud);
+    };
+  }, []);
   useEffect(() => {
     configureGameMusic(character?.id ?? null);
     return () => {
@@ -223,6 +246,7 @@ function GameLayout() {
             pathname === "/house" && "home-scene",
             profile?.reduced_motion && "reduce-motion",
             phoneOpen && "phone-open",
+            hudIdle && "hud-idle",
           )}
         >
           <WorldEnvironment />
