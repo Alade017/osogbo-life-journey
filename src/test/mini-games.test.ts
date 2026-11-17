@@ -192,7 +192,7 @@ describe("whot", () => {
     expect(drawn.pendingDraw).toBe(0);
   });
 
-  it("lets the next player defend a Pick Two with another Pick Two and stack the penalty", () => {
+  it("lets the next player defend a Pick Two with another Pick Two without stacking", () => {
     const base = newWhot(2, seeded(5));
     const defender = { id: "two-b", shape: "star" as const, rank: 2 };
     const state: WhotState = {
@@ -208,7 +208,7 @@ describe("whot", () => {
       pendingRank: 2,
     };
     const after = playWhot(state, "two-b", undefined, seeded(3));
-    expect(after.pendingDraw).toBe(4);
+    expect(after.pendingDraw).toBe(2);
     expect(after.turn).toBe(0);
   });
 

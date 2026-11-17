@@ -126,6 +126,7 @@ export function WhotTableView({
             discard: [live.top],
           },
           card,
+          live.my_hand.length,
         ),
       )
     : [];

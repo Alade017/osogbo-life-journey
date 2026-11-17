@@ -31,14 +31,14 @@ function game(overrides: Partial<WhotState>): WhotState {
 }
 
 describe("whot penalties", () => {
-  it("a 2 defends a Pick Two and the penalty stacks to four without drawing", () => {
+  it("a 2 defends a Pick Two and the penalty does not stack", () => {
     const state = game({
       hands: [[card("c2", "circle", 2), card("x", "cross", 9)], [card("o", "cross", 11)]],
       pendingDraw: 2,
       pendingRank: 2,
     });
     const after = playWhot(state, "c2");
-    expect(after.pendingDraw).toBe(4);
+    expect(after.pendingDraw).toBe(2);
     expect(after.pendingRank).toBe(2);
     expect(after.hands[1]).toHaveLength(1);
     expect(after.turn).toBe(1);
@@ -68,7 +68,7 @@ describe("whot penalties", () => {
     expect(playableCards(state).map((item) => item.id)).toEqual(["c2"]);
     expect(playWhot(state, "w", "star")).toBe(state);
     const defended = playWhot(state, "c2");
-    expect(defended.pendingDraw).toBe(4);
+    expect(defended.pendingDraw).toBe(2);
     expect(defended.pendingRank).toBe(2);
   });
 
@@ -77,5 +77,19 @@ describe("whot penalties", () => {
     const after = playWhot(state, "w", "star");
     expect(after.shape).toBe("star");
     expect(after.pendingDraw).toBe(0);
+  });
+
+  it("a player cannot finish the game on a 1 (Hold On) and must play on", () => {
+    const lastOne = game({ hands: [[card("c1", "circle", 1)], [card("o", "cross", 11)]] });
+    expect(playableCards(lastOne)).toEqual([]);
+    expect(playWhot(lastOne, "c1")).toBe(lastOne);
+    const withMore = game({
+      hands: [[card("c1", "circle", 1), card("c3", "circle", 3)], [card("o", "cross", 11)]],
+    });
+    const after = playWhot(withMore, "c1");
+    expect(after.winner).toBeNull();
+    expect(after.turn).toBe(0);
+    const finished = playWhot(after, "c3");
+    expect(finished.winner).toBe(0);
   });
 });
