@@ -96,3 +96,19 @@ it("keeps market fixture selection and server-offer handoff available without We
   expect(browse).toHaveBeenCalledTimes(1);
   vi.useRealTimers();
 });
+
+it.each([
+  ["community-police", "Community police station", "Report desk", "Case submission"],
+  ["civic-court", "Civic court", "Consultation desk", "does not start a service"],
+])("keeps %s inspection usable when WebGL is unavailable", (slug, name, feature, detail) => {
+  vi.useFakeTimers();
+  render(<LocationVenueScene slug={slug} locationName={name} />);
+  act(() => {
+    vi.advanceTimersByTime(5000);
+  });
+  fireEvent.click(screen.getByRole("button", { name: feature }));
+  expect(screen.getByRole("button", { name: feature })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByText(new RegExp(detail))).toBeInTheDocument();
+  expect(screen.queryByTestId("venue-canvas")).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /submit|pay/i })).not.toBeInTheDocument();
+});
