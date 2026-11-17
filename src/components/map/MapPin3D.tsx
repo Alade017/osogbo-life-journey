@@ -12,6 +12,7 @@ export interface MapPin3DProps {
   lockReason?: string;
   isSelected?: boolean;
   isHovered?: boolean;
+  showName?: boolean;
   onClick?: () => void;
   onPointerOver?: () => void;
   onPointerOut?: () => void;
@@ -26,6 +27,7 @@ export const MapPin3D: FC<MapPin3DProps> = ({
   lockReason,
   isSelected = false,
   isHovered = false,
+  showName = false,
   onClick,
   onPointerOver,
   onPointerOut,
@@ -38,7 +40,7 @@ export const MapPin3D: FC<MapPin3DProps> = ({
 
   const pinColor = isLocked ? "#82705d" : badgeInfo.tone;
   const [hovered, setHovered] = useState(false);
-  const showLabel = isSelected || isHovered || hovered;
+  const showLabel = showName || isSelected || isHovered || hovered;
   return (
     <group
       position={[position[0], position[1] + 1.1, position[2]]}

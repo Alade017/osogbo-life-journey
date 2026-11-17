@@ -350,7 +350,7 @@
 .town-route-status {
   position: absolute;
   left: 16px;
-  top: 76px;
+  top: 64px;
   max-width: min(320px, calc(100% - 32px));
   z-index: 21;
   margin: 0;

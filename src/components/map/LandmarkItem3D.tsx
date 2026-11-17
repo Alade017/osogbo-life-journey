@@ -13,6 +13,7 @@ export interface LandmarkItem3DProps {
   position: [number, number, number];
   isSelected?: boolean;
   isHovered?: boolean;
+  showName?: boolean;
   onSelectLandmark: (id: string, worldPosition: [number, number, number]) => void;
   onPointerOver?: (id: string, label: string) => void;
   onPointerOut?: (id: string) => void;
@@ -28,6 +29,7 @@ export const LandmarkItem3D: FC<LandmarkItem3DProps> = ({
   position,
   isSelected = false,
   isHovered = false,
+  showName = false,
   onSelectLandmark,
   onPointerOver,
   onPointerOut,
@@ -39,6 +41,7 @@ export const LandmarkItem3D: FC<LandmarkItem3DProps> = ({
       category={place.category}
       isSelected={isSelected}
       isHovered={isHovered}
+      showName={showName}
       onClick={() => onSelectLandmark(place.id, position)}
       onPointerOver={() => onPointerOver?.(place.id, place.label)}
       onPointerOut={() => onPointerOut?.(place.id)}

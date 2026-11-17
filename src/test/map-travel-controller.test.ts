@@ -14,10 +14,14 @@ const network = vi.hoisted(() => ({
   refresh: vi.fn(),
   navigate: vi.fn(),
   home: vi.fn(),
+  locations: vi.fn(),
 }));
 vi.mock("@/lib/game", () => ({
   rpc: { travelToLocation: network.travel },
-  q: { character: () => ({ queryKey: ["character"], queryFn: network.refresh }) },
+  q: {
+    character: () => ({ queryKey: ["character"], queryFn: network.refresh }),
+    locations: () => ({ queryKey: ["locations"], queryFn: network.locations }),
+  },
 }));
 vi.mock("@/lib/living-cost-service", () => ({
   canonicalHomeOptions: (id: string) => ({
@@ -28,6 +32,9 @@ vi.mock("@/lib/living-cost-service", () => ({
 const clients: QueryClient[] = [];
 beforeEach(() => {
   arrival.mockClear();
+  network.locations
+    .mockReset()
+    .mockResolvedValue([{ id: "destination", slug: "general-hospital" }]);
   network.home.mockReset().mockResolvedValue({
     playerPropertyId: "home",
     propertyId: "property",
@@ -79,7 +86,10 @@ describe("map travel transaction controller", () => {
       finish({});
       await Promise.all([first, second]);
     });
-    expect(network.navigate).toHaveBeenCalledWith({ to: "/neighborhood" });
+    expect(network.navigate).toHaveBeenCalledWith({
+      to: "/location/$slug",
+      params: { slug: "general-hospital" },
+    });
     expect(result.current.state.phase).toBe("arrived");
     expect(arrival).toHaveBeenCalledOnce();
   });
@@ -152,7 +162,10 @@ it("travels to the selected destination when a stale home flag has no current ho
     locationId: "destination",
     mode: "danfo",
   });
-  expect(network.navigate).toHaveBeenCalledExactlyOnceWith({ to: "/neighborhood" });
+  expect(network.navigate).toHaveBeenCalledExactlyOnceWith({
+    to: "/location/$slug",
+    params: { slug: "general-hospital" },
+  });
   expect(peekPendingDepartureFromHome()).toBeNull();
   expect(result.current.state.phase).toBe("arrived");
 });
@@ -167,7 +180,10 @@ it("does not divert a trip to a different saved home", async () => {
   await act(async () => {
     await result.current.confirm("destination", "walking");
   });
-  expect(network.navigate).toHaveBeenCalledExactlyOnceWith({ to: "/neighborhood" });
+  expect(network.navigate).toHaveBeenCalledExactlyOnceWith({
+    to: "/location/$slug",
+    params: { slug: "general-hospital" },
+  });
   expect(network.travel).toHaveBeenCalledOnce();
 });
 it.each(["offline", "malformed"])(
@@ -200,7 +216,10 @@ it("refreshes cached home data before handing off a departure", async () => {
     await result.current.confirm("destination", "walking");
   });
   expect(network.home).toHaveBeenCalledOnce();
-  expect(network.navigate).toHaveBeenCalledExactlyOnceWith({ to: "/neighborhood" });
+  expect(network.navigate).toHaveBeenCalledExactlyOnceWith({
+    to: "/location/$slug",
+    params: { slug: "general-hospital" },
+  });
 });
 it("ignores a home check that completes after the map unmounts", async () => {
   let finish!: (value: unknown) => void;
@@ -222,4 +241,31 @@ it("ignores a home check that completes after the map unmounts", async () => {
   });
   expect(network.travel).not.toHaveBeenCalled();
   expect(network.navigate).not.toHaveBeenCalled();
+});
+
+it("retries a missing destination route without charging for travel again", async () => {
+  network.locations.mockResolvedValueOnce([]);
+  const { result } = setup();
+  await act(async () => {
+    await result.current.confirm("destination", "walking");
+  });
+  expect(network.navigate).not.toHaveBeenCalled();
+  expect(result.current.state.phase).toBe("sync-error");
+  await act(async () => {
+    await result.current.retryArrival();
+  });
+  expect(network.travel).toHaveBeenCalledOnce();
+  expect(network.navigate).toHaveBeenCalledWith({
+    to: "/location/$slug",
+    params: { slug: "general-hospital" },
+  });
+});
+it("does not open the selected scene before the server confirms arrival", async () => {
+  network.refresh.mockResolvedValueOnce({ current_location_id: "origin" });
+  const { result } = setup();
+  await act(async () => {
+    await result.current.confirm("destination", "walking");
+  });
+  expect(network.navigate).not.toHaveBeenCalled();
+  expect(result.current.state.phase).toBe("sync-error");
 });

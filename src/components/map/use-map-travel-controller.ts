@@ -22,7 +22,9 @@ export function useMapTravelController<T extends { id: string }>({
 }: {
   character: Player | null | undefined;
   queryClient: QueryClient;
-  navigate: (options: { to: "/house" | "/neighborhood" }) => Promise<unknown>;
+  navigate: (
+    options: { to: "/house" } | { to: "/location/$slug"; params: { slug: string } },
+  ) => Promise<unknown>;
 }) {
   const [state, dispatch] = useReducer(reduceMapTravelState<T>, initialMapTravelState<T>());
   const mounted = useRef(false);
@@ -73,7 +75,11 @@ export function useMapTravelController<T extends { id: string }>({
         });
         return;
       }
-      await navigate({ to: "/neighborhood" });
+      const locations = await queryClient.fetchQuery(q.locations());
+      if (!current()) return;
+      const destination = locations?.find((location) => location.id === destinationId);
+      if (!destination?.slug) throw new Error("Saved destination is unavailable.");
+      await navigate({ to: "/location/$slug", params: { slug: destination.slug } });
       toast.success("Arrived at your destination", { id: `map-arrival-${destinationId}` });
       if (current()) dispatch({ type: "arrived" });
     } catch {
