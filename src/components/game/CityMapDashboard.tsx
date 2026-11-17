@@ -99,10 +99,9 @@ function getQuickTravelLandmark(id: string) {
   };
 }
 
-export function CityMapDashboard({
-  mood,
-  nextRentDueAt,
-}: { money?: number; mood?: string; nextRentDueAt?: string } = {}) {
+export function CityMapDashboard(
+  _props: { money?: number; mood?: string; nextRentDueAt?: string } = {},
+) {
   const [selectedDistrict, setSelectedDistrict] = useState<MapDistrict | null>(null);
   const [searchTarget, setSearchTarget] = useState<MapSearchTarget | null>(null);
   const [offline, setOffline] = useState(typeof navigator !== "undefined" && !navigator.onLine);
