@@ -1,3 +1,4 @@
+import { RESIDENTIAL_COMPOUND, compoundFeatures } from "@/game/residential-compound";
 import type { BankInteriorVariant } from "@/game/bank-interiors";
 import { WORLD_PALETTE } from "@/components/3d/world-theme";
 export type VenueFixtureKind =
@@ -22,7 +23,7 @@ export type LocationVenueDesign = {
   bankInterior?: BankInteriorVariant;
   transportPark?: boolean;
   sceneBounds?: { width: number; depth: number };
-  scene?: "campus" | "market" | "clinic" | "healthcare";
+  scene?: "campus" | "market" | "clinic" | "healthcare" | "residential";
   sceneSize?: { width: number; depth: number };
   name: string;
   description: string;
@@ -51,6 +52,19 @@ function fixture(
 }
 
 const venues: Readonly<Record<string, LocationVenueDesign>> = {
+  residential: {
+    scene: "residential",
+    sceneSize: { width: RESIDENTIAL_COMPOUND.cameraWidth, depth: RESIDENTIAL_COMPOUND.cameraDepth },
+    name: "Residential compound",
+    description: "An open courtyard, water point, drying area and private house fronts.",
+    floorColor: WORLD_PALETTE.ground,
+    wallColor: WORLD_PALETTE.wall,
+    accentColor: WORLD_PALETTE.foliage,
+    fixtures: compoundFeatures().map((item) =>
+      fixture(item.id, item.label, item.detail, "display", item.x, item.z),
+    ),
+  },
+
   "student-district": {
     scene: "campus",
     name: "School campus",
@@ -206,12 +220,20 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
   "cedar-bank": {
     bankInterior: "teller-hall",
     name: "Cedar Bank lobby",
-    description: "A timber-finished teller hall with screened service windows, a guided queue and shared seating.",
+    description:
+      "A timber-finished teller hall with screened service windows, a guided queue and shared seating.",
     floorColor: "#d5d1c5",
     wallColor: "#e6e1d4",
     accentColor: "#4b806f",
     fixtures: [
-      fixture("cedar-teller", "Teller counter", "Screened teller windows beside the queue. Open bank services for account actions.", "counter", 0, -1.6),
+      fixture(
+        "cedar-teller",
+        "Teller counter",
+        "Screened teller windows beside the queue. Open bank services for account actions.",
+        "counter",
+        0,
+        -1.6,
+      ),
       fixture("cedar-queue", "Queue seats", "Seats beside the service queue.", "seat", -2.8, 0.9),
       fixture(
         "cedar-info",
@@ -226,7 +248,8 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
   "meridian-bank": {
     bankInterior: "digital-lounge",
     name: "Meridian Bank lobby",
-    description: "An open self-service branch with twin kiosks, window seating and a screened customer-service desk.",
+    description:
+      "An open self-service branch with twin kiosks, window seating and a screened customer-service desk.",
     floorColor: "#c8d2d0",
     wallColor: "#e3e9e5",
     accentColor: "#527c9b",
@@ -810,11 +833,11 @@ const fallbackVenue: LocationVenueDesign = {
 };
 
 export function getLocationVenueDesign(slug: string, locationName: string): LocationVenueDesign {
-  const design = venues[slug] ?? (
-    ["state-hospital", "general-hospital"].includes(slug)
+  const design =
+    venues[slug] ??
+    (["state-hospital", "general-hospital"].includes(slug)
       ? { ...venues["sunrise-health-post"], name: locationName }
-      : fallbackVenue
-  );
+      : fallbackVenue);
   return design === fallbackVenue ? { ...fallbackVenue, name: locationName } : design;
 }
 
