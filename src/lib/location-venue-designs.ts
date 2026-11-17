@@ -17,6 +17,8 @@ export type VenueEnvironment = {
 };
 
 export type LocationVenueDesign = {
+  transportPark?: boolean;
+  sceneBounds?: { width: number; depth: number };
   name: string;
   description: string;
   floorColor: string;
@@ -243,6 +245,8 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     ],
   },
   "transit-park": {
+    transportPark: true,
+    sceneBounds: { width: 12, depth: 9 },
     name: "Transit concourse",
     description: "A practical transit waiting area beside route information and ticketing.",
     floorColor: "#c9c7bc",

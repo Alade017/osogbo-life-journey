@@ -39,3 +39,16 @@ describe("location venue scene", () => {
     expect(screen.getByText("A central display table.")).toBeInTheDocument();
   });
 });
+
+it("keeps transit planning and fixture controls available when WebGL fails", () => {
+  vi.useFakeTimers();
+  render(<LocationVenueScene slug="transit-park" locationName="Transit Park" />);
+  act(() => { vi.advanceTimersByTime(5000); });
+  fireEvent.click(screen.getByRole("button", { name: "Ticket counter" }));
+  expect(screen.getByRole("button", { name: "Ticket counter" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("link", { name: "Choose destination" })).toHaveAttribute("href", "/map");
+  fireEvent.click(screen.getByText("Preferred transport"));
+  fireEvent.click(screen.getByRole("button", { name: "Danfo" }));
+  expect(screen.getByRole("link", { name: "Choose destination" })).toHaveAttribute("href", "/map?transport=danfo");
+  vi.useRealTimers();
+});
