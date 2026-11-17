@@ -141,7 +141,7 @@ export function MapCanvas({
       ),
     [availableLandmarkIds],
   );
-  // Every landmark not yet open to the player is shown as a locked pin, whatever the filter.
+  // Keep locked landmarks visible as non-interactive pins.
   const lockedPlaces = useMemo(
     () =>
       availableLandmarkIds === undefined
