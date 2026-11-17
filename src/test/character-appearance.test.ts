@@ -65,3 +65,19 @@ describe("character appearance customization", () => {
     );
   });
 });
+
+it("adds the reference short crop without moving existing female hairstyle indices", () => {
+  expect(HAIR_STYLES_BY_GENDER["female"]!.slice(0, 6)).toEqual([
+    "Low bun",
+    "Natural afro",
+    "Knotless braids",
+    "Bald",
+    "Bantu knots",
+    "Locs",
+  ]);
+  const index = HAIR_STYLES_BY_GENDER["female"]!.indexOf("Short crop");
+  expect(index).toBeGreaterThan(5);
+  expect(appearanceForGender({ ...DEFAULT_CHARACTER_APPEARANCE, hair: index }, "female").hair).toBe(
+    index,
+  );
+});

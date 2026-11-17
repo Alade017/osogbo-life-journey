@@ -46,6 +46,8 @@ import {
   type WorldInstance,
 } from "@/components/3d/WorldScene";
 import { ROOM_VIEW_CAMERA, ROOM_VIEW_PALETTE, WORLD_SCALE } from "@/components/3d/world-theme";
+import { StudioInterior, StudioRug } from "./StudioInterior";
+import { STUDIO_FINISH } from "./house-blueprints";
 
 type WaitingCourier = { delivery: FoodDelivery; index: number };
 
@@ -249,6 +251,25 @@ function OsogboRoomPrototype({
   const doorwayWidth = 1.12;
   const doorHeight = WORLD_SCALE.door * 1.1;
   const rearDoorCenter = houseRearDoorCenter(houseTypeId, width);
+  if (houseTypeId === "studio-flat")
+    return (
+      <group>
+        <StudioInterior
+          width={width}
+          depth={depth}
+          editMode={editMode}
+          wallsClosed={wallsClosed ?? false}
+          roomView={roomView}
+        />
+        <HouseDoorPanel
+          hingeX={rearDoorCenter - doorwayWidth / 2}
+          z={-depth / 2}
+          width={doorwayWidth}
+          height={2.05}
+          open={doorOpen}
+        />
+      </group>
+    );
   return (
     <group>
       <mesh receiveShadow position={[0, -0.26, 0]}>
@@ -475,6 +496,16 @@ const FURNITURE_COLOURS = {
   rugTeal: "#3d7a78",
 } as const;
 
+const STUDIO_FURNITURE_COLOURS = {
+  ...FURNITURE_COLOURS,
+  sofaFrame: STUDIO_FINISH.sage,
+  sofaCushion: "#8c9975",
+  mediaWood: "#795736",
+  blanket: "#617f76",
+};
+const FurniturePaletteContext =
+  createContext<Record<keyof typeof FURNITURE_COLOURS, string>>(FURNITURE_COLOURS);
+
 export function FurnitureFallback({
   artKey,
   slotType,
@@ -484,6 +515,7 @@ export function FurnitureFallback({
   slotType: string;
   hovered?: boolean;
 }) {
+  const FURNITURE_COLOURS = useContext(FurniturePaletteContext);
   const rawKind = artKey ?? slotType;
   const kind =
     rawKind === "starter-bed"
@@ -1979,14 +2011,21 @@ export function HouseRoom3D({
   onDraftMove,
 }: Props & { inputBlocked?: boolean }) {
   const [width, depth] = ROOM_SIZE[houseTypeId] ?? ROOM_SIZE["shared-room"]!;
-  const roomView = roomViewId
-    ? (houseRoomViews(houseTypeId, width, depth).find((room) => room.id === roomViewId) ?? null)
-    : null;
+  const roomView = useMemo(
+    () =>
+      roomViewId
+        ? (houseRoomViews(houseTypeId, width, depth).find((room) => room.id === roomViewId) ?? null)
+        : null,
+    [houseTypeId, width, depth, roomViewId],
+  );
   // In a room view only that room's furniture is shown and can be used.
   const placements = roomView
     ? allPlacements.filter((item) => {
-        if (!hasRoomPosition(item)) return true;
-        const [x, , z] = roomPercentToPosition(item.x, item.y, width, depth);
+        const slot = renderSlotForPlacement(item, slots);
+        if (!slot) return false;
+        const [x, , z] = hasRoomPosition(item)
+          ? roomPercentToPosition(item.x, item.y, width, depth)
+          : slotPosition(slot, width, depth);
         return roomViewContains(roomView, x, z);
       })
     : allPlacements;
@@ -2121,238 +2160,267 @@ export function HouseRoom3D({
   return (
     <div className="house-3d-scene" aria-label={`${houseTypeId.replaceAll("-", " ")} 3D room`}>
       <RoomOverlayContext.Provider value={overlayHost}>
-        <Canvas
-          frameloop="demand"
-          dpr={[1, 1.5]}
-          shadows
-          camera={{
-            position: [0, 4, 12],
-            fov: 42,
-            near: 0.1,
-            far: 80,
-          }}
-          gl={{ antialias: false, powerPreference: "low-power" }}
+        <FurniturePaletteContext.Provider
+          value={houseTypeId === "studio-flat" ? STUDIO_FURNITURE_COLOURS : FURNITURE_COLOURS}
         >
-          <WorldLighting size={Math.max(width, depth) * 1.5} dimmed={!lightOn} />
+          <Canvas
+            frameloop="demand"
+            dpr={[1, 1.5]}
+            shadows
+            camera={{
+              position: [0, 4, 12],
+              fov: 42,
+              near: 0.1,
+              far: 80,
+            }}
+            gl={{ antialias: false, powerPreference: "low-power" }}
+          >
+            <WorldLighting size={Math.max(width, depth) * 1.5} dimmed={!lightOn} />
 
-          <OsogboRoomPrototype
-            houseTypeId={houseTypeId}
-            roomView={roomView}
-            wallsClosed={wallsClosed}
-            width={width}
-            depth={depth}
-            editMode={editMode}
-            activeFloor={activeFloor}
-            onUseStairs={onUseStairs}
-            doorOpen={doorOpen}
-          />
-          <RoomFloor houseTypeId={houseTypeId} width={width} depth={depth} roomView={roomView} />
-          {roomView && (
-            <pointLight
-              position={[0, ROOM_VIEW_LIGHT_Y, 0]}
-              intensity={lightOn ? 6 : 0}
-              distance={Math.max(width, depth) * 2}
-              color={ROOM_VIEW_PALETTE.light}
+            <OsogboRoomPrototype
+              houseTypeId={houseTypeId}
+              roomView={roomView}
+              wallsClosed={wallsClosed}
+              width={width}
+              depth={depth}
+              editMode={editMode}
+              activeFloor={activeFloor}
+              onUseStairs={onUseStairs}
+              doorOpen={doorOpen}
             />
-          )}
-          {guideZone &&
-            (() => {
-              const [zoneX, , zoneZ] = roomPercentToPosition(
-                (guideZone.x0 + guideZone.x1) / 2,
-                (guideZone.y0 + guideZone.y1) / 2,
-                width,
-                depth,
-              );
+            {houseTypeId !== "studio-flat" && (
+              <RoomFloor
+                houseTypeId={houseTypeId}
+                width={width}
+                depth={depth}
+                roomView={roomView}
+              />
+            )}
+            {houseTypeId === "studio-flat" &&
+              placements
+                .filter((item) => item.slot_type === "bed" || item.art_key === "sofa")
+                .map((item) => {
+                  const slot = renderSlotForPlacement(item, slots);
+                  if (!slot) return null;
+                  const position = hasRoomPosition(item)
+                    ? roomPercentToPosition(item.x, item.y, width, depth)
+                    : slotPosition(slot, width, depth);
+                  return (
+                    <StudioRug
+                      key={item.id}
+                      position={position}
+                      rotation={(-(item.rotation_deg ?? 0) * Math.PI) / 180}
+                      bed={item.slot_type === "bed"}
+                    />
+                  );
+                })}
+            {roomView && (
+              <pointLight
+                position={[0, ROOM_VIEW_LIGHT_Y, 0]}
+                intensity={lightOn ? 6 : 0}
+                distance={Math.max(width, depth) * 2}
+                color={ROOM_VIEW_PALETTE.light}
+              />
+            )}
+            {guideZone &&
+              (() => {
+                const [zoneX, , zoneZ] = roomPercentToPosition(
+                  (guideZone.x0 + guideZone.x1) / 2,
+                  (guideZone.y0 + guideZone.y1) / 2,
+                  width,
+                  depth,
+                );
+                return (
+                  <mesh
+                    rotation={[-Math.PI / 2, 0, 0]}
+                    position={[zoneX, 0.03, zoneZ]}
+                    raycast={() => null}
+                  >
+                    <planeGeometry
+                      args={[
+                        ((guideZone.x1 - guideZone.x0) / 100) * (width - 0.8),
+                        ((guideZone.y1 - guideZone.y0) / 100) * (depth - 0.8),
+                      ]}
+                    />
+                    <meshBasicMaterial
+                      color={FURNITURE_COLOURS.artRoyal}
+                      transparent
+                      opacity={0.14}
+                      depthWrite={false}
+                    />
+                  </mesh>
+                );
+              })()}
+            {!editMode && !inputBlocked && onWalk && (
+              <mesh
+                rotation={[-Math.PI / 2, 0, 0]}
+                position={[0, 0.035, 0]}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  if (event.delta <= 4) onWalk([event.point.x, 0.06, event.point.z]);
+                }}
+              >
+                <planeGeometry args={[width - 0.6, depth - 0.6]} />
+                <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+              </mesh>
+            )}
+            {actorPosition ? (
+              <WorldCharacter
+                name={characterName}
+                appearance={appearance}
+                gender={gender}
+                equipment={equipment}
+                position={actorPosition}
+                facing={actorFacing}
+                animation={animationState}
+                {...(taskPose ? { taskPose } : {})}
+              />
+            ) : (
+              <RoomCharacter
+                name={characterName}
+                appearance={appearance}
+                gender={gender}
+                equipment={equipment}
+                animationState={animationState}
+                activityRequestId={activityRequestId}
+                activityLabel={activityLabel}
+                position={[0, 0.06, depth * 0.18]}
+                bedPosition={bedPosition}
+              />
+            )}
+            {foodDeliveries
+              .filter(
+                (delivery) =>
+                  delivery.deliveryState === "awaiting_response" ||
+                  delivery.deliveryState === "approaching",
+              )
+              .slice(0, 1)
+              .map((delivery) => (
+                <FoodCourier
+                  key={delivery.id}
+                  delivery={delivery}
+                  houseTypeId={houseTypeId}
+                  width={width}
+                  depth={depth}
+                  index={0}
+                  onCollect={!inputBlocked && !editMode ? onCollectPackage : undefined}
+                />
+              ))}
+            {foodDeliveries
+              .filter((delivery) => delivery.deliveryState === "package_waiting")
+              .slice(0, 4)
+              .map((delivery, index) => (
+                <FoodCourier
+                  key={delivery.id}
+                  delivery={delivery}
+                  houseTypeId={houseTypeId}
+                  width={width}
+                  depth={depth}
+                  index={index}
+                  onCollect={!inputBlocked && !editMode ? onCollectPackage : undefined}
+                />
+              ))}
+            {departing.map(({ delivery, index }) => {
+              const inside = delivery.deliveryChoice === "inside";
+              const doorX = houseRearDoorCenter(houseTypeId, width);
               return (
-                <mesh
-                  rotation={[-Math.PI / 2, 0, 0]}
-                  position={[zoneX, 0.03, zoneZ]}
-                  raycast={() => null}
-                >
-                  <planeGeometry
-                    args={[
-                      ((guideZone.x1 - guideZone.x0) / 100) * (width - 0.8),
-                      ((guideZone.y1 - guideZone.y0) / 100) * (depth - 0.8),
-                    ]}
-                  />
-                  <meshBasicMaterial
-                    color={FURNITURE_COLOURS.artRoyal}
-                    transparent
-                    opacity={0.14}
-                    depthWrite={false}
-                  />
-                </mesh>
+                <DepartingCourier
+                  key={`leaving-${delivery.id}`}
+                  startX={(inside ? width * COURIER_INSIDE_SHARE : doorX) + index * COURIER_SPACING}
+                  startZ={
+                    inside ? -depth / 2 + COURIER_INSIDE_DEPTH : -depth / 2 + COURIER_DOOR_INSET
+                  }
+                  exitX={doorX}
+                  exitZ={-depth / 2 - COURIER_EXIT_DISTANCE}
+                  onGone={() =>
+                    setDeparting((current) => current.filter((c) => c.delivery.id !== delivery.id))
+                  }
+                />
               );
-            })()}
-          {!editMode && !inputBlocked && onWalk && (
-            <mesh
-              rotation={[-Math.PI / 2, 0, 0]}
-              position={[0, 0.035, 0]}
-              onClick={(event) => {
-                event.stopPropagation();
-                if (event.delta <= 4) onWalk([event.point.x, 0.06, event.point.z]);
-              }}
-            >
-              <planeGeometry args={[width - 0.6, depth - 0.6]} />
-              <meshBasicMaterial transparent opacity={0} depthWrite={false} />
-            </mesh>
-          )}
-          {actorPosition ? (
-            <WorldCharacter
-              name={characterName}
-              appearance={appearance}
-              gender={gender}
-              equipment={equipment}
-              position={actorPosition}
-              facing={actorFacing}
-              animation={animationState}
-              {...(taskPose ? { taskPose } : {})}
+            })}
+            {/* Placed furniture: reconstructed, compare with your original if anything is off */}
+            {placements.map((placement) => {
+              const slot = renderSlotForPlacement(placement, slots);
+              if (!slot) return null;
+              return (
+                <SlotObject
+                  key={placement.id}
+                  slot={slot}
+                  placement={placement}
+                  width={width}
+                  depth={depth}
+                  editMode={editMode}
+                  moveEnabled={moveEnabled}
+                  inputBlocked={inputBlocked}
+                  dragPreview={activePreview}
+                  activeSlotType={
+                    activePreview
+                      ? (placements.find((item) => item.id === activePreview.placementId)
+                          ?.slot_type ?? null)
+                      : (movingPlacement?.slot_type ?? null)
+                  }
+                  onSelectPlacement={onSelectPlacement}
+                  onSelectSlot={onSelectSlot}
+                  onDragStart={onDragStart}
+                  onDragMove={onDragMove}
+                  onDragEnd={onDragEnd}
+                  onDragCancel={onDragCancel}
+                  suppressClick={suppressClick}
+                />
+              );
+            })}
+            {/* Empty slots (edit mode shows the "+" placeholders) */}
+            {slots
+              .filter((slot) => !bySlot.has(slot.id))
+              .map((slot) => (
+                <SlotObject
+                  key={slot.id}
+                  slot={slot}
+                  placement={undefined}
+                  width={width}
+                  depth={depth}
+                  editMode={editMode}
+                  moveEnabled={moveEnabled}
+                  inputBlocked={inputBlocked}
+                  dragPreview={activePreview}
+                  activeSlotType={
+                    activePreview
+                      ? (placements.find((item) => item.id === activePreview.placementId)
+                          ?.slot_type ?? null)
+                      : (movingPlacement?.slot_type ?? null)
+                  }
+                  onSelectPlacement={onSelectPlacement}
+                  onSelectSlot={onSelectSlot}
+                  onDragStart={onDragStart}
+                  onDragMove={onDragMove}
+                  onDragEnd={onDragEnd}
+                  onDragCancel={onDragCancel}
+                  suppressClick={suppressClick}
+                />
+              ))}
+            <WorldCamera
+              width={roomView ? roomView.maxX - roomView.minX : width}
+              depth={roomView ? roomView.maxZ - roomView.minZ : depth}
+              stage
+              horizontalOrbit={!editMode && !roomView}
+              verticalOrbit={!editMode && !roomView}
+              polarAngle={editMode ? Math.PI / 5 : Math.PI / 4}
+              target={
+                roomView
+                  ? [
+                      (roomView.minX + roomView.maxX) / 2,
+                      WORLD_SCALE.door * 0.65,
+                      (roomView.minZ + roomView.maxZ) / 2,
+                    ]
+                  : editMode
+                    ? [0, 0.25, 0]
+                    : [0, WORLD_SCALE.door * 0.58, depth * 0.06]
+              }
+              distanceScale={roomView ? ROOM_VIEW_CAMERA.distanceScale : 0.94}
+              enabled={!inputBlocked && !activePreview}
             />
-          ) : (
-            <RoomCharacter
-              name={characterName}
-              appearance={appearance}
-              gender={gender}
-              equipment={equipment}
-              animationState={animationState}
-              activityRequestId={activityRequestId}
-              activityLabel={activityLabel}
-              position={[0, 0.06, depth * 0.18]}
-              bedPosition={bedPosition}
-            />
-          )}
-          {foodDeliveries
-            .filter(
-              (delivery) =>
-                delivery.deliveryState === "awaiting_response" ||
-                delivery.deliveryState === "approaching",
-            )
-            .slice(0, 1)
-            .map((delivery) => (
-              <FoodCourier
-                key={delivery.id}
-                delivery={delivery}
-                houseTypeId={houseTypeId}
-                width={width}
-                depth={depth}
-                index={0}
-                onCollect={!inputBlocked && !editMode ? onCollectPackage : undefined}
-              />
-            ))}
-          {foodDeliveries
-            .filter((delivery) => delivery.deliveryState === "package_waiting")
-            .slice(0, 4)
-            .map((delivery, index) => (
-              <FoodCourier
-                key={delivery.id}
-                delivery={delivery}
-                houseTypeId={houseTypeId}
-                width={width}
-                depth={depth}
-                index={index}
-                onCollect={!inputBlocked && !editMode ? onCollectPackage : undefined}
-              />
-            ))}
-          {departing.map(({ delivery, index }) => {
-            const inside = delivery.deliveryChoice === "inside";
-            const doorX = houseRearDoorCenter(houseTypeId, width);
-            return (
-              <DepartingCourier
-                key={`leaving-${delivery.id}`}
-                startX={(inside ? width * COURIER_INSIDE_SHARE : doorX) + index * COURIER_SPACING}
-                startZ={
-                  inside ? -depth / 2 + COURIER_INSIDE_DEPTH : -depth / 2 + COURIER_DOOR_INSET
-                }
-                exitX={doorX}
-                exitZ={-depth / 2 - COURIER_EXIT_DISTANCE}
-                onGone={() =>
-                  setDeparting((current) => current.filter((c) => c.delivery.id !== delivery.id))
-                }
-              />
-            );
-          })}
-          {/* Placed furniture: reconstructed, compare with your original if anything is off */}
-          {placements.map((placement) => {
-            const slot = renderSlotForPlacement(placement, slots);
-            if (!slot) return null;
-            return (
-              <SlotObject
-                key={placement.id}
-                slot={slot}
-                placement={placement}
-                width={width}
-                depth={depth}
-                editMode={editMode}
-                moveEnabled={moveEnabled}
-                inputBlocked={inputBlocked}
-                dragPreview={activePreview}
-                activeSlotType={
-                  activePreview
-                    ? (placements.find((item) => item.id === activePreview.placementId)
-                        ?.slot_type ?? null)
-                    : (movingPlacement?.slot_type ?? null)
-                }
-                onSelectPlacement={onSelectPlacement}
-                onSelectSlot={onSelectSlot}
-                onDragStart={onDragStart}
-                onDragMove={onDragMove}
-                onDragEnd={onDragEnd}
-                onDragCancel={onDragCancel}
-                suppressClick={suppressClick}
-              />
-            );
-          })}
-          {/* Empty slots (edit mode shows the "+" placeholders) */}
-          {slots
-            .filter((slot) => !bySlot.has(slot.id))
-            .map((slot) => (
-              <SlotObject
-                key={slot.id}
-                slot={slot}
-                placement={undefined}
-                width={width}
-                depth={depth}
-                editMode={editMode}
-                moveEnabled={moveEnabled}
-                inputBlocked={inputBlocked}
-                dragPreview={activePreview}
-                activeSlotType={
-                  activePreview
-                    ? (placements.find((item) => item.id === activePreview.placementId)
-                        ?.slot_type ?? null)
-                    : (movingPlacement?.slot_type ?? null)
-                }
-                onSelectPlacement={onSelectPlacement}
-                onSelectSlot={onSelectSlot}
-                onDragStart={onDragStart}
-                onDragMove={onDragMove}
-                onDragEnd={onDragEnd}
-                onDragCancel={onDragCancel}
-                suppressClick={suppressClick}
-              />
-            ))}
-          <WorldCamera
-            width={roomView ? roomView.maxX - roomView.minX : width}
-            depth={roomView ? roomView.maxZ - roomView.minZ : depth}
-            stage
-            horizontalOrbit={!editMode && !roomView}
-            verticalOrbit={!editMode && !roomView}
-            polarAngle={editMode ? Math.PI / 5 : Math.PI / 4}
-            target={
-              roomView
-                ? [
-                    (roomView.minX + roomView.maxX) / 2,
-                    WORLD_SCALE.door * 0.65,
-                    (roomView.minZ + roomView.maxZ) / 2,
-                  ]
-                : editMode
-                  ? [0, 0.25, 0]
-                  : [0, WORLD_SCALE.door * 0.58, depth * 0.06]
-            }
-            distanceScale={roomView ? ROOM_VIEW_CAMERA.distanceScale : 0.94}
-            enabled={!inputBlocked && !activePreview}
-          />
-        </Canvas>
+          </Canvas>
+        </FurniturePaletteContext.Provider>
       </RoomOverlayContext.Provider>
       <div
         ref={overlayHost}
