@@ -42,3 +42,14 @@ describe("location venue designs", () => {
     expect(hasAuthoritativeLocationArrival(undefined, undefined)).toBe(false);
   });
 });
+
+it("selects destination scenes from venue metadata without changing transaction data", () => {
+  const campus = getLocationVenueDesign("student-district", "Campus");
+  const market = getLocationVenueDesign("oja-oba", "Oja-Oba");
+  expect(campus.scene).toBe("campus");
+  expect(market.scene).toBe("market");
+  expect(market.fixtures.map(fixture => fixture.id)).toEqual([
+    "oja-oba-produce-counter", "oja-oba-staples-shelves", "oja-oba-household-table", "oja-oba-trader-seats",
+  ]);
+  expect(getLocationVenueDesign("new-location", "New").scene).toBeUndefined();
+});
