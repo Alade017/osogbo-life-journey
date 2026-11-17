@@ -690,7 +690,8 @@
 .mg-shape-overlay {
   position: fixed;
   inset: 0;
-  z-index: 60;
+  /* Above the game dock, bottom bar and needs rail (80) so the picker and the draw sheet stay tappable. */
+  z-index: 120;
   display: grid;
   place-items: center;
   padding: 16px;

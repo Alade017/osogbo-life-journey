@@ -62,20 +62,20 @@ describe("whot penalties", () => {
     expect(drawn.pendingDraw).toBe(0);
   });
 
-  it("a Whot card cannot cancel a penalty unless the house rule is agreed", () => {
-    const hand = [card("w", null, 20)];
-    const blocked = game({ hands: [hand, []], pendingDraw: 2, pendingRank: 2 });
-    expect(playableCards(blocked)).toEqual([]);
-    const agreed = game({
-      hands: [hand, []],
-      pendingDraw: 2,
-      pendingRank: 2,
-      whotBlocksPenalty: true,
-    });
-    expect(playableCards(agreed).map((item) => item.id)).toEqual(["w"]);
-    const cancelled = playWhot(agreed, "w", "star");
-    expect(cancelled.pendingDraw).toBe(0);
-    expect(cancelled.pendingRank).toBeNull();
-    expect(cancelled.shape).toBe("star");
+  it("a Whot card can never cancel a running penalty", () => {
+    const hand = [card("w", null, 20), card("c2", "circle", 2)];
+    const state = game({ hands: [hand, []], pendingDraw: 2, pendingRank: 2 });
+    expect(playableCards(state).map((item) => item.id)).toEqual(["c2"]);
+    expect(playWhot(state, "w", "star")).toBe(state);
+    const defended = playWhot(state, "c2");
+    expect(defended.pendingDraw).toBe(4);
+    expect(defended.pendingRank).toBe(2);
+  });
+
+  it("a Whot card still picks the shape when no penalty is running", () => {
+    const state = game({ hands: [[card("w", null, 20)], []] });
+    const after = playWhot(state, "w", "star");
+    expect(after.shape).toBe("star");
+    expect(after.pendingDraw).toBe(0);
   });
 });
