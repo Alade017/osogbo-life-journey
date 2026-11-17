@@ -61,6 +61,16 @@ export function GameNeedsRail({
     : null;
 
   useEffect(() => {
+    const dismissPanels = () => {
+      setExpanded(false);
+      setDetailNeed(null);
+      setActionMessage(null);
+    };
+    window.addEventListener("osogbo-hud-dismiss-panels", dismissPanels);
+    return () => window.removeEventListener("osogbo-hud-dismiss-panels", dismissPanels);
+  }, []);
+
+  useEffect(() => {
     if (!expanded) return;
     const dismiss = () => {
       setExpanded(false);
