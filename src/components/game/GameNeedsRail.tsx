@@ -1,5 +1,14 @@
-import { useState } from "react";
-import { Droplets, Plus, Smile, Sparkles, Utensils, Users, X, Zap } from "lucide-react";
+import { useEffect, useId, useRef, useState } from "react";
+import {
+  ChevronDown,
+  ChevronUp,
+  Droplets,
+  Smile,
+  Sparkles,
+  Utensils,
+  Users,
+  Zap,
+} from "lucide-react";
 import { useGameTime } from "@/components/game/GameTimeProvider";
 import { NEED_NAMES, NEED_RULES, statusForNeed } from "@/lib/life-simulation";
 import type { PlayerState } from "@/lib/player-state";
@@ -24,24 +33,24 @@ export function GameNeedsRail({
   const { simulation, start, busy, ready } = useGameTime();
   const [detailNeed, setDetailNeed] = useState<(typeof NEED_NAMES)[number] | null>(null);
   const [actionMessage, setActionMessage] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState(!compact);
-  const criticalCount = NEED_NAMES.filter(
-    (name) => statusForNeed(name, Math.round(simulation.needs[name])) === "critical",
-  ).length;
-  // Preview mode surfaces the two needs requiring the most attention.
-  const previewNeeds = NEED_NAMES.map((name) => ({
-    name,
-    value: Math.round(simulation.needs[name]),
-    status: statusForNeed(name, Math.round(simulation.needs[name])),
-  }))
+  const [expanded, setExpanded] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const actionInFlight = useRef(false);
+  const rail = useRef<HTMLElement>(null);
+  const toggle = useRef<HTMLButtonElement>(null);
+  const panelId = useId();
+  const needs = NEED_NAMES.map((name) => {
+    const value = Math.max(0, Math.min(100, Math.round(simulation.needs[name])));
+    return { name, value, status: statusForNeed(name, value) };
+  });
+  const criticalCount = needs.filter((need) => need.status === "critical").length;
+  const urgent = needs
     .filter((need) => need.status !== "healthy")
     .sort((a, b) => {
       const priority = { critical: 0, warning: 1, healthy: 2 };
       return priority[a.status] - priority[b.status] || a.value - b.value;
-    })
-    .slice(0, 2);
-  const visibleNeeds = expanded ? NEED_NAMES : [];
-  const detailValue = detailNeed ? Math.round(simulation.needs[detailNeed]) : null;
+    })[0];
+  const selected = needs.find((need) => need.name === detailNeed);
   const needAction = detailNeed
     ? {
         hunger: { label: "Eat a meal", action: "eat" as const },
@@ -53,21 +62,56 @@ export function GameNeedsRail({
       }[detailNeed]
     : null;
 
+  useEffect(() => {
+    if (!expanded) return;
+    const dismiss = () => {
+      setExpanded(false);
+      setDetailNeed(null);
+      setActionMessage(null);
+    };
+    const onPointer = (event: PointerEvent) => {
+      if (event.target instanceof Node && !rail.current?.contains(event.target)) dismiss();
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        dismiss();
+        toggle.current?.focus();
+      }
+    };
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [expanded]);
+
   const handleNeedAction = async () => {
-    if (!needAction || !detailNeed) return;
+    if (!needAction || !detailNeed || actionInFlight.current) return;
     setActionMessage(null);
     if ("action" in needAction && needAction.action) {
       if (!ready || busy || simulation.currentAction) {
         setActionMessage("Finish your current activity and wait for the simulation to be ready.");
         return;
       }
-      const error = await start(
-        needAction.action,
-        "needs-" + needAction.action + "-" + crypto.randomUUID(),
-      );
-      setActionMessage(error ?? needAction.label + " started.");
+      actionInFlight.current = true;
+      setSubmitting(true);
+      try {
+        const error = await start(
+          needAction.action,
+          "needs-" + needAction.action + "-" + crypto.randomUUID(),
+        );
+        setActionMessage(error ?? needAction.label + " started.");
+      } catch {
+        setActionMessage("This activity could not start. Please try again.");
+      } finally {
+        actionInFlight.current = false;
+        setSubmitting(false);
+      }
       return;
     }
+    setExpanded(false);
+    setDetailNeed(null);
     window.dispatchEvent(
       new CustomEvent("osogbo-open-phone-app", { detail: { app: needAction.app } }),
     );
@@ -75,126 +119,133 @@ export function GameNeedsRail({
 
   return (
     <aside
-      className={`game-needs-rail${expanded ? "" : " is-collapsed"}${compact ? " is-map-compact" : ""}`}
+      ref={rail}
+      className={`game-needs-rail${expanded ? " is-expanded" : " is-collapsed"}${compact ? " is-map-compact" : ""}`}
       aria-label={`${player.name}'s needs dashboard${criticalCount ? `, ${criticalCount} critical` : ""}`}
-      data-critical-count={criticalCount}
     >
-      {criticalCount > 0 && (
-        <span className="game-needs-summary" role="status" aria-live="polite">
-          {criticalCount} critical
-        </span>
-      )}
       <button
+        ref={toggle}
         type="button"
-        className="game-needs-toggle"
+        className={`game-needs-toggle${urgent ? ` is-${urgent.status}` : ""}`}
         aria-expanded={expanded}
+        aria-controls={panelId}
         aria-label={
           expanded
             ? "Collapse needs panel"
             : `Expand needs panel${criticalCount ? `, ${criticalCount} critical ${criticalCount === 1 ? "need" : "needs"}` : ""}`
         }
-        title={expanded ? "Collapse needs panel" : "Expand needs panel"}
-        onClick={() => setExpanded((current) => !current)}
+        onClick={() => {
+          setExpanded(!expanded);
+          setDetailNeed(null);
+          setActionMessage(null);
+        }}
       >
+        <span className="game-needs-trigger-icon">
+          <Zap size={18} aria-hidden="true" />
+        </span>
+        <span className="game-needs-trigger-copy">
+          <strong>Needs</strong>
+          <span>
+            {urgent ? `${NEED_RULES[urgent.name].label} ${urgent.value}%` : "All looking good"}
+          </span>
+        </span>
+        {criticalCount > 0 && (
+          <span className="game-needs-count" aria-hidden="true">
+            {criticalCount}
+          </span>
+        )}
         {expanded ? (
-          <X size={12} aria-hidden="true" />
+          <ChevronDown size={16} aria-hidden="true" />
         ) : (
-          <>
-            <Zap className="game-needs-collapsed-icon" size={23} aria-hidden="true" />
-            <span className="game-needs-collapsed-plus" aria-hidden="true">
-              <Plus size={13} />
-            </span>
-          </>
+          <ChevronUp size={16} aria-hidden="true" />
         )}
       </button>
-      {!expanded && !compact && (
-        <div className="game-needs-preview" aria-label="Needs requiring attention">
-          {previewNeeds.map(({ name, value, status }) => {
-            const Icon = NEED_ICONS[name];
-            return (
+      {expanded && (
+        <section id={panelId} className="game-needs-panel" aria-label="Character wellbeing">
+          <header className="game-needs-panel-header">
+            <div>
+              <h2>Your wellbeing</h2>
+              <p>Choose a need to see what helps.</p>
+            </div>
+            <span
+              className={`game-needs-summary${criticalCount ? " is-critical" : ""}`}
+              role="status"
+            >
+              {criticalCount
+                ? `${criticalCount} critical`
+                : urgent
+                  ? "Needs attention"
+                  : "Doing well"}
+            </span>
+          </header>
+          <div className="game-needs-list">
+            {needs.map(({ name, value, status }) => {
+              const Icon = NEED_ICONS[name];
+              return (
+                <button
+                  key={name}
+                  type="button"
+                  className={`game-needs-item is-${status}${detailNeed === name ? " is-active" : ""}`}
+                  aria-label={`${NEED_RULES[name].label}: ${value} percent, ${status}`}
+                  aria-pressed={detailNeed === name}
+                  onClick={() => {
+                    setActionMessage(null);
+                    setDetailNeed(detailNeed === name ? null : name);
+                  }}
+                >
+                  <span className="game-needs-item-heading">
+                    <Icon size={17} aria-hidden="true" />
+                    <span>{NEED_RULES[name].label}</span>
+                    <strong>{value}%</strong>
+                  </span>
+                  <span
+                    className="game-needs-meter"
+                    role="meter"
+                    aria-label={NEED_RULES[name].label}
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={value}
+                  >
+                    <span style={{ width: `${value}%` }} />
+                  </span>
+                  <span className="game-needs-status">
+                    {status === "healthy" ? "Good" : status === "warning" ? "Low" : "Critical"}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          {selected && needAction && (
+            <div
+              className={`game-needs-detail is-${selected.status}`}
+              role="region"
+              aria-label={`${NEED_RULES[selected.name].label} need status`}
+            >
+              <p>
+                <strong>{NEED_RULES[selected.name].label}</strong>
+                <span>
+                  {selected.value}% · {selected.status}
+                </span>
+              </p>
               <button
                 type="button"
-                className={`game-needs-preview-pill is-${status}`}
-                key={name}
-                aria-label={`${NEED_RULES[name].label}: ${value} percent, ${status}. Tap for details`}
-                onClick={() => {
-                  setActionMessage(null);
-                  setDetailNeed(name);
-                }}
+                className="game-needs-action"
+                onClick={() => void handleNeedAction()}
+                disabled={
+                  submitting ||
+                  ("action" in needAction && (busy || !ready || !!simulation.currentAction))
+                }
               >
-                <Icon size={13} aria-hidden="true" />
-                <span>{NEED_RULES[name].label}</span>
-                <strong>{value}%</strong>
+                {submitting ? "Starting…" : needAction.label}
               </button>
-            );
-          })}
-          {previewNeeds.length === 0 && (
-            <span className="game-needs-preview-empty">All needs are good</span>
+              {actionMessage && (
+                <p className="game-needs-action-message" role="status">
+                  {actionMessage}
+                </p>
+              )}
+            </div>
           )}
-        </div>
-      )}
-      <div className="game-needs-list">
-        {visibleNeeds.map((name) => {
-          const Icon = NEED_ICONS[name];
-          const value = Math.round(simulation.needs[name]);
-          const status = statusForNeed(name, value);
-          return (
-            <button
-              type="button"
-              className={`game-needs-item is-${status}${detailNeed === name ? " is-active" : ""}`}
-              key={name}
-              aria-label={`${NEED_RULES[name].label}: ${value} percent, ${status}`}
-              aria-pressed={detailNeed === name}
-              title={`${NEED_RULES[name].label}: ${value}% · Tap for details`}
-              onClick={() => {
-                setActionMessage(null);
-                setDetailNeed((current) => (current === name ? null : name));
-              }}
-            >
-              <span
-                className="game-needs-icon-ring"
-                style={{
-                  background: `conic-gradient(var(--need-tone) ${value}%, #e8ece8 0)`,
-                }}
-              >
-                <span className="game-needs-icon-core">
-                  <Icon size={15} aria-hidden="true" />
-                </span>
-              </span>
-              <span className="game-needs-value">{value}%</span>
-            </button>
-          );
-        })}
-      </div>
-      {detailNeed && detailValue !== null && (
-        <div
-          className="game-needs-detail"
-          role="status"
-          aria-live="polite"
-          aria-label={`${NEED_RULES[detailNeed].label} need status`}
-        >
-          <strong>{NEED_RULES[detailNeed].label}</strong>
-          <span>
-            {detailValue}% · {statusForNeed(detailNeed, detailValue)}
-          </span>
-          <button
-            type="button"
-            className="game-needs-action"
-            onClick={() => void handleNeedAction()}
-            disabled={
-              !!needAction &&
-              "action" in needAction &&
-              (busy || !ready || !!simulation.currentAction)
-            }
-          >
-            {needAction?.label ?? "Choose an action"}
-          </button>
-          {actionMessage && (
-            <span className="game-needs-action-message" role="status">
-              {actionMessage}
-            </span>
-          )}
-        </div>
+        </section>
       )}
     </aside>
   );

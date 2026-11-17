@@ -94,6 +94,27 @@ describe("ludo board geometry", () => {
       expect(rect.y + rect.size).toBeLessThanOrEqual(BOARD_SIZE);
     }
   });
+
+  it("keeps each coloured yard in the correct quadrant", () => {
+    const expected = [
+      { x: 0, y: 9 },  // RED: bottom-left
+      { x: 0, y: 0 },  // GREEN: top-left
+      { x: 9, y: 0 },  // YELLOW: top-right
+      { x: 9, y: 9 },  // BLUE: bottom-right
+    ];
+
+    COLOURS.forEach((colour, arm) => {
+      const rect = yardRect(arm);
+      expect({ x: rect.x, y: rect.y }, colour).toEqual(expected[arm]);
+      for (let token = 0; token < 4; token += 1) {
+        const point = tokenPoint(colour, YARD_STEP, token);
+        expect(point.x).toBeGreaterThan(rect.x);
+        expect(point.x).toBeLessThan(rect.x + rect.size);
+        expect(point.y).toBeGreaterThan(rect.y);
+        expect(point.y).toBeLessThan(rect.y + rect.size);
+      }
+    });
+  });
 });
 
 describe("hop animation", () => {

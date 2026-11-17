@@ -7111,6 +7111,7 @@ export type Database = {
         Returns: number;
       };
       mini_game_heartbeat: { Args: { p_table: string }; Returns: undefined };
+      mini_game_my_table: { Args: never; Returns: Json };
       mini_game_join_table: { Args: { p_table: string }; Returns: string };
       mini_game_leave_table: { Args: { p_table: string }; Returns: undefined };
       mini_game_play_move: { Args: { p_cell: number; p_table: string }; Returns: Json };
