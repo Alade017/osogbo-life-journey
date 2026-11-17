@@ -94,6 +94,20 @@ describe("ludo board geometry", () => {
       expect(rect.y + rect.size).toBeLessThanOrEqual(BOARD_SIZE);
     }
   });
+
+  it("places each colour's yard directly beside its own track start", () => {
+    COLOURS.forEach((colour, arm) => {
+      const rect = yardRect(arm);
+      const [row, col] = LOOP_CELLS[absoluteTile(colour, 0)]!;
+      const withinColumns = col >= rect.x && col < rect.x + rect.size;
+      const withinRows = row >= rect.y && row < rect.y + rect.size;
+      const touchesYard =
+        (withinColumns && (row === rect.y - 1 || row === rect.y + rect.size)) ||
+        (withinRows && (col === rect.x - 1 || col === rect.x + rect.size));
+
+      expect(touchesYard, `${colour} start at ${row},${col}`).toBe(true);
+    });
+  });
 });
 
 describe("hop animation", () => {
