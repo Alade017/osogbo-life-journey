@@ -62,19 +62,27 @@ export function LudoBoard({
   playable,
   onPick,
   playerCount,
+  onAnimatingChange,
 }: {
   pieces: Progress;
   playable: ReadonlySet<string>;
   onPick: (colour: Colour, token: number) => void;
   playerCount: number;
+  onAnimatingChange?: (animating: boolean) => void;
 }) {
   const [shown, setShown] = useState<Progress>(pieces);
 
+  const animating = !sameAll(shown, pieces);
+
   useEffect(() => {
-    if (sameAll(shown, pieces)) return;
+    onAnimatingChange?.(animating);
+  }, [animating, onAnimatingChange]);
+
+  useEffect(() => {
+    if (!animating) return;
     const timer = window.setTimeout(() => setShown((current) => stepAll(current, pieces)), HOP_MS);
     return () => window.clearTimeout(timer);
-  }, [shown, pieces]);
+  }, [animating, shown, pieces]);
 
   // Group tokens that share a tile, so stacked tokens are scaled and laid out in a small sub-grid.
   const tiles = new Map<string, { colour: Colour; token: number; point: Point }[]>();
