@@ -112,7 +112,7 @@ function TorsoGarment({
   return (
     <group name="torso-garment" scale={[1, 1, 0.78]}>
       <mesh geometry={geometry} castShadow receiveShadow>
-        <meshStandardMaterial color={color} map={map} roughness={0.93} side={2} flatShading />
+        <meshStandardMaterial color={color} map={map} roughness={0.93} side={2} />
       </mesh>
       <mesh position={[0, 0.19, 0]} castShadow>
         <cylinderGeometry args={[0.051, 0.051, 0.012, 16, 1, true]} />

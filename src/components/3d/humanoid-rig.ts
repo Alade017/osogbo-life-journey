@@ -11,6 +11,7 @@ import {
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { BONE, ROOT_REST_Y, type BoneName } from "./humanoid-pose";
 import type { HairShape } from "./hair-shapes";
+import { characterSkinTextures } from "./character-skin";
 
 export type BodyVariant = "female" | "male" | "business";
 export const ACCESSORY_COLOR = "#241914";
@@ -60,7 +61,7 @@ type RingWeights = readonly [BoneName, BoneName, number];
 function profilePart(
   rings: readonly ProfileRing[],
   weightsFor: (y: number) => RingWeights,
-  segments = 12,
+  segments = 20,
 ): Part {
   const positions: number[] = [],
     indices: number[] = [],
@@ -118,14 +119,14 @@ function profilePart(
   return { geometry, bone: BONE.root, accessory: false, preSkinned: true };
 }
 
-/** Small low-poly volumes for ears, fingers and facial details. */
+/** Extra silhouette detail for fingers, feet, ears and the face. */
 function blob(
   radii: [number, number, number],
   at: [number, number, number],
   bone: BoneName,
   options: { detail?: 0 | 1; accessory?: boolean } = {},
 ): Part {
-  const geometry = new SphereGeometry(1, options.detail ? 9 : 8, options.detail ? 6 : 5);
+  const geometry = new SphereGeometry(1, options.detail ? 12 : 10, options.detail ? 8 : 7);
   geometry.scale(...radii);
   geometry.translate(...at);
   return { geometry, bone, accessory: options.accessory ?? false };
@@ -158,7 +159,7 @@ function torsoSurface(shape: { shoulder: number; waist: number; hip: number }): 
     { y: 0.85, x: 0.13 * shape.shoulder, z: 0.073 },
     { y: 0.88, x: 0.046, z: 0.043 },
   ];
-  const radialSegments = 16;
+  const radialSegments = 32;
   const positions: number[] = [];
   const indices: number[] = [];
   const skinIndices: number[] = [];
@@ -260,7 +261,7 @@ function limbParts(side: 1 | -1, shape: { shoulder: number; hip: number; limb: n
       y >= 0.77
         ? [upper, BONE.spine2, Math.min(1, (y - 0.77) / 0.065)]
         : [fore, upper, Math.max(0, Math.min(1, (y - 0.59) / 0.04))],
-    10,
+    20,
   );
   const leg = profilePart(
     [
@@ -279,7 +280,7 @@ function limbParts(side: 1 | -1, shape: { shoulder: number; hip: number; limb: n
       y >= 0.46
         ? [thigh, BONE.root, Math.min(1, (y - 0.46) / 0.08)]
         : [calf, thigh, Math.max(0, Math.min(1, (y - 0.23) / 0.04))],
-    10,
+    20,
   );
   return [
     arm,
@@ -311,7 +312,7 @@ function headPart(): Part {
       { y: 1.066, x: 0.008, z: 0.008, cz: -0.004 },
     ],
     () => [BONE.head, BONE.head, 0],
-    12,
+    24,
   );
 }
 
@@ -453,7 +454,7 @@ function hairVolumes(shape: HairShape): Part[] {
 
 function hairParts(shape: HairShape): Part[] {
   if (shape === "cap" || shape === "buzz") {
-    const geometry = new SphereGeometry(1, 12, 5, 0, Math.PI * 2, 0, Math.PI * 0.56);
+    const geometry = new SphereGeometry(1, 20, 7, 0, Math.PI * 2, 0, Math.PI * 0.56);
     geometry.scale(0.076, shape === "buzz" ? 0.041 : 0.049, 0.062);
     geometry.translate(0, 1.026, -0.004);
     return [{ geometry, bone: BONE.head, accessory: false }];
@@ -545,31 +546,34 @@ export function createHumanoid({
     mesh.bind(skeleton);
     return mesh;
   };
+  const skinTextures = characterSkinTextures();
   const meshes = [
     makeMesh(
       geo.body,
       new MeshStandardMaterial({
         color: skinColor,
-        roughness: 0.88,
+        roughness: 0.76,
+        map: skinTextures.color,
+        roughnessMap: skinTextures.roughness,
         metalness: 0,
-        flatShading: true,
+        flatShading: false,
       }),
     ),
     makeMesh(
       geo.face,
-      new MeshStandardMaterial({ color: ACCESSORY_COLOR, roughness: 0.58, flatShading: true }),
+      new MeshStandardMaterial({ color: ACCESSORY_COLOR, roughness: 0.58, flatShading: false }),
     ),
     makeMesh(
       geo.eyes,
-      new MeshStandardMaterial({ color: "#f1e9df", roughness: 0.34, flatShading: true }),
+      new MeshStandardMaterial({ color: "#f1e9df", roughness: 0.34, flatShading: false }),
     ),
     makeMesh(
       geo.irises,
-      new MeshStandardMaterial({ color: "#3a2118", roughness: 0.28, flatShading: true }),
+      new MeshStandardMaterial({ color: "#3a2118", roughness: 0.28, flatShading: false }),
     ),
     makeMesh(
       geo.pupils,
-      new MeshStandardMaterial({ color: "#100b09", roughness: 0.18, flatShading: true }),
+      new MeshStandardMaterial({ color: "#100b09", roughness: 0.18, flatShading: false }),
     ),
     makeMesh(
       geo.highlights,
@@ -578,7 +582,7 @@ export function createHumanoid({
         roughness: 0.12,
         emissive: "#fffaf2",
         emissiveIntensity: 0.08,
-        flatShading: true,
+        flatShading: false,
       }),
     ),
   ];
@@ -590,7 +594,7 @@ export function createHumanoid({
           color: hairColor,
           roughness: 0.94,
           metalness: 0,
-          flatShading: true,
+          flatShading: false,
         }),
       ),
     );
