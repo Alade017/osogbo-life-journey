@@ -86,11 +86,11 @@ export function GameInventoryPanel() {
     },
   );
 
-  if (isLoading) return <CardListSkeleton label="Loading wardrobe" cards={4} />;
+  if (isLoading) return <CardListSkeleton label="Loading inventory" cards={4} />;
   if (isError)
     return (
       <section className="pi-panel" role="alert">
-        <h1 className="text-lg font-bold text-ink">Unable to load your wardrobe</h1>
+        <h1 className="text-lg font-bold text-ink">Unable to load your inventory</h1>
         <p className="mt-1 text-sm text-muted-foreground">{error.message}</p>
         <Button
           className="mt-4"
