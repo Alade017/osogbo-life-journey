@@ -46,20 +46,16 @@ export function GameMobileNav({
         <Briefcase className="h-4.75 w-4.75" />
         <span>Career Life</span>
       </Link>
-      <button
-        type="button"
-        className="gbb-link gbb-inventory"
-        onClick={() => {
-          onNavigate();
-          window.dispatchEvent(
-            new CustomEvent("osogbo-open-phone-app", { detail: { app: "Inventory" } }),
-          );
-        }}
+      <Link
+        to="/inventory"
+        activeProps={{ className: "gbb-active" }}
+        className="gbb-link"
+        onClick={onNavigate}
         aria-label="Open inventory"
       >
         <Backpack className="h-4.75 w-4.75" aria-hidden="true" />
         <span>Inventory</span>
-      </button>
+      </Link>
       {children}
     </nav>
   );
