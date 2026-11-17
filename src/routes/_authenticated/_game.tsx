@@ -66,6 +66,7 @@ function GameLayout() {
   const [housingOpen, setHousingOpen] = useState(false);
   const [phoneOpen, setPhoneOpen] = useState(false);
   const [hudIdle, setHudIdle] = useState(false);
+  const [hudPanelOpen, setHudPanelOpen] = useState(false);
   const [housingRequested, setHousingRequested] = useState(false);
   const [housingSource, setHousingSource] = useState<"home" | "profile">("home");
   const housingHandledThisSession = useRef(false);
@@ -96,6 +97,13 @@ function GameLayout() {
       window.removeEventListener("keydown", wakeHud);
       window.removeEventListener("focusin", wakeHud);
     };
+  }, []);
+  useEffect(() => {
+    const handleHudPanel = (event: Event) => {
+      setHudPanelOpen(Boolean((event as CustomEvent<{ open?: boolean }>).detail?.open));
+    };
+    window.addEventListener("osogbo-hud-panel-open", handleHudPanel);
+    return () => window.removeEventListener("osogbo-hud-panel-open", handleHudPanel);
   }, []);
   useEffect(() => {
     configureGameMusic(character?.id ?? null);
@@ -248,6 +256,7 @@ function GameLayout() {
             profile?.reduced_motion && "reduce-motion",
             phoneOpen && "phone-open",
             housingOpen && "hud-menu-open",
+            hudPanelOpen && "hud-panel-open",
             hudIdle && "hud-idle",
           )}
         >
