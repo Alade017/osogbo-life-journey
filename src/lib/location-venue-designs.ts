@@ -4,6 +4,7 @@ export type VenueFixtureKind =
   "counter" | "table" | "bench" | "shelf" | "screen" | "display" | "planter" | "seat";
 
 export type VenueFixture = {
+  workplaceFeature?: WorkplaceFeature;
   id: string;
   label: string;
   detail: string;
@@ -427,29 +428,19 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     ],
   },
   "harvest-tech-hub": {
+    scene: "workplace",
+    sceneSize: { width: WORKPLACE_LAYOUT.cameraWidth, depth: WORKPLACE_LAYOUT.cameraDepth },
     name: "Harvest Tech Hub",
-    description: "A practical learning lab with shared worktables and a presentation screen.",
-    floorColor: "#c8d5d0",
-    wallColor: "#e0e9e3",
-    accentColor: "#4d8c80",
+    description: "A shared workplace with reception, computer workstations, a training area and equipment storage.",
+    floorColor: WORLD_PALETTE.tileLight,
+    wallColor: WORLD_PALETTE.linen,
+    accentColor: WORLD_PALETTE.foliage,
     fixtures: [
-      fixture("tech-worktable", "Worktable", "A shared workspace.", "table", -2.5, 0.8),
-      fixture(
-        "tech-screen",
-        "Presentation screen",
-        "A display at the front of the room.",
-        "screen",
-        0,
-        -1.5,
-      ),
-      fixture(
-        "tech-shelf",
-        "Equipment shelf",
-        "Storage for learning equipment.",
-        "shelf",
-        2.8,
-        0.6,
-      ),
+      { ...fixture("tech-worktable", "Worktable", "Shared computer workstations. Open Jobs & shifts for actual work options.", "table", -2.9, 0.3), workplaceFeature: "workstations" },
+      { ...fixture("tech-screen", "Presentation screen", "The training presentation area. Course enrolment and progress stay in the existing education flow.", "screen", 0, -4.8), workplaceFeature: "presentation" },
+      { ...fixture("tech-shelf", "Equipment shelf", "Equipment storage for the workspace. Inspecting it does not grant inventory items.", "shelf", 5.4, 0.4), workplaceFeature: "equipment" },
+      { ...fixture("tech-reception", "Reception desk", "The workplace reception point. Browse current opportunities through Jobs & shifts.", "counter", 2.9, 3.4), workplaceFeature: "reception" },
+      { ...fixture("tech-training-table", "Training table", "Shared training seats beside the presentation area. Open Courses for configured learning activities.", "table", 2.9, -2.6), workplaceFeature: "training" },
     ],
   },
   "old-town-library": {
