@@ -1509,6 +1509,7 @@ export function PlayableNeighborhood() {
                                 slug={currentLocation.slug}
                                 locationName={currentLocation.name}
                                 {...(hasBankServices ? { onBankServices: () => setBusinessView("bank") } : {})}
+                                {...(hasSelectedShopOffers ? { onBrowseMarket: () => setBusinessView("shops") } : {})}
                               />
                             </>
                           )}

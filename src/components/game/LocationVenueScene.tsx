@@ -4,6 +4,13 @@ import { TransitParkScene } from "@/components/3d/TransitParkScene";
 import { TRAVEL_MODES, TRAVEL_MODE_DETAILS, type TravelMode } from "@/lib/transport-service";
 import { transportMapHref } from "@/lib/transport-park";
 import { Component, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
+import { HealthcareScene } from "@/components/3d/HealthcareScene";
+import { MarketTradingHall } from "@/components/3d/MarketTradingScene";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { VenueSceneBoundary } from "./VenueSceneBoundary";
+
+const ClinicVenue = lazy(() => import("./ClinicVenue").then(module => ({ default: module.ClinicVenue })));
+const SchoolCampusVenue = lazy(() => import("./SchoolCampusVenue").then(module => ({ default: module.SchoolCampusVenue })));
 import { Canvas } from "@react-three/fiber";
 import { WorldCamera, WorldLighting, WorldMaterial } from "@/components/3d/WorldScene";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
@@ -17,25 +24,6 @@ import { VenueFurnitureModel } from "@/components/3d/VenueFurniture";
 import { useOptionalGameTime } from "@/components/game/GameTimeProvider";
 
 const SCENE_START_TIMEOUT_MS = 5_000;
-
-class VenueSceneBoundary extends Component<
-  { children: ReactNode; onError: () => void },
-  { failed: boolean }
-> {
-  override state = { failed: false };
-
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-
-  override componentDidCatch() {
-    this.props.onError();
-  }
-
-  override render() {
-    return this.state.failed ? null : this.props.children;
-  }
-}
 
 function FixtureModel({
   fixture,
@@ -67,6 +55,11 @@ function FixtureModel({
 }
 
 export function LocationVenueScene({ slug, locationName, onBankServices }: { slug: string; locationName: string; onBankServices?: () => void }) {
+function BasicLocationVenueScene({ slug, locationName, onBrowseMarket }: {
+  slug: string;
+  locationName: string;
+  onBrowseMarket?: () => void;
+}) {
   const venue = useMemo(() => getLocationVenueDesign(slug, locationName), [slug, locationName]);
   const bankLayout = venue.bankInterior ? BANK_INTERIORS[venue.bankInterior] : null;
   const gameTime = useOptionalGameTime();
@@ -134,6 +127,12 @@ export function LocationVenueScene({ slug, locationName, onBankServices }: { slu
                 <BankInteriorScene variant={venue.bankInterior} fixtures={venue.fixtures} selected={selectedFixture} onSelect={setSelectedFixture} floorColor={venue.floorColor} wallColor={venue.wallColor} accentColor={venue.accentColor} />
               ) : venue.transportPark ? (
                 <TransitParkScene fixtures={venue.fixtures} selected={selectedFixture} onSelect={setSelectedFixture} onSelectMode={setPreferredMode} />
+              <WorldCamera width={venue.sceneSize?.width ?? 10} depth={venue.sceneSize?.depth ?? 7} stage target={[0, 1.2, 0]} zoom={1.2} />
+              <WorldLighting size={14} />
+              {venue.scene === "healthcare" ? (
+                <HealthcareScene fixtures={venue.fixtures} selected={selectedFixture} onSelect={setSelectedFixture} />
+              ) : venue.scene === "market" ? (
+                <MarketTradingHall fixtures={venue.fixtures} selected={selectedFixture} onSelect={setSelectedFixture} />
               ) : venue.environment ? (
                 <VenueEnvironment
                   url={venue.environment.url}
@@ -216,6 +215,10 @@ export function LocationVenueScene({ slug, locationName, onBankServices }: { slu
         <button type="button" onClick={onBankServices}
           className="rounded-lg border border-edge bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground">
           Access bank services
+      {venue.scene === "market" && onBrowseMarket && (
+        <button type="button" onClick={onBrowseMarket}
+          className="rounded-lg border border-edge bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground">
+          Browse market offers
         </button>
       )}
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(14rem,0.8fr)]">
@@ -249,4 +252,18 @@ export function LocationVenueScene({ slug, locationName, onBankServices }: { slu
       </div>
     </section>
   );
+}
+
+export function LocationVenueScene(props: { slug: string; locationName: string; onBrowseMarket?: () => void }) {
+  const venue = getLocationVenueDesign(props.slug, props.locationName);
+  if (venue.scene === "clinic") return (
+    <Suspense fallback={<WorldLoadingIndicator title="Opening the clinic" detail="Preparing the rooms…" />}>
+      <ClinicVenue key={props.slug} slug={props.slug} locationName={props.locationName} />
+    </Suspense>
+  );
+  return venue.scene === "campus" ? (
+    <Suspense fallback={<WorldLoadingIndicator title="Opening the campus" detail="Preparing the grounds…" />}>
+      <SchoolCampusVenue key={props.slug} slug={props.slug} locationName={props.locationName} />
+    </Suspense>
+  ) : <BasicLocationVenueScene {...props} />;
 }

@@ -35,7 +35,7 @@ export function roadExtent(road: NeighborhoodRoad, bounds: DressingBounds) {
 type Box = { x: number; y: number; width: number; height: number };
 
 /** Everything street dressing must stay clear of: obstacles, and the main building footprints. */
-function occupiedBoxes(area: NeighborhoodArea): Box[] {
+function occupiedBoxes(area: NeighborhoodArea, includeWalkIn = false): Box[] {
   const obstacles: Box[] = (area.obstacles ?? []).map((o) => ({
     x: o.x,
     y: o.y,
@@ -43,7 +43,7 @@ function occupiedBoxes(area: NeighborhoodArea): Box[] {
     height: o.height,
   }));
   const buildings: Box[] = area.objects
-    .filter((o) => o.kind !== "npc")
+    .filter((o) => o.kind !== "npc" && (includeWalkIn || !o.walkIn))
     .map((o) => {
       const footprint = neighborhoodBuildingFootprint(o);
       return {
@@ -94,7 +94,8 @@ export function roadMarkings(area: NeighborhoodArea, bounds: DressingBounds): Dr
       if (
         insideObstacle(x, y, boxes, Math.max(width, depth) / 2 + 2) ||
         overlapsObstacle(marking, crossingBoxes, 0)
-      ) continue;
+      )
+        continue;
       rects.push(marking);
     }
   }
@@ -108,7 +109,7 @@ export function sidewalksAndCurbs(
 ): { sidewalks: DressingRect[]; curbs: DressingRect[] } {
   const sidewalks: DressingRect[] = [];
   const curbs: DressingRect[] = [];
-  const boxes = occupiedBoxes(area);
+  const boxes = occupiedBoxes(area, true);
   const crossings = pedestrianCrossings(area);
   for (const road of area.roads ?? []) {
     const { start, end, vertical } = roadExtent(road, bounds);
@@ -129,8 +130,8 @@ export function sidewalksAndCurbs(
           )
           .map((crossing) =>
             vertical
-              ? [crossing.y - crossing.depth / 2, crossing.y + crossing.depth / 2] as const
-              : [crossing.x - crossing.width / 2, crossing.x + crossing.width / 2] as const,
+              ? ([crossing.y - crossing.depth / 2, crossing.y + crossing.depth / 2] as const)
+              : ([crossing.x - crossing.width / 2, crossing.x + crossing.width / 2] as const),
           );
         // Keep driveway cutouts from current main while splitting sidewalks at crossings.
         const drivewayBlocked = (area.zoneLayout?.drivewayCutouts ?? [])
@@ -213,17 +214,22 @@ export function pedestrianCrossings(area: NeighborhoodArea): DressingRect[] {
         (verticalEnd !== undefined && horizontal.offset > verticalEnd) ||
         (horizontalStart !== undefined && vertical.offset < horizontalStart) ||
         (horizontalEnd !== undefined && vertical.offset > horizontalEnd)
-      ) continue;
+      )
+        continue;
 
       const verticalApproach = horizontal.width / 2 + 14;
-      for (const y of [horizontal.offset - verticalApproach, horizontal.offset + verticalApproach]) {
+      for (const y of [
+        horizontal.offset - verticalApproach,
+        horizontal.offset + verticalApproach,
+      ]) {
         // Extend across both kerbs and footpaths so the crossing actually connects them.
         const width = vertical.width + 2 * (SIDEWALK_WIDTH + CURB_WIDTH);
         const depth = 14;
         if (
           !withinRoadSpan(vertical, y, depth / 2) ||
           !withinRoadSpan(horizontal, vertical.offset, width / 2)
-        ) continue;
+        )
+          continue;
         addCrossing(`vertical:${vertical.id}:${horizontal.id}:${y}`, {
           x: vertical.offset,
           y,
@@ -233,13 +239,17 @@ export function pedestrianCrossings(area: NeighborhoodArea): DressingRect[] {
       }
 
       const horizontalApproach = vertical.width / 2 + 14;
-      for (const x of [vertical.offset - horizontalApproach, vertical.offset + horizontalApproach]) {
+      for (const x of [
+        vertical.offset - horizontalApproach,
+        vertical.offset + horizontalApproach,
+      ]) {
         const width = 14;
         const depth = horizontal.width + 2 * (SIDEWALK_WIDTH + CURB_WIDTH);
         if (
           !withinRoadSpan(vertical, horizontal.offset, depth / 2) ||
           !withinRoadSpan(horizontal, x, width / 2)
-        ) continue;
+        )
+          continue;
         addCrossing(`horizontal:${vertical.id}:${horizontal.id}:${x}`, {
           x,
           y: horizontal.offset,
@@ -301,7 +311,8 @@ export function trafficLightSpots(area: NeighborhoodArea): TrafficLightSpot[] {
         (verticalEnd !== undefined && horizontal.offset > verticalEnd) ||
         (horizontalStart !== undefined && vertical.offset < horizontalStart) ||
         (horizontalEnd !== undefined && vertical.offset > horizontalEnd)
-      ) continue;
+      )
+        continue;
       // Put signal poles beyond the footpath edge, not on the zebra crossings.
       const setbackX = vertical.width / 2 + SIDEWALK_WIDTH + CURB_WIDTH + 12;
       const setbackY = horizontal.width / 2 + SIDEWALK_WIDTH + CURB_WIDTH + 12;
@@ -321,7 +332,8 @@ export function trafficLightSpots(area: NeighborhoodArea): TrafficLightSpot[] {
             !withinVertical ||
             !withinHorizontal ||
             insideObstacle(x, y, boxes, 8)
-          ) continue;
+          )
+            continue;
           seen.add(key);
           spots.push({
             x,
@@ -356,10 +368,7 @@ export function streetLightSpots(area: NeighborhoodArea, bounds: DressingBounds)
         const x = vertical ? road.offset + side * across : along;
         const y = vertical ? along : road.offset + side * across;
         if (lamps.some((lamp) => Math.hypot(lamp.x - x, lamp.y - y) < 40)) continue;
-        if (
-          insideObstacle(x, y, boxes, 6) ||
-          insideObstacle(x, y, crossingBoxes, 6)
-        ) continue;
+        if (insideObstacle(x, y, boxes, 6) || insideObstacle(x, y, crossingBoxes, 6)) continue;
         spots.push({ x, y });
       }
     }
@@ -387,10 +396,7 @@ export function carSpots(area: NeighborhoodArea, bounds: DressingBounds): CarSpo
         const x = vertical ? road.offset + across : along;
         const y = vertical ? along : road.offset + across;
         // Keep parked traffic props out of zebra crossings and their approach space.
-        if (
-          insideObstacle(x, y, boxes, 28) ||
-          insideObstacle(x, y, crossingBoxes, 24)
-        ) continue;
+        if (insideObstacle(x, y, boxes, 28) || insideObstacle(x, y, crossingBoxes, 24)) continue;
         const rotation = vertical
           ? lane === -1
             ? -Math.PI / 2
@@ -439,10 +445,7 @@ export function pedestrianSpots(area: NeighborhoodArea, bounds: DressingBounds):
       const x = vertical ? road.offset + side * across : along;
       const y = vertical ? along : road.offset + side * across;
       // Keep pedestrian actors on the footpath, not in the crossing stripe area.
-      if (
-        insideObstacle(x, y, boxes, 12) ||
-        insideObstacle(x, y, crossingBoxes, 8)
-      ) continue;
+      if (insideObstacle(x, y, boxes, 12) || insideObstacle(x, y, crossingBoxes, 8)) continue;
       roadSpots.push({ x, y });
     }
     if (roadSpots.length) byRoad.push(roadSpots);

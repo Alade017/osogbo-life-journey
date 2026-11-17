@@ -12,7 +12,6 @@ import {
   type MapSearchTarget,
   type MapEventChip,
 } from "@/components/map/MapCanvas";
-import { NeighborhoodCityMap } from "@/components/map/NeighborhoodCityMap";
 import type { NeighborhoodLandmarkSpec } from "@/data/neighborhoodLocations";
 import {
   enqueueNeighborhoodNavigation,
@@ -130,7 +129,6 @@ export function CityMapDashboard({
   const [selectedBillboard, setSelectedBillboard] = useState<CurrentMapBillboard | null>(null);
   const [billboardNow, setBillboardNow] = useState(() => Date.now());
   const [mapLevel, setMapLevel] = useState<"town" | "state">("town");
-  const [townFocus, setTownFocus] = useState<"neighborhood" | "3d-town">("3d-town");
   const [selectedTownId, setSelectedTownId] = useState("osogbo");
   const [soonOpen, setSoonOpen] = useState(false);
   const livePlayerPose = useLivePlayerPose();
@@ -450,60 +448,6 @@ export function CityMapDashboard({
     return 5000 + persisted.walletOffset;
   }, [wallet.data?.balance]);
 
-  const handleWalkHere = useCallback(
-    (landmark: NeighborhoodLandmarkSpec) => {
-      enqueueNeighborhoodNavigation({
-        mode: "walk",
-        landmarkId: landmark.id,
-        landmarkName: landmark.name,
-        primaryZoneId: landmark.primaryZoneId,
-        targetScenePoint: landmark.walkToPoint,
-        dropOffScenePoint: landmark.dropOffPoint,
-        fare: 0,
-      });
-      toast.message(`Walking to ${landmark.name}`);
-      void navigate({ to: "/neighborhood" });
-    },
-    [navigate],
-  );
-
-  const handleBoardKeke = useCallback(
-    (landmark: NeighborhoodLandmarkSpec) => {
-      if (effectivePocketBalance < landmark.kekeFare) {
-        toast.error(`You need ₦${landmark.kekeFare} pocket cash to board a Keke here.`);
-        return;
-      }
-      const outcome = {
-        id: `keke-fare-${landmark.id}`,
-        label: `Keke / Korope to ${landmark.name}`,
-        description: `Fast-travel drop-off at ${landmark.name}.`,
-        walletDelta: -landmark.kekeFare,
-        toastMessage: `Keke dropped you off at ${landmark.name} (-₦${landmark.kekeFare}).`,
-        activityKind: "transit" as const,
-      };
-      const prevSlice = loadPersistedNeighborhoodState();
-      const nextSlice = neighborhoodReducer(
-        prevSlice,
-        applyZoneOutcomeAction({ zoneTitle: "City Transit", outcome }),
-      );
-      persistNeighborhoodState(nextSlice);
-      syncZoneOutcomeToQueryCache(queryClient, "City Transit", outcome);
-
-      enqueueNeighborhoodNavigation({
-        mode: "keke",
-        landmarkId: landmark.id,
-        landmarkName: landmark.name,
-        primaryZoneId: landmark.primaryZoneId,
-        targetScenePoint: landmark.walkToPoint,
-        dropOffScenePoint: landmark.dropOffPoint,
-        fare: landmark.kekeFare,
-      });
-      toast.success(`Boarded Keke to ${landmark.name} (-₦${landmark.kekeFare})`);
-      void navigate({ to: "/neighborhood" });
-    },
-    [effectivePocketBalance, navigate, queryClient],
-  );
-
   return (
     <section className="city-map-dashboard is-world-map map-experience" aria-label="Osun Life map">
       <details className="map-options">
@@ -626,7 +570,7 @@ export function CityMapDashboard({
           Places could not be loaded. Reconnect to browse the town.
         </div>
       )}
-      {mapLevel === "town" && townFocus === "3d-town" && (
+      {mapLevel === "town" && (
         <div className="map-controls">
           <div className="map-category-chips" aria-label="Filter places">
             {categories.map((c) => (
@@ -663,112 +607,77 @@ export function CityMapDashboard({
       )}
       {mapLevel === "town" ? (
         <div className="ncm-layout-grid">
-          <div className="map-view-switch" role="group" aria-label="Choose 3D map view">
-            <button
-              type="button"
-              aria-pressed={townFocus === "neighborhood"}
-              onClick={() => setTownFocus("neighborhood")}
-            >
-              Olaiya neighborhood
-            </button>
-            <button
-              type="button"
-              aria-pressed={townFocus === "3d-town"}
-              onClick={() => setTownFocus("3d-town")}
-            >
-              Osogbo districts
-            </button>
-          </div>
-          {townFocus === "neighborhood" && (
-            <NeighborhoodCityMap
-              playerPosition={playerMapPosition}
-              walletBalance={wallet.data?.balance ?? effectivePocketBalance}
-              offline={offline}
-              onWalkHere={handleWalkHere}
-              onBoardKeke={handleBoardKeke}
-              onSelectSurroundingDistrict={(landmarkId) => {
-                setTownFocus("3d-town");
-                setSearchTarget({ id: landmarkId, kind: "landmark" });
-                onLandmark(landmarkId);
-              }}
-              onOpenDistrictMapView={() => setTownFocus("3d-town")}
-            />
-          )}
-          {townFocus === "3d-town" && (
-            <div className="ncm-3d-companion">
-              <div className="ncm-3d-companion-bar">
-                <div>
-                  <strong>Osogbo 3D Town Districts</strong>{" "}
-                  <span>Explore surrounding quarters &amp; city transit</span>
-                </div>
-                <button
-                  type="button"
-                  className="ncm-3d-expand-btn"
-                  onClick={() =>
-                    setTownFocus((mode) => (mode === "neighborhood" ? "3d-town" : "neighborhood"))
-                  }
-                >
-                  Back to Olaiya in 3D
-                </button>
+          <div className="ncm-3d-companion">
+            <div className="ncm-3d-companion-bar">
+              <div>
+                <strong>Places &amp; districts</strong>{" "}
+                <span>Pick a place, then walk its streets</span>
               </div>
-              <MapCanvas
-                selectedLandmarkId={selectedLandmark?.id ?? null}
-                travelMode={travelController.state.mode}
-                travelPending={travelController.state.phase === "submitting"}
-                playerLocation={
-                  currentMapPlace
-                    ? {
-                        x:
-                          currentLocation?.slug === "city-centre"
-                            ? currentMapPlace.grid.x + (playerMapPosition.mapCoords.x - 0.5) * 2.2
-                            : currentMapPlace.grid.x,
-                        y:
-                          currentLocation?.slug === "city-centre"
-                            ? currentMapPlace.grid.z + (playerMapPosition.mapCoords.y - 0.5) * 1.4
-                            : currentMapPlace.grid.z,
-                        label: "You are here",
-                      }
-                    : null
-                }
-                properties={housingMarkers.data ?? []}
-                eventChips={eventChips}
-                onSelectEvent={(landmarkId) => {
-                  const event = (cityEvents.data?.events ?? []).find(
-                    (item) => item.status === "active" && item.landmarkId === landmarkId,
-                  );
-                  const found =
-                    landmarks.find((item) => item.id === landmarkId) ??
-                    getQuickTravelLandmark(landmarkId);
-                  if (!event || !found) return;
-                  setSelectedDistrict(null);
-                  travelController.select(found, "details");
-                  setActionError("");
-                  setPlaceActionResult(null);
-                }}
-                availableLandmarkIds={availableLandmarks.data ?? []}
-                onSelectDistrict={onDistrict}
-                onSelectLandmark={onLandmark}
-                activeFilter={filter}
-                searchTarget={searchTarget}
-                jobLandmarkIds={jobLandmarkIds}
-                billboardMarkers={billboardMarkers}
-                onSelectBillboard={(campaignId) => {
-                  setSelectedBillboard(
-                    activeMapBillboards.find(
-                      ({ advertisement }) => advertisement.id === campaignId,
-                    ) ?? null,
-                  );
-                }}
-                onSelectProperty={(property) => {
-                  window.dispatchEvent(
-                    new CustomEvent("osogbo-open-phone-app", {
-                      detail: { app: property.status === "vacant" ? "Find homes" : "Property" },
-                    }),
-                  );
-                }}
-              />
+              <button
+                type="button"
+                className="ncm-3d-expand-btn"
+                onClick={() => void navigate({ to: "/neighborhood" })}
+              >
+                Walk the streets
+              </button>
             </div>
-          )}
+            <MapCanvas
+              selectedLandmarkId={selectedLandmark?.id ?? null}
+              travelMode={travelController.state.mode}
+              travelPending={travelController.state.phase === "submitting"}
+              playerLocation={
+                currentMapPlace
+                  ? {
+                      x:
+                        currentLocation?.slug === "city-centre"
+                          ? currentMapPlace.grid.x + (playerMapPosition.mapCoords.x - 0.5) * 2.2
+                          : currentMapPlace.grid.x,
+                      y:
+                        currentLocation?.slug === "city-centre"
+                          ? currentMapPlace.grid.z + (playerMapPosition.mapCoords.y - 0.5) * 1.4
+                          : currentMapPlace.grid.z,
+                      label: "You are here",
+                    }
+                  : null
+              }
+              properties={housingMarkers.data ?? []}
+              eventChips={eventChips}
+              onSelectEvent={(landmarkId) => {
+                const event = (cityEvents.data?.events ?? []).find(
+                  (item) => item.status === "active" && item.landmarkId === landmarkId,
+                );
+                const found =
+                  landmarks.find((item) => item.id === landmarkId) ??
+                  getQuickTravelLandmark(landmarkId);
+                if (!event || !found) return;
+                setSelectedDistrict(null);
+                travelController.select(found, "details");
+                setActionError("");
+                setPlaceActionResult(null);
+              }}
+              availableLandmarkIds={availableLandmarks.data ?? []}
+              onSelectDistrict={onDistrict}
+              onSelectLandmark={onLandmark}
+              activeFilter={filter}
+              searchTarget={searchTarget}
+              jobLandmarkIds={jobLandmarkIds}
+              billboardMarkers={billboardMarkers}
+              onSelectBillboard={(campaignId) => {
+                setSelectedBillboard(
+                  activeMapBillboards.find(
+                    ({ advertisement }) => advertisement.id === campaignId,
+                  ) ?? null,
+                );
+              }}
+              onSelectProperty={(property) => {
+                window.dispatchEvent(
+                  new CustomEvent("osogbo-open-phone-app", {
+                    detail: { app: property.status === "vacant" ? "Find homes" : "Property" },
+                  }),
+                );
+              }}
+            />
+          </div>
         </div>
       ) : (
         <OsunStateOverview

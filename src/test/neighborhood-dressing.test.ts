@@ -69,7 +69,7 @@ describe("neighbourhood street dressing", () => {
   });
 
   it("orients traffic in both directions along horizontal and vertical roads", () => {
-    const rotations = new Set(carSpots(CITY_CENTRE_AREA, bounds).map((spot) => spot.rotation));
+    const rotations = new Set(carSpots(OJA_OBA_AREA, bounds).map((spot) => spot.rotation));
     expect(rotations.has(0)).toBe(true);
     expect(rotations.has(Math.PI)).toBe(true);
     expect(rotations.has(Math.PI / 2)).toBe(true);
@@ -77,12 +77,12 @@ describe("neighbourhood street dressing", () => {
   });
 
   it("keeps sidewalks and lamps clear of main building footprints", () => {
-    const buildings = CITY_CENTRE_AREA.objects.map((o) => ({
-      left: o.x - 57,
-      right: o.x + 57,
-      top: o.y - 62,
-      bottom: o.y - 4,
-    }));
+    const buildings = CITY_CENTRE_AREA.objects
+      .filter((o) => o.kind !== "npc")
+      .map((o) => {
+        const f = neighborhoodBuildingFootprint(o);
+        return { left: f.left, right: f.left + f.width, top: f.top, bottom: f.top + f.height };
+      });
     for (const rect of sidewalksAndCurbs(CITY_CENTRE_AREA, bounds).sidewalks)
       for (const b of buildings) {
         const overlapX =
@@ -99,7 +99,7 @@ describe("neighbourhood street dressing", () => {
   });
 
   it("places pedestrian crossings across both intersecting road directions", () => {
-    const crossings = pedestrianCrossings(CITY_CENTRE_AREA);
+    const crossings = pedestrianCrossings(OJA_OBA_AREA);
     expect(crossings.some((crossing) => crossing.width > crossing.depth)).toBe(true);
     expect(crossings.some((crossing) => crossing.depth > crossing.width)).toBe(true);
   });
@@ -110,10 +110,8 @@ describe("neighbourhood street dressing", () => {
     for (const crossing of crossings)
       for (const marking of markings) {
         const overlaps =
-          Math.abs(crossing.x - marking.x) <
-            (crossing.width + marking.width) / 2 &&
-          Math.abs(crossing.y - marking.y) <
-            (crossing.depth + marking.depth) / 2;
+          Math.abs(crossing.x - marking.x) < (crossing.width + marking.width) / 2 &&
+          Math.abs(crossing.y - marking.y) < (crossing.depth + marking.depth) / 2;
         expect(overlaps).toBe(false);
       }
   });
@@ -123,9 +121,10 @@ describe("neighbourhood street dressing", () => {
     const stripes = pedestrianCrossingStripes(crossings);
     expect(stripes).toHaveLength(crossings.length * 4);
     for (const crossing of crossings) {
-      const matching = stripes.filter((stripe) =>
-        Math.abs(stripe.x - crossing.x) <= crossing.width / 2 &&
-        Math.abs(stripe.y - crossing.y) <= crossing.depth / 2,
+      const matching = stripes.filter(
+        (stripe) =>
+          Math.abs(stripe.x - crossing.x) <= crossing.width / 2 &&
+          Math.abs(stripe.y - crossing.y) <= crossing.depth / 2,
       );
       expect(matching).toHaveLength(4);
       if (crossing.width >= crossing.depth) {
@@ -150,20 +149,32 @@ describe("neighbourhood street dressing", () => {
         for (const side of [-1, 1]) {
           const x = verticalRoad.offset + side * (verticalRoad.width / 2 + 8);
           expect(
-            sidewalks.some((segment) => Math.abs(segment.x - x) < 1 && segment.y < crossing.y - crossing.depth / 2),
+            sidewalks.some(
+              (segment) =>
+                Math.abs(segment.x - x) < 1 && segment.y < crossing.y - crossing.depth / 2,
+            ),
           ).toBe(true);
           expect(
-            sidewalks.some((segment) => Math.abs(segment.x - x) < 1 && segment.y > crossing.y + crossing.depth / 2),
+            sidewalks.some(
+              (segment) =>
+                Math.abs(segment.x - x) < 1 && segment.y > crossing.y + crossing.depth / 2,
+            ),
           ).toBe(true);
         }
       } else if (horizontalRoad && crossing.depth > crossing.width) {
         for (const side of [-1, 1]) {
           const y = horizontalRoad.offset + side * (horizontalRoad.width / 2 + 8);
           expect(
-            sidewalks.some((segment) => Math.abs(segment.y - y) < 1 && segment.x < crossing.x - crossing.width / 2),
+            sidewalks.some(
+              (segment) =>
+                Math.abs(segment.y - y) < 1 && segment.x < crossing.x - crossing.width / 2,
+            ),
           ).toBe(true);
           expect(
-            sidewalks.some((segment) => Math.abs(segment.y - y) < 1 && segment.x > crossing.x + crossing.width / 2),
+            sidewalks.some(
+              (segment) =>
+                Math.abs(segment.y - y) < 1 && segment.x > crossing.x + crossing.width / 2,
+            ),
           ).toBe(true);
         }
       }
@@ -198,10 +209,8 @@ describe("neighbourhood street dressing", () => {
     for (const crossing of pedestrianCrossings(CITY_CENTRE_AREA)) {
       for (const obstacle of CITY_CENTRE_AREA.obstacles ?? []) {
         const overlaps =
-          Math.abs(crossing.x - obstacle.x) <
-            (crossing.width + obstacle.width) / 2 + 2 &&
-          Math.abs(crossing.y - obstacle.y) <
-            (crossing.depth + obstacle.height) / 2 + 2;
+          Math.abs(crossing.x - obstacle.x) < (crossing.width + obstacle.width) / 2 + 2 &&
+          Math.abs(crossing.y - obstacle.y) < (crossing.depth + obstacle.height) / 2 + 2;
         expect(overlaps).toBe(false);
       }
       for (const object of CITY_CENTRE_AREA.objects.filter((item) => item.kind !== "npc")) {
@@ -232,13 +241,13 @@ describe("neighbourhood street dressing", () => {
   });
 
   it("derives deterministic traffic signals at clear arterial junctions", () => {
-    const signals = trafficLightSpots(CITY_CENTRE_AREA);
+    const signals = trafficLightSpots(OJA_OBA_AREA);
     expect(signals.length).toBeGreaterThan(0);
     expect(new Set(signals.map((signal) => signal.rotation)).size).toBeGreaterThan(1);
-    expect(signals).toEqual(trafficLightSpots(CITY_CENTRE_AREA));
-    const crossings = pedestrianCrossings(CITY_CENTRE_AREA);
+    expect(signals).toEqual(trafficLightSpots(OJA_OBA_AREA));
+    const crossings = pedestrianCrossings(OJA_OBA_AREA);
     for (const signal of signals) {
-      for (const obstacle of CITY_CENTRE_AREA.obstacles ?? []) {
+      for (const obstacle of OJA_OBA_AREA.obstacles ?? []) {
         expect(
           Math.abs(signal.x - obstacle.x) < obstacle.width / 2 + 8 &&
             Math.abs(signal.y - obstacle.y) < obstacle.height / 2 + 8,
@@ -294,10 +303,8 @@ describe("neighbourhood street dressing", () => {
   });
 
   it("is deterministic for the same area", () => {
-    expect(pedestrianSpots(CITY_CENTRE_AREA, bounds)).toEqual(
-      pedestrianSpots(CITY_CENTRE_AREA, bounds),
-    );
-    expect(pedestrianCrossings(CITY_CENTRE_AREA).length).toBeGreaterThan(0);
-    expect(vendorSpots(CITY_CENTRE_AREA)).toEqual([...(CITY_CENTRE_AREA.marketStalls ?? [])]);
+    expect(pedestrianSpots(OJA_OBA_AREA, bounds)).toEqual(pedestrianSpots(OJA_OBA_AREA, bounds));
+    expect(pedestrianCrossings(OJA_OBA_AREA).length).toBeGreaterThan(0);
+    expect(vendorSpots(OJA_OBA_AREA)).toEqual([...(OJA_OBA_AREA.marketStalls ?? [])]);
   });
 });

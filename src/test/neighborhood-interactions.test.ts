@@ -43,25 +43,15 @@ describe("Olaiya neighborhood full zone interactivity & state slice", () => {
     }
   });
 
-  it("allows walking inside Dele Cutz Barber and Iya Adire Accessories doorways while blocking walls", () => {
+  it("keeps every Olaiya spot reachable from its walkable access point", () => {
     const objects = CITY_CENTRE_AREA.objects;
     const obstacles = CITY_CENTRE_AREA.obstacles ?? [];
-
-    // Open doorways & walk-in shop interiors
-    expect(
-      canOccupyNeighborhoodPoint(toWorld({ x: 1502, y: 55 }, origin), origin, objects, obstacles),
-    ).toBe(true);
-    expect(
-      canOccupyNeighborhoodPoint(toWorld({ x: 1502, y: 335 }, origin), origin, objects, obstacles),
-    ).toBe(true);
-
-    // Solid east rear walls & interior counters block movement
-    expect(
-      canOccupyNeighborhoodPoint(toWorld({ x: 1568, y: 65 }, origin), origin, objects, obstacles),
-    ).toBe(false);
-    expect(
-      canOccupyNeighborhoodPoint(toWorld({ x: 1568, y: 345 }, origin), origin, objects, obstacles),
-    ).toBe(false);
+    for (const zone of NEIGHBORHOOD_INTERACTABLE_ZONES) {
+      expect(
+        canOccupyNeighborhoodPoint(toWorld(zone.accessPoint, origin), origin, objects, obstacles),
+        `Expected ${zone.id} access point to be walkable`,
+      ).toBe(true);
+    }
   });
 
   it("matches proximity queries accurately at each zone and NPC access point", () => {

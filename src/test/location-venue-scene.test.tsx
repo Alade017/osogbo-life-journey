@@ -65,5 +65,15 @@ it.each([
   expect(screen.getByRole("button", { name: feature })).toHaveAttribute("aria-pressed", "true");
   fireEvent.click(screen.getByRole("button", { name: "Access bank services" }));
   expect(openBank).toHaveBeenCalledTimes(1);
+it("keeps market fixture selection and server-offer handoff available without WebGL", () => {
+  vi.useFakeTimers();
+  const browse = vi.fn();
+  render(<LocationVenueScene slug="oja-oba" locationName="Oja-Oba" onBrowseMarket={browse} />);
+  act(() => { vi.advanceTimersByTime(5000); });
+  fireEvent.click(screen.getByRole("button", { name: "Household goods display" }));
+  expect(screen.getByRole("button", { name: "Household goods display" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByText("A shared display table for practical household items.")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Browse market offers" }));
+  expect(browse).toHaveBeenCalledTimes(1);
   vi.useRealTimers();
 });
