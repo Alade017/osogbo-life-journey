@@ -267,7 +267,7 @@ function GameLayout() {
             pathname === "/house" && "home-scene",
             profile?.reduced_motion && "reduce-motion",
             phoneOpen && "phone-open",
-            housingOpen && "hud-menu-open",
+            (housingOpen || inventoryOpen) && "hud-menu-open",
             hudPanelOpen && "hud-panel-open",
             hudIdle && "hud-idle",
           )}
@@ -321,7 +321,13 @@ function GameLayout() {
               onOpenChange={setPhoneOpen}
               dock={
                 <div className="gbb">
-                  <GameMobileNav onNavigate={() => setPhoneOpen(false)} />
+                  <GameMobileNav
+                    onNavigate={() => setPhoneOpen(false)}
+                    onInventoryOpen={() => {
+                      setPhoneOpen(false);
+                      setInventoryOpen(true);
+                    }}
+                  />
                 </div>
               }
             />
