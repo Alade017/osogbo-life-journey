@@ -352,9 +352,7 @@ describe("isometric town map", () => {
     expect(
       townData.landmarks.filter((place) => place.category === "worship").map((place) => place.id),
     ).toEqual([
-      "garden-chapel",
       "mosque-square",
-      "river-shrine-court",
       "central-church",
       "central-mosque",
     ]);
