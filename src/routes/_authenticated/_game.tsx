@@ -111,7 +111,9 @@ function GameLayout() {
   }, [pathname]);
 
   useEffect(() => {
-    if (phoneOpen || housingOpen) setHudPanelOpen(false);
+    if (!phoneOpen && !housingOpen) return;
+    setHudPanelOpen(false);
+    window.dispatchEvent(new Event("osogbo-hud-dismiss-panels"));
   }, [phoneOpen, housingOpen]);
   useEffect(() => {
     configureGameMusic(character?.id ?? null);
