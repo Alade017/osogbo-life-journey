@@ -1,3 +1,4 @@
+import { isDiningItem } from "@/lib/food-venue";
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -14,7 +15,7 @@ export const Route = createFileRoute("/_authenticated/_game/market")({
   component: MarketPage,
 });
 
-export function MarketPage({ shopSlug }: { shopSlug?: string | null } = {}) {
+export function MarketPage({ shopSlug, foodOnly = false }: { shopSlug?: string | null; foodOnly?: boolean } = {}) {
   const { data: worldTime } = useWorldClock();
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const { data: character, isLoading: characterLoading } = useQuery(q.character());
@@ -32,6 +33,7 @@ export function MarketPage({ shopSlug }: { shopSlug?: string | null } = {}) {
           !!currentLocation &&
           !!offer.shop &&
           offer.shop.location_id === currentLocation.id &&
+          (!foodOnly || isDiningItem(offer.item ?? null)) &&
           (shopSlug === undefined || (shopSlug !== null && offer.shop.slug === shopSlug)) &&
           shopIsOpen(
             offer.shop.is_open,
@@ -40,7 +42,7 @@ export function MarketPage({ shopSlug }: { shopSlug?: string | null } = {}) {
             worldTime?.hour ?? -1,
           ),
       ) ?? [],
-    [shopItems, currentLocation, worldTime?.hour, shopSlug],
+    [shopItems, currentLocation, worldTime?.hour, shopSlug, foodOnly],
   );
   const purchase = useGameAction(rpc.purchaseShopItem, {
     onSuccess: () => toast.success("Purchase complete. Your inventory has been updated."),
@@ -53,7 +55,7 @@ export function MarketPage({ shopSlug }: { shopSlug?: string | null } = {}) {
 
   return (
     <div className="space-y-5">
-      <PageHeader eyebrow="SHOPS AROUND THE CITY" title="City market" />
+      <PageHeader eyebrow={foodOnly ? "LOCAL FOOD OFFERS" : "SHOPS AROUND THE CITY"} title={foodOnly ? "Food & drinks" : "City market"} />
       <section className="game-panel flex flex-wrap items-center justify-between gap-3 p-4">
         <div>
           <p className="font-semibold">
@@ -153,8 +155,8 @@ export function MarketPage({ shopSlug }: { shopSlug?: string | null } = {}) {
         </section>
       ) : (
         <EmptyState
-          title="No shops in this district"
-          body="Travel to a market, supermarket, clothing shop, or electronics store to browse its offers."
+          title={foodOnly ? "No food offers available" : "No shops in this district"}
+          body={foodOnly ? "No matching food or drink offers are available from open shops here right now." : "Travel to a market, supermarket, clothing shop, or electronics store to browse its offers."}
         />
       )}
 

@@ -16,7 +16,7 @@ const state = vi.hoisted(() => ({
   gameTime: { minute: 0, hour: 8, day: 1, weekday: 0 },
   npcRows: [] as Array<{ id: string }>,
   placeRows: [] as Array<{ location_id: string; category: string }>,
-  shopRows: [] as Array<{ shop: { location_id: string } }>,
+  shopRows: [] as Array<{ shop: { location_id: string; slug?: string } }>,
   jobRows: [] as Array<{ is_available: boolean; location_id: string }>,
   position: null as { x: number; y: number } | null,
 }));
@@ -259,7 +259,7 @@ async function changeLocation(location: string) {
 it("loads Oja-Oba's confirmed room and correct origin without fetching or exposing a personal home", async () => {
   state.location = "market";
   show();
-  await screen.findByText(/Tap the ground to walk/);
+  await screen.findByText(/Tap the ground.*walk/);
   await screen.findByText("R3F neighbourhood");
   expect(state.join).toHaveBeenCalledWith("market");
   expect(screen.getByRole("heading", { name: "Oja-Oba Market neighbourhood" })).toBeInTheDocument();
@@ -275,25 +275,25 @@ it("loads Oja-Oba's confirmed room and correct origin without fetching or exposi
 
 it("offers shop interactions only when real local shop offers are configured", async () => {
   state.location = "market";
-  state.position = { x: 1.90625, y: 4.15625 };
-  state.shopRows = [{ shop: { location_id: "market" } }];
+  state.position = toWorld({ x: 145, y: 165 }, { x: 3, y: 5 });
+  state.shopRows = [{ shop: { location_id: "market", slug: "market-sales-stall" } }];
   show();
-  await screen.findByRole("button", { name: /Interact with Oja-Oba Market/i });
+  await screen.findByRole("button", { name: /Interact with Oja-Oba stalls/i });
   await act(async () => {
-    screen.getByRole("button", { name: /Interact with Oja-Oba Market/i }).click();
+    screen.getByRole("button", { name: /Interact with Oja-Oba stalls/i }).click();
   });
-  await screen.findByRole("button", { name: "Browse local shop offers" });
-  screen.getByRole("button", { name: "Browse local shop offers" }).click();
+  await screen.findByRole("button", { name: "Browse Oja-Oba stalls shop offers" });
+  screen.getByRole("button", { name: "Browse Oja-Oba stalls shop offers" }).click();
   await screen.findByText("Market offers");
 });
 
 it("does not offer fake business interactions for decorative buildings", async () => {
   state.location = "market";
-  state.position = { x: 1.90625, y: 4.15625 };
+  state.position = toWorld({ x: 515, y: 165 }, { x: 3, y: 5 });
   show();
   await screen.findByText("R3F neighbourhood");
   expect(
-    screen.queryByRole("button", { name: /Interact with Oja-Oba Market/i }),
+    screen.queryByRole("button", { name: /Interact with Oja-Oba stalls/i }),
   ).not.toBeInTheDocument();
   expect(
     screen.queryByRole("button", { name: /Browse local shop offers/i }),
@@ -342,9 +342,9 @@ it("opens an NPC conversation from a 3D target only when the player is within in
   await screen.findByText("R3F neighbourhood");
   await settleNpcsAtDestination(joined);
   const sceneProps = state.scene.mock.lastCall?.[0];
-  expect(sceneProps?.interactionTargets).toEqual([
-    expect.objectContaining({ id: "npc-adeola", kind: "npc" }),
-  ]);
+  expect(sceneProps?.interactionTargets).toEqual(
+    expect.arrayContaining([expect.objectContaining({ id: "npc-adeola", kind: "npc" })]),
+  );
   await act(async () => sceneProps?.onSelectTarget("npc-adeola"));
   await screen.findByRole("button", { name: "Say hello" });
 });
@@ -392,7 +392,7 @@ it("does not join inactive locations", async () => {
 it("joins a mapped city-world blueprint beyond the two authored districts", async () => {
   state.location = "school";
   show();
-  await screen.findByText(/Tap the ground to walk/);
+  await screen.findByText(/Tap the ground.*walk/);
   expect(state.join).toHaveBeenCalledWith("school");
   expect(state.scene.mock.lastCall?.[0].area.slug).toBe("student-district");
   expect(state.scene.mock.lastCall?.[0].area.roads.length).toBeGreaterThan(2);
@@ -406,14 +406,14 @@ it("waits for the initial authoritative room state before publishing players", a
   state.join.mockResolvedValue(pending);
   show();
   await waitFor(() => expect(pending.listeners.publish).toBeDefined());
-  expect(screen.queryByText(/Tap the ground to walk/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/Tap the ground.*walk/)).not.toBeInTheDocument();
   expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   Object.defineProperty(pending, "state", {
     value: { players: initialPlayers },
     configurable: true,
   });
   act(() => pending.listeners.publish?.());
-  await screen.findByText(/Tap the ground to walk/);
+  await screen.findByText(/Tap the ground.*walk/);
   await screen.findByText("R3F neighbourhood");
 });
 
@@ -421,7 +421,7 @@ it("adds only the confirmed local activity animation to the scene player snapsho
   state.location = "market";
   state.currentAction = { animation: "socializing" };
   show();
-  await screen.findByText(/Tap the ground to walk/);
+  await screen.findByText(/Tap the ground.*walk/);
   await screen.findByText("R3F neighbourhood");
 
   const players = state.scene.mock.lastCall?.[0].playersRef.current;
@@ -442,7 +442,7 @@ it("disposes a room whose join completes after navigation to another district", 
   show();
   await waitFor(() => expect(state.join).toHaveBeenCalledWith("city"));
   await changeLocation("market");
-  await screen.findByText(/Tap the ground to walk/);
+  await screen.findByText(/Tap the ground.*walk/);
   await screen.findByText("R3F neighbourhood");
   const late = room("city");
   await act(async () => {

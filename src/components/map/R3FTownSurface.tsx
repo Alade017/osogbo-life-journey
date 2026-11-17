@@ -108,6 +108,11 @@ const point = (x: number, z: number): [number, number, number] => [
   0,
   (z - (gridRows - 1) / 2) * cell,
 ];
+// A place's marker sits on the centre of its building (buildings span a 2x2 block of cells).
+const placeAnchor = (place: { id: string; grid: { x: number; z: number } }): [number, number, number] => {
+  const building = town.grid.buildings.find((b) => b.placeId === place.id);
+  return building ? point(building.x + 0.5, building.z + 0.5) : point(place.grid.x, place.grid.z);
+};
 
 class SurfaceBoundary extends Component<
   { children: ReactNode; onUnavailable: () => void },
@@ -168,7 +173,7 @@ export function R3FTownSurface(props: Props) {
       typeof props.searchTarget === "string" ? props.searchTarget : props.searchTarget.id;
     const landmark = props.places.find((p) => p.id === targetId);
     if (landmark) {
-      const [x, , z] = point(landmark.grid.x, landmark.grid.z);
+      const [x, , z] = placeAnchor(landmark);
       setSelectedTarget({ id: landmark.id, position: [x, 0, z], type: "landmark" });
       return;
     }
@@ -195,7 +200,7 @@ export function R3FTownSurface(props: Props) {
     if (!landmark) return;
     setSelectedTarget({
       id: landmark.id,
-      position: point(landmark.grid.x, landmark.grid.z),
+      position: placeAnchor(landmark),
       type: "landmark",
     });
   }, [props.selectedLandmarkId]);
@@ -1290,7 +1295,7 @@ export function R3FTownSurface(props: Props) {
               />
             )}
             {props.places.map((place) => {
-              const [x, , z] = point(place.grid.x, place.grid.z);
+              const [x, , z] = placeAnchor(place);
               const buildingType =
                 town.grid.buildings.find((building) => building.placeId === place.id)
                   ?.buildingType ?? place.category;

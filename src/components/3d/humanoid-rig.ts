@@ -1,14 +1,13 @@
-import {
+﻿import {
   Bone,
   BufferGeometry,
-  CylinderGeometry,
   Float32BufferAttribute,
-  IcosahedronGeometry,
   MeshStandardMaterial,
   LatheGeometry,
   Vector2,
   Skeleton,
   SkinnedMesh,
+  SphereGeometry,
   Uint16BufferAttribute,
 } from "three";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
@@ -16,13 +15,9 @@ import { BONE, ROOT_REST_Y, type BoneName } from "./humanoid-pose";
 import type { HairShape } from "./hair-shapes";
 
 export type BodyVariant = "female" | "male" | "business";
-
-/** Dark accessory colour for the face features, blindfold and wrist and ankle bands. */
-export const ACCESSORY_COLOR = "#1d1410";
+export const ACCESSORY_COLOR = "#241914";
 
 type Joint = { name: BoneName; parent: BoneName | null; offset: [number, number, number] };
-
-/** Bones in skeleton order. Offsets are relative to the parent, so the rest pose stands 1.0 tall. */
 export const JOINTS: readonly Joint[] = [
   { name: BONE.root, parent: null, offset: [0, ROOT_REST_Y, 0] },
   { name: BONE.spine, parent: BONE.root, offset: [0, 0.04, 0] },
@@ -95,17 +90,18 @@ function blob(
   bone: BoneName,
   options: { detail?: 0 | 1; accessory?: boolean } = {},
 ): Part {
-  const geometry = new IcosahedronGeometry(1, options.detail ?? 0);
+  const geometry = new SphereGeometry(1, options.detail ? 12 : 8, options.detail ? 8 : 6);
   geometry.scale(...radii);
   geometry.translate(...at);
   return { geometry, bone, accessory: options.accessory ?? false };
 }
 
-const SHAPES: Record<BodyVariant, { shoulder: number; waist: number; hip: number; bust: number }> = {
-  male: { shoulder: 1, waist: 1, hip: 1, bust: 0 },
-  business: { shoulder: 1, waist: 1, hip: 1, bust: 0 },
-  female: { shoulder: 0.92, waist: 0.88, hip: 1.1, bust: 1 },
-};
+const SHAPES: Record<BodyVariant, { shoulder: number; waist: number; hip: number; bust: number }> =
+  {
+    male: { shoulder: 1, waist: 1, hip: 1, bust: 0 },
+    business: { shoulder: 1, waist: 1, hip: 1, bust: 0 },
+    female: { shoulder: 0.92, waist: 0.88, hip: 1.1, bust: 1 },
+  };
 const BUILD_FACTORS = [
   { shoulder: 0.9, waist: 0.86, hip: 0.92, limb: 0.9 },
   { shoulder: 1, waist: 1, hip: 1, limb: 1 },
@@ -114,9 +110,7 @@ const BUILD_FACTORS = [
 ] as const;
 
 /** A single closed torso surface with blended root/spine skin weights. */
-function torsoSurface(
-  shape: { shoulder: number; waist: number; hip: number },
-): Part {
+function torsoSurface(shape: { shoulder: number; waist: number; hip: number }): Part {
   const rings = [
     { y: 0.49, x: 0.105 * shape.hip, z: 0.075 },
     { y: 0.53, x: 0.137 * shape.hip, z: 0.09 },
@@ -166,9 +160,9 @@ function torsoSurface(
   for (let ring = 0; ring < rings.length - 1; ring += 1) {
     for (let segment = 0; segment < radialSegments; segment += 1) {
       const a = ring * radialSegments + segment;
-      const b = ring * radialSegments + (segment + 1) % radialSegments;
+      const b = ring * radialSegments + ((segment + 1) % radialSegments);
       const c = (ring + 1) * radialSegments + segment;
-      const d = (ring + 1) * radialSegments + (segment + 1) % radialSegments;
+      const d = (ring + 1) * radialSegments + ((segment + 1) % radialSegments);
       indices.push(a, c, b, b, c, d);
     }
   }
@@ -207,7 +201,7 @@ function limbParts(side: 1 | -1, shape: { shoulder: number; hip: number; limb: n
   const thigh = side === 1 ? BONE.lThigh : BONE.rThigh;
   const calf = side === 1 ? BONE.lCalf : BONE.rCalf;
   const foot = side === 1 ? BONE.lFoot : BONE.rFoot;
-  const ax = 0.2 * side * shape.shoulder;
+  const ax = 0.19 * side * shape.shoulder;
   const lx = 0.1 * side * shape.hip;
   const arm = shape.limb;
   const thighWidth = 0.073 * shape.hip * arm;
@@ -222,8 +216,11 @@ function limbParts(side: 1 | -1, shape: { shoulder: number; hip: number; limb: n
     blob([0.036 * arm, 0.047 * arm, 0.025 * arm], [ax, 0.355, 0.008], hand, { detail: 1 }),
     blob([0.014 * arm, 0.029 * arm, 0.016 * arm], [ax - side * 0.035 * arm, 0.348, 0.012], hand),
     ...[-1.5, -0.5, 0.5, 1.5].map((finger) =>
-      blob([0.0065 * arm, 0.027 * arm, 0.008 * arm],
-        [ax + finger * fingerSpread, 0.31, 0.018], hand),
+      blob(
+        [0.0065 * arm, 0.027 * arm, 0.008 * arm],
+        [ax + finger * fingerSpread, 0.31, 0.018],
+        hand,
+      ),
     ),
     // Rounded thigh and a narrower calf with an ankle transition.
     taperedSegment(thighWidth, 0.052 * arm, 0.31 * arm, [lx, 0.33, 0], thigh),
@@ -271,17 +268,16 @@ function bodyParts(variant: BodyVariant, build: number): Part[] {
     blob([0.12 * shoulder, 0.012, 0.014], [-0.065, 0.84, 0.098], BONE.spine2),
   ];
   if (bust > 0) {
-    // Two chest pieces, one per side, sit on the upper chest.
     parts.push(
-      blob([0.075 * bust, 0.065 * bust, 0.07 * bust], [0.075, 0.74, 0.085], BONE.spine2),
-      blob([0.075 * bust, 0.065 * bust, 0.07 * bust], [-0.075, 0.74, 0.085], BONE.spine2),
+      blob([0.073 * bust, 0.06 * bust, 0.064 * bust], [0.073, 0.75, 0.085], BONE.spine2, { detail: 1 }),
+      blob([0.073 * bust, 0.06 * bust, 0.064 * bust], [-0.073, 0.75, 0.085], BONE.spine2, { detail: 1 }),
     );
   }
   parts.push(...limbParts(1, shape), ...limbParts(-1, shape));
   return parts;
 }
 
-function accessoryParts(): Part[] {
+function faceDetailParts(): Part[] {
   return [
     // Brows, nose definition and lips. Eye whites/irises/highlights use their own material meshes below.
     blob([0.024, 0.006, 0.009], [0.038, 0.976, 0.083], BONE.head, { accessory: true }),
@@ -290,6 +286,26 @@ function accessoryParts(): Part[] {
     blob([0.009, 0.0035, 0.004], [-0.012, 0.914, 0.122], BONE.head, { accessory: true }),
     blob([0.025, 0.005, 0.006], [0, 0.884, 0.092], BONE.head, { accessory: true }),
   ];
+}
+function eyeWhiteParts(): Part[] {
+  return [-1, 1].map((side) =>
+    blob([0.019, 0.012, 0.009], [side * 0.038, 0.956, 0.083], BONE.head),
+  );
+}
+function irisParts(): Part[] {
+  return [-1, 1].map((side) =>
+    blob([0.008, 0.0085, 0.005], [side * 0.038, 0.956, 0.092], BONE.head),
+  );
+}
+function pupilParts(): Part[] {
+  return [-1, 1].map((side) =>
+    blob([0.0042, 0.0055, 0.003], [side * 0.038, 0.956, 0.096], BONE.head),
+  );
+}
+function highlightParts(): Part[] {
+  return [-1, 1].map((side) =>
+    blob([0.0024, 0.0024, 0.0018], [side * 0.038 - 0.002, 0.959, 0.099], BONE.head),
+  );
 }
 
 function hairParts(shape: HairShape): Part[] {
@@ -354,8 +370,10 @@ function hairParts(shape: HairShape): Part[] {
   return [base];
 }
 
-const geometryCache = new Map<string, { body: BufferGeometry; hair: BufferGeometry }>();
-
+const geometryCache = new Map<string, {
+  body: BufferGeometry; face: BufferGeometry; eyes: BufferGeometry; irises: BufferGeometry;
+  pupils: BufferGeometry; highlights: BufferGeometry; hair: BufferGeometry;
+}>();
 function mergeSkinned(parts: readonly Part[], indexOf: Map<BoneName, number>): BufferGeometry {
   const merged = mergeGeometries(
     parts.map((part) => skinTo(part.geometry, indexOf.get(part.bone) ?? 0, part.preSkinned)),
@@ -372,28 +390,36 @@ function geometriesFor(variant: BodyVariant, hairShape: HairShape, build: number
   const indexOf = new Map(JOINTS.map((joint, index) => [joint.name, index]));
   const parts = bodyParts(variant, normalizedBuild);
   const built = {
-    body: mergeGeometries([skin, dark], true) ?? skin,
+    body: mergeSkinned(parts, indexOf),
+    face: mergeSkinned(faceDetailParts(), indexOf),
+    eyes: mergeSkinned(eyeWhiteParts(), indexOf),
+    irises: mergeSkinned(irisParts(), indexOf),
+    pupils: mergeSkinned(pupilParts(), indexOf),
+    highlights: mergeSkinned(highlightParts(), indexOf),
     hair: mergeSkinned(hairParts(hairShape), indexOf),
+    face: mergeSkinned(accessoryParts(), indexOf),
+    eyes: eyePair([0.022, 0.013, 0.01], 0.95, 0.087),
+    irises: eyePair([0.009, 0.01, 0.005], 0.95, 0.096),
+    pupils: eyePair([0.004, 0.006, 0.003], 0.95, 0.101),
+    highlights: eyePair([0.002, 0.002, 0.002], 0.954, 0.104),
   };
   geometryCache.set(key, built);
   return built;
 }
 
-export type Humanoid = {
-  root: Bone;
-  bones: Bone[];
-  byName: Map<string, Bone>;
-  meshes: SkinnedMesh[];
-};
-
-/**
- * Builds the skeleton and skinned body. A bald character has no hair mesh; the hair shape is
- * chosen by the caller from the saved hair style.
- */
+export type Humanoid = { root: Bone; bones: Bone[]; byName: Map<string, Bone>; meshes: SkinnedMesh[] };
 export function createHumanoid({
-  variant, skinColor, hairColor, hairShape = "cap", build = 1,
+  variant,
+  skinColor,
+  hairColor,
+  hairShape = "cap",
+  build = 1,
 }: {
-  variant: BodyVariant; skinColor: string; hairColor: string | null; hairShape?: HairShape; build?: number;
+  variant: BodyVariant;
+  skinColor: string;
+  hairColor: string | null;
+  hairShape?: HairShape;
+  build?: number;
 }): Humanoid {
   const byName = new Map<string, Bone>();
   const bones: Bone[] = [];
@@ -417,21 +443,44 @@ export function createHumanoid({
     return mesh;
   };
   const meshes = [
-    makeMesh(geo.body, new MeshStandardMaterial({ color: skinColor, roughness: 0.66, metalness: 0, flatShading: false })),
-    makeMesh(geo.face, new MeshStandardMaterial({ color: ACCESSORY_COLOR, roughness: 0.58, flatShading: false })),
-    makeMesh(geo.eyes, new MeshStandardMaterial({ color: "#f1e9df", roughness: 0.34, flatShading: false })),
-    makeMesh(geo.irises, new MeshStandardMaterial({ color: "#3a2118", roughness: 0.28, flatShading: false })),
-    makeMesh(geo.pupils, new MeshStandardMaterial({ color: "#100b09", roughness: 0.18, flatShading: false })),
-    makeMesh(geo.highlights, new MeshStandardMaterial({ color: "#fffaf2", roughness: 0.12, emissive: "#fffaf2", emissiveIntensity: 0.08, flatShading: false })),
+    makeMesh(
+      geo.body,
+      new MeshStandardMaterial({
+        color: skinColor,
+        roughness: 0.66,
+        metalness: 0,
+        flatShading: false,
+      }),
+    ),
+    makeMesh(
+      geo.face,
+      new MeshStandardMaterial({ color: ACCESSORY_COLOR, roughness: 0.58, flatShading: false }),
+    ),
+    makeMesh(
+      geo.eyes,
+      new MeshStandardMaterial({ color: "#f1e9df", roughness: 0.34, flatShading: false }),
+    ),
+    makeMesh(
+      geo.irises,
+      new MeshStandardMaterial({ color: "#3a2118", roughness: 0.28, flatShading: false }),
+    ),
+    makeMesh(
+      geo.pupils,
+      new MeshStandardMaterial({ color: "#100b09", roughness: 0.18, flatShading: false }),
+    ),
+    makeMesh(
+      geo.highlights,
+      new MeshStandardMaterial({
+        color: "#fffaf2",
+        roughness: 0.12,
+        emissive: "#fffaf2",
+        emissiveIntensity: 0.08,
+        flatShading: false,
+      }),
+    ),
   ];
   if (hairColor) {
-    const hair = new SkinnedMesh(
-      geometries.hair,
-      new MeshStandardMaterial({ color: hairColor, roughness: 0.9, flatShading: true }),
-    );
-    hair.castShadow = true;
-    hair.bind(skeleton);
-    meshes.push(hair);
+    meshes.push(makeMesh(geo.hair, new MeshStandardMaterial({ color: hairColor, roughness: 0.94, metalness: 0, flatShading: false })));
   }
   return { root, bones, byName, meshes };
 }

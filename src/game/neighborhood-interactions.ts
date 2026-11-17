@@ -32,6 +32,7 @@ export type ZoneActionOutcome = {
 };
 
 export interface InteractableZoneSpec {
+  venueInterior?: "buka";
   id: string;
   zoneTag: NeighborhoodZoneTag;
   category: InteractableCategory;
@@ -384,6 +385,7 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
   },
   {
     id: "zone-buka-stall",
+    venueInterior: "buka",
     zoneTag: "ADIRE_MARKET",
     category: "market",
     title: "Mama Sikira Buka Kitchen",

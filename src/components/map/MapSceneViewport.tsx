@@ -1,6 +1,7 @@
 import { Component, Suspense, useState, type ReactNode } from "react";
 import { Canvas } from "@react-three/fiber";
 import { WORLD_PALETTE } from "@/components/3d/world-theme";
+import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
 
 class MapSceneBoundary extends Component<
   { children: ReactNode; retry: () => void },
@@ -31,9 +32,7 @@ export function MapSceneViewport({ children, label }: { children: ReactNode; lab
       <MapSceneBoundary key={attempt} retry={() => setAttempt((value) => value + 1)}>
         <Suspense
           fallback={
-            <p className="map-scene-message" role="status">
-              Loading the 3D world…
-            </p>
+            <WorldLoadingIndicator presentation="screen" title="Loading the map" detail="Preparing the 3D world…" />
           }
         >
           <Canvas
