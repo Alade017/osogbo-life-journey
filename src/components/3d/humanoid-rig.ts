@@ -12,6 +12,7 @@ import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
 import { BONE, ROOT_REST_Y, type BoneName } from "./humanoid-pose";
 import type { HairShape } from "./hair-shapes";
 import { characterSkinTextures } from "./character-skin";
+import { connectBodySurfaces, type SkinnedSurface } from "./humanoid-surface-join";
 
 export type BodyVariant = "female" | "male" | "business";
 export const ACCESSORY_COLOR = "#241914";
@@ -38,7 +39,13 @@ export const JOINTS: readonly Joint[] = [
   { name: BONE.rFoot, parent: BONE.rCalf, offset: [0, -0.2, 0] },
 ];
 
-type Part = { geometry: BufferGeometry; bone: BoneName; accessory: boolean; preSkinned?: boolean };
+type Part = {
+  geometry: BufferGeometry;
+  bone: BoneName;
+  accessory: boolean;
+  preSkinned?: boolean;
+  surface?: SkinnedSurface;
+};
 function skinTo(geometry: BufferGeometry, boneIndex: number, preSkinned = false): BufferGeometry {
   const flat = geometry.index ? geometry.toNonIndexed() : geometry.clone();
   if (preSkinned) return flat;
@@ -62,6 +69,7 @@ function profilePart(
   rings: readonly ProfileRing[],
   weightsFor: (y: number) => RingWeights,
   segments = 20,
+  endCap = true,
 ): Part {
   const positions: number[] = [],
     indices: number[] = [],
@@ -98,7 +106,7 @@ function profilePart(
       indices.push(a, a + segments, b, b, a + segments, b + segments);
     }
   }
-  for (const top of [false, true]) {
+  for (const top of endCap ? [false, true] : [false]) {
     const ring = rings[top ? rings.length - 1 : 0]!;
     const center = positions.length / 3;
     append(ring.cx ?? 0, ring.y, ring.cz ?? 0, 0.5);
@@ -116,7 +124,13 @@ function profilePart(
   geometry.setAttribute("skinWeight", new Float32BufferAttribute(skinWeights, 4));
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
-  return { geometry, bone: BONE.root, accessory: false, preSkinned: true };
+  return {
+    geometry,
+    bone: BONE.root,
+    accessory: false,
+    preSkinned: true,
+    surface: { geometry, ringHeights: rings.map((ring) => ring.y), segments: segments },
+  };
 }
 
 /** Extra silhouette detail for fingers, feet, ears and the face. */
@@ -180,7 +194,7 @@ export const HUMANOID_BUILD_FACTORS = [
 /** A single closed torso surface with blended root/spine skin weights. */
 function torsoSurface(shape: { shoulder: number; waist: number; hip: number; bust: number }): Part {
   const rings = [
-    { y: 0.49, x: 0.105 * shape.hip, z: 0.075 },
+    { y: 0.49, x: 0.137 * shape.hip, z: 0.09 },
     { y: 0.53, x: 0.137 * shape.hip, z: 0.09 },
     { y: 0.58, x: 0.13 * shape.waist, z: 0.085 },
     { y: 0.63, x: 0.112 * shape.waist, z: 0.08 },
@@ -272,7 +286,13 @@ function torsoSurface(shape: { shoulder: number; waist: number; hip: number; bus
   geometry.setAttribute("skinWeight", new Float32BufferAttribute(skinWeights, 4));
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
-  return { geometry, bone: BONE.root, accessory: false, preSkinned: true };
+  return {
+    geometry,
+    bone: BONE.root,
+    accessory: false,
+    preSkinned: true,
+    surface: { geometry, ringHeights: rings.map((ring) => ring.y), segments: radialSegments },
+  };
 }
 
 /** Rest surfaces follow the existing shoulder/elbow/wrist and hip/knee/ankle pivots. */
@@ -288,6 +308,9 @@ function limbParts(side: 1 | -1, shape: typeof BASE_SHAPE & { limb: number }): P
   const mass = shape.limb;
   const arm = profilePart(
     [
+      { y: 0.39, x: (0.027 * shape.hand) / shape.arm, z: (0.015 * shape.hand) / shape.arm },
+      { y: 0.412, x: (0.031 * shape.hand) / shape.arm, z: (0.018 * shape.hand) / shape.arm },
+      { y: 0.435, x: (0.024 * shape.hand) / shape.arm, z: (0.019 * shape.hand) / shape.arm },
       { y: 0.445, x: 0.021, z: 0.022 },
       { y: 0.47, x: 0.025, z: 0.026 },
       { y: 0.52, x: 0.038, z: 0.035 },
@@ -296,8 +319,6 @@ function limbParts(side: 1 | -1, shape: typeof BASE_SHAPE & { limb: number }): P
       { y: 0.65, x: 0.041, z: 0.041 },
       { y: 0.71, x: 0.051, z: 0.047 },
       { y: 0.77, x: 0.055, z: 0.049 },
-      { y: 0.805, x: 0.052, z: 0.045 },
-      { y: 0.835, x: 0.028, z: 0.031 },
     ].map((r) => ({
       ...r,
       x: r.x * mass * shape.arm,
@@ -305,14 +326,20 @@ function limbParts(side: 1 | -1, shape: typeof BASE_SHAPE & { limb: number }): P
       cx: r.y > 0.805 ? ax * 0.9 : ax,
     })),
     (y) =>
-      y >= 0.77
-        ? [upper, BONE.spine2, Math.min(1, (y - 0.77) / 0.065)]
-        : [fore, upper, Math.max(0, Math.min(1, (y - 0.59) / 0.04))],
+      y < 0.47
+        ? [hand, fore, Math.max(0, Math.min(1, (y - 0.435) / 0.035))]
+        : y >= 0.77
+          ? [upper, BONE.spine2, Math.min(1, (y - 0.77) / 0.065)]
+          : [fore, upper, Math.max(0, Math.min(1, (y - 0.59) / 0.04))],
     20,
+    false,
   );
   const leg = profilePart(
     [
-      { y: 0.04, x: 0.025, z: 0.029 },
+      { y: 0.006, x: 0.032 * shape.foot, z: 0.052 * shape.foot, cz: 0.035 },
+      { y: 0.016, x: 0.036 * shape.foot, z: 0.071 * shape.foot, cz: 0.035 },
+      { y: 0.032, x: 0.031 * shape.foot, z: 0.067 * shape.foot, cz: 0.026 },
+      { y: 0.05, x: 0.025, z: 0.035, cz: 0.008 },
       { y: 0.075, x: 0.027, z: 0.031 },
       { y: 0.13, x: 0.039, z: 0.039, cz: -0.008 },
       { y: 0.19, x: 0.043, z: 0.044, cz: -0.006 },
@@ -320,8 +347,6 @@ function limbParts(side: 1 | -1, shape: typeof BASE_SHAPE & { limb: number }): P
       { y: 0.3, x: 0.052, z: 0.05 },
       { y: 0.38, x: 0.065, z: 0.064 },
       { y: 0.46, x: 0.069, z: 0.07 },
-      { y: 0.51, x: 0.061, z: 0.063 },
-      { y: 0.55, x: 0.036, z: 0.046 },
     ].map((r) => ({
       ...r,
       x: r.x * mass * shape.leg * (r.y > 0.25 ? shape.thigh : 1),
@@ -329,19 +354,17 @@ function limbParts(side: 1 | -1, shape: typeof BASE_SHAPE & { limb: number }): P
       cx: lx,
     })),
     (y) =>
-      y >= 0.46
-        ? [thigh, BONE.root, Math.min(1, (y - 0.46) / 0.08)]
-        : [calf, thigh, Math.max(0, Math.min(1, (y - 0.23) / 0.04))],
+      y < 0.075
+        ? [foot, calf, Math.max(0, Math.min(1, (y - 0.035) / 0.04))]
+        : y >= 0.46
+          ? [thigh, BONE.root, Math.min(1, (y - 0.46) / 0.08)]
+          : [calf, thigh, Math.max(0, Math.min(1, (y - 0.23) / 0.04))],
     20,
+    false,
   );
   return [
     arm,
     leg,
-    blob(
-      [0.03 * mass * shape.hand, 0.041 * shape.hand, 0.017 * shape.hand],
-      [ax, 0.423, 0.004],
-      hand,
-    ),
     blob(
       [0.012 * shape.hand, 0.027 * shape.hand, 0.013 * shape.hand],
       [ax - side * 0.028 * shape.hand, 0.418, 0.015],
@@ -354,8 +377,6 @@ function limbParts(side: 1 | -1, shape: typeof BASE_SHAPE & { limb: number }): P
         hand,
       ),
     ),
-    blob([0.032 * shape.foot, 0.031, 0.062 * shape.foot], [lx, 0.03, 0.026], foot),
-    blob([0.035 * shape.foot, 0.021, 0.038 * shape.foot], [lx, 0.018, 0.064], foot),
   ];
 }
 
@@ -388,9 +409,16 @@ function bodyParts(variant: BodyVariant, build: number): Part[] {
     bust: base.bust,
     limb: factor.limb,
   };
+  const right = limbParts(1, shape),
+    left = limbParts(-1, shape);
+  const torso = torsoSurface(shape);
+  const core = connectBodySurfaces(
+    torso.surface!,
+    [right[0]!.surface!, left[0]!.surface!],
+    [right[1]!.surface!, left[1]!.surface!],
+  );
   const parts: Part[] = [
-    // One continuous torso shell replaces the disconnected chest, abdomen and pelvis spheres.
-    torsoSurface(shape),
+    { geometry: core, bone: BONE.root, accessory: false, preSkinned: true },
     profilePart(
       [
         { y: 0.845, x: 0.044 * shape.neck, z: 0.041 * shape.neck },
@@ -407,7 +435,7 @@ function bodyParts(variant: BodyVariant, build: number): Part[] {
     blob([0.013, 0.023, 0.013], [-0.073 * shape.faceWidth, 0.971, -0.003], BONE.head),
     blob([0.021, 0.005, 0.007], [0, 0.935, 0.059], BONE.head),
   ];
-  parts.push(...limbParts(1, shape), ...limbParts(-1, shape));
+  parts.push(...right.slice(2), ...left.slice(2));
   return parts;
 }
 
