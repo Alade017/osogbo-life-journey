@@ -61,9 +61,9 @@ export function MapTravelSelector(props: Props) {
   );
   const detailsQuery = useQuery({
     queryKey: ["mapLandmarkDetails", props.landmark.id, props.accountId, props.characterId],
-    queryFn: () => {
+    queryFn: ({ signal }) => {
       if (!props.accountId) throw new Error("Player account is not ready.");
-      return requestMapLandmark(props.landmark.id, props.accountId);
+      return requestMapLandmark(props.landmark.id, props.accountId, signal);
     },
     enabled: props.open && !!props.accountId && !!props.characterId && !props.offline,
     staleTime: 15_000,

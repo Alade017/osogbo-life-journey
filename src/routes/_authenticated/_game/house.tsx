@@ -896,14 +896,27 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       setActivityError(error instanceof Error ? error.message : "Travel could not be completed.");
       return;
     }
-    completeTransitionStep("Travelling");
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: q.character().queryKey }),
-      queryClient.invalidateQueries({ queryKey: q.locations().queryKey }),
-      queryClient.invalidateQueries({ queryKey: q.wallet().queryKey }),
-    ]);
-    completeTransitionStep("Loading the neighbourhood");
-    await navigate({ to: "/neighborhood" });
+    try {
+      completeTransitionStep("Travelling");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: q.character().queryKey }),
+        queryClient.invalidateQueries({ queryKey: q.locations().queryKey }),
+        queryClient.invalidateQueries({ queryKey: q.wallet().queryKey }),
+      ]);
+      completeTransitionStep("Loading your destination");
+      const saved = await queryClient.fetchQuery(q.character());
+      const locations = await queryClient.fetchQuery(q.locations());
+      const destination = locations?.find((location) => location.id === departure.locationId);
+      if (saved?.current_location_id !== departure.locationId || !destination?.slug)
+        throw new Error("Destination is not ready.");
+      await navigate({ to: "/location/$slug", params: { slug: destination.slug } });
+      endTransition();
+    } catch {
+      endTransition();
+      setActivityError(
+        "Travel completed, but the destination could not be opened. Open the city map to continue; do not pay for the trip again.",
+      );
+    }
   };
   const walkTo = (point: RoomPoint, interact = false) => {
     const path = findRoomPath(

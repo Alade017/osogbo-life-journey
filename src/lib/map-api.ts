@@ -138,13 +138,20 @@ export function clearPendingTownTravelKey(townId: string, requestId: string) {
   }
 }
 
-export async function requestMapLandmark(landmarkId: string, accountId: string) {
+export async function requestMapLandmark(
+  landmarkId: string,
+  accountId: string,
+  signal?: AbortSignal,
+) {
   const { data, error } = await supabase.auth.getSession();
   const session = data.session;
   const token = session?.access_token;
   if (error || !token) throw new MapApiError("Sign in to view this place.", "UNAUTHORIZED");
   if (session.user.id !== accountId) throw new MapApiError("Account changed", "UNAUTHORIZED");
   const response = await fetch(`/api/map/landmark/${encodeURIComponent(landmarkId)}`, {
+    signal: signal
+      ? AbortSignal.any([signal, AbortSignal.timeout(15_000)])
+      : AbortSignal.timeout(15_000),
     headers: { Authorization: `Bearer ${token}` },
   });
   const result = (await response.json().catch(() => null)) as

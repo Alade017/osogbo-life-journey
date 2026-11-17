@@ -188,9 +188,7 @@ export function CityMapDashboard({
     : null;
   const currentMapPlace = currentLocation
     ? townData.landmarks.find(
-        (place) =>
-          MAP_LANDMARK_LOCATION_SLUG[place.id] === currentLocation.slug &&
-          availableLandmarks.data?.includes(place.id),
+        (place) => MAP_LANDMARK_LOCATION_SLUG[place.id] === currentLocation.slug,
       )
     : null;
   const billboards = useQuery(q.billboards());
@@ -500,8 +498,7 @@ export function CityMapDashboard({
           </div>
         </header>
       </details>
-      <div className="map-news">
-      </div>
+      <div className="map-news"></div>
       {offline && (
         <div role="status" className="map-offline-banner">
           <CloudOff size={16} />

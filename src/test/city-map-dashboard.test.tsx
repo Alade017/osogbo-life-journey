@@ -268,7 +268,10 @@ describe("isometric town map", () => {
 
     await vi.waitFor(() => {
       expect(testState.travelToLocation).toHaveBeenCalledTimes(1);
-      expect(testState.navigate).toHaveBeenCalledWith({ to: "/neighborhood" });
+      expect(testState.navigate).toHaveBeenCalledWith({
+        to: "/location/$slug",
+        params: { slug: "city-centre" },
+      });
     });
     expect(testState.travelToLocation).toHaveBeenCalledWith({
       locationId: "destination-city-centre",

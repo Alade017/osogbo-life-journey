@@ -109,7 +109,10 @@ const point = (x: number, z: number): [number, number, number] => [
   (z - (gridRows - 1) / 2) * cell,
 ];
 // A place's marker sits on the centre of its building (buildings span a 2x2 block of cells).
-const placeAnchor = (place: { id: string; grid: { x: number; z: number } }): [number, number, number] => {
+const placeAnchor = (place: {
+  id: string;
+  grid: { x: number; z: number };
+}): [number, number, number] => {
   const building = town.grid.buildings.find((b) => b.placeId === place.id);
   return building ? point(building.x + 0.5, building.z + 0.5) : point(place.grid.x, place.grid.z);
 };
@@ -1156,7 +1159,7 @@ export function R3FTownSurface(props: Props) {
           </button>
           <button
             type="button"
-            aria-label="Show district names"
+            aria-label="Show destination and district names"
             aria-pressed={showNames}
             onClick={() => setShowNames((value) => !value)}
           >
@@ -1312,6 +1315,7 @@ export function R3FTownSurface(props: Props) {
                   position={[x, markerHeight, z]}
                   isSelected={selectedTarget?.id === place.id}
                   isHovered={hoveredTargetId === place.id}
+                  showName={showNames}
                   onSelectLandmark={(id) =>
                     select(undefined, () => {
                       setSelectedTarget({
