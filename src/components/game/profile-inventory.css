@@ -649,3 +649,84 @@
     transition: none;
   }
 }
+
+
+/* Dedicated inventory screen: compact, item-first and consistent with the game HUD. */
+.pi-inventory {
+  max-width: 1180px;
+  margin-inline: auto;
+  padding: clamp(0.75rem, 2.5vw, 1.5rem);
+  gap: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+.pi-inventory .pi-inventory-masthead {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.9rem;
+  padding: clamp(0.85rem, 2vw, 1.25rem);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: var(--card);
+  box-shadow: var(--elevation-card);
+}
+
+.pi-inventory-mark {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--border));
+  border-radius: 16px;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 9%, var(--card));
+}
+
+.pi-inventory-heading { min-width: 0; }
+.pi-inventory .pi-inventory-heading h1 { font-size: clamp(1.45rem, 4vw, 2rem); }
+.pi-inventory .pi-inventory-heading .pi-sub { font-size: 0.82rem; line-height: 1.4; }
+
+.pi-inventory-total {
+  display: grid;
+  justify-items: end;
+  gap: 0.1rem;
+  white-space: nowrap;
+}
+
+.pi-inventory-total strong {
+  color: var(--primary);
+  font-size: 1.45rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.pi-inventory-total small {
+  color: var(--muted-foreground);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.pi-inventory .pi-stage {
+  border-color: var(--border);
+  background: radial-gradient(circle at 50% 28%, color-mix(in srgb, var(--primary) 12%, var(--card)), var(--card) 72%);
+}
+
+.pi-inventory .pi-stage-foot strong { color: var(--foreground); }
+.pi-inventory .pi-stage-foot span { color: var(--muted-foreground); }
+.pi-inventory .pi-tile,
+.pi-inventory .pi-detail,
+.pi-inventory .pi-slot { transition: border-color 160ms ease, box-shadow 160ms ease; }
+
+.pi-inventory .pi-tile:hover,
+.pi-inventory .pi-slot:hover { border-color: color-mix(in srgb, var(--primary) 42%, var(--border)); }
+
+.pi-inventory :is(.pi-tile, .pi-filters button, .pi-chip-btn):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  .pi-inventory .pi-inventory-masthead { grid-template-columns: auto minmax(0, 1fr); }
+  .pi-inventory-total { grid-column: 2; justify-items: start; }
+  .pi-inventory .pi-stage { border-radius: 18px; }
+}
