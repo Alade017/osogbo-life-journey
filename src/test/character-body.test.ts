@@ -69,8 +69,8 @@ describe("poses", () => {
 
   it("raises both arms overhead when stretching", () => {
     const pose = poseFor("Stretch", 0);
-    expect(pose.bones[BONE.lUpperArm]![0]).toBeLessThan(-2.5);
-    expect(pose.bones[BONE.rUpperArm]![0]).toBeLessThan(-2.5);
+    expect(pose.bones[BONE.lUpperArm]![0]).toBeGreaterThan(2.5);
+    expect(pose.bones[BONE.rUpperArm]![0]).toBeGreaterThan(2.5);
   });
 });
 

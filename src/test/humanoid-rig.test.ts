@@ -62,8 +62,8 @@ describe("code-built humanoid", () => {
     const pose = poseFor("Walk", 0);
     expect(pose.bones[BONE.lThigh]).toBeDefined();
     expect(pose.bones[BONE.rThigh]).toBeDefined();
-    expect(pose.bones[BONE.lCalf]![0]).toBeLessThan(0);
-    expect(pose.bones[BONE.rCalf]![0]).toBeLessThanOrEqual(0);
+    expect(pose.bones[BONE.lCalf]![0]).toBeGreaterThan(0);
+    expect(pose.bones[BONE.rCalf]![0]).toBeGreaterThanOrEqual(0);
     expect(pose.bones[BONE.lFoot]).toBeDefined();
     expect(pose.bones[BONE.rFoot]).toBeDefined();
     expect(pose.bones[BONE.spine2]).toBeDefined();
@@ -71,10 +71,10 @@ describe("code-built humanoid", () => {
 
   it("keeps both feet articulated in the seated pose", () => {
     const pose = poseFor("Sit", 0);
-    expect(pose.bones[BONE.lCalf]![0]).toBeCloseTo(-1.45);
-    expect(pose.bones[BONE.rCalf]![0]).toBeCloseTo(-1.45);
-    expect(pose.bones[BONE.lFoot]![0]).toBeCloseTo(0.28);
-    expect(pose.bones[BONE.rFoot]![0]).toBeCloseTo(0.28);
+    expect(pose.bones[BONE.lCalf]![0]).toBeCloseTo(1.45);
+    expect(pose.bones[BONE.rCalf]![0]).toBeCloseTo(1.45);
+    expect(pose.bones[BONE.lFoot]![0]).toBeCloseTo(-0.28);
+    expect(pose.bones[BONE.rFoot]![0]).toBeCloseTo(-0.28);
   });
 
   it("skins every vertex to a real joint and leaves bald characters without hair", () => {
