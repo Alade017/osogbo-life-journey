@@ -52,7 +52,7 @@ export type HouseRoomRendererProps = {
 };
 
 export const HOUSE_ROOM_SIZE: Record<string, readonly [number, number]> = {
-  "shared-room": [4.2, 4.5],
+  "shared-room": [5.9, 4.8],
   "single-room": [6.8, 5.3],
   "studio-flat": [8.6, 6.4],
   "mini-flat": [9.9, 7.5],
