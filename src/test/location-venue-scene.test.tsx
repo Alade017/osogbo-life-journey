@@ -52,3 +52,18 @@ it("keeps transit planning and fixture controls available when WebGL fails", () 
   expect(screen.getByRole("link", { name: "Choose destination" })).toHaveAttribute("href", "/map?transport=danfo");
   vi.useRealTimers();
 });
+
+it.each([
+  ["cedar-bank", "Cedar Bank", "Information screen"],
+  ["meridian-bank", "Meridian Bank", "Self-service kiosk"],
+])("keeps %s features and banking handoff usable without WebGL", (slug, name, feature) => {
+  vi.useFakeTimers();
+  const openBank = vi.fn();
+  render(<LocationVenueScene slug={slug} locationName={name} onBankServices={openBank} />);
+  act(() => { vi.advanceTimersByTime(5000); });
+  fireEvent.click(screen.getByRole("button", { name: feature }));
+  expect(screen.getByRole("button", { name: feature })).toHaveAttribute("aria-pressed", "true");
+  fireEvent.click(screen.getByRole("button", { name: "Access bank services" }));
+  expect(openBank).toHaveBeenCalledTimes(1);
+  vi.useRealTimers();
+});

@@ -1,3 +1,5 @@
+import { BankInteriorScene } from "@/components/3d/BankInteriorScene";
+import { BANK_INTERIORS } from "@/game/bank-interiors";
 import { TransitParkScene } from "@/components/3d/TransitParkScene";
 import { TRAVEL_MODES, TRAVEL_MODE_DETAILS, type TravelMode } from "@/lib/transport-service";
 import { transportMapHref } from "@/lib/transport-park";
@@ -64,8 +66,9 @@ function FixtureModel({
   );
 }
 
-export function LocationVenueScene({ slug, locationName }: { slug: string; locationName: string }) {
+export function LocationVenueScene({ slug, locationName, onBankServices }: { slug: string; locationName: string; onBankServices?: () => void }) {
   const venue = useMemo(() => getLocationVenueDesign(slug, locationName), [slug, locationName]);
+  const bankLayout = venue.bankInterior ? BANK_INTERIORS[venue.bankInterior] : null;
   const gameTime = useOptionalGameTime();
   // Shops with trading hours show their shutter open or closed for the current game hour.
   const shutterOpen = venue.environment?.trading
@@ -125,9 +128,11 @@ export function LocationVenueScene({ slug, locationName }: { slug: string; locat
               onCreated={() => setSceneStatus("ready")}
               aria-hidden="true"
             >
-              <WorldCamera width={venue.sceneBounds?.width ?? 10} depth={venue.sceneBounds?.depth ?? 7} stage target={[0, 1.2, 0]} zoom={1.2} />
+              <WorldCamera width={bankLayout?.width ?? venue.sceneBounds?.width ?? 10} depth={bankLayout?.depth ?? venue.sceneBounds?.depth ?? 7} stage target={[0, 1.2, 0]} zoom={1.2} />
               <WorldLighting size={14} />
-              {venue.transportPark ? (
+              {venue.bankInterior ? (
+                <BankInteriorScene variant={venue.bankInterior} fixtures={venue.fixtures} selected={selectedFixture} onSelect={setSelectedFixture} floorColor={venue.floorColor} wallColor={venue.wallColor} accentColor={venue.accentColor} />
+              ) : venue.transportPark ? (
                 <TransitParkScene fixtures={venue.fixtures} selected={selectedFixture} onSelect={setSelectedFixture} onSelectMode={setPreferredMode} />
               ) : venue.environment ? (
                 <VenueEnvironment
@@ -206,6 +211,12 @@ export function LocationVenueScene({ slug, locationName }: { slug: string; locat
             Choose destination
           </a>
         </section>
+      )}
+      {venue.bankInterior && onBankServices && (
+        <button type="button" onClick={onBankServices}
+          className="rounded-lg border border-edge bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground">
+          Access bank services
+        </button>
       )}
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(14rem,0.8fr)]">
         <div>
