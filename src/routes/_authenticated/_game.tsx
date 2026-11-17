@@ -109,6 +109,10 @@ function GameLayout() {
   useEffect(() => {
     setHudPanelOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (phoneOpen || housingOpen) setHudPanelOpen(false);
+  }, [phoneOpen, housingOpen]);
   useEffect(() => {
     configureGameMusic(character?.id ?? null);
     return () => {
