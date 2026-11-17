@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { HomeDashboard } from "@/components/game/HomeDashboard";
 import { GameNeedsRail } from "@/components/game/GameNeedsRail";
 import { PhoneLauncher } from "@/components/game/PhoneLauncher";
+import { InventoryOverlay } from "@/components/game/InventoryOverlay";
 import { Smartphone } from "lucide-react";
 import { useGameViewport } from "@/hooks/use-game-viewport";
 import { GameMobileNav } from "@/components/game/GameMobileNav";
@@ -65,6 +66,7 @@ function GameLayout() {
   const { data: equipment } = useQuery({ ...q.equipment(), enabled: !!character });
   const [housingOpen, setHousingOpen] = useState(false);
   const [phoneOpen, setPhoneOpen] = useState(false);
+  const [inventoryOpen, setInventoryOpen] = useState(false);
   const [hudIdle, setHudIdle] = useState(false);
   const [hudPanelOpen, setHudPanelOpen] = useState(false);
   const [housingRequested, setHousingRequested] = useState(false);
@@ -111,10 +113,10 @@ function GameLayout() {
   }, [pathname]);
 
   useEffect(() => {
-    if (!phoneOpen && !housingOpen) return;
+    if (!phoneOpen && !housingOpen && !inventoryOpen) return;
     setHudPanelOpen(false);
     window.dispatchEvent(new Event("osogbo-hud-dismiss-panels"));
-  }, [phoneOpen, housingOpen]);
+  }, [phoneOpen, housingOpen, inventoryOpen]);
   useEffect(() => {
     configureGameMusic(character?.id ?? null);
     return () => {
@@ -307,7 +309,11 @@ function GameLayout() {
           />
 
           <div className={phoneOpen ? "gbb is-open" : "gbb"}>
-            <GameMobileNav hidden={phoneOpen} onNavigate={() => setPhoneOpen(false)} />
+            <GameMobileNav
+              hidden={phoneOpen || inventoryOpen}
+              onNavigate={() => setPhoneOpen(false)}
+              onInventoryOpen={() => setInventoryOpen(true)}
+            />
             <PhoneLauncher
               compact
               className="gbb-phone"
@@ -320,6 +326,7 @@ function GameLayout() {
               }
             />
           </div>
+          <InventoryOverlay open={inventoryOpen} onOpenChange={setInventoryOpen} />
           <HousingChooser
             open={housingOpen}
             pending={housingPending || (housingRequested && housingSource === "profile")}
