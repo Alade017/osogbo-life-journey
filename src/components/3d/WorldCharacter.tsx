@@ -191,6 +191,7 @@ export function WorldCharacter({
             variant={variant}
             height={h}
             motion={motion}
+            animated={!reduced}
             held={held}
             appearance={safe}
             gender={gender}

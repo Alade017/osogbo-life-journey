@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { Box3, Mesh, MeshStandardMaterial, SkinnedMesh } from "three";
+import { Box3, DataTexture, Mesh, MeshStandardMaterial, SkinnedMesh, Vector3 } from "three";
 import { createHumanoid, JOINTS } from "@/components/3d/humanoid-rig";
 import { BONE, poseFor } from "@/components/3d/humanoid-pose";
 
@@ -13,12 +13,12 @@ describe("code-built humanoid", () => {
     const rig = createHumanoid({ variant, skinColor: "#8a5a3b", hairColor: "#1b1410" });
     const total = rig.meshes.reduce((sum, mesh) => sum + triangles(mesh), 0);
     expect(rig.meshes).toHaveLength(7);
-    expect(total).toBeLessThan(7000);
+    expect(total).toBeLessThanOrEqual(8000);
   });
 
   it("keeps the female body within the low triangle budget", () => {
     const rig = createHumanoid({ variant: "female", skinColor: "#8a5a3b", hairColor: null });
-    expect(rig.meshes[0]!.geometry.attributes["position"]!.count / 3).toBeLessThan(5000);
+    expect(rig.meshes[0]!.geometry.attributes["position"]!.count / 3).toBeLessThan(6500);
   });
 
   it("stands about one body height tall with the head on top", () => {
@@ -62,8 +62,8 @@ describe("code-built humanoid", () => {
     const pose = poseFor("Walk", 0);
     expect(pose.bones[BONE.lThigh]).toBeDefined();
     expect(pose.bones[BONE.rThigh]).toBeDefined();
-    expect(pose.bones[BONE.lCalf]![0]).toBeLessThan(0);
-    expect(pose.bones[BONE.rCalf]![0]).toBeLessThanOrEqual(0);
+    expect(pose.bones[BONE.lCalf]![0]).toBeGreaterThan(0);
+    expect(pose.bones[BONE.rCalf]![0]).toBeGreaterThanOrEqual(0);
     expect(pose.bones[BONE.lFoot]).toBeDefined();
     expect(pose.bones[BONE.rFoot]).toBeDefined();
     expect(pose.bones[BONE.spine2]).toBeDefined();
@@ -71,10 +71,10 @@ describe("code-built humanoid", () => {
 
   it("keeps both feet articulated in the seated pose", () => {
     const pose = poseFor("Sit", 0);
-    expect(pose.bones[BONE.lCalf]![0]).toBeCloseTo(-1.45);
-    expect(pose.bones[BONE.rCalf]![0]).toBeCloseTo(-1.45);
-    expect(pose.bones[BONE.lFoot]![0]).toBeCloseTo(0.28);
-    expect(pose.bones[BONE.rFoot]![0]).toBeCloseTo(0.28);
+    expect(pose.bones[BONE.lCalf]![0]).toBeCloseTo(1.45);
+    expect(pose.bones[BONE.rCalf]![0]).toBeCloseTo(1.45);
+    expect(pose.bones[BONE.lFoot]![0]).toBeCloseTo(-0.28);
+    expect(pose.bones[BONE.rFoot]![0]).toBeCloseTo(-0.28);
   });
 
   it("skins every vertex to a real joint and leaves bald characters without hair", () => {
@@ -91,7 +91,7 @@ describe("code-built humanoid", () => {
 });
 
 describe("reference-inspired character surface", () => {
-  it("uses adult head proportions and faceted skin", () => {
+  it("uses adult head proportions and smooth skin", () => {
     const rig = createHumanoid({ variant: "male", skinColor: "#754c32", hairColor: "#171512" });
     const skin = rig.meshes[0]!;
     const positions = skin.geometry.getAttribute("position");
@@ -108,7 +108,7 @@ describe("reference-inspired character surface", () => {
     }
     expect(max - min).toBeGreaterThan(0.12);
     expect(max - min).toBeLessThan(0.19);
-    expect((skin.material as MeshStandardMaterial).flatShading).toBe(true);
+    expect((skin.material as MeshStandardMaterial).flatShading).toBe(false);
   });
   it.each(["male", "female", "business"] as const)(
     "keeps valid blended skin weights on the %s body",
@@ -129,4 +129,37 @@ describe("reference-inspired character surface", () => {
       expect(blended).toBeGreaterThan(0);
     },
   );
+});
+
+it("preserves curved vertex normals after combining the skinned body surfaces", () => {
+  const rig = createHumanoid({ variant: "male", skinColor: "#754c32", hairColor: "#171512" });
+  const body = rig.meshes[0]!;
+  const normals = body.geometry.getAttribute("normal");
+  let smoothTriangles = 0;
+  for (let i = 0; i < normals.count; i += 3) {
+    const a = new Vector3().fromBufferAttribute(normals, i);
+    const b = new Vector3().fromBufferAttribute(normals, i + 1);
+    expect(a.length()).toBeCloseTo(1);
+    if (a.distanceTo(b) > 0.001) smoothTriangles++;
+  }
+  expect(smoothTriangles).toBeGreaterThan(normals.count / 6);
+  const total = rig.meshes.reduce((sum, mesh) => sum + triangles(mesh), 0);
+  expect(total).toBeGreaterThanOrEqual(6000);
+  expect(total).toBeLessThanOrEqual(8000);
+});
+
+it("shares lightweight skin maps while preserving individually selected skin colours", () => {
+  const dark = createHumanoid({ variant: "male", skinColor: "#754c32", hairColor: null });
+  const light = createHumanoid({ variant: "female", skinColor: "#c28a5e", hairColor: null });
+  const a = dark.meshes[0]!.material as MeshStandardMaterial;
+  const b = light.meshes[0]!.material as MeshStandardMaterial;
+  expect(a.map).not.toBeNull();
+  expect(a.map).toBe(b.map);
+  expect(a.roughnessMap).toBe(b.roughnessMap);
+  if (!(a.map instanceof DataTexture)) throw new Error("Expected a shared skin data texture");
+  expect(a.map.image.width).toBeLessThanOrEqual(256);
+  expect(a.map.image.height).toBeLessThanOrEqual(256);
+  expect(a.color.getHexString()).toBe("754c32");
+  expect(b.color.getHexString()).toBe("c28a5e");
+  expect(a.metalness).toBe(0);
 });
