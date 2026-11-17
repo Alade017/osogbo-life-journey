@@ -46,7 +46,7 @@ import {
   type WorldInstance,
 } from "@/components/3d/WorldScene";
 import { ROOM_VIEW_CAMERA, ROOM_VIEW_PALETTE, WORLD_SCALE } from "@/components/3d/world-theme";
-import { StudioInterior, StudioRug } from "./StudioInterior";
+import { BlueprintInterior, StudioRug } from "./StudioInterior";
 import { STUDIO_FINISH } from "./house-blueprints";
 
 type WaitingCourier = { delivery: FoodDelivery; index: number };
@@ -251,10 +251,11 @@ function OsogboRoomPrototype({
   const doorwayWidth = 1.12;
   const doorHeight = WORLD_SCALE.door * 1.1;
   const rearDoorCenter = houseRearDoorCenter(houseTypeId, width);
-  if (houseTypeId === "studio-flat")
+  if (houseTypeId === "studio-flat" || houseTypeId === "shared-room")
     return (
       <group>
-        <StudioInterior
+        <BlueprintInterior
+          houseTypeId={houseTypeId}
           width={width}
           depth={depth}
           editMode={editMode}
@@ -503,8 +504,16 @@ const STUDIO_FURNITURE_COLOURS = {
   mediaWood: "#795736",
   blanket: "#617f76",
 };
-const FurniturePaletteContext =
-  createContext<Record<keyof typeof FURNITURE_COLOURS, string>>(FURNITURE_COLOURS);
+const DEFAULT_FURNITURE_STYLE = { colors: FURNITURE_COLOURS, singleBed: false };
+const STUDIO_FURNITURE_STYLE = { colors: STUDIO_FURNITURE_COLOURS, singleBed: false };
+const SHARED_FURNITURE_STYLE = {
+  colors: { ...FURNITURE_COLOURS, mediaWood: "#795736", blanket: "#6f7950" },
+  singleBed: true,
+};
+const FurniturePaletteContext = createContext<{
+  colors: Record<keyof typeof FURNITURE_COLOURS, string>;
+  singleBed: boolean;
+}>(DEFAULT_FURNITURE_STYLE);
 
 export function FurnitureFallback({
   artKey,
@@ -515,7 +524,7 @@ export function FurnitureFallback({
   slotType: string;
   hovered?: boolean;
 }) {
-  const FURNITURE_COLOURS = useContext(FurniturePaletteContext);
+  const { colors: FURNITURE_COLOURS, singleBed } = useContext(FurniturePaletteContext);
   const rawKind = artKey ?? slotType;
   const kind =
     rawKind === "starter-bed"
@@ -527,7 +536,7 @@ export function FurnitureFallback({
           : rawKind;
   if (kind === "bed")
     return (
-      <group scale={[1.2, 1, 1.45]}>
+      <group scale={[singleBed ? 1 : 1.2, 1, 1.45]}>
         <RoundedBox
           castShadow
           receiveShadow
@@ -568,7 +577,13 @@ export function FurnitureFallback({
         >
           <meshStandardMaterial color={FURNITURE_COLOURS.blanket} roughness={0.95} />
         </RoundedBox>
-        {[-0.23, 0.23].map((x) => (
+        {singleBed && (
+          <mesh position={[0, 0.402, 0.42]} castShadow receiveShadow>
+            <boxGeometry args={[0.91, 0.025, 0.22]} />
+            <meshStandardMaterial color={STUDIO_FINISH.curtain} roughness={0.95} />
+          </mesh>
+        )}
+        {(singleBed ? [0] : [-0.23, 0.23]).map((x) => (
           <RoundedBox
             castShadow
             receiveShadow
@@ -2161,7 +2176,13 @@ export function HouseRoom3D({
     <div className="house-3d-scene" aria-label={`${houseTypeId.replaceAll("-", " ")} 3D room`}>
       <RoomOverlayContext.Provider value={overlayHost}>
         <FurniturePaletteContext.Provider
-          value={houseTypeId === "studio-flat" ? STUDIO_FURNITURE_COLOURS : FURNITURE_COLOURS}
+          value={
+            houseTypeId === "studio-flat"
+              ? STUDIO_FURNITURE_STYLE
+              : houseTypeId === "shared-room"
+                ? SHARED_FURNITURE_STYLE
+                : DEFAULT_FURNITURE_STYLE
+          }
         >
           <Canvas
             frameloop="demand"
@@ -2188,7 +2209,7 @@ export function HouseRoom3D({
               onUseStairs={onUseStairs}
               doorOpen={doorOpen}
             />
-            {houseTypeId !== "studio-flat" && (
+            {houseTypeId !== "studio-flat" && houseTypeId !== "shared-room" && (
               <RoomFloor
                 houseTypeId={houseTypeId}
                 width={width}
