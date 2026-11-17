@@ -34,7 +34,7 @@ import { useItemThumbnail } from "@/components/3d/item-thumbnails";
 import "@/components/game/profile-inventory.css";
 
 export const Route = createFileRoute("/_authenticated/_game/inventory")({
-  head: () => pageMeta("Wardrobe", "Items your character carries around Osogbo."),
+  head: () => pageMeta("Inventory", "Manage the items your character carries around Osogbo."),
   component: InventoryPage,
 });
 
@@ -154,12 +154,19 @@ export function InventoryPage() {
       <ItemThumbnailQueue
         slugs={(items ?? []).map((entry) => entry.item?.slug ?? "").filter(Boolean)}
       />
-      <header className="pi-masthead">
-        <p className="pi-eyebrow">Your collection</p>
-        <h1>Wardrobe</h1>
-        <p className="pi-sub">
-          {inventory.length} item types · {countInventoryUnits(inventory)} items in your bag
-        </p>
+      <header className="pi-masthead pi-inventory-masthead">
+        <span className="pi-inventory-mark" aria-hidden="true">
+          <Backpack size={22} />
+        </span>
+        <div className="pi-inventory-heading">
+          <p className="pi-eyebrow">Player inventory</p>
+          <h1>Inventory</h1>
+          <p className="pi-sub">Manage what you carry, use, and equip around Osogbo.</p>
+        </div>
+        <span className="pi-inventory-total">
+          <strong>{countInventoryUnits(inventory)}</strong>
+          <small>Items carried</small>
+        </span>
       </header>
 
       <div className="pi-hero">
@@ -202,8 +209,8 @@ export function InventoryPage() {
           <section className="pi-section" aria-label="Equipment">
             <div className="pi-section-heading">
               <div>
-                <p className="pi-eyebrow">Your outfit</p>
-                <h2>Equipped items</h2>
+                <p className="pi-eyebrow">Character loadout</p>
+                <h2>Equipped</h2>
               </div>
               <span>
                 {normalizedEquipment.length} / {EQUIPMENT_SLOTS.length}
@@ -262,13 +269,13 @@ export function InventoryPage() {
       </div>
 
       {!items?.length ? (
-        <EmptyState title="Empty backpack" body="You don't own any items yet." />
+        <EmptyState title="Your inventory is empty" body="Items you collect or purchase will appear here." />
       ) : (
         <>
           <div className="pi-section-heading">
             <div>
-              <p className="pi-eyebrow">Everything you carry</p>
-              <h2>Your bag</h2>
+              <p className="pi-eyebrow">Your collection</p>
+              <h2>Inventory items</h2>
             </div>
             <span>{compatibleItems.length} shown</span>
           </div>
