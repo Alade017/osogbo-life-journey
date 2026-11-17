@@ -814,9 +814,9 @@
 
 @media (max-width: 640px) {
   .inventory-dialog-shell {
-    width: 92vw;
-    height: 84dvh;
-    max-height: 84dvh;
+    width: min(80vw, 1180px);
+    height: 80dvh;
+    max-height: 80dvh;
     border-radius: 20px;
   }
 
