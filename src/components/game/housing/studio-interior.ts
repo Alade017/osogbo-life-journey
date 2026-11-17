@@ -7,7 +7,12 @@ import {
   MeshStandardMaterial,
   Object3D,
 } from "three";
-import { boundsContain, STUDIO_FINISH as finish, studioBlueprint } from "./house-blueprints";
+import {
+  boundsContain,
+  STUDIO_FINISH as finish,
+  HOUSE_BLUEPRINTS,
+  type BlueprintHomeType,
+} from "./house-blueprints";
 import {
   housePartitionSegments,
   houseWallSegments,
@@ -21,7 +26,8 @@ type Point = [number, number, number];
 type Box = { position: Point; size: Point; color: string };
 
 /** Actual game geometry, also usable by the offline model preview. No furniture ownership is implied. */
-export function createStudioInterior(
+export function createBlueprintInterior(
+  houseTypeId: BlueprintHomeType,
   width: number,
   depth: number,
   {
@@ -35,8 +41,8 @@ export function createStudioInterior(
   } = {},
 ) {
   const root = new Group();
-  root.name = "studio-blueprint-interior";
-  const plan = studioBlueprint(width, depth);
+  root.name = `${houseTypeId}-blueprint-interior`;
+  const plan = HOUSE_BLUEPRINTS[houseTypeId](width, depth);
   const unit = new BoxGeometry(1, 1, 1);
   const materials = new Map<string, MeshStandardMaterial>();
   const material = (color: string) => {
@@ -78,7 +84,7 @@ export function createStudioInterior(
     for (let col = 0, x = -width / 2; x < width / 2 - 0.001; x += tile, col++) {
       const w = Math.min(tile, width / 2 - x),
         d = Math.min(tile, depth / 2 - z);
-      const wet = boundsContain(plan.bathroom, x + w / 2, z + d / 2);
+      const wet = plan.bathroom && boundsContain(plan.bathroom, x + w / 2, z + d / 2);
       tiles.push({
         position: [x + w / 2, 0.026, z + d / 2],
         size: [w - 0.008, 0.025, d - 0.008],
@@ -90,31 +96,51 @@ export function createStudioInterior(
   // A flush timber inset defines the sleeping zone without any wall or raised trip edge.
   const planks: Box[] = [];
   const sleep = plan.sleep;
-  for (let row = 0, z = sleep.minZ + 0.08; z < sleep.maxZ - 0.08; z += 0.18, row++) {
-    const d = Math.min(0.174, sleep.maxZ - 0.08 - z);
-    for (let col = 0, x = sleep.minX + 0.08; x < sleep.maxX - 0.08; x += 0.82, col++) {
-      const w = Math.min(0.812, sleep.maxX - 0.08 - x);
-      planks.push({
-        position: [x + w / 2, 0.045, z + d / 2],
-        size: [w, 0.018, d],
-        color: (col + row) % 3 ? finish.wood : finish.woodAlternate,
-      });
+  if (sleep)
+    for (let row = 0, z = sleep.minZ + 0.08; z < sleep.maxZ - 0.08; z += 0.18, row++) {
+      const d = Math.min(0.174, sleep.maxZ - 0.08 - z);
+      for (let col = 0, x = sleep.minX + 0.08; x < sleep.maxX - 0.08; x += 0.82, col++) {
+        const w = Math.min(0.812, sleep.maxX - 0.08 - x);
+        planks.push({
+          position: [x + w / 2, 0.045, z + d / 2],
+          size: [w, 0.018, d],
+          color: (col + row) % 3 ? finish.wood : finish.woodAlternate,
+        });
+      }
     }
-  }
   batch(planks, "sleeping-zone-timber");
   const walls = new Group();
-  walls.name = "studio-cutaway-walls";
+  walls.name = `${houseTypeId}-cutaway-walls`;
   walls.scale.y = editMode ? 0.28 : 1;
   root.add(walls);
   const height = 2.5;
   const show = (segment: HouseWallSegment) => !roomView || !roomViewHidesSegment(segment, roomView);
   const wall = (segment: HouseWallSegment, color: string = finish.plaster) => {
     if (!show(segment)) return;
-    box(walls, segment.size, segment.position, color, segment.id);
+    box(
+      walls,
+      segment.size,
+      segment.position,
+      houseTypeId === "single-room" && segment.id === "rear-left" ? finish.sage : color,
+      segment.id,
+    );
     const [x, y, z] = segment.position;
     const [w, h, d] = segment.size;
     box(walls, [w + 0.025, 0.045, d + 0.025], [x, y + h / 2, z], finish.trim);
-    box(walls, [w + 0.018, 0.09, d + 0.018], [x, 0.08, z], finish.trim);
+    if (y - h / 2 < 0.1) {
+      box(walls, [w + 0.018, 0.09, d + 0.018], [x, 0.08, z], finish.trim);
+      if (houseTypeId === "shared-room") {
+        const claddingHeight = Math.min(0.64, h);
+        box(
+          walls,
+          [w + 0.012, claddingHeight, d + 0.012],
+          [x, claddingHeight / 2, z],
+          finish.sage,
+          "shared-room-wall-panelling",
+        );
+        box(walls, [w + 0.025, 0.035, d + 0.025], [x, claddingHeight, z], finish.trim);
+      }
+    }
   };
   // Replace the left wall with real window openings; the remaining exterior keeps the common doorway.
   houseWallSegments(width, depth, height, 1.12, plan.entranceX, wallsClosed)
@@ -137,7 +163,7 @@ export function createStudioInterior(
       position: [0, 0.14, depth / 2],
       size: [width, 0.28, HOUSE_WALL_THICKNESS],
     });
-  const windowWidth = depth * 0.22;
+  const windowWidth = plan.windowWidth;
   const sill = 0.9,
     windowHeight = 1.15;
   let cursor = -depth / 2;
@@ -195,15 +221,70 @@ export function createStudioInterior(
     position: [-width / 2, height / 2, (cursor + depth / 2) / 2],
     size: [HOUSE_WALL_THICKNESS, height, depth / 2 - cursor],
   });
-  housePartitionSegments("studio-flat", width, depth).forEach((segment) =>
-    wall(segment, finish.wetTile),
+  housePartitionSegments(houseTypeId, width, depth).forEach((segment) =>
+    wall(segment, segment.id.includes("bath") ? finish.wetTile : finish.plaster),
   );
-  // The bathroom doorway stays open for navigation. Its timber jambs clearly mark the private space.
-  const door = plan.bathroomDoor;
-  for (const side of [-1, 1])
-    box(walls, [0.17, 1.95, 0.07], [door.x, 0.975, door.z + (side * door.width) / 2], finish.trim);
-  box(walls, [0.17, 0.08, door.width + 0.14], [door.x, 1.95, door.z], finish.trim);
+  // The bathroom door folds back against its wall, keeping the navigation opening clear.
+  for (const door of plan.interiorDoors) {
+    const doorwaySegment: HouseWallSegment = {
+      id: door.id,
+      position: [door.x, 0.95, door.z],
+      size:
+        door.axis === "z"
+          ? [HOUSE_WALL_THICKNESS, 1.9, door.width]
+          : [door.width, 1.9, HOUSE_WALL_THICKNESS],
+    };
+    if (!show(doorwaySegment)) continue;
+    const frame = new Group();
+    frame.name = `${door.id}-frame`;
+    frame.position.set(door.x, 0, door.z);
+    frame.rotation.y = door.axis === "x" ? Math.PI / 2 : 0;
+    walls.add(frame);
+    for (const side of [-1, 1])
+      box(frame, [0.17, 1.95, 0.07], [0, 0.975, (side * door.width) / 2], finish.trim);
+    box(frame, [0.17, 0.08, door.width + 0.14], [0, 1.95, 0], finish.trim);
+    const panel = new Group();
+    panel.name = door.id;
+    panel.position.set(-HOUSE_WALL_THICKNESS / 2 - 0.025, 0, -door.width / 2);
+    panel.rotation.y = Math.PI;
+    frame.add(panel);
+    const panelWidth = door.width - 0.1;
+    box(
+      panel,
+      [0.045, 1.86, panelWidth],
+      [0, 0.97, panelWidth / 2],
+      finish.wood,
+      "bathroom-door-leaf",
+    );
+    for (const side of [-1, 1]) {
+      for (const y of [0.58, 1.38])
+        box(
+          panel,
+          [0.012, 0.6, panelWidth - 0.18],
+          [side * 0.028, y, panelWidth / 2],
+          finish.woodAlternate,
+          "bathroom-door-inset",
+        );
+      box(panel, [0.035, 0.14, 0.045], [side * 0.04, 0.98, panelWidth - 0.1], finish.brass);
+      box(
+        panel,
+        [0.045, 0.035, 0.14],
+        [side * 0.065, 0.98, panelWidth - 0.14],
+        finish.brass,
+        "bathroom-door-handle",
+      );
+    }
+  }
   return root;
+}
+
+/** Compatibility entry point for the studio scene and its geometry checks. */
+export function createStudioInterior(
+  width: number,
+  depth: number,
+  options: Parameters<typeof createBlueprintInterior>[3] = {},
+) {
+  return createBlueprintInterior("studio-flat", width, depth, options);
 }
 
 /** Soft floor decoration follows owned furniture; it neither blocks movement nor invents an item. */
