@@ -598,28 +598,15 @@ function LudoTable({
           );
         })}
       </div>
-      <div className="lb-stage">
-        <LudoBoard
-          pieces={game.pieces}
-          playable={playable}
-          onPick={pick}
-          playerCount={seats.length}
-          onAnimatingChange={handleAnimationChange}
-        />
-        {hintVisible && canRoll && (
-          <div className="lb-roll-hint" role="status">
-            Tap the dice to roll
-            <span
-              className="lb-roll-timer"
-              aria-hidden="true"
-              style={{ animationDuration: `${ROLL_HINT_MS}ms` }}
-            />
-          </div>
-        )}
-      </div>
-      {game.phase !== "GAME_OVER" && (
-        <div className="lb-dice-tray">
-          <div className="lb-dice-row" role="group" aria-label="Dice">
+      <LudoBoard
+        pieces={game.pieces}
+        playable={playable}
+        onPick={pick}
+        playerCount={seats.length}
+        onAnimatingChange={handleAnimationChange}
+      >
+        {game.phase !== "GAME_OVER" && (
+          <div className="lb-dice-centre" role="group" aria-label="Dice">
             {[0, 1].map((index) => {
               const die = index as 0 | 1;
               const used = game.dice !== null && game.used[die];
@@ -652,6 +639,20 @@ function LudoTable({
               );
             })}
           </div>
+        )}
+        {hintVisible && canRoll && (
+          <div className="lb-roll-hint" role="status">
+            Tap the dice to roll
+            <span
+              className="lb-roll-timer"
+              aria-hidden="true"
+              style={{ animationDuration: `${ROLL_HINT_MS}ms` }}
+            />
+          </div>
+        )}
+      </LudoBoard>
+      {game.phase !== "GAME_OVER" && (
+        <div className="lb-dice-tray">
           <p className="lb-dice-note" aria-live="polite">
             {canRoll
               ? "Tap the dice to roll."

@@ -208,7 +208,7 @@ describe("LudoEngine captures, stacks and finishing", () => {
   });
 
   it("ends the game when every token of a player has finished", () => {
-    const state = rolled({ RED: [FINISH_STEP, FINISH_STEP, FINISH_STEP, 54] }, [3, 1]);
+    const state = rolled({ RED: [FINISH_STEP, FINISH_STEP, FINISH_STEP, FINISH_STEP - 2] }, [2, 1]);
     const done = ok(moveToken(state, "alice", "RED", 3, 0));
     expect(done.game.phase).toBe("GAME_OVER");
     expect(done.game.winnerId).toBe("alice");

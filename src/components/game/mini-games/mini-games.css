@@ -868,13 +868,12 @@
   position: relative;
   gap: 12px;
 }
+/* The stage is a square with room for finished pawns on every side. The board is inset by the rail
+   margin: 1.6 of 18.2 squares, which is 8.79% on each side. */
 .lb-board {
-  position: relative;
+  position: absolute;
   box-sizing: border-box;
-  width: 100%;
-  max-width: 440px;
-  margin: 0 auto;
-  aspect-ratio: 1;
+  inset: 8.79%;
   background: #ffffff;
   border: 3px solid #1f2937;
   border-radius: 16px;
@@ -884,6 +883,10 @@
 .lb-stage {
   position: relative;
   width: 100%;
+  max-width: 520px;
+  margin: 0 auto;
+  aspect-ratio: 1;
+  container-type: inline-size;
 }
 .lb-grid {
   position: absolute;
@@ -1469,31 +1472,42 @@
 }
 
 /* Dice sit on the board's centre; each die keeps a 44px touch target. */
-/* Dice live in a tray under the board, so they never cover the centre triangles or the home lanes. */
+/* Dice sit in the centre square, over the empty middle of the board. Sizes follow the stage width (cqw),
+   so two dice fit inside the three-square centre at every screen size. */
+.lb-dice-centre {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 6;
+  display: flex;
+  gap: 0.8cqw;
+  align-items: center;
+}
+.lb-dice-centre .mg-ludo-die {
+  display: grid;
+  place-items: center;
+  width: 7cqw;
+  height: 7cqw;
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+}
+.lb-dice-centre .mg-die-stage {
+  width: 100%;
+  height: 100%;
+}
+.lb-dice-centre .mg-cube {
+  --die: 5.6cqw;
+}
+.lb-dice-centre .mg-ludo-die.is-unusable {
+  opacity: 0.45;
+}
 .lb-dice-tray {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
-}
-.lb-dice-row {
-  display: flex;
-  gap: 18px;
-  align-items: center;
-  justify-content: center;
-}
-.lb-dice-row .mg-ludo-die {
-  display: grid;
-  place-items: center;
-  min-width: 56px;
-  min-height: 56px;
-  padding: 0;
-}
-.lb-dice-row .mg-ludo-die.is-unusable {
-  opacity: 0.45;
-}
-.lb-dice-row .mg-cube {
-  --die: 30px;
 }
 .lb-dice-note {
   margin: 0;

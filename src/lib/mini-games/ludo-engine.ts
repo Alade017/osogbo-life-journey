@@ -26,7 +26,9 @@ export const DICE_COUNT = 2;
 export const TRACK_LENGTH = 52;
 export const YARD_STEP = -1;
 export const LAST_TRACK_STEP = 50;
-export const FINISH_STEP = 57;
+/** Five home squares after the track, then the finish: the standard Ludo home column. */
+export const HOME_STEPS = 5;
+export const FINISH_STEP = LAST_TRACK_STEP + HOME_STEPS + 1;
 /** Absolute track tile where each colour's track starts (step 0). */
 export const START_OFFSET: Readonly<Record<Colour, number>> = {
   RED: 0,
