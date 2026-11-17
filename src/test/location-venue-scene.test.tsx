@@ -96,3 +96,26 @@ it("keeps market fixture selection and server-offer handoff available without We
   expect(browse).toHaveBeenCalledTimes(1);
   vi.useRealTimers();
 });
+
+it("keeps mall inspection and catalogue handoff usable without WebGL", () => {
+  vi.useFakeTimers();
+  const browse = vi.fn();
+  render(<LocationVenueScene slug="osun-mall" locationName="Osun Mall" onBrowseMarket={browse} />);
+  act(() => {
+    vi.advanceTimersByTime(5000);
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Checkout counter" }));
+  expect(screen.getByRole("button", { name: "Checkout counter" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  expect(screen.queryByTestId("venue-canvas")).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Browse shop catalogue" }));
+  expect(browse).toHaveBeenCalledTimes(1);
+});
+
+it("does not offer mall checkout when no confirmed catalogue callback exists", () => {
+  render(<LocationVenueScene slug="osun-mall" locationName="Osun Mall" />);
+  expect(screen.queryByRole("button", { name: "Browse shop catalogue" })).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Checkout counter" })).toBeInTheDocument();
+});

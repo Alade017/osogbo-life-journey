@@ -19,6 +19,7 @@ export type VenueEnvironment = {
 };
 
 export type LocationVenueDesign = {
+  retailInterior?: boolean;
   bankInterior?: BankInteriorVariant;
   transportPark?: boolean;
   sceneBounds?: { width: number; depth: number };
@@ -206,12 +207,20 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
   "cedar-bank": {
     bankInterior: "teller-hall",
     name: "Cedar Bank lobby",
-    description: "A timber-finished teller hall with screened service windows, a guided queue and shared seating.",
+    description:
+      "A timber-finished teller hall with screened service windows, a guided queue and shared seating.",
     floorColor: "#d5d1c5",
     wallColor: "#e6e1d4",
     accentColor: "#4b806f",
     fixtures: [
-      fixture("cedar-teller", "Teller counter", "Screened teller windows beside the queue. Open bank services for account actions.", "counter", 0, -1.6),
+      fixture(
+        "cedar-teller",
+        "Teller counter",
+        "Screened teller windows beside the queue. Open bank services for account actions.",
+        "counter",
+        0,
+        -1.6,
+      ),
       fixture("cedar-queue", "Queue seats", "Seats beside the service queue.", "seat", -2.8, 0.9),
       fixture(
         "cedar-info",
@@ -226,7 +235,8 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
   "meridian-bank": {
     bankInterior: "digital-lounge",
     name: "Meridian Bank lobby",
-    description: "An open self-service branch with twin kiosks, window seating and a screened customer-service desk.",
+    description:
+      "An open self-service branch with twin kiosks, window seating and a screened customer-service desk.",
     floorColor: "#c8d2d0",
     wallColor: "#e3e9e5",
     accentColor: "#527c9b",
@@ -326,22 +336,63 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     ],
   },
   "osun-mall": {
-    name: "Mall gallery",
-    description: "A compact shopping gallery with display plinths and a seating nook.",
-    floorColor: "#d4d0c6",
-    wallColor: "#ece8de",
-    accentColor: "#ba7051",
+    retailInterior: true,
+    sceneBounds: { width: 16, depth: 14 },
+    name: "Osun Mall shopping gallery",
+    description:
+      "A shopping gallery opening into supermarket aisles, with a clear central walkway and checkout area. Display packs are scenery; the shop catalogue confirms actual offers.",
+    floorColor: WORLD_PALETTE.tileLight,
+    wallColor: WORLD_PALETTE.wall,
+    accentColor: WORLD_PALETTE.foliage,
     fixtures: [
-      fixture("mall-display", "Featured display", "A central retail display.", "display", 0, -1.3),
+      fixture(
+        "mall-display",
+        "Featured display",
+        "Inspect the gallery display. Products and prices are confirmed in the existing shop catalogue.",
+        "display",
+        -4.6,
+        0,
+      ),
       fixture(
         "mall-shelves",
         "Shop shelves",
-        "Shelving along one side of the gallery.",
+        "Supermarket shelving with a clear aisle in front. Display packs do not represent stock quantities.",
         "shelf",
-        -2.7,
-        0.7,
+        4,
+        -4.5,
       ),
-      fixture("mall-seats", "Gallery seats", "A quiet place to pause.", "seat", 2.7, 0.8),
+      fixture(
+        "mall-essentials",
+        "Essentials aisle",
+        "Everyday-goods display shelving. Browse the catalogue to check current availability.",
+        "shelf",
+        4,
+        -1.3,
+      ),
+      fixture(
+        "mall-gallery-shop",
+        "Gallery shop display",
+        "A separate shopfront display beside the public gallery. It does not create another purchasable shop.",
+        "display",
+        -4.6,
+        -4.5,
+      ),
+      fixture(
+        "mall-seats",
+        "Gallery seats",
+        "Seating beside the entrance, outside the central walkway.",
+        "seat",
+        -4.6,
+        4.5,
+      ),
+      fixture(
+        "mall-checkout",
+        "Checkout counter",
+        "Use Browse shop catalogue for real offers. Purchases and payment stay in the existing server-checked shop flow.",
+        "counter",
+        4,
+        3.3,
+      ),
     ],
   },
   "sports-ground": {
@@ -810,11 +861,11 @@ const fallbackVenue: LocationVenueDesign = {
 };
 
 export function getLocationVenueDesign(slug: string, locationName: string): LocationVenueDesign {
-  const design = venues[slug] ?? (
-    ["state-hospital", "general-hospital"].includes(slug)
-      ? { ...venues["sunrise-health-post"], name: locationName }
-      : fallbackVenue
-  );
+  const design =
+    venues[slug] ??
+    (["state-hospital", "general-hospital"].includes(slug)
+      ? { ...(venues["sunrise-health-post"] ?? fallbackVenue), name: locationName }
+      : fallbackVenue);
   return design === fallbackVenue ? { ...fallbackVenue, name: locationName } : design;
 }
 

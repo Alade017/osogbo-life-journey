@@ -1,3 +1,4 @@
+import { RetailInteriorScene } from "@/components/3d/RetailInteriorScene";
 import { BankInteriorScene } from "@/components/3d/BankInteriorScene";
 import { BANK_INTERIORS } from "@/game/bank-interiors";
 import { TransitParkScene } from "@/components/3d/TransitParkScene";
@@ -137,7 +138,16 @@ function BasicLocationVenueScene({
                 zoom={1.2}
               />
               <WorldLighting size={14} />
-              {venue.bankInterior ? (
+              {venue.retailInterior ? (
+                <RetailInteriorScene
+                  fixtures={venue.fixtures}
+                  selected={selectedFixture}
+                  onSelect={setSelectedFixture}
+                  floorColor={venue.floorColor}
+                  wallColor={venue.wallColor}
+                  accentColor={venue.accentColor}
+                />
+              ) : venue.bankInterior ? (
                 <BankInteriorScene
                   variant={venue.bankInterior}
                   fixtures={venue.fixtures}
@@ -266,13 +276,13 @@ function BasicLocationVenueScene({
           Access bank services
         </button>
       )}
-      {venue.scene === "market" && onBrowseMarket && (
+      {(venue.scene === "market" || venue.retailInterior) && onBrowseMarket && (
         <button
           type="button"
           onClick={onBrowseMarket}
           className="rounded-lg border border-edge bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground"
         >
-          Browse market offers
+          {venue.retailInterior ? "Browse shop catalogue" : "Browse market offers"}
         </button>
       )}
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(14rem,0.8fr)]">
