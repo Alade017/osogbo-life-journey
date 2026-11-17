@@ -95,17 +95,24 @@ describe("ludo board geometry", () => {
     }
   });
 
-  it("places each colour's yard directly beside its own track start", () => {
+  it("keeps each coloured yard in the correct quadrant", () => {
+    const expected = [
+      { x: 0, y: 9 },  // RED: bottom-left
+      { x: 0, y: 0 },  // GREEN: top-left
+      { x: 9, y: 0 },  // YELLOW: top-right
+      { x: 9, y: 9 },  // BLUE: bottom-right
+    ];
+
     COLOURS.forEach((colour, arm) => {
       const rect = yardRect(arm);
-      const [row, col] = LOOP_CELLS[absoluteTile(colour, 0)]!;
-      const withinColumns = col >= rect.x && col < rect.x + rect.size;
-      const withinRows = row >= rect.y && row < rect.y + rect.size;
-      const touchesYard =
-        (withinColumns && (row === rect.y - 1 || row === rect.y + rect.size)) ||
-        (withinRows && (col === rect.x - 1 || col === rect.x + rect.size));
-
-      expect(touchesYard, `${colour} start at ${row},${col}`).toBe(true);
+      expect({ x: rect.x, y: rect.y }, colour).toEqual(expected[arm]);
+      for (let token = 0; token < 4; token += 1) {
+        const point = tokenPoint(colour, YARD_STEP, token);
+        expect(point.x).toBeGreaterThan(rect.x);
+        expect(point.x).toBeLessThan(rect.x + rect.size);
+        expect(point.y).toBeGreaterThan(rect.y);
+        expect(point.y).toBeLessThan(rect.y + rect.size);
+      }
     });
   });
 });
