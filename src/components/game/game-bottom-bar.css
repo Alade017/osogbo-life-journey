@@ -160,6 +160,15 @@
   pointer-events: none;
 }
 
+.game-shell.hud-panel-open .gbb,
+.game-shell.hud-panel-open .hd-status {
+  opacity: 0.3;
+}
+
+.game-shell.hud-panel-open .gbb {
+  pointer-events: none;
+}
+
 @media (max-width: 380px) {
   .gbb {
     gap: 4px;
