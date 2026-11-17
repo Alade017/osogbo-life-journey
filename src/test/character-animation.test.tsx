@@ -29,8 +29,9 @@ describe("cached avatar artwork and animation clips", () => {
       stature: 2,
       build: 3,
     };
-    expect(normalizeAvatarAppearance(fullAppearance, "male")).toEqual(fullAppearance);
+    expect(normalizeAvatarAppearance(fullAppearance, "male")).toEqual({ ...fullAppearance, clothed: true });
     expect(normalizeAvatarAppearance({ skin: -1, hair: 88, outfit: 9 }, "female")).toEqual({
+      clothed: false,
       skin: 1,
       hair: 1,
       hairColor: 0,
@@ -42,6 +43,7 @@ describe("cached avatar artwork and animation clips", () => {
       build: 1,
     });
     expect(normalizeAvatarAppearance(undefined)).toEqual({
+      clothed: true,
       skin: 1,
       hair: 1,
       hairColor: 0,

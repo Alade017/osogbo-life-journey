@@ -24,7 +24,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { q, rpc } from "@/lib/game";
 import { parseAppTileStyle, type AppTileStyle } from "@/lib/app-tile-style";
 import { pageMeta } from "@/lib/seo";
-import { Avatar } from "@/components/game/Avatar";
+import { CharacterPreview } from "@/components/3d/CharacterPreview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -203,7 +203,13 @@ export function SettingsPage() {
     <div className="sx-page" data-reduced={profile.reduced_motion ? "true" : "false"}>
       <header className="sx-hero">
         <div className="sx-hero-avatar" aria-hidden="true">
-          <Avatar appearance={appearance} gender={character?.gender ?? "nonbinary"} size={84} />
+          <CharacterPreview
+            appearance={appearance}
+            gender={character?.gender ?? "nonbinary"}
+            equipment={[]}
+            label={`${profile.display_name || "Your character"}, head portrait`}
+            framing="head"
+          />
         </div>
         <div className="sx-hero-copy">
           <p className="sx-eyebrow">Make it yours</p>
@@ -522,10 +528,13 @@ function AudioControls({ profile, onSave }: { profile: Profile; onSave: (patch: 
             <Waves aria-hidden="true" />
             <strong>Ambient texture</strong>
           </span>
-          <output className="sx-volume-value">{Math.round((levels.environment ?? 0) * 100)}%</output>
+          <output className="sx-volume-value">
+            {Math.round((levels.environment ?? 0) * 100)}%
+          </output>
         </div>
         <p className="sx-row-hint">
-          Procedural outdoor ambience: soft wind, distant road rumble and occasional birds. Generated locally without audio downloads.
+          Procedural outdoor ambience: soft wind, distant road rumble and occasional birds.
+          Generated locally without audio downloads.
         </p>
         <div className="sx-volume">
           <Slider

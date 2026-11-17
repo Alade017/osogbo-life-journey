@@ -63,6 +63,15 @@ import { ZoneSurroundings } from "@/components/3d/ZoneSurroundings";
 import { ZoneNpcs } from "@/components/3d/ZoneNpcs";
 import type { ZoneNpcSpec } from "@/game/neighborhood-interactions";
 import { CHARACTER_MOTION } from "@/components/3d/character-config";
+import { ProceduralProp } from "@/components/3d/props/ProceduralProp";
+import {
+  busParts,
+  compoundParts,
+  palmTreeParts,
+  tukTukParts,
+} from "@/components/3d/props/procedural-props";
+import type { NeighborhoodArea, WorldPoint } from "@/game/neighborhood-model";
+import { dressingPartsFor } from "@/components/3d/props/dressing";
 import { NEIGHBORHOOD_CAMERA, WORLD_PALETTE, WORLD_SCALE } from "../3d/world-theme";
 import {
   carSpots,
@@ -372,6 +381,18 @@ function NeighborhoodNpcActor({
 const SKY_FOG_NEAR_SCALE = 0.42;
 const SKY_FOG_FAR_SCALE = 1.05;
 /** Whether an obstacle sits inside a real model's footprint, so its procedural stand-in is skipped. */
+/** Heading along the road a point sits nearest to: quarter turn on north–south roads. */
+function vehicleHeading(area: NeighborhoodArea, spot: WorldPoint) {
+  let best: { distance: number; vertical: boolean } | null = null;
+  for (const road of area.roads ?? []) {
+    if (road.type === "lane") continue;
+    const vertical = road.axis === "vertical";
+    const distance = Math.abs((vertical ? spot.x : spot.y) - road.offset);
+    if (!best || distance < best.distance) best = { distance, vertical };
+  }
+  return best?.vertical ? Math.PI / 2 : 0;
+}
+
 function insideEnvironment(
   environment: { x: number; y: number; width: number; height: number } | undefined,
   obstacle: { x: number; y: number },
@@ -541,13 +562,26 @@ export function R3FNeighborhoodSurface({
       sidewalks: flat(dressing.sidewalks, 0.05, 0.1),
       curbs: flat(dressing.curbs, 0.09, 0.14),
       lights: onGround(dressing.lights),
-      cars: onGround(dressing.cars),
+      cars: onGround(dressing.cars.slice(2)),
       people: onGround(dressing.people),
       vendors: onGround(dressing.vendors),
     };
   }, [dressing, point, unit]);
   const streetSize = WORLD_SCALE.neighborhoodStreetCell;
   const lookRange = CHARACTER_MOTION.lookRange * WORLD_SCALE.character;
+  // The first two car spots of each area carry a bus and a tuk-tuk; the rest stay simple cars.
+  const busModel = useMemo(() => busParts({ length: 9, width: 2.5, height: 3 }), []);
+  const tukTukModel = useMemo(() => tukTukParts({ length: 2.4, width: 1.2 }), []);
+  const vehicles = useMemo(
+    () =>
+      dressing.cars.slice(0, 2).map((spot, index) => ({
+        id: `vehicle-${index}`,
+        parts: index === 0 ? busModel : tukTukModel,
+        position: point(spot.x, spot.y),
+        rotation: vehicleHeading(area, spot),
+      })),
+    [area, dressing, point, busModel, tukTukModel],
+  );
   const scenePoints = useMemo(
     () =>
       players.map((player) => {
@@ -599,10 +633,46 @@ export function R3FNeighborhoodSurface({
         point(selfPoint.x, selfPoint.y)[2],
       ] as const)
     : null;
+  // Filler trees on the outer edge are palms; the rest keep the scene's generic trees.
+  const palmParts = useMemo(
+    () =>
+      palmTreeParts({
+        height: WORLD_SCALE.character * 3.4,
+        frondLength: WORLD_SCALE.character * 1.5,
+      }),
+    [],
+  );
+  const palmSpots = (area.obstacles ?? [])
+    .filter((o) => o.kind === "tree" && o.id.startsWith("perimeter-tree"))
+    .map((o) => point(o.x, o.y));
+  // Compounds: boundary wall, house and rusted roof, built in metres to fit each footprint.
+  const compoundSpots = useMemo(
+    () =>
+      (area.obstacles ?? [])
+        .filter((o) => !o.visualManaged && o.kind === "compound")
+        .filter((o) => !insideEnvironment(area.environment, o))
+        .map((o) => ({
+          id: o.id,
+          position: point(o.x, o.y),
+          parts: compoundParts({ width: o.width * unit, depth: o.height * unit }),
+        })),
+    [area, point, unit],
+  );
+  // Market umbrellas, jerrycans, tanks, vats and palms declared by the area; decorative only.
+  const dressingSpots = useMemo(
+    () =>
+      (area.dressing ?? []).map((item) => ({
+        id: item.id,
+        kind: item.kind,
+        position: point(item.x, item.y),
+        rotation: item.rotation ?? 0,
+      })),
+    [area, point],
+  );
   const trees: WorldTree[] = useMemo(
     () =>
       (area.obstacles ?? [])
-        .filter((o) => o.kind === "tree")
+        .filter((o) => o.kind === "tree" && !o.id.startsWith("perimeter-tree"))
         .map((o, index) => {
           const p = point(o.x, o.y);
 
@@ -662,6 +732,14 @@ export function R3FNeighborhoodSurface({
           <WorldSidewalks sidewalks={street.sidewalks} curbs={street.curbs} />
           <WorldStreetLights positions={street.lights} size={streetSize} />
           <WorldCars positions={street.cars} size={streetSize} />
+          {vehicles.map((vehicle) => (
+            <ProceduralProp
+              key={vehicle.id}
+              parts={vehicle.parts}
+              position={[vehicle.position[0], 0, vehicle.position[2]]}
+              rotation={vehicle.rotation}
+            />
+          ))}
           <WorldStreetVendors positions={street.vendors} size={streetSize} />
           <WorldPeople positions={street.people} />
           {area.paths?.map((path) => {
@@ -685,6 +763,23 @@ export function R3FNeighborhoodSurface({
             );
           })}
           <WorldTrees positions={trees} />
+          {palmSpots.map((spot, index) => (
+            <ProceduralProp
+              key={`palm-${index}`}
+              parts={palmParts}
+              position={[spot[0], 0, spot[2]]}
+              rotation={index * 1.7}
+            />
+          ))}
+
+          {dressingSpots.map((item) => (
+            <ProceduralProp
+              key={item.id}
+              parts={dressingPartsFor(item.kind)}
+              position={[item.position[0], 0, item.position[2]]}
+              rotation={item.rotation}
+            />
+          ))}
 
           {area.zoneLayout && (
             <>
@@ -730,7 +825,7 @@ export function R3FNeighborhoodSurface({
             </Suspense>
           )}
           {area.obstacles
-            ?.filter((o) => !o.visualManaged && ["compound", "shop", "kiosk"].includes(o.kind))
+            ?.filter((o) => !o.visualManaged && ["shop", "kiosk"].includes(o.kind))
             .filter((o) => !insideEnvironment(area.environment, o))
             .map((o) => (
               <WorldHouse
@@ -746,6 +841,13 @@ export function R3FNeighborhoodSurface({
                 }
               />
             ))}
+          {compoundSpots.map((item) => (
+            <ProceduralProp
+              key={item.id}
+              parts={item.parts}
+              position={[item.position[0], 0, item.position[2]]}
+            />
+          ))}
           <WorldStreetFurniture
             items={(area.obstacles ?? [])
               .filter(

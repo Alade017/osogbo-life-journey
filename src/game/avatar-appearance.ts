@@ -15,6 +15,8 @@ export const BODY_HEIGHTS = ["Short", "Average", "Tall"];
 export const BODY_BUILDS = ["Lean", "Average", "Athletic", "Muscular"];
 
 export type Appearance = {
+  /** Whether the character wears the top, trousers and shoes. Female bodies start unclothed. */
+  clothed?: boolean;
   skin?: number;
   hair?: number;
   hairColor?: number;
@@ -27,6 +29,7 @@ export type Appearance = {
 };
 
 const DEFAULT_APPEARANCE: Required<Appearance> = {
+  clothed: true,
   skin: 1,
   hair: 1,
   hairColor: 0,
@@ -50,6 +53,7 @@ export function normalizeAvatarAppearance(
 ): Required<Appearance> {
   const hairOptions = HAIR_STYLES_BY_GENDER[gender] ?? SAFE_HAIR;
   return {
+    clothed: typeof appearance?.clothed === "boolean" ? appearance.clothed : gender !== "female",
     skin: validIndex(appearance?.skin, SKIN_TONES, DEFAULT_APPEARANCE.skin),
     hair: validIndex(appearance?.hair, hairOptions, DEFAULT_APPEARANCE.hair),
     hairColor: validIndex(appearance?.hairColor, HAIR_COLORS, DEFAULT_APPEARANCE.hairColor),

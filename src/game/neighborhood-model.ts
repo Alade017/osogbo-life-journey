@@ -63,8 +63,20 @@ export type NeighborhoodPath = {
   to: WorldPoint;
   width: number;
 };
+/** Decorative props placed in an area. They never block movement. */
+export type NeighborhoodDressingKind = "umbrella" | "jerrycans" | "water-tank" | "dye-vat" | "palm";
+
+export type NeighborhoodDressing = {
+  id: string;
+  kind: NeighborhoodDressingKind;
+  x: number;
+  y: number;
+  rotation?: number;
+};
+
 export type NeighborhoodArea = {
   slug: string;
+  dressing?: readonly NeighborhoodDressing[];
   name: string;
   objects: readonly NeighborhoodObject[];
   obstacles?: readonly NeighborhoodObstacle[];
@@ -159,6 +171,13 @@ export const CITY_CENTRE_AREA: NeighborhoodArea = {
 /** A second, data-backed street layout for the seeded Oja-Oba Market destination. */
 export const OJA_OBA_AREA: NeighborhoodArea = {
   slug: "oja-oba",
+  dressing: [
+    { id: "market-umbrella-west", kind: "umbrella", x: 20, y: 150 },
+    { id: "market-umbrella-north", kind: "umbrella", x: 20, y: 80 },
+    { id: "market-dye-vat", kind: "dye-vat", x: 440, y: 150 },
+    { id: "market-jerrycans", kind: "jerrycans", x: 205, y: 175 },
+    { id: "market-palm", kind: "palm", x: 580, y: 430 },
+  ],
   name: "Oja-Oba Market",
   roads: [
     { id: "market-spine", axis: "vertical", offset: 270, width: 92, type: "street" },
@@ -359,6 +378,108 @@ const AREA_ANCHOR_SETS = [
   ],
 ] as const;
 
+/** Outer edge spots where filler buildings and trees may stand, away from the centre. */
+const PERIMETER_SPOTS: readonly WorldPoint[] = [
+  { x: 20, y: 20 },
+  { x: 620, y: 20 },
+  { x: 20, y: 540 },
+  { x: 620, y: 540 },
+  { x: 20, y: 300 },
+  { x: 620, y: 300 },
+  { x: 320, y: 20 },
+  { x: 320, y: 540 },
+  { x: 20, y: 200 },
+  { x: 620, y: 420 },
+];
+const PERIMETER_MAX = 6;
+
+function footprintFor(index: number) {
+  return index % 3 === 2
+    ? { kind: "compound" as const, width: 96, height: 56 }
+    : { kind: "tree" as const, width: 38, height: 38 };
+}
+
+/** True when a box centred on `spot` clears a road's surface by `gap`. */
+function clearsRoad(
+  spot: WorldPoint,
+  width: number,
+  height: number,
+  road: NeighborhoodRoad,
+  gap: number,
+) {
+  if (road.axis === "vertical") {
+    return Math.abs(spot.x - road.offset) > road.width / 2 + width / 2 + gap;
+  }
+  return Math.abs(spot.y - road.offset) > road.width / 2 + height / 2 + gap;
+}
+
+function overlapsBox(
+  spot: WorldPoint,
+  width: number,
+  height: number,
+  box: { x: number; y: number; width: number; height: number },
+  gap: number,
+) {
+  return (
+    Math.abs(spot.x - box.x) < (width + box.width) / 2 + gap &&
+    Math.abs(spot.y - box.y) < (height + box.height) / 2 + gap
+  );
+}
+
+/**
+ * Filler perimeter: a few trees and walled compounds on the outer edge, placed clear of roads,
+ * the hero objects and the fixed obstacles. The start spot follows the seed, so each
+ * neighbourhood gets its own skyline without moving between visits.
+ */
+export function perimeterObstacles(
+  seed: number,
+  roads: readonly NeighborhoodRoad[],
+  objects: readonly NeighborhoodObject[],
+  obstacles: readonly NeighborhoodObstacle[],
+): NeighborhoodObstacle[] {
+  const roadGap = 8;
+  const gap = 12;
+  const free = PERIMETER_SPOTS.map((spot, index) => ({
+    spot,
+    index,
+    ...footprintFor(index),
+  })).filter(
+    ({ spot, width, height }) =>
+      roads.every((road) => clearsRoad(spot, width, height, road, roadGap)) &&
+      objects.every(
+        (object) =>
+          !overlapsBox(
+            spot,
+            width,
+            height,
+            { x: object.x, y: object.y, width: 40, height: 40 },
+            gap,
+          ),
+      ) &&
+      obstacles.every((box) => !overlapsBox(spot, width, height, box, gap)),
+  );
+  if (free.length === 0) return [];
+  const start = seed % free.length;
+  const ordered = [...free.slice(start), ...free.slice(0, start)];
+  return ordered.slice(0, PERIMETER_MAX).map(({ spot, index, kind, width, height }) => ({
+    id: `perimeter-${kind}-${index}`,
+    kind,
+    x: spot.x,
+    y: spot.y,
+    width,
+    height,
+  }));
+}
+
+function addPerimeter(area: NeighborhoodArea, seed: number): NeighborhoodArea {
+  const objects = area.objects ?? [];
+  const obstacles = area.obstacles ?? [];
+  return {
+    ...area,
+    obstacles: [...obstacles, ...perimeterObstacles(seed, area.roads ?? [], objects, obstacles)],
+  };
+}
+
 function generatedNeighborhoodArea(
   slug: string,
   name: string,
@@ -380,7 +501,7 @@ function generatedNeighborhoodArea(
   const furnitureY = seed % 3 === 0 ? 100 : 500;
   const pedestrianY = horizontalMain + (seed % 2 === 0 ? 62 : -62);
   const npcNames = [`Neighbour in ${name}`, `Shopper in ${name}`, `Street vendor in ${name}`];
-  return {
+  const area: NeighborhoodArea = {
     slug,
     name,
     roads: [
@@ -516,6 +637,7 @@ function generatedNeighborhoodArea(
     ],
     style: AREA_STYLE_BY_CATEGORY[category],
   };
+  return addPerimeter(area, seed);
 }
 
 /**
@@ -528,6 +650,12 @@ export const FUEL_AND_GO_AREA: NeighborhoodArea = {
   name: "Fuel and Go",
   objects: [
     { id: "market", name: "Fuel and Go shop", kind: "market", shopSlug: null, x: 1000, y: 300 },
+  ],
+  dressing: [
+    { id: "fuel-water-tank", kind: "water-tank", x: 1110, y: 190 },
+    { id: "fuel-jerrycans", kind: "jerrycans", x: 930, y: 420 },
+    { id: "fuel-umbrella", kind: "umbrella", x: 700, y: 430 },
+    { id: "fuel-palm", kind: "palm", x: 1200, y: 500 },
   ],
   roads: [
     { id: "fuel-main-road", axis: "horizontal", offset: 300, width: 84, type: "arterial" },

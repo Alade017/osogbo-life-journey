@@ -6,6 +6,7 @@ import type { AvatarAnimationState, AvatarEquipment } from "@/components/game/Av
 import { WORLD_SCALE } from "./world-theme";
 import { CHARACTER_GROUND, CHARACTER_MOTION, CHARACTER_SOCKETS } from "./character-config";
 import { bodyVariantFor, CharacterBody, motionFor, type BodyVariant } from "./CharacterBody";
+import { followStep, measuredSpeed, type Vec3 } from "./character-follow";
 import { WORN_ITEM_MODELS } from "./world-item-models";
 
 export type TaskPose = "sit" | "wash" | "cook" | "collect" | "stretch";
@@ -66,7 +67,21 @@ export function WorldCharacter({
   // The root glides toward `position` each frame, so a new spot is walked to rather than jumped to.
   const root = useRef<Group>(null);
   const goal = useRef(new Vector3(...position));
+  // Speed of the server's last update, so the glide keeps pace with the walk rather than easing off.
+  const speed = useRef(0);
+  const updateAt = useRef(performance.now());
+  const previousGoal = useRef<Vec3>(position);
   const [x, y, z] = position;
+  if (
+    previousGoal.current[0] !== x ||
+    previousGoal.current[1] !== y ||
+    previousGoal.current[2] !== z
+  ) {
+    const now = performance.now();
+    speed.current = measuredSpeed(previousGoal.current, position, (now - updateAt.current) / 1000);
+    updateAt.current = now;
+    previousGoal.current = position;
+  }
   goal.current.set(x, y, z);
   useLayoutEffect(() => {
     root.current?.position.copy(goal.current);
@@ -110,9 +125,15 @@ export function WorldCharacter({
   useFrame((_state, delta) => {
     const rootGroup = root.current;
     if (rootGroup && rootGroup.position.distanceTo(goal.current) > 0.001) {
-      rootGroup.position.lerp(goal.current, 1 - Math.exp(-CHARACTER_MOTION.glideRate * delta));
-      if (rootGroup.position.distanceTo(goal.current) <= 0.001)
-        rootGroup.position.copy(goal.current);
+      const here = rootGroup.position;
+      const [nx, ny, nz] = followStep(
+        [here.x, here.y, here.z],
+        [goal.current.x, goal.current.y, goal.current.z],
+        delta,
+        speed.current,
+        CHARACTER_MOTION.glideRate,
+      );
+      rootGroup.position.set(nx, ny, nz);
       invalidate();
     }
     const group = bodyRef.current;

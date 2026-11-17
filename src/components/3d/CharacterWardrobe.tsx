@@ -164,6 +164,7 @@ export function CharacterWardrobe({
     return { torso, pelvis, arms, legs, feet };
   }, [rig]);
 
+  if (appearance.clothed === false) return null;
   const top = OUTFITS[appearance.outfit ?? 0] ?? OUTFITS[0]!;
   const bottom = TROUSERS[appearance.bottoms ?? 0] ?? TROUSERS[0]!;
   const shoes = SHOE_COLORS[appearance.shoes ?? 0] ?? SHOE_COLORS[0]!;

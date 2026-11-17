@@ -1,5 +1,7 @@
 import { useLayoutEffect, useMemo, useRef } from "react";
 import { Object3D, type InstancedMesh } from "three";
+import { ProceduralProp } from "./props/ProceduralProp";
+import { bankTowerParts } from "./props/procedural-props";
 import type {
   AdireMarketSpec,
   CommercialBankSpec,
@@ -239,6 +241,9 @@ function CommercialBank({
   const alcovePos = point(spec.atmAlcove.x, spec.atmAlcove.y);
   const lotPos = point(spec.parkingLot.x, spec.parkingLot.y);
   const postPos = point(spec.securityPost.x, spec.securityPost.y);
+  // Glass-and-concrete tower in the courtyard's north-east corner, clear of the lobby path and ATM.
+  const towerParts = useMemo(() => bankTowerParts({ width: 4.5, depth: 4.5, height: 14 }), []);
+  const towerPos = point(1200, -62);
 
   const bw = spec.building.width * unit;
   const bd = spec.building.height * unit;
@@ -457,6 +462,8 @@ function CommercialBank({
           </group>
         ))}
       </group>
+
+      <ProceduralProp parts={towerParts} position={[towerPos[0], 0, towerPos[2]]} />
 
       {/* 4. Instanced ATM Queue Stanchions */}
       <InstancedBankStanchions stanchions={spec.stanchions} point={point} />
