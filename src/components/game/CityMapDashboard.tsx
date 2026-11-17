@@ -1,14 +1,13 @@
 import { transportPreference } from "@/lib/transport-park";
 import "@/components/map/map-compact.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CalendarDays, CloudOff, MapPinned, Smile, Compass, Lock, X } from "lucide-react";
+import { CloudOff, MapPinned } from "lucide-react";
 import { toast } from "sonner";
 import {
   MapCanvas,
   type MapBillboardMarker,
-  type MapFilter,
   type MapSearchTarget,
   type MapEventChip,
 } from "@/components/map/MapCanvas";
@@ -34,7 +33,6 @@ import { OsunStateOverview } from "@/components/map/OsunStateOverview";
 import { MAP_LANDMARK_LOCATION_SLUG } from "@/components/map/map-location-links";
 import townData from "@/data/osogbo-town.json";
 import { q, rpc } from "@/lib/game";
-import { isPlayableDistrict } from "@/game/playable-district";
 import { INITIAL_GAME_TIME, gameTimeFromCharacter } from "@/lib/game-time";
 import { useWorldClock } from "@/hooks/use-world-clock";
 import { supabase } from "@/integrations/supabase/client";
@@ -60,19 +58,6 @@ import "@/components/map/map-hud.css";
 import "@/components/map/neighborhood-city-map.css";
 import "@/components/map/map-explorer.css";
 
-const categories: { id: MapFilter; label: string }[] = [
-  { id: "all", label: "All" },
-  { id: "jobs", label: "Jobs" },
-  { id: "food", label: "Food" },
-  { id: "market", label: "Markets" },
-  { id: "health", label: "Health" },
-  { id: "school", label: "Schools" },
-  { id: "services", label: "Services" },
-  { id: "worship", label: "Worship" },
-  { id: "transport", label: "Transport" },
-  { id: "junction", label: "Junctions" },
-  { id: "sport", label: "Sport" },
-];
 const townLandmarks = townData.landmarks as (MapLandmark & { districtId: string })[];
 const districts = townData.districts.map((district) => ({
   ...district,
@@ -119,7 +104,6 @@ export function CityMapDashboard({
   nextRentDueAt,
 }: { money?: number; mood?: string; nextRentDueAt?: string } = {}) {
   const [selectedDistrict, setSelectedDistrict] = useState<MapDistrict | null>(null);
-  const [filter, setFilter] = useState<MapFilter>("all");
   const [searchTarget, setSearchTarget] = useState<MapSearchTarget | null>(null);
   const [offline, setOffline] = useState(typeof navigator !== "undefined" && !navigator.onLine);
   const [actionError, setActionError] = useState("");
@@ -128,7 +112,6 @@ export function CityMapDashboard({
   const [billboardNow, setBillboardNow] = useState(() => Date.now());
   const [mapLevel, setMapLevel] = useState<"town" | "state">("town");
   const [selectedTownId, setSelectedTownId] = useState("osogbo");
-  const [soonOpen, setSoonOpen] = useState(false);
   const livePlayerPose = useLivePlayerPose();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
@@ -159,11 +142,9 @@ export function CityMapDashboard({
       return mapHousingMarkers(await response.json());
     },
   });
-  const rent = useQuery(q.rentStatus());
   const wallet = useQuery(q.wallet());
   const worldClock = useWorldClock();
   const cityEvents = useCityEvents();
-  const jobCatalog = useQuery({ ...q.jobs(), enabled: filter === "jobs" });
   const locations = useQuery(q.locations());
   const availableLandmarks = useQuery({
     queryKey: ["mapAvailableLandmarks"],
@@ -381,38 +362,12 @@ export function CityMapDashboard({
       query ? "?" + query : window.location.pathname,
     );
   }, [availableLandmarks.data, onLandmark, setDestinationTab]);
-  const locationsWithJobs = new Set(
-    (jobCatalog.data ?? []).flatMap((job) => (job.location_id ? [job.location_id] : [])),
-  );
-  const jobLandmarkIds = landmarks
-    .filter((landmark) => {
-      const slug = MAP_LANDMARK_LOCATION_SLUG[landmark.id];
-      const locationRow = locations.data?.find((row) => row.slug === slug);
-      return !!locationRow && locationsWithJobs.has(locationRow.id);
-    })
-    .map((item) => item.id);
   const submitSearch = () => {
     if (!searchMatches) return;
     setMapLevel("town");
 
     setSearchTarget({ id: searchMatches.id, kind: searchMatches.kind });
   };
-  const rentRecord = rent.data as { next_due_at?: string; due_at?: string } | null;
-  const due = nextRentDueAt ?? rentRecord?.next_due_at ?? rentRecord?.due_at;
-  const availableIds = availableLandmarks.data;
-  const lockedPlaces = availableIds
-    ? townLandmarks.filter((place) => !availableIds.includes(place.id))
-    : [];
-  const displayedMood =
-    mood ??
-    (character.data?.happiness != null
-      ? character.data.happiness > 75
-        ? "Cheerful"
-        : character.data.happiness > 45
-          ? "Content"
-          : "Low"
-      : "Settled");
-
   const playerMapPosition = useMemo(
     () => resolvePlayerMapPosition(character.data, livePlayerPose),
     [character.data, livePlayerPose],
@@ -426,112 +381,22 @@ export function CityMapDashboard({
 
   return (
     <section className="city-map-dashboard is-world-map map-experience" aria-label="Osun Life map">
-      <details className="map-options">
-        <summary>Map options</summary>
-        <header className="map-hud">
-          <div className="map-hud-status" aria-label="Map status">
-            <span className="map-hud-chip">
-              <Smile size={15} aria-hidden="true" />
-              <strong>{displayedMood}</strong>
-            </span>
-            <span className="map-hud-chip">
-              <CalendarDays size={15} aria-hidden="true" />
-              <small>Rent</small>
-              <strong>
-                {due
-                  ? new Intl.DateTimeFormat("en-NG", {
-                      timeZone: "Africa/Lagos",
-                      day: "numeric",
-                      month: "short",
-                    }).format(new Date(due))
-                  : "Not scheduled"}
-              </strong>
-            </span>
-            {mapLevel === "town" && lockedPlaces.length > 0 && (
-              <button
-                type="button"
-                className="map-soon-button"
-                aria-expanded={soonOpen}
-                onClick={() => setSoonOpen(true)}
-              >
-                <Lock size={13} aria-hidden="true" />
-                <strong>{lockedPlaces.length}</strong>
-                <small>coming soon</small>
-              </button>
-            )}
-          </div>
-          <div className="map-hud-actions">
-            <button
-              className="map-level-toggle"
-              type="button"
-              onClick={() => setMapLevel((level) => (level === "town" ? "state" : "town"))}
-            >
-              <MapPinned size={16} />
-              {mapLevel === "town" ? "Explore Osun" : "Osogbo map"}
-            </button>
-            {mapLevel === "town" && isPlayableDistrict(currentLocation?.slug) && (
-              <Link className="map-neighborhood-link" to="/neighborhood">
-                {currentLocation?.slug === "oja-oba" ? "Walk Oja-Oba Market" : "Walk Olaiya"}
-              </Link>
-            )}
-            {mapLevel === "town" && currentLocation?.slug !== "oja-oba" && (
-              <button
-                className="map-neighborhood-link"
-                type="button"
-                onClick={() => onLandmark("oja-oba-market")}
-              >
-                Visit Oja-Oba Market
-              </button>
-            )}
-            {mapLevel === "town" &&
-              currentLocation?.slug !== "city-centre" &&
-              availableLandmarks.data?.includes("olaiya-junction") && (
-                <button
-                  className="map-neighborhood-link"
-                  type="button"
-                  disabled={offline}
-                  onClick={() => onLandmark("olaiya-junction")}
-                >
-                  Travel to Olaiya
-                </button>
-              )}
-          </div>
-        </header>
-      </details>
-      <div className="map-news"></div>
+      <header className="map-hud map-hud-minimal">
+        <div className="map-hud-actions">
+          <button
+            className="map-level-toggle"
+            type="button"
+            onClick={() => setMapLevel((level) => (level === "town" ? "state" : "town"))}
+          >
+            <MapPinned size={16} aria-hidden="true" />
+            {mapLevel === "town" ? "Explore Osun" : "Osogbo map"}
+          </button>
+        </div>
+      </header>
       {offline && (
         <div role="status" className="map-offline-banner">
           <CloudOff size={16} />
           Offline. Showing your last saved map.
-        </div>
-      )}
-      {soonOpen && (
-        <div className="map-sheet map-soon-sheet" role="dialog" aria-label="Places coming soon">
-          <header className="map-sheet-header">
-            <div>
-              <p className="map-sheet-eyebrow">Coming to Osun</p>
-              <h2>{lockedPlaces.length} places in progress</h2>
-            </div>
-            <button
-              type="button"
-              className="map-icon-button"
-              aria-label="Close"
-              onClick={() => setSoonOpen(false)}
-            >
-              <X size={18} aria-hidden="true" />
-            </button>
-          </header>
-          <ul className="map-soon-list">
-            {lockedPlaces.map((place) => (
-              <li key={place.id}>
-                <span className="map-soon-icon">
-                  <Lock size={14} aria-hidden="true" />
-                </span>
-                <span>{place.label}</span>
-                <small>Coming soon</small>
-              </li>
-            ))}
-          </ul>
         </div>
       )}
       {!offline && housingMarkers.isError && (
@@ -542,23 +407,6 @@ export function CityMapDashboard({
       {!offline && availableLandmarks.isError && (
         <div role="alert" className="map-housing-message">
           Places could not be loaded. Reconnect to browse the town.
-        </div>
-      )}
-      {mapLevel === "town" && (
-        <div className="map-controls">
-          <div className="map-category-chips" aria-label="Filter places">
-            {categories.map((c) => (
-              <button
-                key={c.id}
-                aria-pressed={filter === c.id}
-                onClick={() => {
-                  setFilter(c.id === "all" ? "all" : filter === c.id ? "all" : c.id);
-                }}
-              >
-                {c.label}
-              </button>
-            ))}
-          </div>
         </div>
       )}
       {mapLevel === "town" ? (
@@ -614,9 +462,7 @@ export function CityMapDashboard({
               availableLandmarkIds={availableLandmarks.data ?? []}
               onSelectDistrict={onDistrict}
               onSelectLandmark={onLandmark}
-              activeFilter={filter}
               searchTarget={searchTarget}
-              jobLandmarkIds={jobLandmarkIds}
               billboardMarkers={billboardMarkers}
               onSelectBillboard={(campaignId) => {
                 setSelectedBillboard(
