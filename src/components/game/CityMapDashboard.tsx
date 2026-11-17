@@ -121,7 +121,6 @@ export function CityMapDashboard({
 }: { money?: number; mood?: string; nextRentDueAt?: string } = {}) {
   const [selectedDistrict, setSelectedDistrict] = useState<MapDistrict | null>(null);
   const [filter, setFilter] = useState<MapFilter>("all");
-  const [search, setSearch] = useState("");
   const [searchTarget, setSearchTarget] = useState<MapSearchTarget | null>(null);
   const [offline, setOffline] = useState(typeof navigator !== "undefined" && !navigator.onLine);
   const [actionError, setActionError] = useState("");
@@ -136,7 +135,7 @@ export function CityMapDashboard({
   const navigate = useNavigate();
   const mapHref = useLocation({ select: (location) => location.href });
   const preferredTransport = transportPreference(mapHref);
-  useEffect(() => { if (preferredTransport) { setMapLevel("town"); setTownFocus("3d-town"); } }, [preferredTransport]);
+  useEffect(() => { if (preferredTransport) { setMapLevel("town"); } }, [preferredTransport]);
   const requestedBillboardId = new URLSearchParams(mapHref.split("?")[1]?.split("#")[0] ?? "").get(
     "billboard",
   );
@@ -381,31 +380,6 @@ export function CityMapDashboard({
       query ? "?" + query : window.location.pathname,
     );
   }, [availableLandmarks.data, onLandmark, setDestinationTab]);
-  const searchMatches = useMemo(() => {
-    const value = search.trim().toLocaleLowerCase();
-    if (!value) return null;
-    return (
-      [
-        ...districts.map((d) => ({ id: d.id, kind: "district" as const, label: d.name })),
-        ...landmarks
-          .filter((l) => availableLandmarks.data?.includes(l.id))
-          .map((l) => ({ id: l.id, kind: "landmark" as const, label: l.label })),
-      ]
-        .map((item) => ({
-          ...item,
-          score:
-            item.label.toLocaleLowerCase() === value
-              ? 0
-              : item.label.toLocaleLowerCase().startsWith(value)
-                ? 1
-                : item.label.toLocaleLowerCase().includes(value)
-                  ? 2
-                  : 3,
-        }))
-        .filter((x) => x.score < 3)
-        .sort((a, b) => a.score - b.score)[0] ?? null
-    );
-  }, [availableLandmarks.data, search]);
   const locationsWithJobs = new Set(
     (jobCatalog.data ?? []).flatMap((job) => (job.location_id ? [job.location_id] : [])),
   );
@@ -416,11 +390,6 @@ export function CityMapDashboard({
       return !!locationRow && locationsWithJobs.has(locationRow.id);
     })
     .map((item) => item.id);
-  const submitSearch = () => {
-    if (!searchMatches) return;
-    setTownFocus("3d-town");
-    setSearchTarget({ id: searchMatches.id, kind: searchMatches.kind });
-  };
   const rentRecord = rent.data as { next_due_at?: string; due_at?: string } | null;
   const due = nextRentDueAt ?? rentRecord?.next_due_at ?? rentRecord?.due_at;
   const availableIds = availableLandmarks.data;
@@ -578,7 +547,6 @@ export function CityMapDashboard({
                 key={c.id}
                 aria-pressed={filter === c.id}
                 onClick={() => {
-                  setTownFocus("3d-town");
                   setFilter(c.id === "all" ? "all" : filter === c.id ? "all" : c.id);
                 }}
               >
@@ -586,23 +554,6 @@ export function CityMapDashboard({
               </button>
             ))}
           </div>
-          <form
-            className="map-search"
-            onSubmit={(e) => {
-              e.preventDefault();
-              submitSearch();
-            }}
-          >
-            <input
-              aria-label="Search districts and landmarks"
-              placeholder="Search map"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <button type="submit" disabled={!searchMatches}>
-              Search
-            </button>
-          </form>
         </div>
       )}
       {mapLevel === "town" ? (

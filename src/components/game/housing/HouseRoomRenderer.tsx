@@ -1,5 +1,6 @@
 import { Component, Suspense, lazy, type ReactNode } from "react";
 import type { HouseRoomRendererProps } from "./house-room-contract";
+import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
 
 const R3FRoom = lazy(() =>
   import("./HouseRoom3D").then((module) => ({ default: module.HouseRoom3D })),
@@ -80,9 +81,11 @@ export function HouseRoomRenderer({
   return (
     <Suspense
       fallback={
-        <div className="house-3d-scene" role="status">
-          Loading room…
-        </div>
+        <WorldLoadingIndicator
+          presentation="screen"
+          title="Loading the house"
+          detail="Preparing the room…"
+        />
       }
     >
       <RendererBoundary
