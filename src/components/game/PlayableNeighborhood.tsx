@@ -1508,6 +1508,7 @@ export function PlayableNeighborhood() {
                               <LocationVenueScene
                                 slug={currentLocation.slug}
                                 locationName={currentLocation.name}
+                                {...(hasBankServices ? { onBankServices: () => setBusinessView("bank") } : {})}
                                 {...(hasSelectedShopOffers ? { onBrowseMarket: () => setBusinessView("shops") } : {})}
                               />
                             </>
