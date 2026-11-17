@@ -144,3 +144,33 @@
   left: 12px;
   bottom: calc(72px + env(safe-area-inset-bottom));
 }
+
+
+/* Adaptive HUD: soften passive controls after four seconds without input.
+   Controls remain interactive; critical needs and expanded panels stay prominent. */
+.gbb,
+.game-needs-rail,
+.hd-status {
+  transition: opacity 180ms ease;
+}
+
+.game-shell.hud-idle .gbb,
+.game-shell.hud-idle .hd-status,
+.game-shell.hud-idle .game-needs-rail:not(:has(.game-needs-toggle.is-critical)):not(.is-expanded) {
+  opacity: 0.42;
+}
+
+.game-shell.hud-idle .game-needs-rail:has(.game-needs-toggle.is-critical),
+.game-shell.hud-idle .game-needs-rail.is-expanded,
+.game-shell.hud-idle .gbb:focus-within,
+.game-shell.hud-idle .hd-status:focus-within {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gbb,
+  .game-needs-rail,
+  .hd-status {
+    transition: none;
+  }
+}
