@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { Briefcase, House, Map } from "lucide-react";
+import { Backpack, Briefcase, House, Map } from "lucide-react";
 import type { ReactNode } from "react";
 
 export function GameMobileNav({
@@ -35,7 +35,7 @@ export function GameMobileNav({
         onClick={onNavigate}
       >
         <Map className="h-4.75 w-4.75" />
-        <span>City</span>
+        <span>Map</span>
       </Link>
       <Link
         to="/jobs"
@@ -46,6 +46,20 @@ export function GameMobileNav({
         <Briefcase className="h-4.75 w-4.75" />
         <span>Career Life</span>
       </Link>
+      <button
+        type="button"
+        className="gbb-link gbb-inventory"
+        onClick={() => {
+          onNavigate();
+          window.dispatchEvent(
+            new CustomEvent("osogbo-open-phone-app", { detail: { app: "Inventory" } }),
+          );
+        }}
+        aria-label="Open inventory"
+      >
+        <Backpack className="h-4.75 w-4.75" aria-hidden="true" />
+        <span>Inventory</span>
+      </button>
       {children}
     </nav>
   );
