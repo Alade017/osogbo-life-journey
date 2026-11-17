@@ -417,23 +417,15 @@ describe("isometric town map", () => {
   });
 });
 
-it("keeps transport handoff, filtering and search usable without the removed town-focus state", async () => {
+it("keeps transport handoff and filtering usable, with no search box on the map", async () => {
   testState.href = "/map?transport=danfo";
   renderDashboard("city-centre");
   const filters = screen.getByLabelText("Filter places");
   const buttons = within(filters).getAllByRole("button");
   fireEvent.click(buttons[1]!);
   expect(buttons[1]).toHaveAttribute("aria-pressed", "true");
-  fireEvent.change(screen.getByRole("textbox", { name: "Search districts and landmarks" }), {
-    target: { value: townData.landmarks[0]!.label },
-  });
-  fireEvent.click(screen.getByRole("button", { name: /^Search$/ }));
   expect(
-    await screen.findByRole("dialog", { name: townData.landmarks[0]!.label }),
-  ).toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "Cancel travel selection" }));
-  expect(
-    screen.getByRole("textbox", { name: "Search districts and landmarks" }),
-  ).toBeInTheDocument();
+    screen.queryByRole("textbox", { name: "Search districts and landmarks" }),
+  ).not.toBeInTheDocument();
   expect(testState.travelToLocation).not.toHaveBeenCalled();
 });
