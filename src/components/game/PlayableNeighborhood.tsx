@@ -1508,6 +1508,7 @@ export function PlayableNeighborhood() {
                               <LocationVenueScene
                                 slug={currentLocation.slug}
                                 locationName={currentLocation.name}
+                                {...(selectedShopSlug !== undefined ? { shopSlug: selectedShopSlug } : {})}
                               />
                             </>
                           )}
@@ -1565,6 +1566,7 @@ export function PlayableNeighborhood() {
                               <LocationVenueScene
                                 slug={currentLocation.slug}
                                 locationName={currentLocation.name}
+                                {...(selectedShopSlug !== undefined ? { shopSlug: selectedShopSlug } : {})}
                               />
                             </>
                           ) : null}
@@ -1623,6 +1625,7 @@ export function PlayableNeighborhood() {
                     localInventory={zoneState.localInventory}
                     equippedAccessorySlug={zoneState.equippedAccessorySlug}
                     currentLocationId={currentLocation?.id}
+                    currentLocationSlug={currentLocation?.slug}
                     npcTip={zoneState.lastNpcTip}
                     onPerformZoneAction={handlePerformZoneAction}
                     onNpcTipSelect={handleNpcTipSelect}

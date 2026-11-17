@@ -1,3 +1,6 @@
+import { BukaInteriorScene } from "@/components/3d/BukaInteriorScene";
+import { FOOD_VENUE_LAYOUTS } from "@/game/food-venue-layout";
+import { FoodVenueServices } from "./FoodVenueServices";
 import { Component, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Canvas } from "@react-three/fiber";
 import { WorldCamera, WorldLighting, WorldMaterial } from "@/components/3d/WorldScene";
@@ -6,6 +9,7 @@ import {
   getLocationVenueDesign,
   isTradingOpen,
   type VenueFixture,
+  type LocationVenueDesign,
 } from "@/lib/location-venue-designs";
 import { VenueEnvironment } from "@/components/3d/VenueEnvironment";
 import { VenueFurnitureModel } from "@/components/3d/VenueFurniture";
@@ -61,8 +65,11 @@ function FixtureModel({
   );
 }
 
-export function LocationVenueScene({ slug, locationName }: { slug: string; locationName: string }) {
-  const venue = useMemo(() => getLocationVenueDesign(slug, locationName), [slug, locationName]);
+export function LocationVenueScene({ slug, locationName, design, shopSlug }: {
+  slug: string; locationName: string; design?: LocationVenueDesign; shopSlug?: string | null;
+}) {
+  const venue = useMemo(() => design ?? getLocationVenueDesign(slug, locationName), [slug, locationName, design]);
+  const diningLayout = venue.foodInterior ? FOOD_VENUE_LAYOUTS[venue.foodInterior] : null;
   const gameTime = useOptionalGameTime();
   // Shops with trading hours show their shutter open or closed for the current game hour.
   const shutterOpen = venue.environment?.trading
@@ -121,9 +128,11 @@ export function LocationVenueScene({ slug, locationName }: { slug: string; locat
               onCreated={() => setSceneStatus("ready")}
               aria-hidden="true"
             >
-              <WorldCamera width={10} depth={7} stage target={[0, 1.2, 0]} zoom={1.2} />
+              <WorldCamera width={diningLayout?.width ?? 10} depth={diningLayout?.depth ?? 7} stage target={[0, 1.2, 0]} zoom={1.2} />
               <WorldLighting size={14} />
-              {venue.environment ? (
+              {venue.foodInterior === "buka" ? (
+                <BukaInteriorScene fixtures={venue.fixtures} selected={selectedFixture} onSelect={setSelectedFixture} floorColor={venue.floorColor} wallColor={venue.wallColor} accentColor={venue.accentColor} />
+              ) : venue.environment ? (
                 <VenueEnvironment
                   url={venue.environment.url}
                   open={shutterOpen}
@@ -177,6 +186,7 @@ export function LocationVenueScene({ slug, locationName }: { slug: string; locat
         )}
       </div>
 
+      {venue.foodInterior && <FoodVenueServices {...(shopSlug !== undefined ? { shopSlug } : {})} />}
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(14rem,0.8fr)]">
         <div>
           <h3 className="mb-2 text-sm font-bold">Explore a feature</h3>
