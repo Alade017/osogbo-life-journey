@@ -105,6 +105,10 @@ function GameLayout() {
     window.addEventListener("osogbo-hud-panel-open", handleHudPanel);
     return () => window.removeEventListener("osogbo-hud-panel-open", handleHudPanel);
   }, []);
+
+  useEffect(() => {
+    setHudPanelOpen(false);
+  }, [pathname]);
   useEffect(() => {
     configureGameMusic(character?.id ?? null);
     return () => {
