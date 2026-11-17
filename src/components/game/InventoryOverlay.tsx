@@ -10,8 +10,8 @@ import {
 } from "@/components/ui/dialog";
 
 const InventoryPage = lazy(() =>
-  import("@/routes/_authenticated/_game/inventory").then((module) => ({
-    default: module.InventoryPage,
+  import("@/components/game/GameInventoryPanel").then((module) => ({
+    default: module.GameInventoryPanel,
   })),
 );
 
