@@ -1,6 +1,5 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-// @ts-expect-error Node CLI helpers are JavaScript modules.
 import { auditSupabaseLedger } from "../../scripts/migration-ledger-audit.mjs";
 
 describe("Supabase migration ledger audit", () => {

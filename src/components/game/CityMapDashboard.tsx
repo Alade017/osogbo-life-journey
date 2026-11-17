@@ -1,3 +1,4 @@
+import { transportPreference } from "@/lib/transport-park";
 import "@/components/map/map-compact.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
@@ -58,7 +59,6 @@ import "@/components/map/map-ui.css";
 import "@/components/map/map-hud.css";
 import "@/components/map/neighborhood-city-map.css";
 import "@/components/map/map-explorer.css";
-import { MapTicker } from "@/components/map/MapTicker";
 
 const categories: { id: MapFilter; label: string }[] = [
   { id: "all", label: "All" },
@@ -120,7 +120,6 @@ export function CityMapDashboard({
 }: { money?: number; mood?: string; nextRentDueAt?: string } = {}) {
   const [selectedDistrict, setSelectedDistrict] = useState<MapDistrict | null>(null);
   const [filter, setFilter] = useState<MapFilter>("all");
-  const [search, setSearch] = useState("");
   const [searchTarget, setSearchTarget] = useState<MapSearchTarget | null>(null);
   const [offline, setOffline] = useState(typeof navigator !== "undefined" && !navigator.onLine);
   const [actionError, setActionError] = useState("");
@@ -134,6 +133,12 @@ export function CityMapDashboard({
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const mapHref = useLocation({ select: (location) => location.href });
+  const preferredTransport = transportPreference(mapHref);
+  useEffect(() => {
+    if (preferredTransport) {
+      setMapLevel("town");
+    }
+  }, [preferredTransport]);
   const requestedBillboardId = new URLSearchParams(mapHref.split("?")[1]?.split("#")[0] ?? "").get(
     "billboard",
   );
@@ -332,6 +337,7 @@ export function CityMapDashboard({
   });
   const closeTravelSelector = travelController.close;
   const selectDestination = travelController.select;
+  const selectPreferredMode = travelController.selectMode;
   const setDestinationTab = travelController.setTab;
   const onDistrict = (id: string) => {
     if (travelController.busy || travelController.arrivalConfirmed) return;
@@ -350,11 +356,12 @@ export function CityMapDashboard({
       if (found) {
         setSelectedDistrict(null);
         selectDestination(found);
+        if (preferredTransport) selectPreferredMode(preferredTransport);
         setActionError("");
         setPlaceActionResult(null);
       }
     },
-    [availableLandmarks.data, selectDestination],
+    [availableLandmarks.data, selectDestination, preferredTransport, selectPreferredMode],
   );
   const deepLinkedLandmark = useRef<string | null>(null);
   useEffect(() => {
@@ -376,31 +383,6 @@ export function CityMapDashboard({
       query ? "?" + query : window.location.pathname,
     );
   }, [availableLandmarks.data, onLandmark, setDestinationTab]);
-  const searchMatches = useMemo(() => {
-    const value = search.trim().toLocaleLowerCase();
-    if (!value) return null;
-    return (
-      [
-        ...districts.map((d) => ({ id: d.id, kind: "district" as const, label: d.name })),
-        ...landmarks
-          .filter((l) => availableLandmarks.data?.includes(l.id))
-          .map((l) => ({ id: l.id, kind: "landmark" as const, label: l.label })),
-      ]
-        .map((item) => ({
-          ...item,
-          score:
-            item.label.toLocaleLowerCase() === value
-              ? 0
-              : item.label.toLocaleLowerCase().startsWith(value)
-                ? 1
-                : item.label.toLocaleLowerCase().includes(value)
-                  ? 2
-                  : 3,
-        }))
-        .filter((x) => x.score < 3)
-        .sort((a, b) => a.score - b.score)[0] ?? null
-    );
-  }, [availableLandmarks.data, search]);
   const locationsWithJobs = new Set(
     (jobCatalog.data ?? []).flatMap((job) => (job.location_id ? [job.location_id] : [])),
   );
@@ -413,7 +395,8 @@ export function CityMapDashboard({
     .map((item) => item.id);
   const submitSearch = () => {
     if (!searchMatches) return;
-    setTownFocus("3d-town");
+    setMapLevel("town");
+
     setSearchTarget({ id: searchMatches.id, kind: searchMatches.kind });
   };
   const rentRecord = rent.data as { next_due_at?: string; due_at?: string } | null;
@@ -518,7 +501,6 @@ export function CityMapDashboard({
         </header>
       </details>
       <div className="map-news">
-        <MapTicker />
       </div>
       {offline && (
         <div role="status" className="map-offline-banner">
@@ -573,7 +555,6 @@ export function CityMapDashboard({
                 key={c.id}
                 aria-pressed={filter === c.id}
                 onClick={() => {
-                  setTownFocus("3d-town");
                   setFilter(c.id === "all" ? "all" : filter === c.id ? "all" : c.id);
                 }}
               >
@@ -581,23 +562,6 @@ export function CityMapDashboard({
               </button>
             ))}
           </div>
-          <form
-            className="map-search"
-            onSubmit={(e) => {
-              e.preventDefault();
-              submitSearch();
-            }}
-          >
-            <input
-              aria-label="Search districts and landmarks"
-              placeholder="Search map"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-            <button type="submit" disabled={!searchMatches}>
-              Search
-            </button>
-          </form>
         </div>
       )}
       {mapLevel === "town" ? (

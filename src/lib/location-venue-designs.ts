@@ -1,5 +1,5 @@
+import type { BankInteriorVariant } from "@/game/bank-interiors";
 import { WORLD_PALETTE } from "@/components/3d/world-theme";
-import type { FoodVenueVariant } from "@/game/food-venue-layout";
 export type VenueFixtureKind =
   "counter" | "table" | "bench" | "shelf" | "screen" | "display" | "planter" | "seat";
 
@@ -19,7 +19,11 @@ export type VenueEnvironment = {
 };
 
 export type LocationVenueDesign = {
-  foodInterior?: FoodVenueVariant;
+  bankInterior?: BankInteriorVariant;
+  transportPark?: boolean;
+  sceneBounds?: { width: number; depth: number };
+  scene?: "campus" | "market" | "clinic" | "healthcare";
+  sceneSize?: { width: number; depth: number };
   name: string;
   description: string;
   floorColor: string;
@@ -47,7 +51,45 @@ function fixture(
 }
 
 const venues: Readonly<Record<string, LocationVenueDesign>> = {
+  "student-district": {
+    scene: "campus",
+    name: "School campus",
+    description:
+      "A teaching campus with a shared courtyard, classroom, library and administration office.",
+    floorColor: WORLD_PALETTE.tileLight,
+    wallColor: WORLD_PALETTE.wall,
+    accentColor: WORLD_PALETTE.foliage,
+    fixtures: [
+      fixture(
+        "campus-classroom",
+        "Classroom",
+        "Inspect the teaching space, then browse available courses.",
+        "table",
+        -2.5,
+        0,
+      ),
+      fixture(
+        "campus-library",
+        "Campus library",
+        "Browse the campus study space.",
+        "shelf",
+        2.5,
+        0,
+      ),
+      fixture(
+        "campus-administration",
+        "Administration",
+        "Find the existing course and enrolment options.",
+        "counter",
+        0,
+        -2,
+      ),
+    ],
+  },
+
   "oja-oba": {
+    scene: "market",
+    sceneSize: { width: 12, depth: 9 },
     name: "Oja-Oba trading hall",
     description:
       "An Osogbo-inspired covered market interior with produce, staple-goods and household trading spaces.",
@@ -162,13 +204,14 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     ],
   },
   "cedar-bank": {
+    bankInterior: "teller-hall",
     name: "Cedar Bank lobby",
-    description: "A calm banking lobby with a teller counter and queue seating.",
+    description: "A timber-finished teller hall with screened service windows, a guided queue and shared seating.",
     floorColor: "#d5d1c5",
     wallColor: "#e6e1d4",
     accentColor: "#4b806f",
     fixtures: [
-      fixture("cedar-teller", "Teller counter", "A staffed service counter.", "counter", 0, -1.6),
+      fixture("cedar-teller", "Teller counter", "Screened teller windows beside the queue. Open bank services for account actions.", "counter", 0, -1.6),
       fixture("cedar-queue", "Queue seats", "Seats beside the service queue.", "seat", -2.8, 0.9),
       fixture(
         "cedar-info",
@@ -181,8 +224,9 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     ],
   },
   "meridian-bank": {
+    bankInterior: "digital-lounge",
     name: "Meridian Bank lobby",
-    description: "A modern branch lobby with self-service points and a private desk.",
+    description: "An open self-service branch with twin kiosks, window seating and a screened customer-service desk.",
     floorColor: "#c8d2d0",
     wallColor: "#e3e9e5",
     accentColor: "#527c9b",
@@ -190,7 +234,7 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
       fixture(
         "meridian-service",
         "Service desk",
-        "A private customer service point.",
+        "A screened customer-service desk separate from the self-service area.",
         "counter",
         2.5,
         -1.4,
@@ -198,7 +242,7 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
       fixture(
         "meridian-kiosk",
         "Self-service kiosk",
-        "A simple branch information terminal.",
+        "Twin self-service information terminals. Account actions use the existing bank services.",
         "screen",
         -2.5,
         -0.8,
@@ -227,6 +271,7 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     ],
   },
   "community-clinic": {
+    scene: "clinic",
     name: "Community clinic",
     description: "A clean reception and care area with clear visitor seating.",
     floorColor: "#d0ded8",
@@ -246,6 +291,8 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     ],
   },
   "transit-park": {
+    transportPark: true,
+    sceneBounds: { width: 12, depth: 9 },
     name: "Transit concourse",
     description: "A practical transit waiting area beside route information and ticketing.",
     floorColor: "#c9c7bc",
@@ -359,6 +406,8 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     ],
   },
   "sunrise-health-post": {
+    scene: "healthcare",
+    sceneSize: { width: 12, depth: 9 },
     name: "Sunrise health post",
     description: "A small health post with reception, care space and patient seating.",
     floorColor: "#d2e0d7",
@@ -762,12 +811,16 @@ const fallbackVenue: LocationVenueDesign = {
 };
 
 export function getLocationVenueDesign(slug: string, locationName: string): LocationVenueDesign {
-  const design = venues[slug] ?? fallbackVenue;
+  const design = venues[slug] ?? (
+    ["state-hospital", "general-hospital"].includes(slug)
+      ? { ...venues["sunrise-health-post"], name: locationName }
+      : fallbackVenue
+  );
   return design === fallbackVenue ? { ...fallbackVenue, name: locationName } : design;
 }
 
 export function hasLocationVenueDesign(slug: string) {
-  return Object.hasOwn(venues, slug);
+  return Object.hasOwn(venues, slug) || ["state-hospital", "general-hospital"].includes(slug);
 }
 
 /**

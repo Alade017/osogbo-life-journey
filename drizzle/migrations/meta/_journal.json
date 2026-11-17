@@ -708,6 +708,20 @@
       "when": 1794463209000,
       "tag": "0098_whot_stake_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 100,
+      "version": "7",
+      "when": 1794463210000,
+      "tag": "0100_clinic_patient_flow",
+      "breakpoints": true
+    },
+    {
+      "idx": 101,
+      "version": "7",
+      "when": 1794463211000,
+      "tag": "0101_clinic_staff_assignment",
+      "breakpoints": true
     }
   ]
 }

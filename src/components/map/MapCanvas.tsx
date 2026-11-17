@@ -140,7 +140,11 @@ export function MapCanvas({
     "loading",
   );
 
+  const handledSearchTarget = useRef<MapCanvasProps["searchTarget"]>(undefined);
   useEffect(() => {
+    // A search is a navigation request, not a command to replay on each parent render.
+    if (handledSearchTarget.current === searchTarget) return;
+    handledSearchTarget.current = searchTarget;
     if (!searchTarget) return;
     const id = typeof searchTarget === "string" ? searchTarget : searchTarget.id;
     if (townData.landmarks.some((landmark) => landmark.id === id)) {
