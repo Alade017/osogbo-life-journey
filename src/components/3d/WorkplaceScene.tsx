@@ -5,7 +5,7 @@ import type { VenueFixture } from "@/lib/location-venue-designs";
 
 type Point = [number, number, number];
 function Block({ at, size, tone = "wall", color }: { at: Point; size: Point; tone?: WorldTone; color?: string }) {
-  return <mesh position={at} castShadow receiveShadow><boxGeometry args={size} /><WorldMaterial tone={tone} color={color} /></mesh>;
+  return <mesh position={at} castShadow receiveShadow><boxGeometry args={size} /><WorldMaterial tone={tone} {...(color === undefined ? {} : { color })} /></mesh>;
 }
 function Chair() {
   return <group>
@@ -29,7 +29,7 @@ function Table({ width = 3.5, depth = 1.6 }: { width?: number; depth?: number })
       at={[x * (width / 2 - 0.18), 0.4, z * (depth / 2 - 0.18)]} size={[0.08, 0.8, 0.08]} tone="metal" />))}
   </group>;
 }
-function Feature({ purpose }: { purpose?: WorkplaceFeature }) {
+function Feature({ purpose }: { purpose?: WorkplaceFeature | undefined }) {
   if (purpose === "workstations") return <group name="workstation-island">
     <Table />
     {[-0.95, 0.95].flatMap(x => [-1, 1].map(side => <group key={x + ":" + side}>
