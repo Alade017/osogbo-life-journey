@@ -64,6 +64,9 @@ export function GameNeedsRail({
     if (!expanded) return;
     const dismiss = () => {
       setExpanded(false);
+      window.dispatchEvent(
+        new CustomEvent("osogbo-hud-panel-open", { detail: { open: false } }),
+      );
       setDetailNeed(null);
       setActionMessage(null);
     };
@@ -133,7 +136,11 @@ export function GameNeedsRail({
             : `Expand needs panel${criticalCount ? `, ${criticalCount} critical ${criticalCount === 1 ? "need" : "needs"}` : ""}`
         }
         onClick={() => {
-          setExpanded(!expanded);
+          const nextExpanded = !expanded;
+          setExpanded(nextExpanded);
+          window.dispatchEvent(
+            new CustomEvent("osogbo-hud-panel-open", { detail: { open: nextExpanded } }),
+          );
           setDetailNeed(null);
           setActionMessage(null);
         }}
