@@ -3,6 +3,7 @@ import {
   housePartitionSegmentsForFloor,
   houseSlotPosition,
   roomPercentToPosition,
+  houseRearDoorCenter,
 } from "@/components/game/housing/house-room-contract";
 export type RoomPoint = [number, number, number];
 export type RoomObstacle = { x: number; z: number; w: number; d: number; wall?: boolean };
@@ -17,8 +18,58 @@ export function placementPoint(
   const slot = slots.find((s) => s.id === item.slot);
   return slot ? houseSlotPosition(slot, width, depth) : [0, 0.06, 0];
 }
-export function packagePoint(index: number, width: number, depth: number): RoomPoint {
-  return [width * 0.22 + index * 0.56, 0.06, -depth / 2 + 0.72 + (index % 2) * 0.46];
+export function packagePoint(
+  index: number,
+  width: number,
+  depth: number,
+  houseTypeId = "shared-room",
+  inside = true,
+): RoomPoint {
+  return [
+    (inside ? width * 0.13 : houseRearDoorCenter(houseTypeId, width)) + index * 0.5,
+    0.06,
+    -depth / 2 + (inside ? 1.35 : 0.2),
+  ];
+}
+
+/** Identify saved items intersecting a redesigned wall without rewriting any saved positions. */
+export function placementsOverlappingWalls(
+  type: string,
+  width: number,
+  depth: number,
+  placements: HousePlacement[],
+  slots: HouseSlot[],
+): HousePlacement[] {
+  const walls = roomObstacles(type, width, depth, [], slots);
+  return placements.filter((item) => {
+    if (item.art_key.startsWith("wall-art")) return false;
+    const furniture = furnitureObstacle(item, slots, width, depth);
+    return walls.some(
+      (wall) =>
+        Math.abs(furniture.x - wall.x) < (furniture.w + wall.w) / 2 &&
+        Math.abs(furniture.z - wall.z) < (furniture.d + wall.d) / 2,
+    );
+  });
+}
+function furnitureObstacle(
+  p: HousePlacement,
+  slots: HouseSlot[],
+  width: number,
+  depth: number,
+): RoomObstacle {
+  const point = placementPoint(p, slots, width, depth);
+  const [w, d] =
+    p.slot_type === "bed"
+      ? [1.45, 2.1]
+      : p.art_key === "sofa"
+        ? [1.8, 0.85]
+        : p.art_key === "plant"
+          ? [0.45, 0.45]
+          : [0.8, 0.75];
+  const angle = ((p.rotation_deg ?? 0) * Math.PI) / 180;
+  const c = Math.abs(Math.cos(angle)),
+    s = Math.abs(Math.sin(angle));
+  return { x: point[0], z: point[2], w: w! * c + d! * s, d: w! * s + d! * c };
 }
 export function roomObstacles(
   type: string,
@@ -36,18 +87,7 @@ export function roomObstacles(
       d: s.size[2],
       wall: true,
     })),
-    ...placements.map((p) => {
-      const point = placementPoint(p, slots, width, depth);
-      const [w, d] =
-        p.slot_type === "bed"
-          ? [1.45, 2.1]
-          : p.art_key === "sofa"
-            ? [1.8, 0.85]
-            : p.art_key === "plant"
-              ? [0.45, 0.45]
-              : [0.8, 0.75];
-      return { x: point[0], z: point[2], w: w!, d: d! };
-    }),
+    ...placements.map((p) => furnitureObstacle(p, slots, width, depth)),
   ];
 }
 /** Four-way grid search: diagonal shortcuts cannot clip furniture or doorway corners. */

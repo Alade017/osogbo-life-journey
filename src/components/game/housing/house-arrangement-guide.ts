@@ -1,4 +1,31 @@
-import { FOUR_ROOM_HOME_TYPES, isWallArtKind, type GuideZoneBounds } from "./house-room-contract";
+import {
+  FOUR_ROOM_HOME_TYPES,
+  isWallArtKind,
+  HOUSE_ROOM_SIZE,
+  roomCoordinatesToPercent,
+  type GuideZoneBounds,
+} from "./house-room-contract";
+import { bungalowBlueprint } from "./bungalow-blueprint";
+import { boundsContain } from "./house-blueprints";
+
+function bungalowGuideBounds(slotType: string, artKey: string): GuideZoneBounds | null {
+  const [width, depth] = HOUSE_ROOM_SIZE["bungalow"]!;
+  const plan = bungalowBlueprint(width, depth);
+  const id =
+    slotType === "bed" || slotType === "storage" || slotType === "light"
+      ? "bedroom-2"
+      : slotType === "bathroom"
+        ? "bathroom"
+        : slotType === "kitchen"
+          ? "kitchen"
+          : artKey === "dining-table" || artKey === "dining-chair"
+            ? "dining"
+            : "sitting";
+  const room = plan.rooms.find((room) => room.id === id)!;
+  const [x0, y1] = roomCoordinatesToPercent(room.minX, room.minZ, width, depth);
+  const [x1, y0] = roomCoordinatesToPercent(room.maxX, room.maxZ, width, depth);
+  return { x0, x1, y0, y1 };
+}
 
 /** Zones of the room, in room percent: x runs left to right, y runs front (0) to back (100). */
 export const GUIDE_ZONE_BOUNDS = {
@@ -29,18 +56,36 @@ const GUIDE_RULES: Record<string, GuideRule> = {
 export type ArrangementGuide = { hint: string; zoneBounds: GuideZoneBounds | null };
 
 /** The suggestion for an item, or null when the guide has nothing for it. Wall art is handled separately. */
-export function guideFor(slotType: string, artKey: string): ArrangementGuide | null {
+export function guideFor(
+  slotType: string,
+  artKey: string,
+  houseTypeId?: string,
+): ArrangementGuide | null {
   if (isWallArtKind(artKey)) {
     return { hint: "On the back wall. Slide it to where you want it.", zoneBounds: null };
   }
   const rule = GUIDE_RULES[slotType];
   if (!rule) return null;
+  if (houseTypeId === "bungalow")
+    return {
+      hint:
+        slotType === "bathroom"
+          ? "In the common bathroom or master ensuite, clear of the door."
+          : slotType === "bed" || slotType === "storage" || slotType === "light"
+            ? "In any bedroom, keeping space beside the bed and door."
+            : rule.hint,
+      zoneBounds: rule.zone ? bungalowGuideBounds(slotType, artKey) : null,
+    };
   return { hint: rule.hint, zoneBounds: rule.zone ? GUIDE_ZONE_BOUNDS[rule.zone] : null };
 }
 
 /** Where the entrance door sits on the back wall, in room percent. */
 export function houseDoorPercentX(houseTypeId: string): number {
-  return houseTypeId === "studio-flat" || FOUR_ROOM_HOME_TYPES.includes(houseTypeId) ? 22 : 74;
+  return houseTypeId === "studio-flat" ||
+    houseTypeId === "bungalow" ||
+    FOUR_ROOM_HOME_TYPES.includes(houseTypeId)
+    ? 22
+    : 74;
 }
 
 const SOFT_SLOT_TYPES = new Set(["bed", "seat"]);
@@ -55,10 +100,24 @@ export function arrangementWarnings(
   x: number,
   y: number,
   doorX: number,
+  houseTypeId?: string,
 ): string[] {
   if (isWallArtKind(artKey)) return [];
-  const inWet = x > 50 && y < 50;
-  const inSleep = x <= 50 && y >= 50;
+  let inWet = x > 50 && y < 50;
+  let inSleep = x <= 50 && y >= 50;
+  if (houseTypeId === "bungalow") {
+    const [width, depth] = HOUSE_ROOM_SIZE["bungalow"]!;
+    const plan = bungalowBlueprint(width, depth);
+    const px = (x / 100 - 0.5) * (width - 0.8),
+      pz = (0.5 - y / 100) * (depth - 0.8);
+    inWet = plan.wetAreas.some((area) => boundsContain(area, px, pz));
+    inSleep = plan.rooms.some(
+      (room) =>
+        room.id.startsWith("bedroom") &&
+        boundsContain(room, px, pz) &&
+        !("exclude" in room && room.exclude && boundsContain(room.exclude, px, pz)),
+    );
+  }
   const notes: string[] = [];
   const againstWall = x <= 12 || x >= 88 || y >= 88;
   if (slotType === "bed" && !againstWall) {

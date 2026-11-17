@@ -2,6 +2,7 @@ import type { HousePlacement, HouseSlot } from "./HouseRoomScene";
 import type { AvatarAnimationState, AvatarEquipment } from "@/components/game/Avatar";
 import type { Appearance } from "@/game/avatar-appearance";
 import type { FoodDelivery } from "@/lib/food-delivery-service";
+import { bungalowBlueprint } from "./bungalow-blueprint";
 import {
   boundsContain,
   studioBlueprint,
@@ -62,7 +63,7 @@ export const HOUSE_ROOM_SIZE: Record<string, readonly [number, number]> = {
   "single-room": [6.8, 5.3],
   "studio-flat": [8.6, 6.4],
   "mini-flat": [9.9, 7.5],
-  bungalow: [11.5, 8.6],
+  bungalow: [14, 11.2],
   duplex: [13.2, 9.7],
 };
 export const HOUSE_ACCESSORY_TIER: Record<string, number> = {
@@ -244,6 +245,7 @@ export function houseDoorThreshold(
 
 /** Centre of the entrance door on the back wall. In four-room homes it opens into the sitting room. */
 export function houseRearDoorCenter(houseTypeId: string, width: number): number {
+  if (houseTypeId === "bungalow") return -width * 0.25;
   if (houseTypeId === "studio-flat") return studioBlueprint(width, 1).entranceX;
   return FOUR_ROOM_HOME_TYPES.includes(houseTypeId) ? -width * 0.25 : width * 0.22;
 }
@@ -373,7 +375,7 @@ function fourRoomPartitionSegments(
 }
 
 /** Home types that have the four-room plan: sitting room, bedroom, kitchen and dining, bathroom. */
-export const FOUR_ROOM_HOME_TYPES: readonly string[] = ["mini-flat", "bungalow", "duplex"];
+export const FOUR_ROOM_HOME_TYPES: readonly string[] = ["mini-flat", "duplex"];
 
 /** Blueprint homes open as a cutaway; this same default drives the wall button and scene. */
 export function houseWallsDefaultClosed(houseTypeId: string): boolean {
@@ -385,6 +387,7 @@ export function housePartitionSegments(
   width: number,
   depth: number,
 ): HouseWallSegment[] {
+  if (houseTypeId === "bungalow") return bungalowBlueprint(width, depth).partitions;
   if (houseTypeId === "studio-flat") {
     const { bathroom, bathroomDoor } = studioBlueprint(width, depth);
     const height = 1.9;
@@ -509,6 +512,11 @@ export const HOUSE_ROOM_ID = {
   bedroom: "bedroom",
   bathroom: "bathroom",
   single: "room",
+  bedroom2: "bedroom-2",
+  bedroom3: "bedroom-3",
+  ensuite: "ensuite",
+  dining: "dining",
+  hallway: "hallway",
 } as const;
 export type HouseRoomId = (typeof HOUSE_ROOM_ID)[keyof typeof HOUSE_ROOM_ID];
 
@@ -519,6 +527,11 @@ export const HOUSE_ROOM_LABEL: Record<HouseRoomId, string> = {
   [HOUSE_ROOM_ID.bedroom]: "Bedroom",
   [HOUSE_ROOM_ID.bathroom]: "Bathroom",
   [HOUSE_ROOM_ID.single]: "Room",
+  [HOUSE_ROOM_ID.bedroom2]: "Bedroom 2",
+  [HOUSE_ROOM_ID.bedroom3]: "Bedroom 3",
+  [HOUSE_ROOM_ID.ensuite]: "Master ensuite",
+  [HOUSE_ROOM_ID.dining]: "Dining room",
+  [HOUSE_ROOM_ID.hallway]: "Hallway",
 };
 
 /** Picker button that goes back to the whole home. */
@@ -542,6 +555,7 @@ export type HouseRoomView = {
  * sides are the ones hidden in the room view.
  */
 export function houseRoomViews(houseTypeId: string, width: number, depth: number): HouseRoomView[] {
+  if (houseTypeId === "bungalow") return bungalowBlueprint(width, depth).rooms;
   if (houseTypeId === "studio-flat") {
     const { whole, bathroom } = studioBlueprint(width, depth);
     return [
