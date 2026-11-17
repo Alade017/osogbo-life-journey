@@ -1469,25 +1469,88 @@
 }
 
 /* Dice sit on the board's centre; each die keeps a 44px touch target. */
-.lb-dice-centre {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 3;
+/* Dice live in a tray under the board, so they never cover the centre triangles or the home lanes. */
+.lb-dice-tray {
   display: flex;
-  gap: 4px;
+  flex-direction: column;
   align-items: center;
+  gap: 8px;
 }
-.lb-dice-centre .mg-ludo-die {
+.lb-dice-row {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  justify-content: center;
+}
+.lb-dice-row .mg-ludo-die {
   display: grid;
   place-items: center;
-  min-width: 44px;
-  min-height: 44px;
+  min-width: 56px;
+  min-height: 56px;
   padding: 0;
 }
-.lb-dice-centre .mg-cube {
-  --die: 28px;
+.lb-dice-row .mg-ludo-die.is-unusable {
+  opacity: 0.45;
+}
+.lb-dice-row .mg-cube {
+  --die: 30px;
+}
+.lb-dice-note {
+  margin: 0;
+  min-height: 1.25em;
+  font-size: 0.9rem;
+  color: var(--muted-foreground, #5b6472);
+  text-align: center;
+}
+
+/* Local game setup: colour pick for three and four players. */
+.lb-colour-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0 12px;
+}
+.lb-colour-label {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.lb-colour-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+.lb-colour-swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 6px;
+  border: 2px solid transparent;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 0 0 1px rgb(31 41 55 / 0.18);
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.lb-colour-swatch.is-selected {
+  border-color: var(--swatch);
+  box-shadow: 0 0 0 3px rgb(31 41 55 / 0.15);
+}
+.lb-colour-chip {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--swatch);
+  border: 2px solid #1f2937;
+}
+.lb-colour-swatch:focus-visible {
+  outline: 3px solid #1f2937;
+  outline-offset: 2px;
+}
+.lb-colour-note {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--muted-foreground, #5b6472);
 }
 
 /* 3D dice: a real cube with shaded faces and glossy pips. */

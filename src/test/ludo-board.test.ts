@@ -95,17 +95,19 @@ describe("ludo board geometry", () => {
     }
   });
 
-  it("keeps each coloured yard in the correct quadrant", () => {
-    const expected = [
-      { x: 0, y: 9 },  // RED: bottom-left
-      { x: 0, y: 0 },  // GREEN: top-left
-      { x: 9, y: 0 },  // YELLOW: top-right
-      { x: 9, y: 9 },  // BLUE: bottom-right
-    ];
-
+  it("puts each coloured yard beside its own colour's start tile", () => {
+    // A token leaving the yard enters at its start, so that start must be the nearest of the four.
+    const starts = COLOURS.map((colour) => ({ colour, point: tokenPoint(colour, 0, 0) }));
     COLOURS.forEach((colour, arm) => {
       const rect = yardRect(arm);
-      expect({ x: rect.x, y: rect.y }, colour).toEqual(expected[arm]);
+      const centre = { x: rect.x + rect.size / 2, y: rect.y + rect.size / 2 };
+      const nearest = starts.reduce((best, start) =>
+        Math.hypot(start.point.x - centre.x, start.point.y - centre.y) <
+        Math.hypot(best.point.x - centre.x, best.point.y - centre.y)
+          ? start
+          : best,
+      );
+      expect(nearest.colour, colour).toBe(colour);
       for (let token = 0; token < 4; token += 1) {
         const point = tokenPoint(colour, YARD_STEP, token);
         expect(point.x).toBeGreaterThan(rect.x);

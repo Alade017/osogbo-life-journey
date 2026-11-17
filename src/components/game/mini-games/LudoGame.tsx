@@ -20,10 +20,12 @@ import {
   completeNoLegalMoves,
   createLudoGame,
   currentPlayerId,
+  declineFreeDeploy,
   getLegalMoves,
   moveToken,
   rollDice,
   type Colour,
+  type LegalMove,
   type LudoEvent,
   type LudoGame as Game,
   type LudoResult,
@@ -38,9 +40,9 @@ const COLOUR_NAMES: Readonly<Record<Colour, string>> = {
   BLUE: "Blue",
 };
 const PLAYER_OPTIONS: readonly { players: number; blurb: string }[] = [
-  { players: 2, blurb: "You and the computer, two colours each." },
-  { players: 3, blurb: "You and two computers, one colour each." },
-  { players: 4, blurb: "You and three computers, one colour each." },
+  { players: 2, blurb: "You and the computer, two colours each, on opposite arms." },
+  { players: 3, blurb: "You and two computers, one colour each. Pick your colour." },
+  { players: 4, blurb: "You and three computers, one colour each. Pick your colour." },
 ];
 /** Online play is not connected to this screen yet, so these show as unavailable. */
 const ONLINE_OPTIONS: readonly { label: string; blurb: string }[] = [
@@ -59,8 +61,12 @@ function randomFace() {
   return 1 + Math.floor(Math.random() * 6);
 }
 
-/** Seats for a local game. Two players split the four colours, alternating turns. */
-function seatsFor(players: number): Seat[] {
+/**
+ * Seats for a local game, in turn order. Two players split the four colours on opposite arms, so you
+ * play Red and Yellow and the computer plays Green and Blue. With three or four players you pick your
+ * colour and the computers take the others in board order.
+ */
+export function seatsFor(players: number, humanColour: Colour): Seat[] {
   if (players === 2) {
     return [
       { colour: "RED", playerId: HUMAN },
@@ -69,10 +75,34 @@ function seatsFor(players: number): Seat[] {
       { colour: "BLUE", playerId: "cpu-2" },
     ];
   }
-  return COLOURS.slice(0, players).map((colour, index) => ({
+  const others = COLOURS.filter((colour) => colour !== humanColour);
+  return [humanColour, ...others.slice(0, players - 1)].map((colour, index) => ({
     colour,
     playerId: index === 0 ? HUMAN : `cpu-${index}`,
   }));
+}
+
+/**
+ * The move a tap on one pawn makes, given the die the player picked (or null for none).
+ * A free yard deploy is preferred: it spends no die, so the die stays for another pawn.
+ * Returns null when the pawn needs a die picked first.
+ */
+export function moveForTap(
+  moves: readonly LegalMove[],
+  colour: Colour,
+  token: number,
+  selected: 0 | 1 | null,
+): LegalMove | null {
+  const here = moves.filter(
+    (move) =>
+      move.colour === colour &&
+      move.token === token &&
+      (selected === null || move.die === selected || move.die === null),
+  );
+  const free = here.find((move) => move.die === null);
+  if (free) return free;
+  if (new Set(here.map((move) => move.die)).size === 1) return here[0] ?? null;
+  return null;
 }
 
 /** Which face of the cube turns to the viewer for each value (CSS rotations in degrees). */
@@ -106,7 +136,8 @@ function Die({
   rolling: boolean;
   className: string;
   "aria-label"?: string;
-  onClick?: () => void;
+  "aria-pressed"?: boolean | undefined;
+  onClick?: (() => void) | undefined;
   disabled?: boolean;
 }) {
   const turn = CUBE_TURN[value] ?? { x: 0, y: 0 };
@@ -136,14 +167,25 @@ function Die({
   );
 }
 
+type LocalGame = { players: number; humanColour: Colour };
+
 export function LudoGame() {
-  const [players, setPlayers] = useState<number | null>(null);
-  if (players === null) return <LudoSetup onStart={setPlayers} />;
-  return <LudoTable key={players} players={players} onLobby={() => setPlayers(null)} />;
+  const [config, setConfig] = useState<LocalGame | null>(null);
+  if (config === null) return <LudoSetup onStart={setConfig} />;
+  return (
+    <LudoTable
+      key={`${config.players}-${config.humanColour}`}
+      players={config.players}
+      humanColour={config.humanColour}
+      onLobby={() => setConfig(null)}
+    />
+  );
 }
 
-function LudoSetup({ onStart }: { onStart: (players: number) => void }) {
+function LudoSetup({ onStart }: { onStart: (config: LocalGame) => void }) {
   const [choice, setChoice] = useState(2);
+  const [humanColour, setHumanColour] = useState<Colour>("RED");
+  const others = COLOURS.filter((colour) => colour !== humanColour);
   return (
     <section className="mg-game mg-setup" aria-label="Ludo lobby">
       <div className="mg-setup-block">
@@ -162,7 +204,7 @@ function LudoSetup({ onStart }: { onStart: (players: number) => void }) {
                 onClick={() => setChoice(count)}
               >
                 <span className="mg-setup-pawns" aria-hidden="true">
-                  {seatsFor(count).map((seat) => (
+                  {seatsFor(count, humanColour).map((seat) => (
                     <PawnMark key={seat.colour} colour={seat.colour} size={16} />
                   ))}
                 </span>
@@ -177,7 +219,40 @@ function LudoSetup({ onStart }: { onStart: (players: number) => void }) {
             );
           })}
         </div>
-        <Button className="mg-setup-start" onClick={() => onStart(choice)}>
+        {choice > 2 && (
+          <div className="lb-colour-pick" role="radiogroup" aria-label="Your colour">
+            <span className="lb-colour-label">Your colour</span>
+            <div className="lb-colour-row">
+              {COLOURS.map((colour) => {
+                const selected = humanColour === colour;
+                return (
+                  <button
+                    key={colour}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    className={`lb-colour-swatch ${selected ? "is-selected" : ""}`}
+                    style={{ "--swatch": LUDO_COLOURS[colour] } as CSSProperties}
+                    onClick={() => setHumanColour(colour)}
+                  >
+                    <span className="lb-colour-chip" aria-hidden="true" />
+                    {COLOUR_NAMES[colour]}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="lb-colour-note">
+              The computers play {others.slice(0, choice - 1).map((colour) => COLOUR_NAMES[colour]).join(" and ")}.
+            </p>
+          </div>
+        )}
+        {choice === 2 && (
+          <p className="lb-colour-note">You play Red and Yellow. The computer plays Green and Blue.</p>
+        )}
+        <Button
+          className="mg-setup-start"
+          onClick={() => onStart({ players: choice, humanColour: choice === 2 ? "RED" : humanColour })}
+        >
           Start game
         </Button>
       </div>
@@ -208,8 +283,12 @@ function describeEvents(events: LudoEvent[], name: (playerId: string) => string)
   for (const event of events) {
     if (event.type === "CAPTURED")
       out.push(`${name(event.playerId)} captured a ${event.victimColour.toLowerCase()} token`);
-    if (event.type === "TRIPLE_SIX_FORFEIT")
-      out.push(`${name(event.playerId)} rolled three sixes. Turn lost`);
+    if (event.type === "TRIPLE_DOUBLE_SIX_FORFEIT")
+      out.push(`${name(event.playerId)} rolled three double sixes. Turn lost`);
+    if (event.type === "BONUS_ROLL")
+      out.push(`${name(event.playerId)} rolled a double six. Roll again`);
+    if (event.type === "FREE_DEPLOY_OFFERED" && event.playerId === HUMAN)
+      out.push("Capture! Bring a pawn out of the yard free, or skip");
     if (event.type === "NO_LEGAL_MOVES") out.push(`No legal move for ${name(event.playerId)}`);
   }
   return out;
@@ -271,14 +350,23 @@ function LudoResults({
   );
 }
 
-function LudoTable({ players, onLobby }: { players: number; onLobby: () => void }) {
-  const [seats] = useState(() => seatsFor(players));
+function LudoTable({
+  players,
+  humanColour,
+  onLobby,
+}: {
+  players: number;
+  humanColour: Colour;
+  onLobby: () => void;
+}) {
+  const [seats] = useState(() => seatsFor(players, humanColour));
   const [game, setGame] = useState<Game>(() => createLudoGame(seats));
   const [movementPending, setMovementPending] = useState(false);
   const handleAnimationChange = useCallback((animating: boolean) => {
     setMovementPending(animating);
   }, []);
   const [selectedDie, setSelectedDie] = useState<0 | 1 | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [idle, setIdle] = useState<readonly [number, number]>(() => [randomFace(), randomFace()]);
   const [rolls, setRolls] = useState(0);
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -295,6 +383,7 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
       result.game.pieces[colour].some((step, token) => step !== game.pieces[colour][token]),
     );
     if (moved) setMovementPending(true);
+    setNotice(null);
     setGame(result.game);
     const messages = describeEvents(result.events, nameOf);
     if (messages.length) {
@@ -349,7 +438,9 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
   const usableDie = (die: 0 | 1) => moves.some((move) => move.die === die);
   const playable = new Set(
     moves
-      .filter((move) => selectedDie === null || move.die === selectedDie)
+      .filter(
+        (move) => selectedDie === null || move.die === selectedDie || move.die === null,
+      )
       .map((move) => `${move.colour}-${move.token}`),
   );
   const faces: readonly [number, number] = game.dice ?? idle;
@@ -386,27 +477,36 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
     return () => window.clearTimeout(timer);
   }, [humanReady, promptOpen, game]);
   const pick = (colour: Colour, token: number) => {
-    if (movementPending) return;
-    apply(moveToken(game, HUMAN, colour, token, selectedDie ?? undefined));
+    if (movementPending || !humanTurn) return;
+    const move = moveForTap(moves, colour, token, selectedDie);
+    if (!move) {
+      setNotice("Choose a die first, then the pawn.");
+      return;
+    }
+    apply(moveToken(game, HUMAN, move.colour, move.token, move.die));
   };
+  const skipDeploy = () => apply(declineFreeDeploy(game, HUMAN));
 
   const humanWon = game.winnerId === HUMAN;
-  const status =
-    movementPending
+  const status = notice
+    ? notice
+    : movementPending
       ? "Moving pawn…"
       : game.phase === "GAME_OVER"
         ? humanWon
           ? "You won!"
           : `${nameOf(game.winnerId ?? "")} won.`
         : humanTurn
-        ? game.phase === "WAITING_FOR_ROLL"
-          ? ""
-          : game.phase === "NO_LEGAL_MOVES"
-            ? "No legal move for either die."
-            : selectedDie !== null
-              ? "Choose a highlighted pawn to move."
-              : `You rolled ${game.dice?.[0]} and ${game.dice?.[1]}. Select a die, then choose a pawn.`
-        : `${nameOf(turnPlayer ?? "")} is playing…`;
+          ? game.phase === "WAITING_FOR_ROLL"
+            ? ""
+            : game.phase === "NO_LEGAL_MOVES"
+              ? "No legal move for either die."
+              : game.freeDeploy
+                ? "Captured! Tap a yard pawn to bring it out free, or skip."
+                : selectedDie !== null
+                  ? `Choose a highlighted pawn to move ${game.dice?.[selectedDie]}.`
+                  : `You rolled ${game.dice?.[0]} and ${game.dice?.[1]}. Tap a die to choose it.`
+          : `${nameOf(turnPlayer ?? "")} is playing…`;
 
   const finishedFor = (colour: Colour) =>
     game.pieces[colour].filter((step) => step === FINISH_STEP).length;
@@ -508,7 +608,7 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
         />
         {hintVisible && canRoll && (
           <div className="lb-roll-hint" role="status">
-            Tap to roll
+            Tap the dice to roll
             <span
               className="lb-roll-timer"
               aria-hidden="true"
@@ -516,37 +616,58 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
             />
           </div>
         )}
-        {game.phase !== "GAME_OVER" && (
-          <div className="lb-dice-centre" role="group" aria-label="Dice">
+      </div>
+      {game.phase !== "GAME_OVER" && (
+        <div className="lb-dice-tray">
+          <div className="lb-dice-row" role="group" aria-label="Dice">
             {[0, 1].map((index) => {
               const die = index as 0 | 1;
               const used = game.dice !== null && game.used[die];
               const usable = humanTurn && game.dice !== null && !used && usableDie(die);
+              const unusable = humanTurn && game.dice !== null && !used && !usable;
               const selected = selectedDie === die;
               const onClick = canRoll
                 ? roll
-                : usable
-                  ? () => setSelectedDie(selected ? null : die)
+                : humanTurn && game.dice !== null && !used
+                  ? () => {
+                      if (usable) setSelectedDie(selected ? null : die);
+                      else setNotice(`Die ${index + 1} has no legal move.`);
+                    }
                   : undefined;
               return (
                 <Die
                   key={index}
-                  className={`mg-ludo-die ${canRoll ? "is-rollable" : ""} ${usable ? "is-usable" : ""} ${selected ? "is-selected" : ""} ${used ? "is-used" : ""}`}
-                  value={faces[index]}
+                  className={`mg-ludo-die ${canRoll ? "is-rollable" : ""} ${usable ? "is-usable" : ""} ${selected ? "is-selected" : ""} ${used ? "is-used" : ""} ${unusable ? "is-unusable" : ""}`}
+                  value={faces[die]}
                   rolling={rolls > 0 && game.dice !== null && !used}
                   disabled={!onClick}
                   aria-label={
                     canRoll
                       ? "Roll the dice"
-                      : `Die ${index + 1}: ${faces[index]}${used ? ", played" : ""}`
+                      : `Die ${index + 1}: ${faces[die]}${used ? ", played" : unusable ? ", no legal move" : ""}${selected ? ", chosen" : ""}`
                   }
+                  aria-pressed={canRoll ? undefined : selected}
                   onClick={onClick}
                 />
               );
             })}
           </div>
-        )}
-      </div>
+          <p className="lb-dice-note" aria-live="polite">
+            {canRoll
+              ? "Tap the dice to roll."
+              : humanTurn && game.phase === "WAITING_FOR_MOVE" && !game.freeDeploy
+                ? selectedDie === null
+                  ? "Tap a die, then a highlighted pawn."
+                  : "Now tap a highlighted pawn."
+                : ""}
+          </p>
+          {humanTurn && game.freeDeploy && !movementPending && (
+            <Button variant="plain" onClick={skipDeploy}>
+              Skip the free deploy
+            </Button>
+          )}
+        </div>
+      )}
       {game.phase === "GAME_OVER" && !movementPending && (
         <LudoResults
           open={!resultsDismissed}
@@ -556,6 +677,8 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
           onAgain={() => {
             setResultsDismissed(false);
             setMovementPending(false);
+            setSelectedDie(null);
+            setNotice(null);
             setGame(createLudoGame(seats));
           }}
           onLobby={onLobby}
