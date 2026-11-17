@@ -3,6 +3,7 @@ import { useCallback, useEffect, useReducer, useRef } from "react";
 import type { QueryClient } from "@tanstack/react-query";
 import { q, rpc, type Character } from "@/lib/game";
 import { clearPendingDepartureFromHome, requestDepartureFromHome } from "@/lib/home-departure";
+import { hasConfirmedHomeDeparture } from "@/lib/home-departure-query";
 import type { TravelMode } from "@/lib/transport-service";
 import {
   initialMapTravelState,
@@ -97,9 +98,23 @@ export function useMapTravelController<T extends { id: string }>({
     inFlight.current = token;
     const version = generation.current;
     const current = () => mounted.current && generation.current === version;
-    dispatch({ type: "start", departing: !!character.inside_home_property_id });
+    dispatch({ type: "start" });
     try {
-      if (character.inside_home_property_id) {
+      let departing = false;
+      try {
+        if (character.inside_home_property_id)
+          departing = await hasConfirmedHomeDeparture(queryClient, character);
+      } catch {
+        if (current())
+          dispatch({
+            type: "fail",
+            message: "Your home status could not be checked. Try again; travel has not started.",
+          });
+        return;
+      }
+      if (!current()) return;
+      if (departing) {
+        dispatch({ type: "start", departing: true });
         const departure = requestDepartureFromHome({ locationId: destinationId, mode });
         try {
           await navigate({ to: "/house" });

@@ -9,14 +9,31 @@ import {
 } from "@/lib/home-departure";
 const arrival = vi.hoisted(() => vi.fn());
 vi.mock("sonner", () => ({ toast: { success: arrival } }));
-const network = vi.hoisted(() => ({ travel: vi.fn(), refresh: vi.fn(), navigate: vi.fn() }));
+const network = vi.hoisted(() => ({
+  travel: vi.fn(),
+  refresh: vi.fn(),
+  navigate: vi.fn(),
+  home: vi.fn(),
+}));
 vi.mock("@/lib/game", () => ({
   rpc: { travelToLocation: network.travel },
   q: { character: () => ({ queryKey: ["character"], queryFn: network.refresh }) },
 }));
+vi.mock("@/lib/living-cost-service", () => ({
+  canonicalHomeOptions: (id: string) => ({
+    queryKey: ["canonicalHousingHome", id],
+    queryFn: network.home,
+  }),
+}));
 const clients: QueryClient[] = [];
 beforeEach(() => {
   arrival.mockClear();
+  network.home.mockReset().mockResolvedValue({
+    playerPropertyId: "home",
+    propertyId: "property",
+    houseTypeId: "bungalow",
+    name: "Home",
+  });
   network.travel.mockReset().mockResolvedValue({});
   network.refresh.mockReset().mockResolvedValue({ current_location_id: "destination" });
   network.navigate.mockReset().mockResolvedValue(undefined);
@@ -123,4 +140,86 @@ describe("map travel transaction controller", () => {
     expect(result.current.state.phase).toBe("submit-error");
     expect(result.current.state.error).toMatch(/home exit/);
   });
+});
+
+it("travels to the selected destination when a stale home flag has no current home", async () => {
+  network.home.mockResolvedValueOnce(null);
+  const { result } = setup(true);
+  await act(async () => {
+    await result.current.confirm("destination", "danfo");
+  });
+  expect(network.travel).toHaveBeenCalledExactlyOnceWith({
+    locationId: "destination",
+    mode: "danfo",
+  });
+  expect(network.navigate).toHaveBeenCalledExactlyOnceWith({ to: "/neighborhood" });
+  expect(peekPendingDepartureFromHome()).toBeNull();
+  expect(result.current.state.phase).toBe("arrived");
+});
+it("does not divert a trip to a different saved home", async () => {
+  network.home.mockResolvedValueOnce({
+    playerPropertyId: "other-home",
+    propertyId: "property",
+    houseTypeId: "bungalow",
+    name: "Home",
+  });
+  const { result } = setup(true);
+  await act(async () => {
+    await result.current.confirm("destination", "walking");
+  });
+  expect(network.navigate).toHaveBeenCalledExactlyOnceWith({ to: "/neighborhood" });
+  expect(network.travel).toHaveBeenCalledOnce();
+});
+it.each(["offline", "malformed"])(
+  "keeps %s home checks retryable without charging",
+  async (kind) => {
+    if (kind === "offline") network.home.mockRejectedValueOnce(new Error("offline"));
+    else network.home.mockResolvedValueOnce({});
+    const { result } = setup(true);
+    await act(async () => {
+      await result.current.confirm("destination", "danfo");
+    });
+    expect(network.travel).not.toHaveBeenCalled();
+    expect(network.navigate).not.toHaveBeenCalled();
+    expect(peekPendingDepartureFromHome()).toBeNull();
+    expect(result.current.state.phase).toBe("submit-error");
+    expect(result.current.state.error).toMatch(/home status/);
+  },
+);
+
+it("refreshes cached home data before handing off a departure", async () => {
+  network.home.mockResolvedValueOnce(null);
+  const { result, queryClient } = setup(true);
+  queryClient.setQueryData(["canonicalHousingHome", "character"], {
+    playerPropertyId: "home",
+    propertyId: "property",
+    houseTypeId: "bungalow",
+    name: "Old home",
+  });
+  await act(async () => {
+    await result.current.confirm("destination", "walking");
+  });
+  expect(network.home).toHaveBeenCalledOnce();
+  expect(network.navigate).toHaveBeenCalledExactlyOnceWith({ to: "/neighborhood" });
+});
+it("ignores a home check that completes after the map unmounts", async () => {
+  let finish!: (value: unknown) => void;
+  network.home.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const { result, unmount } = setup(true);
+  let pending!: Promise<void>;
+  act(() => {
+    pending = result.current.confirm("destination", "walking");
+  });
+  unmount();
+  await act(async () => {
+    finish(null);
+    await pending;
+  });
+  expect(network.travel).not.toHaveBeenCalled();
+  expect(network.navigate).not.toHaveBeenCalled();
 });
