@@ -175,7 +175,7 @@ export function InventoryPage() {
             appearance={(character?.appearance ?? {}) as unknown as Appearance}
             gender={character?.gender ?? "nonbinary"}
             equipment={previewEquipment}
-            label="Your character, dressed for the wardrobe"
+            label="Your character wearing the currently equipped items"
           />
           <div className="pi-stage-foot">
             <div>
