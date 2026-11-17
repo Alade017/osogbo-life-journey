@@ -31,13 +31,10 @@ describe("landmark building variants", () => {
     expect(getLandmarkBuildingVariant("transport")).toBe("transit");
   });
 
-  it("uses distinct chapel and mosque silhouettes for the town's worship landmarks", () => {
-    const chapel = town.grid.buildings.find((building) => building.placeId === "garden-chapel");
+  it("uses a mosque silhouette for the Oja-Oba Mosque", () => {
     const mosque = town.grid.buildings.find((building) => building.placeId === "mosque-square");
 
-    expect(chapel?.buildingType).toBe("church");
     expect(mosque?.buildingType).toBe("mosque");
-    expect(getLandmarkBuildingVariant(chapel?.buildingType)).toBe("church");
     expect(getLandmarkBuildingVariant(mosque?.buildingType)).toBe("mosque");
   });
 

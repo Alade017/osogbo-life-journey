@@ -525,12 +525,6 @@
         "buildingType": "school"
       },
       {
-        "placeId": "garden-chapel",
-        "x": 2,
-        "z": 11,
-        "buildingType": "church"
-      },
-      {
         "placeId": "fish-market",
         "x": 9,
         "z": 11,
@@ -568,8 +562,8 @@
       },
       {
         "placeId": "mosque-square",
-        "x": 10,
-        "z": 15,
+        "x": 27,
+        "z": 2,
         "buildingType": "mosque"
       },
       {
@@ -1575,41 +1569,6 @@
       ]
     },
     {
-      "id": "garden-chapel",
-      "label": "Garden Chapel",
-      "category": "worship",
-      "districtId": "south-quarter",
-      "locationSlug": "garden-chapel",
-      "x": 185,
-      "y": 820,
-      "verify": false,
-      "grid": {
-        "x": 2,
-        "z": 11
-      },
-      "buildingType": "church",
-      "actions": [
-        {
-          "id": "garden-chapel-visit",
-          "label": "Look around",
-          "description": "Spend time at Garden Chapel.",
-          "time_cost_minutes": 10,
-          "money_minor": {
-            "min": 0,
-            "max": 0
-          },
-          "mood_effect": 1,
-          "requirement": "Travel here first",
-          "open_hours": {
-            "start": 7,
-            "end": 21
-          },
-          "cooldown_game_minutes": 60,
-          "verify": false
-        }
-      ]
-    },
-    {
       "id": "fish-market",
       "label": "Fish Market",
       "category": "market",
@@ -1821,23 +1780,23 @@
     },
     {
       "id": "mosque-square",
-      "label": "Mosque Square",
+      "label": "Oja-Oba Mosque",
       "category": "worship",
-      "districtId": "south-quarter",
-      "locationSlug": "mosque-square",
-      "x": 1079,
-      "y": 1120,
+      "districtId": "oja-oba",
+      "locationSlug": "oja-oba",
+      "x": 2975,
+      "y": 145,
       "verify": false,
       "grid": {
-        "x": 10,
-        "z": 15
+        "x": 27,
+        "z": 2
       },
       "buildingType": "mosque",
       "actions": [
         {
           "id": "mosque-square-visit",
           "label": "Look around",
-          "description": "Spend time at Mosque Square.",
+          "description": "Spend time at Oja-Oba Mosque.",
           "time_cost_minutes": 10,
           "money_minor": {
             "min": 0,
@@ -2128,24 +2087,6 @@
       },
       "mapObjectType": "junction",
       "availabilityReason": "Flyover landmark; use it as an orientation point.",
-      "actions": []
-    },
-    {
-      "id": "river-shrine-court",
-      "label": "River Shrine Court",
-      "category": "worship",
-      "districtId": "oke-fia",
-      "locationSlug": null,
-      "x": 3201,
-      "y": 1645,
-      "verify": false,
-      "grid": {
-        "x": 29,
-        "z": 22
-      },
-      "mapObjectType": "poi",
-      "availabilityReason": "Heritage destination reserved for a later playable phase.",
-      "unlockRequirement": "Future heritage-area implementation.",
       "actions": []
     },
     {
