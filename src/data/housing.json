@@ -16,39 +16,39 @@
     "extra_requirements": [],
     "home_slots": [
       {
-        "y": 40,
+        "y": 25,
         "slot_type": "bed",
         "id": "bed-2",
         "z": 2,
-        "x": 76
+        "x": 81
       },
       {
-        "y": 66,
+        "y": 25,
         "slot_type": "bed",
         "id": "bed",
         "z": 2,
-        "x": 24
+        "x": 19
       },
       {
-        "y": 72,
+        "y": 10,
         "slot_type": "storage",
         "id": "storage",
         "z": 2,
-        "x": 78
+        "x": 50
       },
       {
-        "y": 34,
+        "y": 12,
         "slot_type": "decor",
         "id": "decor-1",
         "z": 1,
-        "x": 18
+        "x": 4
       },
       {
-        "y": 33,
+        "y": 12,
         "slot_type": "decor",
         "id": "decor-2",
         "z": 1,
-        "x": 83
+        "x": 96
       },
       {
         "y": 24,
@@ -58,54 +58,36 @@
         "x": 57
       },
       {
-        "y": 71,
+        "y": 63,
         "slot_type": "seat",
         "id": "seat",
         "z": 3,
-        "x": 55
+        "x": 15
       },
+      
       {
-        "y": 53,
-        "slot_type": "kitchen",
-        "id": "kitchen",
-        "z": 2,
-        "x": 72
-      },
-      {
-        "y": 75,
+        "y": 10,
         "slot_type": "plant",
         "id": "plant",
         "z": 3,
-        "x": 89
+        "x": 34
       },
+      
       {
-        "y": 52,
-        "slot_type": "bathroom",
-        "id": "bathroom",
-        "z": 2,
-        "x": 92
-      },
-      {
-        "y": 46,
+        "y": 93,
         "slot_type": "device",
         "id": "device",
         "z": 2,
-        "x": 40
+        "x": 46
       },
       {
-        "y": 74,
+        "y": 83,
         "slot_type": "table",
         "id": "table",
         "z": 3,
-        "x": 41
-      },
-      {
-        "y": 38,
-        "slot_type": "bathroom",
-        "id": "bathroom-shower",
-        "z": 2,
-        "x": 76
+        "x": 15
       }
+      
     ],
     "walkable_area": {
       "max_x": 92,
