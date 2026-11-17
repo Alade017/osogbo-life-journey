@@ -82,17 +82,18 @@ function GameLayout() {
       window.clearTimeout(timeout);
       timeout = window.setTimeout(() => setHudIdle(true), 4000);
     };
+    const wakeOnPointerMove = (event: PointerEvent) => {
+      if (event.pointerType === "mouse") wakeHud();
+    };
     window.addEventListener("pointerdown", wakeHud, { passive: true });
-    window.addEventListener("pointermove", wakeHud, { passive: true });
+    window.addEventListener("pointermove", wakeOnPointerMove, { passive: true });
     window.addEventListener("keydown", wakeHud);
-    window.addEventListener("touchstart", wakeHud, { passive: true });
     window.addEventListener("focusin", wakeHud);
     return () => {
       window.clearTimeout(timeout);
       window.removeEventListener("pointerdown", wakeHud);
-      window.removeEventListener("pointermove", wakeHud);
+      window.removeEventListener("pointermove", wakeOnPointerMove);
       window.removeEventListener("keydown", wakeHud);
-      window.removeEventListener("touchstart", wakeHud);
       window.removeEventListener("focusin", wakeHud);
     };
   }, []);
