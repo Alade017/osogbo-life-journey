@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -125,6 +126,7 @@ export function WhotTableView({
             discard: [live.top],
           },
           card,
+          live.my_hand.length,
         ),
       )
     : [];
@@ -233,31 +235,40 @@ export function WhotTableView({
         </div>
       )}
 
-      {choosing && (
-        <div className="wt-shape-sheet" role="dialog" aria-label="Choose the next shape">
-          <p>Choose the next shape</p>
-          <div className="wt-shape-options">
-            {SHAPES.map((shape) => (
-              <button
-                key={shape}
-                type="button"
-                aria-label={SHAPE_LABELS[shape]}
-                onClick={() => {
-                  const card = choosing;
-                  setChoosing(null);
-                  play.mutate({ cardId: card.id, shape });
-                }}
-              >
-                <ShapeGlyph shape={shape} size={28} />
-                <span>{SHAPE_LABELS[shape]}</span>
-              </button>
-            ))}
-          </div>
-          <Button variant="plain" onClick={() => setChoosing(null)}>
-            Cancel
-          </Button>
-        </div>
-      )}
+      {choosing &&
+        createPortal(
+          <div className="mg-shape-overlay">
+            <div
+              className="wt-shape-sheet"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Choose the next shape"
+            >
+              <p>Choose the next shape</p>
+              <div className="wt-shape-options">
+                {SHAPES.map((shape) => (
+                  <button
+                    key={shape}
+                    type="button"
+                    aria-label={SHAPE_LABELS[shape]}
+                    onClick={() => {
+                      const card = choosing;
+                      setChoosing(null);
+                      play.mutate({ cardId: card.id, shape });
+                    }}
+                  >
+                    <ShapeGlyph shape={shape} size={28} />
+                    <span>{SHAPE_LABELS[shape]}</span>
+                  </button>
+                ))}
+              </div>
+              <Button variant="plain" onClick={() => setChoosing(null)}>
+                Cancel
+              </Button>
+            </div>
+          </div>,
+          document.body,
+        )}
 
       <div className="wt-actions">
         {myTurn && playable.length === 0 && live && (

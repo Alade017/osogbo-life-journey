@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { COLOURS, type Colour } from "@/lib/mini-games/ludo-engine";
-import { BOARD_SIZE } from "@/lib/mini-games/ludo-board";
+import { BOARD_SIZE, VIEW_SQUARES } from "@/lib/mini-games/ludo-board";
 import { LUDO_COLOURS } from "@/components/game/mini-games/ludo-palette";
 
 /** A pawn as the board draws it: centre in board units, scale as a fraction of a square. */
@@ -16,8 +16,6 @@ export type ScenePiece = {
 };
 
 const CENTRE = BOARD_SIZE / 2;
-/** How many board squares the camera shows across the stage. */
-const VIEW_SQUARES = BOARD_SIZE;
 /** Tilt of the camera away from straight down, so the pawns show their height. */
 const TILT = (24 * Math.PI) / 180;
 const CAMERA_DISTANCE = 24;

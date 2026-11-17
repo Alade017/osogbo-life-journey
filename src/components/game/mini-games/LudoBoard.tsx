@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { COLOURS, absoluteTile, isSafeTile, type Colour } from "@/lib/mini-games/ludo-engine";
 import { LUDO_COLOURS } from "@/components/game/mini-games/ludo-palette";
 import { LudoPawns3D, type ScenePiece } from "@/components/game/mini-games/LudoPawns3D";
@@ -63,12 +63,15 @@ export function LudoBoard({
   onPick,
   playerCount,
   onAnimatingChange,
+  children,
 }: {
   pieces: Progress;
   playable: ReadonlySet<string>;
   onPick: (colour: Colour, token: number) => void;
   playerCount: number;
   onAnimatingChange?: (animating: boolean) => void;
+  /** Drawn over the board and the rails, such as the dice. */
+  children?: ReactNode;
 }) {
   const [shown, setShown] = useState<Progress>(pieces);
 
@@ -113,6 +116,7 @@ export function LudoBoard({
   );
 
   return (
+    <div className="lb-stage">
     <div className="lb-board" data-players={playerCount}>
       <div className="lb-grid" role="img" aria-label="Ludo board">
         {Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, index) => {
@@ -251,7 +255,9 @@ export function LudoBoard({
           );
         }),
       )}
+    </div>
       <LudoPawns3D pieces={scenePieces} />
+      {children}
     </div>
   );
 }
