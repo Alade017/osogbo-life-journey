@@ -1470,6 +1470,13 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       </div>
     );
 
+  if (!serverState?.house && canonicalHomeQuery.isLoading)
+    return (
+      <div className="house-page">
+        <HouseSceneSkeleton />
+      </div>
+    );
+
   if (!serverState?.house)
     return (
       <div className="house-page">
@@ -1516,6 +1523,128 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const house = serverState.house;
   return (
     <div className={`house-page house-page-fill${editing ? " is-editing" : ""}`}>
+      <div className="house-toolbar">
+        <div className="house-scene-controls" role="group" aria-label="Home controls">
+          {!editing && canonicalHome && (
+            <button
+              type="button"
+              className="house-scene-exit"
+              disabled={isOffline || homePresence.isPending || taskBusy}
+              aria-busy={homePresence.isPending}
+              onClick={() =>
+                isInsideHome ? void goOutside() : homePresence.mutate("enter_player_home")
+              }
+            >
+              {homePresence.isPending ? (
+                <LoaderCircle
+                  size={16}
+                  className="house-scene-control-spinner"
+                  aria-hidden="true"
+                />
+              ) : (
+                <DoorOpen size={16} aria-hidden="true" />
+              )}
+              <span>
+                {homePresence.isPending
+                  ? "Updating location..."
+                  : isInsideHome
+                    ? activeSleep
+                      ? "Wake up first"
+                      : "Go outside"
+                    : "Travel home"}
+              </span>
+            </button>
+          )}
+          <button
+            className="house-edit-button house-edit-toggle"
+            type="button"
+            aria-label={editing ? "Close shop" : "Shop"}
+            aria-pressed={editing}
+            disabled={taskBusy}
+            onClick={() => {
+              movement.cancel();
+              setEditing((value) => !value);
+              setSelectedPlacement(null);
+            }}
+          >
+            {editing ? "Done" : "Shop"}
+          </button>
+        </div>
+        {!editing && (
+          <button
+            type="button"
+            className="house-icon-button house-light-switch"
+            aria-pressed={lightOn}
+            aria-label={lightOn ? "Turn the room light off" : "Turn the room light on"}
+            title={lightOn ? "Light on" : "Light off"}
+            disabled={isOffline || !character?.id || lightMutation.isPending}
+            onClick={() => lightMutation.mutate(!lightOn)}
+          >
+            {lightOn ? (
+              <Lightbulb size={20} aria-hidden="true" />
+            ) : (
+              <LightbulbOff size={20} aria-hidden="true" />
+            )}
+          </button>
+        )}
+        {!editing && (
+          <button
+            type="button"
+            className="house-icon-button house-walls-switch"
+            aria-pressed={wallsSetting ?? FOUR_ROOM_HOME_TYPES.includes(house.house_type_id)}
+            aria-label={
+              (wallsSetting ?? FOUR_ROOM_HOME_TYPES.includes(house.house_type_id))
+                ? "Open the walls"
+                : "Close the walls"
+            }
+            title={
+              (wallsSetting ?? FOUR_ROOM_HOME_TYPES.includes(house.house_type_id))
+                ? "Walls closed"
+                : "Walls open"
+            }
+            disabled={isOffline || !character?.id || wallsMutation.isPending}
+            onClick={() =>
+              wallsMutation.mutate(
+                !(wallsSetting ?? FOUR_ROOM_HOME_TYPES.includes(house.house_type_id)),
+              )
+            }
+          >
+            {(wallsSetting ?? FOUR_ROOM_HOME_TYPES.includes(house.house_type_id)) ? (
+              <DoorClosed size={20} aria-hidden="true" />
+            ) : (
+              <DoorOpen size={20} aria-hidden="true" />
+            )}
+          </button>
+        )}
+        {!editing && activeFloor === 0 && roomViews.length > 0 && (
+          <div className="house-room-views" role="group" aria-label="Room view">
+            {roomViews.map((room) => (
+              <button
+                key={room.id}
+                type="button"
+                aria-pressed={roomView === room.id}
+                className={roomView === room.id ? "is-active" : undefined}
+                onClick={() => setPinnedRoom(room.id)}
+              >
+                {room.label}
+              </button>
+            ))}
+            <button
+              type="button"
+              aria-pressed={roomView === null}
+              className={roomView === null ? "is-active" : undefined}
+              onClick={() => setPinnedRoom(null)}
+            >
+              {WHOLE_HOME_LABEL}
+            </button>
+          </div>
+        )}
+        {!editing && stairs && (
+          <span className="house-floor-label" role="status" aria-live="polite">
+            {activeFloor === 0 ? "Ground floor" : "Upstairs"}
+          </span>
+        )}
+      </div>
       <section
         className={`house-room-card${house.status === "overdue" ? " room-overdue" : ""}${activeSleep ? " is-sleeping" : ""}`}
         aria-label={`${house.house_type.label} room`}
@@ -1582,52 +1711,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           }}
           onSelectSlot={() => undefined}
         />
-        <div className="house-scene-controls" role="group" aria-label="Home controls">
-          {!editing && canonicalHome && (
-            <button
-              type="button"
-              className="house-scene-exit"
-              disabled={isOffline || homePresence.isPending || taskBusy}
-              aria-busy={homePresence.isPending}
-              onClick={() =>
-                isInsideHome ? void goOutside() : homePresence.mutate("enter_player_home")
-              }
-            >
-              {homePresence.isPending ? (
-                <LoaderCircle
-                  size={16}
-                  className="house-scene-control-spinner"
-                  aria-hidden="true"
-                />
-              ) : (
-                <DoorOpen size={16} aria-hidden="true" />
-              )}
-              <span>
-                {homePresence.isPending
-                  ? "Updating location..."
-                  : isInsideHome
-                    ? activeSleep
-                      ? "Wake up first"
-                      : "Go outside"
-                    : "Travel home"}
-              </span>
-            </button>
-          )}
-          <button
-            className="house-edit-button house-edit-toggle"
-            type="button"
-            aria-label={editing ? "Close shop" : "Shop"}
-            aria-pressed={editing}
-            disabled={taskBusy}
-            onClick={() => {
-              movement.cancel();
-              setEditing((value) => !value);
-              setSelectedPlacement(null);
-            }}
-          >
-            {editing ? "Done" : "Shop"}
-          </button>
-        </div>
+
         {!editing &&
           (isOffline ||
             !gameTime.ready ||
@@ -1703,80 +1787,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           </div>
         )}
       </section>
-      {!editing && (
-        <button
-          type="button"
-          className="house-icon-button house-light-switch"
-          aria-pressed={lightOn}
-          aria-label={lightOn ? "Turn the room light off" : "Turn the room light on"}
-          title={lightOn ? "Light on" : "Light off"}
-          disabled={isOffline || !character?.id || lightMutation.isPending}
-          onClick={() => lightMutation.mutate(!lightOn)}
-        >
-          {lightOn ? (
-            <Lightbulb size={20} aria-hidden="true" />
-          ) : (
-            <LightbulbOff size={20} aria-hidden="true" />
-          )}
-        </button>
-      )}
-      {!editing && (
-        <button
-          type="button"
-          className="house-icon-button house-walls-switch"
-          aria-pressed={wallsSetting ?? FOUR_ROOM_HOME_TYPES.includes(house.house_type_id)}
-          aria-label={
-            (wallsSetting ?? FOUR_ROOM_HOME_TYPES.includes(house.house_type_id))
-              ? "Open the walls"
-              : "Close the walls"
-          }
-          title={
-            (wallsSetting ?? FOUR_ROOM_HOME_TYPES.includes(house.house_type_id))
-              ? "Walls closed"
-              : "Walls open"
-          }
-          disabled={isOffline || !character?.id || wallsMutation.isPending}
-          onClick={() =>
-            wallsMutation.mutate(
-              !(wallsSetting ?? FOUR_ROOM_HOME_TYPES.includes(house.house_type_id)),
-            )
-          }
-        >
-          {(wallsSetting ?? FOUR_ROOM_HOME_TYPES.includes(house.house_type_id)) ? (
-            <DoorClosed size={20} aria-hidden="true" />
-          ) : (
-            <DoorOpen size={20} aria-hidden="true" />
-          )}
-        </button>
-      )}
-      {!editing && activeFloor === 0 && roomViews.length > 0 && (
-        <div className="house-room-views" role="group" aria-label="Room view">
-          {roomViews.map((room) => (
-            <button
-              key={room.id}
-              type="button"
-              aria-pressed={roomView === room.id}
-              className={roomView === room.id ? "is-active" : undefined}
-              onClick={() => setPinnedRoom(room.id)}
-            >
-              {room.label}
-            </button>
-          ))}
-          <button
-            type="button"
-            aria-pressed={roomView === null}
-            className={roomView === null ? "is-active" : undefined}
-            onClick={() => setPinnedRoom(null)}
-          >
-            {WHOLE_HOME_LABEL}
-          </button>
-        </div>
-      )}
-      {!editing && stairs && (
-        <span className="house-floor-label" role="status" aria-live="polite">
-          {activeFloor === 0 ? "Ground floor" : "Upstairs"}
-        </span>
-      )}
       {!editing && drawerOpen && (
         <DrawerSheet
           drawer={drawerQuery.data ?? null}

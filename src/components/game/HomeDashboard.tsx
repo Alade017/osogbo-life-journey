@@ -20,7 +20,6 @@ export function HomeDashboard({
   return (
     <section className="home-dashboard" aria-label="Player dashboard">
       <div className="hd-stage">
-        {children}
         <header className="hd-status" aria-label="Player status">
           <div className="hd-area">
             <MapPin className="h-4 w-4 shrink-0" aria-hidden="true" />
@@ -52,6 +51,7 @@ export function HomeDashboard({
             </Link>
           </div>
         </header>
+        <div className="hd-world">{children}</div>
       </div>
     </section>
   );

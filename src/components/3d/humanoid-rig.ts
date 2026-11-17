@@ -90,7 +90,7 @@ function blob(
   bone: BoneName,
   options: { detail?: 0 | 1; accessory?: boolean } = {},
 ): Part {
-  const geometry = new SphereGeometry(1, options.detail ? 12 : 8, options.detail ? 8 : 6);
+  const geometry = new SphereGeometry(1, options.detail ? 9 : 8, options.detail ? 6 : 5);
   geometry.scale(...radii);
   geometry.translate(...at);
   return { geometry, bone, accessory: options.accessory ?? false };
@@ -269,8 +269,12 @@ function bodyParts(variant: BodyVariant, build: number): Part[] {
   ];
   if (bust > 0) {
     parts.push(
-      blob([0.073 * bust, 0.06 * bust, 0.064 * bust], [0.073, 0.75, 0.085], BONE.spine2, { detail: 1 }),
-      blob([0.073 * bust, 0.06 * bust, 0.064 * bust], [-0.073, 0.75, 0.085], BONE.spine2, { detail: 1 }),
+      blob([0.073 * bust, 0.06 * bust, 0.064 * bust], [0.073, 0.75, 0.085], BONE.spine2, {
+        detail: 1,
+      }),
+      blob([0.073 * bust, 0.06 * bust, 0.064 * bust], [-0.073, 0.75, 0.085], BONE.spine2, {
+        detail: 1,
+      }),
     );
   }
   parts.push(...limbParts(1, shape), ...limbParts(-1, shape));
@@ -370,10 +374,18 @@ function hairParts(shape: HairShape): Part[] {
   return [base];
 }
 
-const geometryCache = new Map<string, {
-  body: BufferGeometry; face: BufferGeometry; eyes: BufferGeometry; irises: BufferGeometry;
-  pupils: BufferGeometry; highlights: BufferGeometry; hair: BufferGeometry;
-}>();
+const geometryCache = new Map<
+  string,
+  {
+    body: BufferGeometry;
+    face: BufferGeometry;
+    eyes: BufferGeometry;
+    irises: BufferGeometry;
+    pupils: BufferGeometry;
+    highlights: BufferGeometry;
+    hair: BufferGeometry;
+  }
+>();
 function mergeSkinned(parts: readonly Part[], indexOf: Map<BoneName, number>): BufferGeometry {
   const merged = mergeGeometries(
     parts.map((part) => skinTo(part.geometry, indexOf.get(part.bone) ?? 0, part.preSkinned)),
@@ -397,17 +409,17 @@ function geometriesFor(variant: BodyVariant, hairShape: HairShape, build: number
     pupils: mergeSkinned(pupilParts(), indexOf),
     highlights: mergeSkinned(highlightParts(), indexOf),
     hair: mergeSkinned(hairParts(hairShape), indexOf),
-    face: mergeSkinned(accessoryParts(), indexOf),
-    eyes: eyePair([0.022, 0.013, 0.01], 0.95, 0.087),
-    irises: eyePair([0.009, 0.01, 0.005], 0.95, 0.096),
-    pupils: eyePair([0.004, 0.006, 0.003], 0.95, 0.101),
-    highlights: eyePair([0.002, 0.002, 0.002], 0.954, 0.104),
   };
   geometryCache.set(key, built);
   return built;
 }
 
-export type Humanoid = { root: Bone; bones: Bone[]; byName: Map<string, Bone>; meshes: SkinnedMesh[] };
+export type Humanoid = {
+  root: Bone;
+  bones: Bone[];
+  byName: Map<string, Bone>;
+  meshes: SkinnedMesh[];
+};
 export function createHumanoid({
   variant,
   skinColor,
@@ -480,7 +492,17 @@ export function createHumanoid({
     ),
   ];
   if (hairColor) {
-    meshes.push(makeMesh(geo.hair, new MeshStandardMaterial({ color: hairColor, roughness: 0.94, metalness: 0, flatShading: false })));
+    meshes.push(
+      makeMesh(
+        geo.hair,
+        new MeshStandardMaterial({
+          color: hairColor,
+          roughness: 0.94,
+          metalness: 0,
+          flatShading: false,
+        }),
+      ),
+    );
   }
   return { root, bones, byName, meshes };
 }

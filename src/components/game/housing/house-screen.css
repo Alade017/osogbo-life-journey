@@ -3273,3 +3273,103 @@ button.house-task-status-action:disabled {
     max-height: none;
   }
 }
+
+/* Home toolbar is part of the layout, above the canvas at every viewport size. */
+.city-game.navigation-redesign .house-page.house-page-fill {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: calc(100dvh - var(--game-dock-space, 80px));
+}
+.city-game.navigation-redesign .hd-world .house-page.house-page-fill {
+  height: 100%;
+}
+.house-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--card);
+  position: relative;
+  z-index: 4;
+}
+.city-game.navigation-redesign .house-toolbar .house-scene-controls {
+  position: static;
+  inset: auto;
+  order: 1;
+  display: flex;
+  flex-wrap: wrap;
+  max-width: 100%;
+  margin-left: auto;
+  animation: none;
+}
+.city-game.navigation-redesign .house-toolbar .house-room-views {
+  position: static;
+  inset: auto;
+  order: 0;
+  display: flex;
+  flex: 1 1 100%;
+  flex-wrap: nowrap;
+  gap: 6px;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  padding: 2px;
+}
+.city-game.navigation-redesign .house-toolbar .house-room-views button {
+  flex: none;
+  min-height: 44px;
+  padding: 8px 14px;
+  border-radius: 12px;
+}
+.city-game.navigation-redesign
+  .house-toolbar
+  :is(.house-light-switch, .house-walls-switch, .house-floor-label) {
+  position: static;
+  inset: auto;
+  order: 1;
+  z-index: auto;
+  margin: 0;
+  box-shadow: none;
+  flex: none;
+}
+.city-game.navigation-redesign .house-toolbar :is(.house-light-switch, .house-walls-switch) {
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 10px;
+  border-radius: 12px;
+}
+.city-game.navigation-redesign .house-toolbar .house-floor-label {
+  order: 0;
+  font-size: 12px;
+}
+.city-game.navigation-redesign .house-page.house-page-fill .house-room-card,
+.city-game.navigation-redesign .house-page.house-page-fill.is-editing .house-room-card {
+  flex: 1;
+  height: auto;
+  min-height: 220px;
+  overflow: hidden;
+}
+.city-game.navigation-redesign .house-page.house-page-fill .house-3d-scene {
+  height: 100%;
+}
+@media (min-width: 900px) {
+  .city-game.navigation-redesign .house-toolbar .house-room-views {
+    flex: 1;
+  }
+}
+@media (max-height: 500px) {
+  .home-dashboard .hd-status {
+    padding-block: 4px;
+  }
+  .house-toolbar {
+    padding-block: 4px;
+  }
+  .city-game.navigation-redesign .house-toolbar .house-room-views {
+    flex: 1;
+  }
+}
