@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import { Button } from "@/components/ui/button";
 import { Bot, Check, User } from "lucide-react";
 import { PawnMark3D } from "@/components/game/mini-games/LudoPawns3D";
@@ -274,6 +274,10 @@ function LudoResults({
 function LudoTable({ players, onLobby }: { players: number; onLobby: () => void }) {
   const [seats] = useState(() => seatsFor(players));
   const [game, setGame] = useState<Game>(() => createLudoGame(seats));
+  const [movementPending, setMovementPending] = useState(false);
+  const handleAnimationChange = useCallback((animating: boolean) => {
+    setMovementPending(animating);
+  }, []);
   const [selectedDie, setSelectedDie] = useState<0 | 1 | null>(null);
   const [idle, setIdle] = useState<readonly [number, number]>(() => [randomFace(), randomFace()]);
   const [rolls, setRolls] = useState(0);
@@ -287,6 +291,10 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
 
   const apply = (result: LudoResult) => {
     if (!result.ok) return;
+    const moved = COLOURS.some((colour) =>
+      result.game.pieces[colour].some((step, token) => step !== game.pieces[colour][token]),
+    );
+    if (moved) setMovementPending(true);
     setGame(result.game);
     const messages = describeEvents(result.events, nameOf);
     if (messages.length) {
@@ -322,25 +330,22 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
   }, [game]);
 
   useComputerTurn(
-    !humanTurn && game.phase !== "GAME_OVER" && game.phase !== "NO_LEGAL_MOVES",
+    !movementPending && !humanTurn && game.phase !== "GAME_OVER" && game.phase !== "NO_LEGAL_MOVES",
     [game],
     () => {
       setRolls((count) => count + 1);
-      setGame((current) => {
-        const player = currentPlayerId(current);
-        if (current.phase === "WAITING_FOR_ROLL") {
-          const result = rollDice(current, player, [randomFace(), randomFace()]);
-          return result.ok ? result.game : current;
-        }
-        const pick = bestComputerMove(current, player);
-        if (!pick) return current;
-        const result = moveToken(current, player, pick.colour, pick.token, pick.die);
-        return result.ok ? result.game : current;
-      });
+      const player = currentPlayerId(game);
+      if (game.phase === "WAITING_FOR_ROLL") {
+        apply(rollDice(game, player, [randomFace(), randomFace()]));
+        return;
+      }
+      const pick = bestComputerMove(game, player);
+      if (!pick) return;
+      apply(moveToken(game, player, pick.colour, pick.token, pick.die));
     },
   );
 
-  const moves = humanTurn ? getLegalMoves(game, HUMAN) : [];
+  const moves = humanTurn && !movementPending ? getLegalMoves(game, HUMAN) : [];
   const usableDie = (die: 0 | 1) => moves.some((move) => move.die === die);
   const playable = new Set(
     moves
@@ -348,7 +353,7 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
       .map((move) => `${move.colour}-${move.token}`),
   );
   const faces: readonly [number, number] = game.dice ?? idle;
-  const canRoll = humanTurn && game.phase === "WAITING_FOR_ROLL";
+  const canRoll = humanTurn && !movementPending && game.phase === "WAITING_FOR_ROLL";
   const [hintVisible, setHintVisible] = useState(false);
   useEffect(() => {
     if (!canRoll) {
@@ -366,7 +371,7 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
   };
   // The your-turn card opens when a human turn starts, and returns after a long pause.
   const humanReady =
-    humanTurn && (game.phase === "WAITING_FOR_ROLL" || game.phase === "WAITING_FOR_MOVE");
+    humanTurn && !movementPending && (game.phase === "WAITING_FOR_ROLL" || game.phase === "WAITING_FOR_MOVE");
   const [promptOpen, setPromptOpen] = useState(false);
   useEffect(() => {
     if (!humanReady) {
@@ -381,6 +386,7 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
     return () => window.clearTimeout(timer);
   }, [humanReady, promptOpen, game]);
   const pick = (colour: Colour, token: number) => {
+    if (movementPending) return;
     apply(moveToken(game, HUMAN, colour, token, selectedDie ?? undefined));
   };
 
@@ -390,7 +396,9 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
       ? humanWon
         ? "You won!"
         : `${nameOf(game.winnerId ?? "")} won.`
-      : humanTurn
+      : movementPending
+        ? "Moving pawn…"
+        : humanTurn
         ? game.phase === "WAITING_FOR_ROLL"
           ? ""
           : game.phase === "NO_LEGAL_MOVES"
@@ -496,6 +504,7 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
           playable={playable}
           onPick={pick}
           playerCount={seats.length}
+          onAnimatingChange={handleAnimationChange}
         />
         {hintVisible && canRoll && (
           <div className="lb-roll-hint" role="status">
@@ -546,6 +555,7 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
           nameOf={nameOf}
           onAgain={() => {
             setResultsDismissed(false);
+            setMovementPending(false);
             setGame(createLudoGame(seats));
           }}
           onLobby={onLobby}
