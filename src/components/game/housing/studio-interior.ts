@@ -222,24 +222,32 @@ export function createBlueprintInterior(
     size: [HOUSE_WALL_THICKNESS, height, depth / 2 - cursor],
   });
   housePartitionSegments(houseTypeId, width, depth).forEach((segment) =>
-    wall(segment, finish.wetTile),
+    wall(segment, segment.id.includes("bath") ? finish.wetTile : finish.plaster),
   );
   // The bathroom door folds back against its wall, keeping the navigation opening clear.
-  const door = plan.bathroomDoor;
-  if (door) {
+  for (const door of plan.interiorDoors) {
+    const doorwaySegment: HouseWallSegment = {
+      id: door.id,
+      position: [door.x, 0.95, door.z],
+      size:
+        door.axis === "z"
+          ? [HOUSE_WALL_THICKNESS, 1.9, door.width]
+          : [door.width, 1.9, HOUSE_WALL_THICKNESS],
+    };
+    if (!show(doorwaySegment)) continue;
+    const frame = new Group();
+    frame.name = `${door.id}-frame`;
+    frame.position.set(door.x, 0, door.z);
+    frame.rotation.y = door.axis === "x" ? Math.PI / 2 : 0;
+    walls.add(frame);
     for (const side of [-1, 1])
-      box(
-        walls,
-        [0.17, 1.95, 0.07],
-        [door.x, 0.975, door.z + (side * door.width) / 2],
-        finish.trim,
-      );
-    box(walls, [0.17, 0.08, door.width + 0.14], [door.x, 1.95, door.z], finish.trim);
+      box(frame, [0.17, 1.95, 0.07], [0, 0.975, (side * door.width) / 2], finish.trim);
+    box(frame, [0.17, 0.08, door.width + 0.14], [0, 1.95, 0], finish.trim);
     const panel = new Group();
-    panel.name = "studio-bathroom-door";
-    panel.position.set(door.x - HOUSE_WALL_THICKNESS / 2 - 0.025, 0, door.z - door.width / 2);
+    panel.name = door.id;
+    panel.position.set(-HOUSE_WALL_THICKNESS / 2 - 0.025, 0, -door.width / 2);
     panel.rotation.y = Math.PI;
-    walls.add(panel);
+    frame.add(panel);
     const panelWidth = door.width - 0.1;
     box(
       panel,

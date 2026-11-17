@@ -1,5 +1,6 @@
 /** Architectural boundaries in room metres. Rendering and movement consume these together. */
 export type FloorBounds = { minX: number; maxX: number; minZ: number; maxZ: number };
+export type BlueprintDoor = { id: string; axis: "x" | "z"; x: number; z: number; width: number };
 
 export const STUDIO_FINISH = {
   plaster: "#dbc9ac",
@@ -36,6 +37,9 @@ export function studioBlueprint(width: number, depth: number) {
     bathroomDoor: { x: bathroom.minX, z: depth * 0.25, width: doorwayWidth },
     windows: [-depth * 0.25, depth * 0.25],
     windowWidth: depth * 0.22,
+    interiorDoors: [
+      { id: "studio-bathroom-door", axis: "z", x: 0, z: depth * 0.25, width: doorwayWidth },
+    ] satisfies BlueprintDoor[],
   };
 }
 
@@ -49,6 +53,7 @@ export function sharedRoomBlueprint(width: number, depth: number) {
     entranceX: width * 0.22,
     windows: [0],
     windowWidth: depth * 0.42,
+    interiorDoors: [] as BlueprintDoor[],
   };
 }
 
@@ -62,6 +67,19 @@ export function privateRoomBlueprint(width: number, depth: number) {
     entranceX: width * 0.22,
     windows: [-depth * 0.15],
     windowWidth: depth * 0.4,
+    interiorDoors: [] as BlueprintDoor[],
+  };
+}
+
+/** Keep the established four-room boundaries and existing furniture coordinates. */
+export function miniFlatBlueprint(width: number, depth: number) {
+  return {
+    ...studioBlueprint(width, depth),
+    interiorDoors: [
+      { id: "mini-bedroom-door", axis: "x", x: -width * 0.25, z: 0, width: 1.1 },
+      { id: "mini-kitchen-door", axis: "z", x: 0, z: -depth * 0.25, width: 1.1 },
+      { id: "mini-bathroom-door", axis: "z", x: 0, z: depth * 0.25, width: 1.1 },
+    ] satisfies BlueprintDoor[],
   };
 }
 
@@ -69,6 +87,7 @@ export const HOUSE_BLUEPRINTS = {
   "studio-flat": studioBlueprint,
   "shared-room": sharedRoomBlueprint,
   "single-room": privateRoomBlueprint,
+  "mini-flat": miniFlatBlueprint,
 } as const;
 export type BlueprintHomeType = keyof typeof HOUSE_BLUEPRINTS;
 

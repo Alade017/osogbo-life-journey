@@ -2,7 +2,12 @@ import type { HousePlacement, HouseSlot } from "./HouseRoomScene";
 import type { AvatarAnimationState, AvatarEquipment } from "@/components/game/Avatar";
 import type { Appearance } from "@/game/avatar-appearance";
 import type { FoodDelivery } from "@/lib/food-delivery-service";
-import { boundsContain, studioBlueprint, type FloorBounds } from "./house-blueprints";
+import {
+  boundsContain,
+  studioBlueprint,
+  isBlueprintHomeType,
+  type FloorBounds,
+} from "./house-blueprints";
 
 /** A rectangle of the room, in room percent (see house-arrangement-guide). */
 export type GuideZoneBounds = { x0: number; x1: number; y0: number; y1: number };
@@ -369,6 +374,11 @@ function fourRoomPartitionSegments(
 
 /** Home types that have the four-room plan: sitting room, bedroom, kitchen and dining, bathroom. */
 export const FOUR_ROOM_HOME_TYPES: readonly string[] = ["mini-flat", "bungalow", "duplex"];
+
+/** Blueprint homes open as a cutaway; this same default drives the wall button and scene. */
+export function houseWallsDefaultClosed(houseTypeId: string): boolean {
+  return FOUR_ROOM_HOME_TYPES.includes(houseTypeId) && !isBlueprintHomeType(houseTypeId);
+}
 
 export function housePartitionSegments(
   houseTypeId: string,

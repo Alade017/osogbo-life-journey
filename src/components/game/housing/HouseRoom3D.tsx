@@ -31,6 +31,7 @@ import {
   houseWallSegments,
   houseRearDoorCenter,
   FOUR_ROOM_HOME_TYPES,
+  houseWallsDefaultClosed,
   houseRoomViews,
   roomViewContains,
   roomViewHidesSegment,
@@ -259,7 +260,7 @@ function OsogboRoomPrototype({
           width={width}
           depth={depth}
           editMode={editMode}
-          wallsClosed={wallsClosed ?? false}
+          wallsClosed={wallsClosed ?? houseWallsDefaultClosed(houseTypeId)}
           roomView={roomView}
         />
         <HouseDoorPanel
@@ -290,7 +291,7 @@ function OsogboRoomPrototype({
           height,
           doorwayWidth,
           rearDoorCenter,
-          wallsClosed ?? FOUR_ROOM_HOME_TYPES.includes(houseTypeId),
+          wallsClosed ?? houseWallsDefaultClosed(houseTypeId),
         )
           .filter((segment) => !roomView || !roomViewHidesSegment(segment, roomView))
           .map((segment) => (
@@ -2235,7 +2236,7 @@ export function HouseRoom3D({
               ? STUDIO_FURNITURE_STYLE
               : houseTypeId === "shared-room"
                 ? SHARED_FURNITURE_STYLE
-                : houseTypeId === "single-room"
+                : houseTypeId === "single-room" || houseTypeId === "mini-flat"
                   ? PRIVATE_FURNITURE_STYLE
                   : DEFAULT_FURNITURE_STYLE
           }
