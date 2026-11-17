@@ -59,7 +59,6 @@ import "@/components/map/map-ui.css";
 import "@/components/map/map-hud.css";
 import "@/components/map/neighborhood-city-map.css";
 import "@/components/map/map-explorer.css";
-import { MapTicker } from "@/components/map/MapTicker";
 
 const categories: { id: MapFilter; label: string }[] = [
   { id: "all", label: "All" },
@@ -492,7 +491,6 @@ export function CityMapDashboard({
         </header>
       </details>
       <div className="map-news">
-        <MapTicker />
       </div>
       {offline && (
         <div role="status" className="map-offline-banner">
