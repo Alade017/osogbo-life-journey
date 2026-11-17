@@ -1,3 +1,4 @@
+import type { BankInteriorVariant } from "@/game/bank-interiors";
 import { WORLD_PALETTE } from "@/components/3d/world-theme";
 export type VenueFixtureKind =
   "counter" | "table" | "bench" | "shelf" | "screen" | "display" | "planter" | "seat";
@@ -18,6 +19,9 @@ export type VenueEnvironment = {
 };
 
 export type LocationVenueDesign = {
+  bankInterior?: BankInteriorVariant;
+  transportPark?: boolean;
+  sceneBounds?: { width: number; depth: number };
   scene?: "campus" | "market" | "clinic" | "healthcare";
   sceneSize?: { width: number; depth: number };
   name: string;
@@ -200,13 +204,14 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     ],
   },
   "cedar-bank": {
+    bankInterior: "teller-hall",
     name: "Cedar Bank lobby",
-    description: "A calm banking lobby with a teller counter and queue seating.",
+    description: "A timber-finished teller hall with screened service windows, a guided queue and shared seating.",
     floorColor: "#d5d1c5",
     wallColor: "#e6e1d4",
     accentColor: "#4b806f",
     fixtures: [
-      fixture("cedar-teller", "Teller counter", "A staffed service counter.", "counter", 0, -1.6),
+      fixture("cedar-teller", "Teller counter", "Screened teller windows beside the queue. Open bank services for account actions.", "counter", 0, -1.6),
       fixture("cedar-queue", "Queue seats", "Seats beside the service queue.", "seat", -2.8, 0.9),
       fixture(
         "cedar-info",
@@ -219,8 +224,9 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     ],
   },
   "meridian-bank": {
+    bankInterior: "digital-lounge",
     name: "Meridian Bank lobby",
-    description: "A modern branch lobby with self-service points and a private desk.",
+    description: "An open self-service branch with twin kiosks, window seating and a screened customer-service desk.",
     floorColor: "#c8d2d0",
     wallColor: "#e3e9e5",
     accentColor: "#527c9b",
@@ -228,7 +234,7 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
       fixture(
         "meridian-service",
         "Service desk",
-        "A private customer service point.",
+        "A screened customer-service desk separate from the self-service area.",
         "counter",
         2.5,
         -1.4,
@@ -236,7 +242,7 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
       fixture(
         "meridian-kiosk",
         "Self-service kiosk",
-        "A simple branch information terminal.",
+        "Twin self-service information terminals. Account actions use the existing bank services.",
         "screen",
         -2.5,
         -0.8,
@@ -285,6 +291,8 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     ],
   },
   "transit-park": {
+    transportPark: true,
+    sceneBounds: { width: 12, depth: 9 },
     name: "Transit concourse",
     description: "A practical transit waiting area beside route information and ticketing.",
     floorColor: "#c9c7bc",

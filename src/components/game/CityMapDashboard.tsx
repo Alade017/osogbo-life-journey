@@ -1,3 +1,4 @@
+import { transportPreference } from "@/lib/transport-park";
 import "@/components/map/map-compact.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
@@ -134,6 +135,8 @@ export function CityMapDashboard({
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const mapHref = useLocation({ select: (location) => location.href });
+  const preferredTransport = transportPreference(mapHref);
+  useEffect(() => { if (preferredTransport) { setMapLevel("town"); setTownFocus("3d-town"); } }, [preferredTransport]);
   const requestedBillboardId = new URLSearchParams(mapHref.split("?")[1]?.split("#")[0] ?? "").get(
     "billboard",
   );
@@ -332,6 +335,7 @@ export function CityMapDashboard({
   });
   const closeTravelSelector = travelController.close;
   const selectDestination = travelController.select;
+  const selectPreferredMode = travelController.selectMode;
   const setDestinationTab = travelController.setTab;
   const onDistrict = (id: string) => {
     if (travelController.busy || travelController.arrivalConfirmed) return;
@@ -350,11 +354,12 @@ export function CityMapDashboard({
       if (found) {
         setSelectedDistrict(null);
         selectDestination(found);
+        if (preferredTransport) selectPreferredMode(preferredTransport);
         setActionError("");
         setPlaceActionResult(null);
       }
     },
-    [availableLandmarks.data, selectDestination],
+    [availableLandmarks.data, selectDestination, preferredTransport, selectPreferredMode],
   );
   const deepLinkedLandmark = useRef<string | null>(null);
   useEffect(() => {
