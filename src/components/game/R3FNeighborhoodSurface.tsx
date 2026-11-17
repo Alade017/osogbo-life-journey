@@ -74,10 +74,12 @@ import { NEIGHBORHOOD_CAMERA, WORLD_PALETTE, WORLD_SCALE } from "../3d/world-the
 import {
   carSpots,
   pedestrianCrossings,
+  pedestrianCrossingStripes,
   pedestrianSpots,
   roadMarkings,
   sidewalksAndCurbs,
   streetLightSpots,
+  treeVisualProfile,
   vendorSpots,
   type DressingRect,
 } from "@/game/neighborhood-dressing";
@@ -383,17 +385,6 @@ function NeighborhoodNpcActor({
 const SKY_FOG_NEAR_SCALE = 0.42;
 const SKY_FOG_FAR_SCALE = 1.05;
 /** Whether an obstacle sits inside a real model's footprint, so its procedural stand-in is skipped. */
-/** Heading along the road a point sits nearest to: quarter turn on north–south roads. */
-function vehicleHeading(area: NeighborhoodArea, spot: WorldPoint) {
-  let best: { distance: number; vertical: boolean } | null = null;
-  for (const road of area.roads ?? []) {
-    if (road.type === "lane") continue;
-    const vertical = road.axis === "vertical";
-    const distance = Math.abs((vertical ? spot.x : spot.y) - road.offset);
-    if (!best || distance < best.distance) best = { distance, vertical };
-  }
-  return best?.vertical ? Math.PI / 2 : 0;
-}
 
 function insideEnvironment(
   environment: { x: number; y: number; width: number; height: number } | undefined,
@@ -535,11 +526,13 @@ export function R3FNeighborhoodSurface({
   // Street dressing comes from the area's own roads, objects and stalls.
   const dressing = useMemo(() => {
     const kerbs = sidewalksAndCurbs(area, bounds);
+    const crossings = pedestrianCrossings(area);
     return {
       markings: roadMarkings(area, bounds),
       sidewalks: kerbs.sidewalks,
       curbs: kerbs.curbs,
-      crossings: pedestrianCrossings(area),
+      crossings,
+      crossingStripes: pedestrianCrossingStripes(crossings),
       lights: streetLightSpots(area, bounds),
       cars: carSpots(area, bounds),
       people: pedestrianSpots(area, bounds),
@@ -563,11 +556,14 @@ export function R3FNeighborhoodSurface({
       });
     return {
       markings: flat(dressing.markings, 0.07, 0.03),
-      crossings: flat(dressing.crossings, 0.07, 0.03),
+      crossings: flat(dressing.crossingStripes, 0.07, 0.03),
       sidewalks: flat(dressing.sidewalks, 0.05, 0.1),
       curbs: flat(dressing.curbs, 0.09, 0.14),
       lights: onGround(dressing.lights),
-      cars: onGround(dressing.cars.slice(2)),
+      cars: dressing.cars.slice(2).map((spot) => {
+        const p = point(spot.x, spot.y);
+        return [p[0], p[2], spot.rotation] as [number, number, number];
+      }),
       people: onGround(dressing.people),
       vendors: onGround(dressing.vendors),
     };
@@ -583,9 +579,9 @@ export function R3FNeighborhoodSurface({
         id: `vehicle-${index}`,
         parts: index === 0 ? busModel : tukTukModel,
         position: point(spot.x, spot.y),
-        rotation: vehicleHeading(area, spot),
+        rotation: spot.rotation,
       })),
-    [area, dressing, point, busModel, tukTukModel],
+    [dressing, point, busModel, tukTukModel],
   );
   const scenePoints = useMemo(
     () =>
@@ -678,16 +674,13 @@ export function R3FNeighborhoodSurface({
     () =>
       (area.obstacles ?? [])
         .filter((o) => o.kind === "tree" && !o.id.startsWith("perimeter-tree"))
-        .map((o, index) => {
-          const p = point(o.x, o.y);
-
-          // Deterministic variation based on tree index.
-          const variation = (index * 17) % 30;
-
+        .map((obstacle) => {
+          const p = point(obstacle.x, obstacle.y);
+          const profile = treeVisualProfile(obstacle);
           return {
             position: [p[0], p[2]],
-            height: 0.85 + variation / 100,
-            canopyScale: 0.85 + ((index * 13) % 35) / 100,
+            height: profile.height,
+            canopyScale: profile.canopyScale,
           };
         }),
     [area.obstacles, point],
