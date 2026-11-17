@@ -98,7 +98,7 @@ export function tokenPoint(colour: Colour, step: number, token: number): Point {
 
 /** Yard rectangles, one per arm: a 6-cell square in the corner beside the arm. */
 export function yardRect(arm: number): { x: number; y: number; size: number } {
-  const corner = turnPointBy(YARD_CENTRE, arm + 1);
+  const corner = turnPointBy(YARD_CENTRE, arm);
   const size = EDGE;
   return { x: corner.x - size / 2, y: corner.y - size / 2, size };
 }
