@@ -1,4 +1,10 @@
-import { Component, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
+import { HealthcareScene } from "@/components/3d/HealthcareScene";
+import { MarketTradingHall } from "@/components/3d/MarketTradingScene";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { VenueSceneBoundary } from "./VenueSceneBoundary";
+
+const ClinicVenue = lazy(() => import("./ClinicVenue").then(module => ({ default: module.ClinicVenue })));
+const SchoolCampusVenue = lazy(() => import("./SchoolCampusVenue").then(module => ({ default: module.SchoolCampusVenue })));
 import { Canvas } from "@react-three/fiber";
 import { WorldCamera, WorldLighting, WorldMaterial } from "@/components/3d/WorldScene";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
@@ -12,25 +18,6 @@ import { VenueFurnitureModel } from "@/components/3d/VenueFurniture";
 import { useOptionalGameTime } from "@/components/game/GameTimeProvider";
 
 const SCENE_START_TIMEOUT_MS = 5_000;
-
-class VenueSceneBoundary extends Component<
-  { children: ReactNode; onError: () => void },
-  { failed: boolean }
-> {
-  override state = { failed: false };
-
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-
-  override componentDidCatch() {
-    this.props.onError();
-  }
-
-  override render() {
-    return this.state.failed ? null : this.props.children;
-  }
-}
 
 function FixtureModel({
   fixture,
@@ -61,7 +48,11 @@ function FixtureModel({
   );
 }
 
-export function LocationVenueScene({ slug, locationName }: { slug: string; locationName: string }) {
+function BasicLocationVenueScene({ slug, locationName, onBrowseMarket }: {
+  slug: string;
+  locationName: string;
+  onBrowseMarket?: () => void;
+}) {
   const venue = useMemo(() => getLocationVenueDesign(slug, locationName), [slug, locationName]);
   const gameTime = useOptionalGameTime();
   // Shops with trading hours show their shutter open or closed for the current game hour.
@@ -121,9 +112,13 @@ export function LocationVenueScene({ slug, locationName }: { slug: string; locat
               onCreated={() => setSceneStatus("ready")}
               aria-hidden="true"
             >
-              <WorldCamera width={10} depth={7} stage target={[0, 1.2, 0]} zoom={1.2} />
+              <WorldCamera width={venue.sceneSize?.width ?? 10} depth={venue.sceneSize?.depth ?? 7} stage target={[0, 1.2, 0]} zoom={1.2} />
               <WorldLighting size={14} />
-              {venue.environment ? (
+              {venue.scene === "healthcare" ? (
+                <HealthcareScene fixtures={venue.fixtures} selected={selectedFixture} onSelect={setSelectedFixture} />
+              ) : venue.scene === "market" ? (
+                <MarketTradingHall fixtures={venue.fixtures} selected={selectedFixture} onSelect={setSelectedFixture} />
+              ) : venue.environment ? (
                 <VenueEnvironment
                   url={venue.environment.url}
                   open={shutterOpen}
@@ -177,6 +172,12 @@ export function LocationVenueScene({ slug, locationName }: { slug: string; locat
         )}
       </div>
 
+      {venue.scene === "market" && onBrowseMarket && (
+        <button type="button" onClick={onBrowseMarket}
+          className="rounded-lg border border-edge bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground">
+          Browse market offers
+        </button>
+      )}
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(14rem,0.8fr)]">
         <div>
           <h3 className="mb-2 text-sm font-bold">Explore a feature</h3>
@@ -208,4 +209,18 @@ export function LocationVenueScene({ slug, locationName }: { slug: string; locat
       </div>
     </section>
   );
+}
+
+export function LocationVenueScene(props: { slug: string; locationName: string; onBrowseMarket?: () => void }) {
+  const venue = getLocationVenueDesign(props.slug, props.locationName);
+  if (venue.scene === "clinic") return (
+    <Suspense fallback={<WorldLoadingIndicator title="Opening the clinic" detail="Preparing the rooms…" />}>
+      <ClinicVenue key={props.slug} slug={props.slug} locationName={props.locationName} />
+    </Suspense>
+  );
+  return venue.scene === "campus" ? (
+    <Suspense fallback={<WorldLoadingIndicator title="Opening the campus" detail="Preparing the grounds…" />}>
+      <SchoolCampusVenue key={props.slug} slug={props.slug} locationName={props.locationName} />
+    </Suspense>
+  ) : <BasicLocationVenueScene {...props} />;
 }

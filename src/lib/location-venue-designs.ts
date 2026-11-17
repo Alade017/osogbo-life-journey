@@ -1,3 +1,4 @@
+import { WORLD_PALETTE } from "@/components/3d/world-theme";
 export type VenueFixtureKind =
   "counter" | "table" | "bench" | "shelf" | "screen" | "display" | "planter" | "seat";
 
@@ -17,6 +18,8 @@ export type VenueEnvironment = {
 };
 
 export type LocationVenueDesign = {
+  scene?: "campus" | "market" | "clinic" | "healthcare";
+  sceneSize?: { width: number; depth: number };
   name: string;
   description: string;
   floorColor: string;
@@ -44,7 +47,45 @@ function fixture(
 }
 
 const venues: Readonly<Record<string, LocationVenueDesign>> = {
+  "student-district": {
+    scene: "campus",
+    name: "School campus",
+    description:
+      "A teaching campus with a shared courtyard, classroom, library and administration office.",
+    floorColor: WORLD_PALETTE.tileLight,
+    wallColor: WORLD_PALETTE.wall,
+    accentColor: WORLD_PALETTE.foliage,
+    fixtures: [
+      fixture(
+        "campus-classroom",
+        "Classroom",
+        "Inspect the teaching space, then browse available courses.",
+        "table",
+        -2.5,
+        0,
+      ),
+      fixture(
+        "campus-library",
+        "Campus library",
+        "Browse the campus study space.",
+        "shelf",
+        2.5,
+        0,
+      ),
+      fixture(
+        "campus-administration",
+        "Administration",
+        "Find the existing course and enrolment options.",
+        "counter",
+        0,
+        -2,
+      ),
+    ],
+  },
+
   "oja-oba": {
+    scene: "market",
+    sceneSize: { width: 12, depth: 9 },
     name: "Oja-Oba trading hall",
     description:
       "An Osogbo-inspired covered market interior with produce, staple-goods and household trading spaces.",
@@ -224,6 +265,7 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     ],
   },
   "community-clinic": {
+    scene: "clinic",
     name: "Community clinic",
     description: "A clean reception and care area with clear visitor seating.",
     floorColor: "#d0ded8",
@@ -355,6 +397,8 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     ],
   },
   "sunrise-health-post": {
+    scene: "healthcare",
+    sceneSize: { width: 12, depth: 9 },
     name: "Sunrise health post",
     description: "A small health post with reception, care space and patient seating.",
     floorColor: "#d2e0d7",
@@ -758,12 +802,16 @@ const fallbackVenue: LocationVenueDesign = {
 };
 
 export function getLocationVenueDesign(slug: string, locationName: string): LocationVenueDesign {
-  const design = venues[slug] ?? fallbackVenue;
+  const design = venues[slug] ?? (
+    ["state-hospital", "general-hospital"].includes(slug)
+      ? { ...venues["sunrise-health-post"], name: locationName }
+      : fallbackVenue
+  );
   return design === fallbackVenue ? { ...fallbackVenue, name: locationName } : design;
 }
 
 export function hasLocationVenueDesign(slug: string) {
-  return Object.hasOwn(venues, slug);
+  return Object.hasOwn(venues, slug) || ["state-hospital", "general-hospital"].includes(slug);
 }
 
 /**
