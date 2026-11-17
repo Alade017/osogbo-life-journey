@@ -247,6 +247,7 @@ function GameLayout() {
             pathname === "/house" && "home-scene",
             profile?.reduced_motion && "reduce-motion",
             phoneOpen && "phone-open",
+            housingOpen && "hud-menu-open",
             hudIdle && "hud-idle",
           )}
         >
