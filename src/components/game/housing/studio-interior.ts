@@ -101,10 +101,19 @@ export function createBlueprintInterior(
       const w = Math.min(tile, width / 2 - x),
         d = Math.min(tile, depth / 2 - z);
       const wet = wetAreas.some((area) => boundsContain(area, x + w / 2, z + d / 2));
+      const gym =
+        "gymAreas" in plan &&
+        plan.gymAreas.some((area) => boundsContain(area, x + w / 2, z + d / 2));
       tiles.push({
         position: [x + w / 2, 0.026, z + d / 2],
         size: [w - 0.008, 0.025, d - 0.008],
-        color: wet ? finish.wetTile : (row + col) % 2 ? finish.tile : finish.tileAlternate,
+        color: wet
+          ? finish.wetTile
+          : gym
+            ? finish.gymFloor
+            : (row + col) % 2
+              ? finish.tile
+              : finish.tileAlternate,
       });
     }
   }

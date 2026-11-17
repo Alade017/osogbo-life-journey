@@ -11,6 +11,7 @@ export const STUDIO_FINISH = {
   tileAlternate: "#dfd0b8",
   grout: "#c3b39b",
   wetTile: "#a8ada3",
+  gymFloor: "#626e65",
   wood: "#a4784d",
   woodAlternate: "#b18658",
   sage: "#677357",

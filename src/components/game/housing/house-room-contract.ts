@@ -517,6 +517,7 @@ export const HOUSE_ROOM_ID = {
   ensuite: "ensuite",
   dining: "dining",
   hallway: "hallway",
+  gym: "gym",
 } as const;
 export type HouseRoomId = (typeof HOUSE_ROOM_ID)[keyof typeof HOUSE_ROOM_ID];
 
@@ -532,6 +533,7 @@ export const HOUSE_ROOM_LABEL: Record<HouseRoomId, string> = {
   [HOUSE_ROOM_ID.ensuite]: "Master ensuite",
   [HOUSE_ROOM_ID.dining]: "Dining room",
   [HOUSE_ROOM_ID.hallway]: "Hallway",
+  [HOUSE_ROOM_ID.gym]: "Gym / shared room",
 };
 
 /** Picker button that goes back to the whole home. */

@@ -12,15 +12,17 @@ function bungalowGuideBounds(slotType: string, artKey: string): GuideZoneBounds 
   const [width, depth] = HOUSE_ROOM_SIZE["bungalow"]!;
   const plan = bungalowBlueprint(width, depth);
   const id =
-    slotType === "bed" || slotType === "storage" || slotType === "light"
-      ? "bedroom-2"
-      : slotType === "bathroom"
-        ? "bathroom"
-        : slotType === "kitchen"
-          ? "kitchen"
-          : artKey === "dining-table" || artKey === "dining-chair"
-            ? "dining"
-            : "sitting";
+    slotType === "fitness"
+      ? "gym"
+      : slotType === "bed" || slotType === "storage" || slotType === "light"
+        ? "bedroom-2"
+        : slotType === "bathroom"
+          ? "bathroom"
+          : slotType === "kitchen"
+            ? "kitchen"
+            : artKey === "dining-table" || artKey === "dining-chair"
+              ? "dining"
+              : "sitting";
   const room = plan.rooms.find((room) => room.id === id)!;
   const [x0, y1] = roomCoordinatesToPercent(room.minX, room.minZ, width, depth);
   const [x1, y0] = roomCoordinatesToPercent(room.maxX, room.maxZ, width, depth);
@@ -64,6 +66,11 @@ export function guideFor(
   if (isWallArtKind(artKey)) {
     return { hint: "On the back wall. Slide it to where you want it.", zoneBounds: null };
   }
+  if (houseTypeId === "bungalow" && slotType === "fitness")
+    return {
+      hint: "In the shared gym, leaving space around equipment and the door.",
+      zoneBounds: bungalowGuideBounds(slotType, artKey),
+    };
   const rule = GUIDE_RULES[slotType];
   if (!rule) return null;
   if (houseTypeId === "bungalow")

@@ -26,13 +26,28 @@ import {
 import type { HousePlacement } from "@/components/game/housing/HouseRoomScene";
 
 const [width, depth] = HOUSE_ROOM_SIZE["bungalow"]!;
-describe("three-bedroom bungalow", () => {
-  it("has three distinct bedrooms, a master ensuite and a common bathroom", () => {
+describe("two-bedroom bungalow with shared gym", () => {
+  it("has two bedrooms, a shared gym and an enlarged common bathroom", () => {
     const rooms = houseRoomViews("bungalow", width, depth);
-    expect(rooms.filter((room) => room.id.startsWith("bedroom"))).toHaveLength(3);
+    expect(rooms.filter((room) => room.id.startsWith("bedroom"))).toHaveLength(2);
     expect(rooms.map((room) => room.id)).toEqual(
-      expect.arrayContaining(["sitting", "dining", "kitchen", "bathroom", "ensuite", "hallway"]),
+      expect.arrayContaining([
+        "sitting",
+        "dining",
+        "kitchen",
+        "bathroom",
+        "ensuite",
+        "hallway",
+        "gym",
+      ]),
     );
+    const bath = rooms.find((room) => room.id === "bathroom")!;
+    const area = (bath.maxX - bath.minX) * (bath.maxZ - bath.minZ);
+    expect(area).toBeCloseTo(11.96);
+    expect(area / ((width / 2 - 3) * (2.5 - 0.2))).toBeCloseTo(1.3);
+    const gymZone = guideFor("fitness", "treadmill", "bungalow")!.zoneBounds!;
+    const [gx, gy] = roomCoordinatesToPercent(-1.3, 3, width, depth);
+    expect(gx >= gymZone.x0 && gx <= gymZone.x1 && gy >= gymZone.y0 && gy <= gymZone.y1).toBe(true);
     const ensuite = rooms.find((room) => room.id === "ensuite")!,
       master = rooms.find((room) => room.id === "bedroom")!;
     expect(roomViewContains(master, 6, 4.5, 0)).toBe(false);

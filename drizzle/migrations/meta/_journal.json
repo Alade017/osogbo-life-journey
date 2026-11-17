@@ -722,6 +722,13 @@
       "when": 1794463211000,
       "tag": "0101_clinic_staff_assignment",
       "breakpoints": true
+    },
+    {
+      "idx": 102,
+      "version": "7",
+      "when": 1794963600000,
+      "tag": "0102_bungalow_two_bedroom_gym",
+      "breakpoints": true
     }
   ]
 }

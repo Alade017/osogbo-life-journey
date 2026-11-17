@@ -431,8 +431,8 @@
   {
     "id": "bungalow",
     "name": "Bungalow",
-    "description": "A single-storey family home with room for shared household life.",
-    "bedrooms": 3,
+    "description": "A two-bedroom bungalow with a shared gym room, a spacious common bathroom and a master ensuite.",
+    "bedrooms": 2,
     "floors": 1,
     "shared_facilities": false,
     "weekly_rent_minor": 22000,
