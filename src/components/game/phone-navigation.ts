@@ -114,7 +114,8 @@ export function handlePhoneLinkClick(
     (anchor.target && anchor.target !== "_self")
   )
     return;
-  if (isFullPageWorldPath(anchor.pathname)) {
+  // Inventory is a standalone game screen, never a nested phone app.
+  if (anchor.pathname === "/inventory" || isFullPageWorldPath(anchor.pathname)) {
     if (openWorld) {
       event.preventDefault();
       event.stopPropagation();
