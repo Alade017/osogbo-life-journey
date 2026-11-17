@@ -4,16 +4,10 @@ type HeadwearStyle = 0 | 1 | 2 | 3;
  * Lightweight procedural Yoruba and everyday headwear.
  * Coordinates are local to the existing head bone; no rig changes are required.
  */
-export function ProceduralHeadwear({
-  style,
-  color,
-}: {
-  style: HeadwearStyle;
-  color: string;
-}) {
+export function ProceduralHeadwear({ style, color }: { style: HeadwearStyle; color: string }) {
   const trim = "#e9dfc8";
   return (
-    <group position={[0, 0.12, 0]} name="procedural-headwear">
+    <group position={[0, 0.19, 0]} scale={[0.8, 0.9, 0.8]} name="procedural-headwear">
       {style === 1 ? (
         <group name="yoruba-gele" rotation={[0.04, 0, -0.025]}>
           <mesh position={[0, 0.018, -0.006]} scale={[1.04, 0.78, 0.88]} castShadow>
@@ -28,11 +22,21 @@ export function ProceduralHeadwear({
             <torusGeometry args={[0.058, 0.014, 8, 24]} />
             <meshStandardMaterial color={trim} roughness={0.88} />
           </mesh>
-          <mesh position={[-0.088, 0.038, -0.018]} rotation={[0.1, 0, -0.42]} scale={[1.1, 0.7, 0.72]} castShadow>
+          <mesh
+            position={[-0.088, 0.038, -0.018]}
+            rotation={[0.1, 0, -0.42]}
+            scale={[1.1, 0.7, 0.72]}
+            castShadow
+          >
             <sphereGeometry args={[0.064, 16, 10]} />
             <meshStandardMaterial color={color} roughness={0.92} />
           </mesh>
-          <mesh position={[0.088, 0.038, -0.018]} rotation={[-0.1, 0, 0.42]} scale={[1.1, 0.7, 0.72]} castShadow>
+          <mesh
+            position={[0.088, 0.038, -0.018]}
+            rotation={[-0.1, 0, 0.42]}
+            scale={[1.1, 0.7, 0.72]}
+            castShadow
+          >
             <sphereGeometry args={[0.064, 16, 10]} />
             <meshStandardMaterial color={color} roughness={0.92} />
           </mesh>
@@ -62,7 +66,12 @@ export function ProceduralHeadwear({
             <sphereGeometry args={[0.098, 20, 12]} />
             <meshStandardMaterial color={color} roughness={0.86} />
           </mesh>
-          <mesh position={[0, 0.012, 0.066]} rotation={[-0.12, 0, 0]} scale={[1, 0.22, 1.45]} castShadow>
+          <mesh
+            position={[0, 0.012, 0.066]}
+            rotation={[-0.12, 0, 0]}
+            scale={[1, 0.22, 1.45]}
+            castShadow
+          >
             <sphereGeometry args={[0.065, 20, 10]} />
             <meshStandardMaterial color={color} roughness={0.84} />
           </mesh>

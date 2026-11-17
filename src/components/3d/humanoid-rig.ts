@@ -1,10 +1,8 @@
-﻿import {
+import {
   Bone,
   BufferGeometry,
   Float32BufferAttribute,
   MeshStandardMaterial,
-  LatheGeometry,
-  Vector2,
   Skeleton,
   SkinnedMesh,
   SphereGeometry,
@@ -55,35 +53,72 @@ function skinTo(geometry: BufferGeometry, boneIndex: number, preSkinned = false)
   return flat;
 }
 
-/** Tapered lathe surface for limbs: avoids the stack-of-balls silhouette while keeping the existing bone contract. */
-function taperedSegment(
-  radiusBottom: number,
-  radiusTop: number,
-  length: number,
-  at: [number, number, number],
-  bone: BoneName,
+type ProfileRing = { y: number; x: number; z: number; cx?: number; cz?: number };
+type RingWeights = readonly [BoneName, BoneName, number];
+
+/** Closed polygonal cross-sections. Ring weights keep elbows and knees joined as they bend. */
+function profilePart(
+  rings: readonly ProfileRing[],
+  weightsFor: (y: number) => RingWeights,
+  segments = 12,
 ): Part {
-  const half = length / 2;
-  const r = radiusBottom;
-  const t = radiusTop;
-  const geometry = new LatheGeometry(
-    [
-      new Vector2(0, -half),
-      new Vector2(r * 0.62, -half * 0.96),
-      new Vector2(r * 0.92, -half * 0.78),
-      new Vector2(r, -half * 0.38),
-      new Vector2((r + t) * 0.5, half * 0.18),
-      new Vector2(t, half * 0.62),
-      new Vector2(t * 0.78, half * 0.9),
-      new Vector2(0, half),
-    ],
-    12,
-  );
-  geometry.translate(...at);
-  return { geometry, bone, accessory: false };
+  const positions: number[] = [],
+    indices: number[] = [],
+    uvs: number[] = [];
+  const skinIndices: number[] = [],
+    skinWeights: number[] = [];
+  const append = (x: number, y: number, z: number, u: number) => {
+    positions.push(x, y, z);
+    uvs.push(u, y);
+    const [lower, upper, blend] = weightsFor(y);
+    skinIndices.push(
+      JOINTS.findIndex((j) => j.name === lower),
+      JOINTS.findIndex((j) => j.name === upper),
+      0,
+      0,
+    );
+    skinWeights.push(1 - blend, blend, 0, 0);
+  };
+  rings.forEach((ring) => {
+    for (let i = 0; i < segments; i++) {
+      const angle = (i / segments) * Math.PI * 2;
+      append(
+        (ring.cx ?? 0) + Math.cos(angle) * ring.x,
+        ring.y,
+        (ring.cz ?? 0) + Math.sin(angle) * ring.z,
+        i / segments,
+      );
+    }
+  });
+  for (let r = 0; r < rings.length - 1; r++) {
+    for (let i = 0; i < segments; i++) {
+      const a = r * segments + i,
+        b = r * segments + ((i + 1) % segments);
+      indices.push(a, a + segments, b, b, a + segments, b + segments);
+    }
+  }
+  for (const top of [false, true]) {
+    const ring = rings[top ? rings.length - 1 : 0]!;
+    const center = positions.length / 3;
+    append(ring.cx ?? 0, ring.y, ring.cz ?? 0, 0.5);
+    const start = top ? (rings.length - 1) * segments : 0;
+    for (let i = 0; i < segments; i++) {
+      const a = start + i,
+        b = start + ((i + 1) % segments);
+      indices.push(...(top ? [center, b, a] : [center, a, b]));
+    }
+  }
+  const geometry = new BufferGeometry();
+  geometry.setAttribute("position", new Float32BufferAttribute(positions, 3));
+  geometry.setAttribute("uv", new Float32BufferAttribute(uvs, 2));
+  geometry.setAttribute("skinIndex", new Uint16BufferAttribute(skinIndices, 4));
+  geometry.setAttribute("skinWeight", new Float32BufferAttribute(skinWeights, 4));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return { geometry, bone: BONE.root, accessory: false, preSkinned: true };
 }
 
-/** Smooth UV spheres replace the old faceted icosahedra; detail is concentrated around the face and torso. */
+/** Small low-poly volumes for ears, fingers and facial details. */
 function blob(
   radii: [number, number, number],
   at: [number, number, number],
@@ -102,7 +137,7 @@ const SHAPES: Record<BodyVariant, { shoulder: number; waist: number; hip: number
     business: { shoulder: 1, waist: 1, hip: 1, bust: 0 },
     female: { shoulder: 0.92, waist: 0.88, hip: 1.1, bust: 1 },
   };
-const BUILD_FACTORS = [
+export const HUMANOID_BUILD_FACTORS = [
   { shoulder: 0.9, waist: 0.86, hip: 0.92, limb: 0.9 },
   { shoulder: 1, waist: 1, hip: 1, limb: 1 },
   { shoulder: 1.07, waist: 0.94, hip: 1.02, limb: 1.06 },
@@ -120,10 +155,10 @@ function torsoSurface(shape: { shoulder: number; waist: number; hip: number }): 
     { y: 0.73, x: 0.157 * shape.shoulder, z: 0.105 },
     { y: 0.78, x: 0.174 * shape.shoulder, z: 0.112 },
     { y: 0.83, x: 0.165 * shape.shoulder, z: 0.105 },
-    { y: 0.87, x: 0.125 * shape.shoulder, z: 0.085 },
-    { y: 0.89, x: 0.072, z: 0.06 },
+    { y: 0.85, x: 0.13 * shape.shoulder, z: 0.073 },
+    { y: 0.88, x: 0.046, z: 0.043 },
   ];
-  const radialSegments = 20;
+  const radialSegments = 16;
   const positions: number[] = [];
   const indices: number[] = [];
   const skinIndices: number[] = [];
@@ -137,7 +172,11 @@ function torsoSurface(shape: { shoulder: number; waist: number; hip: number }): 
       const angle = (segment / radialSegments) * Math.PI * 2;
       const front = Math.max(0, Math.sin(angle));
       const back = Math.max(0, -Math.sin(angle));
-      const frontFullness = ring.y >= 0.7 && ring.y <= 0.81 ? 0.012 * front : 0;
+      const frontFullness =
+        ring.y >= 0.7 && ring.y <= 0.81
+          ? front *
+            (0.008 + 0.014 * Math.exp(-Math.pow((Math.abs(Math.cos(angle)) - 0.5) / 0.3, 2)))
+          : 0;
       const backFullness = ring.y >= 0.5 && ring.y <= 0.59 ? 0.008 * back : 0;
       positions.push(
         Math.cos(angle) * ring.x,
@@ -179,9 +218,9 @@ function torsoSurface(shape: { shoulder: number; waist: number; hip: number }): 
   skinWeights.push(1, 0, 0, 0);
   for (let segment = 0; segment < radialSegments; segment += 1) {
     const next = (segment + 1) % radialSegments;
-    indices.push(bottomCenter, next, segment);
+    indices.push(bottomCenter, segment, next);
     const topStart = (rings.length - 1) * radialSegments;
-    indices.push(topCenter, topStart + segment, topStart + next);
+    indices.push(topCenter, topStart + next, topStart + segment);
   }
   const geometry = new BufferGeometry();
   geometry.setAttribute("position", new Float32BufferAttribute(positions, 3));
@@ -193,7 +232,7 @@ function torsoSurface(shape: { shoulder: number; waist: number; hip: number }): 
   return { geometry, bone: BONE.root, accessory: false, preSkinned: true };
 }
 
-/** Overlapping smooth volumes create continuous-looking muscle transitions at game scale. */
+/** Rest surfaces follow the existing shoulder/elbow/wrist and hip/knee/ankle pivots. */
 function limbParts(side: 1 | -1, shape: { shoulder: number; hip: number; limb: number }): Part[] {
   const upper = side === 1 ? BONE.lUpperArm : BONE.rUpperArm;
   const fore = side === 1 ? BONE.lForearm : BONE.rForearm;
@@ -201,42 +240,84 @@ function limbParts(side: 1 | -1, shape: { shoulder: number; hip: number; limb: n
   const thigh = side === 1 ? BONE.lThigh : BONE.rThigh;
   const calf = side === 1 ? BONE.lCalf : BONE.rCalf;
   const foot = side === 1 ? BONE.lFoot : BONE.rFoot;
-  const ax = 0.19 * side * shape.shoulder;
-  const lx = 0.1 * side * shape.hip;
-  const arm = shape.limb;
-  const thighWidth = 0.073 * shape.hip * arm;
-  const fingerSpread = 0.012 * arm;
+  const ax = side * 0.19;
+  const lx = side * 0.09;
+  const mass = shape.limb;
+  const arm = profilePart(
+    [
+      { y: 0.445, x: 0.021, z: 0.022 },
+      { y: 0.47, x: 0.025, z: 0.026 },
+      { y: 0.52, x: 0.038, z: 0.035 },
+      { y: 0.57, x: 0.04, z: 0.038 },
+      { y: 0.61, x: 0.032, z: 0.032 },
+      { y: 0.65, x: 0.041, z: 0.041 },
+      { y: 0.71, x: 0.051, z: 0.047 },
+      { y: 0.77, x: 0.055, z: 0.049 },
+      { y: 0.805, x: 0.052, z: 0.045 },
+      { y: 0.835, x: 0.028, z: 0.031 },
+    ].map((r) => ({ ...r, x: r.x * mass, z: r.z * mass, cx: r.y > 0.805 ? ax * 0.9 : ax })),
+    (y) =>
+      y >= 0.77
+        ? [upper, BONE.spine2, Math.min(1, (y - 0.77) / 0.065)]
+        : [fore, upper, Math.max(0, Math.min(1, (y - 0.59) / 0.04))],
+    10,
+  );
+  const leg = profilePart(
+    [
+      { y: 0.04, x: 0.025, z: 0.029 },
+      { y: 0.075, x: 0.027, z: 0.031 },
+      { y: 0.13, x: 0.039, z: 0.039, cz: -0.008 },
+      { y: 0.19, x: 0.043, z: 0.044, cz: -0.006 },
+      { y: 0.25, x: 0.037, z: 0.037 },
+      { y: 0.3, x: 0.052, z: 0.05 },
+      { y: 0.38, x: 0.065, z: 0.064 },
+      { y: 0.46, x: 0.069, z: 0.07 },
+      { y: 0.51, x: 0.061, z: 0.063 },
+      { y: 0.55, x: 0.036, z: 0.046 },
+    ].map((r) => ({ ...r, x: r.x * mass, z: r.z * mass, cx: lx })),
+    (y) =>
+      y >= 0.46
+        ? [thigh, BONE.root, Math.min(1, (y - 0.46) / 0.08)]
+        : [calf, thigh, Math.max(0, Math.min(1, (y - 0.23) / 0.04))],
+    10,
+  );
   return [
-    // Deltoid, upper arm and forearm taper toward the wrist instead of forming oversized balls.
-    taperedSegment(0.061 * arm, 0.052 * arm, 0.15, [ax, 0.79, 0], upper),
-    taperedSegment(0.052 * arm, 0.038 * arm, 0.23, [ax, 0.665, 0], upper),
-    blob([0.039 * arm, 0.047 * arm, 0.039 * arm], [ax, 0.545, 0], fore),
-    taperedSegment(0.039 * arm, 0.03 * arm, 0.19, [ax, 0.46, 0], fore),
-    // Palm, thumb and four individually readable fingers.
-    blob([0.036 * arm, 0.047 * arm, 0.025 * arm], [ax, 0.355, 0.008], hand, { detail: 1 }),
-    blob([0.014 * arm, 0.029 * arm, 0.016 * arm], [ax - side * 0.035 * arm, 0.348, 0.012], hand),
+    arm,
+    leg,
+    blob([0.03 * mass, 0.041, 0.017], [ax, 0.423, 0.004], hand),
+    blob([0.012, 0.027, 0.013], [ax - side * 0.028, 0.418, 0.015], hand),
     ...[-1.5, -0.5, 0.5, 1.5].map((finger) =>
       blob(
-        [0.0065 * arm, 0.027 * arm, 0.008 * arm],
-        [ax + finger * fingerSpread, 0.31, 0.018],
+        [0.006, 0.026 - Math.abs(finger) * 0.003, 0.008],
+        [ax + finger * 0.013, 0.377, 0.009],
         hand,
       ),
     ),
-    // Rounded thigh and a narrower calf with an ankle transition.
-    taperedSegment(thighWidth, 0.052 * arm, 0.31 * arm, [lx, 0.33, 0], thigh),
-    // A small patella volume bridges thigh and shin without a large spherical knee.
-    blob([0.039 * arm, 0.039 * arm, 0.039 * arm], [lx, 0.205, 0.006], calf),
-    taperedSegment(0.049 * arm, 0.034 * arm, 0.19 * arm, [lx, 0.12, -0.008], calf),
-    blob([0.041 * arm, 0.033 * arm, 0.078 * arm], [lx, 0.02, 0.035], foot, { detail: 1 }),
-    // Toe box and heel give the foot a recognizable forward direction.
-    blob([0.042 * arm, 0.025 * arm, 0.045 * arm], [lx, 0.012, 0.075], foot),
-    blob([0.034 * arm, 0.025 * arm, 0.028 * arm], [lx, 0.018, -0.018], foot),
+    blob([0.032, 0.031, 0.062], [lx, 0.03, 0.026], foot),
+    blob([0.035, 0.021, 0.038], [lx, 0.018, 0.064], foot),
   ];
+}
+
+function headPart(): Part {
+  return profilePart(
+    [
+      { y: 0.902, x: 0.031, z: 0.031, cz: 0.014 },
+      { y: 0.919, x: 0.047, z: 0.04, cz: 0.012 },
+      { y: 0.946, x: 0.063, z: 0.049, cz: 0.006 },
+      { y: 0.978, x: 0.073, z: 0.055 },
+      { y: 1.008, x: 0.071, z: 0.058, cz: -0.002 },
+      { y: 1.038, x: 0.063, z: 0.052, cz: -0.004 },
+      { y: 1.059, x: 0.035, z: 0.031, cz: -0.004 },
+      { y: 1.066, x: 0.008, z: 0.008, cz: -0.004 },
+    ],
+    () => [BONE.head, BONE.head, 0],
+    12,
+  );
 }
 
 function bodyParts(variant: BodyVariant, build: number): Part[] {
   const base = SHAPES[variant];
-  const factor = BUILD_FACTORS[Math.max(0, Math.min(3, Math.round(build)))]!;
+  const factor = HUMANOID_BUILD_FACTORS[Math.max(0, Math.min(3, Math.round(build)))]!;
   const shape = {
     shoulder: base.shoulder * factor.shoulder,
     waist: base.waist * factor.waist,
@@ -244,28 +325,25 @@ function bodyParts(variant: BodyVariant, build: number): Part[] {
     bust: base.bust,
     limb: factor.limb,
   };
-  const { shoulder, waist, hip, bust } = shape;
+  const { bust } = shape;
   const parts: Part[] = [
     // One continuous torso shell replaces the disconnected chest, abdomen and pelvis spheres.
     torsoSurface(shape),
-    // A visible neck, larger cranium and tapered lower face improve head-to-body proportion.
-    blob([0.047, 0.092, 0.047], [0, 0.865, 0], BONE.neck, { detail: 1 }),
-    blob([0.096, 0.122, 0.096], [0, 0.95, 0], BONE.head, { detail: 1 }),
-    // Jaw, chin and cheek planes blend into the cranium instead of reading as separate beads.
-    blob([0.071, 0.052, 0.076], [0, 0.89, 0.025], BONE.head, { detail: 1 }),
-    blob([0.029, 0.022, 0.026], [0, 0.866, 0.053], BONE.head, { detail: 1 }),
-    blob([0.034, 0.035, 0.027], [0.054, 0.928, 0.055], BONE.head, { detail: 1 }),
-    blob([0.034, 0.035, 0.027], [-0.054, 0.928, 0.055], BONE.head, { detail: 1 }),
-    // A tapered bridge and rounded tip are skin geometry, not dark painted facial marks.
-    blob([0.012, 0.031, 0.016], [0, 0.936, 0.096], BONE.head, { detail: 1 }),
-    blob([0.017, 0.014, 0.019], [0, 0.915, 0.108], BONE.head, { detail: 1 }),
-    blob([0.022, 0.027, 0.021], [0.09, 0.94, 0], BONE.head, { detail: 1 }),
-    blob([0.022, 0.027, 0.021], [-0.09, 0.94, 0], BONE.head, { detail: 1 }),
-    // Shoulder caps are restrained and overlap the tapered upper arms to soften the joint seam.
-    blob([0.061 * shoulder, 0.055, 0.062], [0.155, 0.79, 0], BONE.spine2, { detail: 1 }),
-    blob([0.061 * shoulder, 0.055, 0.062], [-0.155, 0.79, 0], BONE.spine2, { detail: 1 }),
-    blob([0.12 * shoulder, 0.012, 0.014], [0.065, 0.84, 0.098], BONE.spine2),
-    blob([0.12 * shoulder, 0.012, 0.014], [-0.065, 0.84, 0.098], BONE.spine2),
+    profilePart(
+      [
+        { y: 0.845, x: 0.044, z: 0.041 },
+        { y: 0.88, x: 0.038, z: 0.036 },
+        { y: 0.922, x: 0.033, z: 0.034 },
+      ],
+      (y) => [BONE.spine2, BONE.head, Math.max(0, Math.min(1, (y - 0.855) / 0.055))],
+    ),
+    headPart(),
+    // Angular nose, small ears and a restrained lower lip keep the face readable at game scale.
+    blob([0.009, 0.023, 0.01], [0, 0.976, 0.063], BONE.head),
+    blob([0.014, 0.01, 0.013], [0, 0.961, 0.073], BONE.head),
+    blob([0.013, 0.023, 0.013], [0.073, 0.971, -0.003], BONE.head),
+    blob([0.013, 0.023, 0.013], [-0.073, 0.971, -0.003], BONE.head),
+    blob([0.021, 0.005, 0.007], [0, 0.935, 0.059], BONE.head),
   ];
   if (bust > 0) {
     parts.push(
@@ -283,36 +361,35 @@ function bodyParts(variant: BodyVariant, build: number): Part[] {
 
 function faceDetailParts(): Part[] {
   return [
-    // Brows, nose definition and lips. Eye whites/irises/highlights use their own material meshes below.
-    blob([0.024, 0.006, 0.009], [0.038, 0.976, 0.083], BONE.head, { accessory: true }),
-    blob([0.024, 0.006, 0.009], [-0.038, 0.976, 0.083], BONE.head, { accessory: true }),
-    blob([0.009, 0.0035, 0.004], [0.012, 0.914, 0.122], BONE.head, { accessory: true }),
-    blob([0.009, 0.0035, 0.004], [-0.012, 0.914, 0.122], BONE.head, { accessory: true }),
-    blob([0.025, 0.005, 0.006], [0, 0.884, 0.092], BONE.head, { accessory: true }),
+    blob([0.019, 0.004, 0.005], [0.029, 1.006, 0.053], BONE.head),
+    blob([0.019, 0.004, 0.005], [-0.029, 1.006, 0.053], BONE.head),
+    blob([0.004, 0.0025, 0.002], [0.008, 0.958, 0.084], BONE.head),
+    blob([0.004, 0.0025, 0.002], [-0.008, 0.958, 0.084], BONE.head),
+    blob([0.021, 0.0025, 0.003], [0, 0.941, 0.061], BONE.head),
   ];
 }
 function eyeWhiteParts(): Part[] {
   return [-1, 1].map((side) =>
-    blob([0.019, 0.012, 0.009], [side * 0.038, 0.956, 0.083], BONE.head),
+    blob([0.015, 0.007, 0.005], [side * 0.029, 0.991, 0.054], BONE.head),
   );
 }
 function irisParts(): Part[] {
   return [-1, 1].map((side) =>
-    blob([0.008, 0.0085, 0.005], [side * 0.038, 0.956, 0.092], BONE.head),
+    blob([0.006, 0.006, 0.003], [side * 0.029, 0.991, 0.059], BONE.head),
   );
 }
 function pupilParts(): Part[] {
   return [-1, 1].map((side) =>
-    blob([0.0042, 0.0055, 0.003], [side * 0.038, 0.956, 0.096], BONE.head),
+    blob([0.003, 0.004, 0.002], [side * 0.029, 0.991, 0.062], BONE.head),
   );
 }
 function highlightParts(): Part[] {
   return [-1, 1].map((side) =>
-    blob([0.0024, 0.0024, 0.0018], [side * 0.038 - 0.002, 0.959, 0.099], BONE.head),
+    blob([0.0016, 0.0016, 0.001], [side * 0.029 - 0.0015, 0.993, 0.064], BONE.head),
   );
 }
 
-function hairParts(shape: HairShape): Part[] {
+function hairVolumes(shape: HairShape): Part[] {
   // Hair masses sit behind the facial plane (+z is the face on this rig).
   const base = blob([0.09, 0.071, 0.09], [0, 0.985, -0.03], BONE.head, { detail: 1 });
   if (shape === "afro") {
@@ -372,6 +449,20 @@ function hairParts(shape: HairShape): Part[] {
     ];
   }
   return [base];
+}
+
+function hairParts(shape: HairShape): Part[] {
+  if (shape === "cap" || shape === "buzz") {
+    const geometry = new SphereGeometry(1, 12, 5, 0, Math.PI * 2, 0, Math.PI * 0.56);
+    geometry.scale(0.076, shape === "buzz" ? 0.041 : 0.049, 0.062);
+    geometry.translate(0, 1.026, -0.004);
+    return [{ geometry, bone: BONE.head, accessory: false }];
+  }
+  return hairVolumes(shape).map((part) => {
+    part.geometry.scale(0.8, 0.87, 0.8);
+    part.geometry.translate(0, 0.15, 0);
+    return part;
+  });
 }
 
 const geometryCache = new Map<
@@ -459,26 +550,26 @@ export function createHumanoid({
       geo.body,
       new MeshStandardMaterial({
         color: skinColor,
-        roughness: 0.66,
+        roughness: 0.88,
         metalness: 0,
-        flatShading: false,
+        flatShading: true,
       }),
     ),
     makeMesh(
       geo.face,
-      new MeshStandardMaterial({ color: ACCESSORY_COLOR, roughness: 0.58, flatShading: false }),
+      new MeshStandardMaterial({ color: ACCESSORY_COLOR, roughness: 0.58, flatShading: true }),
     ),
     makeMesh(
       geo.eyes,
-      new MeshStandardMaterial({ color: "#f1e9df", roughness: 0.34, flatShading: false }),
+      new MeshStandardMaterial({ color: "#f1e9df", roughness: 0.34, flatShading: true }),
     ),
     makeMesh(
       geo.irises,
-      new MeshStandardMaterial({ color: "#3a2118", roughness: 0.28, flatShading: false }),
+      new MeshStandardMaterial({ color: "#3a2118", roughness: 0.28, flatShading: true }),
     ),
     makeMesh(
       geo.pupils,
-      new MeshStandardMaterial({ color: "#100b09", roughness: 0.18, flatShading: false }),
+      new MeshStandardMaterial({ color: "#100b09", roughness: 0.18, flatShading: true }),
     ),
     makeMesh(
       geo.highlights,
@@ -487,7 +578,7 @@ export function createHumanoid({
         roughness: 0.12,
         emissive: "#fffaf2",
         emissiveIntensity: 0.08,
-        flatShading: false,
+        flatShading: true,
       }),
     ),
   ];
@@ -499,7 +590,7 @@ export function createHumanoid({
           color: hairColor,
           roughness: 0.94,
           metalness: 0,
-          flatShading: false,
+          flatShading: true,
         }),
       ),
     );
