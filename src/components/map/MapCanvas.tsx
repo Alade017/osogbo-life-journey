@@ -7,18 +7,6 @@ const TownSurface3D = lazy(() =>
   import("./R3FTownSurface").then((module) => ({ default: module.R3FTownSurface })),
 );
 
-export type MapFilter =
-  | "market"
-  | "transport"
-  | "school"
-  | "health"
-  | "worship"
-  | "junction"
-  | "sport"
-  | "food"
-  | "services"
-  | "jobs"
-  | "all";
 export type MapSearchTarget = string | { id: string; kind?: "district" | "landmark" };
 export type MapPlayerLocation = {
   x: number;
@@ -52,14 +40,12 @@ export type MapProperty = {
 export interface MapCanvasProps {
   onSelectDistrict: (id: string) => void;
   onSelectLandmark: (id: string) => void;
-  activeFilter?: MapFilter;
   searchTarget?: MapSearchTarget | null;
   selectedLandmarkId?: string | null;
   travelMode?: import("@/lib/transport-service").TravelMode | null;
   travelPending?: boolean;
   playerLocation?: MapPlayerLocation | null;
   eventChips?: MapEventChip[];
-  jobLandmarkIds?: string[];
   billboardMarkers?: MapBillboardMarker[];
   onSelectBillboard?: (campaignId: string) => void;
   availableLandmarkIds?: readonly string[];
@@ -77,10 +63,6 @@ const propertyStatusText: Record<MapProperty["status"], string> = {
   vacant: "Vacant",
 };
 
-const filterCategories: Partial<Record<MapFilter, readonly string[]>> = {
-  jobs: ["services", "food", "market", "transport"],
-};
-
 function houseBadgeText(property: MapProperty) {
   if (property.status === "owned" && property.ownerName) return property.ownerName;
   return propertyStatusText[property.status];
@@ -89,14 +71,12 @@ function houseBadgeText(property: MapProperty) {
 export function MapCanvas({
   onSelectDistrict,
   onSelectLandmark,
-  activeFilter = "all",
   searchTarget,
   selectedLandmarkId,
   travelMode,
   travelPending,
   playerLocation,
   eventChips: _eventChips = [],
-  jobLandmarkIds = [],
   billboardMarkers = [],
   availableLandmarkIds,
   onSelectBillboard,
@@ -157,14 +137,9 @@ export function MapCanvas({
   const availablePlaces = useMemo(
     () =>
       townData.landmarks.filter(
-        (place) =>
-          (availableLandmarkIds === undefined || availableLandmarkIds.includes(place.id)) &&
-          (activeFilter === "all" ||
-            (activeFilter === "jobs"
-              ? jobLandmarkIds.includes(place.id)
-              : (filterCategories[activeFilter] ?? [activeFilter]).includes(place.category))),
+        (place) => availableLandmarkIds === undefined || availableLandmarkIds.includes(place.id),
       ),
-    [activeFilter, availableLandmarkIds, jobLandmarkIds],
+    [availableLandmarkIds],
   );
   // Every landmark not yet open to the player is shown as a locked pin, whatever the filter.
   const lockedPlaces = useMemo(
