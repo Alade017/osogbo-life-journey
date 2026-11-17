@@ -52,6 +52,30 @@ export function sharedRoomBlueprint(width: number, depth: number) {
   };
 }
 
+/** A private bedroom with household facilities shared outside the room. */
+export function privateRoomBlueprint(width: number, depth: number) {
+  return {
+    whole: { minX: -width / 2, maxX: width / 2, minZ: -depth / 2, maxZ: depth / 2 },
+    bathroom: null,
+    bathroomDoor: null,
+    sleep: { minX: -width / 2, maxX: -width * 0.06, minZ: -depth / 2, maxZ: depth * 0.25 },
+    entranceX: width * 0.22,
+    windows: [-depth * 0.15],
+    windowWidth: depth * 0.4,
+  };
+}
+
+export const HOUSE_BLUEPRINTS = {
+  "studio-flat": studioBlueprint,
+  "shared-room": sharedRoomBlueprint,
+  "single-room": privateRoomBlueprint,
+} as const;
+export type BlueprintHomeType = keyof typeof HOUSE_BLUEPRINTS;
+
+export function isBlueprintHomeType(houseTypeId: string): houseTypeId is BlueprintHomeType {
+  return Object.hasOwn(HOUSE_BLUEPRINTS, houseTypeId);
+}
+
 export function boundsContain(bounds: FloorBounds, x: number, z: number, margin = 0) {
   return (
     x >= bounds.minX - margin &&

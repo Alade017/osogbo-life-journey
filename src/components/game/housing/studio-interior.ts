@@ -10,8 +10,8 @@ import {
 import {
   boundsContain,
   STUDIO_FINISH as finish,
-  studioBlueprint,
-  sharedRoomBlueprint,
+  HOUSE_BLUEPRINTS,
+  type BlueprintHomeType,
 } from "./house-blueprints";
 import {
   housePartitionSegments,
@@ -27,7 +27,7 @@ type Box = { position: Point; size: Point; color: string };
 
 /** Actual game geometry, also usable by the offline model preview. No furniture ownership is implied. */
 export function createBlueprintInterior(
-  houseTypeId: "studio-flat" | "shared-room",
+  houseTypeId: BlueprintHomeType,
   width: number,
   depth: number,
   {
@@ -42,10 +42,7 @@ export function createBlueprintInterior(
 ) {
   const root = new Group();
   root.name = `${houseTypeId}-blueprint-interior`;
-  const plan =
-    houseTypeId === "shared-room"
-      ? sharedRoomBlueprint(width, depth)
-      : studioBlueprint(width, depth);
+  const plan = HOUSE_BLUEPRINTS[houseTypeId](width, depth);
   const unit = new BoxGeometry(1, 1, 1);
   const materials = new Map<string, MeshStandardMaterial>();
   const material = (color: string) => {
@@ -120,7 +117,13 @@ export function createBlueprintInterior(
   const show = (segment: HouseWallSegment) => !roomView || !roomViewHidesSegment(segment, roomView);
   const wall = (segment: HouseWallSegment, color: string = finish.plaster) => {
     if (!show(segment)) return;
-    box(walls, segment.size, segment.position, color, segment.id);
+    box(
+      walls,
+      segment.size,
+      segment.position,
+      houseTypeId === "single-room" && segment.id === "rear-left" ? finish.sage : color,
+      segment.id,
+    );
     const [x, y, z] = segment.position;
     const [w, h, d] = segment.size;
     box(walls, [w + 0.025, 0.045, d + 0.025], [x, y + h / 2, z], finish.trim);
