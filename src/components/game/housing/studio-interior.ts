@@ -198,11 +198,42 @@ export function createStudioInterior(
   housePartitionSegments("studio-flat", width, depth).forEach((segment) =>
     wall(segment, finish.wetTile),
   );
-  // The bathroom doorway stays open for navigation. Its timber jambs clearly mark the private space.
+  // The bathroom door folds back against its wall, keeping the navigation opening clear.
   const door = plan.bathroomDoor;
   for (const side of [-1, 1])
     box(walls, [0.17, 1.95, 0.07], [door.x, 0.975, door.z + (side * door.width) / 2], finish.trim);
   box(walls, [0.17, 0.08, door.width + 0.14], [door.x, 1.95, door.z], finish.trim);
+  const panel = new Group();
+  panel.name = "studio-bathroom-door";
+  panel.position.set(door.x - HOUSE_WALL_THICKNESS / 2 - 0.025, 0, door.z - door.width / 2);
+  panel.rotation.y = Math.PI;
+  walls.add(panel);
+  const panelWidth = door.width - 0.1;
+  box(
+    panel,
+    [0.045, 1.86, panelWidth],
+    [0, 0.97, panelWidth / 2],
+    finish.wood,
+    "bathroom-door-leaf",
+  );
+  for (const side of [-1, 1]) {
+    for (const y of [0.58, 1.38])
+      box(
+        panel,
+        [0.012, 0.6, panelWidth - 0.18],
+        [side * 0.028, y, panelWidth / 2],
+        finish.woodAlternate,
+        "bathroom-door-inset",
+      );
+    box(panel, [0.035, 0.14, 0.045], [side * 0.04, 0.98, panelWidth - 0.1], finish.brass);
+    box(
+      panel,
+      [0.045, 0.035, 0.14],
+      [side * 0.065, 0.98, panelWidth - 0.14],
+      finish.brass,
+      "bathroom-door-handle",
+    );
+  }
   return root;
 }
 
