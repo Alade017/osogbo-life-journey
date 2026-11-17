@@ -16,7 +16,9 @@ type Dependencies = {
 
 export function findMapPlaceAction(landmarkId: string, actionId: string) {
   const landmark = townData.landmarks.find((place) => place.id === landmarkId);
-  const action = landmark?.actions.find((item) => item.id === actionId);
+  const action = (landmark?.actions as MapPlaceAction[] | undefined)?.find(
+    (item) => item.id === actionId,
+  );
   if (landmark && action) return { landmark, action: action as MapPlaceAction };
   // Keep old action ids safe for saved requests; the database now rejects their inactive pins.
   for (const district of legacyMapData.districts) {

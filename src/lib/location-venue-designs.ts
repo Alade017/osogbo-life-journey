@@ -5,6 +5,7 @@ export type VenueFixtureKind =
   "counter" | "table" | "bench" | "shelf" | "screen" | "display" | "planter" | "seat";
 
 export type VenueFixture = {
+  workplaceFeature?: WorkplaceFeature;
   id: string;
   label: string;
   detail: string;
@@ -20,6 +21,7 @@ export type VenueEnvironment = {
 };
 
 export type LocationVenueDesign = {
+  civicService?: "police" | "civic";
   bankInterior?: BankInteriorVariant;
   transportPark?: boolean;
   sceneBounds?: { width: number; depth: number };
@@ -173,47 +175,106 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     ],
   },
   "civic-court": {
+    civicService: "civic",
+    sceneBounds: { width: 14, depth: 11 },
     name: "Civic service hall",
-    description: "A bright public counter with visitor seating and a notice display.",
-    floorColor: "#d5d5ca",
-    wallColor: "#e7e5d9",
-    accentColor: "#527d82",
+    description:
+      "A public reception hall with clerk counters, waiting seats and a consultation office.",
+    floorColor: WORLD_PALETTE.tileLight,
+    wallColor: WORLD_PALETTE.wall,
+    accentColor: WORLD_PALETTE.foliage,
     fixtures: [
-      fixture("public-counter", "Public counter", "The main service desk.", "counter", 0, -1.6),
-      fixture("visitor-seats", "Visitor seats", "A small waiting area.", "seat", -2.8, 1),
+      fixture(
+        "public-counter",
+        "Public counter",
+        "Clerk reception for the fictional town. Use the existing place activities for supported services.",
+        "counter",
+        -3.2,
+        -1.5,
+      ),
+      fixture(
+        "visitor-seats",
+        "Visitor seats",
+        "Public waiting seats beside the clear central aisle.",
+        "seat",
+        -3.3,
+        2.5,
+      ),
       fixture(
         "civic-noticeboard",
         "Notice display",
-        "Public information is displayed here.",
+        "Inspect the public information board. Available activities remain in the place menu.",
         "screen",
-        2.8,
-        0.8,
+        5,
+        2.3,
+      ),
+      fixture(
+        "consultation-desk",
+        "Consultation desk",
+        "A separate desk for private consultations. Inspecting it does not start a service or charge a fee.",
+        "table",
+        3.8,
+        -3.9,
+      ),
+      fixture(
+        "records-cabinet",
+        "Staff records",
+        "Closed records storage in the staff area; no player records are exposed here.",
+        "shelf",
+        6.1,
+        -4.8,
       ),
     ],
   },
   "community-police": {
-    name: "Community help desk",
-    description: "A neighbourhood service room with a front desk and briefing space.",
-    floorColor: "#d0d2c8",
-    wallColor: "#e1e2d9",
-    accentColor: "#607c84",
+    civicService: "police",
+    sceneBounds: { width: 14, depth: 11 },
+    name: "Community police station",
+    description:
+      "A neighbourhood station with reception, waiting seats, a report desk and a staff briefing office.",
+    floorColor: WORLD_PALETTE.sidewalk,
+    wallColor: WORLD_PALETTE.wall,
+    accentColor: WORLD_PALETTE.indigo,
     fixtures: [
       fixture(
         "front-desk",
         "Front desk",
-        "The station's public information desk.",
+        "The station's public reception. Existing safety guides, directions and community activities are in the place menu.",
         "counter",
-        -2.5,
-        -1,
+        -3.2,
+        -1.5,
       ),
-      fixture("briefing-table", "Briefing table", "A shared table for staff.", "table", 0.4, 0.6),
+      fixture(
+        "police-waiting",
+        "Waiting seats",
+        "Visitor seating off the entrance aisle.",
+        "seat",
+        -3.3,
+        2.5,
+      ),
+      fixture(
+        "report-desk",
+        "Report desk",
+        "Inspect the report-writing area. Case submission is not available in the current game services.",
+        "table",
+        3.6,
+        1,
+      ),
+      fixture(
+        "briefing-table",
+        "Briefing table",
+        "A staff briefing office behind the public reception area.",
+        "table",
+        3.8,
+        -3.9,
+      ),
       fixture(
         "community-board",
         "Community board",
-        "Local notices and safety information.",
+        "Local notices and game safety information beside reception.",
         "screen",
-        2.8,
-        -0.6,
+        -5.6,
+        -3.7,
       ),
     ],
   },
@@ -394,6 +455,7 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     ],
   },
   "riverside-food-court": {
+    foodInterior: "courtyard",
     environment: { url: "/models/environments/market-and-bank/street-food-market-yard.glb" },
     name: "Riverside food court",
     description: "An open-sided dining room with vendor counters and shared tables.",
@@ -449,29 +511,19 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     ],
   },
   "harvest-tech-hub": {
+    scene: "workplace",
+    sceneSize: { width: WORKPLACE_LAYOUT.cameraWidth, depth: WORKPLACE_LAYOUT.cameraDepth },
     name: "Harvest Tech Hub",
-    description: "A practical learning lab with shared worktables and a presentation screen.",
-    floorColor: "#c8d5d0",
-    wallColor: "#e0e9e3",
-    accentColor: "#4d8c80",
+    description: "A shared workplace with reception, computer workstations, a training area and equipment storage.",
+    floorColor: WORLD_PALETTE.tileLight,
+    wallColor: WORLD_PALETTE.linen,
+    accentColor: WORLD_PALETTE.foliage,
     fixtures: [
-      fixture("tech-worktable", "Worktable", "A shared workspace.", "table", -2.5, 0.8),
-      fixture(
-        "tech-screen",
-        "Presentation screen",
-        "A display at the front of the room.",
-        "screen",
-        0,
-        -1.5,
-      ),
-      fixture(
-        "tech-shelf",
-        "Equipment shelf",
-        "Storage for learning equipment.",
-        "shelf",
-        2.8,
-        0.6,
-      ),
+      { ...fixture("tech-worktable", "Worktable", "Shared computer workstations. Open Jobs & shifts for actual work options.", "table", -2.9, 0.3), workplaceFeature: "workstations" },
+      { ...fixture("tech-screen", "Presentation screen", "The training presentation area. Course enrolment and progress stay in the existing education flow.", "screen", 0, -4.8), workplaceFeature: "presentation" },
+      { ...fixture("tech-shelf", "Equipment shelf", "Equipment storage for the workspace. Inspecting it does not grant inventory items.", "shelf", 5.4, 0.4), workplaceFeature: "equipment" },
+      { ...fixture("tech-reception", "Reception desk", "The workplace reception point. Browse current opportunities through Jobs & shifts.", "counter", 2.9, 3.4), workplaceFeature: "reception" },
+      { ...fixture("tech-training-table", "Training table", "Shared training seats beside the presentation area. Open Courses for configured learning activities.", "table", 2.9, -2.6), workplaceFeature: "training" },
     ],
   },
   "old-town-library": {
@@ -864,3 +916,18 @@ export function hasAuthoritativeLocationArrival(
     currentLocationId === destinationLocationId
   );
 }
+
+/** Interior for the existing neighborhood Buka zone, not a fabricated server location. */
+export const BUKA_VENUE_DESIGN: LocationVenueDesign = {
+  name: "Buka dining room",
+  description: "A local canteen with a hot-food serving line, shared bench tables and a wash point.",
+  foodInterior: "buka",
+  floorColor: WORLD_PALETTE.ground,
+  wallColor: WORLD_PALETTE.wall,
+  accentColor: WORLD_PALETTE.clay,
+  fixtures: [
+    fixture("buka-serving-counter", "Serving counter", "Covered cooking pots beside the service counter. Browse the current local catalogue for availability.", "counter", 0, -2.6),
+    fixture("buka-shared-table", "Shared dining table", "A shared table with bench seating. Eating uses food already in your bag.", "table", 0, 1.2),
+    fixture("buka-wash-point", "Wash point", "The canteen hand-wash area. Inspecting this feature does not change needs.", "display", -4.2, 0.5),
+  ],
+};

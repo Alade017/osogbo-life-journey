@@ -1,3 +1,4 @@
+import { CivicServiceScene } from "@/components/3d/CivicServiceScene";
 import { BankInteriorScene } from "@/components/3d/BankInteriorScene";
 import { BANK_INTERIORS } from "@/game/bank-interiors";
 import { TransitParkScene } from "@/components/3d/TransitParkScene";
@@ -5,14 +6,9 @@ import { TRAVEL_MODES, TRAVEL_MODE_DETAILS, type TravelMode } from "@/lib/transp
 import { transportMapHref } from "@/lib/transport-park";
 import { HealthcareScene } from "@/components/3d/HealthcareScene";
 import { MarketTradingHall } from "@/components/3d/MarketTradingScene";
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { Component, lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
 import { VenueSceneBoundary } from "./VenueSceneBoundary";
 
-const ResidentialCompoundVenue = lazy(() =>
-  import("./ResidentialCompoundVenue").then((module) => ({
-    default: module.ResidentialCompoundVenue,
-  })),
-);
 const ClinicVenue = lazy(() =>
   import("./ClinicVenue").then((module) => ({ default: module.ClinicVenue })),
 );
@@ -26,6 +22,7 @@ import {
   getLocationVenueDesign,
   isTradingOpen,
   type VenueFixture,
+  type LocationVenueDesign,
 } from "@/lib/location-venue-designs";
 import { VenueEnvironment } from "@/components/3d/VenueEnvironment";
 import { VenueFurnitureModel } from "@/components/3d/VenueFurniture";
@@ -135,16 +132,24 @@ function BasicLocationVenueScene({
               aria-hidden="true"
             >
               <WorldCamera
-                width={
-                  bankLayout?.width ?? venue.sceneBounds?.width ?? venue.sceneSize?.width ?? 10
-                }
-                depth={bankLayout?.depth ?? venue.sceneBounds?.depth ?? venue.sceneSize?.depth ?? 7}
+                width={bankLayout?.width ?? venue.sceneBounds?.width ?? 10}
+                depth={bankLayout?.depth ?? venue.sceneBounds?.depth ?? 7}
                 stage
                 target={[0, 1.2, 0]}
                 zoom={1.2}
               />
               <WorldLighting size={14} />
-              {venue.bankInterior ? (
+              {venue.civicService ? (
+                <CivicServiceScene
+                  variant={venue.civicService}
+                  fixtures={venue.fixtures}
+                  selected={selectedFixture}
+                  onSelect={setSelectedFixture}
+                  floorColor={venue.floorColor}
+                  wallColor={venue.wallColor}
+                  accentColor={venue.accentColor}
+                />
+              ) : venue.bankInterior ? (
                 <BankInteriorScene
                   variant={venue.bankInterior}
                   fixtures={venue.fixtures}
@@ -322,16 +327,6 @@ export function LocationVenueScene(props: {
   onBankServices?: () => void;
 }) {
   const venue = getLocationVenueDesign(props.slug, props.locationName);
-  if (venue.scene === "residential")
-    return (
-      <Suspense
-        fallback={
-          <WorldLoadingIndicator title="Opening the compound" detail="Preparing the courtyard…" />
-        }
-      >
-        <ResidentialCompoundVenue key={props.slug} />
-      </Suspense>
-    );
   if (venue.scene === "clinic")
     return (
       <Suspense

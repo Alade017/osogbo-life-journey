@@ -13,6 +13,10 @@ describe("location venue designs", () => {
         (landmark): landmark is typeof landmark & { locationSlug: string } =>
           typeof landmark.locationSlug === "string",
       )
+      .filter(
+        (landmark, index, all) =>
+          all.findIndex((item) => item.locationSlug === landmark.locationSlug) === index,
+      )
       .map((landmark) => getLocationVenueDesign(landmark.locationSlug, landmark.label));
 
     expect(designs.length).toBeGreaterThan(0);
@@ -48,8 +52,24 @@ it("selects destination scenes from venue metadata without changing transaction 
   const market = getLocationVenueDesign("oja-oba", "Oja-Oba");
   expect(campus.scene).toBe("campus");
   expect(market.scene).toBe("market");
-  expect(market.fixtures.map(fixture => fixture.id)).toEqual([
-    "oja-oba-produce-counter", "oja-oba-staples-shelves", "oja-oba-household-table", "oja-oba-trader-seats",
+  expect(market.fixtures.map((fixture) => fixture.id)).toEqual([
+    "oja-oba-produce-counter",
+    "oja-oba-staples-shelves",
+    "oja-oba-household-table",
+    "oja-oba-trader-seats",
   ]);
   expect(getLocationVenueDesign("new-location", "New").scene).toBeUndefined();
 });
+
+it.each(["community-police", "civic-court"])(
+  "fits %s public and staff fixtures within its scene",
+  (slug) => {
+    const design = getLocationVenueDesign(slug, slug);
+    expect(design.civicService).toBe(slug === "community-police" ? "police" : "civic");
+    expect(design.sceneBounds).toEqual({ width: 14, depth: 11 });
+    for (const item of design.fixtures) {
+      expect(Math.abs(item.position[0])).toBeLessThan(design.sceneBounds!.width / 2);
+      expect(Math.abs(item.position[1])).toBeLessThan(design.sceneBounds!.depth / 2);
+    }
+  },
+);

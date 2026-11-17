@@ -1,3 +1,5 @@
+import { LocationVenueScene } from "./LocationVenueScene";
+import { BUKA_VENUE_DESIGN } from "@/lib/location-venue-designs";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
@@ -61,6 +63,7 @@ export function NeighborhoodZoneModal({
   localInventory,
   equippedAccessorySlug,
   currentLocationId,
+  currentLocationSlug,
   npcTip,
   onPerformZoneAction,
   onNpcTipSelect,
@@ -76,6 +79,7 @@ export function NeighborhoodZoneModal({
   localInventory: readonly NeighborhoodInventoryEntry[];
   equippedAccessorySlug: string | null;
   currentLocationId?: string | undefined;
+  currentLocationSlug?: string | undefined;
   npcTip: string | null;
   onPerformZoneAction: (zone: InteractableZoneSpec, outcome: ZoneActionOutcome) => void;
   onNpcTipSelect: (npc: ZoneNpcSpec, tipIndex: number) => void;
@@ -83,7 +87,7 @@ export function NeighborhoodZoneModal({
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [subTab, setSubTab] = useState<"actions" | "bank" | "market" | "jobs" | "transit">(
+  const [subTab, setSubTab] = useState<"actions" | "bank" | "market" | "jobs" | "transit" | "interior">(
     "actions",
   );
   const [tipIndex, setTipIndex] = useState(0);
@@ -227,6 +231,12 @@ export function NeighborhoodZoneModal({
               >
                 Zone Actions
               </button>
+              {zone.venueInterior === "buka" && (
+                <button type="button" className={subTab === "interior" ? "is-active" : ""}
+                  aria-pressed={subTab === "interior"} onClick={() => setSubTab("interior")}>
+                  Explore Buka
+                </button>
+              )}
               {zone.category === "bank" && (
                 <button
                   type="button"
@@ -265,6 +275,11 @@ export function NeighborhoodZoneModal({
               )}
             </div>
 
+            {subTab === "interior" && zone.venueInterior === "buka" && (
+              currentLocationSlug ? <LocationVenueScene slug={currentLocationSlug} locationName={zone.title}
+                design={BUKA_VENUE_DESIGN} {...(zone.shopSlug !== undefined ? { shopSlug: zone.shopSlug } : {})} /> :
+                <p role="status">Loading your location…</p>
+            )}
             {subTab === "actions" && (
               <div className="space-y-4">
                 <div className="grid gap-3 sm:grid-cols-2">

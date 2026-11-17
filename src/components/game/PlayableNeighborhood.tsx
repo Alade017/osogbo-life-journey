@@ -273,7 +273,7 @@ function useNeighborhoodConnection(
           );
       }
     };
-  }, [attempt, locationId, locationIsPlayable, slug]);
+  }, [attempt, locationId, locationIsPlayable, slug, setAttempt]);
 
   const sameLocation = roomLocationId === locationId;
   return {
@@ -723,7 +723,7 @@ export function PlayableNeighborhood() {
     };
     window.addEventListener("osun:commute-to-work", requestCommute);
     return () => window.removeEventListener("osun:commute-to-work", requestCommute);
-  }, []);
+  }, [roomRef]);
 
   /** Keyboard walking. Pressing a key cancels a tapped destination. */
   useEffect(() => {
@@ -1155,7 +1155,7 @@ export function PlayableNeighborhood() {
         {district ? `${area.name} neighbourhood` : "Explore the neighbourhoods"}
       </h1>
 
-      {connectionState === "wrong-area" ? (
+      {connectionState === "wrong-area" || !district ? (
         <div className="neighborhood-message" role="status">
           <strong>This destination is not available for walking yet.</strong>
           <span>
@@ -1588,6 +1588,7 @@ export function PlayableNeighborhood() {
                               <LocationVenueScene
                                 slug={currentLocation.slug}
                                 locationName={currentLocation.name}
+                                {...(selectedShopSlug !== undefined ? { shopSlug: selectedShopSlug } : {})}
                               />
                             </>
                           ) : null}
@@ -1646,6 +1647,7 @@ export function PlayableNeighborhood() {
                     localInventory={zoneState.localInventory}
                     equippedAccessorySlug={zoneState.equippedAccessorySlug}
                     currentLocationId={currentLocation?.id}
+                    currentLocationSlug={currentLocation?.slug}
                     npcTip={zoneState.lastNpcTip}
                     onPerformZoneAction={handlePerformZoneAction}
                     onNpcTipSelect={handleNpcTipSelect}

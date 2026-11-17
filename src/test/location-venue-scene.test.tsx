@@ -75,7 +75,6 @@ it.each([
   expect(screen.getByRole("button", { name: feature })).toHaveAttribute("aria-pressed", "true");
   fireEvent.click(screen.getByRole("button", { name: "Access bank services" }));
   expect(openBank).toHaveBeenCalledTimes(1);
-  vi.useRealTimers();
 });
 
 it("keeps market fixture selection and server-offer handoff available without WebGL", () => {
@@ -95,5 +94,20 @@ it("keeps market fixture selection and server-offer handoff available without We
   ).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Browse market offers" }));
   expect(browse).toHaveBeenCalledTimes(1);
+  vi.useRealTimers();
+});
+
+vi.mock("@tanstack/react-router", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@tanstack/react-router")>()),
+  Link: ({ to, children, ...props }: { to: string; children: import("react").ReactNode }) => <a href={to} {...props}>{children}</a>,
+}));
+it("keeps workplace features, jobs and courses accessible when WebGL fails", () => {
+  vi.useFakeTimers();
+  render(<LocationVenueScene slug="harvest-tech-hub" locationName="Harvest Tech Hub" />);
+  act(() => { vi.advanceTimersByTime(5000); });
+  fireEvent.click(screen.getByRole("button", { name: "Training table" }));
+  expect(screen.getByRole("button", { name: "Training table" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("link", { name: "Jobs & shifts" })).toHaveAttribute("href", "/jobs");
+  expect(screen.getByRole("link", { name: "Courses" })).toHaveAttribute("href", "/education");
   vi.useRealTimers();
 });
