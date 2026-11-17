@@ -278,13 +278,13 @@ function BasicLocationVenueScene({
           Access bank services
         </button>
       )}
-      {venue.scene === "market" && onBrowseMarket && (
+      {(venue.scene === "market" || venue.retailInterior) && onBrowseMarket && (
         <button
           type="button"
           onClick={onBrowseMarket}
           className="rounded-lg border border-edge bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground"
         >
-          Browse market offers
+          {venue.retailInterior ? "Browse shop catalogue" : "Browse market offers"}
         </button>
       )}
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(14rem,0.8fr)]">
