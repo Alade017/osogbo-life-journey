@@ -304,6 +304,12 @@ const KEY_DIRECTIONS: Readonly<Record<string, MovementDirection>> = {
   KeyD: "east",
 };
 
+const ResidentialCompoundVenue = lazy(() =>
+  import("./ResidentialCompoundVenue").then((module) => ({
+    default: module.ResidentialCompoundVenue,
+  })),
+);
+
 function homeTypeFromRecord(value: unknown) {
   if (!isRecord(value) || typeof value["houseTypeId"] !== "string") return null;
   return value["houseTypeId"];
@@ -387,6 +393,7 @@ export function PlayableNeighborhood() {
   const directionsRef = useRef(directions);
   directionsRef.current = directions;
   const lastIntentRef = useRef("0:0");
+  const [compoundOpen, setCompoundOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<InteractionPanel | null>(null);
   const [selectedBuildingName, setSelectedBuildingName] = useState<string | null>(null);
   const [selectedShopSlug, setSelectedShopSlug] = useState<string | null | undefined>(undefined);
@@ -409,7 +416,7 @@ export function PlayableNeighborhood() {
   const [hasWalked, setHasWalked] = useState(false);
   const autoWalkRouteRef = useRef<{ route: WorldPoint[]; index: number } | null>(null);
   const zoneModalOpen = zoneState.activeZoneId !== null || zoneState.activeNpcId !== null;
-  const anyModalOpen = activePanel !== null || zoneModalOpen;
+  const anyModalOpen = activePanel !== null || zoneModalOpen || compoundOpen;
   const player = players.find((candidate) => candidate.sessionId === sessionId);
   const playerRef = useRef(player);
   playerRef.current = player;
@@ -677,6 +684,15 @@ export function PlayableNeighborhood() {
     setHomeBound(true);
   }, [nearHome, homeObject, district?.personalHome, enterHomeNow, startPathfindingTo]);
   const enteringHome = enterHome.isPending;
+  const openCompound = () => {
+    autoWalkRouteRef.current = null;
+    groundTargetRef.current = null;
+    setGroundTarget(null);
+    setDirections(new Set());
+    setPendingTargetId(null);
+    setHomeBound(false);
+    setCompoundOpen(true);
+  };
   useEffect(() => {
     if (!homeBound || nearbyObject?.kind !== "home") return;
     setHomeBound(false);
@@ -690,6 +706,7 @@ export function PlayableNeighborhood() {
     lastIntentRef.current = "0:0";
     setZoom(NEIGHBORHOOD_CAMERA.defaultZoom);
     setActivePanel(null);
+    setCompoundOpen(false);
     setSelectedBuildingName(null);
     setSelectedShopSlug(undefined);
     setBusinessView("actions");
@@ -1571,6 +1588,7 @@ export function PlayableNeighborhood() {
                               <LocationVenueScene
                                 slug={currentLocation.slug}
                                 locationName={currentLocation.name}
+                                {...(selectedShopSlug !== undefined ? { shopSlug: selectedShopSlug } : {})}
                               />
                             </>
                           ) : null}
@@ -1629,12 +1647,58 @@ export function PlayableNeighborhood() {
                     localInventory={zoneState.localInventory}
                     equippedAccessorySlug={zoneState.equippedAccessorySlug}
                     currentLocationId={currentLocation?.id}
+                    currentLocationSlug={currentLocation?.slug}
                     npcTip={zoneState.lastNpcTip}
                     onPerformZoneAction={handlePerformZoneAction}
                     onNpcTipSelect={handleNpcTipSelect}
                     onToggleAccessory={handleToggleAccessory}
                   />
+                  <Dialog
+                    open={compoundOpen}
+                    onOpenChange={(open) => {
+                      if (open) openCompound();
+                      else setCompoundOpen(false);
+                    }}
+                  >
+                    <DialogContent className="max-h-[92svh] overflow-y-auto sm:max-w-5xl">
+                      <DialogTitle className="sr-only">Residential compound</DialogTitle>
+                      <DialogDescription className="sr-only">
+                        Explore the courtyard, facilities and private home entrances.
+                      </DialogDescription>
+                      <Suspense
+                        fallback={
+                          <WorldLoadingIndicator
+                            title="Opening the compound"
+                            detail="Preparing the courtyard…"
+                          />
+                        }
+                      >
+                        <ResidentialCompoundVenue
+                          homeTypeId={homeTypeId}
+                          enteringHome={enteringHome || homeBound}
+                          {...(district?.personalHome && homeTypeId && !homeQuery.isError
+                            ? {
+                                onEnterHome: () => {
+                                  setCompoundOpen(false);
+                                  activateHome();
+                                },
+                              }
+                            : {})}
+                        />
+                      </Suspense>
+                    </DialogContent>
+                  </Dialog>
                   <div className="neighborhood-controls-row">
+                    {district?.personalHome && (
+                      <button
+                        type="button"
+                        className="neighborhood-go-home"
+                        disabled={enteringHome || homeBound}
+                        onClick={openCompound}
+                      >
+                        Explore compound
+                      </button>
+                    )}
                     {homeTypeId && (
                       <button
                         type="button"

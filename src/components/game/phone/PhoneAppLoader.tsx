@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { LoadingSpinner } from "@/components/game/LoadingSpinner";
 import { isSlowNetwork } from "@/lib/network-hint";
 
 /** Wait before the slow-network message appears: sooner on slow connections. */
@@ -44,11 +44,7 @@ export function PhoneAppLoader({
       role="status"
       aria-live="polite"
     >
-      <Loader2
-        className="phone-app-loader-mark"
-        aria-hidden="true"
-        style={{ animationDuration: `${spinSeconds}s` }}
-      />
+      <LoadingSpinner className="phone-app-loader-mark" durationSeconds={spinSeconds} />
       <strong>{title}</strong>
       {isSlow && (
         <>

@@ -1,4 +1,4 @@
-import { RetailInteriorScene } from "@/components/3d/RetailInteriorScene";
+import { CivicServiceScene } from "@/components/3d/CivicServiceScene";
 import { BankInteriorScene } from "@/components/3d/BankInteriorScene";
 import { BANK_INTERIORS } from "@/game/bank-interiors";
 import { TransitParkScene } from "@/components/3d/TransitParkScene";
@@ -22,6 +22,7 @@ import {
   getLocationVenueDesign,
   isTradingOpen,
   type VenueFixture,
+  type LocationVenueDesign,
 } from "@/lib/location-venue-designs";
 import { VenueEnvironment } from "@/components/3d/VenueEnvironment";
 import { VenueFurnitureModel } from "@/components/3d/VenueFurniture";
@@ -138,8 +139,9 @@ function BasicLocationVenueScene({
                 zoom={1.2}
               />
               <WorldLighting size={14} />
-              {venue.retailInterior ? (
-                <RetailInteriorScene
+              {venue.civicService ? (
+                <CivicServiceScene
+                  variant={venue.civicService}
                   fixtures={venue.fixtures}
                   selected={selectedFixture}
                   onSelect={setSelectedFixture}

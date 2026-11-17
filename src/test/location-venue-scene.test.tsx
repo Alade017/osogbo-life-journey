@@ -97,25 +97,17 @@ it("keeps market fixture selection and server-offer handoff available without We
   vi.useRealTimers();
 });
 
-it("keeps mall inspection and catalogue handoff usable without WebGL", () => {
+vi.mock("@tanstack/react-router", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@tanstack/react-router")>()),
+  Link: ({ to, children, ...props }: { to: string; children: import("react").ReactNode }) => <a href={to} {...props}>{children}</a>,
+}));
+it("keeps workplace features, jobs and courses accessible when WebGL fails", () => {
   vi.useFakeTimers();
-  const browse = vi.fn();
-  render(<LocationVenueScene slug="osun-mall" locationName="Osun Mall" onBrowseMarket={browse} />);
-  act(() => {
-    vi.advanceTimersByTime(5000);
-  });
-  fireEvent.click(screen.getByRole("button", { name: "Checkout counter" }));
-  expect(screen.getByRole("button", { name: "Checkout counter" })).toHaveAttribute(
-    "aria-pressed",
-    "true",
-  );
-  expect(screen.queryByTestId("venue-canvas")).not.toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "Browse shop catalogue" }));
-  expect(browse).toHaveBeenCalledTimes(1);
-});
-
-it("does not offer mall checkout when no confirmed catalogue callback exists", () => {
-  render(<LocationVenueScene slug="osun-mall" locationName="Osun Mall" />);
-  expect(screen.queryByRole("button", { name: "Browse shop catalogue" })).not.toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Checkout counter" })).toBeInTheDocument();
+  render(<LocationVenueScene slug="harvest-tech-hub" locationName="Harvest Tech Hub" />);
+  act(() => { vi.advanceTimersByTime(5000); });
+  fireEvent.click(screen.getByRole("button", { name: "Training table" }));
+  expect(screen.getByRole("button", { name: "Training table" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("link", { name: "Jobs & shifts" })).toHaveAttribute("href", "/jobs");
+  expect(screen.getByRole("link", { name: "Courses" })).toHaveAttribute("href", "/education");
+  vi.useRealTimers();
 });
