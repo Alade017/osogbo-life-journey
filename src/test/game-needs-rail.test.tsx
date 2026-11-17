@@ -48,17 +48,16 @@ describe("persistent player needs dashboard", () => {
     expect(detail).toHaveTextContent("Social");
     expect(detail).toHaveTextContent("10% · critical");
   });
-  it("shows the most urgent needs as compact pills in preview mode", () => {
+  it("hides the panel into a tab and brings it back", () => {
     const { container } = render(<GameNeedsRail player={player} />);
     fireEvent.click(screen.getByRole("button", { name: "Collapse needs panel" }));
-    expect(container.querySelector(".game-needs-toggle")).toHaveAttribute("aria-expanded", "false");
     expect(container.querySelector(".game-needs-rail")).toHaveClass("is-collapsed");
-    expect(container.querySelectorAll(".game-needs-preview-pill")).toHaveLength(2);
-    expect(container.querySelector(".game-needs-preview")).toHaveTextContent("Social");
-    expect(container.querySelector(".game-needs-preview")).toHaveTextContent("Hunger");
-    expect(container.querySelector(".game-needs-list")).toBeEmptyDOMElement();
-    fireEvent.click(screen.getByRole("button", { name: /Social: 10 percent, critical/ }));
-    expect(screen.getByRole("status", { name: "Social need status" })).toHaveTextContent("10%");
+    const tab = screen.getByRole("button", { name: /Expand needs panel/ });
+    expect(tab).toHaveAttribute("aria-expanded", "false");
+    expect(tab).toHaveClass("game-needs-tab");
+    fireEvent.click(tab);
+    expect(container.querySelector(".game-needs-rail")).not.toHaveClass("is-collapsed");
+    expect(screen.getByRole("button", { name: "Collapse needs panel" })).toBeInTheDocument();
   });
   it("starts the map panel collapsed and keeps needs available on demand", () => {
     const { container } = render(<GameNeedsRail player={player} compact />);
@@ -66,8 +65,7 @@ describe("persistent player needs dashboard", () => {
       "aria-expanded",
       "false",
     );
-    expect(container.querySelectorAll(".game-needs-item")).toHaveLength(0);
-    expect(container.querySelector(".game-needs-preview")).toBeNull();
+    expect(container.querySelector(".game-needs-rail")).toHaveClass("is-collapsed");
     fireEvent.click(screen.getByRole("button", { name: /Expand needs panel/ }));
     expect(container.querySelectorAll(".game-needs-item")).toHaveLength(6);
   });

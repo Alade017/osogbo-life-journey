@@ -11097,3 +11097,24 @@
   color: #24556f;
   background: #eaf7fb;
 }
+
+/* Press feedback: buttons sink when clicked or tapped, so every press reads as a click. */
+button:not(:disabled),
+[role="button"] {
+  transition-property: transform, filter, box-shadow, background-color, border-color, color, opacity;
+  transition-duration: 120ms;
+  transition-timing-function: ease-out;
+}
+
+button:not(:disabled):active,
+[role="button"]:active {
+  transform: scale(0.94);
+  filter: brightness(0.93);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button:not(:disabled):active,
+  [role="button"]:active {
+    transform: none;
+  }
+}

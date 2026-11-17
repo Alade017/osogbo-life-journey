@@ -39,6 +39,7 @@ import { CompoundPlot3D } from "./CompoundPlot3D";
 import { MapPin3D } from "./MapPin3D";
 import { LandmarkItem3D } from "./LandmarkItem3D";
 import { SelectionRing3D } from "./SelectionRing3D";
+import { ClickPulse3D } from "./ClickPulse3D";
 import { MapCameraRig } from "./MapCameraRig";
 import { Terrain3D } from "./Terrain3D";
 import { MovingTraffic3D } from "./MovingTraffic3D";
@@ -155,6 +156,10 @@ export function R3FTownSurface(props: Props) {
     [],
   );
 
+  const [pressPulse, setPressPulse] = useState<{
+    key: number;
+    position: [number, number, number];
+  } | null>(null);
   const [selectedTarget, setSelectedTarget] = useState<{
     id: string;
     position: [number, number, number];
@@ -1287,6 +1292,14 @@ export function R3FTownSurface(props: Props) {
                 })
               }
             />
+            {pressPulse && (
+              <ClickPulse3D
+                key={pressPulse.key}
+                position={pressPulse.position}
+                radius={cell * 0.8}
+                onDone={() => setPressPulse(null)}
+              />
+            )}
             {selectedTarget && (
               <SelectionRing3D
                 position={selectedTarget.position}
@@ -1314,6 +1327,7 @@ export function R3FTownSurface(props: Props) {
                   isHovered={hoveredTargetId === place.id}
                   onSelectLandmark={(id) =>
                     select(undefined, () => {
+                      setPressPulse({ key: Date.now(), position: [x, 0, z] });
                       setSelectedTarget({
                         id,
                         position: [x, 0, z],

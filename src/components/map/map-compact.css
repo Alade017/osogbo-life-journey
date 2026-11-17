@@ -28,18 +28,6 @@
 .map-experience .ncm-filter-menu .ncm-filter-row {
   margin-top: var(--spacing-sm);
 }
-.city-game .game-needs-rail.game-needs-rail.game-needs-rail.is-map-compact.is-collapsed {
-  width: 54px;
-  padding: 5px;
-  gap: 2px;
-}
-.city-game
-  .game-needs-rail.game-needs-rail.game-needs-rail.is-map-compact.is-collapsed
-  .game-needs-summary {
-  display: block;
-  padding: 2px;
-  font-size: 9px;
-}
 @media (max-width: 760px) {
   .city-game .map-experience.city-map-dashboard {
     gap: var(--spacing-sm);

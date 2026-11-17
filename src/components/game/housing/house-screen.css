@@ -1727,11 +1727,7 @@
 
 .home-scene .house-home-badge {
   animation: house-float-in 260ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
-}
-
-.home-scene .house-edit-toggle,
-.home-scene .house-needs-actions,
-.city-game.navigation-redesign.home-scene .game-needs-rail {
+}.home-scene .house-edit-toggle, .home-scene .house-needs-actions {
   animation: house-float-in 280ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
 }
 
@@ -1778,7 +1774,7 @@
   outline-offset: 3px;
 }
 
-.home-scene .game-needs-rail {
+.home-scene .game-needs-panel {
   border-color: rgb(255 255 255 / 84%);
   background: rgb(255 255 255 / 96%);
 }
@@ -1830,16 +1826,6 @@
   .home-scene .house-needs-actions > p {
     font-size: 0.72rem;
   }
-
-  .home-scene .game-needs-rail {
-    right: 12px;
-    bottom: calc(var(--game-dock-height, 64px) + env(safe-area-inset-bottom) + 10px);
-    left: 12px;
-    width: auto;
-    padding: 0.55rem;
-    border-radius: 18px;
-  }
-
   .home-scene .game-needs-header {
     margin-bottom: 0.35rem;
   }
@@ -1857,14 +1843,7 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .home-scene .house-home-badge,
-  .home-scene .house-edit-toggle,
-  .home-scene .house-needs-actions,
-  .home-scene .game-needs-rail,
-  .home-scene .house-edit-toggle *,
-  .home-scene .house-needs-actions *,
-  .home-scene .game-needs-rail * {
+@media (prefers-reduced-motion: reduce) {.home-scene .house-home-badge, .home-scene .house-edit-toggle, .home-scene .house-needs-actions, .home-scene .house-edit-toggle *, .home-scene .house-needs-actions * {
     animation: none !important;
     transition: none !important;
   }
@@ -2175,17 +2154,6 @@
     font-size: 11px;
   }
 }
-
-.home-scene .game-needs-rail {
-  right: auto;
-  bottom: calc(var(--game-dock-height, 64px) + env(safe-area-inset-bottom) + 12px);
-  left: 14px;
-  width: max-content;
-  max-width: calc(100vw - 28px);
-  padding: 5px;
-  border-radius: 999px;
-}
-
 .home-scene .game-needs-list {
   display: flex;
   grid-template-columns: none;

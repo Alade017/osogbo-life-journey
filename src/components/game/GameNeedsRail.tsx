@@ -14,6 +14,10 @@ const NEED_ICONS = {
   social: Users,
 };
 
+/**
+ * Needs panel: one rounded pill of six needs. Hiding slides the pill off the
+ * left edge and leaves a small tab that brings it back.
+ */
 export function GameNeedsRail({
   player,
   compact = false,
@@ -28,19 +32,6 @@ export function GameNeedsRail({
   const criticalCount = NEED_NAMES.filter(
     (name) => statusForNeed(name, Math.round(simulation.needs[name])) === "critical",
   ).length;
-  // Preview mode surfaces the two needs requiring the most attention.
-  const previewNeeds = NEED_NAMES.map((name) => ({
-    name,
-    value: Math.round(simulation.needs[name]),
-    status: statusForNeed(name, Math.round(simulation.needs[name])),
-  }))
-    .filter((need) => need.status !== "healthy")
-    .sort((a, b) => {
-      const priority = { critical: 0, warning: 1, healthy: 2 };
-      return priority[a.status] - priority[b.status] || a.value - b.value;
-    })
-    .slice(0, 2);
-  const visibleNeeds = expanded ? NEED_NAMES : [];
   const detailValue = detailNeed ? Math.round(simulation.needs[detailNeed]) : null;
   const needAction = detailNeed
     ? {
@@ -73,128 +64,112 @@ export function GameNeedsRail({
     );
   };
 
+  const toggleLabel = expanded
+    ? "Collapse needs panel"
+    : `Expand needs panel${criticalCount ? `, ${criticalCount} critical ${criticalCount === 1 ? "need" : "needs"}` : ""}`;
+
   return (
     <aside
       className={`game-needs-rail${expanded ? "" : " is-collapsed"}${compact ? " is-map-compact" : ""}`}
       aria-label={`${player.name}'s needs dashboard${criticalCount ? `, ${criticalCount} critical` : ""}`}
       data-critical-count={criticalCount}
     >
-      {criticalCount > 0 && (
-        <span className="game-needs-summary" role="status" aria-live="polite">
-          {criticalCount} critical
-        </span>
-      )}
-      <button
-        type="button"
-        className="game-needs-toggle"
-        aria-expanded={expanded}
-        aria-label={
-          expanded
-            ? "Collapse needs panel"
-            : `Expand needs panel${criticalCount ? `, ${criticalCount} critical ${criticalCount === 1 ? "need" : "needs"}` : ""}`
-        }
-        title={expanded ? "Collapse needs panel" : "Expand needs panel"}
-        onClick={() => setExpanded((current) => !current)}
-      >
-        {expanded ? (
-          <X size={12} aria-hidden="true" />
-        ) : (
-          <>
-            <Zap className="game-needs-collapsed-icon" size={23} aria-hidden="true" />
-            <span className="game-needs-collapsed-plus" aria-hidden="true">
-              <Plus size={13} />
-            </span>
-          </>
+      <div className="game-needs-panel" aria-hidden={!expanded}>
+        {criticalCount > 0 && (
+          <span className="game-needs-summary" role="status" aria-live="polite">
+            {criticalCount} critical
+          </span>
         )}
-      </button>
-      {!expanded && !compact && (
-        <div className="game-needs-preview" aria-label="Needs requiring attention">
-          {previewNeeds.map(({ name, value, status }) => {
+        {expanded && (
+          <button
+            type="button"
+            className="game-needs-toggle"
+            aria-expanded
+            aria-label="Collapse needs panel"
+            title="Hide needs"
+            onClick={() => setExpanded(false)}
+          >
+            <X size={12} aria-hidden="true" />
+          </button>
+        )}
+        <div className="game-needs-list">
+          {NEED_NAMES.map((name) => {
             const Icon = NEED_ICONS[name];
+            const value = Math.round(simulation.needs[name]);
+            const status = statusForNeed(name, value);
             return (
               <button
                 type="button"
-                className={`game-needs-preview-pill is-${status}`}
+                className={`game-needs-item is-${status}${detailNeed === name ? " is-active" : ""}`}
                 key={name}
-                aria-label={`${NEED_RULES[name].label}: ${value} percent, ${status}. Tap for details`}
+                aria-label={`${NEED_RULES[name].label}: ${value} percent, ${status}`}
+                aria-pressed={detailNeed === name}
+                title={`${NEED_RULES[name].label}: ${value}% · Tap for details`}
+                tabIndex={expanded ? 0 : -1}
                 onClick={() => {
                   setActionMessage(null);
-                  setDetailNeed(name);
+                  setDetailNeed((current) => (current === name ? null : name));
                 }}
               >
-                <Icon size={13} aria-hidden="true" />
-                <span>{NEED_RULES[name].label}</span>
-                <strong>{value}%</strong>
+                <span
+                  className="game-needs-icon-ring"
+                  style={{
+                    background: `conic-gradient(var(--need-tone) ${value}%, #e8ece8 0)`,
+                  }}
+                >
+                  <span className="game-needs-icon-core">
+                    <Icon size={15} aria-hidden="true" />
+                  </span>
+                </span>
+                <span className="game-needs-value">{value}%</span>
               </button>
             );
           })}
-          {previewNeeds.length === 0 && (
-            <span className="game-needs-preview-empty">All needs are good</span>
-          )}
         </div>
-      )}
-      <div className="game-needs-list">
-        {visibleNeeds.map((name) => {
-          const Icon = NEED_ICONS[name];
-          const value = Math.round(simulation.needs[name]);
-          const status = statusForNeed(name, value);
-          return (
+        {detailNeed && detailValue !== null && expanded && (
+          <div
+            className="game-needs-detail"
+            role="status"
+            aria-live="polite"
+            aria-label={`${NEED_RULES[detailNeed].label} need status`}
+          >
+            <strong>{NEED_RULES[detailNeed].label}</strong>
+            <span>
+              {detailValue}% · {statusForNeed(detailNeed, detailValue)}
+            </span>
             <button
               type="button"
-              className={`game-needs-item is-${status}${detailNeed === name ? " is-active" : ""}`}
-              key={name}
-              aria-label={`${NEED_RULES[name].label}: ${value} percent, ${status}`}
-              aria-pressed={detailNeed === name}
-              title={`${NEED_RULES[name].label}: ${value}% · Tap for details`}
-              onClick={() => {
-                setActionMessage(null);
-                setDetailNeed((current) => (current === name ? null : name));
-              }}
+              className="game-needs-action"
+              onClick={() => void handleNeedAction()}
+              disabled={
+                !!needAction &&
+                "action" in needAction &&
+                (busy || !ready || !!simulation.currentAction)
+              }
             >
-              <span
-                className="game-needs-icon-ring"
-                style={{
-                  background: `conic-gradient(var(--need-tone) ${value}%, #e8ece8 0)`,
-                }}
-              >
-                <span className="game-needs-icon-core">
-                  <Icon size={15} aria-hidden="true" />
-                </span>
-              </span>
-              <span className="game-needs-value">{value}%</span>
+              {needAction?.label ?? "Choose an action"}
             </button>
-          );
-        })}
+            {actionMessage && (
+              <span className="game-needs-action-message" role="status">
+                {actionMessage}
+              </span>
+            )}
+          </div>
+        )}
       </div>
-      {detailNeed && detailValue !== null && (
-        <div
-          className="game-needs-detail"
-          role="status"
-          aria-live="polite"
-          aria-label={`${NEED_RULES[detailNeed].label} need status`}
+      {!expanded && (
+        <button
+          type="button"
+          className="game-needs-tab"
+          aria-expanded={false}
+          aria-label={toggleLabel}
+          title="Show needs"
+          onClick={() => setExpanded(true)}
         >
-          <strong>{NEED_RULES[detailNeed].label}</strong>
-          <span>
-            {detailValue}% · {statusForNeed(detailNeed, detailValue)}
-          </span>
-          <button
-            type="button"
-            className="game-needs-action"
-            onClick={() => void handleNeedAction()}
-            disabled={
-              !!needAction &&
-              "action" in needAction &&
-              (busy || !ready || !!simulation.currentAction)
-            }
-          >
-            {needAction?.label ?? "Choose an action"}
-          </button>
-          {actionMessage && (
-            <span className="game-needs-action-message" role="status">
-              {actionMessage}
-            </span>
-          )}
-        </div>
+          <Zap size={16} aria-hidden="true" />
+          {criticalCount > 0 && <span className="game-needs-tab-dot" aria-hidden="true" />}
+          <Plus size={11} className="game-needs-tab-plus" aria-hidden="true" />
+        </button>
       )}
     </aside>
   );

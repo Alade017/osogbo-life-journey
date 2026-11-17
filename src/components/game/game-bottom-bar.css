@@ -138,9 +138,3 @@
   white-space: nowrap;
 }
 
-/* Needs panel: bottom-left, just above the bar. */
-.game-needs-rail.game-needs-rail.game-needs-rail {
-  right: auto;
-  left: 12px;
-  bottom: calc(72px + env(safe-area-inset-bottom));
-}

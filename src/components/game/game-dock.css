@@ -191,14 +191,6 @@
   }
 }
 
-/* Fixed needs and home controls reserve the same dock boundary on every screen. */
-.city-game.navigation-redesign .game-needs-rail {
-  inset: auto auto calc(var(--game-dock-space) + 8px) max(12px, env(safe-area-inset-left));
-}
-
-.city-game.navigation-redesign.home-scene .game-needs-rail {
-  bottom: calc(var(--game-dock-space) + 8px);
-}
 
 .city-game.navigation-redesign .house-needs-actions {
   bottom: calc(var(--game-dock-space) + 12px);
