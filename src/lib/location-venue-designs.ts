@@ -18,7 +18,7 @@ export type VenueEnvironment = {
 };
 
 export type LocationVenueDesign = {
-  scene?: "campus" | "market";
+  scene?: "campus" | "market" | "clinic" | "healthcare";
   sceneSize?: { width: number; depth: number };
   name: string;
   description: string;
@@ -265,6 +265,7 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     ],
   },
   "community-clinic": {
+    scene: "clinic",
     name: "Community clinic",
     description: "A clean reception and care area with clear visitor seating.",
     floorColor: "#d0ded8",
@@ -396,6 +397,8 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     ],
   },
   "sunrise-health-post": {
+    scene: "healthcare",
+    sceneSize: { width: 12, depth: 9 },
     name: "Sunrise health post",
     description: "A small health post with reception, care space and patient seating.",
     floorColor: "#d2e0d7",
@@ -799,12 +802,16 @@ const fallbackVenue: LocationVenueDesign = {
 };
 
 export function getLocationVenueDesign(slug: string, locationName: string): LocationVenueDesign {
-  const design = venues[slug] ?? fallbackVenue;
+  const design = venues[slug] ?? (
+    ["state-hospital", "general-hospital"].includes(slug)
+      ? { ...venues["sunrise-health-post"], name: locationName }
+      : fallbackVenue
+  );
   return design === fallbackVenue ? { ...fallbackVenue, name: locationName } : design;
 }
 
 export function hasLocationVenueDesign(slug: string) {
-  return Object.hasOwn(venues, slug);
+  return Object.hasOwn(venues, slug) || ["state-hospital", "general-hospital"].includes(slug);
 }
 
 /**
