@@ -1,6 +1,14 @@
 {
   "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules", "dist", "dist-public", ".output", ".nitro", ".tanstack"],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "dist-public",
+    ".output",
+    ".nitro",
+    ".tanstack",
+    "supabase/functions"
+  ],
   "compilerOptions": {
     "target": "ES2022",
     "jsx": "react-jsx",

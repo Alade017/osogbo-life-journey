@@ -136,7 +136,11 @@ export function CityMapDashboard({
   const navigate = useNavigate();
   const mapHref = useLocation({ select: (location) => location.href });
   const preferredTransport = transportPreference(mapHref);
-  useEffect(() => { if (preferredTransport) { setMapLevel("town"); setTownFocus("3d-town"); } }, [preferredTransport]);
+  useEffect(() => {
+    if (preferredTransport) {
+      setMapLevel("town");
+    }
+  }, [preferredTransport]);
   const requestedBillboardId = new URLSearchParams(mapHref.split("?")[1]?.split("#")[0] ?? "").get(
     "billboard",
   );
@@ -418,7 +422,8 @@ export function CityMapDashboard({
     .map((item) => item.id);
   const submitSearch = () => {
     if (!searchMatches) return;
-    setTownFocus("3d-town");
+    setMapLevel("town");
+
     setSearchTarget({ id: searchMatches.id, kind: searchMatches.kind });
   };
   const rentRecord = rent.data as { next_due_at?: string; due_at?: string } | null;
@@ -578,7 +583,6 @@ export function CityMapDashboard({
                 key={c.id}
                 aria-pressed={filter === c.id}
                 onClick={() => {
-                  setTownFocus("3d-town");
                   setFilter(c.id === "all" ? "all" : filter === c.id ? "all" : c.id);
                 }}
               >

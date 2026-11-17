@@ -20,7 +20,7 @@ vi.mock("@tanstack/react-router", async (importOriginal) => {
     ...actual,
     useNavigate: () => testState.navigate,
     useLocation: (options?: { select?: (location: { href: string }) => unknown }) => {
-      const location = { href: "/map" };
+      const location = { href: testState.href };
       return options?.select ? options.select(location) : location;
     },
     Link: ({ to, children, ...props }: { to: string; children: ReactNode; className?: string }) => (
@@ -31,6 +31,7 @@ vi.mock("@tanstack/react-router", async (importOriginal) => {
   };
 });
 const testState = vi.hoisted(() => ({
+  href: "/map",
   navigate: vi.fn(),
   travelToLocation: vi.fn(),
   character: null as Record<string, unknown> | null,
@@ -89,6 +90,7 @@ vi.mock("@/hooks/use-world-clock", () => ({ useWorldClock: () => ({ data: null }
 const clients: QueryClient[] = [];
 
 beforeEach(() => {
+  testState.href = "/map";
   eventState.events = [];
   testState.navigate.mockReset();
   testState.travelToLocation.mockReset();
@@ -351,11 +353,7 @@ describe("isometric town map", () => {
     }
     expect(
       townData.landmarks.filter((place) => place.category === "worship").map((place) => place.id),
-    ).toEqual([
-      "mosque-square",
-      "central-church",
-      "central-mosque",
-    ]);
+    ).toEqual(["mosque-square", "central-church", "central-mosque"]);
     expect(JSON.stringify(townData)).not.toMatch(/\/models\/city\//);
     expect(JSON.stringify(townData).toLowerCase()).not.toMatch(/sacred|grove|osun-osogbo/);
     expect(townData.landmarks.find((place) => place.id === "lantern-club")?.min_age).toBe(18);
@@ -417,4 +415,25 @@ describe("isometric town map", () => {
     expect(findMapPlaceAction("lantern-club", "club-social")).not.toBeNull();
     expect(findMapPlaceAction("lantern-club", "made-up-action")).toBeNull();
   });
+});
+
+it("keeps transport handoff, filtering and search usable without the removed town-focus state", async () => {
+  testState.href = "/map?transport=danfo";
+  renderDashboard("city-centre");
+  const filters = screen.getByLabelText("Filter places");
+  const buttons = within(filters).getAllByRole("button");
+  fireEvent.click(buttons[1]!);
+  expect(buttons[1]).toHaveAttribute("aria-pressed", "true");
+  fireEvent.change(screen.getByRole("textbox", { name: "Search districts and landmarks" }), {
+    target: { value: townData.landmarks[0]!.label },
+  });
+  fireEvent.click(screen.getByRole("button", { name: /^Search$/ }));
+  expect(
+    await screen.findByRole("dialog", { name: townData.landmarks[0]!.label }),
+  ).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Cancel travel selection" }));
+  expect(
+    screen.getByRole("textbox", { name: "Search districts and landmarks" }),
+  ).toBeInTheDocument();
+  expect(testState.travelToLocation).not.toHaveBeenCalled();
 });

@@ -101,11 +101,12 @@ function blob(
   return { geometry, bone, accessory: options.accessory ?? false };
 }
 
-const SHAPES: Record<BodyVariant, { shoulder: number; waist: number; hip: number; bust: number }> = {
-  male: { shoulder: 1, waist: 1, hip: 1, bust: 0 },
-  business: { shoulder: 1, waist: 1, hip: 1, bust: 0 },
-  female: { shoulder: 0.92, waist: 0.88, hip: 1.1, bust: 1 },
-};
+const SHAPES: Record<BodyVariant, { shoulder: number; waist: number; hip: number; bust: number }> =
+  {
+    male: { shoulder: 1, waist: 1, hip: 1, bust: 0 },
+    business: { shoulder: 1, waist: 1, hip: 1, bust: 0 },
+    female: { shoulder: 0.92, waist: 0.88, hip: 1.1, bust: 1 },
+  };
 const BUILD_FACTORS = [
   { shoulder: 0.9, waist: 0.86, hip: 0.92, limb: 0.9 },
   { shoulder: 1, waist: 1, hip: 1, limb: 1 },
@@ -114,9 +115,7 @@ const BUILD_FACTORS = [
 ] as const;
 
 /** A single closed torso surface with blended root/spine skin weights. */
-function torsoSurface(
-  shape: { shoulder: number; waist: number; hip: number },
-): Part {
+function torsoSurface(shape: { shoulder: number; waist: number; hip: number }): Part {
   const rings = [
     { y: 0.49, x: 0.105 * shape.hip, z: 0.075 },
     { y: 0.53, x: 0.137 * shape.hip, z: 0.09 },
@@ -166,9 +165,9 @@ function torsoSurface(
   for (let ring = 0; ring < rings.length - 1; ring += 1) {
     for (let segment = 0; segment < radialSegments; segment += 1) {
       const a = ring * radialSegments + segment;
-      const b = ring * radialSegments + (segment + 1) % radialSegments;
+      const b = ring * radialSegments + ((segment + 1) % radialSegments);
       const c = (ring + 1) * radialSegments + segment;
-      const d = (ring + 1) * radialSegments + (segment + 1) % radialSegments;
+      const d = (ring + 1) * radialSegments + ((segment + 1) % radialSegments);
       indices.push(a, c, b, b, c, d);
     }
   }
@@ -222,8 +221,11 @@ function limbParts(side: 1 | -1, shape: { shoulder: number; hip: number; limb: n
     blob([0.036 * arm, 0.047 * arm, 0.025 * arm], [ax, 0.355, 0.008], hand, { detail: 1 }),
     blob([0.014 * arm, 0.029 * arm, 0.016 * arm], [ax - side * 0.035 * arm, 0.348, 0.012], hand),
     ...[-1.5, -0.5, 0.5, 1.5].map((finger) =>
-      blob([0.0065 * arm, 0.027 * arm, 0.008 * arm],
-        [ax + finger * fingerSpread, 0.31, 0.018], hand),
+      blob(
+        [0.0065 * arm, 0.027 * arm, 0.008 * arm],
+        [ax + finger * fingerSpread, 0.31, 0.018],
+        hand,
+      ),
     ),
     // Rounded thigh and a narrower calf with an ankle transition.
     taperedSegment(thighWidth, 0.052 * arm, 0.31 * arm, [lx, 0.33, 0], thigh),
@@ -354,7 +356,11 @@ function hairParts(shape: HairShape): Part[] {
   return [base];
 }
 
-const geometryCache = new Map<string, { body: BufferGeometry; hair: BufferGeometry }>();
+type HumanoidGeometries = Record<
+  "body" | "hair" | "face" | "eyes" | "irises" | "pupils" | "highlights",
+  BufferGeometry
+>;
+const geometryCache = new Map<string, HumanoidGeometries>();
 
 function mergeSkinned(parts: readonly Part[], indexOf: Map<BoneName, number>): BufferGeometry {
   const merged = mergeGeometries(
@@ -371,9 +377,19 @@ function geometriesFor(variant: BodyVariant, hairShape: HairShape, build: number
   if (cached) return cached;
   const indexOf = new Map(JOINTS.map((joint, index) => [joint.name, index]));
   const parts = bodyParts(variant, normalizedBuild);
-  const built = {
-    body: mergeGeometries([skin, dark], true) ?? skin,
+  const eyePair = (radii: [number, number, number], y: number, z: number) =>
+    mergeSkinned(
+      [-1, 1].map((side) => blob(radii, [side * 0.038, y, z], BONE.head, { detail: 1 })),
+      indexOf,
+    );
+  const built: HumanoidGeometries = {
+    body: mergeSkinned(parts, indexOf),
     hair: mergeSkinned(hairParts(hairShape), indexOf),
+    face: mergeSkinned(accessoryParts(), indexOf),
+    eyes: eyePair([0.022, 0.013, 0.01], 0.95, 0.087),
+    irises: eyePair([0.009, 0.01, 0.005], 0.95, 0.096),
+    pupils: eyePair([0.004, 0.006, 0.003], 0.95, 0.101),
+    highlights: eyePair([0.002, 0.002, 0.002], 0.954, 0.104),
   };
   geometryCache.set(key, built);
   return built;
@@ -391,9 +407,17 @@ export type Humanoid = {
  * chosen by the caller from the saved hair style.
  */
 export function createHumanoid({
-  variant, skinColor, hairColor, hairShape = "cap", build = 1,
+  variant,
+  skinColor,
+  hairColor,
+  hairShape = "cap",
+  build = 1,
 }: {
-  variant: BodyVariant; skinColor: string; hairColor: string | null; hairShape?: HairShape; build?: number;
+  variant: BodyVariant;
+  skinColor: string;
+  hairColor: string | null;
+  hairShape?: HairShape;
+  build?: number;
 }): Humanoid {
   const byName = new Map<string, Bone>();
   const bones: Bone[] = [];
@@ -417,16 +441,45 @@ export function createHumanoid({
     return mesh;
   };
   const meshes = [
-    makeMesh(geo.body, new MeshStandardMaterial({ color: skinColor, roughness: 0.66, metalness: 0, flatShading: false })),
-    makeMesh(geo.face, new MeshStandardMaterial({ color: ACCESSORY_COLOR, roughness: 0.58, flatShading: false })),
-    makeMesh(geo.eyes, new MeshStandardMaterial({ color: "#f1e9df", roughness: 0.34, flatShading: false })),
-    makeMesh(geo.irises, new MeshStandardMaterial({ color: "#3a2118", roughness: 0.28, flatShading: false })),
-    makeMesh(geo.pupils, new MeshStandardMaterial({ color: "#100b09", roughness: 0.18, flatShading: false })),
-    makeMesh(geo.highlights, new MeshStandardMaterial({ color: "#fffaf2", roughness: 0.12, emissive: "#fffaf2", emissiveIntensity: 0.08, flatShading: false })),
+    makeMesh(
+      geo.body,
+      new MeshStandardMaterial({
+        color: skinColor,
+        roughness: 0.66,
+        metalness: 0,
+        flatShading: false,
+      }),
+    ),
+    makeMesh(
+      geo.face,
+      new MeshStandardMaterial({ color: ACCESSORY_COLOR, roughness: 0.58, flatShading: false }),
+    ),
+    makeMesh(
+      geo.eyes,
+      new MeshStandardMaterial({ color: "#f1e9df", roughness: 0.34, flatShading: false }),
+    ),
+    makeMesh(
+      geo.irises,
+      new MeshStandardMaterial({ color: "#3a2118", roughness: 0.28, flatShading: false }),
+    ),
+    makeMesh(
+      geo.pupils,
+      new MeshStandardMaterial({ color: "#100b09", roughness: 0.18, flatShading: false }),
+    ),
+    makeMesh(
+      geo.highlights,
+      new MeshStandardMaterial({
+        color: "#fffaf2",
+        roughness: 0.12,
+        emissive: "#fffaf2",
+        emissiveIntensity: 0.08,
+        flatShading: false,
+      }),
+    ),
   ];
   if (hairColor) {
     const hair = new SkinnedMesh(
-      geometries.hair,
+      geo.hair,
       new MeshStandardMaterial({ color: hairColor, roughness: 0.9, flatShading: true }),
     );
     hair.castShadow = true;
