@@ -1,42 +1,31 @@
 /*
- * Bottom bar: Home, City and Career Life on one pill, with the Phone button in a
- * fixed column on the right. Uses its own class names (gbb-*) so older nav rules
- * in game-navigation.css, game-dock.css and styles.css cannot match it.
+ * Adaptive HUD controls. Every primary action is an independent pill;
+ * there is no shared dock surface or oversized phone button.
  */
-
 .gbb {
   position: fixed;
   left: 50%;
   bottom: calc(8px + env(safe-area-inset-bottom) + var(--game-keyboard-inset, 0px));
   z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   box-sizing: border-box;
-  width: min(520px, calc(100% - 24px));
-  height: 56px;
-  padding-right: 72px;
+  width: max-content;
+  max-width: calc(100% - max(12px, env(safe-area-inset-left)) - max(12px, env(safe-area-inset-right)));
+  height: 48px;
+  padding: 0;
   transform: translateX(-50%);
   pointer-events: none;
 }
 
-/* While the phone is open, the bar sits above the overlay so the Phone button can close it. */
 .gbb.is-open {
   z-index: calc(var(--game-dialog-layer, 140) + 20);
 }
 
 .gbb .gbb-nav {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 4px;
-  box-sizing: border-box;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 4px;
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  background: var(--popover);
-  color: var(--popover-foreground);
-  box-shadow: var(--elevation-card);
-  pointer-events: auto;
+  display: contents;
 }
 
 .gbb .gbb-nav[aria-hidden="true"] {
@@ -44,78 +33,65 @@
   pointer-events: none;
 }
 
-.gbb .gbb-link {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  box-sizing: border-box;
-  min-width: 0;
-  height: 100%;
-  margin: 0;
-  padding: 2px;
-  border-radius: 14px;
-  color: var(--muted-foreground);
-  font-size: 10px;
-  font-weight: 650;
-  line-height: 1.1;
-  text-decoration: none;
-}
-
-.gbb .gbb-link svg {
-  width: 16px;
-  height: 16px;
-  flex: none;
-}
-
-.gbb .gbb-link.gbb-active {
-  background: var(--primary);
-  color: var(--primary-foreground);
-}
-
-/* Phone button: fixed 64px column on the right, same height and surface as the nav. */
+.gbb .gbb-link,
 .gbb .gbb-phone {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
+  position: relative;
+  display: inline-flex;
+  flex: 0 1 auto;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  width: 64px;
-  height: 56px;
-  min-height: 56px;
+  gap: 6px;
+  box-sizing: border-box;
+  min-width: 44px;
+  min-height: 44px;
+  height: 44px;
   margin: 0;
-  padding: 4px 2px;
+  padding: 0 11px;
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: 999px;
   background: var(--popover);
-  color: var(--primary);
+  color: var(--muted-foreground);
   box-shadow: var(--elevation-card);
   font: inherit;
   font-size: 10px;
   font-weight: 650;
-  line-height: 1.1;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
   cursor: pointer;
   pointer-events: auto;
+  touch-action: manipulation;
+}
+
+.gbb .gbb-link svg,
+.gbb .gbb-phone svg {
+  width: 17px;
+  height: 17px;
+  flex: none;
+}
+
+.gbb .gbb-link.gbb-active {
+  border-color: color-mix(in srgb, var(--primary) 30%, var(--border));
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.gbb .gbb-phone {
+  color: var(--primary);
 }
 
 .gbb .gbb-phone .phone-launcher-icon {
   position: static;
-  display: grid;
+  display: inline-grid;
   place-items: center;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   padding: 0;
   border: 0;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
-  color: var(--primary);
+  color: currentColor;
 }
 
 .gbb .gbb-phone .phone-launcher-icon::before,
@@ -124,8 +100,8 @@
 }
 
 .gbb .gbb-phone .phone-launcher-icon svg {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
 }
 
 .gbb .gbb-phone .phone-compact-label {
@@ -138,33 +114,74 @@
   white-space: nowrap;
 }
 
-/* Needs panel: bottom-left, just above the bar. */
-.game-needs-rail.game-needs-rail.game-needs-rail {
-  right: auto;
-  left: 12px;
-  bottom: calc(72px + env(safe-area-inset-bottom));
+.gbb :is(a, button):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
 }
 
+/* Needs stays separate from navigation, with enough clearance above the pills. */
+.game-needs-rail.game-needs-rail.game-needs-rail {
+  right: auto;
+  left: max(12px, env(safe-area-inset-left));
+  bottom: calc(64px + env(safe-area-inset-bottom));
+}
 
-/* Adaptive HUD: soften passive controls after four seconds without input.
-   Controls remain interactive; critical needs and expanded panels stay prominent. */
+/* Adaptive idle state: soften surfaces without making labels or controls unusable. */
 .gbb,
 .game-needs-rail,
 .hd-status {
   transition: opacity 180ms ease;
 }
 
-.game-shell.hud-idle .gbb,
+.game-shell.hud-idle .gbb:not(.is-open),
 .game-shell.hud-idle .hd-status,
-.game-shell.hud-idle .game-needs-rail:not(:has(.game-needs-toggle.is-critical)):not(.is-expanded) {
-  opacity: 0.42;
+.game-shell.hud-idle .game-needs-rail:not(.has-critical):not(.is-expanded) {
+  opacity: 0.82;
 }
 
-.game-shell.hud-idle .game-needs-rail:has(.game-needs-toggle.is-critical),
+.game-shell.hud-idle .game-needs-rail.has-critical,
 .game-shell.hud-idle .game-needs-rail.is-expanded,
 .game-shell.hud-idle .gbb:focus-within,
-.game-shell.hud-idle .hd-status:focus-within {
+.game-shell.hud-idle .hd-status:focus-within,
+.game-shell.phone-open .gbb {
   opacity: 1;
+}
+
+/* Modal/menu focus: keep the world HUD visually subordinate to the active surface. */
+.game-shell.phone-open .hd-status,
+.game-shell.hud-menu-open .gbb,
+.game-shell.hud-menu-open .hd-status,
+.game-shell.hud-menu-open .game-needs-rail {
+  opacity: 0.3;
+}
+
+.game-shell.hud-menu-open .gbb,
+.game-shell.hud-menu-open .game-needs-rail {
+  pointer-events: none;
+}
+
+@media (max-width: 380px) {
+  .gbb {
+    gap: 4px;
+  }
+
+  .gbb .gbb-link,
+  .gbb .gbb-phone {
+    gap: 0;
+    width: 44px;
+    min-width: 44px;
+    padding: 0;
+  }
+
+  .gbb .gbb-link span,
+  .gbb .gbb-phone .phone-compact-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
