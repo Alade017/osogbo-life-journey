@@ -1,9 +1,10 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { createPortal } from "@react-three/fiber";
-import { Bone, Object3D, Quaternion, Vector3 } from "three";
+import { Bone, LatheGeometry, Object3D, Quaternion, Vector2, Vector3 } from "three";
 import type { Appearance } from "@/game/avatar-appearance";
 import { OUTFITS, SHOE_COLORS, TROUSERS } from "@/game/avatar-appearance";
 import { adireTexture } from "./cloth-patterns";
+import { HUMANOID_BUILD_FACTORS } from "./humanoid-rig";
 
 type Segment = { bone: Bone; child: Bone };
 function clean(name: string) {
@@ -65,49 +66,71 @@ function SegmentGarment({
       </mesh>
       {cuff ? (
         <mesh position={[0, -length * 0.44, 0]} castShadow>
-          <cylinderGeometry args={[radius * 0.96, radius * 0.96, Math.max(length * 0.075, 0.01), 12]} />
+          <cylinderGeometry
+            args={[radius * 0.96, radius * 0.96, Math.max(length * 0.075, 0.01), 12]}
+          />
           <meshStandardMaterial color={trim} roughness={0.82} />
         </mesh>
       ) : null}
       <mesh position={[0, length * 0.2, 0]}>
-        <cylinderGeometry args={[radius * 1.01, radius * 1.01, Math.max(length * 0.018, 0.004), 12]} />
+        <cylinderGeometry
+          args={[radius * 1.01, radius * 1.01, Math.max(length * 0.018, 0.004), 12]}
+        />
         <meshStandardMaterial color={trim} roughness={0.82} />
       </mesh>
     </group>
   );
 }
 
-
-function TorsoGarment({ color, trim, patterned = false }: { color: string; trim: string; patterned?: boolean }) {
+function TorsoGarment({
+  color,
+  trim,
+  patterned = false,
+  fit,
+}: {
+  color: string;
+  trim: string;
+  patterned?: boolean;
+  fit: { shoulder: number; waist: number; hip: number };
+}) {
   const map = useMemo(() => (patterned ? adireTexture() : null), [patterned]);
+  const geometry = useMemo(
+    () =>
+      new LatheGeometry(
+        [
+          new Vector2(0.145 * fit.hip, -0.185),
+          new Vector2(0.125 * fit.waist, -0.065),
+          new Vector2(0.178 * fit.shoulder, 0.035),
+          new Vector2(0.193 * fit.shoulder, 0.115),
+          new Vector2(0.05, 0.19),
+        ],
+        16,
+      ),
+    [fit],
+  );
+  useEffect(() => () => geometry.dispose(), [geometry]);
   return (
-    <group position={[0, 0.012, 0]} name="torso-garment">
-      <mesh position={[0, -0.012, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.15, 0.12, 0.36, 20, 2, false]} />
-        <meshStandardMaterial color={color} map={map} roughness={0.93} side={2} />
+    <group name="torso-garment" scale={[1, 1, 0.78]}>
+      <mesh geometry={geometry} castShadow receiveShadow>
+        <meshStandardMaterial color={color} map={map} roughness={0.93} side={2} flatShading />
       </mesh>
-      <mesh position={[0, 0.17, 0]} castShadow>
-        <cylinderGeometry args={[0.15, 0.15, 0.025, 20]} />
-        <meshStandardMaterial color={trim} roughness={0.86} />
-      </mesh>
-      <mesh position={[0, -0.17, 0]} castShadow>
-        <cylinderGeometry args={[0.113, 0.108, 0.018, 20]} />
-        <meshStandardMaterial color={trim} roughness={0.86} />
+      <mesh position={[0, 0.19, 0]} castShadow>
+        <cylinderGeometry args={[0.051, 0.051, 0.012, 16, 1, true]} />
+        <meshStandardMaterial color={trim} roughness={0.86} side={2} />
       </mesh>
     </group>
   );
 }
 
-
-function WaistGarment({ color, trim }: { color: string; trim: string }) {
+function WaistGarment({ color, trim, hip }: { color: string; trim: string; hip: number }) {
   return (
-    <group position={[0, 0.018, 0]} name="waist-garment">
+    <group position={[0, 0.018, 0]} name="waist-garment" scale={[hip, 1, 0.72]}>
       <mesh position={[0, 0, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.132, 0.118, 0.19, 20, 2, false]} />
+        <cylinderGeometry args={[0.16, 0.145, 0.19, 16, 2, false]} />
         <meshStandardMaterial color={color} roughness={0.94} side={2} />
       </mesh>
       <mesh position={[0, 0.096, 0]}>
-        <cylinderGeometry args={[0.132, 0.132, 0.014, 20]} />
+        <cylinderGeometry args={[0.16, 0.16, 0.014, 16]} />
         <meshStandardMaterial color={trim} roughness={0.86} />
       </mesh>
     </group>
@@ -164,39 +187,58 @@ export function CharacterWardrobe({
     return { torso, pelvis, arms, legs, feet };
   }, [rig]);
 
-  if (appearance.clothed === false) return null;
   const top = OUTFITS[appearance.outfit ?? 0] ?? OUTFITS[0]!;
   const bottom = TROUSERS[appearance.bottoms ?? 0] ?? TROUSERS[0]!;
   const shoes = SHOE_COLORS[appearance.shoes ?? 0] ?? SHOE_COLORS[0]!;
   const trim = gender === "female" ? "#c49b61" : "#d7c49a";
   const patterned = appearance.outfit === 3;
+  const build =
+    HUMANOID_BUILD_FACTORS[Math.max(0, Math.min(3, Math.round(appearance.build ?? 1)))]!;
+  const fit = useMemo(
+    () => ({
+      shoulder: build.shoulder * (gender === "male" ? 1 : 0.92),
+      waist: build.waist * (gender === "male" ? 1 : 0.88),
+      hip: build.hip * (gender === "male" ? 1 : 1.1),
+    }),
+    [build, gender],
+  );
 
+  if (appearance.clothed === false) return null;
   return (
     <>
       {anchors.torso
         ? createPortal(
-            <TorsoGarment color={top} trim={trim} patterned={patterned} />,
+            <TorsoGarment color={top} trim={trim} patterned={patterned} fit={fit} />,
             anchors.torso,
           )
         : null}
       {anchors.pelvis
-        ? createPortal(<WaistGarment color={bottom} trim={trim} />, anchors.pelvis)
+        ? createPortal(<WaistGarment color={bottom} trim={trim} hip={fit.hip} />, anchors.pelvis)
         : null}
       {anchors.arms.map((segment) =>
         createPortal(
-          <SegmentGarment segment={segment} color={top} trim={trim} radiusFactor={0.39} patterned={patterned} />,
-          segment.bone
+          <SegmentGarment
+            segment={segment}
+            color={top}
+            trim={trim}
+            radiusFactor={0.39 * build.limb}
+            patterned={patterned}
+          />,
+          segment.bone,
         ),
       )}
       {anchors.legs.map((segment) =>
         createPortal(
-          <SegmentGarment segment={segment} color={bottom} trim={trim} radiusFactor={0.3} />,
-          segment.bone
+          <SegmentGarment
+            segment={segment}
+            color={bottom}
+            trim={trim}
+            radiusFactor={0.3 * build.limb}
+          />,
+          segment.bone,
         ),
       )}
-      {anchors.feet.map((bone) =>
-        createPortal(<ShoeGarment color={shoes} />, bone),
-      )}
+      {anchors.feet.map((bone) => createPortal(<ShoeGarment color={shoes} />, bone))}
     </>
   );
 }
