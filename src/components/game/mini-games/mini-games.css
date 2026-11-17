@@ -1598,3 +1598,29 @@
   color: #1f2937;
   flex: none;
 }
+
+/* The player's own table, pinned above the lobby so they can always return to it. */
+.mg-stake-current {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--mg-accent);
+  border-radius: 16px;
+  background: var(--mg-paper);
+}
+.mg-stake-current > div:first-child {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.mg-stake-current small {
+  color: var(--mg-muted, inherit);
+}
+.mg-stake-current-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
