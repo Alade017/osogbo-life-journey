@@ -75,6 +75,10 @@ export type NeighborhoodDressing = {
 };
 
 export type NeighborhoodArea = {
+  /** Optional authored interaction layout; generated town areas omit it. */
+  zoneLayout?: {
+    drivewayCutouts?: readonly { roadId: string; side: number; start: number; end: number }[];
+  };
   slug: string;
   dressing?: readonly NeighborhoodDressing[];
   name: string;
