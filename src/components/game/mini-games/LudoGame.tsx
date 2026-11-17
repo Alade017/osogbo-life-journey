@@ -392,12 +392,12 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
 
   const humanWon = game.winnerId === HUMAN;
   const status =
-    game.phase === "GAME_OVER"
-      ? humanWon
-        ? "You won!"
-        : `${nameOf(game.winnerId ?? "")} won.`
-      : movementPending
-        ? "Moving pawn…"
+    movementPending
+      ? "Moving pawn…"
+      : game.phase === "GAME_OVER"
+        ? humanWon
+          ? "You won!"
+          : `${nameOf(game.winnerId ?? "")} won.`
         : humanTurn
         ? game.phase === "WAITING_FOR_ROLL"
           ? ""
@@ -547,7 +547,7 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
           </div>
         )}
       </div>
-      {game.phase === "GAME_OVER" && (
+      {game.phase === "GAME_OVER" && !movementPending && (
         <LudoResults
           open={!resultsDismissed}
           seats={seats}
@@ -562,7 +562,7 @@ function LudoTable({ players, onLobby }: { players: number; onLobby: () => void 
           onClose={() => setResultsDismissed(true)}
         />
       )}
-      {game.phase === "GAME_OVER" && resultsDismissed && (
+      {game.phase === "GAME_OVER" && !movementPending && resultsDismissed && (
         <Button variant="plain" onClick={() => setResultsDismissed(false)}>
           See results
         </Button>
