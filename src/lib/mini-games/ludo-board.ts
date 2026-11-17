@@ -69,7 +69,7 @@ export function homeLane(arm: number): readonly Cell[] {
   );
 }
 
-/** Yard centre for arm 0 is the top-left corner beside the RED start; other arms turn it. */
+/** Yard centre for arm 0 (RED) is bottom-left; subsequent colour arms rotate clockwise. */
 const YARD_CENTRE: Point = { x: EDGE / 2, y: BOARD_SIZE - EDGE / 2 };
 const YARD_OFFSET = 1.25;
 export const YARD_SLOTS: readonly Point[] = [
@@ -84,7 +84,7 @@ export function tokenPoint(colour: Colour, step: number, token: number): Point {
   const arm = armOf(colour);
   if (step === YARD_STEP) {
     const slot = YARD_SLOTS[token % 4] ?? YARD_SLOTS[0]!;
-    const centre = turnPointBy(YARD_CENTRE, arm + 1);
+    const centre = turnPointBy(YARD_CENTRE, arm);
     return { x: centre.x + slot.x, y: centre.y + slot.y };
   }
   if (step === FINISH_STEP) return { x: MID + 0.5, y: MID + 0.5 };
