@@ -9,6 +9,11 @@ import townData from "@/data/osogbo-town.json";
 import osunPlaces from "@/data/osun-public-places.json";
 import { MapCanvas } from "@/components/map/MapCanvas";
 import { findMapPlaceAction } from "@/lib/map-place-action.server";
+import {
+  clearPendingDepartureFromHome,
+  peekPendingDepartureFromHome,
+  takeDepartureFromHome,
+} from "@/lib/home-departure";
 vi.mock("@tanstack/react-router", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@tanstack/react-router")>();
   return {
@@ -31,6 +36,7 @@ const testState = vi.hoisted(() => ({
   character: null as Record<string, unknown> | null,
   locations: [] as Record<string, unknown>[],
   wallet: null as Record<string, unknown> | null,
+  insideHome: false,
 }));
 const eventState = vi.hoisted(() => ({
   events: [] as import("@/lib/city-event-service").CityEventOccurrence[],
@@ -89,6 +95,9 @@ beforeEach(() => {
   testState.character = null;
   testState.locations = [];
   testState.wallet = null;
+  testState.insideHome = false;
+  const pending = takeDepartureFromHome();
+  if (pending) clearPendingDepartureFromHome(pending);
   class TestResizeObserver {
     constructor(private readonly callback: ResizeObserverCallback) {}
     observe() {
@@ -107,7 +116,8 @@ afterEach(() => {
   clients.splice(0).forEach((client) => client.clear());
 });
 
-function renderDashboard(currentSlug?: string) {
+function renderDashboard(currentSlug?: string, insideHome = false) {
+  testState.insideHome = insideHome;
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   if (currentSlug) {
     testState.character = {
@@ -115,6 +125,7 @@ function renderDashboard(currentSlug?: string) {
       user_id: "test-account",
       current_location_id: "confirmed-location",
       level: 5,
+      inside_home_property_id: insideHome ? "player-property" : null,
     };
     testState.locations = [
       { id: "confirmed-location", slug: currentSlug, name: "Current location" },
@@ -168,6 +179,7 @@ function renderDashboard(currentSlug?: string) {
 describe("isometric town map", () => {
   it("offers the market walking route only after confirmed arrival", () => {
     renderDashboard("oja-oba");
+    fireEvent.click(screen.getByText("Map options"));
     expect(screen.getByRole("link", { name: "Walk Oja-Oba Market" })).toHaveAttribute(
       "href",
       "/neighborhood",
@@ -178,6 +190,7 @@ describe("isometric town map", () => {
 
   it("offers the transport selector rather than walking when another district is confirmed", async () => {
     renderDashboard("student-district");
+    fireEvent.click(screen.getByText("Map options"));
     fireEvent.click(screen.getByRole("button", { name: "Visit Oja-Oba Market" }));
     expect(await screen.findByRole("dialog")).toBeVisible();
     expect(screen.queryByRole("link", { name: "Walk Oja-Oba Market" })).not.toBeInTheDocument();
@@ -206,7 +219,7 @@ describe("isometric town map", () => {
         name: /Town market,/i,
       }),
     );
-    fireEvent.click(await screen.findByRole("button", { name: "Place details and activities" }));
+    fireEvent.click(await screen.findByRole("tab", { name: "Details & activities" }));
     expect(await screen.findByText(/Town Market Day · Until/)).toBeVisible();
   });
 
@@ -256,9 +269,38 @@ describe("isometric town map", () => {
     fireEvent.click(screen.getByRole("button", { name: "Confirm and travel" }));
 
     await vi.waitFor(() => expect(testState.travelToLocation).toHaveBeenCalledTimes(1));
-    expect(await screen.findByRole("alert")).toHaveTextContent("INSUFFICIENT_FUNDS");
+    expect(await screen.findByRole("alert")).toHaveTextContent("You do not have enough money");
     expect(testState.navigate).not.toHaveBeenCalled();
     expect(testState.character?.["current_location_id"]).toBe("confirmed-location");
+  }, 15_000);
+
+  it("clears the queued home departure when navigation to the house fails", async () => {
+    renderDashboard("residential", true);
+    testState.navigate.mockRejectedValueOnce(new Error("navigation failed"));
+    fireEvent.click(screen.getByRole("button", { name: "Travel to Olaiya" }));
+    await screen.findByText("Destination access confirmed.");
+    fireEvent.click(screen.getByRole("radio", { name: /Danfo/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm and travel" }));
+
+    await vi.waitFor(() => expect(testState.navigate).toHaveBeenCalledWith({ to: "/house" }));
+    await vi.waitFor(() => expect(peekPendingDepartureFromHome()).toBeNull());
+    expect(testState.travelToLocation).not.toHaveBeenCalled();
+  }, 15_000);
+
+  it("preserves the queued home departure after successful navigation", async () => {
+    renderDashboard("residential", true);
+    testState.navigate.mockResolvedValueOnce(undefined);
+    fireEvent.click(screen.getByRole("button", { name: "Travel to Olaiya" }));
+    await screen.findByText("Destination access confirmed.");
+    fireEvent.click(screen.getByRole("radio", { name: /Danfo/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm and travel" }));
+
+    await vi.waitFor(() => expect(testState.navigate).toHaveBeenCalledWith({ to: "/house" }));
+    expect(takeDepartureFromHome()).toEqual({
+      locationId: "destination-city-centre",
+      mode: "danfo",
+    });
+    expect(testState.travelToLocation).not.toHaveBeenCalled();
   }, 15_000);
 
   it("offers the playable neighborhood for an active destination with a valid row", async () => {
@@ -286,10 +328,10 @@ describe("isometric town map", () => {
   });
 
   it("defines a hand-authored grid and fictional public venues with action definitions", () => {
-    expect(townData.meta.grid).toEqual({ columns: 32, rows: 24, cellSize: 2 });
+    expect(townData.meta.grid).toEqual({ columns: 40, rows: 24, cellSize: 2 });
     expect(townData.grid.rows).toHaveLength(24);
-    expect(townData.grid.rows.every((row) => row.length === 32)).toBe(true);
-    expect(townData.districts).toHaveLength(17);
+    expect(townData.grid.rows.every((row) => row.length === 40)).toBe(true);
+    expect(townData.districts).toHaveLength(19);
     expect(townData.landmarks.map((place) => place.label)).toEqual(
       expect.arrayContaining([
         "Civic court",
@@ -309,7 +351,11 @@ describe("isometric town map", () => {
     }
     expect(
       townData.landmarks.filter((place) => place.category === "worship").map((place) => place.id),
-    ).toEqual(["garden-chapel", "mosque-square", "river-shrine-court"]);
+    ).toEqual([
+      "mosque-square",
+      "central-church",
+      "central-mosque",
+    ]);
     expect(JSON.stringify(townData)).not.toMatch(/\/models\/city\//);
     expect(JSON.stringify(townData).toLowerCase()).not.toMatch(/sacred|grove|osun-osogbo/);
     expect(townData.landmarks.find((place) => place.id === "lantern-club")?.min_age).toBe(18);
@@ -349,6 +395,7 @@ describe("isometric town map", () => {
 
   it("shows only public venue categories for towns outside the detailed Osogbo map", () => {
     renderDashboard();
+    fireEvent.click(screen.getByText("Map options"));
     fireEvent.click(screen.getByRole("button", { name: "Explore Osun" }));
     fireEvent.click(screen.getByRole("button", { name: "Ilesa" }));
     expect(screen.getByRole("heading", { name: "Ilesa" })).toBeInTheDocument();

@@ -14,16 +14,6 @@ import {
   type DraughtsState,
 } from "@/lib/mini-games/draughts";
 import {
-  BASE,
-  FINISHED,
-  bestLudoToken,
-  legalTokenMoves,
-  moveLudoToken,
-  newLudo,
-  rollLudo,
-  type LudoState,
-} from "@/lib/mini-games/ludo";
-import {
   bestWhotCard,
   buildWhotDeck,
   drawWhot,
@@ -148,72 +138,6 @@ describe("draughts", () => {
   });
 });
 
-describe("ludo", () => {
-  it("only a six takes a token out of base", () => {
-    const state = rollLudo(newLudo(2), 3);
-    expect(state.dice).toBeNull();
-    expect(state.turn).toBe(1);
-  });
-
-  it("brings a token out on six and gives another roll", () => {
-    let state: LudoState = rollLudo(newLudo(2), 6);
-    expect(legalTokenMoves(state, 6)).toEqual([0, 1, 2, 3]);
-    state = moveLudoToken(state, 0);
-    expect(state.tokens[0]?.[0]).toBe(0);
-    expect(state.turn).toBe(0);
-    expect(state.dice).toBeNull();
-  });
-
-  it("sends an opponent back when landing on an unsafe shared square", () => {
-    // Player 0 starts at loop square 0 and player 1 at 26. Progress 12 for player 0 is loop square 12,
-    // which is not safe. Player 1 progress 38 is loop square (26 + 38) % 52 = 12, the same square.
-    const state: LudoState = {
-      playerCount: 2,
-      tokens: [
-        [10, BASE, BASE, BASE],
-        [38, BASE, BASE, BASE],
-      ],
-      turn: 0,
-      dice: 2,
-      winner: null,
-    };
-    const after = moveLudoToken(state, 0);
-    expect(after.tokens[0]?.[0]).toBe(12);
-    expect(after.tokens[1]?.[0]).toBe(BASE);
-  });
-
-  it("does not send an opponent back on a safe square", () => {
-    // Progress 13 for player 0 is loop square 13, a safe square. Player 1 progress 39 is also square 13.
-    const state: LudoState = {
-      playerCount: 2,
-      tokens: [
-        [10, BASE, BASE, BASE],
-        [39, BASE, BASE, BASE],
-      ],
-      turn: 0,
-      dice: 3,
-      winner: null,
-    };
-    const after = moveLudoToken(state, 0);
-    expect(after.tokens[0]?.[0]).toBe(13);
-    expect(after.tokens[1]?.[0]).toBe(39);
-  });
-
-  it("needs an exact roll to finish", () => {
-    const state: LudoState = {
-      playerCount: 2,
-      tokens: [
-        [FINISHED - 2, BASE, BASE, BASE],
-        [BASE, BASE, BASE, BASE],
-      ],
-      turn: 0,
-      dice: 5,
-      winner: null,
-    };
-    expect(legalTokenMoves(state, 5)).not.toContain(0);
-  });
-});
-
 describe("whot", () => {
   it("deals five cards each from a 61-card deck", () => {
     const deck = buildWhotDeck(seeded(1));
@@ -316,29 +240,6 @@ describe("computer games finish", () => {
           state = choice
             ? playWhot(state, choice.cardId, choice.shape ?? undefined, rng)
             : drawWhot(state, rng);
-          steps += 1;
-        }
-        expect(state.winner).not.toBeNull();
-      }
-    }
-  });
-
-  it("plays Ludo to a winner for 2 to 4 players", () => {
-    for (let players = 2; players <= 4; players += 1) {
-      for (let seed = 1; seed <= 10; seed += 1) {
-        const rng = seeded(seed * 31 + players);
-        let state = newLudo(players);
-        let steps = 0;
-        while (state.winner === null && steps < 20000) {
-          if (state.dice === null) {
-            state = rollLudo(state, 1 + Math.floor(rng() * 6));
-          } else {
-            const token = bestLudoToken(state);
-            state =
-              token === null
-                ? { ...state, dice: null, turn: (state.turn + 1) % state.playerCount }
-                : moveLudoToken(state, token);
-          }
           steps += 1;
         }
         expect(state.winner).not.toBeNull();

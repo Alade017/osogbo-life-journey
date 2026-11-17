@@ -16,8 +16,10 @@ export function DistrictZones({
   point,
   cell,
   onSelect,
+  showLabels = true,
 }: {
   districts: readonly District[];
+  showLabels?: boolean;
   point: (x: number, z: number) => [number, number, number];
   cell: number;
   onSelect: (id: string, event: ThreeEvent<MouseEvent>) => void;
@@ -58,11 +60,13 @@ export function DistrictZones({
               <planeGeometry args={[a.width * cell * 0.96, a.depth * cell * 0.96]} />
               <WorldMaterial tone="ground" color={tint} />
             </mesh>
-            <Html position={[cx, 0.2, cz]} center zIndexRange={[10, 0]} pointerEvents="none">
-              <span className="district-label" data-traffic={district.traffic}>
-                {district.name}
-              </span>
-            </Html>
+            {showLabels && (
+              <Html position={[cx, 0.2, cz]} center zIndexRange={[10, 0]} pointerEvents="none">
+                <span className="district-label" data-traffic={district.traffic}>
+                  {district.name}
+                </span>
+              </Html>
+            )}
           </group>
         );
       })}

@@ -472,6 +472,7 @@ const FURNITURE_COLOURS = {
   mirrorFrame: "#14213d",
   artRoyal: "#014baa",
   artGold: "#e7d9b4",
+  rugTeal: "#3d7a78",
 } as const;
 
 export function FurnitureFallback({
@@ -1056,6 +1057,71 @@ export function FurnitureFallback({
         <mesh castShadow position={[0, 0.7, 0.05]} rotation={[Math.PI / 2, 0, 0]}>
           <cylinderGeometry args={[0.13, 0.13, 0.02, 24]} />
           <meshStandardMaterial color={FURNITURE_COLOURS.blanket} roughness={0.5} />
+        </mesh>
+      </group>
+    );
+  if (kind === "rug")
+    return (
+      <RoundedBox
+        castShadow
+        receiveShadow
+        args={[1.4, 0.03, 1.0]}
+        radius={0.02}
+        smoothness={3}
+        position={[0, 0.02, 0]}
+      >
+        <meshStandardMaterial color={FURNITURE_COLOURS.rugTeal} roughness={0.95} />
+      </RoundedBox>
+    );
+  if (kind === "ottoman")
+    return (
+      <RoundedBox
+        castShadow
+        receiveShadow
+        args={[0.5, 0.4, 0.5]}
+        radius={0.06}
+        smoothness={4}
+        position={[0, 0.2, 0]}
+      >
+        <meshStandardMaterial color={FURNITURE_COLOURS.blanket} roughness={0.8} />
+      </RoundedBox>
+    );
+  if (kind === "shoe-rack")
+    return (
+      <RoundedBox
+        castShadow
+        receiveShadow
+        args={[0.7, 0.8, 0.3]}
+        radius={0.02}
+        smoothness={3}
+        position={[0, 0.4, 0]}
+      >
+        <meshStandardMaterial color={FURNITURE_COLOURS.mediaWood} roughness={0.7} />
+      </RoundedBox>
+    );
+  if (kind === "welcome-mat")
+    return (
+      <RoundedBox
+        castShadow
+        receiveShadow
+        args={[0.8, 0.02, 0.45]}
+        radius={0.01}
+        smoothness={2}
+        position={[0, 0.01, 0]}
+      >
+        <meshStandardMaterial color={FURNITURE_COLOURS.gymMat} roughness={1} />
+      </RoundedBox>
+    );
+  if (kind === "lamp")
+    return (
+      <group>
+        <mesh castShadow position={[0, 0.03, 0]}>
+          <cylinderGeometry args={[0.12, 0.14, 0.06, 20]} />
+          <meshStandardMaterial color={FURNITURE_COLOURS.brass} roughness={0.4} metalness={0.5} />
+        </mesh>
+        <mesh castShadow position={[0, 0.3, 0]}>
+          <cylinderGeometry args={[0.2, 0.12, 0.3, 20, 1, true]} />
+          <meshStandardMaterial color={FURNITURE_COLOURS.sofaCushion} roughness={0.9} side={2} />
         </mesh>
       </group>
     );

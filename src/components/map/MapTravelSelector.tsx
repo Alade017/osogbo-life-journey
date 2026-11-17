@@ -1,10 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
-import { Clock3, MapPin, Navigation, Wallet, X } from "lucide-react";
+import { useMemo, type ComponentProps } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { GameTime } from "@/lib/game-time";
 import type { Location } from "@/lib/game";
-import { formatMapNaira } from "@/components/map/map-ui-utils";
 import { isPlayableDistrict } from "@/game/playable-district";
 import { MapApiError, requestMapLandmark } from "@/lib/map-api";
 import {
@@ -14,15 +11,21 @@ import {
   type TravelMode,
 } from "@/lib/transport-service";
 import { adjustedTripMinutes } from "@/lib/world-simulation";
+import { DestinationSheet, type DestinationSheetStatus } from "./DestinationSheet";
+import { LandmarkDetailsContent } from "./LandmarkDetailsContent";
+import { mapTravelBusy, type MapTravelState, type MapTravelTab } from "./map-travel-state";
 
 type Destination = Pick<
   Location,
   "id" | "slug" | "name" | "travel_fare" | "travel_minutes" | "level_required" | "metadata"
 >;
-
+type DetailsProps = Omit<
+  ComponentProps<typeof LandmarkDetailsContent>,
+  "detailsQuery" | "landmark" | "accountId" | "characterId" | "offline"
+>;
 type Props = {
   open: boolean;
-  landmark: { id: string; label: string };
+  landmark: { id: string; label: string; category: string };
   districtName: string;
   accountId?: string;
   characterId?: string;
@@ -35,314 +38,150 @@ type Props = {
   characterLevel: number | null;
   walletBalance: number | null;
   walletLoading: boolean;
+  onRetryWallet: () => void;
   gameTime: GameTime;
   offline: boolean;
-  pending: boolean;
-  arrivalConfirmed: boolean;
-  refreshingArrival: boolean;
-  error: string | null;
+  state: Pick<
+    MapTravelState<unknown>,
+    "tab" | "mode" | "phase" | "error" | "confirmedDestinationId"
+  >;
+  onTabChange: (tab: MapTravelTab) => void;
+  onModeChange: (mode: TravelMode) => void;
   onConfirm: (mode: TravelMode) => void;
   onCancel: () => void;
-  onOpenDetails: () => void;
   onRetryArrival: () => void;
+  detailsProps: DetailsProps;
 };
-
-export function MapTravelSelector({
-  open,
-  landmark,
-  districtName,
-  accountId,
-  characterId,
-  destination,
-  isLoadingDestination,
-  destinationLoadError,
-  onRetryDestination,
-  originName,
-  currentLocationId,
-  characterLevel,
-  walletBalance,
-  walletLoading,
-  gameTime,
-  offline,
-  pending,
-  arrivalConfirmed,
-  refreshingArrival,
-  error,
-  onConfirm,
-  onCancel,
-  onOpenDetails,
-  onRetryArrival,
-}: Props) {
-  const [selectedMode, setSelectedMode] = useState<TravelMode | null>(null);
-  const destinationIsPlayable = !!destination && isPlayableDistrict(destination.slug);
+/** Data/eligibility adapter. The visual sheet receives no network or transaction dependencies. */
+export function MapTravelSelector(props: Props) {
+  const playable = !!props.destination && isPlayableDistrict(props.destination.slug);
   const modes = useMemo(
-    () => (destination ? getAvailableTravelModes(destination.metadata) : []),
-    [destination],
+    () => (props.destination ? getAvailableTravelModes(props.destination.metadata) : []),
+    [props.destination],
   );
   const detailsQuery = useQuery({
-    queryKey: ["mapLandmarkDetails", landmark.id, accountId, characterId],
+    queryKey: ["mapLandmarkDetails", props.landmark.id, props.accountId, props.characterId],
     queryFn: () => {
-      if (!accountId) throw new Error("Player account is not ready.");
-      return requestMapLandmark(landmark.id, accountId);
+      if (!props.accountId) throw new Error("Player account is not ready.");
+      return requestMapLandmark(props.landmark.id, props.accountId);
     },
-    enabled: open && !!accountId && !!characterId && !offline && destinationIsPlayable,
+    enabled: props.open && !!props.accountId && !!props.characterId && !props.offline,
     staleTime: 15_000,
+    refetchInterval: props.state.tab === "details" ? 15_000 : false,
+    refetchIntervalInBackground: false,
     refetchOnMount: "always",
     refetchOnWindowFocus: true,
     retry: false,
   });
   const restricted =
     detailsQuery.error instanceof MapApiError && detailsQuery.error.code === "AGE_RESTRICTED";
-  const modeIsAvailable = !!selectedMode && modes.includes(selectedMode);
-  const estimate =
-    destination && modeIsAvailable && selectedMode
-      ? estimateTrip(selectedMode, destination.travel_fare, destination.travel_minutes)
-      : null;
-  const estimatedMinutes =
-    estimate && selectedMode ? adjustedTripMinutes(estimate.minutes, selectedMode, gameTime) : null;
-  const cannotAfford = estimate !== null && walletBalance !== null && walletBalance < estimate.fare;
-  const alreadyHere = !!destination && currentLocationId === destination.id;
-  const levelLocked =
-    !!destination && characterLevel !== null && characterLevel < destination.level_required;
-  const accessCheckPending =
-    destinationIsPlayable && !offline && (detailsQuery.isPending || !accountId || !characterId);
-  const accessCheckFailed =
-    destinationIsPlayable && !offline && detailsQuery.isError && !restricted;
-  const canTravel =
-    open &&
-    !!destination &&
-    destinationIsPlayable &&
-    !offline &&
-    !pending &&
-    !arrivalConfirmed &&
-    !accessCheckPending &&
-    !accessCheckFailed &&
-    !restricted &&
-    !alreadyHere &&
-    !levelLocked &&
-    modeIsAvailable &&
-    !cannotAfford;
-
-  useEffect(() => {
-    if (!open || pending || arrivalConfirmed) return undefined;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onCancel();
+  const busy = mapTravelBusy(props.state.phase),
+    confirmed = !!props.state.confirmedDestinationId;
+  const options = useMemo(
+    () =>
+      props.destination
+        ? modes.map((mode) => {
+            const estimate = estimateTrip(
+              mode,
+              props.destination!.travel_fare,
+              props.destination!.travel_minutes,
+            );
+            return {
+              id: mode,
+              ...TRAVEL_MODE_DETAILS[mode],
+              fare: estimate.fare,
+              minutes: adjustedTripMinutes(estimate.minutes, mode, props.gameTime),
+            };
+          })
+        : [],
+    [props.destination, modes, props.gameTime],
+  );
+  let status: DestinationSheetStatus = { message: "Destination access confirmed.", tone: "ready" };
+  if (confirmed) status = { message: "Loading your saved destination…", tone: "loading" };
+  else if (props.offline)
+    status = { message: "Reconnect to check access and travel.", tone: "blocked" };
+  else if (props.isLoadingDestination)
+    status = { message: "Loading destination…", tone: "loading" };
+  else if (props.destinationLoadError)
+    status = {
+      message: "Destination information could not be loaded.",
+      tone: "error",
+      action: { label: "Retry destination lookup", onClick: props.onRetryDestination },
     };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [arrivalConfirmed, onCancel, open, pending]);
-
-  if (!open || typeof document === "undefined") return null;
-
-  return createPortal(
-    <div className="map-travel-overlay">
-      <section
-        className="map-travel-dialog"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="map-travel-title"
-      >
-        <header className="map-travel-header">
-          <div>
-            <p className="map-sheet-eyebrow">Choose your transport</p>
-            <h2 id="map-travel-title">{landmark.label}</h2>
-          </div>
-          <button
-            type="button"
-            className="map-icon-button"
-            aria-label="Cancel travel selection"
-            disabled={pending || arrivalConfirmed}
-            onClick={onCancel}
-          >
-            <X size={18} />
-          </button>
-        </header>
-
-        <p className="map-travel-route">
-          <MapPin size={16} aria-hidden="true" />
-          <span>{originName}</span>
-          <span aria-hidden="true">→</span>
-          <strong>{destination?.name ?? districtName}</strong>
-        </p>
-
-        {isLoadingDestination ? (
-          <p className="map-travel-status" role="status">
-            Loading destination…
-          </p>
-        ) : destinationLoadError ? (
-          <div className="map-travel-notice" role="alert">
-            <p>Destination information could not be loaded.</p>
-            <button type="button" onClick={onRetryDestination}>
-              Retry destination lookup
-            </button>
-          </div>
-        ) : !destination ? (
-          <p className="map-travel-notice" role="status">
-            This landmark is not connected to an active travel destination yet.
-          </p>
-        ) : !destinationIsPlayable ? (
-          <p className="map-travel-notice" role="status">
-            Travel is not available here yet because this destination does not have a playable
-            neighborhood.
-          </p>
-        ) : (
-          <>
-            <div className="map-travel-eligibility" aria-live="polite">
-              {offline ? (
-                <p role="status">Reconnect to check eligibility and travel.</p>
-              ) : accessCheckPending ? (
-                <p role="status">Checking destination access…</p>
-              ) : restricted ? (
-                <p role="alert">This place is restricted for your character.</p>
-              ) : accessCheckFailed ? (
-                <div role="alert">
-                  <p>Destination access could not be verified.</p>
-                  <button
-                    type="button"
-                    disabled={detailsQuery.isFetching}
-                    onClick={() => void detailsQuery.refetch()}
-                  >
-                    {detailsQuery.isFetching ? "Checking…" : "Retry access check"}
-                  </button>
-                </div>
-              ) : alreadyHere ? (
-                <p role="status">Your character is already at this destination.</p>
-              ) : levelLocked ? (
-                <p role="status">Reach level {destination.level_required} to travel here.</p>
-              ) : (
-                <p role="status">Destination access confirmed.</p>
-              )}
-            </div>
-
-            {modes.length > 0 ? (
-              <fieldset className="map-travel-modes">
-                <legend>Available transport</legend>
-                <div role="radiogroup" aria-label="Available transport">
-                  {modes.map((mode) => {
-                    const trip = estimateTrip(
-                      mode,
-                      destination.travel_fare,
-                      destination.travel_minutes,
-                    );
-                    const minutes = adjustedTripMinutes(trip.minutes, mode, gameTime);
-                    return (
-                      <button
-                        key={mode}
-                        type="button"
-                        role="radio"
-                        aria-checked={selectedMode === mode}
-                        disabled={
-                          offline ||
-                          pending ||
-                          arrivalConfirmed ||
-                          accessCheckPending ||
-                          accessCheckFailed ||
-                          restricted ||
-                          alreadyHere ||
-                          levelLocked
-                        }
-                        onClick={() => setSelectedMode(mode)}
-                      >
-                        <strong>{TRAVEL_MODE_DETAILS[mode].label}</strong>
-                        <small>{TRAVEL_MODE_DETAILS[mode].hint}</small>
-                        <span>
-                          {formatMapNaira(trip.fare)} · {minutes} min estimate
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </fieldset>
-            ) : (
-              <p className="map-travel-notice" role="status">
-                No transport modes are configured for this destination.
-              </p>
-            )}
-
-            {selectedMode && estimate && estimatedMinutes !== null && (
-              <dl className="map-travel-estimate">
-                <div>
-                  <dt>
-                    <Wallet size={15} aria-hidden="true" /> Your balance
-                  </dt>
-                  <dd>
-                    {walletBalance === null
-                      ? walletLoading
-                        ? "Loading…"
-                        : "Verified when you travel"
-                      : formatMapNaira(walletBalance)}
-                  </dd>
-                </div>
-                <div>
-                  <dt>
-                    <Navigation size={15} aria-hidden="true" /> Estimated fare
-                  </dt>
-                  <dd>{formatMapNaira(estimate.fare)}</dd>
-                </div>
-                <div>
-                  <dt>
-                    <Clock3 size={15} aria-hidden="true" /> Journey duration
-                  </dt>
-                  <dd>{estimatedMinutes} game minutes</dd>
-                </div>
-              </dl>
-            )}
-          </>
-        )}
-
-        {error && (
-          <p className="map-travel-error" role="alert">
-            {error}
-          </p>
-        )}
-
-        {arrivalConfirmed ? (
-          <div className="map-travel-actions">
-            <p className="map-travel-status" role="status">
-              Travel is confirmed. Loading your saved destination…
-            </p>
-            {error && (
-              <button
-                type="button"
-                className="map-primary-button"
-                disabled={refreshingArrival}
-                onClick={onRetryArrival}
-              >
-                {refreshingArrival ? "Refreshing destination…" : "Retry destination loading"}
-              </button>
-            )}
-          </div>
-        ) : (
-          <div className="map-travel-actions">
-            <button
-              type="button"
-              className="map-primary-button"
-              disabled={!canTravel}
-              onClick={() => selectedMode && onConfirm(selectedMode)}
-            >
-              <Navigation size={17} aria-hidden="true" />
-              {pending ? "Confirming travel…" : "Confirm and travel"}
-            </button>
-            <button
-              type="button"
-              className="map-travel-details-button"
-              disabled={pending}
-              onClick={onOpenDetails}
-            >
-              Place details and activities
-            </button>
-            <button
-              type="button"
-              className="map-travel-cancel-button"
-              disabled={pending}
-              onClick={onCancel}
-            >
-              Cancel
-            </button>
-          </div>
-        )}
-      </section>
-    </div>,
-    document.body,
+  else if (!props.destination)
+    status = { message: "This place is not available for travel yet.", tone: "blocked" };
+  else if (!playable) status = { message: "Travel is not available here yet.", tone: "blocked" };
+  else if (
+    !props.accountId ||
+    !props.characterId ||
+    props.characterLevel === null ||
+    detailsQuery.isPending
+  )
+    status = { message: "Checking destination access…", tone: "loading" };
+  else if (restricted)
+    status = { message: "This place is restricted for your character.", tone: "blocked" };
+  else if (detailsQuery.isError)
+    status = {
+      message: "Destination access could not be verified.",
+      tone: "error",
+      action: {
+        label: detailsQuery.isFetching ? "Checking…" : "Retry access check",
+        onClick: () => void detailsQuery.refetch(),
+        disabled: detailsQuery.isFetching,
+      },
+    };
+  else if (props.currentLocationId === props.destination.id)
+    status = { message: "Your character is already at this destination.", tone: "blocked" };
+  else if (props.characterLevel < props.destination.level_required)
+    status = {
+      message: `Reach level ${props.destination.level_required} to travel here.`,
+      tone: "blocked",
+    };
+  else if (!modes.length)
+    status = { message: "No transport is available for this destination.", tone: "blocked" };
+  const selected = options.find((option) => option.id === props.state.mode);
+  const affordable =
+    !!selected &&
+    (selected.fare === 0 || (props.walletBalance !== null && props.walletBalance >= selected.fare));
+  const actionPending = props.detailsProps.pending || props.detailsProps.actionPending;
+  const canChoose = status.tone === "ready" && !busy && !confirmed && !actionPending;
+  return (
+    <DestinationSheet
+      open={props.open}
+      interactionPending={actionPending}
+      title={props.landmark.label}
+      category={props.landmark.category}
+      districtName={props.districtName}
+      originName={props.originName}
+      destinationName={props.destination?.name ?? props.districtName}
+      tab={props.state.tab}
+      onTabChange={props.onTabChange}
+      selectedMode={props.state.mode}
+      onModeChange={props.onModeChange}
+      options={options}
+      walletBalance={props.walletBalance}
+      walletLoading={props.walletLoading}
+      onRetryBalance={props.onRetryWallet}
+      status={status}
+      phase={props.state.phase}
+      error={props.state.error}
+      canChooseMode={canChoose}
+      canTravel={canChoose && affordable}
+      onConfirm={() => {
+        if (canChoose && affordable && selected) props.onConfirm(selected.id);
+      }}
+      onClose={props.onCancel}
+      onRetryArrival={props.onRetryArrival}
+      details={
+        <LandmarkDetailsContent
+          {...props.detailsProps}
+          detailsQuery={detailsQuery}
+          landmark={props.landmark}
+          accountId={props.accountId}
+          characterId={props.characterId}
+          offline={props.offline}
+        />
+      }
+    />
   );
 }

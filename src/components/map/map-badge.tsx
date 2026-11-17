@@ -2,6 +2,9 @@ import type { CSSProperties } from "react";
 import { SceneHtml as Html } from "@/components/3d/SceneHtml";
 
 const CATEGORY_BADGES: Record<string, { emoji: string; tone: string }> = {
+  bank: { emoji: "🏦", tone: "#3b82f6" },
+  junction: { emoji: "🚦", tone: "#14b8a6" },
+  transit: { emoji: "🚌", tone: "#14b8a6" },
   food: { emoji: "🍽️", tone: "#f97316" },
   market: { emoji: "🛍️", tone: "#eab308" },
   health: { emoji: "🏥", tone: "#ef4444" },

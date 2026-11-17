@@ -145,6 +145,21 @@ describe("neighbourhood checkpoint database", () => {
     expect(rows[0]).toEqual({ anon: false, authenticated: false, service: false });
   });
 
+  it("accepts positions in the expanded neighbourhood", async () => {
+    expect(
+      await asUser(userId, "select public.save_my_world_checkpoint(24, 20) as result"),
+    ).toMatchObject({ ok: true, result: { saved: true, world_x: 24, world_y: 20 } });
+  });
+
+  it("does not spend energy or game time when saving", async () => {
+    const before = await db.query<{ energy: number; game_time_minute: number }>(
+      "select energy, game_time_minute from public.characters where id=$1",
+      [characterId],
+    );
+    await asUser(userId, "select public.save_my_world_checkpoint(9, 9) as result");
+    const after = await db.query<{ energy: number; game_time_minute: number }>(
+      "select energy, game_time_minute from public.characters where id=$1",
+      [characterId],
   it("does not let visitors call the old checkpoint function", async () => {
     const outcome = await asRole("anon", "select public.save_my_world_checkpoint(3, 3) as result");
     expect(outcome).toMatchObject({

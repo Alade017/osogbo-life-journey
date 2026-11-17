@@ -1,0 +1,156 @@
+/* Keep secondary map controls behind deliberate disclosure on every screen size. */
+.map-experience .map-options > summary,
+.map-experience .ncm-filter-menu > summary,
+.map-experience .ncm-place-list > summary,
+.map-experience .ncm-area-list > summary {
+  min-height: 2.75rem;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--shape-button);
+  background: var(--card);
+  color: var(--foreground);
+  font: 600 0.8125rem/1.375rem var(--font-sans);
+  cursor: pointer;
+}
+.map-experience summary:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}
+.map-experience .map-options {
+  align-self: start;
+}
+.map-experience .map-options[open] {
+  width: 100%;
+}
+.map-experience .map-options .map-hud {
+  margin-top: var(--spacing-sm);
+}
+.map-experience .ncm-filter-menu .ncm-filter-row {
+  margin-top: var(--spacing-sm);
+}
+.city-game .game-needs-rail.game-needs-rail.game-needs-rail.is-map-compact.is-collapsed {
+  width: 54px;
+  padding: 5px;
+  gap: 2px;
+}
+.city-game
+  .game-needs-rail.game-needs-rail.game-needs-rail.is-map-compact.is-collapsed
+  .game-needs-summary {
+  display: block;
+  padding: 2px;
+  font-size: 9px;
+}
+@media (max-width: 760px) {
+  .city-game .map-experience.city-map-dashboard {
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm) 6px calc(var(--game-dock-space, 92px) + env(safe-area-inset-bottom));
+  }
+  .city-game .map-experience .map-news {
+    display: none;
+  }
+  .city-game .map-experience .map-view-switch {
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+  .city-game .map-experience .map-view-switch button {
+    flex: 1;
+    min-width: 0;
+    min-height: 2.75rem;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  .city-game .map-experience .ncm-layout-grid {
+    gap: var(--spacing-sm);
+  }
+  .city-game .map-experience .ncm-shell {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    gap: var(--spacing-sm);
+    padding: var(--spacing-sm);
+    border-radius: var(--shape-card);
+  }
+  .city-game .map-experience .ncm-header {
+    min-height: 2.75rem;
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
+    margin-right: 0;
+    padding: 0 4px;
+  }
+  .city-game .map-experience .ncm-header h2 {
+    margin: 0;
+    font-size: 1.125rem;
+  }
+  .city-game .map-experience .ncm-eyebrow,
+  .city-game .map-experience .ncm-live-readout {
+    display: none;
+  }
+  .city-game .map-experience .ncm-filter-menu {
+    position: relative;
+    grid-column: 2;
+    grid-row: 1;
+    align-self: start;
+    z-index: 30;
+  }
+  .city-game .map-experience .ncm-filter-menu .ncm-filter-row {
+    position: absolute;
+    right: 0;
+    width: min(280px, calc(100vw - 3rem));
+    padding: var(--spacing-sm);
+    border: 1px solid var(--border);
+    border-radius: var(--shape-button);
+    background: var(--card);
+    box-shadow: var(--elevation-lift);
+  }
+  .city-game .map-experience .ncm-filter-pills {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+  .city-game .map-experience .ncm-filter-pill {
+    min-height: 2.75rem;
+    padding: var(--spacing-sm);
+  }
+  .city-game .map-experience .ncm-canvas-frame {
+    min-height: 320px;
+    height: clamp(20rem, 65svh, 46rem);
+    border-radius: var(--shape-button);
+  }
+  .city-game .map-experience .ncm-camera-tools {
+    top: var(--spacing-sm);
+    left: var(--spacing-sm);
+    gap: 4px;
+  }
+  .city-game .map-experience .ncm-camera-tools button {
+    padding: 6px 10px;
+    min-height: 2.75rem;
+    font-size: 12px;
+  }
+  .city-game .map-experience .ncm-camera-hint {
+    display: none;
+  }
+  .city-game .map-experience .ncm-3d-companion-bar span,
+  .city-game .map-experience .ncm-3d-expand-btn {
+    display: none;
+  }
+  .city-game .map-experience .ncm-3d-companion-bar {
+    padding: var(--spacing-sm) 12px;
+  }
+  .city-game .map-experience .ncm-canvas-frame:has(.ncm-drawer) {
+    height: auto;
+    padding-top: 320px;
+  }
+  .city-game .map-experience .ncm-canvas-frame:has(.ncm-drawer) .ncm-world {
+    height: 320px;
+  }
+}
+
+@media (max-width: 760px) {
+  .city-game .map-experience .ncm-shell > .ncm-stage,
+  .city-game .map-experience .ncm-shell > .ncm-place-list,
+  .city-game .map-experience .ncm-shell > .ncm-area-list {
+    grid-column: 1 / -1;
+    min-width: 0;
+  }
+}

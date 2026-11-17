@@ -1,5 +1,5 @@
 import { OSOGBO_WORLD_NODES, type WorldMapCategory } from "../lib/city-world.ts";
-import { createCityCentreZoneLayout, type NeighborhoodZoneLayout } from "./neighborhood-zones.ts";
+import { townAnchorForSlug, townNeighborhoodArea } from "./town-neighborhood.ts";
 
 export type WorldPoint = { x: number; y: number };
 export type NeighborhoodNpcView = {
@@ -82,7 +82,6 @@ export type NeighborhoodArea = {
   obstacles?: readonly NeighborhoodObstacle[];
   roads?: readonly NeighborhoodRoad[];
   paths?: readonly NeighborhoodPath[];
-  zoneLayout?: NeighborhoodZoneLayout;
   style: {
     ground: number;
     grid: number;
@@ -104,69 +103,14 @@ export const NEIGHBORHOOD_SCENE_BOUNDS = {
   width: 24 * WORLD_SCALE,
   height: 20 * WORLD_SCALE,
 } as const;
-const CITY_CENTRE_ROADS: readonly NeighborhoodRoad[] = [
-  { id: "olaiya-arterial-north-south", axis: "vertical", offset: 500, width: 84, type: "arterial" },
-  { id: "olaiya-arterial-east-west", axis: "horizontal", offset: 500, width: 80, type: "arterial" },
-  {
-    id: "home-access-lane",
-    axis: "horizontal",
-    offset: 340,
-    width: 44,
-    type: "lane",
-    start: 320,
-    end: 500,
-  },
-  { id: "west-residential-street", axis: "vertical", offset: -410, width: 58, type: "street" },
-  { id: "east-market-street", axis: "vertical", offset: 1280, width: 72, type: "arterial" },
-  { id: "north-compound-lane", axis: "horizontal", offset: -160, width: 54, type: "lane" },
-  { id: "south-compound-lane", axis: "horizontal", offset: 820, width: 58, type: "street" },
-  { id: "east-residential-arterial", axis: "vertical", offset: 1880, width: 72, type: "arterial" },
-  { id: "outer-east-street", axis: "vertical", offset: 2550, width: 56, type: "street" },
-  { id: "north-extension-street", axis: "horizontal", offset: -540, width: 52, type: "street" },
-  { id: "midtown-extension-street", axis: "horizontal", offset: 1220, width: 58, type: "street" },
-  { id: "south-extension-arterial", axis: "horizontal", offset: 1900, width: 74, type: "arterial" },
-];
-const { zoneLayout: CITY_CENTRE_ZONE_LAYOUT, zoneObstacles: CITY_CENTRE_OBSTACLES } =
-  createCityCentreZoneLayout();
-export const CITY_CENTRE_AREA: NeighborhoodArea = {
-  slug: "city-centre",
-  name: "Olaiya",
-  roads: CITY_CENTRE_ROADS,
-  paths: [
-    { id: "home-to-street-path", from: { x: 320, y: 300 }, to: { x: 320, y: 340 }, width: 12 },
-  ],
-  obstacles: CITY_CENTRE_OBSTACLES,
-  zoneLayout: CITY_CENTRE_ZONE_LAYOUT,
-  objects: [
-    { id: "home", name: "Your home", kind: "home", x: 320, y: 300 },
-    {
-      id: "market",
-      name: "Fuel & Go Mini-Mart",
-      kind: "market",
-      walkIn: true,
-      x: 800,
-      y: 255,
-    },
-    {
-      id: "work",
-      name: "Meridian Commercial Bank",
-      kind: "work",
-      walkIn: true,
-      x: 1135,
-      y: 110,
-    },
-    { id: "npc", name: "Bisi · neighbour", kind: "npc", x: 200, y: 420 },
-  ],
-  style: {
-    ground: 0xe8eedf,
-    grid: 0xd3dfcb,
-    road: 0xbac6b4,
-    paving: 0xe8ddbd,
-    marking: 0xfffaf0,
-    verticalRoad: { x: 278, width: 84 },
-    horizontalRoad: { y: 260, height: 80 },
-  },
-};
+/**
+ * Olaiya is walked from the town data like every other place (see town-neighborhood). This export
+ * keeps the name for the default fallback and for callers that want the Olaiya layout directly.
+ */
+export const CITY_CENTRE_AREA: NeighborhoodArea = townNeighborhoodArea(
+  townAnchorForSlug("city-centre")!,
+  "Olaiya",
+);
 
 /** A second, data-backed street layout for the seeded Oja-Oba Market destination. */
 export const OJA_OBA_AREA: NeighborhoodArea = {
@@ -713,7 +657,34 @@ export const NEIGHBORHOOD_AREAS: Readonly<Record<string, NeighborhoodArea>> = {
 };
 export const NEIGHBORHOOD_OBJECTS = CITY_CENTRE_AREA.objects;
 
+/**
+ * Places kept as hand-built layouts (custom GLB environment or bespoke zones). Every other place
+ * with a landmark in the town data is walked from that data.
+ */
+const HAND_BUILT_SLUGS: ReadonlySet<string> = new Set([FUEL_AND_GO_AREA.slug, OJA_OBA_AREA.slug]);
+const townAreaCache = new Map<string, NeighborhoodArea>();
+
+function townAreaForSlug(slug: string): NeighborhoodArea | null {
+  if (slug === CITY_CENTRE_AREA.slug) return CITY_CENTRE_AREA;
+  if (HAND_BUILT_SLUGS.has(slug)) return null;
+  const anchor = townAnchorForSlug(slug);
+  if (!anchor) return null;
+  const cached = townAreaCache.get(anchor.id);
+  if (cached) return cached;
+  const node = Object.values(OSOGBO_WORLD_NODES).find((item) => item.slug === slug);
+  const area = townNeighborhoodArea(
+    anchor,
+    slug === CITY_CENTRE_AREA.slug ? CITY_CENTRE_AREA.name : (node?.name ?? anchor.label),
+  );
+  townAreaCache.set(anchor.id, area);
+  return area;
+}
+
 export function neighborhoodAreaForSlug(slug: string | null | undefined): NeighborhoodArea {
+  if (slug) {
+    const fromTown = townAreaForSlug(slug);
+    if (fromTown) return fromTown;
+  }
   return (slug && NEIGHBORHOOD_AREAS[slug]) || CITY_CENTRE_AREA;
 }
 
@@ -742,6 +713,8 @@ export function neighborhoodAreaForLocation(location: {
   name?: string | null;
   map_category?: string | null;
 }): NeighborhoodArea {
+  const fromTown = townAreaForSlug(location.slug);
+  if (fromTown) return fromTown;
   const known = NEIGHBORHOOD_AREAS[location.slug];
   if (known) return known;
   const cached = locationAreaCache.get(location.slug);

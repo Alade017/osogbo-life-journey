@@ -425,7 +425,7 @@ function TrafficVehicle({
 
       {/* Interactive Speech & Hail Bubble */}
       {isSpeaking && speechText && (
-        <Html center position={[0, 1.2, 0]} distanceFactor={14}>
+        <Html center position={[0, 1.2, 0]}>
           <div
             style={{
               background: "#0f172a",

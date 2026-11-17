@@ -4,7 +4,7 @@
     "source": "Fictional game layout with broad Osogbo-inspired town character; not geographic data.",
     "reviewed": false,
     "grid": {
-      "columns": 32,
+      "columns": 40,
       "rows": 24,
       "cellSize": 2
     },
@@ -23,30 +23,12 @@
       "traffic": "high",
       "description": "A lively fictional trading quarter with public services and neighborhood shops.",
       "shape": [
-        [
-          40,
-          40
-        ],
-        [
-          340,
-          30
-        ],
-        [
-          390,
-          180
-        ],
-        [
-          330,
-          310
-        ],
-        [
-          50,
-          300
-        ],
-        [
-          20,
-          170
-        ]
+        [40, 40],
+        [340, 30],
+        [390, 180],
+        [330, 310],
+        [50, 300],
+        [20, 170]
       ],
       "gridArea": {
         "x": 0,
@@ -62,30 +44,12 @@
       "traffic": "medium",
       "description": "A fictional civic area for public help desks, community safety and everyday errands.",
       "shape": [
-        [
-          390,
-          35
-        ],
-        [
-          720,
-          40
-        ],
-        [
-          760,
-          190
-        ],
-        [
-          690,
-          320
-        ],
-        [
-          390,
-          300
-        ],
-        [
-          350,
-          175
-        ]
+        [390, 35],
+        [720, 40],
+        [760, 190],
+        [690, 320],
+        [390, 300],
+        [350, 175]
       ],
       "gridArea": {
         "x": 5,
@@ -101,30 +65,12 @@
       "traffic": "medium",
       "description": "A fictional business district with small services and neighborhood meeting places.",
       "shape": [
-        [
-          770,
-          35
-        ],
-        [
-          1140,
-          55
-        ],
-        [
-          1170,
-          195
-        ],
-        [
-          1080,
-          320
-        ],
-        [
-          720,
-          315
-        ],
-        [
-          750,
-          185
-        ]
+        [770, 35],
+        [1140, 55],
+        [1170, 195],
+        [1080, 320],
+        [720, 315],
+        [750, 185]
       ],
       "gridArea": {
         "x": 10,
@@ -140,30 +86,12 @@
       "traffic": "high",
       "description": "A fictional junction where the town's main roads and shared activities meet.",
       "shape": [
-        [
-          35,
-          335
-        ],
-        [
-          350,
-          325
-        ],
-        [
-          390,
-          465
-        ],
-        [
-          340,
-          615
-        ],
-        [
-          30,
-          610
-        ],
-        [
-          15,
-          475
-        ]
+        [35, 335],
+        [350, 325],
+        [390, 465],
+        [340, 615],
+        [30, 610],
+        [15, 475]
       ],
       "gridArea": {
         "x": 0,
@@ -179,30 +107,12 @@
       "traffic": "low",
       "description": "A fictional green neighborhood with room to relax, exercise and meet friends.",
       "shape": [
-        [
-          390,
-          335
-        ],
-        [
-          700,
-          330
-        ],
-        [
-          750,
-          475
-        ],
-        [
-          700,
-          620
-        ],
-        [
-          390,
-          610
-        ],
-        [
-          350,
-          475
-        ]
+        [390, 335],
+        [700, 330],
+        [750, 475],
+        [700, 620],
+        [390, 610],
+        [350, 475]
       ],
       "gridArea": {
         "x": 5,
@@ -218,30 +128,12 @@
       "traffic": "medium",
       "description": "A fictional learning and community area for study, care and skill-building.",
       "shape": [
-        [
-          760,
-          330
-        ],
-        [
-          1150,
-          340
-        ],
-        [
-          1175,
-          480
-        ],
-        [
-          1090,
-          620
-        ],
-        [
-          720,
-          615
-        ],
-        [
-          750,
-          475
-        ]
+        [760, 330],
+        [1150, 340],
+        [1175, 480],
+        [1090, 620],
+        [720, 615],
+        [750, 475]
       ],
       "gridArea": {
         "x": 10,
@@ -257,22 +149,10 @@
       "traffic": "medium",
       "description": "A fictional transit and shopping edge with convenient routes around town.",
       "shape": [
-        [
-          55,
-          635
-        ],
-        [
-          560,
-          630
-        ],
-        [
-          610,
-          765
-        ],
-        [
-          65,
-          765
-        ]
+        [55, 635],
+        [560, 630],
+        [610, 765],
+        [65, 765]
       ],
       "gridArea": {
         "x": 1,
@@ -288,22 +168,10 @@
       "traffic": "low",
       "description": "A fictional open edge of town with community sports and quieter roads.",
       "shape": [
-        [
-          640,
-          635
-        ],
-        [
-          1140,
-          630
-        ],
-        [
-          1135,
-          765
-        ],
-        [
-          590,
-          765
-        ]
+        [640, 635],
+        [1140, 630],
+        [1135, 765],
+        [590, 765]
       ],
       "gridArea": {
         "x": 8,
@@ -319,30 +187,12 @@
       "traffic": "medium",
       "description": "A fictional riverside quarter with food, care and learning spots.",
       "shape": [
-        [
-          560,
-          0
-        ],
-        [
-          760,
-          0
-        ],
-        [
-          960,
-          0
-        ],
-        [
-          960,
-          320
-        ],
-        [
-          760,
-          320
-        ],
-        [
-          560,
-          320
-        ]
+        [560, 0],
+        [760, 0],
+        [960, 0],
+        [960, 320],
+        [760, 320],
+        [560, 320]
       ],
       "gridArea": {
         "x": 14,
@@ -358,30 +208,12 @@
       "traffic": "medium",
       "description": "A fictional southern quarter with services and worship spaces.",
       "shape": [
-        [
-          0,
-          400
-        ],
-        [
-          280,
-          400
-        ],
-        [
-          560,
-          400
-        ],
-        [
-          560,
-          720
-        ],
-        [
-          280,
-          720
-        ],
-        [
-          0,
-          720
-        ]
+        [0, 400],
+        [280, 400],
+        [560, 400],
+        [560, 720],
+        [280, 720],
+        [0, 720]
       ],
       "gridArea": {
         "x": 0,
@@ -397,30 +229,12 @@
       "traffic": "high",
       "description": "A fictional gateway with travel, entertainment and work spots.",
       "shape": [
-        [
-          560,
-          400
-        ],
-        [
-          760,
-          400
-        ],
-        [
-          960,
-          400
-        ],
-        [
-          960,
-          720
-        ],
-        [
-          760,
-          720
-        ],
-        [
-          560,
-          720
-        ]
+        [560, 400],
+        [760, 400],
+        [960, 400],
+        [960, 720],
+        [760, 720],
+        [560, 720]
       ],
       "gridArea": {
         "x": 14,
@@ -442,22 +256,10 @@
         "depth": 8
       },
       "shape": [
-        [
-          960,
-          0
-        ],
-        [
-          1280,
-          0
-        ],
-        [
-          1280,
-          320
-        ],
-        [
-          960,
-          320
-        ]
+        [960, 0],
+        [1280, 0],
+        [1280, 320],
+        [960, 320]
       ]
     },
     {
@@ -473,22 +275,10 @@
         "depth": 10
       },
       "shape": [
-        [
-          960,
-          320
-        ],
-        [
-          1280,
-          320
-        ],
-        [
-          1280,
-          720
-        ],
-        [
-          960,
-          720
-        ]
+        [960, 320],
+        [1280, 320],
+        [1280, 720],
+        [960, 720]
       ]
     },
     {
@@ -504,22 +294,10 @@
         "depth": 6
       },
       "shape": [
-        [
-          0,
-          720
-        ],
-        [
-          320,
-          720
-        ],
-        [
-          320,
-          960
-        ],
-        [
-          0,
-          960
-        ]
+        [0, 720],
+        [320, 720],
+        [320, 960],
+        [0, 960]
       ]
     },
     {
@@ -535,22 +313,10 @@
         "depth": 6
       },
       "shape": [
-        [
-          320,
-          720
-        ],
-        [
-          640,
-          720
-        ],
-        [
-          640,
-          960
-        ],
-        [
-          320,
-          960
-        ]
+        [320, 720],
+        [640, 720],
+        [640, 960],
+        [320, 960]
       ]
     },
     {
@@ -566,22 +332,10 @@
         "depth": 6
       },
       "shape": [
-        [
-          640,
-          720
-        ],
-        [
-          960,
-          720
-        ],
-        [
-          960,
-          960
-        ],
-        [
-          640,
-          960
-        ]
+        [640, 720],
+        [960, 720],
+        [960, 960],
+        [640, 960]
       ]
     },
     {
@@ -597,100 +351,93 @@
         "depth": 6
       },
       "shape": [
-        [
-          960,
-          720
-        ],
-        [
-          1280,
-          720
-        ],
-        [
-          1280,
-          960
-        ],
-        [
-          960,
-          960
-        ]
+        [960, 720],
+        [1280, 720],
+        [1280, 960],
+        [960, 960]
       ]
+    },
+    {
+      "id": "olaiya",
+      "name": "Olaiya",
+      "theme": "residential",
+      "traffic": "medium",
+      "description": "A fictional residential quarter of family homes along quiet streets.",
+      "shape": [
+        [2640, 80],
+        [3120, 80],
+        [3120, 560],
+        [2640, 560]
+      ],
+      "gridArea": {
+        "x": 33,
+        "z": 1,
+        "width": 6,
+        "depth": 6
+      }
+    },
+    {
+      "id": "isale-aro",
+      "name": "Isale-Aro",
+      "theme": "market",
+      "traffic": "medium",
+      "description": "A fictional older quarter with lanes of family homes and small trading spots.",
+      "shape": [
+        [2640, 720],
+        [3120, 720],
+        [3120, 1200],
+        [2640, 1200]
+      ],
+      "gridArea": {
+        "x": 33,
+        "z": 9,
+        "width": 6,
+        "depth": 6
+      }
     }
   ],
   "grid": {
     "cellSize": 2,
     "rows": [
-      "ggggrrrgggrrrgggggrrrrrrrgggggrg",
-      "ggggrgggggrggggggggggggrrgggggrg",
-      "ggggrgggggrggggggggggggrrgggggrg",
-      "ggggrgggggrggggggggggggrrgggggrg",
-      "rrrrrrrrrrrrrrrrrggggggrrgggggrr",
-      "ggggggrgggggrgggrrrggggrrgggggrr",
-      "ggggggrgggggrgggggrggggrrgggggrr",
-      "ggggggrgggggrgggggrrrggrrgggggrr",
-      "rrggggrgggggrggggggrrrrrrrrrrrrr",
-      "grggggrgggggrggggggrggggrgggggrr",
-      "grggggrgggggrggggggrrrrrrrrrrrrr",
-      "grggggrgggggrggggggrrgggrgggggrg",
-      "rrggggrgggggrgggrrrrrgggrgggggrr",
-      "grrrrrrrrrrrrrrrrggrrrrrrrrrrrrr",
-      "ggggggrgggggrggggggrggggrgggggrg",
-      "ggggggrgggggrgggggrrggggrgggggrg",
-      "rrrrrrrrrrggrgggggrgggggrgggggrr",
-      "ggggggrggrrrrrrrrrrrrrrrrrrrrrrr",
-      "ggggggrgggggrgggggrgggggrgggggrg",
-      "ggggggrgggggrgggggrgggggrgggggrg",
-      "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr",
-      "ggggggrgggggrgggggrgggggrgggggrg",
-      "ggggggrgggggrgggggrgggggrgggggrg",
-      "ggggggrgggggrgggggrgggggrgggggrg"
+      "ggggrrrgggrrrgggggrrrrrrrgggggrgrggggggg",
+      "ggggrgggggrggggggggggggrrgggggrgrggggggg",
+      "ggggrgggggrggggggggggggrrgggggrgrggggggg",
+      "ggggrgggggrggggggggggggrrgggggrgrggggggg",
+      "rrrrrrrrrrrrrrrrrggggggrrgggggrrrggggggg",
+      "ggggggrgggggrgggrrrggggrrgggggrrrggggggg",
+      "ggggggrgggggrgggggrggggrrgggggrrrggggggg",
+      "ggggggrgggggrgggggrrrggrrgggggrrrggggggg",
+      "rrggggrgggggrggggggrrrrrrrrrrrrrrrrrrrrr",
+      "grggggrgggggrggggggrggggrgggggrrrggggggg",
+      "grggggrgggggrggggggrrrrrrrrrrrrrrggggggg",
+      "grggggrgggggrggggggrrgggrgggggrgrggggggg",
+      "rrggggrgggggrgggrrrrrgggrgggggrrrggggggg",
+      "grrrrrrrrrrrrrrrrggrrrrrrrrrrrrrrggggggg",
+      "ggggggrgggggrggggggrggggrgggggrgrggggggg",
+      "ggggggrgggggrgggggrrggggrgggggrgrggggggg",
+      "rrrrrrrrrrggrgggggrgggggrgggggrrrggggggg",
+      "ggggggrggrrrrrrrrrrrrrrrrrrrrrrrrggggggg",
+      "ggggggrgggggrgggggrgggggrgggggrgrggggggg",
+      "ggggggrgggggrgggggrgggggrgggggrgrggggggg",
+      "rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrggggggg",
+      "ggggggrgggggrgggggrgggggrgggggrgrggggggg",
+      "ggggggrgggggrgggggrgggggrgggggrgrggggggg",
+      "ggggggrgggggrgggggrgggggrgggggrgrggggggg"
     ],
     "waterCells": [
-      [
-        0,
-        7
-      ],
-      [
-        1,
-        7
-      ],
-      [
-        14,
-        1
-      ],
-      [
-        13,
-        1
-      ]
+      [0, 7],
+      [1, 7],
+      [14, 1],
+      [13, 1]
     ],
     "plotCells": [
-      [
-        1,
-        1
-      ],
-      [
-        1,
-        3
-      ],
-      [
-        7,
-        1
-      ],
-      [
-        14,
-        2
-      ],
-      [
-        2,
-        6
-      ],
-      [
-        7,
-        7
-      ],
-      [
-        9,
-        6
-      ]
+      [1, 1],
+      [1, 3],
+      [7, 1],
+      [14, 2],
+      [2, 6],
+      [7, 7],
+      [9, 6]
     ],
     "buildings": [
       {
@@ -778,12 +525,6 @@
         "buildingType": "school"
       },
       {
-        "placeId": "garden-chapel",
-        "x": 2,
-        "z": 11,
-        "buildingType": "church"
-      },
-      {
         "placeId": "fish-market",
         "x": 9,
         "z": 11,
@@ -821,8 +562,8 @@
       },
       {
         "placeId": "mosque-square",
-        "x": 10,
-        "z": 15,
+        "x": 27,
+        "z": 2,
         "buildingType": "mosque"
       },
       {
@@ -851,56 +592,20 @@
       }
     ],
     "treeCells": [
-      [
-        0,
-        0
-      ],
-      [
-        5,
-        1
-      ],
-      [
-        9,
-        0
-      ],
-      [
-        13,
-        3
-      ],
-      [
-        0,
-        6
-      ],
-      [
-        5,
-        6
-      ],
-      [
-        11,
-        7
-      ],
-      [
-        13,
-        9
-      ],
-      [
-        3,
-        9
-      ],
-      [
-        8,
-        0
-      ]
+      [0, 0],
+      [5, 1],
+      [9, 0],
+      [13, 3],
+      [0, 6],
+      [5, 6],
+      [11, 7],
+      [13, 9],
+      [3, 9],
+      [8, 0]
     ],
     "carCells": [
-      [
-        4,
-        4
-      ],
-      [
-        10,
-        4
-      ]
+      [4, 4],
+      [10, 4]
     ]
   },
   "landmarks": [
@@ -1864,41 +1569,6 @@
       ]
     },
     {
-      "id": "garden-chapel",
-      "label": "Garden Chapel",
-      "category": "worship",
-      "districtId": "south-quarter",
-      "locationSlug": "garden-chapel",
-      "x": 185,
-      "y": 820,
-      "verify": false,
-      "grid": {
-        "x": 2,
-        "z": 11
-      },
-      "buildingType": "church",
-      "actions": [
-        {
-          "id": "garden-chapel-visit",
-          "label": "Look around",
-          "description": "Spend time at Garden Chapel.",
-          "time_cost_minutes": 10,
-          "money_minor": {
-            "min": 0,
-            "max": 0
-          },
-          "mood_effect": 1,
-          "requirement": "Travel here first",
-          "open_hours": {
-            "start": 7,
-            "end": 21
-          },
-          "cooldown_game_minutes": 60,
-          "verify": false
-        }
-      ]
-    },
-    {
       "id": "fish-market",
       "label": "Fish Market",
       "category": "market",
@@ -2110,23 +1780,23 @@
     },
     {
       "id": "mosque-square",
-      "label": "Mosque Square",
+      "label": "Oja-Oba Mosque",
       "category": "worship",
-      "districtId": "south-quarter",
-      "locationSlug": "mosque-square",
-      "x": 1079,
-      "y": 1120,
+      "districtId": "oja-oba",
+      "locationSlug": "oja-oba",
+      "x": 2975,
+      "y": 145,
       "verify": false,
       "grid": {
-        "x": 10,
-        "z": 15
+        "x": 27,
+        "z": 2
       },
       "buildingType": "mosque",
       "actions": [
         {
           "id": "mosque-square-visit",
           "label": "Look around",
-          "description": "Spend time at Mosque Square.",
+          "description": "Spend time at Oja-Oba Mosque.",
           "time_cost_minutes": 10,
           "money_minor": {
             "min": 0,
@@ -2420,22 +2090,434 @@
       "actions": []
     },
     {
-      "id": "river-shrine-court",
-      "label": "River Shrine Court",
-      "category": "worship",
-      "districtId": "oke-fia",
-      "locationSlug": null,
-      "x": 3201,
-      "y": 1645,
+      "id": "art-craft-gallery",
+      "label": "Art and Craft Gallery",
+      "category": "services",
+      "districtId": "garden-quarter",
+      "locationSlug": "art-craft-gallery",
+      "x": 660,
+      "y": 366,
       "verify": false,
       "grid": {
-        "x": 29,
-        "z": 22
+        "x": 7,
+        "z": 5
       },
-      "mapObjectType": "poi",
-      "availabilityReason": "Heritage destination reserved for a later playable phase.",
-      "unlockRequirement": "Future heritage-area implementation.",
-      "actions": []
+      "actions": [],
+      "mapObjectType": "landmark"
+    },
+    {
+      "id": "hair-salon-tailor",
+      "label": "Hair Salon and Tailor",
+      "category": "services",
+      "districtId": "market-quarter",
+      "locationSlug": "hair-salon-tailor",
+      "x": 123,
+      "y": -1,
+      "verify": false,
+      "grid": {
+        "x": 2,
+        "z": 0
+      },
+      "actions": [],
+      "mapObjectType": "landmark"
+    },
+    {
+      "id": "shrine-garden-park",
+      "label": "Shrine Garden Park",
+      "category": "services",
+      "districtId": "river-quarter",
+      "locationSlug": "shrine-garden-park",
+      "x": 1733,
+      "y": 72,
+      "verify": false,
+      "grid": {
+        "x": 17,
+        "z": 1
+      },
+      "actions": [],
+      "mapObjectType": "landmark"
+    },
+    {
+      "id": "osun-festival-grounds",
+      "label": "Osun Festival Grounds",
+      "category": "sport",
+      "districtId": "river-quarter",
+      "locationSlug": "osun-festival-grounds",
+      "x": 1948,
+      "y": 72,
+      "verify": false,
+      "grid": {
+        "x": 19,
+        "z": 1
+      },
+      "actions": [],
+      "mapObjectType": "landmark"
+    },
+    {
+      "id": "central-church",
+      "label": "Central Church",
+      "category": "worship",
+      "districtId": "river-quarter",
+      "locationSlug": "central-church",
+      "x": 1948,
+      "y": 219,
+      "verify": false,
+      "grid": {
+        "x": 19,
+        "z": 3
+      },
+      "actions": [],
+      "mapObjectType": "landmark"
+    },
+    {
+      "id": "general-hospital",
+      "label": "General Hospital",
+      "category": "health",
+      "districtId": "river-quarter",
+      "locationSlug": "general-hospital",
+      "x": 2162,
+      "y": 219,
+      "verify": false,
+      "grid": {
+        "x": 21,
+        "z": 3
+      },
+      "actions": [],
+      "mapObjectType": "landmark"
+    },
+    {
+      "id": "fuel-station",
+      "label": "Fuel Station",
+      "category": "transport",
+      "districtId": "south-quarter",
+      "locationSlug": "fuel-station",
+      "x": 338,
+      "y": 733,
+      "verify": false,
+      "grid": {
+        "x": 4,
+        "z": 10
+      },
+      "actions": [],
+      "mapObjectType": "landmark"
+    },
+    {
+      "id": "okada-stand",
+      "label": "Okada Stand",
+      "category": "transport",
+      "districtId": "south-quarter",
+      "locationSlug": "okada-stand",
+      "x": 660,
+      "y": 806,
+      "verify": false,
+      "grid": {
+        "x": 7,
+        "z": 11
+      },
+      "actions": [],
+      "mapObjectType": "landmark"
+    },
+    {
+      "id": "cinema-event-hall",
+      "label": "Cinema and Event Hall",
+      "category": "services",
+      "districtId": "south-quarter",
+      "locationSlug": "cinema-event-hall",
+      "x": -91,
+      "y": 1027,
+      "verify": false,
+      "grid": {
+        "x": 0,
+        "z": 14
+      },
+      "actions": [],
+      "mapObjectType": "landmark"
+    },
+    {
+      "id": "post-office-cafe",
+      "label": "Post Office and Internet Cafe",
+      "category": "services",
+      "districtId": "south-quarter",
+      "locationSlug": "post-office-cafe",
+      "x": 123,
+      "y": 1027,
+      "verify": false,
+      "grid": {
+        "x": 2,
+        "z": 14
+      },
+      "actions": [],
+      "mapObjectType": "landmark"
+    },
+    {
+      "id": "central-mosque",
+      "label": "Central Mosque",
+      "category": "worship",
+      "districtId": "south-quarter",
+      "locationSlug": "central-mosque",
+      "x": 660,
+      "y": 1027,
+      "verify": false,
+      "grid": {
+        "x": 7,
+        "z": 14
+      },
+      "actions": [],
+      "mapObjectType": "landmark"
+    },
+    {
+      "id": "community-pharmacy",
+      "label": "Community Pharmacy",
+      "category": "health",
+      "districtId": "oja-oba",
+      "locationSlug": "community-pharmacy",
+      "x": 2592,
+      "y": -1,
+      "verify": false,
+      "grid": {
+        "x": 25,
+        "z": 0
+      },
+      "actions": [],
+      "mapObjectType": "landmark"
+    },
+    {
+      "id": "olaiya-central",
+      "label": "Olaiya Central",
+      "category": "services",
+      "districtId": "olaiya",
+      "locationSlug": "city-centre",
+      "x": 3855,
+      "y": 145,
+      "verify": false,
+      "grid": {
+        "x": 35,
+        "z": 2
+      },
+      "actions": [],
+      "mapObjectType": "landmark",
+      "availabilityReason": "Olaiya hub linked to the Olaiya walk."
+    },
+    {
+      "id": "olaiya-fuel-pumps",
+      "label": "Fuel & Go Forecourt Pumps",
+      "category": "transport",
+      "districtId": "olaiya",
+      "locationSlug": null,
+      "x": 3635,
+      "y": 70,
+      "verify": false,
+      "grid": {
+        "x": 33,
+        "z": 1
+      },
+      "actions": [],
+      "mapObjectType": "landmark",
+      "availabilityReason": "Olaiya place in the town map."
+    },
+    {
+      "id": "olaiya-mini-mart",
+      "label": "Fuel & Go Mini-Mart",
+      "category": "food",
+      "districtId": "olaiya",
+      "locationSlug": null,
+      "x": 3745,
+      "y": 70,
+      "verify": false,
+      "grid": {
+        "x": 34,
+        "z": 1
+      },
+      "actions": [],
+      "mapObjectType": "landmark",
+      "availabilityReason": "Olaiya place in the town map."
+    },
+    {
+      "id": "olaiya-vulcanizer",
+      "label": "Vulcanizer & Tire Corner",
+      "category": "services",
+      "districtId": "olaiya",
+      "locationSlug": null,
+      "x": 3855,
+      "y": 70,
+      "verify": false,
+      "grid": {
+        "x": 35,
+        "z": 1
+      },
+      "actions": [],
+      "mapObjectType": "landmark",
+      "availabilityReason": "Olaiya place in the town map."
+    },
+    {
+      "id": "olaiya-atm",
+      "label": "Meridian Bank ATM Alcove",
+      "category": "services",
+      "districtId": "olaiya",
+      "locationSlug": null,
+      "x": 3965,
+      "y": 70,
+      "verify": false,
+      "grid": {
+        "x": 36,
+        "z": 1
+      },
+      "actions": [],
+      "mapObjectType": "landmark",
+      "availabilityReason": "Olaiya place in the town map."
+    },
+    {
+      "id": "olaiya-bank-lobby",
+      "label": "Meridian Bank Customer Lobby",
+      "category": "services",
+      "districtId": "olaiya",
+      "locationSlug": null,
+      "x": 4075,
+      "y": 70,
+      "verify": false,
+      "grid": {
+        "x": 37,
+        "z": 1
+      },
+      "actions": [],
+      "mapObjectType": "landmark",
+      "availabilityReason": "Olaiya place in the town map."
+    },
+    {
+      "id": "olaiya-adire-vats",
+      "label": "Indigo Dye Vats & Zinc Shed",
+      "category": "market",
+      "districtId": "olaiya",
+      "locationSlug": null,
+      "x": 4185,
+      "y": 70,
+      "verify": false,
+      "grid": {
+        "x": 38,
+        "z": 1
+      },
+      "actions": [],
+      "mapObjectType": "landmark",
+      "availabilityReason": "Olaiya place in the town map."
+    },
+    {
+      "id": "olaiya-adire-racks",
+      "label": "Adire Drying & Folding Racks",
+      "category": "market",
+      "districtId": "olaiya",
+      "locationSlug": null,
+      "x": 3635,
+      "y": 295,
+      "verify": false,
+      "grid": {
+        "x": 33,
+        "z": 4
+      },
+      "actions": [],
+      "mapObjectType": "landmark",
+      "availabilityReason": "Olaiya place in the town map."
+    },
+    {
+      "id": "olaiya-market-stalls",
+      "label": "Open Market Produce & Cloth Tables",
+      "category": "market",
+      "districtId": "olaiya",
+      "locationSlug": null,
+      "x": 3745,
+      "y": 295,
+      "verify": false,
+      "grid": {
+        "x": 34,
+        "z": 4
+      },
+      "actions": [],
+      "mapObjectType": "landmark",
+      "availabilityReason": "Olaiya place in the town map."
+    },
+    {
+      "id": "olaiya-buka",
+      "label": "Mama Sikira Buka Kitchen",
+      "category": "food",
+      "districtId": "olaiya",
+      "locationSlug": null,
+      "x": 3855,
+      "y": 295,
+      "verify": false,
+      "grid": {
+        "x": 35,
+        "z": 4
+      },
+      "actions": [],
+      "mapObjectType": "landmark",
+      "availabilityReason": "Olaiya place in the town map."
+    },
+    {
+      "id": "olaiya-barber",
+      "label": "Dele Cutz Barber Salon",
+      "category": "services",
+      "districtId": "olaiya",
+      "locationSlug": null,
+      "x": 3965,
+      "y": 295,
+      "verify": false,
+      "grid": {
+        "x": 36,
+        "z": 4
+      },
+      "actions": [],
+      "mapObjectType": "landmark",
+      "availabilityReason": "Olaiya place in the town map."
+    },
+    {
+      "id": "olaiya-pos",
+      "label": "FastCash POS & Airtime Kiosk",
+      "category": "services",
+      "districtId": "olaiya",
+      "locationSlug": null,
+      "x": 4075,
+      "y": 295,
+      "verify": false,
+      "grid": {
+        "x": 37,
+        "z": 4
+      },
+      "actions": [],
+      "mapObjectType": "landmark",
+      "availabilityReason": "Olaiya place in the town map."
+    },
+    {
+      "id": "olaiya-accessory",
+      "label": "Iya Adire Style & Accessories",
+      "category": "market",
+      "districtId": "olaiya",
+      "locationSlug": null,
+      "x": 4185,
+      "y": 295,
+      "verify": false,
+      "grid": {
+        "x": 38,
+        "z": 4
+      },
+      "actions": [],
+      "mapObjectType": "landmark",
+      "availabilityReason": "Olaiya place in the town map."
+    },
+    {
+      "id": "olaiya-transit",
+      "label": "Keke Napep & Korope Loading Stand",
+      "category": "transport",
+      "districtId": "olaiya",
+      "locationSlug": null,
+      "x": 3635,
+      "y": 445,
+      "verify": false,
+      "grid": {
+        "x": 33,
+        "z": 6
+      },
+      "actions": [],
+      "mapObjectType": "landmark",
+      "availabilityReason": "Olaiya place in the town map."
     }
   ]
 }

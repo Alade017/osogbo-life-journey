@@ -481,83 +481,6 @@
 .mg-pip {
   fill: #1f2937;
 }
-.mg-ludo-tokens {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  display: grid;
-  gap: 8px;
-}
-.mg-token {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border-radius: 14px;
-  border: 1px solid var(--mg-line);
-  background: var(--mg-paper);
-  text-align: left;
-  cursor: default;
-  transition:
-    transform 160ms ease,
-    box-shadow 160ms ease;
-}
-.mg-token.is-playable {
-  cursor: pointer;
-  border-color: var(--mg-gold);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mg-gold) 30%, transparent);
-  animation: mg-pulse 1100ms ease-in-out infinite alternate;
-}
-.mg-token.is-playable:hover {
-  transform: translateY(-2px);
-}
-.mg-token:disabled {
-  opacity: 0.85;
-}
-.mg-token-disc {
-  flex-shrink: 0;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle at 35% 30%,
-    #fff 0 12%,
-    var(--token) 13% 70%,
-    color-mix(in srgb, var(--token) 70%, #000) 100%
-  );
-  box-shadow:
-    0 3px 6px rgb(0 0 0 / 0.3),
-    inset 0 -3px 0 rgb(0 0 0 / 0.2);
-}
-.mg-token-body {
-  display: grid;
-  gap: 4px;
-  min-width: 0;
-  flex: 1;
-}
-.mg-token-body strong {
-  font-size: 0.92rem;
-}
-.mg-token-body small {
-  font-size: 0.76rem;
-  color: var(--muted-foreground, #6b7280);
-}
-.mg-track {
-  display: block;
-  height: 6px;
-  border-radius: 999px;
-  background: var(--muted, #ece8dc);
-  overflow: hidden;
-}
-.mg-track > span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--token, var(--mg-accent));
-  transition: width 500ms ease;
-}
 .mg-rival {
   margin: 0;
   font-size: 0.82rem;
@@ -939,92 +862,739 @@
   }
 }
 
-/* Ludo board: an illustrated cross-shaped track with coloured yards, home lanes and pieces. */
+/* Ludo board: a 15 by 15 CSS grid with solid yards, a white track and pawns that hop tile to tile. */
 .mg-ludo {
-  gap: 14px;
+  position: relative;
+  gap: 12px;
 }
-.mg-ludo-board-wrap {
+.lb-board {
+  position: relative;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  aspect-ratio: 1;
+  background: #ffffff;
+  border: 3px solid #1f2937;
+  border-radius: 16px;
+  box-shadow: 0 18px 32px -20px rgb(40 26 10 / 0.6);
+  overflow: hidden;
+}
+.lb-stage {
+  position: relative;
+  width: 100%;
+}
+.lb-grid {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(15, 1fr);
+  grid-template-rows: repeat(15, 1fr);
+}
+.lb-cell {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid #1f2937;
+  box-sizing: border-box;
+}
+.lb-cell.is-start,
+.lb-cell.is-home {
+  border-color: #1f2937;
+}
+.lb-mark {
+  position: absolute;
+  inset: 10%;
+  width: 80%;
+  height: 80%;
+}
+.lb-yard {
+  position: absolute;
+  border-radius: 14%;
+  z-index: 1;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.lb-yard-plate {
+  position: absolute;
+  inset: 13%;
+  border-radius: 14%;
+  background: #ffffff;
+}
+.lb-socket {
+  position: absolute;
+  width: 15%;
+  height: 15%;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  border: 2px solid #ffffff;
+}
+.lb-centre {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.lb-piece {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  aspect-ratio: 1;
+  transition:
+    left 170ms linear,
+    top 170ms linear,
+    width 200ms ease;
+  pointer-events: none;
+}
+.lb-piece.is-playable {
+  pointer-events: auto;
+  cursor: pointer;
+  filter: drop-shadow(0 0 4px #f5c518) drop-shadow(0 0 2px #f5c518);
+  animation: mg-pulse 1100ms ease-in-out infinite alternate;
+}
+.lb-piece.is-playable:focus-visible {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+.lb-pawn {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.lb-pawn-shadow {
+  fill: rgb(20 14 6 / 0.3);
+}
+.lb-roll-hint {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 10px);
+  transform: translateX(-50%);
+  display: grid;
+  min-width: 128px;
+  padding: 6px 12px 8px;
+  border-radius: 12px;
+  background: #1f2937;
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  overflow: hidden;
+  pointer-events: none;
+  box-shadow: 0 6px 16px rgb(0 0 0 / 0.25);
+  animation: lb-hint-in 220ms ease-out;
+}
+.lb-roll-timer {
+  display: block;
+  height: 3px;
+  margin: 4px -12px -8px;
+  background: #f5c518;
+  transform-origin: left center;
+  animation-name: lb-hint-timer;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+@keyframes lb-hint-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -4px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+@keyframes lb-hint-timer {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lb-roll-hint,
+  .lb-roll-timer {
+    animation: none;
+  }
+}
+
+/* HUD: one compact card per seat, with the turn highlighted. */
+.lb-hud {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+}
+.lb-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid rgb(0 0 0 / 0.07);
+  background: #ffffff;
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.04),
+    0 4px 12px rgb(0 0 0 / 0.05);
+}
+.lb-card.is-active {
+  border-color: #1f2937;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.12);
+}
+.lb-avatar {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #f1efe8;
+  color: #1f2937;
+  flex: none;
+}
+.lb-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lb-done {
+  grid-column: 1 / -1;
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
+.lb-done i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1px solid var(--seat);
+}
+.lb-done i.is-home {
+  background: var(--seat);
+}
+.lb-info {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.lb-turn {
+  font-size: 0.7rem;
+  color: var(--muted-foreground, #6b7280);
+}
+.lb-card.is-active .lb-turn {
+  color: var(--mg-ink);
+  font-weight: 700;
+}
+
+/* Results: a separate panel that replaces the dice once the game is over. */
+/* Results popup: a centred dialog over the finished board. */
+.lb-results.lb-results {
+  box-sizing: border-box;
+  display: grid;
+  gap: 16px;
+  width: min(92vw, 380px);
+  max-width: 380px;
+  padding: 22px;
+  border-radius: 24px;
+  background: var(--mg-paper, #fffdf7);
+  border: 2px solid #1f2937;
+  box-shadow:
+    0 6px 0 #1f2937,
+    0 24px 48px rgb(0 0 0 / 0.35);
+}
+.lb-pawn {
+  flex: none;
+  filter: drop-shadow(0 3px 2px rgb(0 0 0 / 0.2));
+}
+.lb-results-head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.lb-results-head h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+.lb-results-head p {
+  margin: 2px 0 0;
+  font-size: 0.85rem;
+  color: var(--muted-foreground, #6b7280);
+}
+.lb-rank {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.lb-rank li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: rgb(0 0 0 / 0.03);
+  font-size: 0.85rem;
+}
+.lb-rank-place {
+  font-weight: 700;
+  min-width: 18px;
+}
+.lb-rank-home {
+  color: var(--muted-foreground, #6b7280);
+  font-size: 0.8rem;
+}
+.lb-results-actions {
+  display: grid;
+  gap: 8px;
+}
+.lb-results-actions button {
+  min-height: 44px;
+}
+
+/* Toasts: short notices for captures, forfeits and passes. */
+.lb-toasts {
+  position: absolute;
+  left: 50%;
+  top: 8px;
+  z-index: 8;
+  transform: translateX(-50%);
+  display: grid;
+  gap: 6px;
+  width: min(92%, 360px);
+  pointer-events: none;
+}
+.lb-toast {
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgb(31 41 55 / 0.9);
+  color: #ffffff;
+  font-size: 0.8rem;
+  text-align: center;
+  animation: mg-pulse 1s ease-in-out 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lb-piece,
+  .lb-piece.is-playable,
+  .lb-toast,
+  .lb-card,
+  .mg-ludo-face.is-rolling {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* Ludo dice: two white dice that roll when tapped before the roll and select a die after it. */
+.mg-ludo-dice {
+  gap: 18px;
+}
+.mg-ludo-die {
+  padding: 6px;
+  border: 0;
+  border-radius: 18px;
+  background: transparent;
+  cursor: default;
+  transition:
+    transform 160ms ease,
+    opacity 160ms ease;
+}
+.mg-ludo-die.is-rollable,
+.mg-ludo-die.is-usable {
+  cursor: pointer;
+}
+.mg-ludo-die.is-rollable:hover,
+.mg-ludo-die.is-usable:hover {
+  transform: translateY(-2px);
+}
+.mg-ludo-die.is-rollable {
+  animation: mg-pulse 1100ms ease-in-out infinite alternate;
+}
+.mg-ludo-die.is-usable {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mg-gold) 45%, transparent);
+}
+.mg-ludo-die.is-selected {
+  box-shadow: 0 0 0 3px var(--mg-gold);
+}
+.mg-ludo-die.is-used {
+  opacity: 0.35;
+}
+.mg-ludo-die:focus-visible {
+  outline: 3px solid var(--mg-gold);
+  outline-offset: 2px;
+  border-radius: 18px;
+}
+.mg-ludo-face {
+  display: block;
+  filter: drop-shadow(0 4px 4px rgb(0 0 0 / 0.25));
+}
+.mg-ludo-face.is-rolling {
+  animation: mg-die-roll 480ms cubic-bezier(0.3, 1.2, 0.5, 1);
+}
+
+/* Setup screens: pick the players or the house rules before a game starts. */
+.mg-setup {
   width: 100%;
   max-width: 420px;
   margin: 0 auto;
+  gap: 12px;
 }
-.mg-ludo-board {
-  display: block;
+.mg-setup-title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.mg-setup-options {
+  display: grid;
+  gap: 10px;
   width: 100%;
-  height: auto;
-  border-radius: 18px;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.7) inset,
-    0 14px 30px -18px rgba(60, 40, 20, 0.55);
-  overflow: visible;
 }
-.mg-ludo-ground {
-  fill: #efe2c4;
-  stroke: #c9b48a;
-  stroke-width: 0.06;
+.mg-setup-block {
+  display: grid;
+  gap: 10px;
+  width: 100%;
 }
-.mg-ludo-yard {
-  fill: color-mix(in srgb, var(--yard, #bbb) 26%, #fbf5e6);
-  stroke: color-mix(in srgb, var(--yard, #bbb) 70%, #5b4630);
-  stroke-width: 0.05;
+.mg-setup-lede {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted-foreground, #6b7280);
 }
-.mg-ludo-cell {
-  fill: #fbf5e6;
-  stroke: #cdb98f;
-  stroke-width: 0.035;
+.mg-setup-subtitle {
+  margin: 0;
+  font-size: 0.95rem;
 }
-.mg-ludo-cell.is-safe {
-  fill: #fff8df;
-}
-.mg-ludo-cell.is-start {
-  fill: color-mix(in srgb, var(--start) 55%, #fff8df);
-}
-.mg-ludo-cell.is-home {
-  fill: color-mix(in srgb, var(--start) 45%, #fbf5e6);
-}
-.mg-ludo-centre {
-  fill: #fffaf0;
-  stroke: #5b4630;
-  stroke-width: 0.06;
-}
-.mg-ludo polygon {
-  stroke: rgba(255, 255, 255, 0.6);
-  stroke-width: 0.03;
-}
-.mg-ludo-piece {
-  transition: transform 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.mg-ludo-piece.is-playable {
+.mg-setup-option {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 2px solid var(--mg-line);
+  background: var(--mg-paper);
+  color: inherit;
+  text-align: left;
   cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
 }
-.mg-ludo-disc {
-  fill: var(--piece);
-  stroke: #fffdf6;
-  stroke-width: 0.07;
-  filter: drop-shadow(0 0.06px 0.05px rgba(40, 26, 10, 0.35));
+.mg-setup-option:hover:not(:disabled) {
+  border-color: var(--mg-gold);
 }
-.mg-ludo-piece.is-playable .mg-ludo-disc {
-  stroke: var(--mg-gold);
-  stroke-width: 0.13;
+.mg-setup-option.is-selected {
+  border-color: var(--mg-gold);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mg-gold) 30%, transparent);
+}
+.mg-setup-option:focus-visible {
+  outline: 3px solid var(--mg-gold);
+  outline-offset: 2px;
+}
+.mg-setup-option.is-unavailable {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+.mg-setup-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.mg-setup-text small {
+  font-size: 0.8rem;
+  color: var(--muted-foreground, #6b7280);
+}
+.mg-setup-pawns {
+  display: grid;
+  grid-template-columns: repeat(2, 16px);
+  gap: 2px 4px;
+  width: 40px;
+  justify-items: center;
+}
+.mg-setup-tick {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--mg-line);
+}
+.mg-setup-option.is-selected .mg-setup-tick {
+  background: var(--mg-gold);
+  border-color: var(--mg-gold);
+  color: #1f2937;
+}
+.mg-setup-badge {
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: var(--mg-line);
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.mg-setup-start {
+  width: 100%;
+  min-height: 48px;
+  font-size: 1rem;
+}
+.mg-setup-soon {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.mg-setup-rules {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 0.85rem;
+  display: grid;
+  gap: 6px;
+}
+.mg-setup-check {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid var(--mg-line);
+  background: var(--mg-paper);
+}
+.mg-setup-check span {
+  display: grid;
+  gap: 2px;
+}
+.mg-setup-check small {
+  color: var(--muted-foreground, #6b7280);
+}
+
+/* Whot: shuffle on load, and the draw popup that asks the player to pick from the deck. */
+.mg-shuffle {
+  position: relative;
+  width: 100%;
+  height: 150px;
+  display: grid;
+  place-items: center;
+}
+.mg-shuffle-card {
+  position: absolute;
+  animation: mg-shuffle 0.9s ease-in-out infinite alternate;
+  animation-delay: calc(var(--i) * 60ms);
+}
+@keyframes mg-shuffle {
+  from {
+    transform: translateX(-34px) rotate(-7deg);
+  }
+  to {
+    transform: translateX(34px) rotate(7deg);
+  }
+}
+.mg-draw-pick {
+  width: min(88vw, 300px);
+  background: #fffdf7;
+  color: #1f2937;
+}
+.mg-draw-deck {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  color: var(--mg-ink);
+  font-size: 0.8rem;
+  font-weight: 600;
   animation: mg-pulse 1100ms ease-in-out infinite alternate;
 }
-.mg-ludo-glint {
-  fill: #ffffff;
-  opacity: 0.55;
-  pointer-events: none;
-}
-.mg-ludo-piece:focus-visible {
-  outline: none;
-}
-.mg-ludo-piece:focus-visible .mg-ludo-disc {
-  stroke: #1d4ed8;
-  stroke-width: 0.16;
-}
 @media (prefers-reduced-motion: reduce) {
-  .mg-ludo-piece {
-    transition: none;
-  }
-  .mg-ludo-piece.is-playable .mg-ludo-disc {
+  .mg-shuffle-card,
+  .mg-draw-deck,
+  .mg-ludo-die.is-rollable {
     animation: none;
   }
+}
+
+/* Results popup header: pawn beside the title, the pawn at a fixed size. */
+.lb-results.lb-results .lb-results-head {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  text-align: left;
+}
+.lb-results.lb-results .lb-results-head svg {
+  width: 64px;
+  height: 64px;
+  flex: none;
+}
+.lb-results.lb-results .lb-results-head > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+.lb-results.lb-results .lb-results-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.mg-setup-title,
+.mg-setup-subtitle {
+  font-weight: 700;
+}
+
+/* Results popup: small, centred, winner only. */
+.lb-results.lb-results {
+  width: min(86vw, 330px);
+  max-width: 330px;
+  padding: 22px 20px 20px;
+  gap: 18px;
+}
+.lb-results.lb-results .lb-results-head svg {
+  width: 48px;
+  height: 48px;
+}
+.lb-results.lb-results .lb-results-head > div {
+  min-width: 0;
+}
+.lb-results.lb-results .lb-results-actions {
+  grid-template-columns: 1fr;
+}
+
+/* Dice sit on the board's centre; each die keeps a 44px touch target. */
+.lb-dice-centre {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.lb-dice-centre .mg-ludo-die {
+  display: grid;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0;
+}
+.lb-dice-centre .mg-cube {
+  --die: 28px;
+}
+
+/* 3D dice: a real cube with shaded faces and glossy pips. */
+.mg-die-stage {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  perspective: 260px;
+}
+.mg-cube {
+  --die: 34px;
+  position: relative;
+  width: var(--die);
+  height: var(--die);
+  transform-style: preserve-3d;
+  transition: transform 620ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.mg-cube.is-rolling {
+  animation: mg-cube-roll 560ms cubic-bezier(0.3, 1.1, 0.5, 1);
+}
+@keyframes mg-cube-roll {
+  from {
+    transform: rotateX(calc(var(--ax) - 720deg)) rotateY(calc(var(--ay) - 720deg));
+  }
+  to {
+    transform: rotateX(var(--ax)) rotateY(var(--ay));
+  }
+}
+.mg-cube-face {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  padding: calc(var(--die) * 0.14);
+  border-radius: calc(var(--die) * 0.22);
+  background: radial-gradient(circle at 28% 24%, #ffffff 0%, #f7f4ec 48%, #d6cfbd 100%);
+  box-shadow:
+    inset 0 0 0 1px rgb(0 0 0 / 0.18),
+    inset -2px -3px 4px rgb(0 0 0 / 0.08);
+  backface-visibility: hidden;
+}
+.mg-cube-face.f1 {
+  transform: translateZ(calc(var(--die) / 2));
+}
+.mg-cube-face.f6 {
+  transform: rotateY(180deg) translateZ(calc(var(--die) / 2));
+}
+.mg-cube-face.f3 {
+  transform: rotateY(90deg) translateZ(calc(var(--die) / 2));
+}
+.mg-cube-face.f4 {
+  transform: rotateY(-90deg) translateZ(calc(var(--die) / 2));
+}
+.mg-cube-face.f2 {
+  transform: rotateX(90deg) translateZ(calc(var(--die) / 2));
+}
+.mg-cube-face.f5 {
+  transform: rotateX(-90deg) translateZ(calc(var(--die) / 2));
+}
+.mg-pip {
+  width: calc(var(--die) * 0.2);
+  height: calc(var(--die) * 0.2);
+  margin: auto;
+  border-radius: 50%;
+}
+.mg-pip.is-on {
+  background: radial-gradient(circle at 32% 28%, #6b6b6b 0%, #1a1a1a 55%, #000000 100%);
+  box-shadow:
+    0 1px 1px rgb(255 255 255 / 0.5),
+    inset 0 -1px 1px rgb(255 255 255 / 0.15);
+}
+
+/* The 3D pawn stage sits over the board and never takes clicks: the DOM pieces do. */
+.lb-scene {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+.lb-scene canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* A single 3D pawn: a square box that holds its own small canvas. */
+.lb-mark-3d {
+  position: relative;
+  display: block;
+  flex: none;
+}
+.lb-mark-3d canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* Your-turn card: the same card as the results, with a small icon chip. */
+.lb-prompt-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #f5c518;
+  color: #1f2937;
+  flex: none;
 }

@@ -16,7 +16,7 @@ it.each(["detached", "moved"])("cleans a focused overlay after its host was %s",
     entry.dispose();
     entry.dispose();
     expect(unmount).not.toHaveBeenCalled();
-    await Promise.resolve();
+    await new Promise((resolve) => setTimeout(resolve, 0));
   });
   expect(unmount).toHaveBeenCalledTimes(1);
   expect(other.childNodes).toHaveLength(0);
@@ -34,13 +34,13 @@ it("keeps a replayed overlay isolated from deferred cleanup of the previous root
     first.dispose();
     second = mountSceneOverlay(target);
     second.root.render(<button>New</button>);
-    await Promise.resolve();
+    await new Promise((resolve) => setTimeout(resolve, 0));
   });
   expect(target.textContent).toBe("New");
   expect(target.querySelectorAll("[data-scene-overlay]")).toHaveLength(1);
   await act(async () => {
     second.dispose();
-    await Promise.resolve();
+    await new Promise((resolve) => setTimeout(resolve, 0));
   });
   target.remove();
 });

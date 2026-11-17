@@ -12,13 +12,6 @@
   min-height: 0;
 }
 
-@media (min-width: 1080px) {
-  .ncm-layout-grid.is-split {
-    grid-template-columns: minmax(0, 1.38fr) minmax(320px, 0.92fr);
-    align-items: stretch;
-  }
-}
-
 .ncm-3d-companion {
   display: flex;
   flex-direction: column;
@@ -61,7 +54,9 @@
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
-  transition: background 160ms ease, color 160ms ease;
+  transition:
+    background 160ms ease,
+    color 160ms ease;
 }
 
 .ncm-3d-expand-btn:hover {
@@ -198,279 +193,14 @@
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
-  transition: background 150ms ease, border-color 150ms ease;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease;
 }
 
 .ncm-district-switch:hover {
   background: #f2ead9;
   border-color: #16225c;
-}
-
-/* Interactive Map Stage */
-.ncm-stage {
-  position: relative;
-  flex: 1 1 auto;
-  min-height: 390px;
-}
-
-.ncm-canvas-frame {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 1000 / 600;
-  min-height: 360px;
-  border-radius: 18px;
-  border: 1px solid rgba(22, 34, 92, 0.16);
-  background: #faf7f0;
-  overflow: hidden;
-}
-
-.ncm-svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
-.ncm-road-label {
-  fill: #f6efe2;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  opacity: 0.92;
-}
-
-.ncm-alley-label {
-  fill: #16225c;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  opacity: 0.72;
-}
-
-/* Surrounding Districts Compass Ring */
-.ncm-compass-ring {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 3;
-}
-
-.ncm-compass-chip {
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.05rem;
-  padding: 0.32rem 0.62rem;
-  border-radius: 10px;
-  border: 1px solid rgba(22, 34, 92, 0.18);
-  background: rgba(250, 247, 240, 0.94);
-  backdrop-filter: blur(6px);
-  color: #16225c;
-  font-size: 0.7rem;
-  line-height: 1.2;
-  cursor: pointer;
-  pointer-events: auto;
-  box-shadow: 0 6px 14px -8px rgba(22, 34, 92, 0.32);
-  transition:
-    transform 160ms ease,
-    border-color 160ms ease,
-    background 160ms ease;
-}
-
-.ncm-compass-chip:hover {
-  transform: translateY(-1px);
-  border-color: #16225c;
-  background: #ffffff;
-}
-
-.ncm-compass-chip strong {
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.ncm-compass-chip span {
-  font-size: 0.64rem;
-  color: #4f5974;
-  white-space: nowrap;
-}
-
-.ncm-compass-north {
-  top: 0.55rem;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.ncm-compass-north:hover {
-  transform: translate(-50%, -1px);
-}
-
-.ncm-compass-south {
-  bottom: 0.55rem;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.ncm-compass-south:hover {
-  transform: translate(-50%, -1px);
-}
-
-.ncm-compass-west {
-  left: 0.55rem;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.ncm-compass-west:hover {
-  transform: translateY(calc(-50% - 1px));
-}
-
-.ncm-compass-east {
-  right: 0.55rem;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.ncm-compass-east:hover {
-  transform: translateY(calc(-50% - 1px));
-}
-
-/* Pin Layer */
-.ncm-pin-layer {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 4;
-}
-
-.ncm-home-marker {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  display: inline-flex;
-  align-items: center;
-  gap: 0.28rem;
-  padding: 0.24rem 0.52rem;
-  border-radius: 8px;
-  background: rgba(250, 247, 240, 0.94);
-  border: 1.5px solid #1e9a5f;
-  color: #13683f;
-  font-size: 0.7rem;
-  font-weight: 700;
-  box-shadow: 0 6px 14px -8px rgba(30, 154, 95, 0.55);
-}
-
-.ncm-pin {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  display: inline-flex;
-  align-items: center;
-  gap: 0.42rem;
-  padding: 0.28rem 0.55rem 0.28rem 0.3rem;
-  border-radius: 12px;
-  border: 1.5px solid rgba(22, 34, 92, 0.24);
-  background: rgba(250, 247, 240, 0.96);
-  color: #16225c;
-  text-align: left;
-  cursor: pointer;
-  pointer-events: auto;
-  box-shadow: 0 8px 18px -10px rgba(22, 34, 92, 0.4);
-  transition:
-    transform 160ms cubic-bezier(0.16, 1, 0.3, 1),
-    border-color 160ms ease,
-    box-shadow 160ms ease;
-}
-
-.ncm-pin:hover {
-  transform: translate(-50%, calc(-50% - 2px));
-  border-color: #16225c;
-  box-shadow: 0 12px 22px -10px rgba(22, 34, 92, 0.48);
-  z-index: 6;
-}
-
-.ncm-pin.is-selected {
-  border-color: #f2b21c;
-  box-shadow:
-    0 0 0 3px rgba(242, 178, 28, 0.35),
-    0 12px 24px -10px rgba(22, 34, 92, 0.52);
-  z-index: 7;
-}
-
-.ncm-pin-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  color: #ffffff;
-  flex-shrink: 0;
-}
-
-.ncm-pin-label {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.15;
-}
-
-.ncm-pin-label strong {
-  font-size: 0.74rem;
-  font-weight: 700;
-  color: #16225c;
-  white-space: nowrap;
-}
-
-.ncm-pin-label small {
-  font-size: 0.64rem;
-  font-weight: 600;
-  color: #4f5974;
-  white-space: nowrap;
-}
-
-/* Live Player Position Marker */
-.ncm-player-marker {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  z-index: 8;
-  pointer-events: none;
-  transition:
-    left 180ms linear,
-    top 180ms linear;
-}
-
-.ncm-player-halo {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 28px;
-  height: 28px;
-  transform: translate(-50%, -50%);
-  border-radius: 999px;
-  background: rgba(242, 178, 28, 0.34);
-  border: 1.5px solid #f2b21c;
-}
-
-.ncm-player-core {
-  position: relative;
-  width: 14px;
-  height: 14px;
-  border-radius: 999px;
-  background: #16225c;
-  border: 2.5px solid #faf7f0;
-  box-shadow: 0 2px 6px rgba(22, 34, 92, 0.55);
-}
-
-.ncm-player-tag {
-  margin-top: 3px;
-  padding: 0.08rem 0.4rem;
-  border-radius: 6px;
-  background: #16225c;
-  color: #f2b21c;
-  font-size: 0.63rem;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  white-space: nowrap;
 }
 
 /* Porcelain & Indigo Location Drawer */
@@ -658,23 +388,4 @@
 .ncm-btn-walk:active,
 .ncm-btn-keke:active {
   transform: scale(0.98);
-}
-
-@media (max-width: 680px) {
-  .ncm-canvas-frame {
-    aspect-ratio: 4 / 3;
-    min-height: 340px;
-  }
-  .ncm-compass-chip {
-    display: none;
-  }
-  .ncm-pin-label small {
-    display: none;
-  }
-  .ncm-drawer {
-    left: 0.5rem;
-    right: 0.5rem;
-    bottom: 0.5rem;
-    width: auto;
-  }
 }

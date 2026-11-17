@@ -1,6 +1,6 @@
-import type { NeighborhoodZoneTag } from "./neighborhood-zones.ts";
 import type { WorldPoint } from "./neighborhood-model.ts";
 import type { NeedName } from "../lib/life-simulation.ts";
+import { townSpotFor } from "./town-neighborhood.ts";
 
 export type InteractableCategory =
   "filling-station" | "bank" | "adire" | "market" | "shops" | "transit" | "npc";
@@ -67,7 +67,13 @@ export interface ZoneNpcSpec {
   catalogNpcId?: string;
 }
 
-export const NEIGHBORHOOD_INTERACTABLE_ZONES: readonly InteractableZoneSpec[] = [
+type AuthoredZone = Omit<InteractableZoneSpec, "position" | "accessPoint">;
+type AuthoredNpc = Omit<ZoneNpcSpec, "position" | "accessPoint">;
+
+export type NeighborhoodZoneTag =
+  "FILLING_STATION" | "BANK" | "ADIRE_MARKET" | "COMMERCIAL_SHOPS" | "PERIMETER";
+
+const AUTHORED_ZONES: readonly AuthoredZone[] = [
   {
     id: "zone-fuel-pumps",
     zoneTag: "FILLING_STATION",
@@ -75,8 +81,6 @@ export const NEIGHBORHOOD_INTERACTABLE_ZONES: readonly InteractableZoneSpec[] = 
     title: "Fuel & Go Forecourt Pumps",
     subtitle: "Refuel vehicles, stock 10L jerrycans, or clock in as a station attendant.",
     promptLabel: "Fuel Pumps",
-    position: { x: 668, y: 250 },
-    accessPoint: { x: 668, y: 242 },
     interactRadius: 88,
     ringRadius: 1.05,
     badgeHeight: 2.35,
@@ -116,8 +120,6 @@ export const NEIGHBORHOOD_INTERACTABLE_ZONES: readonly InteractableZoneSpec[] = 
     title: "Fuel & Go Mini-Mart",
     subtitle: "Air-conditioned convenience counter with snacks, chilled drinks, and essentials.",
     promptLabel: "Enter Mart",
-    position: { x: 820, y: 230 },
-    accessPoint: { x: 805, y: 205 },
     interactRadius: 84,
     ringRadius: 1.0,
     badgeHeight: 2.55,
@@ -159,8 +161,6 @@ export const NEIGHBORHOOD_INTERACTABLE_ZONES: readonly InteractableZoneSpec[] = 
     title: "Vulcanizer & Tire Corner",
     subtitle: "Pump tires, patch tubes, or lend a hand at the compressor.",
     promptLabel: "Vulcanizer",
-    position: { x: 615, y: 412 },
-    accessPoint: { x: 615, y: 358 },
     interactRadius: 84,
     ringRadius: 0.95,
     badgeHeight: 2.4,
@@ -200,8 +200,6 @@ export const NEIGHBORHOOD_INTERACTABLE_ZONES: readonly InteractableZoneSpec[] = 
     title: "Meridian Bank ATM Alcove",
     subtitle: "24/7 exterior cash point for quick withdrawals, deposits, and receipts.",
     promptLabel: "Use ATM",
-    position: { x: 1130, y: 110 },
-    accessPoint: { x: 1136, y: 110 },
     interactRadius: 82,
     ringRadius: 0.95,
     badgeHeight: 2.55,
@@ -236,8 +234,6 @@ export const NEIGHBORHOOD_INTERACTABLE_ZONES: readonly InteractableZoneSpec[] = 
     title: "Meridian Bank Customer Lobby",
     subtitle: "Walk-in teller hall for deposits, withdrawals, account status, and ledger.",
     promptLabel: "Bank Lobby",
-    position: { x: 1015, y: 36 },
-    accessPoint: { x: 1020, y: 24 },
     interactRadius: 88,
     ringRadius: 1.05,
     badgeHeight: 2.6,
@@ -272,8 +268,6 @@ export const NEIGHBORHOOD_INTERACTABLE_ZONES: readonly InteractableZoneSpec[] = 
     title: "Indigo Dye Vats & Zinc Shed",
     subtitle: "Traditional Osogbo cassava-resist dyeing pits steeped in deep indigo (#16225C).",
     promptLabel: "Dye Adire",
-    position: { x: -165, y: 50 },
-    accessPoint: { x: -165, y: 112 },
     interactRadius: 90,
     ringRadius: 1.1,
     badgeHeight: 2.6,
@@ -314,8 +308,6 @@ export const NEIGHBORHOOD_INTERACTABLE_ZONES: readonly InteractableZoneSpec[] = 
     title: "Adire Drying & Folding Racks",
     subtitle: "Sun-dried indigo patterns hanging across wooden market frames.",
     promptLabel: "Fold Adire",
-    position: { x: 15, y: 92 },
-    accessPoint: { x: 15, y: 88 },
     interactRadius: 88,
     ringRadius: 1.0,
     badgeHeight: 2.35,
@@ -356,8 +348,6 @@ export const NEIGHBORHOOD_INTERACTABLE_ZONES: readonly InteractableZoneSpec[] = 
     title: "Open Market Produce & Cloth Tables",
     subtitle: "Umbrella stalls stocked with staples, groceries, and folded yardage.",
     promptLabel: "Market Stalls",
-    position: { x: -10, y: 325 },
-    accessPoint: { x: -10, y: 274 },
     interactRadius: 90,
     ringRadius: 1.05,
     badgeHeight: 2.5,
@@ -399,8 +389,6 @@ export const NEIGHBORHOOD_INTERACTABLE_ZONES: readonly InteractableZoneSpec[] = 
     title: "Mama Sikira Buka Kitchen",
     subtitle: "Steaming local pots serving hot Amala, Ewedu, Jollof Rice, and chilled Zobo.",
     promptLabel: "Buka Meals",
-    position: { x: 165, y: 325 },
-    accessPoint: { x: 165, y: 272 },
     interactRadius: 86,
     ringRadius: 1.0,
     badgeHeight: 2.45,
@@ -435,8 +423,6 @@ export const NEIGHBORHOOD_INTERACTABLE_ZONES: readonly InteractableZoneSpec[] = 
     title: "Dele Cutz Barber Salon",
     subtitle: "Walk-in clippers & grooming shop keeping your fade crisp and fresh.",
     promptLabel: "Barber Shop",
-    position: { x: 1515, y: 65 },
-    accessPoint: { x: 1502, y: 55 },
     interactRadius: 86,
     ringRadius: 1.0,
     badgeHeight: 2.75,
@@ -471,8 +457,6 @@ export const NEIGHBORHOOD_INTERACTABLE_ZONES: readonly InteractableZoneSpec[] = 
     title: "FastCash POS & Airtime Kiosk",
     subtitle: "Instant roadside cash-out, airtime recharge, and utility bill payments.",
     promptLabel: "POS Kiosk",
-    position: { x: 1515, y: 190 },
-    accessPoint: { x: 1452, y: 185 },
     interactRadius: 82,
     ringRadius: 0.95,
     badgeHeight: 2.55,
@@ -507,8 +491,6 @@ export const NEIGHBORHOOD_INTERACTABLE_ZONES: readonly InteractableZoneSpec[] = 
     title: "Iya Adire Style & Accessories",
     subtitle: "Walk-in boutique for leather backpacks, woven totes, and streetwear accents.",
     promptLabel: "Accessories",
-    position: { x: 1515, y: 345 },
-    accessPoint: { x: 1502, y: 335 },
     interactRadius: 86,
     ringRadius: 1.0,
     badgeHeight: 2.75,
@@ -561,8 +543,6 @@ export const NEIGHBORHOOD_INTERACTABLE_ZONES: readonly InteractableZoneSpec[] = 
     title: "Keke Napep & Korope Loading Stand",
     subtitle: "Catch a ride across Osogbo districts or run a fast shuttle trip for fares.",
     promptLabel: "Board Korope",
-    position: { x: 1362, y: 290 },
-    accessPoint: { x: 1322, y: 295 },
     interactRadius: 96,
     ringRadius: 1.15,
     badgeHeight: 2.35,
@@ -592,14 +572,12 @@ export const NEIGHBORHOOD_INTERACTABLE_ZONES: readonly InteractableZoneSpec[] = 
   },
 ];
 
-export const NEIGHBORHOOD_ZONE_NPCS: readonly ZoneNpcSpec[] = [
+const AUTHORED_NPCS: readonly AuthoredNpc[] = [
   {
     id: "zone-npc-tunde",
     name: "Tunde · Pump Attendant",
     role: "Fuel & Go Attendant",
     zoneTag: "FILLING_STATION",
-    position: { x: 618, y: 168 },
-    accessPoint: { x: 618, y: 196 },
     shirtColor: "#0f766e",
     trouserColor: "#1e293b",
     accentColor: "#f59e0b",
@@ -615,8 +593,6 @@ export const NEIGHBORHOOD_ZONE_NPCS: readonly ZoneNpcSpec[] = [
     name: "Musa · Bank Security",
     role: "Meridian Guard",
     zoneTag: "BANK",
-    position: { x: 1172, y: 192 },
-    accessPoint: { x: 1152, y: 192 },
     shirtColor: "#1e3a8a",
     trouserColor: "#0f172a",
     accentColor: "#38bdf8",
@@ -632,8 +608,6 @@ export const NEIGHBORHOOD_ZONE_NPCS: readonly ZoneNpcSpec[] = [
     name: "Iya Risi · Adire Master",
     role: "Indigo Dyer",
     zoneTag: "ADIRE_MARKET",
-    position: { x: -82, y: 78 },
-    accessPoint: { x: -82, y: 112 },
     shirtColor: "#16225C",
     trouserColor: "#312e81",
     accentColor: "#e2e8f0",
@@ -649,8 +623,6 @@ export const NEIGHBORHOOD_ZONE_NPCS: readonly ZoneNpcSpec[] = [
     name: "Mama Sikira · Buka Chef",
     role: "Market Cook",
     zoneTag: "ADIRE_MARKET",
-    position: { x: 112, y: 312 },
-    accessPoint: { x: 112, y: 274 },
     shirtColor: "#c2410c",
     trouserColor: "#7c2d12",
     accentColor: "#fde68a",
@@ -666,8 +638,6 @@ export const NEIGHBORHOOD_ZONE_NPCS: readonly ZoneNpcSpec[] = [
     name: "Chidi · Korope Rider",
     role: "Transit Regular",
     zoneTag: "COMMERCIAL_SHOPS",
-    position: { x: 1332, y: 162 },
-    accessPoint: { x: 1312, y: 162 },
     shirtColor: "#ca8a04",
     trouserColor: "#1f2937",
     accentColor: "#fef08a",
@@ -679,6 +649,43 @@ export const NEIGHBORHOOD_ZONE_NPCS: readonly ZoneNpcSpec[] = [
     ],
   },
 ];
+
+const ZONE_LANDMARK: Record<string, string> = {
+  "zone-fuel-pumps": "olaiya-fuel-pumps",
+  "zone-mini-mart": "olaiya-mini-mart",
+  "zone-vulcanizer": "olaiya-vulcanizer",
+  "zone-bank-atm": "olaiya-atm",
+  "zone-bank-lobby": "olaiya-bank-lobby",
+  "zone-adire-vats": "olaiya-adire-vats",
+  "zone-adire-racks": "olaiya-adire-racks",
+  "zone-market-stalls": "olaiya-market-stalls",
+  "zone-buka-stall": "olaiya-buka",
+  "zone-shop-barber": "olaiya-barber",
+  "zone-shop-pos": "olaiya-pos",
+  "zone-shop-accessory": "olaiya-accessory",
+  "zone-transit-stand": "olaiya-transit",
+};
+const NPC_LANDMARK: Record<string, string> = {
+  "zone-npc-tunde": "olaiya-fuel-pumps",
+  "zone-npc-musa": "olaiya-atm",
+  "zone-npc-risi": "olaiya-adire-racks",
+  "zone-npc-sikira": "olaiya-buka",
+  "zone-npc-chidi": "olaiya-transit",
+};
+/** Olaiya's interaction spots are landmarks in the town data, so their places follow the layout. */
+export const NEIGHBORHOOD_INTERACTABLE_ZONES: readonly InteractableZoneSpec[] = AUTHORED_ZONES.map(
+  (zone) => {
+    const landmarkId = ZONE_LANDMARK[zone.id];
+    if (!landmarkId) throw new Error(`No Olaiya landmark for ${zone.id}`);
+    return { ...zone, ...townSpotFor("city-centre", landmarkId) };
+  },
+);
+export const NEIGHBORHOOD_ZONE_NPCS: readonly ZoneNpcSpec[] = AUTHORED_NPCS.map((npc) => {
+  const landmarkId = NPC_LANDMARK[npc.id];
+  if (!landmarkId) throw new Error(`No Olaiya landmark for ${npc.id}`);
+  const { accessPoint } = townSpotFor("city-centre", landmarkId);
+  return { ...npc, position: accessPoint, accessPoint };
+});
 
 export function findInteractableZone(id: string | null | undefined): InteractableZoneSpec | null {
   if (!id) return null;

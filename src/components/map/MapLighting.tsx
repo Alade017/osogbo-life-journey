@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useThree } from "@react-three/fiber";
 import { Color } from "three";
-import { useOptionalGameTime } from "@/components/game/GameTimeProvider";
 import { WORLD_PALETTE } from "../3d/world-theme";
 
 const DAY_BACKGROUND = new Color(WORLD_PALETTE.ground);
@@ -23,7 +22,6 @@ export function daylightFor(hour: number, minute = 0) {
 
 /** Reads real-world local time or active game simulation clock. */
 export function useRealOrGameClock(): { hour: number; minute: number; isRealTime: boolean } {
-  const game = useOptionalGameTime();
   const [realClock, setRealClock] = useState(() => {
     const now = new Date();
     return { hour: now.getHours(), minute: now.getMinutes() };
@@ -33,19 +31,17 @@ export function useRealOrGameClock(): { hour: number; minute: number; isRealTime
     // Keep in sync with real-world time ticking
     const interval = setInterval(() => {
       const now = new Date();
-      setRealClock({ hour: now.getHours(), minute: now.getMinutes() });
+      const hour = now.getHours(),
+        minute = now.getMinutes();
+      setRealClock((previous) =>
+        previous.hour === hour && previous.minute === minute ? previous : { hour, minute },
+      );
     }, 15000);
     return () => clearInterval(interval);
   }, []);
 
-  if (game?.simulation?.gameTime) {
-    return {
-      hour: game.simulation.gameTime.hour,
-      minute: game.simulation.gameTime.minute,
-      isRealTime: false,
-    };
-  }
-
+  // The map follows the player's real local time, so daylight matches the day outside.
+  // The game clock is not used here, because it can sit at night while it is daytime.
   return { ...realClock, isRealTime: true };
 }
 
@@ -57,6 +53,7 @@ export function useRealOrGameClock(): { hour: number; minute: number; isRealTime
 export function MapLighting({ size = 30 }: { size?: number }) {
   const clock = useRealOrGameClock();
   const invalidate = useThree((state) => state.invalidate);
+  const viewportWidth = useThree((state) => state.size.width);
   const { hour, minute } = clock;
   const { arc, day, isNight } = daylightFor(hour, minute);
 
@@ -76,19 +73,20 @@ export function MapLighting({ size = 30 }: { size?: number }) {
   return (
     <>
       <color attach="background" args={[background]} />
-      <ambientLight color={ambientColor} intensity={isNight ? 0.8 : 0.95 + 0.6 * day} />
+      <ambientLight color={ambientColor} intensity={isNight ? 0.8 : 0.35 + 0.3 * day} />
 
       {/* Sun Light (Daytime) */}
       <directionalLight
         position={sunPosition}
         color={ambientColor}
-        intensity={0.15 + 1.35 * day}
+        intensity={0.15 + 2.15 * day}
         castShadow
-        shadow-mapSize={[1024, 1024]}
-        shadow-camera-left={-size}
-        shadow-camera-right={size}
-        shadow-camera-top={size}
-        shadow-camera-bottom={-size}
+        shadow-mapSize={viewportWidth < 768 ? [1024, 1024] : [2048, 2048]}
+        shadow-normalBias={0.025}
+        shadow-camera-left={-size * 0.65}
+        shadow-camera-right={size * 0.65}
+        shadow-camera-top={size * 0.65}
+        shadow-camera-bottom={-size * 0.65}
       />
 
       {/* Soft Moon Light (Nighttime) */}
