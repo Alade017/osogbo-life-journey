@@ -40,7 +40,7 @@ export function guideFor(slotType: string, artKey: string): ArrangementGuide | n
 
 /** Where the entrance door sits on the back wall, in room percent. */
 export function houseDoorPercentX(houseTypeId: string): number {
-  return FOUR_ROOM_HOME_TYPES.includes(houseTypeId) ? 22 : 74;
+  return houseTypeId === "studio-flat" || FOUR_ROOM_HOME_TYPES.includes(houseTypeId) ? 22 : 74;
 }
 
 const SOFT_SLOT_TYPES = new Set(["bed", "seat"]);

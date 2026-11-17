@@ -18,7 +18,7 @@ describe("room view", () => {
   });
 
   it("gives each room of a four-room home its own view", () => {
-    const views = houseRoomViews("studio-flat", width, depth);
+    const views = houseRoomViews("mini-flat", width, depth);
     expect(views.map((view) => view.id)).toEqual(["sitting", "kitchen", "bedroom", "bathroom"]);
     const bathroom = views.find((view) => view.id === "bathroom")!;
     expect(roomViewContains(bathroom, 2, 1)).toBe(true);
@@ -36,16 +36,16 @@ describe("room view", () => {
   });
 
   it("keeps the partitions that bound a room from the far side only", () => {
-    const sitting = houseRoomViews("studio-flat", width, depth).find(
+    const sitting = houseRoomViews("mini-flat", width, depth).find(
       (view) => view.id === "sitting",
     )!;
-    const partitions = housePartitionSegmentsForFloor("studio-flat", width, depth, 0);
+    const partitions = housePartitionSegmentsForFloor("mini-flat", width, depth, 0);
     const shown = partitions
       .filter((wall) => !roomViewHidesSegment(wall, sitting))
       .map((wall) => wall.id);
     expect(shown).toEqual([]);
 
-    const bedroom = houseRoomViews("studio-flat", width, depth).find(
+    const bedroom = houseRoomViews("mini-flat", width, depth).find(
       (view) => view.id === "bedroom",
     )!;
     const bedroomShown = partitions

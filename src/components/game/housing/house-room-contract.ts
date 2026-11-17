@@ -2,6 +2,7 @@ import type { HousePlacement, HouseSlot } from "./HouseRoomScene";
 import type { AvatarAnimationState, AvatarEquipment } from "@/components/game/Avatar";
 import type { Appearance } from "@/game/avatar-appearance";
 import type { FoodDelivery } from "@/lib/food-delivery-service";
+import { boundsContain, studioBlueprint, type FloorBounds } from "./house-blueprints";
 
 /** A rectangle of the room, in room percent (see house-arrangement-guide). */
 export type GuideZoneBounds = { x0: number; x1: number; y0: number; y1: number };
@@ -238,6 +239,7 @@ export function houseDoorThreshold(
 
 /** Centre of the entrance door on the back wall. In four-room homes it opens into the sitting room. */
 export function houseRearDoorCenter(houseTypeId: string, width: number): number {
+  if (houseTypeId === "studio-flat") return studioBlueprint(width, 1).entranceX;
   return FOUR_ROOM_HOME_TYPES.includes(houseTypeId) ? -width * 0.25 : width * 0.22;
 }
 
@@ -326,11 +328,15 @@ export function houseWallSegments(
 }
 
 /**
- * Studio layout, four rooms with an empty doorway into each:
+ * Existing larger-home layout, four rooms with an empty doorway into each:
  * sitting room (back-left), bedroom (front-left), kitchen and dining (back-right),
  * bathroom (front-right). Walls are centred on the room, so the origin is the middle.
  */
-function studioPartitionSegments(width: number, depth: number, height: number): HouseWallSegment[] {
+function fourRoomPartitionSegments(
+  width: number,
+  depth: number,
+  height: number,
+): HouseWallSegment[] {
   const thickness = HOUSE_WALL_THICKNESS;
   const doorway = 1.1;
   const alongX = (id: string, z: number, x0: number, x1: number): HouseWallSegment => ({
@@ -362,21 +368,39 @@ function studioPartitionSegments(width: number, depth: number, height: number): 
 }
 
 /** Home types that have the four-room plan: sitting room, bedroom, kitchen and dining, bathroom. */
-export const FOUR_ROOM_HOME_TYPES: readonly string[] = [
-  "studio-flat",
-  "mini-flat",
-  "bungalow",
-  "duplex",
-];
+export const FOUR_ROOM_HOME_TYPES: readonly string[] = ["mini-flat", "bungalow", "duplex"];
 
 export function housePartitionSegments(
   houseTypeId: string,
   width: number,
   depth: number,
 ): HouseWallSegment[] {
+  if (houseTypeId === "studio-flat") {
+    const { bathroom, bathroomDoor } = studioBlueprint(width, depth);
+    const height = 1.9;
+    const left = bathroomDoor.z - bathroomDoor.width / 2;
+    const right = bathroomDoor.z + bathroomDoor.width / 2;
+    return [
+      {
+        id: "studio-bath-back",
+        position: [(bathroom.minX + bathroom.maxX) / 2, height / 2, bathroom.minZ],
+        size: [bathroom.maxX - bathroom.minX, height, HOUSE_WALL_THICKNESS],
+      },
+      {
+        id: "studio-bath-side-back",
+        position: [bathroom.minX, height / 2, (bathroom.minZ + left) / 2],
+        size: [HOUSE_WALL_THICKNESS, height, left - bathroom.minZ],
+      },
+      {
+        id: "studio-bath-side-front",
+        position: [bathroom.minX, height / 2, (right + bathroom.maxZ) / 2],
+        size: [HOUSE_WALL_THICKNESS, height, bathroom.maxZ - right],
+      },
+    ];
+  }
   if (!FOUR_ROOM_HOME_TYPES.includes(houseTypeId)) return [];
   // Taller than the furniture, so it reads clearly from the camera.
-  return studioPartitionSegments(width, depth, 1.9);
+  return fourRoomPartitionSegments(width, depth, 1.9);
 }
 
 /** Stairs in a two-storey home. The same footprint serves both floors, against the left wall. */
@@ -498,14 +522,23 @@ export type HouseRoomView = {
   maxX: number;
   minZ: number;
   maxZ: number;
+  /** An open-plan room can wrap around an enclosed bathroom. */
+  exclude?: FloorBounds;
 };
 
 /**
  * Rooms that can be viewed on their own. Multi-room homes split the ground floor into the four
- * studio rooms; every other home is one room. The camera sits at +x, +z, so the walls on those
+ * rooms; a studio has one open main space and an enclosed bathroom. The camera sits at +x, +z, so the walls on those
  * sides are the ones hidden in the room view.
  */
 export function houseRoomViews(houseTypeId: string, width: number, depth: number): HouseRoomView[] {
+  if (houseTypeId === "studio-flat") {
+    const { whole, bathroom } = studioBlueprint(width, depth);
+    return [
+      { id: HOUSE_ROOM_ID.single, label: "Studio", ...whole, exclude: bathroom },
+      { id: HOUSE_ROOM_ID.bathroom, label: HOUSE_ROOM_LABEL.bathroom, ...bathroom },
+    ];
+  }
   if (FOUR_ROOM_HOME_TYPES.includes(houseTypeId)) {
     const { x, z } = STUDIO_ROOM_SPLIT;
     const left = { minX: -width / 2, maxX: x };
@@ -558,6 +591,7 @@ export function roomViewContains(
   z: number,
   margin = ROOM_VIEW_MARGIN,
 ): boolean {
+  if (room.exclude && boundsContain(room.exclude, x, z)) return false;
   return (
     x >= room.minX - margin &&
     x <= room.maxX + margin &&
