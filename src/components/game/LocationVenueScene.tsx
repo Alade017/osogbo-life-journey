@@ -1,3 +1,4 @@
+import { CivicServiceScene } from "@/components/3d/CivicServiceScene";
 import { BankInteriorScene } from "@/components/3d/BankInteriorScene";
 import { BANK_INTERIORS } from "@/game/bank-interiors";
 import { TransitParkScene } from "@/components/3d/TransitParkScene";
@@ -138,7 +139,17 @@ function BasicLocationVenueScene({
                 zoom={1.2}
               />
               <WorldLighting size={14} />
-              {venue.bankInterior ? (
+              {venue.civicService ? (
+                <CivicServiceScene
+                  variant={venue.civicService}
+                  fixtures={venue.fixtures}
+                  selected={selectedFixture}
+                  onSelect={setSelectedFixture}
+                  floorColor={venue.floorColor}
+                  wallColor={venue.wallColor}
+                  accentColor={venue.accentColor}
+                />
+              ) : venue.bankInterior ? (
                 <BankInteriorScene
                   variant={venue.bankInterior}
                   fixtures={venue.fixtures}
