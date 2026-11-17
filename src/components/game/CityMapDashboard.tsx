@@ -393,12 +393,6 @@ export function CityMapDashboard({
       return !!locationRow && locationsWithJobs.has(locationRow.id);
     })
     .map((item) => item.id);
-  const submitSearch = () => {
-    if (!searchMatches) return;
-    setMapLevel("town");
-
-    setSearchTarget({ id: searchMatches.id, kind: searchMatches.kind });
-  };
   const rentRecord = rent.data as { next_due_at?: string; due_at?: string } | null;
   const due = nextRentDueAt ?? rentRecord?.next_due_at ?? rentRecord?.due_at;
   const availableIds = availableLandmarks.data;
