@@ -1,9 +1,3 @@
-import { BankInteriorScene } from "@/components/3d/BankInteriorScene";
-import { BANK_INTERIORS } from "@/game/bank-interiors";
-import { TransitParkScene } from "@/components/3d/TransitParkScene";
-import { TRAVEL_MODES, TRAVEL_MODE_DETAILS, type TravelMode } from "@/lib/transport-service";
-import { transportMapHref } from "@/lib/transport-park";
-import { Component, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
 import { HealthcareScene } from "@/components/3d/HealthcareScene";
 import { MarketTradingHall } from "@/components/3d/MarketTradingScene";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
@@ -54,20 +48,17 @@ function FixtureModel({
   );
 }
 
-export function LocationVenueScene({ slug, locationName, onBankServices }: { slug: string; locationName: string; onBankServices?: () => void }) {
 function BasicLocationVenueScene({ slug, locationName, onBrowseMarket }: {
   slug: string;
   locationName: string;
   onBrowseMarket?: () => void;
 }) {
   const venue = useMemo(() => getLocationVenueDesign(slug, locationName), [slug, locationName]);
-  const bankLayout = venue.bankInterior ? BANK_INTERIORS[venue.bankInterior] : null;
   const gameTime = useOptionalGameTime();
   // Shops with trading hours show their shutter open or closed for the current game hour.
   const shutterOpen = venue.environment?.trading
     ? isTradingOpen(gameTime?.simulation.gameTime.hour ?? 12, venue.environment.trading)
     : undefined;
-  const [preferredMode, setPreferredMode] = useState<TravelMode | null>(null);
   const [selectedFixture, setSelectedFixture] = useState(venue.fixtures[0]?.id ?? "");
   const [sceneStatus, setSceneStatus] = useState<"loading" | "ready" | "fallback">("loading");
   const selected =
@@ -121,12 +112,6 @@ function BasicLocationVenueScene({ slug, locationName, onBrowseMarket }: {
               onCreated={() => setSceneStatus("ready")}
               aria-hidden="true"
             >
-              <WorldCamera width={bankLayout?.width ?? venue.sceneBounds?.width ?? 10} depth={bankLayout?.depth ?? venue.sceneBounds?.depth ?? 7} stage target={[0, 1.2, 0]} zoom={1.2} />
-              <WorldLighting size={14} />
-              {venue.bankInterior ? (
-                <BankInteriorScene variant={venue.bankInterior} fixtures={venue.fixtures} selected={selectedFixture} onSelect={setSelectedFixture} floorColor={venue.floorColor} wallColor={venue.wallColor} accentColor={venue.accentColor} />
-              ) : venue.transportPark ? (
-                <TransitParkScene fixtures={venue.fixtures} selected={selectedFixture} onSelect={setSelectedFixture} onSelectMode={setPreferredMode} />
               <WorldCamera width={venue.sceneSize?.width ?? 10} depth={venue.sceneSize?.depth ?? 7} stage target={[0, 1.2, 0]} zoom={1.2} />
               <WorldLighting size={14} />
               {venue.scene === "healthcare" ? (
@@ -187,34 +172,6 @@ function BasicLocationVenueScene({ slug, locationName, onBrowseMarket }: {
         )}
       </div>
 
-      {venue.transportPark && (
-        <section aria-label="Plan a journey" className="space-y-3">
-          <details>
-            <summary className="cursor-pointer rounded-lg border border-edge p-3 text-sm font-semibold">
-              Preferred transport{preferredMode ? " · " + TRAVEL_MODE_DETAILS[preferredMode].label : ""}
-            </summary>
-            <div role="group" aria-label="Preferred transport" className="mt-2 flex flex-wrap gap-2">
-              {TRAVEL_MODES.map(mode => (
-                <button key={mode} type="button" aria-pressed={preferredMode === mode}
-                  onClick={() => setPreferredMode(mode)}
-                  className="rounded-lg border border-edge bg-card px-3 py-3 text-sm aria-pressed:bg-primary aria-pressed:text-primary-foreground">
-                  {TRAVEL_MODE_DETAILS[mode].label}
-                </button>
-              ))}
-            </div>
-          </details>
-          <p className="text-sm text-muted-foreground">
-            Choose a destination to check routes, transport availability and fares before confirming.
-          </p>
-          <a href={transportMapHref(preferredMode)} className="inline-flex rounded-lg border border-edge bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground">
-            Choose destination
-          </a>
-        </section>
-      )}
-      {venue.bankInterior && onBankServices && (
-        <button type="button" onClick={onBankServices}
-          className="rounded-lg border border-edge bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground">
-          Access bank services
       {venue.scene === "market" && onBrowseMarket && (
         <button type="button" onClick={onBrowseMarket}
           className="rounded-lg border border-edge bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground">
