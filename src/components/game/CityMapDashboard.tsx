@@ -134,7 +134,11 @@ export function CityMapDashboard({
   const navigate = useNavigate();
   const mapHref = useLocation({ select: (location) => location.href });
   const preferredTransport = transportPreference(mapHref);
-  useEffect(() => { if (preferredTransport) { setMapLevel("town"); } }, [preferredTransport]);
+  useEffect(() => {
+    if (preferredTransport) {
+      setMapLevel("town");
+    }
+  }, [preferredTransport]);
   const requestedBillboardId = new URLSearchParams(mapHref.split("?")[1]?.split("#")[0] ?? "").get(
     "billboard",
   );
@@ -389,6 +393,12 @@ export function CityMapDashboard({
       return !!locationRow && locationsWithJobs.has(locationRow.id);
     })
     .map((item) => item.id);
+  const submitSearch = () => {
+    if (!searchMatches) return;
+    setMapLevel("town");
+
+    setSearchTarget({ id: searchMatches.id, kind: searchMatches.kind });
+  };
   const rentRecord = rent.data as { next_due_at?: string; due_at?: string } | null;
   const due = nextRentDueAt ?? rentRecord?.next_due_at ?? rentRecord?.due_at;
   const availableIds = availableLandmarks.data;

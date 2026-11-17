@@ -49,8 +49,12 @@ function SegmentGarment({
       new Vector3(0, 1, 0),
       vector.clone().normalize(),
     );
-    const mid = vector.clone().multiplyScalar(0.5);
-    return { length: len, radius: rad, rotation: rot, midpoint: mid };
+    return {
+      length: len,
+      radius: rad,
+      rotation: rot,
+      midpoint: vector.clone().multiplyScalar(0.5),
+    };
   }, [segment, radiusFactor]);
   const map = useMemo(() => (patterned ? adireTexture() : null), [patterned]);
   return (
@@ -60,17 +64,13 @@ function SegmentGarment({
         <meshStandardMaterial color={color} map={map} roughness={0.94} side={2} />
       </mesh>
       {cuff ? (
-        <mesh position={[0, -length * 0.44, 0]}>
-          <cylinderGeometry
-            args={[radius * 0.96, radius * 0.96, Math.max(length * 0.075, 0.01), 12]}
-          />
+        <mesh position={[0, -length * 0.44, 0]} castShadow>
+          <cylinderGeometry args={[radius * 0.96, radius * 0.96, Math.max(length * 0.075, 0.01), 12]} />
           <meshStandardMaterial color={trim} roughness={0.82} />
         </mesh>
       ) : null}
       <mesh position={[0, length * 0.2, 0]}>
-        <cylinderGeometry
-          args={[radius * 1.01, radius * 1.01, Math.max(length * 0.018, 0.004), 12]}
-        />
+        <cylinderGeometry args={[radius * 1.01, radius * 1.01, Math.max(length * 0.018, 0.004), 12]} />
         <meshStandardMaterial color={trim} roughness={0.82} />
       </mesh>
     </group>
@@ -79,7 +79,7 @@ function SegmentGarment({
 
 
 function TorsoGarment({ color, trim, patterned = false }: { color: string; trim: string; patterned?: boolean }) {
-  const map = patterned ? adireTexture() : null;
+  const map = useMemo(() => (patterned ? adireTexture() : null), [patterned]);
   return (
     <group position={[0, 0.012, 0]} name="torso-garment">
       <mesh position={[0, -0.012, 0]} castShadow receiveShadow>
@@ -194,7 +194,9 @@ export function CharacterWardrobe({
           segment.bone
         ),
       )}
-      {anchors.feet.map((bone) => createPortal(<ShoeGarment color={shoes} />, bone))}
+      {anchors.feet.map((bone) =>
+        createPortal(<ShoeGarment color={shoes} />, bone),
+      )}
     </>
   );
 }

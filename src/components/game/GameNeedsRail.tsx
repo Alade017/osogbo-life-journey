@@ -56,7 +56,7 @@ export function GameNeedsRail({
   const handleNeedAction = async () => {
     if (!needAction || !detailNeed) return;
     setActionMessage(null);
-    if ("action" in needAction) {
+    if ("action" in needAction && needAction.action) {
       if (!ready || busy || simulation.currentAction) {
         setActionMessage("Finish your current activity and wait for the simulation to be ready.");
         return;

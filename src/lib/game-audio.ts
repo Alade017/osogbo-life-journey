@@ -18,7 +18,12 @@ type AudioGraph = {
 };
 
 const STORAGE_KEY = "osogbo-world-audio-v1";
-const DEFAULT_LEVELS: AudioLevels = { master: 0.75, music: 0.4, effects: 0.65, environment: 0 };
+const DEFAULT_LEVELS: Required<AudioLevels> = {
+  master: 0.75,
+  music: 0.4,
+  effects: 0.65,
+  environment: 0,
+};
 let graph: AudioGraph | null = null;
 let automaticAudioAllowed = false;
 let sessionCleanup: (() => void) | null = null;
@@ -357,7 +362,12 @@ export function readGameAudioLevels(): AudioLevels {
       typeof input[key] === "number" && Number.isFinite(input[key])
         ? Math.max(0, Math.min(1, input[key] as number))
         : DEFAULT_LEVELS[key];
-    return { master: level("master"), music: level("music"), effects: level("effects"), environment: level("environment") };
+    return {
+      master: level("master"),
+      music: level("music"),
+      effects: level("effects"),
+      environment: level("environment"),
+    };
   } catch {
     return DEFAULT_LEVELS;
   }
@@ -386,7 +396,7 @@ function createAmbientSoundscape(context: AudioContext): AudioBuffer {
     seed ^= seed << 13;
     seed ^= seed >>> 17;
     seed ^= seed << 5;
-    return (seed >>> 0) / 0xffffffff * 2 - 1;
+    return ((seed >>> 0) / 0xffffffff) * 2 - 1;
   };
 
   // Build a seamless, original sound bed: soft wind, distant road rumble,
@@ -416,9 +426,15 @@ function createAmbientSoundscape(context: AudioContext): AudioBuffer {
       if (elapsed < 0 || elapsed >= chirp.duration) continue;
       const progress = elapsed / chirp.duration;
       const envelope = Math.sin(Math.PI * progress) ** 2;
-      birds += Math.sin(2 * Math.PI * (chirp.low * elapsed +
-        ((chirp.high - chirp.low) / (2 * chirp.duration)) * elapsed * elapsed)) *
-        envelope * 0.15;
+      birds +=
+        Math.sin(
+          2 *
+            Math.PI *
+            (chirp.low * elapsed +
+              ((chirp.high - chirp.low) / (2 * chirp.duration)) * elapsed * elapsed),
+        ) *
+        envelope *
+        0.15;
     }
     samples[index] = Math.max(-0.55, Math.min(0.55, wind + traffic + birds));
   }
@@ -481,7 +497,11 @@ function createAudioGraph(levels: AudioLevels): AudioGraph | null {
 }
 
 export async function enableGameAudio(levels = readGameAudioLevels()): Promise<boolean> {
-  if (typeof window === "undefined" || document.hidden || (!levels.music && !levels.effects && !levels.environment))
+  if (
+    typeof window === "undefined" ||
+    document.hidden ||
+    (!levels.music && !levels.effects && !levels.environment)
+  )
     return false;
   automaticAudioAllowed = true;
   saveLevels(levels);
