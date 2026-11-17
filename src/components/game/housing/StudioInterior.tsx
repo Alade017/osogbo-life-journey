@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
 import { createBlueprintInterior, createStudioRug, disposeStudioInterior } from "./studio-interior";
 import type { HouseRoomView } from "./house-room-contract";
+import type { BlueprintHomeType } from "./house-blueprints";
 
 export function BlueprintInterior({
   houseTypeId,
@@ -10,7 +11,7 @@ export function BlueprintInterior({
   wallsClosed,
   roomView,
 }: {
-  houseTypeId: "studio-flat" | "shared-room";
+  houseTypeId: BlueprintHomeType;
   width: number;
   depth: number;
   editMode: boolean;
