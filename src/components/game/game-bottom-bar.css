@@ -126,25 +126,27 @@
   bottom: calc(64px + env(safe-area-inset-bottom));
 }
 
-/* Adaptive idle state: soften surfaces without making labels or controls unusable. */
-.gbb,
-.game-needs-rail,
-.hd-status {
-  transition: opacity 180ms ease;
+/* Adaptive idle state: recede surfaces, never dim labels or touch targets. */
+.gbb .gbb-link,
+.gbb .gbb-phone,
+.game-needs-rail .game-needs-toggle {
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
 }
 
-.game-shell.hud-idle .gbb:not(.is-open),
-.game-shell.hud-idle .hd-status,
-.game-shell.hud-idle .game-needs-rail:not(.has-critical):not(.is-expanded) {
-  opacity: 0.82;
+.game-shell.hud-idle .gbb:not(.is-open) .gbb-link:not(:focus-visible),
+.game-shell.hud-idle .gbb:not(.is-open) .gbb-phone:not(:focus-visible) {
+  border-color: color-mix(in srgb, var(--border) 62%, transparent);
+  background: color-mix(in srgb, var(--popover) 82%, transparent);
+  box-shadow: none;
 }
 
-.game-shell.hud-idle .game-needs-rail.has-critical,
-.game-shell.hud-idle .game-needs-rail.is-expanded,
-.game-shell.hud-idle .gbb:focus-within,
-.game-shell.hud-idle .hd-status:focus-within,
-.game-shell.phone-open .gbb {
-  opacity: 1;
+.game-shell.hud-idle .game-needs-rail:not(.has-critical):not(.is-expanded) .game-needs-toggle:not(:focus-visible) {
+  border-color: color-mix(in srgb, var(--border) 62%, transparent);
+  background: color-mix(in srgb, var(--card) 82%, transparent);
+  box-shadow: none;
 }
 
 /* Modal/menu focus: keep the world HUD visually subordinate to the active surface. */
@@ -199,9 +201,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .gbb,
-  .game-needs-rail,
-  .hd-status {
+  .gbb .gbb-link,
+  .gbb .gbb-phone,
+  .game-needs-rail .game-needs-toggle {
     transition: none;
   }
 }
