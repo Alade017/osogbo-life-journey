@@ -169,6 +169,11 @@
   pointer-events: none;
 }
 
+.game-shell.hud-menu-open .gbb :is(a, button),
+.game-shell.hud-panel-open .gbb :is(a, button) {
+  pointer-events: none;
+}
+
 @media (max-width: 380px) {
   .gbb {
     gap: 4px;
