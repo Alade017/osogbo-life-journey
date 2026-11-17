@@ -836,3 +836,13 @@
     transition: none !important;
   }
 }
+
+.inventory-dialog-scroll .pi-inventory-masthead {
+  padding-right: 6.5rem;
+}
+
+@media (max-width: 480px) {
+  .inventory-dialog-scroll .pi-inventory-masthead {
+    padding-right: 5.25rem;
+  }
+}
