@@ -371,6 +371,7 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     ],
   },
   "riverside-food-court": {
+    foodInterior: "courtyard",
     environment: { url: "/models/environments/market-and-bank/street-food-market-yard.glb" },
     name: "Riverside food court",
     description: "An open-sided dining room with vendor counters and shared tables.",
@@ -841,3 +842,18 @@ export function hasAuthoritativeLocationArrival(
     currentLocationId === destinationLocationId
   );
 }
+
+/** Interior for the existing neighborhood Buka zone, not a fabricated server location. */
+export const BUKA_VENUE_DESIGN: LocationVenueDesign = {
+  name: "Buka dining room",
+  description: "A local canteen with a hot-food serving line, shared bench tables and a wash point.",
+  foodInterior: "buka",
+  floorColor: WORLD_PALETTE.ground,
+  wallColor: WORLD_PALETTE.wall,
+  accentColor: WORLD_PALETTE.clay,
+  fixtures: [
+    fixture("buka-serving-counter", "Serving counter", "Covered cooking pots beside the service counter. Browse the current local catalogue for availability.", "counter", 0, -2.6),
+    fixture("buka-shared-table", "Shared dining table", "A shared table with bench seating. Eating uses food already in your bag.", "table", 0, 1.2),
+    fixture("buka-wash-point", "Wash point", "The canteen hand-wash area. Inspecting this feature does not change needs.", "display", -4.2, 0.5),
+  ],
+};
