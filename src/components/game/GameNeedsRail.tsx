@@ -1,7 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
 import {
-  ChevronDown,
-  ChevronUp,
   Droplets,
   Smile,
   Sparkles,
@@ -141,23 +139,20 @@ export function GameNeedsRail({
         }}
       >
         <span className="game-needs-trigger-icon">
-          <Zap size={18} aria-hidden="true" />
+          <Zap size={16} aria-hidden="true" />
         </span>
         <span className="game-needs-trigger-copy">
           <strong>Needs</strong>
-          <span>
-            {urgent ? `${NEED_RULES[urgent.name].label} ${urgent.value}%` : "All looking good"}
-          </span>
         </span>
+        {urgent && (
+          <span className={`game-needs-urgent-pill is-${urgent.status}`}>
+            {NEED_RULES[urgent.name].label} · {urgent.value}%
+          </span>
+        )}
         {criticalCount > 0 && (
           <span className="game-needs-count" aria-hidden="true">
             {criticalCount}
           </span>
-        )}
-        {expanded ? (
-          <ChevronDown size={16} aria-hidden="true" />
-        ) : (
-          <ChevronUp size={16} aria-hidden="true" />
         )}
       </button>
       {expanded && (
