@@ -1,11 +1,16 @@
 import { WorldMaterial } from "./WorldScene";
-import type { WorldTone } from "./world-theme";
+import { WORLD_PALETTE, type WorldTone } from "./world-theme";
 import { BANK_INTERIORS, type BankInteriorVariant } from "@/game/bank-interiors";
 import type { VenueFixture } from "@/lib/location-venue-designs";
 
 type Point = [number, number, number];
 function Block({ at, size, tone = "wall", color }: { at: Point; size: Point; tone?: WorldTone; color?: string }) {
   return <mesh position={at} castShadow receiveShadow><boxGeometry args={size} /><WorldMaterial tone={tone} color={color} /></mesh>;
+}
+function Glazing({ at, size }: { at: Point; size: Point }) {
+  return <mesh position={at}><boxGeometry args={size} />
+    <meshStandardMaterial color={WORLD_PALETTE.glass} transparent opacity={0.28} roughness={0.25} depthWrite={false} />
+  </mesh>;
 }
 function Seat({ lounge = false }: { lounge?: boolean }) {
   return <group>
@@ -51,7 +56,7 @@ export function BankInteriorScene({ variant, fixtures, selected, onSelect, floor
         <Block at={[0, 1.9, 0]} size={[2.6, 2.1, 0.07]} tone="glass" />
         <Block at={[0, 1.9, 0.05]} size={[0.06, 2.1, 0.06]} tone="windowFrame" />
       </group>)}
-      <Block at={[1.2, 1.2, -1.7]} size={[0.08, 2.4, 3.5]} tone="glass" />
+      <Glazing at={[1.2, 1.2, -1.7]} size={[0.08, 2.4, 3.5]} />
       <Block at={[1.14, 1.35, -1.7]} size={[0.04, 0.4, 3.5]} tone="linen" />
       <Block at={[1.2, 2.4, -1.7]} size={[0.12, 0.1, 3.6]} tone="metal" />
       <Block at={[0, 0.015, 1.1]} size={[4, 0.025, 2.8]} tone="tileShade" />
@@ -62,7 +67,7 @@ export function BankInteriorScene({ variant, fixtures, selected, onSelect, floor
         <Block at={[0, 0.65, 0]} size={[7.6, 1.3, 0.95]} tone="timber" />
         <Block at={[0, 1.35, 0]} size={[7.8, 0.12, 1.15]} tone="linen" />
         {BANK_INTERIORS["teller-hall"].tellerWindows.map(x => <group key={x} position={[x, 0, 0]}>
-          <Block at={[0, 1.95, -0.1]} size={[2.1, 1.1, 0.05]} tone="glass" />
+          <Glazing at={[0, 1.95, -0.1]} size={[2.1, 1.1, 0.05]} />
           <Block at={[1.05, 1.95, -0.1]} size={[0.06, 1.3, 0.07]} tone="metal" />
           <Block at={[0, 1.43, 0.22]} size={[0.55, 0.05, 0.34]} tone="metal" />
         </group>)}
