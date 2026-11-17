@@ -39,6 +39,20 @@ const testState = vi.hoisted(() => ({
   wallet: null as Record<string, unknown> | null,
   insideHome: false,
 }));
+vi.mock("@/lib/living-cost-service", () => ({
+  canonicalHomeOptions: (id: string) => ({
+    queryKey: ["canonicalHousingHome", id],
+    queryFn: async () =>
+      testState.insideHome
+        ? {
+            playerPropertyId: "player-property",
+            propertyId: "property",
+            houseTypeId: "bungalow",
+            name: "Home",
+          }
+        : null,
+  }),
+}));
 const eventState = vi.hoisted(() => ({
   events: [] as import("@/lib/city-event-service").CityEventOccurrence[],
 }));

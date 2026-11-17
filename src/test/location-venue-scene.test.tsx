@@ -97,18 +97,17 @@ it("keeps market fixture selection and server-offer handoff available without We
   vi.useRealTimers();
 });
 
-it.each([
-  ["community-police", "Community police station", "Report desk", "Case submission"],
-  ["civic-court", "Civic court", "Consultation desk", "does not start a service"],
-])("keeps %s inspection usable when WebGL is unavailable", (slug, name, feature, detail) => {
+vi.mock("@tanstack/react-router", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@tanstack/react-router")>()),
+  Link: ({ to, children, ...props }: { to: string; children: import("react").ReactNode }) => <a href={to} {...props}>{children}</a>,
+}));
+it("keeps workplace features, jobs and courses accessible when WebGL fails", () => {
   vi.useFakeTimers();
-  render(<LocationVenueScene slug={slug} locationName={name} />);
-  act(() => {
-    vi.advanceTimersByTime(5000);
-  });
-  fireEvent.click(screen.getByRole("button", { name: feature }));
-  expect(screen.getByRole("button", { name: feature })).toHaveAttribute("aria-pressed", "true");
-  expect(screen.getByText(new RegExp(detail))).toBeInTheDocument();
-  expect(screen.queryByTestId("venue-canvas")).not.toBeInTheDocument();
-  expect(screen.queryByRole("button", { name: /submit|pay/i })).not.toBeInTheDocument();
+  render(<LocationVenueScene slug="harvest-tech-hub" locationName="Harvest Tech Hub" />);
+  act(() => { vi.advanceTimersByTime(5000); });
+  fireEvent.click(screen.getByRole("button", { name: "Training table" }));
+  expect(screen.getByRole("button", { name: "Training table" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByRole("link", { name: "Jobs & shifts" })).toHaveAttribute("href", "/jobs");
+  expect(screen.getByRole("link", { name: "Courses" })).toHaveAttribute("href", "/education");
+  vi.useRealTimers();
 });

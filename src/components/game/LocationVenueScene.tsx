@@ -22,6 +22,7 @@ import {
   getLocationVenueDesign,
   isTradingOpen,
   type VenueFixture,
+  type LocationVenueDesign,
 } from "@/lib/location-venue-designs";
 import { VenueEnvironment } from "@/components/3d/VenueEnvironment";
 import { VenueFurnitureModel } from "@/components/3d/VenueFurniture";
