@@ -23,7 +23,6 @@ export const PHONE_APP_ROUTES: Readonly<Record<string, string>> = {
   "/market": "Market",
   "/party": "Party",
   "/profile": "Profile",
-  "/inventory": "Inventory",
   "/social": "Messages",
   "/missions": "Missions",
   "/notifications": "Notifications",
