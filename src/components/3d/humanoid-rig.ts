@@ -132,12 +132,44 @@ function blob(
   return { geometry, bone, accessory: options.accessory ?? false };
 }
 
-const SHAPES: Record<BodyVariant, { shoulder: number; waist: number; hip: number; bust: number }> =
-  {
-    male: { shoulder: 1, waist: 1, hip: 1, bust: 0 },
-    business: { shoulder: 1, waist: 1, hip: 1, bust: 0 },
-    female: { shoulder: 0.92, waist: 0.88, hip: 1.1, bust: 1 },
-  };
+const BASE_SHAPE = {
+  shoulder: 1,
+  waist: 1,
+  hip: 1,
+  bust: 0,
+  arm: 1,
+  leg: 1,
+  thigh: 1,
+  armSpan: 1,
+  legSpan: 1,
+  jaw: 1,
+  faceWidth: 1,
+  neck: 1,
+  hand: 1,
+  foot: 1,
+};
+/** Body and wardrobe use the same proportions; saved build indices remain unchanged. */
+export const HUMANOID_SHAPES: Record<BodyVariant, typeof BASE_SHAPE> = {
+  male: { ...BASE_SHAPE },
+  business: { ...BASE_SHAPE },
+  female: {
+    ...BASE_SHAPE,
+    shoulder: 0.86,
+    waist: 0.9,
+    hip: 1.13,
+    bust: 0.85,
+    arm: 0.82,
+    leg: 0.96,
+    thigh: 1.12,
+    armSpan: 0.92,
+    legSpan: 1.06,
+    jaw: 0.87,
+    faceWidth: 0.96,
+    neck: 0.88,
+    hand: 0.88,
+    foot: 0.94,
+  },
+};
 export const HUMANOID_BUILD_FACTORS = [
   { shoulder: 0.9, waist: 0.86, hip: 0.92, limb: 0.9 },
   { shoulder: 1, waist: 1, hip: 1, limb: 1 },
@@ -146,15 +178,18 @@ export const HUMANOID_BUILD_FACTORS = [
 ] as const;
 
 /** A single closed torso surface with blended root/spine skin weights. */
-function torsoSurface(shape: { shoulder: number; waist: number; hip: number }): Part {
+function torsoSurface(shape: { shoulder: number; waist: number; hip: number; bust: number }): Part {
   const rings = [
     { y: 0.49, x: 0.105 * shape.hip, z: 0.075 },
     { y: 0.53, x: 0.137 * shape.hip, z: 0.09 },
     { y: 0.58, x: 0.13 * shape.waist, z: 0.085 },
     { y: 0.63, x: 0.112 * shape.waist, z: 0.08 },
     { y: 0.68, x: 0.13 * shape.waist, z: 0.09 },
+    ...(shape.bust ? [{ y: 0.705, x: 0.143 * shape.shoulder, z: 0.097 }] : []),
     { y: 0.73, x: 0.157 * shape.shoulder, z: 0.105 },
+    ...(shape.bust ? [{ y: 0.755, x: 0.17 * shape.shoulder, z: 0.108 }] : []),
     { y: 0.78, x: 0.174 * shape.shoulder, z: 0.112 },
+    ...(shape.bust ? [{ y: 0.805, x: 0.17 * shape.shoulder, z: 0.108 }] : []),
     { y: 0.83, x: 0.165 * shape.shoulder, z: 0.105 },
     { y: 0.85, x: 0.13 * shape.shoulder, z: 0.073 },
     { y: 0.88, x: 0.046, z: 0.043 },
@@ -174,11 +209,18 @@ function torsoSurface(shape: { shoulder: number; waist: number; hip: number }): 
       const front = Math.max(0, Math.sin(angle));
       const back = Math.max(0, -Math.sin(angle));
       const frontFullness =
-        ring.y >= 0.7 && ring.y <= 0.81
+        shape.bust > 0
           ? front *
-            (0.008 + 0.014 * Math.exp(-Math.pow((Math.abs(Math.cos(angle)) - 0.5) / 0.3, 2)))
-          : 0;
-      const backFullness = ring.y >= 0.5 && ring.y <= 0.59 ? 0.008 * back : 0;
+            shape.bust *
+            0.05 *
+            Math.exp(-Math.pow((ring.y - 0.755) / 0.045, 2)) *
+            Math.exp(-Math.pow((Math.abs(Math.cos(angle)) - 0.48) / 0.32, 2))
+          : ring.y >= 0.7 && ring.y <= 0.81
+            ? front *
+              (0.008 + 0.014 * Math.exp(-Math.pow((Math.abs(Math.cos(angle)) - 0.5) / 0.3, 2)))
+            : 0;
+      const backFullness =
+        ring.y >= 0.5 && ring.y <= 0.59 ? (0.008 + shape.bust * 0.008) * back : 0;
       positions.push(
         Math.cos(angle) * ring.x,
         ring.y,
@@ -234,15 +276,15 @@ function torsoSurface(shape: { shoulder: number; waist: number; hip: number }): 
 }
 
 /** Rest surfaces follow the existing shoulder/elbow/wrist and hip/knee/ankle pivots. */
-function limbParts(side: 1 | -1, shape: { shoulder: number; hip: number; limb: number }): Part[] {
+function limbParts(side: 1 | -1, shape: typeof BASE_SHAPE & { limb: number }): Part[] {
   const upper = side === 1 ? BONE.lUpperArm : BONE.rUpperArm;
   const fore = side === 1 ? BONE.lForearm : BONE.rForearm;
   const hand = side === 1 ? BONE.lHand : BONE.rHand;
   const thigh = side === 1 ? BONE.lThigh : BONE.rThigh;
   const calf = side === 1 ? BONE.lCalf : BONE.rCalf;
   const foot = side === 1 ? BONE.lFoot : BONE.rFoot;
-  const ax = side * 0.19;
-  const lx = side * 0.09;
+  const ax = side * 0.19 * shape.armSpan;
+  const lx = side * 0.09 * shape.legSpan;
   const mass = shape.limb;
   const arm = profilePart(
     [
@@ -256,7 +298,12 @@ function limbParts(side: 1 | -1, shape: { shoulder: number; hip: number; limb: n
       { y: 0.77, x: 0.055, z: 0.049 },
       { y: 0.805, x: 0.052, z: 0.045 },
       { y: 0.835, x: 0.028, z: 0.031 },
-    ].map((r) => ({ ...r, x: r.x * mass, z: r.z * mass, cx: r.y > 0.805 ? ax * 0.9 : ax })),
+    ].map((r) => ({
+      ...r,
+      x: r.x * mass * shape.arm,
+      z: r.z * mass * shape.arm,
+      cx: r.y > 0.805 ? ax * 0.9 : ax,
+    })),
     (y) =>
       y >= 0.77
         ? [upper, BONE.spine2, Math.min(1, (y - 0.77) / 0.065)]
@@ -275,7 +322,12 @@ function limbParts(side: 1 | -1, shape: { shoulder: number; hip: number; limb: n
       { y: 0.46, x: 0.069, z: 0.07 },
       { y: 0.51, x: 0.061, z: 0.063 },
       { y: 0.55, x: 0.036, z: 0.046 },
-    ].map((r) => ({ ...r, x: r.x * mass, z: r.z * mass, cx: lx })),
+    ].map((r) => ({
+      ...r,
+      x: r.x * mass * shape.leg * (r.y > 0.25 ? shape.thigh : 1),
+      z: r.z * mass * shape.leg * (r.y > 0.25 ? shape.thigh : 1),
+      cx: lx,
+    })),
     (y) =>
       y >= 0.46
         ? [thigh, BONE.root, Math.min(1, (y - 0.46) / 0.08)]
@@ -285,21 +337,30 @@ function limbParts(side: 1 | -1, shape: { shoulder: number; hip: number; limb: n
   return [
     arm,
     leg,
-    blob([0.03 * mass, 0.041, 0.017], [ax, 0.423, 0.004], hand),
-    blob([0.012, 0.027, 0.013], [ax - side * 0.028, 0.418, 0.015], hand),
+    blob(
+      [0.03 * mass * shape.hand, 0.041 * shape.hand, 0.017 * shape.hand],
+      [ax, 0.423, 0.004],
+      hand,
+    ),
+    blob(
+      [0.012 * shape.hand, 0.027 * shape.hand, 0.013 * shape.hand],
+      [ax - side * 0.028 * shape.hand, 0.418, 0.015],
+      hand,
+    ),
     ...[-1.5, -0.5, 0.5, 1.5].map((finger) =>
       blob(
-        [0.006, 0.026 - Math.abs(finger) * 0.003, 0.008],
-        [ax + finger * 0.013, 0.377, 0.009],
+        [0.006 * shape.hand, (0.026 - Math.abs(finger) * 0.003) * shape.hand, 0.008 * shape.hand],
+        [ax + finger * 0.013 * shape.hand, 0.377, 0.009],
         hand,
       ),
     ),
-    blob([0.032, 0.031, 0.062], [lx, 0.03, 0.026], foot),
-    blob([0.035, 0.021, 0.038], [lx, 0.018, 0.064], foot),
+    blob([0.032 * shape.foot, 0.031, 0.062 * shape.foot], [lx, 0.03, 0.026], foot),
+    blob([0.035 * shape.foot, 0.021, 0.038 * shape.foot], [lx, 0.018, 0.064], foot),
   ];
 }
 
-function headPart(): Part {
+function headPart(variant: BodyVariant): Part {
+  const shape = HUMANOID_SHAPES[variant];
   return profilePart(
     [
       { y: 0.902, x: 0.031, z: 0.031, cz: 0.014 },
@@ -310,52 +371,42 @@ function headPart(): Part {
       { y: 1.038, x: 0.063, z: 0.052, cz: -0.004 },
       { y: 1.059, x: 0.035, z: 0.031, cz: -0.004 },
       { y: 1.066, x: 0.008, z: 0.008, cz: -0.004 },
-    ],
+    ].map((ring) => ({ ...ring, x: ring.x * (ring.y < 0.95 ? shape.jaw : shape.faceWidth) })),
     () => [BONE.head, BONE.head, 0],
     24,
   );
 }
 
 function bodyParts(variant: BodyVariant, build: number): Part[] {
-  const base = SHAPES[variant];
+  const base = HUMANOID_SHAPES[variant];
   const factor = HUMANOID_BUILD_FACTORS[Math.max(0, Math.min(3, Math.round(build)))]!;
   const shape = {
+    ...base,
     shoulder: base.shoulder * factor.shoulder,
     waist: base.waist * factor.waist,
     hip: base.hip * factor.hip,
     bust: base.bust,
     limb: factor.limb,
   };
-  const { bust } = shape;
   const parts: Part[] = [
     // One continuous torso shell replaces the disconnected chest, abdomen and pelvis spheres.
     torsoSurface(shape),
     profilePart(
       [
-        { y: 0.845, x: 0.044, z: 0.041 },
-        { y: 0.88, x: 0.038, z: 0.036 },
-        { y: 0.922, x: 0.033, z: 0.034 },
+        { y: 0.845, x: 0.044 * shape.neck, z: 0.041 * shape.neck },
+        { y: 0.88, x: 0.038 * shape.neck, z: 0.036 * shape.neck },
+        { y: 0.922, x: 0.033 * shape.neck, z: 0.034 * shape.neck },
       ],
       (y) => [BONE.spine2, BONE.head, Math.max(0, Math.min(1, (y - 0.855) / 0.055))],
     ),
-    headPart(),
+    headPart(variant),
     // Angular nose, small ears and a restrained lower lip keep the face readable at game scale.
     blob([0.009, 0.023, 0.01], [0, 0.976, 0.063], BONE.head),
     blob([0.014, 0.01, 0.013], [0, 0.961, 0.073], BONE.head),
-    blob([0.013, 0.023, 0.013], [0.073, 0.971, -0.003], BONE.head),
-    blob([0.013, 0.023, 0.013], [-0.073, 0.971, -0.003], BONE.head),
+    blob([0.013, 0.023, 0.013], [0.073 * shape.faceWidth, 0.971, -0.003], BONE.head),
+    blob([0.013, 0.023, 0.013], [-0.073 * shape.faceWidth, 0.971, -0.003], BONE.head),
     blob([0.021, 0.005, 0.007], [0, 0.935, 0.059], BONE.head),
   ];
-  if (bust > 0) {
-    parts.push(
-      blob([0.073 * bust, 0.06 * bust, 0.064 * bust], [0.073, 0.75, 0.085], BONE.spine2, {
-        detail: 1,
-      }),
-      blob([0.073 * bust, 0.06 * bust, 0.064 * bust], [-0.073, 0.75, 0.085], BONE.spine2, {
-        detail: 1,
-      }),
-    );
-  }
   parts.push(...limbParts(1, shape), ...limbParts(-1, shape));
   return parts;
 }
@@ -530,7 +581,14 @@ export function createHumanoid({
   for (const joint of JOINTS) {
     const bone = new Bone();
     bone.name = joint.name;
-    bone.position.set(...joint.offset);
+    const shape = HUMANOID_SHAPES[variant];
+    const span =
+      joint.name === BONE.lUpperArm || joint.name === BONE.rUpperArm
+        ? shape.armSpan
+        : joint.name === BONE.lThigh || joint.name === BONE.rThigh
+          ? shape.legSpan
+          : 1;
+    bone.position.set(joint.offset[0] * span, joint.offset[1], joint.offset[2]);
     if (joint.parent) byName.get(joint.parent)!.add(bone);
     byName.set(joint.name, bone);
     bones.push(bone);

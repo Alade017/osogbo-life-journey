@@ -4,7 +4,7 @@ import { Bone, LatheGeometry, Object3D, Quaternion, Vector2, Vector3 } from "thr
 import type { Appearance } from "@/game/avatar-appearance";
 import { OUTFITS, SHOE_COLORS, TROUSERS } from "@/game/avatar-appearance";
 import { adireTexture } from "./cloth-patterns";
-import { HUMANOID_BUILD_FACTORS } from "./humanoid-rig";
+import { HUMANOID_BUILD_FACTORS, HUMANOID_SHAPES } from "./humanoid-rig";
 
 type Segment = { bone: Bone; child: Bone };
 function clean(name: string) {
@@ -91,7 +91,7 @@ function TorsoGarment({
   color: string;
   trim: string;
   patterned?: boolean;
-  fit: { shoulder: number; waist: number; hip: number };
+  fit: { shoulder: number; waist: number; hip: number; depth: number };
 }) {
   const map = useMemo(() => (patterned ? adireTexture() : null), [patterned]);
   const geometry = useMemo(
@@ -110,7 +110,7 @@ function TorsoGarment({
   );
   useEffect(() => () => geometry.dispose(), [geometry]);
   return (
-    <group name="torso-garment" scale={[1, 1, 0.78]}>
+    <group name="torso-garment" scale={[1, 1, 0.78 * fit.depth]}>
       <mesh geometry={geometry} castShadow receiveShadow>
         <meshStandardMaterial color={color} map={map} roughness={0.93} side={2} />
       </mesh>
@@ -194,13 +194,15 @@ export function CharacterWardrobe({
   const patterned = appearance.outfit === 3;
   const build =
     HUMANOID_BUILD_FACTORS[Math.max(0, Math.min(3, Math.round(appearance.build ?? 1)))]!;
+  const shape = HUMANOID_SHAPES[gender === "male" ? "male" : "female"];
   const fit = useMemo(
     () => ({
-      shoulder: build.shoulder * (gender === "male" ? 1 : 0.92),
-      waist: build.waist * (gender === "male" ? 1 : 0.88),
-      hip: build.hip * (gender === "male" ? 1 : 1.1),
+      shoulder: build.shoulder * shape.shoulder,
+      waist: build.waist * shape.waist,
+      hip: build.hip * shape.hip,
+      depth: 1 + shape.bust * 0.3,
     }),
-    [build, gender],
+    [build, shape],
   );
 
   if (appearance.clothed === false) return null;
@@ -233,7 +235,7 @@ export function CharacterWardrobe({
             segment={segment}
             color={bottom}
             trim={trim}
-            radiusFactor={0.3 * build.limb}
+            radiusFactor={0.3 * build.limb * (shape.leg * shape.thigh + shape.bust * 0.12)}
           />,
           segment.bone,
         ),

@@ -163,3 +163,25 @@ it("shares lightweight skin maps while preserving individually selected skin col
   expect(b.color.getHexString()).toBe("c28a5e");
   expect(a.metalness).toBe(0);
 });
+
+it("gives the female base a distinct silhouette while keeping wardrobe bone names", () => {
+  const male = createHumanoid({ variant: "male", skinColor: "#754c32", hairColor: null });
+  const female = createHumanoid({ variant: "female", skinColor: "#754c32", hairColor: null });
+  function widthAt(rig: typeof male, height: number) {
+    const positions = rig.meshes[0]!.geometry.getAttribute("position");
+    let min = Infinity,
+      max = -Infinity;
+    for (let i = 0; i < positions.count; i++) {
+      if (Math.abs(positions.getY(i) - height) < 0.001) {
+        min = Math.min(min, positions.getX(i));
+        max = Math.max(max, positions.getX(i));
+      }
+    }
+    return max - min;
+  }
+  expect(widthAt(female, 0.53)).toBeGreaterThan(widthAt(male, 0.53));
+  expect(widthAt(female, 0.77)).toBeLessThan(widthAt(male, 0.77));
+  expect(widthAt(female, 0.919)).toBeLessThan(widthAt(male, 0.919));
+  expect(female.bones.map((bone) => bone.name)).toEqual(male.bones.map((bone) => bone.name));
+  expect(female.meshes.reduce((sum, mesh) => sum + triangles(mesh), 0)).toBeLessThan(8000);
+});

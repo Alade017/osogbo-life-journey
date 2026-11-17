@@ -1,7 +1,15 @@
 // Keep these palette indices stable; saved characters refer to them in Supabase.
 export const SKIN_TONES = ["#5a3825", "#6e452c", "#8a5a3b", "#a56f48", "#c28a5e", "#3f2618"];
 export const HAIR_STYLES_BY_GENDER: Record<string, string[]> = {
-  female: ["Low bun", "Natural afro", "Knotless braids", "Bald", "Bantu knots", "Locs"],
+  female: [
+    "Low bun",
+    "Natural afro",
+    "Knotless braids",
+    "Bald",
+    "Bantu knots",
+    "Locs",
+    "Short crop",
+  ],
   male: ["Low fade", "Short afro", "Cornrows", "Bald", "Wave cut", "Locs"],
   nonbinary: ["Taper fade", "Natural afro", "Braids", "Bald", "Twist-out", "Locs"],
 };
