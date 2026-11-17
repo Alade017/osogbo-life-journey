@@ -170,3 +170,23 @@
 .reduce-motion .world-loading-bar.is-indeterminate > span {
   animation: none;
 }
+
+
+.world-loading-retry {
+  justify-self: center;
+  min-height: 44px;
+  margin-top: 0.35rem;
+  padding: 0.65rem 1.2rem;
+  border: 1px solid rgba(62, 224, 234, 0.55);
+  border-radius: 999px;
+  background: rgba(62, 224, 234, 0.12);
+  color: #f2f4f5;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.world-loading-retry:focus-visible {
+  outline: 2px solid #3ee0ea;
+  outline-offset: 3px;
+}

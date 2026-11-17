@@ -9,10 +9,11 @@ it("uses the existing inventory categories for food offers", () => {
   expect(isDiningItem(item("electronics"))).toBe(false);
   expect(isDiningItem(null)).toBe(false);
 });
-it("preserves the food court model and gives Buka its own canteen layout", () => {
+it("uses the built courtyard and Buka canteen layouts instead of GLB models", () => {
   const court = getLocationVenueDesign("riverside-food-court", "Riverside");
   expect(court.foodInterior).toBe("courtyard");
-  expect(court.environment?.url).toBe("/models/environments/market-and-bank/street-food-market-yard.glb");
+  expect(court.environment).toBeUndefined();
+  expect(court.sceneSize).toEqual(FOOD_VENUE_LAYOUTS.courtyard);
   expect(court.fixtures.map(f => f.id)).toEqual(["riverside-counter", "riverside-tables", "riverside-planter"]);
   expect(BUKA_VENUE_DESIGN.foodInterior).toBe("buka");
   for (const f of BUKA_VENUE_DESIGN.fixtures) {

@@ -26,10 +26,17 @@ export function canPromoteCareer(
   );
 }
 
+const CAREER_JOB_PATHS: Readonly<Record<string, string>> = {
+  career_cedar_banking: "banking",
+  career_meridian_banking: "banking",
+  career_osun_mall_retail: "retail",
+};
+
 export function isCareerJob(slug: string): boolean {
-  return (
-    slug === "career_cedar_banking" ||
-    slug === "career_meridian_banking" ||
-    slug === "career_osun_mall_retail"
-  );
+  return Object.hasOwn(CAREER_JOB_PATHS, slug);
+}
+
+/** The career path a career job belongs to, or null for ordinary jobs and workplaces. */
+export function careerPathForJob(slug: string): string | null {
+  return CAREER_JOB_PATHS[slug] ?? null;
 }
