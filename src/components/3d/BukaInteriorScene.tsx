@@ -1,10 +1,10 @@
 import { WorldMaterial } from "./WorldScene";
 import type { WorldTone } from "./world-theme";
 import type { VenueFixture } from "@/lib/location-venue-designs";
-import { FOOD_VENUE_LAYOUTS } from "@/game/food-venue-layout";
+import { FOOD_VENUE_LAYOUTS, type FoodVenueVariant } from "@/game/food-venue-layout";
 type Point = [number, number, number];
 function Block({ at, size, tone = "wall", color }: { at: Point; size: Point; tone?: WorldTone; color?: string }) {
-  return <mesh position={at} castShadow receiveShadow><boxGeometry args={size} /><WorldMaterial tone={tone} color={color} /></mesh>;
+  return <mesh position={at} castShadow receiveShadow><boxGeometry args={size} /><WorldMaterial tone={tone} {...(color === undefined ? {} : { color })} /></mesh>;
 }
 function CookingPot() {
   return <group>
@@ -15,11 +15,12 @@ function CookingPot() {
   </group>;
 }
 /** Decorative kitchen equipment never claims menu stock, cooking progress or food availability. */
-export function BukaInteriorScene({ fixtures, selected, onSelect, floorColor, wallColor, accentColor }: {
+export function BukaInteriorScene({ variant = "buka", fixtures, selected, onSelect, floorColor, wallColor, accentColor }: {
+  variant?: FoodVenueVariant;
   fixtures: readonly VenueFixture[]; selected: string; onSelect: (id: string) => void;
   floorColor: string; wallColor: string; accentColor: string;
 }) {
-  const layout = FOOD_VENUE_LAYOUTS.buka;
+  const layout = FOOD_VENUE_LAYOUTS[variant];
   return <group name="buka-canteen-interior">
     <Block at={[0, -0.1, 0]} size={[layout.width, 0.2, layout.depth]} tone="tileLight" color={floorColor} />
     <Block at={[0, 1.6, -layout.depth / 2]} size={[layout.width, 3.2, 0.16]} color={wallColor} />
