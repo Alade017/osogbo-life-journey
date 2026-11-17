@@ -17,7 +17,8 @@ import { surfaceForPath } from "@/lib/game-route-surfaces";
 
 describe("neighborhood navigation and location registry", () => {
   const area = neighborhoodAreaForSlug("city-centre");
-  const startWorld = toWorld({ x: 500, y: 240 }, OLAIYA_ORIGIN);
+  // Walks start where the player spawns: the centre of the Olaiya town walk.
+  const startWorld = toWorld({ x: 320, y: 300 }, OLAIYA_ORIGIN);
 
   it("renders /neighborhood, /map, /home, and /jobs as full-screen game surfaces", () => {
     expect(surfaceForPath("/neighborhood")).toBe("full");

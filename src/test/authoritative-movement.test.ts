@@ -48,16 +48,22 @@ describe("authoritative neighborhood movement", () => {
     expect(
       canRestoreNeighborhoodCheckpoint({ x: 25, y: 9 }, origin, area.objects, area.obstacles),
     ).toBe(false);
-    expect(
-      canRestoreNeighborhoodCheckpoint({ x: 24, y: 20 }, origin, [], []),
-    ).toBe(true);
+    expect(canRestoreNeighborhoodCheckpoint({ x: 24, y: 20 }, origin, [], [])).toBe(true);
   });
 
-  it("blocks building footprints on the server movement model", () => {
-    const blocked = toWorld({ x: 320, y: 260 }, origin);
-    expect(canOccupyNeighborhoodPoint(blocked, origin)).toBe(false);
-    expect(canOccupyNeighborhoodPoint({ x: 7, y: 6 }, origin)).toBe(true);
-    const moved = stepAuthoritativePosition(blocked, { x: -1, y: 0 }, 0.05, origin);
+  it("blocks solid obstacles on the server movement model", () => {
+    const area = neighborhoodAreaForSlug("city-centre");
+    const solid = area.obstacles![0]!;
+    const blocked = toWorld({ x: solid.x, y: solid.y }, origin);
+    expect(canOccupyNeighborhoodPoint(blocked, origin, area.objects, area.obstacles)).toBe(false);
+    const moved = stepAuthoritativePosition(
+      blocked,
+      { x: -1, y: 0 },
+      0.05,
+      origin,
+      area.objects,
+      area.obstacles,
+    );
     expect(moved).toEqual(blocked);
   });
 
@@ -70,39 +76,30 @@ describe("authoritative neighborhood movement", () => {
     expect(canOccupyNeighborhoodPoint(insideMarketFootprint, origin, cityObjects)).toBe(true);
   });
 
-  it("uses generated district landmarks as shared server collision footprints", () => {
-    const districtObjects = neighborhoodAreaForSlug("student-district").objects;
+  it("uses generated district obstacles as shared server collision footprints", () => {
+    const district = neighborhoodAreaForSlug("student-district");
     const cityObjects = neighborhoodAreaForSlug("city-centre").objects;
-    const campusShop = districtObjects.find((object) => object.id === "market")!;
-    const insideFootprint = toWorld({ x: campusShop.x, y: campusShop.y - 45 }, origin);
-    expect(canOccupyNeighborhoodPoint(insideFootprint, origin, districtObjects)).toBe(false);
+    const solid = district.obstacles![0]!;
+    const insideFootprint = toWorld({ x: solid.x, y: solid.y }, origin);
+    expect(
+      canOccupyNeighborhoodPoint(insideFootprint, origin, district.objects, district.obstacles),
+    ).toBe(false);
     expect(canOccupyNeighborhoodPoint(insideFootprint, origin, cityObjects)).toBe(true);
   });
 
-  it("blocks authored Olaiya compounds and street furniture while keeping the crossing walkable", () => {
+  it("blocks Olaiya's obstacles while keeping the spawn walkable", () => {
     const area = neighborhoodAreaForSlug("city-centre");
-    const compound = area.obstacles?.find((obstacle) => obstacle.kind === "compound");
-    const bench = area.obstacles?.find((obstacle) => obstacle.kind === "bench");
-    expect(compound).toBeDefined();
-    expect(bench).toBeDefined();
+    const solid = area.obstacles![0]!;
     expect(
-      canOccupyNeighborhoodPoint(toWorld(compound!, origin), origin, area.objects, area.obstacles),
+      canOccupyNeighborhoodPoint(toWorld(solid, origin), origin, area.objects, area.obstacles),
     ).toBe(false);
     expect(
-      canOccupyNeighborhoodPoint(toWorld(bench!, origin), origin, area.objects, area.obstacles),
-    ).toBe(false);
-    expect(canOccupyNeighborhoodPoint({ x: 7, y: 6 }, origin, area.objects, area.obstacles)).toBe(
-      true,
-    );
-    expect(
-      stepAuthoritativePosition(
-        toWorld(compound!, origin),
-        { x: 1, y: 0 },
-        0.05,
+      canOccupyNeighborhoodPoint(
+        toWorld({ x: 320, y: 300 }, origin),
         origin,
         area.objects,
         area.obstacles,
       ),
-    ).toEqual(toWorld(compound!, origin));
+    ).toBe(true);
   });
 });

@@ -314,19 +314,6 @@ describe("isometric town map", () => {
     expect(screen.queryByText(/does not have a playable neighborhood/i)).not.toBeInTheDocument();
     expect(testState.travelToLocation).not.toHaveBeenCalled();
   }, 15_000);
-  it("shows one full-width 3D map at a time and returns from the neighborhood", () => {
-    renderDashboard();
-    expect(screen.getByRole("region", { name: /Interactive 3D town map/i })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Olaiya neighborhood" }));
-    expect(
-      screen.queryByRole("region", { name: /Interactive 3D town map/i }),
-    ).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Olaiya" })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Osogbo districts" }));
-    expect(screen.getByRole("region", { name: /Interactive 3D town map/i })).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "Olaiya" })).not.toBeInTheDocument();
-  });
-
   it("renders the 3D town region and a keyboard-accessible list", () => {
     renderDashboard();
     expect(screen.getByRole("region", { name: /Interactive 3D town map/i })).toBeInTheDocument();

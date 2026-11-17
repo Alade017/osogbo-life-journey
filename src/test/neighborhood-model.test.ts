@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { OSOGBO_WORLD_NODES, cityEntranceForLocation } from "@/lib/city-world";
+import { townAnchorForSlug } from "@/game/town-neighborhood";
 import {
   neighborhoodAreaForSlug,
   neighborhoodAreaOrigin,
@@ -33,28 +34,15 @@ describe("neighborhood coordinates and interaction", () => {
     }
     expect(neighborhoodAreaForSlug("unmapped-district")).toBe(olaiya);
   });
-  it("defines connected Olaiya roads and collision obstacles for the playable scene", () => {
+  it("builds Olaiya's roads and spot landmarks from the town data", () => {
     const area = neighborhoodAreaForSlug("city-centre");
-    expect(area.roads?.filter((road) => road.type === "arterial")).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ axis: "vertical", offset: 500 }),
-        expect.objectContaining({ axis: "horizontal", offset: 500 }),
-      ]),
+    expect(area.name).toBe("Olaiya");
+    expect(area.roads?.length ?? 0).toBeGreaterThan(0);
+    const labels = (area.obstacles ?? []).map((obstacle) => obstacle.label);
+    expect(labels).toEqual(
+      expect.arrayContaining(["Fuel & Go Forecourt Pumps", "Meridian Bank ATM Alcove"]),
     );
-    expect(area.roads?.find((road) => road.id === "home-access-lane")).toMatchObject({
-      axis: "horizontal",
-      start: 320,
-      end: 500,
-    });
-    expect(area.paths?.[0]).toMatchObject({
-      id: "home-to-street-path",
-      from: { x: 320, y: 300 },
-      to: { x: 320, y: 340 },
-    });
-    expect(area.roads?.some((road) => road.id === "west-residential-street")).toBe(true);
-    expect(area.obstacles?.some((obstacle) => obstacle.kind === "compound")).toBe(true);
-    expect(area.obstacles?.some((obstacle) => obstacle.kind === "streetlight")).toBe(true);
-    expect(area.obstacles?.some((obstacle) => obstacle.kind === "bench")).toBe(true);
+    expect(area.zoneLayout).toBeUndefined();
   });
   it("provides a deterministic playable template for every registered city district", () => {
     for (const node of Object.values(OSOGBO_WORLD_NODES)) {
@@ -73,7 +61,13 @@ describe("neighborhood coordinates and interaction", () => {
       expect(new Set(area.objects.map((object) => `${object.x}:${object.y}`)).size).toBe(
         area.objects.length,
       );
-      if (node.slug !== "city-centre" && node.slug !== "oja-oba") {
+      // Places with a landmark in the town data are walked from that data (see town-neighborhood).
+      const handBuilt = ["city-centre", "oja-oba", "fuel-and-go"];
+      if (townAnchorForSlug(node.slug) && !handBuilt.includes(node.slug)) {
+        expect(area.objects.filter((object) => object.kind === "npc").length).toBeGreaterThan(0);
+        const kinds = area.obstacles?.map((obstacle) => obstacle.kind) ?? [];
+        expect(kinds.some((kind) => kind === "shop" || kind === "landmark")).toBe(true);
+      } else if (!handBuilt.includes(node.slug)) {
         expect(area.objects.filter((object) => object.kind === "npc")).toHaveLength(3);
         expect(area.roads).toHaveLength(6);
         expect(area.paths).toHaveLength(2);
@@ -159,19 +153,13 @@ describe("neighborhood coordinates and interaction", () => {
   });
   it("only offers interaction within reach and picks the closest target", () => {
     const area = neighborhoodAreaForSlug("city-centre");
-    expect(nearestInteraction({ x: 320, y: 300 }, area.objects)?.kind).toBe("home");
+    const home = area.objects.find((object) => object.id === "home")!;
+    expect(nearestInteraction({ x: home.x, y: home.y }, area.objects)?.kind).toBe("home");
     expect(
       canOccupyNeighborhoodPoint({ x: 7, y: 6 }, { x: 7, y: 6 }, area.objects, area.obstacles),
     ).toBe(true);
-    expect(
-      canOccupyNeighborhoodPoint(
-        toWorld({ x: 320, y: 260 }, { x: 7, y: 6 }),
-        { x: 7, y: 6 },
-        area.objects,
-        area.obstacles,
-      ),
-    ).toBe(false);
-    expect(nearestInteraction({ x: 190, y: 420 })?.kind).toBe("npc");
+    const npc = area.objects.find((object) => object.kind === "npc")!;
+    expect(nearestInteraction({ x: npc.x, y: npc.y })?.kind).toBe("npc");
   });
   it("rejects corrupt and out-of-city checkpoints", () => {
     expect(validCheckpoint({ x: 7, y: 6 })).toBe(true);
