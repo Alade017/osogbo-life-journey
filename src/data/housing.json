@@ -16,6 +16,13 @@
     "extra_requirements": [],
     "home_slots": [
       {
+        "y": 40,
+        "slot_type": "bed",
+        "id": "bed-2",
+        "z": 2,
+        "x": 76
+      },
+      {
         "y": 66,
         "slot_type": "bed",
         "id": "bed",
