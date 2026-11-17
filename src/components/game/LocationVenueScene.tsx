@@ -1,3 +1,5 @@
+import { WorkplaceScene } from "@/components/3d/WorkplaceScene";
+import { Link } from "@tanstack/react-router";
 import { HealthcareScene } from "@/components/3d/HealthcareScene";
 import { MarketTradingHall } from "@/components/3d/MarketTradingScene";
 import { lazy, Suspense, useEffect, useMemo, useState } from "react";
@@ -114,7 +116,9 @@ function BasicLocationVenueScene({ slug, locationName, onBrowseMarket }: {
             >
               <WorldCamera width={venue.sceneSize?.width ?? 10} depth={venue.sceneSize?.depth ?? 7} stage target={[0, 1.2, 0]} zoom={1.2} />
               <WorldLighting size={14} />
-              {venue.scene === "healthcare" ? (
+              {venue.scene === "workplace" ? (
+                <WorkplaceScene fixtures={venue.fixtures} selected={selectedFixture} onSelect={setSelectedFixture} floorColor={venue.floorColor} wallColor={venue.wallColor} accentColor={venue.accentColor} />
+              ) : venue.scene === "healthcare" ? (
                 <HealthcareScene fixtures={venue.fixtures} selected={selectedFixture} onSelect={setSelectedFixture} />
               ) : venue.scene === "market" ? (
                 <MarketTradingHall fixtures={venue.fixtures} selected={selectedFixture} onSelect={setSelectedFixture} />
@@ -172,6 +176,12 @@ function BasicLocationVenueScene({ slug, locationName, onBrowseMarket }: {
         )}
       </div>
 
+      {venue.scene === "workplace" && (
+        <nav aria-label="Workplace activities" className="flex flex-wrap gap-2">
+          <Link to="/jobs" className="rounded-lg border border-edge bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground">Jobs & shifts</Link>
+          <Link to="/education" className="rounded-lg border border-edge bg-card px-4 py-3 text-sm font-semibold">Courses</Link>
+        </nav>
+      )}
       {venue.scene === "market" && onBrowseMarket && (
         <button type="button" onClick={onBrowseMarket}
           className="rounded-lg border border-edge bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground">
