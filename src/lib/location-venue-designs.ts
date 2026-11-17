@@ -1,3 +1,4 @@
+import { RESIDENTIAL_COMPOUND, compoundFeatures } from "@/game/residential-compound";
 import type { BankInteriorVariant } from "@/game/bank-interiors";
 import { WORLD_PALETTE } from "@/components/3d/world-theme";
 export type VenueFixtureKind =
@@ -24,7 +25,7 @@ export type LocationVenueDesign = {
   bankInterior?: BankInteriorVariant;
   transportPark?: boolean;
   sceneBounds?: { width: number; depth: number };
-  scene?: "campus" | "market" | "clinic" | "healthcare";
+  scene?: "campus" | "market" | "clinic" | "healthcare" | "residential";
   sceneSize?: { width: number; depth: number };
   name: string;
   description: string;
@@ -53,6 +54,19 @@ function fixture(
 }
 
 const venues: Readonly<Record<string, LocationVenueDesign>> = {
+  residential: {
+    scene: "residential",
+    sceneSize: { width: RESIDENTIAL_COMPOUND.cameraWidth, depth: RESIDENTIAL_COMPOUND.cameraDepth },
+    name: "Residential compound",
+    description: "An open courtyard, water point, drying area and private house fronts.",
+    floorColor: WORLD_PALETTE.ground,
+    wallColor: WORLD_PALETTE.wall,
+    accentColor: WORLD_PALETTE.foliage,
+    fixtures: compoundFeatures().map((item) =>
+      fixture(item.id, item.label, item.detail, "display", item.x, item.z),
+    ),
+  },
+
   "student-district": {
     scene: "campus",
     name: "School campus",
