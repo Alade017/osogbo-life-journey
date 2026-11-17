@@ -8,7 +8,7 @@
     "dev": "vite dev --host 0.0.0.0 --port 3000",
     "dev:public": "vite --config vite.public.config.ts",
     "multiplayer:dev": "node --env-file-if-exists=.env --experimental-strip-types multiplayer/server.ts",
-    "multiplayer:start": "node --experimental-strip-types multiplayer/server.ts",
+    "multiplayer:start": "tsx multiplayer/server.ts",
     "build:public": "vite build --config vite.public.config.ts",
     "build": "vite build",
     "build:dev": "vite build --mode development",
@@ -90,6 +90,7 @@
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4.2.1",
     "three": "^0.186.1",
+    "tsx": "^4.23.15",
     "tw-animate-css": "^1.3.4",
     "vaul": "^1.1.2",
     "zod": "^4.1.12"
