@@ -5,10 +5,12 @@ import type { ReactNode } from "react";
 export function GameMobileNav({
   hidden = false,
   onNavigate,
+  onInventoryOpen,
   children,
 }: {
   hidden?: boolean;
   onNavigate: () => void;
+  onInventoryOpen: () => void;
   children?: ReactNode;
 }) {
   return (
@@ -46,16 +48,15 @@ export function GameMobileNav({
         <Briefcase className="h-4.75 w-4.75" />
         <span>Career Life</span>
       </Link>
-      <Link
-        to="/inventory"
-        activeProps={{ className: "gbb-active" }}
+      <button
+        type="button"
         className="gbb-link"
-        onClick={onNavigate}
+        onClick={onInventoryOpen}
         aria-label="Open inventory"
       >
         <Backpack className="h-4.75 w-4.75" aria-hidden="true" />
         <span>Inventory</span>
-      </Link>
+      </button>
       {children}
     </nav>
   );
