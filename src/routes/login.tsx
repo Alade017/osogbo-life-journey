@@ -21,7 +21,7 @@ export const Route = createFileRoute("/login")({
 
 function LoginPage() {
   const navigate = useNavigate();
-  // Returning from Google sign-in lands here; continue once the session exists.
+  // Continue existing authenticated sessions while preserving password recovery.
   useEffect(() => {
     // A recovery session must stay on the form until the password is changed.
     if (
