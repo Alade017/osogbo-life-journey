@@ -756,3 +756,87 @@ body:has(.neighborhood-page) {
     right: 0.75rem;
   }
 }
+
+
+/* Compact contextual interaction sheet; complex bank/market/jobs/transit tools keep the full modal. */
+.neighborhood-zone-modal.is-compact {
+  width: min(100% - 32px, 500px);
+  max-width: 500px;
+  max-height: min(68dvh, 620px);
+  padding: 18px;
+  border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border));
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--card) 96%, transparent);
+  box-shadow: 0 24px 70px color-mix(in srgb, var(--foreground) 22%, transparent);
+  backdrop-filter: blur(22px);
+}
+
+.neighborhood-zone-modal.is-compact .neighborhood-zone-modal-header {
+  gap: 0.4rem;
+  padding-bottom: 0.65rem;
+}
+
+.neighborhood-zone-modal.is-compact .neighborhood-zone-modal-header > .text-xl {
+  font-size: 1.08rem;
+  line-height: 1.25;
+}
+
+.neighborhood-zone-modal.is-compact .neighborhood-zone-stats-bar {
+  gap: 0.35rem;
+}
+
+.neighborhood-zone-modal.is-compact .neighborhood-zone-stat-pill {
+  padding: 0.28rem 0.48rem;
+  font-size: 0.68rem;
+}
+
+.neighborhood-zone-modal.is-compact .neighborhood-zone-tabs {
+  gap: 0.35rem;
+}
+
+.neighborhood-zone-modal.is-compact .neighborhood-zone-tabs button {
+  min-height: 38px;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+}
+
+.neighborhood-zone-modal.is-compact .neighborhood-zone-action-tile {
+  min-height: 48px;
+  gap: 0.28rem;
+  padding: 0.7rem 0.75rem;
+  border-radius: 16px;
+}
+
+@media (max-width: 640px) {
+  .neighborhood-zone-modal.is-compact {
+    position: fixed;
+    top: auto;
+    right: auto;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    left: 50%;
+    width: calc(100vw - 24px);
+    max-width: 500px;
+    max-height: min(66dvh, 560px);
+    margin: 0;
+    padding: 15px;
+    transform: translateX(-50%);
+    border-radius: 24px;
+  }
+
+  .neighborhood-zone-modal.is-compact .neighborhood-zone-stats-bar {
+    max-height: 72px;
+    overflow-y: auto;
+  }
+
+  .neighborhood-zone-modal.is-compact .grid.gap-3.sm\\:grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .neighborhood-zone-modal.is-compact * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
