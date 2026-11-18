@@ -374,7 +374,8 @@ it("cancels a pending NPC approach when the player taps a different ground point
   player.y = 6;
   await act(async () => joined.listeners.publish?.());
 
-  await act(async () => initialScene?.onSelectTarget("npc-adeola"));
+  const distantScene = state.scene.mock.lastCall?.[0];
+  await act(async () => distantScene?.onSelectTarget("npc-adeola"));
   expect(state.scene.mock.lastCall?.[0].groundTarget).not.toBeNull();
 
   await act(async () => state.scene.mock.lastCall?.[0].onGroundTap({ x: 3, y: 3 }));
