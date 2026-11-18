@@ -121,7 +121,7 @@ vi.mock("@/components/game/R3FNeighborhoodSurface", () => ({
     homeTypeId: string | null;
     players: readonly unknown[];
     npcs: readonly unknown[];
-    interactionTargets: readonly { id: string }[];
+    interactionTargets: readonly { id: string; x: number; y: number }[];
     onSelectTarget: (targetId: string) => void;
     onGroundTap: (point: { x: number; y: number }) => void;
     groundTarget: { x: number; y: number } | null;
@@ -366,7 +366,7 @@ it("cancels a pending NPC approach when the player taps a different ground point
 
   const initialScene = state.scene.mock.lastCall?.[0];
   const target = initialScene?.interactionTargets.find(
-    (candidate: { id: string }) => candidate.id === "npc-adeola",
+    (candidate: { id: string; x: number; y: number }) => candidate.id === "npc-adeola",
   );
   expect(target).toBeDefined();
   const player = joined.state.players.get(joined.sessionId)!;
