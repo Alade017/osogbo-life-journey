@@ -5,6 +5,7 @@ import {
   packagePoint,
   roomObstacles,
   type RoomPoint,
+  placementsOverlappingWalls,
 } from "@/game/house-navigation";
 import {
   HOUSE_GRID_STEP,
@@ -1140,7 +1141,9 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     ? isHouseGridCellOccupied(draftMove.x, draftMove.y, scenePlacements, draftMove.placementId)
     : false;
   const guide =
-    draftPlacement && draftMove ? guideFor(draftPlacement.slot_type, draftPlacement.art_key) : null;
+    draftPlacement && draftMove
+      ? guideFor(draftPlacement.slot_type, draftPlacement.art_key, houseTypeId ?? undefined)
+      : null;
   const arrangementNotes =
     draftPlacement && draftMove
       ? arrangementWarnings(
@@ -1149,6 +1152,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           draftMove.x,
           draftMove.y,
           houseDoorPercentX(houseTypeId ?? ""),
+          houseTypeId ?? undefined,
         )
       : [];
   const startMove = (placement: HousePlacement) => {
@@ -1289,7 +1293,16 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     setActivityError("");
     try {
       if (
-        (await walkTo(packagePoint(index, roomWidth, roomDepth), true)) &&
+        (await walkTo(
+          packagePoint(
+            index,
+            roomWidth,
+            roomDepth,
+            houseTypeId ?? "shared-room",
+            waiting[index]?.deliveryChoice === "inside",
+          ),
+          true,
+        )) &&
         version === interactionVersion.current
       ) {
         setCollectingPackage(true);
@@ -1521,6 +1534,10 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     );
 
   const house = serverState.house;
+  const layoutConflicts =
+    house.house_type_id === "bungalow"
+      ? placementsOverlappingWalls(house.house_type_id, roomWidth, roomDepth, placements, slots)
+      : [];
   return (
     <div className={`house-page house-page-fill${editing ? " is-editing" : ""}`}>
       <div className="house-toolbar">
@@ -1563,6 +1580,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             disabled={taskBusy}
             onClick={() => {
               movement.cancel();
+              setPinnedRoom(null);
               setEditing((value) => !value);
               setSelectedPlacement(null);
             }}
@@ -1616,25 +1634,60 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         )}
         {!editing && activeFloor === 0 && roomViews.length > 0 && (
           <div className="house-room-views" role="group" aria-label="Room view">
-            {roomViews.map((room) => (
-              <button
-                key={room.id}
-                type="button"
-                aria-pressed={roomView === room.id}
-                className={roomView === room.id ? "is-active" : undefined}
-                onClick={() => setPinnedRoom(room.id)}
+            {roomViews.length > 4 ? (
+              <select
+                aria-label="View room"
+                value={roomView ?? "whole"}
+                onChange={(event) =>
+                  setPinnedRoom(event.target.value === "whole" ? null : event.target.value)
+                }
               >
-                {room.label}
+                <option value="whole">{WHOLE_HOME_LABEL}</option>
+                {roomViews.map((room) => (
+                  <option key={room.id} value={room.id}>
+                    {room.label}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <>
+                {roomViews.map((room) => (
+                  <button
+                    key={room.id}
+                    type="button"
+                    aria-pressed={roomView === room.id}
+                    className={roomView === room.id ? "is-active" : undefined}
+                    onClick={() => setPinnedRoom(room.id)}
+                  >
+                    {room.label}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  aria-pressed={roomView === null}
+                  className={roomView === null ? "is-active" : undefined}
+                  onClick={() => setPinnedRoom(null)}
+                >
+                  {WHOLE_HOME_LABEL}
+                </button>
+              </>
+            )}
+            {layoutConflicts.length > 0 && (
+              <button
+                type="button"
+                disabled={taskBusy || isOffline}
+                title="Some saved furniture overlaps the new walls. Reposition these items in Arrange."
+                aria-label={`Reposition ${layoutConflicts.length} items overlapping walls`}
+                onClick={() => {
+                  movement.cancel();
+                  setPinnedRoom(null);
+                  setEditing(true);
+                  setSelectedPlacement(layoutConflicts[0] ?? null);
+                }}
+              >
+                Arrange ({layoutConflicts.length})
               </button>
-            ))}
-            <button
-              type="button"
-              aria-pressed={roomView === null}
-              className={roomView === null ? "is-active" : undefined}
-              onClick={() => setPinnedRoom(null)}
-            >
-              {WHOLE_HOME_LABEL}
-            </button>
+            )}
           </div>
         )}
         {!editing && stairs && (

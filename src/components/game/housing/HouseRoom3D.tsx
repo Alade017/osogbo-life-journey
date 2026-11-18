@@ -47,6 +47,7 @@ import {
   type WorldInstance,
 } from "@/components/3d/WorldScene";
 import { ROOM_VIEW_CAMERA, ROOM_VIEW_PALETTE, WORLD_SCALE } from "@/components/3d/world-theme";
+import { packagePoint } from "@/game/house-navigation";
 import { BlueprintInterior, StudioRug } from "./StudioInterior";
 import { STUDIO_FINISH, isBlueprintHomeType } from "./house-blueprints";
 
@@ -1659,9 +1660,6 @@ function RoomCharacter({
 /** Courier spots, measured from the room's real rear door. */
 const COURIER_DOOR_INSET = 0.2;
 const COURIER_EXIT_DISTANCE = 2.5;
-const COURIER_INSIDE_SHARE = 0.13;
-const COURIER_INSIDE_DEPTH = 1.35;
-const COURIER_SPACING = 0.5;
 
 /** Walks the courier out of the room after the player has collected the package. */
 function DepartingCourier({
@@ -1734,8 +1732,7 @@ function FoodCourier({
   const doorZ = -depth / 2 + COURIER_DOOR_INSET;
   const inside = delivery.deliveryChoice === "inside";
   // Where the courier stands once he has arrived (one spot per waiting package).
-  const standX = (inside ? width * COURIER_INSIDE_SHARE : doorX) + index * COURIER_SPACING;
-  const standZ = inside ? -depth / 2 + COURIER_INSIDE_DEPTH : doorZ;
+  const [standX, , standZ] = packagePoint(index, width, depth, houseTypeId, inside);
   const knocking = delivery.deliveryState === "awaiting_response";
   const approaching = delivery.deliveryState === "approaching";
   const waiting = delivery.deliveryState === "package_waiting";
@@ -2236,7 +2233,9 @@ export function HouseRoom3D({
               ? STUDIO_FURNITURE_STYLE
               : houseTypeId === "shared-room"
                 ? SHARED_FURNITURE_STYLE
-                : houseTypeId === "single-room" || houseTypeId === "mini-flat"
+                : houseTypeId === "single-room" ||
+                    houseTypeId === "mini-flat" ||
+                    houseTypeId === "bungalow"
                   ? PRIVATE_FURNITURE_STYLE
                   : DEFAULT_FURNITURE_STYLE
           }
@@ -2404,10 +2403,8 @@ export function HouseRoom3D({
               return (
                 <DepartingCourier
                   key={`leaving-${delivery.id}`}
-                  startX={(inside ? width * COURIER_INSIDE_SHARE : doorX) + index * COURIER_SPACING}
-                  startZ={
-                    inside ? -depth / 2 + COURIER_INSIDE_DEPTH : -depth / 2 + COURIER_DOOR_INSET
-                  }
+                  startX={packagePoint(index, width, depth, houseTypeId, inside)[0]}
+                  startZ={packagePoint(index, width, depth, houseTypeId, inside)[2]}
                   exitX={doorX}
                   exitZ={-depth / 2 - COURIER_EXIT_DISTANCE}
                   onGone={() =>
