@@ -10,7 +10,8 @@
   max-width: min(420px, calc(100vw - 28px));
 }
 
-.house-room-views button {
+.house-room-views button,
+.house-room-views select {
   border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--card);
@@ -21,13 +22,21 @@
   cursor: pointer;
 }
 
+.house-room-views select {
+  max-width: min(240px, calc(100vw - 28px));
+  min-height: 44px;
+  min-width: 0;
+  flex: 1;
+}
+
 .house-room-views button.is-active {
   border-color: #1e40af;
   background: #1e40af;
   color: #ffffff;
 }
 
-.house-room-views button:focus-visible {
+.house-room-views button:focus-visible,
+.house-room-views select:focus-visible {
   outline: 2px solid #1e40af;
   outline-offset: 2px;
 }

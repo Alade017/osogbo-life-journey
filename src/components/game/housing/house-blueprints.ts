@@ -1,3 +1,6 @@
+import { bungalowBlueprint } from "./bungalow-blueprint";
+import { duplexBlueprint } from "./duplex-blueprint";
+
 /** Architectural boundaries in room metres. Rendering and movement consume these together. */
 export type FloorBounds = { minX: number; maxX: number; minZ: number; maxZ: number };
 export type BlueprintDoor = { id: string; axis: "x" | "z"; x: number; z: number; width: number };
@@ -9,6 +12,7 @@ export const STUDIO_FINISH = {
   tileAlternate: "#dfd0b8",
   grout: "#c3b39b",
   wetTile: "#a8ada3",
+  gymFloor: "#626e65",
   wood: "#a4784d",
   woodAlternate: "#b18658",
   sage: "#677357",
@@ -88,6 +92,8 @@ export const HOUSE_BLUEPRINTS = {
   "shared-room": sharedRoomBlueprint,
   "single-room": privateRoomBlueprint,
   "mini-flat": miniFlatBlueprint,
+  bungalow: bungalowBlueprint,
+  duplex: duplexBlueprint,
 } as const;
 export type BlueprintHomeType = keyof typeof HOUSE_BLUEPRINTS;
 

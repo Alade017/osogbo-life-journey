@@ -172,7 +172,10 @@ it("gives the female base a distinct silhouette while keeping wardrobe bone name
     let min = Infinity,
       max = -Infinity;
     for (let i = 0; i < positions.count; i++) {
-      if (Math.abs(positions.getY(i) - height) < 0.001) {
+      if (
+        Math.abs(positions.getY(i) - height) < 0.012 &&
+        (height > 0.6 || Math.abs(positions.getX(i)) < 0.16)
+      ) {
         min = Math.min(min, positions.getX(i));
         max = Math.max(max, positions.getX(i));
       }

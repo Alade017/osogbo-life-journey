@@ -5,6 +5,7 @@ import type { BlueprintHomeType } from "./house-blueprints";
 
 export function BlueprintInterior({
   houseTypeId,
+  activeFloor = 0,
   width,
   depth,
   editMode,
@@ -12,6 +13,7 @@ export function BlueprintInterior({
   roomView,
 }: {
   houseTypeId: BlueprintHomeType;
+  activeFloor?: 0 | 1;
   width: number;
   depth: number;
   editMode: boolean;
@@ -19,8 +21,14 @@ export function BlueprintInterior({
   roomView: HouseRoomView | null;
 }) {
   const scene = useMemo(
-    () => createBlueprintInterior(houseTypeId, width, depth, { editMode, wallsClosed, roomView }),
-    [houseTypeId, width, depth, editMode, wallsClosed, roomView],
+    () =>
+      createBlueprintInterior(houseTypeId, width, depth, {
+        editMode,
+        wallsClosed,
+        roomView,
+        activeFloor,
+      }),
+    [houseTypeId, width, depth, editMode, wallsClosed, roomView, activeFloor],
   );
   useEffect(() => () => disposeStudioInterior(scene), [scene]);
   return <primitive object={scene} />;

@@ -14,7 +14,7 @@ import {
   type BlueprintHomeType,
 } from "./house-blueprints";
 import {
-  housePartitionSegments,
+  housePartitionSegmentsForFloor,
   houseWallSegments,
   roomViewHidesSegment,
   HOUSE_WALL_THICKNESS,
@@ -34,15 +34,17 @@ export function createBlueprintInterior(
     editMode = false,
     wallsClosed = false,
     roomView = null,
+    activeFloor = 0,
   }: {
     editMode?: boolean;
     wallsClosed?: boolean;
     roomView?: HouseRoomView | null;
+    activeFloor?: 0 | 1;
   } = {},
 ) {
   const root = new Group();
   root.name = `${houseTypeId}-blueprint-interior`;
-  const plan = HOUSE_BLUEPRINTS[houseTypeId](width, depth);
+  const plan = HOUSE_BLUEPRINTS[houseTypeId](width, depth, activeFloor);
   const unit = new BoxGeometry(1, 1, 1);
   const materials = new Map<string, MeshStandardMaterial>();
   const material = (color: string) => {
@@ -60,7 +62,23 @@ export function createBlueprintInterior(
     parent.add(mesh);
     return mesh;
   };
-  const batch = (boxes: Box[], name: string) => {
+  const batch = (sourceBoxes: Box[], name: string) => {
+    const allBoxes =
+      "stairwell" in plan && activeFloor === 1
+        ? sourceBoxes.filter((box) => {
+            const well = plan.stairwell;
+            return (
+              box.position[0] + box.size[0] / 2 <= well.x0 ||
+              box.position[0] - box.size[0] / 2 >= well.x1 ||
+              box.position[2] + box.size[2] / 2 <= well.z0 ||
+              box.position[2] - box.size[2] / 2 >= well.z1
+            );
+          })
+        : sourceBoxes;
+    const boxes =
+      (houseTypeId === "bungalow" || houseTypeId === "duplex") && roomView
+        ? allBoxes.filter((box) => boundsContain(roomView, box.position[0], box.position[2], 0))
+        : allBoxes;
     for (const color of new Set(boxes.map((item) => item.color))) {
       const items = boxes.filter((item) => item.color === color);
       const mesh = new InstancedMesh(unit, material(color), items.length);
@@ -76,27 +94,75 @@ export function createBlueprintInterior(
       root.add(mesh);
     }
   };
-  box(root, [width + 0.2, 0.23, depth + 0.2], [0, -0.12, 0], finish.trim, "foundation");
-  box(root, [width, 0.025, depth], [0, 0.01, 0], finish.grout, "grout-bed");
+  const base =
+    (houseTypeId === "bungalow" || houseTypeId === "duplex") && roomView ? roomView : plan.whole;
+  const basePieces =
+    "stairwell" in plan && activeFloor === 1
+      ? [
+          {
+            minX: base.minX,
+            maxX: Math.min(base.maxX, plan.stairwell.x0),
+            minZ: base.minZ,
+            maxZ: base.maxZ,
+          },
+          {
+            minX: Math.max(base.minX, plan.stairwell.x1),
+            maxX: base.maxX,
+            minZ: base.minZ,
+            maxZ: base.maxZ,
+          },
+          {
+            minX: Math.max(base.minX, plan.stairwell.x0),
+            maxX: Math.min(base.maxX, plan.stairwell.x1),
+            minZ: base.minZ,
+            maxZ: Math.min(base.maxZ, plan.stairwell.z0),
+          },
+          {
+            minX: Math.max(base.minX, plan.stairwell.x0),
+            maxX: Math.min(base.maxX, plan.stairwell.x1),
+            minZ: Math.max(base.minZ, plan.stairwell.z1),
+            maxZ: base.maxZ,
+          },
+        ]
+      : [base];
+  for (const piece of basePieces)
+    if (piece.maxX > piece.minX && piece.maxZ > piece.minZ) {
+      const w = piece.maxX - piece.minX,
+        d = piece.maxZ - piece.minZ,
+        x = (piece.minX + piece.maxX) / 2,
+        z = (piece.minZ + piece.maxZ) / 2;
+      box(root, [w, 0.23, d], [x, -0.12, z], finish.trim, "foundation");
+      box(root, [w, 0.025, d], [x, 0.01, z], finish.grout, "grout-bed");
+    }
   const tiles: Box[] = [];
   const tile = 0.4;
+  const wetAreas = "wetAreas" in plan ? plan.wetAreas : plan.bathroom ? [plan.bathroom] : [];
   for (let row = 0, z = -depth / 2; z < depth / 2 - 0.001; z += tile, row++) {
     for (let col = 0, x = -width / 2; x < width / 2 - 0.001; x += tile, col++) {
       const w = Math.min(tile, width / 2 - x),
         d = Math.min(tile, depth / 2 - z);
-      const wet = plan.bathroom && boundsContain(plan.bathroom, x + w / 2, z + d / 2);
+      const wet = wetAreas.some((area) => boundsContain(area, x + w / 2, z + d / 2));
+      const gym =
+        "gymAreas" in plan &&
+        plan.gymAreas.some((area) => boundsContain(area, x + w / 2, z + d / 2));
       tiles.push({
         position: [x + w / 2, 0.026, z + d / 2],
         size: [w - 0.008, 0.025, d - 0.008],
-        color: wet ? finish.wetTile : (row + col) % 2 ? finish.tile : finish.tileAlternate,
+        color: wet
+          ? finish.wetTile
+          : gym
+            ? finish.gymFloor
+            : (row + col) % 2
+              ? finish.tile
+              : finish.tileAlternate,
       });
     }
   }
   batch(tiles, "porcelain-floor-tiles");
   // A flush timber inset defines the sleeping zone without any wall or raised trip edge.
   const planks: Box[] = [];
-  const sleep = plan.sleep;
-  if (sleep)
+  const sleepAreas = "sleepAreas" in plan ? plan.sleepAreas : plan.sleep ? [plan.sleep] : [];
+  for (const sleep of sleepAreas)
     for (let row = 0, z = sleep.minZ + 0.08; z < sleep.maxZ - 0.08; z += 0.18, row++) {
       const d = Math.min(0.174, sleep.maxZ - 0.08 - z);
       for (let col = 0, x = sleep.minX + 0.08; x < sleep.maxX - 0.08; x += 0.82, col++) {
@@ -115,7 +181,25 @@ export function createBlueprintInterior(
   root.add(walls);
   const height = 2.5;
   const show = (segment: HouseWallSegment) => !roomView || !roomViewHidesSegment(segment, roomView);
-  const wall = (segment: HouseWallSegment, color: string = finish.plaster) => {
+  const wall = (source: HouseWallSegment, color: string = finish.plaster) => {
+    let segment = source;
+    if ((houseTypeId === "bungalow" || houseTypeId === "duplex") && roomView) {
+      const [x, y, z] = source.position,
+        [w, h, d] = source.size;
+      if (w > d) {
+        if (z < roomView.minZ - 0.1 || z > roomView.maxZ + 0.1) return;
+        const left = Math.max(x - w / 2, roomView.minX),
+          right = Math.min(x + w / 2, roomView.maxX);
+        if (right - left < 0.01) return;
+        segment = { ...source, position: [(left + right) / 2, y, z], size: [right - left, h, d] };
+      } else {
+        if (x < roomView.minX - 0.1 || x > roomView.maxX + 0.1) return;
+        const back = Math.max(z - d / 2, roomView.minZ),
+          front = Math.min(z + d / 2, roomView.maxZ);
+        if (front - back < 0.01) return;
+        segment = { ...source, position: [x, y, (back + front) / 2], size: [w, h, front - back] };
+      }
+    }
     if (!show(segment)) return;
     box(
       walls,
@@ -146,7 +230,10 @@ export function createBlueprintInterior(
   houseWallSegments(width, depth, height, 1.12, plan.entranceX, wallsClosed)
     .filter(
       (segment) =>
-        !segment.id.startsWith("left-") && (wallsClosed || !segment.id.startsWith("front-")),
+        !segment.id.startsWith("left-") &&
+        (!("hasEntrance" in plan) || plan.hasEntrance || !segment.id.startsWith("rear-")) &&
+        (!("balcony" in plan) || !plan.balcony || !segment.id.startsWith("front-")) &&
+        (wallsClosed || !segment.id.startsWith("front-")),
     )
     .forEach((segment) => {
       if (!wallsClosed && segment.id.startsWith("right-")) {
@@ -157,7 +244,13 @@ export function createBlueprintInterior(
         });
       } else wall(segment);
     });
-  if (!wallsClosed)
+  if ("hasEntrance" in plan && !plan.hasEntrance)
+    wall({
+      id: "duplex-upper-rear-wall",
+      position: [0, height / 2, -depth / 2],
+      size: [width, height, HOUSE_WALL_THICKNESS],
+    });
+  if (!("balcony" in plan && plan.balcony) && !wallsClosed)
     wall({
       id: "studio-front-cutaway",
       position: [0, 0.14, depth / 2],
@@ -185,33 +278,39 @@ export function createBlueprintInterior(
       position: [-width / 2, (sill + windowHeight + height) / 2, center],
       size: [HOUSE_WALL_THICKNESS, height - sill - windowHeight, windowWidth],
     });
-    box(
-      walls,
-      [0.045, windowHeight, windowWidth],
-      [-width / 2 + 0.02, sill + windowHeight / 2, center],
-      finish.glass,
-      "window-glazing",
-    );
-    for (const y of [sill, sill + windowHeight / 2, sill + windowHeight])
-      box(walls, [0.09, 0.035, windowWidth + 0.08], [-width / 2 + 0.06, y, center], finish.trim);
-    for (const z of [start, center, end])
+    if (
+      (houseTypeId !== "bungalow" && houseTypeId !== "duplex") ||
+      !roomView ||
+      boundsContain(roomView, -width / 2, center, 0.1)
+    ) {
       box(
         walls,
-        [0.09, windowHeight, 0.035],
-        [-width / 2 + 0.06, sill + windowHeight / 2, z],
-        finish.trim,
+        [0.045, windowHeight, windowWidth],
+        [-width / 2 + 0.02, sill + windowHeight / 2, center],
+        finish.glass,
+        "window-glazing",
       );
-    box(walls, [0.14, 0.035, windowWidth + 0.3], [-width / 2 + 0.13, 2.23, center], finish.brass);
-    for (const side of [-1, 1]) {
-      for (let fold = 0; fold < 5; fold++) {
-        const z = center + side * (windowWidth / 2 - 0.07) + (fold - 2) * 0.045;
+      for (const y of [sill, sill + windowHeight / 2, sill + windowHeight])
+        box(walls, [0.09, 0.035, windowWidth + 0.08], [-width / 2 + 0.06, y, center], finish.trim);
+      for (const z of [start, center, end])
         box(
           walls,
-          [fold % 2 ? 0.07 : 0.11, 1.95, 0.045],
-          [-width / 2 + 0.16, 1.22, z],
-          fold % 2 ? finish.curtain : finish.woodAlternate,
-          "curtain-fold",
+          [0.09, windowHeight, 0.035],
+          [-width / 2 + 0.06, sill + windowHeight / 2, z],
+          finish.trim,
         );
+      box(walls, [0.14, 0.035, windowWidth + 0.3], [-width / 2 + 0.13, 2.23, center], finish.brass);
+      for (const side of [-1, 1]) {
+        for (let fold = 0; fold < 5; fold++) {
+          const z = center + side * (windowWidth / 2 - 0.07) + (fold - 2) * 0.045;
+          box(
+            walls,
+            [fold % 2 ? 0.07 : 0.11, 1.95, 0.045],
+            [-width / 2 + 0.16, 1.22, z],
+            fold % 2 ? finish.curtain : finish.woodAlternate,
+            "curtain-fold",
+          );
+        }
       }
     }
     cursor = end;
@@ -221,7 +320,7 @@ export function createBlueprintInterior(
     position: [-width / 2, height / 2, (cursor + depth / 2) / 2],
     size: [HOUSE_WALL_THICKNESS, height, depth / 2 - cursor],
   });
-  housePartitionSegments(houseTypeId, width, depth).forEach((segment) =>
+  housePartitionSegmentsForFloor(houseTypeId, width, depth, activeFloor).forEach((segment) =>
     wall(segment, segment.id.includes("bath") ? finish.wetTile : finish.plaster),
   );
   // The bathroom door folds back against its wall, keeping the navigation opening clear.
@@ -234,7 +333,8 @@ export function createBlueprintInterior(
           ? [HOUSE_WALL_THICKNESS, 1.9, door.width]
           : [door.width, 1.9, HOUSE_WALL_THICKNESS],
     };
-    if (!show(doorwaySegment)) continue;
+    if (!show(doorwaySegment) || (roomView && !boundsContain(roomView, door.x, door.z, 0.1)))
+      continue;
     const frame = new Group();
     frame.name = `${door.id}-frame`;
     frame.position.set(door.x, 0, door.z);
@@ -273,6 +373,62 @@ export function createBlueprintInterior(
         finish.brass,
         "bathroom-door-handle",
       );
+    }
+  }
+  if ("veranda" in plan && plan.veranda && !roomView) {
+    const porch = plan.veranda;
+    box(
+      root,
+      [porch.width, 0.16, porch.depth],
+      [porch.x, -0.05, porch.z],
+      finish.wood,
+      "bungalow-veranda",
+    );
+    for (const side of [-1, 1]) {
+      const x = porch.x + side * (porch.width / 2 - 0.06);
+      box(root, [0.09, 0.7, porch.depth], [x, 0.35, porch.z], finish.trim, "veranda-side-rail");
+    }
+    box(
+      root,
+      [1.4, 0.12, 0.35],
+      [porch.x, -0.15, porch.z - porch.depth / 2 - 0.15],
+      finish.trim,
+      "veranda-step",
+    );
+  }
+  if ("balcony" in plan && plan.balcony) {
+    const deck = plan.balcony,
+      railing = new Group();
+    railing.name = "duplex-balcony-railing";
+    root.add(railing);
+    const h = wallsClosed ? height : 0.28;
+    for (const [left, right] of [
+      [-width / 2, deck.minX],
+      [deck.maxX, width / 2],
+    ])
+      wall({
+        id: `duplex-front-${left}`,
+        position: [(left! + right!) / 2, h / 2, depth / 2],
+        size: [right! - left!, h, HOUSE_WALL_THICKNESS],
+      });
+    if (
+      !roomView ||
+      boundsContain(roomView, (deck.minX + deck.maxX) / 2, (deck.minZ + deck.maxZ) / 2)
+    ) {
+      box(
+        railing,
+        [deck.maxX - deck.minX, 0.055, 0.075],
+        [(deck.minX + deck.maxX) / 2, 0.95, deck.maxZ],
+        finish.trim,
+      );
+      const count = Math.ceil((deck.maxX - deck.minX) / 0.35);
+      for (let i = 0; i <= count; i++)
+        box(
+          railing,
+          [0.035, 0.9, 0.035],
+          [deck.minX + ((deck.maxX - deck.minX) * i) / count, 0.45, deck.maxZ],
+          finish.trim,
+        );
     }
   }
   return root;

@@ -84,3 +84,16 @@ it("allows bounded vertical house swipes without going below the floor or overhe
     Number(state.orbitOptions["minPolarAngle"]),
   );
 });
+
+it("provides a 180 degree swipe arc for the house without changing other scenes", () => {
+  const view = render(
+    <WorldCamera width={12} depth={10} stage horizontalOrbit orbitArc={Math.PI} />,
+  );
+  expect(
+    Number(state.orbitOptions["maxAzimuthAngle"]) - Number(state.orbitOptions["minAzimuthAngle"]),
+  ).toBeCloseTo(Math.PI);
+  view.rerender(<WorldCamera width={12} depth={10} stage horizontalOrbit />);
+  expect(
+    Number(state.orbitOptions["maxAzimuthAngle"]) - Number(state.orbitOptions["minAzimuthAngle"]),
+  ).toBeCloseTo((2 * Math.PI) / 3);
+});
