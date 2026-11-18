@@ -1,5 +1,4 @@
 import type { Needs } from "@/lib/life-simulation";
-import type { ZoneNpcSpec } from "@/game/neighborhood-interactions";
 
 export interface NeighborhoodInteractionState {
   hoveredZoneId: string | null;
@@ -39,7 +38,7 @@ export const closeZoneInteraction = () => ({
   type: "neighborhood/closeInteraction" as const,
 });
 
-export const recordNpcChatAction = (payload: { npc: ZoneNpcSpec; tip: string }) => ({
+export const recordNpcChatAction = (payload: { tip: string }) => ({
   type: "neighborhood/recordNpcChat" as const,
   payload,
 });
