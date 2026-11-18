@@ -11,13 +11,9 @@ import {
   isServerBackedBankTransfer,
 } from "@/game/neighborhood-interactions";
 import {
-  applyZoneOutcomeAction,
-  closeZoneInteraction,
   initialNeighborhoodState,
   neighborhoodReducer,
-  openZoneInteraction,
   recordNpcChatAction,
-  setPendingZoneId,
 } from "@/store/neighborhoodSlice";
 
 const origin = { x: 7, y: 6 };
@@ -88,5 +84,5 @@ describe("Olaiya neighborhood full zone interactivity & state slice", () => {
     state = neighborhoodReducer(state, recordNpcChatAction({ npc, tip: npc.tips[0]! }));
     expect(state.lastNpcTip).toBe(npc.tips[0]);
     expect(state.needOffsets.social ?? 0).toBe(0);
-  });;
+  });
 });
