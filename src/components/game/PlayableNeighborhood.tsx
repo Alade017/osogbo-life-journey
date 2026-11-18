@@ -64,14 +64,11 @@ import {
   nearestInteractableZone,
   nearestZoneNpc,
   type InteractableZoneSpec,
-  type ZoneActionOutcome,
   type ZoneNpcSpec,
 } from "@/game/neighborhood-interactions";
 import {
-  applyZoneOutcomeAction,
   closeZoneInteraction,
   effectiveNeedsFromCharacter,
-  equipLocalAccessoryAction,
   loadPersistedNeighborhoodState,
   neighborhoodReducer,
   openZoneInteraction,
@@ -79,8 +76,6 @@ import {
   recordNpcChatAction,
   setHoveredZoneId,
   setPendingZoneId,
-  syncNpcChatToQueryCache,
-  syncZoneOutcomeToQueryCache,
 } from "@/store/neighborhoodSlice";
 import { isPlayableDistrict, playableDistrictForLocation } from "@/game/playable-district";
 import type { NeighborhoodPlayerView, NeighborhoodSceneHandle } from "@/game/neighborhood-types";
@@ -1090,32 +1085,9 @@ export function PlayableNeighborhood() {
     }
   }, [nearbyZoneMatch, nearbyZoneNpcMatch, zoneState.pendingZoneId]);
 
-  const handlePerformZoneAction = useCallback(
-    (zoneSpec: InteractableZoneSpec, outcome: ZoneActionOutcome) => {
-      dispatchZone(applyZoneOutcomeAction({ zoneTitle: zoneSpec.title, outcome }));
-      syncZoneOutcomeToQueryCache(queryClient, zoneSpec.title, outcome);
-      toast.success(outcome.toastMessage);
-    },
-    [queryClient],
-  );
-
-  const handleNpcTipSelect = useCallback(
-    (npc: ZoneNpcSpec, tipIndex: number) => {
-      const tip = npc.tips[tipIndex % npc.tips.length] ?? npc.greeting;
-      dispatchZone(recordNpcChatAction({ npc, tip, socialBoost: 10 }));
-      syncNpcChatToQueryCache(queryClient, 10);
-      toast.success(
-        `${npc.name.split("·")[0]?.trim() ?? npc.name} shared a local tip (+10 Social)`,
-      );
-    },
-    [queryClient],
-  );
-
-  const handleToggleAccessory = useCallback((slug: string | null) => {
-    dispatchZone(equipLocalAccessoryAction({ slug }));
-    toast.success(
-      slug ? "Equipped Craft Leather Backpack on your character!" : "Accessory unequipped.",
-    );
+  const handleNpcTipSelect = useCallback((npc: ZoneNpcSpec, tipIndex: number) => {
+    const tip = npc.tips[tipIndex % npc.tips.length] ?? npc.greeting;
+    dispatchZone(recordNpcChatAction({ npc, tip }));
   }, []);
 
   const effectiveNeeds = useMemo(
@@ -1675,14 +1647,10 @@ export function PlayableNeighborhood() {
                     pocketBalance={pocketBalance}
                     bankBalance={bankBalance}
                     needs={effectiveNeeds}
-                    localInventory={zoneState.localInventory}
-                    equippedAccessorySlug={zoneState.equippedAccessorySlug}
                     currentLocationId={currentLocation?.id}
                     currentLocationSlug={currentLocation?.slug}
                     npcTip={zoneState.lastNpcTip}
-                    onPerformZoneAction={handlePerformZoneAction}
                     onNpcTipSelect={handleNpcTipSelect}
-                    onToggleAccessory={handleToggleAccessory}
                   />
                   <Dialog
                     open={compoundOpen}
