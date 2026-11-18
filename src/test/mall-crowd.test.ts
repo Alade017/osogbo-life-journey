@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  isPaying,
   MALL_CROWD_TARGET,
   advanceCrowd,
   buildShopperRoute,
   createShopper,
 } from "@/game/mall-crowd";
+import { stepWalker } from "@/game/mall-movement";
 import { canWalkInMall } from "@/game/osun-mall-layout";
 
 describe("mall shopper routes", () => {
@@ -49,5 +51,22 @@ describe("mall crowd", () => {
       state = advanceCrowd(state.shoppers, 0.5, state.nextSeed);
       expect(state.shoppers.length).toBeGreaterThanOrEqual(MALL_CROWD_TARGET);
     }
+  });
+});
+
+describe("mall payment", () => {
+  it("is paying only during the pause at the till", () => {
+    const shopper = createShopper(3);
+    expect(shopper).not.toBeNull();
+    let walker = shopper!.walker;
+    let sawPaying = false;
+    let sawBrowsing = false;
+    for (let step = 0; step < 4000 && !walker.done; step += 1) {
+      walker = stepWalker(walker, 0.05);
+      if (isPaying(walker)) sawPaying = true;
+      if (walker.dwellLeft > 0 && !isPaying(walker)) sawBrowsing = true;
+    }
+    expect(sawPaying).toBe(true);
+    expect(sawBrowsing).toBe(true);
   });
 });

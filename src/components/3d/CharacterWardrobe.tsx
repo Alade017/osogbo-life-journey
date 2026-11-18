@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { Fragment, useEffect, useMemo } from "react";
 import { createPortal } from "@react-three/fiber";
 import { Bone, LatheGeometry, Object3D, Quaternion, Vector2, Vector3 } from "three";
 import type { Appearance } from "@/game/avatar-appearance";
@@ -217,32 +217,38 @@ export function CharacterWardrobe({
       {anchors.pelvis
         ? createPortal(<WaistGarment color={bottom} trim={trim} hip={fit.hip} />, anchors.pelvis)
         : null}
-      {anchors.arms.map((segment) =>
-        createPortal(
-          <SegmentGarment
-            key={segment.bone.uuid}
-            segment={segment}
-            color={top}
-            trim={trim}
-            radiusFactor={0.39 * build.limb}
-            patterned={patterned}
-          />,
-          segment.bone,
-        ),
-      )}
-      {anchors.legs.map((segment) =>
-        createPortal(
-          <SegmentGarment
-            key={segment.bone.uuid}
-            segment={segment}
-            color={bottom}
-            trim={trim}
-            radiusFactor={0.3 * build.limb * (shape.leg * shape.thigh + shape.bust * 0.12)}
-          />,
-          segment.bone,
-        ),
-      )}
-      {anchors.feet.map((bone) => createPortal(<ShoeGarment color={shoes} />, bone))}
+      {anchors.arms.map((segment, index) => (
+        <Fragment key={`arm-${index}`}>
+          {createPortal(
+            <SegmentGarment
+              segment={segment}
+              color={top}
+              trim={trim}
+              radiusFactor={0.39 * build.limb}
+              patterned={patterned}
+            />,
+            segment.bone,
+          )}
+        </Fragment>
+      ))}
+      {anchors.legs.map((segment, index) => (
+        <Fragment key={`leg-${index}`}>
+          {createPortal(
+            <SegmentGarment
+              segment={segment}
+              color={bottom}
+              trim={trim}
+              radiusFactor={0.3 * build.limb * (shape.leg * shape.thigh + shape.bust * 0.12)}
+            />,
+            segment.bone,
+          )}
+        </Fragment>
+      ))}
+      {anchors.feet.map((bone, index) => (
+        <Fragment key={`foot-${index}`}>
+          {createPortal(<ShoeGarment color={shoes} />, bone)}
+        </Fragment>
+      ))}
     </>
   );
 }

@@ -3,7 +3,7 @@ import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { Vector3, type Group } from "three";
 import type { Appearance } from "@/game/avatar-appearance";
 import type { WalkPoint } from "@/game/grid-walk-path";
-import { advanceCrowd, MALL_CROWD_TARGET, type MallShopper } from "@/game/mall-crowd";
+import { advanceCrowd, isPaying, MALL_CROWD_TARGET, type MallShopper } from "@/game/mall-crowd";
 import { createWalker, stepWalker, type MallWalker } from "@/game/mall-movement";
 import {
   MALL_BOUNDS,
@@ -173,7 +173,21 @@ function MallInterior({
 }
 
 /** Fixed staff. Tills stand at the counter; the rest stand and face their way. */
-function MallStaffLayer({ onInteract }: { onInteract: (target: MallTarget) => void }) {
+function MallStaffLayer({
+  sim,
+  onInteract,
+}: {
+  sim: { current: MallSim };
+  onInteract: (target: MallTarget) => void;
+}) {
+  // Cashiers reach forward to take money whenever a shopper is paying at a till.
+  const [paying, setPaying] = useState(false);
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setPaying(sim.current.shoppers.some((shopper) => isPaying(shopper.walker)));
+    }, SNAPSHOT_INTERVAL_MS);
+    return () => window.clearInterval(timer);
+  }, [sim]);
   return (
     <group>
       {MALL_STAFF.map((member, index) => {
@@ -193,7 +207,7 @@ function MallStaffLayer({ onInteract }: { onInteract: (target: MallTarget) => vo
               appearance={look.appearance}
               name={member.id}
               facing={member.facing}
-              animation={member.role === "till" ? "work" : "idle"}
+              animation={member.role === "till" ? (paying ? "interact" : "work") : "idle"}
               position={[0, 0, 0]}
             />
           </group>
@@ -207,6 +221,8 @@ function MallStaffLayer({ onInteract }: { onInteract: (target: MallTarget) => vo
 function ShopperFigure({
   id,
   moving,
+  paying,
+  lookAt,
   gender,
   appearance,
   sim,
@@ -214,6 +230,9 @@ function ShopperFigure({
 }: {
   id: string;
   moving: boolean;
+  paying: boolean;
+  /** Local point to turn toward, relative to this shopper; null when facing ahead. */
+  lookAt: readonly [number, number, number] | null;
   gender: MallGender;
   appearance: Appearance;
   sim: { current: MallSim };
@@ -241,11 +260,47 @@ function ShopperFigure({
         appearance={appearance}
         name={id}
         facing="south"
-        animation={moving ? "walk" : "idle"}
+        animation={paying ? "interact" : moving ? "walk" : "idle"}
+        lookAt={lookAt}
+        held={paying ? <PaymentNote /> : null}
         position={[0, 0, 0]}
       />
     </group>
   );
+}
+
+/** The card or note a shopper hands over at the till. */
+function PaymentNote() {
+  return (
+    <mesh position={[0, 0.02, 0.08]}>
+      <boxGeometry args={[0.16, 0.02, 0.1]} />
+      <meshStandardMaterial color="#f5f0e1" roughness={0.5} />
+    </mesh>
+  );
+}
+
+/** Where a shopper turns to look: a paying shopper faces the nearest cashier, and anyone close to the player faces them. */
+function lookTargetFor(
+  shopper: MallShopper,
+  player: WalkPoint,
+): readonly [number, number, number] | null {
+  const [sx, sz] = shopper.walker.pos;
+  if (isPaying(shopper.walker)) {
+    let nearest: WalkPoint | null = null;
+    let best = Infinity;
+    for (const member of MALL_STAFF) {
+      if (member.role !== "till") continue;
+      const d = Math.hypot(member.position[0] - sx, member.position[1] - sz);
+      if (d < best) {
+        best = d;
+        nearest = member.position;
+      }
+    }
+    if (nearest) return [nearest[0] - sx, 0, nearest[1] - sz];
+  }
+  const toPlayer = Math.hypot(player[0] - sx, player[1] - sz);
+  if (toPlayer < 6) return [player[0] - sx, 0, player[1] - sz];
+  return null;
 }
 
 /** Items the player has placed, drawn as simple coloured blocks on the floor. */
@@ -273,7 +328,14 @@ function CrowdLayer({
   onInteract: (target: MallTarget) => void;
 }) {
   const [snapshot, setSnapshot] = useState<
-    Array<{ id: string; moving: boolean; gender: MallGender; appearance: Appearance }>
+    Array<{
+      id: string;
+      moving: boolean;
+      paying: boolean;
+      lookAt: readonly [number, number, number] | null;
+      gender: MallGender;
+      appearance: Appearance;
+    }>
   >([]);
   useFrame((_, delta) => {
     const state = sim.current;
@@ -288,10 +350,13 @@ function CrowdLayer({
   });
   useEffect(() => {
     const timer = window.setInterval(() => {
+      const player = sim.current.player.pos;
       setSnapshot(
         sim.current.shoppers.map((shopper) => ({
           id: shopper.id,
           moving: shopper.walker.moving,
+          paying: isPaying(shopper.walker),
+          lookAt: lookTargetFor(shopper, player),
           gender: shopper.gender,
           appearance: shopper.appearance,
         })),
@@ -306,6 +371,8 @@ function CrowdLayer({
           key={shopper.id}
           id={shopper.id}
           moving={shopper.moving}
+          paying={shopper.paying}
+          lookAt={shopper.lookAt}
           gender={shopper.gender}
           appearance={shopper.appearance}
           sim={sim}
@@ -338,7 +405,12 @@ function PlayerFigure({
       player.pos = next.pos;
       player.moving = next.moving;
       player.walker = next.done ? null : next;
-      if (next.done) player.moving = false;
+      if (next.done) {
+        player.moving = false;
+        // Always report where the walk ended, so other players and the server agree.
+        player.lastSent = performance.now();
+        onMove(player.pos);
+      }
     }
     const now = performance.now();
     if (player.moving && now - player.lastSent >= SEND_INTERVAL_MS) {
@@ -438,7 +510,7 @@ export function OsunMall3D({
       <FollowCamera sim={sim} />
       <WorldLighting size={16} />
       <MallInterior onWalk={onWalk} onInteract={onInteract} accent={accent} />
-      <MallStaffLayer onInteract={onInteract} />
+      <MallStaffLayer sim={sim} onInteract={onInteract} />
       <PlacedPropsLayer placed={placed} />
       <CrowdLayer sim={sim} onInteract={onInteract} />
       {people.map((person) => (

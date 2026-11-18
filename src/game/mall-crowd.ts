@@ -89,3 +89,8 @@ export function advanceCrowd(
 function mod(value: number, divisor: number) {
   return ((value % divisor) + divisor) % divisor;
 }
+
+/** True while a shopper is standing at a till paying, so the cashier and the shopper can react. */
+export function isPaying(walker: MallWalker): boolean {
+  return walker.dwellLeft > 0 && walker.dwellAt.get(walker.next - 1) === MALL_PAY_SECONDS;
+}

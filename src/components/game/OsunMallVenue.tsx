@@ -59,12 +59,16 @@ export function OsunMallVenue({
             setPeople(data.people.filter((person) => person.sessionId !== room.sessionId));
           },
         );
-        room.onMessage("rejected", (data: { position: WalkPoint }) => {
+        room.onMessage("rejected", (data: { position: WalkPoint; reason: "blocked" | "speed" }) => {
           // The server has a different position: move the player back to it and drop the walk.
           sim.current.player.pos = data.position;
           sim.current.player.walker = null;
           sim.current.player.moving = false;
-          setMessage("That route is not open to you.");
+          setMessage(
+            data.reason === "speed"
+              ? "You moved too fast. Try the walk again."
+              : "That route is not open to you.",
+          );
         });
         setStatus("ready");
       })
