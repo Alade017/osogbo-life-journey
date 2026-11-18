@@ -85,9 +85,7 @@ function GameLayout() {
       window.clearTimeout(timeout);
       timeout = window.setTimeout(() => setHudIdle(true), 4000);
     };
-    const wakeOnPointerMove = (event: PointerEvent) => {
-      if (event.pointerType === "mouse") wakeHud();
-    };
+    const wakeOnPointerMove = () => wakeHud();
     window.addEventListener("pointerdown", wakeHud, { passive: true });
     window.addEventListener("pointermove", wakeOnPointerMove, { passive: true });
     window.addEventListener("keydown", wakeHud);
