@@ -45,7 +45,7 @@ import {
 import { fetchHouseLight, setHouseLight } from "@/lib/house-light";
 import { fetchHouseWalls, setHouseWalls } from "@/lib/house-walls";
 import {
-  FOUR_ROOM_HOME_TYPES,
+  houseWallsDefaultClosed,
   houseRoomViews,
   roomViewContains,
   WHOLE_HOME_LABEL,
@@ -1591,25 +1591,23 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           <button
             type="button"
             className="house-icon-button house-walls-switch"
-            aria-pressed={wallsSetting ?? FOUR_ROOM_HOME_TYPES.includes(house.house_type_id)}
+            aria-pressed={wallsSetting ?? houseWallsDefaultClosed(house.house_type_id)}
             aria-label={
-              (wallsSetting ?? FOUR_ROOM_HOME_TYPES.includes(house.house_type_id))
+              (wallsSetting ?? houseWallsDefaultClosed(house.house_type_id))
                 ? "Open the walls"
                 : "Close the walls"
             }
             title={
-              (wallsSetting ?? FOUR_ROOM_HOME_TYPES.includes(house.house_type_id))
+              (wallsSetting ?? houseWallsDefaultClosed(house.house_type_id))
                 ? "Walls closed"
                 : "Walls open"
             }
             disabled={isOffline || !character?.id || wallsMutation.isPending}
             onClick={() =>
-              wallsMutation.mutate(
-                !(wallsSetting ?? FOUR_ROOM_HOME_TYPES.includes(house.house_type_id)),
-              )
+              wallsMutation.mutate(!(wallsSetting ?? houseWallsDefaultClosed(house.house_type_id)))
             }
           >
-            {(wallsSetting ?? FOUR_ROOM_HOME_TYPES.includes(house.house_type_id)) ? (
+            {(wallsSetting ?? houseWallsDefaultClosed(house.house_type_id)) ? (
               <DoorClosed size={20} aria-hidden="true" />
             ) : (
               <DoorOpen size={20} aria-hidden="true" />
