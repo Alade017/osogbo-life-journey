@@ -605,6 +605,16 @@ export function PlayableNeighborhood() {
     hasVenueInterior,
     homeTypeId,
   ]);
+  useEffect(() => {
+    if (!pendingTargetId || interactionTargets.some((target) => target.id === pendingTargetId)) {
+      return;
+    }
+    setPendingTargetId(null);
+    autoWalkRouteRef.current = null;
+    groundTargetRef.current = null;
+    setGroundTarget(null);
+  }, [interactionTargets, pendingTargetId]);
+
   const playerScenePoint = useMemo(() => {
     if (!player || !district) return null;
     return toScene({ x: player.x, y: player.y }, district.origin);
