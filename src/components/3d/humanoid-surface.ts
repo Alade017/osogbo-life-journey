@@ -1,3 +1,4 @@
+import { HUMANOID_LATERAL_SCALE } from "./humanoid-proportions";
 import { BufferGeometry, Float32BufferAttribute, Uint16BufferAttribute, Vector3 } from "three";
 import { BONE, type BoneName } from "./humanoid-pose";
 import { sculptHumanoid } from "./humanoid-sculpt";
@@ -18,8 +19,8 @@ export function createAnatomicalSurface(
 ) {
   const field = sculptHumanoid(female, build, armSpan, legSpan);
   const step = 0.034,
-    min: Point = [-0.36, -0.014, -0.16],
-    size = [23, 32, 13];
+    min: Point = [-0.408, -0.014, -0.17],
+    size = [25, 32, 11];
   const nx = size[0]!,
     ny = size[1]!,
     nz = size[2]!,
@@ -148,6 +149,7 @@ export function createAnatomicalSurface(
   geometry.setAttribute("skinIndex", new Uint16BufferAttribute(boneIndices, 4));
   geometry.setAttribute("skinWeight", new Float32BufferAttribute(weights, 4));
   geometry.setIndex(indices);
+  geometry.scale(HUMANOID_LATERAL_SCALE, 1, 1);
   geometry.computeVertexNormals();
   const flat = geometry.toNonIndexed();
   geometry.dispose();

@@ -80,14 +80,14 @@ export function createFittedClothing(
       const arm = armWeight > 0.25;
       let shirt = clip(
         tri,
-        (v) => v.p[1]! - (arm ? (cut === "long-sleeve" ? 0.482 : 0.657) : 0.555),
+        (v) => v.p[1]! - (arm ? (cut === "long-sleeve" ? 0.482 : 0.657) : 0.515),
       );
-      shirt = clip(shirt, (v) => 0.794 + 0.16 * Math.abs(v.p[0]!) - v.p[1]!);
+      shirt = clip(shirt, (v) => 0.814 + 0.08 * Math.abs(v.p[0]!) - v.p[1]!);
       add(shirt, 0);
       if (!arm) {
         add(
           clip(
-            clip(tri, (v) => 0.555 - v.p[1]!),
+            clip(tri, (v) => 0.515 - v.p[1]!),
             (v) => v.p[1]! - 0.067,
           ),
           1,
@@ -182,9 +182,9 @@ export function createVisibleSkin(body: SkinnedMesh, cut: TopCut = "tee") {
         const y = p.getY(v),
           x = p.getX(v);
         return (
-          (!arm && y <= 0.555) ||
-          (y >= (arm ? (cut === "long-sleeve" ? 0.482 : 0.657) : 0.555) &&
-            y <= 0.794 + 0.16 * Math.abs(x))
+          (!arm && y <= 0.515) ||
+          (y >= (arm ? (cut === "long-sleeve" ? 0.482 : 0.657) : 0.515) &&
+            y <= 0.814 + 0.08 * Math.abs(x))
         );
       });
       if (!covered) indices.push(i, i + 1, i + 2);

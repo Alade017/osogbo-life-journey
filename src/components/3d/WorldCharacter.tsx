@@ -58,7 +58,6 @@ export function WorldCharacter({
   const outfit = resolveWornOutfit(safe, gender, equipment);
   if (outfit.hasWearables) safe.clothed = true;
   const h = WORLD_SCALE.character * ([0.92, 1, 1.06][safe.stature] ?? 1);
-  const build = [0.9, 1, 1.07, 1.14][safe.build] ?? 1;
   const variant = body ?? bodyVariantFor(gender);
   const bodyRef = useRef<Group>(null);
   const { invalidate } = useThree();
@@ -187,7 +186,6 @@ export function WorldCharacter({
               : [0, 0, 0]
         }
         rotation={[animation === "sleep" ? -Math.PI / 2 : 0, 0, 0]}
-        scale={[build, 1, 1]}
       >
         <group ref={bodyRef}>
           <CharacterBody

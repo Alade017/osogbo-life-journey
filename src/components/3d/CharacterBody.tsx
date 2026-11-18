@@ -163,10 +163,12 @@ export function CharacterBody({
       <CharacterWardrobe body={rig.meshes[0]!} appearance={safe} outfit={outfit} />
       {head && safe.headwear > 0
         ? createPortal(
-            <ProceduralHeadwear
-              style={safe.headwear as 1 | 2 | 3}
-              color={HAIR_COLORS[safe.hairColor] ?? HAIR_COLORS[0]!}
-            />,
+            <group scale={[0.7, 1, 0.82]}>
+              <ProceduralHeadwear
+                style={safe.headwear as 1 | 2 | 3}
+                color={HAIR_COLORS[safe.hairColor] ?? HAIR_COLORS[0]!}
+              />
+            </group>,
             head,
           )
         : null}

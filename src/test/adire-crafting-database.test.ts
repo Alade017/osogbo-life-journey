@@ -67,6 +67,10 @@ beforeAll(async () => {
       ].includes(e.tag),
   ))
     await db.exec(readFileSync(`drizzle/migrations/${tag}.sql`, "utf8").replace(/^\uFEFF/, ""));
+  // Keep shop checks deterministic; production uses shared real Lagos time, not character.game_time_hour.
+  await db.exec(
+    `create or replace function public.world_clock() returns jsonb language sql stable as $$ select '{"hour":10,"minute":0,"day":1,"weekday":0}'::jsonb $$`,
+  );
   for (const user of [uid, other]) {
     await db.query("insert into auth.users(id) values($1)", [user]);
     await db.query("insert into profiles(id,display_name) values($1,'Crafter')", [user]);
