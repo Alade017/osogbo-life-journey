@@ -1,25 +1,29 @@
 import { Room, type AuthContext, type Client } from "colyseus";
 import type { WalkPoint } from "../src/game/grid-walk-path.ts";
-import { isPossibleMallMove } from "../src/game/mall-movement.ts";
+import { MALL_MOVE_BURST, checkMallMove } from "../src/game/mall-movement.ts";
 import { MALL_ENTRANCE } from "../src/game/osun-mall-layout.ts";
 
 // One room for the Osun Mall. The room relays presence and positions only. Money, stats and
 // progress are changed by database RPCs; this room never writes to them. Every move is checked
-// against the mall layout and walking speed, so the client cannot walk through shelves or into
-// the staff and control rooms.
+// against the mall layout (the whole route, not just its end) and against walking speed, and a
+// player whose saved character leaves the mall is removed from the room.
 
 type MallMember = {
   characterId: string;
   name: string;
   gender: string;
   appearance: unknown;
+  accessToken: string;
   position: WalkPoint;
+  /** Distance this player may still cover, refilled over time up to the burst limit. */
+  allowance: number;
   lastMoveAt: number;
 };
 
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const NAME_MAX = 24;
 const PRESENCE_INTERVAL_MS = 250;
+const MEMBERSHIP_CHECK_MS = 20_000;
 export const MALL_MAX_PLAYERS = 40;
 
 function supabaseSettings() {
@@ -91,7 +95,9 @@ async function readMallMember(accessToken: string, locationId: string): Promise<
     name: String(character.name ?? "Guest").slice(0, NAME_MAX),
     gender: String(character.gender ?? "nonbinary"),
     appearance: character.appearance,
+    accessToken,
     position: [MALL_ENTRANCE[0], MALL_ENTRANCE[1]],
+    allowance: MALL_MOVE_BURST,
     lastMoveAt: Date.now(),
   };
 }
@@ -111,11 +117,13 @@ export class MallRoom extends Room {
   override maxClients = MALL_MAX_PLAYERS;
   override maxMessagesPerSecond = 12;
   private readonly members = new Map<string, MallMember>();
+  private locationId = "";
   private dirty = false;
 
   override onCreate(options: { locationId?: unknown }) {
     if (typeof options.locationId !== "string" || !UUID_PATTERN.test(options.locationId))
       throw new Error("A valid mall is required.");
+    this.locationId = options.locationId;
     this.setMetadata({ locationId: options.locationId });
     this.onMessage("move", (client, payload: unknown) => this.moveMember(client, payload));
     this.setSimulationInterval(() => {
@@ -123,6 +131,7 @@ export class MallRoom extends Room {
       this.dirty = false;
       this.broadcastPresence();
     }, PRESENCE_INTERVAL_MS);
+    this.clock.setInterval(() => void this.recheckMembers(), MEMBERSHIP_CHECK_MS);
   }
 
   override async onAuth(
@@ -159,17 +168,34 @@ export class MallRoom extends Room {
     const member = this.members.get(client.sessionId);
     if (!member || typeof payload !== "object" || payload === null) return;
     const target = (payload as Record<string, unknown>)["to"];
-    const now = Date.now();
     if (!isPoint(target)) return;
+    const now = Date.now();
     const elapsed = (now - member.lastMoveAt) / 1000;
-    if (!isPossibleMallMove(member.position, target, elapsed)) {
-      // Tell only this player where the server has them, so the client snaps back.
-      client.send("rejected", { position: member.position });
+    member.lastMoveAt = now;
+    const result = checkMallMove(member.allowance, member.position, target, elapsed);
+    if (!result.ok) {
+      // Tell only this player where the server has them and why the move was refused.
+      client.send("rejected", { position: member.position, reason: result.reason });
       return;
     }
+    member.allowance = result.allowance;
     member.position = [target[0], target[1]];
-    member.lastMoveAt = now;
     this.dirty = true;
+  }
+
+  /** Removes anyone whose saved character has left the mall or whose session is no longer valid. */
+  private async recheckMembers() {
+    const entries = [...this.members.entries()];
+    const results = await Promise.allSettled(
+      entries.map(([, member]) => readMallMember(member.accessToken, this.locationId)),
+    );
+    results.forEach((result, index) => {
+      if (result.status === "rejected") {
+        const [sessionId] = entries[index] ?? [];
+        const client = sessionId ? this.clients.getById(sessionId) : undefined;
+        client?.leave(4_003, "You left the mall.");
+      }
+    });
   }
 
   private broadcastPresence() {

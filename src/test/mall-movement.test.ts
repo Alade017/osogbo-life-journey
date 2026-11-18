@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  MALL_MOVE_BURST,
   MALL_WALK_SPEED,
+  checkMallMove,
   createWalker,
-  isPossibleMallMove,
+  isSegmentWalkable,
   stepWalker,
 } from "@/game/mall-movement";
 import {
@@ -40,7 +42,7 @@ describe("mall walkers", () => {
       ],
       { dwellAt: new Map([[0, 2]]) },
     );
-    walker = stepWalker(walker, 1); // reaches the first point
+    walker = stepWalker(walker, 1);
     expect(walker.moving).toBe(false);
     expect(walker.dwellLeft).toBe(2);
     walker = stepWalker(walker, 1);
@@ -55,19 +57,46 @@ describe("mall walkers", () => {
   });
 });
 
-describe("mall move validation", () => {
-  it("accepts a short walk to a walkable point", () => {
-    expect(isPossibleMallMove(MALL_ENTRANCE, [0, 5.5], 1)).toBe(true);
+describe("mall move checks", () => {
+  it("accepts a short walk along open floor", () => {
+    const result = checkMallMove(MALL_MOVE_BURST, MALL_ENTRANCE, [0, 5.5], 0.2);
+    expect(result.ok).toBe(true);
   });
 
-  it("rejects a move into a restricted room, however short", () => {
-    expect(isPossibleMallMove([6.5, -4], [7, -5.5], 10)).toBe(false);
+  it("refuses a move into a restricted room, however short", () => {
+    expect(checkMallMove(MALL_MOVE_BURST, [6.5, -4], [7, -5.5], 10)).toEqual({
+      ok: false,
+      reason: "blocked",
+    });
   });
 
-  it("rejects a jump farther than walking speed allows in the time since the last update", () => {
-    expect(isPossibleMallMove([-6, 2], [6, 2], 0.5)).toBe(false);
-    expect(canWalkInMall([6, 2])).toBe(true);
-    expect(isPossibleMallMove([-6, 2], [6, 2], 10)).toBe(true);
+  it("refuses a route that crosses shelves even when both ends are open", () => {
+    // Shelves sit between z -4.93 and -4.07 at x 2.2..5.8: the straight line crosses them.
+    expect(isSegmentWalkable([3, -5.5], [3, -3])).toBe(false);
+    expect(checkMallMove(MALL_MOVE_BURST, [3, -5.5], [3, -3], 10)).toEqual({
+      ok: false,
+      reason: "blocked",
+    });
+  });
+
+  it("refuses a jump longer than the burst limit, however long the pause", () => {
+    const longPause = checkMallMove(0, [-6, 2], [-3, 2], 600);
+    expect(longPause).toEqual({ ok: false, reason: "speed" });
+  });
+
+  it("spends allowance on each move and refills it over time", () => {
+    const first = checkMallMove(MALL_MOVE_BURST, [-6, 2], [-5.5, 2], 0.2);
+    expect(first.ok).toBe(true);
+    if (!first.ok) return;
+    expect(first.allowance).toBeCloseTo(MALL_MOVE_BURST - 0.5);
+    const refilled = checkMallMove(0, [-6, 2], [-5.5, 2], 1);
+    expect(refilled.ok).toBe(true);
+  });
+
+  it("caps the allowance at the burst limit", () => {
+    const result = checkMallMove(0, [-6, 2], [-6, 2], 600);
+    expect(result.ok).toBe(true);
+    if (result.ok) expect(result.allowance).toBeLessThanOrEqual(MALL_MOVE_BURST);
   });
 });
 

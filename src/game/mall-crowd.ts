@@ -1,13 +1,13 @@
-import type { Appearance } from "./avatar-appearance";
-import type { WalkPoint } from "./grid-walk-path";
-import { shopperLook, type MallGender } from "./mall-appearance";
-import { createWalker, stepWalker, type MallWalker } from "./mall-movement";
+import type { Appearance } from "./avatar-appearance.ts";
+import type { WalkPoint } from "./grid-walk-path.ts";
+import { shopperLook, type MallGender } from "./mall-appearance.ts";
+import { createWalker, stepWalker, type MallWalker } from "./mall-movement.ts";
 import {
   MALL_BROWSE_SPOTS,
   MALL_ENTRANCE,
   MALL_TILL_QUEUE,
   findMallPath,
-} from "./osun-mall-layout";
+} from "./osun-mall-layout.ts";
 
 /** Shoppers on the floor at once, on top of any real players who are in the mall. */
 export const MALL_CROWD_TARGET = 20;

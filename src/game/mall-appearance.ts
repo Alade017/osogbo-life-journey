@@ -4,8 +4,8 @@ import {
   TROUSERS,
   normalizeAvatarAppearance,
   type Appearance,
-} from "./avatar-appearance";
-import type { MallStaffRole } from "./osun-mall-layout";
+} from "./avatar-appearance.ts";
+import type { MallStaffRole } from "./osun-mall-layout.ts";
 
 export type MallGender = "female" | "male";
 

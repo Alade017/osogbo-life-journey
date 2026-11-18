@@ -1,11 +1,17 @@
-import { canWalkInMall } from "./osun-mall-layout";
-import type { WalkPoint } from "./grid-walk-path";
+import { canWalkInMall } from "./osun-mall-layout.ts";
+import type { WalkPoint } from "./grid-walk-path.ts";
 
 /** Walking speed in scene units per second. Shoppers and the player share it. */
 export const MALL_WALK_SPEED = 2.2;
 
-/** A small allowance on top of the speed limit, for network delay and frame timing. */
-const MOVE_TOLERANCE = 0.6;
+/**
+ * The most distance a player can bank while idle. A long pause never buys a long jump: the
+ * allowance is capped here, so the most a single report can cover is this many units.
+ */
+export const MALL_MOVE_BURST = 1.5;
+
+/** Spacing of the points checked along a move, so no shelf can be crossed between two checks. */
+const SEGMENT_STEP = 0.1;
 
 /**
  * Walker state for anything that follows a list of waypoints. Dwell times pause the walker
@@ -78,16 +84,38 @@ export function stepWalker(walker: MallWalker, dt: number): MallWalker {
   };
 }
 
+/** True when every point along the straight line from `from` to `to` can be walked. */
+export function isSegmentWalkable(from: WalkPoint, to: WalkPoint): boolean {
+  const distance = Math.hypot(to[0] - from[0], to[1] - from[1]);
+  const steps = Math.max(1, Math.ceil(distance / SEGMENT_STEP));
+  for (let i = 0; i <= steps; i += 1) {
+    const t = i / steps;
+    const point: WalkPoint = [from[0] + (to[0] - from[0]) * t, from[1] + (to[1] - from[1]) * t];
+    if (!canWalkInMall(point)) return false;
+  }
+  return true;
+}
+
+export type MallMoveResult =
+  | { ok: true; allowance: number }
+  | { ok: false; reason: "blocked" | "speed" };
+
 /**
- * Whether a move a client reports is possible: the destination must be walkable, and the
- * distance covered must fit the walking speed over the time since the last accepted position.
+ * Checks one reported move. The allowance grows with time up to the burst limit and is spent
+ * by the distance moved. The whole route must be walkable, not only its end point.
  */
-export function isPossibleMallMove(
+export function checkMallMove(
+  allowance: number,
   from: WalkPoint,
   to: WalkPoint,
   elapsedSeconds: number,
-): boolean {
-  if (!canWalkInMall(to)) return false;
-  const allowed = MALL_WALK_SPEED * Math.max(0, elapsedSeconds) + MOVE_TOLERANCE;
-  return Math.hypot(to[0] - from[0], to[1] - from[1]) <= allowed;
+): MallMoveResult {
+  if (!isSegmentWalkable(from, to)) return { ok: false, reason: "blocked" };
+  const available = Math.min(
+    MALL_MOVE_BURST,
+    allowance + MALL_WALK_SPEED * Math.max(0, elapsedSeconds),
+  );
+  const distance = Math.hypot(to[0] - from[0], to[1] - from[1]);
+  if (distance > available) return { ok: false, reason: "speed" };
+  return { ok: true, allowance: available - distance };
 }

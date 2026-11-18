@@ -1,4 +1,4 @@
-import { findGridWalkPath, type WalkPoint } from "./grid-walk-path";
+import { findGridWalkPath, type WalkPoint } from "./grid-walk-path.ts";
 
 /**
  * Walkable floor plan for the Osun Mall interior. Coordinates are [x, z] in scene units,
