@@ -18,18 +18,22 @@ import {
 import { findRoomPath, roomObstacles, runHouseStairTransition } from "@/game/house-navigation";
 import { guideFor } from "@/components/game/housing/house-arrangement-guide";
 const [width, depth] = HOUSE_ROOM_SIZE["duplex"]!;
-describe("four-bedroom duplex", () => {
-  it("has one guest bedroom downstairs and three bedrooms, an office and balcony upstairs", () => {
+describe("three-bedroom duplex with upstairs gym", () => {
+  it("has one guest bedroom downstairs, two upstairs bedrooms, a gym, office and balcony", () => {
     const downstairs = houseRoomViews("duplex", width, depth, 0),
       upstairs = houseRoomViews("duplex", width, depth, 1);
     expect(downstairs.filter((room) => room.id.startsWith("bedroom"))).toHaveLength(1);
-    expect(upstairs.filter((room) => room.id.startsWith("bedroom"))).toHaveLength(3);
+    expect(upstairs.filter((room) => room.id.startsWith("bedroom"))).toHaveLength(2);
     expect(upstairs.map((room) => room.id)).toEqual(
-      expect.arrayContaining(["study", "balcony", "ensuite", "bathroom", "landing"]),
+      expect.arrayContaining(["study", "balcony", "ensuite", "bathroom", "landing", "gym"]),
     );
     expect(upstairs.some((room) => room.id === "kitchen")).toBe(false);
     expect(downstairs.some((room) => room.id === "kitchen")).toBe(true);
     expect(guideFor("kitchen", "stove", "duplex", 1)?.zoneBounds).toBeNull();
+    expect(guideFor("fitness", "treadmill", "duplex", 0)?.zoneBounds).toBeNull();
+    expect(guideFor("fitness", "treadmill", "duplex", 1)?.zoneBounds).not.toBeNull();
+    expect(duplexBlueprint(width, depth, 1).gymAreas).toHaveLength(1);
+    expect(duplexBlueprint(width, depth, 0).gymAreas).toEqual([]);
     for (const rooms of [downstairs, upstairs])
       for (let x = -width / 2 + 0.13; x < width / 2; x += 0.4)
         for (let z = -depth / 2 + 0.13; z < depth / 2; z += 0.4)

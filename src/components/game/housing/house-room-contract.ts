@@ -451,7 +451,7 @@ export function stairTraversalPath(stairs: HouseStairs, up: boolean): [number, n
   return up ? path : path.reverse();
 }
 
-/** Partitions for the duplex upper floor, including its three bedrooms and balcony doorway. */
+/** Partitions for the duplex upper floor, including its bedrooms, gym and balcony doorway. */
 export function upstairsPartitionSegments(width: number, depth: number): HouseWallSegment[] {
   return duplexBlueprint(width, depth, 1).partitions;
 }

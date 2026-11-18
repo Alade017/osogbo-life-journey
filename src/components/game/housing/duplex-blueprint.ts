@@ -33,8 +33,6 @@ export function duplexBlueprint(width: number, depth: number, floor: 0 | 1 = 0) 
     };
     const rooms = base.rooms.map((room) => {
       switch (room.id) {
-        case "gym":
-          return { ...room, id: "bedroom-3" as const, label: "Bedroom 3" };
         case "sitting":
           return { ...room, label: "Family lounge" };
         case "dining":
@@ -73,12 +71,12 @@ export function duplexBlueprint(width: number, depth: number, floor: 0 | 1 = 0) 
       interiorDoors: [
         ...base.interiorDoors.map((door) => ({
           ...door,
-          id: rename(door.id).replace("gym", "bedroom-3").replace("kitchen", "study"),
+          id: rename(door.id).replace("kitchen", "study"),
         })),
         balconyDoor,
       ],
-      sleepAreas: [base.sleepAreas[0]!, gym, { ...base.sleepAreas[1]!, maxZ: balcony.minZ }],
-      gymAreas: [],
+      sleepAreas: [base.sleepAreas[0]!, { ...base.sleepAreas[1]!, maxZ: balcony.minZ }],
+      gymAreas: [gym],
       hasEntrance: false,
       veranda: undefined,
       balcony,

@@ -85,10 +85,16 @@ export function guideFor(
   }
   if (houseTypeId === "duplex" && floor === 1 && slotType === "kitchen")
     return { hint: "Place cooking appliances in the downstairs kitchen.", zoneBounds: null };
-  if (houseTypeId === "bungalow" && slotType === "fitness")
+  if ((houseTypeId === "bungalow" || houseTypeId === "duplex") && slotType === "fitness")
     return {
-      hint: "In the shared gym, leaving space around equipment and the door.",
-      zoneBounds: blueprintGuideBounds(slotType, artKey),
+      hint:
+        houseTypeId === "duplex" && floor === 0
+          ? "The gym is upstairs."
+          : "In the shared gym, leaving space around equipment and the door.",
+      zoneBounds:
+        houseTypeId === "duplex" && floor === 0
+          ? null
+          : blueprintGuideBounds(slotType, artKey, houseTypeId, floor),
     };
   const rule = GUIDE_RULES[slotType];
   if (!rule) return null;
