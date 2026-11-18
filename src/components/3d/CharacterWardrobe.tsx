@@ -1,246 +1,28 @@
 import { useEffect, useMemo } from "react";
-import { createPortal } from "@react-three/fiber";
-import { Bone, LatheGeometry, Object3D, Quaternion, Vector2, Vector3 } from "three";
-import type { Appearance } from "@/game/avatar-appearance";
-import { OUTFITS, SHOE_COLORS, TROUSERS } from "@/game/avatar-appearance";
-import { adireTexture } from "./cloth-patterns";
-import { HUMANOID_BUILD_FACTORS, HUMANOID_SHAPES } from "./humanoid-rig";
-
-type Segment = { bone: Bone; child: Bone };
-function clean(name: string) {
-  return name.toLowerCase().replace(/[^a-z0-9]/g, "");
-}
-function findBone(root: Object3D, candidates: string[]): Bone | null {
-  const wanted = candidates.map(clean);
-  let found: Bone | null = null;
-  root.traverse((node) => {
-    if (found || !(node instanceof Bone)) return;
-    const name = clean(node.name);
-    if (wanted.some((candidate) => name === candidate || name.endsWith(candidate))) found = node;
-  });
-  return found;
-}
-function segmentFrom(root: Object3D, candidates: string[]): Segment | null {
-  const bone = findBone(root, candidates);
-  if (!bone) return null;
-  const child = bone.children.find((node): node is Bone => node instanceof Bone);
-  return child ? { bone, child } : null;
-}
-
-function SegmentGarment({
-  segment,
-  color,
-  trim,
-  radiusFactor,
-  patterned = false,
-  cuff = true,
-}: {
-  segment: Segment;
-  color: string;
-  trim: string;
-  radiusFactor: number;
-  patterned?: boolean;
-  cuff?: boolean;
-}) {
-  const { length, radius, rotation, midpoint } = useMemo(() => {
-    const vector = segment.child.position;
-    const len = Math.max(vector.length(), 0.025);
-    const rad = Math.max(len * radiusFactor, 0.012);
-    const rot = new Quaternion().setFromUnitVectors(
-      new Vector3(0, 1, 0),
-      vector.clone().normalize(),
-    );
-    return {
-      length: len,
-      radius: rad,
-      rotation: rot,
-      midpoint: vector.clone().multiplyScalar(0.5),
-    };
-  }, [segment, radiusFactor]);
-  const map = useMemo(() => (patterned ? adireTexture() : null), [patterned]);
-  return (
-    <group position={midpoint} quaternion={rotation}>
-      <mesh castShadow receiveShadow>
-        <cylinderGeometry args={[radius * 0.94, radius, length * 1.04, 12, 1]} />
-        <meshStandardMaterial color={color} map={map} roughness={0.94} side={2} />
-      </mesh>
-      {cuff ? (
-        <mesh position={[0, -length * 0.44, 0]} castShadow>
-          <cylinderGeometry
-            args={[radius * 0.96, radius * 0.96, Math.max(length * 0.075, 0.01), 12]}
-          />
-          <meshStandardMaterial color={trim} roughness={0.82} />
-        </mesh>
-      ) : null}
-      <mesh position={[0, length * 0.2, 0]}>
-        <cylinderGeometry
-          args={[radius * 1.01, radius * 1.01, Math.max(length * 0.018, 0.004), 12]}
-        />
-        <meshStandardMaterial color={trim} roughness={0.82} />
-      </mesh>
-    </group>
-  );
-}
-
-function TorsoGarment({
-  color,
-  trim,
-  patterned = false,
-  fit,
-}: {
-  color: string;
-  trim: string;
-  patterned?: boolean;
-  fit: { shoulder: number; waist: number; hip: number; depth: number };
-}) {
-  const map = useMemo(() => (patterned ? adireTexture() : null), [patterned]);
-  const geometry = useMemo(
-    () =>
-      new LatheGeometry(
-        [
-          new Vector2(0.145 * fit.hip, -0.185),
-          new Vector2(0.125 * fit.waist, -0.065),
-          new Vector2(0.178 * fit.shoulder, 0.035),
-          new Vector2(0.193 * fit.shoulder, 0.115),
-          new Vector2(0.05, 0.19),
-        ],
-        16,
-      ),
-    [fit],
-  );
-  useEffect(() => () => geometry.dispose(), [geometry]);
-  return (
-    <group name="torso-garment" scale={[1, 1, 0.78 * fit.depth]}>
-      <mesh geometry={geometry} castShadow receiveShadow>
-        <meshStandardMaterial color={color} map={map} roughness={0.93} side={2} />
-      </mesh>
-      <mesh position={[0, 0.19, 0]} castShadow>
-        <cylinderGeometry args={[0.051, 0.051, 0.012, 16, 1, true]} />
-        <meshStandardMaterial color={trim} roughness={0.86} side={2} />
-      </mesh>
-    </group>
-  );
-}
-
-function WaistGarment({ color, trim, hip }: { color: string; trim: string; hip: number }) {
-  return (
-    <group position={[0, 0.018, 0]} name="waist-garment" scale={[hip, 1, 0.72]}>
-      <mesh position={[0, 0, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[0.16, 0.145, 0.19, 16, 2, false]} />
-        <meshStandardMaterial color={color} roughness={0.94} side={2} />
-      </mesh>
-      <mesh position={[0, 0.096, 0]}>
-        <cylinderGeometry args={[0.16, 0.16, 0.014, 16]} />
-        <meshStandardMaterial color={trim} roughness={0.86} />
-      </mesh>
-    </group>
-  );
-}
-
-function ShoeGarment({ color }: { color: string }) {
-  return (
-    <group>
-      <mesh position={[0, -0.018, 0.035]} scale={[0.72, 0.42, 1.18]} castShadow>
-        <sphereGeometry args={[0.055, 12, 8]} />
-        <meshStandardMaterial color={color} roughness={0.72} />
-      </mesh>
-      <mesh position={[0, -0.038, 0.035]} scale={[0.72, 0.18, 1.15]}>
-        <sphereGeometry args={[0.055, 12, 8]} />
-        <meshStandardMaterial color="#282522" roughness={0.7} />
-      </mesh>
-    </group>
-  );
-}
-
-/**
- * Rig-following wardrobe panels. Garments are parented to named biped bones; missing anchors are
- * skipped instead of placing clothes at guessed world coordinates.
- */
+import type { SkinnedMesh } from "three";
+import { OUTFITS, SHOE_COLORS, TROUSERS, type Appearance } from "@/game/avatar-appearance";
+import { createFittedClothing } from "./humanoid-clothing";
+/** The outfit shares the body's skeleton, so elbows and knees bend with the cloth. */
 export function CharacterWardrobe({
-  rig,
+  body,
   appearance,
-  gender,
 }: {
-  rig: Object3D;
+  body: SkinnedMesh;
   appearance: Appearance;
-  gender: string;
 }) {
-  const anchors = useMemo(() => {
-    const torso = findBone(rig, ["Bip01 Spine2", "Spine2", "spine_2"]);
-    const pelvis = findBone(rig, ["Bip01", "Root", "Hips"]);
-    const arms = [
-      segmentFrom(rig, ["Bip01 L UpperArm", "L UpperArm", "LeftUpperArm", "upperarm_l"]),
-      segmentFrom(rig, ["Bip01 R UpperArm", "R UpperArm", "RightUpperArm", "upperarm_r"]),
-      segmentFrom(rig, ["Bip01 L Forearm", "L Forearm", "LeftForeArm", "lowerarm_l"]),
-      segmentFrom(rig, ["Bip01 R Forearm", "R Forearm", "RightForeArm", "lowerarm_r"]),
-    ].filter((value): value is Segment => !!value);
-    const legs = [
-      segmentFrom(rig, ["Bip01 L Thigh", "L Thigh", "LeftUpLeg", "thigh_l"]),
-      segmentFrom(rig, ["Bip01 R Thigh", "R Thigh", "RightUpLeg", "thigh_r"]),
-      segmentFrom(rig, ["Bip01 L Calf", "L Calf", "LeftLeg", "calf_l"]),
-      segmentFrom(rig, ["Bip01 R Calf", "R Calf", "RightLeg", "calf_r"]),
-    ].filter((value): value is Segment => !!value);
-    const feet = [
-      findBone(rig, ["Bip01 L Foot", "L Foot", "LeftFoot", "foot_l"]),
-      findBone(rig, ["Bip01 R Foot", "R Foot", "RightFoot", "foot_r"]),
-    ].filter((value): value is Bone => !!value);
-    return { torso, pelvis, arms, legs, feet };
-  }, [rig]);
-
   const top = OUTFITS[appearance.outfit ?? 0] ?? OUTFITS[0]!;
   const bottom = TROUSERS[appearance.bottoms ?? 0] ?? TROUSERS[0]!;
   const shoes = SHOE_COLORS[appearance.shoes ?? 0] ?? SHOE_COLORS[0]!;
-  const trim = gender === "female" ? "#c49b61" : "#d7c49a";
-  const patterned = appearance.outfit === 3;
-  const build =
-    HUMANOID_BUILD_FACTORS[Math.max(0, Math.min(3, Math.round(appearance.build ?? 1)))]!;
-  const shape = HUMANOID_SHAPES[gender === "male" ? "male" : "female"];
-  const fit = useMemo(
-    () => ({
-      shoulder: build.shoulder * shape.shoulder,
-      waist: build.waist * shape.waist,
-      hip: build.hip * shape.hip,
-      depth: 1 + shape.bust * 0.3,
-    }),
-    [build, shape],
+  const mesh = useMemo(
+    () => createFittedClothing(body, [top, bottom, shoes], appearance.outfit === 3),
+    [body, top, bottom, shoes, appearance.outfit],
   );
-
-  if (appearance.clothed === false) return null;
-  return (
-    <>
-      {anchors.torso
-        ? createPortal(
-            <TorsoGarment color={top} trim={trim} patterned={patterned} fit={fit} />,
-            anchors.torso,
-          )
-        : null}
-      {anchors.pelvis
-        ? createPortal(<WaistGarment color={bottom} trim={trim} hip={fit.hip} />, anchors.pelvis)
-        : null}
-      {anchors.arms.map((segment) =>
-        createPortal(
-          <SegmentGarment
-            segment={segment}
-            color={top}
-            trim={trim}
-            radiusFactor={0.39 * build.limb}
-            patterned={patterned}
-          />,
-          segment.bone,
-        ),
-      )}
-      {anchors.legs.map((segment) =>
-        createPortal(
-          <SegmentGarment
-            segment={segment}
-            color={bottom}
-            trim={trim}
-            radiusFactor={0.3 * build.limb * (shape.leg * shape.thigh + shape.bust * 0.12)}
-          />,
-          segment.bone,
-        ),
-      )}
-      {anchors.feet.map((bone) => createPortal(<ShoeGarment color={shoes} />, bone))}
-    </>
+  useEffect(
+    () => () => {
+      for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material])
+        material.dispose();
+    },
+    [mesh],
   );
+  return appearance.clothed === false ? null : <primitive object={mesh} dispose={null} />;
 }

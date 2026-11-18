@@ -90,6 +90,7 @@ export type Humanoid = {
   meshes: SkinnedMesh[];
 };
 const geometryCache = new Map<string, BufferGeometry[]>();
+const bodyGeometryCache = new Map<string, BufferGeometry>();
 function details(
   parts: { r: [number, number, number]; p: [number, number, number]; cap?: boolean }[],
   head: number,
@@ -132,37 +133,37 @@ function geometryFor(variant: BodyVariant, hair: HairShape, build: number) {
   const index = new Map(JOINTS.map((j, i) => [j.name, i]));
   const face = details(
     [
-      { r: [0.025, 0.004, 0.005], p: [-0.033 * faceWidth, 0.951, 0.066] },
-      { r: [0.025, 0.004, 0.005], p: [0.033 * faceWidth, 0.951, 0.066] },
-      { r: [0.022, 0.0035, 0.007], p: [0, 0.887, 0.064] },
+      { r: [0.02, 0.003, 0.004], p: [-0.033 * faceWidth, 0.946, 0.063] },
+      { r: [0.02, 0.003, 0.004], p: [0.033 * faceWidth, 0.946, 0.063] },
+      { r: [0.018, 0.003, 0.005], p: [0, 0.886, 0.077] },
     ],
     head,
   );
   const eyes = details(
     [-1, 1].map((side) => ({
-      r: [0.017, 0.008, 0.006] as [number, number, number],
-      p: [side * 0.033 * faceWidth, 0.931, 0.071] as [number, number, number],
+      r: [0.013, 0.006, 0.005] as [number, number, number],
+      p: [side * 0.033 * faceWidth, 0.928, 0.073] as [number, number, number],
     })),
     head,
   );
   const irises = details(
     [-1, 1].map((side) => ({
-      r: [0.0065, 0.0065, 0.003] as [number, number, number],
-      p: [side * 0.033 * faceWidth, 0.931, 0.077] as [number, number, number],
+      r: [0.005, 0.005, 0.0025] as [number, number, number],
+      p: [side * 0.033 * faceWidth, 0.928, 0.078] as [number, number, number],
     })),
     head,
   );
   const pupils = details(
     [-1, 1].map((side) => ({
-      r: [0.003, 0.004, 0.0018] as [number, number, number],
-      p: [side * 0.033 * faceWidth, 0.931, 0.08] as [number, number, number],
+      r: [0.0025, 0.0035, 0.0018] as [number, number, number],
+      p: [side * 0.033 * faceWidth, 0.928, 0.081] as [number, number, number],
     })),
     head,
   );
   const highlights = details(
     [-1, 1].map((side) => ({
       r: [0.0015, 0.0015, 0.001] as [number, number, number],
-      p: [side * 0.033 * faceWidth - 0.002, 0.934, 0.082] as [number, number, number],
+      p: [side * 0.033 * faceWidth - 0.002, 0.93, 0.083] as [number, number, number],
     })),
     head,
   );
@@ -187,15 +188,19 @@ function geometryFor(variant: BodyVariant, hair: HairShape, build: number) {
         p: [Math.sin(a) * 0.068, hair === "knots" ? 1.014 : 0.94, Math.cos(a) * 0.059 - 0.014],
       });
     }
-  const geo = [
-    createAnatomicalSurface(variant === "female", build, index, shape.armSpan, shape.legSpan),
-    face,
-    eyes,
-    irises,
-    pupils,
-    highlights,
-    details(hairParts, head),
-  ];
+  const bodyKey = `${variant}:${build}`;
+  let bodyGeometry = bodyGeometryCache.get(bodyKey);
+  if (!bodyGeometry) {
+    bodyGeometry = createAnatomicalSurface(
+      variant === "female",
+      build,
+      index,
+      shape.armSpan,
+      shape.legSpan,
+    );
+    bodyGeometryCache.set(bodyKey, bodyGeometry);
+  }
+  const geo = [bodyGeometry, face, eyes, irises, pupils, highlights, details(hairParts, head)];
   geometryCache.set(key, geo);
   return geo;
 }

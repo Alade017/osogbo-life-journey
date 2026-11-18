@@ -149,7 +149,7 @@ export function CharacterBody({
       {rig.meshes.map((mesh, index) => (
         <primitive key={index} object={mesh} />
       ))}
-      <CharacterWardrobe rig={rig.root} appearance={safe} gender={gender} />
+      <CharacterWardrobe body={rig.meshes[0]!} appearance={safe} />
       {head && safe.headwear > 0
         ? createPortal(
             <ProceduralHeadwear

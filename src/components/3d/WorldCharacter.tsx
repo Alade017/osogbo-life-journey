@@ -21,9 +21,8 @@ const FACING_YAW: Record<string, number> = {
 };
 
 /**
- * The same saved appearance contract is used by portraits and both world scenes. Bodies are
- * rigged adults with their own clothing and hair, so the saved outfit, hair and skin options no
- * longer change the body; height and build still scale it.
+ * Portraits and world scenes share the same saved skin, hair, fitted outfit and proportions.
+ * Stable biped bones preserve every task pose, held item and equipment socket.
  */
 export function WorldCharacter({
   appearance = {},
