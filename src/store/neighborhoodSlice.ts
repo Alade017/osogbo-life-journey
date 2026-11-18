@@ -88,7 +88,6 @@ export const applyZoneOutcomeAction = (payload: {
 export const recordNpcChatAction = (payload: {
   npc: ZoneNpcSpec;
   tip: string;
-  socialBoost: number;
 }) => ({
   type: "neighborhood/recordNpcChat" as const,
   payload,
@@ -210,15 +209,8 @@ export function neighborhoodReducer(
       };
     }
     case "neighborhood/recordNpcChat": {
-      const { tip, socialBoost } = action.payload;
-      return {
-        ...state,
-        lastNpcTip: tip,
-        needOffsets: {
-          ...state.needOffsets,
-          social: (state.needOffsets.social ?? 0) + socialBoost,
-        },
-      };
+      const { tip } = action.payload;
+      return { ...state, lastNpcTip: tip };
     }
     case "neighborhood/equipAccessory":
       return { ...state, equippedAccessorySlug: action.payload.slug };
