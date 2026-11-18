@@ -918,3 +918,28 @@ body:has(.neighborhood-page) {
   border: 1px solid var(--border);
   border-radius: 50%;
 }
+
+.neighborhood-crafting {
+  display: grid;
+  gap: 14px;
+}
+.neighborhood-crafting h3 {
+  font-size: 1.1rem;
+  font-weight: 750;
+}
+.neighborhood-crafting p,
+.neighborhood-crafting li {
+  font-size: 0.85rem;
+  line-height: 1.65;
+}
+.neighborhood-craft-recipe {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+}
+.neighborhood-craft-recipe h4 {
+  font-weight: 700;
+}

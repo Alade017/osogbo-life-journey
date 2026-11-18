@@ -31,7 +31,8 @@ export type ZoneActionOutcome = {
   activityKind?: "purchase" | "shift" | "craft" | "service" | "transit";
 };
 
-export type ZoneService = "bank" | "market" | "jobs" | "transit" | "interior" | "barber" | "pos";
+export type ZoneService =
+  "bank" | "market" | "jobs" | "transit" | "interior" | "barber" | "pos" | "craft";
 
 export interface InteractableZoneSpec {
   /** Existing server-backed panels offered at this world target. */
@@ -289,7 +290,8 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
   },
   {
     id: "zone-adire-vats",
-    services: ["market", "jobs"],
+    services: ["craft", "market", "jobs"],
+    shopSlug: "adire-materials",
     zoneTag: "ADIRE_MARKET",
     category: "adire",
     title: "Indigo Dye Vats & Zinc Shed",
@@ -300,22 +302,6 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
     badgeHeight: 2.6,
     hitSize: [3.0, 2.6, 2.4],
     actions: [
-      {
-        id: "adire-craft-wrapper",
-        label: "Dye Adire Eleko Cloth",
-        description: "Dip tied cotton cloth into indigo vats and add to inventory.",
-        walletDelta: -1500,
-        needDeltas: { fun: 16, energy: -8, hygiene: -4 },
-        xpGain: 32,
-        craftItem: {
-          slug: "adire_indigo_wrapper",
-          name: "Indigo Adire Eleko Cloth",
-          category: "craft",
-          description: "Hand-dyed deep indigo Osogbo Adire cloth crafted at the yard.",
-        },
-        toastMessage: "Dyed Indigo Adire Eleko Cloth (+16 Fun, +32 XP) — added to inventory!",
-        activityKind: "craft",
-      },
       {
         id: "adire-artisan-shift",
         label: "Work Adire Artisan Shift",
@@ -330,7 +316,8 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
   },
   {
     id: "zone-adire-racks",
-    services: ["market", "jobs"],
+    services: ["craft", "market", "jobs"],
+    shopSlug: "adire-materials",
     zoneTag: "ADIRE_MARKET",
     category: "adire",
     title: "Adire Drying & Folding Racks",
@@ -341,22 +328,6 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
     badgeHeight: 2.35,
     hitSize: [2.6, 2.3, 2.8],
     actions: [
-      {
-        id: "adire-craft-scarf",
-        label: "Craft Indigo Adire Scarf",
-        description: "Finish and fold a sun-cured indigo neck scarf.",
-        walletDelta: -900,
-        needDeltas: { fun: 12, energy: -5 },
-        xpGain: 22,
-        craftItem: {
-          slug: "adire_indigo_scarf",
-          name: "Indigo Adire Scarf",
-          category: "craft",
-          description: "Sun-cured cassava-resist indigo scarf from Olaiya Makers' Yard.",
-        },
-        toastMessage: "Folded a fresh Indigo Adire Scarf — added to inventory!",
-        activityKind: "craft",
-      },
       {
         id: "adire-sell-batch",
         label: "Package Market Bundle",
