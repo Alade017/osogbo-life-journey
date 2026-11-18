@@ -121,8 +121,10 @@ vi.mock("@/components/game/R3FNeighborhoodSurface", () => ({
     homeTypeId: string | null;
     players: readonly unknown[];
     npcs: readonly unknown[];
-    interactionTargets: readonly { id: string }[];
+    interactionTargets: readonly { id: string; x: number; y: number }[];
     onSelectTarget: (targetId: string) => void;
+    onGroundTap: (point: { x: number; y: number }) => void;
+    groundTarget: { x: number; y: number } | null;
     onNpcArrive: (npcId: string, x: number, y: number) => void;
     onScene: (handle: NeighborhoodSceneHandle | null) => void;
   }) => {
@@ -133,6 +135,8 @@ vi.mock("@/components/game/R3FNeighborhoodSurface", () => ({
       npcs: props.npcs,
       interactionTargets: props.interactionTargets,
       onSelectTarget: props.onSelectTarget,
+      onGroundTap: props.onGroundTap,
+      groundTarget: props.groundTarget,
       onNpcArrive: props.onNpcArrive,
       playersRef: { current: props.players },
     });
@@ -347,6 +351,40 @@ it("opens an NPC conversation from a 3D target only when the player is within in
   );
   await act(async () => sceneProps?.onSelectTarget("npc-adeola"));
   await screen.findByRole("button", { name: "Say hello" });
+});
+
+it("cancels a pending NPC approach when the player taps a different ground point", async () => {
+  state.location = "market";
+  state.position = { x: 7, y: 6 };
+  state.gameTime = { minute: 0, hour: 17, day: 1, weekday: 0 };
+  state.npcRows = [{ id: "npc-adeola" }];
+  const joined = room("market");
+  state.join.mockImplementation(async () => joined);
+  show();
+  await screen.findByText("R3F neighbourhood");
+  await settleNpcsAtDestination(joined);
+
+  const initialScene = state.scene.mock.lastCall?.[0];
+  const target = initialScene?.interactionTargets.find(
+    (candidate: { id: string; x: number; y: number }) => candidate.id === "npc-adeola",
+  );
+  expect(target).toBeDefined();
+  const player = joined.state.players.get(joined.sessionId)!;
+  player.x = 7;
+  player.y = 6;
+  await act(async () => joined.listeners.publish?.());
+
+  await act(async () => initialScene?.onSelectTarget("npc-adeola"));
+  expect(state.scene.mock.lastCall?.[0].groundTarget).not.toBeNull();
+
+  await act(async () => state.scene.mock.lastCall?.[0].onGroundTap({ x: 3, y: 3 }));
+  expect(state.scene.mock.lastCall?.[0].groundTarget).toEqual({ x: 3, y: 3 });
+
+  const destination = toWorld({ x: target!.x, y: target!.y }, initialScene!.areaOrigin);
+  player.x = destination.x;
+  player.y = destination.y;
+  await act(async () => joined.listeners.publish?.());
+  expect(screen.queryByRole("button", { name: "Say hello" })).not.toBeInTheDocument();
 });
 
 it("does not allow a distant NPC target to bypass the proximity gate", async () => {
