@@ -8,15 +8,15 @@ import {
   NEIGHBORHOOD_ZONE_NPCS,
   nearestInteractableZone,
   nearestZoneNpc,
+  isServerBackedBankTransfer,
 } from "@/game/neighborhood-interactions";
 import {
-  applyZoneOutcomeAction,
-  closeZoneInteraction,
   initialNeighborhoodState,
   neighborhoodReducer,
   openZoneInteraction,
-  recordNpcChatAction,
+  closeZoneInteraction,
   setPendingZoneId,
+  recordNpcChatAction,
 } from "@/store/neighborhoodSlice";
 
 const origin = { x: 7, y: 6 };
@@ -66,51 +66,60 @@ describe("Olaiya neighborhood full zone interactivity & state slice", () => {
     }
   });
 
-  it("routes Adire crafting, accessory equipping, shifts, and NPC chats cleanly through neighborhoodReducer", () => {
-    let state = initialNeighborhoodState;
+  it("clears an approach target when the interaction opens and closes only the panel", () => {
+    let state = neighborhoodReducer(initialNeighborhoodState, setPendingZoneId("zone-bank-atm"));
+    expect(state.pendingZoneId).toBe("zone-bank-atm");
 
-    // 1. Tap-to-walk pending target & arrival open
-    state = neighborhoodReducer(state, setPendingZoneId("zone-adire-vats"));
-    expect(state.pendingZoneId).toBe("zone-adire-vats");
-
-    state = neighborhoodReducer(state, openZoneInteraction({ zoneId: "zone-adire-vats" }));
+    state = neighborhoodReducer(state, openZoneInteraction({ zoneId: "zone-bank-atm" }));
     expect(state.pendingZoneId).toBeNull();
-    expect(state.activeZoneId).toBe("zone-adire-vats");
+    expect(state.activeZoneId).toBe("zone-bank-atm");
 
-    // 2. Dye Adire cloth (spends ₦1500, adds crafted wrapper to inventory, boosts fun + XP)
-    const adireZone = findInteractableZone("zone-adire-vats")!;
-    const dyeAction = adireZone.actions[0]!;
-    state = neighborhoodReducer(
-      state,
-      applyZoneOutcomeAction({ zoneTitle: adireZone.title, outcome: dyeAction }),
-    );
-    expect(state.walletOffset).toBe(-1500);
-    expect(state.needOffsets.fun).toBe(16);
-    expect(state.xpOffset).toBe(32);
-    expect(state.localInventory.some((i) => i.slug === "adire_indigo_wrapper")).toBe(true);
-    expect(state.localTransactions).toHaveLength(1);
-
-    // 3. Buy & equip Leather Backpack from Accessories Shop
-    const accZone =
-      findInteractableZone("shop-accessory-zone") ?? findInteractableZone("zone-shop-accessory")!;
-    const backpackAction = accZone.actions[0]!;
-    state = neighborhoodReducer(
-      state,
-      applyZoneOutcomeAction({ zoneTitle: accZone.title, outcome: backpackAction }),
-    );
-    expect(state.equippedAccessorySlug).toBe("backpack");
-    expect(state.localInventory.some((i) => i.slug === "backpack")).toBe(true);
-
-    // 4. Close modal & chat with a Zone NPC
     state = neighborhoodReducer(state, closeZoneInteraction());
     expect(state.activeZoneId).toBeNull();
-
-    const npc = findZoneNpc("zone-npc-tunde")!;
-    state = neighborhoodReducer(
-      state,
-      recordNpcChatAction({ npc, tip: npc.tips[0]!, socialBoost: 10 }),
-    );
-    expect(state.lastNpcTip).toBe(npc.tips[0]);
-    expect(state.needOffsets.social).toBe(20);
+    expect(state.activeNpcId).toBeNull();
   });
+
+  it("allows only pure server-backed bank transfers as zone actions", () => {
+    const atm = findInteractableZone("zone-bank-atm")!;
+    const withdraw = atm.actions.find((action) => action.id === "atm-withdraw-2000")!;
+    const deposit = atm.actions.find((action) => action.id === "atm-deposit-2000")!;
+    expect(isServerBackedBankTransfer(atm, withdraw)).toBe(true);
+    expect(isServerBackedBankTransfer(atm, deposit)).toBe(true);
+
+    const pos = findInteractableZone("zone-shop-pos")!;
+    const posCashOut = pos.actions.find((action) => action.id === "pos-cashout-2000")!;
+    expect(isServerBackedBankTransfer(pos, posCashOut)).toBe(false);
+
+    const adire = findInteractableZone("zone-adire-vats")!;
+    expect(isServerBackedBankTransfer(adire, adire.actions[0]!)).toBe(false);
+  });
+
+  it("keeps authored NPC tips informational without granting social rewards", () => {
+    let state = initialNeighborhoodState;
+    const npc = findZoneNpc("zone-npc-tunde")!;
+    state = neighborhoodReducer(state, recordNpcChatAction({ tip: npc.tips[0]! }));
+    expect(state.lastNpcTip).toBe(npc.tips[0]);
+    expect(state).not.toHaveProperty("needOffsets");
+  });
+});
+
+it("rejects non-finite and fractional quick bank transfers", () => {
+  const zone = findInteractableZone("zone-bank-atm")!,
+    base = zone.actions[0]!;
+  for (const amount of [Infinity, NaN, 0.5, Number.MAX_SAFE_INTEGER + 1])
+    expect(
+      isServerBackedBankTransfer(zone, { ...base, bankDelta: amount, walletDelta: -amount }),
+    ).toBe(false);
+});
+it("connects shopping and transport zones to existing authoritative service panels", () => {
+  expect(findInteractableZone("zone-mini-mart")).toMatchObject({
+    services: ["market"],
+    foodOnly: true,
+  });
+  expect(findInteractableZone("zone-buka-stall")).toMatchObject({
+    services: ["interior", "market"],
+    foodOnly: true,
+  });
+  expect(findInteractableZone("zone-transit-stand")?.services).toContain("transit");
+  expect(findInteractableZone("zone-shop-accessory")?.services).toContain("market");
 });

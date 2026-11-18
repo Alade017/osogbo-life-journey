@@ -17,13 +17,6 @@ import {
   resolvePlayerMapPosition,
   useLivePlayerPose,
 } from "@/store/neighborhoodNavSync";
-import {
-  applyZoneOutcomeAction,
-  loadPersistedNeighborhoodState,
-  neighborhoodReducer,
-  persistNeighborhoodState,
-  syncZoneOutcomeToQueryCache,
-} from "@/store/neighborhoodSlice";
 import { mapHousingMarkers } from "@/components/map/map-housing-markers";
 import { DistrictSheet } from "@/components/map/DistrictSheet";
 import { useMapTravelController } from "@/components/map/use-map-travel-controller";
@@ -368,8 +361,7 @@ export function CityMapDashboard(
 
   const effectivePocketBalance = useMemo(() => {
     if (typeof wallet.data?.balance === "number") return wallet.data.balance;
-    const persisted = loadPersistedNeighborhoodState();
-    return 5000 + persisted.walletOffset;
+    return 0;
   }, [wallet.data?.balance]);
 
   return (
