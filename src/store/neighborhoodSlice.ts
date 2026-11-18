@@ -1,6 +1,5 @@
 import type { Needs } from "@/lib/life-simulation";
 import type { ZoneNpcSpec } from "@/game/neighborhood-interactions";
-import { clampNeed as clampSimulationNeed } from "@/lib/life-simulation";
 
 export interface NeighborhoodInteractionState {
   hoveredZoneId: string | null;
@@ -71,7 +70,7 @@ export function neighborhoodReducer(
         activeNpcId: action.payload.npcId ?? null,
         lastNpcTip:
           action.payload.npcId && state.activeNpcId !== action.payload.npcId
-            ? (action.payload.npcId ? state.lastNpcTip : null)
+            ? null
             : state.lastNpcTip,
       };
     case "neighborhood/closeInteraction":
@@ -105,5 +104,5 @@ export function effectiveNeedsFromCharacter(
 }
 
 function clampNeed(value: number): number {
-  return clampSimulationNeed(value);
+  return Math.max(0, Math.min(100, Math.round(value)));
 }
