@@ -64,23 +64,17 @@ import {
   nearestInteractableZone,
   nearestZoneNpc,
   type InteractableZoneSpec,
-  type ZoneActionOutcome,
   type ZoneNpcSpec,
 } from "@/game/neighborhood-interactions";
 import {
-  applyZoneOutcomeAction,
   closeZoneInteraction,
   effectiveNeedsFromCharacter,
-  equipLocalAccessoryAction,
-  loadPersistedNeighborhoodState,
+  initialNeighborhoodState,
   neighborhoodReducer,
   openZoneInteraction,
-  persistNeighborhoodState,
   recordNpcChatAction,
   setHoveredZoneId,
   setPendingZoneId,
-  syncNpcChatToQueryCache,
-  syncZoneOutcomeToQueryCache,
 } from "@/store/neighborhoodSlice";
 import { isPlayableDistrict, playableDistrictForLocation } from "@/game/playable-district";
 import type { NeighborhoodPlayerView, NeighborhoodSceneHandle } from "@/game/neighborhood-types";
@@ -427,11 +421,7 @@ export function PlayableNeighborhood() {
   const [npcPositionOverrides, setNpcPositionOverrides] = useState<
     Record<string, { x: number; y: number }>
   >({});
-  const [zoneState, dispatchZone] = useReducer(
-    neighborhoodReducer,
-    undefined,
-    loadPersistedNeighborhoodState,
-  );
+  const [zoneState, dispatchZone] = useReducer(neighborhoodReducer, initialNeighborhoodState);
   const [hasWalked, setHasWalked] = useState(false);
   const autoWalkRouteRef = useRef<{ route: WorldPoint[]; index: number } | null>(null);
   const zoneModalOpen = zoneState.activeZoneId !== null || zoneState.activeNpcId !== null;
@@ -464,10 +454,6 @@ export function PlayableNeighborhood() {
   );
 
   useEffect(() => {
-    persistNeighborhoodState(zoneState);
-  }, [zoneState]);
-
-  useEffect(() => {
     if (!player || !district) return;
     const scenePoint = toScene({ x: player.x, y: player.y }, district.origin);
     const [threeX, threeZ] = scenePointToThreeXZ(scenePoint);
@@ -488,30 +474,11 @@ export function PlayableNeighborhood() {
     : undefined;
   const scenePlayers = useMemo(
     () =>
-      players.map((candidate) => {
-        if (candidate.sessionId !== sessionId) return candidate;
-        let nextEquipment = candidate.equipment;
-        if (zoneState.equippedAccessorySlug) {
-          try {
-            const parsed = JSON.parse(candidate.equipment || "[]");
-            const arr = Array.isArray(parsed)
-              ? parsed.filter((entry) => entry?.slot !== "accessory")
-              : [];
-            arr.push({ slot: "accessory", item: { slug: zoneState.equippedAccessorySlug } });
-            nextEquipment = JSON.stringify(arr);
-          } catch {
-            nextEquipment = JSON.stringify([
-              { slot: "accessory", item: { slug: zoneState.equippedAccessorySlug } },
-            ]);
-          }
-        }
-        return {
-          ...candidate,
-          equipment: nextEquipment,
-          ...(actionAnimation ? { actionAnimation } : {}),
-        };
-      }),
-    [actionAnimation, players, sessionId, zoneState.equippedAccessorySlug],
+      players.map((candidate) => ({
+        ...candidate,
+        ...(candidate.sessionId === sessionId && actionAnimation ? { actionAnimation } : {}),
+      })),
+    [actionAnimation, players, sessionId],
   );
   useEffect(() => setNpcPositionOverrides({}), [currentLocation?.id]);
   const activeNpcs = useMemo((): NeighborhoodNpcView[] => {
@@ -753,6 +720,8 @@ export function PlayableNeighborhood() {
         autoWalkRouteRef.current = null;
         groundTargetRef.current = null;
         setGroundTarget(null);
+        setPendingTargetId(null);
+        dispatchZone(setPendingZoneId(null));
         setHomeBound(false);
         setHasWalked(true);
       }
@@ -1029,7 +998,12 @@ export function PlayableNeighborhood() {
   const selectWorldTarget = (targetId: string) => {
     const target = interactionTargets.find((candidate) => candidate.id === targetId);
     if (!target) return;
+    dispatchZone(setPendingZoneId(null));
+    setHomeBound(false);
     if (nearbyObject?.id === targetId) {
+      autoWalkRouteRef.current = null;
+      groundTargetRef.current = null;
+      setGroundTarget(null);
       setPendingTargetId(null);
       openInteraction();
       return;
@@ -1052,6 +1026,12 @@ export function PlayableNeighborhood() {
       const zone = findInteractableZone(id);
       if (zone) {
         if (nearbyZoneMatch?.zone.id === id) {
+          autoWalkRouteRef.current = null;
+          groundTargetRef.current = null;
+          setGroundTarget(null);
+          setPendingTargetId(null);
+          setHomeBound(false);
+          dispatchZone(setPendingZoneId(null));
           dispatchZone(openZoneInteraction({ zoneId: id }));
           return;
         }
@@ -1065,6 +1045,12 @@ export function PlayableNeighborhood() {
       const npc = findZoneNpc(id);
       if (npc) {
         if (nearbyZoneNpcMatch?.npc.id === id) {
+          autoWalkRouteRef.current = null;
+          groundTargetRef.current = null;
+          setGroundTarget(null);
+          setPendingTargetId(null);
+          setHomeBound(false);
+          dispatchZone(setPendingZoneId(null));
           dispatchZone(openZoneInteraction({ npcId: id }));
           return;
         }
@@ -1090,40 +1076,17 @@ export function PlayableNeighborhood() {
     }
   }, [nearbyZoneMatch, nearbyZoneNpcMatch, zoneState.pendingZoneId]);
 
-  const handlePerformZoneAction = useCallback(
-    (zoneSpec: InteractableZoneSpec, outcome: ZoneActionOutcome) => {
-      dispatchZone(applyZoneOutcomeAction({ zoneTitle: zoneSpec.title, outcome }));
-      syncZoneOutcomeToQueryCache(queryClient, zoneSpec.title, outcome);
-      toast.success(outcome.toastMessage);
-    },
-    [queryClient],
-  );
-
-  const handleNpcTipSelect = useCallback(
-    (npc: ZoneNpcSpec, tipIndex: number) => {
-      const tip = npc.tips[tipIndex % npc.tips.length] ?? npc.greeting;
-      dispatchZone(recordNpcChatAction({ npc, tip, socialBoost: 10 }));
-      syncNpcChatToQueryCache(queryClient, 10);
-      toast.success(
-        `${npc.name.split("·")[0]?.trim() ?? npc.name} shared a local tip (+10 Social)`,
-      );
-    },
-    [queryClient],
-  );
-
-  const handleToggleAccessory = useCallback((slug: string | null) => {
-    dispatchZone(equipLocalAccessoryAction({ slug }));
-    toast.success(
-      slug ? "Equipped Craft Leather Backpack on your character!" : "Accessory unequipped.",
-    );
+  const handleNpcTipSelect = useCallback((npc: ZoneNpcSpec, tipIndex: number) => {
+    const tip = npc.tips[tipIndex % npc.tips.length] ?? npc.greeting;
+    dispatchZone(recordNpcChatAction({ tip }));
   }, []);
 
   const effectiveNeeds = useMemo(
-    () => effectiveNeedsFromCharacter(characterQuery.data, simulation.needs, zoneState.needOffsets),
-    [characterQuery.data, simulation.needs, zoneState.needOffsets],
+    () => effectiveNeedsFromCharacter(characterQuery.data, simulation.needs),
+    [characterQuery.data, simulation.needs],
   );
-  const pocketBalance = walletQuery.data?.balance ?? 5000 + zoneState.walletOffset;
-  const bankBalance = walletQuery.data?.bank_balance ?? 12000 + zoneState.bankOffset;
+  const pocketBalance = walletQuery.data?.balance ?? 0;
+  const bankBalance = walletQuery.data?.bank_balance ?? 0;
   const activeZoneSpec = findInteractableZone(zoneState.activeZoneId);
   const activeZoneNpc = findZoneNpc(zoneState.activeNpcId);
   const closeInteraction = (open: boolean) => {
@@ -1675,14 +1638,10 @@ export function PlayableNeighborhood() {
                     pocketBalance={pocketBalance}
                     bankBalance={bankBalance}
                     needs={effectiveNeeds}
-                    localInventory={zoneState.localInventory}
-                    equippedAccessorySlug={zoneState.equippedAccessorySlug}
                     currentLocationId={currentLocation?.id}
                     currentLocationSlug={currentLocation?.slug}
                     npcTip={zoneState.lastNpcTip}
-                    onPerformZoneAction={handlePerformZoneAction}
                     onNpcTipSelect={handleNpcTipSelect}
-                    onToggleAccessory={handleToggleAccessory}
                   />
                   <Dialog
                     open={compoundOpen}
