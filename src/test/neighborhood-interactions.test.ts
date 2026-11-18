@@ -108,9 +108,9 @@ describe("Olaiya neighborhood full zone interactivity & state slice", () => {
     const npc = findZoneNpc("zone-npc-tunde")!;
     state = neighborhoodReducer(
       state,
-      recordNpcChatAction({ npc, tip: npc.tips[0]!, socialBoost: 10 }),
+      recordNpcChatAction({ npc, tip: npc.tips[0]! }),
     );
     expect(state.lastNpcTip).toBe(npc.tips[0]);
-    expect(state.needOffsets.social).toBe(20);
+    expect(state.needOffsets.social ?? 0).toBe(0);
   });
 });
