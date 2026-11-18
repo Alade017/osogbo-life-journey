@@ -757,7 +757,6 @@ body:has(.neighborhood-page) {
   }
 }
 
-
 /* Compact contextual interaction sheet; complex bank/market/jobs/transit tools keep the full modal. */
 .neighborhood-zone-modal.is-compact {
   width: min(100% - 32px, 500px);
@@ -839,4 +838,40 @@ body:has(.neighborhood-page) {
     transition: none !important;
     animation: none !important;
   }
+}
+
+.neighborhood-zone-service-cards {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+}
+.neighborhood-zone-upcoming {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+}
+.neighborhood-zone-upcoming summary {
+  cursor: pointer;
+  min-height: 32px;
+  font-weight: 650;
+}
+.neighborhood-zone-upcoming p {
+  margin: 8px 0;
+}
+.neighborhood-zone-upcoming ul {
+  padding-left: 18px;
+  list-style: disc;
+}
+.neighborhood-zone-trip-confirm {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--primary);
+  border-radius: 14px;
+  background: var(--card);
+}
+.neighborhood-zone-modal[data-locked="true"] > button:last-child {
+  display: none;
 }

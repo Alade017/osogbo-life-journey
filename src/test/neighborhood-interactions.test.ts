@@ -102,3 +102,24 @@ describe("Olaiya neighborhood full zone interactivity & state slice", () => {
     expect(state).not.toHaveProperty("needOffsets");
   });
 });
+
+it("rejects non-finite and fractional quick bank transfers", () => {
+  const zone = findInteractableZone("zone-bank-atm")!,
+    base = zone.actions[0]!;
+  for (const amount of [Infinity, NaN, 0.5, Number.MAX_SAFE_INTEGER + 1])
+    expect(
+      isServerBackedBankTransfer(zone, { ...base, bankDelta: amount, walletDelta: -amount }),
+    ).toBe(false);
+});
+it("connects shopping and transport zones to existing authoritative service panels", () => {
+  expect(findInteractableZone("zone-mini-mart")).toMatchObject({
+    services: ["market"],
+    foodOnly: true,
+  });
+  expect(findInteractableZone("zone-buka-stall")).toMatchObject({
+    services: ["interior", "market"],
+    foodOnly: true,
+  });
+  expect(findInteractableZone("zone-transit-stand")?.services).toContain("transit");
+  expect(findInteractableZone("zone-shop-accessory")?.services).toContain("market");
+});

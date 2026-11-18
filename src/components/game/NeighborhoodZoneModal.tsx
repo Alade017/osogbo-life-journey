@@ -1,6 +1,8 @@
 import { LocationVenueScene } from "./LocationVenueScene";
+import { useMapTravelController } from "@/components/map/use-map-travel-controller";
+import { neighborhoodTripEstimate } from "@/game/neighborhood-transit";
 import { BUKA_VENUE_DESIGN } from "@/lib/location-venue-designs";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import {
@@ -22,13 +24,33 @@ import { MarketPage } from "@/routes/_authenticated/_game/market";
 import { JobsPage } from "@/routes/_authenticated/_game/jobs";
 import { formatNaira, q, rpc } from "@/lib/game";
 import type { Needs } from "@/lib/life-simulation";
-import { estimateTrip, type TravelMode } from "@/lib/transport-service";
+import { TRAVEL_MODE_DETAILS, type TravelMode } from "@/lib/transport-service";
 import {
   isServerBackedBankTransfer,
   type InteractableZoneSpec,
   type ZoneActionOutcome,
   type ZoneNpcSpec,
+  type ZoneService,
 } from "@/game/neighborhood-interactions";
+
+function serviceLabel(service: ZoneService, foodOnly: boolean) {
+  return {
+    bank: "Bank services",
+    market: foodOnly ? "Food & drinks" : "Shop catalogue",
+    jobs: "Career shifts",
+    transit: "District routes",
+    interior: "Explore Buka",
+  }[service];
+}
+function serviceDescription(service: ZoneService) {
+  return {
+    bank: "Account, deposits and withdrawals",
+    market: "Browse current offers and buy into your inventory",
+    jobs: "View available jobs and start a confirmed shift",
+    transit: "Choose a destination and confirm your fare",
+    interior: "Look around the kitchen and dining area",
+  }[service];
+}
 
 function CategoryIcon({ category }: { category: InteractableZoneSpec["category"] }) {
   switch (category) {
@@ -76,11 +98,17 @@ export function NeighborhoodZoneModal({
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [subTab, setSubTab] = useState<"actions" | "bank" | "market" | "jobs" | "transit" | "interior">(
-    "actions",
-  );
+  const [subTab, setSubTab] = useState<
+    "actions" | "bank" | "market" | "jobs" | "transit" | "interior"
+  >("actions");
   const [tipIndex, setTipIndex] = useState(0);
   const [travelMode, setTravelMode] = useState<TravelMode>("keke");
+  const bankLock = useRef(false);
+  const [bankNeedsRefresh, setBankNeedsRefresh] = useState(false);
+  const characterQuery = useQuery({
+    ...q.character(),
+    enabled: open && zone?.category === "transit",
+  });
 
   useEffect(() => {
     setSubTab("actions");
@@ -97,46 +125,68 @@ export function NeighborhoodZoneModal({
     retry: false,
   });
 
+  const transit = useMapTravelController<NonNullable<typeof locationsQuery.data>[number]>({
+    character: characterQuery.data,
+    queryClient,
+    navigate,
+  });
+  const services = zone?.services ?? [];
   const bankTransfer = useMutation({
+    retry: false,
     mutationFn: async (args: { kind: "deposit" | "withdraw"; amount: number }) => {
       if (args.kind === "deposit") return rpc.depositCash(args.amount);
       return rpc.withdrawCash(args.amount);
     },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["wallet"] });
-      void queryClient.invalidateQueries({ queryKey: ["transactions"] });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: q.wallet().queryKey }),
+        queryClient.invalidateQueries({ queryKey: ["transactions"] }),
+        queryClient.invalidateQueries({ queryKey: q.bankAccount().queryKey }),
+      ]);
+    },
+    onError: (error) => {
+      setBankNeedsRefresh(true);
+      toast.error(
+        `${error instanceof Error ? error.message : "Transfer could not be confirmed."} Refresh your account before another transfer; no automatic retry was made.`,
+      );
+    },
+    onSettled: () => {
+      bankLock.current = false;
     },
   });
-
-  const transitMutation = useMutation({
-    mutationFn: async (args: { locationId: string; mode: TravelMode; name: string }) =>
-      rpc.travelToLocation({ locationId: args.locationId, mode: args.mode }),
-    onSuccess: async (result, vars) => {
-      toast.success(`Arrived at ${vars.name} by ${vars.mode} (₦${result.fare}).`);
-      await queryClient.invalidateQueries();
-      onOpenChange(false);
-    },
-    onError: (err) => {
-      toast.error(err instanceof Error ? err.message : "Transit route unavailable.");
-    },
+  const refreshBank = useMutation({
+    mutationFn: async () =>
+      Promise.all([
+        queryClient.fetchQuery({ ...q.wallet(), staleTime: 0 }),
+        queryClient.fetchQuery({ ...q.transactions(), staleTime: 0 }),
+        bankAccountQuery.refetch({ throwOnError: true }),
+      ]),
+    onSuccess: () => setBankNeedsRefresh(false),
+    onError: () => toast.error("Your account could not be refreshed. Check your connection."),
   });
-
   const handleClose = (nextOpen: boolean) => {
+    if (!nextOpen && (bankLock.current || bankTransfer.isPending || !transit.canDismiss)) return;
     if (!nextOpen) {
       setSubTab("actions");
       setTipIndex(0);
+      transit.close();
     }
     onOpenChange(nextOpen);
   };
-
+  useEffect(() => {
+    if (open && transit.state.phase === "arrived") onOpenChange(false);
+  }, [open, transit.state.phase, onOpenChange]);
 
   const handleOutcomeClick = (zoneSpec: InteractableZoneSpec, outcome: ZoneActionOutcome) => {
+    if (bankLock.current || bankNeedsRefresh) return;
     if (!isServerBackedBankTransfer(zoneSpec, outcome) || !bankAccountQuery.data) {
       toast.error("This activity is not connected to a server-authoritative action yet.");
       return;
     }
     if (outcome.walletDelta < 0 && pocketBalance < Math.abs(outcome.walletDelta)) {
-      toast.error(`You need ${formatNaira(Math.abs(outcome.walletDelta))} pocket cash. Withdraw from the Bank or ATM first.`);
+      toast.error(
+        `You need ${formatNaira(Math.abs(outcome.walletDelta))} pocket cash. Withdraw from the Bank or ATM first.`,
+      );
       return;
     }
     if ((outcome.bankDelta ?? 0) < 0 && bankBalance < Math.abs(outcome.bankDelta ?? 0)) {
@@ -146,22 +196,29 @@ export function NeighborhoodZoneModal({
 
     const bankDelta = outcome.bankDelta ?? 0;
     const amount = Math.abs(bankDelta);
+    bankLock.current = true;
     bankTransfer.mutate(
       { kind: bankDelta > 0 ? "deposit" : "withdraw", amount },
       {
-        onError: (error) => toast.error(error instanceof Error ? error.message : "The bank transfer was not completed."),
         onSuccess: () => toast.success(outcome.toastMessage),
       },
     );
   };
 
-  const transitDestinations = (locationsQuery.data ?? [])
-    .filter((loc) => loc.id !== currentLocationId)
-    .slice(0, 6);
+  const transitDestinations = (locationsQuery.data ?? []).filter(
+    (loc) => loc.is_active && loc.id !== currentLocationId,
+  );
+  const selectedTrip = transit.state.landmark;
+  const selectedEstimate = selectedTrip
+    ? neighborhoodTripEstimate(selectedTrip, currentLocationId, travelMode)
+    : null;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className={`neighborhood-zone-modal ${subTab === "actions" ? "is-compact" : "is-service"} max-h-[90vh] overflow-y-auto sm:max-w-3xl`}>
+      <DialogContent
+        data-locked={bankTransfer.isPending || !transit.canDismiss}
+        className={`neighborhood-zone-modal ${subTab === "actions" ? "is-compact" : "is-service"} max-h-[90vh] overflow-y-auto sm:max-w-3xl`}
+      >
         {zone && (
           <>
             <div className="neighborhood-zone-modal-header">
@@ -204,159 +261,147 @@ export function NeighborhoodZoneModal({
               </div>
             </div>
 
-            {/* Sub-navigation Tabs when zone integrates Banking, Shop Catalog, Careers, or Transit */}
-            <div className="neighborhood-zone-tabs">
+            <div className="neighborhood-zone-tabs" role="group" aria-label="Local services">
               <button
                 type="button"
                 className={subTab === "actions" ? "is-active" : ""}
+                aria-pressed={subTab === "actions"}
+                disabled={bankTransfer.isPending || transit.busy || transit.arrivalConfirmed}
                 onClick={() => setSubTab("actions")}
               >
-                Zone Actions
+                Overview
               </button>
-              {zone.venueInterior === "buka" && (
-                <button type="button" className={subTab === "interior" ? "is-active" : ""}
-                  aria-pressed={subTab === "interior"} onClick={() => setSubTab("interior")}>
-                  Explore Buka
-                </button>
-              )}
-              {zone.category === "bank" && (
+              {services.map((service) => (
                 <button
+                  key={service}
                   type="button"
-                  className={subTab === "bank" ? "is-active" : ""}
-                  onClick={() => setSubTab("bank")}
+                  className={subTab === service ? "is-active" : ""}
+                  aria-pressed={subTab === service}
+                  disabled={bankTransfer.isPending || transit.busy || transit.arrivalConfirmed}
+                  onClick={() => setSubTab(service)}
                 >
-                  Full Osun Bank App
+                  {serviceLabel(service, !!zone.foodOnly)}
                 </button>
-              )}
-              {(zone.category === "market" || zone.id === "zone-mini-mart") && (
-                <button
-                  type="button"
-                  className={subTab === "market" ? "is-active" : ""}
-                  onClick={() => setSubTab("market")}
-                >
-                  {zone.id === "zone-mini-mart" || zone.id === "zone-buka-stall" ? "Food & Drinks" : "Shop Catalogue"}
-                </button>
-              )}
-              {(zone.category === "adire" || zone.category === "filling-station") && (
-                <button
-                  type="button"
-                  className={subTab === "jobs" ? "is-active" : ""}
-                  onClick={() => setSubTab("jobs")}
-                >
-                  Career Shifts
-                </button>
-              )}
-              {zone.category === "transit" && (
-                <button
-                  type="button"
-                  className={subTab === "transit" ? "is-active" : ""}
-                  onClick={() => setSubTab("transit")}
-                >
-                  Osogbo District Routes
-                </button>
-              )}
+              ))}
             </div>
 
-            {subTab === "interior" && zone.venueInterior === "buka" && (
-              currentLocationSlug ? <LocationVenueScene slug={currentLocationSlug} locationName={zone.title}
-                design={BUKA_VENUE_DESIGN} {...(zone.shopSlug !== undefined ? { shopSlug: zone.shopSlug } : {})} /> :
+            {subTab === "interior" &&
+              zone.venueInterior === "buka" &&
+              (currentLocationSlug ? (
+                <LocationVenueScene
+                  slug={currentLocationSlug}
+                  locationName={zone.title}
+                  design={BUKA_VENUE_DESIGN}
+                  {...(zone.shopSlug !== undefined ? { shopSlug: zone.shopSlug } : {})}
+                />
+              ) : (
                 <p role="status">Loading your location…</p>
-            )}
+              ))}
             {subTab === "actions" && (
               <div className="space-y-4">
-                <p
-                  className="rounded-xl border border-amber-500/25 bg-amber-50 px-3 py-2 text-xs text-amber-900"
-                  role="status"
-                >
-                  Only confirmed bank transfers are available here. Other activities remain unavailable until their own server-backed handlers are implemented.
-                </p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {zone.actions.map((outcome) => {
-                    const supported = isServerBackedBankTransfer(zone, outcome);
-                    const priceLabel = supported
-                      ? outcome.walletDelta > 0
-                        ? `+${formatNaira(outcome.walletDelta)}`
-                        : formatNaira(Math.abs(outcome.walletDelta))
-                      : "Unavailable";
-                    const affordable =
-                      (outcome.walletDelta >= 0 || pocketBalance >= Math.abs(outcome.walletDelta)) &&
-                      ((outcome.bankDelta ?? 0) >= 0 ||
-                        bankBalance >= Math.abs(outcome.bankDelta ?? 0));
-
-                    return (
+                {services.length > 0 && (
+                  <div className="neighborhood-zone-service-cards">
+                    {services.map((service) => (
                       <button
-                        key={outcome.id}
+                        key={service}
                         type="button"
-                        disabled={
-                          !supported ||
-                          !bankAccountQuery.data ||
-                          !affordable ||
-                          bankTransfer.isPending
-                        }
-                        onClick={() => handleOutcomeClick(zone, outcome)}
                         className="neighborhood-zone-action-tile"
+                        disabled={
+                          bankTransfer.isPending || transit.busy || transit.arrivalConfirmed
+                        }
+                        onClick={() => setSubTab(service)}
                       >
-                        <div className="flex w-full items-start justify-between gap-2">
-                          <strong className="text-sm font-extrabold text-[#16225C]">
-                            {outcome.label}
-                          </strong>
-                          <span
-                            className={`neighborhood-zone-price-tag${
-                              supported && outcome.walletDelta > 0 ? " is-earn" : ""
-                            }`}
-                          >
-                            {priceLabel}
-                          </span>
-                        </div>
-                        <p className="text-xs text-[#4b5970]">{outcome.description}</p>
-                        {!supported && (
-                          <span className="text-[10px] font-bold uppercase tracking-wide text-amber-700">
-                            Not available yet
-                          </span>
-                        )}
-                        {supported && !bankAccountQuery.data && (
-                          <span className="text-[10px] font-bold uppercase tracking-wide text-amber-700">
-                            Open a bank account to use
-                          </span>
-                        )}
-                        {supported && (
-                          <div className="flex flex-wrap gap-1.5 pt-1 text-[11px] font-bold text-[#16225C]">
-                            {outcome.needDeltas?.hunger ? (
-                              <span>
-                                {outcome.needDeltas.hunger > 0 ? "+" : ""}
-                                {outcome.needDeltas.hunger} Fullness
-                              </span>
-                            ) : null}
-                            {outcome.needDeltas?.energy ? (
-                              <span>
-                                {outcome.needDeltas.energy > 0 ? "+" : ""}
-                                {outcome.needDeltas.energy} Energy
-                              </span>
-                            ) : null}
-                            {outcome.needDeltas?.hygiene ? (
-                              <span>
-                                {outcome.needDeltas.hygiene > 0 ? "+" : ""}
-                                {outcome.needDeltas.hygiene} Hygiene
-                              </span>
-                            ) : null}
-                            {outcome.needDeltas?.fun ? (
-                              <span>+{outcome.needDeltas.fun} Mood</span>
-                            ) : null}
-                            {outcome.needDeltas?.social ? (
-                              <span>+{outcome.needDeltas.social} Social</span>
-                            ) : null}
-                            {outcome.craftItem ? (
-                              <span className="text-[#b87b00]">+ Item: {outcome.craftItem.name}</span>
-                            ) : null}
-                            {outcome.xpGain ? (
-                              <span className="text-[#1E9A5F]">+{outcome.xpGain} XP</span>
-                            ) : null}
-                          </div>
-                        )}
+                        <strong>{serviceLabel(service, !!zone.foodOnly)}</strong>
+                        <span className="text-xs text-muted-foreground">
+                          {serviceDescription(service)}
+                        </span>
                       </button>
-                    );
-                  })}
-                </div>
+                    ))}
+                  </div>
+                )}
+                {bankNeedsRefresh && (
+                  <div role="alert">
+                    <p>Refresh your account and history before making another transfer.</p>
+                    <button
+                      type="button"
+                      className="neighborhood-zone-action-tile"
+                      disabled={refreshBank.isPending}
+                      onClick={() => refreshBank.mutate()}
+                    >
+                      Refresh account
+                    </button>
+                  </div>
+                )}
+                {zone.actions.some((outcome) => isServerBackedBankTransfer(zone, outcome)) && (
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {zone.actions
+                      .filter((outcome) => isServerBackedBankTransfer(zone, outcome))
+                      .map((outcome) => {
+                        const priceLabel =
+                          outcome.walletDelta > 0
+                            ? `+${formatNaira(outcome.walletDelta)}`
+                            : formatNaira(Math.abs(outcome.walletDelta));
+                        const affordable =
+                          (outcome.walletDelta >= 0 ||
+                            pocketBalance >= Math.abs(outcome.walletDelta)) &&
+                          ((outcome.bankDelta ?? 0) >= 0 ||
+                            bankBalance >= Math.abs(outcome.bankDelta ?? 0));
+
+                        return (
+                          <button
+                            key={outcome.id}
+                            type="button"
+                            aria-busy={bankTransfer.isPending}
+                            disabled={
+                              !bankAccountQuery.data ||
+                              !affordable ||
+                              bankTransfer.isPending ||
+                              bankNeedsRefresh
+                            }
+                            onClick={() => handleOutcomeClick(zone, outcome)}
+                            className="neighborhood-zone-action-tile"
+                          >
+                            <div className="flex w-full items-start justify-between gap-2">
+                              <strong className="text-sm font-extrabold text-[#16225C]">
+                                {outcome.label}
+                              </strong>
+                              <span
+                                className={`neighborhood-zone-price-tag${
+                                  outcome.walletDelta > 0 ? " is-earn" : ""
+                                }`}
+                              >
+                                {priceLabel}
+                              </span>
+                            </div>
+                            <p className="text-xs text-[#4b5970]">{outcome.description}</p>
+                            {!bankAccountQuery.data && (
+                              <span className="text-xs text-muted-foreground">
+                                Open a bank account to use
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                  </div>
+                )}
+                {zone.actions.some((outcome) => !isServerBackedBankTransfer(zone, outcome)) && (
+                  <details className="neighborhood-zone-upcoming">
+                    <summary>Activities coming later</summary>
+                    <p>
+                      These activities are not available yet.
+                      {services.length > 0
+                        ? " Use the services above for confirmed purchases, shifts or travel."
+                        : " This spot does not have a playable service yet."}
+                    </p>
+                    <ul>
+                      {zone.actions
+                        .filter((outcome) => !isServerBackedBankTransfer(zone, outcome))
+                        .map((outcome) => (
+                          <li key={outcome.id}>{outcome.label}</li>
+                        ))}
+                    </ul>
+                  </details>
+                )}
               </div>
             )}
 
@@ -369,8 +414,8 @@ export function NeighborhoodZoneModal({
             {subTab === "market" && (
               <div className="rounded-xl border border-[#16225C]/15 bg-white/85 p-2">
                 <MarketPage
-                  shopSlug={zone.shopSlug ?? undefined}
-                  foodOnly={zone.id === "zone-mini-mart" || zone.id === "zone-buka-stall"}
+                  {...(zone.shopSlug != null ? { shopSlug: zone.shopSlug } : {})}
+                  foodOnly={zone.foodOnly ?? false}
                 />
               </div>
             )}
@@ -383,80 +428,103 @@ export function NeighborhoodZoneModal({
 
             {subTab === "transit" && (
               <div className="space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#16225C]/15 bg-[#f5f2ea] p-3">
-                  <div>
-                    <strong className="block text-sm text-[#16225C]">Choose Transit Vehicle</strong>
-                    <span className="text-xs text-[#4b5970]">
-                      Board from Olaiya Right Avenue shoulder bay
-                    </span>
-                  </div>
-                  <div className="flex gap-1.5">
-                    {(["keke", "danfo", "okada"] as const).map((mode) => (
-                      <button
-                        key={mode}
-                        type="button"
-                        onClick={() => setTravelMode(mode)}
-                        className={`min-h-[40px] rounded-lg border px-3 py-1.5 text-xs font-bold capitalize ${
-                          travelMode === mode
-                            ? "border-[#16225C] bg-[#16225C] text-[#FAF7F0]"
-                            : "border-[#16225C]/20 bg-white text-[#16225C]"
-                        }`}
-                      >
-                        {mode === "danfo" ? "Korope / Danfo" : mode}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {transitDestinations.length > 0 ? (
-                  <div className="grid gap-2.5 sm:grid-cols-2">
-                    {transitDestinations.map((loc) => {
-                      const est = estimateTrip(travelMode, 350, 12);
-                      return (
-                        <button
-                          key={loc.id}
-                          type="button"
-                          disabled={transitMutation.isPending || pocketBalance < est.fare}
-                          onClick={() =>
-                            transitMutation.mutate({
-                              locationId: loc.id,
-                              mode: travelMode,
-                              name: loc.name,
-                            })
-                          }
-                          className="neighborhood-zone-action-tile"
-                        >
-                          <div className="flex w-full items-center justify-between">
-                            <strong className="text-sm text-[#16225C]">{loc.name}</strong>
-                            <span className="neighborhood-zone-price-tag">
-                              {formatNaira(est.fare)}
-                            </span>
-                          </div>
-                          <span className="text-xs text-[#4b5970]">
-                            ~{est.minutes} min · {loc.type.replace("_", " ")}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="rounded-xl border border-[#16225C]/15 bg-[#f5f2ea] p-4 text-center">
-                    <p className="mb-3 text-sm text-[#3a4668]">
-                      Open the interactive Osogbo City Map to board a Keke or Korope to any
-                      district.
-                    </p>
+                <div role="group" aria-label="Transport mode" className="neighborhood-zone-tabs">
+                  {(["walking", "keke", "danfo", "okada"] as const).map((mode) => (
                     <button
                       type="button"
-                      onClick={() => {
-                        handleClose(false);
-                        void navigate({ to: "/map" });
-                      }}
-                      className="inline-flex min-h-[44px] items-center gap-2 rounded-xl bg-[#16225C] px-4 py-2 text-sm font-bold text-[#FAF7F0]"
+                      key={mode}
+                      aria-pressed={travelMode === mode}
+                      disabled={transit.busy || transit.arrivalConfirmed}
+                      onClick={() => setTravelMode(mode)}
                     >
-                      <MapIcon size={16} aria-hidden="true" />
-                      Open City Transit Map
+                      {TRAVEL_MODE_DETAILS[mode].label}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Estimates use each destination's route settings. The server confirms the final
+                  fare and arrival.
+                </p>
+                {locationsQuery.isPending && <p role="status">Loading routes…</p>}
+                {locationsQuery.isError && (
+                  <div role="alert">
+                    Routes could not load.{" "}
+                    <button type="button" onClick={() => void locationsQuery.refetch()}>
+                      Retry routes
                     </button>
                   </div>
+                )}
+                <div className="grid gap-2.5 sm:grid-cols-2">
+                  {transitDestinations.map((loc) => {
+                    const estimate = neighborhoodTripEstimate(loc, currentLocationId, travelMode);
+                    return (
+                      <button
+                        key={loc.id}
+                        type="button"
+                        className="neighborhood-zone-action-tile"
+                        aria-pressed={selectedTrip?.id === loc.id}
+                        disabled={!estimate || transit.busy || transit.arrivalConfirmed}
+                        onClick={() => transit.select(loc)}
+                      >
+                        <strong>{loc.name}</strong>
+                        <span>
+                          {estimate
+                            ? `${formatNaira(estimate.fare)} · ~${estimate.minutes} min`
+                            : "Mode unavailable"}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {selectedTrip && (
+                  <div className="neighborhood-zone-trip-confirm" aria-live="polite">
+                    <strong>{selectedTrip.name}</strong>
+                    <p>
+                      {selectedEstimate
+                        ? `${TRAVEL_MODE_DETAILS[travelMode].label} · ${formatNaira(selectedEstimate.fare)} estimated`
+                        : "Choose an available transport mode."}
+                    </p>
+                    {transit.state.error && <p role="alert">{transit.state.error}</p>}
+                    {transit.arrivalConfirmed ? (
+                      <button
+                        type="button"
+                        className="neighborhood-zone-action-tile"
+                        disabled={transit.busy}
+                        onClick={() => void transit.retryArrival()}
+                      >
+                        Retry destination loading
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="neighborhood-zone-action-tile"
+                        disabled={
+                          !selectedEstimate ||
+                          pocketBalance < selectedEstimate.fare ||
+                          transit.busy ||
+                          !characterQuery.data
+                        }
+                        onClick={() => void transit.confirm(selectedTrip.id, travelMode)}
+                      >
+                        {transit.busy ? "Confirming trip…" : "Confirm trip"}
+                      </button>
+                    )}
+                    {selectedEstimate && pocketBalance < selectedEstimate.fare && (
+                      <p>Not enough pocket cash. Choose a cheaper option or walk.</p>
+                    )}
+                  </div>
+                )}
+                {!transit.busy && !transit.arrivalConfirmed && (
+                  <button
+                    type="button"
+                    className="neighborhood-zone-action-tile"
+                    onClick={() => {
+                      handleClose(false);
+                      void navigate({ to: "/map" });
+                    }}
+                  >
+                    <MapIcon size={16} aria-hidden="true" /> Open city map
+                  </button>
                 )}
               </div>
             )}

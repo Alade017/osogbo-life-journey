@@ -31,7 +31,12 @@ export type ZoneActionOutcome = {
   activityKind?: "purchase" | "shift" | "craft" | "service" | "transit";
 };
 
+export type ZoneService = "bank" | "market" | "jobs" | "transit" | "interior";
+
 export interface InteractableZoneSpec {
+  /** Existing server-backed panels offered at this world target. */
+  services?: readonly ZoneService[];
+  foodOnly?: boolean;
   venueInterior?: "buka";
   id: string;
   zoneTag: NeighborhoodZoneTag;
@@ -52,7 +57,6 @@ export interface InteractableZoneSpec {
   actions: readonly ZoneActionOutcome[];
 }
 
-
 /** Only a pure pocket↔bank transfer can be handled by the existing bank RPCs. */
 export function isServerBackedBankTransfer(
   zone: InteractableZoneSpec,
@@ -61,6 +65,7 @@ export function isServerBackedBankTransfer(
   return (
     zone.category === "bank" &&
     typeof outcome.bankDelta === "number" &&
+    Number.isSafeInteger(outcome.bankDelta) &&
     outcome.bankDelta !== 0 &&
     outcome.walletDelta === -outcome.bankDelta &&
     !outcome.needDeltas &&
@@ -95,6 +100,7 @@ export type NeighborhoodZoneTag =
 const AUTHORED_ZONES: readonly AuthoredZone[] = [
   {
     id: "zone-fuel-pumps",
+    services: ["jobs"],
     zoneTag: "FILLING_STATION",
     category: "filling-station",
     title: "Fuel & Go Forecourt Pumps",
@@ -134,6 +140,8 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
   },
   {
     id: "zone-mini-mart",
+    services: ["market"],
+    foodOnly: true,
     zoneTag: "FILLING_STATION",
     category: "filling-station",
     title: "Fuel & Go Mini-Mart",
@@ -175,6 +183,7 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
   },
   {
     id: "zone-vulcanizer",
+    services: ["jobs"],
     zoneTag: "FILLING_STATION",
     category: "filling-station",
     title: "Vulcanizer & Tire Corner",
@@ -214,6 +223,7 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
   },
   {
     id: "zone-bank-atm",
+    services: ["bank"],
     zoneTag: "BANK",
     category: "bank",
     title: "Meridian Bank ATM Alcove",
@@ -246,6 +256,7 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
   },
   {
     id: "zone-bank-lobby",
+    services: ["bank"],
     zoneTag: "BANK",
     category: "bank",
     title: "Meridian Bank Customer Lobby",
@@ -278,6 +289,7 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
   },
   {
     id: "zone-adire-vats",
+    services: ["market", "jobs"],
     zoneTag: "ADIRE_MARKET",
     category: "adire",
     title: "Indigo Dye Vats & Zinc Shed",
@@ -318,6 +330,7 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
   },
   {
     id: "zone-adire-racks",
+    services: ["market", "jobs"],
     zoneTag: "ADIRE_MARKET",
     category: "adire",
     title: "Adire Drying & Folding Racks",
@@ -358,6 +371,7 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
   },
   {
     id: "zone-market-stalls",
+    services: ["market"],
     zoneTag: "ADIRE_MARKET",
     category: "market",
     title: "Open Market Produce & Cloth Tables",
@@ -399,6 +413,8 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
   },
   {
     id: "zone-buka-stall",
+    services: ["interior", "market"],
+    foodOnly: true,
     venueInterior: "buka",
     zoneTag: "ADIRE_MARKET",
     category: "market",
@@ -502,6 +518,7 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
   },
   {
     id: "zone-shop-accessory",
+    services: ["market"],
     zoneTag: "COMMERCIAL_SHOPS",
     category: "shops",
     title: "Iya Adire Style & Accessories",
@@ -554,6 +571,7 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
   },
   {
     id: "zone-transit-stand",
+    services: ["transit", "jobs"],
     zoneTag: "COMMERCIAL_SHOPS",
     category: "transit",
     title: "Keke Napep & Korope Loading Stand",
