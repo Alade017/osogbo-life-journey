@@ -52,6 +52,24 @@ export interface InteractableZoneSpec {
   actions: readonly ZoneActionOutcome[];
 }
 
+
+/** Only a pure pocket↔bank transfer can be handled by the existing bank RPCs. */
+export function isServerBackedBankTransfer(
+  zone: InteractableZoneSpec,
+  outcome: ZoneActionOutcome,
+): boolean {
+  return (
+    zone.category === "bank" &&
+    typeof outcome.bankDelta === "number" &&
+    outcome.bankDelta !== 0 &&
+    outcome.walletDelta === -outcome.bankDelta &&
+    !outcome.needDeltas &&
+    !outcome.xpGain &&
+    !outcome.craftItem &&
+    !outcome.equipSlot
+  );
+}
+
 export interface ZoneNpcSpec {
   id: string;
   name: string;
@@ -212,7 +230,6 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
         description: "Pull spending cash from bank savings straight to pocket.",
         walletDelta: 2000,
         bankDelta: -2000,
-        xpGain: 5,
         toastMessage: "Withdrew ₦2,000 from Meridian ATM to pocket cash.",
         activityKind: "service",
       },
@@ -222,7 +239,6 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
         description: "Secure pocket Naira into your Osun Bank savings.",
         walletDelta: -2000,
         bankDelta: 2000,
-        xpGain: 5,
         toastMessage: "Deposited ₦2,000 into Osun Bank savings via ATM.",
         activityKind: "service",
       },
@@ -246,7 +262,6 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
         description: "Deposit pocket earnings into savings with zero queue.",
         walletDelta: -5000,
         bankDelta: 5000,
-        xpGain: 10,
         toastMessage: "Teller confirmed ₦5,000 deposit to bank savings.",
         activityKind: "service",
       },
@@ -256,7 +271,6 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
         description: "Withdraw market budget cash from your savings.",
         walletDelta: 5000,
         bankDelta: -5000,
-        xpGain: 8,
         toastMessage: "Teller dispensed ₦5,000 to your pocket wallet.",
         activityKind: "service",
       },
