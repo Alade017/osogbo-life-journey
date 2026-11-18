@@ -1,7 +1,7 @@
 import { expect, it } from "vitest";
 import { Vector3 } from "three";
 import { createHumanoid } from "@/components/3d/humanoid-rig";
-import { createFittedClothing } from "@/components/3d/humanoid-clothing";
+import { createFittedClothing, createVisibleSkin } from "@/components/3d/humanoid-clothing";
 import {
   BONE,
   poseFor,
@@ -75,3 +75,34 @@ it("reuses the sculpt across hair choices while retaining independent skeletons"
   expect(a.meshes[0]!.geometry).toBe(b.meshes[0]!.geometry);
   expect(a.root).not.toBe(b.root);
 });
+
+it("switches sleeve geometry on the same skeleton without changing the body", () => {
+  const rig = createHumanoid({ variant: "female", skinColor: "#754c32", hairColor: null }),
+    body = rig.meshes[0]!;
+  const tee = createFittedClothing(body, ["#eeeeee", "#333333", "#111111"], false, "tee");
+  const long = createFittedClothing(body, ["#b96643", "#333333", "#111111"], false, "long-sleeve");
+  expect(long.skeleton).toBe(tee.skeleton);
+  expect(long.geometry).not.toBe(tee.geometry);
+  expect(long.geometry.groups[0]!.count).toBeGreaterThan(tee.geometry.groups[0]!.count);
+});
+
+it.each(["male", "female"] as const)(
+  "keeps the dressed %s render within the mobile triangle budget",
+  (variant) => {
+    const rig = createHumanoid({ variant, skinColor: "#754c32", hairColor: "#111111" }),
+      body = rig.meshes[0]!;
+    for (const cut of ["tee", "long-sleeve"] as const) {
+      const exposed = createVisibleSkin(body, cut),
+        outfit = createFittedClothing(body, ["#eeeeee", "#333333", "#111111"], false, cut);
+      const triangles = (mesh: typeof body) =>
+        (mesh.geometry.index?.count ?? mesh.geometry.getAttribute("position").count) / 3;
+      expect(
+        triangles(exposed) +
+          triangles(outfit) +
+          rig.meshes.slice(1).reduce((sum, m) => sum + triangles(m), 0),
+      ).toBeLessThanOrEqual(10000);
+      expect(exposed.skeleton).toBe(body.skeleton);
+      expect(exposed.material).toBe(body.material);
+    }
+  },
+);

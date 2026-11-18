@@ -1,3 +1,4 @@
+import type { WearableEquipment } from "@/game/wearable-outfits";
 import { OrbitControls } from "@react-three/drei";
 import type { AvatarAnimationState } from "@/components/game/Avatar";
 import { Canvas } from "@react-three/fiber";
@@ -6,7 +7,7 @@ import { WorldCharacter } from "./WorldCharacter";
 import { WorldLighting } from "./WorldScene";
 
 /** Worn items may carry their slug so 3D models can be shown on the character. */
-export type PreviewEquipment = readonly { slot: string; item?: { slug?: string | null } | null }[];
+export type PreviewEquipment = readonly WearableEquipment[];
 
 /** The same 3D character used in the house, framed for a profile or wardrobe stage. */
 /** Full body for the profile stage; "head" frames only the face and hair, for small avatars. */

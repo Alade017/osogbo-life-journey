@@ -1,3 +1,4 @@
+import { resolveWornOutfit } from "@/game/wearable-outfits";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { MathUtils, Vector3, type Group } from "three";
@@ -54,6 +55,8 @@ export function WorldCharacter({
   body?: BodyVariant | undefined;
 }) {
   const safe = normalizeAvatarAppearance(appearance, gender);
+  const outfit = resolveWornOutfit(safe, gender, equipment);
+  if (outfit.hasWearables) safe.clothed = true;
   const h = WORLD_SCALE.character * ([0.92, 1, 1.06][safe.stature] ?? 1);
   const build = [0.9, 1, 1.07, 1.14][safe.build] ?? 1;
   const variant = body ?? bodyVariantFor(gender);
@@ -188,6 +191,7 @@ export function WorldCharacter({
       >
         <group ref={bodyRef}>
           <CharacterBody
+            outfit={outfit}
             variant={variant}
             height={h}
             motion={motion}

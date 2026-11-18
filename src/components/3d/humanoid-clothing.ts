@@ -1,3 +1,4 @@
+import type { TopCut } from "@/game/wearable-outfits";
 import {
   BufferGeometry,
   Float32BufferAttribute,
@@ -8,7 +9,7 @@ import {
 } from "three";
 import { BONE } from "./humanoid-pose";
 import { adireTexture } from "./cloth-patterns";
-const cache = new WeakMap<BufferGeometry, BufferGeometry>();
+const cache = new WeakMap<BufferGeometry, Map<TopCut, BufferGeometry>>();
 type Vertex = { p: number[]; n: number[]; uv: number[]; bones: Map<number, number> };
 function interpolate(a: Vertex, b: Vertex, t: number): Vertex {
   const mix = (p: number[], q: number[]) => p.map((v, i) => v + (q[i]! - v) * t);
@@ -35,8 +36,9 @@ export function createFittedClothing(
   body: SkinnedMesh,
   colors: readonly [string, string, string],
   patterned: boolean,
+  cut: TopCut = "tee",
 ) {
-  let geometry = cache.get(body.geometry);
+  let geometry = cache.get(body.geometry)?.get(cut);
   if (!geometry) {
     const source = body.geometry,
       p = source.getAttribute("position"),
@@ -76,7 +78,10 @@ export function createFittedClothing(
         for (const [bone, w] of v.bones)
           if (armBones.has(body.skeleton.bones[bone]!.name)) armWeight += w / 3;
       const arm = armWeight > 0.25;
-      let shirt = clip(tri, (v) => v.p[1]! - (arm ? 0.657 : 0.555));
+      let shirt = clip(
+        tri,
+        (v) => v.p[1]! - (arm ? (cut === "long-sleeve" ? 0.482 : 0.657) : 0.555),
+      );
       shirt = clip(shirt, (v) => 0.794 + 0.16 * Math.abs(v.p[0]!) - v.p[1]!);
       add(shirt, 0);
       if (!arm) {
@@ -127,7 +132,9 @@ export function createFittedClothing(
     geometry.setAttribute("skinWeight", new Float32BufferAttribute(skinWeights, 4));
     geometry.computeBoundingBox();
     geometry.computeBoundingSphere();
-    cache.set(source, geometry);
+    const variants = cache.get(source) ?? new Map<TopCut, BufferGeometry>();
+    variants.set(cut, geometry);
+    cache.set(source, variants);
   }
   const materials = colors.map(
     (color, i) =>
@@ -140,6 +147,57 @@ export function createFittedClothing(
   );
   const mesh = new SkinnedMesh(geometry, materials);
   mesh.name = "fitted-character-outfit";
+  mesh.bind(body.skeleton, body.bindMatrix);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  return mesh;
+}
+
+const exposedCache = new WeakMap<BufferGeometry, Map<TopCut, BufferGeometry>>();
+/** Avoid drawing a second full body underneath the fitted outfit. */
+export function createVisibleSkin(body: SkinnedMesh, cut: TopCut = "tee") {
+  let geometry = exposedCache.get(body.geometry)?.get(cut);
+  if (!geometry) {
+    const source = body.geometry,
+      p = source.getAttribute("position"),
+      skin = source.getAttribute("skinIndex"),
+      weights = source.getAttribute("skinWeight"),
+      indices: number[] = [];
+    const armBones = new Set([
+      BONE.lUpperArm,
+      BONE.rUpperArm,
+      BONE.lForearm,
+      BONE.rForearm,
+      BONE.lHand,
+      BONE.rHand,
+    ] as string[]);
+    for (let i = 0; i < p.count; i += 3) {
+      let armWeight = 0;
+      for (let v = i; v < i + 3; v++)
+        for (let j = 0; j < 4; j++)
+          if (armBones.has(body.skeleton.bones[skin.getComponent(v, j)]!.name))
+            armWeight += weights.getComponent(v, j) / 3;
+      const arm = armWeight > 0.25;
+      const covered = [i, i + 1, i + 2].every((v) => {
+        const y = p.getY(v),
+          x = p.getX(v);
+        return (
+          (!arm && y <= 0.555) ||
+          (y >= (arm ? (cut === "long-sleeve" ? 0.482 : 0.657) : 0.555) &&
+            y <= 0.794 + 0.16 * Math.abs(x))
+        );
+      });
+      if (!covered) indices.push(i, i + 1, i + 2);
+    }
+    geometry = new BufferGeometry();
+    for (const [name, attribute] of Object.entries(source.attributes))
+      geometry.setAttribute(name, attribute);
+    geometry.setIndex(indices);
+    const variants = exposedCache.get(source) ?? new Map<TopCut, BufferGeometry>();
+    variants.set(cut, geometry);
+    exposedCache.set(source, variants);
+  }
+  const mesh = new SkinnedMesh(geometry, body.material);
   mesh.bind(body.skeleton, body.bindMatrix);
   mesh.castShadow = true;
   mesh.receiveShadow = true;

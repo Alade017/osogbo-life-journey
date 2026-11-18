@@ -22,6 +22,7 @@ const MOTIONS: PoseMotion[] = [
 describe("motionFor", () => {
   it("walks whenever the character is moving", () => {
     expect(motionFor("idle", true)).toBe("Walk");
+    expect(motionFor("walk", false)).toBe("Walk");
     expect(motionFor("work", true)).toBe("Walk");
   });
 
