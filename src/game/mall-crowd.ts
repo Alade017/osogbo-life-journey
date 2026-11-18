@@ -1,4 +1,6 @@
+import type { Appearance } from "./avatar-appearance";
 import type { WalkPoint } from "./grid-walk-path";
+import { shopperLook, type MallGender } from "./mall-appearance";
 import { createWalker, stepWalker, type MallWalker } from "./mall-movement";
 import {
   MALL_BROWSE_SPOTS,
@@ -18,13 +20,15 @@ export const MALL_OUTFIT_COUNT = 6;
 
 export type MallShopper = {
   id: string;
-  /** Index into the crowd's outfit palette. */
-  outfit: number;
+  gender: MallGender;
+  appearance: Appearance;
   walker: MallWalker;
 };
 
 /** The route for one shopper: entrance → browse spot → till queue → entrance. */
-export function buildShopperRoute(seed: number): { points: WalkPoint[]; dwellAt: Map<number, number> } | null {
+export function buildShopperRoute(
+  seed: number,
+): { points: WalkPoint[]; dwellAt: Map<number, number> } | null {
   const browse = MALL_BROWSE_SPOTS[mod(seed, MALL_BROWSE_SPOTS.length)];
   const queue = MALL_TILL_QUEUE[mod(seed * 3 + 1, MALL_TILL_QUEUE.length)];
   if (!browse || !queue) return null;
@@ -51,9 +55,11 @@ export function buildShopperRoute(seed: number): { points: WalkPoint[]; dwellAt:
 export function createShopper(seed: number): MallShopper | null {
   const route = buildShopperRoute(seed);
   if (!route) return null;
+  const look = shopperLook(seed);
   return {
     id: `shopper-${seed}`,
-    outfit: mod(seed * 5, MALL_OUTFIT_COUNT),
+    gender: look.gender,
+    appearance: look.appearance,
     walker: createWalker(MALL_ENTRANCE, route.points, { dwellAt: route.dwellAt }),
   };
 }

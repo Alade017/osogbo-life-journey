@@ -220,6 +220,7 @@ export function CharacterWardrobe({
       {anchors.arms.map((segment) =>
         createPortal(
           <SegmentGarment
+            key={segment.bone.uuid}
             segment={segment}
             color={top}
             trim={trim}
@@ -232,6 +233,7 @@ export function CharacterWardrobe({
       {anchors.legs.map((segment) =>
         createPortal(
           <SegmentGarment
+            key={segment.bone.uuid}
             segment={segment}
             color={bottom}
             trim={trim}

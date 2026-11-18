@@ -45,7 +45,12 @@ export function stepWalker(walker: MallWalker, dt: number): MallWalker {
   if (walker.done) return walker.moving ? { ...walker, moving: false } : walker;
   if (walker.dwellLeft > 0) {
     const left = Math.max(0, walker.dwellLeft - dt);
-    return { ...walker, dwellLeft: left, moving: false, done: left === 0 && walker.next >= walker.points.length };
+    return {
+      ...walker,
+      dwellLeft: left,
+      moving: false,
+      done: left === 0 && walker.next >= walker.points.length,
+    };
   }
   const target = walker.points[walker.next];
   if (!target) return { ...walker, moving: false, done: true };
@@ -86,4 +91,3 @@ export function isPossibleMallMove(
   const allowed = MALL_WALK_SPEED * Math.max(0, elapsedSeconds) + MOVE_TOLERANCE;
   return Math.hypot(to[0] - from[0], to[1] - from[1]) <= allowed;
 }
-

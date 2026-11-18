@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
   MALL_CROWD_TARGET,
-  MALL_OUTFIT_COUNT,
   advanceCrowd,
   buildShopperRoute,
   createShopper,
@@ -25,13 +24,20 @@ describe("mall shopper routes", () => {
     expect(route?.points.at(-1)).toEqual([0, 6.2]);
   });
 
-  it("gives neighbouring shoppers different outfits", () => {
-    const outfits = Array.from({ length: 10 }, (_, seed) => createShopper(seed)?.outfit ?? -1);
-    for (let i = 1; i < outfits.length; i += 1) {
-      expect(outfits[i]).not.toBe(outfits[i - 1]);
-      expect(outfits[i]).toBeGreaterThanOrEqual(0);
-      expect(outfits[i]).toBeLessThan(MALL_OUTFIT_COUNT);
+  it("gives neighbouring shoppers different tops and trousers, all clothed", () => {
+    const looks = Array.from({ length: 12 }, (_, seed) => createShopper(seed)?.appearance);
+    for (let i = 1; i < looks.length; i += 1) {
+      expect(looks[i]?.outfit).not.toBe(looks[i - 1]?.outfit);
+      expect(looks[i]?.bottoms).not.toBe(looks[i - 1]?.bottoms);
     }
+    for (const look of looks) expect(look?.clothed).toBe(true);
+  });
+
+  it("uses a good variety of tops across the crowd", () => {
+    const tops = new Set(
+      Array.from({ length: 20 }, (_, seed) => createShopper(seed)?.appearance.outfit),
+    );
+    expect(tops.size).toBeGreaterThanOrEqual(5);
   });
 });
 

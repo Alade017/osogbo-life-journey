@@ -32,7 +32,14 @@ describe("mall walkers", () => {
   });
 
   it("pauses at a dwell waypoint before moving on", () => {
-    let walker = createWalker([0, 0], [[0.5, 0], [2, 0]], { dwellAt: new Map([[0, 2]]) });
+    let walker = createWalker(
+      [0, 0],
+      [
+        [0.5, 0],
+        [2, 0],
+      ],
+      { dwellAt: new Map([[0, 2]]) },
+    );
     walker = stepWalker(walker, 1); // reaches the first point
     expect(walker.moving).toBe(false);
     expect(walker.dwellLeft).toBe(2);
@@ -79,6 +86,8 @@ describe("mall spots", () => {
 
   it("places fourteen staff, three of them in the restricted rooms", () => {
     expect(MALL_STAFF).toHaveLength(14);
-    expect(MALL_STAFF.filter((member) => member.role === "staff-room" || member.role === "control-room")).toHaveLength(3);
+    expect(
+      MALL_STAFF.filter((member) => member.role === "staff-room" || member.role === "control-room"),
+    ).toHaveLength(3);
   });
 });

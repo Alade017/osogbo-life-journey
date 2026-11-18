@@ -410,7 +410,12 @@ function LocationPage() {
       </div>
 
       {isHere && (
-        <LocationVenueScene key={loc.id} slug={loc.slug} locationName={loc.name} locationId={loc.id} />
+        <LocationVenueScene
+          key={loc.id}
+          slug={loc.slug}
+          locationName={loc.name}
+          locationId={loc.id}
+        />
       )}
 
       {isHere && isPlayableDistrict(loc.slug) && (

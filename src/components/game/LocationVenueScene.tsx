@@ -144,7 +144,9 @@ function BasicLocationVenueScene({
               aria-hidden="true"
             >
               <WorldCamera
-                width={bankLayout?.width ?? venue.sceneBounds?.width ?? venue.sceneSize?.width ?? 10}
+                width={
+                  bankLayout?.width ?? venue.sceneBounds?.width ?? venue.sceneSize?.width ?? 10
+                }
                 depth={bankLayout?.depth ?? venue.sceneBounds?.depth ?? venue.sceneSize?.depth ?? 7}
                 stage
                 target={[0, 1.2, 0]}
@@ -311,10 +313,16 @@ function BasicLocationVenueScene({
       )}
       {venue.scene === "workplace" && (
         <nav aria-label="Workplace links" className="flex flex-wrap gap-2">
-          <Link to="/jobs" className="rounded-lg border border-edge bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground">
+          <Link
+            to="/jobs"
+            className="rounded-lg border border-edge bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground"
+          >
             Jobs & shifts
           </Link>
-          <Link to="/education" className="rounded-lg border border-edge bg-card px-4 py-3 text-sm font-semibold">
+          <Link
+            to="/education"
+            className="rounded-lg border border-edge bg-card px-4 py-3 text-sm font-semibold"
+          >
             Courses
           </Link>
         </nav>
@@ -385,7 +393,9 @@ export function LocationVenueScene(props: {
   if (props.slug === "osun-mall" && props.locationId)
     return (
       <Suspense
-        fallback={<WorldLoadingIndicator title="Entering the mall" detail="Opening the shopping hall…" />}
+        fallback={
+          <WorldLoadingIndicator title="Entering the mall" detail="Opening the shopping hall…" />
+        }
       >
         <OsunMallVenue locationId={props.locationId} locationName={props.locationName} />
       </Suspense>

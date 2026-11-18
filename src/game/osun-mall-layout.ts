@@ -24,7 +24,14 @@ export const MALL_BODY_RADIUS = 0.3;
 export const MALL_OBSTACLES: readonly MallRect[] = [
   { id: "mall-display", label: "Featured display", minX: -5.6, maxX: -3.6, minZ: -0.8, maxZ: 0.8 },
   { id: "mall-shelves", label: "Shop shelves", minX: 2.2, maxX: 5.8, minZ: -4.93, maxZ: -4.07 },
-  { id: "mall-essentials", label: "Essentials aisle", minX: 2.2, maxX: 5.8, minZ: -1.73, maxZ: -0.87 },
+  {
+    id: "mall-essentials",
+    label: "Essentials aisle",
+    minX: 2.2,
+    maxX: 5.8,
+    minZ: -1.73,
+    maxZ: -0.87,
+  },
   {
     id: "mall-gallery-shop",
     label: "Gallery shop display",
@@ -34,7 +41,14 @@ export const MALL_OBSTACLES: readonly MallRect[] = [
     maxZ: -3.7,
   },
   { id: "mall-seats", label: "Gallery seats", minX: -5.75, maxX: -3.45, minZ: 4.17, maxZ: 4.83 },
-  { id: "mall-checkout", label: "Checkout counter", minX: 2.15, maxX: 5.85, minZ: 2.67, maxZ: 3.93 },
+  {
+    id: "mall-checkout",
+    label: "Checkout counter",
+    minX: 2.15,
+    maxX: 5.85,
+    minZ: 2.67,
+    maxZ: 3.93,
+  },
   { id: "queue-post-west", label: "Queue post", minX: 2.1, maxX: 2.7, minZ: 5.2, maxZ: 5.8 },
   { id: "queue-post-east", label: "Queue post", minX: 5.3, maxX: 5.9, minZ: 5.2, maxZ: 5.8 },
 ];
@@ -103,7 +117,8 @@ export const MALL_TILL_QUEUE: readonly WalkPoint[] = [
   [1.5, 4.6],
 ];
 
-export type MallStaffRole = "till" | "floor" | "security" | "supervisor" | "staff-room" | "control-room";
+export type MallStaffRole =
+  "till" | "floor" | "security" | "supervisor" | "staff-room" | "control-room";
 
 export type MallStaffMember = {
   id: string;

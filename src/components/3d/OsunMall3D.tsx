@@ -13,8 +13,18 @@ import {
   MALL_STAFF,
   type MallRect,
 } from "@/game/osun-mall-layout";
+import { staffLook, type MallGender } from "@/game/mall-appearance";
+import { MALL_PROPS, type MallPropId, type MallTarget } from "@/game/mall-reactions";
 import { WorldCharacter } from "./WorldCharacter";
 import { WorldLighting, WorldMaterial } from "./WorldScene";
+
+/** A cosmetic item the player has placed on the floor. */
+export type PlacedProp = { id: MallPropId; position: WalkPoint };
+
+/** A click counts only when the pointer barely moved, so dragging the camera never triggers it. */
+function isClick(event: ThreeEvent<MouseEvent>) {
+  return event.delta <= 5;
+}
 
 /** A person another player's device reports in the mall. Positions come from the server. */
 export type MallPerson = {
@@ -52,18 +62,39 @@ function Block({
   size,
   tone = "wall",
   color,
+  onClick,
 }: {
   at: [number, number, number];
   size: [number, number, number];
-  tone?: "wall" | "tileLight" | "metal" | "timber" | "linen" | "concrete" | "slate" | "door" | "glass";
+  tone?:
+    "wall" | "tileLight" | "metal" | "timber" | "linen" | "concrete" | "slate" | "door" | "glass";
   color?: string | undefined;
+  onClick?: (() => void) | undefined;
 }) {
   return (
-    <mesh position={at} castShadow receiveShadow>
+    <mesh
+      position={at}
+      castShadow
+      receiveShadow
+      onClick={(event) => {
+        if (!onClick || !isClick(event)) return;
+        event.stopPropagation();
+        onClick();
+      }}
+    >
       <boxGeometry args={size} />
       <WorldMaterial tone={tone} {...(color === undefined ? {} : { color })} />
     </mesh>
   );
+}
+
+/** Which kind of thing a click on each fixture means. Queue posts are not interactive. */
+function targetForFixture(id: string): MallTarget | null {
+  if (id === "mall-checkout") return { kind: "till", id };
+  if (id === "mall-seats") return { kind: "seat", id };
+  if (id === "mall-display" || id === "mall-gallery-shop") return { kind: "display", id };
+  if (id === "mall-shelves" || id === "mall-essentials") return { kind: "shelf", id };
+  return null;
 }
 
 function fixtureHeight(rect: MallRect) {
@@ -75,11 +106,19 @@ function fixtureHeight(rect: MallRect) {
 }
 
 /** Floor, walls and the restricted rooms. The floor is the click target for walking. */
-function MallInterior({ onWalk, accent }: { onWalk: (point: WalkPoint) => void; accent: string }) {
+function MallInterior({
+  onWalk,
+  onInteract,
+  accent,
+}: {
+  onWalk: (point: WalkPoint) => void;
+  onInteract: (target: MallTarget) => void;
+  accent: string;
+}) {
   const width = MALL_BOUNDS.maxX - MALL_BOUNDS.minX + 0.8;
   const depth = 14;
   const handleClick = (event: ThreeEvent<MouseEvent>) => {
-    if (event.delta > 5) return;
+    if (!isClick(event)) return;
     event.stopPropagation();
     onWalk([event.point.x, event.point.z]);
   };
@@ -117,6 +156,7 @@ function MallInterior({ onWalk, accent }: { onWalk: (point: WalkPoint) => void; 
       })}
       {MALL_OBSTACLES.map((rect) => {
         const h = fixtureHeight(rect);
+        const target = targetForFixture(rect.id);
         return (
           <Block
             key={rect.id}
@@ -124,6 +164,7 @@ function MallInterior({ onWalk, accent }: { onWalk: (point: WalkPoint) => void; 
             size={[rect.maxX - rect.minX, h, rect.maxZ - rect.minZ]}
             tone={rect.id === "mall-checkout" ? "slate" : "linen"}
             color={rect.id === "mall-checkout" ? accent : undefined}
+            onClick={target ? () => onInteract(target) : undefined}
           />
         );
       })}
@@ -132,20 +173,32 @@ function MallInterior({ onWalk, accent }: { onWalk: (point: WalkPoint) => void; 
 }
 
 /** Fixed staff. Tills stand at the counter; the rest stand and face their way. */
-function MallStaffLayer() {
+function MallStaffLayer({ onInteract }: { onInteract: (target: MallTarget) => void }) {
   return (
     <group>
-      {MALL_STAFF.map((member, index) => (
-        <group key={member.id} position={[member.position[0], 0, member.position[1]]}>
-          <WorldCharacter
-            gender={index % 2 ? "female" : "male"}
-            name={member.id}
-            facing={member.facing}
-            animation={member.role === "till" ? "work" : "idle"}
-            position={[0, 0, 0]}
-          />
-        </group>
-      ))}
+      {MALL_STAFF.map((member, index) => {
+        const look = staffLook(member.role, index);
+        return (
+          <group
+            key={member.id}
+            position={[member.position[0], 0, member.position[1]]}
+            onClick={(event) => {
+              if (!isClick(event)) return;
+              event.stopPropagation();
+              onInteract({ kind: "staff", role: member.role, id: member.id });
+            }}
+          >
+            <WorldCharacter
+              gender={look.gender}
+              appearance={look.appearance}
+              name={member.id}
+              facing={member.facing}
+              animation={member.role === "till" ? "work" : "idle"}
+              position={[0, 0, 0]}
+            />
+          </group>
+        );
+      })}
     </group>
   );
 }
@@ -154,13 +207,17 @@ function MallStaffLayer() {
 function ShopperFigure({
   id,
   moving,
-  outfit,
+  gender,
+  appearance,
   sim,
+  onInteract,
 }: {
   id: string;
   moving: boolean;
-  outfit: number;
+  gender: MallGender;
+  appearance: Appearance;
   sim: { current: MallSim };
+  onInteract: (target: MallTarget) => void;
 }) {
   const group = useRef<Group>(null);
   useFrame(() => {
@@ -171,9 +228,17 @@ function ShopperFigure({
     if (shopper) node.position.set(shopper.walker.pos[0], 0, shopper.walker.pos[1]);
   });
   return (
-    <group ref={group}>
+    <group
+      ref={group}
+      onClick={(event) => {
+        if (!isClick(event)) return;
+        event.stopPropagation();
+        onInteract({ kind: "shopper", id });
+      }}
+    >
       <WorldCharacter
-        gender={outfit % 2 ? "female" : "male"}
+        gender={gender}
+        appearance={appearance}
         name={id}
         facing="south"
         animation={moving ? "walk" : "idle"}
@@ -183,13 +248,41 @@ function ShopperFigure({
   );
 }
 
-function CrowdLayer({ sim }: { sim: { current: MallSim } }) {
-  const [snapshot, setSnapshot] = useState<Array<{ id: string; moving: boolean; outfit: number }>>(
-    [],
+/** Items the player has placed, drawn as simple coloured blocks on the floor. */
+function PlacedPropsLayer({ placed }: { placed: readonly PlacedProp[] }) {
+  return (
+    <group>
+      {placed.map((prop) => {
+        const definition = MALL_PROPS.find((candidate) => candidate.id === prop.id);
+        return (
+          <mesh key={prop.id} position={[prop.position[0], 0.3, prop.position[1]]} castShadow>
+            <boxGeometry args={[0.6, 0.6, 0.6]} />
+            <meshStandardMaterial color={definition?.color ?? "#888888"} roughness={0.6} />
+          </mesh>
+        );
+      })}
+    </group>
   );
+}
+
+function CrowdLayer({
+  sim,
+  onInteract,
+}: {
+  sim: { current: MallSim };
+  onInteract: (target: MallTarget) => void;
+}) {
+  const [snapshot, setSnapshot] = useState<
+    Array<{ id: string; moving: boolean; gender: MallGender; appearance: Appearance }>
+  >([]);
   useFrame((_, delta) => {
     const state = sim.current;
-    const next = advanceCrowd(state.shoppers, Math.min(delta, 0.1), state.nextSeed, MALL_CROWD_TARGET);
+    const next = advanceCrowd(
+      state.shoppers,
+      Math.min(delta, 0.1),
+      state.nextSeed,
+      MALL_CROWD_TARGET,
+    );
     state.shoppers = next.shoppers;
     state.nextSeed = next.nextSeed;
   });
@@ -199,7 +292,8 @@ function CrowdLayer({ sim }: { sim: { current: MallSim } }) {
         sim.current.shoppers.map((shopper) => ({
           id: shopper.id,
           moving: shopper.walker.moving,
-          outfit: shopper.outfit,
+          gender: shopper.gender,
+          appearance: shopper.appearance,
         })),
       );
     }, SNAPSHOT_INTERVAL_MS);
@@ -212,8 +306,10 @@ function CrowdLayer({ sim }: { sim: { current: MallSim } }) {
           key={shopper.id}
           id={shopper.id}
           moving={shopper.moving}
-          outfit={shopper.outfit}
+          gender={shopper.gender}
+          appearance={shopper.appearance}
           sim={sim}
+          onInteract={onInteract}
         />
       ))}
     </group>
@@ -224,10 +320,14 @@ function CrowdLayer({ sim }: { sim: { current: MallSim } }) {
 function PlayerFigure({
   sim,
   moving,
+  gender,
+  appearance,
   onMove,
 }: {
   sim: { current: MallSim };
   moving: boolean;
+  gender: string;
+  appearance: Appearance;
   onMove: (point: WalkPoint) => void;
 }) {
   const group = useRef<Group>(null);
@@ -251,6 +351,8 @@ function PlayerFigure({
     <group ref={group}>
       <WorldCharacter
         name="You"
+        gender={gender}
+        appearance={appearance}
         facing="south"
         animation={moving ? "walk" : "idle"}
         position={[0, 0, 0]}
@@ -312,28 +414,43 @@ export function OsunMall3D({
   sim,
   people,
   playerMoving,
+  playerGender,
+  playerAppearance,
+  placed,
   onWalk,
   onMove,
+  onInteract,
   accent,
 }: {
   sim: { current: MallSim };
   people: MallPerson[];
   playerMoving: boolean;
+  playerGender: string;
+  playerAppearance: Appearance;
+  placed: readonly PlacedProp[];
   onWalk: (point: WalkPoint) => void;
   onMove: (point: WalkPoint) => void;
+  onInteract: (target: MallTarget) => void;
   accent: string;
 }) {
   return (
     <>
       <FollowCamera sim={sim} />
       <WorldLighting size={16} />
-      <MallInterior onWalk={onWalk} accent={accent} />
-      <MallStaffLayer />
-      <CrowdLayer sim={sim} />
+      <MallInterior onWalk={onWalk} onInteract={onInteract} accent={accent} />
+      <MallStaffLayer onInteract={onInteract} />
+      <PlacedPropsLayer placed={placed} />
+      <CrowdLayer sim={sim} onInteract={onInteract} />
       {people.map((person) => (
         <RemoteFigure key={person.sessionId} person={person} />
       ))}
-      <PlayerFigure sim={sim} moving={playerMoving} onMove={onMove} />
+      <PlayerFigure
+        sim={sim}
+        moving={playerMoving}
+        gender={playerGender}
+        appearance={playerAppearance}
+        onMove={onMove}
+      />
     </>
   );
 }

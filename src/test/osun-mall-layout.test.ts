@@ -61,7 +61,10 @@ describe("Osun Mall layout", () => {
     for (const point of path) {
       for (const zone of MALL_RESTRICTED_ZONES) {
         const inside =
-          point[0] >= zone.minX && point[0] <= zone.maxX && point[1] >= zone.minZ && point[1] <= zone.maxZ;
+          point[0] >= zone.minX &&
+          point[0] <= zone.maxX &&
+          point[1] >= zone.minZ &&
+          point[1] <= zone.maxZ;
         expect(inside, JSON.stringify(point)).toBe(false);
       }
     }
