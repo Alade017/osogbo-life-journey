@@ -46,7 +46,7 @@ export function FoodVenueServices({ shopSlug }: { shopSlug?: string | null }) {
     <summary className="cursor-pointer rounded-lg border border-edge p-3 text-sm font-semibold">Browse food & eat</summary>
     {open && <div className="mt-3 space-y-5">
       {shopSlug === undefined && <p className="text-sm text-muted-foreground">Showing food offers from open shops at your current location.</p>}
-      <MarketPage foodOnly {...(shopSlug !== undefined ? { shopSlug } : {})} />
+      <MarketPage foodOnly {...(shopSlug != null ? { shopSlug } : {})} />
       <FoodBag />
     </div>}
   </details>;
