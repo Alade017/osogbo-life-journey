@@ -764,6 +764,13 @@
       "when": 1795006800000,
       "tag": "0107_adire_crafting",
       "breakpoints": true
+    },
+    {
+      "idx": 108,
+      "version": "7",
+      "when": 1795018200000,
+      "tag": "0108_stall_stock_receipts",
+      "breakpoints": true
     }
   ]
 }
