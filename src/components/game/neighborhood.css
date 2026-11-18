@@ -820,7 +820,7 @@ body:has(.neighborhood-page) {
     max-height: min(66dvh, 560px);
     margin: 0;
     padding: 15px;
-    transform: translateX(-50%);
+    translate: -50% 0;
     border-radius: 24px;
   }
 
@@ -829,7 +829,7 @@ body:has(.neighborhood-page) {
     overflow-y: auto;
   }
 
-  .neighborhood-zone-modal.is-compact .grid.gap-3.sm\\:grid-cols-2 {
+  .neighborhood-zone-modal.is-compact .grid {
     grid-template-columns: 1fr;
   }
 }
