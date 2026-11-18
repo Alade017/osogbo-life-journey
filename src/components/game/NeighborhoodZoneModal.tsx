@@ -156,7 +156,7 @@ export function NeighborhoodZoneModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="neighborhood-zone-modal max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+      <DialogContent className={`neighborhood-zone-modal ${subTab === "actions" ? "is-compact" : "is-service"} max-h-[90vh] overflow-y-auto sm:max-w-3xl`}>
         {zone && (
           <>
             <div className="neighborhood-zone-modal-header">
