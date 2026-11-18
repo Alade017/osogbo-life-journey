@@ -10,9 +10,7 @@ import {
   Landmark,
   Map as MapIcon,
   MessageCircle,
-  Package,
   Scissors,
-  ShoppingBag,
   Sparkles,
   Utensils,
   Wallet,
@@ -30,7 +28,6 @@ import type {
   ZoneActionOutcome,
   ZoneNpcSpec,
 } from "@/game/neighborhood-interactions";
-import type { NeighborhoodInventoryEntry } from "@/store/neighborhoodSlice";
 
 function CategoryIcon({ category }: { category: InteractableZoneSpec["category"] }) {
   switch (category) {
@@ -59,8 +56,6 @@ export function NeighborhoodZoneModal({
   pocketBalance,
   bankBalance,
   needs,
-  localInventory,
-  equippedAccessorySlug,
   currentLocationId,
   currentLocationSlug,
   npcTip,
@@ -73,8 +68,6 @@ export function NeighborhoodZoneModal({
   pocketBalance: number;
   bankBalance: number;
   needs: Needs;
-  localInventory: readonly NeighborhoodInventoryEntry[];
-  equippedAccessorySlug: string | null;
   currentLocationId?: string | undefined;
   currentLocationSlug?: string | undefined;
   npcTip: string | null;
