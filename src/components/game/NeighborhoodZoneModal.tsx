@@ -316,38 +316,38 @@ export function NeighborhoodZoneModal({
                         )}
                         {supported && (
                           <div className="flex flex-wrap gap-1.5 pt-1 text-[11px] font-bold text-[#16225C]">
-                          {outcome.needDeltas?.hunger ? (
-                            <span>
-                              {outcome.needDeltas.hunger > 0 ? "+" : ""}
-                              {outcome.needDeltas.hunger} Fullness
-                            </span>
-                          ) : null}
-                          {outcome.needDeltas?.energy ? (
-                            <span>
-                              {outcome.needDeltas.energy > 0 ? "+" : ""}
-                              {outcome.needDeltas.energy} Energy
-                            </span>
-                          ) : null}
-                          {outcome.needDeltas?.hygiene ? (
-                            <span>
-                              {outcome.needDeltas.hygiene > 0 ? "+" : ""}
-                              {outcome.needDeltas.hygiene} Hygiene
-                            </span>
-                          ) : null}
-                          {outcome.needDeltas?.fun ? (
-                            <span>+{outcome.needDeltas.fun} Mood</span>
-                          ) : null}
-                          {outcome.needDeltas?.social ? (
-                            <span>+{outcome.needDeltas.social} Social</span>
-                          ) : null}
-                          {outcome.craftItem ? (
-                            <span className="text-[#b87b00]">+ Item: {outcome.craftItem.name}</span>
-                          ) : null}
-                          {outcome.xpGain ? (
-                            <span className="text-[#1E9A5F]">+{outcome.xpGain} XP</span>
-                          ) : null}
+                            {outcome.needDeltas?.hunger ? (
+                              <span>
+                                {outcome.needDeltas.hunger > 0 ? "+" : ""}
+                                {outcome.needDeltas.hunger} Fullness
+                              </span>
+                            ) : null}
+                            {outcome.needDeltas?.energy ? (
+                              <span>
+                                {outcome.needDeltas.energy > 0 ? "+" : ""}
+                                {outcome.needDeltas.energy} Energy
+                              </span>
+                            ) : null}
+                            {outcome.needDeltas?.hygiene ? (
+                              <span>
+                                {outcome.needDeltas.hygiene > 0 ? "+" : ""}
+                                {outcome.needDeltas.hygiene} Hygiene
+                              </span>
+                            ) : null}
+                            {outcome.needDeltas?.fun ? (
+                              <span>+{outcome.needDeltas.fun} Mood</span>
+                            ) : null}
+                            {outcome.needDeltas?.social ? (
+                              <span>+{outcome.needDeltas.social} Social</span>
+                            ) : null}
+                            {outcome.craftItem ? (
+                              <span className="text-[#b87b00]">+ Item: {outcome.craftItem.name}</span>
+                            ) : null}
+                            {outcome.xpGain ? (
+                              <span className="text-[#1E9A5F]">+{outcome.xpGain} XP</span>
+                            ) : null}
                           </div>
-                        )}
+                        )}              )}
                       </button>
                     );
                   })}
