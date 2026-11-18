@@ -47,6 +47,7 @@ import { Route as ApiHomeUnequipRouteImport } from './routes/api/home/unequip'
 import { Route as ApiHouseLightRouteImport } from './routes/api/house/light'
 import { Route as ApiHouseMoveRouteImport } from './routes/api/house/move'
 import { Route as ApiHousePlaceRouteImport } from './routes/api/house/place'
+import { Route as ApiHouseRearrangeRouteImport } from './routes/api/house/rearrange'
 import { Route as ApiHouseRemoveRouteImport } from './routes/api/house/remove'
 import { Route as ApiHouseRotateRouteImport } from './routes/api/house/rotate'
 import { Route as ApiHouseStateRouteImport } from './routes/api/house/state'
@@ -292,6 +293,11 @@ const ApiHouseMoveRoute = ApiHouseMoveRouteImport.update({
 const ApiHousePlaceRoute = ApiHousePlaceRouteImport.update({
   id: '/api/house/place',
   path: '/api/house/place',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiHouseRearrangeRoute = ApiHouseRearrangeRouteImport.update({
+  id: '/api/house/rearrange',
+  path: '/api/house/rearrange',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiHouseRemoveRoute = ApiHouseRemoveRouteImport.update({
@@ -566,6 +572,7 @@ export interface FileRoutesByFullPath {
   '/api/house/light': typeof ApiHouseLightRoute
   '/api/house/move': typeof ApiHouseMoveRoute
   '/api/house/place': typeof ApiHousePlaceRoute
+  '/api/house/rearrange': typeof ApiHouseRearrangeRoute
   '/api/house/remove': typeof ApiHouseRemoveRoute
   '/api/house/rotate': typeof ApiHouseRotateRoute
   '/api/house/state': typeof ApiHouseStateRoute
@@ -650,6 +657,7 @@ export interface FileRoutesByTo {
   '/api/house/light': typeof ApiHouseLightRoute
   '/api/house/move': typeof ApiHouseMoveRoute
   '/api/house/place': typeof ApiHousePlaceRoute
+  '/api/house/rearrange': typeof ApiHouseRearrangeRoute
   '/api/house/remove': typeof ApiHouseRemoveRoute
   '/api/house/rotate': typeof ApiHouseRotateRoute
   '/api/house/state': typeof ApiHouseStateRoute
@@ -737,6 +745,7 @@ export interface FileRoutesById {
   '/api/house/light': typeof ApiHouseLightRoute
   '/api/house/move': typeof ApiHouseMoveRoute
   '/api/house/place': typeof ApiHousePlaceRoute
+  '/api/house/rearrange': typeof ApiHouseRearrangeRoute
   '/api/house/remove': typeof ApiHouseRemoveRoute
   '/api/house/rotate': typeof ApiHouseRotateRoute
   '/api/house/state': typeof ApiHouseStateRoute
@@ -823,6 +832,7 @@ export interface FileRouteTypes {
     | '/api/house/light'
     | '/api/house/move'
     | '/api/house/place'
+    | '/api/house/rearrange'
     | '/api/house/remove'
     | '/api/house/rotate'
     | '/api/house/state'
@@ -907,6 +917,7 @@ export interface FileRouteTypes {
     | '/api/house/light'
     | '/api/house/move'
     | '/api/house/place'
+    | '/api/house/rearrange'
     | '/api/house/remove'
     | '/api/house/rotate'
     | '/api/house/state'
@@ -993,6 +1004,7 @@ export interface FileRouteTypes {
     | '/api/house/light'
     | '/api/house/move'
     | '/api/house/place'
+    | '/api/house/rearrange'
     | '/api/house/remove'
     | '/api/house/rotate'
     | '/api/house/state'
@@ -1058,6 +1070,7 @@ export interface RootRouteChildren {
   ApiHouseLightRoute: typeof ApiHouseLightRoute
   ApiHouseMoveRoute: typeof ApiHouseMoveRoute
   ApiHousePlaceRoute: typeof ApiHousePlaceRoute
+  ApiHouseRearrangeRoute: typeof ApiHouseRearrangeRoute
   ApiHouseRemoveRoute: typeof ApiHouseRemoveRoute
   ApiHouseRotateRoute: typeof ApiHouseRotateRoute
   ApiHouseStateRoute: typeof ApiHouseStateRoute
@@ -1370,6 +1383,13 @@ declare module '@tanstack/react-router' {
       path: '/api/house/place'
       fullPath: '/api/house/place'
       preLoaderRoute: typeof ApiHousePlaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/house/rearrange': {
+      id: '/api/house/rearrange'
+      path: '/api/house/rearrange'
+      fullPath: '/api/house/rearrange'
+      preLoaderRoute: typeof ApiHouseRearrangeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/house/remove': {
@@ -1780,6 +1800,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiHouseLightRoute: ApiHouseLightRoute,
   ApiHouseMoveRoute: ApiHouseMoveRoute,
   ApiHousePlaceRoute: ApiHousePlaceRoute,
+  ApiHouseRearrangeRoute: ApiHouseRearrangeRoute,
   ApiHouseRemoveRoute: ApiHouseRemoveRoute,
   ApiHouseRotateRoute: ApiHouseRotateRoute,
   ApiHouseStateRoute: ApiHouseStateRoute,

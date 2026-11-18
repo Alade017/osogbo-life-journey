@@ -168,4 +168,90 @@ describe("free furniture placement database", () => {
     await place("free-sofa", a!.x, a!.y);
     expect((await move("free-sofa", a!.x + 1, a!.y + 1)).ok).toBe(true);
   });
+  it("atomically rearranges existing items and rejects stale or foreign snapshots", async () => {
+    const rows = async () =>
+      (
+        await db.query<{
+          id: string;
+          slot: string;
+          x: number;
+          y: number;
+          floor: number;
+          rotation_deg: number;
+        }>(
+          `select id,slot,x::float8,y::float8,floor,rotation_deg::float8 from public.house_placements
+       where player_house_id=(select id from public.player_houses where player_id=$1 and status='active') order by id`,
+          [userId],
+        )
+      ).rows;
+    const before = await rows();
+    const house = (
+      await db.query<{ id: string }>(
+        "select id from public.player_houses where player_id=$1 and status='active'",
+        [userId],
+      )
+    ).rows[0]!.id;
+    const count = (
+      await db.query<{ n: number }>(
+        "select sum(quantity)::int n from public.player_items where player_id=$1",
+        [userId],
+      )
+    ).rows[0]!.n;
+    // All original placements participate, including the starter furniture.
+    const moves = before.map((p, i) => ({
+      id: p.id,
+      x: 9.75 + 11.5 * (i % 8),
+      y: 9.75 + 11.5 * Math.floor(i / 8),
+      floor: 0,
+      rotation_deg: 90,
+    }));
+    const result = await db.query<{ result: Result }>(
+      "select public.house_rearrange_owned_items($1,$2,$3,$4) result",
+      [userId, house, JSON.stringify(before), JSON.stringify(moves)],
+    );
+    expect(result.rows[0]!.result.ok).toBe(true);
+    const after = await rows();
+    expect(after.map((p) => p.id)).toEqual(before.map((p) => p.id));
+    expect(after.map((p) => p.slot)).toEqual(before.map((p) => p.slot));
+    expect(
+      (
+        await db.query<{ n: number }>(
+          "select sum(quantity)::int n from public.player_items where player_id=$1",
+          [userId],
+        )
+      ).rows[0]!.n,
+    ).toBe(count);
+    await expect(
+      db.query("select public.house_rearrange_owned_items($1,$2,$3,$4)", [
+        userId,
+        house,
+        JSON.stringify(before),
+        JSON.stringify(moves),
+      ]),
+    ).rejects.toThrow("LAYOUT_CHANGED");
+    expect(await rows()).toEqual(after);
+    if (moves.length > 1) {
+      const duplicated = moves.map((p, i) =>
+        i === 1 ? { ...p, x: moves[0]!.x, y: moves[0]!.y } : p,
+      );
+      await expect(
+        db.query("select public.house_rearrange_owned_items($1,$2,$3,$4)", [
+          userId,
+          house,
+          JSON.stringify(after),
+          JSON.stringify(duplicated),
+        ]),
+      ).rejects.toThrow("INVALID_POSITION");
+      expect(await rows()).toEqual(after);
+    }
+
+    await expect(
+      db.query("select public.house_rearrange_owned_items($1,$2,$3,$4)", [
+        "99999999-9999-4999-8999-999999999999",
+        house,
+        JSON.stringify(after),
+        JSON.stringify(moves),
+      ]),
+    ).rejects.toThrow("NO_ACTIVE_HOUSE");
+  });
 });

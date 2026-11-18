@@ -19,6 +19,8 @@ type HouseApiDependencies = {
 
 export const statusByCode: Record<string, number> = {
   UNAUTHORIZED: 401,
+  LAYOUT_CHANGED: 409,
+  NO_CLEAR_LAYOUT: 409,
   NOT_IN_DRAWER: 404,
   NOT_WEARABLE: 409,
   ITEM_WORN: 409,

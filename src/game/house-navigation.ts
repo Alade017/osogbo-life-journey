@@ -90,21 +90,31 @@ export function placementsOverlappingWalls(
     );
   });
 }
-function furnitureObstacle(
+export function furnitureObstacle(
   p: HousePlacement,
   slots: HouseSlot[],
   width: number,
   depth: number,
 ): RoomObstacle {
   const point = placementPoint(p, slots, width, depth);
-  const [w, d] =
-    p.slot_type === "bed"
-      ? [1.45, 2.1]
-      : p.art_key === "sofa"
-        ? [1.8, 0.85]
-        : p.art_key === "plant"
-          ? [0.45, 0.45]
-          : [0.8, 0.75];
+  const key = p.art_key.replace(/^starter-/, "");
+  const footprints: Record<string, readonly [number, number]> = {
+    bed: [1.45, 2.1],
+    sofa: [1.8, 0.85],
+    "sofa-2": [1.8, 0.85],
+    seat: [1.8, 0.85],
+    plant: [0.45, 0.45],
+    light: [0.42, 0.42],
+    treadmill: [0.75, 1.55],
+    "multi-gym-machine": [1, 1],
+    dumbbells: [0.5, 0.65],
+    "yoga-mat": [0.75, 1.7],
+    shower: [1, 1],
+    wardrobe: [1.15, 0.65],
+    computer: [1.25, 0.8],
+    "dining-table": [1.4, 1.4],
+  };
+  const [w, d] = footprints[key] ?? (p.slot_type === "bed" ? footprints["bed"]! : [0.8, 0.75]);
   const angle = ((p.rotation_deg ?? 0) * Math.PI) / 180;
   const c = Math.abs(Math.cos(angle)),
     s = Math.abs(Math.sin(angle));
@@ -138,7 +148,9 @@ export function roomObstacles(
       d: s.size[2],
       wall: true,
     })),
-    ...placements.map((p) => furnitureObstacle(p, slots, width, depth)),
+    ...placements
+      .filter((p) => !p.art_key.startsWith("wall-art"))
+      .map((p) => furnitureObstacle(p, slots, width, depth)),
   ];
 }
 /** Four-way grid search: diagonal shortcuts cannot clip furniture or doorway corners. */

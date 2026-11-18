@@ -2054,6 +2054,8 @@ export function HouseRoom3D({
   roomView: roomViewId = null,
   guideZone = null,
   characterName = "Your character",
+  showCharacter = true,
+  actorSpawnKey,
   appearance = {},
   gender = "nonbinary",
   equipment = [],
@@ -2245,6 +2247,7 @@ export function HouseRoom3D({
           }
         >
           <Canvas
+            style={{ touchAction: "none" }}
             frameloop="demand"
             dpr={[1, 1.5]}
             shadows
@@ -2345,30 +2348,32 @@ export function HouseRoom3D({
                 <meshBasicMaterial transparent opacity={0} depthWrite={false} />
               </mesh>
             )}
-            {actorPosition ? (
-              <WorldCharacter
-                name={characterName}
-                appearance={appearance}
-                gender={gender}
-                equipment={equipment}
-                position={actorPosition}
-                facing={actorFacing}
-                animation={animationState}
-                {...(taskPose ? { taskPose } : {})}
-              />
-            ) : (
-              <RoomCharacter
-                name={characterName}
-                appearance={appearance}
-                gender={gender}
-                equipment={equipment}
-                animationState={animationState}
-                activityRequestId={activityRequestId}
-                activityLabel={activityLabel}
-                position={[0, 0.06, depth * 0.18]}
-                bedPosition={bedPosition}
-              />
-            )}
+            {showCharacter &&
+              (actorPosition ? (
+                <WorldCharacter
+                  key={actorSpawnKey}
+                  name={characterName}
+                  appearance={appearance}
+                  gender={gender}
+                  equipment={equipment}
+                  position={actorPosition}
+                  facing={actorFacing}
+                  animation={animationState}
+                  {...(taskPose ? { taskPose } : {})}
+                />
+              ) : (
+                <RoomCharacter
+                  name={characterName}
+                  appearance={appearance}
+                  gender={gender}
+                  equipment={equipment}
+                  animationState={animationState}
+                  activityRequestId={activityRequestId}
+                  activityLabel={activityLabel}
+                  position={[0, 0.06, depth * 0.18]}
+                  bedPosition={bedPosition}
+                />
+              ))}
             {foodDeliveries
               .filter(
                 (delivery) =>
@@ -2481,7 +2486,8 @@ export function HouseRoom3D({
               width={roomView ? roomView.maxX - roomView.minX : width}
               depth={roomView ? roomView.maxZ - roomView.minZ : depth}
               stage
-              horizontalOrbit={!editMode && !roomView}
+              horizontalOrbit={!editMode}
+              orbitArc={Math.PI}
               verticalOrbit={!editMode && !roomView}
               polarAngle={editMode ? Math.PI / 5 : Math.PI / 4}
               target={

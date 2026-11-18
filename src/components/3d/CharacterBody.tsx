@@ -55,7 +55,16 @@ export function motionFor(animation: string, walking: boolean, taskPose?: string
 const scratchEuler = new Euler();
 const scratchQuat = new Quaternion();
 const identity = new Quaternion();
-const LOOPING_MOTIONS = new Set<PoseMotion>(["Idle", "Walk", "Talk", "Wash", "Cook", "Collect"]);
+const LOOPING_MOTIONS = new Set<PoseMotion>([
+  "Idle",
+  "Walk",
+  "Talk",
+  "Wash",
+  "Cook",
+  "Collect",
+  "Work",
+  "Interact",
+]);
 
 /**
  * A low-poly body built in code: one skinned mesh on a 18-bone biped. Each character owns its

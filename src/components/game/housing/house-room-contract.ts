@@ -34,10 +34,14 @@ export type HouseRoomRendererProps = {
   /** Room shown on its own (an id from houseRoomViews); omitted or null shows the whole home. */
   roomView?: string | null;
   characterName?: string;
+  /** False removes the complete player hierarchy, including wardrobe and held objects. */
+  showCharacter?: boolean;
   appearance?: Appearance;
   gender?: string;
   equipment?: readonly AvatarEquipment[];
-  animationState?: AvatarAnimationState;
+  animationState?: AvatarAnimationState | "interact";
+  /** Remount at an entry threshold instead of interpolating from a previous scene position. */
+  actorSpawnKey?: string;
   actorPosition?: [number, number, number];
   actorFacing?: string;
   taskPose?: "sit" | "wash" | "cook" | "collect" | "stretch";
@@ -151,6 +155,11 @@ export function gridCellOf(x: number, y: number): { col: number; row: number } {
 /** Snaps a room percentage to the centre of its grid cell. */
 export function snapToHouseGrid(x: number, y: number): [number, number] {
   const { col, row } = gridCellOf(x, y);
+  return houseGridCellCenter(col, row);
+}
+
+/** Shared cell coordinates for manual placement and automatic rearrangement. */
+export function houseGridCellCenter(col: number, row: number): [number, number] {
   return [GRID_MIN + GRID_CELL * (col + 0.5), GRID_MIN + GRID_CELL * (row + 0.5)];
 }
 

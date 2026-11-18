@@ -736,6 +736,13 @@
       "when": 1794967200000,
       "tag": "0103_duplex_upstairs_gym",
       "breakpoints": true
+    },
+    {
+      "idx": 104,
+      "version": "7",
+      "when": 1794968400000,
+      "tag": "0104_house_rearrange",
+      "breakpoints": true
     }
   ]
 }

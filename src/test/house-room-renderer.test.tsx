@@ -205,3 +205,11 @@ describe("R3F home renderer boundary", () => {
     expect(input.onMove).toHaveBeenCalledWith(placement, destination);
   });
 });
+
+it("does not leave the player's identity in the fallback room after leaving home", async () => {
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  scene.fail = true;
+  render(<HouseRoomRenderer {...props()} characterName="Departed player" showCharacter={false} />);
+  await screen.findByRole("status");
+  expect(screen.queryByText("Departed player")).not.toBeInTheDocument();
+});

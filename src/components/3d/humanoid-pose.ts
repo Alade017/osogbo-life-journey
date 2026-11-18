@@ -77,8 +77,8 @@ export function poseFor(
           // Arms counter-swing with a relaxed elbow bend rather than rigid straight arms.
           [BONE.lUpperArm]: [s * 0.36, 0, 0.07],
           [BONE.rUpperArm]: [-(s * 0.36), 0, -0.07],
-          [BONE.lForearm]: [-(0.18 + 0.16 * Math.max(0), -s), 0, 0],
-          [BONE.rForearm]: [-(0.18 + 0.16 * Math.max(0), s), 0, 0],
+          [BONE.lForearm]: [-(0.18 + 0.16 * Math.max(0, -s)), 0, 0],
+          [BONE.rForearm]: [-(0.18 + 0.16 * Math.max(0, s)), 0, 0],
         },
       };
     }
@@ -89,8 +89,8 @@ export function poseFor(
           [BONE.head]: [0.35, 0, 0],
           [BONE.lUpperArm]: [-0.6, 0, 0.1],
           [BONE.rUpperArm]: [-0.6, 0, -0.1],
-          [BONE.lForearm]: [-0.9, 0, 0],
-          [BONE.rForearm]: [-0.9, 0, 0],
+          [BONE.lForearm]: [-0.9 + sin(t * 6) * 0.06, 0, 0],
+          [BONE.rForearm]: [-0.9 + sin(t * 6 + 1) * 0.06, 0, 0],
         },
       };
     case "Talk":
@@ -109,7 +109,7 @@ export function poseFor(
           [BONE.spine]: [0.12, 0, 0],
           [BONE.head]: [0.1, 0, 0],
           [BONE.lUpperArm]: [-0.1, 0, 0.08],
-          [BONE.rUpperArm]: [-1.2, 0, -0.15],
+          [BONE.rUpperArm]: [-1.12 - sin(t * 2) * 0.08, 0, -0.15],
           [BONE.rForearm]: [-0.2, 0, 0],
         },
       };
