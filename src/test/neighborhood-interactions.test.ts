@@ -13,6 +13,9 @@ import {
 import {
   initialNeighborhoodState,
   neighborhoodReducer,
+  openZoneInteraction,
+  closeZoneInteraction,
+  setPendingZoneId,
   recordNpcChatAction,
 } from "@/store/neighborhoodSlice";
 
@@ -61,6 +64,19 @@ describe("Olaiya neighborhood full zone interactivity & state slice", () => {
       const match = nearestZoneNpc(npc.accessPoint);
       expect(match?.npc.id).toBe(npc.id);
     }
+  });
+
+  it("clears an approach target when the interaction opens and closes only the panel", () => {
+    let state = neighborhoodReducer(initialNeighborhoodState, setPendingZoneId("zone-bank-atm"));
+    expect(state.pendingZoneId).toBe("zone-bank-atm");
+
+    state = neighborhoodReducer(state, openZoneInteraction({ zoneId: "zone-bank-atm" }));
+    expect(state.pendingZoneId).toBeNull();
+    expect(state.activeZoneId).toBe("zone-bank-atm");
+
+    state = neighborhoodReducer(state, closeZoneInteraction());
+    expect(state.activeZoneId).toBeNull();
+    expect(state.activeNpcId).toBeNull();
   });
 
   it("allows only pure server-backed bank transfers as zone actions", () => {
