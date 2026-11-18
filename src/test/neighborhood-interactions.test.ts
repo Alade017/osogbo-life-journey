@@ -81,7 +81,7 @@ describe("Olaiya neighborhood full zone interactivity & state slice", () => {
   it("keeps authored NPC tips informational without granting social rewards", () => {
     let state = initialNeighborhoodState;
     const npc = findZoneNpc("zone-npc-tunde")!;
-    state = neighborhoodReducer(state, recordNpcChatAction({ npc, tip: npc.tips[0]! }));
+    state = neighborhoodReducer(state, recordNpcChatAction({ tip: npc.tips[0]! }));
     expect(state.lastNpcTip).toBe(npc.tips[0]);
     expect(state).not.toHaveProperty("needOffsets");
   });
