@@ -748,6 +748,8 @@ export function PlayableNeighborhood() {
         autoWalkRouteRef.current = null;
         groundTargetRef.current = null;
         setGroundTarget(null);
+        setPendingTargetId(null);
+        dispatchZone(setPendingZoneId(null));
         setHomeBound(false);
         setHasWalked(true);
       }
@@ -1024,7 +1026,12 @@ export function PlayableNeighborhood() {
   const selectWorldTarget = (targetId: string) => {
     const target = interactionTargets.find((candidate) => candidate.id === targetId);
     if (!target) return;
+    dispatchZone(setPendingZoneId(null));
+    setHomeBound(false);
     if (nearbyObject?.id === targetId) {
+      autoWalkRouteRef.current = null;
+      groundTargetRef.current = null;
+      setGroundTarget(null);
       setPendingTargetId(null);
       openInteraction();
       return;
@@ -1047,6 +1054,12 @@ export function PlayableNeighborhood() {
       const zone = findInteractableZone(id);
       if (zone) {
         if (nearbyZoneMatch?.zone.id === id) {
+          autoWalkRouteRef.current = null;
+          groundTargetRef.current = null;
+          setGroundTarget(null);
+          setPendingTargetId(null);
+          setHomeBound(false);
+          dispatchZone(setPendingZoneId(null));
           dispatchZone(openZoneInteraction({ zoneId: id }));
           return;
         }
@@ -1060,6 +1073,12 @@ export function PlayableNeighborhood() {
       const npc = findZoneNpc(id);
       if (npc) {
         if (nearbyZoneNpcMatch?.npc.id === id) {
+          autoWalkRouteRef.current = null;
+          groundTargetRef.current = null;
+          setGroundTarget(null);
+          setPendingTargetId(null);
+          setHomeBound(false);
+          dispatchZone(setPendingZoneId(null));
           dispatchZone(openZoneInteraction({ npcId: id }));
           return;
         }
