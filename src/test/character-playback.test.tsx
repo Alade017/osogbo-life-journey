@@ -60,6 +60,7 @@ const motions: PoseMotion[] = [
   "Cook",
   "Collect",
   "Stretch",
+  "Dance",
 ];
 describe("upgraded character frame playback", () => {
   it.each(
@@ -128,4 +129,33 @@ it("settles a reduced-motion idle pose without scheduling an endless animation l
   runtime.frame!({ clock: { elapsedTime: 100 } }, 1 / 60);
   expect(runtime.invalidate).not.toHaveBeenCalled();
   expect(rig.byName.get(BONE.head)!.quaternion.angleTo(initial)).toBeLessThan(0.0001);
+});
+
+it.each(["male", "female"] as const)(
+  "keeps %s dancing on a demand canvas and blends back to idle",
+  (variant) => {
+    const view = render(<CharacterBody variant={variant} height={1} motion="Dance" />);
+    play(4);
+    for (let i = 0; i < 120; i++) {
+      runtime.invalidate.mockClear();
+      runtime.frame!({ clock: { elapsedTime: 4 + i / 60 } }, 1 / 60);
+      expect(runtime.invalidate).toHaveBeenCalled();
+    }
+    const rig = runtime.rigs[0]!;
+    view.rerender(<CharacterBody variant={variant} height={1} motion="Idle" />);
+    play(3);
+    expect(runtime.rigs).toHaveLength(1);
+    expect(Math.abs(rig.byName.get(BONE.root)!.rotation.y)).toBeLessThan(0.001);
+  },
+);
+
+it("holds a still dance pose with reduced motion", () => {
+  render(<CharacterBody variant="female" height={1} motion="Dance" animated={false} />);
+  const rig = play(3),
+    hand = point(rig, BONE.rHand).clone();
+  runtime.invalidate.mockClear();
+  runtime.frame!({ clock: { elapsedTime: 99 } }, 1 / 60);
+  rig.root.updateMatrixWorld(true);
+  expect(runtime.invalidate).not.toHaveBeenCalled();
+  expect(point(rig, BONE.rHand).distanceTo(hand)).toBeLessThan(0.001);
 });

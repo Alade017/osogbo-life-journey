@@ -2,6 +2,8 @@ import type { HousePlacement, HouseSlot } from "./HouseRoomScene";
 import type { AvatarAnimationState, AvatarEquipment } from "@/components/game/Avatar";
 import type { Appearance } from "@/game/avatar-appearance";
 import type { FoodDelivery } from "@/lib/food-delivery-service";
+import { bungalowBlueprint } from "./bungalow-blueprint";
+import { duplexBlueprint, duplexStairwell } from "./duplex-blueprint";
 import {
   boundsContain,
   studioBlueprint,
@@ -32,10 +34,14 @@ export type HouseRoomRendererProps = {
   /** Room shown on its own (an id from houseRoomViews); omitted or null shows the whole home. */
   roomView?: string | null;
   characterName?: string;
+  /** False removes the complete player hierarchy, including wardrobe and held objects. */
+  showCharacter?: boolean;
   appearance?: Appearance;
   gender?: string;
   equipment?: readonly AvatarEquipment[];
-  animationState?: AvatarAnimationState;
+  animationState?: AvatarAnimationState | "interact";
+  /** Remount at an entry threshold instead of interpolating from a previous scene position. */
+  actorSpawnKey?: string;
   actorPosition?: [number, number, number];
   actorFacing?: string;
   taskPose?: "sit" | "wash" | "cook" | "collect" | "stretch";
@@ -62,8 +68,8 @@ export const HOUSE_ROOM_SIZE: Record<string, readonly [number, number]> = {
   "single-room": [6.8, 5.3],
   "studio-flat": [8.6, 6.4],
   "mini-flat": [9.9, 7.5],
-  bungalow: [11.5, 8.6],
-  duplex: [13.2, 9.7],
+  bungalow: [14, 11.2],
+  duplex: [14, 11.2],
 };
 export const HOUSE_ACCESSORY_TIER: Record<string, number> = {
   basic: 1,
@@ -149,6 +155,11 @@ export function gridCellOf(x: number, y: number): { col: number; row: number } {
 /** Snaps a room percentage to the centre of its grid cell. */
 export function snapToHouseGrid(x: number, y: number): [number, number] {
   const { col, row } = gridCellOf(x, y);
+  return houseGridCellCenter(col, row);
+}
+
+/** Shared cell coordinates for manual placement and automatic rearrangement. */
+export function houseGridCellCenter(col: number, row: number): [number, number] {
   return [GRID_MIN + GRID_CELL * (col + 0.5), GRID_MIN + GRID_CELL * (row + 0.5)];
 }
 
@@ -244,6 +255,7 @@ export function houseDoorThreshold(
 
 /** Centre of the entrance door on the back wall. In four-room homes it opens into the sitting room. */
 export function houseRearDoorCenter(houseTypeId: string, width: number): number {
+  if (houseTypeId === "bungalow") return -width * 0.25;
   if (houseTypeId === "studio-flat") return studioBlueprint(width, 1).entranceX;
   return FOUR_ROOM_HOME_TYPES.includes(houseTypeId) ? -width * 0.25 : width * 0.22;
 }
@@ -373,7 +385,7 @@ function fourRoomPartitionSegments(
 }
 
 /** Home types that have the four-room plan: sitting room, bedroom, kitchen and dining, bathroom. */
-export const FOUR_ROOM_HOME_TYPES: readonly string[] = ["mini-flat", "bungalow", "duplex"];
+export const FOUR_ROOM_HOME_TYPES: readonly string[] = ["mini-flat", "duplex"];
 
 /** Blueprint homes open as a cutaway; this same default drives the wall button and scene. */
 export function houseWallsDefaultClosed(houseTypeId: string): boolean {
@@ -385,6 +397,9 @@ export function housePartitionSegments(
   width: number,
   depth: number,
 ): HouseWallSegment[] {
+  if (houseTypeId === "duplex") return duplexBlueprint(width, depth, 0).partitions;
+
+  if (houseTypeId === "bungalow") return bungalowBlueprint(width, depth).partitions;
   if (houseTypeId === "studio-flat") {
     const { bathroom, bathroomDoor } = studioBlueprint(width, depth);
     const height = 1.9;
@@ -427,44 +442,28 @@ export type HouseStairs = {
 
 export function houseStairs(houseTypeId: string, width: number, depth: number): HouseStairs | null {
   if (houseTypeId !== "duplex") return null;
-  const x0 = -width / 2 + 0.1;
-  const x1 = -width / 2 + 1.1;
-  const z0 = -depth * 0.45;
-  const z1 = -depth * 0.1;
-  const cx = (x0 + x1) / 2;
-  return { x0, x1, z0, z1, bottom: [cx, z1 + 0.35], top: [cx, z0 - 0.35] };
+  return duplexStairwell(width, depth);
 }
 
-/**
- * Upstairs walls for a duplex: a lounge with a mini gym (left, with the stairs), a living room
- * (back-right) and a bedroom (front-right). Each has an empty doorway.
- */
+export const HOUSE_STAIR_RISE = 1.44;
+/** A reserved three-dimensional traversal; normal floor routes cannot enter the stairwell. */
+export function stairTraversalPath(stairs: HouseStairs, up: boolean): [number, number, number][] {
+  const cx = (stairs.x0 + stairs.x1) / 2;
+  const path: [number, number, number][] = [[cx, 0.06, stairs.bottom[1]]];
+  for (let i = 0; i < 8; i++)
+    path.push([
+      cx,
+      0.06 + ((i + 1) * HOUSE_STAIR_RISE) / 8,
+      stairs.z1 - ((stairs.z1 - stairs.z0) * (i + 0.5)) / 8,
+    ]);
+  path.push([cx, 0.06 + HOUSE_STAIR_RISE, stairs.top[1]]);
+  return up ? path : path.reverse();
+}
+
+/** Partitions for the duplex upper floor, including its bedrooms, gym and balcony doorway. */
 export function upstairsPartitionSegments(width: number, depth: number): HouseWallSegment[] {
-  const height = 1.9;
-  const thickness = HOUSE_WALL_THICKNESS;
-  const doorway = 1.1;
-  const alongX = (id: string, z: number, x0: number, x1: number): HouseWallSegment => ({
-    id,
-    position: [(x0 + x1) / 2, height / 2, z],
-    size: [x1 - x0, height, thickness],
-  });
-  const alongZ = (id: string, x: number, z0: number, z1: number): HouseWallSegment => ({
-    id,
-    position: [x, height / 2, (z0 + z1) / 2],
-    size: [thickness, height, z1 - z0],
-  });
-  const livingDoorZ = -depth * 0.25;
-  const bedroomDoorX = width * 0.25;
-  return [
-    // Lounge and living room, with a doorway at z = livingDoorZ.
-    alongZ("upstairs-lounge-living-back", 0, -depth / 2, livingDoorZ - doorway / 2),
-    alongZ("upstairs-lounge-living-front", 0, livingDoorZ + doorway / 2, depth / 2),
-    // Living room and bedroom, with a doorway at x = bedroomDoorX.
-    alongX("upstairs-living-bedroom-left", 0, 0, bedroomDoorX - doorway / 2),
-    alongX("upstairs-living-bedroom-right", 0, bedroomDoorX + doorway / 2, width / 2),
-  ];
+  return duplexBlueprint(width, depth, 1).partitions;
 }
-
 /** Partition segments for the floor being viewed. Single-storey layouts have one floor. */
 export function housePartitionSegmentsForFloor(
   houseTypeId: string,
@@ -509,6 +508,16 @@ export const HOUSE_ROOM_ID = {
   bedroom: "bedroom",
   bathroom: "bathroom",
   single: "room",
+  bedroom2: "bedroom-2",
+  bedroom3: "bedroom-3",
+  ensuite: "ensuite",
+  dining: "dining",
+  hallway: "hallway",
+  gym: "gym",
+  study: "study",
+  family: "family",
+  landing: "landing",
+  balcony: "balcony",
 } as const;
 export type HouseRoomId = (typeof HOUSE_ROOM_ID)[keyof typeof HOUSE_ROOM_ID];
 
@@ -519,6 +528,16 @@ export const HOUSE_ROOM_LABEL: Record<HouseRoomId, string> = {
   [HOUSE_ROOM_ID.bedroom]: "Bedroom",
   [HOUSE_ROOM_ID.bathroom]: "Bathroom",
   [HOUSE_ROOM_ID.single]: "Room",
+  [HOUSE_ROOM_ID.bedroom2]: "Bedroom 2",
+  [HOUSE_ROOM_ID.bedroom3]: "Bedroom 3",
+  [HOUSE_ROOM_ID.ensuite]: "Master ensuite",
+  [HOUSE_ROOM_ID.dining]: "Dining room",
+  [HOUSE_ROOM_ID.hallway]: "Hallway",
+  [HOUSE_ROOM_ID.gym]: "Gym / shared room",
+  [HOUSE_ROOM_ID.study]: "Home office",
+  [HOUSE_ROOM_ID.family]: "Family room",
+  [HOUSE_ROOM_ID.landing]: "Landing",
+  [HOUSE_ROOM_ID.balcony]: "Balcony",
 };
 
 /** Picker button that goes back to the whole home. */
@@ -534,6 +553,7 @@ export type HouseRoomView = {
   maxZ: number;
   /** An open-plan room can wrap around an enclosed bathroom. */
   exclude?: FloorBounds;
+  excludeAreas?: FloorBounds[];
 };
 
 /**
@@ -541,7 +561,14 @@ export type HouseRoomView = {
  * rooms; a studio has one open main space and an enclosed bathroom. The camera sits at +x, +z, so the walls on those
  * sides are the ones hidden in the room view.
  */
-export function houseRoomViews(houseTypeId: string, width: number, depth: number): HouseRoomView[] {
+export function houseRoomViews(
+  houseTypeId: string,
+  width: number,
+  depth: number,
+  floor: 0 | 1 = 0,
+): HouseRoomView[] {
+  if (houseTypeId === "duplex") return duplexBlueprint(width, depth, floor).rooms;
+  if (houseTypeId === "bungalow") return bungalowBlueprint(width, depth).rooms;
   if (houseTypeId === "studio-flat") {
     const { whole, bathroom } = studioBlueprint(width, depth);
     return [
@@ -602,6 +629,7 @@ export function roomViewContains(
   margin = ROOM_VIEW_MARGIN,
 ): boolean {
   if (room.exclude && boundsContain(room.exclude, x, z)) return false;
+  if (room.excludeAreas?.some((area) => boundsContain(area, x, z))) return false;
   return (
     x >= room.minX - margin &&
     x <= room.maxX + margin &&

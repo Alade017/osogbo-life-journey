@@ -13,6 +13,8 @@ export const AVATAR_ANIMATION_CLIPS = [
   { state: "talk", frames: 2, frameRate: 3, repeat: -1 },
   { state: "work", frames: 4, frameRate: 6, repeat: -1 },
   { state: "sleep", frames: 2, frameRate: 1, repeat: -1 },
+  // Four fallback frames keep the vertical atlas within a 4096px mobile texture.
+  { state: "dance", frames: 4, frameRate: 2, repeat: -1 },
 ] as const satisfies readonly {
   state: AvatarAnimationState;
   frames: number;

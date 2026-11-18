@@ -56,10 +56,10 @@ describe("mini-flat blueprint", () => {
     disposeStudioInterior(scene);
   });
 
-  it("starts as a cutaway while retaining the older large-home defaults", () => {
+  it("starts as a cutaway while including redesigned duplex homes", () => {
     expect(houseWallsDefaultClosed("mini-flat")).toBe(false);
-    expect(houseWallsDefaultClosed("bungalow")).toBe(true);
-    expect(houseWallsDefaultClosed("duplex")).toBe(true);
+    expect(houseWallsDefaultClosed("bungalow")).toBe(false);
+    expect(houseWallsDefaultClosed("duplex")).toBe(false);
     const scene = createBlueprintInterior("mini-flat", width, depth);
     const cutaway = scene.getObjectByName("studio-front-cutaway") as Mesh;
     expect(cutaway.scale.y).toBeLessThan(0.5);

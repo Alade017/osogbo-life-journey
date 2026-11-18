@@ -431,8 +431,8 @@
   {
     "id": "bungalow",
     "name": "Bungalow",
-    "description": "A single-storey family home with room for shared household life.",
-    "bedrooms": 3,
+    "description": "A two-bedroom bungalow with a shared gym room, a spacious common bathroom and a master ensuite.",
+    "bedrooms": 2,
     "floors": 1,
     "shared_facilities": false,
     "weekly_rent_minor": 22000,
@@ -541,8 +541,8 @@
   {
     "id": "duplex",
     "name": "Duplex",
-    "description": "A two-storey family home with separate spaces for work and rest.",
-    "bedrooms": 4,
+    "description": "A three-bedroom duplex with an upstairs gym, home office and balcony.",
+    "bedrooms": 3,
     "floors": 2,
     "shared_facilities": false,
     "weekly_rent_minor": 35000,

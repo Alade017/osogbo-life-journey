@@ -1,7 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
 import {
-  ChevronDown,
-  ChevronUp,
   Droplets,
   Smile,
   Sparkles,
@@ -63,9 +61,22 @@ export function GameNeedsRail({
     : null;
 
   useEffect(() => {
+    const dismissPanels = () => {
+      setExpanded(false);
+      setDetailNeed(null);
+      setActionMessage(null);
+    };
+    window.addEventListener("osogbo-hud-dismiss-panels", dismissPanels);
+    return () => window.removeEventListener("osogbo-hud-dismiss-panels", dismissPanels);
+  }, []);
+
+  useEffect(() => {
     if (!expanded) return;
     const dismiss = () => {
       setExpanded(false);
+      window.dispatchEvent(
+        new CustomEvent("osogbo-hud-panel-open", { detail: { open: false } }),
+      );
       setDetailNeed(null);
       setActionMessage(null);
     };
@@ -120,7 +131,7 @@ export function GameNeedsRail({
   return (
     <aside
       ref={rail}
-      className={`game-needs-rail${expanded ? " is-expanded" : " is-collapsed"}${compact ? " is-map-compact" : ""}`}
+      className={`game-needs-rail${expanded ? " is-expanded" : " is-collapsed"}${criticalCount > 0 ? " has-critical" : ""}${compact ? " is-map-compact" : ""}`}
       aria-label={`${player.name}'s needs dashboard${criticalCount ? `, ${criticalCount} critical` : ""}`}
     >
       <button
@@ -135,29 +146,30 @@ export function GameNeedsRail({
             : `Expand needs panel${criticalCount ? `, ${criticalCount} critical ${criticalCount === 1 ? "need" : "needs"}` : ""}`
         }
         onClick={() => {
-          setExpanded(!expanded);
+          const nextExpanded = !expanded;
+          setExpanded(nextExpanded);
+          window.dispatchEvent(
+            new CustomEvent("osogbo-hud-panel-open", { detail: { open: nextExpanded } }),
+          );
           setDetailNeed(null);
           setActionMessage(null);
         }}
       >
         <span className="game-needs-trigger-icon">
-          <Zap size={18} aria-hidden="true" />
+          <Zap size={16} aria-hidden="true" />
         </span>
         <span className="game-needs-trigger-copy">
           <strong>Needs</strong>
-          <span>
-            {urgent ? `${NEED_RULES[urgent.name].label} ${urgent.value}%` : "All looking good"}
-          </span>
         </span>
+        {urgent && (
+          <span className={`game-needs-urgent-pill is-${urgent.status}`}>
+            {NEED_RULES[urgent.name].label} · {urgent.value}%
+          </span>
+        )}
         {criticalCount > 0 && (
           <span className="game-needs-count" aria-hidden="true">
             {criticalCount}
           </span>
-        )}
-        {expanded ? (
-          <ChevronDown size={16} aria-hidden="true" />
-        ) : (
-          <ChevronUp size={16} aria-hidden="true" />
         )}
       </button>
       {expanded && (

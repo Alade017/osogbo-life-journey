@@ -48,7 +48,8 @@ export function useHouseMovement(resetKey: string, initial: RoomPoint) {
               from = current.current,
               dx = to[0] - from[0],
               dz = to[2] - from[2],
-              distance = Math.hypot(dx, dz);
+              dy = to[1] - from[1],
+              distance = Math.hypot(dx, dy, dz);
             if (distance <= remaining || reduced) {
               current.current = to;
               remaining -= distance;
@@ -60,7 +61,7 @@ export function useHouseMovement(resetKey: string, initial: RoomPoint) {
             );
             current.current = [
               from[0] + (dx / distance) * remaining,
-              0.06,
+              from[1] + (dy / distance) * remaining,
               from[2] + (dz / distance) * remaining,
             ];
             break;

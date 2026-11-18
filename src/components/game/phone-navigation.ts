@@ -23,7 +23,6 @@ export const PHONE_APP_ROUTES: Readonly<Record<string, string>> = {
   "/market": "Market",
   "/party": "Party",
   "/profile": "Profile",
-  "/inventory": "Inventory",
   "/social": "Messages",
   "/missions": "Missions",
   "/notifications": "Notifications",
@@ -115,7 +114,8 @@ export function handlePhoneLinkClick(
     (anchor.target && anchor.target !== "_self")
   )
     return;
-  if (isFullPageWorldPath(anchor.pathname)) {
+  // Inventory is a standalone game screen, never a nested phone app.
+  if (anchor.pathname === "/inventory" || isFullPageWorldPath(anchor.pathname)) {
     if (openWorld) {
       event.preventDefault();
       event.stopPropagation();

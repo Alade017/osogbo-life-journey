@@ -28,6 +28,19 @@ function tick() {
   frames.clear();
   act(() => pending.forEach((f) => f(now)));
 }
+it("interpolates height along a stair path and reaches the elevated landing", async () => {
+  const { result } = renderHook(() => useHouseMovement("stairs", [0, 0.06, 0]));
+  let arrived!: Promise<boolean>;
+  act(() => {
+    arrived = result.current.walk([[0, 1.5, -2]]);
+  });
+  for (let i = 0; i < 5; i++) tick();
+  expect(result.current.position[1]).toBeGreaterThan(0.06);
+  expect(result.current.position[1]).toBeLessThan(1.5);
+  for (let i = 0; i < 30; i++) tick();
+  expect(await arrived).toBe(true);
+  expect(result.current.position).toEqual([0, 1.5, -2]);
+});
 it("keeps its position and resolves false when walking is cancelled", async () => {
   const { result } = renderHook(() => useHouseMovement("room", [0, 0.06, 0]));
   let arrived!: Promise<boolean>;

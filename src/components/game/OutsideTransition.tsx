@@ -7,7 +7,12 @@ export function OutsideTransition() {
   if (!transition.kind) return null;
   const percent = Math.round((transition.done / transition.total) * 100);
   return (
-    <div className="outside-transition" role="status" aria-live="polite">
+    <div
+      className="outside-transition"
+      data-kind={transition.kind}
+      role="status"
+      aria-live="polite"
+    >
       <div className="outside-transition-card">
         <p className="outside-transition-kicker">
           {transition.kind === "leaving" ? "Going outside" : "Coming home"}

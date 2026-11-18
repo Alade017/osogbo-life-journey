@@ -66,7 +66,9 @@ describe("R3F home renderer boundary", () => {
 
   it("provides expanded room sizes and a genuine front-door opening", () => {
     expect(HOUSE_ROOM_SIZE["single-room"]?.[0]).toBeGreaterThan(5);
-    expect(HOUSE_ROOM_SIZE["duplex"]?.[0]).toBeGreaterThan(HOUSE_ROOM_SIZE["bungalow"]?.[0] ?? 0);
+    const [duplexWidth, duplexDepth] = HOUSE_ROOM_SIZE["duplex"]!;
+    const [bungalowWidth, bungalowDepth] = HOUSE_ROOM_SIZE["bungalow"]!;
+    expect(duplexWidth * duplexDepth * 2).toBeGreaterThan(bungalowWidth * bungalowDepth);
     const walls = houseWallSegments(8, 6, 2.2, 1.1);
     const frontWalls = walls.filter((wall) => wall.id.startsWith("front-"));
     const rearWalls = walls.filter((wall) => wall.id === "rear-left" || wall.id === "rear-right");
@@ -83,8 +85,8 @@ describe("R3F home renderer boundary", () => {
   it("adds a pass-through partition only to larger home layouts", () => {
     expect(housePartitionSegments("single-room", 8, 6)).toHaveLength(0);
     expect(housePartitionSegments("studio-flat", 8, 6)).toHaveLength(3);
-    expect(housePartitionSegments("bungalow", 10, 8)).toHaveLength(7);
-    expect(housePartitionSegments("duplex", 12, 9)).toHaveLength(7);
+    expect(housePartitionSegments("bungalow", 10, 8).length).toBeGreaterThan(7);
+    expect(housePartitionSegments("duplex", 12, 9).length).toBeGreaterThan(7);
     expect(housePartitionSegments("bungalow", 10, 8).every((part) => part.size[1] < 2)).toBe(true);
   });
 
@@ -202,4 +204,12 @@ describe("R3F home renderer boundary", () => {
     fireEvent.click(moveButton);
     expect(input.onMove).toHaveBeenCalledWith(placement, destination);
   });
+});
+
+it("does not leave the player's identity in the fallback room after leaving home", async () => {
+  vi.spyOn(console, "error").mockImplementation(() => {});
+  scene.fail = true;
+  render(<HouseRoomRenderer {...props()} characterName="Departed player" showCharacter={false} />);
+  await screen.findByRole("status");
+  expect(screen.queryByText("Departed player")).not.toBeInTheDocument();
 });
