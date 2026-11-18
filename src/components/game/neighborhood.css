@@ -875,3 +875,46 @@ body:has(.neighborhood-page) {
 .neighborhood-zone-modal[data-locked="true"] > button:last-child {
   display: none;
 }
+
+.neighborhood-personal-service {
+  display: grid;
+  gap: 12px;
+}
+.neighborhood-personal-service h3 {
+  font-size: 1.1rem;
+  font-weight: 750;
+}
+.neighborhood-personal-service p {
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+.neighborhood-personal-service label {
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+.neighborhood-personal-service select {
+  min-height: 48px;
+  max-width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  background: var(--card);
+  color: var(--foreground);
+}
+.neighborhood-personal-service dl {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.neighborhood-personal-service dd {
+  font-weight: 750;
+}
+.neighborhood-hair-colour {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+}

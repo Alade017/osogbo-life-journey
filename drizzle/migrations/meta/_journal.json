@@ -750,6 +750,13 @@
       "when": 1794968400000,
       "tag": "0105_house_rearrange",
       "breakpoints": true
+    },
+    {
+      "idx": 106,
+      "version": "7",
+      "when": 1795003200000,
+      "tag": "0106_barber_pos_services",
+      "breakpoints": true
     }
   ]
 }

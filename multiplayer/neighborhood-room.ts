@@ -381,6 +381,12 @@ export class NeighborhoodRoom extends Room {
     try {
       const fresh = await readCharacter(credentials.accessToken, credentials.locationId);
       player.equipment = fresh.equipment;
+      player.appearance = playerSnapshot(
+        fresh.character,
+        fresh.areaOrigin,
+        fresh.area,
+        fresh.equipment,
+      ).appearance;
     } catch {
       // Keep the last verified snapshot; the normal reconnect path will retry.
     }

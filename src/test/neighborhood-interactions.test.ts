@@ -87,8 +87,9 @@ describe("Olaiya neighborhood full zone interactivity & state slice", () => {
     expect(isServerBackedBankTransfer(atm, deposit)).toBe(true);
 
     const pos = findInteractableZone("zone-shop-pos")!;
-    const posCashOut = pos.actions.find((action) => action.id === "pos-cashout-2000")!;
+    const posCashOut = { ...withdraw, id: "pos-cashout", walletDelta: 2000, bankDelta: -2100 };
     expect(isServerBackedBankTransfer(pos, posCashOut)).toBe(false);
+    expect(isServerBackedBankTransfer(atm, posCashOut)).toBe(false);
 
     const adire = findInteractableZone("zone-adire-vats")!;
     expect(isServerBackedBankTransfer(adire, adire.actions[0]!)).toBe(false);
