@@ -315,7 +315,7 @@ export function NeighborhoodZoneModal({
                           </span>
                         )}
                         {supported && (
-                        <div className="flex flex-wrap gap-1.5 pt-1 text-[11px] font-bold text-[#16225C]">
+                          <div className="flex flex-wrap gap-1.5 pt-1 text-[11px] font-bold text-[#16225C]">
                           {outcome.needDeltas?.hunger ? (
                             <span>
                               {outcome.needDeltas.hunger > 0 ? "+" : ""}
@@ -346,7 +346,7 @@ export function NeighborhoodZoneModal({
                           {outcome.xpGain ? (
                             <span className="text-[#1E9A5F]">+{outcome.xpGain} XP</span>
                           ) : null}
-                        </div>
+                          </div>
                         )}
                       </button>
                     );
