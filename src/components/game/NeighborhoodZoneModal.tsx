@@ -229,7 +229,7 @@ export function NeighborhoodZoneModal({
                   className={subTab === "market" ? "is-active" : ""}
                   onClick={() => setSubTab("market")}
                 >
-                  {zone.id === "zone-mini-mart" ? "Food & Drinks" : "Shop Catalogue"}
+                  {zone.id === "zone-mini-mart" || zone.id === "zone-buka-stall" ? "Food & Drinks" : "Shop Catalogue"}
                 </button>
               )}
               {(zone.category === "adire" || zone.category === "filling-station") && (
@@ -297,7 +297,7 @@ export function NeighborhoodZoneModal({
                           </strong>
                           <span
                             className={`neighborhood-zone-price-tag${
-                              outcome.walletDelta > 0 ? " is-earn" : ""
+                              supported && outcome.walletDelta > 0 ? " is-earn" : ""
                             }`}
                           >
                             {priceLabel}
@@ -365,7 +365,7 @@ export function NeighborhoodZoneModal({
               <div className="rounded-xl border border-[#16225C]/15 bg-white/85 p-2">
                 <MarketPage
                   shopSlug={zone.shopSlug ?? undefined}
-                  foodOnly={zone.id === "zone-mini-mart"}
+                  foodOnly={zone.id === "zone-mini-mart" || zone.id === "zone-buka-stall"}
                 />
               </div>
             )}
