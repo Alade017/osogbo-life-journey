@@ -124,3 +124,13 @@ it("connects shopping and transport zones to existing authoritative service pane
   expect(findInteractableZone("zone-transit-stand")?.services).toContain("transit");
   expect(findInteractableZone("zone-shop-accessory")?.services).toContain("market");
 });
+
+it("connects both Adire stations to crafting and the same server-owned materials counter", () => {
+  for (const id of ["zone-adire-vats", "zone-adire-racks"]) {
+    const zone = findInteractableZone(id)!;
+    expect(zone.services).toContain("craft");
+    expect(zone.services).toContain("market");
+    expect(zone.shopSlug).toBe("adire-materials");
+    expect(zone.actions.some((action) => action.id.startsWith("adire-craft-"))).toBe(false);
+  }
+});

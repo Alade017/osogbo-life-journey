@@ -757,6 +757,13 @@
       "when": 1795003200000,
       "tag": "0106_barber_pos_services",
       "breakpoints": true
+    },
+    {
+      "idx": 107,
+      "version": "7",
+      "when": 1795006800000,
+      "tag": "0107_adire_crafting",
+      "breakpoints": true
     }
   ]
 }

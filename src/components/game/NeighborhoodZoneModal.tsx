@@ -1,3 +1,4 @@
+import { AdireCraftingPanel } from "./AdireCraftingPanel";
 import { NeighborhoodPersonalService } from "./NeighborhoodPersonalService";
 import { LocationVenueScene } from "./LocationVenueScene";
 import { useMapTravelController } from "@/components/map/use-map-travel-controller";
@@ -36,6 +37,7 @@ import {
 
 function serviceLabel(service: ZoneService, foodOnly: boolean) {
   return {
+    craft: "Adire crafting",
     barber: "Hair styling",
     pos: "POS withdrawal",
     bank: "Bank services",
@@ -47,6 +49,7 @@ function serviceLabel(service: ZoneService, foodOnly: boolean) {
 }
 function serviceDescription(service: ZoneService) {
   return {
+    craft: "Use owned materials and collect a finished Adire piece",
     barber: "Choose and save a new hairstyle",
     pos: "Withdraw cash with a clear fee breakdown",
     bank: "Account, deposits and withdrawals",
@@ -107,7 +110,7 @@ export function NeighborhoodZoneModal({
   const [tipIndex, setTipIndex] = useState(0);
   const [travelMode, setTravelMode] = useState<TravelMode>("keke");
   const bankLock = useRef(false);
-  const [personalBusy, setPersonalBusy] = useState(false);
+  const [serviceBusy, setServiceBusy] = useState(false);
   const [bankNeedsRefresh, setBankNeedsRefresh] = useState(false);
   const characterQuery = useQuery({
     ...q.character(),
@@ -171,7 +174,7 @@ export function NeighborhoodZoneModal({
   const handleClose = (nextOpen: boolean) => {
     if (
       !nextOpen &&
-      (personalBusy || bankLock.current || bankTransfer.isPending || !transit.canDismiss)
+      (serviceBusy || bankLock.current || bankTransfer.isPending || !transit.canDismiss)
     )
       return;
     if (!nextOpen) {
@@ -224,7 +227,7 @@ export function NeighborhoodZoneModal({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent
-        data-locked={personalBusy || bankTransfer.isPending || !transit.canDismiss}
+        data-locked={serviceBusy || bankTransfer.isPending || !transit.canDismiss}
         className={`neighborhood-zone-modal ${subTab === "actions" ? "is-compact" : "is-service"} max-h-[90vh] overflow-y-auto sm:max-w-3xl`}
       >
         {zone && (
@@ -275,7 +278,7 @@ export function NeighborhoodZoneModal({
                 className={subTab === "actions" ? "is-active" : ""}
                 aria-pressed={subTab === "actions"}
                 disabled={
-                  personalBusy || bankTransfer.isPending || transit.busy || transit.arrivalConfirmed
+                  serviceBusy || bankTransfer.isPending || transit.busy || transit.arrivalConfirmed
                 }
                 onClick={() => setSubTab("actions")}
               >
@@ -288,7 +291,7 @@ export function NeighborhoodZoneModal({
                   className={subTab === service ? "is-active" : ""}
                   aria-pressed={subTab === service}
                   disabled={
-                    personalBusy ||
+                    serviceBusy ||
                     bankTransfer.isPending ||
                     transit.busy ||
                     transit.arrivalConfirmed
@@ -420,12 +423,20 @@ export function NeighborhoodZoneModal({
               </div>
             )}
 
+            {subTab === "craft" && (
+              <AdireCraftingPanel
+                key={zone.id}
+                zoneId={zone.id}
+                onBusyChange={setServiceBusy}
+                onBuyMaterials={() => setSubTab("market")}
+              />
+            )}
             {(subTab === "barber" || subTab === "pos") && (
               <NeighborhoodPersonalService
                 key={zone.id}
                 zoneId={zone.id}
                 kind={subTab}
-                onBusyChange={setPersonalBusy}
+                onBusyChange={setServiceBusy}
               />
             )}
 
